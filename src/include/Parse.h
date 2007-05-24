@@ -23,6 +23,10 @@
 #include <R_ext/Parse.h>
 #include <IOStuff.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Public interface */
 /* SEXP R_ParseVector(SEXP, int, ParseStatus *, SEXP); in R_ext/Parse.h */
 
@@ -49,5 +53,9 @@ SEXP R_ParseConn(Rconnection con, int n, ParseStatus *status, SEXP srcfile);
 	/* Report a parse error */
 	
 void parseError(SEXP call, int linenum);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* not R_PARSE_H */

@@ -29,6 +29,10 @@
 #ifndef R_INLINES_H_
 #define R_INLINES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef COMPILING_R /* defined only in util.c */
 /* The following was added in gcc 4.1.3.  It is defined if
    GCC is following C99 inline semantics by default: we
@@ -237,7 +241,7 @@ INLINE_FUN Rboolean conformable(SEXP x, SEXP y)
 
 INLINE_FUN Rboolean isString(SEXP s)
 {
-    return (TYPEOF(s) == STRSXP);
+  return (TYPEOF(s) == STRSXP);
 }
 
 INLINE_FUN Rboolean isNull(SEXP s)
@@ -639,5 +643,8 @@ INLINE_FUN double fsign_int(double x, double y)
     return ((y >= 0) ? fabs(x) : -fabs(x));
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_INLINES_H_ */

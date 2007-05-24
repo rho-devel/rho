@@ -21,6 +21,9 @@
 #ifndef ERRORMSG_H
 #define ERRORMSG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 	/*-- Error Message Strings --- 1st step to i18n --- --*/
 
@@ -76,6 +79,9 @@ typedef enum {
     WARNING_UNKNOWN = 9999
 } R_WARNING;
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

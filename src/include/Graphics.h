@@ -39,6 +39,10 @@
 #define MAX_LAYOUT_CELLS 500 /* must be less than 65535, 
 				3 copies, 3bytes each */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned int rcolor;
 
 typedef struct {
@@ -480,5 +484,9 @@ typedef enum {meMouseDown = 0,
 SEXP doMouseEvent(SEXP eventRho, NewDevDesc *dd, R_MouseEvent event, 
                   int buttons, double x, double y);
 SEXP doKeybd	(SEXP eventRho, NewDevDesc *dd, R_KeyName rkey, char *keyname);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRAPHICS_H_ */

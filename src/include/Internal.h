@@ -28,6 +28,9 @@
 #ifndef R_INTERNAL_H
 #define R_INTERNAL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Device drivers here (for ease of access) */
 
@@ -560,5 +563,9 @@ SEXP do_getRegNS(SEXP call, SEXP op, SEXP args, SEXP rho);
 SEXP do_getNSRegistry(SEXP call, SEXP op, SEXP args, SEXP rho);
 SEXP do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho);
 SEXP do_envprofile(SEXP call, SEXP op, SEXP args, SEXP rho);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* not R_INTERNAL_H */

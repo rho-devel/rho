@@ -24,6 +24,10 @@
 #include <R_ext/PrtUtil.h>
 #include "Defn.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define formatFactor        Rf_formatFactor
 #define formatRaw           Rf_formatRaw
 #define formatString        Rf_formatString
@@ -86,4 +90,8 @@ void R_PV(SEXP s);
 #define R_MIN_DIGITS_OPT	1
 #define R_MAX_DIGITS_OPT	22
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* PRINT_H_ */

@@ -24,6 +24,10 @@
 
 #include <Rinternals.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef SEXP (*Rf_La_svd)(SEXP jobu, SEXP jobv, SEXP x, SEXP s, SEXP u, 
 			  SEXP v, SEXP method);
 typedef SEXP (*Rf_La_rs)(SEXP x, SEXP only_values);
@@ -65,5 +69,8 @@ typedef struct {
 
 R_LapackRoutines *R_setLapackRoutines(R_LapackRoutines *routines);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_LAPACK_MODULE_H */

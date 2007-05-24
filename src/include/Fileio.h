@@ -22,7 +22,15 @@
 
 #define RFILEIO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int	R_fgetc(FILE*);
 FILE *	R_fopen(const char *filename, const char *mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -5,6 +5,13 @@
 /* For inclusion by datetime.c if needed. A slightly modified version of
    code from the GNU C library with locale support removed. */
 
+#ifndef RSTRPTIME_H
+#define RSTRPTIME_H 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef HAVE_LOCALE_H
 # include <locale.h>
 #endif
@@ -1203,3 +1210,9 @@ static void get_locale_w_strings(void)
 }
 #endif
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* RSTRPTIME_H */

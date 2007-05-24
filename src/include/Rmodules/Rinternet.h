@@ -4,6 +4,9 @@
 
 #include <Rinternals.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef SEXP (*R_DownloadRoutine)(SEXP call, SEXP op, SEXP args, SEXP env);
 typedef Rconnection (*R_NewUrlRoutine)(char *description, const char * const mode);
@@ -52,5 +55,9 @@ typedef struct {
 } R_InternetRoutines;
 
 R_InternetRoutines *R_setInternetRoutines(R_InternetRoutines *routines);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ifndef R_INTERNET_MODULE_H */

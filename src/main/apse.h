@@ -37,6 +37,10 @@ Furthermore:
 
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef APSE_VEC_T
 typedef	APSE_VEC_T	apse_vec_t;
 #else
@@ -225,5 +229,9 @@ void* apse_get_custom_data(apse_t*	ap,
 void apse_destroy(apse_t *ap);
 
 #define APSE_MATCH_BAD			((apse_size_t)  -1)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* #ifndef APSE_H */

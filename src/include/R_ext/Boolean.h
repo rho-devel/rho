@@ -24,12 +24,16 @@
 #undef TRUE
 
 #ifdef  __cplusplus
-extern "C" {
-#endif
+
+typedef bool Rboolean;
+
+#define TRUE true
+#define FALSE false
+
+#else
+
 typedef enum { FALSE = 0, TRUE /*, MAYBE */ } Rboolean;
 
-#ifdef  __cplusplus
-}
 #endif
 
 #endif /* R_EXT_BOOLEAN_H_ */

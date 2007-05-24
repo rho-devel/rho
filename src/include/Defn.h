@@ -54,6 +54,11 @@
 			   and occasionally as a limit. */
 
 #include <R_ext/Complex.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void Rf_CoercionWarning(int);/* warning code */
 int Rf_LogicalFromInteger(int, int*);
 int Rf_LogicalFromReal(double, int*);
@@ -1146,6 +1151,10 @@ extern char *alloca(size_t);
 # define LDOUBLE long double
 #else
 # define LDOUBLE double
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* DEFN_H_ */

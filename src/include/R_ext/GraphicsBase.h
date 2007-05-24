@@ -22,6 +22,10 @@
 #ifndef R_GRAPHICSBASE_H_
 #define R_GRAPHICSBASE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     GPar dp;		/* current device default parameters */
     GPar gp;		/* current device current parameters */
@@ -36,5 +40,9 @@ void registerBase();
 
 Rboolean Rf_baseDevice(DevDesc *dd);
 void Rf_setBaseDevice(Rboolean val, DevDesc *dd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* R_GRAPHICSBASE_ */

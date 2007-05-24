@@ -1,3 +1,10 @@
+#ifndef ARITHMETIC_H
+#define ARITHMETIC_H 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
 SEXP do_math2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_math3(SEXP, SEXP, SEXP, SEXP);
@@ -12,3 +19,8 @@ SEXP complex_math2(SEXP, SEXP, SEXP, SEXP);
 SEXP complex_unary(ARITHOP_TYPE, SEXP);
 SEXP complex_binary(ARITHOP_TYPE, SEXP, SEXP);
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ARITHMETIC_H */

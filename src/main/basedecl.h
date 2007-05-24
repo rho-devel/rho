@@ -21,6 +21,13 @@
  *  These routines are `registered' in registration.c.
  */
 
+#ifndef BASEDECL_H
+#define BASEDECL_H 1
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void Rsockconnect(int *, char **);
 void Rsockopen(int *);
 void Rsocklisten(int *, char **, int *);
@@ -99,3 +106,9 @@ SEXP R_getbcprofcounts();
 SEXP R_startbcprof();
 SEXP R_stopbcprof();
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* BASEDECL_H */

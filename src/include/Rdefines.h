@@ -20,6 +20,10 @@
 #ifndef R_DEFINES_H
 #define R_DEFINES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(R_R_H) && !defined(R_S_H)
 /* user forgot to include R.h or S.h */
 #include <R_ext/Memory.h>
@@ -158,5 +162,8 @@
 
 #define EVAL(x)			eval(x,R_GlobalEnv)
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

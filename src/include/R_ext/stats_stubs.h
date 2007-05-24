@@ -1,3 +1,6 @@
+#ifndef STATS_STUBS_H
+#define STATS_STUBS_H 1
+
 #include <Rconfig.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
@@ -6,6 +9,10 @@
 # define attribute_hidden __attribute__ ((visibility ("hidden")))
 #else
 # define attribute_hidden
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 void attribute_hidden
@@ -47,3 +54,8 @@ S_nlsb_iterate(double b[], double d[], double dr[], int iv[], int liv,
     fun(b, d, dr, iv, liv, lv, n, nd, p, r, rd, v, x);
 }
 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* STATS_STUBS_H */

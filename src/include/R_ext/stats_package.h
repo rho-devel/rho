@@ -9,6 +9,10 @@
 # define attribute_hidden
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum AlgType {NREG = 1, OPT = 2};
 				/* 0-based indices into v */
 enum  VPos {F = 9, F0 = 12, FDIF = 10, G = 27, HC = 70};
@@ -48,6 +52,10 @@ static R_INLINE int S_iv_length(int alg, int n)
 {
     return (alg - 1) ? (82 + 4 * n) : (78 + 3 * n);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* STATS_H */
 

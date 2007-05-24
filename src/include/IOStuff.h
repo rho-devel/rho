@@ -35,6 +35,10 @@
 
 #define IOBSIZE 4096
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct BufferListItem {
 	unsigned char			buf[IOBSIZE];
 	struct BufferListItem	*next;
@@ -79,5 +83,9 @@ int R_IoBufferPuts(char*, IoBuffer*);
 int R_TextBufferInit(TextBuffer*, SEXP);
 int R_TextBufferFree(TextBuffer*);
 int R_TextBufferGetc(TextBuffer*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* not R_IOSTUFF_H */

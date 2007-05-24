@@ -21,6 +21,10 @@
 #define R_CONNECTIONS_H_
 #include <R_ext/Boolean.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* until we make connections more public this allows the opaque
    pointer definition to be made available in Rinternals.h */
 #ifndef HAVE_RCONNECTION_TYPEDEF
@@ -172,5 +176,10 @@ int Rsockselect(int nsock, int *insockfd, int *ready, int *write,
 
 #define set_iconv Rf_set_iconv
 void set_iconv(Rconnection con);
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* R_CONNECTIONS_H_ */
 

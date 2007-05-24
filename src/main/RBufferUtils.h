@@ -1,6 +1,10 @@
 #ifndef R_BUFFER_UTILS
 #define R_BUFFER_UTILS
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* used in character.c deparse.c, printutils.c, saveload.c scan.c */
 
 /* We can make these uint's rather than ordinary int's. */
@@ -14,5 +18,9 @@ typedef struct {
 /* Note that R_StringBuffer *buf needs to be initialized before call */
 void R_AllocStringBuffer(int blen, R_StringBuffer *buf);
 void R_FreeStringBuffer(R_StringBuffer *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

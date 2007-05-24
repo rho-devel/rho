@@ -22,6 +22,10 @@
 
 #include <R_ext/RStartup.h>	/* The meat here */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* originally from Defn.h : */
 
 void R_CleanUp(SA_TYPE, int, int);
@@ -31,4 +35,8 @@ FILE *R_OpenInitFile(void);
 FILE *R_OpenSysInitFile(void);
 FILE *R_OpenSiteFile(void);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* STARTUP_H */
