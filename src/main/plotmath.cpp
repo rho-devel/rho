@@ -938,12 +938,12 @@ static FontType mc->CurrentFont = 3;
 #endif
 static FontType GetFont(R_GE_gcontext *gc)
 {
-    return gc->fontface;
+    return FontType(gc->fontface);
 }
 
 static FontType SetFont(FontType font, R_GE_gcontext *gc)
 {
-    FontType prevfont = gc->fontface;
+    FontType prevfont = FontType(gc->fontface);
     gc->fontface = font;
     return prevfont;
 }
@@ -2219,7 +2219,7 @@ static BBOX RenderDelim(int which, double dist, int draw, mathContext *mc,
 		- (bboxHeight(topBBox) + bboxDepth(topBBox));
 	    ybot = axisHeight - dist
 		+ (bboxHeight(botBBox) + bboxDepth(botBBox));
-	    n = ceil((ytop - ybot) / (0.99 * extHeight));
+	    n = int(ceil((ytop - ybot) / (0.99 * extHeight)));
 	    if (n > 0) {
 		delta = (ytop - ybot) / n;
 		for (i = 0; i < n; i++) {
@@ -2838,7 +2838,7 @@ static BBOX RenderPlain(SEXP expr, int draw, mathContext *mc,
 			R_GE_gcontext *gc, GEDevDesc *dd)
 {
     BBOX bbox;
-    int prevfont = SetFont(PlainFont, gc);
+    FontType prevfont = SetFont(PlainFont, gc);
     bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
@@ -2860,7 +2860,7 @@ static BBOX RenderBoldItalic(SEXP expr, int draw, mathContext *mc,
 			     R_GE_gcontext *gc, GEDevDesc *dd)
 {
     BBOX bbox;
-    int prevfont = SetFont(BoldItalicFont, gc);
+    FontType prevfont = SetFont(BoldItalicFont, gc);
     bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
@@ -3326,7 +3326,7 @@ void GMathText(double x, double y, int coords, SEXP expr,
 {
     R_GE_gcontext gc;
     gcontextFromGP(&gc, dd);
-    GConvert(&x, &y, coords, DEVICE, dd);
+    GConvert(&x, &y, GUnit(coords), DEVICE, dd);
     GClip(dd);
     GEMathText(x, y, expr, xc, yc, rot, &gc, (GEDevDesc*) dd);
 }

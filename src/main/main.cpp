@@ -1054,7 +1054,8 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    cptr = cptr->nextcontext;
 	Rprintf("Called from: ");
 	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
-	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
+//	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
+	if(tmp != R_NaInt && tmp > 0) R_BrowseLines = tmp;
 	PrintValueRec(cptr->call,rho);
 	R_BrowseLines = 0;
     }

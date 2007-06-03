@@ -129,7 +129,7 @@ static HashData *HashTableSetup(int maxstrings)
 
 static SEXP insertString(char *str, LocalData *l)
 {
-    HashData *d = l->hash;
+    HashData *d = reinterpret_cast<HashData*>(l->hash);
     int i;
     SEXP tmp, *h = d->HashTable;
 
@@ -398,7 +398,7 @@ static int scanchar(Rboolean inQuote, LocalData *d)
 /* utility to close connections after interrupts */
 static void scan_cleanup(void *data)
 {
-    LocalData *ld = data;
+    LocalData *ld = reinterpret_cast<LocalData*>(data);
     if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
     if (ld->quotesave) free(ld->quotesave);
 }
@@ -758,7 +758,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 		      int fill, SEXP stripwhite, int blskip, int multiline,
 		      LocalData *d)
 {
-    SEXP ans, new, old, w;
+    SEXP ans, newv, old, w;
     char *buffer = NULL;
     int blksize, c, i, ii, j, n, nc, linesread, colsread, strip, bch;
     int badline, nstring = 0;
@@ -839,9 +839,9 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 	    for (i = 0; i < nc; i++) {
 		old = VECTOR_ELT(ans, i);
 		if(!isNull(old)) {
-		    new = allocVector(TYPEOF(old), blksize);
-		    copyVector(new, old);
-		    SET_VECTOR_ELT(ans, i, new);
+		    newv = allocVector(TYPEOF(old), blksize);
+		    copyVector(newv, old);
+		    SET_VECTOR_ELT(ans, i, newv);
 		}
 	    }
 	}
@@ -889,35 +889,35 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 
     for (i = 0; i < nc; i++) {
 	old = VECTOR_ELT(ans, i);
-	new = allocVector(TYPEOF(old), n);
+	newv = allocVector(TYPEOF(old), n);
 	switch (TYPEOF(old)) {
 	case LGLSXP:
 	case INTSXP:
 	    for (j = 0; j < n; j++)
-		INTEGER(new)[j] = INTEGER(old)[j];
+		INTEGER(newv)[j] = INTEGER(old)[j];
 	    break;
 	case REALSXP:
 	    for (j = 0; j < n; j++)
-		REAL(new)[j] = REAL(old)[j];
+		REAL(newv)[j] = REAL(old)[j];
 	    break;
 	case CPLXSXP:
 	    for (j = 0; j < n; j++)
-		COMPLEX(new)[j] = COMPLEX(old)[j];
+		COMPLEX(newv)[j] = COMPLEX(old)[j];
 	    break;
 	case STRSXP:
 	    for (j = 0; j < n; j++)
-		SET_STRING_ELT(new, j, STRING_ELT(old, j));
+		SET_STRING_ELT(newv, j, STRING_ELT(old, j));
 	    break;
 	case RAWSXP:
 	    for (j = 0; j < n; j++)
-		RAW(new)[j] = RAW(old)[j];
+		RAW(newv)[j] = RAW(old)[j];
 	    break;
 	case NILSXP:
 	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("scanFrame", old);
 	}
-	SET_VECTOR_ELT(ans, i, new);
+	SET_VECTOR_ELT(ans, i, newv);
     }
     UNPROTECT(1);
     R_FreeStringBuffer(&buf);
@@ -1006,9 +1006,9 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	data.quoteset = translateChar(STRING_ELT(quotes, 0));
 	/* Protect against broken realloc */
 	if(data.quotesave)
-	    data.quotesave = realloc(data.quotesave,
-				     strlen(data.quoteset) + 1);
-	else data.quotesave = malloc(strlen(data.quoteset) + 1);
+	    data.quotesave = reinterpret_cast<char*>(realloc(data.quotesave,
+				                             strlen(data.quoteset) + 1));
+	else data.quotesave = reinterpret_cast<char*>(malloc(strlen(data.quoteset) + 1));
 	if (!data.quotesave)
 	    errorcall(call, _("out of memory"));
 	strcpy(data.quotesave, data.quoteset);
@@ -1129,8 +1129,8 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* This appears to be necessary to protect quoteset against GC */
 	data.quoteset = translateChar(STRING_ELT(quotes, 0));
 	/* Protect against broken realloc */
-	if(data.quotesave) data.quotesave = realloc(data.quotesave, strlen(data.quoteset) + 1);
-	else data.quotesave = malloc(strlen(data.quoteset) + 1);
+	if(data.quotesave) data.quotesave = reinterpret_cast<char*>(realloc(data.quotesave, strlen(data.quoteset) + 1));
+	else data.quotesave = reinterpret_cast<char*>(malloc(strlen(data.quoteset) + 1));
 	if (!data.quotesave)
 	    errorcall(call, _("out of memory"));
 	strcpy(data.quotesave, data.quoteset);
@@ -1590,7 +1590,7 @@ SEXP attribute_hidden do_menu(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
     ans = allocVector(INTSXP, 1);
-    INTEGER(ans)[0] = first;
+    INTEGER(ans)[0] = int(first);
     return ans;
 }
 
@@ -1625,9 +1625,9 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	data.quoteset = translateChar(STRING_ELT(quotes, 0));
 	/* Protect against broken realloc */
 	if(data.quotesave)
-	    data.quotesave = realloc(data.quotesave,
-				     strlen(data.quoteset) + 1);
-	else data.quotesave = malloc(strlen(data.quoteset) + 1);
+	    data.quotesave = reinterpret_cast<char*>(realloc(data.quotesave,
+				                             strlen(data.quoteset) + 1));
+	else data.quotesave = reinterpret_cast<char*>(malloc(strlen(data.quoteset) + 1));
 	if (!data.quotesave)
 	    errorcall(call, _("out of memory"));
 	strcpy(data.quotesave, data.quoteset);
@@ -1831,7 +1831,7 @@ typedef struct wt_info {
 /* utility to cleanup e.g. after interrpts */
 static void wt_cleanup(void *data)
 {
-    wt_info *ld = data;
+    wt_info *ld = reinterpret_cast<wt_info*>(data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
@@ -1892,9 +1892,9 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     quote_col = (Rboolean *) R_alloc(nc, sizeof(Rboolean));
     for(j = 0; j < nc; j++) quote_col[j] = FALSE;
     for(i = 0; i < length(quote); i++) { /* NB, quote might be NULL */
-	int this = INTEGER(quote)[i];
-	if(this == 0) quote_rn = TRUE;
-	if(this >  0) quote_col[this - 1] = TRUE;
+	int that = INTEGER(quote)[i];
+	if(that == 0) quote_rn = TRUE;
+	if(that >  0) quote_col[that - 1] = TRUE;
     }
     R_AllocStringBuffer(0, &strBuf);
     PrintDefaults(R_NilValue);
@@ -1938,7 +1938,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 						 quote_col[j], qmethod,
 						 &strBuf, cdec);
 			else if(TYPEOF(xj) == REALSXP)
-			    tmp = EncodeElement2(levels[j], REAL(xj)[i] - 1,
+			    tmp = EncodeElement2(levels[j], int(REAL(xj)[i] - 1),
 						 quote_col[j], qmethod,
 						 &strBuf, cdec);
 			else

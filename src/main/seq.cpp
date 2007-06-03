@@ -93,7 +93,7 @@ static SEXP seq_colon(double n1, double n2)
     r = fabs(n2 - n1);
     if(r >= INT_MAX) error(_("result would be too long a vector"));
 
-    n = r + 1 + FLT_EPSILON;
+    n = int(r + 1 + FLT_EPSILON);
     if (useInt) {
 	ans = allocVector(INTSXP, n);
 	if (n1 <= n2)
@@ -546,7 +546,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = rfrom + i*rby;
+		INTEGER(ans)[i] = int(rfrom + i*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -563,7 +563,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = rto - (lout - 1 - i)*rby;
+		INTEGER(ans)[i] = int(rto - (lout - 1 - i)*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)

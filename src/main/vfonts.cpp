@@ -74,7 +74,7 @@ static void vfonts_Init(void)
 }
 
 double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
-		   int unit, DevDesc *dd)
+		   GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
     char *str = (char *)s;
@@ -88,7 +88,7 @@ double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
 #ifdef SUPPORT_MBCS
     if(typeface == 0  && (fontindex == 5 || fontindex == 6)) conv = FALSE;
     if(conv && !utf8strIsASCII(str)) {
-	buff = alloca(strlen(str)+1); /* Output string cannot be longer */
+	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrWidth"));
 	mbcsToLatin1((char*) s, buff);
@@ -114,7 +114,7 @@ double R_GE_VStrWidth(const unsigned char *s,
 }
 
 double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
-		    int unit, DevDesc *dd)
+		    GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
     char *str = (char *)s;
@@ -128,7 +128,7 @@ double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
 #ifdef SUPPORT_MBCS
     if(typeface == 0  && (fontindex == 5 || fontindex == 6)) conv = FALSE;
     if(conv && !utf8strIsASCII(str)) {
-	buff = alloca(strlen(str)+1); /* Output string cannot be longer */
+	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrHeight"));
 	mbcsToLatin1((char *) s, buff);
@@ -153,7 +153,7 @@ double R_GE_VStrHeight(const unsigned char *s,
     }
 }
 
-void GVText (double x, double y, int unit, char *s,
+void GVText (double x, double y, GUnit unit, char *s,
 	     int typeface, int fontindex,
 	     double x_justify, double y_justify, double rotation,
 	     DevDesc *dd)
@@ -175,7 +175,7 @@ void GVText (double x, double y, int unit, char *s,
 #ifdef SUPPORT_MBCS
     if(typeface == 0  && (fontindex == 5 || fontindex == 6)) conv = FALSE;
     if(conv && !utf8strIsASCII(str)) {
-	buff = alloca(strlen(str)+1); /* Output string cannot be longer */
+	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
 	R_CheckStack();
 	if(!buff) error(_("allocation failure in GVText"));
 	mbcsToLatin1(s, buff);

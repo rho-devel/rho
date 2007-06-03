@@ -204,7 +204,7 @@
     else if (streql(what, "smo")) {
 	lengthCheck(what, value, 1, call);	x = asReal(value);
 	nonnegRealCheck(x, what);
-	R_DEV__(smo) = x;
+	R_DEV__(smo) = int(x);
     }
     else if (streql(what, "srt")) {
 	lengthCheck(what, value, 1, call);	x = asReal(value);

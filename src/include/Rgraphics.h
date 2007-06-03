@@ -318,7 +318,7 @@ double GStrHeight(char*, GUnit, DevDesc*);
 double GStrWidth(char*, GUnit, DevDesc*);
 /* Draw the specified text at location (x,y) with the specified
  * rotation and justification: */
-void GText(double, double, int, char*, double, double, double, DevDesc*);
+void GText(double, double, int, const char*, double, double, double, DevDesc*);
 
 
 void GStartPath(DevDesc*);

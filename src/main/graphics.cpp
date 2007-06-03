@@ -126,7 +126,7 @@ GUnit GMapUnits(int Runits)
     case 1:	return USER;
     case 2:	return NFC;
     case 3:	return INCHES;
-    default:	return 0;
+    default:	return GUnit(0);
     }
 }
 
@@ -1322,12 +1322,12 @@ static void subRegion(double *left, double *right, double *bottom, double *top,
 {
     double totalWidth = sumRegions(widths, 0, Rf_gpptr(dd)->numcols-1);
     double totalHeight = sumRegions(heights, 0, Rf_gpptr(dd)->numrows-1);
-    *left = (0.5 - totalWidth/2) + sumRegions(widths, 0, mincol-1);
-    *right = (0.5 - totalWidth/2) + sumRegions(widths, 0, maxcol);
+    *left = (0.5 - totalWidth/2) + sumRegions(widths, 0, int(mincol-1));
+    *right = (0.5 - totalWidth/2) + sumRegions(widths, 0, int(maxcol));
     *bottom = (0.5 - totalHeight/2) + totalHeight
-	- sumRegions(heights, 0, maxrow);
+	- sumRegions(heights, 0, int(maxrow));
     *top = (0.5 - totalHeight/2) + totalHeight
-	- sumRegions(heights, 0, minrow-1);
+	- sumRegions(heights, 0, int(minrow-1));
 }
 
 /* a fudge for backwards compatibility (of sorts) with par(mfg) */
@@ -1776,7 +1776,7 @@ DevDesc *GNewPlot(Rboolean recording)
     /* we can call par(mfg) before any plotting.
        That sets new = TRUE and also sets currentFigure <= lastFigure
        so treat separately. */
-    if (!Rf_gpptr(dd)->new) {
+    if (!Rf_gpptr(dd)->newplot) {
 	R_GE_gcontext gc;
 	gcontextFromGP(&gc, dd);
 	Rf_dpptr(dd)->currentFigure += 1;
@@ -2191,7 +2191,7 @@ void attribute_hidden GInit(GPar *dp)
     dp->respect[0] = 0;
 
     /* Misc plotting parameters */
-    dp->new = FALSE;
+    dp->newplot = FALSE;
     dp->devmode = -99;
     dp->pty = 'm';
     dp->lwd = 1;
@@ -2445,7 +2445,7 @@ void GCheckState(DevDesc *dd)
 
 
 static void setClipRect(double *x1, double *y1, double *x2, double *y2,
-                        int coords, DevDesc *dd)
+                        GUnit coords, DevDesc *dd)
 {
     /*
      * xpd = 0 means clip to current plot region
@@ -2526,7 +2526,7 @@ void gcontextFromGP(R_GE_gcontext *gc, DevDesc *dd)
 /* Draw a line. */
 /* If the device canClip, R clips line to device extent and
    device does all other clipping. */
-void GLine(double x1, double y1, double x2, double y2, int coords, DevDesc *dd)
+void GLine(double x1, double y1, double x2, double y2, GUnit coords, DevDesc *dd)
 {
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
     if (Rf_gpptr(dd)->lty == LTY_BLANK) return;
@@ -2545,7 +2545,7 @@ void GLine(double x1, double y1, double x2, double y2, int coords, DevDesc *dd)
 }
 
 /* Read the current "pen" position. */
-Rboolean GLocator(double *x, double *y, int coords, DevDesc *dd)
+Rboolean GLocator(double *x, double *y, GUnit coords, DevDesc *dd)
 {
     if(!((GEDevDesc*) dd)->dev->locator)
 	error(_("no locator capability in device driver"));
@@ -2587,7 +2587,7 @@ void GMode(int mode, DevDesc *dd)
     if(mode != Rf_gpptr(dd)->devmode) {
 	((GEDevDesc*) dd)->dev->mode(mode, ((GEDevDesc*) dd)->dev);
     }
-    Rf_gpptr(dd)->new = Rf_dpptr(dd)->new = FALSE;
+    Rf_gpptr(dd)->newplot = Rf_dpptr(dd)->newplot = FALSE;
     Rf_gpptr(dd)->devmode = Rf_dpptr(dd)->devmode = mode;
 }
 
@@ -2708,7 +2708,7 @@ void clipPoint (Edge b, double x, double y,
 	if (cross (b, x, y, cs[b].sx, cs[b].sy, clip)) {
 	    intersect (b, x, y, cs[b].sx, cs[b].sy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (b + 1, ix, iy, xout, yout, cnt, store,
+		clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store,
 			   clip, cs);
 	    else {
 		if (store) {
@@ -2727,7 +2727,7 @@ void clipPoint (Edge b, double x, double y,
     /* proceed to next clip edge, if any */
     if (inside (b, x, y, clip)) {
 	if (b < Top)
-	    clipPoint (b + 1, x, y, xout, yout, cnt, store, clip, cs);
+	    clipPoint (Edge(b + 1), x, y, xout, yout, cnt, store, clip, cs);
 	else {
 	    if (store) {
 		xout[*cnt] = x;
@@ -2745,12 +2745,12 @@ void closeClip (double *xout, double *yout, int *cnt, int store,
     double ix = 0.0, iy = 0.0 /* -Wall */;
     Edge b;
 
-    for (b = Left; b <= Top; b++) {
+    for (b = Left; b <= Top; b = Edge(b+1)) {
 	if (cross (b, cs[b].sx, cs[b].sy, cs[b].fx, cs[b].fy, clip)) {
 	    intersect (b, cs[b].sx, cs[b].sy,
 		       cs[b].fx, cs[b].fy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (b + 1, ix, iy, xout, yout, cnt, store, clip, cs);
+		clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
 	    else {
 		if (store) {
 		    xout[*cnt] = ix;
@@ -2762,7 +2762,7 @@ void closeClip (double *xout, double *yout, int *cnt, int store,
     }
 }
 
-int GClipPolygon(double *x, double *y, int n, int coords, int store,
+int GClipPolygon(double *x, double *y, int n, GUnit coords, int store,
 		 double *xout, double *yout, DevDesc *dd)
 {
     int i, cnt = 0;
@@ -2805,7 +2805,7 @@ int GClipPolygon(double *x, double *y, int n, int coords, int store,
  *	Filled with color bg and outlined with color fg
  *	These may both be NA_INTEGER
  */
-void GPolygon(int n, double *x, double *y, int coords,
+void GPolygon(int n, double *x, double *y, GUnit coords,
 	      int bg, int fg, DevDesc *dd)
 {
     int i;
@@ -2845,7 +2845,7 @@ void GPolygon(int n, double *x, double *y, int coords,
 /* Draw a series of line segments. */
 /* If the device canClip, R clips to the device extent and the device
    does all other clipping */
-void GPolyline(int n, double *x, double *y, int coords, DevDesc *dd)
+void GPolyline(int n, double *x, double *y, GUnit coords, DevDesc *dd)
 {
     int i;
     double *xx;
@@ -2882,7 +2882,7 @@ void GPolyline(int n, double *x, double *y, int coords, DevDesc *dd)
  * Could be removed if Rgraphics.h ever gets REPLACED by new API
  * NOTE that base graphics code (in plot.c) still calls this.
  */
-void GCircle(double x, double y, int coords,
+void GCircle(double x, double y, GUnit coords,
 	     double radius, int bg, int fg, DevDesc *dd)
 {
     double ir;
@@ -2911,7 +2911,7 @@ void GCircle(double x, double y, int coords,
 /* Draw a rectangle	*/
 /* Filled with color bg and outlined with color fg  */
 /* These may both be NA_INTEGER	 */
-void GRect(double x0, double y0, double x1, double y1, int coords,
+void GRect(double x0, double y0, double x1, double y1, GUnit coords,
 	   int bg, int fg, DevDesc *dd)
 {
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
@@ -2961,7 +2961,7 @@ double GStrHeight(char *str, GUnit units, DevDesc *dd)
 /* Draw text in a plot. */
 /* If you want EXACT centering of text (e.g., like in GSymbol) */
 /* then pass NA_REAL for xc and yc */
-void GText(double x, double y, int coords, char *str,
+void GText(double x, double y, GUnit coords, char *str,
 	   double xc, double yc, double rot, DevDesc *dd)
 {
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
@@ -2986,7 +2986,7 @@ void GText(double x, double y, int coords, char *str,
 
 /* GArrow -- Draw an arrow. */
 /* NOTE that the length parameter is in inches. */
-void GArrow(double xfrom, double yfrom, double xto, double yto, int coords,
+void GArrow(double xfrom, double yfrom, double xto, double yto, GUnit coords,
 	    double length, double angle, int code, DevDesc *dd)
 {
 
@@ -3125,11 +3125,11 @@ void GLPretty(double *ul, double *uh, int *n)
  * The real work happens when the axis is drawn. */
     int p1, p2;
     double dl = *ul, dh = *uh;
-    p1 = ceil(log10(dl));
-    p2 = floor(log10(dh));	
+    p1 = int(ceil(log10(dl)));
+    p2 = int(floor(log10(dh)));	
     if(p2 <= p1 &&  dh/dl > 10.0) {
-	p1 = ceil(log10(dl) - 0.5);
-	p2 = floor(log10(dh) + 0.5);
+	p1 = int(ceil(log10(dl) - 0.5));
+	p2 = int(floor(log10(dh) + 0.5));
     }
 
     if (p2 <= p1) { /* floor(log10(uh)) <= ceil(log10(ul))
@@ -3172,7 +3172,7 @@ void GPretty(double *lo, double *up, int *ndiv)
 /* NOTE: This cex is already multiplied with cexbase */
 
 /* Draw one of the R special symbols. */
-void GSymbol(double x, double y, int coords, int pch, DevDesc *dd)
+void GSymbol(double x, double y, GUnit coords, int pch, DevDesc *dd)
 {
     double size = GConvertYUnits(GSTR_0, INCHES, DEVICE, dd);
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
@@ -4178,7 +4178,7 @@ unsigned int attribute_hidden number2col(char *nm)
 {
     int indx;
     char *ptr;
-    indx = strtod(nm, &ptr);
+    indx = int(strtod(nm, &ptr));
     if(*ptr) error(_("invalid color specification"));
     if(indx == 0) return Rf_dpptr(CurrentDevice())->bg;
     else return R_ColorTable[(indx-1) % R_ColorTableSize];
@@ -4307,7 +4307,7 @@ unsigned int RGBpar(SEXP x, int i)
 	     * Used to be set to NA_INTEGER (see comment in name2col).
 	     */
 	    return R_TRANWHITE;
-	indx = REAL(x)[i] - 1;
+	indx = int(REAL(x)[i] - 1);
 	if(indx < 0) return Rf_dpptr(CurrentDevice())->bg;
 	else return R_ColorTable[indx % R_ColorTableSize];
     }
@@ -4428,7 +4428,7 @@ unsigned int LTYpar(SEXP value, int ind)
 	rcode = REAL(value)[ind];
 	if(!R_FINITE(rcode) || rcode < 0)
 	    error(_("invalid line type"));
-	code = rcode;
+	code = int(rcode);
 	if (code > 0)
 	    code = (code-1) % nlinetype + 1;
 	return linetype[code].pattern;
@@ -4999,7 +4999,7 @@ void restoredpSaved(DevDesc *dd)
     Rf_dpptr(dd)->rspct = Rf_dpSavedptr(dd)->rspct;
     Rf_dpptr(dd)->layout = Rf_dpSavedptr(dd)->layout;
     Rf_dpptr(dd)->mfind = Rf_dpSavedptr(dd)->mfind;
-    Rf_dpptr(dd)->new = Rf_dpSavedptr(dd)->new;
+    Rf_dpptr(dd)->newplot = Rf_dpSavedptr(dd)->newplot;
     Rf_dpptr(dd)->oma[0] = Rf_dpSavedptr(dd)->oma[0];
     Rf_dpptr(dd)->oma[1] = Rf_dpSavedptr(dd)->oma[1];
     Rf_dpptr(dd)->oma[2] = Rf_dpSavedptr(dd)->oma[2];

@@ -225,8 +225,8 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
        tick, usually 10ms, so avoid too small intervals here */
 #if !defined(Win32) && defined(_R_HAVE_TIMING_)
     double clock_incr = R_getClockIncrement();
-    int nclock = floor(dinterval/clock_incr + 0.5);
-    interval = 1e6 * ((nclock > 1)?nclock:1) * clock_incr + 0.5;
+    int nclock = int(floor(dinterval/clock_incr + 0.5));
+    interval = int(1e6 * ((nclock > 1)?nclock:1) * clock_incr + 0.5);
 #else
     interval = 1e6 * dinterval + 0.5;
 #endif

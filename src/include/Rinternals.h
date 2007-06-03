@@ -713,7 +713,7 @@ struct R_outpstream_st {
     R_pstream_format_t type;
     int version;
     void (*OutChar)(R_outpstream_t, int);
-    void (*OutBytes)(R_outpstream_t, void *, int);
+    void (*OutBytes)(R_outpstream_t, const void *, int);
     SEXP (*OutPersistHookFunc)(SEXP, SEXP);
     SEXP OutPersistHookData;
 };

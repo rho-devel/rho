@@ -471,7 +471,7 @@ static LineEND lineend[] = {
     { "round",   GE_ROUND_CAP  },
     { "butt",	 GE_BUTT_CAP   },
     { "square",	 GE_SQUARE_CAP },
-    { NULL,	 0	     }
+    { NULL,	 R_GE_lineend(0)	     }
 };
 
 static int nlineend = (sizeof(lineend)/sizeof(LineEND)-2);
@@ -486,7 +486,7 @@ R_GE_lineend LENDpar(SEXP value, int ind)
 	    if(!strcmp(CHAR(STRING_ELT(value, ind)), lineend[i].name)) /*ASCII */
 		return lineend[i].end;
 	}
-	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return 0;
+	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return R_GE_lineend(0);
     }
     else if(isInteger(value)) {
 	code = INTEGER(value)[ind];
@@ -500,13 +500,13 @@ R_GE_lineend LENDpar(SEXP value, int ind)
 	rcode = REAL(value)[ind];
 	if(!R_FINITE(rcode) || rcode < 0)
 	    error(_("invalid line end"));
-	code = rcode;
+	code = int(rcode);
 	if (code > 0)
 	    code = (code-1) % nlineend + 1;
 	return lineend[code].end;
     }
     else {
-	error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return 0;
+        error(_("invalid line end")); /*NOTREACHED, for -Wall : */ return R_GE_lineend(0);
     }
 }
 
@@ -536,7 +536,7 @@ static LineJOIN linejoin[] = {
     { "round",   GE_ROUND_JOIN },
     { "mitre",	 GE_MITRE_JOIN },
     { "bevel",	 GE_BEVEL_JOIN},
-    { NULL,	 0	     }
+    { NULL,	 R_GE_linejoin(0)	     }
 };
 
 static int nlinejoin = (sizeof(linejoin)/sizeof(LineJOIN)-2);
@@ -551,7 +551,7 @@ R_GE_linejoin LJOINpar(SEXP value, int ind)
 	    if(!strcmp(CHAR(STRING_ELT(value, ind)), linejoin[i].name)) /* ASCII */
 		return linejoin[i].join;
 	}
-	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return 0;
+	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return R_GE_linejoin(0);
     }
     else if(isInteger(value)) {
 	code = INTEGER(value)[ind];
@@ -565,13 +565,13 @@ R_GE_linejoin LJOINpar(SEXP value, int ind)
 	rcode = REAL(value)[ind];
 	if(!R_FINITE(rcode) || rcode < 0)
 	    error(_("invalid line join"));
-	code = rcode;
+	code = int(rcode);
 	if (code > 0)
 	    code = (code-1) % nlinejoin + 1;
 	return linejoin[code].join;
     }
     else {
-	error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return 0;
+        error(_("invalid line join")); /*NOTREACHED, for -Wall : */ return R_GE_linejoin(0);
     }
 }
 
@@ -1000,7 +1000,7 @@ void clipPoint (Edge b, double x, double y,
 	if (cross (b, x, y, cs[b].sx, cs[b].sy, clip)) {
 	    intersect (b, x, y, cs[b].sx, cs[b].sy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (b + 1, ix, iy, xout, yout, cnt, store,
+	        clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store,
 			   clip, cs);
 	    else {
 		if (store) {
@@ -1019,7 +1019,7 @@ void clipPoint (Edge b, double x, double y,
     /* proceed to next clip edge, if any */
     if (inside (b, x, y, clip)) {
 	if (b < Top)
-	    clipPoint (b + 1, x, y, xout, yout, cnt, store, clip, cs);
+	    clipPoint (Edge(b + 1), x, y, xout, yout, cnt, store, clip, cs);
 	else {
 	    if (store) {
 		xout[*cnt] = x;
@@ -1037,12 +1037,12 @@ void closeClip (double *xout, double *yout, int *cnt, int store,
     double ix = 0.0, iy = 0.0 /* -Wall */;
     Edge b;
 
-    for (b = Left; b <= Top; b++) {
+    for (b = Left; b <= Top; b = Edge(b + 1)) {
 	if (cross (b, cs[b].sx, cs[b].sy, cs[b].fx, cs[b].fy, clip)) {
 	    intersect (b, cs[b].sx, cs[b].sy,
 		       cs[b].fx, cs[b].fy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (b + 1, ix, iy, xout, yout, cnt, store, clip, cs);
+		clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
 	    else {
 		if (store) {
 		    xout[*cnt] = ix;
@@ -1205,7 +1205,7 @@ static int clipCircleCode(double x, double y, double r,
 	       roughly const * sqrt(r) so there'd be little point in
 	       enforcing an upper limit. */
 
-	    result = (r <= 6) ? 10 : 2 * M_PI/acos(1 - 1/r) ;
+	    result = (r <= 6) ? 10 : int(2 * M_PI/acos(1 - 1/r)) ;
 	}
     }
     return result;
@@ -1769,7 +1769,7 @@ void GEText(double x, double y, const char * const str,
  ****************************************************************
  */
 
-#include "xspline.c"
+#include "xspline.cpp"
 
 /*
  * Draws a "curve" through the specified control points.
@@ -2215,7 +2215,7 @@ void GEPretty(double *lo, double *up, int *ndiv)
 	    ns++;
 	if(nu > ns + 1 && nu * unit > *up + rounding_eps*unit)
 	    nu--;
-	*ndiv = nu - ns;
+	*ndiv = int(nu - ns);
     }
     *lo = ns * unit;
     *up = nu * unit;

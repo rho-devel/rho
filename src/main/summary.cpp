@@ -61,7 +61,7 @@ static Rboolean isum(int *x, int n, int *value, Rboolean narm)
 	warning(_("Integer overflow in sum(.); use sum(as.numeric(.))"));
 	*value = NA_INTEGER;
     }
-    else *value = s;
+    else *value = int(s);
 
     return(updated);
 }

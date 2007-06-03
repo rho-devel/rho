@@ -257,7 +257,7 @@ int R_system(char *command)
 # include <crt_externs.h>
 # define environ (*_NSGetEnviron())
 #else
-extern char ** environ;
+extern "C" {extern char ** environ;}
 #endif
 
 SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)

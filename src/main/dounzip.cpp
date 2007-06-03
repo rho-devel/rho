@@ -263,7 +263,7 @@ static Rboolean unz_open(Rconnection con)
 	return FALSE;
     }
     unzOpenCurrentFile(uf);
-    ((Runzconn)(con->private))->uf = uf;
+    ((Runzconn)(con->connprivate))->uf = uf;
     con->isopen = TRUE;
     con->canwrite = FALSE;
     con->canread = TRUE;
@@ -276,7 +276,7 @@ static Rboolean unz_open(Rconnection con)
 
 static void unz_close(Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;    
+    unzFile uf = ((Runzconn)(con->connprivate))->uf;    
     unzCloseCurrentFile(uf);
     unzClose(uf);
     con->isopen = FALSE;
@@ -284,7 +284,7 @@ static void unz_close(Rconnection con)
 
 static int unz_fgetc_internal(Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;
+    unzFile uf = ((Runzconn)(con->connprivate))->uf;
     char buf[1];
     int err, p;
 
@@ -296,7 +296,7 @@ static int unz_fgetc_internal(Rconnection con)
 static size_t unz_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    unzFile uf = ((Runzconn)(con->private))->uf;
+    unzFile uf = ((Runzconn)(con->connprivate))->uf;
     return unzReadCurrentFile(uf, ptr, size*nitems)/size;
 }
 
@@ -326,38 +326,38 @@ static int null_fflush(Rconnection con)
 
 Rconnection attribute_hidden R_newunz(char *description, char *mode)
 {
-    Rconnection new;
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of unz connection failed"));
-    new->class = (char *) malloc(strlen("unz") + 1);
-    if(!new->class) {
-	free(new);
+    Rconnection newconn;
+    newconn = (Rconnection) malloc(sizeof(struct Rconn));
+    if(!newconn) error(_("allocation of unz connection failed"));
+    newconn->connclass = (char *) malloc(strlen("unz") + 1);
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of unz connection failed"));
     }
-    strcpy(new->class, "unz");
-    new->description = (char *) malloc(strlen(description) + 1);
-    if(!new->description) {
-	free(new->class); free(new);
+    strcpy(newconn->connclass, "unz");
+    newconn->description = (char *) malloc(strlen(description) + 1);
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));
     }
-    init_con(new, description, mode);
+    init_con(newconn, description, mode);
 
-    new->canseek = TRUE;
-    new->open = &unz_open;
-    new->close = &unz_close;
-    new->vfprintf = &null_vfprintf;
-    new->fgetc_internal = &unz_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->seek = &null_seek;
-    new->fflush = &null_fflush;
-    new->read = &unz_read;
-    new->write = &null_write;
-    new->private = (void *) malloc(sizeof(struct fileconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    newconn->canseek = TRUE;
+    newconn->open = &unz_open;
+    newconn->close = &unz_close;
+    newconn->vfprintf = &null_vfprintf;
+    newconn->fgetc_internal = &unz_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->seek = &null_seek;
+    newconn->fflush = &null_fflush;
+    newconn->read = &unz_read;
+    newconn->write = &null_write;
+    newconn->connprivate = (void *) malloc(sizeof(struct fileconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));
     }
-    return new;
+    return newconn;
 }
 
        /* =================== second part ====================== */

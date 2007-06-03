@@ -834,7 +834,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    digits = R_print.digits, gap = R_print.gap,
 		    na_width = R_print.na_width,
 		    na_width_noquote = R_print.na_width_noquote;
-		Rprt_adj right = R_print.right;
+		Rprt_adj right = Rprt_adj(R_print.right);
 
 		PROTECT(t = s = allocList(3));
 		SET_TYPEOF(s, LANGSXP);

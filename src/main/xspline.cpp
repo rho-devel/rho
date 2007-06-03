@@ -215,8 +215,8 @@ point_computing(double *A_blend,
 
   weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
 
-  *x = EQN_NUMERATOR(px) / (weights_sum);
-  *y = EQN_NUMERATOR(py) / (weights_sum);
+  *x = int(EQN_NUMERATOR(px) / (weights_sum));
+  *y = int(EQN_NUMERATOR(py) / (weights_sum));
 }
 
 static float
@@ -248,8 +248,8 @@ step_computing(int k,
       }
       point_computing(A_blend, px, py, &xstart, &ystart);
   } else {
-      xstart = px[1];
-      ystart = py[1];
+      xstart = int(px[1]);
+      ystart = int(py[1]);
   }
   
   /* compute coordinates  of the extremity */
@@ -263,8 +263,8 @@ step_computing(int k,
       }
       point_computing(A_blend, px, py, &xend, &yend);
   } else {
-      xend = px[2];
-      yend = py[2];
+      xend = int(px[2]);
+      yend = int(py[2]);
   }
 
   /* compute coordinates  of the middle */
@@ -304,10 +304,10 @@ step_computing(int k,
   xlength = xend - xstart;
   ylength = yend - ystart;
 
-  start_to_end_dist = sqrt(xlength*xlength + ylength*ylength);
+  start_to_end_dist = int(sqrt(xlength*xlength + ylength*ylength));
 
   /* more steps if segment's origin and extremity are remote */
-  number_of_steps = sqrt(start_to_end_dist)/2;
+  number_of_steps = int(sqrt(start_to_end_dist)/2);
 
   /* more steps if the curve is high */
   number_of_steps += (int)((1 + angle_cos)*10);

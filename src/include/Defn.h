@@ -271,7 +271,7 @@ extern int putenv(char *string);
 
 /* The type of the do_xxxx functions. */
 /* These are the built-in R functions. */
-typedef SEXP (*CCODE)();
+typedef SEXP (*CCODE)(SEXP, SEXP, SEXP, SEXP);
 
 /* Information for Deparsing Expressions */
 typedef enum {
@@ -520,9 +520,8 @@ typedef enum {
 
 /* Defined and initialized in names.c (not main.c) :*/
 #ifndef __R_Names__
-extern
+extern FUNTAB	R_FunTab[];	    /* Built in functions */
 #endif
-FUNTAB	R_FunTab[];	    /* Built in functions */
 
 
 #include <R_ext/libextern.h>
@@ -530,13 +529,15 @@ FUNTAB	R_FunTab[];	    /* Built in functions */
 #ifdef __MAIN__
 # define INI_as(v) = v
 #define extern0 attribute_hidden
+#define extern1
 #else
 # define INI_as(v)
 #define extern0 extern
+#define extern1 extern
 #endif
 
 /* extern int	errno; already have errno.h ! */
-extern int	gc_inhibit_torture INI_as(1);
+extern1 int	gc_inhibit_torture INI_as(1);
 
 LibExtern Rboolean R_interrupts_suspended INI_as(FALSE);
 LibExtern int R_interrupts_pending INI_as(0);
@@ -573,21 +574,21 @@ extern0 int	R_Expressions	INI_as(5000);	/* options(expressions) */
 extern0 int	R_Expressions_keep INI_as(5000);	/* options(expressions) */
 extern0 Rboolean R_KeepSource	INI_as(FALSE);	/* options(keep.source) */
 extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
-extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
-extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
+extern1 uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
+extern1 uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
 extern0 Rboolean R_WarnEscapes  INI_as(TRUE);   /* Warn on unrecognized escapes */
 
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/
 extern0 Rboolean R_Quiet	INI_as(FALSE);	/* Be as quiet as possible */
-extern Rboolean  R_Slave	INI_as(FALSE);	/* Run as a slave process */
+extern1 Rboolean  R_Slave	INI_as(FALSE);	/* Run as a slave process */
 extern0 Rboolean R_Verbose	INI_as(FALSE);	/* Be verbose */
 /* extern int	R_Console; */	    /* Console active flag */
 /* IoBuffer R_ConsoleIob; : --> ./IOStuff.h */
 /* R_Consolefile is used in the internet module */
-extern FILE*	R_Consolefile	INI_as(NULL);	/* Console output file */
-extern FILE*	R_Outputfile	INI_as(NULL);	/* Output file */
+extern1 FILE*	R_Consolefile	INI_as(NULL);	/* Console output file */
+extern1 FILE*	R_Outputfile	INI_as(NULL);	/* Output file */
 extern0 int	R_ErrorCon	INI_as(2);	/* Error connection */
 LibExtern char*	R_TempDir	INI_as(NULL);	/* Name of per-session dir */
 extern0 char*   Sys_TempDir	INI_as(NULL);	/* Name of per-session dir
@@ -605,7 +606,7 @@ extern0 char	R_ParseContext[PARSE_CONTEXT_SIZE] INI_as("");
 extern0 int	R_ParseContextLast INI_as(0); /* last character in context buffer */
 
 /* Image Dump/Restore */
-extern int	R_DirtyImage	INI_as(0);	/* Current image dirty */
+extern1 int	R_DirtyImage	INI_as(0);	/* Current image dirty */
 
 /* History */
 LibExtern char*	R_HistoryFile;	/* Name of the history file */
@@ -634,7 +635,7 @@ extern int Rf_initEmbeddedR(int argc, char **argv);
 
 /* GUI type */
 
-extern char*	R_GUIType	INI_as("unknown");
+extern1 char*	R_GUIType	INI_as("unknown");
 
 #ifdef BYTECODE
 #define R_BCNODESTACKSIZE 10000

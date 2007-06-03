@@ -57,7 +57,7 @@ static SEXP baseCallback(GEevent task, GEDevDesc *dd, SEXP data) {
 	ddp->canHAdj = dev->canHAdj;
 	/* For some things, the device sets the starting value at least.
 	 */
-	ddp->ps = dev->startps;
+	ddp->ps = int(dev->startps);
 	ddp->col = ddp->fg = dev->startcol;
 	ddp->bg = dev->startfill;
 	ddp->font = dev->startfont; 

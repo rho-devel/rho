@@ -280,14 +280,14 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
 	warning(_("graphical parameter \"%s\" cannot be set"), what);
 	return;
     }
-#include "par-common.c"
+#include "par-common.cpp"
 /*	  ------------
  *--- now, these are *different* from  "Specify2() use" : */
     else if (streql(what, "bg")) {
 	lengthCheck(what, value, 1, call);	ix = RGBpar(value, 0);
 	/*	naIntCheck(ix, what); */
 	R_DEV__(bg) = ix;
-	R_DEV__(new) = FALSE;
+	R_DEV__(newplot) = FALSE;
     }
     else if (streql(what, "cex")) {
 	lengthCheck(what, value, 1, call);	x = asReal(value);
@@ -504,7 +504,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
 	R_DEV_2(currentFigure);
 	/* R_DEV_2(defaultFigure) = TRUE;
 	   R_DEV_2(layout) = FALSE; */
-	R_DEV_2(new) = TRUE;
+	R_DEV_2(newplot) = TRUE;
 	GReset(dd);
 	/* Force a device clip */
 	if (Rf_dpptr(dd)->canClip)
@@ -514,7 +514,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
     else if (streql(what, "new")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if(!Rf_gpptr(dd)->state) warning(_("calling par(new=) with no plot"));
-	else R_DEV__(new) = (ix != 0);
+	else R_DEV__(newplot) = (ix != 0);
     }
     /* -- */
 
@@ -707,7 +707,7 @@ void attribute_hidden Specify2(char *what, SEXP value, DevDesc *dd, SEXP call)
 	return;
     }
 
-#include "par-common.c"
+#include "par-common.cpp"
 /*	  ------------
  *  these are *different* from Specify() , i.e., par(<NAM> = .) use : */
     else if (streql(what, "bg")) {
@@ -978,7 +978,7 @@ static SEXP Query(char *what, DevDesc *dd)
     }
     else if (streql(what, "new")) {
 	value = allocVector(LGLSXP, 1);
-	LOGICAL(value)[0] = Rf_dpptr(dd)->new;
+	LOGICAL(value)[0] = Rf_dpptr(dd)->newplot;
     }
     else if (streql(what, "oma")) {
 	value = allocVector(REALSXP, 4);

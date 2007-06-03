@@ -93,7 +93,7 @@ void R_CheckStack(void)
 	 */
 	RCNTXT cntxt;
 	unsigned int stacklimit = R_CStackLimit;
-	R_CStackLimit += 0.05*R_CStackLimit;
+	R_CStackLimit += uintptr_t(0.05*R_CStackLimit);
 	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &reset_stack_limit;

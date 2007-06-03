@@ -31,6 +31,10 @@
 #include <Fileio.h>
 #include <Rversion.h>
 
+/* This include is to bring in declarations of R_compress1 and
+   R_decompress1 */
+#include "basedecl.h"
+
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
  * guidelines on handling format changes:
@@ -1541,7 +1545,7 @@ void
 R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, void *, int),
+		      void (*outbytes)(R_outpstream_t, const void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     stream->data = data;
@@ -1560,27 +1564,27 @@ R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 
 static void OutCharFile(R_outpstream_t stream, int c)
 {
-    FILE *fp = stream->data;
+    FILE *fp = reinterpret_cast<FILE*>(stream->data);
     fputc(c, fp);
 }
 
 
 static int InCharFile(R_inpstream_t stream)
 {
-    FILE *fp = stream->data;
+    FILE *fp = reinterpret_cast<FILE*>(stream->data);
     return fgetc(fp);
 }
 
 static void OutBytesFile(R_outpstream_t stream, void *buf, int length)
 {
-    FILE *fp = stream->data;
+    FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t out = fwrite(buf, 1, length, fp);
     if (out != length) error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 {
-    FILE *fp = stream->data;
+    FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t in = fread(buf, 1, length, fp);
     if (in != length) error(_("read failed"));
 }
@@ -1632,7 +1636,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
     CheckInConn(con);
     if (con->text) {
 	int i;
-	char *p = buf;
+	char *p = reinterpret_cast<char*>(buf);
 	for (i = 0; i < length; i++)
 	    p[i] = Rconn_fgetc(con);
     }
@@ -1662,7 +1666,7 @@ static void OutBytesConn(R_outpstream_t stream, void *buf, int length)
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	char *p = buf;
+	char *p = reinterpret_cast<char*>(buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
@@ -1807,7 +1811,7 @@ static void flush_bcon_buffer(bconbuf_t bb)
 
 static void OutCharBB(R_outpstream_t stream, int c)
 {
-    bconbuf_t bb = stream->data;
+    bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
     if (bb->count >= BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     bb->buf[bb->count++] = c;
@@ -1815,7 +1819,7 @@ static void OutCharBB(R_outpstream_t stream, int c)
 
 static void OutBytesBB(R_outpstream_t stream, void *buf, int length)
 {
-    bconbuf_t bb = stream->data;
+    bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
     if (bb->count + length > BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     if (length <= BCONBUFSIZ) {
@@ -1867,7 +1871,7 @@ typedef struct membuf_st {
 static void resize_buffer(membuf_t mb, int needed)
 {
     int newsize = 2 * needed;
-    mb->buf = realloc(mb->buf, newsize);
+    mb->buf = reinterpret_cast<unsigned char*>(realloc(mb->buf, newsize));
     if (mb->buf == NULL)
 	error(_("cannot allocate buffer"));
     mb->size = newsize;
@@ -1875,7 +1879,7 @@ static void resize_buffer(membuf_t mb, int needed)
 
 static void OutCharMem(R_outpstream_t stream, int c)
 {
-    membuf_t mb = stream->data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     if (mb->count >= mb->size)
 	resize_buffer(mb, mb->count + 1);
     mb->buf[mb->count++] = c;
@@ -1883,7 +1887,7 @@ static void OutCharMem(R_outpstream_t stream, int c)
 
 static void OutBytesMem(R_outpstream_t stream, void *buf, int length)
 {
-    membuf_t mb = stream->data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     if (mb->count + length > mb->size)
 	resize_buffer(mb, mb->count + length);
     memcpy(mb->buf + mb->count, buf, length);
@@ -1892,7 +1896,7 @@ static void OutBytesMem(R_outpstream_t stream, void *buf, int length)
 
 static int InCHarMem(R_inpstream_t stream)
 {
-    membuf_t mb = stream->data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     if (mb->count >= mb->size)
 	error(_("read error"));
     return mb->buf[mb->count++];
@@ -1900,7 +1904,7 @@ static int InCHarMem(R_inpstream_t stream)
 
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
-    membuf_t mb = stream->data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     if (mb->count + length > mb->size)
 	error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
@@ -1913,7 +1917,7 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
 {
     mb->count = 0;
     mb->size = length;
-    mb->buf = buf;
+    mb->buf = reinterpret_cast<unsigned char*>(buf);
     R_InitInPStream(stream, (R_pstream_data_t) mb, R_pstream_any_format,
 		    InCHarMem, InBytesMem, phook, pdata);
 }
@@ -1931,7 +1935,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
 
 static void free_mem_buffer(void *data)
 {
-    membuf_t mb = data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(data);
     if (mb->buf != NULL) {
 	unsigned char *buf = mb->buf;
 	mb->buf = NULL;
@@ -1942,7 +1946,7 @@ static void free_mem_buffer(void *data)
 static SEXP CloseMemOutPStream(R_outpstream_t stream)
 {
     SEXP val;
-    membuf_t mb = stream->data;
+    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     PROTECT(val = allocVector(RAWSXP, mb->count));
     memcpy(RAW(val), mb->buf, mb->count);
     free_mem_buffer(mb);
@@ -2024,10 +2028,6 @@ SEXP R_unserialize(SEXP icon, SEXP fun)
 /*
  * Support Code for Lazy Loading of Packages
  */
-
-/* This include is to bring in declarations of R_compress1 and
-   R_decompress1 */
-#include "basedecl.h"
 
 #define IS_PROPER_STRING(s) (TYPEOF(s) == STRSXP && LENGTH(s) > 0)
 
@@ -2138,7 +2138,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	filelen = ftell(fp);
 	/* fprintf(stderr, "adding file %s at pos %d in cache, length %d\n",
 	   cfile, icache, filelen); */
-	ptr[icache] = malloc(filelen);
+	ptr[icache] = reinterpret_cast<char*>(malloc(filelen));
 	if (fseek(fp, 0, SEEK_SET) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);

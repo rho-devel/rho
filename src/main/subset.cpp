@@ -566,7 +566,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    switch (TYPEOF(x)) {
 	    case REALSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? REAL(s)[0] : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? int(REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}
@@ -579,7 +579,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		break;
 	    case INTSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? REAL(s)[0] : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? int(REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}

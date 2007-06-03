@@ -31,7 +31,7 @@ extern "C" {
 typedef struct Rconn  *Rconnection;
 #endif
 struct Rconn {
-    char* class;
+    char* connclass;
     char* description;
     char mode[5];
     Rboolean text, isopen, incomplete, canread, canwrite, canseek, blocking, 
@@ -60,7 +60,7 @@ struct Rconn {
     char iconvbuff[25], oconvbuff[50], *next, init_out[25];
     short navail, inavail;
     Rboolean EOF_signalled;
-    void *private;
+    void *connprivate;
 };
 
 typedef struct fileconn {
@@ -161,7 +161,7 @@ Rconnection getConnection(int n);
 Rconnection getConnection_no_err(int n);
 Rboolean switch_stdout(int icon, int closeOnExit);
 void con_close(int i);
-void init_con(Rconnection new, char *description, const char * const mode);
+void init_con(Rconnection newconn, char *description, const char * const mode);
 Rconnection R_newurl(char *description, const char * const mode);
 Rconnection R_newsock(char *host, int port, int server, char *mode);
 Rconnection in_R_newsock(char *host, int port, int server, char *mode);

@@ -79,7 +79,7 @@ typedef struct {
     double cex;          /* Character expansion (font size = fontsize*cex) */
     double ps;           /* Font size in points */
     double lineheight;   /* Line height (multiply by font size) */
-    int fontface;        /* Font face (plain, italic, bold, ...) */
+    int fontface;        /* Font face (plain, italic, bold, ...) */ /* 2007/06/03 arr: consider declaring this as FontType (enum currently declared in plotmath.cpp) */
     char fontfamily[201]; /* Font family */
 } R_GE_gcontext;
 

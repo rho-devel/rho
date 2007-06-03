@@ -112,22 +112,22 @@ void F77_SUB(qsort3)(double *v, int *ii, int *jj)
 #define qsort_Index
 #define NUMERIC double
 void R_qsort_I(double *v, int *I, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 void R_qsort_int_I(int *v, int *I, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #undef qsort_Index
 
 #define NUMERIC double
 void R_qsort(double *v, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC
 
 #define NUMERIC int
 void R_qsort_int(int *v, int i, int j)
-#include "qsort-body.c"
+#include "qsort-body.cpp"
 #undef NUMERIC

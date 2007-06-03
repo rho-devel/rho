@@ -209,7 +209,7 @@ SEXP FixupPch(SEXP pch, int dflt)
 	ans = allocVector(INTSXP, n);
 	for (i = 0; i < n; i++)
 	    INTEGER(ans)[i] = R_FINITE(REAL(pch)[i]) ?
-		REAL(pch)[i] : NA_INTEGER;
+		int(REAL(pch)[i]) : NA_INTEGER;
     }
     else if (isString(pch)) {
 	ans = allocVector(INTSXP, n);
@@ -328,7 +328,7 @@ SEXP FixupFont(SEXP font, int dflt)
     else if (isReal(font)) {
 	ans = allocVector(INTSXP, n);
 	for (i = 0; i < n; i++) {
-	    k = REAL(font)[i];
+	    k = int(REAL(font)[i]);
 #ifndef Win32
 	    if (k < 1 || k > 5) k = NA_INTEGER;
 #else
@@ -804,7 +804,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     double umin, umax, dn, rng, small;
     int i, n, ne;
     if (!logflag || axp[2] < 0) { /* --- linear axis --- Only use axp[] arg. */
-	n = fabs(axp[2]) + 0.25;/* >= 0 */
+	n = int(fabs(axp[2]) + 0.25);/* >= 0 */
 	dn = imax2(1, n);
 	rng = axp[1] - axp[0];
 	small = fabs(rng)/(100.*dn);
@@ -818,7 +818,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     else { /* ------ log axis ----- */
 	Rboolean reversed = FALSE;
 
-	n = (axp[2] + 0.5);
+	n = int(axp[2] + 0.5);
 	/* {xy}axp[2] for 'log': GLpretty() [./graphics.c] sets
 	   n < 0: very small scale ==> linear axis, above, or
 	   n = 1,2,3.  see switch() below */
@@ -853,7 +853,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	 */
 	switch(n) {
 	case 1: /* large range:	1	 * 10^k */
-	    i = floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25;
+	    i = int(floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
 	    ne = i / nint + 1;
 	    if (ne < 1)
 		error("log - axis(), 'at' creation, _LARGE_ range: "
@@ -1058,7 +1058,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!R_FINITE(line)) {
 	/* Except that here mgp values are not relative to themselves */
 	line = Rf_gpptr(dd)->mgp[2];
-	lineoff = line;
+	lineoff = int(line);
     }
     args = CDR(args);
 
@@ -1231,7 +1231,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base = GConvertY(0.0, outer, NFC, dd)
+		axis_base = GConvertY(0.0, GUnit(outer), NFC, dd)
 		    - GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(Rf_gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1253,7 +1253,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertY(1.0, outer, NFC, dd)
+		axis_base =  GConvertY(1.0, GUnit(outer), NFC, dd)
 		    + GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(Rf_gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1362,7 +1362,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(0.0, outer, NFC, dd)
+		axis_base =  GConvertX(0.0, GUnit(outer), NFC, dd)
 		    - GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(Rf_gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1383,7 +1383,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(1.0, outer, NFC, dd)
+		axis_base =  GConvertX(1.0, GUnit(outer), NFC, dd)
 		    + GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(Rf_gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -2488,8 +2488,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we don't want to mark the plot as dirty. */
 
     dirtyplot = FALSE;
-    gpnewsave = Rf_gpptr(dd)->new;
-    dpnewsave = Rf_dpptr(dd)->new;
+    gpnewsave = Rf_gpptr(dd)->newplot;
+    dpnewsave = Rf_dpptr(dd)->newplot;
     cexsave = Rf_gpptr(dd)->cex;
     fontsave = Rf_gpptr(dd)->font;
     colsave = Rf_gpptr(dd)->col;
@@ -2500,8 +2500,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
 	Rf_gpptr(dd)->xpd = 1;
 
     if (outer) {
-	gpnewsave = Rf_gpptr(dd)->new;
-	dpnewsave = Rf_dpptr(dd)->new;
+	gpnewsave = Rf_gpptr(dd)->newplot;
+	dpnewsave = Rf_dpptr(dd)->newplot;
 	/* override par("xpd") and force clipping to device region */
 	Rf_gpptr(dd)->xpd = 2;
     }
@@ -2551,8 +2551,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
 
     GRestorePars(dd);
     if (!dirtyplot) {
-	Rf_gpptr(dd)->new = gpnewsave;
-	Rf_dpptr(dd)->new = dpnewsave;
+	Rf_gpptr(dd)->newplot = gpnewsave;
+	Rf_dpptr(dd)->newplot = dpnewsave;
     }
     UNPROTECT(10);
 
@@ -2572,8 +2572,8 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	 ...) */
 
     SEXP Main, xlab, ylab, sub, string;
-    double adj, adjy, cex, offset, line, hpos, vpos, where;
-    int col, font, outer;
+    double adj, adjy, cex, offset, line, hpos, vpos;
+    int col, font, outer, where;
     int i, n;
     SEXP originalArgs = args;
     DevDesc *dd = CurrentDevice();

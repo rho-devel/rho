@@ -325,7 +325,7 @@ typedef union PAGE_HEADER {
   ((c) == 0 ? sizeof(SEXPREC) : \
    sizeof(SEXPREC_ALIGN) + NodeClassSize[c] * sizeof(VECREC))
 
-#define PAGE_DATA(p) ((void *) (p + 1))
+#define PAGE_DATA(p) (reinterpret_cast<char*>(p + 1))
 #define VHEAP_FREE() (R_VSize - R_LargeVallocSize - R_SmallVallocSize)
 
 
@@ -621,7 +621,7 @@ static void GetNewPage(int node_class)
     node_size = NODE_SIZE(node_class);
     page_count = (R_PAGE_SIZE - sizeof(PAGE_HEADER)) / node_size;
 
-    page = malloc(R_PAGE_SIZE);
+    page = reinterpret_cast<PAGE_HEADER*>(malloc(R_PAGE_SIZE));
     if (page == NULL)
 	mem_err_heap((R_size_t) NodeClassSize[node_class]);
 #ifdef R_MEMORY_PROFILING
@@ -684,7 +684,7 @@ static void TryToReleasePages(void)
 
 	    maxrel = R_GenHeap[i].AllocCount;
 	    for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++)
-		maxrel -= (1.0 + R_MaxKeepFrac) * R_GenHeap[i].OldCount[gen];
+		maxrel -= (1.0 + R_MaxKeepFrac) * R_GenHeap[i].OldCount[gen]; /*2007/06/03 arr: FIXME*/
 	    maxrel_pages = maxrel > 0 ? maxrel / page_count : 0;
 
 	    /* all nodes in New space should be both free and unmarked */
@@ -768,8 +768,8 @@ static void ReleaseLargeFreeVectors(void)
 
 static void AdjustHeapSize(R_size_t size_needed)
 {
-    R_size_t R_MinNFree = orig_R_NSize * R_MinFreeFrac;
-    R_size_t R_MinVFree = orig_R_VSize * R_MinFreeFrac;
+    R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
+    R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
     R_size_t NNeeded = R_NodesInUse + R_MinNFree;
     R_size_t VNeeded = R_SmallVallocSize + R_LargeVallocSize
 	+ size_needed + R_MinVFree;
@@ -777,12 +777,12 @@ static void AdjustHeapSize(R_size_t size_needed)
     double vect_occup =	((double) VNeeded) / R_VSize;
 
     if (node_occup > R_NGrowFrac) {
-	R_size_t change = R_NGrowIncrMin + R_NGrowIncrFrac * R_NSize;
+	R_size_t change = R_size_t(R_NGrowIncrMin + R_NGrowIncrFrac * R_NSize);
 	if (R_MaxNSize >= R_NSize + change)
 	    R_NSize += change;
     }
     else if (node_occup < R_NShrinkFrac) {
-	R_NSize -= (R_NShrinkIncrMin + R_NShrinkIncrFrac * R_NSize);
+	R_NSize -= (R_NShrinkIncrMin + R_NShrinkIncrFrac * R_NSize); /*2007/06/03 arr: FIXME*/
 	if (R_NSize < NNeeded)
 	    R_NSize = (NNeeded < R_MaxNSize) ? NNeeded: R_MaxNSize;
 	if (R_NSize < orig_R_NSize)
@@ -792,12 +792,12 @@ static void AdjustHeapSize(R_size_t size_needed)
     if (vect_occup > 1.0 && VNeeded < R_MaxVSize)
 	R_VSize = VNeeded;
     if (vect_occup > R_VGrowFrac) {
-	R_size_t change = R_VGrowIncrMin + R_VGrowIncrFrac * R_VSize;
+	R_size_t change = R_size_t(R_VGrowIncrMin + R_VGrowIncrFrac * R_VSize);
 	if (R_MaxVSize - R_VSize >= change)
 	    R_VSize += change;
     }
     else if (vect_occup < R_VShrinkFrac) {
-	R_VSize -= R_VShrinkIncrMin + R_VShrinkIncrFrac * R_VSize;
+	R_VSize -= R_VShrinkIncrMin + R_VShrinkIncrFrac * R_VSize; /*2007/06/03 arr: FIXME*/
 	if (R_VSize < VNeeded)
 	    R_VSize = VNeeded;
 	if (R_VSize < orig_R_VSize)
@@ -1687,19 +1687,19 @@ char *S_alloc(long nelem, int eltsize)
 }
 
 
-char *S_realloc(char *p, long new, long old, int size)
+char *S_realloc(char *p, long newct, long old, int size)
 {
     int /*i,*/ nold;
     char *q;
     /* shrinking is a no-op */
-    if(new <= old) return p;
-    q = R_alloc(new, size);
+    if(newct <= old) return p;
+    q = R_alloc(newct, size);
     nold = old * size;
     memcpy(q, p, nold);
-    memset(q + nold, 0, new*size - nold);
+    memset(q + nold, 0, newct*size - nold);
     /* for(i = 0; i < nold; i++)
 	q[i] = p[i];
-    for(i = nold; i < new*size; i++)
+    for(i = nold; i < newct*size; i++)
         q[i] = 0; */
     return q;
 }
@@ -1989,13 +1989,13 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    Rboolean success = FALSE;
 	    s = NULL; /* initialize to suppress warning */
 	    if (size < (R_SIZE_T_MAX / sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
-		s = malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));
+		s = reinterpret_cast<SEXPREC*>(malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC)));
 		if (s == NULL) {
 		    /* If we are near the address space limit, we
 		       might be short of address space.  So return
 		       all unused objects to malloc and try again. */
 		    R_gc_internal(alloc_size);
-		    s = malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));
+		    s = reinterpret_cast<SEXPREC*>(malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC)));
 		}
 		if (s != NULL) success = TRUE;
 #ifdef R_MEMORY_PROFILING
@@ -2278,7 +2278,7 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void reset_pp_stack(void *data)
 {
-    R_size_t *poldpps = data;
+    R_size_t *poldpps = reinterpret_cast<R_size_t*>(data);
     R_PPStackSize =  *poldpps;
 }
 
@@ -2421,7 +2421,7 @@ void R_ReleaseObject(SEXP object)
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     SEXP s = allocSExp(EXTPTRSXP);
-    EXTPTR_PTR(s) = p;
+    EXTPTR_PTR(s) = reinterpret_cast<SEXPREC*>(p);
     EXTPTR_PROT(s) = prot;
     EXTPTR_TAG(s) = tag;
     return s;
@@ -2449,7 +2449,7 @@ void R_ClearExternalPtr(SEXP s)
 
 void R_SetExternalPtrAddr(SEXP s, void *p)
 {
-    EXTPTR_PTR(s) = p;
+    EXTPTR_PTR(s) = reinterpret_cast<SEXPREC*>(p);
 }
 
 void R_SetExternalPtrTag(SEXP s, SEXP tag)

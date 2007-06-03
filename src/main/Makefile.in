@@ -12,14 +12,14 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = gram.c regex.c
+SOURCES_C = complex.c gram.c regex.c
 
 SOURCES_CXX = \
 	CConverters.cpp CommandLineArgs.cpp \
 	Rdynload.cpp Renviron.cpp RNG.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
-	character.cpp coerce.cpp colors.cpp complex.cpp connections.cpp context.cpp \
+	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
 	cov.cpp cum.cpp \
 	dcf.cpp datetime.cpp debug.cpp deparse.cpp deriv.cpp \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \

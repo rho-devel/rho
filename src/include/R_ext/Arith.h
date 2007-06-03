@@ -28,6 +28,7 @@
 #include <math.h>
 
 #include <R_ext/libextern.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -39,7 +40,7 @@ LibExtern double R_NegInf;	/* IEEE -Inf */
 LibExtern double R_NaReal;	/* NA_REAL: IEEE */
 LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 #ifdef __MAIN__
-#undef extern
+//#undef extern  /* 2007/06/03 arr */
 #undef LibExtern
 #endif
 

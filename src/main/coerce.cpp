@@ -199,7 +199,7 @@ IntegerFromReal(double x, int *warn)
 	*warn |= WARN_NA;
 	return NA_INTEGER;
     }
-    return x;
+    return int(x);
 }
 
 int attribute_hidden
@@ -213,7 +213,7 @@ IntegerFromComplex(Rcomplex x, int *warn)
     }
     if (x.i != 0)
 	*warn |= WARN_IMAG;
-    return x.r;
+    return int(x.r);
 }
 
 
@@ -234,7 +234,7 @@ IntegerFromString(SEXP x, int *warn)
 		return INT_MIN;
 	    }
 	    else
-		return xdouble;
+		return int(xdouble);
 	}
 	else *warn |= WARN_NA;
     }

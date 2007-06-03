@@ -22,6 +22,8 @@
 #ifndef R_GRAPHICSDEVICE_H_
 #define R_GRAPHICSDEVICE_H_
 
+#include <R_ext/GraphicsContext.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,7 +59,7 @@ extern "C" {
  *    complement the size() function.)
  */
 
-typedef struct {
+typedef struct _NewDevDesc {
     /* The first element is a boolean indicating whether this is 
      * a new device driver (always 1) -- the old device driver structure
      * has had a similar element added (which will always be 0)
@@ -184,7 +186,7 @@ typedef struct {
      * static void   X11_Activate(NewDevDesc *dd);
      *
      */
-    void (*activate)();
+    void (*activate)(struct _NewDevDesc*);
     /*
      * device_Circle should have the side-effect that a	
      * circle is drawn, centred at the given location, with 
@@ -203,7 +205,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   col, fill, gamma, lty, lwd
      */
-    void (*circle)();
+    void (*circle)(double, double, double, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Clip is given the left, right, bottom, and	
      * top of a rectangle (in DEVICE coordinates).	
@@ -218,7 +220,7 @@ typedef struct {
      * static void X11_Clip(double x0, double x1, double y0, double y1, 
      *                      NewDevDesc *dd)
      */
-    void (*clip)();
+    void (*clip)(double, double,double,double,struct _NewDevDesc*);
     /*
      * device_Close is called when the device is killed.
      * This function is responsible for destroying any	
@@ -230,7 +232,7 @@ typedef struct {
      * static void X11_Close(NewDevDesc *dd)
      *
      */
-    void (*close)();
+    void (*close)(struct _NewDevDesc*);
     /*
      * device_Deactivate is called when a device becomes	
      * inactive.  
@@ -242,7 +244,7 @@ typedef struct {
      * static void X11_Deactivate(NewDevDesc *dd)
      *
      */
-    void (*deactivate)();
+    void (*deactivate)(struct _NewDevDesc*);
     void (*dot)();
     /*
      * I don't know what this is for and i can't find it	
@@ -263,7 +265,7 @@ typedef struct {
      * static Rboolean X11_Locator(double *x, double *y, NewDevDesc *dd)
      *
      */
-    Rboolean (*locator)();
+    Rboolean (*locator)(double*, double*, struct _NewDevDesc*);
     /*
      * device_Line should have the side-effect that a single
      * line is drawn (from x1,y1 to x2,y2)			
@@ -276,7 +278,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   col, gamma, lty, lwd
      */
-    void (*line)();
+    void (*line)(double, double, double, double, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_MetricInfo should return height, depth, and	
      * width information for the given character in DEVICE	
@@ -295,7 +297,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   font, cex, ps
      */
-    void (*metricInfo)();
+    void (*metricInfo)(int, R_GE_gcontext*, const double*, const double*, const double*, struct _NewDevDesc*);
     /*
      * device_Mode is called whenever the graphics engine	
      * starts drawing (mode=1) or stops drawing (mode=0)	
@@ -305,7 +307,7 @@ typedef struct {
      * static void X11_Mode(int mode, NewDevDesc *dd);
      *
      */
-    void (*mode)();
+    void (*mode)(int, struct _NewDevDesc*);
     /*
      * device_NewPage is called whenever a new plot requires
      * a new page.	
@@ -319,7 +321,7 @@ typedef struct {
      *                         NewDevDesc *dd);
      *
      */
-    void (*newPage)();
+    void (*newPage)(R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Open is not usually called directly by the	
      * graphics engine;  it is usually only called from	
@@ -354,7 +356,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   col, fill, gamma, lty, lwd
      */
-    void (*polygon)();
+    void (*polygon)(int, const double*, const double*, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Polyline should have the side-effect that a	
      * series of line segments are drawn using the given x	
@@ -368,7 +370,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   col, gamma, lty, lwd
      */
-    void (*polyline)();
+  void (*polyline)(int, const double*, const double*, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Rect should have the side-effect that a	
      * rectangle is drawn with the given locations for its	
@@ -385,7 +387,7 @@ typedef struct {
      *                      NewDevDesc *dd);
      *
      */
-    void (*rect)();
+    void (*rect)(double, double, double, double, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Size is called whenever the device is	
      * resized.  
@@ -417,7 +419,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   font, cex, ps
      */
-    double (*strWidth)();
+    double (*strWidth)(const char*, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_Text should have the side-effect that the	
      * given text is drawn at the given location.
@@ -432,7 +434,7 @@ typedef struct {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   font, cex, ps, col, gamma
      */
-    void (*text)();
+    void (*text)(double, double, const char*, double, double, R_GE_gcontext*, struct _NewDevDesc*);
     /*
      * device_onExit is called by GEonExit when the user has aborted
      * some operation, and so an R_ProcessEvents call may not return normally.
@@ -442,7 +444,7 @@ typedef struct {
      *
      * static void X11_onExit(NewDevDesc *dd);
     */    
-    void (*onExit)();
+    void (*onExit)(struct _NewDevDesc*);
     /*
      * device_getEvent is called by do_getGraphicsEvent to get a modal
      * graphics event.  It should call R_ProcessEvents() until one
@@ -452,7 +454,7 @@ typedef struct {
      *
      * static SEXP GA_getEvent(SEXP eventRho, char *prompt);
      */
-    SEXP (*getEvent)();
+    SEXP (*getEvent)(SEXP, const char*);
     
 } NewDevDesc;
 

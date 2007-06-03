@@ -41,12 +41,9 @@
 #endif
 
 #ifdef __cplusplus
-#include "Clinkage.h"
-#endif
-
-#ifdef __cplusplus
 extern "C" {
 #endif
+
 void F77_SYMBOL(rwarnc)(char *msg, int *nchar);
 void F77_SYMBOL(rexitc)(char *msg, int *nchar);
 
@@ -833,7 +830,7 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, enc, tmp;
     int i, m, n;
-    char *this;
+    char *ch;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -850,9 +847,9 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 	tmp = STRING_ELT(x, i);
 	UNSET_LATIN1(tmp);
 	UNSET_UTF8(tmp);
-	this = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
-	if(streql(this, "latin1")) SET_LATIN1(tmp);
-	else if(streql(this, "UTF-8")) SET_UTF8(tmp);
+	ch = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
+	if(streql(ch, "latin1")) SET_LATIN1(tmp);
+	else if(streql(ch, "UTF-8")) SET_UTF8(tmp);
 	SET_STRING_ELT(x, i, tmp);
     }
     UNPROTECT(1);

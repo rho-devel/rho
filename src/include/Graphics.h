@@ -274,7 +274,7 @@ typedef struct {
 
     /* Layout parameter: Internal flags */
 
-    Rboolean new;	/* Clean plot ? */
+    Rboolean newplot;	/* Clean plot ? */
     int	devmode;	/* creating new image or adding to existing one */
 
     /* Coordinate System Mappings */

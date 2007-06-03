@@ -289,12 +289,16 @@ static SEXP R_HashGetLoc(int hashcode, SEXP symbol, SEXP table)
 
 */
 
-static SEXP R_NewHashTable(int size, int growth_rate)
+/* 2007/06/02 arr: growth_rate arg doesn't appear to be used. BUG?
+ * This arg was declared as int, but double appears to make more sense.
+ */
+
+static SEXP R_NewHashTable(int size, double /*int growth_rate*/)
 {
     SEXP table;
 
     /* Some checking */
-    if (growth_rate <= 0) growth_rate =  HASHTABLEGROWTHRATE;
+    //if (growth_rate <= 0) growth_rate =  HASHTABLEGROWTHRATE;
     if (size <= 0) size = HASHMINSIZE;
 
     /* Allocate hash table in the form of a vector */
@@ -376,7 +380,7 @@ static SEXP R_HashResize(SEXP table)
     /* hash_grow = HASHSIZE(table); */
 
     /* Allocate the new hash table */
-    new_table = R_NewHashTable(HASHSIZE(table) * HASHTABLEGROWTHRATE,
+    new_table = R_NewHashTable(int(HASHSIZE(table) * HASHTABLEGROWTHRATE),
 			       HASHTABLEGROWTHRATE);
     for (counter = 0; counter < length(table); counter++) {
 	chain = VECTOR_ELT(table, counter);

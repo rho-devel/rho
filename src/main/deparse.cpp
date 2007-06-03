@@ -372,7 +372,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		obj_name = translateChar(STRING_ELT(names, i));
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		Rprintf(/* figure out if we need to quote the name */
-			isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n",
+			/*CCAST*/(char*)(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
 			obj_name);
 		tval = deparse1(CAR(o), 0, opts);
 		for (j = 0; j < LENGTH(tval); j++)

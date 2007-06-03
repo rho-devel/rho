@@ -56,7 +56,7 @@ static void Init_R_Machine(SEXP rho)
 	   &R_AccuracyInfo.xmin,
 	   &R_AccuracyInfo.xmax);
 
-    R_dec_min_exponent = floor(log10(R_AccuracyInfo.xmin)); /* smallest decimal exponent */
+    R_dec_min_exponent = int(floor(log10(R_AccuracyInfo.xmin))); /* smallest decimal exponent */
     PROTECT(ans = allocVector(VECSXP, 18));
     PROTECT(nms = allocVector(STRSXP, 18));
     SET_STRING_ELT(nms, 0, mkChar("double.eps"));

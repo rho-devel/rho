@@ -549,7 +549,7 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 		    wchar_t *end;
 		    sval = wcstod(rp, &end);
 		    if( sval >= 0.0 && sval <= 61.0) {
-			tm->tm_sec = sval;
+		        tm->tm_sec = int(sval);
 			*psecs = sval;
 		    }
 		    rp = end;
@@ -988,7 +988,7 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
 		       char *end;
 		       sval = strtod(rp, &end);
 		       if( sval >= 0.0 && sval <= 61.0) {
-			   tm->tm_sec = sval;
+			   tm->tm_sec = int(sval);
 			   *psecs = sval;
 		       }
 		       rp = end;

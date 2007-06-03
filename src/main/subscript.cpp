@@ -61,7 +61,7 @@ OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos)
 	indx = integerOneIndex(INTEGER(s)[pos], len);
 	break;
     case REALSXP:
-	indx = integerOneIndex(REAL(s)[pos], len);
+	indx = integerOneIndex(int(REAL(s)[pos]), len);
 	break;
     case STRSXP:
 	nx = length(x);

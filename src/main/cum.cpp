@@ -49,7 +49,7 @@ static SEXP icumsum(SEXP x, SEXP s)
 	    warning(_("Integer overflow in 'cumsum'; use 'cumsum(as.numeric(.))'"));
 	    break;
 	}
-	is[i] = sum;
+	is[i] = int(sum);
     }
     return s;
 }

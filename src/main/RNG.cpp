@@ -382,7 +382,7 @@ static void RNGkind(RNGtype newkind)
 	error(_("RNGkind: unimplemented RNG kind %d"), newkind);
     }
     GetRNGstate();
-    RNG_Init(newkind, unif_rand() * UINT_MAX);
+    RNG_Init(newkind, Int32(unif_rand() * UINT_MAX));
     RNG_kind = newkind;
     PutRNGstate();
 }
@@ -611,11 +611,12 @@ static double MT_genrand()
 #define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
 
 /*long ran_x[KK]; */                   /* the generator state */
-
-/* void ran_array(long aa[],int n) */
-void ran_array(aa,n)    /* put n new random numbers in aa */
-  long *aa;   /* destination */
-  int n;      /* array length (must be at least KK) */
+/**
+ * Put n new random number in aa
+ * @param aa Destunation.
+ * @param n  Array length; must be at least KK.
+ */
+void ran_array(long aa[], int n)
 {
   register int i,j;
   for (j=0;j<KK;j++) aa[j]=ran_x[j];
@@ -628,9 +629,11 @@ void ran_array(aa,n)    /* put n new random numbers in aa */
 #define is_odd(x)  ((x)&1)          /* units bit of x */
 #define evenize(x) ((x)&(MM-2))   /* make x even */
 
-/* void ran_start(long seed) */
-void ran_start(seed)    /* do this before using ran_array */
-  long seed;            /* selector for different streams */
+/**
+ * Call this before using ran_array
+ * @param seed Selector for different streams.
+ */
+void ran_start(long seed)
 {
   register int t,j;
   long x[KK+KK-1];              /* the preparation buffer */
