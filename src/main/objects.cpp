@@ -31,6 +31,7 @@
 
 #include "Defn.h"
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
+#include "basedecl.h"
 
 static SEXP GetObject(RCNTXT *cptr)
 {

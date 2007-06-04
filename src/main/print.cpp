@@ -942,6 +942,8 @@ void attribute_hidden CustomPrintValue(SEXP s, SEXP env)
    The actual interfaces are now in xxxpr.f
  */
 
+extern "C" {
+
 attribute_hidden
 int F77_NAME(dblep0) (char *label, int *nchar, double *data, int *ndata)
 {
@@ -1014,3 +1016,5 @@ void F77_NAME(xerbla)(char *srname, int *info)
     buf[6] = '\0';
     error(_("BLAS/LAPACK routine '%6s' gave error code %d"), buf, -(*info));
 }
+
+} /* extern "C" */

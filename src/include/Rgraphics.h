@@ -287,7 +287,7 @@ void GSetState(int, DevDesc*);
 
 
 /* Draw a circle, centred on (x,y) with radius r (in inches). */
-void GCircle(double, double, int, double, int, int, DevDesc*);
+void GCircle(double, double, GUnit, double, int, int, DevDesc*);
 /* Set clipping region (based on current setting of dd->gp.xpd).
  * Only clip if new clipping region is different from the current one */
 void GClip(DevDesc*);
@@ -297,9 +297,9 @@ int GClipPolygon(double *, double *, int, int, int,
 /* Always clips */
 void GForceClip(DevDesc*);
 /* Draw a line from (x1,y1) to (x2,y2): */
-void GLine(double, double, double, double, int, DevDesc*);
+void GLine(double, double, double, double, GUnit, DevDesc*);
 /* Return the location of the next mouse click: */
-Rboolean GLocator(double*, double*, int, DevDesc*);
+Rboolean GLocator(double*, double*, GUnit, DevDesc*);
 /* Return the height, depth, and width of the specified
  * character in the specified units: */
 void GMetricInfo(int, double*, double*, double*, GUnit, DevDesc*);
@@ -307,18 +307,18 @@ void GMetricInfo(int, double*, double*, double*, GUnit, DevDesc*);
  */
 void GMode(int, DevDesc*);
 /* Draw a polygon using the specified lists of x and y values: */
-void GPolygon(int, double*, double*, int, int, int, DevDesc*);
+void GPolygon(int, double*, double*, GUnit, int, int, DevDesc*);
 /* Draw series of straight lines using the specified lists of x and y values: */
-void GPolyline(int, double*, double*, int, DevDesc*);
+void GPolyline(int, double*, double*, GUnit, DevDesc*);
 /* Draw a rectangle given two opposite corners: */
-void GRect(double, double, double, double, int, int, int, DevDesc*);
+void GRect(double, double, double, double, GUnit, int, int, DevDesc*);
 /* Return the height of the specified string in the specified units: */
 double GStrHeight(char*, GUnit, DevDesc*);
 /* Return the width of the specified string in the specified units */
 double GStrWidth(char*, GUnit, DevDesc*);
 /* Draw the specified text at location (x,y) with the specified
  * rotation and justification: */
-void GText(double, double, int, const char*, double, double, double, DevDesc*);
+void GText(double, double, GUnit, const char*, double, double, double, DevDesc*);
 
 
 void GStartPath(DevDesc*);
@@ -336,12 +336,12 @@ typedef double (*GVStrHeightRoutine)(const unsigned char *s, int typeface, int f
    	   	                     int unit, DevDesc *dd);
 void R_setVFontRoutines(GVStrWidthRoutine vwidth, GVStrHeightRoutine vheight, GVTextRoutine vtext);
 
-void GVText(double x, double y, int unit, char* s, int typeface, int fontindex,
+void GVText(double x, double y, GUnit unit, char* s, int typeface, int fontindex,
 	    double xadj, double yadj, double rot, DevDesc *dd);
 double GVStrWidth(const unsigned char *s, int typeface, int fontindex,
-		  int unit, DevDesc *dd);
+		  GUnit unit, DevDesc *dd);
 double GVStrHeight(const unsigned char *s, int typeface, int fontindex,
-		   int unit, DevDesc *dd);
+		   GUnit unit, DevDesc *dd);
 
 /*-------------------------------------------------------------------
  *
@@ -353,7 +353,7 @@ double GVStrHeight(const unsigned char *s, int typeface, int fontindex,
 
 /* Draw a line from (x1,y1) to (x2,y2) with an arrow head
  * at either or both ends. */
-void GArrow(double, double, double, double, int, double, double, int, DevDesc*);
+void GArrow(double, double, double, double, GUnit, double, double, int, DevDesc*);
 /* Draw a box around specified region:
  *  1=plot region, 2=figure region, 3=inner region, 4=device. */
 void GBox(int, DevDesc*);
@@ -364,7 +364,7 @@ void GLPretty(double*, double*, int*);
 /* Draw text in margins. */
 void GMtext(char*, int, double, int, double, int, double, DevDesc*);
 /* Draw one of the predefined symbols (circle, square, diamond, ...) */
-void GSymbol(double, double, int, int, DevDesc*);
+void GSymbol(double, double, GUnit, int, DevDesc*);
 
 double GExpressionHeight(SEXP, GUnit, DevDesc*);
 double GExpressionWidth(SEXP, GUnit, DevDesc*);
@@ -443,9 +443,9 @@ double yNPCtoUsr(double, DevDesc*);
 
 /* Vector fonts */
 
-double GVStrWidth (const unsigned char *, int, int, int, DevDesc *);
-double GVStrHeight (const unsigned char *, int, int, int, DevDesc *);
-void GVText (double, double, int, char *, int, int,
+double GVStrWidth (const unsigned char *, int, int, GUnit, DevDesc *);
+double GVStrHeight (const unsigned char *, int, int, GUnit, DevDesc *);
+void GVText (double, double, GUnit, char *, int, int,
 	     double, double, double, DevDesc *);
 
 

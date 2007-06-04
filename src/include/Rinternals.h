@@ -736,7 +736,7 @@ void R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
 void R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, void *, int),
+		      void (*outbytes)(R_outpstream_t, const void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 
 void R_InitFileInPStream(R_inpstream_t stream, FILE *fp,

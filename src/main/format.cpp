@@ -43,6 +43,7 @@
 #endif
 
 #include <Defn.h>
+#include <Rcomplex.h>
 #include <Rmath.h>
 #include <Print.h>
 

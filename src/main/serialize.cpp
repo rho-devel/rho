@@ -1575,7 +1575,7 @@ static int InCharFile(R_inpstream_t stream)
     return fgetc(fp);
 }
 
-static void OutBytesFile(R_outpstream_t stream, void *buf, int length)
+static void OutBytesFile(R_outpstream_t stream, const void *buf, int length)
 {
     FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t out = fwrite(buf, 1, length, fp);
@@ -1660,13 +1660,13 @@ static int InCharConn(R_inpstream_t stream)
     }
 }
 
-static void OutBytesConn(R_outpstream_t stream, void *buf, int length)
+static void OutBytesConn(R_outpstream_t stream, const void *buf, int length)
 {
     Rconnection con = (Rconnection) stream->data;
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	char *p = reinterpret_cast<char*>(buf);
+	const char *p = reinterpret_cast<const char*>(buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
@@ -1792,7 +1792,7 @@ SEXP attribute_hidden do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP
  */
 
 /**** should eventually come from a public header file */
-size_t R_WriteConnection(Rconnection con, void *buf, size_t n);
+size_t R_WriteConnection(Rconnection con, const void *buf, size_t n);
 
 #define BCONBUFSIZ 4096
 
@@ -1817,7 +1817,7 @@ static void OutCharBB(R_outpstream_t stream, int c)
     bb->buf[bb->count++] = c;
 }
 
-static void OutBytesBB(R_outpstream_t stream, void *buf, int length)
+static void OutBytesBB(R_outpstream_t stream, const void *buf, int length)
 {
     bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
     if (bb->count + length > BCONBUFSIZ)
@@ -1885,7 +1885,7 @@ static void OutCharMem(R_outpstream_t stream, int c)
     mb->buf[mb->count++] = c;
 }
 
-static void OutBytesMem(R_outpstream_t stream, void *buf, int length)
+static void OutBytesMem(R_outpstream_t stream, const void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     if (mb->count + length > mb->size)

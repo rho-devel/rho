@@ -2103,8 +2103,12 @@ void R_gc(void)
 }
 
 #ifdef _R_HAVE_TIMING_
+
+extern "C" {
+// defined in unix/sys-unix.c :
 double R_getClockIncrement(void);
 void R_getProcTime(double *data);
+}
 
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;

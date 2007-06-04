@@ -95,6 +95,7 @@
 
 #include <Rmath.h>
 #include <Rdynpriv.h>
+#include <basedecl.h>
 
 #ifdef Unix
 /* HP-UX 11.0 has dlfcn.h, but according to libtool as of Dec 2001

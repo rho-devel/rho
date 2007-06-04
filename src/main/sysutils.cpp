@@ -28,6 +28,7 @@
 
 #include <stdlib.h> /* for putenv */
 #include <Defn.h>
+#include <Fileio.h>
 #include <R_ext/Riconv.h>
 #include <Rinterface.h>
 

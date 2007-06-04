@@ -1,8 +1,11 @@
+/* $Id$ */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2005  Robert Gentleman, Ross Ihaka
- *			      and the R Development Core Team
+ *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
+ *  Copyright (C) 2000-6       	    The R Development Core Team.
+ *  Copyright (C) 2005		    The R Foundation
+ *  Copyright (C) 2007              Andrew Runnalls
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,27 +22,25 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/* <UTF8> char here is handled as a whole string */
+/* Prototypes of functions within complex.c needed elsewhere. */
 
+#ifndef RCOMPLEX_H
+#define RCOMPLEX_H 1
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <Defn.h>		/* -> ../include/R_ext/Complex.h */
+
+#ifdef __cplusplus
 extern "C" {
-int Rf_initialize_R(int ac, char **av); /* in ../unix/system.c */
+#endif
+
+void attribute_hidden z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
+
+#ifdef __cplusplus
 }
+#endif
 
-#include <Rinterface.h>
-
-
-extern int R_running_as_main_program;   /* in ../unix/system.c */
-
-int main(int ac, char **av)
-{
-    R_running_as_main_program = 1;
-    Rf_initialize_R(ac, av);
-    Rf_mainloop(); /* does not return */
-    return 0;
-}
-
-	/* Declarations to keep f77 happy */
-
-int MAIN_(int ac, char **av)  {return 0;}
-int MAIN__(int ac, char **av) {return 0;}
-int __main(int ac, char **av) {return 0;}
+#endif /* RCOMPLEX_H */

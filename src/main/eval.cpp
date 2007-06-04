@@ -29,7 +29,8 @@
 #include <Defn.h>
 #include <Rinterface.h>
 #include <Fileio.h>
-
+#include "arithmetic.h"
+#include "basedecl.h"
 
 #define ARGUSED(x) LEVELS(x)
 
@@ -208,7 +209,10 @@ static void R_EndProfiling()
 }
 
 #if !defined(Win32) && defined(_R_HAVE_TIMING_)
+// defined in unix/sys-unix.c
+extern "C" {
 double R_getClockIncrement(void);
+}
 #endif
 
 static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem_profiling)

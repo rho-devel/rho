@@ -34,6 +34,7 @@
 #endif
 
 #include <Defn.h>
+#include <basedecl.h>
 
 #define NIL -1
 #define ARGUSED(x) LEVELS(x)

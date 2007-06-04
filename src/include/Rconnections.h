@@ -170,6 +170,7 @@ int dummy_fgetc(Rconnection con);
 int dummy_vfprintf(Rconnection con, const char *format, va_list ap);
 int getActiveSink(int n);
 void con_pushback(Rconnection con, Rboolean newLine, char *line);
+size_t R_WriteConnection(Rconnection con, const void *buf, size_t n);
 
 int Rsockselect(int nsock, int *insockfd, int *ready, int *write,
 		double timeout);

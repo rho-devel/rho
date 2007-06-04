@@ -77,7 +77,7 @@ SEXP Rrowsum_df(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP do_mapply(SEXP, SEXP, SEXP, SEXP);
 
 SEXP R_r2dtable(SEXP, SEXP, SEXP);
-SEXP R_shortRowNames(SEXP);
+SEXP R_shortRowNames(SEXP, SEXP);
 SEXP R_copyDFattr(SEXP, SEXP);
 
 void F77_SYMBOL(dchdc)(double *, int *, int *, double *, int *, int *, int *);

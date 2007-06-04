@@ -71,6 +71,7 @@
 #include <Rmath.h>
 #include <Print.h>
 #include <R_ext/RS.h>
+#include <Rcomplex.h>
 #include <Rconnections.h>
 
 #include "RBufferUtils.h"
@@ -91,11 +92,11 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
 	if((Giga * (double)v) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return (Giga*v);
+	return R_size_t(Giga*v);
     }
     else if(p[0] == 'M') {
 	if((Mega * (double)v) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return (Mega*v);
+	return R_size_t(Mega*v);
     }
     else if(p[0] == 'K') {
 	if((1024 * (double)v) > R_SIZE_T_MAX) { *ierr = 2; return(v); }

@@ -2961,7 +2961,7 @@ double GStrHeight(char *str, GUnit units, DevDesc *dd)
 /* Draw text in a plot. */
 /* If you want EXACT centering of text (e.g., like in GSymbol) */
 /* then pass NA_REAL for xc and yc */
-void GText(double x, double y, GUnit coords, char *str,
+void GText(double x, double y, GUnit coords, const char *str,
 	   double xc, double yc, double rot, DevDesc *dd)
 {
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
@@ -3209,11 +3209,11 @@ void GMtext(char *str, int side, double line, int outer, double at, int las,
 	 3 = always vertical.
 */
     double angle, xadj;
-    int coords, subcoords;
+    GUnit coords, subcoords;
 
     /* Init to keep -Wall happy: */
     angle = 0.;
-    coords = 0;
+    coords = GUnit(0);
 
     xadj = Rf_gpptr(dd)->adj;	/* ALL cases */
     if(outer) {

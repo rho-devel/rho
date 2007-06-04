@@ -30,6 +30,7 @@
 #endif
 
 #include "Defn.h"
+#include "Fileio.h"
 
 int R_fgetc(FILE *fp)
 {

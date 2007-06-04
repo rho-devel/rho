@@ -23,6 +23,7 @@
 #endif
 
 #include "Defn.h"
+#include "basedecl.h"
 
 SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {

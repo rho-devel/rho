@@ -2663,7 +2663,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	  for (i = 0; i < n; i++) {
 		string = STRING_ELT(Main, i);
 		if(string != NA_STRING)
-		    GText(hpos, offset - i, where, translateChar(string),
+		    GText(hpos, offset - i, GUnit(where), translateChar(string),
 			  adj, adjy, 0.0, dd);
 	  }
 	}

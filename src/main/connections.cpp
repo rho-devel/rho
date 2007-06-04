@@ -34,6 +34,8 @@
 #include <R_ext/R-ftp-http.h>
 #include <R_ext/RS.h>		/* R_chk_calloc and Free */
 #include <R_ext/Riconv.h>
+#include <basedecl.h>
+
 #undef ERROR			/* for compilation on Windows */
 
 int attribute_hidden R_OutputCon; /* used in printutils.c */
@@ -1382,7 +1384,10 @@ extern int GA_clipboardhastext(); /* from ga.h */
 #endif
 
 #ifdef Unix
+// Defined in unix/X11.c :
+extern "C" {
 Rboolean R_ReadClipboard(Rclpconn clpcon, char *type);
+}
 #endif
 
 static Rboolean clp_open(Rconnection con)
@@ -3770,7 +3775,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
    connection.  It is mainly intended as a means for C code to do a
    buffered write to sockets, but could be the start of a more
    extensive C-level connection API.  LT */
-size_t R_WriteConnection(Rconnection con, void *buf, size_t n)
+size_t R_WriteConnection(Rconnection con, const void *buf, size_t n)
 {
     if(!con->isopen) error(_("connection is not open"));
     if(!con->canwrite) error(_("cannot write to this connection"));

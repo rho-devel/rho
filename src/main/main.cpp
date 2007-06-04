@@ -34,7 +34,9 @@
 #include "IOStuff.h"
 #include "Fileio.h"
 #include "Parse.h"
+#include "Rembedded.h"
 #include "Startup.h"
+#include "basedecl.h"
 
 #ifdef HAVE_LOCALE_H
 # include <locale.h>

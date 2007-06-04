@@ -28,6 +28,7 @@
 #include <Defn.h>
 #include <Rmath.h>
 #include <Rdefines.h>
+#include <basedecl.h>
 
 static void checkNames(SEXP, SEXP);
 static SEXP installAttrib(SEXP, SEXP, SEXP);
