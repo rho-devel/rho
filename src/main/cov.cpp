@@ -387,7 +387,7 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* compute correlations if PRIMVAL(op) == 0,
 	       covariances  if PRIMVAL(op) != 0 */
-    cor = PRIMVAL(op);
+    cor = Rboolean(PRIMVAL(op));
 
     /* Arg.1: x */
     if (isNull(CAR(args)) || !LENGTH(CAR(args))) error(_("'x' is empty"));
@@ -426,7 +426,7 @@ SEXP attribute_hidden do_cov(SEXP call, SEXP op, SEXP args, SEXP env)
 
     args = CDR(args);
     /* Arg.4:  kendall */
-    kendall = asLogical(CAR(args));
+    kendall = Rboolean(asLogical(CAR(args)));
 
     /* "default: complete" (easier for -Wall) */
     na_fail = FALSE;

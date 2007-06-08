@@ -31,7 +31,14 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+
+#define RBOOL(x) Rboolean(x)
+
+#else
+
+#define RBOOL(x) x
+
+#endif /* __cplusplus */
 
 #ifndef COMPILING_R /* defined only in util.c */
 /* The following was added in gcc 4.1.3.  It is defined if
@@ -241,17 +248,17 @@ INLINE_FUN Rboolean conformable(SEXP x, SEXP y)
 
 INLINE_FUN Rboolean isString(SEXP s)
 {
-  return (TYPEOF(s) == STRSXP);
+    return RBOOL(TYPEOF(s) == STRSXP);
 }
 
 INLINE_FUN Rboolean isNull(SEXP s)
 {
-    return (s == R_NilValue);
+    return RBOOL(s == R_NilValue);
 }
 
 INLINE_FUN Rboolean isObject(SEXP s)
 {
-    return OBJECT(s);/* really '1-bit unsigned int' */
+    return RBOOL(OBJECT(s));/* really '1-bit unsigned int' */
 }
 
 /*  The following should work but as of 06/09/04 it generates warnings about 
@@ -292,18 +299,18 @@ INLINE_FUN Rboolean inherits(SEXP s, char *name)
 
 INLINE_FUN Rboolean isValidString(SEXP x)
 {
-    return isString(x) && LENGTH(x) > 0 && !isNull(STRING_ELT(x, 0));
+    return RBOOL(isString(x) && LENGTH(x) > 0 && !isNull(STRING_ELT(x, 0)));
 }
 
 /* non-empty ("") valid string :*/
 INLINE_FUN Rboolean isValidStringF(SEXP x)
 {
-    return isValidString(x) && CHAR(STRING_ELT(x, 0))[0];
+    return RBOOL(isValidString(x) && CHAR(STRING_ELT(x, 0))[0]);
 }
 
 INLINE_FUN Rboolean isSymbol(SEXP s)
 {
-    return TYPEOF(s) == SYMSXP;
+    return RBOOL(TYPEOF(s) == SYMSXP);
 }
 
 INLINE_FUN Rboolean isUserBinop(SEXP s)
@@ -318,26 +325,26 @@ INLINE_FUN Rboolean isUserBinop(SEXP s)
 
 INLINE_FUN Rboolean isFunction(SEXP s)
 {
-    return (TYPEOF(s) == CLOSXP ||
+    return RBOOL(TYPEOF(s) == CLOSXP ||
 	    TYPEOF(s) == BUILTINSXP ||
 	    TYPEOF(s) == SPECIALSXP);
 }
 
 INLINE_FUN Rboolean isPrimitive(SEXP s)
 {
-    return (TYPEOF(s) == BUILTINSXP ||
+    return RBOOL(TYPEOF(s) == BUILTINSXP ||
 	    TYPEOF(s) == SPECIALSXP);
 }
 
 INLINE_FUN Rboolean isList(SEXP s)
 {
-    return (s == R_NilValue || TYPEOF(s) == LISTSXP);
+    return RBOOL(s == R_NilValue || TYPEOF(s) == LISTSXP);
 }
 
 
 INLINE_FUN Rboolean isNewList(SEXP s)
 {
-    return (s == R_NilValue || TYPEOF(s) == VECSXP);
+    return RBOOL(s == R_NilValue || TYPEOF(s) == VECSXP);
 }
 
 INLINE_FUN Rboolean isPairList(SEXP s)
@@ -410,12 +417,12 @@ INLINE_FUN Rboolean isFrame(SEXP s)
 
 INLINE_FUN Rboolean isExpression(SEXP s)
 {
-    return TYPEOF(s) == EXPRSXP;
+    return RBOOL(TYPEOF(s) == EXPRSXP);
 }
 
 INLINE_FUN Rboolean isLanguage(SEXP s)
 {
-    return (s == R_NilValue || TYPEOF(s) == LANGSXP);
+    return RBOOL(s == R_NilValue || TYPEOF(s) == LANGSXP);
 }
 
 INLINE_FUN Rboolean isMatrix(SEXP s)
@@ -446,52 +453,52 @@ INLINE_FUN Rboolean isArray(SEXP s)
 
 INLINE_FUN Rboolean isTs(SEXP s)
 {
-    return (isVector(s) && getAttrib(s, R_TspSymbol) != R_NilValue);
+    return RBOOL(isVector(s) && getAttrib(s, R_TspSymbol) != R_NilValue);
 }
 
 
 INLINE_FUN Rboolean isLogical(SEXP s)
 {
-    return (TYPEOF(s) == LGLSXP);
+    return RBOOL(TYPEOF(s) == LGLSXP);
 }
 
 INLINE_FUN Rboolean isInteger(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP && !inherits(s, "factor"));
+    return RBOOL(TYPEOF(s) == INTSXP && !inherits(s, "factor"));
 }
 
 INLINE_FUN Rboolean isReal(SEXP s)
 {
-    return (TYPEOF(s) == REALSXP);
+    return RBOOL(TYPEOF(s) == REALSXP);
 }
 
 INLINE_FUN Rboolean isComplex(SEXP s)
 {
-    return (TYPEOF(s) == CPLXSXP);
+    return RBOOL(TYPEOF(s) == CPLXSXP);
 }
 
 INLINE_FUN Rboolean isUnordered(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
+    return RBOOL(TYPEOF(s) == INTSXP
 	    && inherits(s, "factor")
 	    && !inherits(s, "ordered"));
 }
 
 INLINE_FUN Rboolean isOrdered(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP
+    return RBOOL(TYPEOF(s) == INTSXP
 	    && inherits(s, "factor")
 	    && inherits(s, "ordered"));
 }
 
 INLINE_FUN Rboolean isFactor(SEXP s)
 {
-    return (TYPEOF(s) == INTSXP  && inherits(s, "factor"));
+    return RBOOL(TYPEOF(s) == INTSXP  && inherits(s, "factor"));
 }
 
 INLINE_FUN Rboolean isEnvironment(SEXP s)
 {
-    return (TYPEOF(s) == ENVSXP);
+    return RBOOL(TYPEOF(s) == ENVSXP);
 }
 
 INLINE_FUN int nlevels(SEXP f)

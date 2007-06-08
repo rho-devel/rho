@@ -830,7 +830,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(varnames = allocVector(STRSXP, nvar));
     for (v = CDR(varlist), i = 0; v != R_NilValue; v = CDR(v))
-	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), 0), 0));
+	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), FALSE), 0));
     
     /* Step 2b: Find and remove any offset(s) */
 

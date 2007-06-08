@@ -202,7 +202,7 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
     opts = SHOWATTRIBUTES;
     if(!isNull(CAR(args)))
     	opts = asInteger(CAR(args));
-    ca1 = deparse1WithCutoff(ca1, 0, cut0, backtick, opts);
+    ca1 = deparse1WithCutoff(ca1, FALSE, cut0, Rboolean(backtick), opts);
     return ca1;
 }
 
@@ -294,18 +294,18 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
-    opts = SHOWATTRIBUTES;
+    opts = Rboolean(SHOWATTRIBUTES);
     if(!isNull(CADDR(args)))
-       	opts = asInteger(CADDR(args));
+       	opts = Rboolean(asInteger(CADDR(args)));
 
-    tval = deparse1(tval, 0, opts);
+    tval = deparse1(tval, FALSE, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
 	SET_CLOENV(CAR(args), saveenv);
 	UNPROTECT(1);
     }
     ifile = asInteger(CADR(args));
 
-    wasopen = 1;
+    wasopen = TRUE;
     if (ifile != 1) {
 	con = getConnection(ifile);
 	wasopen = con->isopen;
@@ -350,7 +350,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* <NOTE>: change this if extra options are added */ 
     if(opts == NA_INTEGER || opts < 0 || opts > 256)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = asLogical(CAD4R(args));
+    evaluate = Rboolean(asLogical(CAD4R(args)));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));
@@ -374,7 +374,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rprintf(/* figure out if we need to quote the name */
 			/*CCAST*/(char*)(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
 			obj_name);
-		tval = deparse1(CAR(o), 0, opts);
+		tval = deparse1(CAR(o), FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++)
 		    Rprintf("%s\n", CHAR(STRING_ELT(tval, j)));/* translated */
 		o = CDR(o);
@@ -393,7 +393,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		res = Rconn_printf(con, "`%s` <-\n", s);
 		if(!havewarned && res < strlen(s) + 6)
 		    warningcall(call, _("wrote too few characters"));
-		tval = deparse1(CAR(o), 0, opts);
+		tval = deparse1(CAR(o), FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++) {
 		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 		    if(!havewarned &&
@@ -484,7 +484,7 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		case PP_IF:
 		case PP_WHILE:
 		case PP_REPEAT:
-		    return left == 1;
+		    return Rboolean(left == 1);
 		    break;
 		default:
 		    return FALSE;
@@ -1172,7 +1172,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	   Also, it is neat to deparse m:n in that form,
 	   so we do so as from 2.5.0.
 	 */
-	Rboolean intSeq = (tlen > 1);
+	Rboolean intSeq = Rboolean(tlen > 1);
 	int *tmp = INTEGER(vector);
 
 	for(i = 1; i < tlen; i++) {
@@ -1188,8 +1188,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		strp = EncodeElement(vector, tlen - 1, '"', '.');
 		print2buff(strp, d);
 	} else {
-	    addL = d->opts & KEEPINTEGER & !(d->opts & S_COMPAT);
-	    allNA = (d->opts & KEEPNA) || addL;
+	    addL = Rboolean(d->opts & KEEPINTEGER & !(d->opts & S_COMPAT));
+	    allNA = Rboolean((d->opts & KEEPNA) || addL);
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
 		    allNA = FALSE;
@@ -1199,7 +1199,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.integer(", d);
 	    }
-	    allNA = allNA && !(d->opts & S_COMPAT);
+	    allNA = Rboolean(allNA && !(d->opts & S_COMPAT));
 	    if(tlen > 1) print2buff("c(", d);
 	    for (i = 0; i < tlen; i++) {
 		if(allNA && tmp[i] == NA_INTEGER) {
@@ -1216,7 +1216,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(surround) print2buff(")", d);
 	}
     } else {
-	allNA = d->opts & KEEPNA;
+	allNA = Rboolean(d->opts & KEEPNA);
 	if((d->opts & KEEPNA) && TYPEOF(vector) == REALSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(!ISNA(REAL(vector)[i])) {
@@ -1251,7 +1251,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    }
 	}
 	if(tlen > 1) print2buff("c(", d);
-	allNA = allNA && !(d->opts & S_COMPAT);
+	allNA = Rboolean(allNA && !(d->opts & S_COMPAT));
 	for (i = 0; i < tlen; i++) {
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {

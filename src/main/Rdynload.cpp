@@ -1089,7 +1089,7 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
       f = R_FindSymbol(name, package, &symbol);
 
     if(f)
-      sym = createRSymbolObject(sname, f, &symbol, LOGICAL(withRegistrationInfo)[0]);
+      sym = createRSymbolObject(sname, f, &symbol, Rboolean(LOGICAL(withRegistrationInfo)[0]));
 
     return(sym);
 }

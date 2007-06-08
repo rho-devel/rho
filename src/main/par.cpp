@@ -307,7 +307,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
 /*--- and these are "Specify() only" {i.e. par(nam = val)} : */
     else if (streql(what, "ask")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
-	R_DEV__(ask) = (ix == 1);/* NA |-> FALSE */
+	R_DEV__(ask) = Rboolean(ix == 1);/* NA |-> FALSE */
     }
     else if (streql(what, "fig")) {
 	value = coerceVector(value, REALSXP);
@@ -316,7 +316,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
 	    REAL(value)[1] <= 1.0 &&
 	    0.0 <= REAL(value)[2] && REAL(value)[2] < REAL(value)[3] &&
 	    REAL(value)[3] <= 1.0) {
-	    R_DEV_2(defaultFigure) = 0;
+	    R_DEV_2(defaultFigure) = FALSE;
 	    R_DEV_2(fUnits) = NIC;
 	    R_DEV_2(numrows) = 1;
 	    R_DEV_2(numcols) = 1;
@@ -350,7 +350,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
     else if (streql(what, "fin")) {
 	value = coerceVector(value, REALSXP);
 	lengthCheck(what, value, 2, call);
-	R_DEV_2(defaultFigure) = 0;
+	R_DEV_2(defaultFigure) = FALSE;
 	R_DEV_2(fUnits) = INCHES;
 	R_DEV_2(numrows) = 1;
 	R_DEV_2(numcols) = 1;
@@ -514,7 +514,7 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
     else if (streql(what, "new")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if(!Rf_gpptr(dd)->state) warning(_("calling par(new=) with no plot"));
-	else R_DEV__(newplot) = (ix != 0);
+	else R_DEV__(newplot) = Rboolean(ix != 0);
     }
     /* -- */
 
@@ -654,13 +654,13 @@ static void Specify(char *what, SEXP value, DevDesc *dd, SEXP call)
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(xlog) = (ix != 0);
+	R_DEV__(xlog) = Rboolean(ix != 0);
     }
     else if (streql(what, "ylog")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(ylog) = (ix != 0);
+	R_DEV__(ylog) = Rboolean(ix != 0);
     }
     /* We do not need these as Query will already have warned.
     else if (streql(what, "type")) {

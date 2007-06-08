@@ -60,9 +60,9 @@ Rboolean tsConform(SEXP x, SEXP y)
 	/* tspgets should enforce this, but prior to 2.4.0
 	   had INTEGER() here */
 	if(TYPEOF(x) == REALSXP && TYPEOF(y) == REALSXP)
-            return REAL(x)[0] == REAL(x)[0] &&
+            return Rboolean(REAL(x)[0] == REAL(x)[0] &&
                 REAL(x)[1] == REAL(x)[1] &&
-                REAL(x)[2] == REAL(x)[2];
+                REAL(x)[2] == REAL(x)[2]);
 	/* else fall through */
     }
     return FALSE;
@@ -361,7 +361,7 @@ Rboolean isBlankString(char *s)
 Rboolean StringBlank(SEXP x)
 {
     if (x == R_NilValue) return TRUE;
-    else return CHAR(x)[0] == '\0';
+    else return Rboolean(CHAR(x)[0] == '\0');
 }
 
 /* Function to test whether a string is a true value */
@@ -769,7 +769,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(w != NA_INTEGER && w < 0)
 	    errorcall(call, _("invalid '%s' value"), "width");
     }
-    findWidth = (w == NA_INTEGER);
+    findWidth = Rboolean(w == NA_INTEGER);
     s = CADDR(args);
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	errorcall(call, _("invalid '%s' value"), "quote");
@@ -904,7 +904,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 
 Rboolean mbcsValid(char *str)
 {
-    return  ((int)mbstowcs(NULL, str, 0) >= 0);
+    return  Rboolean((int)mbstowcs(NULL, str, 0) >= 0);
 }
 
 /* We do this conversion ourselves to do our own error recovery */
@@ -1020,6 +1020,8 @@ void R_fixbackslash(char *s)
 }
 #endif
 
+extern "C" {
+
 void F77_SYMBOL(rexitc)(char *msg, int *nchar)
 {
     int nc = *nchar;
@@ -1051,3 +1053,4 @@ void F77_SYMBOL(rchkusr)(void)
     R_CheckUserInterrupt();
 }
 
+} // extern "C"

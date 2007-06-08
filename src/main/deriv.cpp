@@ -480,7 +480,7 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 
 	else {
-	    SEXP u = deparse1(CAR(expr), 0, SIMPLEDEPARSE);
+	    SEXP u = deparse1(CAR(expr), FALSE, SIMPLEDEPARSE);
 	    error(_("Function '%s' is not in the derivatives table"),
 		  translateChar(STRING_ELT(u, 0)));
 	}

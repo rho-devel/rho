@@ -163,10 +163,10 @@ Rboolean newX11_Open(NewDevDesc *dd, newX11Desc *xd,
 		     char *dsp, double w, double h,
 		     double gamma_fac, X_COLORTYPE colormodel,
 		     int maxcube, int bgcolor, int canvascolor, int res); */
-static void newX11_Polygon(int n, double *x, double *y,
+static void newX11_Polygon(int n, const double *x, const double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
-static void newX11_Polyline(int n, double *x, double *y,
+static void newX11_Polyline(int n, const double *x, const double *y,
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd);
 static void newX11_Rect(double x0, double y0, double x1, double y1,
@@ -175,10 +175,10 @@ static void newX11_Rect(double x0, double y0, double x1, double y1,
 static void newX11_Size(double *left, double *right,
 		     double *bottom, double *top,
 		     NewDevDesc *dd);
-static double newX11_StrWidth(char *str,
+static double newX11_StrWidth(const char *str,
 			      R_GE_gcontext *gc,
 			      NewDevDesc *dd);
-static void newX11_Text(double x, double y, char *str,
+static void newX11_Text(double x, double y, const char *str,
 			double rot, double hadj,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd);
@@ -1474,7 +1474,7 @@ static char* translateFontFamily(char* family, newX11Desc* xd) {
     return result;
 }
 
-static double newX11_StrWidth(char *str,
+static double newX11_StrWidth(const char *str,
 			      R_GE_gcontext *gc,
 			      NewDevDesc *dd)
 {
@@ -1943,7 +1943,7 @@ static void newX11_Line(double x1, double y1, double x2, double y2,
     }
 }
 
-static void newX11_Polyline(int n, double *x, double *y,
+static void newX11_Polyline(int n, const double *x, const double *y,
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd)
 {
@@ -1977,7 +1977,7 @@ static void newX11_Polyline(int n, double *x, double *y,
     vmaxset(vmax);
 }
 
-static void newX11_Polygon(int n, double *x, double *y,
+static void newX11_Polygon(int n, const double *x, const double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd)
 {
@@ -2015,7 +2015,7 @@ static void newX11_Polygon(int n, double *x, double *y,
 
 
 static void newX11_Text(double x, double y,
-			char *str, double rot, double hadj,
+			const char *str, double rot, double hadj,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd)
 {

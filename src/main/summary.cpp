@@ -402,7 +402,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
     ans = matchArgExact(R_NaRmSymbol, &args);
-    narm = asLogical(ans);
+    narm = Rboolean(asLogical(ans));
     updated = 0;
     empty = 1;/*- =1: only zero-length arguments, or NA with na.rm=T */
 

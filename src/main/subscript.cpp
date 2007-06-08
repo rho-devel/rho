@@ -368,7 +368,7 @@ static SEXP stringSubscript(SEXP s, int ns, int nx, SEXP names,
     int canstretch = *stretch;
 #ifdef USE_HASHING
     /* product may overflow, so check factors as well. */
-    Rboolean usehashing = in && ( (ns > 1000 && nx) || (nx > 1000 && ns) || (ns * nx > 1000) );
+    Rboolean usehashing = Rboolean(in && ( (ns > 1000 && nx) || (nx > 1000 && ns) || (ns * nx > 1000) ));
 #else
     Rboolean usehashing = FALSE;
 #endif

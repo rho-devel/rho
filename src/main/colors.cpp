@@ -304,7 +304,7 @@ SEXP attribute_hidden do_rgb(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(b = coerceVector(CAR(args), REALSXP)); args = CDR(args);
 	PROTECT(a = coerceVector(CAR(args), REALSXP)); args = CDR(args);
 	mV = asReal(CAR(args));			       args = CDR(args);
-	max_1 = (mV == 1.);
+	max_1 = Rboolean(mV == 1.);
     }
 
     nr = LENGTH(r); ng = LENGTH(g); nb = LENGTH(b); na = LENGTH(a);

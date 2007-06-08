@@ -53,7 +53,7 @@ static SEXP GetObject(RCNTXT *cptr)
 	s = R_NilValue;
 	/** exact matches **/
 	for (b = cptr->promargs ; b != R_NilValue ; b = CDR(b))
-	    if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), 1)) {
+	    if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), TRUE)) {
 		if (s != R_NilValue)
 		    error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
 		else
@@ -63,7 +63,7 @@ static SEXP GetObject(RCNTXT *cptr)
 	if (s == R_NilValue)
 	    /** partial matches **/
 	    for (b = cptr->promargs ; b != R_NilValue ; b = CDR(b))
-		if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), 0)) {
+		if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), FALSE)) {
 		    if ( s != R_NilValue)
 			error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
 		    else
@@ -101,9 +101,9 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
     SEXP ans;
     if (TYPEOF(op) == SPECIALSXP) {
 	int save = R_PPStackTop, flag = PRIMPRINT(op);
-	R_Visible = flag != 1;
+	R_Visible = Rboolean(flag != 1);
 	ans = PRIMFUN(op) (call, op, args, rho);
-	if (flag < 2) R_Visible = flag != 1;
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
 	check_stack_balance(op, save);
     }
     /* In other places we add a context to builtins when profiling,
@@ -114,9 +114,9 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
     else if (TYPEOF(op) == BUILTINSXP) {
 	int save = R_PPStackTop, flag = PRIMPRINT(op);
 	PROTECT(args = evalList(args, rho, op));
-	R_Visible = flag != 1;
+	R_Visible = Rboolean(flag != 1);
 	ans = PRIMFUN(op) (call, op, args, rho);
-	if (flag < 2) R_Visible = flag != 1;
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
 	UNPROTECT(1);
 	check_stack_balance(op, save);
     }
@@ -889,7 +889,7 @@ SEXP R_isMethodsDispatchOn(SEXP onOff) {
     R_stdGen_ptr_t old = R_get_standardGeneric_ptr();
     LOGICAL(value)[0] = !NOT_METHODS_DISPATCH_PTR(old);
     if(length(onOff) > 0) {
-	    onOffValue = asLogical(onOff);
+	    onOffValue = Rboolean(asLogical(onOff));
 	    if(onOffValue == FALSE)
 		    R_set_standardGeneric_ptr(0, 0);
 	    else if(NOT_METHODS_DISPATCH_PTR(old)) {
@@ -909,7 +909,7 @@ SEXP R_isMethodsDispatchOn(SEXP onOff) {
 attribute_hidden
 Rboolean isMethodsDispatchOn(void)
 {
-    return !NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr);
+    return Rboolean(!NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr));
 }
 
 
@@ -1344,7 +1344,7 @@ SEXP R_isS4Object(SEXP object)
 
 SEXP R_setS4Object(SEXP object, SEXP onOff) 
 {
-    Rboolean flag = asLogical(onOff);
+    Rboolean flag = Rboolean(asLogical(onOff));
     /* wanted     return asS4(object, flag); */
     if(flag == IS_S4_OBJECT(object))
         return object;

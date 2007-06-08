@@ -87,7 +87,7 @@ static SEXP seq_colon(double n1, double n2)
     Rboolean useInt;
 
     in1 = (int)(n1);
-    useInt = (n1 == in1);
+    useInt = Rboolean(n1 == in1);
     if (n1 <= INT_MIN || n2 <= INT_MIN || n1 > INT_MAX || n2 > INT_MAX)
 	useInt = FALSE;
     r = fabs(n2 - n1);
@@ -418,7 +418,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
     int i, nargs = length(args), lf, lout = NA_INTEGER;
-    Rboolean One = nargs == 1;
+    Rboolean One = Rboolean(nargs == 1);
 
     if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
 	return(ans);

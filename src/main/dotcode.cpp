@@ -258,9 +258,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return(actualType == INTSXP || actualType == LGLSXP);
+	    return Rboolean(actualType == INTSXP || actualType == LGLSXP);
 	}
-	return(targetType == actualType);
+	return Rboolean(targetType == actualType);
     }
 
     return(TRUE);
@@ -583,7 +583,7 @@ comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
       return(TRUE);
 
    if(dup && type == SINGLESXP)
-      return(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
+      return Rboolean(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
 
    return(FALSE);
 }
@@ -1713,7 +1713,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
 #ifdef THROW_REGISTRATION_TYPE_ERROR
         if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), dup)) {
+	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), Rboolean(dup))) {
             /* We can loop over all the arguments and report all the
                erroneous ones, but then we would also want to avoid
                the conversions.  Also, in the future, we may just

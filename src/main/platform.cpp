@@ -1165,7 +1165,7 @@ SEXP attribute_hidden do_setlocale(SEXP call, SEXP op, SEXP args, SEXP rho)
     known_to_be_latin1 = latin1locale = streql(p, "ISO-8859-1") ? TRUE : FALSE;
 #endif
 #ifdef SUPPORT_MBCS
-    mbcslocale = MB_CUR_MAX > 1;
+    mbcslocale = Rboolean(MB_CUR_MAX > 1);
 #endif
 #ifdef Win32
     {
@@ -1292,7 +1292,7 @@ static Rboolean R_can_use_X11()
 #endif
     }
 
-    return var_R_can_use_X11 > 0;
+    return Rboolean(var_R_can_use_X11 > 0);
 }
 #endif
 
@@ -1619,12 +1619,12 @@ SEXP attribute_hidden do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocVector(STRSXP, n));
     for (i = 0; i < n; i++) {
 	path = translateChar(STRING_ELT(paths, i));
-	OK = strlen(path) <= PATH_MAX;
+	OK = Rboolean(strlen(path) <= PATH_MAX);
 	if(OK) {
 	    if(path[0] == '/') strncpy(abspath, path, PATH_MAX);
 	    else {
-		OK = getcwd(abspath, PATH_MAX) != NULL;
-		OK = OK && (strlen(path) + strlen(abspath) + 1 <= PATH_MAX);
+		OK = Rboolean(getcwd(abspath, PATH_MAX) != NULL);
+		OK = Rboolean(OK && (strlen(path) + strlen(abspath) + 1 <= PATH_MAX));
 		if(OK) {
 		    strcat(abspath, "/");
 		    strcat(abspath, path);

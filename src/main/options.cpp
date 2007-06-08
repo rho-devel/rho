@@ -257,7 +257,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     p = getenv("R_KEEP_PKG_SOURCE");
-    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? 1 : 0;
+    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? TRUE : FALSE;
 
     SET_TAG(v, install("keep.source")); /* overridden in common.R */
     SETCAR(v, allocVector(LGLSXP, 1));
@@ -403,7 +403,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    errorcall(call, _("keep.source parameter invalid"));
 		k = asLogical(argi);
-		R_KeepSource = k;
+		R_KeepSource = Rboolean(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "editor")) {
@@ -478,7 +478,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		/* Should be quicker than checking options(echo)
 		   every time R prompts for input:
 		   */
-		R_Slave = !k;
+		R_Slave = Rboolean(!k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "OutDec")) {
@@ -500,7 +500,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    errorcall(call, _("warnEscapes parameter invalid"));
 		k = asLogical(argi);
-		R_WarnEscapes = k;
+		R_WarnEscapes = Rboolean(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else {

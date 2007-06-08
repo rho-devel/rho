@@ -191,7 +191,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
     Rboolean redo_which = TRUE;
     int which = 100 * TYPEOF(*x) + TYPEOF(*y);
     /* coercion can lose the object bit */
-    Rboolean x_is_object = OBJECT(*x);
+    Rboolean x_is_object = Rboolean(OBJECT(*x));
 
     switch (which) {
 
@@ -1340,7 +1340,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	x = SETCAR(args, duplicate(CAR(args)));
 
     SubAssignArgs(args, &x, &subs, &y);
-    S4 = IS_S4_OBJECT(x);
+    S4 = Rboolean(IS_S4_OBJECT(x));
     nsubs = length(subs);
 
     oldtype = 0;
@@ -1462,7 +1462,7 @@ SEXP attribute_hidden do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho
     PROTECT(args);
 
     SubAssignArgs(args, &x, &subs, &y);
-    S4 = IS_S4_OBJECT(x);
+    S4 = Rboolean(IS_S4_OBJECT(x));
 
     /* Handle NULL left-hand sides.  If the right-hand side */
     /* is NULL, just return the left-hand size otherwise, */
@@ -1803,7 +1803,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 
     PROTECT_WITH_INDEX(x, &pxidx);
     PROTECT_WITH_INDEX(val, &pvalidx);
-    S4 = IS_S4_OBJECT(x);
+    S4 = Rboolean(IS_S4_OBJECT(x));
 
     if (NAMED(x) == 2)
 	REPROTECT(x = duplicate(x), pxidx);

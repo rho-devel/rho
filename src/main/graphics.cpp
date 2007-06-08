@@ -1290,12 +1290,12 @@ static void someCmRegions(double widths[], double heights[],
 
 static Rboolean allCm(DevDesc *dd)
 {
-    return allCmWidths(dd) && allCmHeights(dd);
+    return Rboolean(allCmWidths(dd) && allCmHeights(dd));
 }
 
 static Rboolean noCm(DevDesc *dd)
 {
-    return noCmWidths(dd) && noCmHeights(dd);
+    return Rboolean(noCmWidths(dd) && noCmHeights(dd));
 }
 
 static void layoutRegions(double widths[], double heights[],
@@ -1709,7 +1709,7 @@ void GReset(DevDesc *dd)
 
 static Rboolean validFigureRegion(DevDesc *dd)
 {
-    return ((Rf_gpptr(dd)->fig[0] > 0-FLT_EPSILON) &&
+    return Rboolean((Rf_gpptr(dd)->fig[0] > 0-FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->fig[1] < 1+FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->fig[2] > 0-FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->fig[3] < 1+FLT_EPSILON));
@@ -1719,7 +1719,7 @@ static Rboolean validFigureRegion(DevDesc *dd)
 
 static Rboolean validOuterMargins(DevDesc *dd)
 {
-    return ((Rf_gpptr(dd)->fig[0] < Rf_gpptr(dd)->fig[1]) &&
+    return Rboolean((Rf_gpptr(dd)->fig[0] < Rf_gpptr(dd)->fig[1]) &&
 	    (Rf_gpptr(dd)->fig[2] < Rf_gpptr(dd)->fig[3]));
 }
 
@@ -1727,7 +1727,7 @@ static Rboolean validOuterMargins(DevDesc *dd)
 
 static Rboolean validPlotRegion(DevDesc *dd)
 {
-    return ((Rf_gpptr(dd)->plt[0] > 0-FLT_EPSILON) &&
+    return Rboolean((Rf_gpptr(dd)->plt[0] > 0-FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->plt[1] < 1+FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->plt[2] > 0-FLT_EPSILON) &&
 	    (Rf_gpptr(dd)->plt[3] < 1+FLT_EPSILON));
@@ -1737,7 +1737,7 @@ static Rboolean validPlotRegion(DevDesc *dd)
 
 static Rboolean validFigureMargins(DevDesc *dd)
 {
-    return ((Rf_gpptr(dd)->plt[0] < Rf_gpptr(dd)->plt[1]) &&
+    return Rboolean((Rf_gpptr(dd)->plt[0] < Rf_gpptr(dd)->plt[1]) &&
 	    (Rf_gpptr(dd)->plt[2] < Rf_gpptr(dd)->plt[3]));
 }
 
@@ -1869,7 +1869,7 @@ void GScale(double min, double max, int axis, DevDesc *dd)
 #define EPS_FAC_1  16
 #define EPS_FAC_2 100
 
-    Rboolean swap, is_xaxis = (axis == 1 || axis == 3);
+    Rboolean swap, is_xaxis = Rboolean(axis == 1 || axis == 3);
     int log, n, style;
     double temp, min_o = 0., max_o = 0., tmp2 = 0.;/*-Wall*/
 
@@ -1975,7 +1975,7 @@ void GScale(double min, double max, int axis, DevDesc *dd)
      * subroutine which could be called by do_axis {when [xy]axt != 'n'} ..
      */
 
-    swap = min > max;
+    swap = Rboolean(min > max);
     if(swap) { /* Feature: in R, something like  xlim = c(100,0)  just works */
 	temp = min; min = max; max = temp;
     }
@@ -2039,7 +2039,7 @@ void GSetupAxis(int axis, DevDesc *dd)
  *   xlog or ylog = TRUE ? */
     double min, max;
     int n;
-    Rboolean is_xaxis = (axis == 1 || axis == 3);
+    Rboolean is_xaxis = Rboolean(axis == 1 || axis == 3);
 
     if(is_xaxis) {
 	n = Rf_gpptr(dd)->lab[0];
@@ -2079,7 +2079,7 @@ void attribute_hidden GInit(GPar *dp)
     dp->valid = FALSE;
 
     dp->ann = TRUE;
-    dp->ask = Rf_GetOptionParAsk();
+    dp->ask = Rboolean(Rf_GetOptionParAsk());
     dp->err = 0;
     dp->bty = 'o';
 
@@ -2336,7 +2336,7 @@ void GSavePars(DevDesc *dd)
 void GRestorePars(DevDesc *dd)
 {
     Rf_gpptr(dd)->adj = adjsave;
-    Rf_gpptr(dd)->ann = annsave;
+    Rf_gpptr(dd)->ann = Rboolean(annsave);
     Rf_gpptr(dd)->bty = btysave;
     Rf_gpptr(dd)->cex = cexsave;
     Rf_gpptr(dd)->lheight = lheightsave;
@@ -4326,13 +4326,13 @@ Rboolean attribute_hidden isNAcol(SEXP col, int index, int ncol)
 	result = TRUE;
     else {
 	if (isLogical(col))
-	    result = LOGICAL(col)[index % ncol] == NA_LOGICAL;
+	    result = Rboolean(LOGICAL(col)[index % ncol] == NA_LOGICAL);
 	else if (isString(col))
-	    result = strcmp(CHAR(STRING_ELT(col, index % ncol)), "NA") == 0;
+	    result = Rboolean(strcmp(CHAR(STRING_ELT(col, index % ncol)), "NA") == 0);
 	else if (isInteger(col))
-	    result = INTEGER(col)[index % ncol] == NA_INTEGER;
+	    result = Rboolean(INTEGER(col)[index % ncol] == NA_INTEGER);
 	else if (isReal(col))
-	    result = !R_FINITE(REAL(col)[index % ncol]);
+	    result = Rboolean(!R_FINITE(REAL(col)[index % ncol]));
 	else
 	    error(_("Invalid color"));
     }

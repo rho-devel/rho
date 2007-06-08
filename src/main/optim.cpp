@@ -568,15 +568,15 @@ vmmin(int n0, double *b, double *Fmin, optimfn fminfn, optimgr fmingr,
 		if (count < n) {
 		    f = fminfn(n0, b, ex);
 		    funcount++;
-		    accpoint = R_FINITE(f) &&
-			(f <= *Fmin + gradproj * steplength * acctol);
+		    accpoint = Rboolean(R_FINITE(f) &&
+			(f <= *Fmin + gradproj * steplength * acctol));
 		    if (!accpoint) {
 			steplength *= stepredn;
 		    }
 		}
 	    } while (!(count == n || accpoint));
-	    enough = (f > abstol) &&
-		fabs(f - *Fmin) > reltol * (fabs(*Fmin) + reltol);
+	    enough = Rboolean((f > abstol) &&
+		fabs(f - *Fmin) > reltol * (fabs(*Fmin) + reltol));
 	    /* stop if value if small or if relative change is low */
 	    if (!enough) {
 		count = n;
@@ -964,7 +964,7 @@ void cgmin(int n, double *Bvec, double *X, double *Fmin,
 			if (count < n) { /* point is different */
 			    f = fminfn(n, Bvec, ex);
 			    funcount++;
-			    accpoint = (R_FINITE(f) &&
+			    accpoint = Rboolean(R_FINITE(f) &&
 					f <= *Fmin + gradproj * steplength * acctol);
 
 			    if (!accpoint) {

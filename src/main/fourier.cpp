@@ -184,7 +184,7 @@ static Rboolean ok_n(int n, int *f, int nf)
 		return TRUE;
 	}
     }
-    return n == 1;
+    return Rboolean(n == 1);
 }
 
 static int nextn(int n, int *f, int nf)

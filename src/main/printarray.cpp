@@ -500,7 +500,7 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	 *       are printed as matrices -- if options("max.print") allows */
 	for (i = 2, nb = 1; i < ndim; i++)
 	    nb *= INTEGER(dim)[i];
-	max_reached = (b > 0 && R_print.max / b < nb);
+	max_reached = Rboolean(b > 0 && R_print.max / b < nb);
 	if (max_reached) { /* i.e., also  b > 0, nr > 0, nc > 0, nb > 0 */
 	    /* nb_pr := the number of matrix slices to be printed */
 	    nb_pr = ceil_DIV(R_print.max, b);

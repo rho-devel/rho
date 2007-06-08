@@ -85,7 +85,7 @@ SEXP R_traceOnOff(SEXP onOff) {
     SEXP value;
     Rboolean prev = GET_TRACE_STATE;
     if(length(onOff) > 0) {
-        Rboolean _new = asLogical(onOff);
+        Rboolean _new = Rboolean(asLogical(onOff));
         if(_new == TRUE || _new == FALSE)
             SET_TRACE_STATE(_new);
         else

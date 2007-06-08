@@ -220,7 +220,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied)
 	if (TAG(f) != R_DotsSymbol) {
 	    i = 1;
 	    for (b = supplied; b != R_NilValue; b = CDR(b)) {
-		if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), 1)) {
+		if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), TRUE)) {
 		    if (ARGUSED(f) == 2)
 #ifdef MULTIPLE_MATCHES
 {
@@ -269,7 +269,7 @@ nextarg1:
 		i = 1;
 		for (b = supplied; b != R_NilValue; b = CDR(b)) {
 		    if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
-			pmatch(TAG(f), TAG(b), seendots)) {
+			pmatch(TAG(f), TAG(b), Rboolean(seendots))) {
 			if (ARGUSED(b))
 			    error(_("argument %d matches multiple formal arguments"), i);
 			if (ARGUSED(f) == 1)
@@ -385,7 +385,7 @@ nextarg2:
 	if(last != R_NilValue) {
 	    errorcall(R_GlobalContext->call,
 		      _("unused argument(s) %s"), 
-		      CHAR(STRING_ELT(deparse1line(unused, 0), 0)) + 4);
+		      CHAR(STRING_ELT(deparse1line(unused, FALSE), 0)) + 4);
 	}
     }
     UNPROTECT(1);

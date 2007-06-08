@@ -834,7 +834,7 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(w = switchList(CDR(args), rho));
     if (isString(x)) {
 	for (y = w; y != R_NilValue; y = CDR(y))
-	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), 1)) {
+	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), TRUE)) {
 		while (CAR(y) == R_MissingArg && y != R_NilValue)
 		    y = CDR(y);
 		UNPROTECT(1);

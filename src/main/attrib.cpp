@@ -30,6 +30,9 @@
 #include <Rdefines.h>
 #include <basedecl.h>
 
+#undef TRUE
+#undef FALSE
+
 static void checkNames(SEXP, SEXP);
 static SEXP installAttrib(SEXP, SEXP, SEXP);
 static SEXP removeAttrib(SEXP, SEXP);

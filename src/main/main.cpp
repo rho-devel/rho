@@ -746,7 +746,7 @@ void setup_Rmainloop(void)
     }
 #endif
 #ifdef SUPPORT_MBCS
-    mbcslocale = MB_CUR_MAX > 1;
+    mbcslocale = Rboolean(MB_CUR_MAX > 1);
 #endif
 #ifdef Win32
     {
@@ -1416,7 +1416,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     int errorOccurred;
     Rboolean again;
     Rboolean useData;
-    useData = LOGICAL(VECTOR_ELT(f, 2))[0];
+    useData = Rboolean(LOGICAL(VECTOR_ELT(f, 2))[0]);
 
     PROTECT(e = allocVector(LANGSXP, 5 + useData));
     SETCAR(e, VECTOR_ELT(f, 0));
@@ -1444,7 +1444,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
               /* It would be nice to identify the function. */
 	    warning(_("top-level task callback did not return a logical value"));
 	}
-	again = asLogical(val);
+	again = Rboolean(asLogical(val));
 	UNPROTECT(1);
     } else {
         /* warning("error occurred in top-level task callback\n"); */

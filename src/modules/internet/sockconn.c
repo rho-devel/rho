@@ -41,7 +41,7 @@ static void listencleanup(void *data)
 
 static Rboolean sock_open(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn this = (Rsockconn)con->connprivate;
     int sock, sock1, mlen;
     int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
     char buf[256];
@@ -98,14 +98,14 @@ static Rboolean sock_open(Rconnection con)
 
 static void sock_close(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn this = (Rsockconn)con->connprivate;
     R_SockClose(this->fd);
     con->isopen = FALSE;
 }
 
 static int sock_read_helper(Rconnection con, void *ptr, size_t size)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn this = (Rsockconn)con->connprivate;
     int res;
     int nread = 0, n;
 
@@ -161,7 +161,7 @@ static size_t sock_read(void *ptr, size_t size, size_t nitems,
 static size_t sock_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->private;
+    Rsockconn this = (Rsockconn)con->connprivate;
 
     return R_SockWrite(this->fd, ptr, size * nitems)/size;
 }
@@ -172,15 +172,15 @@ Rconnection in_R_newsock(char *host, int port, int server, char *mode)
 
     new = (Rconnection) malloc(sizeof(struct Rconn));
     if(!new) error(_("allocation of socket connection failed"));
-    new->class = (char *) malloc(strlen("socket") + 1);
-    if(!new->class) {
+    new->connclass = (char *) malloc(strlen("socket") + 1);
+    if(!new->connclass) {
 	free(new);
 	error(_("allocation of socket connection failed"));
     }
-    strcpy(new->class, "socket");
+    strcpy(new->connclass, "socket");
     new->description = (char *) malloc(strlen(host) + 10);
     if(!new->description) {
-	free(new->class); free(new);
+	free(new->connclass); free(new);
 	error(_("allocation of socket connection failed"));
     }
     init_con(new, host, mode);
@@ -191,13 +191,13 @@ Rconnection in_R_newsock(char *host, int port, int server, char *mode)
     new->fgetc = &dummy_fgetc;
     new->read = &sock_read;
     new->write = &sock_write;
-    new->private = (void *) malloc(sizeof(struct sockconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    new->connprivate = (void *) malloc(sizeof(struct sockconn));
+    if(!new->connprivate) {
+	free(new->description); free(new->connclass); free(new);
 	error(_("allocation of socket connection failed"));
     }
-    ((Rsockconn)new->private)-> port = port;
-    ((Rsockconn)new->private)-> server = server;
+    ((Rsockconn)new->connprivate)-> port = port;
+    ((Rsockconn)new->connprivate)-> server = server;
     return new;
 }
 

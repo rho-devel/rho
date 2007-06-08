@@ -114,9 +114,9 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(snr = allocMatrix(TYPEOF(vals), nr, nc));
     if(lendat) {
 	if (isVector(vals))
-	    copyMatrix(snr, vals, byrow);
+	    copyMatrix(snr, vals, Rboolean(byrow));
 	else
-	    copyListMatrix(snr, vals, byrow);
+	    copyListMatrix(snr, vals, Rboolean(byrow));
     } else if (isVector(vals)) { /* fill with NAs */
 	int i, j;
 	switch(TYPEOF(vals)) {
@@ -1131,13 +1131,13 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args); args = CDR(args);
     n = asInteger(CAR(args)); args = CDR(args);
     p = asInteger(CAR(args)); args = CDR(args);
-    NaRm = asLogical(CAR(args));
+    NaRm = Rboolean(asLogical(CAR(args)));
     if (n == NA_INTEGER || n < 0)
 	errorcall(call, _("invalid value of 'n'"));
     if (p == NA_INTEGER || p < 0)
 	errorcall(call, _("invalid value of 'p'"));
     if (NaRm == NA_LOGICAL) errorcall(call, _("invalid value of 'na.rm'"));
-    keepNA = !NaRm;
+    keepNA = Rboolean(!NaRm);
 
     OP = PRIMVAL(op);
     switch (type = TYPEOF(x)) {

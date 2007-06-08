@@ -464,11 +464,11 @@ static Rboolean file_open(Rconnection con)
 #endif
     thisconn->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     if(mlen >= 2 && con->mode[1] == '+')
 	con->canread = con->canwrite = TRUE;
-    thisconn->last_was_write = !con->canread;
+    thisconn->last_was_write = Rboolean(!con->canread);
     thisconn->rpos = 0;
     if(con->canwrite) thisconn->wpos = f_tell(fp);
     if(mlen >= 2 && con->mode[mlen-1] == 'b') con->text = FALSE;
@@ -701,8 +701,8 @@ static Rboolean fifo_open(Rconnection con)
     struct stat sb;
 
     name = R_ExpandFileName(con->description);
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     if(mlen >= 2 && con->mode[1] == '+') con->canread = TRUE;
 
     /* if we are to write, create the fifo if needed */
@@ -847,7 +847,7 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     ncon = NextConnection();
     con = Connections[ncon] = newfifo(file, strlen(open) ? open : /*CCAST*/(char*)("r"));
-    con->blocking = block;
+    con->blocking = Rboolean(block);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -902,8 +902,8 @@ static Rboolean pipe_open(Rconnection con)
     }
     ((Rfileconn)(con->connprivate))->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w');
+    con->canread = Rboolean(!con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     set_iconv(con);
@@ -1037,8 +1037,8 @@ static Rboolean gzfile_open(Rconnection con)
     }
     ((Rgzfileconn)(con->connprivate))->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     set_iconv(con);
@@ -1207,8 +1207,8 @@ static Rboolean bzfile_open(Rconnection con)
     int bzerror;
     char mode[] = "rb";
 
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     /* regardless of the R view of the file, the file must be opened in
        binary mode where it matters */
     mode[0] = con->mode[0];
@@ -1395,8 +1395,8 @@ static Rboolean clp_open(Rconnection con)
     Rclpconn thisconn = /*CCAST*/(clpconn*)con->connprivate;
 
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     thisconn->pos = 0;
     if(con->canread) {
 	/* copy the clipboard contents now */
@@ -1695,8 +1695,8 @@ static Rconnection newterminal(char *description, char *mode)
     }
     init_con(newconn, description, mode);
     newconn->isopen = TRUE;
-    newconn->canread = (strcmp(mode, "r") == 0);
-    newconn->canwrite = (strcmp(mode, "w") == 0);
+    newconn->canread = Rboolean(strcmp(mode, "r") == 0);
+    newconn->canwrite = Rboolean(strcmp(mode, "w") == 0);
     newconn->destroy = &null_close;
     newconn->connprivate = NULL;
     return newconn;
@@ -1946,7 +1946,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 		thisconn->lastlinelength = newlen;
 	    }
 	    strcpy(thisconn->lastline, p);
-	    con->incomplete = strlen(thisconn->lastline) > 0;
+	    con->incomplete = Rboolean(strlen(thisconn->lastline) > 0);
 	    break;
 	}
     }
@@ -2152,7 +2152,7 @@ SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
     ncon = NextConnection();
     con = R_newsock(host, port, server, open);
     Connections[ncon] = con;
-    con->blocking = blocking;
+    con->blocking = Rboolean(blocking);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -2254,7 +2254,7 @@ SEXP attribute_hidden do_open(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "blocking");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     if(strlen(open) > 0) strcpy(con->mode, open);
-    con->blocking = block;
+    con->blocking = Rboolean(block);
     success = con->open(con);
     if(!success) {
 	/* con_close(i); user might have a reference */
@@ -2585,7 +2585,7 @@ no_more_lines:
 			con->description);
 	} else {
 	    /* push back the rest */
-	    con_pushback(con, 0, buf);
+	    con_pushback(con, FALSE, buf);
 	    con->incomplete = TRUE;
 	}
     }
@@ -3748,7 +3748,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     Connections[ncon] = con;
-    con->blocking = block;
+    con->blocking = Rboolean(block);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -3807,7 +3807,7 @@ static Rboolean gzcon_open(Rconnection con)
     if(!icon->open(icon)) return FALSE;
     con->isopen = TRUE;
     con->canwrite = icon->canwrite;
-    con->canread = !con->canwrite;
+    con->canread = Rboolean(!con->canwrite);
     con->save = -1000;
 
     priv->s.zalloc = (alloc_func)0;
@@ -4114,7 +4114,7 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     ((Rgzconn)(newconn->connprivate))->con = incon;
     ((Rgzconn)(newconn->connprivate))->cp = level;
     ((Rgzconn)(newconn->connprivate))->nsaved = -1;
-    ((Rgzconn)(newconn->connprivate))->allow = allow;
+    ((Rgzconn)(newconn->connprivate))->allow = Rboolean(allow);
 
     Connections[icon] = newconn;
     strncpy(newconn->encname, incon->encname, 100);

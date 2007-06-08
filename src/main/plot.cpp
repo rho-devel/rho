@@ -825,7 +825,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	umin = usr[0];
 	umax = usr[1];
 	if (umin > umax) {
-	    reversed = (axp[0] > axp[1]);
+	    reversed = Rboolean(axp[0] > axp[1]);
 	    if (reversed) {
 		/* have *reversed* log axis -- whereas
 		 * the switch(n) { .. } below assumes *increasing* values
@@ -1045,7 +1045,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* This indicates whether or not ticks and the axis line */
     /* should be plotted: TRUE => show, FALSE => don't show. */
 
-    doticks = asLogical(CAR(args));
+    doticks = Rboolean(asLogical(CAR(args)));
     doticks = (doticks == NA_LOGICAL) ? TRUE : (Rboolean) doticks;
     args = CDR(args);
 
@@ -1150,7 +1150,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* Determine the tickmark positions.  Note that these may fall */
     /* outside the plot window. We will clip them in the code below. */
 
-    create_at = (length(at) == 0);
+    create_at = Rboolean(length(at) == 0);
     if (create_at) {
 	PROTECT(at = CreateAtVector(axp, usr, nint, logflag));
     }
@@ -3723,7 +3723,7 @@ SEXP attribute_hidden do_playDL(SEXP call, SEXP op, SEXP args, SEXP env)
 	dd->displayList = theList;
     if (theList != R_NilValue) {
 	ask = Rf_gpptr(dd)->ask;
-	Rf_gpptr(dd)->ask = 1;
+	Rf_gpptr(dd)->ask = TRUE;
 	GReset(dd);
 	while (theList != R_NilValue) {
 	    SEXP theOperation = CAR(theList);
@@ -3733,7 +3733,7 @@ SEXP attribute_hidden do_playDL(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (!Rf_gpptr(dd)->valid) break;
 	    theList = CDR(theList);
 	}
-	Rf_gpptr(dd)->ask = ask;
+	Rf_gpptr(dd)->ask = Rboolean(ask);
     }
     return R_NilValue;
 }
@@ -3765,7 +3765,7 @@ static Rboolean SymbolRange(double *x, int n, double *xmax, double *xmin)
 	    if (*xmax < x[i]) *xmax = x[i];
 	    if (*xmin > x[i]) *xmin = x[i];
 	}
-    return(*xmax >= *xmin && *xmin >= 0);
+    return Rboolean(*xmax >= *xmin && *xmin >= 0);
 }
 
 static void CheckSymbolPar(SEXP call, SEXP p, int *nr, int *nc)

@@ -1190,6 +1190,8 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
 #define SET_INTEGER_ELT(x,__i__,v)	(INTEGER_ELT(x,__i__)=(v))
 #define SET_REAL_ELT(x,__i__,v)		(REAL_ELT(x,__i__)=(v))
 #define SET_COMPLEX_ELT(x,__i__,v)	(COMPLEX_ELT(x,__i__)=(v))
+#undef TRUE
+#undef FALSE
 
 static SEXP InCHARSXP (FILE *fp, InputRoutines *m, SaveLoadData *d)
 {
@@ -2233,7 +2235,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	errorcall(call, _("'ascii' must be logical"));
-    ascii = INTEGER(CADDR(args))[0];
+    ascii = Rboolean(INTEGER(CADDR(args))[0]);
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSaveFormatVersion;

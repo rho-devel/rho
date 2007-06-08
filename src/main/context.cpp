@@ -155,7 +155,7 @@ void attribute_hidden R_restore_globals(RCNTXT *cptr)
     R_PPStackTop = cptr->cstacktop;
     R_EvalDepth = cptr->evaldepth;
     vmaxset(cptr->vmax);
-    R_interrupts_suspended = cptr->intsusp;
+    R_interrupts_suspended = Rboolean(cptr->intsusp);
     R_HandlerStack = cptr->handlerstack;
     R_RestartStack = cptr->restartstack;
 #ifdef BYTECODE

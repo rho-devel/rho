@@ -44,7 +44,7 @@ static Rboolean random1(double (*f) (double), double *a, int na, double *x, int 
     for (i = 0; i < n; i++) {
 	ai = a[i % na];
 	x[i] = f(ai);
-	if (!R_FINITE(x[i])) naflag = 1;
+	if (!R_FINITE(x[i])) naflag = TRUE;
     }
     return(naflag);
 }
@@ -116,7 +116,7 @@ static Rboolean random2(double (*f) (double, double), double *a, int na, double 
 	ai = a[i % na];
 	bi = b[i % nb];
 	x[i] = f(ai, bi);
-	if (!R_FINITE(x[i])) naflag = 1;
+	if (!R_FINITE(x[i])) naflag = TRUE;
     }
     return(naflag);
 }
@@ -159,7 +159,7 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
     else {
 	PROTECT(a = coerceVector(CADR(args), REALSXP));
 	PROTECT(b = coerceVector(CADDR(args), REALSXP));
-	naflag = 0;
+	naflag = FALSE;
 	GetRNGstate();
 	switch (PRIMVAL(op)) {
 	    RAND2(0, rbeta);
@@ -249,7 +249,7 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(a = coerceVector(a, REALSXP));
 	PROTECT(b = coerceVector(b, REALSXP));
 	PROTECT(c = coerceVector(c, REALSXP));
-	naflag = 0;
+	naflag = FALSE;
 	GetRNGstate();
 	switch (PRIMVAL(op)) {
 	    RAND3(0, rhyper);

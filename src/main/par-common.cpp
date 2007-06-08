@@ -12,7 +12,7 @@
     }
     else if (streql(what, "ann")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
-	R_DEV__(ann) = (ix != 0);/* NA |-> TRUE */
+	R_DEV__(ann) = Rboolean(ix != 0);/* NA |-> TRUE */
     }
     else if (streql(what, "bty")) {
 	lengthCheck(what, value, 1, call);

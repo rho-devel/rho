@@ -21,10 +21,6 @@
 #ifndef R_INTERNALS_H_
 #define R_INTERNALS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <R_ext/Arith.h>
 #include <R_ext/Boolean.h>
 #include <R_ext/Complex.h>
@@ -43,6 +39,10 @@ extern "C" {
 #include <ctype.h>
 
 #include <R_ext/libextern.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef unsigned char Rbyte;
 
@@ -329,9 +329,10 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 typedef struct SEXPREC *SEXP;
 
 #define CHAR(x)		R_CHAR(x)
-char *(R_CHAR)(SEXP x);
 
 #endif /* USE_RINTERNALS */
+
+char *(R_CHAR)(SEXP x);
 
 /* Accessor functions.  Many are declared using () to avoid the macro
    definitions in the USE_RINTERNALS section.
@@ -996,6 +997,12 @@ SEXP Rf_ScalarReal(double);
 SEXP Rf_ScalarString(SEXP);
 #endif
 
+/*
+ * 2007/06/06 arr:
+ * Function prototypes that don't appear to be defined anywhere else:
+ */
+
+SEXP R_execMethod(SEXP op, SEXP rho);
 
 #ifdef __cplusplus
 }

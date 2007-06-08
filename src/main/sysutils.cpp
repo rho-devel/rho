@@ -63,7 +63,7 @@ extern	Rboolean useaqua;
 Rboolean attribute_hidden R_FileExists(char *path)
 {
     struct stat sb;
-    return stat(R_ExpandFileName(path), &sb) == 0;
+    return Rboolean(stat(R_ExpandFileName(path), &sb) == 0);
 }
 
 double attribute_hidden R_FileMtime(char *path)
@@ -92,8 +92,8 @@ double attribute_hidden R_FileMtime(char *path)
 
 Rboolean attribute_hidden R_HiddenFile(char *name)
 {
-    if (name && name[0] != '.') return 0;
-    else return 1;
+    if (name && name[0] != '.') return FALSE;
+    else return TRUE;
 }
 
 

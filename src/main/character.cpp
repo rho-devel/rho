@@ -735,7 +735,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 	    SET_STRING_ELT(ans, i, NA_STRING);
 	else {
 	    s = translateChar(STRING_ELT(x, i));
-	    warn = warn | !utf8strIsASCII(s);
+	    warn = Rboolean(warn | !utf8strIsASCII(s));
 	    AllocBuffer(strlen(s) + 1, &cbuff);
 	    SET_STRING_ELT(ans, i, stripchars(s, minlen));
 	}
@@ -2023,7 +2023,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef SUPPORT_UTF8
     /* test for non-ASCII strings */
     if(mbcslocale) {
-        Rboolean warn = !utf8strIsASCII(CHAR(STRING_ELT(pat, 0)));
+        Rboolean warn = Rboolean(!utf8strIsASCII(CHAR(STRING_ELT(pat, 0))));
         if(!warn)
             for(i = 0 ; i < length(vec) ; i++)
                 if(!utf8strIsASCII(CHAR(STRING_ELT(vec, i)))) {
@@ -2227,7 +2227,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
         errorcall(call, _("argument 'x' must be raw, integer or logical"));
     if (!isString(stype)  || LENGTH(stype) != 1)
         errorcall(call, _("argument 'type' must be a character string"));
-    useRaw = strcmp(CHAR(STRING_ELT(stype, 0)), "integer");
+    useRaw = Rboolean(strcmp(CHAR(STRING_ELT(stype, 0)), "integer"));
     fac = useRaw ? 8 : 32;
     if (len% fac)
         errorcall(call, _("argument 'x' must be a multiple of %d long"), fac);

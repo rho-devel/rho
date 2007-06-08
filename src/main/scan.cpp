@@ -423,7 +423,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m;
 #ifdef SUPPORT_MBCS
-    Rboolean dbcslocale = (MB_CUR_MAX == 2);
+    Rboolean dbcslocale = Rboolean(MB_CUR_MAX == 2);
 #endif
 
     m = 0;
@@ -1025,7 +1025,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strlen(p) == 1) data.comchar = (unsigned char)*p;
     if(escapes == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' value"), "allowEscapes");
-    data.escapes = escapes != 0;
+    data.escapes = Rboolean(escapes != 0);
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -1094,7 +1094,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     int blocksize, nlines, blskip;
     char *p;
 #ifdef SUPPORT_MBCS
-    Rboolean dbcslocale = (MB_CUR_MAX == 2);
+    Rboolean dbcslocale = Rboolean(MB_CUR_MAX == 2);
 #endif
     LocalData data = {NULL, 0, 0, 0, NULL, NULL, NO_COMCHAR, 0, 0, FALSE,
 		      FALSE, 0, FALSE, FALSE, NULL};
@@ -1165,7 +1165,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.save = 0;
 
     for (;;) {
-	c = scanchar(inquote, &data);
+	c = scanchar(Rboolean(inquote), &data);
 	if (c == R_EOF)	 {
 	    if (nfields != 0)
 		INTEGER(ans)[nlines] = nfields;
@@ -1209,7 +1209,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (strchr(data.quoteset, c)) {
 		quote = c;
 		inquote = 1;
-		while ((c = scanchar(inquote, &data)) != quote) {
+		while ((c = scanchar(Rboolean(inquote), &data)) != quote) {
 		    if (c == R_EOF || c == '\n') {
 			if(!data.wasopen) data.con->close(data.con);
 			errorcall(call,
@@ -1761,20 +1761,20 @@ static Rboolean isna(SEXP x, int indx)
     Rcomplex rc;
     switch(TYPEOF(x)) {
     case LGLSXP:
-	return LOGICAL(x)[indx] == NA_LOGICAL;
+	return Rboolean(LOGICAL(x)[indx] == NA_LOGICAL);
 	break;
     case INTSXP:
-	return INTEGER(x)[indx] == NA_INTEGER;
+	return Rboolean(INTEGER(x)[indx] == NA_INTEGER);
 	break;
     case REALSXP:
-	return ISNAN(REAL(x)[indx]);
+	return Rboolean(ISNAN(REAL(x)[indx]));
 	break;
     case STRSXP:
-	return STRING_ELT(x, indx) == NA_STRING;
+	return Rboolean(STRING_ELT(x, indx) == NA_STRING);
 	break;
     case CPLXSXP:
 	rc = COMPLEX(x)[indx];
-	return ISNAN(rc.r) || ISNAN(rc.i);
+	return Rboolean(ISNAN(rc.r) || ISNAN(rc.i));
 	break;
     default:
 	break;
@@ -1924,7 +1924,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, qmethod,
+			     EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		xj = VECTOR_ELT(x, j);
@@ -1935,16 +1935,16 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 			/* We cannot assume factors have integer levels */
 			if(TYPEOF(xj) == INTSXP)
 			    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						 quote_col[j], qmethod,
+						 quote_col[j], Rboolean(qmethod),
 						 &strBuf, cdec);
 			else if(TYPEOF(xj) == REALSXP)
 			    tmp = EncodeElement2(levels[j], int(REAL(xj)[i] - 1),
-						 quote_col[j], qmethod,
+						 quote_col[j], Rboolean(qmethod),
 						 &strBuf, cdec);
 			else
 			    error("column %s claims to be a factor but does not have numeric codes", j+1);
 		    } else {
-			tmp = EncodeElement2(xj, i, quote_col[j], qmethod,
+			tmp = EncodeElement2(xj, i, quote_col[j], Rboolean(qmethod),
 					     &strBuf, cdec);
 		    }
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
@@ -1966,13 +1966,13 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, qmethod,
+			     EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		if(j > 0) Rconn_printf(con, "%s", csep);
 		if(isna(x, i + j*nr)) tmp = cna;
 		else {
-		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], qmethod,
+		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], Rboolean(qmethod),
 					&strBuf, cdec);
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
 		}

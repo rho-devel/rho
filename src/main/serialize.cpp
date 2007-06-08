@@ -1745,7 +1745,7 @@ SEXP attribute_hidden do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	errorcall(call, _("'ascii' must be logical"));
-    ascii = INTEGER(CADDR(args))[0];
+    ascii = Rboolean(INTEGER(CADDR(args))[0]);
     if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
 
@@ -2180,7 +2180,7 @@ SEXP attribute_hidden R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
         error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
         error(_("bad variable names"));
-    force = asLogical(forcesxp);
+    force = Rboolean(asLogical(forcesxp));
 
     len = LENGTH(vars);
     PROTECT(val = allocVector(VECSXP, len));
@@ -2218,7 +2218,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
                         SEXP compsxp, SEXP hook)
 {
     PROTECT_INDEX vpi;
-    Rboolean compress = asLogical(compsxp);
+    Rboolean compress = Rboolean(asLogical(compsxp));
     SEXP key;
 
     value = R_serialize(value, R_NilValue, ascii, hook);
@@ -2238,7 +2238,7 @@ SEXP attribute_hidden
 R_lazyLoadDBfetch(SEXP key, SEXP file, SEXP compsxp, SEXP hook)
 {
     PROTECT_INDEX vpi;
-    Rboolean compressed = asLogical(compsxp);
+    Rboolean compressed = Rboolean(asLogical(compsxp));
     SEXP val;
 
     PROTECT_WITH_INDEX(val = readRawFromFile(file, key), &vpi);

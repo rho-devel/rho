@@ -297,7 +297,7 @@ typedef struct _NewDevDesc {
      * R_GE_gcontext parameters that should be honoured (if possible):
      *   font, cex, ps
      */
-    void (*metricInfo)(int, R_GE_gcontext*, const double*, const double*, const double*, struct _NewDevDesc*);
+    void (*metricInfo)(int, R_GE_gcontext*, double*, double*, double*, struct _NewDevDesc*);
     /*
      * device_Mode is called whenever the graphics engine	
      * starts drawing (mode=1) or stops drawing (mode=0)	

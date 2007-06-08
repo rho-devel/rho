@@ -559,7 +559,7 @@ static void PrintExpression(SEXP s)
     SEXP u;
     int i, n;
 
-    u = deparse1(s, 0, R_print.useSource | DEFAULTDEPARSE);
+    u = deparse1(s, FALSE, R_print.useSource | DEFAULTDEPARSE);
     n = LENGTH(u);
     for (i = 0; i < n ; i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
@@ -620,7 +620,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	break;
     case SYMSXP: /* Use deparse here to handle backtick quotification
 		  * of "weird names" */
-	t = deparse1(s, 0, SIMPLEDEPARSE);
+	t = deparse1(s, FALSE, SIMPLEDEPARSE);
 	Rprintf("%s\n", CHAR(STRING_ELT(t, 0))); /* translated */
 	break;
     case SPECIALSXP:
@@ -645,7 +645,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	}
 	if(s2 != R_UnboundValue) {
 	    PROTECT(s2);
-	    t = deparse1(s2, 0, DEFAULTDEPARSE);
+	    t = deparse1(s2, FALSE, DEFAULTDEPARSE);
 	    Rprintf("%s ", CHAR(STRING_ELT(t, 0))); /* translated */
 	    Rprintf(".Primitive(\"%s\")\n", PRIMNAME(s));
 	    UNPROTECT(1);
@@ -666,7 +666,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
     case LANGSXP:
 	t = getAttrib(s, R_SourceSymbol);
 	if (isNull(t) || !R_print.useSource)
-	    t = deparse1(s, 0, R_print.useSource | DEFAULTDEPARSE);
+	    t = deparse1(s, FALSE, R_print.useSource | DEFAULTDEPARSE);
 	for (i = 0; i < LENGTH(t); i++)
 	    Rprintf("%s\n", CHAR(STRING_ELT(t, i))); /* translated */
 #ifdef BYTECODE

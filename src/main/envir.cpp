@@ -876,7 +876,7 @@ SEXP R_GetVarLocSymbol(R_varloc_t vl)
 
 Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
-    return MISSING((SEXP) vl);
+    return Rboolean(MISSING((SEXP) vl));
 }
 
 void R_SetVarLocValue(R_varloc_t vl, SEXP value)
@@ -1312,7 +1312,7 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 	    }
 	    hashcode = HASHVALUE(c) % HASHSIZE(HASHTAB(rho));
 	    R_HashSet(hashcode, symbol, HASHTAB(rho), value,
-		      FRAME_IS_LOCKED(rho));
+		      Rboolean(FRAME_IS_LOCKED(rho)));
 	    if (R_HashSizeCheck(HASHTAB(rho)))
 		SET_HASHTAB(rho, R_HashResize(HASHTAB(rho)));
 	}
@@ -1648,7 +1648,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("invalid '%s' argument"), "inherits");
 
     /* Search for the object */
-    rval = findVar1mode(t1, genv, gmode, ginherits, PRIMVAL(op));
+    rval = findVar1mode(t1, genv, gmode, ginherits, Rboolean(PRIMVAL(op)));
 
     if (PRIMVAL(op)) { /* have get(.) */
 	if (rval == R_UnboundValue) {
@@ -1688,8 +1688,8 @@ static SEXP gfind(char *name, SEXP env, SEXPTYPE mode, SEXP ifnotfound,
 
     t1 = install(name);
 
-    /* Search for the object - last arg is 1 to 'get' */
-    rval = findVar1mode(t1, env, mode, inherits, 1);
+    /* Search for the object - last arg is TRUE to 'get' */
+    rval = findVar1mode(t1, env, mode, inherits, TRUE);
 
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {
@@ -1974,7 +1974,7 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isValidStringF(name))
 	error(_("invalid value for '%s'"), "name");
 
-    isSpecial = IS_USER_DATABASE(CAR(args));
+    isSpecial = Rboolean(IS_USER_DATABASE(CAR(args)));
 
     if(!isSpecial) {
 	if (isNewList(CAR(args))) {
@@ -2100,7 +2100,7 @@ SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(s = ENCLOS(t));
 	x = ENCLOS(s);
 	SET_ENCLOS(t, x);
-        isSpecial = IS_USER_DATABASE(s);
+        isSpecial = Rboolean(IS_USER_DATABASE(s));
 	if(isSpecial) {
 	    R_ObjectTable *tb = (R_ObjectTable*) R_ExternalPtrAddr(HASHTAB(s));
 	    if(tb->onDetach) tb->onDetach(tb);
@@ -2323,7 +2323,7 @@ SEXP attribute_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
 
-    return R_lsInternal(env, all);
+    return R_lsInternal(env, Rboolean(all));
 }
 
 /* takes a *list* of environments and a boolean indicating whether to get all
@@ -2714,7 +2714,7 @@ Rboolean R_EnvironmentIsLocked(SEXP env)
     	error(_("use of NULL environment is defunct"));
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
-    return FRAME_IS_LOCKED(env) != 0;
+    return Rboolean(FRAME_IS_LOCKED(env) != 0);
 }
 
 SEXP attribute_hidden do_lockEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -2723,7 +2723,7 @@ SEXP attribute_hidden do_lockEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean bindings;
     checkArity(op, args);
     frame = CAR(args);
-    bindings = asLogical(CADR(args));
+    bindings = Rboolean(asLogical(CADR(args)));
     R_LockEnvironment(frame, bindings);
     return R_NilValue;
 }
@@ -2821,12 +2821,12 @@ Rboolean R_BindingIsLocked(SEXP sym, SEXP env)
     if (env == R_BaseEnv || env == R_BaseNamespace)
 	/* It is a symbol, so must have a binding even if it is
 	   R_UnboundSymbol */
-	return BINDING_IS_LOCKED(sym) != 0;
+	return Rboolean(BINDING_IS_LOCKED(sym) != 0);
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
 	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
-	return BINDING_IS_LOCKED(binding) != 0;
+	return Rboolean(BINDING_IS_LOCKED(binding) != 0);
     }
 }
 
@@ -2841,12 +2841,12 @@ Rboolean R_BindingIsActive(SEXP sym, SEXP env)
     if (env == R_BaseEnv || env == R_BaseNamespace)
 	/* It is a symbol, so must have a binding even if it is
 	   R_UnboundSymbol */
-	return IS_ACTIVE_BINDING(sym) != 0;
+	return Rboolean(IS_ACTIVE_BINDING(sym) != 0);
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
 	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
-	return IS_ACTIVE_BINDING(binding) != 0;
+	return Rboolean(IS_ACTIVE_BINDING(binding) != 0);
     }
 }
 

@@ -434,7 +434,7 @@ SEXP eval(SEXP e, SEXP rho)
 	if (TYPEOF(op) == SPECIALSXP) {
 	    int save = R_PPStackTop, flag = PRIMPRINT(op);
 	    PROTECT(CDR(e));
-	    R_Visible = flag != 1;
+	    R_Visible = Rboolean(flag != 1);
 	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
 #ifdef CHECK_VISIBILITY
 	    if(flag < 2 && R_Visible == flag) {
@@ -445,7 +445,7 @@ SEXP eval(SEXP e, SEXP rho)
 		    printf("vis: special %s\n", nm);
 	    }
 #endif
-	    if (flag < 2) R_Visible = flag != 1;
+	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    UNPROTECT(1);
 	    check_stack_balance(op, save);
 	}
@@ -453,7 +453,7 @@ SEXP eval(SEXP e, SEXP rho)
 	    int save = R_PPStackTop, flag = PRIMPRINT(op);
 	    RCNTXT cntxt;
 	    PROTECT(tmp = evalList(CDR(e), rho, op));
-	    if (flag < 2) R_Visible = flag != 1;
+	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    /* We used to insert a context only if profiling,
 	       but helps for tracebacks on .C etc. */
 	    if (R_Profiling || (PPINFO(op).kind == PP_FOREIGN)) {
@@ -470,7 +470,7 @@ SEXP eval(SEXP e, SEXP rho)
 		printf("vis: builtin %s\n", nm);
 	    }
 #endif
-	    if (flag < 2) R_Visible = flag != 1;
+	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    UNPROTECT(1);
 	    check_stack_balance(op, save);
 	}
@@ -897,7 +897,7 @@ static SEXP assignCall(SEXP op, SEXP symbol, SEXP fun,
    into a macro, especially for while loops. */
 static Rboolean asLogicalNoNA(SEXP s, SEXP call)
 {
-    Rboolean cond = asLogical(s);
+    Rboolean cond = Rboolean(asLogical(s));
     if (length(s) > 1)
 	warningcall(call,
 		    _("the condition has length > 1 and only the first element will be used"));
@@ -1442,7 +1442,7 @@ static void PrintArgs(SEXP args, SEXP op)
 	REprintf("the part of the args list of '%s' being evaluated was:\n",
 		 PRIMNAME(op));
     REprintf("   %s\n", 
-	     CHAR(STRING_ELT(deparse1line(args, 0), 0))+4);
+	     CHAR(STRING_ELT(deparse1line(args, FALSE), 0))+4);
 }
 
 
@@ -3135,15 +3135,15 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	switch (ftype) {
 	case BUILTINSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = flag != 1;
+	  R_Visible = Rboolean(flag != 1);
 	  value = PRIMFUN(fun) (call, fun, args, rho);
-          if (flag < 2) R_Visible = flag != 1;
+          if (flag < 2) R_Visible = Rboolean(flag != 1);
 	  break;
 	case SPECIALSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = flag != 1;
+	  R_Visible = Rboolean(flag != 1);
 	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-          if (flag < 2) R_Visible = flag != 1;
+          if (flag < 2) R_Visible = Rboolean(flag != 1);
 	  break;
 	case CLOSXP:
 	  value = applyClosure(call, fun, args, rho, R_BaseEnv);
@@ -3163,9 +3163,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = flag != 1;
+	R_Visible = Rboolean(flag != 1);
 	value = PRIMFUN(fun) (call, fun, args, rho);
-	if (flag < 2) R_Visible = flag != 1;
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
 	R_BCNodeStackTop -= 2;
 	R_BCNodeStackTop[-1] = value;
 	NEXT();
@@ -3187,9 +3187,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != SPECIALSXP)
 	  error(_("not a SPECIAL function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = flag != 1;
+	R_Visible = Rboolean(flag != 1);
 	value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	if (flag < 2) R_Visible = flag != 1;
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
 	BCNPUSH(value);
 	NEXT();
       }

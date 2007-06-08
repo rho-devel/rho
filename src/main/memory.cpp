@@ -997,7 +997,7 @@ static void CheckFinalizers(void)
    a cleaner way of doing this, but this will do for now. --LT */
 static Rboolean isCFinalizer(SEXP fun)
 {
-    return TYPEOF(fun) == CHARSXP;
+    return Rboolean(TYPEOF(fun) == CHARSXP);
     /*return TYPEOF(fun) == EXTPTRSXP;*/
 }
 
@@ -1157,7 +1157,7 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(onexit == NA_LOGICAL)
 	errorcall(call, _("third argument must be 'TRUE' or 'FALSE'"));
 
-    R_RegisterFinalizerEx(CAR(args), CADR(args), onexit);
+    R_RegisterFinalizerEx(CAR(args), CADR(args), Rboolean(onexit));
     return R_NilValue;
 }
 
@@ -2119,7 +2119,7 @@ SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
     if (args == R_NilValue)
 	gctime_enabled = TRUE;
     else
-	gctime_enabled = asLogical(CAR(args));
+	gctime_enabled = Rboolean(asLogical(CAR(args)));
     ans = allocVector(REALSXP, 5);
     REAL(ans)[0] = gctimes[0];
     REAL(ans)[1] = gctimes[1];
@@ -2801,9 +2801,9 @@ void (SET_HASHVALUE)(SEXP x, int v) { SET_HASHVALUE(x, v); }
 
 /* Bindings accessors */
 Rboolean attribute_hidden 
-(IS_ACTIVE_BINDING)(SEXP b) {return IS_ACTIVE_BINDING(b);}
+(IS_ACTIVE_BINDING)(SEXP b) {return Rboolean(IS_ACTIVE_BINDING(b));}
 Rboolean attribute_hidden
-(BINDING_IS_LOCKED)(SEXP b) {return BINDING_IS_LOCKED(b);}
+(BINDING_IS_LOCKED)(SEXP b) {return Rboolean(BINDING_IS_LOCKED(b));}
 void attribute_hidden 
 (SET_ACTIVE_BINDING_BIT)(SEXP b) {SET_ACTIVE_BINDING_BIT(b);}
 void attribute_hidden (LOCK_BINDING)(SEXP b) {LOCK_BINDING(b);}

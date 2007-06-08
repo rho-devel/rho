@@ -129,8 +129,8 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	int i, n = length(x), n1, n2;
 	if(n != length(y)) return FALSE;
 	for(i = 0; i < n; i++) {
-	    Rboolean na1 = (STRING_ELT(x, i) == NA_STRING),
-		na2 = (STRING_ELT(y, i) == NA_STRING);
+	    Rboolean na1 = Rboolean(STRING_ELT(x, i) == NA_STRING),
+		na2 = Rboolean(STRING_ELT(y, i) == NA_STRING);
 	    if(na1 ^ na2) return FALSE;
 	    if(na1 && na2) continue;
 	    /* NB: R strings can have embedded nuls */
@@ -172,7 +172,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	    x = CDR(x);
 	    y = CDR(y);
 	}
-	return(y == R_NilValue);
+	return Rboolean(y == R_NilValue);
     }
     case CLOSXP:
 	return(compute_identical(FORMALS(x), FORMALS(y)) &&
@@ -223,5 +223,5 @@ static Rboolean neWithNaN(double x,  double y)
 	return(R_IsNA(y) ? FALSE : TRUE);
     if(ISNAN(x))
 	return(ISNAN(y) ? FALSE : TRUE);
-    return(x != y);
+    return Rboolean(x != y);
 }

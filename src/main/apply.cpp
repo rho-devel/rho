@@ -197,7 +197,7 @@ SEXP attribute_hidden do_rapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     deflt = CAR(args); args = CDR(args);
     how = CAR(args);
     if(!isString(how)) errorcall(call, _("invalid '%s' argument"), "how");
-    replace = strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0; /* ASCII */
+    replace = Rboolean(strcmp(CHAR(STRING_ELT(how, 0)), "replace") == 0); /* ASCII */
     n = length(X);
     PROTECT(ans = allocVector(VECSXP, n));
     names = getAttrib(X, R_NamesSymbol);
@@ -237,7 +237,7 @@ SEXP attribute_hidden do_islistfactor(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
     X = CAR(args);
-    recursive = asLogical(CADR(args));
+    recursive = Rboolean(asLogical(CADR(args)));
     n = length(X);
     if(n == 0 || !isVectorList(X)) {
 	lans = FALSE;

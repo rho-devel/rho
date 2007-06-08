@@ -303,6 +303,7 @@ static R_FortranMethodDef fortranMethods[] = {
     {NULL, NULL, 0}
 };
 
+#undef FALSE
 
 void attribute_hidden
 R_init_base(DllInfo *dll)

@@ -67,7 +67,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
 	LENGTH(x) > 0 && LENGTH(y) > 0) {
 	SEXP ans = real_relop((RELOP_TYPE) PRIMVAL(op), x, y);
 	if (nx > 0 && ny > 0)
-	    mismatch = ((nx > ny) ? nx % ny : ny % nx) != 0;
+	    mismatch = Rboolean(((nx > ny) ? nx % ny : ny % nx) != 0);
 	if (mismatch)
 	    warningcall(call, _("longer object length\n\
  \tis not a multiple of shorter object length"));
@@ -81,7 +81,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
 	SEXP tmp = allocVector(STRSXP, 1);
 	PROTECT(tmp);
 	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(x) :
-		       STRING_ELT(deparse1(x, 0, DEFAULTDEPARSE), 0));
+		       STRING_ELT(deparse1(x, FALSE, DEFAULTDEPARSE), 0));
 	REPROTECT(x = tmp, xpi);
 	UNPROTECT(1);
     }
@@ -89,7 +89,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
 	SEXP tmp = allocVector(STRSXP, 1);
 	PROTECT(tmp);
 	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(y) :
-		       STRING_ELT(deparse1(y, 0, DEFAULTDEPARSE), 0));
+		       STRING_ELT(deparse1(y, FALSE, DEFAULTDEPARSE), 0));
 	REPROTECT(y = tmp, ypi);
 	UNPROTECT(1);
     }
@@ -120,7 +120,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
     xts = isTs(x);
     yts = isTs(y);
     if (nx > 0 && ny > 0)
-	mismatch = ((nx > ny) ? nx % ny : ny % nx) != 0;
+	mismatch = Rboolean(((nx > ny) ? nx % ny : ny % nx) != 0);
 
     if (xarray || yarray) {
 	if (xarray && yarray) {

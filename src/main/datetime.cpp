@@ -83,7 +83,7 @@ static Rboolean have_broken_mktime(void)
 	res = mktime(&t);
 	test_result = (res == (time_t)-1);
     }
-    return test_result > 0;
+    return Rboolean(test_result > 0);
 #else
     return FALSE;
 #endif
@@ -323,7 +323,7 @@ static double mktime0 (struct tm *tm, const int local)
     if(validate_tm(tm) < 0) return (double)(-1);
     if(!local) return mktime00(tm);
 
-    OK = tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02);
+    OK = Rboolean(tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
 #ifdef Win32
     /* Microsoft's mktime regards times before 1970-01-01 00:00:00 GMT as
        invalid! */

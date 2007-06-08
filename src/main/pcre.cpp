@@ -377,7 +377,7 @@ SEXP attribute_hidden do_pgsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* Do not repeat a 0-length match after a match, so
 	       gsub("a*", "x", "baaac") is "xbxcx" not "xbxxcx" */
 	    if(ovector[1] > last_end) {
-		ns += length_adj(s, t, ovector, re_nsub, useBytes);
+		ns += length_adj(s, t, ovector, re_nsub, Rboolean(useBytes));
 		last_end = ovector[1];
 	    }
 	    offset = ovector[1];
@@ -416,7 +416,7 @@ SEXP attribute_hidden do_pgsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		   ovector[0], ovector[1]); */
 		for (j = offset; j < ovector[0]; j++) *u++ = s[j];
 		if(ovector[1] > last_end) {
-		    u = string_adj(u, s, t, ovector, useBytes);
+		    u = string_adj(u, s, t, ovector, Rboolean(useBytes));
 		    last_end = ovector[1];
 		}
 		offset = ovector[1];

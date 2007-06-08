@@ -61,7 +61,7 @@ static Rboolean url_open(Rconnection con)
 {
     void *ctxt;
     char *url = con->description;
-    UrlScheme type = ((Rurlconn)(con->private))->type;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
 
     if(con->mode[0] != 'r') {
 	REprintf("can only open URLs for reading");
@@ -80,7 +80,7 @@ static Rboolean url_open(Rconnection con)
 	  /* error("cannot open URL '%s'", url); */
 	    return FALSE;
 	}
-	((Rurlconn)(con->private))->ctxt = ctxt;
+	((Rurlconn)(con->connprivate))->ctxt = ctxt;
 	break;
     case FTPsh:
 	ctxt = in_R_FTPOpen(url);
@@ -90,7 +90,7 @@ static Rboolean url_open(Rconnection con)
 	  /* error("cannot open URL '%s'", url); */
 	    return FALSE;
 	}
-	((Rurlconn)(con->private))->ctxt = ctxt;
+	((Rurlconn)(con->connprivate))->ctxt = ctxt;
 	break;
     default:
 	warning(_("unsupported URL scheme"));
@@ -109,14 +109,14 @@ static Rboolean url_open(Rconnection con)
 
 static void url_close(Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
     switch(type) {
     case HTTPSsh:
     case HTTPsh:
-	in_R_HTTPClose(((Rurlconn)(con->private))->ctxt);
+	in_R_HTTPClose(((Rurlconn)(con->connprivate))->ctxt);
 	break;
     case FTPsh:
-	in_R_FTPClose(((Rurlconn)(con->private))->ctxt);
+	in_R_FTPClose(((Rurlconn)(con->connprivate))->ctxt);
 	break;
     }
     con->isopen = FALSE;
@@ -124,8 +124,8 @@ static void url_close(Rconnection con)
 
 static int url_fgetc_internal(Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
-    void * ctxt = ((Rurlconn)(con->private))->ctxt;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
+    void * ctxt = ((Rurlconn)(con->connprivate))->ctxt;
     unsigned char c;
     size_t n = 0; /* -Wall */
 
@@ -144,8 +144,8 @@ static int url_fgetc_internal(Rconnection con)
 static size_t url_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    UrlScheme type = ((Rurlconn)(con->private))->type;
-    void * ctxt = ((Rurlconn)(con->private))->ctxt;
+    UrlScheme type = ((Rurlconn)(con->connprivate))->type;
+    void * ctxt = ((Rurlconn)(con->connprivate))->ctxt;
     size_t n = 0; /* -Wall */
 
     switch(type) {
@@ -167,15 +167,15 @@ static Rconnection in_R_newurl(char *description, const char * const mode)
 
     new = (Rconnection) malloc(sizeof(struct Rconn));
     if(!new) error(_("allocation of url connection failed"));
-    new->class = (char *) malloc(strlen("url") + 1);
-    if(!new->class) {
+    new->connclass = (char *) malloc(strlen("url") + 1);
+    if(!new->connclass) {
 	free(new);
 	error(_("allocation of url connection failed"));
     }
-    strcpy(new->class, "url");
+    strcpy(new->connclass, "url");
     new->description = (char *) malloc(strlen(description) + 1);
     if(!new->description) {
-	free(new->class); free(new);
+	free(new->connclass); free(new);
 	error(_("allocation of url connection failed"));
     }
     init_con(new, description, mode);
@@ -185,9 +185,9 @@ static Rconnection in_R_newurl(char *description, const char * const mode)
     new->fgetc_internal = &url_fgetc_internal;
     new->fgetc = &dummy_fgetc;
     new->read = &url_read;
-    new->private = (void *) malloc(sizeof(struct urlconn));
-    if(!new->private) {
-	free(new->description); free(new->class); free(new);
+    new->connprivate = (void *) malloc(sizeof(struct urlconn));
+    if(!new->connprivate) {
+	free(new->description); free(new->connclass); free(new);
 	error(_("allocation of url connection failed"));
     }
 

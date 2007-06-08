@@ -308,7 +308,7 @@ do_setToCConverterActiveStatus(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(status = allocVector(LGLSXP, 1));
     if(PRIMVAL(op) == 0) {
 	LOGICAL(status)[0] = el->active;
-	el->active = LOGICAL(CADR(args))[0];
+	el->active = Rboolean(LOGICAL(CADR(args))[0]);
     } else {
 	R_removeToCConverter(el);
 	LOGICAL(status)[0] = TRUE;

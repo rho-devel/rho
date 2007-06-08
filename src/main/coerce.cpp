@@ -944,7 +944,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), 0), 0));
+		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
 	}
     }
     else if (type == VECSXP) {
@@ -1046,7 +1046,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	    else
 		SET_STRING_ELT(rval, i,
-			       STRING_ELT(deparse1line(VECTOR_ELT(v, i), 0), 0));
+			       STRING_ELT(deparse1line(VECTOR_ELT(v, i), FALSE), 0));
 	}
     }
     else if (type == LISTSXP) {
@@ -1161,7 +1161,7 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(ans, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), 0), 0));
+		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
 	}
 	UNPROTECT(1);
 	break;
@@ -1225,7 +1225,7 @@ SEXP CreateTag(SEXP x)
 	&& length(STRING_ELT(x, 0)) >= 1)
 	x = install(translateChar(STRING_ELT(x, 0)));
     else
-	x = install(CHAR(STRING_ELT(deparse1(x, 1, SIMPLEDEPARSE), 0)));
+	x = install(CHAR(STRING_ELT(deparse1(x, TRUE, SIMPLEDEPARSE), 0)));
     return x;
 }
 
