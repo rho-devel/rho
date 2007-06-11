@@ -899,7 +899,7 @@ pstrmatch(SEXP target, SEXP input, int slen)
 	break;
     }
     if(strncmp(st, translateChar(input), slen) == 0) {
-	if (strlen(st) == slen)
+	if (int(strlen(st)) == slen)
 	    return EXACT_MATCH;
 	else
 	    return PARTIAL_MATCH;
