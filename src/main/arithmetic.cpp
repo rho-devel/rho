@@ -24,6 +24,8 @@
 #include <config.h>
 #endif
 
+#include <limits>
+
 #if defined(HAVE_GLIBC2)
 /* for matherr etc */
 # define _SVID_SOURCE 1
@@ -179,10 +181,10 @@ int R_finite(double x)
 void attribute_hidden InitArithmetic()
 {
     R_NaInt = INT_MIN;
-    R_NaN = 0.0/R_Zero_Hack;
+    R_NaN = std::numeric_limits<double>::quiet_NaN(); // was 0.0/R_Zero_Hack;
     R_NaReal = R_ValueOfNA();
-    R_PosInf = 1.0/R_Zero_Hack;
-    R_NegInf = -1.0/R_Zero_Hack;
+    R_PosInf = std::numeric_limits<double>::infinity();  // was 1.0/R_Zero_Hack;
+    R_NegInf = -R_PosInf;  // is this portable?
 }
 
 /* Keep these two in step */
@@ -762,7 +764,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    else if (x2 == 0)
 		INTEGER(ans)[i] = 0;
 	    else
-		INTEGER(ans)[i] = floor((double)x1 / (double)x2);
+	        INTEGER(ans)[i] = int(floor((double)x1 / (double)x2));
 	}
 	break;
     }

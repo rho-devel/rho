@@ -684,7 +684,7 @@ static void TryToReleasePages(void)
 
 	    maxrel = R_GenHeap[i].AllocCount;
 	    for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++)
-		maxrel -= (1.0 + R_MaxKeepFrac) * R_GenHeap[i].OldCount[gen]; /*2007/06/03 arr: FIXME*/
+		maxrel = int(maxrel - ((1.0 + R_MaxKeepFrac) * R_GenHeap[i].OldCount[gen]));
 	    maxrel_pages = maxrel > 0 ? maxrel / page_count : 0;
 
 	    /* all nodes in New space should be both free and unmarked */
@@ -782,7 +782,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 	    R_NSize += change;
     }
     else if (node_occup < R_NShrinkFrac) {
-	R_NSize -= (R_NShrinkIncrMin + R_NShrinkIncrFrac * R_NSize); /*2007/06/03 arr: FIXME*/
+	R_NSize = int(R_NSize - (R_NShrinkIncrMin + R_NShrinkIncrFrac * R_NSize));
 	if (R_NSize < NNeeded)
 	    R_NSize = (NNeeded < R_MaxNSize) ? NNeeded: R_MaxNSize;
 	if (R_NSize < orig_R_NSize)
@@ -797,7 +797,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 	    R_VSize += change;
     }
     else if (vect_occup < R_VShrinkFrac) {
-	R_VSize -= R_VShrinkIncrMin + R_VShrinkIncrFrac * R_VSize; /*2007/06/03 arr: FIXME*/
+	R_VSize = int(R_VSize - (R_VShrinkIncrMin + R_VShrinkIncrFrac * R_VSize));
 	if (R_VSize < VNeeded)
 	    R_VSize = VNeeded;
 	if (R_VSize < orig_R_VSize)
