@@ -583,12 +583,12 @@ char *locale2charset(const char *locale)
     /* separate language_locale.encoding */
     memset(la_loc, 0, sizeof(la_loc));
     memset(enc, 0, sizeof(enc));
-    for (i = 0; locale[i] && locale[i]!='.' && i < sizeof(la_loc) - 1; i++)
+    for (i = 0; locale[i] && locale[i]!='.' && i < int(sizeof(la_loc)) - 1; i++)
 	la_loc[i] = locale[i];
     if(locale[i]) {
 	i++;
 	offset = i;
-	for(i = 0; locale[i+offset] && i < sizeof(enc) - 1; i++)
+	for(i = 0; locale[i+offset] && i < int(sizeof(enc)) - 1; i++)
 	    enc[i] = locale[i+offset];
     }
 

@@ -1075,7 +1075,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	     Rboolean doGet)
 {
     SEXP vl;
-    int tl;
+    unsigned int tl;
     if (mode == INTSXP) mode = REALSXP;
     if (mode == FUNSXP || mode ==  BUILTINSXP || mode == SPECIALSXP)
 	mode = CLOSXP;

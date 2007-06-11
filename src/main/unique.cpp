@@ -643,7 +643,8 @@ SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, input, target;
     Rboolean perfect;
-    int i, j, k, imatch, n_input, n_target, temp;
+    int i, j, k, imatch, n_input, n_target;
+    unsigned int temp;
     char *ss, *st;
 
     checkArity(op, args);

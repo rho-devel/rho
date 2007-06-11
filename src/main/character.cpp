@@ -420,7 +420,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(fixed) {
 		/* This is UTF-8 safe since it compares whole strings */
 		laststart = buf;
-		for(bufp = buf; bufp-buf < strlen(buf); bufp++) {
+		for(bufp = buf; bufp-buf < int(strlen(buf)); bufp++) {
 		    if((slen == 1 && *bufp != *split) ||
 		       (slen > 1 && strncmp(bufp, split, slen))) continue;
 		    ntok++;
@@ -481,7 +481,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    /* This is UTF-8 safe since it compares whole strings,
 		       but it would be more efficient to skip along by chars.
 		     */
-		    for(; bufp - buf < strlen(buf); bufp++) {
+		    for(; bufp - buf < int(strlen(buf)); bufp++) {
 			if((slen == 1 && *bufp != *split) ||
 			   (slen > 1 && strncmp(bufp, split, slen))) continue;
 			if(slen) {
@@ -641,7 +641,7 @@ static SEXP stripchars(char *inchar, int minlen)
     mystrcpy(buff1, &buff1[j]);
     upper = strlen(buff1) - 1;
 
-    if (strlen(buff1) < minlen)
+    if (int(strlen(buff1)) < minlen)
 	goto donesc;
 
     for (i = upper, j = 1; i > 0; i--) {
@@ -654,7 +654,7 @@ static SEXP stripchars(char *inchar, int minlen)
 	else
 	    j = 0;
 	/*strcpy(buff1[i],buff1[i+1]);*/
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -662,7 +662,7 @@ static SEXP stripchars(char *inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if(LOWVOW(i) && LASTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -670,7 +670,7 @@ static SEXP stripchars(char *inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(i) && !FIRSTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -678,7 +678,7 @@ static SEXP stripchars(char *inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower((int)buff1[i]) && LASTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -686,7 +686,7 @@ static SEXP stripchars(char *inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower((int)buff1[i]) && !FIRSTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -696,7 +696,7 @@ static SEXP stripchars(char *inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (!FIRSTCHAR(i) && !isspace((int)buff1[i]))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (strlen(buff1) - nspace <= minlen)
+	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -2380,8 +2380,8 @@ static size_t inttomb(char *s, const int wc)
 
     b = s ? s : buf;
     if(cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < sizeof(utf8_table1)/sizeof(int); i++)
-        if (cvalue <= utf8_table1[i]) break;
+    for (i = 0; i < int(sizeof(utf8_table1)/sizeof(int)); i++)
+        if (int(cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
         *b-- = 0x80 | (cvalue & 0x3f);

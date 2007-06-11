@@ -713,11 +713,11 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		s = start;
 		ns = 0;
 		/* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-		while (s && ns < max_contour_segments) {
+		while (s && ns < int(max_contour_segments)) {
 		    ns++;
 		    s = s->next;
 		}
-		if(ns == max_contour_segments)
+		if(ns == int(max_contour_segments))
 		    warning(_("contour(): circular/long seglist -- bug.report()!"));
 
 		/* countour midpoint : use for labelling sometime (not yet!) */
@@ -736,7 +736,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		REAL(xsxp)[0] = s->x0;
 		REAL(ysxp)[0] = s->y0;
 		ns = 1;
-		while (s->next && ns < max_contour_segments) {
+		while (s->next && ns < int(max_contour_segments)) {
 		    s = s->next;
 		    REAL(xsxp)[ns] = s->x0;
 		    REAL(ysxp)[ns++] = s->y0;
@@ -1006,11 +1006,11 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    s = start;
 	    ns = 0;
 	    /* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-	    while (s && ns < max_contour_segments) {
+	    while (s && ns < int(max_contour_segments)) {
 		ns++;
 		s = s->next;
 	    }
-	    if(ns == max_contour_segments)
+	    if(ns == int(max_contour_segments))
 		warning(_("contour(): circular/long seglist -- bug.report()!"));
 
 	    /* countour midpoint : use for labelling sometime (not yet!) */
@@ -1024,7 +1024,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    ns = 0;
 	    xxx[ns] = s->x0;
 	    yyy[ns++] = s->y0;
-	    while (s->next && ns < max_contour_segments) {
+	    while (s->next && ns < int(max_contour_segments)) {
 		s = s->next;
 		xxx[ns] = s->x0;
 		yyy[ns++] = s->y0;

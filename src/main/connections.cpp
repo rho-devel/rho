@@ -1940,7 +1940,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 	    UNPROTECT(1);
 	} else {
 	    /* retain the last line */
-	    if(strlen(p) >= thisconn->lastlinelength) {
+	    if(int(strlen(p)) >= thisconn->lastlinelength) {
 		int newlen = strlen(p) + 1;
 		thisconn->lastline = /*CCAST*/(char*)realloc(thisconn->lastline, newlen);
 		thisconn->lastlinelength = newlen;
@@ -2446,7 +2446,7 @@ int Rconn_fgetc(Rconnection con)
     }
     curLine = con->PushBack[con->nPushBack-1];
     c = (unsigned char) curLine[con->posPushBack++];
-    if(con->posPushBack >= strlen(curLine)) {
+    if(con->posPushBack >= int(strlen(curLine))) {
 	/* last character on a line, so pop the line */
 	free(curLine);
 	con->nPushBack--;

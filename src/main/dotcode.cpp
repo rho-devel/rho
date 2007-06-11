@@ -401,11 +401,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == -1 && errno == E2BIG) {
+		    if(res == size_t(-1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_in;
 		    }
-		    if(res == -1) 
+		    if(res == size_t(-1)) 
 			error(_("conversion problem in re-encoding to '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -528,11 +528,11 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == -1 && errno == E2BIG) {
+		    if(res == size_t(-1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_out;
 		    }
-		    if(res == -1) 
+		    if(res == size_t(-1)) 
 			error(_("conversion problem in re-encoding from '%s'"),
 			      encname);
 		    *outbuf = '\0';

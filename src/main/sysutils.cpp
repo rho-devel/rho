@@ -526,10 +526,10 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    *outbuf = '\0';
 	    /* other possible error conditions are incomplete
 	       and invalid multibyte chars */
-	    if(res == -1 && errno == E2BIG) {
+	    if(res == size_t(-1) && errno == E2BIG) {
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
-	    } else if(res == -1 && errno == EILSEQ && sub) {
+	    } else if(res == size_t(-1) && errno == EILSEQ && sub) {
 		/* it seems this gets thrown for non-convertible input too */
 		if(strcmp(sub, "byte") == 0) {
 		    if(outb < 5) {
@@ -543,14 +543,14 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 			R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 			goto top_of_loop;
 		    }
-		    for(j = 0; j < strlen(sub); j++) *outbuf++ = sub[j];
+		    for(j = 0; j < int(strlen(sub)); j++) *outbuf++ = sub[j];
 		    outb -= strlen(sub);
 		}
 		inbuf++; inb--;
 		goto next_char;
 	    }
 
-	    if(res != -1 && inb == 0) {
+	    if(res != size_t(-1) && inb == 0) {
 		SET_STRING_ELT(ans, i, mkChar(cbuff.data));
 		if(isLatin1) SET_LATIN1(STRING_ELT(ans, i));
 		if(isUTF8) SET_UTF8(STRING_ELT(ans, i));
@@ -637,10 +637,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = iconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == -1 && errno == E2BIG) {
+    if(res == size_t(-1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == -1 && errno == EILSEQ) {
+    } else if(res == size_t(-1) && errno == EILSEQ) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;

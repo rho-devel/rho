@@ -1052,7 +1052,7 @@ static BBOX RenderSymbolStr(char *str, int draw, mathContext *mc,
 	    while (*s) {
 		wc = 0;
 		res = mbrtowc(&wc, s, MB_LEN_MAX, &mb_st);
-		if(res == -1) error("invalid multibyte string");
+		if(res == size_t(-1)) error("invalid multibyte string");
 		if (iswdigit(wc) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
@@ -1070,7 +1070,7 @@ static BBOX RenderSymbolStr(char *str, int draw, mathContext *mc,
 		if (draw) {
 		    memset(chr, 0, sizeof(chr));
 		    res  = wcrtomb(chr, wc, &mb_st);
-		    if(res == -1) error("invalid multibyte string");
+		    if(res == size_t(-1)) error("invalid multibyte string");
 		    PMoveAcross(lastItalicCorr, mc);
 		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
 			   0.0, 0.0, mc->CurrentAngle, gc,
@@ -1136,7 +1136,7 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
 #ifdef SUPPORT_MBCS
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, NULL);
-	    if(res == -1)
+	    if(res == size_t(-1))
 		error("invalid character in current multibyte locale");
 	} else
 #endif

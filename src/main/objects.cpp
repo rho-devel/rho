@@ -1346,7 +1346,7 @@ SEXP R_setS4Object(SEXP object, SEXP onOff)
 {
     Rboolean flag = Rboolean(asLogical(onOff));
     /* wanted     return asS4(object, flag); */
-    if(flag == IS_S4_OBJECT(object))
+    if(flag == Rboolean(IS_S4_OBJECT(object)))
         return object;
     if(NAMED(object) == 2)
         object = duplicate(object);

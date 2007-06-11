@@ -4447,7 +4447,7 @@ SEXP LTYget(unsigned int lty)
     unsigned int l;
 
     for (i = 0; linetype[i].name; i++) {
-	if(linetype[i].pattern == lty)
+	if(linetype[i].pattern == int(lty))
 	    return mkString(linetype[i].name);
     }
 

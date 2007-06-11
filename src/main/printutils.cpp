@@ -480,7 +480,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 			else
 #endif
 			    snprintf(buf, 11, "\\u%04x", k);
-			for(j = 0; j < strlen(buf); j++) *q++ = buf[j];
+			for(j = 0; j < int(strlen(buf)); j++) *q++ = buf[j];
 			p += res;
 		    }
 		    i += (res - 1);

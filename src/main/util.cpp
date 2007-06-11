@@ -227,7 +227,7 @@ SEXP type2str(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == int(t))
 	    return mkChar(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2str");
@@ -239,7 +239,7 @@ char * type2char(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == int(t))
 	    return (char *) TypeTable[i].str;
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2char");
@@ -253,7 +253,7 @@ SEXP type2symbol(SEXPTYPE t)
        with TypeTable pointing to both the
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == int(t))
 	    return install((char *)&TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
@@ -265,7 +265,7 @@ void UNIMPLEMENTED_TYPEt(char *s, SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == t)
+	if (TypeTable[i].type == int(t))
 	    error(_("unimplemented type '%s' in '%s'\n"), TypeTable[i].str, s);
     }
     error(_("unimplemented type (%d) in '%s'\n"), t, s);
@@ -911,7 +911,7 @@ Rboolean mbcsValid(char *str)
 void mbcsToLatin1(char *in, char *out)
 {
     wchar_t *wbuff;
-    int i;
+    unsigned int i;
     size_t res = mbstowcs(NULL, in, 0), mres;
 
     if(res == (size_t)(-1)) {

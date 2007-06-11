@@ -130,7 +130,7 @@ do_unzip(char *zipname, char *dest, int nfiles, char **files,
     if(nfiles == 0) { /* all files */
 	unz_global_info gi;
 	unzGetGlobalInfo(uf, &gi);
-	for (i = 0; i < gi.number_entry; i++) {
+	for (i = 0; i < int(gi.number_entry); i++) {
 	    if (i > 0) if((err = unzGoToNextFile(uf)) != UNZ_OK) break;
 	    if(*nnames+1 >= LENGTH(names)) {
 		SEXP onames = names;

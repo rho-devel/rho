@@ -145,7 +145,7 @@ void attribute_hidden
 R_AllocStringBuffer(int blen, DeparseBuffer *buf)
 {
     if(blen >= 0) {
-	if(blen*sizeof(char) < buf->bufsize) return;
+	if(blen*int(sizeof(char)) < buf->bufsize) return;
 	blen = (blen+1)*sizeof(char);
 	if(blen < buf->defaultSize) blen = buf->defaultSize;
 	if(buf->data == NULL){
@@ -318,7 +318,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else {
 	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
 	    if(!havewarned &&
-	       res < strlen(CHAR(STRING_ELT(tval, i))) + 1)
+	       res < int(strlen(CHAR(STRING_ELT(tval, i)))) + 1)
 		warningcall(call, _("wrote too few characters"));
 	}
     if (!wasopen) con->close(con);
@@ -391,13 +391,13 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		s = translateChar(STRING_ELT(names, i));
 		res = Rconn_printf(con, "`%s` <-\n", s);
-		if(!havewarned && res < strlen(s) + 6)
+		if(!havewarned && res < int(strlen(s)) + 6)
 		    warningcall(call, _("wrote too few characters"));
 		tval = deparse1(CAR(o), FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++) {
 		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 		    if(!havewarned &&
-		       res < strlen(CHAR(STRING_ELT(tval, j))) + 1)
+		       res < int(strlen(CHAR(STRING_ELT(tval, j)))) + 1)
 			warningcall(call, _("wrote too few characters"));
 		}
 		o = CDR(o);

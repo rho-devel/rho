@@ -2365,7 +2365,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	classString = CHAR(asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */
-	if(valueType != -1) {
+	if(int(valueType) != -1) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
 	    if(classTable[whichType].canChange) {
 		PROTECT(obj = ascommon(call, obj, valueType));

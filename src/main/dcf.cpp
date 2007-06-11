@@ -37,7 +37,8 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int nwhat, nret, nc, nr, m, k, lastm, need;
     Rboolean blank_skip, field_skip = FALSE;
-    int whatlen, dynwhat, buflen=0;
+    unsigned int whatlen;
+    int dynwhat, buflen=0;
     char *line, *buf;
     regex_t blankline, contline, trailblank, regline;
     regmatch_t regmatch[1];

@@ -1064,7 +1064,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, t, tag = R_NilValue, alist;
     char *str;
-    int n;
+    unsigned int n;
     enum { NONE, PARTIAL, PARTIAL2, FULL } match = NONE;
 
     s = CAR(args);

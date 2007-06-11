@@ -538,14 +538,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
         len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -553,7 +553,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -562,7 +562,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < len; j++) {
+	for (j = 0; j < uint(len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -608,29 +608,29 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < len; j++)
+	for (j = 0; j < uint(len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -1606,7 +1606,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (fread(buf, sizeof(char), nbytes, fp) != nbytes)
+    if (int(fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1691,7 +1691,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = NULL;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (nbytes >= buflen) {
+    if (int(nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
 	if(buf) newbuf = (char *) realloc(buf, nbytes + 1); 
@@ -2274,7 +2274,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (con->text)
 	Rconn_printf(con, "%s", magic);
     else {
-	int len = strlen(magic);
+	unsigned int len = strlen(magic);
 	if (len != con->write(magic, 1, len, con))
 	    error(_("error writing to connection"));
     }

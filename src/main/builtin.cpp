@@ -634,7 +634,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(s) == 0)
 	error(_("vector: zero-length 'type' argument"));
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
-    if (mode == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
+    if (int(mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
     switch (mode) {
     case LGLSXP:

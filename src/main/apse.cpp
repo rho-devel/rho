@@ -282,7 +282,7 @@ static int _apse_wrap_slice(apse_t*		ap,
 			    apse_ssize_t*	begin_out,
 			    apse_ssize_t*	size_out) {
     if (begin_in < 0) {
-	if (-begin_in > ap->pattern_size)
+	if (-begin_in > apse_ssize_t(ap->pattern_size))
 	    return 0;
 	begin_in = ap->pattern_size + begin_in;
     }
@@ -294,10 +294,10 @@ static int _apse_wrap_slice(apse_t*		ap,
 	begin_in -=  size_in;
     }
 
-    if (begin_in >= ap->pattern_size)
+    if (begin_in >= apse_ssize_t(ap->pattern_size))
 	return 0;
 	
-    if (begin_in + size_in > ap->pattern_size)
+    if (begin_in + size_in > apse_ssize_t(ap->pattern_size))
 	size_in = ap->pattern_size - begin_in;
 
     if (begin_out)

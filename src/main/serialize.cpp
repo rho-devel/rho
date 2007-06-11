@@ -1579,14 +1579,14 @@ static void OutBytesFile(R_outpstream_t stream, const void *buf, int length)
 {
     FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t out = fwrite(buf, 1, length, fp);
-    if (out != length) error(_("write failed"));
+    if (int(out) != length) error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 {
     FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t in = fread(buf, 1, length, fp);
-    if (in != length) error(_("read failed"));
+    if (int(in) != length) error(_("read failed"));
 }
 
 void
@@ -1641,7 +1641,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 	    p[i] = Rconn_fgetc(con);
     }
     else {
-	if (length != con->read(buf, 1, length, con))
+	if (length != int(con->read(buf, 1, length, con)))
 	    error(_("error reading from connection"));
     }
 }
@@ -1671,7 +1671,7 @@ static void OutBytesConn(R_outpstream_t stream, const void *buf, int length)
 	    Rconn_printf(con, "%c", p[i]);
     }
     else {
-	if (length != con->write(buf, 1, length, con))
+	if (length != int(con->write(buf, 1, length, con)))
 	    error(_("error writing to connection"));
     }
 }
@@ -1804,7 +1804,7 @@ typedef struct bconbuf_st {
 
 static void flush_bcon_buffer(bconbuf_t bb)
 {
-    if (R_WriteConnection(bb->con, bb->buf, bb->count) != bb->count)
+    if (int(R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
 	error(_("error writing to connection"));
     bb->count = 0;
 }
@@ -1826,7 +1826,7 @@ static void OutBytesBB(R_outpstream_t stream, const void *buf, int length)
 	memcpy(bb->buf + bb->count, buf, length);
 	bb->count += length;
     }
-    else if (R_WriteConnection(bb->con, buf, length) != length)
+    else if (int(R_WriteConnection(bb->con, buf, length)) != length)
 	error(_("error writing to connection"));
 }
 

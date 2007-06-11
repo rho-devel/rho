@@ -184,7 +184,7 @@ static int ConsoleGetcharWithPushBack(Rconnection con)
     if(con->nPushBack > 0) {
 	curLine = con->PushBack[con->nPushBack-1];
 	c = curLine[con->posPushBack++];
-	if(con->posPushBack >= strlen(curLine)) {
+	if(con->posPushBack >= int(strlen(curLine))) {
 	    /* last character on a line, so pop the line */
 	    free(curLine);
 	    con->nPushBack--;

@@ -340,7 +340,8 @@ static int R_AppendFile(SEXP file1, SEXP file2)
 {
     FILE *fp1, *fp2;
     char buf[APPENDBUFSIZE];
-    int nchar, status = 0;
+    size_t nchar;
+    int status = 0;
     if((fp1 = RC_fopen(file1, "ab", TRUE)) == NULL) {
         return 0;
     }
@@ -386,7 +387,8 @@ SEXP attribute_hidden do_fileappend(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n1 == 1) { /* common case */
 	FILE *fp1, *fp2;
 	char buf[APPENDBUFSIZE];
-	int nchar, status = 0;
+        size_t nchar;
+	int status = 0;
 	if(!(fp1 = RC_fopen(STRING_ELT(f1, 0), "ab", TRUE)))
 	   goto done;
 	for(i = 0; i < n; i++) {
@@ -1652,8 +1654,8 @@ SEXP attribute_hidden do_Cstack_info(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     PROTECT(ans = allocVector(INTSXP, 4));
     PROTECT(nms = allocVector(STRSXP, 4));
-    INTEGER(ans)[0] = (R_CStackLimit == -1) ? NA_INTEGER : R_CStackLimit;
-    INTEGER(ans)[1] = (R_CStackLimit == -1) ? NA_INTEGER :
+    INTEGER(ans)[0] = (R_CStackLimit == uintptr_t(-1)) ? NA_INTEGER : R_CStackLimit;
+    INTEGER(ans)[1] = (R_CStackLimit == uintptr_t(-1)) ? NA_INTEGER :
 	R_CStackDir * (R_CStackStart - (unsigned long) &ans);
     INTEGER(ans)[2] = R_CStackDir;
     INTEGER(ans)[3] = R_EvalDepth;
