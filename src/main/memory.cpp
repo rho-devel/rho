@@ -812,7 +812,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 
 #define AGE_NODE(s,g) do { \
   SEXP an__n__ = (s); \
-  int an__g__ = (g); \
+  unsigned int an__g__ = (g); \
   if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
     if (NODE_IS_MARKED(an__n__)) \
        R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \
@@ -832,7 +832,7 @@ static void AgeNodeAndChildren(SEXP s, int gen)
     while (forwarded_nodes != NULL) {
 	s = forwarded_nodes;
 	forwarded_nodes = NEXT_NODE(forwarded_nodes);
-	if (NODE_GENERATION(s) != gen)
+	if (NODE_GENERATION(s) != uint(gen))
 	    REprintf("****snapping into wrong generation\n");
 	SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
 	R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
@@ -1205,7 +1205,7 @@ static void RunGenCollect(R_size_t size_needed)
 		SEXP next = NEXT_NODE(s);
 		DO_CHILDREN(s, AgeNodeAndChildren, gen);
 		UNSNAP_NODE(s);
-		if (NODE_GENERATION(s) != gen)
+		if (NODE_GENERATION(s) != uint(gen))
 		    REprintf("****snapping into wrong generation\n");
 		SNAP_NODE(s, R_GenHeap[i].Old[gen]);
 		s = next;
@@ -1890,7 +1890,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	if (length <= 0)
 	    actual_size = size = 0;
 	else {
-	    if (length > R_SIZE_T_MAX / sizeof(int))
+	    if (length > int(R_SIZE_T_MAX / sizeof(int)))
 		errorcall(R_GlobalContext->call,
 			  _("cannot allocate vector of length %d"), length);
 	    size = INT2VEC(length);
@@ -1901,7 +1901,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	if (length <= 0)
 	    actual_size = size = 0;
 	else {
-	    if (length > R_SIZE_T_MAX / sizeof(double))
+	    if (length > int(R_SIZE_T_MAX / sizeof(double)))
 		errorcall(R_GlobalContext->call,
 			  _("cannot allocate vector of length %d"), length);
 	    size = FLOAT2VEC(length);
@@ -1912,7 +1912,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	if (length <= 0)
 	    actual_size = size = 0;
 	else {
-	    if (length > R_SIZE_T_MAX / sizeof(Rcomplex))
+	    if (length > int(R_SIZE_T_MAX / sizeof(Rcomplex)))
 		errorcall(R_GlobalContext->call,
 			  _("cannot allocate vector of length %d"), length);
 	    size = COMPLEX2VEC(length);
@@ -1925,7 +1925,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	if (length <= 0)
 	    actual_size = size = 0;
 	else {
-	    if (length > R_SIZE_T_MAX / sizeof(SEXP))
+	    if (length > int(R_SIZE_T_MAX / sizeof(SEXP)))
 		errorcall(R_GlobalContext->call,
 			  _("cannot allocate vector of length %d"), length);
 	    size = PTR2VEC(length);
@@ -1944,7 +1944,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type, length);
     }
 
-    if (size <= NodeClassSize[1]) {
+    if (int(size) <= NodeClassSize[1]) {
 	node_class = 1;
 	alloc_size = NodeClassSize[1];
     }
@@ -1952,7 +1952,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	node_class = LARGE_NODE_CLASS;
 	alloc_size = size;
 	for (i = 2; i < NUM_SMALL_NODE_CLASSES; i++) {
-	    if (size <= NodeClassSize[i]) {
+	    if (int(size) <= NodeClassSize[i]) {
 		node_class = i;
 		alloc_size = NodeClassSize[i];
 		break;
@@ -2297,7 +2297,7 @@ SEXP protect(SEXP s)
 	cntxt.cend = &reset_pp_stack;
 	cntxt.cenddata = &oldpps;
 
-	if (R_PPStackSize < R_RealPPStackSize)
+	if (R_PPStackSize < int(R_RealPPStackSize))
 	    R_PPStackSize = R_RealPPStackSize;
 	errorcall(R_NilValue, _("protect(): protection stack overflow"));
 
