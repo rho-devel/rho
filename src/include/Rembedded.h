@@ -42,7 +42,7 @@ void setup_Rmainloop(void);
 extern void R_ReplDLLinit(void);
 extern int R_ReplDLLdo1();
 
-void R_setStartTime(void);
+void R_setStartTime(void);  /* 2007/06/11 arr: also prototyped in Rinterface.h */
 extern void R_RunExitFinalizers();
 extern void CleanEd();
 extern void Rf_KillAllDevices();

@@ -1792,7 +1792,9 @@ SEXP attribute_hidden do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP
  */
 
 /**** should eventually come from a public header file */
+/* Prototyped in Defn.h  2007/06/11 arr
 size_t R_WriteConnection(Rconnection con, const void *buf, size_t n);
+*/
 
 #define BCONBUFSIZ 4096
 

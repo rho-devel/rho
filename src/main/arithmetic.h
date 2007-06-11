@@ -19,6 +19,9 @@ SEXP complex_math2(SEXP, SEXP, SEXP, SEXP);
 SEXP complex_unary(ARITHOP_TYPE, SEXP);
 SEXP complex_binary(ARITHOP_TYPE, SEXP, SEXP);
 
+SEXP R_binary(SEXP, SEXP, SEXP, SEXP);
+SEXP R_unary(SEXP, SEXP, SEXP);
+
 #ifdef __cplusplus
 }
 #endif

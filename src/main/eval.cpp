@@ -210,9 +210,7 @@ static void R_EndProfiling()
 
 #if !defined(Win32) && defined(_R_HAVE_TIMING_)
 // defined in unix/sys-unix.c
-extern "C" {
-double R_getClockIncrement(void);
-}
+//double R_getClockIncrement(void);  // Use header files! 2007/06/11 arr
 #endif
 
 static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem_profiling)
@@ -2262,6 +2260,7 @@ enum {
 };
 
 
+/* Use header files!  2007/06/11 arr
 SEXP R_unary(SEXP, SEXP, SEXP);
 SEXP R_binary(SEXP, SEXP, SEXP, SEXP);
 SEXP do_math1(SEXP, SEXP, SEXP, SEXP);
@@ -2272,6 +2271,7 @@ SEXP do_subassign_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_c_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_subset2_dflt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_subassign2_dflt(SEXP, SEXP, SEXP, SEXP);
+*/
 
 #define DO_FAST_RELOP2(op,a,b) do { \
     double __a__ = (a), __b__ = (b); \

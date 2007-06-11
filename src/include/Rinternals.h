@@ -997,13 +997,6 @@ SEXP Rf_ScalarReal(double);
 SEXP Rf_ScalarString(SEXP);
 #endif
 
-/*
- * 2007/06/06 arr:
- * Function prototypes that don't appear to be defined anywhere else:
- */
-
-SEXP R_execMethod(SEXP op, SEXP rho);
-
 #ifdef __cplusplus
 }
 #endif

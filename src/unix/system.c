@@ -84,9 +84,9 @@ int R_ShowFiles(int nfile, char **file, char **headers, char *wtitle,
 int R_ChooseFile(int _new, char *buf, int len)
 { return ptr_R_ChooseFile(_new, buf, len); }
 
-
-void R_setStartTime(void); /* in sys-unix.c */
-
+/* Use header files!  2007/06/11 arr
+void R_setStartTime(void); // in sys-unix.c
+*/
 
 #ifdef HAVE_AQUA
 /*  this should be a global variable as it used in unix/devQuartz.c

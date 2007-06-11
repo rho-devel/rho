@@ -1154,6 +1154,15 @@ extern char *alloca(size_t);
 # define LDOUBLE double
 #endif
 
+/*
+ * 2007/06/06 arr:
+ * Function prototypes that don't appear to be defined anywhere else:
+ */
+
+Rboolean R_access_X11(void); /* from src/unix/X11.c */
+SEXP R_execMethod(SEXP op, SEXP rho);
+double R_getClockIncrement();
+
 #ifdef __cplusplus
 }
 #endif

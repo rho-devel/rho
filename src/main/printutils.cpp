@@ -207,7 +207,9 @@ char *EncodeReal2(double x, int w, int d, int e)
     return buff;
 }
 
+/* Use header files!  2007/06/11 arr
 void z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
+*/
 
 char *EncodeComplex(Rcomplex x, int wr, int dr, int er, int wi, int di, int ei,
 		    char cdec)

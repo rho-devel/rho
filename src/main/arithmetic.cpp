@@ -291,8 +291,6 @@ static double logbase(double x, double base)
     return R_log(x) / log(base);
 }
 
-SEXP R_unary(SEXP, SEXP, SEXP);
-SEXP R_binary(SEXP, SEXP, SEXP, SEXP);
 static SEXP integer_unary(ARITHOP_TYPE, SEXP);
 static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);

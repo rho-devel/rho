@@ -318,7 +318,9 @@ void formatReal(double *x, int n, int *w, int *d, int *e, int nsmall)
 
 /* As from 2.2.0 the number of digits applies to real and imaginary parts
    together, not separately */
+/* Use header files!  2007/06/11 arr
 void z_prec_r(Rcomplex *r, Rcomplex *x, double digits);
+*/
 
 void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 		   int *wi, int *di, int *ei, int nsmall)
