@@ -33,5 +33,135 @@ renamed to <code>.cpp</code>, with the following exceptions:</p>
 
 <p>The result of this phase does not build correctly; however, it is useful
 as a baseline for seeing the subsequent changes.</p>
+
+<h2>Phase 1: <code>0.01-2.5.0</code></h2>
+
+<p>Make such changes to the result of Phase 0 to enable the <code>.cpp</code>
+files to compile without warning using <code>-Wall</code> with
+<code>gcc-4.1.3</code>, retaining C linkage conventions for everything
+defined in <code>.h</code> files. Ensure that the whole of R will build
+correctly and pass <code>make check</code>.</p>
+
+<p>A desirable side effect of enforcing C linkage was that the linkage editor
+picked up several instances where the source file implementing a function
+failed to <code>#include</code> the appropriate header file, and consequently
+generated a function with C++ linkage: see below.</p>
+
+<p>This needed to address the following issues:</p>
+<ul>
+  <li><code>Rboolean</code> is different from C++ <code>bool</code>.
+    <code>Rboolean</code> is an enumeration with elements
+    <code>FALSE=0</code> and <code>TRUE=1</code>; <code>bool</code> is a
+    primitive type, with values <code>false</code> and <code>true</code>.
+    (Also, there are <code>#define</code>s of <code>FALSE</code> to 0 and
+    TRUE to 1 lurking around in the R code, just to confuse matters.) In
+    particular an <code>Rboolean</code> is a different size from a
+    <code>bool</code>. It was necessary to introduce many explicit
+    conversions from <code>bool</code> (resulting in C++ from evaluating
+    Boolean expressions) or integer types to <code>Rboolean</code>.
+    <p>In connection with this, defined a macro <code>RBOOL(x)</code> within
+    <code>Rinlinedfuns.h</code> expands to <code>x</code> in C and
+    <code>Rboolean(x)</code> in C++.</p>
+  </li>
+  <li>The C++ keywords <code>class</code>, <code>new</code>,
+    <code>private</code> and <code>this</code> were used as identifiers;
+    these had to be renamed, e.g. <code>class</code> changed to
+    <code>connclass</code>.</li>
+  <li>In various places, particularly <code>connections.cpp</code>, a
+    <code>void*</code> was implicitly converted to another type of pointer.
+    These conversions were made explicit, and flagged
+  <code>/*CCAST*/</code>.</li>
+  <li><code>datetime.cpp</code> and <code>memory.cpp</code> used statements
+    of the form <code>i -= d;</code> where <code>i</code> is of integer type
+    and <code>d</code> is an expression evaluating to a floating point type.
+    This was converted to the form <code>i = int(i - (d));</code> to avoid a
+    compiler warning. This interpretation complies with sec. 6.5.12.2 of the
+    C99 standard <a
+    href="http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1124.pdf">ISO:IEC
+    9899:1999</a>.</li>
+  <li>The structure type <code>NewDevDesc</code> defined in
+    <code>GraphicsDevice.h</code> contains a number of pointers to functions
+    as members, and the types of these functions were specified without
+    giving the number and types of the function arguments. This was
+    rectified. It was also necessary to give this structure a tag
+    (<code>_NewDevDesc</code>) because most of these functions included a
+    pointer to a <code>NewDevDesc</code> among their arguments.</li>
+  <li>It was necessary to shift some of the material in
+    <code>R_ext/GraphicsEngine.h</code>, in particular the definition of
+    <code>R_GE_context</code>, into a new header file
+    <code>R_ext/GraphicsContext.h</code>, to avoid reciprocal dependencies
+    between <code>GraphicsEngine.h</code> and
+  <code>GraphicsDevice.h</code>.</li>
+  <li>The pointer to function type <code>CCODE</code>, defined in
+    <code>Defn.h</code>, was redefined to make the number and type of its
+    arguments explicit, as follows:
+    <pre>typedef SEXP (*CCODE)(SEXP, SEXP, SEXP, SEXP);</pre>
+  </li>
+  <li>If <code>__MAIN__</code> is defined, <code>libextern.h</code>
+    <code>#define</code>d <code>extern</code> to the empty string, which
+    could play havoc with the <code>extern "C"</code> used in C++ to enforce
+    C-style linkage. This <code>#define</code> was commented out, and instead
+    a new macro <code>extern1</code> was <code>#define</code>d within
+    <code>Defn.h</code>.</li>
+  <li>In numerous places it was necessary to make conversions from
+    floating-point types to integer types explicit. In other places it was
+    clear that the same effect could be achieved without deleterious side
+    effect by changing the type of a variable.</li>
+  <li>It was necessary to introduce <code>reinterpret_cast</code>s in various
+    places in <code>memory.cpp</code>, <code>scan.cpp</code>,
+    <code>serialize.cpp</code> and <code>vfonts.cpp</code>. (In future it is
+    the intention to get rid of as many of these as possible, as well as
+    getting rid of all C-style casts.)</li>
+  <li>In <code>Defn.h</code>, the whole declaration <code>extern FUNTAB
+    R_FunTab[];</code> was made <code>#ifndef __R_Names__</code>, not just
+    the word <code>extern</code>.</li>
+  <li>In some places I couldn't resist changing the type of a function
+    argument from a plain pointer to a <code>const</code> pointer. We can
+    expect much more of this later, but this may have been premature.</li>
+  <li><code>sysutils.cpp</code> (conditionally) contained an
+    <code>extern</code> declaration of <code>environ</code>; the compiler
+    considered this to have C++ linkage, conflicting with the C-linkage
+    definition in <code>unistd.h</code> (subsequently <code>#include</code>d
+    into <code>sysutils.cpp</code>). This <code>extern</code> declaration has
+    been itself replaced by a (conditional) <code>#include</code> of
+    <code>unistd.h</code>.</li>
+  <li>Sorted out problems where a file implementing a function failed to
+    include the relevant header file. In some cases this was because the
+    prototype didn't appear in <em>any</em> header file, and clients of the
+    function were instead relying on a prototype within the client source
+    file itself! Such misplaced prototypes were found in
+    <code>eval.cpp</code>, <code>format.cpp</code>, <code>memory.cpp</code>,
+    <code>platform.cpp</code> and <code>printutils.cpp</code>; they were
+    commented out, and flagged with the comment "Use header files!". Needed
+    prototypes that didn't appear in any header file were generally placed at
+    the end of <code>Defn.h</code>.
+    <p>A particularly obscure example of this kind concerns
+    <code>R_CHAR</code>. This is declared as a pointer to a function in
+    <code>Rinternals.h</code>, and implemented in <code>memory.cpp</code>.
+    Now <code>memory.cpp</code> does <code>#include</code>
+    <code>Rinternals.h</code>, but it does so with
+    <code>USE_RINTERNALS</code> defined, as a result of which the
+    <code>R_CHAR</code> declaration in the header file isn't seen by the
+    compiler, and so the implemented function got C++ linkage. I modified the
+    header file by moving the <code>R_CHAR</code> declaration outside the
+    <code>#ifndef USE_RINTERNALS</code>.</p>
+  </li>
+  <li>The definitions in <code>print.cpp</code> of functions intended to be
+    called from FORTRAN needed to be surrounded by <code>extern "C"{</code>
+    ... <code>}</code>.</li>
+  <li><code>deparse.cpp</code>:1191 used <code>&amp;</code> where
+    <code>&amp;&amp;</code> was surely intended;
+    <code>character.cpp</code>:738 similarly used <code>|</code> instead of
+    <code>||</code>.</li>
+  <li><code>-Wall</code> complains about attempts to compare signed with
+    unsigned. This required explicit conversions in numerous places.
+    Generally (but not always) I did this by converting unsigned to signed.
+    In other places it was clear that the same effect could be achieved
+    without deleterious side effect by changing the type of a variable.
+    <p>In connection with this, the macro <code>AGE_NODE</code> in
+    <code>memory.cpp</code> had to be changed to make <code>an__g__</code>
+    unsigned.</p>
+  </li>
+</ul>
 </body>
 </html>
