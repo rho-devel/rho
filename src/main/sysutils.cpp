@@ -258,7 +258,7 @@ int R_system(char *command)
 # include <crt_externs.h>
 # define environ (*_NSGetEnviron())
 #else
-extern "C" {extern char ** environ;}
+#include <unistd.h>  // But what if it doesn't exist?
 #endif
 
 SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
