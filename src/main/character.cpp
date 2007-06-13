@@ -735,7 +735,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 	    SET_STRING_ELT(ans, i, NA_STRING);
 	else {
 	    s = translateChar(STRING_ELT(x, i));
-	    warn = Rboolean(warn | !utf8strIsASCII(s));
+	    warn = Rboolean(warn || !utf8strIsASCII(s));
 	    AllocBuffer(strlen(s) + 1, &cbuff);
 	    SET_STRING_ELT(ans, i, stripchars(s, minlen));
 	}

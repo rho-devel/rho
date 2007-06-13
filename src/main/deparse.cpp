@@ -1188,7 +1188,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		strp = EncodeElement(vector, tlen - 1, '"', '.');
 		print2buff(strp, d);
 	} else {
-	    addL = Rboolean(d->opts & KEEPINTEGER & !(d->opts & S_COMPAT));
+	    addL = Rboolean(d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
 	    allNA = Rboolean((d->opts & KEEPNA) || addL);
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
