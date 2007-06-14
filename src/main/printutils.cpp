@@ -633,6 +633,11 @@ int vasprintf(char **strp, const char *fmt, va_list ap)
 ;
 #endif
 
+// 2007/06/14 arr: C++98 ain't C99.  FIXME : handle in configure script
+#ifdef __cplusplus
+#undef HAVE_VA_COPY
+#endif
+
 #if !HAVE_VA_COPY && HAVE___VA_COPY
 # define va_copy __va_copy
 # undef HAVE_VA_COPY
