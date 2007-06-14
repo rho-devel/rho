@@ -444,7 +444,7 @@ SEXP R_standardGeneric(SEXP fname, SEXP ev, SEXP fdef)
     switch(TYPEOF(f)) {
     case CLOSXP:
 	{
-	    SEXP R_execMethod(SEXP, SEXP);
+//	    SEXP R_execMethod(SEXP, SEXP); /* Use header files! 2007/06/14 arr */
 	    PROTECT(f); nprotect++; /* is this needed?? */
 	    val = R_execMethod(f, ev);
 	}
