@@ -58,7 +58,7 @@ generated a function with C++ linkage: see below.</p>
     particular an <code>Rboolean</code> is a different size from a
     <code>bool</code>. It was necessary to introduce many explicit
     conversions from <code>bool</code> (resulting in C++ from evaluating
-    Boolean expressions) or integer types to <code>Rboolean</code>.
+    Boolean expressions) or integer types to <code>Rboolean</code>. 
     <p>In connection with this, defined a macro <code>RBOOL(x)</code> within
     <code>Rinlinedfuns.h</code> expands to <code>x</code> in C and
     <code>Rboolean(x)</code> in C++.</p>
@@ -94,7 +94,7 @@ generated a function with C++ linkage: see below.</p>
   <code>GraphicsDevice.h</code>.</li>
   <li>The pointer to function type <code>CCODE</code>, defined in
     <code>Defn.h</code>, was redefined to make the number and type of its
-    arguments explicit, as follows:
+    arguments explicit, as follows: 
     <pre>typedef SEXP (*CCODE)(SEXP, SEXP, SEXP, SEXP);</pre>
   </li>
   <li>If <code>__MAIN__</code> is defined, <code>libextern.h</code>
@@ -131,10 +131,11 @@ generated a function with C++ linkage: see below.</p>
     function were instead relying on a prototype within the client source
     file itself! Such misplaced prototypes were found in
     <code>eval.cpp</code>, <code>format.cpp</code>, <code>memory.cpp</code>,
-    <code>platform.cpp</code> and <code>printutils.cpp</code>; they were
+    <code>platform.cpp</code>, <code>printutils.cpp</code>, and
+    <code>library/methods/src/methods_list_dispatch.c</code>; they were
     commented out, and flagged with the comment "Use header files!". Needed
     prototypes that didn't appear in any header file were generally placed at
-    the end of <code>Defn.h</code>.
+    the end of <code>Defn.h</code>. 
     <p>A particularly obscure example of this kind concerns
     <code>R_CHAR</code>. This is declared as a pointer to a function in
     <code>Rinternals.h</code>, and implemented in <code>memory.cpp</code>.
@@ -157,7 +158,7 @@ generated a function with C++ linkage: see below.</p>
     unsigned. This required explicit conversions in numerous places.
     Generally (but not always) I did this by converting unsigned to signed.
     In other places it was clear that the same effect could be achieved
-    without deleterious side effect by changing the type of a variable.
+    without deleterious side effect by changing the type of a variable. 
     <p>In connection with this, the macro <code>AGE_NODE</code> in
     <code>memory.cpp</code> had to be changed to make <code>an__g__</code>
     unsigned.</p>
