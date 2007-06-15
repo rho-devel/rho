@@ -1,0 +1,69 @@
+#
+# ${R_HOME}/src/include/CXXR/Makefile
+
+VPATH = @srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+
+top_builddir = ../../..
+subdir = src/include/CXXR
+
+include $(top_builddir)/Makeconf
+
+distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
+
+## Partially included by the API (1) headers in .., but not part of the
+## API per se. 
+R_EXT_HEADERS = \
+  RObject.h
+
+DISTFILES = Makefile.in $(R_EXT_HEADERS)
+TIMESTAMPS = $(R_EXT_HEADERS:.h=.ts)
+
+CLEANFILES = stamp-R $(TIMESTAMPS)
+DISTCLEANFILES = Makefile
+
+.SUFFIXES:
+.SUFFIXES: .h .ts
+
+.h.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
+	@touch $@
+
+all: Makefile R
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+R: Makefile stamp-R $(TIMESTAMPS)
+stamp-R: 
+	@$(MKINSTALLDIRS) $(top_builddir)/include/CXXR
+	@touch $@
+$(TIMESTAMPS): stamp-R
+
+install: installdirs
+	@for f in $(R_EXT_HEADERS); do \
+	  $(INSTALL_DATA) $(srcdir)/$${f} "$(rincludedir)/CXXR"; \
+	done
+installdirs:
+	@$(MKINSTALLDIRS) "$(rincludedir)/CXXR"
+install-strip:
+	$(MAKE) INSTALL_PROGRAM="${INSTALL_PROGRAM} -s" install
+uninstall:
+	@rm -rf "$(rincludedir)/CXXR"
+
+mostlyclean: clean
+clean:
+	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
+distclean: clean
+	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+maintainer-clean: distclean
+
+TAGS info dvi check:
+
+distdir: $(DISTFILES)
+	@for f in $(DISTFILES); do \
+	  test -f $(distdir)/$${f} \
+	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
+	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
+	done

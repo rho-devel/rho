@@ -29,19 +29,6 @@
 /* probably no longer needed */
 #define NEW_CONDITION_HANDLING
 
-/* To test the write barrier used by the generational collector,
-   define TESTING_WRITE_BARRIER.  This makes the internal structure of
-   SEXPRECs visible only inside of files that explicitly define
-   USE_RINTERNALS, and all uses of SEXPREC fields that do not go
-   through the appropriate functions or macros will become compilation
-   errors.  Since this does impose a small but noticable performance
-   penalty, code that includes Defn.h (or code that explicitly defines
-   USE_RINTERNALS) can access a SEXPREC's fields directly. */
-
-#ifndef TESTING_WRITE_BARRIER
-# define USE_RINTERNALS
-#endif
-
 #ifdef HAVE_VISIBILITY_ATTRIBUTE
 # define attribute_visible __attribute__ ((visibility ("default")))
 # define attribute_hidden __attribute__ ((visibility ("hidden")))
@@ -78,26 +65,6 @@ Rcomplex Rf_ComplexFromReal(double, int*);
 #include <Rinternals.h>		/*-> Arith.h, Complex.h, Error.h, Memory.h
 				  PrtUtil.h, Utils.h */
 #undef CALLED_FROM_DEFN_H
-
-/* CHARSXP charset bits */
-#ifdef USE_RINTERNALS
-# define LATIN1_MASK (1<<2)
-# define IS_LATIN1(x) ((x)->sxpinfo.gp & LATIN1_MASK)
-# define SET_LATIN1(x) (((x)->sxpinfo.gp) |= LATIN1_MASK)
-# define UNSET_LATIN1(x) (((x)->sxpinfo.gp) &= ~LATIN1_MASK)
-# define UTF8_MASK (1<<3)
-# define IS_UTF8(x) ((x)->sxpinfo.gp & UTF8_MASK)
-# define SET_UTF8(x) (((x)->sxpinfo.gp) |= UTF8_MASK)
-# define UNSET_UTF8(x) (((x)->sxpinfo.gp) &= ~UTF8_MASK)
-#else
-/* Needed only for write-barrier testing */
-int IS_LATIN1(SEXP x);
-void SET_LATIN1(SEXP x);
-void UNSET_LATIN1(SEXP x);
-int IS_UTF8(SEXP x);
-void SET_UTF8(SEXP x);
-void UNSET_UTF8(SEXP x);
-#endif
 
 
 #include "Internal.h"		/* do_FOO */
@@ -336,80 +303,21 @@ typedef struct {
     PPinfo gram;     /* pretty-print info */
 } FUNTAB;
 
-#ifdef USE_RINTERNALS
-/* There is much more in Rinternals.h, including function versions
- * of the Promise and Hasking groups.
- */
-
-/* Primitive Access Macros */
-#define PRIMOFFSET(x)	((x)->u.primsxp.offset)
-#define SET_PRIMOFFSET(x,v)	(((x)->u.primsxp.offset)=(v))
+#ifdef __cplusplus
 #define PRIMFUN(x)	(R_FunTab[(x)->u.primsxp.offset].cfun)
 #define PRIMNAME(x)	(R_FunTab[(x)->u.primsxp.offset].name)
 #define PRIMVAL(x)	(R_FunTab[(x)->u.primsxp.offset].code)
 #define PRIMARITY(x)	(R_FunTab[(x)->u.primsxp.offset].arity)
 #define PPINFO(x)	(R_FunTab[(x)->u.primsxp.offset].gram)
 #define PRIMPRINT(x)	(((R_FunTab[(x)->u.primsxp.offset].eval)/100)%10)
-
-/* Promise Access Macros */
-#define PRCODE(x)	((x)->u.promsxp.expr)
-#define PRENV(x)	((x)->u.promsxp.env)
-#define PRVALUE(x)	((x)->u.promsxp.value)
-#define PRSEEN(x)	((x)->sxpinfo.gp)
-#define SET_PRSEEN(x,v)	(((x)->sxpinfo.gp)=(v))
-
-/* Hashing Macros */
-#define HASHASH(x)      ((x)->sxpinfo.gp)
-#define HASHVALUE(x)    TRUELENGTH(x)
-#define SET_HASHASH(x,v) (((x)->sxpinfo.gp)=(v))
-#define SET_HASHVALUE(x,v) SET_TRUELENGTH(x, v)
-
-/* Vector Heap Structure */
-typedef struct {
-	union {
-		SEXP		backpointer;
-		double		align;
-	} u;
-} VECREC, *VECP;
-
-/* Vector Heap Macros */
-#define BACKPOINTER(v)	((v).u.backpointer)
-#define BYTE2VEC(n)	(((n)>0)?(((n)-1)/sizeof(VECREC)+1):0)
-#define INT2VEC(n)	(((n)>0)?(((n)*sizeof(int)-1)/sizeof(VECREC)+1):0)
-#define FLOAT2VEC(n)	(((n)>0)?(((n)*sizeof(double)-1)/sizeof(VECREC)+1):0)
-#define COMPLEX2VEC(n)	(((n)>0)?(((n)*sizeof(Rcomplex)-1)/sizeof(VECREC)+1):0)
-#define PTR2VEC(n)	(((n)>0)?(((n)*sizeof(SEXP)-1)/sizeof(VECREC)+1):0)
-/* Bindings */
-/* use the same bits (15 and 14) in symbols and bindings */
-#define ACTIVE_BINDING_MASK (1<<15)
-#define BINDING_LOCK_MASK (1<<14)
-#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
-#define IS_ACTIVE_BINDING(b) ((b)->sxpinfo.gp & ACTIVE_BINDING_MASK)
-#define BINDING_IS_LOCKED(b) ((b)->sxpinfo.gp & BINDING_LOCK_MASK)
-#define SET_ACTIVE_BINDING_BIT(b) ((b)->sxpinfo.gp |= ACTIVE_BINDING_MASK)
-#define LOCK_BINDING(b) ((b)->sxpinfo.gp |= BINDING_LOCK_MASK)
-#define UNLOCK_BINDING(b) ((b)->sxpinfo.gp &= (~BINDING_LOCK_MASK))
-
-#else /* USE_RINTERNALS */
-
-typedef struct VECREC *VECP;
-int (PRIMOFFSET)(SEXP x);
-void (SET_PRIMOFFSET)(SEXP x, int v);
-
+#else
 #define PRIMFUN(x)	(R_FunTab[PRIMOFFSET(x)].cfun)
 #define PRIMNAME(x)	(R_FunTab[PRIMOFFSET(x)].name)
 #define PRIMVAL(x)	(R_FunTab[PRIMOFFSET(x)].code)
 #define PRIMARITY(x)	(R_FunTab[PRIMOFFSET(x)].arity)
 #define PPINFO(x)	(R_FunTab[PRIMOFFSET(x)].gram)
 #define PRIMPRINT(x)	(((R_FunTab[PRIMOFFSET(x)].eval)/100)%10)
-
-Rboolean (IS_ACTIVE_BINDING)(SEXP b);
-Rboolean (BINDING_IS_LOCKED)(SEXP b);
-void (SET_ACTIVE_BINDING_BIT)(SEXP b);
-void (LOCK_BINDING)(SEXP b);
-void (UNLOCK_BINDING)(SEXP b);
-
-#endif /* USE_RINTERNALS */
+#endif
 
 #ifdef BYTECODE
 # ifdef BC_INT_STACK
