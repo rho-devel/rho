@@ -319,6 +319,38 @@ typedef struct {
 #define PRIMPRINT(x)	(((R_FunTab[PRIMOFFSET(x)].eval)/100)%10)
 #endif
 
+#ifdef __cplusplus
+/* There is much more in Rinternals.h, including function versions
+ * of the Promise and Hasking groups.
+ */
+
+/* Vector Heap Structure */
+typedef struct {
+	union {
+		SEXP		backpointer;
+		double		align;
+	} u;
+} VECREC, *VECP;
+
+/* Vector Heap Macros */
+#define BACKPOINTER(v)	((v).u.backpointer)
+#define BYTE2VEC(n)	(((n)>0)?(((n)-1)/sizeof(VECREC)+1):0)
+#define INT2VEC(n)	(((n)>0)?(((n)*sizeof(int)-1)/sizeof(VECREC)+1):0)
+#define FLOAT2VEC(n)	(((n)>0)?(((n)*sizeof(double)-1)/sizeof(VECREC)+1):0)
+#define COMPLEX2VEC(n)	(((n)>0)?(((n)*sizeof(Rcomplex)-1)/sizeof(VECREC)+1):0)
+#define PTR2VEC(n)	(((n)>0)?(((n)*sizeof(SEXP)-1)/sizeof(VECREC)+1):0)
+/* Bindings */
+/* use the same bits (15 and 14) in symbols and bindings */
+#define ACTIVE_BINDING_MASK (1<<15)
+#define BINDING_LOCK_MASK (1<<14)
+#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
+
+#else /* if not __cplusplus */
+
+typedef struct VECREC *VECP;
+
+#endif // __cplusplus
+
 #ifdef BYTECODE
 # ifdef BC_INT_STACK
 typedef union { void *p; int i; } IStackval;
