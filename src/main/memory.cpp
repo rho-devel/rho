@@ -2484,7 +2484,7 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
 SEXP (ATTRIB)(SEXP x) { return ATTRIB(x); }
 int (OBJECT)(SEXP x) { return OBJECT(x); }
 int (MARK)(SEXP x) { return MARK(x); }
-int (TYPEOF)(SEXP x) { return TYPEOF(x); }
+SEXPTYPE (TYPEOF)(SEXP x) { return TYPEOF(x); }
 int (NAMED)(SEXP x) { return NAMED(x); }
 int (TRACE)(SEXP x) { return TRACE(x); }
 int (LEVELS)(SEXP x) { return LEVELS(x); }

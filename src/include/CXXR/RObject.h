@@ -223,6 +223,20 @@ typedef struct VECTOR_SEXPREC {
 
 typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 
+/* S4 object bit, set by R_do_new_object for all new() calls */
+#define S4_OBJECT_MASK (1<<4)
+
+#define DDVAL_MASK	1
+
+/** \def USE_RINTERNALS
+ *
+ * In CXXR USE_RINTERNALS is defined only in source files inherited
+ * from C R that need privileged access to C++ objects, e.g. because
+ * the file implements what is or will be a friend function.
+ */
+
+#ifdef USE_RINTERNALS
+
 /* General Cons Cell Attributes */
 #define ATTRIB(x)	((x)->attrib)
 #define OBJECT(x)	((x)->sxpinfo.obj)
@@ -237,8 +251,6 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #define SET_TRACE(x,v)	(((x)->sxpinfo.trace)=(v))
 #define SETLEVELS(x,v)	(((x)->sxpinfo.gp)=(v))
 
-/* S4 object bit, set by R_do_new_object for all new() calls */
-#define S4_OBJECT_MASK (1<<4)
 #define IS_S4_OBJECT(x) ((x)->sxpinfo.gp & S4_OBJECT_MASK)
 #define SET_S4_OBJECT(x) (((x)->sxpinfo.gp) |= S4_OBJECT_MASK)
 #define UNSET_S4_OBJECT(x) (((x)->sxpinfo.gp) &= ~S4_OBJECT_MASK)
@@ -297,7 +309,6 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #define PRINTNAME(x)	((x)->u.symsxp.pname)
 #define SYMVALUE(x)	((x)->u.symsxp.value)
 #define INTERNAL(x)	((x)->u.symsxp.internal)
-#define DDVAL_MASK	1
 #define DDVAL(x)	((x)->sxpinfo.gp & DDVAL_MASK) /* for ..1, ..2 etc */
 #define SET_DDVAL_BIT(x) (((x)->sxpinfo.gp) |= DDVAL_MASK)
 #define UNSET_DDVAL_BIT(x) (((x)->sxpinfo.gp) &= ~DDVAL_MASK)
@@ -310,13 +321,17 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #define ENVFLAGS(x)	((x)->sxpinfo.gp)	/* for environments */
 #define SET_ENVFLAGS(x,v)	(((x)->sxpinfo.gp)=(v))
 
+#endif // USE_RINTERNALS
+
 #else /* if not __cplusplus */
 
 typedef struct SEXPREC *SEXP;
 
-#define CHAR(x)		R_CHAR(x)
-
 #endif /* __cplusplus */
+
+#ifndef USE_RINTERNALS
+#define CHAR(x)		R_CHAR(x)
+#endif
 
 char *(R_CHAR)(SEXP x);
 
@@ -330,7 +345,7 @@ char *(R_CHAR)(SEXP x);
 SEXP (ATTRIB)(SEXP x);
 int  (OBJECT)(SEXP x);
 int  (MARK)(SEXP x);
-int  (TYPEOF)(SEXP x);
+SEXPTYPE (TYPEOF)(SEXP x);
 int  (NAMED)(SEXP x);
 void (SET_OBJECT)(SEXP x, int v);
 void (SET_TYPEOF)(SEXP x, int v);
