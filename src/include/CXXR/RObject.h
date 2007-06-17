@@ -22,8 +22,9 @@
 #ifndef ROBJECT_H
 #define ROBJECT_H
 
-#include <R_ext/Boolean.h>
-#include <R_ext/Complex.h>
+#include "R_ext/Boolean.h"
+#include "R_ext/Complex.h"
+#include "Rf_namespace.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -506,21 +507,6 @@ inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
 #define SET_HASHASH(x,v) (((x)->sxpinfo.gp)=(v))
 #define SET_HASHVALUE(x,v) SET_TRUELENGTH(x, v)
 
-/* Vector Heap Structure */
-typedef struct {
-	union {
-		SEXP		backpointer;
-		double		align;
-	} u;
-} VECREC, *VECP;
-
-/* Vector Heap Macros */
-#define BACKPOINTER(v)	((v).u.backpointer)
-#define BYTE2VEC(n)	(((n)>0)?(((n)-1)/sizeof(VECREC)+1):0)
-#define INT2VEC(n)	(((n)>0)?(((n)*sizeof(int)-1)/sizeof(VECREC)+1):0)
-#define FLOAT2VEC(n)	(((n)>0)?(((n)*sizeof(double)-1)/sizeof(VECREC)+1):0)
-#define COMPLEX2VEC(n)	(((n)>0)?(((n)*sizeof(Rcomplex)-1)/sizeof(VECREC)+1):0)
-#define PTR2VEC(n)	(((n)>0)?(((n)*sizeof(SEXP)-1)/sizeof(VECREC)+1):0)
 /* Bindings */
 /* use the same bits (15 and 14) in symbols and bindings */
 #define ACTIVE_BINDING_MASK (1<<15)
@@ -534,7 +520,6 @@ typedef struct {
 
 #else /* if not __cplusplus */
 
-typedef struct VECREC *VECP;
 void (SET_PRIMOFFSET)(SEXP x, int v);
 
 Rboolean (IS_ACTIVE_BINDING)(SEXP b);
