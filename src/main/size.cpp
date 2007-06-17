@@ -19,7 +19,7 @@
 
 
 /* We need to know the sizes of certain internal structures */
-#define USE_RINTERNALS
+//#define USE_RINTERNALS
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
