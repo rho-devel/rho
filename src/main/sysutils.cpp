@@ -585,10 +585,10 @@ void * Riconv_open (char* tocode, char* fromcode)
 #endif
 }
 
-size_t Riconv (void *cd, char **inbuf, size_t *inbytesleft,
+size_t Riconv (void *cd, const char **inbuf, size_t *inbytesleft,
 	       char **outbuf, size_t *outbytesleft)
 {
-    return iconv((iconv_t) cd, inbuf, inbytesleft, outbuf, outbytesleft);
+    return iconv((iconv_t) cd, (char **)inbuf, inbytesleft, outbuf, outbytesleft);
 }
 
 int Riconv_close (void *cd)

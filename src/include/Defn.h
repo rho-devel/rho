@@ -993,17 +993,17 @@ SEXP R_subassign3_dflt(SEXP, SEXP, SEXP, SEXP);
 /* main/util.c */
 void UNIMPLEMENTED_TYPE(char *s, SEXP x);
 void UNIMPLEMENTED_TYPEt(char *s, SEXPTYPE t);
-Rboolean utf8strIsASCII(char *str);
+Rboolean utf8strIsASCII(const char *str);
 #ifdef SUPPORT_MBCS
 typedef unsigned short ucs2_t;
-size_t mbcsToUcs2(char *in, ucs2_t *out, int nout);
+size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout);
 /* size_t mbcsMblen(char *in);
 size_t ucs2ToMbcs(ucs2_t *in, char *out);
 size_t ucs2Mblen(ucs2_t *in); */
 int utf8clen(char c);
 #define mbs_init(x) memset(x, 0, sizeof(mbstate_t))
 size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps);
-void mbcsToLatin1(char *in, char *out);
+void mbcsToLatin1(const char *in, char *out);
 Rboolean mbcsValid(char *str);
 char *Rf_strchr(const char *s, int c);
 char *Rf_strrchr(const char *s, int c);

@@ -197,8 +197,9 @@ static int null_vfprintf(Rconnection con, const char *format, va_list ap)
    __va_copy declared uncondiitonally */
 
 
+// 2007/06/19 arr: Gives -pedantic error.  FIXME : handle in configure script
 #if defined(HAVE_VASPRINTF) && !HAVE_DECL_VASPRINTF
-int vasprintf(char **strp, const char *fmt, va_list ap);
+//int vasprintf(char **strp, const char *fmt, va_list ap);
 #endif
 
 // 2007/06/14 arr: C++98 ain't C99.  FIXME : handle in configure script
@@ -264,7 +265,8 @@ int dummy_vfprintf(Rconnection con, const char *format, va_list ap)
 #endif
 #ifdef HAVE_ICONV
     if(con->outconv) { /* translate the buffer */
-	char outbuf[BUFSIZE+1], *ib = b, *ob;
+	const char* ib = b;
+	char outbuf[BUFSIZE+1], *ob;
 	size_t inb = res, onb, ires;
 	Rboolean again = FALSE;
 	int ninit = strlen(con->init_out);
@@ -301,7 +303,8 @@ int dummy_fgetc(Rconnection con)
     if(con->inconv) {
 	if(con->navail <= 0) {
 	    unsigned int i, inew = 0;
-	    char *p, *ib, *ob;
+	    const char* ib;
+	    char *p, *ob;
 	    size_t inb, onb, res;
 
 	    if(con->EOF_signalled) return R_EOF;

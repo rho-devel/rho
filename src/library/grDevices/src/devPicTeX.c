@@ -178,7 +178,7 @@ static void PicTeX_MetricInfo(int c,
 			      double* width, NewDevDesc *dd);
 static void PicTeX_Mode(int mode, NewDevDesc *dd);
 static void PicTeX_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
-static void PicTeX_Polygon(int n, double *x, double *y, 
+static void PicTeX_Polygon(int n, const double *x, const double *y, 
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
 static void PicTeX_Rect(double x0, double y0, double x1, double y1,
@@ -187,10 +187,10 @@ static void PicTeX_Rect(double x0, double y0, double x1, double y1,
 static void PicTeX_Size(double *left, double *right,
 			double *bottom, double *top,
 			NewDevDesc *dd);
-static double PicTeX_StrWidth(char *str, 
+static double PicTeX_StrWidth(const char *str, 
 			      R_GE_gcontext *gc,
 			      NewDevDesc *dd);
-static void PicTeX_Text(double x, double y, char *str, 
+static void PicTeX_Text(double x, double y, const char *str, 
 			double rot, double hadj, 
 			R_GE_gcontext *gc,
 			NewDevDesc *dd);
@@ -446,7 +446,7 @@ static void PicTeX_Line(double x1, double y1, double x2, double y2,
     }
 }
 
-static void PicTeX_Polyline(int n, double *x, double *y, 
+static void PicTeX_Polyline(int n, const double *x, const double *y, 
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd)
 {
@@ -472,13 +472,13 @@ static void PicTeX_Polyline(int n, double *x, double *y,
 	/* String Width in Rasters */
 	/* For the current font in pointsize fontsize */
 
-static double PicTeX_StrWidth(char *str, 
+static double PicTeX_StrWidth(const char *str, 
 			      R_GE_gcontext *gc,
 			      NewDevDesc *dd)
 {
     picTeXDesc *ptd = (picTeXDesc *) dd->deviceSpecific;
 
-    char *p;
+    const char *p;
     int size;
     double sum;
 
@@ -534,7 +534,7 @@ static void PicTeX_Circle(double x, double y, double r,
 	    x, (y + r), x, y);
 }
 
-static void PicTeX_Polygon(int n, double *x, double *y, 
+static void PicTeX_Polygon(int n, const double *x, const double *y, 
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd)
 {
@@ -564,7 +564,7 @@ static void PicTeX_Polygon(int n, double *x, double *y,
 }
 
 /* TeX Text Translations */
-static void textext(char *str, picTeXDesc *ptd)
+static void textext(const char *str, picTeXDesc *ptd)
 {
     fputc('{', ptd->texfp);
     for( ; *str ; str++)
@@ -598,7 +598,7 @@ static void textext(char *str, picTeXDesc *ptd)
 
 /* Rotated Text */
 
-static void PicTeX_Text(double x, double y, char *str, 
+static void PicTeX_Text(double x, double y, const char *str, 
 			double rot, double hadj, 
 			R_GE_gcontext *gc,
 			NewDevDesc *dd)

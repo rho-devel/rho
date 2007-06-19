@@ -297,10 +297,11 @@ static const char UCS2ENC[] = "UCS-2LE";
 /* Note: this does not terminate out, as all current uses are to look
  * at 'out' a wchar at a time, and sometimes just one char.
  */
-size_t mbcsToUcs2(char *in, ucs2_t *out, int nout)
+size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout)
 {
     void   *cd = NULL ;
-    char   *i_buf, *o_buf;
+    const char   *i_buf;
+    char *o_buf;
     size_t  i_len, o_len, status, wc_len;
 
     /* out length */
@@ -314,7 +315,7 @@ size_t mbcsToUcs2(char *in, ucs2_t *out, int nout)
     i_len = strlen(in); /* not including terminator */
     o_buf = (char *)out;
     o_len = nout * sizeof(ucs2_t);
-    status = Riconv(cd, (char **)&i_buf, (size_t *)&i_len,
+    status = Riconv(cd, &i_buf, (size_t *)&i_len,
 		    (char **)&o_buf, (size_t *)&o_len);
 
     Riconv_close(cd);
@@ -868,9 +869,9 @@ void attribute_hidden markKnown(SEXP x, SEXP ref)
 
 /* Note: this is designed to be fast and valid only for UTF-8 strings.
    It is also correct in EUC-* locales. */
-Rboolean utf8strIsASCII(char *str)
+Rboolean utf8strIsASCII(const char *str)
 {
-    char *p;
+    const char *p;
     for(p = str; *p; p++)
 	if((unsigned int)*p > 0x7F) return FALSE;
     return TRUE;
@@ -908,7 +909,7 @@ Rboolean mbcsValid(char *str)
 }
 
 /* We do this conversion ourselves to do our own error recovery */
-void mbcsToLatin1(char *in, char *out)
+void mbcsToLatin1(const char *in, char *out)
 {
     wchar_t *wbuff;
     unsigned int i;

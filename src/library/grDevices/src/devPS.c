@@ -34,7 +34,7 @@
 #ifdef SUPPORT_MBCS
 #include <wchar.h>
 #include <wctype.h>
-static void mbcsToSbcs(char *in, char *out, char *encoding);
+static void mbcsToSbcs(const char *in, char *out, char *encoding);
 #endif
 
 #if defined(HAVE_ICONV) && defined(ICONV_LATIN1)
@@ -812,7 +812,8 @@ PostScriptMetricInfo(int c, double *ascent, double *descent, double *width,
        convert from  UCS4ENC, but there are no language chars about 65536. */
     if(mbcslocale && !isSymbol && c >= 128 && c < 65536) { /* Unicode */
 	void *cd = NULL;
-	char *i_buf, *o_buf, out[2];
+	const char *i_buf;
+        char *o_buf, out[2];
 	size_t i_len, o_len, status;
 	unsigned short w[2];
 
@@ -826,7 +827,7 @@ PostScriptMetricInfo(int c, double *ascent, double *descent, double *width,
 	i_len = 4;
 	o_buf = out;
 	o_len = 2;
-	status = Riconv(cd, (char **)&i_buf, (size_t *)&i_len,
+	status = Riconv(cd, &i_buf, (size_t *)&i_len,
 			(char **)&o_buf, (size_t *)&o_len);
 	Riconv_close(cd);
 	if (status == (size_t)-1) {
@@ -2711,7 +2712,7 @@ static void PostScriptCircle(FILE *fp, double x, double y, double r)
     fprintf(fp, "%.2f %.2f %.2f c ", x, y, r);
 }
 
-static void PostScriptWriteString(FILE *fp, char *str)
+static void PostScriptWriteString(FILE *fp, const char *str)
 {
     fputc('(', fp);
     for ( ; *str; str++)
@@ -2742,7 +2743,7 @@ static void PostScriptWriteString(FILE *fp, char *str)
 }
 
 static void PostScriptText(FILE *fp, double x, double y,
-			   char *str, double xc, double yc, double rot)
+			   const char *str, double xc, double yc, double rot)
 {
     fprintf(fp, "%.2f %.2f ", x, y);
     PostScriptWriteString(fp, str);
@@ -2766,7 +2767,7 @@ static void PostScriptText(FILE *fp, double x, double y,
 
 #ifdef SUPPORT_MBCS
 static void PostScriptHexText(FILE *fp, double x, double y,
-			      char *str, int strlen,
+			      const char *str, int strlen,
 			      double xc, double yc, double rot)
 {
     unsigned char *p = (unsigned char *)str;
@@ -2818,10 +2819,10 @@ static void PS_Mode(int mode, NewDevDesc *dd);
 static void PS_NewPage(R_GE_gcontext *gc,
 		       NewDevDesc *dd);
 static Rboolean PS_Open(NewDevDesc*, PostScriptDesc*);
-static void PS_Polygon(int n, double *x, double *y,
+static void PS_Polygon(int n, const double *x, const double *y,
 		       R_GE_gcontext *gc,
 		       NewDevDesc *dd);
-static void PS_Polyline(int n, double *x, double *y,
+static void PS_Polyline(int n, const double *x, const double *y,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd);
 static void PS_Rect(double x0, double y0, double x1, double y1,
@@ -2830,10 +2831,10 @@ static void PS_Rect(double x0, double y0, double x1, double y1,
 static void PS_Size(double *left, double *right,
 		     double *bottom, double *top,
 		     NewDevDesc *dd);
-static double PS_StrWidth(char *str,
+static double PS_StrWidth(const char *str,
 			  R_GE_gcontext *gc,
 			  NewDevDesc *dd);
-static void PS_Text(double x, double y, char *str,
+static void PS_Text(double x, double y, const char *str,
 		    double rot, double hadj,
 		    R_GE_gcontext *gc,
 		    NewDevDesc *dd);
@@ -3626,7 +3627,7 @@ static char *convname(char *family, PostScriptDesc *pd) {
     return result;
 }
 
-static double PS_StrWidth(char *str,
+static double PS_StrWidth(const char *str,
 			  R_GE_gcontext *gc,
 			  NewDevDesc *dd)
 {
@@ -3756,7 +3757,7 @@ static void PS_Line(double x1, double y1, double x2, double y2,
     }
 }
 
-static void PS_Polygon(int n, double *x, double *y,
+static void PS_Polygon(int n, const double *x, const double *y,
 		       R_GE_gcontext *gc,
 		       NewDevDesc *dd)
 {
@@ -3791,7 +3792,7 @@ static void PS_Polygon(int n, double *x, double *y,
     }
 }
 
-static void PS_Polyline(int n, double *x, double *y,
+static void PS_Polyline(int n, const double *x, const double *y,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd)
 {
@@ -3867,7 +3868,7 @@ static int translateCIDFont(char* family, int style, PostScriptDesc *pd)
 }
 #endif
 
-static void drawSimpleText(double x, double y, char *str,
+static void drawSimpleText(double x, double y, const char *str,
 			   double rot, double hadj,
 			   int font,
 			   R_GE_gcontext *gc,
@@ -3898,10 +3899,11 @@ static void PS_Text(double x, double y, char *str,
    need to know if the current locale's charset changes.  However,
    currently this is only called in a UTF-8 locale.
  */
-static void mbcsToSbcs(char *in, char *out, char *encoding)
+static void mbcsToSbcs(const char *in, char *out, char *encoding)
 {
     void *cd = NULL;
-    char *i_buf, *o_buf;
+    const char *i_buf;
+    char *o_buf;
     size_t i_len, o_len, status;
 
     if(strcmp(encoding, "latin1") == 0 || strcmp(encoding, "ISOLatin1") == 0) {
@@ -3916,19 +3918,19 @@ static void mbcsToSbcs(char *in, char *out, char *encoding)
     i_len = strlen(in)+1; /* include terminator */
     o_buf = (char *)out;
     o_len = i_len; /* must be the same or fewer chars */
-    status = Riconv(cd, (char **)&i_buf, (size_t *)&i_len,
+    status = Riconv(cd, &i_buf, (size_t *)&i_len,
 		    (char **)&o_buf, (size_t *)&o_len);
 
     Riconv_close(cd);
     if (status == (size_t)-1) error(_("conversion failure in 'mbcsToSbcs'"));
 }
 
-static void PS_Text(double x, double y, char *str,
+static void PS_Text(double x, double y, const char *str,
 		    double rot, double hadj,
 		    R_GE_gcontext *gc,
 		    NewDevDesc *dd)
 {
-    char *str1 = str;
+    const char *str1 = str;
     char *buff;
 
     PostScriptDesc *pd = (PostScriptDesc *) dd->deviceSpecific;
@@ -3979,7 +3981,8 @@ static void PS_Text(double x, double y, char *str,
         if (ucslen != (size_t)-1) {
 	    void *cd;
 	    unsigned char *buf;
-	    char  *i_buf, *o_buf;
+	    const char  *i_buf;
+	    char *o_buf;
 	    size_t nb, i_len,  o_len, buflen = ucslen * sizeof(ucs2_t);
 	    size_t status;
 
@@ -3994,7 +3997,7 @@ static void PS_Text(double x, double y, char *str,
             i_len = strlen(str); /* do not include terminator */
             nb = o_len = buflen;
 
-            status = Riconv(cd, (char **)&i_buf, (size_t *)&i_len,
+            status = Riconv(cd, &i_buf, (size_t *)&i_len,
                             (char **)&o_buf, (size_t *)&o_len);
 
             Riconv_close(cd);
@@ -4126,7 +4129,7 @@ static void XF_EndPage(FILE *fp)
     fprintf(fp, "# end of XFig page\n");
 }
 
-static void XF_WriteString(FILE *fp, char *str)
+static void XF_WriteString(FILE *fp, const char *str)
 {
     unsigned int c;
     for ( ; *str; str++) {
@@ -4214,10 +4217,10 @@ static void XFig_MetricInfo(int c,
 			    double* width, NewDevDesc *dd);
 static void XFig_Mode(int mode, NewDevDesc *dd);
 static void XFig_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
-static void XFig_Polygon(int n, double *x, double *y,
+static void XFig_Polygon(int n, const double *x, const double *y,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd);
-static void XFig_Polyline(int n, double *x, double *y,
+static void XFig_Polyline(int n, const double *x, const double *y,
 			  R_GE_gcontext *gc,
 			  NewDevDesc *dd);
 static void XFig_Rect(double x0, double y0, double x1, double y1,
@@ -4226,10 +4229,10 @@ static void XFig_Rect(double x0, double y0, double x1, double y1,
 static void XFig_Size(double *left, double *right,
 		     double *bottom, double *top,
 		     NewDevDesc *dd);
-static double XFig_StrWidth(char *str,
+static double XFig_StrWidth(const char *str,
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd);
-static void XFig_Text(double x, double y, char *str,
+static void XFig_Text(double x, double y, const char *str,
 		      double rot, double hadj,
 		      R_GE_gcontext *gc,
 		      NewDevDesc *dd);
@@ -4735,7 +4738,7 @@ static void XFig_Line(double x1, double y1, double x2, double y2,
     }
 }
 
-static void XFig_Polygon(int n, double *x, double *y,
+static void XFig_Polygon(int n, const double *x, const double *y,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd)
 {
@@ -4766,7 +4769,7 @@ static void XFig_Polygon(int n, double *x, double *y,
     }
 }
 
-static void XFig_Polyline(int n, double *x, double *y,
+static void XFig_Polyline(int n, const double *x, const double *y,
 			  R_GE_gcontext *gc,
 			  NewDevDesc *dd)
 {
@@ -4793,7 +4796,7 @@ static void XFig_Polyline(int n, double *x, double *y,
 
 static const int styles[4] = {0,2,1,3};
 
-static void XFig_Text(double x, double y, char *str,
+static void XFig_Text(double x, double y, const char *str,
 		      double rot, double hadj,
 		      R_GE_gcontext *gc,
 		      NewDevDesc *dd)
@@ -4802,7 +4805,7 @@ static void XFig_Text(double x, double y, char *str,
     FILE *fp = pd->tmpfp;
     int fontnum, style = gc->fontface;
     double size = floor(gc->cex * gc->ps + 0.5);
-    char *str1 = str;
+    const char *str1 = str;
 #if defined(HAVE_ICONV) && defined(ICONV_LATIN1)
     char *buf;
 #endif
@@ -4846,7 +4849,8 @@ static void XFig_Text(double x, double y, char *str,
 #if defined(HAVE_ICONV) && defined(ICONV_LATIN1)
 	    /* reencode the text */
 	    void *cd;
-	    char  *i_buf, *o_buf;
+	    const char  *i_buf;
+	    char *o_buf;
 	    size_t i_len, o_len, status;
 	    int buflen = MB_LEN_MAX*strlen(str) + 1;
 
@@ -4889,7 +4893,7 @@ static void XFig_Hold(NewDevDesc *dd)
 {
 }
 
-static double XFig_StrWidth(char *str,
+static double XFig_StrWidth(const char *str,
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd)
 {
@@ -5034,10 +5038,10 @@ static void PDF_MetricInfo(int c,
 			   double* width, NewDevDesc *dd);
 static void PDF_Mode(int mode, NewDevDesc *dd);
 static void PDF_NewPage(R_GE_gcontext *gc, NewDevDesc *dd);
-static void PDF_Polygon(int n, double *x, double *y,
+static void PDF_Polygon(int n, const double *x, const double *y,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd);
-static void PDF_Polyline(int n, double *x, double *y,
+static void PDF_Polyline(int n, const double *x, const double *y,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd);
 static void PDF_Rect(double x0, double y0, double x1, double y1,
@@ -5046,10 +5050,10 @@ static void PDF_Rect(double x0, double y0, double x1, double y1,
 static void PDF_Size(double *left, double *right,
 		     double *bottom, double *top,
 		     NewDevDesc *dd);
-static double PDF_StrWidth(char *str,
+static double PDF_StrWidth(const char *str,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd);
-static void PDF_Text(double x, double y, char *str,
+static void PDF_Text(double x, double y, const char *str,
 		     double rot, double hadj,
 		     R_GE_gcontext *gc,
 		     NewDevDesc *dd);
@@ -6368,7 +6372,7 @@ static void PDF_Line(double x1, double y1, double x2, double y2,
     fprintf(pd->pdffp, "%.2f %.2f m %.2f %.2f l S\n", x1, y1, x2, y2);
 }
 
-static void PDF_Polygon(int n, double *x, double *y,
+static void PDF_Polygon(int n, const double *x, const double *y,
 			R_GE_gcontext *gc,
 			NewDevDesc *dd)
 {
@@ -6401,7 +6405,7 @@ static void PDF_Polygon(int n, double *x, double *y,
     }
 }
 
-static void PDF_Polyline(int n, double *x, double *y,
+static void PDF_Polyline(int n, const double *x, const double *y,
 			 R_GE_gcontext *gc,
 			 NewDevDesc *dd)
 {
@@ -6501,7 +6505,7 @@ static int PDFfontNumber(char *family, int face, PDFDesc *pd)
     return num;
 }
 
-static void PDFSimpleText(double x, double y, char *str,
+static void PDFSimpleText(double x, double y, const char *str,
 			  double rot, double hadj,
 			  int font,
 			  R_GE_gcontext *gc,
@@ -6510,7 +6514,7 @@ static void PDFSimpleText(double x, double y, char *str,
     int size = (int)floor(gc->cex * gc->ps + 0.5);
     int face = gc->fontface;
     double a, b, rot1;
-    char *str1 = str;
+    const char *str1 = str;
 
     if(!R_VIS(gc->col)) return;
 
@@ -6548,7 +6552,7 @@ static void PDF_Text(double x, double y, char *str,
 #else
 static char *PDFconvname(char *family, PDFDesc *pd);
 
-static void PDF_Text(double x, double y, char *str,
+static void PDF_Text(double x, double y, const char *str,
 		     double rot, double hadj,
 		     R_GE_gcontext *gc,
 		     NewDevDesc *dd)
@@ -6557,7 +6561,7 @@ static void PDF_Text(double x, double y, char *str,
     int size = (int) floor(gc->cex * gc->ps + 0.5);
     int face = gc->fontface;
     double a, b, rot1;
-    char *str1 = str;
+    const char *str1 = str;
     char *buff;
 
     if(!R_VIS(gc->col)) return;
@@ -6629,7 +6633,8 @@ static void PDF_Text(double x, double y, char *str,
 	ucslen = mbstowcs(NULL, str, 0);
         if (ucslen != (size_t)-1) {
 	    void *cd;
-	    char  *i_buf, *o_buf;
+	    const char  *i_buf;
+	    char *o_buf;
 	    size_t i, nb, i_len,  o_len, buflen = ucslen*sizeof(ucs2_t);
 	    size_t status;
 	    unsigned char *p;
@@ -6646,7 +6651,7 @@ static void PDF_Text(double x, double y, char *str,
 				    as output a byte at a time */
 	    nb = o_len = buflen;
 
-	    status = Riconv(cd, (char **)&i_buf, (size_t *)&i_len,
+	    status = Riconv(cd, &i_buf, (size_t *)&i_len,
 			    (char **)&o_buf, (size_t *)&o_len);
 
 	    Riconv_close(cd);
@@ -6817,7 +6822,7 @@ static char *PDFconvname(char *family,
     return result;
 }
 
-static double PDF_StrWidth(char *str,
+static double PDF_StrWidth(const char *str,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd)
 {

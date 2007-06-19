@@ -2935,7 +2935,7 @@ void GRect(double x0, double y0, double x1, double y1, GUnit coords,
 }
 
 /* Compute string width. */
-double GStrWidth(char *str, GUnit units, DevDesc *dd)
+double GStrWidth(const char *str, GUnit units, DevDesc *dd)
 {
     double w;
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
@@ -2948,7 +2948,7 @@ double GStrWidth(char *str, GUnit units, DevDesc *dd)
 
 /* Compute string height. */
 
-double GStrHeight(char *str, GUnit units, DevDesc *dd)
+double GStrHeight(const char *str, GUnit units, DevDesc *dd)
 {
     double h;
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);

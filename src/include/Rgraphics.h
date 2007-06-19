@@ -313,9 +313,9 @@ void GPolyline(int, double*, double*, GUnit, DevDesc*);
 /* Draw a rectangle given two opposite corners: */
 void GRect(double, double, double, double, GUnit, int, int, DevDesc*);
 /* Return the height of the specified string in the specified units: */
-double GStrHeight(char*, GUnit, DevDesc*);
+double GStrHeight(const char*, GUnit, DevDesc*);
 /* Return the width of the specified string in the specified units */
-double GStrWidth(char*, GUnit, DevDesc*);
+double GStrWidth(const char*, GUnit, DevDesc*);
 /* Draw the specified text at location (x,y) with the specified
  * rotation and justification: */
 void GText(double, double, GUnit, const char*, double, double, double, DevDesc*);
