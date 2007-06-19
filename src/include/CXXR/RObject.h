@@ -19,18 +19,19 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+/** @file RObject.h
+ * Future class RObject.
+ */
+
 #ifndef ROBJECT_H
 #define ROBJECT_H
 
 #include "R_ext/Boolean.h"
-#include "R_ext/Complex.h"
 #include "Rf_namespace.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef unsigned char Rbyte;
 
 /* type for length of vectors etc */
 typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
@@ -208,33 +209,17 @@ typedef struct SEXPREC {
     } u;
 } SEXPREC, *SEXP;
 
-/* The generational collector uses a reduced version of SEXPREC as a
-   header in vector nodes.  The layout MUST be kept consistent with
-   the SEXPREC definition.  The standard SEXPREC takes up 7 words on
-   most hardware; this reduced version should take up only 6 words.
-   In addition to slightly reducing memory use, this can lead to more
-   favorable data alignment on 32-bit architectures like the Intel
-   Pentium III where odd word alignment of doubles is allowed but much
-   less efficient than even word alignment. */
-typedef struct VECTOR_SEXPREC {
-    SEXPREC_HEADER;
-    struct vecsxp_struct vecsxp;
-} VECTOR_SEXPREC, *VECSEXP;
-
-typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
-
 /* S4 object bit, set by R_do_new_object for all new() calls */
 #define S4_OBJECT_MASK (1<<4)
 
 #define DDVAL_MASK	1
 
-/** \def USE_RINTERNALS
- *
+
+/*
  * In CXXR USE_RINTERNALS is defined only in source files inherited
  * from C R that need privileged access to C++ objects, e.g. because
  * the file implements what is or will be a friend function.
  */
-
 #ifdef USE_RINTERNALS
 
 /* General Cons Cell Attributes */
@@ -255,267 +240,6 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #define SET_S4_OBJECT(x) (((x)->sxpinfo.gp) |= S4_OBJECT_MASK)
 #define UNSET_S4_OBJECT(x) (((x)->sxpinfo.gp) &= ~S4_OBJECT_MASK)
 
-/* Vector Access Macros */
-#define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
-#define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
-#define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
-#define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
-
-/* Under the generational allocator the data for vector nodes comes
-   immediately after the node structure, so the data address is a
-   known offset from the node SEXP. */
-#define DATAPTR(x)	(((SEXPREC_ALIGN *) (x)) + 1)
-#define CHAR(x)		((char *) DATAPTR(x))
-#define LOGICAL(x)	((int *) DATAPTR(x))
-#define INTEGER(x)	((int *) DATAPTR(x))
-#define RAW(x)		((Rbyte *) DATAPTR(x))
-#define COMPLEX(x)	((Rcomplex *) DATAPTR(x))
-#define REAL(x)		((double *) DATAPTR(x))
-#define STRING_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define VECTOR_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define STRING_PTR(x)	((SEXP *) DATAPTR(x))
-#define VECTOR_PTR(x)	((SEXP *) DATAPTR(x))
-
-/* List Access Macros */
-/* These also work for ... objects */
-#define LISTVAL(x)	((x)->u.listsxp)
-#define TAG(e)		((e)->u.listsxp.tagval)
-#define CAR(e)		((e)->u.listsxp.carval)
-#define CDR(e)		((e)->u.listsxp.cdrval)
-#define CAAR(e)		CAR(CAR(e))
-#define CDAR(e)		CDR(CAR(e))
-#define CADR(e)		CAR(CDR(e))
-#define CDDR(e)		CDR(CDR(e))
-#define CADDR(e)	CAR(CDR(CDR(e)))
-#define CADDDR(e)	CAR(CDR(CDR(CDR(e))))
-#define CAD4R(e)	CAR(CDR(CDR(CDR(CDR(e)))))
-#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
-#define MISSING(x)	((x)->sxpinfo.gp & MISSING_MASK)/* for closure calls */
-#define SET_MISSING(x,v) do { \
-  SEXP __x__ = (x); \
-  int __v__ = (v); \
-  int __other_flags__ = __x__->sxpinfo.gp & ~MISSING_MASK; \
-  __x__->sxpinfo.gp = __other_flags__ | __v__; \
-} while (0)
-
-/* Closure Access Macros */
-#define FORMALS(x)	((x)->u.closxp.formals)
-#define BODY(x)		((x)->u.closxp.body)
-#define CLOENV(x)	((x)->u.closxp.env)
-#define DEBUG(x)	((x)->sxpinfo.debug)
-#define SET_DEBUG(x,v)	(((x)->sxpinfo.debug)=(v))
-
-/* Symbol Access Macros */
-#define PRINTNAME(x)	((x)->u.symsxp.pname)
-#define SYMVALUE(x)	((x)->u.symsxp.value)
-#define INTERNAL(x)	((x)->u.symsxp.internal)
-#define DDVAL(x)	((x)->sxpinfo.gp & DDVAL_MASK) /* for ..1, ..2 etc */
-#define SET_DDVAL_BIT(x) (((x)->sxpinfo.gp) |= DDVAL_MASK)
-#define UNSET_DDVAL_BIT(x) (((x)->sxpinfo.gp) &= ~DDVAL_MASK)
-#define SET_DDVAL(x,v) ((v) ? SET_DDVAL_BIT(x) : UNSET_DDVAL_BIT(x)) /* for ..1, ..2 etc */
-
-/* Environment Access Macros */
-#define FRAME(x)	((x)->u.envsxp.frame)
-#define ENCLOS(x)	((x)->u.envsxp.enclos)
-#define HASHTAB(x)	((x)->u.envsxp.hashtab)
-#define ENVFLAGS(x)	((x)->sxpinfo.gp)	/* for environments */
-#define SET_ENVFLAGS(x,v)	(((x)->sxpinfo.gp)=(v))
-
-#endif // USE_RINTERNALS
-
-#else /* if not __cplusplus */
-
-typedef struct SEXPREC *SEXP;
-
-#endif /* __cplusplus */
-
-#ifndef USE_RINTERNALS
-#define CHAR(x)		R_CHAR(x)
-#endif
-
-char *(R_CHAR)(SEXP x);
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
-
-/* General Cons Cell Attributes */
-SEXP (ATTRIB)(SEXP x);
-int  (OBJECT)(SEXP x);
-int  (MARK)(SEXP x);
-SEXPTYPE (TYPEOF)(SEXP x);
-int  (NAMED)(SEXP x);
-void (SET_OBJECT)(SEXP x, int v);
-void (SET_TYPEOF)(SEXP x, int v);
-void (SET_NAMED)(SEXP x, int v);
-void SET_ATTRIB(SEXP x, SEXP v);
-void DUPLICATE_ATTRIB(SEXP to, SEXP from);
-
-/* S4 object testing */
-int (IS_S4_OBJECT)(SEXP x);
-void (SET_S4_OBJECT)(SEXP x);
-void (UNSET_S4_OBJECT)(SEXP x);
-
-/* Vector Access Functions */
-int  (LENGTH)(SEXP x);
-int  (TRUELENGTH)(SEXP x);
-void (SETLENGTH)(SEXP x, int v);
-void (SET_TRUELENGTH)(SEXP x, int v);
-int  (LEVELS)(SEXP x);
-int  (SETLEVELS)(SEXP x, int v);
-
-int  *(LOGICAL)(SEXP x);
-int  *(INTEGER)(SEXP x);
-Rbyte *(RAW)(SEXP x);
-double *(REAL)(SEXP x);
-Rcomplex *(COMPLEX)(SEXP x);
-SEXP (STRING_ELT)(SEXP x, int i);
-SEXP (VECTOR_ELT)(SEXP x, int i);
-void SET_STRING_ELT(SEXP x, int i, SEXP v);
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
-SEXP *(STRING_PTR)(SEXP x);
-SEXP *(VECTOR_PTR)(SEXP x);
-
-/* List Access Functions */
-/* These also work for ... objects */
-#define CONS(a, b)	cons((a), (b))		/* data lists */
-#define LCONS(a, b)	lcons((a), (b))		/* language lists */
-SEXP (TAG)(SEXP e);
-SEXP (CAR)(SEXP e);
-SEXP (CDR)(SEXP e);
-SEXP (CAAR)(SEXP e);
-SEXP (CDAR)(SEXP e);
-SEXP (CADR)(SEXP e);
-SEXP (CDDR)(SEXP e);
-SEXP (CADDR)(SEXP e);
-SEXP (CADDDR)(SEXP e);
-SEXP (CAD4R)(SEXP e);
-int  (MISSING)(SEXP x);
-void (SET_MISSING)(SEXP x, int v);
-void SET_TAG(SEXP x, SEXP y);
-SEXP SETCAR(SEXP x, SEXP y);
-SEXP SETCDR(SEXP x, SEXP y);
-SEXP SETCADR(SEXP x, SEXP y);
-SEXP SETCADDR(SEXP x, SEXP y);
-SEXP SETCADDDR(SEXP x, SEXP y);
-SEXP SETCAD4R(SEXP e, SEXP y);
-
-/* Closure Access Functions */
-SEXP (FORMALS)(SEXP x);
-SEXP (BODY)(SEXP x);
-SEXP (CLOENV)(SEXP x);
-int  (DEBUG)(SEXP x);
-int  (TRACE)(SEXP x);
-void (SET_DEBUG)(SEXP x, int v);
-void (SET_TRACE)(SEXP x, int v);
-void SET_FORMALS(SEXP x, SEXP v);
-void SET_BODY(SEXP x, SEXP v);
-void SET_CLOENV(SEXP x, SEXP v);
-
-/* Symbol Access Functions */
-SEXP (PRINTNAME)(SEXP x);
-SEXP (SYMVALUE)(SEXP x);
-SEXP (INTERNAL)(SEXP x);
-int  (DDVAL)(SEXP x);
-void (SET_DDVAL)(SEXP x, int v);
-void SET_PRINTNAME(SEXP x, SEXP v);
-void SET_SYMVALUE(SEXP x, SEXP v);
-void SET_INTERNAL(SEXP x, SEXP v);
-
-/* Environment Access Functions */
-SEXP (FRAME)(SEXP x);
-SEXP (ENCLOS)(SEXP x);
-SEXP (HASHTAB)(SEXP x);
-int  (ENVFLAGS)(SEXP x);
-void (SET_ENVFLAGS)(SEXP x, int v);
-void SET_FRAME(SEXP x, SEXP v);
-void SET_ENCLOS(SEXP x, SEXP v);
-void SET_HASHTAB(SEXP x, SEXP v);
-
-/* Promise Access Functions */
-/* First five have macro versions in Defn.h */
-SEXP (PRCODE)(SEXP x);
-SEXP (PRENV)(SEXP x);
-SEXP (PRVALUE)(SEXP x);
-int  (PRSEEN)(SEXP x);
-void (SET_PRSEEN)(SEXP x, int v);
-void SET_PRENV(SEXP x, SEXP v);
-void SET_PRVALUE(SEXP x, SEXP v);
-void SET_PRCODE(SEXP x, SEXP v);
-void SET_PRSEEN(SEXP x, int v);
-
-/* Hashing Functions */
-/* There are macro versions in Defn.h */
-int  (HASHASH)(SEXP x);
-int  (HASHVALUE)(SEXP x);
-void (SET_HASHASH)(SEXP x, int v);
-void (SET_HASHVALUE)(SEXP x, int v);
-
-
-/* External pointer access macros */
-#define EXTPTR_PTR(x)	CAR(x)
-#define EXTPTR_PROT(x)	CDR(x)
-#define EXTPTR_TAG(x)	TAG(x)
-
-#ifdef BYTECODE
-/* Bytecode access macros */
-#define BCODE_CODE(x)	CAR(x)
-#define BCODE_CONSTS(x) CDR(x)
-#define BCODE_EXPR(x)	TAG(x)
-#define isByteCode(x)	(TYPEOF(x)==BCODESXP)
-#else
-#define isByteCode(x)	FALSE
-#endif
-
-/* CHARSXP charset bits */
-#ifdef __cplusplus
-# define LATIN1_MASK (1<<2)
-# define IS_LATIN1(x) ((x)->sxpinfo.gp & LATIN1_MASK)
-# define UNSET_LATIN1(x) (((x)->sxpinfo.gp) &= ~LATIN1_MASK)
-# define UTF8_MASK (1<<3)
-# define IS_UTF8(x) ((x)->sxpinfo.gp & UTF8_MASK)
-# define UNSET_UTF8(x) (((x)->sxpinfo.gp) &= ~UTF8_MASK)
-#else
-/* Needed only for write-barrier testing */
-int IS_LATIN1(SEXP x);
-//void SET_LATIN1(SEXP x);
-void UNSET_LATIN1(SEXP x);
-int IS_UTF8(SEXP x);
-//void SET_UTF8(SEXP x);
-void UNSET_UTF8(SEXP x);
-#endif
-
-/* CHARSXP charset bits */
-
-#ifndef __cplusplus
-void SET_LATIN1(SEXP x);
-#else
-inline void SET_LATIN1(SEXP x)  {x->sxpinfo.gp |= LATIN1_MASK;}
-#endif
-
-#ifndef __cplusplus
-void SET_UTF8(SEXP x);
-#else
-inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
-#endif
-
-#ifdef __cplusplus
-/* There is much more in Rinternals.h, including function versions
- * of the Promise and Hasking groups.
- */
-
-/* Primitive Access Macros */
-#define SET_PRIMOFFSET(x,v)	(((x)->u.primsxp.offset)=(v))
-
-/* Promise Access Macros */
-#define PRCODE(x)	((x)->u.promsxp.expr)
-#define PRENV(x)	((x)->u.promsxp.env)
-#define PRVALUE(x)	((x)->u.promsxp.value)
-#define PRSEEN(x)	((x)->sxpinfo.gp)
-#define SET_PRSEEN(x,v)	(((x)->sxpinfo.gp)=(v))
-
 /* Hashing Macros */
 #define HASHASH(x)      ((x)->sxpinfo.gp)
 #define HASHVALUE(x)    TRUELENGTH(x)
@@ -533,25 +257,130 @@ inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
 #define LOCK_BINDING(b) ((b)->sxpinfo.gp |= BINDING_LOCK_MASK)
 #define UNLOCK_BINDING(b) ((b)->sxpinfo.gp &= (~BINDING_LOCK_MASK))
 
+#endif // USE_RINTERNALS
+
 #else /* if not __cplusplus */
 
-void (SET_PRIMOFFSET)(SEXP x, int v);
+typedef struct SEXPREC *SEXP;
+
+#endif /* __cplusplus */
+
+/* Accessor functions.  Many are declared using () to avoid the macro
+   definitions in the USE_RINTERNALS section.
+   The function STRING_ELT is used as an argument to arrayAssign even 
+   if the macro version is in use.
+*/
+
+/* General Cons Cell Attributes */
+
+/**
+ * Return the attributes of an \c RObject.
+ * @param x Pointer to the \c RObject whose attributes are required.
+ * @return Pointer to the attributes object of \a x.
+ */
+SEXP (ATTRIB)(SEXP x);
+
+/**
+ * Does \c RObject have a class attribute?.
+ * @param x Pointer to an \c RObject.
+ * @return true iff \a x has a class attribute.
+ * @todo Make x \c const; return \c Rboolean
+ */
+int  (OBJECT)(SEXP x);
+
+/**
+ * Object in use?
+ * @param x Pointer to an \c RObject.
+ * @return true iff \a x is considered to be in use by garbage collector.
+ * @deprecated Depends on GC.
+ */
+int  (MARK)(SEXP x);
+
+/**
+ * Object type.
+ * @param x Pointer to \c RObject.
+ * @return \c SEXPTYPE of \a x.
+ * @todo Make \a x \c const.
+ */
+SEXPTYPE (TYPEOF)(SEXP x);
+
+/**
+ * @deprecated
+ */
+int  (NAMED)(SEXP x);
+
+/**
+ * @deprecated
+ */
+int  (LEVELS)(SEXP x);
+
+/**
+ * @deprecated
+ */
+int  (SETLEVELS)(SEXP x, int v);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (SET_OBJECT)(SEXP x, int v);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (SET_TYPEOF)(SEXP x, int v);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (SET_NAMED)(SEXP x, int v);
+
+/**
+ * Replace x's attributes by \a v.
+ * @param x Pointer to \c RObject.
+ * @param v Pointer to attributes \c RObject.
+ * @todo Could \a v be \c const ?
+ */
+void SET_ATTRIB(SEXP x, SEXP v);
+
+/**
+ * Replace \a to's attributes by those of \a from.
+ * @param to Pointer to \c RObject.
+ * @param from Pointer to another \c RObject.
+ * @todo Make \a from \c const.
+ */
+void DUPLICATE_ATTRIB(SEXP to, SEXP from);
+
+/* S4 object testing */
+
+/**
+ * An S4 object?
+ * @param x Pointer to \c RObject.
+ * @return true iff \a x is an S4 object.
+ * @todo return \c Rboolean.
+ */
+int (IS_S4_OBJECT)(SEXP x);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (SET_S4_OBJECT)(SEXP x);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (UNSET_S4_OBJECT)(SEXP x);
+
+/* Hashing Functions */
+int  (HASHASH)(SEXP x);
+int  (HASHVALUE)(SEXP x);
+void (SET_HASHASH)(SEXP x, int v);
+void (SET_HASHVALUE)(SEXP x, int v);
 
 Rboolean (IS_ACTIVE_BINDING)(SEXP b);
 Rboolean (BINDING_IS_LOCKED)(SEXP b);
 void (SET_ACTIVE_BINDING_BIT)(SEXP b);
 void (LOCK_BINDING)(SEXP b);
 void (UNLOCK_BINDING)(SEXP b);
-
-#endif // __cplusplus
-
-// Primitive access functions:
-
-#ifndef __cplusplus
-int PRIMOFFSET(SEXP x);
-#else
-inline int (PRIMOFFSET)(SEXP x) { return x->u.primsxp.offset; }
-#endif
 
 #ifdef __cplusplus
 }

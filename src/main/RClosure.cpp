@@ -17,11 +17,11 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RObject.cpp
- * At present, this file is used to check that RObject.h is
+/** @file RClosure.cpp
+ * At present, this file is used to check that RClosure.h is
  * self-contained, i.e. #includes anything it needs, and doesn't rely
  * on anything having been previously #included in the enclosing
  * source file.
  */
 
-#include "CXXR/RObject.h"
+#include "CXXR/RClosure.h"

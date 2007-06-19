@@ -38,7 +38,12 @@
 
 #include <R_ext/libextern.h>
 
-#include <CXXR/RObject.h>
+#include <CXXR/RClosure.h>
+#include <CXXR/REnvironment.h>
+#include <CXXR/RPairList.h>
+#include <CXXR/RPromise.h>
+#include <CXXR/RSymbol.h>
+#include <CXXR/RVector.h>
 
 #ifdef __cplusplus
 extern "C" {

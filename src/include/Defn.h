@@ -21,6 +21,8 @@
 #ifndef DEFN_H_
 #define DEFN_H_
 
+#include "CXXR/RInternalFunction.h"
+
 /* seems unused */
 #define COUNTING
 

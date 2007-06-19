@@ -2755,7 +2755,7 @@ void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); CLOENV(x) = v; }
 void (SET_DEBUG)(SEXP x, int v) { SET_DEBUG(x, v); }
 
 /* Primitive Accessors */
-///int (PRIMOFFSET)(SEXP x) { return PRIMOFFSET(x); }
+int (PRIMOFFSET)(SEXP x) { return PRIMOFFSET(x); }
 
 void (SET_PRIMOFFSET)(SEXP x, int v) { SET_PRIMOFFSET(x, v); }
 
@@ -2812,8 +2812,8 @@ void attribute_hidden (UNLOCK_BINDING)(SEXP b) {UNLOCK_BINDING(b);}
 /* for use when testing the write barrier */
 int  attribute_hidden (IS_LATIN1)(SEXP x) { return IS_LATIN1(x); }
 int  attribute_hidden (IS_UTF8)(SEXP x) { return IS_UTF8(x); }
-///void attribute_hidden (SET_LATIN1)(SEXP x) { SET_LATIN1(x); }
-///void attribute_hidden (SET_UTF8)(SEXP x) { SET_UTF8(x); }
+void attribute_hidden (SET_LATIN1)(SEXP x) { SET_LATIN1(x); }
+void attribute_hidden (SET_UTF8)(SEXP x) { SET_UTF8(x); }
 void attribute_hidden (UNSET_LATIN1)(SEXP x) { UNSET_LATIN1(x); }
 void attribute_hidden (UNSET_UTF8)(SEXP x) { UNSET_UTF8(x); }
 

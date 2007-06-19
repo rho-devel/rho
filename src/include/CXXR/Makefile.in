@@ -14,11 +14,12 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 ## Partially included by the API (1) headers in .., but not part of the
 ## API per se. 
-R_EXT_HEADERS = \
-  RObject.h
+CXXR_HEADERS = \
+  RClosure.h REnvironment.h RObject.h RPairList.h RPromise.h RSymbol.h \
+  RVector.h
 
-DISTFILES = Makefile.in $(R_EXT_HEADERS)
-TIMESTAMPS = $(R_EXT_HEADERS:.h=.ts)
+DISTFILES = Makefile.in $(CXXR_HEADERS)
+TIMESTAMPS = $(CXXR_HEADERS:.h=.ts)
 
 CLEANFILES = stamp-R $(TIMESTAMPS)
 DISTCLEANFILES = Makefile
@@ -42,7 +43,7 @@ stamp-R:
 $(TIMESTAMPS): stamp-R
 
 install: installdirs
-	@for f in $(R_EXT_HEADERS); do \
+	@for f in $(CXXR_HEADERS); do \
 	  $(INSTALL_DATA) $(srcdir)/$${f} "$(rincludedir)/CXXR"; \
 	done
 installdirs:

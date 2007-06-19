@@ -16,7 +16,9 @@ SOURCES_C = complex.c gram.c regex.c
 
 SOURCES_CXX = \
 	CConverters.cpp CommandLineArgs.cpp \
-	Rdynload.cpp Renviron.cpp RNG.cpp RObject.cpp \
+	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
+        RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
+        Rdynload.cpp Renviron.cpp RNG.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
@@ -131,7 +133,7 @@ Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
   ../include/config.h \
   ../include/Rversion.h \
-  $(SOURCES_CXX) $(EXTRA_SOURCES_CXX)
+  $(SOURCES_C) $(SOURCES_CXX) $(EXTRA_SOURCES_CXX)
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
