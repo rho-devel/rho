@@ -53,6 +53,10 @@ EXTRA_SOURCES_CXX = \
 	snprintf.cpp strdup.cpp strncasecmp.cpp \
 	vsnprintf.cpp xspline.cpp
 
+SAN_SOURCES_C = \
+        RClosureC.c  REnvironmentC.c  RInternalFunctionC.c  RPairListC.c  \
+        RPromiseC.c  RSymbolC.c  RVectorC.c
+
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
           $(EXTRA_SOURCES_CXX:.cpp=.d)
 SOURCES = $(SOURCES_C) $(SOURCES_CXX) $(SOURCES_F)
@@ -164,6 +168,8 @@ install-bin-local: $(R_binary)
 
 $(top_builddir)/etc/R.exp: $(OBJECTS) $(RLIBS)
 	@$(SHELL) $(top_srcdir)/tools/ldAIX4 -o $@ $(OBJECTS) $(RLIBS)
+
+C-sanity-check : $(SAN_SOURCES_C:.c=.o)
 
 ## is this portable?  Documented as GNU extension.
 $(RLIBS):
