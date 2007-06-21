@@ -251,6 +251,20 @@ void (SET_UTF8)(SEXP x);
  */
 void (UNSET_UTF8)(SEXP x);
 
+/**
+ * @brief Create a vector object.
+ *
+ *  Allocate a vector object.  This ensures only validity of list-like
+ *  SEXPTYPES (as the elements must be initialized).  Initializing of
+ *  other vector types is done in do_makevector.
+ * @param stype The type of vector required.
+ * @param length The length of the vector to be created.
+ * @return Pointer to the created vector.
+ */
+SEXP allocVector(SEXPTYPE stype, R_len_t length);
+
+#define allocString(n)		allocVector(CHARSXP, n)
+
 #ifdef __cplusplus
 }
 #endif

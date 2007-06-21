@@ -184,6 +184,25 @@ SEXP SETCADDDR(SEXP x, SEXP y);
  */
 SEXP SETCAD4R(SEXP e, SEXP y);
 
+/**
+ * @brief Create a list of NULL values.
+ * @param n Number of elements required in the list.
+ * @return Pointer to the created list.
+ * @todo Make \a n unsigned
+ */
+SEXP allocList(unsigned int n);
+
+/**
+ * @brief Create an RObject...of listlike type
+ *
+ * Despite the general name, the code (in memory.cpp) seems to assume
+ * that the resulting object with have CAR, CDR, TAG etc.
+ *
+ * @param t The stype of the required object.
+ * @return Pointer to the created object.
+ */
+SEXP allocSExp(SEXPTYPE t);
+
 /* External pointer access macros */
 #define EXTPTR_PTR(x)	CAR(x)
 #define EXTPTR_PROT(x)	CDR(x)

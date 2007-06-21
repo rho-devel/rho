@@ -133,10 +133,6 @@ Rcomplex Rf_asComplex(SEXP x);
 
 SEXP Rf_allocArray(SEXPTYPE, SEXP);
 SEXP Rf_allocMatrix(SEXPTYPE, int, int);
-SEXP Rf_allocList(int);
-SEXP Rf_allocS4Object();
-SEXP Rf_allocSExp(SEXPTYPE);
-SEXP Rf_allocVector(SEXPTYPE, R_len_t);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
@@ -369,10 +365,6 @@ void R_RunExitFinalizers(void);	/* in memory.c */
 FILE *R_popen(char *, char *);
 #endif
 int R_system(char *);
-
-/* now a macro */
-#define allocString(n)		Rf_allocVector(CHARSXP, n)
-#define Rf_allocString(n)      	Rf_allocVector(CHARSXP, n)
 
 #if defined(CALLED_FROM_DEFN_H) && !defined(__MAIN__) && (defined(COMPILING_R) || ( __GNUC__ && !defined(__INTEL_COMPILER) ))
 #include "Rinlinedfuns.h"

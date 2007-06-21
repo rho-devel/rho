@@ -299,9 +299,8 @@ int  (MARK)(SEXP x);
  * Object type.
  * @param x Pointer to \c RObject.
  * @return \c SEXPTYPE of \a x.
- * @todo Make \a x \c const.
  */
-SEXPTYPE (TYPEOF)(SEXP x);
+SEXPTYPE (TYPEOF)(const SEXP x);
 
 /**
  * @deprecated
@@ -366,6 +365,13 @@ void (SET_S4_OBJECT)(SEXP x);
  * @deprecated Ought to be private.
  */
 void (UNSET_S4_OBJECT)(SEXP x);
+
+/**
+ * @brief Create an S4 object.
+ *
+ * @return Pointer to the created vector.
+ */
+SEXP allocS4Object();
 
 /* Hashing Functions */
 int  (HASHASH)(SEXP x);

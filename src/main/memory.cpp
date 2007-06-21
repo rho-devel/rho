@@ -2076,9 +2076,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     return s;
 }
 
-SEXP allocList(int n)
+SEXP allocList(unsigned int n)
 {
-    int i;
+    unsigned int i;
     SEXP result;
     result = R_NilValue;
     for (i = 0; i < n; i++)
