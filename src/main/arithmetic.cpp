@@ -136,41 +136,41 @@ int R_IsNA(double x)
     return 0;
 }
 
-int R_IsNaN(double x)
+Rboolean R_IsNaN(double x)
 {
     if (isnan(x)) {
 	ieee_double y;
 	y.value = x;
-	return (y.word[lw] != 1954);
+	return Rboolean(y.word[lw] != 1954);
     }
-    return 0;
+    return FALSE;
 }
 
 /* ISNAN uses isnan, which is undefined by C++ headers
    This workaround is called only when ISNAN() is used
    in a user code in a file with __cplusplus defined */
 
-int R_isnancpp(double x)
+Rboolean R_isnancpp(double x)
 {
-   return (isnan(x)!=0);
+   return Rboolean(isnan(x)!=0);
 }
 
 
 /* <FIXME> Simplify this mess.  Not used inside R
    if isfinite works, and if finite works only in packages */
-int R_finite(double x)
+Rboolean R_finite(double x)
 {
 #ifdef HAVE_WORKING_ISFINITE
-    return isfinite(x);
+    return Rboolean(isfinite(x));
 #elif HAVE_WORKING_FINITE
-    return finite(x);
+    return Rboolean(finite(x));
 #else
 /* neither finite nor isfinite work. Do we really need the AIX exception? */
 # ifdef _AIX
 #  include <fp.h>
      return FINITE(x);
 # else
-    return (!isnan(x) & (x != R_PosInf) & (x != R_NegInf));
+    return Rboolean(!isnan(x) && (x != R_PosInf) && (x != R_NegInf));
 # endif
 #endif
 }

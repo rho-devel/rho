@@ -936,7 +936,8 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int dbg, nm;
+    Rboolean dbg;
+    int nm;
     volatile int i, n, bgn;
     SEXP sym, body;
     volatile SEXP ans, v, val;
@@ -1036,7 +1037,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int dbg;
+    Rboolean dbg;
     volatile int bgn;
     volatile SEXP t, body;
     RCNTXT cntxt;
@@ -1067,7 +1068,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int dbg;
+    Rboolean dbg;
     volatile int bgn;
     volatile SEXP t, body;
     RCNTXT cntxt;

@@ -989,16 +989,16 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
     if (isSymbol(CExpr)) {
 	char *expr = CHAR(PRINTNAME(CExpr));
 	if (!strcmp(expr, "n")) {
-	    SET_DEBUG(rho, 1);
+	    SET_DEBUG(rho, TRUE);
 	    rval = 1;
 	}
 	if (!strcmp(expr, "c")) {
 	    rval = 1;
-	    SET_DEBUG(rho, 0);
+	    SET_DEBUG(rho, FALSE);
 	}
 	if (!strcmp(expr, "cont")) {
 	    rval = 1;
-	    SET_DEBUG(rho, 0);
+	    SET_DEBUG(rho, FALSE);
 	}
 	if (!strcmp(expr, "Q")) {
 
@@ -1012,7 +1012,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 
 	    /* this is really dynamic state that should be managed as such */
 	    R_BrowseLevel = 0;
-	    SET_DEBUG(rho, 0); /*PR#1721*/
+	    SET_DEBUG(rho, FALSE); /*PR#1721*/
 
 	    jump_to_toplevel();
 	}

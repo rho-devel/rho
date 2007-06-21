@@ -284,9 +284,8 @@ SEXP (ATTRIB)(SEXP x);
  * Does \c RObject have a class attribute?.
  * @param x Pointer to an \c RObject.
  * @return true iff \a x has a class attribute.
- * @todo Make x \c const; return \c Rboolean
  */
-int  (OBJECT)(SEXP x);
+Rboolean (OBJECT)(const SEXP x);
 
 /**
  * Object in use?
@@ -346,9 +345,8 @@ void SET_ATTRIB(SEXP x, SEXP v);
  * Replace \a to's attributes by those of \a from.
  * @param to Pointer to \c RObject.
  * @param from Pointer to another \c RObject.
- * @todo Make \a from \c const.
  */
-void DUPLICATE_ATTRIB(SEXP to, SEXP from);
+void DUPLICATE_ATTRIB(SEXP to, const SEXP from);
 
 /* S4 object testing */
 
@@ -356,9 +354,8 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from);
  * An S4 object?
  * @param x Pointer to \c RObject.
  * @return true iff \a x is an S4 object.
- * @todo return \c Rboolean.
  */
-int (IS_S4_OBJECT)(SEXP x);
+Rboolean (IS_S4_OBJECT)(SEXP x);
 
 /**
  * @deprecated Ought to be private.

@@ -2482,7 +2482,7 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
 
 /* General Cons Cell Attributes */
 SEXP (ATTRIB)(SEXP x) { return ATTRIB(x); }
-int (OBJECT)(SEXP x) { return OBJECT(x); }
+Rboolean (OBJECT)(SEXP x) { return Rboolean(OBJECT(x)); }
 int (MARK)(SEXP x) { return MARK(x); }
 SEXPTYPE (TYPEOF)(SEXP x) { return TYPEOF(x); }
 int (NAMED)(SEXP x) { return NAMED(x); }
@@ -2510,7 +2510,7 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 }
 
 /* S4 object testing */
-int (IS_S4_OBJECT)(SEXP x){ return IS_S4_OBJECT(x); }
+Rboolean (IS_S4_OBJECT)(SEXP x){ return Rboolean(IS_S4_OBJECT(x)); }
 void (SET_S4_OBJECT)(SEXP x){ SET_S4_OBJECT(x); }
 void (UNSET_S4_OBJECT)(SEXP x){ UNSET_S4_OBJECT(x); }
 
@@ -2747,12 +2747,12 @@ void (SET_MISSING)(SEXP x, int v) { SET_MISSING(x, v); }
 SEXP (FORMALS)(SEXP x) { return FORMALS(x); }
 SEXP (BODY)(SEXP x) { return BODY(x); }
 SEXP (CLOENV)(SEXP x) { return CLOENV(x); }
-int (DEBUG)(SEXP x) { return DEBUG(x); }
+Rboolean (DEBUG)(SEXP x) { return Rboolean(DEBUG(x)); }
 
 void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); FORMALS(x) = v; }
 void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); BODY(x) = v; }
 void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); CLOENV(x) = v; }
-void (SET_DEBUG)(SEXP x, int v) { SET_DEBUG(x, v); }
+void (SET_DEBUG)(SEXP x, Rboolean v) { SET_DEBUG(x, v); }
 
 /* Primitive Accessors */
 int (PRIMOFFSET)(SEXP x) { return PRIMOFFSET(x); }
@@ -2763,7 +2763,7 @@ void (SET_PRIMOFFSET)(SEXP x, int v) { SET_PRIMOFFSET(x, v); }
 SEXP (PRINTNAME)(SEXP x) { return PRINTNAME(x); }
 SEXP (SYMVALUE)(SEXP x) { return SYMVALUE(x); }
 SEXP (INTERNAL)(SEXP x) { return INTERNAL(x); }
-int (DDVAL)(SEXP x) { return DDVAL(x); }
+Rboolean (DDVAL)(SEXP x) { return Rboolean(DDVAL(x)); }
 
 void (SET_PRINTNAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); PRINTNAME(x) = v; }
 void (SET_SYMVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); SYMVALUE(x) = v; }
@@ -2810,8 +2810,8 @@ void attribute_hidden (LOCK_BINDING)(SEXP b) {LOCK_BINDING(b);}
 void attribute_hidden (UNLOCK_BINDING)(SEXP b) {UNLOCK_BINDING(b);}
 
 /* for use when testing the write barrier */
-int  attribute_hidden (IS_LATIN1)(SEXP x) { return IS_LATIN1(x); }
-int  attribute_hidden (IS_UTF8)(SEXP x) { return IS_UTF8(x); }
+Rboolean attribute_hidden (IS_LATIN1)(SEXP x) { return Rboolean(IS_LATIN1(x)); }
+Rboolean  attribute_hidden (IS_UTF8)(SEXP x) { return Rboolean(IS_UTF8(x)); }
 void attribute_hidden (SET_LATIN1)(SEXP x) { SET_LATIN1(x); }
 void attribute_hidden (SET_UTF8)(SEXP x) { SET_UTF8(x); }
 void attribute_hidden (UNSET_LATIN1)(SEXP x) { UNSET_LATIN1(x); }

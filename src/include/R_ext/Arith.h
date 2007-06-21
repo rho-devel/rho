@@ -27,6 +27,7 @@
 #endif
 #include <math.h>
 
+#include <R_ext/Boolean.h>
 #include <R_ext/libextern.h>
 
 #ifdef  __cplusplus
@@ -44,15 +45,15 @@ LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 #undef LibExtern
 #endif
 
-#define NA_LOGICAL	R_NaInt
+#define NA_LOGICAL	((Rboolean)(R_NaInt))
 #define NA_INTEGER	R_NaInt
 /* #define NA_FACTOR	R_NaInt  unused */
 #define NA_REAL		R_NaReal
 /* NA_STRING is a SEXP, so defined in Rinternals.h */
 
 int R_IsNA(double);		/* True for R's NA only */
-int R_IsNaN(double);		/* True for special NaN, *not* for NA */
-int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
+Rboolean R_IsNaN(double);		/* True for special NaN, *not* for NA */
+Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 
 #define ISNA(x)	       R_IsNA(x)
 /* True for *both* NA and NaN.
@@ -62,15 +63,15 @@ int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
    hence the workaround.  This code also appears in Rmath.h
 */
 #ifdef __cplusplus
-  int R_isnancpp(double); /* in arithmetic.c */
+  Rboolean R_isnancpp(double); /* in arithmetic.c */
 #  define ISNAN(x)     R_isnancpp(x)
 #else
-#  define ISNAN(x)     (isnan(x)!=0)
+#  define ISNAN(x)     ((Rboolean)(isnan(x)!=0))
 #endif
 
 #ifdef HAVE_WORKING_ISFINITE
 /* isfinite is defined in <math.h> according to C99 */
-# define R_FINITE(x)    isfinite(x)
+# define R_FINITE(x)    ((Rboolean)(isfinite(x)))
 #elif HAVE_WORKING_FINITE
 /* include header needed to define finite() */
 #  ifdef HAVE_IEEE754_H
@@ -80,7 +81,7 @@ int R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 #    include <ieeefp.h>		/* others [Solaris], .. */
 #   endif
 #  endif
-# define R_FINITE(x)    finite(x)
+# define R_FINITE(x)    ((Rboolean)(finite(x)))
 #else
 # define R_FINITE(x)    R_finite(x)
 #endif

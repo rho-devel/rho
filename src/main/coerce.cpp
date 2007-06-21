@@ -147,38 +147,38 @@ double R_strtod(const char *c, char **end)
     return x;
 }
 
-int attribute_hidden
+Rboolean attribute_hidden
 LogicalFromInteger(int x, int *warn)
 {
     return (x == NA_INTEGER) ?
-	NA_LOGICAL : (x != 0);
+	NA_LOGICAL : Rboolean(x != 0);
 }
 
-int attribute_hidden
+Rboolean attribute_hidden
 LogicalFromReal(double x, int *warn)
 {
     return ISNAN(x) ?
-	NA_LOGICAL : (x != 0);
+	NA_LOGICAL : Rboolean(x != 0);
 }
 
-int attribute_hidden
+Rboolean attribute_hidden
 LogicalFromComplex(Rcomplex x, int *warn)
 {
     return (ISNAN(x.r) || ISNAN(x.i)) ?
-	NA_LOGICAL : (x.r != 0 || x.i != 0);
+	NA_LOGICAL : Rboolean(x.r != 0 || x.i != 0);
 }
 
-int attribute_hidden
+Rboolean attribute_hidden
 LogicalFromString(SEXP x, int *warn)
 {
     if (x != R_NaString) {
 	int i;
 	for (i = 0; truenames[i]; i++)
 	    if (!strcmp(CHAR(x), truenames[i])) /* ASCII */
-		return 1;
+		return TRUE;
 	for (i = 0; falsenames[i]; i++)
 	    if (!strcmp(CHAR(x), falsenames[i])) /* ASCII */
-		return 0;
+		return FALSE;
     }
     return NA_LOGICAL;
 }
@@ -1474,8 +1474,8 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-/* int, not Rboolean, for NA_LOGICAL : */
-int asLogical(SEXP x)
+/* int, not Rboolean, for NA_LOGICAL : */ /* 2007/06/19 arr: ignored, probably at my peril ... */
+Rboolean asLogical(SEXP x)
 {
     int warn = 0;
 
@@ -1484,7 +1484,7 @@ int asLogical(SEXP x)
 	    return NA_LOGICAL;
 	switch (TYPEOF(x)) {
 	case LGLSXP:
-	    return LOGICAL(x)[0];
+	    return Rboolean(LOGICAL(x)[0]);
 	case INTSXP:
 	    return Rf_LogicalFromInteger(INTEGER(x)[0], &warn);
 	case REALSXP:
@@ -1612,8 +1612,8 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == LGLSXP);
 	break;
     case INTSXP:	/* is.integer */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == INTSXP)
-	    && !inherits(CAR(args), "factor");
+	LOGICAL(ans)[0] = ((TYPEOF(CAR(args)) == INTSXP)
+				   && !inherits(CAR(args), "factor"));
 	break;
     case REALSXP:	/* is.double == is.real */
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == REALSXP);
@@ -1639,7 +1639,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 			   TYPEOF(CAR(args)) == NILSXP);/* pairlist() -> NULL */
 	break;
     case EXPRSXP:	/* is.expression */
-	LOGICAL(ans)[0] = TYPEOF(CAR(args)) == EXPRSXP;
+	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == EXPRSXP);
 	break;
     case RAWSXP:	/* is.raw */
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == RAWSXP);
@@ -1655,8 +1655,8 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 */
 
     case 100:		/* is.numeric */
-	LOGICAL(ans)[0] = isNumeric(CAR(args)) &&
-	    !isLogical(CAR(args));  /* isNumeric excludes factors */
+	LOGICAL(ans)[0] = (isNumeric(CAR(args)) &&
+				   !isLogical(CAR(args)));  /* isNumeric excludes factors */
 	break;
     case 101:		/* is.matrix */
 	LOGICAL(ans)[0] = isMatrix(CAR(args));
@@ -1676,10 +1676,10 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case CPLXSXP:
 	case STRSXP:
 	case RAWSXP:
-	    LOGICAL(ans)[0] = 1;
+	    LOGICAL(ans)[0] = TRUE;
 	    break;
 	default:
-	    LOGICAL(ans)[0] = 0;
+	    LOGICAL(ans)[0] = FALSE;
 	    break;
 	}
 	break;
@@ -1701,16 +1701,16 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case BCODESXP:
 #endif
 	case WEAKREFSXP:
-	    LOGICAL(ans)[0] = 1;
+	    LOGICAL(ans)[0] = TRUE;
 	    break;
 	default:
-	    LOGICAL(ans)[0] = 0;
+	    LOGICAL(ans)[0] = FALSE;
 	    break;
 	}
 	break;
 
     case 300:		/* is.call */
-	LOGICAL(ans)[0] = TYPEOF(CAR(args)) == LANGSXP;
+	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == LANGSXP);
 	break;
     case 301:		/* is.language */
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP ||
@@ -1752,17 +1752,17 @@ SEXP attribute_hidden do_isvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else if (streql(CHAR(STRING_ELT(CADR(args), 0)), /* ASCII */
 		    type2char(TYPEOF(CAR(args))))) {
-	LOGICAL(ans)[0] = 1;
+	LOGICAL(ans)[0] = TRUE;
     }
     else
-	LOGICAL(ans)[0] = 0;
+	LOGICAL(ans)[0] = FALSE;
 
     /* We allow a "names" attribute on any vector. */
     if (LOGICAL(ans)[0] && ATTRIB(CAR(args)) != R_NilValue) {
 	a = ATTRIB(CAR(args));
 	while(a != R_NilValue) {
 	    if (TAG(a) != R_NamesSymbol) {
-		LOGICAL(ans)[0] = 0;
+		LOGICAL(ans)[0] = FALSE;
 		break;
 	    }
 	    a = CDR(a);
@@ -1823,10 +1823,12 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* Same code for LISTSXP and VECSXP : */
 #define LIST_VEC_NA(s)							\
 	if (!isVector(s) || length(s) != 1)				\
-		LOGICAL(ans)[i] = 0;					\
+		LOGICAL(ans)[i] = FALSE;					\
 	else {								\
 		switch (TYPEOF(s)) {					\
 		case LGLSXP:						\
+		    LOGICAL(ans)[i] = (LOGICAL(s)[0] == NA_LOGICAL);	\
+		    break;						\
 		case INTSXP:						\
 		    LOGICAL(ans)[i] = (INTEGER(s)[0] == NA_INTEGER);	\
 		    break;						\
@@ -1841,7 +1843,7 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
 				       || ISNAN(COMPLEX(s)[0].i));	\
 		    break;						\
 		default:						\
-		    LOGICAL(ans)[i] = 0;				\
+		    LOGICAL(ans)[i] = FALSE;				\
 		}							\
 	}
 
@@ -1860,12 +1862,12 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
     case RAWSXP:
 	/* no such thing as a raw NA */
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = FALSE;
 	break;
     default:
 	warningcall(call, _("%s() applied to non-(list or vector)"), "is.na");
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = FALSE;
     }
     if (dims != R_NilValue)
 	setAttrib(ans, R_DimSymbol, dims);
@@ -1913,7 +1915,7 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
     case STRSXP:
     case RAWSXP:
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = FALSE;
 	break;
     case REALSXP:
 	for (i = 0; i < n; i++)
@@ -1929,13 +1931,13 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #define LIST_VEC_NAN(s)							\
 	if (!isVector(s) || length(s) != 1)				\
-		LOGICAL(ans)[i] = 0;					\
+		LOGICAL(ans)[i] = FALSE;					\
 	else {								\
 		switch (TYPEOF(s)) {					\
 		case LGLSXP:						\
 		case INTSXP:						\
 		case STRSXP:						\
-		    LOGICAL(ans)[i] = 0;				\
+		    LOGICAL(ans)[i] = FALSE;				\
 		    break;						\
 		case REALSXP:						\
 		    LOGICAL(ans)[i] = R_IsNaN(REAL(s)[0]);		\
@@ -1962,7 +1964,7 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
     default:
 	warningcall(call, _("%s() applied to non-(list or vector)"), "is.nan");
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = FALSE;
     }
     if (dims != R_NilValue)
 	setAttrib(ans, R_DimSymbol, dims);
@@ -2015,7 +2017,7 @@ SEXP attribute_hidden do_isfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     default:
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = TRUE;
     }
     if (dims != R_NilValue)
 	setAttrib(ans, R_DimSymbol, dims);
@@ -2054,9 +2056,9 @@ SEXP attribute_hidden do_isinfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (i = 0; i < n; i++) {
 	    xr = REAL(x)[i];
 	    if (ISNAN(xr) || R_FINITE(xr))
-		LOGICAL(ans)[i] = 0;
+		LOGICAL(ans)[i] = FALSE;
 	    else
-		LOGICAL(ans)[i] = 1;
+		LOGICAL(ans)[i] = TRUE;
 	}
 	break;
     case CPLXSXP:
@@ -2064,14 +2066,14 @@ SEXP attribute_hidden do_isinfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    xr = COMPLEX(x)[i].r;
 	    xi = COMPLEX(x)[i].i;
 	    if ((ISNAN(xr) || R_FINITE(xr)) && (ISNAN(xi) || R_FINITE(xi)))
-		LOGICAL(ans)[i] = 0;
+		LOGICAL(ans)[i] = FALSE;
 	    else
-		LOGICAL(ans)[i] = 1;
+		LOGICAL(ans)[i] = TRUE;
 	}
 	break;
     default:
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = 0;
+	    LOGICAL(ans)[i] = FALSE;
     }
     if (!isNull(dims))
 	setAttrib(ans, R_DimSymbol, dims);

@@ -41,12 +41,12 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("argument must be a function"));
     switch(PRIMVAL(op)) {
     case 0:
-	SET_DEBUG(CAR(args), 1);
+	SET_DEBUG(CAR(args), TRUE);
 	break;
     case 1:
 	if( DEBUG(CAR(args)) != 1 )
 	    warningcall(call, "argument is not being debugged");
-	SET_DEBUG(CAR(args), 0);
+	SET_DEBUG(CAR(args), FALSE);
 	break;
     }
     return R_NilValue;

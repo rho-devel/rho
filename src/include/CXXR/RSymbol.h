@@ -86,9 +86,8 @@ SEXP (INTERNAL)(SEXP x);
  * Did symbol arise from ... expression?
  * @param x Pointer to an \c RSymbol.
  * @return \c true iff this symbol arose from a ... expression.
- * @todo return \c Rboolean; make \a x \c const.
  */
-int  (DDVAL)(SEXP x);
+Rboolean (DDVAL)(const SEXP x);
 
 /**
  * @deprecated Ought to be private.

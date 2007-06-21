@@ -77,9 +77,8 @@ SEXP (CLOENV)(SEXP x);
  * @param x Pointer a closure object.
  * @return \c true if debugging is set, i.e. evaluations of the
  *         function should run under the browser.
- * @todo return \c Rboolean; make \a x \c const.
  */
-int  (DEBUG)(SEXP x);
+Rboolean (DEBUG)(const SEXP x);
 
 /**
  * @todo Used with tracemem.  Will need review.  Should it be in
@@ -91,9 +90,8 @@ int  (TRACE)(SEXP x);
  * Set the debugging state of a closure object.
  * @param x Pointer a closure object.
  * @param v The new debugging state.
- * @todo Make \a v \c Rboolean.
  */
-void (SET_DEBUG)(SEXP x, int v);
+void (SET_DEBUG)(SEXP x, Rboolean v);
 
 /**
  * @todo Used with tracemem.  Will need review.  Should it be in

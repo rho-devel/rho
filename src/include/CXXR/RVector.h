@@ -136,16 +136,14 @@ void (SET_TRUELENGTH)(SEXP x, int v);
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as character data.
- * @todo return \c Rboolean* .
  */
 char  *(R_CHAR)(SEXP x);
 
 /**
- * @param x Pointer to an \c RVector .
- * @return Pointer to \a x 's data, interpreted as logical data.
- * @todo return \c Rboolean* .
+ * @param x Pointer to an \c RVector representing logical data.
+ * @return Pointer to \a x 's data.
  */
-int  *(LOGICAL)(SEXP x);
+int *(LOGICAL)(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
@@ -220,9 +218,8 @@ SEXP *(VECTOR_PTR)(SEXP x);
 /**
  * @param x Pointer to an \c RVector representing a character string.
  * @return true iff \a x is marked as having LATIN1 encoding.
- * @todo Make \a x \c const ; return \c Rboolean
  */
-int (IS_LATIN1)(SEXP x);
+Rboolean (IS_LATIN1)(const SEXP x);
 
 /**
  * @brief Set LATIN1 encoding.
@@ -239,9 +236,8 @@ void (UNSET_LATIN1)(SEXP x);
 /**
  * @param x Pointer to an \c RVector representing a character string.
  * @return true iff \a x is marked as having UTF8 encoding.
- * @todo Make \a x \c const ; return \c Rboolean
  */
-int (IS_UTF8)(SEXP x);
+Rboolean (IS_UTF8)(const SEXP x);
 
 /**
  * @brief Set UTF8 encoding.
