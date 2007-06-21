@@ -148,11 +148,6 @@ struct sxpinfo_struct {
     unsigned int gccls :  3;  /* node class */
 }; /*		    Tot: 32 */
 
-struct vecsxp_struct {
-    R_len_t	length;
-    R_len_t	truelength;
-};
-
 struct primsxp_struct {
     int offset;
 };

@@ -37,6 +37,11 @@ typedef unsigned char Rbyte;
 
 #ifdef __cplusplus
 
+struct vecsxp_struct {
+    R_len_t	length;
+    R_len_t	truelength;
+};
+
 /* The generational collector uses a reduced version of SEXPREC as a
    header in vector nodes.  The layout MUST be kept consistent with
    the SEXPREC definition.  The standard SEXPREC takes up 7 words on
