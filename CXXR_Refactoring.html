@@ -164,5 +164,114 @@ generated a function with C++ linkage: see below.</p>
     unsigned.</p>
   </li>
 </ul>
+
+<h2>Phase 2: <code>0.02-2.5.0</code></h2>
+
+<p>In a subsequent phases (possibly starting in Phase 3) it is our objective
+to replace the SEXPREC union by a hierarchy of C++ classes. This phase
+prepares for that by reorganising the material in the header files in
+<code>src/include</code>. This involves creating a new subdirectory
+<code>src/include/CXXR</code>, and within that creating a new header file
+<code>RObject.h</code> (ultimately to include a base class
+<code>RObject</code> for the new hierarchy), and further header files
+<code>RClosure.h</code>, <code>REnvironment.h</code>,
+<code>RInternalFunction.h</code>, <code>RPairList.h</code>,
+<code>RPromise.h</code>, <code>RSymbol.h</code> and <code>RVector.h</code>,
+corresponding respectively to <code>closxp_struct</code>,
+<code>envsxp_struct</code>, <code>primsxp_struct</code>,
+<code>listsxp_struct</code>, <code>promsxp_struct</code>,
+<code>symsxp_struct</code> and <code>vecsxp_struct</code>, which will
+eventually be derived classes. The material in these new headers comes
+predominantly from <code>Rinternals.h</code>, but to some extent (in the case
+of <code>RInternalFunction.h</code>) from <code>Defn.h</code>. All of the new
+header files, with the exception of <code>RInternalFunction.h</code>, are
+also installed in <code>$(rincludedir)/CXXR</code>.</p>
+
+<p>Function prototypes moved into the new header files are documented using
+<a href="http://www.doxygen.org">doxygen</a>. Where is was clearly consistent
+with the semantics, some of the argument types of the functions were changed,
+either by adding <code>const</code>, or by converting <code>int</code> into
+<code>Rboolean</code> (however, see the issues below regarding the
+latter).</p>
+
+<p>The following are implementational details and issues that arose:</p>
+<ul>
+  <li>The implementation of SEXPREC (though still the unchanged C code) was
+    made visible only to C++ programs. This is to get advance warning of
+    potential problems when the implementation <em>is</em> changed to
+  C++.</li>
+  <li>In many places CR defined a name as a macro when
+    <code>USE_RINTERNALS</code> was defined, and otherwise as a function. It
+    has been the intention in this phase to replace the macros with C++
+    inline functions: these would automatically also generate a non-inlined
+    form, so the separate definition (usually in <code>memory.cpp</code>)
+    could be dispensed with. 
+    <p>This was all very well where the function form was implemented in CR
+    simply by invoking the macro; however in some cases the function form
+    carried out some error checking before invoking the macro. Trying to
+    convert the macro to an inline function would then result in two distinct
+    functions with the same name, which the compiler and/or linker would
+    certainly reject.</p>
+    <p>In the end it was decided to leave the macros in place for the time
+    being: they'll have to be changed when the C++ implementation rolls out
+    anyway.</p>
+  </li>
+  <li>I considered getting rid of the <code>USE_RINTERNALS</code> compilation
+    conditions, but decided to retain it to mark out material (usually
+    currently in the form macro definitions) that will in the future need
+    privileged access to a C++ class. Only <code>memory.cpp</code> now
+    <code>#define</code>s <code>USE_RINTERNALS</code>.</li>
+  <li><code>Rinternals.h</code> contained many <code>#define</code>s of
+    function names to the same name prefixed by <code>Rf_</code>: this
+    appears to correspond in C++ terms to putting these functions in a
+    namespace. I split these <code>#define</code>s out into a separate header
+    file <code>Rf_namespace.h</code>, which is <code>#include</code>d by
+    <code>RObject.h</code> (which is in turn included by the other new
+    headers). There are various similar <code>#define</code>s scattered
+    around other CR header files, which may need to be moved into
+    <code>Rf_namespace.h</code> in due course.</li>
+  <li>I dithered about whether to name the file in question
+    <code>RInternalFunction.h</code> or <code>RPrimitiveFunction.h</code>.
+    Usage in the CR code (e.g. primsxp_struct) suggests the latter, and the R
+    Internals document speaks of internal and primitive functions as being
+    mutually exclusive, but fails to give a more general name covering any
+    function handled via <code>R_FunTab</code>. But it seems to be reasonable
+    to regard primitive functions as a special case of an internal function,
+    hence the eventual choice of <code>RInternalFunction.h</code>.</li>
+  <li>It is noted that <code>Rdynload.cpp</code> and <code>dotcode.cpp</code>
+    each give compiler warnings under <code>-pedantic</code> because they
+    attempt to cast function pointers to <code>void*</code>. The source code
+    of the former already contains a comment saying that it's illegal even in
+    C. Not easy to fix, so leave for now.</li>
+  <li>It seems logical (!) that a logical vector (<code>LGLSXP</code>) should
+    contain items of type <code>Rboolean</code> rather than of type
+    <code>int</code>, and consequently that the macro/function
+    <code>LOGICAL(SEXP)</code> should return <code>Rboolean*</code> rather
+    than <code>int*</code>. I made some attempt to do this, but backed out of
+    it for the following reasons: 
+    <ul>
+      <li>The <code>.C</code> interface expects these vectors to contain
+        <code>int</code>s;</li>
+      <li>ISO14882:1998 says that in C++, subject to certain constraints, it
+        is implementation-defined which integral type is used as the
+        underlying type for an enumeration (though <code>gcc</code> happens
+        to use <code>int</code> for <code>Rboolean</code>).</li>
+      <li>ISO9899:1999 says much the same for C, but with differently worded
+        constraints.</li>
+      <li>In any case, despite the commented-out <code>MAYBE</code> value in
+        the enumeration, perhaps <code>Rboolean</code> is best thought of as
+        '<code>bool</code> for C', rather than having any capability to
+        handle NAs.</li>
+    </ul>
+    <p>Possible new policy: within functions visible from C, use
+    <code>Rboolean</code> as a substitute for C++ <code>bool</code>, possibly
+    constrained to be 32 bits long to avoid the <code>enum</code>
+    implementation dependencies noted above. However, R logical vectors will
+    continue to be represented using <code>int</code>s. (One day we might
+    define an <code>Rlogical</code> class - a wrapper round an
+    <code>int</code> - to handle logical vectors within C++, while C programs
+    simply see <code>typedef int Rlogical;</code>.)</p>
+  </li>
+</ul>
 </body>
 </html>
