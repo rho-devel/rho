@@ -376,9 +376,9 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 
     s = allocVector(LGLSXP, 1L);
     if (PRIMVAL(op) == 1) {	/* ALL */
-	LOGICAL(s)[0] = haveNA ? (haveFalse ? FALSE : NA_LOGICAL) : !haveFalse;
+	LOGICAL(s)[0] = haveNA ? (haveFalse ? 0 : NA_LOGICAL) : !haveFalse;
     } else {			/* ANY */
-	LOGICAL(s)[0] = haveNA ? (haveTrue  ? TRUE  : NA_LOGICAL) : haveTrue;
+	LOGICAL(s)[0] = haveNA ? (haveTrue  ? 1 : NA_LOGICAL) : int(haveTrue);
     }
     return s;
 }

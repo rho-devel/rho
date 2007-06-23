@@ -49,9 +49,9 @@ extern "C" {
 #endif
 
 void Rf_CoercionWarning(int);/* warning code */
-Rboolean Rf_LogicalFromInteger(int, int*);
-Rboolean Rf_LogicalFromReal(double, int*);
-Rboolean Rf_LogicalFromComplex(Rcomplex, int*);
+int Rf_LogicalFromInteger(int, int*);
+int Rf_LogicalFromReal(double, int*);
+int Rf_LogicalFromComplex(Rcomplex, int*);
 int Rf_IntegerFromLogical(int, int*);
 int Rf_IntegerFromReal(double, int*);
 int Rf_IntegerFromComplex(Rcomplex, int*);
@@ -798,11 +798,11 @@ void R_SetVarLocValue(R_varloc_t, SEXP);
 #define FORSOURCING		95 /* not DELAYPROMISES, used in edit.c */
 
 /* Coercion functions */
-Rboolean Rf_LogicalFromString(SEXP, int*);
+int Rf_LogicalFromString(SEXP, int*);
 int Rf_IntegerFromString(SEXP, int*);
 double Rf_RealFromString(SEXP, int*);
 Rcomplex Rf_ComplexFromString(SEXP, int*);
-SEXP Rf_StringFromLogical(Rboolean, int*);
+SEXP Rf_StringFromLogical(int, int*);
 SEXP Rf_StringFromInteger(int, int*);
 SEXP Rf_StringFromReal(double, int*);
 SEXP Rf_StringFromComplex(Rcomplex, int*);

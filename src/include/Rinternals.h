@@ -122,7 +122,7 @@ SEXP Rf_asChar(SEXP);
 SEXP Rf_coerceVector(SEXP, SEXPTYPE);
 SEXP Rf_PairToVectorList(SEXP x);
 SEXP Rf_VectorToPairList(SEXP x);
-Rboolean Rf_asLogical(SEXP x);
+int Rf_asLogical(SEXP x);
 int Rf_asInteger(SEXP x);
 double Rf_asReal(SEXP x);
 Rcomplex Rf_asComplex(SEXP x);
@@ -373,7 +373,7 @@ int R_system(char *);
 /*SEXP Rf_allocString(int);*/
 Rcomplex Rf_asComplex(SEXP);
 int Rf_asInteger(SEXP);
-Rboolean Rf_asLogical(SEXP);
+int Rf_asLogical(SEXP);
 double Rf_asReal(SEXP);
 Rboolean Rf_conformable(SEXP, SEXP);
 SEXP Rf_elt(SEXP, int);
@@ -435,6 +435,7 @@ SEXP Rf_ScalarRaw(Rbyte);
 SEXP Rf_ScalarReal(double);
 SEXP Rf_ScalarString(SEXP);
 #endif
+
 
 #ifdef __cplusplus
 }

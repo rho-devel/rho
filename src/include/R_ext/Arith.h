@@ -45,7 +45,7 @@ LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 #undef LibExtern
 #endif
 
-#define NA_LOGICAL	((Rboolean)(R_NaInt))
+#define NA_LOGICAL	R_NaInt
 #define NA_INTEGER	R_NaInt
 /* #define NA_FACTOR	R_NaInt  unused */
 #define NA_REAL		R_NaReal
