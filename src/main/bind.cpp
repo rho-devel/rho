@@ -1289,7 +1289,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 	for (t = args; t != R_NilValue; t = CDR(t)) {
 	    u = PRVALUE(CAR(t));
 	    if (isMatrix(u) || length(u) >= lenmin) {
-		k = LENGTH(u);
+		k = u ? LENGTH(u) : 0;
 		idx = (!isMatrix(u)) ? rows : k;
 		if (TYPEOF(u) <= INTSXP) {
 		    if (mode <= INTSXP) {

@@ -350,6 +350,8 @@ SEXP eval(SEXP e, SEXP rho)
     R_Visible = TRUE;
     switch (TYPEOF(e)) {
     case NILSXP:
+	tmp = e;
+	break;
     case LISTSXP:
     case LGLSXP:
     case INTSXP:
@@ -397,7 +399,8 @@ SEXP eval(SEXP e, SEXP rho)
 	else if (TYPEOF(tmp) == PROMSXP) {
 	    PROTECT(tmp);
 	    tmp = eval(tmp, rho);
-	    SET_NAMED(tmp, 2);
+	    if (tmp)
+		SET_NAMED(tmp, 2);
 	    UNPROTECT(1);
 	}
 	else if (!isNull(tmp) && NAMED(tmp) < 1)
@@ -832,7 +835,7 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
 
     if ((vl = findVarInFrame3(rho, symbol, TRUE)) != R_UnboundValue) {
 	vl = eval(symbol, rho);	/* for promises */
-	if(NAMED(vl) == 2) {
+	if(vl && NAMED(vl) == 2) {
 	    PROTECT(vl = duplicate(vl));
 	    defineVar(symbol, vl, rho);
 	    UNPROTECT(1);
@@ -937,7 +940,6 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
-    int nm;
     volatile int i, n, bgn;
     SEXP sym, body;
     volatile SEXP ans, v, val;
@@ -967,7 +969,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     dbg = DEBUG(rho);
     bgn = BodyHasBraces(body);
 
-    nm = NAMED(val);
     PROTECT_WITH_INDEX(ans, &api);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
@@ -1011,12 +1012,12 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case EXPRSXP:
 	case VECSXP:
 	    /* make sure loop variable is a copy if needed */
-	    if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
+	    if(NAMED(val) > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
 	    setVar(sym, VECTOR_ELT(val, i), rho);
 	    break;
 	case LISTSXP:
 	    /* make sure loop variable is a copy if needed */
-	    if(nm > 0) SET_NAMED(CAR(val), 2);
+	    if(NAMED(val) > 0) SET_NAMED(CAR(val), 2);
 	    setVar(sym, CAR(val), rho);
 	    val = CDR(val);
 	    break;
@@ -1346,7 +1347,8 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 #else
     /* we do not duplicate the value, so to be conservative mark the
        value as NAMED = 2 */
-    SET_NAMED(saverhs, 2);
+    if (saverhs)
+	SET_NAMED(saverhs, 2);
     return saverhs;
 #endif
 }
@@ -1389,10 +1391,11 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    UNPROTECT(1);
 	    SET_NAMED(s, 1);
 #else
-	    switch (NAMED(s)) {
-	    case 0: SET_NAMED(s, 1); break;
-	    case 1: SET_NAMED(s, 2); break;
-	    }
+	    if (s)
+		switch (NAMED(s)) {
+		case 0: SET_NAMED(s, 1); break;
+		case 1: SET_NAMED(s, 2); break;
+		}
 	    defineVar(CAR(args), s, rho);
 #endif
 	    R_Visible = FALSE;

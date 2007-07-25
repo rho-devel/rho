@@ -167,8 +167,15 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 		return FALSE;
 	    if(!compute_identical(CAR(x), CAR(y)))
 		return FALSE;
-	    if(!compute_identical(PRINTNAME(TAG(x)), PRINTNAME(TAG(y))))
-		return FALSE;
+	    {
+		SEXP tx = TAG(x);
+		SEXP ty = TAG(y);
+		if ((tx == 0) != (ty == 0))
+		    return FALSE;
+		if(tx && ty
+		   && !compute_identical(PRINTNAME(tx), PRINTNAME(ty)))
+		    return FALSE;
+	    }
 	    x = CDR(x);
 	    y = CDR(y);
 	}

@@ -512,6 +512,8 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	PrintWarnings();
     }
 
+    //abort();  // 2007/07/23 arr
+
     jump_to_top_ex(TRUE, TRUE, TRUE, TRUE, FALSE);
 
     /* not reached */

@@ -1274,7 +1274,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     }
     else if (isVector(u) || isList(u) || isLanguage(u)
 	     || (isSymbol(u) && type == EXPRSXP)) {
-	if (NAMED(u))
+	if (u && NAMED(u))
 	    v = duplicate(u);
 	else v = u;
 	if (type != ANYSXP) {

@@ -18,10 +18,19 @@
  */
 
 /** @file RObject.cpp
- * At present, this file is used to check that RObject.h is
- * self-contained, i.e. #includes anything it needs, and doesn't rely
- * on anything having been previously #included in the enclosing
- * source file.
+ *
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in RObject.h where these are
+ * intended to be callable from C.  It is also used to check that
+ * RObject.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
 #include "CXXR/RObject.h"
+
+namespace {
+    SEXP (*attribptr)(SEXP e) = ATTRIB;
+    Rboolean (*objectptr)(SEXP e) = OBJECT;
+    SEXPTYPE (*typeofptr)(SEXP e) = TYPEOF;
+}

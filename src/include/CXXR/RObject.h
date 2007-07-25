@@ -63,6 +63,11 @@ typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
 typedef unsigned int SEXPTYPE;
 
 #define NILSXP	     0	  /* nil = NULL */
+                          /* arr 2007/07/21: no SEXPREC now has this
+			     type, but for backward compatibility
+			     TYPEOF will return NILSXP if passed a
+			     zero pointer.
+			  */
 #define SYMSXP	     1	  /* symbols */
 #define LISTSXP	     2	  /* lists of dotted pairs */
 #define CLOSXP	     3	  /* closures */
@@ -218,10 +223,7 @@ typedef struct SEXPREC {
 #ifdef USE_RINTERNALS
 
 /* General Cons Cell Attributes */
-#define ATTRIB(x)	((x)->attrib)
-#define OBJECT(x)	((x)->sxpinfo.obj)
 #define MARK(x)		((x)->sxpinfo.mark)
-#define TYPEOF(x)	((x)->sxpinfo.type)
 #define NAMED(x)	((x)->sxpinfo.named)
 #define TRACE(x)	((x)->sxpinfo.trace)
 #define LEVELS(x)	((x)->sxpinfo.gp)
@@ -231,7 +233,6 @@ typedef struct SEXPREC {
 #define SET_TRACE(x,v)	(((x)->sxpinfo.trace)=(v))
 #define SETLEVELS(x,v)	(((x)->sxpinfo.gp)=(v))
 
-#define IS_S4_OBJECT(x) ((x)->sxpinfo.gp & S4_OBJECT_MASK)
 #define SET_S4_OBJECT(x) (((x)->sxpinfo.gp) |= S4_OBJECT_MASK)
 #define UNSET_S4_OBJECT(x) (((x)->sxpinfo.gp) &= ~S4_OBJECT_MASK)
 
@@ -271,16 +272,29 @@ typedef struct SEXPREC *SEXP;
 /**
  * Return the attributes of an \c RObject.
  * @param x Pointer to the \c RObject whose attributes are required.
- * @return Pointer to the attributes object of \a x.
+ * @return Pointer to the attributes object of \a x , or 0 if \a x is
+ * a null pointer.
  */
-SEXP (ATTRIB)(SEXP x);
+#ifndef __cplusplus
+SEXP ATTRIB(SEXP x);
+#else
+inline SEXP ATTRIB(SEXP x) {return x ? x->attrib : 0;}
+#endif
 
 /**
  * Does \c RObject have a class attribute?.
  * @param x Pointer to an \c RObject.
- * @return true iff \a x has a class attribute.
+ * @return true iff \a x has a class attribute.  Returns false if \a x
+ * is 0.
  */
-Rboolean (OBJECT)(const SEXP x);
+#ifndef __cplusplus
+Rboolean OBJECT(const SEXP x);
+#else
+inline Rboolean OBJECT(const SEXP x)
+{
+    return Rboolean(x && x->sxpinfo.obj);
+}
+#endif
 
 /**
  * Object in use?
@@ -293,9 +307,13 @@ int  (MARK)(SEXP x);
 /**
  * Object type.
  * @param x Pointer to \c RObject.
- * @return \c SEXPTYPE of \a x.
+ * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
  */
-SEXPTYPE (TYPEOF)(const SEXP x);
+#ifndef __cplusplus
+SEXPTYPE TYPEOF(const SEXP x);
+#else
+inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
+#endif
 
 /**
  * @deprecated
@@ -347,9 +365,17 @@ void DUPLICATE_ATTRIB(SEXP to, const SEXP from);
 /**
  * An S4 object?
  * @param x Pointer to \c RObject.
- * @return true iff \a x is an S4 object.
+ * @return true iff \a x is an S4 object.  Returns false if \a x
+ * is 0.
  */
-Rboolean (IS_S4_OBJECT)(SEXP x);
+#ifndef __cplusplus
+Rboolean IS_S4_OBJECT(const SEXP x);
+#else
+inline Rboolean IS_S4_OBJECT(const SEXP x)
+{
+    return Rboolean(x && (x->sxpinfo.gp & S4_OBJECT_MASK));
+}
+#endif
 
 /**
  * @deprecated Ought to be private.

@@ -18,10 +18,19 @@
  */
 
 /** @file RPairList.cpp
- * At present, this file is used to check that RPairList.h is
- * self-contained, i.e. #includes anything it needs, and doesn't rely
- * on anything having been previously #included in the enclosing
- * source file.
+ *
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in RPairList.h where these
+ * are intended to be callable from C.  It is also used to check that
+ * RPairList.h is self-contained, i.e. #includes anything it needs,
+ * and doesn't rely on anything having been previously #included in
+ * the enclosing source file.
  */
 
 #include "CXXR/RPairList.h"
+
+namespace {
+    SEXP (*tagptr)(SEXP e) = TAG;
+    SEXP (*carptr)(SEXP e) = CAR;
+    SEXP (*cdrptr)(SEXP e) = CDR;
+}

@@ -39,9 +39,6 @@ extern "C" {
 /* List Access Macros */
 /* These also work for ... objects */
 #define LISTVAL(x)	((x)->u.listsxp)
-#define TAG(e)		((e)->u.listsxp.tagval)
-#define CAR(e)		((e)->u.listsxp.carval)
-#define CDR(e)		((e)->u.listsxp.cdrval)
 #define CAAR(e)		CAR(CAR(e))
 #define CDAR(e)		CDR(CAR(e))
 #define CADR(e)		CAR(CDR(e))
@@ -75,21 +72,36 @@ extern "C" {
 
 /**
  * @param e Pointer to a list.
- * @return Pointer to the tag (key) of the list head.
+ * @return Pointer to the tag (key) of the list head, or 0 if \a e is
+ * a null pointer.
  */
-SEXP (TAG)(SEXP e);
+#ifndef __cplusplus
+SEXP TAG(SEXP e);
+#else
+inline SEXP TAG(SEXP e) {return e ? e->u.listsxp.tagval : 0;}
+#endif
 
 /**
  * @param e Pointer to a list.
- * @return Pointer to the value of the list head.
+ * @return Pointer to the value of the list head, or 0 if \a e is
+ * a null pointer.
  */
-SEXP (CAR)(SEXP e);
+#ifndef __cplusplus
+SEXP CAR(SEXP e);
+#else
+inline SEXP CAR(SEXP e)  {return e ? e->u.listsxp.carval : 0;}
+#endif
 
 /**
  * @param e Pointer to a list.
- * @return Pointer to the tail of the list.
+ * @return Pointer to the tail of the list, or 0 if \a e is
+ * a null pointer.
  */
-SEXP (CDR)(SEXP e);
+#ifndef __cplusplus
+SEXP CDR(SEXP e);
+#else
+inline SEXP CDR(SEXP e) {return e ? e->u.listsxp.cdrval : 0;}
+#endif
 
 /**
  * Equivalent to CAR(CAR(e)).
@@ -207,6 +219,9 @@ SEXP allocSExp(SEXPTYPE t);
 #define EXTPTR_PTR(x)	CAR(x)
 #define EXTPTR_PROT(x)	CDR(x)
 #define EXTPTR_TAG(x)	TAG(x)
+#define SET_EXTPTR_PTR(x, y)   SETCAR(x, y)
+#define SET_EXTPTR_PROT(x, y)  SETCDR(x, y)
+#define SET_EXTPTR_TAG(x, y)   SET_TAG(x, y)
 
 #ifdef BYTECODE
 /* Bytecode access macros */

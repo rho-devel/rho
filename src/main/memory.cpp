@@ -298,9 +298,12 @@ static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0, 1, 2, 4, 6, 8, 16 };
 
 #define NODE_GEN_IS_YOUNGER(s,g) \
   (! NODE_IS_MARKED(s) || NODE_GENERATION(s) < (g))
-#define NODE_IS_OLDER(x, y) \
-  (NODE_IS_MARKED(x) && \
-   (! NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y)))
+
+inline bool NODE_IS_OLDER(SEXP x, SEXP y)
+{
+    return NODE_IS_MARKED(x) &&	
+	(!NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y));
+}
 
 static int num_old_gens_to_collect = 0;
 static int gen_gc_counts[NUM_OLD_GENERATIONS + 1];
@@ -850,9 +853,10 @@ static void old_to_new(SEXP x, SEXP y)
 #endif
 }
 
-#define CHECK_OLD_TO_NEW(x,y) do { \
-  if (NODE_IS_OLDER(x, y)) old_to_new(x,y);  } while (0)
-
+inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
+{
+    if (y && NODE_IS_OLDER(x, y)) old_to_new(x,y);
+}
 
 /* Node Sorting.  SortNodes attempts to improve locality of reference
    by rearranging the free list to place nodes on the same place page
@@ -914,13 +918,13 @@ static SEXP R_weak_refs = NULL;
 #define FINALIZE_ON_EXIT(s) ((s)->sxpinfo.gp & FINALIZE_ON_EXIT_MASK)
 
 #define WEAKREF_SIZE 4
-#define WEAKREF_KEY(w) VECTOR_ELT(w, 0)
+inline SEXP WEAKREF_KEY(SEXP w)  {return VECTOR_ELT(w, 0);}
 #define SET_WEAKREF_KEY(w, k) SET_VECTOR_ELT(w, 0, k)
-#define WEAKREF_VALUE(w) VECTOR_ELT(w, 1)
+inline SEXP WEAKREF_VALUE(SEXP w)  {return VECTOR_ELT(w, 1);}
 #define SET_WEAKREF_VALUE(w, v) SET_VECTOR_ELT(w, 1, v)
-#define WEAKREF_FINALIZER(w) VECTOR_ELT(w, 2)
+inline SEXP WEAKREF_FINALIZER(SEXP w)  {return VECTOR_ELT(w, 2);}
 #define SET_WEAKREF_FINALIZER(w, f) SET_VECTOR_ELT(w, 2, f)
-#define WEAKREF_NEXT(w) VECTOR_ELT(w, 3)
+inline SEXP WEAKREF_NEXT(SEXP w)  {return VECTOR_ELT(w, 3);}
 #define SET_WEAKREF_NEXT(w, n) SET_VECTOR_ELT(w, 3, n)
 
 static SEXP MakeCFinalizer(R_CFinalizer_t cfun);
@@ -938,7 +942,7 @@ static SEXP NewWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
     }
 
     PROTECT(key);
-    PROTECT(val = NAMED(val) ? duplicate(val) : val);
+    PROTECT(val = (val && NAMED(val)) ? duplicate(val) : val);
     PROTECT(fin);
     w = allocVector(VECSXP, WEAKREF_SIZE);
     SET_TYPEOF(w, WEAKREFSXP);
@@ -1320,13 +1324,15 @@ static void RunGenCollect(R_size_t size_needed)
 	    recheck_weak_refs = FALSE;
 	    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s)) {
 		if (NODE_IS_MARKED(WEAKREF_KEY(s))) {
-		    if (! NODE_IS_MARKED(WEAKREF_VALUE(s))) {
+		    SEXP wrv = WEAKREF_VALUE(s);
+		    if (wrv && !NODE_IS_MARKED(wrv)) {
 			recheck_weak_refs = TRUE;
-			FORWARD_NODE(WEAKREF_VALUE(s));
+			FORWARD_NODE(wrv);
 		    }
-		    if (! NODE_IS_MARKED(WEAKREF_FINALIZER(s))) {
+		    SEXP wrf = WEAKREF_FINALIZER(s);
+		    if (wrf && !NODE_IS_MARKED(wrf)) {
 			recheck_weak_refs = TRUE;
-			FORWARD_NODE(WEAKREF_FINALIZER(s));
+			FORWARD_NODE(wrf);
 		    }
 		}
 	    }
@@ -1566,6 +1572,8 @@ void attribute_hidden InitMemory()
     /* Field assignments for R_NilValue must not go through write barrier
        since the write barrier prevents assignments to R_NilValue's fields.
        because of checks for nil */
+    R_NilValue = 0;  // arr 2007/07/21
+    /*
     GET_FREE_NODE(R_NilValue);
     R_NilValue->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     TYPEOF(R_NilValue) = NILSXP;
@@ -1573,6 +1581,7 @@ void attribute_hidden InitMemory()
     CDR(R_NilValue) = R_NilValue;
     TAG(R_NilValue) = R_NilValue;
     ATTRIB(R_NilValue) = R_NilValue;
+    */
 
 #ifdef BYTECODE
     R_BCNodeStackBase = (SEXP *) malloc(R_BCNODESTACKSIZE * sizeof(SEXP));
@@ -1661,7 +1670,7 @@ char *R_alloc(long nelem, int eltsize)
 	}	
 	s = allocString(size); /**** avoid extra null byte?? */
 #endif
-	ATTRIB(s) = R_VStack;
+	s->attrib = R_VStack;
 	R_VStack = s;
 #if VALGRIND_LEVEL > 0
 	VALGRIND_MAKE_WRITABLE(CHAR(s), (int) dsize);
@@ -1717,11 +1726,11 @@ SEXP allocSExp(SEXPTYPE t)
     }
     GET_FREE_NODE(s);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(s) = t;
-    CAR(s) = R_NilValue;
-    CDR(s) = R_NilValue;
-    TAG(s) = R_NilValue;
-    ATTRIB(s) = R_NilValue;
+    SET_TYPEOF(s, t);
+    SETCAR(s, R_NilValue);
+    SETCDR(s, R_NilValue);
+    SET_TAG(s, R_NilValue);
+    SET_ATTRIB(s, R_NilValue);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
@@ -1738,9 +1747,9 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
     }
     GET_FREE_NODE(s);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(s) = t;
-    TAG(s) = R_NilValue;
-    ATTRIB(s) = R_NilValue;
+    SET_TYPEOF(s, t);
+    SET_TAG(s, R_NilValue);
+    SET_ATTRIB(s, R_NilValue);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
@@ -1765,11 +1774,11 @@ SEXP cons(SEXP car, SEXP cdr)
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(s) = LISTSXP;
-    CAR(s) = car;
-    CDR(s) = cdr;
-    TAG(s) = R_NilValue;
-    ATTRIB(s) = R_NilValue;
+    SET_TYPEOF(s, LISTSXP);
+    SETCAR(s, car);
+    SETCDR(s, cdr);
+    SET_TAG(s, R_NilValue);
+    SET_ATTRIB(s, R_NilValue);
     return s;
 }
 
@@ -1809,11 +1818,11 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
 #endif
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(newrho) = ENVSXP;
+    SET_TYPEOF(newrho, ENVSXP);
     FRAME(newrho) = valuelist;
     ENCLOS(newrho) = rho;
     HASHTAB(newrho) = R_NilValue;
-    ATTRIB(newrho) = R_NilValue;
+    SET_ATTRIB(newrho, R_NilValue);
 
     v = valuelist;
     n = namelist;
@@ -1843,12 +1852,12 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
     VALGRIND_MAKE_READABLE(s,sizeof(*s));
 #endif
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(s) = PROMSXP;
+    SET_TYPEOF(s, PROMSXP);
     PRCODE(s) = expr;
     PRENV(s) = rho;
     PRVALUE(s) = R_UnboundValue;
     PRSEEN(s) = 0;
-    ATTRIB(s) = R_NilValue;
+    SET_ATTRIB(s, R_NilValue);
     return s;
 }
 
@@ -1935,7 +1944,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case LANGSXP:
 	if(length == 0) return R_NilValue;
 	s = allocList(length);
-	TYPEOF(s) = LANGSXP;
+	SET_TYPEOF(s, LANGSXP);
 	return s;
     case LISTSXP:
 	return allocList(length);
@@ -2026,8 +2035,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    R_NodesInUse++;
 	    SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
 	}
-	ATTRIB(s) = R_NilValue;
-	TYPEOF(s) = type;
+	SET_ATTRIB(s, R_NilValue);
+	SET_TYPEOF(s, type);
     }
     else {
 	GC_PROT(s = allocSExpNonCons(type));
@@ -2410,7 +2419,7 @@ static SEXP RecursiveRelease(SEXP object, SEXP list)
         if (object == CAR(list))
             return CDR(list);
         else
-            CDR(list) = RecursiveRelease(object, CDR(list));
+            SETCDR(list, RecursiveRelease(object, CDR(list)));
     }
     return list;
 }
@@ -2425,9 +2434,9 @@ void R_ReleaseObject(SEXP object)
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     SEXP s = allocSExp(EXTPTRSXP);
-    EXTPTR_PTR(s) = reinterpret_cast<SEXPREC*>(p);
-    EXTPTR_PROT(s) = prot;
-    EXTPTR_TAG(s) = tag;
+    SET_EXTPTR_PTR(s, reinterpret_cast<SEXPREC*>(p));
+    SET_EXTPTR_PROT(s, prot);
+    SET_EXTPTR_TAG(s, tag);
     return s;
 }
 
@@ -2448,24 +2457,24 @@ SEXP R_ExternalPtrProtected(SEXP s)
 
 void R_ClearExternalPtr(SEXP s)
 {
-    EXTPTR_PTR(s) = NULL;
+    SET_EXTPTR_PTR(s, NULL);
 }
 
 void R_SetExternalPtrAddr(SEXP s, void *p)
 {
-    EXTPTR_PTR(s) = reinterpret_cast<SEXPREC*>(p);
+    SET_EXTPTR_PTR(s, reinterpret_cast<SEXPREC*>(p));
 }
 
 void R_SetExternalPtrTag(SEXP s, SEXP tag)
 {
     CHECK_OLD_TO_NEW(s, tag);
-    EXTPTR_TAG(s) = tag;
+    SET_EXTPTR_TAG(s, tag);
 }
 
 void R_SetExternalPtrProtected(SEXP s, SEXP p)
 {
     CHECK_OLD_TO_NEW(s, p);
-    EXTPTR_PROT(s) = p;
+    SET_EXTPTR_PROT(s, p);
 }
 
 #define USE_TYPE_CHECKING
@@ -2481,10 +2490,7 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
    implement the write barrier. */
 
 /* General Cons Cell Attributes */
-SEXP (ATTRIB)(SEXP x) { return ATTRIB(x); }
-Rboolean (OBJECT)(SEXP x) { return Rboolean(OBJECT(x)); }
 int (MARK)(SEXP x) { return MARK(x); }
-SEXPTYPE (TYPEOF)(SEXP x) { return TYPEOF(x); }
 int (NAMED)(SEXP x) { return NAMED(x); }
 int (TRACE)(SEXP x) { return TRACE(x); }
 int (LEVELS)(SEXP x) { return LEVELS(x); }
@@ -2496,7 +2502,7 @@ void (SET_ATTRIB)(SEXP x, SEXP v) {
 	      type2char(TYPEOF(x)));
 #endif
     CHECK_OLD_TO_NEW(x, v); 
-    ATTRIB(x) = v; 
+    x->attrib = v; 
 }
 void (SET_OBJECT)(SEXP x, int v) { SET_OBJECT(x, v); }
 void (SET_TYPEOF)(SEXP x, int v) { SET_TYPEOF(x, v); }
@@ -2510,7 +2516,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 }
 
 /* S4 object testing */
-Rboolean (IS_S4_OBJECT)(SEXP x){ return Rboolean(IS_S4_OBJECT(x)); }
 void (SET_S4_OBJECT)(SEXP x){ SET_S4_OBJECT(x); }
 void (UNSET_S4_OBJECT)(SEXP x){ UNSET_S4_OBJECT(x); }
 
@@ -2651,9 +2656,7 @@ SEXP (SET_VECTOR_ELT)(SEXP x, int i, SEXP v) {
 
 
 /* List Accessors */
-SEXP (TAG)(SEXP e) { return TAG(e); }
-SEXP (CAR)(SEXP e) { return CAR(e); }
-SEXP (CDR)(SEXP e) { return CDR(e); }
+
 SEXP (CAAR)(SEXP e) { return CAAR(e); }
 SEXP (CDAR)(SEXP e) { return CDAR(e); }
 SEXP (CADR)(SEXP e) { return CADR(e); }
@@ -2663,14 +2666,18 @@ SEXP (CADDDR)(SEXP e) { return CADDDR(e); }
 SEXP (CAD4R)(SEXP e) { return CAD4R(e); }
 int (MISSING)(SEXP x) { return MISSING(x); }
 
-void (SET_TAG)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); TAG(x) = v; }
+void (SET_TAG)(SEXP x, SEXP v)
+{
+    CHECK_OLD_TO_NEW(x, v);
+    x->u.listsxp.tagval = v;
+}
 
 SEXP (SETCAR)(SEXP x, SEXP y)
 {
     if (x == NULL || x == R_NilValue)
 	error(_("bad value"));
     CHECK_OLD_TO_NEW(x, y);
-    CAR(x) = y;
+    x->u.listsxp.carval = y;
     return y;
 }
 
@@ -2679,7 +2686,7 @@ SEXP (SETCDR)(SEXP x, SEXP y)
     if (x == NULL || x == R_NilValue)
 	error(_("bad value"));
     CHECK_OLD_TO_NEW(x, y);
-    CDR(x) = y;
+    x->u.listsxp.cdrval = y;
     return y;
 }
 
@@ -2691,7 +2698,7 @@ SEXP (SETCADR)(SEXP x, SEXP y)
 	error(_("bad value"));
     cell = CDR(x);
     CHECK_OLD_TO_NEW(cell, y);
-    CAR(cell) = y;
+    SETCAR(cell, y);
     return y;
 }
 
@@ -2704,7 +2711,7 @@ SEXP (SETCADDR)(SEXP x, SEXP y)
 	error(_("bad value"));
     cell = CDDR(x);
     CHECK_OLD_TO_NEW(cell, y);
-    CAR(cell) = y;
+    SETCAR(cell, y);
     return y;
 }
 
@@ -2720,7 +2727,7 @@ SEXP (SETCADDDR)(SEXP x, SEXP y)
 	error(_("bad value"));
     cell = CDDDR(x);
     CHECK_OLD_TO_NEW(cell, y);
-    CAR(cell) = y;
+    SETCAR(cell, y);
     return y;
 }
 
@@ -2737,7 +2744,7 @@ SEXP (SETCAD4R)(SEXP x, SEXP y)
 	error(_("bad value"));
     cell = CD4R(x);
     CHECK_OLD_TO_NEW(cell, y);
-    CAR(cell) = y;
+    SETCAR(cell, y);
     return y;
 }
 

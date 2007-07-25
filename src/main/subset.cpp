@@ -167,13 +167,14 @@ static SEXP VectorSubset(SEXP x, SEXP s, SEXP call)
     PROTECT(result = ExtractSubset(x, result, indx, call));
     if (result != R_NilValue &&
 	(
-	    ((attrib = getAttrib(x, R_NamesSymbol)) != R_NilValue) ||
-	    ( /* here we might have an array.  Use row names if 1D */
-		isArray(x) && LENGTH(getAttrib(x, R_DimNamesSymbol)) == 1 &&
-		(attrib = getAttrib(x, R_DimNamesSymbol)) != R_NilValue &&
-		(attrib = GetRowNames(attrib)) != R_NilValue
-		)
-	    )) {
+	 ((attrib = getAttrib(x, R_NamesSymbol)) != R_NilValue) ||
+	 ( /* here we might have an array.  Use row names if 1D */
+	  isArray(x)
+	  && (attrib = getAttrib(x, R_DimNamesSymbol)) != R_NilValue
+	  && LENGTH(attrib) == 1
+	  && (attrib = GetRowNames(attrib)) != R_NilValue
+	  )
+	 )) {
 	nattrib = allocVector(TYPEOF(attrib), n);
 	PROTECT(nattrib); /* seems unneeded */
 	nattrib = ExtractSubset(attrib, nattrib, indx, call);
@@ -687,10 +688,14 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_TYPEOF(ans, LANGSXP);
 	for(px = ans, i = 0 ; px != R_NilValue ; px = CDR(px))
 	    SETCAR(px, VECTOR_ELT(ax, i++));
-	setAttrib(ans, R_DimSymbol, getAttrib(ax, R_DimSymbol));
-	setAttrib(ans, R_DimNamesSymbol, getAttrib(ax, R_DimNamesSymbol));
-	setAttrib(ans, R_NamesSymbol, getAttrib(ax, R_NamesSymbol));
-	SET_NAMED(ans, NAMED(ax)); /* PR#7924 */
+	if (ans)  // 2007/07/23 arr
+	    {
+		setAttrib(ans, R_DimSymbol, getAttrib(ax, R_DimSymbol));
+		setAttrib(ans, R_DimNamesSymbol,
+			  getAttrib(ax, R_DimNamesSymbol));
+		setAttrib(ans, R_NamesSymbol, getAttrib(ax, R_NamesSymbol));
+		SET_NAMED(ans, NAMED(ax)); /* PR#7924 */
+	    }
     }
     else {
 	PROTECT(ans);
@@ -838,12 +843,12 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if(isPairList(x)) {
 	ans = CAR(nthcdr(x, offset));
-	if (NAMED(x) > NAMED(ans))
+	if (ans && NAMED(x) > NAMED(ans))
 	    SET_NAMED(ans, NAMED(x));
     } else if(isVectorList(x)) {
 	/* did unconditional duplication before 2.4.0 */
 	ans = VECTOR_ELT(x, offset);
-	if (NAMED(x) > NAMED(ans))
+	if (ans && NAMED(x) > NAMED(ans))
 	    SET_NAMED(ans, NAMED(x));
     } else {
 	ans = allocVector(TYPEOF(x), 1);
@@ -977,7 +982,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	    switch(pstrmatch(TAG(y), input, slen)) {
 	    case EXACT_MATCH:
 		y = CAR(y);
-		if (NAMED(x) > NAMED(y))
+		if (y && NAMED(x) > NAMED(y))
 		    SET_NAMED(y, NAMED(x));
 		return y;
 	    case PARTIAL_MATCH:
@@ -1006,7 +1011,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	    switch(pstrmatch(STRING_ELT(nlist, i), input, slen)) {
 	    case EXACT_MATCH:
 		y = VECTOR_ELT(x, i);
-		if (NAMED(x) > NAMED(y))
+		if (y && NAMED(x) > NAMED(y))
 		    SET_NAMED(y, NAMED(x));
 		return y;
 	    case PARTIAL_MATCH:
@@ -1016,7 +1021,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
                        This is overkill, but alternative ways to prevent 
                        the aliasing appear to be even worse */
 		    y=VECTOR_ELT(x,i);
-		    SET_NAMED(y,2);
+		    if (y) SET_NAMED(y,2);
 		    SET_VECTOR_ELT(x,i,y);
 		}
 		imatch = i;

@@ -455,6 +455,8 @@ static int xxgetc(void)
 	else  error(_("function is too long to keep source"));
     }
     xxcharcount++;
+    //    putchar(c);
+    //    if (c == '\n') fputs("R:: ", stdout);
     return c;
 }
 
@@ -473,6 +475,7 @@ static int xxungetc(int c)
     R_ParseContextLast = R_ParseContextLast % PARSE_CONTEXT_SIZE;
     if(npush >= 16) return EOF;
     pushback[npush++] = c;
+    // putchar('\b');
     return c;
 }
 

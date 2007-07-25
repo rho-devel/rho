@@ -650,7 +650,7 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 }
 
 
-int R_SignalHandlers = 1;  /* Exposed in R_interface.h */
+int R_SignalHandlers = 0;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
 /* Use this to allow e.g. Win32 malloc to call warning.
    Don't use R-specific type, e.g. Rboolean */

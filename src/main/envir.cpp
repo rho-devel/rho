@@ -811,7 +811,7 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
 	return (c == R_UnboundValue) ? R_NilValue : c;
     }
 
-    if (rho == R_EmptyEnv)
+    if (!rho || rho == R_EmptyEnv)
     	return(R_NilValue);
 
     if(IS_USER_DATABASE(rho)) {
