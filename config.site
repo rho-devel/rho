@@ -54,7 +54,7 @@
 ## specified above.
 ## If unspecified, defaults to '-g -O2' for gcc, 
 ## and '-g' in all other cases except icc (for which see R-admin.html).
-## CFLAGS=
+CFLAGS= -g -O1
 
 ## Defines for C compilation.
 ## Use this to specify defines to be used in the compilation of R,
@@ -168,7 +168,7 @@
 ## CXX=
 
 ## Options for the C++ compiler.
-## CXXFLAGS=
+CXXFLAGS= -g -std=c++98 -Wall
 
 ## Any special flags which must be used when compiling C++ code to be
 ## turned into a shared library.  If this variable is left unspecified

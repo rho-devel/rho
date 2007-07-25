@@ -454,6 +454,7 @@ do
     "src/include/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/Makefile" ;;
     "src/include/Rmath.h0") CONFIG_FILES="$CONFIG_FILES src/include/Rmath.h0" ;;
     "src/include/R_ext/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/R_ext/Makefile" ;;
+    "src/include/CXXR/Makefile") CONFIG_FILES="$CONFIG_FILES src/include/CXXR/Makefile" ;;
     "src/library/Recommended/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Recommended/Makefile" ;;
     "src/library/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Makefile" ;;
     "src/library/base/DESCRIPTION") CONFIG_FILES="$CONFIG_FILES src/library/base/DESCRIPTION" ;;
@@ -718,7 +719,7 @@ s,@R_ZIPCMD@,|#_!!_#|/usr/bin/zip,g
 s,@R_GZIPCMD@,|#_!!_#|/usr/bin/gzip,g
 s,@R_PDFVIEWER@,|#_!!_#|/usr/bin/acroread,g
 s,@CC@,|#_!!_#|gcc -std=gnu99,g
-s,@CFLAGS@,|#_!!_#|-g -O2,g
+s,@CFLAGS@,|#_!!_#|-g -O1,g
 s,@LDFLAGS@,|#_!!_#|-L/usr/local/lib,g
 s,@CPPFLAGS@,|#_!!_#|-I/usr/local/include,g
 s,@ac_ct_CC@,|#_!!_#|gcc,g
@@ -729,7 +730,7 @@ s,@F77@,|#_!!_#|gfortran,g
 s,@FFLAGS@,|#_!!_#|-g -O2,g
 s,@ac_ct_F77@,|#_!!_#|,g
 s,@CXX@,|#_!!_#|g++,g
-s,@CXXFLAGS@,|#_!!_#|-g -O2,g
+s,@CXXFLAGS@,|#_!!_#|-g -O1 -std=c++98 -Wall,g
 s,@ac_ct_CXX@,|#_!!_#|g++,g
 s,@CXXCPP@,|#_!!_#|g++ -E,g
 s,@C_VISIBILITY@,|#_!!_#|-fvisibility=hidden,g
