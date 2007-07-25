@@ -190,7 +190,7 @@ install-lib-local: $(libR_la)
 ../appl/stamp-lo ../nmath/stamp-lo ../unix/stamp-lo:
 	(cd $(@D); $(MAKE) $(@F))
 
-$(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
+$(srcdir)/gram.c: $(srcdir)/gram.y
 	@echo "re-making gram.c"
 	$(YACC) $(YFLAGS) $(srcdir)/gram.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c
