@@ -86,7 +86,7 @@ static SEXP seq_colon(double n1, double n2)
     SEXP ans;
     Rboolean useInt;
 
-    in1 = (int)(n1);
+    in1 = int(n1);
     useInt = Rboolean(n1 == in1);
     if (n1 <= INT_MIN || n2 <= INT_MIN || n1 > INT_MAX || n2 > INT_MAX)
 	useInt = FALSE;
@@ -124,10 +124,10 @@ SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
     n1 = length(s1);
     if( n1 > 1 )
 	warningcall(call, 
-		    _("numerical expression has %d elements: only the first used"), (int) n1);
+		    _("numerical expression has %d elements: only the first used"), int(n1));
     n2 = length(s2);
     if( n2 > 1 )
-	warningcall(call, _("numerical expression has %d elements: only the first used"), (int) n2);
+	warningcall(call, _("numerical expression has %d elements: only the first used"), int(n2));
     n1 = asReal(s1);
     n2 = asReal(s2);
     if (ISNAN(n1) || ISNAN(n2))
@@ -457,7 +457,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(lf == 1 && (TYPEOF(from) == INTSXP || TYPEOF(from) == REALSXP))
 	    ans = seq_colon(1.0, asReal(from));
 	else if (lf)
-	    ans = seq_colon(1.0, (double)lf);
+	    ans = seq_colon(1.0, double(lf));
 	else
 	    ans = allocVector(INTSXP, 0);
 	goto done;
@@ -465,14 +465,14 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(along != R_MissingArg) {
 	lout = INTEGER(along)[0];
 	if(One) {
-	    ans = lout ? seq_colon(1.0, (double)lout) : allocVector(INTSXP, 0);
+	    ans = lout ? seq_colon(1.0, double(lout)) : allocVector(INTSXP, 0);
 	    goto done;
 	}
     } else if(len != R_MissingArg && len != R_NilValue) {
 	double rout = asReal(len);
 	if(ISNAN(rout) || rout <= -0.5)
 	    errorcall(call, _("'length.out' must be a non-negative number"));
-	lout = (int) ceil(rout);
+	lout = int(ceil(rout));
     }
 
     if(lout == NA_INTEGER) {
@@ -506,9 +506,9 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ans = from;
 		goto done;
 	    }
-	    if(n > (double) INT_MAX)
+	    if(n > double(INT_MAX))
 		errorcall(call, _("'by' argument is much too small"));
-	    nn = (int)(n + FLT_EPSILON);
+	    nn = int(n + FLT_EPSILON);
 	    if(nn < 0)
 		errorcall(call, _("wrong sign in 'by' argument"));
 	    ans = allocVector(REALSXP, nn+1);
@@ -518,7 +518,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else if (lout == 0) {
 	ans = allocVector(INTSXP, 0);
     } else if (One) {
-	ans = seq_colon(1.0, (double)lout);
+	ans = seq_colon(1.0, double(lout));
     } else if (by == R_MissingArg) {
 	double rfrom = asReal(from), rto = asReal(to), rby;
 	if(to == R_MissingArg) rto = rfrom + lout - 1;
@@ -531,7 +531,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(lout > 0) REAL(ans)[0] = rfrom;
 	if(lout > 1) REAL(ans)[lout - 1] = rto;
 	if(lout > 2) {
-	    rby = (rto - rfrom)/(double)(lout - 1);
+	    rby = (rto - rfrom)/double(lout - 1);
 	    for(i = 1; i < lout-1; i++) REAL(ans)[i] = rfrom + i*rby;
 	}
     } else if (to == R_MissingArg) {
@@ -542,7 +542,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(!R_FINITE(rby))
 	    errorcall(call, _("'by' must be finite"));
 	rto = rfrom +(lout-1)*rby;
-	if(rby == (int)rby && rfrom <= INT_MAX && rfrom >= INT_MIN
+	if(rby == int(rby) && rfrom <= INT_MAX && rfrom >= INT_MIN
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -559,7 +559,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    errorcall(call, _("'to' must be finite"));
 	if(!R_FINITE(rby))
 	    errorcall(call, _("'by' must be finite"));
-	if(rby == (int)rby && rfrom <= INT_MAX && rfrom >= INT_MIN
+	if(rby == int(rby) && rfrom <= INT_MAX && rfrom >= INT_MIN
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)

@@ -198,10 +198,10 @@ static void scientific(double *x, int *sgn, int *kpower, int *nsig, double eps)
 	   is in range.
 	 */
 	else if (kp <= R_dec_min_exponent) {
-	    alpha = (r * 1e+30)/pow(10.0, (double)(kp+30));
+	    alpha = (r * 1e+30)/pow(10.0, double(kp+30));
 	}
 	else
-	    alpha = r / pow(10.0, (double)kp);
+	    alpha = r / pow(10.0, double(kp));
 
 	/* make sure that alpha is in [1,10) AFTER rounding */
 
@@ -241,7 +241,7 @@ void formatReal(double *x, int n, int *w, int *d, int *e, int nsmall)
     int neg, sgn, kpower, nsig;
     int i, naflag, nanflag, posinf, neginf;
 
-    double eps = pow(10.0, -(double)R_print.digits);
+    double eps = pow(10.0, -double(R_print.digits));
     /* better to err on the side of too few signif digits rather than
        far too many */
     if(eps < 2*DBL_EPSILON) eps = 2*DBL_EPSILON;
@@ -336,7 +336,7 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
     Rcomplex tmp;
     Rboolean all_re_zero = TRUE, all_im_zero = TRUE;
 
-    double eps = pow(10.0, -(double)R_print.digits);
+    double eps = pow(10.0, -double(R_print.digits));
     if(eps < 2*DBL_EPSILON) eps = 2*DBL_EPSILON;
 
     naflag = 0;

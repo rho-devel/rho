@@ -81,7 +81,7 @@ static Rboolean have_broken_mktime(void)
 	t.tm_year = 68;
 	t.tm_isdst = -1;
 	res = mktime(&t);
-	test_result = (res == (time_t)-1);
+	test_result = (res == time_t(-1));
     }
     return Rboolean(test_result > 0);
 #else
@@ -221,11 +221,11 @@ static double mktime00 (struct tm *tm)
     year0 = 1900 + tm->tm_year;
     /* safety check for unbounded loops */
     if (year0 > 3000) {
-	excess = (int)(year0/2000) - 1;
-	year0 = int(year - excess * 2000);
+	excess = int(year0/2000) - 1;
+	year0 = int(year0 - excess * 2000);
     } else if (year0 < 0) {
-	excess = -1 - (int)(-year0/2000);
-	year0 = int(year - excess * 2000);
+	excess = -1 - int(-year0/2000);
+	year0 = int(year0 - excess * 2000);
     }
 
     for(i = 0; i < tm->tm_mon; i++) day += days_in_month[i];
@@ -285,12 +285,12 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = 0;
     tm->tm_year = year;
     tm->tm_isdst = -1;
-    offset1 = (double) mktime(tm) - mktime00(tm);
+    offset1 = double(mktime(tm)) - mktime00(tm);
     /* and in July */
     tm->tm_year = year;
     tm->tm_mon = 6;
     tm->tm_isdst = -1;
-    offset2 = (double) mktime(tm) - mktime00(tm);
+    offset2 = double(mktime(tm)) - mktime00(tm);
     if(oldisdst > 0) {
 	offset = (offset1 > offset2) ? offset2 : offset1;
     } else {
@@ -300,7 +300,7 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = oldmonth;
     tm->tm_isdst = -1;
     if(oldisdst < 0) {
-	offset1 = (double) mktime(tm) - mktime00(tm);
+	offset1 = double(mktime(tm)) - mktime00(tm);
 	oldisdst = (offset1 < offset) ? 1:0;
 	if(oldisdst) offset = offset1;
     }
@@ -320,7 +320,7 @@ static double mktime0 (struct tm *tm, const int local)
     int i;
 #endif
 
-    if(validate_tm(tm) < 0) return (double)(-1);
+    if(validate_tm(tm) < 0) return double(-1);
     if(!local) return mktime00(tm);
 
     OK = Rboolean(tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
@@ -330,8 +330,8 @@ static double mktime0 (struct tm *tm, const int local)
     if(tm->tm_year == 70 && tm->tm_mon == 0 && tm->tm_mday <= 1) OK = FALSE;
 #endif
     if(OK) {
-	res = (double) mktime(tm);
-	if (res == (double)-1) return res;
+	res = double(mktime(tm));
+	if (res == double(-1)) return res;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
         for(i = 0; i < n_leapseconds; i++)
@@ -352,7 +352,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
     time_t t;
 
     if(d < 2147483647.0 && d > (have_broken_mktime() ? 0. : -2147483647.0)) {
-	t = (time_t) d;
+	t = time_t(d);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
         for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
@@ -360,8 +360,8 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	return local ? localtime(&t) : gmtime(&t);
     }
 
-    day = (int) floor(d/86400.0);
-    left = (int) (d - day * 86400.0 + 0.5);
+    day = int(floor(d/86400.0));
+    left = int(d - day * 86400.0 + 0.5);
 
     /* hour, min, and sec */
     res->tm_hour = left / 3600;
@@ -431,7 +431,7 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
     struct timeval tv;
     int res = gettimeofday(&tv, NULL);
     if(res == 0) {
-	double tmp = (double) tv.tv_sec + 1e-6 * (double) tv.tv_usec;
+	double tmp = double(tv.tv_sec) + 1e-6 * double(tv.tv_usec);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
 	tmp -= n_leapseconds;
@@ -666,7 +666,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 	    REAL(ans)[i] = NA_REAL;
 	else {
 	    tmp = mktime0(&tm, 1 - isgmt);
-	    REAL(ans)[i] = (tmp == (double)(-1)) ? 
+	    REAL(ans)[i] = (tmp == double(-1)) ? 
 		NA_REAL : tmp + (secs - fsecs);
 	}
     }
@@ -925,7 +925,7 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for(i = 0; i < n; i++) {
 	if(R_FINITE(REAL(x)[i])) {
-	    day = (int) REAL(x)[i];
+	    day = int(REAL(x)[i]);
 	    tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 	    /* weekday: 1970-01-01 was a Thursday */
 	    if ((tm.tm_wday = ((4 + day) % 7)) < 0) tm.tm_wday += 7;

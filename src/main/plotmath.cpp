@@ -1061,7 +1061,7 @@ static BBOX RenderSymbolStr(char *str, int draw, mathContext *mc,
 		    font = prevfont;
 		    SetFont(prevfont, gc);
 		}
-		glyphBBox = GlyphBBox((int)wc, gc, dd);
+		glyphBBox = GlyphBBox(int(wc), gc, dd);
 		if (UsingItalics(gc))
 		    bboxItalic(glyphBBox) =
 			ItalicFactor * bboxHeight(glyphBBox);
@@ -1086,7 +1086,7 @@ static BBOX RenderSymbolStr(char *str, int draw, mathContext *mc,
 #endif
 	{
 	    while (*s) {
-		if (isdigit((int)*s) && font != PlainFont) {
+		if (isdigit(int(*s)) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
 		}

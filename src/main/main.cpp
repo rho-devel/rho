@@ -134,11 +134,11 @@ char *R_PromptString(int browselevel, int type)
 		sprintf(BrowsePrompt, "Browse[%d]> ", browselevel);
 		return BrowsePrompt;
 	    }
-	    return (char*)CHAR(STRING_ELT(GetOption(install("prompt"),
+	    return CHAR(STRING_ELT(GetOption(install("prompt"),
 						    R_BaseEnv), 0));
 	}
 	else {
-	    return (char*)CHAR(STRING_ELT(GetOption(install("continue"),
+	    return CHAR(STRING_ELT(GetOption(install("continue"),
 						    R_BaseEnv), 0));
 	}
     }
@@ -235,7 +235,7 @@ Rf_ReplIteration(SEXP rho, int savestack, int browselevel, R_ReplState *state)
 
 	/* The intention here is to break on CR but not on other 
 	   null statements: see PR#9063 */
-	if (browselevel && !strcmp((char *) state->buf, "\n")) return -1;
+	if (browselevel && !strcmp(reinterpret_cast<char *>(state->buf), "\n")) return -1;
 	R_IoBufferWriteReset(&R_ConsoleIob);
 	state->prompt_type = 1;
 	return(1);
@@ -450,13 +450,13 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
      */
-    if(signum == SIGSEGV && (ip != (siginfo_t *)0) && 
-       (long) R_CStackStart != -1) {
-	long addr = (long) ip->si_addr;
+    if(signum == SIGSEGV && (ip != 0) && 
+       long(R_CStackStart) != -1) {
+	long addr = long(ip->si_addr);
 	long diff = (R_CStackDir > 0) ? R_CStackStart - addr:
 	    addr - R_CStackStart;
 	long upper = 0x1000000;  /* 16Mb */
-	if((long) R_CStackLimit != -1) upper += R_CStackLimit;
+	if(long(R_CStackLimit) != -1) upper += R_CStackLimit;
 	if(diff > 0 && diff < upper) {
 	    REprintf(_("Error: segfault from C stack overflow\n"));
 	    jump_to_toplevel();	
@@ -470,7 +470,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     REprintf("\n *** caught %s ***\n", 
 	     signum == SIGILL ? "illegal operation" : 
 	     signum == SIGBUS ? "bus error" : "segfault");
-    if(ip != (siginfo_t *)0) {
+    if(ip != 0) {
 	if(signum == SIGILL) {
 	    
 	    switch(ip->si_code) {
@@ -1029,7 +1029,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
    is maintained across LONGJMP's */
 static void browser_cend(void *data)
 {
-    int *psaved = (int *) data;
+    int *psaved = reinterpret_cast<int *>(data);
     R_BrowseLevel = *psaved - 1;
 }
 
@@ -1189,7 +1189,7 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
 {
     int which;
     R_ToplevelCallbackEl *el;
-    el = (R_ToplevelCallbackEl *) malloc(sizeof(R_ToplevelCallbackEl));
+    el = reinterpret_cast<R_ToplevelCallbackEl *>(malloc(sizeof(R_ToplevelCallbackEl)));
     if(!el)
 	error(_("cannot allocate space for toplevel callback element"));
 
@@ -1411,7 +1411,7 @@ Rboolean
 R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 		      Rboolean visible, void *userData)
 {
-    SEXP f = (SEXP) userData;
+    SEXP f = reinterpret_cast<SEXP>(userData);
     SEXP e, tmp, val, cur;
     int errorOccurred;
     Rboolean again;

@@ -237,12 +237,12 @@
 	naRealCheck(REAL(value)[0], what);
 	naRealCheck(REAL(value)[1], what);
         if ((R_DEV__(xlog)))
-            logAxpCheck((int) (REAL(value)[2]), what);
+            logAxpCheck(int(REAL(value)[2]), what);
         else
-            posIntCheck((int) (REAL(value)[2]), what);
+            posIntCheck(int(REAL(value)[2]), what);
 	R_DEV__(xaxp[0]) = REAL(value)[0];
 	R_DEV__(xaxp[1]) = REAL(value)[1];
-	R_DEV__(xaxp[2]) = (int)(REAL(value)[2]);
+	R_DEV__(xaxp[2]) = int(REAL(value)[2]);
     }
     else if (streql(what, "xaxs")) {
 	if (!isString(value) || LENGTH(value) < 1)
@@ -274,12 +274,12 @@
 	naRealCheck(REAL(value)[0], what);
 	naRealCheck(REAL(value)[1], what);
         if ((R_DEV__(ylog)))
-            logAxpCheck((int) (REAL(value)[2]), what);
+            logAxpCheck(int(REAL(value)[2]), what);
         else
-            posIntCheck((int) (REAL(value)[2]), what);
+            posIntCheck(int(REAL(value)[2]), what);
 	R_DEV__(yaxp[0]) = REAL(value)[0];
 	R_DEV__(yaxp[1]) = REAL(value)[1];
-	R_DEV__(yaxp[2]) = (int) (REAL(value)[2]);
+	R_DEV__(yaxp[2]) = int(REAL(value)[2]);
     }
     else if (streql(what, "yaxs")) {
 	if (!isString(value) || LENGTH(value) < 1)

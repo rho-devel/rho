@@ -38,28 +38,28 @@ unsigned int ScaleColor(double x)
 {
     if (!R_FINITE(x) || x < 0.0 || x > 1.0)
 	error(_("color intensity %g, not in [0,1]"), x);
-    return (unsigned int)(255*x + 0.5);
+    return uint(255*x + 0.5);
 }
 
 unsigned int CheckColor(int x)
 {
     if (x == NA_INTEGER || x < 0 || x > 255)
 	error(_("color intensity %d, not in 0:255"), x);
-    return (unsigned int)x;
+    return uint(x);
 }
 
 static unsigned int ScaleAlpha(double x)
 {
     if (!R_FINITE(x) || x < 0.0 || x > 1.0)
 	error(_("alpha level %g, not in [0,1]"), x);
-    return (unsigned int)(255*x + 0.5);
+    return uint(255*x + 0.5);
 }
 
 static unsigned int CheckAlpha(int x)
 {
     if (x == NA_INTEGER || x < 0 || x > 255)
 	error(_("alpha level %d, not in 0:255"), x);
-    return (unsigned int)x;
+    return uint(x);
 }
 
 static void setpalette(char **palette)

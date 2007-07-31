@@ -36,14 +36,14 @@ SEXP attribute_hidden do_mapply(SEXP f, SEXP varyingArgs, SEXP constantArgs, SEX
 
     named = vnames!=R_NilValue;
 
-    lengths = (int *)  R_alloc(m, sizeof(int));
+    lengths = reinterpret_cast<int *>(R_alloc(m, sizeof(int)));
     for(i = 0; i < m; i++){
 	lengths[i] = length(VECTOR_ELT(varyingArgs,i));
 	if (lengths[i] > longest) longest=lengths[i];
     }
 
 
-    counters = (int *) R_alloc(m, sizeof(int));
+    counters = reinterpret_cast<int *>(R_alloc(m, sizeof(int)));
     for(i = 0; i < m; counters[i++]=0);
 
     mindex=PROTECT(allocVector(VECSXP, m));

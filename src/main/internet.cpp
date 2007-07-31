@@ -111,7 +111,7 @@ Rconnection attribute_hidden R_newurl(char *description, const char * const mode
 	return (*ptr->newurl)(description, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return (Rconnection)0;
+	return 0;
     }    
 }
 
@@ -122,7 +122,7 @@ Rconnection R_newsock(char *host, int port, int server, char *mode)
 	return (*ptr->newsock)(host, port, server, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return (Rconnection)0;
+	return 0;
     }    
 }
 

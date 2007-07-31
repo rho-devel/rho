@@ -113,7 +113,7 @@ static HashData *HashTableSetup(int maxstrings)
 
     maxstrings = imin2(maxstrings, 536870912); /* 2^29 */
     n4 = 2 * maxstrings;
-    d = (HashData *) R_alloc(1, sizeof(HashData));
+    d = reinterpret_cast<HashData *>(R_alloc(1, sizeof(HashData)));
     d->M = 2;
     d->K = 1;
     while (d->M < n4) {
@@ -123,7 +123,7 @@ static HashData *HashTableSetup(int maxstrings)
     d->nins = 0;
     d->maxstrings = maxstrings;
 
-    d->HashTable = (SEXP *) S_alloc(d->M, sizeof(SEXP));
+    d->HashTable = reinterpret_cast<SEXP *>(S_alloc(d->M, sizeof(SEXP)));
     return d;
 }
 
@@ -169,7 +169,7 @@ static int ConsoleGetchar()
 	    return R_EOF;
 	}
 	ConsoleBufp = ConsoleBuf;
-	ConsoleBufCnt = strlen((char *)ConsoleBuf);
+	ConsoleBufCnt = strlen(reinterpret_cast<char *>(ConsoleBuf));
 	ConsoleBufCnt--;
     }
     return *ConsoleBufp++;
@@ -217,16 +217,16 @@ static double Rs_strtod(const char *c, char **end, Rboolean NA)
     double x;
 
     if (NA && strncmp(c, "NA", 2) == 0){
-	x = NA_REAL; *end = (char *)c + 2; /* coercion for -Wall */
+	x = NA_REAL; *end = const_cast<char*>(c) + 2; /* coercion for -Wall */
     }
     else if (strncmp(c, "NaN", 3) == 0) {
-	x = R_NaN; *end = (char *)c + 3;
+	x = R_NaN; *end = const_cast<char*>(c) + 3;
     }
     else if (strncmp(c, "Inf", 3) == 0) {
-	x = R_PosInf; *end = (char *)c + 3;
+	x = R_PosInf; *end = const_cast<char*>(c) + 3;
     }
     else if (strncmp(c, "-Inf", 4) == 0) {
-	x = R_NegInf; *end = (char *)c + 4;
+	x = R_NegInf; *end = const_cast<char*>(c) + 4;
     }
     else
         x = strtod(c, end);
@@ -255,7 +255,7 @@ Strtod (const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 		d->convbuf[i] = d->decchar;
 	x = Rs_strtod(d->convbuf, &end, NA);
 	if(endptr)
-  	   *endptr = (char *) nptr + (end - d->convbuf);
+	    *endptr = const_cast<char*>(nptr) + (end - d->convbuf);
 	return x;
     }
 }
@@ -284,7 +284,7 @@ strtoc(const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 	}
 	else {
 	    z.r = 0; z.i = 0;
-	    endp = (char *) nptr; /* -Wall */
+	    endp = const_cast<char*>(nptr); /* -Wall */
 	}
     }
     *endptr = endp;
@@ -294,7 +294,7 @@ strtoc(const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 static Rbyte
 strtoraw (const char *nptr, char **endptr)
 {
-    char *p = (char *) nptr;
+    char *p = const_cast<char*>(nptr);
     int i, val = 0;
 
     /* should have whitespace plus exactly 2 hex digits */
@@ -307,7 +307,7 @@ strtoraw (const char *nptr, char **endptr)
 	else {val = 0; break;}
     }
     *endptr = p;
-    return (Rbyte) val;
+    return Rbyte(val);
 }
 
 static R_INLINE int scanchar_raw(LocalData *d)
@@ -543,8 +543,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     /* strip trailing white space, if desired and if item is non-null */
     bufp = &buffer->data[m];
    if (strip && m > 0) {
-	do {c = (int)*--bufp;} while(Rspace(c));
-	bufp++;
+       do {c = int(*--bufp);} while(Rspace(c));
+       bufp++;
     }
     *bufp = '\0';
     *bch = filled;
@@ -1577,9 +1577,9 @@ SEXP attribute_hidden do_menu(SEXP call, SEXP op, SEXP args, SEXP rho)
     ConsolePrompt[0] = '\0';
 
     bufp = buffer;
-    while (Rspace((int)*bufp)) bufp++;
+    while (Rspace(int(*bufp))) bufp++;
     first = LENGTH(CAR(args)) + 1;
-    if (isdigit((int)*bufp)) {
+    if (isdigit(int(*bufp))) {
 	first = Strtod(buffer, NULL, TRUE, &data);
     } else {
 	for (j = 0; j < LENGTH(CAR(args)); j++) {
@@ -1643,7 +1643,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
 	errorcall(call, _("invalid '%s' value"), "comment.char");
-    else if (strlen(p) == 1) data.comchar = (int)*p;
+    else if (strlen(p) == 1) data.comchar = int(*p);
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
 	else data.sepchar = (unsigned char) translateChar(STRING_ELT(sep, 0))[0];
@@ -1663,7 +1663,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    data.con->seek(data.con, data.con->seek(data.con, -1, 1, 1), 1, 1);
     }
 
-    buf = (char *) malloc(buf_size);
+    buf = reinterpret_cast<char*>(malloc(buf_size));
     if(!buf)
 	error(_("cannot allocate buffer in readTableHead"));
 
@@ -1675,7 +1675,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while((c = scanchar(TRUE, &data)) != R_EOF) {
 	    if(nbuf >= buf_size -1) {
 		buf_size *= 2;
-		buf = (char *) realloc(buf, buf_size);
+		buf = reinterpret_cast<char*>(realloc(buf, buf_size));
 		if(!buf)
 		    error(_("cannot allocate buffer in readTableHead"));
 	    }
@@ -1889,7 +1889,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(strlen(sdec) != 1)
 	errorcall(call, _("'dec' must be a single character"));
     cdec = sdec[0];
-    quote_col = (Rboolean *) R_alloc(nc, sizeof(Rboolean));
+    quote_col = reinterpret_cast<Rboolean*>(R_alloc(nc, sizeof(Rboolean)));
     for(j = 0; j < nc; j++) quote_col[j] = FALSE;
     for(i = 0; i < length(quote); i++) { /* NB, quote might be NULL */
 	int that = INTEGER(quote)[i];
@@ -1910,7 +1910,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isVectorList(x)) { /* A data frame */
 
 	/* handle factors internally, check integrity */
-	levels = (SEXP *) R_alloc(nc, sizeof(SEXP));
+	levels = reinterpret_cast<SEXP*>(R_alloc(nc, sizeof(SEXP)));
 	for(j = 0; j < nc; j++) {
 	    xj = VECTOR_ELT(x, j);
 	    if(LENGTH(xj) != nr)

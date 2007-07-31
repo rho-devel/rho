@@ -1047,7 +1047,7 @@ void InitNames()
     /* R_BlankString */
     R_BlankString = mkChar("");
     /* Initialize the symbol Table */
-    if (!(R_SymbolTable = (SEXP *) malloc(HSIZE * sizeof(SEXP))))
+    if (!(R_SymbolTable = reinterpret_cast<SEXP *>(malloc(HSIZE * sizeof(SEXP)))))
 	R_Suicide("couldn't allocate memory for symbol table");
     for (i = 0; i < HSIZE; i++)
 	R_SymbolTable[i] = R_NilValue;

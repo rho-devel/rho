@@ -39,7 +39,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    (char *) 0,
+    0,
 };
 
 const static char * const falsenames[] = {
@@ -47,7 +47,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    (char *) 0,
+    0,
 };
 
 /* Coercion warnings will be OR'ed : */
@@ -119,7 +119,7 @@ static double R_strtol(const char *nptr, char **endptr)
     }
 
 done:
-    if(endptr) *endptr = (char *)p;
+    if(endptr) *endptr = const_cast<char *>(p);
     return sign*ret;
 }
 
@@ -129,16 +129,16 @@ double R_strtod(const char *c, char **end)
     double x;
 
     if (strncmp(c, "NA", 2) == 0){
-	x = NA_REAL; *end = (char *)c + 2; /* coercion for -Wall */
+	x = NA_REAL; *end = const_cast<char*>(c) + 2; /* coercion for -Wall */
     }
     else if (strncmp(c, "NaN", 3) == 0) {
-	x = R_NaN; *end = (char *)c + 3;
+	x = R_NaN; *end = const_cast<char*>(c) + 3;
     }
     else if (strncmp(c, "Inf", 3) == 0) {
-	x = R_PosInf; *end = (char *)c + 3;
+	x = R_PosInf; *end = const_cast<char*>(c) + 3;
     }
     else if (strncmp(c, "-Inf", 4) == 0) {
-	x = R_NegInf; *end = (char *)c + 4;
+	x = R_NegInf; *end = const_cast<char*>(c) + 4;
     }
     else if (!strncmp(c, "0x", 2) || !strncmp(c, "0x", 2)) {
 	x = R_strtol(c, end);
@@ -513,7 +513,7 @@ static SEXP coerceToLogical(SEXP v)
 	break;
     case RAWSXP:
 	for (i = 0; i < n; i++)
-	    LOGICAL(ans)[i] = LogicalFromInteger((int)RAW(v)[i], &warn);
+	    LOGICAL(ans)[i] = LogicalFromInteger(int(RAW(v)[i]), &warn);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("coerceToLogical", v);
@@ -554,7 +554,7 @@ static SEXP coerceToInteger(SEXP v)
 	break;
     case RAWSXP:
 	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = (int)RAW(v)[i];
+	    INTEGER(ans)[i] = int(RAW(v)[i]);
 	    break;
     default:
 	UNIMPLEMENTED_TYPE("coerceToInteger", v);
@@ -595,7 +595,7 @@ static SEXP coerceToReal(SEXP v)
 	break;
     case RAWSXP:
 	for (i = 0; i < n; i++)
-	    REAL(ans)[i] = RealFromInteger((int)RAW(v)[i], &warn);
+	    REAL(ans)[i] = RealFromInteger(int(RAW(v)[i]), &warn);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("coerceToReal", v);
@@ -636,7 +636,7 @@ static SEXP coerceToComplex(SEXP v)
 	break;
     case RAWSXP:
 	for (i = 0; i < n; i++)
-	    COMPLEX(ans)[i] = ComplexFromInteger((int)RAW(v)[i], &warn);
+	    COMPLEX(ans)[i] = ComplexFromInteger(int(RAW(v)[i]), &warn);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("coerceToComplex", v);
@@ -667,7 +667,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = (Rbyte) tmp;
+	    RAW(ans)[i] = Rbyte(tmp);
 	}
 	break;
     case INTSXP:
@@ -677,7 +677,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = (Rbyte) tmp;
+	    RAW(ans)[i] = Rbyte(tmp);
 	}
 	break;
     case REALSXP:
@@ -687,7 +687,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = (Rbyte) tmp;
+	    RAW(ans)[i] = Rbyte(tmp);
 	}
 	break;
     case CPLXSXP:
@@ -697,7 +697,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = (Rbyte) tmp;
+	    RAW(ans)[i] = Rbyte(tmp);
 	}
 	break;
     case STRSXP:
@@ -707,7 +707,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = (Rbyte) tmp;
+	    RAW(ans)[i] = Rbyte(tmp);
 	}
 	break;
     default:
@@ -973,7 +973,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    break;
 	case RAWSXP:
 	    for (i = 0, vp = v; i < n; i++, vp = CDR(vp))
-		RAW(rval)[i] = (Rbyte) asInteger(CAR(vp));
+		RAW(rval)[i] = Rbyte(asInteger(CAR(vp)));
 	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("coercePairList", v);
@@ -1080,7 +1080,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 		    tmp = 0;
 		    warn |= WARN_RAW;
 		}
-		RAW(rval)[i] = (Rbyte) tmp;
+		RAW(rval)[i] = Rbyte(tmp);
 	    }
 	    break;
 	default:
@@ -2315,7 +2315,7 @@ static classType classTable[] = {
     { "weakref",	WEAKREFSXP, FALSE },
     { "name",		SYMSXP,	   FALSE },
 
-    { (char *)0,	(SEXPTYPE)-1, FALSE}
+    { 0,	        SEXPTYPE(-1), FALSE}
 };
 
 static int class2type(char *s)

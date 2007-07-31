@@ -666,7 +666,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m, int version, SaveL
     /* save the current non-relocatable base */
 
     vmaxsave = vmaxget();
-    node.OldOffset = (int*)R_alloc(node.NSymbol + node.NSave, sizeof(int));
+    node.OldOffset = reinterpret_cast<int*>(R_alloc(node.NSymbol + node.NSave, sizeof(int)));
     PROTECT(node.NewAddress = allocVector(VECSXP, node.NSymbol + node.NSave));
     for (i = 0 ; i < node.NTotal ; i++) {
 	node.OldOffset[i] = 0;
@@ -819,7 +819,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
     case -3: return R_UnboundValue;
     case -4: return R_MissingArg;
     }
-    return (SEXP) 0;	/* not strictly legal... */
+    return 0;	/* not strictly legal... */
 }
 
 
@@ -1124,7 +1124,7 @@ static void NewWriteItem (SEXP s, SEXP sym_list, SEXP env_list, FILE *fp, Output
 
 static void newdatasave_cleanup(void *data)
 {
-    OutputCtxtData *cinfo = (OutputCtxtData*)data;
+    OutputCtxtData *cinfo = reinterpret_cast<OutputCtxtData*>(data);
     FILE *fp = cinfo->fp;
     cinfo->methods->OutTerm(fp, cinfo->data);
 }
@@ -1322,7 +1322,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 static void newdataload_cleanup(void *data)
 {
     InputCtxtData *cinfo = (InputCtxtData*)data;
-    FILE *fp = (FILE *) data;
+    FILE *fp = (FILE *) data;  // 2007/07/31 arr: Can this be right?
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 
@@ -1459,8 +1459,8 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1); 
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1));
+	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading ascii string"));
 	buf = newbuf;
@@ -1599,8 +1599,8 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1); 
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1)); 
+	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1694,8 +1694,8 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     if (int(nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = (char *) realloc(buf, nbytes + 1); 
-	else newbuf = (char *) malloc(nbytes + 1);
+	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1)); 
+	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1774,22 +1774,22 @@ static void R_WriteMagic(FILE *fp, int number)
     number = abs(number);
     switch (number) {
     case R_MAGIC_ASCII_V1:   /* Version 1 - R Data, ASCII Format */
-	strcpy((char*)buf, "RDA1");
+	strcpy(reinterpret_cast<char*>(buf), "RDA1");
 	break;
     case R_MAGIC_BINARY_V1:  /* Version 1 - R Data, Binary Format */
-	strcpy((char*)buf, "RDB1");
+	strcpy(reinterpret_cast<char*>(buf), "RDB1");
 	break;
     case R_MAGIC_XDR_V1:     /* Version 1 - R Data, XDR Binary Format */
-	strcpy((char*)buf, "RDX1");
+	strcpy(reinterpret_cast<char*>(buf), "RDX1");
 	break;
     case R_MAGIC_ASCII_V2:   /* Version >=2 - R Data, ASCII Format */
-	strcpy((char*)buf, "RDA2");
+	strcpy(reinterpret_cast<char*>(buf), "RDA2");
 	break;
     case R_MAGIC_BINARY_V2:  /* Version >=2 - R Data, Binary Format */
-	strcpy((char*)buf, "RDB2");
+	strcpy(reinterpret_cast<char*>(buf), "RDB2");
 	break;
     case R_MAGIC_XDR_V2:     /* Version >=2 - R Data, XDR Binary Format */
-	strcpy((char*)buf, "RDX2");
+	strcpy(reinterpret_cast<char*>(buf), "RDX2");
 	break;
     default:
 	buf[0] = (number/1000) % 10 + '0';
@@ -1798,7 +1798,7 @@ static void R_WriteMagic(FILE *fp, int number)
 	buf[3] = number % 10 + '0';
     }
     buf[4] = '\n';
-    res = fwrite((char*)buf, sizeof(char), 5, fp);
+    res = fwrite(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
     if(res != 5) error(_("write failed"));
 }
 
@@ -1807,7 +1807,7 @@ static int R_ReadMagic(FILE *fp)
     unsigned char buf[6];
     int d1, d2, d3, d4, count;
 
-    count = fread((char*)buf, sizeof(char), 5, fp);
+    count = fread(reinterpret_cast<char*>(buf), sizeof(char), 5, fp);
     if (count != 5) {
 	if (count == 0)
 	    return R_MAGIC_EMPTY;
@@ -1815,25 +1815,25 @@ static int R_ReadMagic(FILE *fp)
 	    return R_MAGIC_CORRUPT;
     }
 
-    if (strncmp((char*)buf, "RDA1\n", 5) == 0) {
+    if (strncmp(reinterpret_cast<char*>(buf), "RDA1\n", 5) == 0) {
 	return R_MAGIC_ASCII_V1;
     }
-    else if (strncmp((char*)buf, "RDB1\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDB1\n", 5) == 0) {
 	return R_MAGIC_BINARY_V1;
     }
-    else if (strncmp((char*)buf, "RDX1\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDX1\n", 5) == 0) {
 	return R_MAGIC_XDR_V1;
     }
-    if (strncmp((char*)buf, "RDA2\n", 5) == 0) {
+    if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0) {
 	return R_MAGIC_ASCII_V2;
     }
-    else if (strncmp((char*)buf, "RDB2\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0) {
 	return R_MAGIC_BINARY_V2;
     }
-    else if (strncmp((char*)buf, "RDX2\n", 5) == 0) {
+    else if (strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	return R_MAGIC_XDR_V2;
     }
-    else if (strncmp((char *)buf, "RD", 2) == 0)
+    else if (strncmp(reinterpret_cast<char*>(buf), "RD", 2) == 0)
 	return R_MAGIC_MAYBE_TOONEW;
 
     /* Intel gcc seems to screw up a single expression here */
@@ -1937,7 +1937,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 
 static void saveload_cleanup(void *data)
 {
-    FILE *fp = (FILE *) data;
+    FILE *fp = reinterpret_cast<FILE *>(data);
     fclose(fp);
 }
 
@@ -2109,7 +2109,7 @@ void attribute_hidden R_XDREncodeDouble(double d, void *buf)
     XDR xdrs;
     int success;
  
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_DOUBLE_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2122,7 +2122,7 @@ double attribute_hidden R_XDRDecodeDouble(void *buf)
     double d;
     int success;
  
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_DOUBLE_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2135,7 +2135,7 @@ void attribute_hidden R_XDREncodeInteger(int i, void *buf)
     XDR xdrs;
     int success;
  
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_INTEGER_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2147,7 +2147,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     XDR xdrs;
     int i, success;
  
-    xdrmem_create(&xdrs, (char *) buf, R_XDR_INTEGER_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2311,7 +2311,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void saveloadcon_cleanup(void *data)
 {
-    FILE *fp = (FILE *) data;
+    FILE *fp = reinterpret_cast<FILE *>(data);
     fclose(fp);
 }
 
@@ -2347,9 +2347,9 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     memset(buf, 0, 6);
     count = con->read(buf, sizeof(char), 5, con);
     if (count == 0) error(_("no input is available"));
-    if (strncmp((char*)buf, "RDA2\n", 5) == 0 ||
-	strncmp((char*)buf, "RDB2\n", 5) == 0 ||
-	strncmp((char*)buf, "RDX2\n", 5) == 0) {
+    if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
+	strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
+	strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	/* set up a context which will clean up if there is an error */
 	if (wasopen) {
 	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,

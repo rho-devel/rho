@@ -54,7 +54,7 @@ Furthermore:
 #define APSE_DEBUG(x)
 #endif
 
-#define APSE_BIT(i)		((apse_vec_t)1 << ((i)%APSE_BITS_IN_BITVEC))
+#define APSE_BIT(i)		(apse_vec_t(1) << ((i)%APSE_BITS_IN_BITVEC))
 #define APSE_IDX(p, q, i)	((p)*(q)+(i)/APSE_BITS_IN_BITVEC)
 #define APSE_BIT_SET(bv, p, q, i) (bv[APSE_IDX(p, q, i)] |=  APSE_BIT(i))
 #define APSE_BIT_CLR(bv, p, q, i) (bv[APSE_IDX(p, q, i)] &= ~APSE_BIT(i))
@@ -68,8 +68,7 @@ Furthermore:
 #define APSE_MATCH_STATE_END		5
 #define APSE_MATCH_STATE_EOT		6
 
-#define APSE_TEST_HIGH_BIT(i)	\
-	(((i) & ((apse_vec_t)1 << (APSE_BITS_IN_BITVEC - 1))) ? 1 : 0)
+#define APSE_TEST_HIGH_BIT(i)   (((i) & (apse_vec_t(1) << (APSE_BITS_IN_BITVEC - 1))) ? 1 : 0)
 
 /* In case you are reading the TR 91-11 of University of Arizona, page 6:
  * j+1	state
@@ -195,19 +194,19 @@ apse_bool_t apse_set_pattern(apse_t*		ap,
 
     ap->bytes_in_state = ap->bitvectors_in_state * sizeof(apse_vec_t);
 
-    ap->case_mask = (apse_vec_t *) calloc((apse_size_t)APSE_CHAR_MAX, ap->bytes_in_state);
+    ap->case_mask = reinterpret_cast<apse_vec_t *>(calloc(apse_size_t(APSE_CHAR_MAX), ap->bytes_in_state));
     if (!ap->case_mask)
 	goto out;
 
     for (i = 0; i < pattern_size; i++)
 	APSE_BIT_SET(ap->case_mask,
-		     (unsigned)pattern[i],
+		     pattern[i],
 		     ap->bitvectors_in_state, i);
 
     ap->pattern_mask = ap->case_mask;
 
     ap->match_end_bitmask =
-	(apse_vec_t)1 << ((pattern_size - 1) % APSE_BITS_IN_BITVEC);
+	apse_vec_t(1) << ((pattern_size - 1) % APSE_BITS_IN_BITVEC);
 
 out:
     if (ap && ap->case_mask)
@@ -458,11 +457,11 @@ apse_bool_t apse_set_edit_distance(apse_t *ap, apse_size_t edit_distance) {
 
     ap->state = ap->prev_state = 0;
 
-    ap->state = (apse_vec_t *) calloc(edit_distance + 1, ap->bytes_in_state);
+    ap->state = reinterpret_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
     if (!ap->state)
 	goto out;
 
-    ap->prev_state = (apse_vec_t *) calloc(edit_distance + 1, ap->bytes_in_state);
+    ap->prev_state = reinterpret_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
     if (!ap->prev_state)
 	goto out;
 
@@ -479,9 +478,9 @@ apse_bool_t apse_set_edit_distance(apse_t *ap, apse_size_t edit_distance) {
 
     ap->match_begin_bitvector	=
 	(edit_distance + 1) / APSE_BITS_IN_BITVEC;
-    ap->match_begin_prefix = ((apse_vec_t)1 << edit_distance) - 1;
+    ap->match_begin_prefix = (apse_vec_t(1) << edit_distance) - 1;
     ap->match_begin_bitmask	=
-	((apse_vec_t)1 << edit_distance) - 1;
+	(apse_vec_t(1) << edit_distance) - 1;
 
     ap->match_end_bitvector =
 	(ap->pattern_size - 1) / APSE_BITS_IN_BITVEC;
@@ -570,8 +569,8 @@ apse_bool_t apse_set_caseignore_slice(apse_t*		ap,
 
     if (!ap->fold_mask) {
 
-	ap->fold_mask = (apse_vec_t *) calloc((apse_size_t)APSE_CHAR_MAX,
-					      ap->bytes_in_state);
+	ap->fold_mask = reinterpret_cast<apse_vec_t *>(calloc(apse_size_t(APSE_CHAR_MAX),
+							      ap->bytes_in_state));
 	if (!ap->fold_mask)
 	    goto out;
 
@@ -653,7 +652,7 @@ apse_t *apse_create(unsigned char*	pattern,
 	printf("(pattern = \"%s\", pattern_size = %ld)\n",
 	       pattern, pattern_size));
 
-    ap = (apse_t *) calloc((size_t)1, sizeof(*ap));
+    ap = reinterpret_cast<apse_t *>(calloc(size_t(1), sizeof(*ap)));
     if (!ap)
 	return 0;
 
@@ -703,7 +702,7 @@ apse_t *apse_create(unsigned char*	pattern,
     ap->custom_data		= 0;
     ap->custom_data_size	= 0;
 
-    if (!apse_set_pattern(ap, (unsigned char *)pattern, pattern_size))
+    if (!apse_set_pattern(ap, pattern, pattern_size))
 	goto out;
 
     if (!apse_set_edit_distance(ap, edit_distance))
@@ -996,10 +995,10 @@ static apse_bool_t _apse_match_single_simple(apse_t *ap) {
     APSE_DEBUG(printf("(match single simple)\n"));
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	apse_vec_t	t =
-      	    ap->pattern_mask[(unsigned)ap->text[ap->text_position] *
+      	    ap->pattern_mask[ap->text[ap->text_position] *
 			    ap->bitvectors_in_state];
 	apse_size_t	h, g;
-	APSE_NEXT_EXACT(ap->state, ap->prev_state, t, (apse_size_t)0, 1);
+	APSE_NEXT_EXACT(ap->state, ap->prev_state, t, apse_size_t(0), 1);
 	APSE_DEBUG_SINGLE(ap, (apse_size_t)0);
 
 	for (g = 0, h = 1; h <= ap->edit_distance; g = h, h++) {
@@ -1027,7 +1026,7 @@ static apse_bool_t _apse_match_multiple_simple(apse_t *ap) {
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	apse_vec_t	*t =
 	    ap->pattern_mask +
-	    (unsigned)ap->text[ap->text_position] * ap->bitvectors_in_state;
+	    ap->text[ap->text_position] * ap->bitvectors_in_state;
 	apse_vec_t	c, d;
 
 	APSE_DEBUG_MULTIPLE_FIRST(ap, (apse_size_t)0);
@@ -1073,11 +1072,11 @@ static apse_bool_t _apse_match_single_complex(apse_t *ap) {
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	unsigned char	o = ap->text[ap->text_position];
 	apse_vec_t	t =
-	    ap->pattern_mask[(unsigned int)o * ap->bitvectors_in_state];
+	    ap->pattern_mask[uint(o) * ap->bitvectors_in_state];
 	apse_size_t	h, g;
 
-	APSE_NEXT_EXACT(ap->state, ap->prev_state, t, (apse_size_t)0, 1);
-	APSE_DEBUG_SINGLE(ap, (apse_size_t)0);
+	APSE_NEXT_EXACT(ap->state, ap->prev_state, t, apse_size_t(0), 1);
+	APSE_DEBUG_SINGLE(ap, apse_size_t(0));
 
 	for (g = 0, h = 1; h <= ap->edit_distance; g = h, h++) {
 	    apse_bool_t has_insertions    = h <= ap->edit_insertions;
@@ -1119,7 +1118,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	unsigned char	o = ap->text[ap->text_position];
 	apse_vec_t	*t =
-	    ap->pattern_mask + (unsigned)o * ap->bitvectors_in_state;
+	    ap->pattern_mask + uint(o) * ap->bitvectors_in_state;
 	apse_vec_t	c, d;
 
 	APSE_DEBUG_MULTIPLE_FIRST(ap, (apse_size_t)0);

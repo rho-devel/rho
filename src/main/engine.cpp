@@ -80,7 +80,7 @@ GEDevDesc* GEcreateDevDesc(NewDevDesc* dev)
      * device description (add graphics engine information
      * to the device description).
      */
-    GEDevDesc *dd = (GEDevDesc*) calloc(1, sizeof(GEDevDesc));
+    GEDevDesc *dd = reinterpret_cast<GEDevDesc*>(calloc(1, sizeof(GEDevDesc)));
     /* NULL the gesd array
      */
     int i;
@@ -144,7 +144,7 @@ void* GEsystemState(GEDevDesc *dd, int index)
  */
 static void registerOne(GEDevDesc *dd, int systemNumber, GEcallback cb) {
     dd->gesd[systemNumber] =
-	(GESystemDesc*) calloc(1, sizeof(GESystemDesc));
+	reinterpret_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
     if (dd->gesd[systemNumber] == NULL)
 	error(_("unable to allocate memory (in GEregister)"));
     cb(GE_InitState, dd, R_NilValue);
@@ -210,7 +210,7 @@ void GEregisterSystem(GEcallback cb, int *systemRegisterIndex) {
     /* Store the information for adding to any new devices
      */
     registeredSystems[numGraphicsSystems] =
-	(GESystemDesc*) calloc(1, sizeof(GESystemDesc));
+	reinterpret_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
     if (registeredSystems[numGraphicsSystems] == NULL)
 	error(_("unable to allocate memory (in GEregister)"));
     registeredSystems[numGraphicsSystems]->callback = cb;
@@ -816,8 +816,8 @@ static void CScliplines(int n, double *x, double *y,
     else
 	getClipRect(&cr.xl, &cr.yb, &cr.xr, &cr.yt, dd);
 
-    xx = (double *) R_alloc(n, sizeof(double));
-    yy = (double *) R_alloc(n, sizeof(double));
+    xx = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
+    yy = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
     if (xx == NULL || yy == NULL)
 	error(_("out of memory while clipping polyline"));
 
@@ -1083,8 +1083,8 @@ static void clipPolygon(int n, double *x, double *y,
      * If bg was NA then it has been converted to fully transparent */
     if (R_TRANSPARENT(gc->fill)) {
 	int i;
-	xc = (double*) R_alloc(n + 1, sizeof(double));
-	yc = (double*) R_alloc(n + 1, sizeof(double));
+	xc = reinterpret_cast<double*>(R_alloc(n + 1, sizeof(double)));
+	yc = reinterpret_cast<double*>(R_alloc(n + 1, sizeof(double)));
 	for (i=0; i<n; i++) {
 	    xc[i] = x[i];
 	    yc[i] = y[i];
@@ -1098,8 +1098,8 @@ static void clipPolygon(int n, double *x, double *y,
 	xc = yc = 0;		/* -Wall */
 	npts = clipPoly(x, y, n, 0, toDevice, xc, yc, dd);
 	if (npts > 1) {
-	    xc = (double*) R_alloc(npts, sizeof(double));
-	    yc = (double*) R_alloc(npts, sizeof(double));
+	    xc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
+	    yc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
 	    npts = clipPoly(x, y, n, 1, toDevice, xc, yc, dd);
 	    dd->dev->polygon(npts, xc, yc, gc, dd->dev);
 	}
@@ -1275,8 +1275,8 @@ void GECircle(double x, double y, double radius,
 	}
 	else {
 	    vmax = vmaxget();
-	    xc = (double*)R_alloc(result+1, sizeof(double));
-	    yc = (double*)R_alloc(result+1, sizeof(double));
+	    xc = reinterpret_cast<double*>(R_alloc(result+1, sizeof(double)));
+	    yc = reinterpret_cast<double*>(R_alloc(result+1, sizeof(double)));
 	    convertCircle(x, y, radius, result, xc, yc);
 	    if (R_TRANSPARENT(gc->fill)) {
 		GEPolyline(result+1, xc, yc, gc, dd);
@@ -1288,8 +1288,8 @@ void GECircle(double x, double y, double radius,
 		npts = clipPoly(xc, yc, result, 0, !dd->dev->canClip,
 				    xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = (double*)R_alloc(npts, sizeof(double));
-		    ycc = (double*)R_alloc(npts, sizeof(double));
+		    xcc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
+		    ycc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, result, 1, !dd->dev->canClip,
 					xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
@@ -1363,8 +1363,8 @@ void GERect(double x0, double y0, double x1, double y1,
 	    dd->dev->rect(x0, y0, x1, y1, gc, dd->dev);
 	else {
 	    vmax = vmaxget();
-	    xc = (double*)R_alloc(5, sizeof(double));
-	    yc = (double*)R_alloc(5, sizeof(double));
+	    xc = reinterpret_cast<double*>(R_alloc(5, sizeof(double)));
+	    yc = reinterpret_cast<double*>(R_alloc(5, sizeof(double)));
 	    xc[0] = x0; yc[0] = y0;
 	    xc[1] = x0; yc[1] = y1;
 	    xc[2] = x1; yc[2] = y1;
@@ -1379,8 +1379,8 @@ void GERect(double x0, double y0, double x1, double y1,
 		xcc = ycc = 0;		/* -Wall */
 		npts = clipPoly(xc, yc, 4, 0, !dd->dev->canClip, xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = (double*)R_alloc(npts, sizeof(double));
-		    ycc = (double*)R_alloc(npts, sizeof(double));
+		    xcc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
+		    ycc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, 4, 1, !dd->dev->canClip, xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
 		}
@@ -1617,7 +1617,7 @@ void GEText(double x, double y, const char * const str,
 		if (*s == '\n')
 		    n += 1;
 	    /* Allocate a temporary buffer */
-	    sbuf = (char*) R_alloc(strlen(str) + 1, sizeof(char));
+	    sbuf = reinterpret_cast<char*>(R_alloc(strlen(str) + 1, sizeof(char)));
 	    sb = sbuf;
 	    i = 0;
 	    sin_rot = DEG2RAD * rot;
@@ -1684,7 +1684,7 @@ void GEText(double x, double y, const char * const str,
 				    mbstate_t mb_st;
 				    mbs_init(&mb_st);
 				    while ((used = mbrtowc(&wc, ss, n, &mb_st)) > 0) {
-					GEMetricInfo((int)wc, gc, &h, &d, &w, dd);
+					GEMetricInfo(int(wc), gc, &h, &d, &w, dd);
 					h = fromDeviceHeight(h, GE_INCHES, dd);
 					d = fromDeviceHeight(d, GE_INCHES, dd);
 					/* Set maxHeight and maxDepth from height
@@ -2285,7 +2285,7 @@ double GEStrWidth(const char *str,
     if (vfontcode >= 0) {
 	gc->fontfamily[0] = vfontcode;
 	gc->fontface = VFontFaceCode(vfontcode, gc->fontface);
-	return R_GE_VStrWidth((unsigned char *) str, gc, dd);
+	return R_GE_VStrWidth(reinterpret_cast<const unsigned char *>(str), gc, dd);
     } else {
 	double w;
 	char *sbuf = NULL;
@@ -2294,7 +2294,7 @@ double GEStrWidth(const char *str,
 	    const char *s;
 	    char *sb;
 	    double wdash;
-	    sbuf = (char*) R_alloc(strlen(str) + 1, sizeof(char));
+	    sbuf = reinterpret_cast<char*>(R_alloc(strlen(str) + 1, sizeof(char)));
 	    sb = sbuf;
 	    for(s = str; ; s++) {
 		if (*s == '\n' || *s == '\0') {
@@ -2332,7 +2332,7 @@ double GEStrHeight(const char *str,
     if (vfontcode >= 0) {
 	gc->fontfamily[0] = vfontcode;
 	gc->fontface = VFontFaceCode(vfontcode, gc->fontface);
-	return R_GE_VStrHeight((unsigned char *) str, gc, dd);
+	return R_GE_VStrHeight(reinterpret_cast<const unsigned char *>(str), gc, dd);
     } else {
 	double h;
 	const char *s;

@@ -177,7 +177,7 @@ static void cov_pairwise2(int n, int ncx, int ncy, double *x, double *y,
 	    if(ind[k] != 0)			\
 		sum += xx[k];			\
         tmp = sum / nobs;			\
-        if(R_FINITE((double)tmp)) {		\
+        if(R_FINITE(double(tmp))) {		\
  	    sum = 0.;				\
 	    for (k = 0 ; k < n ; k++)		\
 	        if(ind[k] != 0)			\

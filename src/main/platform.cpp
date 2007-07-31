@@ -226,7 +226,7 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
     fn = CAR(args); args = CDR(args);
     hd = CAR(args); args = CDR(args);
     tl = CAR(args); args = CDR(args);
-    dl = (Rboolean)asLogical(CAR(args)); args = CDR(args);
+    dl = Rboolean(asLogical(CAR(args))); args = CDR(args);
     pg = CAR(args);
     n = 0;			/* -Wall */
     if (!isString(fn) || (n = length(fn)) < 1)
@@ -237,8 +237,8 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("invalid 'title'"));
     if (!isString(pg))
         errorcall(call, _("invalid '%s' specification"), "pager");
-    f = (char**)R_alloc(n, sizeof(char*));
-    h = (char**)R_alloc(n, sizeof(char*));
+    f = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
+    h = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
     for (i = 0; i < n; i++) {
 	if (!isNull(STRING_ELT(fn, i)))
 	    /* Do better later for file names? */
@@ -290,8 +290,8 @@ SEXP attribute_hidden do_fileedit(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n > 0) {
 	if (!isString(fn))
 	    errorcall(call, _("invalid '%s' specification"), "filename");
-	f = (char**) R_alloc(n, sizeof(char*));
-	title = (char**) R_alloc(n, sizeof(char*));
+	f = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
+	title = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
 	for (i = 0; i < n; i++) {
 	    if (!isNull(STRING_ELT(fn, i)))
 		/* Do better later for file names? */
@@ -306,9 +306,9 @@ SEXP attribute_hidden do_fileedit(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else {  /* open a new file for editing */
 	n = 1;
-	f = (char**) R_alloc(1, sizeof(char*));
+	f = reinterpret_cast<char**>(R_alloc(1, sizeof(char*)));
 	f[0] = CHAR(R_BlankString);
-	title = (char**) R_alloc(1, sizeof(char*));
+	title = reinterpret_cast<char**>(R_alloc(1, sizeof(char*)));
 	title[0] = CHAR(R_BlankString);
     }
     if (length(ed) >= 1 || !isNull(STRING_ELT(ed, 0)))
@@ -626,15 +626,15 @@ SEXP attribute_hidden do_fileinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    stat(R_ExpandFileName(translateChar(STRING_ELT(fn, i))), &sb)
 #endif
 	    == 0) {
-	    REAL(fsize)[i] = (double) sb.st_size;
+	    REAL(fsize)[i] = double(sb.st_size);
 	    LOGICAL(isdir)[i] = (sb.st_mode & S_IFDIR) > 0;
-	    INTEGER(mode)[i]  = (int) sb.st_mode & 0007777;
-	    REAL(mtime)[i] = (double) sb.st_mtime;
-	    REAL(ctime)[i] = (double) sb.st_ctime;
-	    REAL(atime)[i] = (double) sb.st_atime;
+	    INTEGER(mode)[i]  = int(sb.st_mode) & 0007777;
+	    REAL(mtime)[i] = double(sb.st_mtime);
+	    REAL(ctime)[i] = double(sb.st_ctime);
+	    REAL(atime)[i] = double(sb.st_atime);
 #ifdef UNIX_EXTRAS
-	    INTEGER(uid)[i] = (int) sb.st_uid;
-	    INTEGER(gid)[i] = (int) sb.st_gid;
+	    INTEGER(uid)[i] = int(sb.st_uid);
+	    INTEGER(gid)[i] = int(sb.st_gid);
 	    stpwd = getpwuid(sb.st_uid);
 	    if(stpwd) SET_STRING_ELT(uname, i, mkChar(stpwd->pw_name));
 	    else SET_STRING_ELT(uname, i, NA_STRING);
@@ -933,7 +933,7 @@ SEXP attribute_hidden do_indexsearch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    while (filbuf(linebuf, fp)) {
 		if(strncmp(linebuf, topicbuf, ltopicbuf) == 0) {
 		    p = &linebuf[ltopicbuf - 1];
-		    while(isspace((int)*p)) p++;
+		    while(isspace(int(*p))) p++;
 		    fclose(fp);
 		    if (!strcmp(ctype, "html"))
 			snprintf(topicbuf, 256, "%s%s%s%s%s%s",
@@ -1219,28 +1219,28 @@ SEXP attribute_hidden do_localeconv(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_STRING_ELT(ansnames, i++, mkChar("positive_sign"));
     SET_STRING_ELT(ans, i, mkChar(lc->negative_sign));
     SET_STRING_ELT(ansnames, i++, mkChar("negative_sign"));
-    sprintf(buff, "%d", (int)lc->int_frac_digits);
+    sprintf(buff, "%d", int(lc->int_frac_digits));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("int_frac_digits"));
-    sprintf(buff, "%d", (int)lc->frac_digits);
+    sprintf(buff, "%d", int(lc->frac_digits));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("frac_digits"));
-    sprintf(buff, "%d", (int)lc->p_cs_precedes);
+    sprintf(buff, "%d", int(lc->p_cs_precedes));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_cs_precedes"));
-    sprintf(buff, "%d", (int)lc->p_sep_by_space);
+    sprintf(buff, "%d", int(lc->p_sep_by_space));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_sep_by_space"));
-    sprintf(buff, "%d", (int)lc->n_cs_precedes);
+    sprintf(buff, "%d", int(lc->n_cs_precedes));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_cs_precedes"));
-    sprintf(buff, "%d", (int)lc->n_sep_by_space);
+    sprintf(buff, "%d", int(lc->n_sep_by_space));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_sep_by_space"));
-    sprintf(buff, "%d", (int)lc->p_sign_posn);
+    sprintf(buff, "%d", int(lc->p_sign_posn));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("p_sign_posn"));
-    sprintf(buff, "%d", (int)lc->n_sign_posn);
+    sprintf(buff, "%d", int(lc->n_sign_posn));
     SET_STRING_ELT(ans, i, mkChar(buff));
     SET_STRING_ELT(ansnames, i++, mkChar("n_sign_posn"));
     setAttrib(ans, R_NamesSymbol, ansnames);

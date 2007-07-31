@@ -100,7 +100,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun, R_RegisteredNativeSymbol *s
    	   *fun = (DL_FUNC) R_ExternalPtrAddr(op);
 	else if(R_ExternalPtrTag(op) == Rf_install("registered native symbol")) {
    	   R_RegisteredNativeSymbol *tmp;
-	   tmp = (R_RegisteredNativeSymbol *) R_ExternalPtrAddr(op);
+	   tmp = reinterpret_cast<R_RegisteredNativeSymbol *>(R_ExternalPtrAddr(op));
 	   if(tmp) {
   	      if(symbol->type != R_ANY_SYM && symbol->type != tmp->type)
  	         errorcall(call, _("NULL value passed as symbol address"));
@@ -313,11 +313,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
     n = LENGTH(s);
     rawptr = RAW(s);
     if (dup) {
-        rawptr = (unsigned char *) R_alloc(n, sizeof(unsigned char));
+        rawptr = reinterpret_cast<unsigned char *>(R_alloc(n, sizeof(unsigned char)));
         for (i = 0; i < n; i++)
             rawptr[i] = RAW(s)[i];
     }
-    return (void *) rawptr;
+    return rawptr;
     break;
     case LGLSXP:
     case INTSXP:
@@ -328,11 +328,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		error(_("NAs in foreign function call (arg %d)"), narg);
 	}
 	if (dup) {
-	    iptr = (int*)R_alloc(n, sizeof(int));
+	    iptr = reinterpret_cast<int*>(R_alloc(n, sizeof(int)));
 	    for (i = 0 ; i < n ; i++)
 		iptr[i] = INTEGER(s)[i];
 	}
-	return (void*)iptr;
+	return iptr;
 	break;
     case REALSXP:
 	n = LENGTH(s);
@@ -343,18 +343,18 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	}
 	if (dup) {
 	    if(asLogical(getAttrib(s, CSingSymbol)) == 1) {
-		sptr = (float*)R_alloc(n, sizeof(float));
+		sptr = reinterpret_cast<float*>(R_alloc(n, sizeof(float)));
 		for (i = 0 ; i < n ; i++)
-		    sptr[i] = (float) REAL(s)[i];
-		return (void*)sptr;
+		    sptr[i] = float(REAL(s)[i]);
+		return sptr;
 	    } else {
-		rptr = (double*)R_alloc(n, sizeof(double));
+		rptr = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
 		for (i = 0 ; i < n ; i++)
 		    rptr[i] = REAL(s)[i];
-		return (void*)rptr;
+		return rptr;
 	    }
 	} else
-	    return (void*)rptr;
+	    return rptr;
 	break;
     case CPLXSXP:
 	n = LENGTH(s);
@@ -365,11 +365,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		      narg);
 	}
 	if (dup) {
-	    zptr = (Rcomplex*)R_alloc(n, sizeof(Rcomplex));
+	    zptr = reinterpret_cast<Rcomplex*>(R_alloc(n, sizeof(Rcomplex)));
 	    for (i = 0 ; i < n ; i++)
 		zptr[i] = COMPLEX(s)[i];
 	}
-	return (void*)zptr;
+	return zptr;
 	break;
     case STRSXP:
 	if(!dup)
@@ -380,11 +380,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    if(n > 1)
 		warning(_("only first string in char vector used in .Fortran"));
 	    l = strlen(ss);
-	    fptr = (char*)R_alloc(max(255, l) + 1, sizeof(char));
+	    fptr = reinterpret_cast<char*>(R_alloc(max(255, l) + 1, sizeof(char)));
 	    strcpy(fptr, ss);
-	    return (void*)fptr;
+	    return fptr;
 	} else {
-	    cptr = (char**)R_alloc(n, sizeof(char*));
+	    cptr = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
 		const char *inbuf;
@@ -398,7 +398,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    inb = strlen(inbuf);
 		    outb0 = 3*inb;
 		restart_in:
-		    cptr[i] = outbuf = (char*)R_alloc(outb0 + 1, sizeof(char));
+		    cptr[i] = outbuf = reinterpret_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -421,11 +421,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		for (i = 0 ; i < n ; i++) {
 		    char *ss = translateChar(STRING_ELT(s, i));
 		    l = strlen(ss);
-		    cptr[i] = (char*)R_alloc(l + 1, sizeof(char));
+		    cptr[i] = reinterpret_cast<char*>(R_alloc(l + 1, sizeof(char)));
 		    strcpy(cptr[i], ss);
 		}
 	    }
-	    return (void*)cptr;
+	    return cptr;
 	}
 	break;
     case VECSXP:
@@ -433,27 +433,27 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    error(_("lists must be duplicated in .C"));
 	/* if (!dup) return (void*)VECTOR_PTR(s); ***** Dangerous to GC!!! */
   	n = length(s);
-	lptr = (SEXP*)R_alloc(n, sizeof(SEXP));
+	lptr = reinterpret_cast<SEXP*>(R_alloc(n, sizeof(SEXP)));
 	for (i = 0 ; i < n ; i++) {
 	    lptr[i] = VECTOR_ELT(s, i);
 	}
- 	return (void*)lptr;
+ 	return lptr;
 	break;
     case LISTSXP:
 	if(Fort) error(_("invalid mode to pass to Fortran (arg %d)"), narg);
 	/* Warning : The following looks like it could bite ... */
-	if(!dup) return (void*)s;
+	if(!dup) return s;
 	n = length(s);
-	cptr = (char**)R_alloc(n, sizeof(char*));
+	cptr = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
 	for(i=0 ; i<n ; i++) {
 	    cptr[i] = (char*)s;
 	    s = CDR(s);
 	}
-	return (void*)cptr;
+	return cptr;
 	break;
     default:
 	if(Fort) error(_("invalid mode to pass to Fortran (arg %d)"), narg);
-	return (void*)s;
+	return s;
     }
 }
 
@@ -474,14 +474,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     switch(type) {
     case RAWSXP:
     s = allocVector(type, n);
-    rawptr = (unsigned char *)p;
+    rawptr = reinterpret_cast<unsigned char *>(p);
     for (i = 0; i < n; i++)
         RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
     case INTSXP:
 	s = allocVector(type, n);
-	iptr = (int*)p;
+	iptr = reinterpret_cast<int*>(p);
 	for(i=0 ; i<n ; i++)
             INTEGER(s)[i] = iptr[i];
 	break;
@@ -489,16 +489,16 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case SINGLESXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
-	    sptr = (float*) p;
-	    for(i=0 ; i<n ; i++) REAL(s)[i] = (double) sptr[i];
+	    sptr = reinterpret_cast<float*>(p);
+	    for(i=0 ; i<n ; i++) REAL(s)[i] = double(sptr[i]);
 	} else {
-	    rptr = (double*) p;
+	    rptr = reinterpret_cast<double*>(p);
 	    for(i=0 ; i<n ; i++) REAL(s)[i] = rptr[i];
 	}
 	break;
     case CPLXSXP:
 	s = allocVector(type, n);
-	zptr = (Rcomplex*)p;
+	zptr = reinterpret_cast<Rcomplex*>(p);
 	for(i=0 ; i<n ; i++) {
 	    COMPLEX(s)[i] = zptr[i];
 	}
@@ -506,14 +506,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case STRSXP:
 	if(Fort) {
 	    /* only return one string: warned on the R -> Fortran step */
-	    strncpy(buf, (char*)p, 255);
+	    strncpy(buf, reinterpret_cast<char*>(p), 255);
 	    buf[255] = '\0';
 	    PROTECT(s = allocVector(type, 1));
 	    SET_STRING_ELT(s, 0, mkChar(buf));
 	    UNPROTECT(1);
 	} else {
 	    PROTECT(s = allocVector(type, n));
-	    cptr = (char**)p;
+	    cptr = reinterpret_cast<char**>(p);
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
 		const char *inbuf;
@@ -526,7 +526,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    inbuf = cptr[i]; inb = strlen(inbuf);
 		    outb0 = 3*inb;
 		restart_out:
-		    p = outbuf = (char*)R_alloc(outb0 + 1, sizeof(char));
+		    p = outbuf = reinterpret_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -555,7 +555,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	break;
     case VECSXP:
 	PROTECT(s = allocVector(VECSXP, n));
-	lptr = (SEXP*)p;
+	lptr = reinterpret_cast<SEXP*>(p);
 	for (i = 0 ; i < n ; i++) {
 	    SET_VECTOR_ELT(s, i, lptr[i]);
 	}
@@ -563,14 +563,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	break;
     case LISTSXP:
 	PROTECT(t = s = allocList(n));
-	lptr = (SEXP*)p;
+	lptr = reinterpret_cast<SEXP*>(p);
 	for(i=0 ; i<n ; i++) {
 	    SETCAR(t, lptr[i]);
 	    t = CDR(t);
 	}
 	UNPROTECT(1);
     default:
-	s = (SEXP)p;
+	s = reinterpret_cast<SEXP>(p);
     }
     return s;
 }
@@ -633,14 +633,14 @@ static SEXP naokfind(SEXP args, int * len, int *naok, int *dup,
 	    } else {
 		    /* Have a DLL object*/
 	        if(TYPEOF(CAR(s)) == EXTPTRSXP) {
-		    dll->dll = (HINSTANCE) R_ExternalPtrAddr(CAR(s));
+		    dll->dll = reinterpret_cast<HINSTANCE>(R_ExternalPtrAddr(CAR(s)));
 		    dll->type = DLL_HANDLE;
 		} else if(TYPEOF(CAR(s)) == VECSXP) {
 		    dll->type = R_OBJECT;
 		    dll->obj = s;
 		    strcpy(dll->DLLname,
 			   translateChar(STRING_ELT(VECTOR_ELT(CAR(s), 1), 0)));
-		    dll->dll = (HINSTANCE) R_ExternalPtrAddr(VECTOR_ELT(s, 4));
+		    dll->dll = reinterpret_cast<HINSTANCE>(R_ExternalPtrAddr(VECTOR_ELT(s, 4)));
 		}
 	    }
 	} else {
@@ -838,16 +838,12 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 #endif
 
-    retval = (SEXP)fun(args);
+    retval = fun(args);
     vmaxset(vmax);
     return retval;
 }
 
-#ifdef __cplusplus
 typedef SEXP (*VarFun)(...);
-#else
-typedef DL_FUNC VarFun;
-#endif
 
 /* .Call(name, <args>) */
 SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -883,116 +879,116 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     fun = (VarFun) ofun;
     switch (nargs) {
     case 0:
-	retval = (SEXP)ofun();
+	retval = reinterpret_cast<SEXP>(ofun());
 	break;
     case 1:
-	retval = (SEXP)fun(cargs[0]);
+	retval = fun(cargs[0]);
 	break;
     case 2:
-	retval = (SEXP)fun(cargs[0], cargs[1]);
+	retval = fun(cargs[0], cargs[1]);
 	break;
     case 3:
-	retval = (SEXP)fun(cargs[0], cargs[1], cargs[2]);
+	retval = fun(cargs[0], cargs[1], cargs[2]);
 	break;
     case 4:
-	retval = (SEXP)fun(cargs[0], cargs[1], cargs[2], cargs[3]);
+	retval = fun(cargs[0], cargs[1], cargs[2], cargs[3]);
 	break;
     case 5:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4]);
 	break;
     case 6:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5]);
 	break;
     case 7:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6]);
 	break;
     case 8:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7]);
 	break;
     case 9:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8]);
 	break;
     case 10:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9]);
 	break;
     case 11:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10]);
 	break;
     case 12:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11]);
 	break;
     case 13:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12]);
 	break;
     case 14:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13]);
 	break;
     case 15:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14]);
 	break;
     case 16:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15]);
 	break;
     case 17:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16]);
 	break;
     case 18:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17]);
 	break;
     case 19:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17], cargs[18]);
 	break;
     case 20:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
 	    cargs[15], cargs[16], cargs[17], cargs[18], cargs[19]);
 	break;
     case 21:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1000,7 +996,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20]);
 	break;
     case 22:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1008,7 +1004,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21]);
 	break;
     case 23:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1016,7 +1012,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22]);
 	break;
     case 24:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1024,7 +1020,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22], cargs[23]);
 	break;
     case 25:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1032,7 +1028,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[20], cargs[21], cargs[22], cargs[23], cargs[24]);
 	break;
     case 26:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1041,7 +1037,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25]);
 	break;
     case 27:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1050,7 +1046,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26]);
 	break;
     case 28:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1059,7 +1055,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27]);
 	break;
     case 29:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1068,7 +1064,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27], cargs[28]);
 	break;
     case 30:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1077,7 +1073,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[25], cargs[26], cargs[27], cargs[28], cargs[29]);
 	break;
     case 31:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1087,7 +1083,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30]);
 	break;
     case 32:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1097,7 +1093,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31]);
 	break;
     case 33:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1107,7 +1103,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32]);
 	break;
     case 34:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1117,7 +1113,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32], cargs[33]);
 	break;
     case 35:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1127,7 +1123,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[30], cargs[31], cargs[32], cargs[33], cargs[34]);
 	break;
     case 36:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1138,7 +1134,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35]);
 	break;
     case 37:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1149,7 +1145,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36]);
 	break;
     case 38:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1160,7 +1156,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37]);
 	break;
     case 39:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1171,7 +1167,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37], cargs[38]);
 	break;
     case 40:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1182,7 +1178,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[35], cargs[36], cargs[37], cargs[38], cargs[39]);
 	break;
     case 41:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1194,7 +1190,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40]);
 	break;
     case 42:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1206,7 +1202,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41]);
 	break;
     case 43:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1218,7 +1214,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42]);
 	break;
     case 44:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1230,7 +1226,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42], cargs[43]);
 	break;
     case 45:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1242,7 +1238,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[40], cargs[41], cargs[42], cargs[43], cargs[44]);
 	break;
     case 46:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1255,7 +1251,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45]);
 	break;
     case 47:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1268,7 +1264,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46]);
 	break;
     case 48:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1281,7 +1277,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47]);
 	break;
     case 49:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1294,7 +1290,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47], cargs[48]);
 	break;
     case 50:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1307,7 +1303,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[45], cargs[46], cargs[47], cargs[48], cargs[49]);
 	break;
     case 51:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1321,7 +1317,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50]);
 	break;
     case 52:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1335,7 +1331,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51]);
 	break;
     case 53:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1349,7 +1345,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52]);
 	break;
     case 54:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1363,7 +1359,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52], cargs[53]);
 	break;
     case 55:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1377,7 +1373,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[50], cargs[51], cargs[52], cargs[53], cargs[54]);
 	break;
     case 56:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1392,7 +1388,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55]);
 	break;
     case 57:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1407,7 +1403,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56]);
 	break;
     case 58:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1422,7 +1418,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57]);
 	break;
     case 59:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1437,7 +1433,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57], cargs[58]);
 	break;
     case 60:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1452,7 +1448,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[55], cargs[56], cargs[57], cargs[58], cargs[59]);
 	break;
     case 61:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1468,7 +1464,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60]);
 	break;
     case 62:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1484,7 +1480,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61]);
 	break;
     case 63:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1500,7 +1496,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61], cargs[62]);
 	break;
     case 64:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1516,7 +1512,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cargs[60], cargs[61], cargs[62], cargs[63]);
 	break;
     case 65:
-	retval = (SEXP)fun(
+	retval = fun(
 	    cargs[0],  cargs[1],  cargs[2],  cargs[3],  cargs[4],
 	    cargs[5],  cargs[6],  cargs[7],  cargs[8],  cargs[9],
 	    cargs[10], cargs[11], cargs[12], cargs[13], cargs[14],
@@ -1649,7 +1645,7 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
     if(inherits(dll->obj, "DLLInfo")) {
 	SEXP tmp;
 	tmp = VECTOR_ELT(dll->obj, 4);
-	info = (DllInfo *) R_ExternalPtrAddr(tmp);
+	info = reinterpret_cast<DllInfo *>(R_ExternalPtrAddr(tmp));
 	if(!info)
 	    error(_("NULL value for DLLInfoReference when looking for DLL"));
 	fun = R_dlsym(info, name, symbol);
@@ -1710,7 +1706,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     /* function calls.  Note that we copy twice */
     /* once here, on the way into the call, and */
     /* once below on the way out. */
-    cargs = (void**)R_alloc(nargs, sizeof(void*));
+    cargs = reinterpret_cast<void**>(R_alloc(nargs, sizeof(void*)));
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
 #ifdef THROW_REGISTRATION_TYPE_ERROR
@@ -2471,7 +2467,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	    n = lengths[i];
 	    SETCAR(pcall, allocVector(STRSXP, n));
 	    for (j = 0 ; j < n ; j++) {
-		char *str = (char*)(arguments[i]);
+		char *str = reinterpret_cast<char*>(arguments[i]);
 		s = allocString(strlen(str));
 		SET_STRING_ELT(CAR(pcall), i, s);
 		strcpy(CHAR(s), str);
@@ -2501,23 +2497,23 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     case CPLXSXP:
     case STRSXP:
 	if(nres > 0)
-	    results[0] = (char *) RObjToCPtr(s, 1, 1, 0, 0, (const char *)NULL,
-					     NULL, 0, "");
+	    results[0] = reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
+							     NULL, 0, ""));
 	break;
     case VECSXP:
 	n = length(s);
 	if (nres < n) n = nres;
 	for (i = 0 ; i < n ; i++) {
-	    results[i] = (char *) RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
-					     (const char *)NULL, NULL, 0, "");
+	    results[i] = reinterpret_cast<char *>(RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
+							     NULL, NULL, 0, ""));
 	}
 	break;
     case LISTSXP:
 	n = length(s);
 	if(nres < n) n = nres;
 	for(i=0 ; i<n ; i++) {
-	    results[i] =(char *) RObjToCPtr(s, 1, 1, 0, 0, (const char *)NULL,
-					    NULL, 0, "");
+	    results[i] =reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
+							    NULL, 0, ""));
 	    s = CDR(s);
 	}
 	break;

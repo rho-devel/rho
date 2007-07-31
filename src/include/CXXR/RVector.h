@@ -60,25 +60,25 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #ifdef USE_RINTERNALS
 
 /* Vector Access Macros */
-#define LENGTH(x)	(((VECSEXP) (x))->vecsxp.length)
-#define TRUELENGTH(x)	(((VECSEXP) (x))->vecsxp.truelength)
-#define SETLENGTH(x,v)		((((VECSEXP) (x))->vecsxp.length)=(v))
-#define SET_TRUELENGTH(x,v)	((((VECSEXP) (x))->vecsxp.truelength)=(v))
+#define LENGTH(x)	(reinterpret_cast<VECSEXP>(x)->vecsxp.length)
+#define TRUELENGTH(x)	(reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)
+#define SETLENGTH(x,v)		((reinterpret_cast<VECSEXP>(x)->vecsxp.length)=(v))
+#define SET_TRUELENGTH(x,v)	((reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)=(v))
 
 /* Under the generational allocator the data for vector nodes comes
    immediately after the node structure, so the data address is a
    known offset from the node SEXP. */
-#define DATAPTR(x)	(((SEXPREC_ALIGN *) (x)) + 1)
-#define CHAR(x)		((char *) DATAPTR(x))
-#define LOGICAL(x)	((int *) DATAPTR(x))
-#define INTEGER(x)	((int *) DATAPTR(x))
-#define RAW(x)		((Rbyte *) DATAPTR(x))
-#define COMPLEX(x)	((Rcomplex *) DATAPTR(x))
-#define REAL(x)		((double *) DATAPTR(x))
-#define STRING_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define VECTOR_ELT(x,i)	((SEXP *) DATAPTR(x))[i]
-#define STRING_PTR(x)	((SEXP *) DATAPTR(x))
-#define VECTOR_PTR(x)	((SEXP *) DATAPTR(x))
+#define DATAPTR(x)	(reinterpret_cast<SEXPREC_ALIGN *>(x) + 1)
+#define CHAR(x)		(reinterpret_cast<char *>(DATAPTR(x)))
+#define LOGICAL(x)	(reinterpret_cast<int *>(DATAPTR(x)))
+#define INTEGER(x)	(reinterpret_cast<int *>(DATAPTR(x)))
+#define RAW(x)		(reinterpret_cast<Rbyte *>(DATAPTR(x)))
+#define COMPLEX(x)	(reinterpret_cast<Rcomplex *>(DATAPTR(x)))
+#define REAL(x)		(reinterpret_cast<double *>(DATAPTR(x)))
+#define STRING_ELT(x,i)	(reinterpret_cast<SEXP *>(DATAPTR(x))[i])
+#define VECTOR_ELT(x,i)	(reinterpret_cast<SEXP *>(DATAPTR(x))[i])
+#define STRING_PTR(x)	(reinterpret_cast<SEXP *>(DATAPTR(x)))
+#define VECTOR_PTR(x)	(reinterpret_cast<SEXP *>(DATAPTR(x)))
 
 /* CHARSXP charset bits */
 

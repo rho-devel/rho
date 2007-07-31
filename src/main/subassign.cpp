@@ -142,7 +142,7 @@ static SEXP EnlargeVector(SEXP x, R_len_t newlen)
 	for (i = 0; i < len; i++)
 	    RAW(newx)[i] = RAW(x)[i];
 	for (i = len; i < newlen; i++)
-	    RAW(newx)[i] = (Rbyte) 0;
+	    RAW(newx)[i] = Rbyte(0);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("EnlargeVector", x);
@@ -951,10 +951,10 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     if (dims == R_NilValue || (k = LENGTH(dims)) != length(s))
 	error(_("incorrect number of subscripts"));
 
-    subs = (int**)R_alloc(k, sizeof(int*));
-    indx = (int*)R_alloc(k, sizeof(int));
-    bound = (int*)R_alloc(k, sizeof(int));
-    offset = (int*)R_alloc(k, sizeof(int));
+    subs = reinterpret_cast<int**>(R_alloc(k, sizeof(int*)));
+    indx = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    bound = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    offset = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
 
     ny = LENGTH(y);
 
@@ -1204,7 +1204,7 @@ static SEXP listRemove(SEXP x, SEXP s)
     nx = length(x);
     PROTECT(s = makeSubscript(x, s, &stretch));
     ns = length(s);
-    ind = (int*)R_alloc(nx, sizeof(int));
+    ind = reinterpret_cast<int*>(R_alloc(nx, sizeof(int)));
     for (i = 0; i < nx; i++)
 	ind[i] = 1;
     for (i = 0; i < ns; i++) {

@@ -183,7 +183,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 			case 'X':
 			    if(TYPEOF(_this) == REALSXP) {
 				double r = REAL(_this)[0];
-				if((double)((int) r) == r)
+				if(double(int(r)) == r)
 				    _this = coerceVector(_this, INTSXP);
 			    }
 			    break;

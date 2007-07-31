@@ -116,7 +116,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
 		RAW(result)[i] = RAW(x)[ii];
 	    else
-		RAW(result)[i] = (Rbyte) 0;
+		RAW(result)[i] = Rbyte(0);
 	    break;
 	default:
 	    errorcall(call, R_MSG_ob_nonsub);
@@ -251,7 +251,7 @@ static SEXP MatrixSubset(SEXP x, SEXP s, SEXP call, int drop)
 		    SET_VECTOR_ELT(result, ij, R_NilValue);
 		    break;
 		case RAWSXP:
-		    RAW(result)[ij] = (Rbyte) 0;
+		    RAW(result)[ij] = Rbyte(0);
 		    break;
 		default:
 		    error(_("matrix subscripting not handled for this type"));
@@ -349,10 +349,10 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
     k = length(xdims);
 
     vmaxsave = vmaxget();
-    subs = (int**)R_alloc(k, sizeof(int*));
-    indx = (int*)R_alloc(k, sizeof(int));
-    offset = (int*)R_alloc(k, sizeof(int));
-    bound = (int*)R_alloc(k, sizeof(int));
+    subs = reinterpret_cast<int**>(R_alloc(k, sizeof(int*)));
+    indx = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    offset = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    bound = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
 
     /* Construct a vector to contain the returned values. */
     /* Store its extents. */
@@ -437,7 +437,7 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
 	    if (ii != NA_INTEGER)
 		RAW(result)[i] = RAW(x)[ii];
 	    else
-		RAW(result)[i] = (Rbyte) 0;
+		RAW(result)[i] = Rbyte(0);
 	    break;
 	default:
 	    error(_("array subscripting not handled for this type"));

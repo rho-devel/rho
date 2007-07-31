@@ -143,7 +143,7 @@ SEXP attribute_hidden do_pgrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	else INTEGER(ind)[i] = 0;
     }
     (pcre_free)(re_pcre);
-    pcre_free((void *)tables);
+    pcre_free(const_cast<unsigned char*>(tables));
     PROTECT(ind);
     if (value_opt) {
 	SEXP nmold = getAttrib(vec, R_NamesSymbol), nm;
@@ -194,13 +194,13 @@ static int length_adj(char *orig, char *repl, int *ovec, int nsubexpr,
 		    int j, nc;
 		    char *xi, *p;
 		    wchar_t *wc;
-		    p = xi = (char *) alloca((nb+1)*sizeof(char));
+		    p = xi = reinterpret_cast<char *>(alloca((nb+1)*sizeof(char)));
 		    R_CheckStack();
 		    for(j = 0; j < nb; j++) *p++ = orig[ovec[2*k]+j];
 		    *p = '\0';
 		    nc = mbstowcs(NULL, xi, 0);
 		    if(nc >= 0) {
-			wc = (wchar_t *) alloca((nc+1)*sizeof(wchar_t));
+			wc = reinterpret_cast<wchar_t *>(alloca((nc+1)*sizeof(wchar_t)));
 			R_CheckStack();
 			mbstowcs(wc, xi, nc + 1);
 			for(j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
@@ -248,13 +248,13 @@ static char *string_adj(char *target, char *orig, char *repl, int *ovec,
 		    int j, nc;
 		    char *xi, *p;
 		    wchar_t *wc;
-		    p = xi = (char *) alloca((nb+1)*sizeof(char));
+		    p = xi = reinterpret_cast<char *>(alloca((nb+1)*sizeof(char)));
 		    R_CheckStack();
 		    for(j = 0; j < nb; j++) *p++ = orig[ovec[2*k]+j];
 		    *p = '\0';
 		    nc = mbstowcs(NULL, xi, 0);
 		    if(nc >= 0) {
-			wc = (wchar_t *) alloca((nc+1)*sizeof(wchar_t));
+			wc = reinterpret_cast<wchar_t *>(alloca((nc+1)*sizeof(wchar_t)));
 			R_CheckStack();
 			mbstowcs(wc, xi, nc + 1);
 			for(j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
@@ -450,7 +450,7 @@ SEXP attribute_hidden do_pgsub(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     (pcre_free)(re_pe);
     (pcre_free)(re_pcre);
-    pcre_free((void *)tables);
+    pcre_free(const_cast<unsigned char*>(tables));
     UNPROTECT(1);
     return ans;
 }
@@ -546,7 +546,7 @@ SEXP attribute_hidden do_pregexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     /* see comment above */
     if(cbuff.bufsize != MAXELTSIZE) R_FreeStringBuffer(&cbuff);
     (pcre_free)(re_pcre);
-    pcre_free((void *)tables);
+    pcre_free(const_cast<unsigned char*>(tables));
     setAttrib(ans, install("match.length"), matchlen);
     UNPROTECT(2);
     return ans;
@@ -706,7 +706,7 @@ SEXP attribute_hidden do_gpregexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     /* see comment above */
     if(cbuff.bufsize != MAXELTSIZE) R_FreeStringBuffer(&cbuff);
     (pcre_free)(re_pcre);
-    pcre_free((void *)tables);
+    pcre_free(const_cast<unsigned char*>(tables));
     UNPROTECT(3);
     return ansList;
 }

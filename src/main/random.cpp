@@ -331,8 +331,8 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
      */
     if(n <= 10000) {
 	/* might do this repeatedly, so speed matters */
-	HL = (int *)alloca(n * sizeof(int));
-	q = (double *) alloca(n * sizeof(double));
+	HL = reinterpret_cast<int *>(alloca(n * sizeof(int)));
+	q = reinterpret_cast<double *>(alloca(n * sizeof(double)));
 	R_CheckStack();
     } else {
 	/* Slow enough anyway not to risk overflow */
@@ -359,7 +359,7 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
     /* generate sample */
     for (i = 0; i < nans; i++) {
 	rU = unif_rand() * n;
-	k = (int) rU;
+	k = int(rU);
 	ans[i] = (rU < q[k]) ? k+1 : a[k]+1;
     }
     if(n > 100000) {
@@ -580,12 +580,12 @@ R_r2dtable(SEXP n, SEXP r, SEXP c)
     /* Log-factorials from 0 to n_of_cases.
        (I.e., lgamma(1), ..., lgamma(n_of_cases + 1).)
     */
-    fact = (double *) R_alloc(n_of_cases + 1, sizeof(double));
+    fact = reinterpret_cast<double *>(R_alloc(n_of_cases + 1, sizeof(double)));
     fact[0] = 0.;
     for(i = 1; i <= n_of_cases; i++)
-	fact[i] = lgammafn((double) (i + 1));
+	fact[i] = lgammafn(double(i + 1));
 
-    jwork = (int *) R_alloc(nc, sizeof(int));
+    jwork = reinterpret_cast<int *>(R_alloc(nc, sizeof(int)));
 
     PROTECT(ans = allocVector(VECSXP, n_of_samples));
 

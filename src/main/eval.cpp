@@ -1254,7 +1254,7 @@ static const char * const asym[] = {":=", "<-", "<<-", "="};
 
 static void tmp_cleanup(void *data)
 {
-    unbindVar(R_TmpvalSymbol, (SEXP) data);
+    unbindVar(R_TmpvalSymbol, reinterpret_cast<SEXP>(data));
 }
 
 

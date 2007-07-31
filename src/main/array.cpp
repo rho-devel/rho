@@ -108,7 +108,7 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
 
-    if ((double)nr * (double)nc > INT_MAX)
+    if (double(nr) * double(nc) > INT_MAX)
 	error(_("matrix: too many elements specified"));
 
     PROTECT(snr = allocMatrix(TYPEOF(vals), nr, nc));
@@ -172,7 +172,7 @@ SEXP allocMatrix(SEXPTYPE mode, int nrow, int ncol)
 
     if (nrow < 0 || ncol < 0)
 	error(_("negative extents to matrix"));
-    if ((double)nrow * (double)ncol > INT_MAX)
+    if (double(nrow) * double(ncol) > INT_MAX)
 	error(_("allocMatrix: too many elements specified"));
     n = nrow * ncol;
     PROTECT(s = allocVector(mode, n));
@@ -979,7 +979,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(perm = coerceVector(CADR(args), INTSXP));
     vmax = vmaxget();
-    pp = (int *) R_alloc(n, sizeof(int));
+    pp = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
     if (length(perm) == 0) {
 	for (i=0; i<n; i++)
 	    pp[i] = n-1-i;
@@ -989,7 +989,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else
 	errorcall(call, _("'perm' is of wrong length"));
 
-    iip = (int *) R_alloc(n, sizeof(int));
+    iip = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
     for (i=0; i<n; iip[i++] = 0);
     for (i=0; i<n; i++)
 	if (pp[i] >= 0 && pp[i] < n)
@@ -1002,7 +1002,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* create the stride object and permute */
 
-    stride = (int *) R_alloc(n, sizeof(int));
+    stride = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
 
     for (iip[0] = 1, i = 1; i<n; i++)
 	iip[i] = iip[i-1] * INTEGER(dimsa)[i-1];
@@ -1195,7 +1195,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int *Cnt = NULL, *c;
 	    LDOUBLE *rans, *ra;
 	    if(n <= 10000) {
-		rans = (LDOUBLE *) alloca(n * sizeof(LDOUBLE));
+		rans = reinterpret_cast<LDOUBLE *>(alloca(n * sizeof(LDOUBLE)));
 		R_CheckStack();
 		memset(rans, 0, n*sizeof(LDOUBLE));
 	    } else rans = Calloc(n, LDOUBLE);

@@ -510,7 +510,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(streql(to, "") && known_to_be_latin1) isLatin1 = TRUE;
 	if(streql(to, "") && known_to_be_utf8) isUTF8 = TRUE;
 	obj = Riconv_open(to, from);
-	if(obj == (iconv_t)(-1))
+	if(obj == iconv_t(-1))
 	    errorcall(call, _("unsupported conversion"));
 	PROTECT(ans = duplicate(x));
 	R_AllocStringBuffer(0, &cbuff);  /* just default */
@@ -588,12 +588,12 @@ void * Riconv_open (char* tocode, char* fromcode)
 size_t Riconv (void *cd, const char **inbuf, size_t *inbytesleft,
 	       char **outbuf, size_t *outbytesleft)
 {
-    return iconv((iconv_t) cd, (char **)inbuf, inbytesleft, outbuf, outbytesleft);
+    return iconv(iconv_t(cd), const_cast<char**>(inbuf), inbytesleft, outbuf, outbytesleft);
 }
 
 int Riconv_close (void *cd)
 {
-    return iconv_close((iconv_t) cd);
+    return iconv_close(iconv_t(cd));
 }
 
 static void *latin1_obj = NULL, *utf8_obj=NULL;
@@ -781,7 +781,7 @@ void attribute_hidden InitTempDir()
     }
 
     len = strlen(tmp) + 1;
-    p = (char *) malloc(len);
+    p = reinterpret_cast<char *>(malloc(len));
     if(!p)
 	R_Suicide(_("cannot allocate R_TempDir"));
     else {
@@ -808,7 +808,7 @@ void attribute_hidden InitRand()
   {
     struct timeval tv;
     gettimeofday (&tv, NULL);
-    seed = ((uint64_t) tv.tv_usec << 16) ^ tv.tv_sec;
+    seed = (uint64_t(tv.tv_usec) << 16) ^ tv.tv_sec;
   }
 #elif HAVE_TIME
     seed = (unsigned int) time(NULL);
@@ -846,7 +846,7 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
     }
     if(!done)
 	error(_("cannot find unused tempfile name"));
-    res = (char *) malloc((strlen(tm)+1) * sizeof(char));
+    res = reinterpret_cast<char *>(malloc((strlen(tm)+1) * sizeof(char)));
     strcpy(res, tm);
     return res;
 }

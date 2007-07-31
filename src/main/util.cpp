@@ -73,7 +73,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    (char *) 0,
+    0,
 };
 
 int nrows(SEXP s)
@@ -127,7 +127,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    (char *) 0,
+    0,
 };
 
 SEXP asChar(SEXP x)
@@ -206,7 +206,7 @@ TypeTable[] = {
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { (char *)0,	-1	   }
+    { 0,	        -1	   }
 };
 
 
@@ -218,7 +218,7 @@ SEXPTYPE str2type(char *s)
 	    return TypeTable[i].type;
     }
     /* SEXPTYPE is an unsigned int, so the compiler warns us w/o the cast. */
-    return (SEXPTYPE) -1;
+    return SEXPTYPE(-1);
 }
 
 
@@ -240,7 +240,7 @@ char * type2char(SEXPTYPE t)
 
     for (i = 0; TypeTable[i].str; i++) {
 	if (TypeTable[i].type == int(t))
-	    return (char *) TypeTable[i].str;
+	    return const_cast<char*>(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2char");
     return ""; /* for -Wall */
@@ -306,30 +306,30 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout)
 
     /* out length */
     wc_len = mbstowcs(NULL, in, 0);
-    if (out == NULL || (int)wc_len < 0) return wc_len;
+    if (out == NULL || int(wc_len) < 0) return wc_len;
 
     if ((void*)-1 == (cd = Riconv_open((char *)UCS2ENC, "")))
-	return (size_t) -1;
+	return size_t(-1);
 
     i_buf = in;
     i_len = strlen(in); /* not including terminator */
-    o_buf = (char *)out;
+    o_buf = reinterpret_cast<char*>(out);
     o_len = nout * sizeof(ucs2_t);
-    status = Riconv(cd, &i_buf, (size_t *)&i_len,
-		    (char **)&o_buf, (size_t *)&o_len);
+    status = Riconv(cd, &i_buf, &i_len,
+		    &o_buf, &o_len);
 
     Riconv_close(cd);
-    if (status == (size_t)-1) {
+    if (status == size_t(-1)) {
         switch(errno){
         case EINVAL:
-            return (size_t) -2;
+            return size_t(-2);
         case EILSEQ:
-            return (size_t) -1;
+            return size_t(-1);
         case E2BIG:
             break;
         default:
 	    errno = EILSEQ;
-	    return (size_t) -1;
+	    return size_t(-1);
         }
     }
     return wc_len; /* status would be better? */
@@ -355,7 +355,7 @@ Rboolean isBlankString(char *s)
     } else
 #endif
 	while (*s)
-	    if (!isspace((int)*s++)) return FALSE;
+	    if (!isspace(int(*s++))) return FALSE;
     return TRUE;
 }
 
@@ -489,7 +489,7 @@ Rboolean isFree(SEXP val)
 
 int dtype(SEXP q)
 {
-    return((int)TYPEOF(q));
+    return(int(TYPEOF(q)));
 }
 
 
@@ -551,8 +551,8 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
-    ix = (int *) R_alloc(nx, sizeof(int));
-    iy = (int *) R_alloc(ny, sizeof(int));
+    ix = reinterpret_cast<int*>(R_alloc(nx, sizeof(int)));
+    iy = reinterpret_cast<int*>(R_alloc(ny, sizeof(int)));
     for(i = 0; i < nx; i++) ix[i] = i+1;
     for(i = 0; i < ny; i++) iy[i] = i+1;
     isort_with_index(INTEGER(xi), ix, nx);
@@ -800,7 +800,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
     for(i = 0; i < len; i++) {
 	s = STRING_ELT(x, i);
 	if(na || s != NA_STRING)
-	    SET_STRING_ELT(ans, i, mkChar(EncodeString(s, w, quote, (Rprt_adj) justify)));
+	    SET_STRING_ELT(ans, i, mkChar(EncodeString(s, w, quote, Rprt_adj(justify))));
     }
     UNPROTECT(1);
     return ans;
@@ -897,15 +897,15 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 {
     size_t used;
 
-    if(n <= 0 || !*s) return (size_t)0;
+    if(n <= 0 || !*s) return size_t(0);
     used = mbrtowc(wc, s, n, ps);
-    if((int)used < 0) error(_("invalid multibyte string"));
+    if(int(used) < 0) error(_("invalid multibyte string"));
     return used;
 }
 
 Rboolean mbcsValid(char *str)
 {
-    return  Rboolean((int)mbstowcs(NULL, str, 0) >= 0);
+    return  Rboolean(int(mbstowcs(NULL, str, 0)) >= 0);
 }
 
 /* We do this conversion ourselves to do our own error recovery */
@@ -915,21 +915,21 @@ void mbcsToLatin1(const char *in, char *out)
     unsigned int i;
     size_t res = mbstowcs(NULL, in, 0), mres;
 
-    if(res == (size_t)(-1)) {
+    if(res == size_t(-1)) {
 	warning(_("invalid input in mbcsToLatin1"));
 	*out = '\0';
 	return;
     }
-    wbuff = (wchar_t *) alloca((res+1) * sizeof(wchar_t));
+    wbuff = reinterpret_cast<wchar_t*>(alloca((res+1) * sizeof(wchar_t)));
     R_CheckStack();
     if(!wbuff) error(_("allocation failure in 'mbcsToLatin1'"));
     mres = mbstowcs(wbuff, in, res+1);
-    if(mres == (size_t)-1)
+    if(mres == size_t(-1))
 	error(_("invalid input in 'mbcsToLatin1'"));
     for(i = 0; i < res; i++) {
 	/* here we do assume Unicode wchars */
 	if(wbuff[i] > 0xFF) out[i] = '.';
-	else out[i] = (char) wbuff[i];
+	else out[i] = char(wbuff[i]);
     }
     out[res] = '\0';
 }
@@ -937,7 +937,7 @@ void mbcsToLatin1(const char *in, char *out)
 /* MBCS-aware versions of common comparisons.  Only used for ASCII c */
 char *Rf_strchr(const char *s, int c)
 {
-    char *p = (char *)s;
+    char *p = const_cast<char*>(s);
     mbstate_t mb_st;
     int used;
 
@@ -947,12 +947,12 @@ char *Rf_strchr(const char *s, int c)
 	if(*p == c) return p;
 	p += used;
     }
-    return (char *)NULL;
+    return NULL;
 }
 
 char *Rf_strrchr(const char *s, int c)
 {
-    char *p = (char *)s, *plast = NULL;
+    char *p = const_cast<char*>(s), *plast = NULL;
     mbstate_t mb_st;
     int used;
 

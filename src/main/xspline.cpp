@@ -58,15 +58,15 @@ add_point(double x, double y, GEDevDesc *dd)
 	    error(_("add_point - reached MAXNUMPTS (%d)"),tmp_n);
 	}
 	if (max_points == 0) {
-	    tmp_px = (double *) R_alloc(tmp_n, sizeof(double));
-	    tmp_py = (double *) R_alloc(tmp_n, sizeof(double));
+	    tmp_px = reinterpret_cast<double *>(R_alloc(tmp_n, sizeof(double)));
+	    tmp_py = reinterpret_cast<double *>(R_alloc(tmp_n, sizeof(double)));
 	} else {
-	    tmp_px = (double *) S_realloc((char *) xpoints, 
-					  tmp_n, max_points, 
-					  sizeof(double));
-	    tmp_py = (double *) S_realloc((char *) ypoints, 
-					  tmp_n, max_points, 
-					  sizeof(double));
+	    tmp_px = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>(xpoints), 
+							  tmp_n, max_points, 
+							  sizeof(double)));
+	    tmp_py = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>(ypoints), 
+							  tmp_n, max_points, 
+							  sizeof(double)));
 	}
 	if (tmp_px == NULL || tmp_py == NULL) {
 	    error(_("insufficient memory to allocate point array"));
@@ -310,7 +310,7 @@ step_computing(int k,
   number_of_steps = int(sqrt(start_to_end_dist)/2);
 
   /* more steps if the curve is high */
-  number_of_steps += (int)((1 + angle_cos)*10);
+  number_of_steps += int((1 + angle_cos)*10);
 
   if (number_of_steps == 0)
     step = 1;

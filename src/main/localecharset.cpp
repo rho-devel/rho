@@ -671,7 +671,7 @@ char *locale2charset(const char *locale)
 	/* let's hope it is a ll_* name */
 	if (0 == strcmp(enc, "euc")) {
 	    /* This is OK as encoding names are ASCII */
-	    if(isalpha((int)enc[0]) && isalpha((int)enc[1]) 
+	    if(isalpha(int(enc[0])) && isalpha(int(enc[1])) 
 	       && (enc[2] == '_')) {
 		if (0 == strncmp("ja", la_loc, 2)) return "EUC-JP";
 		if (0 == strncmp("ko", la_loc, 2)) return "EUC-KR";
@@ -684,7 +684,7 @@ char *locale2charset(const char *locale)
     if(0 == strcmp(enc, "utf8")) return "UTF-8";
 
     value = name_value_search(la_loc, guess, guess_count);
-    return value == NULL ? (char *) "ASCII" : value;
+    return value == NULL ? const_cast<char *>("ASCII") : value;
 }
 
 /*****************************************************

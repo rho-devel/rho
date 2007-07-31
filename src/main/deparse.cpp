@@ -149,10 +149,10 @@ R_AllocStringBuffer(int blen, DeparseBuffer *buf)
 	blen = (blen+1)*sizeof(char);
 	if(blen < buf->defaultSize) blen = buf->defaultSize;
 	if(buf->data == NULL){
-		buf->data = (char *) malloc(blen);
-		buf->data[0] = '\0';
+	    buf->data = reinterpret_cast<char *>(malloc(blen));
+	    buf->data[0] = '\0';
 	} else
-		buf->data = (char *) realloc(buf->data, blen);
+	    buf->data = reinterpret_cast<char *>(realloc(buf->data, blen));
 	buf->bufsize = blen;
 	if(!buf->data) {
 		buf->bufsize = 0;
@@ -161,7 +161,7 @@ R_AllocStringBuffer(int blen, DeparseBuffer *buf)
     } else {
 	if(buf->bufsize == buf->defaultSize) return;
 	free(buf->data);
-	buf->data = (char *) malloc(buf->defaultSize);
+	buf->data = reinterpret_cast<char *>(malloc(buf->defaultSize));
 	buf->bufsize = buf->defaultSize;
     }
 }
@@ -284,7 +284,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP saveenv, tval;
     int i, ifile, res;
     Rboolean wasopen, havewarned = FALSE, opts;
-    Rconnection con = (Rconnection) 1; /* stdout */
+    Rconnection con = Rconnection(1); /* stdout */
 
     checkArity(op, args);
 
@@ -372,7 +372,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		obj_name = translateChar(STRING_ELT(names, i));
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		Rprintf(/* figure out if we need to quote the name */
-			/*CCAST*/(char*)(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
+			const_cast<char*>(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
 			obj_name);
 		tval = deparse1(CAR(o), FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++)

@@ -48,7 +48,7 @@ static int NextWriteBufferListItem(IoBuffer *iob)
     }
     else {
 	BufferListItem *_new;
-	if (!(_new = (BufferListItem*)malloc(sizeof(BufferListItem))))
+	if (!(_new = reinterpret_cast<BufferListItem*>(malloc(sizeof(BufferListItem)))))
 	    return 0;
 	_new->next = NULL;
 	iob->write_buf->next = _new;
@@ -104,7 +104,7 @@ int attribute_hidden R_IoBufferReadReset(IoBuffer *iob)
 int attribute_hidden R_IoBufferInit(IoBuffer *iob)
 {
     if (iob == NULL) return 0;
-    iob->start_buf = (BufferListItem*)malloc(sizeof(BufferListItem));
+    iob->start_buf = reinterpret_cast<BufferListItem*>(malloc(sizeof(BufferListItem)));
     if (iob->start_buf == NULL) return 0;
     iob->start_buf->next = NULL;
     return R_IoBufferWriteReset(iob);
@@ -187,7 +187,7 @@ int attribute_hidden R_TextBufferInit(TextBuffer *txtb, SEXP text)
 	    }
 	}
 	txtb->vmax = vmaxget();
-	txtb->buf = (unsigned char *)R_alloc(l+2, sizeof(char)); /* '\n' and '\0' */
+	txtb->buf = reinterpret_cast<unsigned char *>(R_alloc(l+2, sizeof(char))); /* '\n' and '\0' */
 	txtb->bufp = txtb->buf;
 	txtb->text = text;
 	txtb->ntext = n;

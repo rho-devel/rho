@@ -154,7 +154,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		    nc = mbstowcs(NULL, xi, 0);
 		    if(nc >= 0) {
 			AllocBuffer((nc+1)*sizeof(wchar_t), &cbuff);
-			wc = (wchar_t *) cbuff.data;
+			wc = reinterpret_cast<wchar_t *>(cbuff.data);
 			mbstowcs(wc, xi, nc + 1);
 			INTEGER(s)[i] = Ri18n_wcswidth(wc, 2147483647);
 			if(INTEGER(s)[i] < 1) INTEGER(s)[i] = nc;
@@ -475,7 +475,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		PROTECT(t = allocVector(STRSXP, ntok + 1));
 	    /* and fill with the splits */
 	    laststart = bufp = buf;
-	    pt = (char *) realloc(pt, (strlen(buf)+1) * sizeof(char));
+	    pt = reinterpret_cast<char *>(realloc(pt, (strlen(buf)+1) * sizeof(char)));
 	    for(j = 0; j < ntok; j++) {
 		if(fixed) {
 		    /* This is UTF-8 safe since it compares whole strings,
@@ -575,7 +575,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(usedPCRE) {
 	    pcre_free(re_pe);
 	    pcre_free(re_pcre);
-	    pcre_free((void *)tables);
+	    pcre_free(const_cast<unsigned char*>(tables));
 	    usedPCRE = FALSE;
 	}
     }
@@ -605,8 +605,8 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 */
 
 
-#define FIRSTCHAR(i) (isspace((int)buff1[i-1]))
-#define LASTCHAR(i) (!isspace((int)buff1[i-1]) && (!buff1[i+1] || isspace((int)buff1[i+1])))
+#define FIRSTCHAR(i) (isspace(int(buff1[i-1])))
+#define LASTCHAR(i) (!isspace(int(buff1[i-1])) && (!buff1[i+1] || isspace(int(buff1[i+1]))))
 #define LOWVOW(i) (buff1[i] == 'a' || buff1[i] == 'e' || buff1[i] == 'i' || \
 		   buff1[i] == 'o' || buff1[i] == 'u')
 
@@ -633,7 +633,7 @@ static SEXP stripchars(char *inchar, int minlen)
     /* remove leading blanks */
     j = 0;
     for (i = 0 ; i < upper ; i++)
-	if (isspace((int)buff1[i]))
+	if (isspace(int(buff1[i])))
 	    j++;
 	else
 	    break;
@@ -645,7 +645,7 @@ static SEXP stripchars(char *inchar, int minlen)
 	goto donesc;
 
     for (i = upper, j = 1; i > 0; i--) {
-	if (isspace((int)buff1[i])) {
+	if (isspace(int(buff1[i]))) {
 	    if (j)
 		buff1[i] = '\0' ;
 	    else
@@ -676,7 +676,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) - 1;
     for (i = upper; i > 0; i--) {
-	if (islower((int)buff1[i]) && LASTCHAR(i))
+	if (islower(int(buff1[i])) && LASTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -684,7 +684,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) -1;
     for (i = upper; i > 0; i--) {
-	if (islower((int)buff1[i]) && !FIRSTCHAR(i))
+	if (islower(int(buff1[i])) && !FIRSTCHAR(i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -694,7 +694,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) - 1;
     for (i = upper; i > 0; i--) {
-	if (!FIRSTCHAR(i) && !isspace((int)buff1[i]))
+	if (!FIRSTCHAR(i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -705,7 +705,7 @@ donesc:
     upper = strlen(buff1);
     if (upper > minlen)
 	for (i = upper - 1; i > 0; i--)
-	    if (isspace((int)buff1[i]))
+	    if (isspace(int(buff1[i])))
 		mystrcpy(&buff1[i], &buff1[i + 1]);
 
     return(mkChar(buff1));
@@ -789,8 +789,8 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	{
 	    if (_this[0] == '.') {
-		if (l >= 1 && isdigit(0xff & (int) _this[1])) need_prefix = TRUE;
-	    } else if (!isalpha(0xff & (int) _this[0])) need_prefix = TRUE;
+		if (l >= 1 && isdigit(0xff & int(_this[1]))) need_prefix = TRUE;
+	    } else if (!isalpha(0xff & int(_this[0]))) need_prefix = TRUE;
 	}
 	if (need_prefix) {
 	    tmp = Calloc(l+2, char);
@@ -812,7 +812,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 		for(wc = wstr; *wc; wc++) {
 		    if (*wc == L'.' || (allow_ && *wc == L'_')) 
 			/* leave alone */;
-		    else if(!iswalnum((int)*wc)) *wc = L'.';
+		    else if(!iswalnum(int(*wc))) *wc = L'.';
 		    /* If it changes into dot here,
 		     * length will become short on mbcs.
 		     * The name which became short will contain garbage.
@@ -829,7 +829,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	{
 	    for (p = tmp; *p; p++) {
 		if (*p == '.' || (allow_ && *p == '_')) /* leave alone */;
-		else if(!isalnum(0xff & (int)*p)) *p = '.';
+		else if(!isalnum(0xff & int(*p))) *p = '.';
 		/* else leave alone */
 	    }
 	}
@@ -1589,7 +1589,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
                 nc = mbstowcs(NULL, xi, 0);
                 if(nc >= 0) {
                     AllocBuffer((nc+1)*sizeof(wchar_t), &cbuff);
-                    wc = (wchar_t *) cbuff.data;
+                    wc = reinterpret_cast<wchar_t *>(cbuff.data);
                     mbstowcs(wc, xi, nc + 1);
                     for(j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
                     nb = wcstombs(NULL, wc, 0);
@@ -1839,7 +1839,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
         nc = mbstowcs(NULL, s, 0);
         if(nc < 0) errorcall(call, _("invalid multibyte string 'old'"));
         AllocBuffer((nc+1)*sizeof(wchar_t), &cbuff);
-        wc = (wchar_t *) cbuff.data;
+        wc = reinterpret_cast<wchar_t *>(cbuff.data);
         mbstowcs(wc, s, nc + 1);
         wtr_build_spec(wc, trs_old);
 
@@ -1847,7 +1847,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
         nc = mbstowcs(NULL, s, 0);
         if(nc < 0) errorcall(call, _("invalid multibyte string 'new'"));
         AllocBuffer((nc+1)*sizeof(wchar_t), &cbuff);
-        wc = (wchar_t *) cbuff.data;
+        wc = reinterpret_cast<wchar_t *>(cbuff.data);
         mbstowcs(wc, s, nc + 1);
         wtr_build_spec(wc, trs_new);
 
@@ -1885,7 +1885,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
                     errorcall(call, _("invalid input multibyte string %d"),
                               i+1);
                 AllocBuffer((nc+1)*sizeof(wchar_t), &cbuff);
-                wc = (wchar_t *) cbuff.data;
+                wc = reinterpret_cast<wchar_t *>(cbuff.data);
                 mbstowcs(wc, xi, nc + 1);
                 for(j = 0; j < nc; j++) wc[j] = xtable[wc[j]];
                 nb = wcstombs(NULL, wc, 0);
@@ -1945,7 +1945,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    char *xi = translateChar(STRING_ELT(x, i));
                     SET_STRING_ELT(y, i, allocString(strlen(xi)));
                     strcpy(CHAR(STRING_ELT(y, i)), xi);
-                    for(p = (unsigned char *) CHAR(STRING_ELT(y, i));
+                    for(p = reinterpret_cast<unsigned char *>(CHAR(STRING_ELT(y, i)));
                         *p != '\0'; p++) *p = xtable[*p];
 		    markKnown(STRING_ELT(y, i), STRING_ELT(x, i));
                 }
@@ -1972,13 +1972,13 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
     vec = CAR(args); args = CDR(args);
     igcase_opt = asLogical(CAR(args)); args = CDR(args);
     value_opt = asLogical(CAR(args)); args = CDR(args);
-    max_distance_opt = (apse_size_t)asInteger(CAR(args));
+    max_distance_opt = apse_size_t(asInteger(CAR(args)));
     args = CDR(args);
-    max_deletions_opt = (apse_size_t)asInteger(CAR(args));
+    max_deletions_opt = apse_size_t(asInteger(CAR(args)));
     args = CDR(args);
-    max_insertions_opt = (apse_size_t)asInteger(CAR(args));
+    max_insertions_opt = apse_size_t(asInteger(CAR(args)));
     args = CDR(args);
-    max_substitutions_opt = (apse_size_t)asInteger(CAR(args));
+    max_substitutions_opt = apse_size_t(asInteger(CAR(args)));
 
     if(igcase_opt == NA_INTEGER) igcase_opt = 0;
     if(value_opt == NA_INTEGER) value_opt = 0;
@@ -2036,8 +2036,8 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* Create search pattern object. */
     str = translateChar(STRING_ELT(pat, 0));
-    aps = apse_create((unsigned char *)str, (apse_size_t)strlen(str),
-                      max_distance_opt);
+    aps = apse_create(reinterpret_cast<unsigned char *>(str),
+		      apse_size_t(strlen(str)), max_distance_opt);
     if(!aps)
         error(_("could not allocate memory for approximate matching"));
 
@@ -2058,8 +2058,8 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
         str = translateChar(STRING_ELT(vec, i));
         /* Set case ignore flag for the whole string to be matched. */
         if(!apse_set_caseignore_slice(aps, 0,
-                                      (apse_ssize_t)strlen(str),
-                                      (apse_bool_t)igcase_opt)) {
+                                      apse_ssize_t(strlen(str)),
+                                      apse_bool_t(igcase_opt))) {
             /* Most likely, an error in apse_set_caseignore_slice()
              * means that allocating memory failed (as we ensure that
              * the slice is contained in the string) ... */
@@ -2067,8 +2067,8 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
         }
         /* Perform match. */
         if(apse_match(aps,
-                      (unsigned char *)str,
-                      (apse_size_t)strlen(str))) {
+                      reinterpret_cast<unsigned char *>(str),
+                      apse_size_t(strlen(str)))) {
             LOGICAL(ind)[i] = 1;
             nmatches++;
         }
@@ -2141,7 +2141,7 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
         buf[1] = '\0';
         PROTECT(ans = allocVector(STRSXP, nc));
         for(i = 0; i < nc; i++) {
-            buf[0] = (char) RAW(x)[i];
+            buf[0] = char(RAW(x)[i]);
             SET_STRING_ELT(ans, i, mkChar(buf));
         }
         /* do we want to copy e.g. names here? */
@@ -2189,7 +2189,7 @@ SEXP attribute_hidden do_rawToBits(SEXP call, SEXP op, SEXP args, SEXP env)
         errorcall(call, _("argument 'x' must be a raw vector"));
     PROTECT(ans = allocVector(RAWSXP, 8*LENGTH(x)));
     for(i = 0; i < LENGTH(x); i++) {
-        tmp = (unsigned int) RAW(x)[i];
+        tmp = uint(RAW(x)[i]);
         for(k = 0; k < 8; k++, tmp >>= 1)
             RAW(ans)[j++] = tmp & 0x1;
     }
@@ -2207,7 +2207,7 @@ SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
         errorcall(call, _("argument 'x' must be a integer vector"));
     PROTECT(ans = allocVector(RAWSXP, 32*LENGTH(x)));
     for(i = 0; i < LENGTH(x); i++) {
-        tmp = (unsigned int) INTEGER(x)[i];
+        tmp = uint(INTEGER(x)[i]);
         for(k = 0; k < 32; k++, tmp >>= 1)
             RAW(ans)[j++] = tmp & 0x1;
     }
@@ -2263,7 +2263,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
                     itmp |= j & 0x1;
                 }
             }
-            INTEGER(ans)[i] = (int) itmp;
+            INTEGER(ans)[i] = int(itmp);
         }
     UNPROTECT(1);
     return ans;
@@ -2272,25 +2272,25 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 static int mbrtoint(int *w, const char *s)
 {
     unsigned int byte;
-    byte = *((unsigned char *)s);
+    byte = uint(*s);
 
     if (byte == 0) {
         *w = 0;
         return 0;	
     } else if (byte < 0xC0) {
-        *w = (int) byte;
+        *w = int(byte);
         return 1;
     } else if (byte < 0xE0) {
         if(strlen(s) < 2) return -2;
         if ((s[1] & 0xC0) == 0x80) {
-            *w = (int) (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+            *w = int(((byte & 0x1F) << 6) | (s[1] & 0x3F));
             return 2;
         } else return -1;
     } else if (byte < 0xF0) {
         if(strlen(s) < 3) return -2;
         if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-            *w = (int) (((byte & 0x0F) << 12)
-                        | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
+            *w = int(((byte & 0x0F) << 12)
+		     | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
             byte = *w;
             if(byte >= 0xD800 && byte <= 0xDFFF) return -1; /* surrogate */
             if(byte == 0xFFFE || byte == 0xFFFF) return -1;
@@ -2301,10 +2301,10 @@ static int mbrtoint(int *w, const char *s)
         if (((s[1] & 0xC0) == 0x80) 
             && ((s[2] & 0xC0) == 0x80)
             && ((s[3] & 0xC0) == 0x80)) {
-            *w = (int) (((byte & 0x07) << 18)
-                        | ((s[1] & 0x3F) << 12) 
-                        | ((s[2] & 0x3F) << 6)
-                        | (s[3] & 0x3F));
+            *w = int(((byte & 0x07) << 18)
+		     | ((s[1] & 0x3F) << 12) 
+		     | ((s[2] & 0x3F) << 6)
+		     | (s[3] & 0x3F));
             byte = *w;
             return 4;
         } else return -1;
@@ -2314,11 +2314,11 @@ static int mbrtoint(int *w, const char *s)
             && ((s[2] & 0xC0) == 0x80)
             && ((s[3] & 0xC0) == 0x80)
             && ((s[4] & 0xC0) == 0x80)) {
-            *w = (int) (((byte & 0x03) << 24)
-                        | ((s[1] & 0x3F) << 18) 
-                        | ((s[2] & 0x3F) << 12) 
-                        | ((s[3] & 0x3F) << 6)
-                        | (s[4] & 0x3F));
+            *w = int(((byte & 0x03) << 24)
+		     | ((s[1] & 0x3F) << 18) 
+		     | ((s[2] & 0x3F) << 12) 
+		     | ((s[3] & 0x3F) << 6)
+		     | (s[4] & 0x3F));
             byte = *w;
             return 5;
         } else return -1;
@@ -2329,12 +2329,12 @@ static int mbrtoint(int *w, const char *s)
             && ((s[3] & 0xC0) == 0x80)
             && ((s[4] & 0xC0) == 0x80)
             && ((s[5] & 0xC0) == 0x80)) {
-            *w = (int) (((byte & 0x01) << 30)
-                        | ((s[1] & 0x3F) << 24) 
-                        | ((s[2] & 0x3F) << 18) 
-                        | ((s[3] & 0x3F) << 12)
-                        | ((s[5] & 0x3F) << 6)
-                        | (s[5] & 0x3F));
+            *w = int(((byte & 0x01) << 30)
+		     | ((s[1] & 0x3F) << 24) 
+		     | ((s[2] & 0x3F) << 18) 
+		     | ((s[3] & 0x3F) << 12)
+		     | ((s[5] & 0x3F) << 6)
+		     | (s[5] & 0x3F));
             byte = *w;
             return 5;
         } else return -1;
@@ -2354,7 +2354,7 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
     if(LENGTH(x) > 1)
         warningcall(call, _("argument should be a character vector of length 1\nall but the first element will be ignored"));
     nc = LENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
-    ians = (int *) R_alloc(nc,  sizeof(int *));
+    ians = reinterpret_cast<int *>(R_alloc(nc,  sizeof(int *)));
     for(i = 0, j = 0; i < nc; i++) {
         used = mbrtoint(&tmp, s);
         if(used <= 0) break;

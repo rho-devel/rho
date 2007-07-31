@@ -52,8 +52,8 @@ static char *rmspace(char *s)
 {
     int   i;
 
-    for (i = strlen(s) - 1; i >= 0 && isspace((int)s[i]); i--) s[i] = '\0';
-    for (i = 0; isspace((int)s[i]); i++);
+    for (i = strlen(s) - 1; i >= 0 && isspace(int(s[i])); i--) s[i] = '\0';
+    for (i = 0; isspace(int(s[i])); i++);
     return s + i;
 }
 
@@ -61,7 +61,7 @@ static char *rmspace(char *s)
    return "" on an error condition.
  */
 
-static char *subterm(char *s)
+static const char *subterm(char *s)
 {
     char *p, *q;
 
@@ -79,7 +79,7 @@ static char *subterm(char *s)
     } else q = NULL;
     p = getenv(s);
     if(p && strlen(p)) return p; /* variable was set and non-empty */
-    return q ? subterm(q) : (char *) "";
+    return q ? subterm(q) : "";
 }
 
 /* skip along until we find an unmatched right brace */
@@ -104,7 +104,8 @@ static char *findRbrace(char *s)
 
 static char *findterm(char *s)
 {
-    char *p, *q, *r, *r2, *ss=s;
+    char *p, *q, *r, *ss=s;
+    const char* r2;
     static char ans[1000];
     int nans;
 
@@ -119,7 +120,7 @@ static char *findterm(char *s)
 	/* copy over leading part */
 	nans = strlen(ans);
 	strncat(ans, s, p-s); ans[nans + p - s] = '\0';
-	r = (char *) alloca(q - p + 2);
+	r = reinterpret_cast<char *>(alloca(q - p + 2));
 	strncpy(r, p, q - p + 1);
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
@@ -137,7 +138,7 @@ static void Putenv(char *a, char *b)
     int inquote = 0;
 
 #ifdef HAVE_SETENV
-    buf = (char *) malloc((strlen(b) + 1) * sizeof(char));
+    buf = reinterpret_cast<char *>(malloc((strlen(b) + 1) * sizeof(char)));
     if(!buf) R_Suicide("allocation failure in reading Renviron");
     value = buf;
 #else

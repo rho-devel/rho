@@ -98,12 +98,12 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
     case LGLSXP:
         if (length(x) != length(y)) return FALSE;
         /* Use memcmp (which is ISO C) to speed up the comparison */
-        return memcmp((void *)LOGICAL(x), (void *)LOGICAL(y),
+        return memcmp(LOGICAL(x), LOGICAL(y),
                       length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case INTSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
-	return memcmp((void *)INTEGER(x), (void *)INTEGER(y), 
+	return memcmp(INTEGER(x), INTEGER(y), 
 		      length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case REALSXP:
     {
@@ -199,7 +199,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
     case RAWSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
-	return memcmp((void *)RAW(x), (void *)RAW(y), 
+	return memcmp(RAW(x), RAW(y), 
 		      length(x) * sizeof(Rbyte)) == 0 ? TRUE : FALSE;
 
 	/*  case PROMSXP: args are evaluated, so will not be seen */

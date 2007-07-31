@@ -133,7 +133,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     collab = CAR(a); a = CDR(a);
 
     quote = asInteger(CAR(a)); a = CDR(a);
-    R_print.right = (Rprt_adj) asInteger(CAR(a)); a = CDR(a);
+    R_print.right = Rprt_adj(asInteger(CAR(a))); a = CDR(a);
     naprint = CAR(a);
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
@@ -201,7 +201,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = CDR(args);
 
-    R_print.right = (Rprt_adj) asLogical(CAR(args)); /* Should this be asInteger()? */
+    R_print.right = Rprt_adj(asLogical(CAR(args))); /* Should this be asInteger()? */
     if(R_print.right == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' argument"), "right");
     args = CDR(args);

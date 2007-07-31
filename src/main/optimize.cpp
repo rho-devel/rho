@@ -208,8 +208,8 @@ SEXP attribute_hidden do_zeroin(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(res = allocVector(REALSXP, 3));
     REAL(res)[0] =
 	R_zeroin(xmin, xmax,   (double (*)(double, void*)) fcn2,
-		 (void *) &info, &tol, &iter);
-    REAL(res)[1] = (double)iter;
+		 &info, &tol, &iter);
+    REAL(res)[1] = double(iter);
     REAL(res)[2] = tol;
     UNPROTECT(2);
     return res;
@@ -252,18 +252,18 @@ static void FT_init(int n, int FT_size, function_info *state)
     have_gradient = state->have_gradient;
     have_hessian = state->have_hessian;
 
-    Ftable = (ftable *)R_alloc(FT_size, sizeof(ftable));
+    Ftable = reinterpret_cast<ftable *>(R_alloc(FT_size, sizeof(ftable)));
 
     for (i = 0; i < FT_size; i++) {
-	Ftable[i].x = (double *)R_alloc(n, sizeof(double));
+	Ftable[i].x = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
 				/* initialize to unlikely parameter values */
 	for (j = 0; j < n; j++) {
 	    Ftable[i].x[j] = DBL_MAX;
 	}
 	if (have_gradient) {
-	    Ftable[i].grad = (double *)R_alloc(n, sizeof(double));
+	    Ftable[i].grad = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
 	    if (have_hessian) {
-		Ftable[i].hess = (double *)R_alloc(n * n, sizeof(double));
+		Ftable[i].hess = reinterpret_cast<double *>(R_alloc(n * n, sizeof(double)));
 	    }
 	}
     }
@@ -330,7 +330,7 @@ static void fcn(int n, const double x[], double *f, function_info
 {
     SEXP s, R_fcall;
     ftable *Ftable;
-    double *g = (double *) 0, *h = (double *) 0;
+    double *g = 0, *h = 0;
     int i;
 
     R_fcall = state->R_fcall;
@@ -429,7 +429,7 @@ static double *fixparam(SEXP p, int *n, SEXP call)
 	*n = LENGTH(p);
     }
 
-    x = (double*)R_alloc(*n, sizeof(double));
+    x = reinterpret_cast<double*>(R_alloc(*n, sizeof(double)));
     switch(TYPEOF(p)) {
     case LGLSXP:
     case INTSXP:
@@ -545,7 +545,7 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     PrintDefaults(rho);
     vmax = vmaxget();
 
-    state = (function_info *) R_alloc(1, sizeof(function_info));
+    state = reinterpret_cast<function_info *>(R_alloc(1, sizeof(function_info)));
 
     /* the function to be minimized */
 
@@ -652,10 +652,10 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     iexp = iahflg ? 0 : 1; /* Function calls are expensive */
     dlt = 1.0;
 
-    xpls = (double*)R_alloc(n, sizeof(double));
-    gpls = (double*)R_alloc(n, sizeof(double));
-    a = (double*)R_alloc(n*n, sizeof(double));
-    wrk = (double*)R_alloc(8*n, sizeof(double));
+    xpls = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    gpls = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    a = reinterpret_cast<double*>(R_alloc(n*n, sizeof(double)));
+    wrk = reinterpret_cast<double*>(R_alloc(8*n, sizeof(double)));
 
     /*
      *	 Dennis + Schnabel Minimizer

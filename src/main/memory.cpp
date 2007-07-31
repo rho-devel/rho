@@ -626,7 +626,7 @@ static void GetNewPage(int node_class)
 
     page = reinterpret_cast<PAGE_HEADER*>(malloc(R_PAGE_SIZE));
     if (page == NULL)
-	mem_err_heap((R_size_t) NodeClassSize[node_class]);
+	mem_err_heap(R_size_t(NodeClassSize[node_class]));
 #ifdef R_MEMORY_PROFILING
     R_ReportNewPage();
 #endif
@@ -776,8 +776,8 @@ static void AdjustHeapSize(R_size_t size_needed)
     R_size_t NNeeded = R_NodesInUse + R_MinNFree;
     R_size_t VNeeded = R_SmallVallocSize + R_LargeVallocSize
 	+ size_needed + R_MinVFree;
-    double node_occup = ((double) NNeeded) / R_NSize;
-    double vect_occup =	((double) VNeeded) / R_VSize;
+    double node_occup = double(NNeeded) / R_NSize;
+    double vect_occup =	double(VNeeded) / R_VSize;
 
     if (node_occup > R_NGrowFrac) {
 	R_size_t change = R_size_t(R_NGrowIncrMin + R_NGrowIncrFrac * R_NSize);
@@ -1529,7 +1529,7 @@ void attribute_hidden InitMemory()
     gc_reporting = R_Verbose;
     R_StandardPPStackSize = R_PPStackSize;
     R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
-    if (!(R_PPStack = (SEXP *) malloc(R_RealPPStackSize * sizeof(SEXP))))
+    if (!(R_PPStack = reinterpret_cast<SEXP *>(malloc(R_RealPPStackSize * sizeof(SEXP)))))
 	R_Suicide("couldn't allocate memory for pointer stack");
     R_PPStackTop = 0;
 #if VALGRIND_LEVEL > 1
@@ -1584,7 +1584,7 @@ void attribute_hidden InitMemory()
     */
 
 #ifdef BYTECODE
-    R_BCNodeStackBase = (SEXP *) malloc(R_BCNODESTACKSIZE * sizeof(SEXP));
+    R_BCNodeStackBase = reinterpret_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
     if (R_BCNodeStackBase == NULL)
 	R_Suicide("couldn't allocate node stack");
 # ifdef BC_INT_STACK
@@ -1628,7 +1628,7 @@ void vmaxset(char *ovmax)
 char *R_alloc(long nelem, int eltsize)
 {
     R_size_t size = nelem * eltsize;
-    double dsize = (double)nelem * eltsize;
+    double dsize = double(nelem) * eltsize;
     if (dsize > 0) { /* precaution against integer overflow */
 	SEXP s;
 #if SIZEOF_LONG > 4
@@ -2012,7 +2012,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #endif
 	    }
 	    if (! success) {
-		double dsize = (double)size * sizeof(VECREC)/1024.0;
+		double dsize = double(size) * sizeof(VECREC)/1024.0;
 		/* reset the vector heap limit */
 		R_VSize = old_R_VSize;
 		if(dsize > 1024.0*1024.0)
@@ -2198,12 +2198,12 @@ static void R_gc_internal(R_size_t size_needed)
 	/* We try to make this consistent with the results returned by gc */
 	ncells = 0.1*ceil(10*ncells * sizeof(SEXPREC)/Mega);
 	REprintf("\n%.1f Mbytes of cons cells used (%d%%)\n",
-		 ncells, (int) (nfrac + 0.5));
+		 ncells, int(nfrac + 0.5));
 	vcells = R_VSize - VHEAP_FREE();
 	vfrac = (100.0 * vcells) / R_VSize;
 	vcells = 0.1*ceil(10*vcells * vsfac/Mega);
 	REprintf("%.1f Mbytes of vectors used (%d%%)\n",
-		 vcells, (int) (vfrac + 0.5));
+		 vcells, int(vfrac + 0.5));
     }
 
     if (first) {
@@ -2230,8 +2230,8 @@ SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     nsize = asInteger(CAR(args));
     vsize = asInteger(CADR(args));
-    if(nsize != NA_INTEGER) R_SetMaxNSize((R_size_t) nsize);
-    if(vsize != NA_INTEGER) R_SetMaxVSize((R_size_t) vsize);
+    if(nsize != NA_INTEGER) R_SetMaxNSize(R_size_t(nsize));
+    if(vsize != NA_INTEGER) R_SetMaxVSize(R_size_t(vsize));
     PROTECT(ans = allocVector(INTSXP, 2));
     tmp = R_GetMaxNSize();
     INTEGER(ans)[0] = (tmp < INT_MAX) ? tmp : NA_INTEGER;

@@ -412,7 +412,7 @@ static int InByte(R_inpstream_t stream)
     switch (stream->type) {
     case R_pstream_ascii_format:
 	InWord(stream, word, sizeof(word));
-	return (Rbyte) word[0];
+	return Rbyte(word[0]);
     case R_pstream_binary_format:
     case R_pstream_xdr_format:
 	stream->InBytes(stream, &rb, 1);
@@ -576,7 +576,7 @@ static void InFormat(R_inpstream_t stream)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) (((R_size_t) (obj)) >> 2)
+#define PTRHASH(obj) (R_size_t(obj) >> 2)
 
 #define HASH_TABLE_COUNT(ht) TRUELENGTH(CDR(ht))
 #define SET_HASH_TABLE_COUNT(ht, val) SET_TRUELENGTH(CDR(ht), val)
@@ -1594,7 +1594,7 @@ R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 			  R_pstream_format_t type, int version,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitOutPStream(stream, (R_pstream_data_t) fp, type, version,
+    R_InitOutPStream(stream, fp, type, version,
 		     OutCharFile, OutBytesFile, phook, pdata);
 }
 
@@ -1603,7 +1603,7 @@ R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
 			 R_pstream_format_t type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitInPStream(stream, (R_pstream_data_t) fp, type,
+    R_InitInPStream(stream, fp, type,
 		    InCharFile, InBytesFile, phook, pdata);
 }
 
@@ -1632,7 +1632,7 @@ static void CheckOutConn(Rconnection con)
 
 static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 {
-    Rconnection con = (Rconnection) stream->data;
+    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
     CheckInConn(con);
     if (con->text) {
 	int i;
@@ -1649,7 +1649,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 static int InCharConn(R_inpstream_t stream)
 {
     char buf[1];
-    Rconnection con = (Rconnection) stream->data;
+    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
     CheckInConn(con);
     if (con->text)
 	return Rconn_fgetc(con);
@@ -1662,7 +1662,7 @@ static int InCharConn(R_inpstream_t stream)
 
 static void OutBytesConn(R_outpstream_t stream, const void *buf, int length)
 {
-    Rconnection con = (Rconnection) stream->data;
+    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
@@ -1678,13 +1678,13 @@ static void OutBytesConn(R_outpstream_t stream, const void *buf, int length)
 
 static void OutCharConn(R_outpstream_t stream, int c)
 {
-    Rconnection con = (Rconnection) stream->data;
+    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
     CheckOutConn(con);
     if (con->text)
 	Rconn_printf(con, "%c", c);
     else {
 	char buf[1];
-	buf[0] = (char) c;
+	buf[0] = char(c);
 	if (1 != con->write(buf, 1, 1, con))
 	    error(_("error writing to connection"));
     }
@@ -1697,7 +1697,7 @@ void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
     CheckOutConn(con);
     if (con->text && type != R_pstream_ascii_format)
 	error(_("only ascii format can be written to text mode connections"));
-    R_InitOutPStream(stream, (R_pstream_data_t) con, type, version,
+    R_InitOutPStream(stream, con, type, version,
 		     OutCharConn, OutBytesConn, phook, pdata);
 }
 
@@ -1712,7 +1712,7 @@ void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 	else if (type != R_pstream_ascii_format)
 	    error(_("only ascii format can be read from text mode connections"));
     }
-    R_InitInPStream(stream, (R_pstream_data_t) con, type,
+    R_InitInPStream(stream, con, type,
 		    InCharConn, InBytesConn, phook, pdata);
 }
 
@@ -1839,7 +1839,7 @@ static void InitBConOutPStream(R_outpstream_t stream, bconbuf_t bb,
 {
     bb->count = 0;
     bb->con = con;
-    R_InitOutPStream(stream, (R_pstream_data_t) bb, type, version,
+    R_InitOutPStream(stream, bb, type, version,
 		     OutCharBB, OutBytesBB, phook, pdata);
 }
 
@@ -1920,7 +1920,7 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = length;
     mb->buf = reinterpret_cast<unsigned char*>(buf);
-    R_InitInPStream(stream, (R_pstream_data_t) mb, R_pstream_any_format,
+    R_InitInPStream(stream, mb, R_pstream_any_format,
 		    InCHarMem, InBytesMem, phook, pdata);
 }
 
@@ -1931,7 +1931,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = 0;
     mb->buf = NULL;
-    R_InitOutPStream(stream, (R_pstream_data_t) mb, type, version,
+    R_InitOutPStream(stream, mb, type, version,
 		     OutCharMem, OutBytesMem, phook, pdata);
 }
 

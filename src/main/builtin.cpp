@@ -50,7 +50,7 @@ static R_len_t asVecSize(SEXP x)
 	    d = REAL(x)[0];
 	    if(d < 0) error(_("vector size cannot be negative"));
 	    if(d > R_LEN_T_MAX) error(_("vector size specified is too large"));
-	    return (R_size_t) d;
+	    return R_len_t(d);
 	default:
 	    UNIMPLEMENTED_TYPE("asVecSize", x);
 	}
@@ -398,7 +398,7 @@ typedef struct cat_info {
 
 static void cat_cleanup(void *data)
 {
-    cat_info *pci = (cat_info *) data;
+    cat_info *pci = reinterpret_cast<cat_info *>(data);
     Rconnection con = pci->con;
     Rboolean wasopen = pci->wasopen;
     int changedcon = pci->changedcon;
@@ -761,7 +761,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
 		    SET_STRING_ELT(names, i, STRING_ELT(xnames, i));
 	    }
 	    else
-		RAW(rval)[i] = (Rbyte) 0;
+		RAW(rval)[i] = Rbyte(0);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("length<-", x);

@@ -77,7 +77,7 @@ double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
 		   GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
-    char *str = (char *)s;
+    char *str = reinterpret_cast<char *>(const_cast<unsigned char*>(s));
 #ifdef SUPPORT_MBCS
     char *buff;
     Rboolean conv = mbcslocale;
@@ -91,11 +91,11 @@ double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
 	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrWidth"));
-	mbcsToLatin1((char*) s, buff);
+	mbcsToLatin1(reinterpret_cast<char *>(const_cast<unsigned char*>(s)), buff);
 	str = buff;
     }
 #endif
-    return GConvertXUnits(R_GE_VStrWidth((unsigned char *)str, &gc,
+    return GConvertXUnits(R_GE_VStrWidth(reinterpret_cast<unsigned char*>(str), &gc,
 					 (GEDevDesc *) dd),
 			  DEVICE, unit, dd);
 }
@@ -117,7 +117,7 @@ double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
 		    GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
-    char *str = (char *)s;
+    char *str = reinterpret_cast<char*>(const_cast<unsigned char*>(s));
 #ifdef SUPPORT_MBCS
     char *buff;
     Rboolean conv = mbcslocale;
@@ -131,11 +131,11 @@ double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
 	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrHeight"));
-	mbcsToLatin1((char *) s, buff);
+	mbcsToLatin1(reinterpret_cast<char*>(const_cast<unsigned char*>(s)), buff);
 	str = buff;
     }
 #endif
-    return GConvertYUnits(R_GE_VStrHeight((unsigned char *)str, &gc,
+    return GConvertYUnits(R_GE_VStrHeight(reinterpret_cast<unsigned char*>(str), &gc,
 					  (GEDevDesc *) dd),
 			  DEVICE, unit, dd);
 }

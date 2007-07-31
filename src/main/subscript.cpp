@@ -144,7 +144,7 @@ get1index(SEXP s, SEXP names, int len, Rboolean pok, int pos)
     case REALSXP:
 	dblind = REAL(s)[pos];
 	if(!ISNAN(dblind))
-	    indx = integerOneIndex((int)dblind, len);
+	    indx = integerOneIndex(int(dblind), len);
 	break;
     case STRSXP:
 	/* NA matches nothing */

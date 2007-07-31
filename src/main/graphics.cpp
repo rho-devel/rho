@@ -1497,10 +1497,10 @@ static void mapFigureRegion(DevDesc *dd)
 	    row = (Rf_gpptr(dd)->currentFigure-1) / Rf_gpptr(dd)->numcols + 1;
 	    col = Rf_gpptr(dd)->currentFigure - (row-1)*Rf_gpptr(dd)->numcols;
 	}
-	x0 = (double) (col-1) / Rf_gpptr(dd)->numcols;
-	x1 = (double) col / Rf_gpptr(dd)->numcols;
-	y0 = (double) (Rf_gpptr(dd)->numrows - row) / Rf_gpptr(dd)->numrows;
-	y1 = (double) (Rf_gpptr(dd)->numrows - row + 1) / Rf_gpptr(dd)->numrows;
+	x0 = double(col-1) / Rf_gpptr(dd)->numcols;
+	x1 = double(col) / Rf_gpptr(dd)->numcols;
+	y0 = double(Rf_gpptr(dd)->numrows - row) / Rf_gpptr(dd)->numrows;
+	y1 = double(Rf_gpptr(dd)->numrows - row + 1) / Rf_gpptr(dd)->numrows;
     }
     Rf_gpptr(dd)->fig[0] = Rf_dpptr(dd)->fig[0] = x0;
     Rf_gpptr(dd)->fig[1] = Rf_dpptr(dd)->fig[1] = x1;
@@ -2517,7 +2517,7 @@ void gcontextFromGP(R_GE_gcontext *gc, DevDesc *dd)
     /* 
      * Scale by "zoom" factor to allow for fit-to-window resizing in Windows
      */
-    gc->ps = (double) Rf_gpptr(dd)->ps * Rf_gpptr(dd)->scale;
+    gc->ps = double(Rf_gpptr(dd)->ps) * Rf_gpptr(dd)->scale;
     gc->lineheight = Rf_gpptr(dd)->lheight;
     gc->fontface = Rf_gpptr(dd)->font;
     strncpy(gc->fontfamily, Rf_gpptr(dd)->family, 201);
@@ -2821,8 +2821,8 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = (double*) R_alloc(n, sizeof(double));
-    yy = (double*) R_alloc(n, sizeof(double));
+    xx = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    yy = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {
@@ -2857,8 +2857,8 @@ void GPolyline(int n, double *x, double *y, GUnit coords, DevDesc *dd)
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = (double*) R_alloc(n, sizeof(double));
-    yy = (double*) R_alloc(n, sizeof(double));
+    xx = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    yy = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {
@@ -3142,8 +3142,8 @@ void GLPretty(double *ul, double *uh, int *n)
     }
     else { /* extra tickmarks --> CreateAtVector() in ./plot.c */
 	/* round to nice "1e<N>" */
-	*ul = pow(10., (double)p1);
-	*uh = pow(10., (double)p2);
+	*ul = pow(10., double(p1));
+	*uh = pow(10., double(p2));
 	if (p2 - p1 <= LPR_SMALL)
 	    *n = 3; /* Small range :	Use 1,2,5,10 times 10^k tickmarks */
 	else if (p2 - p1 <= LPR_MEDIUM)
@@ -3295,7 +3295,7 @@ void hsv2rgb(double h, double s, double v, double *r, double *g, double *b)
     int i;
 
     f = modf(h * 6.0, &t);
-    i = ((int) t) % 6;
+    i = int(t) % 6;
 
     p = v * (1 - s);
     q = v * (1 - s * f);
@@ -4265,7 +4265,7 @@ char *col2name(unsigned int col)
 unsigned int str2col(char *s)
 {
     if(s[0] == '#') return rgb2col(s);
-    else if(isdigit((int)s[0])) return number2col(s);
+    else if(isdigit(int(s[0]))) return number2col(s);
     else return name2col(s);
 }
 

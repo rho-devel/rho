@@ -81,7 +81,7 @@ static int ihash(SEXP x, int indx, HashData *d)
 {
     if (INTEGER(x)[indx] == NA_INTEGER)
 	return 0;
-    return scatter((unsigned int) (INTEGER(x)[indx]), d);
+    return scatter(uint(INTEGER(x)[indx]), d);
 }
 
 /* We use unions here because Solaris gcc -O2 has trouble with
@@ -588,7 +588,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isString(input) || !isString(target))
 	errorcall(call, _("argument is not of mode character"));
 
-    used = (int *) R_alloc(n_target, sizeof(int));
+    used = reinterpret_cast<int*>(R_alloc(n_target, sizeof(int)));
     for (j = 0; j < n_target; j++) used[j] = 0;
     ans = allocVector(INTSXP, n_input);
     for (i = 0; i < n_input; i++) INTEGER(ans)[i] = 0;
@@ -1116,13 +1116,13 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	buf = (char *) alloca(maxlen + strlen(csep) + (int) (log((double)n)/log(10.0)) + 2);
+	buf = reinterpret_cast<char*>(alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
 	if(n < 10000) {
-	    cnts = (int *) alloca(n * sizeof(int));
+	    cnts = reinterpret_cast<int*>(alloca(n * sizeof(int)));
 	} else {
 	    /* This is going to be slow so use expensive allocation
 	       that will be recovered if interrupted. */
-	    cnts = (int *) R_alloc(n,  sizeof(int));
+	    cnts = reinterpret_cast<int*>(R_alloc(n,  sizeof(int)));
 	}
 	R_CheckStack();
 	for(i = 0; i < n; i++) cnts[i] = 1;
@@ -1157,7 +1157,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static int cshash(SEXP x, int indx, HashData *d)
 {
-    intptr_t z = (intptr_t) STRING_ELT(x, indx);
+    intptr_t z = intptr_t(STRING_ELT(x, indx));
     unsigned int z1 = z & 0xffffffff, z2 = 0;
 #if SIZEOF_LONG == 8
     z2 = z/0x100000000L;

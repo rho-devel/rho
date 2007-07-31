@@ -267,7 +267,7 @@ double R_pow_di(double x, int n)
     if (ISNAN(x)) return x;
     if (n == NA_INTEGER) return NA_REAL;
     if (n != 0) {
-	if (!R_FINITE(x)) return R_pow(x, (double)n);
+	if (!R_FINITE(x)) return R_pow(x, double(n));
 	if (n < 0) { n = -n; x = 1/x; }
 	for(;;) {
 	    if(n & 01) xn *= x;
@@ -345,7 +345,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
     int xattr, yattr;
     SEXP lcall = call;
     PROTECT_INDEX xpi, ypi;
-    ARITHOP_TYPE oper = (ARITHOP_TYPE) PRIMVAL(op);
+    ARITHOP_TYPE oper = ARITHOP_TYPE(PRIMVAL(op));
     int nprotect = 2; /* x and y */
 
 
@@ -517,7 +517,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 {
-    ARITHOP_TYPE operation = (ARITHOP_TYPE) PRIMVAL(op);
+    ARITHOP_TYPE operation = ARITHOP_TYPE(PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
     case INTSXP:
@@ -613,10 +613,10 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 # define GOODISUM(x, y, z) (((x) > 0) ? ((y) < (z)) : ! ((y) < (z)))
 # define GOODIDIFF(x, y, z) (!(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z)))
 #else
-# define GOODISUM(x, y, z) ((double) (x) + (double) (y) == (z))
-# define GOODIDIFF(x, y, z) ((double) (x) - (double) (y) == (z))
+# define GOODISUM(x, y, z) (double(x) + double(y) == (z))
+# define GOODIDIFF(x, y, z) (double(x) - double(y) == (z))
 #endif
-#define GOODIPROD(x, y, z) ((double) (x) * (double) (y) == (z))
+#define GOODIPROD(x, y, z) (double(x) * double(y) == (z))
 #define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
 #endif
 
@@ -726,7 +726,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		    REAL(ans)[i] = NA_REAL;
 		else
-		    REAL(ans)[i] = (double) x1 / (double) x2;
+		    REAL(ans)[i] = double(x1) / double(x2);
 	}
 	break;
     case POWOP:
@@ -736,7 +736,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		REAL(ans)[i] = NA_REAL;
 	    else {
-		REAL(ans)[i] = R_pow((double) x1, (double) x2);
+		REAL(ans)[i] = R_pow(double(x1), double(x2));
 	    }
 	}
 	break;
@@ -749,7 +749,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    else {
 		INTEGER(ans)[i] = /* till 0.63.2:	x1 % x2 */
 		    (x1 >= 0 && x2 > 0) ? x1 % x2 :
-		    (int)myfmod((double)x1,(double)x2);
+		    int(myfmod(double(x1), double(x2)));
 	    }
 	}
 	break;
@@ -762,7 +762,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    else if (x2 == 0)
 		INTEGER(ans)[i] = 0;
 	    else
-	        INTEGER(ans)[i] = int(floor((double)x1 / (double)x2));
+	        INTEGER(ans)[i] = int(floor(double(x1) / double(x2)));
 	}
 	break;
     }
@@ -786,7 +786,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
     return ans;
 }
 
-#define R_INTEGER(robj, i) (double) (INTEGER(robj)[i] == NA_INTEGER ? NA_REAL : INTEGER(robj)[i])
+#define R_INTEGER(robj, i) double(INTEGER(robj)[i] == NA_INTEGER ? NA_REAL : INTEGER(robj)[i])
 
 static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 {
@@ -1766,7 +1766,7 @@ SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
 
 	/* Completely dummy for -Wall -- math4() at all! : */
-    case -99: return Math4(args, (double (*)(double, double, double, double))NULL);
+    case -99: return Math4(args, NULL);
 
     case  1: return Math4_1(args, dhyper);
     case  2: return Math4_2(args, phyper);

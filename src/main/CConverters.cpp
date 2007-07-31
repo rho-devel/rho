@@ -57,7 +57,7 @@ Rf_convertToC(SEXP s, R_CConvertInfo *info, int *success,
     }
 
     *success = 0;
-    return((void*) NULL);
+    return  NULL;
 }
 
 
@@ -74,7 +74,7 @@ R_toCConverter
     R_toCConverter *tmp = StoCConverters;
     R_toCConverter *el;
     /* Create and populate the new entry. */
-    el = (R_toCConverter *) malloc(sizeof(R_toCConverter));
+    el = reinterpret_cast<R_toCConverter *>(malloc(sizeof(R_toCConverter)));
     el->matcher = matcher;
     el->converter = converter;
     el->userData = userData;
@@ -82,7 +82,7 @@ R_toCConverter
     el->active = TRUE;
     if(desc)
 	el->description = strdup(desc);
-    el->next = (R_toCConverter*) NULL;
+    el->next = NULL;
 
     /* Add the entry to the end of the list. */
     if(StoCConverters == NULL)
@@ -111,7 +111,7 @@ R_toCConverter *R_getToCConverterByIndex(int which)
 	tmp = tmp->next;
     }
 
-    return((R_toCConverter*) NULL);
+    return NULL;
 }
 
 
@@ -128,7 +128,7 @@ R_toCConverter *R_getToCConverterByDescription(const char *desc)
 	tmp = tmp->next;
     }
 
-    return((R_toCConverter*) NULL);
+    return NULL;
 }
 
 /*
@@ -182,7 +182,7 @@ R_converterMatchClass(SEXP obj, R_CConvertInfo *inf, R_toCConverter *el)
     n = length(klasses);
     for(i = 0; i < n ; i++) {
 	if(strcmp(translateChar(STRING_ELT(klasses,i)),
-		  (char *)el->userData) == 0) {
+		  reinterpret_cast<char *>(el->userData)) == 0) {
 	    return(TRUE);
 	}
     }

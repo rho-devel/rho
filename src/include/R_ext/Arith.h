@@ -71,7 +71,11 @@ Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 
 #ifdef HAVE_WORKING_ISFINITE
 /* isfinite is defined in <math.h> according to C99 */
+#ifdef __cplusplus
+# define R_FINITE(x)    (Rboolean(isfinite(x)))  // Avoid C-style cast
+#else
 # define R_FINITE(x)    ((Rboolean)(isfinite(x)))
+#endif
 #elif HAVE_WORKING_FINITE
 /* include header needed to define finite() */
 #  ifdef HAVE_IEEE754_H
@@ -81,7 +85,11 @@ Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 #    include <ieeefp.h>		/* others [Solaris], .. */
 #   endif
 #  endif
+#ifdef __cplusplus
+# define R_FINITE(x)    (Rboolean(finite(x)))  // Avoid C-style cast
+#else
 # define R_FINITE(x)    ((Rboolean)(finite(x)))
+#endif
 #else
 # define R_FINITE(x)    R_finite(x)
 #endif

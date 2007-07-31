@@ -228,7 +228,7 @@ void* apse_get_custom_data(apse_t*	ap,
 
 void apse_destroy(apse_t *ap);
 
-#define APSE_MATCH_BAD			((apse_size_t)  -1)
+#define APSE_MATCH_BAD			(apse_size_t(-1))
 
 #ifdef __cplusplus
 }

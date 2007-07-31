@@ -77,7 +77,7 @@ static void signalInterrupt(void);
 
 static void reset_stack_limit(void *data)
 {
-    unsigned int *limit = (unsigned int *) data;
+    unsigned int *limit = reinterpret_cast<unsigned int *>(data);
     R_CStackLimit = *limit;
 }
 
@@ -446,7 +446,7 @@ static void (*R_ErrorHook)(SEXP, char *) = NULL;
 
 static void restore_inError(void *data)
 {
-    int *poldval = (int *) data;
+    int *poldval = reinterpret_cast<int *>(data);
     inError = *poldval;
     R_Expressions = R_Expressions_keep;
 }
@@ -766,7 +766,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = CDR(rho);
 	}
 	if(strlen(domain)) {
-	    buf = (char *) alloca(strlen(domain)+3);
+	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));
 	    R_CheckStack();
 	    sprintf(buf, "R-%s", domain);
 	    domain = buf;
@@ -781,7 +781,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int ihead = 0, itail = 0;
 	    char * This = translateChar(STRING_ELT(string, i)), 
 		*tmp, *head = NULL, *tail = NULL, *p, *tr;
-	    tmp = (char *) alloca(strlen(This) + 1);
+	    tmp = reinterpret_cast<char *>(alloca(strlen(This) + 1));
 	    R_CheckStack();
 	    strcpy(tmp, This);
 	    /* strip leading and trailing white spaces and 
@@ -790,7 +790,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		*p && (*p == ' ' || *p == '\t' || *p == '\n'); 
 		p++, ihead++) ;
 	    if(ihead > 0) {
-		head = (char *) alloca(ihead + 1);
+		head = reinterpret_cast<char *>(alloca(ihead + 1));
 		R_CheckStack();
 		strncpy(head, tmp, ihead);
 		head[ihead] = '\0';
@@ -801,7 +801,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    p >= tmp && (*p == ' ' || *p == '\t' || *p == '\n');
 		    p--, itail++) ;
 	    if(itail > 0) {
-		tail = (char *) alloca(itail + 1);
+		tail = reinterpret_cast<char *>(alloca(itail + 1));
 		R_CheckStack();
 		strcpy(tail, tmp+strlen(tmp)-itail);
 		tmp[strlen(tmp)-itail] = '\0';
@@ -811,7 +811,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		REprintf("translating '%s' in domain '%s'\n", tmp, domain);
 #endif
 		tr = dgettext(domain, tmp);
-		tmp = (char *) alloca(strlen(tr) + ihead + itail + 1);
+		tmp = reinterpret_cast<char *>(alloca(strlen(tr) + ihead + itail + 1));
 		R_CheckStack();
 		tmp[0] ='\0';
 		if(ihead > 0) strcat(tmp, head);
@@ -865,7 +865,7 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = CDR(rho);
 	}
 	if(strlen(domain)) {
-	    buf = (char *) alloca(strlen(domain)+3);
+	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));
 	    R_CheckStack();
 	    sprintf(buf, "R-%s", domain);
 	    domain = buf;
@@ -1540,7 +1540,7 @@ static void invokeRestart(SEXP r, SEXP arglist)
 	    if (exit == RESTART_EXIT(CAR(R_RestartStack))) {
 		R_RestartStack = CDR(R_RestartStack);
 		if (TYPEOF(exit) == EXTPTRSXP) {
-		    RCNTXT *c = (RCNTXT *) R_ExternalPtrAddr(exit);
+		    RCNTXT *c = reinterpret_cast<RCNTXT *>(R_ExternalPtrAddr(exit));
 		    R_JumpToContext(c, CTXT_RESTART, R_RestartToken);
 		}
 		else findcontext(CTXT_FUNCTION, exit, arglist);

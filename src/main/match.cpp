@@ -66,7 +66,7 @@ Rboolean NonNullStringMatch(SEXP s, SEXP t)
 Rboolean psmatch(char *f, char *t, Rboolean exact)
 {
     if (exact)
-	return (Rboolean)!strcmp(f, t);
+	return Rboolean(!strcmp(f, t));
     /* else */
     while (*f || *t) {
 	if (*t == '\0') return TRUE;

@@ -860,7 +860,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 		      "ne = %d <= 0 !!\n"
 		      "\t axp[0:1]=(%g,%g) ==> i = %d;	nint = %d",
 		      ne, axp[0],axp[1], i, nint);
-	    rng = pow(10., (double)ne);/* >= 10 */
+	    rng = pow(10., double(ne));/* >= 10 */
 	    n = 0;
 	    while (dn < umax) {
 		n++;
@@ -1046,7 +1046,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* should be plotted: TRUE => show, FALSE => don't show. */
 
     doticks = Rboolean(asLogical(CAR(args)));
-    doticks = (doticks == NA_LOGICAL) ? TRUE : (Rboolean) doticks;
+    doticks = (doticks == NA_LOGICAL) ? TRUE : Rboolean(doticks);
     args = CDR(args);
 
     /* Optional argument: "line" */
@@ -1181,7 +1181,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* The code here is long-winded.  Couldn't we just inline things */
     /* below.  Hmmm - we need the min and max of the finite values ... */
 
-    ind = (int *) R_alloc(n, sizeof(int));
+    ind = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
     for(i = 0; i < n; i++) ind[i] = i;
     rsort_with_index(REAL(at), ind, n);
     ntmp = 0;
@@ -1653,8 +1653,8 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	double *xtemp, *ytemp;
 	int n0 = 0;
-	xtemp = (double *) alloca(2*n*sizeof(double));
-	ytemp = (double *) alloca(2*n*sizeof(double));
+	xtemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
+	ytemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
 	Rf_gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
 	yold = NA_REAL;
@@ -1683,8 +1683,8 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	double *xtemp, *ytemp;
 	int n0 = 0;
-	xtemp = (double *) alloca(2*n*sizeof(double));
-	ytemp = (double *) alloca(2*n*sizeof(double));
+	xtemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
+	ytemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
 	Rf_gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
 	yold = NA_REAL;
@@ -3584,8 +3584,8 @@ SEXP attribute_hidden do_dendwindow(SEXP call, SEXP op, SEXP args, SEXP env)
     Rf_gpptr(dd)->cex = Rf_gpptr(dd)->cexbase * Rf_gpptr(dd)->cex;
     dnd_offset = GStrWidth("m", INCHES, dd);
     vmax = vmaxget();
-    y =  (double*)R_alloc(n, sizeof(double));
-    ll = (double*)R_alloc(n, sizeof(double));
+    y =  reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    ll = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
     dnd_lptr = &(INTEGER(merge)[0]);
     dnd_rptr = &(INTEGER(merge)[n]);
     ymax = ymin = REAL(height)[0];
@@ -3915,9 +3915,9 @@ SEXP attribute_hidden do_symbols(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (!SymbolRange(REAL(p), nc * nr, &pmax, &pmin))
 	    errorcall(call, _("invalid symbol parameter"));
 	vmax = vmaxget();
-	pp = (double*)R_alloc(nc, sizeof(double));
-	xp = (double*)R_alloc(nc, sizeof(double));
-	yp = (double*)R_alloc(nc, sizeof(double));
+	pp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
+	xp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
+	yp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
 	p1 = 2.0 * M_PI / nc;
 	for (i = 0; i < nr; i++) {
 	    xx = REAL(x)[i];

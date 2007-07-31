@@ -28,7 +28,7 @@
 
 #define R_INT_MIN	(1+INT_MIN)
 	/* since INT_MIN is the NA_INTEGER value ! */
-#define Int2Real(i)	((i == NA_INTEGER) ? NA_REAL : (double)i)
+#define Int2Real(i)	((i == NA_INTEGER) ? NA_REAL : double(i))
 
 #ifdef DEBUG_sum
 #define DbgP1(s) REprintf(s)
@@ -363,7 +363,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	    PROTECT(ans = allocVector(REALSXP, 1));
 	    for (i = 0; i < n; i++) s += REAL(x)[i];
 	    s /= n;
-	    if(R_FINITE((double)s)) {
+	    if(R_FINITE(double(s))) {
 		for (i = 0; i < n; i++) t += (REAL(x)[i] - s);
 		s += t/n;
 	    }
@@ -376,7 +376,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		si += COMPLEX(x)[i].i;
 	    }
 	    s /= n; si /= n;
-	    if( R_FINITE((double)s) && R_FINITE((double)si) ) {
+	    if( R_FINITE(double(s)) && R_FINITE(double(si)) ) {
 		for (i = 0; i < n; i++) {
 		    t += COMPLEX(x)[i].r - s;
 		    ti += COMPLEX(x)[i].i - si;
@@ -545,7 +545,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if(updated) {
 			if(itmp == NA_INTEGER) goto na_answer;
 			if(ans_type == INTSXP) {
-			    s = (double) icum + (double) itmp;
+			    s = double(icum) + double(itmp);
 			    if(s > INT_MAX || s < R_INT_MIN){
 				warning(_("Integer overflow in sum(.); use sum(as.numeric(.))"));
 				goto na_answer;

@@ -151,7 +151,7 @@ SEXP attribute_hidden do_objectsize(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     cnt = objectsize(CAR(args));
     PROTECT(ans = allocVector(REALSXP, 1));
-    REAL(ans)[0] = (double) cnt;
+    REAL(ans)[0] = double(cnt);
     UNPROTECT(1);
     return ans;
 }

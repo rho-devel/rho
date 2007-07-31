@@ -224,7 +224,7 @@ R_getDllInfo(const char *path)
 	if(strcmp(LoadedDLL[i].path, path) == 0)
 	    return(&LoadedDLL[i]);
     }
-    return((DllInfo*) NULL);
+    return NULL;
 }
 
 /*
@@ -252,7 +252,8 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
 
     if(croutines) {
 	for(num=0; croutines[num].name != NULL; num++) {;}
-	info->CSymbols = (Rf_DotCSymbol*)calloc(num, sizeof(Rf_DotCSymbol));
+	info->CSymbols
+	    = reinterpret_cast<Rf_DotCSymbol*>(calloc(num, sizeof(Rf_DotCSymbol)));
 	info->numCSymbols = num;
 	for(i = 0; i < num; i++) {
 	    R_addCRoutine(info, croutines+i, info->CSymbols + i);
@@ -262,7 +263,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(fortranRoutines) {
 	for(num=0; fortranRoutines[num].name != NULL; num++) {;}
 	info->FortranSymbols =
-	    (Rf_DotFortranSymbol*)calloc(num, sizeof(Rf_DotFortranSymbol));
+	    reinterpret_cast<Rf_DotFortranSymbol*>(calloc(num, sizeof(Rf_DotFortranSymbol)));
 	info->numFortranSymbols = num;
 
 	for(i = 0; i < num; i++) {
@@ -274,7 +275,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(callRoutines) {
 	for(num=0; callRoutines[num].name != NULL; num++) {;}
 	info->CallSymbols =
-	    (Rf_DotCallSymbol*)calloc(num, sizeof(Rf_DotCallSymbol));
+	    reinterpret_cast<Rf_DotCallSymbol*>(calloc(num, sizeof(Rf_DotCallSymbol)));
 	info->numCallSymbols = num;
 	for(i = 0; i < num; i++) {
 	    R_addCallRoutine(info, callRoutines+i, info->CallSymbols + i);
@@ -284,7 +285,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(externalRoutines) {
 	for(num=0; externalRoutines[num].name != NULL; num++) {;}
 	info->ExternalSymbols =
-	    (Rf_DotExternalSymbol*)calloc(num, sizeof(Rf_DotExternalSymbol));
+	    reinterpret_cast<Rf_DotExternalSymbol*>(calloc(num, sizeof(Rf_DotExternalSymbol)));
 	info->numExternalSymbols = num;
 
 	for(i = 0; i < num; i++) {
@@ -300,8 +301,8 @@ static void
 R_setPrimitiveArgTypes(const R_FortranMethodDef * const croutine,
 		       Rf_DotFortranSymbol *sym)
 {
-    sym->types = (R_NativePrimitiveArgType *)
-	malloc(sizeof(R_NativePrimitiveArgType) * croutine->numArgs);
+    sym->types = reinterpret_cast<R_NativePrimitiveArgType *>
+	(malloc(sizeof(R_NativePrimitiveArgType) * croutine->numArgs));
     if(sym->types)
         memcpy(sym->types, croutine->types,
 	       sizeof(R_NativePrimitiveArgType) * croutine->numArgs);
@@ -312,8 +313,8 @@ static void
 R_setArgStyles(const R_FortranMethodDef * const croutine,
 	       Rf_DotFortranSymbol *sym)
 {
-    sym->styles = (R_NativeArgStyle *)
-	malloc(sizeof(R_NativeArgStyle) * croutine->numArgs);
+    sym->styles = reinterpret_cast<R_NativeArgStyle *>
+	(malloc(sizeof(R_NativeArgStyle) * croutine->numArgs));
     if(sym->styles)
         memcpy(sym->styles, croutine->styles,
 	       sizeof(R_NativeArgStyle) * croutine->numArgs);
@@ -492,7 +493,7 @@ DL_FUNC Rf_lookupCachedSymbol(const char *name, const char *pkg, int all)
 	    return CPFun[i].func;
 #endif
 
-    return((DL_FUNC) NULL);
+    return NULL;
 }
 
 
@@ -541,12 +542,12 @@ static DllInfo* AddDLL(char *path, int asLocal, int now)
 	char *tmp;
 	DllInfoInitCall f;
 #ifdef HAVE_NO_SYMBOL_UNDERSCORE
-	tmp = (char*) malloc(sizeof(char)*(strlen("R_init_") +
-					   strlen(info->name)+ 1));
+	tmp = reinterpret_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
+							   strlen(info->name)+ 1)));
 	sprintf(tmp, "%s%s","R_init_", info->name);
 #else
-	tmp = (char*) malloc(sizeof(char)*(strlen("R_init_") +
-					   strlen(info->name)+ 2));
+	tmp = reinterpret_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
+							   strlen(info->name)+ 2)));
 	sprintf(tmp, "_%s%s","R_init_", info->name);
 #endif
 	f = (DllInfoInitCall) R_osDynSymbol->dlsym(info, tmp);
@@ -571,7 +572,7 @@ static DllInfo *R_RegisterDLL(HINSTANCE handle, const char *path)
     */
     info->useDynamicLookup = TRUE;
 
-    dpath = (char *) malloc(strlen(path)+1);
+    dpath = reinterpret_cast<char *>(malloc(strlen(path)+1));
     if(dpath == NULL) {
 	strcpy(DLLerror, _("could not allocate space for 'path'"));
 	R_osDynSymbol->closeLibrary(handle);
@@ -605,7 +606,7 @@ static int
 addDLL(char *dpath, char *DLLname, HINSTANCE handle)
 {
     int ans = CountDLL;
-    char *name = (char *) malloc(strlen(DLLname)+1);
+    char *name = reinterpret_cast<char *>(malloc(strlen(DLLname)+1));
     if(name == NULL) {
 	strcpy(DLLerror, _("could not allocate space for 'name'"));
 	if(handle)
@@ -639,7 +640,7 @@ Rf_lookupRegisteredCSymbol(DllInfo *info, const char *name)
 	    return(&(info->CSymbols[i]));
     }
 
-    return(NULL);
+    return NULL;
 }
 
 static Rf_DotFortranSymbol *
@@ -651,7 +652,7 @@ Rf_lookupRegisteredFortranSymbol(DllInfo *info, const char *name)
 	    return(&(info->FortranSymbols[i]));
     }
 
-    return((Rf_DotFortranSymbol*)NULL);
+    return NULL;
 }
 
 static Rf_DotCallSymbol *
@@ -663,7 +664,7 @@ Rf_lookupRegisteredCallSymbol(DllInfo *info, const char *name)
         if(strcmp(name, info->CallSymbols[i].name) == 0)
 	    return(&(info->CallSymbols[i]));
     }
-    return((Rf_DotCallSymbol*)NULL);
+    return NULL;
 }
 
 static Rf_DotExternalSymbol *
@@ -675,7 +676,7 @@ Rf_lookupRegisteredExternalSymbol(DllInfo *info, const char *name)
         if(strcmp(name, info->ExternalSymbols[i].name) == 0)
 	    return(&(info->ExternalSymbols[i]));
     }
-    return((Rf_DotExternalSymbol*)NULL);
+    return NULL;
 }
 
 static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
@@ -748,7 +749,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 	fail = 1;
     }
 
-    return((DL_FUNC) NULL);
+    return NULL;
 }
 
 DL_FUNC attribute_hidden
@@ -804,7 +805,7 @@ R_dlsym(DllInfo *info, char const *name,
 DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 		     R_RegisteredNativeSymbol *symbol)
 {
-    DL_FUNC fcnptr = (DL_FUNC) NULL;
+    DL_FUNC fcnptr = NULL;
     int i, all = (strlen(pkg) == 0), doit;
 
     if(R_osDynSymbol->lookupCachedSymbol)
@@ -825,7 +826,7 @@ DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 	if(!doit && !strcmp(pkg, LoadedDLL[i].name)) doit = 2;
 	if(doit) {
   	    fcnptr = R_dlsym(&LoadedDLL[i], name, symbol); /* R_osDynSymbol->dlsym */
-	    if (fcnptr != (DL_FUNC) NULL) {
+	    if (fcnptr != NULL) {
 		if(symbol)
 		    symbol->dll = LoadedDLL+i;
 #ifdef CACHE_DLL_SYM
@@ -839,10 +840,10 @@ DL_FUNC R_FindSymbol(char const *name, char const *pkg,
 		return fcnptr;
 	    }
 	}
-	if(doit > 1) return (DL_FUNC) NULL;  /* Only look in the first-matching DLL */
+	if(doit > 1) return NULL;  /* Only look in the first-matching DLL */
     }
 
-    return (DL_FUNC) NULL;
+    return NULL;
 }
 
 
@@ -957,10 +958,10 @@ Rf_MakeRegisteredNativeSymbol(R_RegisteredNativeSymbol *symbol)
 {                     
   SEXP ref, klass;
   R_RegisteredNativeSymbol *copy;
-  copy = (R_RegisteredNativeSymbol *) malloc(1 * sizeof(R_RegisteredNativeSymbol));
+  copy = reinterpret_cast<R_RegisteredNativeSymbol *>(malloc(1 * sizeof(R_RegisteredNativeSymbol)));
   if(!copy) {
      error(_("cannot allocate memory for registered native symbol (%d bytes)"),
-	     (int) sizeof(R_RegisteredNativeSymbol));
+	   int(sizeof(R_RegisteredNativeSymbol)));
   }
   *copy = *symbol;
 

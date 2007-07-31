@@ -283,7 +283,7 @@ static int ctr_intersect(double z0, double z1, double zc, double *f)
 
 static SEGP ctr_newseg(double x0, double y0, double x1, double y1, SEGP prev)
 {
-    SEGP seg = (SEGP)R_alloc(1, sizeof(SEG));
+    SEGP seg = reinterpret_cast<SEGP>(R_alloc(1, sizeof(SEG)));
     seg->x0 = x0;
     seg->y0 = y0;
     seg->x1 = x1;
@@ -481,7 +481,7 @@ static SEGP* contourLines(double *x, int nx, double *y, int ny,
     /*
      * This reset is done out in GEcontourLines
      */
-    segmentDB = (SEGP*)R_alloc(nx*ny, sizeof(SEGP));
+    segmentDB = reinterpret_cast<SEGP*>(R_alloc(nx*ny, sizeof(SEGP)));
     for (i = 0; i < nx; i++)
 	for (j = 0; j < ny; j++)
 	    segmentDB[i + j * nx] = NULL;
@@ -1017,8 +1017,8 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    if (ns > 3) ns2 = ns/2; else ns2 = -1;
 
 	    vmax = vmaxget();
-	    xxx = (double *) R_alloc(ns + 1, sizeof(double));
-	    yyy = (double *) R_alloc(ns + 1, sizeof(double));
+	    xxx = reinterpret_cast<double *>(R_alloc(ns + 1, sizeof(double)));
+	    yyy = reinterpret_cast<double *>(R_alloc(ns + 1, sizeof(double)));
 	    /* now have the space, go through again: */
 	    s = start;
 	    ns = 0;
@@ -1066,10 +1066,10 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 		if (vectorFonts) {
 		    /* 1, 1 => sans serif, basic font */
 		    labelDistance =
-			GVStrWidth((unsigned char *)buffer, typeface,
+			GVStrWidth(reinterpret_cast<unsigned char *>(buffer), typeface,
 				   fontindex, INCHES, dd);
 		    labelHeight =
-			GVStrHeight((unsigned char *)buffer, typeface,
+			GVStrHeight(reinterpret_cast<unsigned char *>(buffer), typeface,
 				    fontindex, INCHES, dd);
 		}
 		else {
@@ -1408,7 +1408,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     labcex = asReal(CAR(args));
     args = CDR(args);
 
-    drawLabels = (Rboolean)asLogical(CAR(args));
+    drawLabels = Rboolean(asLogical(CAR(args)));
     args = CDR(args);
 
     method = asInteger(CAR(args)); args = CDR(args);
@@ -1493,7 +1493,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     /* memory after a sequence of displaylist replays */
 
     vmax0 = vmaxget();
-    ctr_SegDB = (SEGP*)R_alloc(nx*ny, sizeof(SEGP));
+    ctr_SegDB = reinterpret_cast<SEGP*>(R_alloc(nx*ny, sizeof(SEGP)));
 
     for (i = 0; i < nx; i++)
 	for (j = 0; j < ny; j++)
@@ -1707,7 +1707,7 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     y = REAL(sy);
     z = REAL(sz);
     c = REAL(sc);
-    col = (unsigned*)INTEGER(scol);
+    col = reinterpret_cast<unsigned int*>(INTEGER(scol));
 
     /* Check of grid coordinates */
     /* We want them to all be finite */
@@ -1807,7 +1807,7 @@ SEXP attribute_hidden do_image(SEXP call, SEXP op, SEXP args, SEXP env)
     x = REAL(sx);
     y = REAL(sy);
     z = INTEGER(sz);
-    c = (unsigned*)INTEGER(sc);
+    c = reinterpret_cast<unsigned int*>(INTEGER(sc));
 
     /* Check of grid coordinates now done in C code */
 
@@ -1978,9 +1978,9 @@ static void DrawFacets(double *z, double *x, double *y, int nx, int ny,
 	if (nv > 2) {
 	    newcol = col[icol];
 	    if (DoLighting) {
-		r = (unsigned int)(shade * R_RED(newcol));
-		g = (unsigned int)(shade * R_GREEN(newcol));
-		b = (unsigned int)(shade * R_BLUE(newcol));
+		r = uint(shade * R_RED(newcol));
+		g = uint(shade * R_GREEN(newcol));
+		b = uint(shade * R_BLUE(newcol));
 		newcol = R_RGB(r, g, b);
 	    }
 	    GPolygon(nv, xx, yy, USER, newcol, border, dd);

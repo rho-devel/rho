@@ -72,8 +72,8 @@ SEXP attribute_hidden do_fft(SEXP call, SEXP op, SEXP args, SEXP env)
 	    fft_factor(n, &maxf, &maxp);
 	    if (maxf == 0)
 		errorcall(call, _("fft factorization error"));
-	    work = (double*)R_alloc(4 * maxf, sizeof(double));
-	    iwork = (int*)R_alloc(maxp, sizeof(int));
+	    work = reinterpret_cast<double*>(R_alloc(4 * maxf, sizeof(double)));
+	    iwork = reinterpret_cast<int*>(R_alloc(maxp, sizeof(int)));
 	    fft_work(&(COMPLEX(z)[0].r), &(COMPLEX(z)[0].i),
 		     1, n, 1, inv, work, iwork);
 	}
@@ -93,8 +93,8 @@ SEXP attribute_hidden do_fft(SEXP call, SEXP op, SEXP args, SEXP env)
 			maxmaxp = maxp;
 		}
 	    }
-	    work = (double*)R_alloc(4 * maxmaxf, sizeof(double));
-	    iwork = (int*)R_alloc(maxmaxp, sizeof(int));
+	    work = reinterpret_cast<double*>(R_alloc(4 * maxmaxf, sizeof(double)));
+	    iwork = reinterpret_cast<int*>(R_alloc(maxmaxp, sizeof(int)));
 	    nseg = LENGTH(z);
 	    n = 1;
 	    nspn = 1;
@@ -162,8 +162,8 @@ SEXP attribute_hidden do_mvfft(SEXP call, SEXP op, SEXP args, SEXP env)
 	fft_factor(n, &maxf, &maxp);
 	if (maxf == 0)
 	    errorcall(call, _("fft factorization error"));
-	work = (double*)R_alloc(4 * maxf, sizeof(double));
-	iwork = (int*)R_alloc(maxp, sizeof(int));
+	work = reinterpret_cast<double*>(R_alloc(4 * maxf, sizeof(double)));
+	iwork = reinterpret_cast<int*>(R_alloc(maxp, sizeof(int)));
 	for (i = 0; i < p; i++) {
 	    fft_factor(n, &maxf, &maxp);
 	    fft_work(&(COMPLEX(z)[i*n].r), &(COMPLEX(z)[i*n].i),

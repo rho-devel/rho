@@ -91,19 +91,19 @@ R_size_t R_Decode2Long(char *p, int *ierr)
     if(R_Verbose)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
-	if((Giga * (double)v) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
+	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
 	return R_size_t(Giga*v);
     }
     else if(p[0] == 'M') {
-	if((Mega * (double)v) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
+	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
 	return R_size_t(Mega*v);
     }
     else if(p[0] == 'K') {
-	if((1024 * (double)v) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
+	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
 	return (1024*v);
     }
     else if(p[0] == 'k') {
-	if((1000 * (double)v) > R_SIZE_T_MAX) { *ierr = 3; return(v); }
+	if((1000 * double(v)) > R_SIZE_T_MAX) { *ierr = 3; return(v); }
 	return (1000*v);
     }
     else {
@@ -281,7 +281,7 @@ int Rstrwid(char *str, int slen, int quote)
 
 	mbs_init(&mb_st);
 	for (i = 0; i < slen; i++) {
-	    res = (int) mbrtowc(&wc, p, MB_CUR_MAX, NULL);
+	    res = int(mbrtowc(&wc, p, MB_CUR_MAX, NULL));
 	    if(res >= 0) {
 		k = wc;
 		if(0x20 <= k && k < 0x7f && iswprint(wc)) {
@@ -315,7 +315,7 @@ int Rstrwid(char *str, int slen, int quote)
 		    }
 		    p++;
 		} else {
-		    len += iswprint((wint_t)wc) ? Ri18n_wcwidth(wc) :
+		    len += iswprint(wint_t(wc)) ? Ri18n_wcwidth(wc) :
 #ifdef Win32
 			6;
 #else
@@ -334,7 +334,7 @@ int Rstrwid(char *str, int slen, int quote)
 	for (i = 0; i < slen; i++) {
 	    /* ASCII */
 	    if((unsigned char) *p < 0x80) {
-		if(isprint((int)*p)) {
+		if(isprint(int(*p))) {
 		    switch(*p) {
 		    case '\\':
 			len += 2; break;
@@ -363,7 +363,7 @@ int Rstrwid(char *str, int slen, int quote)
 #ifdef Win32 /* It seems Windows does not know what is printable! */
 		len++;
 #else
-		len += isprint((int)*p) ? 1 : 4;
+		len += isprint(int(*p)) ? 1 : 4;
 #endif
 		p++;
 	    }
@@ -435,7 +435,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 	mbs_init(&mb_st);
 	for (i = 0; i < cnt; i++) {
-	    res = (int) mbrtowc(&wc, p, MB_CUR_MAX, &mb_st);
+	    res = int(mbrtowc(&wc, p, MB_CUR_MAX, &mb_st));
 	    if(res >= 0) { /* res = 0 is a terminator */
 		k = wc;
 		/* To be portable, treat \0 explicitly */
@@ -489,7 +489,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x", *((unsigned char *)p));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}
@@ -504,7 +504,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 	    /* ASCII */
 	    if((unsigned char) *p < 0x80) {
-		if(*p != '\t' && isprint((int)*p)) { /* Windows has \t as printable */
+		if(*p != '\t' && isprint(int(*p))) { /* Windows has \t as printable */
 		    switch(*p) {
 		    case '\\': *q++ = '\\'; *q++ = '\\'; break;
 		    case '\'':
@@ -534,7 +534,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #ifdef Win32 /* It seems Windows does not know what is printable! */
 		*q++ = *p++;
 #else
-		if(!isprint((int)*p & 0xff)) {
+		if(!isprint(int(*p) & 0xff)) {
 		    /* print in octal */
 		    snprintf(buf, 5, "\\%03o", (unsigned char) *p);
 		    for(j = 0; j < 4; j++) *q++ = buf[j];
@@ -769,7 +769,7 @@ void REvprintf(const char *format, va_list arg)
 
 int attribute_hidden IndexWidth(int n)
 {
-    return (int) (log10(n + 0.5) + 1);
+    return int(log10(n + 0.5) + 1);
 }
 
 void attribute_hidden VectorIndex(int i, int w)

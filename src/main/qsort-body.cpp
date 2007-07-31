@@ -41,7 +41,7 @@
       L20:
 	k = i;
 	/* ij = (j + i) >> 1; midpoint */
-	ij = i + (int)((j - i)*R);
+	ij = i + int((j - i)*R);
 #ifdef qsort_Index
 	it = I[ij];
 #endif
