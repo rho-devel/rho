@@ -2453,7 +2453,7 @@ int Rconn_fgetc(Rconnection con)
 	return c;
     }
     curLine = con->PushBack[con->nPushBack-1];
-    c = (unsigned char) curLine[con->posPushBack++];
+    c = static_cast<unsigned char>(curLine[con->posPushBack++]);
     if(con->posPushBack >= int(strlen(curLine))) {
 	/* last character on a line, so pop the line */
 	free(curLine);
@@ -3096,7 +3096,7 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    case 1:
 		for (i = 0; i < len; i++)
-		    buf[i] = (signed char) INTEGER(object)[i];
+		    buf[i] = static_cast<signed char>(INTEGER(object)[i]);
 		break;
 	    default:
 		errorcall(call, _("size %d is unknown on this machine"), size);
@@ -3121,7 +3121,7 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    {
 		long double ld1;
 		for (i = 0, j = 0; i < len; i++, j+=size) {
-		    ld1 = (long double) REAL(object)[i];
+		    ld1 = static_cast<long double>(REAL(object)[i]);
 		    memcpy(buf+j, &ld1, size);
 		}
 		break;
@@ -4168,7 +4168,7 @@ SEXP R_compress1(SEXP in)
     outlen = uLong(1.001*inlen) + 20;
     buf = reinterpret_cast<Bytef *>(R_alloc(outlen, sizeof(Bytef)));
     /* we want this to be system-independent */
-    *((unsigned int *)buf) = (unsigned int) uiSwap(inlen);
+    *(reinterpret_cast<unsigned int *>(buf)) = static_cast<unsigned int>(uiSwap(inlen));
     res = compress(buf + 4, &outlen, reinterpret_cast<Bytef *>(RAW(in)), inlen);
     if(res != Z_OK) error(_("internal error in R_compress1"));
     ans = allocVector(RAWSXP, outlen + 4);
@@ -4188,7 +4188,7 @@ SEXP R_decompress1(SEXP in)
     if(TYPEOF(in) != RAWSXP)
 	error(_("R_decompress1 requires a raw vector"));
     inlen = LENGTH(in);
-    outlen = uLong(uiSwap(*((unsigned int *) p)));
+    outlen = uLong(uiSwap(*(reinterpret_cast<unsigned int *>(p))));
     buf = reinterpret_cast<Bytef *>(R_alloc(outlen, sizeof(Bytef)));
     res = uncompress(buf, &outlen, reinterpret_cast<Bytef *>(p + 4), inlen - 4);
     if(res != Z_OK) error(_("internal error in R_decompress1"));

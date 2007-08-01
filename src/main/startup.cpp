@@ -186,7 +186,7 @@ static void SetSize(R_size_t vsize, R_size_t nsize)
     }
     if(vsize < Min_Vsize || vsize > Max_Vsize) {
 	sprintf(msg, "WARNING: invalid v(ector heap)size `%lu' ignored\n"
-		 "using default = %gM\n", (unsigned long) vsize, 
+		"using default = %gM\n", static_cast<unsigned long>(vsize), 
 		R_VSIZE / Mega);
 	R_ShowMessage(msg);
 	R_VSize = R_VSIZE;
@@ -194,7 +194,7 @@ static void SetSize(R_size_t vsize, R_size_t nsize)
 	R_VSize = vsize;
     if(nsize < Min_Nsize || nsize > Max_Nsize) {
 	sprintf(msg, "WARNING: invalid language heap (n)size `%lu' ignored,"
-		 " using default = %ld\n", (unsigned long) nsize, R_NSIZE);
+		" using default = %ld\n", static_cast<unsigned long>(nsize), R_NSIZE);
 	R_ShowMessage(msg);
 	R_NSize = R_NSIZE;
     } else

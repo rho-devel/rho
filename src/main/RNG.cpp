@@ -250,13 +250,13 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 		warning(_("cannot read seeds unless 'user_unif_nseed' is supplied"));
 		break;
 	    }
-	    ns = *((int *) User_unif_nseed());
+	    ns = *reinterpret_cast<int *>(User_unif_nseed());
 	    if (ns < 0 || ns > 625) {
 		warning(_("seed length must be in 0...625; ignored"));
 		break;
 	    }
 	    RNG_Table[kind].n_seed = ns;
-	    RNG_Table[kind].i_seed = (Int32 *) User_unif_seedloc();
+	    RNG_Table[kind].i_seed = reinterpret_cast<Int32 *>(User_unif_seedloc());
 	}
 	break;
     default:

@@ -873,7 +873,7 @@ Rboolean utf8strIsASCII(const char *str)
 {
     const char *p;
     for(p = str; *p; p++)
-	if((unsigned int)*p > 0x7F) return FALSE;
+	if(static_cast<unsigned int>(*p) > 0x7F) return FALSE;
     return TRUE;
 }
 

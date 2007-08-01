@@ -333,7 +333,7 @@ int Rstrwid(char *str, int slen, int quote)
 #endif
 	for (i = 0; i < slen; i++) {
 	    /* ASCII */
-	    if((unsigned char) *p < 0x80) {
+	    if(static_cast<unsigned char>(*p) < 0x80) {
 		if(isprint(int(*p))) {
 		    switch(*p) {
 		    case '\\':
@@ -503,7 +503,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	for (i = 0; i < cnt; i++) {
 
 	    /* ASCII */
-	    if((unsigned char) *p < 0x80) {
+	    if(static_cast<unsigned char>(*p) < 0x80) {
 		if(*p != '\t' && isprint(int(*p))) { /* Windows has \t as printable */
 		    switch(*p) {
 		    case '\\': *q++ = '\\'; *q++ = '\\'; break;
@@ -525,7 +525,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 		default:
 		    /* print in octal */
-		    snprintf(buf, 5, "\\%03o", (unsigned char) *p);
+		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>(*p));
 		    for(j = 0; j < 4; j++) *q++ = buf[j];
 		    break;
 		}
@@ -536,7 +536,7 @@ char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #else
 		if(!isprint(int(*p) & 0xff)) {
 		    /* print in octal */
-		    snprintf(buf, 5, "\\%03o", (unsigned char) *p);
+		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>(*p));
 		    for(j = 0; j < 4; j++) *q++ = buf[j];
 		    p++;
 		} else *q++ = *p++;

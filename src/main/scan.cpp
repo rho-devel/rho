@@ -982,7 +982,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    char *sc = translateChar(STRING_ELT(sep, 0));
 	    if(strlen(sc) > 1)
 		errorcall(call, _("invalid 'sep' value: must be one byte"));
-	    data.sepchar = (unsigned char) sc[0];
+	    data.sepchar = static_cast<unsigned char>(sc[0]);
 	}
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else errorcall(call, _("invalid '%s' value"), "sep");
@@ -1022,7 +1022,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
 	errorcall(call, _("invalid '%s' value"), "comment.char");
-    else if (strlen(p) == 1) data.comchar = (unsigned char)*p;
+    else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
 	errorcall(call, _("invalid '%s' value"), "allowEscapes");
     data.escapes = Rboolean(escapes != 0);
@@ -1114,14 +1114,14 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
 	errorcall(call, _("invalid '%s' value"), "comment.char");
-    else if (strlen(p) == 1) data.comchar = (unsigned char)*p;
+    else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
 
     if (nskip < 0 || nskip == NA_INTEGER) nskip = 0;
     if (blskip == NA_LOGICAL) blskip = 1;
 
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
-	else data.sepchar = (unsigned char) translateChar(STRING_ELT(sep, 0))[0];
+	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else errorcall(call, _("invalid '%s' value"), "sep");
 
@@ -1646,7 +1646,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strlen(p) == 1) data.comchar = int(*p);
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
-	else data.sepchar = (unsigned char) translateChar(STRING_ELT(sep, 0))[0];
+	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else errorcall(call, _("invalid '%s' value"), "sep");
 

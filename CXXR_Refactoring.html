@@ -273,5 +273,68 @@ latter).</p>
     simply see <code>typedef int Rlogical;</code>.)</p>
   </li>
 </ul>
+
+<h2>Phase 3: <code>0.03-2.5.0</code></h2>
+
+<p>The primary objective of this phase was to redefine
+<code>R_NilValue</code> as a null (i.e. zero) pointer of type
+<code>SEXP</code>. <code>R_NilValue</code> is widely used within CR as a
+stub, i.e. to signify that something that might be present is absent, in much
+the same way that a null pointer is used within C or C++. However, in CR it
+is actually implemented in effect as an element of a pairlist (i.e.
+<code>struct listsxp</code>), whose CAR, CDR, TAG and attributes all point to
+itself. This would cause difficulties in CXXR when we reimplement the
+<code>SEXPREC</code> union as a type hierarchy, because pairlist elements
+will need to be of a specific type within the hierarchy. If
+<code>R_NilValue</code> were given this type, it would preclude its use as a
+general-purpose stub. But zero is a possible value for a pointer of any type,
+so if we equate <code>R_NilValue</code> to zero this will sidestep the
+problem.</p>
+
+<p>Another disadvantage of the CR definition of <code>R_NilValue</code> is
+that it needlessly introduces a cyclic data structure.</p>
+
+<p>The following are implementational details and issues that arose in
+carrying out this change:</p>
+<ul>
+  <li>The existing code in many places invokes functions/macros
+    <code>CAR</code>, <code>CDR</code>, <code>TAG</code> and
+    <code>ATTRIB</code> on a <code>SEXP</code> that may in fact be
+    <code>R_NilValue</code>, expecting in this case for each of these
+    functions to return <code>R_NilValue</code>. These functions were
+    reimplemented to preserve this behaviour: i.e. each of them returns a
+    null pointer if passed a null pointer. At the same time the macro forms
+    were abolished: they are now implemented as inline functions for C++, and
+    ordinary functions if called from C.</li>
+  <li>In the same spirit, <code>OBJECT</code> and <code>IS_S4_OBJECT</code>
+    have been reimplemented to return <code>FALSE</code> if passed a zero
+    pointer. They too are now implemented as inline functions for C++, and
+    ordinary functions if called from C.</li>
+  <li>No such modification was made to <code>NAMED</code>: the policy here is
+    that the calling code should be modified as necessary to prevent it being
+    invoked for a null pointer. Deal similarly with invocations of SET_NAMED,
+    PRINTNAME, NODE_IS_MARKED, SET_ATTRIB, SET_OBJECT, and LENGTH. (This last
+    case is interesting because LENGTH is meant to be applied to vector
+    objects, i.e. components of the SEXPREC union different from <code>struct
+    listsxp</code>.) The calling sites concerned were determined by running
+    <code>make check</code> at top-level: doubtless many have slipped through
+    the net!</li>
+  <li>Incidental to the above changes, some of the macros in
+    <code>memory.cpp</code> were replaced by inline functions.</li>
+</ul>
+
+<p>A secondary objective of this phase was to get rid of C-style casts within
+the C++ code, wherever the appropriate remedy was reasonably obvious and
+straightforward. The following kinds of C-style casts were left in place
+pending further work:</p>
+<ul>
+  <li>Casts from one function pointer type to another (often involving
+    <code>DL_FUNC</code>);</li>
+  <li>Casts from one struct pointer type to another (often involving
+    <code>DevDesc</code> and <code>GEDevDesc</code>);</li>
+  <li>Use of the construct <code>(void*)(-1)</code>;</li>
+  <li>Casts to/from <code>R_varloc_t</code>;</li>
+  <li>Other puzzling casts.</li>
+</ul>
 </body>
 </html>

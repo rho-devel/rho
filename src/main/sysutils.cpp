@@ -536,7 +536,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 			R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 			goto top_of_loop;
 		    }
-		    snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+		    snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 		    outbuf += 4; outb -= 4;
 		} else {
 		    if(outb < strlen(sub)) {
@@ -645,7 +645,7 @@ next_char:
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
 	}
-	snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+	snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 	outbuf += 4; outb -= 4;
 	inbuf++; inb--;
 	goto next_char;

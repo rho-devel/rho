@@ -2865,7 +2865,7 @@ static void R_ReportAllocation(R_size_t size)
 {
     if (R_IsMemReporting) {
 	if(size > R_MemReportingThreshold) {
-	    fprintf(R_MemReportingOutfile, "%ld :", (unsigned long) size);
+	    fprintf(R_MemReportingOutfile, "%ld :", static_cast<unsigned long>(size));
 	    R_OutputStackTrace(R_MemReportingOutfile);
 	}
     }

@@ -464,7 +464,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     }
 
     /* need to take off stack checking as stack base has changed */
-    R_CStackLimit = (unsigned long)-1;
+    R_CStackLimit = static_cast<unsigned long>(-1);
 
     /* Do not translate these messages */
     REprintf("\n *** caught %s ***\n", 

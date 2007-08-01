@@ -847,7 +847,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) (((unsigned long) (obj)) >> 2)
+#define PTRHASH(obj) (((unsigned long)(obj)) >> 2)
 
 #define HASH_TABLE_KEYS_LIST(ht) CAR(ht)
 #define SET_HASH_TABLE_KEYS_LIST(ht, v) SETCAR(ht, v)
@@ -1438,7 +1438,7 @@ static void OutStringAscii(FILE *fp, char *x, SaveLoadData *unused)
 	       is handled above, x[i] > 126 can't happen, but
 	       I'm superstitious...  -pd */
 	    if (x[i] <= 32 || x[i] > 126)
-		fprintf(fp, "\\%03o", (unsigned char) x[i]);
+		fprintf(fp, "\\%03o", static_cast<unsigned char>(x[i]));
 	    else 
 		fputc(x[i], fp);
         }

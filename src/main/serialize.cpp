@@ -305,7 +305,7 @@ static void OutString(R_outpstream_t stream, char *s, int length)
 		   is handled above, s[i] > 126 can't happen, but
 		   I'm superstitious...  -pd */
 		if (s[i] <= 32 || s[i] > 126)
-		    sprintf(buf, "\\%03o", (unsigned char) s[i]);
+		    sprintf(buf, "\\%03o", static_cast<unsigned char>(s[i]));
 		else
 		    sprintf(buf, "%c", s[i]);
 	    }

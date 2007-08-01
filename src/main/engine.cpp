@@ -1705,7 +1705,7 @@ void GEText(double x, double y, const char * const str,
 				} else
 #endif
 				    for (ss = sbuf; *ss; ss++) {
-					GEMetricInfo((unsigned char) *ss, gc,
+					GEMetricInfo(static_cast<unsigned char>(*ss), gc,
 						     &h, &d, &w, dd);
 					h = fromDeviceHeight(h, GE_INCHES, dd);
 					d = fromDeviceHeight(d, GE_INCHES, dd);
