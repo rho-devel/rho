@@ -2242,6 +2242,7 @@ AC_CONFIG_FILES(
   src/include/Makefile
   src/include/Rmath.h0
   src/include/R_ext/Makefile
+  src/include/CXXR/Makefile
   src/library/Recommended/Makefile
   src/library/Makefile
   src/library/base/DESCRIPTION

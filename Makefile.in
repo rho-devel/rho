@@ -37,13 +37,13 @@ ACINCLUDE_DEPENDENCIES = \
 	m4/libtool.m4
 CONFIGURE_DEPENDENCIES = $(srcdir)/VERSION
 config.status: $(srcdir)/configure
-	@$(SHELL) ./config.status --recheck
+	$(SHELL) ./config.status --recheck
 $(srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(srcdir)/configure.ac $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
-	@BD=`pwd`; cd $(srcdir) && $(AUTOCONF) -B $${BD}
+	BD=`pwd`; cd $(srcdir) && $(AUTOCONF) -B $${BD}
 $(ACLOCAL_M4): $(srcdir)/configure.ac acinclude.m4
-	@BD=`pwd`; cd $(srcdir) && $(ACLOCAL) --output=$${BD}/$@ -I $${BD}
+	BD=`pwd`; cd $(srcdir) && $(ACLOCAL) --output=$${BD}/$@ -I $${BD}
 acinclude.m4: $(srcdir)/configure.ac $(ACINCLUDE_DEPENDENCIES)
-	@(cd $(srcdir) && cat $(ACINCLUDE_DEPENDENCIES)) > $@
+	(cd $(srcdir) && cat $(ACINCLUDE_DEPENDENCIES)) > $@
 
 LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
