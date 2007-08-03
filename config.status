@@ -328,7 +328,7 @@ Copyright (C) 2006 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/home/arr/NOTBACKEDUP/sandboxes/Rchive'
+ac_pwd='/home/arr/NOTBACKEDUP/sandboxes/Rchive/trunk'
 srcdir='.'
 INSTALL='/usr/bin/install -c'
 # If no file are specified by the user, then we need to provide default
@@ -822,9 +822,9 @@ s,@BUILD_PCRE_FALSE@,|#_!!_#|#,g
 s,@R_PROFILING@,|#_!!_#|,g
 s,@PAPERCONF@,|#_!!_#|false,g
 s,@JAVA@,|#_!!_#|,g
-s,@JAVAC@,|#_!!_#|/usr/bin/javac,g
-s,@JAVAH@,|#_!!_#|/usr/bin/javah,g
-s,@JAR@,|#_!!_#|/usr/bin/jar,g
+s,@JAVAC@,|#_!!_#|/usr/lib/jvm/java/bin/javac,g
+s,@JAVAH@,|#_!!_#|/usr/lib/jvm/java/bin/javah,g
+s,@JAR@,|#_!!_#|/usr/lib/jvm/java/bin/jar,g
 s,@JAVA_HOME@,|#_!!_#|,g
 s,@JAVA_LD_LIBRARY_PATH@,|#_!!_#|,g
 s,@JAVA_LIBS0@,|#_!!_#|,g
