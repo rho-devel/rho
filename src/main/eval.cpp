@@ -410,7 +410,11 @@ SEXP eval(SEXP e, SEXP rho)
 	if (PRVALUE(e) == R_UnboundValue) {
 	    if(PRSEEN(e))
 		errorcall(R_GlobalContext->call,
-			  _("recursive default argument reference"));
+			  _("promise already under evaluation: recursive default argument reference or earlier problems?"));
+	    /* We don't want to interrupt a lazyload evaluation, and that
+	       means we must not check when calling the wrapper function
+	       or the .Call call.  So delay checking for long enough. */
+	    if(evalcount > 95) evalcount = 95;
 	    SET_PRSEEN(e, 1);
 	    val = eval(PRCODE(e), PRENV(e));
 	    SET_PRSEEN(e, 0);
@@ -434,6 +438,7 @@ SEXP eval(SEXP e, SEXP rho)
 	}
 	if (TYPEOF(op) == SPECIALSXP) {
 	    int save = R_PPStackTop, flag = PRIMPRINT(op);
+	    char *vmax = vmaxget();
 	    PROTECT(CDR(e));
 	    R_Visible = Rboolean(flag != 1);
 	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
@@ -449,9 +454,11 @@ SEXP eval(SEXP e, SEXP rho)
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    UNPROTECT(1);
 	    check_stack_balance(op, save);
+	    vmaxset(vmax);
 	}
 	else if (TYPEOF(op) == BUILTINSXP) {
 	    int save = R_PPStackTop, flag = PRIMPRINT(op);
+	    char *vmax = vmaxget();
 	    RCNTXT cntxt;
 	    PROTECT(tmp = evalList(CDR(e), rho, op));
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
@@ -474,6 +481,7 @@ SEXP eval(SEXP e, SEXP rho)
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    UNPROTECT(1);
 	    check_stack_balance(op, save);
+	    vmaxset(vmax);
 	}
 	else if (TYPEOF(op) == CLOSXP) {
 	    PROTECT(tmp = promiseArgs(CDR(e), rho));
@@ -3164,12 +3172,14 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP call = VECTOR_ELT(constants, GETOP());
 	SEXP args = R_BCNodeStackTop[-2];
 	int flag;
+	char *vmax = vmaxget();
 	if (TYPEOF(fun) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
 	R_Visible = Rboolean(flag != 1);
 	value = PRIMFUN(fun) (call, fun, args, rho);
 	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	vmaxset(vmax);
 	R_BCNodeStackTop -= 2;
 	R_BCNodeStackTop[-1] = value;
 	NEXT();
@@ -3180,6 +3190,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP symbol = CAR(call);
 	SEXP fun = SYMVALUE(symbol);
 	int flag;
+	char *vmax = vmaxget();
 	if (TYPEOF(value) == PROMSXP) {
 	    value = forcePromise(value);
 	    SET_NAMED(value, 2);
@@ -3194,6 +3205,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	R_Visible = Rboolean(flag != 1);
 	value = PRIMFUN(fun) (call, fun, CDR(call), rho);
 	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	vmaxset(vmax);
 	BCNPUSH(value);
 	NEXT();
       }
