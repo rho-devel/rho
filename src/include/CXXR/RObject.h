@@ -157,34 +157,36 @@ struct primsxp_struct {
     int offset;
 };
 
+class RObject;
+
 struct symsxp_struct {
-    struct SEXPREC *pname;
-    struct SEXPREC *value;
-    struct SEXPREC *internal;
+    RObject *pname;
+    RObject *value;
+    RObject *internal;
 };
 
 struct listsxp_struct {
-    struct SEXPREC *carval;
-    struct SEXPREC *cdrval;
-    struct SEXPREC *tagval;
+    RObject *carval;
+    RObject *cdrval;
+    RObject *tagval;
 };
 
 struct envsxp_struct {
-    struct SEXPREC *frame;
-    struct SEXPREC *enclos;
-    struct SEXPREC *hashtab;
+    RObject *frame;
+    RObject *enclos;
+    RObject *hashtab;
 };
 
 struct closxp_struct {
-    struct SEXPREC *formals;
-    struct SEXPREC *body;
-    struct SEXPREC *env;
+    RObject *formals;
+    RObject *body;
+    RObject *env;
 };
 
 struct promsxp_struct {
-    struct SEXPREC *value;
-    struct SEXPREC *expr;
-    struct SEXPREC *env;
+    RObject *value;
+    RObject *expr;
+    RObject *env;
 };
 
 /* Every node must start with a set of sxpinfo flags and an attribute
@@ -192,12 +194,12 @@ struct promsxp_struct {
    fields used to maintain the collector's linked list structures. */
 #define SEXPREC_HEADER \
     struct sxpinfo_struct sxpinfo; \
-    struct SEXPREC *attrib; \
-    struct SEXPREC *gengc_next_node, *gengc_prev_node
+    RObject *attrib; \
+    RObject *gengc_next_node, *gengc_prev_node
 
 /* The standard node structure consists of a header followed by the
    node data. */
-typedef struct SEXPREC {
+typedef struct RObject {
     SEXPREC_HEADER;
     union {
 	struct primsxp_struct primsxp;
@@ -207,7 +209,9 @@ typedef struct SEXPREC {
 	struct closxp_struct closxp;
 	struct promsxp_struct promsxp;
     } u;
-} SEXPREC, *SEXP;
+} SEXPREC;
+
+typedef RObject* SEXP;
 
 /* S4 object bit, set by R_do_new_object for all new() calls */
 #define S4_OBJECT_MASK (1<<4)
