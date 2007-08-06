@@ -651,7 +651,7 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (DispatchOrEval(call, op, "names<-", args, env, &ans, 0, 1))
 	return(ans);
     PROTECT(args = ans);
-    if (CAR(args) && NAMED(CAR(args)) == 2)
+    if (NAMED(CAR(args)) == 2)
         SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
         PROTECT(call = allocList(2));
@@ -987,14 +987,12 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     /* If there are multiple references to the object being mutated, */
     /* we must duplicate so that the other references are unchanged. */
 
-    object = CAR(args);
-    if (object && NAMED(object) == 2) {
-	SETCAR(args, duplicate(object));
-	object = CAR(args);
-    }
+    if (NAMED(CAR(args)) == 2)
+	SETCAR(args, duplicate(CAR(args)));
 
     /* Extract the arguments from the argument list */
 
+    object = CAR(args);
     attrs = CADR(args);
     if (object == R_NilValue) {
 	if (attrs == R_NilValue)
@@ -1149,7 +1147,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP obj, name;
 
     obj = CAR(args);
-    if (obj && NAMED(obj) == 2)
+    if (NAMED(obj) == 2)
 	PROTECT(obj = duplicate(obj));
     else
 	PROTECT(obj);

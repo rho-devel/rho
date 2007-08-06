@@ -576,11 +576,10 @@ SEXP attribute_hidden do_makelist(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else {
 	    SET_STRING_ELT(names, i, R_BlankString);
 	}
-	SEXP ca = CAR(args);
-	if (ca && NAMED(ca))
-	    SET_VECTOR_ELT(list, i, duplicate(ca));
+	if (NAMED(CAR(args)))
+	    SET_VECTOR_ELT(list, i, duplicate(CAR(args)));
 	else
-	    SET_VECTOR_ELT(list, i, ca);
+	    SET_VECTOR_ELT(list, i, CAR(args));
 	args = CDR(args);
     }
     if (havenames) {
@@ -599,7 +598,7 @@ SEXP attribute_hidden do_expression(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocVector(EXPRSXP, n));
     a = args;
     for (i = 0; i < n; i++) {
-	if(CAR(a) && NAMED(CAR(a)))
+	if(NAMED(CAR(a)))
 	    SET_VECTOR_ELT(ans, i, duplicate(CAR(a)));
 	else
 	    SET_VECTOR_ELT(ans, i, CAR(a));

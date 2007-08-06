@@ -843,12 +843,12 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if(isPairList(x)) {
 	ans = CAR(nthcdr(x, offset));
-	if (ans && NAMED(x) > NAMED(ans))
+	if (NAMED(x) > NAMED(ans))
 	    SET_NAMED(ans, NAMED(x));
     } else if(isVectorList(x)) {
 	/* did unconditional duplication before 2.4.0 */
 	ans = VECTOR_ELT(x, offset);
-	if (ans && NAMED(x) > NAMED(ans))
+	if (NAMED(x) > NAMED(ans))
 	    SET_NAMED(ans, NAMED(x));
     } else {
 	ans = allocVector(TYPEOF(x), 1);
@@ -982,7 +982,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	    switch(pstrmatch(TAG(y), input, slen)) {
 	    case EXACT_MATCH:
 		y = CAR(y);
-		if (y && NAMED(x) > NAMED(y))
+		if (NAMED(x) > NAMED(y))
 		    SET_NAMED(y, NAMED(x));
 		return y;
 	    case PARTIAL_MATCH:
@@ -1011,7 +1011,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	    switch(pstrmatch(STRING_ELT(nlist, i), input, slen)) {
 	    case EXACT_MATCH:
 		y = VECTOR_ELT(x, i);
-		if (y && NAMED(x) > NAMED(y))
+		if (NAMED(x) > NAMED(y))
 		    SET_NAMED(y, NAMED(x));
 		return y;
 	    case PARTIAL_MATCH:
@@ -1021,7 +1021,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
                        This is overkill, but alternative ways to prevent 
                        the aliasing appear to be even worse */
 		    y=VECTOR_ELT(x,i);
-		    if (y) SET_NAMED(y,2);
+		    SET_NAMED(y,2);
 		    SET_VECTOR_ELT(x,i,y);
 		}
 		imatch = i;

@@ -359,7 +359,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     case VECSXP:
 	argnames = getAttrib(args, R_NamesSymbol);
-	if(!argnames || LENGTH(argnames) != n)
+	if(LENGTH(argnames) != n)
 	    errorcall(call, _("list argument has no valid names"));
 	break;
     default:

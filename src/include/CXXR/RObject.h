@@ -279,19 +279,9 @@ inline SEXP ATTRIB(SEXP x) {return x ? x->attrib : 0;}
 #endif
 
 /**
- * Does \c RObject have a class attribute?.
- * @param x Pointer to an \c RObject.
- * @return true iff \a x has a class attribute.  Returns false if \a x
- * is 0.
+ * @deprecated
  */
-#ifndef __cplusplus
-Rboolean OBJECT(const SEXP x);
-#else
-inline Rboolean OBJECT(const SEXP x)
-{
-    return Rboolean(x && x->sxpinfo.obj);
-}
-#endif
+int  (LEVELS)(SEXP x);
 
 /**
  * Object in use?
@@ -311,6 +301,21 @@ int  (MARK)(SEXP x);
 int NAMED(SEXP x);
 #else
 inline int NAMED(SEXP x) {return x ? x->sxpinfo.named : 0;}
+#endif
+
+/**
+ * Does \c RObject have a class attribute?.
+ * @param x Pointer to an \c RObject.
+ * @return true iff \a x has a class attribute.  Returns false if \a x
+ * is 0.
+ */
+#ifndef __cplusplus
+Rboolean OBJECT(const SEXP x);
+#else
+inline Rboolean OBJECT(const SEXP x)
+{
+    return Rboolean(x && x->sxpinfo.obj);
+}
 #endif
 
 /**
@@ -339,22 +344,15 @@ inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
 /**
  * @deprecated
  */
-int  (LEVELS)(SEXP x);
-
-/**
- * @deprecated
- */
 int  (SETLEVELS)(SEXP x, int v);
 
 /**
- * @deprecated Ought to be private.
+ * Replace x's attributes by \a v.
+ * @param x Pointer to \c RObject.
+ * @param v Pointer to attributes \c RObject.
+ * @todo Could \a v be \c const ?
  */
-void (SET_OBJECT)(SEXP x, int v);
-
-/**
- * @deprecated Ought to be private.
- */
-void (SET_TYPEOF)(SEXP x, int v);
+void SET_ATTRIB(SEXP x, SEXP v);
 
 /**
  * Set object copying status.  Does nothing if \a x is a null pointer.
@@ -373,12 +371,14 @@ inline void SET_NAMED(SEXP x, int v)
 #endif
 
 /**
- * Replace x's attributes by \a v.
- * @param x Pointer to \c RObject.
- * @param v Pointer to attributes \c RObject.
- * @todo Could \a v be \c const ?
+ * @deprecated Ought to be private.
  */
-void SET_ATTRIB(SEXP x, SEXP v);
+void (SET_OBJECT)(SEXP x, int v);
+
+/**
+ * @deprecated Ought to be private.
+ */
+void (SET_TYPEOF)(SEXP x, int v);
 
 /**
  * Replace \a to's attributes by those of \a from.

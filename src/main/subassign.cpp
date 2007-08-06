@@ -1336,7 +1336,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* over always duplicating. */
     /* FIXME: shouldn't x be protected?  It is (as args is)! */
 
-    if (CAR(args) && NAMED(CAR(args)) == 2)
+    if (NAMED(CAR(args)) == 2)
 	x = SETCAR(args, duplicate(CAR(args)));
 
     SubAssignArgs(args, &x, &subs, &y);
@@ -1808,7 +1808,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     PROTECT_WITH_INDEX(val, &pvalidx);
     S4 = Rboolean(IS_S4_OBJECT(x));
 
-    if (x && NAMED(x) == 2)
+    if (NAMED(x) == 2)
 	REPROTECT(x = duplicate(x), pxidx);
 
     /* If we aren't creating a new entry and NAMED>0
@@ -1816,9 +1816,9 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
        If we are creating a new entry we could duplicate
        or increase NAMED. We duplicate if NAMED==1, but
        not if NAMED==2 */
-    if (val && NAMED(val) == 2)
+    if (NAMED(val) == 2)
 	maybe_duplicate=TRUE;
-    else if (val && NAMED(val)==1)
+    else if (NAMED(val)==1)
 	REPROTECT(val = duplicate(val), pvalidx);
 
     if ((isList(x) || isLanguage(x)) && !isNull(x)) {
@@ -1945,7 +1945,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	}
     }
     UNPROTECT(2);
-    if (x) SET_NAMED(x, 0);
+    SET_NAMED(x, 0);
     if(S4) SET_S4_OBJECT(x);
     return x;
 }

@@ -72,17 +72,6 @@ extern "C" {
 
 /**
  * @param e Pointer to a list.
- * @return Pointer to the tag (key) of the list head, or 0 if \a e is
- * a null pointer.
- */
-#ifndef __cplusplus
-SEXP TAG(SEXP e);
-#else
-inline SEXP TAG(SEXP e) {return e ? e->u.listsxp.tagval : 0;}
-#endif
-
-/**
- * @param e Pointer to a list.
  * @return Pointer to the value of the list head, or 0 if \a e is
  * a null pointer.
  */
@@ -139,6 +128,17 @@ SEXP (CADDDR)(SEXP e);
 SEXP (CAD4R)(SEXP e);
 
 int  (MISSING)(SEXP x);
+
+/**
+ * @param e Pointer to a list.
+ * @return Pointer to the tag (key) of the list head, or 0 if \a e is
+ * a null pointer.
+ */
+#ifndef __cplusplus
+SEXP TAG(SEXP e);
+#else
+inline SEXP TAG(SEXP e) {return e ? e->u.listsxp.tagval : 0;}
+#endif
 
 void (SET_MISSING)(SEXP x, int v);
 

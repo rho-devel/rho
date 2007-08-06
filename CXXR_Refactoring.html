@@ -312,13 +312,15 @@ carrying out this change:</p>
     ordinary functions if called from C.</li>
   <li>No such modification was made to <code>NAMED</code>: the policy here is
     that the calling code should be modified as necessary to prevent it being
-    invoked for a null pointer. Deal similarly with invocations of SET_NAMED,
-    PRINTNAME, NODE_IS_MARKED, SET_ATTRIB, SET_OBJECT, and LENGTH. (This last
-    case is interesting because LENGTH is meant to be applied to vector
-    objects, i.e. components of the SEXPREC union different from <code>struct
-    listsxp</code>.) The calling sites concerned were determined by running
-    <code>make check</code> at top-level: doubtless many have slipped through
-    the net!</li>
+    invoked for a null pointer. Deal similarly with invocations of
+    <code>SET_NAMED</code>, <code>PRINTNAME</code>,
+    <code>NODE_IS_MARKED</code>, <code>SET_ATTRIB</code>,
+    <code>SET_OBJECT</code>, and <code>LENGTH</code>. (This last case is
+    interesting because <code>LENGTH</code> is meant to be applied to vector
+    objects, i.e. components of the <code>SEXPREC</code> union different from
+    <code>struct listsxp</code>.) The calling sites concerned were determined
+    by running <code>make check</code> at top-level: doubtless many have
+    slipped through the net!</li>
   <li>Incidental to the above changes, some of the macros in
     <code>memory.cpp</code> were replaced by inline functions.</li>
 </ul>
@@ -335,6 +337,32 @@ pending further work:</p>
   <li>Use of the construct <code>(void*)(-1)</code>;</li>
   <li>Casts to/from <code>R_varloc_t</code>;</li>
   <li>Other puzzling casts.</li>
+</ul>
+
+<p>Addendum 2007/08/06: although <code>make check</code> works with this
+release, <code>make check-devel</code> doesn't.</p>
+
+<h2>Phase 4: <code>0.04-2.5.1</code></h2>
+
+<p>The primary objective of this phase was to update the program to parallel
+release 2.5.1 of R. This proved to be straightforward, except that it was
+necessary to install a later version of <code>svn_load_dirs.pl</code> to cope
+with filenames containing <code>@</code> signs. (However, I was surprised to
+discover that <code>svn merge</code> doesn't track renames.)</p>
+
+<p>Other changes were as follows:</p>
+<ul>
+  <li>Bugs revealed by <code>make check-devel</code> were fixed. In general
+    this was done by modifying certain functions to behave reasonably if
+    passed a null pointer, namely <code>LENGTH</code> (returns 0),
+    <code>NAMED</code> (returns 0) and <code>SET_NAMED</code> (does nothing).
+    These changes obviated some of the changes made leading up to svn
+    revision 49 (see Phase 3 above), and these changes were accordingly
+    reversed. <code>make check-all</code> also now works, but it was
+    time-consuming to run and revealed no bugs.</li>
+  <li>I managed to get <code>autoconf</code> working properly, and
+    accordingly backed out of some configuration kludges I had made
+    previously.</li>
 </ul>
 </body>
 </html>
