@@ -18,10 +18,17 @@
  */
 
 /** @file RVector.cpp
- * At present, this file is used to check that RVector.h is
- * self-contained, i.e. #includes anything it needs, and doesn't rely
- * on anything having been previously #included in the enclosing
- * source file.
+ *
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in RVector.h where these are
+ * intended to be callable from C.  It is also is used to check that
+ * RVector.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
 #include "CXXR/RVector.h"
+
+namespace {
+    int (*lengthptr)(SEXP x) = LENGTH;
+}

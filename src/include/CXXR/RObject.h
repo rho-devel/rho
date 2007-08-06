@@ -224,12 +224,9 @@ typedef struct SEXPREC {
 
 /* General Cons Cell Attributes */
 #define MARK(x)		((x)->sxpinfo.mark)
-#define NAMED(x)	((x)->sxpinfo.named)
-#define TRACE(x)	((x)->sxpinfo.trace)
 #define LEVELS(x)	((x)->sxpinfo.gp)
 #define SET_OBJECT(x,v)	(((x)->sxpinfo.obj)=(v))
 #define SET_TYPEOF(x,v)	(((x)->sxpinfo.type)=(v))
-#define SET_NAMED(x,v)	(((x)->sxpinfo.named)=(v))
 #define SET_TRACE(x,v)	(((x)->sxpinfo.trace)=(v))
 #define SETLEVELS(x,v)	(((x)->sxpinfo.gp)=(v))
 
@@ -305,6 +302,30 @@ inline Rboolean OBJECT(const SEXP x)
 int  (MARK)(SEXP x);
 
 /**
+ * Object copying status.
+ * @param x Pointer to \c RObject.
+ * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
+ * null pointer.
+ */
+#ifndef __cplusplus
+int NAMED(SEXP x);
+#else
+inline int NAMED(SEXP x) {return x ? x->sxpinfo.named : 0;}
+#endif
+
+/**
+ * Object tracing status.
+ * @param x Pointer to \c RObject.
+ * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
+ * null pointer.
+ */
+#ifndef __cplusplus
+int TRACE(SEXP x);
+#else
+inline int TRACE(SEXP x) {return x ? x->sxpinfo.trace : 0;}
+#endif
+
+/**
  * Object type.
  * @param x Pointer to \c RObject.
  * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
@@ -314,11 +335,6 @@ SEXPTYPE TYPEOF(const SEXP x);
 #else
 inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
 #endif
-
-/**
- * @deprecated
- */
-int  (NAMED)(SEXP x);
 
 /**
  * @deprecated
@@ -341,9 +357,20 @@ void (SET_OBJECT)(SEXP x, int v);
 void (SET_TYPEOF)(SEXP x, int v);
 
 /**
+ * Set object copying status.  Does nothing if \a x is a null pointer.
+ * @param x Pointer to \c RObject.
+ * @param v Refer to 'R Internals' document.
  * @deprecated Ought to be private.
  */
-void (SET_NAMED)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_NAMED(SEXP x, int v);
+#else
+inline void SET_NAMED(SEXP x, int v)
+{
+    if (!x) return;
+    x->sxpinfo.named = v;
+}
+#endif
 
 /**
  * Replace x's attributes by \a v.

@@ -31,6 +31,9 @@
 
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
+    int (*namedptr)(SEXP x) = NAMED;
     Rboolean (*objectptr)(SEXP e) = OBJECT;
+    void (*setnamedptr)(SEXP x, int v) = SET_NAMED;
+    int (*traceptr)(SEXP x) = TRACE;
     SEXPTYPE (*typeofptr)(SEXP e) = TYPEOF;
 }

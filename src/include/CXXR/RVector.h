@@ -60,7 +60,6 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 #ifdef USE_RINTERNALS
 
 /* Vector Access Macros */
-#define LENGTH(x)	(reinterpret_cast<VECSEXP>(x)->vecsxp.length)
 #define TRUELENGTH(x)	(reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)
 #define SETLENGTH(x,v)		((reinterpret_cast<VECSEXP>(x)->vecsxp.length)=(v))
 #define SET_TRUELENGTH(x,v)	((reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)=(v))
@@ -109,11 +108,19 @@ typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 
 /**
  * @param x Pointer to an \c RVector .
- * @return The length of \a x.  (In the case of certain hash tables,
- *         this means the 'capacity' of \a x , not all of which may be
- *         used.)
+ *
+ * @return The length of \a x, or 0 if \a x is a null pointer.  (In
+ *         the case of certain hash tables, this means the 'capacity'
+ *         of \a x , not all of which may be used.)
  */
-int  (LENGTH)(SEXP x);
+#ifndef __cplusplus
+int LENGTH(SEXP x);
+#else
+inline int LENGTH(SEXP x)
+{
+    return x ? reinterpret_cast<VECSEXP>(x)->vecsxp.length : 0;
+}
+#endif
 
 /**
  * @param x Pointer to an \c RVector .

@@ -2041,8 +2041,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     else {
 	GC_PROT(s = allocSExpNonCons(type));
     }
-    LENGTH(s) = length;
-    NAMED(s) = 0;
+    SETLENGTH(s, length);
+    SET_NAMED(s, 0);
 
     /* The following prevents disaster in the case */
     /* that an uninitialised string vector is marked */
@@ -2491,8 +2491,6 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
 
 /* General Cons Cell Attributes */
 int (MARK)(SEXP x) { return MARK(x); }
-int (NAMED)(SEXP x) { return NAMED(x); }
-int (TRACE)(SEXP x) { return TRACE(x); }
 int (LEVELS)(SEXP x) { return LEVELS(x); }
 
 void (SET_ATTRIB)(SEXP x, SEXP v) { 
@@ -2506,7 +2504,6 @@ void (SET_ATTRIB)(SEXP x, SEXP v) {
 }
 void (SET_OBJECT)(SEXP x, int v) { SET_OBJECT(x, v); }
 void (SET_TYPEOF)(SEXP x, int v) { SET_TYPEOF(x, v); }
-void (SET_NAMED)(SEXP x, int v) { SET_NAMED(x, v); }
 void (SET_TRACE)(SEXP x, int v) { SET_TRACE(x, v); }
 int (SETLEVELS)(SEXP x, int v) { return SETLEVELS(x, v); }
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
@@ -2520,7 +2517,6 @@ void (SET_S4_OBJECT)(SEXP x){ SET_S4_OBJECT(x); }
 void (UNSET_S4_OBJECT)(SEXP x){ UNSET_S4_OBJECT(x); }
 
 /* Vector Accessors */
-int (LENGTH)(SEXP x) { return LENGTH(x); }
 int (TRUELENGTH)(SEXP x) { return TRUELENGTH(x); }
 void (SETLENGTH)(SEXP x, int v) { SETLENGTH(x, v); }
 void (SET_TRUELENGTH)(SEXP x, int v) { SET_TRUELENGTH(x, v); }
