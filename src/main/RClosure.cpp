@@ -18,10 +18,20 @@
  */
 
 /** @file RClosure.cpp
- * At present, this file is used to check that RClosure.h is
- * self-contained, i.e. #includes anything it needs, and doesn't rely
- * on anything having been previously #included in the enclosing
- * source file.
+ *
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in RClosure.h where these
+ * are intended to be callable from C.  It is also used to check that
+ * RClosure.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
 #include "CXXR/RClosure.h"
+
+namespace {
+    SEXP (*bodyp)(SEXP x) = BODY;
+    SEXP (*cloenvp)(SEXP x) = CLOENV;
+    SEXP (*formalsp)(SEXP x) = FORMALS;
+    void (*setdebugp)(SEXP x, Rboolean v) = SET_DEBUG;
+}

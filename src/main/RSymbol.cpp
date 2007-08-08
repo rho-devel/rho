@@ -18,10 +18,21 @@
  */
 
 /** @file RSymbol.cpp
- * At present, this file is used to check that RSymbol.h is
- * self-contained, i.e. #includes anything it needs, and doesn't rely
- * on anything having been previously #included in the enclosing
- * source file.
+ *
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in RSymbol.h where these are
+ * intended to be callable from C.  It is also used to check that
+ * RSymbol.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
 #include "CXXR/RSymbol.h"
+
+namespace {
+    Rboolean (*ddvalp)(SEXP x) = DDVAL;
+    SEXP (*internalp)(SEXP x) = INTERNAL;
+    SEXP (*printnamep)(SEXP x) = PRINTNAME;
+    void (*setddvalp)(SEXP x, int v) = SET_DDVAL;
+    SEXP (*symvaluep)(SEXP x) = SYMVALUE;
+}

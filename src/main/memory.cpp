@@ -126,8 +126,8 @@ static void mem_err_heap(R_size_t size);
 
 static SEXPREC UnmarkedNodeTemplate;
 #define NODE_IS_MARKED(s) (MARK(s)==1)
-#define MARK_NODE(s) (MARK(s)=1)
-#define UNMARK_NODE(s) (MARK(s)=0)
+#define MARK_NODE(s) ((s)->sxpinfo.mark=1)
+#define UNMARK_NODE(s) ((s)->sxpinfo.mark=0)
 
 
 /* Tuning Constants. Most of these could be made settable from R,
@@ -417,6 +417,11 @@ static R_size_t R_NodesInUse = 0;
 
 
 /* Processing Node Children */
+
+// 2007/08/07 arr: memory.cpp's own non-type-checked versions!
+#undef CHAR
+#define CHAR(x)           (reinterpret_cast<char*>(DATAPTR(x)))
+#define STRING_ELT(x, i)  (reinterpret_cast<SEXP*>(DATAPTR(x))[i])
 
 /* This macro calls dc__action__ for each child of __n__, passing
    dc__extra__ as a second argument for each call. */
@@ -1566,13 +1571,13 @@ void attribute_hidden InitMemory()
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
 
+    /* 2007/08/06 arr: R_NilValue is now simply #defined to 0. */
     /* R_NilValue */
     /* THIS MUST BE THE FIRST CONS CELL ALLOCATED */
     /* OR ARMAGEDDON HAPPENS. */
     /* Field assignments for R_NilValue must not go through write barrier
        since the write barrier prevents assignments to R_NilValue's fields.
        because of checks for nil */
-    R_NilValue = 0;  // arr 2007/07/21
     /*
     GET_FREE_NODE(R_NilValue);
     R_NilValue->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
@@ -1819,9 +1824,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 #endif
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(newrho, ENVSXP);
-    FRAME(newrho) = valuelist;
-    ENCLOS(newrho) = rho;
-    HASHTAB(newrho) = R_NilValue;
+    newrho->u.envsxp.frame = valuelist;  // FRAME
+    newrho->u.envsxp.enclos = rho;  // ENCLOS
+    newrho->u.envsxp.hashtab = R_NilValue;  // HASHTAB
     SET_ATTRIB(newrho, R_NilValue);
 
     v = valuelist;
@@ -1853,10 +1858,10 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
 #endif
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(s, PROMSXP);
-    PRCODE(s) = expr;
-    PRENV(s) = rho;
-    PRVALUE(s) = R_UnboundValue;
-    PRSEEN(s) = 0;
+    s->u.promsxp.expr = expr;  // PRCODE
+    s->u.promsxp.env = rho;  // PRENV
+    s->u.promsxp.value = R_UnboundValue;  // PRVALUE
+    SET_PRSEEN(s, 0);
     SET_ATTRIB(s, R_NilValue);
     return s;
 }
@@ -2490,8 +2495,6 @@ void R_SetExternalPtrProtected(SEXP s, SEXP p)
    implement the write barrier. */
 
 /* General Cons Cell Attributes */
-int (MARK)(SEXP x) { return MARK(x); }
-int (LEVELS)(SEXP x) { return LEVELS(x); }
 
 void (SET_ATTRIB)(SEXP x, SEXP v) { 
 #ifdef USE_TYPE_CHECKING
@@ -2502,24 +2505,13 @@ void (SET_ATTRIB)(SEXP x, SEXP v) {
     CHECK_OLD_TO_NEW(x, v); 
     x->attrib = v; 
 }
-void (SET_OBJECT)(SEXP x, int v) { SET_OBJECT(x, v); }
-void (SET_TYPEOF)(SEXP x, int v) { SET_TYPEOF(x, v); }
-void (SET_TRACE)(SEXP x, int v) { SET_TRACE(x, v); }
-int (SETLEVELS)(SEXP x, int v) { return SETLEVELS(x, v); }
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     SET_ATTRIB(to, duplicate(ATTRIB(from)));
     SET_OBJECT(to, OBJECT(from));
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }
 
-/* S4 object testing */
-void (SET_S4_OBJECT)(SEXP x){ SET_S4_OBJECT(x); }
-void (UNSET_S4_OBJECT)(SEXP x){ UNSET_S4_OBJECT(x); }
-
 /* Vector Accessors */
-int (TRUELENGTH)(SEXP x) { return TRUELENGTH(x); }
-void (SETLENGTH)(SEXP x, int v) { SETLENGTH(x, v); }
-void (SET_TRUELENGTH)(SEXP x, int v) { SET_TRUELENGTH(x, v); }
 
 char *(R_CHAR)(SEXP x) {
 #ifdef USE_TYPE_CHECKING
@@ -2527,7 +2519,7 @@ char *(R_CHAR)(SEXP x) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "CHAR", "CHARSXP", type2char(TYPEOF(x)));
 #endif
-    return CHAR(x);
+    return reinterpret_cast<char*>(DATAPTR(x));
 }
 
 SEXP (STRING_ELT)(SEXP x, int i) {
@@ -2536,7 +2528,7 @@ SEXP (STRING_ELT)(SEXP x, int i) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "STRING_ELT", "character vector", type2char(TYPEOF(x)));
 #endif
-    return STRING_ELT(x, i);
+    return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
 }
 
 SEXP (VECTOR_ELT)(SEXP x, int i) {
@@ -2555,7 +2547,7 @@ SEXP (VECTOR_ELT)(SEXP x, int i) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "VECTOR_ELT", "list", type2char(TYPEOF(x)));
 #endif
-    return VECTOR_ELT(x, i);
+    return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
 }
 
 int *(LOGICAL)(SEXP x) {
@@ -2569,7 +2561,7 @@ int *(LOGICAL)(SEXP x) {
 	error("%s() can only be applied to a '%s', not a '%s'",
 	      "LOGICAL",  "logical", type2char(TYPEOF(x)));
 #endif
-  return LOGICAL(x); 
+  return reinterpret_cast<int *>(DATAPTR(x)); 
 }
 
 int *(INTEGER)(SEXP x) {
@@ -2578,7 +2570,7 @@ int *(INTEGER)(SEXP x) {
         error("%s() can only be applied to a '%s', not a '%s'",
 	      "INTEGER", "integer", type2char(TYPEOF(x)));
 #endif
-    return INTEGER(x); 
+    return reinterpret_cast<int *>(DATAPTR(x)); 
 }
 
 Rbyte *(RAW)(SEXP x) { 
@@ -2587,7 +2579,7 @@ Rbyte *(RAW)(SEXP x) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "RAW", "raw", type2char(TYPEOF(x)));
 #endif
-    return RAW(x); 
+    return reinterpret_cast<Rbyte *>(DATAPTR(x)); 
 }
 
 double *(REAL)(SEXP x) { 
@@ -2596,7 +2588,7 @@ double *(REAL)(SEXP x) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "REAL", "numeric", type2char(TYPEOF(x)));
 #endif
-    return REAL(x); 
+    return reinterpret_cast<double *>(DATAPTR(x)); 
 }
 
 Rcomplex *(COMPLEX)(SEXP x) { 
@@ -2605,10 +2597,8 @@ Rcomplex *(COMPLEX)(SEXP x) {
 	error("%s() can only be applied to a '%s', not a '%s'", 
 	      "COMPLEX", "complex", type2char(TYPEOF(x)));
 #endif
-    return COMPLEX(x); 
+    return reinterpret_cast<Rcomplex *>(DATAPTR(x)); 
 }
-
-SEXP *(STRING_PTR)(SEXP x) { return STRING_PTR(x); }
 
 SEXP *(VECTOR_PTR)(SEXP x)
 {
@@ -2626,7 +2616,7 @@ void (SET_STRING_ELT)(SEXP x, int i, SEXP v) {
 	     type2char(TYPEOF(v)));
 #endif
     CHECK_OLD_TO_NEW(x, v);
-    STRING_ELT(x, i) = v; 
+    reinterpret_cast<SEXP *>(DATAPTR(x))[i] = v; 
 }
 
 SEXP (SET_VECTOR_ELT)(SEXP x, int i, SEXP v) { 
@@ -2647,20 +2637,11 @@ SEXP (SET_VECTOR_ELT)(SEXP x, int i, SEXP v) {
     }
 #endif
     CHECK_OLD_TO_NEW(x, v); 
-    return VECTOR_ELT(x, i) = v; 
+    return reinterpret_cast<SEXP *>(DATAPTR(x))[i] = v; 
 }
 
 
 /* List Accessors */
-
-SEXP (CAAR)(SEXP e) { return CAAR(e); }
-SEXP (CDAR)(SEXP e) { return CDAR(e); }
-SEXP (CADR)(SEXP e) { return CADR(e); }
-SEXP (CDDR)(SEXP e) { return CDDR(e); }
-SEXP (CADDR)(SEXP e) { return CADDR(e); }
-SEXP (CADDDR)(SEXP e) { return CADDDR(e); }
-SEXP (CAD4R)(SEXP e) { return CAD4R(e); }
-int (MISSING)(SEXP x) { return MISSING(x); }
 
 void (SET_TAG)(SEXP x, SEXP v)
 {
@@ -2744,81 +2725,29 @@ SEXP (SETCAD4R)(SEXP x, SEXP y)
     return y;
 }
 
-void (SET_MISSING)(SEXP x, int v) { SET_MISSING(x, v); }
-
 /* Closure Accessors */
-SEXP (FORMALS)(SEXP x) { return FORMALS(x); }
-SEXP (BODY)(SEXP x) { return BODY(x); }
-SEXP (CLOENV)(SEXP x) { return CLOENV(x); }
-Rboolean (DEBUG)(SEXP x) { return Rboolean(DEBUG(x)); }
 
-void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); FORMALS(x) = v; }
-void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); BODY(x) = v; }
-void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); CLOENV(x) = v; }
-void (SET_DEBUG)(SEXP x, Rboolean v) { SET_DEBUG(x, v); }
-
-/* Primitive Accessors */
-int (PRIMOFFSET)(SEXP x) { return PRIMOFFSET(x); }
-
-void (SET_PRIMOFFSET)(SEXP x, int v) { SET_PRIMOFFSET(x, v); }
+void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.formals = v; }
+void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.body = v; }
+void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.env = v; }
 
 /* Symbol Accessors */
-SEXP (PRINTNAME)(SEXP x) { return PRINTNAME(x); }
-SEXP (SYMVALUE)(SEXP x) { return SYMVALUE(x); }
-SEXP (INTERNAL)(SEXP x) { return INTERNAL(x); }
-Rboolean (DDVAL)(SEXP x) { return Rboolean(DDVAL(x)); }
 
-void (SET_PRINTNAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); PRINTNAME(x) = v; }
-void (SET_SYMVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); SYMVALUE(x) = v; }
-void (SET_INTERNAL)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); INTERNAL(x) = v; }
-void (SET_DDVAL)(SEXP x, int v) { SET_DDVAL(x, v); }
+void (SET_PRINTNAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.pname = v; }
+void (SET_SYMVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.value = v; }
+void (SET_INTERNAL)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.internal = v; }
 
 /* Environment Accessors */
-SEXP (FRAME)(SEXP x) { return FRAME(x); }
-SEXP (ENCLOS)(SEXP x) { return ENCLOS(x); }
-SEXP (HASHTAB)(SEXP x) { return HASHTAB(x); }
-int (ENVFLAGS)(SEXP x) { return ENVFLAGS(x); }
 
-void (SET_FRAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); FRAME(x) = v; }
-void (SET_ENCLOS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); ENCLOS(x) = v; }
-void (SET_HASHTAB)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); HASHTAB(x) = v; }
-void (SET_ENVFLAGS)(SEXP x, int v) { SET_ENVFLAGS(x, v); }
+void (SET_FRAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.frame = v; }
+void (SET_ENCLOS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.enclos = v; }
+void (SET_HASHTAB)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.hashtab = v; }
 
 /* Promise Accessors */
-SEXP (PRCODE)(SEXP x) { return PRCODE(x); }
-SEXP (PRENV)(SEXP x) { return PRENV(x); }
-SEXP (PRVALUE)(SEXP x) { return PRVALUE(x); }
-int (PRSEEN)(SEXP x) { return PRSEEN(x); }
 
-void (SET_PRENV)(SEXP x, SEXP v){ CHECK_OLD_TO_NEW(x, v); PRENV(x) = v; }
-void (SET_PRVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); PRVALUE(x) = v; }
-void (SET_PRCODE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); PRCODE(x) = v; }
-void (SET_PRSEEN)(SEXP x, int v) { SET_PRSEEN(x, v); }
-
-/* Hashing Accessors */
-int (HASHASH)(SEXP x) { return HASHASH(x); }
-int (HASHVALUE)(SEXP x) { return HASHVALUE(x); }
-
-void (SET_HASHASH)(SEXP x, int v) { SET_HASHASH(x, v); }
-void (SET_HASHVALUE)(SEXP x, int v) { SET_HASHVALUE(x, v); }
-
-/* Bindings accessors */
-Rboolean attribute_hidden 
-(IS_ACTIVE_BINDING)(SEXP b) {return Rboolean(IS_ACTIVE_BINDING(b));}
-Rboolean attribute_hidden
-(BINDING_IS_LOCKED)(SEXP b) {return Rboolean(BINDING_IS_LOCKED(b));}
-void attribute_hidden 
-(SET_ACTIVE_BINDING_BIT)(SEXP b) {SET_ACTIVE_BINDING_BIT(b);}
-void attribute_hidden (LOCK_BINDING)(SEXP b) {LOCK_BINDING(b);}
-void attribute_hidden (UNLOCK_BINDING)(SEXP b) {UNLOCK_BINDING(b);}
-
-/* for use when testing the write barrier */
-Rboolean attribute_hidden (IS_LATIN1)(SEXP x) { return Rboolean(IS_LATIN1(x)); }
-Rboolean  attribute_hidden (IS_UTF8)(SEXP x) { return Rboolean(IS_UTF8(x)); }
-void attribute_hidden (SET_LATIN1)(SEXP x) { SET_LATIN1(x); }
-void attribute_hidden (SET_UTF8)(SEXP x) { SET_UTF8(x); }
-void attribute_hidden (UNSET_LATIN1)(SEXP x) { UNSET_LATIN1(x); }
-void attribute_hidden (UNSET_UTF8)(SEXP x) { UNSET_UTF8(x); }
+void (SET_PRENV)(SEXP x, SEXP v){ CHECK_OLD_TO_NEW(x, v); x->u.promsxp.env = v; }
+void (SET_PRVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.promsxp.value = v; }
+void (SET_PRCODE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.promsxp.expr = v; }
 
 /*******************************************/
 /* Non-sampling memory use profiler

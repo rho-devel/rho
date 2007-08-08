@@ -30,7 +30,16 @@
 #include "CXXR/RPairList.h"
 
 namespace {
-    SEXP (*tagptr)(SEXP e) = TAG;
-    SEXP (*carptr)(SEXP e) = CAR;
-    SEXP (*cdrptr)(SEXP e) = CDR;
+    SEXP (*tagp)(SEXP e) = TAG;
+    SEXP (*caarp)(SEXP e) = CAAR;
+    SEXP (*cad4r)(SEXP e) = CAD4R;
+    SEXP (*cadddrp)(SEXP e) = CADDDR;
+    SEXP (*caddrp)(SEXP e) = CADDR;
+    SEXP (*cadrp)(SEXP e) = CADR;
+    SEXP (*carp)(SEXP e) = CAR;
+    SEXP (*cdarp)(SEXP e) = CDAR;
+    SEXP (*cddrp)(SEXP e) = CDDR;
+    SEXP (*cdrp)(SEXP e) = CDR;
+    int (*missingp)(SEXP x) = MISSING;
+    void (*setmissingp)(SEXP x, int v) = SET_MISSING;
 }

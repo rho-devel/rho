@@ -31,9 +31,22 @@
 
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
+    int (*levelsptr)(SEXP x) = LEVELS;
+    int (*markptr)(SEXP x) = MARK;
     int (*namedptr)(SEXP x) = NAMED;
     Rboolean (*objectptr)(SEXP e) = OBJECT;
+    int (*setlevelsptr)(SEXP x, int v) = SETLEVELS;
     void (*setnamedptr)(SEXP x, int v) = SET_NAMED;
+    void (*setobjectptr)(SEXP x, int v) = SET_OBJECT;
+    void (*settraceptr)(SEXP x, int v) = SET_TRACE;
+    void (*settypeofptr)(SEXP x, int v) = SET_TYPEOF;
     int (*traceptr)(SEXP x) = TRACE;
     SEXPTYPE (*typeofptr)(SEXP e) = TYPEOF;
+    void (*setS4objectptr)(SEXP x) = SET_S4_OBJECT;
+    void (*unsetS4objectptr)(SEXP x) = UNSET_S4_OBJECT;
+    Rboolean (*bindingislockedptr)(SEXP b) = BINDING_IS_LOCKED;
+    Rboolean (*isactivebindingptr)(SEXP b) = IS_ACTIVE_BINDING;
+    void (*lockbindingptr)(SEXP b) = LOCK_BINDING;
+    void (*setactivebindingbitptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
+    void (*unlockbindingptr)(SEXP b) = UNLOCK_BINDING;
 }
