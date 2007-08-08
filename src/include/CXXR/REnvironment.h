@@ -32,25 +32,7 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-#define FRAME(x)	((x)->u.envsxp.frame)
-#define ENCLOS(x)	((x)->u.envsxp.enclos)
-#define HASHTAB(x)	((x)->u.envsxp.hashtab)
-#define ENVFLAGS(x)	((x)->sxpinfo.gp)	/* for environments */
-#define SET_ENVFLAGS(x,v)	(((x)->sxpinfo.gp)=(v))
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions. */
 
 /* Environment Access Functions */
 
@@ -58,26 +40,42 @@ extern "C" {
  * @param x Pointer to an \c REnvironment.
  * @return Pointer to the frame of \a x .
  */
-SEXP (FRAME)(SEXP x);
+#ifndef __cplusplus
+SEXP FRAME(SEXP x);
+#else
+inline SEXP FRAME(SEXP x) {return x->u.envsxp.frame;}
+#endif
 
 /**
  * @param x Pointer to an \c REnvironment.
  * @return Pointer to \a x 's enclosing environment.
  */
-SEXP (ENCLOS)(SEXP x);
+#ifndef __cplusplus
+SEXP ENCLOS(SEXP x);
+#else
+inline SEXP ENCLOS(SEXP x) {return x->u.envsxp.enclos;}
+#endif
 
 /**
  * @param x Pointer to an \c REnvironment.
  * @return Pointer to \a x 's hash table (may be NULL).
  */
-SEXP (HASHTAB)(SEXP x);
+#ifndef __cplusplus
+SEXP HASHTAB(SEXP x);
+#else
+inline SEXP HASHTAB(SEXP x) {return x->u.envsxp.hashtab;}
+#endif
 
 /**
  * @param x Pointer to an \c REnvironment.
  * @return \a x 's environment flags.
  * @deprecated
  */
-int  (ENVFLAGS)(SEXP x);
+#ifndef __cplusplus
+int ENVFLAGS(SEXP x);
+#else
+inline int ENVFLAGS(SEXP x) {return x->sxpinfo.gp;}
+#endif
 
 /**
  * Set environment flags.
@@ -85,7 +83,11 @@ int  (ENVFLAGS)(SEXP x);
  * @param v The new flags.
  * @deprecated
  */
-void (SET_ENVFLAGS)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_ENVFLAGS(SEXP x, int v);
+#else
+inline void SET_ENVFLAGS(SEXP x, int v) {x->sxpinfo.gp = v;}
+#endif
 
 /**
  * Set environment's frame.

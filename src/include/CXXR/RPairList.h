@@ -36,34 +36,14 @@ extern "C" {
 
 #ifdef USE_RINTERNALS
 
-/* List Access Macros */
-/* These also work for ... objects */
+// The following doesn't appear to be used anywhere
 #define LISTVAL(x)	((x)->u.listsxp)
-#define CAAR(e)		CAR(CAR(e))
-#define CDAR(e)		CDR(CAR(e))
-#define CADR(e)		CAR(CDR(e))
-#define CDDR(e)		CDR(CDR(e))
-#define CADDR(e)	CAR(CDR(CDR(e)))
-#define CADDDR(e)	CAR(CDR(CDR(CDR(e))))
-#define CAD4R(e)	CAR(CDR(CDR(CDR(CDR(e)))))
-#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
-#define MISSING(x)	((x)->sxpinfo.gp & MISSING_MASK)/* for closure calls */
-#define SET_MISSING(x,v) do { \
-  SEXP __x__ = (x); \
-  int __v__ = (v); \
-  int __other_flags__ = __x__->sxpinfo.gp & ~MISSING_MASK; \
-  __x__->sxpinfo.gp = __other_flags__ | __v__; \
-} while (0)
 
 #endif // USE_RINTERNALS
 
 #endif /* __cplusplus */
 
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions. */
 
 /* List Access Functions */
 /* These also work for ... objects */
@@ -95,39 +75,73 @@ inline SEXP CDR(SEXP e) {return e ? e->u.listsxp.cdrval : 0;}
 /**
  * Equivalent to CAR(CAR(e)).
  */
-SEXP (CAAR)(SEXP e);
+#ifndef __cplusplus
+SEXP CAAR(SEXP e);
+#else
+inline SEXP CAAR(SEXP e) {return CAR(CAR(e));}
+#endif
 
 /**
  * Equivalent to CDR(CAR(e)).
  */
-SEXP (CDAR)(SEXP e);
+#ifndef __cplusplus
+SEXP CDAR(SEXP e);
+#else
+inline SEXP CDAR(SEXP e) {return CDR(CAR(e));}
+#endif
 
 /**
  * Equivalent to CAR(CDR(e)).
  */
-SEXP (CADR)(SEXP e);
+#ifndef __cplusplus
+SEXP CADR(SEXP e);
+#else
+inline SEXP CADR(SEXP e) {return CAR(CDR(e));}
+#endif
 
 /**
  * Equivalent to CDR(CDR(e)).
  */
-SEXP (CDDR)(SEXP e);
+#ifndef __cplusplus
+SEXP CDDR(SEXP e);
+#else
+inline SEXP CDDR(SEXP e) {return CDR(CDR(e));}
+#endif
 
 /**
  * Equivalent to CAR(CDR(CDR(e))).
  */
-SEXP (CADDR)(SEXP e);
+#ifndef __cplusplus
+SEXP CADDR(SEXP e);
+#else
+inline SEXP CADDR(SEXP e) {return CAR(CDR(CDR(e)));}
+#endif
 
 /**
  * Equivalent to CAR(CDR(CDR(CDR(e)))).
  */
-SEXP (CADDDR)(SEXP e);
+#ifndef __cplusplus
+SEXP CADDDR(SEXP e);
+#else
+inline SEXP CADDDR(SEXP e) {return CAR(CDR(CDR(CDR(e))));}
+#endif
 
 /**
  * Equivalent to CAR(CDR(CDR(CDR(CDR(e))))).
  */
-SEXP (CAD4R)(SEXP e);
+#ifndef __cplusplus
+SEXP CAD4R(SEXP e);
+#else
+inline SEXP CAD4R(SEXP e) {return CAR(CDR(CDR(CDR(CDR(e)))));}
+#endif
 
-int  (MISSING)(SEXP x);
+#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
+
+#ifndef __cplusplus
+int MISSING(SEXP x);
+#else
+inline int MISSING(SEXP x) {return x->sxpinfo.gp & MISSING_MASK;}
+#endif
 
 /**
  * @param e Pointer to a list.
@@ -140,7 +154,15 @@ SEXP TAG(SEXP e);
 inline SEXP TAG(SEXP e) {return e ? e->u.listsxp.tagval : 0;}
 #endif
 
-void (SET_MISSING)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_MISSING(SEXP x, int v);
+#else
+inline void SET_MISSING(SEXP x, int v)
+{
+    int other_flags = x->sxpinfo.gp & ~MISSING_MASK;
+    x->sxpinfo.gp = other_flags | v;
+}
+#endif
 
 /**
  * Set the tag of a list element.

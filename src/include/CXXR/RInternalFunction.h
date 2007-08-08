@@ -32,23 +32,7 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-/* Primitive Access Macros */
-#define PRIMOFFSET(x)           ((x)->u.primsxp.offset)
-#define SET_PRIMOFFSET(x,v)	(((x)->u.primsxp.offset)=(v))
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions.*/
 
 // Primitive access functions:
 
@@ -57,7 +41,11 @@ extern "C" {
  * @return The offset of this function within the function table.
  * @todo Ought to be private.
  */
-int (PRIMOFFSET)(SEXP x);
+#ifndef __cplusplus
+int PRIMOFFSET(SEXP x);
+#else
+inline int PRIMOFFSET(SEXP x) {return x->u.primsxp.offset;}
+#endif
 
 /**
  * Set the object's table offset.
@@ -65,7 +53,11 @@ int (PRIMOFFSET)(SEXP x);
  * @param v The required offset value.
  * @todo Ought to be private.
  */
-void (SET_PRIMOFFSET)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_PRIMOFFSET(SEXP x, int v);
+#else
+inline void SET_PRIMOFFSET(SEXP x, int v) {x->u.primsxp.offset = v;}
+#endif
 
 #ifdef __cplusplus
 }

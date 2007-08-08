@@ -32,72 +32,61 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-/* Closure Access Macros */
-#define FORMALS(x)	((x)->u.closxp.formals)
-#define BODY(x)		((x)->u.closxp.body)
-#define CLOENV(x)	((x)->u.closxp.env)
-#define DEBUG(x)	((x)->sxpinfo.debug)
-#define SET_DEBUG(x,v)	(((x)->sxpinfo.debug)=(v))
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions.*/
 
 /* Closure Access Functions */
 
 /**
  * @param x Pointer a closure object.
- * @return Pointer to the formals list of x.
- */
-SEXP (FORMALS)(SEXP x);
-
-/**
- * @param x Pointer a closure object.
  * @return Pointer to the body of x.
  */
-SEXP (BODY)(SEXP x);
+#ifndef __cplusplus
+SEXP BODY(SEXP x);
+#else
+inline SEXP BODY(SEXP x) {return x->u.closxp.body;}
+#endif
 
 /**
  * @param x Pointer a closure object.
  * @return Pointer to the environment of x.
  */
-SEXP (CLOENV)(SEXP x);
+#ifndef __cplusplus
+SEXP CLOENV(SEXP x);
+#else
+inline SEXP CLOENV(SEXP x) {return x->u.closxp.env;}
+#endif
 
 /**
  * @param x Pointer a closure object.
  * @return \c true if debugging is set, i.e. evaluations of the
  *         function should run under the browser.
  */
-Rboolean (DEBUG)(const SEXP x);
+#ifndef __cplusplus
+Rboolean DEBUG(const SEXP x);
+#else
+inline Rboolean DEBUG(const SEXP x) {return Rboolean(x->sxpinfo.debug);}
+#endif
 
 /**
- * @todo Used with tracemem.  Will need review.  Should it be in
- * RObject.h?
+ * @param x Pointer a closure object.
+ * @return Pointer to the formals list of x.
  */
-int  (TRACE)(SEXP x);
+#ifndef __cplusplus
+SEXP FORMALS(SEXP x);
+#else
+inline SEXP FORMALS(SEXP x) {return x->u.closxp.formals;}
+#endif
 
 /**
  * Set the debugging state of a closure object.
  * @param x Pointer a closure object.
  * @param v The new debugging state.
  */
-void (SET_DEBUG)(SEXP x, Rboolean v);
-
-/**
- * @todo Used with tracemem.  Will need review.  Should it be in
- * RObject.h?
- */
-void (SET_TRACE)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_DEBUG(SEXP x, Rboolean v);
+#else
+inline void SET_DEBUG(SEXP x, Rboolean v) {x->sxpinfo.debug = v;}
+#endif
 
 /**
  * Set the formals of a closure object.

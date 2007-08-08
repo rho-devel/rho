@@ -226,33 +226,9 @@ typedef RObject* SEXP;
  */
 #ifdef USE_RINTERNALS
 
-/* General Cons Cell Attributes */
-#define MARK(x)		((x)->sxpinfo.mark)
-#define LEVELS(x)	((x)->sxpinfo.gp)
-#define SET_OBJECT(x,v)	(((x)->sxpinfo.obj)=(v))
-#define SET_TYPEOF(x,v)	(((x)->sxpinfo.type)=(v))
-#define SET_TRACE(x,v)	(((x)->sxpinfo.trace)=(v))
-#define SETLEVELS(x,v)	(((x)->sxpinfo.gp)=(v))
-
-#define SET_S4_OBJECT(x) (((x)->sxpinfo.gp) |= S4_OBJECT_MASK)
-#define UNSET_S4_OBJECT(x) (((x)->sxpinfo.gp) &= ~S4_OBJECT_MASK)
-
-/* Hashing Macros */
-#define HASHASH(x)      ((x)->sxpinfo.gp)
-#define HASHVALUE(x)    TRUELENGTH(x)
-#define SET_HASHASH(x,v) (((x)->sxpinfo.gp)=(v))
-#define SET_HASHVALUE(x,v) SET_TRUELENGTH(x, v)
-
-/* Bindings */
-/* use the same bits (15 and 14) in symbols and bindings */
-#define ACTIVE_BINDING_MASK (1<<15)
-#define BINDING_LOCK_MASK (1<<14)
-#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
-#define IS_ACTIVE_BINDING(b) ((b)->sxpinfo.gp & ACTIVE_BINDING_MASK)
-#define BINDING_IS_LOCKED(b) ((b)->sxpinfo.gp & BINDING_LOCK_MASK)
-#define SET_ACTIVE_BINDING_BIT(b) ((b)->sxpinfo.gp |= ACTIVE_BINDING_MASK)
-#define LOCK_BINDING(b) ((b)->sxpinfo.gp |= BINDING_LOCK_MASK)
-#define UNLOCK_BINDING(b) ((b)->sxpinfo.gp &= (~BINDING_LOCK_MASK))
+/*
+ * Well, that was the idea anyway.
+ */
 
 #endif // USE_RINTERNALS
 
@@ -285,7 +261,11 @@ inline SEXP ATTRIB(SEXP x) {return x ? x->attrib : 0;}
 /**
  * @deprecated
  */
-int  (LEVELS)(SEXP x);
+#ifndef __cplusplus
+int LEVELS(SEXP x);
+#else
+inline int LEVELS(SEXP x) {return x->sxpinfo.gp;}
+#endif
 
 /**
  * Object in use?
@@ -293,7 +273,11 @@ int  (LEVELS)(SEXP x);
  * @return true iff \a x is considered to be in use by garbage collector.
  * @deprecated Depends on GC.
  */
-int  (MARK)(SEXP x);
+#ifndef __cplusplus
+int MARK(SEXP x);
+#else
+inline int MARK(SEXP x) {return x->sxpinfo.mark;}
+#endif
 
 /**
  * Object copying status.
@@ -348,7 +332,11 @@ inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
 /**
  * @deprecated
  */
-int  (SETLEVELS)(SEXP x, int v);
+#ifndef __cplusplus
+int SETLEVELS(SEXP x, int v);
+#else
+inline int SETLEVELS(SEXP x, int v) {return x->sxpinfo.gp = v;}
+#endif
 
 /**
  * Replace x's attributes by \a v.
@@ -377,12 +365,26 @@ inline void SET_NAMED(SEXP x, int v)
 /**
  * @deprecated Ought to be private.
  */
-void (SET_OBJECT)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_OBJECT(SEXP x, int v);
+#else
+inline void SET_OBJECT(SEXP x, int v) {x->sxpinfo.obj = v;}
+#endif
+
+#ifndef __cplusplus
+void SET_TRACE(SEXP x, int v);
+#else
+inline void SET_TRACE(SEXP x, int v) {x->sxpinfo.trace = v;}
+#endif
 
 /**
  * @deprecated Ought to be private.
  */
-void (SET_TYPEOF)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_TYPEOF(SEXP x, int v);
+#else
+inline void SET_TYPEOF(SEXP x, int v) {x->sxpinfo.type = v;}
+#endif
 
 /**
  * Replace \a to's attributes by those of \a from.
@@ -411,12 +413,20 @@ inline Rboolean IS_S4_OBJECT(const SEXP x)
 /**
  * @deprecated Ought to be private.
  */
-void (SET_S4_OBJECT)(SEXP x);
+#ifndef __cplusplus
+void SET_S4_OBJECT(SEXP x);
+#else
+inline void SET_S4_OBJECT(SEXP x)  {x->sxpinfo.gp |= S4_OBJECT_MASK;}
+#endif
 
 /**
  * @deprecated Ought to be private.
  */
-void (UNSET_S4_OBJECT)(SEXP x);
+#ifndef __cplusplus
+void UNSET_S4_OBJECT(SEXP x);
+#else
+inline void UNSET_S4_OBJECT(SEXP x)  {x->sxpinfo.gp &= ~S4_OBJECT_MASK;}
+#endif
 
 /**
  * @brief Create an S4 object.
@@ -425,17 +435,50 @@ void (UNSET_S4_OBJECT)(SEXP x);
  */
 SEXP allocS4Object();
 
-/* Hashing Functions */
-int  (HASHASH)(SEXP x);
-int  (HASHVALUE)(SEXP x);
-void (SET_HASHASH)(SEXP x, int v);
-void (SET_HASHVALUE)(SEXP x, int v);
+/* Bindings */
+/* use the same bits (15 and 14) in symbols and bindings */
+#define ACTIVE_BINDING_MASK (1<<15)
+#define BINDING_LOCK_MASK (1<<14)
+#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
 
-Rboolean (IS_ACTIVE_BINDING)(SEXP b);
-Rboolean (BINDING_IS_LOCKED)(SEXP b);
-void (SET_ACTIVE_BINDING_BIT)(SEXP b);
-void (LOCK_BINDING)(SEXP b);
-void (UNLOCK_BINDING)(SEXP b);
+#ifndef __cplusplus
+Rboolean IS_ACTIVE_BINDING(SEXP b);
+#else
+inline Rboolean IS_ACTIVE_BINDING(SEXP b)
+{
+    return Rboolean(b->sxpinfo.gp & ACTIVE_BINDING_MASK);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean BINDING_IS_LOCKED(SEXP b);
+#else
+inline Rboolean BINDING_IS_LOCKED(SEXP b)
+{
+    return Rboolean(b->sxpinfo.gp & BINDING_LOCK_MASK);
+}
+#endif
+
+#ifndef __cplusplus
+void SET_ACTIVE_BINDING_BIT(SEXP b);
+#else
+inline void SET_ACTIVE_BINDING_BIT(SEXP b)
+{
+    b->sxpinfo.gp |= ACTIVE_BINDING_MASK;
+}
+#endif
+
+#ifndef __cplusplus
+void LOCK_BINDING(SEXP b);
+#else
+inline void LOCK_BINDING(SEXP b) {b->sxpinfo.gp |= BINDING_LOCK_MASK;}
+#endif
+
+#ifndef __cplusplus
+void UNLOCK_BINDING(SEXP b);
+#else
+inline void UNLOCK_BINDING(SEXP b) {b->sxpinfo.gp &= (~BINDING_LOCK_MASK);}
+#endif
 
 #ifdef __cplusplus
 }

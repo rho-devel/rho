@@ -305,14 +305,22 @@ typedef struct {
     PPinfo gram;     /* pretty-print info */
 } FUNTAB;
 
+/* Defined and initialized in names.cpp (not main.cpp) :*/
+extern FUNTAB	R_FunTab[];	    /* Built in functions */
+
 #ifdef __cplusplus
-#define PRIMFUN(x)	(R_FunTab[(x)->u.primsxp.offset].cfun)
-#define PRIMNAME(x)	(R_FunTab[(x)->u.primsxp.offset].name)
-#define PRIMVAL(x)	(R_FunTab[(x)->u.primsxp.offset].code)
-#define PRIMARITY(x)	(R_FunTab[(x)->u.primsxp.offset].arity)
-#define PPINFO(x)	(R_FunTab[(x)->u.primsxp.offset].gram)
-#define PRIMPRINT(x)	(((R_FunTab[(x)->u.primsxp.offset].eval)/100)%10)
-#else
+inline CCODE PRIMFUN(SEXP x) {return R_FunTab[x->u.primsxp.offset].cfun;}
+inline char* PRIMNAME(SEXP x) {return R_FunTab[x->u.primsxp.offset].name;}
+inline int PRIMVAL(SEXP x) {return R_FunTab[x->u.primsxp.offset].code;}
+inline int PRIMARITY(SEXP x) {return R_FunTab[x->u.primsxp.offset].arity;}
+inline PPinfo PPINFO(SEXP x) {return R_FunTab[x->u.primsxp.offset].gram;}
+
+inline int PRIMPRINT(SEXP x)
+{
+    return ((R_FunTab[x->u.primsxp.offset].eval)/100)%10;
+}
+
+#else  /* it's not C++, so: */
 #define PRIMFUN(x)	(R_FunTab[PRIMOFFSET(x)].cfun)
 #define PRIMNAME(x)	(R_FunTab[PRIMOFFSET(x)].name)
 #define PRIMVAL(x)	(R_FunTab[PRIMOFFSET(x)].code)
@@ -335,12 +343,35 @@ typedef struct {
 } VECREC, *VECP;
 
 /* Vector Heap Macros */
-#define BACKPOINTER(v)	((v).u.backpointer)
-#define BYTE2VEC(n)	(((n)>0)?(((n)-1)/sizeof(VECREC)+1):0)
-#define INT2VEC(n)	(((n)>0)?(((n)*sizeof(int)-1)/sizeof(VECREC)+1):0)
-#define FLOAT2VEC(n)	(((n)>0)?(((n)*sizeof(double)-1)/sizeof(VECREC)+1):0)
-#define COMPLEX2VEC(n)	(((n)>0)?(((n)*sizeof(Rcomplex)-1)/sizeof(VECREC)+1):0)
-#define PTR2VEC(n)	(((n)>0)?(((n)*sizeof(SEXP)-1)/sizeof(VECREC)+1):0)
+
+// This doesn't seem to be used anywhere:
+//#define BACKPOINTER(v)	((v).u.backpointer)
+
+inline size_t BYTE2VEC(int n)
+{
+    return (n > 0) ? (n - 1)/sizeof(VECREC) + 1 : 0;
+}
+
+inline size_t INT2VEC(int n)
+{
+    return (n > 0) ? (n*sizeof(int) - 1)/sizeof(VECREC) + 1 : 0;
+}
+
+inline size_t FLOAT2VEC(int n)
+{
+    return (n > 0) ? (n*sizeof(double) - 1)/sizeof(VECREC) + 1 : 0;
+}
+
+inline size_t COMPLEX2VEC(int n)
+{
+    return (n > 0) ? (n*sizeof(Rcomplex) - 1)/sizeof(VECREC) + 1 : 0;
+}
+
+inline size_t PTR2VEC(int n)
+{
+    return (n > 0) ? (n*sizeof(SEXP) - 1)/sizeof(VECREC) + 1 : 0;
+}
+
 /* Bindings */
 /* use the same bits (15 and 14) in symbols and bindings */
 #define ACTIVE_BINDING_MASK (1<<15)
@@ -459,12 +490,6 @@ typedef enum {
 
 
 /*--- Global Variables ---------------------------------------------------- */
-
-/* Defined and initialized in names.c (not main.c) :*/
-#ifndef __R_Names__
-extern FUNTAB	R_FunTab[];	    /* Built in functions */
-#endif
-
 
 #include <R_ext/libextern.h>
 

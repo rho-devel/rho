@@ -32,26 +32,7 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-/* Promise Access Macros */
-#define PRCODE(x)	((x)->u.promsxp.expr)
-#define PRENV(x)	((x)->u.promsxp.env)
-#define PRVALUE(x)	((x)->u.promsxp.value)
-#define PRSEEN(x)	((x)->sxpinfo.gp)
-#define SET_PRSEEN(x,v)	(((x)->sxpinfo.gp)=(v))
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions. */
 
 /* Promise Access Functions */
 
@@ -59,33 +40,53 @@ extern "C" {
  * @param x Pointer to a promise.
  * @return Pointer to the expression to be evaluated.
  */
-SEXP (PRCODE)(SEXP x);
+#ifndef __cplusplus
+SEXP PRCODE(SEXP x);
+#else
+inline SEXP PRCODE(SEXP x) {return x->u.promsxp.expr;}
+#endif
 
 /**
  * @param x Pointer to a promise.
  * @return Pointer to the environment in which the expression is to be
  *         evaluated.  Set NULL when the promise has been evaluated.
  */
-SEXP (PRENV)(SEXP x);
+#ifndef __cplusplus
+SEXP PRENV(SEXP x);
+#else
+inline SEXP PRENV(SEXP x) {return x->u.promsxp.env;}
+#endif
 
 /**
  * @param x Pointer to a promise.
  * @return Pointer to the value of the expression (once evaluated?).
  */
-SEXP (PRVALUE)(SEXP x);
+#ifndef __cplusplus
+SEXP PRVALUE(SEXP x);
+#else
+inline SEXP PRVALUE(SEXP x) {return x->u.promsxp.value;}
+#endif
 
 /**
  * @param x Pointer to a promise.
  * @return ?
  * @deprecated Will need to be fixed.
  */
-int  (PRSEEN)(SEXP x);
+#ifndef __cplusplus
+int PRSEEN(SEXP x);
+#else
+inline int PRSEEN(SEXP x) {return x->sxpinfo.gp;}
+#endif
 
 /**
  * @param x Pointer to a promise.
  * @deprecated Will need to be fixed.
  */
-void (SET_PRSEEN)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_PRSEEN(SEXP x, int v);
+#else
+inline void SET_PRSEEN(SEXP x, int v) {x->sxpinfo.gp = v;}
+#endif
 
 /**
  * Set environment

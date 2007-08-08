@@ -34,28 +34,7 @@ extern "C" {
 
 #define DDVAL_MASK	1
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-/* Symbol Access Macros */
-#define PRINTNAME(x)	((x)->u.symsxp.pname)
-#define SYMVALUE(x)	((x)->u.symsxp.value)
-#define INTERNAL(x)	((x)->u.symsxp.internal)
-#define DDVAL(x)	((x)->sxpinfo.gp & DDVAL_MASK) /* for ..1, ..2 etc */
-#define SET_DDVAL_BIT(x) (((x)->sxpinfo.gp) |= DDVAL_MASK)
-#define UNSET_DDVAL_BIT(x) (((x)->sxpinfo.gp) &= ~DDVAL_MASK)
-#define SET_DDVAL(x,v) ((v) ? SET_DDVAL_BIT(x) : UNSET_DDVAL_BIT(x)) /* for ..1, ..2 etc */
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions. */
 
 /* Symbol Access Functions */
 
@@ -64,15 +43,22 @@ extern "C" {
  * @param x Pointer to an \c RSymbol.
  * @return Pointer to \c RObject representings \a x's name.
  */
-SEXP (PRINTNAME)(SEXP x);
-
+#ifndef __cplusplus
+SEXP PRINTNAME(SEXP x);
+#else
+inline SEXP PRINTNAME(SEXP x) {return x->u.symsxp.pname;}
+#endif
 
 /**
  * Symbol value.
  * @param x Pointer to an \c RSymbol.
  * @return Pointer to \c RObject representings \a x's value.
  */
-SEXP (SYMVALUE)(SEXP x);
+#ifndef __cplusplus
+SEXP SYMVALUE(SEXP x);
+#else
+inline SEXP SYMVALUE(SEXP x) {return x->u.symsxp.value;}
+#endif
 
 /**
  * Internal function value.
@@ -80,19 +66,38 @@ SEXP (SYMVALUE)(SEXP x);
  * @return ? If \a x represents and internal function, the corresponding
  * \c RObject, otherwise NULL..
  */
-SEXP (INTERNAL)(SEXP x);
+#ifndef __cplusplus
+SEXP INTERNAL(SEXP x);
+#else
+inline SEXP INTERNAL(SEXP x) {return x->u.symsxp.internal;}
+#endif
 
 /**
  * Did symbol arise from ... expression?
  * @param x Pointer to an \c RSymbol.
  * @return \c true iff this symbol arose from a ... expression.
  */
-Rboolean (DDVAL)(const SEXP x);
+#ifndef __cplusplus
+Rboolean DDVAL(const SEXP x);
+#else
+inline Rboolean DDVAL(const SEXP x)
+{
+    return Rboolean(x->sxpinfo.gp & DDVAL_MASK);
+}
+#endif
 
 /**
  * @deprecated Ought to be private.
  */
-void (SET_DDVAL)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_DDVAL(SEXP x, int v);
+#else
+inline void SET_DDVAL(SEXP x, int v)
+{
+    if (v) x->sxpinfo.gp |= DDVAL_MASK;
+    else x->sxpinfo.gp &= ~DDVAL_MASK;
+}
+#endif
 
 /**
  * Set symbol's name.

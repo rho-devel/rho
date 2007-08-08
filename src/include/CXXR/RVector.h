@@ -57,52 +57,18 @@ typedef struct VECTOR_SEXPREC {
 
 typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
 
-#ifdef USE_RINTERNALS
-
-/* Vector Access Macros */
-#define TRUELENGTH(x)	(reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)
-#define SETLENGTH(x,v)		((reinterpret_cast<VECSEXP>(x)->vecsxp.length)=(v))
-#define SET_TRUELENGTH(x,v)	((reinterpret_cast<VECSEXP>(x)->vecsxp.truelength)=(v))
-
 /* Under the generational allocator the data for vector nodes comes
    immediately after the node structure, so the data address is a
    known offset from the node SEXP. */
+// 2007/08/07 arr Get rid of this macro once it is no longer needed
+// within the inline functions below.
 #define DATAPTR(x)	(reinterpret_cast<SEXPREC_ALIGN *>(x) + 1)
-#define CHAR(x)		(reinterpret_cast<char *>(DATAPTR(x)))
-#define LOGICAL(x)	(reinterpret_cast<int *>(DATAPTR(x)))
-#define INTEGER(x)	(reinterpret_cast<int *>(DATAPTR(x)))
-#define RAW(x)		(reinterpret_cast<Rbyte *>(DATAPTR(x)))
-#define COMPLEX(x)	(reinterpret_cast<Rcomplex *>(DATAPTR(x)))
-#define REAL(x)		(reinterpret_cast<double *>(DATAPTR(x)))
-#define STRING_ELT(x,i)	(reinterpret_cast<SEXP *>(DATAPTR(x))[i])
-#define VECTOR_ELT(x,i)	(reinterpret_cast<SEXP *>(DATAPTR(x))[i])
-#define STRING_PTR(x)	(reinterpret_cast<SEXP *>(DATAPTR(x)))
-#define VECTOR_PTR(x)	(reinterpret_cast<SEXP *>(DATAPTR(x)))
-
-/* CHARSXP charset bits */
-
-# define LATIN1_MASK (1<<2)
-# define IS_LATIN1(x) ((x)->sxpinfo.gp & LATIN1_MASK)
-# define SET_LATIN1(x) (((x)->sxpinfo.gp) |= LATIN1_MASK)
-# define UNSET_LATIN1(x) (((x)->sxpinfo.gp) &= ~LATIN1_MASK)
-# define UTF8_MASK (1<<3)
-# define IS_UTF8(x) ((x)->sxpinfo.gp & UTF8_MASK)
-# define SET_UTF8(x) (((x)->sxpinfo.gp) |= UTF8_MASK)
-# define UNSET_UTF8(x) (((x)->sxpinfo.gp) &= ~UTF8_MASK)
-
-#endif // USE_RINTERNALS
 
 #endif /* __cplusplus */
 
-#ifndef USE_RINTERNALS
 #define CHAR(x)         R_CHAR(x)
-#endif
 
-/* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
-   The function STRING_ELT is used as an argument to arrayAssign even 
-   if the macro version is in use.
-*/
+/* Accessor functions */
 
 /* Vector Access Functions */
 
@@ -129,57 +95,78 @@ inline int LENGTH(SEXP x)
  *         tables, and signifies the number of used slots in the
  *         table.
  */
-int  (TRUELENGTH)(SEXP x);
+#ifndef __cplusplus
+int TRUELENGTH(SEXP x);
+#else
+inline int TRUELENGTH(SEXP x)
+{
+    return reinterpret_cast<VECSEXP>(x)->vecsxp.truelength;
+}
+#endif
 
 /**
  * Set length of vector.
  * @param x Pointer to an \c RVector .
  * @param v The required new length.
  */
-void (SETLENGTH)(SEXP x, int v);
+#ifndef __cplusplus
+void SETLENGTH(SEXP x, int v);
+#else
+inline void SETLENGTH(SEXP x, int v)
+{
+    reinterpret_cast<VECSEXP>(x)->vecsxp.length = v;
+}
+#endif
 
 /**
  * Set 'true length' of vector.
  * @param x Pointer to an \c RVector .
  * @param v The required new 'true length'.
  */
-void (SET_TRUELENGTH)(SEXP x, int v);
+#ifndef __cplusplus
+void SET_TRUELENGTH(SEXP x, int v);
+#else
+inline void SET_TRUELENGTH(SEXP x, int v)
+{
+    reinterpret_cast<VECSEXP>(x)->vecsxp.truelength = v;
+}
+#endif
 
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as character data.
  */
-char  *(R_CHAR)(SEXP x);
+char *R_CHAR(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector representing logical data.
  * @return Pointer to \a x 's data.
  */
-int *(LOGICAL)(SEXP x);
+int *LOGICAL(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as integer data.
  */
-int  *(INTEGER)(SEXP x);
+int  *INTEGER(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as raw bytes.
  */
-Rbyte *(RAW)(SEXP x);
+Rbyte *RAW(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as real numbers.
  */
-double *(REAL)(SEXP x);
+double *REAL(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as complex numbers.
  */
-Rcomplex *(COMPLEX)(SEXP x);
+Rcomplex *COMPLEX(SEXP x);
 
 /**
  * Extract element of character string.
@@ -187,7 +174,7 @@ Rcomplex *(COMPLEX)(SEXP x);
  * @param i Index of the required element
  * @return Pointer to extracted \i 'th element.
  */
-SEXP (STRING_ELT)(SEXP x, int i);
+SEXP STRING_ELT(SEXP x, int i);
 
 /**
  * Extract element of vector.
@@ -195,7 +182,7 @@ SEXP (STRING_ELT)(SEXP x, int i);
  * @param i Index of the required element
  * @return Pointer to extracted \i 'th element.
  */
-SEXP (VECTOR_ELT)(SEXP x, int i);
+SEXP VECTOR_ELT(SEXP x, int i);
 
 /**
  * Set element of character string.
@@ -218,7 +205,11 @@ SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
  *          objects.
  * @return Pointer to the start of \a x 's data, thus interpreted.
  */
-SEXP *(STRING_PTR)(SEXP x);
+#ifndef __cplusplus
+SEXP *STRING_PTR(SEXP x);
+#else
+inline SEXP *STRING_PTR(SEXP x)  {return reinterpret_cast<SEXP *>(DATAPTR(x));}
+#endif
 
 /**
  * @param x Pointer to an \c RVector representing a vector of vector
@@ -227,41 +218,101 @@ SEXP *(STRING_PTR)(SEXP x);
  */
 SEXP *(VECTOR_PTR)(SEXP x);
 
+# define LATIN1_MASK (1<<2)
+
 /**
  * @param x Pointer to an \c RVector representing a character string.
  * @return true iff \a x is marked as having LATIN1 encoding.
  */
-Rboolean (IS_LATIN1)(const SEXP x);
+#ifndef __cplusplus
+Rboolean IS_LATIN1(const SEXP x);
+#else
+inline Rboolean IS_LATIN1(const SEXP x)
+{
+    return Rboolean(x->sxpinfo.gp & LATIN1_MASK);
+}
+#endif
 
 /**
  * @brief Set LATIN1 encoding.
  * @param x Pointer to an \c RVector representing a character string.
  */
-void (SET_LATIN1)(SEXP x);
+#ifndef __cplusplus
+void SET_LATIN1(SEXP x);
+#else
+inline void SET_LATIN1(SEXP x) {x->sxpinfo.gp |= LATIN1_MASK;}
+#endif
 
 /**
  * @brief Unset LATIN1 encoding.
  * @param x Pointer to an \c RVector representing a character string.
  */
-void (UNSET_LATIN1)(SEXP x);
+#ifndef __cplusplus
+void UNSET_LATIN1(SEXP x);
+#else
+inline void UNSET_LATIN1(SEXP x) {x->sxpinfo.gp &= ~LATIN1_MASK;}
+#endif
+
+# define UTF8_MASK (1<<3)
 
 /**
  * @param x Pointer to an \c RVector representing a character string.
  * @return true iff \a x is marked as having UTF8 encoding.
  */
-Rboolean (IS_UTF8)(const SEXP x);
+#ifndef __cplusplus
+Rboolean IS_UTF8(const SEXP x);
+#else
+inline Rboolean IS_UTF8(const SEXP x)
+{
+    return Rboolean(x->sxpinfo.gp & UTF8_MASK);
+}
+#endif
 
 /**
  * @brief Set UTF8 encoding.
  * @param x Pointer to an \c RVector representing a character string.
  */
-void (SET_UTF8)(SEXP x);
+#ifndef __cplusplus
+void SET_UTF8(SEXP x);
+#else
+inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
+#endif
 
 /**
  * @brief Unset UTF8 encoding.
  * @param x Pointer to an \c RVector representing a character string.
  */
-void (UNSET_UTF8)(SEXP x);
+#ifndef __cplusplus
+void UNSET_UTF8(SEXP x);
+#else
+inline void UNSET_UTF8(SEXP x) {x->sxpinfo.gp &= ~UTF8_MASK;}
+#endif
+
+/* Hashing Functions */
+
+#ifndef __cplusplus
+int HASHASH(SEXP x);
+#else
+inline int HASHASH(SEXP x) {return x->sxpinfo.gp;}
+#endif
+
+#ifndef __cplusplus
+int HASHVALUE(SEXP x);
+#else
+inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
+#endif
+
+#ifndef __cplusplus
+void SET_HASHASH(SEXP x, int v);
+#else
+inline void SET_HASHASH(SEXP x, int v) {x->sxpinfo.gp = v;}
+#endif
+
+#ifndef __cplusplus
+void SET_HASHVALUE(SEXP x, int v);
+#else
+inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
+#endif
 
 /**
  * @brief Create a vector object.
