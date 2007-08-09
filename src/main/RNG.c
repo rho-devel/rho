@@ -112,7 +112,7 @@ double unif_rand(void)
 	I2 = I2 * 172 % 30307;
 	I3 = I3 * 170 % 30323;
 	value = I1 / 30269.0 + I2 / 30307.0 + I3 / 30323.0;
-	return fixup(value - int(value));/* in [0,1) */
+	return fixup(value - (int) value);/* in [0,1) */
 
     case MARSAGLIA_MULTICARRY:/* 0177777(octal) == 65535(decimal)*/
 	I1= 36969*(I1 & 0177777) + (I1>>16);
@@ -136,7 +136,7 @@ double unif_rand(void)
 	return fixup(KT_next() * KT);
 
     case USER_UNIF:
-	return *(reinterpret_cast<double *>(User_unif_fun()));
+	return *((double *) User_unif_fun());
 
     default:
 	error(_("unif_rand: unimplemented RNG kind %d"), RNG_kind);
@@ -250,13 +250,13 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 		warning(_("cannot read seeds unless 'user_unif_nseed' is supplied"));
 		break;
 	    }
-	    ns = *reinterpret_cast<int *>(User_unif_nseed());
+	    ns = *((int *) User_unif_nseed());
 	    if (ns < 0 || ns > 625) {
 		warning(_("seed length must be in 0...625; ignored"));
 		break;
 	    }
 	    RNG_Table[kind].n_seed = ns;
-	    RNG_Table[kind].i_seed = reinterpret_cast<Int32 *>(User_unif_seedloc());
+	    RNG_Table[kind].i_seed = (Int32 *) User_unif_seedloc();
 	}
 	break;
     default:
@@ -269,7 +269,7 @@ static void Randomize(RNGtype kind)
 {
 /* Only called by  GetRNGstate() when there's no .Random.seed */
 
-    RNG_Init(kind, Int32(time(NULL)));
+    RNG_Init(kind, (Int32) time(NULL));
 }
 
 
@@ -295,8 +295,8 @@ void GetRNGstate()
 	if (tmp == NA_INTEGER)
 	    error(_(".Random.seed[1] is not a valid integer"));
         /* How using two integers, with names in the options to identify the types. */
-	newRNG = RNGtype(tmp % 100); 
-	newN01 = N01type(tmp / 100);
+	newRNG = (RNGtype) (tmp % 100); 
+	newN01 = (N01type) (tmp / 100);
 	/*if (RNG_kind > USER_UNIF || RNG_kind < 0) {
 	    warning(".Random.seed was invalid: re-initializing");
 	    RNG_kind = RNG_DEFAULT;
@@ -382,7 +382,7 @@ static void RNGkind(RNGtype newkind)
 	error(_("RNGkind: unimplemented RNG kind %d"), newkind);
     }
     GetRNGstate();
-    RNG_Init(newkind, Int32(unif_rand() * UINT_MAX));
+    RNG_Init(newkind, unif_rand() * UINT_MAX);
     RNG_kind = newkind;
     PutRNGstate();
 }
@@ -417,10 +417,10 @@ SEXP attribute_hidden do_RNGkind (SEXP call, SEXP op, SEXP args, SEXP env)
     rng = CAR(args);
     norm = CADR(args);
     if(!isNull(rng)) { /* set a new RNG kind */
-	RNGkind(RNGtype(asInteger(rng)));
+	RNGkind((RNGtype) asInteger(rng));
     }
     if(!isNull(norm)) { /* set a new normal kind */
-	Norm_kind(N01type(asInteger(norm)));
+	Norm_kind((N01type) asInteger(norm));
     }
     UNPROTECT(1);
     return ans;
@@ -439,11 +439,11 @@ SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("supplied seed is not a valid integer"));
     skind = CADR(args);
     if (!isNull(skind)) {
-	kind = RNGtype(asInteger(skind));
+	kind = (RNGtype) asInteger(skind);
 	RNGkind(kind);
     } else
 	kind = RNG_kind;
-    RNG_Init(RNG_kind, Int32(seed));
+    RNG_Init(RNG_kind, (Int32) seed);
     PutRNGstate();
     return R_NilValue;
 }
@@ -567,7 +567,7 @@ static double MT_genrand()
     y ^= TEMPERING_SHIFT_L(y);
     dummy[0] = mti;
 
-    return ( double(y) * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
+    return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }
 
 /* 
@@ -611,12 +611,11 @@ static double MT_genrand()
 #define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
 
 /*long ran_x[KK]; */                   /* the generator state */
-/**
- * Put n new random number in aa
- * @param aa Destunation.
- * @param n  Array length; must be at least KK.
- */
-void ran_array(long aa[], int n)
+
+/* void ran_array(long aa[],int n) */
+void ran_array(aa,n)    /* put n new random numbers in aa */
+  long *aa;   /* destination */
+  int n;      /* array length (must be at least KK) */
 {
   register int i,j;
   for (j=0;j<KK;j++) aa[j]=ran_x[j];
@@ -629,11 +628,9 @@ void ran_array(long aa[], int n)
 #define is_odd(x)  ((x)&1)          /* units bit of x */
 #define evenize(x) ((x)&(MM-2))   /* make x even */
 
-/**
- * Call this before using ran_array
- * @param seed Selector for different streams.
- */
-void ran_start(long seed)
+/* void ran_start(long seed) */
+void ran_start(seed)    /* do this before using ran_array */
+  long seed;            /* selector for different streams */
 {
   register int t,j;
   long x[KK+KK-1];              /* the preparation buffer */
