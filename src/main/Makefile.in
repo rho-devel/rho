@@ -12,13 +12,13 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = complex.c gram.c regex.c
+SOURCES_C = RNG.c complex.c gram.c regex.c
 
 SOURCES_CXX = \
 	CConverters.cpp CommandLineArgs.cpp \
 	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
         RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
-        Rdynload.cpp Renviron.cpp RNG.cpp \
+        Rdynload.cpp Renviron.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
