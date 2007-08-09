@@ -20,6 +20,11 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
+/** @file eval.cpp
+ *
+ * General evaluation of expressions, including implementation of R flow
+ * control constructs, and R profiling.
+ */
 
 #undef HASHING
 
@@ -932,17 +937,21 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
+namespace {
+    inline int BodyHasBraces(SEXP body)
+    {
+	return (isLanguage(body) && CAR(body) == R_BraceSymbol) ? 1 : 0;
+    }
 
-#define BodyHasBraces(body) \
-    ((isLanguage(body) && CAR(body) == R_BraceSymbol) ? 1 : 0)
-
-#define DO_LOOP_DEBUG(call, op, args, rho, bgn) do { \
-    if (bgn && DEBUG(rho)) { \
-	Rprintf("debug: "); \
-	PrintValue(CAR(args)); \
-	do_browser(call,op,args,rho); \
-    } } while (0)
-
+    inline void DO_LOOP_DEBUG(SEXP call, SEXP op, SEXP args, SEXP rho, int bgn)
+    {
+	if (bgn && DEBUG(rho)) {
+	    Rprintf("debug: ");
+	    PrintValue(CAR(args));
+	    do_browser(call,op,args,rho);
+	}
+    }
+}
 
 SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -2437,21 +2446,33 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y)
     Arith2(opval, opsym); \
 } while (0)
 
-#define BCNPUSH(v) do { \
-  SEXP __value__ = (v); \
-  SEXP *__ntop__ = R_BCNodeStackTop + 1; \
-  if (__ntop__ > R_BCNodeStackEnd) nodeStackOverflow(); \
-  __ntop__[-1] = __value__; \
-  R_BCNodeStackTop = __ntop__; \
-} while (0)
+static void nodeStackOverflow()
+{
+    error(_("node stack overflow"));
+}
 
-#define BCNPOP() (R_BCNodeStackTop--, R_BCNodeStackTop[0])
-#define BCNPOP_IGNORE_VALUE() R_BCNodeStackTop--
+namespace {
+    inline void BCNPUSH(SEXP v)
+    {
+	SEXP *ntop = R_BCNodeStackTop + 1;
+	if (ntop > R_BCNodeStackEnd) nodeStackOverflow();
+	ntop[-1] = v;
+	R_BCNodeStackTop = ntop;
+    }
 
-#define BCNSTACKCHECK(n)  do { \
-  if (R_BCNodeStackTop + 1 > R_BCNodeStackEnd) nodeStackOverflow(); \
-} while (0)
+    inline SEXP BCNPOP() {R_BCNodeStackTop--; return R_BCNodeStackTop[0];}
 
+    inline void BCNPOP_IGNORE_VALUE() {R_BCNodeStackTop--;}
+
+    inline void BCNSTACKCHECK(int /*unused*/)
+    {
+	if (R_BCNodeStackTop + 1 > R_BCNodeStackEnd) nodeStackOverflow();
+    }
+}
+
+#define BCCONSTS(e) BCODE_CONSTS(e)
+
+#ifdef BC_INT_STACK
 #define BCIPUSHPTR(v)  do { \
   void *__value__ = (v); \
   IStackval *__ntop__ = R_BCIntStackTop + 1; \
@@ -2471,14 +2492,6 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y)
 #define BCIPOPPTR() ((--R_BCIntStackTop)->p)
 #define BCIPOPINT() ((--R_BCIntStackTop)->i)
 
-#define BCCONSTS(e) BCODE_CONSTS(e)
-
-static void nodeStackOverflow()
-{
-    error(_("node stack overflow"));
-}
-
-#ifdef BC_INT_STACK
 static void intStackOverflow()
 {
     error(_("integer stack overflow"));
@@ -2579,14 +2592,16 @@ typedef int BCODE;
   NEXT(); \
 } while (0)
 
-#define PUSHCALLARG(v) PUSHCALLARG_CELL(CONS(v, R_NilValue))
+namespace {
+    inline void PUSHCALLARG_CELL(SEXP cell)
+    {
+	if (R_BCNodeStackTop[-2]) R_BCNodeStackTop[-2] = cell;
+	else SETCDR(R_BCNodeStackTop[-1], cell);
+	R_BCNodeStackTop[-1] = cell;
+    }
 
-#define PUSHCALLARG_CELL(c) do { \
-  SEXP __cell__ = (c); \
-  if (R_BCNodeStackTop[-2] == R_NilValue) R_BCNodeStackTop[-2] = __cell__; \
-  else SETCDR(R_BCNodeStackTop[-1], __cell__); \
-  R_BCNodeStackTop[-1] = __cell__; \
-} while (0)
+    inline void PUSHCALLARG(SEXP v) {PUSHCALLARG_CELL(CONS(v, R_NilValue));}
+}
 
 /* making sure the constant is NAMED can be done at assembly time
    once duplicate is set up to not copy the constant portion of code
@@ -2650,11 +2665,13 @@ static int tryDispatch(char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
                          R_TrueValue : R_FalseValue; \
   NEXT(); \
 } while(0)
+
 #define DO_ISTYPE(type) do { \
   R_BCNodeStackTop[-1] = TYPEOF(R_BCNodeStackTop[-1]) == type ? \
                          mkTrue() : mkFalse(); \
   NEXT(); \
 } while (0)
+
 #define isNumericOnly(x) (isNumeric(x) && ! isLogical(x))
 
 #ifdef BC_PROFILING

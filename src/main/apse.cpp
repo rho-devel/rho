@@ -25,6 +25,11 @@ Furthermore:
 
 /* <UTF8-FIXME> byte-level ops. Not at all clear that this is fixable. */
 
+/** @file apse.cpp
+ *
+ * Approximate string matching, as used in agrep.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -54,11 +59,34 @@ Furthermore:
 #define APSE_DEBUG(x)
 #endif
 
-#define APSE_BIT(i)		(apse_vec_t(1) << ((i)%APSE_BITS_IN_BITVEC))
-#define APSE_IDX(p, q, i)	((p)*(q)+(i)/APSE_BITS_IN_BITVEC)
-#define APSE_BIT_SET(bv, p, q, i) (bv[APSE_IDX(p, q, i)] |=  APSE_BIT(i))
-#define APSE_BIT_CLR(bv, p, q, i) (bv[APSE_IDX(p, q, i)] &= ~APSE_BIT(i))
-#define APSE_BIT_TST(bv, p, q, i) (bv[APSE_IDX(p, q, i)] &   APSE_BIT(i))
+namespace {
+    inline apse_vec_t APSE_BIT(apse_size_t i)
+    {
+	return apse_vec_t(1) << (i%APSE_BITS_IN_BITVEC);
+    }
+
+    inline apse_size_t APSE_IDX(apse_size_t p, apse_size_t q, apse_size_t i)
+    {
+	return p*q + i/APSE_BITS_IN_BITVEC;
+    }
+
+    inline void APSE_BIT_SET(apse_vec_t bv[],
+			     apse_size_t p, apse_size_t q, apse_size_t i)
+    {
+	bv[APSE_IDX(p, q, i)] |=  APSE_BIT(i);
+    }
+
+    inline void APSE_BIT_CLR(apse_vec_t bv[],
+			     apse_size_t p, apse_size_t q, apse_size_t i)
+    {
+	bv[APSE_IDX(p, q, i)] &= ~APSE_BIT(i);
+    }
+
+    inline bool APSE_BIT_TST(const apse_vec_t bv[],
+			     apse_size_t p, apse_size_t q, apse_size_t i)
+    {
+	return bv[APSE_IDX(p, q, i)] & APSE_BIT(i);
+    }
 
 #define APSE_MATCH_STATE_BOT		0
 #define APSE_MATCH_STATE_SEARCH		1
@@ -68,73 +96,89 @@ Furthermore:
 #define APSE_MATCH_STATE_END		5
 #define APSE_MATCH_STATE_EOT		6
 
-#define APSE_TEST_HIGH_BIT(i)   (((i) & (apse_vec_t(1) << (APSE_BITS_IN_BITVEC - 1))) ? 1 : 0)
+    inline apse_vec_t APSE_TEST_HIGH_BIT(apse_vec_t i)
+    {
+	return (i & (apse_vec_t(1) << (APSE_BITS_IN_BITVEC - 1))) ? 1 : 0;
+    }
 
-/* In case you are reading the TR 91-11 of University of Arizona, page 6:
- * j+1	state
- * j	prev_state
- * d	i
- * d-1	prev_i
- */
+    /* In case you are reading the TR 91-11 of University of Arizona, page 6:
+     * j+1	state
+     * j	prev_state
+     * d	i
+     * d-1	prev_i
+     */
 
-#define APSE_NEXT_EXACT(state, prev_state, text, i, carry)		\
-	(state[i] = ((prev_state[i] << 1 | carry) & text))
+    inline void APSE_NEXT_EXACT(apse_vec_t* state,
+				const apse_vec_t* prev_state,
+				apse_vec_t text, apse_size_t i,
+				apse_vec_t carry)
+    {
+	state[i] = ((prev_state[i] << 1 | carry) & text);
+    }
 
-#define APSE_NEXT_APPROX(state, prev_state, text, i, prev_i, carry)	\
-	(state[i]  = (((prev_state[i] << 1) & text)		  |	\
-			prev_state[prev_i] 			  |	\
-		      ((state[prev_i] | prev_state[prev_i]) << 1) |	\
-			carry))
+    inline void APSE_NEXT_APPROX(apse_vec_t* state,
+				 const apse_vec_t* prev_state,
+				 apse_vec_t text, apse_size_t i,
+				 apse_size_t prev_i, apse_vec_t carry)
+    {
+	state[i] = (((prev_state[i] << 1) & text)
+		    | prev_state[prev_i]
+		    | ((state[prev_i] | prev_state[prev_i]) << 1)
+		    | carry);
+    }
 
-#define APSE_NEXT_COMMON(state, prev_state, text, i)			\
-	(state[i]  = (prev_state[i] << 1) & text)
+    inline void APSE_NEXT_COMMON(apse_vec_t* state,
+				 const apse_vec_t* prev_state,
+				 apse_vec_t text, apse_size_t i)
+    {
+	state[i]  = (prev_state[i] << 1) & text;
+    }
 
-#define APSE_NEXT_INSERT(state, prev_state, i, prev_i)			\
-	(state[i] |= prev_state[prev_i])
+    inline void APSE_NEXT_INSERT(apse_vec_t* state,
+				 const apse_vec_t* prev_state,
+				 apse_size_t i, apse_size_t prev_i)
+    {
+	state[i] |= prev_state[prev_i];
+    }
 
-#define APSE_NEXT_DELETE(state, i, prev_i)				\
-	(state[i] |= (state[prev_i] << 1))
+    inline void APSE_NEXT_DELETE(apse_vec_t* state,
+				 apse_size_t i, apse_size_t prev_i)
+    {
+	state[i] |= (state[prev_i] << 1);
+    }
 
-#define APSE_NEXT_SUBSTI(state, prev_state, i, prev_i)			\
-	(state[i] |= (prev_state[prev_i] << 1))
+    inline void APSE_NEXT_SUBSTI(apse_vec_t* state,
+				 const apse_vec_t* prev_state,
+				 apse_size_t i, apse_size_t prev_i)
+    {
+	state[i] |= (prev_state[prev_i] << 1);
+    }
 
-#define APSE_NEXT_CARRY(state, i, carry)				\
-	(state[i] |= carry)
+    inline void APSE_NEXT_CARRY(apse_vec_t* state, apse_size_t i,
+				apse_vec_t carry)
+    {
+	state[i] |= carry;
+    }
 
-#define APSE_EXACT_MATCH_BEGIN(ap)	(ap->state[0] & 1)
+    inline bool APSE_EXACT_MATCH_BEGIN(const apse_t* ap)
+    {
+	return ap->state[0] & 1;
+    }
 
-#define APSE_APPROX_MATCH_BEGIN(ap)	\
-	(ap->state[ap->largest_distance + ap->match_begin_bitvector] > \
-	 ap->match_begin_prefix && \
-	 ap->state[ap->largest_distance + ap->match_begin_bitvector] & \
-	 ap->match_begin_prefix)
+    inline bool APSE_APPROX_MATCH_BEGIN(const apse_t* ap)
+    {
+	apse_vec_t v = ap->state[ap->largest_distance
+				 + ap->match_begin_bitvector];
+	return (v > ap->match_begin_prefix) && (v & ap->match_begin_prefix);
+    }
 
-#define APSE_PREFIX_DELETE_MASK(ap)	\
-	    do { if (ap->edit_deletions < ap->edit_distance &&	\
-		     ap->text_position  < ap->edit_distance)	\
- 	             ap->state[h] &= ap->match_begin_bitmask; } while (0)
-
-#define APSE_DEBUG_SINGLE(ap, i)		\
-	APSE_DEBUG(printf("%c %2ld %2ld %s\n",				\
-			  isprint(ap->text[ap->text_position])?	\
-			  ap->text[ap->text_position]:'.',		\
-			  ap->text_position, i, 			\
-			  _apse_fbin(ap->state[i],			\
-				     ap->pattern_size, 1)))
-
-
-#define APSE_DEBUG_MULTIPLE_FIRST(ap, i)	\
-	APSE_DEBUG(printf("%c %2ld %2ld",				\
-			  isprint(ap->text[ap->text_position])?	\
-			  ap->text[ap->text_position]:'.',		\
-			  ap->text_position, i))
-
-#define APSE_DEBUG_MULTIPLE_REST(ap, i, j)	\
-	APSE_DEBUG(printf(" %s",					\
-			  _apse_fbin(ap->state[j],			\
-				     ap->pattern_size, 			\
-				     i == ap->bitvectors_in_state-1)))
-
+    inline void APSE_PREFIX_DELETE_MASK(apse_t* ap, apse_size_t h)
+    {
+	if (ap->edit_deletions < ap->edit_distance
+	    && ap->text_position  < ap->edit_distance)
+	    ap->state[h] &= ap->match_begin_bitmask;
+    }
+}  // anonymous namespace
 
 #ifdef APSE_DEBUGGING
 static char *_apse_fbin(apse_vec_t v, apse_size_t n, apse_bool_t last);
@@ -163,6 +207,33 @@ static char *_apse_fbin(apse_vec_t v, apse_size_t n, apse_bool_t last) {
     return s;
 }
 #endif
+
+namespace {
+    inline void APSE_DEBUG_SINGLE(const apse_t* ap, apse_size_t i)
+    {
+	APSE_DEBUG(printf("%c %2ld %2ld %s\n",
+			  isprint(ap->text[ap->text_position])
+			  ? ap->text[ap->text_position] : '.',
+			  ap->text_position, i,
+			  _apse_fbin(ap->state[i], ap->pattern_size, 1)));
+    }
+
+    inline void APSE_DEBUG_MULTIPLE_FIRST(const apse_t* ap, apse_size_t i)
+    {
+	APSE_DEBUG(printf("%c %2ld %2ld",
+			  isprint(ap->text[ap->text_position])
+			  ? ap->text[ap->text_position] : '.',
+			  ap->text_position, i));
+    }
+
+    inline void APSE_DEBUG_MULTIPLE_REST(const apse_t* ap,
+					 apse_size_t i, apse_size_t j)
+    {
+	APSE_DEBUG(printf(" %s", _apse_fbin(ap->state[j],
+					    ap->pattern_size,
+					    i == ap->bitvectors_in_state-1)));
+    }
+}
 
 /* The code begins. */
 
@@ -928,7 +999,7 @@ static apse_bool_t _apse_match_next_state(apse_t *ap) {
 		    active++;
 	    }
 #ifdef APSE_DEBUGGING
-	    printf("(equal = %d, active = %d)\n", equal, active);
+	    printf("(equal = %d, active = %d)\n", int(equal), int(active));
 #endif
 	    if ((equal == ap->edit_distance + 1 && ap->is_greedy == 0) ||
 		(equal < ap->prev_equal && ap->prev_active &&
@@ -939,7 +1010,7 @@ static apse_bool_t _apse_match_next_state(apse_t *ap) {
 			       ap->text_position - ap->match_begin))) {
 		ap->match_begin = ap->text_position;
 #ifdef APSE_DEBUGGING
-		printf("(slide begin %d)\n", ap->match_begin);
+		printf("(slide begin %d)\n", int(ap->match_begin));
 #endif
 	    }
 	    else if (active == 0)
@@ -1092,7 +1163,7 @@ static apse_bool_t _apse_match_single_complex(apse_t *ap) {
 		APSE_NEXT_SUBSTI(ap->state, ap->prev_state, h, g);
 	    APSE_NEXT_CARRY(ap->state, h,
 			    has_deletions || has_substitutions ? 1 : 0);
-	    APSE_PREFIX_DELETE_MASK(ap);
+	    APSE_PREFIX_DELETE_MASK(ap, h);
 	    APSE_DEBUG_SINGLE(ap, h);
 	}
 
@@ -1151,7 +1222,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_DELETE(ap->state, kj, jj);
 			APSE_NEXT_SUBSTI(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		} else if (has_deletions) {
@@ -1163,7 +1234,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_INSERT(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_DELETE(ap->state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		} else if (has_substitutions) {
@@ -1175,7 +1246,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_INSERT(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_SUBSTI(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		} else {
@@ -1186,7 +1257,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_COMMON(ap->state, ap->prev_state, t[i], kj);
 			APSE_NEXT_INSERT(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		}
@@ -1200,7 +1271,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_DELETE(ap->state, kj, jj);
 			APSE_NEXT_SUBSTI(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		} else if (has_deletions) {
@@ -1211,7 +1282,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_COMMON(ap->state, ap->prev_state, t[i], kj);
 			APSE_NEXT_DELETE(ap->state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		} else if (has_substitutions) {
@@ -1222,7 +1293,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 			APSE_NEXT_COMMON(ap->state, ap->prev_state, t[i], kj);
 			APSE_NEXT_SUBSTI(ap->state, ap->prev_state, kj, jj);
 			APSE_NEXT_CARRY(ap->state, kj, c);
-			APSE_PREFIX_DELETE_MASK(ap);
+			APSE_PREFIX_DELETE_MASK(ap, h);
 			APSE_DEBUG_MULTIPLE_REST(ap, i, kj);
 		    }
 		}

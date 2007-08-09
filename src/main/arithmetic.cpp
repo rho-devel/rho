@@ -20,6 +20,12 @@
  *  Fifth Floor, Boston, MA 02110-1301  USA.
  */
 
+/** @arithmetic.cpp
+ *
+ * All sorts of arithmetical and mathematical functions, from addition
+ * through to Bessel functions.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -608,15 +614,34 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 */
 #define USES_TWOS_COMPLEMENT 1
 
+// Checks for integer overflow:
+
 #if USES_TWOS_COMPLEMENT
-# define OPPOSITE_SIGNS(x, y) ((x < 0) ^ (y < 0))
-# define GOODISUM(x, y, z) (((x) > 0) ? ((y) < (z)) : ! ((y) < (z)))
-# define GOODIDIFF(x, y, z) (!(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z)))
+namespace {
+    inline bool GOODISUM(int x, int y, int z)
+    {
+	return ((x > 0) ? (y < z) : ! (y < z));
+    }
+
+    inline bool OPPOSITE_SIGNS(int x, int y) {return (x < 0)^(y < 0);}
+
+    inline bool GOODIDIFF(int x, int y, int z)
+    {
+	return !(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z));
+    }
+}
 #else
 # define GOODISUM(x, y, z) (double(x) + double(y) == (z))
 # define GOODIDIFF(x, y, z) (double(x) - double(y) == (z))
 #endif
-#define GOODIPROD(x, y, z) (double(x) * double(y) == (z))
+
+namespace {
+    inline bool GOODIPROD(int x, int y, int z)
+    {
+	return double(x) * double(y) == z;
+    }
+}
+
 #define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
 #endif
 
@@ -786,7 +811,13 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
     return ans;
 }
 
-#define R_INTEGER(robj, i) double(INTEGER(robj)[i] == NA_INTEGER ? NA_REAL : INTEGER(robj)[i])
+namespace {
+    inline double R_INTEGER(SEXP robj, unsigned int i)
+    {
+	return double(INTEGER(robj)[i]
+		      == NA_INTEGER ? NA_REAL : INTEGER(robj)[i]);
+    }
+}
 
 static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 {
@@ -1749,7 +1780,9 @@ static SEXP math4_2(SEXP sa, SEXP sb, SEXP sc, SEXP sd, SEXP sI, SEXP sJ,
 
 #define CAD3R	CADDDR
 /* This is not (yet) in Rinternals.h : */
-#define CAD5R(e)	CAR(CDR(CDR(CDR(CDR(CDR(e))))))
+namespace {
+    inline SEXP CAD5R(SEXP e) {return CAR(CDR(CDR(CDR(CDR(CDR(e))))));}
+}
 
 #define Math4(A, FUN)   math4  (CAR(A), CADR(A), CADDR(A), CAD3R(A), FUN, call)
 #define Math4_1(A, FUN) math4_1(CAR(A), CADR(A), CADDR(A), CAD3R(A), CAD4R(A), \

@@ -28,6 +28,11 @@
    probably continue to ignore).
 */
 
+/** @file scan.cpp
+ *
+ * Input scanning routines including scan and readline.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -156,7 +161,12 @@ static SEXP insertString(char *str, LocalData *l)
     return tmp;
 }
 
-#define Rspace(c) (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+namespace {
+    inline bool Rspace(char c)
+    {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+    }
+}
 
 /* used by readline() and menu() */
 static int ConsoleGetchar()

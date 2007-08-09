@@ -35,6 +35,11 @@
    chartr works at char not byte level.
  */
 
+/** @file character.cpp
+ *
+ * All sorts of character manipulation, including grep and agrep.
+ */
+ 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -604,12 +609,24 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
    names, minlength, use.classes, dot
 */
 
+namespace {
+    inline bool FIRSTCHAR(const char* buff1, unsigned int i)
+    {
+	return isspace(int(buff1[i-1]));
+    }
 
-#define FIRSTCHAR(i) (isspace(int(buff1[i-1])))
-#define LASTCHAR(i) (!isspace(int(buff1[i-1])) && (!buff1[i+1] || isspace(int(buff1[i+1]))))
-#define LOWVOW(i) (buff1[i] == 'a' || buff1[i] == 'e' || buff1[i] == 'i' || \
-		   buff1[i] == 'o' || buff1[i] == 'u')
+    inline bool LASTCHAR(const char* buff1, unsigned int i)
+    {
+	return !isspace(int(buff1[i-1]))
+	    && (!buff1[i+1] || isspace(int(buff1[i+1])));
+    }
 
+    inline bool LOWVOW(const char* buff1, unsigned int i)
+    {
+	return buff1[i] == 'a' || buff1[i] == 'e' || buff1[i] == 'i' ||
+	    buff1[i] == 'o' || buff1[i] == 'u';
+    }
+}
 
 /* memmove does allow overlapping src and dest */
 static void mystrcpy(char *dest, const char *src)
@@ -660,7 +677,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) -1;
     for (i = upper; i > 0; i--) {
-	if(LOWVOW(i) && LASTCHAR(i))
+	if(LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -668,7 +685,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) -1;
     for (i = upper; i > 0; i--) {
-	if (LOWVOW(i) && !FIRSTCHAR(i))
+	if (LOWVOW(buff1, i) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -676,7 +693,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) - 1;
     for (i = upper; i > 0; i--) {
-	if (islower(int(buff1[i])) && LASTCHAR(i))
+	if (islower(int(buff1[i])) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -684,7 +701,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) -1;
     for (i = upper; i > 0; i--) {
-	if (islower(int(buff1[i])) && !FIRSTCHAR(i))
+	if (islower(int(buff1[i])) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -694,7 +711,7 @@ static SEXP stripchars(char *inchar, int minlen)
 
     upper = strlen(buff1) - 1;
     for (i = upper; i > 0; i--) {
-	if (!FIRSTCHAR(i) && !isspace(int(buff1[i])))
+	if (!FIRSTCHAR(buff1, i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -2179,7 +2196,9 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-#define isRaw(x) (TYPEOF(x) == RAWSXP)
+namespace {
+    inline bool isRaw(SEXP x) {return TYPEOF(x) == RAWSXP;}
+}
 
 /* <UTF8>  charToRaw should work at byte level, ignore encoding */
 SEXP attribute_hidden do_charToRaw(SEXP call, SEXP op, SEXP args, SEXP env)

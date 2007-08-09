@@ -20,6 +20,11 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
+/** @file errors.cpp
+ *
+ * Error and warning handling.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -1515,11 +1520,13 @@ SEXP attribute_hidden do_getRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* very minimal error checking --just enough to avoid a segfault */
-#define CHECK_RESTART(r) do { \
-    SEXP __r__ = (r); \
-    if (TYPEOF(__r__) != VECSXP || LENGTH(__r__) < 2) \
-	error(_("bad restart")); \
-} while (0)
+namespace {
+    inline void CHECK_RESTART(SEXP r)
+    {
+	if (TYPEOF(r) != VECSXP || LENGTH(r) < 2)
+	    error(_("bad restart"));
+    }
+}
 
 SEXP attribute_hidden do_addRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {

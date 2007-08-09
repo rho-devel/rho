@@ -23,6 +23,11 @@
  *  Symbolic Differentiation
  */
 
+/** @file deriv.cpp
+ *
+ * Symbolic differentiation.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -258,14 +263,16 @@ static SEXP simplify(SEXP fun, SEXP arg1, SEXP arg2)
     return ans;
 }/* simplify() */
 
+namespace {
+    inline SEXP PP_S(SEXP F, SEXP a1, SEXP a2 = R_MissingArg)
+    {
+	return PP(simplify(F,a1,a2));
+    }
+}
 
 /* D() implements the "derivative table" : */
 static SEXP D(SEXP expr, SEXP var)
 {
-
-#define PP_S(F,a1,a2) PP(simplify(F,a1,a2))
-#define PP_S2(F,a1)   PP(simplify(F,a1, R_MissingArg))
-
     SEXP ans=R_NilValue, expr1, expr2;
     switch(TYPEOF(expr)) {
     case LGLSXP:
@@ -352,7 +359,7 @@ static SEXP D(SEXP expr, SEXP var)
 		expr2 = simplify(TimesSymbol,
 				 PP_S(PowerSymbol, CADR(expr), CADDR(expr)),
 				 PP_S(TimesSymbol,
-				      PP_S2(LogSymbol, CADR(expr)),
+				      PP_S(LogSymbol, CADR(expr)),
 				      PP(D(CADDR(expr), var))));
 		UNPROTECT(4);
 		PROTECT(expr2);
@@ -374,13 +381,13 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 	else if (CAR(expr) == CosSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(SinSymbol, CADR(expr)),
-			   PP_S2(MinusSymbol, PP(D(CADR(expr), var))));
+			   PP_S(SinSymbol, CADR(expr)),
+			   PP_S(MinusSymbol, PP(D(CADR(expr), var))));
 	    UNPROTECT(3);
 	}
 	else if (CAR(expr) == SinSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(CosSymbol, CADR(expr)),
+			   PP_S(CosSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
@@ -388,19 +395,19 @@ static SEXP D(SEXP expr, SEXP var)
 	    ans = simplify(DivideSymbol,
 			   PP(D(CADR(expr), var)),
 			   PP_S(PowerSymbol,
-				PP_S2(CosSymbol, CADR(expr)),
+				PP_S(CosSymbol, CADR(expr)),
 				PP(Constant(2.0))));
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == CoshSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(SinhSymbol, CADR(expr)),
+			   PP_S(SinhSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == SinhSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(CoshSymbol, CADR(expr)),
+			   PP_S(CoshSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var))),
 		UNPROTECT(2);
 	}
@@ -408,7 +415,7 @@ static SEXP D(SEXP expr, SEXP var)
 	    ans = simplify(DivideSymbol,
 			   PP(D(CADR(expr), var)),
 			   PP_S(PowerSymbol,
-				PP_S2(CoshSymbol, CADR(expr)),
+				PP_S(CoshSymbol, CADR(expr)),
 				PP(Constant(2.0))));
 	    UNPROTECT(4);
 	}
@@ -423,15 +430,15 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 	else if (CAR(expr) == PnormSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(DnormSymbol, CADR(expr)),
+			   PP_S(DnormSymbol, CADR(expr)),
 			   PP(D(CADR(expr), var)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == DnormSymbol) {
 	    ans = simplify(TimesSymbol,
-			   PP_S2(MinusSymbol, CADR(expr)),
+			   PP_S(MinusSymbol, CADR(expr)),
 			   PP_S(TimesSymbol,
-				PP_S2(DnormSymbol, CADR(expr)),
+				PP_S(DnormSymbol, CADR(expr)),
 				PP(D(CADR(expr), var))));
 	    UNPROTECT(4);
 	}
@@ -465,7 +472,7 @@ static SEXP D(SEXP expr, SEXP var)
 	else if (CAR(expr) == LGammaSymbol) {
 	    ans = simplify(TimesSymbol,
 			   PP(D(CADR(expr), var)),
-			   PP_S2(PsiSymbol, CADR(expr)));
+			   PP_S(PsiSymbol, CADR(expr)));
 	    UNPROTECT(2);
 	}
 	else if (CAR(expr) == GammaSymbol) {
@@ -473,7 +480,7 @@ static SEXP D(SEXP expr, SEXP var)
 			   PP(D(CADR(expr), var)),
 			   PP_S(TimesSymbol,
 				expr,
-				PP_S2(PsiSymbol, CADR(expr))));
+				PP_S(PsiSymbol, CADR(expr))));
 	    UNPROTECT(3);
 	}
 

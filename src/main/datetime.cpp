@@ -36,6 +36,11 @@
     seems to be available on the affected platforms.
  */
 
+/** @file datetime.cpp
+ *
+ * Date and time manipulation functions.
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -97,8 +102,14 @@ static Rboolean have_broken_mktime(void)
 static const int days_in_month[12] =
 {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
-#define days_in_year(year) (isleap(year) ? 366 : 365)
+namespace {
+    inline bool isleap(int y)
+    {
+	return (((y % 4) == 0 && (y % 100) != 0) || (y % 400) == 0);
+    }
+
+    inline int days_in_year(int year) {return isleap(year) ? 366 : 365;}
+}
 
 #ifndef HAVE_POSIX_LEAPSECONDS
 /* There have been 23 leapseconds, the last being on 2005-12-31.

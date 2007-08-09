@@ -20,6 +20,12 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
+/** @file
+ *
+ * Coercions from one R type to another, including various 'is' and
+ * 'as' functions.  Also 'quote'.
+ */
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -56,27 +62,26 @@ const static char * const falsenames[] = {
 #define WARN_IMAG  4
 #define WARN_RAW  8
 
-/* The following two macros copy or clear the attributes.  They also
+/* The following two functions copy or clear the attributes.  They also
    ensure that the object bit is properly set.  They avoid calling the
    assignment functions when possible, since the write barrier (and
    possibly cache behavior on some architectures) makes assigning more
    costly than dereferencing. */
-#define DUPLICATE_ATTRIB(to, from) do {\
-  SEXP __from__ = (from); \
-  if (ATTRIB(__from__) != R_NilValue) { \
-    SEXP __to__ = (to); \
-    (DUPLICATE_ATTRIB)(__to__, __from__);	\
-  } \
-} while (0)
+namespace {
+    inline void cDUPLICATE_ATTRIB(SEXP to, SEXP from)
+    {
+	if (ATTRIB(from)) DUPLICATE_ATTRIB(to, from);
+    }
 
-#define CLEAR_ATTRIB(x) do {\
-  SEXP __x__ = (x); \
-  if (ATTRIB(__x__) != R_NilValue) { \
-    SET_ATTRIB(__x__, R_NilValue); \
-    if (OBJECT(__x__)) SET_OBJECT(__x__, 0); \
-    if (IS_S4_OBJECT(__x__)) UNSET_S4_OBJECT(__x__); \
-  } \
-} while (0)
+    inline void CLEAR_ATTRIB(SEXP x)
+    {
+	if (ATTRIB(x)) {
+	    SET_ATTRIB(x, 0);
+	    if (OBJECT(x)) SET_OBJECT(x, 0);
+	    if (IS_S4_OBJECT(x)) UNSET_S4_OBJECT(x);
+	}
+    }
+}
 
 void attribute_hidden CoercionWarning(int warn)
 {
@@ -493,7 +498,7 @@ static SEXP coerceToLogical(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case INTSXP:
 	for (i = 0; i < n; i++)
@@ -534,7 +539,7 @@ static SEXP coerceToInteger(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -575,7 +580,7 @@ static SEXP coerceToReal(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -616,7 +621,7 @@ static SEXP coerceToComplex(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -658,7 +663,7 @@ static SEXP coerceToRaw(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++) {
@@ -729,7 +734,7 @@ static SEXP coerceToString(SEXP v)
        SET_TRACE(ans,1);
     }
 #endif
-    DUPLICATE_ATTRIB(ans, v);
+    cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -1772,6 +1777,34 @@ SEXP attribute_hidden do_isvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     return (ans);
 }
 
+namespace {
+    inline int LIST_VEC_NA(SEXP s)
+    {
+	if (!isVector(s) || length(s) != 1)
+	    return 0;
+	else {
+	    switch (TYPEOF(s)) {
+	    case LGLSXP:
+	    case INTSXP:
+		return (INTEGER(s)[0] == NA_INTEGER);
+		break;
+	    case REALSXP:
+		return ISNAN(REAL(s)[0]);
+		break;
+	    case STRSXP:
+		return (STRING_ELT(s, 0) == NA_STRING);
+		break;
+	    case CPLXSXP:
+		return (ISNAN(COMPLEX(s)[0].r)
+			|| ISNAN(COMPLEX(s)[0].i));
+		break;
+	    default:
+		return 0;
+	    }
+	}
+    }
+}
+    
 SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, dims, names, x;
@@ -1819,42 +1852,16 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for (i = 0; i < n; i++)
 	    LOGICAL(ans)[i] = (STRING_ELT(x, i) == NA_STRING);
 	break;
-
-/* Same code for LISTSXP and VECSXP : */
-#define LIST_VEC_NA(s)							\
-	if (!isVector(s) || length(s) != 1)				\
-		LOGICAL(ans)[i] = 0;					\
-	else {								\
-		switch (TYPEOF(s)) {					\
-		case LGLSXP:						\
-		case INTSXP:						\
-		    LOGICAL(ans)[i] = (INTEGER(s)[0] == NA_INTEGER);	\
-		    break;						\
-		case REALSXP:						\
-		    LOGICAL(ans)[i] = ISNAN(REAL(s)[0]);		\
-		    break;						\
-		case STRSXP:						\
-		    LOGICAL(ans)[i] = (STRING_ELT(s, 0) == NA_STRING);	\
-		    break;						\
-		case CPLXSXP:						\
-		    LOGICAL(ans)[i] = (ISNAN(COMPLEX(s)[0].r)		\
-				       || ISNAN(COMPLEX(s)[0].i));	\
-		    break;						\
-		default:						\
-		    LOGICAL(ans)[i] = 0;				\
-		}							\
-	}
-
     case LISTSXP:
 	for (i = 0; i < n; i++) {
-	    LIST_VEC_NA(CAR(x));
+	    LOGICAL(ans)[i] = LIST_VEC_NA(CAR(x));
 	    x = CDR(x);
 	}
 	break;
     case VECSXP:
 	for (i = 0; i < n; i++) {
 	    SEXP s = VECTOR_ELT(x, i);
-	    LIST_VEC_NA(s);
+	    LOGICAL(ans)[i] = LIST_VEC_NA(s);
 	}
 	break;
     case RAWSXP:
@@ -1880,6 +1887,32 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     UNPROTECT(1); /*ans*/
     return ans;
+}
+
+namespace {
+    inline int LIST_VEC_NAN(SEXP s)
+    {
+	if (!isVector(s) || length(s) != 1)
+	    return 0;
+	else {
+	    switch (TYPEOF(s)) {
+	    case LGLSXP:
+	    case INTSXP:
+	    case STRSXP:
+		return 0;
+		break;
+	    case REALSXP:
+		return R_IsNaN(REAL(s)[0]);
+		break;
+	    case CPLXSXP:
+		return (R_IsNaN(COMPLEX(s)[0].r)
+			|| R_IsNaN(COMPLEX(s)[0].i));
+		break;
+	    default:
+		return 0;  // 2007/08/08 arr: Formerly no default
+	    }
+	}
+    }
 }
 
 SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1924,39 +1957,16 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    LOGICAL(ans)[i] = (R_IsNaN(COMPLEX(x)[i].r) ||
 			       R_IsNaN(COMPLEX(x)[i].i));
 	break;
-
-/* Same code for LISTSXP and VECSXP : */
-
-#define LIST_VEC_NAN(s)							\
-	if (!isVector(s) || length(s) != 1)				\
-		LOGICAL(ans)[i] = 0;					\
-	else {								\
-		switch (TYPEOF(s)) {					\
-		case LGLSXP:						\
-		case INTSXP:						\
-		case STRSXP:						\
-		    LOGICAL(ans)[i] = 0;				\
-		    break;						\
-		case REALSXP:						\
-		    LOGICAL(ans)[i] = R_IsNaN(REAL(s)[0]);		\
-		    break;						\
-		case CPLXSXP:						\
-		    LOGICAL(ans)[i] = (R_IsNaN(COMPLEX(s)[0].r) ||	\
-				       R_IsNaN(COMPLEX(s)[0].i));	\
-		    break;						\
-		}							\
-	}
-
     case LISTSXP:
 	for (i = 0; i < n; i++) {
-	    LIST_VEC_NAN(CAR(x));
+	     LOGICAL(ans)[i] = LIST_VEC_NAN(CAR(x));
 	    x = CDR(x);
 	}
 	break;
     case VECSXP:
 	for (i = 0; i < n; i++) {
 	    SEXP s = VECTOR_ELT(x, i);
-	    LIST_VEC_NAN(s);
+	     LOGICAL(ans)[i] = LIST_VEC_NAN(s);
 	}
 	break;
     default:
