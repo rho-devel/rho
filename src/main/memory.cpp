@@ -29,6 +29,11 @@
 
 /* <UTF8> char here is handled as a whole */
 
+/** @file memory.cpp
+ *
+ * Memory management, garbage collection, and memory profiling.
+ */
+
 #define USE_RINTERNALS
 
 
@@ -125,10 +130,12 @@ static void R_gc_internal(R_size_t size_needed);
 static void mem_err_heap(R_size_t size);
 
 static SEXPREC UnmarkedNodeTemplate;
-#define NODE_IS_MARKED(s) (MARK(s)==1)
-#define MARK_NODE(s) ((s)->sxpinfo.mark=1)
-#define UNMARK_NODE(s) ((s)->sxpinfo.mark=0)
 
+namespace {
+    inline bool NODE_IS_MARKED(SEXP s) {return MARK(s) == 1;}
+    inline void MARK_NODE(SEXP s) {s->sxpinfo.mark = 1;}
+    inline void UNMARK_NODE(SEXP s) {s->sxpinfo.mark = 0;}
+}
 
 /* Tuning Constants. Most of these could be made settable from R,
    within some reasonable constraints at least.  Since there are quite
@@ -279,9 +286,14 @@ static R_size_t R_V_maxused=0;
 /* the number of VECREC's in nodes of the small node classes */
 static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0, 1, 2, 4, 6, 8, 16 };
 
-#define NODE_CLASS(s) ((s)->sxpinfo.gccls)
-#define SET_NODE_CLASS(s,v) (((s)->sxpinfo.gccls) = (v))
+namespace {
+    inline unsigned int NODE_CLASS(SEXP s) {return s->sxpinfo.gccls;}
 
+    inline void SET_NODE_CLASS(SEXP s, unsigned int v)
+    {
+	s->sxpinfo.gccls = v;
+    }
+}
 
 /* Node Generations. */
 
@@ -293,16 +305,24 @@ static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0, 1, 2, 4, 6, 8, 16 };
 # error number of old generations must be 1 or 2
 #endif
 
-#define NODE_GENERATION(s) ((s)->sxpinfo.gcgen)
-#define SET_NODE_GENERATION(s,g) ((s)->sxpinfo.gcgen=(g))
+namespace {
+    inline unsigned int NODE_GENERATION(SEXP s) {return s->sxpinfo.gcgen;}
 
-#define NODE_GEN_IS_YOUNGER(s,g) \
-  (! NODE_IS_MARKED(s) || NODE_GENERATION(s) < (g))
+    inline void SET_NODE_GENERATION(SEXP s, unsigned int g)
+    {
+	s->sxpinfo.gcgen = g;
+    }
 
-inline bool NODE_IS_OLDER(SEXP x, SEXP y)
-{
-    return NODE_IS_MARKED(x) &&	
-	(!NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y));
+    inline bool NODE_GEN_IS_YOUNGER(SEXP s, unsigned int g)
+    {
+	return !NODE_IS_MARKED(s) || (NODE_GENERATION(s) < g);
+    }
+
+    inline bool NODE_IS_OLDER(SEXP x, SEXP y)
+    {
+	return NODE_IS_MARKED(x) &&	
+	    (!NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y));
+    }
 }
 
 static int num_old_gens_to_collect = 0;
@@ -324,13 +344,24 @@ typedef union PAGE_HEADER {
   (((BASE_PAGE_SIZE - sizeof(PAGE_HEADER)) / sizeof(SEXPREC)) \
    * sizeof(SEXPREC) \
    + sizeof(PAGE_HEADER))
-#define NODE_SIZE(c) \
-  ((c) == 0 ? sizeof(SEXPREC) : \
-   sizeof(SEXPREC_ALIGN) + NodeClassSize[c] * sizeof(VECREC))
 
-#define PAGE_DATA(p) (reinterpret_cast<char*>(p + 1))
-#define VHEAP_FREE() (R_VSize - R_LargeVallocSize - R_SmallVallocSize)
+namespace {
+    inline int NODE_SIZE(int nclass)
+    {
+	return nclass == 0 ? sizeof(SEXPREC)
+	    : sizeof(SEXPREC_ALIGN) + NodeClassSize[nclass] * sizeof(VECREC);
+    }
 
+    inline char* PAGE_DATA(PAGE_HEADER* page)
+    {
+	return reinterpret_cast<char*>(page + 1);
+    }
+
+    inline R_size_t VHEAP_FREE()
+    {
+	return R_VSize - R_LargeVallocSize - R_SmallVallocSize;
+    }
+}
 
 /* The Heap Structure.  Nodes for each class/generation combination
    are arranged in circular doubly-linked lists.  The double linking
@@ -372,56 +403,68 @@ static struct {
 
 static R_size_t R_NodesInUse = 0;
 
-#define NEXT_NODE(s) (s)->gengc_next_node
-#define PREV_NODE(s) (s)->gengc_prev_node
-#define SET_NEXT_NODE(s,t) (NEXT_NODE(s) = (t))
-#define SET_PREV_NODE(s,t) (PREV_NODE(s) = (t))
+namespace {
+    inline RObject* NEXT_NODE(SEXP s) {return s->gengc_next_node;}
 
+    inline RObject* PREV_NODE(SEXP s) {return s->gengc_prev_node;}
 
-/* Node List Manipulation */
+    inline void SET_NEXT_NODE(SEXP s, SEXP t)
+    {
+	s->gengc_next_node = t;
+    }
 
-/* unsnap node s from its list */
-#define UNSNAP_NODE(s) do { \
-  SEXP un__n__ = (s); \
-  SEXP next = NEXT_NODE(un__n__); \
-  SEXP prev = PREV_NODE(un__n__); \
-  SET_NEXT_NODE(prev, next); \
-  SET_PREV_NODE(next, prev); \
-} while(0)
+    inline void SET_PREV_NODE(SEXP s, SEXP t)
+    {
+	s->gengc_prev_node = t;
+    }
 
-/* snap in node s before node t */
-#define SNAP_NODE(s,t) do { \
-  SEXP sn__n__ = (s); \
-  SEXP next = (t); \
-  SEXP prev = PREV_NODE(next); \
-  SET_NEXT_NODE(sn__n__, next); \
-  SET_PREV_NODE(next, sn__n__); \
-  SET_NEXT_NODE(prev, sn__n__); \
-  SET_PREV_NODE(sn__n__, prev); \
-} while (0)
+    /* Node List Manipulation */
 
-/* move all nodes on from_peg to to_peg */
-#define BULK_MOVE(from_peg,to_peg) do { \
-  SEXP __from__ = (from_peg); \
-  SEXP __to__ = (to_peg); \
-  SEXP first_old = NEXT_NODE(__from__); \
-  SEXP last_old = PREV_NODE(__from__); \
-  SEXP first_new = NEXT_NODE(__to__); \
-  SET_PREV_NODE(first_old, __to__); \
-  SET_NEXT_NODE(__to__, first_old); \
-  SET_PREV_NODE(first_new, last_old); \
-  SET_NEXT_NODE(last_old, first_new); \
-  SET_NEXT_NODE(__from__, __from__); \
-  SET_PREV_NODE(__from__, __from__); \
-} while (0);
+    /* unsnap node s from its list */
+    inline void UNSNAP_NODE(SEXP s)
+    {
+	SEXP next = NEXT_NODE(s);
+	SEXP prev = PREV_NODE(s);
+	SET_NEXT_NODE(prev, next);
+	SET_PREV_NODE(next, prev);
+    }
 
+    /* snap in node s before node t */
+    inline void SNAP_NODE(SEXP s, SEXP t)
+    {
+	SEXP prev = PREV_NODE(t);
+	SET_NEXT_NODE(s, t);
+	SET_PREV_NODE(t, s);
+	SET_NEXT_NODE(prev, s);
+	SET_PREV_NODE(s, prev);
+    }
+
+    /* move all nodes on from_peg to to_peg */
+    inline void BULK_MOVE(SEXP from_peg, SEXP to_peg)
+    {
+	SEXP first_old = NEXT_NODE(from_peg);
+	SEXP last_old = PREV_NODE(from_peg);
+	SEXP first_new = NEXT_NODE(to_peg);
+	SET_PREV_NODE(first_old, to_peg);
+	SET_NEXT_NODE(to_peg, first_old);
+	SET_PREV_NODE(first_new, last_old);
+	SET_NEXT_NODE(last_old, first_new);
+	SET_NEXT_NODE(from_peg, from_peg);
+	SET_PREV_NODE(from_peg, from_peg);
+    }
+}
 
 /* Processing Node Children */
 
 // 2007/08/07 arr: memory.cpp's own non-type-checked versions!
-#undef CHAR
-#define CHAR(x)           (reinterpret_cast<char*>(DATAPTR(x)))
-#define STRING_ELT(x, i)  (reinterpret_cast<SEXP*>(DATAPTR(x))[i])
+namespace {
+    inline char* memCHAR(SEXP x) {return reinterpret_cast<char*>(DATAPTR(x));}
+
+    inline SEXP memSTRING_ELT(SEXP x, int i)
+    {
+        return reinterpret_cast<SEXP*>(DATAPTR(x))[i];
+    }
+}
 
 /* This macro calls dc__action__ for each child of __n__, passing
    dc__extra__ as a second argument for each call. */
@@ -447,7 +490,7 @@ static R_size_t R_NodesInUse = 0;
     { \
       int i; \
       for (i = 0; i < LENGTH(__n__); i++) \
-        dc__action__(STRING_ELT(__n__, i), dc__extra__); \
+        dc__action__(memSTRING_ELT(__n__, i), dc__extra__); \
     } \
     break; \
   case ENVSXP: \
@@ -474,43 +517,6 @@ static R_size_t R_NodesInUse = 0;
     abort(); \
   } \
 } while(0)
-
-
-/* Forwarding Nodes.  These macros mark nodes or children of nodes and
-   place them on the forwarding list.  The forwarding list is assumed
-   to be in a local variable of the caller named named
-   forwarded_nodes. */
-
-#define FORWARD_NODE(s) do { \
-  SEXP fn__n__ = (s); \
-  if (fn__n__ && ! NODE_IS_MARKED(fn__n__)) { \
-    MARK_NODE(fn__n__); \
-    UNSNAP_NODE(fn__n__); \
-    SET_NEXT_NODE(fn__n__, forwarded_nodes); \
-    forwarded_nodes = fn__n__; \
-  } \
-} while (0)
-
-#define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
-#define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
-
-
-/* Node Allocation. */
-
-#define CLASS_GET_FREE_NODE(c,s) do { \
-  SEXP __n__ = R_GenHeap[c].Free; \
-  if (__n__ == R_GenHeap[c].New) { \
-    GetNewPage(c); \
-    __n__ = R_GenHeap[c].Free; \
-  } \
-  R_GenHeap[c].Free = NEXT_NODE(__n__); \
-  R_NodesInUse++; \
-  (s) = __n__; \
-} while (0)
-
-#define NO_FREE_NODES() (R_NodesInUse >= R_NSize)
-#define GET_FREE_NODE(s) CLASS_GET_FREE_NODE(0,s)
-
 
 /* Debugging Routines. */
 
@@ -734,7 +740,7 @@ static void ReleaseLargeFreeVectors(void)
     SEXP s = NEXT_NODE(R_GenHeap[LARGE_NODE_CLASS].New);
     while (s != R_GenHeap[LARGE_NODE_CLASS].New) {
 	SEXP next = NEXT_NODE(s);
-	if (CHAR(s) != NULL) {
+	if (memCHAR(s) != NULL) {
 	    R_size_t size;
 	    switch (TYPEOF(s)) {	/* get size in bytes */
 	    case CHARSXP:
@@ -858,9 +864,11 @@ static void old_to_new(SEXP x, SEXP y)
 #endif
 }
 
-inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
-{
-    if (y && NODE_IS_OLDER(x, y)) old_to_new(x,y);
+namespace {
+    inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
+    {
+	if (y && NODE_IS_OLDER(x, y)) old_to_new(x,y);
+    }
 }
 
 /* Node Sorting.  SortNodes attempts to improve locality of reference
@@ -912,25 +920,69 @@ static SEXP R_weak_refs = NULL;
 
 #define READY_TO_FINALIZE_MASK 1
 
-#define SET_READY_TO_FINALIZE(s) ((s)->sxpinfo.gp |= READY_TO_FINALIZE_MASK)
-#define CLEAR_READY_TO_FINALIZE(s) ((s)->sxpinfo.gp &= ~READY_TO_FINALIZE_MASK)
-#define IS_READY_TO_FINALIZE(s) ((s)->sxpinfo.gp & READY_TO_FINALIZE_MASK)
+namespace {
+    inline void SET_READY_TO_FINALIZE(SEXP s)
+    {
+	s->sxpinfo.gp |= READY_TO_FINALIZE_MASK;
+    }
+
+    inline void CLEAR_READY_TO_FINALIZE(SEXP s)
+    {
+	s->sxpinfo.gp &= ~READY_TO_FINALIZE_MASK;
+    }
+
+    inline bool IS_READY_TO_FINALIZE(SEXP s)
+    {
+	return s->sxpinfo.gp & READY_TO_FINALIZE_MASK;
+    }
 
 #define FINALIZE_ON_EXIT_MASK 2
 
-#define SET_FINALIZE_ON_EXIT(s) ((s)->sxpinfo.gp |= FINALIZE_ON_EXIT_MASK)
-#define CLEAR_FINALIZE_ON_EXIT(s) ((s)->sxpinfo.gp &= ~FINALIZE_ON_EXIT_MASK)
-#define FINALIZE_ON_EXIT(s) ((s)->sxpinfo.gp & FINALIZE_ON_EXIT_MASK)
+    inline void SET_FINALIZE_ON_EXIT(SEXP s)
+    {
+	s->sxpinfo.gp |= FINALIZE_ON_EXIT_MASK;
+    }
+
+    inline void CLEAR_FINALIZE_ON_EXIT(SEXP s)
+    {
+	s->sxpinfo.gp &= ~FINALIZE_ON_EXIT_MASK;
+    }
+
+    inline bool FINALIZE_ON_EXIT(SEXP s)
+    {
+	return s->sxpinfo.gp & FINALIZE_ON_EXIT_MASK;
+    }
 
 #define WEAKREF_SIZE 4
-inline SEXP WEAKREF_KEY(SEXP w)  {return VECTOR_ELT(w, 0);}
-#define SET_WEAKREF_KEY(w, k) SET_VECTOR_ELT(w, 0, k)
-inline SEXP WEAKREF_VALUE(SEXP w)  {return VECTOR_ELT(w, 1);}
-#define SET_WEAKREF_VALUE(w, v) SET_VECTOR_ELT(w, 1, v)
-inline SEXP WEAKREF_FINALIZER(SEXP w)  {return VECTOR_ELT(w, 2);}
-#define SET_WEAKREF_FINALIZER(w, f) SET_VECTOR_ELT(w, 2, f)
-inline SEXP WEAKREF_NEXT(SEXP w)  {return VECTOR_ELT(w, 3);}
-#define SET_WEAKREF_NEXT(w, n) SET_VECTOR_ELT(w, 3, n)
+
+    inline SEXP WEAKREF_KEY(SEXP w)  {return VECTOR_ELT(w, 0);}
+
+    inline void SET_WEAKREF_KEY(SEXP w, SEXP k)
+    {
+	SET_VECTOR_ELT(w, 0, k);
+    }
+
+    inline SEXP WEAKREF_VALUE(SEXP w)  {return VECTOR_ELT(w, 1);}
+
+    inline void SET_WEAKREF_VALUE(SEXP w, SEXP v)
+    {
+	SET_VECTOR_ELT(w, 1, v);
+    }
+
+    inline SEXP WEAKREF_FINALIZER(SEXP w)  {return VECTOR_ELT(w, 2);}
+
+    inline void SET_WEAKREF_FINALIZER(SEXP w, SEXP f)
+    {
+	SET_VECTOR_ELT(w, 2, f);
+    }
+
+    inline SEXP WEAKREF_NEXT(SEXP w)  {return VECTOR_ELT(w, 3);}
+
+    inline void SET_WEAKREF_NEXT(SEXP w, SEXP n)
+    {
+	SET_VECTOR_ELT(w, 3, n);
+    }
+}
 
 static SEXP MakeCFinalizer(R_CFinalizer_t cfun);
 
@@ -1013,14 +1065,14 @@ static Rboolean isCFinalizer(SEXP fun)
 static SEXP MakeCFinalizer(R_CFinalizer_t cfun)
 {
     SEXP s = allocString(sizeof(R_CFinalizer_t));
-    *((R_CFinalizer_t *) CHAR(s)) = cfun;
+    *((R_CFinalizer_t *) memCHAR(s)) = cfun;
     return s;
     /*return R_MakeExternalPtr((void *) cfun, R_NilValue, R_NilValue);*/
 }
 
 static R_CFinalizer_t GetCFinalizer(SEXP fun)
 {
-    return *((R_CFinalizer_t *) CHAR(fun));
+    return *((R_CFinalizer_t *) memCHAR(fun));
     /*return (R_CFinalizer_t) R_ExternalPtrAddr(fun);*/
 }
 
@@ -1171,8 +1223,39 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-/* The Generational Collector. */
+/* Forwarding Nodes.  These macros mark nodes or children of nodes and
+   place them on the forwarding list.  pnptr is a pointer to the first
+   element of the list of forwarded nodes. */
+namespace {
+    SEXP forwarded_nodes;
 
+    inline void FORWARD_NODE(SEXP s)
+    {
+	if (s && ! NODE_IS_MARKED(s)) {
+	    MARK_NODE(s);
+	    UNSNAP_NODE(s);
+	    SET_NEXT_NODE(s, forwarded_nodes);
+	    forwarded_nodes = s;
+	}
+    }
+
+#define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
+#define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
+
+    inline void PROCESS_NODES()
+    {
+	while (forwarded_nodes != NULL) {
+	    SEXP s = forwarded_nodes;
+	    forwarded_nodes = NEXT_NODE(forwarded_nodes);
+	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
+	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
+	    FORWARD_CHILDREN(s);
+	}
+    }
+}
+
+/* The Generational Collector. */
+/*
 #define PROCESS_NODES() do { \
     while (forwarded_nodes != NULL) { \
 	s = forwarded_nodes; \
@@ -1182,14 +1265,13 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 	FORWARD_CHILDREN(s); \
     } \
 } while (0)
-
+*/
 static void RunGenCollect(R_size_t size_needed)
 {
     int i, gen, gens_collected;
     DevDesc *dd;
     RCNTXT *ctxt;
     SEXP s;
-    SEXP forwarded_nodes;
 
     /* determine number of generations to collect */
     while (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
@@ -1256,8 +1338,7 @@ static void RunGenCollect(R_size_t size_needed)
 #endif
 
     /* forward all roots */
-    FORWARD_NODE(R_NilValue);	           /* Builtin constants */
-    FORWARD_NODE(NA_STRING);
+    FORWARD_NODE(NA_STRING);	        /* Builtin constants */
     FORWARD_NODE(R_BlankString);
     FORWARD_NODE(R_UnboundValue);
     FORWARD_NODE(R_RestartToken);
@@ -1678,9 +1759,9 @@ char *R_alloc(long nelem, int eltsize)
 	s->attrib = R_VStack;
 	R_VStack = s;
 #if VALGRIND_LEVEL > 0
-	VALGRIND_MAKE_WRITABLE(CHAR(s), (int) dsize);
+	VALGRIND_MAKE_WRITABLE(memCHAR(s), (int) dsize);
 #endif
-	return CHAR(s);
+	return memCHAR(s);
     }
     else return NULL;
 }
@@ -1718,6 +1799,24 @@ char *S_realloc(char *p, long newct, long old, int size)
     return q;
 }
 
+/* Node Allocation. */
+
+namespace {
+    inline SEXP GET_FREE_NODE(int nclass = 0)
+    {
+	SEXP n = R_GenHeap[nclass].Free;
+	if (n == R_GenHeap[nclass].New) {
+	    GetNewPage(nclass);
+	    n = R_GenHeap[nclass].Free;
+	}
+	R_GenHeap[nclass].Free = NEXT_NODE(n);
+	R_NodesInUse++;
+	return n;
+    }
+
+    inline bool NO_FREE_NODES() {return R_NodesInUse >= R_NSize;}
+}
+
 /* "allocSExp" allocate a SEXPREC */
 /* call gc if necessary */
 
@@ -1729,7 +1828,7 @@ SEXP allocSExp(SEXPTYPE t)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
-    GET_FREE_NODE(s);
+    s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(s, t);
     SETCAR(s, R_NilValue);
@@ -1750,7 +1849,7 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
-    GET_FREE_NODE(s);
+    s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_TYPEOF(s, t);
     SET_TAG(s, R_NilValue);
@@ -1774,7 +1873,7 @@ SEXP cons(SEXP car, SEXP cdr)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
-    GET_FREE_NODE(s);
+    s = GET_FREE_NODE();
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
@@ -1818,7 +1917,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
-    GET_FREE_NODE(newrho);
+    newrho = GET_FREE_NODE();
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
 #endif
@@ -1852,7 +1951,7 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
-    GET_FREE_NODE(s);
+    s = GET_FREE_NODE();
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s,sizeof(*s));
 #endif
@@ -1988,7 +2087,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 
     if (size > 0) {
 	if (node_class < NUM_SMALL_NODE_CLASSES) {
-	    CLASS_GET_FREE_NODE(node_class, s);
+	    s = GET_FREE_NODE(node_class);
 #if VALGRIND_LEVEL > 2
 	    VALGRIND_MAKE_WRITABLE(s, 4); /* sizeof sxpinfo_struct */
 #endif
@@ -2072,9 +2171,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     }
     else if (type == CHARSXP){
 #if VALGRIND_LEVEL > 0
- 	VALGRIND_MAKE_WRITABLE(CHAR(s), actual_size);
+ 	VALGRIND_MAKE_WRITABLE(memCHAR(s), actual_size);
 #endif
-	CHAR(s)[length] = 0;
+	memCHAR(s)[length] = 0;
     }
     else if (type == REALSXP){
 #if VALGRIND_LEVEL > 0
@@ -2692,7 +2791,11 @@ SEXP (SETCADDR)(SEXP x, SEXP y)
     return y;
 }
 
-#define CDDDR(x) CDR(CDR(CDR(x)))
+namespace {
+    inline SEXP CDDDR(SEXP x) {return CDR(CDR(CDR(x)));}
+
+    inline SEXP CD4R(SEXP x) {return CDR(CDR(CDR(CDR(x))));}
+}
 
 SEXP (SETCADDDR)(SEXP x, SEXP y)
 {
@@ -2707,8 +2810,6 @@ SEXP (SETCADDDR)(SEXP x, SEXP y)
     SETCAR(cell, y);
     return y;
 }
-
-#define CD4R(x) CDR(CDR(CDR(CDR(x))))
 
 SEXP (SETCAD4R)(SEXP x, SEXP y)
 {
@@ -2779,7 +2880,7 @@ static void R_OutputStackTrace(FILE *file)
 	    SEXP fun = CAR(cptr->call);
 	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",
-		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
+		    TYPEOF(fun) == SYMSXP ? memCHAR(PRINTNAME(fun)) :
 		    "<Anonymous>");
 	}
     }
@@ -2840,7 +2941,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isString(CAR(args)) || (LENGTH(CAR(args))) != 1)
 	errorcall(call, _("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
-    filename = R_ExpandFileName(CHAR(STRING_ELT(CAR(args), 0)));
+    filename = R_ExpandFileName(memCHAR(memSTRING_ELT(CAR(args), 0)));
     threshold = REAL(CADDR(args))[0];
     if (strlen(filename))
 	R_InitMemReporting(filename, append_mode, threshold);
