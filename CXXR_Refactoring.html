@@ -364,5 +364,84 @@ discover that <code>svn merge</code> doesn't track renames.)</p>
     accordingly backed out of some configuration kludges I had made
     previously.</li>
 </ul>
+
+<h2>Phase 5: <code>0.05-2.5.1</code></h2>
+
+<p>The aim of this phase was to create a branch entitled <code>const</code>,
+to explore to what extent the R code is amenable to 'constifying': i.e.
+converting pointers and C++ references wherever possible to
+<code>const</code> pointers. Two preliminary steps, carried out in the trunk,
+were as follows:</p>
+<ul>
+  <li>In the C++ source files in main, macros were replaced by inline
+    functions wherever it was reasonably straightforward to do so. (The
+    reason for doing this now was that during the constification process, it
+    was usually extremely difficult to see what the compiler was complaining
+    about if a multiline macro was involved.)
+    <p>Similar changes were made to the header files under
+    <code>src/include</code>: however, the pattern here was to convert a
+    macro to an inline function if the header files was
+    <code>#include</code>d into a C++ file, and to an out-of-line call to the
+    same function if the header file was <code>#include</code>d into a C
+    file.</p>
+    <p>This macro conversion was counterindicated in the following
+    circumstances:</p>
+    <ul>
+      <li>The body of the macro was not syntactically equivalent to a
+        function call;</li>
+      <li>The macro used <code>##</code></li>
+      <li>The macro modified its arguments, e.g. something like
+        <pre>#define INC(x) ++(x)</pre>
+        <p>(Using C++ reference arguments to get round this is not as
+        straightforward as it might seem.)</p>
+      </li>
+      <li>The macro referred to local variables at the point of call
+        (although in some cases such macros were converted to inline
+        functions with additional arguments);</li>
+      <li>In some cases macros were left in place if they expanded to a
+        single C/C++ expression or to a single macro invocation: it is the
+        multiline macros that are particularly opaque.</li>
+    </ul>
+  </li>
+  <li>An incidental change was this: Until now, the type <code>SEXPREC</code>
+    was defined along the following lines:
+    <pre>typedef struct SEXPREC { ... } SEXPREC;</pre>
+    <p>with the first occurrence of <code>SEXPREC</code> being what in C
+    would have been a structure tag. This has now been changed to:</p>
+    <pre>typedef struct RObject { ... } SEXPREC;</pre>
+    <p>exploiting the fact that in C++ <code>RObject</code> is a
+    fully-fledged class name. The header files in
+    <code>src/include/CXXR</code> now generally refer to <code>RObject</code>
+    rather than <code>SEXPREC</code>.</p>
+  </li>
+</ul>
+
+<p>Having established the <code>const</code> branch, constification was set
+in train by the brute force measure of redefining <code>SEXP</code> to mean
+<code>const RObject*</code> rather than simply <code>RObject*</code>; a new
+<code>typedef</code> mapped <code>vSEXP</code> onto plain
+<code>RObject*</code>. In the same spirit '<code>v</code>' variants of many
+of the accessor functions were introduced: for example now <code>CAR</code>
+takes a <code>SEXP</code> argument and returns a <code>SEXP</code>, while
+<code>vCAR</code> takes and returns a <code>vSEXP</code>. (Since these
+accessor functions are required to be callable from C, we can't simply
+overload <code>CAR</code>.)</p>
+
+<p>I then attempted to recompile various files, inserting '<code>v</code>'s
+wherever the compiler demanded it. It quickly became apparent that these
+'<code>v</code>'s were highly contagious: for example, both
+<code>NA_STRING</code> and <code>R_EmptyEnv</code> had to be declared as
+<code>vSEXP</code>s rather than <code>SEXP</code>s. This led me to the
+conclusion that it was premature to attempt constification until I understand
+the evaluation process better.</p>
+
+<p>At the time of tagging this release, the following files compile without
+warnings in the <code>const</code> branch: <code>memory.cpp</code>,
+<code>envir.cpp</code> and <code>names.cpp</code>. <code>eval.cpp</code>
+gives one compilation error, when <code>do_function</code> attempts a
+non-const operation on its <code>op</code> argument: fixing this would mean
+changing the signature of all the <code>do_</code> functions.</p>
+
+<p></p>
 </body>
 </html>
