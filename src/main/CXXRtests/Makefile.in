@@ -1,0 +1,35 @@
+# Low-level tests for the CXXR classes.
+
+top_builddir = ../../..
+
+top_srcdir = ../../..
+
+include $(top_builddir)/Makeconf
+
+maindir = ..
+
+CXXFLAGS = -I../../include
+
+sources_cxx = CellPooltest.cpp
+
+depends = $(sources_cxx:.cpp=.d)
+
+tests = CellPooltest
+
+check : $(tests:=.ts)
+
+CellPooltest_objs = CellPooltest.o $(maindir)/CellPool.o
+
+CellPooltest : $(CellPooltest_objs)
+	$(LINK.cc) -o $@ $(CellPooltest_objs)
+
+CellPooltest.ts : CellPooltest CellPooltest.save
+	./$< > CellPooltest.out
+	diff CellPooltest.save CellPooltest.out
+	rm CellPooltest.out
+	touch $@
+
+Makefile : Makefile.in $(depends)
+	cat Makefile.in $(depends) > $@
+
+## Automagically generated dependencies:

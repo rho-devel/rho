@@ -1,0 +1,152 @@
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2007  Andrew Runnalls
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation; either version 2.1 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ */
+
+/** @file CellPool
+ *
+ * Class CellPool
+ */
+
+#ifndef CELLPOOL_HPP
+#define CELLPOOL_HPP
+
+#include <cstddef>
+#include <new>
+#include <vector>
+
+/** Class to manage a pool of memory cells of a fixed size.
+ * 
+ * This class, based closely on Item 10 of Scott Meyers' 'Effective
+ * C++ (2nd edition)' manages a collection of memory cells of a
+ * specified size, and is intended as a back-end to implementations of
+ * operator new and operator delete to enable the allocation and
+ * deallocation of small objects quickly.
+ */
+namespace CXXR {
+    class CellPool {
+    public:
+	/**
+	 * @param dbls_per_cell (must be >= 1). Size of cells,
+	 *         expressed as a multiple of sizeof(double).  For
+	 *         example, if you require cells large enough to
+	 *         contain one double, put dbls_per_cell as 1.  (NB:
+	 *         cells can contain anything, not just doubles; we
+	 *         work in doubles because these are likely to have
+	 *         the most stringent address alignment requirements.)
+	 *
+	 * @param cells_per_block (must be >= 1).  Memory for cells is
+	 *         obtained from the main heap in blocks sufficient to
+	 *         contain this many cells.
+	 *
+	 * @param out_of_cells This function (if specified) is called
+	 *         when an allocation attempt finds that there are no
+	 *         cells available within the currently allocated
+	 *         blocks.  The function may for example initiate
+	 *         garbage collection.  If when this function returns
+	 *         there are still no free cells, only then will
+	 *         allocate a new block.
+	 */
+	CellPool(size_t dbls_per_cell, size_t cells_per_block,
+		 void (*out_of_cells)() = 0)
+	    : m_cellsize(dbls_per_cell*sizeof(double)),
+	      m_cells_per_block(cells_per_block),
+	      m_blocksize(m_cellsize*cells_per_block),
+	      m_out_of_cells(out_of_cells),
+	      m_free_cells(0),
+	      m_cells_allocated(0)
+	{}
+
+	/** Destructor
+	 *
+	 * It is up to the user to check that any cells allocated from
+	 * the pool have been freed before this destructor is
+	 * invoked.  (Although the destructor could check this for
+	 * itself and issue an error message, this message would
+	 * probably be a nuisance if it occurred during program shutdown.)
+	 */
+        ~CellPool();
+
+	/**
+	 * Allocate a cell from the pool.
+	 *
+	 * @return a pointer to the allocated cell.
+	 *
+	 * @throws bad_alloc if a cell cannot be allocated.
+	 */
+	void* allocate() throw (std::bad_alloc)
+	{
+	    if (!m_free_cells) seekMemory();
+	    Cell* c = m_free_cells;
+	    m_free_cells = c->m_next;
+	    ++m_cells_allocated;
+	    return c;
+	}
+
+	/**
+	 * @return the size of each cell in bytes (well, strictly as a
+	 * multiple of sizeof(char)).
+	 */         
+	size_t cellSize() const  {return m_cellsize;}
+
+	/**
+	 * @return the number of cells currently allocated from this
+	 * pool.
+	 */
+	unsigned int cellsAllocated() const {return m_cells_allocated;}
+
+	/** Integrity check.
+	 *
+	 * Aborts the program with an error message if the object is
+	 * found to be internally inconsistent.
+	 */
+	void check() const;
+
+	/** Deallocate a cell
+	 *
+	 * @param Pointer to a block of memory previously allocated
+	 * from this pool, or a null pointer (in which case method
+	 * does nothing).
+	 */
+	void deallocate(void* p)
+	{
+	    if (!p) return;
+	    Cell* c = reinterpret_cast<Cell*>(p);
+	    c->m_next = m_free_cells;
+	    m_free_cells = c;
+	    --m_cells_allocated;
+	}
+    private:
+	struct Cell {
+	    Cell* m_next;
+
+	    Cell(Cell* next = 0) : m_next(next) {}
+	};
+
+	const size_t m_cellsize;
+	const size_t m_cells_per_block;
+	const size_t m_blocksize;
+	void (*m_out_of_cells)();
+	std::vector<void*> m_blocks;
+	Cell* m_free_cells;
+	unsigned int m_cells_allocated;
+
+	void seekMemory() throw (std::bad_alloc);
+    };
+}
+
+#endif /* CELLPOOL_HPP */
