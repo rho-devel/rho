@@ -1,4 +1,5 @@
 Cell size: 8
+Superblock size: 40
 Allocating dptrs[0]
 Out of memory
 Allocating dptrs[1]

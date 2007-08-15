@@ -31,8 +31,8 @@ using namespace CXXR;
 
 CellPool::~CellPool()
 {
-    for (vector<void*>::iterator it = m_blocks.begin();
-	 it != m_blocks.end(); ++it)
+    for (vector<void*>::iterator it = m_superblocks.begin();
+	 it != m_superblocks.end(); ++it)
 	::operator delete(*it);
 }
 
@@ -40,7 +40,8 @@ void CellPool::check() const
 {
     unsigned int free_cells = 0;
     for (Cell* c = m_free_cells; c; c = c->m_next) ++free_cells;
-    if (m_cells_allocated + free_cells != m_cells_per_block*m_blocks.size()) {
+    if (m_cells_allocated + free_cells
+	!= m_cells_per_superblock*m_superblocks.size()) {
 	cerr << "CellPool::check(): internal inconsistency\n";
 	abort();
     }
@@ -50,14 +51,14 @@ void CellPool::seekMemory() throw (std::bad_alloc)
 {
     if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
-	char* block = reinterpret_cast<char*>(::operator new(m_blocksize));
-	m_blocks.push_back(block);
+	char* superblock = reinterpret_cast<char*>(::operator new(m_superblocksize));
+	m_superblocks.push_back(superblock);
 	// Initialise cells:
 	{
-	    int offset = m_blocksize - m_cellsize;
+	    int offset = m_superblocksize - m_cellsize;
 	    Cell* next = 0;
 	    while (offset >= 0) {
-		next = new (block + offset) Cell(next);
+		next = new (superblock + offset) Cell(next);
 		offset -= m_cellsize;
 	    }
 	    m_free_cells = next;

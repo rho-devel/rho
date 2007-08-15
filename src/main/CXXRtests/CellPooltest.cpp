@@ -50,7 +50,8 @@ namespace {
 int main() {
     for (int i = 0; i < 16; ++i) dptrs[i] = 0;
     pool.check();
-    cout << "Cell size: " << pool.cellSize() << endl;
+    cout << "Cell size: " << pool.cellSize()
+	 << "\nSuperblock size: " << pool.superblockSize() << endl;
     for (int i = 0; i < 10; ++i) {
 	cout << "Allocating dptrs[" << i << "]\n";
 	dptrs[i] = reinterpret_cast<double*>(pool.allocate());
