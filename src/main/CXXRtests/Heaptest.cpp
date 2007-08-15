@@ -65,6 +65,13 @@ namespace {
 	memset(cptr, 0, bytes);
 	trs.push_back(Tr(serial++, bytes, cptr));
     }
+
+    bool cueGC(size_t bytes, bool force)
+    {
+	cout << "GC cued for " << bytes
+	     << (force ? " (forced)\n" : " (not forced)\n");
+	return false;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -89,6 +96,7 @@ int main(int argc, char* argv[]) {
 	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
     }
     // Carry out churns:
+    Heap::setGCCuer(cueGC);
     {
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = random();

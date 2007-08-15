@@ -31,12 +31,18 @@ using namespace CXXR;
 
 unsigned int Heap::s_blocks_allocated = 0;
 unsigned int Heap::s_bytes_allocated = 0;
+bool (*Heap::s_cue_gc)(size_t, bool) = 0;
 
-CellPool Heap::s_pools[] = {CellPool(1, 512),
-			    CellPool(2, 256),
-			    CellPool(4, 128),
-			    CellPool(8, 64),
-			    CellPool(16, 32)};
+void Heap::pool_out_of_memory(CellPool* pool)
+{
+    if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
+}
+
+CellPool Heap::s_pools[] = {CellPool(1, 512, pool_out_of_memory),
+			    CellPool(2, 256, pool_out_of_memory),
+			    CellPool(4, 128, pool_out_of_memory),
+			    CellPool(8, 64, pool_out_of_memory),
+			    CellPool(16, 32, pool_out_of_memory)};
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
@@ -46,19 +52,40 @@ unsigned int Heap::s_pooltab[]
     
 void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 {
+    void* p = 0;
     // Assumes sizeof(double) == 8:
     size_t dbls = (bytes + 7) >> 3;
-    ++s_blocks_allocated;
-    s_bytes_allocated += bytes;
+    bool joy = false;
     try {
-	if (dbls > 16) return ::operator new(bytes);
-	return s_pools[s_pooltab[dbls]].allocate();
+	if (dbls > 16) {
+	    if (s_cue_gc) s_cue_gc(bytes, false);
+	    p = ::operator new(bytes);
+	}
+	else p = s_pools[s_pooltab[dbls]].allocate();
     }
     catch (bad_alloc) {
-	--s_blocks_allocated;
-	s_bytes_allocated -= bytes;
-	throw;
+	if (s_cue_gc) {
+	    // Try to force garbage collection if available:
+	    size_t sought_bytes = bytes;
+	    if (dbls < 16)
+		sought_bytes = s_pools[s_pooltab[dbls]].superblockSize();
+	    joy = s_cue_gc(sought_bytes, true);
+	}
+	else throw;
     }
+    if (!p && joy) {
+	// Try once more:
+	try {
+	    if (dbls > 16) p = ::operator new(bytes);
+	    else p = s_pools[s_pooltab[dbls]].allocate();
+	}
+	catch (bad_alloc) {
+	    throw;
+	}
+    }
+    ++s_blocks_allocated;
+    s_bytes_allocated += bytes;
+    return p;
 }
 				
 void Heap::check()

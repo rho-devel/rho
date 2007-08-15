@@ -12,9 +12,11 @@ Blocks allocated: 10
 Bytes allocated: 1658
 Deallocating #4
 Allocating #10 with size 78
+GC cued for 4096 (not forced)
 Deallocating #3
 Allocating #11 with size 35
 Allocating #12 with size 735
+GC cued for 735 (not forced)
 Deallocating #12
 Deallocating #6
 Deallocating #11

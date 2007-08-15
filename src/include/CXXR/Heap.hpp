@@ -92,9 +92,26 @@ namespace CXXR {
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
+
+	/** Set a callback to cue garbage collection.
+	 *
+	 * @param cue_gc This is a pointer to a function that this
+	 *         class will call before it attempts to allocate
+	 *         memory from the main heap (second argument set to
+	 *         false), or has just failed to allocate memory from
+	 *         the heap (second argument set to true).  The first
+	 *         argument is the amount of memory sought (in bytes).
+	 *         The function should return true iff a release of memory 
+	 *         took place.
+	 */
+	static void setGCCuer(bool (*cue_gc)(size_t, bool) = 0)
+	{
+	    s_cue_gc = cue_gc;
+	}
     private:
 	static unsigned int s_blocks_allocated;
 	static unsigned int s_bytes_allocated;
+	static bool (*s_cue_gc)(size_t, bool);
 	static CellPool s_pools[];
 	static unsigned int s_pooltab[];
 
@@ -113,6 +130,8 @@ namespace CXXR {
 	// Allocation of large objects, and second-line allocation
 	// attempt for small objects:
 	static void* alloc2(size_t bytes) throw (std::bad_alloc);
+
+	static void pool_out_of_memory(CellPool* pool);
     };
 }
 
