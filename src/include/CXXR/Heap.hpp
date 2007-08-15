@@ -27,12 +27,12 @@
 
 #include "CXXR/CellPool.hpp"
 
-/** Class to manage memory allocation and deallocation for CXXR.
- * 
- * Small objects are quickly allocated from CellPools of various cell
- * sizes; large objects are obtained directly from the main heap.
- */
 namespace CXXR {
+    /** Class to manage memory allocation and deallocation for CXXR.
+     * 
+     * Small objects are quickly allocated from CellPools of various cell
+     * sizes; large objects are obtained directly from the main heap.
+     */
     class Heap {
     public:
 	/** Allocate a block of memory.
@@ -61,7 +61,8 @@ namespace CXXR {
 	 * @note This refers to the total number of bytes \e requested
 	 * in blocks that have been allocated but not subsequently
 	 * deallocated.  Actual utilisation of memory in the main heap
-	 * may be greater than this, possibly by a factor of 2.
+	 * may be greater than this, possibly by as much as a factor
+	 * of 2.
 	 */
 	static unsigned int bytesAllocated() {return s_bytes_allocated;}
 
