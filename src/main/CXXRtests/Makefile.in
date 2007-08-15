@@ -8,7 +8,7 @@ include $(top_builddir)/Makeconf
 
 maindir = ..
 
-CXXFLAGS = -I../../include
+ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
 sources_cxx = CellPooltest.cpp Heaptest.cpp
 
@@ -35,7 +35,7 @@ Heaptest : $(Heaptest_objs)
 	$(LINK.cc) -o $@ $(Heaptest_objs)
 
 Heaptest.ts : Heaptest Heaptest.save
-	./$< > Heaptest.out
+	./$< 10 12 > Heaptest.out
 	diff Heaptest.save Heaptest.out
 	rm Heaptest.out
 	touch $@

@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /** @file Heap.cpp
@@ -25,56 +25,44 @@
 #include "CXXR/Heap.hpp"
 
 #include <iostream>
-#include "CXXR/CellPool.hpp"
 
 using namespace std;
 using namespace CXXR;
 
 unsigned int Heap::s_blocks_allocated = 0;
+unsigned int Heap::s_bytes_allocated = 0;
 
-namespace {
-    vector<CellPool*> pools(5);
+CellPool Heap::s_pools[] = {CellPool(1, 512),
+			    CellPool(2, 256),
+			    CellPool(4, 128),
+			    CellPool(8, 64),
+			    CellPool(16, 32)};
 
-    unsigned int pooltab[]
-    = {0, 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
-}
+// Note that the C++ standard requires that an operator new returns a
+// valid pointer even when 0 bytes are requested.  The entry at
+// s_pooltab[0] ensures this.
+unsigned int Heap::s_pooltab[]
+= {0, 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
     
-void* Heap::allocate(size_t bytes) throw (std::bad_alloc)
+void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 {
-    if (!pools[0]) {
-	// Create pools:
-	pools[0] = new CellPool(1, 512);
-	pools[1] = new CellPool(2, 256);
-	pools[2] = new CellPool(4, 128);
-	pools[3] = new CellPool(8, 64);
-	pools[4] = new CellPool(16, 32);
-    }
-    size_t dbls = (bytes + sizeof(double) - 1)/sizeof(double);
-    if (dbls == 0) ++dbls;
+    // Assumes sizeof(double) == 8:
+    size_t dbls = (bytes + 7) >> 3;
     ++s_blocks_allocated;
+    s_bytes_allocated += bytes;
     try {
 	if (dbls > 16) return ::operator new(bytes);
-	return pools[pooltab[dbls]]->allocate();
+	return s_pools[s_pooltab[dbls]].allocate();
     }
     catch (bad_alloc) {
 	--s_blocks_allocated;
+	s_bytes_allocated -= bytes;
 	throw;
     }
 }
 				
 void Heap::check()
 {
-    if (pools[0]) for (vector<CellPool*>::const_iterator it = pools.begin();
-		       it != pools.end(); ++it)
-	(*it)->check();
+    for (unsigned int i = 0; i < 5; ++i)
+	s_pools[i].check();
 }
-
-void  Heap::deallocate(void* p, size_t bytes)
-{
-    if (!p) return;
-    size_t dbls = (bytes + sizeof(double) - 1)/sizeof(double);
-    if (dbls > 16) ::operator delete(p);
-    else pools[pooltab[dbls]]->deallocate(p);
-    --s_blocks_allocated;
-}
-

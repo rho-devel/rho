@@ -244,3 +244,4 @@ distdir: $(DISTFILES)
 
 ## Automagically generated dependencies:
 
+include $(DEPENDS)

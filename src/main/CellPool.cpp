@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /** @file CellPool.cpp
@@ -48,7 +48,7 @@ void CellPool::check() const
 
 void CellPool::seekMemory() throw (std::bad_alloc)
 {
-    if (m_out_of_cells) (*m_out_of_cells)();
+    if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
 	char* block = reinterpret_cast<char*>(::operator new(m_blocksize));
 	m_blocks.push_back(block);

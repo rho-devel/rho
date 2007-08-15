@@ -14,7 +14,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /** @file CellPooltest.cpp
@@ -64,7 +64,8 @@ int main() {
     pool.check();
     cout << "Cells allocated: " << pool.cellsAllocated() << endl;
     for (int i = 1;
-	 dptrs[i] = reinterpret_cast<double*>(pool.easyAllocate()); i += 2)
+	 (dptrs[i] = reinterpret_cast<double*>(pool.easyAllocate()));
+	 i += 2)
 	cout << "Allocated dptrs[" << i << "]\n";
     cout << "easyAllocate() failed\n";
     pool.check();
