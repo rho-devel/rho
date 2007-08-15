@@ -1,0 +1,76 @@
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2007  Andrew Runnalls
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation; either version 2.1 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ */
+
+/** @file Heap
+ *
+ * Class Heap
+ */
+
+#ifndef CXXR_HEAP_HPP
+#define CXXR_HEAP_HPP
+
+#include <cstddef>
+#include <new>
+
+/** Class to manage memory allocation and deallocation for CXXR.
+ * 
+ * Small objects are quickly allocated from CellPools of various cell
+ * sizes; large objects are obtained directly from the main heap.
+ */
+namespace CXXR {
+    class Heap {
+    public:
+	/** Allocate a block of memory.
+	 *
+	 * @param bytes Required size in bytes of the block.
+	 *
+	 * @return a pointer to the allocated cell.
+	 *
+	 * @throws bad_alloc if a cell cannot be allocated.
+	 */
+	static void* allocate(size_t bytes) throw (std::bad_alloc);
+
+	/**
+	 * @return the number of blocks of memory currently allocated.
+	 */
+	static unsigned int blocksAllocated() {return s_blocks_allocated;}
+
+	/** Integrity check.
+	 *
+	 * Aborts the program with an error message if the class is
+	 * found to be internally inconsistent.
+	 */
+	static void check();
+
+	/** Deallocate a block
+	 *
+	 * @param p Pointer to a block of memory previously allocated
+	 *          by Heap::allocate(), or a null pointer (in which
+	 *          case method does nothing).
+	 *
+	 * @param bytes Size in bytes of the block being deallocated.
+	 *          Ignored if p is a null pointer.
+	 */
+	static void deallocate(void* p, size_t bytes);
+    private:
+	static unsigned int s_blocks_allocated;
+    };
+}
+
+#endif /* CXXR_HEAP_HPP */

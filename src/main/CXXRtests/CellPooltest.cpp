@@ -32,11 +32,11 @@ using namespace CXXR;
 namespace {
     double* dptrs[16];
 
-    void out_of_memory();
+    void out_of_memory(CellPool*);
 
     CellPool pool(1, 5, out_of_memory);
 
-    void out_of_memory() {
+    void out_of_memory(CellPool* /*ignored*/) {
 	cout << "Out of memory";
 	if (dptrs[1]) {
 	    cout << ": freeing dptrs[1]";
@@ -63,7 +63,12 @@ int main() {
     }
     pool.check();
     cout << "Cells allocated: " << pool.cellsAllocated() << endl;
-    for (int i = 1; i < 16; i += 2) {
+    for (int i = 1;
+	 dptrs[i] = reinterpret_cast<double*>(pool.easyAllocate()); i += 2)
+	cout << "Allocated dptrs[" << i << "]\n";
+    cout << "easyAllocate() failed\n";
+    pool.check();
+    for (int i = 11; i < 16; i += 2) {
 	cout << "Allocating dptrs[" << i << "]\n";
 	dptrs[i] = reinterpret_cast<double*>(pool.allocate());
     }

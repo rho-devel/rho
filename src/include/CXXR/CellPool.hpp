@@ -54,15 +54,17 @@ namespace CXXR {
 	 *         contain this many cells.
 	 *
 	 * @param out_of_cells This function (if specified) is called
-	 *         when an allocation attempt finds that there are no
-	 *         cells available within the currently allocated
-	 *         blocks.  The function may for example initiate
-	 *         garbage collection.  If when this function returns
-	 *         there are still no free cells, only then will
-	 *         allocate a new block.
+	 *         by a CellPool when an allocation attempt finds that
+	 *         there are no cells available within the currently
+	 *         allocated blocks; the function's argument is set to
+	 *         point to the CellPool concerned.  The function may
+	 *         for example initiate garbage collection.  If when
+	 *         this function returns there are still no free
+	 *         cells, only then will the CellPool allocate a new
+	 *         block.
 	 */
 	CellPool(size_t dbls_per_cell, size_t cells_per_block,
-		 void (*out_of_cells)() = 0)
+		 void (*out_of_cells)(CellPool*) = 0)
 	    : m_cellsize(dbls_per_cell*sizeof(double)),
 	      m_cells_per_block(cells_per_block),
 	      m_blocksize(m_cellsize*cells_per_block),
@@ -118,7 +120,7 @@ namespace CXXR {
 
 	/** Deallocate a cell
 	 *
-	 * @param Pointer to a block of memory previously allocated
+	 * @param p Pointer to a block of memory previously allocated
 	 * from this pool, or a null pointer (in which case method
 	 * does nothing).
 	 */
@@ -130,6 +132,23 @@ namespace CXXR {
 	    m_free_cells = c;
 	    --m_cells_allocated;
 	}
+
+	/**
+	 * Allocate a cell from the pool, provided it can be allocated
+	 * 'from stock'.  Can be useful when called from other inlined
+	 * functions in that it doesn't throw any exceptions.
+	 *
+	 * @return a pointer to the allocated cell, or 0 if the cell
+	 * cannot be allocated from the current memory blocks.
+	 */
+	void* easyAllocate() throw ()
+	{
+	    if (!m_free_cells) return 0;
+	    Cell* c = m_free_cells;
+	    m_free_cells = c->m_next;
+	    ++m_cells_allocated;
+	    return c;
+	}
     private:
 	struct Cell {
 	    Cell* m_next;
@@ -140,7 +159,7 @@ namespace CXXR {
 	const size_t m_cellsize;
 	const size_t m_cells_per_block;
 	const size_t m_blocksize;
-	void (*m_out_of_cells)();
+	void (*m_out_of_cells)(CellPool*);
 	std::vector<void*> m_blocks;
 	Cell* m_free_cells;
 	unsigned int m_cells_allocated;

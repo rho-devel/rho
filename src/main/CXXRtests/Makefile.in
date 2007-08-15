@@ -10,11 +10,11 @@ maindir = ..
 
 CXXFLAGS = -I../../include
 
-sources_cxx = CellPooltest.cpp
+sources_cxx = CellPooltest.cpp Heaptest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest
+tests = CellPooltest Heaptest
 
 check : $(tests:=.ts)
 
@@ -29,7 +29,18 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 	rm CellPooltest.out
 	touch $@
 
-Makefile : Makefile.in $(depends)
-	cat Makefile.in $(depends) > $@
+Heaptest_objs = Heaptest.o $(maindir)/Heap.o $(maindir)/CellPool.o
 
-## Automagically generated dependencies:
+Heaptest : $(Heaptest_objs)
+	$(LINK.cc) -o $@ $(Heaptest_objs)
+
+Heaptest.ts : Heaptest Heaptest.save
+	./$< > Heaptest.out
+	diff Heaptest.save Heaptest.out
+	rm Heaptest.out
+	touch $@
+
+Makefile : Makefile.in
+	cp $< $@
+
+include $(depends)
