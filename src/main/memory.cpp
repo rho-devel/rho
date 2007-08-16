@@ -47,6 +47,10 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/Heap.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 #if defined(Win32) && defined(LEA_MALLOC)
 #include <stddef.h>
@@ -622,7 +626,7 @@ static void DEBUG_RELEASE_PRINT(int rel_pages, int maxrel_pages, int i)
 #define DEBUG_RELEASE_PRINT(rel_pages, maxrel_pages, i)
 #endif /* DEBUG_RELEASE_MEM */
 
-
+#ifdef USING_UNUSED_CODE
 /* Page Allocation and Release. */
 
 static void GetNewPage(int node_class)
@@ -735,6 +739,8 @@ static void TryToReleasePages(void)
     else release_count--;
 }
 
+#endif  // USING_UNUSED_CODE
+
 static void ReleaseLargeFreeVectors(void)
 {
     SEXP s = NEXT_NODE(R_GenHeap[LARGE_NODE_CLASS].New);
@@ -771,7 +777,8 @@ static void ReleaseLargeFreeVectors(void)
 	    UNSNAP_NODE(s);
 	    R_LargeVallocSize -= size;
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
-	    free(s);
+	    size_t bytes = sizeof(SEXPREC_ALIGN) + size*sizeof(VECREC);
+	    Heap::deallocate(s, bytes);
 	}
 	s = next;
     }
@@ -871,6 +878,7 @@ namespace {
     }
 }
 
+#ifdef USING_UNUSED_CODE
 /* Node Sorting.  SortNodes attempts to improve locality of reference
    by rearranging the free list to place nodes on the same place page
    together and order nodes within pages.  This involves a sweep of the
@@ -907,7 +915,7 @@ static void SortNodes(void)
     }
 }
 #endif
-
+#endif  // USING_UNUSED_CODE
 
 /* Finalization and Weak References */
 
@@ -1489,11 +1497,11 @@ static void RunGenCollect(R_size_t size_needed)
     if (gens_collected == NUM_OLD_GENERATIONS) {
 	/**** do some adjustment for intermediate collections? */
 	AdjustHeapSize(size_needed);
-	TryToReleasePages();
+	// TryToReleasePages();
 	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
     }
     else if (gens_collected > 0) {
-	TryToReleasePages();
+	// TryToReleasePages();
 	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
     }
 #ifdef SORT_NODES
@@ -1607,11 +1615,20 @@ static void mem_err_cons()
 #define PP_REDZONE_SIZE 1000L
 static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
 
+namespace {
+    bool cueGC(size_t bytes, bool force)
+    {
+	if (force) R_gc_internal(bytes);
+	return force;
+    }
+}
+
 void attribute_hidden InitMemory()
 {
     int i;
     int gen;
 
+    Heap::setGCCuer(cueGC);
     gc_reporting = R_Verbose;
     R_StandardPPStackSize = R_PPStackSize;
     R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
@@ -1806,8 +1823,14 @@ namespace {
     {
 	SEXP n = R_GenHeap[nclass].Free;
 	if (n == R_GenHeap[nclass].New) {
-	    GetNewPage(nclass);
-	    n = R_GenHeap[nclass].Free;
+	    size_t bytes = NODE_SIZE(nclass);
+	    try {
+		n = reinterpret_cast<SEXP>(Heap::allocate(bytes));
+	    }
+	    catch (bad_alloc) {
+		mem_err_heap(bytes);
+	    }
+	    SNAP_NODE(n, R_GenHeap[nclass].New);
 	}
 	R_GenHeap[nclass].Free = NEXT_NODE(n);
 	R_NodesInUse++;
@@ -2099,38 +2122,32 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    R_SmallVallocSize += alloc_size;
 	}
 	else {
-	    Rboolean success = FALSE;
 	    s = NULL; /* initialize to suppress warning */
-	    if (size < (R_SIZE_T_MAX / sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
-		s = reinterpret_cast<SEXPREC*>(malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC)));
-		if (s == NULL) {
-		    /* If we are near the address space limit, we
-		       might be short of address space.  So return
-		       all unused objects to malloc and try again. */
-		    R_gc_internal(alloc_size);
-		    s = reinterpret_cast<SEXPREC*>(malloc(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC)));
+	    if (size < (R_SIZE_T_MAX/sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
+		size_t bytes = sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC);
+		try {
+		    s = reinterpret_cast<SEXPREC*>(Heap::allocate(bytes));
 		}
-		if (s != NULL) success = TRUE;
+		catch (bad_alloc) {
+		    double dsize = double(size) * sizeof(VECREC)/1024.0;
+		    /* reset the vector heap limit */
+		    R_VSize = old_R_VSize;
+		    if(dsize > 1024.0*1024.0)
+			errorcall(R_NilValue, 
+				  _("cannot allocate vector of size %0.1f Gb"),
+				  dsize/1024.0/1024.0);
+		    if(dsize > 1024.0)
+			errorcall(R_NilValue,
+				  _("cannot allocate vector of size %0.1f Mb"),
+				  dsize/1024.0);
+		    else
+			errorcall(R_NilValue, 
+				  _("cannot allocate vector of size %0.f Kb"),
+				  dsize);
+		}
 #ifdef R_MEMORY_PROFILING
 		R_ReportAllocation(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));
 #endif
-	    }
-	    if (! success) {
-		double dsize = double(size) * sizeof(VECREC)/1024.0;
-		/* reset the vector heap limit */
-		R_VSize = old_R_VSize;
-		if(dsize > 1024.0*1024.0)
-		    errorcall(R_NilValue, 
-			      _("cannot allocate vector of size %0.1f Gb"),
-			      dsize/1024.0/1024.0);
-		if(dsize > 1024.0)
-		    errorcall(R_NilValue,
-			      _("cannot allocate vector of size %0.1f Mb"),
-			      dsize/1024.0);
-		else
-		    errorcall(R_NilValue, 
-			      _("cannot allocate vector of size %0.f Kb"),
-			      dsize);
 	    }
 	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	    SET_NODE_CLASS(s, LARGE_NODE_CLASS);
