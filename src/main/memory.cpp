@@ -122,7 +122,6 @@ static int gc_count = 0;
 
 #ifdef R_MEMORY_PROFILING
 static void R_ReportAllocation(R_size_t);
-static void R_ReportNewPage();
 #endif
 
 extern SEXP framenames;
@@ -170,14 +169,6 @@ static int collect_counts_max[] = { LEVEL_0_FREQ, LEVEL_1_FREQ };
    fraction of the minimal heap size levels that should be available
    for allocation. */
 static double R_MinFreeFrac = 0.2;
-
-/* When pages are released, a number of free nodes equal to
-   R_MaxKeepFrac times the number of allocated nodes for each class is
-   retained.  Pages not needed to meet this requirement are released.
-   An attempt to release pages is made every R_PageReleaseFreq level 1
-   or level 2 collections. */
-static double R_MaxKeepFrac = 0.5;
-static int R_PageReleaseFreq = 1;
 
 /* The heap size constants R_NSize and R_VSize are used for triggering
    collections.  The initial values set by defaults or command line
@@ -361,6 +352,8 @@ namespace {
 	return reinterpret_cast<char*>(page + 1);
     }
 
+    // 2007/08/16 arr: Um, regarding the return type, is it quite
+    // certain that the answer won't be negative? 
     inline R_size_t VHEAP_FREE()
     {
 	return R_VSize - R_LargeVallocSize - R_SmallVallocSize;
@@ -626,121 +619,6 @@ static void DEBUG_RELEASE_PRINT(int rel_pages, int maxrel_pages, int i)
 #define DEBUG_RELEASE_PRINT(rel_pages, maxrel_pages, i)
 #endif /* DEBUG_RELEASE_MEM */
 
-#ifdef USING_UNUSED_CODE
-/* Page Allocation and Release. */
-
-static void GetNewPage(int node_class)
-{
-    SEXP s, base;
-    char *data;
-    PAGE_HEADER *page;
-    int node_size, page_count, i;
-
-    node_size = NODE_SIZE(node_class);
-    page_count = (R_PAGE_SIZE - sizeof(PAGE_HEADER)) / node_size;
-
-    page = reinterpret_cast<PAGE_HEADER*>(malloc(R_PAGE_SIZE));
-    if (page == NULL)
-	mem_err_heap(R_size_t(NodeClassSize[node_class]));
-#ifdef R_MEMORY_PROFILING
-    R_ReportNewPage();
-#endif
-    page->next = R_GenHeap[node_class].pages;
-    R_GenHeap[node_class].pages = page;
-    R_GenHeap[node_class].PageCount++;
-
-    data = PAGE_DATA(page);
-    base = R_GenHeap[node_class].New;
-    for (i = 0; i < page_count; i++, data += node_size) {
-	s = (SEXP) data;
-	R_GenHeap[node_class].AllocCount++;
-	SNAP_NODE(s, base);
-#if  VALGRIND_LEVEL > 1
-	if (NodeClassSize[node_class]>0)
-	    VALGRIND_MAKE_NOACCESS(DATAPTR(s), NodeClassSize[node_class]*sizeof(VECREC));
-#endif
-	s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	SET_NODE_CLASS(s, node_class);
-	base = s;
-	R_GenHeap[node_class].Free = s;
-    }
-}
-
-static void ReleasePage(PAGE_HEADER *page, int node_class)
-{
-    SEXP s;
-    char *data;
-    int node_size, page_count, i;
-
-    node_size = NODE_SIZE(node_class);
-    page_count = (R_PAGE_SIZE - sizeof(PAGE_HEADER)) / node_size;
-    data = PAGE_DATA(page);
-
-    for (i = 0; i < page_count; i++, data += node_size) {
-	s = (SEXP) data;
-	UNSNAP_NODE(s);
-	R_GenHeap[node_class].AllocCount--;
-    }
-    R_GenHeap[node_class].PageCount--;
-    free(page);
-}
-
-static void TryToReleasePages(void)
-{
-    SEXP s;
-    int i;
-    static int release_count = 0;
-
-    if (release_count == 0) {
-	release_count = R_PageReleaseFreq;
-	for (i = 0; i < NUM_SMALL_NODE_CLASSES; i++) {
-	    int pages_free = 0;
-	    PAGE_HEADER *page, *last, *next;
-	    int node_size = NODE_SIZE(i);
-	    int page_count = (R_PAGE_SIZE - sizeof(PAGE_HEADER)) / node_size;
-	    int maxrel, maxrel_pages, rel_pages, gen;
-
-	    maxrel = R_GenHeap[i].AllocCount;
-	    for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++)
-		maxrel = int(maxrel - ((1.0 + R_MaxKeepFrac) * R_GenHeap[i].OldCount[gen]));
-	    maxrel_pages = maxrel > 0 ? maxrel / page_count : 0;
-
-	    /* all nodes in New space should be both free and unmarked */
-	    for (page = R_GenHeap[i].pages, rel_pages = 0, last = NULL;
-		 rel_pages < maxrel_pages && page != NULL;) {
-		int j, in_use;
-		char *data = PAGE_DATA(page);
-
-		next = page->next;
-		for (in_use = 0, j = 0; j < page_count;
-		     j++, data += node_size) {
-		    s = (SEXP) data;
-		    if (NODE_IS_MARKED(s)) {
-			in_use = 1;
-			break;
-		    }
-		}
-		if (! in_use) {
-		    ReleasePage(page, i);
-		    if (last == NULL)
-			R_GenHeap[i].pages = next;
-		    else
-			last->next = next;
-		    pages_free++;
-		    rel_pages++;
-		}
-		else last = page;
-		page = next;
-	    }
-	    DEBUG_RELEASE_PRINT(rel_pages, maxrel_pages, i);
-	    R_GenHeap[i].Free = NEXT_NODE(R_GenHeap[i].New);
-	}
-    }
-    else release_count--;
-}
-
-#endif  // USING_UNUSED_CODE
-
 static void ReleaseLargeFreeVectors(void)
 {
     SEXP s = NEXT_NODE(R_GenHeap[LARGE_NODE_CLASS].New);
@@ -877,45 +755,6 @@ namespace {
 	if (y && NODE_IS_OLDER(x, y)) old_to_new(x,y);
     }
 }
-
-#ifdef USING_UNUSED_CODE
-/* Node Sorting.  SortNodes attempts to improve locality of reference
-   by rearranging the free list to place nodes on the same place page
-   together and order nodes within pages.  This involves a sweep of the
-   heap, so it should not be done too often, but doing it at least
-   occasionally does seem essential.  Sorting on each full colllection is
-   probably sufficient.
-*/
-
-#define SORT_NODES
-#ifdef SORT_NODES
-static void SortNodes(void)
-{
-    SEXP s;
-    int i;
-
-    for (i = 0; i < NUM_SMALL_NODE_CLASSES; i++) {
-	PAGE_HEADER *page;
-	int node_size = NODE_SIZE(i);
-	int page_count = (R_PAGE_SIZE - sizeof(PAGE_HEADER)) / node_size;
-
-	SET_NEXT_NODE(R_GenHeap[i].New, R_GenHeap[i].New);
-	SET_PREV_NODE(R_GenHeap[i].New, R_GenHeap[i].New);
-	for (page = R_GenHeap[i].pages; page != NULL; page = page->next) {
-	    int j;
-	    char *data = PAGE_DATA(page);
-
-	    for (j = 0; j < page_count; j++, data += node_size) {
-		s = (SEXP) data;
-		if (! NODE_IS_MARKED(s))
-		    SNAP_NODE(s, R_GenHeap[i].New);
-	    }
-	}
-	R_GenHeap[i].Free = NEXT_NODE(R_GenHeap[i].New);
-    }
-}
-#endif
-#endif  // USING_UNUSED_CODE
 
 /* Finalization and Weak References */
 
@@ -1504,10 +1343,6 @@ static void RunGenCollect(R_size_t size_needed)
 	// TryToReleasePages();
 	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
     }
-#ifdef SORT_NODES
-    if (gens_collected == NUM_OLD_GENERATIONS)
-	SortNodes();
-#endif
 
     if (gc_reporting) {
 	REprintf("Garbage collection %d = %d", gc_count, gen_gc_counts[0]);
@@ -2146,7 +1981,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 				  dsize);
 		}
 #ifdef R_MEMORY_PROFILING
-		R_ReportAllocation(sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC));
+		R_ReportAllocation(bytes);
 #endif
 	    }
 	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
@@ -2915,15 +2750,6 @@ static void R_ReportAllocation(R_size_t size)
     return;
 }
 
-static void R_ReportNewPage(void)
-{
-    if (R_IsMemReporting) {
-	fprintf(R_MemReportingOutfile, "new page:");
-	R_OutputStackTrace(R_MemReportingOutfile);
-    }
-    return;
-}
-
 static void R_EndMemReporting()
 {
     if(R_MemReportingOutfile != NULL) {
@@ -2959,7 +2785,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
     filename = R_ExpandFileName(memCHAR(memSTRING_ELT(CAR(args), 0)));
-    threshold = REAL(CADDR(args))[0];
+    threshold = R_size_t(REAL(CADDR(args))[0]);
     if (strlen(filename))
 	R_InitMemReporting(filename, append_mode, threshold);
     else
