@@ -47,7 +47,8 @@ namespace CXXR {
 	{
 	    void* p;
 	    // Assumes sizeof(double) == 8:
-	    return (bytes > 128 || !(p = alloc1(bytes))) ? alloc2(bytes) : p;
+	    return (bytes > s_max_cell_size || !(p = alloc1(bytes)))
+		? alloc2(bytes) : p;
 	}
 
 	/**
@@ -86,9 +87,8 @@ namespace CXXR {
 	{
 	    if (!p) return;
 	    // Assumes sizeof(double) == 8:
-	    size_t dbls = (bytes + 7) >> 3;
-	    if (dbls > 16) ::operator delete(p);
-	    else s_pools[s_pooltab[dbls]].deallocate(p);
+	    if (bytes > s_max_cell_size) ::operator delete(p);
+	    else s_pools[s_pooltab[bytes]].deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
@@ -109,6 +109,7 @@ namespace CXXR {
 	    s_cue_gc = cue_gc;
 	}
     private:
+	static const size_t s_max_cell_size = 128;
 	static unsigned int s_blocks_allocated;
 	static unsigned int s_bytes_allocated;
 	static bool (*s_cue_gc)(size_t, bool);
@@ -118,8 +119,7 @@ namespace CXXR {
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
 	{
-	    // Assumes sizeof(double) == 8:
-	    void* p = s_pools[s_pooltab[(bytes + 7) >> 3]].easyAllocate();
+	    void* p = s_pools[s_pooltab[bytes]].easyAllocate();
 	    if (p) {
 		++s_blocks_allocated;
 		s_bytes_allocated += bytes;
