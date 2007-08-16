@@ -127,6 +127,9 @@ namespace CXXR {
 	void deallocate(void* p)
 	{
 	    if (!p) return;
+#ifdef DEBUG_RELEASE_MEM
+	    checkAllocatedCell(p);
+#endif
 	    Cell* c = reinterpret_cast<Cell*>(p);
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
@@ -169,6 +172,14 @@ namespace CXXR {
 	std::vector<void*> m_superblocks;
 	Cell* m_free_cells;
 	unsigned int m_cells_allocated;
+
+	// Checks that p is either null or points to a cell belonging
+	// to this pool; aborts if not.
+	void checkCell(const void* p) const;
+
+	// Calls checkCell, and further checks that the cell is not on
+	// the free list:
+	void checkAllocatedCell(const void* p) const;
 
 	void seekMemory() throw (std::bad_alloc);
     };

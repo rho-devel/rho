@@ -39,10 +39,51 @@ CellPool::~CellPool()
 void CellPool::check() const
 {
     unsigned int free_cells = 0;
-    for (Cell* c = m_free_cells; c; c = c->m_next) ++free_cells;
+    for (Cell* c = m_free_cells; c; c = c->m_next) {
+	checkCell(c);
+	++free_cells;
+    }
     if (m_cells_allocated + free_cells
 	!= m_cells_per_superblock*m_superblocks.size()) {
 	cerr << "CellPool::check(): internal inconsistency\n";
+	abort();
+    }
+}
+
+void CellPool::checkAllocatedCell(const void* p) const 
+{
+    checkCell(p);
+    const Cell* cp = reinterpret_cast<const Cell*>(p);
+    bool found = false;
+    for (Cell* c = m_free_cells; !found && c; c = c->m_next)
+	found = (c == cp);
+    if (found) {
+	cerr << "CellPool::checkCell : designated block"
+	    " is (already) free.\n";
+	abort();
+    }
+}
+
+void CellPool::checkCell(const void* p) const
+{
+    if (!p) return;
+    const char* pc = reinterpret_cast<const char*>(p);
+    bool found = false;
+    for (vector<void*>::const_iterator it = m_superblocks.begin();
+	 !found && it != m_superblocks.end(); ++it) {
+	long offset = pc - reinterpret_cast<const char*>(*it);
+	if (offset >= 0 && offset < static_cast<long>(m_superblocksize)) {
+	    found = true;
+	    if (offset%m_cellsize != 0) {
+		cerr << "CellPool::checkCell : designated block"
+		        " is misaligned\n";
+		abort();
+	    }
+	}
+    }
+    if (!found) {
+	cerr << "CellPool::checkCell : "
+	    "designated block doesn't belong to this CellPool\n";
 	abort();
     }
 }
