@@ -1958,32 +1958,37 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	}
 	else {
 	    s = NULL; /* initialize to suppress warning */
+	    bool success = false;
 	    if (size < (R_SIZE_T_MAX/sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
 		size_t bytes = sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC);
 		try {
 		    s = reinterpret_cast<SEXPREC*>(Heap::allocate(bytes));
+		    success = true;
 		}
 		catch (bad_alloc) {
-		    double dsize = double(size) * sizeof(VECREC)/1024.0;
-		    /* reset the vector heap limit */
-		    R_VSize = old_R_VSize;
-		    if(dsize > 1024.0*1024.0)
-			errorcall(R_NilValue, 
-				  _("cannot allocate vector of size %0.1f Gb"),
-				  dsize/1024.0/1024.0);
-		    if(dsize > 1024.0)
-			errorcall(R_NilValue,
-				  _("cannot allocate vector of size %0.1f Mb"),
-				  dsize/1024.0);
-		    else
-			errorcall(R_NilValue, 
-				  _("cannot allocate vector of size %0.f Kb"),
-				  dsize);
+		    success = false;
 		}
-#ifdef R_MEMORY_PROFILING
-		R_ReportAllocation(bytes);
-#endif
 	    }
+	    if (!success) {
+		double dsize = double(size) * sizeof(VECREC)/1024.0;
+		/* reset the vector heap limit */
+		R_VSize = old_R_VSize;
+		if(dsize > 1024.0*1024.0)
+		    errorcall(R_NilValue, 
+			      _("cannot allocate vector of size %0.1f Gb"),
+			      dsize/1024.0/1024.0);
+		if(dsize > 1024.0)
+		    errorcall(R_NilValue,
+			      _("cannot allocate vector of size %0.1f Mb"),
+			      dsize/1024.0);
+		else
+		    errorcall(R_NilValue, 
+			      _("cannot allocate vector of size %0.f Kb"),
+			      dsize);
+	    }
+#ifdef R_MEMORY_PROFILING
+	    R_ReportAllocation(bytes);
+#endif
 	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	    SET_NODE_CLASS(s, LARGE_NODE_CLASS);
 	    R_LargeVallocSize += size;
