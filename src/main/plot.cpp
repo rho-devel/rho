@@ -124,9 +124,9 @@ SEXP attribute_hidden do_devprev(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP attribute_hidden do_devset(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    checkArity_length;
     int devNum = INTEGER(CAR(args))[0] - 1;
     SEXP sd = allocVector(INTSXP, 1);
-    checkArity(op, args);
     INTEGER(sd)[0] = selectDevice(devNum) + 1;
     return sd;
 }

@@ -54,7 +54,7 @@ SEXP R_isoreg(SEXP y)
 	REAL(yc)[i + 1] = tmp;
     }
     known = 0; ip = 0, n_ip = 0;
-    do {
+    if (n > 0) do {
 	slope = R_PosInf;/*1e+200*/
 	for (i = known + 1; i <= n; i++) {
 	    tmp = (REAL(yc)[i] - REAL(yc)[known]) / (i - known);
