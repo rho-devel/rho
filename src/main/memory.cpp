@@ -15,7 +15,7 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /*
@@ -278,9 +278,6 @@ static R_size_t R_V_maxused=0;
 #define LARGE_NODE_CLASS (NUM_NODE_CLASSES - 1)
 #define NUM_SMALL_NODE_CLASSES (NUM_NODE_CLASSES - 1)
 
-/* the number of VECREC's in nodes of the small node classes */
-static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0 };
-
 namespace {
     inline unsigned int NODE_CLASS(SEXP s) {return s->sxpinfo.gccls;}
 
@@ -324,31 +321,10 @@ static int num_old_gens_to_collect = 0;
 static int gen_gc_counts[NUM_OLD_GENERATIONS + 1];
 static int collect_counts[NUM_OLD_GENERATIONS];
 
-
-/* Node Pages.  Non-vector nodes and small vector nodes are allocated
-   from fixed size pages.  The pages for each node class are kept in a
-   linked list. */
-
-typedef union PAGE_HEADER {
-  union PAGE_HEADER *next;
-  double align;
-} PAGE_HEADER;
-
-#define BASE_PAGE_SIZE 2000
-#define R_PAGE_SIZE \
-  (((BASE_PAGE_SIZE - sizeof(PAGE_HEADER)) / sizeof(SEXPREC)) \
-   * sizeof(SEXPREC) \
-   + sizeof(PAGE_HEADER))
-
 namespace {
     inline int NODE_SIZE(int nclass)
     {
 	return sizeof(SEXPREC);
-    }
-
-    inline char* PAGE_DATA(PAGE_HEADER* page)
-    {
-	return reinterpret_cast<char*>(page + 1);
     }
 
     // 2007/08/16 arr: Um, regarding the return type, is it quite
@@ -393,8 +369,7 @@ static struct {
     SEXP OldToNew[NUM_OLD_GENERATIONS];
     SEXPREC OldToNewPeg[NUM_OLD_GENERATIONS];
 #endif
-    int OldCount[NUM_OLD_GENERATIONS], AllocCount, PageCount;
-    PAGE_HEADER *pages;
+    int OldCount[NUM_OLD_GENERATIONS], AllocCount;
 } R_GenHeap[NUM_NODE_CLASSES];
 
 static R_size_t R_NodesInUse = 0;
@@ -593,30 +568,12 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 	     100.0 * node_occup, 100.0 * vect_occup);
     alloc = R_LargeVallocSize +
 	sizeof(SEXPREC) * R_GenHeap[LARGE_NODE_CLASS].AllocCount;
-    for (i = 0; i < NUM_SMALL_NODE_CLASSES; i++)
-	alloc += R_PAGE_SIZE * R_GenHeap[i].PageCount;
     REprintf("Total allocation: %lu\n", alloc);
     REprintf("Ncells %lu\nVcells %lu\n", R_NSize, R_VSize);
 }
 #else
 #define DEBUG_ADJUST_HEAP_PRINT(node_occup, vect_occup)
 #endif /* DEBUG_ADJUST_HEAP */
-
-#ifdef DEBUG_RELEASE_MEM
-static void DEBUG_RELEASE_PRINT(int rel_pages, int maxrel_pages, int i)
-{
-    if (maxrel_pages > 0) {
-	int gen, n;
-	REprintf("Class: %d, pages = %d, maxrel = %d, released = %d\n", i,
-		 R_GenHeap[i].PageCount, maxrel_pages, rel_pages);
-	for (gen = 0, n = 0; gen < NUM_OLD_GENERATIONS; gen++)
-	    n += R_GenHeap[i].OldCount[gen];
-	REprintf("Allocated = %d, in use = %d\n", R_GenHeap[i].AllocCount, n);
-    }
-}
-#else
-#define DEBUG_RELEASE_PRINT(rel_pages, maxrel_pages, i)
-#endif /* DEBUG_RELEASE_MEM */
 
 static void ReleaseLargeFreeVectors(void)
 {
@@ -1283,13 +1240,11 @@ static void RunGenCollect(R_size_t size_needed)
     DEBUG_CHECK_NODE_COUNTS("after releasing large allocated nodes");
 
     /* tell Valgrind about free nodes */
-#if VALGRIND_LEVEL > 1
-    for(i=1; i< NUM_NODE_CLASSES;i++){
-	for(s=NEXT_NODE(R_GenHeap[i].New); s!=R_GenHeap[i].Free; s=NEXT_NODE(s)){
-	    VALGRIND_MAKE_NOACCESS(DATAPTR(s), NodeClassSize[i]*sizeof(VECREC));
-# if VALGRIND_LEVEL > 2
+#if VALGRIND_LEVEL > 2
+    for (i=1; i< NUM_NODE_CLASSES;i++){
+	for (s=NEXT_NODE(R_GenHeap[i].New);
+	     s !=R_GenHeap[i].Free; s=NEXT_NODE(s)) {
 	    VALGRIND_MAKE_NOACCESS(s,4); /* sizeof sxpinfo_struct */
-# endif
 	}
     }
 #endif
@@ -1303,8 +1258,6 @@ static void RunGenCollect(R_size_t size_needed)
     R_Collected = R_NSize;
     R_SmallVallocSize = 0;
     for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	for (i = 1; i < NUM_SMALL_NODE_CLASSES; i++)
-	    R_SmallVallocSize += R_GenHeap[i].OldCount[gen] * NodeClassSize[i];
 	for (i = 0; i < NUM_NODE_CLASSES; i++)
 	    R_Collected -= R_GenHeap[i].OldCount[gen];
     }
@@ -1326,11 +1279,9 @@ static void RunGenCollect(R_size_t size_needed)
     if (gens_collected == NUM_OLD_GENERATIONS) {
 	/**** do some adjustment for intermediate collections? */
 	AdjustHeapSize(size_needed);
-	// TryToReleasePages();
 	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
     }
     else if (gens_collected > 0) {
-	// TryToReleasePages();
 	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
     }
 
@@ -1915,21 +1866,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type, length);
     }
 
-    if (int(size) <= NodeClassSize[1]) {
-	node_class = 1;
-	alloc_size = NodeClassSize[1];
-    }
-    else {
-	node_class = LARGE_NODE_CLASS;
-	alloc_size = size;
-	for (i = 2; i < NUM_SMALL_NODE_CLASSES; i++) {
-	    if (int(size) <= NodeClassSize[i]) {
-		node_class = i;
-		alloc_size = NodeClassSize[i];
-		break;
-	    }
-	}
-    }
+    node_class = LARGE_NODE_CLASS;
+    alloc_size = size;
 
     /* save current R_VSize to roll back adjustment if malloc fails */
     old_R_VSize = R_VSize;
@@ -2712,7 +2650,7 @@ void (SET_PRCODE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.promsxp.expr = 
 /*******************************************/
 /* Non-sampling memory use profiler
    reports all large vector heap
-   allocations and all calls to GetNewPage */
+   allocations */
 /*******************************************/
 
 #ifndef R_MEMORY_PROFILING

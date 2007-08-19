@@ -45,7 +45,7 @@ typedef unsigned char Rbyte;
    favorable data alignment on 32-bit architectures like the Intel
    Pentium III where odd word alignment of doubles is allowed but much
    less efficient than even word alignment. */
-typedef RObject VECTOR_SEXPREC, *VECSEXP;
+typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
 
 /* Under the generational allocator the data for vector nodes comes
    immediately after the node structure, so the data address is a

@@ -138,109 +138,113 @@ typedef enum {
  * (which are always defined).
  */
 
-/* Flags */
-struct sxpinfo_struct {
-    SEXPTYPE type      :  5;/* ==> (FUNSXP == 99) %% 2^5 == 3 == CLOSXP
-			     * -> warning: `type' is narrower than values
-			     *              of its type
-			     * when SEXPTYPE was an enum */
-    unsigned int obj   :  1;
-    unsigned int named :  2;
-    unsigned int gp    : 16;
-    unsigned int mark  :  1;
-    unsigned int debug :  1;
-    unsigned int trace :  1;  /* functions and memory tracing */
-    unsigned int spare :  1;  /* currently unused */
-    unsigned int gcgen :  1;  /* old generation number */
-    unsigned int gccls :  3;  /* node class */
-}; /*		    Tot: 32 */
+namespace CXXR {
 
-struct primsxp_struct {
-    int offset;
-};
+    /* Flags */
+    struct sxpinfo_struct {
+	SEXPTYPE type      :  5;/* ==> (FUNSXP == 99) %% 2^5 == 3 == CLOSXP
+				 * -> warning: `type' is narrower than values
+				 *              of its type
+				 * when SEXPTYPE was an enum */
+	unsigned int obj   :  1;
+	unsigned int named :  2;
+	unsigned int gp    : 16;
+	unsigned int mark  :  1;
+	unsigned int debug :  1;
+	unsigned int trace :  1;  /* functions and memory tracing */
+	unsigned int spare :  1;  /* currently unused */
+	unsigned int gcgen :  1;  /* old generation number */
+	unsigned int gccls :  3;  /* node class */
+    }; /*		    Tot: 32 */
 
-class RObject;
+    struct primsxp_struct {
+	int offset;
+    };
 
-struct symsxp_struct {
-    RObject *pname;
-    RObject *value;
-    RObject *internal;
-};
+    class RObject;
 
-struct listsxp_struct {
-    RObject *carval;
-    RObject *cdrval;
-    RObject *tagval;
-};
+    struct symsxp_struct {
+	RObject *pname;
+	RObject *value;
+	RObject *internal;
+    };
 
-struct envsxp_struct {
-    RObject *frame;
-    RObject *enclos;
-    RObject *hashtab;
-};
+    struct listsxp_struct {
+	RObject *carval;
+	RObject *cdrval;
+	RObject *tagval;
+    };
 
-struct closxp_struct {
-    RObject *formals;
-    RObject *body;
-    RObject *env;
-};
+    struct envsxp_struct {
+	RObject *frame;
+	RObject *enclos;
+	RObject *hashtab;
+    };
 
-struct promsxp_struct {
-    RObject *value;
-    RObject *expr;
-    RObject *env;
-};
+    struct closxp_struct {
+	RObject *formals;
+	RObject *body;
+	RObject *env;
+    };
 
-struct vecsxp_struct {
-    R_len_t	length;
-    R_len_t	truelength;
-};
+    struct promsxp_struct {
+	RObject *value;
+	RObject *expr;
+	RObject *env;
+    };
 
-/* Every node must start with a set of sxpinfo flags and an attribute
-   field. Under the generational collector these are followed by the
-   fields used to maintain the collector's linked list structures. */
-#define SEXPREC_HEADER \
-    struct sxpinfo_struct sxpinfo; \
-    RObject *attrib; \
-    RObject *gengc_next_node, *gengc_prev_node
+    struct vecsxp_struct {
+	R_len_t	length;
+	R_len_t	truelength;
+    };
 
-/* The standard node structure consists of a header followed by the
-   node data. */
-typedef struct RObject {
-    SEXPREC_HEADER;
-    union {
-	struct primsxp_struct primsxp;
-	struct symsxp_struct symsxp;
-	struct listsxp_struct listsxp;
-	struct envsxp_struct envsxp;
-	struct closxp_struct closxp;
-	struct promsxp_struct promsxp;
-	struct vecsxp_struct vecsxp;
-    } u;
-    void* m_data;
-    size_t m_databytes;
-} SEXPREC;
+    /* Every node must start with a set of sxpinfo flags and an attribute
+       field. Under the generational collector these are followed by the
+       fields used to maintain the collector's linked list structures. */
+#define SEXPREC_HEADER					\
+    struct sxpinfo_struct sxpinfo;			\
+	RObject *attrib;				\
+	RObject *gengc_next_node, *gengc_prev_node
 
-typedef RObject* SEXP;
+    /* The standard node structure consists of a header followed by the
+       node data. */
+    struct RObject {
+	SEXPREC_HEADER;
+	union {
+	    struct primsxp_struct primsxp;
+	    struct symsxp_struct symsxp;
+	    struct listsxp_struct listsxp;
+	    struct envsxp_struct envsxp;
+	    struct closxp_struct closxp;
+	    struct promsxp_struct promsxp;
+	    struct vecsxp_struct vecsxp;
+	} u;
+	void* m_data;
+	size_t m_databytes;
+    };
 
-/* S4 object bit, set by R_do_new_object for all new() calls */
+    /* S4 object bit, set by R_do_new_object for all new() calls */
 #define S4_OBJECT_MASK (1<<4)
 
 #define DDVAL_MASK	1
 
 
-/*
- * In CXXR USE_RINTERNALS is defined only in source files inherited
- * from C R that need privileged access to C++ objects, e.g. because
- * the file implements what is or will be a friend function.
- */
+    /*
+     * In CXXR USE_RINTERNALS is defined only in source files inherited
+     * from C R that need privileged access to C++ objects, e.g. because
+     * the file implements what is or will be a friend function.
+     */
 #ifdef USE_RINTERNALS
 
-/*
- * Well, that was the idea anyway.
- */
+    /*
+     * Well, that was the idea anyway.
+     */
 
 #endif // USE_RINTERNALS
+
+}  // namespace CXXR
+
+typedef CXXR::RObject SEXPREC, *SEXP;
 
 #else /* if not __cplusplus */
 
