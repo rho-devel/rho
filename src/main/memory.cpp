@@ -343,8 +343,7 @@ typedef union PAGE_HEADER {
 namespace {
     inline int NODE_SIZE(int nclass)
     {
-	return nclass == 0 ? sizeof(SEXPREC)
-	    : sizeof(SEXPREC_ALIGN) + NodeClassSize[nclass] * sizeof(VECREC);
+	return sizeof(SEXPREC);
     }
 
     inline char* PAGE_DATA(PAGE_HEADER* page)
@@ -593,7 +592,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
     REprintf("Node occupancy: %.0f%%\nVector occupancy: %.0f%%\n",
 	     100.0 * node_occup, 100.0 * vect_occup);
     alloc = R_LargeVallocSize +
-	sizeof(SEXPREC_ALIGN) * R_GenHeap[LARGE_NODE_CLASS].AllocCount;
+	sizeof(SEXPREC) * R_GenHeap[LARGE_NODE_CLASS].AllocCount;
     for (i = 0; i < NUM_SMALL_NODE_CLASSES; i++)
 	alloc += R_PAGE_SIZE * R_GenHeap[i].PageCount;
     REprintf("Total allocation: %lu\n", alloc);
@@ -656,8 +655,8 @@ static void ReleaseLargeFreeVectors(void)
 	    UNSNAP_NODE(s);
 	    R_LargeVallocSize -= size;
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
-	    size_t bytes = sizeof(SEXPREC_ALIGN) + size*sizeof(VECREC);
-	    Heap::deallocate(s, bytes);
+	    Heap::deallocate(s->m_data, s->m_databytes);
+	    Heap::deallocate(s, sizeof(SEXPREC));
 	}
 	s = next;
     }
@@ -1103,17 +1102,7 @@ namespace {
 }
 
 /* The Generational Collector. */
-/*
-#define PROCESS_NODES() do { \
-    while (forwarded_nodes != NULL) { \
-	s = forwarded_nodes; \
-	forwarded_nodes = NEXT_NODE(forwarded_nodes); \
-	SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]); \
-	R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++; \
-	FORWARD_CHILDREN(s); \
-    } \
-} while (0)
-*/
+
 static void RunGenCollect(R_size_t size_needed)
 {
     int i, gen, gens_collected;
@@ -1689,6 +1678,8 @@ SEXP allocSExp(SEXPTYPE t)
     }
     s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    s->m_data = 0;
+    s->m_databytes = 0;
     SET_TYPEOF(s, t);
     SETCAR(s, R_NilValue);
     SETCDR(s, R_NilValue);
@@ -1710,6 +1701,8 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
     }
     s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    s->m_data = 0;
+    s->m_databytes = 0;
     SET_TYPEOF(s, t);
     SET_TAG(s, R_NilValue);
     SET_ATTRIB(s, R_NilValue);
@@ -1737,6 +1730,8 @@ SEXP cons(SEXP car, SEXP cdr)
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    s->m_data = 0;
+    s->m_databytes = 0;
     SET_TYPEOF(s, LISTSXP);
     SETCAR(s, car);
     SETCDR(s, cdr);
@@ -1781,6 +1776,8 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
 #endif
     newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    newrho->m_data = 0;
+    newrho->m_databytes = 0;
     SET_TYPEOF(newrho, ENVSXP);
     newrho->u.envsxp.frame = valuelist;  // FRAME
     newrho->u.envsxp.enclos = rho;  // ENCLOS
@@ -1815,6 +1812,8 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
     VALGRIND_MAKE_READABLE(s,sizeof(*s));
 #endif
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+    s->m_data = 0;
+    s->m_databytes = 0;
     SET_TYPEOF(s, PROMSXP);
     s->u.promsxp.expr = expr;  // PRCODE
     s->u.promsxp.env = rho;  // PRENV
@@ -1958,15 +1957,17 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    R_SmallVallocSize += alloc_size;
 	}
 	else {
-	    s = NULL; /* initialize to suppress warning */
+	    s = NULL;
 	    bool success = false;
-	    if (size < (R_SIZE_T_MAX/sizeof(VECREC)) - sizeof(SEXPREC_ALIGN)) {
-		size_t bytes = sizeof(SEXPREC_ALIGN) + size * sizeof(VECREC);
+	    if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
 		try {
-		    s = reinterpret_cast<SEXPREC*>(Heap::allocate(bytes));
+		    s = reinterpret_cast<SEXPREC*>(Heap::allocate(sizeof(SEXPREC)));
+		    s->m_databytes = size * sizeof(VECREC);
+		    s->m_data = Heap::allocate(s->m_databytes);
 		    success = true;
 		}
 		catch (bad_alloc) {
+		    if (s) Heap::deallocate(s, s->m_databytes);
 		    success = false;
 		}
 	    }

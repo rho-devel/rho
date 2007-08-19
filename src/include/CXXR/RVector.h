@@ -37,11 +37,6 @@ typedef unsigned char Rbyte;
 
 #ifdef __cplusplus
 
-struct vecsxp_struct {
-    R_len_t	length;
-    R_len_t	truelength;
-};
-
 /* The generational collector uses a reduced version of SEXPREC as a
    header in vector nodes.  The layout MUST be kept consistent with
    the SEXPREC definition.  The standard SEXPREC takes up 7 words on
@@ -50,19 +45,14 @@ struct vecsxp_struct {
    favorable data alignment on 32-bit architectures like the Intel
    Pentium III where odd word alignment of doubles is allowed but much
    less efficient than even word alignment. */
-typedef struct VECTOR_SEXPREC {
-    SEXPREC_HEADER;
-    struct vecsxp_struct vecsxp;
-} VECTOR_SEXPREC, *VECSEXP;
-
-typedef union { VECTOR_SEXPREC s; double align; } SEXPREC_ALIGN;
+typedef RObject VECTOR_SEXPREC, *VECSEXP;
 
 /* Under the generational allocator the data for vector nodes comes
    immediately after the node structure, so the data address is a
    known offset from the node SEXP. */
 // 2007/08/07 arr Get rid of this macro once it is no longer needed
 // within the inline functions below.
-#define DATAPTR(x)	(reinterpret_cast<SEXPREC_ALIGN *>(x) + 1)
+inline void* DATAPTR(SEXP x) {return x->m_data;}
 
 #endif /* __cplusplus */
 
@@ -84,7 +74,7 @@ int LENGTH(SEXP x);
 #else
 inline int LENGTH(SEXP x)
 {
-    return x ? reinterpret_cast<VECSEXP>(x)->vecsxp.length : 0;
+    return x ? reinterpret_cast<VECSEXP>(x)->u.vecsxp.length : 0;
 }
 #endif
 
@@ -100,7 +90,7 @@ int TRUELENGTH(SEXP x);
 #else
 inline int TRUELENGTH(SEXP x)
 {
-    return reinterpret_cast<VECSEXP>(x)->vecsxp.truelength;
+    return reinterpret_cast<VECSEXP>(x)->u.vecsxp.truelength;
 }
 #endif
 
@@ -114,7 +104,7 @@ void SETLENGTH(SEXP x, int v);
 #else
 inline void SETLENGTH(SEXP x, int v)
 {
-    reinterpret_cast<VECSEXP>(x)->vecsxp.length = v;
+    reinterpret_cast<VECSEXP>(x)->u.vecsxp.length = v;
 }
 #endif
 
@@ -128,7 +118,7 @@ void SET_TRUELENGTH(SEXP x, int v);
 #else
 inline void SET_TRUELENGTH(SEXP x, int v)
 {
-    reinterpret_cast<VECSEXP>(x)->vecsxp.truelength = v;
+    reinterpret_cast<VECSEXP>(x)->u.vecsxp.truelength = v;
 }
 #endif
 

@@ -30,6 +30,8 @@
 #include "Rf_namespace.h"
 
 #ifdef __cplusplus
+#include <cstddef>
+
 extern "C" {
 #endif
 
@@ -189,6 +191,11 @@ struct promsxp_struct {
     RObject *env;
 };
 
+struct vecsxp_struct {
+    R_len_t	length;
+    R_len_t	truelength;
+};
+
 /* Every node must start with a set of sxpinfo flags and an attribute
    field. Under the generational collector these are followed by the
    fields used to maintain the collector's linked list structures. */
@@ -208,7 +215,10 @@ typedef struct RObject {
 	struct envsxp_struct envsxp;
 	struct closxp_struct closxp;
 	struct promsxp_struct promsxp;
+	struct vecsxp_struct vecsxp;
     } u;
+    void* m_data;
+    size_t m_databytes;
 } SEXPREC;
 
 typedef RObject* SEXP;
