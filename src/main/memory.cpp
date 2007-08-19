@@ -268,7 +268,7 @@ static R_size_t R_V_maxused=0;
    node header is followed in memory by the vector data, offset from
    the header by SEXPREC_ALIGN. */
 
-#define NUM_NODE_CLASSES 8
+#define NUM_NODE_CLASSES 2
 
 /* sxpinfo allocates 3 bits for the node class, so at most 8 are allowed */
 #if NUM_NODE_CLASSES > 8
@@ -279,7 +279,7 @@ static R_size_t R_V_maxused=0;
 #define NUM_SMALL_NODE_CLASSES (NUM_NODE_CLASSES - 1)
 
 /* the number of VECREC's in nodes of the small node classes */
-static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0, 1, 2, 4, 6, 8, 16 };
+static int NodeClassSize[NUM_SMALL_NODE_CLASSES] = { 0 };
 
 namespace {
     inline unsigned int NODE_CLASS(SEXP s) {return s->sxpinfo.gccls;}
@@ -646,6 +646,7 @@ static void ReleaseLargeFreeVectors(void)
 	    case STRSXP:
 	    case EXPRSXP:
 	    case VECSXP:
+	    case WEAKREFSXP:
 		size = LENGTH(s) * sizeof(SEXP);
 		break;
 	    default:
