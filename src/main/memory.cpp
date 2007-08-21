@@ -1390,9 +1390,9 @@ static void mem_err_cons()
 static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
 
 namespace {
-    bool cueGC(size_t bytes, bool force)
+    bool cueGC(size_t bytes_wanted, bool force)
     {
-	if (force) R_gc_internal(bytes);
+	if (force) R_gc_internal(bytes_wanted);
 	return force;
     }
 }
@@ -1674,7 +1674,10 @@ SEXP cons(SEXP car, SEXP cdr)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
+    PROTECT(car);
+    PROTECT(cdr);
     s = GET_FREE_NODE();
+    UNPROTECT(2);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
@@ -1720,7 +1723,11 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
+    PROTECT(namelist);
+    PROTECT(valuelist);
+    PROTECT(rho);
     newrho = GET_FREE_NODE();
+    UNPROTECT(3);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
 #endif
@@ -1756,7 +1763,10 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
 	if (NO_FREE_NODES())
 	    mem_err_cons();
     }
+    PROTECT(expr);
+    PROTECT(rho);
     s = GET_FREE_NODE();
+    UNPROTECT(2);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s,sizeof(*s));
 #endif
@@ -1886,7 +1896,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    try {
 		s = reinterpret_cast<SEXPREC*>(Heap::allocate(sizeof(SEXPREC)));
 		s->m_databytes = size * sizeof(VECREC);
+		PROTECT(s);
 		s->m_data = Heap::allocate(s->m_databytes);
+		UNPROTECT(1);
 		success = true;
 	    }
 	    catch (bad_alloc) {
