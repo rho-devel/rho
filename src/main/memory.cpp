@@ -133,7 +133,6 @@ extern SEXP framenames;
 	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
 
 static void R_gc_internal(R_size_t size_needed);
-static void mem_err_heap(R_size_t size);
 
 static SEXPREC UnmarkedNodeTemplate;
 
@@ -608,7 +607,7 @@ static void ReleaseLargeFreeVectors(void)
 	    size = BYTE2VEC(size);
 	    UNSNAP_NODE(s);
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
-	    if (s->m_data) Heap::deallocate(s->m_data, s->m_databytes);
+	    Heap::deallocate(s->m_data, s->m_databytes);
 	    Heap::deallocate(s, sizeof(SEXPREC));
 	}
 	s = next;
@@ -1365,15 +1364,17 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-static void mem_err_heap(R_size_t size)
-{
-    errorcall(R_NilValue, _("vector memory exhausted (limit reached?)"));
-}
+namespace {
+    inline bool NO_FREE_NODES() {return Heap::blocksAllocated() >= R_NSize;}
 
-
-static void mem_err_cons()
-{
-    errorcall(R_NilValue, _("cons memory exhausted (limit reached?)"));
+    bool cueGC(size_t bytes_wanted, bool force)
+    {
+	if (!force && !NO_FREE_NODES()
+	    && VHEAP_FREE() >= bytes_wanted/sizeof(VECREC))
+	    return false;
+	R_gc_internal(bytes_wanted);
+	return true;
+    }
 }
 
 /* InitMemory : Initialise the memory to be used in R. */
@@ -1381,14 +1382,6 @@ static void mem_err_cons()
 
 #define PP_REDZONE_SIZE 1000L
 static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
-
-namespace {
-    bool cueGC(size_t bytes_wanted, bool force)
-    {
-	if (force) R_gc_internal(bytes_wanted);
-	return force;
-    }
-}
 
 void attribute_hidden InitMemory()
 {
@@ -1435,23 +1428,6 @@ void attribute_hidden InitMemory()
     SET_NODE_CLASS(&UnmarkedNodeTemplate, 0);
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
-
-    /* 2007/08/06 arr: R_NilValue is now simply #defined to 0. */
-    /* R_NilValue */
-    /* THIS MUST BE THE FIRST CONS CELL ALLOCATED */
-    /* OR ARMAGEDDON HAPPENS. */
-    /* Field assignments for R_NilValue must not go through write barrier
-       since the write barrier prevents assignments to R_NilValue's fields.
-       because of checks for nil */
-    /*
-    GET_FREE_NODE(R_NilValue);
-    R_NilValue->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    TYPEOF(R_NilValue) = NILSXP;
-    CAR(R_NilValue) = R_NilValue;
-    CDR(R_NilValue) = R_NilValue;
-    TAG(R_NilValue) = R_NilValue;
-    ATTRIB(R_NilValue) = R_NilValue;
-    */
 
 #ifdef BYTECODE
     R_BCNodeStackBase = reinterpret_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
@@ -1591,19 +1567,18 @@ namespace {
 	SEXP n = R_GenHeap[nclass].Free;
 	if (n == R_GenHeap[nclass].New) {
 	    size_t bytes = NODE_SIZE(nclass);
+	    if (FORCE_GC) R_gc_internal(0);
 	    try {
 		n = reinterpret_cast<SEXP>(Heap::allocate(bytes));
 	    }
 	    catch (bad_alloc) {
-		mem_err_heap(bytes);
+		errorcall(R_NilValue, _("memory exhausted"));
 	    }
 	    SNAP_NODE(n, R_GenHeap[nclass].New);
 	}
 	R_GenHeap[nclass].Free = NEXT_NODE(n);
 	return n;
     }
-
-    inline bool NO_FREE_NODES() {return Heap::blocksAllocated() >= R_NSize;}
 }
 
 /* "allocSExp" allocate a SEXPREC */
@@ -1611,13 +1586,7 @@ namespace {
 
 SEXP allocSExp(SEXPTYPE t)
 {
-    SEXP s;
-    if (FORCE_GC || NO_FREE_NODES()) {
-	R_gc_internal(0);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
-    s = GET_FREE_NODE();
+    SEXP s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     s->m_data = 0;
     s->m_databytes = 0;
@@ -1634,13 +1603,7 @@ SEXP allocSExp(SEXPTYPE t)
 
 static SEXP allocSExpNonCons(SEXPTYPE t)
 {
-    SEXP s;
-    if (FORCE_GC || NO_FREE_NODES()) {
-	R_gc_internal(0);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
-    s = GET_FREE_NODE();
+    SEXP s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     s->m_data = 0;
     s->m_databytes = 0;
@@ -1658,14 +1621,6 @@ static SEXP allocSExpNonCons(SEXPTYPE t)
 SEXP cons(SEXP car, SEXP cdr)
 {
     SEXP s;
-    if (FORCE_GC || NO_FREE_NODES()) {
-	PROTECT(car);
-	PROTECT(cdr);
-	R_gc_internal(0);
-	UNPROTECT(2);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
     PROTECT(car);
     PROTECT(cdr);
     s = GET_FREE_NODE();
@@ -1706,15 +1661,6 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 {
     SEXP v, n, newrho;
 
-    if (FORCE_GC || NO_FREE_NODES()) {
-	PROTECT(namelist);
-	PROTECT(valuelist);
-	PROTECT(rho);
-	R_gc_internal(0);
-	UNPROTECT(3);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
     PROTECT(namelist);
     PROTECT(valuelist);
     PROTECT(rho);
@@ -1747,14 +1693,6 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
 {
     SEXP s;
-    if (FORCE_GC || NO_FREE_NODES()) {
-	PROTECT(expr);
-	PROTECT(rho);
-	R_gc_internal(0);
-	UNPROTECT(2);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-    }
     PROTECT(expr);
     PROTECT(rho);
     s = GET_FREE_NODE();
@@ -1872,15 +1810,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     /* save current R_VSize to roll back adjustment if malloc fails */
     old_R_VSize = R_VSize;
 
-    /* we need to do the gc here so allocSExp doesn't! */
-    if (FORCE_GC || NO_FREE_NODES() || VHEAP_FREE() < alloc_size) {
-	R_gc_internal(alloc_size);
-	if (NO_FREE_NODES())
-	    mem_err_cons();
-	if (VHEAP_FREE() < alloc_size)
-	    mem_err_heap(size);
-    }
-
     s = GET_FREE_NODE(LARGE_NODE_CLASS);
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
     SET_NODE_CLASS(s, LARGE_NODE_CLASS);
@@ -1892,6 +1821,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     if (size > 0) {
 	bool success = false;
 	if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
+	    // We don't want the garbage collector trying to mark this
+	    // node's children yet:
+	    SETLENGTH(s, 0);
 	    try {
 		PROTECT(s);
 		s->m_data = Heap::allocate(s->m_databytes);
@@ -1923,9 +1855,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #ifdef R_MEMORY_PROFILING
 	R_ReportAllocation(bytes);
 #endif
-    }
-    else {
-	GC_PROT(s = allocSExpNonCons(type));
     }
     SETLENGTH(s, length);
     SET_NAMED(s, 0);
