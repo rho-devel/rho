@@ -608,7 +608,7 @@ static void ReleaseLargeFreeVectors(void)
 	    size = BYTE2VEC(size);
 	    UNSNAP_NODE(s);
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
-	    Heap::deallocate(s->m_data, s->m_databytes);
+	    if (s->m_data) Heap::deallocate(s->m_data, s->m_databytes);
 	    Heap::deallocate(s, sizeof(SEXPREC));
 	}
 	s = next;
@@ -1886,7 +1886,12 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	bool success = false;
 	if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
 	    try {
-		s = reinterpret_cast<SEXPREC*>(Heap::allocate(sizeof(SEXPREC)));
+		s = GET_FREE_NODE(LARGE_NODE_CLASS);
+		s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+		SET_NODE_CLASS(s, LARGE_NODE_CLASS);
+		R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
+		SET_ATTRIB(s, R_NilValue);
+		SET_TYPEOF(s, type);
 		s->m_databytes = size * sizeof(VECREC);
 		PROTECT(s);
 		s->m_data = Heap::allocate(s->m_databytes);
@@ -1894,7 +1899,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 		success = true;
 	    }
 	    catch (bad_alloc) {
-		if (s) Heap::deallocate(s, s->m_databytes);
+		s->m_data = 0;
+		// Leave s itself to the garbage collector.
 		success = false;
 	    }
 	}
@@ -1918,12 +1924,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #ifdef R_MEMORY_PROFILING
 	R_ReportAllocation(bytes);
 #endif
-	s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	SET_NODE_CLASS(s, LARGE_NODE_CLASS);
-	R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
-	SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
-	SET_ATTRIB(s, R_NilValue);
-	SET_TYPEOF(s, type);
     }
     else {
 	GC_PROT(s = allocSExpNonCons(type));
