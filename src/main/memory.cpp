@@ -255,7 +255,6 @@ void R_SetPPSize(R_size_t size)
 static SEXP R_VStack = NULL;		/* R_alloc stack pointer */
 static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
 static R_size_t R_LargeVallocSize = 0;
-static R_size_t R_SmallVallocSize = 0;
 static R_size_t orig_R_NSize;
 static R_size_t orig_R_VSize;
 
@@ -331,7 +330,7 @@ namespace {
     // certain that the answer won't be negative? 
     inline R_size_t VHEAP_FREE()
     {
-	return R_VSize - R_LargeVallocSize - R_SmallVallocSize;
+	return R_VSize - R_LargeVallocSize;
     }
 }
 
@@ -547,7 +546,7 @@ static void DEBUG_GC_SUMMARY(int full_gc)
 {
     int i, gen, OldCount;
     REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
-	     R_SmallVallocSize + R_LargeVallocSize);
+	    R_LargeVallocSize);
     for (i = 1; i < NUM_NODE_CLASSES; i++) {
 	for (gen = 0, OldCount = 0; gen < NUM_OLD_GENERATIONS; gen++)
 	    OldCount += R_GenHeap[i].OldCount[gen];
@@ -627,7 +626,7 @@ static void AdjustHeapSize(R_size_t size_needed)
     R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
     R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
     R_size_t NNeeded = R_NodesInUse + R_MinNFree;
-    R_size_t VNeeded = R_SmallVallocSize + R_LargeVallocSize
+    R_size_t VNeeded = R_LargeVallocSize
 	+ size_needed + R_MinVFree;
     double node_occup = double(NNeeded) / R_NSize;
     double vect_occup =	double(VNeeded) / R_VSize;
@@ -1256,7 +1255,6 @@ static void RunGenCollect(R_size_t size_needed)
 
     /* update heap statistics */
     R_Collected = R_NSize;
-    R_SmallVallocSize = 0;
     for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
 	for (i = 0; i < NUM_NODE_CLASSES; i++)
 	    R_Collected -= R_GenHeap[i].OldCount[gen];
@@ -1327,7 +1325,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 				      unsigned long *largevsize,
 				      unsigned long *nodes)
 {
-    *smallvsize = R_SmallVallocSize;
+    *smallvsize = 0;
     *largevsize = R_LargeVallocSize;
     *nodes = R_NodesInUse * sizeof(SEXPREC);
     return;
@@ -1882,60 +1880,46 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     }
 
     if (size > 0) {
-	if (node_class < NUM_SMALL_NODE_CLASSES) {
-	    s = GET_FREE_NODE(node_class);
-#if VALGRIND_LEVEL > 2
-	    VALGRIND_MAKE_WRITABLE(s, 4); /* sizeof sxpinfo_struct */
-#endif
-#if VALGRIND_LEVEL > 1
-	    VALGRIND_MAKE_WRITABLE(DATAPTR(s), actual_size);
-#endif
-	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	    SET_NODE_CLASS(s, node_class);
-	    R_SmallVallocSize += alloc_size;
+	s = NULL;
+	bool success = false;
+	if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
+	    try {
+		s = reinterpret_cast<SEXPREC*>(Heap::allocate(sizeof(SEXPREC)));
+		s->m_databytes = size * sizeof(VECREC);
+		s->m_data = Heap::allocate(s->m_databytes);
+		success = true;
+	    }
+	    catch (bad_alloc) {
+		if (s) Heap::deallocate(s, s->m_databytes);
+		success = false;
+	    }
 	}
-	else {
-	    s = NULL;
-	    bool success = false;
-	    if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
-		try {
-		    s = reinterpret_cast<SEXPREC*>(Heap::allocate(sizeof(SEXPREC)));
-		    s->m_databytes = size * sizeof(VECREC);
-		    s->m_data = Heap::allocate(s->m_databytes);
-		    success = true;
-		}
-		catch (bad_alloc) {
-		    if (s) Heap::deallocate(s, s->m_databytes);
-		    success = false;
-		}
-	    }
-	    if (!success) {
-		double dsize = double(size) * sizeof(VECREC)/1024.0;
-		/* reset the vector heap limit */
-		R_VSize = old_R_VSize;
-		if(dsize > 1024.0*1024.0)
-		    errorcall(R_NilValue, 
-			      _("cannot allocate vector of size %0.1f Gb"),
-			      dsize/1024.0/1024.0);
-		if(dsize > 1024.0)
-		    errorcall(R_NilValue,
-			      _("cannot allocate vector of size %0.1f Mb"),
-			      dsize/1024.0);
-		else
-		    errorcall(R_NilValue, 
-			      _("cannot allocate vector of size %0.f Kb"),
-			      dsize);
-	    }
+	if (!success) {
+	    double dsize = double(size) * sizeof(VECREC)/1024.0;
+	    /* reset the vector heap limit */
+	    R_VSize = old_R_VSize;
+	    if(dsize > 1024.0*1024.0)
+		errorcall(R_NilValue, 
+			  _("cannot allocate vector of size %0.1f Gb"),
+			  dsize/1024.0/1024.0);
+	    if(dsize > 1024.0)
+		errorcall(R_NilValue,
+			  _("cannot allocate vector of size %0.1f Mb"),
+			  dsize/1024.0);
+	    else
+		errorcall(R_NilValue, 
+			  _("cannot allocate vector of size %0.f Kb"),
+			  dsize);
+	}
 #ifdef R_MEMORY_PROFILING
-	    R_ReportAllocation(bytes);
+	R_ReportAllocation(bytes);
 #endif
-	    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-	    SET_NODE_CLASS(s, LARGE_NODE_CLASS);
-	    R_LargeVallocSize += size;
-	    R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
-	    R_NodesInUse++;
-	    SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
-	}
+	s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
+	SET_NODE_CLASS(s, LARGE_NODE_CLASS);
+	R_LargeVallocSize += size;
+	R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
+	R_NodesInUse++;
+	SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
 	SET_ATTRIB(s, R_NilValue);
 	SET_TYPEOF(s, type);
     }

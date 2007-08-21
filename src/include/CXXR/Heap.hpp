@@ -100,9 +100,12 @@ namespace CXXR {
 	 *         memory from the main heap (second argument set to
 	 *         false), or has just failed to allocate memory from
 	 *         the heap (second argument set to true).  The first
-	 *         argument is the amount of memory sought (in bytes).
-	 *         The function should return true iff a release of memory 
-	 *         took place.
+	 *         argument is the amount of memory, in bytes, sought
+	 *         from the main heap.  The function should return
+	 *         false if it is certain that no release of memory
+	 *         too place (e.g. because no garbage collection was
+	 *         carried out on this occasion), and otherwise return
+	 *         true.
 	 */
 	static void setGCCuer(bool (*cue_gc)(size_t, bool) = 0)
 	{

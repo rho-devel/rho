@@ -20,6 +20,8 @@
 /** @file CellPool.cpp
  *
  * Implementation of class CellPool
+ *
+ * @todo Include valgrind instrumentation (conditionally compiled).
  */
 
 #include "CXXR/CellPool.hpp"
