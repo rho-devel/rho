@@ -41,6 +41,9 @@
 #include <config.h>
 #endif
 
+// For debugging:
+#include <iostream>
+
 #if defined(HAVE_GLIBC2)
 /* for isnan in Rinlinedfuns.h */
 # define _SVID_SOURCE 1
@@ -371,8 +374,6 @@ static struct {
     int OldCount[NUM_OLD_GENERATIONS], AllocCount;
 } R_GenHeap[NUM_NODE_CLASSES];
 
-static R_size_t R_NodesInUse = 0;
-
 namespace {
     inline RObject* NEXT_NODE(SEXP s) {return s->gengc_next_node;}
 
@@ -561,7 +562,6 @@ static void DEBUG_GC_SUMMARY(int full_gc)
 #ifdef DEBUG_ADJUST_HEAP
 static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 {
-    int i;
     R_size_t alloc;
     REprintf("Node occupancy: %.0f%%\nVector occupancy: %.0f%%\n",
 	     100.0 * node_occup, 100.0 * vect_occup);
@@ -625,7 +625,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 {
     R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
     R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
-    R_size_t NNeeded = R_NodesInUse + R_MinNFree;
+    R_size_t NNeeded = Heap::blocksAllocated() + R_MinNFree;
     R_size_t VNeeded = R_LargeVallocSize
 	+ size_needed + R_MinVFree;
     double node_occup = double(NNeeded) / R_NSize;
@@ -1061,6 +1061,7 @@ namespace {
 
 static void RunGenCollect(R_size_t size_needed)
 {
+    // cout << "Starting garbage collection." << endl;
     int i, gen, gens_collected;
     DevDesc *dd;
     RCNTXT *ctxt;
@@ -1254,18 +1255,13 @@ static void RunGenCollect(R_size_t size_needed)
 
 
     /* update heap statistics */
-    R_Collected = R_NSize;
-    for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	for (i = 0; i < NUM_NODE_CLASSES; i++)
-	    R_Collected -= R_GenHeap[i].OldCount[gen];
-    }
-    R_NodesInUse = R_NSize - R_Collected;
-
     if (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
-	if (R_Collected < R_MinFreeFrac * R_NSize ||
+	double nfrac = double(Heap::blocksAllocated())/double(R_NSize);
+	if (nfrac >= 1.0 - R_MinFreeFrac * R_NSize ||
 	    VHEAP_FREE() < size_needed + R_MinFreeFrac * R_VSize) {
 	    num_old_gens_to_collect++;
-	    if (R_Collected <= 0 || VHEAP_FREE() < size_needed)
+	    if (Heap::blocksAllocated() >= R_NSize
+		|| VHEAP_FREE() < size_needed)
 		goto again;
 	}
 	else num_old_gens_to_collect = 0;
@@ -1290,6 +1286,7 @@ static void RunGenCollect(R_size_t size_needed)
 	REprintf(" (level %d) ... ", gens_collected);
 	DEBUG_GC_SUMMARY(gens_collected == NUM_OLD_GENERATIONS);
     }
+    // cout << "Finished garbage collection" << endl;
 }
 
 
@@ -1327,7 +1324,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 {
     *smallvsize = 0;
     *largevsize = R_LargeVallocSize;
-    *nodes = R_NodesInUse * sizeof(SEXPREC);
+    *nodes = 0;
     return;
 }
 
@@ -1335,7 +1332,6 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP value;
     int ogc, reset_max;
-    R_size_t onsize = R_NSize /* can change during collection */;
 
     checkArity(op, args);
     ogc = gc_reporting;
@@ -1346,12 +1342,12 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     gc_reporting = ogc;
     /*- now return the [used , gc trigger size] for cells and heap */
     PROTECT(value = allocVector(REALSXP, 14));
-    REAL(value)[0] = onsize - R_Collected;
+    REAL(value)[0] = Heap::blocksAllocated();
     REAL(value)[1] = R_VSize - VHEAP_FREE();
     REAL(value)[4] = R_NSize;
     REAL(value)[5] = R_VSize;
     /* next four are in 0.1Mb, rounded up */
-    REAL(value)[2] = 0.1*ceil(10. * (onsize - R_Collected)/Mega * sizeof(SEXPREC));
+    REAL(value)[2] = 0.0;  // in CXXR, cells don't have a fixed size
     REAL(value)[3] = 0.1*ceil(10. * (R_VSize - VHEAP_FREE())/Mega * vsfac);
     REAL(value)[6] = 0.1*ceil(10. * R_NSize/Mega * sizeof(SEXPREC));
     REAL(value)[7] = 0.1*ceil(10. * R_VSize/Mega * vsfac);
@@ -1360,12 +1356,12 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     REAL(value)[9] = (R_MaxVSize < R_SIZE_T_MAX) ?
 	0.1*ceil(10. * R_MaxVSize/Mega * vsfac) : NA_REAL;
     if (reset_max){
-	    R_N_maxused = onsize - R_Collected;
-	    R_V_maxused = R_VSize - VHEAP_FREE();
+	R_N_maxused = Heap::blocksAllocated();
+	R_V_maxused = R_VSize - VHEAP_FREE();
     }
     REAL(value)[10] = R_N_maxused;
     REAL(value)[11] = R_V_maxused;
-    REAL(value)[12] = 0.1*ceil(10. * R_N_maxused/Mega*sizeof(SEXPREC));
+    REAL(value)[12] = 0.0;  // in CXXR, cells don't have a fixed size
     REAL(value)[13] = 0.1*ceil(10. * R_V_maxused/Mega*vsfac);
     UNPROTECT(1);
     return value;
@@ -1607,11 +1603,10 @@ namespace {
 	    SNAP_NODE(n, R_GenHeap[nclass].New);
 	}
 	R_GenHeap[nclass].Free = NEXT_NODE(n);
-	R_NodesInUse++;
 	return n;
     }
 
-    inline bool NO_FREE_NODES() {return R_NodesInUse >= R_NSize;}
+    inline bool NO_FREE_NODES() {return Heap::blocksAllocated() >= R_NSize;}
 }
 
 /* "allocSExp" allocate a SEXPREC */
@@ -1930,7 +1925,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	SET_NODE_CLASS(s, LARGE_NODE_CLASS);
 	R_LargeVallocSize += size;
 	R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
-	R_NodesInUse++;
 	SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
 	SET_ATTRIB(s, R_NilValue);
 	SET_TYPEOF(s, type);
@@ -2072,7 +2066,6 @@ static void gc_end_timing(void)
 
 static void R_gc_internal(R_size_t size_needed)
 {
-    R_size_t onsize = R_NSize /* can change during collection */;
     double ncells, vcells, vfrac, nfrac;
     Rboolean first = TRUE;
 
@@ -2080,7 +2073,7 @@ static void R_gc_internal(R_size_t size_needed)
 
     gc_count++;
 
-    R_N_maxused = R_MAX(R_N_maxused, R_NodesInUse);
+    R_N_maxused = R_MAX(R_N_maxused, Heap::blocksAllocated());
     R_V_maxused = R_MAX(R_V_maxused, R_VSize - VHEAP_FREE());
 
     BEGIN_SUSPEND_INTERRUPTS {
@@ -2090,7 +2083,7 @@ static void R_gc_internal(R_size_t size_needed)
     } END_SUSPEND_INTERRUPTS;
 
     if (gc_reporting) {
-	ncells = onsize - R_Collected;
+	ncells = Heap::blocksAllocated();
 	nfrac = (100.0 * ncells) / R_NSize;
 	/* We try to make this consistent with the results returned by gc */
 	ncells = 0.1*ceil(10*ncells * sizeof(SEXPREC)/Mega);
