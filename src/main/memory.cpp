@@ -257,7 +257,6 @@ void R_SetPPSize(R_size_t size)
 
 static SEXP R_VStack = NULL;		/* R_alloc stack pointer */
 static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
-static R_size_t R_LargeVallocSize = 0;
 static R_size_t orig_R_NSize;
 static R_size_t orig_R_VSize;
 
@@ -333,7 +332,7 @@ namespace {
     // certain that the answer won't be negative? 
     inline R_size_t VHEAP_FREE()
     {
-	return R_VSize - R_LargeVallocSize;
+	return R_VSize - Heap::bytesAllocated()/sizeof(VECREC);
     }
 }
 
@@ -547,7 +546,7 @@ static void DEBUG_GC_SUMMARY(int full_gc)
 {
     int i, gen, OldCount;
     REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
-	    R_LargeVallocSize);
+	     Heap::bytesAllocated()/sizeof(VECREC));
     for (i = 1; i < NUM_NODE_CLASSES; i++) {
 	for (gen = 0, OldCount = 0; gen < NUM_OLD_GENERATIONS; gen++)
 	    OldCount += R_GenHeap[i].OldCount[gen];
@@ -565,8 +564,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
     R_size_t alloc;
     REprintf("Node occupancy: %.0f%%\nVector occupancy: %.0f%%\n",
 	     100.0 * node_occup, 100.0 * vect_occup);
-    alloc = R_LargeVallocSize +
-	sizeof(SEXPREC) * R_GenHeap[LARGE_NODE_CLASS].AllocCount;
+    alloc = Heap::bytesAllocated();
     REprintf("Total allocation: %lu\n", alloc);
     REprintf("Ncells %lu\nVcells %lu\n", R_NSize, R_VSize);
 }
@@ -609,7 +607,6 @@ static void ReleaseLargeFreeVectors(void)
 	    }
 	    size = BYTE2VEC(size);
 	    UNSNAP_NODE(s);
-	    R_LargeVallocSize -= size;
 	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
 	    Heap::deallocate(s->m_data, s->m_databytes);
 	    Heap::deallocate(s, sizeof(SEXPREC));
@@ -626,7 +623,7 @@ static void AdjustHeapSize(R_size_t size_needed)
     R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
     R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
     R_size_t NNeeded = Heap::blocksAllocated() + R_MinNFree;
-    R_size_t VNeeded = R_LargeVallocSize
+    R_size_t VNeeded = Heap::bytesAllocated()/sizeof(VECREC)
 	+ size_needed + R_MinVFree;
     double node_occup = double(NNeeded) / R_NSize;
     double vect_occup =	double(VNeeded) / R_VSize;
@@ -1323,7 +1320,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 				      unsigned long *nodes)
 {
     *smallvsize = 0;
-    *largevsize = R_LargeVallocSize;
+    *largevsize = Heap::bytesAllocated()/sizeof(VECREC);
     *nodes = 0;
     return;
 }
@@ -1923,7 +1920,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #endif
 	s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
 	SET_NODE_CLASS(s, LARGE_NODE_CLASS);
-	R_LargeVallocSize += size;
 	R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
 	SNAP_NODE(s, R_GenHeap[LARGE_NODE_CLASS].New);
 	SET_ATTRIB(s, R_NilValue);
