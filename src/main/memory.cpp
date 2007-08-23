@@ -538,45 +538,16 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 #define DEBUG_ADJUST_HEAP_PRINT(node_occup, vect_occup)
 #endif /* DEBUG_ADJUST_HEAP */
 
-static void ReleaseLargeFreeVectors(void)
+static void ReleaseNodes()
 {
     SEXP s = NEXT_NODE(R_GenHeap.New);
     while (s != R_GenHeap.New) {
 	SEXP next = NEXT_NODE(s);
-	if (memCHAR(s) != NULL) {
-	    R_size_t size;
-	    switch (TYPEOF(s)) {	/* get size in bytes */
-	    case CHARSXP:
-		size = LENGTH(s) + 1;
-		break;
-	    case RAWSXP:
-		size = LENGTH(s);
-		break;
-	    case LGLSXP:
-	    case INTSXP:
-		size = LENGTH(s) * sizeof(int);
-		break;
-	    case REALSXP:
-		size = LENGTH(s) * sizeof(double);
-		break;
-	    case CPLXSXP:
-		size = LENGTH(s) * sizeof(Rcomplex);
-		break;
-	    case STRSXP:
-	    case EXPRSXP:
-	    case VECSXP:
-	    case WEAKREFSXP:
-		size = LENGTH(s) * sizeof(SEXP);
-		break;
-	    default:
-		abort();
-	    }
-	    size = BYTE2VEC(size);
-	    UNSNAP_NODE(s);
-	    R_GenHeap.AllocCount--;
+	if (s->m_data != NULL)
 	    Heap::deallocate(s->m_data, s->m_databytes);
-	    Heap::deallocate(s, sizeof(SEXPREC));
-	}
+	UNSNAP_NODE(s);
+	R_GenHeap.AllocCount--;
+	Heap::deallocate(s, sizeof(SEXPREC));
 	s = next;
     }
 }
@@ -1192,18 +1163,9 @@ static void RunGenCollect(R_size_t size_needed)
 
     DEBUG_CHECK_NODE_COUNTS("after processing forwarded list");
 
-    /* release large vector allocations */
-    ReleaseLargeFreeVectors();
+    ReleaseNodes();
 
-    DEBUG_CHECK_NODE_COUNTS("after releasing large allocated nodes");
-
-    /* tell Valgrind about free nodes */
-#if VALGRIND_LEVEL > 2
-    for (s=NEXT_NODE(R_GenHeap.New);
-	 s !=R_GenHeap.Free; s=NEXT_NODE(s)) {
-	VALGRIND_MAKE_NOACCESS(s,4); /* sizeof sxpinfo_struct */
-    }
-#endif
+    DEBUG_CHECK_NODE_COUNTS("after releasing nodes");
 
     /* reset Free pointers */
     R_GenHeap.Free = NEXT_NODE(R_GenHeap.New);
@@ -1529,6 +1491,7 @@ namespace {
 		errorcall(R_NilValue, _("memory exhausted"));
 	    }
 	    SNAP_NODE(n, R_GenHeap.New);
+	    ++R_GenHeap.AllocCount;
 	}
 	R_GenHeap.Free = NEXT_NODE(n);
 	return n;
@@ -1764,7 +1727,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 
     s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    R_GenHeap.AllocCount++;
     SET_ATTRIB(s, R_NilValue);
     SET_TYPEOF(s, type);
     s->m_databytes = size * sizeof(VECREC);
