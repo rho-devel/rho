@@ -377,7 +377,7 @@ were as follows:</p>
     functions wherever it was reasonably straightforward to do so. (The
     reason for doing this now was that during the constification process, it
     was usually extremely difficult to see what the compiler was complaining
-    about if a multiline macro was involved.)
+    about if a multiline macro was involved.) 
     <p>Similar changes were made to the header files under
     <code>src/include</code>: however, the pattern here was to convert a
     macro to an inline function if the header files was
@@ -390,7 +390,7 @@ were as follows:</p>
       <li>The body of the macro was not syntactically equivalent to a
         function call;</li>
       <li>The macro used <code>##</code></li>
-      <li>The macro modified its arguments, e.g. something like
+      <li>The macro modified its arguments, e.g. something like 
         <pre>#define INC(x) ++(x)</pre>
         <p>(Using C++ reference arguments to get round this is not as
         straightforward as it might seem.)</p>
@@ -404,7 +404,7 @@ were as follows:</p>
     </ul>
   </li>
   <li>An incidental change was this: Until now, the type <code>SEXPREC</code>
-    was defined along the following lines:
+    was defined along the following lines: 
     <pre>typedef struct SEXPREC { ... } SEXPREC;</pre>
     <p>with the first occurrence of <code>SEXPREC</code> being what in C
     would have been a structure tag. This has now been changed to:</p>
@@ -441,6 +441,73 @@ warnings in the <code>const</code> branch: <code>memory.cpp</code>,
 gives one compilation error, when <code>do_function</code> attempts a
 non-const operation on its <code>op</code> argument: fixing this would mean
 changing the signature of all the <code>do_</code> functions.</p>
+
+<h2>Phase 6: <code>0.06-2.5.1</code></h2>
+
+<p>In CR, each <code>SEXPREC</code> has a node class in the range 0 to 7.
+Nodes of non-vector <code>SEXPTYPE</code> (i.e. not of types
+<code>CHARSXP</code>, <code>LGLSXP</code>, <code>INTSXP</code>,
+<code>REALSXP</code>, <code>CPLXSXP</code>, <code>STRSXP</code>,
+<code>VECSXP</code>, <code>EXPRSXP</code>, <code>WEAKREFSXP</code> or
+<code>RAWSXP</code>) are all in class 0, and are 28 bytes long. Class 7 is
+used for vector nodes whose vector data amount to more than 128 bytes; the
+remaining classes are used for smaller vectors, classified according to their
+size. Nodes of class 7 are allocated directly using <code>malloc</code>;
+nodes of the remaining classes are allocated from 'pages' about 2 kB in size,
+with each node class having its own pages. In CXXR it is intended to replace
+<code>SEXPREC</code>s with an extensible class hierarchy (rooted at
+<code>RObject</code>), so it will not be feasible to put a tight upper bound
+on the size of non-vector nodes.</p>
+
+<p>Another feature of CR is that in vector nodes, a single block of memory
+contains the data of the vector preceded by a <code>SEXPREC</code> and
+information about the length of the header. This is quite incompatible with
+the design philosophy of C++, which is that the size of an object must be
+deducible from its (C++) type: in particular <code>::operator delete</code>
+relies on this.</p>
+
+<p>The purpose of Phase 6 was to circumvent these problems, and at the same
+time to endeavour to decouple the code for allocating memory from the code
+managing garbage collection. This comprised the following changes:</p>
+<ul>
+  <li>A new class <code>CXXR::Heap</code> was created to handle allocation
+    and deallocation of blocks of memory. This parallels CR to the extent
+    that requests for large blocks are passed on directly to <code>::operator
+    new</code>, while requests for small blocks are satisfied by allocating
+    fixed-sized cells carved out of 'superblocks'. However, this is an
+    implementational detail and is not visible to the remainder of CXXR: only
+    the total number of bytes and the total number of blocks allocated
+    <em>via</em> <code>CXXR::Heap</code> are visible (using static member
+    functions).
+    <p>It is intended that <code>CXXR::Heap</code> will serve as a back-end
+    to implementations of operator new and to an STL-compatible Allocator
+    class. Note in particular that the blocks allocated from
+    <code>CXXR::Heap</code> are not exclusively used to create
+    <code>RObject</code>s, but may be used for any purpose where rapid
+    allocation/deallocation of small blocks is required.</p>
+  </li>
+  <li>Node classes have been abolished, and the garbage collector now treats
+    all nodes in the same way. In particular, following garbage collection,
+    all unused nodes are deallocated back to <code>CXXR::Heap</code>. (CR
+    deallocates only large vector nodes.)</li>
+  <li>The data of a vector object now resides in a separate block allocated
+    from <code>CXXR::Heap</code>; a data member <code>m_data</code> of
+    <code>RObject</code> (in due course to be factored out into a derived
+    class) points to this block. For non-vector objects, and vectors of size
+    zero, <code>m_data</code> is a null pointer. (CR appears to allocate at
+    least 8 bytes of vector data even when the nominal size of the vector is
+    zero.)</li>
+  <li>In CR decisions about when to garbage collect, and how many generations
+    to collect are based (a) on the total number of nodes of classes 0-6, and
+    (b) the total size of the vector data in nodes of class 7 (reckoned in
+    units of 8 bytes). In CXXR the same logic is used, but based (a) on the
+    total number of nodes, and (b) the total number of bytes currently
+    allocated from <code>CXXR::Heap</code>, divided by 8.
+    <p>I was strongly tempted to base GC exclusively on (b), and to ignore
+    the number of nodes - after all, we're talking about a single resource
+    here: memory. I'd welcome opinions about this.</p>
+  </li>
+</ul>
 
 <p></p>
 </body>

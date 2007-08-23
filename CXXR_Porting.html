@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+  <title>C++ R Engine: Porting Guide</title>
+  <meta name="generator" content="Amaya 9.54, see http://www.w3.org/Amaya" />
+</head>
+
+<body>
+<h1>C++ R Engine: Porting Guide</h1>
+
+<p>This document gives guidance on porting R code and C packages to work with
+CXXR.</p>
+
+<h2>R Code</h2>
+
+<p>In general, if R code behaves differently under CXXR and under CR (in the
+release of CR on which this release of CXXR is based), then that is a bug in
+CXXR: please report it. However, differences in timing and in space
+consumption are to be expected.</p>
+
+<p>Also, there may be differences in the behaviour of R functions which probe
+into the implementation of the interpreter. In particular:</p>
+<ul>
+  <li><code>gc()</code> now returns different quantities, in the form of a
+    vector with four rows and two columns: see the revised help page.</li>
+  <li>Although <code>mem.limits(nsize, vsize)</code> retains the same
+    interface, the interpretation of the quantities involved has changed
+    somewhat; likewise the corresponding command-line options to R. See the
+    revised Memory help page for details.</li>
+  <li>Memory profiling has not (yet) been properly reengineered for CXXR, and
+    the relevant code has not been tested. Do not rely on the existing
+    behaviour to persist.</li>
+</ul>
+
+<h2>C Code</h2>
+
+<h3>Mandatory changes:</h3>
+<ul>
+  <li><code>R_NilValue</code> in CXXR is simply a null pointer, rather than a
+    pointer to a real object. To smooth this change, the following changes
+    have been made to accessor functions:
+    <ul>
+      <li><code>CAR</code>, <code>CDR</code>, <code>TAG</code> and
+        <code>ATTRIB</code> each return a null pointer if passed a null
+        pointer.</li>
+      <li><code>OBJECT</code> and <code>IS_S4_OBJECT</code> each return
+        <code>FALSE</code> if passed a null pointer.</li>
+      <li><code>LENGTH</code> and <code>NAMED</code> each return 0 if passed
+        a null pointer.</li>
+      <li><code>SET_NAMED</code> is a no-op if the first argument is a null
+        pointer.</li>
+    </ul>
+    <p>However, other accessor functions are likely to crash if invoked for
+    R_NilValue: the calling code should introduce appropriate checks and
+    workarounds.</p>
+  </li>
+</ul>
+
+<h3>Suggested changes:</h3>
+<ul>
+  <li>Redesignate your code as C++ :-) : this will enable more functions to
+    be inlined, and open the way to future benefits. At the very least,
+    remove features of your code that gratuitously prevent it being compiled
+    by a C++ compiler: identifiers called <code>this</code> or
+    <code>class</code>, for example. But remember to use <code>extern
+    "C"</code> appropriately in your header files, to prevent C++ mangling of
+    the names of functions intended to be visible to CR.</li>
+  <li>Rework code as necessary to prevent compiler warnings that a
+    <code>const</code> qualifier is being discarded.</li>
+</ul>
+
+<h2>C++ Code</h2>
+
+<p>The question of providing additional facilities for external packages
+written in C++ has not yet been addressed. In particular, although it is
+intended that in the future such packages will be able to make use of the
+classes defined in namespace <code>CXXR</code>, the interfaces are in too
+much flux at present for this to be advisable.</p>
+
+<p>If you want to help in refactoring of the R interpreter itself, and have
+sufficient knowledge of C++, please contact <a
+href="mailto:A.R.Runnalls@kent.ac.uk">A.R.Runnalls@kent.ac.uk</a>.</p>
+</body>
+</html>
