@@ -347,7 +347,8 @@ static struct {
     SEXP OldToNew[NUM_OLD_GENERATIONS];
     SEXPREC OldToNewPeg[NUM_OLD_GENERATIONS];
 #endif
-    int OldCount[NUM_OLD_GENERATIONS], AllocCount;
+    int OldCount[NUM_OLD_GENERATIONS];
+    size_t AllocCount;
 } R_GenHeap;
 
 namespace {
@@ -559,7 +560,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 {
     R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
     R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
-    R_size_t NNeeded = Heap::blocksAllocated() + R_MinNFree;
+    R_size_t NNeeded = R_GenHeap.AllocCount + R_MinNFree;
     R_size_t VNeeded = Heap::bytesAllocated()/sizeof(VECREC)
 	+ size_needed + R_MinVFree;
     double node_occup = double(NNeeded) / R_NSize;
@@ -1173,11 +1174,11 @@ static void RunGenCollect(R_size_t size_needed)
 
     /* update heap statistics */
     if (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
-	double nfrac = double(Heap::blocksAllocated())/double(R_NSize);
+	double nfrac = double(R_GenHeap.AllocCount)/double(R_NSize);
 	if (nfrac >= 1.0 - R_MinFreeFrac * R_NSize ||
 	    VHEAP_FREE() < size_needed + R_MinFreeFrac * R_VSize) {
 	    num_old_gens_to_collect++;
-	    if (Heap::blocksAllocated() >= R_NSize
+	    if (R_GenHeap.AllocCount >= R_NSize
 		|| VHEAP_FREE() < size_needed)
 		goto again;
 	}
@@ -1239,9 +1240,10 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 				      unsigned long *largevsize,
 				      unsigned long *nodes)
 {
+    // All subject to change in CXXR:
     *smallvsize = 0;
     *largevsize = Heap::bytesAllocated()/sizeof(VECREC);
-    *nodes = 0;
+    *nodes = R_GenHeap.AllocCount;
     return;
 }
 
@@ -1259,26 +1261,25 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     gc_reporting = ogc;
     /*- now return the [used , gc trigger size] for cells and heap */
     PROTECT(value = allocVector(REALSXP, 14));
-    REAL(value)[0] = Heap::blocksAllocated();
+    REAL(value)[0] = R_GenHeap.AllocCount;
     REAL(value)[1] = R_VSize - VHEAP_FREE();
     REAL(value)[4] = R_NSize;
     REAL(value)[5] = R_VSize;
     /* next four are in 0.1Mb, rounded up */
-    REAL(value)[2] = 0.0;  // in CXXR, cells don't have a fixed size
+    REAL(value)[2] = NA_REAL;  // in CXXR, cells don't have a fixed size
     REAL(value)[3] = 0.1*ceil(10. * (R_VSize - VHEAP_FREE())/Mega * vsfac);
-    REAL(value)[6] = 0.1*ceil(10. * R_NSize/Mega * sizeof(SEXPREC));
+    REAL(value)[6] = NA_REAL;  // in CXXR, cells don't have a fixed size
     REAL(value)[7] = 0.1*ceil(10. * R_VSize/Mega * vsfac);
-    REAL(value)[8] = (R_MaxNSize < R_SIZE_T_MAX) ?
-	0.1*ceil(10. * R_MaxNSize/Mega * sizeof(SEXPREC)) : NA_REAL;
+    REAL(value)[8] = NA_REAL;  // in CXXR, cells don't have a fixed size
     REAL(value)[9] = (R_MaxVSize < R_SIZE_T_MAX) ?
 	0.1*ceil(10. * R_MaxVSize/Mega * vsfac) : NA_REAL;
     if (reset_max){
-	R_N_maxused = Heap::blocksAllocated();
+	R_N_maxused = R_GenHeap.AllocCount;
 	R_V_maxused = R_VSize - VHEAP_FREE();
     }
     REAL(value)[10] = R_N_maxused;
     REAL(value)[11] = R_V_maxused;
-    REAL(value)[12] = 0.0;  // in CXXR, cells don't have a fixed size
+    REAL(value)[12] = NA_REAL;  // in CXXR, cells don't have a fixed size
     REAL(value)[13] = 0.1*ceil(10. * R_V_maxused/Mega*vsfac);
     UNPROTECT(1);
     return value;
@@ -1286,7 +1287,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
 namespace {
-    inline bool NO_FREE_NODES() {return Heap::blocksAllocated() >= R_NSize;}
+    inline bool NO_FREE_NODES() {return R_GenHeap.AllocCount >= R_NSize;}
 
     bool cueGC(size_t bytes_wanted, bool force)
     {
@@ -1910,7 +1911,7 @@ static void R_gc_internal(R_size_t size_needed)
 
     gc_count++;
 
-    R_N_maxused = R_MAX(R_N_maxused, Heap::blocksAllocated());
+    R_N_maxused = R_MAX(R_N_maxused, R_GenHeap.AllocCount);
     R_V_maxused = R_MAX(R_V_maxused, R_VSize - VHEAP_FREE());
 
     BEGIN_SUSPEND_INTERRUPTS {
@@ -1920,7 +1921,7 @@ static void R_gc_internal(R_size_t size_needed)
     } END_SUSPEND_INTERRUPTS;
 
     if (gc_reporting) {
-	ncells = Heap::blocksAllocated();
+	ncells = R_GenHeap.AllocCount;
 	nfrac = (100.0 * ncells) / R_NSize;
 	/* We try to make this consistent with the results returned by gc */
 	ncells = 0.1*ceil(10*ncells * sizeof(SEXPREC)/Mega);
