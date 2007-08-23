@@ -1260,27 +1260,21 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_gc();
     gc_reporting = ogc;
     /*- now return the [used , gc trigger size] for cells and heap */
-    PROTECT(value = allocVector(REALSXP, 14));
+    PROTECT(value = allocVector(REALSXP, 8));
     REAL(value)[0] = R_GenHeap.AllocCount;
-    REAL(value)[1] = R_VSize - VHEAP_FREE();
-    REAL(value)[4] = R_NSize;
-    REAL(value)[5] = R_VSize;
-    /* next four are in 0.1Mb, rounded up */
-    REAL(value)[2] = NA_REAL;  // in CXXR, cells don't have a fixed size
-    REAL(value)[3] = 0.1*ceil(10. * (R_VSize - VHEAP_FREE())/Mega * vsfac);
-    REAL(value)[6] = NA_REAL;  // in CXXR, cells don't have a fixed size
-    REAL(value)[7] = 0.1*ceil(10. * R_VSize/Mega * vsfac);
-    REAL(value)[8] = NA_REAL;  // in CXXR, cells don't have a fixed size
-    REAL(value)[9] = (R_MaxVSize < R_SIZE_T_MAX) ?
+    REAL(value)[1] = R_NSize;
+    REAL(value)[2] = (R_MaxNSize < R_SIZE_T_MAX) ? R_MaxNSize : NA_REAL;
+    REAL(value)[3] = R_N_maxused;
+    /* next four are in 0.1MB, rounded up */
+    REAL(value)[4] = 0.1*ceil(10. * (R_VSize - VHEAP_FREE())/Mega * vsfac);
+    REAL(value)[5] = 0.1*ceil(10. * R_VSize/Mega * vsfac);
+    REAL(value)[6] = (R_MaxVSize < R_SIZE_T_MAX) ?
 	0.1*ceil(10. * R_MaxVSize/Mega * vsfac) : NA_REAL;
+    REAL(value)[7] = 0.1*ceil(10. * R_V_maxused/Mega*vsfac);
     if (reset_max){
 	R_N_maxused = R_GenHeap.AllocCount;
 	R_V_maxused = R_VSize - VHEAP_FREE();
     }
-    REAL(value)[10] = R_N_maxused;
-    REAL(value)[11] = R_V_maxused;
-    REAL(value)[12] = NA_REAL;  // in CXXR, cells don't have a fixed size
-    REAL(value)[13] = 0.1*ceil(10. * R_V_maxused/Mega*vsfac);
     UNPROTECT(1);
     return value;
 }
@@ -1404,13 +1398,13 @@ char *R_alloc(long nelem, int eltsize)
 	else {
 	    s = R_NilValue; /* -Wall */
 	    if(dsize > 1024.0*1024.0*1024.0)
-		error(_("cannot allocate memory block of size %0.1f Gb"), 
+		error(_("cannot allocate memory block of size %0.1f GB"), 
 		      dsize/1024.0/1024.0/1024.0);
 	    else if(dsize > 1024.0*1024.0)
-		error(_("cannot allocate memory block of size %0.1f Mb"), 
+		error(_("cannot allocate memory block of size %0.1f MB"), 
 		      dsize/1024.0/1024.0);
 	    else if(dsize > 1024.0)
-		error(_("cannot allocate memory block of size %0.1f Kb"), 
+		error(_("cannot allocate memory block of size %0.1f KB"), 
 		      dsize/1024.0);
 	    else
 		error(_("cannot allocate memory block of size %.0f"),
@@ -1419,13 +1413,13 @@ char *R_alloc(long nelem, int eltsize)
 #else
 	if(dsize > R_LEN_T_MAX) {
 	    if(dsize > 1024.0*1024.0*1024.0)
-		error(_("cannot allocate memory block of size %0.1f Gb"), 
+		error(_("cannot allocate memory block of size %0.1f GB"), 
 		      dsize/1024.0/1024.0/1024.0);
 	    else if(dsize > 1024.0*1024.0)
-		error(_("cannot allocate memory block of size %0.1f Mb"), 
+		error(_("cannot allocate memory block of size %0.1f MB"), 
 		      dsize/1024.0/1024.0);
 	    else if(dsize > 1024.0)
-		error(_("cannot allocate memory block of size %0.1f Kb"), 
+		error(_("cannot allocate memory block of size %0.1f KB"), 
 		      dsize/1024.0);
 	    else
 		error(_("cannot allocate memory block of size %.0f"),
@@ -1755,15 +1749,15 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    R_VSize = old_R_VSize;
 	    if(dsize > 1024.0*1024.0)
 		errorcall(R_NilValue, 
-			  _("cannot allocate vector of size %0.1f Gb"),
+			  _("cannot allocate vector of size %0.1f GB"),
 			  dsize/1024.0/1024.0);
 	    if(dsize > 1024.0)
 		errorcall(R_NilValue,
-			  _("cannot allocate vector of size %0.1f Mb"),
+			  _("cannot allocate vector of size %0.1f MB"),
 			  dsize/1024.0);
 	    else
 		errorcall(R_NilValue, 
-			  _("cannot allocate vector of size %0.f Kb"),
+			  _("cannot allocate vector of size %0.f KB"),
 			  dsize);
 	}
 #ifdef R_MEMORY_PROFILING

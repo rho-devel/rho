@@ -18,7 +18,7 @@ mem.limits(nsize = NA, vsize = NA)
 }
 \arguments{
   \item{vl, vu, vsize}{Heap memory in bytes.}
-  \item{nl, nu, nsize}{Number of cons cells.}
+  \item{nl, nu, nsize}{Number of nodes.}
   \item{N}{Number of nested \code{PROTECT} calls.}.
 }
 \details{
@@ -45,41 +45,44 @@ mem.limits(nsize = NA, vsize = NA)
   See also \code{\link{memory.limit}}.)
 #endif
 
-  To understand the options, one needs to know that \R maintains
-  separate areas for fixed and variable sized objects.  The first of these
-  is allocated as an array of \dQuote{\emph{cons cells}} (Lisp programmers will
-  know what they are, others may think of them as the building blocks of
-  the language itself, parse trees, etc.), and the second are thrown on a
-  \dQuote{\emph{heap}} of \dQuote{Vcells} of 8 bytes each.  Effectively,
-  the inputs \code{vl} and \code{vu} are rounded up to the next
-  multiple of 8.
+  To understand the options, one needs to know that CXXR allocates
+  most of its memory via an internal heap implemented by class
+  CXXR::Heap (which in turn gets its memory using C++'s \code{::operator
+  new}).  The amount of memory allocated via this heap is one of the
+  factors that is used to decide when to carry out garbage collections.
 
-  Each cons cell occupies 28 bytes on a 32-bit machine, (usually) 56 bytes
-  on a 64-bit machine.
+  However, reflecting practice within CR, the CXXR garbage collector
+  also keeps track of the number of 'nodes', and uses this as another
+  factor to decide the timing of garbage collections.  In CXXR, nodes
+  are objects of a type derived from CXXR::GCNode.  Lisp programmers
+  can compare them to cons cells; others may think of them as the
+  building blocks of the language itself, parse trees, etc.  (Note
+  that within CXXR, space occupied by nodes itself comes from
+  CXXR::Heap, and - unlike CR - is \emph{included} within the heap
+  allocation byte counts.)
 
-  The \option{--*-nsize} options can be used to specify the number of
-  cons cells and the \option{--*-vsize} options specify the size of the
-  vector heap in bytes.  Both options must be integers or integers
-  followed by \code{G}, \code{M}, \code{K}, or \code{k} meaning
-  \code{Giga} (\eqn{2^{30} = 1073741824}) \emph{Mega} (\eqn{2^{20} =
-    1048576}), (computer) \emph{Kilo} (\eqn{2^{10} = 1024}), or regular
-  \emph{kilo} (1000).
+  The \option{--*-nsize} options can be used to specify parameters for
+  the number of nodes and the \option{--*-vsize} options to specify
+  parameters for the total heap allocation in bytes.  Both options must
+  be integers or integers followed by \code{G}, \code{M}, \code{K}, or
+  \code{k} meaning \code{Giga} (\eqn{2^{30} = 1073741824}) \emph{Mega}
+  (\eqn{2^{20} = 1048576}), (computer) \emph{Kilo} (\eqn{2^{10} = 1024}), or
+  regular \emph{kilo} (1000).
 
   The \option{--min-*} options set the minimal sizes for the number of
-  cons cells and for the vector heap.  These values are also the initial
+  nodes and for the heap allocation.  These values are also the initial
   values, but thereafter \R will grow or shrink the areas depending on
   usage, but never exceeding the limits set by the \option{--max-*}
   options nor decreasing below the initial values.
 
-  The default values are currently minima of 350k cons cells,
-  6Mb of vector heap
-  and no maxima (other than machine resources).  The maxima can be
-  changed during an \R session by calling \code{mem.limits}. (If this is
-  called with the default values, it reports the current settings.)
+  The default values are currently minima of 350k nodes,
+  6MB of heap allocation and no maxima (other than machine resources).
+  The maxima can be changed during an \R session by calling
+  \code{mem.limits}. (If this is called with the default values, it
+  reports the current settings.) 
 
-
-  You can find out the current memory consumption (the heap and cons
-  cells used as numbers and megabytes) by typing \code{\link{gc}()} at the
+  You can find out the current memory consumption (the heap allocation
+  and number of nodes) by typing \code{\link{gc}()} at the
   \R prompt.  Note that following \code{\link{gcinfo}(TRUE)}, automatic
   garbage collection always prints memory use statistics.  Maxima will
   never be reduced below the current values for triggering garbage
@@ -107,7 +110,7 @@ mem.limits(nsize = NA, vsize = NA)
   \code{\link{gc}} for information on the garbage collector and total
   memory usage,  \code{\link{object.size}(a)} for the (approximate)
   size of \R object \code{a}.  \code{\link{memory.profile}} for
-  profiling the usage of cons cells.
+  profiling the usage of nodes.
 #ifdef windows
 
   \code{\link{memory.size}} to monitor total memory usage,
@@ -116,8 +119,8 @@ mem.limits(nsize = NA, vsize = NA)
 }
 
 \examples{
-# Start R with 10MB of heap memory and 500k cons cells, limit to
-# 100Mb and 1M cells
+# Start R with 10MB of heap memory and 500k nodes, limit to
+# 100Mb and 1M nodes
 \dontrun{
 ## Unix
 R --min-vsize=10M --max-vsize=100M --min-nsize=500k --max-nsize=1M
