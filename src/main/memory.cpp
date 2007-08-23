@@ -262,30 +262,8 @@ static R_size_t orig_R_VSize;
 static R_size_t R_N_maxused=0;
 static R_size_t R_V_maxused=0;
 
-/* Node Classes.  Non-vector nodes are of class zero. Small vector
-   nodes are in classes 1, ..., NUM_SMALL_NODE_CLASSES, and large
-   vector nodes are in class LARGE_NODE_CLASS.  For vector nodes the
-   node header is followed in memory by the vector data, offset from
-   the header by SEXPREC_ALIGN. */
-
-#define NUM_NODE_CLASSES 2
-
-/* sxpinfo allocates 3 bits for the node class, so at most 8 are allowed */
-#if NUM_NODE_CLASSES > 8
-# error NUM_NODE_CLASSES must be at most 8
-#endif
-
-#define LARGE_NODE_CLASS (NUM_NODE_CLASSES - 1)
-#define NUM_SMALL_NODE_CLASSES (NUM_NODE_CLASSES - 1)
-
-namespace {
-    inline unsigned int NODE_CLASS(SEXP s) {return s->sxpinfo.gccls;}
-
-    inline void SET_NODE_CLASS(SEXP s, unsigned int v)
-    {
-	s->sxpinfo.gccls = v;
-    }
-}
+/* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
+   ignored. */
 
 /* Node Generations. */
 
@@ -322,7 +300,7 @@ static int gen_gc_counts[NUM_OLD_GENERATIONS + 1];
 static int collect_counts[NUM_OLD_GENERATIONS];
 
 namespace {
-    inline int NODE_SIZE(int nclass)
+    inline int NODE_SIZE()
     {
 	return sizeof(SEXPREC);
     }
@@ -335,15 +313,15 @@ namespace {
     }
 }
 
-/* The Heap Structure.  Nodes for each class/generation combination
-   are arranged in circular doubly-linked lists.  The double linking
-   allows nodes to be removed in constant time; this is used by the
-   collector to move reachable nodes out of free space and into the
-   appropriate generation.  The circularity eliminates the need for
-   end checks.  In addition, each link is anchored at an artificial
-   node, the Peg SEXPREC's in the structure below, which simplifies
-   pointer maintenance.  The circular doubly-linked arrangement is
-   taken from Baker's in-place incremental collector design; see
+/* The Heap Structure.  Nodes for each generation are arranged in
+   circular doubly-linked lists.  The double linking allows nodes to
+   be removed in constant time; this is used by the collector to move
+   reachable nodes out of free space and into the appropriate
+   generation.  The circularity eliminates the need for end checks.
+   In addition, each link is anchored at an artificial node, the Peg
+   SEXPREC's in the structure below, which simplifies pointer
+   maintenance.  The circular doubly-linked arrangement is taken from
+   Baker's in-place incremental collector design; see
    ftp://ftp.netcom.com/pub/hb/hbaker/NoMotionGC.html or the Jones and
    Lins GC book.  The linked lists are implemented by adding two
    pointer fields to the SEXPREC structure, which increases its size
@@ -370,7 +348,7 @@ static struct {
     SEXPREC OldToNewPeg[NUM_OLD_GENERATIONS];
 #endif
     int OldCount[NUM_OLD_GENERATIONS], AllocCount;
-} R_GenHeap[NUM_NODE_CLASSES];
+} R_GenHeap;
 
 namespace {
     inline RObject* NEXT_NODE(SEXP s) {return s->gengc_next_node;}
@@ -499,58 +477,47 @@ static void CheckNodeGeneration(SEXP x, int g)
 
 static void DEBUG_CHECK_NODE_COUNTS(char *where)
 {
-    int i, OldCount, NewCount, OldToNewCount, gen;
+    int OldCount, NewCount, OldToNewCount, gen;
     SEXP s;
 
     REprintf("Node counts %s:\n", where);
-    for (i = 0; i < NUM_NODE_CLASSES; i++) {
-	for (s = NEXT_NODE(R_GenHeap[i].New), NewCount = 0;
-	     s != R_GenHeap[i].New;
-	     s = NEXT_NODE(s)) {
-	    NewCount++;
-	    if (i != NODE_CLASS(s))
-		REprintf("Inconsistent class assignment for node!\n");
-	}
-	for (gen = 0, OldCount = 0, OldToNewCount = 0;
-	     gen < NUM_OLD_GENERATIONS;
-	     gen++) {
-	    for (s = NEXT_NODE(R_GenHeap[i].Old[gen]);
-		 s != R_GenHeap[i].Old[gen];
-		 s = NEXT_NODE(s)) {
-		OldCount++;
-		if (i != NODE_CLASS(s))
-		    REprintf("Inconsistent class assignment for node!\n");
-		if (gen != NODE_GENERATION(s))
-		    REprintf("Inconsistent node generation\n");
-		DO_CHILDREN(s, CheckNodeGeneration, gen);
-	    }
-	    for (s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
-		 s != R_GenHeap[i].OldToNew[gen];
-		 s = NEXT_NODE(s)) {
-		OldToNewCount++;
-		if (i != NODE_CLASS(s))
-		    REprintf("Inconsistent class assignment for node!\n");
-		if (gen != NODE_GENERATION(s))
-		    REprintf("Inconsistent node generation\n");
-	    }
-	}
-	REprintf("Class: %d, New = %d, Old = %d, OldToNew = %d, Total = %d\n",
-		 i,
-		 NewCount, OldCount, OldToNewCount,
-		 NewCount + OldCount + OldToNewCount);
+    for (s = NEXT_NODE(R_GenHeap.New), NewCount = 0;
+	 s != R_GenHeap.New;
+	 s = NEXT_NODE(s)) {
+	NewCount++;
     }
+    for (gen = 0, OldCount = 0, OldToNewCount = 0;
+	 gen < NUM_OLD_GENERATIONS;
+	 gen++) {
+	for (s = NEXT_NODE(R_GenHeap.Old[gen]);
+	     s != R_GenHeap.Old[gen];
+	     s = NEXT_NODE(s)) {
+	    OldCount++;
+	    if (gen != NODE_GENERATION(s))
+		REprintf("Inconsistent node generation\n");
+	    DO_CHILDREN(s, CheckNodeGeneration, gen);
+	}
+	for (s = NEXT_NODE(R_GenHeap.OldToNew[gen]);
+	     s != R_GenHeap.OldToNew[gen];
+	     s = NEXT_NODE(s)) {
+	    OldToNewCount++;
+	    if (gen != NODE_GENERATION(s))
+		REprintf("Inconsistent node generation\n");
+	}
+    }
+    REprintf("New = %d, Old = %d, OldToNew = %d, Total = %d\n",
+	     NewCount, OldCount, OldToNewCount,
+	     NewCount + OldCount + OldToNewCount);
 }
 
 static void DEBUG_GC_SUMMARY(int full_gc)
 {
-    int i, gen, OldCount;
+    int gen, OldCount;
     REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
 	     Heap::bytesAllocated()/sizeof(VECREC));
-    for (i = 1; i < NUM_NODE_CLASSES; i++) {
-	for (gen = 0, OldCount = 0; gen < NUM_OLD_GENERATIONS; gen++)
-	    OldCount += R_GenHeap[i].OldCount[gen];
-	REprintf(", class %d: %d", i, OldCount);
-    }
+    for (gen = 0, OldCount = 0; gen < NUM_OLD_GENERATIONS; gen++)
+	OldCount += R_GenHeap.OldCount[gen];
+    REprintf(", %d", OldCount);
 }
 #else
 #define DEBUG_CHECK_NODE_COUNTS(s)
@@ -573,8 +540,8 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 static void ReleaseLargeFreeVectors(void)
 {
-    SEXP s = NEXT_NODE(R_GenHeap[LARGE_NODE_CLASS].New);
-    while (s != R_GenHeap[LARGE_NODE_CLASS].New) {
+    SEXP s = NEXT_NODE(R_GenHeap.New);
+    while (s != R_GenHeap.New) {
 	SEXP next = NEXT_NODE(s);
 	if (memCHAR(s) != NULL) {
 	    R_size_t size;
@@ -606,7 +573,7 @@ static void ReleaseLargeFreeVectors(void)
 	    }
 	    size = BYTE2VEC(size);
 	    UNSNAP_NODE(s);
-	    R_GenHeap[LARGE_NODE_CLASS].AllocCount--;
+	    R_GenHeap.AllocCount--;
 	    Heap::deallocate(s->m_data, s->m_databytes);
 	    Heap::deallocate(s, sizeof(SEXPREC));
 	}
@@ -666,7 +633,7 @@ static void AdjustHeapSize(R_size_t size_needed)
   unsigned int an__g__ = (g); \
   if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
     if (NODE_IS_MARKED(an__n__)) \
-       R_GenHeap[NODE_CLASS(an__n__)].OldCount[NODE_GENERATION(an__n__)]--; \
+       R_GenHeap.OldCount[NODE_GENERATION(an__n__)]--; \
     else \
       MARK_NODE(an__n__); \
     SET_NODE_GENERATION(an__n__, an__g__); \
@@ -685,8 +652,8 @@ static void AgeNodeAndChildren(SEXP s, int gen)
 	forwarded_nodes = NEXT_NODE(forwarded_nodes);
 	if (NODE_GENERATION(s) != uint(gen))
 	    REprintf("****snapping into wrong generation\n");
-	SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[gen]);
-	R_GenHeap[NODE_CLASS(s)].OldCount[gen]++;
+	SNAP_NODE(s, R_GenHeap.Old[gen]);
+	R_GenHeap.OldCount[gen]++;
 	DO_CHILDREN(s, AGE_NODE, gen);
     }
 }
@@ -697,7 +664,7 @@ static void old_to_new(SEXP x, SEXP y)
     AgeNodeAndChildren(y, NODE_GENERATION(x));
 #else
     UNSNAP_NODE(x);
-    SNAP_NODE(x, R_GenHeap[NODE_CLASS(x)].OldToNew[NODE_GENERATION(x)]);
+    SNAP_NODE(x, R_GenHeap.OldToNew[NODE_GENERATION(x)]);
 #endif
 }
 
@@ -1046,8 +1013,8 @@ namespace {
 	while (forwarded_nodes != NULL) {
 	    SEXP s = forwarded_nodes;
 	    forwarded_nodes = NEXT_NODE(forwarded_nodes);
-	    SNAP_NODE(s, R_GenHeap[NODE_CLASS(s)].Old[NODE_GENERATION(s)]);
-	    R_GenHeap[NODE_CLASS(s)].OldCount[NODE_GENERATION(s)]++;
+	    SNAP_NODE(s, R_GenHeap.Old[NODE_GENERATION(s)]);
+	    R_GenHeap.OldCount[NODE_GENERATION(s)]++;
 	    FORWARD_CHILDREN(s);
 	}
     }
@@ -1080,17 +1047,15 @@ static void RunGenCollect(R_size_t size_needed)
     /* eliminate old-to-new references in generations to collect by
        transferring referenced nodes to referring generation */
     for (gen = 0; gen < num_old_gens_to_collect; gen++) {
-	for (i = 0; i < NUM_NODE_CLASSES; i++) {
-	    s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
-	    while (s != R_GenHeap[i].OldToNew[gen]) {
-		SEXP next = NEXT_NODE(s);
-		DO_CHILDREN(s, AgeNodeAndChildren, gen);
-		UNSNAP_NODE(s);
-		if (NODE_GENERATION(s) != uint(gen))
-		    REprintf("****snapping into wrong generation\n");
-		SNAP_NODE(s, R_GenHeap[i].Old[gen]);
-		s = next;
-	    }
+	s = NEXT_NODE(R_GenHeap.OldToNew[gen]);
+	while (s != R_GenHeap.OldToNew[gen]) {
+	    SEXP next = NEXT_NODE(s);
+	    DO_CHILDREN(s, AgeNodeAndChildren, gen);
+	    UNSNAP_NODE(s);
+	    if (NODE_GENERATION(s) != uint(gen))
+		REprintf("****snapping into wrong generation\n");
+	    SNAP_NODE(s, R_GenHeap.Old[gen]);
+	    s = next;
 	}
     }
 #endif
@@ -1100,19 +1065,17 @@ static void RunGenCollect(R_size_t size_needed)
     /* unmark all marked nodes in old generations to be collected and
        move to New space */
     for (gen = 0; gen < num_old_gens_to_collect; gen++) {
-	for (i = 0; i < NUM_NODE_CLASSES; i++) {
-	    R_GenHeap[i].OldCount[gen] = 0;
-	    s = NEXT_NODE(R_GenHeap[i].Old[gen]);
-	    while (s != R_GenHeap[i].Old[gen]) {
-		SEXP next = NEXT_NODE(s);
-		if (gen < NUM_OLD_GENERATIONS - 1)
-		    SET_NODE_GENERATION(s, gen + 1);
-		UNMARK_NODE(s);
-		s = next;
-	    }
-	    if (NEXT_NODE(R_GenHeap[i].Old[gen]) != R_GenHeap[i].Old[gen])
-		BULK_MOVE(R_GenHeap[i].Old[gen], R_GenHeap[i].New);
+	R_GenHeap.OldCount[gen] = 0;
+	s = NEXT_NODE(R_GenHeap.Old[gen]);
+	while (s != R_GenHeap.Old[gen]) {
+	    SEXP next = NEXT_NODE(s);
+	    if (gen < NUM_OLD_GENERATIONS - 1)
+		SET_NODE_GENERATION(s, gen + 1);
+	    UNMARK_NODE(s);
+	    s = next;
 	}
+	if (NEXT_NODE(R_GenHeap.Old[gen]) != R_GenHeap.Old[gen])
+	    BULK_MOVE(R_GenHeap.Old[gen], R_GenHeap.New);
     }
 
     forwarded_nodes = NULL;
@@ -1120,11 +1083,10 @@ static void RunGenCollect(R_size_t size_needed)
 #ifndef EXPEL_OLD_TO_NEW
     /* scan nodes in uncollected old generations with old-to-new pointers */
     for (gen = num_old_gens_to_collect; gen < NUM_OLD_GENERATIONS; gen++)
-	for (i = 0; i < NUM_NODE_CLASSES; i++)
-	    for (s = NEXT_NODE(R_GenHeap[i].OldToNew[gen]);
-		 s != R_GenHeap[i].OldToNew[gen];
-		 s = NEXT_NODE(s))
-		FORWARD_CHILDREN(s);
+	for (s = NEXT_NODE(R_GenHeap.OldToNew[gen]);
+	     s != R_GenHeap.OldToNew[gen];
+	     s = NEXT_NODE(s))
+	    FORWARD_CHILDREN(s);
 #endif
 
     /* forward all roots */
@@ -1237,17 +1199,14 @@ static void RunGenCollect(R_size_t size_needed)
 
     /* tell Valgrind about free nodes */
 #if VALGRIND_LEVEL > 2
-    for (i=1; i< NUM_NODE_CLASSES;i++){
-	for (s=NEXT_NODE(R_GenHeap[i].New);
-	     s !=R_GenHeap[i].Free; s=NEXT_NODE(s)) {
-	    VALGRIND_MAKE_NOACCESS(s,4); /* sizeof sxpinfo_struct */
-	}
+    for (s=NEXT_NODE(R_GenHeap.New);
+	 s !=R_GenHeap.Free; s=NEXT_NODE(s)) {
+	VALGRIND_MAKE_NOACCESS(s,4); /* sizeof sxpinfo_struct */
     }
 #endif
 
     /* reset Free pointers */
-    for (i = 0; i < NUM_NODE_CLASSES; i++)
-	R_GenHeap[i].Free = NEXT_NODE(R_GenHeap[i].New);
+    R_GenHeap.Free = NEXT_NODE(R_GenHeap.New);
 
 
     /* update heap statistics */
@@ -1385,7 +1344,6 @@ static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
 
 void attribute_hidden InitMemory()
 {
-    int i;
     int gen;
 
     Heap::setGCCuer(cueGC);
@@ -1403,29 +1361,25 @@ void attribute_hidden InitMemory()
 
     UNMARK_NODE(&UnmarkedNodeTemplate);
 
-    for (i = 0; i < NUM_NODE_CLASSES; i++) {
-      for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-        R_GenHeap[i].Old[gen] = &R_GenHeap[i].OldPeg[gen];
-	SET_PREV_NODE(R_GenHeap[i].Old[gen], R_GenHeap[i].Old[gen]);
-	SET_NEXT_NODE(R_GenHeap[i].Old[gen], R_GenHeap[i].Old[gen]);
+    for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
+        R_GenHeap.Old[gen] = &R_GenHeap.OldPeg[gen];
+	SET_PREV_NODE(R_GenHeap.Old[gen], R_GenHeap.Old[gen]);
+	SET_NEXT_NODE(R_GenHeap.Old[gen], R_GenHeap.Old[gen]);
 
 #ifndef EXPEL_OLD_TO_NEW
-	R_GenHeap[i].OldToNew[gen] = &R_GenHeap[i].OldToNewPeg[gen];
-	SET_PREV_NODE(R_GenHeap[i].OldToNew[gen], R_GenHeap[i].OldToNew[gen]);
-	SET_NEXT_NODE(R_GenHeap[i].OldToNew[gen], R_GenHeap[i].OldToNew[gen]);
+	R_GenHeap.OldToNew[gen] = &R_GenHeap.OldToNewPeg[gen];
+	SET_PREV_NODE(R_GenHeap.OldToNew[gen], R_GenHeap.OldToNew[gen]);
+	SET_NEXT_NODE(R_GenHeap.OldToNew[gen], R_GenHeap.OldToNew[gen]);
 #endif
 
-	R_GenHeap[i].OldCount[gen] = 0;
-      }
-      R_GenHeap[i].New = &R_GenHeap[i].NewPeg;
-      SET_PREV_NODE(R_GenHeap[i].New, R_GenHeap[i].New);
-      SET_NEXT_NODE(R_GenHeap[i].New, R_GenHeap[i].New);
+	R_GenHeap.OldCount[gen] = 0;
     }
+    R_GenHeap.New = &R_GenHeap.NewPeg;
+    SET_PREV_NODE(R_GenHeap.New, R_GenHeap.New);
+    SET_NEXT_NODE(R_GenHeap.New, R_GenHeap.New);
 
-    for (i = 0; i < NUM_NODE_CLASSES; i++)
-        R_GenHeap[i].Free = NEXT_NODE(R_GenHeap[i].New);
+    R_GenHeap.Free = NEXT_NODE(R_GenHeap.New);
 
-    SET_NODE_CLASS(&UnmarkedNodeTemplate, 0);
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
 
@@ -1562,11 +1516,11 @@ char *S_realloc(char *p, long newct, long old, int size)
 /* Node Allocation. */
 
 namespace {
-    inline SEXP GET_FREE_NODE(int nclass = 0)
+    inline SEXP GET_FREE_NODE()
     {
-	SEXP n = R_GenHeap[nclass].Free;
-	if (n == R_GenHeap[nclass].New) {
-	    size_t bytes = NODE_SIZE(nclass);
+	SEXP n = R_GenHeap.Free;
+	if (n == R_GenHeap.New) {
+	    size_t bytes = sizeof(SEXPREC);
 	    if (FORCE_GC) R_gc_internal(0);
 	    try {
 		n = reinterpret_cast<SEXP>(Heap::allocate(bytes));
@@ -1574,9 +1528,9 @@ namespace {
 	    catch (bad_alloc) {
 		errorcall(R_NilValue, _("memory exhausted"));
 	    }
-	    SNAP_NODE(n, R_GenHeap[nclass].New);
+	    SNAP_NODE(n, R_GenHeap.New);
 	}
-	R_GenHeap[nclass].Free = NEXT_NODE(n);
+	R_GenHeap.Free = NEXT_NODE(n);
 	return n;
     }
 }
@@ -1728,7 +1682,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 		   require several casts below... */
     R_len_t i;
     R_size_t size = 0, actual_size = 0, alloc_size, old_R_VSize;
-    int node_class;
 
     if (length < 0 )
 	errorcall(R_GlobalContext->call,
@@ -1804,16 +1757,14 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type, length);
     }
 
-    node_class = LARGE_NODE_CLASS;
     alloc_size = size;
 
     /* save current R_VSize to roll back adjustment if malloc fails */
     old_R_VSize = R_VSize;
 
-    s = GET_FREE_NODE(LARGE_NODE_CLASS);
+    s = GET_FREE_NODE();
     s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    SET_NODE_CLASS(s, LARGE_NODE_CLASS);
-    R_GenHeap[LARGE_NODE_CLASS].AllocCount++;
+    R_GenHeap.AllocCount++;
     SET_ATTRIB(s, R_NilValue);
     SET_TYPEOF(s, type);
     s->m_databytes = size * sizeof(VECREC);
@@ -2069,23 +2020,21 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
     setAttrib(ans, R_NamesSymbol, nms);
 
     BEGIN_SUSPEND_INTERRUPTS {
-      int gen;
+	int gen;
 
-      /* run a full GC to make sure that all stuff in use is in Old space */
-      num_old_gens_to_collect = NUM_OLD_GENERATIONS;
-      R_gc();
-      for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	for (i = 0; i < NUM_NODE_CLASSES; i++) {
-	  SEXP s;
-	  for (s = NEXT_NODE(R_GenHeap[i].Old[gen]);
-	       s != R_GenHeap[i].Old[gen];
-	       s = NEXT_NODE(s)) {
-	      tmp = TYPEOF(s);
-	      if(tmp > LGLSXP) tmp -= 2;
-	      INTEGER(ans)[tmp]++;
-	  }
+	/* run a full GC to make sure that all stuff in use is in Old space */
+	num_old_gens_to_collect = NUM_OLD_GENERATIONS;
+	R_gc();
+	for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
+	    SEXP s;
+	    for (s = NEXT_NODE(R_GenHeap.Old[gen]);
+		 s != R_GenHeap.Old[gen];
+		 s = NEXT_NODE(s)) {
+		tmp = TYPEOF(s);
+		if(tmp > LGLSXP) tmp -= 2;
+		INTEGER(ans)[tmp]++;
+	    }
 	}
-      }
     } END_SUSPEND_INTERRUPTS;
     UNPROTECT(2);
     return ans;
