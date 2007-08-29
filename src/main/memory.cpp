@@ -86,10 +86,6 @@ static int gc_count = 0;
 # define FORCE_GC 0
 #endif
 
-#ifdef R_MEMORY_PROFILING
-static void R_ReportAllocation(R_size_t);
-#endif
-
 extern SEXP framenames;
 
 #define GC_PROT(X) {int __t = gc_inhibit_torture; \
@@ -1723,9 +1719,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 			  _("cannot allocate vector of size %0.f KB"),
 			  dsize);
 	}
-#ifdef R_MEMORY_PROFILING
-	R_ReportAllocation(s->m_databytes);
-#endif
     }
     SETLENGTH(s, length);
     SET_NAMED(s, 0);
@@ -2444,37 +2437,28 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 #else
-static int R_IsMemReporting;  /* Rboolean more appropriate? */
 static FILE *R_MemReportingOutfile;
-static R_size_t R_MemReportingThreshold;
 
 static void R_OutputStackTrace(FILE *file)
 {
-    int newline = 0;
     RCNTXT *cptr;
 
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
-	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? memCHAR(PRINTNAME(fun)) :
 		    "<Anonymous>");
 	}
     }
-    if (newline) fprintf(file, "\n");
+    fprintf(file, "\n");
 }
 
 static void R_ReportAllocation(R_size_t size)
 {
-    if (R_IsMemReporting) {
-	if(size > R_MemReportingThreshold) {
-	    fprintf(R_MemReportingOutfile, "%ld :", static_cast<unsigned long>(size));
-	    R_OutputStackTrace(R_MemReportingOutfile);
-	}
-    }
-    return;
+    fprintf(R_MemReportingOutfile, "%ld :", static_cast<unsigned long>(size));
+    R_OutputStackTrace(R_MemReportingOutfile);
 }
 
 static void R_EndMemReporting()
@@ -2485,7 +2469,7 @@ static void R_EndMemReporting()
 	fclose(R_MemReportingOutfile);
 	R_MemReportingOutfile=NULL;
     }
-    R_IsMemReporting = 0;
+    Heap::setMonitor(0);
     return;
 }
 
@@ -2496,9 +2480,7 @@ static void R_InitMemReporting(char *filename, int append,
     R_MemReportingOutfile = fopen(filename, append ? "a" : "w");
     if (R_MemReportingOutfile == NULL)
 	error(_("Rprofmem: cannot open output file '%s'"), filename);
-    R_MemReportingThreshold = threshold;
-    R_IsMemReporting = 1;
-    return;
+    Heap::setMonitor(R_ReportAllocation, threshold);
 }
 
 SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
