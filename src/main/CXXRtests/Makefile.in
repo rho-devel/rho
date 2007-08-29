@@ -8,7 +8,7 @@ include $(top_builddir)/Makeconf
 
 maindir = ..
 
-ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
+#ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
 sources_cxx = CellPooltest.cpp Heaptest.cpp
 
@@ -18,24 +18,36 @@ tests = CellPooltest Heaptest
 
 check : $(tests:=.ts)
 
-CellPooltest_objs = CellPooltest.o $(maindir)/CellPool.o
+CellPool.o : $(maindir)/CellPool.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -c -o $@ $<
+
+CellPooltest.o : CellPooltest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -c -o $@ $<
+
+CellPooltest_objs = CellPooltest.o CellPool.o
 
 CellPooltest : $(CellPooltest_objs)
 	$(LINK.cc) -o $@ $(CellPooltest_objs)
 
 CellPooltest.ts : CellPooltest CellPooltest.save
-	./$< > CellPooltest.out
+	valgrind -q --leak-check="yes" ./$< > CellPooltest.out
 	diff CellPooltest.save CellPooltest.out
 	rm CellPooltest.out
 	touch $@
 
-Heaptest_objs = Heaptest.o $(maindir)/Heap.o $(maindir)/CellPool.o
+Heap.o : $(maindir)/Heap.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+
+Heaptest.o : Heaptest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+
+Heaptest_objs = Heaptest.o Heap.o CellPool.o
 
 Heaptest : $(Heaptest_objs)
 	$(LINK.cc) -o $@ $(Heaptest_objs)
 
 Heaptest.ts : Heaptest Heaptest.save
-	./$< 10 12 > Heaptest.out
+	valgrind -q --leak-check="yes" ./$< 10 12 > Heaptest.out
 	diff Heaptest.save Heaptest.out
 	rm Heaptest.out
 	touch $@
