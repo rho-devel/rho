@@ -36,10 +36,7 @@
 
 #define USE_RINTERNALS
 
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "Rvalgrind.h"
 
 // For debugging:
 #include <iostream>
@@ -65,40 +62,6 @@ extern void *Rm_realloc(void * p, size_t n);
 #define malloc Rm_malloc
 #define realloc Rm_realloc
 #define free Rm_free
-#endif
-
-/* Declarations for Valgrind.
-
-   These are controlled by the
-     --with-valgrind-instrumentation=
-   option to configure, which sets VALGRIND_LEVEL to the
-   supplied value (default 0) and defines NVALGRIND if
-   the value is 0.
-
-   level 0 is no additional instrumentation
-   level 1 marks uninitialized numeric, logical, integer vectors
-           and R_alloc memory
-   level 2 marks free memory as inaccessible
-
-   It may be necessary to define NVALGRIND for a non-gcc
-   compiler on a supported architecture if it has different
-   syntax for inline assembly language from gcc.
-
-   For Win32, Valgrind is useful only if running under Wine,
-*/
-#ifdef Win32
-# ifndef USE_VALGRIND_FOR_WINE
-# define NVALGRIND 1
-#endif
-#endif
-
-#ifndef NVALGRIND
-# include "memcheck.h"
-#endif
-
-
-#ifndef VALGRIND_LEVEL
-#define VALGRIND_LEVEL 0
 #endif
 
 #include <Defn.h>

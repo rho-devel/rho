@@ -26,3 +26,9 @@ Allocating #13 with size 1
 Deallocating #7
 Blocks allocated: 6
 Bytes allocated: 653
+Deallocating #0
+Deallocating #13
+Deallocating #2
+Deallocating #10
+Deallocating #8
+Deallocating #5

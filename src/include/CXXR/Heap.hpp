@@ -127,6 +127,9 @@ namespace CXXR {
 		++s_blocks_allocated;
 		s_bytes_allocated += bytes;
 	    }
+#if VALGRIND_LEVEL > 1
+	    VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
+#endif
 	    return p;
 	}
 

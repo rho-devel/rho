@@ -115,6 +115,13 @@ int main(int argc, char* argv[]) {
 	cout << "Blocks allocated: " << Heap::blocksAllocated()
 	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
     }
+    // Clear up:
+    {
+	for (unsigned int k = 0; k < trs.size(); ++k) {
+	    cout << "Deallocating #" << trs[k].serial << endl;
+	    Heap::deallocate(trs[k].cptr, trs[k].size);
+	}
+    }
     return 0;
 }
 

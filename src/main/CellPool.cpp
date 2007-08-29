@@ -38,7 +38,7 @@ CellPool::~CellPool()
 	::operator delete(*it);
 }
 
-void CellPool::check() const
+bool CellPool::check() const
 {
     unsigned int free_cells = 0;
     for (Cell* c = m_free_cells; c; c = c->m_next) {
@@ -50,6 +50,7 @@ void CellPool::check() const
 	cerr << "CellPool::check(): internal inconsistency\n";
 	abort();
     }
+    return true;
 }
 
 void CellPool::checkAllocatedCell(const void* p) const 
@@ -94,7 +95,8 @@ void CellPool::seekMemory() throw (std::bad_alloc)
 {
     if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
-	char* superblock = reinterpret_cast<char*>(::operator new(m_superblocksize));
+	char* superblock
+	    = reinterpret_cast<char*>(::operator new(m_superblocksize));
 	m_superblocks.push_back(superblock);
 	// Initialise cells:
 	{
@@ -102,6 +104,9 @@ void CellPool::seekMemory() throw (std::bad_alloc)
 	    Cell* next = 0;
 	    while (offset >= 0) {
 		next = new (superblock + offset) Cell(next);
+#if VALGRIND_LEVEL > 1
+		VALGRIND_MAKE_NOACCESS(next + 1, m_cellsize - sizeof(Cell));
+#endif
 		offset -= m_cellsize;
 	    }
 	    m_free_cells = next;

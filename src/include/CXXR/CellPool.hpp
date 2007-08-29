@@ -29,6 +29,8 @@
 #include <new>
 #include <vector>
 
+#include "Rvalgrind.h"
+
 namespace CXXR {
     /** Class to manage a pool of memory cells of a fixed size.
      * 
@@ -96,6 +98,7 @@ namespace CXXR {
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 	    ++m_cells_allocated;
+	    // Leave it to CXXR::Heap to VALGRIND_MAKE_MEM_UNDEFINED
 	    return c;
 	}
 
@@ -115,8 +118,11 @@ namespace CXXR {
 	 *
 	 * Aborts the program with an error message if the object is
 	 * found to be internally inconsistent.
+	 *
+	 * @return true, if it returns at all.  The return value is to
+	 * facilitate use with \c assert .
 	 */
-	void check() const;
+	bool check() const;
 
 	/** Deallocate a cell
 	 *
@@ -134,6 +140,9 @@ namespace CXXR {
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
 	    --m_cells_allocated;
+#if VALGRIND_LEVEL > 1
+	    VALGRIND_MAKE_NOACCESS(c + 1, m_cellsize - sizeof(Cell));
+#endif
 	}
 
 	/**
@@ -150,6 +159,7 @@ namespace CXXR {
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 	    ++m_cells_allocated;
+	    // Leave it to CXXR::Heap to VALGRIND_MAKE_MEM_UNDEFINED
 	    return c;
 	}
 
