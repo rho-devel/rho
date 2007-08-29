@@ -1761,7 +1761,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 			  dsize);
 	}
 #ifdef R_MEMORY_PROFILING
-	R_ReportAllocation(bytes);
+	R_ReportAllocation(s->m_databytes);
 #endif
     }
     SETLENGTH(s, length);
