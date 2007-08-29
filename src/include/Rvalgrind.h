@@ -48,11 +48,24 @@
 #ifndef RVALGRIND_H
 #define RVALGRIND_H 1
 
-// We ignore the config.h settings if VALGRIND_LEVEL is already
-// defined, e.g. in compiling test programs.
-#ifndef VALGRIND_LEVEL
+// We ignore the config.h settings of VALGRIND_LEVEL and NVALGRIND if
+// VALGRIND_LEVEL is already defined at this point, e.g. in compiling
+// test programs.
+#ifdef VALGRIND_LEVEL
+#define OVERRIDE_VALGRIND_LEVEL VALGRIND_LEVEL
+#undef VALGRIND_LEVEL
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
+
+#ifdef OVERRIDE_VALGRIND_LEVEL
+#undef VALGRIND_LEVEL
+#undef NVALGRIND
+#define VALGRIND_LEVEL OVERRIDE_VALGRIND_LEVEL
+#if VALGRIND_LEVEL==0
+#define NVALGRIND
 #endif
 #endif
 

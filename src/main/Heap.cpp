@@ -26,12 +26,20 @@
 
 #include <iostream>
 
+#ifdef R_MEMORY_PROFILING
+#include <limits>
+#endif
+
 using namespace std;
 using namespace CXXR;
 
 unsigned int Heap::s_blocks_allocated = 0;
 unsigned int Heap::s_bytes_allocated = 0;
 bool (*Heap::s_cue_gc)(size_t, bool) = 0;
+#ifdef R_MEMORY_PROFILING
+void (*Heap::s_monitor)(size_t) = 0;
+size_t Heap::s_threshold = numeric_limits<size_t>::max();
+#endif
 
 void Heap::pool_out_of_memory(CellPool* pool)
 {
@@ -101,6 +109,9 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 #if VALGRIND_LEVEL > 1
     if (bytes <= s_max_cell_size) VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
 #endif
+#ifdef R_MEMORY_PROFILING
+    if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
+#endif
     return p;
 }
 				
@@ -109,3 +120,11 @@ void Heap::check()
     for (unsigned int i = 0; i < 5; ++i)
 	s_pools[i].check();
 }
+
+#ifdef R_MEMORY_PROFILING
+void Heap::setMonitor(void (*monitor)(size_t), size_t threshold)
+{
+    s_monitor = monitor;
+    s_threshold = (monitor ? threshold : numeric_limits<size_t>::max());
+}
+#endif

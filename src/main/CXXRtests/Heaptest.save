@@ -1,11 +1,16 @@
 Allocating #0 with size 338
+Monitored allocation of 338 bytes
 Allocating #1 with size 15
 Allocating #2 with size 227
+Monitored allocation of 227 bytes
 Allocating #3 with size 253
+Monitored allocation of 253 bytes
 Allocating #4 with size 555
+Monitored allocation of 555 bytes
 Allocating #5 with size 3
 Allocating #6 with size 10
 Allocating #7 with size 205
+Monitored allocation of 205 bytes
 Allocating #8 with size 6
 Allocating #9 with size 46
 Blocks allocated: 10

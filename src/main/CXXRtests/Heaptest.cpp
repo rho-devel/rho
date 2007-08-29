@@ -72,6 +72,11 @@ namespace {
 	     << (force ? " (forced)\n" : " (not forced)\n");
 	return false;
     }
+
+    void monitor(size_t bytes)
+    {
+	cout << "Monitored allocation of " << bytes << " bytes\n";
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -90,14 +95,16 @@ int main(int argc, char* argv[]) {
     srandom(0);
     // Carry out initial allocations:
     {
+	Heap::setMonitor(monitor, 100);
 	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc(random());
 	Heap::check();
 	cout << "Blocks allocated: " << Heap::blocksAllocated()
 	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
     }
     // Carry out churns:
-    Heap::setGCCuer(cueGC);
     {
+	Heap::setMonitor(0);
+	Heap::setGCCuer(cueGC);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = random();
 	    if (rnd & 1 || trs.empty()) alloc(rnd);

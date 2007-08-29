@@ -14,12 +14,12 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /** @file Heap.hpp
  *
- * Class Heap
+ * Class CXXR::Heap
  */
 
 #ifndef CXXR_HEAP_HPP
@@ -111,6 +111,28 @@ namespace CXXR {
 	{
 	    s_cue_gc = cue_gc;
 	}
+
+#ifdef R_MEMORY_PROFILING
+	/** Set a callback to monitor allocations exceeding a threshold size.
+	 *
+	 * @param monitor This is a pointer to a function that this
+	 *          class will call when it allocates a block
+	 *          exceeding a threshold size.  The function is
+	 *          called with the first argument set to the number
+	 *          of bytes allocated.  Alternatively, monitor can be
+	 *          set to a null pointer to discontinue monitoring.
+	 *
+	 * @param threshold The monitor will only be called for
+	 *          allocations of at least this many bytes.  Ignored
+	 *          if monitor is a null pointer.
+	 *
+	 * @note This function is available only if R_MEMORY_PROFILING
+	 * is defined, e.g. by specifying option
+	 * --enable-memory-profiling to the configure script.
+	 */
+	static void setMonitor(void (*monitor)(size_t) = 0,
+			       size_t threshold = 0);
+#endif
     private:
 	static const size_t s_max_cell_size = 128;
 	static unsigned int s_blocks_allocated;
@@ -118,6 +140,10 @@ namespace CXXR {
 	static bool (*s_cue_gc)(size_t, bool);
 	static CellPool s_pools[];
 	static unsigned int s_pooltab[];
+#ifdef R_MEMORY_PROFILING
+	static void (*s_monitor)(size_t);
+	static size_t s_threshold;
+#endif
 
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
@@ -129,6 +155,9 @@ namespace CXXR {
 	    }
 #if VALGRIND_LEVEL > 1
 	    VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
+#endif
+#ifdef R_MEMORY_PROFILING
+	    if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
 #endif
 	    return p;
 	}
