@@ -82,7 +82,7 @@ Rboolean DDVAL(const SEXP x);
 #else
 inline Rboolean DDVAL(const SEXP x)
 {
-    return Rboolean(x->sxpinfo.gp & DDVAL_MASK);
+    return Rboolean(x->m_gpbits & DDVAL_MASK);
 }
 #endif
 
@@ -94,8 +94,8 @@ void SET_DDVAL(SEXP x, int v);
 #else
 inline void SET_DDVAL(SEXP x, int v)
 {
-    if (v) x->sxpinfo.gp |= DDVAL_MASK;
-    else x->sxpinfo.gp &= ~DDVAL_MASK;
+    if (v) x->m_gpbits |= DDVAL_MASK;
+    else x->m_gpbits &= ~DDVAL_MASK;
 }
 #endif
 

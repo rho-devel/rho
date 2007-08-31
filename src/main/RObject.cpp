@@ -32,7 +32,6 @@
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
     int (*levelsptr)(SEXP x) = LEVELS;
-    int (*markptr)(SEXP x) = MARK;
     int (*namedptr)(SEXP x) = NAMED;
     Rboolean (*objectptr)(SEXP e) = OBJECT;
     int (*setlevelsptr)(SEXP x, int v) = SETLEVELS;

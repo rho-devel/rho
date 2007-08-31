@@ -74,7 +74,7 @@ inline SEXP HASHTAB(SEXP x) {return x->u.envsxp.hashtab;}
 #ifndef __cplusplus
 int ENVFLAGS(SEXP x);
 #else
-inline int ENVFLAGS(SEXP x) {return x->sxpinfo.gp;}
+inline int ENVFLAGS(SEXP x) {return x->m_gpbits;}
 #endif
 
 /**
@@ -86,7 +86,7 @@ inline int ENVFLAGS(SEXP x) {return x->sxpinfo.gp;}
 #ifndef __cplusplus
 void SET_ENVFLAGS(SEXP x, int v);
 #else
-inline void SET_ENVFLAGS(SEXP x, int v) {x->sxpinfo.gp = v;}
+inline void SET_ENVFLAGS(SEXP x, int v) {x->m_gpbits = v;}
 #endif
 
 /**

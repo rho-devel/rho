@@ -75,7 +75,7 @@ inline SEXP PRVALUE(SEXP x) {return x->u.promsxp.value;}
 #ifndef __cplusplus
 int PRSEEN(SEXP x);
 #else
-inline int PRSEEN(SEXP x) {return x->sxpinfo.gp;}
+inline int PRSEEN(SEXP x) {return x->m_gpbits;}
 #endif
 
 /**
@@ -85,7 +85,7 @@ inline int PRSEEN(SEXP x) {return x->sxpinfo.gp;}
 #ifndef __cplusplus
 void SET_PRSEEN(SEXP x, int v);
 #else
-inline void SET_PRSEEN(SEXP x, int v) {x->sxpinfo.gp = v;}
+inline void SET_PRSEEN(SEXP x, int v) {x->m_gpbits = v;}
 #endif
 
 /**

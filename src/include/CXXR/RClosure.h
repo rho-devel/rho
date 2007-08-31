@@ -64,7 +64,7 @@ inline SEXP CLOENV(SEXP x) {return x->u.closxp.env;}
 #ifndef __cplusplus
 Rboolean DEBUG(const SEXP x);
 #else
-inline Rboolean DEBUG(const SEXP x) {return Rboolean(x->sxpinfo.debug);}
+inline Rboolean DEBUG(const SEXP x) {return Rboolean(x->m_debug);}
 #endif
 
 /**
@@ -85,7 +85,7 @@ inline SEXP FORMALS(SEXP x) {return x->u.closxp.formals;}
 #ifndef __cplusplus
 void SET_DEBUG(SEXP x, Rboolean v);
 #else
-inline void SET_DEBUG(SEXP x, Rboolean v) {x->sxpinfo.debug = v;}
+inline void SET_DEBUG(SEXP x, Rboolean v) {x->m_debug = v;}
 #endif
 
 /**

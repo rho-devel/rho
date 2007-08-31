@@ -31,6 +31,9 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstring>
+
+#include "CXXR/Heap.hpp"
 
 extern "C" {
 #endif
@@ -132,36 +135,13 @@ typedef enum {
 #endif
 
 #ifdef __cplusplus
-/* This is intended for use only within R itself.
- * It defines internal structures that are otherwise only accessible
- * via SEXP, and macros to replace many (but not all) of accessor functions
- * (which are always defined).
- */
 
 namespace CXXR {
-
-    /* Flags */
-    struct sxpinfo_struct {
-	SEXPTYPE type      :  5;/* ==> (FUNSXP == 99) %% 2^5 == 3 == CLOSXP
-				 * -> warning: `type' is narrower than values
-				 *              of its type
-				 * when SEXPTYPE was an enum */
-	unsigned int obj   :  1;
-	unsigned int named :  2;
-	unsigned int gp    : 16;
-	unsigned int mark  :  1;
-	unsigned int debug :  1;
-	unsigned int trace :  1;  /* functions and memory tracing */
-	unsigned int spare :  1;  /* currently unused */
-	unsigned int gcgen :  1;  /* old generation number */
-	unsigned int gccls :  3;  /* node class */
-    }; /*		    Tot: 32 */
+    class RObject;
 
     struct primsxp_struct {
 	int offset;
     };
-
-    class RObject;
 
     struct symsxp_struct {
 	RObject *pname;
@@ -198,18 +178,112 @@ namespace CXXR {
 	R_len_t	truelength;
     };
 
-    /* Every node must start with a set of sxpinfo flags and an attribute
-       field. Under the generational collector these are followed by the
-       fields used to maintain the collector's linked list structures. */
-#define SEXPREC_HEADER					\
-    struct sxpinfo_struct sxpinfo;			\
-	RObject *attrib;				\
-	RObject *gengc_next_node, *gengc_prev_node
-
     /* The standard node structure consists of a header followed by the
        node data. */
     struct RObject {
-	SEXPREC_HEADER;
+	/**
+	 * @param stype Required type of the RObject.
+	 */
+	RObject(SEXPTYPE stype = ANYSXP);
+
+	/** Allocate memory.
+         *
+	 * Allocates memory for a new object of a class derived from
+	 * RObject, and zero the memory thus allocated.
+	 *
+	 * @param bytes Number of bytes of memory required.
+	 *
+	 * @note Since objects of classes derived from RObject \e must
+	 * be allocated on the heap, constructors of these classes may
+	 * rely on the fact that operator new zeroes the allocated
+	 * memory to elide member initializations.
+	 */
+	static void* operator new(size_t bytes)
+	{
+	    return memset(Heap::allocate(bytes), 0, bytes);
+	}
+
+	static void operator delete(void* p, size_t bytes)
+	{
+	    Heap::deallocate(p, bytes);
+	}
+
+	/**
+	 * @return Pointer to the attributes of this object.
+	 */
+	const RObject* attributes() const {return m_attrib;}
+
+	/**
+	 * @return pointer to first element (car) of this list.
+	 */
+	const RObject* car() const {return u.listsxp.carval;}
+
+	/**
+	 * @return pointer to tail (cdr) of this list.
+	 */
+	const RObject* cdr() const {return u.listsxp.cdrval;}
+
+	/** Delete an RObject
+	 *
+	 * @note Because the class destructors are not public, objects
+	 * of classes derived from RObject must be deleted by calling
+	 * this method.
+	 */
+	void destroy() const {delete this;}
+
+	/**
+	 * @return pointer to enclosing environment.
+	 */
+	const RObject* enclosingEnvironment() const {return u.envsxp.enclos;}
+
+	/**
+	 * @return pointer to frame of this environment.
+	 */
+	const RObject* frame() const {return u.envsxp.frame;}
+
+	/**
+	 * @return pointer to hash table of this environment.
+	 */
+	const RObject* hashTable() const {return u.envsxp.hashtab;}
+
+	/**
+	 * @return length of this vector.
+	 */
+	R_len_t length() const {return u.vecsxp.length;}
+
+	/**
+	 * @return SEXPTYPE of this object.
+	 */
+	SEXPTYPE sexptype() const {return m_type;}
+
+	/**
+	 * @return pointer to tag of this list.
+	 */
+	const RObject* tag() const {return u.listsxp.tagval;}
+
+        // To be protected in future:
+
+	/** Destructor
+	 *
+	 * @note The destructor is protected to ensure that RObjects
+	 * are allocated on the heap.  (See Meyers 'More Effective
+	 * C++' Item 27.) Derived classes should likewise declare
+	 * their constructors private or protected.
+	 */
+	virtual ~RObject();
+
+	// To be private in future:
+
+	mutable const RObject *gengc_prev_node, *gengc_next_node;
+	mutable unsigned int m_gcgen : 2;
+	mutable bool m_marked        : 1;
+	SEXPTYPE m_type              : 7;
+	bool m_has_class             : 1;
+	unsigned int m_named         : 2;
+	bool m_debug                 : 1;
+	bool m_trace                 : 1;
+	unsigned short m_gpbits;
+	RObject *m_attrib;
 	union {
 	    struct primsxp_struct primsxp;
 	    struct symsxp_struct symsxp;
@@ -221,6 +295,20 @@ namespace CXXR {
 	} u;
 	void* m_data;
 	size_t m_databytes;
+
+	// Special constructor for pegs.  The parameter is simply to
+	// give this constructor a distinct signature. Note that the
+	// node countisn't altered.
+	RObject(const RObject* /*ignored*/)
+	    : gengc_prev_node(this), gengc_next_node(this)
+	{}
+
+	// Make t the successor of s:
+	static void link(const RObject* s, const RObject* t)
+	{
+	    s->gengc_next_node = t;
+	    t->gengc_prev_node = s;
+	}
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */
@@ -269,7 +357,7 @@ typedef struct SEXPREC *SEXP;
 #ifndef __cplusplus
 SEXP ATTRIB(SEXP x);
 #else
-inline SEXP ATTRIB(SEXP x) {return x ? x->attrib : 0;}
+inline SEXP ATTRIB(SEXP x) {return x ? x->m_attrib : 0;}
 #endif
 
 /**
@@ -278,7 +366,7 @@ inline SEXP ATTRIB(SEXP x) {return x ? x->attrib : 0;}
 #ifndef __cplusplus
 int LEVELS(SEXP x);
 #else
-inline int LEVELS(SEXP x) {return x->sxpinfo.gp;}
+inline int LEVELS(SEXP x) {return x->m_gpbits;}
 #endif
 
 /**
@@ -287,10 +375,10 @@ inline int LEVELS(SEXP x) {return x->sxpinfo.gp;}
  * @return true iff \a x is considered to be in use by garbage collector.
  * @deprecated Depends on GC.
  */
-#ifndef __cplusplus
-int MARK(SEXP x);
-#else
-inline int MARK(SEXP x) {return x->sxpinfo.mark;}
+#ifdef __cplusplus
+namespace CXXR {
+    inline int MARK(const RObject* x) {return x->m_marked;}
+}
 #endif
 
 /**
@@ -302,7 +390,7 @@ inline int MARK(SEXP x) {return x->sxpinfo.mark;}
 #ifndef __cplusplus
 int NAMED(SEXP x);
 #else
-inline int NAMED(SEXP x) {return x ? x->sxpinfo.named : 0;}
+inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
 #endif
 
 /**
@@ -316,7 +404,7 @@ Rboolean OBJECT(const SEXP x);
 #else
 inline Rboolean OBJECT(const SEXP x)
 {
-    return Rboolean(x && x->sxpinfo.obj);
+    return Rboolean(x && x->m_has_class);
 }
 #endif
 
@@ -329,7 +417,7 @@ inline Rboolean OBJECT(const SEXP x)
 #ifndef __cplusplus
 int TRACE(SEXP x);
 #else
-inline int TRACE(SEXP x) {return x ? x->sxpinfo.trace : 0;}
+inline int TRACE(SEXP x) {return x ? x->m_trace : 0;}
 #endif
 
 /**
@@ -340,7 +428,7 @@ inline int TRACE(SEXP x) {return x ? x->sxpinfo.trace : 0;}
 #ifndef __cplusplus
 SEXPTYPE TYPEOF(const SEXP x);
 #else
-inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
+inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sexptype() : NILSXP;}
 #endif
 
 /**
@@ -349,7 +437,7 @@ inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sxpinfo.type : NILSXP;}
 #ifndef __cplusplus
 int SETLEVELS(SEXP x, int v);
 #else
-inline int SETLEVELS(SEXP x, int v) {return x->sxpinfo.gp = v;}
+inline int SETLEVELS(SEXP x, int v) {return x->m_gpbits = v;}
 #endif
 
 /**
@@ -372,7 +460,7 @@ void SET_NAMED(SEXP x, int v);
 inline void SET_NAMED(SEXP x, int v)
 {
     if (!x) return;
-    x->sxpinfo.named = v;
+    x->m_named = v;
 }
 #endif
 
@@ -382,13 +470,13 @@ inline void SET_NAMED(SEXP x, int v)
 #ifndef __cplusplus
 void SET_OBJECT(SEXP x, int v);
 #else
-inline void SET_OBJECT(SEXP x, int v) {x->sxpinfo.obj = v;}
+    inline void SET_OBJECT(SEXP x, int v) {x->m_has_class = v;}
 #endif
 
 #ifndef __cplusplus
 void SET_TRACE(SEXP x, int v);
 #else
-inline void SET_TRACE(SEXP x, int v) {x->sxpinfo.trace = v;}
+inline void SET_TRACE(SEXP x, int v) {x->m_trace = v;}
 #endif
 
 /**
@@ -397,7 +485,7 @@ inline void SET_TRACE(SEXP x, int v) {x->sxpinfo.trace = v;}
 #ifndef __cplusplus
 void SET_TYPEOF(SEXP x, int v);
 #else
-inline void SET_TYPEOF(SEXP x, int v) {x->sxpinfo.type = v;}
+inline void SET_TYPEOF(SEXP x, int v) {x->m_type = v;}
 #endif
 
 /**
@@ -420,7 +508,7 @@ Rboolean IS_S4_OBJECT(const SEXP x);
 #else
 inline Rboolean IS_S4_OBJECT(const SEXP x)
 {
-    return Rboolean(x && (x->sxpinfo.gp & S4_OBJECT_MASK));
+    return Rboolean(x && (x->m_gpbits & S4_OBJECT_MASK));
 }
 #endif
 
@@ -430,7 +518,7 @@ inline Rboolean IS_S4_OBJECT(const SEXP x)
 #ifndef __cplusplus
 void SET_S4_OBJECT(SEXP x);
 #else
-inline void SET_S4_OBJECT(SEXP x)  {x->sxpinfo.gp |= S4_OBJECT_MASK;}
+inline void SET_S4_OBJECT(SEXP x)  {x->m_gpbits |= S4_OBJECT_MASK;}
 #endif
 
 /**
@@ -439,7 +527,7 @@ inline void SET_S4_OBJECT(SEXP x)  {x->sxpinfo.gp |= S4_OBJECT_MASK;}
 #ifndef __cplusplus
 void UNSET_S4_OBJECT(SEXP x);
 #else
-inline void UNSET_S4_OBJECT(SEXP x)  {x->sxpinfo.gp &= ~S4_OBJECT_MASK;}
+inline void UNSET_S4_OBJECT(SEXP x)  {x->m_gpbits &= ~S4_OBJECT_MASK;}
 #endif
 
 /**
@@ -460,7 +548,7 @@ Rboolean IS_ACTIVE_BINDING(SEXP b);
 #else
 inline Rboolean IS_ACTIVE_BINDING(SEXP b)
 {
-    return Rboolean(b->sxpinfo.gp & ACTIVE_BINDING_MASK);
+    return Rboolean(b->m_gpbits & ACTIVE_BINDING_MASK);
 }
 #endif
 
@@ -469,7 +557,7 @@ Rboolean BINDING_IS_LOCKED(SEXP b);
 #else
 inline Rboolean BINDING_IS_LOCKED(SEXP b)
 {
-    return Rboolean(b->sxpinfo.gp & BINDING_LOCK_MASK);
+    return Rboolean(b->m_gpbits & BINDING_LOCK_MASK);
 }
 #endif
 
@@ -478,20 +566,20 @@ void SET_ACTIVE_BINDING_BIT(SEXP b);
 #else
 inline void SET_ACTIVE_BINDING_BIT(SEXP b)
 {
-    b->sxpinfo.gp |= ACTIVE_BINDING_MASK;
+    b->m_gpbits |= ACTIVE_BINDING_MASK;
 }
 #endif
 
 #ifndef __cplusplus
 void LOCK_BINDING(SEXP b);
 #else
-inline void LOCK_BINDING(SEXP b) {b->sxpinfo.gp |= BINDING_LOCK_MASK;}
+inline void LOCK_BINDING(SEXP b) {b->m_gpbits |= BINDING_LOCK_MASK;}
 #endif
 
 #ifndef __cplusplus
 void UNLOCK_BINDING(SEXP b);
 #else
-inline void UNLOCK_BINDING(SEXP b) {b->sxpinfo.gp &= (~BINDING_LOCK_MASK);}
+inline void UNLOCK_BINDING(SEXP b) {b->m_gpbits &= (~BINDING_LOCK_MASK);}
 #endif
 
 #ifdef __cplusplus

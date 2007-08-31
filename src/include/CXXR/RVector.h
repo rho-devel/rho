@@ -219,7 +219,7 @@ Rboolean IS_LATIN1(const SEXP x);
 #else
 inline Rboolean IS_LATIN1(const SEXP x)
 {
-    return Rboolean(x->sxpinfo.gp & LATIN1_MASK);
+    return Rboolean(x->m_gpbits & LATIN1_MASK);
 }
 #endif
 
@@ -230,7 +230,7 @@ inline Rboolean IS_LATIN1(const SEXP x)
 #ifndef __cplusplus
 void SET_LATIN1(SEXP x);
 #else
-inline void SET_LATIN1(SEXP x) {x->sxpinfo.gp |= LATIN1_MASK;}
+inline void SET_LATIN1(SEXP x) {x->m_gpbits |= LATIN1_MASK;}
 #endif
 
 /**
@@ -240,7 +240,7 @@ inline void SET_LATIN1(SEXP x) {x->sxpinfo.gp |= LATIN1_MASK;}
 #ifndef __cplusplus
 void UNSET_LATIN1(SEXP x);
 #else
-inline void UNSET_LATIN1(SEXP x) {x->sxpinfo.gp &= ~LATIN1_MASK;}
+inline void UNSET_LATIN1(SEXP x) {x->m_gpbits &= ~LATIN1_MASK;}
 #endif
 
 # define UTF8_MASK (1<<3)
@@ -254,7 +254,7 @@ Rboolean IS_UTF8(const SEXP x);
 #else
 inline Rboolean IS_UTF8(const SEXP x)
 {
-    return Rboolean(x->sxpinfo.gp & UTF8_MASK);
+    return Rboolean(x->m_gpbits & UTF8_MASK);
 }
 #endif
 
@@ -265,7 +265,7 @@ inline Rboolean IS_UTF8(const SEXP x)
 #ifndef __cplusplus
 void SET_UTF8(SEXP x);
 #else
-inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
+inline void SET_UTF8(SEXP x) {x->m_gpbits |= UTF8_MASK;}
 #endif
 
 /**
@@ -275,7 +275,7 @@ inline void SET_UTF8(SEXP x) {x->sxpinfo.gp |= UTF8_MASK;}
 #ifndef __cplusplus
 void UNSET_UTF8(SEXP x);
 #else
-inline void UNSET_UTF8(SEXP x) {x->sxpinfo.gp &= ~UTF8_MASK;}
+inline void UNSET_UTF8(SEXP x) {x->m_gpbits &= ~UTF8_MASK;}
 #endif
 
 /* Hashing Functions */
@@ -283,7 +283,7 @@ inline void UNSET_UTF8(SEXP x) {x->sxpinfo.gp &= ~UTF8_MASK;}
 #ifndef __cplusplus
 int HASHASH(SEXP x);
 #else
-inline int HASHASH(SEXP x) {return x->sxpinfo.gp;}
+inline int HASHASH(SEXP x) {return x->m_gpbits;}
 #endif
 
 #ifndef __cplusplus
@@ -295,7 +295,7 @@ inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
 #ifndef __cplusplus
 void SET_HASHASH(SEXP x, int v);
 #else
-inline void SET_HASHASH(SEXP x, int v) {x->sxpinfo.gp = v;}
+inline void SET_HASHASH(SEXP x, int v) {x->m_gpbits = v;}
 #endif
 
 #ifndef __cplusplus

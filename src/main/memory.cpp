@@ -93,12 +93,10 @@ extern SEXP framenames;
 
 static void R_gc_internal(R_size_t size_needed);
 
-static SEXPREC UnmarkedNodeTemplate;
-
 namespace {
-    inline bool NODE_IS_MARKED(SEXP s) {return MARK(s) == 1;}
-    inline void MARK_NODE(SEXP s) {s->sxpinfo.mark = 1;}
-    inline void UNMARK_NODE(SEXP s) {s->sxpinfo.mark = 0;}
+    inline bool NODE_IS_MARKED(const RObject* s) {return MARK(s) == 1;}
+    inline void MARK_NODE(const RObject* s) {s->m_marked = true;}
+    inline void UNMARK_NODE(const RObject* s) {s->m_marked = false;}
 }
 
 /* Tuning Constants. Most of these could be made settable from R,
@@ -235,19 +233,19 @@ static R_size_t R_V_maxused=0;
 #endif
 
 namespace {
-    inline unsigned int NODE_GENERATION(SEXP s) {return s->sxpinfo.gcgen;}
+    inline unsigned int NODE_GENERATION(const RObject* s) {return s->m_gcgen;}
 
-    inline void SET_NODE_GENERATION(SEXP s, unsigned int g)
+    inline void SET_NODE_GENERATION(const RObject* s, unsigned int g)
     {
-	s->sxpinfo.gcgen = g;
+	s->m_gcgen = g;
     }
 
-    inline bool NODE_GEN_IS_YOUNGER(SEXP s, unsigned int g)
+    inline bool NODE_GEN_IS_YOUNGER(const RObject* s, unsigned int g)
     {
 	return !NODE_IS_MARKED(s) || (NODE_GENERATION(s) < g);
     }
 
-    inline bool NODE_IS_OLDER(SEXP x, SEXP y)
+    inline bool NODE_IS_OLDER(const RObject* x, const RObject* y)
     {
 	return NODE_IS_MARKED(x) &&	
 	    (!NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y));
@@ -277,10 +275,10 @@ namespace {
    be removed in constant time; this is used by the collector to move
    reachable nodes out of free space and into the appropriate
    generation.  The circularity eliminates the need for end checks.
-   In addition, each link is anchored at an artificial node, the Peg
-   SEXPREC's in the structure below, which simplifies pointer
-   maintenance.  The circular doubly-linked arrangement is taken from
-   Baker's in-place incremental collector design; see
+   In addition, each link is anchored at an artificial node called a
+   peg, which simplifies pointer maintenance.  The circular
+   doubly-linked arrangement is taken from Baker's in-place
+   incremental collector design; see
    ftp://ftp.netcom.com/pub/hb/hbaker/NoMotionGC.html or the Jones and
    Lins GC book.  The linked lists are implemented by adding two
    pointer fields to the SEXPREC structure, which increases its size
@@ -300,27 +298,25 @@ namespace {
    both counts.*/
 /*#define EXPEL_OLD_TO_NEW*/
 static struct {
-    SEXP Old[NUM_OLD_GENERATIONS], New, Free;
-    SEXPREC OldPeg[NUM_OLD_GENERATIONS], NewPeg;
+    SEXP Old[NUM_OLD_GENERATIONS], New;
 #ifndef EXPEL_OLD_TO_NEW
     SEXP OldToNew[NUM_OLD_GENERATIONS];
-    SEXPREC OldToNewPeg[NUM_OLD_GENERATIONS];
 #endif
     int OldCount[NUM_OLD_GENERATIONS];
     size_t AllocCount;
 } R_GenHeap;
 
 namespace {
-    inline RObject* NEXT_NODE(SEXP s) {return s->gengc_next_node;}
+    inline const RObject* NEXT_NODE(const RObject* s) {return s->gengc_next_node;}
 
-    inline RObject* PREV_NODE(SEXP s) {return s->gengc_prev_node;}
+    inline const RObject* PREV_NODE(const RObject* s) {return s->gengc_prev_node;}
 
-    inline void SET_NEXT_NODE(SEXP s, SEXP t)
+    inline void SET_NEXT_NODE(const RObject* s, const RObject* t)
     {
 	s->gengc_next_node = t;
     }
 
-    inline void SET_PREV_NODE(SEXP s, SEXP t)
+    inline void SET_PREV_NODE(const RObject* s, const RObject* t)
     {
 	s->gengc_prev_node = t;
     }
@@ -328,18 +324,18 @@ namespace {
     /* Node List Manipulation */
 
     /* unsnap node s from its list */
-    inline void UNSNAP_NODE(SEXP s)
+    inline void UNSNAP_NODE(const RObject* s)
     {
-	SEXP next = NEXT_NODE(s);
-	SEXP prev = PREV_NODE(s);
+	const RObject* next = NEXT_NODE(s);
+	const RObject* prev = PREV_NODE(s);
 	SET_NEXT_NODE(prev, next);
 	SET_PREV_NODE(next, prev);
     }
 
     /* snap in node s before node t */
-    inline void SNAP_NODE(SEXP s, SEXP t)
+    inline void SNAP_NODE(const RObject* s, const RObject* t)
     {
-	SEXP prev = PREV_NODE(t);
+	const RObject* prev = PREV_NODE(t);
 	SET_NEXT_NODE(s, t);
 	SET_PREV_NODE(t, s);
 	SET_NEXT_NODE(prev, s);
@@ -347,11 +343,11 @@ namespace {
     }
 
     /* move all nodes on from_peg to to_peg */
-    inline void BULK_MOVE(SEXP from_peg, SEXP to_peg)
+    inline void BULK_MOVE(const RObject* from_peg, const RObject* to_peg)
     {
-	SEXP first_old = NEXT_NODE(from_peg);
-	SEXP last_old = PREV_NODE(from_peg);
-	SEXP first_new = NEXT_NODE(to_peg);
+	const RObject* first_old = NEXT_NODE(from_peg);
+	const RObject* last_old = PREV_NODE(from_peg);
+	const RObject* first_new = NEXT_NODE(to_peg);
 	SET_PREV_NODE(first_old, to_peg);
 	SET_NEXT_NODE(to_peg, first_old);
 	SET_PREV_NODE(first_new, last_old);
@@ -361,69 +357,86 @@ namespace {
     }
 }
 
+namespace CXXR {
+    RObject::RObject(SEXPTYPE stype)
+	: m_type(stype)
+    {
+	link(R_GenHeap.New->gengc_prev_node, this);
+	link(this, R_GenHeap.New);
+	++R_GenHeap.AllocCount;
+    }
+
+    RObject::~RObject()
+    {
+	--R_GenHeap.AllocCount;
+	if (m_data) Heap::deallocate(m_data, m_databytes);
+	link(gengc_prev_node, gengc_next_node);
+    }
+}
+
 /* Processing Node Children */
 
 // 2007/08/07 arr: memory.cpp's own non-type-checked versions!
 namespace {
     inline char* memCHAR(SEXP x) {return reinterpret_cast<char*>(DATAPTR(x));}
 
-    inline SEXP memSTRING_ELT(SEXP x, int i)
+    inline const RObject* memSTRING_ELT(const RObject* x, int i)
     {
-        return reinterpret_cast<SEXP*>(DATAPTR(x))[i];
+        return reinterpret_cast<SEXP*>(x->m_data)[i];
     }
 }
 
 /* This macro calls dc__action__ for each child of __n__, passing
    dc__extra__ as a second argument for each call. */
 #define DO_CHILDREN(__n__,dc__action__,dc__extra__) do { \
-  if (ATTRIB(__n__) != R_NilValue) \
-    dc__action__(ATTRIB(__n__), dc__extra__); \
-  switch (TYPEOF(__n__)) { \
-  case NILSXP: \
-  case BUILTINSXP: \
-  case SPECIALSXP: \
-  case CHARSXP: \
-  case LGLSXP: \
-  case INTSXP: \
-  case REALSXP: \
-  case CPLXSXP: \
-  case WEAKREFSXP: \
-  case RAWSXP: \
-  case S4SXP: \
-    break; \
-  case STRSXP: \
-  case EXPRSXP: \
-  case VECSXP: \
-    { \
-      int i; \
-      for (i = 0; i < LENGTH(__n__); i++) \
-        dc__action__(memSTRING_ELT(__n__, i), dc__extra__); \
-    } \
-    break; \
-  case ENVSXP: \
-    dc__action__(FRAME(__n__), dc__extra__); \
-    dc__action__(ENCLOS(__n__), dc__extra__); \
-    dc__action__(HASHTAB(__n__), dc__extra__); \
-    break; \
-  case CLOSXP: \
-  case PROMSXP: \
-  case LISTSXP: \
-  case LANGSXP: \
-  case DOTSXP: \
-  case SYMSXP: \
-  case BCODESXP: \
-    dc__action__(TAG(__n__), dc__extra__); \
-    dc__action__(CAR(__n__), dc__extra__); \
-    dc__action__(CDR(__n__), dc__extra__); \
-    break; \
-  case EXTPTRSXP: \
-    dc__action__(EXTPTR_PROT(__n__), dc__extra__); \
-    dc__action__(EXTPTR_TAG(__n__), dc__extra__); \
-    break; \
-  default: \
-    abort(); \
-  } \
-} while(0)
+	if (__n__->attributes() != R_NilValue)				\
+	    dc__action__(__n__->attributes(), dc__extra__);		\
+	switch (__n__->sexptype()) {					\
+	case NILSXP:							\
+	case BUILTINSXP:						\
+	case SPECIALSXP:						\
+	case CHARSXP:							\
+	case LGLSXP:							\
+	case INTSXP:							\
+	case REALSXP:							\
+	case CPLXSXP:							\
+	case WEAKREFSXP:						\
+	case RAWSXP:							\
+	case S4SXP:							\
+	    break;							\
+	case STRSXP:							\
+	case EXPRSXP:							\
+	case VECSXP:							\
+	    {								\
+		int i;							\
+		for (i = 0; i < __n__->length(); i++)		        \
+		    dc__action__(memSTRING_ELT(__n__, i), dc__extra__); \
+	    }								\
+	    break;							\
+	case ENVSXP:							\
+	    dc__action__(__n__->frame(), dc__extra__);		        \
+	    dc__action__(__n__->enclosingEnvironment(), dc__extra__);   \
+	    dc__action__(__n__->hashTable(), dc__extra__);	        \
+	    break;							\
+	case CLOSXP:							\
+	case PROMSXP:							\
+	case LISTSXP:							\
+	case LANGSXP:							\
+	case DOTSXP:							\
+	case SYMSXP:							\
+	case BCODESXP:							\
+	    dc__action__(__n__->tag(), dc__extra__);		        \
+	    dc__action__(__n__->car(), dc__extra__);		        \
+	    dc__action__(__n__->cdr(), dc__extra__);		        \
+	    break;							\
+	case EXTPTRSXP:							\
+	    dc__action__(__n__->cdr(), dc__extra__);			\
+	    dc__action__(__n__->tag(), dc__extra__);			\
+	    break;							\
+	default:							\
+	    abort();							\
+	}								\
+    } while(0)
 
 /* Debugging Routines. */
 
@@ -500,14 +513,10 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 static void ReleaseNodes()
 {
-    SEXP s = NEXT_NODE(R_GenHeap.New);
+    const RObject* s = NEXT_NODE(R_GenHeap.New);
     while (s != R_GenHeap.New) {
-	SEXP next = NEXT_NODE(s);
-	if (s->m_data != NULL)
-	    Heap::deallocate(s->m_data, s->m_databytes);
-	UNSNAP_NODE(s);
-	R_GenHeap.AllocCount--;
-	Heap::deallocate(s, sizeof(SEXPREC));
+	const RObject* next = NEXT_NODE(s);
+	s->destroy();
 	s = next;
     }
 }
@@ -560,7 +569,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 /* Managing Old-to-New References. */
 
 #define AGE_NODE(s,g) do { \
-  SEXP an__n__ = (s); \
+  const RObject* an__n__ = (s); \
   unsigned int an__g__ = (g); \
   if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
     if (NODE_IS_MARKED(an__n__)) \
@@ -574,9 +583,9 @@ static void AdjustHeapSize(R_size_t size_needed)
   } \
 } while (0)
 
-static void AgeNodeAndChildren(SEXP s, int gen)
+static void AgeNodeAndChildren(const RObject* s, int gen)
 {
-    SEXP forwarded_nodes = NULL;
+    const RObject* forwarded_nodes = NULL;
     AGE_NODE(s, gen);
     while (forwarded_nodes != NULL) {
 	s = forwarded_nodes;
@@ -620,34 +629,34 @@ static SEXP R_weak_refs = NULL;
 namespace {
     inline void SET_READY_TO_FINALIZE(SEXP s)
     {
-	s->sxpinfo.gp |= READY_TO_FINALIZE_MASK;
+	s->m_gpbits |= READY_TO_FINALIZE_MASK;
     }
 
     inline void CLEAR_READY_TO_FINALIZE(SEXP s)
     {
-	s->sxpinfo.gp &= ~READY_TO_FINALIZE_MASK;
+	s->m_gpbits &= ~READY_TO_FINALIZE_MASK;
     }
 
     inline bool IS_READY_TO_FINALIZE(SEXP s)
     {
-	return s->sxpinfo.gp & READY_TO_FINALIZE_MASK;
+	return s->m_gpbits & READY_TO_FINALIZE_MASK;
     }
 
 #define FINALIZE_ON_EXIT_MASK 2
 
     inline void SET_FINALIZE_ON_EXIT(SEXP s)
     {
-	s->sxpinfo.gp |= FINALIZE_ON_EXIT_MASK;
+	s->m_gpbits |= FINALIZE_ON_EXIT_MASK;
     }
 
     inline void CLEAR_FINALIZE_ON_EXIT(SEXP s)
     {
-	s->sxpinfo.gp &= ~FINALIZE_ON_EXIT_MASK;
+	s->m_gpbits &= ~FINALIZE_ON_EXIT_MASK;
     }
 
     inline bool FINALIZE_ON_EXIT(SEXP s)
     {
-	return s->sxpinfo.gp & FINALIZE_ON_EXIT_MASK;
+	return s->m_gpbits & FINALIZE_ON_EXIT_MASK;
     }
 
 #define WEAKREF_SIZE 4
@@ -924,9 +933,9 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
    place them on the forwarding list.  pnptr is a pointer to the first
    element of the list of forwarded nodes. */
 namespace {
-    SEXP forwarded_nodes;
+    const RObject* forwarded_nodes;
 
-    inline void FORWARD_NODE(SEXP s)
+    inline void FORWARD_NODE(const RObject* s)
     {
 	if (s && ! NODE_IS_MARKED(s)) {
 	    MARK_NODE(s);
@@ -942,7 +951,7 @@ namespace {
     inline void PROCESS_NODES()
     {
 	while (forwarded_nodes != NULL) {
-	    SEXP s = forwarded_nodes;
+	    const RObject* s = forwarded_nodes;
 	    forwarded_nodes = NEXT_NODE(forwarded_nodes);
 	    SNAP_NODE(s, R_GenHeap.Old[NODE_GENERATION(s)]);
 	    R_GenHeap.OldCount[NODE_GENERATION(s)]++;
@@ -959,7 +968,7 @@ static void RunGenCollect(R_size_t size_needed)
     int i, gen, gens_collected;
     DevDesc *dd;
     RCNTXT *ctxt;
-    SEXP s;
+    const RObject* s;
 
     /* determine number of generations to collect */
     while (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
@@ -980,7 +989,7 @@ static void RunGenCollect(R_size_t size_needed)
     for (gen = 0; gen < num_old_gens_to_collect; gen++) {
 	s = NEXT_NODE(R_GenHeap.OldToNew[gen]);
 	while (s != R_GenHeap.OldToNew[gen]) {
-	    SEXP next = NEXT_NODE(s);
+	    const RObject* next = NEXT_NODE(s);
 	    DO_CHILDREN(s, AgeNodeAndChildren, gen);
 	    UNSNAP_NODE(s);
 	    if (NODE_GENERATION(s) != uint(gen))
@@ -999,7 +1008,7 @@ static void RunGenCollect(R_size_t size_needed)
 	R_GenHeap.OldCount[gen] = 0;
 	s = NEXT_NODE(R_GenHeap.Old[gen]);
 	while (s != R_GenHeap.Old[gen]) {
-	    SEXP next = NEXT_NODE(s);
+	    const RObject* next = NEXT_NODE(s);
 	    if (gen < NUM_OLD_GENERATIONS - 1)
 		SET_NODE_GENERATION(s, gen + 1);
 	    UNMARK_NODE(s);
@@ -1091,14 +1100,15 @@ static void RunGenCollect(R_size_t size_needed)
 	Rboolean recheck_weak_refs;
 	do {
 	    recheck_weak_refs = FALSE;
-	    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s)) {
-		if (NODE_IS_MARKED(WEAKREF_KEY(s))) {
-		    SEXP wrv = WEAKREF_VALUE(s);
+	    for (SEXP wr = R_weak_refs;
+		 wr != R_NilValue; wr = WEAKREF_NEXT(wr)) {
+		if (NODE_IS_MARKED(WEAKREF_KEY(wr))) {
+		    SEXP wrv = WEAKREF_VALUE(wr);
 		    if (wrv && !NODE_IS_MARKED(wrv)) {
 			recheck_weak_refs = TRUE;
 			FORWARD_NODE(wrv);
 		    }
-		    SEXP wrf = WEAKREF_FINALIZER(s);
+		    SEXP wrf = WEAKREF_FINALIZER(wr);
 		    if (wrf && !NODE_IS_MARKED(wrf)) {
 			recheck_weak_refs = TRUE;
 			FORWARD_NODE(wrf);
@@ -1113,11 +1123,11 @@ static void RunGenCollect(R_size_t size_needed)
     CheckFinalizers();
 
     /* process the weak reference chain */
-    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s)) {
-	FORWARD_NODE(s);
-	FORWARD_NODE(WEAKREF_KEY(s));
-	FORWARD_NODE(WEAKREF_VALUE(s));
-	FORWARD_NODE(WEAKREF_FINALIZER(s));
+    for (SEXP wr = R_weak_refs; wr != R_NilValue; wr = WEAKREF_NEXT(wr)) {
+	FORWARD_NODE(wr);
+	FORWARD_NODE(WEAKREF_KEY(wr));
+	FORWARD_NODE(WEAKREF_VALUE(wr));
+	FORWARD_NODE(WEAKREF_FINALIZER(wr));
     }
     PROCESS_NODES();
 
@@ -1126,10 +1136,6 @@ static void RunGenCollect(R_size_t size_needed)
     ReleaseNodes();
 
     DEBUG_CHECK_NODE_COUNTS("after releasing nodes");
-
-    /* reset Free pointers */
-    R_GenHeap.Free = NEXT_NODE(R_GenHeap.New);
-
 
     /* update heap statistics */
     if (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
@@ -1275,26 +1281,16 @@ void attribute_hidden InitMemory()
     vsfac = sizeof(VECREC);
     R_VSize = (((R_VSize + 1)/ vsfac));
 
-    UNMARK_NODE(&UnmarkedNodeTemplate);
-
     for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-        R_GenHeap.Old[gen] = &R_GenHeap.OldPeg[gen];
-	SET_PREV_NODE(R_GenHeap.Old[gen], R_GenHeap.Old[gen]);
-	SET_NEXT_NODE(R_GenHeap.Old[gen], R_GenHeap.Old[gen]);
-
+	R_GenHeap.Old[gen]
+	    = new RObject(R_GenHeap.Old[gen]);
 #ifndef EXPEL_OLD_TO_NEW
-	R_GenHeap.OldToNew[gen] = &R_GenHeap.OldToNewPeg[gen];
-	SET_PREV_NODE(R_GenHeap.OldToNew[gen], R_GenHeap.OldToNew[gen]);
-	SET_NEXT_NODE(R_GenHeap.OldToNew[gen], R_GenHeap.OldToNew[gen]);
+	R_GenHeap.OldToNew[gen]
+	    = new RObject(R_GenHeap.OldToNew[gen]);
 #endif
-
 	R_GenHeap.OldCount[gen] = 0;
     }
-    R_GenHeap.New = &R_GenHeap.NewPeg;
-    SET_PREV_NODE(R_GenHeap.New, R_GenHeap.New);
-    SET_NEXT_NODE(R_GenHeap.New, R_GenHeap.New);
-
-    R_GenHeap.Free = NEXT_NODE(R_GenHeap.New);
+    R_GenHeap.New = new RObject(R_GenHeap.New);
 
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
@@ -1386,7 +1382,7 @@ char *R_alloc(long nelem, int eltsize)
 	}	
 	s = allocString(size); /**** avoid extra null byte?? */
 #endif
-	s->attrib = R_VStack;
+	s->m_attrib = R_VStack;
 	R_VStack = s;
 #if VALGRIND_LEVEL > 0
 	VALGRIND_MAKE_WRITABLE(memCHAR(s), (int) dsize);
@@ -1431,60 +1427,9 @@ char *S_realloc(char *p, long newct, long old, int size)
 
 /* Node Allocation. */
 
-namespace {
-    inline SEXP GET_FREE_NODE()
-    {
-	SEXP n = R_GenHeap.Free;
-	if (n == R_GenHeap.New) {
-	    size_t bytes = sizeof(SEXPREC);
-	    if (FORCE_GC) R_gc_internal(0);
-	    try {
-		n = reinterpret_cast<SEXP>(Heap::allocate(bytes));
-	    }
-	    catch (bad_alloc) {
-		errorcall(R_NilValue, _("memory exhausted"));
-	    }
-	    SNAP_NODE(n, R_GenHeap.New);
-	    ++R_GenHeap.AllocCount;
-	}
-	R_GenHeap.Free = NEXT_NODE(n);
-	return n;
-    }
-}
-
-/* "allocSExp" allocate a SEXPREC */
-/* call gc if necessary */
-
 SEXP allocSExp(SEXPTYPE t)
 {
-    SEXP s = GET_FREE_NODE();
-    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    s->m_data = 0;
-    s->m_databytes = 0;
-    SET_TYPEOF(s, t);
-    SETCAR(s, R_NilValue);
-    SETCDR(s, R_NilValue);
-    SET_TAG(s, R_NilValue);
-    SET_ATTRIB(s, R_NilValue);
-#if VALGRIND_LEVEL > 2
-    VALGRIND_MAKE_READABLE(s, sizeof(*s));
-#endif
-    return s;
-}
-
-static SEXP allocSExpNonCons(SEXPTYPE t)
-{
-    SEXP s = GET_FREE_NODE();
-    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    s->m_data = 0;
-    s->m_databytes = 0;
-    SET_TYPEOF(s, t);
-    SET_TAG(s, R_NilValue);
-    SET_ATTRIB(s, R_NilValue);
-#if VALGRIND_LEVEL > 2
-    VALGRIND_MAKE_READABLE(s, sizeof(*s));
-#endif
-    return s;
+    return new RObject(t);
 }
 
 /* cons is defined directly to avoid the need to protect its arguments
@@ -1494,19 +1439,13 @@ SEXP cons(SEXP car, SEXP cdr)
     SEXP s;
     PROTECT(car);
     PROTECT(cdr);
-    s = GET_FREE_NODE();
+    s = new RObject(LISTSXP);
     UNPROTECT(2);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
 #endif
-    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    s->m_data = 0;
-    s->m_databytes = 0;
-    SET_TYPEOF(s, LISTSXP);
     SETCAR(s, car);
     SETCDR(s, cdr);
-    SET_TAG(s, R_NilValue);
-    SET_ATTRIB(s, R_NilValue);
     return s;
 }
 
@@ -1535,19 +1474,13 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     PROTECT(namelist);
     PROTECT(valuelist);
     PROTECT(rho);
-    newrho = GET_FREE_NODE();
+    newrho = new RObject(ENVSXP);
     UNPROTECT(3);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
 #endif
-    newrho->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    newrho->m_data = 0;
-    newrho->m_databytes = 0;
-    SET_TYPEOF(newrho, ENVSXP);
     newrho->u.envsxp.frame = valuelist;  // FRAME
     newrho->u.envsxp.enclos = rho;  // ENCLOS
-    newrho->u.envsxp.hashtab = R_NilValue;  // HASHTAB
-    SET_ATTRIB(newrho, R_NilValue);
 
     v = valuelist;
     n = namelist;
@@ -1566,20 +1499,15 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
     SEXP s;
     PROTECT(expr);
     PROTECT(rho);
-    s = GET_FREE_NODE();
+    s = new RObject(PROMSXP);
     UNPROTECT(2);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s,sizeof(*s));
 #endif
-    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    s->m_data = 0;
-    s->m_databytes = 0;
-    SET_TYPEOF(s, PROMSXP);
     s->u.promsxp.expr = expr;  // PRCODE
     s->u.promsxp.env = rho;  // PRENV
     s->u.promsxp.value = R_UnboundValue;  // PRVALUE
     SET_PRSEEN(s, 0);
-    SET_ATTRIB(s, R_NilValue);
     return s;
 }
 
@@ -1679,12 +1607,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     /* save current R_VSize to roll back adjustment if malloc fails */
     old_R_VSize = R_VSize;
 
-    s = GET_FREE_NODE();
-    s->sxpinfo = UnmarkedNodeTemplate.sxpinfo;
-    SET_ATTRIB(s, R_NilValue);
-    SET_TYPEOF(s, type);
+    s = new RObject(type);
     s->m_databytes = size * sizeof(VECREC);
-    s->m_data = 0;
     if (size > 0) {
 	bool success = false;
 	if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
@@ -1721,7 +1645,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	}
     }
     SETLENGTH(s, length);
-    SET_NAMED(s, 0);
 
     /* The following prevents disaster in the case */
     /* that an uninitialised string vector is marked */
@@ -1777,7 +1700,7 @@ SEXP allocList(unsigned int n)
 SEXP allocS4Object()
 {
    SEXP s;
-   GC_PROT(s = allocSExpNonCons(S4SXP));
+   GC_PROT(s = new RObject(S4SXP));
    SET_S4_OBJECT(s);
    return s;
 }
@@ -1939,11 +1862,11 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 	num_old_gens_to_collect = NUM_OLD_GENERATIONS;
 	R_gc();
 	for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	    SEXP s;
+	    const RObject* s;
 	    for (s = NEXT_NODE(R_GenHeap.Old[gen]);
 		 s != R_GenHeap.Old[gen];
 		 s = NEXT_NODE(s)) {
-		tmp = TYPEOF(s);
+		tmp = s->sexptype();
 		if(tmp > LGLSXP) tmp -= 2;
 		INTEGER(ans)[tmp]++;
 	    }
@@ -2174,7 +2097,7 @@ void (SET_ATTRIB)(SEXP x, SEXP v) {
 	      type2char(TYPEOF(x)));
 #endif
     CHECK_OLD_TO_NEW(x, v); 
-    x->attrib = v; 
+    x->m_attrib = v; 
 }
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     SET_ATTRIB(to, duplicate(ATTRIB(from)));
