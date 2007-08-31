@@ -688,6 +688,8 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing)
     case CPLXSXP:
 	cx = COMPLEX(key);
  	break;
+    default:  // -Wswitch
+	break;
     }
 
     /* First sort NAs to one end */
@@ -723,7 +725,10 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing)
 #define less(a, b) (isna[a] > isna[b] || (isna[a] == isna[b] && a > b))
 	    sort2_with_index
 #undef less
-	    if(nalast) hi -= numna; else lo += numna;
+		if(nalast) hi -= numna; else lo += numna;
+	    break;
+	default:  // -Wswitch
+	    break;
 	}
 
     /* Shell sort isn't stable, so add test on index */

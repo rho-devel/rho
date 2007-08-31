@@ -201,6 +201,8 @@ void printVector(SEXP x, int indx, int quote)
 	case RAWSXP:
 	    printRawVector(RAW(x), n_pr, indx);
 	    break;
+	default:  // -Wswitch
+	    break;
 	}
 	if(n_pr < n)
 		Rprintf(" [ reached getOption(\"max.print\") -- omitted %d entries ]]\n",
@@ -215,6 +217,7 @@ void printVector(SEXP x, int indx, int quote)
 	case CPLXSXP:	Rprintf("complex(0)\n");	break;	\
 	case STRSXP:	Rprintf("character(0)\n");	break;	\
 	case RAWSXP:	Rprintf("raw(0)\n");		break;	\
+	default:                                        break;  \
 	}
 	PRINT_V_0;
 }
@@ -340,6 +343,8 @@ void printNamedVector(SEXP x, SEXP names, int quote, char *title)
 	    break;
 	case RAWSXP:
 	    printNamedRawVector(RAW(x), n_pr, STRING_PTR(names));
+	    break;
+	default:  // -Wswitch
 	    break;
 	}
 	if(n_pr < n)

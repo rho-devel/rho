@@ -693,7 +693,8 @@ SEXP attribute_hidden do_c(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, t;
-    int mode, recurse, usenames;
+    int recurse, usenames;
+    SEXPTYPE mode;
     struct BindData data;
     struct NameData nameData;
 
@@ -806,7 +807,8 @@ SEXP attribute_hidden do_c_dflt(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_unlist(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, t;
-    int mode, recurse, usenames;
+    int recurse, usenames;
+    SEXPTYPE mode;
     int i, n;
     struct BindData data;
     struct NameData nameData;
@@ -972,7 +974,8 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP a, t, obj, classlist, classname, method, classmethod, rho;
     const char *generic;
-    int mode, deparse_level;
+    int deparse_level;
+    SEXPTYPE mode;
     struct BindData data;
     char buf[512], *s, *klass;
 

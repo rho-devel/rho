@@ -671,6 +671,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
     case REALSXP:  REAL(ans)[0] = zcum.r; break;
     case CPLXSXP:  COMPLEX(ans)[0].r = zcum.r; COMPLEX(ans)[0].i = zcum.i;break;
     case STRSXP:   SET_STRING_ELT(ans, 0, scum); break;
+    default:       break;  // -Wswitch
     }
     return ans;
 
@@ -681,6 +682,7 @@ na_answer: /* only INTSXP case curently used */
     case REALSXP:	REAL(ans)[0] = NA_REAL; break;
     case CPLXSXP:	COMPLEX(ans)[0].r = COMPLEX(ans)[0].i = NA_REAL; break;
     case STRSXP:        SET_STRING_ELT(ans, 0, NA_STRING); break;
+    default:            break;  // -Wswitch
     }
     return ans;
 

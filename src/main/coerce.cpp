@@ -1336,7 +1336,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
-    int type;
+    SEXPTYPE type;
 
     if (DispatchOrEval(call, op, "as.vector", args, rho, &ans, 0, 1))
 	return(ans);
@@ -2368,7 +2368,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     }
     else {
 	char *valueString, *classString; int whichType;
-	SEXP cur_class; SEXPTYPE valueType;
+	SEXP cur_class; int valueType;
 	valueString = CHAR(asChar(value)); /* ASCII */
 	whichType = class2type(valueString);
 	valueType = (whichType == -1) ? -1 : classTable[whichType].sexp;
@@ -2378,7 +2378,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	if(int(valueType) != -1) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
 	    if(classTable[whichType].canChange) {
-		PROTECT(obj = ascommon(call, obj, valueType));
+		PROTECT(obj = ascommon(call, obj, SEXPTYPE(valueType)));
 		nProtect++;
 	    }
 	    else if(valueType != TYPEOF(obj))

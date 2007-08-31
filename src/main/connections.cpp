@@ -3138,6 +3138,8 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	case RAWSXP:
 	    memcpy(buf, RAW(object), len); /* size = 1 */
 	    break;
+	default:  // -Wswitch
+	    break;
 	}
 
 	if(swap && size > 1) {

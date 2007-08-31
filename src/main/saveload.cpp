@@ -465,7 +465,7 @@ static SEXP OffsetToNode(int offset, NodeInfo *node)
     return R_NilValue;
 }
 
-static unsigned int FixupType(unsigned int type, int VersionId)
+static SEXPTYPE FixupType(unsigned int type, int VersionId)
 {
     if (VersionId) {
 	switch(VersionId) {
@@ -491,12 +491,13 @@ static unsigned int FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return type;
+    return SEXPTYPE(type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
 {
-    unsigned int j, idx, type;
+    unsigned int j, idx;
+    SEXPTYPE type;
     int len;
     SEXP s = R_NilValue;	/* -Wall */
 
@@ -575,7 +576,8 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 
 static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int version, SaveLoadData *d)
 {
-    unsigned int j, type;
+    unsigned int j;
+    SEXPTYPE type;
     int len;
 
     type = FixupType(m->InInteger(fp, d), version);
@@ -813,7 +815,7 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (type) {
+    switch (int(type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
@@ -968,6 +970,9 @@ in version 1 workspaces"));
 	break;
     case WEAKREFSXP:
 	error(_("cannot save weak references in version 1 workspaces"));
+	break;
+    default:  // -Wswitch
+	break;
     }
     NewMakeLists(ATTRIB(obj), sym_list, env_list);
 }
@@ -1257,7 +1262,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     int pos, levs, objf;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = m->InInteger(fp, d);
+    type = SEXPTYPE(m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);

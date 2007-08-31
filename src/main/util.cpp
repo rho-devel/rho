@@ -173,7 +173,7 @@ SEXP asChar(SEXP x)
 
 const static struct {
     const char * const str;
-    const int type;
+    const SEXPTYPE type;
 }
 TypeTable[] = {
     { "NULL",		NILSXP	   },  /* real types */
@@ -206,7 +206,7 @@ TypeTable[] = {
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { 0,	        -1	   }
+    { 0,	        SEXPTYPE(-1)}
 };
 
 
@@ -217,7 +217,6 @@ SEXPTYPE str2type(char *s)
 	if (!strcmp(s, TypeTable[i].str))
 	    return TypeTable[i].type;
     }
-    /* SEXPTYPE is an unsigned int, so the compiler warns us w/o the cast. */
     return SEXPTYPE(-1);
 }
 

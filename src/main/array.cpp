@@ -554,7 +554,8 @@ static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 /* "%*%" (op = 0), crossprod (op = 1) or tcrossprod (op = 2) */
 SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int ldx, ldy, nrx, ncx, nry, ncy, mode;
+    int ldx, ldy, nrx, ncx, nry, ncy;
+    SEXPTYPE mode;
     SEXP x = CAR(args), y = CADR(args), xdims, ydims, ans;
     Rboolean sym;
 
@@ -1121,7 +1122,8 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, ans = R_NilValue;
-    int OP, n, p, cnt = 0, i, j, type;
+    int OP, n, p, cnt = 0, i, j;
+    SEXPTYPE type;
     Rboolean NaRm, keepNA;
     int *ix;
     double *rx;

@@ -268,7 +268,7 @@ checkNativeType(int targetType, int actualType)
 
 static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 			const char *name, R_toCConverter **converter,
-			int targetType, char* encname)
+			SEXPTYPE targetType, char* encname)
 {
     unsigned char *rawptr;
     int *iptr;
@@ -470,17 +470,18 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     SEXP *lptr, CSingSymbol = install("Csingle");
     int i;
     SEXP s, t;
+    SEXPTYPE stype = SEXPTYPE(type);
 
-    switch(type) {
+    switch(stype) {
     case RAWSXP:
-    s = allocVector(type, n);
+    s = allocVector(stype, n);
     rawptr = reinterpret_cast<unsigned char *>(p);
     for (i = 0; i < n; i++)
         RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
     case INTSXP:
-	s = allocVector(type, n);
+	s = allocVector(stype, n);
 	iptr = reinterpret_cast<int*>(p);
 	for(i=0 ; i<n ; i++)
             INTEGER(s)[i] = iptr[i];
@@ -497,7 +498,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	}
 	break;
     case CPLXSXP:
-	s = allocVector(type, n);
+	s = allocVector(stype, n);
 	zptr = reinterpret_cast<Rcomplex*>(p);
 	for(i=0 ; i<n ; i++) {
 	    COMPLEX(s)[i] = zptr[i];
@@ -508,11 +509,11 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    /* only return one string: warned on the R -> Fortran step */
 	    strncpy(buf, reinterpret_cast<char*>(p), 255);
 	    buf[255] = '\0';
-	    PROTECT(s = allocVector(type, 1));
+	    PROTECT(s = allocVector(stype, 1));
 	    SET_STRING_ELT(s, 0, mkChar(buf));
 	    UNPROTECT(1);
 	} else {
-	    PROTECT(s = allocVector(type, n));
+	    PROTECT(s = allocVector(stype, n));
 	    cptr = reinterpret_cast<char**>(p);
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
@@ -581,13 +582,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 static Rboolean
 comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 {
-   if(type == ANYSXP || TYPEOF(s) == type)
-      return(TRUE);
+    SEXPTYPE stype = SEXPTYPE(type);
+    if(stype == ANYSXP || TYPEOF(s) == stype)
+	return(TRUE);
 
-   if(dup && type == SINGLESXP)
-      return Rboolean(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
+    if(dup && stype == SINGLESXP)
+	return Rboolean(asLogical(getAttrib(s, install("Csingle"))) == TRUE);
 
-   return(FALSE);
+    return(FALSE);
 }
 #endif /* end of THROW_REGISTRATION_TYPE_ERROR */
 
@@ -1726,7 +1728,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	cargs[nargs] = RObjToCPtr(CAR(pargs), naok, dup, nargs + 1,
 				  which, symName, argConverters + nargs,
-				  checkTypes ? checkTypes[nargs] : 0,
+				  checkTypes
+				  ? SEXPTYPE(checkTypes[nargs]) : NILSXP,
 				  encname);
 #ifdef R_MEMORY_PROFILING
 	if (TRACE(CAR(pargs)) && dup)
@@ -2411,10 +2414,10 @@ typeinfo[] = {
     {"complex",	  CPLXSXP},
     {"character", STRSXP },
     {"list",	  VECSXP },
-    {NULL,	  0      }
+    {NULL,	  NILSXP }
 };
 
-static int string2type(char *s)
+static SEXPTYPE string2type(char *s)
 {
     int i;
     for (i = 0 ; typeinfo[i].name ; i++) {
@@ -2423,7 +2426,7 @@ static int string2type(char *s)
 	}
     }
     error(_("type \"%s\" not supported in interlanguage calls"), s);
-    return 1; /* for -Wall */
+    return NILSXP; /* for -Wall */
 }
 
 void call_R(char *func, long nargs, void **arguments, char **modes,
@@ -2497,25 +2500,31 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     case CPLXSXP:
     case STRSXP:
 	if(nres > 0)
-	    results[0] = reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
-							     NULL, 0, ""));
+	    results[0]
+		= reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
+						      NULL, NILSXP, ""));
 	break;
     case VECSXP:
 	n = length(s);
 	if (nres < n) n = nres;
 	for (i = 0 ; i < n ; i++) {
-	    results[i] = reinterpret_cast<char *>(RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
-							     NULL, NULL, 0, ""));
+	    results[i]
+		= reinterpret_cast<char *>(RObjToCPtr(VECTOR_ELT(s, i), 1, 1,
+						      0, 0, NULL, NULL, NILSXP,
+						      ""));
 	}
 	break;
     case LISTSXP:
 	n = length(s);
 	if(nres < n) n = nres;
 	for(i=0 ; i<n ; i++) {
-	    results[i] =reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
-							    NULL, 0, ""));
+	    results[i]
+		= reinterpret_cast<char *>(RObjToCPtr(s, 1, 1, 0, 0, NULL,
+						      NULL, NILSXP, ""));
 	    s = CDR(s);
 	}
+	break;
+    default:  // -Wswitch
 	break;
     }
     UNPROTECT(2);

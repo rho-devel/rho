@@ -554,6 +554,8 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	    case RAWSXP:
 		printRawMatrix    (x, i * b, use_nr, nr, nc, dn0, dn1, rn, cn);
 		break;
+	    default:  // -Wswitch
+		break;
 	    }
 	    Rprintf("\n");
 	}

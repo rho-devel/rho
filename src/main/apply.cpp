@@ -222,6 +222,8 @@ static Rboolean islistfactor(SEXP X)
 	    if(!islistfactor(VECTOR_ELT(X, i))) return FALSE;
 	return TRUE;
 	break;
+    default:  // -Wswitch
+	break;
     }
     return isFactor(X);
 }

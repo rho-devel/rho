@@ -41,7 +41,7 @@ into the implementation of the interpreter. In particular:</p>
 <ul>
   <li><code>R_NilValue</code> in CXXR is simply a null pointer, rather than a
     pointer to a real object. To smooth this change, the following changes
-    have been made to accessor functions:
+    have been made to accessor functions: 
     <ul>
       <li><code>CAR</code>, <code>CDR</code>, <code>TAG</code> and
         <code>ATTRIB</code> each return a null pointer if passed a null
@@ -54,9 +54,14 @@ into the implementation of the interpreter. In particular:</p>
         pointer.</li>
     </ul>
     <p>However, other accessor functions are likely to crash if invoked for
-    R_NilValue: the calling code should introduce appropriate checks and
-    workarounds.</p>
+    <code>R_NilValue</code>: the calling code should introduce appropriate
+    checks and workarounds.</p>
   </li>
+  <li><code>SEXPTYPE</code> is now an enumeration, rather than being
+    <code>typedef</code>ed to <code>unsigned int</code>, but the numerical
+    values of particular <code>SEXPTYPE</code>s are unchanged. (This change
+    appears to have been under comtemplation within CR.) This may necessitate
+    some explicit conversions or changes in the types of variables.</li>
 </ul>
 
 <h3>Suggested changes:</h3>

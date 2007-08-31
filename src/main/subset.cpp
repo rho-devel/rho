@@ -130,7 +130,8 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
    matrix indexing of arrays */
 static SEXP VectorSubset(SEXP x, SEXP s, SEXP call)
 {
-    int n, mode, stretch = 1;
+    int n, stretch = 1;
+    SEXPTYPE mode;
     SEXP indx, result, attrib, nattrib;
 
     if (s == R_MissingArg) return duplicate(x);
@@ -339,7 +340,8 @@ static SEXP MatrixSubset(SEXP x, SEXP s, SEXP call, int drop)
 
 static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
 {
-    int i, j, k, ii, jj, mode, n;
+    int i, j, k, ii, jj, n;
+    SEXPTYPE mode;
     int **subs, *indx, *offset, *bound;
     SEXP dimnames, dimnamesnames, p, q, r, result, xdims;
     char *vmaxsave;
@@ -901,6 +903,8 @@ pstrmatch(SEXP target, SEXP input, int slen)
 	break;
     case CHARSXP:
 	st = translateChar(target);
+	break;
+    default:  // -Wswitch
 	break;
     }
     if(strncmp(st, translateChar(input), slen) == 0) {

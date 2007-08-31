@@ -94,6 +94,7 @@ extern SEXP framenames;
 static void R_gc_internal(R_size_t size_needed);
 
 namespace {
+    inline bool MARK(const RObject* x) {return x->m_marked;}
     inline bool NODE_IS_MARKED(const RObject* s) {return MARK(s) == 1;}
     inline void MARK_NODE(const RObject* s) {s->m_marked = true;}
     inline void UNMARK_NODE(const RObject* s) {s->m_marked = false;}
@@ -1851,7 +1852,7 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(nms = allocVector(STRSXP, 23));
     for (i = 0; i < 23; i++) {
         INTEGER(ans)[i] = 0;
-	SET_STRING_ELT(nms, i, type2str(i > LGLSXP? i+2 : i));
+	SET_STRING_ELT(nms, i, type2str(SEXPTYPE(i > LGLSXP? i+2 : i)));
     }
     setAttrib(ans, R_NamesSymbol, nms);
 

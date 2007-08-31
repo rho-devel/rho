@@ -38,7 +38,7 @@ namespace {
     void (*setnamedptr)(SEXP x, int v) = SET_NAMED;
     void (*setobjectptr)(SEXP x, int v) = SET_OBJECT;
     void (*settraceptr)(SEXP x, int v) = SET_TRACE;
-    void (*settypeofptr)(SEXP x, int v) = SET_TYPEOF;
+    void (*settypeofptr)(SEXP x, SEXPTYPE v) = SET_TYPEOF;
     int (*traceptr)(SEXP x) = TRACE;
     SEXPTYPE (*typeofptr)(SEXP e) = TYPEOF;
     void (*setS4objectptr)(SEXP x) = SET_S4_OBJECT;

@@ -2948,6 +2948,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    value = CAR(seq);
 	    R_BCNodeStackTop[-4] = CDR(seq);
 	    break;
+	  default:  // -Wswitch
+	      break;
 	  }
 	  R_SetVarLocValue((R_varloc_t) cell, value);
 	  BC_CHECK_SIGINT();

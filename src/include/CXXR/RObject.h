@@ -56,56 +56,15 @@ typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
 /*  These exact numeric values are seldom used, but they are, e.g., in
  *  ../main/subassign.c
 */
-#ifndef enum_SEXPTYPE
-/* NOT YET using enum:
- *  1)	The SEXPREC struct below has 'SEXPTYPE type : 5'
- *	(making FUNSXP and CLOSXP equivalent in there),
- *	giving (-Wall only ?) warnings all over the place
- * 2)	Many switch(type) { case ... } statements need a final `default:'
- *	added in order to avoid warnings like [e.g. l.170 of ../main/util.c]
- *	  "enumeration value `FUNSXP' not handled in switch"
- */
-typedef unsigned int SEXPTYPE;
-
-#define NILSXP	     0	  /* nil = NULL */
-                          /* arr 2007/07/21: no SEXPREC now has this
-			     type, but for backward compatibility
-			     TYPEOF will return NILSXP if passed a
-			     zero pointer.
-			  */
-#define SYMSXP	     1	  /* symbols */
-#define LISTSXP	     2	  /* lists of dotted pairs */
-#define CLOSXP	     3	  /* closures */
-#define ENVSXP	     4	  /* environments */
-#define PROMSXP	     5	  /* promises: [un]evaluated closure arguments */
-#define LANGSXP	     6	  /* language constructs (special lists) */
-#define SPECIALSXP   7	  /* special forms */
-#define BUILTINSXP   8	  /* builtin non-special forms */
-#define CHARSXP	     9	  /* "scalar" string type (internal only)*/
-#define LGLSXP	    10	  /* logical vectors */
-#define INTSXP	    13	  /* integer vectors */
-#define REALSXP	    14	  /* real variables */
-#define CPLXSXP	    15	  /* complex variables */
-#define STRSXP	    16	  /* string vectors */
-#define DOTSXP	    17	  /* dot-dot-dot object */
-#define ANYSXP	    18	  /* make "any" args work.
-			     Used in specifying types for symbol
-			     registration to mean anything is okay  */
-#define VECSXP	    19	  /* generic vectors */
-#define EXPRSXP	    20	  /* expressions vectors */
-#define BCODESXP    21    /* byte code */
-#define EXTPTRSXP   22    /* external pointer */
-#define WEAKREFSXP  23    /* weak reference */
-#define RAWSXP      24    /* raw bytes */
-#define S4SXP       25    /* S4, non-vector */
-
-#define FUNSXP      99    /* Closure or Builtin or Special */
-
-
-#else /* NOT YET */
 /*------ enum_SEXPTYPE ----- */
 typedef enum {
-    NILSXP	= 0,	/* nil = NULL */
+    NILSXP	= 0,	/* nil = NULL
+			 *
+			 * arr 2007/07/21: no RObject now has this
+			 * type, but for backward compatibility TYPEOF
+			 * will return NILSXP if passed a zero
+			 * pointer.
+			 */
     SYMSXP	= 1,	/* symbols */
     LISTSXP	= 2,	/* lists of dotted pairs */
     CLOSXP	= 3,	/* closures */
@@ -128,13 +87,13 @@ typedef enum {
     EXTPTRSXP   = 22,   /* external pointer */
     WEAKREFSXP  = 23,   /* weak reference */
     RAWSXP      = 24,   /* raw bytes */
-    S4SXP         = 25,   /* S4 non-vector */
+    S4SXP       = 25,   /* S4 non-vector */
 
     FUNSXP	= 99	/* Closure or Builtin */
 } SEXPTYPE;
-#endif
 
 #ifdef __cplusplus
+}  // extern "C"
 
 namespace CXXR {
     class RObject;
@@ -334,6 +293,7 @@ namespace CXXR {
 
 typedef CXXR::RObject SEXPREC, *SEXP;
 
+extern "C" {
 #else /* if not __cplusplus */
 
 typedef struct SEXPREC *SEXP;
@@ -367,18 +327,6 @@ inline SEXP ATTRIB(SEXP x) {return x ? x->m_attrib : 0;}
 int LEVELS(SEXP x);
 #else
 inline int LEVELS(SEXP x) {return x->m_gpbits;}
-#endif
-
-/**
- * Object in use?
- * @param x Pointer to an \c RObject.
- * @return true iff \a x is considered to be in use by garbage collector.
- * @deprecated Depends on GC.
- */
-#ifdef __cplusplus
-namespace CXXR {
-    inline int MARK(const RObject* x) {return x->m_marked;}
-}
 #endif
 
 /**
@@ -483,9 +431,9 @@ inline void SET_TRACE(SEXP x, int v) {x->m_trace = v;}
  * @deprecated Ought to be private.
  */
 #ifndef __cplusplus
-void SET_TYPEOF(SEXP x, int v);
+void SET_TYPEOF(SEXP x, SEXPTYPE v);
 #else
-inline void SET_TYPEOF(SEXP x, int v) {x->m_type = v;}
+inline void SET_TYPEOF(SEXP x, SEXPTYPE v) {x->m_type = v;}
 #endif
 
 /**

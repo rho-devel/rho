@@ -660,7 +660,7 @@ static int HashGet(SEXP item, SEXP ht)
 #define HAS_TAG_BIT_MASK (1 << 10)
 #define ENCODE_LEVELS(v) (v << 12)
 #define DECODE_LEVELS(v) (v >> 12)
-#define DECODE_TYPE(v) (v & 255)
+#define DECODE_TYPE(v) (SEXPTYPE(v & 255))
 
 static int PackFlags(int type, int levs, int isobj, int hasattr, int hastag)
 {
@@ -1412,7 +1412,7 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 		pos = InInteger(stream);
 		type = InInteger(stream);
 	    }
-	    PROTECT(ans = allocSExp(type));
+	    PROTECT(ans = allocSExp(SEXPTYPE(type)));
 	    if (pos >= 0)
 		SET_VECTOR_ELT(reps, pos, ans);
 	    SET_TAG(ans, ReadItem(ref_table, stream));
