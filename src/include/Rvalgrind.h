@@ -29,13 +29,15 @@
  * <LI>Level 0 is no additional instrumentation</LI>
  * <LI>Level 1 marks as uninitialized newly-created numeric, logical,
  * and integer vectors, and R_alloc memory.  This level is aimed
- * primarily at users of R (including writers of imported code).</LI>
+ * primarily at enabling users of R (including writers of imported
+ * code) to detect use of uninitialized data.</LI>
  * <LI>Level 2 marks free memory within CellPools as inaccessible, and
  * the contents of newly allocated blocks from CellPools as
- * uninitialised.  This level is intended primarily for debugging
- * R/CXXR itself.</LI>
+ * uninitialised.  This provides further protection against array
+ * overruns and the use of stale pointers.</LI>
  * <LI>CR countenances the possibility that <tt>VALGRIND_LEVEL > 2</tt> but
- * does not document its meaning.
+ * does not document its meaning.  (Maybe in CXXR it could be used to
+ * redzone CXXR::Heap.)
  * </UL>
  *
  * It may be necessary to define \c NVALGRIND for a non-gcc compiler

@@ -1,5 +1,5 @@
 \name{gc}
-\title{Garbage Collection}
+\title{Garbage Collection (adapted for CXXR)}
 \usage{
 gc(verbose = getOption("verbose"), reset=FALSE)
 gcinfo(verbose)
