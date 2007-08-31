@@ -52,6 +52,9 @@ Heaptest.ts : Heaptest Heaptest.save
 	rm Heaptest.out
 	touch $@
 
+RObject_sizer : RObject_sizer.o
+	$(LINK.cc) -o $@ $<
+
 Makefile : Makefile.in
 	cp $< $@
 
