@@ -15,7 +15,7 @@ include $(top_builddir)/Makeconf
 SOURCES_C = RNG.c complex.c gram.c regex.c
 
 SOURCES_CXX = \
-	CConverters.cpp CellPool.cpp CommandLineArgs.cpp Heap.cpp \
+	CConverters.cpp CellPool.cpp CommandLineArgs.cpp GCNode.cpp Heap.cpp \
 	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
         RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
         Rdynload.cpp Renviron.cpp \

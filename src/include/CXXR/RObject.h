@@ -30,10 +30,8 @@
 #include "Rf_namespace.h"
 
 #ifdef __cplusplus
-#include <cstddef>
-#include <cstring>
 
-#include "CXXR/Heap.hpp"
+#include "CXXR/GCNode.h"
 
 extern "C" {
 #endif
@@ -139,33 +137,11 @@ namespace CXXR {
 
     /* The standard node structure consists of a header followed by the
        node data. */
-    struct RObject {
+    struct RObject : public GCNode {
 	/**
 	 * @param stype Required type of the RObject.
 	 */
-	RObject(SEXPTYPE stype = ANYSXP);
-
-	/** Allocate memory.
-         *
-	 * Allocates memory for a new object of a class derived from
-	 * RObject, and zero the memory thus allocated.
-	 *
-	 * @param bytes Number of bytes of memory required.
-	 *
-	 * @note Since objects of classes derived from RObject \e must
-	 * be allocated on the heap, constructors of these classes may
-	 * rely on the fact that operator new zeroes the allocated
-	 * memory to elide member initializations.
-	 */
-	static void* operator new(size_t bytes)
-	{
-	    return memset(Heap::allocate(bytes), 0, bytes);
-	}
-
-	static void operator delete(void* p, size_t bytes)
-	{
-	    Heap::deallocate(p, bytes);
-	}
+	RObject(SEXPTYPE stype = ANYSXP) : m_type(stype) {}
 
 	/**
 	 * @return Pointer to the attributes of this object.
@@ -181,14 +157,6 @@ namespace CXXR {
 	 * @return pointer to tail (cdr) of this list.
 	 */
 	const RObject* cdr() const {return u.listsxp.cdrval;}
-
-	/** Delete an RObject
-	 *
-	 * @note Because the class destructors are not public, objects
-	 * of classes derived from RObject must be deleted by calling
-	 * this method.
-	 */
-	void destroy() const {delete this;}
 
 	/**
 	 * @return pointer to enclosing environment.
@@ -233,9 +201,6 @@ namespace CXXR {
 
 	// To be private in future:
 
-	mutable const RObject *gengc_prev_node, *gengc_next_node;
-	mutable unsigned int m_gcgen : 2;
-	mutable bool m_marked        : 1;
 	SEXPTYPE m_type              : 7;
 	bool m_has_class             : 1;
 	unsigned int m_named         : 2;
@@ -254,20 +219,6 @@ namespace CXXR {
 	} u;
 	void* m_data;
 	size_t m_databytes;
-
-	// Special constructor for pegs.  The parameter is simply to
-	// give this constructor a distinct signature. Note that the
-	// node countisn't altered.
-	RObject(const RObject* /*ignored*/)
-	    : gengc_prev_node(this), gengc_next_node(this)
-	{}
-
-	// Make t the successor of s:
-	static void link(const RObject* s, const RObject* t)
-	{
-	    s->gengc_next_node = t;
-	    t->gengc_prev_node = s;
-	}
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */

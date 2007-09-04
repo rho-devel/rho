@@ -68,6 +68,8 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
 
+using namespace std;
+using namespace CXXR;
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
    as large as unsigned long.  Changed from int at 1.6.0 to (i) allow
@@ -94,10 +96,10 @@ extern SEXP framenames;
 static void R_gc_internal(R_size_t size_needed);
 
 namespace {
-    inline bool MARK(const RObject* x) {return x->m_marked;}
-    inline bool NODE_IS_MARKED(const RObject* s) {return MARK(s) == 1;}
-    inline void MARK_NODE(const RObject* s) {s->m_marked = true;}
-    inline void UNMARK_NODE(const RObject* s) {s->m_marked = false;}
+    inline bool MARK(const GCNode* x) {return x->m_marked;}
+    inline bool NODE_IS_MARKED(const GCNode* s) {return MARK(s) == 1;}
+    inline void MARK_NODE(const GCNode* s) {s->m_marked = true;}
+    inline void UNMARK_NODE(const GCNode* s) {s->m_marked = false;}
 }
 
 /* Tuning Constants. Most of these could be made settable from R,
@@ -234,19 +236,19 @@ static R_size_t R_V_maxused=0;
 #endif
 
 namespace {
-    inline unsigned int NODE_GENERATION(const RObject* s) {return s->m_gcgen;}
+    inline unsigned int NODE_GENERATION(const GCNode* s) {return s->m_gcgen;}
 
-    inline void SET_NODE_GENERATION(const RObject* s, unsigned int g)
+    inline void SET_NODE_GENERATION(const GCNode* s, unsigned int g)
     {
 	s->m_gcgen = g;
     }
 
-    inline bool NODE_GEN_IS_YOUNGER(const RObject* s, unsigned int g)
+    inline bool NODE_GEN_IS_YOUNGER(const GCNode* s, unsigned int g)
     {
 	return !NODE_IS_MARKED(s) || (NODE_GENERATION(s) < g);
     }
 
-    inline bool NODE_IS_OLDER(const RObject* x, const RObject* y)
+    inline bool NODE_IS_OLDER(const GCNode* x, const GCNode* y)
     {
 	return NODE_IS_MARKED(x) &&	
 	    (!NODE_IS_MARKED(y) || NODE_GENERATION(x) > NODE_GENERATION(y));
@@ -299,80 +301,62 @@ namespace {
    both counts.*/
 /*#define EXPEL_OLD_TO_NEW*/
 static struct {
-    SEXP Old[NUM_OLD_GENERATIONS], New;
+    GCNode *Old[NUM_OLD_GENERATIONS], *New;
 #ifndef EXPEL_OLD_TO_NEW
-    SEXP OldToNew[NUM_OLD_GENERATIONS];
+    GCNode* OldToNew[NUM_OLD_GENERATIONS];
 #endif
     int OldCount[NUM_OLD_GENERATIONS];
     size_t AllocCount;
 } R_GenHeap;
 
 namespace {
-    inline const RObject* NEXT_NODE(const RObject* s) {return s->gengc_next_node;}
+    inline const GCNode* NEXT_NODE(const GCNode* s) {return s->gengc_next_node;}
 
-    inline const RObject* PREV_NODE(const RObject* s) {return s->gengc_prev_node;}
+    inline const GCNode* PREV_NODE(const GCNode* s) {return s->gengc_prev_node;}
 
-    inline void SET_NEXT_NODE(const RObject* s, const RObject* t)
+    inline void SET_NEXT_NODE(const GCNode* s, const GCNode* t)
     {
 	s->gengc_next_node = t;
-    }
-
-    inline void SET_PREV_NODE(const RObject* s, const RObject* t)
-    {
-	s->gengc_prev_node = t;
     }
 
     /* Node List Manipulation */
 
     /* unsnap node s from its list */
-    inline void UNSNAP_NODE(const RObject* s)
+    inline void UNSNAP_NODE(const GCNode* s)
     {
-	const RObject* next = NEXT_NODE(s);
-	const RObject* prev = PREV_NODE(s);
-	SET_NEXT_NODE(prev, next);
-	SET_PREV_NODE(next, prev);
+	GCNode::link(PREV_NODE(s), NEXT_NODE(s));
     }
 
     /* snap in node s before node t */
-    inline void SNAP_NODE(const RObject* s, const RObject* t)
+    inline void SNAP_NODE(const GCNode* s, const GCNode* t)
     {
-	const RObject* prev = PREV_NODE(t);
-	SET_NEXT_NODE(s, t);
-	SET_PREV_NODE(t, s);
-	SET_NEXT_NODE(prev, s);
-	SET_PREV_NODE(s, prev);
+	GCNode::link(PREV_NODE(t), s);
+	GCNode::link(s, t);
     }
 
     /* move all nodes on from_peg to to_peg */
-    inline void BULK_MOVE(const RObject* from_peg, const RObject* to_peg)
+    inline void BULK_MOVE(const GCNode* from_peg, const GCNode* to_peg)
     {
-	const RObject* first_old = NEXT_NODE(from_peg);
-	const RObject* last_old = PREV_NODE(from_peg);
-	const RObject* first_new = NEXT_NODE(to_peg);
-	SET_PREV_NODE(first_old, to_peg);
-	SET_NEXT_NODE(to_peg, first_old);
-	SET_PREV_NODE(first_new, last_old);
-	SET_NEXT_NODE(last_old, first_new);
-	SET_NEXT_NODE(from_peg, from_peg);
-	SET_PREV_NODE(from_peg, from_peg);
+	const GCNode* first_old = NEXT_NODE(from_peg);
+	const GCNode* last_old = PREV_NODE(from_peg);
+	const GCNode* first_new = NEXT_NODE(to_peg);
+	GCNode::link(to_peg, first_old);
+	GCNode::link(last_old, first_new);
+	GCNode::link(from_peg, from_peg);
     }
 }
 
-namespace CXXR {
-    RObject::RObject(SEXPTYPE stype)
-	: m_type(stype)
-    {
-	link(R_GenHeap.New->gengc_prev_node, this);
-	link(this, R_GenHeap.New);
-	++R_GenHeap.AllocCount;
-    }
+GCNode::GCNode()
+{
+    link(R_GenHeap.New->gengc_prev_node, this);
+    link(this, R_GenHeap.New);
+    ++R_GenHeap.AllocCount;
+}
 
-    RObject::~RObject()
-    {
-	--R_GenHeap.AllocCount;
-	if (m_data) Heap::deallocate(m_data, m_databytes);
-	link(gengc_prev_node, gengc_next_node);
-    }
+GCNode::~GCNode()
+{
+    --R_GenHeap.AllocCount;
+    link(gengc_prev_node, gengc_next_node);
 }
 
 /* Processing Node Children */
@@ -389,7 +373,8 @@ namespace {
 
 /* This macro calls dc__action__ for each child of __n__, passing
    dc__extra__ as a second argument for each call. */
-#define DO_CHILDREN(__n__,dc__action__,dc__extra__) do { \
+#define DO_CHILDREN(n,dc__action__,dc__extra__) do { \
+	const RObject* __n__ = static_cast<const RObject*>(n);          \
 	if (__n__->attributes() != R_NilValue)				\
 	    dc__action__(__n__->attributes(), dc__extra__);		\
 	switch (__n__->sexptype()) {					\
@@ -514,9 +499,9 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 static void ReleaseNodes()
 {
-    const RObject* s = NEXT_NODE(R_GenHeap.New);
+    const GCNode* s = NEXT_NODE(R_GenHeap.New);
     while (s != R_GenHeap.New) {
-	const RObject* next = NEXT_NODE(s);
+	const GCNode* next = NEXT_NODE(s);
 	s->destroy();
 	s = next;
     }
@@ -570,7 +555,7 @@ static void AdjustHeapSize(R_size_t size_needed)
 /* Managing Old-to-New References. */
 
 #define AGE_NODE(s,g) do { \
-  const RObject* an__n__ = (s); \
+  const GCNode* an__n__ = (s); \
   unsigned int an__g__ = (g); \
   if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
     if (NODE_IS_MARKED(an__n__)) \
@@ -579,14 +564,14 @@ static void AdjustHeapSize(R_size_t size_needed)
       MARK_NODE(an__n__); \
     SET_NODE_GENERATION(an__n__, an__g__); \
     UNSNAP_NODE(an__n__); \
-    SET_NEXT_NODE(an__n__, forwarded_nodes); \
+    SET_NEXT_NODE(an__n__, forwarded_nodes);		\
     forwarded_nodes = an__n__; \
   } \
 } while (0)
 
-static void AgeNodeAndChildren(const RObject* s, int gen)
+static void AgeNodeAndChildren(const GCNode* s, int gen)
 {
-    const RObject* forwarded_nodes = NULL;
+    const GCNode* forwarded_nodes = NULL;
     AGE_NODE(s, gen);
     while (forwarded_nodes != NULL) {
 	s = forwarded_nodes;
@@ -934,9 +919,9 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
    place them on the forwarding list.  pnptr is a pointer to the first
    element of the list of forwarded nodes. */
 namespace {
-    const RObject* forwarded_nodes;
+    const GCNode* forwarded_nodes;
 
-    inline void FORWARD_NODE(const RObject* s)
+    inline void FORWARD_NODE(const GCNode* s)
     {
 	if (s && ! NODE_IS_MARKED(s)) {
 	    MARK_NODE(s);
@@ -952,7 +937,7 @@ namespace {
     inline void PROCESS_NODES()
     {
 	while (forwarded_nodes != NULL) {
-	    const RObject* s = forwarded_nodes;
+	    const GCNode* s = forwarded_nodes;
 	    forwarded_nodes = NEXT_NODE(forwarded_nodes);
 	    SNAP_NODE(s, R_GenHeap.Old[NODE_GENERATION(s)]);
 	    R_GenHeap.OldCount[NODE_GENERATION(s)]++;
@@ -969,7 +954,7 @@ static void RunGenCollect(R_size_t size_needed)
     int i, gen, gens_collected;
     DevDesc *dd;
     RCNTXT *ctxt;
-    const RObject* s;
+    const GCNode* s;
 
     /* determine number of generations to collect */
     while (num_old_gens_to_collect < NUM_OLD_GENERATIONS) {
@@ -990,7 +975,7 @@ static void RunGenCollect(R_size_t size_needed)
     for (gen = 0; gen < num_old_gens_to_collect; gen++) {
 	s = NEXT_NODE(R_GenHeap.OldToNew[gen]);
 	while (s != R_GenHeap.OldToNew[gen]) {
-	    const RObject* next = NEXT_NODE(s);
+	    const GCNode* next = NEXT_NODE(s);
 	    DO_CHILDREN(s, AgeNodeAndChildren, gen);
 	    UNSNAP_NODE(s);
 	    if (NODE_GENERATION(s) != uint(gen))
@@ -1009,7 +994,7 @@ static void RunGenCollect(R_size_t size_needed)
 	R_GenHeap.OldCount[gen] = 0;
 	s = NEXT_NODE(R_GenHeap.Old[gen]);
 	while (s != R_GenHeap.Old[gen]) {
-	    const RObject* next = NEXT_NODE(s);
+	    const GCNode* next = NEXT_NODE(s);
 	    if (gen < NUM_OLD_GENERATIONS - 1)
 		SET_NODE_GENERATION(s, gen + 1);
 	    UNMARK_NODE(s);
@@ -1283,15 +1268,13 @@ void attribute_hidden InitMemory()
     R_VSize = (((R_VSize + 1)/ vsfac));
 
     for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	R_GenHeap.Old[gen]
-	    = new RObject(R_GenHeap.Old[gen]);
+	R_GenHeap.Old[gen] = new GCNode(0);
 #ifndef EXPEL_OLD_TO_NEW
-	R_GenHeap.OldToNew[gen]
-	    = new RObject(R_GenHeap.OldToNew[gen]);
+	R_GenHeap.OldToNew[gen] = new GCNode(0);
 #endif
 	R_GenHeap.OldCount[gen] = 0;
     }
-    R_GenHeap.New = new RObject(R_GenHeap.New);
+    R_GenHeap.New = new GCNode(0);
 
     orig_R_NSize = R_NSize;
     orig_R_VSize = R_VSize;
@@ -1863,13 +1846,15 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 	num_old_gens_to_collect = NUM_OLD_GENERATIONS;
 	R_gc();
 	for (gen = 0; gen < NUM_OLD_GENERATIONS; gen++) {
-	    const RObject* s;
+	    const GCNode* s;
 	    for (s = NEXT_NODE(R_GenHeap.Old[gen]);
 		 s != R_GenHeap.Old[gen];
 		 s = NEXT_NODE(s)) {
-		tmp = s->sexptype();
-		if(tmp > LGLSXP) tmp -= 2;
-		INTEGER(ans)[tmp]++;
+		if (const RObject* ob = dynamic_cast<const RObject*>(s)) {
+		    tmp = ob->sexptype();
+		    if(tmp > LGLSXP) tmp -= 2;
+		    INTEGER(ans)[tmp]++;
+		}
 	    }
 	}
     } END_SUSPEND_INTERRUPTS;

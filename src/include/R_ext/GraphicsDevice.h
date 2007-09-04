@@ -23,6 +23,7 @@
 #define R_GRAPHICSDEVICE_H_
 
 #include <R_ext/GraphicsContext.h>
+#include "CXXR/RObject.h"
 
 #ifdef __cplusplus
 extern "C" {

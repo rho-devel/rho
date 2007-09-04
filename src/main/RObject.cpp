@@ -29,6 +29,9 @@
 
 #include "CXXR/RObject.h"
 
+using namespace std;
+using namespace CXXR;
+
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
     int (*levelsptr)(SEXP x) = LEVELS;
@@ -48,4 +51,9 @@ namespace {
     void (*lockbindingptr)(SEXP b) = LOCK_BINDING;
     void (*setactivebindingbitptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
     void (*unlockbindingptr)(SEXP b) = UNLOCK_BINDING;
+}
+
+RObject::~RObject()
+{
+    if (m_data) Heap::deallocate(m_data, m_databytes);
 }
