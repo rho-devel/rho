@@ -27,6 +27,9 @@
  * enclosing source file.
  */
 
+// Needed while visitChildren(visitor* v) is unimplemented.
+#include <iostream>
+
 #include "CXXR/RObject.h"
 
 using namespace std;
@@ -57,3 +60,46 @@ RObject::~RObject()
 {
     if (m_data) Heap::deallocate(m_data, m_databytes);
 }
+
+void RObject::visitChildren(const_visitor* v) const
+{
+    if (m_attrib) m_attrib->conductVisitor(v);
+    switch (sexptype()) {
+    case STRSXP:
+    case EXPRSXP:
+    case VECSXP:
+	for (int i = 0; i < length(); i++)
+	    reinterpret_cast<SEXP*>(m_data)[i]->conductVisitor(v);
+	break;
+    case ENVSXP:
+	if (frame()) frame()->conductVisitor(v);
+	if (enclosingEnvironment())
+	    enclosingEnvironment()->conductVisitor(v);
+	if (hashTable()) hashTable()->conductVisitor(v);
+	break;
+    case CLOSXP:
+    case PROMSXP:
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+    case SYMSXP:
+    case BCODESXP:
+	if (tag()) tag()->conductVisitor(v);
+	if (car()) car()->conductVisitor(v);
+	if (cdr()) cdr()->conductVisitor(v);
+	break;
+    case EXTPTRSXP:
+	if (cdr()) cdr()->conductVisitor(v);
+	if (tag()) tag()->conductVisitor(v);
+	break;
+    default:
+	break;
+    }
+}
+
+void RObject::visitChildren(visitor* v)
+{
+    cerr << "RObject::visitChildren(visitor* v) not implemented yet.\n";
+    abort();
+}
+
