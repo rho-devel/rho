@@ -78,28 +78,25 @@ namespace {
     const int collect_counts_max[] = { LEVEL_0_FREQ, LEVEL_1_FREQ };
 
     /* When a level N collection fails to produce at least MinFreeFrac
-       * s_node_threshold free nodes and MinFreeFrac *
-       s_threshold free vector space, the next collection will be
-       a level N + 1 collection.
+       * s_threshold free vector space, the next collection will be a
+       level N + 1 collection.
 
        This constant is also used in heap size adjustment as a minimal
        fraction of the minimal heap size levels that should be
        available for allocation. */
     const double MinFreeFrac = 0.2;
 
-    /* The heap size constants s_node_threshold and s_threshold
-       are used for triggering collections.  The initial values set by
-       defaults or command line arguments are used as minimal values.
-       After full collections these levels are adjusted up or down,
-       though not below the minimal values or above the maximum
-       values, towards maintain heap occupancy within a specified
-       range.  When the number of nodes in use reaches NGrowFrac *
-       s_node_threshold, the value of s_node_threshold is incremented
-       by NGrowIncrMin + NGrowIncrFrac * s_node_threshold.  When the
-       number of nodes in use falls below NShrinkFrac,
-       s_node_threshold is decremented by NShrinkIncrMin * NShrinkFrac
-       * s_node_threshold.  Analogous adjustments are made to
-       s_threshold.
+    /* The heap size constant s_threshold is used for triggering
+       collections.  The initial value set by default or command line
+       argument is used as a minimum value.  After full collections
+       this threshold is adjusted up or down, though not below the
+       minimal value or above the maximum value, towards maintaining
+       heap occupancy within a specified range.  When the number of
+       bytes in use reaches BGrowFrac * s_threshold, the value of
+       s_threshold is incremented by BGrowIncrMin + BGrowIncrFrac *
+       s_threshold.  When the number of bytes in use falls below
+       BShrinkFrac, s_threshold is decremented by BShrinkIncrMin *
+       BShrinkFrac * s_threshold.
 
        This mechanism for adjusting the heap size constants is very
        primitive but hopefully adequate for now.  Some modeling and
