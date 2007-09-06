@@ -20,7 +20,7 @@
  */
 
 /** @file GCNode.hpp
- * Class GCNode and associated C-callable routines.
+ * Class GCNode.
  */
 
 #ifndef GCNODE_HPP
@@ -167,6 +167,12 @@ namespace CXXR {
 	 * this method.
 	 */
 	void destroy() const {delete this;}
+
+	/** Initiate a garbage collection.
+	 *
+	 * @param num_old_gens The number of old generations to collect.
+	 */
+	static void gc(unsigned num_old_gens);
 
 	/** Initialize static members.
 	 *

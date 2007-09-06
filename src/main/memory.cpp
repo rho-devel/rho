@@ -744,10 +744,10 @@ void R_RunWeakRefFinalizer(SEXP w)
     UNPROTECT(2);
 }
 
-static Rboolean RunFinalizers(void)
+static bool RunFinalizers(void)
 {
     volatile SEXP s, last;
-    volatile Rboolean finalizer_run = FALSE;
+    volatile bool finalizer_run = FALSE;
 
     for (s = R_weak_refs, last = R_NilValue; s != R_NilValue;) {
 	SEXP next = WEAKREF_NEXT(s);

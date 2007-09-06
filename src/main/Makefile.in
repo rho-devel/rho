@@ -15,7 +15,8 @@ include $(top_builddir)/Makeconf
 SOURCES_C = RNG.c complex.c gram.c regex.c
 
 SOURCES_CXX = \
-	CConverters.cpp CellPool.cpp CommandLineArgs.cpp GCNode.cpp Heap.cpp \
+	CConverters.cpp CellPool.cpp CommandLineArgs.cpp GCManager.cpp \
+	GCNode.cpp Heap.cpp \
 	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
         RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
         Rdynload.cpp Renviron.cpp \
@@ -31,8 +32,7 @@ SOURCES_CXX = \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
-	names.cpp \
-	objects.cpp optim.cpp optimize.cpp options.cpp \
+	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
 	par.cpp paste.cpp pcre.cpp platform.cpp \
 	plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
