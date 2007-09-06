@@ -31,7 +31,7 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/GCNode.h"
+#include "CXXR/GCNode.hpp"
 
 extern "C" {
 #endif

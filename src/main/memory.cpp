@@ -269,7 +269,7 @@ namespace {
 namespace {
     inline void SET_NEXT_NODE(const GCNode* s, const GCNode* t)
     {
-	s->gengc_next_node = t;
+	s->m_next = t;
     }
 
     /* Node List Manipulation */
@@ -290,12 +290,7 @@ namespace {
     /* move all nodes on from_peg to to_peg */
     inline void BULK_MOVE(const GCNode* from_peg, const GCNode* to_peg)
     {
-	const GCNode* first_old = from_peg->next();
-	const GCNode* last_old = from_peg->prev();
-	const GCNode* first_new = to_peg->next();
-	GCNode::link(to_peg, first_old);
-	GCNode::link(last_old, first_new);
-	GCNode::link(from_peg, from_peg);
+	to_peg->splice(from_peg->next(), from_peg);
     }
 }
 
