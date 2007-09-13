@@ -100,12 +100,6 @@ namespace CXXR {
 	bool isTortured() {return s_tortured;}
 
 	/**
-	 * @return the current maximum permitted value of the collection
-	 * threshold.
-	 */
-	static size_t maxThreshold() {return s_max_threshold;}
-
-	/**
 	 * @return the maximum number of bytes used (up to the time of
 	 *         the most recent garbage collection.)
 	 */
@@ -130,35 +124,14 @@ namespace CXXR {
 	 */
 	static void resetMaxTallies();
 
-	/** Set maximum permitted value for the collection trigger level.
-	 *
-	 * @param newmax The new maximum value required.  An attempt
-	 *          to set this maximum value to less than the current
-	 *          value of the actual threshold will be silently
-	 *          ignored.
-	 *
-	 * @note This is provided for compatibility with CR.  Beware
-	 * that setting a maximum trigger level will not prevent the
-	 * CXXR interpreter from growing above the specified level: it
-	 * will merely cause the garbage collector to thrash when it
-	 * does.
-	 */
-	static void setMaxTrigger(size_t newmax);
-
-	/**
-	 * @return the maximum permitted value for the collection
-	 * trigger level (as set by setMaxTrigger() ), or
-	 * <tt>numeric_limits<size_t>::max()</tt> if no maximum has
-	 * been set.
-	 */
-	static size_t maxTriggerLevel() {return s_max_threshold;}
-
 	/** Set the output stream for garbage collection reporting.
 	 *
 	 * @param os Pointer to the output stream to which reporting
 	 *          should be directed.  If NULL, suppresses reporting.
+	 *
+	 * @return The previous value of the output stream pointer.
 	 */
-	static void setReporting(std::ostream* os = 0) {s_os = os;}
+	static std::ostream* setReporting(std::ostream* os = 0);
 
 	/** Turn garbage collection torture on or off.  If enabled,
 	 * every time that CXXR::Heap indicates that it is about to
@@ -179,7 +152,6 @@ namespace CXXR {
 	static size_t triggerLevel() {return s_threshold;}
     private:
 	static size_t s_threshold;
-	static size_t s_max_threshold;
 	static size_t s_min_threshold;
 
 	static size_t s_max_bytes;

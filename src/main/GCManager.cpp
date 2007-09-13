@@ -37,7 +37,6 @@ using namespace std;
 using namespace CXXR;
 
 size_t GCManager::s_threshold;
-size_t GCManager::s_max_threshold = numeric_limits<size_t>::max();
 size_t GCManager::s_min_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
@@ -159,20 +158,15 @@ void GCManager::adjustThreshold(size_t bytes_needed)
     size_t MinBFree = size_t(s_min_threshold * MinFreeFrac);
     size_t BNeeded = Heap::bytesAllocated() + bytes_needed + MinBFree;
     double occup = double(BNeeded) / s_threshold;
-    if (occup > 1.0)
-	s_threshold = min(BNeeded, s_max_threshold);
+    if (occup > 1.0) s_threshold = BNeeded;
     // This follows memory.c in 2.5.1, but should the following
     // actually read 'else if'?
-    if (occup > BGrowFrac) {
-	size_t change
-	    = size_t(BGrowIncrMin + BGrowIncrFrac*s_threshold);
-	s_threshold = min(s_threshold + change, s_max_threshold);
-    }
+    if (occup > BGrowFrac)
+	s_threshold += size_t(BGrowIncrMin + BGrowIncrFrac*s_threshold);
     else if (occup < BShrinkFrac) {
 	s_threshold = size_t(s_threshold - BShrinkIncrMin
 			     - BShrinkIncrFrac * s_threshold);
-	if (s_threshold < BNeeded)
-	    s_threshold = min(BNeeded, s_max_threshold);
+	s_threshold = max(BNeeded, s_threshold);
 	s_threshold = max(s_threshold, s_min_threshold);
     }
 #ifdef DEBUG_ADJUST_HEAP
@@ -295,7 +289,9 @@ void GCManager::resetMaxTallies()
     s_max_nodes = GCNode::numNodes();
 }
 
-void GCManager::setMaxTrigger(size_t newmax)
+ostream* GCManager::setReporting(ostream* os)
 {
-    s_max_threshold = max(s_threshold, newmax);
+    ostream* ans = s_os;
+    s_os = os;
+    return ans;
 }

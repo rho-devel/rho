@@ -47,6 +47,7 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/GCManager.hpp"
 #include "CXXR/Heap.hpp"
 
 using namespace std;
@@ -77,9 +78,6 @@ using namespace CXXR;
    length on a 64-bit system.
 */
 
-static int gc_reporting = 0;
-static int gc_count = 0;
-
 #define GC_TORTURE
 
 #ifdef GC_TORTURE
@@ -93,113 +91,6 @@ extern SEXP framenames;
 #define GC_PROT(X) {int __t = gc_inhibit_torture; \
 	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
 
-static void R_gc_internal(R_size_t size_needed);
-
-/* Tuning Constants. Most of these could be made settable from R,
-   within some reasonable constraints at least.  Since there are quite
-   a lot of constants it would probably make sense to put together
-   several "packages" representing different space/speed tradeoffs
-   (e.g. very aggressive freeing and small increments to conserve
-   memory; much less frequent releasing and larger increments to
-   increase speed). */
-
-/* There are three levels of collections.  Level 0 collects only the
-   youngest generation, level 1 collects the two youngest generations,
-   and level 2 collects all generations.  Higher level collections
-   occur at least after specified numbers of lower level ones.  After
-   LEVEL_0_FREQ level zero collections a level 1 collection is done;
-   after every LEVEL_1_FREQ level 1 collections a level 2 collection
-   occurs.  Thus, roughly, every LEVEL_0_FREQ-th collection is a level
-   1 collection and every (LEVEL_0_FREQ * LEVEL_1_FREQ)-th collection
-   is a level 2 collection.  */
-#define LEVEL_0_FREQ 20
-#define LEVEL_1_FREQ 5
-static int collect_counts_max[] = { LEVEL_0_FREQ, LEVEL_1_FREQ };
-
-/* When a level N collection fails to produce at least MinFreeFrac *
-   R_NSize free nodes and MinFreeFrac * R_VSize free vector space, the
-   next collection will be a level N + 1 collection.
-
-   This constant is also used in heap size adjustment as a minimal
-   fraction of the minimal heap size levels that should be available
-   for allocation. */
-static double R_MinFreeFrac = 0.2;
-
-/* The heap size constants R_NSize and R_VSize are used for triggering
-   collections.  The initial values set by defaults or command line
-   arguments are used as minimal values.  After full collections these
-   levels are adjusted up or down, though not below the minimal values
-   or above the maximum values, towards maintain heap occupancy within
-   a specified range.  When the number of nodes in use reaches
-   R_NGrowFrac * R_NSize, the value of R_NSize is incremented by
-   R_NGrowIncrMin + R_NGrowIncrFrac * R_NSize.  When the number of
-   nodes in use falls below R_NShrinkFrac, R_NSize is decremented by
-   R_NShrinkIncrMin * R_NShrinkFrac * R_NSize.  Analogous adjustments
-   are made to R_VSize.
-
-   This mechanism for adjusting the heap size constants is very
-   primitive but hopefully adequate for now.  Some modeling and
-   experimentation would be useful.  We want the heap sizes to get set
-   at levels adequate for the current computations.  The present
-   mechanism uses only the size of the current live heap to provide
-   information about the current needs; since the current live heap
-   size can be very volatile, the adjustment mechanism only makes
-   gradual adjustments.  A more sophisticated strategy would use more
-   of the live heap history. */
-static double R_NGrowFrac = 0.70;
-static double R_NShrinkFrac = 0.30;
-
-static double R_VGrowFrac = 0.70;
-static double R_VShrinkFrac = 0.30;
-
-#ifdef SMALL_MEMORY
-/* On machines with only 32M of memory (or on a classic Mac OS port)
-   it might be a good idea to use settings like these that are more
-   aggressive at keeping memory usage down. */
-static double R_NGrowIncrFrac = 0.0, R_NShrinkIncrFrac = 0.2;
-static int R_NGrowIncrMin = 50000, R_NShrinkIncrMin = 0;
-static double R_VGrowIncrFrac = 0.0, R_VShrinkIncrFrac = 0.2;
-static int R_VGrowIncrMin = 100000, R_VShrinkIncrMin = 0;
-#else
-static double R_NGrowIncrFrac = 0.05, R_NShrinkIncrFrac = 0.2;
-static int R_NGrowIncrMin = 40000, R_NShrinkIncrMin = 0;
-static double R_VGrowIncrFrac = 0.05, R_VShrinkIncrFrac = 0.2;
-static int R_VGrowIncrMin = 80000, R_VShrinkIncrMin = 0;
-#endif
-
-/* Maximal Heap Limits.  These variables contain upper limits on the
-   heap sizes.  They could be made adjustable from the R level,
-   perhaps by a handler for a recoverable error.
-
-   Access to these values is provided with reader and writer
-   functions; the writer function insures that the maximal values are
-   never set below the current ones. */
-static R_size_t R_MaxVSize = R_SIZE_T_MAX;
-static R_size_t R_MaxNSize = R_SIZE_T_MAX;
-static int vsfac = 1; /* current units for vsize: changes at initialization */
-
-R_size_t attribute_hidden R_GetMaxVSize(void)
-{
-    if (R_MaxVSize == R_SIZE_T_MAX) return R_SIZE_T_MAX;
-    return R_MaxVSize*vsfac;
-}
-
-void attribute_hidden R_SetMaxVSize(R_size_t size)
-{
-    if (size == R_SIZE_T_MAX) return;
-    if (size / vsfac >= R_VSize) R_MaxVSize = (size+1)/vsfac;
-}
-
-R_size_t attribute_hidden R_GetMaxNSize(void)
-{
-    return R_MaxNSize;
-}
-
-void attribute_hidden R_SetMaxNSize(R_size_t size)
-{
-    if (size >= R_NSize) R_MaxNSize = size;
-}
-
 void R_SetPPSize(R_size_t size)
 {
     R_PPStackSize = size;
@@ -209,11 +100,6 @@ void R_SetPPSize(R_size_t size)
 
 static SEXP R_VStack = NULL;		/* R_alloc stack pointer */
 static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
-static R_size_t orig_R_NSize;
-static R_size_t orig_R_VSize;
-
-static R_size_t R_N_maxused=0;
-static R_size_t R_V_maxused=0;
 
 /* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
    ignored. */
@@ -249,8 +135,6 @@ namespace {
 }
 
 static unsigned int num_old_gens_to_collect = 0;
-static int gen_gc_counts[GCNode::s_num_old_generations + 1];
-static int collect_counts[GCNode::s_num_old_generations];
 
 namespace {
     inline int NODE_SIZE()
@@ -438,50 +322,6 @@ static void ReleaseNodes()
 	s->destroy();
 	s = next;
     }
-}
-
-
-/* Heap Size Adjustment. */
-
-static void AdjustHeapSize(R_size_t size_needed)
-{
-    R_size_t R_MinNFree = R_size_t(orig_R_NSize * R_MinFreeFrac);
-    R_size_t R_MinVFree = R_size_t(orig_R_VSize * R_MinFreeFrac);
-    R_size_t NNeeded = GCNode::s_num_nodes + R_MinNFree;
-    R_size_t VNeeded = Heap::bytesAllocated()/sizeof(VECREC)
-	+ size_needed + R_MinVFree;
-    double node_occup = double(NNeeded) / R_NSize;
-    double vect_occup =	double(VNeeded) / R_VSize;
-
-    if (node_occup > R_NGrowFrac) {
-	R_size_t change = R_size_t(R_NGrowIncrMin + R_NGrowIncrFrac * R_NSize);
-	if (R_MaxNSize >= R_NSize + change)
-	    R_NSize += change;
-    }
-    else if (node_occup < R_NShrinkFrac) {
-	R_NSize = int(R_NSize - (R_NShrinkIncrMin + R_NShrinkIncrFrac * R_NSize));
-	if (R_NSize < NNeeded)
-	    R_NSize = (NNeeded < R_MaxNSize) ? NNeeded: R_MaxNSize;
-	if (R_NSize < orig_R_NSize)
-	    R_NSize = orig_R_NSize;
-    }
-
-    if (vect_occup > 1.0 && VNeeded < R_MaxVSize)
-	R_VSize = VNeeded;
-    if (vect_occup > R_VGrowFrac) {
-	R_size_t change = R_size_t(R_VGrowIncrMin + R_VGrowIncrFrac * R_VSize);
-	if (R_MaxVSize - R_VSize >= change)
-	    R_VSize += change;
-    }
-    else if (vect_occup < R_VShrinkFrac) {
-	R_VSize = int(R_VSize - (R_VShrinkIncrMin + R_VShrinkIncrFrac * R_VSize));
-	if (R_VSize < VNeeded)
-	    R_VSize = VNeeded;
-	if (R_VSize < orig_R_VSize)
-	    R_VSize = orig_R_VSize;
-    }
-
-    DEBUG_ADJUST_HEAP_PRINT(node_occup, vect_occup);
 }
 
 
@@ -744,7 +584,7 @@ void R_RunWeakRefFinalizer(SEXP w)
     UNPROTECT(2);
 }
 
-static bool RunFinalizers(void)
+bool RunFinalizers(void)
 {
     volatile SEXP s, last;
     volatile bool finalizer_run = FALSE;
@@ -878,32 +718,13 @@ namespace {
 
 /* The Generational Collector. */
 
-static void RunGenCollect(R_size_t size_needed)
-{
-    // cout << "Starting garbage collection." << endl;
-    unsigned int gens_collected;
-    DevDesc *dd;
-    RCNTXT *ctxt;
-    const GCNode* s;
-
-    /* determine number of generations to collect */
-    while (num_old_gens_to_collect < GCNode::s_num_old_generations) {
-	if (collect_counts[num_old_gens_to_collect]-- <= 0) {
-	    collect_counts[num_old_gens_to_collect] =
-		collect_counts_max[num_old_gens_to_collect];
-	    num_old_gens_to_collect++;
-	}
-	else break;
-    }
-
- again:
-    gens_collected = num_old_gens_to_collect;
-
+void GCNode::gc(unsigned int num_old_gens_to_collect)
+    {
 #ifndef EXPEL_OLD_TO_NEW
     /* eliminate old-to-new references in generations to collect by
        transferring referenced nodes to referring generation */
     for (unsigned int gen = 0; gen < num_old_gens_to_collect; gen++) {
-	s = GCNode::s_old_to_new_peg[gen]->next();
+	const GCNode* s = GCNode::s_old_to_new_peg[gen]->next();
 	while (s != GCNode::s_old_to_new_peg[gen]) {
 	    const GCNode* next = s->next();
 	    DO_CHILDREN(s, AgeNodeAndChildren, gen);
@@ -921,7 +742,7 @@ static void RunGenCollect(R_size_t size_needed)
        move to New space */
     for (unsigned int gen = 0; gen < num_old_gens_to_collect; gen++) {
 	GCNode::s_oldcount[gen] = 0;
-	s = GCNode::s_oldpeg[gen]->next();
+	const GCNode* s = GCNode::s_oldpeg[gen]->next();
 	while (s != GCNode::s_oldpeg[gen]) {
 	    const GCNode* next = s->next();
 	    if (gen < GCNode::s_num_old_generations - 1)
@@ -939,7 +760,7 @@ static void RunGenCollect(R_size_t size_needed)
     /* scan nodes in uncollected old generations with old-to-new pointers */
     for (unsigned int gen = num_old_gens_to_collect;
 	 gen < GCNode::s_num_old_generations; gen++)
-	for (s = GCNode::s_old_to_new_peg[gen]->next();
+	for (const GCNode* s = GCNode::s_old_to_new_peg[gen]->next();
 	     s != GCNode::s_old_to_new_peg[gen]; s = s->next())
 	    FORWARD_CHILDREN(s);
 #endif
@@ -968,7 +789,7 @@ static void RunGenCollect(R_size_t size_needed)
 
     for (unsigned int i = 0; i < R_MaxDevices; i++)  /* Device display lists */
 	{
-	    dd = GetDevice(i);
+	    DevDesc* dd = GetDevice(i);
 	    if (dd) {
 		if (dd->newDevStruct) {
 		    FORWARD_NODE(((GEDevDesc*) dd)->dev->displayList);
@@ -979,7 +800,8 @@ static void RunGenCollect(R_size_t size_needed)
 	    }
 	}
 
-    for (ctxt = R_GlobalContext ; ctxt != NULL ; ctxt = ctxt->nextcontext) {
+    for (RCNTXT* ctxt = R_GlobalContext;
+	 ctxt != NULL ; ctxt = ctxt->nextcontext) {
 	FORWARD_NODE(ctxt->conexit);       /* on.exit expressions */
 	FORWARD_NODE(ctxt->promargs);	   /* promises supplied to closure */
 	FORWARD_NODE(ctxt->callfun);       /* the closure called */
@@ -1052,40 +874,6 @@ static void RunGenCollect(R_size_t size_needed)
     ReleaseNodes();
 
     DEBUG_CHECK_NODE_COUNTS("after releasing nodes");
-
-    /* update heap statistics */
-    if (num_old_gens_to_collect < GCNode::s_num_old_generations) {
-	double nfrac = double(GCNode::s_num_nodes)/double(R_NSize);
-	if (nfrac >= 1.0 - R_MinFreeFrac * R_NSize ||
-	    VHEAP_FREE() < size_needed + R_MinFreeFrac * R_VSize) {
-	    num_old_gens_to_collect++;
-	    if (GCNode::s_num_nodes >= R_NSize
-		|| VHEAP_FREE() < size_needed)
-		goto again;
-	}
-	else num_old_gens_to_collect = 0;
-    }
-    else num_old_gens_to_collect = 0;
-
-    gen_gc_counts[gens_collected]++;
-
-    if (gens_collected == GCNode::s_num_old_generations) {
-	/**** do some adjustment for intermediate collections? */
-	AdjustHeapSize(size_needed);
-	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
-    }
-    else if (gens_collected > 0) {
-	DEBUG_CHECK_NODE_COUNTS("after heap adjustment");
-    }
-
-    if (gc_reporting) {
-	REprintf("Garbage collection %d = %d", gc_count, gen_gc_counts[0]);
-	for (unsigned int i = 0; i < GCNode::s_num_old_generations; i++)
-	    REprintf("+%d", gen_gc_counts[i + 1]);
-	REprintf(" (level %d) ... ", gens_collected);
-	DEBUG_GC_SUMMARY(gens_collected == GCNode::s_num_old_generations);
-    }
-    // cout << "Finished garbage collection" << endl;
 }
 
 
@@ -1104,14 +892,16 @@ SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int i;
     SEXP old = allocVector(LGLSXP, 1);
 
     checkArity(op, args);
-    i = asLogical(CAR(args));
-    LOGICAL(old)[0] = gc_reporting;
-    if (i != NA_LOGICAL)
-	gc_reporting = i;
+    ostream* report_os = GCManager::setReporting(0);
+    bool want_reporting = asLogical(CAR(args));
+    LOGICAL(old)[0] = (report_os != 0);
+    if (want_reporting != NA_LOGICAL)
+	GCManager::setReporting(want_reporting ? &cerr : 0);
+    else
+	GCManager::setReporting(report_os);
     return old;
 }
 
@@ -1131,48 +921,89 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP value;
-    int ogc, reset_max;
+    bool reset_max;
 
     checkArity(op, args);
-    ogc = gc_reporting;
-    gc_reporting = asLogical(CAR(args));
+    ostream* report_os
+	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
     reset_max = asLogical(CADR(args));
-    num_old_gens_to_collect = GCNode::s_num_old_generations;
-    R_gc();
-    gc_reporting = ogc;
+    GCManager::gc(0, true);
+    GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
     PROTECT(value = allocVector(REALSXP, 8));
-    REAL(value)[0] = GCNode::s_num_nodes;
-    REAL(value)[1] = R_NSize;
-    REAL(value)[2] = (R_MaxNSize < R_SIZE_T_MAX) ? R_MaxNSize : NA_REAL;
-    REAL(value)[3] = R_N_maxused;
+    REAL(value)[0] = GCNode::numNodes();
+    REAL(value)[1] = NA_INTEGER;
+    REAL(value)[2] = NA_INTEGER;
+    REAL(value)[3] = GCManager::maxNodes();
     /* next four are in 0.1MB, rounded up */
-    REAL(value)[4] = 0.1*ceil(10. * (R_VSize - VHEAP_FREE())/Mega * vsfac);
-    REAL(value)[5] = 0.1*ceil(10. * R_VSize/Mega * vsfac);
-    REAL(value)[6] = (R_MaxVSize < R_SIZE_T_MAX) ?
-	0.1*ceil(10. * R_MaxVSize/Mega * vsfac) : NA_REAL;
-    REAL(value)[7] = 0.1*ceil(10. * R_V_maxused/Mega*vsfac);
-    if (reset_max){
-	R_N_maxused = GCNode::s_num_nodes;
-	R_V_maxused = R_VSize - VHEAP_FREE();
-    }
+    REAL(value)[4] = 0.1*ceil(10. * Heap::bytesAllocated()/Mega);
+    REAL(value)[5] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
+    size_t maxtrig = GCManager::maxTriggerLevel();
+    REAL(value)[6] = (maxtrig < numeric_limits<size_t>::max()
+		      ? 0.1*ceil(10. * maxtrig/Mega) : NA_REAL);
+    REAL(value)[7] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
+    if (reset_max) GCManager::resetMaxTallies();
     UNPROTECT(1);
     return value;
 }
 
 
-namespace {
-    inline bool NO_FREE_NODES() {return GCNode::s_num_nodes >= R_NSize;}
+#ifdef _R_HAVE_TIMING_
 
-    bool cueGC(size_t bytes_wanted, bool force)
-    {
-	if (!force && !NO_FREE_NODES()
-	    && VHEAP_FREE() >= bytes_wanted/sizeof(VECREC))
-	    return false;
-	R_gc_internal(bytes_wanted);
-	return true;
+/* Use header files! 2007/06/11 arr
+// defined in unix/sys-unix.c :
+double R_getClockIncrement(void);
+void R_getProcTime(double *data);
+*/
+
+static double gctimes[5], gcstarttimes[5];
+static Rboolean gctime_enabled = FALSE;
+
+SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    SEXP ans;
+    if (args == R_NilValue)
+	gctime_enabled = TRUE;
+    else
+	gctime_enabled = Rboolean(asLogical(CAR(args)));
+    ans = allocVector(REALSXP, 5);
+    REAL(ans)[0] = gctimes[0];
+    REAL(ans)[1] = gctimes[1];
+    REAL(ans)[2] = gctimes[2];
+    REAL(ans)[3] = gctimes[3];
+    REAL(ans)[4] = gctimes[4];
+    return ans;
+}
+
+static void gc_start_timing(void)
+{
+    if (gctime_enabled)
+	R_getProcTime(gcstarttimes);
+}
+
+static void gc_end_timing(void)
+{
+    if (gctime_enabled) {
+	double times[5], delta;
+	R_getProcTime(times);
+	delta = R_getClockIncrement();
+
+	/* add delta to compensate for timer resolution */
+	gctimes[0] += times[0] - gcstarttimes[0] + delta;
+	gctimes[1] += times[1] - gcstarttimes[1] + delta;
+	gctimes[2] += times[2] - gcstarttimes[2] + delta;
+	gctimes[3] += times[3] - gcstarttimes[3];
+	gctimes[4] += times[4] - gcstarttimes[4];
     }
 }
+#else /* not _R_HAVE_TIMING_ */
+SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    error(_("gc.time() is not implemented on this system"));
+    return R_NilValue;		/* -Wall */
+}
+#endif /* not _R_HAVE_TIMING_ */
+
 
 /* InitMemory : Initialise the memory to be used in R. */
 /* This includes: stack space, node space and vector space */
@@ -1182,9 +1013,12 @@ static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
 
 void attribute_hidden InitMemory()
 {
-    Heap::setGCCuer(cueGC);
-    GCNode::initialize();
-    gc_reporting = R_Verbose;
+#ifdef _R_HAVE_TIMING_
+    GCManager::initialize(R_VSize, gc_start_timing, gc_end_timing);
+#else
+    GCManager::initialize(R_VSize);
+#endif
+    GCManager::setReporting(R_Verbose ? &cerr : 0);
     R_StandardPPStackSize = R_PPStackSize;
     R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
     if (!(R_PPStack = reinterpret_cast<SEXP *>(malloc(R_RealPPStackSize * sizeof(SEXP)))))
@@ -1193,11 +1027,6 @@ void attribute_hidden InitMemory()
 #if VALGRIND_LEVEL > 1
     VALGRIND_MAKE_NOACCESS(R_PPStackTop+R_PPStackSize,PP_REDZONE_SIZE);
 #endif
-    vsfac = sizeof(VECREC);
-    R_VSize = (((R_VSize + 1)/ vsfac));
-
-    orig_R_NSize = R_NSize;
-    orig_R_VSize = R_VSize;
 
 #ifdef BYTECODE
     R_BCNodeStackBase = reinterpret_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
@@ -1614,117 +1443,11 @@ SEXP allocS4Object()
 
 void R_gc(void)
 {
-    R_gc_internal(0);
+    GCManager::gc(0);
 }
 
-#ifdef _R_HAVE_TIMING_
-
-/* Use header files! 2007/06/11 arr
-// defined in unix/sys-unix.c :
-double R_getClockIncrement(void);
-void R_getProcTime(double *data);
-*/
-
-static double gctimes[5], gcstarttimes[5];
-static Rboolean gctime_enabled = FALSE;
-
-SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP ans;
-    if (args == R_NilValue)
-	gctime_enabled = TRUE;
-    else
-	gctime_enabled = Rboolean(asLogical(CAR(args)));
-    ans = allocVector(REALSXP, 5);
-    REAL(ans)[0] = gctimes[0];
-    REAL(ans)[1] = gctimes[1];
-    REAL(ans)[2] = gctimes[2];
-    REAL(ans)[3] = gctimes[3];
-    REAL(ans)[4] = gctimes[4];
-    return ans;
-}
-#else /* not _R_HAVE_TIMING_ */
-SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    error(_("gc.time() is not implemented on this system"));
-    return R_NilValue;		/* -Wall */
-}
-#endif /* not _R_HAVE_TIMING_ */
-
-static void gc_start_timing(void)
-{
-#ifdef _R_HAVE_TIMING_
-    if (gctime_enabled)
-	R_getProcTime(gcstarttimes);
-#endif /* _R_HAVE_TIMING_ */
-}
-
-static void gc_end_timing(void)
-{
-#ifdef _R_HAVE_TIMING_
-    if (gctime_enabled) {
-	double times[5], delta;
-	R_getProcTime(times);
-	delta = R_getClockIncrement();
-
-	/* add delta to compensate for timer resolution */
-	gctimes[0] += times[0] - gcstarttimes[0] + delta;
-	gctimes[1] += times[1] - gcstarttimes[1] + delta;
-	gctimes[2] += times[2] - gcstarttimes[2] + delta;
-	gctimes[3] += times[3] - gcstarttimes[3];
-	gctimes[4] += times[4] - gcstarttimes[4];
-    }
-#endif /* _R_HAVE_TIMING_ */
-}
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
-
-static void R_gc_internal(R_size_t size_needed)
-{
-    double ncells, vcells, vfrac, nfrac;
-    Rboolean first = TRUE;
-
- again:
-
-    gc_count++;
-
-    R_N_maxused = R_MAX(R_N_maxused, GCNode::s_num_nodes);
-    R_V_maxused = R_MAX(R_V_maxused, R_VSize - VHEAP_FREE());
-
-    BEGIN_SUSPEND_INTERRUPTS {
-	gc_start_timing();
-	RunGenCollect(size_needed);
-	gc_end_timing();
-    } END_SUSPEND_INTERRUPTS;
-
-    if (gc_reporting) {
-	ncells = GCNode::s_num_nodes;
-	nfrac = (100.0 * ncells) / R_NSize;
-	/* We try to make this consistent with the results returned by gc */
-	ncells = 0.1*ceil(10*ncells * sizeof(SEXPREC)/Mega);
-	REprintf("\n%.1f Mbytes of cons cells used (%d%%)\n",
-		 ncells, int(nfrac + 0.5));
-	vcells = R_VSize - VHEAP_FREE();
-	vfrac = (100.0 * vcells) / R_VSize;
-	vcells = 0.1*ceil(10*vcells * vsfac/Mega);
-	REprintf("%.1f Mbytes of vectors used (%d%%)\n",
-		 vcells, int(vfrac + 0.5));
-    }
-
-    if (first) {
-	first = FALSE;
-	/* Run any eligible finalizers.  The return result of
-	   RunFinalizers is TRUE if any finalizers are actually run.
-	   There is a small chance that running finalizers here may
-	   chew up enough memory to make another immediate collection
-	   necessary.  If so, we jump back to the beginning and run
-	   the collection, but on this second pass we do not run
-	   finalizers. */
-	if (RunFinalizers() &&
-	    (NO_FREE_NODES() || size_needed > VHEAP_FREE()))
-	    goto again;
-    }
-}
 
 SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
