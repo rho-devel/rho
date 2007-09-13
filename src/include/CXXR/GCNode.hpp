@@ -172,7 +172,7 @@ namespace CXXR {
 	 *
 	 * @param num_old_gens The number of old generations to collect.
 	 */
-	static void gc(unsigned num_old_gens);
+	static void gc(unsigned int num_old_gens);
 
 	/** Initialize static members.
 	 *

@@ -32,24 +32,26 @@ gcinfo(verbose)
   connection at each garbage collection of the form
   \preformatted{
     Garbage collection 12 = 10+0+2 (level 0) ...
-    6.4 Mbytes of cons cells used (58%)
-    2.0 Mbytes of vectors used (32%)
+    2.0 Mbytes used (32%)
   }
-  (Subject to change for CXXR: FIXME.)  Here the last two lines give
-  the current memory usage rounded up to the next 0.1Mb and as a
-  percentage of the current trigger value.  The first line gives a
-  breakdown of the number of garbage collections at various levels
-  (for an explanation see the \sQuote{R Internals} manual).
+  Here the last line gives the current memory usage rounded up to the
+  next 0.1Mb and as a  percentage of the current trigger value.  The
+  first line gives a  breakdown of the number of garbage collections
+  at various levels (for an explanation see the \sQuote{R Internals}
+  manual). 
 }
 
 \value{
   \code{gc} returns a matrix with columns \code{"Nodes"} and
   \code{"Mbytes"} (total memory allocated via CXXR's internal heap,
-  rounded up to next 0.1 MB), and rows \code{"used"} and \code{"gc trigger"}. 
+  rounded up to next 0.1 MB), and rows \code{"used"} and \code{"gc
+  trigger"}.  Since CXXR triggers exclusively on the number of bytes
+  and not on the number of nodes, the first entry in the second row is
+  always NA.
 
-  If maxima have been set for either \code{"Nodes"} or total memory,
-  a third row is printed giving the current limits (with \code{NA}
-  denoting no limit). 
+  If a maximum has been set for the trigger level, a third row is
+  printed giving the current limit.  Again, the first entry of this row
+  is always NA. 
 
   The final row shows the maximum node count and space used since the
   last call to \code{gc(reset=TRUE)} (or since \R started).

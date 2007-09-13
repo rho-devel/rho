@@ -10,7 +10,7 @@ maindir = ..
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
-sources_cxx = CellPooltest.cpp Heaptest.cpp
+sources_cxx = CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
@@ -33,6 +33,20 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 	valgrind -q --leak-check="yes" ./$< > CellPooltest.out
 	diff CellPooltest.save CellPooltest.out
 	rm CellPooltest.out
+	touch $@
+
+GCManager.o : $(maindir)/GCManager.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
+
+GCManagertest_objs = GCManagertest.o GCManager.o Heap.o CellPool.o
+
+GCManagertest : $(GCManagertest_objs)
+	$(LINK.cc) -o $@ $(GCManagertest_objs)
+
+GCManagertest.ts : GCManagertest GCManagertest.save
+	./$< > GCManagertest.out
+	grep -v '^#' GCManagertest.save | diff - GCManagertest.out
+	rm GCManagertest.out
 	touch $@
 
 Heap.o : $(maindir)/Heap.cpp

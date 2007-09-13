@@ -27,6 +27,8 @@
 #include "CXXR/GCManager.hpp"
 
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include "R_ext/Print.h"
 #include "CXXR/GCNode.hpp"
@@ -37,23 +39,17 @@ using namespace CXXR;
 size_t GCManager::s_threshold;
 size_t GCManager::s_max_threshold = numeric_limits<size_t>::max();
 size_t GCManager::s_min_threshold;
+size_t GCManager::s_max_bytes = 0;
+size_t GCManager::s_max_nodes = 0;
+bool GCManager::s_tortured = false;
+ostream* GCManager::s_os = 0;
+
+void (*GCManager::s_pre_gc)();
+void (*GCManager::s_post_gc)();
 
 namespace {
-    int gc_reporting = 0;
-    int gc_count = 0;
-
-#define GC_TORTURE
-
-#ifdef GC_TORTURE
-# define FORCE_GC !gc_inhibit_torture
-#else
-# define FORCE_GC 0
-#endif
-
-#define GC_PROT(X) {int __t = gc_inhibit_torture;		\
-	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
-
-    void R_gc_internal(size_t size_needed);
+    int gc_count;
+    int gen_gc_counts[GCNode::s_num_old_generations + 1];
 
     /* Tuning Constants. Most of these could be made settable from R,
        within some reasonable constraints at least.  Since there are
@@ -62,20 +58,6 @@ namespace {
        tradeoffs (e.g. very aggressive freeing and small increments to
        conserve memory; much less frequent releasing and larger
        increments to increase speed). */
-
-    /* There are three levels of collections.  Level 0 collects only
-       the youngest generation, level 1 collects the two youngest
-       generations, and level 2 collects all generations.  Higher
-       level collections occur at least after specified numbers of
-       lower level ones.  After LEVEL_0_FREQ level zero collections a
-       level 1 collection is done; after every LEVEL_1_FREQ level 1
-       collections a level 2 collection occurs.  Thus, roughly, every
-       LEVEL_0_FREQ-th collection is a level 1 collection and every
-       (LEVEL_0_FREQ * LEVEL_1_FREQ)-th collection is a level 2
-       collection.  */
-#define LEVEL_0_FREQ 20
-#define LEVEL_1_FREQ 5
-    const int collect_counts_max[] = { LEVEL_0_FREQ, LEVEL_1_FREQ };
 
     /* When a level N collection fails to produce at least MinFreeFrac
        * s_threshold free vector space, the next collection will be a
@@ -121,7 +103,43 @@ namespace {
     const int BGrowIncrMin = 640000, BShrinkIncrMin = 0;
 #endif
 
+    const unsigned int collect_counts_max[GCNode::s_num_old_generations]
+    = {20, 5};
+
+    /** Choose how many generations to collect according to a rota.
+     *
+     * There are three levels of collections.  Level 0 collects only
+     * the youngest generation, Level 1 collects the two youngest
+     * generations, and Level 2 collects all generations.  This
+     * function decides how many old generations to collect according
+     * to a rota.  Most collections are Level 0.  However, after every
+     * collect_counts_max[0] Level 0 collections, a Level 1 collection
+     * will be carried out; similarly after every
+     * collect_counts_max[1] Level 1 collections a Level 2 collection
+     * will be carried out.
+     *
+     * @param minlevel (<= 2, not checked) This parameter places a
+     *          minimum on the number of old generations to be
+     *          collected.  If minlevel is higher than the number of
+     *          generations that genRota would have chosen for itself,
+     *          the position in the rota is advanced accordingly.
+     */
+    unsigned int genRota(unsigned int minlevel)
+    {
+	static unsigned int collect_counts[GCNode::s_num_old_generations];
+	unsigned int level = minlevel;
+	for (unsigned int i = 0; i < level; ++i)
+	    collect_counts[i] = 0;
+	while (level < GCNode::s_num_old_generations
+	       && ++collect_counts[level] > collect_counts_max[level]) {
+	    collect_counts[level] = 0;
+	    ++level;
+	}
+	return level;
+    }
+	
 #ifdef DEBUG_GC
+    // This ought to go in GCNode.
     void DEBUG_GC_SUMMARY(int full_gc)
     {
 	int gen, OldCount;
@@ -134,93 +152,37 @@ namespace {
 #else
 #define DEBUG_GC_SUMMARY(x)
 #endif /* DEBUG_GC */
-
-#ifdef DEBUG_ADJUST_HEAP
-    void DEBUG_ADJUST_HEAP_PRINT(double occup)
-    {
-	REprintf("Occupancy: %.0f%%\n", 100.0 * occup);
-	REprintf("Total allocation: %lu\n", Heap::bytesAllocated());
-	REprintf("Threshold %lu\n", GCManager::s_threshold);
-    }
-#else
-#define DEBUG_ADJUST_HEAP_PRINT(occup)
-#endif /* DEBUG_ADJUST_HEAP */
-}
-
-static void RunGenCollect(size_t size_needed)
-{
-    static unsigned int num_old_gens_to_collect = 0;
-    static int gen_gc_counts[GCNode::s_num_old_generations + 1];
-    static int collect_counts[GCNode::s_num_old_generations];
-    unsigned int gens_collected;
-
-    /* determine number of generations to collect */
-    while (num_old_gens_to_collect < GCNode::s_num_old_generations) {
-	if (collect_counts[num_old_gens_to_collect]-- <= 0) {
-	    collect_counts[num_old_gens_to_collect] =
-		collect_counts_max[num_old_gens_to_collect];
-	    num_old_gens_to_collect++;
-	}
-	else break;
-    }
-
-    bool ok = false;
-    while (!ok) {
-	ok = true;
-	GCNode::gc(num_old_gens_to_collect);
-	gens_collected = num_old_gens_to_collect;
-
-	/* update heap statistics */
-	if (num_old_gens_to_collect < GCNode::s_num_old_generations) {
-	    if (Heap::bytesAllocated() + size_needed
-		> (1.0 - MinFreeFrac)*GCManager::s_threshold) {
-		num_old_gens_to_collect++;
-		if (Heap::bytesAllocated() + size_needed
-		    >= GCManager::s_threshold)
-		    ok = false;
-	    }
-	    else num_old_gens_to_collect = 0;
-	}
-	else num_old_gens_to_collect = 0;
-    }
-
-    gen_gc_counts[gens_collected]++;
-
-    if (gens_collected == GCNode::s_num_old_generations) {
-	/**** do some adjustment for intermediate collections? */
-	GCManager::adjustThreshold(size_needed);
-
-	if (gc_reporting) {
-	    REprintf("Garbage collection %d = %d", gc_count, gen_gc_counts[0]);
-	    for (unsigned int i = 0; i < GCNode::s_num_old_generations; i++)
-		REprintf("+%d", gen_gc_counts[i + 1]);
-	    REprintf(" (level %d) ... ", gens_collected);
-	    DEBUG_GC_SUMMARY(gens_collected == GCNode::s_num_old_generations);
-	}
-    }
 }
 
 void GCManager::adjustThreshold(size_t bytes_needed)
 {
     size_t MinBFree = size_t(s_min_threshold * MinFreeFrac);
     size_t BNeeded = Heap::bytesAllocated() + bytes_needed + MinBFree;
-    double byte_occup = double(BNeeded) / s_threshold;
-    if (byte_occup > 1.0 && BNeeded < s_max_threshold)
-	s_threshold = BNeeded;
-    if (byte_occup > BGrowFrac) {
+    double occup = double(BNeeded) / s_threshold;
+    if (occup > 1.0)
+	s_threshold = min(BNeeded, s_max_threshold);
+    // This follows memory.c in 2.5.1, but should the following
+    // actually read 'else if'?
+    if (occup > BGrowFrac) {
 	size_t change
 	    = size_t(BGrowIncrMin + BGrowIncrFrac*s_threshold);
-	if (s_max_threshold - s_threshold >= change)
-	    s_threshold += change;
+	s_threshold = min(s_threshold + change, s_max_threshold);
     }
-    else if (byte_occup < BShrinkFrac) {
+    else if (occup < BShrinkFrac) {
 	s_threshold = size_t(s_threshold - BShrinkIncrMin
 			     - BShrinkIncrFrac * s_threshold);
 	if (s_threshold < BNeeded)
 	    s_threshold = min(BNeeded, s_max_threshold);
 	s_threshold = max(s_threshold, s_min_threshold);
     }
-    DEBUG_ADJUST_HEAP_PRINT(byte_occup);
+#ifdef DEBUG_ADJUST_HEAP
+    if (s_os) {
+	*s_os << "Bytes needed: " << BNeeded
+	      << ", Occupancy: " << fixed << setprecision(0) << 100.0*occup
+	      << "%, New threshold: " << s_threshold
+	      << endl;
+    }
+#endif
 }
 
 bool GCManager::cue(size_t bytes_wanted, bool force)
@@ -234,54 +196,106 @@ bool GCManager::cue(size_t bytes_wanted, bool force)
 // Put this prototype here temporarily!
 bool RunFinalizers();
 
-void GCManager::gc(size_t bytes_wanted, bool /*ignored for the mo*/)
+void GCManager::gc(size_t bytes_wanted, bool full)
 {
-    bool first = true;
+    static bool running_finalizers = false;
+    // Prevent recursion:
+    if (running_finalizers) return;
+    gcGenController(bytes_wanted, full);
+    /* Run any eligible finalizers.  The return result of
+       RunFinalizers is TRUE if any finalizers are actually run.
+       There is a small chance that running finalizers here may
+       chew up enough memory to make another immediate collection
+       necessary.  If so, we do another collection. */
+    running_finalizers = true;
+    bool any_finalizers_run = RunFinalizers();
+    running_finalizers = false;
+    if (any_finalizers_run &&
+	Heap::bytesAllocated() + bytes_wanted >= s_threshold)
+	gcGenController(bytes_wanted, full);
+}
+
+void GCManager::gcGenController(size_t bytes_wanted, bool full)
+{
+    static unsigned int level = 0;
+    if (full) level = GCNode::s_num_old_generations;
+    level = genRota(level);
+
+    unsigned int gens_collected;
+
+    gc_count++;
+
+    s_max_bytes = max(s_max_bytes, Heap::bytesAllocated());
+    s_max_nodes = max(s_max_nodes, GCNode::numNodes());
+
+    /*BEGIN_SUSPEND_INTERRUPTS { */
+    if (s_pre_gc) (*s_pre_gc)();
+
     bool ok = false;
     while (!ok) {
 	ok = true;
-	gc_count++;
+	GCNode::gc(level);
+	gens_collected = level;
 
-	s_max_bytes = max(s_max_bytes, Heap::bytesAllocated());
-
-	/*BEGIN_SUSPEND_INTERRUPTS*/ {
-	    /* gc_start_timing();*/
-	    RunGenCollect(bytes_wanted);
-	    /*gc_end_timing();*/
-	} /*END_SUSPEND_INTERRUPTS*/;
-
-	if (gc_reporting) {
-	    double bytes = Heap::bytesAllocated();
-	    double bfrac = (100.0 * bytes) / s_threshold;
-	    bytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
-	    REprintf("%.1f Mbytes used (%d%%)\n",
-		     bytes, int(bfrac + 0.5));
+	/* update heap statistics */
+	if (level < GCNode::s_num_old_generations) {
+	    if (Heap::bytesAllocated() + bytes_wanted
+		> (1.0 - MinFreeFrac)*s_threshold) {
+		level++;
+		if (Heap::bytesAllocated() + bytes_wanted
+		    >= s_threshold)
+		    ok = false;
+	    }
+	    else level = 0;
 	}
+	else level = 0;
+    }
 
-	if (first) {
-	    first = false;
-	    /* Run any eligible finalizers.  The return result of
-	       RunFinalizers is TRUE if any finalizers are actually run.
-	       There is a small chance that running finalizers here may
-	       chew up enough memory to make another immediate collection
-	       necessary.  If so, we jump back to the beginning and run
-	       the collection, but on this second pass we do not run
-	       finalizers. */
-	    if (RunFinalizers() &&
-		Heap::bytesAllocated() + bytes_wanted >= s_threshold)
-		ok = false;
-	}
+    gen_gc_counts[gens_collected]++;
+
+    if (gens_collected == GCNode::s_num_old_generations) {
+	/**** do some adjustment for intermediate collections? */
+	adjustThreshold(bytes_wanted);
+    }
+    if (s_post_gc) (*s_post_gc)();
+    /* } END_SUSPEND_INTERRUPTS;*/
+
+    if (s_os) {
+	*s_os << "Garbage collection " << gc_count
+	      << " = " << gen_gc_counts[0];
+	for (unsigned int i = 0; i < GCNode::s_num_old_generations; ++i)
+	    *s_os << "+" << gen_gc_counts[i + 1];
+	*s_os << " (level " << gens_collected << ") ... ";
+	DEBUG_GC_SUMMARY(gens_collected == GCNode::s_num_old_generations);
+	double bytes = Heap::bytesAllocated();
+	double bfrac = (100.0 * bytes) / s_threshold;
+	double mbytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
+	*s_os << '\n' << setprecision(1) << mbytes << " Mbytes used ("
+	      << int(bfrac + 0.5) << "%)\n";
     }
 }
 
-void GCManager::initialize(size_t initial_threshold)
+void GCManager::initialize(size_t initial_threshold,
+			   void (*pre_gc)(),
+			   void (*post_gc)())
 {
     GCNode::initialize();
     s_min_threshold = s_threshold = initial_threshold;
+    s_pre_gc = pre_gc;
+    s_post_gc = post_gc;
+    gc_count = 0;
+    for (unsigned int i = 0; i <= GCNode::s_num_old_generations; ++i)
+	gen_gc_counts[i] = 0;
     Heap::setGCCuer(cue);
 }
 
-void GCManager::setMaxThreshold(size_t newmax)
+void GCManager::resetMaxTallies()
 {
-    s_max_threshold = max(s_max_threshold, newmax);
+    s_max_bytes = Heap::bytesAllocated();
+    s_max_nodes = GCNode::numNodes();
+}
+
+void GCManager::setMaxTrigger(size_t newmax)
+{
+    s_max_threshold = max(s_threshold, newmax);
 }

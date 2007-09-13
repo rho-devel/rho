@@ -30,6 +30,7 @@
 #define GCMANAGER_HPP
 
 #include <cstddef>
+#include <iosfwd>
 
 namespace CXXR {
     /** Class for managing garbage collection.
@@ -47,7 +48,8 @@ namespace CXXR {
      * default, the maximum is set to
      * <tt>numeric_limits<size_t>::max()</tt>.
      */
-    struct GCManager {
+    class GCManager {
+    public:
 	/** Adjust the garbage collection threshold in the light of
 	 *  current allocations, and the space demand currently being
 	 *  addressed.
@@ -78,8 +80,19 @@ namespace CXXR {
 	 *
 	 * @param initial_threshold  Initial value for the collection
 	 *          threshold.
+	 *
+	 * @param pre_gc If specified, this function will be called
+	 *          just before garbage collection begins, e.g. to
+	 *          carry out timing.  It must not itself give rise to
+	 *          a garbage collection.
+	 *
+	 * @param post_gc If specified, this function will be called
+	 *          just before garbage collection begins.  It 
+	 *          must not itself give rise to a garbage collection.
 	 */
-	static void initialize(size_t initial_threshold);
+	static void initialize(size_t initial_threshold,
+			       void (*pre_gc)() = 0,
+			       void (*post_gc)() = 0);
 
 	/**
 	 * @return true iff garbage collection torture is enabled.
@@ -98,14 +111,54 @@ namespace CXXR {
 	 */
 	static size_t maxBytes() {return s_max_bytes;}
 
-	/** Set maximum permitted value for the collection threshold.
+	/**
+	 * @return the maximum number of GCNodes allocated (up to the time of
+	 *         the most recent garbage collection.)
+	 *
+	 * @note This method is provided for compatibility with CR.
+	 * The number of GCNodes doesn't directly affect the operation
+	 * of garbage collection in CXXR.
+	 */
+	static size_t maxNodes() {return s_max_nodes;}
+
+	/** Reset the tallies of the maximum numbers of bytes and
+	 *  GCNodes.
+	 *
+	 * This method resets the record of the maximum number of
+	 * bytes allocated to the current number of bytes allocated,
+	 * and similarly for the maximum number of GCNodes.
+	 */
+	static void resetMaxTallies();
+
+	/** Set maximum permitted value for the collection trigger level.
 	 *
 	 * @param newmax The new maximum value required.  An attempt
 	 *          to set this maximum value to less than the current
 	 *          value of the actual threshold will be silently
 	 *          ignored.
+	 *
+	 * @note This is provided for compatibility with CR.  Beware
+	 * that setting a maximum trigger level will not prevent the
+	 * CXXR interpreter from growing above the specified level: it
+	 * will merely cause the garbage collector to thrash when it
+	 * does.
 	 */
-	static void setMaxThreshold(size_t newmax);
+	static void setMaxTrigger(size_t newmax);
+
+	/**
+	 * @return the maximum permitted value for the collection
+	 * trigger level (as set by setMaxTrigger() ), or
+	 * <tt>numeric_limits<size_t>::max()</tt> if no maximum has
+	 * been set.
+	 */
+	static size_t maxTriggerLevel() {return s_max_threshold;}
+
+	/** Set the output stream for garbage collection reporting.
+	 *
+	 * @param os Pointer to the output stream to which reporting
+	 *          should be directed.  If NULL, suppresses reporting.
+	 */
+	static void setReporting(std::ostream* os = 0) {s_os = os;}
 
 	/** Turn garbage collection torture on or off.  If enabled,
 	 * every time that CXXR::Heap indicates that it is about to
@@ -116,20 +169,39 @@ namespace CXXR {
 	 */
 	static void torture(bool on) {s_tortured = on;}
 
-	// To be private in future:
-
+	/**
+	 * @return The current threshold level.  When CXXR::Heap
+	 * indicates that it is on the point of requesting additional
+	 * memory from the operating system, garbage collection will
+	 * be triggered if the number of bytes currently allocated via
+	 * CXXR::Heap is at least as great as this level.
+	 */
+	static size_t triggerLevel() {return s_threshold;}
+    private:
 	static size_t s_threshold;
 	static size_t s_max_threshold;
 	static size_t s_min_threshold;
 
 	static size_t s_max_bytes;
+	static size_t s_max_nodes;
 
 	static bool s_tortured;  // If this is true, every cue from
 				 // CXXR::Heap leads to a garbage
 				 // collection.
+	static std::ostream* s_os;  // Pointer to output stream for GC
+				    // reporting, or NULL.
 
 	// Callback for CXXR::Heap to cue a garbage collection:
 	static bool cue(size_t bytes_wanted, bool force);
+
+	// Callbacks e.g. for timing:
+	static void (*s_pre_gc)();
+	static void (*s_post_gc)();
+
+	// Detailed control of the garbage collection, in particular
+	// choosing how many generations to collect, is carried out
+	// here.
+	static void gcGenController(size_t bytes_wanted, bool full);
     };
 }  // namespace CXXR
 

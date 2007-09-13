@@ -1,0 +1,392 @@
+GCNode::initialize()
+ Allocating 34825 bytes
+ Allocating 186086 bytes
+ Allocating 48899 bytes
+ Allocating 45019 bytes
+ Allocating 18500 bytes
+ Allocating 324351 bytes
+ Allocating 218592 bytes
+ Allocating 52733 bytes
+ Allocating 256188 bytes
+GC started: Bytes allocated 929005; threshold 1000000
+GCNode::gc(0)
+ Released 52733 bytes
+ Released 218592 bytes
+GC finished: Bytes allocated 657680; threshold 1000000
+Garbage collection 1 = 1+0+0 (level 0) ... 
+0.7 Mbytes used (66%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 92765 bytes
+GC started: Bytes allocated 913868; threshold 1000000
+GCNode::gc(1)
+ Released 256188 bytes
+ Released 324351 bytes
+GC finished: Bytes allocated 333329; threshold 1000000
+Garbage collection 2 = 1+1+0 (level 1) ... 
+0.4 Mbytes used (33%)
+RunFinalizers():
+ Allocating 24474 bytes
+RunFinalizers returned true
+ Allocating 17505 bytes
+ Allocating 90602 bytes
+ Allocating 66453 bytes
+ Allocating 390946 bytes
+GC started: Bytes allocated 625128; threshold 1000000
+GCNode::gc(0)
+ Released 66453 bytes
+ Released 90602 bytes
+GC finished: Bytes allocated 468073; threshold 1000000
+Garbage collection 3 = 2+1+0 (level 0) ... 
+0.5 Mbytes used (47%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 283031 bytes
+GC started: Bytes allocated 859019; threshold 1000000
+GCNode::gc(1)
+ Released 390946 bytes
+ Released 17505 bytes
+ Released 92765 bytes
+ Released 24474 bytes
+ Released 18500 bytes
+GC finished: Bytes allocated 314829; threshold 1000000
+Garbage collection 4 = 2+2+0 (level 1) ... 
+0.4 Mbytes used (31%)
+RunFinalizers():
+ Allocating 926777 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 1241606; threshold 1000000
+GCNode::gc(0)
+ Released 926777 bytes
+GC finished: Bytes allocated 314829; threshold 1000000
+Garbage collection 5 = 3+2+0 (level 0) ... 
+0.4 Mbytes used (31%)
+ Allocating 408366 bytes
+GC started: Bytes allocated 597860; threshold 1000000
+GCNode::gc(0)
+ Released 283031 bytes
+ Released 45019 bytes
+ Released 48899 bytes
+GC finished: Bytes allocated 220911; threshold 1000000
+Garbage collection 6 = 4+2+0 (level 0) ... 
+0.3 Mbytes used (22%)
+RunFinalizers():
+ Allocating 761041 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 981952; threshold 1000000
+GCNode::gc(0)
+GCNode::gc(1)
+GCNode::gc(2)
+Bytes needed: 1590318, Occupancy: 159%, New threshold: 2309833
+GC finished: Bytes allocated 981952; threshold 2309833
+Garbage collection 7 = 4+2+1 (level 2) ... 
+1.0 Mbytes used (43%)
+ Allocating 243457 bytes
+ Allocating 90023 bytes
+ Allocating 129143 bytes
+ Allocating 141212 bytes
+ Allocating 5520 bytes
+ Allocating 245846 bytes
+ Allocating 51920 bytes
+ Allocating 128207 bytes
+GC started: Bytes allocated 2297439; threshold 2309833
+GCNode::gc(0)
+ Released 51920 bytes
+GCNode::gc(1)
+ Released 245846 bytes
+ Released 5520 bytes
+ Released 141212 bytes
+GC finished: Bytes allocated 1852941; threshold 2309833
+Garbage collection 8 = 4+3+1 (level 1) ... 
+1.8 Mbytes used (80%)
+RunFinalizers():
+ Allocating 630598 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 2483539; threshold 2309833
+GCNode::gc(2)
+ Released 630598 bytes
+ Released 129143 bytes
+ Released 90023 bytes
+Bytes needed: 1961982, Occupancy: 85%, New threshold: 3065324
+GC finished: Bytes allocated 1633775; threshold 3065324
+Garbage collection 9 = 4+3+2 (level 2) ... 
+1.6 Mbytes used (53%)
+# Checked in detail up to here -----------------------------
+ Allocating 42706 bytes
+ Allocating 16888 bytes
+ Allocating 532552 bytes
+ Allocating 10400 bytes
+ Allocating 128492 bytes
+ Allocating 490551 bytes
+ Allocating 329829 bytes
+GC started: Bytes allocated 2983571; threshold 3065324
+GCNode::gc(0)
+ Released 490551 bytes
+ Released 128492 bytes
+GC finished: Bytes allocated 2364528; threshold 3065324
+Garbage collection 10 = 5+3+2 (level 0) ... 
+2.3 Mbytes used (77%)
+RunFinalizers():
+ Allocating 526495 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 2891023; threshold 3065324
+GCNode::gc(1)
+ Released 526495 bytes
+ Released 10400 bytes
+ Released 532552 bytes
+ Released 16888 bytes
+ Released 42706 bytes
+ Released 128207 bytes
+ Released 243457 bytes
+ Released 408366 bytes
+GC finished: Bytes allocated 981952; threshold 3065324
+Garbage collection 11 = 5+4+2 (level 1) ... 
+1.0 Mbytes used (32%)
+ Allocating 782174 bytes
+ Allocating 156307 bytes
+ Allocating 552620 bytes
+ Allocating 286861 bytes
+GC started: Bytes allocated 2802882; threshold 3065324
+GCNode::gc(0)
+GCNode::gc(1)
+GCNode::gc(2)
+Bytes needed: 3289743, Occupancy: 107%, New threshold: 4094230
+GC finished: Bytes allocated 2802882; threshold 4094230
+Garbage collection 12 = 5+4+3 (level 2) ... 
+2.7 Mbytes used (68%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 123326 bytes
+ Allocating 196055 bytes
+ Allocating 54821 bytes
+ Allocating 133677 bytes
+ Allocating 80776 bytes
+ Allocating 126370 bytes
+ Allocating 647406 bytes
+GC started: Bytes allocated 3804768; threshold 4094230
+GCNode::gc(0)
+ Released 126370 bytes
+ Released 80776 bytes
+ Released 133677 bytes
+ Released 54821 bytes
+GC finished: Bytes allocated 3409124; threshold 4094230
+Garbage collection 13 = 6+4+3 (level 0) ... 
+3.3 Mbytes used (83%)
+RunFinalizers():
+ Allocating 35850 bytes
+RunFinalizers returned true
+ Allocating 65436 bytes
+GC started: Bytes allocated 4092380; threshold 4094230
+GCNode::gc(1)
+ Released 647406 bytes
+ Released 35850 bytes
+ Released 196055 bytes
+ Released 123326 bytes
+ Released 286861 bytes
+GC finished: Bytes allocated 2802882; threshold 4094230
+Garbage collection 14 = 6+5+3 (level 1) ... 
+2.7 Mbytes used (68%)
+RunFinalizers():
+ Allocating 223160 bytes
+RunFinalizers returned true
+ Allocating 207664 bytes
+ Allocating 74833 bytes
+ Allocating 359184 bytes
+ Allocating 164148 bytes
+ Allocating 25549 bytes
+ Allocating 37458 bytes
+ Allocating 221528 bytes
+GC started: Bytes allocated 3960314; threshold 4094230
+GCNode::gc(0)
+ Released 37458 bytes
+ Released 25549 bytes
+ Released 164148 bytes
+ Released 359184 bytes
+ Released 74833 bytes
+ Released 207664 bytes
+ Released 65436 bytes
+GC finished: Bytes allocated 3026042; threshold 4094230
+Garbage collection 15 = 7+5+3 (level 0) ... 
+2.9 Mbytes used (74%)
+RunFinalizers():
+ Allocating 524396 bytes
+RunFinalizers returned true
+ Allocating 75180 bytes
+ Allocating 8901 bytes
+ Allocating 105988 bytes
+ Allocating 83921 bytes
+ Allocating 30472 bytes
+ Allocating 164396 bytes
+GC started: Bytes allocated 4076428; threshold 4094230
+GCNode::gc(0)
+GCNode::gc(1)
+ Released 30472 bytes
+ Released 83921 bytes
+ Released 105988 bytes
+ Released 8901 bytes
+ Released 75180 bytes
+GC finished: Bytes allocated 3771966; threshold 4094230
+Garbage collection 16 = 7+6+3 (level 1) ... 
+3.6 Mbytes used (92%)
+RunFinalizers():
+ Allocating 189738 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 3961704; threshold 4094230
+GCNode::gc(2)
+Bytes needed: 4326100, Occupancy: 106%, New threshold: 5182405
+GC finished: Bytes allocated 3961704; threshold 5182405
+Garbage collection 17 = 7+6+4 (level 2) ... 
+3.8 Mbytes used (76%)
+ Allocating 145758 bytes
+ Allocating 306657 bytes
+ Allocating 10205 bytes
+ Allocating 16648 bytes
+ Allocating 382568 bytes
+ Allocating 25325 bytes
+ Allocating 88920 bytes
+ Allocating 167887 bytes
+GC started: Bytes allocated 5102181; threshold 5182405
+GCNode::gc(0)
+ Released 88920 bytes
+ Released 25325 bytes
+ Released 382568 bytes
+ Released 16648 bytes
+GC finished: Bytes allocated 4588720; threshold 5182405
+Garbage collection 18 = 8+6+4 (level 0) ... 
+4.4 Mbytes used (89%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 48159 bytes
+ Allocating 235883 bytes
+ Allocating 161024 bytes
+GC started: Bytes allocated 5040649; threshold 5182405
+GCNode::gc(1)
+ Released 235883 bytes
+ Released 48159 bytes
+ Released 167887 bytes
+ Released 10205 bytes
+ Released 306657 bytes
+ Released 145758 bytes
+ Released 164396 bytes
+ Released 189738 bytes
+ Released 221528 bytes
+GC finished: Bytes allocated 3550438; threshold 5182405
+Garbage collection 19 = 8+7+4 (level 1) ... 
+3.4 Mbytes used (69%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 257300 bytes
+ Allocating 117237 bytes
+ Allocating 175173 bytes
+ Allocating 354854 bytes
+ Allocating 19565 bytes
+ Allocating 454273 bytes
+ Allocating 414175 bytes
+GC started: Bytes allocated 5089864; threshold 5182405
+GCNode::gc(0)
+ Released 454273 bytes
+ Released 19565 bytes
+ Released 354854 bytes
+ Released 175173 bytes
+GC finished: Bytes allocated 4085999; threshold 5182405
+Garbage collection 20 = 9+7+4 (level 0) ... 
+3.9 Mbytes used (79%)
+RunFinalizers():
+ Allocating 7682 bytes
+RunFinalizers returned true
+ Allocating 13440 bytes
+ Allocating 75829 bytes
+ Allocating 191845 bytes
+ Allocating 57597 bytes
+ Allocating 199574 bytes
+ Allocating 244726 bytes
+GC started: Bytes allocated 5046141; threshold 5182405
+GCNode::gc(1)
+ Released 199574 bytes
+ Released 57597 bytes
+ Released 191845 bytes
+ Released 75829 bytes
+ Released 13440 bytes
+ Released 414175 bytes
+ Released 7682 bytes
+ Released 117237 bytes
+ Released 257300 bytes
+GC finished: Bytes allocated 3711462; threshold 5182405
+Garbage collection 21 = 9+8+4 (level 1) ... 
+3.6 Mbytes used (72%)
+RunFinalizers():
+ Allocating 704448 bytes
+RunFinalizers returned true
+ Allocating 376262 bytes
+ Allocating 62354 bytes
+ Allocating 415129 bytes
+GC started: Bytes allocated 5099252; threshold 5182405
+GCNode::gc(0)
+ Released 62354 bytes
+GCNode::gc(1)
+ Released 376262 bytes
+ Released 244726 bytes
+ Released 704448 bytes
+ Released 161024 bytes
+ Released 524396 bytes
+ Released 223160 bytes
+ Released 552620 bytes
+GC finished: Bytes allocated 2250262; threshold 5182405
+Garbage collection 22 = 9+9+4 (level 1) ... 
+2.2 Mbytes used (43%)
+RunFinalizers():
+ Allocating 1298278 bytes
+RunFinalizers returned true
+ Allocating 10236 bytes
+ Allocating 589276 bytes
+ Allocating 130184 bytes
+ Allocating 347215 bytes
+ Allocating 285371 bytes
+GC started: Bytes allocated 5040580; threshold 5182405
+GCNode::gc(0)
+ Released 347215 bytes
+GC finished: Bytes allocated 4693365; threshold 5182405
+Garbage collection 23 = 10+9+4 (level 0) ... 
+4.5 Mbytes used (91%)
+RunFinalizers():
+ Allocating 210367 bytes
+RunFinalizers returned true
+GC started: Bytes allocated 4903732; threshold 5182405
+GCNode::gc(1)
+GCNode::gc(2)
+ Released 210367 bytes
+ Released 130184 bytes
+Bytes needed: 5048552, Occupancy: 97%, New threshold: 6081525
+GC finished: Bytes allocated 4563181; threshold 6081525
+Garbage collection 24 = 10+9+5 (level 2) ... 
+4.4 Mbytes used (75%)
+ Allocating 54957 bytes
+ Allocating 474000 bytes
+ Allocating 400640 bytes
+ Allocating 130704 bytes
+ Allocating 509614 bytes
+GC started: Bytes allocated 5908853; threshold 6081525
+GCNode::gc(0)
+ Released 130704 bytes
+ Released 400640 bytes
+ Released 474000 bytes
+ Released 54957 bytes
+ Released 285371 bytes
+ Released 589276 bytes
+ Released 10236 bytes
+ Released 415129 bytes
+ Released 1298278 bytes
+ Released 156307 bytes
+ Released 782174 bytes
+GC finished: Bytes allocated 1311781; threshold 6081525
+Garbage collection 25 = 11+9+5 (level 0) ... 
+1.3 Mbytes used (22%)
+RunFinalizers():
+RunFinalizers returned false
+ Allocating 154689 bytes
+ Allocating 39768 bytes
+ Allocating 111262 bytes
+ Allocating 56053 bytes
+ Allocating 591537 bytes
+ Allocating 369276 bytes
+ Allocating 1 bytes
