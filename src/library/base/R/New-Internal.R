@@ -131,10 +131,10 @@ format.info <- function(x, digits=NULL, nsmall=0)
 gc <- function(verbose = getOption("verbose"),	reset=FALSE)
 {
     res <- .Internal(gc(verbose, reset))
-    res <- matrix(res, 4, 2,
-	          dimnames = list(c("used", "gc trigger", "limit", "max used"),
+    res <- matrix(res, 3, 2,
+	          dimnames = list(c("used", "gc trigger", "max used"),
                                   c("Nodes", "Mbytes")))
-    if(all(is.na(res[3, ]))) res[-3, ] else res
+    res
 }
 gcinfo <- function(verbose) .Internal(gcinfo(verbose))
 gctorture <- function(on=TRUE) invisible(.Internal(gctorture(on)))

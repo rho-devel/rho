@@ -264,7 +264,8 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 	double bytes = Heap::bytesAllocated();
 	double bfrac = (100.0 * bytes) / s_threshold;
 	double mbytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
-	*s_os << '\n' << setprecision(1) << mbytes << " Mbytes used ("
+	*s_os << '\n' << fixed << setprecision(1)
+	      << mbytes << " Mbytes used ("
 	      << int(bfrac + 0.5) << "%)\n";
     }
 }

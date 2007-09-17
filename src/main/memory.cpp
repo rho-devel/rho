@@ -930,18 +930,14 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    PROTECT(value = allocVector(REALSXP, 8));
+    PROTECT(value = allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
-    REAL(value)[1] = NA_INTEGER;
-    REAL(value)[2] = NA_INTEGER;
-    REAL(value)[3] = GCManager::maxNodes();
+    REAL(value)[1] = NA_REAL;
+    REAL(value)[2] = GCManager::maxNodes();
     /* next four are in 0.1MB, rounded up */
-    REAL(value)[4] = 0.1*ceil(10. * Heap::bytesAllocated()/Mega);
-    REAL(value)[5] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
-    size_t maxtrig = GCManager::maxTriggerLevel();
-    REAL(value)[6] = (maxtrig < numeric_limits<size_t>::max()
-		      ? 0.1*ceil(10. * maxtrig/Mega) : NA_REAL);
-    REAL(value)[7] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
+    REAL(value)[3] = 0.1*ceil(10. * Heap::bytesAllocated()/Mega);
+    REAL(value)[4] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
+    REAL(value)[5] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
     if (reset_max) GCManager::resetMaxTallies();
     UNPROTECT(1);
     return value;
@@ -1458,13 +1454,9 @@ SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     nsize = asInteger(CAR(args));
     vsize = asInteger(CADR(args));
-    if(nsize != NA_INTEGER) R_SetMaxNSize(R_size_t(nsize));
-    if(vsize != NA_INTEGER) R_SetMaxVSize(R_size_t(vsize));
     PROTECT(ans = allocVector(INTSXP, 2));
-    tmp = R_GetMaxNSize();
-    INTEGER(ans)[0] = (tmp < INT_MAX) ? tmp : NA_INTEGER;
-    tmp = R_GetMaxVSize();
-    INTEGER(ans)[1] = (tmp < INT_MAX) ? tmp : NA_INTEGER;
+    INTEGER(ans)[0] = NA_INTEGER;
+    INTEGER(ans)[1] = NA_INTEGER;
     UNPROTECT(1);
     return ans;
 }

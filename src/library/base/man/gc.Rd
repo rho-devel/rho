@@ -8,7 +8,7 @@ gcinfo(verbose)
 \alias{gcinfo}
 \arguments{
   \item{verbose}{logical; if \code{TRUE}, the garbage collection prints
-    statistics about nodes and the total memory allocated via CXXR's
+    statistics about the total memory allocated via CXXR's
     internal heap.}
   \item{reset}{logical; if \code{TRUE} the values for maximum space used
     are reset to the current values.}
@@ -48,10 +48,6 @@ gcinfo(verbose)
   trigger"}.  Since CXXR triggers exclusively on the number of bytes
   and not on the number of nodes, the first entry in the second row is
   always NA.
-
-  If a maximum has been set for the trigger level, a third row is
-  printed giving the current limit.  Again, the first entry of this row
-  is always NA. 
 
   The final row shows the maximum node count and space used since the
   last call to \code{gc(reset=TRUE)} (or since \R started).

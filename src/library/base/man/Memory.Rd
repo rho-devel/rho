@@ -1,7 +1,7 @@
 \name{Memory}
 \alias{Memory}
 \alias{mem.limits}
-\title{Memory Available for Data Storage}
+\title{Memory Available for Data Storage (adapted for CXXR)}
 \description{
   Use command line options to control the memory available for \R.
 }
@@ -48,45 +48,33 @@ mem.limits(nsize = NA, vsize = NA)
   To understand the options, one needs to know that CXXR allocates
   most of its memory via an internal heap implemented by class
   CXXR::Heap (which in turn gets its memory using C++'s \code{::operator
-  new}).  The amount of memory allocated via this heap is one of the
-  factors that is used to decide when to carry out garbage collections.
+  new}).  The amount of memory allocated via this heap is used to
+  decide when to carry out garbage collections.
 
-  However, reflecting practice within CR, the CXXR garbage collector
-  also keeps track of the number of 'nodes', and uses this as another
-  factor to decide the timing of garbage collections.  In CXXR, nodes
-  are objects of a type derived from CXXR::GCNode.  Lisp programmers
-  can compare them to cons cells; others may think of them as the
-  building blocks of the language itself, parse trees, etc.  (Note
-  that within CXXR, space occupied by nodes itself comes from
-  CXXR::Heap, and - unlike CR - is \emph{included} within the heap
-  allocation byte counts.)
+  The \option{--*-nsize} and \option(--max-*} options are ignored in
+  CXXR.  The \option{--min-vsize} options is described below.  All
+  these options must be integers or integers followed by 
+  \code{G}, \code{M}, \code{K}, or \code{k} meaning \code{Giga}
+  (\eqn{2^{30} = 1073741824}) \emph{Mega} (\eqn{2^{20} = 1048576}),
+  (computer) \emph{Kilo} (\eqn{2^{10} = 1024}), or regular \emph{kilo}
+  (1000). 
 
-  The \option{--*-nsize} options can be used to specify parameters for
-  the number of nodes and the \option{--*-vsize} options to specify
-  parameters for the total heap allocation in bytes.  Both options must
-  be integers or integers followed by \code{G}, \code{M}, \code{K}, or
-  \code{k} meaning \code{Giga} (\eqn{2^{30} = 1073741824}) \emph{Mega}
-  (\eqn{2^{20} = 1048576}), (computer) \emph{Kilo} (\eqn{2^{10} = 1024}), or
-  regular \emph{kilo} (1000).
+  The \option{--min-vsize} option sets the minimal value for the heap
+  size at which garbage collection will be triggered.  The specified
+  value is also the initial trigger value, but thereafter \R will
+  raise or lower the trigger value depending on usage, but never below
+  this initial value.  The default value is currently a minimum
+  trigger level of 6MB of heap allocation.
 
-  The \option{--min-*} options set the minimal sizes for the number of
-  nodes and for the heap allocation.  These values are also the initial
-  values, but thereafter \R will grow or shrink the areas depending on
-  usage, but never exceeding the limits set by the \option{--max-*}
-  options nor decreasing below the initial values.
-
-  The default values are currently minima of 350k nodes,
-  6MB of heap allocation and no maxima (other than machine resources).
-  The maxima can be changed during an \R session by calling
-  \code{mem.limits}. (If this is called with the default values, it
-  reports the current settings.) 
+  In CR, maximum trigger levels can be changed during an \R session by
+  calling \code{mem.limits}, but this command has no effect in
+  CXXR. (If this is called with the default values, it reports the
+  current settings.)  
 
   You can find out the current memory consumption (the heap allocation
   and number of nodes) by typing \code{\link{gc}()} at the
   \R prompt.  Note that following \code{\link{gcinfo}(TRUE)}, automatic
-  garbage collection always prints memory use statistics.  Maxima will
-  never be reduced below the current values for triggering garbage
-  collection, and attempts to do so will be silently ignored.
+  garbage collection always prints memory use statistics.
 
   The command-line option \option{--max-ppsize} controls the maximum
   size of the pointer protection stack.  This defaults to 50000, but can
@@ -99,7 +87,7 @@ mem.limits(nsize = NA, vsize = NA)
 
 \value{
   \code{mem.limits()} returns an integer vector giving the current
-  settings of the maxima, possibly \code{NA}.
+  settings of the maxima; in CXXR these are always \code{NA}.
 }
 
 \seealso{
@@ -120,7 +108,7 @@ mem.limits(nsize = NA, vsize = NA)
 
 \examples{
 # Start R with 10MB of heap memory and 500k nodes, limit to
-# 100Mb and 1M nodes
+# 100Mb and 1M nodes.  (In CXXR only the first option has any effect)
 \dontrun{
 ## Unix
 R --min-vsize=10M --max-vsize=100M --min-nsize=500k --max-nsize=1M
