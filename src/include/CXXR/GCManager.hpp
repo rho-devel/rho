@@ -43,10 +43,9 @@ namespace CXXR {
      * In the current implementation of GCManager, when cued by CXXR
      * as above, a garbage collection will be carried out if the
      * number of bytes currently allocated via CXXR::Heap is at least
-     * as great as a threshold value.  This threshold values varies
-     * during the run, subject to a user-specifiable maximum; by
-     * default, the maximum is set to
-     * <tt>numeric_limits<size_t>::max()</tt>.
+     * as great as a threshold value.  This threshold value varies
+     * during the run, subject to a minimum value specified in the
+     * <tt>initialize</tt> method.
      */
     class GCManager {
     public:
@@ -74,7 +73,7 @@ namespace CXXR {
 
 	/** Initialize static members.
 	 *
-	 * This method must be called before any GCNodes are created.
+	 * This method must be called before any GCNode objects are created.
 	 * If called more than once in a single program run, the
 	 * second and subsequent calls do nothing.
 	 *
@@ -106,21 +105,21 @@ namespace CXXR {
 	static size_t maxBytes() {return s_max_bytes;}
 
 	/**
-	 * @return the maximum number of GCNodes allocated (up to the time of
-	 *         the most recent garbage collection.)
+	 * @return the maximum number of GCNode objects allocated (up
+	 * to the time of the most recent garbage collection.)
 	 *
 	 * @note This method is provided for compatibility with CR.
-	 * The number of GCNodes doesn't directly affect the operation
+	 * The number of GCNode objects doesn't directly affect the operation
 	 * of garbage collection in CXXR.
 	 */
 	static size_t maxNodes() {return s_max_nodes;}
 
 	/** Reset the tallies of the maximum numbers of bytes and
-	 *  GCNodes.
+	 *  GCNode objects.
 	 *
 	 * This method resets the record of the maximum number of
 	 * bytes allocated to the current number of bytes allocated,
-	 * and similarly for the maximum number of GCNodes.
+	 * and similarly for the maximum number of GCNode objects.
 	 */
 	static void resetMaxTallies();
 
