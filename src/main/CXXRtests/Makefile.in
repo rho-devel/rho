@@ -10,13 +10,27 @@ maindir = ..
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
-sources_cxx = CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
+sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest Heaptest
+tests = CellPooltest Heaptest Allocatortest GCManagertest
 
 check : $(tests:=.ts)
+
+Allocatortest.o : Allocatortest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+
+Allocatortest_objs = Allocatortest.o Heap.o CellPool.o
+
+Allocatortest : $(Allocatortest_objs)
+	$(LINK.cc) -o $@ $(Allocatortest_objs)
+
+Allocatortest.ts : Allocatortest Allocatortest.save
+	valgrind -q --leak-check="yes" ./$< 10 12 > Allocatortest.out
+	diff Allocatortest.save Allocatortest.out
+	rm Allocatortest.out
+	touch $@
 
 CellPool.o : $(maindir)/CellPool.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -c -o $@ $<
