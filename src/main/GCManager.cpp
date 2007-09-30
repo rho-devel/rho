@@ -47,8 +47,9 @@ void (*GCManager::s_pre_gc)();
 void (*GCManager::s_post_gc)();
 
 namespace {
-    int gc_count;
-    int gen_gc_counts[GCNode::s_num_old_generations + 1];
+    const unsigned int num_old_generations = 2;
+    unsigned int gc_count;
+    unsigned int gen_gc_counts[num_old_generations + 1];
 
     /* Tuning Constants. Most of these could be made settable from R,
        within some reasonable constraints at least.  Since there are
@@ -102,7 +103,7 @@ namespace {
     const int BGrowIncrMin = 640000, BShrinkIncrMin = 0;
 #endif
 
-    const unsigned int collect_counts_max[GCNode::s_num_old_generations]
+    const unsigned int collect_counts_max[num_old_generations]
     = {20, 5};
 
     /** Choose how many generations to collect according to a rota.
@@ -125,11 +126,11 @@ namespace {
      */
     unsigned int genRota(unsigned int minlevel)
     {
-	static unsigned int collect_counts[GCNode::s_num_old_generations];
+	static unsigned int collect_counts[num_old_generations];
 	unsigned int level = minlevel;
 	for (unsigned int i = 0; i < level; ++i)
 	    collect_counts[i] = 0;
-	while (level < GCNode::s_num_old_generations
+	while (level < num_old_generations
 	       && ++collect_counts[level] > collect_counts_max[level]) {
 	    collect_counts[level] = 0;
 	    ++level;
@@ -144,7 +145,7 @@ namespace {
 	int gen, OldCount;
 	REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
 		 Heap::bytesAllocated()/sizeof(VECREC));
-	for (gen = 0, OldCount = 0; gen < GCNode::s_num_old_generations; gen++)
+	for (gen = 0, OldCount = 0; gen < num_old_generations; gen++)
 	    OldCount += GCNode::s_oldcount[gen];
 	REprintf(", %d", OldCount);
     }
@@ -212,7 +213,7 @@ void GCManager::gc(size_t bytes_wanted, bool full)
 void GCManager::gcGenController(size_t bytes_wanted, bool full)
 {
     static unsigned int level = 0;
-    if (full) level = GCNode::s_num_old_generations;
+    if (full) level = num_old_generations;
     level = genRota(level);
 
     unsigned int gens_collected;
@@ -232,7 +233,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 	gens_collected = level;
 
 	/* update heap statistics */
-	if (level < GCNode::s_num_old_generations) {
+	if (level < num_old_generations) {
 	    if (Heap::bytesAllocated() + bytes_wanted
 		> (1.0 - MinFreeFrac)*s_threshold) {
 		level++;
@@ -247,7 +248,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 
     gen_gc_counts[gens_collected]++;
 
-    if (gens_collected == GCNode::s_num_old_generations) {
+    if (gens_collected == num_old_generations) {
 	/**** do some adjustment for intermediate collections? */
 	adjustThreshold(bytes_wanted);
     }
@@ -257,10 +258,10 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
     if (s_os) {
 	*s_os << "Garbage collection " << gc_count
 	      << " = " << gen_gc_counts[0];
-	for (unsigned int i = 0; i < GCNode::s_num_old_generations; ++i)
+	for (unsigned int i = 0; i < num_old_generations; ++i)
 	    *s_os << "+" << gen_gc_counts[i + 1];
 	*s_os << " (level " << gens_collected << ") ... ";
-	DEBUG_GC_SUMMARY(gens_collected == GCNode::s_num_old_generations);
+	DEBUG_GC_SUMMARY(gens_collected == num_old_generations);
 	double bytes = Heap::bytesAllocated();
 	double bfrac = (100.0 * bytes) / s_threshold;
 	double mbytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
@@ -274,12 +275,12 @@ void GCManager::initialize(size_t initial_threshold,
 			   void (*pre_gc)(),
 			   void (*post_gc)())
 {
-    GCNode::initialize();
+    GCNode::initialize(num_old_generations);
     s_min_threshold = s_threshold = initial_threshold;
     s_pre_gc = pre_gc;
     s_post_gc = post_gc;
     gc_count = 0;
-    for (unsigned int i = 0; i <= GCNode::s_num_old_generations; ++i)
+    for (unsigned int i = 0; i <= num_old_generations; ++i)
 	gen_gc_counts[i] = 0;
     Heap::setGCCuer(cue);
 }

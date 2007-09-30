@@ -68,8 +68,10 @@ void RObject::visitChildren(const_visitor* v) const
     case STRSXP:
     case EXPRSXP:
     case VECSXP:
-	for (int i = 0; i < length(); i++)
-	    reinterpret_cast<SEXP*>(m_data)[i]->conductVisitor(v);
+	for (int i = 0; i < length(); i++) {
+	    const GCNode* node = reinterpret_cast<SEXP*>(m_data)[i];
+	    if (node) node->conductVisitor(v);
+	}
 	break;
     case ENVSXP:
 	if (frame()) frame()->conductVisitor(v);

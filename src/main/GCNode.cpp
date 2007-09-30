@@ -26,41 +26,113 @@
 
 #include "CXXR/GCNode.hpp"
 
+#include <iostream>
+
 using namespace std;
 using namespace CXXR;
 
-const unsigned int GCNode::s_num_old_generations;
-GCNode* GCNode::s_oldpeg[];
-unsigned int GCNode::s_oldcount[];
-#ifndef EXPEL_OLD_TO_NEW
-GCNode* GCNode::s_old_to_new_peg[];
-#endif
-GCNode* GCNode::s_newpeg;
+unsigned int GCNode::s_last_gen;
+vector<const GCNode*> GCNode::s_genpeg;
+vector<unsigned int> GCNode::s_gencount;
 unsigned int GCNode::s_num_nodes;
 
 GCNode::GCNode()
 {
-    link(s_newpeg->m_prev, this);
-    link(this, s_newpeg);
+    link(s_genpeg[0]->m_prev, this);
+    link(this, s_genpeg[0]);
+    ++s_gencount[0];
     ++s_num_nodes;
 }
 
 GCNode::~GCNode()
 {
     --s_num_nodes;
+    --s_gencount[m_gcgen];
     link(m_prev, m_next);
 }
 
-void GCNode::initialize()
+bool GCNode::check()
 {
-    if (!s_newpeg) {
-	s_newpeg = new GCNode(0);
-	for (unsigned int gen = 0; gen < s_num_old_generations; ++gen) {
-	    s_oldpeg[gen] = new GCNode(0);
-	    s_oldcount[gen] = 0;
-#ifndef EXPEL_OLD_TO_NEW
-	    s_old_to_new_peg[gen] = new GCNode(0);
-#endif
+    if (s_genpeg.size() == 0) {
+	cerr << "GCNode::check() : class not initialised.\n";
+	abort();
+    }
+    if (s_genpeg.size() != s_last_gen + 1
+	|| s_genpeg.size() != s_gencount.size()) {
+	cerr << "GCNode::check() : internal vectors inconsistently sized.\n";
+	abort();
+    }
+    // Check each generation:
+    {
+	unsigned int numnodes = 0;
+	for (unsigned int gen = 0; gen <= s_last_gen; ++gen) {
+	    unsigned int gct = 0;
+	    OldToNewChecker o2n(gen);
+	    for (const GCNode* node = s_genpeg[gen]->next();
+		 node != s_genpeg[gen]; node = node->next()) {
+		++gct;
+		if (node->isMarked()) {
+		    cerr << "GCNode::check() : marked node found.\n";
+		    abort();
+		}
+		if (node->m_gcgen != gen) {
+		    cerr << "GCNode::check() : "
+			"node has wrong generation for its list.\n";
+		    abort();
+		}
+		node->visitChildren(&o2n);
+	    }
+	    if (gct != s_gencount[gen]) {
+		cerr << "GCNode::check() : nodes in generation " << gen
+		     << " wrongly counted.\n";
+		abort();
+	    }
+	    numnodes += gct;
+	}
+	if (numnodes != s_num_nodes) {
+	    cerr << "GCNode::check() :"
+		"generation node totals inconsistent with grand total.\n";
+	    abort();
 	}
     }
+    return true;
+}
+
+void GCNode::initialize(unsigned int num_old_generations)
+{
+    if (s_genpeg.size() == 0) {
+	s_last_gen = num_old_generations;
+	s_genpeg.resize(num_old_generations + 1);
+	s_gencount.resize(num_old_generations + 1, 0);
+	for (unsigned int gen = 0; gen <= s_last_gen; ++gen)
+	    s_genpeg[gen] = new GCNode(0);
+    }
+}
+
+bool GCNode::Ager::operator()(const GCNode* node)
+{
+    if (node->m_gcgen >= m_mingen)
+	return false;
+    --s_gencount[node->m_gcgen];
+    node->m_gcgen = m_mingen;
+    s_genpeg[m_mingen]->splice(node);
+    ++s_gencount[node->m_gcgen];
+    return true;
+}
+
+bool GCNode::Marker::operator()(const GCNode* node)
+{
+    if (node->isMarked() || node->m_gcgen > m_maxgen)
+	return false;
+    node->mark();
+    return true;
+}
+
+bool GCNode::OldToNewChecker::operator()(const GCNode* node)
+{
+    if (node->m_gcgen < m_mingen) {
+	cerr << "GCNode: old to new reference found.\n";
+	abort();
+    }
+    return false;
 }

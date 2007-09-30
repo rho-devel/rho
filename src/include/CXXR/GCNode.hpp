@@ -26,7 +26,10 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
+#include <vector>
 #include "CXXR/Heap.hpp"
+
+#define EXPEL_OLD_TO_NEW
 
 /* Comment formerly in memory.c:
 
@@ -44,18 +47,7 @@
    pointer fields to the SEXPREC structure, which increases its size
    from 5 to 7 words. Other approaches are possible but don't seem
    worth pursuing for R.
-
-   There are two options for dealing with old-to-new pointers.  The
-   first option is to make sure they never occur by transferring all
-   referenced younger objects to the generation of the referrer when a
-   reference to a newer object is assigned to an older one.  This is
-   enabled by defining EXPEL_OLD_TO_NEW.  The second alternative is to
-   keep track of all nodes that may contain references to newer nodes
-   and to "age" the nodes they refer to at the beginning of each
-   collection.  This is the default.  The first option is simpler in
-   some ways, but will create more floating garbage and add a bit to
-   the execution time, though the difference is probably marginal on
-   both counts.*/
+*/
 
 namespace CXXR {
     /** Abstract base class for all objects managed by the garbage collector.
@@ -132,6 +124,16 @@ namespace CXXR {
 	    Heap::deallocate(p, bytes);
 	}
 
+	/** Integrity check.
+	 *
+	 * Aborts the program with an error message if the class is
+	 * found to be internally inconsistent.
+	 *
+	 * @return true, if it returns at all.  The return value is to
+	 * facilitate use with \c assert.
+	 */
+	static bool check();
+
 	/** Present this node to a visitor and, if the visitor so
 	 * wishes, conduct the visitor to the children of this node.
 	 * 
@@ -162,9 +164,12 @@ namespace CXXR {
 
 	/** Delete a GCNode
 	 *
-	 * @note Because the class destructors are not public, objects
-	 * of classes derived from GCNode must be deleted by calling
-	 * this method.
+	 * @note It is a design objective that it should be possible
+	 * to delete any GCNode object 'by hand', rather than leaving
+	 * it to the garbage collector: designers of derived classes
+	 * should bear this in mind.  Because the class destructors
+	 * are not public, such manual deletion will normally be
+	 * accomplished by calling this method.
 	 */
 	void destroy() const {delete this;}
 
@@ -179,8 +184,17 @@ namespace CXXR {
 	 * This method must be called before any GCNodes are created.
 	 * If called more than once in a single program run, the
 	 * second and subsequent calls do nothing.
+	 *
+	 * @param num_old_generations One fewer than the number of
+	 * generations into which GCNode objects are to be ranked.
 	 */
-	static void initialize();
+	static void initialize(unsigned int num_old_generations);
+
+	/**
+	 * @return The number of generations into which GCNode objects
+	 * are ranked by the garbage collector.
+	 */
+	static unsigned int numGenerations() {return s_genpeg.size();}
 
 	/**
 	 * @return the number of GCNodes currently in existence.
@@ -212,13 +226,75 @@ namespace CXXR {
 
 	// To be private in future:
 
-	static const unsigned int s_num_old_generations = 2;
-	static GCNode* s_oldpeg[s_num_old_generations];
-	static unsigned int s_oldcount[s_num_old_generations];
-#ifndef EXPEL_OLD_TO_NEW
-	static GCNode* s_old_to_new_peg[s_num_old_generations];
-#endif
-	static GCNode* s_newpeg;
+	/** Visitor class used to impose a minimum generation number.
+	 *
+	 * This visitory class is used to ensure that a node and its
+	 * descendants all have generation numbers that exceed a
+	 * specified minimum value, and is used in implementing the
+	 * write barrier in the generational garbage collector.
+	 */
+	class Ager : public const_visitor {
+	public:
+	    /**
+	     * @param min_gen The minimum generation number that the
+	     * visitor is to apply.
+	     */
+	    Ager(unsigned int min_gen)
+		: m_mingen(min_gen)
+	    {}
+
+	    // Virtual function of const_visitor:
+	    bool operator()(const GCNode* node);
+	private:
+	    unsigned int m_mingen;
+	};
+
+	/** Visitor class used to mark nodes.
+	 *
+	 * This visitor class is used during the mark phase of garbage
+	 * collection to ensure that a node and its descendants are
+	 * marked.  However, nodes with generation numbers exceeding a
+	 * specified level are left unmarked.  It is assumed that no
+	 * node references a node with a younger generation number.
+	 */
+	class Marker : public const_visitor {
+	public:
+	    /**
+	     * @param max_gen Nodes with a generation number exceeding
+	     *          this are not to be marked.
+	     */
+	    Marker(unsigned int max_gen)
+		: m_maxgen(max_gen)
+	    {}
+	    
+	    // Virtual function of const_visitor:
+	    bool operator()(const GCNode* node);
+	private:
+	    unsigned int m_maxgen;
+	};
+
+	/** Visitor class used to abort the program if old-to-new
+	 * references are found.
+	 */
+	class OldToNewChecker : public const_visitor {
+	public:
+	    /**
+	     * @param min_gen The minimum generation number that is
+	     * acceptable in visited nodes.
+	     */
+	    OldToNewChecker(unsigned int min_gen)
+		: m_mingen(min_gen)
+	    {}
+
+	    // Virtual function of const_visitor:
+	    bool operator()(const GCNode* node);
+	private:
+	    unsigned int m_mingen;
+	};
+
+	static unsigned int s_last_gen;
+	static std::vector<const GCNode*> s_genpeg;
+	static std::vector<unsigned int> s_gencount;
 	static unsigned int s_num_nodes;
 
 	mutable const GCNode *m_prev, *m_next;

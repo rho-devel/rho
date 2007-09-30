@@ -47,6 +47,7 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/Heap.hpp"
 
@@ -68,9 +69,6 @@ extern void *Rm_realloc(void * p, size_t n);
 #include <Defn.h>
 #include <Graphics.h> /* display lists */
 #include <Rdevices.h> /* GetDevice */
-
-using namespace std;
-using namespace CXXR;
 
 /* malloc uses size_t.  We are assuming here that size_t is at least
    as large as unsigned long.  Changed from int at 1.6.0 to (i) allow
@@ -134,8 +132,6 @@ namespace {
     }
 }
 
-static unsigned int num_old_gens_to_collect = 0;
-
 namespace {
     inline int NODE_SIZE()
     {
@@ -190,115 +186,7 @@ namespace {
     }
 }
 
-/* This macro calls dc__action__ for each child of __n__, passing
-   dc__extra__ as a second argument for each call. */
-#define DO_CHILDREN(n,dc__action__,dc__extra__) do { \
-	const RObject* __n__ = static_cast<const RObject*>(n);          \
-	if (__n__->attributes() != R_NilValue)				\
-	    dc__action__(__n__->attributes(), dc__extra__);		\
-	switch (__n__->sexptype()) {					\
-	case NILSXP:							\
-	case BUILTINSXP:						\
-	case SPECIALSXP:						\
-	case CHARSXP:							\
-	case LGLSXP:							\
-	case INTSXP:							\
-	case REALSXP:							\
-	case CPLXSXP:							\
-	case WEAKREFSXP:						\
-	case RAWSXP:							\
-	case S4SXP:							\
-	    break;							\
-	case STRSXP:							\
-	case EXPRSXP:							\
-	case VECSXP:							\
-	    {								\
-		int i;							\
-		for (i = 0; i < __n__->length(); i++)		        \
-		    dc__action__(memSTRING_ELT(__n__, i), dc__extra__); \
-	    }								\
-	    break;							\
-	case ENVSXP:							\
-	    dc__action__(__n__->frame(), dc__extra__);		        \
-	    dc__action__(__n__->enclosingEnvironment(), dc__extra__);   \
-	    dc__action__(__n__->hashTable(), dc__extra__);	        \
-	    break;							\
-	case CLOSXP:							\
-	case PROMSXP:							\
-	case LISTSXP:							\
-	case LANGSXP:							\
-	case DOTSXP:							\
-	case SYMSXP:							\
-	case BCODESXP:							\
-	    dc__action__(__n__->tag(), dc__extra__);		        \
-	    dc__action__(__n__->car(), dc__extra__);		        \
-	    dc__action__(__n__->cdr(), dc__extra__);		        \
-	    break;							\
-	case EXTPTRSXP:							\
-	    dc__action__(__n__->cdr(), dc__extra__);			\
-	    dc__action__(__n__->tag(), dc__extra__);			\
-	    break;							\
-	default:							\
-	    abort();							\
-	}								\
-    } while(0)
-
 /* Debugging Routines. */
-
-#ifdef DEBUG_GC
-static void CheckNodeGeneration(SEXP x, int g)
-{
-    if (NODE_GENERATION(x) < g) {
-	REprintf("untraced old-to-new reference\n");
-    }
-}
-
-static void DEBUG_CHECK_NODE_COUNTS(char *where)
-{
-    int OldCount, NewCount, OldToNewCount, gen;
-    SEXP s;
-
-    REprintf("Node counts %s:\n", where);
-    for (s = GCNode::s_newpeg->next(), NewCount = 0;
-	 s != GCNode::s_newpeg; s = s->next()) {
-	NewCount++;
-    }
-    for (gen = 0, OldCount = 0, OldToNewCount = 0;
-	 gen < GCNode::s_num_old_generations;
-	 gen++) {
-	for (s = GCNode::s_oldpeg[gen]->next();
-	     s != GCNode::s_oldpeg[gen];
-	     s = s->next()) {
-	    OldCount++;
-	    if (gen != NODE_GENERATION(s))
-		REprintf("Inconsistent node generation\n");
-	    DO_CHILDREN(s, CheckNodeGeneration, gen);
-	}
-	for (s = GCNode::s_old_to_new_peg[gen]->next();
-	     s != GCNode::s_old_to_new_peg[gen]; s = s->next()) {
-	    OldToNewCount++;
-	    if (gen != NODE_GENERATION(s))
-		REprintf("Inconsistent node generation\n");
-	}
-    }
-    REprintf("New = %d, Old = %d, OldToNew = %d, Total = %d\n",
-	     NewCount, OldCount, OldToNewCount,
-	     NewCount + OldCount + OldToNewCount);
-}
-
-static void DEBUG_GC_SUMMARY(int full_gc)
-{
-    int gen, OldCount;
-    REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
-	     Heap::bytesAllocated()/sizeof(VECREC));
-    for (gen = 0, OldCount = 0; gen < GCNode::s_num_old_generations; gen++)
-	OldCount += GCNode::GCNode::s_oldcount[gen];
-    REprintf(", %d", OldCount);
-}
-#else
-#define DEBUG_CHECK_NODE_COUNTS(s)
-#define DEBUG_GC_SUMMARY(x)
-#endif /* DEBUG_GC */
 
 #ifdef DEBUG_ADJUST_HEAP
 static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
@@ -314,60 +202,10 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 #define DEBUG_ADJUST_HEAP_PRINT(node_occup, vect_occup)
 #endif /* DEBUG_ADJUST_HEAP */
 
-static void ReleaseNodes()
-{
-    const GCNode* s = GCNode::s_newpeg->next();
-    while (s != GCNode::s_newpeg) {
-	const GCNode* next = s->next();
-	s->destroy();
-	s = next;
-    }
-}
-
-
-/* Managing Old-to-New References. */
-#define AGE_NODE(s,g) do {					\
-	const GCNode* an__n__ = (s);				\
-	unsigned int an__g__ = (g);				\
-	if (an__n__ && NODE_GEN_IS_YOUNGER(an__n__, an__g__)) { \
-	    if (an__n__->isMarked())				\
-		GCNode::s_oldcount[NODE_GENERATION(an__n__)]--; \
-	    else an__n__->mark();				\
-	    SET_NODE_GENERATION(an__n__, an__g__);		\
-	    UNSNAP_NODE(an__n__);				\
-	    SET_NEXT_NODE(an__n__, forwarded_nodes);		\
-	    forwarded_nodes = an__n__;				\
-	}							\
-    } while (0)
-
-static void AgeNodeAndChildren(const GCNode* s, int gen)
-{
-    const GCNode* forwarded_nodes = NULL;
-    AGE_NODE(s, gen);
-    while (forwarded_nodes != NULL) {
-	s = forwarded_nodes;
-	forwarded_nodes = forwarded_nodes->next();
-	if (NODE_GENERATION(s) != uint(gen))
-	    REprintf("****snapping into wrong generation\n");
-	SNAP_NODE(s, GCNode::s_oldpeg[gen]);
-	GCNode::s_oldcount[gen]++;
-	DO_CHILDREN(s, AGE_NODE, gen);
-    }
-}
-
-static void old_to_new(SEXP x, SEXP y)
-{
-#ifdef EXPEL_OLD_TO_NEW
-    AgeNodeAndChildren(y, NODE_GENERATION(x));
-#else
-    GCNode::s_old_to_new_peg[NODE_GENERATION(x)]->splice(x);
-#endif
-}
-
 namespace {
     inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
     {
-	if (y && NODE_IS_OLDER(x, y)) old_to_new(x,y);
+	Edge(x, y);
     }
 }
 
@@ -506,12 +344,14 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
     return w;
 }
 
-static void CheckFinalizers(void)
+static void CheckFinalizers(unsigned int num_old_gens_to_collect)
 {
     SEXP s;
-    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s))
-	if (! WEAKREF_KEY(s)->isMarked() && ! IS_READY_TO_FINALIZE(s))
+    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s)) {
+	GCNode *k = WEAKREF_KEY(s);
+	if (k->m_gcgen <= num_old_gens_to_collect && !k->isMarked())
 	    SET_READY_TO_FINALIZE(s);
+    }
 }
 
 /* C finalizers are stored in a CHARSXP.  It would be nice if we could
@@ -685,153 +525,84 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-/* Forwarding Nodes.  These macros mark nodes or children of nodes and
-   place them on the forwarding list.  pnptr is a pointer to the first
-   element of the list of forwarded nodes. */
-namespace {
-    const GCNode* forwarded_nodes;
-
-    inline void FORWARD_NODE(const GCNode* s)
-    {
-	if (s && ! s->isMarked()) {
-	    s->mark();
-	    UNSNAP_NODE(s);
-	    SET_NEXT_NODE(s, forwarded_nodes);
-	    forwarded_nodes = s;
-	}
-    }
-
-#define FC_FORWARD_NODE(__n__,__dummy__) FORWARD_NODE(__n__)
-#define FORWARD_CHILDREN(__n__) DO_CHILDREN(__n__,FC_FORWARD_NODE, 0)
-
-    inline void PROCESS_NODES()
-    {
-	while (forwarded_nodes != NULL) {
-	    const GCNode* s = forwarded_nodes;
-	    forwarded_nodes = forwarded_nodes->next();
-	    SNAP_NODE(s, GCNode::s_oldpeg[NODE_GENERATION(s)]);
-	    GCNode::s_oldcount[NODE_GENERATION(s)]++;
-	    FORWARD_CHILDREN(s);
-	}
-    }
-}
-
 /* The Generational Collector. */
 
+namespace {
+    inline void MARK_THRU(GCNode::Marker* marker, const GCNode* node) {
+	if (node) node->conductVisitor(marker);
+    }
+}
+	
 void GCNode::gc(unsigned int num_old_gens_to_collect)
-    {
-#ifndef EXPEL_OLD_TO_NEW
-    /* eliminate old-to-new references in generations to collect by
-       transferring referenced nodes to referring generation */
-    for (unsigned int gen = 0; gen < num_old_gens_to_collect; gen++) {
-	const GCNode* s = GCNode::s_old_to_new_peg[gen]->next();
-	while (s != GCNode::s_old_to_new_peg[gen]) {
-	    const GCNode* next = s->next();
-	    DO_CHILDREN(s, AgeNodeAndChildren, gen);
-	    if (NODE_GENERATION(s) != gen)
-		REprintf("****snapping into wrong generation\n");
-	    GCNode::s_oldpeg[gen]->splice(s);
-	    s = next;
-	}
-    }
-#endif
+{
+    // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
+    GCNode::check();
+    // cout << "Precheck completed OK\n";
 
-    DEBUG_CHECK_NODE_COUNTS("at start");
+    GCNode::Marker marker(num_old_gens_to_collect);
+    MARK_THRU(&marker, NA_STRING);	        /* Builtin constants */
+    MARK_THRU(&marker, R_BlankString);
+    MARK_THRU(&marker, R_UnboundValue);
+    MARK_THRU(&marker, R_RestartToken);
+    MARK_THRU(&marker, R_MissingArg);
+    MARK_THRU(&marker, R_CommentSxp);
 
-    /* unmark all marked nodes in old generations to be collected and
-       move to New space */
-    for (unsigned int gen = 0; gen < num_old_gens_to_collect; gen++) {
-	GCNode::s_oldcount[gen] = 0;
-	const GCNode* s = GCNode::s_oldpeg[gen]->next();
-	while (s != GCNode::s_oldpeg[gen]) {
-	    const GCNode* next = s->next();
-	    if (gen < GCNode::s_num_old_generations - 1)
-		SET_NODE_GENERATION(s, gen + 1);
-	    s->unmark();
-	    s = next;
-	}
-	if (GCNode::s_oldpeg[gen]->next() != GCNode::s_oldpeg[gen])
-	    BULK_MOVE(GCNode::s_oldpeg[gen], GCNode::s_newpeg);
-    }
+    MARK_THRU(&marker, R_GlobalEnv);	           /* Global environment */
+    MARK_THRU(&marker, R_BaseEnv);
+    MARK_THRU(&marker, R_EmptyEnv);
+    MARK_THRU(&marker, R_Warnings);	           /* Warnings, if any */
 
-    forwarded_nodes = NULL;
-
-#ifndef EXPEL_OLD_TO_NEW
-    /* scan nodes in uncollected old generations with old-to-new pointers */
-    for (unsigned int gen = num_old_gens_to_collect;
-	 gen < GCNode::s_num_old_generations; gen++)
-	for (const GCNode* s = GCNode::s_old_to_new_peg[gen]->next();
-	     s != GCNode::s_old_to_new_peg[gen]; s = s->next())
-	    FORWARD_CHILDREN(s);
-#endif
-
-    /* forward all roots */
-    FORWARD_NODE(NA_STRING);	        /* Builtin constants */
-    FORWARD_NODE(R_BlankString);
-    FORWARD_NODE(R_UnboundValue);
-    FORWARD_NODE(R_RestartToken);
-    FORWARD_NODE(R_MissingArg);
-    FORWARD_NODE(R_CommentSxp);
-
-    FORWARD_NODE(R_GlobalEnv);	           /* Global environment */
-    FORWARD_NODE(R_BaseEnv);
-    FORWARD_NODE(R_EmptyEnv);
-    FORWARD_NODE(R_Warnings);	           /* Warnings, if any */
-
-    FORWARD_NODE(R_HandlerStack);          /* Condition handler stack */
-    FORWARD_NODE(R_RestartStack);          /* Available restarts stack */
+    MARK_THRU(&marker, R_HandlerStack);          /* Condition handler stack */
+    MARK_THRU(&marker, R_RestartStack);          /* Available restarts stack */
 
     for (unsigned int i = 0; i < HSIZE; i++)	           /* Symbol table */
-	FORWARD_NODE(R_SymbolTable[i]);
+	MARK_THRU(&marker, R_SymbolTable[i]);
 
     if (R_CurrentExpr != NULL)	           /* Current expression */
-	FORWARD_NODE(R_CurrentExpr);
+	MARK_THRU(&marker, R_CurrentExpr);
 
     for (unsigned int i = 0; i < R_MaxDevices; i++)  /* Device display lists */
 	{
 	    DevDesc* dd = GetDevice(i);
 	    if (dd) {
 		if (dd->newDevStruct) {
-		    FORWARD_NODE(((GEDevDesc*) dd)->dev->displayList);
-		    FORWARD_NODE(((GEDevDesc*) dd)->dev->savedSnapshot);
+		    MARK_THRU(&marker, ((GEDevDesc*) dd)->dev->displayList);
+		    MARK_THRU(&marker, ((GEDevDesc*) dd)->dev->savedSnapshot);
 		}
 		else
-		    FORWARD_NODE(dd->displayList);
+		    MARK_THRU(&marker, dd->displayList);
 	    }
 	}
 
     for (RCNTXT* ctxt = R_GlobalContext;
 	 ctxt != NULL ; ctxt = ctxt->nextcontext) {
-	FORWARD_NODE(ctxt->conexit);       /* on.exit expressions */
-	FORWARD_NODE(ctxt->promargs);	   /* promises supplied to closure */
-	FORWARD_NODE(ctxt->callfun);       /* the closure called */
-        FORWARD_NODE(ctxt->sysparent);     /* calling environment */
-	FORWARD_NODE(ctxt->call);          /* the call */
-	FORWARD_NODE(ctxt->cloenv);        /* the closure environment */
-	FORWARD_NODE(ctxt->handlerstack);  /* the condition handler stack */
-	FORWARD_NODE(ctxt->restartstack);  /* the available restarts stack */
+	MARK_THRU(&marker, ctxt->conexit);       /* on.exit expressions */
+	MARK_THRU(&marker, ctxt->promargs);	   /* promises supplied to closure */
+	MARK_THRU(&marker, ctxt->callfun);       /* the closure called */
+        MARK_THRU(&marker, ctxt->sysparent);     /* calling environment */
+	MARK_THRU(&marker, ctxt->call);          /* the call */
+	MARK_THRU(&marker, ctxt->cloenv);        /* the closure environment */
+	MARK_THRU(&marker, ctxt->handlerstack);  /* the condition handler stack */
+	MARK_THRU(&marker, ctxt->restartstack);  /* the available restarts stack */
     }
 
-    FORWARD_NODE(framenames); 		   /* used for interprocedure
+    MARK_THRU(&marker, framenames); 		   /* used for interprocedure
 					      communication in model.c */
 
-    FORWARD_NODE(R_PreciousList);
+    MARK_THRU(&marker, R_PreciousList);
 
     for (int i = 0; i < R_PPStackTop; i++)    /* Protected pointers */
-	FORWARD_NODE(R_PPStack[i]);
+	MARK_THRU(&marker, R_PPStack[i]);
 
-    FORWARD_NODE(R_VStack);		   /* R_alloc stack */
+    MARK_THRU(&marker, R_VStack);		   /* R_alloc stack */
 
 #ifdef BYTECODE
     {
 	SEXP *sp;
 	for (sp = R_BCNodeStackBase; sp < R_BCNodeStackTop; sp++)
-	    FORWARD_NODE(*sp);
+	    MARK_THRU(&marker, *sp);
     }
 #endif
-
-    /* main processing loop */
-    PROCESS_NODES();
 
     /* identify weakly reachable nodes */
     {
@@ -844,36 +615,64 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 		    SEXP wrv = WEAKREF_VALUE(wr);
 		    if (wrv && !wrv->isMarked()) {
 			recheck_weak_refs = TRUE;
-			FORWARD_NODE(wrv);
+			MARK_THRU(&marker, wrv);
 		    }
 		    SEXP wrf = WEAKREF_FINALIZER(wr);
 		    if (wrf && !wrf->isMarked()) {
 			recheck_weak_refs = TRUE;
-			FORWARD_NODE(wrf);
+			MARK_THRU(&marker, wrf);
 		    }
 		}
 	    }
-	    PROCESS_NODES();
 	} while (recheck_weak_refs);
     }
 
     /* mark nodes ready for finalizing */
-    CheckFinalizers();
+    CheckFinalizers(num_old_gens_to_collect);
 
     /* process the weak reference chain */
     for (SEXP wr = R_weak_refs; wr != R_NilValue; wr = WEAKREF_NEXT(wr)) {
-	FORWARD_NODE(wr);
-	FORWARD_NODE(WEAKREF_KEY(wr));
-	FORWARD_NODE(WEAKREF_VALUE(wr));
-	FORWARD_NODE(WEAKREF_FINALIZER(wr));
+	MARK_THRU(&marker, wr);
+	MARK_THRU(&marker, WEAKREF_KEY(wr));
+	MARK_THRU(&marker, WEAKREF_VALUE(wr));
+	MARK_THRU(&marker, WEAKREF_FINALIZER(wr));
     }
-    PROCESS_NODES();
 
-    DEBUG_CHECK_NODE_COUNTS("after processing forwarded list");
+    // Sweep.  gen must be signed here or the loop won't terminate!
+    for (int gen = num_old_gens_to_collect; gen >= 0; --gen) {
+	if (gen == int(s_last_gen)) {
+	    // Delete unmarked nodes and unmark the rest:
+	    const GCNode* node = s_genpeg[gen]->next();
+	    while (node != s_genpeg[gen]) {
+		const GCNode* next = node->next();
+		if (!node->isMarked())
+		    delete node;
+		else node->m_marked = false;
+		node = next;
+	    }
+	} else {
+	    // Delete unmarked nodes, unmark the rest and promote them
+	    // to the next generation:
+	    const GCNode* node = s_genpeg[gen]->next();
+	    while (node != s_genpeg[gen]) {
+		const GCNode* next = node->next();
+		if (!node->isMarked())
+		    delete node;
+		else {
+		    node->m_marked = false;
+		    ++node->m_gcgen;
+		}
+		node = next;
+	    }
+	    s_genpeg[gen+1]->splice(s_genpeg[gen]->next(), s_genpeg[gen]);
+	    s_gencount[gen+1] += s_gencount[gen];
+	    s_gencount[gen] = 0;
+	}
+    }
 
-    ReleaseNodes();
-
-    DEBUG_CHECK_NODE_COUNTS("after releasing nodes");
+    // cout << "Finishing garbage collection\n";
+    // GCNode::check();
+    // cout << "Postcheck completed OK\n";
 }
 
 
@@ -1448,12 +1247,7 @@ void R_gc(void)
 SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
-    int nsize, vsize;
-    R_size_t tmp;
-
     checkArity(op, args);
-    nsize = asInteger(CAR(args));
-    vsize = asInteger(CADR(args));
     PROTECT(ans = allocVector(INTSXP, 2));
     INTEGER(ans)[0] = NA_INTEGER;
     INTEGER(ans)[1] = NA_INTEGER;
@@ -1475,14 +1269,10 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
     setAttrib(ans, R_NamesSymbol, nms);
 
     BEGIN_SUSPEND_INTERRUPTS {
-	/* run a full GC to make sure that all stuff in use is in Old space */
-	num_old_gens_to_collect = GCNode::s_num_old_generations;
-	R_gc();
 	for (unsigned int gen = 0;
-	     gen < GCNode::s_num_old_generations; gen++) {
-	    const GCNode* s;
-	    for (s = GCNode::s_oldpeg[gen]->next();
-		 s != GCNode::s_oldpeg[gen]; s = s->next()) {
+	     gen < GCNode::numGenerations(); ++gen) {
+	    for (const GCNode* s = GCNode::s_genpeg[gen]->next();
+		 s != GCNode::s_genpeg[gen]; s = s->next()) {
 		if (const RObject* ob = dynamic_cast<const RObject*>(s)) {
 		    tmp = ob->sexptype();
 		    if(tmp > LGLSXP) tmp -= 2;
@@ -1649,6 +1439,10 @@ void R_ReleaseObject(SEXP object)
 
 
 /* External Pointer Objects */
+
+// y doesn't point to a GCNode, so no old-to-new check:
+#define SET_EXTPTR_PTR(x, y) (x)->u.listsxp.carval = (y)
+
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     SEXP s = allocSExp(EXTPTRSXP);

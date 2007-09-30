@@ -241,7 +241,10 @@ SEXP allocSExp(SEXPTYPE t);
 #define EXTPTR_PTR(x)	CAR(x)
 #define EXTPTR_PROT(x)	CDR(x)
 #define EXTPTR_TAG(x)	TAG(x)
+/*
+Moved to memory.cpp: refer to notes for 2007/09/26
 #define SET_EXTPTR_PTR(x, y)   SETCAR(x, y)
+*/
 #define SET_EXTPTR_PROT(x, y)  SETCDR(x, y)
 #define SET_EXTPTR_TAG(x, y)   SET_TAG(x, y)
 
