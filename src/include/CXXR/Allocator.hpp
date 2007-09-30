@@ -29,6 +29,9 @@
  * warranty, and with no claim as to its suitability for any purpose.
  */
 
+#ifndef ALLOCATOR_HPP
+#define ALLOCATOR_HPP 1
+
 #include <limits>
 #include "CXXR/Heap.hpp"
 
@@ -121,3 +124,5 @@ namespace CXXR {
 	return false;
     }
 }
+
+#endif  // ALLOCATOR_HPP
