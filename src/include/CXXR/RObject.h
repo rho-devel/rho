@@ -32,6 +32,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/FlagWord.hpp"
 #include "CXXR/GCNode.hpp"
 
 extern "C" {
@@ -142,7 +143,9 @@ namespace CXXR {
 	/**
 	 * @param stype Required type of the RObject.
 	 */
-	RObject(SEXPTYPE stype = ANYSXP) : m_type(stype) {}
+	RObject(SEXPTYPE stype = ANYSXP)
+	    : m_type(stype), m_gpbits(m_flags.m_flags)
+	{}
 
 	/**
 	 * @return Pointer to the attributes of this object.
@@ -211,6 +214,7 @@ namespace CXXR {
 	unsigned int m_named         : 2;
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
+	FlagWord m_flags;
 	unsigned short m_gpbits;
 	RObject *m_attrib;
 	union {
