@@ -1,4 +1,4 @@
-GCNode::initialize()
+GCNode::initialize(2)
  Allocating 34825 bytes
  Allocating 186086 bytes
  Allocating 48899 bytes

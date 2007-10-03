@@ -89,9 +89,9 @@ void GCNode::gc(unsigned int num_old_gens)
     // cout << Heap::bytesAllocated() << " bytes allocated at end\n";
 }
 
-void GCNode::initialize()
+void GCNode::initialize(unsigned int num_old_generations)
 {
-    cout << "GCNode::initialize()\n";
+    cout << "GCNode::initialize(" << num_old_generations << ")\n";
 }
 
 size_t GCNode::s_num_nodes = 42;
