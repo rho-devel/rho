@@ -14,7 +14,7 @@ sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest Heaptest Allocatortest GCManagertest
+tests = CellPooltest Heaptest Allocatortest GCManagertest splice_test
 
 check : $(tests:=.ts)
 
@@ -82,6 +82,15 @@ Heaptest.ts : Heaptest Heaptest.save
 
 RObject_sizer : RObject_sizer.o
 	$(LINK.cc) -o $@ $<
+
+splice_test : splice_test.o
+	$(LINK.cc) -o $@ $<
+
+splice_test.ts : splice_test splice_test.save
+	./$< > splice_test.out
+	diff splice_test.save splice_test.out
+	rm splice_test.out
+	touch $@
 
 Makefile : Makefile.in
 	cp $< $@
