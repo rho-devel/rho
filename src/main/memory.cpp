@@ -50,6 +50,7 @@
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/Heap.hpp"
+#include "CXXR/WeakRef.h"
 
 using namespace std;
 using namespace CXXR;
@@ -216,6 +217,8 @@ namespace {
    Haskell" by Peyton Jones, Marlow, and Elliott (at
    www.research.microsoft.com/Users/simonpj/papers/weak.ps.gz). --LT */
 
+#ifdef USING_UNUSED_CODE
+
 static SEXP R_weak_refs = NULL;
 
 #define READY_TO_FINALIZE_MASK 1
@@ -321,8 +324,22 @@ static SEXP NewWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
     return w;
 }
 
+#endif  // USING_UNUSED_CODE
+
+static void checkKey(SEXP key)
+{
+    switch (TYPEOF(key)) {
+    case NILSXP:
+    case ENVSXP:
+    case EXTPTRSXP:
+	break;
+    default: error(_("can only weakly reference/finalize reference objects"));
+    }
+}
+
 SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 {
+    checkKey(key);
     switch (TYPEOF(fin)) {
     case NILSXP:
     case CLOSXP:
@@ -331,18 +348,16 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 	break;
     default: error(_("finalizer must be a function or NULL"));
     }
-    return NewWeakRef(key, val, fin, onexit);
+    return new WeakRef(key, val, fin, onexit);
 }
 
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 {
-    SEXP w;
-    PROTECT(key);
-    PROTECT(val);
-    w = NewWeakRef(key, val, MakeCFinalizer(fin), onexit);
-    UNPROTECT(2);
-    return w;
+    checkKey(key);
+    return new WeakRef(key, val, fin, onexit);
 }
+
+#ifdef USING_UNUSED_CODE
 
 static void CheckFinalizers(unsigned int num_old_gens_to_collect)
 {
@@ -378,23 +393,28 @@ static R_CFinalizer_t GetCFinalizer(SEXP fun)
     /*return (R_CFinalizer_t) R_ExternalPtrAddr(fun);*/
 }
 
+#endif // USING_UNUSED_CODE
+
 SEXP R_WeakRefKey(SEXP w)
 {
-    if (TYPEOF(w) != WEAKREFSXP)
+    WeakRef* wr = dynamic_cast<WeakRef*>(w);
+    if (!wr)
 	error(_("not a weak reference"));
-    return WEAKREF_KEY(w);
+    return wr->key();
 }
 
 SEXP R_WeakRefValue(SEXP w)
 {
-    SEXP v;
-    if (TYPEOF(w) != WEAKREFSXP)
+    WeakRef* wr = dynamic_cast<WeakRef*>(w);
+    if (!wr)
 	error(_("not a weak reference"));
-    v = WEAKREF_VALUE(w);
-    if (v != R_NilValue && NAMED(v) != 2)
+    SEXP v = wr->value();
+    if (v && NAMED(v) != 2)
 	SET_NAMED(v, 2);
     return v;
 }
+
+#ifdef USING_UNUSED_CODE
 
 void R_RunWeakRefFinalizer(SEXP w)
 {
@@ -480,6 +500,76 @@ void R_RunExitFinalizers(void)
 	if (FINALIZE_ON_EXIT(s))
 	    SET_READY_TO_FINALIZE(s);
     RunFinalizers();
+}
+
+#endif // USING_UNUSED_CODE
+
+void WeakRef::finalize()
+{
+    R_CFinalizer_t Cfin = m_Cfinalizer;
+    SEXP key, Rfin;
+    PROTECT(key = m_key);
+    PROTECT(Rfin = m_Rfinalizer);
+    // Do this now to ensure that finalizer is run only once, even if
+    // an error occurs:
+    tombstone();
+    if (Cfin) Cfin(key);
+    else if (Rfin) {
+	SEXP e;
+	PROTECT(e = LCONS(Rfin, LCONS(key, 0)));
+	eval(e, R_GlobalEnv);
+	UNPROTECT(1);
+    }
+    UNPROTECT(2);
+}
+
+bool WeakRef::runFinalizers()
+{
+    WeakRef::check();
+    bool finalizer_run = !s_f10n_pending.empty();
+    WRList::iterator lit = s_f10n_pending.begin();
+    while (lit != s_f10n_pending.end()) {
+	WeakRef* wr = *lit++;
+	RCNTXT thiscontext;
+	// A top level context is established for the finalizer to
+	// insure that any errors that might occur do not spill into
+	// the call that triggered the collection:
+	begincontext(&thiscontext, CTXT_TOPLEVEL,
+		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
+	RCNTXT* saveToplevelContext = R_ToplevelContext;
+	SEXP topExp;
+	PROTECT(topExp = R_CurrentExpr);
+	int savestack = R_PPStackTop;
+	if (! SETJMP(thiscontext.cjmpbuf)) {
+	    R_GlobalContext = R_ToplevelContext = &thiscontext;
+	    wr->finalize();
+	}
+	endcontext(&thiscontext);
+	R_ToplevelContext = saveToplevelContext;
+	R_PPStackTop = savestack;
+	R_CurrentExpr = topExp;
+	UNPROTECT(1);
+    }
+    return finalizer_run;
+}
+
+void WeakRef::runExitFinalizers()
+{
+    WeakRef::check();
+    WRList::iterator lit = s_live.begin();
+    while (lit != s_live.end()) {
+	WeakRef* wr = *lit++;
+	if (wr->m_flags[FINALIZE_ON_EXIT]) {
+	    wr->m_flags[READY_TO_FINALIZE] = true;
+	    wr->transfer(&s_live, &s_f10n_pending);
+	}
+    }
+    runFinalizers();
+}
+
+void R_RunExitFinalizers(void)
+{
+    WeakRef::runExitFinalizers();
 }
 
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
@@ -604,39 +694,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     }
 #endif
 
-    /* identify weakly reachable nodes */
-    {
-	Rboolean recheck_weak_refs;
-	do {
-	    recheck_weak_refs = FALSE;
-	    for (SEXP wr = R_weak_refs;
-		 wr != R_NilValue; wr = WEAKREF_NEXT(wr)) {
-		if (WEAKREF_KEY(wr)->isMarked()) {
-		    SEXP wrv = WEAKREF_VALUE(wr);
-		    if (wrv && !wrv->isMarked()) {
-			recheck_weak_refs = TRUE;
-			MARK_THRU(&marker, wrv);
-		    }
-		    SEXP wrf = WEAKREF_FINALIZER(wr);
-		    if (wrf && !wrf->isMarked()) {
-			recheck_weak_refs = TRUE;
-			MARK_THRU(&marker, wrf);
-		    }
-		}
-	    }
-	} while (recheck_weak_refs);
-    }
-
-    /* mark nodes ready for finalizing */
-    CheckFinalizers(num_old_gens_to_collect);
-
-    /* process the weak reference chain */
-    for (SEXP wr = R_weak_refs; wr != R_NilValue; wr = WEAKREF_NEXT(wr)) {
-	MARK_THRU(&marker, wr);
-	MARK_THRU(&marker, WEAKREF_KEY(wr));
-	MARK_THRU(&marker, WEAKREF_VALUE(wr));
-	MARK_THRU(&marker, WEAKREF_FINALIZER(wr));
-    }
+    WeakRef::markThru(num_old_gens_to_collect);
 
     // Sweep.  gen must be signed here or the loop won't terminate!
     for (int gen = num_old_gens_to_collect; gen >= 0; --gen) {
@@ -840,7 +898,6 @@ void attribute_hidden InitMemory()
     R_BCIntStackEnd = R_BCIntStackBase + R_BCINTSTACKSIZE;
 # endif
 #endif
-    R_weak_refs = R_NilValue;
 
     R_HandlerStack = R_RestartStack = R_NilValue;
 

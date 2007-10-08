@@ -32,6 +32,7 @@
 #include <limits>
 #include "R_ext/Print.h"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/WeakRef.h"
 
 using namespace std;
 using namespace CXXR;
@@ -188,9 +189,6 @@ bool GCManager::cue(size_t bytes_wanted, bool force)
     return true;
 }
 
-// Put this prototype here temporarily!
-bool RunFinalizers();
-
 void GCManager::gc(size_t bytes_wanted, bool full)
 {
     static bool running_finalizers = false;
@@ -203,7 +201,7 @@ void GCManager::gc(size_t bytes_wanted, bool full)
        chew up enough memory to make another immediate collection
        necessary.  If so, we do another collection. */
     running_finalizers = true;
-    bool any_finalizers_run = RunFinalizers();
+    bool any_finalizers_run = WeakRef::runFinalizers();
     running_finalizers = false;
     if (any_finalizers_run &&
 	Heap::bytesAllocated() + bytes_wanted >= s_threshold)
