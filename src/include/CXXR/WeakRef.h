@@ -175,7 +175,7 @@ namespace CXXR {
 	static const unsigned int READY_TO_FINALIZE = 0;
 	static const unsigned int FINALIZE_ON_EXIT = 1;
 
-	typedef std::list<WeakRef* /*, Allocator<WeakRef*>*/ > WRList;
+	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
 	static WRList s_live;
 	static WRList s_f10n_pending;  // Finalization pending
 	static WRList s_tombstone;

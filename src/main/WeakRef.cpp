@@ -122,6 +122,7 @@ bool WeakRef::check()
 	    abort();
 	}
     }
+    return true;
 }
 
 void WeakRef::markThru(unsigned int max_gen)
