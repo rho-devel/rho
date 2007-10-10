@@ -33,6 +33,7 @@
 using namespace std;
 using namespace CXXR;
 
+unsigned int Heap::SchwarzCtr::s_count = 0;
 unsigned int Heap::s_blocks_allocated = 0;
 unsigned int Heap::s_bytes_allocated = 0;
 bool (*Heap::s_cue_gc)(size_t, bool) = 0;
@@ -46,15 +47,11 @@ void Heap::pool_out_of_memory(CellPool* pool)
     if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
 }
 
-CellPool Heap::s_pools[] = {CellPool(1, 512, pool_out_of_memory),
-			    CellPool(2, 256, pool_out_of_memory),
-			    CellPool(4, 128, pool_out_of_memory),
-			    CellPool(8, 64, pool_out_of_memory),
-			    CellPool(16, 32, pool_out_of_memory)};
+CellPool* Heap::s_pools[5];
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
-// s_pooltab[0] ensures this.  This table aAssumes sizeof(double) == 8.
+// s_pooltab[0] ensures this.  This table assumes sizeof(double) == 8.
 unsigned int Heap::s_pooltab[]
 = {0, 0, 0, 0, 0, 0, 0, 0, 0,
    1, 1, 1, 1, 1, 1, 1, 1,
@@ -82,14 +79,14 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 	    if (s_cue_gc) s_cue_gc(bytes, false);
 	    p = ::operator new(bytes);
 	}
-	else p = s_pools[s_pooltab[bytes]].allocate();
+	else p = s_pools[s_pooltab[bytes]]->allocate();
     }
     catch (bad_alloc) {
 	if (s_cue_gc) {
 	    // Try to force garbage collection if available:
 	    size_t sought_bytes = bytes;
 	    if (bytes < s_max_cell_size)
-		sought_bytes = s_pools[s_pooltab[bytes]].superblockSize();
+		sought_bytes = s_pools[s_pooltab[bytes]]->superblockSize();
 	    joy = s_cue_gc(sought_bytes, true);
 	}
 	else throw;
@@ -98,7 +95,7 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 	// Try once more:
 	try {
 	    if (bytes > s_max_cell_size) p = ::operator new(bytes);
-	    else p = s_pools[s_pooltab[bytes]].allocate();
+	    else p = s_pools[s_pooltab[bytes]]->allocate();
 	}
 	catch (bad_alloc) {
 	    throw;
@@ -118,7 +115,24 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 void Heap::check()
 {
     for (unsigned int i = 0; i < 5; ++i)
-	s_pools[i].check();
+	s_pools[i]->check();
+}
+
+// Deleting heap objects on program exit is not strictly necessary,
+// but doing so makes bugs more conspicuous when using valgrind.
+void Heap::cleanup()
+{
+    for (unsigned int i = 0; i < 5; ++i)
+	delete s_pools[i];
+}
+
+void Heap::initialize()
+{
+    s_pools[0] = new CellPool(1, 512, pool_out_of_memory);
+    s_pools[1] = new CellPool(2, 256, pool_out_of_memory);
+    s_pools[2] = new CellPool(4, 128, pool_out_of_memory);
+    s_pools[3] = new CellPool(8, 64, pool_out_of_memory);
+    s_pools[4] = new CellPool(16, 32, pool_out_of_memory);
 }
 
 #ifdef R_MEMORY_PROFILING
