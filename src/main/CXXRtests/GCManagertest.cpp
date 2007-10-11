@@ -29,6 +29,7 @@
 #include <vector>
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/WeakRef.h"
 
 using namespace std;
 using namespace CXXR;
@@ -98,7 +99,7 @@ size_t GCNode::s_num_nodes = 42;
 
 // Other stubs:
 
-bool RunFinalizers()
+bool WeakRef::runFinalizers()
 {
     bool success = (uni01() > 0.5);
     cout << "RunFinalizers():\n";
