@@ -1,12 +1,12 @@
 # Low-level tests for the CXXR classes.
 
-top_builddir = ../../..
+top_builddir = ../..
 
-top_srcdir = ../../..
+top_srcdir = ../..
 
 include $(top_builddir)/Makeconf
 
-maindir = ..
+maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
@@ -94,5 +94,11 @@ splice_test.ts : splice_test splice_test.save
 
 Makefile : Makefile.in
 	cp $< $@
+
+clean:
+	rm -f *.d *.o *.ts $(tests)
+
+distclean: clean
+	rm -f Makefile
 
 include $(depends)

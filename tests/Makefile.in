@@ -68,7 +68,7 @@ DISTFILES = Makefile.in Makefile.win README \
 	nanbug.rda \
 	WinUnicode.dat \
 	R-intro.Rout.save
-SUBDIRS = Embedding Examples Native
+SUBDIRS = CXXR Embedding Examples Native
 
 R = LC_ALL=C SRCDIR=$(srcdir) R_DEFAULT_PACKAGES= $(top_builddir)/bin/R --vanilla
 RDIFF = $(top_builddir)/bin/R CMD Rdiff
@@ -98,7 +98,7 @@ test-out = $(test-src:.R=.Rout) $(test-out-demo) $(test-out-gct) \
 .SUFFIXES:
 .SUFFIXES: .R .Rin .Rout .Rout-gct .Rout-valgct
 
-all-basic-tests = Examples Specific Reg Internet
+all-basic-tests = CXXR Examples Specific Reg Internet
 all-devel-tests = Docs IsAs Lapack Random Demo Primitive Segfault \
    Standalone Packages
 
@@ -202,6 +202,9 @@ test-all-devel: Makefile
 	@for name in $(all-devel-tests); do \
 	  $(MAKE) test-$${name} || exit 1; \
 	done
+
+test-CXXR:
+	cd CXXR && $(MAKE) check
 
 test-Examples:
 	@(cd Examples && $(MAKE) $@)
