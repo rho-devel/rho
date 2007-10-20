@@ -44,7 +44,6 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit);
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit);
 SEXP R_WeakRefKey(SEXP w);
 SEXP R_WeakRefValue(SEXP w);
-void R_RunWeakRefFinalizer(SEXP w);
 
 #ifdef __cplusplus
 }  // extern "C"
