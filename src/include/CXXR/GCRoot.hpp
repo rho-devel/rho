@@ -105,10 +105,11 @@ namespace CXXR {
     class GCRoot : public GCRootBase {
     public:
 	/**
-	 * @param node The node to be pointed to, and protected from
-	 *          the garbage collector, or a null pointer.
+	 * @param node Pointer the node to be pointed to, and
+	 *          protected from the garbage collector, or a null
+	 *          pointer.
 	 */
-	explicit GCRoot(T* node = 0) : GCRootBase(node) {}
+	explicit GCRoot(T node = 0) : GCRootBase(node) {}
 
 	/** Copy constructor.
 	 *
@@ -137,7 +138,7 @@ namespace CXXR {
 	 * @param node Pointer to the GCNode that is not to be pointed
 	 *          to and protected from the garbage collector.
 	 */
-	GCRoot operator=(T* node)
+	GCRoot operator=(T node)
 	{
 	    GCRootBase::operator=(node);
 	    return *this;
@@ -149,9 +150,9 @@ namespace CXXR {
 	 * lvalue, the effect of which would probably not be what the
 	 * programmer expected.
 	 */
-	operator T* const() const
+	operator T const() const
 	{
-	    return static_cast<T*>(ptr());
+	    return static_cast<T>(ptr());
 	}
     };
 
