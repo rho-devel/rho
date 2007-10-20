@@ -40,13 +40,17 @@ void GCRootBase::seq_error()
 void GCRootBase::visitRoots(GCNode::const_visitor* v)
 {
     for (vector<GCNode*>::iterator it = s_roots.begin();
-	 it != s_roots.end(); ++it)
-	(*v)(*it);
+	 it != s_roots.end(); ++it) {
+	GCNode* n = *it;
+	if (n) n->conductVisitor(v);
+    }
 }
 
 void GCRootBase::visitRoots(GCNode::visitor* v)
 {
     for (vector<GCNode*>::iterator it = s_roots.begin();
-	 it != s_roots.end(); ++it)
-	(*v)(*it);
+	 it != s_roots.end(); ++it) {
+	GCNode* n = *it;
+	if (n) n->conductVisitor(v);
+    }
 }
