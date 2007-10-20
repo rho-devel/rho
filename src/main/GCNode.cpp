@@ -98,6 +98,8 @@ bool GCNode::check()
     return true;
 }
 
+// GCNode::gc() is in memory.cpp (for the time being)
+
 void GCNode::initialize(unsigned int num_old_generations)
 {
     if (s_genpeg.size() == 0) {

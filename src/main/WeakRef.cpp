@@ -125,6 +125,8 @@ bool WeakRef::check()
     return true;
 }
 
+// WeakRef::finalize() is in memory.cpp (for the time being).
+
 void WeakRef::markThru(unsigned int max_gen)
 {
     WeakRef::check();
@@ -177,6 +179,9 @@ void WeakRef::markThru(unsigned int max_gen)
 	}
     }
 }
+
+// WeakRef::runExitFinalizers() and WeakRef::runFinalizers() are in memory.cpp
+// (for the time being).
 
 void WeakRef::tombstone()
 {
