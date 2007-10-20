@@ -49,6 +49,7 @@
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
+#include "CXXR/GCRoot.hpp"
 #include "CXXR/Heap.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -217,115 +218,6 @@ namespace {
    Haskell" by Peyton Jones, Marlow, and Elliott (at
    www.research.microsoft.com/Users/simonpj/papers/weak.ps.gz). --LT */
 
-#ifdef USING_UNUSED_CODE
-
-static SEXP R_weak_refs = NULL;
-
-#define READY_TO_FINALIZE_MASK 1
-
-namespace {
-    inline void SET_READY_TO_FINALIZE(SEXP s)
-    {
-	s->m_gpbits |= READY_TO_FINALIZE_MASK;
-    }
-
-    inline void CLEAR_READY_TO_FINALIZE(SEXP s)
-    {
-	s->m_gpbits &= ~READY_TO_FINALIZE_MASK;
-    }
-
-    inline bool IS_READY_TO_FINALIZE(SEXP s)
-    {
-	return s->m_gpbits & READY_TO_FINALIZE_MASK;
-    }
-
-#define FINALIZE_ON_EXIT_MASK 2
-
-    inline void SET_FINALIZE_ON_EXIT(SEXP s)
-    {
-	s->m_gpbits |= FINALIZE_ON_EXIT_MASK;
-    }
-
-    inline void CLEAR_FINALIZE_ON_EXIT(SEXP s)
-    {
-	s->m_gpbits &= ~FINALIZE_ON_EXIT_MASK;
-    }
-
-    inline bool FINALIZE_ON_EXIT(SEXP s)
-    {
-	return s->m_gpbits & FINALIZE_ON_EXIT_MASK;
-    }
-
-#define WEAKREF_SIZE 4
-
-    inline SEXP WEAKREF_KEY(SEXP w)  {return VECTOR_ELT(w, 0);}
-
-    inline void SET_WEAKREF_KEY(SEXP w, SEXP k)
-    {
-	SET_VECTOR_ELT(w, 0, k);
-    }
-
-    inline SEXP WEAKREF_VALUE(SEXP w)  {return VECTOR_ELT(w, 1);}
-
-    inline void SET_WEAKREF_VALUE(SEXP w, SEXP v)
-    {
-	SET_VECTOR_ELT(w, 1, v);
-    }
-
-    inline SEXP WEAKREF_FINALIZER(SEXP w)  {return VECTOR_ELT(w, 2);}
-
-    inline void SET_WEAKREF_FINALIZER(SEXP w, SEXP f)
-    {
-	SET_VECTOR_ELT(w, 2, f);
-    }
-
-    inline SEXP WEAKREF_NEXT(SEXP w)  {return VECTOR_ELT(w, 3);}
-
-    inline void SET_WEAKREF_NEXT(SEXP w, SEXP n)
-    {
-	SET_VECTOR_ELT(w, 3, n);
-    }
-}
-
-static SEXP MakeCFinalizer(R_CFinalizer_t cfun);
-
-static SEXP NewWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
-{
-    SEXP w;
-
-    switch (TYPEOF(key)) {
-    case NILSXP:
-    case ENVSXP:
-    case EXTPTRSXP:
-	break;
-    default: error(_("can only weakly reference/finalize reference objects"));
-    }
-
-    PROTECT(key);
-    PROTECT(val = NAMED(val) ? duplicate(val) : val);
-    PROTECT(fin);
-    w = allocVector(VECSXP, WEAKREF_SIZE);
-    SET_TYPEOF(w, WEAKREFSXP);
-    if (key != R_NilValue) {
-	/* If the key is R_NilValue we don't register the weak reference.
-	   This is used in loading saved images. */
-        SET_WEAKREF_KEY(w, key);
-	SET_WEAKREF_VALUE(w, val);
-	SET_WEAKREF_FINALIZER(w, fin);
-	SET_WEAKREF_NEXT(w, R_weak_refs);
-	CLEAR_READY_TO_FINALIZE(w);
-	if (onexit)
-	    SET_FINALIZE_ON_EXIT(w);
-	else
-	    CLEAR_FINALIZE_ON_EXIT(w);
-	R_weak_refs = w;
-    }
-    UNPROTECT(3);
-    return w;
-}
-
-#endif  // USING_UNUSED_CODE
-
 static void checkKey(SEXP key)
 {
     switch (TYPEOF(key)) {
@@ -357,44 +249,6 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
     return new WeakRef(key, val, fin, onexit);
 }
 
-#ifdef USING_UNUSED_CODE
-
-static void CheckFinalizers(unsigned int num_old_gens_to_collect)
-{
-    SEXP s;
-    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s)) {
-	GCNode *k = WEAKREF_KEY(s);
-	if (k->m_gcgen <= num_old_gens_to_collect && !k->isMarked())
-	    SET_READY_TO_FINALIZE(s);
-    }
-}
-
-/* C finalizers are stored in a CHARSXP.  It would be nice if we could
-   use EXTPTRSXP's but these only hold a void *, and function pointers
-   are not guaranteed to be compatible with a void *.  There should be
-   a cleaner way of doing this, but this will do for now. --LT */
-static Rboolean isCFinalizer(SEXP fun)
-{
-    return Rboolean(TYPEOF(fun) == CHARSXP);
-    /*return TYPEOF(fun) == EXTPTRSXP;*/
-}
-
-static SEXP MakeCFinalizer(R_CFinalizer_t cfun)
-{
-    SEXP s = allocString(sizeof(R_CFinalizer_t));
-    *((R_CFinalizer_t *) memCHAR(s)) = cfun;
-    return s;
-    /*return R_MakeExternalPtr((void *) cfun, R_NilValue, R_NilValue);*/
-}
-
-static R_CFinalizer_t GetCFinalizer(SEXP fun)
-{
-    return *((R_CFinalizer_t *) memCHAR(fun));
-    /*return (R_CFinalizer_t) R_ExternalPtrAddr(fun);*/
-}
-
-#endif // USING_UNUSED_CODE
-
 SEXP R_WeakRefKey(SEXP w)
 {
     WeakRef* wr = dynamic_cast<WeakRef*>(w);
@@ -414,113 +268,19 @@ SEXP R_WeakRefValue(SEXP w)
     return v;
 }
 
-#ifdef USING_UNUSED_CODE
-
-void R_RunWeakRefFinalizer(SEXP w)
-{
-    SEXP key, fun, e;
-    if (TYPEOF(w) != WEAKREFSXP)
-	error(_("not a weak reference"));
-    key = WEAKREF_KEY(w);
-    fun = WEAKREF_FINALIZER(w);
-    SET_WEAKREF_KEY(w, R_NilValue);
-    SET_WEAKREF_VALUE(w, R_NilValue);
-    SET_WEAKREF_FINALIZER(w, R_NilValue);
-    if (! IS_READY_TO_FINALIZE(w))
-	SET_READY_TO_FINALIZE(w); /* insures removal from list on next gc */
-    PROTECT(key);
-    PROTECT(fun);
-    if (isCFinalizer(fun)) {
-	/* Must be a C finalizer. */
-	R_CFinalizer_t cfun = GetCFinalizer(fun);
-	cfun(key);
-    }
-    else if (fun != R_NilValue) {
-	/* An R finalizer. */
-	PROTECT(e = LCONS(fun, LCONS(key, R_NilValue)));
-	eval(e, R_GlobalEnv);
-	UNPROTECT(1);
-    }
-    UNPROTECT(2);
-}
-
-bool RunFinalizers(void)
-{
-    volatile SEXP s, last;
-    volatile bool finalizer_run = FALSE;
-
-    for (s = R_weak_refs, last = R_NilValue; s != R_NilValue;) {
-	SEXP next = WEAKREF_NEXT(s);
-	if (IS_READY_TO_FINALIZE(s)) {
-	    RCNTXT thiscontext;
-	    RCNTXT * volatile saveToplevelContext;
-	    volatile int savestack;
-	    volatile SEXP topExp;
-
-	    finalizer_run = TRUE;
-
-	    /* A top level context is established for the finalizer to
-	       insure that any errors that might occur do not spill
-	       into the call that triggered the collection. */
-	    begincontext(&thiscontext, CTXT_TOPLEVEL, R_NilValue, R_GlobalEnv,
-			 R_BaseEnv, R_NilValue, R_NilValue);
-	    saveToplevelContext = R_ToplevelContext;
-	    PROTECT(topExp = R_CurrentExpr);
-	    savestack = R_PPStackTop;
-	    if (! SETJMP(thiscontext.cjmpbuf)) {
-		R_GlobalContext = R_ToplevelContext = &thiscontext;
-
-		/* The entry in the weak reference list is removed
-		   before running the finalizer.  This insures that a
-		   finalizer is run only once, even if running it
-		   raises an error. */
-		if (last == R_NilValue)
-		    R_weak_refs = next;
-		else
-		    SET_WEAKREF_NEXT(last, next);
-		R_RunWeakRefFinalizer(s);
-	    }
-	    endcontext(&thiscontext);
-	    R_ToplevelContext = saveToplevelContext;
-	    R_PPStackTop = savestack;
-	    R_CurrentExpr = topExp;
-	    UNPROTECT(1);
-	}
-	else last = s;
-	s = next;
-    }
-    return finalizer_run;
-}
-
-void R_RunExitFinalizers(void)
-{
-    SEXP s;
-
-    for (s = R_weak_refs; s != R_NilValue; s = WEAKREF_NEXT(s))
-	if (FINALIZE_ON_EXIT(s))
-	    SET_READY_TO_FINALIZE(s);
-    RunFinalizers();
-}
-
-#endif // USING_UNUSED_CODE
-
 void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
-    SEXP key, Rfin;
-    PROTECT(key = m_key);
-    PROTECT(Rfin = m_Rfinalizer);
+    Root key(m_key);
+    Root Rfin(m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	SEXP e;
-	PROTECT(e = LCONS(Rfin, LCONS(key, 0)));
+	Root e(LCONS(Rfin, LCONS(key, 0)));
 	eval(e, R_GlobalEnv);
-	UNPROTECT(1);
     }
-    UNPROTECT(2);
 }
 
 bool WeakRef::runFinalizers()
@@ -537,8 +297,7 @@ bool WeakRef::runFinalizers()
 	begincontext(&thiscontext, CTXT_TOPLEVEL,
 		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	SEXP topExp;
-	PROTECT(topExp = R_CurrentExpr);
+	Root topExp(R_CurrentExpr);
 	int savestack = R_PPStackTop;
 	if (! SETJMP(thiscontext.cjmpbuf)) {
 	    R_GlobalContext = R_ToplevelContext = &thiscontext;
@@ -548,7 +307,6 @@ bool WeakRef::runFinalizers()
 	R_ToplevelContext = saveToplevelContext;
 	R_PPStackTop = savestack;
 	R_CurrentExpr = topExp;
-	UNPROTECT(1);
     }
     return finalizer_run;
 }
@@ -630,6 +388,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     // cout << "Precheck completed OK\n";
 
     GCNode::Marker marker(num_old_gens_to_collect);
+    GCRootBase::visitRoots(&marker);
     MARK_THRU(&marker, NA_STRING);	        /* Builtin constants */
     MARK_THRU(&marker, R_BlankString);
     MARK_THRU(&marker, R_UnboundValue);
@@ -777,17 +536,14 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP value;
-    bool reset_max;
-
     checkArity(op, args);
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
-    reset_max = asLogical(CADR(args));
+    bool reset_max = asLogical(CADR(args));
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    PROTECT(value = allocVector(REALSXP, 6));
+    Root value(allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
@@ -796,7 +552,6 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     REAL(value)[4] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
     REAL(value)[5] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
     if (reset_max) GCManager::resetMaxTallies();
-    UNPROTECT(1);
     return value;
 }
 
@@ -1021,10 +776,9 @@ SEXP allocSExp(SEXPTYPE t)
    unless a GC will actually occur. */
 SEXP cons(SEXP car, SEXP cdr)
 {
-    SEXP s;
     PROTECT(car);
     PROTECT(cdr);
-    s = new RObject(LISTSXP);
+    SEXP s = new RObject(LISTSXP);
     UNPROTECT(2);
 #if VALGRIND_LEVEL > 2
     VALGRIND_MAKE_READABLE(s, sizeof(*s));
