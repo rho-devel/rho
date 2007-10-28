@@ -183,8 +183,8 @@ namespace CXXR {
 			     // debugging)
 
 	RObject* m_key;
-	Edge m_value;
-	Edge m_Rfinalizer;
+	GCEdge<> m_value;
+	GCEdge<> m_Rfinalizer;
 	R_CFinalizer_t m_Cfinalizer;
 	WRList::iterator m_lit;
 

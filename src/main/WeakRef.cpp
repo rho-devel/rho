@@ -41,9 +41,12 @@ int WeakRef::s_count = 0;
 
 WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(key, value), m_Rfinalizer(key, R_finalizer),
+    : m_key(key), m_value(key, 0), m_Rfinalizer(key, 0),
       m_lit(s_live.insert(s_live.end(), this))
 {
+    // Force old-to-new checks:
+    m_value.redirect(key, value);
+    m_Rfinalizer.redirect(key, R_finalizer);
     if (!m_key)
 	tombstone();
     m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;
@@ -52,9 +55,11 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(key, value), m_Rfinalizer(key, 0),
+    : m_key(key), m_value(key, 0), m_Rfinalizer(key, 0),
       m_Cfinalizer(C_finalizer), m_lit(s_live.insert(s_live.end(), this))
 {
+    // Force old-to-new check:
+    m_value.redirect(key, value);
     if (!m_key)
 	tombstone();
     m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;

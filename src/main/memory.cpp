@@ -114,6 +114,8 @@ static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
 # error number of old generations must be 1 or 2
 #endif
 
+#ifdef USING_UNUSED_CODE
+
 namespace {
     inline unsigned int NODE_GENERATION(const GCNode* s) {return s->m_gcgen;}
 
@@ -176,6 +178,8 @@ namespace {
     }
 }
 
+#endif // USING_UNUSED_CODE
+
 /* Processing Node Children */
 
 // 2007/08/07 arr: memory.cpp's own non-type-checked versions!
@@ -207,7 +211,8 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 namespace {
     inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
     {
-	Edge(x, y);
+	GCEdge<> e(x, 0);
+	e.redirect(x, y);
     }
 }
 
@@ -271,14 +276,14 @@ SEXP R_WeakRefValue(SEXP w)
 void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
-    Root key(m_key);
-    Root Rfin(m_Rfinalizer);
+    GCRoot<> key(m_key);
+    GCRoot<> Rfin(m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	Root e(LCONS(Rfin, LCONS(key, 0)));
+	GCRoot<> e(LCONS(Rfin, LCONS(key, 0)));
 	eval(e, R_GlobalEnv);
     }
 }
@@ -297,7 +302,7 @@ bool WeakRef::runFinalizers()
 	begincontext(&thiscontext, CTXT_TOPLEVEL,
 		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	Root topExp(R_CurrentExpr);
+	GCRoot<> topExp(R_CurrentExpr);
 	int savestack = R_PPStackTop;
 	if (! SETJMP(thiscontext.cjmpbuf)) {
 	    R_GlobalContext = R_ToplevelContext = &thiscontext;
@@ -375,12 +380,16 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
+/*
 namespace {
     inline void MARK_THRU(GCNode::Marker* marker, const GCNode* node) {
 	if (node) node->conductVisitor(marker);
     }
 }
-	
+*/
+
+#define MARK_THRU(marker, node) if (node) (node)->conductVisitor(marker)
+
 void GCNode::gc(unsigned int num_old_gens_to_collect)
 {
     // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
@@ -530,7 +539,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
     // All subject to change in CXXR:
     *smallvsize = 0;
     *largevsize = Heap::bytesAllocated()/sizeof(VECREC);
-    *nodes = GCNode::s_num_nodes;
+    *nodes = GCNode::numNodes();
     return;
 }
 
@@ -543,7 +552,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    Root value(allocVector(REALSXP, 6));
+    GCRoot<> value(allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
