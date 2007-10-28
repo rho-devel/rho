@@ -478,7 +478,7 @@ managing garbage collection. This comprised the following changes:</p>
     implementational detail and is not visible to the remainder of CXXR: only
     the total number of bytes and the total number of blocks allocated
     <em>via</em> <code>CXXR::Heap</code> are visible (using static member
-    functions).
+    functions). 
     <p>It is intended that <code>CXXR::Heap</code> will serve as a back-end
     to implementations of operator new and to an STL-compatible Allocator
     class. Note in particular that the blocks allocated from
@@ -502,13 +502,102 @@ managing garbage collection. This comprised the following changes:</p>
     (b) the total size of the vector data in nodes of class 7 (reckoned in
     units of 8 bytes). In CXXR the same logic is used, but based (a) on the
     total number of nodes, and (b) the total number of bytes currently
-    allocated from <code>CXXR::Heap</code>, divided by 8.
+    allocated from <code>CXXR::Heap</code>, divided by 8. 
     <p>I was strongly tempted to base GC exclusively on (b), and to ignore
     the number of nodes - after all, we're talking about a single resource
     here: memory. I'd welcome opinions about this.</p>
   </li>
 </ul>
 
-<p></p>
+<h2>Phase 7: <code>0.07-2.5.1</code></h2>
+
+<p>The purpose of this phase was to encapsulate all the garbage-collection
+logic within C++ classes. Five such classes were introduced, namely
+<code>GCManager</code>, <code>GCNode</code>, <code>GCEdge</code>,
+<code>GCRoot</code> and <code>WeakRef</code>, as now described.</p>
+<ul>
+  <li>Class <code>GCManager</code>, as the name implies, carries out
+    high-level management of garbage collection. It has no non-static data or
+    methods. When <code>CXXR::Heap</code> indicates (<em>via</em> a callback)
+    that it is on the point of requesting additional memory from the
+    operating system, method <code>GCManager::gc()</code> decides whether to
+    carry out a garbage collection, and if so how many generations to
+    collect. As comtemplated at tag 0.06-2.5.1, this decision is now based
+    only on the total memory allocated <em>via</em> <code>CXXR::Heap</code>,
+    and not on the number of nodes allocated. If <code>GCManager</code>
+    decides to carry out a garbage collection, this is carried out by calling
+    <code>GCNode::gc()</code>, specifying the number of generations to be
+    collected.</li>
+  <li>Class <code>GCNode</code> is intended to be the base class for all
+    objects subject to garbage collection; <code>RObject</code> is now
+    derived from <code>GCNode</code>. All <code>GCNode</code>s are threaded
+    on circular doubly-linked lists according to their generation, managed
+    <em>via</em> the static private vector <code>s_genpeg</code>. Element 0
+    of this vector represents the 'new' generation of nodes that have not yet
+    been exposed to the garbage collector; nodes that survive garbage
+    collection are moved into successively higher generations.</li>
+  <li>Templated class <code>GCEdge&lt;T&gt;</code>, where <code>T</code>
+    (defaulting to <code>RObject*</code>) is a pointer to a class type
+    derived from <code>GCNode</code>, represents a directed edge within the
+    directed graph whose nodes are the <code>GCNode</code>s. Whenever an
+    object of a type derived from <code>GCNode</code> wishes to refer to
+    another such object, it should do so by incorporating a
+    <code>GCEdge</code> encapsulating an appropriate pointer, rather than by
+    incorporating the pointer directly. The class provides for
+    <code>GCEdge&lt;T&gt;</code> to be implicitly converted to <code>T</code>
+    in contexts which require this.
+    <p><code>GCEdge</code> contains the logic for ensuring that a node in a
+    higher generation never includes a reference to an object in a younger
+    generation. If any attempt is made to direct a <code>GCEdge</code> from
+    an older node to a younger node, that younger node is immediately
+    promoted to the the generation of the older node, and this change is
+    propagated through the outgoing <code>GCEdge</code>s of the younger node,
+    and so on recursively. (In other words, it implements the
+    <code>EXPEL_OLD_TO_NEW</code> logic that can be configured into CR (but
+    is not the default for CR).)</p>
+  </li>
+  <li>Templated class <code>GCRoot&lt;T&gt;</code>, where <code>T</code>
+    (defaulting to <code>RObject*</code>) is a pointer to a class type
+    derived from <code>GCNode</code>, is intended to protect
+    <code>GCNode</code>s from the garbage-collector. A <code>GCNode</code>
+    pointed to by a <code>GCRoot</code> will not be garbage collected for as
+    long as the <code>GCRoot</code> object exists. The constructor and
+    destructor of this class therefore perform similar functions to the
+    <code>PROTECT</code>/<code>UNPROTECT</code> macros of CR, but within a
+    C++ idiom, in which the programmer is spared the need to check that
+    <code>PROTECT</code>s are balanced by <code>UNPROTECT</code>s. (However,
+    <code>PROTECT</code> and <code>UNPROTECT</code> continue, and will
+    continue, to be available within CXXR.) The class provides for
+    <code>GCRoot&lt;T&gt;</code> to be implicitly converted to <code>T</code>
+    in contexts which require this.
+    <p>The implementation of <code>GCRoot</code> uses an internal stack, and
+    consequently requires (and checks) that <code>GCRoot</code>s are
+    destroyed in the reverse order of their creation. This should cause no
+    problem as long as only variables with automatic or static storage
+    duration are declared as <code>GCRoot</code>s.</p>
+    <p>Despite successful experiments, the deployment of this class has been
+    deferred, pending the replacement of
+    <code>setjmp</code>/<code>longjmp</code> within CXXR by C++ exceptions.
+    This is because destructors of C++ automatic variables are not called
+    when the stack is unwound by <code>longjmp</code> (see ISO14882:2003 sec.
+    18.7); they are when the stack is unwound by a C++ exception.</p>
+  </li>
+  <li>Class <code>WeakRef</code> implements weak references (<code>SEXPTYPE
+    WEAKREFSXP</code>) in a way intended to be functionally identical to CR.
+    Each weak reference has a key and, optionally, a value and/or a
+    finalizer. The finalizer may either be a C/C++ function or an R object.
+    <p>The garbage collector will consider the value and finalizer to be
+    reachable provided the key is reachable. If, during a garbage collection,
+    the key is found not to be reachable then the finalizer (if any) will be
+    run, and the weak reference object will be 'tombstoned', so that
+    subsequent calls to key() and value() will return null pointers. A weak
+    reference object with a reachable key will not be garbage collected even
+    if the weak reference object is not itself reachable.</p>
+    <p>Note that, in CXXR, weak references are not implemented as
+    four-element vectors, and the class has separate, appropriately typed
+    fields for R and C/C++ finalizers (though at most one of these fields may
+    be used in any particular <code>WeakRef</code> object).</p>
+  </li>
+</ul>
 </body>
 </html>

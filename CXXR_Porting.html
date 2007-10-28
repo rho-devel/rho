@@ -30,9 +30,12 @@ into the implementation of the interpreter. In particular:</p>
     interface, the interpretation of the quantities involved has changed
     somewhat; likewise the corresponding command-line options to R. See the
     revised Memory help page for details.</li>
-  <li>Memory profiling has not (yet) been properly reengineered for CXXR, and
-    the relevant code has not been tested. Do not rely on the existing
-    behaviour to persist.</li>
+  <li>Memory profiling, as accessed <em>via</em> <code>Rprofmem</code> in
+    package <code>utils</code>, has not (yet) been properly reengineered for
+    CXXR, and the relevant code has not been tested. Do not rely on the
+    existing behaviour to persist.</li>
+  <li>The function <code>memory.profile()</code> performs no useful function
+    in CXXR: it simply returns a vector of zeroes.</li>
 </ul>
 
 <h2>C Code</h2>
@@ -72,7 +75,7 @@ into the implementation of the interpreter. In particular:</p>
     by a C++ compiler: identifiers called <code>this</code> or
     <code>class</code>, for example. But remember to use <code>extern
     "C"</code> appropriately in your header files, to prevent C++ mangling of
-    the names of functions intended to be visible to CR.</li>
+    the names of functions intended to be visible to C code.</li>
   <li>Rework code as necessary to prevent compiler warnings that a
     <code>const</code> qualifier is being discarded.</li>
 </ul>
