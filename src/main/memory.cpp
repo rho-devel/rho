@@ -1087,20 +1087,7 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_STRING_ELT(nms, i, type2str(SEXPTYPE(i > LGLSXP? i+2 : i)));
     }
     setAttrib(ans, R_NamesSymbol, nms);
-
-    BEGIN_SUSPEND_INTERRUPTS {
-	for (unsigned int gen = 0;
-	     gen < GCNode::numGenerations(); ++gen) {
-	    for (const GCNode* s = GCNode::s_genpeg[gen]->next();
-		 s != GCNode::s_genpeg[gen]; s = s->next()) {
-		if (const RObject* ob = dynamic_cast<const RObject*>(s)) {
-		    tmp = ob->sexptype();
-		    if(tmp > LGLSXP) tmp -= 2;
-		    INTEGER(ans)[tmp]++;
-		}
-	    }
-	}
-    } END_SUSPEND_INTERRUPTS;
+    // Just return a vector of zeroes in CXXR.
     UNPROTECT(2);
     return ans;
 }

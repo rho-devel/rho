@@ -233,7 +233,7 @@ namespace CXXR {
 	 * their constructors private or protected.
 	 */
 	virtual ~GCNode();
-    public:
+    private:
 	friend class WeakRef;
 	template <class T> friend class GCEdge;
 
