@@ -49,7 +49,6 @@
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
-#include "CXXR/GCRoot.hpp"
 #include "CXXR/Heap.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -103,82 +102,6 @@ static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
 
 /* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
    ignored. */
-
-/* Node Generations. */
-
-#define NUM_OLD_GENERATIONS 2
-
-/* sxpinfo allocates one bit for the old generation count, so only 1
-   or 2 is allowed */
-#if NUM_OLD_GENERATIONS > 2 || NUM_OLD_GENERATIONS < 1
-# error number of old generations must be 1 or 2
-#endif
-
-#ifdef USING_UNUSED_CODE
-
-namespace {
-    inline unsigned int NODE_GENERATION(const GCNode* s) {return s->m_gcgen;}
-
-    inline void SET_NODE_GENERATION(const GCNode* s, unsigned int g)
-    {
-	s->m_gcgen = g;
-    }
-
-    inline bool NODE_GEN_IS_YOUNGER(const GCNode* s, unsigned int g)
-    {
-	return !s->isMarked() || (NODE_GENERATION(s) < g);
-    }
-
-    inline bool NODE_IS_OLDER(const GCNode* x, const GCNode* y)
-    {
-	return x->isMarked() &&	
-	    (!y->isMarked() || NODE_GENERATION(x) > NODE_GENERATION(y));
-    }
-}
-
-namespace {
-    inline int NODE_SIZE()
-    {
-	return sizeof(SEXPREC);
-    }
-
-    // 2007/08/16 arr: Um, regarding the return type, is it quite
-    // certain that the answer won't be negative? 
-    inline R_size_t VHEAP_FREE()
-    {
-	return R_VSize - Heap::bytesAllocated()/sizeof(VECREC);
-    }
-}
-
-namespace {
-    inline void SET_NEXT_NODE(const GCNode* s, const GCNode* t)
-    {
-	s->m_next = t;
-    }
-
-    /* Node List Manipulation */
-
-    /* unsnap node s from its list */
-    inline void UNSNAP_NODE(const GCNode* s)
-    {
-	GCNode::link(s->prev(), s->next());
-    }
-
-    /* snap in node s before node t */
-    inline void SNAP_NODE(const GCNode* s, const GCNode* t)
-    {
-	GCNode::link(t->prev(), s);
-	GCNode::link(s, t);
-    }
-
-    /* move all nodes on from_peg to to_peg */
-    inline void BULK_MOVE(const GCNode* from_peg, const GCNode* to_peg)
-    {
-	to_peg->splice(from_peg->next(), from_peg);
-    }
-}
-
-#endif // USING_UNUSED_CODE
 
 /* Processing Node Children */
 
@@ -276,16 +199,20 @@ SEXP R_WeakRefValue(SEXP w)
 void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
-    GCRoot<> key(m_key);
-    GCRoot<> Rfin(m_Rfinalizer);
+    SEXP key, Rfin;
+    PROTECT(key = m_key);
+    PROTECT(Rfin = m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCRoot<> e(LCONS(Rfin, LCONS(key, 0)));
+	SEXP e;
+	PROTECT(e = LCONS(Rfin, LCONS(key, 0)));
 	eval(e, R_GlobalEnv);
+	UNPROTECT(1);
     }
+    UNPROTECT(2);
 }
 
 bool WeakRef::runFinalizers()
@@ -302,7 +229,8 @@ bool WeakRef::runFinalizers()
 	begincontext(&thiscontext, CTXT_TOPLEVEL,
 		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	GCRoot<> topExp(R_CurrentExpr);
+	SEXP topExp;
+	PROTECT(topExp = R_CurrentExpr);
 	int savestack = R_PPStackTop;
 	if (! SETJMP(thiscontext.cjmpbuf)) {
 	    R_GlobalContext = R_ToplevelContext = &thiscontext;
@@ -312,6 +240,7 @@ bool WeakRef::runFinalizers()
 	R_ToplevelContext = saveToplevelContext;
 	R_PPStackTop = savestack;
 	R_CurrentExpr = topExp;
+	UNPROTECT(1);
     }
     return finalizer_run;
 }
@@ -380,14 +309,6 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
-/*
-namespace {
-    inline void MARK_THRU(GCNode::Marker* marker, const GCNode* node) {
-	if (node) node->conductVisitor(marker);
-    }
-}
-*/
-
 #define MARK_THRU(marker, node) if (node) (node)->conductVisitor(marker)
 
 void GCNode::gc(unsigned int num_old_gens_to_collect)
@@ -397,7 +318,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     // cout << "Precheck completed OK\n";
 
     GCNode::Marker marker(num_old_gens_to_collect);
-    GCRootBase::visitRoots(&marker);
+    // GCRootBase::visitRoots(&marker);
     MARK_THRU(&marker, NA_STRING);	        /* Builtin constants */
     MARK_THRU(&marker, R_BlankString);
     MARK_THRU(&marker, R_UnboundValue);
@@ -545,6 +466,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    SEXP value;
     checkArity(op, args);
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
@@ -552,7 +474,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    GCRoot<> value(allocVector(REALSXP, 6));
+    PROTECT(value = allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
@@ -561,6 +483,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     REAL(value)[4] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
     REAL(value)[5] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
     if (reset_max) GCManager::resetMaxTallies();
+    UNPROTECT(1);
     return value;
 }
 
@@ -1078,11 +1001,9 @@ SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
-    int i, tmp;
-
     PROTECT(ans = allocVector(INTSXP, 23));
     PROTECT(nms = allocVector(STRSXP, 23));
-    for (i = 0; i < 23; i++) {
+    for (int i = 0; i < 23; i++) {
         INTEGER(ans)[i] = 0;
 	SET_STRING_ELT(nms, i, type2str(SEXPTYPE(i > LGLSXP? i+2 : i)));
     }
