@@ -57,7 +57,8 @@ namespace CXXR {
      * 'meaning' of an object of a derived class, all of its data
      * members are mutable.
      */
-    struct GCNode {
+    class GCNode {
+    public:
 	/** Abstract base class for the Visitor design pattern.
 	 *
 	 * See Gamma et al 'Design Patterns' Ch. 5 for a description
@@ -109,6 +110,8 @@ namespace CXXR {
 	 *
 	 * @param bytes Number of bytes of memory required.
 	 *
+	 * @return Pointer to the allocated memory block.
+	 *
 	 * @note Since objects of classes derived from RObject \e must
 	 * be allocated on the heap, constructors of these classes may
 	 * rely on the fact that operator new zeroes the allocated
@@ -119,6 +122,15 @@ namespace CXXR {
 	    return memset(Heap::allocate(bytes), 0, bytes);
 	}
 
+	/** Deallocate memory
+	 *
+	 * Deallocate memory previously allocated by operator new.
+	 *
+	 * @param p Pointer to the allocated memory block.
+	 *
+	 * @param bytes Size in bytes of the memory block, as
+	 * requested when the block was allocated.
+	 */
 	static void operator delete(void* p, size_t bytes)
 	{
 	    Heap::deallocate(p, bytes);
@@ -212,9 +224,7 @@ namespace CXXR {
 	 * @param Pointer to the visitor object.
 	 */
 	virtual void visitChildren(visitor* v) {}
-
-        // To be protected in future:
-
+    protected:
 	/** Destructor
 	 *
 	 * @note The destructor is protected to ensure that GCNodes
@@ -223,8 +233,9 @@ namespace CXXR {
 	 * their constructors private or protected.
 	 */
 	virtual ~GCNode();
-
-	// To be private in future:
+    public:
+	friend class WeakRef;
+	template <class T> friend class GCEdge;
 
 	/** Visitor class used to impose a minimum generation number.
 	 *
