@@ -101,7 +101,7 @@ namespace CXXR {
      *          GCNode.  There is at present no provision for const
      *          pointers to be encapsulated within a GCRoot.
      */
-    template <class T>
+    template <class T = RObject*>
     class GCRoot : public GCRootBase {
     public:
 	/**
@@ -118,6 +118,15 @@ namespace CXXR {
 	 * constructor.)
 	 */
 	GCRoot(const GCRoot& source) : GCRootBase(source) {}
+
+	/** Upcast constructor
+	 *
+	 * This constructor enables a GCRoot<Derived*> to be
+	 * implicitly converted to a GCRoot<Base*>.
+	 */
+	template <class U> GCRoot(const GCRoot<U>& source)
+	    : GCRootBase(T(source))
+	{}
 
 	/**
 	 * This will cause this GCRoot to protect the same GCNode as
@@ -155,8 +164,6 @@ namespace CXXR {
 	    return static_cast<T>(ptr());
 	}
     };
-
-    typedef GCRoot<RObject*> Root;
 }
 
 #endif  // GCROOT_HPP
