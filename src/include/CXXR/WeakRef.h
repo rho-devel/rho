@@ -78,10 +78,9 @@ namespace CXXR {
     class WeakRef : public RObject {
     public:
 	/**
-	 * @param key Pointer to the key of the weak reference.
-	 *
-	 *          It is not forbidden but probably pointless for the
-	 *          key to be null: in this event the reference will
+	 * @param key Pointer to the key of the weak reference.  It is
+	 *          not forbidden but probably pointless for the key
+	 *          to be null: in this event the reference will
 	 *          immediately be tombstoned, and its finalizer (if
 	 *          any) will never be run.
 	 *
@@ -103,10 +102,9 @@ namespace CXXR {
 		bool finalize_on_exit = false);
 
 	/**
-	 * @param key Pointer to the key of the weak reference.
-	 *
-	 *          It is not forbidden but probably pointless for the
-	 *          key to be null: in this event the reference will
+	 * @param key Pointer to the key of the weak reference.  It is
+	 *          not forbidden but probably pointless for the key
+	 *          to be null: in this event the reference will
 	 *          immediately be tombstoned, and its finalizer (if
 	 *          any) will never be run.
 	 *

@@ -23,9 +23,12 @@
 namespace CXXR {
     /** Unsigned short interpreted as an array of booleans.
      *
-     * This class performs a similar function, and it implemented in a
-     * similar way to, vector<bool>.  However, it is more lightweight,
-     * and is adapted for use with R's serialisation code.
+     * This class performs a similar function, and is implemented in a
+     * similar way, to <tt>std::bitset<16></tt>.  However, its bits are
+     * contained as a public data member, and within \c RObject the
+     * member \c m_gpbits is a reference to this data member.  In due
+     * course the use of \c m_gpbits will be eliminated from CXXR, and
+     * then FlagWord itself will be replaced by <tt>bitset<16></tt>.
      */
     class FlagWord {
     public:
@@ -34,13 +37,13 @@ namespace CXXR {
 	 * Objects of this class are used to allow the Boolean values
 	 * within a FlagWord to be examined and modified using the
 	 * same syntax as would be used for accessing an array of
-	 * bool.  See Item 30 of Scott Meyers's 'More Effective C++'
-	 * for a general discussion of proxy object, but see the
-	 * <a
+	 * <tt>bool</tt>.  See Item 30 of Scott Meyers's 'More
+	 * Effective C++' for a general discussion of proxy objects,
+	 * but see the <a
 	 * href="http://www.aristeia.com/BookErrata/mec++-errata_frames.html">errata</a>.
 	 * (It may look complicated, but an optimising compiler should
-	 * be able to distil an invocation of FlagWord::operator[] into
-	 * very few instructions.)
+	 * be able to distil an invocation of FlagWord::operator[]
+	 * into very few instructions.)
 	 */
 	class BitProxy {
 	public:
@@ -81,7 +84,8 @@ namespace CXXR {
 	{}
 
 	/**
-	 * @param i An index in the range 0 to 15 inclusive.
+	 * @param i An index in the range 0 to 15 inclusive.  Index 0
+	 * refers to the least significant bit.
 	 *
 	 * @return a BitProxy object that can be used to examine or
 	 * modify the Boolean value represented by bit i of the FlagWord.
@@ -92,7 +96,8 @@ namespace CXXR {
 	}
 
 	/**
-	 * @param i An index in the range 0 to 15 inclusive.
+	 * @param i An index in the range 0 to 15 inclusive. Index 0
+	 * refers to the least significant bit.
 	 *
 	 * @return the Boolean value represented by bit i of the
 	 * FlagWord.  The return value is const to prevent its use as
