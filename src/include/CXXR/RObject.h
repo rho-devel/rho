@@ -215,7 +215,7 @@ namespace CXXR {
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
 	FlagWord m_flags;
-	unsigned short m_gpbits;
+	unsigned short& m_gpbits;
 	RObject *m_attrib;
 	union {
 	    struct primsxp_struct primsxp;
