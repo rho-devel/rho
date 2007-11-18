@@ -96,7 +96,7 @@ namespace CXXR {
 	/**
 	 * @return true iff garbage collection torture is enabled.
 	 */
-	bool isTortured() {return s_tortured;}
+	static bool isTortured() {return s_tortured;}
 
 	/**
 	 * @return the maximum number of bytes used (up to the time of
