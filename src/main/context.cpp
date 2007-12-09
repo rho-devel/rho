@@ -102,12 +102,19 @@
  *  occurs.
  */
 
+// For debugging:
+#include <iostream>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include "Defn.h"
 
+#include "CXXR/JMPException.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 /* R_run_onexits - runs the conexit/cend code for all contexts from
    R_GlobalContext down to but not including the argument context.
@@ -190,8 +197,9 @@ static void jumpfun(RCNTXT * cptr, int mask, SEXP val)
                                perhaps allow loops to be handled with
                                fewer SETJMP's.  LT */
     R_restore_globals(R_GlobalContext);
-
-    LONGJMP(cptr->cjmpbuf, mask);
+    // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
+    //	 << cptr << ", " << mask << ")\n" << flush;
+    throw JMPException(cptr, mask);
 }
 
 
@@ -583,13 +591,23 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 
     begincontext(&thiscontext, CTXT_TOPLEVEL, R_NilValue, R_GlobalEnv,
 		 R_BaseEnv, R_NilValue, R_NilValue);
-    if (SETJMP(thiscontext.cjmpbuf))
-	result = FALSE;
-    else {
+    // cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &thiscontext << endl;
+    try {
 	R_GlobalContext = R_ToplevelContext = &thiscontext;
 	fun(data);
 	result = TRUE;
     }
+    catch (JMPException& e) {
+	// cout << __FILE__":" << __LINE__
+	//	<< " Seeking  " << e.context
+	//      << "; in " << &thiscontext << endl;
+	if (e.context != &thiscontext)
+	    throw;
+	result = FALSE;
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &thiscontext << endl;
     endcontext(&thiscontext);
 
     R_ToplevelContext = saveToplevelContext;

@@ -22,6 +22,9 @@
 
 /* <UTF8> char here is either ASCII or handled as a whole */
 
+// For debugging:
+#include <iostream>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -45,6 +48,11 @@
 #ifdef HAVE_LANGINFO_CODESET
 # include <langinfo.h>
 #endif
+
+#include "CXXR/JMPException.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 #ifdef ENABLE_NLS
 void attribute_hidden nl_Rdummy()
@@ -641,10 +649,21 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 {
     FILE * volatile fp = fparg; /* is this needed? */
     if (fp != NULL) {
-	if (! SETJMP(R_Toplevel.cjmpbuf)) {
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &R_Toplevel << endl;
+	try {
 	    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
 	    R_ReplFile(fp, env, 0, 0);
 	}
+	catch (JMPException& e) {
+	    //	    cout << __FILE__":" << __LINE__
+	    //		 << " Seeking " << e.context
+	    //		 << "; in " << &R_Toplevel << endl;
+	    if (e.context != &R_Toplevel)
+		throw;
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &R_Toplevel << endl;
 	fclose(fp);
     }
 }
@@ -658,7 +677,6 @@ int R_SignalHandlers = 1;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
 void setup_Rmainloop(void)
 {
-    volatile int doneit;
     volatile SEXP baseEnv;
     SEXP cmd;
     FILE *fp;
@@ -807,14 +825,24 @@ void setup_Rmainloop(void)
     if (fp == NULL)
 	R_Suicide(_("unable to open the base package\n"));
 
-    doneit = 0;
-    SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    if (R_SignalHandlers) init_signal_handlers();
-    if (!doneit) {
-	doneit = 1;
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &R_Toplevel << endl;
+    try {
+	if (R_SignalHandlers) init_signal_handlers();
 	R_ReplFile(fp, baseEnv, 0, 0);
     }
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &R_Toplevel << endl;
+	if (e.context != &R_Toplevel)
+	    throw;
+	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	if (R_SignalHandlers) init_signal_handlers();
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &R_Toplevel << endl;
     fclose(fp);
 
     /* This is where we source the system-wide, the site's and the
@@ -835,11 +863,10 @@ void setup_Rmainloop(void)
     R_unLockBinding(install(".Library.site"), R_BaseEnv);
 
     /* require(methods) if it is in the default packages */
-    doneit = 0;
-    SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    if (!doneit) {
-	doneit = 1;
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &R_Toplevel << endl;
+    try {
 	PROTECT(cmd = install(".OptRequireMethods"));
 	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
@@ -850,6 +877,16 @@ void setup_Rmainloop(void)
 	}
 	UNPROTECT(1);
     }
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &R_Toplevel << endl;
+	if (e.context != &R_Toplevel)
+	    throw;
+	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &R_Toplevel << endl;
 
     if (strcmp(R_GUIType, "Tk") == 0) {
 	char buf[256];
@@ -879,25 +916,31 @@ void setup_Rmainloop(void)
        we look in any documents which might have been double clicked on
        or dropped on the application.
     */
-    doneit = 0;
-    SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    if (!doneit) {
-	doneit = 1;
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &R_Toplevel << endl;
+    try {
 	R_InitialData();
     }
-    else
-    	R_Suicide(_("unable to restore saved data in .RData\n"));
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &R_Toplevel << endl;
+	if (e.context != &R_Toplevel)
+	    throw;
+	R_Suicide(_("unable to restore saved data in .RData\n"));
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &R_Toplevel << endl;
 
     /* Initial Loading is done.
        At this point we try to invoke the .First Function.
        If there is an error we continue. */
 
-    doneit = 0;
-    SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    if (!doneit) {
-	doneit = 1;
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &R_Toplevel << endl;
+    try {
 	PROTECT(cmd = install(".First"));
 	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
@@ -908,24 +951,44 @@ void setup_Rmainloop(void)
 	}
 	UNPROTECT(1);
     }
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &R_Toplevel << endl;
+	if (e.context != &R_Toplevel)
+	    throw;
+	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &R_Toplevel << endl;
+
     /* Try to invoke the .First.sys function, which loads the default packages.
        If there is an error we continue. */
 
-    doneit = 0;
-    SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    if (!doneit) {
-	doneit = 1;
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &R_Toplevel << endl;
+    try {
 	PROTECT(cmd = install(".First.sys"));
 	R_CurrentExpr = findVar(cmd, baseEnv);
 	if (R_CurrentExpr != R_UnboundValue &&
 	    TYPEOF(R_CurrentExpr) == CLOSXP) {
-	        PROTECT(R_CurrentExpr = lang1(cmd));
-	        R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
-	        UNPROTECT(1);
+	    PROTECT(R_CurrentExpr = lang1(cmd));
+	    R_CurrentExpr = eval(R_CurrentExpr, R_GlobalEnv);
+	    UNPROTECT(1);
 	}
 	UNPROTECT(1);
     }
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &R_Toplevel << endl;
+	if (e.context != &R_Toplevel)
+	    throw;
+	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &R_Toplevel << endl;
     /* gc_inhibit_torture = 0; */
     if (R_CollectWarnings) {
 	REprintf(_("During startup - "));
@@ -952,9 +1015,29 @@ void run_Rmainloop(void)
     /* Here is the real R read-eval-loop. */
     /* We handle the console until end-of-file. */
     R_IoBufferInit(&R_ConsoleIob);
-    SETJMP(R_Toplevel.cjmpbuf);
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
-    R_ReplConsole(R_GlobalEnv, 0, 0);
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &R_Toplevel << endl;
+	try {
+	    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	    R_ReplConsole(R_GlobalEnv, 0, 0);
+	}
+	catch (JMPException& e) {
+	    //	    cout << __FILE__":" << __LINE__
+	    //		 << " Seeking " << e.context
+	    //		 << "; in " << &R_Toplevel << endl;
+	    if (e.context != &R_Toplevel)
+		throw;
+	    redo = true;
+	}
+	//	catch (...) {
+	//	    cout << "Non-JMPException caught" << endl;
+	//	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &R_Toplevel << endl;
+    } while (redo);
     end_Rmainloop(); /* must go here */
 }
 
@@ -1074,20 +1157,47 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		 R_BaseEnv, R_NilValue, R_NilValue);
     returncontext.cend = browser_cend;
     returncontext.cenddata = &savebrowselevel;
-    if (!SETJMP(returncontext.cjmpbuf)) {
+    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+    //	 << &returncontext << endl;
+    try {
 	begincontext(&thiscontext, CTXT_RESTART, R_NilValue, rho,
 		     R_BaseEnv, R_NilValue, R_NilValue);
-	if (SETJMP(thiscontext.cjmpbuf)) {
-	    SET_RESTART_BIT_ON(thiscontext.callflag);
-	    R_ReturnedValue = R_NilValue;
-	    R_Visible = FALSE;
-	}
-	R_GlobalContext = &thiscontext;
-	R_InsertRestartHandlers(&thiscontext, TRUE);
-	R_BrowseLevel = savebrowselevel;
-	R_ReplConsole(rho, savestack, R_BrowseLevel);
+	bool redo;
+	do {
+	    redo = false;
+	    //	    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //		 << &thiscontext << endl;
+	    try {
+		R_GlobalContext = &thiscontext;
+		R_InsertRestartHandlers(&thiscontext, TRUE);
+		R_BrowseLevel = savebrowselevel;
+		R_ReplConsole(rho, savestack, R_BrowseLevel);
+	    }
+	    catch (JMPException& e) {
+		//		cout << __FILE__":" << __LINE__
+		//		     << " Seeking " << e.context
+		//		     << "; in " << &thiscontext << endl;
+		if (e.context != &thiscontext)
+		    throw;
+		SET_RESTART_BIT_ON(thiscontext.callflag);
+		R_ReturnedValue = R_NilValue;
+		R_Visible = FALSE;
+		redo = true;
+	    }
+	    //	    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //		 << &thiscontext << endl;
+	} while (redo);
 	endcontext(&thiscontext);
     }
+    catch (JMPException& e) {
+	//	cout << __FILE__":" << __LINE__
+	//	     << " Seeking " << e.context
+	//	     << "; in " << &returncontext << endl;
+	if (e.context != &returncontext)
+	    throw;
+    }
+    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+    //	 << &returncontext << endl;
     endcontext(&returncontext);
 
     /* Reset the interpreter state. */

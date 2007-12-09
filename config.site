@@ -54,7 +54,9 @@
 ## specified above.
 ## If unspecified, defaults to '-g -O2' for gcc, 
 ## and '-g' in all other cases except icc (for which see R-admin.html).
-CFLAGS="-g -O1"
+# 2007/12/07 arr: this is obviously not the right place to specify
+# -fexceptions, but I don't know what is!
+CFLAGS="-fexceptions -g -O1"
 
 ## Defines for C compilation.
 ## Use this to specify defines to be used in the compilation of R,
@@ -168,7 +170,8 @@ CFLAGS="-g -O1"
 ## CXX=
 
 ## Options for the C++ compiler.
-CXXFLAGS="-g -O1 -std=c++98 -Wall"
+#CXXFLAGS="-g -O1 -std=c++98 -Wall"
+CXXFLAGS="-g -std=c++98 -Wall"
 
 ## Any special flags which must be used when compiling C++ code to be
 ## turned into a shared library.  If this variable is left unspecified

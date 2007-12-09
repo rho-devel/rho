@@ -50,6 +50,7 @@
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/Heap.hpp"
+#include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace std;
@@ -232,10 +233,21 @@ bool WeakRef::runFinalizers()
 	SEXP topExp;
 	PROTECT(topExp = R_CurrentExpr);
 	int savestack = R_PPStackTop;
-	if (! SETJMP(thiscontext.cjmpbuf)) {
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &thiscontext << endl;
+	try {
 	    R_GlobalContext = R_ToplevelContext = &thiscontext;
 	    wr->finalize();
 	}
+	catch (JMPException& e) {
+	    //	    cout << __FILE__":" << __LINE__
+	    //		 << " Seeking " << e.context
+	    //		 << "; in " << &thiscontext << endl;
+	    if (e.context != &thiscontext)
+		throw;
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &thiscontext << endl;
 	endcontext(&thiscontext);
 	R_ToplevelContext = saveToplevelContext;
 	R_PPStackTop = savestack;

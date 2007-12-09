@@ -25,6 +25,9 @@
  * Error and warning handling.
  */
 
+// For debugging:
+#include <iostream>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -43,6 +46,11 @@ extern void R_ProcessEvents(void);
 #include <R_ext/GraphicsDevice.h>
 #include <R_ext/GraphicsEngine.h> /* for GEonExit */
 #include <Rmath.h> /* for imax2 */
+
+#include "CXXR/JMPException.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 #ifndef min
 #define min(a, b) (a<b?a:b)
@@ -723,7 +731,9 @@ static void jump_to_top_ex(Rboolean traceback,
 
     R_GlobalContext = R_ToplevelContext;
     R_restore_globals(R_GlobalContext);
-    LONGJMP(R_ToplevelContext->cjmpbuf, 0);
+    // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
+    //	 <<  R_ToplevelContext << ", 0)\n" << flush;
+    throw JMPException(R_ToplevelContext);
     /* not reached */
     endcontext(&cntxt);
     inError = oldInError;
@@ -1121,7 +1131,9 @@ void R_JumpToToplevel(Rboolean restart)
 
     R_ToplevelContext = R_GlobalContext = c;
     R_restore_globals(R_GlobalContext);
-    LONGJMP(c->cjmpbuf, CTXT_TOPLEVEL);
+    //    cout << __FILE__":" << __LINE__ << " About to throw JMPException("
+    //	 << c << ", " << CTXT_TOPLEVEL << ")\n" << flush;
+    throw JMPException(c, CTXT_TOPLEVEL);
 }
 
 void R_SetErrmessage(char *s)

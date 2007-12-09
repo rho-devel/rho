@@ -28,6 +28,9 @@
 
 #undef HASHING
 
+// For debugging:
+#include <iostream>
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -36,6 +39,11 @@
 #include <Fileio.h>
 #include "arithmetic.h"
 #include "basedecl.h"
+
+#include "CXXR/JMPException.hpp"
+
+using namespace std;
+using namespace CXXR;
 
 #define ARGUSED(x) LEVELS(x)
 
@@ -637,20 +645,28 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /*  Set a longjmp target which will catch any explicit returns
 	from the function body.  */
-
-    if ((SETJMP(cntxt.cjmpbuf))) {
-	if (R_ReturnedValue == R_RestartToken) {
-	    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-	    R_ReturnedValue = R_NilValue;  /* remove restart token */
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
 	    PROTECT(tmp = eval(body, newrho));
 	}
-	else
-	    PROTECT(tmp = R_ReturnedValue);
-    }
-    else {
-	PROTECT(tmp = eval(body, newrho));
-    }
-
+	catch (JMPException& e) {
+	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+	    if (e.context != &cntxt)
+		throw;
+	    if (R_ReturnedValue == R_RestartToken) {
+		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		R_ReturnedValue = R_NilValue;  /* remove restart token */
+		redo = true;
+	    }
+	    else PROTECT(tmp = R_ReturnedValue);
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
+    } while (redo);
     endcontext(&cntxt);
 
     if (DEBUG(op)) {
@@ -722,20 +738,28 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 
     /*  Set a longjmp target which will catch any explicit returns
 	from the function body.  */
-
-    if ((SETJMP(cntxt.cjmpbuf))) {
-	if (R_ReturnedValue == R_RestartToken) {
-	    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-	    R_ReturnedValue = R_NilValue;  /* remove restart token */
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
 	    PROTECT(tmp = eval(body, newrho));
 	}
-	else
-	    PROTECT(tmp = R_ReturnedValue);
-    }
-    else {
-	PROTECT(tmp = eval(body, newrho));
-    }
-
+	catch (JMPException& e) {
+	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+	    if (e.context != &cntxt)
+		throw;
+	    if (R_ReturnedValue == R_RestartToken) {
+		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		R_ReturnedValue = R_NilValue;  /* remove restart token */
+		redo = true;
+	    }
+	    else PROTECT(tmp = R_ReturnedValue);
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
+    } while (redo);
     endcontext(&cntxt);
 
     if (DEBUG(op)) {
@@ -990,63 +1014,66 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT_WITH_INDEX(ans, &api);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
-    switch (SETJMP(cntxt.cjmpbuf)) {
-    case CTXT_BREAK: goto for_break;
-    case CTXT_NEXT: goto for_next;
-    }
     for (i = 0; i < n; i++) {
-	DO_LOOP_DEBUG(call, op, args, rho, bgn);
-	switch (TYPEOF(val)) {
-	case LGLSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    LOGICAL(v)[0] = LOGICAL(val)[i];
-	    setVar(sym, v, rho);
-	    break;
-	case INTSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    INTEGER(v)[0] = INTEGER(val)[i];
-	    setVar(sym, v, rho);
-	    break;
-	case REALSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    REAL(v)[0] = REAL(val)[i];
-	    setVar(sym, v, rho);
-	    break;
-	case CPLXSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    COMPLEX(v)[0] = COMPLEX(val)[i];
-	    setVar(sym, v, rho);
-	    break;
-	case STRSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    SET_STRING_ELT(v, 0, STRING_ELT(val, i));
-	    setVar(sym, v, rho);
-	    break;
-	case RAWSXP:
-	    REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
-	    RAW(v)[0] = RAW(val)[i];
-	    setVar(sym, v, rho);
-	    break;
-	case EXPRSXP:
-	case VECSXP:
-	    /* make sure loop variable is a copy if needed */
-	    if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
-	    setVar(sym, VECTOR_ELT(val, i), rho);
-	    break;
-	case LISTSXP:
-	    /* make sure loop variable is a copy if needed */
-	    if(nm > 0) SET_NAMED(CAR(val), 2);
-	    setVar(sym, CAR(val), rho);
-	    val = CDR(val);
-	    break;
-	default:
-	    errorcall(call, _("invalid for() loop sequence"));
+	try {
+	    DO_LOOP_DEBUG(call, op, args, rho, bgn);
+	    switch (TYPEOF(val)) {
+	    case LGLSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		LOGICAL(v)[0] = LOGICAL(val)[i];
+		setVar(sym, v, rho);
+		break;
+	    case INTSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		INTEGER(v)[0] = INTEGER(val)[i];
+		setVar(sym, v, rho);
+		break;
+	    case REALSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		REAL(v)[0] = REAL(val)[i];
+		setVar(sym, v, rho);
+		break;
+	    case CPLXSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		COMPLEX(v)[0] = COMPLEX(val)[i];
+		setVar(sym, v, rho);
+		break;
+	    case STRSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		SET_STRING_ELT(v, 0, STRING_ELT(val, i));
+		setVar(sym, v, rho);
+		break;
+	    case RAWSXP:
+		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		RAW(v)[0] = RAW(val)[i];
+		setVar(sym, v, rho);
+		break;
+	    case EXPRSXP:
+	    case VECSXP:
+		/* make sure loop variable is a copy if needed */
+		if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
+		setVar(sym, VECTOR_ELT(val, i), rho);
+		break;
+	    case LISTSXP:
+		/* make sure loop variable is a copy if needed */
+		if(nm > 0) SET_NAMED(CAR(val), 2);
+		setVar(sym, CAR(val), rho);
+		val = CDR(val);
+		break;
+	    default:
+		errorcall(call, _("invalid for() loop sequence"));
+	    }
+	    REPROTECT(ans = eval(body, rho), api);
 	}
-	REPROTECT(ans = eval(body, rho), api);
-    for_next:
-	; /* needed for strict ISO C compliance, according to gcc 2.95.2 */
+	catch (JMPException& e) {
+	    //		cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+	    if (e.context != &cntxt)
+		throw;
+	    if (e.mask == CTXT_BREAK)
+		break;
+	    // Otherwise assume it's CTXT_NEXT
+	}
     }
- for_break:
     endcontext(&cntxt);
     UNPROTECT(5);
     SET_DEBUG(rho, dbg);
@@ -1072,12 +1099,26 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT_WITH_INDEX(t, &tpi);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
-    if (SETJMP(cntxt.cjmpbuf) != CTXT_BREAK) {
-	while (asLogicalNoNA(eval(CAR(args), rho), call)) {
-	    DO_LOOP_DEBUG(call, op, args, rho, bgn);
-	    REPROTECT(t = eval(body, rho), tpi);
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
+	    while (asLogicalNoNA(eval(CAR(args), rho), call)) {
+		DO_LOOP_DEBUG(call, op, args, rho, bgn);
+		REPROTECT(t = eval(body, rho), tpi);
+	    }
 	}
-    }
+	catch (JMPException& e) {
+	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+	    if (e.context != &cntxt)
+		throw;
+	    redo = (e.mask != CTXT_BREAK);
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
+    } while (redo);
     endcontext(&cntxt);
     UNPROTECT(1);
     SET_DEBUG(rho, dbg);
@@ -1103,12 +1144,26 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT_WITH_INDEX(t, &tpi);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
-    if (SETJMP(cntxt.cjmpbuf) != CTXT_BREAK) {
-	for (;;) {
-	    DO_LOOP_DEBUG(call, op, args, rho, bgn);
-	    REPROTECT(t = eval(body, rho), tpi);
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
+	    for (;;) {
+		DO_LOOP_DEBUG(call, op, args, rho, bgn);
+		REPROTECT(t = eval(body, rho), tpi);
+	    }
 	}
-    }
+	catch (JMPException& e) {
+	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+	    if (e.context != &cntxt)
+		throw;
+	    redo = (e.mask != CTXT_BREAK);
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
+    } while (redo);
     endcontext(&cntxt);
     UNPROTECT(1);
     SET_DEBUG(rho, dbg);
@@ -1694,15 +1749,22 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(expr) == LANGSXP || TYPEOF(expr) == SYMSXP || isByteCode(expr)) {
 	PROTECT(expr);
 	begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
-	if (!SETJMP(cntxt.cjmpbuf))
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
 	    expr = eval(expr, env);
-	else {
+	}
+	catch (JMPException& e) {
+	    if (e.context != &cntxt)
+		throw;
 	    expr = R_ReturnedValue;
 	    if (expr == R_RestartToken) {
 		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
 		errorcall(call, _("restarts not supported in 'eval'"));
 	    }
 	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
 	endcontext(&cntxt);
 	UNPROTECT(1);
     }
@@ -1712,16 +1774,23 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	n = LENGTH(expr);
 	tmp = R_NilValue;
 	begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
-	if (!SETJMP(cntxt.cjmpbuf))
-	    for(i = 0 ; i < n ; i++)
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
+	    for (i = 0 ; i < n ; i++)
 		tmp = eval(VECTOR_ELT(expr, i), env);
-	else {
+	}
+	catch (JMPException& e) {
+	    if (e.context != &cntxt)
+		throw;
 	    tmp = R_ReturnedValue;
 	    if (tmp == R_RestartToken) {
 		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
 		errorcall(call, _("restarts not supported in 'eval'"));
 	    }
 	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
 	endcontext(&cntxt);
 	UNPROTECT(1);
 	expr = tmp;
@@ -2694,8 +2763,22 @@ static void loopWithContect(volatile SEXP code, volatile SEXP rho)
     RCNTXT cntxt;
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
-    if (SETJMP(cntxt.cjmpbuf) != CTXT_BREAK)
-	bcEval(code, rho);
+    bool redo;
+    do {
+	redo = false;
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &cntxt << endl;
+	try {
+	    bcEval(code, rho);
+	}
+	catch (JMPException& e) {
+	    if (e.context != &cntxt)
+		throw;
+	    redo = (e.mask != CTXT_BREAK);
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &cntxt << endl;
+    } while (redo);
     endcontext(&cntxt);
 }
 
