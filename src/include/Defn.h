@@ -384,80 +384,7 @@ typedef struct VECREC *VECP;
 
 #endif // __cplusplus
 
-#ifdef BYTECODE
-# ifdef BC_INT_STACK
-typedef union { void *p; int i; } IStackval;
-# endif
-#endif
-
-/* Evaluation Context Structure */
-typedef struct RCNTXT {
-    struct RCNTXT *nextcontext;	/* The next context up the chain */
-    int callflag;		/* The context "type" */
-    JMP_BUF cjmpbuf;		/* C stack and register information */
-    int cstacktop;		/* Top of the pointer protection stack */
-    int evaldepth;	        /* evaluation depth at inception */
-    SEXP promargs;		/* Promises supplied to closure */
-    SEXP callfun;		/* The closure called */
-    SEXP sysparent;		/* environment the closure was called from */
-    SEXP call;			/* The call that effected this context*/
-    SEXP cloenv;		/* The environment */
-    SEXP conexit;		/* Interpreted "on.exit" code */
-    void (*cend)(void *);	/* C "on.exit" thunk */
-    void *cenddata;		/* data for C "on.exit" thunk */
-    char *vmax;		        /* top of R_alloc stack */
-    int intsusp;                /* interrupts are suspended */
-    SEXP handlerstack;          /* condition handler stack */
-    SEXP restartstack;          /* stack of available restarts */
-#ifdef BYTECODE
-    SEXP *nodestack;
-# ifdef BC_INT_STACK
-    IStackval *intstack;
-# endif
-#endif
-} RCNTXT, *context;
-
-/* The Various Context Types.
-
- * In general the type is a bitwise OR of the values below.
- * Note that CTXT_LOOP is already the or of CTXT_NEXT and CTXT_BREAK.
- * Only functions should have the third bit turned on;
- * this allows us to move up the context stack easily
- * with either RETURN's or GENERIC's or RESTART's.
- * If you add a new context type for functions make sure
- *   CTXT_NEWTYPE & CTXT_FUNCTION > 0
- */
-enum {
-    CTXT_TOPLEVEL = 0,
-    CTXT_NEXT	  = 1,
-    CTXT_BREAK	  = 2,
-    CTXT_LOOP	  = 3,	/* break OR next target */
-    CTXT_FUNCTION = 4,
-    CTXT_CCODE	  = 8,
-    CTXT_RETURN	  = 12,
-    CTXT_BROWSER  = 16,
-    CTXT_GENERIC  = 20,
-    CTXT_RESTART  = 32,
-    CTXT_BUILTIN  = 64  /* used in profiling */
-};
-
-/*
-TOP   0 0 0 0 0 0  = 0
-NEX   1 0 0 0 0 0  = 1
-BRE   0 1 0 0 0 0  = 2
-LOO   1 1 0 0 0 0  = 3
-FUN   0 0 1 0 0 0  = 4
-CCO   0 0 0 1 0 0  = 8
-BRO   0 0 0 0 1 0  = 16
-RET   0 0 1 1 0 0  = 12
-GEN   0 0 1 0 1 0  = 20
-RES   0 0 0 0 0 0 1 = 32
-BUI   0 0 0 0 0 0 0 1 = 64
-*/
-
-#define IS_RESTART_BIT_SET(flags) ((flags) & CTXT_RESTART)
-#define SET_RESTART_BIT_ON(flags) (flags |= CTXT_RESTART)
-#define SET_RESTART_BIT_OFF(flags) (flags &= ~CTXT_RESTART)
+#include "RCNTXT.h"
 
 /* Miscellaneous Definitions */
 #define streql(s, t)	(!strcmp((s), (t)))
@@ -528,9 +455,6 @@ extern0 SEXP*	R_PPStack;	    /* The pointer protection stack */
 LibExtern SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
 extern0 SEXP	R_ReturnedValue;    /* Slot for return-ing values */
 extern0 SEXP*	R_SymbolTable;	    /* The symbol table */
-LibExtern RCNTXT R_Toplevel;	    /* Storage for the toplevel environment */
-LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
-LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
 extern0 Rboolean R_Visible;	    /* Value visibility flag */
 LibExtern int	R_EvalDepth	INI_as(0);	/* Evaluation recursion depth */
 extern0 int	R_BrowseLevel	INI_as(0);	/* how deep the browser is */
@@ -652,129 +576,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 /*--- FUNCTIONS ------------------------------------------------------ */
 
-# define begincontext		Rf_begincontext
-# define checkArity		Rf_checkArity
-# define check_stack_balance	Rf_check_stack_balance
-# define CheckFormals		Rf_CheckFormals
-# define CleanEd		Rf_CleanEd
-# define CoercionWarning       	Rf_CoercionWarning
-# define ComplexFromInteger	Rf_ComplexFromInteger
-# define ComplexFromLogical	Rf_ComplexFromLogical
-# define ComplexFromReal	Rf_ComplexFromReal
-# define ComplexFromString	Rf_ComplexFromString
-# define copyListMatrix		Rf_copyListMatrix
-# define copyMostAttribNoTs	Rf_copyMostAttribNoTs
-# define CustomPrintValue	Rf_CustomPrintValue
-# define DataFrameClass		Rf_DataFrameClass
-# define ddfindVar		Rf_ddfindVar
-# define deparse1		Rf_deparse1
-# define deparse1line		Rf_deparse1line
-# define DispatchGroup		Rf_DispatchGroup
-# define DispatchOrEval		Rf_DispatchOrEval
-# define dynamicfindVar		Rf_dynamicfindVar
-# define EncodeRaw              Rf_EncodeRaw
-# define EncodeString           Rf_EncodeString
-# define EnsureString 		Rf_EnsureString
-# define endcontext		Rf_endcontext
-# define envlength		Rf_envlength
-# define ErrorMessage		Rf_ErrorMessage
-# define evalList		Rf_evalList
-# define evalListKeepMissing	Rf_evalListKeepMissing
-# define factorsConform		Rf_factorsConform
-# define findcontext		Rf_findcontext
-# define findVar1		Rf_findVar1
-# define FrameClassFix		Rf_FrameClassFix
-# define framedepth		Rf_framedepth
-# define frameSubscript		Rf_frameSubscript
-# define get1index		Rf_get1index
-# define getVar			Rf_getVar
-# define getVarInFrame		Rf_getVarInFrame
-# define hashpjw		Rf_hashpjw
-# define InheritsClass		Rf_InheritsClass
-# define InitArithmetic		Rf_InitArithmetic
-# define InitColors		Rf_InitColors
-# define InitConnections	Rf_InitConnections
-# define InitEd			Rf_InitEd
-# define InitFunctionHashing	Rf_InitFunctionHashing
-# define InitBaseEnv		Rf_InitBaseEnv
-# define InitGlobalEnv		Rf_InitGlobalEnv
-# define InitMemory		Rf_InitMemory
-# define InitNames		Rf_InitNames
-# define InitOptions		Rf_InitOptions
-# define InitRand		Rf_InitRand
-# define InitTempDir		Rf_InitTempDir
-# define initStack		Rf_initStack
-# define IntegerFromComplex	Rf_IntegerFromComplex
-# define IntegerFromLogical	Rf_IntegerFromLogical
-# define IntegerFromReal	Rf_IntegerFromReal
-# define IntegerFromString	Rf_IntegerFromString
-# define internalTypeCheck	Rf_internalTypeCheck
-# define isValidName		Rf_isValidName
-# define ItemName		Rf_ItemName
-# define jump_to_toplevel	Rf_jump_to_toplevel
-# define levelsgets		Rf_levelsgets
-# define LogicalFromComplex	Rf_LogicalFromComplex
-# define LogicalFromInteger	Rf_LogicalFromInteger
-# define LogicalFromReal	Rf_LogicalFromReal
-# define LogicalFromString	Rf_LogicalFromString
-# define mainloop		Rf_mainloop
-# define makeSubscript		Rf_makeSubscript
-# define markKnown		Rf_markKnown
-# define mat2indsub		Rf_mat2indsub
-# define matchArg		Rf_matchArg
-# define matchArgExact		Rf_matchArgExact
-# define matchArgs		Rf_matchArgs
-# define matchPar		Rf_matchPar
-# define Mbrtowc		Rf_mbrtowc
-# define mkCLOSXP		Rf_mkCLOSXP
-# define mkComplex              Rf_mkComplex
-# define mkFalse		Rf_mkFalse
-# define mkFloat		Rf_mkFloat
-# define mkNA			Rf_mkNA
-# define mkPROMISE		Rf_mkPROMISE
-# define mkQUOTE		Rf_mkQUOTE
-# define mkSYMSXP		Rf_mkSYMSXP
-# define mkTrue			Rf_mkTrue
-# define NewEnvironment		Rf_NewEnvironment
-# define OneIndex		Rf_OneIndex
-# define onintr			Rf_onintr
-# define onsigusr1              Rf_onsigusr1
-# define onsigusr2              Rf_onsigusr2
-# define parse			Rf_parse
-# define PrintDefaults		Rf_PrintDefaults
-# define PrintGreeting		Rf_PrintGreeting
-# define PrintValueEnv		Rf_PrintValueEnv
-# define PrintValueRec		Rf_PrintValueRec
-# define PrintVersion		Rf_PrintVersion
-# define PrintVersionString    	Rf_PrintVersionString
-# define PrintWarnings		Rf_PrintWarnings
-# define promiseArgs		Rf_promiseArgs
-# define RealFromComplex	Rf_RealFromComplex
-# define RealFromInteger	Rf_RealFromInteger
-# define RealFromLogical	Rf_RealFromLogical
-# define RealFromString		Rf_RealFromString
-# define RemoveClass		Rf_RemoveClass
-# define sortVector		Rf_sortVector
-# define ssort			Rf_ssort
-# define StringFromComplex	Rf_StringFromComplex
-# define StringFromInteger	Rf_StringFromInteger
-# define StringFromLogical	Rf_StringFromLogical
-# define StringFromReal		Rf_StringFromReal
-# define StrToInternal		Rf_StrToInternal
-# define substituteList		Rf_substituteList
-# define tsConform		Rf_tsConform
-# define tspgets		Rf_tspgets
-# define type2symbol		Rf_type2symbol
-# define unbindVar		Rf_unbindVar
-# define usemethod		Rf_usemethod
-# define vectorSubscript	Rf_vectorSubscript
-# define warningcall		Rf_warningcall
-# define WarningMessage		Rf_WarningMessage
-# define yychar			Rf_yychar
-# define yylval			Rf_yylval
-# define yynerrs		Rf_yynerrs
-# define yyparse		Rf_yyparse
-
 /* Platform Dependent Gui Hooks */
 
 #define	R_CONSOLE	1
@@ -835,7 +636,6 @@ SEXP Rf_EnsureString(SEXP);
 /* Other Internally Used Functions */
 
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
-void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
 void checkArity(SEXP, SEXP);
 void CheckFormals(SEXP);
 void check_stack_balance(SEXP op, int save);
@@ -850,16 +650,12 @@ SEXP deparse1line(SEXP,Rboolean);
 int DispatchOrEval(SEXP, SEXP, char*, SEXP, SEXP, SEXP*, int, int);
 int DispatchGroup(char*, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP);
-SEXP dynamicfindVar(SEXP, RCNTXT*);
-void endcontext(RCNTXT*);
 int envlength(SEXP);
 SEXP evalList(SEXP, SEXP, SEXP);
 SEXP evalListKeepMissing(SEXP, SEXP);
 int factorsConform(SEXP, SEXP);
-void findcontext(int, SEXP, SEXP);
 SEXP findVar1(SEXP, SEXP, SEXPTYPE, int);
 void FrameClassFix(SEXP);
-int framedepth(RCNTXT*);
 SEXP frameSubscript(int, SEXP, SEXP);
 int get1index(SEXP, SEXP, int, Rboolean, int);
 SEXP getVar(SEXP, SEXP);
@@ -884,11 +680,9 @@ void Init_R_Variables(SEXP);
 void InitRand(void);
 void InitTempDir(void);
 void initStack(void);
-void R_InsertRestartHandlers(RCNTXT *, Rboolean);
 void internalTypeCheck(SEXP, SEXP, SEXPTYPE);
 Rboolean isMethodsDispatchOn(void);
 int isValidName(char *);
-void R_JumpToContext(RCNTXT *, int, SEXP);
 void jump_to_toplevel(void);
 SEXP levelsgets(SEXP, SEXP);
 void mainloop(void);
@@ -951,10 +745,6 @@ void sortVector(SEXP, Rboolean);
 void ssort(SEXP*,int);
 int StrToInternal(char*);
 SEXP substituteList(SEXP, SEXP);
-SEXP R_syscall(int,RCNTXT*);
-int R_sysparent(int,RCNTXT*);
-SEXP R_sysframe(int,RCNTXT*);
-SEXP R_sysfunction(int,RCNTXT*);
 Rboolean tsConform(SEXP,SEXP);
 SEXP tspgets(SEXP, SEXP);
 SEXP type2symbol(SEXPTYPE);
@@ -981,9 +771,6 @@ R_size_t R_GetMaxNSize(void);
 void R_SetMaxNSize(R_size_t);
 R_size_t R_Decode2Long(char *p, int *ierr);
 void R_SetPPSize(R_size_t);
-
-void R_run_onexits(RCNTXT *);
-void R_restore_globals(RCNTXT *);
 
 /* ../main/identical.c : */
 Rboolean compute_identical(SEXP x, SEXP y);
