@@ -49,6 +49,7 @@
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
+#include "CXXR/GCRoot.hpp"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
@@ -200,20 +201,16 @@ SEXP R_WeakRefValue(SEXP w)
 void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
-    SEXP key, Rfin;
-    PROTECT(key = m_key);
-    PROTECT(Rfin = m_Rfinalizer);
+    GCRoot<> key(m_key);
+    GCRoot<> Rfin(m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	SEXP e;
-	PROTECT(e = LCONS(Rfin, LCONS(key, 0)));
+	GCRoot<> e(LCONS(Rfin, LCONS(key, 0)));
 	eval(e, R_GlobalEnv);
-	UNPROTECT(1);
     }
-    UNPROTECT(2);
 }
 
 bool WeakRef::runFinalizers()
@@ -230,8 +227,7 @@ bool WeakRef::runFinalizers()
 	begincontext(&thiscontext, CTXT_TOPLEVEL,
 		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	SEXP topExp;
-	PROTECT(topExp = R_CurrentExpr);
+	GCRoot<> topExp(R_CurrentExpr);
 	int savestack = R_PPStackTop;
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << &thiscontext << endl;
@@ -252,7 +248,6 @@ bool WeakRef::runFinalizers()
 	R_ToplevelContext = saveToplevelContext;
 	R_PPStackTop = savestack;
 	R_CurrentExpr = topExp;
-	UNPROTECT(1);
     }
     return finalizer_run;
 }
@@ -330,7 +325,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     // cout << "Precheck completed OK\n";
 
     GCNode::Marker marker(num_old_gens_to_collect);
-    // GCRootBase::visitRoots(&marker);
+    GCRootBase::visitRoots(&marker);
     MARK_THRU(&marker, NA_STRING);	        /* Builtin constants */
     MARK_THRU(&marker, R_BlankString);
     MARK_THRU(&marker, R_UnboundValue);
@@ -478,7 +473,6 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP value;
     checkArity(op, args);
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
@@ -486,7 +480,7 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    PROTECT(value = allocVector(REALSXP, 6));
+    GCRoot<> value(allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
@@ -495,7 +489,6 @@ SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     REAL(value)[4] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
     REAL(value)[5] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
     if (reset_max) GCManager::resetMaxTallies();
-    UNPROTECT(1);
     return value;
 }
 
