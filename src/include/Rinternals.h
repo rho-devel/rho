@@ -196,20 +196,6 @@ void R_SetExternalPtrAddr(SEXP s, void *p);
 void R_SetExternalPtrTag(SEXP s, SEXP tag);
 void R_SetExternalPtrProtected(SEXP s, SEXP p);
 
-/* Finalization interface */
-typedef void (*R_CFinalizer_t)(SEXP);
-void R_RegisterFinalizer(SEXP s, SEXP fun);
-void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
-void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
-void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit);
-
-/* Weak reference interface */
-SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit);
-SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit);
-SEXP R_WeakRefKey(SEXP w);
-SEXP R_WeakRefValue(SEXP w);
-void R_RunWeakRefFinalizer(SEXP w);
-
 #ifdef BYTECODE
 SEXP R_PromiseExpr(SEXP);
 SEXP R_ClosureExpr(SEXP);
@@ -341,7 +327,6 @@ void R_ReleaseObject(SEXP);
 
 /* Shutdown actions */
 void R_dot_Last(void);		/* in main.c */
-void R_RunExitFinalizers(void);	/* in memory.c */
 
 /* Replacements for popen and system */
 #ifdef HAVE_POPEN

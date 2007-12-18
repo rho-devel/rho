@@ -30,6 +30,7 @@
 #include <Rmath.h>
 #include <Fileio.h>
 #include <Rversion.h>
+#include "CXXR/WeakRef.h"
 
 /* This include is to bring in declarations of R_compress1 and
    R_decompress1 */

@@ -30,6 +30,7 @@
 #include <Rinterface.h>
 #include <Rmath.h>
 #include <Fileio.h>
+#include "CXXR/WeakRef.h"
 
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some

@@ -247,44 +247,6 @@ bool WeakRef::runFinalizers()
     return finalizer_run;
 }
 
-void WeakRef::runExitFinalizers()
-{
-    WeakRef::check();
-    WRList::iterator lit = s_live.begin();
-    while (lit != s_live.end()) {
-	WeakRef* wr = *lit++;
-	if (wr->m_flags[FINALIZE_ON_EXIT]) {
-	    wr->m_flags[READY_TO_FINALIZE] = true;
-	    wr->transfer(&s_live, &s_f10n_pending);
-	}
-    }
-    runFinalizers();
-}
-
-void R_RunExitFinalizers(void)
-{
-    WeakRef::runExitFinalizers();
-}
-
-void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
-{
-    R_MakeWeakRef(s, R_NilValue, fun, onexit);
-}
-
-void R_RegisterFinalizer(SEXP s, SEXP fun)
-{
-    R_RegisterFinalizerEx(s, fun, FALSE);
-}
-
-void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit)
-{
-    R_MakeWeakRefC(s, R_NilValue, fun, onexit);
-}
-
-void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun)
-{
-    R_RegisterCFinalizerEx(s, fun, FALSE);
-}
 
 /* R interface function */
 

@@ -50,6 +50,7 @@
 #include "Runix.h"
 #include "Startup.h"
 #include <R_ext/Riconv.h>
+#include "CXXR/WeakRef.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>		/* for unlink */

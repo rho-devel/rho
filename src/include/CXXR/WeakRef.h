@@ -32,18 +32,20 @@
 extern "C" {
 #endif
 
-/* Finalization interface */
-typedef void (*R_CFinalizer_t)(SEXP);
-void R_RegisterFinalizer(SEXP s, SEXP fun);
-void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
-void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
-void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit);
+    /* Finalization interface */
+    typedef void (*R_CFinalizer_t)(SEXP);
+    void R_RegisterFinalizer(SEXP s, SEXP fun);
+    void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
+    void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
+    void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit);
 
-/* Weak reference interface */
-SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit);
-SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit);
-SEXP R_WeakRefKey(SEXP w);
-SEXP R_WeakRefValue(SEXP w);
+    /* Weak reference interface */
+    SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit);
+    SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin,
+			Rboolean onexit);
+    void R_RunExitFinalizers(void);
+    SEXP R_WeakRefKey(SEXP w);
+    SEXP R_WeakRefValue(SEXP w);
 
 #ifdef __cplusplus
 }  // extern "C"

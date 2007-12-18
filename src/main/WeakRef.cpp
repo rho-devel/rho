@@ -28,6 +28,8 @@
 
 #include "CXXR/WeakRef.h"
 
+#include "RCNTXT.h"
+
 using namespace std;
 using namespace CXXR;
 
@@ -130,7 +132,8 @@ bool WeakRef::check()
     return true;
 }
 
-// WeakRef::finalize() is in memory.cpp (for the time being).
+// WeakRef::finalize() is in memory.cpp (for the time being, until
+// LCONS is moved into a CXXR header).
 
 void WeakRef::markThru(unsigned int max_gen)
 {
@@ -185,8 +188,22 @@ void WeakRef::markThru(unsigned int max_gen)
     }
 }
 
-// WeakRef::runExitFinalizers() and WeakRef::runFinalizers() are in memory.cpp
-// (for the time being).
+void WeakRef::runExitFinalizers()
+{
+    WeakRef::check();
+    WRList::iterator lit = s_live.begin();
+    while (lit != s_live.end()) {
+	WeakRef* wr = *lit++;
+	if (wr->m_flags[FINALIZE_ON_EXIT]) {
+	    wr->m_flags[READY_TO_FINALIZE] = true;
+	    wr->transfer(&s_live, &s_f10n_pending);
+	}
+    }
+    runFinalizers();
+}
+
+// WeakRef::runFinalizers() is in memory.cpp (until R_GlobalEnv and
+// R_BaseEnv are in CXXR headers).
 
 void WeakRef::tombstone()
 {
@@ -204,3 +221,33 @@ WeakRef::WRList* WeakRef::wrList() const
     return m_flags[READY_TO_FINALIZE] ? &s_f10n_pending :
 	(m_key ? &s_live : &s_tombstone);
 }
+
+// ***** C interface *****
+
+void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
+{
+    R_MakeWeakRef(s, 0, fun, onexit);
+}
+
+void R_RegisterFinalizer(SEXP s, SEXP fun)
+{
+    R_RegisterFinalizerEx(s, fun, FALSE);
+}
+
+void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit)
+{
+    R_MakeWeakRefC(s, 0, fun, onexit);
+}
+
+void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun)
+{
+    R_RegisterCFinalizerEx(s, fun, FALSE);
+}
+
+void R_RunExitFinalizers()
+{
+    WeakRef::runExitFinalizers();
+}
+
+// Other C interface functions are still in memory.cpp for the time
+// being.
