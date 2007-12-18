@@ -317,11 +317,11 @@ SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* NEEDED: A fixup is needed in browser, because it can trap errors,
  *	and currently does not reset the limit to the right value. */
 
-void attribute_hidden check_stack_balance(SEXP op, int save)
+void attribute_hidden check_stack_balance(SEXP op, unsigned int save)
 {
-    if(save == R_PPStackTop) return;
+    if(save == GCRootBase::ppsSize()) return;
     REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-	     PRIMNAME(op), save, R_PPStackTop);
+	     PRIMNAME(op), save, GCRootBase::ppsSize());
 }
 
 
@@ -449,7 +449,8 @@ SEXP eval(SEXP e, SEXP rho)
 	    PrintValue(e);
 	}
 	if (TYPEOF(op) == SPECIALSXP) {
-	    int save = R_PPStackTop, flag = PRIMPRINT(op);
+	    unsigned int save = GCRootBase::ppsSize();
+	    int flag = PRIMPRINT(op);
 	    char *vmax = vmaxget();
 	    PROTECT(CDR(e));
 	    R_Visible = Rboolean(flag != 1);
@@ -469,7 +470,8 @@ SEXP eval(SEXP e, SEXP rho)
 	    vmaxset(vmax);
 	}
 	else if (TYPEOF(op) == BUILTINSXP) {
-	    int save = R_PPStackTop, flag = PRIMPRINT(op);
+	    unsigned int save = GCRootBase::ppsSize();
+	    int flag = PRIMPRINT(op);
 	    char *vmax = vmaxget();
 	    RCNTXT cntxt;
 	    PROTECT(tmp = evalList(CDR(e), rho, op));
@@ -519,7 +521,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP body, formals, actuals, savedrho;
     volatile  SEXP newrho;
-    SEXP f, a, tmp;
+    SEXP f, a;
+    GCRoot<> tmp;
     RCNTXT cntxt;
 
     /* formals = list of formal parameters */
@@ -651,7 +654,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << &cntxt << endl;
 	try {
-	    PROTECT(tmp = eval(body, newrho));
+	    tmp = eval(body, newrho);
 	}
 	catch (JMPException& e) {
 	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
@@ -662,18 +665,18 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 		R_ReturnedValue = R_NilValue;  /* remove restart token */
 		redo = true;
 	    }
-	    else PROTECT(tmp = R_ReturnedValue);
+	    else tmp = R_ReturnedValue;
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &cntxt << endl;
     } while (redo);
+    UNPROTECT(2);
     endcontext(&cntxt);
 
     if (DEBUG(op)) {
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
-    UNPROTECT(3);
     return (tmp);
 }
 
@@ -683,7 +686,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 			  SEXP newrho)
 {
-    SEXP body, tmp;
+    SEXP body;
+    GCRoot<> tmp;
     RCNTXT cntxt;
 
     body = BODY(op);
@@ -744,7 +748,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << &cntxt << endl;
 	try {
-	    PROTECT(tmp = eval(body, newrho));
+	    tmp = eval(body, newrho);
 	}
 	catch (JMPException& e) {
 	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
@@ -755,7 +759,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 		R_ReturnedValue = R_NilValue;  /* remove restart token */
 		redo = true;
 	    }
-	    else PROTECT(tmp = R_ReturnedValue);
+	    else tmp = R_ReturnedValue;
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &cntxt << endl;
@@ -766,7 +770,6 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
-    UNPROTECT(1);
     return (tmp);
 }
 
@@ -983,9 +986,9 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     int nm;
     volatile int i, n, bgn;
     SEXP sym, body;
-    volatile SEXP ans, v, val;
+    volatile SEXP val;
+    GCRoot<> ans, v;
     RCNTXT cntxt;
-    PROTECT_INDEX vpi, api;
 
     sym = CAR(args);
     val = CADR(args);
@@ -999,11 +1002,11 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     defineVar(sym, R_NilValue, rho);
     if (isList(val) || isNull(val)) {
 	n = length(val);
-	PROTECT_WITH_INDEX(v = R_NilValue, &vpi);
+	v = 0;
     }
     else {
 	n = LENGTH(val);
-	PROTECT_WITH_INDEX(v = allocVector(TYPEOF(val), 1), &vpi);
+	v = allocVector(TYPEOF(val), 1);
     }
     ans = R_NilValue;
 
@@ -1011,7 +1014,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     nm = NAMED(val);
-    PROTECT_WITH_INDEX(ans, &api);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
     for (i = 0; i < n; i++) {
@@ -1019,32 +1021,32 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    DO_LOOP_DEBUG(call, op, args, rho, bgn);
 	    switch (TYPEOF(val)) {
 	    case LGLSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		LOGICAL(v)[0] = LOGICAL(val)[i];
 		setVar(sym, v, rho);
 		break;
 	    case INTSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		INTEGER(v)[0] = INTEGER(val)[i];
 		setVar(sym, v, rho);
 		break;
 	    case REALSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		REAL(v)[0] = REAL(val)[i];
 		setVar(sym, v, rho);
 		break;
 	    case CPLXSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		COMPLEX(v)[0] = COMPLEX(val)[i];
 		setVar(sym, v, rho);
 		break;
 	    case STRSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		SET_STRING_ELT(v, 0, STRING_ELT(val, i));
 		setVar(sym, v, rho);
 		break;
 	    case RAWSXP:
-		REPROTECT(v = allocVector(TYPEOF(val), 1), vpi);
+		v = allocVector(TYPEOF(val), 1);
 		RAW(v)[0] = RAW(val)[i];
 		setVar(sym, v, rho);
 		break;
@@ -1063,7 +1065,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    default:
 		errorcall(call, _("invalid for() loop sequence"));
 	    }
-	    REPROTECT(ans = eval(body, rho), api);
+	    ans = eval(body, rho);
 	}
 	catch (JMPException& e) {
 	    //		cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
@@ -1075,7 +1077,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
     }
     endcontext(&cntxt);
-    UNPROTECT(5);
+    UNPROTECT(3);
     SET_DEBUG(rho, dbg);
     return ans;
 }
@@ -1085,9 +1087,9 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
-    volatile SEXP t, body;
+    GCRoot<> t;
+    volatile SEXP body;
     RCNTXT cntxt;
-    PROTECT_INDEX tpi;
 
     checkArity(op, args);
 
@@ -1095,8 +1097,6 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CADR(args);
     bgn = BodyHasBraces(body);
 
-    t = R_NilValue;
-    PROTECT_WITH_INDEX(t, &tpi);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
     bool redo;
@@ -1107,7 +1107,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	try {
 	    while (asLogicalNoNA(eval(CAR(args), rho), call)) {
 		DO_LOOP_DEBUG(call, op, args, rho, bgn);
-		REPROTECT(t = eval(body, rho), tpi);
+		t = eval(body, rho);
 	    }
 	}
 	catch (JMPException& e) {
@@ -1120,7 +1120,6 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
     } while (redo);
     endcontext(&cntxt);
-    UNPROTECT(1);
     SET_DEBUG(rho, dbg);
     return t;
 }
@@ -1130,9 +1129,9 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
-    volatile SEXP t, body;
+    GCRoot<> t;
+    volatile SEXP body;
     RCNTXT cntxt;
-    PROTECT_INDEX tpi;
 
     checkArity(op, args);
 
@@ -1140,8 +1139,6 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CAR(args);
     bgn = BodyHasBraces(body);
 
-    t = R_NilValue;
-    PROTECT_WITH_INDEX(t, &tpi);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
     bool redo;
@@ -1152,7 +1149,7 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	try {
 	    for (;;) {
 		DO_LOOP_DEBUG(call, op, args, rho, bgn);
-		REPROTECT(t = eval(body, rho), tpi);
+		t = eval(body, rho);
 	    }
 	}
 	catch (JMPException& e) {
@@ -1165,7 +1162,6 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
     } while (redo);
     endcontext(&cntxt);
-    UNPROTECT(1);
     SET_DEBUG(rho, dbg);
     return t;
 }
@@ -1333,7 +1329,8 @@ static void tmp_cleanup(void *data)
 
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP expr, lhs, rhs, saverhs, tmp, tmp2;
+    SEXP expr, lhs, rhs, tmp, tmp2;
+    GCRoot<> saverhs;
     R_varloc_t tmploc;
     char buf[32];
     RCNTXT cntxt;
@@ -1344,7 +1341,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	assignment is right associative i.e.  a <- b <- c is parsed as
 	a <- (b <- c).  */
 
-    PROTECT(saverhs = rhs = eval(CADR(args), rho));
+    saverhs = rhs = eval(CADR(args), rho);
 
     /*  FIXME: We need to ensure that this works for hashed
         environments.  This code only works for unhashed ones.  the
@@ -1412,7 +1409,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 			      install(buf), R_GetVarLocSymbol(tmploc),
 			      CDDR(expr), tmp));
     expr = eval(expr, rho);
-    UNPROTECT(5);
+    UNPROTECT(4);
     endcontext(&cntxt); /* which does not run the remove */
     unbindVar(R_TmpvalSymbol, rho);
 #ifdef CONSERVATIVE_COPYING

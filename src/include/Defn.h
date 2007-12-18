@@ -18,6 +18,11 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+/** @file Defn.h
+ *
+ * A ragbag.
+ */
+
 #ifndef DEFN_H_
 #define DEFN_H_
 
@@ -62,6 +67,9 @@ Rcomplex Rf_ComplexFromLogical(int, int*);
 Rcomplex Rf_ComplexFromInteger(int, int*);
 Rcomplex Rf_ComplexFromReal(double, int*);
 
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #define CALLED_FROM_DEFN_H 1
 #include <Rinternals.h>		/*-> Arith.h, Complex.h, Error.h, Memory.h
@@ -73,8 +81,16 @@ Rcomplex Rf_ComplexFromReal(double, int*);
 
 #include "Errormsg.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(Win32) || defined(HAVE_AQUA)
 extern void R_ProcessEvents(void);
+#endif
+
+#ifdef __cplusplus
+}  /* extern "C" */
 #endif
 
 #ifdef Win32
@@ -163,6 +179,10 @@ typedef long R_long_t;
 #endif
 
 #include <math.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* declare substitutions */
 #if !defined(acosh) && defined(HAVE_DECL_ACOSH) && !HAVE_DECL_ACOSH
@@ -638,7 +658,7 @@ SEXP Rf_EnsureString(SEXP);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
 void checkArity(SEXP, SEXP);
 void CheckFormals(SEXP);
-void check_stack_balance(SEXP op, int save);
+void check_stack_balance(SEXP op, unsigned int save);
 void CleanEd(void);
 void copyListMatrix(SEXP, SEXP, Rboolean);
 void copyMostAttribNoTs(SEXP, SEXP);
@@ -919,7 +939,7 @@ SEXP R_execMethod(SEXP op, SEXP rho);
 double R_getClockIncrement();
 
 #ifdef __cplusplus
-}
+}  /* extern "C" */
 #endif
 
 #endif /* DEFN_H_ */

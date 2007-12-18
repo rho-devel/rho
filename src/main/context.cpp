@@ -159,7 +159,7 @@ please bug.report() [R_run_onexits]"));
 
 void attribute_hidden R_restore_globals(RCNTXT *cptr)
 {
-    R_PPStackTop = cptr->cstacktop;
+    GCRootBase::ppsRestoreSize(cptr->cstacktop);
     R_EvalDepth = cptr->evaldepth;
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);
@@ -211,7 +211,7 @@ void begincontext(RCNTXT * cptr, int flags,
 		  SEXP promargs, SEXP callfun)
 {
     cptr->nextcontext = R_GlobalContext;
-    cptr->cstacktop = R_PPStackTop;
+    cptr->cstacktop = GCRootBase::ppsSize();
     cptr->evaldepth = R_EvalDepth;
     cptr->callflag = flags;
     cptr->call = syscall;
@@ -637,7 +637,7 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
  */
 typedef struct {
     SEXP expression;
-    SEXP val;
+    GCRoot<> val;
     SEXP env;
 } ProtectedEvalData;
 
@@ -650,7 +650,6 @@ protectedEval(void *d)
 	env = data->env;
     }
     data->val = eval(data->expression, env); 
-    PROTECT(data->val);
 }
 
 SEXP
@@ -669,8 +668,6 @@ R_tryEval(SEXP e, SEXP env, int *ErrorOccurred)
     }
     if (ok == FALSE)
 	data.val = NULL;
-    else
-	UNPROTECT(1);
 
     return(data.val);
 }

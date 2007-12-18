@@ -38,29 +38,17 @@
 
 #include <R_ext/libextern.h>
 
-#include <CXXR/RClosure.h>
-#include <CXXR/REnvironment.h>
-#include <CXXR/RPairList.h>
-#include <CXXR/RPromise.h>
-#include <CXXR/RSymbol.h>
-#include <CXXR/RVector.h>
+#include "CXXR/GCRoot.h"
+#include "CXXR/RClosure.h"
+#include "CXXR/REnvironment.h"
+#include "CXXR/RPairList.h"
+#include "CXXR/RPromise.h"
+#include "CXXR/RSymbol.h"
+#include "CXXR/RVector.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Pointer Protection and Unprotection */
-#define PROTECT(s)	protect(s)
-#define UNPROTECT(n)	unprotect(n)
-#define UNPROTECT_PTR(s)	unprotect_ptr(s)
-
-/* We sometimes need to coerce a protected value and place the new
-   coerced value under protection.  For these cases PROTECT_WITH_INDEX
-   saves an index of the protection location that can be used to
-   replace the protected value using REPROTECT. */
-typedef int PROTECT_INDEX;
-#define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
-#define REPROTECT(x,i) R_Reprotect(x,i)
 
 /* Evaluation Environment */
 LibExtern SEXP	R_GlobalEnv;	    /* The "global" environment */
@@ -177,7 +165,6 @@ SEXP Rf_nthcdr(SEXP, int);
 Rboolean Rf_pmatch(SEXP, SEXP, Rboolean);
 Rboolean Rf_psmatch(char *, char *, Rboolean);
 void Rf_PrintValue(SEXP);
-SEXP Rf_protect(SEXP);
 SEXP Rf_setAttrib(SEXP, SEXP, SEXP);
 void Rf_setSVector(SEXP*, int, SEXP);
 void Rf_setVar(SEXP, SEXP, SEXP);
@@ -187,11 +174,7 @@ SEXP Rf_substitute(SEXP,SEXP);
 char * Rf_translateChar(SEXP);
 char * Rf_type2char(SEXPTYPE);
 SEXP Rf_type2str(SEXPTYPE);
-void Rf_unprotect(int);
-void Rf_unprotect_ptr(SEXP);
 
-void R_ProtectWithIndex(SEXP, PROTECT_INDEX *);
-void R_Reprotect(SEXP, PROTECT_INDEX);
 SEXP R_tryEval(SEXP, SEXP, int *);
 
 				/* return(.) NOT reached : for -Wall */

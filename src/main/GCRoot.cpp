@@ -22,19 +22,93 @@
  * Implementation of class GCRootBase.
  */
 
-#include "CXXR/GCRoot.hpp"
+#include "CXXR/GCRoot.h"
 
-#include <iostream>
+#include <stdexcept>
 
 using namespace std;
 using namespace CXXR;
 
+// Force generation of non-inline embodiments of functions in the C
+// interface:
+namespace {
+    RObject* (*protectp)(RObject*) = protect;
+    void (*unprotectp)(int) = unprotect;
+    void (*ProtectWithIndexp)(SEXP, PROTECT_INDEX *) = R_ProtectWithIndex;
+    void (*Reprotectp)(SEXP, PROTECT_INDEX) = R_Reprotect;
+}
+
 vector<GCNode*> GCRootBase::s_roots;
+
+#ifdef NDEBUG
+vector<RObject*> GCRootBase::s_pps;
+#else
+vector<pair<RObject*, RCNTXT*> > GCRootBase::s_pps;
+#endif
+
+void GCRootBase::ppsRestoreSize(size_t new_size)
+{
+    if (new_size > s_pps.size())
+	throw out_of_range("GCRootBase::ppsRestoreSize: requested size"
+			   " greater than current size.");
+    s_pps.resize(new_size);
+}
+
+void GCRootBase::reprotect(RObject* node, unsigned int index)
+{
+    if (index >= s_pps.size())
+	throw out_of_range("GCRootBase::reprotect: index out of range.");
+#ifdef NDEBUG
+    s_pps[index] = node;
+#else
+    pair<RObject*, RCNTXT*>& pr = s_pps[index];
+    if (pr.second != R_GlobalContext)
+	throw logic_error("GCRootBase::reprotect: not in same context"
+			  " as the corresponding call of protect().");
+    pr.first = node;
+#endif
+}
 
 void GCRootBase::seq_error()
 {
-    cerr << "GCRoots must be destroyed in reverse order of creation\n";
-    abort();
+    throw logic_error("GCRoots must be destroyed"
+		      " in reverse order of creation\n");
+}
+
+void GCRootBase::unprotect(unsigned int count)
+{
+    size_t sz = s_pps.size();
+    if (count > sz)
+	throw out_of_range("GCRootBase::unprotect: count greater"
+			   " than current stack size.");
+#ifdef NDEBUG
+    s_pps.resize(sz - count);
+#else
+    for (unsigned int i = 0; i < count; ++i) {
+	const pair<RObject*, RCNTXT*>& pr = s_pps.back();
+	if (pr.second != R_GlobalContext)
+	    throw logic_error("GCRootBase::unprotect: not in same context"
+			      " as the corresponding call of protect().");
+	s_pps.pop_back();
+    }
+#endif
+}
+
+void GCRootBase::unprotectPtr(RObject* node)
+{
+#ifdef NDEBUG
+    vector<RObject*>::reverse_iterator rit
+	= find(s_pps.rbegin(), s_pps.rend(), node);
+#else
+    vector<pair<RObject*, RCNTXT*> >::reverse_iterator rit = s_pps.rbegin();
+    while (rit != s_pps.rend() && (*rit).first != node)
+	++rit;
+#endif
+    if (rit == s_pps.rend())
+	throw invalid_argument("GCRootBase::unprotectPtr:"
+			       " pointer not found.");
+    // See Josuttis p.267 for the need for -- :
+    s_pps.erase(--(rit.base()));
 }
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)
@@ -44,6 +118,19 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
 	GCNode* n = *it;
 	if (n) n->conductVisitor(v);
     }
+#ifdef NDEBUG
+    for (vector<RObject*>::iterator it = s_pps.begin();
+	 it != s_pps.end(); ++it) {
+	RObject* n = *it;
+	if (n) n->conductVisitor(v);
+    }
+#else
+    for (vector<pair<RObject*, RCNTXT*> >::iterator it = s_pps.begin();
+	 it != s_pps.end(); ++it) {
+	RObject* n = (*it).first;
+	if (n) n->conductVisitor(v);
+    }
+#endif
 }
 
 void GCRootBase::visitRoots(GCNode::visitor* v)
@@ -53,4 +140,27 @@ void GCRootBase::visitRoots(GCNode::visitor* v)
 	GCNode* n = *it;
 	if (n) n->conductVisitor(v);
     }
+#ifdef NDEBUG
+    for (vector<RObject*>::iterator it = s_pps.begin();
+	 it != s_pps.end(); ++it) {
+	RObject* n = *it;
+	if (n) n->conductVisitor(v);
+    }
+#else
+    for (vector<pair<RObject*, RCNTXT*> >::iterator it = s_pps.begin();
+	 it != s_pps.end(); ++it) {
+	RObject* n = (*it).first;
+	if (n) n->conductVisitor(v);
+    }
+#endif
+}
+
+void Rf_ppsRestoreSize(size_t new_size)
+{
+    GCRootBase::ppsRestoreSize(new_size);
+}
+
+size_t Rf_ppsSize()
+{
+    return GCRootBase::ppsSize();
 }

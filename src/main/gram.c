@@ -3468,12 +3468,12 @@ SEXP R_Parse1General(int (*g_getc)(), int (*g_ungetc)(),
 
 static SEXP R_Parse(int n, ParseStatus *status, SEXP srcfile)
 {
-    volatile int savestack;
+    size_t savestack;
     int i;
     SEXP t, rval;
 
     ParseContextInit();
-    savestack = R_PPStackTop;
+    savestack = Rf_ppsSize();
     PROTECT(t = NewList());
     
     xxlineno = 1;
@@ -3497,7 +3497,7 @@ static SEXP R_Parse(int n, ParseStatus *status, SEXP srcfile)
 	    break;
 	case PARSE_INCOMPLETE:
 	case PARSE_ERROR:
-	    R_PPStackTop = savestack;
+	    Rf_ppsRestoreSize(savestack);
 	    return R_NilValue;
 	    break;
 	case PARSE_EOF:
@@ -3516,7 +3516,7 @@ finish:
     	rval = attachSrcrefs(rval, SrcFile);
         SrcFile = NULL;    
     }
-    R_PPStackTop = savestack;
+    Rf_ppsRestoreSize(savestack);
     *status = PARSE_OK;
     return rval;
 }
@@ -3603,12 +3603,12 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt, SE
     SEXP rval, t;
     char *bufp, buf[1024];
     int c, i, prompt_type = 1;
-    volatile int savestack;
+    size_t savestack;
 
     R_IoBufferWriteReset(buffer);
     buf[0] = '\0';
     bufp = buf;
-    savestack = R_PPStackTop;
+    savestack = Rf_ppsSize();
     PROTECT(t = NewList());
     
     xxlineno = 1;
@@ -3644,7 +3644,7 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt, SE
 	case PARSE_INCOMPLETE:
 	case PARSE_ERROR:
 	    R_IoBufferWriteReset(buffer);
-	    R_PPStackTop = savestack;
+	    Rf_ppsRestoreSize(savestack);
 	    return R_NilValue;
 	    break;
 	case PARSE_EOF:
@@ -3662,7 +3662,7 @@ finish:
     	rval = attachSrcrefs(rval, SrcFile);
         SrcFile = NULL;    
     }	
-    R_PPStackTop = savestack;
+    Rf_ppsRestoreSize(savestack);
     *status = PARSE_OK;
     return rval;
 }

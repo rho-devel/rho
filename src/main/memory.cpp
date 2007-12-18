@@ -49,7 +49,7 @@
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
-#include "CXXR/GCRoot.hpp"
+#include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
@@ -91,11 +91,6 @@ extern SEXP framenames;
 
 #define GC_PROT(X) {int __t = gc_inhibit_torture; \
 	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
-
-void R_SetPPSize(R_size_t size)
-{
-    R_PPStackSize = size;
-}
 
 /* Miscellaneous Globals. */
 
@@ -228,7 +223,7 @@ bool WeakRef::runFinalizers()
 		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
 	GCRoot<> topExp(R_CurrentExpr);
-	int savestack = R_PPStackTop;
+	unsigned int savestack = GCRootBase::ppsSize();
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << &thiscontext << endl;
 	try {
@@ -246,7 +241,7 @@ bool WeakRef::runFinalizers()
 	//	     << &thiscontext << endl;
 	endcontext(&thiscontext);
 	R_ToplevelContext = saveToplevelContext;
-	R_PPStackTop = savestack;
+	GCRootBase::ppsRestoreSize(savestack);
 	R_CurrentExpr = topExp;
     }
     return finalizer_run;
@@ -376,9 +371,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 					      communication in model.c */
 
     MARK_THRU(&marker, R_PreciousList);
-
-    for (int i = 0; i < R_PPStackTop; i++)    /* Protected pointers */
-	MARK_THRU(&marker, R_PPStack[i]);
 
     MARK_THRU(&marker, R_VStack);		   /* R_alloc stack */
 
@@ -553,9 +545,6 @@ SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
 /* InitMemory : Initialise the memory to be used in R. */
 /* This includes: stack space, node space and vector space */
 
-#define PP_REDZONE_SIZE 1000L
-static R_size_t R_StandardPPStackSize, R_RealPPStackSize;
-
 void attribute_hidden InitMemory()
 {
 #ifdef _R_HAVE_TIMING_
@@ -564,14 +553,6 @@ void attribute_hidden InitMemory()
     GCManager::initialize(R_VSize);
 #endif
     GCManager::setReporting(R_Verbose ? &cerr : 0);
-    R_StandardPPStackSize = R_PPStackSize;
-    R_RealPPStackSize = R_PPStackSize + PP_REDZONE_SIZE;
-    if (!(R_PPStack = reinterpret_cast<SEXP *>(malloc(R_RealPPStackSize * sizeof(SEXP)))))
-	R_Suicide("couldn't allocate memory for pointer stack");
-    R_PPStackTop = 0;
-#if VALGRIND_LEVEL > 1
-    VALGRIND_MAKE_NOACCESS(R_PPStackTop+R_PPStackSize,PP_REDZONE_SIZE);
-#endif
 
 #ifdef BYTECODE
     R_BCNodeStackBase = reinterpret_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
@@ -1017,99 +998,6 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(2);
     return ans;
 }
-
-/* "protect" push a single argument onto R_PPStack */
-
-/* In handling a stack overflow we have to be careful not to use
-   PROTECT. error("protect(): stack overflow") would call deparse1,
-   which uses PROTECT and segfaults.*/
-
-/* However, the traceback creation in the normal error handler also
-   does a PROTECT, as does the jumping code, at least if there are
-   cleanup expressions to handle on the way out.  So for the moment
-   we'll allocate a slightly larger PP stack and only enable the added
-   red zone during handling of a stack overflow error.  LT */
-
-static void reset_pp_stack(void *data)
-{
-    R_size_t *poldpps = reinterpret_cast<R_size_t*>(data);
-    R_PPStackSize =  *poldpps;
-}
-
-SEXP protect(SEXP s)
-{
-    if (R_PPStackTop >= R_PPStackSize) {
-	RCNTXT cntxt;
-	R_size_t oldpps = R_PPStackSize;
-
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &reset_pp_stack;
-	cntxt.cenddata = &oldpps;
-
-	if (R_PPStackSize < int(R_RealPPStackSize))
-	    R_PPStackSize = R_RealPPStackSize;
-	errorcall(R_NilValue, _("protect(): protection stack overflow"));
-
-	endcontext(&cntxt); /* not reached */
-    }
-    R_PPStack[R_PPStackTop++] = s;
-    return s;
-}
-
-
-/* "unprotect" pop argument list from top of R_PPStack */
-
-void unprotect(int l)
-{
-    if (R_PPStackTop >=  l)
-	R_PPStackTop -= l;
-    else
-	error(_("unprotect(): only %d protected items"), R_PPStackTop);
-}
-
-
-/* "unprotect_ptr" remove pointer from somewhere in R_PPStack */
-
-void unprotect_ptr(SEXP s)
-{
-    int i = R_PPStackTop;
-
-    /* go look for  s  in  R_PPStack */
-    /* (should be among the top few items) */
-    do {
-    	if (i == 0)
-	    error(_("unprotect_ptr: pointer not found"));
-    } while ( R_PPStack[--i] != s );
-
-    /* OK, got it, and  i  is indexing its location */
-    /* Now drop stack above it */
-
-    do {
-    	R_PPStack[i] = R_PPStack[i + 1];
-    } while ( i++ < R_PPStackTop );
-
-    R_PPStackTop--;
-}
-
-void R_ProtectWithIndex(SEXP s, PROTECT_INDEX *pi)
-{
-    protect(s);
-    *pi = R_PPStackTop - 1;
-}
-
-void R_Reprotect(SEXP s, PROTECT_INDEX i)
-{
-    R_PPStack[i] = s;
-}
-
-
-/* "initStack" initialize environment stack */
-void initStack(void)
-{
-    R_PPStackTop = 0;
-}
-
 
 /* S-like wrappers for calloc, realloc and free that check for error
    conditions */

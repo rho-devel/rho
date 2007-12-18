@@ -33,6 +33,9 @@
 #include <R_ext/RConverters.h>
 
 #include <Rinterface.h>
+#include "CXXR/GCRoot.h"
+
+using namespace CXXR;
 
 /* Table of  .Internal(.) and .Primitive(.)  R functions
  * =====     =========	      ==========
@@ -1099,7 +1102,7 @@ SEXP install(char const *name)
 SEXP attribute_hidden do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, fun;
-    int save = R_PPStackTop;
+    int save = GCRootBase::ppsSize();
     int flag;
     char *vmax = vmaxget();
 

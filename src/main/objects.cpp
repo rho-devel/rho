@@ -32,6 +32,9 @@
 #include "Defn.h"
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
+#include "CXXR/GCRoot.h"
+
+using namespace CXXR;
 
 static SEXP GetObject(RCNTXT *cptr)
 {
@@ -100,7 +103,8 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
 {
     SEXP ans;
     if (TYPEOF(op) == SPECIALSXP) {
-	int save = R_PPStackTop, flag = PRIMPRINT(op);
+	unsigned int save = GCRootBase::ppsSize();
+	int flag = PRIMPRINT(op);
 	char *vmax = vmaxget();
 	R_Visible = Rboolean(flag != 1);
 	ans = PRIMFUN(op) (call, op, args, rho);
@@ -114,7 +118,8 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
        found).
      */
     else if (TYPEOF(op) == BUILTINSXP) {
-	int save = R_PPStackTop, flag = PRIMPRINT(op);
+	unsigned int save = GCRootBase::ppsSize();
+	int flag = PRIMPRINT(op);
 	char *vmax = vmaxget();
 	PROTECT(args = evalList(args, rho, op));
 	R_Visible = Rboolean(flag != 1);
