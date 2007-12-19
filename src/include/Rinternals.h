@@ -45,6 +45,7 @@
 #include "CXXR/RPromise.h"
 #include "CXXR/RSymbol.h"
 #include "CXXR/RVector.h"
+#include "CXXR/WeakRef.h"
 
 #ifdef __cplusplus
 extern "C" {
