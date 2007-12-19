@@ -410,4 +410,7 @@ SEXP Rf_ScalarString(SEXP);
 }
 #endif
 
+/* We defer this to the last possible moment: */
+#include "Rf_namespace.h"
+
 #endif /* R_INTERNALS_H_ */

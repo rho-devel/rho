@@ -28,7 +28,6 @@
 #define ROBJECT_H
 
 #include "R_ext/Boolean.h"
-#include "Rf_namespace.h"
 
 #ifdef __cplusplus
 
@@ -443,7 +442,7 @@ inline void UNSET_S4_OBJECT(SEXP x)  {x->m_gpbits &= ~S4_OBJECT_MASK;}
  *
  * @return Pointer to the created vector.
  */
-SEXP allocS4Object();
+SEXP Rf_allocS4Object();
 
 /* Bindings */
 /* use the same bits (15 and 14) in symbols and bindings */

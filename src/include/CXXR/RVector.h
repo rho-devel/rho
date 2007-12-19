@@ -314,9 +314,9 @@ inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
  * @param length The length of the vector to be created.
  * @return Pointer to the created vector.
  */
-SEXP allocVector(SEXPTYPE stype, R_len_t length);
+SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
 
-#define allocString(n)		allocVector(CHARSXP, n)
+#define allocString(n)		Rf_allocVector(CHARSXP, n)
 
 #ifdef __cplusplus
 }

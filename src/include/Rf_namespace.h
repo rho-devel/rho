@@ -18,13 +18,29 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** \file Rf_namespace.h
+/** @file Rf_namespace.h
+ * @brief Analogous to <tt>using namespace Rf;</tt>
  * 
  * This header file causes functions within the C interface to be
- * allocated symbol names starting with Rf_ , to avoid name clashes
+ * allocated symbol names starting with \c Rf_ , to avoid name clashes
  * with function names in client code.  It corresponds in C++ terms to
- * placing the functions in a namespace.  It should be included within
- * any file that uses or defines the functions concerned.
+ * placing the functions in a namespace.
+ *
+ * @note This file is primarily intended for use with code inherited
+ * from CR that uses the relevant function names without the \c Rf_
+ * prefix.  In new or extensively revised code it is recommended that
+ * this prefix be made explicit.  The preprocessor directive
+ * @code
+ * #include "Rf_namespace.h"
+ * @endcode
+ * should be treated analogously to a using-directive in C++, e.g.
+ * @code
+ * using namespace Rf;
+ * @endcode
+ * In particular, this file should \e not normally be <tt>\#include</tt>d
+ * into other header files.  However, it is included at the end of
+ * Rinternals.h (and hence indirectly included into Defn.h), because
+ * to do otherwise would break much existing code.
  */
 
 #ifndef RF_NAMESPACE_H
@@ -288,6 +304,6 @@
 #define yynerrs		        Rf_yynerrs
 #define yyparse		        Rf_yyparse
 
-#endif
+#endif /* R_NO_REMAP */
 
 #endif /* RF_NAMESPACE_H */

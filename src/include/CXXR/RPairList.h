@@ -47,8 +47,8 @@ extern "C" {
 
 /* List Access Functions */
 /* These also work for ... objects */
-#define CONS(a, b)	cons((a), (b))		/* data lists */
-#define LCONS(a, b)	lcons((a), (b))		/* language lists */
+#define CONS(a, b)	Rf_cons((a), (b))		/* data lists */
+#define LCONS(a, b)	Rf_lcons((a), (b))		/* language lists */
 
 /**
  * @param e Pointer to a list.
@@ -224,7 +224,7 @@ SEXP SETCAD4R(SEXP e, SEXP y);
  * @return Pointer to the created list.
  * @todo Make \a n unsigned
  */
-SEXP allocList(unsigned int n);
+SEXP Rf_allocList(unsigned int n);
 
 /**
  * @brief Create an RObject...of listlike type
@@ -235,7 +235,7 @@ SEXP allocList(unsigned int n);
  * @param t The stype of the required object.
  * @return Pointer to the created object.
  */
-SEXP allocSExp(SEXPTYPE t);
+SEXP Rf_allocSExp(SEXPTYPE t);
 
 /* External pointer access macros */
 #define EXTPTR_PTR(x)	CAR(x)

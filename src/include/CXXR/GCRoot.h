@@ -292,8 +292,8 @@ extern "C" {
 
     /* ***** C interface ***** */
 
-#define PROTECT(s)	        protect(s)
-#define UNPROTECT(n)	        unprotect(n)
+#define PROTECT(s)	        Rf_protect(s)
+#define UNPROTECT(n)	        Rf_unprotect(n)
 #define UNPROTECT_PTR(s)	unprotect_ptr(s)
 #define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
 #define REPROTECT(x,i)          R_Reprotect(x,i)
@@ -307,9 +307,9 @@ extern "C" {
      * @return a copy of \a node .
      */
 #ifndef __cplusplus
-    SEXP protect(SEXP node);
+    SEXP Rf_protect(SEXP node);
 #else
-    inline SEXP protect(SEXP node)
+    inline SEXP Rf_protect(SEXP node)
     {
 	CXXR::GCRootBase::protect(node);
 	return node;
@@ -389,9 +389,9 @@ extern "C" {
      *          protection stack.
      */
 #ifndef __cplusplus
-    void unprotect(int count);
+    void Rf_unprotect(int count);
 #else
-    inline void unprotect(int count)
+    inline void Rf_unprotect(int count)
     {
 	CXXR::GCRootBase::unprotect(count);
     }
@@ -408,9 +408,9 @@ extern "C" {
      * @deprecated Utterly.
      */
 #ifndef __cplusplus
-    void unprotect_ptr(SEXP node);
+    void Rf_unprotect_ptr(SEXP node);
 #else
-    inline void unprotect_ptr(SEXP node)
+    inline void Rf_unprotect_ptr(SEXP node)
     {
 	CXXR::GCRootBase::unprotectPtr(node);
     }

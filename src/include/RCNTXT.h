@@ -26,7 +26,6 @@
 #ifndef RCNTXT_H
 #define RCNTXT_H
 
-#include "Rf_namespace.h"
 #include "R_ext/Boolean.h"
 #include "R_ext/libextern.h"
 #include "CXXR/RObject.h"
@@ -116,11 +115,11 @@ extern "C" {
     LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
     LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
 
-    void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
-    SEXP dynamicfindVar(SEXP, RCNTXT*);
-    void endcontext(RCNTXT*);
-    void findcontext(int, SEXP, SEXP);
-    int framedepth(RCNTXT*);
+    void Rf_begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
+    SEXP Rf_dynamicfindVar(SEXP, RCNTXT*);
+    void Rf_endcontext(RCNTXT*);
+    void Rf_findcontext(int, SEXP, SEXP);
+    int Rf_framedepth(RCNTXT*);
     void R_InsertRestartHandlers(RCNTXT *, Rboolean);
     void R_JumpToContext(RCNTXT *, int, SEXP);
     SEXP R_syscall(int,RCNTXT*);

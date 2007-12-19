@@ -32,8 +32,8 @@ using namespace CXXR;
 // Force generation of non-inline embodiments of functions in the C
 // interface:
 namespace {
-    RObject* (*protectp)(RObject*) = protect;
-    void (*unprotectp)(int) = unprotect;
+    RObject* (*protectp)(RObject*) = Rf_protect;
+    void (*unprotectp)(int) = Rf_unprotect;
     void (*ProtectWithIndexp)(SEXP, PROTECT_INDEX *) = R_ProtectWithIndex;
     void (*Reprotectp)(SEXP, PROTECT_INDEX) = R_Reprotect;
 }

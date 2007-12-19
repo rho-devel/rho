@@ -61,7 +61,7 @@ extern "C" {
 
 /* mkChar - make a character (CHARSXP) variable */
 
-INLINE_FUN SEXP mkChar(const char *name)
+INLINE_FUN SEXP Rf_mkChar(const char *name)
 {
     SEXP c = allocString(strlen(name));
     strcpy(CHAR(c), name);
@@ -72,7 +72,7 @@ INLINE_FUN SEXP mkChar(const char *name)
 
 int Rf_envlength(SEXP rho);
 
-INLINE_FUN R_len_t length(SEXP s)
+INLINE_FUN R_len_t Rf_length(SEXP s)
 {
     int i;
     switch (TYPEOF(s)) {
@@ -111,12 +111,12 @@ INLINE_FUN R_len_t length(SEXP s)
 
 
 /* Get the i-th element of a list */
-INLINE_FUN SEXP elt(SEXP list, int i)
+INLINE_FUN SEXP Rf_elt(SEXP list, int i)
 {
     int j;
     SEXP result = list;
 
-    if ((i < 0) || (i > length(list)))
+    if ((i < 0) || (i > Rf_length(list)))
 	return R_NilValue;
     else
 	for (j = 0; j < i; j++)
@@ -127,7 +127,7 @@ INLINE_FUN SEXP elt(SEXP list, int i)
 
 
 /* Return the last element of a list */
-INLINE_FUN SEXP lastElt(SEXP list)
+INLINE_FUN SEXP Rf_lastElt(SEXP list)
 {
     SEXP result = R_NilValue;
     while (list != R_NilValue) {
@@ -140,34 +140,34 @@ INLINE_FUN SEXP lastElt(SEXP list)
 
 /* Shorthands for creating small lists */
 
-INLINE_FUN SEXP list1(SEXP s)
+INLINE_FUN SEXP Rf_list1(SEXP s)
 {
     return CONS(s, R_NilValue);
 }
 
 
-INLINE_FUN SEXP list2(SEXP s, SEXP t)
+INLINE_FUN SEXP Rf_list2(SEXP s, SEXP t)
 {
     PROTECT(s);
-    s = CONS(s, list1(t));
+    s = CONS(s, Rf_list1(t));
     UNPROTECT(1);
     return s;
 }
 
 
-INLINE_FUN SEXP list3(SEXP s, SEXP t, SEXP u)
+INLINE_FUN SEXP Rf_list3(SEXP s, SEXP t, SEXP u)
 {
     PROTECT(s);
-    s = CONS(s, list2(t, u));
+    s = CONS(s, Rf_list2(t, u));
     UNPROTECT(1);
     return s;
 }
 
 
-INLINE_FUN SEXP list4(SEXP s, SEXP t, SEXP u, SEXP v)
+INLINE_FUN SEXP Rf_list4(SEXP s, SEXP t, SEXP u, SEXP v)
 {
     PROTECT(s);
-    s = CONS(s, list3(t, u, v));
+    s = CONS(s, Rf_list3(t, u, v));
     UNPROTECT(1);
     return s;
 }
@@ -175,7 +175,7 @@ INLINE_FUN SEXP list4(SEXP s, SEXP t, SEXP u, SEXP v)
 
 /* Destructive list append : See also ``append'' */
 
-INLINE_FUN SEXP listAppend(SEXP s, SEXP t)
+INLINE_FUN SEXP Rf_listAppend(SEXP s, SEXP t)
 {
     SEXP r;
     if (s == R_NilValue)
@@ -193,38 +193,38 @@ INLINE_FUN SEXP listAppend(SEXP s, SEXP t)
 
 /* Return a (language) dotted pair with the given car and cdr */
 
-INLINE_FUN SEXP lcons(SEXP car, SEXP cdr)
+INLINE_FUN SEXP Rf_lcons(SEXP car, SEXP cdr)
 {
-    SEXP e = cons(car, cdr);
+    SEXP e = Rf_cons(car, cdr);
     SET_TYPEOF(e, LANGSXP);
     return e;
 }
 
-INLINE_FUN SEXP lang1(SEXP s)
+INLINE_FUN SEXP Rf_lang1(SEXP s)
 {
     return LCONS(s, R_NilValue);
 }
 
-INLINE_FUN SEXP lang2(SEXP s, SEXP t)
+INLINE_FUN SEXP Rf_lang2(SEXP s, SEXP t)
 {
     PROTECT(s);
-    s = LCONS(s, list1(t));
+    s = LCONS(s, Rf_list1(t));
     UNPROTECT(1);
     return s;
 }
 
-INLINE_FUN SEXP lang3(SEXP s, SEXP t, SEXP u)
+INLINE_FUN SEXP Rf_lang3(SEXP s, SEXP t, SEXP u)
 {
     PROTECT(s);
-    s = LCONS(s, list2(t, u));
+    s = LCONS(s, Rf_list2(t, u));
     UNPROTECT(1);
     return s;
 }
 
-INLINE_FUN SEXP lang4(SEXP s, SEXP t, SEXP u, SEXP v)
+INLINE_FUN SEXP Rf_lang4(SEXP s, SEXP t, SEXP u, SEXP v)
 {
     PROTECT(s);
-    s = LCONS(s, list3(t, u, v));
+    s = LCONS(s, Rf_list3(t, u, v));
     UNPROTECT(1);
     return s;
 }
@@ -233,13 +233,13 @@ INLINE_FUN SEXP lang4(SEXP s, SEXP t, SEXP u, SEXP v)
 
 /* Check to see if the arrays "x" and "y" have the identical extents */
 
-INLINE_FUN Rboolean conformable(SEXP x, SEXP y)
+INLINE_FUN Rboolean Rf_conformable(SEXP x, SEXP y)
 {
     int i, n;
-    PROTECT(x = getAttrib(x, R_DimSymbol));
-    y = getAttrib(y, R_DimSymbol);
+    PROTECT(x = Rf_getAttrib(x, R_DimSymbol));
+    y = Rf_getAttrib(y, R_DimSymbol);
     UNPROTECT(1);
-    if ((n = length(x)) != length(y))
+    if ((n = Rf_length(x)) != Rf_length(y))
 	return FALSE;
     for (i = 0; i < n; i++)
 	if (INTEGER(x)[i] != INTEGER(y)[i])
@@ -247,24 +247,24 @@ INLINE_FUN Rboolean conformable(SEXP x, SEXP y)
     return TRUE;
 }
 
-INLINE_FUN Rboolean isString(SEXP s)
+INLINE_FUN Rboolean Rf_isString(SEXP s)
 {
     return RBOOL(TYPEOF(s) == STRSXP);
 }
 
-INLINE_FUN Rboolean isNull(SEXP s)
+INLINE_FUN Rboolean Rf_isNull(SEXP s)
 {
     return RBOOL(s == R_NilValue);
 }
 
-INLINE_FUN Rboolean isObject(SEXP s)
+INLINE_FUN Rboolean Rf_isObject(SEXP s)
 {
     return RBOOL(OBJECT(s));/* really '1-bit unsigned int' */
 }
 
 /*  The following should work but as of 06/09/04 it generates warnings about 
     undeclared IS_S4_OBJECT, in spite of being apparently identical to the handling 
-    of isObject() above ------
+    of Rf_isObject() above ------
 INLINE_FUN Rboolean isS4(SEXP s)
 {
   return IS_S4_OBJECT(s);
@@ -283,13 +283,13 @@ INLINE_FUN SEXP asS4(SEXP s, Rboolean flag)
 
 */
 
-INLINE_FUN Rboolean inherits(SEXP s, char *name)
+INLINE_FUN Rboolean Rf_inherits(SEXP s, char *name)
 {
     SEXP klass;
     int i, nclass;
-    if (isObject(s)) {
-	klass = getAttrib(s, R_ClassSymbol);
-	nclass = length(klass);
+    if (Rf_isObject(s)) {
+	klass = Rf_getAttrib(s, R_ClassSymbol);
+	nclass = Rf_length(klass);
 	for (i = 0; i < nclass; i++) {
 	    if (!strcmp(CHAR(STRING_ELT(klass, i)), name))
 		return TRUE;
@@ -298,25 +298,26 @@ INLINE_FUN Rboolean inherits(SEXP s, char *name)
     return FALSE;
 }
 
-INLINE_FUN Rboolean isValidString(SEXP x)
+INLINE_FUN Rboolean Rf_isValidString(SEXP x)
 {
-    return RBOOL(isString(x) && LENGTH(x) > 0 && !isNull(STRING_ELT(x, 0)));
+    return RBOOL(Rf_isString(x) && LENGTH(x) > 0
+		 && !Rf_isNull(STRING_ELT(x, 0)));
 }
 
 /* non-empty ("") valid string :*/
-INLINE_FUN Rboolean isValidStringF(SEXP x)
+INLINE_FUN Rboolean Rf_isValidStringF(SEXP x)
 {
-    return RBOOL(isValidString(x) && CHAR(STRING_ELT(x, 0))[0]);
+    return RBOOL(Rf_isValidString(x) && CHAR(STRING_ELT(x, 0))[0]);
 }
 
-INLINE_FUN Rboolean isSymbol(SEXP s)
+INLINE_FUN Rboolean Rf_isSymbol(SEXP s)
 {
     return RBOOL(TYPEOF(s) == SYMSXP);
 }
 
-INLINE_FUN Rboolean isUserBinop(SEXP s)
+INLINE_FUN Rboolean Rf_isUserBinop(SEXP s)
 {
-    if (isSymbol(s)) {
+    if (Rf_isSymbol(s)) {
 	char *str = CHAR(PRINTNAME(s));
 	if (strlen(str) >= 2 && str[0] == '%' && str[strlen(str)-1] == '%')
 	    return TRUE;
@@ -324,31 +325,31 @@ INLINE_FUN Rboolean isUserBinop(SEXP s)
     return FALSE;
 }
 
-INLINE_FUN Rboolean isFunction(SEXP s)
+INLINE_FUN Rboolean Rf_isFunction(SEXP s)
 {
     return RBOOL(TYPEOF(s) == CLOSXP ||
 	    TYPEOF(s) == BUILTINSXP ||
 	    TYPEOF(s) == SPECIALSXP);
 }
 
-INLINE_FUN Rboolean isPrimitive(SEXP s)
+INLINE_FUN Rboolean Rf_isPrimitive(SEXP s)
 {
     return RBOOL(TYPEOF(s) == BUILTINSXP ||
 	    TYPEOF(s) == SPECIALSXP);
 }
 
-INLINE_FUN Rboolean isList(SEXP s)
+INLINE_FUN Rboolean Rf_isList(SEXP s)
 {
     return RBOOL(s == R_NilValue || TYPEOF(s) == LISTSXP);
 }
 
 
-INLINE_FUN Rboolean isNewList(SEXP s)
+INLINE_FUN Rboolean Rf_isNewList(SEXP s)
 {
     return RBOOL(s == R_NilValue || TYPEOF(s) == VECSXP);
 }
 
-INLINE_FUN Rboolean isPairList(SEXP s)
+INLINE_FUN Rboolean Rf_isPairList(SEXP s)
 {
     switch (TYPEOF(s)) {
     case NILSXP:
@@ -360,7 +361,7 @@ INLINE_FUN Rboolean isPairList(SEXP s)
     }
 }
 
-INLINE_FUN Rboolean isVectorList(SEXP s)
+INLINE_FUN Rboolean Rf_isVectorList(SEXP s)
 {
     switch (TYPEOF(s)) {
     case VECSXP:
@@ -371,7 +372,7 @@ INLINE_FUN Rboolean isVectorList(SEXP s)
     }
 }
 
-INLINE_FUN Rboolean isVectorAtomic(SEXP s)
+INLINE_FUN Rboolean Rf_isVectorAtomic(SEXP s)
 {
     switch (TYPEOF(s)) {
     case LGLSXP:
@@ -386,7 +387,7 @@ INLINE_FUN Rboolean isVectorAtomic(SEXP s)
     }
 }
 
-INLINE_FUN Rboolean isVector(SEXP s)/* === isVectorList() or isVectorAtomic() */
+INLINE_FUN Rboolean Rf_isVector(SEXP s)/* === Rf_isVectorList() or Rf_isVectorAtomic() */
 {
     switch(TYPEOF(s)) {
     case LGLSXP:
@@ -404,33 +405,33 @@ INLINE_FUN Rboolean isVector(SEXP s)/* === isVectorList() or isVectorAtomic() */
     }
 }
 
-INLINE_FUN Rboolean isFrame(SEXP s)
+INLINE_FUN Rboolean Rf_isFrame(SEXP s)
 {
     SEXP klass;
     int i;
-    if (isObject(s)) {
-	klass = getAttrib(s, R_ClassSymbol);
-	for (i = 0; i < length(klass); i++)
+    if (Rf_isObject(s)) {
+	klass = Rf_getAttrib(s, R_ClassSymbol);
+	for (i = 0; i < Rf_length(klass); i++)
 	    if (!strcmp(CHAR(STRING_ELT(klass, i)), "data.frame")) return TRUE;
     }
     return FALSE;
 }
 
-INLINE_FUN Rboolean isExpression(SEXP s)
+INLINE_FUN Rboolean Rf_isExpression(SEXP s)
 {
     return RBOOL(TYPEOF(s) == EXPRSXP);
 }
 
-INLINE_FUN Rboolean isLanguage(SEXP s)
+INLINE_FUN Rboolean Rf_isLanguage(SEXP s)
 {
     return RBOOL(s == R_NilValue || TYPEOF(s) == LANGSXP);
 }
 
-INLINE_FUN Rboolean isMatrix(SEXP s)
+INLINE_FUN Rboolean Rf_isMatrix(SEXP s)
 {
     SEXP t;
-    if (isVector(s)) {
-	t = getAttrib(s, R_DimSymbol);
+    if (Rf_isVector(s)) {
+	t = Rf_getAttrib(s, R_DimSymbol);
 	/* You are not supposed to be able to assign a non-integer dim,
 	   although this might be possible by misuse of ATTRIB. */
 	if (TYPEOF(t) == INTSXP && LENGTH(t) == 2)
@@ -439,11 +440,11 @@ INLINE_FUN Rboolean isMatrix(SEXP s)
     return FALSE;
 }
 
-INLINE_FUN Rboolean isArray(SEXP s)
+INLINE_FUN Rboolean Rf_isArray(SEXP s)
 {
     SEXP t;
-    if (isVector(s)) {
-	t = getAttrib(s, R_DimSymbol);
+    if (Rf_isVector(s)) {
+	t = Rf_getAttrib(s, R_DimSymbol);
 	/* You are not supposed to be able to assign a 0-length dim,
 	 nor a non-integer dim */
 	if (TYPEOF(t) == INTSXP && LENGTH(t) > 0)
@@ -452,61 +453,61 @@ INLINE_FUN Rboolean isArray(SEXP s)
     return FALSE;
 }
 
-INLINE_FUN Rboolean isTs(SEXP s)
+INLINE_FUN Rboolean Rf_isTs(SEXP s)
 {
-    return RBOOL(isVector(s) && getAttrib(s, R_TspSymbol) != R_NilValue);
+    return RBOOL(Rf_isVector(s) && Rf_getAttrib(s, R_TspSymbol) != R_NilValue);
 }
 
 
-INLINE_FUN Rboolean isLogical(SEXP s)
+INLINE_FUN Rboolean Rf_isLogical(SEXP s)
 {
     return RBOOL(TYPEOF(s) == LGLSXP);
 }
 
-INLINE_FUN Rboolean isInteger(SEXP s)
+INLINE_FUN Rboolean Rf_isInteger(SEXP s)
 {
-    return RBOOL(TYPEOF(s) == INTSXP && !inherits(s, "factor"));
+    return RBOOL(TYPEOF(s) == INTSXP && !Rf_inherits(s, "factor"));
 }
 
-INLINE_FUN Rboolean isReal(SEXP s)
+INLINE_FUN Rboolean Rf_isReal(SEXP s)
 {
     return RBOOL(TYPEOF(s) == REALSXP);
 }
 
-INLINE_FUN Rboolean isComplex(SEXP s)
+INLINE_FUN Rboolean Rf_isComplex(SEXP s)
 {
     return RBOOL(TYPEOF(s) == CPLXSXP);
 }
 
-INLINE_FUN Rboolean isUnordered(SEXP s)
+INLINE_FUN Rboolean Rf_isUnordered(SEXP s)
 {
     return RBOOL(TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && !inherits(s, "ordered"));
+	    && Rf_inherits(s, "factor")
+	    && !Rf_inherits(s, "ordered"));
 }
 
-INLINE_FUN Rboolean isOrdered(SEXP s)
+INLINE_FUN Rboolean Rf_isOrdered(SEXP s)
 {
     return RBOOL(TYPEOF(s) == INTSXP
-	    && inherits(s, "factor")
-	    && inherits(s, "ordered"));
+	    && Rf_inherits(s, "factor")
+	    && Rf_inherits(s, "ordered"));
 }
 
-INLINE_FUN Rboolean isFactor(SEXP s)
+INLINE_FUN Rboolean Rf_isFactor(SEXP s)
 {
-    return RBOOL(TYPEOF(s) == INTSXP  && inherits(s, "factor"));
+    return RBOOL(TYPEOF(s) == INTSXP  && Rf_inherits(s, "factor"));
 }
 
-INLINE_FUN Rboolean isEnvironment(SEXP s)
+INLINE_FUN Rboolean Rf_isEnvironment(SEXP s)
 {
     return RBOOL(TYPEOF(s) == ENVSXP);
 }
 
-INLINE_FUN int nlevels(SEXP f)
+INLINE_FUN int Rf_nlevels(SEXP f)
 {
-    if (!isFactor(f))
+    if (!Rf_isFactor(f))
 	return 0;
-    return LENGTH(getAttrib(f, R_LevelsSymbol));
+    return LENGTH(Rf_getAttrib(f, R_LevelsSymbol));
 }
 
 
@@ -514,11 +515,11 @@ INLINE_FUN int nlevels(SEXP f)
 /* FIXME:  the LGLSXP case should be excluded here
  * (really? in many places we affirm they are treated like INTs)*/
 
-INLINE_FUN Rboolean isNumeric(SEXP s)
+INLINE_FUN Rboolean Rf_isNumeric(SEXP s)
 {
     switch(TYPEOF(s)) {
     case INTSXP:
-	if (inherits(s,"factor")) return FALSE;
+	if (Rf_inherits(s,"factor")) return FALSE;
     case LGLSXP:
     case REALSXP:
 	return TRUE;
@@ -528,49 +529,49 @@ INLINE_FUN Rboolean isNumeric(SEXP s)
 }
 
 /* As from R 2.4.0 we check that the value is allowed. */
-INLINE_FUN SEXP ScalarLogical(int x)
+INLINE_FUN SEXP Rf_ScalarLogical(int x)
 {
-    SEXP ans = allocVector(LGLSXP, 1);
+    SEXP ans = Rf_allocVector(LGLSXP, 1);
     if (x == NA_LOGICAL) LOGICAL(ans)[0] = NA_LOGICAL;
     else LOGICAL(ans)[0] = (x != 0);
     return ans;
 }
 
-INLINE_FUN SEXP ScalarInteger(int x)
+INLINE_FUN SEXP Rf_ScalarInteger(int x)
 {
-    SEXP ans = allocVector(INTSXP, 1);
+    SEXP ans = Rf_allocVector(INTSXP, 1);
     INTEGER(ans)[0] = x;
     return ans;
 }
 
-INLINE_FUN SEXP ScalarReal(double x)
+INLINE_FUN SEXP Rf_ScalarReal(double x)
 {
-    SEXP ans = allocVector(REALSXP, 1);
+    SEXP ans = Rf_allocVector(REALSXP, 1);
     REAL(ans)[0] = x;
     return ans;
 }
 
 
-INLINE_FUN SEXP ScalarComplex(Rcomplex x)
+INLINE_FUN SEXP Rf_ScalarComplex(Rcomplex x)
 {
-    SEXP ans = allocVector(CPLXSXP, 1);
+    SEXP ans = Rf_allocVector(CPLXSXP, 1);
     COMPLEX(ans)[0] = x;
     return ans;
 }
 
-INLINE_FUN SEXP ScalarString(SEXP x)
+INLINE_FUN SEXP Rf_ScalarString(SEXP x)
 {
     SEXP ans;
     PROTECT(x);
-    ans = allocVector(STRSXP, 1);
+    ans = Rf_allocVector(STRSXP, 1);
     SET_STRING_ELT(ans, 0, x);
     UNPROTECT(1);
     return ans;
 }
 
-INLINE_FUN SEXP ScalarRaw(Rbyte x)
+INLINE_FUN SEXP Rf_ScalarRaw(Rbyte x)
 {
-    SEXP ans = allocVector(RAWSXP, 1);
+    SEXP ans = Rf_allocVector(RAWSXP, 1);
     RAW(ans)[0] = x;
     return ans;
 }
@@ -579,21 +580,21 @@ INLINE_FUN SEXP ScalarRaw(Rbyte x)
 /* it must have every element being a vector of length 1. */
 /* BUT it does not exclude 0! */
 
-INLINE_FUN Rboolean isVectorizable(SEXP s)
+INLINE_FUN Rboolean Rf_isVectorizable(SEXP s)
 {
-    if (isNull(s)) return TRUE;
-    else if (isNewList(s)) {
+    if (Rf_isNull(s)) return TRUE;
+    else if (Rf_isNewList(s)) {
 	int i, n;
 
 	n = LENGTH(s);
 	for (i = 0 ; i < n; i++)
-	    if (!isVector(VECTOR_ELT(s, i)) || LENGTH(VECTOR_ELT(s, i)) > 1)
+	    if (!Rf_isVector(VECTOR_ELT(s, i)) || LENGTH(VECTOR_ELT(s, i)) > 1)
 		return FALSE;
 	return TRUE;
     }
-    else if (isList(s)) {
+    else if (Rf_isList(s)) {
 	for ( ; s != R_NilValue; s = CDR(s))
-	    if (!isVector(CAR(s)) || LENGTH(CAR(s)) > 1) return FALSE;
+	    if (!Rf_isVector(CAR(s)) || LENGTH(CAR(s)) > 1) return FALSE;
 	return TRUE;
     }
     else return FALSE;
@@ -602,12 +603,12 @@ INLINE_FUN Rboolean isVectorizable(SEXP s)
 
 /* from gram.y */
 
-INLINE_FUN SEXP mkString(const char *s)
+INLINE_FUN SEXP Rf_mkString(const char *s)
 {
     SEXP t;
 
-    PROTECT(t = allocVector(STRSXP, 1));
-    SET_STRING_ELT(t, 0, mkChar(s));
+    PROTECT(t = Rf_allocVector(STRSXP, 1));
+    SET_STRING_ELT(t, 0, Rf_mkChar(s));
     UNPROTECT(1);
     return t;
 }
