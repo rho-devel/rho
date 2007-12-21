@@ -38,6 +38,13 @@ into the implementation of the interpreter. In particular:</p>
     in CXXR: it simply returns a vector of zeroes.</li>
 </ul>
 
+<p>Moreover, while CXXR is at an alpha/beta development stage, internal logic
+errors (i.e. errors due to bugs in the interpreter rather than to bugs in the
+R code it is interpreting) will sometimes cause the interpreter itself to
+terminate, even in circumstances where CR would manage to recover to the
+top-level prompt. This is intentional in order to 'preserve the scene of
+crime' for debugging.</p>
+
 <h2>C Code</h2>
 
 <h3>Mandatory changes:</h3>
@@ -65,6 +72,19 @@ into the implementation of the interpreter. In particular:</p>
     values of particular <code>SEXPTYPE</code>s are unchanged. (This change
     appears to have been under comtemplation within CR.) This may necessitate
     some explicit conversions or changes in the types of variables.</li>
+  <li>C code that calls (directly or indirectly) certain CXXR internal
+    functions that are now implemented in C++ should be compiled in such a
+    way that C++ exceptions are propagated correctly. For example, using
+    <code>gcc</code> this can be achieved by specifying the compiler flag
+    <code>-fexceptions</code>. The most likely case where this will be
+    necessary is in code that calls <code>error</code> (aka
+    <code>Rf_error</code>); without this change, the R interpreter may not
+    return correctly to the top-level R prompt following an error.</li>
+  <li>CXXR requires that when <code>UNPROTECT</code> or
+    <code>REPROTECT</code> are applied to a pointer, this is carried out in
+    the same context (<code>RCNTXT</code>) as that in which the pointer was
+    <code>PROTECT</code>ed. This is to help pick up mispairing between
+    <code>PROTECT</code> and <code>UNPROTECT</code>.</li>
 </ul>
 
 <h3>Suggested changes:</h3>
@@ -78,6 +98,20 @@ into the implementation of the interpreter. In particular:</p>
     the names of functions intended to be visible to C code.</li>
   <li>Rework code as necessary to prevent compiler warnings that a
     <code>const</code> qualifier is being discarded.</li>
+</ul>
+
+<h2>FORTRAN Code</h2>
+
+<h3>Mandatory changes:</h3>
+<ul>
+  <li>FORTRAN code that calls (directly or indirectly) certain CXXR internal
+    functions that are now implemented in C++ should be compiled in such a
+    way that C++ exceptions are propagated correctly. For example, using
+    <code>gfortran</code> this can apparently be achieved by specifying the
+    compiler flag <code>-fexceptions</code> (though it is not well
+    documented). The most likely case where this will be necessary is in code
+    that calls <code>rexit</code>; without this change, the R interpreter may
+    not return correctly to the top-level R prompt following an error.</li>
 </ul>
 
 <h2>C++ Code</h2>
