@@ -136,8 +136,18 @@ namespace CXXR {
 	R_len_t	truelength;
     };
 
-    /* The standard node structure consists of a header followed by the
-       node data. */
+    /** @brief Replacement for CR's SEXPREC.
+     *
+     * This class is the rough equivalent within CXXR of the SEXPREC
+     * union within CR.  However, all functionality relating to
+     * garbage collection has been factored out into the base class
+     * GCNode, and as CXXR development proceeds other functionality
+     * will be factored out into derived classes (corresponding
+     * roughly, but not exactly, to different SEXPTYPEs within CR).
+     *
+     * Eventually this class may end up simply as the home of R
+     * attributes.
+     */
     struct RObject : public GCNode {
 	/**
 	 * @param stype Required type of the RObject.

@@ -19,8 +19,15 @@
  */
 
 /** @file Defn.h
+ * @brief A ragbag.
  *
- * A ragbag.
+ * As CXXR development proceeds, the type definitions, function
+ * prototypes etc. defined in this header file will be progressively
+ * factored out into individual class-related header files, which will
+ * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
+ * code should use the class-related header files directly, as required,
+ * rather than <tt>\#include</tt>ing this file, which is retained for
+ * backwards compatibility only.
  */
 
 #ifndef DEFN_H_
@@ -595,6 +602,137 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 
 /*--- FUNCTIONS ------------------------------------------------------ */
+
+/* These Rf_ macros are retained for backwards compatibility, but
+ * their use is deprecated within CXXR.  In particular header files
+ * should always use the Rf_ prefix explicitly, and not rely on these
+ * macros to paste it in.
+ */
+
+#ifndef R_NO_REMAP
+# define begincontext		Rf_begincontext
+# define checkArity		Rf_checkArity
+# define check_stack_balance	Rf_check_stack_balance
+# define CheckFormals		Rf_CheckFormals
+# define CleanEd		Rf_CleanEd
+# define CoercionWarning       	Rf_CoercionWarning
+# define ComplexFromInteger	Rf_ComplexFromInteger
+# define ComplexFromLogical	Rf_ComplexFromLogical
+# define ComplexFromReal	Rf_ComplexFromReal
+# define ComplexFromString	Rf_ComplexFromString
+# define copyListMatrix		Rf_copyListMatrix
+# define copyMostAttribNoTs	Rf_copyMostAttribNoTs
+# define CustomPrintValue	Rf_CustomPrintValue
+# define DataFrameClass		Rf_DataFrameClass
+# define ddfindVar		Rf_ddfindVar
+# define deparse1		Rf_deparse1
+# define deparse1line		Rf_deparse1line
+# define DispatchGroup		Rf_DispatchGroup
+# define DispatchOrEval		Rf_DispatchOrEval
+# define dynamicfindVar		Rf_dynamicfindVar
+# define EncodeRaw              Rf_EncodeRaw
+# define EncodeString           Rf_EncodeString
+# define EnsureString 		Rf_EnsureString
+# define endcontext		Rf_endcontext
+# define envlength		Rf_envlength
+# define ErrorMessage		Rf_ErrorMessage
+# define evalList		Rf_evalList
+# define evalListKeepMissing	Rf_evalListKeepMissing
+# define factorsConform		Rf_factorsConform
+# define findcontext		Rf_findcontext
+# define findVar1		Rf_findVar1
+# define FrameClassFix		Rf_FrameClassFix
+# define framedepth		Rf_framedepth
+# define frameSubscript		Rf_frameSubscript
+# define get1index		Rf_get1index
+# define getVar			Rf_getVar
+# define getVarInFrame		Rf_getVarInFrame
+# define hashpjw		Rf_hashpjw
+# define InheritsClass		Rf_InheritsClass
+# define InitArithmetic		Rf_InitArithmetic
+# define InitColors		Rf_InitColors
+# define InitConnections	Rf_InitConnections
+# define InitEd			Rf_InitEd
+# define InitFunctionHashing	Rf_InitFunctionHashing
+# define InitBaseEnv		Rf_InitBaseEnv
+# define InitGlobalEnv		Rf_InitGlobalEnv
+# define InitMemory		Rf_InitMemory
+# define InitNames		Rf_InitNames
+# define InitOptions		Rf_InitOptions
+# define InitRand		Rf_InitRand
+# define InitTempDir		Rf_InitTempDir
+# define initStack		Rf_initStack
+# define IntegerFromComplex	Rf_IntegerFromComplex
+# define IntegerFromLogical	Rf_IntegerFromLogical
+# define IntegerFromReal	Rf_IntegerFromReal
+# define IntegerFromString	Rf_IntegerFromString
+# define internalTypeCheck	Rf_internalTypeCheck
+# define isValidName		Rf_isValidName
+# define ItemName		Rf_ItemName
+# define jump_to_toplevel	Rf_jump_to_toplevel
+# define levelsgets		Rf_levelsgets
+# define LogicalFromComplex	Rf_LogicalFromComplex
+# define LogicalFromInteger	Rf_LogicalFromInteger
+# define LogicalFromReal	Rf_LogicalFromReal
+# define LogicalFromString	Rf_LogicalFromString
+# define mainloop		Rf_mainloop
+# define makeSubscript		Rf_makeSubscript
+# define markKnown		Rf_markKnown
+# define mat2indsub		Rf_mat2indsub
+# define matchArg		Rf_matchArg
+# define matchArgExact		Rf_matchArgExact
+# define matchArgs		Rf_matchArgs
+# define matchPar		Rf_matchPar
+# define Mbrtowc		Rf_mbrtowc
+# define mkCLOSXP		Rf_mkCLOSXP
+# define mkComplex              Rf_mkComplex
+# define mkFalse		Rf_mkFalse
+# define mkFloat		Rf_mkFloat
+# define mkNA			Rf_mkNA
+# define mkPROMISE		Rf_mkPROMISE
+# define mkQUOTE		Rf_mkQUOTE
+# define mkSYMSXP		Rf_mkSYMSXP
+# define mkTrue			Rf_mkTrue
+# define NewEnvironment		Rf_NewEnvironment
+# define OneIndex		Rf_OneIndex
+# define onintr			Rf_onintr
+# define onsigusr1              Rf_onsigusr1
+# define onsigusr2              Rf_onsigusr2
+# define parse			Rf_parse
+# define PrintDefaults		Rf_PrintDefaults
+# define PrintGreeting		Rf_PrintGreeting
+# define PrintValueEnv		Rf_PrintValueEnv
+# define PrintValueRec		Rf_PrintValueRec
+# define PrintVersion		Rf_PrintVersion
+# define PrintVersionString    	Rf_PrintVersionString
+# define PrintWarnings		Rf_PrintWarnings
+# define promiseArgs		Rf_promiseArgs
+# define RealFromComplex	Rf_RealFromComplex
+# define RealFromInteger	Rf_RealFromInteger
+# define RealFromLogical	Rf_RealFromLogical
+# define RealFromString		Rf_RealFromString
+# define RemoveClass		Rf_RemoveClass
+# define sortVector		Rf_sortVector
+# define ssort			Rf_ssort
+# define StringFromComplex	Rf_StringFromComplex
+# define StringFromInteger	Rf_StringFromInteger
+# define StringFromLogical	Rf_StringFromLogical
+# define StringFromReal		Rf_StringFromReal
+# define StrToInternal		Rf_StrToInternal
+# define substituteList		Rf_substituteList
+# define tsConform		Rf_tsConform
+# define tspgets		Rf_tspgets
+# define type2symbol		Rf_type2symbol
+# define unbindVar		Rf_unbindVar
+# define usemethod		Rf_usemethod
+# define vectorSubscript	Rf_vectorSubscript
+# define warningcall		Rf_warningcall
+# define WarningMessage		Rf_WarningMessage
+# define yychar			Rf_yychar
+# define yylval			Rf_yylval
+# define yynerrs		Rf_yynerrs
+# define yyparse		Rf_yyparse
+#endif /* R_NO_REMAP */
 
 /* Platform Dependent Gui Hooks */
 
