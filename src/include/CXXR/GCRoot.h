@@ -301,22 +301,6 @@ extern "C" {
     typedef unsigned int PROTECT_INDEX;
 
     /**
-     * Push a node pointer onto the C pointer protection stack.
-     * @param node Pointer to the node to be protected from the
-     *          garbage collector.
-     * @return a copy of \a node .
-     */
-#ifndef __cplusplus
-    SEXP Rf_protect(SEXP node);
-#else
-    inline SEXP Rf_protect(SEXP node)
-    {
-	CXXR::GCRootBase::protect(node);
-	return node;
-    }
-#endif
-
-    /**
      * Push a node pointer onto the C pointer protection stack, and
      * record the index of the resulting stack cell (for subsequent
      * use with R_Reprotect).
@@ -359,6 +343,16 @@ extern "C" {
 #endif
 
     /**
+     * Check that the C pointer protection stack has the expected size,
+     * and print a warning if not.
+     * @param op Operation being performed.
+     * @param save The expected size of the pointer protection stack.
+     *
+     * @todo A warning seems to mild a response in this eventuality.
+     */
+    void Rf_check_stack_balance(SEXP op, unsigned int save);
+
+    /**
      * Restore the C pointer protection stack to a previous size by
      * popping elements off the top.
      * @param new_size The size to which the stack is to be
@@ -378,6 +372,22 @@ extern "C" {
      * future.
      */
     size_t Rf_ppsSize();
+
+    /**
+     * Push a node pointer onto the C pointer protection stack.
+     * @param node Pointer to the node to be protected from the
+     *          garbage collector.
+     * @return a copy of \a node .
+     */
+#ifndef __cplusplus
+    SEXP Rf_protect(SEXP node);
+#else
+    inline SEXP Rf_protect(SEXP node)
+    {
+	CXXR::GCRootBase::protect(node);
+	return node;
+    }
+#endif
 
     /**
      * Pop cells from the C pointer protection stack.  As a

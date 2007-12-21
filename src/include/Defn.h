@@ -796,7 +796,6 @@ SEXP Rf_EnsureString(SEXP);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
 void Rf_checkArity(SEXP, SEXP);
 void Rf_CheckFormals(SEXP);
-void Rf_check_stack_balance(SEXP op, unsigned int save);
 void Rf_CleanEd(void);
 void Rf_copyListMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttribNoTs(SEXP, SEXP);
