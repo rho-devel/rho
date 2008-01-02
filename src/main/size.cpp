@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 
@@ -114,12 +114,13 @@ static R_size_t objectsize(SEXP s)
 	cnt += objectsize(EXTPTR_PROT(s));
 	cnt += objectsize(EXTPTR_TAG(s));
 	break;
-    /* WEAKREFSXP is internally a vector */
     case RAWSXP:
 	vcnt = BYTE2VEC(length(s));
 	isVec = TRUE;
 	break;
     case S4SXP:
+	/* Has TAG and ATRIB but no CAR nor CDR */
+	cnt += objectsize(TAG(s));
         break;
     default:
 	UNIMPLEMENTED_TYPE("object.size", s);
@@ -137,21 +138,14 @@ static R_size_t objectsize(SEXP s)
 	else if (vcnt > 1) cnt += 16;
 	else if (vcnt > 0) cnt += 8;
     } else cnt += sizeof(SEXPREC);
-    /* add in attributes */
-    cnt += objectsize(ATTRIB(s));
+    /* add in attributes: these are fake for CHARXPs */
+    if(TYPEOF(s) != CHARSXP) cnt += objectsize(ATTRIB(s));
     return(cnt);
 }
 
 
 SEXP attribute_hidden do_objectsize(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans;
-    R_size_t cnt = 0;
-    
     checkArity(op, args);
-    cnt = objectsize(CAR(args));
-    PROTECT(ans = allocVector(REALSXP, 1));
-    REAL(ans)[0] = double(cnt);
-    UNPROTECT(1);
-    return ans;
+    return ScalarReal( (double) objectsize(CAR(args)) );
 }

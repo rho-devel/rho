@@ -1,3 +1,8 @@
+% File src/library/base/man/mean.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{mean}
 \title{Arithmetic Mean}
 \usage{
@@ -14,7 +19,7 @@ mean(x, \dots)
     \code{trim = 0}, only.}
   \item{trim}{the fraction (0 to 0.5) of observations to be
     trimmed from each end of \code{x} before the mean is computed.
-    Values outside that range are taken as the nearest endpoint.
+    Values of trim outside that range are taken as the nearest endpoint.
   }
   \item{na.rm}{a logical value indicating whether \code{NA}
     values should be stripped before the computation proceeds.}

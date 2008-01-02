@@ -1,3 +1,19 @@
+#  File src/library/stats/R/ar.ols.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 ## code by Adrian Trapletti
 ar.ols <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
                     demean = TRUE, intercept = demean, series = NULL, ...)
@@ -18,10 +34,12 @@ ar.ols <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
         sc <- sqrt(drop(apply(x, 2, var)))
         x <- x/rep(sc, rep(n.used, nser))
     } else sc <- rep(1, nser)
-    order.max <- if (is.null(order.max)) floor(10 * log10(n.used))
-    else round(order.max)
 
+    order.max <- if (is.null(order.max))
+	min(n.used-1, floor(10 * log10(n.used)))
+    else round(order.max)
     if (order.max < 0) stop ("'order.max' must be >= 0")
+    else if (order.max >= n.used) stop("'order.max' must be < 'n.used'")
     if (aic) order.min <- 0
     else order.min <- order.max
     A <- vector("list", order.max - order.min + 1)
@@ -34,7 +52,7 @@ ar.ols <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
     ## remove means for conditioning
     if(demean) {
         xm <- colMeans(x)
-        x <- sweep(x, 2, xm)
+        x <- sweep(x, 2, xm, check.margin=FALSE)
     } else xm <- rep(0, nser)
     ## Fit models of increasing order
 
@@ -107,7 +125,7 @@ ar.ols <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
     var.pred <- varE[[m - order.min + 1]]
     if(nser > 1) {
         snames <- colnames(x)
-        dimnames(ses) <- dimnames(ar) <- list(seq(length=m), snames, snames)
+        dimnames(ses) <- dimnames(ar) <- list(seq_len(m), snames, snames)
         dimnames(var.pred) <- list(snames, snames)
         names(sem) <- colnames(E) <- snames
     }

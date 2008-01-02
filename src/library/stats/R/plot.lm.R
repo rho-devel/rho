@@ -1,3 +1,19 @@
+#  File src/library/stats/R/plot.lm.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 plot.lm <-
 function (x, which = c(1:3,5), ## was which = 1:4,
 	  caption = c("Residuals vs Fitted", "Normal Q-Q",
@@ -9,7 +25,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	  id.n = 3, labels.id = names(residuals(x)), cex.id = 0.75,
           qqline = TRUE, cook.levels = c(0.5, 1.0),
           add.smooth = getOption("add.smooth"),
-          label.pos = c(4,2))
+          label.pos = c(4,2), cex.caption = 1)
 {
     if (!inherits(x, "lm"))
 	stop("use only with \"lm\" objects")
@@ -84,7 +100,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	    names(cal)[2] <- "" # drop	" formula = "
 	}
 	cc <- deparse(cal, 80) # (80, 75) are ``parameters''
-	nc <- nchar(cc[1])
+	nc <- nchar(cc[1], "c")
 	abbr <- length(cc) > 1 || nc > 75
 	sub.caption <-
 	    if(abbr) paste(substr(cc[1], 1, min(75,nc)), "...") else cc[1]
@@ -104,7 +120,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	panel(yh, r, ...)
 	if (one.fig)
 	    title(sub = sub.caption, ...)
-	mtext(caption[1], 3, 0.25)
+	mtext(caption[1], 3, 0.25, cex = cex.caption)
 	if(id.n > 0) {
 	    y.id <- r[show.r]
 	    y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
@@ -119,7 +135,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	if (qqline) qqline(rs, lty = 3, col = "gray50")
 	if (one.fig)
 	    title(sub = sub.caption, ...)
-	mtext(caption[2], 3, 0.25)
+	mtext(caption[2], 3, 0.25, cex = cex.caption)
 	if(id.n > 0)
 	    text.id(qq$x[show.rs], qq$y[show.rs], show.rs)
     }
@@ -133,7 +149,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	panel(yhn0, sqrtabsr, ...)
 	if (one.fig)
 	    title(sub = sub.caption, ...)
-	mtext(caption[3], 3, 0.25)
+	mtext(caption[3], 3, 0.25, cex = cex.caption)
 	if(id.n > 0)
 	    text.id(yhn0[show.rs], sqrtabsr[show.rs], show.rs)
     }
@@ -146,7 +162,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 	     xlab = "Obs. number", ylab = "Cook's distance", ...)
 	if (one.fig)
 	    title(sub = sub.caption, ...)
-	mtext(caption[4], 3, 0.25)
+	mtext(caption[4], 3, 0.25, cex = cex.caption)
 	if(id.n > 0)
 	    text.id(show.r, cook[show.r], show.r, adj.x=FALSE)
     }
@@ -216,7 +232,8 @@ function (x, which = c(1:3,5), ## was which = 1:4,
                 dispersion <- if(isGlm) summary(x)$dispersion else 1
                 p <- length(coef(x))
                 usr <- par("usr")
-                hh <- seq(min(r.hat[1], r.hat[2]/100), usr[2], length = 101)
+                hh <- seq.int(min(r.hat[1], r.hat[2]/100), usr[2],
+                              length.out = 101)
                 for(crit in cook.levels) {
                     cl.h <- sqrt(crit*p*(1-hh)/hh * dispersion)
                     lines(hh, cl.h, lty = 2, col = 2)
@@ -235,7 +252,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
             }
         } # if(const h_ii) .. else ..
 	if (do.plot) {
-	    mtext(caption[5], 3, 0.25)
+	    mtext(caption[5], 3, 0.25, cex = cex.caption)
 	    if (id.n > 0) {
 		y.id <- rs[show.r]
 		y.id[y.id < 0] <- y.id[y.id < 0] - strheight(" ")/3
@@ -279,7 +296,7 @@ function (x, which = c(1:3,5), ## was which = 1:4,
 
 	## axis(4, at=p*cook.levels, labels=paste(c(rev(cook.levels), cook.levels)),
 	##	mgp=c(.25,.25,0), las=2, tck=0, cex.axis=cex.id)
-	mtext(caption[6], 3, 0.25)
+	mtext(caption[6], 3, 0.25, cex = cex.caption)
 	if (id.n > 0) {
 	    show.r <- order(-cook)[iid]
             text.id(g[show.r], cook[show.r], show.r)

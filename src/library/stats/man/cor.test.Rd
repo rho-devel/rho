@@ -1,3 +1,8 @@
+% File src/library/stats/man/cor.test.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{cor.test}
 \alias{cor.test}
 \alias{cor.test.default}
@@ -111,7 +116,7 @@ cor.test(x, \dots)
   \emph{Applied Statistics}, \bold{24}, 377--379.
 
   Myles Hollander & Douglas A. Wolfe (1973),
-  \emph{Nonparametric statistical inference}.
+  \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 185--194 (Kendall and Spearman tests).
 }
@@ -140,6 +145,7 @@ cor.test(x, y, method = "spearm", alternative = "g")
 cor.test(x, y,                    alternative = "g")
 
 ## Formula interface.
+require(graphics)
 pairs(USJudgeRatings)
 cor.test(~ CONT + INTG, data = USJudgeRatings)
 }

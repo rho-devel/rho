@@ -1,3 +1,8 @@
+% File src/library/base/man/Extract.factor.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Extract.factor}
 \title{Extract or Replace Parts of a Factor}
 \alias{[.factor}
@@ -8,19 +13,18 @@
 }
 \usage{
 \method{[}{factor}(x, \dots, drop = FALSE)
-\method{[[}{factor}(x, i)
+\method{[[}{factor}(x, \dots)
 \method{[}{factor}(x, \dots) <- value
 }
 \arguments{
   \item{x}{a factor}
-  \item{\dots, i}{a specification of indices -- see \code{\link{Extract}}.}
+  \item{\dots}{a specification of indices -- see \code{\link{Extract}}.}
   \item{drop}{logical.  If true, unused levels are dropped.}
   \item{value}{character: a set of levels.  Factor values are coerced to
     character.}
 }
 \value{
-  A factor with the same set of levels as \code{x} unless
-  \code{drop=TRUE}.  (Prior to \R 2.4.0, \code{[[} returned the integer code.)
+  A factor with the same set of levels as \code{x} unless \code{drop=TRUE}.
 }
 \details{
   When unused levels are dropped the ordering of the remaining levels is
@@ -31,6 +35,8 @@
   
   Any \code{\link{contrasts}} assigned to the factor are preserved
   unless \code{drop=TRUE}.
+
+  The \code{[[} method supports argument \code{exact}.
 }
 \seealso{
   \code{\link{factor}}, \code{\link{Extract}}.

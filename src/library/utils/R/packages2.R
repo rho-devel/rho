@@ -1,3 +1,19 @@
+#  File src/library/utils/R/packages2.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 install.packages <-
     function(pkgs, lib, repos = getOption("repos"),
              contriburl = contrib.url(repos, type),
@@ -101,14 +117,17 @@ install.packages <-
                               "'lib' element '%s'  is not a writable directory",
                               "'lib' elements '%s' are not writable directories"),
                      paste(lib[!ok], collapse=", ")), domain = NA)
-    if(length(lib) == 1 && ok && .Platform$OS.type == "windows") {
+    if(length(lib) == 1 && .Platform$OS.type == "windows") {
         ## file.access is unreliable on Windows, especially Vista.
         ## the only known reliable way is to try it
-        fn <- file.path(lib, "_test_dir_")
-        unlink(fn, recursive = TRUE) # precaution
-        res <- try(dir.create(fn, showWarnings = FALSE))
-        if(inherits(res, "try-error") || !res) ok <- FALSE
-        else unlink(fn, recursive = TRUE)
+        ok <- file.info(lib)$isdir
+        if(ok) {
+            fn <- file.path(lib, "_test_dir_")
+            unlink(fn, recursive = TRUE) # precaution
+            res <- try(dir.create(fn, showWarnings = FALSE))
+            if(inherits(res, "try-error") || !res) ok <- FALSE
+            else unlink(fn, recursive = TRUE)
+        }
     }
     if(length(lib) == 1 && !ok) {
         warning(gettextf("'lib = \"%s\"' is not writable", lib),
@@ -312,7 +331,10 @@ install.packages <-
         if(!is.null(tmpd) && is.null(destdir))
             cat("\n", gettextf("The downloaded packages are in\n\t%s",
                                normalizePath(tmpd)), "\n", sep = "")
-        link.html.help(verbose = TRUE)
+        ## update packages.html on Unix only if .Library was installed into
+        libs_used <- unique(update[, 2])
+        if(.Platform$OS.type == "unix" && .Library %in% libs_used)
+            link.html.help(verbose = TRUE)
     } else if(!is.null(tmpd) && is.null(destdir)) unlink(tmpd, TRUE)
 
     invisible()

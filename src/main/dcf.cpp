@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-6   The R Development Core Team.
+ *  Copyright (C) 2001-7   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /* <UTF8> char here is either ASCII or handled as a whole.
@@ -23,7 +23,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+# include <config.h>
 #endif
 
 #include <Defn.h>
@@ -38,13 +38,13 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     int nwhat, nret, nc, nr, m, k, lastm, need;
     Rboolean blank_skip, field_skip = FALSE;
     unsigned int whatlen;
-    int dynwhat, buflen=0;
-    char *line, *buf;
-    regex_t blankline, contline, trailblank, regline;
+    int dynwhat, buflen = 100;
+    char line[MAXELTSIZE], *buf;
+    regex_t blankline, contline, trailblank, regline, eblankline;
     regmatch_t regmatch[1];
     SEXP file, what, what2, retval, retval2, dims, dimnames;
-    Rconnection con=NULL;
-    Rboolean wasopen;
+    Rconnection con = NULL;
+    Rboolean wasopen, is_eblankline;
 
     checkArity(op, args);
 
@@ -60,9 +60,6 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     nwhat = LENGTH(what);
     dynwhat = (nwhat == 0);
 
-    line = reinterpret_cast<char *>(malloc(MAXELTSIZE));
-    if(!line) error(_("could not allocate memory for 'read.dcf'"));
-    buflen = 100;
     buf = reinterpret_cast<char *>(malloc(buflen));
     if(!buf) error(_("could not allocate memory for 'read.dcf'"));
     nret = 20;
@@ -73,11 +70,12 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
     regcomp(&trailblank, "[[:blank:]]+$", REG_EXTENDED);
     regcomp(&contline, "^[[:blank:]]+", REG_EXTENDED);
     regcomp(&regline, "^[^:]+:[[:blank:]]*", REG_EXTENDED);
+    regcomp(&eblankline, "^[[:space:]]+\\.[[:space:]]*$", REG_EXTENDED);
 
     k = 0;
     lastm = -1; /* index of the field currently being recorded */
     blank_skip = TRUE;
-    while(Rconn_getline(con, line, MAXELTSIZE) >= 0){
+    while(Rconn_getline(con, line, MAXELTSIZE) >= 0) {
 	if(strlen(line) == 0 || regexec(&blankline, line, 0, 0, 0) == 0) {
 	    /* A blank line.  The first one after a record
 	       ends a new record, subsequent ones are skipped */
@@ -102,29 +100,35 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* A continuation line.  Are we currently recording?
 	       Or are we skipping a field?  Or is this an error? */
 	    if( (lastm >= 0 || field_skip) &&
-	       regexec(&contline, line, 1, regmatch, 0) == 0) {
+		regexec(&contline, line, 1, regmatch, 0) == 0) {
 		if(lastm >= 0) {
-		need = strlen(line+regmatch[0].rm_eo) +
-		    strlen(CHAR(STRING_ELT(retval, lastm + nwhat*k))) + 2;
-		if(buflen < need) {
+		    need = strlen(CHAR(STRING_ELT(retval,
+						  lastm + nwhat*k))) + 2;
+		    if(regexec(&eblankline, line, 0, NULL, 0) == 0) {
+			is_eblankline = TRUE;
+		    } else {
+			is_eblankline = FALSE;
+			need += strlen(line+regmatch[0].rm_eo);
+		    }
+		    if(buflen < need) {
 		    buf = reinterpret_cast<char *>(realloc(buf, need));
-		    if(!buf)
-			error(_("could not allocate memory for 'read.dcf'"));
-		    buflen = need;
-		}
-		strcpy(buf,CHAR(STRING_ELT(retval, lastm + nwhat*k)));
-		strcat(buf, "\n");
-		strcat(buf, line+regmatch[0].rm_eo);
-		SET_STRING_ELT(retval, lastm + nwhat*k, mkChar(buf));
+			if(!buf)
+			    error(_("could not allocate memory for 'read.dcf'"));
+			buflen = need;
+		    }
+		    strcpy(buf,CHAR(STRING_ELT(retval, lastm + nwhat*k)));
+		    strcat(buf, "\n");
+		    if(!is_eblankline) strcat(buf, line+regmatch[0].rm_eo);
+		    SET_STRING_ELT(retval, lastm + nwhat*k, mkChar(buf));
 		}
 	    } else {
 		if(regexec(&regline, line, 1, regmatch, 0) == 0){
 		    for(m = 0; m < nwhat; m++){
 			whatlen = strlen(CHAR(STRING_ELT(what, m)));
-			if(strlen(line) > whatlen && 
+			if(strlen(line) > whatlen &&
 			   line[whatlen] == ':' &&
 			   strncmp(CHAR(STRING_ELT(what, m)),
-				   line, whatlen) == 0){
+				   line, whatlen) == 0) {
 			    SET_STRING_ELT(retval, m+nwhat*k,
 					   mkChar(line + regmatch[0].rm_eo));
 			    lastm = m;
@@ -182,12 +186,12 @@ SEXP attribute_hidden do_readDCF(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     if(!wasopen) con->close(con);
-    free(line);
     free(buf);
     regfree(&blankline);
     regfree(&contline);
     regfree(&trailblank);
     regfree(&regline);
+    regfree(&eblankline);
 
     if(!blank_skip) k++;
 
@@ -212,10 +216,9 @@ static SEXP allocMatrixNA(SEXPTYPE mode, int nrow, int ncol)
     int k;
     SEXP retval;
 
-    PROTECT(retval=allocMatrix(mode, nrow, ncol));
-    for(k=0;k<LENGTH(retval);k++){
+    PROTECT(retval = allocMatrix(mode, nrow, ncol));
+    for(k = 0; k < LENGTH(retval); k++)
 	SET_STRING_ELT(retval, k, NA_STRING);
-    }
     UNPROTECT(1);
     return(retval);
 }
@@ -232,7 +235,3 @@ static void transferVector(SEXP s, SEXP t)
     for (i = 0; i < nt; i++)
 	SET_STRING_ELT(s, i, STRING_ELT(t, i));
 }
-
-
-
-

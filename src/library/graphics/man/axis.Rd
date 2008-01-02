@@ -1,3 +1,8 @@
+% File src/library/graphics/man/axis.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{axis}
 \alias{axis}
 \title{Add an Axis to a Plot}
@@ -69,7 +74,7 @@ axis(side, at = NULL, labels = TRUE, tick = TRUE, line = NA,
     Note that \code{xpd} is not accepted as clipping is always to the
     device region, and that \code{lab} will partial match to argument
     \code{labels} unless the latter is also supplied.  (Since the
-    default axes has already been set up by \code{\link{plot.window}},
+    default axes have already been set up by \code{\link{plot.window}},
     \code{lab} will not be acted on by \code{axis}.)}
 }
 \value{
@@ -130,6 +135,7 @@ axis(side, at = NULL, labels = TRUE, tick = TRUE, line = NA,
   Wadsworth \& Brooks/Cole.
 }
 \examples{
+require(stats) # for rnorm
 plot(1:4, rnorm(4), axes = FALSE)
 axis(1, 1:4, LETTERS[1:4])
 axis(2)

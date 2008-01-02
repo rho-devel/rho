@@ -1,3 +1,8 @@
+% File src/library/utils/man/update.packages.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{update.packages}
 \alias{update.packages}
 \alias{available.packages}
@@ -202,11 +207,12 @@ contrib.url(repos, type = getOption("pkgType"))
   destination directory, downloads the newest versions and saves them in
   \code{destdir}.  If the list of available packages is not given as
   argument, it is obtained from repositories.  If a repository is local,
-  i.e., the URL starts with \code{"file:"}, then the packages are not
-  downloaded but used directly.  (Both \code{"file:"} and
-  \code{"file:///"} are allowed as prefixes to a file path, the latter
-  for an absolute file path.)
-
+  i.e. the URL starts with \code{"file:"}, then the packages are not
+  downloaded but used directly.  Both \code{"file:"} and
+  \code{"file:///"} are allowed as prefixes to a file path.  Use the
+  latter only for URLs: see \code{\link{url}} for their interpretation.
+  (Other forms of \code{"file://"} URLs are not supported.)
+  
   The main function of the set is \code{update.packages}.  First a list
   of all packages/bundles found in \code{lib.loc} is created and
   compared with those available at the repositories.  If \code{ask =
@@ -231,11 +237,11 @@ contrib.url(repos, type = getOption("pkgType"))
   in \code{.libPaths()}, with a warning if there is more than one.)  If
   \code{lib} is omitted or is of length one and is not a (group)
   writeable directory, the code offers to create a personal library tree
-  (the first element of \code{Sys.getenv("R_LIBS_USER")} and install
+  (the first element of \code{Sys.getenv("R_LIBS_USER")}) and install
   there.
 #ifdef windows
   Detection of a writeable directory is problematic on Windows: see the
-  Warning section.
+  Note section.
 #endif
   
 %  The first argument can be an unquoted name, as in
@@ -245,7 +251,8 @@ contrib.url(repos, type = getOption("pkgType"))
   zip files if \code{repos = NULL}. The zip files are then unpacked directly.
 #endif
 #ifdef unix
-  An attempt is made to install the packages in an order that respects
+  If a repository is used (rather than local \file{.tar.gz} files),
+  an attempt is made to install the packages in an order that respects
   their dependencies.  This does assume that all the entries in
   \code{lib} are on the default library path for installs (set by
   \code{R_LIBS}). 
@@ -321,6 +328,9 @@ contrib.url(repos, type = getOption("pkgType"))
 
   \code{\link{INSTALL}}, \code{\link{REMOVE}},
   \code{\link{library}}, \code{\link{.packages}}, \code{\link{read.dcf}}
+
+  The \sQuote{R Installation and Administration} manual for how to 
+  set up a repository.
 }
 
 \examples{

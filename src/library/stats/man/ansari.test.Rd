@@ -1,3 +1,8 @@
+% File src/library/stats/man/ansari.test.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{ansari.test}
 \alias{ansari.test}
 \alias{ansari.test.default}
@@ -100,7 +105,7 @@ ansari.test(x, \dots)
   San Diego, London: Academic Press.
 
   Myles Hollander & Douglas A. Wolfe (1973),
-  \emph{Nonparametric statistical inference}.
+  \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 83--92.
 }

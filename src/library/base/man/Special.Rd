@@ -1,3 +1,8 @@
+% File src/library/base/man/Special.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Special}
 \title{Special Functions of Mathematics}
 \alias{Special}
@@ -14,6 +19,7 @@
 \alias{lfactorial}
 \concept{tetragamma}% existed till 1.9.0
 \concept{pentagamma}
+\alias{polygamma}
 \concept{binomial coefficient}
 \concept{psi function}
 \description{
@@ -23,11 +29,13 @@
 \usage{
 beta(a, b)
 lbeta(a, b)
+
 gamma(x)
 lgamma(x)
 psigamma(x, deriv = 0)
 digamma(x)
 trigamma(x)
+
 choose(n, k)
 lchoose(n, k)
 factorial(x)
@@ -44,23 +52,25 @@ lfactorial(x)
     B(a,b) = (Gamma(a)Gamma(b))/(Gamma(a+b)).}
   The formal definition is
   \deqn{B(a, b) = \int_0^1 t^{a-1} (1-t)^{b-1} dt}{integral_0^1 t^(a-1) (1-t)^(b-1) dt}
-  (Abramowitz and Stegun (6.2.1), page 258).
+  (Abramowitz and Stegun section 6.2.1, page 258).
 
   The functions \code{gamma} and \code{lgamma} return the gamma function
   \eqn{\Gamma(x)} and the natural logarithm of the absolute value of the
   gamma function.  The gamma function is defined by
-  (Abramowitz and Stegun (6.1.1), page 255)
+  (Abramowitz and Stegun section 6.1.1, page 255)
   \deqn{\Gamma(x) = \int_0^\infty t^{a-1} e^{-t} dt}{integral_0^Inf t^(a-1) exp(-t) dt}
   \code{factorial(x)} is \eqn{x!} and identical to
   \code{gamma(x+1)} and \code{lfactorial} is \code{lgamma(x+1)}.
 
   The functions \code{digamma} and \code{trigamma} return the first and second
   derivatives of the logarithm of the gamma function.
-  \code{psigamma(x, deriv)} (\code{deriv >= 0}) is more generally
-  computing the \code{deriv}-th derivative of \eqn{\psi(x)}.
+  \code{psigamma(x, deriv)} (\code{deriv >= 0}) computes the
+  \code{deriv}-th derivative of \eqn{\psi(x)}.
   \deqn{\code{digamma(x)} = \psi(x) = \frac{d}{dx}\ln\Gamma(x) =
     \frac{\Gamma'(x)}{\Gamma(x)}}{%
     \code{digamma(x)} = psi(x) = d/dx {ln Gamma(x)} = Gamma'(x) / Gamma(x)}
+  This is often called the \sQuote{polygamma} function, e.g. in
+  Abramowitz and Stegun (section 6.4.1, page 260).
 
   The functions \code{choose} and \code{lchoose} return binomial
   coefficients and their logarithms.  Note that \code{choose(n,k)} is
@@ -79,7 +89,7 @@ lfactorial(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole. (for \code{gamma} and \code{lgamma}.)
+  Wadsworth \& Brooks/Cole. (For \code{gamma} and \code{lgamma}.)
 
   Abramowitz, M. and Stegun, I. A. (1972)
   \emph{Handbook of Mathematical Functions.} New York: Dover.
@@ -88,11 +98,15 @@ lfactorial(x)
 \seealso{
   \code{\link{Arithmetic}} for simple, \code{\link{sqrt}} for
   miscellaneous mathematical functions and \code{\link{Bessel}} for the
-  real Bessel functions.
+  real Bessel functions.  Note that \code{\link{gammaCody}(x)} is
+  considerably faster than \code{gamma(x)} but slightly less accurate
+  and (potentially) less reliable.
 
   For the incomplete gamma function see \code{\link{pgamma}}.
 }
 \examples{
+require(graphics)
+
 choose(5, 2)
 for (n in 0:10) print(choose(n, k = 0:n))
 
@@ -130,7 +144,7 @@ for (ch in c("", "l","di","tri","tetra","penta")) {
 par(mfrow = c(1, 1))
 
 ## "Extended" Pascal triangle:
-fN <- function(n) formatC(n, wid=2)
+fN <- function(n) formatC(n, width=2)
 for (n in -4:10) cat(fN(n),":", fN(choose(n, k= -2:max(3,n+2))), "\n")
 
 ## R code version of choose()  [simplistic; warning for k < 0]:

@@ -1,10 +1,19 @@
+% File src/library/base/man/numeric.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{numeric}
 \title{Numeric Vectors}
 \alias{numeric}
 \alias{as.numeric}
 \alias{is.numeric}
+\alias{is.numeric.Date}
+\alias{is.numeric.POSIXt}
 \description{
-  Creates or tests for objects of type \code{"numeric"}.
+  Creates or coerces objects of type \code{"numeric"}.
+  \code{is.numeric} is a more general test of an object being
+  interpretable as numbers.
 }
 \usage{
 numeric(length = 0)
@@ -17,22 +26,27 @@ is.numeric(x)
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \details{
-  \code{as.numeric} is a generic function, but methods must be
-  written for \code{\link{as.double}}, which it calls.
+  \code{numeric} is identical to \code{\link{double}} (and \code{real}).
+  It creates a double-precision vector of the specified length with each
+  element equal to \code{0}.
+
+  \code{as.numeric} is a generic function, but S3 methods must be
+  written for \code{\link{as.double}}.  It is identical to
+  \code{as.double} (and \code{as.real}).
 
   \code{is.numeric} is generic: you can write methods to handle
-  specific classes of objects, see \link{InternalMethods}.
+  specific classes of objects, see \link{InternalMethods}.  It is
+  \strong{not} the same as \code{\link{is.double}}.  Factors are handled
+  by the default method, and there are methods for classes
+  \code{"\link{Date}"} and \code{"\link{POSIXt}"} (in all three cases
+  the result is false).  Methods for \code{is.numeric} should only
+  return true if the base type of the class is \code{double} or
+  \code{integer} \emph{and} values can reasonably be regarded as
+  numeric (e.g. arithmetic on them makes sense).
 }
 \value{
-  \code{numeric} creates a real vector of the specified length.  The
-  elements of the vector are all equal to \code{0}.
-
-  \code{as.numeric} attempts to coerce its argument to \code{"double"}
-  (even if it is already \code{"integer"}).
-  \code{as.numeric} for factors yields the codes underlying the factor
-  levels, not the numeric representation of the labels, see also
-  \code{\link{factor}}.
-
+  for \code{numeric} and \code{as.numeric} see \code{\link{double}}.
+  
   The default method for \code{is.numeric} returns \code{TRUE}
   if its argument is of \link{mode} \code{"numeric"}
   (\link{type} \code{"double"} or type \code{"integer"}) and not a
@@ -40,13 +54,31 @@ is.numeric(x)
   \code{is.integer(x) || is.double(x)}, or
   \code{(mode(x) == "numeric") && !is.factor(x)}.
 }
+\section{S4 methods}{
+  \code{as.numeric} and \code{is.numeric} are internally S4 generic and
+  so methods can be set for them \emph{via} \code{setMethod}.
 
-\note{
-  \emph{\R has no single precision data type.  All real numbers are
-    stored in double precision format}.
+  To ensure that \code{as.numeric}, \code{as.double} and \code{as.real}
+  remain identical, S4 methods can only be set for \code{as.numeric}.
+}
+%% keep next the same in double.Rd & numeric.Rd
+\section{Note on names}{
+  It is a historical anomaly that \R has three names for its
+  floating-point vectors, \code{\link{double}}, \code{\link{numeric}}
+  and \code{\link{real}}.
 
-  \code{numeric} and \code{as.numeric} are the identical to \code{double} and
-  \code{as.double} (unless someone defines S4 methods on one of them).
+  \code{double} is the name of the \link{type}.
+  \code{numeric} is the name of the \link{mode} and also of the implicit
+  \link{class}.  As an S4 formal class, use \code{"numeric"} (there is a
+  deprecated formal class \code{"double"}).
+
+  \code{real} is deprecated and should not be used in new code.
+
+  The potential confusion is that \R has used \emph{\link{mode}}
+  \code{"numeric"} to mean \sQuote{double or integer}, which conflicts
+  with the S4 usage.  Thus \code{is.numeric} tests the mode, not the
+  class, but \code{as.numeric} (which is identical to \code{as.double})
+  coerces to the class.
 }
 \seealso{
   \code{\link{double}}, \code{\link{integer}}, \code{\link{storage.mode}}.

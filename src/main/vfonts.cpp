@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
-  *  Copyright (C) 2001-6 The R Development Core Team
+ *  Copyright (C) 2001-7 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /* <UTF8> char here is either ASCII or handled as a whole.
@@ -28,27 +28,10 @@
 #include <Defn.h>
 #include <Rdynpriv.h>
 #include <Graphics.h>
-
-typedef struct {
-    R_GE_VTextRoutine GEVText;
-    R_GE_VStrWidthRoutine GEVStrWidth;
-    R_GE_VStrHeightRoutine GEVStrHeight;
-} VfontRoutines;
+#include <Rmodules/Rvfonts.h>
 
 static VfontRoutines routines, *ptr = &routines;
 
-/*
-static double (*ptr_GVStrWidth)(const unsigned char *s, int typeface,
-				int fontindex,
-				int unit, DevDesc *dd);
-static double (*ptr_GVStrHeight)(const unsigned char *s, int typeface,
-				 int fontindex,
-				 int unit, DevDesc *dd);
-static void (*ptr_GVText)(double x, double y, int unit, char *s,
-			  int typeface, int fontindex,
-			  double x_justify, double y_justify, double rotation,
-			  DevDesc *dd);
-*/
 
 static int initialized = 0;
 
@@ -73,11 +56,12 @@ static void vfonts_Init(void)
     return;
 }
 
-double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
+attribute_hidden
+double GVStrWidth (const char *s, int typeface, int fontindex,
 		   GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
-    char *str = reinterpret_cast<char *>(const_cast<unsigned char*>(s));
+    char *str = const_cast<char*>(s);
 #ifdef SUPPORT_MBCS
     char *buff;
     Rboolean conv = mbcslocale;
@@ -91,18 +75,16 @@ double GVStrWidth (const unsigned char *s, int typeface, int fontindex,
 	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrWidth"));
-	mbcsToLatin1(reinterpret_cast<char *>(const_cast<unsigned char*>(s)), buff);
+	mbcsToLatin1(s, buff);
 	str = buff;
     }
 #endif
-    return GConvertXUnits(R_GE_VStrWidth(reinterpret_cast<unsigned char*>(str), &gc,
-					 (GEDevDesc *) dd),
+    return GConvertXUnits(R_GE_VStrWidth(str, &gc, (GEDevDesc *) dd),
 			  DEVICE, unit, dd);
 }
 
-double R_GE_VStrWidth(const unsigned char *s,
-		      R_GE_gcontext *gc,
-		      GEDevDesc *dd)
+attribute_hidden
+double R_GE_VStrWidth(const char *s, R_GE_gcontext *gc, GEDevDesc *dd)
 {
     if(!initialized) vfonts_Init();
     if(initialized > 0)
@@ -113,11 +95,12 @@ double R_GE_VStrWidth(const unsigned char *s,
     }
 }
 
-double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
+attribute_hidden
+double GVStrHeight (const char *s, int typeface, int fontindex,
 		    GUnit unit, DevDesc *dd)
 {
     R_GE_gcontext gc;
-    char *str = reinterpret_cast<char*>(const_cast<unsigned char*>(s));
+    char *str = const_cast<char*>(s);
 #ifdef SUPPORT_MBCS
     char *buff;
     Rboolean conv = mbcslocale;
@@ -131,18 +114,16 @@ double GVStrHeight (const unsigned char *s, int typeface, int fontindex,
 	buff = reinterpret_cast<char*>(alloca(strlen(str)+1)); /* Output string cannot be longer */
         R_CheckStack();
 	if(!buff) error(_("allocation failure in GVStrHeight"));
-	mbcsToLatin1(reinterpret_cast<char*>(const_cast<unsigned char*>(s)), buff);
+	mbcsToLatin1(s, buff);
 	str = buff;
     }
 #endif
-    return GConvertYUnits(R_GE_VStrHeight(reinterpret_cast<unsigned char*>(str), &gc,
-					  (GEDevDesc *) dd),
+    return GConvertYUnits(R_GE_VStrHeight(str, &gc, (GEDevDesc *) dd),
 			  DEVICE, unit, dd);
 }
 
-double R_GE_VStrHeight(const unsigned char *s,
-		       R_GE_gcontext *gc,
-		       GEDevDesc *dd)
+attribute_hidden
+double R_GE_VStrHeight(const char *s, R_GE_gcontext *gc, GEDevDesc *dd)
 {
     if(!initialized) vfonts_Init();
     if(initialized > 0)
@@ -153,13 +134,14 @@ double R_GE_VStrHeight(const unsigned char *s,
     }
 }
 
-void GVText (double x, double y, GUnit unit, char *s,
+attribute_hidden
+void GVText (double x, double y, GUnit unit, const char *s,
 	     int typeface, int fontindex,
 	     double x_justify, double y_justify, double rotation,
 	     DevDesc *dd)
 {
     R_GE_gcontext gc;
-    char *str = s;
+    const char *str = s;
 #ifdef SUPPORT_MBCS
     char *buff;
     Rboolean conv = mbcslocale;
@@ -186,6 +168,7 @@ void GVText (double x, double y, GUnit unit, char *s,
 	       &gc, (GEDevDesc *) dd);
 }
 
+attribute_hidden
 void R_GE_VText(double x, double y, const char * const s,
 		double x_justify, double y_justify, double rotation,
 		R_GE_gcontext *gc,

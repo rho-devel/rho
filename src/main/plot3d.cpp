@@ -14,8 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /* <UTF8> char here is either ASCII or handled as a whole */
@@ -781,7 +781,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 SEXP GEcontourLines(double *x, int nx, double *y, int ny,
 		    double *z, double *levels, int nl)
 {
-    char *vmax;
+    void *vmax;
     int i, nlines, len;
     double atom, zmin, zmax;
     SEGP* segmentDB;
@@ -866,8 +866,6 @@ SEXP GEcontourLines(double *x, int nx, double *y, int ny,
     return mainlist;
 }
 
-SEXP GEdrawContourLines();
-
 SEXP attribute_hidden do_contourLines(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP oargs, c, x, y, z;
@@ -924,7 +922,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 {
 /* draw a contour for one given contour level 'zc' */
 
-    char *vmax;
+    void *vmax;
 
     double xend, yend;
     int i, ii, j, jj, ns, ns2, dir;
@@ -1066,10 +1064,10 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 		if (vectorFonts) {
 		    /* 1, 1 => sans serif, basic font */
 		    labelDistance =
-			GVStrWidth(reinterpret_cast<unsigned char *>(buffer), typeface,
+			GVStrWidth(buffer, typeface,
 				   fontindex, INCHES, dd);
 		    labelHeight =
-			GVStrHeight(reinterpret_cast<unsigned char *>(buffer), typeface,
+			GVStrHeight(buffer, typeface,
 				    fontindex, INCHES, dd);
 		}
 		else {
@@ -1363,7 +1361,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     int ltysave, colsave, lwdsave;
     double cexsave;
     double atom, zmin, zmax;
-    char *vmax, *vmax0;
+    void *vmax, *vmax0;
     int method;
     Rboolean drawLabels;
     Rboolean vectorFonts = FALSE;
@@ -1376,7 +1374,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     GCheckState(dd);
 
     if (length(args) < 4)
-	errorcall(call, _("too few arguments"));
+	error(_("too few arguments"));
 
     oargs = args;
 
@@ -1413,7 +1411,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
 
     method = asInteger(CAR(args)); args = CDR(args);
     if (method < 1 || method > 3)
-	errorcall(call, _("invalid '%s' value"), "method");
+	error(_("invalid '%s' value"), "method");
 
     PROTECT(vfont = FixupVFont(CAR(args)));
     if (!isNull(vfont)) {
@@ -1437,31 +1435,31 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     args = CDR(args);
 
     if (nx < 2 || ny < 2)
-	errorcall(call, _("insufficient 'x' or 'y' values"));
+	error(_("insufficient 'x' or 'y' values"));
 
     if (nrows(z) != nx || ncols(z) != ny)
-	errorcall(call, _("dimension mismatch"));
+	error(_("dimension mismatch"));
 
     if (nc < 1)
-	errorcall(call, _("no contour values"));
+	error(_("no contour values"));
 
     for (i = 0; i < nx; i++) {
 	if (!R_FINITE(REAL(x)[i]))
-	    errorcall(call, _("missing 'x' values"));
+	    error(_("missing 'x' values"));
 	if (i > 0 && REAL(x)[i] < REAL(x)[i - 1])
-	    errorcall(call, _("increasing 'x' values expected"));
+	    error(_("increasing 'x' values expected"));
     }
 
     for (i = 0; i < ny; i++) {
 	if (!R_FINITE(REAL(y)[i]))
-	    errorcall(call, _("missing 'y' values"));
+	    error(_("missing 'y' values"));
 	if (i > 0 && REAL(y)[i] < REAL(y)[i - 1])
-	    errorcall(call, _("increasing 'y' values expected"));
+	    error(_("increasing 'y' values expected"));
     }
 
     for (i = 0; i < nc; i++)
 	if (!R_FINITE(REAL(c)[i]))
-	    errorcall(call, _("invalid NA contour values"));
+	    error(_("invalid NA contour values"));
 
     zmin = DBL_MAX;
     zmax = DBL_MIN;
@@ -1690,13 +1688,13 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     args = CDR(args);
 
     if (nx < 2 || ny < 2)
-	errorcall(call, _("insufficient 'x' or 'y' values"));
+	error(_("insufficient 'x' or 'y' values"));
 
     if (nrows(sz) != nx || ncols(sz) != ny)
-	errorcall(call, _("dimension mismatch"));
+	error(_("dimension mismatch"));
 
     if (nc < 1)
-	errorcall(call, _("no contour values"));
+	error(_("no contour values"));
 
     PROTECT(scol = FixupCol(CAR(args), R_TRANWHITE));
     ncol = length(scol);
@@ -1760,9 +1758,9 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_NilValue;
 
  badxy:
-    errorcall(call, _("invalid x / y values or limits"));
+    error(_("invalid x / y values or limits"));
  badlev:
-    errorcall(call, _("invalid contour levels: must be strictly increasing"));
+    error(_("invalid contour levels: must be strictly increasing"));
     return R_NilValue;  /* never used; to keep -Wall happy */
 }
 
@@ -2464,43 +2462,43 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
     DevDesc *dd;
 
     if (length(args) < 24)
-	errorcall(call, _("too few parameters"));
+	error(_("too few parameters"));
     gcall = call;
     originalArgs = args;
 
     PROTECT(x = coerceVector(CAR(args), REALSXP));
-    if (length(x) < 2) errorcall(call, _("invalid '%s' argument"), "x");
+    if (length(x) < 2) error(_("invalid '%s' argument"), "x");
     args = CDR(args);
 
     PROTECT(y = coerceVector(CAR(args), REALSXP));
-    if (length(y) < 2) errorcall(call, _("invalid '%s' argument"), "x");
+    if (length(y) < 2) error(_("invalid '%s' argument"), "x");
     args = CDR(args);
 
     PROTECT(z = coerceVector(CAR(args), REALSXP));
     if (!isMatrix(z) || nrows(z) != length(x) || ncols(z) != length(y))
-	errorcall(call, _("invalid '%s' argument"), "z");
+	error(_("invalid '%s' argument"), "z");
     args = CDR(args);
 
     PROTECT(xlim = coerceVector(CAR(args), REALSXP));
-    if (length(xlim) != 2) errorcall(call, _("invalid '%s' argument"), "xlim");
+    if (length(xlim) != 2) error(_("invalid '%s' argument"), "xlim");
     args = CDR(args);
 
     PROTECT(ylim = coerceVector(CAR(args), REALSXP));
-    if (length(ylim) != 2) errorcall(call, _("invalid '%s' argument"), "ylim");
+    if (length(ylim) != 2) error(_("invalid '%s' argument"), "ylim");
     args = CDR(args);
 
     PROTECT(zlim = coerceVector(CAR(args), REALSXP));
-    if (length(zlim) != 2) errorcall(call, _("invalid '%s' argument"), "zlim");
+    if (length(zlim) != 2) error(_("invalid '%s' argument"), "zlim");
     args = CDR(args);
 
     /* Checks on x/y/z Limits */
 
     if (!LimitCheck(REAL(xlim), &xc, &xs))
-	errorcall(call, _("invalid 'x' limits"));
+	error(_("invalid 'x' limits"));
     if (!LimitCheck(REAL(ylim), &yc, &ys))
-	errorcall(call, _("invalid 'y' limits"));
+	error(_("invalid 'y' limits"));
     if (!LimitCheck(REAL(zlim), &zc, &zs))
-	errorcall(call, _("invalid 'z' limits"));
+	error(_("invalid 'z' limits"));
 
     theta = asReal(CAR(args));	args = CDR(args);
     phi	  = asReal(CAR(args));	args = CDR(args);
@@ -2545,15 +2543,15 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (!R_FINITE(theta) || !R_FINITE(phi) || !R_FINITE(r) || !R_FINITE(d) ||
 	d < 0 || r < 0)
-	errorcall(call, _("invalid viewing parameters"));
+	error(_("invalid viewing parameters"));
     if (!R_FINITE(expand) || expand < 0)
-	errorcall(call, _("invalid '%s' value"), "expand");
+	error(_("invalid '%s' value"), "expand");
     if (scale == NA_LOGICAL)
 	scale = 0;
     if ((nTicks == NA_INTEGER) || (nTicks < 0))
-	errorcall(call, _("invalid '%s' value"), "nticks");
+	error(_("invalid '%s' value"), "nticks");
     if ((tickType == NA_INTEGER) || (tickType < 1) || (tickType > 2))
-	errorcall(call, _("invalid '%s' value"), "ticktype");
+	error(_("invalid '%s' value"), "ticktype");
 
     dd = CurrentDevice();
 
@@ -2561,11 +2559,11 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PROTECT(col = FixupCol(col, Rf_gpptr(dd)->bg));
     ncol = LENGTH(col);
-    if (ncol < 1) errorcall(call, _("invalid '%s' specification"), "col");
+    if (ncol < 1) error(_("invalid '%s' specification"), "col");
     if(!R_OPAQUE(INTEGER(col)[0])) DoLighting = FALSE;
     PROTECT(border = FixupCol(border, Rf_gpptr(dd)->fg));
     if (length(border) < 1) 
-	errorcall(call, _("invalid '%s' specification"), "border");
+	error(_("invalid '%s' specification"), "border");
 
     GSetState(1, dd);
     GSavePars(dd);

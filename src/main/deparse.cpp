@@ -15,8 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  *
  *
  *  IMPLEMENTATION NOTES:
@@ -124,13 +124,14 @@ typedef struct {
     int backtick;
     int opts;
     int sourceable;
+    int longstring;
 } LocalParseData;
 
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 			       Rboolean backtick, int opts);
 static void args2buff(SEXP, int, int, LocalParseData *);
 static void deparse2buff(SEXP, LocalParseData *);
-static void print2buff(char *, LocalParseData *);
+static void print2buff(const char *, LocalParseData *);
 static void printtab2buff(int, LocalParseData *);
 static void writeline(LocalParseData *);
 static void vector2buff(SEXP, LocalParseData *);
@@ -139,41 +140,6 @@ static void vec2buff(SEXP, LocalParseData *);
 static void linebreak(Rboolean *lbreak, LocalParseData *);
 static void deparse2(SEXP, SEXP, LocalParseData *);
 
-void attribute_hidden
-R_AllocStringBuffer(int blen, DeparseBuffer *buf)
-{
-    if(blen >= 0) {
-	if(blen*int(sizeof(char)) < buf->bufsize) return;
-	blen = (blen+1)*sizeof(char);
-	if(blen < buf->defaultSize) blen = buf->defaultSize;
-	if(buf->data == NULL){
-	    buf->data = reinterpret_cast<char *>(malloc(blen));
-	    buf->data[0] = '\0';
-	} else
-	    buf->data = reinterpret_cast<char *>(realloc(buf->data, blen));
-	buf->bufsize = blen;
-	if(!buf->data) {
-		buf->bufsize = 0;
-		error(_("could not allocate memory in C function 'R_AllocStringBuffer'"));
-	}
-    } else {
-	if(buf->bufsize == buf->defaultSize) return;
-	free(buf->data);
-	buf->data = reinterpret_cast<char *>(malloc(buf->defaultSize));
-	buf->bufsize = buf->defaultSize;
-    }
-}
-
-void attribute_hidden
-R_FreeStringBuffer(DeparseBuffer *buf)
-{
-    if (buf->data != NULL) {
-	free(buf->data);
-	buf->bufsize = 0;
-	buf->data = NULL;
-    }
-}
-
 SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ca1;
@@ -181,7 +147,7 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-    if(length(args) < 1) errorcall(call, _("too few arguments"));
+    if(length(args) < 1) error(_("too few arguments"));
 
     ca1 = CAR(args); args = CDR(args);
     cut0 = DEFAULT_Cutoff;
@@ -225,7 +191,7 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 	    {0, 0, 0, 0, /*startline = */TRUE, 0,
 	     NULL,
 	     /*DeparseBuffer=*/{NULL, 0, BUFSIZE},
-	     DEFAULT_Cutoff, FALSE, 0, TRUE};
+	     DEFAULT_Cutoff, FALSE, 0, TRUE, FALSE};
     localData.cutoff = cutoff;
     localData.backtick = backtick;
     localData.opts = opts;
@@ -256,6 +222,8 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     R_print.digits = savedigits;
     if ((opts & WARNINCOMPLETE) && !localData.sourceable)
     	warning(_("deparse may be incomplete"));
+    if ((opts & WARNINCOMPLETE) && localData.longstring)
+    	warning(_("deparse may be not be source()able in R < 2.7.0"));
     /* somewhere lower down might have allocated ... */
     R_FreeStringBuffer(&(localData.buffer));
     return svec;
@@ -317,7 +285,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
 	    if(!havewarned &&
 	       res < int(strlen(CHAR(STRING_ELT(tval, i)))) + 1)
-		warningcall(call, _("wrote too few characters"));
+		warning(_("wrote too few characters"));
 	}
     if (!wasopen) con->close(con);
     return (CAR(args));
@@ -330,17 +298,17 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean wasopen, havewarned = FALSE, evaluate;
     Rconnection con;
     int opts;
-    char *obj_name;
+    const char *obj_name;
 
     checkArity(op, args);
 
     names = CAR(args);
     file = CADR(args);
     if(!isString(names))
-	errorcall(call, _("character arguments expected"));
+	error( _("character arguments expected"));
     nobjs = length(names);
     if(nobjs < 1 || length(file) < 1)
-	errorcall(call, _("zero length argument"));
+	error(_("zero length argument"));
     source = CADDR(args);
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
@@ -357,8 +325,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_TAG(o, install(translateChar(STRING_ELT(names, j))));
 	SETCAR(o, findVar(TAG(o), source));
 	if (CAR(o) == R_UnboundValue)
-	    warning(_("Object \"%s\" not found"), 
-		    CHAR(PRINTNAME(TAG(o))));
+	    warning(_("Object \"%s\" not found"), CHAR(PRINTNAME(TAG(o))));
 	else nout++;
     }
     o = objs;
@@ -384,19 +351,19 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (!wasopen)
 		if(!con->open(con)) error(_("cannot open the connection"));
 	    for (i = 0, nout = 0; i < nobjs; i++) {
-		char *s;
+		const char *s;
 		if (CAR(o) == R_UnboundValue) continue;
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		s = translateChar(STRING_ELT(names, i));
 		res = Rconn_printf(con, "`%s` <-\n", s);
 		if(!havewarned && res < int(strlen(s)) + 6)
-		    warningcall(call, _("wrote too few characters"));
+		    warning(_("wrote too few characters"));
 		tval = deparse1(CAR(o), FALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++) {
 		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 		    if(!havewarned &&
 		       res < int(strlen(CHAR(STRING_ELT(tval, j)))) + 1)
-			warningcall(call, _("wrote too few characters"));
+			warning(_("wrote too few characters"));
 		}
 		o = CDR(o);
 	    }
@@ -545,7 +512,7 @@ static void attr2(SEXP s, LocalParseData *d)
 		}
 		else {
 		    /* TAG(a) might contain spaces etc */
-		    char *tag = CHAR(PRINTNAME(TAG(a)));
+		    const char *tag = CHAR(PRINTNAME(TAG(a)));
 		    d->opts = SIMPLEDEPARSE; /* turn off quote()ing */
 		    if(isValidName(tag))
 			deparse2buff(TAG(a), d);
@@ -589,7 +556,8 @@ static void printcomment(SEXP s, LocalParseData *d)
     }
 }
 
-static char * backquotify(char *s)
+
+static const char * backquotify(const char *s)
 {
     /* backquotifying can at most double the length of the symbol in bytes,
        plus surrounding quotes and terminator. */
@@ -660,8 +628,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	}
 	break;
     case CHARSXP:
-	print2buff(translateChar(s), d);
+    {
+	const char *ts = translateChar(s);
+	/* versions of R < 2.7.0 cannot parse strings longer than 8192 chars */
+	if(strlen(ts) >= 8192) d->longstring = TRUE;
+	print2buff(ts, d);
 	break;
+    }
     case SPECIALSXP:
     case BUILTINSXP:
 	print2buff(".Primitive(\"", d);
@@ -685,7 +658,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
     case CLOSXP:
         if (localOpts & SHOWATTRIBUTES) attr1(s, d);
         if ((d->opts & USESOURCE) && 
-	    (n = length(t = getAttrib(s, R_SourceSymbol))) > 0) {
+	    (n = length(t = getAttrib(s, R_SourceSymbol))) > 0 
+	    && isString(t)) {
     	    for(i = 0 ; i < n ; i++) {
 	    	print2buff(translateChar(STRING_ELT(t, i)), d);
 	    	writeline(d);
@@ -891,7 +865,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    break;
 		case PP_FUNCTION:
 		    printcomment(s, d);
-		    if (!(d->opts & USESOURCE) || isNull(CADDR(s))) {
+		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
 		    	print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    	print2buff("(", d);
 		    	args2buff(FORMALS(s), 0, 1, d);
@@ -1039,7 +1013,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    }
 		    else {
 			if ( isSymbol(CAR(s)) ){
-			    char *ss = CHAR(PRINTNAME(CAR(s)));
+			    const char *ss = CHAR(PRINTNAME(CAR(s)));
 			    if ( !isValidName(ss) ){
 
 				print2buff("`", d);
@@ -1130,7 +1104,7 @@ static void writeline(LocalParseData *d)
     d->startline = TRUE;
 }
 
-static void print2buff(char *strng, LocalParseData *d)
+static void print2buff(const char *strng, LocalParseData *d)
 {
     int tlen, bufflen;
 
@@ -1141,21 +1115,15 @@ static void print2buff(char *strng, LocalParseData *d)
     tlen = strlen(strng);
     R_AllocStringBuffer(0, &(d->buffer));
     bufflen = strlen(d->buffer.data);
-    /*if (bufflen + tlen > BUFSIZE) {
-	buff[0] = '\0';
-	error("string too long in deparse");
-	}*/
     R_AllocStringBuffer(bufflen + tlen, &(d->buffer));
     strcat(d->buffer.data, strng);
     d->len += tlen;
 }
 
-char *EncodeReal2(double x, int w, int d, int e);
-
 static void vector2buff(SEXP vector, LocalParseData *d)
 {
     int tlen, i, quote;
-    char *strp;
+    const char *strp;
     Rboolean surround = FALSE, allNA, addL = TRUE;
 
     tlen = length(vector);
@@ -1275,6 +1243,11 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		int w, d, e;
 		formatReal(&REAL(vector)[i], 1, &w, &d, &e, 0);
 		strp = EncodeReal2(REAL(vector)[i], w, d, e);
+	    } else if (TYPEOF(vector) == STRSXP) {
+		const char *ts = translateChar(STRING_ELT(vector, i));
+		/* versions of R < 2.7.0 cannot parse strings longer than 8192 chars */
+		if(strlen(ts) >= 8192) d->longstring = TRUE;
+		strp = EncodeElement(vector, i, quote, '.');
 	    } else
 		strp = EncodeElement(vector, i, quote, '.');
 	    print2buff(strp, d);
@@ -1362,7 +1335,7 @@ static void args2buff(SEXP arglist, int lineb, int formals, LocalParseData *d)
 	if (TAG(arglist) != R_NilValue) {
 	    SEXP s = TAG(arglist);
 
-	    char *ss = CHAR(PRINTNAME(s));
+	    const char *ss = CHAR(PRINTNAME(s));
 	    if( s == R_DotsSymbol || isValidName(ss) )
 		print2buff(ss, d);
 	    else {

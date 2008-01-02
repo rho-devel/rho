@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2005 The R Development Core Team.
+ *  Copyright (C) 1999-2007 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +13,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 #ifndef R_DEFINES_H
@@ -26,9 +26,11 @@ extern "C" {
 
 #if !defined(R_R_H) && !defined(R_S_H)
 /* user forgot to include R.h or S.h */
-#include <R_ext/Memory.h>
-#include <R_ext/RS.h>
+# include <R_ext/Memory.h>
+# include <R_ext/RS.h>
 #endif
+
+#include <Rinternals.h>
 
 /*
  *  Much is from John Chambers' "Programming With Data".
@@ -43,7 +45,6 @@ extern "C" {
  *  And to hide some internal nastiness.
  */
 
-#include <Rinternals.h>
 
 /*
  *  Added some macros defined in S.h from Splus 5.1
@@ -117,8 +118,8 @@ extern "C" {
 #define NUMERIC_VALUE(x)	asReal(x)
 #define CHARACTER_VALUE(x)	CHAR(asChar(x))
 #define STRING_VALUE(x)		CHAR(asChar(x))
-#define LIST_VALUE(x)		error("the `value' of a list object is not defined")
-#define RAW_VALUE(x)		error("the `value' of a raw object is not defined")
+#define LIST_VALUE(x)		error("the 'value' of a list object is not defined")
+#define RAW_VALUE(x)		error("the 'value' of a raw object is not defined")
 
 #define SET_ELEMENT(x, i, val)	SET_VECTOR_ELT(x, i, val)
 #define GET_ATTR(x,what)       	getAttrib(x, what)
@@ -143,7 +144,7 @@ extern "C" {
 
 #define MAKE_CLASS(what)	R_do_MAKE_CLASS(what)
 /* NEW_OBJECT is recommended; NEW is for green book compatibility */
-#define NEW_OBJECT(class_def)		R_do_new_object(class_def)
+#define NEW_OBJECT(class_def)	R_do_new_object(class_def)
 #define NEW(class_def)		R_do_new_object(class_def)
 
 #define s_object                SEXPREC

@@ -1,3 +1,8 @@
+% File src/library/base/man/tapply.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{tapply}
 \alias{tapply}
 \title{Apply a Function Over a ``Ragged'' Array}
@@ -17,7 +22,7 @@ tapply(X, INDEX, FUN = NULL, \dots, simplify = TRUE)
     \code{+}, \code{\%*\%}, etc., the function name must be quoted.  If
     \code{FUN} is \code{NULL}, tapply returns a vector which can be used
     to subscript the multi-way array \code{tapply} normally produces.}
-  \item{\dots}{optional arguments to \code{FUN}.}
+  \item{\dots}{optional arguments to \code{FUN}: the Note section.}
   \item{simplify}{If \code{FALSE}, \code{tapply} always returns an array
     of mode \code{"list"}.  If \code{TRUE} (the default), then if
     \code{FUN} always returns a scalar, \code{tapply} returns an array
@@ -26,12 +31,13 @@ tapply(X, INDEX, FUN = NULL, \dots, simplify = TRUE)
 \value{
   When \code{FUN} is present, \code{tapply} calls \code{FUN} for each
   cell that has any data in it.  If \code{FUN} returns a single atomic
-  value for each cell (e.g., functions \code{mean} or \code{var}) and
-  when \code{simplify} is \code{TRUE}, \code{tapply} returns a multi-way
-  \link{array} containing the values.  The array has the same number of
-  dimensions as \code{INDEX} has components; the number of levels in a
-  dimension is the number of levels (\code{nlevels()}) in the
-  corresponding component of \code{INDEX}.
+  value for each such cell (e.g., functions \code{mean} or \code{var})
+  and when \code{simplify} is \code{TRUE}, \code{tapply} returns a
+  multi-way \link{array} containing the values, and \code{NA} for the
+  empty cells.  The array has the same number of dimensions as
+  \code{INDEX} has components; the number of levels in a dimension is
+  the number of levels (\code{nlevels()}) in the corresponding component
+  of \code{INDEX}.
 
   Note that contrary to S, \code{simplify = TRUE} always returns an
   array, possibly 1-dimensional.
@@ -45,10 +51,14 @@ tapply(X, INDEX, FUN = NULL, \dots, simplify = TRUE)
   the names of \code{INDEX} and are based on the levels of the grouping
   factors (possibly after coercion).
 
-  Note that optional arguments to \code{FUN} supplied by the
-  \code{...} argument are not divided into cells.  It is therefore
-  inappropriate for \code{FUN} to expect additional arguments with
-  the same length as \code{X}.
+  For a list result, the elements corresponding to empty cells are
+  \code{NULL}.
+}
+\note{
+  Optional arguments to \code{FUN} supplied by the \code{...} argument
+  are not divided into cells.  It is therefore inappropriate for
+  \code{FUN} to expect additional arguments with the same length as
+  \code{X}.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -64,7 +74,7 @@ tapply(X, INDEX, FUN = NULL, \dots, simplify = TRUE)
 }
 \examples{
 require(stats)
-groups <- as.factor(rbinom(32, n = 5, p = .4))
+groups <- as.factor(rbinom(32, n = 5, prob = 0.4))
 tapply(groups, groups, length) #- is almost the same as
 table(groups)
 
@@ -72,7 +82,7 @@ table(groups)
 tapply(warpbreaks$breaks, warpbreaks[,-1], sum)
 tapply(warpbreaks$breaks, warpbreaks[, 3, drop = FALSE], sum)
 
-n <- 17; fac <- factor(rep(1:3, len = n), levels = 1:5)
+n <- 17; fac <- factor(rep(1:3, length = n), levels = 1:5)
 table(fac)
 tapply(1:n, fac, sum)
 tapply(1:n, fac, sum, simplify = FALSE)

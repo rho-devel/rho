@@ -1,3 +1,19 @@
+#  File src/library/stats/R/nafns.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 na.pass <- function(object, ...) object
 na.action <- function(object, ...) UseMethod("na.action")
 na.action.default <- function(object, ...) attr(object, "na.action")
@@ -20,14 +36,14 @@ na.omit.default <- function(object, ...)
     omit <- seq_along(object)[is.na(object)]
     if (length(omit) == 0) return(object)
     if (length(d)){
-        omit <- unique(((omit-1) %% d[1]) + 1)
+        omit <- unique(((omit-1) %% d[1]) + 1L)
         nm <- rownames(object)
         object <- object[-omit, , drop=FALSE]
     } else {
         nm <- names(object)
         object <- object[-omit]
     }
-    if (any(omit)) {
+    if (any(omit > 0L)) {
 	names(omit) <- nm[omit]
 	attr(omit, "class") <- "omit"
 	attr(object, "na.action") <- omit
@@ -54,7 +70,7 @@ na.omit.data.frame <- function(object, ...)
 		omit <- omit | x[, ii]
     }
     xx <- object[!omit, , drop = FALSE]
-    if (any(omit)) {
+    if (any(omit > 0L)) {
 	temp <- seq(omit)[omit]
 	names(temp) <- attr(object, "row.names")[omit]
 	attr(temp, "class") <- "omit"
@@ -74,14 +90,14 @@ na.exclude.default <- function(object, ...)
     omit <- seq_along(object)[is.na(object)]
     if (length(omit) == 0) return(object)
     if (length(d)){
-        omit <- unique(((omit-1) %% d[1]) + 1)
+        omit <- unique(((omit-1) %% d[1]) + 1L)
         nm <- rownames(object)
         object <- object[-omit, , drop=FALSE]
     } else {
         nm <- names(object)
         object <- object[-omit]
     }
-    if (any(omit)) {
+    if (any(omit > 0L)) {
 	names(omit) <- nm[omit]
 	attr(omit, "class") <- "exclude"
 	attr(object, "na.action") <- omit
@@ -108,7 +124,7 @@ na.exclude.data.frame <- function(object, ...)
 		omit <- omit | x[, ii]
     }
     xx <- object[!omit, , drop = FALSE]
-    if (any(omit)) {
+    if (any(omit > 0L)) {
 	temp <- seq(omit)[omit]
 	names(temp) <- attr(object, "row.names")[omit]
 	attr(temp, "class") <- "exclude"

@@ -12,7 +12,7 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = RNG.c complex.c gram.c regex.c
+SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 
 SOURCES_CXX = \
 	CConverters.cpp CellPool.cpp CommandLineArgs.cpp FlagWord.cpp \
@@ -109,8 +109,7 @@ EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) $(R_ZLIBS) \
 ## find dependencies for both libR and standalone R.bin
 DEP_LIBINTL = @BUILD_LIBINTL_TRUE@ ../extra/intl/libintl.a
 COMMON_DEPENDENCIES = \
-	$(R_XTRA_LIBS) $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_XDR) \
-	$(DEP_LIBINTL)
+	$(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_XDR) $(DEP_LIBINTL)
 
 R_binary = R.bin
 R_bin_OBJECTS = Rmain.o @WANT_R_SHLIB_FALSE@$(OBJECTS)
@@ -240,5 +239,8 @@ distdir: $(DISTFILES)
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
+	@if test -f $(srcdir)/TAOCP1997.c ; then \
+	  cp -p $(srcdir)/TAOCP1997.c $(distdir)/TAOCP1997.c; \
+	fi
 
 include $(DEPENDS)

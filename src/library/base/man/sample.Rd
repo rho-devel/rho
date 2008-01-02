@@ -1,3 +1,8 @@
+% File src/library/base/man/sample.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{sample}
 \alias{sample}
 \title{Random Samples and Permutations}
@@ -17,7 +22,8 @@ sample(x, size, replace = FALSE, prob = NULL)
     of the vector being sampled.}
 }
 \details{
-  If \code{x} has length 1 and \code{x >= 1}, sampling takes place from
+  If \code{x} has length 1, is numeric (in the sense of
+  \code{\link{is.numeric}}) and \code{x >= 1}, sampling takes place from
   \code{1:x}.  \emph{Note} that this convenience feature may lead to
   undesired behaviour when \code{x} is of varying length
   \code{sample(x)}.  See the \code{resample()} example below.
@@ -30,14 +36,14 @@ sample(x, size, replace = FALSE, prob = NULL)
   of weights for obtaining the elements of the vector being
   sampled. They need not sum to one, but they should be nonnegative
   and not all zero.  If \code{replace} is true, Walker's alias method
-  (Ripley, 1987) is used when there are more that 250 reasonably
+  (Ripley, 1987) is used when there are more than 250 reasonably
   probable values: this gives results incompatible with those from \R <
   2.2.0, and there will be a warning the first time this happens in a
   session.
 
   If \code{replace} is false, these probabilities are applied
   sequentially, that is the probability of choosing the next item is
-  proportional to the probabilities amongst the remaining items. The number
+  proportional to the probabilities amongst the remaining items.  The number
   of nonzero weights must be at least \code{size} in this case.
 }
 \references{
@@ -46,6 +52,10 @@ sample(x, size, replace = FALSE, prob = NULL)
   Wadsworth \& Brooks/Cole.
 
   Ripley, B. D. (1987) \emph{Stochastic Simulation}. Wiley.
+}
+\seealso{
+  Package \pkg{sampling} for other methods of weighted sampling without
+  replacement.
 }
 \examples{
 x <- 1:12

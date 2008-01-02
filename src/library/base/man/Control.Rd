@@ -1,8 +1,14 @@
+% File src/library/base/man/Control.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Control}
 \alias{Control}
 \alias{if}
 \alias{else}
 \alias{for}
+\alias{in}
 \alias{while}
 \alias{repeat}
 \alias{break}
@@ -11,7 +17,7 @@
 \description{
   These are the basic control-flow constructs of the \R language.  They
   function in much the same way as control statements in any Algol-like
-  language.
+  language.  They are all \link{reserved} words.
 }
 \usage{
 if(cond) expr
@@ -26,7 +32,8 @@ next
 \arguments{
   \item{cond}{A length-one logical vector that is not \code{NA}.
     Conditions of length greater than one are accepted with a warning, but
-    only the first element is used.
+    only the first element is used.  Other types are coerced to logical
+    if possible, ignoring any class.
   }
   \item{var}{A syntactical name for a variable.}
   \item{seq}{An expression evaluating to a vector (including a list and
@@ -86,7 +93,7 @@ next
 \examples{
 for(i in 1:5) print(1:i)
 for(n in c(2,5,10,20,50)) {
-   x <- rnorm(n)
+   x <- stats::rnorm(n)
    cat(n,":", sum(x^2),"\n")
 }
 }

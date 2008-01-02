@@ -1,3 +1,8 @@
+% File src/library/tools/man/undoc.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{undoc}
 \alias{undoc}
 \alias{print.undoc}
@@ -24,17 +29,15 @@ undoc(package, dir, lib.loc = NULL)
 }
 \details{
   This function is useful for package maintainers mostly.  In principle,
-  \emph{all} user level \R objects should be documented; note however
-  that the precise rules for documenting methods of generic functions
-  are still under discussion.
+  \emph{all} user-level \R objects should be documented.
 
   The \pkg{base} package is special as it contains the primitives and
   these do not have definitions available at code level.  We provide
-  equivalent closures in environments \code{\link{.ArgsEnv}} and
-  \code{\link{.GenericArgsEnv}} in the \pkg{base} package that are used
-  for various purposes: \code{undoc("base")} checks that that all the
-  primitive that are not language constructs are prototyped in those
-  environments and no others.
+  equivalent closures in environments \code{.ArgsEnv} and
+  \code{GenericArgsEnv} in the \pkg{base} package that are used
+  for various purposes: \code{undoc("base")} checks that all the
+  primitives that are not language constructs are prototyped in those
+  environments and no others are.
 }
 \value{
   An object of class \code{"undoc"} which is a list of character vectors

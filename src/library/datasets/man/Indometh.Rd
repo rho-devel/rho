@@ -1,3 +1,8 @@
+% File src/library/datasets/man/Indometh.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Indometh}
 \docType{data}
 \alias{Indometh}
@@ -28,8 +33,8 @@
 }
 \source{
   Kwan, Breault, Umbenhauer, McMahon and Duggan (1976),
-  \dQuote{Kinetics of Indomethicin absorption, elimination, and
-    enterohepatic circulation in man},
+  Kinetics of Indomethicin absorption, elimination, and
+    enterohepatic circulation in man.
   \emph{Journal of Pharmacokinetics and Biopharmaceutics}, \bold{4},
   255--280.
 

@@ -1,3 +1,19 @@
+#  File src/library/stats/R/ar.mle.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 ar.mle <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
                     demean = TRUE, series = NULL, ...)
 {
@@ -13,10 +29,12 @@ ar.mle <- function (x, aic = TRUE, order.max = NULL, na.action = na.fail,
     xfreq <- frequency(x)
     x <- as.vector(x)
     n.used <- length(x)
-    order.max <- if (is.null(order.max)) min(12, floor(10 * log10(n.used)))
+    order.max <- if (is.null(order.max))
+        min(n.used-1, 12, floor(10 * log10(n.used)))
     else round(order.max)
 
     if (order.max < 0) stop ("'order.max' must be >= 0")
+    else if (order.max >= n.used) stop("'order.max' must be < 'n.used'")
     if (aic) {
         coefs <- matrix(NA, order.max+1, order.max+1)
         var.pred <- numeric(order.max+1)

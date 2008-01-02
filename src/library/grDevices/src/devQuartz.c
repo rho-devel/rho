@@ -14,7 +14,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
+ *  along with this program; if not, a copy is available at
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
@@ -33,8 +33,8 @@
 #include <wchar.h>
 #endif
 
-
-#if defined(__APPLE_CC__) && defined(HAVE_AQUA)
+/* only 32-bit Mac OS X is supported. For 64-bit support use R 2.7.0 and higher */
+#if defined(__APPLE_CC__) && defined(HAVE_AQUA) && !defined(__LP64__)
 #define __DEBUGGING__
 
 unsigned char Lat2Mac[] = { 
@@ -1714,9 +1714,13 @@ OSStatus QuartzEventHandler( EventHandlerCallRef inCallRef, EventRef inEvent, vo
 #else
 SEXP Quartz(SEXP args)
 {
+#ifdef __LP64__
+    warning(_("This Quartz device does not support 64-bit, use R 2.7.0 for 64-bit Quartz support"));
+#else
     warning(_("Quartz device not available on this platform"));
+#endif
     return R_NilValue;
 }
-#endif  /* __APPLE_CC__  && HAVE_AQUA*/
+#endif  /* __APPLE_CC__  && HAVE_AQUA */
 
 #endif /* __QUARTZ_DEVICE__ */

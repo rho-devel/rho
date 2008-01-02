@@ -1,3 +1,8 @@
+% File src/library/stats/man/wilcox.test.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{wilcox.test}
 \alias{wilcox.test}
 \alias{wilcox.test.default}
@@ -132,7 +137,7 @@ wilcox.test(x, \dots)
   \bold{67}, 687--690.
 
   Myles Hollander & Douglas A. Wolfe (1973),
-  \emph{Nonparametric statistical inference}.
+  \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 27--33 (one-sample), 68--75 (two-sample).\cr
   Or second edition (1999).
@@ -153,6 +158,7 @@ wilcox.test(x, \dots)
   assumptions [or large samples]
 }
 \examples{
+require(graphics)
 ## One-sample test.
 ## Hollander & Wolfe (1973), 29f.
 ## Hamilton depression scale factor measurements in 9 patients with

@@ -126,7 +126,7 @@ inline void SET_TRUELENGTH(SEXP x, int v)
  * @param x Pointer to an \c RVector .
  * @return Pointer to \a x 's data, interpreted as character data.
  */
-char *R_CHAR(SEXP x);
+const char *R_CHAR(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector representing logical data.

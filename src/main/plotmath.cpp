@@ -18,8 +18,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /* <UTF8-FIXME>
@@ -618,13 +618,13 @@ typedef struct {
 
 /* Determine a match between symbol name and string. */
 
-static int NameMatch(SEXP expr, char *aString)
+static int NameMatch(SEXP expr, const char *aString)
 {
     if (!isSymbol(expr)) return 0;
     return !strcmp(CHAR(PRINTNAME(expr)), aString);
 }
 
-static int StringMatch(SEXP expr, char *aString)
+static int StringMatch(SEXP expr, const char *aString)
 {
     return !strcmp(translateChar(STRING_ELT(expr, 0)), aString);
 }
@@ -1031,10 +1031,11 @@ static BBOX RenderSymbolChar(int ascii, int draw, mathContext *mc,
 /* This code inserts italic corrections after */
 /* every character. */
 
-static BBOX RenderSymbolStr(char *str, int draw, mathContext *mc,
+static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 			    R_GE_gcontext *gc, GEDevDesc *dd)
 {
-    char chr[7] = "", *s = str;
+    char chr[7] = "";
+    const char *s = str;
     BBOX glyphBBox;
     BBOX resultBBox = NullBBox();
     double lastItalicCorr = 0;
@@ -1150,35 +1151,38 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
 }
 
 /* This gets called on strings and PRINTNAMES */
-static BBOX RenderStr(char *str, int draw, mathContext *mc,
+static BBOX RenderStr(const char *str, int draw, mathContext *mc,
 		      R_GE_gcontext *gc, GEDevDesc *dd)
 {
     BBOX glyphBBox;
     BBOX resultBBox = NullBBox();
+
     if (str) {
 #ifdef SUPPORT_MBCS
-	int n = strlen(str), used;
-	wchar_t wc;
-	char *p = str;
-	mbstate_t mb_st;
-	mbs_init(&mb_st);
-	while ((used = Mbrtowc(&wc, p, n, &mb_st)) > 0) {
-	    glyphBBox = GlyphBBox(wc, gc, dd);
-	    resultBBox = CombineBBoxes(resultBBox, glyphBBox);
-	    p += used; n -= used;
-	}
-#else
-	char *s = str;
-	while (*s) {
-	    glyphBBox = GlyphBBox(*s, gc, dd);
-	    resultBBox = CombineBBoxes(resultBBox, glyphBBox);
-	    s++;
-	}
+	if(mbcslocale && gc->fontface != 5) {
+	    int n = strlen(str), used;
+	    wchar_t wc;
+	    const char *p = str;
+	    mbstate_t mb_st;
+	    mbs_init(&mb_st);
+	    while ((used = Mbrtowc(&wc, p, n, &mb_st)) > 0) {
+		glyphBBox = GlyphBBox(wc, gc, dd);
+		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
+		p += used; n -= used;
+	    }
+	} else
 #endif
+	{
+	    const char *s = str;
+	    while (*s) {
+		glyphBBox = GlyphBBox(*s, gc, dd);
+		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
+		s++;
+	    }
+	}
 	if (draw) {
 	    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), str,
-		   0.0, 0.0, mc->CurrentAngle, gc,
-		   dd);
+		   0.0, 0.0, mc->CurrentAngle, gc, dd);
 	    PMoveAcross(bboxWidth(resultBBox), mc);
 	}
 	if (UsingItalics(gc))
@@ -2846,6 +2850,34 @@ static BBOX RenderPlain(SEXP expr, int draw, mathContext *mc,
 
 /*----------------------------------------------------------------------
  *
+ *  Code for SymbolFace (i.e. font = 5) Expressions
+ *
+ *  This makes the default font an Adobe Symbol Encoded font
+ *  (provides access to any character in the Adobe Symbol Font
+ *   encoding via strings like "\042" for the universal ["for all"]
+ *   symbol, without the need for separate special names for each
+ *   of these symbols).
+ *
+ */
+
+static int SymbolFaceAtom(SEXP expr)
+{
+    return NameAtom(expr) &&
+	NameMatch(expr, "symbol");
+}
+
+static BBOX RenderSymbolFace(SEXP expr, int draw, mathContext *mc,
+                             R_GE_gcontext *gc, GEDevDesc *dd)
+{
+    BBOX bbox;
+    FontType prevfont = SetFont(SymbolFont, gc);
+    bbox = RenderElement(CADR(expr), draw, mc, gc, dd);
+    SetFont(prevfont, gc);
+    return bbox;
+}
+
+/*----------------------------------------------------------------------
+ *
  *  Code for Bold Italic Expressions
  *
  */
@@ -3086,6 +3118,8 @@ static BBOX RenderFormula(SEXP expr, int draw, mathContext *mc,
 	return RenderItalic(expr, draw, mc, gc, dd);
     else if (PlainAtom(head))
 	return RenderPlain(expr, draw, mc, gc, dd);
+    else if (SymbolFaceAtom(head))
+	return RenderSymbolFace(expr, draw, mc, gc, dd);
     else if (BoldItalicAtom(head))
 	return RenderBoldItalic(expr, draw, mc, gc, dd);
     else if (StyleAtom(head))
@@ -3279,7 +3313,7 @@ void GEMathText(double x, double y, SEXP expr,
     mc.CosAngle = cos(rot);
     mc.SinAngle = sin(rot);
     RenderElement(expr, 1, &mc, gc, dd);
-}/* GMathText */
+}/* GEMathText */
 
 
 /********************************

@@ -1,3 +1,8 @@
+% File src/library/grDevices/man/pdf.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{pdf}
 \alias{pdf}
 \title{PDF Graphics Device}
@@ -23,9 +28,9 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     inches.}
   \item{onefile}{logical: if true (the default) allow multiple figures
     in one file.  If false, generate a file name containing the page
-    number.}
+    number for each page.}
   \item{family}{the font family to be used, see \code{\link{postscript}}.}
-  \item{title}{title string to embed in the file.}
+  \item{title}{title string to embed as the \code{/Title} field in the file.}
   \item{fonts}{a character vector specifying \R graphics font family
     names for fonts which will be included in the PDF file.}
   \item{version}{a string describing the PDF version that will be
@@ -39,7 +44,7 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     and \code{height} specify the paper size.  A further choice is
     \code{"default"}; if this is selected, the
     papersize is taken from the option \code{"papersize"}
-    if that is set and to \code{"a4"} if it is unset or empty.}
+    if that is set and as \code{"a4"} if it is unset or empty.}
   \item{encoding}{the name of an encoding file.  See
     \code{\link{postscript}} for details.}
   \item{bg}{the default background color to be used.}
@@ -68,18 +73,27 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   to a PDF-specific font family description.  (See the
   documentation for \code{\link{pdfFonts}}.)
 
-  \R does \emph{not} embed fonts in the PDF file though, so it is only
-  possible straightforward to use mappings to the font families that are
+  \R does \emph{not} embed fonts in the PDF file, so it is only
+  straightforward to use mappings to the font families that can be
   assumed to be available in any PDF viewer: \code{"Times"}
   (equivalently \code{"serif"}), \code{"Helvetica"} (equivalently
   \code{"sans"}), \code{"Courier"} (equivalently \code{"mono"}) and
   \code{"Symbol"} (equivalently \code{"symbol"}).  Other families may be
   specified, but it is the user's responsibility to ensure that these
   fonts are available on the system and third-party software, e.g.,
-  ghostscript, may be required to embed the fonts so that the PDF can be
-  included in other documents (e.g., LaTeX).  The URW-based families
-  described for \code{\link{postscript}}  can be used with viewers such
-  as GSView which are based on URW fonts.
+  Ghostscript, may be required to embed the fonts so that the PDF can be
+  included in other documents (e.g., LaTeX): see
+  \code{\link{embedFonts}}.  The URW-based families described for
+  \code{\link{postscript}} can be used with viewers
+#ifdef unix
+  set up to use URW fonts, which is usual with those based on
+  \code{xpdf} or Ghostscript.
+#endif
+#ifdef windows
+  such as GSView which utilise URW fonts.
+#endif
+  Since \code{\link{embedFonts}} makes use of Ghostscript, it should be
+  able to embed the URW-based families for use with other viewers.
   
   See \code{\link{postscript}} for details of encodings, as the internal
   code is shared between the drivers.  The native PDF encoding is given
@@ -90,34 +104,45 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   PDF-includers such as \code{pdftex} are usually able to handle
   compression.
 
-  At present the PDF is fairly simple, with each page being represented
+  The PDF produced is fairly simple, with each page being represented
   as a single stream.  The \R graphics model does not distinguish
   graphics objects at the level of the driver interface.
 
   The \code{version} argument declares the version of PDF that gets
-  produced.  The version must be at least 1.4 for semitransparent output
-  to be understood, and at least 1.3 if CID fonts are to be used: if
-  these features are used the version number will be increased (with a
-  warning).  Specifying a low version number (as the default) is useful
-  if you want to produce PDF output that can be viewed on older or
-  non-Adobe PDF viewers.  (PDF 1.4 requires Acrobat 5 or later.)
+  produced.  The version must be at least 1.4 for semi-transparent
+  output to be understood, and at least 1.3 if CID fonts are to be used:
+  if these features are used the version number will be increased (with
+  a warning).  Specifying a low version number (as the default) is
+  useful if you want to produce PDF output that can be viewed on older
+  or non-Adobe PDF viewers.  (PDF 1.4 requires Acrobat 5 or later.)
 
   Line widths as controlled by \code{par(lwd=)} are in multiples of
   1/96 inch.  Multiples less than 1 are allowed.  \code{pch="."} with
   \code{cex = 1} corresponds to a square of side 1/72 inch, which is
   also the \sQuote{pixel} size assumed for graphics parameters such as
   \code{"cra"}.
+
+  The \code{paper} argument sets the \code{/MediaBox} entry in the file,
+  which defaults to \code{width} by \code{height}.  If it is set to
+  something other than \code{"special"}, a device region of the
+  specified size is (by default) centred on the rectangle given by the
+  paper size: if either \code{width} or \code{height} is less
+  than \code{0.1} or too large to give a total margin of 0.5 inch, it is
+  reset to the corresponding paper dimension minus 0.5.  Thus if you
+  want the default behaviour of \code{\link{postscript}} use
+  \code{pdf(paper="a4r", width=0, height=0)} to centre the device region
+  on a landscape A4 page with 0.25 inch margins.
 }
 \note{
   Acrobat Reader does not use the fonts specified but rather emulates
   them from multiple-master fonts.  This can be seen in imprecise
   centering of characters, for example the multiply and divide signs in
-  Helvetica.
+  Helvetica.  This can be circumvented by embedding fonts where possible.
 
   Acrobat Reader 5.x and later can be extended by support for Asian and
   (so-called) Central European fonts (the latter only for 7.x and
-  later), and this will be needed for the full use of encodings other
-  than Latin-1. See
+  later, part of the \sQuote{Extended} pack for 8.x), and this will be
+  needed for the full use of encodings other than Latin-1.  See
   \url{http://www.adobe.com/products/acrobat/acrrasianfontpack.html}.
 }
 \seealso{

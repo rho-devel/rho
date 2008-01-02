@@ -1,3 +1,8 @@
+% File src/library/base/man/strsplit.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{strsplit}
 \alias{strsplit}
 \title{Split the Elements of a Character Vector}
@@ -16,17 +21,18 @@ strsplit(x, split, extended = TRUE, fixed = FALSE, perl = FALSE)
   \item{split}{
     character vector (or object which can be coerced to such)
     containing \link{regular expression}(s) (unless \code{fixed = TRUE})
-    to use as \dQuote{split}.  If empty matches occur, in particular if
+    to use for splitting.  If empty matches occur, in particular if
     \code{split} has length 0, \code{x} is split into single characters.
     If \code{split} has length greater than 1, it is re-cycled along
     \code{x}.
   }
   \item{extended}{
-    logical.  If \code{TRUE}, extended regular expression matching
-    is used, and if \code{FALSE} basic regular expressions are used.
+    logical.  If \code{TRUE} (the default), extended regular expression
+    matching is used, and if \code{FALSE} basic regular expressions are
+    used.
   }
   \item{fixed}{
-    logical.  If \code{TRUE} match string exactly, otherwise
+    logical.  If \code{TRUE} match \code{split} exactly, otherwise
     use regular expressions.  Has priority over \code{perl} and
     \code{extended}.
   }

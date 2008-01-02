@@ -1,3 +1,8 @@
+% File src/library/utils/man/help.search.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{help.search}
 \alias{help.search}
 \alias{print.hsearch}
@@ -65,11 +70,15 @@ help.search(pattern, fields = c("alias", "concept", "title"),
 }
 \details{
   Upon installation of a package, a pre-built help.search index is
-  serialized as \file{hsearch.rds} in the \file{Meta} directory.  These
-  files are used to create the data base.
+  serialized as \file{hsearch.rds} in the \file{Meta} directory
+  (provided the package has any help pages).  These files are used to
+  create the data base.
 
   The arguments \code{apropos} and \code{whatis} play a role similar to
   the Unix commands with the same names.
+
+  Searching with \code{agrep = FALSE} will be several times faster
+  than the default.
 
   If possible, the help data base is saved in memory or (if memory
   limits have been set: see \code{\link{mem.limits}}) to a file in the
@@ -112,8 +121,5 @@ file.show(file.path(R.home(), "doc", "KEYWORDS"))  # show all keywords
 
 ## Help pages with documented topics starting with 'try'.
 help.search("\\\\btry", fields = "alias")
-## Do not use '^' or '$' when matching aliases or keywords
-## (unless all packages were installed using R 1.7 or newer).
-}
-}
+}}
 \keyword{documentation}

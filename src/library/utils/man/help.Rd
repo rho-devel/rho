@@ -1,3 +1,8 @@
+% File src/library/utils/man/help.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{help}
 \alias{help}
 \alias{?}
@@ -5,7 +10,7 @@
 \description{
   These functions provide access to documentation.
   Documentation on a topic with name \code{name} (typically, an \R
-  object or a data set) can be printed with either \code{help(name)} or
+  object or a data set) can be displayed with either \code{help("name")} or
   \code{?name}.
 }
 \usage{
@@ -21,16 +26,21 @@ help(topic, offline = FALSE, package = NULL,
 type?topic
 }
 \arguments{
- \item{topic}{usually, the name on which documentation is sought.
-   The name may be quoted or unquoted (but note that if \code{topic}
-   is the name of a variable containing a character string documentation
-   is provided for the name, not for the character string).
+  \item{topic}{usually, a \link{name} or character string specifying the topic
+   for which help is sought.  A character string (enclosed in explicit
+   single or double quotes) is always taken as naming a topic.
 
-   The \code{topic} argument may also be a function call, to ask for
-   documentation on a corresponding method.  See the section on method
-   documentation.
+   For \code{help}, if the value of \code{topic} is a length-one
+   character vector the topic is taken to be the value of the only
+   element.  Any other argument \code{topic} is regarded as a name and
+   \link{deparse}d to give the desired topic.
 
-   See Details for what happens if this is omitted.
+   For \code{?} the \code{topic} argument may also be a function call,
+   to ask for documentation on a corresponding method: see the section
+   on S4 method documentation.  Unlike \code{help}, all names are
+   deparsed to give the desired topic.
+
+   See Details for what happens if this is omitted for \code{help}.
  }
  \item{offline}{a logical indicating whether documentation should be
    displayed on-line to the screen (the default) or hardcopy of it
@@ -76,10 +86,15 @@ type?topic
   to suitable topics if a package is specified, to available packages if
   \code{lib.loc} only is specified, and help on \code{help} itself if
   nothing is specified.  (In all cases this will be text help.)
-  
-  In the case of unary and binary operators and control-flow special
-  forms (including \code{if}, \code{for} and \code{function}), the topic
-  may need to be quoted.
+
+  Some topics need to be quoted (by \link{backtick}s) or given as a
+  character string.  There include those which cannot syntactically
+  appear on their own such  as unary and binary operators,
+  \code{function} and control-flow \link{reserved} words (including
+  \code{if}, \code{else} \code{for}, \code{in}, \code{repeat},
+  \code{while}, \code{break} and \code{next}.  The other \code{reserved}
+  words can be used as if they were names, for example \code{TRUE},
+  \code{NA} and \code{Inf}.
 
   If multiple help files matching \code{topic} are found, in interactive
   use a menu is presented for the user to choose one: otherwise the
@@ -88,22 +103,27 @@ type?topic
   default.)
 
 #ifdef unix
+  HTML help works best if \code{\link{help.start}()} has been called in
+  the session.  Otherwise there will be a warning about
+  \sQuote{Using non-linked HTML file: style sheet and hyperlinks may be
+    incorrect} and cross-library links will most likely not be resolved.
+ 
   If \code{offline} is \code{TRUE}, hardcopy of the documentation is
   produced by running the LaTeX version of the help page through
-  \code{latex} (note that LaTeX 2e is needed) and \code{dvips}.
-  Depending on your \code{dvips} configuration, hardcopy will be sent to
-  the printer or saved in a file.  If the programs are in non-standard
-  locations and hence were not found at compile time, you can either set
-  the options \code{latexcmd} and \code{dvipscmd}, or the environment
-  variables \env{R\_LATEXCMD} and \env{R\_DVIPSCMD} appropriately.
+  \code{latex} and \code{dvips}.  Depending on your \code{dvips}
+  configuration, hardcopy will be sent to the printer or saved in a
+  file.  If the programs are in non-standard locations and hence were
+  not found at compile time, you can either set the options
+  \code{latexcmd} and \code{dvipscmd}, or the environment variables
+  \env{R\_LATEXCMD} and \env{R\_DVIPSCMD} appropriately.
   The appearance of the output can be customized through a file
   \file{Rhelp.cfg} somewhere in your LaTeX search path.
 #endif
 #ifdef windows
   If \code{offline} is \code{TRUE}, hardcopy of the documentation is
   produced by running the LaTeX version of the help page through
-  \code{latex} (note that LaTeX 2e is needed).  You need to customize
-  the file \file{R\_HOME/bin/helpPRINT.bat} which contains an example.
+  \code{latex}.  You need to customize the file
+  \file{R\_HOME/bin/helpPRINT.bat} which contains an example.
 #endif
   The appearance of the output can be customized through a file
   \file{Rhelp.cfg} somewhere in your LaTeX search path.
@@ -177,7 +197,7 @@ type?topic
   Wadsworth \& Brooks/Cole.
 }
 \seealso{
-  \code{\link{help.search}()} for finding help pages on a \dQuote{vague}
+  \code{\link{help.search}()} for finding help pages on a vague
   topic;
   \code{\link{help.start}()} which opens the HTML version of the \R
   help pages;
@@ -196,8 +216,8 @@ help(help)              # the same
 help(lapply)
 ?lapply                 # the same
 
-help("for")             # or ?"for", but the quotes are needed
-?"+"
+help("for")             # or ?"for", but the quotes or backticks are needed
+?`+`
 
 help(package="splines") # get help even when package is not loaded
 
@@ -205,7 +225,7 @@ data()                  # list all available data sets
 ?women                  # information about data set "women"
 
 topi <- "women"
-\dontrun{help(topi) ##--> Error: No documentation for 'topi'}
+help(topi)
 
 try(help("bs", try.all.packages=FALSE)) # reports not found (an error)
 help("bs", try.all.packages=TRUE) # reports can be found in package 'splines'

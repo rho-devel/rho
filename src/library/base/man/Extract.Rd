@@ -1,8 +1,15 @@
+% File src/library/base/man/Extract.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Extract}
 \title{Extract or Replace Parts of an Object}
 \alias{Extract}
 \alias{Subscript}
 \alias{[}
+\alias{[.listof}
+\alias{[.simple.list}
 \alias{[[}
 \alias{$}
 \alias{[<-}
@@ -16,8 +23,8 @@
 \usage{
 x[i]
 x[i, j, \dots , drop = TRUE]
-x[[i]]
-x[[i, j, \dots]]
+x[[i, exact = NA]]
+x[[i, j, \dots, exact = NA]]
 x$name
 }
 \arguments{
@@ -28,10 +35,10 @@ x$name
     indices specifying elements to extract or replace.  Indices are
     \code{numeric} or \code{character} vectors or empty (missing) or
     \code{NULL}.  Numeric values are coerced to integer as by
-    \code{\link{as.integer}} (and hence truncated towards zero).  For
-    extraction with \code{[[} character vectors are normally (see under
-    Environments) partially matched to the \code{\link{names}} of the
-    object.
+    \code{\link{as.integer}} (and hence truncated towards zero).
+    Character vectors will be matched to the \code{\link{names}} of the
+    object (or for matrices/arrays, the \code{\link{dimnames}}):
+    see \sQuote{Character indices} below for further details.
 
     For \code{[}-indexing only: \code{i, j, \dots} can be logical
     vectors, indicating elements/slices to select.  Such vectors are
@@ -48,12 +55,20 @@ x$name
   }
   \item{name}{
     A literal character string or a \link{name} (possibly \link{backtick}
-    quoted).  For extraction, this is normally (see under Environments)
-    partially matched to the \code{\link{names}} of the object.
+    quoted).  For extraction, this is normally (see under
+    \sQuote{Environments}) partially matched to the \code{\link{names}}
+    of the object.
   }
   \item{drop}{For matrices and arrays.  If \code{TRUE} the result is
     coerced to the lowest possible dimension (see the examples).  This
-    only works for extracting elements, not for the replacement.}
+    only works for extracting elements, not for the replacement.
+  }
+  \item{exact}{Controls possible partial matching of \code{[[} when
+    extracting by a character vector (for most objects, but see under
+    \sQuote{Environments}). The default value, \code{NA}, allows partial
+    matching, but issues a warning when it occurs.  When \code{TRUE}, no
+    partial matching is performed.  When \code{FALSE}, partial matching
+    is allowed and no warning is issued when it occurs.}
 }
 \details{
   These operators are generic.  You can write methods to handle indexing
@@ -73,25 +88,26 @@ x$name
   \code{\link{is.recursive}}) objects.  \code{$} returns \code{NULL}
   (with a warning) except for recursive objects, and is only discussed
   in the section below on recursive objects.  Its use on non-recursive
-  objects was deprecated in \R 2.5.0.
+  objects was deprecated in \R 2.5.0 and will be removed in \R 2.7.0.
 
   Subsetting (except by an empty index) will drop all attributes except
   \code{names}, \code{dim} and \code{dimnames}.
 
   Indexing can occur on the right-hand-side of an expression for
-  extraction, or on the left-hand-side for replacement. When an index
+  extraction, or on the left-hand-side for replacement.  When an index
   expression appears on the left side of an assignment (known as
   \emph{subassignment}) then that part of \code{x} is set to the value
   of the right hand side of the assignment.  In this case no partial
-  matching of indices is done, and the left-hand-side is coerced as
-  needed to accept the values.  Attributes are preserved (although
-  \code{names}, \code{dim} and \code{dimnames} will be adjusted
-  suitably).
+  matching of character indices is done, and the left-hand-side is
+  coerced as needed to accept the values.  Attributes are preserved
+  (although \code{names}, \code{dim} and \code{dimnames} will be
+  adjusted suitably).  Subassignment is done sequentially, so if an
+  index is specified more than once the latest assigned value for an
+  index will result.
 }
 \section{Atomic vectors}{
   The usual form of indexing is \code{"["}.  \code{"[["} can be used to
-  select a single element, but \code{"["} can also do so (but will not
-  partially match a character index).
+  select a single element, but \code{"["} can also do so.
 
   The index object \code{i} can be numeric, logical, character or empty.
   Indexing by factors is allowed and is equivalent to indexing by the
@@ -132,7 +148,8 @@ x$name
   Both \code{[[} and \code{$} select a single element of the list.  The
   main difference is that \code{$} does not allow computed indices,
   whereas \code{[[} does.  \code{x$name} is equivalent to
-  \code{x[["name"]]}.
+  \code{x[["name", exact = FALSE]]}.  Also, the partial matching
+  behavior of \code{[[} can be controlled using the \code{exact} argument.
 
   \code{[} and \code{[[} are sometimes applied to other recursive
   objects such as \link{call}s and \link{expression}s.  Pairlists are
@@ -152,10 +169,10 @@ x$name
 }
 \section{Environments}{
   Both \code{$} and \code{[[} can be applied to environments.  Only
-  character arguments are allowed and no partial matching is done. The
+  character indices are allowed and no partial matching is done. The
   semantics of these operations are those of \code{get(i, env=x,
     inherits=FALSE)}.  If no match is found then \code{NULL} is
-  returned.  The assignment versions, \code{$<-} and \code{[[<-}, can
+  returned.  The replacement versions, \code{$<-} and \code{[[<-}, can
   also be used.  Again, only character arguments are allowed.  The
   semantics in this case are those of \code{assign(i, value, env=x,
     inherits=FALSE)}.  Such an assignment will either create a new
@@ -183,24 +200,44 @@ x$name
   not true for the \code{data.frame} methods described in
   \code{\link{[.data.frame}}.
 
-  To avoid confusion, do not name index arguments (but \code{drop} must
-  be named).
+  To avoid confusion, do not name index arguments (but \code{drop} and
+  \code{exact} must be named).
 }
 \section{S4 methods}{
-  These operators are also (internally) S4 generic.
+  These operators are also S4 generic, but as primitives, S4 methods
+  will be dispatched only on S4 objects.
 
   S4 methods for \code{$} will be passed \code{name} as a character
   vector: despite the message given by \code{getGeneric("$")} you cannot
   usefully write methods based on the class of \code{name}.
 }
-\note{
-  S uses partial matching when extracting by \code{[}
-  (Becker \emph{et al} p. 358) whereas \R does not.
+\section{Character indices}{
+  Character indices can in some circumstances be partially matched (see
+  \code{\link{pmatch}}) to the names or dimnames of the object being
+  subsetted (but never for subassignment).  Unlike S (Becker \emph{et
+    al} p. 358)), \R has never used partial matching when extracting by
+  \code{[}.  Partial matching is currently used by default for
+  extraction by \code{[[} (see argument \code{exact}).
 
+  Partial matching is used when extracting (only) from recursive objects
+  (except environments) by \code{$}.  In that case, warnings can be
+  switched on by \code{\link{options}(warnPartialMatchAttr = TRUE)}.
+
+  The intention is that neither empty (\code{""}) nor \code{NA} indices
+  match any names, not even empty nor missing names.  If any object has
+  no names or appropriate dimnames, they are taken as all \code{""} and
+  so match nothing.  The implementation for \code{""} is currently
+  incomplete (they do match empty names in some circumstances), but such
+  names should be avoided as this will be altered in future versions of \R.
+}
+\note{
   The documented behaviour of S is that an \code{NA} replacement index
   \sQuote{goes nowhere} but uses up an element of \code{value}
   (Becker \emph{et al} p. 359).  However, that is not the current
   behaviour of S-PLUS.
+
+  The default for \code{exact} will become \code{exact=TRUE} in \R
+  2.7.0: partial matching for \code{$} will remain the default.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -208,6 +245,12 @@ x$name
   Wadsworth \& Brooks/Cole.
 }
 \seealso{
+  \code{\link{names}} for details of matching to names, and
+  \code{\link{pmatch}} for partial matching.
+  
+  \code{\link{options}(warnPartialMatchAttr = TRUE)} causes partial
+  matches in \code{$name} to give warnings.
+
   \code{\link{list}}, \code{\link{array}}, \code{\link{matrix}}.
 
   \code{\link{[.data.frame}} and \code{\link{[.factor}} for the
@@ -219,7 +262,7 @@ x$name
   %% 'info' from ESS, see \url{http://cran.R-project.org/manuals.html}.
 }
 \examples{
-x <- 1:12; m <- matrix(1:6,nr=2); li <- list(pi=pi, e = exp(1))
+x <- 1:12; m <- matrix(1:6, nrow=2); li <- list(pi=pi, e = exp(1))
 x[10]                 # the tenth element of x
 x <- x[-1]	      # delete the 1st element of x
 m[1,]                 # the first row of matrix m

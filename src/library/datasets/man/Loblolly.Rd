@@ -1,3 +1,8 @@
+% File src/library/datasets/man/Loblolly.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Loblolly}
 \docType{data}
 \alias{Loblolly}
@@ -24,15 +29,15 @@
 }
 \source{
   Kung, F. H. (1986),
-  \dQuote{Fitting logistic growth curve with predetermined carrying
-    capacity}, \emph{Proceedings of the Statistical Computing Section,
+  Fitting logistic growth curve with predetermined carrying capacity,
+  in \emph{Proceedings of the Statistical Computing Section,
     American Statistical Association}, 340--343.
 
   Pinheiro, J. C. and Bates, D. M. (2000)
   \emph{Mixed-effects Models in S and S-PLUS}, Springer.
 }
 \examples{
-require(stats)
+require(stats); require(graphics)
 plot(height ~ age, data = Loblolly, subset = Seed == 329,
      xlab = "Tree age (yr)", las = 1,
      ylab = "Tree height (ft)",

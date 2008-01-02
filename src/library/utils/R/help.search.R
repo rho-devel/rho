@@ -1,3 +1,19 @@
+#  File src/library/utils/R/help.search.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
+
 .hsearch_db <- local({
     hdb <- NULL
     function(new) {
@@ -141,9 +157,10 @@ function(pattern, fields = c("alias", "concept", "title"),
 	    if(verbose)
 		message(" ", p, appendLF = ((np %% 5) == 0), domain=NA)
 	    path <- .find.package(p, lib.loc, quiet = TRUE)
-	    if(length(path) == 0)
-		stop(gettextf("could not find package '%s'", p), domain = NA)
-
+	    if(length(path) == 0) {
+                if(is.null(package)) next
+		else stop(gettextf("could not find package '%s'", p), domain = NA)
+            }
 	    ## Hsearch 'Meta/hsearch.rds' indices were introduced in
 	    ## R 1.8.0.	 If they are missing, we really cannot use
 	    ## the package (as library() will refuse to load it).
@@ -160,7 +177,8 @@ function(pattern, fields = c("alias", "concept", "title"),
 		} else if(verbose)
 		    message(gettextf("package '%s' has empty hsearch data - strangely", p), domain=NA)
 	    }
-	    else warning("no hsearch.rds meta data for package ", p)
+	    else if(!is.null(package))
+                warning("no hsearch.rds meta data for package ", p)
 	}
 
 	if(verbose)  {
@@ -185,7 +203,7 @@ function(pattern, fields = c("alias", "concept", "title"),
 		   Concepts = do.call("rbind", dbMat[, 4]))
 	if(is.null(db$Concepts))
 	    db$Concepts <-
-		matrix(character(), nc = 3,
+		matrix(character(), ncol = 3,
 		       dimnames = list(NULL,
 		       c("Concepts", "ID", "Package")))
 	## Make the IDs globally unique by prefixing them with the
@@ -220,7 +238,7 @@ function(pattern, fields = c("alias", "concept", "title"),
 	bad_IDs <-
 	    unlist(sapply(db,
 			  function(u)
-			  u[rowSums(is.na(nchar(u, "c"))) > 0, "ID"]))
+			  u[rowSums(is.na(nchar(u, "c", TRUE))) > 0, "ID"]))
 	if(length(bad_IDs)) {
 	    warning("removing all entries with invalid multi-byte character data")
 	    for(i in seq_along(db)) {

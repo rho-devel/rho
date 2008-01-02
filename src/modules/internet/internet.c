@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /* <UTF8> the only interpretation of char is ASCII */
@@ -73,7 +73,22 @@ static Rboolean url_open(Rconnection con)
     case HTTPSsh:
 #endif
     case HTTPsh:
-	ctxt = in_R_HTTPOpen(url, NULL, 0);
+    {
+	SEXP sheaders, agentFun;
+	const char *headers;
+#ifdef USE_WININET
+	PROTECT(agentFun = lang2(install("makeUserAgent"), ScalarLogical(0)));
+#else
+	PROTECT(agentFun = lang1(install("makeUserAgent")));
+#endif
+	PROTECT(sheaders = eval(agentFun, R_FindNamespace(mkString("utils"))));
+	
+	if(TYPEOF(sheaders) == NILSXP)
+	    headers = NULL;
+	else
+	    headers = CHAR(STRING_ELT(sheaders, 0));
+	ctxt = in_R_HTTPOpen(url, headers, 0);
+	UNPROTECT(2);
 	if(ctxt == NULL) {
 	  /* if we call error() we get a connection leak*/
 	  /* so do_url has to raise the error*/
@@ -81,6 +96,7 @@ static Rboolean url_open(Rconnection con)
 	    return FALSE;
 	}
 	((Rurlconn)(con->connprivate))->ctxt = ctxt;
+    }
 	break;
     case FTPsh:
 	ctxt = in_R_FTPOpen(url);
@@ -161,7 +177,7 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
 }
 
 
-static Rconnection in_R_newurl(char *description, const char * const mode)
+static Rconnection in_R_newurl(const char *description, const char * const mode)
 {
     Rconnection new;
 
@@ -227,7 +243,7 @@ typedef struct {
 } inetconn;
 
 #ifdef Win32
-#include <graphapp/ga.h>
+#include <ga.h>
 
 typedef struct {
     window wprog;
@@ -251,8 +267,8 @@ static void doneprogressbar(void *data)
 #define IBUFSIZE 4096
 static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, scmd, sfile, smode, sheaders, agentFun;
-    char *url, *file, *mode, *headers;
+    SEXP scmd, sfile, smode, sheaders, agentFun;
+    const char *url, *file, *mode, *headers;
     int quiet, status = 0, cacheOK;
 
     checkArity(op, args);
@@ -387,8 +403,11 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifndef Win32
 		REprintf("\n");
 #endif
-		if(nbytes > 10240)
-		    REprintf("downloaded %dKb\n\n", nbytes/1024, url);
+		if(nbytes > 1024*1024)
+		    REprintf("downloaded %0.1f Mb\n\n", 
+			     (double)nbytes/1024/1024, url);
+		else if(nbytes > 10240)
+		    REprintf("downloaded %d Kb\n\n", nbytes/1024, url);
 		else
 		    REprintf("downloaded %d bytes\n\n", nbytes, url);
 	    }
@@ -469,8 +488,11 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifndef Win32
 		REprintf("\n");
 #endif
-		if(nbytes > 10240)
-		    REprintf("downloaded %dKb\n\n", nbytes/1024, url);
+		if(nbytes > 1024*1024)
+		    REprintf("downloaded %0.1f Mb\n\n", 
+			     (double)nbytes/1024/1024, url);
+		else if(nbytes > 10240)
+		    REprintf("downloaded %d Kb\n\n", nbytes/1024, url);
 		else
 		    REprintf("downloaded %d bytes\n\n", nbytes, url);
 	    }
@@ -490,10 +512,8 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
     } else
 	error(_("unsupported URL scheme"));
 
-    PROTECT(ans = allocVector(INTSXP, 1));
-    INTEGER(ans)[0] = status;
-    UNPROTECT(2);
-    return ans;
+    UNPROTECT(1);
+    return ScalarInteger(status);
 }
 
 
@@ -523,7 +543,13 @@ void *in_R_HTTPOpen(const char *url, const char *headers, const int cacheOK)
 	    len = RxmlNanoHTTPContentLength(ctxt);
 	    if(!IDquiet){
 		REprintf("Content type '%s'", type ? type : "unknown");
-		if(len >= 0) REprintf(" length %d bytes\n", len);
+		if(len > 1024*1024)
+		    REprintf(" length %d bytes (%0.1f Mb)\n", len,
+			len/1024.0/1024.0);
+		else if(len > 10240)
+		    REprintf(" length %d bytes (%d Kb)\n", len, len/1024);
+		else if(len >= 0)
+		    REprintf(" length %d bytes\n", len);
 		else REprintf(" length unknown\n", len);
 #ifdef Win32
 		R_FlushConsole();
@@ -756,7 +782,14 @@ static void *in_R_HTTPOpen(const char *url, const char *headers,
     wictxt->length = status;
     wictxt->type = strdup(buf);
     if(!IDquiet) {
-	REprintf("Content type '%s' length %d bytes\n", buf, status);
+	if(status > 1024*1024)
+	    REprintf("Content type '%s' length %d bytes (%0.1f Mb)\n", 
+		     buf, status, status/1024.0/1024.0);
+	else if(status > 10240)
+	    REprintf("Content type '%s' length %d bytes (%d Kb)\n", 
+		     buf, status, status/1024);
+	else
+	    REprintf("Content type '%s' length %d bytes\n", buf, status);
 	R_FlushConsole();
     }
 

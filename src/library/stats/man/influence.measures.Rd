@@ -1,3 +1,8 @@
+% File src/library/stats/man/influence.measures.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{influence.measures}
 \title{Regression Deletion Diagnostics}
 %
@@ -154,9 +159,14 @@ hat(x, intercept = TRUE)
   \emph{An R and S-Plus Companion to Applied Regression}.
   Sage Publ.; \url{http://www.socsci.mcmaster.ca/jfox/Books/Companion/}.
 }
-\seealso{\code{\link{influence}} (containing \code{\link{lm.influence}}).
+\seealso{
+  \code{\link{influence}} (containing \code{\link{lm.influence}}).
+
+  \sQuote{\link{plotmath}} for the use of \code{hat} in plot annotation.
 }
 \examples{
+require(graphics)
+
 ## Analysis of the life-cycle savings data
 ## given in Belsley, Kuh and Welsch.
 lm.SR <- lm(sr ~ pop15 + pop75 + dpi + ddpi, data = LifeCycleSavings)

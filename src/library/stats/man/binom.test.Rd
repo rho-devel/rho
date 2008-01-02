@@ -1,3 +1,8 @@
+% File src/library/stats/man/binom.test.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{binom.test}
 \alias{binom.test}
 \title{Exact Binomial Test}
@@ -53,7 +58,7 @@ binom.test(x, n, p = 0.5,
   Pages 97--104.
 
   Myles Hollander & Douglas A. Wolfe (1973),
-  \emph{Nonparametric statistical inference}.
+  \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 15--22.
 }

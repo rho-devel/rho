@@ -1,3 +1,21 @@
+/*
+ *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 2000--2007  The R Development Core Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
+ */
 
 #include "tcltk.h" /* declarations of our `public' interface */
 #ifndef Win32
@@ -10,6 +28,7 @@
 #endif
 
 #include <R.h>
+#include <stdlib.h>
 
 #ifdef ENABLE_NLS
 #include <libintl.h>
@@ -147,7 +166,7 @@ static int R_call_lang(ClientData clientData,
 }
 
 
-static Tcl_Obj * tk_eval(char *cmd)
+static Tcl_Obj * tk_eval(const char *cmd)
 {
 #ifdef SUPPORT_MBCS
     char *cmd_utf8;
@@ -195,7 +214,7 @@ static Tcl_Obj * tk_eval(char *cmd)
 SEXP dotTcl(SEXP args)
 {
     SEXP ans;
-    char *cmd;
+    const char *cmd;
     Tcl_Obj *val;
     if(!isValidString(CADR(args)))
 	error(_("invalid argument"));
@@ -223,7 +242,8 @@ SEXP dotTclObjv(SEXP args)
     objv = (Tcl_Obj **) R_alloc(objc, sizeof(Tcl_Obj *));
 
     for (objc = i = 0; i < length(avec); i++){
-	char *s, *tmp;
+	const char *s;
+	char *tmp;
 	if (!isNull(nm) && strlen(s = translateChar(STRING_ELT(nm, i)))){
 	    tmp = calloc(strlen(s)+2, sizeof(char));
 	    *tmp = '-';
@@ -430,11 +450,7 @@ SEXP RTcl_ObjAsDoubleVector(SEXP args)
 
     /* First try for single value */
     ret = Tcl_GetDoubleFromObj(RTcl_interp, obj, &x);
-    if (ret == TCL_OK) {
-	ans = allocVector(REALSXP, 1);
-	REAL(ans)[0] = x;
-	return ans;
-    }
+    if (ret == TCL_OK) return ScalarReal(x);
 
     /* Then try as list */
     ret = Tcl_ListObjGetElements(RTcl_interp, obj, &count, &elem);
@@ -496,11 +512,7 @@ SEXP RTcl_ObjAsIntVector(SEXP args)
 
     /* First try for single value */
     ret = Tcl_GetIntFromObj(RTcl_interp, obj, &x);
-    if (ret == TCL_OK) {
-	ans = allocVector(INTSXP, 1);
-	INTEGER(ans)[0] = x;
-	return ans;
-    }
+    if (ret == TCL_OK) return ScalarInteger(x);
 
     /* Then try as list */
     ret = Tcl_ListObjGetElements(RTcl_interp, obj, &count, &elem);
@@ -544,7 +556,7 @@ SEXP RTcl_ObjFromIntVector(SEXP args)
 SEXP RTcl_GetArrayElem(SEXP args)
 {
     SEXP x, i;
-    char *xstr, *istr;
+    const char *xstr, *istr;
     Tcl_Obj *tclobj;
 
     x = CADR(args);
@@ -563,7 +575,7 @@ SEXP RTcl_GetArrayElem(SEXP args)
 SEXP RTcl_SetArrayElem(SEXP args)
 {
     SEXP x, i;
-    char *xstr, *istr;
+    const char *xstr, *istr;
     Tcl_Obj *value;
 
     x = CADR(args);
@@ -580,7 +592,7 @@ SEXP RTcl_SetArrayElem(SEXP args)
 SEXP RTcl_RemoveArrayElem(SEXP args)
 {
     SEXP x, i;
-    char *xstr, *istr;
+    const char *xstr, *istr;
 
     x = CADR(args);
     i = CADDR(args);
@@ -667,19 +679,32 @@ SEXP dotTclcallback(SEXP args)
 static void (* OldHandler)(void);
 static int OldTimeout;
 static int Tcl_loaded = 0;
+static int Tcl_lock = 0; /* reentrancy guard */
 
-static void TclHandler(void)
+static void TclSpinLoop(void *data)
 {
     while (Tcl_DoOneEvent(TCL_DONT_WAIT))
 	;
+}
+
+static void TclHandler(void)
+{
+    if (!Tcl_lock && Tcl_GetServiceMode() != TCL_SERVICE_NONE) {
+	Tcl_lock = 1;
+	(void) R_ToplevelExec(TclSpinLoop, NULL);
+	Tcl_lock = 0;
+    }
     /* Tcl_ServiceAll is not enough here, for reasons that escape me */
     OldHandler();
 }
 
 static int Gtk_TclHandler(void)
 {
-    while (Tcl_DoOneEvent(TCL_DONT_WAIT))
-	;
+    if (!Tcl_lock && Tcl_GetServiceMode() != TCL_SERVICE_NONE) {
+	Tcl_lock = 1;
+	(void) R_ToplevelExec(TclSpinLoop, NULL);
+	Tcl_lock = 0;
+    }
     return 1;
 }
 
@@ -810,14 +835,13 @@ void tcltk_init(void)
 		      (ClientData) NULL,
 		      (Tcl_CmdDeleteProc *) NULL);
 
-#ifdef Win32
-    Tcl_SetServiceMode(TCL_SERVICE_ALL);
-#else
+#ifndef Win32
     addTcl(); /* notice: this sets R_wait_usec.... */
     timeout.sec = 0;
     timeout.usec = R_wait_usec;
     Tcl_CreateEventSource(RTcl_setupProc, RTcl_checkProc, 0);
 #endif
+    Tcl_SetServiceMode(TCL_SERVICE_ALL);
 
 /*** We may want to revive this at some point ***/
 
@@ -831,7 +855,6 @@ void tcltk_init(void)
 
 SEXP RTcl_ServiceMode(SEXP args)
 {
-    SEXP ans;
     int value;
     
     if (!isLogical(CADR(args)) || length(CADR(args)) > 1)
@@ -844,9 +867,7 @@ SEXP RTcl_ServiceMode(SEXP args)
     	if (value != TCL_SERVICE_NONE) Tcl_SetServiceMode(value); /* Tcl_GetServiceMode was not found */
     }
     
-    ans = allocVector(LGLSXP, 1);
-    LOGICAL(ans)[0] = value == TCL_SERVICE_ALL;
-    return ans;
+    return ScalarLogical(value == TCL_SERVICE_ALL);
 }
     
 #ifndef Win32

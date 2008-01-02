@@ -1,3 +1,8 @@
+% File src/library/base/man/Math.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{Math}
 \title{Miscellaneous Mathematical Functions}
 \usage{
@@ -31,6 +36,8 @@ sqrt(x)
   \code{\link{Arithmetic}} for simple, \code{\link{log}} for logarithmic,
   \code{\link{sin}} for trigonometric, and \code{\link{Special}} for
   special mathematical functions.
+
+  \sQuote{\link{plotmath}} for the use of \code{sqrt} in plot annotation.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -39,6 +46,7 @@ sqrt(x)
 }
 \examples{
 require(stats) # for spline
+require(graphics)
 xx <- -9:9
 plot(xx, sqrt(abs(xx)),  col = "red")
 lines(spline(xx, sqrt(abs(xx)), n=101), col = "pink")

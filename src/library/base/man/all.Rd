@@ -1,3 +1,8 @@
+% File src/library/base/man/all.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{all}
 \title{Are All Values True?}
 \usage{
@@ -8,8 +13,8 @@ all(\dots, na.rm = FALSE)
   Given a set of logical vectors, are all of the values true?
 }
 \arguments{
-  \item{\dots}{zero or more logical vectors.  Other objects are coerced in
-    a similar way to \code{as.logical.default}.}
+  \item{\dots}{zero or more logical vectors.  Other objects are coerced
+    to logical, ignoring any class.}
   \item{na.rm}{logical.  If true \code{NA} values are removed before
     the result is computed.}
 }
@@ -41,18 +46,23 @@ all(\dots, na.rm = FALSE)
   }
   even if \code{x} has length zero.
 }
+\section{S4 methods}{
+  This is part of the S4 \code{\link[methods:S4groupGeneric]{Summary}}
+  group generic.  Methods for it must use the signature
+  \code{x, \dots, na.rm}.
+}
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
   Wadsworth \& Brooks/Cole.
 }
 \seealso{
-  \code{\link{any}}, the \dQuote{complement} of \code{all}, and
+  \code{\link{any}}, the \sQuote{complement} of \code{all}, and
   \code{\link{stopifnot}(*)} which is an \code{all(*)}
-  \dQuote{insurance}.
+  \sQuote{insurance}.
 }
 \examples{
-range(x <- sort(round(rnorm(10) - 1.2, 1)))
+range(x <- sort(round(stats::rnorm(10) - 1.2, 1)))
 if(all(x < 0)) cat("all x values are negative\n")
 
 all(logical(0))  # true, as all zero of the elements are true.

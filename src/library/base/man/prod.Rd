@@ -1,3 +1,8 @@
+% File src/library/base/man/prod.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{prod}
 \title{Product of Vector Elements}
 \description{
@@ -31,6 +36,11 @@ prod(\dots, na.rm = FALSE)
   The product, a numeric (of type \code{"double"}) or complex vector of length one.
   \strong{NB:} the product of an empty set is one, by definition.
 }
+\section{S4 methods}{
+  This is part of the S4 \code{\link[methods:S4groupGeneric]{Summary}}
+  group generic.  Methods for it must use the signature
+  \code{x, \dots, na.rm}.
+}
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
@@ -39,6 +49,8 @@ prod(\dots, na.rm = FALSE)
 \seealso{
   \code{\link{sum}},
   \code{\link{cumprod}}, \code{\link{cumsum}}.
+
+  \sQuote{\link{plotmath}} for the use of \code{prod} in plot annotation.
 }
 \examples{
 print(prod(1:7)) == print(gamma(8))

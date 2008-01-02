@@ -35,8 +35,19 @@
 using namespace std;
 using namespace CXXR;
 
+// Force the creation of non-inline embodiments of functions callable
+// from C:
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
+    Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
+    Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
+    Rboolean (*isLogicalptr)(SEXP s) = Rf_isLogical;
+    Rboolean (*isRealptr)(SEXP s) = Rf_isReal;
+    Rboolean (*isComplexptr)(SEXP s) = Rf_isComplex;
+    Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
+    Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
+    Rboolean (*isStringptr)(SEXP s) = Rf_isString;
+    Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
     int (*levelsptr)(SEXP x) = LEVELS;
     int (*namedptr)(SEXP x) = NAMED;
     Rboolean (*objectptr)(SEXP e) = OBJECT;

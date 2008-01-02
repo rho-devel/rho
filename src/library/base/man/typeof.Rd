@@ -1,3 +1,8 @@
+% File src/library/base/man/typeof.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{typeof}
 \alias{typeof}
 \alias{type}
@@ -19,18 +24,17 @@ typeof(x)
   \code{"complex"}, \code{"character"}, \code{"raw"} and \code{"list"},
   \code{"NULL"},
   \code{"closure"} (function), \code{"special"} and \code{"builtin"}
-  (basic functions and operators), \code{"environment"}, and others that
-  are unlikely to be seen at user level (\code{"symbol"},
-  \code{"pairlist"}, \code{"promise"},
+  (basic functions and operators), \code{"environment"}, \code{"S4"}
+  (some S4 objects) and others that are unlikely to be seen at user
+  level (\code{"symbol"}, \code{"pairlist"}, \code{"promise"},
   \code{"language"}, \code{"char"}, \code{"..."}, \code{"any"},
   \code{"expression"}, \code{"externalptr"}, \code{"bytecode"} and
   \code{"weakref"}).
-
-  As from \R 2.4.0, \code{"S4"} can occur to refer to some objects with
-  formal (S4) classes.
 }
 \seealso{
   \code{\link{mode}}, \code{\link{storage.mode}}.
+
+  \code{\link{isS4}} to determine if an object has an S4 class.
 }
 \examples{
 typeof(2)

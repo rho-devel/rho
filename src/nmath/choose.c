@@ -14,8 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  *
  *  SYNOPSIS
  *
@@ -34,7 +34,7 @@
  *
  *  We use the simple explicit product formula for  k <= k_small_max
  *  and also have added statements to make sure that the symmetry
- *    (n \\ k ) == (n \\ n-k)  is preserved for integer n.
+ *    (n \\ k ) == (n \\ n-k)  is preserved for non-negative integer n.
  */
 
 #include "nmath.h"
@@ -107,7 +107,7 @@ double choose(double n, double k)
 #endif
     if (k < k_small_max) {
 	int j;
-	if(R_IS_INT(n) && n-k < k) k = n-k; /* <- Symmetry */
+	if(n-k < k && n >= 0 && R_IS_INT(n)) k = n-k; /* <- Symmetry */
 	if (k <	 0) return 0.;
 	if (k == 0) return 1.;
 	/* else: k >= 1 */

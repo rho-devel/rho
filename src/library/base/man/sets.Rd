@@ -1,3 +1,8 @@
+% File src/library/base/man/sets.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{sets}
 \alias{union}
 \alias{intersect}
@@ -37,7 +42,12 @@ is.element(el, set)
   A logical scalar for \code{setequal} and a logical of the same
   length as \code{x} for \code{is.element}.
 }
-\seealso{\code{\link{\%in\%}}}
+\seealso{
+  \code{\link{\%in\%}}
+
+  \sQuote{\link{plotmath}} for the use of \code{union} and
+  \code{intersect} in plot annotation.
+}
 
 \examples{
 (x <- c(sort(sample(1:20, 9)),NA))

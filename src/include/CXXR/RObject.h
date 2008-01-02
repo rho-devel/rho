@@ -248,12 +248,12 @@ namespace CXXR {
     /*
      * In CXXR USE_RINTERNALS is defined only in source files inherited
      * from C R that need privileged access to C++ objects, e.g. because
-     * the file implements what is or will be a friend function.
+     * the file implements what is or will be a friend function...
      */
 #ifdef USE_RINTERNALS
 
     /*
-     * Well, that was the idea anyway.
+     * ... Well, that was the idea anyway.
      */
 
 #endif // USE_RINTERNALS
@@ -268,6 +268,115 @@ extern "C" {
 typedef struct SEXPREC *SEXP;
 
 #endif /* __cplusplus */
+
+/**
+ * Object type.
+ * @param x Pointer to \c RObject.
+ * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
+ */
+#ifndef __cplusplus
+SEXPTYPE TYPEOF(const SEXP x);
+#else
+inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sexptype() : NILSXP;}
+#endif
+
+/**
+ * Does \c RObject have a class attribute?.
+ * @param x Pointer to an \c RObject.
+ * @return true iff \a x has a class attribute.  Returns false if \a x
+ * is 0.
+ */
+#ifndef __cplusplus
+Rboolean OBJECT(const SEXP x);
+#else
+inline Rboolean OBJECT(const SEXP x)
+{
+    return Rboolean(x && x->m_has_class);
+}
+#endif
+
+/* Various tests */
+
+#ifndef __cplusplus
+Rboolean Rf_isNull(SEXP s);
+#else
+inline Rboolean Rf_isNull(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == NILSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isSymbol(SEXP s);
+#else
+inline Rboolean Rf_isSymbol(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == SYMSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean (Rf_isLogical)(SEXP s);
+#else
+inline Rboolean (Rf_isLogical)(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == LGLSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isReal(SEXP s);
+#else
+inline Rboolean Rf_isReal(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == REALSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isComplex(SEXP s);
+#else
+inline Rboolean Rf_isComplex(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == CPLXSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isExpression(SEXP s);
+#else
+inline Rboolean Rf_isExpression(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == EXPRSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isEnvironment(SEXP s);
+#else
+inline Rboolean Rf_isEnvironment(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == ENVSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isString(SEXP s);
+#else
+inline Rboolean Rf_isString(SEXP s)
+{
+    return Rboolean(TYPEOF(s) == STRSXP);
+}
+#endif
+
+#ifndef __cplusplus
+Rboolean Rf_isObject(SEXP s);
+#else
+inline Rboolean Rf_isObject(SEXP s)
+{
+    return Rboolean(OBJECT(s) != 0);
+}
+#endif
 
 /* Accessor functions.  Many are declared using () to avoid the macro
    definitions in the USE_RINTERNALS section.
@@ -311,21 +420,6 @@ inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
 #endif
 
 /**
- * Does \c RObject have a class attribute?.
- * @param x Pointer to an \c RObject.
- * @return true iff \a x has a class attribute.  Returns false if \a x
- * is 0.
- */
-#ifndef __cplusplus
-Rboolean OBJECT(const SEXP x);
-#else
-inline Rboolean OBJECT(const SEXP x)
-{
-    return Rboolean(x && x->m_has_class);
-}
-#endif
-
-/**
  * Object tracing status.
  * @param x Pointer to \c RObject.
  * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
@@ -335,17 +429,6 @@ inline Rboolean OBJECT(const SEXP x)
 int TRACE(SEXP x);
 #else
 inline int TRACE(SEXP x) {return x ? x->m_trace : 0;}
-#endif
-
-/**
- * Object type.
- * @param x Pointer to \c RObject.
- * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
- */
-#ifndef __cplusplus
-SEXPTYPE TYPEOF(const SEXP x);
-#else
-inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sexptype() : NILSXP;}
 #endif
 
 /**

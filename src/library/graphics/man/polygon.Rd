@@ -1,3 +1,8 @@
+% File src/library/graphics/man/polygon.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2007 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{polygon}
 \alias{polygon}
 \title{Polygon Drawing}
@@ -14,7 +19,7 @@ polygon(x, y = NULL, density = NULL, angle = 45,
     of the polygon.}
   \item{density}{the density of shading lines, in lines per inch.  The
     default value of \code{NULL} means that no shading lines are drawn.
-    A zero value of \code{density} means no shading lines whereas
+    A zero value of \code{density} means no shading nor filling whereas
     negative values (and \code{NA}) suppress shading (and so allow
     color filling).}
   \item{angle}{the slope of shading lines, given as an angle
@@ -22,7 +27,8 @@ polygon(x, y = NULL, density = NULL, angle = 45,
    \item{col}{the color for filling the polygon. The default,
      \code{NA}, is to leave polygons unfilled, unless \code{density} is
      specified.  (For back-compatibility, \code{NULL} is equivalent to
-     \code{NA}.)}
+     \code{NA}.)  If \code{density} is specified with a positive value
+     this gives the color of the shading lines.}
   \item{border}{the color to draw the border.  The default, \code{NULL},
     means to use \code{\link{par}("fg")}.  Use \code{border = NA} to
     omit borders.
@@ -88,7 +94,7 @@ par(op)
 
 n <- 100
 xx <- c(0:n, n:0)
-yy <- c(c(0,cumsum(rnorm(n))), rev(c(0,cumsum(rnorm(n)))))
+yy <- c(c(0,cumsum(stats::rnorm(n))), rev(c(0,cumsum(stats::rnorm(n)))))
 plot   (xx, yy, type="n", xlab="Time", ylab="Distance")
 polygon(xx, yy, col="gray", border = "red")
 title("Distance Between Brownian Motions")
