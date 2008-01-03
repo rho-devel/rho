@@ -147,6 +147,14 @@ namespace CXXR {
      *
      * Eventually this class may end up simply as the home of R
      * attributes.
+     *
+     * @note The word 'object' in the name of this class is used in
+     * the sense in which the 'blue book' (Becker <em>et al.</em>
+     * [1988]) uses the phrase 'data object'.  Roughly speaking,
+     * RObject is a base class for the sorts of data items whose
+     * existence would be reported by the R function
+     * <tt>objects()</tt>.  In particular, it does not imply that
+     * the object belongs to an R class.
      */
     struct RObject : public GCNode {
 	/**
@@ -299,7 +307,7 @@ inline Rboolean OBJECT(const SEXP x)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is either a null
+ * @return TRUE iff the RObject pointed to by \a s is either a null
  * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is an RObject
  * with SEXPTYPE NILSXP (should not happen in CXXR).
  */
@@ -314,7 +322,7 @@ inline Rboolean Rf_isNull(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is a symbol.
+ * @return TRUE iff the RObject pointed to by \a s is a symbol.
  */
 #ifndef __cplusplus
 Rboolean Rf_isSymbol(SEXP s);
@@ -327,7 +335,7 @@ inline Rboolean Rf_isSymbol(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is a logical vector.
+ * @return TRUE iff the RObject pointed to by \a s is a logical vector.
  */
 #ifndef __cplusplus
 Rboolean (Rf_isLogical)(SEXP s);
@@ -340,7 +348,7 @@ inline Rboolean (Rf_isLogical)(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is a real vector.
+ * @return TRUE iff the RObject pointed to by \a s is a real vector.
  */
 #ifndef __cplusplus
 Rboolean Rf_isReal(SEXP s);
@@ -353,7 +361,7 @@ inline Rboolean Rf_isReal(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is a complex vector.
+ * @return TRUE iff the RObject pointed to by \a s is a complex vector.
  */
 #ifndef __cplusplus
 Rboolean Rf_isComplex(SEXP s);
@@ -366,7 +374,7 @@ inline Rboolean Rf_isComplex(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is an expression.
+ * @return TRUE iff the RObject pointed to by \a s is an expression.
  */
 #ifndef __cplusplus
 Rboolean Rf_isExpression(SEXP s);
@@ -379,7 +387,7 @@ inline Rboolean Rf_isExpression(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is a vector of strings.
+ * @return TRUE iff the RObject pointed to by \a s is a vector of strings.
  */
 #ifndef __cplusplus
 Rboolean Rf_isString(SEXP s);
@@ -392,7 +400,7 @@ inline Rboolean Rf_isString(SEXP s)
 
 /**
  * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s has a class attribute.
+ * @return TRUE iff the RObject pointed to by \a s has a class attribute.
  */
 #ifndef __cplusplus
 Rboolean Rf_isObject(SEXP s);
