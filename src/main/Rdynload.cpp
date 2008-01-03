@@ -449,7 +449,7 @@ R_callDLLUnload(DllInfo *dllInfo)
     symbol.type = R_ANY_SYM;
 
     snprintf(buf, 1024, "R_unload_%s", dllInfo->name);
-    f = (DllInfoUnloadCall) R_dlsym(dllInfo, buf, &symbol);
+    f = reinterpret_cast<DllInfoUnloadCall>(R_dlsym(dllInfo, buf, &symbol));
     if(f)
        f(dllInfo);
 
@@ -565,7 +565,7 @@ static DllInfo* AddDLL(char *path, int asLocal, int now)
 							   strlen(info->name)+ 2)));
 	sprintf(tmp, "_%s%s","R_init_", info->name);
 #endif
-	f = (DllInfoInitCall) R_osDynSymbol->dlsym(info, tmp);
+	f = reinterpret_cast<DllInfoInitCall>(R_osDynSymbol->dlsym(info, tmp));
 	free(tmp);
 	if(f)
 	    f(info);
@@ -714,7 +714,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 		symbol->dll = info;
 	    }
 
-	    return((DL_FUNC) sym->fun);
+	    return reinterpret_cast<DL_FUNC>(sym->fun);
 	}
 	fail = 1;
     }
@@ -729,7 +729,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
                 symbol->symbol.call = sym;
 		symbol->dll = info;
 	    }
-	    return((DL_FUNC) sym->fun);
+	    return reinterpret_cast<DL_FUNC>(sym->fun);
 	}
 	fail = 1;
     }
@@ -744,7 +744,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
                 symbol->symbol.fortran = sym;
 		symbol->dll = info;
 	    }
-	    return((DL_FUNC) sym->fun);
+	    return reinterpret_cast<DL_FUNC>(sym->fun);
 	}
 	fail = 1;
     }
@@ -759,7 +759,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
                 symbol->symbol.external = sym;
 		symbol->dll = info;
 	    }
-	    return((DL_FUNC) sym->fun);
+	    return reinterpret_cast<DL_FUNC>(sym->fun);
 	}
 	fail = 1;
     }
@@ -800,7 +800,7 @@ R_dlsym(DllInfo *info, char const *name,
     }
 #endif
 
-    return (DL_FUNC) R_osDynSymbol->dlsym(info, buf);
+    return reinterpret_cast<DL_FUNC>(R_osDynSymbol->dlsym(info, buf));
 }
 
 	/* R_FindSymbol checks whether one of the libraries */
@@ -1042,7 +1042,7 @@ Rf_MakeDLLInfo(DllInfo *info)
 
     SET_VECTOR_ELT(ref, 3, Rf_makeDllObject(info->handle));
 
-    SET_VECTOR_ELT(ref, 4, Rf_makeDllInfoReference((HINSTANCE) info));
+    SET_VECTOR_ELT(ref, 4, Rf_makeDllInfoReference(HINSTANCE(info)));
 
     PROTECT(elNames = allocVector(STRSXP, n));
     for(i = 0; i < n; i++)
@@ -1088,7 +1088,8 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
 	}
 	else if(TYPEOF(spackage) == EXTPTRSXP &&
 		R_ExternalPtrTag(spackage) == Rf_install("DLLInfo")) {
-	    f = R_dlsym((DllInfo *)R_ExternalPtrAddr(spackage), name, &symbol);
+	    f = R_dlsym(reinterpret_cast<DllInfo *>(R_ExternalPtrAddr(spackage)),
+			name, &symbol);
 	    package = NULL;
 	} else {
 	    error(_("must pass package name or DllInfo reference"));
@@ -1263,7 +1264,7 @@ R_getRegisteredRoutines(SEXP dll)
 	error(_("R_getRegisteredRoutines() expects a DllInfo reference"));
     }
 
-    info = (DllInfo *) R_ExternalPtrAddr(dll);
+    info = reinterpret_cast<DllInfo *>(R_ExternalPtrAddr(dll));
     if(!info) {
 	error(_("NULL value passed for DllInfo"));
     }

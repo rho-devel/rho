@@ -1051,7 +1051,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     if (fixed_opt);
     else if (perl_opt) {
 	pcre_free(re_pcre);
-	pcre_free((void *)tables);
+	pcre_free(const_cast<unsigned char*>(tables));
     } else
 	regfree(&reg);
 
@@ -1536,7 +1536,7 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     if (fixed_opt) ;
     else if(perl_opt) {
 	pcre_free(re_pcre);
-	pcre_free((void *)tables);
+	pcre_free(const_cast<unsigned char*>(tables));
     } else
 	regfree(&reg);
     setAttrib(ans, install("match.length"), matchlen);
@@ -2064,12 +2064,14 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return ((xtable_t *)a)->c_old - ((xtable_t *)b)->c_old;
+    return (reinterpret_cast<const xtable_t *>(a))->c_old
+	- (reinterpret_cast<const xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *((wchar_t *)a) - ((xtable_t *)b)->c_old;
+    return *(reinterpret_cast<const wchar_t *>(a))
+	- (reinterpret_cast<const xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \
@@ -2194,7 +2196,8 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
         *trs_cnt_ptr = trs_cnt->next;
 	for( xtable_cnt = 0 ; wtr_get_next_char_from_spec(trs_cnt_ptr); xtable_cnt++ );
 	Free(trs_cnt_ptr);
-	xtable = (xtable_t *)R_alloc(xtable_cnt+1,sizeof(xtable_t));
+	xtable = reinterpret_cast<xtable_t *>(R_alloc(xtable_cnt+1,
+						      sizeof(xtable_t)));
 
         trs_old_ptr = Calloc(1, struct wtr_spec *);
         *trs_old_ptr = trs_old->next;

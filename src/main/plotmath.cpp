@@ -3327,7 +3327,7 @@ double GExpressionWidth(SEXP expr, GUnit units, DevDesc *dd)
     R_GE_gcontext gc;
     double width;
     gcontextFromGP(&gc, dd);
-    width = GEExpressionWidth(expr, &gc, (GEDevDesc*) dd);
+    width = GEExpressionWidth(expr, &gc, reinterpret_cast<GEDevDesc*>(dd));
     if (units == DEVICE)
 	return width;
     else
@@ -3339,7 +3339,7 @@ double GExpressionHeight(SEXP expr, GUnit units, DevDesc *dd)
     R_GE_gcontext gc;
     double height;
     gcontextFromGP(&gc, dd);
-    height = GEExpressionHeight(expr, &gc, (GEDevDesc*) dd);
+    height = GEExpressionHeight(expr, &gc, reinterpret_cast<GEDevDesc*>(dd));
     if (units == DEVICE)
 	return height;
     else
@@ -3362,7 +3362,7 @@ void GMathText(double x, double y, int coords, SEXP expr,
     gcontextFromGP(&gc, dd);
     GConvert(&x, &y, GUnit(coords), DEVICE, dd);
     GClip(dd);
-    GEMathText(x, y, expr, xc, yc, rot, &gc, (GEDevDesc*) dd);
+    GEMathText(x, y, expr, xc, yc, rot, &gc, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 void GMMathText(SEXP str, int side, double line, int outer,

@@ -147,5 +147,5 @@ static R_size_t objectsize(SEXP s)
 SEXP attribute_hidden do_objectsize(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    return ScalarReal( (double) objectsize(CAR(args)) );
+    return ScalarReal( double(objectsize(CAR(args))) );
 }

@@ -115,7 +115,8 @@ SEXP attribute_hidden do_fmin(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(res = allocVector(REALSXP, 1));
     SETCADR(info.R_fcall, allocVector(REALSXP, 1));
     REAL(res)[0] = Brent_fmin(xmin, xmax,
-			      (double (*)(double, void*)) fcn1, &info, tol);
+			      reinterpret_cast<double (*)(double, void*)>(fcn1),
+			      &info, tol);
     UNPROTECT(2);
     return res;
 }
@@ -209,9 +210,9 @@ SEXP attribute_hidden do_zeroin(SEXP call, SEXP op, SEXP args, SEXP rho)
     DO_ZEROIN_part_2;
 
     REAL(res)[0] =
-	R_zeroin(xmin, xmax,   (double (*)(double, void*)) fcn2,
-		 (void *) &info, &tol, &iter);
-    REAL(res)[1] = (double)iter;
+	R_zeroin(xmin, xmax, reinterpret_cast<double (*)(double, void*)>(fcn2),
+		 &info, &tol, &iter);
+    REAL(res)[1] = double(iter);
     REAL(res)[2] = tol;
     UNPROTECT(2);
     return res;
@@ -238,8 +239,9 @@ SEXP attribute_hidden do_zeroin2(SEXP call, SEXP op, SEXP args, SEXP rho)
     DO_ZEROIN_part_2;
 
     REAL(res)[0] =
-	R_zeroin2(xmin, xmax, f_ax, f_bx, (double (*)(double, void*)) fcn2,
-		 &info, &tol, &iter);
+	R_zeroin2(xmin, xmax, f_ax, f_bx,
+		  reinterpret_cast<double (*)(double, void*)>(fcn2),
+		  &info, &tol, &iter);
     REAL(res)[1] = double(iter);
     REAL(res)[2] = tol;
     UNPROTECT(2);
@@ -708,7 +710,8 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
      *	 I think we always check gradients and hessians
      */
 
-    optif9(n, n, x, (fcn_p) fcn, (fcn_p) Cd1fcn, (d2fcn_p) Cd2fcn,
+    optif9(n, n, x, reinterpret_cast<fcn_p>(fcn),
+	   reinterpret_cast<fcn_p>(Cd1fcn), reinterpret_cast<d2fcn_p>(Cd2fcn),
 	   state, typsiz, fscale, method, iexp, &msg, ndigit, itnlim,
 	   iagflg, iahflg, dlt, gradtl, stepmx, steptol, xpls, &fpls,
 	   gpls, &code, a, wrk, &itncnt);
@@ -721,8 +724,8 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (want_hessian) {
 	PROTECT(value = allocVector(VECSXP, 6));
 	PROTECT(names = allocVector(STRSXP, 6));
-	fdhess(n, xpls, fpls, (fcn_p) fcn, state, a, n, &wrk[0], &wrk[n],
-	       ndigit, typsiz);
+	fdhess(n, xpls, fpls, reinterpret_cast<fcn_p>(fcn), state, a, n,
+	       &wrk[0], &wrk[n], ndigit, typsiz);
 	for (i = 0; i < n; i++)
 	    for (j = 0; j < i; j++)
 		a[i + j * n] = a[j + i * n];

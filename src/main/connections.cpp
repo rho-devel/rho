@@ -174,7 +174,7 @@ void set_iconv(Rconnection con)
 	size_t onb = 50;
 	char *ob = con->oconvbuff;
 	tmp = Riconv_open("", con->encname);
-	if(tmp != (void *)-1) con->inconv = tmp;
+	if(tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
 	else error(_("conversion from encoding '%s' is unsupported"), 
 		   con->encname);
 	con->EOF_signalled = FALSE;
@@ -189,7 +189,7 @@ void set_iconv(Rconnection con)
 	size_t onb = 25;
 	char *ob = con->init_out;
 	tmp = Riconv_open(con->encname, "");
-	if(tmp != (void *)-1) con->outconv = tmp;
+	if(tmp != reinterpret_cast<void *>(-1)) con->outconv = tmp;
 	else error(_("conversion to encoding '%s' is unsupported"),
 		   con->encname);
 	/* initialize state, and prepare any initial bytes */
@@ -441,8 +441,8 @@ void init_con(Rconnection newconn, const char *description,
     newconn->connprivate = NULL;
     newconn->inconv = newconn->outconv = NULL;
     /* increment id, avoid NULL */
-    current_id = (void *)((size_t) current_id+1);
-    if(!current_id) current_id = (void *) 1;
+    current_id = reinterpret_cast<void *>(size_t(current_id)+1);
+    if(!current_id) current_id = reinterpret_cast<void *>(1);
     newconn->id = current_id;
     newconn->ex_ptr = NULL;
 }
@@ -501,7 +501,7 @@ static Rboolean file_open(Rconnection con)
 #ifdef Win32
 	strncpy(thisconn->name, name, PATH_MAX);
 #endif
-	free((char *) name); /* only free if allocated by R_tmpnam */
+	free(const_cast<char *>(name)); /* only free if allocated by R_tmpnam */
     }
 #ifdef Win32
     thisconn->anon_file = temp;
@@ -767,7 +767,7 @@ static Rboolean fifo_open(Rconnection con)
 	    }
 	    if(temp) {
 		unlink(name);
-		free((char *) name); /* only free if allocated by R_tmpnam */
+		free(const_cast<char *>(name)); /* only free if allocated by R_tmpnam */
 	    }
 	    if(res) return FALSE;
 	} else {
@@ -4218,7 +4218,7 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_STRING_ELT(connclass, 0, mkChar("gzcon"));
     SET_STRING_ELT(connclass, 1, mkChar("connection"));
     classgets(ans, connclass);
-    newconn->ex_ptr = R_MakeExternalPtr((void *)newconn->id,
+    newconn->ex_ptr = R_MakeExternalPtr(newconn->id,
 					install("connection"), R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(newconn->ex_ptr));
     R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(newconn->ex_ptr),

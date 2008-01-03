@@ -100,7 +100,7 @@ static void reset_stack_limit(void *data)
 void R_CheckStack(void)
 {
     int dummy;
-    intptr_t usage = R_CStackDir * (R_CStackStart - (uintptr_t)&dummy);
+    intptr_t usage = R_CStackDir * (R_CStackStart - uintptr_t(&dummy));
 
     /* printf("usage %ld\n", usage); */
     if(R_CStackLimit != uintptr_t(-1) && usage > 0.95 * R_CStackLimit) {
@@ -469,7 +469,7 @@ void PrintWarnings(void)
 	    {
 		int msgline1 = strlen(msg);
 		char *p = strchr(msg, '\n');
-		if (p) msgline1 = (int)(p - msg);
+		if (p) msgline1 = int(p - msg);
 		if (6+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 	    }
 	    REprintf("In %s :%s%s\n", dcall, sep, msg);
@@ -499,7 +499,7 @@ void PrintWarnings(void)
 		{
 		    int msgline1 = strlen(msg);
 		    char *p = strchr(msg, '\n');
-		    if (p) msgline1 = (int)(p - msg);
+		    if (p) msgline1 = int(p - msg);
 		    if (10+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		}
 		REprintf("%d: In %s :%s%s\n", i+1, dcall, sep, msg);
@@ -602,7 +602,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    {
 		int msgline1 = strlen(tmp);
 		char *p = strchr(tmp, '\n');
-		if (p) msgline1 = (int)(p - tmp);
+		if (p) msgline1 = int(p - tmp);
 		if (14 + strlen(dcall) + msgline1 > LONGWARN)
 		    strcat(errbuf, tail);
 	    }

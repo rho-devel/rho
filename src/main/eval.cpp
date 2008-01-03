@@ -2636,7 +2636,7 @@ static struct { void *addr; int argc; } opinfo[OPCOUNT];
 #define NEXT() (__extension__ ({goto *(*pc++).v;}))
 #define GETOP() (*pc++).i
 
-#define BCCODE(e) (BCODE *) INTEGER(BCODE_CODE(e))
+#define BCCODE(e) reinterpret_cast<BCODE *>(INTEGER(BCODE_CODE(e)))
 #else
 typedef int BCODE;
 
@@ -2999,7 +2999,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	int label = GETOP();
 
 	defineVar(symbol, R_NilValue, rho);
-	BCNPUSH((SEXP) R_findVarLocInFrame(rho, symbol));
+	BCNPUSH(reinterpret_cast<SEXP>(R_findVarLocInFrame(rho, symbol)));
 
 	value = allocVector(INTSXP, 2);
 	INTEGER(value)[0] = -1;
@@ -3053,7 +3053,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  default:  // -Wswitch
 	      break;
 	  }
-	  R_SetVarLocValue((R_varloc_t) cell, value);
+	  R_SetVarLocValue(reinterpret_cast<R_varloc_t>(cell), value);
 	  BC_CHECK_SIGINT();
 	  pc = codebase + label;
 	}
@@ -3519,14 +3519,14 @@ SEXP R_bcEncode(SEXP bytes)
     v = ipc[0];
     if (v < R_bcMinVersion || v > R_bcVersion) {
 	code = allocVector(INTSXP, m * 2);
-	pc = (BCODE *) CHAR(code);
+	pc = reinterpret_cast<BCODE *>(CHAR_RW(code));
 	pc[0].i = v;
 	pc[1].v = opinfo[BCMISMATCH_OP].addr;
 	return code;
     }
     else {
 	code = allocVector(INTSXP, m * n);
-	pc = (BCODE *) CHAR(code);
+	pc = reinterpret_cast<BCODE *>(CHAR_RW(code));
 
 	for (i = 0; i < n; i++) pc[i].i = ipc[i];
 
@@ -3560,7 +3560,7 @@ SEXP R_bcDecode(SEXP code) {
     SEXP bytes;
 
     n = LENGTH(code);
-    pc = (BCODE *) CHAR(code);
+    pc = reinterpret_cast<BCODE *>(CHAR_RW(code));
 
     bytes = allocVector(INTSXP, n);
     ipc = INTEGER(bytes);

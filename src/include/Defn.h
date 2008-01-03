@@ -106,7 +106,11 @@ extern0 SEXP	R_StringHash;       /* Global hash of CHARSXPs */
 
 
  /* writable char access for R internal use only */
+#ifdef __cplusplus
+#define CHAR_RW(x)	(const_cast<char *>(CHAR(x)))
+#else
 #define CHAR_RW(x)	((char *) CHAR(x))
+#endif
 
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */

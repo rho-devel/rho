@@ -558,7 +558,8 @@ size_t Riconv (void *cd, const char **inbuf, size_t *inbytesleft,
 	       char **outbuf, size_t *outbytesleft)
 {
     /* here libiconv has const char **, glibc has const ** for inbuf */
-    return iconv((iconv_t) cd, (ICONV_CONST char **) inbuf, inbytesleft, 
+    return iconv(reinterpret_cast<iconv_t>(cd),
+		 const_cast<ICONV_CONST char **>(inbuf), inbytesleft, 
 		 outbuf, outbytesleft);
 }
 
@@ -586,7 +587,8 @@ const char *translateChar(SEXP x)
 	if(!latin1_obj) {
 	    obj = Riconv_open("", "latin1");
 	    /* should never happen */
-	    if(obj == (void *)(-1)) error(_("unsupported conversion"));
+	    if(obj == reinterpret_cast<void *>(-1))
+		error(_("unsupported conversion"));
 	    latin1_obj = obj;
 	}
 	obj = latin1_obj;
@@ -594,7 +596,8 @@ const char *translateChar(SEXP x)
 	if(!utf8_obj) {
 	    obj = Riconv_open("", "UTF-8");
 	    /* should never happen */
-	    if(obj == (void *)(-1)) error(_("unsupported conversion"));
+	    if(obj == reinterpret_cast<void *>(-1))
+		error(_("unsupported conversion"));
 	    utf8_obj = obj;
 	}
 	obj = utf8_obj;

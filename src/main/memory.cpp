@@ -308,8 +308,10 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 	    DevDesc* dd = GetDevice(i);
 	    if (dd) {
 		if (dd->newDevStruct) {
-		    MARK_THRU(&marker, ((GEDevDesc*) dd)->dev->displayList);
-		    MARK_THRU(&marker, ((GEDevDesc*) dd)->dev->savedSnapshot);
+		    MARK_THRU(&marker,
+			      (reinterpret_cast<GEDevDesc*>(dd))->dev->displayList);
+		    MARK_THRU(&marker,
+			      (reinterpret_cast<GEDevDesc*>(dd))->dev->savedSnapshot);
 		}
 		else
 		    MARK_THRU(&marker, dd->displayList);
@@ -573,12 +575,12 @@ void attribute_hidden InitMemory()
    is traced by the collector. */
 void *vmaxget(void)
 {
-    return (void *) R_VStack;
+    return R_VStack;
 }
 
 void vmaxset(const void *ovmax)
 {
-    R_VStack = (SEXP) ovmax;
+    R_VStack = reinterpret_cast<SEXP>(const_cast<void*>(ovmax));
 }
 
 char *R_alloc(size_t nelem, int eltsize)
@@ -1459,7 +1461,7 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     size_t blen1, bsize = buf->defaultSize;
 
     /* for backwards compatibility, probably no longer needed */
-    if(blen == (size_t)-1) {
+    if(blen == size_t(-1)) {
 	warning("R_AllocStringBuffer(-1) used: please report");
 	R_FreeStringBufferL(buf);
 	return NULL;
@@ -1471,16 +1473,16 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     if(blen < blen1) blen += bsize;
 
     if(buf->data == NULL) {
-	buf->data = (char *) malloc(blen);
+	buf->data = reinterpret_cast<char *>(malloc(blen));
 	buf->data[0] = '\0';
     } else
-	buf->data = (char *) realloc(buf->data, blen);
+	buf->data = reinterpret_cast<char *>(realloc(buf->data, blen));
     buf->bufsize = blen;
     if(!buf->data) {
 	buf->bufsize = 0;
 	/* don't translate internal error message */
 	error("could not allocate memory (%u Mb) in C function 'R_AllocStringBuffer'",
-	      (unsigned int) blen/1024/1024);
+	      static_cast<unsigned int>(blen)/1024/1024);
     }
     return buf->data;
 }

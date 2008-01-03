@@ -1603,8 +1603,8 @@ R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
 
     PROTECT(index = allocVector(INTSXP, 1));
     el = Rf_addTaskCallback(R_taskCallbackRoutine,  internalData,
-			    (void (*)(void*)) R_ReleaseObject, tmpName, 
-			    INTEGER(index));
+			    reinterpret_cast<void (*)(void*)>(R_ReleaseObject),
+			    tmpName, INTEGER(index));
 
     if(length(name) == 0) {
 	PROTECT(name = mkString(el->name));

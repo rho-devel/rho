@@ -191,7 +191,7 @@ SEXP alloc3DArray(SEXPTYPE mode, int nrow, int ncol, int nface)
 
     if (nrow < 0 || ncol < 0 || nface < 0)
 	error(_("negative extents to 3D array"));
-    if ((double)nrow * (double)ncol * (double)nface > INT_MAX)
+    if (double(nrow) * double(ncol) * double(nface) > INT_MAX)
 	error(_("alloc3Darray: too many elements specified"));
     n = nrow * ncol * nface;
     PROTECT(s = allocVector(mode, n));

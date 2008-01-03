@@ -1327,8 +1327,8 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 
 static void newdataload_cleanup(void *data)
 {
-    InputCtxtData *cinfo = (InputCtxtData*)data;
-    FILE *fp = (FILE *) data;  // 2007/07/31 arr: Can this be right?
+    InputCtxtData *cinfo = reinterpret_cast<InputCtxtData*>(data);
+    FILE *fp = reinterpret_cast<FILE *>(data);  // 2007/07/31 arr: Can this be right?
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 

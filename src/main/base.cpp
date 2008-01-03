@@ -77,12 +77,12 @@ static SEXP baseCallback(GEevent task, GEDevDesc *dd, SEXP data) {
 	copyGPar(&(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->dpSaved),
 		 &(reinterpret_cast<baseSystemState*> 
 		   (curdd->gesd[baseRegisterIndex]->systemSpecific)->dpSaved));
-	restoredpSaved((DevDesc*) curdd);
+	restoredpSaved(reinterpret_cast<DevDesc*>(curdd));
 	copyGPar(&(reinterpret_cast<baseSystemState*>
 		   (curdd->gesd[baseRegisterIndex]->systemSpecific)->dp),
 		 &(reinterpret_cast<baseSystemState*>
 		   (curdd->gesd[baseRegisterIndex]->systemSpecific)->gp));
-	GReset((DevDesc*) curdd);
+	GReset(reinterpret_cast<DevDesc*>(curdd));
 	break;
     case GE_SaveState:
 	sd = dd->gesd[baseRegisterIndex];
@@ -91,10 +91,10 @@ static SEXP baseCallback(GEevent task, GEDevDesc *dd, SEXP data) {
 	break;
     case GE_RestoreState:
 	sd = dd->gesd[baseRegisterIndex];
-	restoredpSaved((DevDesc*) dd);
+	restoredpSaved(reinterpret_cast<DevDesc*>(dd));
 	copyGPar(&(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->dp),
 		 &(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->gp));
-	GReset((DevDesc*) dd);
+	GReset(reinterpret_cast<DevDesc*>(dd));
 	break;
     case GE_SaveSnapshotState:
 	sd = dd->gesd[baseRegisterIndex];
@@ -105,18 +105,18 @@ static SEXP baseCallback(GEevent task, GEDevDesc *dd, SEXP data) {
 				     */
 				    1 + sizeof(GPar) / sizeof(int)));
 	copyGPar(&(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->dpSaved),
-		 (GPar*) INTEGER(state));
+		 reinterpret_cast<GPar*>(INTEGER(state)));
 	result = state;
 	UNPROTECT(1);
 	break;
     case GE_RestoreSnapshotState:
 	sd = dd->gesd[baseRegisterIndex];
-	copyGPar((GPar*) INTEGER(data),
+	copyGPar(reinterpret_cast<GPar*>(INTEGER(data)),
 		 &(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->dpSaved));	
-	restoredpSaved((DevDesc*) dd);
+	restoredpSaved(reinterpret_cast<DevDesc*>(dd));
 	copyGPar(&(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->dp),
 		 &(reinterpret_cast<baseSystemState*>(sd->systemSpecific)->gp));
-	GReset((DevDesc*) dd);
+	GReset(reinterpret_cast<DevDesc*>(dd));
 	break;
     case GE_CheckPlot:
 	/* Check that the current plotting state is "valid"
@@ -170,32 +170,32 @@ void registerBase() {
  */
 attribute_hidden
 GPar* Rf_gpptr(DevDesc *dd) {
-    return &(reinterpret_cast<baseSystemState*>(GEsystemState((GEDevDesc*) dd, 
+    return &(reinterpret_cast<baseSystemState*>(GEsystemState(reinterpret_cast<GEDevDesc*>(dd), 
 							      baseRegisterIndex))->gp);
 }
 
 attribute_hidden
 GPar* Rf_dpptr(DevDesc *dd) {
-    return &(reinterpret_cast<baseSystemState*>(GEsystemState((GEDevDesc*) dd, 
+    return &(reinterpret_cast<baseSystemState*>(GEsystemState(reinterpret_cast<GEDevDesc*>(dd), 
 							      baseRegisterIndex))->dp);
 }
 
 attribute_hidden
 GPar* Rf_dpSavedptr(DevDesc *dd) {
-    return &(reinterpret_cast<baseSystemState*>(GEsystemState((GEDevDesc*) dd, 
+    return &(reinterpret_cast<baseSystemState*>(GEsystemState(reinterpret_cast<GEDevDesc*>(dd), 
 							      baseRegisterIndex))->dpSaved);
 }
 
 Rboolean Rf_baseDevice(DevDesc *dd) {
-    return reinterpret_cast<baseSystemState*>(GEsystemState((GEDevDesc*) dd, 
+    return reinterpret_cast<baseSystemState*>(GEsystemState(reinterpret_cast<GEDevDesc*>(dd), 
 							    baseRegisterIndex))->baseDevice;
 }
 
 void Rf_setBaseDevice(Rboolean val, DevDesc *dd) {
-    reinterpret_cast<baseSystemState*>(GEsystemState((GEDevDesc*) dd, 
+    reinterpret_cast<baseSystemState*>(GEsystemState(reinterpret_cast<GEDevDesc*>(dd), 
 						     baseRegisterIndex))->baseDevice = val;
 }
 
 SEXP Rf_displayList(DevDesc *dd) {
-    return ((GEDevDesc*) dd)->dev->displayList;
+    return (reinterpret_cast<GEDevDesc*>(dd))->dev->displayList;
 }

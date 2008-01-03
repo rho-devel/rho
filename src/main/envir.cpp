@@ -212,9 +212,9 @@ namespace {
  */
 int attribute_hidden R_Newhashpjw(const char *s)
 {
-    char *p;
+    const char *p;
     unsigned h = 0, g;
-    for (p = (char *) s; *p; p++) {
+    for (p = s; *p; p++) {
 	h = (h << 4) + (*p);
 	if ((g = h & 0xf0000000) != 0) {
 	    h = h ^ (g >> 24);
@@ -902,22 +902,22 @@ R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 
 SEXP R_GetVarLocValue(R_varloc_t vl)
 {
-    return BINDING_VALUE((SEXP) vl);
+    return BINDING_VALUE(reinterpret_cast<SEXP>(vl));
 }
 
 SEXP R_GetVarLocSymbol(R_varloc_t vl)
 {
-    return TAG((SEXP) vl);
+    return TAG(reinterpret_cast<SEXP>(vl));
 }
 
 Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
-    return Rboolean(MISSING((SEXP) vl));
+    return Rboolean(MISSING(reinterpret_cast<SEXP>(vl)));
 }
 
 void R_SetVarLocValue(R_varloc_t vl, SEXP value)
 {
-    SET_BINDING_VALUE((SEXP) vl, value);
+    SET_BINDING_VALUE(reinterpret_cast<SEXP>(vl), value);
 }
 
 
@@ -3267,9 +3267,9 @@ static unsigned int char_hash_mask = 65535;
 static unsigned int char_hash(const char *s)
 {
     /* djb2 as from http://www.cse.yorku.ca/~oz/hash.html */
-    char *p;
+    const char *p;
     unsigned int h = 5381;
-    for (p = (char *) s; *p; p++)
+    for (p = s; *p; p++)
 	h = ((h << 5) + h) + (*p);
     return h;
 }

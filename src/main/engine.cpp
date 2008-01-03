@@ -202,7 +202,7 @@ void GEregisterSystem(GEcallback cb, int *systemRegisterIndex) {
 	     * replaced graphics.c
 	     */
 	    if (dd->newDevStruct) {
-		registerOne((GEDevDesc*) dd, numGraphicsSystems, cb);
+		registerOne(reinterpret_cast<GEDevDesc*>(dd), numGraphicsSystems, cb);
 	    }
 	    devNum = nextDevice(devNum);
 	}
@@ -247,7 +247,7 @@ void GEunregisterSystem(int registerIndex)
 	     * replaced graphics.c
 	     */
 	    if (dd->newDevStruct) {
-		unregisterOne((GEDevDesc*) dd, registerIndex);
+		unregisterOne(reinterpret_cast<GEDevDesc*>(dd), registerIndex);
 	    }
 	    devNum = nextDevice(devNum);
 	}
@@ -288,10 +288,10 @@ void GEunregisterSystem(int registerIndex)
 SEXP GEHandleEvent(GEevent event, NewDevDesc *dev, SEXP data)
 {
     int i;
-    DevDesc* dd = GetDevice(devNumber((DevDesc*) dev));
+    DevDesc* dd = GetDevice(devNumber(reinterpret_cast<DevDesc*>(dev)));
     for (i=0; i<numGraphicsSystems; i++)
 	if (registeredSystems[i] != NULL)
-	    (registeredSystems[i]->callback)(event, (GEDevDesc*) dd,
+	    (registeredSystems[i]->callback)(event, reinterpret_cast<GEDevDesc*>(dd),
 					     data);
     return R_NilValue;
 }
@@ -2504,7 +2504,7 @@ void GEplayDisplayList(GEDevDesc *dd)
     plotok = 1;
     if (theList != R_NilValue) {
 	savedDevice = curDevice();
-	selectDevice(deviceNumber((DevDesc*) dd));
+	selectDevice(deviceNumber(reinterpret_cast<DevDesc*>(dd)));
 	while (theList != R_NilValue && plotok) {
 	    SEXP theOperation = CAR(theList);
 	    SEXP op = CAR(theOperation);
@@ -2530,7 +2530,7 @@ void GEplayDisplayList(GEDevDesc *dd)
 
 GEDevDesc* GEcurrentDevice()
 {
-    return (GEDevDesc*) CurrentDevice();
+    return reinterpret_cast<GEDevDesc*>(CurrentDevice());
 }
 
 /****************************************************************
@@ -2559,7 +2559,8 @@ void GEcopyDisplayList(int fromDevice)
      */
     for (i=0; i<numGraphicsSystems; i++)
 	if (dd->gesd[i] != NULL)
-	    (dd->gesd[i]->callback)(GE_CopyState, (GEDevDesc*) fromDev,
+	    (dd->gesd[i]->callback)(GE_CopyState,
+				    reinterpret_cast<GEDevDesc*>(fromDev),
 				    R_NilValue);
     GEplayDisplayList(dd);
     if (!dd->dev->displayListOn)
@@ -2754,7 +2755,7 @@ void GEonExit()
     if (!NoDevices()) {
 	devNum = curDevice();
 	while (i++ < NumDevices()) {
-  	    gd = (GEDevDesc*) GetDevice(devNum);
+  	    gd = reinterpret_cast<GEDevDesc*>(GetDevice(devNum));
   	    gd->recordGraphics = TRUE;
   	    dd = gd->dev;
   	    if (dd->onExit) dd->onExit(dd);

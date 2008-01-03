@@ -566,8 +566,8 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	    dnn = getAttrib(dimnames, R_NamesSymbol);
 	    has_dnn = !isNull(dnn);
 	    if ( has_dnn ) {
-		rn = (char *) translateChar(STRING_ELT(dnn, 0));
-		cn = (char *) translateChar(STRING_ELT(dnn, 1));
+		rn = translateChar(STRING_ELT(dnn, 0));
+		cn = translateChar(STRING_ELT(dnn, 1));
 	    }
 	}
 	/* nb := #{entries} in a slice such as x[1,1,..] or equivalently,

@@ -120,7 +120,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    (char *) NULL,
+    0,
 };
 
 const static char * const falsenames[] = {
@@ -268,7 +268,7 @@ SEXP type2symbol(SEXPTYPE t)
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
 	if (TypeTable[i].type == int(t))
-	    return install((char *) &TypeTable[i].str);
+	    return install(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
     return R_NilValue; /* for -Wall */
@@ -322,14 +322,14 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout)
     wc_len = mbstowcs(NULL, in, 0);
     if (out == NULL || int(wc_len) < 0) return wc_len;
 
-    if ((void*)-1 == (cd = Riconv_open(UCS2ENC, "")))
+    if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, "")))
 	return size_t(-1);
 
-    i_buf = (char *)in;
+    i_buf = in;
     i_len = strlen(in); /* not including terminator */
     o_buf = reinterpret_cast<char*>(out);
     o_len = nout * sizeof(ucs2_t);
-    status = Riconv(cd, &i_buf, &i_len, &o_buf, (size_t *)&o_len);
+    status = Riconv(cd, &i_buf, &i_len, &o_buf, &o_len);
 
     Riconv_close(cd);
     if (status == size_t(-1)) {

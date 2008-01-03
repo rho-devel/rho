@@ -316,7 +316,7 @@ static void OutString(R_outpstream_t stream, const char *s, int length)
 	stream->OutChar(stream, '\n');
     }
     else
-	stream->OutBytes(stream, (void *)s, length); /* FIXME: is this case right? */
+	stream->OutBytes(stream, s, length); /* FIXME: is this case right? */
 }
 
 
@@ -1683,7 +1683,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
                     error(_("error reading from ascii connection"));
                 if (!sscanf(linebuf, "%02x", &res))
                     error(_("unexpected format in ascii connection"));
-                *p++ = (unsigned char)res;
+                *p++ = static_cast<unsigned char>(res);
             }
         } else {
             if (length != int(con->read(buf, 1, length, con)))
@@ -1943,9 +1943,9 @@ static void OutCharMem(R_outpstream_t stream, int c)
 static void OutBytesMem(R_outpstream_t stream, const void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
-    R_size_t needed = mb->count + (R_size_t) length;
+    R_size_t needed = mb->count + R_size_t(length);
     /* There is a potential overflow here on 32-bit systems */
-    if((double) mb->count + length > (double) INT_MAX)
+    if(double(mb->count) + length > double(INT_MAX))
 	error(_("serialization is too large to store in a raw vector"));
     if (needed > mb->size) resize_buffer(mb, needed);
     memcpy(mb->buf + mb->count, buf, length);
@@ -1963,7 +1963,7 @@ static int InCharMem(R_inpstream_t stream)
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
-    if (mb->count + (R_size_t) length > mb->size)
+    if (mb->count + R_size_t(length) > mb->size)
 	error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
     mb->count += length;
@@ -2067,7 +2067,7 @@ SEXP R_unserialize(SEXP icon, SEXP fun)
 
     if (TYPEOF(icon) == STRSXP && LENGTH(icon) > 0) {
         struct membuf_st mbs;
-	void *data = (void *)CHAR(STRING_ELT(icon, 0)); /* FIXME, is this right? */
+	void *data = CHAR_RW(STRING_ELT(icon, 0)); /* FIXME, is this right? */
 	int length = LENGTH(STRING_ELT(icon, 0));
 	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
 	return R_Unserialize(&in);

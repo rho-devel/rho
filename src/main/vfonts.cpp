@@ -79,7 +79,8 @@ double GVStrWidth (const char *s, int typeface, int fontindex,
 	str = buff;
     }
 #endif
-    return GConvertXUnits(R_GE_VStrWidth(str, &gc, (GEDevDesc *) dd),
+    return GConvertXUnits(R_GE_VStrWidth(str, &gc,
+					 reinterpret_cast<GEDevDesc *>(dd)),
 			  DEVICE, unit, dd);
 }
 
@@ -118,7 +119,8 @@ double GVStrHeight (const char *s, int typeface, int fontindex,
 	str = buff;
     }
 #endif
-    return GConvertYUnits(R_GE_VStrHeight(str, &gc, (GEDevDesc *) dd),
+    return GConvertYUnits(R_GE_VStrHeight(str, &gc,
+					  reinterpret_cast<GEDevDesc *>(dd)),
 			  DEVICE, unit, dd);
 }
 
@@ -165,7 +167,7 @@ void GVText (double x, double y, GUnit unit, const char *s,
     }
 #endif
     R_GE_VText(x, y, str, x_justify, y_justify, rotation,
-	       &gc, (GEDevDesc *) dd);
+	       &gc, reinterpret_cast<GEDevDesc *>(dd));
 }
 
 attribute_hidden

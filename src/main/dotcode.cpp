@@ -397,7 +397,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
                 const char *inbuf;
 		size_t inb, outb, outb0, res;
 		void *obj = Riconv_open("", encname); /* (to, from) */
-		if(obj == (void *)-1)
+		if(obj == reinterpret_cast<void *>(-1))
 		    error(_("unsupported encoding '%s'"), encname);
 		for (i = 0 ; i < n ; i++) {
 		    inbuf = CHAR(STRING_ELT(s, i));
@@ -452,7 +452,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	n = length(s);
 	cptr = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
 	for(i=0 ; i<n ; i++) {
-	    cptr[i] = (char*)s;
+	    cptr[i] = reinterpret_cast<char*>(s);
 	    s = CDR(s);
 	}
 	return cptr;
@@ -527,7 +527,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		char *outbuf, *p;
 		size_t inb, outb, outb0, res;
 		void *obj = Riconv_open(encname, ""); /* (to, from) */
-		if(obj == (void *)(-1))
+		if(obj == reinterpret_cast<void *>(-1))
 		    error(_("unsupported encoding '%s'"), encname);
 		for (i = 0 ; i < n ; i++) {
 		    inbuf = cptr[i]; inb = strlen(inbuf);
@@ -794,7 +794,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
 
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
-    fun = (R_ExternalRoutine) ofun;
+    fun = reinterpret_cast<R_ExternalRoutine>(ofun);
 
     /* Some external symbols that are registered may have 0 as the
        expected number of arguments.  We may want a warning
@@ -834,7 +834,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
 				NULL, call);
     args = CDR(args);
-    fun = (VarFun) ofun;
+    fun = reinterpret_cast<VarFun>(ofun);
 
     for(nargs = 0, pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
         if (nargs == MAX_ARGS)
@@ -851,7 +851,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     retval = R_NilValue;	/* -Wall */
-    fun = (VarFun) ofun;
+    fun = reinterpret_cast<VarFun>(ofun);
     switch (nargs) {
     case 0:
 	retval = reinterpret_cast<SEXP>(ofun());
@@ -1664,7 +1664,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     args = enctrim(args, encname, 100);
     args = resolveNativeRoutine(args, &ofun, &symbol, symName, &nargs,
 				&naok, &dup, call);
-    fun = (VarFun) ofun;
+    fun = reinterpret_cast<VarFun>(ofun);
 
     if(symbol.symbol.c && symbol.symbol.c->numArgs > -1) {
 	if(symbol.symbol.c->numArgs != nargs)
@@ -2409,7 +2409,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     SEXPTYPE type;
     int i, j, n;
 
-    if (!isFunction((SEXP)func))
+    if (!isFunction(reinterpret_cast<SEXP>(func)))
 	error(_("invalid function in call_R"));
     if (nargs < 0)
 	error(_("invalid argument count in call_R"));
@@ -2417,7 +2417,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	error(_("invalid return value count in call_R"));
     PROTECT(pcall = call = allocList(nargs + 1));
     SET_TYPEOF(call, LANGSXP);
-    SETCAR(pcall, (SEXP)func);
+    SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {
 	pcall = CDR(pcall);

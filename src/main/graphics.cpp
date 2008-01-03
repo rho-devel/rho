@@ -1358,13 +1358,13 @@ static void mapNDC2Dev(DevDesc *dd)
      * in case there has been a resize.
      */
     Rf_gpptr(dd)->ndc2dev.bx = Rf_dpptr(dd)->ndc2dev.bx =
-	(((GEDevDesc*) dd)->dev->right - ((GEDevDesc*) dd)->dev->left);
+	((reinterpret_cast<GEDevDesc*>(dd))->dev->right - (reinterpret_cast<GEDevDesc*>(dd))->dev->left);
     Rf_gpptr(dd)->ndc2dev.ax = Rf_dpptr(dd)->ndc2dev.ax =
-	((GEDevDesc*) dd)->dev->left;
+	(reinterpret_cast<GEDevDesc*>(dd))->dev->left;
     Rf_gpptr(dd)->ndc2dev.by = Rf_dpptr(dd)->ndc2dev.by =
-	(((GEDevDesc*) dd)->dev->top - ((GEDevDesc*) dd)->dev->bottom);
+	((reinterpret_cast<GEDevDesc*>(dd))->dev->top - (reinterpret_cast<GEDevDesc*>(dd))->dev->bottom);
     Rf_gpptr(dd)->ndc2dev.ay = Rf_dpptr(dd)->ndc2dev.ay =
-	((GEDevDesc*) dd)->dev->bottom;
+	(reinterpret_cast<GEDevDesc*>(dd))->dev->bottom;
     /* Units Conversion */
 
     Rf_gpptr(dd)->xNDCPerInch = Rf_dpptr(dd)->xNDCPerInch =
@@ -1751,7 +1751,7 @@ static void invalidError(const char *message, DevDesc *dd)
 
 Rboolean attribute_hidden GRecording(SEXP call, DevDesc *dd)
 {
-    return GErecording(call, (GEDevDesc *) dd);
+    return GErecording(call, reinterpret_cast<GEDevDesc *>(dd));
 }
 
 /*  GNewPlot -- Begin a new plot (advance to new frame if needed)  */
@@ -1789,9 +1789,9 @@ DevDesc *GNewPlot(Rboolean recording)
 		    else
 			dd = CurrentDevice();
 		}
-		GEinitDisplayList((GEDevDesc*) dd);
+		GEinitDisplayList(reinterpret_cast<GEDevDesc*>(dd));
 	    }
-	    GENewPage(&gc, (GEDevDesc*) dd);
+	    GENewPage(&gc, reinterpret_cast<GEDevDesc*>(dd));
 	    Rf_dpptr(dd)->currentFigure = Rf_gpptr(dd)->currentFigure = 1;
 	}
 
@@ -1808,9 +1808,9 @@ DevDesc *GNewPlot(Rboolean recording)
 		else
 		    dd = CurrentDevice();
 	    }
-	    GEinitDisplayList((GEDevDesc*) dd);
+	    GEinitDisplayList(reinterpret_cast<GEDevDesc*>(dd));
 	}
-	GENewPage(&gc, (GEDevDesc*) dd);
+	GENewPage(&gc, reinterpret_cast<GEDevDesc*>(dd));
 	Rf_dpptr(dd)->currentFigure = Rf_gpptr(dd)->currentFigure = 1;
 	GReset(dd);
 	GForceClip(dd);
@@ -1852,7 +1852,7 @@ DevDesc *GNewPlot(Rboolean recording)
 	 * "valid" with respect to base graphics
 	 */
 	Rf_setBaseDevice(TRUE, dd);
-	GEdirtyDevice((GEDevDesc*) dd);
+	GEdirtyDevice(reinterpret_cast<GEDevDesc*>(dd));
     }
 
     return dd;
@@ -2477,7 +2477,7 @@ void GClip(DevDesc *dd)
     if (Rf_gpptr(dd)->xpd != Rf_gpptr(dd)->oldxpd) {
 	double x1, y1, x2, y2;
 	setClipRect(&x1, &y1, &x2, &y2, DEVICE, dd);
-	GESetClip(x1, y1, x2, y2, (GEDevDesc*) dd);
+	GESetClip(x1, y1, x2, y2, reinterpret_cast<GEDevDesc*>(dd));
 	Rf_gpptr(dd)->oldxpd = Rf_gpptr(dd)->xpd;
     }
 }
@@ -2489,7 +2489,7 @@ void GForceClip(DevDesc *dd)
     double x1, y1, x2, y2;
     if (Rf_gpptr(dd)->state == 0) return;
     setClipRect(&x1, &y1, &x2, &y2, DEVICE, dd);
-    GESetClip(x1, y1, x2, y2, (GEDevDesc*) dd);
+    GESetClip(x1, y1, x2, y2, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 /*
@@ -2540,15 +2540,15 @@ void GLine(double x1, double y1, double x2, double y2, GUnit coords, DevDesc *dd
      */
     GClip(dd);
     if(R_FINITE(x1) && R_FINITE(y1) && R_FINITE(x2) && R_FINITE(y2))
-	GELine(x1, y1, x2, y2, &gc, (GEDevDesc*) dd);
+	GELine(x1, y1, x2, y2, &gc, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 /* Read the current "pen" position. */
 Rboolean GLocator(double *x, double *y, GUnit coords, DevDesc *dd)
 {
-    if(!((GEDevDesc*) dd)->dev->locator)
+    if(!(reinterpret_cast<GEDevDesc*>(dd))->dev->locator)
 	error(_("no locator capability in device driver"));
-    if(((GEDevDesc*) dd)->dev->locator(x, y, ((GEDevDesc*) dd)->dev)) {
+    if((reinterpret_cast<GEDevDesc*>(dd))->dev->locator(x, y, (reinterpret_cast<GEDevDesc*>(dd))->dev)) {
 	GConvert(x, y, DEVICE, coords, dd);
 	return TRUE;
     }
@@ -2562,9 +2562,9 @@ void GMetricInfo(int c, double *ascent, double *descent, double *width,
 {
     R_GE_gcontext gc;
     gcontextFromGP(&gc, dd);
-    ((GEDevDesc*) dd)->dev->metricInfo(c & 0xFF, &gc,
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->metricInfo(c & 0xFF, &gc,
 				       ascent, descent, width,
-				       ((GEDevDesc*) dd)->dev);
+				       (reinterpret_cast<GEDevDesc*>(dd))->dev);
     if (units != DEVICE) {
 	*ascent = GConvertYUnits(*ascent, DEVICE, units, dd);
 	*descent = GConvertYUnits(*descent, DEVICE, units, dd);
@@ -2584,7 +2584,7 @@ void GMode(int mode, DevDesc *dd)
     if (NoDevices())
 	error(_("No graphics device is active"));
     if(mode != Rf_gpptr(dd)->devmode) {
-	((GEDevDesc*) dd)->dev->mode(mode, ((GEDevDesc*) dd)->dev);
+	(reinterpret_cast<GEDevDesc*>(dd))->dev->mode(mode, (reinterpret_cast<GEDevDesc*>(dd))->dev);
     }
     Rf_gpptr(dd)->newplot = Rf_dpptr(dd)->newplot = FALSE;
     Rf_gpptr(dd)->devmode = Rf_dpptr(dd)->devmode = mode;
@@ -2835,7 +2835,7 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
     GClip(dd);
     gc.col = fg;
     gc.fill = bg;
-    GEPolygon(n, xx, yy, &gc, (GEDevDesc*) dd);
+    GEPolygon(n, xx, yy, &gc, reinterpret_cast<GEDevDesc*>(dd));
     vmaxset(vmaxsave);
 }
 
@@ -2869,7 +2869,7 @@ void GPolyline(int n, double *x, double *y, GUnit coords, DevDesc *dd)
      * Ensure that the base clipping region is set on the device
      */
     GClip(dd);
-    GEPolyline(n, xx, yy, &gc, (GEDevDesc*) dd);
+    GEPolyline(n, xx, yy, &gc, reinterpret_cast<GEDevDesc*>(dd));
     vmaxset(vmaxsave);
 }
 
@@ -2904,7 +2904,7 @@ void GCircle(double x, double y, GUnit coords,
     GClip(dd);
     gc.col = fg;
     gc.fill = bg;
-    GECircle(x, y, ir, &gc, (GEDevDesc*) dd);
+    GECircle(x, y, ir, &gc, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 /* Draw a rectangle	*/
@@ -2930,7 +2930,7 @@ void GRect(double x0, double y0, double x1, double y1, GUnit coords,
     GClip(dd);
     gc.col = fg;
     gc.fill = bg;
-    GERect(x0, y0, x1, y1, &gc, (GEDevDesc*) dd);
+    GERect(x0, y0, x1, y1, &gc, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 /* Compute string width. */
@@ -2938,7 +2938,7 @@ double GStrWidth(const char *str, GUnit units, DevDesc *dd)
 {
     double w;
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
-    w = GEStrWidth(str, &gc, (GEDevDesc*) dd);
+    w = GEStrWidth(str, &gc, reinterpret_cast<GEDevDesc*>(dd));
     if (units != DEVICE)
 	w = GConvertXUnits(w, DEVICE, units, dd);
     return w;
@@ -2951,7 +2951,7 @@ double GStrHeight(const char *str, GUnit units, DevDesc *dd)
 {
     double h;
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
-    h = GEStrHeight(str, &gc, (GEDevDesc*) dd);
+    h = GEStrHeight(str, &gc, reinterpret_cast<GEDevDesc*>(dd));
     if (units != DEVICE)
 	h = GConvertYUnits(h, DEVICE, units, dd);
     return h;
@@ -2973,7 +2973,7 @@ void GText(double x, double y, GUnit coords, const char *str,
      * Ensure that the base clipping region is set on the device
      */
     GClip(dd);
-    GEText(x, y, str, xc, yc, rot, &gc, (GEDevDesc*) dd);
+    GEText(x, y, str, xc, yc, rot, &gc, reinterpret_cast<GEDevDesc*>(dd));
 }
 
 /*-------------------------------------------------------------------
@@ -3193,7 +3193,7 @@ void GSymbol(double x, double y, GUnit coords, int pch, DevDesc *dd)
      * special case for pch = "."
      */
     if(pch == 46) size = Rf_gpptr(dd)->cex;
-    GESymbol(x, y, pch, size, &gc, ((GEDevDesc*) dd));
+    GESymbol(x, y, pch, size, &gc, (reinterpret_cast<GEDevDesc*>(dd)));
 }
 
 
@@ -4688,7 +4688,7 @@ void addDevice(DevDesc *dd)
 
     if (!NoDevices())  {
 	oldd = CurrentDevice();
-	((GEDevDesc*) oldd)->dev->deactivate(((GEDevDesc*) oldd)->dev);
+	(reinterpret_cast<GEDevDesc*>(oldd))->dev->deactivate((reinterpret_cast<GEDevDesc*>(oldd))->dev);
     }
 
     /* find empty slot for new descriptor */
@@ -4711,8 +4711,8 @@ void addDevice(DevDesc *dd)
     R_Devices[i] = dd;
     active[i] = TRUE;
 
-    GEregisterWithDevice((GEDevDesc*) dd);
-    ((GEDevDesc*) dd)->dev->activate(((GEDevDesc*) dd)->dev);
+    GEregisterWithDevice(reinterpret_cast<GEDevDesc*>(dd));
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->activate((reinterpret_cast<GEDevDesc*>(dd))->dev);
 
     /* maintain .Devices (.Device has already been set) */
     PROTECT(t = ScalarString(STRING_ELT(getSymbolValue(".Device"), 0)));
@@ -4757,7 +4757,7 @@ int devNumber(DevDesc *dd)
     int i;
     for (i = 1; i < R_MaxDevices; i++)
 	if (R_Devices[i] != NULL &&
-	    ((GEDevDesc*) R_Devices[i])->dev == (NewDevDesc*) dd)
+	    (reinterpret_cast<GEDevDesc*>(R_Devices[i]))->dev == reinterpret_cast<NewDevDesc*>(dd))
 	    return i;
     return 0;
 }
@@ -4773,7 +4773,7 @@ int selectDevice(int devNum)
 	DevDesc *dd;
 
 	if (!NoDevices()) {
-	    GEDevDesc *oldd = (GEDevDesc*) CurrentDevice();
+	    GEDevDesc *oldd = reinterpret_cast<GEDevDesc*>(CurrentDevice());
 	    oldd->dev->deactivate(oldd->dev);
 	}
 
@@ -4786,7 +4786,7 @@ int selectDevice(int devNum)
 
 	dd = CurrentDevice(); /* will start a device if current is null */
 	if (!NoDevices()) /* which it always will be */
-	    ((GEDevDesc*) dd)->dev->activate(((GEDevDesc*) dd)->dev);
+	    (reinterpret_cast<GEDevDesc*>(dd))->dev->activate((reinterpret_cast<GEDevDesc*>(dd))->dev);
 	return devNum;
     }
     else
@@ -4806,7 +4806,7 @@ void removeDevice(int devNum, Rboolean findNext)
     {
 	int i;
 	SEXP s;
-	GEDevDesc *g = (GEDevDesc*) R_Devices[devNum];
+	GEDevDesc *g = reinterpret_cast<GEDevDesc*>(R_Devices[devNum]);
 
 	active[devNum] = FALSE; /* stops it being selected again */
 	R_NumDevices--;
@@ -4829,7 +4829,7 @@ void removeDevice(int devNum, Rboolean findNext)
 		/* activate new current device */
 		if (R_CurrentDevice) {
 		    DevDesc *dd = CurrentDevice();
-		    ((GEDevDesc*) dd)->dev->activate(((GEDevDesc*) dd)->dev);
+		    (reinterpret_cast<GEDevDesc*>(dd))->dev->activate((reinterpret_cast<GEDevDesc*>(dd))->dev);
 		    copyGPar(Rf_dpptr(dd), Rf_gpptr(dd));
 		    GReset(dd);
 		}
@@ -4886,13 +4886,13 @@ void initDisplayList(DevDesc *dd)
 {
     /* init saveParams */
     copyGPar(Rf_dpptr(dd), Rf_dpSavedptr(dd));
-    ((GEDevDesc*) dd)->dev->displayList = R_NilValue;
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->displayList = R_NilValue;
 }
 
 
 void recordGraphicOperation(SEXP op, SEXP args, DevDesc *dd)
 {
-    GErecordGraphicOperation(op, args, ((GEDevDesc*) dd));
+    GErecordGraphicOperation(op, args, (reinterpret_cast<GEDevDesc*>(dd)));
 }
 
 /* NOTE this is not declared static because it is also used in
@@ -5090,24 +5090,24 @@ void playDisplayList(DevDesc *dd)
 void copyDisplayList(int fromDevice)
 {
     DevDesc *dd = CurrentDevice();
-    ((GEDevDesc*) dd)->dev->displayList =
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->displayList =
 	Rf_displayList(R_Devices[fromDevice]);
     copyGPar(Rf_dpSavedptr(R_Devices[fromDevice]),
 	     Rf_dpSavedptr(dd));
     playDisplayList(dd);
-    if (!((GEDevDesc*) dd)->dev->displayListOn)
+    if (!(reinterpret_cast<GEDevDesc*>(dd))->dev->displayListOn)
 	initDisplayList(dd);
 }
 
 
 void inhibitDisplayList(DevDesc *dd)
 {
-    GEinitDisplayList((GEDevDesc*) dd);
-    ((GEDevDesc*) dd)->dev->displayListOn = FALSE;
+    GEinitDisplayList(reinterpret_cast<GEDevDesc*>(dd));
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->displayListOn = FALSE;
 }
 
 void enableDisplayList(DevDesc *dd)
 {
-    GEinitDisplayList((GEDevDesc*) dd);
-    ((GEDevDesc*) dd)->dev->displayListOn = TRUE;
+    GEinitDisplayList(reinterpret_cast<GEDevDesc*>(dd));
+    (reinterpret_cast<GEDevDesc*>(dd))->dev->displayListOn = TRUE;
 }

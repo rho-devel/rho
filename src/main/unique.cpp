@@ -595,8 +595,8 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (j = 0; j < n_target; j++) used[j] = 0;
     }
 
-    in = (const char **) R_alloc(n_input, sizeof(char *));
-    tar = (const char **) R_alloc(n_target, sizeof(char *));
+    in = reinterpret_cast<const char **>(R_alloc(n_input, sizeof(char *)));
+    tar = reinterpret_cast<const char **>(R_alloc(n_target, sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
     for (i = 0; i < n_input; i++) {

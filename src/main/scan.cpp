@@ -116,7 +116,7 @@ static int ConsoleGetchar()
 	ConsoleBufCnt--;
     }
     /* at this point we need to use unsigned char or similar */
-    return (int) *ConsoleBufp++;
+    return int(*ConsoleBufp++);
 }
 
 /* used by scan() */
@@ -250,7 +250,7 @@ strtoraw (const char *nptr, char **endptr)
 	else if (*p >= 'a' && *p <= 'f') val += *p - 'a' + 10;
 	else {val = 0; break;}
     }
-    *endptr = (char *) p;
+    *endptr = const_cast<char *>(p);
     return Rbyte(val);
 }
 

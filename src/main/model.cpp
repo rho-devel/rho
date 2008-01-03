@@ -964,7 +964,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 		l += strlen(CHAR(STRING_ELT(varnames, i - 1)));
 	    }
 	}
-        cbuf = (char *) alloca(l+1);
+        cbuf = reinterpret_cast<char *>(alloca(l+1));
         cbuf[0] = '\0';
 	l = 0;
 	for (i = 1; i <= nvar; i++) {

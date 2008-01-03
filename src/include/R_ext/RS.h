@@ -78,7 +78,12 @@ extern void R_chk_free(void *);
 #define R_Free(p)      (R_chk_free( (void *)(p) ), (p) = NULL)
 #define Memcpy(p,q,n)  memcpy( p, q, (size_t)( (n) * sizeof(*p) ) )
 #endif  /* __cplusplus */
+
+#ifdef __cplusplus
+#define CallocCharBuf(n) reinterpret_cast<char *>(R_chk_calloc(size_t((n)+1), sizeof(char)))
+#else
 #define CallocCharBuf(n) (char *) R_chk_calloc((size_t) ((n)+1), sizeof(char))
+#endif
 
 /* S Like Fortran Interface */
 /* These may not be adequate everywhere. Convex had _ prepending common

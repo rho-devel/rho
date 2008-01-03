@@ -1070,7 +1070,7 @@ static apse_bool_t _apse_match_single_simple(apse_t *ap) {
 			    ap->bitvectors_in_state];
 	apse_size_t	h, g;
 	APSE_NEXT_EXACT(ap->state, ap->prev_state, t, apse_size_t(0), 1);
-	APSE_DEBUG_SINGLE(ap, (apse_size_t)0);
+	APSE_DEBUG_SINGLE(ap, apse_size_t(0));
 
 	for (g = 0, h = 1; h <= ap->edit_distance; g = h, h++) {
 	    APSE_NEXT_APPROX(ap->state, ap->prev_state, t, h, g, 1);
@@ -1100,7 +1100,7 @@ static apse_bool_t _apse_match_multiple_simple(apse_t *ap) {
 	    ap->text[ap->text_position] * ap->bitvectors_in_state;
 	apse_vec_t	c, d;
 
-	APSE_DEBUG_MULTIPLE_FIRST(ap, (apse_size_t)0);
+	APSE_DEBUG_MULTIPLE_FIRST(ap, apse_size_t(0));
 	for (c = 1, i = 0; i < ap->bitvectors_in_state; i++, c = d) {
 	    d = APSE_TEST_HIGH_BIT(ap->state[i]);
 	    APSE_NEXT_EXACT(ap->state, ap->prev_state, t[i], i, c);
@@ -1192,7 +1192,7 @@ static apse_bool_t _apse_match_multiple_complex(apse_t *ap) {
 	    ap->pattern_mask + uint(o) * ap->bitvectors_in_state;
 	apse_vec_t	c, d;
 
-	APSE_DEBUG_MULTIPLE_FIRST(ap, (apse_size_t)0);
+	APSE_DEBUG_MULTIPLE_FIRST(ap, apse_size_t(0));
 	for (c = 1, i = 0; i < ap->bitvectors_in_state; i++, c = d) {
 	    d = APSE_TEST_HIGH_BIT(ap->state[i]);
 	    APSE_NEXT_EXACT(ap->state, ap->prev_state, t[i], i, c);

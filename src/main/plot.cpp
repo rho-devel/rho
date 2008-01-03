@@ -99,7 +99,7 @@ SEXP attribute_hidden do_devcontrol(SEXP call, SEXP op, SEXP args, SEXP env)
 	else
 	    inhibitDisplayList(CurrentDevice());
     } else { /* dev.displaylist */
-	GEDevDesc *dd = (GEDevDesc*)CurrentDevice();
+	GEDevDesc *dd = reinterpret_cast<GEDevDesc*>(CurrentDevice());
 	listFlag = dd->dev->displayListOn;
     }
     return ScalarLogical(listFlag);
@@ -1692,13 +1692,13 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 	double *xtemp, *ytemp;
 	int n0 = 0;
 	if(n < 1000) {
-	    xtemp = (double *) alloca(2*n*sizeof(double));
-	    ytemp = (double *) alloca(2*n*sizeof(double));
+	    xtemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
+	    ytemp = reinterpret_cast<double *>(alloca(2*n*sizeof(double)));
 	    R_CheckStack();
 	} else {
 	    vmax = vmaxget();
-	    xtemp = (double *) R_alloc(2*n, sizeof(double));
-	    ytemp = (double *) R_alloc(2*n, sizeof(double));
+	    xtemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
+	    ytemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
 	}
 	Rf_gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
@@ -3696,7 +3696,7 @@ SEXP attribute_hidden do_getSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
     if (dd->newDevStruct) {
-	return GEcreateSnapshot((GEDevDesc*) dd);
+	return GEcreateSnapshot(reinterpret_cast<GEDevDesc*>(dd));
     } else {
 	error(_("cannot take snapshot of old-style device"));
 	return R_NilValue;
@@ -3709,7 +3709,7 @@ SEXP attribute_hidden do_playSnapshot(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
     if (dd->newDevStruct)
-	GEplaySnapshot(CAR(args), (GEDevDesc*) dd);
+	GEplaySnapshot(CAR(args), reinterpret_cast<GEDevDesc*>(dd));
     else
 	error(_("cannot play snapshot on old-style device"));
     return R_NilValue;
@@ -3738,7 +3738,7 @@ SEXP attribute_hidden do_playDL(SEXP call, SEXP op, SEXP args, SEXP env)
     if(!isList(theList = CAR(args)))
        error(_("invalid argument"));
     if (dd->newDevStruct)
-	((GEDevDesc*) dd)->dev->displayList = theList;
+	reinterpret_cast<GEDevDesc*>(dd)->dev->displayList = theList;
     else
 	dd->displayList = theList;
     if (theList != R_NilValue) {
@@ -3768,7 +3768,7 @@ SEXP attribute_hidden do_setGPar(SEXP call, SEXP op, SEXP args, SEXP env)
     GP = CAR(args);
     if (!isInteger(GP) || length(GP) != lGPar)
 	error(_("invalid graphics parameter list"));
-    copyGPar((GPar *) INTEGER(GP), Rf_dpSavedptr(dd)); /* &dd->Rf_dpSaved); */
+    copyGPar(reinterpret_cast<GPar *>(INTEGER(GP)), Rf_dpSavedptr(dd)); /* &dd->Rf_dpSaved); */
     return R_NilValue;
 }
 
@@ -4137,8 +4137,8 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     x = REAL(sx);
     y = REAL(sy);
     vmaxsave = vmaxget();
-    xx = (double *) R_alloc(nx, sizeof(double));
-    yy = (double *) R_alloc(nx, sizeof(double));
+    xx = reinterpret_cast<double *>(R_alloc(nx, sizeof(double)));
+    yy = reinterpret_cast<double *>(R_alloc(nx, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in do_xspline)"));
     for (i = 0; i < nx; i++) {
@@ -4150,7 +4150,7 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     gc.col = INTEGER(border)[0];
     gc.fill = INTEGER(col)[0];
     res = GEXspline(nx, xx, yy, REAL(ss), open, repEnds, draw, &gc,
-		    (GEDevDesc*) dd);
+		    reinterpret_cast<GEDevDesc*>(dd));
     vmaxset(vmaxsave);
     UNPROTECT(2);
 
