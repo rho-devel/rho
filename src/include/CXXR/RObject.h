@@ -297,84 +297,109 @@ inline Rboolean OBJECT(const SEXP x)
 
 /* Various tests */
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is either a null
+ * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is an RObject
+ * with SEXPTYPE NILSXP (should not happen in CXXR).
+ */
 #ifndef __cplusplus
 Rboolean Rf_isNull(SEXP s);
 #else
 inline Rboolean Rf_isNull(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == NILSXP);
+    return Rboolean(!s || TYPEOF(s) == NILSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is a symbol.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isSymbol(SEXP s);
 #else
 inline Rboolean Rf_isSymbol(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == SYMSXP);
+    return Rboolean(s && TYPEOF(s) == SYMSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is a logical vector.
+ */
 #ifndef __cplusplus
 Rboolean (Rf_isLogical)(SEXP s);
 #else
 inline Rboolean (Rf_isLogical)(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == LGLSXP);
+    return Rboolean(s && TYPEOF(s) == LGLSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is a real vector.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isReal(SEXP s);
 #else
 inline Rboolean Rf_isReal(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == REALSXP);
+    return Rboolean(s && TYPEOF(s) == REALSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is a complex vector.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isComplex(SEXP s);
 #else
 inline Rboolean Rf_isComplex(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == CPLXSXP);
+    return Rboolean(s && TYPEOF(s) == CPLXSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is an expression.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isExpression(SEXP s);
 #else
 inline Rboolean Rf_isExpression(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == EXPRSXP);
+    return Rboolean(s && TYPEOF(s) == EXPRSXP);
 }
 #endif
 
-#ifndef __cplusplus
-Rboolean Rf_isEnvironment(SEXP s);
-#else
-inline Rboolean Rf_isEnvironment(SEXP s)
-{
-    return Rboolean(TYPEOF(s) == ENVSXP);
-}
-#endif
-
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is a vector of strings.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isString(SEXP s);
 #else
 inline Rboolean Rf_isString(SEXP s)
 {
-    return Rboolean(TYPEOF(s) == STRSXP);
+    return Rboolean(s && TYPEOF(s) == STRSXP);
 }
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s has a class attribute.
+ */
 #ifndef __cplusplus
 Rboolean Rf_isObject(SEXP s);
 #else
 inline Rboolean Rf_isObject(SEXP s)
 {
-    return Rboolean(OBJECT(s) != 0);
+    return OBJECT(s);
 }
 #endif
 

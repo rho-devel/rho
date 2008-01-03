@@ -56,8 +56,6 @@ inline void* DATAPTR(SEXP x) {return x->m_data;}
 
 #endif /* __cplusplus */
 
-#define CHAR(x)         R_CHAR(x)
-
 /* Accessor functions */
 
 /* Vector Access Functions */
@@ -315,8 +313,6 @@ inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
  * @return Pointer to the created vector.
  */
 SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
-
-#define allocString(n)		Rf_allocVector(CHARSXP, n)
 
 #ifdef __cplusplus
 }

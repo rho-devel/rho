@@ -29,10 +29,13 @@
 
 #include "CXXR/REnvironment.h"
 
+// Force the creation of non-inline embodiments of functions callable
+// from C:
 namespace {
     SEXP (*enclosp)(SEXP x) = ENCLOS;
     int (*envflagsp)(SEXP x) = ENVFLAGS;
     SEXP (*hashtabp)(SEXP x) = HASHTAB;
+    Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
     SEXP (*framep)(SEXP x) = FRAME;
     void (*setenvflagsp)(SEXP x, int v) = SET_ENVFLAGS;
 }

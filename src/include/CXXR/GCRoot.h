@@ -292,12 +292,6 @@ extern "C" {
 
     /* ***** C interface ***** */
 
-#define PROTECT(s)	        Rf_protect(s)
-#define UNPROTECT(n)	        Rf_unprotect(n)
-#define UNPROTECT_PTR(s)	unprotect_ptr(s)
-#define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
-#define REPROTECT(x,i)          R_Reprotect(x,i)
-
     typedef unsigned int PROTECT_INDEX;
 
     /**

@@ -32,6 +32,19 @@
 extern "C" {
 #endif
 
+/**
+ * @param s Pointer to an RObject.
+ * @return TRUE iff the RObject pointed to by s is an environment.
+ */
+#ifndef __cplusplus
+Rboolean Rf_isEnvironment(SEXP s);
+#else
+inline Rboolean Rf_isEnvironment(SEXP s)
+{
+    return Rboolean(s && TYPEOF(s) == ENVSXP);
+}
+#endif
+
 /* Accessor functions. */
 
 /* Environment Access Functions */

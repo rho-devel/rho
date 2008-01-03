@@ -64,6 +64,166 @@
 extern "C" {
 #endif
 
+#define CHAR(x)		R_CHAR(x)
+const char *(R_CHAR)(SEXP x);
+
+/* Various tests with macro versions below */
+Rboolean (Rf_isNull)(SEXP s);
+Rboolean (Rf_isSymbol)(SEXP s);
+Rboolean (Rf_isLogical)(SEXP s);
+Rboolean (Rf_isReal)(SEXP s);
+Rboolean (Rf_isComplex)(SEXP s);
+Rboolean (Rf_isExpression)(SEXP s);
+Rboolean (Rf_isEnvironment)(SEXP s);
+Rboolean (Rf_isString)(SEXP s);
+Rboolean (Rf_isObject)(SEXP s);
+
+/* Accessor functions.  Many are declared using () to avoid the macro
+   definitions in the USE_RINTERNALS section.
+   The function STRING_ELT is used as an argument to arrayAssign even
+   if the macro version is in use.
+*/
+
+/* General Cons Cell Attributes */
+SEXP (ATTRIB)(SEXP x);
+Rboolean (OBJECT)(SEXP x);
+int  (MARK)(SEXP x);
+SEXPTYPE (TYPEOF)(SEXP x);
+int  (NAMED)(SEXP x);
+void (SET_OBJECT)(SEXP x, int v);
+void (SET_TYPEOF)(SEXP x, SEXPTYPE v);
+void (SET_NAMED)(SEXP x, int v);
+void SET_ATTRIB(SEXP x, SEXP v);
+void DUPLICATE_ATTRIB(SEXP to, SEXP from);
+
+/* S4 object testing */
+Rboolean (IS_S4_OBJECT)(SEXP x);
+void (SET_S4_OBJECT)(SEXP x);
+void (UNSET_S4_OBJECT)(SEXP x);
+
+/* Vector Access Functions */
+int  (LENGTH)(SEXP x);
+int  (TRUELENGTH)(SEXP x);
+void (SETLENGTH)(SEXP x, int v);
+void (SET_TRUELENGTH)(SEXP x, int v);
+int  (LEVELS)(SEXP x);
+int  (SETLEVELS)(SEXP x, int v);
+
+int  *(LOGICAL)(SEXP x);
+int  *(INTEGER)(SEXP x);
+Rbyte *(RAW)(SEXP x);
+double *(REAL)(SEXP x);
+Rcomplex *(COMPLEX)(SEXP x);
+SEXP (STRING_ELT)(SEXP x, int i);
+SEXP (VECTOR_ELT)(SEXP x, int i);
+void SET_STRING_ELT(SEXP x, int i, SEXP v);
+SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
+SEXP *(STRING_PTR)(SEXP x);
+SEXP *(VECTOR_PTR)(SEXP x);
+
+/* List Access Functions */
+/* These also work for ... objects */
+#define CONS(a, b)	cons((a), (b))		/* data lists */
+#define LCONS(a, b)	lcons((a), (b))		/* language lists */
+SEXP (TAG)(SEXP e);
+SEXP (CAR)(SEXP e);
+SEXP (CDR)(SEXP e);
+SEXP (CAAR)(SEXP e);
+SEXP (CDAR)(SEXP e);
+SEXP (CADR)(SEXP e);
+SEXP (CDDR)(SEXP e);
+SEXP (CADDR)(SEXP e);
+SEXP (CADDDR)(SEXP e);
+SEXP (CAD4R)(SEXP e);
+int  (MISSING)(SEXP x);
+void (SET_MISSING)(SEXP x, int v);
+void SET_TAG(SEXP x, SEXP y);
+SEXP SETCAR(SEXP x, SEXP y);
+SEXP SETCDR(SEXP x, SEXP y);
+SEXP SETCADR(SEXP x, SEXP y);
+SEXP SETCADDR(SEXP x, SEXP y);
+SEXP SETCADDDR(SEXP x, SEXP y);
+SEXP SETCAD4R(SEXP e, SEXP y);
+
+/* Closure Access Functions */
+SEXP (FORMALS)(SEXP x);
+SEXP (BODY)(SEXP x);
+SEXP (CLOENV)(SEXP x);
+Rboolean (DEBUG)(SEXP x);
+int  (TRACE)(SEXP x);
+void (SET_DEBUG)(SEXP x, Rboolean v);
+void (SET_TRACE)(SEXP x, int v);
+void SET_FORMALS(SEXP x, SEXP v);
+void SET_BODY(SEXP x, SEXP v);
+void SET_CLOENV(SEXP x, SEXP v);
+
+/* Symbol Access Functions */
+SEXP (PRINTNAME)(SEXP x);
+SEXP (SYMVALUE)(SEXP x);
+SEXP (INTERNAL)(SEXP x);
+Rboolean (DDVAL)(SEXP x);
+void (SET_DDVAL)(SEXP x, int v);
+void SET_PRINTNAME(SEXP x, SEXP v);
+void SET_SYMVALUE(SEXP x, SEXP v);
+void SET_INTERNAL(SEXP x, SEXP v);
+
+/* Environment Access Functions */
+SEXP (FRAME)(SEXP x);
+SEXP (ENCLOS)(SEXP x);
+SEXP (HASHTAB)(SEXP x);
+int  (ENVFLAGS)(SEXP x);
+void (SET_ENVFLAGS)(SEXP x, int v);
+void SET_FRAME(SEXP x, SEXP v);
+void SET_ENCLOS(SEXP x, SEXP v);
+void SET_HASHTAB(SEXP x, SEXP v);
+
+/* Promise Access Functions */
+/* First five have macro versions in Defn.h */
+SEXP (PRCODE)(SEXP x);
+SEXP (PRENV)(SEXP x);
+SEXP (PRVALUE)(SEXP x);
+int  (PRSEEN)(SEXP x);
+void (SET_PRSEEN)(SEXP x, int v);
+void SET_PRENV(SEXP x, SEXP v);
+void SET_PRVALUE(SEXP x, SEXP v);
+void SET_PRCODE(SEXP x, SEXP v);
+void SET_PRSEEN(SEXP x, int v);
+
+/* Hashing Functions */
+/* There are macro versions in Defn.h */
+int  (HASHASH)(SEXP x);
+int  (HASHVALUE)(SEXP x);
+void (SET_HASHASH)(SEXP x, int v);
+void (SET_HASHVALUE)(SEXP x, int v);
+
+
+/* External pointer access macros */
+#define EXTPTR_PTR(x)	CAR(x)
+#define EXTPTR_PROT(x)	CDR(x)
+#define EXTPTR_TAG(x)	TAG(x)
+
+#ifdef BYTECODE
+/* Bytecode access macros */
+#define BCODE_CODE(x)	CAR(x)
+#define BCODE_CONSTS(x) CDR(x)
+#define BCODE_EXPR(x)	TAG(x)
+#define isByteCode(x)	(TYPEOF(x)==BCODESXP)
+#else
+#define isByteCode(x)	FALSE
+#endif
+
+/* Pointer Protection and Unprotection */
+#define PROTECT(s)	protect(s)
+#define UNPROTECT(n)	unprotect(n)
+#define UNPROTECT_PTR(s)	unprotect_ptr(s)
+
+/* We sometimes need to coerce a protected value and place the new
+   coerced value under protection.  For these cases PROTECT_WITH_INDEX
+   saves an index of the protection location that can be used to
+   replace the protected value using REPROTECT. */
+#define PROTECT_WITH_INDEX(x,i) R_ProtectWithIndex(x,i)
+#define REPROTECT(x,i) R_Reprotect(x,i)
+
 /* Evaluation Environment */
 LibExtern SEXP	R_GlobalEnv;	    /* The "global" environment */
 
@@ -127,6 +287,10 @@ char * Rf_acopy_string(const char *);
 SEXP Rf_alloc3DArray(SEXPTYPE, int, int, int);
 SEXP Rf_allocArray(SEXPTYPE, SEXP);
 SEXP Rf_allocMatrix(SEXPTYPE, int, int);
+SEXP Rf_allocList(unsigned int);
+SEXP Rf_allocS4Object();
+SEXP Rf_allocSExp(SEXPTYPE);
+SEXP Rf_allocVector(SEXPTYPE, R_len_t);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
@@ -178,6 +342,7 @@ SEXP Rf_nthcdr(SEXP, int);
 Rboolean Rf_pmatch(SEXP, SEXP, Rboolean);
 Rboolean Rf_psmatch(const char *, const char *, Rboolean);
 void Rf_PrintValue(SEXP);
+SEXP Rf_protect(SEXP);
 SEXP Rf_setAttrib(SEXP, SEXP, SEXP);
 void Rf_setSVector(SEXP*, int, SEXP);
 void Rf_setVar(SEXP, SEXP, SEXP);
@@ -187,7 +352,11 @@ SEXP Rf_substitute(SEXP,SEXP);
 const char * Rf_translateChar(SEXP);
 const char * Rf_type2char(SEXPTYPE);
 SEXP Rf_type2str(SEXPTYPE);
+void Rf_unprotect(int);
+void Rf_unprotect_ptr(SEXP);
 
+void R_ProtectWithIndex(SEXP, PROTECT_INDEX *);
+void R_Reprotect(SEXP, PROTECT_INDEX);
 SEXP R_tryEval(SEXP, SEXP, int *);
 
 Rboolean Rf_isS4(SEXP);
@@ -211,6 +380,19 @@ void R_ClearExternalPtr(SEXP s);
 void R_SetExternalPtrAddr(SEXP s, void *p);
 void R_SetExternalPtrTag(SEXP s, SEXP tag);
 void R_SetExternalPtrProtected(SEXP s, SEXP p);
+
+/* Finalization interface */
+void R_RegisterFinalizer(SEXP s, SEXP fun);
+void R_RegisterCFinalizer(SEXP s, R_CFinalizer_t fun);
+void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit);
+void R_RegisterCFinalizerEx(SEXP s, R_CFinalizer_t fun, Rboolean onexit);
+
+/* Weak reference interface */
+SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit);
+SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit);
+SEXP R_WeakRefKey(SEXP w);
+SEXP R_WeakRefValue(SEXP w);
+void R_RunWeakRefFinalizer(SEXP w);
 
 #ifdef BYTECODE
 SEXP R_PromiseExpr(SEXP);
@@ -343,12 +525,17 @@ void R_ReleaseObject(SEXP);
 
 /* Shutdown actions */
 void R_dot_Last(void);		/* in main.c */
+void R_RunExitFinalizers(void);	/* in memory.c */
 
 /* Replacements for popen and system */
 #ifdef HAVE_POPEN
 FILE *R_popen(const char *, const char *);
 #endif
 int R_system(const char *);
+
+/* now a macro */
+#define allocString(n)		Rf_allocVector(CHARSXP, n)
+#define Rf_allocString(n)      	Rf_allocVector(CHARSXP, n)
 
 /* These Rf_ macros are retained for backwards compatibility, but
  * their use is deprecated within CXXR.  In particular header files

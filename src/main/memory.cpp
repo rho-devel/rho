@@ -1027,8 +1027,8 @@ SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     SEXP s = allocSExp(EXTPTRSXP);
     SET_EXTPTR_PTR(s, reinterpret_cast<SEXPREC*>(p));
-    SET_EXTPTR_PROT(s, prot);
-    SET_EXTPTR_TAG(s, tag);
+    SETCDR(s, prot);
+    SET_TAG(s, tag);
     return s;
 }
 
@@ -1060,13 +1060,13 @@ void R_SetExternalPtrAddr(SEXP s, void *p)
 void R_SetExternalPtrTag(SEXP s, SEXP tag)
 {
     CHECK_OLD_TO_NEW(s, tag);
-    SET_EXTPTR_TAG(s, tag);
+    SET_TAG(s, tag);
 }
 
 void R_SetExternalPtrProtected(SEXP s, SEXP p)
 {
     CHECK_OLD_TO_NEW(s, p);
-    SET_EXTPTR_PROT(s, p);
+    SETCDR(s, p);
 }
 
 /* Work around casting issues: works where it is needed */
@@ -1079,8 +1079,8 @@ SEXP R_MakeExternalPtrFn(DL_FUNC p, SEXP tag, SEXP prot)
     SEXP s = allocSExp(EXTPTRSXP);
     tmp.fn = p;
     SET_EXTPTR_PTR(s, reinterpret_cast<SEXP>(tmp.p));
-    SET_EXTPTR_PROT(s, prot);
-    SET_EXTPTR_TAG(s, tag);
+    SETCDR(s, prot);
+    SET_TAG(s, tag);
     return s;
 }
 

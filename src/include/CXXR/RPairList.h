@@ -32,23 +32,7 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-
-#ifdef USE_RINTERNALS
-
-// The following doesn't appear to be used anywhere
-#define LISTVAL(x)	((x)->u.listsxp)
-
-#endif // USE_RINTERNALS
-
-#endif /* __cplusplus */
-
 /* Accessor functions. */
-
-/* List Access Functions */
-/* These also work for ... objects */
-#define CONS(a, b)	Rf_cons((a), (b))		/* data lists */
-#define LCONS(a, b)	Rf_lcons((a), (b))		/* language lists */
 
 /**
  * @param e Pointer to a list.
@@ -236,27 +220,6 @@ SEXP Rf_allocList(unsigned int n);
  * @return Pointer to the created object.
  */
 SEXP Rf_allocSExp(SEXPTYPE t);
-
-/* External pointer access macros */
-#define EXTPTR_PTR(x)	CAR(x)
-#define EXTPTR_PROT(x)	CDR(x)
-#define EXTPTR_TAG(x)	TAG(x)
-/*
-Moved to memory.cpp: refer to notes for 2007/09/26
-#define SET_EXTPTR_PTR(x, y)   SETCAR(x, y)
-*/
-#define SET_EXTPTR_PROT(x, y)  SETCDR(x, y)
-#define SET_EXTPTR_TAG(x, y)   SET_TAG(x, y)
-
-#ifdef BYTECODE
-/* Bytecode access macros */
-#define BCODE_CODE(x)	CAR(x)
-#define BCODE_CONSTS(x) CDR(x)
-#define BCODE_EXPR(x)	TAG(x)
-#define isByteCode(x)	(TYPEOF(x)==BCODESXP)
-#else
-#define isByteCode(x)	FALSE
-#endif
 
 #ifdef __cplusplus
 }
