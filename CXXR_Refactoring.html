@@ -610,7 +610,7 @@ logic within C++ classes. Five such classes were introduced, namely
     possible to be a drop-in replacement for
     <code>setjmp</code>/<code>longjmp</code>. This is to ensure that the
     destructors of C++ objects are invoked as the stack is unwound following
-    an exceptional condition.
+    an exceptional condition. 
     <p>Use of <code>JMPException</code> should be regarded as an interim
     measure. Normal C++ coding practice is for <code>throw</code> simply to
     report the exceptional condition that has arisen, rather than - as with
@@ -622,7 +622,7 @@ logic within C++ classes. Five such classes were introduced, namely
     <code>GCRoot</code>'s constructor will protect the <code>GCNode</code> in
     question, and its destructor will unprotect it; there is therefore no
     need for the programmer to remember to balance out the use of
-    <code>PROTECT</code> and <code>UNPROTECT</code> as in CR.
+    <code>PROTECT</code> and <code>UNPROTECT</code> as in CR. 
     <p>The facilities of CR's pointer protection stack (using e.g.
     <code>PROTECT</code> and <code>UNPROTECT</code>) remain available, but
     the underlying implementation has been rewritten in C++ as part of the
@@ -634,7 +634,7 @@ logic within C++ classes. Five such classes were introduced, namely
     <code>UNPROTECT</code>.</p>
   </li>
   <li>Various CR header files, particularly <code>Rinternals.h</code> and
-    <code>Defn.h</code>, contain macro definitions of the form
+    <code>Defn.h</code>, contain macro definitions of the form 
     <pre>#define func Rf_func</pre>
     <p>These serve to avoid name clashes (at least at the linker level) with
     third-party packages; a similar purpose would be achieved in C++ by
@@ -650,6 +650,44 @@ logic within C++ classes. Five such classes were introduced, namely
     modified as necessary to include the <code>Rf_</code> prefix explicitly
     where it is needed.</p>
   </li>
+</ul>
+
+<h2>Phase 9: <code>0.09-2.6.1</code></h2>
+
+<p>The primary objective of this phase was to update the program to parallel
+release 2.6.1 of R.</p>
+
+<p>Other changes were as follows:</p>
+<ul>
+  <li>In previous work, the tendency has been progressively to <em>move</em>
+    function prototypes from CR's header files into the relevant
+    class-oriented (or at least data-type-oriented) header files within
+    <code>include/CXXR</code>, and at the same time to add doxygen
+    documentation. This has now been modified into a policy of
+    <em>copying</em> the prototypes into the relevant CXXR header file, and
+    adding documentation there, but leaving the prototype also in the CR
+    header file. This will make it easier to track changes in function
+    signatures when we upgrade to future releases of R. To this end a script
+    <a href="src/main/allincludes.pl">allincludes.pl</a> has been produced.
+    This generates an (otherwise trivial) C++ source file that
+    <code>#include</code>s all the header files under <code>src/main</code>
+    and <code>src/include</code>; compiling this file checks that the
+    prototypes in the CXXR header files are consistent with those in the CR
+    headers.
+    <p>In the light of this change, the policy regarding the Rf_ prefix
+    described under Phase 8 has been modified. Whilst all header files in the
+    <code>CXXR</code> directory should use the Rf_ prefix explicitly, header
+    files derived from CR (e.g. <code>Rinternals.h</code> and
+    <code>Defn.h</code>) should normally omit the prefix if the corresponding
+    CR file does so.</p>
+  </li>
+  <li>All macros with arguments have been removed from the header files in
+    the <code>CXXR</code> directory.</li>
+  <li>All C-style casts have been removed from the C++ code. (Unfortunately,
+    under some Linuxen at least, standard signals such as
+    <code>SGN_DFL</code> are defines as macros in terms of C-style casts, so
+    <code>main.cpp</code> still gives warnings if compiled using
+    <code>gcc</code> with <code>-Wold-style-cast</code>.)</li>
 </ul>
 </body>
 </html>

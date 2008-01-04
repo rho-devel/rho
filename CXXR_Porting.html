@@ -12,7 +12,8 @@
 <h1>C++ R Engine: Porting Guide</h1>
 
 <p>This document gives guidance on porting R code and C packages to work with
-CXXR.</p>
+CXXR, and on some coding practices that may affect the portability of CXXR to
+different platforms.</p>
 
 <h2>R Code</h2>
 
@@ -125,5 +126,29 @@ much flux at present for this to be advisable.</p>
 <p>If you want to help in refactoring of the R interpreter itself, and have
 sufficient knowledge of C++, please contact <a
 href="mailto:A.R.Runnalls@kent.ac.uk">A.R.Runnalls@kent.ac.uk</a>.</p>
+
+<h2>Porting to Other Platforms</h2>
+
+<p>The following are areas where portability has been traded for efficiency
+and/or clarity in new code generated for CXXR. There may be other
+unportabilities in code inherited from CR.</p>
+<ul>
+  <li>Constructors of class <code>GCNode</code>, and classes derived from it,
+    may rely on the assumption that a null pointer is represented by a zero
+    bit pattern. (See <a
+    href="http://c-faq.com/null/machexamp.html">http://c-faq.com/null/machexamp.html</a>
+    for some machines where this is not true.) This is because they rely on
+    the fact that <code>GCNode::operator new</code> zeroes the allocated
+    storage, and therefore do not explicitly initialise pointer data members
+    if the desired value is a null pointer.</li>
+  <li>Using <code>std::list</code>, it is in places (e.g. in garbage
+    collection) assumed that if a node is spliced from one list to another,
+    an iterator pointing to that node remains valid as an iterator (though it
+    is now an iterator within the destination list rather than within the
+    source list). This assumption is specifically contrary to ISO14882:1998
+    and ISO14882:2003, though it has been identified as a <a
+    href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#250">defect</a>
+    in the standard.</li>
+</ul>
 </body>
 </html>
