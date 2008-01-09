@@ -28,12 +28,14 @@
 # include <stddef.h> /* for size_t */
 #endif
 
+#include "CXXR/RAllocStack.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-void*	vmaxget(void);
-void	vmaxset(const void *);
+unsigned int vmaxget(void);
+void	vmaxset(unsigned int);
 
 void	R_gc(void);
 

@@ -677,7 +677,7 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 }
 
 
-int R_SignalHandlers = 1;  /* Exposed in R_interface.h */ // 2007/07/23 arr
+int R_SignalHandlers = 0;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
 /* Use this to allow e.g. Win32 malloc to call warning.
    Don't use R-specific type, e.g. Rboolean */
@@ -815,7 +815,7 @@ void setup_Rmainloop(void)
     R_Toplevel.cloenv = R_BaseEnv;
     R_Toplevel.sysparent = R_BaseEnv;
     R_Toplevel.conexit = R_NilValue;
-    R_Toplevel.vmax = NULL;
+    R_Toplevel.vmax = 0;
 #ifdef BYTECODE
     R_Toplevel.nodestack = R_BCNodeStackTop;
 # ifdef BC_INT_STACK

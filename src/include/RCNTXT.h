@@ -63,7 +63,7 @@ extern "C" {
 	SEXP conexit;		    /* Interpreted "on.exit" code */
 	void (*cend)(void *);	    /* C "on.exit" thunk */
 	void *cenddata;		    /* data for C "on.exit" thunk */
-	void *vmax;		    /* top of R_alloc stack */
+	unsigned int vmax;	    /* size of R_alloc stack */
 	int intsusp;                /* interrupts are suspended */
 	SEXP handlerstack;          /* condition handler stack */
 	SEXP restartstack;          /* stack of available restarts */

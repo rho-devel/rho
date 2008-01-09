@@ -781,7 +781,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 SEXP GEcontourLines(double *x, int nx, double *y, int ny,
 		    double *z, double *levels, int nl)
 {
-    void *vmax;
+    unsigned int vmax;
     int i, nlines, len;
     double atom, zmin, zmax;
     SEGP* segmentDB;
@@ -922,7 +922,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 {
 /* draw a contour for one given contour level 'zc' */
 
-    void *vmax;
+    unsigned int vmax;
 
     double xend, yend;
     int i, ii, j, jj, ns, ns2, dir;
@@ -1361,7 +1361,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     int ltysave, colsave, lwdsave;
     double cexsave;
     double atom, zmin, zmax;
-    void *vmax, *vmax0;
+    unsigned int vmax, vmax0;
     int method;
     Rboolean drawLabels;
     Rboolean vectorFonts = FALSE;

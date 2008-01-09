@@ -253,7 +253,7 @@ int dummy_vfprintf(Rconnection con, const char *format, va_list ap)
     char buf[BUFSIZE], *b = buf;
     int res;
 #ifdef HAVE_VA_COPY
-    void *vmax = vmaxget();
+    unsigned int vmax = vmaxget();
     int usedRalloc = FALSE, usedVasprintf = FALSE;
     va_list aq;
 
@@ -1957,7 +1957,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 {
     Routtextconn thisconn = reinterpret_cast<Routtextconn>(con->connprivate);
     char buf[BUFSIZE], *b = buf, *p, *q;
-    void *vmax = vmaxget();
+    unsigned int vmax = vmaxget();
     int res = 0, usedRalloc = FALSE, buffree,
 	already = strlen(thisconn->lastline);
     SEXP tmp;

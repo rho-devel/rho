@@ -16,7 +16,7 @@ SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 
 SOURCES_CXX = \
 	CConverters.cpp CellPool.cpp CommandLineArgs.cpp FlagWord.cpp \
-        GCManager.cpp GCNode.cpp GCRoot.cpp Heap.cpp \
+        GCManager.cpp GCNode.cpp GCRoot.cpp Heap.cpp RAllocStack.cpp \
 	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
         RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
         Rdynload.cpp Renviron.cpp WeakRef.cpp \

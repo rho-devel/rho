@@ -126,7 +126,7 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP do_aqua_custom_print(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    char *vm;
+    unsigned int vm;
     char *ct;
     int cpr;  
     SEXP rv, objType, obj;

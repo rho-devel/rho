@@ -94,7 +94,6 @@ extern SEXP framenames;
 
 /* Miscellaneous Globals. */
 
-static SEXP R_VStack = NULL;		/* R_alloc stack pointer */
 static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
 
 /* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
@@ -335,8 +334,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 
     MARK_THRU(&marker, R_PreciousList);
 
-    MARK_THRU(&marker, R_VStack);		   /* R_alloc stack */
-
 #ifdef BYTECODE
     {
 	SEXP *sp;
@@ -569,80 +566,6 @@ void attribute_hidden InitMemory()
     R_PreciousList = R_NilValue;
 }
 
-/* Since memory allocated from the heap is non-moving, R_alloc just
-   allocates off the heap as RAWSXP/REALSXP and maintains the stack of
-   allocations through the ATTRIB pointer.  The stack pointer R_VStack
-   is traced by the collector. */
-void *vmaxget(void)
-{
-    return R_VStack;
-}
-
-void vmaxset(const void *ovmax)
-{
-    R_VStack = reinterpret_cast<SEXP>(const_cast<void*>(ovmax));
-}
-
-char *R_alloc(size_t nelem, int eltsize)
-{
-    R_size_t size = nelem * eltsize;
-    double dsize = double(nelem) * eltsize;
-    if (dsize > 0) { /* precaution against integer overflow */
-	SEXP s;
-#if SIZEOF_SIZE_T > 4
-	/* In this case by allocating larger units we can get up to
-	   size(double) * (2^31 - 1) bytes, approx 16GB */
-	if(dsize < R_LEN_T_MAX)
-	    s = allocVector(RAWSXP, size + 1);
-	else if(dsize < sizeof(double) * (R_LEN_T_MAX - 1))
-	    s = allocVector(REALSXP, (int)(0.99+dsize/sizeof(double)));
-	else {
-	    error(_("cannot allocate memory block of size %0.1f GB"), 
-		  dsize/1024.0/1024.0/1024.0);
-	    s = R_NilValue; /* -Wall */
-	}
-#else
-	if(dsize > R_LEN_T_MAX) /* must be in the Gb range */
-	    error(_("cannot allocate memory block of size %0.1f GB"), 
-		  dsize/1024.0/1024.0/1024.0);
-	s = allocVector(RAWSXP, size + 1);
-#endif
-	s->m_attrib = R_VStack;
-	R_VStack = s;
-#if VALGRIND_LEVEL > 0
-	VALGRIND_MAKE_WRITABLE(DATAPTR(s), int(dsize));
-#endif
-	return reinterpret_cast<char*>(DATAPTR(s));
-    }
-    else return NULL;
-}
-
-
-
-/* S COMPATIBILITY */
-
-char *S_alloc(long nelem, int eltsize)
-{
-    R_size_t size  = nelem * eltsize;
-    char *p = R_alloc(nelem, eltsize);
-
-    memset(p, 0, size);
-    return p;
-}
-
-
-char *S_realloc(char *p, long newct, long old, int size)
-{
-    int nold;
-    char *q;
-    /* shrinking is a no-op */
-    if(newct <= old) return p;
-    q = R_alloc(newct, size);
-    nold = old * size;
-    memcpy(q, p, nold);
-    memset(q + nold, 0, newct*size - nold);
-    return q;
-}
 
 /* Node Allocation. */
 

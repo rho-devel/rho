@@ -479,7 +479,8 @@ SEXP Quartz(SEXP args)
 {
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
-    char *display, *vmax, *family=NULL;
+    char *display, *family=NULL;
+    unsigned int vmax;
     char fontfamily[255];
     double height, width, ps;
     Rboolean  antialias, autorefresh;

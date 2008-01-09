@@ -1965,7 +1965,7 @@ static void newX11_Polyline(int n, const double *x, const double *y,
 			    R_GE_gcontext *gc,
 			    NewDevDesc *dd)
 {
-    char *vmax = vmaxget();
+    unsigned int vmax = vmaxget();
     XPoint *points;
     int i, j;
     newX11Desc *xd = (newX11Desc *) dd->deviceSpecific;
@@ -2000,7 +2000,7 @@ static void newX11_Polygon(int n, const double *x, const double *y,
 			   R_GE_gcontext *gc,
 			   NewDevDesc *dd)
 {
-    char *vmax = vmaxget();
+    unsigned int vmax = vmaxget();
     XPoint *points;
     int i;
     newX11Desc *xd = (newX11Desc *) dd->deviceSpecific;
@@ -2471,7 +2471,7 @@ Rf_addX11Device(const char *display, double width, double height, double ps,
 SEXP in_do_X11(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     const char *display, *cname, *devname;
-    char *vmax;
+    unsigned int vmax;
     double height, width, ps, gamma;
     int colormodel, maxcubesize, bgcolor, canvascolor, res, xpos, ypos;
     SEXP sc, sfonts;

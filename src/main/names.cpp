@@ -1102,7 +1102,7 @@ SEXP attribute_hidden do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP s, fun, ans;
     int save = GCRootBase::ppsSize();
     int flag;
-    void *vmax = vmaxget();
+    unsigned int vmax = vmaxget();
 
     checkArity(op, args);
     s = CAR(args);

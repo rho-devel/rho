@@ -752,7 +752,7 @@ SEXP PicTeX(SEXP args)
 {
     NewDevDesc *dev;
     GEDevDesc *dd;
-    char *vmax;
+    unsigned int vmax;
     const char *file, *bg, *fg;
     double height, width;
     Rboolean debug;

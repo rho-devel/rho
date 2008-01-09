@@ -345,7 +345,7 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
     SEXPTYPE mode;
     int **subs, *indx, *offset, *bound;
     SEXP dimnames, dimnamesnames, p, q, r, result, xdims;
-    void *vmaxsave;
+    unsigned int vmaxsave;
 
     mode = TYPEOF(x);
     xdims = getAttrib(x, R_DimSymbol);

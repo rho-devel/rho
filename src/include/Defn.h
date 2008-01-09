@@ -34,6 +34,7 @@
 #define DEFN_H_
 
 #include "RCNTXT.h"
+#include "localization.h"
 #include "CXXR/RInternalFunction.h"
 
 /* seems unused */
@@ -1090,25 +1091,6 @@ extern char *locale2charset(const char *);
 #define STRCOLL strcmp
 #endif
 
-#endif
-
-/* Localization */
-
-#ifdef ENABLE_NLS
-#include <libintl.h>
-#ifdef Win32
-#define _(String) libintl_gettext (String)
-#undef gettext /* needed for graphapp */
-#else
-#define _(String) gettext (String)
-#endif
-#define gettext_noop(String) String
-#define N_(String) gettext_noop (String)
-#define P_(StringS, StringP, N) ngettext (StringS, StringP, N)
-#else /* not NLS */
-#define _(String) (String)
-#define N_(String) String
-#define P_(String, StringP, N) (N > 1 ? StringP: String)
 #endif
 
 

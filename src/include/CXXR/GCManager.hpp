@@ -162,6 +162,10 @@ namespace CXXR {
 	static std::ostream* s_os;  // Pointer to output stream for GC
 				    // reporting, or NULL.
 
+	// Not implemented.  Declared to stop the compiler generating
+	// a constructor.
+	GCManager();
+
 	// Callback for CXXR::Heap to cue a garbage collection:
 	static bool cue(size_t bytes_wanted, bool force);
 

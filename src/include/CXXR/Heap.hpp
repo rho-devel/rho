@@ -196,6 +196,10 @@ namespace CXXR {
 	static size_t s_threshold;
 #endif
 
+	// Not implemented.  Declared to stop the compiler generating
+	// a constructor.
+	Heap();
+
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
 	{

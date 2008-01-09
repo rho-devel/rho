@@ -475,7 +475,7 @@ SEXP eval(SEXP e, SEXP rho)
 	if (TYPEOF(op) == SPECIALSXP) {
 	    unsigned int save = GCRootBase::ppsSize();
 	    int flag = PRIMPRINT(op);
-	    void *vmax = vmaxget();
+	    unsigned int vmax = vmaxget();
 	    PROTECT(CDR(e));
 	    R_Visible = Rboolean(flag != 1);
 	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
@@ -496,7 +496,7 @@ SEXP eval(SEXP e, SEXP rho)
 	else if (TYPEOF(op) == BUILTINSXP) {
 	    unsigned int save = GCRootBase::ppsSize();
 	    int flag = PRIMPRINT(op);
-	    void *vmax = vmaxget();
+	    unsigned int vmax = vmaxget();
 	    RCNTXT cntxt;
 	    PROTECT(tmp = evalList(CDR(e), rho, op));
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
@@ -3292,7 +3292,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP call = VECTOR_ELT(constants, GETOP());
 	SEXP args = R_BCNodeStackTop[-2];
 	int flag;
-	void *vmax = vmaxget();
+	unsigned int vmax = vmaxget();
 	if (TYPEOF(fun) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
@@ -3310,7 +3310,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP symbol = CAR(call);
 	SEXP fun = SYMVALUE(symbol);
 	int flag;
-	void *vmax = vmaxget();
+	unsigned int vmax = vmaxget();
 	if (TYPEOF(value) == PROMSXP) {
 	    value = forcePromise(value);
 	    SET_NAMED(value, 2);

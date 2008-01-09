@@ -6985,7 +6985,7 @@ SEXP PostScript(SEXP args)
 {
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
-    char *vmax;
+    unsigned int vmax;
     const char *file, *paper, *family=NULL, *bg, *fg, *cmd;
     const char *afms[5];
     const char *encoding, *title, call[] = "postscript", *colormodel;
@@ -7076,7 +7076,7 @@ SEXP XFig(SEXP args)
 {
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
-    char *vmax;
+    unsigned int vmax;
     const char *file, *paper, *family, *bg, *fg, *encoding;
     int horizontal, onefile, pagecentre;
     double height, width, ps;
@@ -7147,7 +7147,7 @@ SEXP PDF(SEXP args)
 {
     NewDevDesc *dev = NULL;
     GEDevDesc *dd;
-    char *vmax;
+    unsigned int vmax;
     const char *file, *paper, *encoding, *family = NULL /* -Wall */,
 	*bg, *fg, *title, call[] = "PDF";
     const char *afms[5];

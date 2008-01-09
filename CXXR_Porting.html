@@ -86,6 +86,9 @@ crime' for debugging.</p>
     the same context (<code>RCNTXT</code>) as that in which the pointer was
     <code>PROTECT</code>ed. This is to help pick up mispairing between
     <code>PROTECT</code> and <code>UNPROTECT</code>.</li>
+  <li><code>vmaxget</code> now returns an <code>unsigned int</code> rather
+    than <code>void*</code>. Similarly, <code>vmaxset</code> now takes an
+    <code>unsigned int</code> as its argument.</li>
 </ul>
 
 <h3>Suggested changes:</h3>
