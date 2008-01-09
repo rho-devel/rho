@@ -37,6 +37,28 @@ into the implementation of the interpreter. In particular:</p>
     existing behaviour to persist.</li>
   <li>The function <code>memory.profile()</code> performs no useful function
     in CXXR: it simply returns a vector of zeroes.</li>
+  <li>The levels that can be specified with the configuration option
+    <code>--with-valgrind-instrumentation</code> have slightly different
+    meanings in CXXR:
+    <ol>
+      <li>No valgrind-related instrumentation is added to the code.</li>
+      <li>Level 1 marks as uninitialized newly-created R data vectors and
+        memory blocks allocated from <code>RAllocStack</code> (e.g.
+        <code>R_alloc</code> and <code>S_alloc</code> blocks). This level is
+        primarily aimed at enabling users of R, including writers of imported
+        code (e.g. in C), to detect use of uninitialized data.</li>
+      <li>Level 2 marks <em>all</em> memory blocks allocated via
+        <code>CXXR::Heap</code> as uninitialized. This, in conjunction with
+        the instrumentation that valgrind carries out by default, means that
+        pretty well all dynamic memory blocks will be marked as uninitialized
+        when they are allocated.</li>
+      <li>Level 3 redzones the data blocks allocated via CXXR::Heap. At
+        present this is simply a trailing 1-byte redzone. (A
+        <strong>redzone</strong> is a small block of memory adjacent to a
+        dynamically allocated memory block, to which valgrind forbids read or
+        write access; this is used to detect array bound violations.)</li>
+    </ol>
+  </li>
 </ul>
 
 <p>Moreover, while CXXR is at an alpha/beta development stage, internal logic
