@@ -137,12 +137,15 @@ namespace CXXR {
 	    checkAllocatedCell(p);
 #endif
 	    Cell* c = reinterpret_cast<Cell*>(p);
+#if VALGRIND_LEVEL > 1
+	    // In case the allocation was smaller than sizeof(Cell):
+	    VALGRIND_MAKE_MEM_UNDEFINED(c, sizeof(Cell));
+	    if (m_cellsize > sizeof(Cell))
+		VALGRIND_MAKE_MEM_NOACCESS(c + 1, m_cellsize - sizeof(Cell));
+#endif
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
 	    --m_cells_allocated;
-#if VALGRIND_LEVEL > 1
-	    VALGRIND_MAKE_NOACCESS(c + 1, m_cellsize - sizeof(Cell));
-#endif
 	}
 
 	/**

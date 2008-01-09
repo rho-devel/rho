@@ -64,6 +64,10 @@ void RAllocStack::restoreSize(size_t new_size)
 			   " greater than current size.");
     while (s_stack.size() > new_size) {
 	Pair& top = s_stack.top();
+#if VALGRIND_LEVEL >= 1
+	char* c = reinterpret_cast<char*>(top.second);
+	VALGRIND_MAKE_MEM_UNDEFINED(c + top.first - 1, 1);
+#endif
 	Heap::deallocate(top.second, top.first);
 	s_stack.pop();
     }
