@@ -43,16 +43,12 @@ RAllocStack::Stack RAllocStack::s_stack;
 
 void* RAllocStack::allocate(size_t sz)
 {
-#if VALGRIND_LEVEL >= 1
-    Pair pr(sz + 1, Heap::allocate(sz + 1));
-#else
     Pair pr(sz, Heap::allocate(sz));
-#endif
     s_stack.push(pr);
     void* ans = s_stack.top().second;
-#if VALGRIND_LEVEL >= 1
-    char* c = reinterpret_cast<char*>(ans);
-    VALGRIND_MAKE_MEM_NOACCESS(c + sz, 1);
+#if VALGRIND_LEVEL == 1
+    // If VALGRIND_LEVEL > 1 this will be done by CXXR::Heap.
+    VALGRIND_MAKE_MEM_UNDEFINED(ans, sz);
 #endif
     return ans;
 }
@@ -64,10 +60,6 @@ void RAllocStack::restoreSize(size_t new_size)
 			   " greater than current size.");
     while (s_stack.size() > new_size) {
 	Pair& top = s_stack.top();
-#if VALGRIND_LEVEL >= 1
-	char* c = reinterpret_cast<char*>(top.second);
-	VALGRIND_MAKE_MEM_UNDEFINED(c + top.first - 1, 1);
-#endif
 	Heap::deallocate(top.second, top.first);
 	s_stack.pop();
     }

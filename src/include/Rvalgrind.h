@@ -14,9 +14,9 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Rvalgrind.h
@@ -27,17 +27,21 @@
  * NVALGRIND if the value is 0.
  * <UL>
  * <LI>Level 0 is no additional instrumentation</LI>
+ *
  * <LI>Level 1 marks as uninitialized newly-created numeric, logical,
- * and integer vectors, and R_alloc memory.  This level is aimed
- * primarily at enabling users of R (including writers of imported
- * code) to detect use of uninitialized data.</LI>
+ * and integer vectors, and <tt>R_alloc</tt>/<tt>S_alloc</tt> memory.
+ * This level is aimed primarily at enabling users of R (including
+ * writers of imported code) to detect use of uninitialized data.</LI>
+ *
  * <LI>Level 2 marks free memory within CellPools as inaccessible, and
  * the contents of newly allocated blocks from CellPools as
  * uninitialised.  This provides further protection against array
  * overruns and the use of stale pointers.</LI>
- * <LI>CR countenances the possibility that <tt>VALGRIND_LEVEL > 2</tt> but
- * does not document its meaning.  (Maybe in CXXR it could be used to
- * redzone CXXR::Heap.)
+ *
+ * <LI>Level 3 redzones memory blocks allocated via
+ * <tt>CXXR::Heap</tt>.  At present this is simply a trailing 1-byte
+ * redzone.  CR also countenances the possibility that
+ * <tt>VALGRIND_LEVEL > 2</tt> but does not document its meaning.
  * </UL>
  *
  * It may be necessary to define \c NVALGRIND for a non-gcc compiler

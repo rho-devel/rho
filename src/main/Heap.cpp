@@ -103,7 +103,7 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
     }
     ++s_blocks_allocated;
     s_bytes_allocated += bytes;
-#if VALGRIND_LEVEL > 1
+#if VALGRIND_LEVEL >= 2
     if (bytes <= s_max_cell_size) VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
 #endif
 #ifdef R_MEMORY_PROFILING

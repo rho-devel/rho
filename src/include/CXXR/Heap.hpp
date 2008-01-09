@@ -96,10 +96,21 @@ namespace CXXR {
 	 */
 	static void* allocate(size_t bytes) throw (std::bad_alloc)
 	{
-	    void* p;
+#if VALGRIND_LEVEL >= 3
+	    size_t blockbytes = bytes + 1;  // trailing redzone
+#else
+	    size_t blockbytes = bytes;
+#endif
 	    // Assumes sizeof(double) == 8:
-	    return (bytes > s_max_cell_size || !(p = alloc1(bytes)))
-		? alloc2(bytes) : p;
+	    void* p;
+	    p = (blockbytes > s_max_cell_size
+		 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes) : p;
+#if VALGRIND_LEVEL >= 3
+	    char* c = reinterpret_cast<char*>(p);
+	    VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
+	    s_bytes_allocated -= 1;
+#endif
+	    return p;
 	}
 
 	/**
@@ -115,6 +126,10 @@ namespace CXXR {
 	 * deallocated.  Actual utilisation of memory in the main heap
 	 * may be greater than this, possibly by as much as a factor
 	 * of 2.
+	 *
+	 * @note If redzoning is operation (<tt>VALGRIND_LEVEL >=
+	 * 2</tt>), the value returned does not include the size of the
+	 * redzones.
 	 */
 	static unsigned int bytesAllocated() {return s_bytes_allocated;}
 
@@ -130,16 +145,20 @@ namespace CXXR {
 	 * @param p Pointer to a block of memory previously allocated
 	 *          by Heap::allocate(), or a null pointer (in which
 	 *          case method does nothing).
-	 *
-	 * @param bytes Size in bytes of the block being deallocated.
-	 *          Ignored if p is a null pointer.
 	 */
 	static void deallocate(void* p, size_t bytes)
 	{
 	    if (!p) return;
+#if VALGRIND_LEVEL >= 3
+	    size_t blockbytes = bytes + 1;  // trailing redzone
+	    char* c = reinterpret_cast<char*>(p);
+	    VALGRIND_MAKE_MEM_UNDEFINED(c + bytes, 1);
+#else
+	    size_t blockbytes = bytes;
+#endif
 	    // Assumes sizeof(double) == 8:
-	    if (bytes > s_max_cell_size) ::operator delete(p);
-	    else s_pools[s_pooltab[bytes]]->deallocate(p);
+	    if (blockbytes > s_max_cell_size) ::operator delete(p);
+	    else s_pools[s_pooltab[blockbytes]]->deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
@@ -208,7 +227,7 @@ namespace CXXR {
 		++s_blocks_allocated;
 		s_bytes_allocated += bytes;
 	    }
-#if VALGRIND_LEVEL > 1
+#if VALGRIND_LEVEL >= 2
 	    VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
 #endif
 #ifdef R_MEMORY_PROFILING
