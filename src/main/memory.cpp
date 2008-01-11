@@ -51,6 +51,7 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/RRealVector.h"
 #include "CXXR/WeakRef.h"
 
 using namespace std;
@@ -697,16 +698,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	}
 	break;
     case REALSXP:
-	if (length <= 0)
-	    actual_size = size = 0;
-	else {
-	    if (length > int(R_SIZE_T_MAX / sizeof(double)))
-		errorcall(R_GlobalContext->call,
-			  _("cannot allocate vector of length %d"), length);
-	    size = FLOAT2VEC(length);
-	    actual_size = length * sizeof(double);
-	}
-	break;
+	return new RRealVector(length);
     case CPLXSXP:
 	if (length <= 0)
 	    actual_size = size = 0;
@@ -1116,15 +1108,6 @@ Rbyte *(RAW)(SEXP x) {
 	      "RAW", "raw", type2char(TYPEOF(x)));
 #endif
     return reinterpret_cast<Rbyte *>(DATAPTR(x)); 
-}
-
-double *(REAL)(SEXP x) { 
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != REALSXP) 
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "REAL", "numeric", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<double *>(DATAPTR(x)); 
 }
 
 Rcomplex *(COMPLEX)(SEXP x) { 

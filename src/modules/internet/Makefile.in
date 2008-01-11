@@ -34,7 +34,6 @@ Makefile: $(srcdir)/Makefile.in \
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)
-	@cat $(DEPENDS) >> Makefile
 	@touch $@
 
 R: Makefile
@@ -77,5 +76,4 @@ distdir: $(DISTFILES)
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
 
-## Automagically generated dependencies:
-
+include $(DEPENDS)

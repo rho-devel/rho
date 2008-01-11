@@ -71,6 +71,11 @@ RObject::~RObject()
     if (m_data) Heap::deallocate(m_data, m_databytes);
 }
 
+const char*  RObject::typeName() const
+{
+    return Rf_type2char(sexptype());
+}
+
 void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);

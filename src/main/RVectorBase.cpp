@@ -17,17 +17,12 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RVector.cpp
+/** @file RVectorBase.cpp
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in RVector.h where these are
- * intended to be callable from C.  It is also used to check that
- * RVector.h is self-contained, i.e. #includes anything it needs, and
- * doesn't rely on anything having been previously #included in the
- * enclosing source file.
+ * Implementation of class RVectorBase and related functions.
  */
 
-#include "CXXR/RVector.h"
+#include "CXXR/RVectorBase.h"
 
 namespace {
     int (*lengthptr)(SEXP x) = LENGTH;
@@ -46,3 +41,5 @@ namespace {
     void (*unsetlatin1ptr)(SEXP x) = UNSET_LATIN1;
     void (*unsetutf8ptr)(SEXP x) = UNSET_UTF8;
 }
+
+// Rf_allocVector is still in memory.cpp (for the time being).

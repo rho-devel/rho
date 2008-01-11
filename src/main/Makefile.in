@@ -18,8 +18,8 @@ SOURCES_CXX = \
 	CConverters.cpp CellPool.cpp CommandLineArgs.cpp FlagWord.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp Heap.cpp RAllocStack.cpp \
 	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
-        RPairList.cpp RPromise.cpp RSymbol.cpp RVector.cpp \
-        Rdynload.cpp Renviron.cpp WeakRef.cpp \
+        RPairList.cpp RPromise.cpp RRealVector.cpp RSymbol.cpp \
+        RVectorBase.cpp Rdynload.cpp Renviron.cpp WeakRef.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \

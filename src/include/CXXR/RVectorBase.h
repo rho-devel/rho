@@ -2,7 +2,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2007
+ *  Andrew Runnalls (C) 2008
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -15,16 +15,16 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
-/** @file RVector.h
- * The future RVector class.
+/** @file RVectorBase.h
+ * Class RVectorBase and associated C interface.
  */
 
-#ifndef RVECTOR_H
-#define RVECTOR_H
+#ifndef RVECTORBASE_H
+#define RVECTORBASE_H
 
 #include "CXXR/RObject.h"
 #include "R_ext/Complex.h"
@@ -37,19 +37,33 @@ typedef unsigned char Rbyte;
 
 #ifdef __cplusplus
 
-/* The generational collector uses a reduced version of SEXPREC as a
-   header in vector nodes.  The layout MUST be kept consistent with
-   the SEXPREC definition.  The standard SEXPREC takes up 7 words on
-   most hardware; this reduced version should take up only 6 words.
-   In addition to slightly reducing memory use, this can lead to more
-   favorable data alignment on 32-bit architectures like the Intel
-   Pentium III where odd word alignment of doubles is allowed but much
-   less efficient than even word alignment. */
 typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
 
-/* Under the generational allocator the data for vector nodes comes
-   immediately after the node structure, so the data address is a
-   known offset from the node SEXP. */
+namespace CXXR {
+    /** @brief Untemplated base class for R vectors.
+     */
+    class RVectorBase : public RObject {
+    public:
+	/**
+	 * @param stype The required <tt>SEXPTYPE</tt>.
+	 * @param sz The required number of elements in the vector.
+	 */
+	RVectorBase(SEXPTYPE stype, size_t sz)
+	    : RObject(stype)
+	{
+	    u.vecsxp.length = sz;
+	}
+
+	/**
+	 * @return The number of elements in the vector.
+	 */
+	size_t size() const
+	{
+	    return length();
+	}
+    };
+}  // namespace CXXR
+
 // 2007/08/07 arr Get rid of this macro once it is no longer needed
 // within the inline functions below.
 inline void* DATAPTR(SEXP x) {return x->m_data;}
@@ -143,12 +157,6 @@ int  *INTEGER(SEXP x);
  * @return Pointer to \a x 's data, interpreted as raw bytes.
  */
 Rbyte *RAW(SEXP x);
-
-/**
- * @param x Pointer to an \c RVector .
- * @return Pointer to \a x 's data, interpreted as real numbers.
- */
-double *REAL(SEXP x);
 
 /**
  * @param x Pointer to an \c RVector .
@@ -318,4 +326,4 @@ SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
 }
 #endif
 
-#endif /* RVECTOR_H */
+#endif /* RVECTORBASE_H */

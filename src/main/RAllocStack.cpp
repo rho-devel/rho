@@ -73,7 +73,7 @@ char* R_alloc(size_t num_elts, int elt_size)
 	Rf_error(_("R_alloc: element size must be positive."));
     size_t size = num_elts*elt_size;
     // Check for integer overflow:
-    if (double(size) != double(num_elts)*double(elt_size))
+    if (size/elt_size != num_elts)
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
     return reinterpret_cast<char*>(RAllocStack::allocate(size));
 }
@@ -86,7 +86,7 @@ char* S_alloc(long num_elts, int elt_size)
 	Rf_error(_("S_alloc: element size must be positive."));
     size_t size = num_elts*elt_size;
     // Check for integer overflow:
-    if (double(size) != double(num_elts)*double(elt_size))
+    if (size/elt_size != size_t(num_elts))
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
     char* ans = reinterpret_cast<char*>(RAllocStack::allocate(size));
     memset(ans, 0, size);
