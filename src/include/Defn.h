@@ -528,16 +528,10 @@ LibExtern int R_interrupts_pending INI_as(0);
 LibExtern char *R_Home;		    /* Root of the R tree */
 
 /* Memory Management */
-extern0 R_size_t R_NSize  INI_as(R_NSIZE);/* Size of cons cell heap */
 extern0 R_size_t R_VSize  INI_as(R_VSIZE);/* Size of the vector heap */
 extern0 SEXP	R_NHeap;	    /* Start of the cons cell heap */
 extern0 SEXP	R_FreeSEXP;	    /* Cons cell free list */
 LibExtern int	R_Is_Running;	    /* for Windows memory manager */
-
-/* The Pointer Protection Stack */
-extern0 int	R_PPStackSize	INI_as(R_PPSSIZE); /* The stack size (elements) */
-extern0 int	R_PPStackTop;	    /* The top of the stack */
-extern0 SEXP*	R_PPStack;	    /* The pointer protection stack */
 
 /* Evaluation Environment */
 LibExtern SEXP	R_CurrentExpr;	    /* Currently evaluating expression */

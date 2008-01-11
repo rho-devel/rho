@@ -225,8 +225,9 @@ R_common_command_line(int *pac, char **argv, Rstart Rp)
 		    R_ShowMessage(msg);
 
 		} else {
-		    if(!strncmp(*av, "--min-nsize", 11)) Rp->nsize = value;
-		    if(!strncmp(*av, "--max-nsize", 11)) Rp->max_nsize = value;
+		    // The next two are ignored in CXXR:
+		    if(!strncmp(*av, "--min-nsize", 11)) /*Rp->nsize = value*/;
+		    if(!strncmp(*av, "--max-nsize", 11)) /*Rp->max_nsize = value*/;
 		    if(!strncmp(*av, "--min-vsize", 11)) Rp->vsize = value;
 		    if(!strncmp(*av, "--max-vsize", 11)) Rp->max_vsize = value;
 		}

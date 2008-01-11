@@ -143,9 +143,7 @@ void R_DefParams(Rstart Rp)
     Rp->LoadInitFile = TRUE;
     Rp->DebugInitFile = FALSE;
     Rp->vsize = R_VSIZE;
-    Rp->nsize = R_NSIZE;
     Rp->max_vsize = R_SIZE_T_MAX;
-    Rp->max_nsize = R_SIZE_T_MAX;
     Rp->ppsize = R_PPSSIZE;
     Rp->NoRenviron = FALSE;
 }
@@ -169,16 +167,9 @@ void R_SizeFromEnv(Rstart Rp)
 	else
 	    Rp->vsize = value;
     }
-    if((p = getenv("R_NSIZE"))) {
-	value = R_Decode2Long(p, &ierr);
-	if(ierr != 0 || value > Max_Nsize || value < Min_Nsize)
-	    R_ShowMessage("WARNING: invalid R_NSIZE ignored\n");
-	else
-	    Rp->nsize = value;
-    }
 }
 
-static void SetSize(R_size_t vsize, R_size_t nsize)
+static void SetSize(R_size_t vsize)
 {
     char msg[1024];
 
@@ -195,13 +186,6 @@ static void SetSize(R_size_t vsize, R_size_t nsize)
 	R_VSize = R_VSIZE;
     } else
 	R_VSize = vsize;
-    if(nsize < Min_Nsize || nsize > Max_Nsize) {
-	sprintf(msg, "WARNING: invalid language heap (n)size `%lu' ignored,"
-		" using default = %ld\n", static_cast<unsigned long>(nsize), R_NSIZE);
-	R_ShowMessage(msg);
-	R_NSize = R_NSIZE;
-    } else
-	R_NSize = nsize;
 }
 
 
@@ -216,7 +200,7 @@ void R_SetParams(Rstart Rp)
     LoadSiteFile = Rp->LoadSiteFile;
     LoadInitFile = Rp->LoadInitFile;
     DebugInitFile = Rp->DebugInitFile;
-    SetSize(Rp->vsize, Rp->nsize);
+    SetSize(Rp->vsize);
 #ifdef Win32
     R_SetWin32(Rp);
 #endif

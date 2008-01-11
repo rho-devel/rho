@@ -62,9 +62,7 @@ typedef struct
     SA_TYPE RestoreAction;
     SA_TYPE SaveAction;
     unsigned long vsize;
-    unsigned long nsize;
     unsigned long max_vsize;
-    unsigned long max_nsize;
     unsigned long ppsize;
     int NoRenviron;
 

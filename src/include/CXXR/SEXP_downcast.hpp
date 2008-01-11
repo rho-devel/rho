@@ -37,7 +37,7 @@ namespace CXXR {
     }
 #else
     /** Down cast from RObject* to a pointer to a class derived from
-     * RObject.
+     *  RObject.
      * @param T Cast the pointer to type T*, where T inherits from RObject.
      * @param s The pointer to be cast.
      * @return The cast pointer.
