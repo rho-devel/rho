@@ -15,11 +15,17 @@ include $(top_builddir)/Makeconf
 SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 
 SOURCES_CXX = \
-	CConverters.cpp CellPool.cpp CommandLineArgs.cpp FlagWord.cpp \
-        GCManager.cpp GCNode.cpp GCRoot.cpp Heap.cpp RAllocStack.cpp \
-	RClosure.cpp REnvironment.cpp RInternalFunction.cpp RObject.cpp \
-        RPairList.cpp RPromise.cpp RRealVector.cpp RSymbol.cpp \
-        RVectorBase.cpp Rdynload.cpp Renviron.cpp WeakRef.cpp \
+	CConverters.cpp CellPool.cpp Closure.cpp CommandLineArgs.cpp \
+	Environment.cpp \
+        FlagWord.cpp \
+        GCManager.cpp GCNode.cpp GCRoot.cpp \
+        Heap.cpp \
+        InternalFunction.cpp \
+        PairList.cpp Promise.cpp \
+        RAllocStack.cpp RObject.cpp Rdynload.cpp RealVector.cpp Renviron.cpp \
+        Symbol.cpp \
+        VectorBase.cpp \
+        WeakRef.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
@@ -37,8 +43,9 @@ SOURCES_CXX = \
 	plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
 	random.cpp registration.cpp relop.cpp rlocale.cpp \
-	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp source.cpp split.cpp \
-	sprintf.cpp startup.cpp subassign.cpp subscript.cpp subset.cpp summary.cpp sysutils.cpp \
+	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
+        source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
+        subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
 	version.cpp vfonts.cpp
 SOURCES_F = \
@@ -54,8 +61,8 @@ EXTRA_SOURCES_CXX = \
 	vsnprintf.cpp xspline.cpp
 
 SAN_SOURCES_C = \
-        RClosureC.c  REnvironmentC.c  RInternalFunctionC.c  RPairListC.c  \
-        RPromiseC.c  RSymbolC.c  RVectorC.c
+        ClosureC.c  EnvironmentC.c  InternalFunctionC.c  PairListC.c  \
+        PromiseC.c  SymbolC.c  VectorC.c
 
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CXX:.cpp=.d) \
           $(EXTRA_SOURCES_CXX:.cpp=.d)

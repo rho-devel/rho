@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2008 Andrew Runnalls.
+ *  Copyright (C) 2007 Andrew Runnalls.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,23 +12,18 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RRealVector.cpp
+/** @file PromiseC.c
+ * @brief C sanity check on Promise.h
  *
- * Implementation of class RRealVector and related functions.
+ * This file is used to check that Promise.h is self-contained as
+ * seen from C, i.e. #includes anything it needs, and doesn't rely on
+ * anything having been previously #included in the enclosing source
+ * file.
  */
 
-#include "CXXR/RRealVector.h"
-
-using namespace std;
-using namespace CXXR;
-
-// Force the creation of non-inline embodiments of functions callable
-// from C:
-namespace {
-    double* (*REALp)(SEXP) = REAL;
-}
+#include "CXXR/Promise.h"

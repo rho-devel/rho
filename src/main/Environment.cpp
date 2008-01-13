@@ -17,22 +17,25 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RSymbol.cpp
+/** @file Environment.cpp
  *
  * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in RSymbol.h where these are
- * intended to be callable from C.  It is also used to check that
- * RSymbol.h is self-contained, i.e. #includes anything it needs, and
- * doesn't rely on anything having been previously #included in the
- * enclosing source file.
+ * versions of inlined functions declared in Environment.h where
+ * these are intended to be callable from C.  It is also used to check
+ * that Environment.h is self-contained, i.e. #includes anything it
+ * needs, and doesn't rely on anything having been previously
+ * #included in the enclosing source file.
  */
 
-#include "CXXR/RSymbol.h"
+#include "CXXR/Environment.h"
 
+// Force the creation of non-inline embodiments of functions callable
+// from C:
 namespace {
-    Rboolean (*ddvalp)(SEXP x) = DDVAL;
-    SEXP (*internalp)(SEXP x) = INTERNAL;
-    SEXP (*printnamep)(SEXP x) = PRINTNAME;
-    void (*setddvalp)(SEXP x, int v) = SET_DDVAL;
-    SEXP (*symvaluep)(SEXP x) = SYMVALUE;
+    SEXP (*enclosp)(SEXP x) = ENCLOS;
+    int (*envflagsp)(SEXP x) = ENVFLAGS;
+    SEXP (*hashtabp)(SEXP x) = HASHTAB;
+    Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
+    SEXP (*framep)(SEXP x) = FRAME;
+    void (*setenvflagsp)(SEXP x, int v) = SET_ENVFLAGS;
 }

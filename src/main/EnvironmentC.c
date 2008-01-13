@@ -17,13 +17,13 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RPromiseC.c
- * @brief C sanity check on RPromise.h
+/** @file EnvironmentC.c
+ * @brief C sanity check on Environment.h
  *
- * This file is used to check that RPromise.h is self-contained as
+ * This file is used to check that Environment.h is self-contained as
  * seen from C, i.e. #includes anything it needs, and doesn't rely on
  * anything having been previously #included in the enclosing source
  * file.
  */
 
-#include "CXXR/RPromise.h"
+#include "CXXR/Environment.h"

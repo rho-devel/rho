@@ -35,7 +35,7 @@
 
 #include "RCNTXT.h"
 #include "localization.h"
-#include "CXXR/RInternalFunction.h"
+#include "CXXR/InternalFunction.h"
 
 /* seems unused */
 #define COUNTING

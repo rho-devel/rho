@@ -17,19 +17,13 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RInternalFunction.cpp
+/** @file InternalFunctionC.c
+ * @brief C sanity check on InternalFunction.h
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in RInternalFunction.h where
- * these are intended to be callable from C.  It is also used to check
- * that RInternalFunction.h is self-contained, i.e. #includes anything
- * it needs, and doesn't rely on anything having been previously
- * #included in the enclosing source file.
+ * This file is used to check that InternalFunction.h is
+ * self-contained as seen from C, i.e. #includes anything it needs,
+ * and doesn't rely on anything having been previously #included in
+ * the enclosing source file.
  */
 
-#include "CXXR/RInternalFunction.h"
-
-namespace {
-    int (*primoffsetp)(SEXP x) = PRIMOFFSET;
-    void (*setprimoffsetp)(SEXP x, int v) = SET_PRIMOFFSET;
-}
+#include "CXXR/InternalFunction.h"

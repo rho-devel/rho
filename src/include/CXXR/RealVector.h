@@ -30,20 +30,20 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/RDumbVector.hpp"
+#include "CXXR/DumbVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* RDumbVector<double, REALSXP>::staticTypeName()
+    inline const char* DumbVector<double, REALSXP>::staticTypeName()
     {
 	return "numeric";
     }
 
     /** @brief Vector of real numbers.
      */
-    typedef CXXR::RDumbVector<double, REALSXP> RRealVector;
+    typedef CXXR::DumbVector<double, REALSXP> RRealVector;
 }  // namespace CXXR
 
 extern "C" {

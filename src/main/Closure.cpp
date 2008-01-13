@@ -17,13 +17,21 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RInternalFunctionC.c
- * @brief C sanity check on RInternalFunction.h
+/** @file Closure.cpp
  *
- * This file is used to check that RInternalFunction.h is
- * self-contained as seen from C, i.e. #includes anything it needs,
- * and doesn't rely on anything having been previously #included in
- * the enclosing source file.
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in Closure.h where these
+ * are intended to be callable from C.  It is also used to check that
+ * Closure.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
-#include "CXXR/RInternalFunction.h"
+#include "CXXR/Closure.h"
+
+namespace {
+    SEXP (*bodyp)(SEXP x) = BODY;
+    SEXP (*cloenvp)(SEXP x) = CLOENV;
+    SEXP (*formalsp)(SEXP x) = FORMALS;
+    void (*setdebugp)(SEXP x, Rboolean v) = SET_DEBUG;
+}

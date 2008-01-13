@@ -17,13 +17,13 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RSymbolC.c
- * @brief C sanity check on RSymbol.h
+/** @file VectorC.c
+ * @brief C sanity check on Vector.h
  *
- * This file is used to check that RSymbol.h is self-contained as seen
+ * This file is used to check that Vector.h is self-contained as seen
  * from C, i.e. #includes anything it needs, and doesn't rely on
  * anything having been previously #included in the enclosing source
  * file.
  */
 
-#include "CXXR/RSymbol.h"
+#include "CXXR/Vector.h"

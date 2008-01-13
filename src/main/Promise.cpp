@@ -17,13 +17,22 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RVectorC.c
- * @brief C sanity check on RVector.h
+/** @file Promise.cpp
  *
- * This file is used to check that RVector.h is self-contained as seen
- * from C, i.e. #includes anything it needs, and doesn't rely on
- * anything having been previously #included in the enclosing source
- * file.
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in Promise.h where these
+ * are intended to be callable from C.  It is also used to check that
+ * Promise.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
-#include "CXXR/RVector.h"
+#include "CXXR/Promise.h"
+
+namespace {
+    SEXP (*prcodep)(SEXP x) = PRCODE;
+    SEXP (*prenvp)(SEXP x) = PRENV;
+    int (*prseenp)(SEXP x) = PRSEEN;
+    SEXP (*prvaluep)(SEXP x) = PRVALUE;
+    void (*setprseen)(SEXP x, int v) = SET_PRSEEN;
+}

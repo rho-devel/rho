@@ -17,13 +17,19 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RPairListC.c
- * @brief C sanity check on RPairList.h
+/** @file InternalFunction.cpp
  *
- * This file is used to check that RPairList.h is self-contained as
- * seen from C, i.e. #includes anything it needs, and doesn't rely on
- * anything having been previously #included in the enclosing source
- * file.
+ * At present, this file simply forces the generation of non-inlined
+ * versions of inlined functions declared in InternalFunction.h where
+ * these are intended to be callable from C.  It is also used to check
+ * that InternalFunction.h is self-contained, i.e. #includes anything
+ * it needs, and doesn't rely on anything having been previously
+ * #included in the enclosing source file.
  */
 
-#include "CXXR/RPairList.h"
+#include "CXXR/InternalFunction.h"
+
+namespace {
+    int (*primoffsetp)(SEXP x) = PRIMOFFSET;
+    void (*setprimoffsetp)(SEXP x, int v) = SET_PRIMOFFSET;
+}

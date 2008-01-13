@@ -17,12 +17,12 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RVectorBase.cpp
+/** @file VectorBase.cpp
  *
  * Implementation of class RVectorBase and related functions.
  */
 
-#include "CXXR/RVectorBase.h"
+#include "CXXR/VectorBase.h"
 
 namespace {
     int (*lengthptr)(SEXP x) = LENGTH;

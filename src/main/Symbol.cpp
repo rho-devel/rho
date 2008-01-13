@@ -17,29 +17,22 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file RPairList.cpp
+/** @file Symbol.cpp
  *
  * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in RPairList.h where these
- * are intended to be callable from C.  It is also used to check that
- * RPairList.h is self-contained, i.e. #includes anything it needs,
- * and doesn't rely on anything having been previously #included in
- * the enclosing source file.
+ * versions of inlined functions declared in RSymbol.h where these are
+ * intended to be callable from C.  It is also used to check that
+ * Symbol.h is self-contained, i.e. #includes anything it needs, and
+ * doesn't rely on anything having been previously #included in the
+ * enclosing source file.
  */
 
-#include "CXXR/RPairList.h"
+#include "CXXR/Symbol.h"
 
 namespace {
-    SEXP (*tagp)(SEXP e) = TAG;
-    SEXP (*caarp)(SEXP e) = CAAR;
-    SEXP (*cad4r)(SEXP e) = CAD4R;
-    SEXP (*cadddrp)(SEXP e) = CADDDR;
-    SEXP (*caddrp)(SEXP e) = CADDR;
-    SEXP (*cadrp)(SEXP e) = CADR;
-    SEXP (*carp)(SEXP e) = CAR;
-    SEXP (*cdarp)(SEXP e) = CDAR;
-    SEXP (*cddrp)(SEXP e) = CDDR;
-    SEXP (*cdrp)(SEXP e) = CDR;
-    int (*missingp)(SEXP x) = MISSING;
-    void (*setmissingp)(SEXP x, int v) = SET_MISSING;
+    Rboolean (*ddvalp)(SEXP x) = DDVAL;
+    SEXP (*internalp)(SEXP x) = INTERNAL;
+    SEXP (*printnamep)(SEXP x) = PRINTNAME;
+    void (*setddvalp)(SEXP x, int v) = SET_DDVAL;
+    SEXP (*symvaluep)(SEXP x) = SYMVALUE;
 }

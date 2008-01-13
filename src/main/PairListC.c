@@ -17,13 +17,13 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file REnvironmentC.c
- * @brief C sanity check on REnvironment.h
+/** @file PairListC.c
+ * @brief C sanity check on PairList.h
  *
- * This file is used to check that REnvironment.h is self-contained as
+ * This file is used to check that PairList.h is self-contained as
  * seen from C, i.e. #includes anything it needs, and doesn't rely on
  * anything having been previously #included in the enclosing source
  * file.
  */
 
-#include "CXXR/REnvironment.h"
+#include "CXXR/PairList.h"

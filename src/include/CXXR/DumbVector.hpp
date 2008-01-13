@@ -17,18 +17,18 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RDumbVector.hpp
+/** @file DumbVector.hpp
  *
- * @brief Templated class RDumbVector.
+ * @brief Templated class DumbVector.
  */
 
-#ifndef RDUMBVECTOR_HPP
-#define RDUMBVECTOR_HPP 1
+#ifndef DUMBVECTOR_HPP
+#define DUMBVECTOR_HPP 1
 
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCRoot.h"
-#include "CXXR/RVectorBase.h"
+#include "CXXR/VectorBase.h"
 
 namespace CXXR {
     /** @brief Vector of 'plain old data'.
@@ -41,15 +41,15 @@ namespace CXXR {
      * @param ST The required \c SEXPTYPE of the vector.
      */
     template <class T, SEXPTYPE ST>
-    class RDumbVector : public RVectorBase {
+    class DumbVector : public VectorBase {
     public:
 	/** @brief Create a vector, leaving its contents
 	 *         uninitialized. 
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	RDumbVector(size_t sz)
-	    : RVectorBase(ST, sz), m_data(&m_singleton)
+	DumbVector(size_t sz)
+	    : VectorBase(ST, sz), m_data(&m_singleton)
 	{
 	    if (sz > 1) allocData(sz);
 	}
@@ -61,8 +61,8 @@ namespace CXXR {
 	 * @param initializer Initial value to be assigned to every
 	 *          element.
 	 */
-	RDumbVector(size_t sz, const T& initializer)
-	    : RVectorBase(ST, sz), m_data(&m_singleton),
+	DumbVector(size_t sz, const T& initializer)
+	    : VectorBase(ST, sz), m_data(&m_singleton),
 	      m_singleton(initializer)
 	{
 	    if (sz > 1) allocData(sz, true);
@@ -92,7 +92,7 @@ namespace CXXR {
 	 * @return the name by which this type is known in R.
 	 *
 	 * @note This function is declared but not defined as part of
-	 * the RDumbVector template.  It must be defined as a
+	 * the DumbVector template.  It must be defined as a
 	 * specialization for each instantiation of the template for
 	 * which it or typeName() is used.
 	 */
@@ -101,9 +101,9 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     protected:
-	// Declared protected to ensure that RDumbVectors are
+	// Declared protected to ensure that DumbVectors are
 	// allocated only using 'new'.
-	~RDumbVector()
+	~DumbVector()
 	{
 	    if (m_data != &m_singleton)
 		Heap::deallocate(m_data, m_databytes);
@@ -113,15 +113,15 @@ namespace CXXR {
 	T* m_data;  // pointer to the vector's data block.
 
 	// If there is only one element, it is stored here, internally
-	// to the RDumbVector object, rather than via a separate
+	// to the DumbVector object, rather than via a separate
 	// allocation from CXXR::Heap.  We put this last, so that it
 	// will be adjacent to any trailing redzone.
 	T m_singleton;
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
-	RDumbVector(const RDumbVector&);
-	RDumbVector& operator=(const RDumbVector&);
+	DumbVector(const DumbVector&);
+	DumbVector& operator=(const DumbVector&);
 
 	// If there is more than one element, this function is used to
 	// allocate the required memory block from CXXR::Heap :
@@ -129,7 +129,7 @@ namespace CXXR {
     };
 
     template <class T, SEXPTYPE ST>
-    void RDumbVector<T, ST>::allocData(size_t sz, bool initialize)
+    void DumbVector<T, ST>::allocData(size_t sz, bool initialize)
     {
 	m_databytes = sz*sizeof(T);
 	// Check for integer overflow:
@@ -144,10 +144,10 @@ namespace CXXR {
     }
 
     template <class T, SEXPTYPE ST>
-    const char* RDumbVector<T, ST>::typeName() const
+    const char* DumbVector<T, ST>::typeName() const
     {
-	return RDumbVector<T, ST>::staticTypeName();
+	return DumbVector<T, ST>::staticTypeName();
     }
 }  // namespace CXXR
 
-#endif  // RDUMBVECTOR_HPP
+#endif  // DUMBVECTOR_HPP

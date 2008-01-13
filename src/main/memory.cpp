@@ -51,7 +51,7 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
-#include "CXXR/RRealVector.h"
+#include "CXXR/RealVector.h"
 #include "CXXR/WeakRef.h"
 
 using namespace std;

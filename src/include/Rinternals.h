@@ -51,13 +51,13 @@
 
 #include <R_ext/libextern.h>
 
+#include "CXXR/Closure.h"
 #include "CXXR/GCRoot.h"
-#include "CXXR/RClosure.h"
-#include "CXXR/REnvironment.h"
-#include "CXXR/RPairList.h"
-#include "CXXR/RPromise.h"
-#include "CXXR/RSymbol.h"
-#include "CXXR/RVectorBase.h"
+#include "CXXR/Environment.h"
+#include "CXXR/PairList.h"
+#include "CXXR/Promise.h"
+#include "CXXR/Symbol.h"
+#include "CXXR/VectorBase.h"
 #include "CXXR/WeakRef.h"
 
 #ifdef __cplusplus

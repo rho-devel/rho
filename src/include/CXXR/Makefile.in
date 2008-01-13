@@ -15,8 +15,8 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 ## Partially included by the API (1) headers in .., but not part of the
 ## API per se. 
 CXXR_HEADERS = \
-  GCRoot.h RAllocStack.h RClosure.h REnvironment.h RObject.h RPairList.h \
-  RPromise.h RSymbol.h RVectorBase.h WeakRef.h
+  Closure.h Environment.h GCRoot.h PairList.h Promise.h RAllocStack.h \
+  RObject.h Symbol.h VectorBase.h WeakRef.h
 
 DISTFILES = Makefile.in $(CXXR_HEADERS)
 TIMESTAMPS = $(CXXR_HEADERS:.h=.ts)

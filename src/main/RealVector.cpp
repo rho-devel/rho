@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2007 Andrew Runnalls.
+ *  Copyright (C) 2008 Andrew Runnalls.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,18 +12,23 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
-/** @file RClosureC.c
- * @brief C sanity check on RClosure.h
+/** @file RealVector.cpp
  *
- * This file is used to check that RClosure.h is self-contained as
- * seen from C, i.e. #includes anything it needs, and doesn't rely on
- * anything having been previously #included in the enclosing source
- * file.
+ * Implementation of class RealVector and related functions.
  */
 
-#include "CXXR/RClosure.h"
+#include "CXXR/RealVector.h"
+
+using namespace std;
+using namespace CXXR;
+
+// Force the creation of non-inline embodiments of functions callable
+// from C:
+namespace {
+    double* (*REALp)(SEXP) = REAL;
+}
