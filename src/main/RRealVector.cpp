@@ -32,8 +32,3 @@ using namespace CXXR;
 namespace {
     double* (*REALp)(SEXP) = REAL;
 }
-
-const char* RRealVector::typeName() const
-{
-    return RRealVector::staticTypeName();
-}

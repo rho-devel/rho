@@ -87,6 +87,19 @@ namespace CXXR {
 	{
 	    return m_data[index];
 	}
+
+	/**
+	 * @return the name by which this type is known in R.
+	 *
+	 * @note This function is declared but not defined as part of
+	 * the RDumbVector template.  It must be defined as a
+	 * specialization for each instantiation of the template for
+	 * which it or typeName() is used.
+	 */
+	inline static const char* staticTypeName();
+
+	// Virtual function of RObject:
+	const char* typeName() const;
     protected:
 	// Declared protected to ensure that RDumbVectors are
 	// allocated only using 'new'.
@@ -128,6 +141,12 @@ namespace CXXR {
 	    for (unsigned int i = 0; i < sz; ++i)
 		m_data[i] = m_singleton;
 	}
+    }
+
+    template <class T, SEXPTYPE ST>
+    const char* RDumbVector<T, ST>::typeName() const
+    {
+	return RDumbVector<T, ST>::staticTypeName();
     }
 }  // namespace CXXR
 

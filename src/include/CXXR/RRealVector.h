@@ -34,45 +34,16 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    // Template specialization:
+    template <>
+    inline const char* RDumbVector<double, REALSXP>::staticTypeName()
+    {
+	return "numeric";
+    }
+
     /** @brief Vector of real numbers.
      */
-    class RRealVector : public CXXR::RDumbVector<double, REALSXP> {
-    public:
-	/** @brief Create a vector, leaving its contents
-	 *         uninitialized. 
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 */
-	RRealVector(size_t sz)
-	    : RDumbVector<double, REALSXP>(sz)
-	{}
-
-	/** @brief Create a vector, and fill with a specified initial
-	 *         value. 
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 * @param initializer Initial value to be assigned to every
-	 *          element.
-	 */
-	RRealVector(size_t sz, double initializer)
-	    : RDumbVector<double, REALSXP>(sz, initializer)
-	{}
-
-	/**
-	 * @return the name by which this type is known in R.
-	 */
-	static const char* staticTypeName()
-	{
-	    return "numeric";
-	}
-
-	// Virtual function of RObject:
-	const char* typeName() const;
-    protected:
-	// Declared protected to ensure that RRealVectors are
-	// allocated only using 'new'.
-	~RRealVector() {}
-    };
+    typedef CXXR::RDumbVector<double, REALSXP> RRealVector;
 }  // namespace CXXR
 
 extern "C" {
