@@ -222,14 +222,20 @@ namespace CXXR {
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
 	{
-	    void* p = s_pools[s_pooltab[bytes]]->easyAllocate();
+	    CellPool* pool = s_pools[s_pooltab[bytes]];
+	    void* p = pool->easyAllocate();
 	    if (p) {
 		++s_blocks_allocated;
 		s_bytes_allocated += bytes;
-	    }
 #if VALGRIND_LEVEL >= 2
-	    VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
+		// Fence off supernumerary bytes:
+		size_t surplus = pool->cellSize() - bytes;
+		if (surplus > 0) {
+		    char* tail = reinterpret_cast<char*>(p) + bytes;
+		    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
+		}
 #endif
+	    }
 #ifdef R_MEMORY_PROFILING
 	    if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
 #endif

@@ -33,6 +33,9 @@ using namespace CXXR;
 
 CellPool::~CellPool()
 {
+#if VALGRIND_LEVEL >= 2
+    VALGRIND_DESTROY_MEMPOOL(this);
+#endif
     for (vector<void*>::iterator it = m_superblocks.begin();
 	 it != m_superblocks.end(); ++it)
 	::operator delete(*it);
@@ -104,7 +107,7 @@ void CellPool::seekMemory() throw (std::bad_alloc)
 	    Cell* next = 0;
 	    while (offset >= 0) {
 		next = new (superblock + offset) Cell(next);
-#if VALGRIND_LEVEL > 1
+#if VALGRIND_LEVEL >= 2
 		VALGRIND_MAKE_NOACCESS(next + 1, m_cellsize - sizeof(Cell));
 #endif
 		offset -= m_cellsize;

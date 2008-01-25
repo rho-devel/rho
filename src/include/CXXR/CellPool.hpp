@@ -73,7 +73,11 @@ namespace CXXR {
 	      m_out_of_cells(out_of_cells),
 	      m_free_cells(0),
 	      m_cells_allocated(0)
-	{}
+	{
+#if VALGRIND_LEVEL >= 2
+	    VALGRIND_CREATE_MEMPOOL(this, 0, 0);
+#endif
+	}
 
 	/** Destructor
 	 *
@@ -98,7 +102,9 @@ namespace CXXR {
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 	    ++m_cells_allocated;
-	    // Leave it to CXXR::Heap to VALGRIND_MAKE_MEM_UNDEFINED
+#if VALGRIND_LEVEL >= 2
+	    VALGRIND_MEMPOOL_ALLOC(this, c, cellSize());
+#endif
 	    return c;
 	}
 
@@ -136,13 +142,11 @@ namespace CXXR {
 #ifdef DEBUG_RELEASE_MEM
 	    checkAllocatedCell(p);
 #endif
-	    Cell* c = reinterpret_cast<Cell*>(p);
-#if VALGRIND_LEVEL > 1
-	    // In case the allocation was smaller than sizeof(Cell):
-	    VALGRIND_MAKE_MEM_UNDEFINED(c, sizeof(Cell));
-	    if (m_cellsize > sizeof(Cell))
-		VALGRIND_MAKE_MEM_NOACCESS(c + 1, m_cellsize - sizeof(Cell));
+#if VALGRIND_LEVEL >= 2
+	    VALGRIND_MEMPOOL_FREE(this, p);
+	    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
 #endif
+	    Cell* c = reinterpret_cast<Cell*>(p);
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
 	    --m_cells_allocated;
@@ -162,7 +166,9 @@ namespace CXXR {
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 	    ++m_cells_allocated;
-	    // Leave it to CXXR::Heap to VALGRIND_MAKE_MEM_UNDEFINED
+#if VALGRIND_LEVEL >= 2
+	    VALGRIND_MEMPOOL_ALLOC(this, c, cellSize());
+#endif
 	    return c;
 	}
 

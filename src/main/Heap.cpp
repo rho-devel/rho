@@ -72,39 +72,41 @@ unsigned int Heap::s_pooltab[]
     
 void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
 {
+    CellPool* pool = 0;
     void* p = 0;
     bool joy = false;  // true if GC succeeds after bad_alloc
     try {
 	if (bytes > s_max_cell_size) {
 	    if (s_cue_gc) s_cue_gc(bytes, false);
 	    p = ::operator new(bytes);
+	} else {
+	    pool = s_pools[s_pooltab[bytes]];
+	    p = pool->allocate();
 	}
-	else p = s_pools[s_pooltab[bytes]]->allocate();
     }
     catch (bad_alloc) {
 	if (s_cue_gc) {
 	    // Try to force garbage collection if available:
-	    size_t sought_bytes = bytes;
-	    if (bytes < s_max_cell_size)
-		sought_bytes = s_pools[s_pooltab[bytes]]->superblockSize();
+	    size_t sought_bytes = (pool ? pool->superblockSize() : bytes);
 	    joy = s_cue_gc(sought_bytes, true);
 	}
 	else throw;
     }
     if (!p && joy) {
 	// Try once more:
-	try {
-	    if (bytes > s_max_cell_size) p = ::operator new(bytes);
-	    else p = s_pools[s_pooltab[bytes]]->allocate();
-	}
-	catch (bad_alloc) {
-	    throw;
-	}
+	p = (pool ? pool->allocate() : ::operator new(bytes));
     }
     ++s_blocks_allocated;
     s_bytes_allocated += bytes;
 #if VALGRIND_LEVEL >= 2
-    if (bytes <= s_max_cell_size) VALGRIND_MAKE_MEM_UNDEFINED(p, bytes);
+    if (pool) {
+	// Fence off supernumerary bytes:
+	size_t surplus = pool->cellSize() - bytes;
+	if (surplus > 0) {
+	    char* tail = reinterpret_cast<char*>(p) + bytes;
+	    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
+	}
+    }
 #endif
 #ifdef R_MEMORY_PROFILING
     if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
