@@ -51,6 +51,8 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/IntVector.h"
+#include "CXXR/LogicalVector.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/WeakRef.h"
 
@@ -686,19 +688,11 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	actual_size=length+1;
 	break;
     case LGLSXP:
+	return new LogicalVector(length);
     case INTSXP:
-	if (length <= 0)
-	    actual_size = size = 0;
-	else {
-	    if (length > int(R_SIZE_T_MAX / sizeof(int)))
-		errorcall(R_GlobalContext->call,
-			  _("cannot allocate vector of length %d"), length);
-	    size = INT2VEC(length);
-	    actual_size = length*sizeof(int);
-	}
-	break;
+	return new IntVector(length);
     case REALSXP:
-	return new RRealVector(length);
+	return new RealVector(length);
     case CPLXSXP:
 	if (length <= 0)
 	    actual_size = size = 0;
@@ -804,19 +798,12 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 #if VALGRIND_LEVEL > 0
  	VALGRIND_MAKE_WRITABLE(memCHAR(s), actual_size);
 #endif
-	CHAR_RW(s)[length] = 0;
+	char* cp = CHAR_RW(s);
+	char c = cp[length];
+	cp[length] = 0;
+	c = cp[length];
+	//	CHAR_RW(s)[length] = 0;
     }
-    else if (type == REALSXP){
-#if VALGRIND_LEVEL > 0
-	VALGRIND_MAKE_WRITABLE(REAL(s), actual_size);
-#endif
-    }
-    else if (type == INTSXP){
-#if VALGRIND_LEVEL > 0
-	VALGRIND_MAKE_WRITABLE(INTEGER(s), actual_size);
-#endif
-    }
-    /* <FIXME> why not valgrindify LGLSXP, CPLXSXP and RAWSXP? */
     return s;
 }
 
@@ -1076,29 +1063,6 @@ SEXP (VECTOR_ELT)(SEXP x, int i) {
 	      "VECTOR_ELT", "list", type2char(TYPEOF(x)));
 #endif
     return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
-}
-
-int *(LOGICAL)(SEXP x) {
-#ifdef USE_TYPE_CHECKING_STRICT
-    if(TYPEOF(x) != LGLSXP)
-	error("%s() can only be applied to a '%s', not a '%s'",
-	      "LOGICAL",  "logical", type2char(TYPEOF(x)));
-#elif defined(USE_TYPE_CHECKING)
-    /* Currently harmless, and quite widely used */
-    if(TYPEOF(x) != LGLSXP && TYPEOF(x) != INTSXP)
-	error("%s() can only be applied to a '%s', not a '%s'",
-	      "LOGICAL",  "logical", type2char(TYPEOF(x)));
-#endif
-  return reinterpret_cast<int *>(DATAPTR(x)); 
-}
-
-int *(INTEGER)(SEXP x) {
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != INTSXP && TYPEOF(x) != LGLSXP)
-        error("%s() can only be applied to a '%s', not a '%s'",
-	      "INTEGER", "integer", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<int *>(DATAPTR(x)); 
 }
 
 Rbyte *(RAW)(SEXP x) { 

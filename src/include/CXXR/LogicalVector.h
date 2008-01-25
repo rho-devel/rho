@@ -19,12 +19,12 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RealVector.h
- * @brief Class RealVector and associated C interface.
+/** @file LogicalVector.h
+ * @brief Class LogicalVector and associated C interface.
  */
 
-#ifndef REALVECTOR_H
-#define REALVECTOR_H
+#ifndef LOGICALVECTOR_H
+#define LOGICALVECTOR_H
 
 #include "CXXR/RObject.h"
 
@@ -36,36 +36,30 @@
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* DumbVector<double, REALSXP>::staticTypeName()
+    inline const char* DumbVector<int, LGLSXP>::staticTypeName()
     {
-	return "numeric";
+	return "logical";
     }
 
-    /** @brief Vector of real numbers.
+    /** @brief Vector of truth values.
      */
-    typedef CXXR::DumbVector<double, REALSXP> RealVector;
+    typedef CXXR::DumbVector<int, LGLSXP> LogicalVector;
 }  // namespace CXXR
 
 extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @param x Pointer to an \c RealVector (i.e. an R numeric vector).
- *          An error is generated if \a x is not pointer to an \c
- *          RealVector .
+ * @param x Pointer to a \c LogicalVector or an \c IntVector (i.e. an
+ *          R logical or integer vector).
+ *          An error is generated if \a x is not pointer to a \c
+ *          LogicalVector or an \c IntVector .
  * @return Pointer to element 0 of \a x .
  */
-#ifndef __cplusplus
-double *REAL(SEXP x);
-#else
-inline double *REAL(SEXP x)
-{
-    return &(*CXXR::SEXP_downcast<CXXR::RealVector>(x))[0];
-}
-#endif
+int *LOGICAL(SEXP x);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* REALVECTOR_H */
+#endif /* LOGICALVECTOR_H */

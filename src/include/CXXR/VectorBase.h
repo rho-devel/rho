@@ -141,18 +141,6 @@ inline void SET_TRUELENGTH(SEXP x, int v)
 const char *R_CHAR(SEXP x);
 
 /**
- * @param x Pointer to a \c VectorBase representing logical data.
- * @return Pointer to \a x 's data.
- */
-int *LOGICAL(SEXP x);
-
-/**
- * @param x Pointer to a \c VectorBase .
- * @return Pointer to \a x 's data, interpreted as integer data.
- */
-int  *INTEGER(SEXP x);
-
-/**
  * @param x Pointer to a \c VectorBase .
  * @return Pointer to \a x 's data, interpreted as raw bytes.
  */

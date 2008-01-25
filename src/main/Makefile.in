@@ -20,7 +20,8 @@ SOURCES_CXX = \
         FlagWord.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
         Heap.cpp \
-        InternalFunction.cpp \
+        IntVector.cpp InternalFunction.cpp \
+	LogicalVector.cpp \
         PairList.cpp Promise.cpp \
         RAllocStack.cpp RObject.cpp Rdynload.cpp RealVector.cpp Renviron.cpp \
         Symbol.cpp \
