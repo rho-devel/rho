@@ -26,7 +26,7 @@
 #ifndef REALVECTOR_H
 #define REALVECTOR_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
 

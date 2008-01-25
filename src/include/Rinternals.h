@@ -52,12 +52,15 @@
 #include <R_ext/libextern.h>
 
 #include "CXXR/Closure.h"
+#include "CXXR/ComplexVector.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/Environment.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/LogicalVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
+#include "CXXR/RealVector.h"
 #include "CXXR/Symbol.h"
-#include "CXXR/VectorBase.h"
 #include "CXXR/WeakRef.h"
 
 #ifdef __cplusplus

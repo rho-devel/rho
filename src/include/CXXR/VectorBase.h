@@ -27,7 +27,6 @@
 #define VECTORBASE_H
 
 #include "CXXR/RObject.h"
-#include "R_ext/Complex.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,12 +144,6 @@ const char *R_CHAR(SEXP x);
  * @return Pointer to \a x 's data, interpreted as raw bytes.
  */
 Rbyte *RAW(SEXP x);
-
-/**
- * @param x Pointer to a \c VectorBase .
- * @return Pointer to \a x 's data, interpreted as complex numbers.
- */
-Rcomplex *COMPLEX(SEXP x);
 
 /**
  * Extract element of character string.

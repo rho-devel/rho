@@ -26,7 +26,7 @@
 #ifndef INTVECTOR_H
 #define INTVECTOR_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
 

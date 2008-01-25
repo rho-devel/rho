@@ -19,14 +19,15 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file LogicalVector.h
- * @brief Class LogicalVector and associated C interface.
+/** @file ComplexVector.h
+ * @brief Class ComplexVector and associated C interface.
  */
 
-#ifndef LOGICALVECTOR_H
-#define LOGICALVECTOR_H
+#ifndef COMPLEXVECTOR_H
+#define COMPLEXVECTOR_H
 
 #include "CXXR/VectorBase.h"
+#include "R_ext/Complex.h"
 
 #ifdef __cplusplus
 
@@ -36,30 +37,36 @@
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* DumbVector<int, LGLSXP>::staticTypeName()
+    inline const char* DumbVector<Rcomplex, CPLXSXP>::staticTypeName()
     {
-	return "logical";
+	return "complex";
     }
 
-    /** @brief Vector of truth values.
+    /** @brief Vector of complex numbers.
      */
-    typedef CXXR::DumbVector<int, LGLSXP> LogicalVector;
+    typedef CXXR::DumbVector<Rcomplex, CPLXSXP> ComplexVector;
 }  // namespace CXXR
 
 extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @param x Pointer to a \c LogicalVector or an \c IntVector (i.e. an
- *          R logical or integer vector).
+ * @param x Pointer to a \c ComplexVector (i.e. an R complex vector).
  *          An error is generated if \a x is not pointer to a \c
- *          LogicalVector or an \c IntVector .
+ *          ComplexVector .
  * @return Pointer to element 0 of \a x .
  */
-int *LOGICAL(SEXP x);
+#ifndef __cplusplus
+Rcomplex *COMPLEX(SEXP x);
+#else
+inline Rcomplex *COMPLEX(SEXP x)
+{
+    return &(*CXXR::SEXP_downcast<CXXR::ComplexVector>(x))[0];
+}
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LOGICALVECTOR_H */
+#endif /* COMPLEXVECTOR_H */

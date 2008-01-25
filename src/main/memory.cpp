@@ -51,6 +51,7 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ComplexVector.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/LogicalVector.h"
 #include "CXXR/RealVector.h"
@@ -694,16 +695,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case REALSXP:
 	return new RealVector(length);
     case CPLXSXP:
-	if (length <= 0)
-	    actual_size = size = 0;
-	else {
-	    if (length > int(R_SIZE_T_MAX / sizeof(Rcomplex)))
-		errorcall(R_GlobalContext->call,
-			  _("cannot allocate vector of length %d"), length);
-	    size = COMPLEX2VEC(length);
-	    actual_size = length * sizeof(Rcomplex);
-	}
-	break;
+	return new ComplexVector(length);
     case STRSXP:
     case EXPRSXP:
     case VECSXP:
@@ -1072,15 +1064,6 @@ Rbyte *(RAW)(SEXP x) {
 	      "RAW", "raw", type2char(TYPEOF(x)));
 #endif
     return reinterpret_cast<Rbyte *>(DATAPTR(x)); 
-}
-
-Rcomplex *(COMPLEX)(SEXP x) { 
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != CPLXSXP)
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "COMPLEX", "complex", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<Rcomplex *>(DATAPTR(x)); 
 }
 
 SEXP *(VECTOR_PTR)(SEXP x)

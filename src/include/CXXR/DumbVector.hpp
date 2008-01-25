@@ -53,7 +53,7 @@ namespace CXXR {
 	{
 	    if (sz > 1) allocData(sz);
 #if VALGRIND_LEVEL >= 1
-	    else VALGRIND_MAKE_MEM_UNDEFINED(m_singleton, sizeof(T));
+	    else VALGRIND_MAKE_MEM_UNDEFINED(&m_singleton, sizeof(T));
 #endif
 	}
 
