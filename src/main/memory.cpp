@@ -681,9 +681,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case NILSXP:
 	return R_NilValue;
     case RAWSXP:
-	size = BYTE2VEC(length);
-	actual_size=length;
-	break;
+	return new RawVector(length);
     case CHARSXP:
 	size = BYTE2VEC(length + 1);
 	actual_size=length+1;
@@ -1055,15 +1053,6 @@ SEXP (VECTOR_ELT)(SEXP x, int i) {
 	      "VECTOR_ELT", "list", type2char(TYPEOF(x)));
 #endif
     return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
-}
-
-Rbyte *(RAW)(SEXP x) { 
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != RAWSXP) 
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "RAW", "raw", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<Rbyte *>(DATAPTR(x)); 
 }
 
 SEXP *(VECTOR_PTR)(SEXP x)

@@ -16,7 +16,8 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 ## API per se. 
 CXXR_HEADERS = \
   Closure.h ComplexVector.h Environment.h GCRoot.h IntVector.h \
-  LogicalVector.h PairList.h Promise.h RAllocStack.h RObject.h RealVector.h \
+  LogicalVector.h PairList.h Promise.h \
+  RAllocStack.h RObject.h RawVector.h RealVector.h \
   Symbol.h VectorBase.h WeakRef.h
 
 DISTFILES = Makefile.in $(CXXR_HEADERS)

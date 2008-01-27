@@ -59,6 +59,7 @@
 #include "CXXR/LogicalVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
+#include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/WeakRef.h"

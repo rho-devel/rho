@@ -29,12 +29,6 @@
 #include "CXXR/RObject.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef unsigned char Rbyte;
-
-#ifdef __cplusplus
 
 typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
 
@@ -66,6 +60,8 @@ namespace CXXR {
 // 2007/08/07 arr Get rid of this macro once it is no longer needed
 // within the inline functions below.
 inline void* DATAPTR(SEXP x) {return x->m_data;}
+
+extern "C" {
 
 #endif /* __cplusplus */
 
@@ -138,12 +134,6 @@ inline void SET_TRUELENGTH(SEXP x, int v)
  * @return Pointer to \a x 's data, interpreted as character data.
  */
 const char *R_CHAR(SEXP x);
-
-/**
- * @param x Pointer to a \c VectorBase .
- * @return Pointer to \a x 's data, interpreted as raw bytes.
- */
-Rbyte *RAW(SEXP x);
 
 /**
  * Extract element of character string.

@@ -24,7 +24,8 @@ SOURCES_CXX = \
         IntVector.cpp InternalFunction.cpp \
 	LogicalVector.cpp \
         PairList.cpp Promise.cpp \
-        RAllocStack.cpp RObject.cpp Rdynload.cpp RealVector.cpp Renviron.cpp \
+        RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
+        Renviron.cpp \
         Symbol.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

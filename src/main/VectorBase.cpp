@@ -19,7 +19,7 @@
 
 /** @file VectorBase.cpp
  *
- * Implementation of class RVectorBase and related functions.
+ * Implementation of class VectorBase and related functions.
  */
 
 #include "CXXR/VectorBase.h"
