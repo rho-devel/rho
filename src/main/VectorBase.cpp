@@ -28,18 +28,12 @@ namespace {
     int (*lengthptr)(SEXP x) = LENGTH;
     int (*hashashptr)(SEXP x) = HASHASH;
     int (*hashvalueptr)(SEXP x) = HASHVALUE;
-    Rboolean (*islatin1ptr)(const SEXP x) = IS_LATIN1;
-    Rboolean (*isutf8ptr)(const SEXP x) = IS_UTF8;
     void (*sethashashptr)(SEXP x, int v) = SET_HASHASH;
     void (*sethashvalueptr)(SEXP x, int v) = SET_HASHVALUE;
-    void (*setlatin1ptr)(SEXP x) = SET_LATIN1;
     void (*setlengthptr)(SEXP x, int v) = SETLENGTH;
     void (*settruelengthptr)(SEXP x, int v) = SET_TRUELENGTH;
-    void (*setutf8ptr)(SEXP x) = SET_UTF8;
     SEXP* (*stringptrptr)(SEXP x) = STRING_PTR;
     int (*truelengthptr)(SEXP x) = TRUELENGTH;
-    void (*unsetlatin1ptr)(SEXP x) = UNSET_LATIN1;
-    void (*unsetutf8ptr)(SEXP x) = UNSET_UTF8;
 }
 
 // Rf_allocVector is still in memory.cpp (for the time being).

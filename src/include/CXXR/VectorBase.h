@@ -130,12 +130,6 @@ inline void SET_TRUELENGTH(SEXP x, int v)
 #endif
 
 /**
- * @param x Pointer to a \c VectorBase .
- * @return Pointer to \a x 's data, interpreted as character data.
- */
-const char *R_CHAR(SEXP x);
-
-/**
  * Extract element of character string.
  * @param x Pointer to a \c VectorBase representing a character string.
  * @param i Index of the required element
@@ -184,76 +178,6 @@ inline SEXP *STRING_PTR(SEXP x)  {return reinterpret_cast<SEXP *>(DATAPTR(x));}
  * @return Pointer to the start of \a x 's data, thus interpreted.
  */
 SEXP *(VECTOR_PTR)(SEXP x);
-
-# define LATIN1_MASK (1<<2)
-
-/**
- * @param x Pointer to a \c VectorBase representing a character string.
- * @return true iff \a x is marked as having LATIN1 encoding.
- */
-#ifndef __cplusplus
-Rboolean IS_LATIN1(const SEXP x);
-#else
-inline Rboolean IS_LATIN1(const SEXP x)
-{
-    return Rboolean(x->m_gpbits & LATIN1_MASK);
-}
-#endif
-
-/**
- * @brief Set LATIN1 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
-#ifndef __cplusplus
-void SET_LATIN1(SEXP x);
-#else
-inline void SET_LATIN1(SEXP x) {x->m_gpbits |= LATIN1_MASK;}
-#endif
-
-/**
- * @brief Unset LATIN1 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
-#ifndef __cplusplus
-void UNSET_LATIN1(SEXP x);
-#else
-inline void UNSET_LATIN1(SEXP x) {x->m_gpbits &= ~LATIN1_MASK;}
-#endif
-
-# define UTF8_MASK (1<<3)
-
-/**
- * @param x Pointer to a \c VectorBase representing a character string.
- * @return true iff \a x is marked as having UTF8 encoding.
- */
-#ifndef __cplusplus
-Rboolean IS_UTF8(const SEXP x);
-#else
-inline Rboolean IS_UTF8(const SEXP x)
-{
-    return Rboolean(x->m_gpbits & UTF8_MASK);
-}
-#endif
-
-/**
- * @brief Set UTF8 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
-#ifndef __cplusplus
-void SET_UTF8(SEXP x);
-#else
-inline void SET_UTF8(SEXP x) {x->m_gpbits |= UTF8_MASK;}
-#endif
-
-/**
- * @brief Unset UTF8 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
-#ifndef __cplusplus
-void UNSET_UTF8(SEXP x);
-#else
-inline void UNSET_UTF8(SEXP x) {x->m_gpbits &= ~UTF8_MASK;}
-#endif
 
 /* Hashing Functions */
 

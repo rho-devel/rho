@@ -54,7 +54,9 @@
 #include "CXXR/ComplexVector.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/LogicalVector.h"
+#include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/String.h"
 #include "CXXR/WeakRef.h"
 
 using namespace std;
@@ -683,9 +685,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case RAWSXP:
 	return new RawVector(length);
     case CHARSXP:
-	size = BYTE2VEC(length + 1);
-	actual_size=length+1;
-	break;
+	return new String(length);
     case LGLSXP:
 	return new LogicalVector(length);
     case INTSXP:
@@ -783,16 +783,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	for (i = 0; i < length; i++){
 	    data[i] = R_BlankString;
 	}
-    }
-    else if (type == CHARSXP){
-#if VALGRIND_LEVEL > 0
- 	VALGRIND_MAKE_WRITABLE(memCHAR(s), actual_size);
-#endif
-	char* cp = CHAR_RW(s);
-	char c = cp[length];
-	cp[length] = 0;
-	c = cp[length];
-	//	CHAR_RW(s)[length] = 0;
     }
     return s;
 }
@@ -1017,15 +1007,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 }
 
 /* Vector Accessors */
-
-const char *(R_CHAR)(SEXP x) {
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != CHARSXP) 
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "CHAR", "CHARSXP", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<const char*>(DATAPTR(x));
-}
 
 SEXP (STRING_ELT)(SEXP x, int i) {
 #ifdef USE_TYPE_CHECKING

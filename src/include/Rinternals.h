@@ -61,6 +61,7 @@
 #include "CXXR/Promise.h"
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/String.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/WeakRef.h"
 
@@ -537,10 +538,6 @@ FILE *R_popen(const char *, const char *);
 #endif
 int R_system(const char *);
 
-/* now a macro */
-#define allocString(n)		Rf_allocVector(CHARSXP, n)
-#define Rf_allocString(n)      	Rf_allocVector(CHARSXP, n)
-
 /* These Rf_ macros are retained for backwards compatibility, but
  * their use is deprecated within CXXR.  In particular header files
  * should always use the Rf_ prefix explicitly, and not rely on these
@@ -555,6 +552,7 @@ int R_system(const char *);
 #define allocMatrix		Rf_allocMatrix
 #define allocS4Object		Rf_allocS4Object
 #define allocSExp		Rf_allocSExp
+#define allocString             Rf_allocString
 #define allocVector		Rf_allocVector
 #define applyClosure		Rf_applyClosure
 #define arraySubscript		Rf_arraySubscript
