@@ -65,6 +65,11 @@ namespace CXXR {
 	    return m_data[index];
 	}
 
+	const char* c_str() const
+	{
+	    return m_data;
+	}
+
 	/**
 	 * @return the name by which this type is known in R.
 	 */
@@ -129,7 +134,7 @@ const char *R_CHAR(const SEXP x);
 #else
 inline const char *R_CHAR(const SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::String>(x))[0];
+    return CXXR::SEXP_downcast<CXXR::String>(x)->c_str();
 }
 #endif
 
