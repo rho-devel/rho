@@ -30,10 +30,14 @@ using namespace std;
 using namespace CXXR;
 
 namespace {
+    int (*hashashptr)(SEXP x) = HASHASH;
+    int (*hashvalueptr)(SEXP x) = HASHVALUE;
     Rboolean (*islatin1ptr)(const SEXP x) = IS_LATIN1;
     Rboolean (*isutf8ptr)(const SEXP x) = IS_UTF8;
     const char* (*R_CHARp)(SEXP x) = R_CHAR;
     SEXP (*Rf_allocStringp)(R_len_t) = Rf_allocString;
+    void (*sethashashptr)(SEXP x, int v) = SET_HASHASH;
+    void (*sethashvalueptr)(SEXP x, int v) = SET_HASHVALUE;
     void (*setlatin1ptr)(SEXP x) = SET_LATIN1;
     void (*setutf8ptr)(SEXP x) = SET_UTF8;
     void (*unsetlatin1ptr)(SEXP x) = UNSET_LATIN1;

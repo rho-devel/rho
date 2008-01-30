@@ -225,6 +225,32 @@ inline SEXP Rf_allocString(R_len_t length)
 }
 #endif
 
+/* Hashing Functions */
+
+#ifndef __cplusplus
+int HASHASH(SEXP x);
+#else
+inline int HASHASH(SEXP x) {return x->m_gpbits;}
+#endif
+
+#ifndef __cplusplus
+int HASHVALUE(SEXP x);
+#else
+inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
+#endif
+
+#ifndef __cplusplus
+void SET_HASHASH(SEXP x, int v);
+#else
+inline void SET_HASHASH(SEXP x, int v) {x->m_gpbits = v;}
+#endif
+
+#ifndef __cplusplus
+void SET_HASHVALUE(SEXP x, int v);
+#else
+inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
+#endif
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

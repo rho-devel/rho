@@ -26,10 +26,6 @@
 
 namespace {
     int (*lengthptr)(SEXP x) = LENGTH;
-    int (*hashashptr)(SEXP x) = HASHASH;
-    int (*hashvalueptr)(SEXP x) = HASHVALUE;
-    void (*sethashashptr)(SEXP x, int v) = SET_HASHASH;
-    void (*sethashvalueptr)(SEXP x, int v) = SET_HASHVALUE;
     void (*setlengthptr)(SEXP x, int v) = SETLENGTH;
     void (*settruelengthptr)(SEXP x, int v) = SET_TRUELENGTH;
     SEXP* (*stringptrptr)(SEXP x) = STRING_PTR;
