@@ -39,7 +39,7 @@ into the implementation of the interpreter. In particular:</p>
     in CXXR: it simply returns a vector of zeroes.</li>
   <li>The levels that can be specified with the configuration option
     <code>--with-valgrind-instrumentation</code> have slightly different
-    meanings in CXXR:
+    meanings in CXXR: 
     <ol>
       <li>No valgrind-related instrumentation is added to the code.</li>
       <li>Level 1 marks as uninitialized newly-created R data vectors and
@@ -111,6 +111,21 @@ crime' for debugging.</p>
   <li><code>vmaxget</code> now returns an <code>unsigned int</code> rather
     than <code>void*</code>. Similarly, <code>vmaxset</code> now takes an
     <code>unsigned int</code> as its argument.</li>
+  <li>In CR, for historical reasons, <code>R_alloc</code> and kindred
+    functions always return a memory block containing at least one more byte
+    than the number requested. This cannot be relied upon in CXXR. To
+    diagnose problems arising from this, rebuild the program with
+    <code>VALGRIND_LEVEL</code> set to 3. Then an extra byte
+    <code>will</code> be allocated (not just for R_alloc but for all memory
+    allocations <em>via</em> <code>CXXR::Heap</code>), but if the program is
+    run under valgrind, any attempt to access this extra byte will be flagged
+    as an error.</li>
+  <li>In CXXR, <code>VECTOR_ELT</code> and <code>SET_VECTOR_ELT</code> can
+    only be applied to <code>SEXP</code>s of type <code>VECSXP</code>
+    (implemented internally using class <code>CXXR::ListVector</code>). In
+    particular, these functions cannot be applied to <code>EXPRSXP</code>s,
+    for which the new functions <code>XVECTOR_ELT</code> and
+    <code>SET_XVECTOR_ELT</code> should be used instead..</li>
 </ul>
 
 <h3>Suggested changes:</h3>
@@ -154,8 +169,8 @@ href="mailto:A.R.Runnalls@kent.ac.uk">A.R.Runnalls@kent.ac.uk</a>.</p>
 
 <h2>Porting to Other Platforms</h2>
 
-<p>The following are areas where portability has been traded for efficiency
-and/or clarity in new code generated for CXXR. There may be other
+<p>The following are areas where portability has been traded for efficiency,
+simplicity and/or clarity in new code generated for CXXR. There may be other
 unportabilities in code inherited from CR.</p>
 <ul>
   <li>Constructors of class <code>GCNode</code>, and classes derived from it,
@@ -174,6 +189,15 @@ unportabilities in code inherited from CR.</p>
     and ISO14882:2003, though it has been identified as a <a
     href="http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#250">defect</a>
     in the standard.</li>
+  <li>In places the CXXR makefiles assume that the following features of GNU
+    <code>make</code> are available:
+    <ul>
+      <li>Appending to <code>make</code> variables using <code>+=</code>.</li>
+      <li>Including other files into a makefile using the
+        <code>include</code> directive; the included files are remade by make
+        automatically if necessary.</li>
+    </ul>
+  </li>
 </ul>
 </body>
 </html>

@@ -62,7 +62,7 @@ namespace CXXR {
 	 * recommended to create the GCEdge will a null 'to' pointer,
 	 * and then to redirect it to the desired target.
 	 */
-	GCEdge(GCNode* /*from*/, T to)
+	GCEdge(GCNode* /*from*/, T to = 0)
 	    : m_to(to)
 	{}
 

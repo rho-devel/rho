@@ -1,6 +1,6 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2007  Andrew Runnalls
+ *  Copyright (C) 2007, 2008  Andrew Runnalls
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +13,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 #ifndef FLAGWORD_HPP
@@ -24,11 +24,12 @@ namespace CXXR {
     /** Unsigned short interpreted as an array of booleans.
      *
      * This class performs a similar function, and is implemented in a
-     * similar way, to <tt>std::bitset<16></tt>.  However, its bits are
-     * contained as a public data member, and within \c RObject the
-     * member \c m_gpbits is a reference to this data member.  In due
-     * course the use of \c m_gpbits will be eliminated from CXXR, and
-     * then FlagWord itself will be replaced by <tt>bitset<16></tt>.
+     * similar way, to <tt>std::bitset<16></tt>.  However, its bits
+     * are contained as a public data member, and within \c RObject
+     * the member \c m_gpbits is a reference to this data member.  In
+     * due course the use of \c m_gpbits will probably be eliminated
+     * from CXXR, and then FlagWord itself will be replaced by
+     * <tt>bitset<16></tt>.
      */
     class FlagWord {
     public:
@@ -47,11 +48,19 @@ namespace CXXR {
 	 */
 	class BitProxy {
 	public:
+	    /** Copy value of proxied bit from another proxied bit.
+	     * @param rhs Proxied bit whose value is to be copied.
+	     * @return Reference to this BitProxy.
+	     */
 	    BitProxy& operator=(const BitProxy& rhs)
 	    {
 		return operator=(static_cast<const bool>(rhs));
 	    }
 
+	    /** Assign value of proxied bit.
+	     * @param rhs The required new value of the proxied bit.
+	     * @return Reference to this BitProxy.
+	     */
 	    BitProxy& operator=(bool rhs)
 	    {
 		if (rhs)
@@ -61,6 +70,9 @@ namespace CXXR {
 		return *this;
 	    }
 
+	    /**
+	     * @return Value of proxied bit.
+	     */
 	    operator const bool() const {return *m_flags & m_mask;}
 	private:
 	    unsigned short* m_flags;

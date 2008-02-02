@@ -138,28 +138,12 @@ inline void SET_TRUELENGTH(SEXP x, int v)
 SEXP STRING_ELT(SEXP x, int i);
 
 /**
- * Extract element of vector.
- * @param x Pointer to a \c VectorBase .
- * @param i Index of the required element
- * @return Pointer to extracted \i 'th element.
- */
-SEXP VECTOR_ELT(SEXP x, int i);
-
-/**
  * Set element of character string.
  * @param x Pointer to a \c VectorBase representing a character string.
  * @param i Index of the required element
  * @param v Pointer to \c RObject representing the new value.
  */
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
-
-/**
- * Set element of vector.
- * @param x Pointer to a \c VectorBase .
- * @param i Index of the required element
- * @param v Pointer to \c RObject representing the new value.
- */
-SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
 
 /**
  * @param x Pointer to a \c VectorBase representing a vector of string
@@ -171,13 +155,6 @@ SEXP *STRING_PTR(SEXP x);
 #else
 inline SEXP *STRING_PTR(SEXP x)  {return reinterpret_cast<SEXP *>(DATAPTR(x));}
 #endif
-
-/**
- * @param x Pointer to a \c VectorBase representing a vector of vector
- *          objects.
- * @return Pointer to the start of \a x 's data, thus interpreted.
- */
-SEXP *(VECTOR_PTR)(SEXP x);
 
 /**
  * @brief Create a vector object.

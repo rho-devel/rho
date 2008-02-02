@@ -635,7 +635,7 @@ static void initialize_rlcompletion(void)
 	    cmdexpr = PROTECT(R_ParseVector(cmdSexp, -1, &status, R_NilValue));
 	    if(status == PARSE_OK) {
 		for(i = 0; i < length(cmdexpr); i++)
-		    eval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv);
+		    eval(XVECTOR_ELT(cmdexpr, i), R_GlobalEnv);
 	    }
 	    UNPROTECT(2);
 	    if(findVarInFrame(R_NamespaceRegistry, install("rcompgen"))

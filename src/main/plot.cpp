@@ -1328,7 +1328,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 		/* Clip tick labels to user coordinates. */
 		if (x > low && x < high) {
 		    if (isExpression(lab)) {
-			GMMathText(VECTOR_ELT(lab, ind[i]), side,
+			GMMathText(XVECTOR_ELT(lab, ind[i]), side,
 				   axis_lab, 0, x, Rf_gpptr(dd)->las,
 				   padjval, dd);
 		    }
@@ -2272,7 +2272,7 @@ SEXP attribute_hidden do_text(SEXP call, SEXP op, SEXP args, SEXP env)
 			   INTEGER(vfont)[0], INTEGER(vfont)[1],
 			   adjx, adjy, Rf_gpptr(dd)->srt, dd);
 	    } else if (isExpression(txt)) {
-		GMathText(xx, yy, INCHES, VECTOR_ELT(txt, i % ntxt),
+		GMathText(xx, yy, INCHES, XVECTOR_ELT(txt, i % ntxt),
 			  adjx, adjy, Rf_gpptr(dd)->srt, dd);
 	    } else {
 		string = STRING_ELT(txt, i % ntxt);
@@ -2554,7 +2554,7 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
 			       outerval, dd);
 
 	if (isExpression(text))
-	    GMMathText(VECTOR_ELT(text, i%ntext),
+	    GMMathText(XVECTOR_ELT(text, i%ntext),
 		       sideval, lineval, outerval, atval, Rf_gpptr(dd)->las,
 		       padjval, dd);
 	else {
@@ -2673,7 +2673,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	    where = MAR3;
 	}
 	if (isExpression(Main)) {
-	    GMathText(hpos, vpos, where, VECTOR_ELT(Main, 0),
+	    GMathText(hpos, vpos, where, XVECTOR_ELT(Main, 0),
 		      adj, 0.5, 0.0, dd);
 	}
 	else {
@@ -2747,7 +2747,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	    where = 0;
 	}
 	if (isExpression(xlab))
-	    GMMathText(VECTOR_ELT(xlab, 0), 1, vpos, where,
+	    GMMathText(XVECTOR_ELT(xlab, 0), 1, vpos, where,
 		       hpos, 0, 0.0, dd);
 	else {
 	    n = length(xlab);
@@ -2783,7 +2783,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	    where = 0;
 	}
 	if (isExpression(ylab))
-	    GMMathText(VECTOR_ELT(ylab, 0), 2, vpos, where,
+	    GMMathText(XVECTOR_ELT(ylab, 0), 2, vpos, where,
 		       hpos, 0, 0.0, dd);
 	else {
 	    n = length(ylab);
@@ -3409,7 +3409,7 @@ SEXP attribute_hidden do_identify(SEXP call, SEXP op, SEXP args, SEXP env)
     Rf_gpptr(dd)->cex = cex * Rf_gpptr(dd)->cexbase;			\
     for (i = 0; i < n; i++)						\
 	if (isExpression(str))						\
-	    REAL(ans)[i] = GExpression ## KIND(VECTOR_ELT(str, i),	\
+	    REAL(ans)[i] = GExpression ## KIND(XVECTOR_ELT(str, i),	\
 					     GMapUnits(units), dd);	\
 	else {								\
 	    ch = STRING_ELT(str, i);					\

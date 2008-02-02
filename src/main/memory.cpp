@@ -18,15 +18,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/*
- *	This code implements a non-moving generational collector
- *      with two or three generations.
- *
- *	Memory allocated by R_alloc is maintained in a stack.  Code
- *	that R_allocs memory must use vmaxget and vmaxset to obtain
- *	and reset the stack pointer.
- */
-
 /* <UTF8> char here is handled as a whole */
 
 /** @file memory.cpp
@@ -52,7 +43,9 @@
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/ComplexVector.h"
+#include "CXXR/ExpressionVector.h"
 #include "CXXR/IntVector.h"
+#include "CXXR/ListVector.h"
 #include "CXXR/LogicalVector.h"
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
@@ -695,8 +688,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case CPLXSXP:
 	return new ComplexVector(length);
     case STRSXP:
-    case EXPRSXP:
-    case VECSXP:
 	if (length <= 0)
 	    actual_size = size = 0;
 	else {
@@ -707,6 +698,10 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	    actual_size = length * sizeof(SEXP);
 	}
 	break;
+    case EXPRSXP:
+	return new ExpressionVector(length);
+    case VECSXP:
+	return new ListVector(length);
     case LANGSXP:
 	if(length == 0) return R_NilValue;
 	s = allocList(length);
@@ -767,15 +762,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     /* that an uninitialised string vector is marked */
     /* Direct assignment is OK since the node was just allocated and */
     /* so is at least as new as R_NilValue and R_BlankString */
-    if (type == EXPRSXP || type == VECSXP) {
-	SEXP *data = STRING_PTR(s);
-#if VALGRIND_LEVEL > 1
-	VALGRIND_MAKE_READABLE(STRING_PTR(s), actual_size);
-#endif
-	for (i = 0; i < length; i++)
-	    data[i] = R_NilValue;
-    }
-    else if(type == STRSXP) {
+    if (type == STRSXP) {
 	SEXP *data = STRING_PTR(s);
 #if VALGRIND_LEVEL > 1
 	VALGRIND_MAKE_READABLE(STRING_PTR(s), actual_size);
@@ -1017,31 +1004,6 @@ SEXP (STRING_ELT)(SEXP x, int i) {
     return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
 }
 
-SEXP (VECTOR_ELT)(SEXP x, int i) {
-#ifdef USE_TYPE_CHECKING_STRICT
-    /* We need to allow vector-like types here */
-    if(TYPEOF(x) != VECSXP && 
-       TYPEOF(x) != EXPRSXP && 
-       TYPEOF(x) != WEAKREFSXP)
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "VECTOR_ELT", "list", type2char(TYPEOF(x)));
-#elif defined(USE_TYPE_CHECKING)
-    /* also allow STRSXP */
-    if(TYPEOF(x) != VECSXP && TYPEOF(x) != STRSXP &&
-       TYPEOF(x) != EXPRSXP && 
-       TYPEOF(x) != WEAKREFSXP)
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "VECTOR_ELT", "list", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
-}
-
-SEXP *(VECTOR_PTR)(SEXP x)
-{
-  error(_("not safe to return vector pointer"));
-  return NULL;
-}
-
 void (SET_STRING_ELT)(SEXP x, int i, SEXP v) { 
 #ifdef USE_TYPE_CHECKING
     if(TYPEOF(x) != STRSXP)
@@ -1053,27 +1015,6 @@ void (SET_STRING_ELT)(SEXP x, int i, SEXP v) {
 #endif
     CHECK_OLD_TO_NEW(x, v);
     reinterpret_cast<SEXP *>(DATAPTR(x))[i] = v; 
-}
-
-SEXP (SET_VECTOR_ELT)(SEXP x, int i, SEXP v) { 
-#ifdef USE_TYPE_CHECKING_STRICT
-    /*  we need to allow vector-like types here */
-    if(TYPEOF(x) != VECSXP &&
-       TYPEOF(x) != EXPRSXP &&
-       TYPEOF(x) != WEAKREFSXP) {
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "SET_VECTOR_ELT", "list", type2char(TYPEOF(x)));
-    }
-#elif defined(USE_TYPE_CHECKING)
-    /* also allow STRSXP */
-    if(TYPEOF(x) != VECSXP && TYPEOF(x) != STRSXP &&
-       TYPEOF(x) != EXPRSXP && TYPEOF(x) != WEAKREFSXP) {
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "SET_VECTOR_ELT", "list", type2char(TYPEOF(x)));
-    }
-#endif
-    CHECK_OLD_TO_NEW(x, v); 
-    return reinterpret_cast<SEXP *>(DATAPTR(x))[i] = v; 
 }
 
 

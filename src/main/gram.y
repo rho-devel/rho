@@ -1341,7 +1341,7 @@ finish:
     t = CDR(t);
     rval = allocVector(EXPRSXP, length(t));
     for (n = 0 ; n < LENGTH(rval) ; n++, t = CDR(t))
-	SET_VECTOR_ELT(rval, n, CAR(t));
+	SET_XVECTOR_ELT(rval, n, CAR(t));
     if (SrcFile) {
     	rval = attachSrcrefs(rval, SrcFile);
         SrcFile = NULL;    

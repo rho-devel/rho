@@ -15,8 +15,9 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 ## Partially included by the API (1) headers in .., but not part of the
 ## API per se. 
 CXXR_HEADERS = \
-  Closure.h ComplexVector.h Environment.h GCRoot.h IntVector.h \
-  LogicalVector.h PairList.h Promise.h \
+  Closure.h ComplexVector.h Environment.h ExpressionVector.h GCRoot.h \
+  IntVector.h \
+  ListVector.h LogicalVector.h PairList.h Promise.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   String.h Symbol.h VectorBase.h WeakRef.h
 

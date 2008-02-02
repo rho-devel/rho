@@ -199,10 +199,19 @@ static SEXP duplicate1(SEXP s)
         return s;
 	break;
     case EXPRSXP:
+	n = LENGTH(s);
+	PROTECT(s);
+	PROTECT(t = allocVector(EXPRSXP, n));
+	for(i = 0 ; i < n ; i++)
+	    SET_XVECTOR_ELT(t, i, duplicate1(XVECTOR_ELT(s, i)));
+	DUPLICATE_ATTRIB(t, s);
+	SET_TRUELENGTH(t, TRUELENGTH(s));
+	UNPROTECT(2);
+	break;
     case VECSXP:
 	n = LENGTH(s);
 	PROTECT(s);
-	PROTECT(t = allocVector(TYPEOF(s), n));
+	PROTECT(t = allocVector(VECSXP, n));
 	for(i = 0 ; i < n ; i++)
 	    SET_VECTOR_ELT(t, i, duplicate1(VECTOR_ELT(s, i)));
 	DUPLICATE_ATTRIB(t, s);

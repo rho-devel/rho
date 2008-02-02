@@ -764,7 +764,7 @@ static void jump_to_top_ex(Rboolean traceback,
 		    {
 			int i, n = LENGTH(s);
 			for (i = 0 ; i < n ; i++)
-			    eval(VECTOR_ELT(s, i), R_GlobalEnv);
+			    eval(XVECTOR_ELT(s, i), R_GlobalEnv);
 		    }
 		inError = oldInError;
 	    }

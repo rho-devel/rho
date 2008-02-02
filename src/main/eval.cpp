@@ -1078,6 +1078,10 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		setVar(sym, v, rho);
 		break;
 	    case EXPRSXP:
+		/* make sure loop variable is a copy if needed */
+		if(nm > 0) SET_NAMED(XVECTOR_ELT(val, i), 2);
+		setVar(sym, XVECTOR_ELT(val, i), rho);
+		break;
 	    case VECSXP:
 		/* make sure loop variable is a copy if needed */
 		if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
@@ -1797,7 +1801,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
 	try {
 	    for (i = 0 ; i < n ; i++)
-		tmp = eval(VECTOR_ELT(expr, i), env);
+		tmp = eval(XVECTOR_ELT(expr, i), env);
 	}
 	catch (JMPException& e) {
 	    if (e.context != &cntxt)

@@ -32,9 +32,11 @@
 #define imax2(x, y) ((x < y) ? y : x)
 
 #include "RBufferUtils.h"
-static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
-#define LIST_ASSIGN(x) {SET_VECTOR_ELT(data->ans_ptr, data->ans_length, x); data->ans_length++;}
+using namespace std;
+using namespace CXXR;
+
+static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
 static SEXP cbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
 static SEXP rbind(SEXP, SEXP, SEXPTYPE, SEXP, int);
@@ -146,6 +148,18 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data)
 /* The following functions are used to coerce arguments to */
 /* the appropriate type for inclusion in the returned value. */
 
+namespace {
+    inline void LIST_ASSIGN(struct BindData* data, SEXP x)
+    {
+	if (ExpressionVector* ev
+	    = dynamic_cast<ExpressionVector*>(data->ans_ptr))
+	    (*ev)[data->ans_length] = x;
+	else
+	    SET_VECTOR_ELT(data->ans_ptr, data->ans_length, x);
+	data->ans_length++;
+    }
+}
+
 static void
 ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 {
@@ -156,37 +170,46 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	break;
     case LGLSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarLogical(LOGICAL(x)[i]));
+	    LIST_ASSIGN(data, ScalarLogical(LOGICAL(x)[i]));
 	break;
     case RAWSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarRaw(RAW(x)[i]));
+	    LIST_ASSIGN(data, ScalarRaw(RAW(x)[i]));
 	break;
     case INTSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarInteger(INTEGER(x)[i]));
+	    LIST_ASSIGN(data, ScalarInteger(INTEGER(x)[i]));
 	break;
     case REALSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarReal(REAL(x)[i]));
+	    LIST_ASSIGN(data, ScalarReal(REAL(x)[i]));
 	break;
     case CPLXSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarComplex(COMPLEX(x)[i]));
+	    LIST_ASSIGN(data, ScalarComplex(COMPLEX(x)[i]));
 	break;
     case STRSXP:
 	for (i = 0; i < LENGTH(x); i++)
-	    LIST_ASSIGN(ScalarString(STRING_ELT(x, i)));
+	    LIST_ASSIGN(data, ScalarString(STRING_ELT(x, i)));
 	break;
     case VECSXP:
-    case EXPRSXP:
 	if (recurse) {
 	    for (i = 0; i < LENGTH(x); i++)
 		ListAnswer(VECTOR_ELT(x, i), recurse, data, call);
 	}
 	else {
 	    for (i = 0; i < LENGTH(x); i++)
-		LIST_ASSIGN(duplicate(VECTOR_ELT(x, i)));
+		LIST_ASSIGN(data, duplicate(VECTOR_ELT(x, i)));
+	}
+	break;
+    case EXPRSXP:
+	if (recurse) {
+	    for (i = 0; i < LENGTH(x); i++)
+		ListAnswer(XVECTOR_ELT(x, i), recurse, data, call);
+	}
+	else {
+	    for (i = 0; i < LENGTH(x); i++)
+		LIST_ASSIGN(data, duplicate(XVECTOR_ELT(x, i)));
 	}
 	break;
     case LISTSXP:
@@ -198,12 +221,12 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else
 	    while (x != R_NilValue) {
-		LIST_ASSIGN(duplicate(CAR(x)));
+		LIST_ASSIGN(data, duplicate(CAR(x)));
 		x = CDR(x);
 	    }
 	break;
     default:
-	LIST_ASSIGN(duplicate(x));
+	LIST_ASSIGN(data, duplicate(x));
 	break;
     }
 }

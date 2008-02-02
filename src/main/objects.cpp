@@ -269,7 +269,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     PROTECT(klass = R_data_class2(obj));
     nclass = length(klass);
     for (i = 0; i < nclass; i++) {
-	const char *ss = translateChar(STRING_ELT(klass, i));
+	//	const char *ss = translateChar(STRING_ELT(klass, i));
+	SEXP se = STRING_ELT(klass, i);
+	const char *ss = translateChar(se);
 	if(strlen(generic) + strlen(ss) + 2 > 512)
 	    error(_("class name too long in '%s'"), generic);
 	sprintf(buf, "%s.%s", generic, ss);

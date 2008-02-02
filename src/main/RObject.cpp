@@ -81,8 +81,6 @@ void RObject::visitChildren(const_visitor* v) const
     if (m_attrib) m_attrib->conductVisitor(v);
     switch (sexptype()) {
     case STRSXP:
-    case EXPRSXP:
-    case VECSXP:
 	for (int i = 0; i < length(); i++) {
 	    const GCNode* node = reinterpret_cast<SEXP*>(m_data)[i];
 	    if (node) node->conductVisitor(v);

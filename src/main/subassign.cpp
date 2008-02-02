@@ -142,6 +142,11 @@ static SEXP EnlargeVector(SEXP x, R_len_t newlen)
 	    SET_STRING_ELT(newx, i, NA_STRING); /* was R_BlankString  < 1.6.0 */
 	break;
     case EXPRSXP:
+	for (i = 0; i < len; i++)
+	    SET_XVECTOR_ELT(newx, i, XVECTOR_ELT(x, i));
+	for (i = len; i < newlen; i++)
+	    SET_XVECTOR_ELT(newx, i, R_NilValue);
+	break;
     case VECSXP:
 	for (i = 0; i < len; i++)
 	    SET_VECTOR_ELT(newx, i, VECTOR_ELT(x, i));
@@ -616,13 +621,22 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* case 2016:  expression <- character  */
     case 2019:	/* expression <- vector, needed if we have promoted a
 		   RHS  to a list */
+
+	for (i = 0; i < n; i++) {
+	    ii = INTEGER(indx)[i];
+	    if (ii == NA_INTEGER) continue;
+	    ii = ii - 1;
+	    SET_XVECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
+	}
+	break;
+
     case 2020:	/* expression <- expression */
 
 	for (i = 0; i < n; i++) {
 	    ii = INTEGER(indx)[i];
 	    if (ii == NA_INTEGER) continue;
 	    ii = ii - 1;
-	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
+	    SET_XVECTOR_ELT(x, ii, XVECTOR_ELT(y, i % ny));
 	}
 	break;
 

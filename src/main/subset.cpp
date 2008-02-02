@@ -41,6 +41,9 @@
 #include <stdexcept>
 #include "Defn.h"
 
+using namespace std;
+using namespace CXXR;
+
 /* ExtractSubset does the transfer of elements from "x" to "result" */
 /* according to the integer subscripts given in "indx". */
 
@@ -95,11 +98,16 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 		SET_STRING_ELT(result, i, NA_STRING);
 	    break;
 	case VECSXP:
-	case EXPRSXP:
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
 		SET_VECTOR_ELT(result, i, VECTOR_ELT(x, ii));
 	    else
 		SET_VECTOR_ELT(result, i, R_NilValue);
+	    break;
+	case EXPRSXP:
+	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
+		SET_XVECTOR_ELT(result, i, XVECTOR_ELT(x, ii));
+	    else
+		SET_XVECTOR_ELT(result, i, R_NilValue);
 	    break;
 	case LISTSXP:
 	    /* cannot happen: pairlists are coerced to lists */
@@ -884,7 +892,9 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_NAMED(ans, NAMED(x));
     } else if(isVectorList(x)) {
 	/* did unconditional duplication before 2.4.0 */
-	ans = VECTOR_ELT(x, offset);
+	if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(x))
+	    ans = (*ev)[offset];
+	else ans = VECTOR_ELT(x, offset);
 	if (NAMED(x) > NAMED(ans))
 	    SET_NAMED(ans, NAMED(x));
     } else {

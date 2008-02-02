@@ -17,12 +17,12 @@ SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 SOURCES_CXX = \
 	CConverters.cpp CellPool.cpp Closure.cpp CommandLineArgs.cpp \
 	ComplexVector.cpp \
-	Environment.cpp \
+	Environment.cpp ExpressionVector.cpp \
         FlagWord.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
         Heap.cpp \
         IntVector.cpp InternalFunction.cpp \
-	LogicalVector.cpp \
+	ListVector.cpp LogicalVector.cpp \
         PairList.cpp Promise.cpp \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \

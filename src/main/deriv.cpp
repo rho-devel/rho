@@ -588,7 +588,7 @@ SEXP attribute_hidden do_D(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP expr, var;
     checkArity(op, args);
-    if (isExpression(CAR(args))) expr = VECTOR_ELT(CAR(args), 0);
+    if (isExpression(CAR(args))) expr = XVECTOR_ELT(CAR(args), 0);
     else expr = CAR(args);
     var = CADR(args);
     if (!isString(var) || length(var) < 1)
@@ -884,7 +884,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(exprlist = LCONS(install("{"), R_NilValue));
     /* expr: */
     if (isExpression(CAR(args)))
-	PROTECT(expr = VECTOR_ELT(CAR(args), 0));
+	PROTECT(expr = XVECTOR_ELT(CAR(args), 0));
     else PROTECT(expr = CAR(args));
     args = CDR(args);
     /* namevec: */
@@ -1059,7 +1059,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     else {
 	funarg = allocVector(EXPRSXP, 1);
-	SET_VECTOR_ELT(funarg, 0, exprlist);
+	SET_XVECTOR_ELT(funarg, 0, exprlist);
 	/* funarg = lang2(install("expression"), exprlist); */
     }
     UNPROTECT(2);

@@ -107,6 +107,9 @@
 
 #include "RBufferUtils.h"
 
+using namespace std;
+using namespace CXXR;
+
 typedef R_StringBuffer DeparseBuffer;
 
 typedef struct {
@@ -1318,8 +1321,11 @@ static void vec2buff(SEXP v, LocalParseData *d)
 	    /* d->opts = localOpts; */
 	    print2buff(" = ", d);
 	}
-	if (!src2buff(sv, i, d))
-	    deparse2buff(VECTOR_ELT(v, i), d);
+	if (!src2buff(sv, i, d)) {
+	    if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(v))
+		deparse2buff((*ev)[i], d);
+	    else deparse2buff(VECTOR_ELT(v, i), d);
+	}
     }
     if (lbreak)
 	d->indent--;

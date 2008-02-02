@@ -80,7 +80,7 @@ static void namewalk(SEXP s, NameWalkData *d)
     case EXPRSXP:
 	n = length(s);
 	for(i=0 ; i<n ; i++)
-	    namewalk(VECTOR_ELT(s, i), d);
+	    namewalk(XVECTOR_ELT(s, i), d);
 	break;
     default:
 	/* it seems the intention is to do nothing here! */
