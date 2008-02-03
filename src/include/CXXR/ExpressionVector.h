@@ -51,6 +51,19 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
+    /**
+     * @param s Pointer to an RObject.
+     * @return TRUE iff the RObject pointed to by \a s is an expression.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isExpression(SEXP s);
+#else
+    inline Rboolean Rf_isExpression(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == EXPRSXP);
+    }
+#endif
+
 /** @brief Set element of ExpressionVector.
  * 
  * @param x Pointer to an \c ExpressionVector .
@@ -76,9 +89,9 @@ inline SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP XVECTOR_ELT(const SEXP x, int i);
+SEXP XVECTOR_ELT(SEXP x, int i);
 #else
-inline SEXP XVECTOR_ELT(const SEXP x, int i)
+inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
     return (*CXXR::SEXP_downcast<CXXR::ExpressionVector>(x))[i];
 }

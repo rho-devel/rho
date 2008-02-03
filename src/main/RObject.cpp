@@ -40,11 +40,6 @@ using namespace CXXR;
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
     Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
-    Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
-    Rboolean (*isLogicalptr)(SEXP s) = Rf_isLogical;
-    Rboolean (*isRealptr)(SEXP s) = Rf_isReal;
-    Rboolean (*isComplexptr)(SEXP s) = Rf_isComplex;
-    Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
     Rboolean (*isStringptr)(SEXP s) = Rf_isString;
     Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
     int (*levelsptr)(SEXP x) = LEVELS;

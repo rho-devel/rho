@@ -27,8 +27,8 @@
 
 #include "CXXR/ListVector.h"
 
-#include "Rinternals.h"
 #include "CXXR/ExpressionVector.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;

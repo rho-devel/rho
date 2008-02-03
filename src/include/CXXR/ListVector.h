@@ -94,9 +94,9 @@ inline SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
  * @return The value of the \a i 'th element.
  */
 #ifndef __cplusplus
-SEXP VECTOR_ELT(const SEXP x, int i);
+SEXP VECTOR_ELT(SEXP x, int i);
 #else
-inline SEXP VECTOR_ELT(const SEXP x, int i)
+inline SEXP VECTOR_ELT(SEXP x, int i)
 {
     return (*CXXR::SEXP_downcast<CXXR::ListVector>(x))[i];
 }

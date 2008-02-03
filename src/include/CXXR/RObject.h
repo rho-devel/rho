@@ -15,8 +15,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file RObject.h
@@ -258,20 +258,6 @@ namespace CXXR {
 
 #define DDVAL_MASK	1
 
-
-    /*
-     * In CXXR USE_RINTERNALS is defined only in source files inherited
-     * from C R that need privileged access to C++ objects, e.g. because
-     * the file implements what is or will be a friend function...
-     */
-#ifdef USE_RINTERNALS
-
-    /*
-     * ... Well, that was the idea anyway.
-     */
-
-#endif // USE_RINTERNALS
-
 }  // namespace CXXR
 
 typedef CXXR::RObject SEXPREC, *SEXP;
@@ -289,9 +275,9 @@ extern "C" {
      * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
      */
 #ifndef __cplusplus
-    SEXPTYPE TYPEOF(const SEXP x);
+    SEXPTYPE TYPEOF(SEXP x);
 #else
-    inline SEXPTYPE TYPEOF(const SEXP x)  {return x ? x->sexptype() : NILSXP;}
+    inline SEXPTYPE TYPEOF(SEXP x)  {return x ? x->sexptype() : NILSXP;}
 #endif
 
     /** @brief Name of type within R.
@@ -302,6 +288,55 @@ extern "C" {
      */
     const char* Rf_type2char(SEXPTYPE st);
 
+    /** @brief Copy attributes, with some exceptions.
+     *
+     * This is called in the case of binary operations to copy most
+     * attributes from one of the input arguments to the output.
+     * Note that the Dim, Dimnames and Names attributes are not
+     * copied: these should have been assigned elsewhere.  The
+     * function also copies the S4 object status.
+     * @param inp Pointer to the RObject from which attributes are to
+     *          be copied.
+     * @param ans Pointer to the RObject to which attributes are to be
+     *          copied.
+     * @note The above documentation is probably incomplete: refer to the
+     *       source code for further details.
+     */
+    void Rf_copyMostAttrib(SEXP inp, SEXP ans);
+
+    /** @brief Access a named attribute.
+     * @param vec Pointer to the RObject whose attributes are to be
+     *          accessed.
+     * @param name Either a pointer to the symbol representing the
+     *          required attribute, or a pointer to a StringVector
+     *          containing the required symbol name as element 0; in
+     *          the latter case, as a side effect, the corresponding
+     *          symbol is installed if necessary.
+     * @return Pointer to the requested attribute, or a null pointer
+     *         if there is no such attribute.
+     * @note The above documentation is incomplete: refer to the
+     *       source code for further details.
+     */
+    SEXP Rf_getAttrib(SEXP vec, SEXP name);
+
+    /** @brief Set or remove a named attribute.
+     * @param vec Pointer to the RObject whose attributes are to be
+     *          modified.
+     * @param name Either a pointer to the symbol representing the
+     *          required attribute, or a pointer to a StringVector
+     *          containing the required symbol name as element 0; in
+     *          the latter case, as a side effect, the corresponding
+     *          symbol is installed if necessary.
+     * @param val Either the value to which the attribute is to be
+     *          set, or a null pointer.  In the latter case the
+     *          attribute (if present) is removed.
+     * @return Refer to source code.  (Sometimes \a vec, sometimes \a
+     * val, sometime a null pointer ...)
+     * @note The above documentation is probably incomplete: refer to the
+     *       source code for further details.
+     */
+    SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
+
     /**
      * Does \c RObject have a class attribute?.
      * @param x Pointer to an \c RObject.
@@ -309,9 +344,9 @@ extern "C" {
      * is 0.
      */
 #ifndef __cplusplus
-    Rboolean OBJECT(const SEXP x);
+    Rboolean OBJECT(SEXP x);
 #else
-    inline Rboolean OBJECT(const SEXP x)
+    inline Rboolean OBJECT(SEXP x)
     {
 	return Rboolean(x && x->m_has_class);
     }
@@ -331,71 +366,6 @@ extern "C" {
     inline Rboolean Rf_isNull(SEXP s)
     {
 	return Rboolean(!s || TYPEOF(s) == NILSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a symbol.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isSymbol(SEXP s);
-#else
-    inline Rboolean Rf_isSymbol(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == SYMSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a logical vector.
-     */
-#ifndef __cplusplus
-    Rboolean (Rf_isLogical)(SEXP s);
-#else
-    inline Rboolean (Rf_isLogical)(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == LGLSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a real vector.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isReal(SEXP s);
-#else
-    inline Rboolean Rf_isReal(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == REALSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a complex vector.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isComplex(SEXP s);
-#else
-    inline Rboolean Rf_isComplex(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == CPLXSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is an expression.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isExpression(SEXP s);
-#else
-    inline Rboolean Rf_isExpression(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == EXPRSXP);
     }
 #endif
 
@@ -540,7 +510,7 @@ extern "C" {
      * @param to Pointer to \c RObject.
      * @param from Pointer to another \c RObject.
      */
-    void DUPLICATE_ATTRIB(SEXP to, const SEXP from);
+    void DUPLICATE_ATTRIB(SEXP to, SEXP from);
 
     /* S4 object testing */
 
@@ -551,9 +521,9 @@ extern "C" {
      * is 0.
      */
 #ifndef __cplusplus
-    Rboolean IS_S4_OBJECT(const SEXP x);
+    Rboolean IS_S4_OBJECT(SEXP x);
 #else
-    inline Rboolean IS_S4_OBJECT(const SEXP x)
+    inline Rboolean IS_S4_OBJECT(SEXP x)
     {
 	return Rboolean(x && (x->m_gpbits & S4_OBJECT_MASK));
     }

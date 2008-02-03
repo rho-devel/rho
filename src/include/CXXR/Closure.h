@@ -62,9 +62,9 @@ inline SEXP CLOENV(SEXP x) {return x->u.closxp.env;}
  *         function should run under the browser.
  */
 #ifndef __cplusplus
-Rboolean DEBUG(const SEXP x);
+Rboolean DEBUG(SEXP x);
 #else
-inline Rboolean DEBUG(const SEXP x) {return Rboolean(x->m_debug);}
+inline Rboolean DEBUG(SEXP x) {return Rboolean(x->m_debug);}
 #endif
 
 /**

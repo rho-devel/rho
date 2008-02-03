@@ -49,6 +49,19 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
+    /**
+     * @param s Pointer to an RObject.
+     * @return TRUE iff the RObject pointed to by \a s is a logical vector.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isLogical(SEXP s);
+#else
+    inline Rboolean Rf_isLogical(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == LGLSXP);
+    }
+#endif
+
 /**
  * @param x Pointer to a \c LogicalVector or an \c IntVector (i.e. an
  *          R logical or integer vector).

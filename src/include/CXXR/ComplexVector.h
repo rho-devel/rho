@@ -50,6 +50,19 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
+    /**
+     * @param s Pointer to an RObject.
+     * @return TRUE iff the RObject pointed to by \a s is a complex vector.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isComplex(SEXP s);
+#else
+    inline Rboolean Rf_isComplex(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == CPLXSXP);
+    }
+#endif
+
 /**
  * @param x Pointer to a \c ComplexVector (i.e. an R complex vector).
  *          An error is generated if \a x is not pointer to a \c

@@ -49,6 +49,19 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
+    /**
+     * @param s Pointer to an RObject.
+     * @return TRUE iff the RObject pointed to by \a s is a real vector.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isReal(SEXP s);
+#else
+    inline Rboolean Rf_isReal(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == REALSXP);
+    }
+#endif
+
 /**
  * @param x Pointer to an \c RealVector (i.e. an R numeric vector).
  *          An error is generated if \a x is not pointer to an \c

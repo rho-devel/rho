@@ -32,6 +32,7 @@
 namespace {
     Rboolean (*ddvalp)(SEXP x) = DDVAL;
     SEXP (*internalp)(SEXP x) = INTERNAL;
+    Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
     SEXP (*printnamep)(SEXP x) = PRINTNAME;
     void (*setddvalp)(SEXP x, int v) = SET_DDVAL;
     SEXP (*symvaluep)(SEXP x) = SYMVALUE;

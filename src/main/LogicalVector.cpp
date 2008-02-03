@@ -29,6 +29,12 @@
 using namespace std;
 using namespace CXXR;
 
+// Force the creation of non-inline embodiments of functions callable
+// from C:
+namespace {
+    Rboolean (*isLogicalptr)(SEXP s) = Rf_isLogical;
+}
+
 int *LOGICAL(SEXP x)
 {
 #ifndef USE_TYPE_CHECKING_STRICT

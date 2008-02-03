@@ -130,9 +130,9 @@ inline char *CHAR_RW(SEXP x)
  * @return \c const pointer to character 0 \a x .
  */
 #ifndef __cplusplus
-const char *R_CHAR(const SEXP x);
+const char *R_CHAR(SEXP x);
 #else
-inline const char *R_CHAR(const SEXP x)
+inline const char *R_CHAR(SEXP x)
 {
     return CXXR::SEXP_downcast<CXXR::String>(x)->c_str();
 }
@@ -145,9 +145,9 @@ inline const char *R_CHAR(const SEXP x)
  * @return true iff \a x is marked as having LATIN1 encoding.
  */
 #ifndef __cplusplus
-Rboolean IS_LATIN1(const SEXP x);
+Rboolean IS_LATIN1(SEXP x);
 #else
-inline Rboolean IS_LATIN1(const SEXP x)
+inline Rboolean IS_LATIN1(SEXP x)
 {
     return Rboolean(x->m_gpbits & LATIN1_MASK);
 }
@@ -180,9 +180,9 @@ inline void UNSET_LATIN1(SEXP x) {x->m_gpbits &= ~LATIN1_MASK;}
  * @return true iff \a x is marked as having UTF8 encoding.
  */
 #ifndef __cplusplus
-Rboolean IS_UTF8(const SEXP x);
+Rboolean IS_UTF8(SEXP x);
 #else
-inline Rboolean IS_UTF8(const SEXP x)
+inline Rboolean IS_UTF8(SEXP x)
 {
     return Rboolean(x->m_gpbits & UTF8_MASK);
 }

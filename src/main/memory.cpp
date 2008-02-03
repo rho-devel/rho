@@ -39,18 +39,8 @@
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
-#include "CXXR/GCRoot.h"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
-#include "CXXR/ComplexVector.h"
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/IntVector.h"
-#include "CXXR/ListVector.h"
-#include "CXXR/LogicalVector.h"
-#include "CXXR/RawVector.h"
-#include "CXXR/RealVector.h"
-#include "CXXR/String.h"
-#include "CXXR/WeakRef.h"
 
 using namespace std;
 using namespace CXXR;
