@@ -29,14 +29,51 @@
 #include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+
+    extern SEXP R_NaString;
+
+#ifdef __cplusplus
+}  // extern "C"
 
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     /** @brief RObject representing a character string.
+     *
+     * @todo Incorporate the management of hash values into the class
+     * logic.
      */
     class String : public VectorBase {
     public:
+	/* @brief Comparison object for CXXR::String.
+	 *
+	 * STL-compatible comparison class for comparing CXXR::String
+	 * objects.
+	 */
+	class Comparator {
+	public:
+	    /**
+	     * @param na_last if true, the 'not available' string will
+	     *          ome after all other strings in the sort
+	     *          ordering; if false, it will come before all
+	     *          other strings.
+	     */
+	    Comparator(bool na_last = true)
+		: m_na_last(na_last)
+	    {}
+
+	    /** @brief Comparison operation.
+	     * @param l const reference to a string.
+	     * @param r const reference to a string.
+	     * @return true iff \a l < \a r in the defined ordering.
+	     */
+	    bool operator()(const String& l, const String& r);
+	private:
+	    bool m_na_last;
+	};
+
 	/** @brief Create a string, leaving its contents
 	 *         uninitialized. 
 	 * @param sz Number of elements required.  Zero is
@@ -70,6 +107,15 @@ namespace CXXR {
 	    return m_data;
 	}
 
+	/** @brief 'Not available' string.
+	 * @return <tt>const</tt> pointer to the string representing
+	 *         'not available'.
+	 */
+	static const String* NA()
+	{
+	    return static_cast<String*>(R_NaString);
+	}
+
 	/**
 	 * @return the name by which this type is known in R.
 	 */
@@ -81,16 +127,9 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
-	// Declared private to ensure that Strings are
-	// allocated only using 'new'.
-	~String()
-	{
-	    if (m_data != m_short_string)
-		Heap::deallocate(m_data, length() + 1);
-	}
-    private:
 	// Max. strlen stored internally:
 	static const size_t s_short_strlen = 7;
+
 	char* m_data;  // pointer to the string's data block.
 
 	// If there are fewer than s_short_strlen+1 chars in the
@@ -104,6 +143,14 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
+
+	// Declared private to ensure that Strings are
+	// allocated only using 'new'.
+	~String()
+	{
+	    if (m_data != m_short_string)
+		Heap::deallocate(m_data, length() + 1);
+	}
     };
 }  // namespace CXXR
 
@@ -111,144 +158,144 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-/**
- * @param x \c pointer to a \c String .
- * @return \c pointer to character 0 \a x .
- * @note For R internal use only.  May be removed in future.
- */
+   /**
+     * @param x \c pointer to a \c String .
+     * @return \c pointer to character 0 \a x .
+     * @note For R internal use only.  May be removed in future.
+     */
 #ifndef __cplusplus
-char *CHAR_RW(SEXP x);
+    char *CHAR_RW(SEXP x);
 #else
-inline char *CHAR_RW(SEXP x)
-{
-    return &(*CXXR::SEXP_downcast<CXXR::String>(x))[0];
-}
+    inline char *CHAR_RW(SEXP x)
+    {
+	return &(*CXXR::SEXP_downcast<CXXR::String>(x))[0];
+    }
 #endif
 
-/**
- * @param x \c const pointer to a \c String .
- * @return \c const pointer to character 0 \a x .
- */
+    /**
+     * @param x \c const pointer to a \c String .
+     * @return \c const pointer to character 0 \a x .
+     */
 #ifndef __cplusplus
-const char *R_CHAR(SEXP x);
+    const char *R_CHAR(SEXP x);
 #else
-inline const char *R_CHAR(SEXP x)
-{
-    return CXXR::SEXP_downcast<CXXR::String>(x)->c_str();
-}
+    inline const char *R_CHAR(SEXP x)
+    {
+	return CXXR::SEXP_downcast<CXXR::String>(x)->c_str();
+    }
 #endif
 
 # define LATIN1_MASK (1<<2)
 
-/**
- * @param x Pointer to a \c VectorBase representing a character string.
- * @return true iff \a x is marked as having LATIN1 encoding.
- */
+    /**
+     * @param x Pointer to a \c VectorBase representing a character string.
+     * @return true iff \a x is marked as having LATIN1 encoding.
+     */
 #ifndef __cplusplus
-Rboolean IS_LATIN1(SEXP x);
+    Rboolean IS_LATIN1(SEXP x);
 #else
-inline Rboolean IS_LATIN1(SEXP x)
-{
-    return Rboolean(x->m_gpbits & LATIN1_MASK);
-}
+    inline Rboolean IS_LATIN1(SEXP x)
+    {
+	return Rboolean(x->m_gpbits & LATIN1_MASK);
+    }
 #endif
 
-/**
- * @brief Set LATIN1 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
+    /**
+     * @brief Set LATIN1 encoding.
+     * @param x Pointer to a \c VectorBase representing a character string.
+     */
 #ifndef __cplusplus
-void SET_LATIN1(SEXP x);
+    void SET_LATIN1(SEXP x);
 #else
-inline void SET_LATIN1(SEXP x) {x->m_gpbits |= LATIN1_MASK;}
+    inline void SET_LATIN1(SEXP x) {x->m_gpbits |= LATIN1_MASK;}
 #endif
 
-/**
- * @brief Unset LATIN1 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
+    /**
+     * @brief Unset LATIN1 encoding.
+     * @param x Pointer to a \c VectorBase representing a character string.
+     */
 #ifndef __cplusplus
-void UNSET_LATIN1(SEXP x);
+    void UNSET_LATIN1(SEXP x);
 #else
-inline void UNSET_LATIN1(SEXP x) {x->m_gpbits &= ~LATIN1_MASK;}
+    inline void UNSET_LATIN1(SEXP x) {x->m_gpbits &= ~LATIN1_MASK;}
 #endif
 
 # define UTF8_MASK (1<<3)
 
-/**
- * @param x Pointer to a \c VectorBase representing a character string.
- * @return true iff \a x is marked as having UTF8 encoding.
- */
+    /**
+     * @param x Pointer to a \c VectorBase representing a character string.
+     * @return true iff \a x is marked as having UTF8 encoding.
+     */
 #ifndef __cplusplus
-Rboolean IS_UTF8(SEXP x);
+    Rboolean IS_UTF8(SEXP x);
 #else
-inline Rboolean IS_UTF8(SEXP x)
-{
-    return Rboolean(x->m_gpbits & UTF8_MASK);
-}
+    inline Rboolean IS_UTF8(SEXP x)
+    {
+	return Rboolean(x->m_gpbits & UTF8_MASK);
+    }
 #endif
 
-/**
- * @brief Set UTF8 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
+    /**
+     * @brief Set UTF8 encoding.
+     * @param x Pointer to a \c VectorBase representing a character string.
+     */
 #ifndef __cplusplus
-void SET_UTF8(SEXP x);
+    void SET_UTF8(SEXP x);
 #else
-inline void SET_UTF8(SEXP x) {x->m_gpbits |= UTF8_MASK;}
+    inline void SET_UTF8(SEXP x) {x->m_gpbits |= UTF8_MASK;}
 #endif
 
-/**
- * @brief Unset UTF8 encoding.
- * @param x Pointer to a \c VectorBase representing a character string.
- */
+    /**
+     * @brief Unset UTF8 encoding.
+     * @param x Pointer to a \c VectorBase representing a character string.
+     */
 #ifndef __cplusplus
-void UNSET_UTF8(SEXP x);
+    void UNSET_UTF8(SEXP x);
 #else
-inline void UNSET_UTF8(SEXP x) {x->m_gpbits &= ~UTF8_MASK;}
+    inline void UNSET_UTF8(SEXP x) {x->m_gpbits &= ~UTF8_MASK;}
 #endif
 
-/**
- * @brief Create a string object.
- *
- *  Allocate a string object.
- * @param length The length of the string to be created (excluding the
- *          trailing null byte).
- * @return Pointer to the created string.
- */
+    /**
+     * @brief Create a string object.
+     *
+     *  Allocate a string object.
+     * @param length The length of the string to be created (excluding the
+     *          trailing null byte).
+     * @return Pointer to the created string.
+     */
 #ifndef __cplusplus
-SEXP Rf_allocString(R_len_t length);
+    SEXP Rf_allocString(R_len_t length);
 #else
-inline SEXP Rf_allocString(R_len_t length)
-{
-    return new CXXR::String(length);
-}
+    inline SEXP Rf_allocString(R_len_t length)
+    {
+	return new CXXR::String(length);
+    }
 #endif
 
-/* Hashing Functions */
+    /* Hashing Functions */
 
 #ifndef __cplusplus
-int HASHASH(SEXP x);
+    int HASHASH(SEXP x);
 #else
-inline int HASHASH(SEXP x) {return x->m_gpbits;}
-#endif
-
-#ifndef __cplusplus
-int HASHVALUE(SEXP x);
-#else
-inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
+    inline int HASHASH(SEXP x) {return x->m_gpbits;}
 #endif
 
 #ifndef __cplusplus
-void SET_HASHASH(SEXP x, int v);
+    int HASHVALUE(SEXP x);
 #else
-inline void SET_HASHASH(SEXP x, int v) {x->m_gpbits = v;}
+    inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
 #endif
 
 #ifndef __cplusplus
-void SET_HASHVALUE(SEXP x, int v);
+    void SET_HASHASH(SEXP x, int v);
 #else
-inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
+    inline void SET_HASHASH(SEXP x, int v) {x->m_gpbits = v;}
+#endif
+
+#ifndef __cplusplus
+    void SET_HASHVALUE(SEXP x, int v);
+#else
+    inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
 #endif
 
 #ifdef __cplusplus
