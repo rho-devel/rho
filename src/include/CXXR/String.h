@@ -60,7 +60,7 @@ namespace CXXR {
 	     *          ordering; if false, it will come before all
 	     *          other strings.
 	     */
-	    Comparator(bool na_last = true)
+	    explicit Comparator(bool na_last = true)
 		: m_na_last(na_last)
 	    {}
 
@@ -69,7 +69,7 @@ namespace CXXR {
 	     * @param r const reference to a string.
 	     * @return true iff \a l < \a r in the defined ordering.
 	     */
-	    bool operator()(const String& l, const String& r);
+	    bool operator()(const String& l, const String& r) const;
 	private:
 	    bool m_na_last;
 	};
@@ -79,7 +79,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
-	String(size_t sz);
+	explicit String(size_t sz);
 
 	/** @brief Character access.
 	 * @param index Index of required character (counting from

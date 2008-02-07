@@ -25,6 +25,8 @@
 #ifndef EDGEVECTOR_HPP
 #define EDGEVECTOR_HPP 1
 
+#include <algorithm>
+
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCEdge.hpp"
@@ -105,12 +107,13 @@ namespace CXXR {
 
 	/** @brief Create a vector.
          *
-         * Create a vector.  Each element will initially encapsulate
-         * a null pointer.
+         * Create a vector.
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
+	 * @param init Initial value for the destination of each
+	 *          GCEdge<T> in the EdgeVector.
 	 */
-	EdgeVector(size_t sz);
+	explicit EdgeVector(size_t sz, T init = 0);
 
 	/** @brief Element access.
 	 * @param index Index of required element (counting from
@@ -131,6 +134,21 @@ namespace CXXR {
 	T const operator[](unsigned int index) const
 	{
 	    return m_data[index];
+	}
+
+	/** @brief Sort the EdgeVector.
+	 * @param tcomp The vector will be sorted according to the
+	 *          ordering defined by the binary predicate \a tcomp
+	 *          as applied to the destinations of the constituent
+	 *          GCEdge<T> objects.
+	 */
+	template <class BinaryPredicate>
+	void sort(const BinaryPredicate& tcomp)
+	{
+	    if (size() > 0) {
+		std::sort(m_data, m_data + size(),
+			  GCEdge<T>::DestComparator(tcomp));
+	    }
 	}
 
 	/**
@@ -170,7 +188,7 @@ namespace CXXR {
     };
 
     template <class T, SEXPTYPE ST>
-    EdgeVector<T, ST>::EdgeVector(size_t sz)
+    EdgeVector<T, ST>::EdgeVector(size_t sz, T init)
 	: VectorBase(ST, sz)
     {
 	if (sz > 0) {
@@ -182,7 +200,7 @@ namespace CXXR {
 	    m_data = reinterpret_cast<GCEdge<T>*>(Heap::allocate(m_databytes));
 	    GCEdge<T>* p = m_data;
 	    for (unsigned int i = 0; i < sz; ++i)
-		new (p++) GCEdge<T>(this);
+		new (p++) GCEdge<T>(this, init);
 	}
     }
 

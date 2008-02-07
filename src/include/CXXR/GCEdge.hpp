@@ -13,8 +13,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 #ifndef GCEDGE_HPP
@@ -43,7 +43,40 @@ namespace CXXR {
     template <class T = RObject*>
     class GCEdge {
     public:
-	/**
+	/** @brief Destination comparator template.
+	 *
+	 * This templated class converts an STL-compatible comparator
+	 * type for object of the type to which T points to into an
+	 * STL-comparator for GCEdge<T>.  The comparison is based on
+	 * the destinations of the GCEdge objects being compared.
+	 * @param BinaryPredicate STL-compatible comparator type for
+	 *          objects of the type to which T points.
+	 */
+	template <class BinaryPredicate> class DestComparator {
+	public:
+	    /**
+	     * @param tcomp The constructed object will compare two
+	     *          GCEdge<T> objects according to how \a tcomp
+	     *          compares their destinations.
+	     */
+	    explicit DestComparator(const BinaryPredicate& tcomp)
+		: m_tcomp(tcomp)
+	    {}
+
+	    /** @brief Comparison operation.
+	     * @param l const reference to a GCEdge<T>.
+	     * @param r const reference to a GCEdge<T>.
+	     * @return true iff \a l < \a r in the defined ordering.
+	     */
+	    bool operator()(const GCEdge<T>& l, const GCEdge<T>& r) const
+	    {
+		return m_tcomp(*l, *r);
+	    }
+	private:
+	    const BinaryPredicate& m_tcomp;
+	};
+
+	/** @fn GCEdge(GCNode* from, T to = 0)
 	 * @param from Pointer to the GCNode which needs to refer to
 	 *          \a to.  Usually the constructed GCEdge object will
 	 *          form part of the object to which \a from points.
@@ -65,6 +98,28 @@ namespace CXXR {
 	GCEdge(GCNode* /*from*/, T to = 0)
 	    : m_to(to)
 	{}
+
+	/** @fn GCEdge(const GCEdge<T>& source)
+	 * @brief Copy constructor
+	 * @param source const reference to the GCEdge to be copied.
+	 *
+	 * @note This constructor does not carry out an old-to-new
+	 * check, because normally the GCEdge being constructed will
+	 * form part of newly-constructed object of a type derived
+	 * from GCNode, so will automatically be newer than any GCNode
+	 * it refers to.
+	 */
+
+	/** @fn GCEdge<T>& operator=(const GCEdge<T>& rhs)
+	 * @brief Assignment operator.
+	 * @param rhs Right-hand side of the assignment.  It is
+	 *          <em>essential</em> that the origin ('from') of \a
+	 *          rhs be the same as the origin of the GCEdge being
+	 *          assigned to, but this is not checked in the
+	 *          default implementation.  Failure to observe this
+	 *          rule will result in garbage collection chaos.
+	 * @return A reference to this object.
+	 */
 
 	/**
 	 * @return the pointer which this GCEdge object encapsulates.
@@ -94,10 +149,6 @@ namespace CXXR {
 	}
     private:
 	T m_to;
-
-	// Not implemented:
-	GCEdge(const GCEdge&);
-	GCEdge& operator=(const GCEdge&);
     };
 }
 
