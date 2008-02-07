@@ -2335,6 +2335,7 @@ AC_CONFIG_FILES(
   src/scripts/check
   src/unix/Makefile
   tests/Makefile
+  tests/CXXR/Makefile
   tests/Embedding/Makefile
   tests/Examples/Makefile
   tests/Native/Makefile
