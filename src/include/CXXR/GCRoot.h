@@ -56,6 +56,7 @@ namespace CXXR {
 	explicit GCRootBase(GCNode* node)
 	    : m_index(s_roots.size())
 	{
+	    if (node) node->expose();
 	    s_roots.push_back(node);
 	}
 
@@ -80,6 +81,7 @@ namespace CXXR {
 
 	GCRootBase& operator=(GCNode* node)
 	{
+	    if (node) node->expose();
 	    s_roots[m_index] = node;
 	    return *this;
 	}
@@ -118,6 +120,7 @@ namespace CXXR {
 	static unsigned int protect(RObject* node)
 	{
 	    unsigned int index = s_pps.size();
+	    if (node) node->expose();
 #ifdef NDEBUG
 	    s_pps.push_back(node);
 #else

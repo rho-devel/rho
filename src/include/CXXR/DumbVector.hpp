@@ -138,7 +138,6 @@ namespace CXXR {
 	// Check for integer overflow:
 	if (m_databytes/sizeof(T) != sz)
 	    Rf_error(_("Request to create impossibly large vector."));
-	GCRoot<> thisroot(this);
 	m_data = reinterpret_cast<T*>(Heap::allocate(m_databytes));
 	if (initialize) {
 	    for (unsigned int i = 0; i < sz; ++i)

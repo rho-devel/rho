@@ -36,14 +36,6 @@ vector<const GCNode*> GCNode::s_genpeg;
 vector<unsigned int> GCNode::s_gencount;
 unsigned int GCNode::s_num_nodes;
 
-GCNode::GCNode()
-{
-    link(s_genpeg[0]->m_prev, this);
-    link(this, s_genpeg[0]);
-    ++s_gencount[0];
-    ++s_num_nodes;
-}
-
 GCNode::~GCNode()
 {
     --s_num_nodes;
@@ -89,13 +81,24 @@ bool GCNode::check()
 	    }
 	    numnodes += gct;
 	}
-	if (numnodes != s_num_nodes) {
+	// s_num_nodes > numnodes is possible because of infant immunity.
+	if (numnodes > s_num_nodes) {
 	    cerr << "GCNode::check() :"
 		"generation node totals inconsistent with grand total.\n";
 	    abort();
 	}
     }
     return true;
+}
+
+void GCNode::expose() const
+{
+    if (!m_prev)
+	{
+	    link(s_genpeg[0]->m_prev, this);
+	    link(this, s_genpeg[0]);
+	    ++s_gencount[0];
+	}
 }
 
 // GCNode::gc() is in memory.cpp (for the time being)
@@ -113,6 +116,7 @@ void GCNode::initialize(unsigned int num_old_generations)
 
 bool GCNode::Ager::operator()(const GCNode* node)
 {
+    node->expose();
     if (node->m_gcgen >= m_mingen)
 	return false;
     --s_gencount[node->m_gcgen];

@@ -50,7 +50,41 @@
 */
 
 namespace CXXR {
-    /** Abstract base class for all objects managed by the garbage collector.
+    /** @brief Base class for objects managed by the garbage collector.
+     *
+     * Abstract base class for all objects managed by the garbage
+     * collector.
+     *
+     * \par Prenatal immunity:
+     * While a GCNode or an object of a class derived from GCNode is
+     * under construction, it is effectively immune from the garbage
+     * collector.  Not only does this greatly simplify the coding of
+     * the constructors themselves, it also means that in implementing
+     * the virtual method visitChildren(), it is not necessary to
+     * consider the possibility that the garbage collector will invoke
+     * this method for a node whose construction is not yet complete.
+     *
+     * \par
+     * The private method \c expose() is used to end this immunity once
+     * construction of an object is complete.  However, there appears
+     * to be no clean and general way in C++ of calling \c expose() \e
+     * exactly when construction is complete.  Consequently, a node's
+     * prenatal immunity will in fact continue until one of the
+     * following events occurs:
+     * <ul>
+     * <li>The node is explicitly protected from the garbage
+     * collector, either by encapsulating a pointer to it in a
+     * GCRoot, or by the CR \c PROTECT mechanism.  For this reason, it
+     * is important that constructors <em>do not</em> attempt
+     * explicitly to protect '<tt>this</tt>'; a particular risk with
+     * this is that constructors of derived classes will not be able
+     * to rely on prenatal immunity.</li>
+     *
+     * <li>The node is marked by the garbage collector.</li>
+     *
+     * <li>The node is visited by a \b GCNode::Ager object (as part of
+     * write barrier enforcement).</li>
+     * </ul>
      * 
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
@@ -101,7 +135,10 @@ namespace CXXR {
 	    virtual bool operator()(GCNode* node) = 0;
 	};
 
-	GCNode();
+	GCNode()
+	{
+	    ++s_num_nodes;
+	}
 
 	/** Allocate memory.
          *
@@ -235,6 +272,7 @@ namespace CXXR {
 	virtual ~GCNode();
     private:
 	friend class WeakRef;
+	friend class GCRootBase;
 	template <class T> friend class GCEdge;
 
 	/** Visitor class used to impose a minimum generation number.
@@ -319,6 +357,10 @@ namespace CXXR {
 	    : m_prev(this), m_next(this)
 	{}
 
+	// Make the node known to the garbage collector (if it isn't
+	// already).
+	void expose() const;
+
 	bool isMarked() const {return m_marked;}
 
 	// Make t the successor of s:
@@ -328,7 +370,11 @@ namespace CXXR {
 	    t->m_prev = s;
 	}
 
-	void mark() const {m_marked = true;}
+	void mark() const
+	{
+	    expose();
+	    m_marked = true;
+	}
 
 	const GCNode* next() const {return m_next;}
 

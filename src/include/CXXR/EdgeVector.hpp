@@ -196,7 +196,6 @@ namespace CXXR {
 	    // Check for integer overflow:
 	    if (m_databytes/sizeof(GCEdge<T>) != sz)
 		Rf_error(_("Request to create impossibly large vector."));
-	    GCRoot<> thisroot(this);
 	    m_data = reinterpret_cast<GCEdge<T>*>(Heap::allocate(m_databytes));
 	    GCEdge<T>* p = m_data;
 	    for (unsigned int i = 0; i < sz; ++i)
@@ -214,13 +213,9 @@ namespace CXXR {
     void EdgeVector<T, ST>::visitChildren(GCNode::const_visitor* v) const
     {
 	VectorBase::visitChildren(v);
-	// Check that this node is fully constructed before attempting
-	// to visit children:
-	if (m_data) {
-	    for (unsigned int i = 0; i < size(); ++i) {
-		T ptr = (*this)[i];
-		if (ptr) ptr->conductVisitor(v);
-	    }
+	for (unsigned int i = 0; i < size(); ++i) {
+	    T ptr = (*this)[i];
+	    if (ptr) ptr->conductVisitor(v);
 	}
     }
 		    
@@ -228,13 +223,9 @@ namespace CXXR {
     void EdgeVector<T, ST>::visitChildren(GCNode::visitor* v)
     {
 	VectorBase::visitChildren(v);
-	// Check that this node is fully constructed before attempting
-	// to visit children:
-	if (m_data) {
-	    for (unsigned int i = 0; i < size(); ++i) {
-		T ptr = (*this)[i];
-		if (ptr) ptr->conductVisitor(v);
-	    }
+	for (unsigned int i = 0; i < size(); ++i) {
+	    T ptr = (*this)[i];
+	    if (ptr) ptr->conductVisitor(v);
 	}
     }
 }  // namespace CXXR

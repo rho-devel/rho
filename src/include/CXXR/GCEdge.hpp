@@ -129,8 +129,8 @@ namespace CXXR {
 	/** Redirect the GCEdge to point at a (possibly) different node.
 	 *
 	 * @param from This \e must point to the same node as that
-	 *          pointed to by the \a from parameter used construct
-	 *          this GCEdge object.
+	 *          pointed to by the \a from parameter used to
+	 *          construct this GCEdge object.
 	 *
 	 * @param to Pointer to the object to which reference is now
 	 *           to be made.
@@ -140,12 +140,13 @@ namespace CXXR {
 	 * However, this would double the space occupied by a GCEdge
 	 * object.
 	 */
-	 
 	void redirect(GCNode* from, T to)
 	{
-	    GCNode::Ager ager(from->m_gcgen);
 	    m_to = to;
-	    if (m_to) m_to->conductVisitor(&ager);
+	    if (m_to) {
+		GCNode::Ager ager(from->m_gcgen);
+		m_to->conductVisitor(&ager);
+	    }
 	}
     private:
 	T m_to;
