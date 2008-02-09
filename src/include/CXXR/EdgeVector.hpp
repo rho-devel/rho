@@ -29,6 +29,7 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/Allocator.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
@@ -37,7 +38,7 @@ namespace CXXR {
     /** @brief Vector of GCEdge objects.
      *
      * This is a templated class to represent a vector whose members
-     * are of a type instantiated from the template GCEdge<>.
+     * are of a type instantiated from the template GCEdge.
      * @param T The type of pointer to be encapsulated by the GCEdge
      *          objects.  This should be pointer or const pointer to
      *          GCNode or to a type (publicly) derived from GCNode.
@@ -113,7 +114,9 @@ namespace CXXR {
 	 * @param init Initial value for the destination of each
 	 *          GCEdge<T> in the EdgeVector.
 	 */
-	explicit EdgeVector(size_t sz, T init = 0);
+	explicit EdgeVector(size_t sz, T init = 0)
+	    : VectorBase(ST, sz), m_data(sz, init)
+	{}
 
 	/** @brief Element access.
 	 * @param index Index of required element (counting from
@@ -145,10 +148,8 @@ namespace CXXR {
 	template <class BinaryPredicate>
 	void sort(const BinaryPredicate& tcomp)
 	{
-	    if (size() > 0) {
-		std::sort(m_data, m_data + size(),
-			  GCEdge<T>::DestComparator(tcomp));
-	    }
+	    std::sort(m_data.begin(), m_data.end(),
+		      GCEdge<T>::DestComparator(tcomp));
 	}
 
 	/**
@@ -168,16 +169,13 @@ namespace CXXR {
 	void visitChildren(const_visitor* v) const;
 	void visitChildren(visitor* v);
     protected:
-	// Declared protected to ensure that EdgeVectors are
-	// allocated only using 'new'.
-	~EdgeVector()
-	{
-	    if (m_data)
-		Heap::deallocate(m_data, m_databytes);
-	}
+	/**
+	 * Declared protected to ensure that EdgeVector objects are
+	 * allocated only using 'new'.
+	 */
+	~EdgeVector() {}
     private:
-	size_t m_databytes;  // used only if > 0 elements
-	GCEdge<T>* m_data;  // pointer to the vector's data block.
+	std::vector<GCEdge<T>, Allocator<GCEdge<T> > > m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -186,22 +184,6 @@ namespace CXXR {
 
 	friend class ElementProxy;
     };
-
-    template <class T, SEXPTYPE ST>
-    EdgeVector<T, ST>::EdgeVector(size_t sz, T init)
-	: VectorBase(ST, sz)
-    {
-	if (sz > 0) {
-	    m_databytes = sz*sizeof(GCEdge<T>);
-	    // Check for integer overflow:
-	    if (m_databytes/sizeof(GCEdge<T>) != sz)
-		Rf_error(_("Request to create impossibly large vector."));
-	    m_data = reinterpret_cast<GCEdge<T>*>(Heap::allocate(m_databytes));
-	    GCEdge<T>* p = m_data;
-	    for (unsigned int i = 0; i < sz; ++i)
-		new (p++) GCEdge<T>(this, init);
-	}
-    }
 
     template <class T, SEXPTYPE ST>
     const char* EdgeVector<T, ST>::typeName() const
