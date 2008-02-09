@@ -104,8 +104,10 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     protected:
-	// Declared protected to ensure that DumbVectors are
-	// allocated only using 'new'.
+	/**
+	 * Declared protected to ensure that DumbVector objects are
+	 * allocated only using 'new'.
+	 */
 	~DumbVector()
 	{
 	    if (m_data != &m_singleton)

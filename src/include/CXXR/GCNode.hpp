@@ -15,8 +15,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file GCNode.hpp
@@ -93,7 +93,7 @@ namespace CXXR {
      */
     class GCNode {
     public:
-	/** Abstract base class for the Visitor design pattern.
+	/** @brief Abstract base class for the Visitor design pattern.
 	 *
 	 * See Gamma et al 'Design Patterns' Ch. 5 for a description
 	 * of the Visitor design pattern.
@@ -117,7 +117,7 @@ namespace CXXR {
 	    virtual bool operator()(const GCNode* node) = 0;
 	};
 
-	/** Abstract base class for the Visitor design pattern.
+	/** @brief Abstract base class for the Visitor design pattern.
 	 *
 	 * See Gamma et al 'Design Patterns' Ch. 5 for a description
 	 * of the Visitor design pattern.
@@ -140,7 +140,7 @@ namespace CXXR {
 	    ++s_num_nodes;
 	}
 
-	/** Allocate memory.
+	/** @brief Allocate memory.
          *
 	 * Allocates memory for a new object of a class derived from
 	 * GCNode, and zero the memory thus allocated.
@@ -151,15 +151,15 @@ namespace CXXR {
 	 *
 	 * @note Since objects of classes derived from RObject \e must
 	 * be allocated on the heap, constructors of these classes may
-	 * rely on the fact that operator new zeroes the allocated
-	 * memory to elide member initializations.
+	 * elide some member initializations by relying on the fact
+	 * that operator new zeroes the allocated memory.
 	 */
 	static void* operator new(size_t bytes)
 	{
 	    return memset(Heap::allocate(bytes), 0, bytes);
 	}
 
-	/** Deallocate memory
+	/** @brief Deallocate memory
 	 *
 	 * Deallocate memory previously allocated by operator new.
 	 *
@@ -173,7 +173,7 @@ namespace CXXR {
 	    Heap::deallocate(p, bytes);
 	}
 
-	/** Integrity check.
+	/** @brief Integrity check.
 	 *
 	 * Aborts the program with an error message if the class is
 	 * found to be internally inconsistent.
@@ -184,7 +184,7 @@ namespace CXXR {
 	static bool check();
 
 	/** Present this node to a visitor and, if the visitor so
-	 * wishes, conduct the visitor to the children of this node.
+	 * requests, conduct the visitor to the children of this node.
 	 * 
 	 * @param v Pointer to the visitor object.
 	 *
@@ -198,7 +198,7 @@ namespace CXXR {
 	}
 
 	/** Present this node to a visitor and, if the visitor so
-	 * wishes, conduct the visitor to the children of this node.
+	 * requests, conduct the visitor to the children of this node.
 	 * 
 	 * @param v Pointer to the visitor object.
 	 *
@@ -236,6 +236,9 @@ namespace CXXR {
 	 *
 	 * @param num_old_generations One fewer than the number of
 	 * generations into which GCNode objects are to be ranked.
+	 *
+	 * @todo Have this method called automatically by a Schwarz
+	 * counter, and make it private.
 	 */
 	static void initialize(unsigned int num_old_generations);
 
@@ -246,7 +249,8 @@ namespace CXXR {
 	static unsigned int numGenerations() {return s_genpeg.size();}
 
 	/**
-	 * @return the number of GCNodes currently in existence.
+	 * @return the number of GCNode objects currently in
+	 * existence.
 	 */
 	static unsigned int numNodes() {return s_num_nodes;}
 
@@ -262,12 +266,11 @@ namespace CXXR {
 	 */
 	virtual void visitChildren(visitor* v) {}
     protected:
-	/** Destructor
-	 *
-	 * @note The destructor is protected to ensure that GCNodes
-	 * are allocated on the heap.  (See Meyers 'More Effective
-	 * C++' Item 27.) Derived classes should likewise declare
-	 * their constructors private or protected.
+	/**
+	 * @note The destructor is protected to ensure that GCNode
+	 * objects are allocated on the heap.  (See Meyers 'More
+	 * Effective C++' Item 27.) Derived classes should likewise
+	 * declare their destructors private or protected.
 	 */
 	virtual ~GCNode();
     private:
