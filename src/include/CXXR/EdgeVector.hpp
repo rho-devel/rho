@@ -39,27 +39,27 @@ namespace CXXR {
      *
      * This is a templated class to represent a vector whose members
      * are of a type instantiated from the template GCEdge.
-     * @param T The type of pointer to be encapsulated by the GCEdge
+     * @param Ptr The type of pointer to be encapsulated by the GCEdge
      *          objects.  This should be pointer or const pointer to
      *          GCNode or to a type (publicly) derived from GCNode.
-     *          The vector elements will be of type GCEdge<T>.
+     *          The vector elements will be of type GCEdge<Ptr>.
      * @param ST The required \c SEXPTYPE of the vector.
      */
-    template <class T, SEXPTYPE ST>
+    template <class Ptr, SEXPTYPE ST>
     class EdgeVector : public VectorBase {
     public:
-	/** Proxy object for an element of an EdgeVector<T, ST>.
+	/** Proxy object for an element of an EdgeVector<Ptr, ST>.
 	 *
 	 * Objects of this class are used to allow the elements of an
-	 * EdgeVector<T, ST> to be examined and modified using the
+	 * EdgeVector<Ptr, ST> to be examined and modified using the
 	 * same syntax as would be used for accessing an array of
-	 * <tt>T</tt>, whilst nevertheless enforcing the write
+	 * <tt>Ptr</tt>, whilst nevertheless enforcing the write
 	 * barrier.  See Item 30 of Scott Meyers's 'More Effective
 	 * C++' for a general discussion of proxy objects, but see the
 	 * <a
 	 * href="http://www.aristeia.com/BookErrata/mec++-errata_frames.html">errata</a>.
 	 * (It may look complicated, but an optimising compiler should
-	 * be able to distil an invocation of EdgeVector<T,
+	 * be able to distil an invocation of EdgeVector<Ptr,
 	 * ST>::operator[] into very few instructions.)
 	 */
 	class ElementProxy {
@@ -71,14 +71,14 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(const ElementProxy& rhs)
 	    {
-		return operator=(static_cast<T>(rhs));
+		return operator=(static_cast<Ptr>(rhs));
 	    }
 
 	    /** Redirect the pointer encapsulated by the proxied element.
 	     * @param rhs New pointer value.
 	     * @return Reference to this ElementProxy.
 	     */
-	    ElementProxy& operator=(T s)
+	    ElementProxy& operator=(Ptr s)
 	    {
 		(m_ev->m_data)[m_index].redirect(m_ev, s);
 		return *this;
@@ -88,22 +88,22 @@ namespace CXXR {
 	     * @return The pointer encapsulated by the proxied
 	     *         element.
 	     */
-	    operator T const() const
+	    operator Ptr const() const
 	    {
 		return (m_ev->m_data)[m_index];
 	    }
 	private:
-	    EdgeVector<T, ST>* m_ev;
+	    EdgeVector<Ptr, ST>* m_ev;
 	    unsigned int m_index;
 
-	    ElementProxy(EdgeVector<T, ST>* ev, unsigned int index)
+	    ElementProxy(EdgeVector<Ptr, ST>* ev, unsigned int index)
 		: m_ev(ev), m_index(index)
 	    {}
 
 	    // Not implemented:
 	    ElementProxy(const ElementProxy&);
 
-	    friend class EdgeVector<T, ST>;
+	    friend class EdgeVector<Ptr, ST>;
 	};
 
 	/** @brief Create a vector.
@@ -112,10 +112,10 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 * @param init Initial value for the destination of each
-	 *          GCEdge<T> in the EdgeVector.
+	 *          GCEdge<Ptr> in the EdgeVector.
 	 */
-	explicit EdgeVector(size_t sz, T init = 0)
-	    : VectorBase(ST, sz), m_data(sz, init)
+	explicit EdgeVector(size_t sz, Ptr init = 0)
+	    : VectorBase(ST, sz), m_data(sz, GCEdge<Ptr>(this, init))
 	{}
 
 	/** @brief Element access.
@@ -134,7 +134,7 @@ namespace CXXR {
 	 *          zero).  No bounds checking is applied.
 	 * @return \c the specified element.
 	 */
-	T const operator[](unsigned int index) const
+	Ptr const operator[](unsigned int index) const
 	{
 	    return m_data[index];
 	}
@@ -143,13 +143,13 @@ namespace CXXR {
 	 * @param tcomp The vector will be sorted according to the
 	 *          ordering defined by the binary predicate \a tcomp
 	 *          as applied to the destinations of the constituent
-	 *          GCEdge<T> objects.
+	 *          GCEdge<Ptr> objects.
 	 */
 	template <class BinaryPredicate>
 	void sort(const BinaryPredicate& tcomp)
 	{
 	    std::sort(m_data.begin(), m_data.end(),
-		      GCEdge<T>::DestComparator(tcomp));
+		      GCEdge<Ptr>::DestComparator(tcomp));
 	}
 
 	/**
@@ -175,7 +175,7 @@ namespace CXXR {
 	 */
 	~EdgeVector() {}
     private:
-	std::vector<GCEdge<T>, Allocator<GCEdge<T> > > m_data;
+	std::vector<GCEdge<Ptr>, Allocator<GCEdge<Ptr> > > m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -185,28 +185,28 @@ namespace CXXR {
 	friend class ElementProxy;
     };
 
-    template <class T, SEXPTYPE ST>
-    const char* EdgeVector<T, ST>::typeName() const
+    template <class Ptr, SEXPTYPE ST>
+    const char* EdgeVector<Ptr, ST>::typeName() const
     {
-	return EdgeVector<T, ST>::staticTypeName();
+	return EdgeVector<Ptr, ST>::staticTypeName();
     }
 
-    template <class T, SEXPTYPE ST>
-    void EdgeVector<T, ST>::visitChildren(GCNode::const_visitor* v) const
+    template <class Ptr, SEXPTYPE ST>
+    void EdgeVector<Ptr, ST>::visitChildren(GCNode::const_visitor* v) const
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {
-	    T ptr = (*this)[i];
+	    Ptr ptr = (*this)[i];
 	    if (ptr) ptr->conductVisitor(v);
 	}
     }
 		    
-    template <class T, SEXPTYPE ST>
-    void EdgeVector<T, ST>::visitChildren(GCNode::visitor* v)
+    template <class Ptr, SEXPTYPE ST>
+    void EdgeVector<Ptr, ST>::visitChildren(GCNode::visitor* v)
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {
-	    T ptr = (*this)[i];
+	    Ptr ptr = (*this)[i];
 	    if (ptr) ptr->conductVisitor(v);
 	}
     }

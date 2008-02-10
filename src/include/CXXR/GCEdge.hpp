@@ -37,26 +37,26 @@ namespace CXXR {
      * object, rather than by containing a pointer or reference
      * directly.
      *
-     * @param T This should be a pointer or const pointer to GCNode or
+     * @param Ptr This should be a pointer or const pointer to GCNode or
      *          (more usually) a type derived from GCNode.
      */
-    template <class T = RObject*>
+    template <class Ptr = RObject*>
     class GCEdge {
     public:
 	/** @brief Destination comparator template.
 	 *
 	 * This templated class converts an STL-compatible comparator
-	 * type for object of the type to which T points to into an
-	 * STL-comparator for GCEdge<T>.  The comparison is based on
+	 * type for object of the type to which Ptr points to into an
+	 * STL-comparator for GCEdge<Ptr>.  The comparison is based on
 	 * the destinations of the GCEdge objects being compared.
 	 * @param BinaryPredicate STL-compatible comparator type for
-	 *          objects of the type to which T points.
+	 *          objects of the type to which Ptr points.
 	 */
 	template <class BinaryPredicate> class DestComparator {
 	public:
 	    /**
 	     * @param tcomp The constructed object will compare two
-	     *          GCEdge<T> objects according to how \a tcomp
+	     *          GCEdge<Ptr> objects according to how \a tcomp
 	     *          compares their destinations.
 	     */
 	    explicit DestComparator(const BinaryPredicate& tcomp)
@@ -64,11 +64,11 @@ namespace CXXR {
 	    {}
 
 	    /** @brief Comparison operation.
-	     * @param l const reference to a GCEdge<T>.
-	     * @param r const reference to a GCEdge<T>.
+	     * @param l const reference to a GCEdge<Ptr>.
+	     * @param r const reference to a GCEdge<Ptr>.
 	     * @return true iff \a l < \a r in the defined ordering.
 	     */
-	    bool operator()(const GCEdge<T>& l, const GCEdge<T>& r) const
+	    bool operator()(const GCEdge<Ptr>& l, const GCEdge<Ptr>& r) const
 	    {
 		return m_tcomp(*l, *r);
 	    }
@@ -76,7 +76,7 @@ namespace CXXR {
 	    const BinaryPredicate& m_tcomp;
 	};
 
-	/** @fn GCEdge(GCNode* from, T to = 0)
+	/** @fn GCEdge(GCNode* from, Ptr to = 0)
 	 * @param from Pointer to the GCNode which needs to refer to
 	 *          \a to.  Usually the constructed GCEdge object will
 	 *          form part of the object to which \a from points.
@@ -95,11 +95,11 @@ namespace CXXR {
 	 * recommended to create the GCEdge will a null 'to' pointer,
 	 * and then to redirect it to the desired target.
 	 */
-	GCEdge(GCNode* /*from*/, T to = 0)
+	explicit GCEdge(GCNode* /*from*/, Ptr to = 0)
 	    : m_to(to)
 	{}
 
-	/** @fn GCEdge(const GCEdge<T>& source)
+	/** @fn GCEdge(const GCEdge<Ptr>& source)
 	 * @brief Copy constructor
 	 * @param source const reference to the GCEdge to be copied.
 	 *
@@ -110,7 +110,7 @@ namespace CXXR {
 	 * it refers to.
 	 */
 
-	/** @fn GCEdge<T>& operator=(const GCEdge<T>& rhs)
+	/** @fn GCEdge<Ptr>& operator=(const GCEdge<Ptr>& rhs)
 	 * @brief Assignment operator.
 	 * @param rhs Right-hand side of the assignment.  It is
 	 *          <em>essential</em> that the origin ('from') of \a
@@ -124,7 +124,7 @@ namespace CXXR {
 	/**
 	 * @return the pointer which this GCEdge object encapsulates.
 	 */
-	operator T const() const {return m_to;}
+	operator Ptr const() const {return m_to;}
 
 	/** Redirect the GCEdge to point at a (possibly) different node.
 	 *
@@ -140,7 +140,7 @@ namespace CXXR {
 	 * However, this would double the space occupied by a GCEdge
 	 * object.
 	 */
-	void redirect(GCNode* from, T to)
+	void redirect(GCNode* from, Ptr to)
 	{
 	    m_to = to;
 	    if (m_to) {
@@ -149,7 +149,7 @@ namespace CXXR {
 	    }
 	}
     private:
-	T m_to;
+	Ptr m_to;
     };
 }
 
