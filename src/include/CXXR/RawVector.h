@@ -62,7 +62,7 @@ Rbyte *RAW(SEXP x);
 #else
 inline Rbyte *RAW(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::RawVector>(x))[0];
+    return &(*CXXR::SEXP_downcast<CXXR::RawVector*>(x))[0];
 }
 #endif
 

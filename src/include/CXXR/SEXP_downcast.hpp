@@ -30,25 +30,27 @@
 
 namespace CXXR {
 #ifndef USE_TYPE_CHECKING
-    template <class T>
-    inline T* SEXP_downcast(SEXP s)
+    template <class Ptr>
+    inline Ptr SEXP_downcast(SEXP s)
     {
-	return static_cast<T*>(s);
+	return static_cast<Ptr>(s);
     }
 #else
     /** Down cast from RObject* to a pointer to a class derived from
      *  RObject.
-     * @param T Cast the pointer to type T*, where T inherits from RObject.
+     * @param Ptr Cast the pointer to type Ptr, where Ptr is a pointer
+     *          or const pointer to RObject or a class derived from
+     *          RObject.
      * @param s The pointer to be cast.
      * @return The cast pointer.
      */
-    template <class T>
-    T* SEXP_downcast(SEXP s)
+    template <class Ptr>
+    Ptr SEXP_downcast(SEXP s)
     {
-	T* ans = dynamic_cast<T*>(s);
+	Ptr ans = dynamic_cast<Ptr>(s);
 	if (!ans)
 	    error("'%s' supplied where '%s' expected.",
-		  s->typeName(), T::staticTypeName());
+		  s->typeName(), ans->staticTypeName());
 	return ans;
     }
 #endif

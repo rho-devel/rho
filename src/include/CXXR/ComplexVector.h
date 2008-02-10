@@ -74,7 +74,7 @@ Rcomplex *COMPLEX(SEXP x);
 #else
 inline Rcomplex *COMPLEX(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::ComplexVector>(x))[0];
+    return &(*CXXR::SEXP_downcast<CXXR::ComplexVector*>(x))[0];
 }
 #endif
 

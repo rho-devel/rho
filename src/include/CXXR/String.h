@@ -168,7 +168,7 @@ extern "C" {
 #else
     inline char *CHAR_RW(SEXP x)
     {
-	return &(*CXXR::SEXP_downcast<CXXR::String>(x))[0];
+	return &(*CXXR::SEXP_downcast<CXXR::String*>(x))[0];
     }
 #endif
 
@@ -181,7 +181,7 @@ extern "C" {
 #else
     inline const char *R_CHAR(SEXP x)
     {
-	return CXXR::SEXP_downcast<CXXR::String>(x)->c_str();
+	return CXXR::SEXP_downcast<CXXR::String*>(x)->c_str();
     }
 #endif
 

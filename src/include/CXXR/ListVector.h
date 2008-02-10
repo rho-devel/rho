@@ -82,7 +82,7 @@ SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
 #else
 inline SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
 {
-    CXXR::ListVector* lv = CXXR::SEXP_downcast<CXXR::ListVector>(x);
+    CXXR::ListVector* lv = CXXR::SEXP_downcast<CXXR::ListVector*>(x);
     (*lv)[i] = v;
     return v;
 }
@@ -98,7 +98,7 @@ SEXP VECTOR_ELT(SEXP x, int i);
 #else
 inline SEXP VECTOR_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::ListVector>(x))[i];
+    return (*CXXR::SEXP_downcast<CXXR::ListVector*>(x))[i];
 }
 #endif
 

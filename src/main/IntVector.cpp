@@ -35,5 +35,5 @@ int *INTEGER(SEXP x)
     if (LogicalVector* lvec = dynamic_cast<LogicalVector*>(x))
 	return &(*lvec)[0];
 #endif
-    return &(*CXXR::SEXP_downcast<IntVector>(x))[0];
+    return &(*CXXR::SEXP_downcast<IntVector*>(x))[0];
 }

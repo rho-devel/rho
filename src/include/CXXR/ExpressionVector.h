@@ -76,7 +76,7 @@ SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
 inline SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
 {
     CXXR::ExpressionVector* ev
-	= CXXR::SEXP_downcast<CXXR::ExpressionVector>(x);
+	= CXXR::SEXP_downcast<CXXR::ExpressionVector*>(x);
     (*ev)[i] = v;
     return v;
 }
@@ -93,7 +93,7 @@ SEXP XVECTOR_ELT(SEXP x, int i);
 #else
 inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::ExpressionVector>(x))[i];
+    return (*CXXR::SEXP_downcast<CXXR::ExpressionVector*>(x))[i];
 }
 #endif
 

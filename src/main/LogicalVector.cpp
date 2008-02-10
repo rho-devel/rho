@@ -41,5 +41,5 @@ int *LOGICAL(SEXP x)
     if (IntVector* ivec = dynamic_cast<IntVector*>(x))
 	return &(*ivec)[0];
 #endif
-    return &(*CXXR::SEXP_downcast<LogicalVector>(x))[0];
+    return &(*CXXR::SEXP_downcast<LogicalVector*>(x))[0];
 }

@@ -73,7 +73,7 @@ double *REAL(SEXP x);
 #else
 inline double *REAL(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::RealVector>(x))[0];
+    return &(*CXXR::SEXP_downcast<CXXR::RealVector*>(x))[0];
 }
 #endif
 
