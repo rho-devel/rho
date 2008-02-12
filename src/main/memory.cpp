@@ -37,7 +37,6 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/Heap.hpp"
 #include "CXXR/JMPException.hpp"
@@ -119,8 +118,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 namespace {
     inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
     {
-	GCEdge<> e(x, 0);
-	e.redirect(x, y);
+	x->devolveAge(y);
     }
 }
 

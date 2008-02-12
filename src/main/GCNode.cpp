@@ -91,6 +91,14 @@ bool GCNode::check()
     return true;
 }
 
+void GCNode::devolveAge(const GCNode* node)
+{
+    if (node) {
+	Ager ager(m_gcgen);
+	node->conductVisitor(&ager);
+    }
+}
+
 void GCNode::expose() const
 {
     if (!m_prev)

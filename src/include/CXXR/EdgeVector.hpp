@@ -30,7 +30,6 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/Allocator.hpp"
-#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
@@ -71,7 +70,10 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(const ElementProxy& rhs)
 	    {
-		return operator=(static_cast<Ptr>(rhs));
+		(m_ev->m_data)[m_index] = (rhs.m_ev->m_data)[m_index];
+		if (rhs.m_ev != m_ev)
+		    m_ev->devolveAge((m_ev->m_data)[m_index]);
+		return *this;
 	    }
 
 	    /** Redirect the pointer encapsulated by the proxied element.
@@ -80,7 +82,8 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(Ptr s)
 	    {
-		(m_ev->m_data)[m_index].redirect(m_ev, s);
+		m_ev->devolveAge(s);
+		(m_ev->m_data)[m_index] = s;
 		return *this;
 	    }
 
@@ -115,7 +118,7 @@ namespace CXXR {
 	 *          GCEdge<Ptr> in the EdgeVector.
 	 */
 	explicit EdgeVector(size_t sz, Ptr init = 0)
-	    : VectorBase(ST, sz), m_data(sz, GCEdge<Ptr>(this, init))
+	    : VectorBase(ST, sz), m_data(sz, init)
 	{}
 
 	/** @brief Element access.
@@ -137,19 +140,6 @@ namespace CXXR {
 	Ptr const operator[](unsigned int index) const
 	{
 	    return m_data[index];
-	}
-
-	/** @brief Sort the EdgeVector.
-	 * @param tcomp The vector will be sorted according to the
-	 *          ordering defined by the binary predicate \a tcomp
-	 *          as applied to the destinations of the constituent
-	 *          GCEdge<Ptr> objects.
-	 */
-	template <class BinaryPredicate>
-	void sort(const BinaryPredicate& tcomp)
-	{
-	    std::sort(m_data.begin(), m_data.end(),
-		      GCEdge<Ptr>::DestComparator(tcomp));
 	}
 
 	/**
@@ -175,7 +165,7 @@ namespace CXXR {
 	 */
 	~EdgeVector() {}
     private:
-	std::vector<GCEdge<Ptr>, Allocator<GCEdge<Ptr> > > m_data;
+	std::vector<Ptr, Allocator<Ptr> > m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:

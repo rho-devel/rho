@@ -222,6 +222,20 @@ namespace CXXR {
 	 */
 	void destroy() const {delete this;}
 
+	/** @brief Prevent old-to-new references.
+	 * 
+	 * If \a node points to a node of a younger generation than
+	 * this node, then raise it to this node's generation, and
+	 * propagate this change to the nodes to which \a node refers,
+	 * and so on recursively.
+	 * @param node Pointer to the node whose generation is to be
+	 *          adjusted if necessary.  If this is a null pointer,
+	 *          the method does nothing.
+	 * @todo Make this protected once CHECK_OLD_TO_NEW in
+	 * memory.cpp is no longer required.
+	 */
+	void devolveAge(const GCNode* node);
+
 	/** Initiate a garbage collection.
 	 *
 	 * @param num_old_gens The number of old generations to collect.

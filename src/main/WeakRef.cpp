@@ -15,8 +15,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file WeakRef.cpp
@@ -43,27 +43,27 @@ int WeakRef::s_count = 0;
 
 WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(key, 0), m_Rfinalizer(key, 0),
+    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
       m_lit(s_live.insert(s_live.end(), this))
 {
-    // Force old-to-new checks:
-    m_value.redirect(key, value);
-    m_Rfinalizer.redirect(key, R_finalizer);
     if (!m_key)
 	tombstone();
+    // Force old-to-new checks:
+    m_key->devolveAge(m_value);
+    m_key->devolveAge(m_Rfinalizer);
     m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;
     ++s_count;
 }
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(key, 0), m_Rfinalizer(key, 0),
-      m_Cfinalizer(C_finalizer), m_lit(s_live.insert(s_live.end(), this))
+    : m_key(key), m_value(value), m_Cfinalizer(C_finalizer),
+      m_lit(s_live.insert(s_live.end(), this))
 {
-    // Force old-to-new check:
-    m_value.redirect(key, value);
     if (!m_key)
 	tombstone();
+    // Force old-to-new check:
+    m_key->devolveAge(m_value);
     m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;
     ++s_count;
 }
@@ -209,8 +209,8 @@ void WeakRef::tombstone()
 {
     WRList* oldl = wrList();
     m_key = 0;
-    m_value.redirect(0, 0);
-    m_Rfinalizer.redirect(0, 0);
+    m_value = 0;
+    m_Rfinalizer = 0;
     m_Cfinalizer = 0;
     m_flags[READY_TO_FINALIZE] = false;
     transfer(oldl, &s_tombstone);
