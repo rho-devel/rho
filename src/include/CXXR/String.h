@@ -139,6 +139,7 @@ namespace CXXR {
 	// Max. strlen stored internally:
 	static const size_t s_short_strlen = 7;
 
+	size_t m_databytes;  // includes trailing null byte
 	char* m_data;  // pointer to the string's data block.
 
 	// If there are fewer than s_short_strlen+1 chars in the
@@ -158,7 +159,7 @@ namespace CXXR {
 	~String()
 	{
 	    if (m_data != m_short_string)
-		Heap::deallocate(m_data, length() + 1);
+		Heap::deallocate(m_data, m_databytes);
 	}
     };
 }  // namespace CXXR

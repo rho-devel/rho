@@ -60,11 +60,6 @@ namespace {
     void (*unlockbindingptr)(SEXP b) = UNLOCK_BINDING;
 }
 
-RObject::~RObject()
-{
-    if (m_data) Heap::deallocate(m_data, m_databytes);
-}
-
 const char*  RObject::typeName() const
 {
     return Rf_type2char(sexptype());

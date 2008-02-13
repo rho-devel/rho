@@ -20,7 +20,7 @@
  */
 
 /** @file VectorBase.h
- * Class VectorBase and associated C interface.
+ * @brief Class VectorBase and associated C interface.
  */
 
 #ifndef VECTORBASE_H
@@ -42,24 +42,29 @@ namespace CXXR {
 	 * @param sz The required number of elements in the vector.
 	 */
 	VectorBase(SEXPTYPE stype, size_t sz)
-	    : RObject(stype)
-	{
-	    u.vecsxp.length = sz;
-	}
+	    : RObject(stype), m_size(sz)
+	{}
+
+	/** @brief Alter the size (number of elements) in the vector.
+	 * @param new_size New size required.  Zero is permissible,
+	 *          but (as presently implemented) the new size must
+	 *          not be greater than the current size. 
+	 */
+	void resize(size_t new_size);
 
 	/**
 	 * @return The number of elements in the vector.
 	 */
 	size_t size() const
 	{
-	    return length();
+	    return m_size;
 	}
+    protected:
+	~VectorBase() {}
+    private:
+	size_t m_size;
     };
 }  // namespace CXXR
-
-// 2007/08/07 arr Get rid of this macro once it is no longer needed
-// within the inline functions below.
-inline void* DATAPTR(SEXP x) {return x->m_data;}
 
 extern "C" {
 
@@ -70,9 +75,10 @@ extern "C" {
 /* Vector Access Functions */
 
 /**
- * @param x Pointer to a \c VectorBase .
+ * @param x Pointer to an \c RObject .
  *
- * @return The length of \a x, or 0 if \a x is a null pointer.  (In
+ * @return The length of \a x, or 0 if \a x is a null pointer, or is
+ *         not a pointer to a vector object (VectorBase).  (In 
  *         the case of certain hash tables, this means the 'capacity'
  *         of \a x , not all of which may be used.)
  */
@@ -81,7 +87,8 @@ int LENGTH(SEXP x);
 #else
 inline int LENGTH(SEXP x)
 {
-    return x ? reinterpret_cast<VECSEXP>(x)->u.vecsxp.length : 0;
+    CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
+    return vb ? vb->size() : 0;
 }
 #endif
 
@@ -106,14 +113,7 @@ inline int TRUELENGTH(SEXP x)
  * @param x Pointer to a \c VectorBase .
  * @param v The required new length.
  */
-#ifndef __cplusplus
 void SETLENGTH(SEXP x, int v);
-#else
-inline void SETLENGTH(SEXP x, int v)
-{
-    reinterpret_cast<VECSEXP>(x)->u.vecsxp.length = v;
-}
-#endif
 
 /**
  * Set 'true length' of vector.

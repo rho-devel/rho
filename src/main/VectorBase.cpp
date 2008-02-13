@@ -13,22 +13,39 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file VectorBase.cpp
  *
- * Implementation of class VectorBase and related functions.
+ * @brief Implementation of class VectorBase and related functions.
  */
 
+#include "R_ext/Error.h"
 #include "CXXR/VectorBase.h"
+
+using namespace std;
+using namespace CXXR;
 
 namespace {
     int (*lengthptr)(SEXP x) = LENGTH;
-    void (*setlengthptr)(SEXP x, int v) = SETLENGTH;
     void (*settruelengthptr)(SEXP x, int v) = SET_TRUELENGTH;
     int (*truelengthptr)(SEXP x) = TRUELENGTH;
 }
 
+void VectorBase::resize(size_t new_size)
+{
+    if (new_size > m_size)
+	error("VectorBase::resize() : requested size exceeds current size.");
+    m_size = new_size;
+}
+
 // Rf_allocVector is still in memory.cpp (for the time being).
+
+void SETLENGTH(SEXP x, int v)
+{
+    CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
+    if (!vb) error("SETLENGTH invoked for a non-vector.");
+    vb->resize(v);
+}

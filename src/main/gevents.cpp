@@ -110,7 +110,6 @@ SEXP doMouseEvent(SEXP eventRho, NewDevDesc *dd, R_MouseEvent event,
 	if (buttons & leftButton) INTEGER(bvec)[i++] = 0;
 	if (buttons & middleButton) INTEGER(bvec)[i++] = 1;
 	if (buttons & rightButton) INTEGER(bvec)[i++] = 2;
-	SETLENGTH(bvec, i);
 
 	PROTECT(sx = ScalarReal( (x - dd->left) / (dd->right - dd->left) ));
 	PROTECT(sy = ScalarReal((y - dd->bottom) / (dd->top - dd->bottom) ));

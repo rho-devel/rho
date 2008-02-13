@@ -48,10 +48,10 @@ namespace {
 // sort.cpp
 
 String::String(size_t sz)
-    : VectorBase(CHARSXP, sz), m_data(m_short_string)
+    : VectorBase(CHARSXP, sz), m_databytes(sz + 1), m_data(m_short_string)
 {
     if (sz > s_short_strlen)
-	m_data = reinterpret_cast<char*>(Heap::allocate(sz + 1));
+	m_data = reinterpret_cast<char*>(Heap::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
 }

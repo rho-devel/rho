@@ -21,7 +21,7 @@
 
 /** @file RObject.h
  *
- * Class RObject.
+ * @brief Class RObject and associated C interface functions.
  */
 
 #ifndef ROBJECT_H
@@ -132,7 +132,6 @@ namespace CXXR {
     };
 
     struct vecsxp_struct {
-	R_len_t	length;
 	R_len_t	truelength;
     };
 
@@ -199,11 +198,6 @@ namespace CXXR {
 	const RObject* hashTable() const {return u.envsxp.hashtab;}
 
 	/**
-	 * @return length of this vector.
-	 */
-	R_len_t length() const {return u.vecsxp.length;}
-
-	/**
 	 * @return SEXPTYPE of this object.
 	 */
 	SEXPTYPE sexptype() const {return m_type;}
@@ -228,7 +222,7 @@ namespace CXXR {
 	 * C++' Item 27.) Derived classes should likewise declare
 	 * their constructors private or protected.
 	 */
-	virtual ~RObject();
+	virtual ~RObject() {}
 
 	// To be private in future:
 
@@ -249,8 +243,6 @@ namespace CXXR {
 	    struct promsxp_struct promsxp;
 	    struct vecsxp_struct vecsxp;
 	} u;
-	void* m_data;
-	size_t m_databytes;
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */
