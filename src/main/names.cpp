@@ -1088,8 +1088,6 @@ SEXP install(const char *name)
 	    return (CAR(sym));
     /* Create a new symbol node and link it into the table. */
     sym = mkSYMSXP(mkChar(buf), R_UnboundValue);
-    SET_HASHVALUE(PRINTNAME(sym), hashcode);
-    SET_HASHASH(PRINTNAME(sym), 1);
     R_SymbolTable[i] = CONS(sym, R_SymbolTable[i]);
     return (sym);
 }

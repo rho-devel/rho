@@ -20,7 +20,8 @@
  */
 
 /** @file String.h
- * Class CXXR::String and associated C interface.
+ * @brief Class CXXR::String and associated C interface.
+ * @todo Get rid of CHAR_RW.
  */
 
 #ifndef CXXR_STRING_H
@@ -43,8 +44,7 @@ extern "C" {
 namespace CXXR {
     /** @brief RObject representing a character string.
      *
-     * @todo Incorporate the management of hash values into the class
-     * logic.
+     * @todo Give it more of a feel of std::string.
      */
     class String : public VectorBase {
     public:
@@ -89,6 +89,7 @@ namespace CXXR {
 	 */
 	char& operator[](unsigned int index)
 	{
+	    m_hash = -1;
 	    return m_data[index];
 	}
 
@@ -116,6 +117,11 @@ namespace CXXR {
 	    return m_data;
 	}
 
+	/** @brief Hash value.
+	 * @return The hash value of this string.
+	 */
+	int hash() const;
+
 	/** @brief 'Not available' string.
 	 * @return <tt>const</tt> pointer to the string representing
 	 *         'not available'.
@@ -139,6 +145,7 @@ namespace CXXR {
 	// Max. strlen stored internally:
 	static const size_t s_short_strlen = 7;
 
+	mutable int m_hash;  // negative signifies invalid
 	size_t m_databytes;  // includes trailing null byte
 	char* m_data;  // pointer to the string's data block.
 
@@ -285,27 +292,13 @@ extern "C" {
     /* Hashing Functions */
 
 #ifndef __cplusplus
-    int HASHASH(SEXP x);
-#else
-    inline int HASHASH(SEXP x) {return x->m_gpbits;}
-#endif
-
-#ifndef __cplusplus
     int HASHVALUE(SEXP x);
 #else
-    inline int HASHVALUE(SEXP x) {return TRUELENGTH(x);}
-#endif
-
-#ifndef __cplusplus
-    void SET_HASHASH(SEXP x, int v);
-#else
-    inline void SET_HASHASH(SEXP x, int v) {x->m_gpbits = v;}
-#endif
-
-#ifndef __cplusplus
-    void SET_HASHVALUE(SEXP x, int v);
-#else
-    inline void SET_HASHVALUE(SEXP x, int v) {SET_TRUELENGTH(x, v);}
+    inline int HASHVALUE(SEXP x)
+    {
+	const CXXR::String& str = *CXXR::SEXP_downcast<CXXR::String*>(x);
+	return str.hash();
+    }
 #endif
 
 #ifdef __cplusplus

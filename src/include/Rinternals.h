@@ -195,11 +195,7 @@ void SET_PRCODE(SEXP x, SEXP v);
 void SET_PRSEEN(SEXP x, int v);
 
 /* Hashing Functions */
-/* There are macro versions in Defn.h */
-int  (HASHASH)(SEXP x);
 int  (HASHVALUE)(SEXP x);
-void (SET_HASHASH)(SEXP x, int v);
-void (SET_HASHVALUE)(SEXP x, int v);
 
 
 /* External pointer access macros */

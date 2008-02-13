@@ -30,14 +30,11 @@ using namespace std;
 using namespace CXXR;
 
 namespace {
-    int (*hashashptr)(SEXP x) = HASHASH;
     int (*hashvalueptr)(SEXP x) = HASHVALUE;
     Rboolean (*islatin1ptr)(const SEXP x) = IS_LATIN1;
     Rboolean (*isutf8ptr)(const SEXP x) = IS_UTF8;
     const char* (*R_CHARp)(SEXP x) = R_CHAR;
     SEXP (*Rf_allocStringp)(R_len_t) = Rf_allocString;
-    void (*sethashashptr)(SEXP x, int v) = SET_HASHASH;
-    void (*sethashvalueptr)(SEXP x, int v) = SET_HASHVALUE;
     void (*setlatin1ptr)(SEXP x) = SET_LATIN1;
     void (*setutf8ptr)(SEXP x) = SET_UTF8;
     void (*unsetlatin1ptr)(SEXP x) = UNSET_LATIN1;
@@ -48,13 +45,16 @@ namespace {
 // sort.cpp
 
 String::String(size_t sz)
-    : VectorBase(CHARSXP, sz), m_databytes(sz + 1), m_data(m_short_string)
+    : VectorBase(CHARSXP, sz), m_hash(-1),
+      m_databytes(sz + 1), m_data(m_short_string)
 {
     if (sz > s_short_strlen)
 	m_data = reinterpret_cast<char*>(Heap::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
 }
+
+// int hash() const is in envir.cpp (for the time being)
 
 const char* String::typeName() const
 {
