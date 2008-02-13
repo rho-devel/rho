@@ -1,23 +1,3 @@
-/*
- *  R : A Computer Language for Statistical Data Analysis
- * (C) Copyright Nicolai M. Josuttis 1999.
- *  Copyright (C) 2007  Andrew Runnalls
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation; either version 2.1 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
- */
-
 /* The following code is adapted from an example taken from the book
  * "The C++ Standard Library - A Tutorial and Reference"
  * by Nicolai M. Josuttis, Addison-Wesley, 1999
@@ -27,6 +7,10 @@
  * is granted provided this copyright notice appears in all copies.
  * This software is provided "as is" without express or implied
  * warranty, and with no claim as to its suitability for any purpose.
+ */
+
+/* Adaptations Copyright Andrew Runnalls 2007, under the same terms as
+ * the original copyright above.
  */
 
 #ifndef ALLOCATOR_HPP
