@@ -955,7 +955,9 @@ void R_Suicide(char *);
 void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
 void sortVector(SEXP, Rboolean);
-void ssort(SEXP*,int);
+#ifdef __cplusplus
+void ssort(CXXR::String**,int);
+#endif
 int StrToInternal(const char *);
 SEXP substituteList(SEXP, SEXP);
 SEXP R_syscall(int,RCNTXT*);

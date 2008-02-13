@@ -28,7 +28,6 @@ namespace {
     int (*lengthptr)(SEXP x) = LENGTH;
     void (*setlengthptr)(SEXP x, int v) = SETLENGTH;
     void (*settruelengthptr)(SEXP x, int v) = SET_TRUELENGTH;
-    SEXP* (*stringptrptr)(SEXP x) = STRING_PTR;
     int (*truelengthptr)(SEXP x) = TRUELENGTH;
 }
 

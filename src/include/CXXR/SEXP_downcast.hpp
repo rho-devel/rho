@@ -47,6 +47,7 @@ namespace CXXR {
     template <class Ptr>
     Ptr SEXP_downcast(SEXP s)
     {
+	if (!s) return 0;
 	Ptr ans = dynamic_cast<Ptr>(s);
 	if (!ans)
 	    error("'%s' supplied where '%s' expected.",

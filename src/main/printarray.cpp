@@ -39,6 +39,9 @@
 
 #include <stdlib.h> /* for div() */
 
+using namespace std;
+using namespace CXXR;
+
 /* We need display width of a string */
 int Rstrwid(const char *str, int slen, int quote);  /* from printutils.c */
 #define strwidth(x) Rstrwid(x, strlen(x), 0)
@@ -390,7 +393,7 @@ static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 			      int quote, int right, SEXP rl, SEXP cl,
 			      const char *rn, const char *cn)
 {
-    SEXP *x;
+    String** x;
     _PRINT_INIT_rl_rn;
 
     sw = allocVector(INTSXP, c);

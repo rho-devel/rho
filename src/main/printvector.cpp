@@ -33,6 +33,9 @@
 
 #include "Print.h"
 
+using namespace std;
+using namespace CXXR;
+
 #define DO_first_lab			\
     if (indx) {				\
 	labwidth = IndexWidth(n) + 2;	\
@@ -130,7 +133,7 @@ void printComplexVector(Rcomplex *x, int n, int indx)
     Rprintf("\n");
 }
 
-static void printStringVector(SEXP * x, int n, int quote, int indx)
+static void printStringVector(String** x, int n, int quote, int indx)
 {
     int i, w, labwidth=0, width;
 
@@ -260,18 +263,18 @@ void printVector(SEXP x, int indx, int quote)
 }
 
 
-static void printNamedLogicalVector(int * x, int n, SEXP * names)
+static void printNamedLogicalVector(int * x, int n, String** names)
     PRINT_N_VECTOR(formatLogical(x, n, &w),
 		   Rprintf("%s%*s", EncodeLogical(x[k],w), R_print.gap,""))
 
-static void printNamedIntegerVector(int * x, int n, SEXP * names)
+static void printNamedIntegerVector(int * x, int n, String** names)
     PRINT_N_VECTOR(formatInteger(x, n, &w),
 		   Rprintf("%s%*s", EncodeInteger(x[k],w), R_print.gap,""))
 
 #undef INI_F_REAL
 #define INI_F_REAL	int d, e; formatReal(x, n, &w, &d, &e, 0)
 
-static void printNamedRealVector(double * x, int n, SEXP * names)
+static void printNamedRealVector(double * x, int n, String** names)
     PRINT_N_VECTOR(INI_F_REAL,
 		   Rprintf("%s%*s", EncodeReal(x[k],w,d,e, OutDec),R_print.gap,""))
 
@@ -287,7 +290,7 @@ static void printNamedRealVector(double * x, int n, SEXP * names)
 		Rprintf("+%si", "NaN");		\
 	    else
 
-static void printNamedComplexVector(Rcomplex * x, int n, SEXP * names)
+static void printNamedComplexVector(Rcomplex * x, int n, String** names)
     PRINT_N_VECTOR(INI_F_CPLX,
 	{ /* PRINT_1 */
 	    if(j) Rprintf("%*s", R_print.gap, "");
@@ -304,13 +307,14 @@ static void printNamedComplexVector(Rcomplex * x, int n, SEXP * names)
 	    }
 	})
 
-static void printNamedStringVector(SEXP * x, int n, int quote, SEXP * names)
+static void printNamedStringVector(String** x, int n, int quote,
+				   String** names)
     PRINT_N_VECTOR(formatString(x, n, &w, quote),
 		   Rprintf("%s%*s",
 			   EncodeString(x[k], w, quote, Rprt_adj_right),
 			   R_print.gap, ""))
 
-static void printNamedRawVector(Rbyte * x, int n, SEXP * names)
+static void printNamedRawVector(Rbyte * x, int n, String** names)
     PRINT_N_VECTOR(formatRaw(x, n, &w),
                    Rprintf("%s%*s", EncodeRaw(x[k]), R_print.gap,""))
 

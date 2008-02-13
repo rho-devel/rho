@@ -30,6 +30,9 @@
 #include <Defn.h> /* => Utils.h with the protos from here */
 #include <Rmath.h>
 
+using namespace std;
+using namespace CXXR;
+
 			/*--- Part I: Comparison Utilities ---*/
 
 static int icmp(int x, int y, Rboolean nalast)
@@ -182,9 +185,9 @@ void R_csort(Rcomplex *x, int n)
 
 
 /* used in platform.c */
-void attribute_hidden ssort(SEXP *x, int n)
+void attribute_hidden ssort(String** x, int n)
 {
-    SEXP v;
+    String* v;
 #define TYPE_CMP scmp
     sort_body
 #undef TYPE_CMP
@@ -352,9 +355,9 @@ static void R_csort2(Rcomplex *x, int n, Rboolean decreasing)
 	}
 }
 
-static void ssort2(SEXP *x, int n, Rboolean decreasing)
+static void ssort2(String** x, int n, Rboolean decreasing)
 {
-    SEXP v;
+    String* v;
     int i, j, h, t;
 
     for (t = 0; incs[t] > n; t++);
@@ -446,9 +449,9 @@ static void cPsort2(Rcomplex *x, int lo, int hi, int k)
 }
 
 
-static void sPsort2(SEXP *x, int lo, int hi, int k)
+static void sPsort2(String** x, int lo, int hi, int k)
 {
-    SEXP v, w;
+    String *v, *w;
 #define TYPE_CMP scmp
     psort_body
 #undef TYPE_CMP
@@ -676,7 +679,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing)
     int *ix = NULL /* -Wall */;
     double *x = NULL /* -Wall */;
     Rcomplex *cx = NULL /* -Wall */;
-    SEXP *sx = NULL /* -Wall */;
+    String** sx = NULL /* -Wall */;
     
     switch (TYPEOF(key)) {
     case LGLSXP:

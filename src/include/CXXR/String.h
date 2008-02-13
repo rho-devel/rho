@@ -32,6 +32,7 @@
 extern "C" {
 #endif
 
+    extern SEXP R_BlankString;
     extern SEXP R_NaString;
 
 #ifdef __cplusplus
@@ -100,6 +101,14 @@ namespace CXXR {
 	char operator[](unsigned int index) const
 	{
 	    return m_data[index];
+	}
+
+	/** @brief Blank string.
+	 * @return <tt>const</tt> pointer to the string "".
+	 */
+	static const String* blank()
+	{
+	    return static_cast<String*>(R_BlankString);
 	}
 
 	const char* c_str() const

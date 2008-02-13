@@ -27,6 +27,9 @@
 
 #include <R_ext/RS.h> /* S4 bit */
 
+using namespace std;
+using namespace CXXR;
+
 /*  duplicate  -  object duplication  */
 
 /*  Because we try to maintain the illusion of call by
@@ -50,7 +53,8 @@
   if (__n__ == 1) fun(to)[0] = fun(from)[0]; \
   else { \
     int __i__; \
-    type *__fp__ = fun(from), *__tp__ = fun(to); \
+    type *__fp__ = fun(from);   \
+    type *__tp__ = fun(to);	\
     for (__i__ = 0; __i__ < __n__; __i__++) \
       __tp__[__i__] = __fp__[__i__]; \
   } \
@@ -227,7 +231,7 @@ static SEXP duplicate1(SEXP s)
 	/* direct copying and bypassing the write barrier is OK since
 	   t was just allocated and so it cannot be older than any of
 	   the elements in s.  LT */
-	DUPLICATE_ATOMIC_VECTOR(SEXP, STRING_PTR, t, s);
+	DUPLICATE_ATOMIC_VECTOR(String*, STRING_PTR, t, s);
 	break;
     case PROMSXP:
 	return s;

@@ -143,6 +143,19 @@ namespace CXXR {
 	}
 
 	/**
+	 * @return pointer to the start of this object's data,
+	 * interpreted (riskily) as an array of Ptr.
+	 * @deprecated This function puts the integrity of the write barrier
+	 * at the mercy of class clients.  (It also assumes that the
+	 * data of a std::vector are stored contiguously, which isn't
+	 * guaranteed by the standard.)
+	 */
+	Ptr* dataPtr()
+	{
+	    return &m_data[0];
+	}
+
+	/**
 	 * @return the name by which this type is known in R.
 	 *
 	 * @note This function is declared but not defined as part of

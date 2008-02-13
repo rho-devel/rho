@@ -63,7 +63,7 @@
 #include "CXXR/Promise.h"
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
-#include "CXXR/String.h"
+#include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/WeakRef.h"
 
@@ -125,8 +125,6 @@ SEXP (STRING_ELT)(SEXP x, int i);
 SEXP (VECTOR_ELT)(SEXP x, int i);
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
-SEXP *(STRING_PTR)(SEXP x);
-SEXP *(VECTOR_PTR)(SEXP x);
 
 /* List Access Functions */
 /* These also work for ... objects */

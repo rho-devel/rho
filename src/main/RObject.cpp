@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file RObject.cpp
@@ -40,7 +40,6 @@ using namespace CXXR;
 namespace {
     SEXP (*attribptr)(SEXP e) = ATTRIB;
     Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
-    Rboolean (*isStringptr)(SEXP s) = Rf_isString;
     Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
     int (*levelsptr)(SEXP x) = LEVELS;
     int (*namedptr)(SEXP x) = NAMED;
@@ -75,12 +74,6 @@ void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);
     switch (sexptype()) {
-    case STRSXP:
-	for (int i = 0; i < length(); i++) {
-	    const GCNode* node = reinterpret_cast<SEXP*>(m_data)[i];
-	    if (node) node->conductVisitor(v);
-	}
-	break;
     case ENVSXP:
 	if (frame()) frame()->conductVisitor(v);
 	if (enclosingEnvironment())

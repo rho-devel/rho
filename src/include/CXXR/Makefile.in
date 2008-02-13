@@ -19,7 +19,7 @@ CXXR_HEADERS = \
   IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
-  String.h Symbol.h VectorBase.h WeakRef.h
+  String.h StringVector.h Symbol.h VectorBase.h WeakRef.h
 
 DISTFILES = Makefile.in $(CXXR_HEADERS)
 TIMESTAMPS = $(CXXR_HEADERS:.h=.ts)

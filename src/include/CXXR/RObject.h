@@ -371,19 +371,6 @@ extern "C" {
 
     /**
      * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a vector of strings.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isString(SEXP s);
-#else
-    inline Rboolean Rf_isString(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == STRSXP);
-    }
-#endif
-
-    /**
-     * @param s Pointer to an RObject.
      * @return TRUE iff the RObject pointed to by \a s has a class attribute.
      */
 #ifndef __cplusplus

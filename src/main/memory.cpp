@@ -87,18 +87,6 @@ static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
 /* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
    ignored. */
 
-/* Processing Node Children */
-
-// 2007/08/07 arr: memory.cpp's own non-type-checked versions!
-namespace {
-    inline char* memCHAR(SEXP x) {return reinterpret_cast<char*>(DATAPTR(x));}
-
-    inline const RObject* memSTRING_ELT(const RObject* x, int i)
-    {
-        return reinterpret_cast<SEXP*>(x->m_data)[i];
-    }
-}
-
 /* Debugging Routines. */
 
 #ifdef DEBUG_ADJUST_HEAP
@@ -650,11 +638,7 @@ SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
 
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
-    SEXP s;     /* For the generational collector it would be safer to
-		   work in terms of a VECSEXP here, but that would
-		   require several casts below... */
-    R_len_t i;
-    R_size_t size = 0, actual_size = 0, alloc_size, old_R_VSize;
+    SEXP s;
 
     if (length < 0 )
 	errorcall(R_GlobalContext->call,
@@ -676,16 +660,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case CPLXSXP:
 	return new ComplexVector(length);
     case STRSXP:
-	if (length <= 0)
-	    actual_size = size = 0;
-	else {
-	    if (length > int(R_SIZE_T_MAX / sizeof(SEXP)))
-		errorcall(R_GlobalContext->call,
-			  _("cannot allocate vector of length %d"), length);
-	    size = PTR2VEC(length);
-	    actual_size = length * sizeof(SEXP);
-	}
-	break;
+	return new StringVector(length);
     case EXPRSXP:
 	return new ExpressionVector(length);
     case VECSXP:
@@ -700,66 +675,8 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     default:
 	error(_("invalid type/length (%s/%d) in vector allocation"),
 	      type2char(type), length);
+	return 0;  // -Wall
     }
-
-    alloc_size = size;
-
-    /* save current R_VSize to roll back adjustment if malloc fails */
-    old_R_VSize = R_VSize;
-
-    s = new RObject(type);
-    s->m_databytes = size * sizeof(VECREC);
-    if (size > 0) {
-	bool success = false;
-	if (size < R_SIZE_T_MAX/sizeof(VECREC)) {
-	    // We don't want the garbage collector trying to mark this
-	    // node's children yet:
-	    SETLENGTH(s, 0);
-	    try {
-		PROTECT(s);
-		s->m_data = Heap::allocate(s->m_databytes);
-		UNPROTECT(1);
-		success = true;
-	    }
-	    catch (bad_alloc) {
-		// Leave s itself to the garbage collector.
-		success = false;
-	    }
-	}
-	if (!success) {
-	    double dsize = double(size) * sizeof(VECREC)/1024.0;
-	    /* reset the vector heap limit */
-	    R_VSize = old_R_VSize;
-	    if(dsize > 1024.0*1024.0)
-		errorcall(R_NilValue, 
-			  _("cannot allocate vector of size %0.1f GB"),
-			  dsize/1024.0/1024.0);
-	    if(dsize > 1024.0)
-		errorcall(R_NilValue,
-			  _("cannot allocate vector of size %0.1f MB"),
-			  dsize/1024.0);
-	    else
-		errorcall(R_NilValue, 
-			  _("cannot allocate vector of size %0.f KB"),
-			  dsize);
-	}
-    }
-    SETLENGTH(s, length);
-
-    /* The following prevents disaster in the case */
-    /* that an uninitialised string vector is marked */
-    /* Direct assignment is OK since the node was just allocated and */
-    /* so is at least as new as R_NilValue and R_BlankString */
-    if (type == STRSXP) {
-	SEXP *data = STRING_PTR(s);
-#if VALGRIND_LEVEL > 1
-	VALGRIND_MAKE_READABLE(STRING_PTR(s), actual_size);
-#endif
-	for (i = 0; i < length; i++){
-	    data[i] = R_BlankString;
-	}
-    }
-    return s;
 }
 
 SEXP allocList(unsigned int n)
@@ -981,30 +898,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }
 
-/* Vector Accessors */
-
-SEXP (STRING_ELT)(SEXP x, int i) {
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != STRSXP)
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "STRING_ELT", "character vector", type2char(TYPEOF(x)));
-#endif
-    return reinterpret_cast<SEXP *>(DATAPTR(x))[i];
-}
-
-void (SET_STRING_ELT)(SEXP x, int i, SEXP v) { 
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(x) != STRSXP)
-	error("%s() can only be applied to a '%s', not a '%s'", 
-	      "SET_STRING_ELT", "character vector", type2char(TYPEOF(x)));
-    if(TYPEOF(v) != CHARSXP && TYPEOF(v) != NILSXP)
-       error("Value of SET_STRING_ELT() must be a 'CHARSXP' not a '%s'", 
-	     type2char(TYPEOF(v)));
-#endif
-    CHECK_OLD_TO_NEW(x, v);
-    reinterpret_cast<SEXP *>(DATAPTR(x))[i] = v; 
-}
-
 
 /* List Accessors */
 
@@ -1147,7 +1040,7 @@ static void R_OutputStackTrace(FILE *file)
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    fprintf(file, "\"%s\" ",
-		    TYPEOF(fun) == SYMSXP ? memCHAR(PRINTNAME(fun)) :
+		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
 		    "<Anonymous>");
 	}
     }
@@ -1192,7 +1085,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isString(CAR(args)) || (LENGTH(CAR(args))) != 1)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
-    filename = R_ExpandFileName(memCHAR(memSTRING_ELT(CAR(args), 0)));
+    filename = R_ExpandFileName(CHAR(STRING_ELT(CAR(args), 0)));
     threshold = R_size_t(REAL(CADDR(args))[0]);
     if (strlen(filename))
 	R_InitMemReporting(filename, append_mode, threshold);
