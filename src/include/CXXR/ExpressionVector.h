@@ -69,6 +69,7 @@ extern "C" {
  * @param x Pointer to an \c ExpressionVector .
  * @param i Index of the required element.  There is no bounds checking.
  * @param v Pointer to \c RObject representing the new value.
+ * @return The new value \a v.
  */
 #ifndef __cplusplus
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
