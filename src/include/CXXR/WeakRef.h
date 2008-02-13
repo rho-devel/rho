@@ -54,7 +54,7 @@ extern "C" {
 #include "CXXR/Allocator.hpp"
 
 namespace CXXR {
-    /** Weak reference.
+    /** @brief Weak reference.
      *
      * Refer to <em>Stretching the storage manager: weak pointers and
      * stable names in Haskell</em> by Peyton Jones, Marlow, and
@@ -75,6 +75,10 @@ namespace CXXR {
      * A weak reference object with a reachable key will not be
      * garbage collected even if the weak reference object is not
      * itself reachable.
+     *
+     * @todo It would probably make more sense for this class to
+     * inherit directly from GCNode, and for the key, value etc. to be
+     * pointers to GCNode.
      */
     class WeakRef : public RObject {
     public:

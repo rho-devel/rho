@@ -70,9 +70,9 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(const ElementProxy& rhs)
 	    {
-		(m_ev->m_data)[m_index] = (rhs.m_ev->m_data)[m_index];
+		*m_it = *rhs.m_it;
 		if (rhs.m_ev != m_ev)
-		    m_ev->devolveAge((m_ev->m_data)[m_index]);
+		    m_ev->devolveAge(*m_it);
 		return *this;
 	    }
 
@@ -83,7 +83,7 @@ namespace CXXR {
 	    ElementProxy& operator=(Ptr s)
 	    {
 		m_ev->devolveAge(s);
-		(m_ev->m_data)[m_index] = s;
+		*m_it = s;
 		return *this;
 	    }
 
@@ -93,14 +93,14 @@ namespace CXXR {
 	     */
 	    operator Ptr const() const
 	    {
-		return (m_ev->m_data)[m_index];
+		return *m_it;
 	    }
 	private:
 	    EdgeVector<Ptr, ST>* m_ev;
-	    unsigned int m_index;
+	    typename std::vector<Ptr, Allocator<Ptr> >::iterator m_it;
 
 	    ElementProxy(EdgeVector<Ptr, ST>* ev, unsigned int index)
-		: m_ev(ev), m_index(index)
+		: m_ev(ev), m_it(m_ev->m_data.begin() + index)
 	    {}
 
 	    // Not implemented:
