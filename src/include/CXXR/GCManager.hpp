@@ -20,7 +20,7 @@
  */
 
 /** @file GCManager.hpp
- * Class GCManager.
+ * @brief Class CXXR::GCManager.
  *
  * @todo Reinstate garbage collection timing.
  * @todo Update DEBUG_GC_SUMMARY etc.
@@ -33,7 +33,7 @@
 #include <iosfwd>
 
 namespace CXXR {
-    /** Class for managing garbage collection.
+    /** @brief Class for managing garbage collection.
      * 
      * This class only has static members.  When CXXR::Heap indicates
      * that it is on the point of requesting additional memory from
@@ -49,7 +49,9 @@ namespace CXXR {
      */
     class GCManager {
     public:
-	/** Adjust the garbage collection threshold in the light of
+	/** @brief Adjust the garbage collection threshold.
+	 *
+	 *  Adjust the garbage collection threshold in the light of
 	 *  current allocations, and the space demand currently being
 	 *  addressed.
 	 *
@@ -58,7 +60,7 @@ namespace CXXR {
 	 */
 	static void adjustThreshold(size_t bytes_needed = 0);
 
-	/** Initiate a garbage collection.
+	/** @brief Initiate a garbage collection.
 	 *
 	 * @param bytes_wanted An indication of the number of bytes
 	 *          wanted in the event that prompted garbage
@@ -71,7 +73,7 @@ namespace CXXR {
 	 */
 	static void gc(size_t bytes_wanted, bool full = false);
 
-	/** Initialize static members.
+	/** @brief Initialize static members.
 	 *
 	 * This method must be called before any GCNode objects are created.
 	 * If called more than once in a single program run, the
@@ -98,13 +100,15 @@ namespace CXXR {
 	 */
 	static bool isTortured() {return s_tortured;}
 
-	/**
+	/** @brief Maximum number of bytes used.
+	 *
 	 * @return the maximum number of bytes used (up to the time of
 	 *         the most recent garbage collection.)
 	 */
 	static size_t maxBytes() {return s_max_bytes;}
 
-	/**
+	/** @brief Maximum number of GCNode objects allocated.
+	 * 
 	 * @return the maximum number of GCNode objects allocated (up
 	 * to the time of the most recent garbage collection.)
 	 *
@@ -114,7 +118,7 @@ namespace CXXR {
 	 */
 	static size_t maxNodes() {return s_max_nodes;}
 
-	/** Reset the tallies of the maximum numbers of bytes and
+	/** @brief Reset the tallies of the maximum numbers of bytes and
 	 *  GCNode objects.
 	 *
 	 * This method resets the record of the maximum number of
@@ -123,7 +127,7 @@ namespace CXXR {
 	 */
 	static void resetMaxTallies();
 
-	/** Set the output stream for garbage collection reporting.
+	/** @brief Set the output stream for garbage collection reporting.
 	 *
 	 * @param os Pointer to the output stream to which reporting
 	 *          should be directed.  If NULL, suppresses reporting.
@@ -132,16 +136,18 @@ namespace CXXR {
 	 */
 	static std::ostream* setReporting(std::ostream* os = 0);
 
-	/** Turn garbage collection torture on or off.  If enabled,
-	 * every time that CXXR::Heap indicates that it is about to
-	 * request additional memory from the operating system, a
-	 * garbage collection is carried out.
+	/** @brief Turn garbage collection torture on or off.
+	 *
+	 * If enabled, every time that CXXR::Heap indicates that it is
+	 * about to request additional memory from the operating
+	 * system, a garbage collection is carried out.
 	 *
 	 * @param on The required torturing status.
 	 */
 	static void torture(bool on) {s_tortured = on;}
 
-	/**
+	/** @brief Current GC threshold level.
+	 *
 	 * @return The current threshold level.  When CXXR::Heap
 	 * indicates that it is on the point of requesting additional
 	 * memory from the operating system, garbage collection will

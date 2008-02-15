@@ -17,11 +17,15 @@
  *  http://www.r-project.org/Licenses/
  */
 
+/** @file FlagWord.hpp
+ * @brief Class CXXR::FlagWord.
+ */
+
 #ifndef FLAGWORD_HPP
 #define FLAGWORD_HPP 1
 
 namespace CXXR {
-    /** Unsigned short interpreted as an array of booleans.
+    /** @brief Unsigned short interpreted as an array of booleans.
      *
      * This class performs a similar function, and is implemented in a
      * similar way, to <tt>std::bitset<16></tt>.  However, its bits
@@ -33,7 +37,7 @@ namespace CXXR {
      */
     class FlagWord {
     public:
-	/** Proxy object for a bit of a FlagWord.
+	/** @brief Proxy object for a bit of a FlagWord.
 	 *
 	 * Objects of this class are used to allow the Boolean values
 	 * within a FlagWord to be examined and modified using the

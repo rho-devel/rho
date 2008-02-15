@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RClosure.h
- * The future RClosure class.
+/** @file Closure.h
+ * @brief C interface associated with the future Closure class.
  */
 
 #ifndef RCLOSURE_H

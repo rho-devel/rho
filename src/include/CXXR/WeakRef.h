@@ -20,7 +20,7 @@
  */
 
 /** @file WeakRef.h
- * Class WeakRef and associated C interface.
+ * @brief Class CXXR::WeakRef and associated C interface.
  */
 
 #ifndef WEAKREF_HPP
@@ -132,7 +132,7 @@ namespace CXXR {
 
 	~WeakRef();
 
-	/** Integrity check.
+	/** @brief Integrity check.
 	 *
 	 * Aborts the program with an error message if the class is
 	 * found to be internally inconsistent.
@@ -147,13 +147,14 @@ namespace CXXR {
 	 */
 	RObject* key() const {return m_key;}
 
-	/**
+	/** @brief Run finalizers with 'finalize_on_exit' specified.
+	 *
 	 * Run the finalizers of all (non-tombstoned) WeakRef object
 	 * for which 'finalize_on_exit' was specified.
 	 */
 	static void runExitFinalizers();
 
-	/** Run finalizers.
+	/** @brief Run finalizers.
 	 *
 	 * This is called by GCManager::gc() immediately after garbage
 	 * collection, and runs the finalizers of any weak references that

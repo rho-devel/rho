@@ -17,13 +17,18 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+/** @file JMPException.hpp
+ * @brief Class CXXR::JMPException.
+ */
+
 #ifndef JMPEXCEPTION_HPP
 #define JMPEXCEPTION_HPP 1
 
 class RCNTXT;
 
 namespace CXXR {
-    /**
+    /** @brief Exception class to replace setjmp/longjmp.
+     *
      * This class is intended as far as possible as a drop-in
      * replacement for the use of setjmp/longjmp within R.  The
      * replacement is necessary to ensure that the destructors of

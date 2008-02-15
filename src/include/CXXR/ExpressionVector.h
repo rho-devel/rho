@@ -20,8 +20,9 @@
  */
 
 /** @file ExpressionVector.h
- * @brief Class ExpressionVector and associated C interface.
- * Class ExpressionVector (implementing EXPRSXP) and associated C interface.
+ * @brief Class CXXR::ExpressionVector and associated C interface.
+ *
+ * (ExpressionVector implementins EXPRSXP.)
  */
 
 #ifndef EXPRESSIONVECTOR_H

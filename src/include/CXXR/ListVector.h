@@ -20,8 +20,9 @@
  */
 
 /** @file ListVector.h
- * @brief Class ListVector and associated C interface.
- * Class ListVector (implementing VECSXP) and associated C interface.
+ * @brief Class CXXR::ListVector and associated C interface.
+ *
+ * (ListVector implements VECSXP.)
  */
 
 #ifndef LISTVECTOR_H
@@ -48,8 +49,7 @@ namespace CXXR {
     public:
 	/** @brief Create a ListVector.
          *
-         * Create a ListVector.  Each element will initially encapsulate
-         * a null pointer.
+         * Each element will initially encapsulate a null pointer.
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */
@@ -57,7 +57,8 @@ namespace CXXR {
 	    : EdgeVector<RObject*, VECSXP>(sz)
 	{}
 
-	/** Construct from ExpressionVector.
+	/** @brief Construct from ExpressionVector.
+	 *
 	 * @param ev The ExpressionVector on which the constructed
 	 *          ListVector is to be modelled.
 	 */

@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RSymbol.h
- * The future RSymbol class.
+/** @file Symbol.h
+ * @brief C interface associated with the future Symbol class.
  */
 
 #ifndef RSYMBOL_H

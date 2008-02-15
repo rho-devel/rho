@@ -18,6 +18,7 @@
  */
 
 /** @file RAllocStack.h
+ * @brief Function R_alloc() and kin.
  *
  * Defines functions R_alloc and related functions, and the class
  * RAllocStack which is used to implement them.
@@ -39,8 +40,9 @@ namespace CXXR {
      */
     class RAllocStack {
     public:
-	/**
-	 * Allocate a new block of memory, aligned on a multiple of
+	/** @brief Allocate a new block of memory.
+	 *
+	 * The block will be aligned on a multiple of
 	 * <tt>sizeof(double)</tt> .
 	 * @param sz The required size in bytes (strictly, as a
 	 *           multiple of sizeof(char)), of the memory block.
@@ -48,7 +50,8 @@ namespace CXXR {
 	 */
 	static void* allocate(size_t sz);
 
-	/**
+	/** @brief Restore stack to a previous size.
+	 *
 	 * Restore the stack to a previous size by popping elements
 	 * off the top.
 	 * @param new_size The size to which the stack is to be
@@ -60,7 +63,8 @@ namespace CXXR {
 	 */
 	static void restoreSize(size_t new_size);
 
-	/**
+	/** @brief Current size of stack.
+	 *
 	 * @return the current size of the stack.
 	 *
 	 * @note This method is intended for use in conjunction with

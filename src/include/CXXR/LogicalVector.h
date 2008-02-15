@@ -20,7 +20,7 @@
  */
 
 /** @file LogicalVector.h
- * @brief Class LogicalVector and associated C interface.
+ * @brief Class CXXR::LogicalVector and associated C interface.
  */
 
 #ifndef LOGICALVECTOR_H

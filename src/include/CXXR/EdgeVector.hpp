@@ -19,7 +19,7 @@
 
 /** @file EdgeVector.hpp
  *
- * @brief Templated class EdgeVector.
+ * @brief Templated class CXXR::EdgeVector.
  */
 
 #ifndef EDGEVECTOR_HPP
@@ -34,7 +34,7 @@
 #include "CXXR/VectorBase.h"
 
 namespace CXXR {
-    /** @brief Vector of GCEdge objects.
+    /** @brief Vector of pointers to RObject.
      *
      * This is a templated class to represent a vector whose members
      * are of a type instantiated from the template GCEdge.
@@ -47,7 +47,7 @@ namespace CXXR {
     template <class Ptr, SEXPTYPE ST>
     class EdgeVector : public VectorBase {
     public:
-	/** Proxy object for an element of an EdgeVector<Ptr, ST>.
+	/** @brief Proxy object for an element of an EdgeVector<Ptr, ST>.
 	 *
 	 * Objects of this class are used to allow the elements of an
 	 * EdgeVector<Ptr, ST> to be examined and modified using the
@@ -155,7 +155,8 @@ namespace CXXR {
 	    return &m_data[0];
 	}
 
-	/**
+	/** @brief Name by which this type is known in R.
+	 *
 	 * @return the name by which this type is known in R.
 	 *
 	 * @note This function is declared but not defined as part of

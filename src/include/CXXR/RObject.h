@@ -21,7 +21,7 @@
 
 /** @file RObject.h
  *
- * @brief Class RObject and associated C interface functions.
+ * @brief Class CXXR::RObject and associated C interface functions.
  */
 
 #ifndef ROBJECT_H
@@ -215,8 +215,7 @@ namespace CXXR {
 
         // To be protected in future:
 
-	/** Destructor
-	 *
+	/**
 	 * @note The destructor is protected to ensure that RObjects
 	 * are allocated on the heap.  (See Meyers 'More Effective
 	 * C++' Item 27.) Derived classes should likewise declare

@@ -20,7 +20,7 @@
  */
 
 /** @file RealVector.h
- * @brief Class RealVector and associated C interface.
+ * @brief Class CXXR::RealVector and associated C interface.
  */
 
 #ifndef REALVECTOR_H

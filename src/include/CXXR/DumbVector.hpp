@@ -19,7 +19,7 @@
 
 /** @file DumbVector.hpp
  *
- * @brief Templated class DumbVector.
+ * @brief Templated class CXXR::DumbVector.
  */
 
 #ifndef DUMBVECTOR_HPP
@@ -91,7 +91,8 @@ namespace CXXR {
 	    return m_data[index];
 	}
 
-	/**
+	/** @brief Name by which this type is known in R.
+	 *
 	 * @return the name by which this type is known in R.
 	 *
 	 * @note This function is declared but not defined as part of

@@ -20,7 +20,7 @@
  */
 
 /** @file RawVector.h
- * @brief Class RawVector and associated C interface.
+ * @brief Class CXXR::RawVector and associated C interface.
  */
 
 #ifndef RAWVECTOR_H

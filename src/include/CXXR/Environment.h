@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file REnvironment.h
- * The future REnvironment class.
+/** @file Environment.h
+ * @brief C interface associated with the future Environment class.
  */
 
 #ifndef RENVIRONMENT_H

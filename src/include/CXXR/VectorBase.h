@@ -20,7 +20,7 @@
  */
 
 /** @file VectorBase.h
- * @brief Class VectorBase and associated C interface.
+ * @brief Class CXXR::VectorBase and associated C interface.
  */
 
 #ifndef VECTORBASE_H
@@ -52,7 +52,8 @@ namespace CXXR {
 	 */
 	void resize(size_t new_size);
 
-	/**
+	/** @brief Number of elements in the vector.
+	 *
 	 * @return The number of elements in the vector.
 	 */
 	size_t size() const

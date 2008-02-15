@@ -19,7 +19,7 @@
 
 /** @file CellPool.hpp
  *
- * Class CellPool
+ * @brief Class CXXR::CellPool.
  */
 
 #ifndef CELLPOOL_HPP
@@ -90,7 +90,7 @@ namespace CXXR {
         ~CellPool();
 
 	/**
-	 * Allocate a cell from the pool.
+	 * @brief Allocate a cell from the pool.
 	 *
 	 * @return a pointer to the allocated cell.
 	 *
@@ -120,7 +120,7 @@ namespace CXXR {
 	 */
 	unsigned int cellsAllocated() const {return m_cells_allocated;}
 
-	/** Integrity check.
+	/** @brief Integrity check.
 	 *
 	 * Aborts the program with an error message if the object is
 	 * found to be internally inconsistent.
@@ -130,7 +130,7 @@ namespace CXXR {
 	 */
 	bool check() const;
 
-	/** Deallocate a cell
+	/** @brief Deallocate a cell
 	 *
 	 * @param p Pointer to a block of memory previously allocated
 	 * from this pool, or a null pointer (in which case method
@@ -152,7 +152,8 @@ namespace CXXR {
 	    --m_cells_allocated;
 	}
 
-	/**
+	/** @brief Allocate a cell 'from stock'.
+	 *
 	 * Allocate a cell from the pool, provided it can be allocated
 	 * 'from stock'.  Can be useful when called from other inlined
 	 * functions in that it doesn't throw any exceptions.

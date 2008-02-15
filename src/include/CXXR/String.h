@@ -112,6 +112,11 @@ namespace CXXR {
 	    return static_cast<String*>(R_BlankString);
 	}
 
+	/** @brief Access encapsulated C-style string.
+	 *
+	 * @return Pointer to the encapsulated C-style (null
+	 * terminated) string.
+	 */
 	const char* c_str() const
 	{
 	    return m_data;
@@ -131,7 +136,8 @@ namespace CXXR {
 	    return static_cast<String*>(R_NaString);
 	}
 
-	/**
+	/** @brief The name by which this type is known in R.
+	 *
 	 * @return the name by which this type is known in R.
 	 */
 	static const char* staticTypeName()

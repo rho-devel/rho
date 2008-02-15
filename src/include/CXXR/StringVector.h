@@ -20,8 +20,9 @@
  */
 
 /** @file StringVector.h
- * @brief Class StringVector and associated C interface.
- * Class StringVector (implementing STRSXP) and associated C interface.
+ * @brief Class CXXR::StringVector and associated C interface.
+ *
+ * (StringVector implementis STRSXP.)
  */
 
 #ifndef STRINGVECTOR_H
@@ -48,8 +49,8 @@ namespace CXXR {
      */
     class StringVector : public CXXR::EdgeVector<String*, STRSXP> {
     public:
-	/**
-         * Create a StringVector.
+	/** @brief Create a StringVector.
+	 *
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 */

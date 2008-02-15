@@ -13,6 +13,10 @@
  * the original copyright above.
  */
 
+/** @file Allocator.hpp
+ * @brief STL-compatible allocator front-ending CXXR::Heap.
+ */
+
 #ifndef ALLOCATOR_HPP
 #define ALLOCATOR_HPP 1
 
@@ -20,7 +24,7 @@
 #include "CXXR/Heap.hpp"
 
 namespace CXXR {
-    /** STL-compatible allocator front-ending CXXR::Heap.
+    /** @brief STL-compatible allocator front-ending CXXR::Heap.
      *
      * This templated class enables container classes within the C++
      * standard library to allocate their memory via CXXR::Heap.  It

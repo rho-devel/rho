@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RInternalFunction.h
- * The future RInternalFunction class.
+/** @file InternalFunction.h
+ * @brief C interface associated with the future InternalFunction class.
  */
 
 #ifndef RINTERNALFUNCTION_H

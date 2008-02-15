@@ -20,7 +20,7 @@
  */
 
 /** @file IntVector.h
- * @brief Class IntVector and associated C interface.
+ * @brief Class CXXR::IntVector and associated C interface.
  */
 
 #ifndef INTVECTOR_H

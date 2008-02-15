@@ -20,7 +20,7 @@
  */
 
 /** @file GCNode.hpp
- * Class GCNode.
+ * @brief Class CXXR::GCNode.
  */
 
 #ifndef GCNODE_HPP
@@ -275,13 +275,15 @@ namespace CXXR {
 	 */
 	static void initialize(unsigned int num_old_generations);
 
-	/**
+	/** @brief Number of generations used by garbage collector.
+	 *
 	 * @return The number of generations into which GCNode objects
 	 * are ranked by the garbage collector.
 	 */
 	static unsigned int numGenerations() {return s_genpeg.size();}
 
-	/**
+	/** @brief Number of GCNode objects in existence.
+	 *
 	 * @return the number of GCNode objects currently in
 	 * existence.
 	 */

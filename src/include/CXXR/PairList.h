@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RPairList.h
- * The future RPairList class.
+/** @file PairList.h
+ * @brief C interface associated with the future PairList class.
  */
 
 #ifndef RPAIRLIST_H

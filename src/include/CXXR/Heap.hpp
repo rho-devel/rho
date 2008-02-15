@@ -19,7 +19,7 @@
 
 /** @file Heap.hpp
  *
- * Class CXXR::Heap
+ * @brief Class CXXR::Heap
  */
 
 #ifndef CXXR_HEAP_HPP
@@ -28,14 +28,14 @@
 #include "CXXR/CellPool.hpp"
 
 namespace CXXR {
-    /** Class to manage memory allocation and deallocation for CXXR.
+    /** @brief Class to manage memory allocation and deallocation for CXXR.
      * 
      * Small objects are quickly allocated from CellPools of various cell
      * sizes; large objects are obtained directly from the main heap.
      */
     class Heap {
     public:
-	/** Schwarz counter.
+	/** @brief Schwarz counter.
 	 *
 	 * The Schwarz counter (see for example Stephen C. Dewhurst's
 	 * book 'C++ Gotchas') is a programming idiom to ensure that a
@@ -86,7 +86,7 @@ namespace CXXR {
 	    static unsigned int s_count;
 	};
 
-	/** Allocate a block of memory.
+	/** @brief Allocate a block of memory.
 	 *
 	 * @param bytes Required size in bytes of the block.
 	 *
@@ -113,12 +113,14 @@ namespace CXXR {
 	    return p;
 	}
 
-	/**
+	/** @brief Number of blocks currently allocated.
+	 *
 	 * @return the number of blocks of memory currently allocated.
 	 */
 	static unsigned int blocksAllocated() {return s_blocks_allocated;}
 
-	/**
+	/** @brief Number of bytes currently allocated.
+	 *
 	 * @return the number of bytes of memory currently allocated.
 	 *
 	 * @note This refers to the total number of bytes \e requested
@@ -133,14 +135,14 @@ namespace CXXR {
 	 */
 	static unsigned int bytesAllocated() {return s_bytes_allocated;}
 
-	/** Integrity check.
+	/** @brief Integrity check.
 	 *
 	 * Aborts the program with an error message if the class is
 	 * found to be internally inconsistent.
 	 */
 	static void check();
 
-	/** Deallocate a block
+	/** @brief Deallocate a block
 	 *
 	 * @param p Pointer to a block of memory previously allocated
 	 *          by Heap::allocate(), or a null pointer (in which
@@ -163,7 +165,7 @@ namespace CXXR {
 	    s_bytes_allocated -= bytes;
 	}
 
-	/** Set a callback to cue garbage collection.
+	/** @brief Set a callback to cue garbage collection.
 	 *
 	 * @param cue_gc This is a pointer to a function that this
 	 *         class will call before it attempts to allocate

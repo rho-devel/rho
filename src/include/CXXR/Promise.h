@@ -19,8 +19,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RPromise.h
- * The future RPromise class.
+/** @file Promise.h
+ * @brief C interface associated with the future Promise class.
  */
 
 #ifndef RPROMISE_H

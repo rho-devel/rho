@@ -20,7 +20,7 @@
  */
 
 /** @file ComplexVector.h
- * @brief Class ComplexVector and associated C interface.
+ * @brief Class CXXR::ComplexVector and associated C interface.
  */
 
 #ifndef COMPLEXVECTOR_H
