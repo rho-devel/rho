@@ -64,6 +64,17 @@ namespace {
     {
 	cout << "Monitored allocation of " << bytes << " bytes\n";
     }
+
+    // Crude congruential generator in range 0 to 1023; repeatability
+    // on different platforms is more important than randomness!
+    // Deliberately the first value returned is 0.
+    size_t qrnd()
+    {
+	static size_t r = 0;
+	size_t ans = r;
+	r = (r*633 + 633)&0x3ff;
+	return ans;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -79,7 +90,6 @@ int main(int argc, char* argv[]) {
 	istringstream is(argv[2]);
 	if (!(is >> num_churns)) usage(argv[0]);
     }
-    srandom(0);
     // Carry out initial allocations:
     {
 	Heap::setMonitor(monitor, 100);
@@ -93,12 +103,12 @@ int main(int argc, char* argv[]) {
 	Heap::setMonitor(0);
 	Heap::setGCCuer(cueGC);
 	for (unsigned int i = 0; i < num_churns; ++i) {
-	    long rnd = random();
-	    if (rnd & 1 || ilv.empty()) alloc();
+	    long rnd = qrnd();
+	    if (rnd & 2 || ilv.empty()) alloc();
 	    else {
 		// Select element to deallocate:
 		unsigned int k
-		    = int(double(rnd)*double(ilv.size())/double(RAND_MAX));
+		    = int(double(rnd)*double(ilv.size())/1024.0);
 		cout << "Deallocating list item #" << *ilv[k] << endl;
 		ilist.erase(ilv[k]);
 		swap(ilv[k], ilv.back());
