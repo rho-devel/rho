@@ -52,13 +52,21 @@ namespace {
 
     vector<Tr> trs;
 
-    // Allocate a block of a randomised size (approximately
-    // exponentially distributed up to 1024 bytes) and clear its
-    // memory. rnd is a number as returned by random().
-    void alloc(long int rnd)
+    // Crude congruential generator in range 0 to 1023; repeatability
+    // on different platforms is more important than randomness!
+    // Deliberately the first value returned is 0.
+    size_t qrnd()
+    {
+	static size_t r = 0;
+	size_t ans = r;
+	r = (r*633 + 633)&0x3ff;
+	return ans;
+    }
+
+    // Allocate a block of size bytes.
+    void alloc(size_t bytes)
     {
 	static int serial = 0;
-	size_t bytes = size_t(pow(2.0, 10.0*double(rnd)/double(RAND_MAX)));
 	cout << "Allocating #" << serial << " with size "
 	     << bytes << endl;
 	char* cptr = reinterpret_cast<char*>(Heap::allocate(bytes));
@@ -92,11 +100,10 @@ int main(int argc, char* argv[]) {
 	istringstream is(argv[2]);
 	if (!(is >> num_churns)) usage(argv[0]);
     }
-    srandom(0);
     // Carry out initial allocations:
     {
 	Heap::setMonitor(monitor, 100);
-	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc(random());
+	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc(qrnd());
 	Heap::check();
 	cout << "Blocks allocated: " << Heap::blocksAllocated()
 	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
@@ -106,12 +113,12 @@ int main(int argc, char* argv[]) {
 	Heap::setMonitor(0);
 	Heap::setGCCuer(cueGC);
 	for (unsigned int i = 0; i < num_churns; ++i) {
-	    long rnd = random();
-	    if (rnd & 1 || trs.empty()) alloc(rnd);
+	    long rnd = qrnd();
+	    if (rnd & 2 || trs.empty()) alloc(rnd);
 	    else {
 		// Select element to deallocate:
 		unsigned int k
-		    = int(double(rnd)*double(trs.size())/double(RAND_MAX));
+		    = int(double(rnd)*double(trs.size())/1024.0);
 		cout << "Deallocating #" << trs[k].serial << endl;
 		Heap::deallocate(trs[k].cptr, trs[k].size);
 		swap(trs[k], trs.back());
