@@ -37,10 +37,20 @@ using namespace CXXR;
 namespace {
     vector<pair<size_t, void*> > allocs;
 
+    // Crude congruential generator in range 1 to 1024; repeatability
+    // on different platforms is more important than randomness!
+    // Deliberately the first value returned is 0.
+    size_t qrnd()
+    {
+	static size_t r = 0;
+	r = (r*633 + 633)&0x3ff;
+	return r;
+    }
+
     // Random number uniform in [0,1].
     double uni01()
     {
-	return double(random())/double(RAND_MAX);
+	return double(qrnd())/1024.0;
     }
 
     // Exponential random number with mean 1.0:
@@ -113,7 +123,6 @@ bool WeakRef::runFinalizers()
 
 int main() {
     ios_base::sync_with_stdio();
-    srandom(0);
     GCManager::initialize(1000000, gcstart, gcend);
     GCManager::setReporting(&cout);
     //    GCManager::setMaxTrigger(8000000);
