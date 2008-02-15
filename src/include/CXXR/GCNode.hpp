@@ -280,14 +280,14 @@ namespace CXXR {
 	 * @return The number of generations into which GCNode objects
 	 * are ranked by the garbage collector.
 	 */
-	static unsigned int numGenerations() {return s_genpeg.size();}
+	static size_t numGenerations() {return s_genpeg.size();}
 
 	/** @brief Number of GCNode objects in existence.
 	 *
 	 * @return the number of GCNode objects currently in
 	 * existence.
 	 */
-	static unsigned int numNodes() {return s_num_nodes;}
+	static size_t numNodes() {return s_num_nodes;}
 
 	/** @brief Conduct a visitor to the children of this node.
 	 *
@@ -392,7 +392,7 @@ namespace CXXR {
 	static unsigned int s_last_gen;
 	static std::vector<const GCNode*> s_genpeg;
 	static std::vector<unsigned int> s_gencount;
-	static unsigned int s_num_nodes;
+	static size_t s_num_nodes;
 
 	mutable const GCNode *m_prev, *m_next;
 	mutable unsigned int m_gcgen : 2;

@@ -304,9 +304,9 @@ static void SetBit(SEXP term, int whichBit, int value)
     word = (whichBit - 1) / WORDSIZE;
     offset = (WORDSIZE - whichBit) % WORDSIZE;
     if (value)
-	reinterpret_cast<unsigned int*>(INTEGER(term))[word] |= (uint(1) << offset);
+	reinterpret_cast<unsigned int*>(INTEGER(term))[word] |= (1U << offset);
     else
-	reinterpret_cast<unsigned int*>(INTEGER(term))[word] &= ~(uint(1) << offset);
+	reinterpret_cast<unsigned int*>(INTEGER(term))[word] &= ~(1U << offset);
 }
 
 

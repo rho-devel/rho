@@ -34,7 +34,7 @@ using namespace CXXR;
 unsigned int GCNode::s_last_gen;
 vector<const GCNode*> GCNode::s_genpeg;
 vector<unsigned int> GCNode::s_gencount;
-unsigned int GCNode::s_num_nodes;
+size_t GCNode::s_num_nodes;
 
 GCNode::~GCNode()
 {

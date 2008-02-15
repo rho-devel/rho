@@ -117,7 +117,7 @@ namespace CXXR {
 	 *
 	 * @return the number of blocks of memory currently allocated.
 	 */
-	static unsigned int blocksAllocated() {return s_blocks_allocated;}
+	static size_t blocksAllocated() {return s_blocks_allocated;}
 
 	/** @brief Number of bytes currently allocated.
 	 *
@@ -133,7 +133,7 @@ namespace CXXR {
 	 * 2</tt>), the value returned does not include the size of the
 	 * redzones.
 	 */
-	static unsigned int bytesAllocated() {return s_bytes_allocated;}
+	static size_t bytesAllocated() {return s_bytes_allocated;}
 
 	/** @brief Integrity check.
 	 *

@@ -76,7 +76,7 @@ static int ihash(SEXP x, int indx, HashData *d)
 {
     if (INTEGER(x)[indx] == NA_INTEGER)
 	return 0;
-    return scatter(uint(INTEGER(x)[indx]), d);
+    return scatter(static_cast<unsigned int>(INTEGER(x)[indx]), d);
 }
 
 /* We use unions here because Solaris gcc -O2 has trouble with

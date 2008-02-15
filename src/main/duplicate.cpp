@@ -95,7 +95,7 @@ using namespace CXXR;
 static SEXP duplicate1(SEXP);
 
 #ifdef R_PROFILING
-static unsigned long duplicate_counter = ulong(-1);
+static unsigned long duplicate_counter = static_cast<unsigned long>(-1);
 
 unsigned long  attribute_hidden
 get_duplicate_counter(void)

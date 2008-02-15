@@ -10,6 +10,11 @@ maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
+valgrind = $(strip $(shell which valgrind))
+ifneq ($(valgrind),)
+valgrind = $(valgrind) -q --leak-check="yes"
+endif
+
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
@@ -27,7 +32,7 @@ Allocatortest : $(Allocatortest_objs)
 	$(LINK.cc) -o $@ $(Allocatortest_objs)
 
 Allocatortest.ts : Allocatortest Allocatortest.save
-	valgrind -q --leak-check="yes" ./$< 10 12 > Allocatortest.out
+	$(valgrind) ./$< 10 12 > Allocatortest.out
 	diff Allocatortest.save Allocatortest.out
 	rm Allocatortest.out
 	touch $@
@@ -44,7 +49,7 @@ CellPooltest : $(CellPooltest_objs)
 	$(LINK.cc) -o $@ $(CellPooltest_objs)
 
 CellPooltest.ts : CellPooltest CellPooltest.save
-	valgrind -q --leak-check="yes" ./$< > CellPooltest.out
+	$(valgrind) ./$< > CellPooltest.out
 	diff CellPooltest.save CellPooltest.out
 	rm CellPooltest.out
 	touch $@
@@ -75,7 +80,7 @@ Heaptest : $(Heaptest_objs)
 	$(LINK.cc) -o $@ $(Heaptest_objs)
 
 Heaptest.ts : Heaptest Heaptest.save
-	valgrind -q --leak-check="yes" ./$< 10 12 > Heaptest.out
+	$(valgrind) ./$< 10 12 > Heaptest.out
 	diff Heaptest.save Heaptest.out
 	rm Heaptest.out
 	touch $@

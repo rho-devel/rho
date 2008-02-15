@@ -1976,9 +1976,9 @@ static void DrawFacets(double *z, double *x, double *y, int nx, int ny,
 	if (nv > 2) {
 	    newcol = col[icol];
 	    if (DoLighting) {
-		r = uint(shade * R_RED(newcol));
-		g = uint(shade * R_GREEN(newcol));
-		b = uint(shade * R_BLUE(newcol));
+		r = static_cast<unsigned int>(shade * R_RED(newcol));
+		g = static_cast<unsigned int>(shade * R_GREEN(newcol));
+		b = static_cast<unsigned int>(shade * R_BLUE(newcol));
 		newcol = R_RGB(r, g, b);
 	    }
 	    GPolygon(nv, xx, yy, USER, newcol, border, dd);
