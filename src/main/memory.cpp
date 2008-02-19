@@ -251,7 +251,7 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 void GCNode::gc(unsigned int num_old_gens_to_collect)
 {
     // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
-    GCNode::check();
+    // GCNode::check();
     // cout << "Precheck completed OK\n";
 
     GCNode::Marker marker(num_old_gens_to_collect);
