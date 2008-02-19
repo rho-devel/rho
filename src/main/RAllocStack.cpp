@@ -35,8 +35,11 @@ using namespace CXXR;
 
 // Force generation of non-inline embodiments of functions in the C
 // interface:
-namespace {
-    unsigned int (*vmaxgetp)(void) = vmaxget;
+namespace CXXR {
+    namespace ForceNonInline {
+	unsigned int (*vmaxgetp)(void) = vmaxget;
+	void (*vmaxsetp)(unsigned int) = vmaxset;
+    }
 }
 
 RAllocStack::Stack RAllocStack::s_stack;
