@@ -12,7 +12,7 @@ maindir = $(top_srcdir)/src/main
 
 valgrind = $(strip $(shell which valgrind))
 ifneq ($(valgrind),)
-valgrind = $(valgrind) -q --leak-check="yes"
+valgrind += -q --leak-check="yes"
 endif
 
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
