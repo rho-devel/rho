@@ -407,7 +407,13 @@ namespace CXXR {
 
 	// Make the node known to the garbage collector (if it isn't
 	// already).
-	void expose() const;
+	void expose() const
+	{
+	    if (!m_prev) expose_aux();
+	}
+
+	// Does the business for expose():
+	void expose_aux() const;
 
 	bool isMarked() const {return m_marked;}
 
