@@ -463,7 +463,7 @@ double toDeviceHeight(double value, GEUnit from, GEDevDesc *dd)
  ****************************************************************
  */
 typedef struct {
-    char *name;
+    const char *name;
     R_GE_lineend end;
 } LineEND;
 
@@ -528,7 +528,7 @@ SEXP LENDget(R_GE_lineend lend)
 }
 
 typedef struct {
-    char *name;
+    const char *name;
     R_GE_linejoin join;
 } LineJOIN;
 
@@ -1480,7 +1480,7 @@ static void clipText(double x, double y, char *str, double rot, double hadj,
  */
 
 typedef struct {
-    char *name;
+    const char *name;
     int minface;
     int maxface;
 } VFontTab;

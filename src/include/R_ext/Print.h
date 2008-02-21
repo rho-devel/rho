@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-void Rprintf(char *, ...);
-void REprintf(char *, ...);
+void Rprintf(const char *, ...);
+void REprintf(const char *, ...);
 void Rvprintf(const char *, va_list);
 void REvprintf(const char *, va_list);
 

@@ -374,7 +374,7 @@ typedef struct {
 /* The type definitions for the table of built-in functions. */
 /* This table can be found in ../main/names.c */
 typedef struct {
-    char   *name;    /* print name */
+    const char   *name;    /* print name */
     CCODE  cfun;     /* c-code address */
     int	   code;     /* offset within c-code */
     int	   eval;     /* evaluate args? */
@@ -387,7 +387,7 @@ extern FUNTAB	R_FunTab[];	    /* Built in functions */
 
 #ifdef __cplusplus
 inline CCODE PRIMFUN(SEXP x) {return R_FunTab[x->u.primsxp.offset].cfun;}
-inline char* PRIMNAME(SEXP x) {return R_FunTab[x->u.primsxp.offset].name;}
+inline const char* PRIMNAME(SEXP x) {return R_FunTab[x->u.primsxp.offset].name;}
 inline int PRIMVAL(SEXP x) {return R_FunTab[x->u.primsxp.offset].code;}
 inline int PRIMARITY(SEXP x) {return R_FunTab[x->u.primsxp.offset].arity;}
 inline PPinfo PPINFO(SEXP x) {return R_FunTab[x->u.primsxp.offset].gram;}
@@ -610,7 +610,7 @@ extern int Rf_initEmbeddedR(int argc, char **argv);
 
 /* GUI type */
 
-extern1 char	*R_GUIType	INI_as("unknown");
+extern1 const char	*R_GUIType	INI_as("unknown");
 
 #ifdef BYTECODE
 #define R_BCNODESTACKSIZE 10000
@@ -795,7 +795,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 /* The maximum length of input line which will be asked for */
 #define CONSOLE_BUFFER_SIZE 1024
-int	R_ReadConsole(char *, unsigned char *, int, int);
+int	R_ReadConsole(const char *, unsigned char *, int, int);
 void	R_WriteConsole(char *, int); /* equivalent to R_WriteConsoleEx(a, b, 0) */
 void	R_WriteConsoleEx(char *, int, int);
 void	R_ResetConsole(void);
@@ -951,7 +951,7 @@ void R_SaveToFileV(SEXP, FILE*, int, int);
 Rboolean R_seemsOldStyleS4Object(SEXP object);
 int R_SetOptionWarn(int);
 int R_SetOptionWidth(int);
-void R_Suicide(char *);
+void R_Suicide(const char *);
 void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
 void sortVector(SEXP, Rboolean);
@@ -1067,7 +1067,7 @@ FILE *RC_fopen(const SEXP fn, const char *mode, const Rboolean expand);
 void set_rl_word_breaks(const char *str);
 
 /* From localecharset.c */
-extern char *locale2charset(const char *);
+extern const char *locale2charset(const char *);
 
 /* used in relop.c and sort.c */
 #if defined(Win32) && defined(SUPPORT_UTF8)

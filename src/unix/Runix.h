@@ -4,9 +4,9 @@ void fpu_setup(Rboolean);	/* ./sys-unix.c */
 
 void Rstd_read_history(char *s);
 
-void Rstd_Suicide(char *s);
-void Rstd_ShowMessage(char *s);
-int  Rstd_ReadConsole(char *prompt, unsigned char *buf, int len, 
+void Rstd_Suicide(const char *s);
+void Rstd_ShowMessage(const char *s);
+int  Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len, 
 		      int addtohistory);
 void Rstd_WriteConsole(char *buf, int len);
 void Rstd_WriteConsoleEx(char *buf, int len, int otype);

@@ -403,7 +403,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    char *transa = "N", *transb = "N";
+    const char *transa = "N", *transb = "N";
     int i,  j, k;
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
@@ -437,7 +437,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    char *transa = "N", *transb = "N";
+    const char *transa = "N", *transb = "N";
     int i;
     Rcomplex one, zero;
 
@@ -480,7 +480,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    char *trans = "T", *uplo = "U";
+    const char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -496,7 +496,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    char *transa = "T", *transb = "N";
+    const char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
         F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -510,7 +510,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    char *transa = "T", *transb = "N";
+    const char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -525,7 +525,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    char *trans = "N", *uplo = "U";
+    const char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -541,7 +541,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    char *transa = "N", *transb = "T";
+    const char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
         F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -555,7 +555,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    char *transa = "N", *transb = "T";
+    const char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;

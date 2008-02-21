@@ -676,7 +676,7 @@ const char *translateChar(SEXP x)
 # define S_IFDIR __S_IFDIR
 #endif
 
-static int isDir(char *path)
+static int isDir(const char *path)
 {
     struct stat sb;
     int isdir = 0;
@@ -692,7 +692,7 @@ static int isDir(char *path)
     return isdir;
 }
 #else
-static int isDir(char *path)
+static int isDir(const char *path)
 {
     return 1;
 }
@@ -704,7 +704,8 @@ extern char * mkdtemp (char *template);
 
 void attribute_hidden InitTempDir()
 {
-    char *tmp, *tm, tmp1[PATH_MAX+11], *p;
+    char *tmp, tmp1[PATH_MAX+11], *p;
+    const char* tm;
     int len;
 #ifdef Win32
     char tmp2[MAX_PATH];

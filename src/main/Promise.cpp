@@ -29,10 +29,14 @@
 
 #include "CXXR/Promise.h"
 
-namespace {
-    SEXP (*prcodep)(SEXP x) = PRCODE;
-    SEXP (*prenvp)(SEXP x) = PRENV;
-    int (*prseenp)(SEXP x) = PRSEEN;
-    SEXP (*prvaluep)(SEXP x) = PRVALUE;
-    void (*setprseen)(SEXP x, int v) = SET_PRSEEN;
+// Force the creation of non-inline embodiments of functions callable
+// from C:
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*PRCODEp)(SEXP x) = PRCODE;
+	SEXP (*PRENVp)(SEXP x) = PRENV;
+	int (*PRSEENp)(SEXP x) = PRSEEN;
+	SEXP (*PRVALUEp)(SEXP x) = PRVALUE;
+	void (*SETPRSEENp)(SEXP x, int v) = SET_PRSEEN;
+    }
 }

@@ -66,9 +66,9 @@ Rboolean UsingReadline = TRUE;  /* used in sys-std.c & ../main/platform.c */
 
 /* call pointers to allow interface switching */
 
-void R_Suicide(char *s) { ptr_R_Suicide(s); }
-void R_ShowMessage(char *s) { ptr_R_ShowMessage(s); }
-int R_ReadConsole(char *prompt, unsigned char *buf, int len, int addtohistory)
+void R_Suicide(const char *s) { ptr_R_Suicide(s); }
+void R_ShowMessage(const char *s) { ptr_R_ShowMessage(s); }
+int R_ReadConsole(const char *prompt, unsigned char *buf, int len, int addtohistory)
 { return ptr_R_ReadConsole(prompt, buf, len, addtohistory); }
 void R_WriteConsole(char *buf, int len) {if (ptr_R_WriteConsole) ptr_R_WriteConsole(buf, len); else ptr_R_WriteConsoleEx(buf, len, 0); }
 void R_WriteConsoleEx(char *buf, int len, int otype) {if (ptr_R_WriteConsole) ptr_R_WriteConsole(buf, len); else ptr_R_WriteConsoleEx(buf, len, otype); }

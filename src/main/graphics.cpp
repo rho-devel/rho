@@ -4371,7 +4371,7 @@ void attribute_hidden InitColors(void)
  */
 
 typedef struct {
-    char *name;
+    const char *name;
     int pattern;
 } LineTYPE;
 
@@ -4624,7 +4624,7 @@ void attribute_hidden InitGraphics(void)
 }
 
 
-static SEXP getSymbolValue(char *symbolName)
+static SEXP getSymbolValue(const char *symbolName)
 {
     SEXP t;
     t = findVar(install(symbolName), R_BaseEnv);

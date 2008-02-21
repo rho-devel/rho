@@ -612,7 +612,7 @@ static BBOX DrawBBox(BBOX bbox, double xoffset, double yoffset,
 #endif
 
 typedef struct {
-    char *name;
+    const char *name;
     int code;
 } SymTab;
 
@@ -1755,7 +1755,7 @@ static BBOX RenderBar(SEXP expr, int draw, mathContext *mc,
 }
 
 static struct {
-    char *name;
+    const char *name;
     int code;
 }
 AccentTable[] = {

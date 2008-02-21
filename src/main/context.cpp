@@ -122,7 +122,7 @@ using namespace CXXR;
    determines the argument is responsible for making sure
    CTXT_TOPLEVEL's are not crossed unless appropriate. */
 
-void attribute_hidden R_run_onexits(RCNTXT *cptr)
+void R_run_onexits(RCNTXT *cptr)
 {
     RCNTXT *c;
 
@@ -165,7 +165,7 @@ please bug.report() [R_run_onexits]"));
    three should be unified so there is only one place where a LONGJMP
    occurs. */
 
-void attribute_hidden R_restore_globals(RCNTXT *cptr)
+void R_restore_globals(RCNTXT *cptr)
 {
     GCRootBase::ppsRestoreSize(cptr->cstacktop);
     R_EvalDepth = cptr->evaldepth;
@@ -275,7 +275,7 @@ void endcontext(RCNTXT * cptr)
 
 /* findcontext - find the correct context */
 
-void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
+void findcontext(int mask, SEXP env, SEXP val)
 {
     RCNTXT *cptr;
     cptr = R_GlobalContext;
@@ -297,7 +297,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
     }
 }
 
-void attribute_hidden R_JumpToContext(RCNTXT *target, int mask, SEXP val)
+void R_JumpToContext(RCNTXT *target, int mask, SEXP val)
 {
     RCNTXT *cptr;
     for (cptr = R_GlobalContext;
@@ -315,7 +315,7 @@ void attribute_hidden R_JumpToContext(RCNTXT *target, int mask, SEXP val)
 /* negative n counts back from the current frame */
 /* positive n counts up from the globalEnv */
 
-SEXP attribute_hidden R_sysframe(int n, RCNTXT *cptr)
+SEXP R_sysframe(int n, RCNTXT *cptr)
 {
     if (n == 0)
 	return(R_GlobalEnv);
@@ -354,7 +354,7 @@ SEXP attribute_hidden R_sysframe(int n, RCNTXT *cptr)
 /* It would be much simpler if sysparent just returned cptr->sysparent */
 /* but then we wouldn't be compatible with S. */
 
-int attribute_hidden R_sysparent(int n, RCNTXT *cptr)
+int R_sysparent(int n, RCNTXT *cptr)
 {
     int j;
     SEXP s;
@@ -387,7 +387,7 @@ int attribute_hidden R_sysparent(int n, RCNTXT *cptr)
     return n;
 }
 
-int attribute_hidden framedepth(RCNTXT *cptr)
+int framedepth(RCNTXT *cptr)
 {
     int nframe = 0;
     while (cptr->nextcontext != NULL) {
@@ -398,7 +398,7 @@ int attribute_hidden framedepth(RCNTXT *cptr)
     return nframe;
 }
 
-SEXP attribute_hidden R_syscall(int n, RCNTXT *cptr)
+SEXP R_syscall(int n, RCNTXT *cptr)
 {
     /* negative n counts back from the current frame */
     /* positive n counts up from the globalEnv */
@@ -424,7 +424,7 @@ SEXP attribute_hidden R_syscall(int n, RCNTXT *cptr)
     return R_NilValue;	/* just for -Wall */
 }
 
-SEXP attribute_hidden R_sysfunction(int n, RCNTXT *cptr)
+SEXP R_sysfunction(int n, RCNTXT *cptr)
 {
     if (n > 0)
 	n = framedepth(cptr) - n;
@@ -454,7 +454,7 @@ SEXP attribute_hidden R_sysfunction(int n, RCNTXT *cptr)
    then get the context of the call that owns the environment.  As it
    is, it will restart the wrong function if used in a promise.
    L.T. */
-SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *cptr;
 
@@ -480,7 +480,7 @@ SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
@@ -556,7 +556,7 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 }
 
-SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int n;
     SEXP t;

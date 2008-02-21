@@ -29,6 +29,8 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    Rbyte* (*RAWp)(SEXP) = RAW;
+namespace CXXR {
+    namespace ForceNonInline {
+	Rbyte* (*RAWp)(SEXP) = RAW;
+    }
 }

@@ -2974,7 +2974,7 @@ Rboolean R_IsPackageEnv(SEXP rho)
     SEXP nameSymbol = install("name");
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, nameSymbol);
-	char *packprefix = "package:";
+	const char *packprefix = "package:";
 	int pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */
@@ -2991,7 +2991,7 @@ SEXP R_PackageEnvName(SEXP rho)
     SEXP nameSymbol = install("name");
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, nameSymbol);
-	char *packprefix = "package:";
+	const char *packprefix = "package:";
 	int pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */

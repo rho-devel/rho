@@ -73,7 +73,7 @@ typedef struct {
     int quiet;
     int sepchar; /*  = 0 */      /* This gets compared to ints */
     char decchar; /* = '.' */    /* This only gets compared to chars */
-    char *quoteset; /* = NULL */
+    const char *quoteset; /* = NULL */
     int comchar; /* = NO_COMCHAR */
     int ttyflag; /* = 0 */
     Rconnection con; /* = NULL */
@@ -344,7 +344,7 @@ static void scan_cleanup(void *data)
 {
     LocalData *ld = reinterpret_cast<LocalData*>(data);
     if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(ld->quoteset);
+    if (ld->quoteset[0]) free(const_cast<char*>(ld->quoteset));
 }
 
 #include "RBufferUtils.h"
@@ -508,7 +508,7 @@ static R_INLINE int isNAstring(const char *buf, int mode, LocalData *d)
     return 0;
 }
 
-static R_INLINE void expected(char *what, char *got, LocalData *d)
+static R_INLINE void expected(const char *what, char *got, LocalData *d)
 {
     int c;
     if (d->ttyflag) { /* This is safe in a MBCS */
@@ -999,7 +999,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
-    if (data.quoteset[0]) free(data.quoteset);
+    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
     return ans;
 }
 
@@ -1163,7 +1163,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i <= nlines; i++)
 	INTEGER(bns)[i] = INTEGER(ans)[i];
     UNPROTECT(1);
-    if (data.quoteset[0]) free(data.quoteset);
+    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
     return bns;
 }
 
@@ -1622,7 +1622,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     free(buf);
     if(!data.wasopen) data.con->close(data.con);
-    if (data.quoteset[0]) free(data.quoteset);
+    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
     return ans;
 
 no_more_lines:
@@ -1640,7 +1640,7 @@ no_more_lines:
     for(i = 0; i < nread; i++)
 	SET_STRING_ELT(ans2, i, STRING_ELT(ans, i));
     UNPROTECT(2);
-    if (data.quoteset[0]) free(data.quoteset);
+    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
     return ans2;
 }
 

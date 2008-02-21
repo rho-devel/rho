@@ -74,7 +74,7 @@ static int immediateWarning = 0;
 static void try_jump_to_restart(void);
 static void jump_to_top_ex(Rboolean, Rboolean, Rboolean, Rboolean, Rboolean);
 static void signalInterrupt(void);
-static char * R_ConciseTraceback(SEXP call, int skip);
+static const char * R_ConciseTraceback(SEXP call, int skip);
 
 /* Interface / Calling Hierarchy :
 
@@ -164,7 +164,7 @@ void onintr()
    These do far more processing than is allowed in a signal handler ....
 */
 
-RETSIGTYPE attribute_hidden onsigusr1(int dummy)
+RETSIGTYPE onsigusr1(int dummy)
 {
     if (R_interrupts_suspended) {
 	/**** ought to save signal and handle after suspend */
@@ -199,7 +199,7 @@ RETSIGTYPE attribute_hidden onsigusr1(int dummy)
 }
 
 
-RETSIGTYPE attribute_hidden onsigusr2(int dummy)
+RETSIGTYPE onsigusr2(int dummy)
 {
     inError = 1;
 
@@ -333,7 +333,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	errorcall(call, _("(converted from warning) %s"), buf);
     }
     else if(w == 1) {	/* print as they happen */
-	char *tr;
+	const char *tr;
 	if( call != R_NilValue ) {
 	    dcall = CHAR(STRING_ELT(deparse1(call, FALSE, DEFAULTDEPARSE), 0));
 	} else dcall = "";
@@ -357,7 +357,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	}
     }
     else if(w == 0) {	/* collect them */
-	char *tr; int nc; 
+	const char *tr; int nc; 
 	if(!R_CollectWarnings)
 	    setupwarnings();
 	if( R_CollectWarnings > 49 )
@@ -548,7 +548,8 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 {
     RCNTXT cntxt;
     const char *dcall;
-    char *p, *tr;
+    char *p;
+    const char *tr;
     int oldInError, nc;
 
     if (inError) {
@@ -580,7 +581,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 
     if(call != R_NilValue) {
 	char tmp[BUFSIZE];
-	char *head = _("Error in "), *mid = " : ", *tail = "\n  ";
+	const char *head = _("Error in "), *mid = " : ", *tail = "\n  ";
 	int len = strlen(head) + strlen(mid) + strlen(tail);
 
 	Rvsnprintf(tmp, min(BUFSIZE, R_WarnLength) - strlen(head), format, ap);
@@ -677,7 +678,7 @@ void errorcall(SEXP call, const char *format,...)
     va_end(ap);
 }
 
-SEXP attribute_hidden do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP res;
 
@@ -862,7 +863,7 @@ void jump_to_toplevel()
 /* #define DEBUG_GETTEXT 1 */
 
 /* gettext(domain, string) */
-SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef ENABLE_NLS
     const char *domain = "";
@@ -958,7 +959,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* ngettext(n, msg1, msg2, domain) */
-SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef ENABLE_NLS
     const char *domain = "";
@@ -1020,7 +1021,7 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
 /* bindtextdomain(domain, dirname) */
-SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef ENABLE_NLS
     char *res;
@@ -1053,7 +1054,7 @@ static SEXP findCall(void)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 /* error(.) : really doesn't return anything; but all do_foo() must be SEXP */
     SEXP c_call;
@@ -1076,7 +1077,7 @@ SEXP attribute_hidden do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* never called: */return c_call;
 }
 
-SEXP attribute_hidden do_warning(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_warning(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP c_call;
 
@@ -1106,7 +1107,6 @@ SEXP attribute_hidden do_warning(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* Error recovery for incorrect argument count error. */
-attribute_hidden
 void WrongArgCount(const char *s)
 {
     error(_("incorrect number of arguments to \"%s\""), s);
@@ -1136,7 +1136,7 @@ const ErrorDB[] = {
 
 static struct {
     R_WARNING code;
-    char* format;
+    const char* format;
 }
 WarningDB[] = {
     { WARNING_coerce_NA,	N_("NAs introduced by coercion")	},
@@ -1296,7 +1296,7 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 \
-static char * R_ConciseTraceback(SEXP call, int skip)
+static const char * R_ConciseTraceback(SEXP call, int skip)
 {
     static char buf[560];
     RCNTXT *c;
@@ -1381,7 +1381,7 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 
 #define RESULT_SIZE 3
 
-SEXP attribute_hidden do_addCondHands(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_addCondHands(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP classes, handlers, parentenv, target, oldstack, newstack, result;
     int calling, i, n;
@@ -1422,7 +1422,7 @@ SEXP attribute_hidden do_addCondHands(SEXP call, SEXP op, SEXP args, SEXP rho)
     return oldstack;
 }
 
-SEXP attribute_hidden do_resetCondHands(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_resetCondHands(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     R_HandlerStack = CAR(args);
@@ -1531,7 +1531,7 @@ static SEXP findConditionHandler(SEXP cond)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_signalCondition(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_signalCondition(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP list, cond, msg, ecall, oldstack;
 
@@ -1616,8 +1616,7 @@ static void signalInterrupt(void)
     UNPROTECT(1);
 }
 
-void attribute_hidden
-R_InsertRestartHandlers(RCNTXT *cptr, Rboolean browser)
+void R_InsertRestartHandlers(RCNTXT *cptr, Rboolean browser)
 {
     SEXP klass, rho, entry, name;
 
@@ -1644,7 +1643,7 @@ R_InsertRestartHandlers(RCNTXT *cptr, Rboolean browser)
     UNPROTECT(3);
 }
 
-SEXP attribute_hidden do_dfltWarn(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_dfltWarn(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *msg;
     SEXP ecall;
@@ -1660,7 +1659,7 @@ SEXP attribute_hidden do_dfltWarn(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_dfltStop(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_dfltStop(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *msg;
     SEXP ecall;
@@ -1681,7 +1680,7 @@ SEXP attribute_hidden do_dfltStop(SEXP call, SEXP op, SEXP args, SEXP rho)
  * Restart Handling
  */
 
-SEXP attribute_hidden do_getRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_getRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i;
     SEXP list;
@@ -1715,7 +1714,7 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_addRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_addRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     CHECK_RESTART(CAR(args));
@@ -1748,7 +1747,7 @@ static void invokeRestart(SEXP r, SEXP arglist)
     }
 }
 
-SEXP attribute_hidden do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     CHECK_RESTART(CAR(args));
@@ -1756,7 +1755,7 @@ SEXP attribute_hidden do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue; /* not reached */
 }
 
-SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     if (R_GlobalContext == R_ToplevelContext ||
@@ -1767,7 +1766,7 @@ SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-SEXP attribute_hidden do_seterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_seterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP msg;
 
@@ -1779,8 +1778,7 @@ SEXP attribute_hidden do_seterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_NilValue;
 }
 
-SEXP attribute_hidden
-do_printDeferredWarnings(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_printDeferredWarnings(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
     R_PrintDeferredWarnings();

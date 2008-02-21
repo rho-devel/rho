@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Environment.cpp
@@ -31,11 +31,13 @@
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    SEXP (*enclosp)(SEXP x) = ENCLOS;
-    int (*envflagsp)(SEXP x) = ENVFLAGS;
-    SEXP (*hashtabp)(SEXP x) = HASHTAB;
-    Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
-    SEXP (*framep)(SEXP x) = FRAME;
-    void (*setenvflagsp)(SEXP x, int v) = SET_ENVFLAGS;
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*ENCLOSp)(SEXP x) = ENCLOS;
+	int (*ENVFLAGSp)(SEXP x) = ENVFLAGS;
+	SEXP (*HASHTABp)(SEXP x) = HASHTAB;
+	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
+	SEXP (*FRAMEp)(SEXP x) = FRAME;
+	void (*SET_ENVFLAGSp)(SEXP x, int v) = SET_ENVFLAGS;
+    }
 }

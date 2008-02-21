@@ -93,7 +93,7 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 }
 
 typedef struct {
-    char *name;
+    const char *name;
     int locale;
 } cjk_locale_name_t;
 
@@ -131,7 +131,7 @@ int Ri18n_wcwidth(wchar_t c)
     char lc_str[128];
     unsigned int i, j;
 
-    static char *lc_cache = "";
+    static const char *lc_cache = "";
     static int lc = 0;
 
     if (0 != strcmp(setlocale(LC_CTYPE, NULL), lc_cache)) {
@@ -295,7 +295,7 @@ static int Ri18n_iswalnum (wint_t wc)
  * iswctype
  */
 typedef struct {
-    char * name;
+    const char * name;
     wctype_t wctype;
     int(*func)(wint_t);
 } Ri18n_wctype_func_l ;

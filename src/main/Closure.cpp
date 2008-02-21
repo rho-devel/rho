@@ -13,8 +13,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Closure.cpp
@@ -29,9 +29,11 @@
 
 #include "CXXR/Closure.h"
 
-namespace {
-    SEXP (*bodyp)(SEXP x) = BODY;
-    SEXP (*cloenvp)(SEXP x) = CLOENV;
-    SEXP (*formalsp)(SEXP x) = FORMALS;
-    void (*setdebugp)(SEXP x, Rboolean v) = SET_DEBUG;
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*BODYp)(SEXP x) = BODY;
+	SEXP (*CLOENVp)(SEXP x) = CLOENV;
+	SEXP (*FORMALSp)(SEXP x) = FORMALS;
+	void (*SET_DEBUGp)(SEXP x, Rboolean v) = SET_DEBUG;
+    }
 }

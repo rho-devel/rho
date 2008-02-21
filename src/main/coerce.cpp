@@ -1302,7 +1302,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SEXPTYPE type = STRSXP;
     int op0 = PRIMVAL(op);
-    char *name = NULL /* -Wall */;
+    const char *name = NULL /* -Wall */;
     
     switch(op0) {
 	case 0: 
@@ -2360,7 +2360,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 typedef struct {
-    char *s;
+    const char *s;
     SEXPTYPE sexp;
     Rboolean canChange;
 } classType;
@@ -2390,7 +2390,7 @@ static int class2type(const char *s)
        classes; e.g., "language" is a type but many classes correspond to objects of
        this type.
     */
-    int i; char *si;
+    int i; const char *si;
     for(i = 0; ; i++) {
 	si = classTable[i].s;
 	if(!si)

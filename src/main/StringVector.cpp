@@ -29,8 +29,10 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    Rboolean (*isStringp)(SEXP s) = Rf_isString;
-    void (*SET_STRING_ELTp)(SEXP x, int i, SEXP v) = SET_STRING_ELT;
-    SEXP (*STRING_ELTp)(const SEXP x, int i) = STRING_ELT;
+namespace CXXR {
+    namespace ForceNonInline {
+	Rboolean (*isStringp)(SEXP s) = Rf_isString;
+	void (*SET_STRING_ELTp)(SEXP x, int i, SEXP v) = SET_STRING_ELT;
+	SEXP (*STRING_ELTp)(const SEXP x, int i) = STRING_ELT;
+    }
 }

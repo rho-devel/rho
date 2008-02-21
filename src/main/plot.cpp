@@ -168,7 +168,7 @@ void ProcessInlinePars(SEXP s, DevDesc *dd, SEXP call)
 /*
  * Extract specified par from list of inline pars
  */
-static SEXP getInlinePar(SEXP s, char *name)
+static SEXP getInlinePar(SEXP s, const char *name)
 {
     SEXP result = R_NilValue;
     int found = 0;

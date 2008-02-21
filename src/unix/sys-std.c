@@ -67,7 +67,7 @@ extern FILE* ifp;
  *  1) FATAL MESSAGES AT STARTUP
  */
 
-void attribute_hidden Rstd_Suicide(char *s)
+void attribute_hidden Rstd_Suicide(const char *s)
 {
     REprintf("Fatal error: %s\n", s); 
     /* Might be called before translation is running */
@@ -493,7 +493,7 @@ static struct {
   and keeps a record of it on the top of the R readline stack.
  */
 static void
-pushReadline(char *prompt, rl_vcpfunc_t f)
+pushReadline(const char *prompt, rl_vcpfunc_t f)
 {
    if(ReadlineStack.current >= ReadlineStack.max) {
      warning(_("An unusual circumstance has arisen in the nesting of readline input. Please report using bug.report()"));
@@ -799,7 +799,7 @@ handleInterrupt(void)
 static void *cd = NULL;
 
 int attribute_hidden
-Rstd_ReadConsole(char *prompt, unsigned char *buf, int len,
+Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 		 int addtohistory)
 {
     if(!R_Interactive) {
@@ -1149,7 +1149,7 @@ int attribute_hidden Rstd_ChooseFile(int _new, char *buf, int len)
 }
 
 
-void attribute_hidden Rstd_ShowMessage(char *s)
+void attribute_hidden Rstd_ShowMessage(const char *s)
 {
     REprintf("%s\n", s);
 }

@@ -29,17 +29,19 @@
 
 #include "CXXR/PairList.h"
 
-namespace {
-    SEXP (*tagp)(SEXP e) = TAG;
-    SEXP (*caarp)(SEXP e) = CAAR;
-    SEXP (*cad4r)(SEXP e) = CAD4R;
-    SEXP (*cadddrp)(SEXP e) = CADDDR;
-    SEXP (*caddrp)(SEXP e) = CADDR;
-    SEXP (*cadrp)(SEXP e) = CADR;
-    SEXP (*carp)(SEXP e) = CAR;
-    SEXP (*cdarp)(SEXP e) = CDAR;
-    SEXP (*cddrp)(SEXP e) = CDDR;
-    SEXP (*cdrp)(SEXP e) = CDR;
-    int (*missingp)(SEXP x) = MISSING;
-    void (*setmissingp)(SEXP x, int v) = SET_MISSING;
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*TAGp)(SEXP e) = TAG;
+	SEXP (*CAARp)(SEXP e) = CAAR;
+	SEXP (*CAD4Rp)(SEXP e) = CAD4R;
+	SEXP (*CADDDRp)(SEXP e) = CADDDR;
+	SEXP (*CADDRp)(SEXP e) = CADDR;
+	SEXP (*CADRp)(SEXP e) = CADR;
+	SEXP (*CARp)(SEXP e) = CAR;
+	SEXP (*CDARp)(SEXP e) = CDAR;
+	SEXP (*CDDRp)(SEXP e) = CDDR;
+	SEXP (*CDRp)(SEXP e) = CDR;
+	int (*MISSINGp)(SEXP x) = MISSING;
+	void (*SET_MISSINGp)(SEXP x, int v) = SET_MISSING;
+    }
 }

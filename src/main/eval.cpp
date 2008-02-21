@@ -282,7 +282,7 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     R_Profiling = 1;
 }
 
-SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP filename;
     int append_mode, mem_profiling;
@@ -318,7 +318,7 @@ SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* NEEDED: A fixup is needed in browser, because it can trap errors,
  *	and currently does not reset the limit to the right value. */
 
-void attribute_hidden check_stack_balance(SEXP op, unsigned int save)
+void check_stack_balance(SEXP op, unsigned int save)
 {
     if(save == GCRootBase::ppsSize()) return;
     REprintf("Warning: stack imbalance in '%s', %d then %d\n",
@@ -979,7 +979,7 @@ static Rboolean asLogicalNoNA(SEXP s, SEXP call)
 }
 
 
-SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP Cond = eval(CAR(args), rho);
 
@@ -1007,7 +1007,7 @@ namespace {
     }
 }
 
-SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     int nm;
@@ -1114,7 +1114,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1156,7 +1156,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1198,21 +1198,21 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     findcontext(PRIMVAL(op), rho, R_NilValue);
     return R_NilValue;
 }
 
 
-SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     return CAR(args);
 }
 
 
-SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
     if (args == R_NilValue) {
@@ -1233,7 +1233,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP a, v, vals;
     int nv = 0;
@@ -1280,7 +1280,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP rval;
 
@@ -1463,7 +1463,7 @@ SEXP attribute_hidden do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /*  Assignment in its various forms  */
 
-SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
     if (length(args) != 2)
@@ -1536,7 +1536,7 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* called in names.c and objects.c */
 
 /* Prior to 2.4.0 this dropped missing elements */
-SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP op)
+SEXP evalList(SEXP el, SEXP rho, SEXP op)
 {
     SEXP ans, h, tail, orig = el;
     int n = 1;
@@ -1595,7 +1595,7 @@ SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP op)
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
+SEXP evalListKeepMissing(SEXP el, SEXP rho)
 {
     SEXP ans, h, tail;
 
@@ -1649,7 +1649,7 @@ SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP attribute_hidden promiseArgs(SEXP el, SEXP rho)
+SEXP promiseArgs(SEXP el, SEXP rho)
 {
     SEXP ans, h, tail;
 
@@ -1701,7 +1701,7 @@ SEXP attribute_hidden promiseArgs(SEXP el, SEXP rho)
 /* Check that each formal is a symbol */
 
 /* used in coerce.c */
-void attribute_hidden CheckFormals(SEXP ls)
+void CheckFormals(SEXP ls)
 {
     if (isList(ls)) {
 	for (; ls != R_NilValue; ls = CDR(ls))
@@ -1718,7 +1718,7 @@ void attribute_hidden CheckFormals(SEXP ls)
 /* "eval" and "eval.with.vis" : Evaluate the first argument */
 /* in the environment specified by the second argument. */
 
-SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP encl, x, xptr;
     volatile SEXP expr, env, tmp;
@@ -1838,7 +1838,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *cptr;
     SEXP s, ans ;
@@ -1892,7 +1892,6 @@ static SEXP evalArgs(SEXP el, SEXP rho, SEXP op, int dropmissing)
  * To call this an ugly hack would be to insult all existing ugly hacks
  * at large in the world.
  */
-attribute_hidden
 int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
                    SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
@@ -2047,7 +2046,6 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
     *which = whichclass;
 }
 
-attribute_hidden
 int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		  SEXP *ans)
 {
@@ -2252,7 +2250,6 @@ static SEXP R_FalseValue = NULL;
 # define THREADED_CODE
 #endif
 
-attribute_hidden
 void R_initialize_bcode(void)
 {
   R_AddSym = install("+");
@@ -2701,7 +2698,7 @@ namespace {
   if (! NAMED(v)) SET_NAMED(v, 1); \
 } while (0)
 
-static int tryDispatch(char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
+static int tryDispatch(const char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
 {
   RCNTXT cntxt;
   SEXP pargs;
@@ -3588,7 +3585,7 @@ SEXP R_bcEncode(SEXP x) { return x; }
 SEXP R_bcDecode(SEXP x) { return duplicate(x); }
 #endif
 
-SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP bytes, consts, ans;
 
@@ -3600,7 +3597,7 @@ SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP forms, body, env;
 
@@ -3624,7 +3621,7 @@ SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     return mkCLOSXP(forms, body, env);
 }
 
-SEXP attribute_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP symbol, i;
 
@@ -3669,7 +3666,7 @@ static SEXP disassemble(SEXP bc)
   return ans;
 }
 
-SEXP attribute_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP code;
 
@@ -3680,14 +3677,14 @@ SEXP attribute_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
   return disassemble(code);
 }
 
-SEXP attribute_hidden do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP ans = allocVector(INTSXP, 1);
   INTEGER(ans)[0] = R_bcVersion;
   return ans;
 }
 
-SEXP attribute_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP file, s;
     FILE *fp;
@@ -3709,7 +3706,7 @@ SEXP attribute_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
     return s;
 }
 
-SEXP attribute_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     FILE *fp;
 
@@ -3779,7 +3776,7 @@ FILE *R_OpenCompiledFile(char *fname, char *buf, size_t bsize)
     else return NULL;
 }
 
-SEXP attribute_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP code, c, ans;
     int i, n;

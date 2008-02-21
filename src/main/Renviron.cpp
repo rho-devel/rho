@@ -88,9 +88,10 @@ static char *findRbrace(char *s)
 }
 
 
-static char *findterm(char *s)
+static const char *findterm(const char *s)
 {
-    char *p, *q, *r, *ss=s;
+    char *p, *q, *r;
+    const char *ss=s;
     const char* r2;
     static char ans[1000];
     int nans;
@@ -118,9 +119,10 @@ static char *findterm(char *s)
     return ans;
 }
 
-static void Putenv(char *a, char *b)
+static void Putenv(char *a, const char *b)
 {
-    char *buf, *value, *p, *q, quote='\0';
+    char *buf, *value, *q, quote='\0';
+    const char *p;
     int inquote = 0;
 
 #ifdef HAVE_SETENV
@@ -177,7 +179,8 @@ static void Putenv(char *a, char *b)
 static int process_Renviron(const char *filename)
 {
     FILE *fp;
-    char *s, *p, sm[BUF_SIZE], *lhs, *rhs, msg[MSG_SIZE+50];
+    char *s, *p, sm[BUF_SIZE], *lhs, msg[MSG_SIZE+50];
+    const char *rhs;
     int errs = 0;
 
     if (!filename || !(fp = R_fopen(filename, "r"))) return 0;

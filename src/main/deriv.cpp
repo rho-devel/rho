@@ -605,7 +605,7 @@ SEXP attribute_hidden do_D(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* ------ FindSubexprs ------ and ------ Accumulate ------ */
 
-static void InvalidExpression(char *where)
+static void InvalidExpression(const char *where)
 {
     error(_("invalid expression in \"%s\""), where);
 }

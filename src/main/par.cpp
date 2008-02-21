@@ -50,7 +50,7 @@
 #include <Rdevices.h>
 
 typedef struct {
-    char *name;
+    const char *name;
     int code; /* 0 normal, 1 not inline, 2 read-only
 		 -1 unknown, -2 obselete, -3 graphical args
 	       */

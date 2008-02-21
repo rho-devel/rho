@@ -29,7 +29,9 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    Rboolean (*isComplexptr)(SEXP s) = Rf_isComplex;
-    Rcomplex* (*COMPLEXp)(SEXP) = COMPLEX;
+namespace CXXR {
+    namespace ForceNonInline {
+	Rboolean (*isComplexptr)(SEXP s) = Rf_isComplex;
+	Rcomplex* (*COMPLEXp)(SEXP) = COMPLEX;
+    }
 }

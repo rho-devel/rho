@@ -29,7 +29,9 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    Rboolean (*isRealptr)(SEXP s) = Rf_isReal;
-    double* (*REALp)(SEXP) = REAL;
+namespace CXXR {
+    namespace FOrceNonInline {
+	Rboolean (*isRealptr)(SEXP s) = Rf_isReal;
+	double* (*REALp)(SEXP) = REAL;
+    }
 }

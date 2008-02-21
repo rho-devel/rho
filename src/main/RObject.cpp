@@ -37,27 +37,29 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    SEXP (*attribptr)(SEXP e) = ATTRIB;
-    Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
-    Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
-    int (*levelsptr)(SEXP x) = LEVELS;
-    int (*namedptr)(SEXP x) = NAMED;
-    Rboolean (*objectptr)(SEXP e) = OBJECT;
-    int (*setlevelsptr)(SEXP x, int v) = SETLEVELS;
-    void (*setnamedptr)(SEXP x, int v) = SET_NAMED;
-    void (*setobjectptr)(SEXP x, int v) = SET_OBJECT;
-    void (*settraceptr)(SEXP x, int v) = SET_TRACE;
-    void (*settypeofptr)(SEXP x, SEXPTYPE v) = SET_TYPEOF;
-    int (*traceptr)(SEXP x) = TRACE;
-    SEXPTYPE (*typeofptr)(SEXP e) = TYPEOF;
-    void (*setS4objectptr)(SEXP x) = SET_S4_OBJECT;
-    void (*unsetS4objectptr)(SEXP x) = UNSET_S4_OBJECT;
-    Rboolean (*bindingislockedptr)(SEXP b) = BINDING_IS_LOCKED;
-    Rboolean (*isactivebindingptr)(SEXP b) = IS_ACTIVE_BINDING;
-    void (*lockbindingptr)(SEXP b) = LOCK_BINDING;
-    void (*setactivebindingbitptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
-    void (*unlockbindingptr)(SEXP b) = UNLOCK_BINDING;
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*ATTRIBptr)(SEXP e) = ATTRIB;
+	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
+	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
+	int (*LEVELSptr)(SEXP x) = LEVELS;
+	int (*NAMEDptr)(SEXP x) = NAMED;
+	Rboolean (*OBJECTptr)(SEXP e) = OBJECT;
+	int (*SETLEVELSptr)(SEXP x, int v) = SETLEVELS;
+	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
+	void (*SET_OBJECTptr)(SEXP x, int v) = SET_OBJECT;
+	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
+	void (*SET_TYPEOFptr)(SEXP x, SEXPTYPE v) = SET_TYPEOF;
+	int (*TRACEptr)(SEXP x) = TRACE;
+	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
+	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
+	void (*UNSET_S4_OBJECTptr)(SEXP x) = UNSET_S4_OBJECT;
+	Rboolean (*BINDING_IS_LOCKEDptr)(SEXP b) = BINDING_IS_LOCKED;
+	Rboolean (*IS_ACTIVE_BINDINGptr)(SEXP b) = IS_ACTIVE_BINDING;
+	void (*LOCK_BINDINGptr)(SEXP b) = LOCK_BINDING;
+	void (*SET_ACTIVE_BINDING_BITptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
+	void (*UNLOCK_BINDINGptr)(SEXP b) = UNLOCK_BINDING;
+    }
 }
 
 const char*  RObject::typeName() const

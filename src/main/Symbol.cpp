@@ -29,11 +29,13 @@
 
 #include "CXXR/Symbol.h"
 
-namespace {
-    Rboolean (*ddvalp)(SEXP x) = DDVAL;
-    SEXP (*internalp)(SEXP x) = INTERNAL;
-    Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
-    SEXP (*printnamep)(SEXP x) = PRINTNAME;
-    void (*setddvalp)(SEXP x, int v) = SET_DDVAL;
-    SEXP (*symvaluep)(SEXP x) = SYMVALUE;
+namespace CXXR {
+    namespace ForceNonInline {
+	Rboolean (*DDVALp)(SEXP x) = DDVAL;
+	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
+	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
+	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
+	void (*SET_DDVALp)(SEXP x, int v) = SET_DDVAL;
+	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
+    }
 }

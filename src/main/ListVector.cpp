@@ -35,9 +35,11 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    SEXP (*SET_VECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_VECTOR_ELT;
-    SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
+namespace CXXR {
+    namespace ForceNonInline {
+	SEXP (*SET_VECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_VECTOR_ELT;
+	SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
+    }
 }
 
 ListVector::ListVector(const ExpressionVector& ev)

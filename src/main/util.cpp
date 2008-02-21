@@ -826,7 +826,7 @@ SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
     int i, n;
-    char *tmp;
+    const char *tmp;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -1081,7 +1081,7 @@ char *acopy_string(const char *in)
         out = (char *) R_alloc(len + 1, sizeof(char));
         strcpy(out, in);
     } else
-        out = "";
+        out = const_cast<char*>("");
     return out;
 }
 

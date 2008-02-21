@@ -224,7 +224,7 @@ bool WeakRef::runFinalizers()
 
 /* R interface function */
 
-SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int onexit;
 
@@ -389,7 +389,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 }
 
 
-SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i;
     SEXP old = ScalarLogical(!gc_inhibit_torture);
@@ -401,7 +401,7 @@ SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
     return old;
 }
 
-SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os = GCManager::setReporting(0);
@@ -426,7 +426,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
     return;
 }
 
-SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os
@@ -459,7 +459,7 @@ void R_getProcTime(double *data);
 static double gctimes[5], gcstarttimes[5];
 static Rboolean gctime_enabled = FALSE;
 
-SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     if (args == R_NilValue)
@@ -508,7 +508,7 @@ SEXP attribute_hidden do_gctime(SEXP call, SEXP op, SEXP args, SEXP env)
 /* InitMemory : Initialise the memory to be used in R. */
 /* This includes: stack space, node space and vector space */
 
-void attribute_hidden InitMemory()
+void InitMemory()
 {
 #ifdef _R_HAVE_TIMING_
     GCManager::initialize(R_VSize, gc_start_timing, gc_end_timing);
@@ -610,7 +610,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 
 /* mkPROMISE is defined directly do avoid the need to protect its arguments
    unless a GC will actually occur. */
-SEXP attribute_hidden mkPROMISE(SEXP expr, SEXP rho)
+SEXP mkPROMISE(SEXP expr, SEXP rho)
 {
     SEXP s;
     PROTECT(expr);
@@ -708,7 +708,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     checkArity(op, args);
@@ -719,7 +719,7 @@ SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 23));
@@ -860,7 +860,6 @@ SEXP R_MakeExternalPtrFn(DL_FUNC p, SEXP tag, SEXP prot)
     return s;
 }
 
-attribute_hidden
 DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 {
     fn_ptr tmp;
@@ -1022,7 +1021,7 @@ void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
 
 #ifndef R_MEMORY_PROFILING
 
-SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     error(_("memory profiling is not available on this system"));
     return R_NilValue; /* not reached */
@@ -1100,7 +1099,6 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include "RBufferUtils.h"
 
-attribute_hidden
 void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
 {
     size_t blen1, bsize = buf->defaultSize;
@@ -1132,8 +1130,7 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     return buf->data;
 }
 
-void attribute_hidden
-R_FreeStringBuffer(R_StringBuffer *buf)
+void R_FreeStringBuffer(R_StringBuffer *buf)
 {
     if (buf->data != NULL) {
 	free(buf->data);
@@ -1142,8 +1139,7 @@ R_FreeStringBuffer(R_StringBuffer *buf)
     }
 }
 
-void attribute_hidden
-R_FreeStringBufferL(R_StringBuffer *buf)
+void R_FreeStringBufferL(R_StringBuffer *buf)
 {
     if (buf->bufsize > buf->defaultSize) {
 	free(buf->data);

@@ -29,8 +29,10 @@ using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
-namespace {
-    Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
-    SEXP (*SET_XVECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_XVECTOR_ELT;
-    SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
+namespace CXXR {
+    namespace ForceNonInline {
+	Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
+	SEXP (*SET_XVECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_XVECTOR_ELT;
+	SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
+    }
 }

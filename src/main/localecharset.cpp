@@ -56,8 +56,8 @@
 
 /* name_value struct */
 typedef struct {
-    char *name;
-    char *value;
+    const char *name;
+    const char *value;
 } name_value;
 
 
@@ -509,7 +509,7 @@ static const name_value known[] = {
 static const int known_count = (sizeof(known)/sizeof(name_value));
 
 
-static char* name_value_search(const char *name, const name_value table[], 
+static const char* name_value_search(const char *name, const name_value table[], 
 			       const int table_count)
 {
     int min, mid, max;
@@ -560,7 +560,7 @@ static char* name_value_search(const char *name, const name_value table[],
 }
 
 
-char *locale2charset(const char *locale)
+const char *locale2charset(const char *locale)
 {
     static char charset[128];
 
@@ -569,7 +569,7 @@ char *locale2charset(const char *locale)
     int i;
     int offset;
     int  cp;
-    char *value;
+    const char *value;
 
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
 	locale = setlocale(LC_CTYPE,NULL);

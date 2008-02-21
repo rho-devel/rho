@@ -3754,7 +3754,7 @@ SEXP attribute_hidden do_sumconnection(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP scmd, sopen, ans, connclass, enc;
-    char *class2 = "url";
+    const char *class2 = "url";
     const char *url, *open;
     int ncon, block;
     Rconnection con = NULL;
@@ -4146,7 +4146,8 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, connclass;
     int icon, level, allow;
     Rconnection incon=NULL, newconn=NULL;
-    char *m, *mode = NULL /* -Wall */,  description[1000];
+    char *m, description[1000];
+    const char* mode = NULL;
 
     checkArity(op, args);
     if(!inherits(CAR(args), "connection"))

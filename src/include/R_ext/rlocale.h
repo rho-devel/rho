@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-extern char *locale2charset(const char *);
+extern const char *locale2charset(const char *);
 
 #ifdef SUPPORT_MBCS
 /*

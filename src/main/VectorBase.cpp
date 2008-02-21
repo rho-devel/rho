@@ -28,10 +28,12 @@
 using namespace std;
 using namespace CXXR;
 
-namespace {
-    int (*lengthptr)(SEXP x) = LENGTH;
-    void (*settruelengthptr)(SEXP x, int v) = SET_TRUELENGTH;
-    int (*truelengthptr)(SEXP x) = TRUELENGTH;
+namespace CXXR {
+    namespace ForceNonInline {
+	int (*LENGTHptr)(SEXP x) = LENGTH;
+	void (*SET_TRUELENGTHptr)(SEXP x, int v) = SET_TRUELENGTH;
+	int (*TRUELENGTHptr)(SEXP x) = TRUELENGTH;
+    }
 }
 
 void VectorBase::resize(size_t new_size)

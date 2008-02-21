@@ -138,8 +138,8 @@ typedef enum {
 #endif
 
 struct colorDataBaseEntry {
-	char *name;	/* X11 Color Name */
-	char *rgb;	/* #RRGGBB String */
+	const char *name;	/* X11 Color Name */
+	const char *rgb;	/* #RRGGBB String */
 	unsigned int code;  /* Internal R Color Code */
 };
 

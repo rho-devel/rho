@@ -2244,7 +2244,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    char *magic;
+    const char *magic;
 
     checkArity(op, args);
 

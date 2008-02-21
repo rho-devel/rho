@@ -45,10 +45,10 @@ extern void R_SaveGlobalEnv(void);
 extern void R_SaveGlobalEnvToFile(const char *);
 extern void R_FlushConsole(void);
 extern void R_ClearerrConsole(void);
-extern void R_Suicide(char *);
+extern void R_Suicide(const char *);
 extern char *R_HomeDir(void);
 extern int R_DirtyImage;	/* Current image dirty */
-extern char *R_GUIType;
+extern const char *R_GUIType;
 extern void R_setupHistory();
 extern char *R_HistoryFile;	/* Name of the history file */
 extern int R_HistorySize;	/* Size of the history file */
@@ -97,9 +97,9 @@ extern uintptr_t R_CStackStart;	/* Initial stack address */
 # define extern
 #endif
 
-extern void (*ptr_R_Suicide)(char *);
-extern void (*ptr_R_ShowMessage)(char *);
-extern int  (*ptr_R_ReadConsole)(char *, unsigned char *, int, int);
+extern void (*ptr_R_Suicide)(const char *);
+extern void (*ptr_R_ShowMessage)(const char *);
+extern int  (*ptr_R_ReadConsole)(const char *, unsigned char *, int, int);
 extern void (*ptr_R_WriteConsole)(char *, int);
 extern void (*ptr_R_WriteConsoleEx)(char *, int, int);
 extern void (*ptr_R_ResetConsole)();

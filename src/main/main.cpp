@@ -461,7 +461,7 @@ extern void R_CleanTempDir();
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
-    char *s;
+    const char *s;
 
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
@@ -1143,7 +1143,7 @@ static void browser_cend(void *data)
     R_BrowseLevel = *psaved - 1;
 }
 
-SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *saveToplevelContext;
     RCNTXT *saveGlobalContext;
@@ -1266,7 +1266,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP attribute_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;

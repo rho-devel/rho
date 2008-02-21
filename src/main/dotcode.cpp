@@ -274,7 +274,7 @@ checkNativeType(int targetType, int actualType)
 
 static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 			const char *name, R_toCConverter **converter,
-			SEXPTYPE targetType, char* encname)
+			SEXPTYPE targetType, const char* encname)
 {
     Rbyte *rawptr;
     int *iptr;
