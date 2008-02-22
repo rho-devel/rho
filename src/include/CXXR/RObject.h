@@ -150,7 +150,7 @@ namespace CXXR {
      * @note The word 'object' in the name of this class is used in
      * the sense in which the 'blue book' (Becker <em>et al.</em>
      * [1988]) uses the phrase 'data object'.  Roughly speaking,
-     * RObject is a base class for the sorts of data items whose
+     * CXXR::RObject is a base class for the sorts of data items whose
      * existence would be reported by the R function
      * <tt>objects()</tt>.  In particular, it does not imply that
      * the object belongs to an R class.
@@ -262,8 +262,8 @@ extern "C" {
 
     /**
      * Object type.
-     * @param x Pointer to \c RObject.
-     * @return \c SEXPTYPE of \a x, or NILSXP if x is a null pointer.
+     * @param x Pointer to CXXR::RObject.
+     * @return ::SEXPTYPE of \a x, or NILSXP if x is a null pointer.
      */
 #ifndef __cplusplus
     SEXPTYPE TYPEOF(SEXP x);
@@ -273,9 +273,9 @@ extern "C" {
 
     /** @brief Name of type within R.
      *
-     * Translate a SEXPTYPE to the name by which it is known within R.
-     * @param st The SEXPTYPE whose name is required.
-     * @return The SEXPTYPE's name within R.
+     * Translate a ::SEXPTYPE to the name by which it is known within R.
+     * @param st The ::SEXPTYPE whose name is required.
+     * @return The ::SEXPTYPE's name within R.
      */
     const char* Rf_type2char(SEXPTYPE st);
 
@@ -286,9 +286,9 @@ extern "C" {
      * Note that the Dim, Dimnames and Names attributes are not
      * copied: these should have been assigned elsewhere.  The
      * function also copies the S4 object status.
-     * @param inp Pointer to the RObject from which attributes are to
+     * @param inp Pointer to the CXXR::RObject from which attributes are to
      *          be copied.
-     * @param ans Pointer to the RObject to which attributes are to be
+     * @param ans Pointer to the CXXR::RObject to which attributes are to be
      *          copied.
      * @note The above documentation is probably incomplete: refer to the
      *       source code for further details.
@@ -296,7 +296,7 @@ extern "C" {
     void Rf_copyMostAttrib(SEXP inp, SEXP ans);
 
     /** @brief Access a named attribute.
-     * @param vec Pointer to the RObject whose attributes are to be
+     * @param vec Pointer to the CXXR::RObject whose attributes are to be
      *          accessed.
      * @param name Either a pointer to the symbol representing the
      *          required attribute, or a pointer to a StringVector
@@ -311,7 +311,7 @@ extern "C" {
     SEXP Rf_getAttrib(SEXP vec, SEXP name);
 
     /** @brief Set or remove a named attribute.
-     * @param vec Pointer to the RObject whose attributes are to be
+     * @param vec Pointer to the CXXR::RObject whose attributes are to be
      *          modified.
      * @param name Either a pointer to the symbol representing the
      *          required attribute, or a pointer to a StringVector
@@ -329,8 +329,8 @@ extern "C" {
     SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
 
     /**
-     * Does \c RObject have a class attribute?.
-     * @param x Pointer to an \c RObject.
+     * Does CXXR::RObject have a class attribute?.
+     * @param x Pointer to a CXXR::RObject.
      * @return true iff \a x has a class attribute.  Returns false if \a x
      * is 0.
      */
@@ -346,10 +346,10 @@ extern "C" {
     /* Various tests */
 
     /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is either a null
-     * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is an RObject
-     * with SEXPTYPE NILSXP (should not happen in CXXR).
+     * @param s Pointer to a CXXR::RObject.
+     * @return TRUE iff the CXXR::RObject pointed to by \a s is either a null
+     * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is a CXXR::RObject
+     * with ::SEXPTYPE NILSXP (should not happen in CXXR).
      */
 #ifndef __cplusplus
     Rboolean Rf_isNull(SEXP s);
@@ -361,8 +361,9 @@ extern "C" {
 #endif
 
     /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s has a class attribute.
+     * @param s Pointer to a CXXR::RObject.
+     * @return TRUE iff the CXXR::RObject pointed to by \a s has a
+     * class attribute.
      */
 #ifndef __cplusplus
     Rboolean Rf_isObject(SEXP s);
@@ -382,8 +383,8 @@ extern "C" {
     /* General Cons Cell Attributes */
 
     /**
-     * Return the attributes of an \c RObject.
-     * @param x Pointer to the \c RObject whose attributes are required.
+     * Return the attributes of an CXXR::RObject.
+     * @param x Pointer to the CXXR::RObject whose attributes are required.
      * @return Pointer to the attributes object of \a x , or 0 if \a x is
      * a null pointer.
      */
@@ -404,7 +405,7 @@ extern "C" {
 
     /**
      * Object copying status.
-     * @param x Pointer to \c RObject.
+     * @param x Pointer to CXXR::RObject.
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
      */
@@ -416,7 +417,7 @@ extern "C" {
 
     /**
      * Object tracing status.
-     * @param x Pointer to \c RObject.
+     * @param x Pointer to CXXR::RObject.
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
      */
@@ -437,15 +438,15 @@ extern "C" {
 
     /**
      * Replace x's attributes by \a v.
-     * @param x Pointer to \c RObject.
-     * @param v Pointer to attributes \c RObject.
+     * @param x Pointer to CXXR::RObject.
+     * @param v Pointer to attributes CXXR::RObject.
      * @todo Could \a v be \c const ?
      */
     void SET_ATTRIB(SEXP x, SEXP v);
 
     /**
      * Set object copying status.  Does nothing if \a x is a null pointer.
-     * @param x Pointer to \c RObject.
+     * @param x Pointer to CXXR::RObject.
      * @param v Refer to 'R Internals' document.
      * @deprecated Ought to be private.
      */
@@ -485,8 +486,8 @@ extern "C" {
 
     /**
      * Replace \a to's attributes by those of \a from.
-     * @param to Pointer to \c RObject.
-     * @param from Pointer to another \c RObject.
+     * @param to Pointer to CXXR::RObject.
+     * @param from Pointer to another CXXR::RObject.
      */
     void DUPLICATE_ATTRIB(SEXP to, SEXP from);
 
@@ -494,7 +495,7 @@ extern "C" {
 
     /**
      * An S4 object?
-     * @param x Pointer to \c RObject.
+     * @param x Pointer to CXXR::RObject.
      * @return true iff \a x is an S4 object.  Returns false if \a x
      * is 0.
      */

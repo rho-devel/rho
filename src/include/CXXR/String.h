@@ -57,7 +57,7 @@ namespace CXXR {
 	public:
 	    /**
 	     * @param na_last if true, the 'not available' string will
-	     *          ome after all other strings in the sort
+	     *          come after all other strings in the sort
 	     *          ordering; if false, it will come before all
 	     *          other strings.
 	     */
@@ -182,8 +182,8 @@ extern "C" {
 #endif /* __cplusplus */
 
    /**
-     * @param x \c pointer to a \c String .
-     * @return \c pointer to character 0 \a x .
+     * @param x pointer to a CXXR::String .
+     * @return pointer to character 0 of \a x .
      * @note For R internal use only.  May be removed in future.
      */
 #ifndef __cplusplus
@@ -196,8 +196,8 @@ extern "C" {
 #endif
 
     /**
-     * @param x \c const pointer to a \c String .
-     * @return \c const pointer to character 0 \a x .
+     * @param x \c const pointer to a CXXR::String .
+     * @return \c const pointer to character 0 of \a x .
      */
 #ifndef __cplusplus
     const char *R_CHAR(SEXP x);
@@ -211,7 +211,7 @@ extern "C" {
 # define LATIN1_MASK (1<<2)
 
     /**
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      * @return true iff \a x is marked as having LATIN1 encoding.
      */
 #ifndef __cplusplus
@@ -225,7 +225,7 @@ extern "C" {
 
     /**
      * @brief Set LATIN1 encoding.
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      */
 #ifndef __cplusplus
     void SET_LATIN1(SEXP x);
@@ -235,7 +235,7 @@ extern "C" {
 
     /**
      * @brief Unset LATIN1 encoding.
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      */
 #ifndef __cplusplus
     void UNSET_LATIN1(SEXP x);
@@ -246,7 +246,7 @@ extern "C" {
 # define UTF8_MASK (1<<3)
 
     /**
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      * @return true iff \a x is marked as having UTF8 encoding.
      */
 #ifndef __cplusplus
@@ -260,7 +260,7 @@ extern "C" {
 
     /**
      * @brief Set UTF8 encoding.
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      */
 #ifndef __cplusplus
     void SET_UTF8(SEXP x);
@@ -270,7 +270,7 @@ extern "C" {
 
     /**
      * @brief Unset UTF8 encoding.
-     * @param x Pointer to a \c VectorBase representing a character string.
+     * @param x Pointer to a CXXR::String.
      */
 #ifndef __cplusplus
     void UNSET_UTF8(SEXP x);

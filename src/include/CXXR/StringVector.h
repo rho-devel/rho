@@ -84,11 +84,11 @@ extern "C" {
     }
 #endif
 
-/** @brief Set element of StringVector.
+/** @brief Set element of CXXR::StringVector.
  * 
- * @param x Pointer to an \c StringVector .
+ * @param x Pointer to a CXXR::StringVector .
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to \c RObject representing the new value.
+ * @param v Pointer to CXXR::RObject representing the new value.
  */
 #ifndef __cplusplus
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
@@ -103,8 +103,8 @@ inline void SET_STRING_ELT(SEXP x, int i, SEXP v)
 #endif
 
 /**
- * @brief Examine element of a StringVector.
- * @param x Pointer to a StringVector.  An error is raised if \a x
+ * @brief Examine element of a CXXR::StringVector.
+ * @param x Pointer to a CXXR::StringVector.  An error is raised if \a x
  *          is not a pointer to a StringVector.
  * @param i Index of the required element.  There is no bounds checking.
  * @return Pointer to extracted \a i 'th element.
@@ -119,10 +119,10 @@ inline SEXP STRING_ELT(SEXP x, int i)
 #endif
 
 /**
- * @param x Pointer to a \c StringVector; an error is raised if \a x
- *          is not a pointer to a StringVector.
+ * @param x Pointer to a CXXR::StringVector; an error is raised if \a x
+ *          is not a pointer to a CXXR::StringVector.
  * @return Pointer to the start of \a x 's data, interpreted (riskily)
- *         as an array of String*.
+ *         as an array of CXXR::String*.
  * @deprecated This function puts the integrity of the write barrier
  * at the mercy of callers.  It is deliberately not made visible
  * to C code.

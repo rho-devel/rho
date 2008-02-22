@@ -22,8 +22,8 @@
  * At present, this file simply forces the generation of non-inlined
  * versions of inlined functions declared in PairList.h where these
  * are intended to be callable from C.  It is also used to check that
- * PairList.h is self-contained, i.e. #includes anything it needs,
- * and doesn't rely on anything having been previously #included in
+ * PairList.h is self-contained, i.e. \#includes anything it needs,
+ * and doesn't rely on anything having been previously \#included in
  * the enclosing source file.
  */
 

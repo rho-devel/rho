@@ -45,7 +45,7 @@ namespace CXXR {
      * number of bytes currently allocated via CXXR::Heap is at least
      * as great as a threshold value.  This threshold value varies
      * during the run, subject to a minimum value specified in the
-     * <tt>initialize</tt> method.
+     * initialize() method.
      */
     class GCManager {
     public:

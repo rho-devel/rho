@@ -22,9 +22,9 @@
  * At present, this file simply forces the generation of non-inlined
  * versions of inlined functions declared in Environment.h where
  * these are intended to be callable from C.  It is also used to check
- * that Environment.h is self-contained, i.e. #includes anything it
+ * that Environment.h is self-contained, i.e. \#includes anything it
  * needs, and doesn't rely on anything having been previously
- * #included in the enclosing source file.
+ * \#included in the enclosing source file.
  */
 
 #include "CXXR/Environment.h"

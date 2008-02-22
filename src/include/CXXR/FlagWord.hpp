@@ -29,9 +29,9 @@ namespace CXXR {
      *
      * This class performs a similar function, and is implemented in a
      * similar way, to <tt>std::bitset<16></tt>.  However, its bits
-     * are contained as a public data member, and within \c RObject
-     * the member \c m_gpbits is a reference to this data member.  In
-     * due course the use of \c m_gpbits will probably be eliminated
+     * are contained as a public data member, and within RObject
+     * the member RObject::m_gpbits is a reference to this data member.  In
+     * due course the use of RObject::m_gpbits will probably be eliminated
      * from CXXR, and then FlagWord itself will be replaced by
      * <tt>bitset<16></tt>.
      */

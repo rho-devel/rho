@@ -37,12 +37,11 @@ namespace CXXR {
     /** @brief Vector of pointers to RObject.
      *
      * This is a templated class to represent a vector whose members
-     * are of a type instantiated from the template GCEdge.
-     * @param Ptr The type of pointer to be encapsulated by the GCEdge
-     *          objects.  This should be pointer or const pointer to
+     * are pointers to other GCNode objects.
+     * @param Ptr This should be pointer or const pointer to
      *          GCNode or to a type (publicly) derived from GCNode.
-     *          The vector elements will be of type GCEdge<Ptr>.
-     * @param ST The required \c SEXPTYPE of the vector.
+     *          The vector elements will be of type \a Ptr.
+     * @param ST The required ::SEXPTYPE of the vector.
      */
     template <class Ptr, SEXPTYPE ST>
     class EdgeVector : public VectorBase {
@@ -52,7 +51,7 @@ namespace CXXR {
 	 * Objects of this class are used to allow the elements of an
 	 * EdgeVector<Ptr, ST> to be examined and modified using the
 	 * same syntax as would be used for accessing an array of
-	 * <tt>Ptr</tt>, whilst nevertheless enforcing the write
+	 * \a Ptr, whilst nevertheless enforcing the write
 	 * barrier.  See Item 30 of Scott Meyers's 'More Effective
 	 * C++' for a general discussion of proxy objects, but see the
 	 * <a
@@ -77,7 +76,7 @@ namespace CXXR {
 	    }
 
 	    /** Redirect the pointer encapsulated by the proxied element.
-	     * @param rhs New pointer value.
+	     * @param s New pointer value.
 	     * @return Reference to this ElementProxy.
 	     */
 	    ElementProxy& operator=(Ptr s)
@@ -115,7 +114,7 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 * @param init Initial value for the destination of each
-	 *          GCEdge<Ptr> in the EdgeVector.
+	 *          \a Ptr in the EdgeVector.
 	 */
 	explicit EdgeVector(size_t sz, Ptr init = 0)
 	    : VectorBase(ST, sz), m_data(sz, init)
@@ -135,7 +134,7 @@ namespace CXXR {
 	/** @brief Read-only element access.
 	 * @param index Index of required element (counting from
 	 *          zero).  No bounds checking is applied.
-	 * @return \c the specified element.
+	 * @return the specified element.
 	 */
 	Ptr const operator[](unsigned int index) const
 	{
@@ -144,7 +143,7 @@ namespace CXXR {
 
 	/**
 	 * @return pointer to the start of this object's data,
-	 * interpreted (riskily) as an array of Ptr.
+	 * interpreted (riskily) as an array of \a Ptr.
 	 * @deprecated This function puts the integrity of the write barrier
 	 * at the mercy of class clients.  (It also assumes that the
 	 * data of a std::vector are stored contiguously, which isn't
@@ -196,7 +195,7 @@ namespace CXXR {
     }
 
     template <class Ptr, SEXPTYPE ST>
-    void EdgeVector<Ptr, ST>::visitChildren(GCNode::const_visitor* v) const
+    void EdgeVector<Ptr, ST>::visitChildren(const_visitor* v) const
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {
@@ -206,7 +205,7 @@ namespace CXXR {
     }
 		    
     template <class Ptr, SEXPTYPE ST>
-    void EdgeVector<Ptr, ST>::visitChildren(GCNode::visitor* v)
+    void EdgeVector<Ptr, ST>::visitChildren(visitor* v)
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {

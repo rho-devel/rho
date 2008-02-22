@@ -2,7 +2,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2007  The R Development Core Team.
- *  Copyright (C) 2007 Andrew Runnalls
+ *  Copyright (C) 2007-8 Andrew Runnalls
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 /** @file Rvalgrind.h
  *
- * #defines relating to the use of valgrind.  These are controlled by the
+ * \#defines relating to the use of valgrind.  These are controlled by the
  * \c --with-valgrind-instrumentation= option to configure, which sets
  * \c VALGRIND_LEVEL to the supplied value (default 0) and defines \c
  * NVALGRIND if the value is 0.
@@ -29,7 +29,7 @@
  * <LI>Level 0 is no additional instrumentation</LI>
  *
  * <LI>Level 1 marks as uninitialized newly-created numeric, logical,
- * and integer vectors, and <tt>R_alloc</tt>/<tt>S_alloc</tt> memory.
+ * and integer vectors, and R_alloc()/S_alloc() memory.
  * This level is aimed primarily at enabling users of R (including
  * writers of imported code) to detect use of uninitialized data.</LI>
  *
@@ -39,7 +39,7 @@
  * overruns and the use of stale pointers.</LI>
  *
  * <LI>Level 3 redzones memory blocks allocated via
- * <tt>CXXR::Heap</tt>.  At present this is simply a trailing 1-byte
+ * CXXR::Heap.  At present this is simply a trailing 1-byte
  * redzone.  CR also countenances the possibility that
  * <tt>VALGRIND_LEVEL > 2</tt> but does not document its meaning.
  * </UL>

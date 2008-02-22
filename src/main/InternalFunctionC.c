@@ -21,8 +21,8 @@
  * @brief C sanity check on InternalFunction.h
  *
  * This file is used to check that InternalFunction.h is
- * self-contained as seen from C, i.e. #includes anything it needs,
- * and doesn't rely on anything having been previously #included in
+ * self-contained as seen from C, i.e. \#includes anything it needs,
+ * and doesn't rely on anything having been previously \#included in
  * the enclosing source file.
  */
 

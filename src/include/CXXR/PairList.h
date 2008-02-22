@@ -151,14 +151,14 @@ inline void SET_MISSING(SEXP x, int v)
 /**
  * Set the tag of a list element.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new tag of the list head..
+ * @param y Pointer a CXXR::RObject representing the new tag of the list head..
  */
 void SET_TAG(SEXP x, SEXP y);
 
 /**
  * Set the value of the first element of list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new value of the
+ * @param y Pointer a CXXR::RObject representing the new value of the
  *          list head.
  */
 SEXP SETCAR(SEXP x, SEXP y);
@@ -166,14 +166,14 @@ SEXP SETCAR(SEXP x, SEXP y);
 /**
  * Replace the tail of a list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new tail of the list.
+ * @param y Pointer a CXXR::RObject representing the new tail of the list.
  */
 SEXP SETCDR(SEXP x, SEXP y);
 
 /**
  * Set the value of the second element of list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new value of the
+ * @param y Pointer a CXXR::RObject representing the new value of the
  *          second element of the list.
  */
 SEXP SETCADR(SEXP x, SEXP y);
@@ -181,7 +181,7 @@ SEXP SETCADR(SEXP x, SEXP y);
 /**
  * Set the value of the third element of list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new value of the
+ * @param y Pointer a CXXR::RObject representing the new value of the
  *          third element of the list.
  */
 SEXP SETCADDR(SEXP x, SEXP y);
@@ -189,7 +189,7 @@ SEXP SETCADDR(SEXP x, SEXP y);
 /**
  * Set the value of the fourth element of list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new value of the
+ * @param y Pointer a CXXR::RObject representing the new value of the
  *          fourth element of the list.
  */
 SEXP SETCADDDR(SEXP x, SEXP y);
@@ -197,10 +197,10 @@ SEXP SETCADDDR(SEXP x, SEXP y);
 /**
  * Set the value of the fifth element of list.
  * @param x Pointer to a list.
- * @param y Pointer an \c RObject representing the new value of the
+ * @param y Pointer a CXXR::RObject representing the new value of the
  *          fifth element of the list.
  */
-SEXP SETCAD4R(SEXP e, SEXP y);
+SEXP SETCAD4R(SEXP x, SEXP y);
 
 /**
  * @brief Create a list of NULL values.
@@ -211,7 +211,7 @@ SEXP SETCAD4R(SEXP e, SEXP y);
 SEXP Rf_allocList(unsigned int n);
 
 /**
- * @brief Create an RObject...of listlike type
+ * @brief Create a CXXR::RObject of listlike type
  *
  * Despite the general name, the code (in memory.cpp) seems to assume
  * that the resulting object with have CAR, CDR, TAG etc.

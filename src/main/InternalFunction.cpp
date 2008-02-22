@@ -22,9 +22,9 @@
  * At present, this file simply forces the generation of non-inlined
  * versions of inlined functions declared in InternalFunction.h where
  * these are intended to be callable from C.  It is also used to check
- * that InternalFunction.h is self-contained, i.e. #includes anything
+ * that InternalFunction.h is self-contained, i.e. \#includes anything
  * it needs, and doesn't rely on anything having been previously
- * #included in the enclosing source file.
+ * \#included in the enclosing source file.
  */
 
 #include "CXXR/InternalFunction.h"

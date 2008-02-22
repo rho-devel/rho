@@ -50,8 +50,9 @@ extern "C" {
 #endif /* __cplusplus */
 
     /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is a logical vector.
+     * @param s Pointer to a CXXR::RObject.
+     * @return TRUE iff the CXXR::RObject pointed to by \a s is a
+     *         logical vector.
      */
 #ifndef __cplusplus
     Rboolean Rf_isLogical(SEXP s);
@@ -63,10 +64,10 @@ extern "C" {
 #endif
 
 /**
- * @param x Pointer to a \c LogicalVector or an \c IntVector (i.e. an
+ * @param x Pointer to a CXXR::LogicalVector or a CXXR::IntVector (i.e. an
  *          R logical or integer vector).
- *          An error is generated if \a x is not pointer to a \c
- *          LogicalVector or an \c IntVector .
+ *          An error is generated if \a x is not pointer to a
+ *          CXXR::LogicalVector or a CXXR::IntVector .
  * @return Pointer to element 0 of \a x .
  */
 int *LOGICAL(SEXP x);

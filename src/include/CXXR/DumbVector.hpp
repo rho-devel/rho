@@ -38,7 +38,7 @@ namespace CXXR {
      *          be either (i) a C++ built-in data type, or (ii) a
      *          class type with a trivial destructor, and a copy
      *          constructor implemented by bitwise copy.
-     * @param ST The required \c SEXPTYPE of the vector.
+     * @param ST The required ::SEXPTYPE of the vector.
      */
     template <class T, SEXPTYPE ST>
     class DumbVector : public VectorBase {

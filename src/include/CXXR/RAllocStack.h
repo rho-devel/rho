@@ -20,8 +20,8 @@
 /** @file RAllocStack.h
  * @brief Function R_alloc() and kin.
  *
- * Defines functions R_alloc and related functions, and the class
- * RAllocStack which is used to implement them.
+ * Defines functions R_alloc() and related functions, and the class
+ * CXXR::RAllocStack which is used to implement them.
  */
 
 #ifndef RALLOCSTACK_H
@@ -33,7 +33,7 @@
 #include <vector>
 
 namespace CXXR {
-    /** @brief Class for implementing \c R_alloc and kindred functions.
+    /** @brief Class for implementing R_alloc() and kindred functions.
      *
      * This class has only static members.  It implements a stack of
      * pointers to blocks of memory.
@@ -45,7 +45,7 @@ namespace CXXR {
 	 * The block will be aligned on a multiple of
 	 * <tt>sizeof(double)</tt> .
 	 * @param sz The required size in bytes (strictly, as a
-	 *           multiple of sizeof(char)), of the memory block.
+	 *           multiple of <tt>sizeof(char)</tt>), of the memory block.
 	 * @return Pointer to the start of the memory block.
 	 */
 	static void* allocate(size_t sz);
@@ -100,7 +100,7 @@ extern "C" {
      * @param num_elts Number of data items to be accommodated in the
      *          block.
      * @param elt_size Size in bytes (strictly, as a multiple of
-     *          sizeof(char)) of each data item.  Must be
+     *          <tt>sizeof(char)</tt>) of each data item.  Must be
      *          non-negative.
      * @return Pointer to the start of the memory block.
      *
@@ -112,12 +112,12 @@ extern "C" {
     /** @brief Allocate a block of memory, and initialize it to zero.
      *
      * This is part of the S compatibility interface.  It does the
-     * same thing as \c R_alloc, except that the memory block is
+     * same thing as R_alloc(), except that the memory block is
      * guaranteed to be initialized to zero.
      * @param num_elts Number of data items to be accommodated in the
      *          block.  Must be non-negative.
      * @param elt_size Size in bytes (strictly, as a multiple of
-     *          sizeof(char)) of each data item.  Must be
+     *          <tt>sizeof(char)</tt>) of each data item.  Must be
      *          non-negative.
      * @return Pointer to the start of the memory block.
      */
@@ -126,12 +126,12 @@ extern "C" {
     /** @brief Reallocate a block of memory.
      *
      * This is part of the S compatibility interface, and is used when
-     * it is decided that a block of memory previously allocated by \c
-     * S_alloc or \c S_realloc needs to be expanded.  It allocates a
+     * it is decided that a block of memory previously allocated by 
+     * S_alloc() or S_realloc() needs to be expanded.  It allocates a
      * new block of memory, copies across the previous contents, and
      * zeroes any additional elements.
      * @param prev_block Pointer to a block of memory previously
-     *          allocated by S_alloc or S_realloc.
+     *          allocated by S_alloc() or S_realloc().
      * @param new_sz New number of elements (>= 0) to be
      *          accommodated.
      * @param old_sz Number of elements contained in prev_block.
@@ -147,10 +147,10 @@ extern "C" {
 
     /** @brief Number of memory blocks allocated.
      *
-     * @return The current number of blocks allocated via <tt>R_alloc</tt>,
-     *         \c S_alloc and <tt>S_realloc</tt>.
+     * @return The current number of blocks allocated via R_alloc(),
+     *         S_alloc() and S_realloc().
      *
-     * @note C++ code should preferably use \c RAllocStack::size() directly.
+     * @note C++ code should preferably use CXXR::RAllocStack::size() directly.
      */
 #ifndef __cplusplus
     unsigned int vmaxget(void);
@@ -164,13 +164,13 @@ extern "C" {
     /** @brief Reclaims memory blocks.
      *
      * @param stack_size A value previously returned by a call to
-     *          <tt>vmaxget</tt>.  \c vmaxset will reclaim the memory
-     *          from all blocks allocated via <tt>R_alloc</tt>, \c
-     *          S_alloc and \c S_realloc subsequent to that call of
-     *          <tt>vmaxget</tt>.
+     *          vmaxget().  vmaxset() will reclaim the memory
+     *          from all blocks allocated via R_alloc(),
+     *          S_alloc() and S_realloc() subsequent to that call of
+     *          vmaxget().
      *
      * @deprecated For expert use only.  C++ code should preferably
-     * use \c RAllocStack::restoreSize() directly.
+     * use CXXR::RAllocStack::restoreSize() directly.
      */
 #ifndef __cplusplus
     void vmaxset(unsigned int stack_size);

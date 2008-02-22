@@ -17,9 +17,9 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file FlagByte.cpp
+/** @file FlagWord.cpp
  *
- * Implementation of class FlagByte.
+ * Implementation of class FlagWord.
  */
 
 #include "CXXR/FlagWord.hpp"

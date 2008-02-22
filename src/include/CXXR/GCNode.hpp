@@ -2,7 +2,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2007
+ *  Andrew Runnalls (C) 2007-8
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -77,7 +77,7 @@ namespace CXXR {
      * during the operation of a constructor for the derived class,
      * because then the object under construction will necessarily be
      * newer than anything to which it refers.</li>
-     * </ul>
+     * </ol>
      *
      * \par Infant immunity:
      * While a GCNode or an object of a class derived from GCNode is
@@ -89,16 +89,16 @@ namespace CXXR {
      * this method for a node whose construction is not yet complete.
      *
      * \par
-     * The private method \c expose() is used to end this immunity once
+     * The private method expose() is used to end this immunity once
      * construction of an object is complete.  However, there appears
-     * to be no clean and general way in C++ of calling \c expose() \e
+     * to be no clean and general way in C++ of calling expose() \e
      * exactly when construction is complete.  Consequently, a node's
      * infant immunity will in fact continue until one of the
      * following events occurs:
      * <ul>
      * <li>The node is explicitly protected from the garbage
      * collector, either by encapsulating a pointer to it in a
-     * GCRoot, or by the CR \c PROTECT mechanism.  For this reason, it
+     * GCRoot, or by the CR PROTECT() mechanism.  For this reason, it
      * is important that constructors <em>do not</em> attempt
      * explicitly to protect '<tt>this</tt>'; a particular risk with
      * this is that constructors of derived classes will not be able
@@ -291,7 +291,7 @@ namespace CXXR {
 
 	/** @brief Conduct a visitor to the children of this node.
 	 *
-	 * @param Pointer to the visitor object.
+	 * @param v Pointer to the visitor object.
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
 	 * visitChildren for the immediate base class of the derived
@@ -302,7 +302,7 @@ namespace CXXR {
 
 	/** @brief Conduct a visitor to the children of this node.
 	 *
-	 * @param Pointer to the visitor object.
+	 * @param v Pointer to the visitor object.
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
 	 * visitChildren for the immediate base class of the derived

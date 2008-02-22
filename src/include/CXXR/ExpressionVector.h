@@ -53,8 +53,8 @@ extern "C" {
 #endif /* __cplusplus */
 
     /**
-     * @param s Pointer to an RObject.
-     * @return TRUE iff the RObject pointed to by \a s is an expression.
+     * @param s Pointer to a CXXR::RObject.
+     * @return TRUE iff the CXXR::RObject pointed to by \a s is an expression.
      */
 #ifndef __cplusplus
     Rboolean Rf_isExpression(SEXP s);
@@ -65,11 +65,11 @@ extern "C" {
     }
 #endif
 
-/** @brief Set element of ExpressionVector.
+/** @brief Set element of CXXR::ExpressionVector.
  * 
- * @param x Pointer to an \c ExpressionVector .
+ * @param x Pointer to a CXXR::ExpressionVector .
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to \c RObject representing the new value.
+ * @param v Pointer to CXXR::RObject representing the new value.
  * @return The new value \a v.
  */
 #ifndef __cplusplus
@@ -85,8 +85,8 @@ inline SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
 #endif
 
 /**
- * @brief Examine element of an ExpressionVector.
- * @param x Pointer to an \c ExpressionVector .
+ * @brief Examine element of a CXXR::ExpressionVector.
+ * @param x Pointer to a CXXR::ExpressionVector .
  * @param i Index of the required element.  There is no bounds checking.
  * @return Pointer to extracted \a i 'th element.
  */

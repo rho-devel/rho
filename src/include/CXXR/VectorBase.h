@@ -38,7 +38,7 @@ namespace CXXR {
     class VectorBase : public RObject {
     public:
 	/**
-	 * @param stype The required <tt>SEXPTYPE</tt>.
+	 * @param stype The required ::SEXPTYPE.
 	 * @param sz The required number of elements in the vector.
 	 */
 	VectorBase(SEXPTYPE stype, size_t sz)
@@ -76,7 +76,7 @@ extern "C" {
 /* Vector Access Functions */
 
 /**
- * @param x Pointer to an \c RObject .
+ * @param x Pointer to an CXXR::RObject .
  *
  * @return The length of \a x, or 0 if \a x is a null pointer, or is
  *         not a pointer to a vector object (VectorBase).  (In 
@@ -94,7 +94,7 @@ inline int LENGTH(SEXP x)
 #endif
 
 /**
- * @param x Pointer to a \c VectorBase .
+ * @param x Pointer to a CXXR::VectorBase .
  * @return The 'true length' of \a x.  According to the R Internals
  *         document for R 2.4.1, this is only used for certain hash
  *         tables, and signifies the number of used slots in the
@@ -111,14 +111,14 @@ inline int TRUELENGTH(SEXP x)
 
 /**
  * Set length of vector.
- * @param x Pointer to a \c VectorBase .
+ * @param x Pointer to a CXXR::VectorBase .
  * @param v The required new length.
  */
 void SETLENGTH(SEXP x, int v);
 
 /**
  * Set 'true length' of vector.
- * @param x Pointer to a \c VectorBase .
+ * @param x Pointer to a CXXR::VectorBase .
  * @param v The required new 'true length'.
  */
 #ifndef __cplusplus
@@ -133,9 +133,10 @@ inline void SET_TRUELENGTH(SEXP x, int v)
 /**
  * @brief Create a vector object.
  *
- *  Allocate a vector object.  This ensures only validity of list-like
- *  SEXPTYPES (as the elements must be initialized).  Initializing of
- *  other vector types is done in do_makevector.
+ *  Allocate a vector object.  This ensures only validity of
+ *  ::SEXPTYPE values representing lists (as the elements must be
+ *  initialized).  Initializing of other vector types is done in
+ *  do_makevector(). 
  * @param stype The type of vector required.
  * @param length The length of the vector to be created.
  * @return Pointer to the created vector.
