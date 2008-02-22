@@ -217,7 +217,7 @@ typedef long R_long_t;
 #define	R_NSIZE		350000L
 #endif
 #ifndef R_VSIZE
-#define	R_VSIZE		6291456L
+#define	R_VSIZE		16000000L
 #endif
 
 /* some commonly needed headers */
