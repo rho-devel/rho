@@ -28,14 +28,20 @@
 void attribute_hidden PrintGreeting(void)
 {
     char buf[128];
-    
+
+    // To facilitate automated tests, make sure that when lines
+    // containing the string "CXXR" are grepped out, you are left with
+    // the standard R greeting.
+
     Rprintf("\n");
+    Rprintf("This is CXXR 0.10-2.6.1, based on:\n");
     PrintVersionString(buf);
     Rprintf("%s", buf);
     Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
 	    R_YEAR);
     
     Rprintf("ISBN 3-900051-07-0\n\n");
+    Rprintf("CXXR Copyright (C) 2008 Andrew Runnalls.  CXXR like\n");
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
