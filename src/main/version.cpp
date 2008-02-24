@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -41,7 +57,7 @@ void attribute_hidden PrintGreeting(void)
 	    R_YEAR);
     
     Rprintf("ISBN 3-900051-07-0\n\n");
-    Rprintf("CXXR Copyright (C) 2008 Andrew Runnalls.  CXXR like\n");
+    Rprintf(_("CXXR Copyright (C) 2008 Andrew Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
@@ -51,6 +67,9 @@ Type 'contributors()' for more information and\n\
     Rprintf(_("Type 'demo()' for some demos, 'help()' for on-line help, or\n\
 'help.start()' for an HTML browser interface to help.\n\
 Type 'q()' to quit R.\n\n"));
+    Rprintf(_("CXXR is not part of the R project, so please "
+	      "do not report bugs\nvia r-bugs or the R website; "
+	      "instead refer to the CXXR website.\n"));
 }
 
 SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
