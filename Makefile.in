@@ -74,7 +74,13 @@ stamp-recommended: R docs
 vignettes: stamp-recommended
 	@(cd src/library && $(MAKE) $@)
 
-install install-strip: installdirs svnonly
+install install-strip:
+	@echo "CXXR is currently in an immature state."
+	@echo "Installing it would overwrite your installation of standard R;"
+	@echo "consequently, installation is currently disabled."
+	@false
+  
+CXXR-install CXXR-install-strip: installdirs svnonly
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) $@) || exit 1; \
 	done
