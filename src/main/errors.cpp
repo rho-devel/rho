@@ -882,7 +882,7 @@ void jump_to_toplevel()
 SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 #ifdef ENABLE_NLS
-    const char *domain = "";
+    const char *domain = "", *cfn;
     char *buf;
     SEXP ans, string = CADR(args);
     int i, n = LENGTH(string);
@@ -899,8 +899,11 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	     cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & CTXT_FUNCTION) {
+		/* stop() etc have internal call to .makeMessage */
+		cfn = CHAR(STRING_ELT(deparse1(CAR(cptr->call), FALSE, 0), 0));
+		if(streql(cfn, "stop") || streql(cfn, "warning")
+		   || streql(cfn, "message")) continue;
 		rho = cptr->cloenv;
-		break;
 	    }
 	while(rho != R_EmptyEnv) {
 	    if (rho == R_GlobalEnv) break;

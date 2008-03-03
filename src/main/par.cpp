@@ -278,9 +278,8 @@ static void Specify(const char *what, SEXP value, DevDesc *dd, SEXP call)
  *	------------------------
  *	"ask",
  *	"family", "fig", "fin",
- *      "lend", lheight", "ljoin", "lmitre",
- *	"mai", "mar", "mex",
- *	"mfrow", "mfcol", "mfg",
+ *      "lheight",
+ *	"mai", "mar", "mex", "mfrow", "mfcol", "mfg",
  *	"new",
  *	"oma", "omd", "omi",
  *	"pin", "plt", "ps", "pty"
@@ -528,9 +527,12 @@ static void Specify(const char *what, SEXP value, DevDesc *dd, SEXP call)
     } /* mfg */
 
     else if (streql(what, "new")) {
-	lengthCheck(what, value, 1, call);	ix = asLogical(value);
-	if(!Rf_gpptr(dd)->state) warning(_("calling par(new=) with no plot"));
-	else R_DEV__(newplot) = Rboolean(ix != 0);
+	lengthCheck(what, value, 1, call);
+	ix = asLogical(value);
+	if(!Rf_gpptr(dd)->state) {
+	    /* no need to warn with new=FALSE and no plot */
+	    if(ix != 0) warning(_("calling par(new=TRUE) with no plot"));
+	} else R_DEV__(newplot) = Rboolean(ix != 0);
     }
     /* -- */
 
@@ -1000,6 +1002,7 @@ static SEXP Query(const char *what, DevDesc *dd)
 	REAL(value)[3] = Rf_dpptr(dd)->omi[3];
     }
     else if (streql(what, "pch")) {
+	/* FIXME: see FixupPch */
 	if(Rf_dpptr(dd)->pch < ' ' || Rf_dpptr(dd)->pch > 255) {
 	    value = ScalarInteger(Rf_dpptr(dd)->pch);
 	} else {

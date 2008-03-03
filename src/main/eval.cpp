@@ -3328,9 +3328,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP fun = SYMVALUE(symbol);
 	int flag;
 	unsigned int vmax = vmaxget();
-	if (TYPEOF(value) == PROMSXP) {
-	    value = forcePromise(value);
-	    SET_NAMED(value, 2);
+	if (TYPEOF(fun) == PROMSXP) {
+	    fun = forcePromise(fun);
+	    SET_NAMED(fun, 2);
 	}
 	if(TRACE(fun)) {
 	  Rprintf("trace: ");
@@ -3576,7 +3576,9 @@ SEXP R_bcDecode(SEXP code) {
     BCODE *pc;
     SEXP bytes;
 
-    n = LENGTH(code);
+    int m = (sizeof(BCODE) + sizeof(int) - 1) / sizeof(int);
+
+    n = LENGTH(code) / m;
     pc = reinterpret_cast<BCODE *>(CHAR_RW(code));
 
     bytes = allocVector(INTSXP, n);
