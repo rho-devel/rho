@@ -337,7 +337,6 @@ namespace CXXR {
     private:
 	friend class WeakRef;
 	friend class GCRootBase;
-	template <class T> friend class GCEdge;
 
 	/** Visitor class used to impose a minimum generation number.
 	 *
@@ -420,6 +419,10 @@ namespace CXXR {
 	explicit GCNode(int /*ignored*/)
 	    : m_prev(this), m_next(this)
 	{}
+
+	// Not implemented.  Declared private to prevent clients
+	// allocating arrays of GCNode.
+	static void* operator new[](size_t);
 
 	// Make the node known to the garbage collector (if it isn't
 	// already).

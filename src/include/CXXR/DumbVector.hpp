@@ -55,7 +55,7 @@ namespace CXXR {
      *          constructor implemented by bitwise copy.
      * @param ST The required ::SEXPTYPE of the vector.
      */
-    template <class T, SEXPTYPE ST>
+    template <typename T, SEXPTYPE ST>
     class DumbVector : public VectorBase {
     public:
 	/** @brief Create a vector, leaving its contents
@@ -149,7 +149,7 @@ namespace CXXR {
 	void allocData(size_t sz, bool initialize = false);
     };
 
-    template <class T, SEXPTYPE ST>
+    template <typename T, SEXPTYPE ST>
     void DumbVector<T, ST>::allocData(size_t sz, bool initialize)
     {
 	m_databytes = sz*sizeof(T);
@@ -167,7 +167,7 @@ namespace CXXR {
 #endif
     }
 
-    template <class T, SEXPTYPE ST>
+    template <typename T, SEXPTYPE ST>
     const char* DumbVector<T, ST>::typeName() const
     {
 	return DumbVector<T, ST>::staticTypeName();

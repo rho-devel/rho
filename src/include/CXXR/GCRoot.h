@@ -252,7 +252,7 @@ namespace CXXR {
      *          GCNode.  There is at present no provision for const
      *          pointers to be encapsulated within a GCRoot.
      */
-    template <class T = RObject*>
+    template <typename T = RObject*>
     class GCRoot : public GCRootBase {
     public:
 	/**

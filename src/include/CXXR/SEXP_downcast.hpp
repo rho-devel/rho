@@ -45,7 +45,7 @@
 
 namespace CXXR {
 #ifndef USE_TYPE_CHECKING
-    template <class Ptr>
+    template <typename Ptr>
     inline Ptr SEXP_downcast(SEXP s)
     {
 	return static_cast<Ptr>(s);
@@ -59,7 +59,7 @@ namespace CXXR {
      * @param s The pointer to be cast.
      * @return The cast pointer.
      */
-    template <class Ptr>
+    template <typename Ptr>
     Ptr SEXP_downcast(SEXP s)
     {
 	if (!s) return 0;

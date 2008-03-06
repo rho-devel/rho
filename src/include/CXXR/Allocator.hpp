@@ -33,7 +33,7 @@ namespace CXXR {
      * Addison-Wesley, 1999.  Also see Item 10 of Meyers' 'Effective
      * STL' for the arcana of STL allocators.
      */
-    template <class T>
+    template <typename T>
     class Allocator {
     public:
 	// type definitions
@@ -101,12 +101,12 @@ namespace CXXR {
     };
 
     // return that all specializations of this allocator are interchangeable
-    template <class T1, class T2>
+    template <typename T1, typename T2>
     bool operator== (const Allocator<T1>&,
 		     const Allocator<T2>&) throw() {
 	return true;
     }
-    template <class T1, class T2>
+    template <typename T1, typename T2>
     bool operator!= (const Allocator<T1>&,
 		     const Allocator<T2>&) throw() {
 	return false;
