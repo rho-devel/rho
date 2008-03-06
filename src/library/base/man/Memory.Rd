@@ -56,7 +56,7 @@ mem.limits(nsize = NA, vsize = NA)
   new}).  The amount of memory allocated via this heap is used to
   decide when to carry out garbage collections.
 
-  The \option{--*-nsize} and \option(--max-*} options are ignored in
+  The \option{--*-nsize} and \option{--max-*} options are ignored in
   CXXR.  The \option{--min-vsize} options is described below.  All
   these options must be integers or integers followed by 
   \code{G}, \code{M}, \code{K}, or \code{k} meaning \code{Giga}

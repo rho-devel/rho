@@ -1018,11 +1018,8 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 	    return new ListVector(*ev);
 
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
-	Rf_error(_("Coercion from VECSXP to EXPRSXP "
-		   "not (yet) implemented in CXXR."));
-	rval = NAMED(v) ? duplicate(v) : v;
-	SET_TYPEOF(rval, EXPRSXP);
-	return rval;
+	GCRoot<ListVector*> lv(static_cast<ListVector*>(v));
+	return new ExpressionVector(*lv);
     }
 
     if (type == STRSXP) {

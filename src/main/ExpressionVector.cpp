@@ -39,6 +39,9 @@
 
 #include "CXXR/ExpressionVector.h"
 
+#include "CXXR/ListVector.h"
+#include "CXXR/Symbol.h"
+
 using namespace std;
 using namespace CXXR;
 
@@ -50,4 +53,17 @@ namespace CXXR {
 	SEXP (*SET_XVECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_XVECTOR_ELT;
 	SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
     }
+}
+
+ExpressionVector::ExpressionVector(const ListVector& lv)
+    : EdgeVector<RObject*, EXPRSXP>(lv.size())
+{
+    // The following results in unnecessary invocations of
+    // devolveAge() on the nodes pointed to.
+    for (unsigned int i = 0; i < size(); ++i)
+	(*this)[i] = lv[i];
+    SEXP names = Rf_getAttrib(const_cast<ListVector*>(&lv),
+			      R_NamesSymbol);
+    if (names)
+	Rf_setAttrib(this, R_NamesSymbol, names);
 }
