@@ -32,12 +32,12 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/** @file Heap.cpp
+/** @file MemoryBank.cpp
  *
- * Implementation of class Heap
+ * Implementation of class MemoryBank
  */
 
-#include "CXXR/Heap.hpp"
+#include "CXXR/MemoryBank.hpp"
 
 #include <iostream>
 
@@ -48,26 +48,26 @@
 using namespace std;
 using namespace CXXR;
 
-unsigned int Heap::SchwarzCtr::s_count = 0;
-unsigned int Heap::s_blocks_allocated = 0;
-unsigned int Heap::s_bytes_allocated = 0;
-bool (*Heap::s_cue_gc)(size_t, bool) = 0;
+unsigned int MemoryBank::SchwarzCtr::s_count = 0;
+unsigned int MemoryBank::s_blocks_allocated = 0;
+unsigned int MemoryBank::s_bytes_allocated = 0;
+bool (*MemoryBank::s_cue_gc)(size_t, bool) = 0;
 #ifdef R_MEMORY_PROFILING
-void (*Heap::s_monitor)(size_t) = 0;
-size_t Heap::s_threshold = numeric_limits<size_t>::max();
+void (*MemoryBank::s_monitor)(size_t) = 0;
+size_t MemoryBank::s_threshold = numeric_limits<size_t>::max();
 #endif
 
-void Heap::pool_out_of_memory(CellPool* pool)
+void MemoryBank::pool_out_of_memory(CellPool* pool)
 {
     if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
 }
 
-CellPool* Heap::s_pools[5];
+CellPool* MemoryBank::s_pools[5];
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
 // s_pooltab[0] ensures this.  This table assumes sizeof(double) == 8.
-unsigned int Heap::s_pooltab[]
+unsigned int MemoryBank::s_pooltab[]
 = {0, 0, 0, 0, 0, 0, 0, 0, 0,
    1, 1, 1, 1, 1, 1, 1, 1,
    2, 2, 2, 2, 2, 2, 2, 2,
@@ -85,7 +85,7 @@ unsigned int Heap::s_pooltab[]
    4, 4, 4, 4, 4, 4, 4, 4,
    4, 4, 4, 4, 4, 4, 4, 4};
     
-void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
+void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 {
     CellPool* pool = 0;
     void* p = 0;
@@ -129,7 +129,7 @@ void* Heap::alloc2(size_t bytes) throw (std::bad_alloc)
     return p;
 }
 				
-void Heap::check()
+void MemoryBank::check()
 {
     for (unsigned int i = 0; i < 5; ++i)
 	s_pools[i]->check();
@@ -137,13 +137,13 @@ void Heap::check()
 
 // Deleting heap objects on program exit is not strictly necessary,
 // but doing so makes bugs more conspicuous when using valgrind.
-void Heap::cleanup()
+void MemoryBank::cleanup()
 {
     for (unsigned int i = 0; i < 5; ++i)
 	delete s_pools[i];
 }
 
-void Heap::initialize()
+void MemoryBank::initialize()
 {
     s_pools[0] = new CellPool(1, 512, pool_out_of_memory);
     s_pools[1] = new CellPool(2, 256, pool_out_of_memory);
@@ -153,7 +153,7 @@ void Heap::initialize()
 }
 
 #ifdef R_MEMORY_PROFILING
-void Heap::setMonitor(void (*monitor)(size_t), size_t threshold)
+void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 {
     s_monitor = monitor;
     s_threshold = (monitor ? threshold : numeric_limits<size_t>::max());

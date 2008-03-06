@@ -51,14 +51,14 @@
 namespace CXXR {
     /** @brief Class for managing garbage collection.
      * 
-     * This class only has static members.  When CXXR::Heap indicates
+     * This class only has static members.  When CXXR::MemoryBank indicates
      * that it is on the point of requesting additional memory from
      * the operating system, the class decides whether to initiate a
      * garbage collection, and if so how many levels to collect.
      *
      * In the current implementation of GCManager, when cued by CXXR
      * as above, a garbage collection will be carried out if the
-     * number of bytes currently allocated via CXXR::Heap is at least
+     * number of bytes currently allocated via CXXR::MemoryBank is at least
      * as great as a threshold value.  This threshold value varies
      * during the run, subject to a minimum value specified in the
      * initialize() method.
@@ -72,7 +72,7 @@ namespace CXXR {
 	 *  addressed.
 	 *
 	 * @param bytes_needed If specified, the number of bytes
-	 *          currently being sought by CXXR::Heap.
+	 *          currently being sought by CXXR::MemoryBank.
 	 */
 	static void adjustThreshold(size_t bytes_needed = 0);
 
@@ -154,7 +154,7 @@ namespace CXXR {
 
 	/** @brief Turn garbage collection torture on or off.
 	 *
-	 * If enabled, every time that CXXR::Heap indicates that it is
+	 * If enabled, every time that CXXR::MemoryBank indicates that it is
 	 * about to request additional memory from the operating
 	 * system, a garbage collection is carried out.
 	 *
@@ -164,11 +164,11 @@ namespace CXXR {
 
 	/** @brief Current GC threshold level.
 	 *
-	 * @return The current threshold level.  When CXXR::Heap
+	 * @return The current threshold level.  When CXXR::MemoryBank
 	 * indicates that it is on the point of requesting additional
 	 * memory from the operating system, garbage collection will
 	 * be triggered if the number of bytes currently allocated via
-	 * CXXR::Heap is at least as great as this level.
+	 * CXXR::MemoryBank is at least as great as this level.
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
@@ -179,7 +179,7 @@ namespace CXXR {
 	static size_t s_max_nodes;
 
 	static bool s_tortured;  // If this is true, every cue from
-				 // CXXR::Heap leads to a garbage
+				 // CXXR::MemoryBank leads to a garbage
 				 // collection.
 	static std::ostream* s_os;  // Pointer to output stream for GC
 				    // reporting, or NULL.
@@ -188,7 +188,7 @@ namespace CXXR {
 	// a constructor.
 	GCManager();
 
-	// Callback for CXXR::Heap to cue a garbage collection:
+	// Callback for CXXR::MemoryBank to cue a garbage collection:
 	static bool cue(size_t bytes_wanted, bool force);
 
 	// Callbacks e.g. for timing:

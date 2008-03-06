@@ -15,18 +15,19 @@ ifneq ($(valgrind),)
 valgrind += -q --leak-check="yes"
 endif
 
-sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp Heaptest.cpp
+sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
+              MemoryBanktest.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest Heaptest Allocatortest GCManagertest splice_test
+tests = CellPooltest MemoryBanktest Allocatortest GCManagertest splice_test
 
 check : $(tests:=.ts)
 
 Allocatortest.o : Allocatortest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
 
-Allocatortest_objs = Allocatortest.o Heap.o CellPool.o
+Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
 
 Allocatortest : $(Allocatortest_objs)
 	$(LINK.cc) -o $@ $(Allocatortest_objs)
@@ -57,7 +58,7 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 GCManager.o : $(maindir)/GCManager.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
 
-GCManagertest_objs = GCManagertest.o GCManager.o Heap.o CellPool.o
+GCManagertest_objs = GCManagertest.o GCManager.o MemoryBank.o CellPool.o
 
 GCManagertest : $(GCManagertest_objs)
 	$(LINK.cc) -o $@ $(GCManagertest_objs)
@@ -68,21 +69,21 @@ GCManagertest.ts : GCManagertest GCManagertest.save
 	rm GCManagertest.out
 	touch $@
 
-Heap.o : $(maindir)/Heap.cpp
+MemoryBank.o : $(maindir)/MemoryBank.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
 
-Heaptest.o : Heaptest.cpp
+MemoryBanktest.o : MemoryBanktest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
 
-Heaptest_objs = Heaptest.o Heap.o CellPool.o
+MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellPool.o
 
-Heaptest : $(Heaptest_objs)
-	$(LINK.cc) -o $@ $(Heaptest_objs)
+MemoryBanktest : $(MemoryBanktest_objs)
+	$(LINK.cc) -o $@ $(MemoryBanktest_objs)
 
-Heaptest.ts : Heaptest Heaptest.save
-	$(valgrind) ./$< 10 12 > Heaptest.out
-	diff Heaptest.save Heaptest.out
-	rm Heaptest.out
+MemoryBanktest.ts : MemoryBanktest MemoryBanktest.save
+	$(valgrind) ./$< 10 12 > MemoryBanktest.out
+	diff MemoryBanktest.save MemoryBanktest.out
+	rm MemoryBanktest.out
 	touch $@
 
 RObject_sizer : RObject_sizer.o

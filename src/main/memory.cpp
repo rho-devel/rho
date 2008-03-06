@@ -54,7 +54,7 @@
 
 #include <R_ext/RS.h> /* for S4 allocation */
 #include "CXXR/GCManager.hpp"
-#include "CXXR/Heap.hpp"
+#include "CXXR/MemoryBank.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -111,7 +111,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
     R_size_t alloc;
     REprintf("Node occupancy: %.0f%%\nVector occupancy: %.0f%%\n",
 	     100.0 * node_occup, 100.0 * vect_occup);
-    alloc = Heap::bytesAllocated();
+    alloc = MemoryBank::bytesAllocated();
     REprintf("Total allocation: %lu\n", alloc);
     REprintf("Ncells %lu\nVcells %lu\n", R_NSize, R_VSize);
 }
@@ -437,7 +437,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 {
     // All subject to change in CXXR:
     *smallvsize = 0;
-    *largevsize = Heap::bytesAllocated()/sizeof(VECREC);
+    *largevsize = MemoryBank::bytesAllocated()/sizeof(VECREC);
     *nodes = GCNode::numNodes();
     return;
 }
@@ -456,7 +456,7 @@ SEXP do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
     /* next four are in 0.1MB, rounded up */
-    REAL(value)[3] = 0.1*ceil(10. * Heap::bytesAllocated()/Mega);
+    REAL(value)[3] = 0.1*ceil(10. * MemoryBank::bytesAllocated()/Mega);
     REAL(value)[4] = 0.1*ceil(10. * GCManager::triggerLevel()/Mega);
     REAL(value)[5] = 0.1*ceil(10. * GCManager::maxBytes()/Mega);
     if (reset_max) GCManager::resetMaxTallies();
@@ -1076,7 +1076,7 @@ static void R_EndMemReporting()
 	fclose(R_MemReportingOutfile);
 	R_MemReportingOutfile=NULL;
     }
-    Heap::setMonitor(0);
+    MemoryBank::setMonitor(0);
     return;
 }
 
@@ -1087,7 +1087,7 @@ static void R_InitMemReporting(const char *filename, int append,
     R_MemReportingOutfile = fopen(filename, append ? "a" : "w");
     if (R_MemReportingOutfile == NULL)
 	error(_("Rprofmem: cannot open output file '%s'"), filename);
-    Heap::setMonitor(R_ReportAllocation, threshold);
+    MemoryBank::setMonitor(R_ReportAllocation, threshold);
 }
 
 SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)

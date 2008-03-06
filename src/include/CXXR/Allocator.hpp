@@ -14,20 +14,20 @@
  */
 
 /** @file Allocator.hpp
- * @brief STL-compatible allocator front-ending CXXR::Heap.
+ * @brief STL-compatible allocator front-ending CXXR::MemoryBank.
  */
 
 #ifndef ALLOCATOR_HPP
 #define ALLOCATOR_HPP 1
 
 #include <limits>
-#include "CXXR/Heap.hpp"
+#include "CXXR/MemoryBank.hpp"
 
 namespace CXXR {
-    /** @brief STL-compatible allocator front-ending CXXR::Heap.
+    /** @brief STL-compatible allocator front-ending CXXR::MemoryBank.
      *
      * This templated class enables container classes within the C++
-     * standard library to allocate their memory via CXXR::Heap.  It
+     * standard library to allocate their memory via CXXR::MemoryBank.  It
      * is adapted from an example in the book "The C++ Standard
      * Library - A Tutorial and Reference" by Nicolai M. Josuttis,
      * Addison-Wesley, 1999.  Also see Item 10 of Meyers' 'Effective
@@ -79,7 +79,7 @@ namespace CXXR {
 
 	// allocate but don't initialize num elements of type T
 	pointer allocate (size_type num, const void* /*hint*/ = 0) {
-	    return reinterpret_cast<pointer>(Heap::allocate(num*sizeof(T)));
+	    return reinterpret_cast<pointer>(MemoryBank::allocate(num*sizeof(T)));
 	}
 
 	// initialize elements of allocated storage p with value value
@@ -96,7 +96,7 @@ namespace CXXR {
 
 	// deallocate storage p of deleted elements
 	void deallocate (pointer p, size_type num) {
-	    Heap::deallocate(p, num*sizeof(T));
+	    MemoryBank::deallocate(p, num*sizeof(T));
 	}
     };
 

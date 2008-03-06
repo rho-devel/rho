@@ -92,16 +92,16 @@ int main(int argc, char* argv[]) {
     }
     // Carry out initial allocations:
     {
-	Heap::setMonitor(monitor, 100);
+	MemoryBank::setMonitor(monitor, 100);
 	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc();
-	Heap::check();
-	cout << "Blocks allocated: " << Heap::blocksAllocated()
-	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
+	MemoryBank::check();
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
+	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
     }
     // Carry out churns:
     {
-	Heap::setMonitor(0);
-	Heap::setGCCuer(cueGC);
+	MemoryBank::setMonitor(0);
+	MemoryBank::setGCCuer(cueGC);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = qrnd();
 	    if (rnd & 2 || ilv.empty()) alloc();
@@ -115,9 +115,9 @@ int main(int argc, char* argv[]) {
 		ilv.pop_back();
 	    }
 	}
-	Heap::check();
-	cout << "Blocks allocated: " << Heap::blocksAllocated()
-	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
+	MemoryBank::check();
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
+	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
     }
     // Clear up:
     {

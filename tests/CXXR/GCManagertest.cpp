@@ -65,13 +65,13 @@ namespace {
 
     void gcstart()
     {
-	cout << "GC started: Bytes allocated " << Heap::bytesAllocated()
+	cout << "GC started: Bytes allocated " << MemoryBank::bytesAllocated()
 	     << "; threshold " << GCManager::triggerLevel() << '\n';
     }
 
     void gcend()
     {
-	cout << "GC finished: Bytes allocated " << Heap::bytesAllocated()
+	cout << "GC finished: Bytes allocated " << MemoryBank::bytesAllocated()
 	     << "; threshold " << GCManager::triggerLevel() << '\n';
     }
 
@@ -79,7 +79,7 @@ namespace {
     void alloc(double mean) {
 	size_t bytes = size_t(mean*rexp());
 	cout << " Allocating " << bytes << " bytes\n";
-	allocs.push_back(make_pair(bytes, Heap::allocate(bytes)));
+	allocs.push_back(make_pair(bytes, MemoryBank::allocate(bytes)));
     }
 }
 
@@ -88,16 +88,16 @@ namespace {
 void GCNode::gc(unsigned int num_old_gens)
 {
     cout << "GCNode::gc(" << num_old_gens << ")\n";
-    // cout << Heap::bytesAllocated() << " bytes allocated at start\n";
+    // cout << MemoryBank::bytesAllocated() << " bytes allocated at start\n";
     double keptfrac = sqrt(uni01());
     size_t keptallocs = size_t(ceil(allocs.size()*keptfrac));
     while (allocs.size() > keptallocs) {
 	pair<size_t, void*>& pr = allocs.back();
-	Heap::deallocate(pr.second, pr.first);
+	MemoryBank::deallocate(pr.second, pr.first);
 	allocs.pop_back();
 	cout << " Released " << pr.first << " bytes\n";
     }
-    // cout << Heap::bytesAllocated() << " bytes allocated at end\n";
+    // cout << MemoryBank::bytesAllocated() << " bytes allocated at end\n";
 }
 
 void GCNode::initialize(unsigned int num_old_generations)

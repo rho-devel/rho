@@ -160,7 +160,7 @@ namespace {
     {
 	int gen, OldCount;
 	REprintf("\n%s, VSize = %lu", full_gc ? "Full" : "Minor",
-		 Heap::bytesAllocated()/sizeof(VECREC));
+		 MemoryBank::bytesAllocated()/sizeof(VECREC));
 	for (gen = 0, OldCount = 0; gen < num_old_generations; gen++)
 	    OldCount += GCNode::s_oldcount[gen];
 	REprintf(", %d", OldCount);
@@ -173,7 +173,7 @@ namespace {
 void GCManager::adjustThreshold(size_t bytes_needed)
 {
     size_t MinBFree = size_t(s_min_threshold * MinFreeFrac);
-    size_t BNeeded = Heap::bytesAllocated() + bytes_needed + MinBFree;
+    size_t BNeeded = MemoryBank::bytesAllocated() + bytes_needed + MinBFree;
     double occup = double(BNeeded) / s_threshold;
     if (occup > 1.0) s_threshold = BNeeded;
     // This follows memory.c in 2.5.1, but should the following
@@ -198,7 +198,7 @@ void GCManager::adjustThreshold(size_t bytes_needed)
 
 bool GCManager::cue(size_t bytes_wanted, bool force)
 {
-    if (!force && Heap::bytesAllocated() + bytes_wanted < s_threshold)
+    if (!force && MemoryBank::bytesAllocated() + bytes_wanted < s_threshold)
 	return false;
     gc(bytes_wanted);
     return true;
@@ -219,7 +219,7 @@ void GCManager::gc(size_t bytes_wanted, bool full)
     bool any_finalizers_run = WeakRef::runFinalizers();
     running_finalizers = false;
     if (any_finalizers_run &&
-	Heap::bytesAllocated() + bytes_wanted >= s_threshold)
+	MemoryBank::bytesAllocated() + bytes_wanted >= s_threshold)
 	gcGenController(bytes_wanted, full);
 }
 
@@ -233,7 +233,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 
     gc_count++;
 
-    s_max_bytes = max(s_max_bytes, Heap::bytesAllocated());
+    s_max_bytes = max(s_max_bytes, MemoryBank::bytesAllocated());
     s_max_nodes = max(s_max_nodes, GCNode::numNodes());
 
     /*BEGIN_SUSPEND_INTERRUPTS { */
@@ -247,10 +247,10 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 
 	/* update heap statistics */
 	if (level < num_old_generations) {
-	    if (Heap::bytesAllocated() + bytes_wanted
+	    if (MemoryBank::bytesAllocated() + bytes_wanted
 		> (1.0 - MinFreeFrac)*s_threshold) {
 		level++;
-		if (Heap::bytesAllocated() + bytes_wanted
+		if (MemoryBank::bytesAllocated() + bytes_wanted
 		    >= s_threshold)
 		    ok = false;
 	    }
@@ -275,7 +275,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 	    *s_os << "+" << gen_gc_counts[i + 1];
 	*s_os << " (level " << gens_collected << ") ... ";
 	DEBUG_GC_SUMMARY(gens_collected == num_old_generations);
-	double bytes = Heap::bytesAllocated();
+	double bytes = MemoryBank::bytesAllocated();
 	double bfrac = (100.0 * bytes) / s_threshold;
 	double mbytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
 	*s_os << '\n' << fixed << setprecision(1)
@@ -295,12 +295,12 @@ void GCManager::initialize(size_t initial_threshold,
     gc_count = 0;
     for (unsigned int i = 0; i <= num_old_generations; ++i)
 	gen_gc_counts[i] = 0;
-    Heap::setGCCuer(cue);
+    MemoryBank::setGCCuer(cue);
 }
 
 void GCManager::resetMaxTallies()
 {
-    s_max_bytes = Heap::bytesAllocated();
+    s_max_bytes = MemoryBank::bytesAllocated();
     s_max_nodes = GCNode::numNodes();
 }
 

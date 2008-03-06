@@ -174,7 +174,7 @@ namespace CXXR {
 	// If there are fewer than s_short_strlen+1 chars in the
 	// string (including the trailing null), it is stored here,
 	// internally to the String object, rather than via a separate
-	// allocation from CXXR::Heap.  We put this last, so that it
+	// allocation from CXXR::MemoryBank.  We put this last, so that it
 	// will be adjacent to any trailing redzone.
 	char m_short_string[s_short_strlen + 1];
 
@@ -188,7 +188,7 @@ namespace CXXR {
 	~String()
 	{
 	    if (m_data != m_short_string)
-		Heap::deallocate(m_data, m_databytes);
+		MemoryBank::deallocate(m_data, m_databytes);
 	}
     };
 }  // namespace CXXR

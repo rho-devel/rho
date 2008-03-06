@@ -127,7 +127,7 @@ namespace CXXR {
 	~DumbVector()
 	{
 	    if (m_data != &m_singleton)
-		Heap::deallocate(m_data, m_databytes);
+		MemoryBank::deallocate(m_data, m_databytes);
 	}
     private:
 	size_t m_databytes;  // used only if > 1 elements
@@ -135,7 +135,7 @@ namespace CXXR {
 
 	// If there is only one element, it is stored here, internally
 	// to the DumbVector object, rather than via a separate
-	// allocation from CXXR::Heap.  We put this last, so that it
+	// allocation from CXXR::MemoryBank.  We put this last, so that it
 	// will be adjacent to any trailing redzone.
 	T m_singleton;
 
@@ -145,7 +145,7 @@ namespace CXXR {
 	DumbVector& operator=(const DumbVector&);
 
 	// If there is more than one element, this function is used to
-	// allocate the required memory block from CXXR::Heap :
+	// allocate the required memory block from CXXR::MemoryBank :
 	void allocData(size_t sz, bool initialize = false);
     };
 
@@ -156,7 +156,7 @@ namespace CXXR {
 	// Check for integer overflow:
 	if (m_databytes/sizeof(T) != sz)
 	    Rf_error(_("Request to create impossibly large vector."));
-	m_data = reinterpret_cast<T*>(Heap::allocate(m_databytes));
+	m_data = reinterpret_cast<T*>(MemoryBank::allocate(m_databytes));
 	if (initialize) {
 	    for (unsigned int i = 0; i < sz; ++i)
 		m_data[i] = m_singleton;

@@ -17,9 +17,9 @@
  *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/** @file Heaptest.cpp
+/** @file MemoryBanktest.cpp
  *
- * Test of class CXXR::Heap
+ * Test of class CXXR::MemoryBank
  */
 
 #include <algorithm>
@@ -28,7 +28,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
-#include "CXXR/Heap.hpp"
+#include "CXXR/MemoryBank.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -69,7 +69,7 @@ namespace {
 	static int serial = 0;
 	cout << "Allocating #" << serial << " with size "
 	     << bytes << endl;
-	char* cptr = reinterpret_cast<char*>(Heap::allocate(bytes));
+	char* cptr = reinterpret_cast<char*>(MemoryBank::allocate(bytes));
 	memset(cptr, 0, bytes);
 	trs.push_back(Tr(serial++, bytes, cptr));
     }
@@ -102,16 +102,16 @@ int main(int argc, char* argv[]) {
     }
     // Carry out initial allocations:
     {
-	Heap::setMonitor(monitor, 100);
+	MemoryBank::setMonitor(monitor, 100);
 	for (unsigned int i = 0; i < num_init_allocs; ++i) alloc(qrnd());
-	Heap::check();
-	cout << "Blocks allocated: " << Heap::blocksAllocated()
-	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
+	MemoryBank::check();
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
+	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
     }
     // Carry out churns:
     {
-	Heap::setMonitor(0);
-	Heap::setGCCuer(cueGC);
+	MemoryBank::setMonitor(0);
+	MemoryBank::setGCCuer(cueGC);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = qrnd();
 	    if (rnd & 2 || trs.empty()) alloc(rnd);
@@ -120,20 +120,20 @@ int main(int argc, char* argv[]) {
 		unsigned int k
 		    = int(double(rnd)*double(trs.size())/1024.0);
 		cout << "Deallocating #" << trs[k].serial << endl;
-		Heap::deallocate(trs[k].cptr, trs[k].size);
+		MemoryBank::deallocate(trs[k].cptr, trs[k].size);
 		swap(trs[k], trs.back());
 		trs.pop_back();
 	    }
 	}
-	Heap::check();
-	cout << "Blocks allocated: " << Heap::blocksAllocated()
-	     << "\nBytes allocated: " << Heap::bytesAllocated() << endl;
+	MemoryBank::check();
+	cout << "Blocks allocated: " << MemoryBank::blocksAllocated()
+	     << "\nBytes allocated: " << MemoryBank::bytesAllocated() << endl;
     }
     // Clear up:
     {
 	for (unsigned int k = 0; k < trs.size(); ++k) {
 	    cout << "Deallocating #" << trs[k].serial << endl;
-	    Heap::deallocate(trs[k].cptr, trs[k].size);
+	    MemoryBank::deallocate(trs[k].cptr, trs[k].size);
 	}
     }
     return 0;

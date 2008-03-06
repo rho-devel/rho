@@ -43,7 +43,7 @@
 #define GCNODE_HPP
 
 #include <vector>
-#include "CXXR/Heap.hpp"
+#include "CXXR/MemoryBank.hpp"
 
 #define EXPEL_OLD_TO_NEW
 
@@ -196,7 +196,7 @@ namespace CXXR {
 	 */
 	static void* operator new(size_t bytes)
 	{
-	    return memset(Heap::allocate(bytes), 0, bytes);
+	    return memset(MemoryBank::allocate(bytes), 0, bytes);
 	}
 
 	/** @brief Deallocate memory
@@ -210,7 +210,7 @@ namespace CXXR {
 	 */
 	static void operator delete(void* p, size_t bytes)
 	{
-	    Heap::deallocate(p, bytes);
+	    MemoryBank::deallocate(p, bytes);
 	}
 
 	/** @brief Integrity check.

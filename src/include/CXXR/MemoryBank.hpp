@@ -32,13 +32,13 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file Heap.hpp
+/** @file MemoryBank.hpp
  *
- * @brief Class CXXR::Heap
+ * @brief Class CXXR::MemoryBank
  */
 
-#ifndef CXXR_HEAP_HPP
-#define CXXR_HEAP_HPP
+#ifndef MEMORYBANK_HPP
+#define MEMORYBANK_HPP
 
 #include "CXXR/CellPool.hpp"
 
@@ -48,7 +48,7 @@ namespace CXXR {
      * Small objects are quickly allocated from CellPools of various cell
      * sizes; large objects are obtained directly from the main heap.
      */
-    class Heap {
+    class MemoryBank {
     public:
 	/** @brief Schwarz counter.
 	 *
@@ -68,34 +68,34 @@ namespace CXXR {
 	 *
 	 * This is achieved by the unusual stratagem of including the
 	 * \e definition of a lightweight data item within this header
-	 * file.  This data item is of type Heap::SchwarzCtr, and is
+	 * file.  This data item is of type MemoryBank::SchwarzCtr, and is
 	 * declared within an anonymous namespace.  Each file that
 	 * <tt>\#include</tt>s this header file will therefore include
 	 * a definition of a SchwarzCtr object, and this definition
 	 * will precede any data definitions within the enclosing file
-	 * that depend on class Heap.  Consequently, the SchwarzCtr
+	 * that depend on class MemoryBank.  Consequently, the SchwarzCtr
 	 * object will be constructed before any data objects of the
 	 * client file.  The constructor of SchwarzCtr is so defined
-	 * that when the first such object is created, the class Heap
+	 * that when the first such object is created, the class MemoryBank
 	 * will itself be initialized.
 	 *
 	 * Conversely, when the program exits, data items within each
 	 * client file will have their destructors invoked before the
 	 * file's SchwarzCtr object has its destructor invoked.  This
 	 * SchwarzCtr destructor is so defined that only when the last
-	 * SchwarzCtr object is destroyed is the Heap class itself
+	 * SchwarzCtr object is destroyed is the MemoryBank class itself
 	 * cleaned up.
 	 */
 	class SchwarzCtr {
 	public:
 	    SchwarzCtr()
 	    {
-		if (!s_count++) Heap::initialize();
+		if (!s_count++) MemoryBank::initialize();
 	    }
 
 	    ~SchwarzCtr()
 	    {
-		if (!--s_count) Heap::cleanup();
+		if (!--s_count) MemoryBank::cleanup();
 	    }
 	private:
 	    static unsigned int s_count;
@@ -160,7 +160,7 @@ namespace CXXR {
 	/** @brief Deallocate a block
 	 *
 	 * @param p Pointer to a block of memory previously allocated
-	 *          by Heap::allocate(), or a null pointer (in which
+	 *          by MemoryBank::allocate(), or a null pointer (in which
 	 *          case method does nothing).
 	 */
 	static void deallocate(void* p, size_t bytes)
@@ -234,7 +234,7 @@ namespace CXXR {
 
 	// Not implemented.  Declared to stop the compiler generating
 	// a constructor.
-	Heap();
+	MemoryBank();
 
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
@@ -276,7 +276,7 @@ namespace CXXR {
 }
 
 namespace {
-    CXXR::Heap::SchwarzCtr schwarz_ctr;
+    CXXR::MemoryBank::SchwarzCtr schwarz_ctr;
 }
 
-#endif /* CXXR_HEAP_HPP */
+#endif /* MEMORYBANK_HPP */
