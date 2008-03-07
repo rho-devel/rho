@@ -1,4 +1,4 @@
-GCNode::initialize(2)
+GCNode::initialize()
  Allocating 96200 bytes
  Allocating 17544 bytes
  Allocating 157028 bytes
@@ -339,3 +339,4 @@ RunFinalizers():
  Allocating 208379 bytes
 RunFinalizers returned true
  Allocating 25815 bytes
+GCNode::cleanup()

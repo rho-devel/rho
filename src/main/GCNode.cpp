@@ -42,13 +42,15 @@
 #include "CXXR/GCNode.hpp"
 
 #include <iostream>
+#include "CXXR/GCManager.hpp"
 
 using namespace std;
 using namespace CXXR;
 
-unsigned int GCNode::s_last_gen;
-vector<const GCNode*> GCNode::s_genpeg;
-vector<unsigned int> GCNode::s_gencount;
+unsigned int GCNode::SchwarzCtr::s_count = 0;
+unsigned int GCNode::s_num_generations = 0;
+const GCNode** GCNode::s_genpeg;
+unsigned int* GCNode::s_gencount;
 size_t GCNode::s_num_nodes;
 
 GCNode::~GCNode()
@@ -60,19 +62,14 @@ GCNode::~GCNode()
 
 bool GCNode::check()
 {
-    if (s_genpeg.size() == 0) {
+    if (s_num_generations == 0) {
 	cerr << "GCNode::check() : class not initialised.\n";
-	abort();
-    }
-    if (s_genpeg.size() != s_last_gen + 1
-	|| s_genpeg.size() != s_gencount.size()) {
-	cerr << "GCNode::check() : internal vectors inconsistently sized.\n";
 	abort();
     }
     // Check each generation:
     {
 	unsigned int numnodes = 0;
-	for (unsigned int gen = 0; gen <= s_last_gen; ++gen) {
+	for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
 	    unsigned int gct = 0;
 	    OldToNewChecker o2n(gen);
 	    for (const GCNode* node = s_genpeg[gen]->next();
@@ -106,6 +103,12 @@ bool GCNode::check()
     return true;
 }
 
+void GCNode::cleanup()
+{
+    delete [] s_gencount;
+    delete [] s_genpeg;
+}
+
 void GCNode::devolveAge(const GCNode* node)
 {
     if (node) {
@@ -123,14 +126,14 @@ void GCNode::expose_aux() const
 
 // GCNode::gc() is in memory.cpp (for the time being)
 
-void GCNode::initialize(unsigned int num_old_generations)
+void GCNode::initialize()
 {
-    if (s_genpeg.size() == 0) {
-	s_last_gen = num_old_generations;
-	s_genpeg.resize(num_old_generations + 1);
-	s_gencount.resize(num_old_generations + 1, 0);
-	for (unsigned int gen = 0; gen <= s_last_gen; ++gen)
-	    s_genpeg[gen] = new GCNode(0);
+    s_num_generations = GCManager::numGenerations();
+    s_genpeg = new const GCNode*[s_num_generations];
+    s_gencount = new unsigned int[s_num_generations];
+    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
+	s_genpeg[gen] = new GCNode(0);
+	s_gencount[gen] = 0;
     }
 }
 

@@ -276,7 +276,7 @@ namespace CXXR {
 }
 
 namespace {
-    CXXR::MemoryBank::SchwarzCtr schwarz_ctr;
+    CXXR::MemoryBank::SchwarzCtr memorybank_schwarz_ctr;
 }
 
 #endif /* MEMORYBANK_HPP */
