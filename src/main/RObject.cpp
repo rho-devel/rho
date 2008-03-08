@@ -98,10 +98,6 @@ void RObject::visitChildren(const_visitor* v) const
 	if (car()) car()->conductVisitor(v);
 	if (cdr()) cdr()->conductVisitor(v);
 	break;
-    case EXTPTRSXP:
-	if (cdr()) cdr()->conductVisitor(v);
-	if (tag()) tag()->conductVisitor(v);
-	break;
     default:
 	break;
     }

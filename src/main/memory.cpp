@@ -815,55 +815,6 @@ void R_ReleaseObject(SEXP object)
 
 /* External Pointer Objects */
 
-// y doesn't point to a GCNode, so no old-to-new check:
-#define SET_EXTPTR_PTR(x, y) (x)->u.listsxp.carval = (y)
-
-SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
-{
-    SEXP s = allocSExp(EXTPTRSXP);
-    SET_EXTPTR_PTR(s, reinterpret_cast<SEXPREC*>(p));
-    SETCDR(s, prot);
-    SET_TAG(s, tag);
-    return s;
-}
-
-void *R_ExternalPtrAddr(SEXP s)
-{
-    return EXTPTR_PTR(s);
-}
-
-SEXP R_ExternalPtrTag(SEXP s)
-{
-    return EXTPTR_TAG(s);
-}
-
-SEXP R_ExternalPtrProtected(SEXP s)
-{
-    return EXTPTR_PROT(s);
-}
-
-void R_ClearExternalPtr(SEXP s)
-{
-    SET_EXTPTR_PTR(s, NULL);
-}
-
-void R_SetExternalPtrAddr(SEXP s, void *p)
-{
-    SET_EXTPTR_PTR(s, reinterpret_cast<SEXPREC*>(p));
-}
-
-void R_SetExternalPtrTag(SEXP s, SEXP tag)
-{
-    CHECK_OLD_TO_NEW(s, tag);
-    SET_TAG(s, tag);
-}
-
-void R_SetExternalPtrProtected(SEXP s, SEXP p)
-{
-    CHECK_OLD_TO_NEW(s, p);
-    SETCDR(s, p);
-}
-
 /* Work around casting issues: works where it is needed */
 typedef union {void *p; DL_FUNC fn;} fn_ptr;
 
@@ -871,12 +822,8 @@ typedef union {void *p; DL_FUNC fn;} fn_ptr;
 SEXP R_MakeExternalPtrFn(DL_FUNC p, SEXP tag, SEXP prot)
 {
     fn_ptr tmp;
-    SEXP s = allocSExp(EXTPTRSXP);
     tmp.fn = p;
-    SET_EXTPTR_PTR(s, reinterpret_cast<SEXP>(tmp.p));
-    SETCDR(s, prot);
-    SET_TAG(s, tag);
-    return s;
+    return R_MakeExternalPtr(tmp.p, tag, prot);
 }
 
 DL_FUNC R_ExternalPtrAddrFn(SEXP s)

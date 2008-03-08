@@ -32,7 +32,7 @@ SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 SOURCES_CXX = \
 	CConverters.cpp CellPool.cpp Closure.cpp CommandLineArgs.cpp \
 	ComplexVector.cpp \
-	Environment.cpp ExpressionVector.cpp \
+	Environment.cpp ExpressionVector.cpp ExternalPointer.cpp \
         FlagWord.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
         IntVector.cpp InternalFunction.cpp \

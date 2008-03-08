@@ -1326,7 +1326,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   newly allocated value PROTECTed */
 	switch (type) {
 	case EXTPTRSXP:
-	    PROTECT(s = allocSExp(type));
+	    PROTECT(s = new CXXR::ExternalPointer);
 	    AddReadRef(ref_table, s);
 	    R_SetExternalPtrAddr(s, NULL);
 	    R_SetExternalPtrProtected(s, ReadItem(ref_table, stream));

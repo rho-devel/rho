@@ -72,6 +72,7 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/Environment.h"
 #include "CXXR/ExpressionVector.h"
+#include "CXXR/ExternalPointer.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/ListVector.h"
 #include "CXXR/LogicalVector.h"
@@ -213,11 +214,11 @@ void SET_PRSEEN(SEXP x, int v);
 /* Hashing Functions */
 int  (HASHVALUE)(SEXP x);
 
-
 /* External pointer access macros */
-#define EXTPTR_PTR(x)	CAR(x)
-#define EXTPTR_PROT(x)	CDR(x)
-#define EXTPTR_TAG(x)	TAG(x)
+/* (only for backwards compatibility in CXXR) */
+#define EXTPTR_PTR(x)	R_ExternalPtrAddr(x)
+#define EXTPTR_PROT(x)  R_ExternalPtrProtected(x)
+#define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
 #ifdef BYTECODE
 /* Bytecode access macros */
