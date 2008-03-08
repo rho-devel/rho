@@ -185,6 +185,7 @@ void WeakRef::markThru(unsigned int max_gen)
 	    RObject* Rfinalizer = wr->m_Rfinalizer;
 	    if (Rfinalizer) Rfinalizer->conductVisitor(&marker);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
+		wr->m_key->conductVisitor(&marker);
 		wr->m_flags[READY_TO_FINALIZE] = true;
 		wr->transfer(&s_live, &s_f10n_pending);
 	    }
