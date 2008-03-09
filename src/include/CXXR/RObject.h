@@ -179,7 +179,8 @@ namespace CXXR {
 	    : m_type(stype), m_gpbits(m_flags.m_flags)
 	{}
 
-	/**
+	/** @brief Get object attributes.
+	 *
 	 * @return Pointer to the attributes of this object.
 	 */
 	const RObject* attributes() const {return m_attrib;}
@@ -213,8 +214,9 @@ namespace CXXR {
 	 */
 	const RObject* hashTable() const {return u.envsxp.hashtab;}
 
-	/**
-	 * @return SEXPTYPE of this object.
+	/** @brief Get an object's ::SEXPTYPE.
+	 *
+	 * @return ::SEXPTYPE of this object.
 	 */
 	SEXPTYPE sexptype() const {return m_type;}
 
@@ -223,7 +225,9 @@ namespace CXXR {
 	 */
 	const RObject* tag() const {return u.listsxp.tagval;}
 
-	/**
+	/** @brief The name by which this type of object is known
+	 *         within R.
+	 *
 	 * @return the name by which this type of object is known
 	 *         within R.
 	 */
@@ -231,12 +235,6 @@ namespace CXXR {
 
         // To be protected in future:
 
-	/**
-	 * @note The destructor is protected to ensure that RObjects
-	 * are allocated on the heap.  (See Meyers 'More Effective
-	 * C++' Item 27.) Derived classes should likewise declare
-	 * their constructors private or protected.
-	 */
 	virtual ~RObject() {}
 
 	// To be private in future:
@@ -276,8 +274,8 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-    /**
-     * Object type.
+    /** @brief Get object's ::SEXPTYPE.
+     *
      * @param x Pointer to CXXR::RObject.
      * @return ::SEXPTYPE of \a x, or NILSXP if x is a null pointer.
      */
@@ -315,7 +313,7 @@ extern "C" {
      * @param vec Pointer to the CXXR::RObject whose attributes are to be
      *          accessed.
      * @param name Either a pointer to the symbol representing the
-     *          required attribute, or a pointer to a StringVector
+     *          required attribute, or a pointer to a CXXR::StringVector
      *          containing the required symbol name as element 0; in
      *          the latter case, as a side effect, the corresponding
      *          symbol is installed if necessary.
@@ -330,7 +328,7 @@ extern "C" {
      * @param vec Pointer to the CXXR::RObject whose attributes are to be
      *          modified.
      * @param name Either a pointer to the symbol representing the
-     *          required attribute, or a pointer to a StringVector
+     *          required attribute, or a pointer to a CXXR::StringVector
      *          containing the required symbol name as element 0; in
      *          the latter case, as a side effect, the corresponding
      *          symbol is installed if necessary.
@@ -344,8 +342,8 @@ extern "C" {
      */
     SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
 
-    /**
-     * Does CXXR::RObject have a class attribute?.
+    /** @brief Does an object have a class attribute?
+     *
      * @param x Pointer to a CXXR::RObject.
      * @return true iff \a x has a class attribute.  Returns false if \a x
      * is 0.
@@ -376,7 +374,8 @@ extern "C" {
     }
 #endif
 
-    /**
+    /** @brief Does an object have a class attribute?
+     *
      * @param s Pointer to a CXXR::RObject.
      * @return TRUE iff the CXXR::RObject pointed to by \a s has a
      * class attribute.
@@ -390,16 +389,8 @@ extern "C" {
     }
 #endif
 
-    /* Accessor functions.  Many are declared using () to avoid the macro
-       definitions in the USE_RINTERNALS section.
-       The function STRING_ELT is used as an argument to arrayAssign even 
-       if the macro version is in use.
-    */
-
-    /* General Cons Cell Attributes */
-
-    /**
-     * Return the attributes of an CXXR::RObject.
+    /** @brief Get the attributes of a CXXR::RObject.
+     *
      * @param x Pointer to the CXXR::RObject whose attributes are required.
      * @return Pointer to the attributes object of \a x , or 0 if \a x is
      * a null pointer.
@@ -419,8 +410,8 @@ extern "C" {
     inline int LEVELS(SEXP x) {return x->m_gpbits;}
 #endif
 
-    /**
-     * Object copying status.
+    /** @brief Get object copying status.
+     *
      * @param x Pointer to CXXR::RObject.
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
@@ -431,8 +422,8 @@ extern "C" {
     inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
 #endif
 
-    /**
-     * Object tracing status.
+    /** @brief Get object tracing status.
+     *
      * @param x Pointer to CXXR::RObject.
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
@@ -452,17 +443,18 @@ extern "C" {
     inline int SETLEVELS(SEXP x, int v) {return x->m_gpbits = v;}
 #endif
 
-    /**
-     * Replace x's attributes by \a v.
-     * @param x Pointer to CXXR::RObject.
-     * @param v Pointer to attributes CXXR::RObject.
+    /** @brief Replace an object's attributes.
+     *
+     * @param x Pointer to a CXXR::RObject.
+     * @param v Pointer to the new attributes CXXR::RObject.
      * @todo Could \a v be \c const ?
      */
     void SET_ATTRIB(SEXP x, SEXP v);
 
-    /**
-     * Set object copying status.  Does nothing if \a x is a null pointer.
-     * @param x Pointer to CXXR::RObject.
+    /** @brief Set object copying status.
+     *
+     * @param x Pointer to CXXR::RObject.  The function does nothing
+     *          if \a x is a null pointer.
      * @param v Refer to 'R Internals' document.
      * @deprecated Ought to be private.
      */
@@ -500,8 +492,8 @@ extern "C" {
     inline void SET_TYPEOF(SEXP x, SEXPTYPE v) {x->m_type = v;}
 #endif
 
-    /**
-     * Replace \a to's attributes by those of \a from.
+    /** @brief Replace the attributes of \a to by those of \a from.
+     *
      * @param to Pointer to CXXR::RObject.
      * @param from Pointer to another CXXR::RObject.
      */
@@ -509,8 +501,8 @@ extern "C" {
 
     /* S4 object testing */
 
-    /**
-     * An S4 object?
+    /** @brief Is this an S4 object?
+     *
      * @param x Pointer to CXXR::RObject.
      * @return true iff \a x is an S4 object.  Returns false if \a x
      * is 0.
@@ -542,10 +534,9 @@ extern "C" {
     inline void UNSET_S4_OBJECT(SEXP x)  {x->m_gpbits &= ~S4_OBJECT_MASK;}
 #endif
 
-    /**
-     * @brief Create an S4 object.
+    /** @brief Create an S4 object.
      *
-     * @return Pointer to the created vector.
+     * @return Pointer to the created object.
      */
     SEXP Rf_allocS4Object();
 

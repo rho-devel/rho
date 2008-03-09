@@ -62,9 +62,9 @@ namespace CXXR {
      * protecting memory (or other resources) used by the entity
      * pointed to by the ExternalPointer.
      *
-     * @note In the future, this may be changed to a templated class,
-     * with the template parameter being the type of the encapsulated
-     * pointer.
+     * @note Writers of C++ packages are recommended to derive their
+     * own classes from RObject rather than use this class, which is
+     * provided primarily to support the established C interface.
      */
     class ExternalPointer : public RObject {
     public:
@@ -81,7 +81,8 @@ namespace CXXR {
 	    : RObject(EXTPTRSXP), m_ptr(ptr), m_tag(tag), m_protege(prot)
 	    {}
 
-	/**
+	/** @brief Get const pointer to protege object.
+	 *
 	 * @return a const pointer to the protege object of this
 	 * ExternalPointer.
 	 */
@@ -90,7 +91,8 @@ namespace CXXR {
 	    return m_protege;
 	}
 
-	/**
+	/** @brief Get pointer to protege object.
+	 *
 	 * @return a pointer to the protege object of this
 	 * ExternalPointer.
 	 */
@@ -99,7 +101,8 @@ namespace CXXR {
 	    return m_protege;
 	}
 
-	/**
+	/** @brief Get the encapsulated pointer, qualified by const.
+	 *
 	 * @return the encapsulated pointer, qualified by const.
 	 */
 	const void* ptr() const
@@ -107,7 +110,8 @@ namespace CXXR {
 	    return m_ptr;
 	}
 
-	/**
+	/** @brief Get the encapsulated pointer.
+	 *
 	 * @return the encapsulated pointer.
 	 */
 	void* ptr()
@@ -155,7 +159,8 @@ namespace CXXR {
 	    return "externalptr";
 	}
 
-	/**
+	/** @brief Get const pointer to tag object.
+	 *
 	 * @return a const pointer to the 'tag' of this ExternalPointer.
 	 */
 	const RObject* tag() const
@@ -163,7 +168,8 @@ namespace CXXR {
 	    return m_tag;
 	}
 
-	/**
+	/** @brief Get pointer to tag object.
+	 *
 	 * @return a pointer to the 'tag' of this ExternalPointer.
 	 */
 	RObject* tag()
@@ -196,16 +202,16 @@ namespace CXXR {
 extern "C" {
 #endif  /* __cplusplus */
 
-    /** @brief Create an ExternalPointer object.
+    /** @brief Create a CXXR::ExternalPointer object.
      *
-     * @param p The pointer that the ExternalPointer object is
+     * @param p The pointer that the CXXR::ExternalPointer object is
      *          to encapsulate.
      * @param tag Pointer to the tag object.  May be null (and
      *          often is). 
      * @param prot Pointer to the protege object.  May be null
      *          (and often is).
      *
-     * @return Pointer to the created ExternalPointer object.
+     * @return Pointer to the created CXXR::ExternalPointer object.
      */
     SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot);
 

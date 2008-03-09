@@ -18,7 +18,6 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2007-8
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -129,6 +128,11 @@ namespace CXXR {
      * by the garbage collector, and does not contribute to the
      * 'meaning' of an object of a derived class, all of its data
      * members are mutable.
+     *
+     * @todo The (private) cleanup() method needs to address the
+     * possibility that derived classes may have destructors that
+     * release some external resource (e.g. a lock).  Maybe a garbage
+     * collection without a 'mark' phase would do the trick.
      */
     class GCNode {
     public:
@@ -293,7 +297,8 @@ namespace CXXR {
 
 	/** @brief Initiate a garbage collection.
 	 *
-	 * @param num_old_gens The number of old generations to collect.
+	 * @param num_old_gens The number of old generations to
+	 * collect.  Must be strictly smaller than numGenerations().
 	 */
 	static void gc(unsigned int num_old_gens);
 
@@ -313,10 +318,15 @@ namespace CXXR {
 
 	/** @brief Conduct a visitor to the children of this node.
 	 *
+	 * The children of this node are those objects derived from
+	 * GCNode to which this node contains a pointer or a
+	 * reference.
+	 *
 	 * @param v Pointer to the visitor object.
+	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
-	 * visitChildren for the immediate base class of the derived
+	 * visitChildren() for the immediate base class of the derived
 	 * class, to ensure that \e all children of the object get
 	 * visited.
 	 */
@@ -324,10 +334,15 @@ namespace CXXR {
 
 	/** @brief Conduct a visitor to the children of this node.
 	 *
+	 * The children of this node are those objects derived from
+	 * GCNode to which this node contains a pointer or a
+	 * reference.
+	 *
 	 * @param v Pointer to the visitor object.
+	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
-	 * visitChildren for the immediate base class of the derived
+	 * visitChildren() for the immediate base class of the derived
 	 * class, to ensure that \e all children of the object get
 	 * visited.
 	 */
@@ -335,7 +350,7 @@ namespace CXXR {
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
-	 * objects are allocated on the heap.  (See Meyers 'More
+	 * objects are allocated using 'new'.  (See Meyers 'More
 	 * Effective C++' Item 27.) Derived classes should likewise
 	 * declare their destructors private or protected.
 	 */
