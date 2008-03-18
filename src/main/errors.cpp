@@ -911,7 +911,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		domain = translateChar(STRING_ELT(R_NamespaceEnvSpec(rho), 0));
 		break;
 	    }
-	    rho = CDR(rho);
+	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
 	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));
@@ -1012,7 +1012,7 @@ SEXP do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		domain = translateChar(STRING_ELT(R_NamespaceEnvSpec(rho), 0));
 		break;
 	    }
-	    rho = CDR(rho);
+	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
 	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));

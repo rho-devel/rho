@@ -39,6 +39,8 @@
 
 #include "CXXR/StringVector.h"
 
+#include <iostream>
+
 using namespace std;
 using namespace CXXR;
 
@@ -49,5 +51,22 @@ namespace CXXR {
 	Rboolean (*isStringp)(SEXP s) = Rf_isString;
 	void (*SET_STRING_ELTp)(SEXP x, int i, SEXP v) = SET_STRING_ELT;
 	SEXP (*STRING_ELTp)(const SEXP x, int i) = STRING_ELT;
+    }
+}
+
+namespace {
+    void indent(ostream& os, size_t margin)
+    {
+	while (margin--) os << ' ';
+    }
+}
+
+void CXXR::strdump(ostream& os, const StringVector& sv, size_t margin)
+{
+    indent(os, margin);
+    os << "character:\n";
+    for (unsigned int i = 0; i < sv.size(); ++i) {
+	indent(os, margin + 2);
+	os << sv[i]->c_str() << '\n';
     }
 }

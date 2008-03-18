@@ -46,7 +46,7 @@
 #include <Defn.h> /* => Utils.h with the protos from here */
 #include <Rmath.h>
 
-using namespace std;
+// 'using namespace std' causes ambiguity of 'greater'
 using namespace CXXR;
 
 			/*--- Part I: Comparison Utilities ---*/

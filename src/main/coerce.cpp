@@ -1236,7 +1236,7 @@ static SEXP asFunction(SEXP x)
     SEXP f, pf;
     int n;
     if (isFunction(x)) return x;
-    PROTECT(f = allocSExp(CLOSXP));
+    PROTECT(f = new RObject(CLOSXP));
     SET_CLOENV(f, R_GlobalEnv);
     if (NAMED(x)) PROTECT(x = duplicate(x));
     else PROTECT(x);

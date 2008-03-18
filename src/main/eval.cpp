@@ -868,7 +868,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		SET_PRENV(val, newrho);
 		/* find the symbol in the method, copy its expression
 		 * to the promise */
-		for(deflt = CAR(op); deflt != R_NilValue; deflt = CDR(deflt)) {
+		for(deflt = FORMALS(op); deflt != R_NilValue; deflt = CDR(deflt)) {
 		    if(TAG(deflt) == symbol)
 		        break;
 		}
@@ -1326,6 +1326,9 @@ SEXP do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
  *  out efficiently using previously computed components.
  */
 
+// CXXR here (necessarily) uses a proper list, with x as the CAR of
+// the last element.
+
 /*
   For complex superassignment  x[y==z]<<-w
   we want x required to be nonlocal, y,z, and w permitted to be local or nonlocal.
@@ -1333,19 +1336,19 @@ SEXP do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 {
-    SEXP val, nval, nexpr;
+    SEXP val, nexpr;
+    GCRoot<> nval;
     if (isNull(expr))
 	error(_("invalid (NULL) left side of assignment"));
     if (isSymbol(expr)) {
-	PROTECT(expr);
+	GCRoot<> exprr(expr);
 	if(forcelocal) {
 	    nval = EnsureLocal(expr, rho);
 	}
 	else {/* now we are down to the target symbol */
 	  nval = eval(expr, ENCLOS(rho));
 	}
-	UNPROTECT(1);
-	return CONS(nval, expr);
+	return new PairList(LISTSXP, nval, new PairList(LISTSXP, expr));
     }
     else if (isLanguage(expr)) {
 	PROTECT(expr);
@@ -1450,7 +1453,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     R_SetVarLocValue(tmploc, CAR(lhs));
     PROTECT(tmp = mkPROMISE(CADR(args), rho));
     SET_PRVALUE(tmp, rhs);
-    PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CDR(lhs),
+    PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
 			      install(buf), R_GetVarLocSymbol(tmploc),
 			      CDDR(expr), tmp));
     expr = eval(expr, rho);
@@ -2175,7 +2178,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(newrho = allocSExp(ENVSXP));
+    PROTECT(newrho = new RObject(ENVSXP));
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;
     for (i = 0 ; i < nargs ; i++) {

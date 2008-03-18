@@ -49,6 +49,8 @@
 
 #include "Defn.h"
 
+using namespace CXXR;
+
 static SEXP ParenSymbol;
 static SEXP PlusSymbol;
 static SEXP MinusSymbol;
@@ -1053,7 +1055,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(funarg) == CLOSXP)
     {
-	s = allocSExp(CLOSXP);
+	s = new RObject(CLOSXP);
 	SET_FORMALS(s, FORMALS(funarg));
 	SET_CLOENV(s, CLOENV(funarg));
 	funarg = s;
@@ -1061,7 +1063,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     else if (isString(funarg)) {
 	PROTECT(names = duplicate(funarg));
-	PROTECT(funarg = allocSExp(CLOSXP));
+	PROTECT(funarg = new RObject(CLOSXP));
 	PROTECT(ans = allocList(length(names)));
 	SET_FORMALS(funarg, ans);
 	for(i = 0; i < length(names); i++) {

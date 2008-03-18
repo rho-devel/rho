@@ -561,29 +561,6 @@ void InitMemory()
 }
 
 
-/* Node Allocation. */
-
-SEXP allocSExp(SEXPTYPE t)
-{
-    return new RObject(t);
-}
-
-/* cons is defined directly to avoid the need to protect its arguments
-   unless a GC will actually occur. */
-SEXP cons(SEXP car, SEXP cdr)
-{
-    PROTECT(car);
-    PROTECT(cdr);
-    SEXP s = new RObject(LISTSXP);
-    UNPROTECT(2);
-#if VALGRIND_LEVEL > 2
-    VALGRIND_MAKE_READABLE(s, sizeof(*s));
-#endif
-    SETCAR(s, car);
-    SETCDR(s, cdr);
-    return s;
-}
-
 /*----------------------------------------------------------------------
 
   NewEnvironment
@@ -696,16 +673,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type2char(type), length);
 	return 0;  // -Wall
     }
-}
-
-SEXP allocList(unsigned int n)
-{
-    unsigned int i;
-    SEXP result;
-    result = R_NilValue;
-    for (i = 0; i < n; i++)
-	result = CONS(R_NilValue, result);
-    return result;
 }
 
 SEXP allocS4Object()
@@ -863,92 +830,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }
 
-
-/* List Accessors */
-
-void (SET_TAG)(SEXP x, SEXP v)
-{
-    CHECK_OLD_TO_NEW(x, v);
-    x->u.listsxp.tagval = v;
-}
-
-SEXP (SETCAR)(SEXP x, SEXP y)
-{
-    if (x == NULL || x == R_NilValue)
-	error(_("bad value"));
-    CHECK_OLD_TO_NEW(x, y);
-    x->u.listsxp.carval = y;
-    return y;
-}
-
-SEXP (SETCDR)(SEXP x, SEXP y)
-{
-    if (x == NULL || x == R_NilValue)
-	error(_("bad value"));
-    CHECK_OLD_TO_NEW(x, y);
-    x->u.listsxp.cdrval = y;
-    return y;
-}
-
-SEXP (SETCADR)(SEXP x, SEXP y)
-{
-    SEXP cell;
-    if (x == NULL || x == R_NilValue ||
-	CDR(x) == NULL || CDR(x) == R_NilValue)
-	error(_("bad value"));
-    cell = CDR(x);
-    CHECK_OLD_TO_NEW(cell, y);
-    SETCAR(cell, y);
-    return y;
-}
-
-SEXP (SETCADDR)(SEXP x, SEXP y)
-{
-    SEXP cell;
-    if (x == NULL || x == R_NilValue ||
-	CDR(x) == NULL || CDR(x) == R_NilValue ||
-	CDDR(x) == NULL || CDDR(x) == R_NilValue)
-	error(_("bad value"));
-    cell = CDDR(x);
-    CHECK_OLD_TO_NEW(cell, y);
-    SETCAR(cell, y);
-    return y;
-}
-
-namespace {
-    inline SEXP CDDDR(SEXP x) {return CDR(CDR(CDR(x)));}
-
-    inline SEXP CD4R(SEXP x) {return CDR(CDR(CDR(CDR(x))));}
-}
-
-SEXP (SETCADDDR)(SEXP x, SEXP y)
-{
-    SEXP cell;
-    if (x == NULL || x == R_NilValue ||
-	CDR(x) == NULL || CDR(x) == R_NilValue ||
-	CDDR(x) == NULL || CDDR(x) == R_NilValue ||
-	CDDDR(x) == NULL || CDDDR(x) == R_NilValue)
-	error(_("bad value"));
-    cell = CDDDR(x);
-    CHECK_OLD_TO_NEW(cell, y);
-    SETCAR(cell, y);
-    return y;
-}
-
-SEXP (SETCAD4R)(SEXP x, SEXP y)
-{
-    SEXP cell;
-    if (x == NULL || x == R_NilValue ||
-	CDR(x) == NULL || CDR(x) == R_NilValue ||
-	CDDR(x) == NULL || CDDR(x) == R_NilValue ||
-	CDDDR(x) == NULL || CDDDR(x) == R_NilValue ||
-	CD4R(x) == NULL || CD4R(x) == R_NilValue)
-	error(_("bad value"));
-    cell = CD4R(x);
-    CHECK_OLD_TO_NEW(cell, y);
-    SETCAR(cell, y);
-    return y;
-}
 
 /* Closure Accessors */
 

@@ -41,6 +41,7 @@
 #include <config.h>
 #endif
 
+#include <iostream>
 #define __R_Names__ /* used in Defn.h for extern on R_FunTab */
 #include <Defn.h>
 #include <Print.h>
@@ -1038,17 +1039,17 @@ void InitNames()
 {
     int i;
     /* R_UnboundValue */
-    R_UnboundValue = allocSExp(SYMSXP);
+    R_UnboundValue = new RObject(SYMSXP);
     SET_SYMVALUE(R_UnboundValue, R_UnboundValue);
     SET_PRINTNAME(R_UnboundValue, R_NilValue);
     SET_ATTRIB(R_UnboundValue, R_NilValue);
     /* R_MissingArg */
-    R_MissingArg = allocSExp(SYMSXP);
+    R_MissingArg = new RObject(SYMSXP);
     SET_SYMVALUE(R_MissingArg, R_MissingArg);
     SET_PRINTNAME(R_MissingArg, mkChar(""));
     SET_ATTRIB(R_MissingArg, R_NilValue);
     /* R_RestartToken */
-    R_RestartToken = allocSExp(SYMSXP);
+    R_RestartToken = new RObject(SYMSXP);
     SET_SYMVALUE(R_RestartToken, R_RestartToken);
     SET_PRINTNAME(R_RestartToken, mkChar(""));
     SET_ATTRIB(R_RestartToken, R_NilValue);

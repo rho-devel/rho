@@ -454,8 +454,8 @@ static int xxgetc(void)
 	else  error(_("function is too long to keep source"));
     }
     xxcharcount++;
-    //    putchar(c);
-    //    if (c == '\n') fputs("R:: ", stdout);
+    // putchar(c);
+    // if (c == '\n') fputs("R:: ", stdout);
     return c;
 }
 
@@ -474,7 +474,8 @@ static int xxungetc(int c)
     R_ParseContextLast = R_ParseContextLast % PARSE_CONTEXT_SIZE;
     if(npush >= 16) return EOF;
     pushback[npush++] = c;
-    // putchar('\b');
+    // putchar('\\');
+    // putchar('b');
     return c;
 }
 
@@ -762,7 +763,7 @@ static SEXP xxforcond(SEXP sym, SEXP expr)
     SEXP ans;
     EatLines = 1;
     if (GenerateCode)
-	PROTECT(ans = LCONS(sym, expr));
+	PROTECT(ans = lang2(sym, expr));  /* CXXR change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(expr);
@@ -774,7 +775,7 @@ static SEXP xxfor(SEXP forsym, SEXP forcond, SEXP body)
 {
     SEXP ans;
     if (GenerateCode)
-	PROTECT(ans = lang4(forsym, CAR(forcond), CDR(forcond), body));
+	PROTECT(ans = lang4(forsym, CAR(forcond), CADR(forcond), body));  /* CXXR change */
     else
 	PROTECT(ans = R_NilValue);
     UNPROTECT_PTR(body);

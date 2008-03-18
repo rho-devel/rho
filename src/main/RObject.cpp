@@ -88,15 +88,19 @@ void RObject::visitChildren(const_visitor* v) const
 	if (hashTable()) hashTable()->conductVisitor(v);
 	break;
     case CLOSXP:
+	if (u.closxp.formals) u.closxp.formals->conductVisitor(v);
+	if (u.closxp.body) u.closxp.body->conductVisitor(v);
+	if (u.closxp.env) u.closxp.env->conductVisitor(v);
+	break;
     case PROMSXP:
-    case LISTSXP:
-    case LANGSXP:
-    case DOTSXP:
+	if (u.promsxp.value) u.promsxp.value->conductVisitor(v);
+	if (u.promsxp.expr) u.promsxp.expr->conductVisitor(v);
+	if (u.promsxp.env) u.promsxp.env->conductVisitor(v);
+	break;
     case SYMSXP:
-    case BCODESXP:
-	if (tag()) tag()->conductVisitor(v);
-	if (car()) car()->conductVisitor(v);
-	if (cdr()) cdr()->conductVisitor(v);
+	if (u.symsxp.pname) u.symsxp.pname->conductVisitor(v);
+	if (u.symsxp.value) u.symsxp.value->conductVisitor(v);
+	if (u.symsxp.internal) u.symsxp.internal->conductVisitor(v);
 	break;
     default:
 	break;
@@ -108,4 +112,3 @@ void RObject::visitChildren(visitor* v)
     cerr << "RObject::visitChildren(visitor* v) not implemented yet.\n";
     abort();
 }
-

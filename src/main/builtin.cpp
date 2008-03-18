@@ -47,6 +47,8 @@
 #include <Fileio.h>
 #include <Rconnections.h>
 
+using namespace CXXR;
+
 static R_len_t asVecSize(SEXP x)
 {
     int warn = 0, res;
@@ -219,7 +221,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (TYPEOF(CAR(args)) == CLOSXP) {
-	s = allocSExp(CLOSXP);
+	s = new RObject(CLOSXP);
 	SET_FORMALS(s, FORMALS(CAR(args)));
 	SET_BODY(s, R_NilValue);
 	SET_CLOENV(s, R_GlobalEnv);
@@ -249,7 +251,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
 	PROTECT(s2 = findVarInFrame3(env, install(nm), TRUE));
 	if(s2 != R_UnboundValue) {
-	    s = allocSExp(CLOSXP);
+	    s = new RObject(CLOSXP);
 	    SET_FORMALS(s, FORMALS(s2));
 	    SET_BODY(s, R_NilValue);
 	    SET_CLOENV(s, R_GlobalEnv);
@@ -308,7 +310,7 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("use of NULL environment is defunct"));
 	if(NAMED(s) > 1) {
 	    /* partial duplicate */
-	    s = allocSExp(CLOSXP);
+	    s = new RObject(CLOSXP);
 	    SET_FORMALS(s, FORMALS(CAR(args)));
 	    SET_BODY(s, BODY(CAR(args)));
 	}

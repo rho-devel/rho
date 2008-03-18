@@ -49,6 +49,8 @@
 #include <R_ext/RS.h>
 #include "CXXR/WeakRef.h"
 
+using namespace CXXR;
+
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
  * guidelines on handling format changes:
@@ -1378,7 +1380,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
     }
     /* Allocate the environments */
     for (count = 0; count < env_count; ++count)
-	SET_VECTOR_ELT(env_table, count, allocSExp(ENVSXP));
+	SET_VECTOR_ELT(env_table, count, new RObject(ENVSXP));
 
     /* Now fill them in  */
     for (count = 0; count < env_count; ++count) {

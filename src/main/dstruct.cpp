@@ -43,6 +43,8 @@
 
 #include "Defn.h"
 
+using namespace CXXR;
+
 /*  append - append second to the tail of first    */
 /*           This operation is non-destructive     */
 /*           i.e. first and second are duplicated  */
@@ -70,7 +72,7 @@ SEXP Rf_append(SEXP first, SEXP second)
 
 SEXP attribute_hidden mkPRIMSXP(int offset, int eval)
 {
-    SEXP result = allocSExp(eval ? BUILTINSXP : SPECIALSXP);
+    SEXP result = new RObject(eval ? BUILTINSXP : SPECIALSXP);
     SET_PRIMOFFSET(result, offset);
     return (result);
 }
@@ -89,7 +91,7 @@ SEXP attribute_hidden mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     PROTECT(formals);
     PROTECT(body);
     PROTECT(rho);
-    c = allocSExp(CLOSXP);
+    c = new RObject(CLOSXP);
 
 #ifdef not_used_CheckFormals
     if(isList(formals))
@@ -149,7 +151,7 @@ SEXP attribute_hidden mkSYMSXP(SEXP name, SEXP value)
     PROTECT(name);
     PROTECT(value);
     i = isDDName(name);
-    c = allocSExp(SYMSXP);
+    c = new RObject(SYMSXP);
     SET_PRINTNAME(c, name);
     SET_SYMVALUE(c, value);
     SET_DDVAL(c, i);

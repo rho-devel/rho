@@ -123,12 +123,6 @@ namespace CXXR {
 	RObject *internal;
     };
 
-    struct listsxp_struct {
-	RObject *carval;
-	RObject *cdrval;
-	RObject *tagval;
-    };
-
     struct envsxp_struct {
 	RObject *frame;
 	RObject *enclos;
@@ -190,16 +184,6 @@ namespace CXXR {
 	void visitChildren(visitor* v);
 
 	/**
-	 * @return pointer to first element (car) of this list.
-	 */
-	const RObject* car() const {return u.listsxp.carval;}
-
-	/**
-	 * @return pointer to tail (cdr) of this list.
-	 */
-	const RObject* cdr() const {return u.listsxp.cdrval;}
-
-	/**
 	 * @return pointer to enclosing environment.
 	 */
 	const RObject* enclosingEnvironment() const {return u.envsxp.enclos;}
@@ -221,13 +205,6 @@ namespace CXXR {
 	SEXPTYPE sexptype() const {return m_type;}
 
 	/**
-	 * @return pointer to tag of this list.
-	 */
-	const RObject* tag() const {return u.listsxp.tagval;}
-
-	/** @brief The name by which this type of object is known
-	 *         within R.
-	 *
 	 * @return the name by which this type of object is known
 	 *         within R.
 	 */
@@ -250,7 +227,6 @@ namespace CXXR {
 	union {
 	    struct primsxp_struct primsxp;
 	    struct symsxp_struct symsxp;
-	    struct listsxp_struct listsxp;
 	    struct envsxp_struct envsxp;
 	    struct closxp_struct closxp;
 	    struct promsxp_struct promsxp;

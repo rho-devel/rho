@@ -93,6 +93,24 @@ SEXP FORMALS(SEXP x);
 inline SEXP FORMALS(SEXP x) {return x->u.closxp.formals;}
 #endif
 
+#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
+
+#ifndef __cplusplus
+int MISSING(SEXP x);
+#else
+inline int MISSING(SEXP x) {return x->m_gpbits & MISSING_MASK;}
+#endif
+
+#ifndef __cplusplus
+void SET_MISSING(SEXP x, int v);
+#else
+inline void SET_MISSING(SEXP x, int v)
+{
+    int other_flags = x->m_gpbits & ~MISSING_MASK;
+    x->m_gpbits = other_flags | v;
+}
+#endif
+
 /**
  * Set the debugging state of a closure object.
  * @param x Pointer a closure object.

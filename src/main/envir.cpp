@@ -113,6 +113,8 @@
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
 
+using namespace CXXR;
+
 namespace {
     inline bool IS_USER_DATABASE(SEXP rho)
     {
@@ -2005,12 +2007,12 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    for (x = CAR(args); x != R_NilValue; x = CDR(x))
 		if (TAG(x) == R_NilValue)
 		    error(_("all elements of a list must be named"));
-	    PROTECT(s = allocSExp(ENVSXP));
+	    PROTECT(s = new RObject(ENVSXP));
 	    SET_FRAME(s, duplicate(CAR(args)));
 	} else if (isEnvironment(CAR(args))) {
 	    SEXP p, loadenv = CAR(args);
 
-	    PROTECT(s = allocSExp(ENVSXP));
+	    PROTECT(s = new RObject(ENVSXP));
 	    if (HASHTAB(loadenv) != R_NilValue) {
 		int i, n;
 		n = length(HASHTAB(loadenv));
@@ -2051,7 +2053,7 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
        	R_ObjectTable *tb = reinterpret_cast<R_ObjectTable*>(R_ExternalPtrAddr(CAR(args)));
         if(tb->onAttach)
 	    tb->onAttach(tb);
-        s = allocSExp(ENVSXP);
+        s = new RObject(ENVSXP);
         SET_HASHTAB(s, CAR(args));
 	setAttrib(s, R_ClassSymbol, getAttrib(HASHTAB(s), R_ClassSymbol));
     }

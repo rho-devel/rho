@@ -887,7 +887,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
 		    	print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    	print2buff("(", d);
-		    	args2buff(FORMALS(s), 0, 1, d);
+		    	args2buff(CAR(s), 0, 1, d);
 		    	print2buff(") ", d);
 		    	deparse2buff(CADR(s), d);
 		    } else {

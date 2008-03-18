@@ -53,6 +53,8 @@
    R_decompress1 */
 #include "basedecl.h"
 
+using namespace CXXR;
+
 /* From time to time changes in R, such as the addition of a new SXP,
  * may require changes in the save file format.  Here are some
  * guidelines on handling format changes:
@@ -875,10 +877,17 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	switch(TYPEOF(s)) {
 	case LISTSXP:
 	case LANGSXP:
+	case DOTSXP:
+	    hastag = TAG(s) != R_NilValue;
+	    break;
 	case CLOSXP:
+	    hastag = (CLOENV(s) != 0);
+	    break;
 	case PROMSXP:
-	case DOTSXP: hastag = TAG(s) != R_NilValue; break;
-	default: hastag = FALSE;
+	    hastag = (PRENV(s) != 0);
+	    break;
+	default:
+	    hastag = FALSE;
 	}
 #ifdef USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS
 	/* With the CHARSXP cache chains maintained through the ATTRIB
@@ -894,8 +903,6 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	switch (TYPEOF(s)) {
 	case LISTSXP:
 	case LANGSXP:
-	case CLOSXP:
-	case PROMSXP:
 	case DOTSXP:
 	    /* Dotted pair objects */
 	    /* These write their ATTRIB fields first to allow us to avoid
@@ -907,6 +914,30 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    WriteItem(CAR(s), ref_table, stream);
 	    /* now do a tail call to WriteItem to handle the CDR */
 	    s = CDR(s);
+	    goto tailcall;
+	case CLOSXP:
+	    /* Dotted pair objects */
+	    /* These write their ATTRIB fields first to allow us to avoid
+	       recursion on the CDR */
+	    if (hasattr)
+		WriteItem(ATTRIB(s), ref_table, stream);
+	    if (CLOENV(s))
+		WriteItem(CLOENV(s), ref_table, stream);
+	    WriteItem(FORMALS(s), ref_table, stream);
+	    /* now do a tail call to WriteItem to handle the CDR */
+	    s = BODY(s);
+	    goto tailcall;
+	case PROMSXP:
+	    /* Dotted pair objects */
+	    /* These write their ATTRIB fields first to allow us to avoid
+	       recursion on the CDR */
+	    if (hasattr)
+		WriteItem(ATTRIB(s), ref_table, stream);
+	    if (PRENV(s))
+		WriteItem(PRENV(s), ref_table, stream);
+	    WriteItem(PRVALUE(s), ref_table, stream);
+	    /* now do a tail call to WriteItem to handle the CDR */
+	    s = PRCODE(s);
 	    goto tailcall;
 	case EXTPTRSXP:
 	    /* external pointers */
@@ -1273,7 +1304,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    PROTECT(s = allocSExp(ENVSXP));
+	    PROTECT(s = new RObject(ENVSXP));
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, s);
@@ -1297,8 +1328,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	}
     case LISTSXP:
     case LANGSXP:
-    case CLOSXP:
-    case PROMSXP:
     case DOTSXP:
 	/* This handling of dotted pair objects still uses recursion
            on the CDR and so will overflow the PROTECT stack for long
@@ -1315,9 +1344,30 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
 	SETCDR(s, ReadItem(ref_table, stream));
+	UNPROTECT(1); /* s */
+	return s;
+    case CLOSXP:
+	PROTECT(s = new RObject(type));
+	SETLEVELS(s, levs);
+	SET_OBJECT(s, objf);
+	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_CLOENV(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_FORMALS(s, ReadItem(ref_table, stream));
+	SET_BODY(s, ReadItem(ref_table, stream));
 	/* For reading closures and promises stored in earlier versions, convert NULL env to baseenv() */
-	if      (type == CLOSXP && CLOENV(s) == R_NilValue) SET_CLOENV(s, R_BaseEnv);
-	else if (type == PROMSXP && PRENV(s) == R_NilValue) SET_PRENV(s, R_BaseEnv);
+	if (CLOENV(s) == R_NilValue) SET_CLOENV(s, R_BaseEnv);
+	UNPROTECT(1); /* s */
+	return s;
+    case PROMSXP:
+	PROTECT(s = new RObject(type));
+	SETLEVELS(s, levs);
+	SET_OBJECT(s, objf);
+	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_PRENV(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_PRVALUE(s, ReadItem(ref_table, stream));
+	SET_PRCODE(s, ReadItem(ref_table, stream));
+	/* For reading closures and promises stored in earlier versions, convert NULL env to baseenv() */
+	if (PRENV(s) == R_NilValue) SET_PRENV(s, R_BaseEnv);
 	UNPROTECT(1); /* s */
 	return s;
     default:
