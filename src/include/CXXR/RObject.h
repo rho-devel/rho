@@ -18,7 +18,6 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2007   The R Development Core Team.
- *  Andrew Runnalls (C) 2007-8
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -169,7 +168,7 @@ namespace CXXR {
 	/**
 	 * @param stype Required type of the RObject.
 	 */
-	RObject(SEXPTYPE stype = ANYSXP)
+	explicit RObject(SEXPTYPE stype = ANYSXP)
 	    : m_type(stype), m_gpbits(m_flags.m_flags)
 	{}
 
