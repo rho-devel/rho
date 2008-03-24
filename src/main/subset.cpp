@@ -736,9 +736,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (type == LANGSXP) {
 	ax = ans;
-	PROTECT(ans = allocList(LENGTH(ax)));
-	if ( LENGTH(ax) > 0 )
-	    SET_TYPEOF(ans, LANGSXP);
+	PROTECT(ans = (LENGTH(ax) > 0 ? new Expression(LENGTH(ax)): 0));
 	for(px = ans, i = 0 ; px != R_NilValue ; px = CDR(px))
 	    SETCAR(px, VECTOR_ELT(ax, i++));
 	if (ans)  // 2007/07/23 arr

@@ -47,6 +47,7 @@
 #include <Rmath.h>
 #include <Fileio.h>
 #include <R_ext/RS.h>
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -530,11 +531,15 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     /* ATTRIB(s) = */ m->InInteger(fp, d);
     switch (type) {
     case LISTSXP:
+	s = new PairList;
+	break;
     case LANGSXP:
+	s = new Expression;
+	break;
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
-	s = allocSExp(type);
+	s = new RObject(type);
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
 	/* CDR(s) = */ m->InInteger(fp, d);
@@ -542,7 +547,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	break;
     case SPECIALSXP:
     case BUILTINSXP:
-	s = allocSExp(type);
+	s = new RObject(type);
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
@@ -1296,18 +1301,42 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : R_NilValue);
 	break;
     case LISTSXP:
+	PROTECT(s = new PairList);
+	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case LANGSXP:
+	PROTECT(s = new Expression);
+	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case CLOSXP:
+	PROTECT(s = new RObject(CLOSXP));
+	SET_CLOENV(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SET_FORMALS(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SET_BODY(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case PROMSXP:
+	PROTECT(s = new RObject(PROMSXP));
+	SET_PRENV(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SET_PRVALUE(s, NewReadItem(sym_table, env_table, fp, m, d));
+	SET_PRCODE(s, NewReadItem(sym_table, env_table, fp, m, d));
+	/*UNPROTECT(1);*/
+	break;
     case DOTSXP:
-	PROTECT(s = allocSExp(type));
+	PROTECT(s = new DottedArgs);
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case EXTPTRSXP:
-	PROTECT(s = allocSExp(type));
+	PROTECT(s = new ExternalPointer);
 	R_SetExternalPtrAddr(s, NULL);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -2229,8 +2258,8 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
     else {
 	SEXP args, call, sQuiet;
 	sQuiet = quiet ? mkTrue() : mkFalse();
-	PROTECT(args = LCONS(sQuiet, R_NilValue));
-	args = LCONS(ScalarString(mkChar(name)), args);
+	PROTECT(args = CONS(sQuiet, R_NilValue));
+	args = CONS(ScalarString(mkChar(name)), args);
 	PROTECT(call = LCONS(sym, args));
 	eval(call, R_GlobalEnv);
 	UNPROTECT(2);

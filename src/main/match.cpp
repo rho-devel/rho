@@ -64,7 +64,7 @@
 #endif
 
 #include "Defn.h"
-
+#include "CXXR/DottedArgs.hpp"
 
 /* used in subscript.c and subassign.c */
 Rboolean NonNullStringMatch(SEXP s, SEXP t)
@@ -375,8 +375,7 @@ nextarg2:
 	    if(!ARGUSED(a)) i++;
 
 	if (i) {
-	    a = allocList(i);
-	    SET_TYPEOF(a, DOTSXP);
+	    a = new CXXR::DottedArgs(i);
 	    f=a;
 	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {

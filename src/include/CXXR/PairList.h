@@ -41,13 +41,11 @@
 #ifndef RPAIRLIST_H
 #define RPAIRLIST_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/ConsCell.h"
 
 #ifdef __cplusplus
 
-#include <stdexcept>
 #include "CXXR/GCRoot.h"
-#include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     /** @brief Singly linked list of pairs.
@@ -56,35 +54,21 @@ namespace CXXR {
      * 'car' object (this is LISP terminology, and has nothing to do
      * with automobiles) and to a 'tag' object, as well as a pointer to
      * the next element of the list.  (Any of these pointers may be
-     * null.)  A PairList object can be thought of either as
-     * representing a single element (link) of such a list, or as
-     * representing an entire list: that element and all its
-     * successors.
-     *
-     * @note This class implements CR's LISTSXP, LANGSXP, DOTSXP and
-     * (for the time being) BCODESXP.  Arguably these ought to be
-     * completely distinct classes, but in that case it would have
-     * been difficult efficiently to implement functions such as
-     * CAR(), which are ubiquitous in the CR code.
+     * null.)  A PairList object is considered to 'own' its car, its
+     * tag, and all its successors.
      */
-    class PairList : public RObject {
+    class PairList : public ConsCell {
     public:
 	/**
-	 * @param st The required ::SEXPTYPE of the PairList.  Must
-	 *           be one of LISTSXP, LANGSXP, DOTSXP or BCODESXP (not
-	 *           checked).
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit PairList(SEXPTYPE st,
-			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
-	{
-	    // checkST(st);
-	}
+	explicit PairList(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
+	    : ConsCell(LISTSXP, cr, tl, tg)
+	{}
 
 	/** @brief Create a list of a specified length.
 	 *
@@ -92,65 +76,13 @@ namespace CXXR {
 	 * of elements.  On creation, each element has null 'car' and
 	 * 'tag'.
 	 *
-	 * @param st The required ::SEXPTYPE of the PairList.  Must
-	 *           be one of LISTSXP, LANGSXP, DOTSXP or BCODESXP
-	 *           (not checked).
 	 * @param sz Number of elements required in the list.  Must be
 	 *           strictly positive; the constructor throws
 	 *           std::out_of_range if sz is zero.
 	 */
-	PairList(SEXPTYPE st, size_t sz)
-	    throw (std::bad_alloc, std::out_of_range);
-
-	/**
-	 * @return a const pointer to the 'car' of this PairList
-	 * element.
-	 */
-	const RObject* car() const
-	{
-	    return m_car;
-	}
-
-	/**
-	 * @return a pointer to the 'car' of this PairList element. 
-	 */
-	RObject* car()
-	{
-	    return m_car;
-	}
-
-	/** @brief Set the 'car' value.
-	 *
-	 * @param cr Pointer to the new car object (or a null
-	 *           pointer).
-	 */
-	void setCar(RObject* cr)
-	{
-	    m_car = cr;
-	    devolveAge(m_car);
-	}
-
-	/** @brief Set the 'tag' value.
-	 *
-	 * @param tg Pointer to the new tag object (or a null
-	 *           pointer).
-	 */
-	void setTag(RObject* tg)
-	{
-	    m_tag = tg;
-	    devolveAge(m_tag);
-	}
-
-	/** @brief Set the 'tail' value.
-	 *
-	 * @param tl Pointer to the new tail list (or a null
-	 *           pointer).
-	 */
-	void setTail(PairList* tl)
-	{
-	    m_tail = tl;
-	    devolveAge(m_tail);
-	}
+	explicit PairList(size_t sz) throw (std::bad_alloc, std::out_of_range)
+	    : ConsCell(LISTSXP, sz)
+	{}
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -158,54 +90,12 @@ namespace CXXR {
 	 */
 	static const char* staticTypeName()
 	{
-	    return "(pairlist type)";
-	}
-
-	/**
-	 * @return a const pointer to the 'tag' of this PairList
-	 * element.
-	 */
-	const RObject* tag() const
-	{
-	    return m_tag;
-	}
-
-	/**
-	 * @return a pointer to the 'tag' of this PairList element.
-	 */
-	RObject* tag()
-	{
-	    return m_tag;
-	}
-
-	/**
-	 * @return a const pointer to the 'tail' of this PairList
-	 * element.
-	 */
-	const PairList* tail() const
-	{
-	    return m_tail;
-	}
-
-	/**
-	 * @return a pointer to the 'tail' of this PairList element.
-	 */
-	PairList* tail()
-	{
-	    return m_tail;
+	    return "pairlist";
 	}
 
 	// Virtual function of RObject:
 	const char* typeName() const;
-
-	// Virtual functions of GCNode:
-	void visitChildren(const_visitor* v) const;
-	void visitChildren(visitor* v);
     private:
-	RObject* m_car;
-	PairList* m_tail;
-	RObject* m_tag;
-
 	// Declared private to ensure that PairList objects are
 	// allocated only using 'new':
 	~PairList() {}
@@ -214,26 +104,21 @@ namespace CXXR {
 	// compiler-generated versions:
 	PairList(const PairList&);
 	PairList& operator=(const PairList&);
-
-	// Check that st is a legal SEXPTYPE for a PairList:
-	static void checkST(SEXPTYPE st);
     };
 
-    /** @brief (For debugging.)
-     *
-     * @note The name and interface of this function may well change.
-     */
-    void pldump(std::ostream& os, const PairList& pl, size_t margin = 0);
+    inline void ConsCell::setTail(PairList* tl)
+    {
+	m_tail = tl;
+	devolveAge(m_tail);
+    }
 } // namespace CXXR
 
 extern "C" {
 #endif
 
-    /* Accessor functions. */
-
-    /** @brief Get car of CXXR::PairList element.
+    /** @brief Get car of CXXR::ConsCell.
      *
-     * @param e Pointer to a CXXR::PairList (checked), or a null pointer.
+     * @param e Pointer to a CXXR::ConsCell (checked), or a null pointer.
      * @return Pointer to the value of the list car, or 0 if \a e is
      * a null pointer.
      */
@@ -243,25 +128,8 @@ extern "C" {
     inline SEXP CAR(SEXP e)
     {
 	if (!e) return 0;
-	CXXR::PairList& pl = *CXXR::SEXP_downcast<CXXR::PairList*>(e);
-	return pl.car();
-    }
-#endif
-
-    /** @brief Get tail of CXXR::PairList element.
-     *
-     * @param e Pointer to a CXXR::PairList (checked), or a null pointer.
-     * @return Pointer to the tail of the list, or 0 if \a e is
-     * a null pointer.
-     */
-#ifndef __cplusplus
-    SEXP CDR(SEXP e);
-#else
-    inline SEXP CDR(SEXP e)
-    {
-	if (!e) return 0;
-	CXXR::PairList& pl = *CXXR::SEXP_downcast<CXXR::PairList*>(e);
-	return pl.tail();
+	CXXR::ConsCell& cc = *CXXR::SEXP_downcast<CXXR::ConsCell*>(e);
+	return cc.car();
     }
 #endif
 
@@ -272,6 +140,23 @@ extern "C" {
     SEXP CAAR(SEXP e);
 #else
     inline SEXP CAAR(SEXP e) {return CAR(CAR(e));}
+#endif
+
+    /** @brief Get tail of CXXR::ConsCell.
+     *
+     * @param e Pointer to a CXXR::ConsCell (checked), or a null pointer.
+     * @return Pointer to the tail of the list, or 0 if \a e is
+     * a null pointer.
+     */
+#ifndef __cplusplus
+    SEXP CDR(SEXP e);
+#else
+    inline SEXP CDR(SEXP e)
+    {
+	if (!e) return 0;
+	CXXR::ConsCell& cc = *CXXR::SEXP_downcast<CXXR::ConsCell*>(e);
+	return cc.tail();
+    }
 #endif
 
     /**
@@ -328,35 +213,9 @@ extern "C" {
     inline SEXP CAD4R(SEXP e) {return CAR(CDR(CDR(CDR(CDR(e)))));}
 #endif
 
-    /** @brief Get tag of CXXR::PairList element.
-     *
-     * @param e Pointer to a CXXR::PairList (checked), or a null pointer.
-     * @return Pointer to the tag of the list element, or 0 if \a e is
-     * a null pointer.
-     */
-#ifndef __cplusplus
-    SEXP TAG(SEXP e);
-#else
-    inline SEXP TAG(SEXP e)
-    {
-	if (!e) return 0;
-	CXXR::PairList& pl = *CXXR::SEXP_downcast<CXXR::PairList*>(e);
-	return pl.tag();
-    }
-#endif
-
     /**
-     * @brief Set the tag of a CXXR::PairList element.
-     *
-     * @param x Pointer to a CXXR::PairList (checked).
-     * @param y Pointer a CXXR::RObject representing the new tag of
-     *          the CXXR::PairList element.
-     */
-    void SET_TAG(SEXP x, SEXP y);
-
-    /**
-     * @brief Set the 'car' value of a CXXR::PairList element.
-     * @param x Pointer to a CXXR::PairList (checked).
+     * @brief Set the 'car' value of a CXXR::ConsCell.
+     * @param x Pointer to a CXXR::ConsCell (checked).
      * @param y Pointer a CXXR::RObject representing the new value of the
      *          list car.
      *
@@ -365,8 +224,8 @@ extern "C" {
     SEXP SETCAR(SEXP x, SEXP y);
 
     /**
-     * @brief Replace the tail of a CXXR::PairList element.
-     * @param x Pointer to a CXXR::PairList (checked).
+     * @brief Replace the tail of a CXXR::ConsCell.
+     * @param x Pointer to a CXXR::ConsCell (checked).
      * @param y Pointer a CXXR::RObject representing the new tail of the list.
      *
      * @returns \a y.
@@ -375,7 +234,7 @@ extern "C" {
 
     /**
      * @brief Set the 'car' value of the second element of list.
-     * @param x Pointer to a CXXR::PairList element with at least one successor
+     * @param x Pointer to a CXXR::ConsCell with at least one successor
      *          (checked).
      * @param y Pointer a CXXR::RObject representing the new value of the
      *          second element of the list.
@@ -386,7 +245,7 @@ extern "C" {
 
     /**
      * @brief Set the 'car' value of the third element of list.
-     * @param x Pointer to a CXXR::PairList element with at least two
+     * @param x Pointer to a CXXR::ConsCell with at least two
      *          successors (checked).
      * @param y Pointer a CXXR::RObject representing the new value of the
      *          third element of the list.
@@ -397,7 +256,7 @@ extern "C" {
 
     /**
      * @brief Set the 'car' value of the fourth element of list.
-     * @param x Pointer to a CXXR::PairList element with at least three
+     * @param x Pointer to a CXXR::ConsCell with at least three
      *          successors (checked).
      * @param y Pointer a CXXR::RObject representing the new value of the
      *          fourth element of the list.
@@ -408,7 +267,7 @@ extern "C" {
 
     /**
      * @brief Set the 'car' value of the fifth element of list.
-     * @param x Pointer to a CXXR::PairList element with at least four
+     * @param x Pointer to a CXXR::ConsCell with at least four
      *          successors (checked).
      * @param y Pointer a CXXR::RObject representing the new value of the
      *          fifth element of the list.
@@ -417,11 +276,11 @@ extern "C" {
      */
     SEXP SETCAD4R(SEXP x, SEXP y);
 
-    /** @brief Create a LISTSXP CXXR::PairList of a specified length.
+    /** @brief Create a CXXR::PairList of a specified length.
      *
-     * This constructor creates a CXXR::PairList of ::SEXPTYPE LISTSXP
-     * with a specified number of elements.  On creation, each element
-     * has null 'car' and 'tag'.
+     * This constructor creates a CXXR::PairList with a specified
+     * number of elements.  On creation, each element has null 'car'
+     * and 'tag'.
      *
      * @param n Number of elements required in the list.
      *
@@ -432,33 +291,13 @@ extern "C" {
 #else
     inline SEXP Rf_allocList(unsigned int n)
     {
-	return n > 0 ? new CXXR::PairList(LISTSXP, n) : 0;
+	return n > 0 ? new CXXR::PairList(n) : 0;
     }
 #endif
 
-    /** @brief Create a single CXXR::PairList element.
+    /** @brief Create a CXXR::PairList comprising a single link.
      *
-     * Create a single CXXR::PairList element, with null car and tag
-     * pointers.
-     *
-     * @param t The ::SEXPTYPE of the required object. Must be one of
-     *          LISTSXP, LANGSXP, DOTSXP or BCODESXP (not checked).
-     *
-     * @return Pointer to the created object.
-     */
-#ifndef __cplusplus
-    SEXP Rf_allocSExp(SEXPTYPE t);
-#else
-    inline SEXP Rf_allocSExp(SEXPTYPE t)
-    {
-	return new CXXR::PairList(t);
-    }
-#endif
-
-    /** @brief Create a CXXR::PairList of ::SEXPTYPE LISTSXP.
-     *
-     * Creates a CXXR::PairList of ::SEXPTYPE LISTSXP with a specified
-     * car and tail.
+     * Creates a CXXR::PairList with a specified car and tail.
      *
      * @param cr Pointer to the 'car' of the element to be created.
      *
@@ -475,31 +314,7 @@ extern "C" {
 	CXXR::GCRoot<> crr(cr);
 	CXXR::GCRoot<CXXR::PairList*>
 	    tlr(CXXR::SEXP_downcast<CXXR::PairList*>(tl));
-	return new CXXR::PairList(LISTSXP, crr, tlr);
-    }
-#endif
-
-    /** @brief Create a CXXR::PairList of ::SEXPTYPE LANGSXP.
-     *
-     * Creates a CXXR::PairList of ::SEXPTYPE LANGSXP with a specified
-     * car and tail.
-     *
-     * @param cr Pointer to the 'car' of the element to be created.
-     *
-     * @param tl Pointer to the 'tail' of the element to be created,
-     *          which must be of a CXXR::PairList type (checked). 
-     *
-     * @return Pointer to the constructed list.
-     */
-#ifndef __cplusplus
-    SEXP Rf_lcons(SEXP cr, SEXP tl);
-#else
-    inline SEXP Rf_lcons(SEXP cr, SEXP tl)
-    {
-	CXXR::GCRoot<> crr(cr);
-	CXXR::GCRoot<CXXR::PairList*>
-	    tlr(CXXR::SEXP_downcast<CXXR::PairList*>(tl));
-	return new CXXR::PairList(LANGSXP, crr, tlr);
+	return new CXXR::PairList(crr, tlr);
     }
 #endif
 

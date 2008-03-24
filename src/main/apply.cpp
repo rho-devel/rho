@@ -77,12 +77,12 @@ SEXP attribute_hidden do_lapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(ind = allocVector(INTSXP, 1));
 	if(isVectorAtomic(XX))
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol, 
-				LCONS(XX, LCONS(ind, R_NilValue))));
+				CONS(XX, CONS(ind, R_NilValue))));
 	else
 	    PROTECT(tmp = LCONS(R_Bracket2Symbol, 
-				LCONS(X, LCONS(ind, R_NilValue))));
+				CONS(X, CONS(ind, R_NilValue))));
 	PROTECT(R_fcall = LCONS(FUN, 
-				LCONS(tmp, LCONS(R_DotsSymbol, R_NilValue))));
+				CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
 	for(i = 0; i < n; i++) {
 	    INTEGER(ind)[0] = i + 1;

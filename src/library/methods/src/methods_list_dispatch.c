@@ -646,7 +646,7 @@ SEXP R_nextMethodCall(SEXP matched_call, SEXP ev)
     {PROTECT(e = duplicate(matched_call)); nprotect++;}
     if(!dotsDone) {
 	SEXP ee = e, dots;
-	PROTECT(dots = allocVector(LANGSXP, 1)); nprotect++;
+	PROTECT(dots = allocVector(LISTSXP, 1)); nprotect++;
 	SETCAR(dots, R_DotsSymbol);
 	for(ee = e; CDR(ee) != R_NilValue; ee = CDR(ee));
 	SETCDR(ee, dots);

@@ -187,11 +187,10 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (addit && (oldcode = ctxt->conexit) != R_NilValue ) {
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
-		PROTECT(tmp = allocList(3));
+		PROTECT(tmp = new Expression(3));
 		SETCAR(tmp, R_BraceSymbol);
 		SETCADR(tmp, oldcode);
 		SETCADDR(tmp, code);
-		SET_TYPEOF(tmp, LANGSXP);
 		ctxt->conexit = tmp;
 		UNPROTECT(1);
 	    }

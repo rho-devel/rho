@@ -46,6 +46,9 @@
 
 #include <Defn.h>
 #include <basedecl.h>
+#include "CXXR/DottedArgs.hpp"
+
+using namespace CXXR;
 
 #define NIL -1
 #define ARGUSED(x) LEVELS(x)
@@ -784,7 +787,11 @@ static SEXP ExpandDots(SEXP s, int expdots)
     if (s == R_NilValue)
 	return s;
     if (TYPEOF(CAR(s)) == DOTSXP ) {
-	SET_TYPEOF(CAR(s), LISTSXP);	/* a safe mutation */
+	// Convert CAR(s) to a PairList:
+	{
+	    ConsCell* cc = static_cast<ConsCell*>(CAR(s));
+	    SETCAR(s, ConsCell::convert<PairList>(cc));
+	}
 	if (expdots) {
 	    r = CAR(s);
 	    while (CDR(r) != R_NilValue ) {
@@ -984,7 +991,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = allocSExp(LANGSXP));
+    PROTECT(rval = new CXXR::Expression);
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(4);

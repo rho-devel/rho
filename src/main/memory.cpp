@@ -193,7 +193,7 @@ void WeakRef::finalize()
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCRoot<> e(LCONS(Rfin, LCONS(key, 0)));
+	GCRoot<> e(LCONS(Rfin, CONS(key, 0)));
 	eval(e, R_GlobalEnv);
     }
 }
@@ -663,8 +663,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	return new ListVector(length);
     case LANGSXP:
 	if(length == 0) return R_NilValue;
-	s = allocList(length);
-	SET_TYPEOF(s, LANGSXP);
+	s = new Expression(length);
 	return s;
     case LISTSXP:
 	return allocList(length);

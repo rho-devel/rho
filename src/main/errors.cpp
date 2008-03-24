@@ -1470,10 +1470,10 @@ static void vsignalWarning(SEXP call, const char *format, va_list ap)
     quotesym = install("quote");
     if (SYMVALUE(hooksym) != R_UnboundValue &&
 	SYMVALUE(quotesym) != R_UnboundValue) {
-	PROTECT(qcall = LCONS(quotesym, LCONS(call, R_NilValue)));
-	PROTECT(hcall = LCONS(qcall, R_NilValue));
+	PROTECT(qcall = LCONS(quotesym, CONS(call, R_NilValue)));
+	PROTECT(hcall = CONS(qcall, R_NilValue));
 	Rvsnprintf(buf, BUFSIZE - 1, format, ap);
-	hcall = LCONS(ScalarString(mkChar(buf)), hcall);
+	hcall = CONS(ScalarString(mkChar(buf)), hcall);
 	PROTECT(hcall = LCONS(hooksym, hcall));
 	eval(hcall, R_GlobalEnv);
 	UNPROTECT(3);
@@ -1574,7 +1574,7 @@ SEXP do_signalCondition(SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall_dflt(ecall, "%s", msgstr);
 	    }
 	    else {
-		SEXP hcall = LCONS(h, LCONS(cond, R_NilValue));
+		SEXP hcall = LCONS(h, CONS(cond, R_NilValue));
 		PROTECT(hcall);
 		eval(hcall, R_GlobalEnv);
 		UNPROTECT(1);

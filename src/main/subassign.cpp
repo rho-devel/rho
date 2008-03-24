@@ -103,6 +103,9 @@
 #include "Defn.h"
 #include <R_ext/RS.h> /* for test of S4 objects */
 
+using namespace std;
+using namespace CXXR;
+
 #if 0
 static SEXP gcall;
 #endif
@@ -1236,45 +1239,36 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 
 static SEXP listRemove(SEXP x, SEXP s)
 {
-    SEXP a, pa, px;
-    int i, ii, *ind, ns, nx, stretch=0;
-    unsigned int vmax;
-
-    vmax = vmaxget();
-    nx = length(x);
-    PROTECT(s = makeSubscript(x, s, &stretch, R_NilValue));
-    ns = length(s);
-    ind = reinterpret_cast<int*>(R_alloc(nx, sizeof(int)));
-    for (i = 0; i < nx; i++)
-	ind[i] = 1;
-    for (i = 0; i < ns; i++) {
-	ii = INTEGER(s)[i];
-	if (ii != NA_INTEGER)
-	    ind[ii - 1] = 0;
-    }
-    PROTECT(a = CONS(R_NilValue, R_NilValue));
-    px = x;
-    pa = a;
-    for (i = 0; i < nx; i++) {
-	if (ind[i]) {
-	    SETCDR(pa, px);
-	    px = CDR(px);
-	    pa = CDR(pa);
-	    SETCDR(pa, R_NilValue);
-	}
-	else {
-	    px = CDR(px);
+    vector<ConsCell*, Allocator<ConsCell*> > vcc;
+    // Assemble vector of pointers to list elements:
+    for (ConsCell* xp = SEXP_downcast<ConsCell*>(x);
+	 xp; xp = xp->tail())
+	vcc.push_back(xp);
+    // Null out pointers to unwanted elements:
+    {
+	int stretch = 0;
+	GCRoot<IntVector*>
+	    iv(SEXP_downcast<IntVector*>(makeSubscript(x, s, &stretch, 0)));
+	unsigned int ns = iv->size();
+	for (unsigned int i = 0; i < ns; ++i) {
+	    int ii = (*iv)[i];
+	    if (ii != NA_INTEGER) vcc[ii-1] = 0;
 	}
     }
-    SET_ATTRIB(CDR(a), ATTRIB(x));
-    IS_S4_OBJECT(x) ?  SET_S4_OBJECT(CDR(a)) : UNSET_S4_OBJECT(CDR(a));
-    SET_OBJECT(CDR(a), OBJECT(x));
-    SET_NAMED(CDR(a), NAMED(x));
-    UNPROTECT(2);
-    vmaxset(vmax);
-    return CDR(a);
+    // Restring the pearls:
+    {
+	ConsCell* ans = 0;
+	for (int i = vcc.size() - 1; i >= 0; --i) {
+	    ConsCell* cc = vcc[i];
+	    if (cc) {
+		PairList* tail = static_cast<PairList*>(ans);
+		ans = cc;
+		ans->setTail(tail);
+	    }
+	}
+	return ans;
+    }
 }
-
 
 static void SubAssignArgs(SEXP args, SEXP *x, SEXP *s, SEXP *y)
 {
@@ -1389,8 +1383,9 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (oldtype == LANGSXP) {
 	if(length(x)) {
-	    x = VectorToPairList(x);
-	    SET_TYPEOF(x, LANGSXP);
+	    GCRoot<PairList*> xlr(static_cast<PairList*>(VectorToPairList(x)));
+	    GCRoot<Expression*> xr(ConsCell::convert<Expression>(xlr));
+	    x = xr;
 	} else
 	    error(_("result is zero-length and so cannot be a language object"));
     }
@@ -1841,7 +1836,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    break;
 		}
 		else if (CDR(t) == R_NilValue && val != R_NilValue) {
-		    SETCDR(t, allocSExp(LISTSXP));
+		    SETCDR(t, new CXXR::PairList);
 		    SET_TAG(CDR(t), nlist);
 		    SETCADR(t, val);
 		    break;

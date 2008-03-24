@@ -42,6 +42,7 @@
 #include "Defn.h"
 
 #include <R_ext/RS.h> /* S4 bit */
+#include "CXXR/DottedArgs.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -187,7 +188,10 @@ static SEXP duplicate1(SEXP s)
 	break;
     case LANGSXP:
 	PROTECT(sp = s);
-	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+	PROTECT(h = t = new Expression(duplicate1(CAR(sp))));
+	COPY_TAG(t, sp);
+	DUPLICATE_ATTRIB(t, sp);
+	sp = CDR(sp);
 	while(sp != R_NilValue) {
 	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
 	    t = CDR(t);
@@ -195,14 +199,16 @@ static SEXP duplicate1(SEXP s)
 	    DUPLICATE_ATTRIB(t, sp);
 	    sp = CDR(sp);
 	}
-	t = CDR(h);
-	SET_TYPEOF(t, LANGSXP);
+	t = h;
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
 	break;
     case DOTSXP:
 	PROTECT(sp = s);
-	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+	PROTECT(h = t = new DottedArgs(duplicate1(CAR(sp))));
+	COPY_TAG(t, sp);
+	DUPLICATE_ATTRIB(t, sp);
+	sp = CDR(sp);
 	while(sp != R_NilValue) {
 	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
 	    t = CDR(t);
@@ -210,8 +216,7 @@ static SEXP duplicate1(SEXP s)
 	    DUPLICATE_ATTRIB(t, sp);
 	    sp = CDR(sp);
 	}
-	t = CDR(h);
-	SET_TYPEOF(t, DOTSXP);
+	t = h;
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
 	break;

@@ -110,6 +110,7 @@
 # include <config.h>
 #endif
 
+#include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
 
@@ -149,8 +150,8 @@ static SEXP getActiveValue(SEXP fun)
 static void setActiveValue(SEXP fun, SEXP val)
 {
     SEXP s_quote = install("quote");
-    SEXP arg = LCONS(s_quote, LCONS(val, R_NilValue));
-    SEXP expr = LCONS(fun, LCONS(arg, R_NilValue));
+    SEXP arg = LCONS(s_quote, CONS(val, R_NilValue));
+    SEXP expr = LCONS(fun, CONS(arg, R_NilValue));
     PROTECT(expr);
     eval(expr, R_GlobalEnv);
     UNPROTECT(1);
@@ -867,7 +868,7 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
 	/* Better to use exists() here if we don't actually need the value! */
         val = table->get(CHAR(PRINTNAME(symbol)), canCache, table);
         if(val != R_UnboundValue) {
-	    tmp = allocSExp(LISTSXP);
+	    tmp = new PairList;
 	    SETCAR(tmp, val);
 	    SET_TAG(tmp, symbol);
             /* If the database has a canCache method, then call that.
@@ -2484,8 +2485,8 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(ind = allocVector(INTSXP, 1));
     PROTECT(tmp = LCONS(R_Bracket2Symbol,
-			LCONS(tmp2, LCONS(ind, R_NilValue))));
-    PROTECT(R_fcall = LCONS(FUN, LCONS(tmp, LCONS(R_DotsSymbol, R_NilValue))));
+		        CONS(tmp2, CONS(ind, R_NilValue))));
+    PROTECT(R_fcall = LCONS(FUN, CONS(tmp, CONS(R_DotsSymbol, R_NilValue))));
 
     for(i = 0; i < k; i++) {
       INTEGER(ind)[0] = i+1;
@@ -3083,7 +3084,7 @@ SEXP R_FindNamespace(SEXP info)
 {
     SEXP expr, val;
     PROTECT(info);
-    PROTECT(expr = LCONS(install("getNamespace"), LCONS(info, R_NilValue)));
+    PROTECT(expr = LCONS(install("getNamespace"), CONS(info, R_NilValue)));
     val = eval(expr, R_GlobalEnv);
     UNPROTECT(2);
     return val;

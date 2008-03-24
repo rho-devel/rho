@@ -1485,7 +1485,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(0 == (n = length(args)))
 	    errorcall(call, _("invalid length 0 argument"));
 	names = getAttrib(args, R_NamesSymbol);
-	PROTECT(ap = ans = allocList(n));
+	PROTECT(ap = ans = new Expression(n));
 	for (i = 0; i < n; i++) {
 	    SETCAR(ap, VECTOR_ELT(args, i));
 	    if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
@@ -1498,7 +1498,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(0 == (n = length(args)))
 	    errorcall(call, _("invalid length 0 argument"));
 	names = getAttrib(args, R_NamesSymbol);
-	PROTECT(ap = ans = allocList(n));
+	PROTECT(ap = ans = new Expression(n));
 	for (i = 0; i < n; i++) {
 	    SETCAR(ap, XVECTOR_ELT(args, i));
 	    if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
@@ -1508,13 +1508,16 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(1);
 	break;
     case LISTSXP:
-	ans = duplicate(args);
-	break;
+	{
+	    ConsCell* cc = SEXP_downcast<ConsCell*>(args);
+	    GCRoot<Expression*> ansr(ConsCell::convert<Expression>(cc));
+	    ans = ansr;
+	    break;
+	}
     default:
 	errorcall(call, _("invalid argument list"));
 	ans = R_NilValue;
     }
-    SET_TYPEOF(ans, LANGSXP);
     SET_TAG(ans, R_NilValue);
     return ans;
 }
@@ -2207,8 +2210,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = length(args);
     names = getAttrib(args, R_NamesSymbol);
 
-    PROTECT(c = call = allocList(n + 1));
-    SET_TYPEOF(c, LANGSXP);
+    PROTECT(c = call = new Expression(n + 1));
     if( isString(fun) )
         SETCAR(c, install(translateChar(STRING_ELT(fun, 0))));
     else
@@ -2310,7 +2312,7 @@ SEXP attribute_hidden substituteList(SEXP el, SEXP rho)
 	    else
 		h = findVarInFrame3(rho, CAR(el), TRUE);
 	    if (h == R_UnboundValue)
-		h = LCONS(R_DotsSymbol, R_NilValue);
+		h = CONS(R_DotsSymbol, R_NilValue);
 	    else if (h == R_NilValue  || h == R_MissingArg)
 		h = R_NilValue;
 	    else if (TYPEOF(h) == DOTSXP)

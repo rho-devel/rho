@@ -984,23 +984,30 @@ static SEXP xxsubscript(SEXP a1, SEXP a2, SEXP a3)
 
 static SEXP xxexprlist(SEXP a1, SEXP a2)
 {
-    SEXP ans;
+    SEXP anslist, ans;
     SEXP prevSrcrefs;
     
     EatLines = 0;
     if (GenerateCode) {
-	SET_TYPEOF(a2, LANGSXP);
+	/* SET_TYPEOF(a2, LANGSXP); -- not allowed in CXXR */
 	SETCAR(a2, a1);
 	if (SrcFile) {
 	    PROTECT(prevSrcrefs = getAttrib(a2, R_SrcrefSymbol));
-	    PROTECT(ans = attachSrcrefs(a2, SrcFile));
+	    PROTECT(anslist = attachSrcrefs(a2, SrcFile));
 	    REPROTECT(SrcRefs = prevSrcrefs, srindex);
 	    /* SrcRefs got NAMED by being an attribute... */
 	    SET_NAMED(SrcRefs, 0);
 	    UNPROTECT_PTR(prevSrcrefs);
 	} 
 	else
-	    PROTECT(ans = a2);	
+	    PROTECT(anslist = a2);
+	/* CXXR: Transform anslist to class Expression: */
+	{
+	    PROTECT(ans = Rf_lcons(CAR(anslist), CDR(anslist)));
+	    SET_TAG(ans, TAG(anslist));
+	    DUPLICATE_ATTRIB(ans, anslist);
+	    UNPROTECT_PTR(anslist);
+	}
     }
     else
 	PROTECT(ans = R_NilValue);

@@ -45,6 +45,8 @@
 #include <Rmath.h>
 #include <basedecl.h>
 
+using namespace CXXR;
+
 #undef TRUE
 #undef FALSE
 
@@ -687,8 +689,7 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) == 2)
         SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
-        PROTECT(call = allocList(2));
-        SET_TYPEOF(call, LANGSXP);
+        PROTECT(call = new Expression(2));
         SETCAR(call, install("as.character"));
         SETCADR(call, CADR(args));
         SETCADR(args, eval(call, env));

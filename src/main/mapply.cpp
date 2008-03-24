@@ -91,7 +91,7 @@ do_mapply(SEXP f, SEXP varyingArgs, SEXP constantArgs, SEXP rho)
 
 
 	UNPROTECT(3);
-	PROTECT(fcall=LCONS(tmp2, fcall));
+	PROTECT(fcall=CONS(tmp2, fcall));
 
 	if (named && CHAR(STRING_ELT(vnames,j))[0]!='\0')
 	    SET_TAG(fcall, install(translateChar(STRING_ELT(vnames,j))));

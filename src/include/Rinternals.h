@@ -71,6 +71,7 @@
 #include "CXXR/ComplexVector.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
 #include "CXXR/ExpressionVector.h"
 #include "CXXR/ExternalPointer.h"
 #include "CXXR/IntVector.h"

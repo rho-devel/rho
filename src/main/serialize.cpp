@@ -47,6 +47,8 @@
 #include <Fileio.h>
 #include <Rversion.h>
 #include <R_ext/RS.h>           /* for CallocCharBuf, Free */
+#include "CXXR/ByteCode.hpp"
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
 /* This include is to bring in declarations of R_compress1 and
@@ -1327,8 +1329,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    return s;
 	}
     case LISTSXP:
-    case LANGSXP:
-    case DOTSXP:
 	/* This handling of dotted pair objects still uses recursion
            on the CDR and so will overflow the PROTECT stack for long
            lists.  The save format does permit using an iterative
@@ -1337,13 +1337,43 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
            is worth to write the code to handle this now, but if it
            becomes necessary we can do it without needing to change
            the save format. */
-	PROTECT(s = allocSExp(type));
+	PROTECT(s = new PairList);
 	SETLEVELS(s, levs);
 	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
 	SETCDR(s, ReadItem(ref_table, stream));
+	UNPROTECT(1); /* s */
+	return s;
+    case LANGSXP:
+	PROTECT(s = new Expression);
+	SETLEVELS(s, levs);
+	SET_OBJECT(s, objf);
+	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
+	SETCAR(s, ReadItem(ref_table, stream));
+	// Convert tail to PairList if necessary:
+	{
+	    GCRoot<ConsCell*>
+		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
+	    SETCDR(s, ConsCell::convert<PairList>(cc));
+	}
+	UNPROTECT(1); /* s */
+	return s;
+    case DOTSXP:
+	PROTECT(s = new DottedArgs);
+	SETLEVELS(s, levs);
+	SET_OBJECT(s, objf);
+	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
+	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
+	SETCAR(s, ReadItem(ref_table, stream));
+	// Convert tail to PairList if necessary:
+	{
+	    GCRoot<ConsCell*>
+		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
+	    SETCDR(s, ConsCell::convert<PairList>(cc));
+	}
 	UNPROTECT(1); /* s */
 	return s;
     case CLOSXP:
@@ -1555,7 +1585,7 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
     SEXP s;
-    PROTECT(s = allocSExp(BCODESXP));
+    PROTECT(s = new ByteCode);
     SETCAR(s, ReadItem(ref_table, stream)); /* code */
     SETCAR(s, R_bcEncode(CAR(s)));
     SETCDR(s, ReadBCConsts(ref_table, reps, stream)); /* consts */
@@ -1832,7 +1862,7 @@ void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 static SEXP CallHook(SEXP x, SEXP fun)
 {
     SEXP val, call;
-    PROTECT(call = LCONS(fun, LCONS(x, R_NilValue)));
+    PROTECT(call = LCONS(fun, CONS(x, R_NilValue)));
     val = eval(call, R_GlobalEnv);
     UNPROTECT(1);
     return val;

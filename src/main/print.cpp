@@ -85,6 +85,7 @@
 #include "Rconnections.h"
 #include <S.h>
 
+using namespace CXXR;
 
 /* Global print parameter struct: */
 attribute_hidden R_print_par_t R_print;
@@ -380,9 +381,8 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	names = getAttrib(s, R_NamesSymbol);
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = allocList(2));
+	PROTECT(newcall = new Expression(2));
 	SETCAR(newcall, install("print"));
-	SET_TYPEOF(newcall, LANGSXP);
 
 	if(ns > 0) {
 	    int n_pr = (ns <= R_print.max +1) ? ns : R_print.max;
@@ -528,9 +528,8 @@ static void printList(SEXP s, SEXP env)
 	i = 1;
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = allocList(2));
+	PROTECT(newcall = new Expression(2));
 	SETCAR(newcall, install("print"));
-	SET_TYPEOF(newcall, LANGSXP);
 	while (TYPEOF(s) == LISTSXP) {
 	    if (i > 1) Rprintf("\n");
 	    if (TAG(s) != R_NilValue && isSymbol(TAG(s))) {
@@ -855,8 +854,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    na_width_noquote = R_print.na_width_noquote;
 		Rprt_adj right = Rprt_adj(R_print.right);
 
-		PROTECT(t = s = allocList(3));
-		SET_TYPEOF(s, LANGSXP);
+		PROTECT(t = s = new Expression(3));
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);
 		SETCAR(t, ScalarInteger(digits));

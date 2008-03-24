@@ -248,11 +248,11 @@ namespace CXXR {
      * GCRoot objects are destroyed in the reverse order of creation,
      * and the destructor checks this.
      *
-     * @param T A pointer to GCNode or a type publicly derived from
+     * @param Ptr A pointer to GCNode or a type publicly derived from
      *          GCNode.  There is at present no provision for const
      *          pointers to be encapsulated within a GCRoot.
      */
-    template <typename T = RObject*>
+    template <typename Ptr = RObject*>
     class GCRoot : public GCRootBase {
     public:
 	/**
@@ -260,7 +260,7 @@ namespace CXXR {
 	 *          protected from the garbage collector, or a null
 	 *          pointer.
 	 */
-	explicit GCRoot(T node = 0) : GCRootBase(node) {}
+	explicit GCRoot(Ptr node = 0) : GCRootBase(node) {}
 
 	/** Copy constructor.
 	 *
@@ -276,7 +276,7 @@ namespace CXXR {
 	 * implicitly converted to a GCRoot<Base*>.
 	 */
 	template <class U> GCRoot(const GCRoot<U>& source)
-	    : GCRootBase(T(source))
+	    : GCRootBase(Ptr(source))
 	{}
 
 	/**
@@ -295,24 +295,33 @@ namespace CXXR {
 	 * instead of the node (if any) it currently points to and
 	 * protects.
 	 *
-	 * @param node Pointer to the GCNode that is not to be pointed
+	 * @param node Pointer to the GCNode that is now to be pointed
 	 *          to and protected from the garbage collector.
 	 */
-	GCRoot operator=(T node)
+	GCRoot operator=(Ptr node)
 	{
 	    GCRootBase::operator=(node);
 	    return *this;
 	}
 
+	/** @brief Access member via encapsulated pointer.
+	 *
+	 * @return the pointer currently encapsulated by the node.
+	 */
+	Ptr const operator->() const
+	{
+	    return static_cast<Ptr>(ptr());
+	}
+
 	/**
 	 * @return the pointer currently encapsulated by the node.
-	 * The pointer is of type T* const to prevent its use as an
+	 * The pointer is of type Ptr const to prevent its use as an
 	 * lvalue, the effect of which would probably not be what the
-	 * programmer expected.
+	 * programmer wanted.
 	 */
-	operator T const() const
+	operator Ptr const() const
 	{
-	    return static_cast<T>(ptr());
+	    return static_cast<Ptr>(ptr());
 	}
     };
 }

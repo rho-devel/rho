@@ -56,6 +56,7 @@
 #include "arithmetic.h"
 #include "basedecl.h"
 
+#include "CXXR/ByteCode.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -948,7 +949,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(args);
     PROTECT(rhs);
     PROTECT(val);
-    ptmp = tmp = allocList(length(args)+3);
+    ptmp = tmp = new Expression(length(args)+3);
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);
     SETCAR(ptmp, val); ptmp = CDR(ptmp);
@@ -960,7 +961,6 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     }
     SETCAR(ptmp, rhs);
     SET_TAG(ptmp, install("value"));
-    SET_TYPEOF(tmp, LANGSXP);
     return tmp;
 }
 
@@ -1348,13 +1348,14 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 	else {/* now we are down to the target symbol */
 	  nval = eval(expr, ENCLOS(rho));
 	}
-	return new PairList(LISTSXP, nval, new PairList(LISTSXP, expr));
+	GCRoot<PairList*> pl(new PairList(expr));
+	return new PairList(nval, pl);
     }
     else if (isLanguage(expr)) {
 	PROTECT(expr);
 	PROTECT(val = evalseq(CADR(expr), rho, forcelocal, tmploc));
 	R_SetVarLocValue(tmploc, CAR(val));
-	PROTECT(nexpr = LCONS(R_GetVarLocSymbol(tmploc), CDDR(expr)));
+	PROTECT(nexpr = CONS(R_GetVarLocSymbol(tmploc), CDDR(expr)));
 	PROTECT(nexpr = LCONS(CAR(expr), nexpr));
 	nval = eval(nexpr, rho);
 	UNPROTECT(4);
@@ -3613,8 +3614,9 @@ SEXP do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     bytes = CAR(args);
     consts = CADR(args);
-    ans = CONS(R_bcEncode(bytes), consts);
-    SET_TYPEOF(ans, BCODESXP);
+    GCRoot<> enc(R_bcEncode(bytes));
+    GCRoot<PairList*> pl(SEXP_downcast<PairList*>(consts));
+    ans = new ByteCode(enc, pl);
     return ans;
 }
 
