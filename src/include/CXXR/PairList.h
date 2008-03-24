@@ -78,7 +78,7 @@ namespace CXXR {
 	 *
 	 * @param sz Number of elements required in the list.  Must be
 	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if sz is zero.
+	 *           std::out_of_range if \a sz is zero.
 	 */
 	explicit PairList(size_t sz) throw (std::bad_alloc, std::out_of_range)
 	    : ConsCell(LISTSXP, sz)
@@ -295,9 +295,7 @@ extern "C" {
     }
 #endif
 
-    /** @brief Create a CXXR::PairList comprising a single link.
-     *
-     * Creates a CXXR::PairList with a specified car and tail.
+    /** @brief Creates a CXXR::PairList with a specified car and tail.
      *
      * @param cr Pointer to the 'car' of the element to be created.
      *

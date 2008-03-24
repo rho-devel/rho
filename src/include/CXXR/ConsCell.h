@@ -98,13 +98,13 @@ namespace CXXR {
 	 * @param T A (non-abstract) class derived from ConsCell.
 	 *
 	 * @param cc Pointer to a ConsCell (possibly null).  The
-	 *          effect of the method on cc is undefined;
-	 *          consequently cc should not be used subsequently to
+	 *          effect of the method on \a cc is undefined;
+	 *          consequently \a cc should not be used subsequently to
 	 *          the method call.
 	 *
 	 * @return Pointer to the converted object, or a null pointer
-	 * if cc is null.  If cc is already of the desired type, the
-	 * method simply returns cc.
+	 * if \a cc is null.  If \a cc is already of the desired type,
+	 * the method simply returns \a cc.
 	 */
 	template <class T> static T* convert(ConsCell* cc)
 	{
@@ -220,7 +220,7 @@ namespace CXXR {
 	 *           (not checked).
 	 * @param sz Number of elements required in the list.  Must be
 	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if sz is zero.
+	 *           std::out_of_range if \a sz is zero.
 	 */
 	ConsCell(SEXPTYPE st, size_t sz)
 	    throw (std::bad_alloc, std::out_of_range);

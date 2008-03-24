@@ -134,6 +134,36 @@ namespace CXXR {
      * immediately after the object is created, to encapsulating a
      * pointer to it in a GCRoot smart pointer.
      *
+     * \par Avoid nested <tt>new</tt>:
+     * Consider the following code to create a PairList of two
+     * elements, with \c first as the 'car' of the first element and
+     * \c second as the 'car' of the second element:
+     * \code
+     * CXXR::GCRoot<CXXR::PairList*>
+     *   pl2(new CXXR::PairList(first, new CXXR::PairList(second)));
+     * \endcode
+     * Is this code sound?  You might suppose that there is a risk
+     * that the second element of the list will be garbage-collected
+     * when \c new is invoked to allocate space for the first element.
+     * But this is not so: at this stage, the second element will
+     * still enjoy infant immunity, which in fact it will continue to
+     * enjoy until the first garbage collection after
+     * <tt>pl2</tt>'s constructor has run.
+     *
+     * \par
+     * The problem arises from a different quarter.  Suppose that the
+     * \c new to allocate space for the second element succeeds, but
+     * that the \c new to allocate space for the first element fails
+     * because of shortage of memory, and throws
+     * <tt>std::bad_alloc</tt>.  Then the space allocated to the
+     * second element will be lost, because this element will never be
+     * exposed to the garbage collector.  To avoid this, the preferred
+     * coding approach is as follows:
+     * \code
+     * CXXR::GCRoot<CXXR::PairList*> pl(new CXXR::PairList(second));
+     * CXXR::GCRoot<CXXR::PairList*> pl2(new CXXR::PairList(first, pl));
+     * \endcode
+     *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
      * 'meaning' of an object of a derived class, all of its data

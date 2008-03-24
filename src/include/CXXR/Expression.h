@@ -76,7 +76,7 @@ namespace CXXR {
 	 *
 	 * @param sz Number of elements required in the list.  Must be
 	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if sz is zero.
+	 *           std::out_of_range if \a sz is zero.
 	 */
 	explicit Expression(size_t sz)
 	    throw (std::bad_alloc, std::out_of_range)
@@ -109,14 +109,12 @@ namespace CXXR {
 extern "C" {
 #endif
 
-    /** @brief Create a CXXR::Expression comprising a single link.
-     *
-     * Creates a CXXR::Expression with a specified car and tail.
+    /** @brief Create a CXXR::Expression with a specified car and tail.
      *
      * @param cr Pointer to the 'car' of the element to be created.
      *
      * @param tl Pointer to the 'tail' of the element to be created,
-     *          which must be of a CXXR::Expression type (checked).
+     *          which must be of a CXXR::PairList type (checked).
      *
      * @return Pointer to the constructed list.
      */

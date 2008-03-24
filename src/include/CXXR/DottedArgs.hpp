@@ -68,7 +68,7 @@ namespace CXXR {
 	 *
 	 * @param sz Number of elements required in the list.  Must be
 	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if sz is zero.
+	 *           std::out_of_range if \a sz is zero.
 	 */
 	explicit DottedArgs(size_t sz)
 	    throw (std::bad_alloc, std::out_of_range)
