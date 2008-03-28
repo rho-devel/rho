@@ -101,7 +101,7 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-attribute_hidden FUNTAB R_FunTab[] =
+FUNTAB R_FunTab[] =
 {
 
 /* Language Related Constructs */
@@ -963,7 +963,7 @@ attribute_hidden FUNTAB R_FunTab[] =
 };
 
 
-SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name;
     int i;
@@ -1112,7 +1112,7 @@ SEXP install(const char *name)
 
 /*  do_internal - This is the code for .Internal(). */
 
-SEXP attribute_hidden do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, fun, ans;
     int save = GCRootBase::ppsSize();
