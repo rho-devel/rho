@@ -10,9 +10,14 @@ maindir = $(top_srcdir)/src/main
 
 #ALL_CPPFLAGS = $(CPPFLAGS) -I../../include
 
-valgrind = $(strip $(shell which valgrind))
-ifneq ($(valgrind),)
-valgrind += -q --leak-check="yes"
+# Thanks to Jochen Laubrock for suggestions about the handling of
+# valgrind on non-Linux platforms.
+
+valgrind = $(shell type -t valgrind > /dev/null \
+             && echo "valgrind -q --leak-check=yes")
+
+ifdef valgrind
+valgrind-flags = -DVALGRIND_LEVEL=2
 endif
 
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
@@ -25,7 +30,7 @@ tests = CellPooltest MemoryBanktest Allocatortest GCManagertest splice_test
 check : $(tests:=.ts)
 
 Allocatortest.o : Allocatortest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
 Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
 
@@ -39,10 +44,10 @@ Allocatortest.ts : Allocatortest Allocatortest.save
 	touch $@
 
 CellPool.o : $(maindir)/CellPool.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
 
 CellPooltest.o : CellPooltest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
 
 CellPooltest_objs = CellPooltest.o CellPool.o
 
@@ -70,10 +75,10 @@ GCManagertest.ts : GCManagertest GCManagertest.save
 	touch $@
 
 MemoryBank.o : $(maindir)/MemoryBank.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
 MemoryBanktest.o : MemoryBanktest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DVALGRIND_LEVEL=2 -DR_MEMORY_PROFILING -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
 MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellPool.o
 
