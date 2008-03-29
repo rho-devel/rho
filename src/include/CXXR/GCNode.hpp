@@ -139,7 +139,7 @@ namespace CXXR {
      * elements, with \c first as the 'car' of the first element and
      * \c second as the 'car' of the second element:
      * \code
-     * CXXR::GCRoot<CXXR::PairList*>
+     * CXXR::GCRoot<CXXR::PairList>
      *   pl2(new CXXR::PairList(first, new CXXR::PairList(second)));
      * \endcode
      * Is this code sound?  You might suppose that there is a risk
@@ -160,8 +160,8 @@ namespace CXXR {
      * exposed to the garbage collector.  To avoid this, the preferred
      * coding approach is as follows:
      * \code
-     * CXXR::GCRoot<CXXR::PairList*> pl(new CXXR::PairList(second));
-     * CXXR::GCRoot<CXXR::PairList*> pl2(new CXXR::PairList(first, pl));
+     * CXXR::GCRoot<CXXR::PairList> pl(new CXXR::PairList(second));
+     * CXXR::GCRoot<CXXR::PairList> pl2(new CXXR::PairList(first, pl));
      * \endcode
      *
      * @note Because this base class is used purely for housekeeping

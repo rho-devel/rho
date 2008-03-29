@@ -16,7 +16,7 @@
 
 /*************************************************************************
  *
- * $Id: triodef.h,v 1.31 2006/08/18 11:34:19 breese Exp $
+ * $Id$
  *
  * Copyright (C) 2001 Bjorn Reese <breese@users.sourceforge.net>
  *

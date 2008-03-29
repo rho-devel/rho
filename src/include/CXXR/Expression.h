@@ -124,7 +124,7 @@ extern "C" {
     inline SEXP Rf_lcons(SEXP cr, SEXP tl)
     {
 	CXXR::GCRoot<> crr(cr);
-	CXXR::GCRoot<CXXR::PairList*>
+	CXXR::GCRoot<CXXR::PairList>
 	    tlr(CXXR::SEXP_downcast<CXXR::PairList*>(tl));
 	return new CXXR::Expression(crr, tlr);
     }

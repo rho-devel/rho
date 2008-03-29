@@ -1355,7 +1355,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	SETCAR(s, ReadItem(ref_table, stream));
 	// Convert tail to PairList if necessary:
 	{
-	    GCRoot<ConsCell*>
+	    GCRoot<ConsCell>
 		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
 	    SETCDR(s, ConsCell::convert<PairList>(cc));
 	}
@@ -1370,7 +1370,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	SETCAR(s, ReadItem(ref_table, stream));
 	// Convert tail to PairList if necessary:
 	{
-	    GCRoot<ConsCell*>
+	    GCRoot<ConsCell>
 		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
 	    SETCDR(s, ConsCell::convert<PairList>(cc));
 	}

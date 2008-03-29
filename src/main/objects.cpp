@@ -584,7 +584,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (t != R_NilValue && t != R_MissingArg) {
 	    // Convert t to a PairList:
 	    {
-		GCRoot<ConsCell*> cc(SEXP_downcast<ConsCell*>(t));
+		GCRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t));
 		t = ConsCell::convert<PairList>(cc);
 	    }
 	    s = matchmethargs(matchedarg, t);

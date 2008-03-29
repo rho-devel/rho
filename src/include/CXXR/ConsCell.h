@@ -110,7 +110,7 @@ namespace CXXR {
 	{
 	    if (!cc) return 0;
 	    if (T* ccc = dynamic_cast<T*>(cc)) return ccc;
-	    GCRoot<T*> ans(new T(cc->car(), cc->tail(), cc->tag()));
+	    GCRoot<T> ans(new T(cc->car(), cc->tail(), cc->tag()));
 	    SET_ATTRIB(ans, ATTRIB(cc));
 	    return ans;
 	}

@@ -1247,7 +1247,7 @@ static SEXP listRemove(SEXP x, SEXP s)
     // Null out pointers to unwanted elements:
     {
 	int stretch = 0;
-	GCRoot<IntVector*>
+	GCRoot<IntVector>
 	    iv(SEXP_downcast<IntVector*>(makeSubscript(x, s, &stretch, 0)));
 	unsigned int ns = iv->size();
 	for (unsigned int i = 0; i < ns; ++i) {
@@ -1383,8 +1383,8 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (oldtype == LANGSXP) {
 	if(length(x)) {
-	    GCRoot<PairList*> xlr(static_cast<PairList*>(VectorToPairList(x)));
-	    GCRoot<Expression*> xr(ConsCell::convert<Expression>(xlr));
+	    GCRoot<PairList> xlr(static_cast<PairList*>(VectorToPairList(x)));
+	    GCRoot<Expression> xr(ConsCell::convert<Expression>(xlr));
 	    x = xr;
 	} else
 	    error(_("result is zero-length and so cannot be a language object"));

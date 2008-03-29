@@ -41,7 +41,7 @@ Furthermore:
 
 /*
 
-  $Id: apse.h,v 1.3 2003/04/25 16:37:46 ripley Exp $
+  $Id$
 
 */
 

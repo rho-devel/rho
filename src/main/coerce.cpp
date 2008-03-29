@@ -1018,7 +1018,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 	    return new ListVector(*ev);
 
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
-	GCRoot<ListVector*> lv(static_cast<ListVector*>(v));
+	GCRoot<ListVector> lv(static_cast<ListVector*>(v));
 	return new ExpressionVector(*lv);
     }
 
@@ -1510,7 +1510,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
     case LISTSXP:
 	{
 	    ConsCell* cc = SEXP_downcast<ConsCell*>(args);
-	    GCRoot<Expression*> ansr(ConsCell::convert<Expression>(cc));
+	    GCRoot<Expression> ansr(ConsCell::convert<Expression>(cc));
 	    ans = ansr;
 	    break;
 	}

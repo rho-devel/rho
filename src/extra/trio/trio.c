@@ -18,7 +18,7 @@
 
 /*************************************************************************
  *
- * $Id: trio.c,v 1.104 2006/11/26 12:07:35 breese Exp $
+ * $Id$
  *
  * Copyright (C) 1998 Bjorn Reese and Daniel Stenberg.
  *
@@ -866,7 +866,7 @@ typedef struct _trio_userdef_t {
  *
  *************************************************************************/
 
-static TRIO_CONST char rcsid[] = "@(#)$Id: trio.c,v 1.104 2006/11/26 12:07:35 breese Exp $";
+static TRIO_CONST char rcsid[] = "@(#)$Id$";
 
 #if TRIO_FEATURE_FLOAT
 /*

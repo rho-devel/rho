@@ -266,9 +266,9 @@ namespace CXXR {
      * GCRoot objects are destroyed in the reverse order of creation,
      * and the destructor checks this.
      *
-     * @param Ptr A pointer to GCNode or a type publicly derived from
-     *          GCNode.  There is at present no provision for const
-     *          pointers to be encapsulated within a GCRoot.
+     * @param T GCNode or a type publicly derived from GCNode.  There
+     *          is at present no provision for const pointers to be
+     *          encapsulated within a GCRoot.
      *
      * \par Caller protects:
      * Suppose some code calls a function (or class method) that takes
@@ -281,9 +281,13 @@ namespace CXXR {
      * responsibility for protecting the returned value.  This is
      * because the calling code is in a better position to decide
      * whether any additional steps are necessary to achieve this, and
-     * what they should be.
+     * what they should be.  (The calling code may also need to protect
+     * other objects: objects that are neither arguments to or values
+     * returned from the called function, but which would otherwise be
+     * vulnerable if the called function gave rise to a garbage
+     * collection.)
      */
-    template <typename Ptr = RObject*>
+    template <class T = RObject>
     class GCRoot : public GCRootBase {
     public:
 	/**
@@ -291,7 +295,7 @@ namespace CXXR {
 	 *          protected from the garbage collector, or a null
 	 *          pointer.
 	 */
-	explicit GCRoot(Ptr node = 0) : GCRootBase(node) {}
+	explicit GCRoot(T* node = 0) : GCRootBase(node) {}
 
 	/** @brief Copy constructor.
 	 *
@@ -300,15 +304,6 @@ namespace CXXR {
 	 * constructor.)
 	 */
 	GCRoot(const GCRoot& source) : GCRootBase(source) {}
-
-	/** @brief Upcast constructor
-	 *
-	 * This constructor enables a GCRoot<Derived*> to be
-	 * implicitly converted to a GCRoot<Base*>.
-	 */
-	template <class U> GCRoot(const GCRoot<U>& source)
-	    : GCRootBase(Ptr(source))
-	{}
 
 	/**
 	 * This will cause this GCRoot to protect the same GCNode as
@@ -329,7 +324,7 @@ namespace CXXR {
 	 * @param node Pointer to the GCNode that is now to be pointed
 	 *          to and protected from the garbage collector.
 	 */
-	GCRoot operator=(Ptr node)
+	GCRoot operator=(T* node)
 	{
 	    GCRootBase::operator=(node);
 	    return *this;
@@ -339,21 +334,41 @@ namespace CXXR {
 	 *
 	 * @return the pointer currently encapsulated by the node.
 	 */
-	Ptr const operator->() const
+	T* const operator->() const
 	{
-	    return static_cast<Ptr>(ptr());
+	    return get();
+	}
+
+	/** @brief Dereference the encapsulated pointer.
+	 *
+	 * @return a reference to the object pointed to by the
+	 * encapsulated pointer.  The effect is undefined if this
+	 * object encapsulates a null pointer.
+	 */
+	T& operator*() const
+	{
+	    return *get();
 	}
 
 	/** @brief Implicit conversion to encapsulated pointer type.
 	 *
 	 * @return the pointer currently encapsulated by the node.
-	 * The pointer is of type \a Ptr const to prevent its use as
+	 * The pointer is of type \a T* const to prevent its use as
 	 * an lvalue, the effect of which would probably not be what
 	 * the programmer wanted.
 	 */
-	operator Ptr const() const
+	operator T* const() const
 	{
-	    return static_cast<Ptr>(ptr());
+	    return get();
+	}
+
+	/** @brief Access the encapsulated pointer.
+	 *
+	 * @return the pointer currently encapsulated by the node.
+	 */
+	T* get() const
+	{
+	    return static_cast<T*>(ptr());
 	}
     };
 }

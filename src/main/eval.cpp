@@ -1348,7 +1348,7 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 	else {/* now we are down to the target symbol */
 	  nval = eval(expr, ENCLOS(rho));
 	}
-	GCRoot<PairList*> pl(new PairList(expr));
+	GCRoot<PairList> pl(new PairList(expr));
 	return new PairList(nval, pl);
     }
     else if (isLanguage(expr)) {
@@ -3615,7 +3615,7 @@ SEXP do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     bytes = CAR(args);
     consts = CADR(args);
     GCRoot<> enc(R_bcEncode(bytes));
-    GCRoot<PairList*> pl(SEXP_downcast<PairList*>(consts));
+    GCRoot<PairList> pl(SEXP_downcast<PairList*>(consts));
     ans = new ByteCode(enc, pl);
     return ans;
 }
