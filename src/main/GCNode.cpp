@@ -43,6 +43,7 @@
 
 #include <iostream>
 #include "CXXR/GCManager.hpp"
+#include "CXXR/GCRoot.h"
 
 using namespace std;
 using namespace CXXR;
@@ -52,6 +53,22 @@ unsigned int GCNode::s_num_generations = 0;
 const GCNode** GCNode::s_genpeg;
 unsigned int* GCNode::s_gencount;
 size_t GCNode::s_num_nodes;
+
+GCNode::SchwarzCtr::SchwarzCtr()
+{
+    if (!s_count++) {
+	GCNode::initialize();
+	GCRootBase::initialize();
+    }
+}
+
+GCNode::SchwarzCtr::~SchwarzCtr()
+{
+    if (!--s_count) {
+	GCRootBase::cleanup();
+	GCNode::cleanup();
+    }
+}
 
 GCNode::~GCNode()
 {

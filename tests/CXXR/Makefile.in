@@ -63,7 +63,7 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 GCManager.o : $(maindir)/GCManager.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
 
-GCManagertest_objs = GCManagertest.o GCManager.o MemoryBank.o CellPool.o
+GCManagertest_objs = GCManagertest.o CellPool.o GCManager.o MemoryBank.o
 
 GCManagertest : $(GCManagertest_objs)
 	$(LINK.cc) -o $@ $(GCManagertest_objs)

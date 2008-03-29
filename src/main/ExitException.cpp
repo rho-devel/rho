@@ -16,9 +16,6 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2005  Robert Gentleman, Ross Ihaka
- *			      and the R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,34 +28,20 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/* <UTF8> char here is handled as a whole string */
+/** @file ExitException.cpp
+ *
+ * Implementation of function CXXR_exit().
+ */
 
-extern "C" {
-int Rf_initialize_R(int ac, char **av); /* in ../unix/system.c */
-}
-
-#include <Rinterface.h>
 #include "CXXR/ExitException.h"
 
-extern int R_running_as_main_program;   /* in ../unix/system.c */
+using namespace CXXR;
 
-int main(int ac, char **av)
+void CXXR_exit(int exit_status)
 {
-    R_running_as_main_program = 1;
-    try {
-    Rf_initialize_R(ac, av);
-    Rf_mainloop(); /* does not return */
-    } catch(CXXR::ExitException& e) {
-	return e.exitStatus();
-    }
+    throw ExitException(exit_status);
 }
-
-	/* Declarations to keep f77 happy */
-
-int MAIN_(int ac, char **av)  {return 0;}
-int MAIN__(int ac, char **av) {return 0;}
-int __main(int ac, char **av) {return 0;}

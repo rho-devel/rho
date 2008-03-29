@@ -74,35 +74,35 @@ namespace CXXR {
     class GCRootBase {
     public:
 	explicit GCRootBase(GCNode* node)
-	    : m_index(s_roots.size())
+	    : m_index(s_roots->size())
 	{
 	    if (node) node->expose();
-	    s_roots.push_back(node);
+	    s_roots->push_back(node);
 	}
 
 	GCRootBase(const GCRootBase& source)
-	    : m_index(s_roots.size())
+	    : m_index(s_roots->size())
 	{
-	    s_roots.push_back(s_roots[source.m_index]);
+	    s_roots->push_back((*s_roots)[source.m_index]);
 	}
 
 	~GCRootBase()
 	{
-	    s_roots.pop_back();
-	    if (m_index != s_roots.size())
+	    s_roots->pop_back();
+	    if (m_index != s_roots->size())
 		seq_error();
 	}
 
 	GCRootBase& operator=(const GCRootBase& source)
 	{
-	    s_roots[m_index] = s_roots[source.m_index];
+	    (*s_roots)[m_index] = (*s_roots)[source.m_index];
 	    return *this;
 	}
 
 	GCRootBase& operator=(GCNode* node)
 	{
 	    if (node) node->expose();
-	    s_roots[m_index] = node;
+	    (*s_roots)[m_index] = node;
 	    return *this;
 	}
 
@@ -129,7 +129,7 @@ namespace CXXR {
 	 */
 	static size_t ppsSize()
 	{
-	    return s_pps.size();
+	    return s_pps->size();
 	}
 
 	/** @brief Push a node pointer onto the PPS.
@@ -142,12 +142,12 @@ namespace CXXR {
 	 */
 	static unsigned int protect(RObject* node)
 	{
-	    unsigned int index = s_pps.size();
+	    unsigned int index = s_pps->size();
 	    if (node) node->expose();
 #ifdef NDEBUG
-	    s_pps.push_back(node);
+	    s_pps->push_back(node);
 #else
-	    s_pps.push_back(std::make_pair(node, R_GlobalContext));
+	    s_pps->push_back(std::make_pair(node, R_GlobalContext));
 #endif
 	    return index;
 	}
@@ -158,7 +158,7 @@ namespace CXXR {
 	 */
 	GCNode* ptr() const
 	{
-	    return s_roots[m_index];
+	    return (*s_roots)[m_index];
 	}
 
 	/** @brief Change the target of a pointer on the PPS.
@@ -221,21 +221,36 @@ namespace CXXR {
 	 */
 	static void visitRoots(GCNode::visitor* v);
     private:
+	friend class GCNode::SchwarzCtr;
+
 	// There may be a case, at least in some C++ library
 	// implementations, for using a deque instead of a vector in
 	// the following, so that memory is released as the stack
 	// shrinks.
-	static std::vector<GCNode*> s_roots;
+	static std::vector<GCNode*>* s_roots;
 
-	// Ye older pointer protection stack:
+	// Ye olde pointer protection stack:
 #ifdef NDEBUG
-	static std::vector<RObject*> s_pps;
+	static std::vector<RObject*>* s_pps;
 #else
-	static std::vector<std::pair<RObject*, RCNTXT*> > s_pps;
+	static std::vector<std::pair<RObject*, RCNTXT*> >* s_pps;
 #endif
 
 	unsigned int m_index;
 
+	// Clean up static data at end of run (called by
+	// GCNode::SchwarzCtr destructor:
+	static void cleanup()
+	{
+	    delete s_pps;
+	    delete s_roots;
+	}
+
+	// Initialize static data (called by GCNode::SchwarzCtr
+	// constructor):
+	static void initialize();
+
+	// Report out-of-sequence destructor call:
 	static void seq_error();
     };
 

@@ -184,15 +184,9 @@ namespace CXXR {
 	 */
 	class SchwarzCtr {
 	public:
-	    SchwarzCtr()
-	    {
-		if (!s_count++) GCNode::initialize();
-	    }
+	    SchwarzCtr();
 
-	    ~SchwarzCtr()
-	    {
-		if (!--s_count) GCNode::cleanup();
-	    }
+	    ~SchwarzCtr();
 	private:
 	    static unsigned int s_count;
 	};
