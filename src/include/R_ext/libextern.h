@@ -52,10 +52,7 @@
 #define LibExport
 #endif
 
-#ifdef __MAIN__
-#define LibExtern LibExport
-//#define extern  /* 2007/06/03 arr */
-#elif defined(R_DLL_BUILD)
+#if defined(R_DLL_BUILD)
 #define LibExtern extern
 #else
 #define LibExtern extern LibImport

@@ -93,6 +93,8 @@ void attribute_hidden nl_Rdummy()
    src/gnuwin/front-ends/graphappmain.c on Windows, unless of course
    R is embedded */
 
+// Global variables: The story so far.  This is how things are done in CR:
+
 /* Global Variables:  For convenience, all interpeter global symbols
  * ================   are declared in Defn.h as extern -- and defined here.
  *
@@ -104,6 +106,164 @@ void attribute_hidden nl_Rdummy()
  * This does not include user interface symbols which are included
  * in separate platform dependent modules.
  */
+
+// Now read on: In CXXR the preprocessor trickery referred to above is
+// not used.  Gradually definitions of global variables will be
+// migrated to the appropriate class-related source file, but those
+// that have not yet been migrated are defined below.
+
+// Data declared LibExtern in R_ext/Arith.h :
+
+LibExport double R_NaN;		/* IEEE NaN */
+LibExport double R_PosInf;	/* IEEE Inf */
+LibExport double R_NegInf;	/* IEEE -Inf */
+LibExport double R_NaReal;	/* NA_REAL: IEEE */
+LibExport int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
+
+// Data declared LibExtern in RCNTXT.h :
+
+LibExport RCNTXT R_Toplevel;     /* Storage for the toplevel environment */
+LibExport RCNTXT* R_ToplevelContext;  /* The toplevel environment */
+LibExport RCNTXT* R_GlobalContext;    /* The global environment */
+
+// Data declared LibExtern in Rinternals.h :
+
+LibExport SEXP	R_GlobalEnv;	    /* The "global" environment */
+LibExport SEXP  R_EmptyEnv;	    /* An empty environment at the root of the
+				    	environment tree */
+LibExport SEXP  R_BaseEnv;	    /* The base environment; formerly R_NilValue */
+LibExport SEXP	R_BaseNamespace;    /* The (fake) name space for base */
+LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
+LibExport SEXP	R_NilValue;	    /* The nil object */
+LibExport SEXP	R_UnboundValue;	    /* Unbound marker */
+LibExport SEXP	R_MissingArg;	    /* Missing argument marker */
+LibExport SEXP	R_Bracket2Symbol;   /* "[[" */
+LibExport SEXP	R_BracketSymbol;    /* "[" */
+LibExport SEXP	R_BraceSymbol;      /* "{" */
+LibExport SEXP	R_ClassSymbol;	    /* "class" */
+LibExport SEXP	R_DimNamesSymbol;   /* "dimnames" */
+LibExport SEXP	R_DimSymbol;	    /* "dim" */
+LibExport SEXP	R_DollarSymbol;	    /* "$" */
+LibExport SEXP	R_DotsSymbol;	    /* "..." */
+LibExport SEXP	R_DropSymbol;	    /* "drop" */
+LibExport SEXP	R_LevelsSymbol;	    /* "levels" */
+LibExport SEXP	R_ModeSymbol;	    /* "mode" */
+LibExport SEXP	R_NamesSymbol;	    /* "names" */
+LibExport SEXP	R_RowNamesSymbol;   /* "row.names" */
+LibExport SEXP	R_SeedsSymbol;	    /* ".Random.seed" */
+LibExport SEXP	R_TspSymbol;	    /* "tsp" */
+LibExport SEXP	R_NaString;	    /* NA_STRING as a CHARSXP */
+LibExport SEXP	R_BlankString;	    /* "" as a CHARSXP */
+
+// Data declared LibExtern in Defn.h :
+
+LibExport Rboolean R_interrupts_suspended = FALSE;
+LibExport int R_interrupts_pending = 0;
+LibExport char *R_Home;		    /* Root of the R tree */
+LibExport int	R_Is_Running;	    /* for Windows memory manager */
+LibExport SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
+LibExport int	R_EvalDepth = 0;    /* Evaluation recursion depth */
+LibExport Rboolean R_Interactive = TRUE;  /* TRUE during interactive use*/
+LibExport char *R_TempDir = NULL;   /* Name of per-session dir */
+LibExport char *R_HistoryFile;	    /* Name of the history file */
+LibExport int	R_HistorySize;	    /* Size of the history file */
+LibExport int	R_RestoreHistory;   /* restore the history file? */
+LibExport Rboolean utf8locale = FALSE;  /* is this a UTF-8 locale? */
+LibExport Rboolean mbcslocale = FALSE;  /* is this a MBCS locale? */
+LibExport unsigned int localeCP = 1252; /* the locale's codepage */
+LibExport SEXP R_MethodsNamespace;
+LibExport AccuracyInfo R_AccuracyInfo;
+
+// Data declared extern in Defn.h :
+
+int	gc_inhibit_torture = 1;
+uintptr_t R_CStackLimit	= (uintptr_t)-1;	/* C stack limit */
+uintptr_t R_CStackStart	= (uintptr_t)-1;	/* Initial stack address */
+Rboolean  R_Slave	= FALSE;	/* Run as a slave process */
+FILE*	R_Consolefile	= NULL;	/* Console output file */
+FILE*	R_Outputfile	= NULL;	/* Output file */
+int	R_DirtyImage	= 0;	/* Current image dirty */
+const char	*R_GUIType	= "unknown";
+
+// Data declared extern0 in Defn.h :
+
+attribute_hidden SEXP	R_CommentSymbol;    /* "comment" */
+attribute_hidden SEXP	R_DotEnvSymbol;     /* ".Environment" */
+attribute_hidden SEXP	R_ExactSymbol;	    /* "exact" */
+attribute_hidden SEXP	R_LastvalueSymbol;  /* ".Last.value" */
+attribute_hidden SEXP	R_NaRmSymbol;	    /* "na.rm" */
+attribute_hidden SEXP	R_RecursiveSymbol;  /* "recursive" */
+attribute_hidden SEXP	R_SourceSymbol;     /* "source" */
+attribute_hidden SEXP	R_SrcfileSymbol;    /* "srcfile" */
+attribute_hidden SEXP	R_SrcrefSymbol;     /* "srcref" */
+attribute_hidden SEXP	R_TmpvalSymbol;     /* "*tmp*" */
+attribute_hidden SEXP	R_UseNamesSymbol;   /* "use.names" */
+attribute_hidden SEXP	R_StringHash;       /* Global hash of CHARSXPs */
+attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Size of the vector heap */
+attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
+attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
+attribute_hidden SEXP	R_ReturnedValue;    /* Slot for return-ing values */
+attribute_hidden SEXP*	R_SymbolTable;	    /* The symbol table */
+attribute_hidden Rboolean R_Visible;	    /* Value visibility flag */
+attribute_hidden int	R_BrowseLevel	= 0;	/* how deep the browser is */
+attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
+attribute_hidden int	R_Expressions	= 5000;	/* options(expressions) */
+attribute_hidden int	R_Expressions_keep = 5000;	/* options(expressions) */
+attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
+attribute_hidden int	R_WarnLength	= 1000;	/* Error/warning max length */
+attribute_hidden int	R_CStackDir	= 1;	/* C stack direction */
+attribute_hidden Rboolean R_WarnEscapes  = TRUE;   /* Warn on unrecognized escapes */
+attribute_hidden struct RPRSTACK *R_PendingPromises = NULL; /* Pending promise stack */
+attribute_hidden Rboolean R_Quiet	= FALSE;	/* Be as quiet as possible */
+attribute_hidden Rboolean R_Verbose	= FALSE;	/* Be verbose */
+attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
+attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
+						   if set by R itself */
+attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
+attribute_hidden SEXP	R_CommentSxp;	    /* Comments accumulate here */
+attribute_hidden int	R_ParseError	= 0; /* Line where parse error occured */
+attribute_hidden SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
+attribute_hidden char	R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
+attribute_hidden char	R_ParseContext[PARSE_CONTEXT_SIZE] = "";
+attribute_hidden int	R_ParseContextLast = 0; /* last character in context buffer */
+attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
+attribute_hidden SEXP	R_Warnings;	    /* the warnings and their calls */
+attribute_hidden int	R_ShowErrorMessages = 1;	/* show error messages? */
+attribute_hidden SEXP	R_HandlerStack;	/* Condition handler stack */
+attribute_hidden SEXP	R_RestartStack;	/* Stack of available restarts */
+attribute_hidden Rboolean R_warn_partial_match_args   = FALSE;
+attribute_hidden Rboolean R_warn_partial_match_dollar = FALSE;
+attribute_hidden Rboolean R_warn_partial_match_attr = FALSE;
+attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
+attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
+attribute_hidden int R_NShowCalls = 50;
+attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
+attribute_hidden char OutDec	= '.';  /* decimal point used for output */
+
+#ifdef BYTECODE
+#define R_BCNODESTACKSIZE 10000
+attribute_hidden SEXP *R_BCNodeStackBase, *R_BCNodeStackTop, *R_BCNodeStackEnd;
+# ifdef BC_INT_STACK
+#define R_BCINTSTACKSIZE 10000
+attribute_hidden IStackval *R_BCIntStackBase, *R_BCIntStackTop, *R_BCIntStackEnd;
+# endif
+#endif
+
+attribute_hidden int R_dec_min_exponent		= -308;
+attribute_hidden unsigned int max_contour_segments = 25000;
+attribute_hidden Rboolean known_to_be_latin1 = FALSE;
+attribute_hidden Rboolean known_to_be_utf8 = FALSE;
+
+// Data declared LibExtern in Rembedded.h :
+
+//LibExport int R_DirtyImage;
+//LibExport char *R_TempDir;
+
+#ifdef Win32   
+LibExport int UserBreak;
+#endif
+
+
 
 void Rf_callToplevelHandlers(SEXP expr, SEXP value, Rboolean succeeded,
 			     Rboolean visible);

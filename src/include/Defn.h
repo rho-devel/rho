@@ -69,11 +69,11 @@
 # define attribute_hidden
 #endif
 
-#ifdef __MAIN__
-# define extern0 attribute_hidden
-#else
+/* In CR, extern0 is defined as attribute_hidden if this file is
+ * #included from main.c, and as extern otherwise.  In CXXR it always
+ * maps to extern.
+ */
 # define extern0 extern
-#endif
 
 
 #define MAXELTSIZE 8192 /* Used as a default for string buffer sizes,
@@ -517,18 +517,15 @@ typedef enum {
 
 #include <R_ext/libextern.h>
 
-#ifdef __MAIN__
-# define INI_as(v) = v
-#define extern0 attribute_hidden
-#define extern1
-#else
+/* In CR, if this file is included from main.c, 'INI_as(v)' expands to
+ * '= v', and 'extern0' expands to 'attribute_hidden'; otherwise the
+ * definitions below are used.
+ */
 # define INI_as(v)
 #define extern0 extern
-#define extern1 extern
-#endif
 
 /* extern int	errno; already have errno.h ! */
-extern1 int	gc_inhibit_torture INI_as(1);
+extern int	gc_inhibit_torture INI_as(1);
 
 LibExtern Rboolean R_interrupts_suspended INI_as(FALSE);
 LibExtern int R_interrupts_pending INI_as(0);
@@ -546,9 +543,9 @@ LibExtern int	R_Is_Running;	    /* for Windows memory manager */
 LibExtern SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
 extern0 SEXP	R_ReturnedValue;    /* Slot for return-ing values */
 extern0 SEXP*	R_SymbolTable;	    /* The symbol table */
-extern RCNTXT R_Toplevel;	    /* Storage for the toplevel environment */
-extern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
-extern RCNTXT* R_GlobalContext;    /* The global environment */
+LibExtern RCNTXT R_Toplevel;	    /* Storage for the toplevel environment */
+LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
+LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
 extern0 Rboolean R_Visible;	    /* Value visibility flag */
 LibExtern int	R_EvalDepth	INI_as(0);	/* Evaluation recursion depth */
 extern0 int	R_BrowseLevel	INI_as(0);	/* how deep the browser is */
@@ -558,8 +555,8 @@ extern0 int	R_Expressions	INI_as(5000);	/* options(expressions) */
 extern0 int	R_Expressions_keep INI_as(5000);	/* options(expressions) */
 extern0 Rboolean R_KeepSource	INI_as(FALSE);	/* options(keep.source) */
 extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
-extern1 uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
-extern1 uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
+extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
+extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
 extern0 Rboolean R_WarnEscapes  INI_as(TRUE);   /* Warn on unrecognized escapes */
 extern0 struct RPRSTACK *R_PendingPromises INI_as(NULL); /* Pending promise stack */
@@ -567,13 +564,13 @@ extern0 struct RPRSTACK *R_PendingPromises INI_as(NULL); /* Pending promise stac
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/
 extern0 Rboolean R_Quiet	INI_as(FALSE);	/* Be as quiet as possible */
-extern1 Rboolean  R_Slave	INI_as(FALSE);	/* Run as a slave process */
+extern Rboolean  R_Slave	INI_as(FALSE);	/* Run as a slave process */
 extern0 Rboolean R_Verbose	INI_as(FALSE);	/* Be verbose */
 /* extern int	R_Console; */	    /* Console active flag */
 /* IoBuffer R_ConsoleIob; : --> ./IOStuff.h */
 /* R_Consolefile is used in the internet module */
-extern1 FILE*	R_Consolefile	INI_as(NULL);	/* Console output file */
-extern1 FILE*	R_Outputfile	INI_as(NULL);	/* Output file */
+extern FILE*	R_Consolefile	INI_as(NULL);	/* Console output file */
+extern FILE*	R_Outputfile	INI_as(NULL);	/* Output file */
 extern0 int	R_ErrorCon	INI_as(2);	/* Error connection */
 LibExtern char *R_TempDir	INI_as(NULL);	/* Name of per-session dir */
 extern0 char   *Sys_TempDir	INI_as(NULL);	/* Name of per-session dir
@@ -591,7 +588,7 @@ extern0 char	R_ParseContext[PARSE_CONTEXT_SIZE] INI_as("");
 extern0 int	R_ParseContextLast INI_as(0); /* last character in context buffer */
 
 /* Image Dump/Restore */
-extern1 int	R_DirtyImage	INI_as(0);	/* Current image dirty */
+extern int	R_DirtyImage	INI_as(0);	/* Current image dirty */
 
 /* History */
 LibExtern char *R_HistoryFile;	/* Name of the history file */
@@ -626,7 +623,7 @@ extern int Rf_initEmbeddedR(int argc, char **argv);
 
 /* GUI type */
 
-extern1 const char	*R_GUIType	INI_as("unknown");
+extern const char	*R_GUIType	INI_as("unknown");
 
 #ifdef BYTECODE
 #define R_BCNODESTACKSIZE 10000
