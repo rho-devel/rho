@@ -45,6 +45,7 @@ SOURCES_CXX = \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \
         String.cpp StringVector.cpp Symbol.cpp \
+	UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp arithmetic.cpp apse.cpp array.cpp attrib.cpp \

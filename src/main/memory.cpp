@@ -646,7 +646,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case RAWSXP:
 	return new RawVector(length);
     case CHARSXP:
-	return new String(length);
+	return new UncachedString(length);
     case LGLSXP:
 	return new LogicalVector(length);
     case INTSXP:

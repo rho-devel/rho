@@ -83,6 +83,7 @@
 #include "CXXR/RealVector.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
+#include "CXXR/UncachedString.h"
 #include "CXXR/WeakRef.h"
 
 #ifdef __cplusplus

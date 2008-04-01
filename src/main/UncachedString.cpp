@@ -32,26 +32,46 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file String.cpp
+/** @file UncachedString.cpp
  *
- * Implementation of class CXXR::String and related functions.
+ * Implementation of class CXXR::UncachedString and related functions.
  */
 
-#include "CXXR/String.h"
+#include "CXXR/UncachedString.h"
 
 using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	int (*HASHVALUEptr)(SEXP x) = HASHVALUE;
-	Rboolean (*IS_LATIN1ptr)(const SEXP x) = IS_LATIN1;
-	Rboolean (*IS_UTF8ptr)(const SEXP x) = IS_UTF8;
-	const char* (*R_CHARp)(SEXP x) = R_CHAR;
+	SEXP (*Rf_allocStringp)(R_len_t) = Rf_allocString;
+	void (*SET_LATIN1ptr)(SEXP x) = SET_LATIN1;
+	void (*SET_UTF8ptr)(SEXP x) = SET_UTF8;
+	void (*UNSET_LATIN1ptr)(SEXP x) = UNSET_LATIN1;
+	void (*UNSET_UTF8ptr)(SEXP x) = UNSET_UTF8;
     }
 }
 
-// String::Comparator::operator()(const String&, const String&) is in
-// sort.cpp
+UncachedString::UncachedString(const std::string& str,
+			       unsigned int encoding)
+    : String(str.size(), encoding), m_databytes(str.size() + 1),
+      m_data(m_short_string)
+{
+    size_t sz = str.size();
+    allocData(sz);
+    memcpy(m_data, str.data(), sz);
+}
 
-// int hash() const is in envir.cpp (for the time being)
+void UncachedString::allocData(size_t sz)
+{
+    if (sz > s_short_strlen)
+	m_data = reinterpret_cast<char*>(MemoryBank::allocate(m_databytes));
+    // Insert trailing null byte:
+    m_data[sz] = 0;
+    setCString(m_data);
+}
+    
+const char* UncachedString::typeName() const
+{
+    return UncachedString::staticTypeName();
+}

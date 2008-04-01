@@ -245,7 +245,7 @@ int R_Newhashpjw(const char *s)
 int CXXR::String::hash() const
 {
     if (m_hash < 0)
-	m_hash = R_Newhashpjw(m_data);
+	m_hash = R_Newhashpjw(m_c_str);
     return m_hash;
 }
 
