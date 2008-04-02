@@ -71,9 +71,9 @@
 
 /* In CR, extern0 is defined as attribute_hidden if this file is
  * #included from main.c, and as extern otherwise.  In CXXR it always
- * maps to extern.
+ * maps to extern attribute_hidden.
  */
-# define extern0 extern
+# define extern0 extern attribute_hidden
 
 
 #define MAXELTSIZE 8192 /* Used as a default for string buffer sizes,
@@ -518,11 +518,11 @@ typedef enum {
 #include <R_ext/libextern.h>
 
 /* In CR, if this file is included from main.c, 'INI_as(v)' expands to
- * '= v', and 'extern0' expands to 'attribute_hidden'; otherwise the
- * definitions below are used.
+ * '= v', and 'extern0' expands to 'attribute_hidden'; otherwise
+ * 'INI_as(v)' expands to nothing and 'extern0' expands to 'extern'.
  */
 # define INI_as(v)
-#define extern0 extern
+#define extern0 extern attribute_hidden
 
 /* extern int	errno; already have errno.h ! */
 extern int	gc_inhibit_torture INI_as(1);
