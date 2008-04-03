@@ -1056,11 +1056,8 @@ void InitNames()
     /* Parser Structures */
     R_CommentSxp = R_NilValue;
     /* String constants (CHARSXP values) */
-    /* Note: we don't want NA_STRING to be in the CHARSXP cache, so that
-       mkChar("NA") is distinct from NA_STRING */
     /* NA_STRING */
-    NA_STRING = allocString(strlen("NA"));
-    strcpy(CHAR_RW(NA_STRING), "NA");
+    // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
     /* R_BlankString */
     R_BlankString = mkChar("");

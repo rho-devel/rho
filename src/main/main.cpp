@@ -152,7 +152,6 @@ LibExport SEXP	R_NamesSymbol;	    /* "names" */
 LibExport SEXP	R_RowNamesSymbol;   /* "row.names" */
 LibExport SEXP	R_SeedsSymbol;	    /* ".Random.seed" */
 LibExport SEXP	R_TspSymbol;	    /* "tsp" */
-LibExport SEXP	R_NaString;	    /* NA_STRING as a CHARSXP */
 LibExport SEXP	R_BlankString;	    /* "" as a CHARSXP */
 
 // Data declared LibExtern in Defn.h :

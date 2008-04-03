@@ -41,13 +41,13 @@
 #ifndef CXXR_STRING_H
 #define CXXR_STRING_H
 
+#include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-    extern SEXP R_NaString;
     extern SEXP R_BlankString;
 
 #define LATIN1_MASK (1<<2)
@@ -136,13 +136,30 @@ namespace CXXR {
 	 */
 	int hash() const;
 
+	/** @brief Test if 'not available'.
+	 *
+	 * @return true iff this is the 'not available' string.
+	 */
+	bool isNA() const
+	{
+	    return this == s_na.get();
+	}
+
 	/** @brief 'Not available' string.
+	 *
+	 * Note that although the 'not available' string contains the
+	 * text "NA", it is identified as the 'not available' string
+	 * by its <em>address</em>, not by its content.  It is
+	 * entirely in order to create another string with the text
+	 * "NA", and that string will not be considered 'not
+	 * available'.
+	 *
 	 * @return <tt>const</tt> pointer to the string representing
 	 *         'not available'.
 	 */
 	static const String* NA()
 	{
-	    return static_cast<String*>(R_NaString);
+	    return s_na;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -216,6 +233,8 @@ namespace CXXR {
 	    m_hash = -1;
 	}
     private:
+	static GCRoot<String> s_na;
+
 	const char* m_c_str;
 
 	mutable int m_hash;  // negative signifies invalid
@@ -230,6 +249,8 @@ namespace CXXR {
 extern "C" {
 
 #endif /* __cplusplus */
+
+    extern SEXP R_NaString;
 
     /**
      * @param x \c const pointer to a CXXR::String .

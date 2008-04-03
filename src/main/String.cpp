@@ -39,6 +39,8 @@
 
 #include "CXXR/String.h"
 
+#include "CXXR/UncachedString.h"
+
 using namespace std;
 using namespace CXXR;
 
@@ -50,6 +52,9 @@ namespace CXXR {
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
     }
 }
+
+GCRoot<String> String::s_na(new UncachedString("NA"));
+SEXP R_NaString = const_cast<String*>(String::NA());
 
 // String::Comparator::operator()(const String&, const String&) is in
 // sort.cpp
