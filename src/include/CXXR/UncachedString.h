@@ -69,10 +69,9 @@ namespace CXXR {
 	 *          permissible.
 	 *
 	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits,
-	 *          other bits being ignored.  Zero signifies ASCII
-	 *          encoding, and the effect is undefined if both MASK
-	 *          bits are set.
+	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
+	 *          Zero signifies ASCII encoding, and at most one of
+	 *          the MASK bits may be set (checked).
 	 */
 	explicit UncachedString(size_t sz, unsigned int encoding = 0)
 	    : String(sz, encoding), m_databytes(sz + 1), m_data(m_short_string)
@@ -87,10 +86,9 @@ namespace CXXR {
 	 *          characters are permissible.)
 	 *
 	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits,
-	 *          other bits being ignored.  Zero signifies ASCII
-	 *          encoding, and the effect is undefined if both MASK
-	 *          bits are set.
+	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
+	 *          Zero signifies ASCII encoding, and at most one of
+	 *          the MASK bits may be set (checked).
 	 */
 	explicit UncachedString(const std::string& str,
 				unsigned int encoding = 0);

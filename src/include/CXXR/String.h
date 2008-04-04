@@ -180,10 +180,9 @@ namespace CXXR {
 	 *          by the string.
 	 *
 	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits,
-	 *          other bits being ignored.  Zero signifies ASCII
-	 *          encoding, and the effect is undefined if both MASK
-	 *          bits are set.
+	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
+	 *          Zero signifies ASCII encoding, and at most one of
+	 *          the MASK bits may be set (checked).
 	 *
 	 * @param c_string Pointer to a representation of the string
 	 *          as a C-style string (but possibly with embedded
@@ -201,7 +200,8 @@ namespace CXXR {
 	       const char* c_string = 0)
 	    : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
 	{
-	    m_gpbits = encoding & (LATIN1_MASK | UTF8_MASK);
+	    if (encoding) checkEncoding(encoding);
+	    m_gpbits = encoding;
 	}
 
 	/** @brief Supply pointer to the string representation.
@@ -243,6 +243,9 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
+
+	// Report error if encoding is invalid:
+	static void checkEncoding(unsigned int encoding);
     };
 }  // namespace CXXR
 

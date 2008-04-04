@@ -119,8 +119,6 @@ extern0 SEXP	R_SrcrefSymbol;     /* "srcref" */
 extern0 SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
 
-extern0 SEXP	R_StringHash;       /* Global hash of CHARSXPs */
-
 
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */

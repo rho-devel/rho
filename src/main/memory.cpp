@@ -338,38 +338,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 
     WeakRef::markThru(num_old_gens_to_collect);
 
-    // Purge R_StringHash hash table.  In future, when CHARSXP is
-    // embodied as a class, the hash table will be a static member of
-    // the class, and be maintained automatically by the constructors
-    // and destructor, so this special treatment will become
-    // unnecessary.
-    //
-    // Note that CXXR does *not*
-    // USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS.
-    { 
-	int nc = 0;
-	for (int i = 0; i < LENGTH(R_StringHash); i++) {
-	    SEXP s = VECTOR_ELT(R_StringHash, i);
-	    SEXP t = R_NilValue;
-	    while (s != R_NilValue) {
-		SEXP node = CXHEAD(s);
-		if (node->m_gcgen <= num_old_gens_to_collect
-		    && !node->isMarked()) {
-		    if (t == R_NilValue) /* head of list */
-			SET_VECTOR_ELT(R_StringHash, i, CXTAIL(s));
-		    else
-			SETCDR(t, CXTAIL(s));
-		}	
-		else
-		    t = s;
-		s = CXTAIL(s);
-	    }
-	    if(VECTOR_ELT(R_StringHash, i) != R_NilValue) nc++;
-	}
-	SET_TRUELENGTH(R_StringHash, nc); /* SET_HASHPRI, really */
-	MARK_THRU(&marker, R_StringHash);
-    }
-
     // Sweep.  gen must be signed here or the loop won't terminate!
     for (int gen = num_old_gens_to_collect; gen >= 0; --gen) {
 	if (gen == int(s_num_generations - 1)) {

@@ -176,8 +176,8 @@ LibExport AccuracyInfo R_AccuracyInfo;
 // Data declared extern in Defn.h :
 
 int	gc_inhibit_torture = 1;
-uintptr_t R_CStackLimit	= (uintptr_t)-1;	/* C stack limit */
-uintptr_t R_CStackStart	= (uintptr_t)-1;	/* Initial stack address */
+uintptr_t R_CStackLimit	= uintptr_t(-1);	/* C stack limit */
+uintptr_t R_CStackStart	= uintptr_t(-1);	/* Initial stack address */
 Rboolean  R_Slave	= FALSE;	/* Run as a slave process */
 FILE*	R_Consolefile	= NULL;	/* Console output file */
 FILE*	R_Outputfile	= NULL;	/* Output file */
@@ -197,7 +197,6 @@ attribute_hidden SEXP	R_SrcfileSymbol;    /* "srcfile" */
 attribute_hidden SEXP	R_SrcrefSymbol;     /* "srcref" */
 attribute_hidden SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 attribute_hidden SEXP	R_UseNamesSymbol;   /* "use.names" */
-attribute_hidden SEXP	R_StringHash;       /* Global hash of CHARSXPs */
 attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Size of the vector heap */
 attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
 attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
@@ -949,7 +948,6 @@ void setup_Rmainloop(void)
 
     InitTempDir(); /* must be before InitEd */
     InitMemory();
-    InitStringHash(); /* must be before InitNames */
     InitNames();
     InitBaseEnv();
     InitGlobalEnv();

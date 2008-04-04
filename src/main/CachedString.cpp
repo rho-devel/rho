@@ -32,38 +32,48 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file String.cpp
+/** @file CachedString.cpp
  *
- * Implementation of class CXXR::String and related functions.
+ * Implementation of class CXXR::CachedString and related functions.
  */
 
-#include "CXXR/String.h"
-
 #include "CXXR/CachedString.h"
-#include "CXXR/UncachedString.h"
 
 using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	int (*HASHVALUEptr)(SEXP x) = HASHVALUE;
-	Rboolean (*IS_LATIN1ptr)(const SEXP x) = IS_LATIN1;
-	Rboolean (*IS_UTF8ptr)(const SEXP x) = IS_UTF8;
-	const char* (*R_CHARp)(SEXP x) = R_CHAR;
+	SEXP (*mkCharp)(const char*) = Rf_mkChar;
+	SEXP (*mkCharEncp)(const char*, int) = Rf_mkCharEnc;
     }
 }
 
-GCRoot<String> String::s_na(new UncachedString("NA"));
-SEXP R_NaString = const_cast<String*>(String::NA());
+CachedString::map CachedString::s_cache;
 
-// String::Comparator::operator()(const String&, const String&) is in
-// sort.cpp
-
-void String::checkEncoding(unsigned int encoding)
+const CachedString* CachedString::obtain(const std::string& str,
+					 unsigned int encoding)
 {
+    // This will be checked again when we actually construct the
+    // CachedString, but we precheck now so that we don't create an
+    // invalid cache key:
     if (encoding != 0 && encoding != UTF8_MASK && encoding != LATIN1_MASK)
         error("unknown encoding mask: %d", encoding);
+    pair<map::iterator, bool> pr
+	= s_cache.insert(map::value_type(key(str, encoding), 0));
+    map::iterator it = pr.first;
+    if (pr.second) {
+	try {
+	    (*it).second = new CachedString(it);
+	} catch (...) {
+	    s_cache.erase(it);
+	    throw;
+	}
+    }
+    return (*it).second;
 }
-
-// int hash() const is in envir.cpp (for the time being)
+ 
+const char* CachedString::typeName() const
+{
+    return CachedString::staticTypeName();
+}

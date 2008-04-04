@@ -31,8 +31,8 @@ SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 
 SOURCES_CXX = \
 	ByteCode.cpp \
-	CConverters.cpp CellPool.cpp Closure.cpp CommandLineArgs.cpp \
-	ComplexVector.cpp ConsCell.cpp \
+	CConverters.cpp CachedString.cpp CellPool.cpp Closure.cpp \
+	CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DottedArgs.cpp \
 	Environment.cpp ExitException.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
