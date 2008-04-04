@@ -63,12 +63,14 @@ const char* ExternalPointer::typeName() const
 
 void ExternalPointer::visitChildren(const_visitor* v) const
 {
+    RObject::visitChildren(v);
     if (m_protege) m_protege->conductVisitor(v);
     if (m_tag) m_tag->conductVisitor(v);
 }
 
 void ExternalPointer::visitChildren(visitor* v)
 {
+    RObject::visitChildren(v);
     if (m_protege) m_protege->conductVisitor(v);
     if (m_tag) m_tag->conductVisitor(v);
 }
