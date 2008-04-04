@@ -233,7 +233,7 @@ namespace CXXR {
 	    m_hash = -1;
 	}
     private:
-	static GCRoot<String> s_na;
+	static GCRoot<const String> s_na;
 
 	const char* m_c_str;
 

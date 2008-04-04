@@ -56,7 +56,7 @@ namespace CXXR {
     }
 }
 
-vector<GCNode*>* GCRootBase::s_roots;
+vector<const GCNode*>* GCRootBase::s_roots;
 
 #ifdef NDEBUG
 vector<RObject*>* GCRootBase::s_pps;
@@ -66,7 +66,7 @@ vector<pair<RObject*, RCNTXT*> >* GCRootBase::s_pps;
 
 void GCRootBase::initialize()
 {
-    s_roots = new vector<GCNode*>;
+    s_roots = new vector<const GCNode*>;
 #ifdef NDEBUG
     s_pps = new vector<RObject*>;
 #else
@@ -142,31 +142,9 @@ void GCRootBase::unprotectPtr(RObject* node)
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)
 {
-    for (vector<GCNode*>::iterator it = s_roots->begin();
+    for (vector<const GCNode*>::iterator it = s_roots->begin();
 	 it != s_roots->end(); ++it) {
-	GCNode* n = *it;
-	if (n) n->conductVisitor(v);
-    }
-#ifdef NDEBUG
-    for (vector<RObject*>::iterator it = s_pps->begin();
-	 it != s_pps->end(); ++it) {
-	RObject* n = *it;
-	if (n) n->conductVisitor(v);
-    }
-#else
-    for (vector<pair<RObject*, RCNTXT*> >::iterator it = s_pps->begin();
-	 it != s_pps->end(); ++it) {
-	RObject* n = (*it).first;
-	if (n) n->conductVisitor(v);
-    }
-#endif
-}
-
-void GCRootBase::visitRoots(GCNode::visitor* v)
-{
-    for (vector<GCNode*>::iterator it = s_roots->begin();
-	 it != s_roots->end(); ++it) {
-	GCNode* n = *it;
+	const GCNode* n = *it;
 	if (n) n->conductVisitor(v);
     }
 #ifdef NDEBUG

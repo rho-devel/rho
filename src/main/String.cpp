@@ -54,7 +54,7 @@ namespace CXXR {
     }
 }
 
-GCRoot<String> String::s_na(new UncachedString("NA"));
+GCRoot<const String> String::s_na(new UncachedString("NA"));
 SEXP R_NaString = const_cast<String*>(String::NA());
 
 // String::Comparator::operator()(const String&, const String&) is in

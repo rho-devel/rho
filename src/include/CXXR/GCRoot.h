@@ -73,7 +73,7 @@ namespace CXXR {
      */
     class GCRootBase {
     public:
-	explicit GCRootBase(GCNode* node)
+	explicit GCRootBase(const GCNode* node)
 	    : m_index(s_roots->size())
 	{
 	    if (node) node->expose();
@@ -156,7 +156,7 @@ namespace CXXR {
 	 *
 	 * @return the GCNode pointer encapsulated by this object.
 	 */
-	GCNode* ptr() const
+	const GCNode* ptr() const
 	{
 	    return (*s_roots)[m_index];
 	}
@@ -211,23 +211,19 @@ namespace CXXR {
 	 * @param v Pointer to the const_visitor object.
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
-
-	/** @brief Conduct a visitor to all 'root' GCNode objects.
-	 *
-	 * Conduct a GCNode::visitor object to each root GCNode
-	 * and each node on the C pointer protection stack.
-	 *
-	 * @param v Pointer to the visitor object.
-	 */
-	static void visitRoots(GCNode::visitor* v);
     private:
 	friend class GCNode::SchwarzCtr;
+
+	// Note that we deliberately do not use CXXR::Allocator in
+	// declaring the following vectors: we really don't want a
+	// garbage collection happening just as we're trying to
+	// protect something from the garbage collector!
 
 	// There may be a case, at least in some C++ library
 	// implementations, for using a deque instead of a vector in
 	// the following, so that memory is released as the stack
 	// shrinks.
-	static std::vector<GCNode*>* s_roots;
+	static std::vector<const GCNode*>* s_roots;
 
 	// Ye olde pointer protection stack:
 #ifdef NDEBUG
@@ -266,9 +262,10 @@ namespace CXXR {
      * GCRoot objects are destroyed in the reverse order of creation,
      * and the destructor checks this.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  There
-     *          is at present no provision for const pointers to be
-     *          encapsulated within a GCRoot.
+     * @param T GCNode or a type publicly derived from GCNode.  This
+     *          may be qualified by const, so for example a const
+     *          String* may be encapsulated in a GCRoot using the type
+     *          GCRoot<const String>.
      *
      * \par Caller protects:
      * Suppose some code calls a function (or class method) that takes
@@ -368,7 +365,7 @@ namespace CXXR {
 	 */
 	T* get() const
 	{
-	    return static_cast<T*>(ptr());
+	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
 	}
     };
 }
