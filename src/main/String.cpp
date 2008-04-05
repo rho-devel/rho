@@ -39,7 +39,6 @@
 
 #include "CXXR/String.h"
 
-#include "CXXR/CachedString.h"
 #include "CXXR/UncachedString.h"
 
 using namespace std;
@@ -56,6 +55,8 @@ namespace CXXR {
 
 GCRoot<const String> String::s_na(new UncachedString("NA"));
 SEXP R_NaString = const_cast<String*>(String::NA());
+
+// String::s_blank and R_BlankString are defined in CachedString.cpp
 
 // String::Comparator::operator()(const String&, const String&) is in
 // sort.cpp

@@ -44,17 +44,10 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    extern SEXP R_BlankString;
-
 #define LATIN1_MASK (1<<2)
 #define UTF8_MASK   (1<<3)
 
 #ifdef __cplusplus
-}  // extern "C"
 
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -112,7 +105,7 @@ namespace CXXR {
 	 */
 	static const String* blank()
 	{
-	    return static_cast<String*>(R_BlankString);
+	    return s_blank;
 	}
 
 	/** @brief Access encapsulated C-style string.
@@ -234,6 +227,7 @@ namespace CXXR {
 	}
     private:
 	static GCRoot<const String> s_na;
+	static GCRoot<const String> s_blank;
 
 	const char* m_c_str;
 
@@ -254,6 +248,7 @@ extern "C" {
 #endif /* __cplusplus */
 
     extern SEXP R_NaString;
+    extern SEXP R_BlankString;
 
     /**
      * @param x \c const pointer to a CXXR::String .

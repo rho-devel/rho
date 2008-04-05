@@ -1059,8 +1059,6 @@ void InitNames()
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /* R_BlankString */
-    R_BlankString = mkChar("");
     /* Initialize the symbol Table */
     if (!(R_SymbolTable = reinterpret_cast<SEXP *>(malloc(HSIZE * sizeof(SEXP)))))
 	R_Suicide("couldn't allocate memory for symbol table");

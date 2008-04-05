@@ -51,6 +51,10 @@ namespace CXXR {
 
 CachedString::map CachedString::s_cache;
 
+// Defined here to make sure that s_cache is already initialised:
+GCRoot<const String> String::s_blank(CachedString::obtain(""));
+SEXP R_BlankString = const_cast<String*>(String::blank());
+
 const CachedString* CachedString::obtain(const std::string& str,
 					 unsigned int encoding)
 {
