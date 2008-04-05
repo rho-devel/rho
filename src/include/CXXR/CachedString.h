@@ -48,6 +48,8 @@
 #include <map>
 #include <string>
 
+#include "CXXR/Allocator.hpp"
+
 namespace CXXR {
     /** @brief String object held in a cache.
      *
@@ -93,7 +95,8 @@ namespace CXXR {
 	// to CachedString objects.  Each CachedString simply contains an
 	// iterator locating its text and encoding within the cache.
 	// In the future this may be changed to a TR1 unordered_map.
-	typedef std::map<key, CachedString*> map;
+	typedef std::map<key, CachedString*, std::less<key>,
+			 Allocator<std::pair<const key, CachedString*> > > map;
 
 	static map s_cache;
 
