@@ -2236,7 +2236,7 @@ void R_SaveGlobalEnvToFile(const char *name)
     }
     else {
 	SEXP args, call;
-	args = LCONS(ScalarString(mkChar(name)), R_NilValue);
+	args = CONS(ScalarString(mkChar(name)), R_NilValue);
 	PROTECT(call = LCONS(sym, args));
 	eval(call, R_GlobalEnv);
 	UNPROTECT(1);
