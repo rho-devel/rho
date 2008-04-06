@@ -67,16 +67,6 @@ SEXP Rf_append(SEXP first, SEXP second)
 #endif
 
 
-/*  mkPRIMSXP - return a builtin function      */
-/*              either "builtin" or "special"  */
-
-SEXP attribute_hidden mkPRIMSXP(int offset, int eval)
-{
-    SEXP result = new RObject(eval ? BUILTINSXP : SPECIALSXP);
-    SET_PRIMOFFSET(result, offset);
-    return (result);
-}
-
 /* This is called by function() {}, where an invalid
    body should be impossible. When called from 
    other places (eg do_asfunction) they 

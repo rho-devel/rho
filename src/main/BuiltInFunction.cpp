@@ -32,21 +32,23 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file InternalFunction.cpp
+/** @file BuiltInFunction.cpp
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in InternalFunction.h where
- * these are intended to be callable from C.  It is also used to check
- * that InternalFunction.h is self-contained, i.e. \#includes anything
- * it needs, and doesn't rely on anything having been previously
- * \#included in the enclosing source file.
+ * Brief Implementation of class CXXR::BuiltInFunction and associated
+ * C interface.
  */
 
-#include "CXXR/InternalFunction.h"
+#include "CXXR/BuiltInFunction.h"
+
+using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
 	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
-	void (*SET_PRIMOFFSETp)(SEXP x, int v) = SET_PRIMOFFSET;
     }
+}
+
+const char* BuiltInFunction::typeName() const
+{
+    return sexptype() == SPECIALSXP ? "special" : "builtin";
 }

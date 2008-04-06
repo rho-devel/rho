@@ -51,7 +51,7 @@
 
 #include "RCNTXT.h"
 #include "localization.h"
-#include "CXXR/InternalFunction.h"
+#include "CXXR/BuiltInFunction.h"
 
 /* seems unused */
 #define COUNTING
@@ -400,20 +400,20 @@ typedef struct {
 extern FUNTAB	R_FunTab[];	    /* Built in functions */
 
 #ifdef __cplusplus
-inline CCODE PRIMFUN(SEXP x) {return R_FunTab[x->u.primsxp.offset].cfun;}
-inline const char* PRIMNAME(SEXP x) {return R_FunTab[x->u.primsxp.offset].name;}
-inline int PRIMVAL(SEXP x) {return R_FunTab[x->u.primsxp.offset].code;}
-inline int PRIMARITY(SEXP x) {return R_FunTab[x->u.primsxp.offset].arity;}
-inline PPinfo PPINFO(SEXP x) {return R_FunTab[x->u.primsxp.offset].gram;}
+inline CCODE PRIMFUN(SEXP x) {return R_FunTab[PRIMOFFSET(x)].cfun;}
+inline const char* PRIMNAME(SEXP x) {return R_FunTab[PRIMOFFSET(x)].name;}
+inline int PRIMVAL(SEXP x) {return R_FunTab[PRIMOFFSET(x)].code;}
+inline int PRIMARITY(SEXP x) {return R_FunTab[PRIMOFFSET(x)].arity;}
+inline PPinfo PPINFO(SEXP x) {return R_FunTab[PRIMOFFSET(x)].gram;}
 
 inline int PRIMINTERNAL(SEXP x)
 {
-    return ((R_FunTab[x->u.primsxp.offset].eval)%100)/10;
+    return ((R_FunTab[PRIMOFFSET(x)].eval)%100)/10;
 }
 
 inline int PRIMPRINT(SEXP x)
 {
-    return ((R_FunTab[x->u.primsxp.offset].eval)/100)%10;
+    return ((R_FunTab[PRIMOFFSET(x)].eval)/100)%10;
 }
 
 #else  /* it's not C++, so: */
@@ -423,7 +423,7 @@ inline int PRIMPRINT(SEXP x)
 #define PRIMARITY(x)	(R_FunTab[PRIMOFFSET(x)].arity)
 #define PPINFO(x)	(R_FunTab[PRIMOFFSET(x)].gram)
 #define PRIMPRINT(x)	(((R_FunTab[PRIMOFFSET(x)].eval)/100)%10)
-#define PRIMINTERNAL(x)	(((R_FunTab[(x)->u.primsxp.offset].eval)%100)/10)
+#define PRIMINTERNAL(x)	(((R_FunTab[PRIMOFFSET(x)].eval)%100)/10)
 #endif
 
 #ifdef __cplusplus

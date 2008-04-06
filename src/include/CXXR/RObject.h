@@ -112,10 +112,6 @@ extern "C" {
 namespace CXXR {
     class RObject;
 
-    struct primsxp_struct {
-	int offset;
-    };
-
     struct symsxp_struct {
 	RObject *pname;
 	RObject *value;
@@ -224,7 +220,6 @@ namespace CXXR {
 	unsigned short& m_gpbits;
 	RObject *m_attrib;
 	union {
-	    struct primsxp_struct primsxp;
 	    struct symsxp_struct symsxp;
 	    struct envsxp_struct envsxp;
 	    struct closxp_struct closxp;

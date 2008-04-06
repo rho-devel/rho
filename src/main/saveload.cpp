@@ -546,12 +546,16 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* TAG(s) = */ m->InInteger(fp, d);
 	break;
     case SPECIALSXP:
-    case BUILTINSXP:
-	s = new RObject(type);
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	/* name = */ m->InString(fp, d);
+	s = new BuiltInFunction(StrToInternal(m->InString(fp, d)), false);
+	break;
+    case BUILTINSXP:
+	/* skip over length and name fields */
+	/* length = */ m->InInteger(fp, d);
+	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
+	s = new BuiltInFunction(StrToInternal(m->InString(fp, d)));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
@@ -626,7 +630,8 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
     case BUILTINSXP:
 	len = m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	SET_PRIMOFFSET(s, StrToInternal(m->InString(fp, d)));
+	// Skip offset field:
+	m->InString(fp, d);
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);

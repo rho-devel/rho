@@ -30,7 +30,7 @@ include $(top_builddir)/Makeconf
 SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
 
 SOURCES_CXX = \
-	ByteCode.cpp \
+	BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CachedString.cpp CellPool.cpp Closure.cpp \
 	CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DottedArgs.cpp \
@@ -38,7 +38,7 @@ SOURCES_CXX = \
         ExternalPointer.cpp \
         FlagWord.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
-        IntVector.cpp InternalFunction.cpp \
+        IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
         PairList.cpp Promise.cpp \
