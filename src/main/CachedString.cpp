@@ -49,11 +49,11 @@ namespace CXXR {
     }
 }
 
-CachedString::map CachedString::s_cache;
-
-// Defined here to make sure that s_cache is already initialised:
-GCRoot<const String> String::s_blank(CachedString::obtain(""));
-SEXP R_BlankString = const_cast<String*>(String::blank());
+CachedString::map* CachedString::cache()
+{
+    static map the_cache;
+    return &the_cache;
+}
 
 const CachedString* CachedString::obtain(const std::string& str,
 					 unsigned int encoding)
@@ -64,13 +64,13 @@ const CachedString* CachedString::obtain(const std::string& str,
     if (encoding != 0 && encoding != UTF8_MASK && encoding != LATIN1_MASK)
         error("unknown encoding mask: %d", encoding);
     pair<map::iterator, bool> pr
-	= s_cache.insert(map::value_type(key(str, encoding), 0));
+	= cache()->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;
     if (pr.second) {
 	try {
 	    (*it).second = new CachedString(it);
 	} catch (...) {
-	    s_cache.erase(it);
+	    cache()->erase(it);
 	    throw;
 	}
     }

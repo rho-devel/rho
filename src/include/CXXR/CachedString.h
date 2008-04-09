@@ -98,8 +98,6 @@ namespace CXXR {
 	typedef std::map<key, CachedString*, std::less<key>,
 			 Allocator<std::pair<const key, CachedString*> > > map;
 
-	static map s_cache;
-
 	map::iterator m_it;
 
 	explicit CachedString(map::iterator iter)
@@ -117,8 +115,11 @@ namespace CXXR {
 	// allocated only using 'new'.
 	~CachedString()
 	{
-	    s_cache.erase(m_it);
+	    cache()->erase(m_it);
 	}
+
+	// Return pointer to the cache:
+	static map* cache();
     };
 }  // namespace CXXR
 
