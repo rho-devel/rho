@@ -188,9 +188,8 @@ namespace CXXR {
 	    return m_tail;
 	}
 
-	// Virtual functions of GCNode:
+	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
-	void visitChildren(visitor* v);
     protected:
 	/**
 	 * @param st The required ::SEXPTYPE of the ConsCell.  Must

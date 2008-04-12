@@ -183,9 +183,8 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
 
-	// Virtual functions of GCNode:
+	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
-	void visitChildren(visitor* v);
     protected:
 	/**
 	 * Declared protected to ensure that EdgeVector objects are
@@ -211,16 +210,6 @@ namespace CXXR {
 
     template <typename Ptr, SEXPTYPE ST>
     void EdgeVector<Ptr, ST>::visitChildren(const_visitor* v) const
-    {
-	VectorBase::visitChildren(v);
-	for (unsigned int i = 0; i < size(); ++i) {
-	    Ptr ptr = (*this)[i];
-	    if (ptr) ptr->conductVisitor(v);
-	}
-    }
-		    
-    template <typename Ptr, SEXPTYPE ST>
-    void EdgeVector<Ptr, ST>::visitChildren(visitor* v)
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {

@@ -98,17 +98,6 @@ void ConsCell::visitChildren(const_visitor* v) const
     } while (p && (*v)(p));
 }
 
-void ConsCell::visitChildren(visitor* v)
-{
-    ConsCell* p = this;
-    do {
-	p->RObject::visitChildren(v);
-	if (p->m_car) p->m_car->conductVisitor(v);
-	if (p->m_tag) p->m_tag->conductVisitor(v);
-	p = p->m_tail;
-    } while (p && (*v)(p));
-}
-
 namespace {
     void indent(ostream& os, size_t margin)
     {

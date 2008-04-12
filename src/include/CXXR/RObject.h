@@ -174,9 +174,8 @@ namespace CXXR {
 	 */
 	const RObject* attributes() const {return m_attrib;}
 
-	// Virtual methods of GCNode:
+	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
-	void visitChildren(visitor* v);
 
 	/**
 	 * @return pointer to enclosing environment.

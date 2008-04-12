@@ -108,9 +108,3 @@ void RObject::visitChildren(const_visitor* v) const
 	break;
     }
 }
-
-void RObject::visitChildren(visitor* v)
-{
-    cerr << "RObject::visitChildren(visitor* v) not implemented yet.\n";
-    abort();
-}

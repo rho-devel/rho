@@ -180,9 +180,8 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
 
-	// Virtual functions of GCNode:
+	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
-	void visitChildren(visitor* v);
     private:
 	void* m_ptr;
 	RObject* m_tag;

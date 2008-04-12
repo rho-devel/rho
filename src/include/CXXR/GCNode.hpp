@@ -215,24 +215,6 @@ namespace CXXR {
 	    virtual bool operator()(const GCNode* node) = 0;
 	};
 
-	/** @brief Abstract base class for the Visitor design pattern.
-	 *
-	 * See Gamma et al 'Design Patterns' Ch. 5 for a description
-	 * of the Visitor design pattern.
-	 */
-	struct visitor {
-	    virtual ~visitor() {}
-
-	    /** @brief Perform visit
-	     *
-	     * @param node Node to be visited.
-	     *
-	     * @return true if the visitor wishes to visit the
-	     * children of this node, otherwise false.
-	     */
-	    virtual bool operator()(GCNode* node) = 0;
-	};
-
 	GCNode()
 	{
 	    ++s_num_nodes;
@@ -298,23 +280,6 @@ namespace CXXR {
 	    return true;
 	}
 
-	/** @brief Present this node, and maybe its children, to a
-	 * visitor.
-	 *
-	 * Present this node to a visitor and, if the visitor so
-	 * requests, conduct the visitor to the children of this node.
-	 * 
-	 * @param v Pointer to the visitor object.
-	 *
-	 * @return the result of applying the visitor to \e this node.
-	 */
-	bool conductVisitor(visitor* v)
-	{
-	    if (!(*v)(this)) return false;
-	    visitChildren(v);
-	    return true;
-	}
-
 	/** @brief Prevent old-to-new references.
 	 * 
 	 * If \a node points to a node of a younger generation than
@@ -365,22 +330,6 @@ namespace CXXR {
 	 * visited.
 	 */
 	virtual void visitChildren(const_visitor* v) const {}
-
-	/** @brief Conduct a visitor to the children of this node.
-	 *
-	 * The children of this node are those objects derived from
-	 * GCNode to which this node contains a pointer or a
-	 * reference.
-	 *
-	 * @param v Pointer to the visitor object.
-	 *
-	 * @note If this method is reimplemented in a derived class,
-	 * the reimplemented version must remember to invoke
-	 * visitChildren() for the immediate base class of the derived
-	 * class, to ensure that \e all children of the object get
-	 * visited.
-	 */
-	virtual void visitChildren(visitor* v) {}
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode

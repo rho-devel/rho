@@ -68,13 +68,6 @@ void ExternalPointer::visitChildren(const_visitor* v) const
     if (m_tag) m_tag->conductVisitor(v);
 }
 
-void ExternalPointer::visitChildren(visitor* v)
-{
-    RObject::visitChildren(v);
-    if (m_protege) m_protege->conductVisitor(v);
-    if (m_tag) m_tag->conductVisitor(v);
-}
-
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
     GCRoot<> tagr(tag);
