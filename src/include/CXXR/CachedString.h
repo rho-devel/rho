@@ -95,8 +95,12 @@ namespace CXXR {
 	// to CachedString objects.  Each CachedString simply contains an
 	// iterator locating its text and encoding within the cache.
 	// In the future this may be changed to a TR1 unordered_map.
-	typedef std::map<key, CachedString*, std::less<key>,
-			 Allocator<std::pair<const key, CachedString*> > > map;
+	// Note that we cannot use CXXR::Allocator here, because when
+	// creating a new CachedString, the call to insert() might
+	// lead to a garbage collection, which in turn might lead to a
+	// call to erase() before the insert() was complete.  (Yes, I
+	// tried this, and it took ages to debug!)
+	typedef std::map<key, CachedString*> map;
 
 	map::iterator m_it;
 

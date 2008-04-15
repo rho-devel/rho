@@ -802,12 +802,6 @@ void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.formals
 void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.body = v; }
 void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.env = v; }
 
-/* Symbol Accessors */
-
-void (SET_PRINTNAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.pname = v; }
-void (SET_SYMVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.value = v; }
-void (SET_INTERNAL)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.symsxp.internal = v; }
-
 /* Environment Accessors */
 
 void (SET_FRAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.frame = v; }

@@ -112,12 +112,6 @@ extern "C" {
 namespace CXXR {
     class RObject;
 
-    struct symsxp_struct {
-	RObject *pname;
-	RObject *value;
-	RObject *internal;
-    };
-
     struct envsxp_struct {
 	RObject *frame;
 	RObject *enclos;
@@ -219,7 +213,6 @@ namespace CXXR {
 	unsigned short& m_gpbits;
 	RObject *m_attrib;
 	union {
-	    struct symsxp_struct symsxp;
 	    struct envsxp_struct envsxp;
 	    struct closxp_struct closxp;
 	    struct promsxp_struct promsxp;
@@ -229,8 +222,6 @@ namespace CXXR {
 
     /* S4 object bit, set by R_do_new_object for all new() calls */
 #define S4_OBJECT_MASK (1<<4)
-
-#define DDVAL_MASK	1
 
 }  // namespace CXXR
 

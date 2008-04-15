@@ -28,21 +28,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Symbol.cpp
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in RSymbol.h where these are
- * intended to be callable from C.  It is also used to check that
- * Symbol.h is self-contained, i.e. \#includes anything it needs, and
- * doesn't rely on anything having been previously \#included in the
- * enclosing source file.
+ * @brief Implementation of class CXXR::Symbol and associated C
+ * interface.
  */
 
 #include "CXXR/Symbol.h"
+
+using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
@@ -50,7 +48,35 @@ namespace CXXR {
 	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
 	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
-	void (*SET_DDVALp)(SEXP x, int v) = SET_DDVAL;
 	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
     }
+}
+
+const char* Symbol::typeName() const
+{
+    return staticTypeName();
+}
+
+void Symbol::visitChildren(const_visitor* v) const
+{
+    RObject::visitChildren(v);
+    if (m_name) m_name->conductVisitor(v);
+    if (m_value) m_value->conductVisitor(v);
+    if (m_internalfunc) m_internalfunc->conductVisitor(v);
+}
+
+// ***** C interface *****
+
+SEXP Rf_mkSYMSXP(SEXP name, SEXP value)
+{
+    GCRoot<const String> namert(SEXP_downcast<const String*>(name));
+    GCRoot<> valuert(value);
+    return new Symbol(namert, valuert);
+}
+
+void SET_INTERNAL(SEXP x, SEXP v)
+{
+    Symbol& sym = *SEXP_downcast<Symbol*>(x);
+    BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
+    sym.setInternalFunction(fun);
 }

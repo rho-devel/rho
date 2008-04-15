@@ -115,13 +115,13 @@ Should NEVER happen; please bug.report() [mkCLOSXP]"));
 /*  mkSYMSXP - return a symsxp with the string  */
 /*             name inserted in the name field  */
 
-static int isDDName(SEXP name)
+static int isDDName(const String* name)
 {
     const char *buf;
     char *endp;
     long val;
 
-    buf = CHAR(name);
+    buf = name->c_str();
     if( !strncmp(buf, "..", 2) && strlen(buf) > 2 ) {
         buf += 2;
 	val = strtol(buf, &endp, 10);
@@ -133,18 +133,11 @@ static int isDDName(SEXP name)
     return 0;
 }
 
-SEXP attribute_hidden mkSYMSXP(SEXP name, SEXP value)
-
+Symbol::Symbol(const String* name, RObject* val,
+	       const BuiltInFunction* internal_func)
+    : RObject(SYMSXP), m_name(name), m_value(val),
+      m_internalfunc(internal_func)
 {
-    SEXP c;
-    int i;
-    PROTECT(name);
-    PROTECT(value);
-    i = isDDName(name);
-    c = new RObject(SYMSXP);
-    SET_PRINTNAME(c, name);
-    SET_SYMVALUE(c, value);
-    SET_DDVAL(c, i);
-    UNPROTECT(2);
-    return c;
+    if (name && isDDName(name))
+	m_gpbits |= DDVAL_MASK;
 }

@@ -105,11 +105,11 @@ namespace {
     }
 
     const char* sympname(const RObject* sym) {
-	const RObject* pname = sym->u.symsxp.pname;
+	const Symbol* symb = dynamic_cast<const Symbol*>(sym);
+	if (!symb) return "(SYMSXP is not a Symbol)";
+	const String* pname = symb->name();
 	if (!pname) return "(Symbol has no PRINTNAME)";
-	const String* pstr = dynamic_cast<const String*>(pname);
-	if (!pstr) return "(PRINTNAME not a String)";
-	return pstr->c_str();
+	return pname->c_str();
     }
 }
 

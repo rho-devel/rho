@@ -99,11 +99,6 @@ void RObject::visitChildren(const_visitor* v) const
 	if (u.promsxp.expr) u.promsxp.expr->conductVisitor(v);
 	if (u.promsxp.env) u.promsxp.env->conductVisitor(v);
 	break;
-    case SYMSXP:
-	if (u.symsxp.pname) u.symsxp.pname->conductVisitor(v);
-	if (u.symsxp.value) u.symsxp.value->conductVisitor(v);
-	if (u.symsxp.internal) u.symsxp.internal->conductVisitor(v);
-	break;
     default:
 	break;
     }
