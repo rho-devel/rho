@@ -83,12 +83,6 @@ void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);
     switch (sexptype()) {
-    case ENVSXP:
-	if (frame()) frame()->conductVisitor(v);
-	if (enclosingEnvironment())
-	    enclosingEnvironment()->conductVisitor(v);
-	if (hashTable()) hashTable()->conductVisitor(v);
-	break;
     case CLOSXP:
 	if (u.closxp.formals) u.closxp.formals->conductVisitor(v);
 	if (u.closxp.body) u.closxp.body->conductVisitor(v);

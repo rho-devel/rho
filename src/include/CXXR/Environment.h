@@ -18,7 +18,6 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2007
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +35,7 @@
  */
 
 /** @file Environment.h
- * @brief C interface associated with the future Environment class.
+ * @brief Class CXXR::Environment and associated C interface.
  */
 
 #ifndef RENVIRONMENT_H
@@ -45,102 +44,302 @@
 #include "CXXR/RObject.h"
 
 #ifdef __cplusplus
+
+#include "CXXR/ListVector.h"
+#include "CXXR/PairList.h"
+#include "CXXR/SEXP_downcast.hpp"
+
+namespace CXXR {
+    class Environment : public RObject {
+    public:
+	/**
+	 * @param enclosing Pointer to the enclosing environment.
+	 *
+	 * @param namevals List of name-value pairs used to initialize
+	 *          the environment.  Every element of this list must have
+	 *          a tag (not checked), and these tags must be
+	 *          distinct (not checked).  As presently implemented,
+	 *          the constructed Environment takes ownership of
+	 *          this list, so the calling code should not
+	 *          subsequently modify it.
+	 */
+	explicit Environment(Environment* enclosing = 0,
+			     PairList* namevals = 0)
+	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(namevals)
+	{}
+
+	/** @brief Access the enclosing environment.
+	 *
+	 * @return pointer to the enclosing environment.
+	 */
+	Environment* enclosingEnvironment() const
+	{
+	    return m_enclosing;
+	}
+
+	/** @brief Access the frame.
+	 *
+	 * @return pointer to the frame of this environment.
+	 */
+	PairList* frame()
+	{
+	    return m_frame;
+	}
+
+	/** @brief Access the frame (const variant).
+	 *
+	 * @return pointer to the frame of this environment.
+	 */
+	const PairList* frame() const
+	{
+	    return m_frame;
+	}
+
+	/** @brief Access the hash table.
+	 *
+	 * @return pointer to the hash table of this environment.
+	 */
+	ListVector* hashTable()
+	{
+	    return m_hashtable;
+	}
+
+	/** @brief Access the hash table (const variant).
+	 *
+	 * @return pointer to the hash table of this environment.
+	 */
+	const ListVector* hashTable() const
+	{
+	    return m_hashtable;
+	}
+
+	/** @brief Replace the enclosing environment.
+	 *
+	 * @param new_enclos Pointer to the environment now to be
+	 *          considered to enclose this Environment.
+	 */
+	void setEnclosingEnvironment(Environment* new_enclos)
+	{
+	    m_enclosing = new_enclos;
+	    devolveAge(m_enclosing);
+	}
+
+	/** @brief Replace the frame.
+	 *
+	 * @param new_frame Pointer to the new frame of this
+	 *          environment.  Every element of this list must have
+	 *          a tag (not checked), and these tags must be
+	 *          distinct (not checked).
+	 */
+	void setFrame(PairList* new_frame)
+	{
+	    m_frame = new_frame;
+	    devolveAge(m_frame);
+	}
+
+	/** @brief Replace the hash table.
+	 *
+	 * @param new_hash_table Pointer to the new hash table.
+	 *          (Because this member function will soon be
+	 *          replaced, we won't go into the detailed
+	 *          requirements for a hash table.)
+	 */
+	void setHashTable(ListVector* new_hash_table)
+	{
+	    m_hashtable = new_hash_table;
+	    devolveAge(m_hashtable);
+	}
+
+	/** @brief The name by which this type is known in R.
+	 *
+	 * @return The name by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "environment";
+	}
+
+	// Virtual function of RObject:
+	const char* typeName() const;
+
+	// Virtual function of GCNode:
+	void visitChildren(const_visitor* v) const;
+    private:
+	Environment* m_enclosing;
+	PairList* m_frame;
+	ListVector* m_hashtable;
+
+	// Declared private to ensure that Environment objects are
+	// created only using 'new':
+	~Environment() {}
+
+	// Not (yet) implemented.  Declared to prevent
+	// compiler-generated versions:
+	Environment(const Environment&);
+	Environment& operator=(const Environment&);
+    };
+}  // namespace CXXR
+
 extern "C" {
 #endif
 
-/**
- * @param s Pointer to an RObject.
- * @return TRUE iff the RObject pointed to by s is an environment.
- */
+    /** @brief Is this an Environment?
+     *
+     * @param s Pointer to an RObject.
+     *
+     * @return TRUE iff the RObject pointed to by s is an environment.
+     */
 #ifndef __cplusplus
-Rboolean Rf_isEnvironment(SEXP s);
+    Rboolean Rf_isEnvironment(SEXP s);
 #else
-inline Rboolean Rf_isEnvironment(SEXP s)
-{
-    return Rboolean(s && TYPEOF(s) == ENVSXP);
-}
+    inline Rboolean Rf_isEnvironment(SEXP s)
+    {
+	return Rboolean(s && TYPEOF(s) == ENVSXP);
+    }
 #endif
 
-/* Accessor functions. */
-
-/* Environment Access Functions */
-
-/**
- * @param x Pointer to an \c REnvironment.
- * @return Pointer to the frame of \a x .
- */
+    /** @brief Access enclosing environment.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @return Pointer to the enclosing environment of \a x .
+     */
 #ifndef __cplusplus
-SEXP FRAME(SEXP x);
+    SEXP ENCLOS(SEXP x);
 #else
-inline SEXP FRAME(SEXP x) {return x->u.envsxp.frame;}
+    inline SEXP ENCLOS(SEXP x)
+    {
+	const CXXR::Environment& env
+	    = *CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	return env.enclosingEnvironment();
+    }
 #endif
 
-/**
- * @param x Pointer to an \c REnvironment.
- * @return Pointer to \a x 's enclosing environment.
- */
+    /** @brief Access an environment's flags.
+     *
+     * @param x Pointer to a CXXR::Environment (not currently checked).
+     *
+     * @return the environment flags of \a x .
+     */
 #ifndef __cplusplus
-SEXP ENCLOS(SEXP x);
+    int ENVFLAGS(SEXP x);
 #else
-inline SEXP ENCLOS(SEXP x) {return x->u.envsxp.enclos;}
+    inline int ENVFLAGS(SEXP x) {return x->m_gpbits;}
 #endif
 
-/**
- * @param x Pointer to an \c REnvironment.
- * @return Pointer to \a x 's hash table (may be NULL).
- */
+    /** @brief Access an environment's frame.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @return Pointer to the frame of \a x (may be null).
+     */
 #ifndef __cplusplus
-SEXP HASHTAB(SEXP x);
+    SEXP FRAME(SEXP x);
 #else
-inline SEXP HASHTAB(SEXP x) {return x->u.envsxp.hashtab;}
+    inline SEXP FRAME(SEXP x)
+    {
+	CXXR::Environment* env
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	return env->frame();
+    }
 #endif
 
-/**
- * @param x Pointer to an \c REnvironment.
- * @return \a x 's environment flags.
- * @deprecated
- */
+    /** @brief Access an environment's hash table.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @return Pointer to the hash table of \a x (may be null).
+     */
 #ifndef __cplusplus
-int ENVFLAGS(SEXP x);
+    SEXP HASHTAB(SEXP x);
 #else
-inline int ENVFLAGS(SEXP x) {return x->m_gpbits;}
+    inline SEXP HASHTAB(SEXP x)
+    {
+	CXXR::Environment* env
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	return env->hashTable();
+    }
 #endif
 
-/**
- * Set environment flags.
- * @param x Pointer to an \c REnvironment.
- * @param v The new flags.
- * @deprecated
- */
+    /** @brief Set an environment's enclosing environment.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @param v Pointer to a CXXR::Environment (checked) intended to be
+     *          the new enclosing environment of \a x.
+     */
 #ifndef __cplusplus
-void SET_ENVFLAGS(SEXP x, int v);
+    void SET_ENCLOS(SEXP x, SEXP v);
 #else
-inline void SET_ENVFLAGS(SEXP x, int v) {x->m_gpbits = v;}
+    inline void SET_ENCLOS(SEXP x, SEXP v)
+    {
+	CXXR::Environment* env
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	CXXR::Environment* enc
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(v);
+	env->setEnclosingEnvironment(enc);
+    }
 #endif
 
-/**
- * Set environment's frame.
- * @param x Pointer to an \c REnvironment.
- * @param v Pointer to the new frame.
- * @todo Probably should be private.
- */
-void SET_FRAME(SEXP x, SEXP v);
+    /** @brief Set environment flags.
+     *
+     * @param x Pointer to a CXXR::Environment (not currently checked).
+     *
+     * @param v The new flags.
+     *
+     * @deprecated
+     */
+#ifndef __cplusplus
+    void SET_ENVFLAGS(SEXP x, int v);
+#else
+    inline void SET_ENVFLAGS(SEXP x, int v) {x->m_gpbits = v;}
+#endif
 
-/**
- * Set environment's enclosing environment.
- * @param x Pointer to an \c REnvironment.
- * @param v Pointer to the new enclosing environment.
- * @todo Probably should be private.
- */
-void SET_ENCLOS(SEXP x, SEXP v);
+    /** @brief Set environment's frame.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @param v Pointer to the new frame.  This must be a CXXR::PairList
+     *          (checked), and every element of this list must have a tag
+     *          (not checked), and these tags must be distinct (not
+     *          checked).
+     *
+     * @todo Probably should be private.
+     */
+#ifndef __cplusplus
+    void SET_FRAME(SEXP x, SEXP v);
+#else
+    inline void SET_FRAME(SEXP x, SEXP v)
+    {
+	CXXR::Environment* env
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	CXXR::PairList* pl
+	    = CXXR::SEXP_downcast<CXXR::PairList*>(v);
+	env->setFrame(pl);
+    }
+#endif
 
-/**
- * Set environment's hash table.
- * @param x Pointer to an \c REnvironment.
- * @param v Pointer to the hash table.
- * @todo Probably should be private.
- */
-void SET_HASHTAB(SEXP x, SEXP v);
+    /** @brief Set environment's hash table.
+     *
+     * @param x Pointer to a CXXR::Environment (checked).
+     *
+     * @param v Pointer to the new hash table, which must be a
+     * CXXR::ListVector (checked), and satisfy other conditions.
+     *
+     * @todo To be removed quite soon.
+     */
+#ifndef __cplusplus
+    void SET_HASHTAB(SEXP x, SEXP v);
+#else
+    inline void SET_HASHTAB(SEXP x, SEXP v)
+    {
+	CXXR::Environment* env
+	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
+	CXXR::ListVector* lv
+	    = CXXR::SEXP_downcast<CXXR::ListVector*>(v);
+	env->setHashTable(lv);
+    }
+#endif
 
 #ifdef __cplusplus
 }

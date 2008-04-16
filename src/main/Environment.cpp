@@ -34,15 +34,14 @@
 
 /** @file Environment.cpp
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in Environment.h where
- * these are intended to be callable from C.  It is also used to check
- * that Environment.h is self-contained, i.e. \#includes anything it
- * needs, and doesn't rely on anything having been previously
- * \#included in the enclosing source file.
+ *
+ * @brief Implementation of class CXXR:Environment and associated C
+ * interface.
  */
 
 #include "CXXR/Environment.h"
+
+using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
@@ -53,6 +52,23 @@ namespace CXXR {
 	SEXP (*HASHTABp)(SEXP x) = HASHTAB;
 	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
+	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENVFLAGSp)(SEXP x, int v) = SET_ENVFLAGS;
+	void (*SET_FRAMEp)(SEXP x, SEXP v) = SET_FRAME;
+	void (*SET_HASHTABp)(SEXP x, SEXP v) = SET_HASHTAB;
     }
+}
+
+
+const char* Environment::typeName() const
+{
+    return staticTypeName();
+}
+
+void Environment::visitChildren(const_visitor* v) const
+{
+    RObject::visitChildren(v);
+    if (m_enclosing) m_enclosing->conductVisitor(v);
+    if (m_frame) m_frame->conductVisitor(v);
+    if (m_hashtable) m_hashtable->conductVisitor(v);
 }

@@ -146,6 +146,11 @@ namespace CXXR {
 	static GCRoot<SpecialSymbol> s_unbound_value;
 
 	const String& m_name;
+
+	// Not (yet) implemented.  Declared to prevent
+	// compiler-generated versions:
+	SpecialSymbol(const SpecialSymbol&);
+	SpecialSymbol& operator=(const SpecialSymbol&);
     };
 }  // namespace CXXR
 

@@ -112,12 +112,6 @@ extern "C" {
 namespace CXXR {
     class RObject;
 
-    struct envsxp_struct {
-	RObject *frame;
-	RObject *enclos;
-	RObject *hashtab;
-    };
-
     struct closxp_struct {
 	RObject *formals;
 	RObject *body;
@@ -171,21 +165,6 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
 
-	/**
-	 * @return pointer to enclosing environment.
-	 */
-	const RObject* enclosingEnvironment() const {return u.envsxp.enclos;}
-
-	/**
-	 * @return pointer to frame of this environment.
-	 */
-	const RObject* frame() const {return u.envsxp.frame;}
-
-	/**
-	 * @return pointer to hash table of this environment.
-	 */
-	const RObject* hashTable() const {return u.envsxp.hashtab;}
-
 	/** @brief Get an object's ::SEXPTYPE.
 	 *
 	 * @return ::SEXPTYPE of this object.
@@ -213,7 +192,6 @@ namespace CXXR {
 	unsigned short& m_gpbits;
 	RObject *m_attrib;
 	union {
-	    struct envsxp_struct envsxp;
 	    struct closxp_struct closxp;
 	    struct promsxp_struct promsxp;
 	    struct vecsxp_struct vecsxp;

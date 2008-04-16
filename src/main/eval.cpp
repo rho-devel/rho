@@ -2179,7 +2179,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(newrho = new RObject(ENVSXP));
+    PROTECT(newrho = new Environment);
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;
     for (i = 0 ; i < nargs ; i++) {

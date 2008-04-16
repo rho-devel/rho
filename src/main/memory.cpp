@@ -544,27 +544,18 @@ void InitMemory()
 */
 SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 {
-    SEXP v, n, newrho;
-
-    PROTECT(namelist);
-    PROTECT(valuelist);
-    PROTECT(rho);
-    newrho = new RObject(ENVSXP);
-    UNPROTECT(3);
-#if VALGRIND_LEVEL > 2
-    VALGRIND_MAKE_READABLE(newrho, sizeof(*newrho));
-#endif
-    newrho->u.envsxp.frame = valuelist;  // FRAME
-    newrho->u.envsxp.enclos = rho;  // ENCLOS
-
-    v = valuelist;
-    n = namelist;
+    SEXP v = valuelist;
+    SEXP n = namelist;
     while (v != R_NilValue && n != R_NilValue) {
 	SET_TAG(v, TAG(n));
 	v = CDR(v);
 	n = CDR(n);
     }
-    return (newrho);
+    
+    GCRoot<> namelistr(namelist);
+    GCRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
+    GCRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
+    return new Environment(rhor, namevalr);
 }
 
 /* mkPROMISE is defined directly do avoid the need to protect its arguments
@@ -798,12 +789,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.formals = v; }
 void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.body = v; }
 void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.env = v; }
-
-/* Environment Accessors */
-
-void (SET_FRAME)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.frame = v; }
-void (SET_ENCLOS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.enclos = v; }
-void (SET_HASHTAB)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.envsxp.hashtab = v; }
 
 /* Promise Accessors */
 

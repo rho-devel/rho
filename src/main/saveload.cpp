@@ -1414,7 +1414,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
     }
     /* Allocate the environments */
     for (count = 0; count < env_count; ++count)
-	SET_VECTOR_ELT(env_table, count, new RObject(ENVSXP));
+	SET_VECTOR_ELT(env_table, count, new Environment);
 
     /* Now fill them in  */
     for (count = 0; count < env_count; ++count) {

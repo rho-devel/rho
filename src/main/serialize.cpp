@@ -1306,7 +1306,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    PROTECT(s = new RObject(ENVSXP));
+	    PROTECT(s = new Environment);
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, s);

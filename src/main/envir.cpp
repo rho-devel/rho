@@ -2006,12 +2006,11 @@ SEXP do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    for (x = CAR(args); x != R_NilValue; x = CDR(x))
 		if (TAG(x) == R_NilValue)
 		    error(_("all elements of a list must be named"));
-	    PROTECT(s = new RObject(ENVSXP));
-	    SET_FRAME(s, duplicate(CAR(args)));
+	    PROTECT(s = new Environment(0, SEXP_downcast<PairList*>(duplicate(CAR(args)))));
 	} else if (isEnvironment(CAR(args))) {
 	    SEXP p, loadenv = CAR(args);
 
-	    PROTECT(s = new RObject(ENVSXP));
+	    PROTECT(s = new Environment);
 	    if (HASHTAB(loadenv) != R_NilValue) {
 		int i, n;
 		n = length(HASHTAB(loadenv));
@@ -2052,7 +2051,7 @@ SEXP do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
        	R_ObjectTable *tb = reinterpret_cast<R_ObjectTable*>(R_ExternalPtrAddr(CAR(args)));
         if(tb->onAttach)
 	    tb->onAttach(tb);
-        s = new RObject(ENVSXP);
+        s = new Environment;
         SET_HASHTAB(s, CAR(args));
 	setAttrib(s, R_ClassSymbol, getAttrib(HASHTAB(s), R_ClassSymbol));
     }

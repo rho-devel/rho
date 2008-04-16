@@ -250,7 +250,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     /* Create a new environment without any */
     /* of the formals to the generic in it. */
 
-    PROTECT(newrho = new RObject(ENVSXP));
+    PROTECT(newrho = new Environment);
     op = CAR(cptr->call);
     switch (TYPEOF(op)) {
     case SYMSXP:
@@ -740,7 +740,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     PROTECT(s = allocVector(STRSXP, length(klass) - i));
     PROTECT(klass = duplicate(klass));
-    PROTECT(m = new RObject(ENVSXP));
+    PROTECT(m = new Environment);
     for (j = 0; j < length(s); j++)
 	SET_STRING_ELT(s, j, duplicate(STRING_ELT(klass, i++)));
     setAttrib(s, install("previous"), klass);

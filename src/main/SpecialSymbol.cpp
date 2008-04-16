@@ -42,6 +42,8 @@
 
 using namespace CXXR;
 
+// Force the creation of non-inline embodiments of functions callable
+// from C:
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
