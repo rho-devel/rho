@@ -41,22 +41,14 @@
 #ifndef RSYMBOL_H
 #define RSYMBOL_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/SpecialSymbol.h"
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-    extern SEXP R_UnboundValue;
-
-#ifdef __cplusplus
-}  // extern "C"
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/String.h"
 
 namespace CXXR {
-    class Symbol : public RObject {
+    class Symbol : public SpecialSymbol {
     public:
 	/**
 	 * @param name Pointer to String object representing the name
@@ -74,7 +66,7 @@ namespace CXXR {
 	 * @param internal_func Pointer to an internal function to be
 	 *          denoted by the constructed Symbol.
 	 */
-	explicit Symbol(const String* name, RObject* val = R_UnboundValue,
+	explicit Symbol(const String& name, RObject* val = unboundValue(),
 			const BuiltInFunction* internal_func = 0);
 
 	/** @brief Access internal function.
@@ -87,13 +79,14 @@ namespace CXXR {
 	    return m_internalfunc;
 	}
 
-	/** @brief Access name.
+	/** @brief Is this a double-dot symbol?
 	 *
-	 * @return const pointer to the name of this Symbol.
+	 * @return true iff this symbol relates to an element of a
+	 *         <tt>...</tt> argument list.
 	 */
-	const String* name() const
+	bool isDDSymbol() const
 	{
-	    return m_name;
+	    return m_flags[s_DDBIT];
 	}
 
 	/** @brief Set internal function.
@@ -162,7 +155,6 @@ namespace CXXR {
     private:
 	static const unsigned int s_DDBIT = 0;
 
-	const String* m_name;
 	RObject* m_value;
 	const BuiltInFunction* m_internalfunc;
 
@@ -197,8 +189,6 @@ extern "C" {
     extern SEXP R_SeedsSymbol;	/* ".Random.seed" */
     extern SEXP R_TspSymbol;	/* "tsp" */
 
-#define DDVAL_MASK 1
-
     /** @brief Does symbol relate to a <tt>...</tt> expression?
      *
      * @param x Pointer to a CXXR::Symbol (checked).
@@ -211,7 +201,8 @@ extern "C" {
 #else
     inline Rboolean DDVAL(SEXP x)
     {
-	return Rboolean(x->m_gpbits & DDVAL_MASK);
+	const CXXR::Symbol& sym = *CXXR::SEXP_downcast<CXXR::Symbol*>(x);
+	return Rboolean(sym.isDDSymbol());
     }
 #endif
 
@@ -233,22 +224,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Test if SYMSXP.
-     *
-     * @param s Pointer to a CXXR::RObject.
-     *
-     * @return TRUE iff s points to a CXXR::RObject with ::SEXPTYPE
-     *         SYMSXP. 
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isSymbol(SEXP s);
-#else
-    inline Rboolean Rf_isSymbol(SEXP s)
-    {
-	return Rboolean(s && TYPEOF(s) == SYMSXP);
-    }
-#endif
-
     /** @brief Create a CXXR::Symbol object.
      *
      * @param name Pointer to a CXXR::String object (checked) to be
@@ -261,23 +236,6 @@ extern "C" {
      * @return Pointer to the created CXXR::Symbol object.
      */
     SEXP Rf_mkSYMSXP(SEXP name, SEXP value);
-
-    /** @brief Symbol name.
-     *
-     * @param x Pointer to a CXXR::Symbol (checked).
-     *
-     * @return Pointer to a CXXR::String representings \a x's name.
-     */
-#ifndef __cplusplus
-    SEXP PRINTNAME(SEXP x);
-#else
-    inline SEXP PRINTNAME(SEXP x)
-    {
-	const CXXR::Symbol& sym
-	    = *CXXR::SEXP_downcast<CXXR::Symbol*>(x);
-	return const_cast<CXXR::String*>(sym.name());
-    }
-#endif
 
     /** @brief Set internal function denoted by a symbol.
      *

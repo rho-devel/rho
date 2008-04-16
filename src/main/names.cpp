@@ -50,6 +50,7 @@
 #include <R_ext/RConverters.h>
 
 #include <Rinterface.h>
+#include "CXXR/CachedString.h"
 #include "CXXR/GCRoot.h"
 
 using namespace CXXR;
@@ -1038,12 +1039,6 @@ extern SEXP framenames; /* from model.c */
 void InitNames()
 {
     int i;
-    /* R_UnboundValue */
-    R_UnboundValue = new Symbol(0, R_UnboundValue);
-    /* R_MissingArg */
-    R_MissingArg = new Symbol(String::blank(), R_MissingArg);
-    /* R_RestartToken */
-    R_RestartToken = new Symbol(String::blank(), R_RestartToken);
     /* Parser Structures */
     R_CommentSxp = R_NilValue;
     /* String constants (CHARSXP values) */

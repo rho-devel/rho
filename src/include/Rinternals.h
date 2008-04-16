@@ -257,11 +257,7 @@ LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 LibExtern SEXP	R_NilValue;	    /* The nil object */
 LibExtern SEXP	R_UnboundValue;	    /* Unbound marker */
 LibExtern SEXP	R_MissingArg;	    /* Missing argument marker */
-#ifdef __MAIN__
-attribute_hidden
-#else
 extern
-#endif
 SEXP	R_RestartToken;     /* Marker for restarted function calls */
 
 /* Symbol Table Shortcuts */

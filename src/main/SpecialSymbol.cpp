@@ -32,61 +32,38 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file Symbol.cpp
+/** @file SpecialSymbol.cpp
  *
- * @brief Implementation of class CXXR::Symbol and associated C
+ * @brief Implementation of class CXXR:SpecialSymbol and associated C
  * interface.
  */
 
-#include "CXXR/Symbol.h"
-
-#include "boost/regex.hpp"
+#include "CXXR/SpecialSymbol.h"
 
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	Rboolean (*DDVALp)(SEXP x) = DDVAL;
-	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
-	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
+	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
+	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
     }
 }
+GCRoot<SpecialSymbol> SpecialSymbol::s_missing_arg(new SpecialSymbol);
+SEXP R_MissingArg = SpecialSymbol::missingArgument();
 
-namespace {
-    boost::basic_regex<char> dd_regex("\\.\\.\\d+");
-}
+GCRoot<SpecialSymbol> SpecialSymbol::s_restart_token(new SpecialSymbol);
+SEXP R_RestartToken = SpecialSymbol::restartToken();
 
-Symbol::Symbol(const String& name, RObject* val,
-	       const BuiltInFunction* internal_func)
-    : SpecialSymbol(name), m_value(val), m_internalfunc(internal_func)
-{
-    m_flags[s_DDBIT] = boost::regex_match(name.c_str(), dd_regex);
-}
+GCRoot<SpecialSymbol> SpecialSymbol::s_unbound_value(new SpecialSymbol);
+SEXP R_UnboundValue = SpecialSymbol::unboundValue();
 
-const char* Symbol::typeName() const
+const char* SpecialSymbol::typeName() const
 {
     return staticTypeName();
 }
 
-void Symbol::visitChildren(const_visitor* v) const
+void SpecialSymbol::visitChildren(const_visitor* v) const
 {
-    SpecialSymbol::visitChildren(v);
-    if (m_value) m_value->conductVisitor(v);
-    if (m_internalfunc) m_internalfunc->conductVisitor(v);
-}
-
-// ***** C interface *****
-
-SEXP Rf_mkSYMSXP(SEXP name, SEXP value)
-{
-    GCRoot<const String> namert(SEXP_downcast<const String*>(name));
-    GCRoot<> valuert(value);
-    return new Symbol(*namert, valuert);
-}
-
-void SET_INTERNAL(SEXP x, SEXP v)
-{
-    Symbol& sym = *SEXP_downcast<Symbol*>(x);
-    BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
-    sym.setInternalFunction(fun);
+    RObject::visitChildren(v);
+    m_name.conductVisitor(v);
 }

@@ -135,8 +135,6 @@ LibExport SEXP  R_BaseEnv;	    /* The base environment; formerly R_NilValue */
 LibExport SEXP	R_BaseNamespace;    /* The (fake) name space for base */
 LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 LibExport SEXP	R_NilValue;	    /* The nil object */
-LibExport SEXP	R_UnboundValue;	    /* Unbound marker */
-LibExport SEXP	R_MissingArg;	    /* Missing argument marker */
 LibExport SEXP	R_Bracket2Symbol;   /* "[[" */
 LibExport SEXP	R_BracketSymbol;    /* "[" */
 LibExport SEXP	R_BraceSymbol;      /* "{" */

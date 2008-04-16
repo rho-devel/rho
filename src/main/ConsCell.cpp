@@ -105,11 +105,9 @@ namespace {
     }
 
     const char* sympname(const RObject* sym) {
-	const Symbol* symb = dynamic_cast<const Symbol*>(sym);
-	if (!symb) return "(SYMSXP is not a Symbol)";
-	const String* pname = symb->name();
-	if (!pname) return "(Symbol has no PRINTNAME)";
-	return pname->c_str();
+	const SpecialSymbol* symb = dynamic_cast<const SpecialSymbol*>(sym);
+	if (!symb) return "(SYMSXP is not a Symbol or SpecialSymbol)";
+	return symb->name().c_str();
     }
 }
 

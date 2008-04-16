@@ -109,35 +109,3 @@ Should NEVER happen; please bug.report() [mkCLOSXP]"));
     UNPROTECT(3);
     return c;
 }
-
-/* mkChar - make a character (CHARSXP) variable -- see Rinlinedfuns.h */
-
-/*  mkSYMSXP - return a symsxp with the string  */
-/*             name inserted in the name field  */
-
-static int isDDName(const String* name)
-{
-    const char *buf;
-    char *endp;
-    long val;
-
-    buf = name->c_str();
-    if( !strncmp(buf, "..", 2) && strlen(buf) > 2 ) {
-        buf += 2;
-	val = strtol(buf, &endp, 10);
-        if( *endp != '\0')
-	    return 0;
-	else
-	    return 1;
-    }
-    return 0;
-}
-
-Symbol::Symbol(const String* name, RObject* val,
-	       const BuiltInFunction* internal_func)
-    : RObject(SYMSXP), m_name(name), m_value(val),
-      m_internalfunc(internal_func)
-{
-    if (name && isDDName(name))
-	m_gpbits |= DDVAL_MASK;
-}
