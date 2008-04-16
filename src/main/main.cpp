@@ -128,13 +128,8 @@ LibExport RCNTXT* R_GlobalContext;    /* The global environment */
 
 // Data declared LibExtern in Rinternals.h :
 
-LibExport SEXP	R_GlobalEnv;	    /* The "global" environment */
-LibExport SEXP  R_EmptyEnv;	    /* An empty environment at the root of the
-				    	environment tree */
-LibExport SEXP  R_BaseEnv;	    /* The base environment; formerly R_NilValue */
 LibExport SEXP	R_BaseNamespace;    /* The (fake) name space for base */
 LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
-LibExport SEXP	R_NilValue;	    /* The nil object */
 LibExport SEXP	R_Bracket2Symbol;   /* "[[" */
 LibExport SEXP	R_BracketSymbol;    /* "[" */
 LibExport SEXP	R_BraceSymbol;      /* "{" */
@@ -946,7 +941,6 @@ void setup_Rmainloop(void)
     InitTempDir(); /* must be before InitEd */
     InitMemory();
     InitNames();
-    InitBaseEnv();
     InitGlobalEnv();
     InitDynload();
     InitOptions();

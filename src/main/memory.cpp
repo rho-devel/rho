@@ -278,9 +278,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     GCRootBase::visitRoots(&marker);
     MARK_THRU(&marker, R_CommentSxp);	        /* Builtin constants */
 
-    MARK_THRU(&marker, R_GlobalEnv);	           /* Global environment */
-    MARK_THRU(&marker, R_BaseEnv);
-    MARK_THRU(&marker, R_EmptyEnv);
     MARK_THRU(&marker, R_Warnings);	           /* Warnings, if any */
 
     MARK_THRU(&marker, R_HandlerStack);          /* Condition handler stack */

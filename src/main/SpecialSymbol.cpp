@@ -50,6 +50,7 @@ namespace CXXR {
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
     }
 }
+
 GCRoot<SpecialSymbol> SpecialSymbol::s_missing_arg(new SpecialSymbol);
 SEXP R_MissingArg = SpecialSymbol::missingArgument();
 

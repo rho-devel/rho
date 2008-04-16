@@ -657,15 +657,8 @@ static SEXP R_GlobalCache, R_GlobalCachePreserve;
 #endif
 static SEXP R_BaseNamespaceName;
 
-void InitBaseEnv()
-{
-    R_EmptyEnv = NewEnvironment(R_NilValue, R_NilValue, R_NilValue);
-    R_BaseEnv = NewEnvironment(R_NilValue, R_NilValue, R_EmptyEnv);
-}
-
 void InitGlobalEnv()
 {
-    R_GlobalEnv = NewEnvironment(R_NilValue, R_NilValue, R_BaseEnv);
 #ifdef NEW_CODE
     HASHTAB(R_GlobalEnv) = R_NewHashTable(100);
 #endif

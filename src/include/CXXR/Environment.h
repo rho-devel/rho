@@ -68,6 +68,15 @@ namespace CXXR {
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(namevals)
 	{}
 
+	/** @brief Base environment.
+	 *
+	 * @return pointer to the base environment.
+	 */
+	static Environment* base()
+	{
+	    return s_base_env;
+	}
+
 	/** @brief Access the enclosing environment.
 	 *
 	 * @return pointer to the enclosing environment.
@@ -75,6 +84,15 @@ namespace CXXR {
 	Environment* enclosingEnvironment() const
 	{
 	    return m_enclosing;
+	}
+
+	/** @brief Empty environment.
+	 *
+	 * @return const pointer to the standard empty environment.
+	 */
+	static const Environment* emptyEnvironment()
+	{
+	    return s_empty_env;
 	}
 
 	/** @brief Access the frame.
@@ -93,6 +111,15 @@ namespace CXXR {
 	const PairList* frame() const
 	{
 	    return m_frame;
+	}
+
+	/** @brief Global environment.
+	 *
+	 * @return pointer to the global environment.
+	 */
+	static Environment* global()
+	{
+	    return s_global_env;
 	}
 
 	/** @brief Access the hash table.
@@ -165,6 +192,10 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
     private:
+	static GCRoot<Environment> s_empty_env;
+	static GCRoot<Environment> s_base_env;
+	static GCRoot<Environment> s_global_env;
+
 	Environment* m_enclosing;
 	PairList* m_frame;
 	ListVector* m_hashtable;
@@ -182,6 +213,10 @@ namespace CXXR {
 
 extern "C" {
 #endif
+
+    extern SEXP R_EmptyEnv;
+    extern SEXP R_BaseEnv;
+    extern SEXP R_GlobalEnv;
 
     /** @brief Is this an Environment?
      *

@@ -59,6 +59,14 @@ namespace CXXR {
     }
 }
 
+GCRoot<Environment> Environment::s_empty_env(new Environment);
+SEXP R_EmptyEnv = const_cast<Environment*>(Environment::emptyEnvironment());
+
+GCRoot<Environment> Environment::s_base_env(new Environment(s_empty_env));
+SEXP R_BaseEnv = Environment::base();
+
+GCRoot<Environment> Environment::s_global_env(new Environment(s_base_env));
+SEXP R_GlobalEnv = Environment::global();
 
 const char* Environment::typeName() const
 {
