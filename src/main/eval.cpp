@@ -372,7 +372,6 @@ static SEXP forcePromise(SEXP e)
 	R_PendingPromises = prstack.next;
 	SET_PRSEEN(e, 0);
 	SET_PRVALUE(e, val);
-	SET_PRENV(e, R_NilValue);
     }
     return PRVALUE(e);
 }
@@ -866,7 +865,6 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	    SET_MISSING(FRAME(newrho), missing);
 	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
 		SEXP deflt;
-		SET_PRENV(val, newrho);
 		/* find the symbol in the method, copy its expression
 		 * to the promise */
 		for(deflt = FORMALS(op); deflt != R_NilValue; deflt = CDR(deflt)) {
@@ -876,7 +874,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		if(deflt == R_NilValue)
 		    error(_("symbol \"%s\" not in environment of method"),
 			  CHAR(PRINTNAME(symbol)));
-		SET_PRCODE(val, CAR(deflt));
+		val = mkPROMISE(CAR(deflt), newrho);
 	    }
 	}
     }

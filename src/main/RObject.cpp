@@ -88,11 +88,6 @@ void RObject::visitChildren(const_visitor* v) const
 	if (u.closxp.body) u.closxp.body->conductVisitor(v);
 	if (u.closxp.env) u.closxp.env->conductVisitor(v);
 	break;
-    case PROMSXP:
-	if (u.promsxp.value) u.promsxp.value->conductVisitor(v);
-	if (u.promsxp.expr) u.promsxp.expr->conductVisitor(v);
-	if (u.promsxp.env) u.promsxp.env->conductVisitor(v);
-	break;
     default:
 	break;
     }

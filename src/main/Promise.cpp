@@ -28,21 +28,19 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Promise.cpp
  *
- * At present, this file simply forces the generation of non-inlined
- * versions of inlined functions declared in Promise.h where these
- * are intended to be callable from C.  It is also used to check that
- * Promise.h is self-contained, i.e. \#includes anything it needs, and
- * doesn't rely on anything having been previously \#included in the
- * enclosing source file.
+ * @brief Implementation of class CXXR::Promise and associated C
+ * interface.
  */
 
 #include "CXXR/Promise.h"
+
+using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
 // from C:
@@ -53,5 +51,36 @@ namespace CXXR {
 	int (*PRSEENp)(SEXP x) = PRSEEN;
 	SEXP (*PRVALUEp)(SEXP x) = PRVALUE;
 	void (*SETPRSEENp)(SEXP x, int v) = SET_PRSEEN;
+	void (*SET_PRVALUEp)(SEXP x, SEXP v) = SET_PRVALUE;
     }
+}
+
+void Promise::setValue(RObject* val)
+{
+    m_value = val;
+    devolveAge(m_value);
+    if (val != SpecialSymbol::unboundValue())
+	m_environment = 0;
+}
+
+const char* Promise::typeName() const
+{
+    return staticTypeName();
+}
+
+void Promise::visitChildren(const_visitor* v) const
+{
+    RObject::visitChildren(v);
+    if (m_value) m_value->conductVisitor(v);
+    if (m_valgen) m_valgen->conductVisitor(v);
+    if (m_environment) m_environment->conductVisitor(v);
+}
+
+// ***** C interface *****
+
+SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
+{
+    GCRoot<> exprt(expr);
+    GCRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
+    return new Promise(exprt, *rhort);
 }

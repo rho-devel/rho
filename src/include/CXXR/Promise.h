@@ -18,7 +18,6 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2007
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +35,7 @@
  */
 
 /** @file Promise.h
- * @brief C interface associated with the future Promise class.
+ * @brief Class CXXR::Promise and associated C interface.
  */
 
 #ifndef RPROMISE_H
@@ -45,89 +44,205 @@
 #include "CXXR/RObject.h"
 
 #ifdef __cplusplus
+
+#include "CXXR/Expression.h"
+#include "CXXR/Environment.h"
+#include "CXXR/SpecialSymbol.h"
+
+namespace CXXR {
+    /** @brief Placeholder for function argument.
+     *
+     * This class is used to handle function arguments within R's lazy
+     * evaluation scheme.  (I'll document it better when I understand
+     * it better!)
+     */
+    class Promise : public RObject {
+    public:
+	/**
+	 * @param valgen pointer to RObject to be evaluated to provide
+	 *          the value of the Promise.  Can be null.
+	 *
+	 * @param env Environment in which \a valgen is to be evaluated.
+	 */
+	Promise(const RObject* valgen, const Environment& env)
+	    : RObject(PROMSXP), m_value(SpecialSymbol::unboundValue()),
+	      m_valgen(valgen), m_environment(&env)
+	{}
+
+	/** @brief Access the environment of the Promise.
+	 *
+	 * @return Pointer to the environment of the Promise.  This
+	 * will be a null pointer after the promise has been
+	 * evaluated.
+	 */
+	const Environment* environment() const
+	{
+	    return m_environment;
+	}
+
+	/** @brief RObject to be evaluated by the Promise.
+	 *
+	 * @return const pointer to the RObject to be evaluated by
+	 * the Promise.
+	 */
+	const RObject* valueGenerator() const
+	{
+	    return m_valgen;
+	}
+
+	/** @brief Set value of the Promise.
+	 *
+	 * Once the value is set to something other than
+	 * SpecialSymbol::unboundValue(), the environment pointer is
+	 * set null.
+	 *
+	 * @param val Value to be associated with the Promise.
+	 *
+	 * @todo Replace this with a method to evaluate the promise.
+	 * Possibly have method value() itself force the promise.
+	 */
+	void setValue(RObject* val);
+
+	/** @brief The name by which this type is known in R.
+	 *
+	 * @return The name by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "promise";
+	}
+
+	/** @brief Access the value of a Promise.
+	 *
+	 * @return pointer to the value of the Promise, or to
+	 * SpecialSymbol::unboundValue() if it has not yet been
+	 * evaluated.
+	 */
+	const RObject* value() const
+	{
+	    return m_value;
+	}
+
+	// Virtual function of RObject:
+	const char* typeName() const;
+
+	// Virtual function of GCNode:
+	void visitChildren(const_visitor* v) const;
+    private:
+	RObject* m_value;
+	const RObject* m_valgen;
+	const Environment* m_environment;
+
+	// Declared private to ensure that Environment objects are
+	// created only using 'new':
+	~Promise() {}
+    };
+}  // namespace CXXR
+
 extern "C" {
 #endif
 
-/* Accessor functions. */
+    /** @brief Create a Promise object.
+     *
+     * @param expr Expression to be evaluated to provide the value
+     *          of the Promise.
+     *
+     * @param env Environment in which \a expr is to be evaluated.
+     */
+    SEXP Rf_mkPROMISE(SEXP expr, SEXP rho);
 
-/* Promise Access Functions */
-
-/**
- * @param x Pointer to a promise.
- * @return Pointer to the expression to be evaluated.
- */
+    /** @brief Access the expression of a CXXR::Promise.
+     *
+     * @param x Pointer to a CXXR::Promise (checked).
+     *
+     * @return Pointer to the expression to be evaluated by the Promise.
+     */
 #ifndef __cplusplus
-SEXP PRCODE(SEXP x);
+    SEXP PRCODE(SEXP x);
 #else
-inline SEXP PRCODE(SEXP x) {return x->u.promsxp.expr;}
+    inline SEXP PRCODE(SEXP x)
+    {
+	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
+	return const_cast<CXXR::RObject*>(prom.valueGenerator());
+    }
 #endif
 
-/**
- * @param x Pointer to a promise.
- * @return Pointer to the environment in which the expression is to be
- *         evaluated.  Set NULL when the promise has been evaluated.
- */
+    /** @brief Access the environment of a CXXR::Promise.
+     *
+     * @param x Pointer to a CXXR::Promise (checked).
+     *
+     * @return Pointer to the environment in which the expression is to be
+     *         evaluated.  Set to a null pointer when the promise has
+     *         been evaluated.
+     */
 #ifndef __cplusplus
-SEXP PRENV(SEXP x);
+    SEXP PRENV(SEXP x);
 #else
-inline SEXP PRENV(SEXP x) {return x->u.promsxp.env;}
+    inline SEXP PRENV(SEXP x)
+    {
+	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
+	return const_cast<CXXR::Environment*>(prom.environment());
+    }
 #endif
 
-/**
- * @param x Pointer to a promise.
- * @return Pointer to the value of the expression (once evaluated?).
- */
+    /** @brief Access the value of a CXXR::Promise.
+     *
+     * @param x Pointer to a CXXR::Promise (checked).
+     *
+     * @return pointer to the value of the Promise, or to R_UnboundValue
+     * if it has not yet been evaluated..
+     */
 #ifndef __cplusplus
-SEXP PRVALUE(SEXP x);
+    SEXP PRVALUE(SEXP x);
 #else
-inline SEXP PRVALUE(SEXP x) {return x->u.promsxp.value;}
+    inline SEXP PRVALUE(SEXP x)
+    {
+	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
+	return const_cast<CXXR::RObject*>(prom.value());
+    }
 #endif
 
-/**
- * @param x Pointer to a promise.
- * @return ?
- * @deprecated Will need to be fixed.
- */
+    /**
+     * @param x Pointer to a promise.
+     * @return ?
+     * @deprecated Will need to be fixed.
+     */
 #ifndef __cplusplus
-int PRSEEN(SEXP x);
+    int PRSEEN(SEXP x);
 #else
-inline int PRSEEN(SEXP x) {return x->m_gpbits;}
+    inline int PRSEEN(SEXP x) {return x->m_gpbits;}
 #endif
 
-/**
- * @param x Pointer to a promise.
- * @deprecated Will need to be fixed.
- */
+    /**
+     * @param x Pointer to a promise.
+     * @deprecated Will need to be fixed.
+     */
 #ifndef __cplusplus
-void SET_PRSEEN(SEXP x, int v);
+    void SET_PRSEEN(SEXP x, int v);
 #else
-inline void SET_PRSEEN(SEXP x, int v) {x->m_gpbits = v;}
+    inline void SET_PRSEEN(SEXP x, int v) {x->m_gpbits = v;}
 #endif
 
-/**
- * Set environment
- * @param x Pointer to a promise.
- * @param v Pointer to the environment in which the expression is to
- *          be evaluated.
- * @todo Probably ought to be private or done in the constructor.
- */
-void SET_PRENV(SEXP x, SEXP v);
-
-/**
- * Set value of promise.
- * @param x Pointer to a promise.
- * @param v Pointer to the value to be assigned to the promise.
- * @todo Probably ought to be private.
- */
-void SET_PRVALUE(SEXP x, SEXP v);
-
-/**
- * Set expression
- * @param x Pointer to a promise.
- * @param v Pointer to the expression to be associated with the promise.
- * @todo Probably ought to be private or done in the constructor.
- */
-void SET_PRCODE(SEXP x, SEXP v);
+    /** @brief Set the value of a CXXR::Promise.
+     *
+     * Once the value is set to something other than R_UnboundValue,
+     * the environment pointer is set null.
+     *
+     * @param x Pointer to a CXXR::Promise (checked).
+     *
+     * @param v Pointer to the value to be assigned to the promise.
+     *
+     * @todo Replace this with a method call to evaluate the promise.
+     */
+#ifndef __cplusplus
+    void SET_PRVALUE(SEXP x, SEXP v);
+#else
+    inline void SET_PRVALUE(SEXP x, SEXP v)
+    {
+	CXXR::Promise* prom = CXXR::SEXP_downcast<CXXR::Promise*>(x);
+	prom->setValue(v);
+    }
+#endif
 
 #ifdef __cplusplus
 }

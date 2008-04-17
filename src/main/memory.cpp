@@ -555,25 +555,6 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     return new Environment(rhor, namevalr);
 }
 
-/* mkPROMISE is defined directly do avoid the need to protect its arguments
-   unless a GC will actually occur. */
-SEXP mkPROMISE(SEXP expr, SEXP rho)
-{
-    SEXP s;
-    PROTECT(expr);
-    PROTECT(rho);
-    s = new RObject(PROMSXP);
-    UNPROTECT(2);
-#if VALGRIND_LEVEL > 2
-    VALGRIND_MAKE_READABLE(s,sizeof(*s));
-#endif
-    s->u.promsxp.expr = expr;  // PRCODE
-    s->u.promsxp.env = rho;  // PRENV
-    s->u.promsxp.value = R_UnboundValue;  // PRVALUE
-    SET_PRSEEN(s, 0);
-    return s;
-}
-
 /* All vector objects  must be a multiple of sizeof(ALIGN) */
 /* bytes so that alignment is preserved for all objects */
 
@@ -786,12 +767,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.formals = v; }
 void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.body = v; }
 void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.env = v; }
-
-/* Promise Accessors */
-
-void (SET_PRENV)(SEXP x, SEXP v){ CHECK_OLD_TO_NEW(x, v); x->u.promsxp.env = v; }
-void (SET_PRVALUE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.promsxp.value = v; }
-void (SET_PRCODE)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.promsxp.expr = v; }
 
 /* R_FunTab accessors */
 /* Not used:

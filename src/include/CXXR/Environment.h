@@ -50,6 +50,15 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    /** @brief mapping from names to R objects.
+     *
+     * An Environment defines a mapping from (pointers to)
+     * CXXR::String objects to (pointers to) arbitrary objects of
+     * classes derived from RObject.  Each Environment (except for the
+     * standard empty environment) has an 'enclosing environment';
+     * under the 'enclosing' relationship, Environment objects form a
+     * tree with the empty environment as its root.
+     */
     class Environment : public RObject {
     public:
 	/**
@@ -62,6 +71,10 @@ namespace CXXR {
 	 *          the constructed Environment takes ownership of
 	 *          this list, so the calling code should not
 	 *          subsequently modify it.
+	 *
+	 * @todo Probably the default for \a enclosing should be the
+	 * empty environment.  \a namevals ought to be thoroughly
+	 * checked.
 	 */
 	explicit Environment(Environment* enclosing = 0,
 			     PairList* namevals = 0)
@@ -144,6 +157,9 @@ namespace CXXR {
 	 *
 	 * @param new_enclos Pointer to the environment now to be
 	 *          considered to enclose this Environment.
+	 *
+	 * @todo This ought to check that the chain of ancestors
+	 * terminates with the empty environment.
 	 */
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{

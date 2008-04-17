@@ -1327,11 +1327,17 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	/*UNPROTECT(1);*/
 	break;
     case PROMSXP:
-	PROTECT(s = new RObject(PROMSXP));
-	SET_PRENV(s, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_PRVALUE(s, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_PRCODE(s, NewReadItem(sym_table, env_table, fp, m, d));
-	/*UNPROTECT(1);*/
+	{
+	    GCRoot<Environment>
+		env(SEXP_downcast<Environment*>(NewReadItem(sym_table,
+							    env_table,
+							    fp, m, d)));
+	    GCRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCRoot<Promise> prom(new Promise(valgen, *env));
+	    prom->setValue(val);
+	    PROTECT(s = prom);
+	}
 	break;
     case DOTSXP:
 	PROTECT(s = new DottedArgs);

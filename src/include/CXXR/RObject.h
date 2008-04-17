@@ -118,12 +118,6 @@ namespace CXXR {
 	RObject *env;
     };
 
-    struct promsxp_struct {
-	RObject *value;
-	RObject *expr;
-	RObject *env;
-    };
-
     struct vecsxp_struct {
 	R_len_t	truelength;
     };
@@ -193,7 +187,6 @@ namespace CXXR {
 	RObject *m_attrib;
 	union {
 	    struct closxp_struct closxp;
-	    struct promsxp_struct promsxp;
 	    struct vecsxp_struct vecsxp;
 	} u;
     };

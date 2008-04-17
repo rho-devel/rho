@@ -1389,17 +1389,25 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case PROMSXP:
-	PROTECT(s = new RObject(type));
-	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
-	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
-	SET_PRENV(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
-	SET_PRVALUE(s, ReadItem(ref_table, stream));
-	SET_PRCODE(s, ReadItem(ref_table, stream));
-	/* For reading closures and promises stored in earlier versions, convert NULL env to baseenv() */
-	if (PRENV(s) == R_NilValue) SET_PRENV(s, R_BaseEnv);
-	UNPROTECT(1); /* s */
-	return s;
+	{
+	    GCRoot<PairList>
+		attr(hasattr
+		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
+		     : 0);
+	    GCRoot<Environment>
+		env(hastag
+		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
+		    : 0);
+	    // For reading promises stored in earlier versions,
+	    // convert null env to base env:
+	    if (!env) env = Environment::base();
+	    GCRoot<> val(ReadItem(ref_table, stream));
+	    GCRoot<> valgen(ReadItem(ref_table, stream));
+	    GCRoot<Promise> prom(new Promise(valgen, *env));
+	    SETLEVELS(prom, levs);
+	    SET_OBJECT(prom, objf);
+	    return prom;
+	}
     default:
 	/* These break out of the switch to have their ATTR,
 	   LEVELS, and OBJECT fields filled in.  Each leaves the
