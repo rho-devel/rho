@@ -136,6 +136,11 @@ namespace CXXR {
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':
 	~Promise() {}
+
+	// Not (yet) implemented.  Declared to prevent
+	// compiler-generated versions:
+	Promise(const Promise&);
+	Promise& operator=(const Promise&);
     };
 }  // namespace CXXR
 
