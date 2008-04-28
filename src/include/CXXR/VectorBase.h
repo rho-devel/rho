@@ -121,7 +121,7 @@ int TRUELENGTH(SEXP x);
 #else
 inline int TRUELENGTH(SEXP x)
 {
-    return reinterpret_cast<VECSEXP>(x)->u.vecsxp.truelength;
+    return reinterpret_cast<VECSEXP>(x)->truelength;
 }
 #endif
 
@@ -142,7 +142,7 @@ void SET_TRUELENGTH(SEXP x, int v);
 #else
 inline void SET_TRUELENGTH(SEXP x, int v)
 {
-    reinterpret_cast<VECSEXP>(x)->u.vecsxp.truelength = v;
+    reinterpret_cast<VECSEXP>(x)->truelength = v;
 }
 #endif
 

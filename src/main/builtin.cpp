@@ -220,11 +220,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (TYPEOF(CAR(args)) == CLOSXP) {
-	s = new RObject(CLOSXP);
-	SET_FORMALS(s, FORMALS(CAR(args)));
-	SET_BODY(s, R_NilValue);
-	SET_CLOENV(s, R_GlobalEnv);
-	return s;
+	return mkCLOSXP(FORMALS(CAR(args)), 0, R_GlobalEnv);
     }
 
     if (TYPEOF(CAR(args)) == BUILTINSXP || TYPEOF(CAR(args)) == SPECIALSXP) {
@@ -250,10 +246,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (TYPEOF(env) == PROMSXP) REPROTECT(env = eval(env, R_BaseEnv), xp);
 	PROTECT(s2 = findVarInFrame3(env, install(nm), TRUE));
 	if(s2 != R_UnboundValue) {
-	    s = new RObject(CLOSXP);
-	    SET_FORMALS(s, FORMALS(s2));
-	    SET_BODY(s, R_NilValue);
-	    SET_CLOENV(s, R_GlobalEnv);
+	    s = mkCLOSXP(FORMALS(s2), 0, R_GlobalEnv);
 	    UNPROTECT(2);
 	    return s;
 	}
@@ -309,11 +302,10 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("use of NULL environment is defunct"));
 	if(NAMED(s) > 1) {
 	    /* partial duplicate */
-	    s = new RObject(CLOSXP);
-	    SET_FORMALS(s, FORMALS(CAR(args)));
-	    SET_BODY(s, BODY(CAR(args)));
+	    s = mkCLOSXP(FORMALS(CAR(args)), BODY(CAR(args)), env);
+	} else {
+	    SET_CLOENV(s, env);
 	}
-	SET_CLOENV(s, env);
     }
     else if (isNull(env) || isEnvironment(env))
 	setAttrib(s, R_DotEnvSymbol, env);

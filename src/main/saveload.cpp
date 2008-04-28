@@ -1320,11 +1320,12 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	/*UNPROTECT(1);*/
 	break;
     case CLOSXP:
-	PROTECT(s = new RObject(CLOSXP));
-	SET_CLOENV(s, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_FORMALS(s, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_BODY(s, NewReadItem(sym_table, env_table, fp, m, d));
-	/*UNPROTECT(1);*/
+	{
+	    GCRoot<> env(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCRoot<> formals(NewReadItem(sym_table, env_table, fp, m, d));
+	    GCRoot<> body(NewReadItem(sym_table, env_table, fp, m, d));
+	    PROTECT(s = mkCLOSXP(formals, body, env));
+	}
 	break;
     case PROMSXP:
 	{

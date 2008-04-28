@@ -159,7 +159,7 @@ namespace CXXR {
 	 *          considered to enclose this Environment.
 	 *
 	 * @todo This ought to check that the chain of ancestors
-	 * terminates with the empty environment.
+	 * is free of loops and terminates with the empty environment.
 	 */
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{

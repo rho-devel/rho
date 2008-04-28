@@ -110,18 +110,6 @@ extern "C" {
 }  // extern "C"
 
 namespace CXXR {
-    class RObject;
-
-    struct closxp_struct {
-	RObject *formals;
-	RObject *body;
-	RObject *env;
-    };
-
-    struct vecsxp_struct {
-	R_len_t	truelength;
-    };
-
     /** @brief Replacement for CR's SEXPREC.
      *
      * This class is the rough equivalent within CXXR of the SEXPREC
@@ -185,10 +173,7 @@ namespace CXXR {
 	FlagWord m_flags;
 	unsigned short& m_gpbits;
 	RObject *m_attrib;
-	union {
-	    struct closxp_struct closxp;
-	    struct vecsxp_struct vecsxp;
-	} u;
+	R_len_t truelength;
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */

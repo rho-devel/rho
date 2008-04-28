@@ -75,37 +75,27 @@ SEXP Rf_append(SEXP first, SEXP second)
 /*  mkCLOSXP - return a closure with formals f,  */
 /*             body b, and environment rho       */
 
+Closure::Closure(const PairList* formal_args, const RObject* body,
+		 Environment* env)
+    : RObject(CLOSXP), m_formals(formal_args), m_body(body),
+      m_environment(env)
+{
+    RObject* bod = const_cast<RObject*>(body);
+    if (!isList(bod) && !isLanguage(bod) && !isSymbol(bod)
+	&& !isExpression(bod) && !isVector(bod)
+#ifdef BYTECODE
+	&& !isByteCode(bod)
+#endif
+	)
+	error(_("invalid body argument for \"function\"\n"
+		"Should NEVER happen; please bug.report() [mkCLOSXP]"));
+}
+   
 SEXP attribute_hidden mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
-    SEXP c;
-    PROTECT(formals);
-    PROTECT(body);
-    PROTECT(rho);
-    c = new RObject(CLOSXP);
-
-#ifdef not_used_CheckFormals
-    if(isList(formals))
-	SET_FORMALS(c, formals);
-    else
-        error(_("invalid formal arguments for \"function\""));
-#else
-    SET_FORMALS(c, formals);
-#endif
-    if(isList(body) || isLanguage(body) || isSymbol(body)
-       || isExpression(body) || isVector(body)
-#ifdef BYTECODE
-       || isByteCode(body)
-#endif
-       )
-	SET_BODY(c, body);
-    else
-        error(_("invalid body argument for \"function\"\n\
-Should NEVER happen; please bug.report() [mkCLOSXP]"));
-
-    if(rho == R_NilValue)
-	SET_CLOENV(c, R_GlobalEnv);
-    else
-	SET_CLOENV(c, rho);
-    UNPROTECT(3);
-    return c;
+    GCRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
+    GCRoot<> bodyrt(body);
+    GCRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
+			      : Environment::global());
+    return new Closure(formrt, bodyrt, envrt);
 }

@@ -892,7 +892,7 @@ static SEXP Prune(SEXP lst)
 SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 {
 /* deriv.default(expr, namevec, function.arg, tag, hessian) */
-    SEXP ans, ans2, expr, funarg, names, s;
+    SEXP ans, ans2, expr, funarg, names;
     int f_index, *d_index, *d2_index;
     int i, j, k, nexpr, nderiv=0, hessian;
     SEXP exprlist, tag;
@@ -1054,25 +1054,17 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(funarg) == CLOSXP)
     {
-	s = new RObject(CLOSXP);
-	SET_FORMALS(s, FORMALS(funarg));
-	SET_CLOENV(s, CLOENV(funarg));
-	funarg = s;
-	SET_BODY(funarg, exprlist);
+	funarg = mkCLOSXP(FORMALS(funarg), exprlist, CLOENV(funarg));
     }
     else if (isString(funarg)) {
-	PROTECT(names = duplicate(funarg));
-	PROTECT(funarg = new RObject(CLOSXP));
-	PROTECT(ans = allocList(length(names)));
-	SET_FORMALS(funarg, ans);
-	for(i = 0; i < length(names); i++) {
-	    SET_TAG(ans, install(translateChar(STRING_ELT(names, i))));
+	GCRoot<> formals(allocList(length(funarg)));
+	ans = formals;
+	for(i = 0; i < length(funarg); i++) {
+	    SET_TAG(ans, install(translateChar(STRING_ELT(funarg, i))));
 	    SETCAR(ans, R_MissingArg);
 	    ans = CDR(ans);
 	}
-	UNPROTECT(3);
-	SET_BODY(funarg, exprlist);
-	SET_CLOENV(funarg, R_GlobalEnv);
+	funarg = mkCLOSXP(formals, exprlist, R_GlobalEnv);
     }
     else {
 	funarg = allocVector(EXPRSXP, 1);

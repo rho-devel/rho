@@ -1377,17 +1377,25 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case CLOSXP:
-	PROTECT(s = new RObject(type));
-	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
-	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
-	SET_CLOENV(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
-	SET_FORMALS(s, ReadItem(ref_table, stream));
-	SET_BODY(s, ReadItem(ref_table, stream));
-	/* For reading closures and promises stored in earlier versions, convert NULL env to baseenv() */
-	if (CLOENV(s) == R_NilValue) SET_CLOENV(s, R_BaseEnv);
-	UNPROTECT(1); /* s */
-	return s;
+	{
+	    GCRoot<PairList>
+		attr(hasattr
+		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
+		     : 0);
+	    GCRoot<Environment>
+		env(hastag
+		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
+		    : 0);
+	    GCRoot<PairList>
+		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
+	    GCRoot<> body(ReadItem(ref_table, stream));
+	    GCRoot<Closure> clos(new Closure(formals, body,
+					     env ? env : Environment::base()));
+	    SETLEVELS(clos, levs);
+	    SET_OBJECT(clos, objf);
+	    SET_ATTRIB(clos, attr);
+	    return clos;
+	}
     case PROMSXP:
 	{
 	    GCRoot<PairList>
@@ -1406,6 +1414,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    GCRoot<Promise> prom(new Promise(valgen, *env));
 	    SETLEVELS(prom, levs);
 	    SET_OBJECT(prom, objf);
+	    SET_ATTRIB(prom, attr);
 	    return prom;
 	}
     default:

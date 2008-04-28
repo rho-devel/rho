@@ -762,12 +762,6 @@ void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
 }
 
 
-/* Closure Accessors */
-
-void (SET_FORMALS)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.formals = v; }
-void (SET_BODY)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.body = v; }
-void (SET_CLOENV)(SEXP x, SEXP v) { CHECK_OLD_TO_NEW(x, v); x->u.closxp.env = v; }
-
 /* R_FunTab accessors */
 /* Not used:
 void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }

@@ -1233,22 +1233,19 @@ SEXP CreateTag(SEXP x)
 
 static SEXP asFunction(SEXP x)
 {
-    SEXP f, pf;
+    SEXP f;
     int n;
     if (isFunction(x)) return x;
-    PROTECT(f = new RObject(CLOSXP));
-    SET_CLOENV(f, R_GlobalEnv);
     if (NAMED(x)) PROTECT(x = duplicate(x));
     else PROTECT(x);
 
     if (isNull(x) || !isList(x)) {
-	SET_FORMALS(f, R_NilValue);
-	SET_BODY(f, x);
+	f = mkCLOSXP(0, x, R_GlobalEnv);
     }
     else {
 	n = length(x);
-	pf = allocList(n - 1);
-	SET_FORMALS(f, pf);
+	SEXP formals = allocList(n - 1);
+	SEXP pf = formals;
 	while(--n) {
 	    if (TAG(x) == R_NilValue) {
 		SET_TAG(pf, CreateTag(CAR(x)));
@@ -1261,9 +1258,9 @@ static SEXP asFunction(SEXP x)
 	    pf = CDR(pf);
 	    x = CDR(x);
 	}
-	SET_BODY(f, CAR(x));
+	f = mkCLOSXP(formals, CAR(x), R_GlobalEnv);
     }
-    UNPROTECT(2);
+    UNPROTECT(1);
     return f;
 }
 
