@@ -246,7 +246,9 @@ namespace CXXR {
 	// constructor):
 	static void initialize();
 
-	// Report out-of-sequence destructor call:
+	// Report out-of-sequence destructor call and abort program.
+	// (We can't use an exception here because it's called from a
+	// destructor.)
 	static void seq_error();
     };
 

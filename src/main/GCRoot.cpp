@@ -39,6 +39,7 @@
 
 #include "CXXR/GCRoot.h"
 
+#include <iostream>
 #include <stdexcept>
 
 using namespace std;
@@ -100,8 +101,9 @@ void GCRootBase::reprotect(RObject* node, unsigned int index)
 
 void GCRootBase::seq_error()
 {
-    throw logic_error("GCRoots must be destroyed"
-		      " in reverse order of creation\n");
+    cerr << "Fatal error:"
+	    " GCRoots must be destroyed in reverse order of creation\n";
+    abort();
 }
 
 void GCRootBase::unprotect(unsigned int count)
