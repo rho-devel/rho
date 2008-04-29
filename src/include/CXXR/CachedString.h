@@ -71,6 +71,9 @@ namespace CXXR {
 	 *          as  indicated by the LATIN1_MASK and UTF8_MASK
 	 *          bits.  Zero signifies ASCII encoding, and at most
 	 *          one of the MASK bits may be set (checked).
+	 *
+	 * @return Pointer to a CachedString representing the
+	 *         specified text in the specified encoding.
 	 */
 	static const CachedString* obtain(const std::string& str,
 					  unsigned int encoding = 0);
@@ -138,6 +141,9 @@ extern "C" {
      * cached string will be returned.
      *
      * @param str The text of the required cached string.
+     *
+     * @return Pointer to a string object representing the specified
+     *         text.
      */
 #ifndef __cplusplus
     SEXP Rf_mkChar(const char * str);
@@ -158,9 +164,12 @@ extern "C" {
      * @param str The text of the required cached string.
      *
      * @param encoding The encoding of the required CachedString,
-     *          as  indicated by the LATIN1_MASK and UTF8_MASK
+     *          as indicated by the LATIN1_MASK and UTF8_MASK
      *          bits.  Zero signifies ASCII encoding, and at most
      *          one of the MASK bits may be set (checked).
+     *
+     * @return Pointer to a string object representing the specified
+     *         text in the specified encoding.
      */
 #ifndef __cplusplus
     SEXP Rf_mkCharEnc(const char * str, int encoding);

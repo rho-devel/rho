@@ -147,12 +147,12 @@ namespace CXXR {
 extern "C" {
 #endif
 
-    /** @brief Create a Promise object.
+    /** @brief Create a CXXR::Promise object.
      *
      * @param expr Expression to be evaluated to provide the value
-     *          of the Promise.
+     *          of the CXXR::Promise.
      *
-     * @param env Environment in which \a expr is to be evaluated.
+     * @param env CXXR::Environment in which \a expr is to be evaluated.
      */
     SEXP Rf_mkPROMISE(SEXP expr, SEXP rho);
 
@@ -160,7 +160,8 @@ extern "C" {
      *
      * @param x Pointer to a CXXR::Promise (checked).
      *
-     * @return Pointer to the expression to be evaluated by the Promise.
+     * @return Pointer to the expression to be evaluated by the
+     *         CXXR::Promise. 
      */
 #ifndef __cplusplus
     SEXP PRCODE(SEXP x);
@@ -176,9 +177,9 @@ extern "C" {
      *
      * @param x Pointer to a CXXR::Promise (checked).
      *
-     * @return Pointer to the environment in which the expression is to be
-     *         evaluated.  Set to a null pointer when the promise has
-     *         been evaluated.
+     * @return Pointer to the environment in which the CXXR::Promise
+     *         is to be  evaluated.  Set to a null pointer when the
+     *         CXXR::Promise has been evaluated.
      */
 #ifndef __cplusplus
     SEXP PRENV(SEXP x);
@@ -187,23 +188,6 @@ extern "C" {
     {
 	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
 	return const_cast<CXXR::Environment*>(prom.environment());
-    }
-#endif
-
-    /** @brief Access the value of a CXXR::Promise.
-     *
-     * @param x Pointer to a CXXR::Promise (checked).
-     *
-     * @return pointer to the value of the Promise, or to R_UnboundValue
-     * if it has not yet been evaluated..
-     */
-#ifndef __cplusplus
-    SEXP PRVALUE(SEXP x);
-#else
-    inline SEXP PRVALUE(SEXP x)
-    {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::RObject*>(prom.value());
     }
 #endif
 
@@ -216,6 +200,23 @@ extern "C" {
     int PRSEEN(SEXP x);
 #else
     inline int PRSEEN(SEXP x) {return x->m_gpbits;}
+#endif
+
+    /** @brief Access the value of a CXXR::Promise.
+     *
+     * @param x Pointer to a CXXR::Promise (checked).
+     *
+     * @return Pointer to the value of the CXXR::Promise, or to
+     *         R_UnboundValue if it has not yet been evaluated..
+     */
+#ifndef __cplusplus
+    SEXP PRVALUE(SEXP x);
+#else
+    inline SEXP PRVALUE(SEXP x)
+    {
+	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
+	return const_cast<CXXR::RObject*>(prom.value());
+    }
 #endif
 
     /**

@@ -129,6 +129,8 @@ namespace CXXR {
      * existence would be reported by the R function
      * <tt>objects()</tt>.  In particular, it does not imply that
      * the object belongs to an R class.
+     *
+     * @todo Constrain m_attributes to be a PairList?
      */
     struct RObject : public GCNode {
 	/**
@@ -153,7 +155,8 @@ namespace CXXR {
 	 */
 	SEXPTYPE sexptype() const {return m_type;}
 
-	/**
+	/** @brief Name within R of this type of object.
+	 *
 	 * @return the name by which this type of object is known
 	 *         within R.
 	 */

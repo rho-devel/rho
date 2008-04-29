@@ -38,7 +38,9 @@
 /** @file ExpressionVector.h
  * @brief Class CXXR::ExpressionVector and associated C interface.
  *
- * (ExpressionVector implementins EXPRSXP.)
+ * (CXXR::ExpressionVector implements EXPRSXP.)
+ *
+ * @todo Constrain the elements to be Expression objects?
  */
 
 #ifndef EXPRESSIONVECTOR_H

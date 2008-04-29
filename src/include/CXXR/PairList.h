@@ -297,6 +297,8 @@ extern "C" {
 
     /** @brief Creates a CXXR::PairList with a specified car and tail.
      *
+     * This function protects its arguments from the garbage collector.
+     *
      * @param cr Pointer to the 'car' of the element to be created.
      *
      * @param tl Pointer to the 'tail' of the element to be created,

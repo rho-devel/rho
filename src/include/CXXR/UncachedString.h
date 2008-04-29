@@ -155,10 +155,14 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-   /**
-     * @param x pointer to a CXXR::String .
+    /** @brief Read-write character access.
+     *
+     * @param x pointer to a CXXR::UncachedString (checked).
+     *
      * @return pointer to character 0 of \a x .
-     * @note For R internal use only.  May be removed in future.
+     *
+     * @note For R internal use only.  May be removed in future.  See
+     * the remarks on UncachedString::operator[]().
      */
 #ifndef __cplusplus
     char *CHAR_RW(SEXP x);
@@ -171,7 +175,8 @@ extern "C" {
 
     /**
      * @brief Set LATIN1 encoding.
-     * @param x Pointer to a CXXR::String.
+     *
+     * @param x Pointer to a CXXR::UncachedString (checked).
      */
 #ifndef __cplusplus
     void SET_LATIN1(SEXP x);
@@ -185,7 +190,8 @@ extern "C" {
 
     /**
      * @brief Unset LATIN1 encoding.
-     * @param x Pointer to a CXXR::String.
+     *
+     * @param x Pointer to a CXXR::UncachedString (checked).
      */
 #ifndef __cplusplus
     void UNSET_LATIN1(SEXP x);
@@ -199,7 +205,8 @@ extern "C" {
 
     /**
      * @brief Set UTF8 encoding.
-     * @param x Pointer to a CXXR::String.
+     *
+     * @param x Pointer to a CXXR::UncachedString (checked).
      */
 #ifndef __cplusplus
     void SET_UTF8(SEXP x);
@@ -213,7 +220,8 @@ extern "C" {
 
     /**
      * @brief Unset UTF8 encoding.
-     * @param x Pointer to a CXXR::String.
+     *
+     * @param x Pointer to a CXXR::UncachedString (checked).
      */
 #ifndef __cplusplus
     void UNSET_UTF8(SEXP x);
@@ -226,11 +234,11 @@ extern "C" {
 #endif
 
     /**
-     * @brief Create a string object.
+     * @brief Create a CXXR::UncachedString object.
      *
-     *  Allocate a string object.
      * @param length The length of the string to be created (excluding the
      *          trailing null byte).
+     *
      * @return Pointer to the created string.
      */
 #ifndef __cplusplus

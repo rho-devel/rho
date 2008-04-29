@@ -35,7 +35,7 @@
  */
 
 /** @file SpecialSymbol.h
- * @brief Class CXXR:SpecialSymbol and associated C interface.
+ * @brief Class CXXR::SpecialSymbol and associated C interface.
  */
 
 #ifndef SPECIALSYMBOL_H
@@ -58,7 +58,7 @@ namespace CXXR {
      * ::SEXPTYPE SYMSXP.
      *
      * Each of these pseudo-objects is accessed by a static member
-     * function which returns a pointers to it.  Because these
+     * function which returns a pointer to it.  Because these
      * pointers are (necessarily) not const, it is possible for
      * clients to modify the attributes of the pseudo-objects; this is
      * untidy but probably innocuous.

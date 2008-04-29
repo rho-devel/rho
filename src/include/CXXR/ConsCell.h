@@ -72,6 +72,8 @@ namespace CXXR {
      * inheriting from a common base class.  Without doing this,
      * however, it would have been difficult efficiently to implement
      * functions such as CAR(), which are ubiquitous in the CR code.
+     *
+     * @todo Constrain the tag to be a String?
      */
     class ConsCell : public RObject {
     public:

@@ -104,7 +104,6 @@ extern "C" {
      *
      * @param x Pointer to a CXXR::BuiltInFunction.
      * @return The offset of this function within the function table.
-     * @todo Ought to be private.
      */
 #ifndef __cplusplus
     int PRIMOFFSET(SEXP x);

@@ -179,7 +179,7 @@ namespace CXXR {
 	 *
 	 * @param c_string Pointer to a representation of the string
 	 *          as a C-style string (but possibly with embedded
-	 *          null characters), with \sz plus one bytes, the
+	 *          null characters), with \a sz plus one bytes, the
 	 *          last byte being a null byte.  (Because of the
 	 *          possibility of embedded nulls the size of the
 	 *          string is not checked.)  This string
@@ -206,10 +206,7 @@ namespace CXXR {
 	 *          possibility of embedded nulls the size of the
 	 *          string is not checked.)  This string
 	 *          representation must remain in existence for the
-	 *          lifetime of the String object.  If a null pointer
-	 *          is supplied here, a string pointer must be
-	 *          supplied later in the construction of the derived
-	 *          class object by calling setCString().
+	 *          lifetime of the String object.
 	 */
 	void setCString(const char* c_string)
 	{

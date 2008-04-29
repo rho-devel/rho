@@ -48,6 +48,12 @@
 #include "CXXR/BuiltInFunction.h"
 
 namespace CXXR {
+    /** @brief Class used to represent R symbols.
+     *
+     * A symbol associates a String object with an arbitrary RObject,
+     * and (or?) with a BuiltInFunction object.  (I'll document it
+     * better when I understand it better! - arr)
+     */
     class Symbol : public SpecialSymbol {
     public:
 	/**

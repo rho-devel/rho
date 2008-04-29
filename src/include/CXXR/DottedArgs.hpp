@@ -44,8 +44,11 @@
 #include "CXXR/ConsCell.h"
 
 namespace CXXR {
-    /** @brief List of promises corresponding to an R ... argument
-     * specification. 
+    /** @brief List of Promise objects corresponding to an R ... argument
+     * specification.
+     *
+     * At present the class makes no attempt to enforce the
+     * requirement that it should contain Promise objects.
      */
     class DottedArgs : public ConsCell {
     public:

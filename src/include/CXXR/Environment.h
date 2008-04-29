@@ -52,7 +52,7 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    /** @brief mapping from names to R objects.
+    /** @brief Mapping from names to R objects.
      *
      * An Environment defines a mapping from (pointers to)
      * CXXR::String objects to (pointers to) arbitrary objects of
@@ -236,7 +236,7 @@ extern "C" {
     extern SEXP R_BaseEnv;
     extern SEXP R_GlobalEnv;
 
-    /** @brief Is this an Environment?
+    /** @brief Is this a CXXR::Environment?
      *
      * @param s Pointer to an RObject.
      *
