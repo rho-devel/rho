@@ -36,6 +36,8 @@
 
 /** @file Environment.h
  * @brief Class CXXR::Environment and associated C interface.
+ *
+ * @todo Arguably R_GlobalEnv etc. should have type RObject* const.
  */
 
 #ifndef RENVIRONMENT_H

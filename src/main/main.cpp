@@ -152,7 +152,6 @@ LibExport Rboolean R_interrupts_suspended = FALSE;
 LibExport int R_interrupts_pending = 0;
 LibExport char *R_Home;		    /* Root of the R tree */
 LibExport int	R_Is_Running;	    /* for Windows memory manager */
-LibExport SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
 LibExport int	R_EvalDepth = 0;    /* Evaluation recursion depth */
 LibExport Rboolean R_Interactive = TRUE;  /* TRUE during interactive use*/
 LibExport char *R_TempDir = NULL;   /* Name of per-session dir */

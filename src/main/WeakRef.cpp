@@ -41,8 +41,11 @@
 
 #include <iostream>
 
+#include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
+#include "CXXR/GCRoot.h"
+#include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
-
 #include "RCNTXT.h"
 
 using namespace std;
@@ -148,7 +151,7 @@ bool WeakRef::check()
 }
 
 // WeakRef::finalize() is in memory.cpp (for the time being, until
-// LCONS is moved into a CXXR header).
+// eval() is declared in a CXXR header).
 
 void WeakRef::markThru(unsigned int max_gen)
 {
@@ -218,8 +221,44 @@ void WeakRef::runExitFinalizers()
     runFinalizers();
 }
 
-// WeakRef::runFinalizers() is in memory.cpp (until R_GlobalEnv and
-// R_BaseEnv are in CXXR headers).
+bool WeakRef::runFinalizers()
+{
+    WeakRef::check();
+    bool finalizer_run = !s_f10n_pending.empty();
+    WRList::iterator lit = s_f10n_pending.begin();
+    while (lit != s_f10n_pending.end()) {
+	WeakRef* wr = *lit++;
+	RCNTXT thiscontext;
+	// A top level context is established for the finalizer to
+	// insure that any errors that might occur do not spill into
+	// the call that triggered the collection:
+	Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
+			0, Environment::global(), R_BaseEnv, 0, 0);
+	RCNTXT* saveToplevelContext = R_ToplevelContext;
+	GCRoot<> topExp(R_CurrentExpr);
+	unsigned int savestack = GCRootBase::ppsSize();
+	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	     << &thiscontext << endl;
+	try {
+	    R_GlobalContext = R_ToplevelContext = &thiscontext;
+	    wr->finalize();
+	}
+	catch (JMPException& e) {
+	    //	    cout << __FILE__":" << __LINE__
+	    //		 << " Seeking " << e.context
+	    //		 << "; in " << &thiscontext << endl;
+	    if (e.context != &thiscontext)
+		throw;
+	}
+	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	     << &thiscontext << endl;
+	Rf_endcontext(&thiscontext);
+	R_ToplevelContext = saveToplevelContext;
+	GCRootBase::ppsRestoreSize(savestack);
+	R_CurrentExpr = topExp;
+    }
+    return finalizer_run;
+}
 
 void WeakRef::tombstone()
 {

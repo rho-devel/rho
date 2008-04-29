@@ -52,6 +52,8 @@ namespace CXXR {
    }
 }
 
+SEXP R_CurrentExpr = 0;
+
 const char* Expression::typeName() const
 {
     return staticTypeName();

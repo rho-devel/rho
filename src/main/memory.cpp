@@ -193,50 +193,11 @@ void WeakRef::finalize()
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCRoot<> e(LCONS(Rfin, CONS(key, 0)));
-	eval(e, R_GlobalEnv);
+	GCRoot<PairList> tail(new PairList(key));
+	GCRoot<Expression> e(new Expression(Rfin, tail));
+	eval(e, Environment::global());
     }
 }
-
-bool WeakRef::runFinalizers()
-{
-    WeakRef::check();
-    bool finalizer_run = !s_f10n_pending.empty();
-    WRList::iterator lit = s_f10n_pending.begin();
-    while (lit != s_f10n_pending.end()) {
-	WeakRef* wr = *lit++;
-	RCNTXT thiscontext;
-	// A top level context is established for the finalizer to
-	// insure that any errors that might occur do not spill into
-	// the call that triggered the collection:
-	begincontext(&thiscontext, CTXT_TOPLEVEL,
-		     0, R_GlobalEnv, R_BaseEnv, 0, 0);
-	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	GCRoot<> topExp(R_CurrentExpr);
-	unsigned int savestack = GCRootBase::ppsSize();
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &thiscontext << endl;
-	try {
-	    R_GlobalContext = R_ToplevelContext = &thiscontext;
-	    wr->finalize();
-	}
-	catch (JMPException& e) {
-	    //	    cout << __FILE__":" << __LINE__
-	    //		 << " Seeking " << e.context
-	    //		 << "; in " << &thiscontext << endl;
-	    if (e.context != &thiscontext)
-		throw;
-	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &thiscontext << endl;
-	endcontext(&thiscontext);
-	R_ToplevelContext = saveToplevelContext;
-	GCRootBase::ppsRestoreSize(savestack);
-	R_CurrentExpr = topExp;
-    }
-    return finalizer_run;
-}
-
 
 /* R interface function */
 
@@ -286,7 +247,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     for (unsigned int i = 0; i < HSIZE; i++)	           /* Symbol table */
 	MARK_THRU(&marker, R_SymbolTable[i]);
 
-    if (R_CurrentExpr != NULL)	           /* Current expression */
+    if (R_CurrentExpr != NULL)             /* Current expression */
 	MARK_THRU(&marker, R_CurrentExpr);
 
     for (unsigned int i = 0; i < R_MaxDevices; i++)  /* Device display lists */

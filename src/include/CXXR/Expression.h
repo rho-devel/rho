@@ -109,6 +109,9 @@ namespace CXXR {
 extern "C" {
 #endif
 
+    // Pointer to expression currently being evaluated:
+    extern SEXP R_CurrentExpr;
+
     /** @brief Create a CXXR::Expression with a specified car and tail.
      *
      * @param cr Pointer to the 'car' of the element to be created.
