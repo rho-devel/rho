@@ -91,7 +91,7 @@ Closure::Closure(const PairList* formal_args, const RObject* body,
 		"Should NEVER happen; please bug.report() [mkCLOSXP]"));
 }
    
-SEXP attribute_hidden mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
+SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCRoot<> bodyrt(body);

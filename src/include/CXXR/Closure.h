@@ -49,6 +49,14 @@
 #include "CXXR/PairList.h"
 
 namespace CXXR {
+    /** @brief Class representing a functional programming closure.
+     *
+     * A closure associates a function definition (the body) with a
+     * list of formal arguments and an environment.  In evaluating the
+     * function, non-local variables within the function definition
+     * are interpreted by reference to the specified environment (and
+     * its enclosing environments).
+     */
     class Closure : public RObject {
     public:
 	/**
@@ -141,24 +149,24 @@ extern "C" {
 
     /** @brief Create a CXXR::Closure object.
      *
-     * @param formal_args Pointer to a CXXR::Pairlist (checked) of
+     * @param formal_args Pointer to a CXXR::PairList (checked) of
      *          formal arguments.
      *
-     * @param body Pointer to the body of the Closure.  This must be
+     * @param body Pointer to the body of the CXXR::Closure.  This must be
      *          either a null pointer or a pointer to an object of one
      *          of the following types: LISTSXP, LANGSXP, SYMSXP,
      *          EXPRSXP, VECSXP or BCODESXP (checked).
      *
-     * @param env pointer to the CXXR:Environment (checked) in which the
+     * @param env pointer to the CXXR::Environment (checked) in which the
      *          closure is to be evaluated.
      *
      * @return pointer to the created closure object.
      */
-    SEXP mkCLOSXP(SEXP formals, SEXP body, SEXP rho);
+    SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho);
 
     /** @brief Access the body of a CXXR::Closure.
      *
-     * @param x Pointer a CXXR::Closure object (checked).
+     * @param x Pointer to a CXXR::Closure object (checked).
      *
      * @return Pointer to the body of \a x.
      */
@@ -175,7 +183,7 @@ extern "C" {
 
     /** @brief Access the environment of a CXXR::Closure.
      *
-     * @param x Pointer a CXXR::Closure object (checked).
+     * @param x Pointer to a CXXR::Closure object (checked).
      *
      * @return Pointer to the environment of x.
      */
@@ -191,7 +199,7 @@ extern "C" {
 #endif
 
     /**
-     * @param x Pointer a closure object.
+     * @param x Pointer to a CXXR::Closure object.
      * @return \c true if debugging is set, i.e. evaluations of the
      *         function should run under the browser.
      */
@@ -203,7 +211,7 @@ extern "C" {
 
     /** @brief Access formal arguments of a CXXR::Closure.
      *
-     * @param x Pointer a CXXR::Closure object (checked).
+     * @param x Pointer to a CXXR::Closure object (checked).
      *
      * @return Pointer to the formal argument list of \a x.
      */
@@ -228,10 +236,10 @@ extern "C" {
 
     /** @brief Replace the environment of a closure.
      *
-     * @param x Pointer to a Closure object (checked).
+     * @param x Pointer to a CXXR::Closure object (checked).
      *
      * @param v Pointer to the environment now to be
-     *          considered as the environment of this Closure.  A
+     *          considered as the environment of this CXXR::Closure.  A
      *          null pointer is not permissible (not checked).
      */
 #ifndef __cplusplus
@@ -257,7 +265,7 @@ extern "C" {
 #endif
 
     /**
-     * Set the debugging state of a closure object.
+     * Set the debugging state of a CXXR::Closure object.
      * @param x Pointer a closure object.
      * @param v The new debugging state.
      */
