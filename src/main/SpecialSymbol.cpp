@@ -40,6 +40,8 @@
 
 #include "CXXR/SpecialSymbol.h"
 
+#include "CXXR/CachedString.h"
+
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -50,6 +52,9 @@ namespace CXXR {
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
     }
 }
+
+GCRoot<const String> String::s_blank(CachedString::obtain(""));
+SEXP R_BlankString = const_cast<String*>(String::blank());
 
 GCRoot<SpecialSymbol> SpecialSymbol::s_missing_arg(new SpecialSymbol);
 SEXP R_MissingArg = SpecialSymbol::missingArgument();

@@ -39,7 +39,6 @@
 
 #include "CXXR/String.h"
 
-#include "CXXR/CachedString.h"
 #include "CXXR/UncachedString.h"
 
 using namespace std;
@@ -57,8 +56,8 @@ namespace CXXR {
 GCRoot<const String> String::s_na(new UncachedString("NA"));
 SEXP R_NaString = const_cast<String*>(String::NA());
 
-GCRoot<const String> String::s_blank(CachedString::obtain(""));
-SEXP R_BlankString = const_cast<String*>(String::blank());
+// String::s_blank and R_BlankString are defined in SpecialSymbol.cpp
+// to enforce initialization order.
 
 // String::Comparator::operator()(const String&, const String&) is in
 // sort.cpp
