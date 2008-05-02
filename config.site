@@ -73,6 +73,7 @@ CFLAGS="-fexceptions -g -O1"
 ## If unset defaults to '-I/usr/local/include', with '-I/sw/include'
 ## prepended on systems using Fink with root '/sw'.
 ## CPPFLAGS=
+CPPFLAGS="-I/usr/local/include -I/opt/local/include"
 
 ## The command which runs the FORTRAN 77 compiler.
 ## If this is not specified, a search is made for
@@ -159,6 +160,7 @@ CFLAGS="-fexceptions -g -O1"
 ## On some Linux 64-bit systems its default is -L/usr/local/lib64.
 ## If LIBnn is set it defaults to -L/usr/local/$LIBnn.
 ## LDFLAGS=
+LDFLAGS="-L/usr/local/lib -L/opt/local/lib"
 
 
 ## The command which runs the C++ compiler.  It not specified, configure
