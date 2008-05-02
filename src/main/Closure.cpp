@@ -50,6 +50,7 @@ namespace CXXR {
 	SEXP (*CLOENVp)(SEXP x) = CLOENV;
 	SEXP (*FORMALSp)(SEXP x) = FORMALS;
 	int (*MISSINGp)(SEXP x) = MISSING;
+	void (*SET_CLOENVp)(SEXP x, SEXP v) = SET_CLOENV;
 	void (*SET_MISSINGp)(SEXP x, int v) = SET_MISSING;
 	void (*SET_DEBUGp)(SEXP x, Rboolean v) = SET_DEBUG;
     }
