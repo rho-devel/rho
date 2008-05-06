@@ -84,6 +84,30 @@ namespace CXXR {
 	    : ConsCell(LISTSXP, sz)
 	{}
 
+	/** @brief Create a PairList element on the free store.
+	 *
+	 * Unlike the constructor (and contrary to CXXR conventions
+	 * generally) this function protects its arguments from the
+	 * garbage collector.
+	 *
+	 * @param cr Pointer to the 'car' of the element to be
+	 *           constructed.
+	 *
+	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
+	 *           to be constructed.
+	 *
+	 * @return Pointer to newly created PairList element.
+	 */
+	static PairList* cons(RObject* cr, PairList* tl=0)
+	{
+	    s_cons_car = cr;
+	    s_cons_cdr = tl;
+	    PairList* ans = new PairList(cr, tl);
+	    s_cons_cdr = 0;
+	    s_cons_car = 0;
+	    return ans;
+	}
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -96,6 +120,11 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
+	// Permanent GCRoots used to implement cons() without pushing
+	// and popping:
+	static GCRoot<> s_cons_car;
+	static GCRoot<PairList> s_cons_cdr;
+
 	// Declared private to ensure that PairList objects are
 	// allocated only using 'new':
 	~PairList() {}
@@ -311,10 +340,8 @@ extern "C" {
 #else
     inline SEXP Rf_cons(SEXP cr, SEXP tl)
     {
-	CXXR::GCRoot<> crr(cr);
-	CXXR::GCRoot<CXXR::PairList>
-	    tlr(CXXR::SEXP_downcast<CXXR::PairList*>(tl));
-	return new CXXR::PairList(crr, tlr);
+	using namespace CXXR;
+	return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
     }
 #endif
 
