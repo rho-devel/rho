@@ -337,7 +337,12 @@ namespace CXXR {
 	 * Effective C++' Item 27.) Derived classes should likewise
 	 * declare their destructors private or protected.
 	 */
-	virtual ~GCNode();
+	virtual ~GCNode()
+	{
+	    --s_num_nodes;
+	    --s_gencount[m_gcgen];
+	    link(m_prev, m_next);
+	}
 
 	/** @brief Make node known to the garbage collector.
 	 *
