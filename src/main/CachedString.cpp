@@ -49,6 +49,8 @@ namespace CXXR {
     }
 }
 
+tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
+
 CachedString::map* CachedString::cache()
 {
     static map the_cache;
@@ -68,7 +70,8 @@ const CachedString* CachedString::obtain(const std::string& str,
     map::iterator it = pr.first;
     if (pr.second) {
 	try {
-	    (*it).second = new CachedString(it);
+	    map::value_type& val = *it;
+	    val.second = new CachedString(&val);
 	} catch (...) {
 	    cache()->erase(it);
 	    throw;

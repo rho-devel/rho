@@ -42,6 +42,9 @@
 #endif
 
 #include <iostream>
+#include "CXXR/CachedString.h"
+#include "CXXR/GCRoot.h"
+
 #define __R_Names__ /* used in Defn.h for extern on R_FunTab */
 #include <Defn.h>
 #include <Print.h>
@@ -50,8 +53,6 @@
 #include <R_ext/RConverters.h>
 
 #include <Rinterface.h>
-#include "CXXR/CachedString.h"
-#include "CXXR/GCRoot.h"
 
 using namespace CXXR;
 

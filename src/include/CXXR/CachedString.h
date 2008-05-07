@@ -45,7 +45,7 @@
 
 #ifdef __cplusplus
 
-#include <map>
+#include <tr1/unordered_map>
 #include <string>
 
 #include "CXXR/Allocator.hpp"
@@ -94,23 +94,34 @@ namespace CXXR {
 	// element the encoding:
 	typedef std::pair<std::string, unsigned int> key;
 
+	// Hashing is based simply on the text of the key, not on its
+	// encoding:
+	class Hasher : public std::unary_function<key, std::size_t> {
+	public:
+	    std::size_t operator()(const key& k) const
+	    {
+		return s_string_hasher(k.first);
+	    }
+	private:
+	    static std::tr1::hash<std::string> s_string_hasher;
+	};
+
 	// The cache is implemented as a mapping from keys to pointers
-	// to CachedString objects.  Each CachedString simply contains an
-	// iterator locating its text and encoding within the cache.
-	// In the future this may be changed to a TR1 unordered_map.
-	// Note that we cannot use CXXR::Allocator here, because when
-	// creating a new CachedString, the call to insert() might
-	// lead to a garbage collection, which in turn might lead to a
-	// call to erase() before the insert() was complete.  (Yes, I
-	// tried this, and it took ages to debug!)
-	typedef std::map<key, CachedString*> map;
+	// to CachedString objects.  Each CachedString simply contains
+	// an pointer locating its entry within the cache.  Note that
+	// we cannot use CXXR::Allocator here, because when creating a
+	// new CachedString, the call to insert() might lead to a
+	// garbage collection, which in turn might lead to a call to
+	// erase() before the insert() was complete.  (Yes, I tried
+	// this, and it took ages to debug!)
+	typedef std::tr1::unordered_map<key, CachedString*, Hasher> map;
 
-	map::iterator m_it;
+	map::value_type* m_key_val_pr;
 
-	explicit CachedString(map::iterator iter)
-	    : String((*iter).first.first.size(), (*iter).first.second,
-		     (*iter).first.first.c_str()),
-	      m_it(iter)
+	explicit CachedString(map::value_type* key_val_pr)
+	    : String(key_val_pr->first.first.size(), key_val_pr->first.second,
+		     key_val_pr->first.first.c_str()),
+	      m_key_val_pr(key_val_pr)
 	{}
 
 	// Not implemented.  Declared to prevent
@@ -122,7 +133,12 @@ namespace CXXR {
 	// allocated only using 'new'.
 	~CachedString()
 	{
-	    cache()->erase(m_it);
+	    // Must copy the key, because some implementations may,
+	    // having deleted the cache entry pointed to by
+	    // m_key_val_pr, continue looking for other entries with
+	    // the given key.
+	    key k = m_key_val_pr->first;
+	    cache()->erase(k);
 	}
 
 	// Return pointer to the cache:
