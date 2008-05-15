@@ -73,39 +73,6 @@ namespace CXXR {
      */
     class GCRootBase {
     public:
-	explicit GCRootBase(const GCNode* node)
-	    : m_index(s_roots->size())
-	{
-	    if (node) node->expose();
-	    s_roots->push_back(node);
-	}
-
-	GCRootBase(const GCRootBase& source)
-	    : m_index(s_roots->size())
-	{
-	    s_roots->push_back((*s_roots)[source.m_index]);
-	}
-
-	~GCRootBase()
-	{
-	    s_roots->pop_back();
-	    if (m_index != s_roots->size())
-		seq_error();
-	}
-
-	GCRootBase& operator=(const GCRootBase& source)
-	{
-	    (*s_roots)[m_index] = (*s_roots)[source.m_index];
-	    return *this;
-	}
-
-	GCRootBase& operator=(GCNode* node)
-	{
-	    if (node) node->expose();
-	    (*s_roots)[m_index] = node;
-	    return *this;
-	}
-
 	/** @brief Restore PPS to a previous size.
 	 *
 	 * Restore the C pointer protection stack to a previous size by
@@ -150,15 +117,6 @@ namespace CXXR {
 	    s_pps->push_back(std::make_pair(node, R_GlobalContext));
 #endif
 	    return index;
-	}
-
-	/** @brief Access the encapsulated pointer.
-	 *
-	 * @return the GCNode pointer encapsulated by this object.
-	 */
-	const GCNode* ptr() const
-	{
-	    return (*s_roots)[m_index];
 	}
 
 	/** @brief Change the target of a pointer on the PPS.
@@ -211,6 +169,47 @@ namespace CXXR {
 	 * @param v Pointer to the const_visitor object.
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
+    protected:
+	explicit GCRootBase(const GCNode* node)
+	    : m_index(s_roots->size())
+	{
+	    if (node) node->expose();
+	    s_roots->push_back(node);
+	}
+
+	GCRootBase(const GCRootBase& source)
+	    : m_index(s_roots->size())
+	{
+	    s_roots->push_back((*s_roots)[source.m_index]);
+	}
+
+	~GCRootBase()
+	{
+	    s_roots->pop_back();
+	    if (m_index != s_roots->size())
+		seq_error();
+	}
+
+	GCRootBase& operator=(const GCRootBase& source)
+	{
+	    (*s_roots)[m_index] = (*s_roots)[source.m_index];
+	    return *this;
+	}
+
+	void redirect(GCNode* node)
+	{
+	    if (node) node->expose();
+	    (*s_roots)[m_index] = node;
+	}
+
+	/** @brief Access the encapsulated pointer.
+	 *
+	 * @return the GCNode pointer encapsulated by this object.
+	 */
+	const GCNode* ptr() const
+	{
+	    return (*s_roots)[m_index];
+	}
     private:
 	friend class GCNode::SchwarzCtr;
 
@@ -309,7 +308,7 @@ namespace CXXR {
 	 * is protected by source.  (There is probably no reason to
 	 * use this method.)
 	 */
-	GCRoot operator=(const GCRoot& source)
+	GCRoot& operator=(const GCRoot& source)
 	{
 	    GCRootBase::operator=(source);
 	    return *this;
@@ -323,9 +322,9 @@ namespace CXXR {
 	 * @param node Pointer to the GCNode that is now to be pointed
 	 *          to and protected from the garbage collector.
 	 */
-	GCRoot operator=(T* node)
+	GCRoot& operator=(T* node)
 	{
-	    GCRootBase::operator=(node);
+	    GCRootBase::redirect(node);
 	    return *this;
 	}
 
