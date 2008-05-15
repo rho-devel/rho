@@ -128,11 +128,14 @@ namespace CXXR {
 	static size_t maxNodes() {return s_max_nodes;}
 
 	/** @brief Number of generations used by garbage collector.
+	 * This will be at least 2, since one generation (Generation
+	 * 0) is for newly created nodes still enjoying infant
+	 * immunity.
 	 *
 	 * @return The number of generations into which GCNode objects
 	 * are ranked by the garbage collector.
 	 */
-	static size_t numGenerations() {return s_num_old_generations + 1;}
+	static size_t numGenerations() {return s_num_old_generations + 2;}
 
 	/** @brief Reset the tallies of the maximum numbers of bytes and
 	 *  GCNode objects.

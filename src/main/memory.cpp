@@ -232,10 +232,10 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 void GCNode::gc(unsigned int num_old_gens_to_collect)
 {
     // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
-    // GCNode::check();
+    GCNode::check();
     // cout << "Precheck completed OK\n";
 
-    GCNode::Marker marker(num_old_gens_to_collect);
+    GCNode::Marker marker(num_old_gens_to_collect + 1);
     GCRootBase::visitRoots(&marker);
     MARK_THRU(&marker, R_CommentSxp);	        /* Builtin constants */
 
@@ -290,11 +290,11 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     }
 #endif
 
-    WeakRef::markThru(num_old_gens_to_collect);
+    WeakRef::markThru(num_old_gens_to_collect + 1);
 
-    // Sweep.  gen must be signed here or the loop won't terminate!
-    for (int gen = num_old_gens_to_collect; gen >= 0; --gen) {
-	if (gen == int(s_num_generations - 1)) {
+    // Sweep.
+    for (unsigned int gen = num_old_gens_to_collect + 1; gen > 0; --gen) {
+	if (gen == s_num_generations - 1) {
 	    // Delete unmarked nodes and unmark the rest:
 	    const GCNode* node = s_genpeg[gen]->next();
 	    while (node != s_genpeg[gen]) {
@@ -325,7 +325,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     }
 
     // cout << "Finishing garbage collection\n";
-    // GCNode::check();
+    GCNode::check();
     // cout << "Postcheck completed OK\n";
 }
 

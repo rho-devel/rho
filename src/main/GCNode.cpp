@@ -129,9 +129,9 @@ void GCNode::devolveAge(const GCNode* node)
 
 void GCNode::expose_aux() const
 {
-    link(s_genpeg[0]->m_prev, this);
-    link(this, s_genpeg[0]);
-    ++s_gencount[0];
+    link(s_genpeg[1]->m_prev, this);
+    link(this, s_genpeg[1]);
+    ++s_gencount[1];
 }
 
 // GCNode::gc() is in memory.cpp (for the time being)

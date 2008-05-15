@@ -216,6 +216,7 @@ namespace CXXR {
 	};
 
 	GCNode()
+	    : m_gcgen(1)
 	{
 	    ++s_num_nodes;
 	}
