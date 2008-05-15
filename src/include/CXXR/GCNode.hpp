@@ -124,12 +124,14 @@ namespace CXXR {
      * a node that is already exposed to the garbage collector is
      * modified so that it refers to N.</li>
      *
+     * <li>N is designated as the key, value or R finalizer of a weak
+     * reference object.</li>
+     *
+     * <li>N is itself a weak reference object (in which case it is
+     * exposed to garbage collection during construction).</li>
+     *
      * <li>The method expose() is called explicitly for N, or a node
      * that refers to N (and so on recursively).
-     *
-     * <li>N is marked by the garbage collector.  (This last case is
-     * primarily to facilitate the handling of weak references, and
-     * may change in the future.)</li>
      *
      * </ul>
      * 
@@ -497,7 +499,6 @@ namespace CXXR {
 
 	void mark() const
 	{
-	    expose();
 	    m_marked = true;
 	}
 
