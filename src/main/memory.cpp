@@ -223,7 +223,11 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
-#define MARK_THRU(marker, node) if (node) (node)->conductVisitor(marker)
+namespace {
+    inline void MARK_THRU(GCNode::const_visitor* marker, GCNode* node) {
+	if (node) node->conductVisitor(marker);
+    }
+}
 
 // The MARK_THRU invocations below could be eliminated by
 // encapsulating the pointers concerned in GCRoot<> objects declared

@@ -94,7 +94,10 @@ bool GCNode::check()
 			"node has wrong generation for its list.\n";
 		    abort();
 		}
-		node->visitChildren(&o2n);
+		// Don't try visiting children of nodes in Generation
+		// 0, because they may still be under construction:
+		if (gen > 0)
+		    node->visitChildren(&o2n);
 	    }
 	    if (gct != s_gencount[gen]) {
 		cerr << "GCNode::check() : nodes in generation " << gen
@@ -103,8 +106,7 @@ bool GCNode::check()
 	    }
 	    numnodes += gct;
 	}
-	// s_num_nodes > numnodes is possible because of infant immunity.
-	if (numnodes > s_num_nodes) {
+	if (numnodes != s_num_nodes) {
 	    cerr << "GCNode::check() :"
 		"generation node totals inconsistent with grand total.\n";
 	    abort();
@@ -127,13 +129,6 @@ void GCNode::devolveAge(const GCNode* node)
     }
 }
 
-void GCNode::expose_aux() const
-{
-    link(s_genpeg[1]->m_prev, this);
-    link(this, s_genpeg[1]);
-    ++s_gencount[1];
-}
-
 // GCNode::gc() is in memory.cpp (for the time being)
 
 void GCNode::initialize()
@@ -147,9 +142,21 @@ void GCNode::initialize()
     }
 }
 
+size_t GCNode::slaughterInfants()
+{
+    size_t ans = 0;
+    const GCNode* node = s_genpeg[0]->next();
+    while (node != s_genpeg[0]) {
+	const GCNode* next = node->next();
+	delete node;
+	++ans;
+	node = next;
+    }
+    return ans;
+}
+
 bool GCNode::Ager::operator()(const GCNode* node)
 {
-    node->expose();
     if (node->m_gcgen >= m_mingen)
 	return false;
     --s_gencount[node->m_gcgen];
