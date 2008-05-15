@@ -121,14 +121,6 @@ void GCNode::cleanup()
     delete [] s_genpeg;
 }
 
-void GCNode::devolveAge(const GCNode* node)
-{
-    if (node) {
-	Ager ager(m_gcgen);
-	node->conductVisitor(&ager);
-    }
-}
-
 // GCNode::gc() is in memory.cpp (for the time being)
 
 void GCNode::initialize()

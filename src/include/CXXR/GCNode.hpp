@@ -296,7 +296,13 @@ namespace CXXR {
 	 * @todo Make this protected once CHECK_OLD_TO_NEW in
 	 * memory.cpp is no longer required.
 	 */
-	void devolveAge(const GCNode* node);
+	void devolveAge(const GCNode* node)
+	{
+	    if (node && m_gcgen > node->m_gcgen) {
+		Ager ager(m_gcgen);
+		node->conductVisitor(&ager);
+	    }
+	}
 
 	/** @brief Make node known to the garbage collector.
 	 *

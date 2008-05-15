@@ -236,7 +236,7 @@ namespace {
 void GCNode::gc(unsigned int num_old_gens_to_collect)
 {
     // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
-    GCNode::check();
+    // GCNode::check();
     // cout << "Precheck completed OK\n";
 
     GCNode::Marker marker(num_old_gens_to_collect + 1);
@@ -329,7 +329,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     }
 
     // cout << "Finishing garbage collection\n";
-    GCNode::check();
+    // GCNode::check();
     // cout << "Postcheck completed OK\n";
 }
 

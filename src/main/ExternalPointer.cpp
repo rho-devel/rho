@@ -70,8 +70,6 @@ void ExternalPointer::visitChildren(const_visitor* v) const
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
-    GCRoot<> tagr(tag);
-    GCRoot<> protr(prot);
     return new ExternalPointer(p, tag, prot);
 }
 
