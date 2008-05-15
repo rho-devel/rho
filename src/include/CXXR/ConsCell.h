@@ -207,7 +207,7 @@ namespace CXXR {
 			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
 	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
 	{
-	    checkST(st);
+	    // checkST(st);
 	}
 
 	/** @brief Create a chain of ConsCell objects.
