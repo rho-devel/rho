@@ -240,6 +240,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
     if (gens_collected == s_num_old_generations) {
 	/**** do some adjustment for intermediate collections? */
 	adjustThreshold(bytes_wanted);
+	MemoryBank::tidy();
     }
     if (s_post_gc) (*s_post_gc)();
     /* } END_SUSPEND_INTERRUPTS;*/

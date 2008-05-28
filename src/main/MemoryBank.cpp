@@ -159,3 +159,10 @@ void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
     s_threshold = (monitor ? threshold : numeric_limits<size_t>::max());
 }
 #endif
+
+void MemoryBank::tidy()
+{
+    for (unsigned int i = 0; i < 5; ++i)
+	s_pools[i]->defragment();
+}
+    

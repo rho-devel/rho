@@ -167,6 +167,14 @@ namespace CXXR {
 	    --m_cells_allocated;
 	}
 
+	/** @brief Reorganise list of free cells within the CellPool.
+	 *
+	 * This is done with a view to increasing the probability that
+	 * successive allocations will lie within the same cache line
+	 * or (less importantly nowadays) memory page.
+	 */
+	void defragment();
+
 	/** @brief Allocate a cell 'from stock'.
 	 *
 	 * Allocate a cell from the pool, provided it can be allocated

@@ -109,6 +109,35 @@ void CellPool::checkCell(const void* p) const
     }
 }
 
+void CellPool::defragment()
+{
+    size_t num_free_cells
+	= m_superblocks.size()*m_cells_per_superblock - m_cells_allocated;
+    vector<Cell*> vf(num_free_cells);
+    // Assemble vector of pointers to free cells:
+    {
+	Cell* c = m_free_cells;
+	for (vector<Cell*>::iterator it = vf.begin(); it != vf.end(); ++it) {
+	    *it = c;
+	    c = c->m_next;
+	}
+    }
+    // Sort by increasing address:
+    sort(vf.begin(), vf.end());
+    // Restring the pearls:
+    {
+	Cell* next = 0;
+	for (vector<Cell*>::reverse_iterator rit = vf.rbegin();
+	     rit != vf.rend(); ++rit) {
+	    Cell* c = *rit;
+	    c->m_next = next;
+	    next = c;
+	}
+	m_free_cells = next;
+    }
+    // check();
+}
+
 void CellPool::seekMemory() throw (std::bad_alloc)
 {
     if (m_out_of_cells) (*m_out_of_cells)(this);

@@ -222,6 +222,15 @@ namespace CXXR {
 	static void setMonitor(void (*monitor)(size_t) = 0,
 			       size_t threshold = 0);
 #endif
+
+	/** @brief Reorganise free space.
+	 *
+	 * This is done with a view to increasing the probability that
+	 * successive allocations (at least of similarly-sized blocks)
+	 * will lie within the same cache line or (less importantly
+	 * nowadays) memory page.  Details unspecified.
+	 */
+	static void tidy();
     private:
 	static const size_t s_max_cell_size = 128;
 	static unsigned int s_blocks_allocated;
