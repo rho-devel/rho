@@ -27,12 +27,13 @@ Deallocating #4
 Allocating #12 with size 774
 GC cued for 774 (not forced)
 Allocating #13 with size 79
-GC cued for 4096 (not forced)
+GC cued for 4000 (not forced)
 Deallocating #5
 Deallocating #10
 Allocating #14 with size 122
-Allocating #15 with size 35
 GC cued for 4096 (not forced)
+Allocating #15 with size 35
+GC cued for 4000 (not forced)
 Deallocating #3
 Deallocating #15
 Blocks allocated: 10

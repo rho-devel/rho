@@ -232,6 +232,7 @@ namespace CXXR {
 	 */
 	static void tidy();
     private:
+	static const size_t s_num_pools = 10;
 	static const size_t s_max_cell_size = 128;
 	static unsigned int s_blocks_allocated;
 	static unsigned int s_bytes_allocated;

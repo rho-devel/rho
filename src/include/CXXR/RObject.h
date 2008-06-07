@@ -176,7 +176,6 @@ namespace CXXR {
 	FlagWord m_flags;
 	unsigned short& m_gpbits;
 	RObject *m_attrib;
-	R_len_t truelength;
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */

@@ -460,8 +460,8 @@ namespace CXXR {
 	static size_t s_num_nodes;
 
 	mutable const GCNode *m_prev, *m_next;
-	mutable unsigned int m_gcgen : 2;
-	mutable bool m_marked        : 1;
+	mutable unsigned char m_gcgen;
+	mutable bool m_marked;
 
 	// Special constructor for pegs.  The parameter is simply to
 	// give this constructor a distinct signature. Note that the

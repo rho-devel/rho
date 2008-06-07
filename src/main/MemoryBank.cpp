@@ -62,28 +62,28 @@ void MemoryBank::pool_out_of_memory(CellPool* pool)
     if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
 }
 
-CellPool* MemoryBank::s_pools[5];
+CellPool* MemoryBank::s_pools[s_num_pools];
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
 // s_pooltab[0] ensures this.  This table assumes sizeof(double) == 8.
 unsigned int MemoryBank::s_pooltab[]
-= {0, 0, 0, 0, 0, 0, 0, 0, 0,
-   1, 1, 1, 1, 1, 1, 1, 1,
-   2, 2, 2, 2, 2, 2, 2, 2,
-   2, 2, 2, 2, 2, 2, 2, 2,
-   3, 3, 3, 3, 3, 3, 3, 3,
-   3, 3, 3, 3, 3, 3, 3, 3,
-   3, 3, 3, 3, 3, 3, 3, 3,
-   3, 3, 3, 3, 3, 3, 3, 3,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4,
-   4, 4, 4, 4, 4, 4, 4, 4};
+= {0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
+   1, 1, 1, 1, 1, 1, 1, 1, // 16
+   2, 2, 2, 2, 2, 2, 2, 2, // 24
+   3, 3, 3, 3, 3, 3, 3, 3, // 32
+   4, 4, 4, 4, 4, 4, 4, 4, // 40
+   5, 5, 5, 5, 5, 5, 5, 5, // 48
+   6, 6, 6, 6, 6, 6, 6, 6,
+   6, 6, 6, 6, 6, 6, 6, 6, // 64
+   7, 7, 7, 7, 7, 7, 7, 7,
+   7, 7, 7, 7, 7, 7, 7, 7, // 80
+   8, 8, 8, 8, 8, 8, 8, 8,
+   8, 8, 8, 8, 8, 8, 8, 8, // 96
+   9, 9, 9, 9, 9, 9, 9, 9,
+   9, 9, 9, 9, 9, 9, 9, 9,
+   9, 9, 9, 9, 9, 9, 9, 9,
+   9, 9, 9, 9, 9, 9, 9, 9}; // 128
     
 void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 {
@@ -131,7 +131,7 @@ void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 				
 void MemoryBank::check()
 {
-    for (unsigned int i = 0; i < 5; ++i)
+    for (unsigned int i = 0; i < s_num_pools; ++i)
 	s_pools[i]->check();
 }
 
@@ -139,7 +139,7 @@ void MemoryBank::check()
 // but doing so makes bugs more conspicuous when using valgrind.
 void MemoryBank::cleanup()
 {
-    for (unsigned int i = 0; i < 5; ++i)
+    for (unsigned int i = 0; i < s_num_pools; ++i)
 	delete s_pools[i];
 }
 
@@ -147,9 +147,14 @@ void MemoryBank::initialize()
 {
     s_pools[0] = new CellPool(1, 512, pool_out_of_memory);
     s_pools[1] = new CellPool(2, 256, pool_out_of_memory);
-    s_pools[2] = new CellPool(4, 128, pool_out_of_memory);
-    s_pools[3] = new CellPool(8, 64, pool_out_of_memory);
-    s_pools[4] = new CellPool(16, 32, pool_out_of_memory);
+    s_pools[2] = new CellPool(3, 180, pool_out_of_memory);
+    s_pools[3] = new CellPool(4, 128, pool_out_of_memory);
+    s_pools[4] = new CellPool(5, 100, pool_out_of_memory);
+    s_pools[5] = new CellPool(6, 90, pool_out_of_memory);
+    s_pools[6] = new CellPool(8, 64, pool_out_of_memory);
+    s_pools[7] = new CellPool(10, 50, pool_out_of_memory);
+    s_pools[8] = new CellPool(12, 45, pool_out_of_memory);
+    s_pools[9] = new CellPool(16, 32, pool_out_of_memory);
 }
 
 #ifdef R_MEMORY_PROFILING
@@ -162,7 +167,7 @@ void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 
 void MemoryBank::tidy()
 {
-    for (unsigned int i = 0; i < 5; ++i)
+    for (unsigned int i = 0; i < s_num_pools; ++i)
 	s_pools[i]->defragment();
 }
     

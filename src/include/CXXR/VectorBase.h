@@ -46,6 +46,8 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/SEXP_downcast.hpp"
+
 typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
 
 namespace CXXR {
@@ -76,6 +78,9 @@ namespace CXXR {
 	{
 	    return m_size;
 	}
+
+	// Make private in due course (or get rid altogether):
+	R_len_t m_truelength;
     protected:
 	~VectorBase() {}
     private:
@@ -104,7 +109,8 @@ int LENGTH(SEXP x);
 #else
 inline int LENGTH(SEXP x)
 {
-    CXXR::VectorBase* vb = dynamic_cast<CXXR::VectorBase*>(x);
+    using namespace CXXR;
+    VectorBase* vb = SEXP_downcast<VectorBase*>(x);
     return vb ? vb->size() : 0;
 }
 #endif
@@ -121,7 +127,9 @@ int TRUELENGTH(SEXP x);
 #else
 inline int TRUELENGTH(SEXP x)
 {
-    return reinterpret_cast<VECSEXP>(x)->truelength;
+    using namespace CXXR;
+    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+    return vb.m_truelength;
 }
 #endif
 
@@ -142,7 +150,9 @@ void SET_TRUELENGTH(SEXP x, int v);
 #else
 inline void SET_TRUELENGTH(SEXP x, int v)
 {
-    reinterpret_cast<VECSEXP>(x)->truelength = v;
+    using namespace CXXR;
+    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+    vb.m_truelength = v;
 }
 #endif
 
