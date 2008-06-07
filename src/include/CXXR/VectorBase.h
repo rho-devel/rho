@@ -79,6 +79,15 @@ namespace CXXR {
 	    return m_size;
 	}
 
+	/** @brief The name by which this type is known in R.
+	 *
+	 * @return the name by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "(vector type)";
+	}
+
 	// Make private in due course (or get rid altogether):
 	R_len_t m_truelength;
     protected:
