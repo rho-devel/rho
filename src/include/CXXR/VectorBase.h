@@ -119,7 +119,7 @@ int LENGTH(SEXP x);
 inline int LENGTH(SEXP x)
 {
     using namespace CXXR;
-    VectorBase* vb = SEXP_downcast<VectorBase*>(x);
+    VectorBase* vb = dynamic_cast<VectorBase*>(x);
     return vb ? vb->size() : 0;
 }
 #endif
