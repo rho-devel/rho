@@ -240,15 +240,7 @@ extern "C" {
      *
      * @todo Replace this with a method call to evaluate the promise.
      */
-#ifndef __cplusplus
     void SET_PRVALUE(SEXP x, SEXP v);
-#else
-    inline void SET_PRVALUE(SEXP x, SEXP v)
-    {
-	CXXR::Promise* prom = CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	prom->setValue(v);
-    }
-#endif
 
 #ifdef __cplusplus
 }

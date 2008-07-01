@@ -457,15 +457,7 @@ extern "C" {
      *          garbage collector.
      * @return a copy of \a node .
      */
-#ifndef __cplusplus
     SEXP Rf_protect(SEXP node);
-#else
-    inline SEXP Rf_protect(SEXP node)
-    {
-	CXXR::GCRootBase::protect(node);
-	return node;
-    }
-#endif
 
     /**
      * Pop cells from the C pointer protection stack.  As a
@@ -476,14 +468,7 @@ extern "C" {
      *          larger than the current size of the C pointer
      *          protection stack.
      */
-#ifndef __cplusplus
     void Rf_unprotect(int count);
-#else
-    inline void Rf_unprotect(int count)
-    {
-	CXXR::GCRootBase::unprotect(count);
-    }
-#endif
 
     /**
      * Removes from the C pointer protection stack the uppermost

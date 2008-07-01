@@ -58,8 +58,6 @@ namespace CXXR {
 	SEXP (*CDARp)(SEXP e) = CDAR;
 	SEXP (*CDDRp)(SEXP e) = CDDR;
 	SEXP (*CDRp)(SEXP e) = CDR;
-	SEXP (*allocListp)(unsigned int n) = Rf_allocList;
-	SEXP (*consp)(SEXP cr, SEXP tl) = Rf_cons;
    }
 }
 
@@ -69,6 +67,16 @@ GCRoot<PairList> PairList::s_cons_cdr;
 const char* PairList::typeName() const
 {
     return staticTypeName();
+}
+
+SEXP Rf_allocList(unsigned int n)
+{
+    return n > 0 ? new PairList(n) : 0;
+}
+
+SEXP Rf_cons(SEXP cr, SEXP tl)
+{
+    return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
 }
 
 SEXP SETCDR(SEXP x, SEXP y)

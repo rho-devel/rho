@@ -51,7 +51,6 @@ namespace CXXR {
 	int (*PRSEENp)(SEXP x) = PRSEEN;
 	SEXP (*PRVALUEp)(SEXP x) = PRVALUE;
 	void (*SETPRSEENp)(SEXP x, int v) = SET_PRSEEN;
-	void (*SET_PRVALUEp)(SEXP x, SEXP v) = SET_PRVALUE;
     }
 }
 
@@ -83,4 +82,10 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
     GCRoot<> exprt(expr);
     GCRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
     return new Promise(exprt, *rhort);
+}
+
+void SET_PRVALUE(SEXP x, SEXP v)
+{
+    Promise* prom = SEXP_downcast<Promise*>(x);
+    prom->setValue(v);
 }

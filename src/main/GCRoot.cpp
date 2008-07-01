@@ -49,8 +49,6 @@ using namespace CXXR;
 // interface:
 namespace CXXR {
     namespace ForceNonInline {
-	RObject* (*protectp)(RObject*) = Rf_protect;
-	void (*unprotectp)(int) = Rf_unprotect;
 	void (*unprotect_ptrp)(RObject*) = Rf_unprotect_ptr;
 	void (*ProtectWithIndexp)(SEXP, PROTECT_INDEX *) = R_ProtectWithIndex;
 	void (*Reprotectp)(SEXP, PROTECT_INDEX) = R_Reprotect;
@@ -172,4 +170,15 @@ void Rf_ppsRestoreSize(size_t new_size)
 size_t Rf_ppsSize()
 {
     return GCRootBase::ppsSize();
+}
+
+SEXP Rf_protect(SEXP node)
+{
+    GCRootBase::protect(node);
+    return node;
+}
+
+void Rf_unprotect(int count)
+{
+    GCRootBase::unprotect(count);
 }

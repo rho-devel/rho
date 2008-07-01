@@ -315,14 +315,7 @@ extern "C" {
      *
      * @return The constructed list, or a null pointer if \a n is zero.
      */
-#ifndef __cplusplus
     SEXP Rf_allocList(unsigned int n);
-#else
-    inline SEXP Rf_allocList(unsigned int n)
-    {
-	return n > 0 ? new CXXR::PairList(n) : 0;
-    }
-#endif
 
     /** @brief Creates a CXXR::PairList with a specified car and tail.
      *
@@ -335,15 +328,7 @@ extern "C" {
      *
      * @return Pointer to the constructed list.
      */
-#ifndef __cplusplus
     SEXP Rf_cons(SEXP cr, SEXP tl);
-#else
-    inline SEXP Rf_cons(SEXP cr, SEXP tl)
-    {
-	using namespace CXXR;
-	return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
-    }
-#endif
 
 #ifdef __cplusplus
 }

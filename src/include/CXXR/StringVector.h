@@ -112,17 +112,7 @@ extern "C" {
  * @param i Index of the required element.  There is no bounds checking.
  * @param v Pointer to CXXR::RObject representing the new value.
  */
-#ifndef __cplusplus
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
-#else
-inline void SET_STRING_ELT(SEXP x, int i, SEXP v)
-{
-    CXXR::StringVector* sv
-	= CXXR::SEXP_downcast<CXXR::StringVector*>(x);
-    CXXR::String* s = CXXR::SEXP_downcast<CXXR::String*>(v);
-    (*sv)[i] = s;
-}
-#endif
 
 /**
  * @brief Examine element of a CXXR::StringVector.
