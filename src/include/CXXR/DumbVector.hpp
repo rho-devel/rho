@@ -127,10 +127,9 @@ namespace CXXR {
 	~DumbVector()
 	{
 	    if (m_data != &m_singleton)
-		MemoryBank::deallocate(m_data, m_databytes);
+		MemoryBank::deallocate(m_data, size()*sizeof(T));
 	}
     private:
-	size_t m_databytes;  // used only if > 1 elements
 	T* m_data;  // pointer to the vector's data block.
 
 	// If there is only one element, it is stored here, internally
@@ -152,18 +151,18 @@ namespace CXXR {
     template <typename T, SEXPTYPE ST>
     void DumbVector<T, ST>::allocData(size_t sz, bool initialize)
     {
-	m_databytes = sz*sizeof(T);
+	size_t bytes = sz*sizeof(T);
 	// Check for integer overflow:
-	if (m_databytes/sizeof(T) != sz)
+	if (bytes/sizeof(T) != sz)
 	    Rf_error(_("Request to create impossibly large vector."));
-	m_data = reinterpret_cast<T*>(MemoryBank::allocate(m_databytes));
+	m_data = reinterpret_cast<T*>(MemoryBank::allocate(bytes));
 	if (initialize) {
 	    for (unsigned int i = 0; i < sz; ++i)
 		m_data[i] = m_singleton;
 	}
 #if VALGRIND_LEVEL == 1
 	// For VALGRIND_LEVEL > 1 this will already have been done:
-	else VALGRIND_MAKE_MEM_UNDEFINED(m_data, m_databytes);
+	else VALGRIND_MAKE_MEM_UNDEFINED(m_data, bytes);
 #endif
     }
 
