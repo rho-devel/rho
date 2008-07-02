@@ -194,7 +194,7 @@ namespace CXXR {
 	    : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
 	{
 	    if (encoding) checkEncoding(encoding);
-	    m_gpbits = encoding;
+	    m_flags.m_flags = encoding;
 	}
 
 	/** @brief Supply pointer to the string representation.
@@ -269,7 +269,7 @@ extern "C" {
 #else
     inline Rboolean IS_LATIN1(SEXP x)
     {
-	return Rboolean(x->m_gpbits & LATIN1_MASK);
+	return Rboolean(x->m_flags.m_flags & LATIN1_MASK);
     }
 #endif
 
@@ -282,7 +282,7 @@ extern "C" {
 #else
     inline Rboolean IS_UTF8(SEXP x)
     {
-	return Rboolean(x->m_gpbits & UTF8_MASK);
+	return Rboolean(x->m_flags.m_flags & UTF8_MASK);
     }
 #endif
 

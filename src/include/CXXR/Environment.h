@@ -277,7 +277,7 @@ extern "C" {
 #ifndef __cplusplus
     int ENVFLAGS(SEXP x);
 #else
-    inline int ENVFLAGS(SEXP x) {return x->m_gpbits;}
+    inline int ENVFLAGS(SEXP x) {return x->m_flags.m_flags;}
 #endif
 
     /** @brief Access an environment's frame.
@@ -345,7 +345,7 @@ extern "C" {
 #ifndef __cplusplus
     void SET_ENVFLAGS(SEXP x, int v);
 #else
-    inline void SET_ENVFLAGS(SEXP x, int v) {x->m_gpbits = v;}
+    inline void SET_ENVFLAGS(SEXP x, int v) {x->m_flags.m_flags = v;}
 #endif
 
     /** @brief Set environment's frame.

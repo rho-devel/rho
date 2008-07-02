@@ -184,7 +184,7 @@ extern "C" {
     inline void SET_LATIN1(SEXP x)
     {
 	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_gpbits |= LATIN1_MASK;
+	x->m_flags.m_flags |= LATIN1_MASK;
     }
 #endif
 
@@ -199,7 +199,7 @@ extern "C" {
     inline void UNSET_LATIN1(SEXP x)
     {
 	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_gpbits &= ~LATIN1_MASK;
+	x->m_flags.m_flags &= ~LATIN1_MASK;
     }
 #endif
 
@@ -214,7 +214,7 @@ extern "C" {
     inline void SET_UTF8(SEXP x)
     {
 	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_gpbits |= UTF8_MASK;
+	x->m_flags.m_flags |= UTF8_MASK;
     }
 #endif
 
@@ -229,7 +229,7 @@ extern "C" {
     inline void UNSET_UTF8(SEXP x)
     {
 	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_gpbits &= ~UTF8_MASK;
+	x->m_flags.m_flags &= ~UTF8_MASK;
     }
 #endif
 

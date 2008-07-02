@@ -199,7 +199,7 @@ extern "C" {
 #ifndef __cplusplus
     int PRSEEN(SEXP x);
 #else
-    inline int PRSEEN(SEXP x) {return x->m_gpbits;}
+    inline int PRSEEN(SEXP x) {return x->m_flags.m_flags;}
 #endif
 
     /** @brief Access the value of a CXXR::Promise.
@@ -226,7 +226,7 @@ extern "C" {
 #ifndef __cplusplus
     void SET_PRSEEN(SEXP x, int v);
 #else
-    inline void SET_PRSEEN(SEXP x, int v) {x->m_gpbits = v;}
+    inline void SET_PRSEEN(SEXP x, int v) {x->m_flags.m_flags = v;}
 #endif
 
     /** @brief Set the value of a CXXR::Promise.

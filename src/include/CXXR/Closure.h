@@ -231,7 +231,7 @@ extern "C" {
 #ifndef __cplusplus
     int MISSING(SEXP x);
 #else
-    inline int MISSING(SEXP x) {return x->m_gpbits & MISSING_MASK;}
+    inline int MISSING(SEXP x) {return x->m_flags.m_flags & MISSING_MASK;}
 #endif
 
     /** @brief Replace the environment of a closure.
@@ -259,8 +259,8 @@ extern "C" {
 #else
     inline void SET_MISSING(SEXP x, int v)
     {
-	int other_flags = x->m_gpbits & ~MISSING_MASK;
-	x->m_gpbits = other_flags | v;
+	int other_flags = x->m_flags.m_flags & ~MISSING_MASK;
+	x->m_flags.m_flags = other_flags | v;
     }
 #endif
 

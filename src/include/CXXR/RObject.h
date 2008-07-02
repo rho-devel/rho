@@ -137,7 +137,7 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
-	    : m_type(stype), m_gpbits(m_flags.m_flags)
+	    : m_type(stype)
 	{}
 
 	/** @brief Get object attributes.
@@ -174,7 +174,6 @@ namespace CXXR {
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
 	FlagWord m_flags;
-	unsigned short& m_gpbits;
 	RObject *m_attrib;
     };
 
@@ -325,7 +324,7 @@ extern "C" {
 #ifndef __cplusplus
     int LEVELS(SEXP x);
 #else
-    inline int LEVELS(SEXP x) {return x->m_gpbits;}
+    inline int LEVELS(SEXP x) {return x->m_flags.m_flags;}
 #endif
 
     /** @brief Get object copying status.
@@ -358,7 +357,7 @@ extern "C" {
 #ifndef __cplusplus
     int SETLEVELS(SEXP x, int v);
 #else
-    inline int SETLEVELS(SEXP x, int v) {return x->m_gpbits = v;}
+    inline int SETLEVELS(SEXP x, int v) {return x->m_flags.m_flags = v;}
 #endif
 
     /** @brief Replace an object's attributes.
@@ -430,7 +429,7 @@ extern "C" {
 #else
     inline Rboolean IS_S4_OBJECT(SEXP x)
     {
-	return Rboolean(x && (x->m_gpbits & S4_OBJECT_MASK));
+	return Rboolean(x && (x->m_flags.m_flags & S4_OBJECT_MASK));
     }
 #endif
 
@@ -440,7 +439,7 @@ extern "C" {
 #ifndef __cplusplus
     void SET_S4_OBJECT(SEXP x);
 #else
-    inline void SET_S4_OBJECT(SEXP x)  {x->m_gpbits |= S4_OBJECT_MASK;}
+    inline void SET_S4_OBJECT(SEXP x)  {x->m_flags.m_flags |= S4_OBJECT_MASK;}
 #endif
 
     /**
@@ -449,7 +448,10 @@ extern "C" {
 #ifndef __cplusplus
     void UNSET_S4_OBJECT(SEXP x);
 #else
-    inline void UNSET_S4_OBJECT(SEXP x)  {x->m_gpbits &= ~S4_OBJECT_MASK;}
+    inline void UNSET_S4_OBJECT(SEXP x)
+    {
+	x->m_flags.m_flags &= ~S4_OBJECT_MASK;
+    }
 #endif
 
     /** @brief Create an S4 object.
@@ -469,7 +471,7 @@ extern "C" {
 #else
     inline Rboolean IS_ACTIVE_BINDING(SEXP b)
     {
-	return Rboolean(b->m_gpbits & ACTIVE_BINDING_MASK);
+	return Rboolean(b->m_flags.m_flags & ACTIVE_BINDING_MASK);
     }
 #endif
 
@@ -478,7 +480,7 @@ extern "C" {
 #else
     inline Rboolean BINDING_IS_LOCKED(SEXP b)
     {
-	return Rboolean(b->m_gpbits & BINDING_LOCK_MASK);
+	return Rboolean(b->m_flags.m_flags & BINDING_LOCK_MASK);
     }
 #endif
 
@@ -487,20 +489,23 @@ extern "C" {
 #else
     inline void SET_ACTIVE_BINDING_BIT(SEXP b)
     {
-	b->m_gpbits |= ACTIVE_BINDING_MASK;
+	b->m_flags.m_flags |= ACTIVE_BINDING_MASK;
     }
 #endif
 
 #ifndef __cplusplus
     void LOCK_BINDING(SEXP b);
 #else
-    inline void LOCK_BINDING(SEXP b) {b->m_gpbits |= BINDING_LOCK_MASK;}
+    inline void LOCK_BINDING(SEXP b) {b->m_flags.m_flags |= BINDING_LOCK_MASK;}
 #endif
 
 #ifndef __cplusplus
     void UNLOCK_BINDING(SEXP b);
 #else
-    inline void UNLOCK_BINDING(SEXP b) {b->m_gpbits &= (~BINDING_LOCK_MASK);}
+    inline void UNLOCK_BINDING(SEXP b)
+    {
+	b->m_flags.m_flags &= (~BINDING_LOCK_MASK);
+    }
 #endif
 
 #ifdef __cplusplus
