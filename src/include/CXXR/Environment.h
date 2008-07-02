@@ -80,7 +80,8 @@ namespace CXXR {
 	 */
 	explicit Environment(Environment* enclosing = 0,
 			     PairList* namevals = 0)
-	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(namevals)
+	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(namevals),
+	      m_hashtable(0)  
 	{}
 
 	/** @brief Base environment.

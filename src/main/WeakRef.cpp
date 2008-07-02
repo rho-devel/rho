@@ -61,7 +61,7 @@ int WeakRef::s_count = 0;
 
 WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
+    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer), m_Cfinalizer(0),
       m_lit(s_live.insert(s_live.end(), this))
 {
     expose();
@@ -77,7 +77,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Cfinalizer(C_finalizer),
+    : m_key(key), m_value(value), m_Rfinalizer(0), m_Cfinalizer(C_finalizer),
       m_lit(s_live.insert(s_live.end(), this))
 {
     expose();

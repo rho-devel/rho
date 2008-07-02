@@ -137,7 +137,8 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
-	    : m_type(stype)
+	    : m_type(stype), m_has_class(false), m_named(0), m_debug(false),
+	      m_trace(false), m_attrib(0)
 	{}
 
 	/** @brief Get object attributes.

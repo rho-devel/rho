@@ -219,6 +219,7 @@ namespace CXXR {
 	};
 
 	GCNode()
+	    : m_gcgen(0), m_marked(false)
 	{
 	    link(s_genpeg[0]->m_prev, this);
 	    link(this, s_genpeg[0]);
@@ -242,7 +243,7 @@ namespace CXXR {
 	 */
 	static void* operator new(size_t bytes)
 	{
-	    return memset(MemoryBank::allocate(bytes), 0, bytes);
+	    return MemoryBank::allocate(bytes);
 	}
 
 	/** @brief Deallocate memory
@@ -467,7 +468,7 @@ namespace CXXR {
 	// give this constructor a distinct signature. Note that the
 	// node count isn't altered.
 	explicit GCNode(int /*ignored*/)
-	    : m_prev(this), m_next(this)
+	    : m_prev(this), m_next(this), m_gcgen(0), m_marked(false)
 	{}
 
 	// Not implemented.  Declared private to prevent clients

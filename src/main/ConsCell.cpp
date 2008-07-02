@@ -60,7 +60,7 @@ namespace CXXR {
 }
 
 ConsCell::ConsCell(SEXPTYPE st, size_t sz) throw (bad_alloc, out_of_range)
-    : RObject(st)
+    : RObject(st), m_car(0), m_tail(0), m_tag(0)
 {
     // checkST(st);
     if (sz == 0)
