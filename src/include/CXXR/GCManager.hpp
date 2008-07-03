@@ -60,7 +60,7 @@ namespace CXXR {
      * number of bytes currently allocated via CXXR::MemoryBank is at least
      * as great as a threshold value.  This threshold value varies
      * during the run, subject to a minimum value specified in the
-     * initialize() method.
+     * enableGC() method.
      */
     class GCManager {
     public:
@@ -100,7 +100,8 @@ namespace CXXR {
 	 * single program run is undefined.
 	 *
 	 * @param initial_threshold  Initial value for the collection
-	 *          threshold.
+	 *          threshold.  The threshold will never be made less
+	 *          than this value during the run.
 	 */
 	static void enableGC(size_t initial_threshold);
 
