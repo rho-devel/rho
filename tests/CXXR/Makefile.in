@@ -21,18 +21,19 @@ valgrind-flags = -DVALGRIND_LEVEL=2
 endif
 
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
-              MemoryBanktest.cpp
+              MemoryBanktest.cpp RObject_sizer.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
-tests = CellPooltest MemoryBanktest Allocatortest GCManagertest splice_test
+tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
+        GCManagertest splice_test
 
 check : $(tests:=.ts)
 
 Allocatortest.o : Allocatortest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
-Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
+Allocatortest_objs = Allocatortest.o MemoryBank.o CellHeap.o
 
 Allocatortest : $(Allocatortest_objs)
 	$(LINK.cc) -o $@ $(Allocatortest_objs)
@@ -41,6 +42,23 @@ Allocatortest.ts : Allocatortest Allocatortest.save
 	$(valgrind) ./$< 10 12 > Allocatortest.out
 	diff Allocatortest.save Allocatortest.out
 	rm Allocatortest.out
+	touch $@
+
+CellHeap.o : $(maindir)/CellHeap.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
+
+CellHeaptest.o : CellHeaptest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
+
+CellHeaptest_objs = CellHeaptest.o CellHeap.o
+
+CellHeaptest : $(CellHeaptest_objs)
+	$(LINK.cc) -o $@ $(CellHeaptest_objs)
+
+CellHeaptest.ts : CellHeaptest CellHeaptest.save
+	$(valgrind) ./$< > CellHeaptest.out
+	diff CellHeaptest.save CellHeaptest.out
+	rm CellHeaptest.out
 	touch $@
 
 CellPool.o : $(maindir)/CellPool.cpp
@@ -63,7 +81,7 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 GCManager.o : $(maindir)/GCManager.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
 
-GCManagertest_objs = GCManagertest.o CellPool.o GCManager.o MemoryBank.o
+GCManagertest_objs = GCManagertest.o CellHeap.o GCManager.o MemoryBank.o
 
 GCManagertest : $(GCManagertest_objs)
 	$(LINK.cc) -o $@ $(GCManagertest_objs)
@@ -74,13 +92,19 @@ GCManagertest.ts : GCManagertest GCManagertest.save
 	rm GCManagertest.out
 	touch $@
 
+GCNode.o : $(maindir)/GCNode.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
+
+GCRoot.o : $(maindir)/GCRoot.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
+
 MemoryBank.o : $(maindir)/MemoryBank.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
 MemoryBanktest.o : MemoryBanktest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
-MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellPool.o
+MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellHeap.o
 
 MemoryBanktest : $(MemoryBanktest_objs)
 	$(LINK.cc) -o $@ $(MemoryBanktest_objs)
@@ -91,8 +115,11 @@ MemoryBanktest.ts : MemoryBanktest MemoryBanktest.save
 	rm MemoryBanktest.out
 	touch $@
 
-RObject_sizer : RObject_sizer.o
-	$(LINK.cc) -o $@ $<
+RObject_sizer_objs = RObject_sizer.o CellHeap.o GCNode.o GCRoot.o \
+                     MemoryBank.o
+
+RObject_sizer : $(RObject_sizer_objs)
+	$(LINK.cc) -o $@ $(RObject_sizer_objs)
 
 splice_test : splice_test.o
 	$(LINK.cc) -o $@ $<

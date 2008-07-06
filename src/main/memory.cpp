@@ -298,38 +298,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 #endif
 
     WeakRef::markThru(num_old_gens_to_collect + 1);
-
-    // Sweep.
-    for (unsigned int gen = num_old_gens_to_collect + 1; gen > 0; --gen) {
-	if (gen == s_num_generations - 1) {
-	    // Delete unmarked nodes and unmark the rest:
-	    const GCNode* node = s_genpeg[gen]->next();
-	    while (node != s_genpeg[gen]) {
-		const GCNode* next = node->next();
-		if (!node->isMarked())
-		    delete node;
-		else node->m_marked = false;
-		node = next;
-	    }
-	} else {
-	    // Delete unmarked nodes, unmark the rest and promote them
-	    // to the next generation:
-	    const GCNode* node = s_genpeg[gen]->next();
-	    while (node != s_genpeg[gen]) {
-		const GCNode* next = node->next();
-		if (!node->isMarked())
-		    delete node;
-		else {
-		    node->m_marked = false;
-		    ++node->m_gcgen;
-		}
-		node = next;
-	    }
-	    s_genpeg[gen+1]->splice(s_genpeg[gen]->next(), s_genpeg[gen]);
-	    s_gencount[gen+1] += s_gencount[gen];
-	    s_gencount[gen] = 0;
-	}
-    }
+    sweep(num_old_gens_to_collect + 1);
 
     // cout << "Finishing garbage collection\n";
     // GCNode::check();

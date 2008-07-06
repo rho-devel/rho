@@ -18,13 +18,23 @@
  */
 
 #include <iostream>
-#include "CXXR/RObject.h"
+#include "RCNTXT.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/PairList.h"
+#include "CXXR/RealVector.h"
 
 using namespace std;
 using namespace CXXR;
 
+RCNTXT* R_GlobalContext;
+
 int main() {
-    cout << "sizeof(RObject): " << sizeof(RObject) << '\n';
+    cout << "sizeof(bool): " << sizeof(bool)
+	 << "\nsizeof(GCNode): " << sizeof(GCNode)
+	 << "\nsizeof(RObject): " << sizeof(RObject)
+         << "\nsizeof(PairList): " << sizeof(PairList)
+	 << "\nsizeof(IntVector): " << sizeof(IntVector)
+	 << "\nsizeof(RealVector): " << sizeof(RealVector) << '\n';
     return 0;
 }
 

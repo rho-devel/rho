@@ -70,6 +70,8 @@ void CXXR::strdump(ostream& os, const StringVector& sv, size_t margin)
     }
 }
 
+// ***** C interface *****
+
 void SET_STRING_ELT(SEXP x, int i, SEXP v)
 {
     StringVector* sv = SEXP_downcast<StringVector*>(x);

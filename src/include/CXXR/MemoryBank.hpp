@@ -40,12 +40,12 @@
 #ifndef MEMORYBANK_HPP
 #define MEMORYBANK_HPP
 
-#include "CXXR/CellPool.hpp"
+#include "CXXR/CellHeap.hpp"
 
 namespace CXXR {
     /** @brief Class to manage memory allocation and deallocation for CXXR.
      * 
-     * Small objects are quickly allocated from CellPools of various cell
+     * Small objects are quickly allocated from CellHeaps of various cell
      * sizes; large objects are obtained directly from the main heap.
      */
     class MemoryBank {
@@ -222,22 +222,13 @@ namespace CXXR {
 	static void setMonitor(void (*monitor)(size_t) = 0,
 			       size_t threshold = 0);
 #endif
-
-	/** @brief Reorganise free space.
-	 *
-	 * This is done with a view to increasing the probability that
-	 * successive allocations (at least of similarly-sized blocks)
-	 * will lie within the same cache line or (less importantly
-	 * nowadays) memory page.  Details unspecified.
-	 */
-	static void tidy();
     private:
 	static const size_t s_num_pools = 10;
 	static const size_t s_max_cell_size = 128;
 	static unsigned int s_blocks_allocated;
 	static unsigned int s_bytes_allocated;
 	static bool (*s_cue_gc)(size_t, bool);
-	static CellPool* s_pools[];
+	static CellHeap* s_pools[];
 	static unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);
@@ -251,7 +242,7 @@ namespace CXXR {
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
 	{
-	    CellPool* pool = s_pools[s_pooltab[bytes]];
+	    CellHeap* pool = s_pools[s_pooltab[bytes]];
 	    void* p = pool->easyAllocate();
 	    if (p) {
 		++s_blocks_allocated;
@@ -281,7 +272,7 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
-	static void pool_out_of_memory(CellPool* pool);
+	static void pool_out_of_memory(CellHeap* pool);
 
 	friend class SchwarzCtr;
     };

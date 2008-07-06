@@ -219,10 +219,9 @@ namespace CXXR {
 	};
 
 	GCNode()
-	    : m_gcgen(0), m_marked(false)
+	    : m_next(s_generation[0]), m_gcgen(0), m_marked(false)
 	{
-	    link(s_genpeg[0]->m_prev, this);
-	    link(this, s_genpeg[0]);
+	    s_generation[0] = this;
 	    ++s_gencount[0];
 	    ++s_num_nodes;
 	}
@@ -230,16 +229,11 @@ namespace CXXR {
 	/** @brief Allocate memory.
          *
 	 * Allocates memory for a new object of a class derived from
-	 * GCNode, and zero the memory thus allocated.
+	 * GCNode.
 	 *
 	 * @param bytes Number of bytes of memory required.
 	 *
 	 * @return Pointer to the allocated memory block.
-	 *
-	 * @note Since objects of classes derived from RObject \e must
-	 * be allocated on the heap, constructors of these classes may
-	 * elide some member initializations by relying on the fact
-	 * that operator new zeroes the allocated memory.
 	 */
 	static void* operator new(size_t bytes)
 	{
@@ -383,7 +377,6 @@ namespace CXXR {
 	{
 	    --s_num_nodes;
 	    --s_gencount[m_gcgen];
-	    link(m_prev, m_next);
 	}
     private:
 	friend class WeakRef;
@@ -455,21 +448,38 @@ namespace CXXR {
 	    unsigned int m_mingen;
 	};
 
+	// Class used to marshal nodes awaiting transfer to a
+	// different generation.  Defined in GCNode.cpp.
+	class XferList;
+		
 	static unsigned int s_num_generations;
-	static const GCNode** s_genpeg;
+	static const GCNode** s_generation;  // s_generation[g] is
+					     // nominally a list of
+					     // the nodes in
+					     // generation g; however,
+					     // some nodes in the list
+					     // may subsequently have changed 
+	                                     // generation.
+	static unsigned int* s_next_gen; // Look-up table used to
+					 // advance generation number
+					 // following a garbage
+					 // collection.
 	static unsigned int* s_gencount;
 	static size_t s_num_nodes;
 
-	mutable const GCNode *m_prev, *m_next;
+	mutable const GCNode *m_next;
 	mutable unsigned char m_gcgen;
 	mutable bool m_marked;
 
-	// Special constructor for pegs.  The parameter is simply to
-	// give this constructor a distinct signature. Note that the
-	// node count isn't altered.
-	explicit GCNode(int /*ignored*/)
-	    : m_prev(this), m_next(this), m_gcgen(0), m_marked(false)
-	{}
+	// Special constructor for pegs (i.e. dummy nodes used to
+	// simplify list management).  The parameter is simply to 
+	// give this constructor a distinct signature.
+	explicit GCNode(int /*ignored*/);
+
+	// Not implemented.  Declared to prevent compiler-generated
+	// versions:
+	GCNode(const GCNode&);
+	GCNode& operator=(const GCNode&);
 
 	// Not implemented.  Declared private to prevent clients
 	// allocating arrays of GCNode.
@@ -491,13 +501,6 @@ namespace CXXR {
 
 	bool isMarked() const {return m_marked;}
 
-	// Make t the successor of s:
-	static void link(const GCNode* s, const GCNode* t)
-	{
-	    s->m_next = t;
-	    t->m_prev = s;
-	}
-
 	void mark() const
 	{
 	    m_marked = true;
@@ -505,50 +508,24 @@ namespace CXXR {
 
 	const GCNode* next() const {return m_next;}
 
-	const GCNode* prev() const {return m_prev;}
-
-	/** Transfer a node so as to precede this node.
-	 * 
-	 * @param n Pointer to node to be moved, which may be in the
-	 * same (circularly linked) list as '*this', or in a different
-	 * list.  It is permissible for n to point to what is already
-	 * the predecessor of '*this', in which case the function
-	 * amounts to a no-op.  It is also permissible for n to point
-	 * to '*this' itself; beware however that in that case the
-	 * function will detach '*this' from its current list, and turn
-	 * it into a singleton list.
-	 */
-	void splice(const GCNode* n) const
-	{
-	    // Doing things in this order is innocuous if n is already
-	    // this node's predecessor:
-	    link(n->prev(), n->next());
-	    link(prev(), n);
-	    link(n, this);
-	}
-
-	/** Transfer a sublist so as to precede this node.
+	/** @brief Carry out the sweep phase of garbage collection.
 	 *
-	 * @param beg Pointer to the first node in the sublist to be
-	 * moved.  The sublist may be a sublist of the same (circularly
-	 * linked) list of which '*this' forms a part, or of another
-	 * list.  Note however that in the former case, the sublist to
-	 * be moved must not contain '*this'.
+	 * Exit conditions: (i) All nodes that on entry were within
+	 * the singly-linked lists of the swept generations will have
+	 * been moved, if necessary, to the singly-linked list
+	 * appropriate to their generation.  (This generation is subject to
+	 * further change as under (iv) below.)  (ii) all nodes within the
+	 * swept generations that were not marked on entry, apart from
+	 * those in Generation 0, will have been deleted.  (iii) all
+	 * nodes will be unmarked.  (iv) Each node within the swept
+	 * generations, other than Generation 0, will have been moved
+	 * to the next higher generation, unless it was already in the
+	 * highest generation.
 	 *
-	 * @param end Pointer to the successor of the last node of the
-	 * sublist to be moved.  It is permissible for it be identical
-	 * to beg, or to point to '*this': in either case the function
-	 * amounts to a no-op.
+	 * @param max_generation The highest generation number to be
+	 *          swept.
 	 */
-	void splice(const GCNode* beg, const GCNode* end) const
-	{
-	    if (beg != end) {
-		const GCNode* last = end->prev();
-		link(beg->prev(), end);
-		link(prev(), beg);
-		link(last, this);
-	    }
-	}
+	static void sweep(unsigned int max_generation);
 
 	void unmark() const {m_marked = false;}
 

@@ -57,12 +57,12 @@ void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_threshold = numeric_limits<size_t>::max();
 #endif
 
-void MemoryBank::pool_out_of_memory(CellPool* pool)
+void MemoryBank::pool_out_of_memory(CellHeap* pool)
 {
     if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
 }
 
-CellPool* MemoryBank::s_pools[s_num_pools];
+CellHeap* MemoryBank::s_pools[s_num_pools];
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
@@ -87,7 +87,7 @@ unsigned int MemoryBank::s_pooltab[]
     
 void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 {
-    CellPool* pool = 0;
+    CellHeap* pool = 0;
     void* p = 0;
     bool joy = false;  // true if GC succeeds after bad_alloc
     try {
@@ -143,18 +143,21 @@ void MemoryBank::cleanup()
 	delete s_pools[i];
 }
 
+// The following leave some space at the end of each 4096-byte page,
+// in case posix_memalign needs to put some housekeeping information
+// for the next page there.
 void MemoryBank::initialize()
 {
-    s_pools[0] = new CellPool(1, 512, pool_out_of_memory);
-    s_pools[1] = new CellPool(2, 256, pool_out_of_memory);
-    s_pools[2] = new CellPool(3, 180, pool_out_of_memory);
-    s_pools[3] = new CellPool(4, 128, pool_out_of_memory);
-    s_pools[4] = new CellPool(5, 100, pool_out_of_memory);
-    s_pools[5] = new CellPool(6, 90, pool_out_of_memory);
-    s_pools[6] = new CellPool(8, 64, pool_out_of_memory);
-    s_pools[7] = new CellPool(10, 50, pool_out_of_memory);
-    s_pools[8] = new CellPool(12, 45, pool_out_of_memory);
-    s_pools[9] = new CellPool(16, 32, pool_out_of_memory);
+    s_pools[0] = new CellHeap(1, 496, pool_out_of_memory);
+    s_pools[1] = new CellHeap(2, 248, pool_out_of_memory);
+    s_pools[2] = new CellHeap(3, 165, pool_out_of_memory);
+    s_pools[3] = new CellHeap(4, 124, pool_out_of_memory);
+    s_pools[4] = new CellHeap(5, 99, pool_out_of_memory);
+    s_pools[5] = new CellHeap(6, 83, pool_out_of_memory);
+    s_pools[6] = new CellHeap(8, 62, pool_out_of_memory);
+    s_pools[7] = new CellHeap(10, 49, pool_out_of_memory);
+    s_pools[8] = new CellHeap(12, 41, pool_out_of_memory);
+    s_pools[9] = new CellHeap(16, 31, pool_out_of_memory);
 }
 
 #ifdef R_MEMORY_PROFILING
@@ -164,10 +167,3 @@ void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
     s_threshold = (monitor ? threshold : numeric_limits<size_t>::max());
 }
 #endif
-
-void MemoryBank::tidy()
-{
-    for (unsigned int i = 0; i < s_num_pools; ++i)
-	s_pools[i]->defragment();
-}
-    

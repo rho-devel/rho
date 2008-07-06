@@ -162,6 +162,8 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
 #endif
 }
 
+// ***** C interface *****
+
 void Rf_ppsRestoreSize(size_t new_size)
 {
     GCRootBase::ppsRestoreSize(new_size);
