@@ -381,7 +381,11 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	names = getAttrib(s, R_NamesSymbol);
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = new Expression(2));
+	{
+	    GCRoot<PairList> tl(new PairList, true);
+	    PROTECT(newcall = new Expression(0, tl));
+	    newcall->expose();
+	}
 	SETCAR(newcall, install("print"));
 
 	if(ns > 0) {
@@ -528,7 +532,11 @@ static void printList(SEXP s, SEXP env)
 	i = 1;
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
-	PROTECT(newcall = new Expression(2));
+	{
+	    GCRoot<PairList> tl(new PairList, true);
+	    PROTECT(newcall = new Expression(0, tl));
+	    newcall->expose();
+	}
 	SETCAR(newcall, install("print"));
 	while (TYPEOF(s) == LISTSXP) {
 	    if (i > 1) Rprintf("\n");
@@ -854,7 +862,11 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    na_width_noquote = R_print.na_width_noquote;
 		Rprt_adj right = Rprt_adj(R_print.right);
 
-		PROTECT(t = s = new Expression(3));
+		{
+		    GCRoot<PairList> tl(PairList::makeList(2));
+		    PROTECT(t = s = new Expression(0, tl));
+		    s->expose();
+		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);
 		SETCAR(t, ScalarInteger(digits));

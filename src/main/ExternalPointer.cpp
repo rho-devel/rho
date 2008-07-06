@@ -70,7 +70,9 @@ void ExternalPointer::visitChildren(const_visitor* v) const
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
-    return new ExternalPointer(p, tag, prot);
+    ExternalPointer* ans = new ExternalPointer(p, tag, prot);
+    ans->expose();
+    return ans;
 }
 
 void R_SetExternalPtrAddr(SEXP s, void *p)

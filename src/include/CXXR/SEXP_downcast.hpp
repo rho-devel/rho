@@ -41,7 +41,7 @@
 #include "R_ext/Error.h"
 #include "CXXR/RObject.h"
 
-// #define USE_TYPE_CHECKING
+#define USE_TYPE_CHECKING
 
 namespace CXXR {
 #ifndef USE_TYPE_CHECKING

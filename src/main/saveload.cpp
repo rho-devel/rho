@@ -532,14 +532,17 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     switch (type) {
     case LISTSXP:
 	s = new PairList;
+	s->expose();
 	break;
     case LANGSXP:
 	s = new Expression;
+	s->expose();
 	break;
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
 	s = new RObject(type);
+	s->expose();
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
 	/* CDR(s) = */ m->InInteger(fp, d);
@@ -550,12 +553,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
 	s = new BuiltInFunction(StrToInternal(m->InString(fp, d)), false);
+	s->expose();
 	break;
     case BUILTINSXP:
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
 	s = new BuiltInFunction(StrToInternal(m->InString(fp, d)));
+	s->expose();
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
@@ -1307,6 +1312,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	break;
     case LISTSXP:
 	PROTECT(s = new PairList);
+	s->expose();
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1314,6 +1320,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	break;
     case LANGSXP:
 	PROTECT(s = new Expression);
+	s->expose();
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1335,13 +1342,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCRoot<Promise> prom(new Promise(valgen, *env));
+	    GCRoot<Promise> prom(new Promise(valgen, *env), true);
 	    prom->setValue(val);
 	    PROTECT(s = prom);
 	}
 	break;
     case DOTSXP:
 	PROTECT(s = new DottedArgs);
+	s->expose();
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1349,6 +1357,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	break;
     case EXTPTRSXP:
 	PROTECT(s = new ExternalPointer);
+	s->expose();
 	R_SetExternalPtrAddr(s, NULL);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));

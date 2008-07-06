@@ -66,6 +66,8 @@
 #include "Defn.h"
 #include "CXXR/DottedArgs.hpp"
 
+using namespace CXXR;
+
 /* used in subscript.c and subassign.c */
 Rboolean NonNullStringMatch(SEXP s, SEXP t)
 {
@@ -375,7 +377,9 @@ nextarg2:
 	    if(!ARGUSED(a)) i++;
 
 	if (i) {
-	    a = new CXXR::DottedArgs(i);
+	    GCRoot<PairList> tl(PairList::makeList(i - 1));
+	    a = new DottedArgs(0, tl);
+	    a->expose();
 	    f=a;
 	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {

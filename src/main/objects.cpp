@@ -251,6 +251,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     /* of the formals to the generic in it. */
 
     PROTECT(newrho = new Environment);
+    newrho->expose();
     op = CAR(cptr->call);
     switch (TYPEOF(op)) {
     case SYMSXP:
@@ -741,6 +742,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(s = allocVector(STRSXP, length(klass) - i));
     PROTECT(klass = duplicate(klass));
     PROTECT(m = new Environment);
+    m->expose();
     for (j = 0; j < length(s); j++)
 	SET_STRING_ELT(s, j, duplicate(STRING_ELT(klass, i++)));
     setAttrib(s, install("previous"), klass);

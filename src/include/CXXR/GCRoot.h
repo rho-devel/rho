@@ -110,7 +110,6 @@ namespace CXXR {
 	static unsigned int protect(RObject* node)
 	{
 	    unsigned int index = s_pps->size();
-	    if (node) node->expose();
 #ifdef NDEBUG
 	    s_pps->push_back(node);
 #else
@@ -170,11 +169,12 @@ namespace CXXR {
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
     protected:
-	explicit GCRootBase(const GCNode* node)
+	GCRootBase(const GCNode* node, bool expose)
 	    : m_index(s_roots->size())
 	{
-	    if (node) node->expose();
 	    s_roots->push_back(node);
+	    if (expose && node)
+		node->expose();
 	}
 
 	GCRootBase(const GCRootBase& source)
@@ -198,7 +198,6 @@ namespace CXXR {
 
 	void redirect(GCNode* node)
 	{
-	    if (node) node->expose();
 	    (*s_roots)[m_index] = node;
 	}
 
@@ -292,8 +291,15 @@ namespace CXXR {
 	 * @param node Pointer the node to be pointed to, and
 	 *          protected from the garbage collector, or a null
 	 *          pointer.
+	 *
+	 * @param expose If true, and \a node is not a null pointer, a
+	 *          side effect of the constructor is to expose \a
+	 *          node to the garbage collector.  Beware that this
+	 *          exposes only this single node: its effect does not
+	 *          recurse to the node's descendants.
 	 */
-	explicit GCRoot(T* node = 0) : GCRootBase(node) {}
+    explicit GCRoot(T* node = 0, bool expose = false)
+    : GCRootBase(node, expose) {}
 
 	/** @brief Copy constructor.
 	 *

@@ -62,6 +62,7 @@
 #define max(a, b) ((a > b)?(a):(b))
 #endif
 
+using namespace CXXR;
 
 /* These are set during each call to do_dotCode() below. */
 
@@ -2431,7 +2432,9 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	error(_("invalid argument count in call_R"));
     if (nres < 0)
 	error(_("invalid return value count in call_R"));
-    PROTECT(pcall = call = new CXXR::Expression(nargs + 1));
+    GCRoot<PairList> tl(PairList::makeList(nargs));
+    PROTECT(pcall = call = new Expression(0, tl));
+    call->expose();
     SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {

@@ -232,7 +232,6 @@ void GCNode::sweep(unsigned int max_generation)
     vector<XferList*> xferlist(s_num_generations);
     for (unsigned int gen = 0; gen < s_num_generations; ++gen)
 	xferlist[gen] = new XferList;
-    size_t g0ct = 0;
     // Process generations:
     for (unsigned int gen = 0; gen <= max_generation; ++gen) {
 	// Scan through generation:
@@ -240,8 +239,6 @@ void GCNode::sweep(unsigned int max_generation)
 	while (node) {
 	    const GCNode* next = node->next();
 	    unsigned int ngen = node->m_gcgen;
-	    if (ngen == 0)
-		++g0ct;
 	    if (ngen <= max_generation && ngen != 0) {
 		if (!node->isMarked()) {
 		    delete node;
@@ -267,6 +264,7 @@ void GCNode::sweep(unsigned int max_generation)
 	xferlist[gen]->prependTo(&s_generation[gen]);
 	delete xferlist[gen];
     }
+    //    cerr << "s_gencount[0] = " << s_gencount[0] << endl;
 }
 
 bool GCNode::Ager::operator()(const GCNode* node)
@@ -281,6 +279,10 @@ bool GCNode::Ager::operator()(const GCNode* node)
 
 bool GCNode::Marker::operator()(const GCNode* node)
 {
+    /*
+    if (node->m_gcgen == 0)
+	cerr << "Warning: Marker encountered gen 0 node.\n";
+    */
     if (node->isMarked() || node->m_gcgen > m_maxgen)
 	return false;
     node->mark();

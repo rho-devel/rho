@@ -63,21 +63,6 @@ namespace CXXR {
 	    : ConsCell(DOTSXP, cr, tl, tg)
 	{}
 
-	/** @brief Create a dotted argument list of a specified length.
-	 *
-	 * This constructor creates a DottedArgs list with a specified
-	 * number of elements.  On creation, each element has null
-	 * 'car' and 'tag'.
-	 *
-	 * @param sz Number of elements required in the list.  Must be
-	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if \a sz is zero.
-	 */
-	explicit DottedArgs(size_t sz)
-	    throw (std::bad_alloc, std::out_of_range)
-	    : ConsCell(DOTSXP, sz)
-	{}
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.

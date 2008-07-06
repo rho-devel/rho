@@ -114,6 +114,7 @@ static SEXP makeErrorCall(SEXP fun)
 {
   SEXP call;
   PROTECT(call = new CXXR::Expression);
+  call->expose();
   SETCAR(call, fun);
   UNPROTECT(1);
   return call;

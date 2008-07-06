@@ -131,7 +131,10 @@ extern "C" {
 #else
     inline SEXP mkPRIMSXP(int offset, int eval)
     {
-	return new CXXR::BuiltInFunction(offset, eval);
+	using namespace CXXR;
+	BuiltInFunction* ans =  new BuiltInFunction(offset, eval);
+	ans->expose();
+	return ans;
     }
 #endif
 

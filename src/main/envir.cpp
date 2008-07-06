@@ -862,6 +862,7 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
         val = table->get(CHAR(PRINTNAME(symbol)), canCache, table);
         if(val != R_UnboundValue) {
 	    tmp = new PairList;
+	    tmp->expose();
 	    SETCAR(tmp, val);
 	    SET_TAG(tmp, symbol);
             /* If the database has a canCache method, then call that.
@@ -2000,10 +2001,12 @@ SEXP do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 		if (TAG(x) == R_NilValue)
 		    error(_("all elements of a list must be named"));
 	    PROTECT(s = new Environment(0, SEXP_downcast<PairList*>(duplicate(CAR(args)))));
+	    s->expose();
 	} else if (isEnvironment(CAR(args))) {
 	    SEXP p, loadenv = CAR(args);
 
 	    PROTECT(s = new Environment);
+	    s->expose();
 	    if (HASHTAB(loadenv) != R_NilValue) {
 		int i, n;
 		n = length(HASHTAB(loadenv));
@@ -2045,6 +2048,7 @@ SEXP do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
         if(tb->onAttach)
 	    tb->onAttach(tb);
         s = new Environment;
+	s->expose();
         SET_HASHTAB(s, CAR(args));
 	setAttrib(s, R_ClassSymbol, getAttrib(HASHTAB(s), R_ClassSymbol));
     }

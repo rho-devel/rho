@@ -64,14 +64,32 @@ namespace CXXR {
 GCRoot<> PairList::s_cons_car;
 GCRoot<PairList> PairList::s_cons_cdr;
 
+PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
+{
+    PairList* ans = 0;
+    try {
+	while (sz--)
+	    ans = new PairList(0, ans, 0);
+    } catch(...) {
+	for (PairList* node = ans; node; node = node->tail())
+	    node->expose();
+	throw;
+    }
+    for (PairList* node = ans; node; node = node->tail())
+	node->expose();
+    return ans;
+}
+
 const char* PairList::typeName() const
 {
     return staticTypeName();
 }
 
+// ***** C interface *****
+
 SEXP Rf_allocList(unsigned int n)
 {
-    return n > 0 ? new PairList(n) : 0;
+    return PairList::makeList(n);
 }
 
 SEXP Rf_cons(SEXP cr, SEXP tl)

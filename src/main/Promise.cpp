@@ -81,7 +81,9 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
 {
     GCRoot<> exprt(expr);
     GCRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
-    return new Promise(exprt, *rhort);
+    Promise* ans = new Promise(exprt, *rhort);
+    ans->expose();
+    return ans;
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

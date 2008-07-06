@@ -1307,6 +1307,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    int locked = InInteger(stream);
 
 	    PROTECT(s = new Environment);
+	    s->expose();
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, s);
@@ -1338,6 +1339,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
            becomes necessary we can do it without needing to change
            the save format. */
 	PROTECT(s = new PairList);
+	s->expose();
 	SETLEVELS(s, levs);
 	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1348,6 +1350,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	return s;
     case LANGSXP:
 	PROTECT(s = new Expression);
+	s->expose();
 	SETLEVELS(s, levs);
 	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1363,6 +1366,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	return s;
     case DOTSXP:
 	PROTECT(s = new DottedArgs);
+	s->expose();
 	SETLEVELS(s, levs);
 	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1390,7 +1394,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
 	    GCRoot<> body(ReadItem(ref_table, stream));
 	    GCRoot<Closure> clos(new Closure(formals, body,
-					     env ? env : Environment::base()));
+					     env ? env : Environment::base()),
+				 true);
 	    SETLEVELS(clos, levs);
 	    SET_OBJECT(clos, objf);
 	    SET_ATTRIB(clos, attr);
@@ -1411,7 +1416,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (!env) env = Environment::base();
 	    GCRoot<> val(ReadItem(ref_table, stream));
 	    GCRoot<> valgen(ReadItem(ref_table, stream));
-	    GCRoot<Promise> prom(new Promise(valgen, *env));
+	    GCRoot<Promise> prom(new Promise(valgen, *env), true);
 	    SETLEVELS(prom, levs);
 	    SET_OBJECT(prom, objf);
 	    SET_ATTRIB(prom, attr);
@@ -1423,7 +1428,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   newly allocated value PROTECTed */
 	switch (type) {
 	case EXTPTRSXP:
-	    PROTECT(s = new CXXR::ExternalPointer);
+	    PROTECT(s = new ExternalPointer);
+	    s->expose();
 	    AddReadRef(ref_table, s);
 	    R_SetExternalPtrAddr(s, NULL);
 	    R_SetExternalPtrProtected(s, ReadItem(ref_table, stream));
@@ -1603,6 +1609,7 @@ static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
     SEXP s;
     PROTECT(s = new ByteCode);
+    s->expose();
     SETCAR(s, ReadItem(ref_table, stream)); /* code */
     SETCAR(s, R_bcEncode(CAR(s)));
     SETCDR(s, ReadBCConsts(ref_table, reps, stream)); /* consts */

@@ -81,7 +81,9 @@ SEXP Rf_mkSYMSXP(SEXP name, SEXP value)
 {
     GCRoot<const String> namert(SEXP_downcast<const String*>(name));
     GCRoot<> valuert(value);
-    return new Symbol(*namert, valuert);
+    Symbol* ans = new Symbol(*namert, valuert);
+    ans->expose();
+    return ans;
 }
 
 void SET_INTERNAL(SEXP x, SEXP v)

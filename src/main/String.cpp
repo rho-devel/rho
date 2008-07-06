@@ -53,7 +53,7 @@ namespace CXXR {
     }
 }
 
-GCRoot<const String> String::s_na(new UncachedString("NA"));
+GCRoot<const String> String::s_na(new UncachedString("NA"), true);
 SEXP R_NaString = const_cast<String*>(String::NA());
 
 // String::s_blank and R_BlankString are defined in SpecialSymbol.cpp

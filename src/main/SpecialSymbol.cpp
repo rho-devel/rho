@@ -56,13 +56,13 @@ namespace CXXR {
 GCRoot<const String> String::s_blank(CachedString::obtain(""));
 SEXP R_BlankString = const_cast<String*>(String::blank());
 
-GCRoot<SpecialSymbol> SpecialSymbol::s_missing_arg(new SpecialSymbol);
+GCRoot<SpecialSymbol> SpecialSymbol::s_missing_arg(new SpecialSymbol, true);
 SEXP R_MissingArg = SpecialSymbol::missingArgument();
 
-GCRoot<SpecialSymbol> SpecialSymbol::s_restart_token(new SpecialSymbol);
+GCRoot<SpecialSymbol> SpecialSymbol::s_restart_token(new SpecialSymbol, true);
 SEXP R_RestartToken = SpecialSymbol::restartToken();
 
-GCRoot<SpecialSymbol> SpecialSymbol::s_unbound_value(new SpecialSymbol);
+GCRoot<SpecialSymbol> SpecialSymbol::s_unbound_value(new SpecialSymbol, true);
 SEXP R_UnboundValue = SpecialSymbol::unboundValue();
 
 const char* SpecialSymbol::typeName() const

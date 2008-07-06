@@ -72,6 +72,7 @@ const CachedString* CachedString::obtain(const std::string& str,
 	try {
 	    map::value_type& val = *it;
 	    val.second = new CachedString(&val);
+	    val.second->expose();
 	} catch (...) {
 	    cache()->erase(it);
 	    throw;

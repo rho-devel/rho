@@ -186,6 +186,7 @@ static SEXP duplicate1(SEXP s)
     case LANGSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = new Expression(duplicate1(CAR(sp))));
+	t->expose();
 	COPY_TAG(t, sp);
 	DUPLICATE_ATTRIB(t, sp);
 	sp = CDR(sp);
@@ -203,6 +204,7 @@ static SEXP duplicate1(SEXP s)
     case DOTSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = new DottedArgs(duplicate1(CAR(sp))));
+	t->expose();
 	COPY_TAG(t, sp);
 	DUPLICATE_ATTRIB(t, sp);
 	sp = CDR(sp);

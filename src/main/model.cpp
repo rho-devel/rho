@@ -49,6 +49,8 @@
 
 #include <Defn.h>
 
+using namespace CXXR;
+
 /* inline-able versions */
 static R_INLINE Rboolean isUnordered_int(SEXP s)
 {
@@ -1732,12 +1734,15 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* the required arguments at call time.  The calls have the following */
     /* form: (contrast.type nlevs contrasts) */
 
-    PROTECT(contr1 = allocVector(VECSXP, nVar));
-    PROTECT(contr2 = allocVector(VECSXP, nVar));
-
-    PROTECT(expr = new CXXR::Expression(3));
-    SETCAR(expr, install("contrasts"));
-    SETCADDR(expr, allocVector(LGLSXP, 1));
+    {
+	PROTECT(contr1 = allocVector(VECSXP, nVar));
+	PROTECT(contr2 = allocVector(VECSXP, nVar));
+	GCRoot<PairList> tl(PairList::makeList(2));
+	PROTECT(expr = new Expression(0, tl));
+	expr->expose();
+	SETCAR(expr, install("contrasts"));
+	SETCADDR(expr, allocVector(LGLSXP, 1));
+    }
 
     /* FIXME: We need to allow a third argument to this function */
     /* which allows us to specify contrasts directly.  That argument */

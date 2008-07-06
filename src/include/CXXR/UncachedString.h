@@ -246,7 +246,10 @@ extern "C" {
 #else
     inline SEXP Rf_allocString(R_len_t length)
     {
-	return new CXXR::UncachedString(length);
+	using namespace CXXR;
+	UncachedString* ans = new UncachedString(length);
+	ans->expose();
+	return ans;
     }
 #endif
 

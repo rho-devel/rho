@@ -1014,12 +1014,16 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 
     /* expression -> list, new in R 2.4.0 */
     if (type == VECSXP)
-	if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(v))
-	    return new ListVector(*ev);
-
+	if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(v)) {
+	    ListVector* ans = new ListVector(*ev);
+	    ans->expose();
+	    return ans;
+	}
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
 	GCRoot<ListVector> lv(static_cast<ListVector*>(v));
-	return new ExpressionVector(*lv);
+	ExpressionVector* ans = new ExpressionVector(*lv);
+	ans->expose();
+	return ans;
     }
 
     if (type == STRSXP) {
@@ -1479,31 +1483,39 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ans = args;
 	break;
     case VECSXP:
-	if(0 == (n = length(args)))
-	    errorcall(call, _("invalid length 0 argument"));
-	names = getAttrib(args, R_NamesSymbol);
-	PROTECT(ap = ans = new Expression(n));
-	for (i = 0; i < n; i++) {
-	    SETCAR(ap, VECTOR_ELT(args, i));
-	    if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
-		SET_TAG(ap, install(translateChar(STRING_ELT(names, i))));
-	    ap = CDR(ap);
+	{
+	    if(0 == (n = length(args)))
+		errorcall(call, _("invalid length 0 argument"));
+	    names = getAttrib(args, R_NamesSymbol);
+	    GCRoot<PairList> tl(PairList::makeList(n - 1));
+	    PROTECT(ap = ans = new Expression(0, tl));
+	    ans->expose();
+	    for (i = 0; i < n; i++) {
+		SETCAR(ap, VECTOR_ELT(args, i));
+		if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
+		    SET_TAG(ap, install(translateChar(STRING_ELT(names, i))));
+		ap = CDR(ap);
+	    }
+	    UNPROTECT(1);
+	    break;
 	}
-	UNPROTECT(1);
-	break;
     case EXPRSXP:
-	if(0 == (n = length(args)))
-	    errorcall(call, _("invalid length 0 argument"));
-	names = getAttrib(args, R_NamesSymbol);
-	PROTECT(ap = ans = new Expression(n));
-	for (i = 0; i < n; i++) {
-	    SETCAR(ap, XVECTOR_ELT(args, i));
-	    if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
-		SET_TAG(ap, install(translateChar(STRING_ELT(names, i))));
-	    ap = CDR(ap);
+	{
+	    if(0 == (n = length(args)))
+		errorcall(call, _("invalid length 0 argument"));
+	    names = getAttrib(args, R_NamesSymbol);
+	    GCRoot<PairList> tl(PairList::makeList(n - 1));
+	    PROTECT(ap = ans = new Expression(0, tl));
+	    ans->expose();
+	    for (i = 0; i < n; i++) {
+		SETCAR(ap, XVECTOR_ELT(args, i));
+		if (names != R_NilValue && !StringBlank(STRING_ELT(names, i)))
+		    SET_TAG(ap, install(translateChar(STRING_ELT(names, i))));
+		ap = CDR(ap);
+	    }
+	    UNPROTECT(1);
+	    break;
 	}
-	UNPROTECT(1);
-	break;
     case LISTSXP:
 	{
 	    ConsCell* cc = SEXP_downcast<ConsCell*>(args);
@@ -2207,7 +2219,9 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = length(args);
     names = getAttrib(args, R_NamesSymbol);
 
-    PROTECT(c = call = new Expression(n + 1));
+    GCRoot<PairList> tl(PairList::makeList(n));
+    PROTECT(c = call = new Expression(0, tl));
+    call->expose();
     if( isString(fun) )
         SETCAR(c, install(translateChar(STRING_ELT(fun, 0))));
     else

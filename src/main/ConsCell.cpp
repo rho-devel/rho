@@ -59,21 +59,6 @@ namespace CXXR {
    }
 }
 
-ConsCell::ConsCell(SEXPTYPE st, size_t sz) throw (bad_alloc, out_of_range)
-    : RObject(st), m_car(0), m_tail(0), m_tag(0)
-{
-    // checkST(st);
-    if (sz == 0)
-	throw out_of_range(_("Cannot construct PairList of zero length."));
-    try {
-	while (--sz)
-	    m_tail = new PairList(0, m_tail, 0);
-    } catch (...) {
-	if (m_tail) m_tail->expose();
-	throw;
-    }
-}
-
 void ConsCell::checkST(SEXPTYPE st)
 {
     switch (st) {
@@ -163,16 +148,23 @@ SEXP SETCAR(SEXP x, SEXP y)
 
 SEXP Rf_allocSExp(SEXPTYPE t)
 {
+    SEXP ans;
     switch (t) {
     case LISTSXP:
-	return new PairList;
+	ans = new PairList;
+	break;
     case LANGSXP:
-	return new Expression;
+	ans = new Expression;
+	break;
     case DOTSXP:
-	return new DottedArgs;
+	ans = new DottedArgs;
+	break;
     case BCODESXP:
-	return new ByteCode;
+	ans = new ByteCode;
+	break;
     default:
 	throw invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }
+    ans->expose();
+    return ans;
 }

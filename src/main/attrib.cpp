@@ -689,7 +689,9 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) == 2)
         SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
-        PROTECT(call = new Expression(2));
+	GCRoot<PairList> tl(new PairList, true);
+        PROTECT(call = new Expression(0, tl));
+	call->expose();
         SETCAR(call, install("as.character"));
         SETCADR(call, CADR(args));
         SETCADR(args, eval(call, env));

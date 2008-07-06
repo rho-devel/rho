@@ -68,21 +68,6 @@ namespace CXXR {
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
-	/** @brief Create an expression of a specified length.
-	 *
-	 * This constructor creates an Expression with a specified number
-	 * of elements.  On creation, each element has null 'car' and
-	 * 'tag'.
-	 *
-	 * @param sz Number of elements required in the list.  Must be
-	 *           strictly positive; the constructor throws
-	 *           std::out_of_range if \a sz is zero.
-	 */
-	explicit Expression(size_t sz)
-	    throw (std::bad_alloc, std::out_of_range)
-	    : ConsCell(LANGSXP, sz)
-	{}
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -129,10 +114,12 @@ extern "C" {
 #else
     inline SEXP Rf_lcons(SEXP cr, SEXP tl)
     {
-	CXXR::GCRoot<> crr(cr);
-	CXXR::GCRoot<CXXR::PairList>
-	    tlr(CXXR::SEXP_downcast<CXXR::PairList*>(tl));
-	return new CXXR::Expression(crr, tlr);
+	using namespace CXXR;
+	GCRoot<> crr(cr);
+	GCRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
+	Expression* ans = new Expression(crr, tlr);
+	ans->expose();
+	return ans;
     }
 #endif
 

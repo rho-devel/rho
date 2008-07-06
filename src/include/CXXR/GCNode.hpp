@@ -111,27 +111,22 @@ namespace CXXR {
      * following events occurs:
      * <ul>
      *
-     * <li>N is explicitly protected from the garbage collector,
-     * either by encapsulating a pointer to it in a GCRoot, or by the
-     * CR PROTECT() mechanism.  For this reason, it is important that
-     * constructors <em>do not</em> attempt explicitly to protect
-     * '<tt>this</tt>'; a particular risk with this is that
-     * constructors of derived classes will not be able to rely on
-     * infant immunity.</li>
+     * <li>The method expose() is called explicitly for N.</li>
      *
      * <li>N is visited by a \b GCNode::Ager object (as part of
      * write barrier enforcement).  This will happen if
      * a node that is already exposed to the garbage collector is
      * modified so that it refers to N.</li>
      *
+     * <li>A pointer to N is specified in the constructor of a GCRoot
+     * object, and the optional argument \a expose is set to
+     * true.</li>
+     *
      * <li>N is designated as the key, value or R finalizer of a weak
      * reference object.</li>
      *
      * <li>N is itself a weak reference object (in which case it is
      * exposed to garbage collection during construction).</li>
-     *
-     * <li>The method expose() is called explicitly for N, or a node
-     * that refers to N (and so on recursively).
      *
      * </ul>
      * 
@@ -304,20 +299,15 @@ namespace CXXR {
 	/** @brief Make node known to the garbage collector.
 	 *
 	 * Makes this node known to the garbage collector (if it isn't
-	 * already).
-	 *
-	 * @note The only circumstance in which a derived class will
-	 * typically need to use this method is when an exception
-	 * arises in a constructor;  if the object under construction
-	 * contains 'subobjects' derived from GCNode, the constructor
-	 * will need to make these known to the garbage collector
-	 * before the exception propagates.
+	 * already).  Beware that this exposes only this single node:
+	 * its effect does not recurse to the node's descendants.
 	 */
 	void expose() const
 	{
 	    if (m_gcgen == 0) {
-		Ager exposer(1);
-		conductVisitor(&exposer);
+		--s_gencount[0];
+		m_gcgen = 1;
+		++s_gencount[1];
 	    }
 	}
 

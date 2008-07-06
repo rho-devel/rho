@@ -155,13 +155,17 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 	break;
     default: error(_("finalizer must be a function or NULL"));
     }
-    return new WeakRef(key, val, fin, onexit);
+    WeakRef* ans = new WeakRef(key, val, fin, onexit);
+    ans->expose();
+    return ans;
 }
 
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 {
     checkKey(key);
-    return new WeakRef(key, val, fin, onexit);
+    WeakRef* ans = new WeakRef(key, val, fin, onexit);
+    ans->expose();
+    return ans;
 }
 
 SEXP R_WeakRefKey(SEXP w)
@@ -193,8 +197,8 @@ void WeakRef::finalize()
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCRoot<PairList> tail(new PairList(key));
-	GCRoot<Expression> e(new Expression(Rfin, tail));
+	GCRoot<PairList> tail(new PairList(key), true);
+	GCRoot<Expression> e(new Expression(Rfin, tail), true);
 	eval(e, Environment::global());
     }
 }
@@ -489,7 +493,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCRoot<> namelistr(namelist);
     GCRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
-    return new Environment(rhor, namevalr);
+    Environment* ans = new Environment(rhor, namevalr);
+    ans->expose();
+    return ans;
 }
 
 /* All vector objects  must be a multiple of sizeof(ALIGN) */
@@ -511,29 +517,41 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     /* number of vector cells to allocate */
     switch (type) {
     case NILSXP:
-	return R_NilValue;
+	return 0;
     case RAWSXP:
-	return new RawVector(length);
+	s = new RawVector(length);
+	break;
     case CHARSXP:
-	return new UncachedString(length);
+	s = new UncachedString(length);
+	break;
     case LGLSXP:
-	return new LogicalVector(length);
+	s = new LogicalVector(length);
+	break;
     case INTSXP:
-	return new IntVector(length);
+	s = new IntVector(length);
+	break;
     case REALSXP:
-	return new RealVector(length);
+	s = new RealVector(length);
+	break;
     case CPLXSXP:
-	return new ComplexVector(length);
+	s = new ComplexVector(length);
+	break;
     case STRSXP:
-	return new StringVector(length);
+	s = new StringVector(length);
+	break;
     case EXPRSXP:
-	return new ExpressionVector(length);
+	s = new ExpressionVector(length);
+	break;
     case VECSXP:
-	return new ListVector(length);
+	s = new ListVector(length);
+	break;
     case LANGSXP:
-	if(length == 0) return R_NilValue;
-	s = new Expression(length);
-	return s;
+	{
+	    if(length == 0) return 0;
+	    GCRoot<PairList> tl(PairList::makeList(length - 1));
+	    s = new Expression(0, tl);
+	    break;
+	}
     case LISTSXP:
 	return allocList(length);
     default:
@@ -541,12 +559,15 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type2char(type), length);
 	return 0;  // -Wall
     }
+    s->expose();
+    return s;
 }
 
 SEXP allocS4Object()
 {
    SEXP s;
    GC_PROT(s = new RObject(S4SXP));
+   s->expose();
    SET_S4_OBJECT(s);
    return s;
 }

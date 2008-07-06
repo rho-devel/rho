@@ -97,5 +97,7 @@ SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     GCRoot<> bodyrt(body);
     GCRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
 			      : Environment::global());
-    return new Closure(formrt, bodyrt, envrt);
+    Closure* ans = new Closure(formrt, bodyrt, envrt);
+    ans->expose();
+    return ans;
 }
