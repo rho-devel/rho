@@ -229,7 +229,7 @@ namespace CXXR {
 	static unsigned int s_bytes_allocated;
 	static bool (*s_cue_gc)(size_t, bool);
 	static CellHeap* s_pools[];
-	static unsigned int s_pooltab[];
+	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);
 	static size_t s_threshold;

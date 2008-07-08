@@ -28,8 +28,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file MemoryBank.cpp
@@ -67,7 +67,7 @@ CellHeap* MemoryBank::s_pools[s_num_pools];
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
 // s_pooltab[0] ensures this.  This table assumes sizeof(double) == 8.
-unsigned int MemoryBank::s_pooltab[]
+const unsigned int MemoryBank::s_pooltab[]
 = {0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
    1, 1, 1, 1, 1, 1, 1, 1, // 16
    2, 2, 2, 2, 2, 2, 2, 2, // 24
