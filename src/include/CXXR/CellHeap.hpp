@@ -169,7 +169,12 @@ namespace CXXR {
 #endif
 	    // check();
 	    Cell* c = new (p) Cell;
-	    m_free_cells = meld(c, m_free_cells);
+	    if (!m_free_cells)
+		m_free_cells = c;
+	    else if (c < m_free_cells) {
+		c->m_l = m_free_cells;
+		m_free_cells = c;
+	    } else meld_aux(m_free_cells, c);
 	    --m_cells_allocated;
 	    // check();
 	}
