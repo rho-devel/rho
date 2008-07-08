@@ -41,10 +41,16 @@
 
 #include "CXXR/CellHeap.hpp"
 
-// For posix_memalign:
+#ifndef __APPLE__
+#define HAVE_POSIX_MEMALIGN
+#endif
+
+#ifdef HAVE_POSIX_MEMALIGN
 #define _XOPEN_SOURCE 600
 
 #include <cstdlib>
+#endif
+
 #include <iostream>
 
 using namespace std;
@@ -158,6 +164,7 @@ void CellHeap::seekMemory() throw (std::bad_alloc)
 {
     if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
+#ifdef HAVE_POSIX_MEMALIGN
 	void* memblock;
 	// We assume the memory page size is some multiple of 4096 bytes:
 	if (0 != posix_memalign(&memblock, 4096, m_superblocksize)) {
@@ -165,6 +172,13 @@ void CellHeap::seekMemory() throw (std::bad_alloc)
 	    abort();
 	}
 	char* superblock = reinterpret_cast<char*>(memblock);
+#else
+	char* superblock = reinterpret_cast<char*>(malloc(m_superblocksize));
+	if (!superblock) {
+		cerr << "Unable to allocate CellHeap memory.\n";
+	    abort();
+	}
+#endif
 	//	cout << "Superblock at " << memblock << " for cell size "
 	//     << m_cellsize << endl;
 	m_superblocks.push_back(superblock);
