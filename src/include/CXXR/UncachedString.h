@@ -251,6 +251,20 @@ extern "C" {
     }
 #endif
 
+    /** @brief Create a CXXR::UncachedString object for specified text.
+     *
+     * @param text The text of the string to be created, possibly
+     *          including embedded null characters.  The encoding is
+     *          assumed to be CE_NATIVE.
+     *
+     * @param length The length of the string pointed to by \a text.
+     *          Must be nonnegative.  The created string will comprise
+     *          the text plus an appended null byte.
+     *
+     * @return Pointer to the created string.
+     */
+    SEXP Rf_mkCharLen(const char* text, int length);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

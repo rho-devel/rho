@@ -3228,15 +3228,3 @@ SEXP do_envprofile(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error("argument must be a hashed environment");
     return ans;
 }
-
-/*
-   Version for strings with embedded nuls:
-   these do not currently go in the cache,
-   and do not have an encoding.
-*/
-SEXP mkCharLen(const char *name, int len)
-{
-    SEXP c = allocString(len);
-    memcpy(CHAR_RW(c), name, len);
-    return c;
-}

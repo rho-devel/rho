@@ -74,3 +74,14 @@ const char* UncachedString::typeName() const
 {
     return UncachedString::staticTypeName();
 }
+
+// ***** C interface *****
+
+
+SEXP Rf_mkCharLen(const char* text, int length)
+{
+    string str(text, length);
+    UncachedString* ans = new UncachedString(str);
+    ans->expose();
+    return ans;
+}
