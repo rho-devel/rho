@@ -342,7 +342,7 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc)
     wc_len = (enc == CE_UTF8)? utf8towcs(NULL, in, 0) : mbstowcs(NULL, in, 0);
     if (out == NULL || int(wc_len) < 0) return wc_len;
 
-    if ((void*)-1 == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
+    if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
 	return size_t(-1);
 
     i_buf = in;
@@ -1024,26 +1024,26 @@ utf8toucs(wchar_t *wc, const char *s)
 {
     unsigned int byte;
     wchar_t local, *w;
-    byte = *((unsigned char *)s);
+    byte = static_cast<unsigned char>(*s);
     w = wc ? wc: &local;
 
     if (byte == 0) {
-	*w = (wchar_t) 0;
+	*w = wchar_t(0);
 	return 0;
     } else if (byte < 0xC0) {
-	*w = (wchar_t) byte;
+	*w = wchar_t(byte);
 	return 1;
     } else if (byte < 0xE0) {
 	if(strlen(s) < 2) return -2;
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = (wchar_t) (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = wchar_t(((byte & 0x1F) << 6) | (s[1] & 0x3F));
 	    return 2;
 	} else return -1;
     } else if (byte < 0xF0) {
 	if(strlen(s) < 3) return -2;
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-	    *w = (wchar_t) (((byte & 0x0F) << 12)
-		    | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
+	    *w = wchar_t(((byte & 0x0F) << 12)
+			 | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    /* Surrogates range */
 	    if(byte >= 0xD800 && byte <= 0xDFFF) return -1;
@@ -1055,27 +1055,27 @@ utf8toucs(wchar_t *wc, const char *s)
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
 	if(strlen(s) < 4) return -2;
-	*w = (wchar_t) (((byte & 0x0F) << 18)
-			| ((s[1] & 0x3F) << 12)
-			| ((s[2] & 0x3F) << 6)
-			| (s[3] & 0x3F));
+	*w = wchar_t(((byte & 0x0F) << 18)
+		     | ((s[1] & 0x3F) << 12)
+		     | ((s[2] & 0x3F) << 6)
+		     | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
 	if(strlen(s) < 5) return -2;
-	*w = (wchar_t) (((byte & 0x0F) << 24)
-			| ((s[1] & 0x3F) << 12)
-			| ((s[2] & 0x3F) << 12)
-			| ((s[3] & 0x3F) << 6)
-			| (s[4] & 0x3F));
+	*w = wchar_t(((byte & 0x0F) << 24)
+		     | ((s[1] & 0x3F) << 12)
+		     | ((s[2] & 0x3F) << 12)
+		     | ((s[3] & 0x3F) << 6)
+		     | (s[4] & 0x3F));
 	return 5;
     } else {
 	if(strlen(s) < 6) return -2;
-	*w = (wchar_t) (((byte & 0x0F) << 30)
-			| ((s[1] & 0x3F) << 24)
-			| ((s[2] & 0x3F) << 18)
-			| ((s[3] & 0x3F) << 12)
-			| ((s[4] & 0x3F) << 6)
-			| (s[5] & 0x3F));
+	*w = wchar_t(((byte & 0x0F) << 30)
+		     | ((s[1] & 0x3F) << 24)
+		     | ((s[2] & 0x3F) << 18)
+		     | ((s[3] & 0x3F) << 12)
+		     | ((s[4] & 0x3F) << 6)
+		     | (s[5] & 0x3F));
 	return 6;
     }
 }
@@ -1160,22 +1160,22 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 
     if(n <= 0 || !*s) return size_t(0);
     used = mbrtowc(wc, s, n, ps);
-    if((int) used < 0) {
+    if(int(used) < 0) {
 	/* let's try to print out a readable version */
-	char *err = reinterpret_cast<char*>(alloca(4*strlen(s) + 1)), *q;
+	char *err = static_cast<char*>(alloca(4*strlen(s) + 1)), *q;
 	const char *p;
 	R_CheckStack();
 	for(p = s, q = err; *p; ) {
 	    /* don't do the first to keep ps state straight */
 	    if(p > s) used = mbrtowc(NULL, p, n, ps);
 	    if(used == 0) break;
-	    else if((int) used > 0) {
+	    else if(int(used) > 0) {
 		memcpy(q, p, used);
 		p += used;
 		q += used;
 		n -= used;
 	    } else {
-		sprintf(q, "<%02x>", (unsigned char) *p++);
+		sprintf(q, "<%02x>", static_cast<unsigned char>(*p++));
 		q += 4;
 		n--;
 	    }
@@ -1225,7 +1225,7 @@ void mbcsToLatin1(const char *in, char *out)
 	*out = '\0';
 	return;
     }
-    wbuff = reinterpret_cast<wchar_t*>(alloca((res+1) * sizeof(wchar_t)));
+    wbuff = static_cast<wchar_t*>(alloca((res+1) * sizeof(wchar_t)));
     R_CheckStack();
     if(!wbuff) error(_("allocation failure in '%s'"), "mbcsToLatin1");
     mres = mbstowcs(wbuff, in, res+1);

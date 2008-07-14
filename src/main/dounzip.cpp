@@ -351,15 +351,15 @@ Rconnection attribute_hidden
 R_newunz(const char *description, const char *const mode)
 {
     Rconnection newconn;
-    newconn = reinterpret_cast<Rconnection>(malloc(sizeof(struct Rconn)));
+    newconn = static_cast<Rconnection>(malloc(sizeof(struct Rconn)));
     if(!newconn) error(_("allocation of unz connection failed"));
-    newconn->connclass = reinterpret_cast<char *>(malloc(strlen("unz") + 1));
+    newconn->connclass = static_cast<char *>(malloc(strlen("unz") + 1));
     if(!newconn->connclass) {
 	free(newconn);
 	error(_("allocation of unz connection failed"));
     }
     strcpy(newconn->connclass, "unz");
-    newconn->description = reinterpret_cast<char *>(malloc(strlen(description) + 1));
+    newconn->description = static_cast<char *>(malloc(strlen(description) + 1));
     if(!newconn->description) {
 	free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));

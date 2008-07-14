@@ -201,7 +201,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	GPar *ddp;
 	sd = dd->gesd[baseRegisterIndex];
 	dev = dd->dev;
-	sd->systemSpecific = bss = reinterpret_cast<baseSystemState*>(malloc(sizeof(baseSystemState)));
+	sd->systemSpecific = bss = static_cast<baseSystemState*>(malloc(sizeof(baseSystemState)));
 	ddp = &(bss->dp);
 	GInit(ddp);
 	/* For some things, the device sets the starting value at least.
@@ -251,13 +251,13 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	/* Changed from INTSXP in 2.7.0: but saved graphics lists
 	   are protected by an R version number */
 	PROTECT(result = allocVector(RAWSXP, sizeof(GPar)));
-	copyGPar(&(bss->dpSaved), (GPar*) RAW(result));
+	copyGPar(&(bss->dpSaved), reinterpret_cast<GPar*>(RAW(result)));
 	UNPROTECT(1);
 	break;
     case GE_RestoreSnapshotState:
 	/* called from GEplaySnapshot */
 	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
-	copyGPar((GPar*) RAW(data), &(bss->dpSaved));
+	copyGPar(reinterpret_cast<GPar*>(RAW(data)), &(bss->dpSaved));
 	restoredpSaved(dd);
 	copyGPar(&(bss->dp), &(bss->gp));
 	GReset(dd);

@@ -93,7 +93,7 @@ char* R_alloc(size_t num_elts, int elt_size)
     // Check for integer overflow:
     if (size/elt_size != num_elts)
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
-    return reinterpret_cast<char*>(RAllocStack::allocate(size));
+    return static_cast<char*>(RAllocStack::allocate(size));
 }
 
 char* S_alloc(long num_elts, int elt_size)
@@ -106,7 +106,7 @@ char* S_alloc(long num_elts, int elt_size)
     // Check for integer overflow:
     if (size/elt_size != size_t(num_elts))
 	Rf_error(_("R_alloc: requested allocation is impossibly large."));
-    char* ans = reinterpret_cast<char*>(RAllocStack::allocate(size));
+    char* ans = static_cast<char*>(RAllocStack::allocate(size));
     memset(ans, 0, size);
     return ans;
 }

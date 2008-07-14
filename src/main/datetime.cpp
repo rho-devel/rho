@@ -296,7 +296,7 @@ static double guess_offset (struct tm *tm)
     if(!have_broken_mktime() && tm->tm_year < 2) { /* no DST */
 	tm->tm_year = 2;
 	mktime(tm);
-	offset1 = (double) mktime(tm) - mktime00(tm);
+	offset1 = double(mktime(tm)) - mktime00(tm);
 	memcpy(tm, &oldtm, sizeof(struct tm));
 	tm->tm_isdst = 0;
 	return offset1;
@@ -375,7 +375,7 @@ static double mktime0 (struct tm *tm, const int local)
 #else
 	errno = 79;
 #endif
-	return (double)(-1);
+	return double(-1);
     }
     if(!local) return mktime00(tm);
 
@@ -725,7 +725,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef MKTIME_SETS_ERRNO
 	    REAL(ans)[i] = errno ? NA_REAL : tmp + (secs - fsecs);
 #else
-	    REAL(ans)[i] = (tmp == (double)(-1)) ?
+	    REAL(ans)[i] = (tmp == double(-1)) ?
 		NA_REAL : tmp + (secs - fsecs);
 #endif
 	}

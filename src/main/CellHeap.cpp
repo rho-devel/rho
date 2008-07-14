@@ -80,7 +80,7 @@ bool CellHeap::check() const
 void CellHeap::checkAllocatedCell(const void* p) const 
 {
     checkCell(p);
-    const Cell* cp = reinterpret_cast<const Cell*>(p);
+    const Cell* cp = static_cast<const Cell*>(p);
     if (isFreeCell(m_free_cells, cp)) {
 	cerr << "CellHeap::checkCell : designated block"
 	    " is (already) free.\n";
@@ -91,7 +91,7 @@ void CellHeap::checkAllocatedCell(const void* p) const
 void CellHeap::checkCell(const void* p) const
 {
     if (!p) return;
-    const char* pc = reinterpret_cast<const char*>(p);
+    const char* pc = static_cast<const char*>(p);
     bool found = false;
     for (vector<void*>::const_iterator it = m_superblocks.begin();
 	 !found && it != m_superblocks.end(); ++it) {
@@ -110,7 +110,7 @@ void CellHeap::checkCell(const void* p) const
 	    "designated block doesn't belong to this CellHeap\n";
 	abort();
     }
-    const Cell* c = reinterpret_cast<const Cell*>(p);
+    const Cell* c = static_cast<const Cell*>(p);
     if ((c->m_l && c->m_l < c) || (c->m_r && c->m_r < c)) {
 	cerr << "CellHeap::checkCell : "
 	    "child with lower address than parent.\n";
@@ -171,9 +171,9 @@ void CellHeap::seekMemory() throw (std::bad_alloc)
 	    cerr << "Unable to allocate CellHeap memory.\n";
 	    abort();
 	}
-	char* superblock = reinterpret_cast<char*>(memblock);
+	char* superblock = static_cast<char*>(memblock);
 #else
-	char* superblock = reinterpret_cast<char*>(malloc(m_superblocksize));
+	char* superblock = static_cast<char*>(malloc(m_superblocksize));
 	if (!superblock) {
 		cerr << "Unable to allocate CellHeap memory.\n";
 	    abort();

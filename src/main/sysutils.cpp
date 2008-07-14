@@ -788,25 +788,25 @@ next_char:
 	    if(clen > 0 && int(inb) >= clen) {
 		inbuf += clen; inb -= clen;
 # ifndef Win32
-		if((unsigned int) wc < 65536) {
+		if(static_cast<unsigned int>(wc) < 65536) {
 # endif
-		    snprintf(outbuf, 9, "<U+%04X>", (unsigned int) wc);
+		    snprintf(outbuf, 9, "<U+%04X>", static_cast<unsigned int>(wc));
 		    outbuf += 8; outb -= 8;
 # ifndef Win32
 		} else {
-		    snprintf(outbuf, 13, "<U+%08X>", (unsigned int) wc);
+		    snprintf(outbuf, 13, "<U+%08X>", static_cast<unsigned int>(wc));
 		    outbuf += 12; outb -= 12;
 		}
 # endif
 	    } else {
-		snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+		snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 		outbuf += 4; outb -= 4;
 		inbuf++; inb--;
 	    }
 	} else
 #endif
 	{
-	    snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+	    snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 	    outbuf += 4; outb -= 4;
 	    inbuf++; inb--;
 	}
@@ -835,7 +835,7 @@ const char *translateCharUTF8(SEXP x)
     if(strIsASCII(CHAR(x))) return ans;
 
     obj = Riconv_open("UTF-8", IS_LATIN1(x) ? "latin1" : "");
-    if(obj == (void *)(-1)) error(_("unsupported conversion"));
+    if(obj == reinterpret_cast<void *>(-1)) error(_("unsupported conversion"));
     R_AllocStringBuffer(0, &cbuff);
 top_of_loop:
     inbuf = ans; inb = strlen(inbuf);
@@ -988,7 +988,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     }
 
     obj = Riconv_open(tocode, fromcode);
-    if(obj == (void *)(-1)) return x;
+    if(obj == reinterpret_cast<void *>(-1)) return x;
     R_AllocStringBuffer(0, &cbuff);
 top_of_loop:
     inbuf = x; inb = strlen(inbuf);
@@ -1008,7 +1008,7 @@ next_char:
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
 	    }
-	    snprintf(outbuf, 5, "<%02x>", (unsigned char)*inbuf);
+	    snprintf(outbuf, 5, "<%02x>", static_cast<unsigned char>(*inbuf));
 	    outbuf += 4; outb -= 4;
 	    inbuf++; inb--;
 	    goto next_char;
@@ -1060,7 +1060,7 @@ size_t ucstomb(char *s, const unsigned int wc)
     char     buf[MB_CUR_MAX+1];
     void    *cd = NULL ;
     unsigned int  wcs[2];
-    const char *inbuf = (const char *) wcs;
+    const char *inbuf = reinterpret_cast<const char *>(wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
     char    *outbuf = buf;
     size_t   outbytesleft = sizeof(buf);
@@ -1073,15 +1073,15 @@ size_t ucstomb(char *s, const unsigned int wc)
     wcs[0] = wc;
 
     if(ucsmb_obj == NULL) {
-	if((void *)(-1) == (cd = Riconv_open("", UNICODE))) {
+	if(reinterpret_cast<void *>(-1) == (cd = Riconv_open("", UNICODE))) {
 #ifndef  Win32
 	    char tocode[128];
 	    /* locale set fuzzy case */
 	    strncpy(tocode, locale2charset(NULL), sizeof(tocode));
-	    if((void *)(-1) == (cd = Riconv_open(tocode, UNICODE)))
-		return (size_t)(-1);
+	    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open(tocode, UNICODE)))
+		return size_t(-1);
 #else
-	    return (size_t)(-1);
+	    return size_t(-1);
 #endif
 	}
 	ucsmb_obj = cd;
@@ -1089,17 +1089,17 @@ size_t ucstomb(char *s, const unsigned int wc)
 
     status = Riconv(ucsmb_obj, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == (size_t) -1) {
+    if (status == size_t(-1)) {
 	switch(errno){
 	case EINVAL:
-	    return (size_t) -2;
+	    return size_t(-2);
 	case EILSEQ:
-	    return (size_t) -1;
+	    return size_t(-1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return (size_t) -1;
+	    return size_t(-1);
 	}
     }
     buf[MB_CUR_MAX] = '\0'; /* safety measure */
@@ -1116,30 +1116,30 @@ mbtoucs(unsigned int *wc, const char *s, size_t n)
     void    *cd;
     const char *inbuf = s;
     size_t   inbytesleft = strlen(s);
-    char    *outbuf = (char *) wcs;
+    char    *outbuf = reinterpret_cast<char *>(wcs);
     size_t   outbytesleft = sizeof(buf);
     size_t   status;
 
     if(s[0] == 0) {*wc = 0; return 1;}
 
-    if((void *)(-1) == (cd = Riconv_open(UNICODE, ""))) return (size_t)(-1);
+    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open(UNICODE, ""))) return size_t(-1);
     status = Riconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == (size_t) -1) {
+    if (status == size_t(-1)) {
 	switch(errno){
 	case EINVAL:
-	    return (size_t) -2;
+	    return size_t(-2);
 	case EILSEQ:
-	    return (size_t) -1;
+	    return size_t(-1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return (size_t) -1;
+	    return size_t(-1);
 	}
     }
     *wc = wcs[0];
-    return (size_t) 1;
+    return 1;
 }
 
 /* made available for use in graphics devices */
@@ -1148,7 +1148,7 @@ size_t ucstoutf8(char *s, const unsigned int wc)
     char     buf[16];
     void    *cd = NULL ;
     unsigned int  wcs[2];
-    const char *inbuf = (const char *) wcs;
+    const char *inbuf = reinterpret_cast<const char *>(wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
     char    *outbuf = buf;
     size_t   outbytesleft = sizeof(buf);
@@ -1159,21 +1159,21 @@ size_t ucstoutf8(char *s, const unsigned int wc)
     memset(buf, 0, sizeof(buf));
     wcs[0] = wc; wcs[1] = 0;
 
-    if((void *)(-1) == (cd = Riconv_open("UTF-8", UNICODE)))
-	return (size_t)(-1);
+    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open("UTF-8", UNICODE)))
+	return size_t(-1);
     status = Riconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == (size_t) -1) {
+    if (status == size_t(-1)) {
 	switch(errno){
 	case EINVAL:
-	    return (size_t) -2;
+	    return size_t(-2);
 	case EILSEQ:
-	    return (size_t) -1;
+	    return size_t(-1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return (size_t) -1;
+	    return size_t(-1);
 	}
     }
     *outbuf = '\0';
@@ -1330,7 +1330,7 @@ void attribute_hidden InitTempDir()
     }
 
     len = strlen(tmp) + 1;
-    p = reinterpret_cast<char *>(malloc(len));
+    p = static_cast<char *>(malloc(len));
     if(!p)
 	R_Suicide(_("cannot allocate R_TempDir"));
     else {
@@ -1367,7 +1367,7 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
     }
     if(!done)
 	error(_("cannot find unused tempfile name"));
-    res = reinterpret_cast<char *>(malloc((strlen(tm)+1) * sizeof(char)));
+    res = static_cast<char *>(malloc((strlen(tm)+1) * sizeof(char)));
     strcpy(res, tm);
     return res;
 }

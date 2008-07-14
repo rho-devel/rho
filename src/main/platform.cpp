@@ -307,8 +307,8 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "title");
     if (!isString(pg))
 	error(_("invalid '%s' argument"), "pager");
-    f = (const char**) R_alloc(n, sizeof(char*));
-    h = (const char**) R_alloc(n, sizeof(char*));
+    f = reinterpret_cast<const char**>(R_alloc(n, sizeof(char*)));
+    h = reinterpret_cast<const char**>(R_alloc(n, sizeof(char*)));
     for (i = 0; i < n; i++) {
 	SEXP el = STRING_ELT(fn, 0);
 	if (!isNull(el))
@@ -367,8 +367,8 @@ SEXP attribute_hidden do_fileedit(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (n > 0) {
 	if (!isString(fn))
 	    error(_("invalid '%s' specification"), "filename");
-	f = (const char**) R_alloc(n, sizeof(char*));
-	title = (const char**) R_alloc(n, sizeof(char*));
+	f = reinterpret_cast<const char**>(R_alloc(n, sizeof(char*)));
+	title = reinterpret_cast<const char**>(R_alloc(n, sizeof(char*)));
 	/* FIXME convert to UTF-8 on Windows */
 	for (i = 0; i < n; i++) {
 	    SEXP el = STRING_ELT(fn, 0);
@@ -388,9 +388,9 @@ SEXP attribute_hidden do_fileedit(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else {  /* open a new file for editing */
 	n = 1;
-	f = (const char**) R_alloc(1, sizeof(char*));
+	f = reinterpret_cast<const char**>(R_alloc(1, sizeof(char*)));
 	f[0] = "";
-	title = (const char**) R_alloc(1, sizeof(char*));
+	title = reinterpret_cast<const char**>(R_alloc(1, sizeof(char*)));
 	title[0] = "";
     }
     if (length(ed) >= 1 || !isNull(STRING_ELT(ed, 0))) {

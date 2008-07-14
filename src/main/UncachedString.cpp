@@ -64,7 +64,7 @@ UncachedString::UncachedString(const std::string& str, cetype_t encoding)
 void UncachedString::allocData(size_t sz)
 {
     if (sz > s_short_strlen)
-	m_data = reinterpret_cast<char*>(MemoryBank::allocate(m_databytes));
+	m_data = static_cast<char*>(MemoryBank::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
     setCString(m_data);

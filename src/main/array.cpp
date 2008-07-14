@@ -1237,7 +1237,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int *Cnt = NULL, *c;
 	    LDOUBLE *rans, *ra;
 	    if(n <= 10000) {
-		rans = reinterpret_cast<LDOUBLE *>(alloca(n * sizeof(LDOUBLE)));
+		rans = static_cast<LDOUBLE *>(alloca(n * sizeof(LDOUBLE)));
 		R_CheckStack();
 		memset(rans, 0, n*sizeof(LDOUBLE));
 	    } else rans = Calloc(n, LDOUBLE);

@@ -716,7 +716,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing)
     }
 
     /* First sort NAs to one end */
-    isna = reinterpret_cast<int*>(malloc(n * sizeof(int)));
+    isna = static_cast<int*>(malloc(n * sizeof(int)));
     switch (TYPEOF(key)) {
     case LGLSXP:
     case INTSXP:
@@ -943,7 +943,7 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     napos = off ? 0 : xmax + 1;
     off -= xmin;
     /* alloca is fine here: we know this is small */
-    cnts = reinterpret_cast<unsigned int*>(alloca((xmax+1)*sizeof(unsigned int)));
+    cnts = static_cast<unsigned int*>(alloca((xmax+1)*sizeof(unsigned int)));
     R_CheckStack();
 
     for(i = 0; i <= xmax+1; i++) cnts[i] = 0;

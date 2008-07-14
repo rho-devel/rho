@@ -1445,7 +1445,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case BUILTINSXP:
 	    /* These are all short strings */
 	    length = InInteger(stream);
-	    cbuf = reinterpret_cast<char*>(alloca(length+1));
+	    cbuf = static_cast<char*>(alloca(length+1));
 	    InString(stream, cbuf, length);
 	    cbuf[length] = '\0';
 	    PROTECT(s = mkPRIMSXP(StrToInternal(cbuf), type == BUILTINSXP));
@@ -1456,7 +1456,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		PROTECT(s = NA_STRING);
 	    else if (length < 1000) {
 		cetype_t enc = CE_NATIVE;
-		cbuf = reinterpret_cast<char*>(alloca(length+1));
+		cbuf = static_cast<char*>(alloca(length+1));
 		InString(stream, cbuf, length);
 		cbuf[length] = '\0';
 		if (levs & UTF8_MASK) enc = CE_UTF8;
@@ -2057,7 +2057,7 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
     if(needed > INT_MAX)
 	error(_("serialization is too large to store in a raw vector"));
     if(needed < INT_MAX - MAXELTSIZE) needed += MAXELTSIZE;
-    mb->buf = reinterpret_cast<unsigned char*>(realloc(mb->buf, newsize));
+    mb->buf = static_cast<unsigned char*>(realloc(mb->buf, newsize));
     if (mb->buf == NULL)
 	error(_("cannot allocate buffer"));
     mb->size = newsize;
@@ -2347,7 +2347,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	filelen = ftell(fp);
 	/* fprintf(stderr, "adding file %s at pos %d in cache, length %d\n",
 	   cfile, icache, filelen); */
-	ptr[icache] = reinterpret_cast<char*>(malloc(filelen));
+	ptr[icache] = static_cast<char*>(malloc(filelen));
 	if (fseek(fp, 0, SEEK_SET) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);

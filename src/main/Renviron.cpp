@@ -123,7 +123,7 @@ static const char *findterm(const char *s)
 	/* copy over leading part */
 	nans = strlen(ans);
 	strncat(ans, s, p-s); ans[nans + p - s] = '\0';
-	r = reinterpret_cast<char *>(alloca(q - p + 2));
+	r = static_cast<char *>(alloca(q - p + 2));
 	strncpy(r, p, q - p + 1);
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
@@ -142,7 +142,7 @@ static void Putenv(char *a, const char *b)
     int inquote = 0;
 
 #ifdef HAVE_SETENV
-    buf = reinterpret_cast<char *>(malloc((strlen(b) + 1) * sizeof(char)));
+    buf = static_cast<char *>(malloc((strlen(b) + 1) * sizeof(char)));
     if(!buf) R_Suicide("allocation failure in reading Renviron");
     value = buf;
 #else

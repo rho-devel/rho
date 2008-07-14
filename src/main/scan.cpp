@@ -1538,7 +1538,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    data.con->seek(data.con, data.con->seek(data.con, -1, 1, 1), 1, 1);
     }
 
-    buf = reinterpret_cast<char*>(malloc(buf_size));
+    buf = static_cast<char*>(malloc(buf_size));
     if(!buf)
 	error(_("cannot allocate buffer in 'readTableHead'"));
 
@@ -1550,7 +1550,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while((c = scanchar(TRUE, &data)) != R_EOF) {
 	    if(nbuf >= buf_size -1) {
 		buf_size *= 2;
-		buf = reinterpret_cast<char*>(realloc(buf, buf_size));
+		buf = static_cast<char*>(realloc(buf, buf_size));
 		if(!buf)
 		    error(_("cannot allocate buffer in 'readTableHead'"));
 	    }

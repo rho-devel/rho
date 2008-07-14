@@ -129,7 +129,7 @@ void* GEsystemState(pGEDevDesc dd, int index)
  */
 static void registerOne(pGEDevDesc dd, int systemNumber, GEcallback cb) {
     dd->gesd[systemNumber] =
-	reinterpret_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
+	static_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
     if (dd->gesd[systemNumber] == NULL)
 	error(_("unable to allocate memory (in GEregister)"));
     cb(GE_InitState, dd, R_NilValue);
@@ -186,7 +186,7 @@ void GEregisterSystem(GEcallback cb, int *systemRegisterIndex) {
     /* Store the information for adding to any new devices
      */
     registeredSystems[numGraphicsSystems] =
-	reinterpret_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
+	static_cast<GESystemDesc*>(calloc(1, sizeof(GESystemDesc)));
     if (registeredSystems[numGraphicsSystems] == NULL)
 	error(_("unable to allocate memory (in GEregister)"));
     registeredSystems[numGraphicsSystems]->callback = cb;
@@ -1678,7 +1678,7 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 #ifdef DEBUG_MI
 					    printf(" centring %s aka %d in MBCS\n", ss, wc);
 #endif
-					    GEMetricInfo((int) wc, gc, &h, &d, &w, dd);
+					    GEMetricInfo(int(wc), gc, &h, &d, &w, dd);
 					    h = fromDeviceHeight(h, GE_INCHES, dd);
 					    d = fromDeviceHeight(d, GE_INCHES, dd);
 					    if (charNum++ == 0) {
@@ -1695,7 +1695,7 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 					int used;
 					wchar_t wc;
 					while ((used = utf8toucs(&wc, ss)) > 0) {
-					    GEMetricInfo(-(int) wc, gc, &h, &d, &w, dd);
+					    GEMetricInfo(-int(wc), gc, &h, &d, &w, dd);
 					    h = fromDeviceHeight(h, GE_INCHES, dd);
 					    d = fromDeviceHeight(d, GE_INCHES, dd);
 #ifdef DEBUG_MI
@@ -1716,7 +1716,7 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 #endif
 				if(!done) {
 				    for (ss = str; *ss; ss++) {
-					GEMetricInfo((unsigned char) *ss, gc,
+					GEMetricInfo(static_cast<unsigned char>(*ss), gc,
 						     &h, &d, &w, dd);
 					h = fromDeviceHeight(h, GE_INCHES, dd);
 					d = fromDeviceHeight(d, GE_INCHES, dd);
@@ -1808,7 +1808,7 @@ SEXP GEXspline(int n, double *x, double *y, double *s, Rboolean open,
      * after any R_alloc's done by functions I call.
      */
     unsigned int vmaxsave = vmaxget();
-    ys = (double *) R_alloc(n, sizeof(double));
+    ys = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
     for (i = 0; i < n; i++) ys[i] = y[i]*asp;
     if (open) {
       compute_open_spline(n, x, ys, s, repEnds, LOW_PRECISION, dd);
@@ -2344,7 +2344,7 @@ double GEStrWidth(const char *str, cetype_t enc, const pGEcontext gc, pGEDevDesc
 		enc2 = (dd->dev->hasTextUTF8 == TRUE) ? CE_UTF8 : CE_NATIVE;
 	    else if(dd->dev->wantSymbolUTF8 == TRUE) enc2 = CE_UTF8;
 
-	    sb = sbuf = (char*) R_alloc(strlen(str) + 1, sizeof(char));
+	    sb = sbuf = R_alloc(strlen(str) + 1, sizeof(char));
 	    for(s = str; ; s++) {
 		if (*s == '\n' || *s == '\0') {
 		    const char *str;
@@ -2830,14 +2830,14 @@ int GEstring_to_pch(SEXP pch)
     if (pch == NA_STRING) return NA_INTEGER;
     if (CHAR(pch)[0] == 0) return NA_INTEGER;  /* pch = "" */
     if (pch == last_pch) return last_ipch;/* take advantage of CHARSXP cache */
-    ipch = (unsigned char) CHAR(pch)[0];
+    ipch = static_cast<unsigned char>(CHAR(pch)[0]);
 #ifdef SUPPORT_MBCS
     if (IS_LATIN1(pch)) {
 	if (ipch > 127) ipch = -ipch;  /* record as Unicode */
     } else if (IS_UTF8(pch) || utf8locale) {
 	wchar_t wc = 0;
 	if (ipch > 127) {
-	    if ( (int) utf8toucs(&wc, CHAR(pch)) > 0) ipch = -wc;
+	    if ( int(utf8toucs(&wc, CHAR(pch))) > 0) ipch = -wc;
 	    else error(_("invalid multibyte char in pch=\"c\""));
 	}
     } else if(mbcslocale) {
@@ -2845,7 +2845,7 @@ int GEstring_to_pch(SEXP pch)
 	   On Windows this only covers CJK locales, so we could.
 	 */
 	unsigned int ucs = 0;
-	if ( (int) mbtoucs(&ucs, CHAR(pch), MB_CUR_MAX) > 0) ipch = ucs;
+	if ( int(mbtoucs(&ucs, CHAR(pch), MB_CUR_MAX)) > 0) ipch = ucs;
 	else error(_("invalid multibyte char in pch=\"c\""));
 	if (ipch > 127) ipch = -ipch;
     }

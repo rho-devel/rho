@@ -1713,7 +1713,7 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     y = REAL(sy);
     z = REAL(sz);
     c = REAL(sc);
-    col = (rcolor *) INTEGER(scol);
+    col = reinterpret_cast<rcolor *>(INTEGER(scol));
 
     /* Check of grid coordinates */
     /* We want them to all be finite */

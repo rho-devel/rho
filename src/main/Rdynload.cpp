@@ -287,7 +287,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(croutines) {
 	for(num=0; croutines[num].name != NULL; num++) {;}
 	info->CSymbols
-	    = reinterpret_cast<Rf_DotCSymbol*>(calloc(num, sizeof(Rf_DotCSymbol)));
+	    = static_cast<Rf_DotCSymbol*>(calloc(num, sizeof(Rf_DotCSymbol)));
 	info->numCSymbols = num;
 	for(i = 0; i < num; i++) {
 	    R_addCRoutine(info, croutines+i, info->CSymbols + i);
@@ -297,7 +297,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(fortranRoutines) {
 	for(num=0; fortranRoutines[num].name != NULL; num++) {;}
 	info->FortranSymbols =
-	    reinterpret_cast<Rf_DotFortranSymbol*>(calloc(num, sizeof(Rf_DotFortranSymbol)));
+	    static_cast<Rf_DotFortranSymbol*>(calloc(num, sizeof(Rf_DotFortranSymbol)));
 	info->numFortranSymbols = num;
 
 	for(i = 0; i < num; i++) {
@@ -309,7 +309,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(callRoutines) {
 	for(num=0; callRoutines[num].name != NULL; num++) {;}
 	info->CallSymbols =
-	    reinterpret_cast<Rf_DotCallSymbol*>(calloc(num, sizeof(Rf_DotCallSymbol)));
+	    static_cast<Rf_DotCallSymbol*>(calloc(num, sizeof(Rf_DotCallSymbol)));
 	info->numCallSymbols = num;
 	for(i = 0; i < num; i++) {
 	    R_addCallRoutine(info, callRoutines+i, info->CallSymbols + i);
@@ -319,7 +319,7 @@ R_registerRoutines(DllInfo *info, const R_CMethodDef * const croutines,
     if(externalRoutines) {
 	for(num=0; externalRoutines[num].name != NULL; num++) {;}
 	info->ExternalSymbols =
-	    reinterpret_cast<Rf_DotExternalSymbol*>(calloc(num, sizeof(Rf_DotExternalSymbol)));
+	    static_cast<Rf_DotExternalSymbol*>(calloc(num, sizeof(Rf_DotExternalSymbol)));
 	info->numExternalSymbols = num;
 
 	for(i = 0; i < num; i++) {
@@ -335,7 +335,7 @@ static void
 R_setPrimitiveArgTypes(const R_FortranMethodDef * const croutine,
 		       Rf_DotFortranSymbol *sym)
 {
-    sym->types = reinterpret_cast<R_NativePrimitiveArgType *>
+    sym->types = static_cast<R_NativePrimitiveArgType *>
 	(malloc(sizeof(R_NativePrimitiveArgType) * croutine->numArgs));
     if(sym->types)
 	memcpy(sym->types, croutine->types,
@@ -347,7 +347,7 @@ static void
 R_setArgStyles(const R_FortranMethodDef * const croutine,
 	       Rf_DotFortranSymbol *sym)
 {
-    sym->styles = reinterpret_cast<R_NativeArgStyle *>
+    sym->styles = static_cast<R_NativeArgStyle *>
 	(malloc(sizeof(R_NativeArgStyle) * croutine->numArgs));
     if(sym->styles)
 	memcpy(sym->styles, croutine->styles,
@@ -576,11 +576,11 @@ static DllInfo* AddDLL(const char *path, int asLocal, int now,
 	char *tmp;
 	DllInfoInitCall f;
 #ifdef HAVE_NO_SYMBOL_UNDERSCORE
-	tmp = reinterpret_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
+	tmp = static_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
 							   strlen(info->name)+ 1)));
 	sprintf(tmp, "%s%s","R_init_", info->name);
 #else
-	tmp = reinterpret_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
+	tmp = static_cast<char*>(malloc(sizeof(char)*(strlen("R_init_") +
 							   strlen(info->name)+ 2)));
 	sprintf(tmp, "_%s%s","R_init_", info->name);
 #endif
@@ -606,7 +606,7 @@ static DllInfo *R_RegisterDLL(HINSTANCE handle, const char *path)
     */
     info->useDynamicLookup = TRUE;
 
-    dpath = reinterpret_cast<char *>(malloc(strlen(path)+1));
+    dpath = static_cast<char *>(malloc(strlen(path)+1));
     if(dpath == NULL) {
 	strcpy(DLLerror, _("could not allocate space for 'path'"));
 	R_osDynSymbol->closeLibrary(handle);
@@ -640,7 +640,7 @@ static int
 addDLL(char *dpath, const char *DLLname, HINSTANCE handle)
 {
     int ans = CountDLL;
-    char *name = reinterpret_cast<char *>(malloc(strlen(DLLname)+1));
+    char *name = static_cast<char *>(malloc(strlen(DLLname)+1));
     if(name == NULL) {
 	strcpy(DLLerror, _("could not allocate space for 'name'"));
 	if(handle)
@@ -814,7 +814,7 @@ R_dlsym(DllInfo *info, char const *name,
     }
 #endif
 
-    f = (DL_FUNC) R_osDynSymbol->dlsym(info, buf);
+    f = reinterpret_cast<DL_FUNC>(R_osDynSymbol->dlsym(info, buf));
 #ifdef HAVE_F77_UNDERSCORE
     if (!f && symbol && symbol->type == R_ANY_SYM) {
 	strcat(buf, "_");
@@ -992,7 +992,7 @@ Rf_MakeRegisteredNativeSymbol(R_RegisteredNativeSymbol *symbol)
 {
     SEXP ref, klass;
     R_RegisteredNativeSymbol *copy;
-    copy = reinterpret_cast<R_RegisteredNativeSymbol *>(malloc(1 * sizeof(R_RegisteredNativeSymbol)));
+    copy = static_cast<R_RegisteredNativeSymbol *>(malloc(1 * sizeof(R_RegisteredNativeSymbol)));
     if(!copy) {
 	error(_("cannot allocate memory for registered native symbol (%d bytes)"),
 	      int(sizeof(R_RegisteredNativeSymbol)));

@@ -431,7 +431,7 @@ void InitMemory()
     GCManager::enableGC(R_VSize);
 
 #ifdef BYTECODE
-    R_BCNodeStackBase = reinterpret_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
+    R_BCNodeStackBase = static_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
     if (R_BCNodeStackBase == NULL)
 	R_Suicide("couldn't allocate node stack");
 # ifdef BC_INT_STACK
@@ -821,10 +821,10 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     if(blen < blen1) blen += bsize;
 
     if(buf->data == NULL) {
-	buf->data = reinterpret_cast<char *>(malloc(blen));
+	buf->data = static_cast<char *>(malloc(blen));
 	buf->data[0] = '\0';
     } else
-	buf->data = reinterpret_cast<char *>(realloc(buf->data, blen));
+	buf->data = static_cast<char *>(realloc(buf->data, blen));
     buf->bufsize = blen;
     if(!buf->data) {
 	buf->bufsize = 0;

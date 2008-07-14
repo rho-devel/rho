@@ -401,7 +401,7 @@ SEXP attribute_hidden do_col2RGB(SEXP call, SEXP op, SEXP args, SEXP env)
 
     bg_needed = !isString(colors);
     for (i = 0; !bg_needed && i < n; i++)
-	bg_needed = isdigit((int)CHAR(STRING_ELT(colors, i))[0]);
+	bg_needed = isdigit(int(CHAR(STRING_ELT(colors, i))[0]));
     if (bg_needed)
 	bg = dpptr(GEcurrentDevice())->bg;
     else
@@ -483,7 +483,7 @@ void hsv2rgb(double h, double s, double v, double *r, double *g, double *b)
     int i;
 
     f = modf(h * 6.0, &t);
-    i = ((int) t) % 6;
+    i = int(t) % 6;
 
     p = v * (1 - s);
     q = v * (1 - s * f);
@@ -1482,7 +1482,7 @@ static unsigned int str2col(const char *s, unsigned int bg)
        and made this depend on base graphics.
        Looks like it was an artefact of conversion in col2rgb().
     */
-    else if(isdigit((int)s[0])) return number2col(s, bg);
+    else if(isdigit(int(s[0]))) return number2col(s, bg);
     else return name2col(s);
 }
 

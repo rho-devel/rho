@@ -1537,8 +1537,8 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1));
-	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading ascii string"));
 	buf = newbuf;
@@ -1677,8 +1677,8 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1)); 
-	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1)); 
+	else newbuf = static_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1778,8 +1778,8 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     if (int(nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = reinterpret_cast<char *>(realloc(buf, nbytes + 1)); 
-	else newbuf = reinterpret_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1)); 
+	else newbuf = static_cast<char *>(malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;

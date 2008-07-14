@@ -226,14 +226,14 @@ apse_bool_t apse_set_pattern(apse_t*		ap,
 
     ap->bytes_in_state = ap->bitvectors_in_state * sizeof(apse_vec_t);
 
-    ap->case_mask = reinterpret_cast<apse_vec_t *>(calloc(ap->n_alphabet, ap->bytes_in_state));
+    ap->case_mask = static_cast<apse_vec_t *>(calloc(ap->n_alphabet, ap->bytes_in_state));
     if (ap->case_mask == 0)
 	goto out;
 
     for (i = 0; i < pattern_size; i++) {
 #ifdef SUPPORT_MBCS
 	unsigned o = ap->n_alphabet > 256 ?
-	    ((wchar_t *)pattern)[i] % ap->n_alphabet :
+	    reinterpret_cast<wchar_t *>(pattern)[i] % ap->n_alphabet :
 	    pattern[i];
 #else
 	unsigned o = pattern[i];
@@ -341,11 +341,11 @@ apse_bool_t apse_set_edit_distance(apse_t *ap, apse_size_t edit_distance) {
 
     ap->state = ap->prev_state = 0;
 
-    ap->state = reinterpret_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
+    ap->state = static_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
     if (ap->state == 0)
 	goto out;
 
-    ap->prev_state = reinterpret_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
+    ap->prev_state = static_cast<apse_vec_t *>(calloc(edit_distance + 1, ap->bytes_in_state));
     if (ap->prev_state == 0)
 	goto out;
 
@@ -391,7 +391,7 @@ apse_bool_t apse_set_caseignore_slice(apse_t*		ap,
 
     if (!ap->fold_mask) {
 
-	ap->fold_mask = reinterpret_cast<apse_vec_t *>(calloc(ap->n_alphabet,
+	ap->fold_mask = static_cast<apse_vec_t *>(calloc(ap->n_alphabet,
 							      ap->bytes_in_state));
 if (ap->fold_mask == 0)
 	    goto out;
@@ -502,7 +502,7 @@ apse_t *apse_create(unsigned char*	pattern,
     apse_t		*ap;
     apse_bool_t	okay = 0;
 
-    ap = reinterpret_cast<apse_t*>(calloc((size_t)1, sizeof(*ap)));
+    ap = static_cast<apse_t*>(calloc(size_t(1), sizeof(*ap)));
     if (ap == 0)
 	return 0;
 
@@ -765,7 +765,7 @@ static apse_bool_t _apse_match_multiple_simple(apse_t *ap) {
 
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	unsigned	o = (ap->n_alphabet > 256) ?
-	    ((wchar_t *)ap->text)[ap->text_position] % ap->n_alphabet :
+	    reinterpret_cast<wchar_t *>(ap->text)[ap->text_position] % ap->n_alphabet :
 	    ap->text[ap->text_position];
 	apse_vec_t	*t = ap->pattern_mask + o * ap->bitvectors_in_state;
 	apse_vec_t	c, d;
@@ -805,7 +805,7 @@ static apse_bool_t _apse_match_single_complex(apse_t *ap) {
     /* single apse_vec_t, has_different_distances */
     for ( ; ap->text_position < ap->text_size; ap->text_position++) {
 	unsigned	o = (ap->n_alphabet > 256) ?
-	    ((wchar_t *)ap->text)[ap->text_position] % ap->n_alphabet :
+	    reinterpret_cast<wchar_t *>(ap->text)[ap->text_position] % ap->n_alphabet :
 	    ap->text[ap->text_position];
 	apse_vec_t	t = ap->pattern_mask[o * ap->bitvectors_in_state];
 	apse_size_t	h, g;

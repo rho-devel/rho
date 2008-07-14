@@ -912,7 +912,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
-	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));
+	    buf = static_cast<char *>(alloca(strlen(domain)+3));
 	    R_CheckStack();
 	    sprintf(buf, "R-%s", domain);
 	    domain = buf;
@@ -927,7 +927,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int ihead = 0, itail = 0;
 	    const char * This = translateChar(STRING_ELT(string, i));
 	    char *tmp, *head = NULL, *tail = NULL, *p, *tr;
-	    tmp = reinterpret_cast<char *>(alloca(strlen(This) + 1));
+	    tmp = static_cast<char *>(alloca(strlen(This) + 1));
 	    R_CheckStack();
 	    strcpy(tmp, This);
 	    /* strip leading and trailing white spaces and
@@ -936,7 +936,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		*p && (*p == ' ' || *p == '\t' || *p == '\n');
 		p++, ihead++) ;
 	    if(ihead > 0) {
-		head = reinterpret_cast<char *>(alloca(ihead + 1));
+		head = static_cast<char *>(alloca(ihead + 1));
 		R_CheckStack();
 		strncpy(head, tmp, ihead);
 		head[ihead] = '\0';
@@ -947,7 +947,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    p >= tmp && (*p == ' ' || *p == '\t' || *p == '\n');
 		    p--, itail++) ;
 	    if(itail > 0) {
-		tail = reinterpret_cast<char *>(alloca(itail + 1));
+		tail = static_cast<char *>(alloca(itail + 1));
 		R_CheckStack();
 		strcpy(tail, tmp+strlen(tmp)-itail);
 		tmp[strlen(tmp)-itail] = '\0';
@@ -957,7 +957,7 @@ SEXP do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 		REprintf("translating '%s' in domain '%s'\n", tmp, domain);
 #endif
 		tr = dgettext(domain, tmp);
-		tmp = reinterpret_cast<char *>(alloca(strlen(tr) + ihead + itail + 1));
+		tmp = static_cast<char *>(alloca(strlen(tr) + ihead + itail + 1));
 		R_CheckStack();
 		tmp[0] ='\0';
 		if(ihead > 0) strcat(tmp, head);
@@ -1013,7 +1013,7 @@ SEXP do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    rho = ENCLOS(rho);
 	}
 	if(strlen(domain)) {
-	    buf = reinterpret_cast<char *>(alloca(strlen(domain)+3));
+	    buf = static_cast<char *>(alloca(strlen(domain)+3));
 	    R_CheckStack();
 	    sprintf(buf, "R-%s", domain);
 	    domain = buf;

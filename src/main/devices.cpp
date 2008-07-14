@@ -181,7 +181,7 @@ pGEDevDesc GEcurrentDevice(void)
 /* FIXME: remove in due course */
 pGEDev Rf_CurrentDevice(void)
 {
-    return (pGEDev) GEcurrentDevice();
+    return pGEDev(GEcurrentDevice());
 }
 
 pGEDevDesc GEgetDevice(int i)
@@ -192,7 +192,7 @@ pGEDevDesc GEgetDevice(int i)
 /* FIXME: remove in due course */
 DevDesc* Rf_GetDevice(int i)
 {
-    return (pGEDev) R_Devices[i];
+    return pGEDev(R_Devices[i]);
 }
 
 
@@ -278,7 +278,7 @@ int ndevNumber(pDevDesc dd)
    Incorrectly declared old version */
 int Rf_devNumber(pGEDev dd)
 {
-    return ndevNumber((pDevDesc ) dd);
+    return ndevNumber(pDevDesc(dd));
 }
 
 int selectDevice(int devNum)
@@ -581,7 +581,7 @@ pGEDevDesc GEcreateDevDesc(pDevDesc dev)
      * device description (add graphics engine information
      * to the device description).
      */
-    pGEDevDesc gdd = (GEDevDesc*) calloc(1, sizeof(GEDevDesc));
+    pGEDevDesc gdd = static_cast<GEDevDesc*>(calloc(1, sizeof(GEDevDesc)));
     /* NULL the gesd array
      */
     int i;

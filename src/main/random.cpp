@@ -350,8 +350,8 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
      */
     if(n <= SMALL) {
 	/* might do this repeatedly, so speed matters */
-	HL = reinterpret_cast<int *>(alloca(n * sizeof(int)));
-	q = reinterpret_cast<double *>(alloca(n * sizeof(double)));
+	HL = static_cast<int *>(alloca(n * sizeof(int)));
+	q = static_cast<double *>(alloca(n * sizeof(double)));
 	R_CheckStack();
     } else {
 	/* Slow enough anyway not to risk overflow */

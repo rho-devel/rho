@@ -705,7 +705,7 @@ const char *locale2charset(const char *locale)
 	/* let's hope it is a ll_* name */
 	if (0 == strcmp(enc, "euc")) {
 	    /* This is OK as encoding names are ASCII */
-	    if(isalpha((int)la_loc[0]) && isalpha((int)la_loc[1])
+	    if(isalpha(int(la_loc[0])) && isalpha(int(la_loc[1]))
 	       && (la_loc[2] == '_')) {
 		if (0 == strncmp("ja", la_loc, 2)) return "EUC-JP";
 		if (0 == strncmp("ko", la_loc, 2)) return "EUC-KR";
