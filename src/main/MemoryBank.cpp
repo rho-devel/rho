@@ -123,9 +123,6 @@ void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 	}
     }
 #endif
-#ifdef R_MEMORY_PROFILING
-    if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
-#endif
     return p;
 }
 				

@@ -111,10 +111,12 @@ namespace CXXR {
 	 */
 	static void* allocate(size_t bytes) throw (std::bad_alloc)
 	{
+#ifdef R_MEMORY_PROFILING
+	    if (s_monitor && bytes >= s_threshold) s_monitor(bytes);
+#endif
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
 #else
-#warning Not compiling for VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes;
 #endif
 	    // Assumes sizeof(double) == 8:

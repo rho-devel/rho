@@ -36,12 +36,14 @@
 
 /** @file Rvalgrind.h
  *
- * \#defines relating to the use of valgrind.  These are controlled by the
- * \c --with-valgrind-instrumentation= option to configure, which sets
- * \c VALGRIND_LEVEL to the supplied value (default 0) and defines \c
- * NVALGRIND if the value is 0.
- * <UL>
- * <LI>Level 0 is no additional instrumentation</LI>
+ * \#defines relating to the use of valgrind.  CXXR uses environment
+ * variables to manage valgrind instrumentation, rather than having
+ * this controlled by the <tt>configure</tt> script.  If the \c
+ * NVALGRIND environment variable is defined, all valgrind
+ * instrumentation is suppressed; otherwise, the instrumentation level
+ * is controlled by the environment variable \c VALGRIND_LEVEL, as
+ * follows: <UL> <LI>Level 0 is no additional instrumentation; this is
+ * the default.</LI>
  *
  * <LI>Level 1 marks as uninitialized newly-created numeric, logical,
  * and integer vectors, and R_alloc()/S_alloc() memory.
@@ -69,25 +71,15 @@
 #ifndef RVALGRIND_H
 #define RVALGRIND_H 1
 
-// We ignore the config.h settings of VALGRIND_LEVEL and NVALGRIND if
-// VALGRIND_LEVEL is already defined at this point, e.g. in compiling
-// test programs.
-#ifdef VALGRIND_LEVEL
-#define OVERRIDE_VALGRIND_LEVEL VALGRIND_LEVEL
+/* NVALGRIND trumps everything else.*/
+#ifdef NVALGRIND
 #undef VALGRIND_LEVEL
+#define VALGRIND_LEVEL 0
 #endif
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#ifdef OVERRIDE_VALGRIND_LEVEL
-#undef VALGRIND_LEVEL
-#undef NVALGRIND
-#define VALGRIND_LEVEL OVERRIDE_VALGRIND_LEVEL
-#if VALGRIND_LEVEL==0
+#ifndef VALGRIND_LEVEL
+#define VALGRIND_LEVEL 0
 #define NVALGRIND
-#endif
 #endif
 
 #ifdef Win32
@@ -98,10 +90,6 @@
 
 #ifndef NVALGRIND
 #include "memcheck.h"
-#endif
-
-#ifndef VALGRIND_LEVEL
-#define VALGRIND_LEVEL 0
 #endif
 
 #endif  /* RVALGRIND_H */

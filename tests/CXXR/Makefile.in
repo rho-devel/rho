@@ -17,7 +17,7 @@ valgrind = $(shell type -t valgrind > /dev/null \
              && echo "valgrind -q --leak-check=yes")
 
 ifdef valgrind
-valgrind-flags = -DVALGRIND_LEVEL=2
+valgrind_flags = -DVALGRIND_LEVEL=2
 endif
 
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
