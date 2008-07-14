@@ -1,6 +1,6 @@
 % File src/library/base/man/chartr.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{chartr}
@@ -41,10 +41,19 @@ casefold(x, upper = FALSE)
 
   \code{casefold} is a wrapper for \code{tolower} and \code{toupper}
   provided for compatibility with S-PLUS.
+
+  Inputs with embedded nul bytes will be truncated at the first nul.
 }
 \value{
   A character vector of the same length and with the same attributes as
   \code{x} (after possible coercion).
+  
+  Elements of the result will be have the encoding declared as that of
+  the current locale (see \code{\link{Encoding}} if the corresponding
+  input had a declared encoding and the current locale is either Latin-1
+  or UTF-8.  The result will be in the current locale's encoding unless
+  the corresponding input was in UTF-8, when it will be in UTF-8 when
+  the system has Unicode wide characters.
 }
 \seealso{
   \code{\link{sub}} and \code{\link{gsub}} for other

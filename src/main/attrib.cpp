@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
  *                            R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,6 @@ using namespace CXXR;
 #undef TRUE
 #undef FALSE
 
-static void checkNames(SEXP, SEXP);
 static SEXP installAttrib(SEXP, SEXP, SEXP);
 static SEXP removeAttrib(SEXP, SEXP);
 
@@ -127,10 +126,10 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 	    s = getAttrib(vec, R_DimSymbol);
 	    if(TYPEOF(s) == INTSXP && length(s) == 1) {
 		s = getAttrib(vec, R_DimNamesSymbol);
-                if(!isNull(s)) {
-                    SET_NAMED(VECTOR_ELT(s, 0), 2);
-                    return VECTOR_ELT(s, 0);
-                }
+		if(!isNull(s)) {
+		    SET_NAMED(VECTOR_ELT(s, 0), 2);
+		    return VECTOR_ELT(s, 0);
+		}
 	    }
 	}
 	if (isList(vec) || isLanguage(vec)) {
@@ -400,7 +399,7 @@ static void checkNames(SEXP x, SEXP s)
 
 /* Time Series Parameters */
 
-static void badtsp()
+static void badtsp(void)
 {
     error(_("invalid time series parameters specified"));
 }
@@ -566,7 +565,7 @@ static SEXP lang2str(SEXP obj, SEXPTYPE t)
 
 /* the S4-style class: for dispatch required to be a single string;
    for the new class() function;
-   if(singleString) , keeps S3-style multiple classes.
+   if(!singleString) , keeps S3-style multiple classes.
    Called from the methods package, so exposed.
  */
 SEXP R_data_class(SEXP obj, Rboolean singleString)
@@ -672,6 +671,7 @@ SEXP attribute_hidden R_data_class2 (SEXP obj)
     }
 }
 
+/* class() : */
 SEXP attribute_hidden R_do_data_class(SEXP call, SEXP op, SEXP args, SEXP env)
 {
   checkArity(op, args);
@@ -687,15 +687,15 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	return(ans);
     PROTECT(args = ans);
     if (NAMED(CAR(args)) == 2)
-        SETCAR(args, duplicate(CAR(args)));
+	SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
 	GCRoot<PairList> tl(new PairList, true);
         PROTECT(call = new Expression(0, tl));
 	call->expose();
-        SETCAR(call, install("as.character"));
-        SETCADR(call, CADR(args));
-        SETCADR(args, eval(call, env));
-        UNPROTECT(1);
+	SETCAR(call, install("as.character"));
+	SETCADR(call, CADR(args));
+	SETCADR(args, eval(call, env));
+	UNPROTECT(1);
     }
     setAttrib(CAR(args), R_NamesSymbol, CADR(args));
     UNPROTECT(1);
@@ -705,7 +705,7 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP namesgets(SEXP vec, SEXP val)
 {
     int i;
-    SEXP s, rval;
+    SEXP s, rval, tval;
 
     PROTECT(vec);
     PROTECT(val);
@@ -719,8 +719,11 @@ SEXP namesgets(SEXP vec, SEXP val)
 	else {
 	    rval = allocVector(STRSXP, length(vec));
 	    PROTECT(rval);
-	    for (i = 0; i < length(vec); i++) {
-		s = coerceVector(CAR(val), STRSXP);
+	    /* See PR#10807 */
+	    for (i = 0, tval = val;
+		 i < length(vec) && tval != R_NilValue;
+		 i++, tval = CDR(tval)) {
+		s = coerceVector(CAR(tval), STRSXP);
 		SET_STRING_ELT(rval, i, STRING_ELT(s, 0));
 	    }
 	    UNPROTECT(1);
@@ -1038,7 +1041,7 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 		CHAR(STRING_ELT(names, i))[0] == '\0') { /* all ASCII tests */
 		error(_("all attributes must have names [%d does not]"), i+1);
 	    }
-        }
+	}
     }
 
     if (object == R_NilValue) {
@@ -1048,14 +1051,14 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	    PROTECT(object = allocVector(VECSXP, 0));
     } else {
 	/* Unlikely to have NAMED == 0 here.
-	   As from R 2.7.0 we don't optimize NAMED == 1 _if_ we are 
-	   setting any attributes as an error later on would leave 
+	   As from R 2.7.0 we don't optimize NAMED == 1 _if_ we are
+	   setting any attributes as an error later on would leave
 	   'obj' changed */
 	if (NAMED(object) > 1 || (NAMED(object) == 1 && nattrs))
 	    object = duplicate(object);
 	PROTECT(object);
     }
-    
+
 
     /* Empty the existing attribute list */
 
@@ -1101,11 +1104,11 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 
     attr <- function (x, which)
     {
-        if (!is.character(which))
-            stop("attribute name must be of mode character")
-        if (length(which) != 1)
-            stop("exactly one attribute name must be given")
-        attributes(x)[[which]]
+	if (!is.character(which))
+	    stop("attribute name must be of mode character")
+	if (length(which) != 1)
+	    stop("exactly one attribute name must be given")
+	attributes(x)[[which]]
    }
 
 The R functions was being called very often and replacing it by
@@ -1124,7 +1127,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (nargs < 2 || nargs > 3)
 	errorcall(call, "either 2 or 3 arguments are required");
-    
+
     s = CAR(args);
     t = CADR(args);
     if(nargs == 3) {
@@ -1170,13 +1173,13 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
     */
     if (match != FULL && strncmp("names", str, n) == 0) {
 	if (strlen("names") == n) {
-	    /* we have a full match on "names", if there is such an 
+	    /* we have a full match on "names", if there is such an
 	       attribute */
 	    tag = R_NamesSymbol;
 	    match = FULL;
 	}
 	else if (match == NONE && !exact) {
-	    /* no match on other attributes and a possible 
+	    /* no match on other attributes and a possible
 	       partial match on "names" */
 	    tag = R_NamesSymbol;
 	    t = getAttrib(s, tag);
@@ -1228,7 +1231,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 /* These provide useful shortcuts which give access to */
 /* the dimnames for matrices and arrays in a standard form. */
 
-void GetMatrixDimnames(SEXP x, SEXP *rl, SEXP *cl, 
+void GetMatrixDimnames(SEXP x, SEXP *rl, SEXP *cl,
 		       const char **rn, const char **cn)
 {
     SEXP dimnames = getAttrib(x, R_DimNamesSymbol);
@@ -1244,14 +1247,14 @@ void GetMatrixDimnames(SEXP x, SEXP *rl, SEXP *cl,
 	*rl = VECTOR_ELT(dimnames, 0);
 	*cl = VECTOR_ELT(dimnames, 1);
 	nn = getAttrib(dimnames, R_NamesSymbol);
-        if (isNull(nn)) {
+	if (isNull(nn)) {
 	    *rn = NULL;
 	    *cn = NULL;
-        }
+	}
 	else {
 	    *rn = translateChar(STRING_ELT(nn, 0));
 	    *cn = translateChar(STRING_ELT(nn, 1));
-        }
+	}
     }
 }
 
@@ -1273,7 +1276,7 @@ static SEXP s_dot_Data;
 static SEXP s_getDataPart;
 static SEXP s_setDataPart;
 
-static void init_slot_handling() {
+static void init_slot_handling(void) {
     s_dot_Data = install(".Data");
     s_getDataPart = install("getDataPart");
     s_setDataPart = install("setDataPart");
@@ -1317,15 +1320,32 @@ static SEXP set_data_part(SEXP obj,  SEXP rhs) {
     return(val);
 }
 
+/* Slots are stored as attributes to
+   provide some back-compatibility
+*/
+
+/**
+ * R_has_slot() : a C-level test if a obj@<name> is available;
+ *                as R_do_slot() gives an error when there's no such slot.
+ */
+int R_has_slot(SEXP obj, SEXP name) {
+
+#define R_SLOT_INIT							\
+    if(!(isSymbol(name) || (isString(name) && LENGTH(name) == 1)))	\
+	error(_("invalid type or length for slot name"));		\
+    if(!s_dot_Data)							\
+	init_slot_handling();						\
+    if(isString(name)) name = install(CHAR(STRING_ELT(name, 0)))
+
+    R_SLOT_INIT;
+    if(name == s_dot_Data)
+	return(1);
+    /* else */
+    return(getAttrib(obj, name) != R_NilValue);
+}
+
 SEXP R_do_slot(SEXP obj, SEXP name) {
-  /* Slots are stored as attributes to
-     provide some back-compatibility
-  */
-    if(!(isSymbol(name) || (isString(name) && LENGTH(name) == 1)))
-	error(_("invalid type or length for slot name"));
-    if(!s_dot_Data)
-	init_slot_handling();
-    if(isString(name)) name = install(translateChar(STRING_ELT(name, 0)));
+    R_SLOT_INIT;
     if(name == s_dot_Data)
 	return data_part(obj);
     else {
@@ -1357,6 +1377,7 @@ SEXP R_do_slot(SEXP obj, SEXP name) {
 	return value;
     }
 }
+#undef R_SLOT_INIT
 
 SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value) {
     PROTECT(obj); PROTECT(value);
@@ -1373,7 +1394,7 @@ SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value) {
 
     if(name == s_dot_Data) {	/* special handling */
 	obj = set_data_part(obj, value);
-        UNPROTECT(2);
+	UNPROTECT(2);
 	return obj;
     }
     if(isNull(value))		/* Slots, but not attributes, can be NULL.*/
@@ -1396,22 +1417,6 @@ SEXP R_pseudo_null() {
 /* the @ operator, and its assignment form.  Processed much like $
    (see do_subset3) but without S3-style methods.
 */
-#ifdef noSlotCheck
-SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP  nlist, object, ans;
-
-    nlist = CADR(args);
-    PROTECT(object = eval(CAR(args), env));
-    ans = R_do_slot(object, nlist);
-    UNPROTECT(1);
-    return ans;
-}
-
-#else
-
-static Rboolean can_test_S4Object = FALSE; /* turning this to TRUE will throw
-   error or warning on all packages that have not been reinstalled for current R 2.3 */
 SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP  nlist, object, ans, klass;
@@ -1425,27 +1430,20 @@ SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid type or length for slot name"));
     if(isString(nlist)) nlist = install(translateChar(STRING_ELT(nlist, 0)));
     PROTECT(object = eval(CAR(args), env));
-    if(can_test_S4Object && !IS_S4_OBJECT(object)) {
+    if(!s_dot_Data) init_slot_handling();
+    if(nlist != s_dot_Data && !IS_S4_OBJECT(object)) {
 	klass = getAttrib(object, R_ClassSymbol);
 	if(length(klass) == 0)
-	    error(_("trying to get slot \"%s\" from an object of a basic class (\"%s\") with no slots"),
+	    warning(_("trying to get slot \"%s\" from an object of a basic class (\"%s\") with no slots"),
 		  CHAR(PRINTNAME(nlist)),
 		  CHAR(STRING_ELT(R_data_class(object, FALSE), 0)));
-	else {
-	    if(isString(klass) &&
-	       streql(CHAR(STRING_ELT(klass, 0)), "classRepresentation")) {
-		warning("Class representations out of date--package(s) need to be reinstalled");
-		can_test_S4Object = FALSE; /* turn tests off to avoid repeated warnings */
-	    }
-	    else
-		error(_("trying to get slot \"%s\" from an object (class \"%s\") that is not an S4 object "),
-		      CHAR(PRINTNAME(nlist)),
-		      translateChar(STRING_ELT(klass, 0)));
-	}
+	else
+	    warning(_("trying to get slot \"%s\" from an object (class \"%s\") that is not an S4 object "),
+		  CHAR(PRINTNAME(nlist)),
+		  translateChar(STRING_ELT(klass, 0)));
     }
+
     ans = R_do_slot(object, nlist);
     UNPROTECT(1);
     return ans;
 }
-
-#endif

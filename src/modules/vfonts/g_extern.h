@@ -58,8 +58,8 @@
    Added the following (to allow R declarations and definitions)
 */
 #include <config.h>
-#include "Defn.h"
-#include "Graphics.h"
+#include <Defn.h>
+#include <R_ext/GraphicsEngine.h>
 
 /* PAUL MURRELL
    This type def taken from sys-defines.h
@@ -148,10 +148,9 @@ extern const struct plTypefaceInfoStruct _hershey_typeface_info[];
 /* PAUL MURRELL
    Modified this declaration
 */
-extern unsigned short * _controlify (GEDevDesc*, const unsigned char *, 
+extern unsigned short * _controlify (pGEDevDesc, const unsigned char *,
 				     int, int);
 
 /* PAUL MURRELL
    Removed heaps below here
 */
-

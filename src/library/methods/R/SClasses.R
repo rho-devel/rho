@@ -425,17 +425,14 @@ validObject <- function(object, test = FALSE, complete = FALSE)
 	    next
 	}
 	if(!complete)
-	    next
-	validityMethod <- classDefi@validity
-	if(is(validityMethod, "function")) {
-	    errori <- anyStrings(validityMethod(sloti))
-	    if(length(errori) > 0) {
-		errori <- paste("In slot \"", slotNames[[i]],
-				"\" of class \"", class(sloti), "\": ",
-				errori, sep = "")
-		errors <- c(errors, errori)
-	    }
-	}
+          next
+        errori <- anyStrings(Recall(sloti, TRUE, TRUE))
+        if(length(errori) > 0) {
+            errori <- paste("In slot \"", slotNames[[i]],
+                            "\" of class \"", class(sloti), "\": ",
+                            errori, sep = "")
+            errors <- c(errors, errori)
+        }
     }
     extends <- rev(classDef@contains)
     for(i in seq_along(extends)) {
@@ -478,25 +475,30 @@ validObject <- function(object, test = FALSE, complete = FALSE)
 	TRUE
 }
 
-setValidity <-
-  function(Class, method, where = topenv(parent.frame())) {
+setValidity <- function(Class, method, where = topenv(parent.frame())) {
     if(isClassDef(Class)) {
-        ClassDef <- Class
-        Class <- ClassDef@className
+	ClassDef <- Class
+	Class <- ClassDef@className
     }
     else {
-      ClassDef <- getClassDef(Class, where)
-  }
+	ClassDef <- getClassDef(Class, where)
+    }
     method <- .makeValidityMethod(Class, method)
     if(is.null(method) ||
-      (is(method, "function") && length(formalArgs(method))==1))
-      ClassDef@validity <- method
+       (is(method, "function") && length(formalArgs(method))==1))
+	ClassDef@validity <- method
     else
-      stop("validity method must be NULL or a function of one argument")
+	stop("validity method must be NULL or a function of one argument")
     ## TO DO:  check the where argument against the package of the class def.
     assignClassDef(Class, ClassDef, where = where)
     resetClass(Class, ClassDef, where = where)
-  }
+}
+
+getValidity <- function (ClassDef) {
+    ## "needed" according to ../man/validObject.Rd
+    ClassDef@validity
+}
+
 
 resetClass <- function(Class, classDef, where) {
         if(is(Class, "classRepresentation")) {

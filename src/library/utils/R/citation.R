@@ -47,7 +47,10 @@ citFooter <- function(...)
 
 readCitationFile <- function(file)
 {
-    pcf <- parse(file)
+    ## Assume latin1 until we have a mechanism for this
+    con <- file(file, encoding="latin1")
+    on.exit(close(con))
+    pcf <- parse(con)
     z <- list()
     k = 0
     envir = new.env()
@@ -55,11 +58,11 @@ readCitationFile <- function(file)
     for(expr in pcf){
 
         x <- eval(expr, envir=envir)
-        if(class(x)=="citation")
+        if(class(x) == "citation")
             z[[k <- k+1]] <- x
-        else if(class(x)=="citationHeader")
+        else if(class(x) == "citationHeader")
             attr(z, "header") <- c(attr(z, "header"), x)
-        else if(class(x)=="citationFooter")
+        else if(class(x) == "citationFooter")
             attr(z, "footer") <- c(attr(z, "footer"), x)
     }
     class(z) <- "citationList"
@@ -89,6 +92,8 @@ print.citation <- function(x, bibtex=TRUE, ...){
         cat("\n")
         writeLines(strwrap(attr(x, "footer")))
     }
+
+    invisible(x)
 }
 
 print.citationList <- function(x, bibtex=length(x)==1, ...)
@@ -106,6 +111,7 @@ print.citationList <- function(x, bibtex=length(x)==1, ...)
         writeLines(strwrap(attr(x, "footer")))
     }
     cat("\n")
+    invisible(x)
 }
 
 ###**********************************************************
@@ -275,10 +281,11 @@ citation <- function(package="base", lib.loc = NULL)
     attr(z, "header") <-
         paste("To cite package", sQuote(package), "in publications use:")
 
-    attr(z, "footer") <-
-        paste("ATTENTION: This citation information has been auto-generated",
-              "from the package DESCRIPTION file and may need manual editing,",
-              "see ", sQuote("help(\"citation\")"), ".")
+    if(! "recommended" %in% desc$Priority) # we assume those are OK
+        attr(z, "footer") <-
+            paste("ATTENTION: This citation information has been auto-generated",
+                  "from the package DESCRIPTION file and may need manual editing,",
+                  "see ", sQuote("help(\"citation\")"), ".")
 
     author <- as.character(z$author)
     if(length(author)>1)

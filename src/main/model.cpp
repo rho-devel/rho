@@ -124,7 +124,7 @@ static int MatchVar(SEXP var1, SEXP var2)
 {
     /* For expedience, and sanity... */
     if ( var1 == var2 )
-    	return 1;
+	return 1;
     /* Handle Nulls */
     if (isNull(var1) && isNull(var2))
 	return 1;
@@ -143,15 +143,14 @@ static int MatchVar(SEXP var1, SEXP var2)
 	return (asReal(var1) == asReal(var2));
     /* Literal Strings */
     if (isString(var1) && isString(var2))
-	return (strcmp(translateChar(STRING_ELT(var1, 0)),
-		       translateChar(STRING_ELT(var2, 0))) == 0);
+	return Seql(STRING_ELT(var1, 0), STRING_ELT(var2, 0));
     /* Nothing else matches */
     return 0;
 }
 
 
 /* InstallVar locates a ``variable'' in the model */
-/* variable list;  adding it to the list if not found. */
+/* variable list;  adding it to the global varlist if not found. */
 
 static int InstallVar(SEXP var)
 {
@@ -303,7 +302,7 @@ static void ExtractVars(SEXP formula, int checkonly)
 /* AllocTerm allocates an integer array for */
 /* bit string representation of a model term */
 
-static SEXP AllocTerm()
+static SEXP AllocTerm(void)
 {
     int i;
     SEXP term = allocVector(INTSXP, nwords);
@@ -626,7 +625,7 @@ static SEXP EncodeVars(SEXP formula)
 		c = translateChar(STRING_ELT(framenames, i));
 		for(j = 0; j < i; j++)
 		    if(!strcmp(c, translateChar(STRING_ELT(framenames, j))))
-			error(_("duplicated name '%s' in data frame using '.'"), 
+			error(_("duplicated name '%s' in data frame using '.'"),
 			      c);
 		term = AllocTerm();
 		SetBit(term, InstallVar(install(c)), 1);
@@ -778,7 +777,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("argument is not a valid model"));
 
     haveDot = FALSE;
-    
+
     PROTECT(ans = duplicate(CAR(args)));
 
     /* The formula will be returned, modified if haveDot becomes TRUE */
@@ -860,14 +859,14 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(formula = EncodeVars(CAR(args)));
 
     nvar = length(varlist) - 1; /* need to recompute, in case
-                                   EncodeVars stretched it */
+				   EncodeVars stretched it */
 
     /* Step 2a: Compute variable names */
 
     PROTECT(varnames = allocVector(STRSXP, nvar));
     for (v = CDR(varlist), i = 0; v != R_NilValue; v = CDR(v))
 	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), FALSE), 0));
-    
+
     /* Step 2b: Find and remove any offset(s) */
 
     /* first see if any of the variables are offsets */
@@ -920,12 +919,12 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_VECTOR_ELT(pattern, n, CAR(call));
 	    counts[n++] = BitCount(CAR(call));
 	}
-	for (n = 0; n < nterm; n++) 
+	for (n = 0; n < nterm; n++)
 	    if(counts[n] > bitmax) bitmax = counts[n];
 	if(keepOrder) {
 	    for (n = 0; n < nterm; n++)
 		iord[n] = counts[n];
-	} else {   
+	} else {
 	    call = formula;
 	    m = 0;
 	    for (i = 0; i <= bitmax; i++) /* can order 0 occur? */
@@ -938,7 +937,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	UNPROTECT(2);
     }
-    
+
 
     /* Step 4: Compute the factor pattern for the model. */
     /* 0 - the variable does not appear in this term. */
@@ -983,17 +982,17 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
         cbuf = reinterpret_cast<char *>(alloca(l+1));
-        cbuf[0] = '\0';
+	cbuf[0] = '\0';
 	l = 0;
 	for (i = 1; i <= nvar; i++) {
 	    if (GetBit(CAR(call), i)) {
 		if (l > 0)
 		    strcat(cbuf, ":");
-                strcat(cbuf, CHAR(STRING_ELT(varnames, i - 1)));
+		strcat(cbuf, CHAR(STRING_ELT(varnames, i - 1)));
 		l++;
 	    }
 	}
-        SET_STRING_ELT(termlabs, n, mkChar(cbuf));
+	SET_STRING_ELT(termlabs, n, mkChar(cbuf));
 	n++;
     }
     PROTECT(v = allocVector(VECSXP, 2));
@@ -1042,16 +1041,16 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     UNPROTECT(2);	/* keep termlabs until here */
 
-    /* Step 6: Fix up the formula by substituting for dot, which should be 
+    /* Step 6: Fix up the formula by substituting for dot, which should be
        the framenames joined by + */
 
     if (haveDot) {
 	if(length(framenames)) {
 	    PROTECT_INDEX ind;
-	    PROTECT_WITH_INDEX(rhs = install(translateChar(STRING_ELT(framenames, 0))), 
+	    PROTECT_WITH_INDEX(rhs = install(translateChar(STRING_ELT(framenames, 0))),
 			       &ind);
 	    for (i = 1; i < LENGTH(framenames); i++) {
-		REPROTECT(rhs = lang3(plusSymbol, rhs, 
+		REPROTECT(rhs = lang3(plusSymbol, rhs,
 				      install(translateChar(STRING_ELT(framenames, i)))),
 			  ind);
 	    }
@@ -1064,15 +1063,15 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("'.' in formula and no 'data' argument"));
 	}
     }
-    
+
     SETCAR(a, allocVector(INTSXP, nterm));
     n = 0;
     {
 	int *ia = INTEGER(CAR(a)), *iord = INTEGER(ord);
-	for (call = formula; call != R_NilValue; call = CDR(call), n++) 
+	for (call = formula; call != R_NilValue; call = CDR(call), n++)
 	    ia[n] = iord[n];
     }
-    
+
     SET_TAG(a, install("order"));
     a = CDR(a);
 
@@ -1282,8 +1281,8 @@ SEXP attribute_hidden do_updateform(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SET_ATTRIB(_new, R_NilValue);
     SET_OBJECT(_new, 0);
-    setAttrib(_new, R_DotEnvSymbol, getAttrib(old, R_DotEnvSymbol)); 
-    
+    setAttrib(_new, R_DotEnvSymbol, getAttrib(old, R_DotEnvSymbol));
+
     return _new;
 }
 
@@ -1460,7 +1459,7 @@ SEXP attribute_hidden do_modelframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* need to transfer _all but tsp and dim_ attributes, possibly lost
 	   by subsetting in na.action.  */
 	for ( i = length(ans) ; i-- ; )
-	  	copyMostAttribNoTs(VECTOR_ELT(data, i),VECTOR_ELT(ans, i));
+		copyMostAttribNoTs(VECTOR_ELT(data, i),VECTOR_ELT(ans, i));
 
 	UNPROTECT(3);
     }
@@ -1482,15 +1481,15 @@ SEXP attribute_hidden do_modelframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_tilde(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     if (isObject(call))
-        return duplicate(call);
+	return duplicate(call);
     else {
-        SEXP klass;
-        PROTECT(call = duplicate(call));
-        PROTECT(klass = mkString("formula"));
-        setAttrib(call, R_ClassSymbol, klass);
-        setAttrib(call, R_DotEnvSymbol, rho);
-        UNPROTECT(2);
-        return call;
+	SEXP klass;
+	PROTECT(call = duplicate(call));
+	PROTECT(klass = mkString("formula"));
+	setAttrib(call, R_ClassSymbol, klass);
+	setAttrib(call, R_DotEnvSymbol, rho);
+	UNPROTECT(2);
+	return call;
     }
 }
 
@@ -1659,10 +1658,10 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* This section of the code checks the types of the variables
        in the model frame.  Note that it should really only check
        the variables if they appear in a term in the model.
-       Because it does not, we need to allow other types here, as they 
+       Because it does not, we need to allow other types here, as they
        might well occur on the LHS.
-       The R code converts all character variables in the model frame to 
-       factors, so the only types that ought to be here are logical, 
+       The R code converts all character variables in the model frame to
+       factors, so the only types that ought to be here are logical,
        integer (including factor), numeric and complex.
      */
 
@@ -1831,12 +1830,12 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (intrcept) INTEGER(assign)[k++] = 0;
     for (j = 0; j < nterms; j++) {
 	if(INTEGER(count)[j] <= 0)
-	    warning(_("problem with term %d in model.matrix: no columns are assigned"), 
+	    warning(_("problem with term %d in model.matrix: no columns are assigned"),
 		      j+1);
 	for (i = 0; i < INTEGER(count)[j]; i++)
 	    INTEGER(assign)[k++] = j+1;
     }
-    
+
 
     /* Create column labels for the matrix columns. */
 
@@ -1957,7 +1956,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    var_i = VECTOR_ELT(variable, i);
 #ifdef R_MEMORY_PROFILING
 	    if (TRACE(var_i)){
-	       memtrace_report(var_i, x);	    
+	       memtrace_report(var_i, x);
 	       SET_TRACE(x, 1);
 	    }
 #endif

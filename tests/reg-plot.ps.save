@@ -388,8 +388,7 @@ o
 523.21 163.73 (+) .5 0 0 t
 548.32 167.00 (,) .5 0 0 t
 573.43 163.73 (-) .5 0 0 t
-/bg { 0 setgray } def
-598.03 166.26 1.00 1.00 r p2
+598.53 166.12 (.) .5 0 0 t
 623.64 162.45 (/) .5 0 0 t
 247.05 187.76 (0) .5 0 0 t
 272.16 187.64 (1) .5 0 0 t
@@ -2941,7 +2940,7 @@ bp
 18.00 18.00 823.89 577.28 cl
 /ps 14 def /Font2 findfont 14 s
 0 setgray
-435.34 542.73 (x) .5 0 0 t
+435.34 542.73 (UCBAdmissions) .5 0 0 t
 /ps 12 def /Font1 findfont 12 s
 435.34 65.52 (Admit) .5 0 0 t
 59.76 304.84 (Gender) .5 0 90 t
@@ -3121,7 +3120,7 @@ bp
 18.00 18.00 823.89 577.28 cl
 /ps 14 def /Font2 findfont 14 s
 0 setgray
-435.34 542.73 (x) .5 0 0 t
+435.34 542.73 (UCBAdmissions) .5 0 0 t
 /ps 12 def /Font1 findfont 12 s
 435.34 65.52 (x label) .5 0 0 t
 59.76 304.84 (YY) .5 0 90 t
@@ -4160,6 +4159,118 @@ o
 ep
 %%Page: 23 23
 bp
+78.81 91.44 793.65 518.24 cl
+78.81 91.44 793.65 518.24 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+171.48 502.43 m
+66.18 -228.50 l
+66.19 -74.24 l
+66.19 -35.90 l
+66.19 -20.69 l
+66.19 -13.15 l
+66.19 -8.87 l
+66.19 -6.21 l
+66.19 -4.44 l
+66.18 -3.18 l
+o
+18.00 18.00 823.89 577.28 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+105.29 91.44 m
+661.88 0 l
+o
+np
+105.29 91.44 m
+0 -7.20 l
+o
+np
+237.66 91.44 m
+0 -7.20 l
+o
+np
+370.04 91.44 m
+0 -7.20 l
+o
+np
+502.42 91.44 m
+0 -7.20 l
+o
+np
+634.80 91.44 m
+0 -7.20 l
+o
+np
+767.17 91.44 m
+0 -7.20 l
+o
+/ps 12 def /Font1 findfont 12 s
+105.29 65.52 (0.0) .5 0 0 t
+237.66 65.52 (0.2) .5 0 0 t
+370.04 65.52 (0.4) .5 0 0 t
+502.42 65.52 (0.6) .5 0 0 t
+634.80 65.52 (0.8) .5 0 0 t
+767.17 65.52 (1.0) .5 0 0 t
+np
+78.81 91.44 m
+714.84 0 l
+0 426.80 l
+-714.84 0 l
+0 -426.80 l
+o
+18.00 18.00 823.89 577.28 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+436.23 36.72 (x) .5 0 0 t
+/ps 12 def /Font5 findfont 12 s
+32.75 293.22 (G) 0 0 90 t
+/ps 15 def /Font5 findfont 15 s
+32.75 300.46 (\() 0 0 90 t
+/ps 12 def /Font1 findfont 12 s
+32.75 305.46 (x) 0 0 90 t
+/ps 15 def /Font5 findfont 15 s
+32.75 311.46 (\)) 0 0 90 t
+ep
+%%Page: 24 24
+bp
+77.04 91.44 793.65 518.24 cl
+18.00 18.00 823.89 577.28 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+435.34 36.72 (x1) .5 0 0 t
+30.96 304.84 (x) .5 0 90 t
+77.04 91.44 793.65 518.24 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+103.58 103.03 (1) .5 0 0 t
+435.34 300.62 (2) .5 0 0 t
+767.11 498.32 (3) .5 0 0 t
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+109.77 110.93 m
+319.39 190.22 l
+o
+np
+441.53 308.52 m
+319.39 190.22 l
+o
+ep
+%%Page: 25 25
+bp
 77.04 91.44 793.65 518.24 cl
 77.04 91.44 793.65 518.24 cl
 0 setgray
@@ -4169,17 +4280,118 @@ bp
 1 setlinejoin
 10.00 setmiterlimit
 np
-169.93 502.43 m
-66.36 -228.50 l
-66.35 -74.24 l
-66.35 -35.90 l
-66.35 -20.69 l
-66.36 -13.15 l
-66.35 -8.87 l
-66.35 -6.21 l
-66.36 -4.44 l
-66.35 -3.18 l
+103.58 502.43 m
+331.76 -376.70 l
+331.77 -18.48 l
 o
+18.00 18.00 823.89 577.28 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+435.34 36.72 (x) .5 0 0 t
+77.04 91.44 793.65 518.24 cl
+1 0 0 rgb
+2.25 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+103.58 502.43 m
+331.76 -376.70 l
+331.77 -18.48 l
+o
+ep
+%%Page: 26 26
+bp
+77.04 91.44 793.65 518.24 cl
+77.04 91.44 793.65 518.24 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+103.58 107.25 2.70 c p1
+767.11 502.43 2.70 c p1
+18.00 18.00 823.89 577.28 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+77.04 107.25 m
+0 395.18 l
+o
+np
+77.04 107.25 m
+-7.20 0 l
+o
+np
+77.04 206.04 m
+-7.20 0 l
+o
+np
+77.04 304.84 m
+-7.20 0 l
+o
+np
+77.04 403.63 m
+-7.20 0 l
+o
+np
+77.04 502.43 m
+-7.20 0 l
+o
+/ps 12 def /Font1 findfont 12 s
+59.76 107.25 (Tue) .5 0 90 t
+59.76 206.04 (Wed) .5 0 90 t
+59.76 304.84 (Thu) .5 0 90 t
+59.76 403.63 (Fri) .5 0 90 t
+59.76 502.43 (Sat) .5 0 90 t
+np
+77.04 91.44 m
+716.61 0 l
+0 426.80 l
+-716.61 0 l
+0 -426.80 l
+o
+18.00 18.00 823.89 577.28 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+30.96 304.84 (x) .5 0 90 t
+ep
+%%Page: 27 27
+bp
+77.04 91.44 793.65 518.24 cl
+77.04 91.44 793.65 518.24 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+103.58 107.25 2.70 c p1
+767.11 502.43 2.70 c p1
+18.00 18.00 823.89 577.28 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+77.04 91.44 m
+716.61 0 l
+0 426.80 l
+-716.61 0 l
+0 -426.80 l
+o
+18.00 18.00 823.89 577.28 cl
+/ps 12 def /Font1 findfont 12 s
+0 setgray
+30.96 304.84 (i) .5 0 90 t
 18.00 18.00 823.89 577.28 cl
 0 setgray
 0.75 setlinewidth
@@ -4196,19 +4408,15 @@ np
 0 -7.20 l
 o
 np
-236.29 91.44 m
+269.46 91.44 m
 0 -7.20 l
 o
 np
-368.99 91.44 m
+435.34 91.44 m
 0 -7.20 l
 o
 np
-501.70 91.44 m
-0 -7.20 l
-o
-np
-634.40 91.44 m
+601.23 91.44 m
 0 -7.20 l
 o
 np
@@ -4216,12 +4424,61 @@ np
 0 -7.20 l
 o
 /ps 12 def /Font1 findfont 12 s
-103.58 65.52 (0.0) .5 0 0 t
-236.29 65.52 (0.2) .5 0 0 t
-368.99 65.52 (0.4) .5 0 0 t
-501.70 65.52 (0.6) .5 0 0 t
-634.40 65.52 (0.8) .5 0 0 t
-767.11 65.52 (1.0) .5 0 0 t
+103.58 65.52 (Tue) .5 0 0 t
+269.46 65.52 (Wed) .5 0 0 t
+435.34 65.52 (Thu) .5 0 0 t
+601.23 65.52 (Fri) .5 0 0 t
+767.11 65.52 (Sat) .5 0 0 t
+ep
+%%Page: 28 28
+bp
+77.04 91.44 793.65 518.24 cl
+77.04 91.44 793.65 518.24 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+103.58 107.25 2.70 c p1
+767.11 502.43 2.70 c p1
+18.00 18.00 823.89 577.28 cl
+0 setgray
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+77.04 107.25 m
+0 395.18 l
+o
+np
+77.04 107.25 m
+-7.20 0 l
+o
+np
+77.04 206.04 m
+-7.20 0 l
+o
+np
+77.04 304.84 m
+-7.20 0 l
+o
+np
+77.04 403.63 m
+-7.20 0 l
+o
+np
+77.04 502.43 m
+-7.20 0 l
+o
+/ps 12 def /Font1 findfont 12 s
+59.76 107.25 (Tue) .5 0 90 t
+59.76 206.04 (Wed) .5 0 90 t
+59.76 304.84 (Thu) .5 0 90 t
+59.76 403.63 (Fri) .5 0 90 t
+59.76 502.43 (Sat) .5 0 90 t
 np
 77.04 91.44 m
 716.61 0 l
@@ -4232,9 +4489,9 @@ o
 18.00 18.00 823.89 577.28 cl
 /ps 12 def /Font1 findfont 12 s
 0 setgray
-435.34 36.72 (x) .5 0 0 t
-30.96 304.84 (Gamma\(x\)) .5 0 90 t
+435.34 36.72 (i) .5 0 0 t
+30.96 304.84 (x) .5 0 90 t
 ep
 %%Trailer
-%%Pages: 23
+%%Pages: 28
 %%EOF

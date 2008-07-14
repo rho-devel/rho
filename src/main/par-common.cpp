@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1997-2007  The R Core Development Team
+ *  Copyright (C) 1997-2008  The R Core Development Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -93,23 +93,23 @@
 	/* col can be a vector of length > 1, so pick off first value
 	   (as e.g. pch always did) */
 	if (!isVector(value) || LENGTH(value) < 1) par_error(what);
-	R_DEV__(col) = RGBpar(value, 0);
+	R_DEV__(col) = RGBpar3(value, 0, dpptr(dd)->bg);
     }
     else if (streql(what, "col.main")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(colmain) = RGBpar(value, 0);
+	R_DEV__(colmain) = RGBpar3(value, 0, dpptr(dd)->bg);
     }
     else if (streql(what, "col.lab")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(collab) = RGBpar(value, 0);
+	R_DEV__(collab) = RGBpar3(value, 0, dpptr(dd)->bg);
     }
     else if (streql(what, "col.sub")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(colsub) = RGBpar(value, 0);
+	R_DEV__(colsub) = RGBpar3(value, 0, dpptr(dd)->bg);
     }
     else if (streql(what, "col.axis")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(colaxis) = RGBpar(value, 0);
+	R_DEV__(colaxis) = RGBpar3(value, 0, dpptr(dd)->bg);
     }
     else if (streql(what, "crt")) {
 	lengthCheck(what, value, 1, call);	x = asReal(value);
@@ -151,9 +151,10 @@
     else if(streql(what, "gamma")) {
 	lengthCheck(what, value, 1, call);	x = asReal(value);
 	posRealCheck(x, what);
-	if ((reinterpret_cast<GEDevDesc*>(dd))->dev->canChangeGamma)
+	if (dd->dev->canChangeGamma) {
 	    R_DEV__(gamma) = x;
-	else
+	    warning("changing 'gamma' is deprecated");
+	} else
 	    warning(_("'gamma' cannot be modified on this device"));
     }
     else if (streql(what, "lab")) {
@@ -174,11 +175,11 @@
     }
     else if (streql(what, "lend")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(lend) = LENDpar(value, 0);
+	R_DEV__(lend) = GE_LENDpar(value, 0);
     }
     else if (streql(what, "ljoin")) {
 	lengthCheck(what, value, 1, call);
-	R_DEV__(ljoin) = LJOINpar(value, 0);
+	R_DEV__(ljoin) = GE_LJOINpar(value, 0);
     }
     else if (streql(what, "lmitre")) {
 	lengthCheck(what, value, 1, call);
@@ -193,7 +194,7 @@
 	   (as e.g. pch always did) */
 	if (!isVector(value) || LENGTH(value) < 1)
 	    par_error(what);
-	R_DEV__(lty) = LTYpar(value, 0);
+	R_DEV__(lty) = GE_LTYpar(value, 0);
     }
     else if (streql(what, "lwd")) {
 	/* lwd can be a vector of length > 1, so pick off first value
@@ -222,24 +223,13 @@
 	R_DEV__(mkh) = x;
     }
     else if (streql(what, "pch")) {
-	/* FIXME: see FixupPch */
-	if (!isVector(value) || LENGTH(value) < 1)
-	    par_error(what);
+	if (!isVector(value) || LENGTH(value) < 1) par_error(what);
 	if (isString(value)) {
-	    const char *tmp = CHAR(STRING_ELT(value, 0));
-	    if(!tmp[0]  || strlen(tmp) > 1) {
-		if (mbcslocale) 
-		    error(_("value of par(pch=s) must be an ASCII character"));
-		else
-		    warning(_("only the first character in 'pch' will be used"));
-	    }
-	    ix = tmp[0];
-	}
-	else if (isNumeric(value)) {
+	    ix = GEstring_to_pch(STRING_ELT(value, 0));
+	} else if (isNumeric(value)) {
 	    ix = asInteger(value);
-	    nonnegIntCheck(ix, what);
-	}
-	else par_error(what);
+	} else par_error(what);
+	if(ix == NA_INTEGER) par_error(what);
 	R_DEV__(pch) = ix;
     }
     else if (streql(what, "smo")) {
@@ -261,7 +251,7 @@
 	R_DEV__(tck) = x;
 	if (R_FINITE(x))
 	    R_DEV__(tcl) = NA_REAL;
-	else if(!R_FINITE(Rf_dpptr(dd)->tcl))
+	else if(!R_FINITE(dpptr(dd)->tcl))
 	    R_DEV__(tcl) = -0.5;
     }
     else if (streql(what, "tcl")) {
@@ -269,7 +259,7 @@
 	R_DEV__(tcl) = x;
 	if (R_FINITE(x))
 	    R_DEV__(tck) = NA_REAL;
-	else if (!R_FINITE(Rf_dpptr(dd)->tck))
+	else if (!R_FINITE(dpptr(dd)->tck))
 	    R_DEV__(tck) = -0.01; /* S Default -- was 0.02 till R 1.5.x */
     }
     else if (streql(what, "xaxp")) {
@@ -277,9 +267,9 @@
 	lengthCheck(what, value, 3, call);
 	naRealCheck(REAL(value)[0], what);
 	naRealCheck(REAL(value)[1], what);
-        if ((R_DEV__(xlog)))
+	if ((R_DEV__(xlog)))
             logAxpCheck(int(REAL(value)[2]), what);
-        else
+	else
             posIntCheck(int(REAL(value)[2]), what);
 	R_DEV__(xaxp[0]) = REAL(value)[0];
 	R_DEV__(xaxp[1]) = REAL(value)[1];
@@ -314,9 +304,9 @@
 	lengthCheck(what, value, 3, call);
 	naRealCheck(REAL(value)[0], what);
 	naRealCheck(REAL(value)[1], what);
-        if ((R_DEV__(ylog)))
+	if ((R_DEV__(ylog)))
             logAxpCheck(int(REAL(value)[2]), what);
-        else
+	else
             posIntCheck(int(REAL(value)[2]), what);
 	R_DEV__(yaxp[0]) = REAL(value)[0];
 	R_DEV__(yaxp[1]) = REAL(value)[1];
@@ -338,4 +328,3 @@
 	    R_DEV__(yaxt) = ix;
 	else par_error(what);
     }
-

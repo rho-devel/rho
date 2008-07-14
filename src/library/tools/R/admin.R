@@ -29,7 +29,7 @@ function(dir, outDir)
     ## path to the DESCRIPTION file, and returns an object with check
     ## results and not the package metadata ...
     ok <- .check_package_description(file.path(dir, "DESCRIPTION"))
-    if(any(as.integer(sapply(ok, length))) > 0) {
+    if(any(as.integer(sapply(ok, length)) > 0L)) {
         stop(paste(gettext("Invalid DESCRIPTION file") ,
                    paste(.capture_output_from_print(ok),
                          collapse = "\n"),
@@ -54,7 +54,7 @@ function(dir, outDir)
         "i386-pc-mingw32"
     else
         R.version$platform
-    if (length(grep("-apple-darwin",R.version$platform)) > 0 &&
+    if (length(grep("-apple-darwin",R.version$platform)) > 0L &&
         nzchar(Sys.getenv("R_ARCH")))
         OStype <- sub(".*-apple-darwin", "universal-apple-darwin", OStype)
     Built <-
@@ -103,8 +103,8 @@ function(dir, outDir)
 function(db, verbose = FALSE)
 {
     if(!is.na(Built <- db["Built"])) {
-        Built <- as.list(strsplit(Built, "; ")[[1]])
-        if(length(Built) != 4) {
+        Built <- as.list(strsplit(Built, "; ")[[1L]])
+        if(length(Built) != 4L) {
             warning(gettextf("*** someone has corrupted the Built field in package '%s' ***",
                              db["Package"]),
                     domain = NA,
@@ -119,26 +119,27 @@ function(db, verbose = FALSE)
     ## might perhaps have multiple entries
     Depends <- .split_dependencies(db[names(db) %in% "Depends"])
     if("R" %in% names(Depends)) {
-        if(verbose && sum("R" == names(Depends)) > 1) {
-            entries <- Depends["R" == names(Depends)]
-            entries <- lapply(entries, function(x)
-                paste(lapply(x, as.character), collapse="")
-            )
-            message("WARNING: 'Depends' entry has multiple dependencies: ",
+        Rdeps2 <- Depends["R" == names(Depends)]
+        names(Rdeps2) <- NULL
+        if(verbose && length(Rdeps2)> 1L) {
+            entries <- lapply(Rdeps2, function(x)
+                paste(lapply(x, as.character), collapse=""))
+            message("WARNING: 'Depends' entry has multiple dependencies on R: ",
                     paste(unlist(entries), collapse=', '),
-                    "\n\tonly the first will be used")
+                    "\n\tonly the first will be used in R < 2.7.0")
         }
         Rdeps <- Depends[["R", exact = TRUE]] # the first one
         Depends <- Depends[names(Depends) != "R"]
         ## several packages have 'Depends: R', which is a noop.
-        if(verbose && length(Rdeps) == 1)
+        if(verbose && length(Rdeps) == 1L)
              message("WARNING: omitting pointless dependence on 'R' without a version requirement")
-        if(length(Rdeps) <= 1) Rdeps <- NULL
-    } else Rdeps <- NULL
+        if(length(Rdeps) <= 1L) Rdeps <- NULL
+    } else Rdeps2 <- Rdeps <- NULL
     Rdeps <- as.vector(Rdeps)
     Suggests <- .split_dependencies(db[names(db) %in% "Suggests"])
     Imports <- .split_dependencies(db[names(db) %in% "Imports"])
-    structure(list(DESCRIPTION = db, Built = Built, Rdepends = Rdeps,
+    structure(list(DESCRIPTION = db, Built = Built,
+                   Rdepends = Rdeps, Rdepends2 = Rdeps2,
                    Depends = Depends, Suggests = Suggests,
                    Imports = Imports),
               class = "packageDescription2")
@@ -227,16 +228,8 @@ function(dir, outDir)
     collationField <-
         c(paste("Collate", .OStype(), sep = "."), "Collate")
     if(any(i <- collationField %in% names(db))) {
-        ## We have a Collate specification in the DESCRIPTION file:
-        ## currently, file paths relative to codeDir, separated by
-        ## white space, possibly quoted.  Note that we could have
-        ## newlines in DCF entries but do not allow them in file names,
-        ## hence we gsub() them out.
-        collationField <- collationField[i][1]
-        con <- textConnection(gsub("\n", " ", db[collationField]))
-        on.exit(close(con))
-        codeFilesInCspec <- scan(con, what = character(),
-                                 strip.white = TRUE, quiet = TRUE)
+        collationField <- collationField[i][1L]
+        codeFilesInCspec <- .read_collate_field(db[collationField])
         ## Duplicated entries in the collation spec?
         badFiles <-
             unique(codeFilesInCspec[duplicated(codeFilesInCspec)])
@@ -384,19 +377,23 @@ function(dir, outDir)
     indices <- c(file.path("Meta", "Rd.rds"),
                  file.path("Meta", "hsearch.rds"),
                  "CONTENTS", "INDEX")
-    upToDate <- file_test("-nt", file.path(outDir, indices), docsDir)
+    ## we want the date of the newest .Rd file we will install
+    allRd <- list_files_with_type(docsDir, "docs")
+    newestRd <- max(file.info(allRd)$mtime)
+    ## these files need not exist, which gives NA.
+    upToDate <- file.info(file.path(outDir, indices))$mtime >= newestRd
     if(file_test("-d", dataDir)) {
         ## Note that the data index is computed from both the package's
         ## Rd files and the data sets actually available.
-        upToDate <-
-            c(upToDate,
-              file_test("-nt",
-                        file.path(outDir, "Meta", "data.rds"),
-                        c(dataDir, docsDir)))
+        newestData <- max(file.info(list.files(dataDir))$mtime)
+        upToDate <- c(upToDate,
+              file.info(file.path(outDir, "Meta", "data.rds"))$mtime >=
+                        max(newestRd, newestData))
     }
-    if(all(upToDate)) return(invisible())
+    ## we want to proceed if any is NA.
+    if(all(upToDate %in% TRUE)) return(invisible())
 
-    contents <- Rdcontents(list_files_with_type(docsDir, "docs"))
+    contents <- Rdcontents(allRd)
 
     .write_contents_as_RDS(contents,
                            file.path(outDir, "Meta", "Rd.rds"))
@@ -460,7 +457,7 @@ function(dir, outDir)
     if(!length(list_files_with_type(vignetteDir, "vignette"))) {
         ## we don't want to write an index if the directory is in fact empty
         files <- list.files(vignetteDir, all.files = TRUE) # includes . and ..
-        if((length(files) > 2) && !hasHtmlIndex)
+        if((length(files) > 2L) && !hasHtmlIndex)
             .writeVignetteHtmlIndex(packageName, htmlIndex)
         return(invisible())
     }
@@ -468,13 +465,27 @@ function(dir, outDir)
     vignetteIndex <- .build_vignette_index(vignetteDir)
     ## For base package vignettes there is no PDF in @file{vignetteDir}
     ## but there might/should be one in @file{outVignetteDir}.
-    if(NROW(vignetteIndex) > 0) {
+    if(NROW(vignetteIndex) > 0L) {
         vignettePDFs <-
             sub("$", ".pdf",
                 basename(file_path_sans_ext(vignetteIndex$File)))
         ind <- file_test("-f", file.path(outVignetteDir, vignettePDFs))
         vignetteIndex$PDF[ind] <- vignettePDFs[ind]
+
+        ## install tangled versions of all vignettes
+        cwd <- getwd()
+        setwd(outVignetteDir)
+        for(srcfile in vignetteIndex$File)
+            tryCatch(utils::Stangle(srcfile),
+                     error = function(e)
+                     stop(gettextf("running Stangle on vignette '%s' failed with message:\n%s",
+                                   srcfile, conditionMessage(e)),
+                          domain = NA, call. = FALSE))
+        vignetteIndex$R <-
+            sub("$", ".R", basename(file_path_sans_ext(vignetteIndex$File)))
+        setwd(cwd)
     }
+
     if(!hasHtmlIndex)
         .writeVignetteHtmlIndex(packageName, htmlIndex, vignetteIndex)
 
@@ -544,9 +555,10 @@ function(dir, outDir, keep.source = FALSE)
         return(invisible())
 
     ## For the time being, the primary use of this function is to
-    ## install (and build) vignettes in base packages.  Hence, we build
-    ## in a subdir of the current directory rather than a temp dir: this
-    ## allows inspection of problems and automatic cleanup via Make.
+    ## build and install vignettes in base packages (which means grid).
+    ## Hence, we build in a subdir of the current directory rather than
+    ## a temp dir:
+    ## this allows inspection of problems and automatic cleanup via Make.
     cwd <- getwd()
     buildDir <- file.path(cwd, ".vignettes")
     if(!file_test("-d", buildDir) && !dir.create(buildDir))
@@ -554,29 +566,24 @@ function(dir, outDir, keep.source = FALSE)
     on.exit(setwd(cwd))
     setwd(buildDir)
 
-    ## Argh.  We need to ensure that vignetteDir is in TEXINPUTS and
-    ## BIBINPUTS.  Note that this does not work with MiKTeX.
-    envSep <- if(.Platform$OS.type == "windows") ";" else ":"
-    ## (Yes, it would be nice to have envPath() similar to file.path().)
-    texinputs <- Sys.getenv("TEXINPUTS")
-    bibinputs <- Sys.getenv("BIBINPUTS")
-    on.exit(Sys.setenv(TEXINPUTS = texinputs, BIBINPUTS = bibinputs),
-            add = TRUE)
-    Sys.setenv(TEXINPUTS = paste(vignetteDir, Sys.getenv("TEXINPUTS"),
-               sep = envSep),
-               BIBINPUTS = paste(vignetteDir, Sys.getenv("BIBINPUTS"),
-               sep = envSep))
-
     for(srcfile in vignetteFiles[!upToDate]) {
         base <- basename(file_path_sans_ext(srcfile))
         message("processing '", basename(srcfile), "'")
         texfile <- paste(base, ".tex", sep = "")
-        yy <- try(utils::Sweave(srcfile, pdf = TRUE, eps = FALSE,
-                                quiet = TRUE, keep.source = keep.source))
-        if(inherits(yy, "try-error")) stop(yy)
+        tryCatch(utils::Sweave(srcfile, pdf = TRUE, eps = FALSE,
+                               quiet = TRUE, keep.source = keep.source,
+                               stylepath = FALSE),
+                 error = function(e)
+                 stop(gettextf("running Sweave on vignette '%s' failed with message:\n%s",
+                               srcfile, conditionMessage(e)),
+                      domain = NA, call. = FALSE))
         ## In case of an error, do not clean up: should we point to
         ## buildDir for possible inspection of results/problems?
-        texi2dvi(texfile, pdf = TRUE, quiet = TRUE)
+        ## We need to ensure that vignetteDir is in TEXINPUTS and BIBINPUTS.
+        ## <FIXME>
+        ## What if this fails?
+        texi2dvi(texfile, pdf = TRUE, quiet = TRUE, texinputs = vignetteDir)
+        ## </FIXME>
         pdffile <-
             paste(basename(file_path_sans_ext(srcfile)), ".pdf", sep = "")
         if(!file.exists(pdffile))
@@ -694,11 +701,11 @@ function(dir, packages)
     ## -I"/path/to/package/include" ...
 
     if(!is.null(file)) {
-        tmp <- read.dcf(file, "LinkingTo")[1,1]
+        tmp <- read.dcf(file, "LinkingTo")[1L, 1L]
         if(is.na(tmp)) return(invisible())
         pkgs <- tmp
     }
-    pkgs <- strsplit(pkgs[1], ",[:blank]*")[[1]]
+    pkgs <- strsplit(pkgs[1L], ",[:blank]*")[[1L]]
     paths <- .find.package(pkgs, lib.loc, quiet=TRUE)
     if(length(paths))
         cat(paste(paste('-I"', paths, '/include"', sep=""), collapse=" "))
@@ -760,34 +767,37 @@ function(dir)
 {
     if(missing(dir)) dir <- "."
     meta <- .read_description(file.path(dir, "DESCRIPTION"))
-    depends <- .split_description(meta, verbose = TRUE)$Rdepends
+    deps <- .split_description(meta, verbose = TRUE)$Rdepends2
     status <- 0
-    ## .split_description will have ensured that this is NULL or
-    ## of length 3.
-    if(length(depends) > 1) {
-        ## .check_package_description will insist on these operators
-        if(!depends$op %in% c("<=", ">="))
-            message("WARNING: malformed 'Depends' field in 'DESCRIPTION'")
-        else
-            status <- !do.call(depends$op,
-                               list(getRversion(), depends$version))
-        if(status != 0) {
-            package <- Sys.getenv("R_PACKAGE_NAME")
-            if(!nzchar(package))
-                package <- meta["Package"]
-            if(nzchar(package))
-                msg <- gettextf("ERROR: this R is version %s, package '%s' requires R %s %s",
-                                getRversion(), package,
-                                depends$op, depends$version)
-            else if (nzchar(bundle <-  meta["Bundle"]) && !is.na(bundle))
-                msg <- gettextf("ERROR: this R is version %s, bundle '%s' requires R %s %s",
-                                getRversion(), bundle,
-                                depends$op, depends$version)
+    current <- getRversion()
+    for(depends in deps) {
+        ## .split_description will have ensured that this is NULL or
+        ## of length 3.
+        if(length(depends) > 1L) {
+            ## .check_package_description will insist on these operators
+            if(!depends$op %in% c("<=", ">=", "<", ">", "==", "!="))
+                message("WARNING: malformed 'Depends' field in 'DESCRIPTION'")
             else
-                msg <- gettextf("ERROR: this R is version %s, required is R %s %s",
-                                getRversion(),
-                                depends$op, depends$version)
-            message(strwrap(msg, exdent = 2))
+                status <- !do.call(depends$op,
+                                   list(current, depends$version))
+            if(status != 0) {
+                package <- Sys.getenv("R_PACKAGE_NAME")
+                if(!nzchar(package))
+                    package <- meta["Package"]
+                if(nzchar(package))
+                    msg <- gettextf("ERROR: this R is version %s, package '%s' requires R %s %s",
+                                    current, package,
+                                    depends$op, depends$version)
+                else if (nzchar(bundle <-  meta["Bundle"]) && !is.na(bundle))
+                    msg <- gettextf("ERROR: this R is version %s, bundle '%s' requires R %s %s",
+                                    current, bundle,
+                                    depends$op, depends$version)
+                else
+                    msg <- gettextf("ERROR: this R is version %s, required is R %s %s",
+                                    current, depends$op, depends$version)
+                message(strwrap(msg, exdent = 2L))
+                break
+            }
         }
     }
     q(status = status)

@@ -114,6 +114,7 @@ namespace CXXR {
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
 #else
+#warning Not compiling for VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes;
 #endif
 	    // Assumes sizeof(double) == 8:
@@ -167,7 +168,7 @@ namespace CXXR {
 	{
 	    if (!p) return;
 	    // Uncommenting this helps to diagnose premature GC:
-	    // memset(p, 0x55, bytes);
+	    memset(p, 0x55, bytes);
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
 	    char* c = reinterpret_cast<char*>(p);

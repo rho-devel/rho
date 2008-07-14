@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2007  The R Development Core Team.
+ *  Copyright (C) 1998--2008  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,8 +61,8 @@ using namespace std;
 using namespace CXXR;
 
 #include <Defn.h>
-#include <Graphics.h> /* display lists */
-#include <Rdevices.h> /* GetDevice */
+#include <R_ext/GraphicsEngine.h> /* GEDevDesc, GEgetDevice */
+#include <R_ext/Rdynload.h>
 #include "Rdynpriv.h"
 
 #if defined(Win32) && defined(LEA_MALLOC)
@@ -261,20 +261,13 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     if (R_CurrentExpr != NULL)             /* Current expression */
 	MARK_THRU(&marker, R_CurrentExpr);
 
-    for (unsigned int i = 0; i < R_MaxDevices; i++)  /* Device display lists */
-	{
-	    DevDesc* dd = GetDevice(i);
-	    if (dd) {
-		if (dd->newDevStruct) {
-		    MARK_THRU(&marker,
-			      (reinterpret_cast<GEDevDesc*>(dd))->dev->displayList);
-		    MARK_THRU(&marker,
-			      (reinterpret_cast<GEDevDesc*>(dd))->dev->savedSnapshot);
-		}
-		else
-		    MARK_THRU(&marker, dd->displayList);
-	    }
+    for (unsigned int i = 0; i < R_MaxDevices; i++) {  /* Device display lists */
+	pGEDevDesc gdd = GEgetDevice(i);
+	if (gdd) {
+	    MARK_THRU(&marker, gdd->displayList);
+	    MARK_THRU(&marker, gdd->savedSnapshot);
 	}
+    }
 
     for (RCNTXT* ctxt = R_GlobalContext;
 	 ctxt != NULL ; ctxt = ctxt->nextcontext) {
@@ -563,7 +556,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     return s;
 }
 
-SEXP allocS4Object()
+SEXP allocS4Object(void)
 {
    SEXP s;
    GC_PROT(s = new RObject(S4SXP));
@@ -597,10 +590,10 @@ SEXP do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
-    PROTECT(ans = allocVector(INTSXP, 23));
-    PROTECT(nms = allocVector(STRSXP, 23));
-    for (int i = 0; i < 23; i++) {
-        INTEGER(ans)[i] = 0;
+    PROTECT(ans = allocVector(INTSXP, 24));
+    PROTECT(nms = allocVector(STRSXP, 24));
+    for (int i = 0; i < 24; i++) {
+	INTEGER(ans)[i] = 0;
 	SET_STRING_ELT(nms, i, type2str(SEXPTYPE(i > LGLSXP? i+2 : i)));
     }
     setAttrib(ans, R_NamesSymbol, nms);
@@ -655,9 +648,9 @@ void R_PreserveObject(SEXP object)
 static SEXP RecursiveRelease(SEXP object, SEXP list)
 {
     if (!isNull(list)) {
-        if (object == CAR(list))
-            return CDR(list);
-        else
+	if (object == CAR(list))
+	    return CDR(list);
+	else
             SETCDR(list, RecursiveRelease(object, CDR(list)));
     }
     return list;
@@ -704,13 +697,13 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 
 /* General Cons Cell Attributes */
 
-void (SET_ATTRIB)(SEXP x, SEXP v) { 
+void (SET_ATTRIB)(SEXP x, SEXP v) {
 #ifdef USE_TYPE_CHECKING
-    if(TYPEOF(v) != LISTSXP && TYPEOF(v) != NILSXP) 
-	error("value of 'SET_ATTRIB' must be a pairlist or NULL, not a '%s'", 
+    if(TYPEOF(v) != LISTSXP && TYPEOF(v) != NILSXP)
+	error("value of 'SET_ATTRIB' must be a pairlist or NULL, not a '%s'",
 	      type2char(TYPEOF(x)));
 #endif
-    CHECK_OLD_TO_NEW(x, v); 
+    CHECK_OLD_TO_NEW(x, v);
     x->m_attrib = v; 
 }
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
@@ -776,11 +769,11 @@ static void R_EndMemReporting()
     return;
 }
 
-static void R_InitMemReporting(const char *filename, int append,
+static void R_InitMemReporting(SEXP filename, int append,
 			       R_size_t threshold)
 {
     if(R_MemReportingOutfile != NULL) R_EndMemReporting();
-    R_MemReportingOutfile = fopen(filename, append ? "a" : "w");
+    R_MemReportingOutfile = RC_fopen(filename, append ? "a" : "w", TRUE);
     if (R_MemReportingOutfile == NULL)
 	error(_("Rprofmem: cannot open output file '%s'"), filename);
     MemoryBank::setMonitor(R_ReportAllocation, threshold);
@@ -788,7 +781,7 @@ static void R_InitMemReporting(const char *filename, int append,
 
 SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    const char *filename;
+    SEXP filename;
     R_size_t threshold;
     int append_mode;
 
@@ -796,9 +789,9 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isString(CAR(args)) || (LENGTH(CAR(args))) != 1)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
-    filename = R_ExpandFileName(CHAR(STRING_ELT(CAR(args), 0)));
+    filename = STRING_ELT(CAR(args), 0);
     threshold = R_size_t(REAL(CADDR(args))[0]);
-    if (strlen(filename))
+    if (strlen(CHAR(filename)))
 	R_InitMemReporting(filename, append_mode, threshold);
     else
 	R_EndMemReporting();

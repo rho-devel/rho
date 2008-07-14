@@ -68,12 +68,11 @@ namespace CXXR {
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 *
-	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
-	 *          Zero signifies ASCII encoding, and at most one of
-	 *          the MASK bits may be set (checked).
+	 * @param encoding The encoding of the required CachedString.
+	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
+	 *          in this context (checked).
 	 */
-	explicit UncachedString(size_t sz, unsigned int encoding = 0)
+	explicit UncachedString(size_t sz, cetype_t encoding = CE_NATIVE)
 	    : String(sz, encoding), m_databytes(sz + 1), m_data(m_short_string)
 	{
 	    allocData(sz);
@@ -85,13 +84,12 @@ namespace CXXR {
 	 *          the constructed UncachedString.  (Embedded null
 	 *          characters are permissible.)
 	 *
-	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
-	 *          Zero signifies ASCII encoding, and at most one of
-	 *          the MASK bits may be set (checked).
+	 * @param encoding The encoding of the required CachedString.
+	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
+	 *          in this context (checked).
 	 */
 	explicit UncachedString(const std::string& str,
-				unsigned int encoding = 0);
+				cetype_t encoding = CE_NATIVE);
 
 	/** @brief Character access.
 	 * @param index Index of required character (counting from

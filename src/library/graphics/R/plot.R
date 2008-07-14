@@ -67,8 +67,8 @@ plot.default <-
     plot.xy(xy, type, ...)
     panel.last
     if (axes) {
-	localAxis(x, side = 1, ...)
-	localAxis(y, side = 2, ...)
+	localAxis(if(is.null(y)) xy$x else x, side = 1, ...)
+	localAxis(if(is.null(y))  x   else y, side = 2, ...)
     }
     if (frame.plot) localBox(...)
     if (ann) localTitle(main = main, sub = sub, xlab = xlab, ylab = ylab, ...)
@@ -129,13 +129,17 @@ plot.table <-
 		if(!is.null(as$axes) && !as$axes) "n" else as$xaxt
 	    }## else NULL
 	axis(1, at = x0, labels = nx, xaxt = xaxt)
-    } else
-	mosaicplot(x, xlab = xlab, ylab = ylab, ...)
+    } else {
+	if(length(as <- list(...)) && !is.null(as$main)) # use 'main'
+	    mosaicplot(x, xlab = xlab, ylab = ylab, ...)
+	else # default main
+	    mosaicplot(x, xlab = xlab, ylab = ylab, main = xnam, ...)
+    }
 }
 
 plot.formula <-
 function(formula, data = parent.frame(), ..., subset,
-         ylab = varnames[response], ask = TRUE)
+         ylab = varnames[response], ask = dev.interactive())
 {
     enquote <- function(x) as.call(list(as.name("quote"), x))
 
@@ -193,8 +197,8 @@ function(formula, data = parent.frame(), ..., subset,
 	if( is.null(funname) )
 	    funname <- "plot"
 	if (length(varnames) > 2) {
-	    opar <- par(ask = ask)
-	    on.exit(par(opar))
+            oask <- devAskNewPage(ask)
+            on.exit(devAskNewPage(oask))
 	}
         if(length(xn) > 0) {
             if( !is.null(xlab<- dots[["xlab"]]) )
@@ -336,3 +340,20 @@ plot.data.frame <- function (x, ...)
 ##               outer = outer, adj = 1, cex = .8, col = "orchid", las=3)
 ##     }
 ## }
+
+.units <- c("device", "ndc", "", "", "", "", "nic", "nfc", "", "", "", "",
+            "user", "inches", "", "", "npc")
+
+grconvertX <- function(x, from = "user", to = "user")
+{
+    from <- pmatch(from, .units)
+    to <- pmatch(to, .units)
+    .Internal(grconvertX(as.double(x), from, to))
+}
+
+grconvertY <- function(y, from = "user", to = "user")
+{
+    from <- pmatch(from, .units)
+    to <- pmatch(to, .units)
+    .Internal(grconvertY(as.double(y), from, to))
+}

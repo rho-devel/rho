@@ -103,14 +103,17 @@ format(x, \dots)
 
   Raw vectors are converted to their 2-digit hexadecimal representation
   by \code{\link{as.character}}.
+
+  Character inputs with embedded nul bytes will be truncated at the first nul.
 }
 \value{
   An object of similar structure to \code{x} containing character
   representations of the elements of the first argument \code{x}
-  in a common format.
+  in a common format, and in the current locale's encoding.
 
-  For numeric or complex \code{x}, dims and dimnames are preserved on
-  matrices/arrays and names on vectors: no other attributes are copied.
+  For character, numeric, complex or factor \code{x}, dims and dimnames
+  are preserved on matrices/arrays and names on vectors: no other
+  attributes are copied.
 
   If \code{x} is a list, the result is a character vector obtained by
   applying \code{format.default(x, \dots)} to each element of the list

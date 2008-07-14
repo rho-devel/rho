@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
  *			      R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -144,10 +144,13 @@ typedef struct {
     int opts;
     int sourceable;
     int longstring;
+    int maxlines;
+    Rboolean active;
+    int isS4;
 } LocalParseData;
 
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
-			       Rboolean backtick, int opts);
+			       Rboolean backtick, int opts, int nlines);
 static void args2buff(SEXP, int, int, LocalParseData *);
 static void deparse2buff(SEXP, LocalParseData *);
 static void print2buff(const char *, LocalParseData *);
@@ -162,7 +165,7 @@ static void deparse2(SEXP, SEXP, LocalParseData *);
 SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ca1;
-    int  cut0, backtick, opts;
+    int  cut0, backtick, opts, nlines;
 
     checkArity(op, args);
 
@@ -184,20 +187,23 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args);
     opts = SHOWATTRIBUTES;
     if(!isNull(CAR(args)))
-    	opts = asInteger(CAR(args));
-    ca1 = deparse1WithCutoff(ca1, FALSE, cut0, Rboolean(backtick), opts);
+	opts = asInteger(CAR(args));
+    args = CDR(args);
+    nlines = asInteger(CAR(args));
+    if (nlines == NA_INTEGER) nlines = -1;
+    ca1 = deparse1WithCutoff(ca1, FALSE, cut0, Rboolean(backtick), opts, nlines);
     return ca1;
 }
 
 SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 {
     Rboolean backtick = TRUE;
-    return(deparse1WithCutoff(call, abbrev, DEFAULT_Cutoff, backtick,
-    			      opts));
+    return deparse1WithCutoff(call, abbrev, DEFAULT_Cutoff, backtick,
+			      opts, -1);
 }
 
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
-			       Rboolean backtick, int opts)
+			       Rboolean backtick, int opts, int nlines)
 {
 /* Arg. abbrev:
 	If abbrev is TRUE, then the returned value
@@ -206,11 +212,12 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 */
     SEXP svec;
     int savedigits;
+    Rboolean need_ellipses = FALSE;
     LocalParseData localData =
 	    {0, 0, 0, 0, /*startline = */TRUE, 0,
 	     NULL,
 	     /*DeparseBuffer=*/{NULL, 0, BUFSIZE},
-	     DEFAULT_Cutoff, FALSE, 0, TRUE, FALSE};
+	     DEFAULT_Cutoff, FALSE, 0, TRUE, FALSE, INT_MAX, TRUE, 0};
     localData.cutoff = cutoff;
     localData.backtick = backtick;
     localData.opts = opts;
@@ -221,7 +228,16 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     R_print.digits = DBL_DIG;/* MAX precision */
 
     svec = R_NilValue;
-    deparse2(call, svec, &localData);/* just to determine linenumber..*/
+    if (nlines > 0) {
+	localData.linenumber = localData.maxlines = nlines;
+    } else {
+	deparse2(call, svec, &localData);/* just to determine linenumber..*/
+	localData.active = TRUE;
+	if(R_BrowseLines > 0 && localData.linenumber > R_BrowseLines) {
+	    localData.linenumber = localData.maxlines = R_BrowseLines + 1;
+	    need_ellipses = TRUE;
+	}
+    }
     PROTECT(svec = allocVector(STRSXP, localData.linenumber));
     deparse2(call, svec, &localData);
     UNPROTECT(1);
@@ -231,18 +247,16 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 	data[10] = '\0';
 	if (strlen(CHAR(STRING_ELT(svec, 0))) > 10) strcat(data, "...");
 	svec = mkString(data);
-    } else if(R_BrowseLines > 0 &&
-	      localData.linenumber > R_BrowseLines) {
-	/* we need to truncate to fewer lines in the browser call */
-	PROTECT(svec = lengthgets(svec, R_BrowseLines+1));
+    } else if(need_ellipses) {
 	SET_STRING_ELT(svec, R_BrowseLines, mkChar("  ..."));
-	UNPROTECT(1);
     }
     R_print.digits = savedigits;
-    if ((opts & WARNINCOMPLETE) && !localData.sourceable)
-    	warning(_("deparse may be incomplete"));
+    if ((opts & WARNINCOMPLETE) && localData.isS4)
+	warning(_("deparse of an S4 object will not be source()able"));
+    else if ((opts & WARNINCOMPLETE) && !localData.sourceable)
+	warning(_("deparse may be incomplete"));
     if ((opts & WARNINCOMPLETE) && localData.longstring)
-    	warning(_("deparse may be not be source()able in R < 2.7.0"));
+	warning(_("deparse may be not be source()able in R < 2.7.0"));
     /* somewhere lower down might have allocated ... */
     R_FreeStringBuffer(&(localData.buffer));
     return svec;
@@ -258,7 +272,17 @@ SEXP deparse1line(SEXP call, Rboolean abbrev)
    Rboolean backtick=TRUE;
 
    temp = deparse1WithCutoff(call, abbrev, MAX_Cutoff, backtick,
-   			     SIMPLEDEPARSE);
+			     SIMPLEDEPARSE, 1);
+   return(temp);
+}
+
+SEXP attribute_hidden deparse1s(SEXP call)
+{
+   SEXP temp;
+   Rboolean backtick=TRUE;
+
+   temp = deparse1WithCutoff(call, FALSE, DEFAULT_Cutoff, backtick,
+			     DEFAULTDEPARSE, 1);
    return(temp);
 }
 
@@ -332,7 +356,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (source != R_NilValue && TYPEOF(source) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
     opts = asInteger(CADDDR(args));
-    /* <NOTE>: change this if extra options are added */ 
+    /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 256)
 	errorcall(call, _("'opts' should be small non-negative integer"));
     evaluate = Rboolean(asLogical(CAD4R(args)));
@@ -445,8 +469,8 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		case PP_BINARY2:
 		    switch(length(CDR(arg))) {
 		    case 1:
-		    	if (!left)
-		    	    return FALSE;
+			if (!left)
+			    return FALSE;
 			if (arginfo.precedence == PREC_SUM)   /* binary +/- precedence upgraded as unary */
 			    arginfo.precedence = PREC_SIGN;
 		    case 2:
@@ -491,10 +515,10 @@ static Rboolean hasAttributes(SEXP s)
     SEXP a = ATTRIB(s);
     if (length(a) > 2) return(TRUE);
     while(!isNull(a)) {
-    	if(TAG(a) != R_SrcrefSymbol
-    	   && (TYPEOF(s) != CLOSXP || TAG(a) != R_SourceSymbol))
-    	    return(TRUE);
-    	a = CDR(a);
+	if(TAG(a) != R_SrcrefSymbol
+	   && (TYPEOF(s) != CLOSXP || TAG(a) != R_SourceSymbol))
+	    return(TRUE);
+	a = CDR(a);
     }
     return(FALSE);
 }
@@ -628,12 +652,16 @@ static void deparse2buff(SEXP s, LocalParseData *d)
     SEXP op, t;
     int localOpts = d->opts, i, n;
 
+    if (!d->active) return;
+
+    if (IS_S4_OBJECT(s)) d->isS4 = TRUE;
+
     switch (TYPEOF(s)) {
     case NILSXP:
 	print2buff("NULL", d);
 	break;
     case SYMSXP:
-    	if (localOpts & QUOTEEXPRESSIONS) {
+	if (localOpts & QUOTEEXPRESSIONS) {
 	    attr1(s, d);
 	    print2buff("quote(", d);
 	}
@@ -675,13 +703,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	}
 	break;
     case CLOSXP:
-        if (localOpts & SHOWATTRIBUTES) attr1(s, d);
-        if ((d->opts & USESOURCE) && 
-	    (n = length(t = getAttrib(s, R_SourceSymbol))) > 0 
+	if (localOpts & SHOWATTRIBUTES) attr1(s, d);
+	if ((d->opts & USESOURCE) &&
+	    (n = length(t = getAttrib(s, R_SourceSymbol))) > 0
 	    && isString(t)) {
-    	    for(i = 0 ; i < n ; i++) {
-	    	print2buff(translateChar(STRING_ELT(t, i)), d);
-	    	writeline(d);
+	    for(i = 0 ; i < n ; i++) {
+		print2buff(translateChar(STRING_ELT(t, i)), d);
+		writeline(d);
 	    }
 	} else {
 	    /* We have established that we don't want to use the
@@ -698,7 +726,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	if (localOpts & SHOWATTRIBUTES) attr2(s, d);
 	break;
     case ENVSXP:
-        d->sourceable = FALSE;
+	d->sourceable = FALSE;
 	print2buff("<environment>", d);
 	break;
     case VECSXP:
@@ -709,7 +737,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	if (localOpts & SHOWATTRIBUTES) attr2(s, d);
 	break;
     case EXPRSXP:
-    	if (localOpts & SHOWATTRIBUTES) attr1(s, d);
+	if (localOpts & SHOWATTRIBUTES) attr1(s, d);
 	if(length(s) <= 0)
 	    print2buff("expression()", d);
 	else {
@@ -885,17 +913,17 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		case PP_FUNCTION:
 		    printcomment(s, d);
 		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
-		    	print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
-		    	print2buff("(", d);
+			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
+			print2buff("(", d);
 		    	args2buff(CAR(s), 0, 1, d);
-		    	print2buff(") ", d);
-		    	deparse2buff(CADR(s), d);
+			print2buff(") ", d);
+			deparse2buff(CADR(s), d);
 		    } else {
 			s = CADDR(s);
 			n = length(s);
-	    	    	for(i = 0 ; i < n ; i++) {
-	    		    print2buff(translateChar(STRING_ELT(s, i)), d);
-	    		    writeline(d);
+			for(i = 0 ; i < n ; i++) {
+			    print2buff(translateChar(STRING_ELT(s, i)), d);
+			    writeline(d);
 			}
 		    }
 		    break;
@@ -1019,15 +1047,15 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if ( isSymbol(CAR(s))
 		      && TYPEOF(val) == CLOSXP
 		      && streql(CHAR(PRINTNAME(CAR(s))), "::") ){ /*  :: is special case */
-		    	deparse2buff(CADR(s), d);
-		    	print2buff("::", d);
+			deparse2buff(CADR(s), d);
+			print2buff("::", d);
 			deparse2buff(CADDR(s), d);
 		    }
 		    else if ( isSymbol(CAR(s))
 		      && TYPEOF(val) == CLOSXP
 		      && streql(CHAR(PRINTNAME(CAR(s))), ":::") ){ /*  ::: is special case */
-		    	deparse2buff(CADR(s), d);
-		    	print2buff(":::", d);
+			deparse2buff(CADR(s), d);
+			print2buff(":::", d);
 			deparse2buff(CADDR(s), d);
 		    }
 		    else {
@@ -1081,29 +1109,30 @@ static void deparse2buff(SEXP s, LocalParseData *d)
     case EXTPTRSXP:
     {
 	char tpb[12+sizeof(void *)];
-    	d->sourceable = FALSE;
+	d->sourceable = FALSE;
 	sprintf(tpb, "<pointer: %p>", R_ExternalPtrAddr(s));
 	print2buff(tpb, d);
     }
 	break;
 #ifdef BYTECODE
     case BCODESXP:
-    	d->sourceable = FALSE;
+	d->sourceable = FALSE;
 	print2buff("<bytecode>", d);
 	break;
 #endif
     case WEAKREFSXP:
-    	d->sourceable = FALSE;
+	d->sourceable = FALSE;
 	print2buff("<weak reference>", d);
 	break;
     case S4SXP:
 	d->sourceable = FALSE;
+	d->isS4 = TRUE;
 	print2buff("<S4 object of class ", d);
 	deparse2buff(getAttrib(s, R_ClassSymbol), d);
 	print2buff(">", d);
       break;
     default:
-    	d->sourceable = FALSE;
+	d->sourceable = FALSE;
 	UNIMPLEMENTED_TYPE("deparse2buff", s);
     }
 }
@@ -1114,9 +1143,10 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 
 static void writeline(LocalParseData *d)
 {
-    if (d->strvec != R_NilValue)
+    if (d->strvec != R_NilValue && d->linenumber < d->maxlines)
 	SET_STRING_ELT(d->strvec, d->linenumber, mkChar(d->buffer.data));
     d->linenumber++;
+    if (d->linenumber >= d->maxlines) d->active = FALSE;
     /* reset */
     d->len = 0;
     d->buffer.data[0] = '\0';
@@ -1206,6 +1236,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		}
 		if (i < (tlen - 1)) print2buff(", ", d);
 		if (tlen > 1 && d->len > d->cutoff) writeline(d);
+		if (!d->active) break;
 	    }
 	    if(tlen > 1)print2buff(")", d);
 	    if(surround) print2buff(")", d);
@@ -1272,6 +1303,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    print2buff(strp, d);
 	    if (i < (tlen - 1)) print2buff(", ", d);
 	    if (tlen > 1 && d->len > d->cutoff) writeline(d);
+	    if (!d->active) break;
 	}
 	if(tlen > 1) print2buff(")", d);
 	if(surround) print2buff(")", d);
@@ -1286,9 +1318,9 @@ static Rboolean src2buff(SEXP sv, int k, LocalParseData *d)
     int i, n;
 
     if (length(sv) > k && !isNull(t = VECTOR_ELT(sv, k))) {
-        PROTECT(t);
+	PROTECT(t);
 
-    	PROTECT(t = lang2(install("as.character"), t));
+	PROTECT(t = lang2(install("as.character"), t));
 	PROTECT(t = eval(t, R_BaseEnv));
 	n = length(t);
 	for(i = 0 ; i < n ; i++) {
@@ -1296,7 +1328,7 @@ static Rboolean src2buff(SEXP sv, int k, LocalParseData *d)
 	    if(i < n-1) writeline(d);
 	}
 	UNPROTECT(3);
-        return TRUE;
+	return TRUE;
     }
     else return FALSE;
 }
@@ -1316,9 +1348,9 @@ static void vec2buff(SEXP v, LocalParseData *d)
     if (length(nv) == 0) nv = R_NilValue;
 
     if (d->opts & USESOURCE)
-   	sv = getAttrib(v, R_SrcrefSymbol);
+	sv = getAttrib(v, R_SrcrefSymbol);
     else
-   	sv = R_NilValue;
+	sv = R_NilValue;
 
     for(i = 0 ; i < n ; i++) {
 	if (i > 0)
@@ -1326,7 +1358,7 @@ static void vec2buff(SEXP v, LocalParseData *d)
 	linebreak(&lbreak, d);
 	if (!isNull(nv) && !isNull(STRING_ELT(nv, i))
 	    && *CHAR(STRING_ELT(nv, i))) { /* length test */
-            /* d->opts = SIMPLEDEPARSE; This seems pointless */
+	    /* d->opts = SIMPLEDEPARSE; This seems pointless */
 	    if( isValidName(translateChar(STRING_ELT(nv, i))) )
 		deparse2buff(STRING_ELT(nv, i), d);
 	    else {
@@ -1353,7 +1385,7 @@ static void args2buff(SEXP arglist, int lineb, int formals, LocalParseData *d)
 
     while (arglist != R_NilValue) {
 	if (TYPEOF(arglist) != LISTSXP && TYPEOF(arglist) != LANGSXP)
-            error(_("badly formed function expression"));
+	    error(_("badly formed function expression"));
 	if (TAG(arglist) != R_NilValue) {
 	    SEXP s = TAG(arglist);
 

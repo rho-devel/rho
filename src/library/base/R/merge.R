@@ -22,7 +22,8 @@ merge.default <- function(x, y, ...)
 merge.data.frame <-
     function(x, y, by = intersect(names(x), names(y)), by.x = by, by.y = by,
              all = FALSE, all.x = all, all.y = all,
-             sort = TRUE, suffixes = c(".x",".y"), ...)
+             sort = TRUE, suffixes = c(".x",".y"), incomparables = NULL,
+             ...)
 {
     fix.by <- function(by, df)
     {
@@ -59,8 +60,12 @@ merge.data.frame <-
             cnm <- nm.y %in% nm
             names(y)[cnm] <- paste(nm.y[cnm], suffixes[2], sep="")
         }
-        ij <- expand.grid(seq_len(nx), seq_len(ny))
-        res <- cbind(x[ij[,1], , drop = FALSE], y[ij[,2], , drop = FALSE])
+        if (nx == 0 || ny == 0) {
+            res <- cbind(x[FALSE, ], y[FALSE, ])
+        } else {
+            ij <- expand.grid(seq_len(nx), seq_len(ny))
+            res <- cbind(x[ij[,1], , drop = FALSE], y[ij[,2], , drop = FALSE])
+        }
     }
     else {
         if(any(by.x == 0)) {
@@ -88,8 +93,8 @@ merge.data.frame <-
         }
         comm <- match(bx, by, 0)
         bxy <- bx[comm > 0]             # the keys which are in both
-        xinds <- match(bx, bxy, 0)
-        yinds <- match(by, bxy, 0)
+        xinds <- match(bx, bxy, 0, incomparables)
+        yinds <- match(by, bxy, 0, incomparables)
         if(nx > 0 && ny > 0)
             m <- .Internal(merge(xinds, yinds, all.x, all.y))
         else

@@ -36,7 +36,7 @@ w_init(Sint m, Sint n)
 {
     Sint i;
     double ***w;
-    
+
     w = (double ***) R_alloc(m + 1, sizeof(double **));
     memset(w, '\0', (m+1) * sizeof(double**));
     for (i = 0; i <= m; i++) {
@@ -54,7 +54,7 @@ cansari(int k, int m, int n, double ***w)
 
     l = (m + 1) * (m + 1) / 4;
     u = l + m * n / 2;
-    
+
     if ((k < l) || (k > u))
 	return(0);
 
@@ -138,10 +138,10 @@ qansari(Sint *len, double *x, Sint *m, Sint *n)
     w = w_init(*m, *n);
     l = (*m + 1) * (*m + 1) / 4;
     u = l + *m * *n / 2;
-    c = choose(*m + *n, *m);    
+    c = choose(*m + *n, *m);
     for (i = 0; i < *len; i++) {
 	xi = x[i];
-        if(xi < 0 || xi > 1)
+	if(xi < 0 || xi > 1)
 	    error(_("probabilities outside [0,1] in qansari()"));
 	if(xi == 0)
 	    x[i] = l;

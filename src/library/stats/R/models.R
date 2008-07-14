@@ -70,6 +70,7 @@ formula.character <- function(x, env = parent.frame(), ...)
 print.formula <- function(x, ...) {
     attr(x, ".Environment") <- NULL
     print.default(unclass(x), ...)
+    invisible(x)
 }
 
 "[.formula" <- function(x,i) {
@@ -103,7 +104,10 @@ terms.default <- function(x, ...) {
 }
 
 terms.terms <- function(x, ...) x
-print.terms <- function(x, ...) print.default(unclass(x))
+print.terms <- function(x, ...) { 
+    print.default(unclass(x))
+    invisible(x)
+}
 
 ## moved from base/R/labels.R
 labels.terms <- function(object, ...) attr(object, "term.labels")
@@ -228,8 +232,6 @@ deviance.default <- function(object, ...) object$deviance
 
 fitted <- function(object, ...) UseMethod("fitted")
 ## we really do need partial matching here
-fitted.default <- function(object, ...)
-    napredict(object$na.action, object$fitted)
 fitted.default <- function(object, ...)
 {
     xx <- if("fitted.values" %in% names(object))
@@ -442,6 +444,8 @@ model.offset <- function(x) {
 
 model.matrix <- function(object, ...) UseMethod("model.matrix")
 
+fitted.default <- function(object, ...)
+    napredict(object$na.action, object$fitted)
 model.matrix.default <- function(object, data = environment(object),
 				 contrasts.arg = NULL, xlev = NULL, ...)
 {

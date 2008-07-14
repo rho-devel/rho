@@ -68,8 +68,8 @@ SEXP Rf_append(SEXP first, SEXP second)
 
 
 /* This is called by function() {}, where an invalid
-   body should be impossible. When called from 
-   other places (eg do_asfunction) they 
+   body should be impossible. When called from
+   other places (eg do_asfunction) they
    should do this checking in advance */
 
 /*  mkCLOSXP - return a closure with formals f,  */

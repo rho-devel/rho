@@ -288,4 +288,3 @@ static double poly(const float *cc, int nord, float x)
     }
     return ret_val;
 } /* poly */
-

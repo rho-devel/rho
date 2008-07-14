@@ -73,8 +73,7 @@ Rboolean NonNullStringMatch(SEXP s, SEXP t)
 {
     /* "" or NA string matches nothing */
     if (s == NA_STRING || t == NA_STRING) return FALSE;
-    if (CHAR(s)[0] && CHAR(t)[0] && 
-	strcmp(translateChar(s), translateChar(t)) == 0)
+    if (CHAR(s)[0] && CHAR(t)[0] && Seql(s, t))
 	return TRUE;
     else
 	return FALSE;
@@ -99,6 +98,7 @@ Rboolean psmatch(const char *f, const char *t, Rboolean exact)
 
 /* Matching formals and arguments */
 
+/* Are these are always native charset? */
 Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
 {
     const char *f, *t;
@@ -191,7 +191,7 @@ SEXP attribute_hidden matchArg(SEXP tag, SEXP * list)
 
 SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
 {
-      return matchPar_int(CHAR(PRINTNAME(tag)), list, TRUE);  
+      return matchPar_int(CHAR(PRINTNAME(tag)), list, TRUE);
 }
 
 
@@ -301,9 +301,9 @@ nextarg1:
 			}
 #endif
 			if (R_warn_partial_match_args) {
-			    warningcall(call, 
+			    warningcall(call,
 					_("partial argument match of '%s' to '%s'"),
-					CHAR(PRINTNAME(TAG(b))), 
+					CHAR(PRINTNAME(TAG(b))),
 					CHAR(PRINTNAME(TAG(f))) );
 			}
 			SETCAR(a, CAR(b));
@@ -409,7 +409,7 @@ nextarg2:
 
 	if(last != R_NilValue) {
 	    errorcall(R_GlobalContext->call,
-		      _("unused argument(s) %s"), 
+		      _("unused argument(s) %s"),
 		      CHAR(STRING_ELT(deparse1line(unused, FALSE), 0)) + 4);
 	}
     }

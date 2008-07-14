@@ -43,7 +43,7 @@
 #include "../getline/getline.h"
 
 extern void cmdlineoptions(int, char **);
-extern void readconsolecfg();
+extern void readconsolecfg(void);
 extern int GA_initapp(int, char **);
 extern void Rf_mainloop(void);
 __declspec(dllimport) extern UImode CharacterMode;
@@ -53,12 +53,12 @@ __declspec(dllimport) extern int R_HistorySize;
 __declspec(dllimport) extern int R_RestoreHistory;
 __declspec(dllimport) extern char *R_HistoryFile;
 
-extern char *getDLLVersion();
-extern void saveConsoleTitle();
+extern char *getDLLVersion(void);
+extern void saveConsoleTitle(void);
 extern void R_gl_tab_set(void);
 
 static char Rversion[25];
-char *getRVersion()
+char *getRVersion(void)
 {
     snprintf(Rversion, 25, "%s.%s", R_MAJOR, R_MINOR);
     return(Rversion);
@@ -66,7 +66,7 @@ char *getRVersion()
 
 static DWORD mainThreadId;
 
-static void my_onintr()
+static void my_onintr(int nSig)
 {
   UserBreak = 1;
   PostThreadMessage(mainThreadId,0,0,0);

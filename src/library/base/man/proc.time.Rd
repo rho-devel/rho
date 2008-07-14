@@ -29,19 +29,24 @@ proc.time()
   system times of any child processes spawned by it on which it has
   waited.  (The \code{print} method combines the child times with those
   of the main process.)
+
+  The definition of \sQuote{user} and \sQuote{system} times is from your
+  OS.  Typically it is something like
+
+  \emph{The \sQuote{user time} is the CPU time charged for the execution
+  of user instructions of the calling process. The \sQuote{system lime}
+  is the CPU time charged for execution by the system on behalf of the
+  calling process.}
  
   The resolution of the times will be system-specific
 #ifdef unix
-  and times are rounded to the nearest 1ms.  On modern systems they will
-  be that accurate, but on older systems they might be accurate to
-  1/100 or 1/60 sec.
+  and on Unix-alikes times are rounded to the nearest 1ms.  On modern
+  systems they will be that accurate, but on older systems they might be
+  accurate to 1/100 or 1/60 sec.
 #endif
 #ifdef windows
-  and times are typically available to 10ms on NT-based versions of Windows.
+  and are typically available to 10ms on Windows.
 #endif
-
-  It is useful for timing the evaluation of \R expressions,
-  which can be done more conveniently with \code{\link{system.time}}.
 }
 \note{
 #ifdef unix
@@ -49,9 +54,8 @@ proc.time()
   when the function will throw an error.
 #endif
 #ifdef windows
-  CPU times will be returned as \code{NA} on Windows 9x/ME systems, but
-  are genuine times on NT4/2000/XP/2003/Vista systems.  Times of child
-  processes are not available and will always be given as \code{NA}.
+  Times of child processes are not available and will always be given as
+  \code{NA}.
 #endif
 }
 \references{

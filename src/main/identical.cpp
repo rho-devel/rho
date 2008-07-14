@@ -56,7 +56,7 @@ SEXP attribute_hidden do_identical(SEXP call, SEXP op, SEXP args, SEXP env)
 /* do the two objects compute as identical? */
 Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 {
-    SEXP ax, ay;
+    SEXP ax, ay, atrx, atry;
     if(x == y)
 	return TRUE;
     if(TYPEOF(x) != TYPEOF(y))
@@ -83,7 +83,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	} else {
 	    SEXP elx, ely;
 	    if(length(ax) != length(ay)) return FALSE;
-	    /* They are the same length and should have 
+	    /* They are the same length and should have
 	       unique non-empty non-NA tags */
 	    for(elx = ax; elx != R_NilValue; elx = CDR(elx)) {
 		const char *tx = CHAR(PRINTNAME(TAG(elx)));
@@ -91,11 +91,15 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 		    if(streql(tx, CHAR(PRINTNAME(TAG(ely))))) {
 			/* We need to treat row.names specially here */
 			if(streql(tx, "row.names")) {
-			    if(!compute_identical(getAttrib(x, R_RowNamesSymbol),
-						  getAttrib(y, R_RowNamesSymbol)))
+                            PROTECT(atrx = getAttrib(x, R_RowNamesSymbol));
+                            PROTECT(atry = getAttrib(y, R_RowNamesSymbol));
+			    if(!compute_identical(atrx, atry)) {
+                               UNPROTECT(2);      
 			       return FALSE;
+                            } else
+                               UNPROTECT(2);
 			} else
-			    if(!compute_identical(CAR(elx), CAR(ely))) 
+			    if(!compute_identical(CAR(elx), CAR(ely)))
 				return FALSE;
 			break;
 		    }
@@ -107,10 +111,10 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
     case NILSXP:
 	return TRUE;
     case LGLSXP:
-        if (length(x) != length(y)) return FALSE;
-        /* Use memcmp (which is ISO C) to speed up the comparison */
+	if (length(x) != length(y)) return FALSE;
+	/* Use memcmp (which is ISO C) to speed up the comparison */
         return memcmp(LOGICAL(x), LOGICAL(y),
-                      length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
+		      length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case INTSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
@@ -161,7 +165,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	if(memcmp(CHAR(x), CHAR(y), n1) != 0) return FALSE;
     }
     case VECSXP:
-    case EXPRSXP: 
+    case EXPRSXP:
     {
 	int i, n = length(x);
 	if(n != length(y)) return FALSE;
@@ -171,7 +175,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	return TRUE;
     }
     case LANGSXP:
-    case LISTSXP: 
+    case LISTSXP:
     {
 	while (x != R_NilValue) {
 	    if(y == R_NilValue)
@@ -221,8 +225,8 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 	  return(compute_identical(subsititute(PREXPR(x), PRENV(x)),
 	  subsititute(PREXPR(y), PRENV(y))));*/
     case S4SXP:
-        /* attributes already tested, so all slots identical */
-        return TRUE;
+	/* attributes already tested, so all slots identical */
+	return TRUE;
     default:
 	/* these are all supposed to be types that represent constant
 	   entities, so no further testing required ?? */

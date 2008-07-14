@@ -47,7 +47,7 @@ R --slave --no-restore --vanilla --file=foo [script_args]
 /* execv exists and can be used on Windows, but it returns immediately
    and so the exit status is lost.  HAVE_EXECV is defined under Windows.
 
-   The main reason for using execv rather than system is to avoid 
+   The main reason for using execv rather than system is to avoid
    argument quoting hell.
 */
 
@@ -85,13 +85,13 @@ static char rhome[] = R_HOME;
 # include "rterm.c"
 #endif
 
-#define RSVERSION "$Rev: 42724 $"
+#define RSVERSION "$Rev: 45476 $"
 
 #ifdef HAVE_EXECV
 static int verbose = 0;
 #endif
 
-void usage()
+void usage(void)
 {
     fprintf(stderr, "Usage: /path/to/Rscript [--options] [-e expr] file [args]\n\n");
     fprintf(stderr, "--options accepted are\n");
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
     av[ac++] = cmd;
     av[ac++] = "--slave";
     av[ac++] = "--no-restore";
-    
+
     if(argc == 2) {
 	if(strcmp(argv[1], "--help") == 0) {
 	    usage();
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 	    exit(0);
 	}
     }
-    
+
     /* first copy over any -e or --foo args */
     for(i = 1; i < argc; i++) {
 	if(strcmp(argv[i], "-e") == 0) {
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 	    if(verbose)
 		fprintf(stderr, "setting '%s'\n", buf2);
 #ifdef HAVE_PUTENV
-	    if(putenv(buf2)) 
+	    if(putenv(buf2))
 #endif
 	    {
 		fprintf(stderr, "unable to set R_DEFAULT_PACKAGES\n");
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 	    fprintf(stderr, "file name is too long\n");
 	    exit(1);
 	}
-	sprintf(buf, "--file=%s", argv[i0]); 
+	sprintf(buf, "--file=%s", argv[i0]);
 	av[ac++] = buf;
     }
     av[ac++] = "--args";

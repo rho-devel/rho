@@ -1,6 +1,6 @@
 % File src/library/base/man/strptime.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{strptime}
@@ -100,16 +100,19 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
     \item{\code{\%S}}{Second as decimal number (00--61), allowing for
       up to two leap-seconds (but POSIX-compliant OSes will ignore leap
       seconds).}
+    % see http://en.wikipedia.org/wiki/Week_number#Week_number
     \item{\code{\%U}}{Week of the year as decimal number (00--53) using
-      the first Sunday as day 1 of week 1.}
+      Sunday as the first day 1 of the week (and typically with the
+      first Sunday of the year as day 1 of week 1).  The US convention.}
     \item{\code{\%w}}{Weekday as decimal number (0--6, Sunday is 0).}
     \item{\code{\%W}}{Week of the year as decimal number (00--53) using
-      the first Monday as day 1 of week 1.}
+      Monday as the first day of week (and typically with the
+      first Monday of the year as day 1 of week 1). The UK convention.}
     \item{\code{\%x}}{Date, locale-specific.}
     \item{\code{\%X}}{Time, locale-specific.}
     \item{\code{\%y}}{Year without century (00--99). If you use this on
       input, which century you get is system-specific.  So don't!  Often
-      values up to 69 (or 68) are prefixed by 20 and 70(or 69) to 99 by 19.}
+      values up to 69 (or 68) are prefixed by 20 and 70 (or 69) to 99 by 19.}
     \item{\code{\%Y}}{Year with century.}
 #ifdef unix
     \item{\code{\%z}}{(output only.) Offset from Greenwich, so
@@ -118,9 +121,11 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
       string (empty if not available).}
 #endif
 #ifdef windows
-    \item{\code{\%z}, \code{\%Z}}{(output only.) Time zone as a character
+    \item{\code{\%z}, \code{\%Z}}{(output only.)  Time zone as a character
       string (empty if not available).  For \code{\%z} this differs
-      from POSIX.}
+      from POSIX.  Also, this is done by a Windows C function and so
+      will use Windows' idea of the timezone names, not that used by
+      other date-time functions.}
 #endif
   }
   Where leading zeros are shown they will be used on output but are
@@ -157,7 +162,8 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
     \item{\code{\%t}}{Tab on output, arbitrary whitespace on input.}
     \item{\code{\%T}}{Equivalent to \code{\%H:\%M:\%S}.}
     \item{\code{\%u}}{Weekday as a decimal number (1--7, Monday is 1).}
-    \item{\code{\%V}}{Week of the year as decimal number (00--53).
+    \item{\code{\%V}}{Week of the year as decimal number (00--53) as
+      defined in ISO 8601.
       If the week (starting on Monday) containing 1 January has four or
       more days in the new year, then it is considered week 1.  Otherwise, it
       is the last week of the previous year, and the next week is week
@@ -174,7 +180,8 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
   not followed by a digit, it uses the setting of
   \code{\link{getOption}("digits.secs")}, or if that is unset, \code{n = 3}).
   Further, for \code{strptime} \code{\%OS} will input seconds including
-  fractional seconds.  Note that \code{\%S} ignore fractional parts on output.
+  fractional seconds.  Note that \code{\%S} ignores (and not rounds)
+  fractional parts on output.
 
   The behaviour of other conversion specifications (and even if other
   character sequences commencing with \code{\%} \emph{are} conversion

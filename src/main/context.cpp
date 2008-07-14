@@ -54,7 +54,7 @@
  *	cjmpbuf		longjump information for non-local return
  *	cstacktop	the current level of the pointer protection stack
  *	callflag	the context "type"
- *	call		the call (name of function, or expression to 
+ *	call		the call (name of function, or expression to
  *			get the function) that effected this
  *			context if a closure, otherwise often NULL.
  *	callfun		the function, if this was a closure.
@@ -223,13 +223,13 @@ static void jumpfun(RCNTXT * cptr, int mask, SEXP val)
 
     R_ReturnedValue = val;
     R_GlobalContext = cptr; /* this used to be set to
-                               cptr->nextcontext for non-toplevel
-                               jumps (with the context set back at the
-                               SETJMP for restarts).  Changing this to
-                               always using cptr as the new global
-                               context should simplify some code and
-                               perhaps allow loops to be handled with
-                               fewer SETJMP's.  LT */
+			       cptr->nextcontext for non-toplevel
+			       jumps (with the context set back at the
+			       SETJMP for restarts).  Changing this to
+			       always using cptr as the new global
+			       context should simplify some code and
+			       perhaps allow loops to be handled with
+			       fewer SETJMP's.  LT */
     R_restore_globals(R_GlobalContext);
     // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
     //	 << cptr << ", " << mask << ")\n" << flush;
@@ -300,8 +300,8 @@ void findcontext(int mask, SEXP env, SEXP val)
 	     cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & CTXT_LOOP && cptr->cloenv == env )
-	        jumpfun(cptr, mask, val);
-        error(_("no loop to break from, jumping to top level"));
+		jumpfun(cptr, mask, val);
+	error(_("no loop to break from, jumping to top level"));
     }
     else {				/* return; or browser */
 	for (cptr = R_GlobalContext;
@@ -423,7 +423,7 @@ SEXP R_syscall(int n, RCNTXT *cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(R_GlobalContext->call, 
+	errorcall(R_GlobalContext->call,
 		  _("not that many frames on the stack"));
     while (cptr->nextcontext != NULL) {
 	if (cptr->callflag & CTXT_FUNCTION ) {
@@ -447,7 +447,7 @@ SEXP R_sysfunction(int n, RCNTXT *cptr)
     else
 	n = - n;
     if (n < 0)
-	errorcall(R_GlobalContext->call, 
+	errorcall(R_GlobalContext->call,
 		  _("not that many frames on the stack"));
     while (cptr->nextcontext != NULL) {
 	if (cptr->callflag & CTXT_FUNCTION ) {
@@ -480,7 +480,7 @@ SEXP do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return(R_NilValue);
     for(cptr = R_GlobalContext->nextcontext; cptr!= R_ToplevelContext;
 	    cptr = cptr->nextcontext) {
-        if (cptr->callflag & CTXT_FUNCTION) {
+	if (cptr->callflag & CTXT_FUNCTION) {
 	    SET_RESTART_BIT_ON(cptr->callflag);
 	    break;
 	}
@@ -518,7 +518,7 @@ SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     switch (PRIMVAL(op)) {
     case 1: /* parent */
 	if(n == NA_INTEGER)
-	    error(_("invalid value for '%s'"), "n");
+	    error(_("invalid '%s' argument"), "n");
 	i = nframe = framedepth(cptr);
 	/* This is a pretty awful kludge, but the alternative would be
 	   a major redesign of everything... -pd */
@@ -527,11 +527,11 @@ SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return ScalarInteger(i);
     case 2: /* call */
 	if(n == NA_INTEGER)
-	    error(_("invalid value for '%s'"), "which");
+	    error(_("invalid '%s' argument"), "which");
 	return R_syscall(n, cptr);
     case 3: /* frame */
 	if(n == NA_INTEGER)
-	    error(_("invalid value for '%s'"), "which");
+	    error(_("invalid '%s' argument"), "which");
 	return R_sysframe(n, cptr);
     case 4: /* sys.nframe */
 	return ScalarInteger(framedepth(cptr));
@@ -564,7 +564,7 @@ SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return rval;
     case 9: /* sys.function */
 	if(n == NA_INTEGER)
-	    error(_("invalid value for 'which'"));
+	    error(_("invalid '%s' value"), "which");
 	return(R_sysfunction(n, cptr));
     default:
 	error(_("internal error in 'do_sys'"));
@@ -583,7 +583,7 @@ SEXP do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = asInteger(t);
 
     if(n == NA_INTEGER || n < 1 )
-	error(_("invalid value for 'n'"));
+	error(_("invalid '%s' value"), "n");
 
     cptr = R_GlobalContext;
     t = cptr->sysparent;
@@ -591,7 +591,7 @@ SEXP do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (cptr->callflag & CTXT_FUNCTION ) {
 	    if (cptr->cloenv == t)
 	    {
-		if (n == 1) 
+		if (n == 1)
 		    return cptr->sysparent;
 		n--;
 		t = cptr->sysparent;
@@ -651,11 +651,11 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 
 /*
   This is a simple interface for evaluating R expressions
-  from C with a guarantee that one will return to the 
+  from C with a guarantee that one will return to the
   point in the code from which the call was made (if it does
   return at all).
   This uses R_TopleveExec to do this.  It is important
-  in applications that embed R or wish to make general 
+  in applications that embed R or wish to make general
   callbacks to R with error handling.
 
   It is currently hidden with a data structure definition
@@ -679,7 +679,7 @@ protectedEval(void *d)
     if(data->env) {
 	env = data->env;
     }
-    data->val = eval(data->expression, env); 
+    data->val = eval(data->expression, env);
 }
 
 SEXP

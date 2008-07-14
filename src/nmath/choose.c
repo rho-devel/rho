@@ -55,8 +55,6 @@
 
 #include "nmath.h"
 
-extern int R_signgam;		/* set in lgammafn(.) */
-
 double attribute_hidden lfastchoose(double n, double k)
 {
     return -log(n + 1.) - lbeta(n - k + 1., k + 1.);
@@ -67,8 +65,7 @@ static
 double lfastchoose2(double n, double k, int *s_choose)
 {
     double r;
-    r = lgammafn(n - k + 1.);
-    *s_choose = R_signgam;
+    r = lgammafn_sign(n - k + 1., s_choose);
     return lgammafn(n + 1.) - lgammafn(k + 1.) - r;
 }
 
@@ -78,11 +75,14 @@ double lfastchoose2(double n, double k, int *s_choose)
 
 double lchoose(double n, double k)
 {
+    double k0 = k;
     k = floor(k + 0.5);
 #ifdef IEEE_754
     /* NaNs propagated correctly */
     if(ISNAN(n) || ISNAN(k)) return n + k;
 #endif
+    if (fabs(k - k0) > 1e-7)
+	MATHLIB_WARNING2(_("'k' (%.2f) must be integer, rounded to %.0f"), k0, k);
     if (k < 2) {
 	if (k <	 0) return ML_NEGINF;
 	if (k == 0) return 0.;
@@ -115,12 +115,14 @@ double lchoose(double n, double k)
 */
 double choose(double n, double k)
 {
-    double r;
+    double r, k0 = k;
     k = floor(k + 0.5);
 #ifdef IEEE_754
     /* NaNs propagated correctly */
     if(ISNAN(n) || ISNAN(k)) return n + k;
 #endif
+    if (fabs(k - k0) > 1e-7)
+	MATHLIB_WARNING2(_("'k' (%.2f) must be integer, rounded to %.0f"), k0, k);
     if (k < k_small_max) {
 	int j;
 	if(n-k < k && n >= 0 && R_IS_INT(n)) k = n-k; /* <- Symmetry */

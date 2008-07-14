@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998--2006  R Development Core Team
+ *  Copyright (C) 1998--2007  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@
    frequently. See rterm.c and ../system.c for one approach using
    a separate thread for input.
 */
-int myReadConsole(char *prompt, char *buf, int len, int addtohistory)
+int myReadConsole(const char *prompt, char *buf, int len, int addtohistory)
 {
     fputs(prompt, stdout);
     fflush(stdout);
@@ -61,7 +61,7 @@ int myReadConsole(char *prompt, char *buf, int len, int addtohistory)
     else return 0;
 }
 
-void myWriteConsoleEx(char *buf, int len, int otype)
+void myWriteConsoleEx(const char *buf, int len, int otype)
 {
     /* we could distinguish between ouput (type=0) and errors (otype=1) ... */
     printf("%s", buf);

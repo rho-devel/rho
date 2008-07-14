@@ -80,5 +80,3 @@ int R_fgetc(FILE *fp)
     return feof(fp) ? R_EOF : c;
 #endif
 }
-
-

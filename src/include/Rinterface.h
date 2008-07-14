@@ -65,7 +65,7 @@ extern void R_Suicide(const char *);
 extern char *R_HomeDir(void);
 extern int R_DirtyImage;	/* Current image dirty */
 extern const char *R_GUIType;
-extern void R_setupHistory();
+extern void R_setupHistory(void);
 extern char *R_HistoryFile;	/* Name of the history file */
 extern int R_HistorySize;	/* Size of the history file */
 extern int R_RestoreHistory;	/* restore the history file? */
@@ -76,14 +76,14 @@ extern char *R_Home;		    /* Root of the R tree */
 # define onintr			Rf_onintr
 void jump_to_toplevel(void);
 void mainloop(void);
-void onintr();
+void onintr(void);
 #ifndef DEFN_H_
 extern void* R_GlobalContext;    /* Need opaque pointer type for export */
 #endif
 
-void process_site_Renviron();
-void process_system_Renviron();
-void process_user_Renviron();
+void process_site_Renviron(void);
+void process_system_Renviron(void);
+void process_user_Renviron(void);
 
 #include <stdio.h>
 extern FILE * R_Consolefile;
@@ -116,16 +116,17 @@ extern uintptr_t R_CStackStart;	/* Initial stack address */
 extern void (*ptr_R_Suicide)(const char *);
 extern void (*ptr_R_ShowMessage)(const char *);
 extern int  (*ptr_R_ReadConsole)(const char *, unsigned char *, int, int);
-extern void (*ptr_R_WriteConsole)(char *, int);
-extern void (*ptr_R_WriteConsoleEx)(char *, int, int);
-extern void (*ptr_R_ResetConsole)();
-extern void (*ptr_R_FlushConsole)();
-extern void (*ptr_R_ClearerrConsole)();
+extern void (*ptr_R_WriteConsole)(const char *, int);
+extern void (*ptr_R_WriteConsoleEx)(const char *, int, int);
+extern void (*ptr_R_ResetConsole)(void);
+extern void (*ptr_R_FlushConsole)(void);
+extern void (*ptr_R_ClearerrConsole)(void);
 extern void (*ptr_R_Busy)(int);
 extern void (*ptr_R_CleanUp)(SA_TYPE, int, int);
-extern int  (*ptr_R_ShowFiles)(int, char **, char **, char *, Rboolean, char *);
+extern int  (*ptr_R_ShowFiles)(int, const char **, const char **,
+			       const char *, Rboolean, const char *);
 extern int  (*ptr_R_ChooseFile)(int, char *, int);
-extern int  (*ptr_R_EditFile)(char *);
+extern int  (*ptr_R_EditFile)(const char *);
 extern void (*ptr_R_loadhistory)(SEXP, SEXP, SEXP, SEXP);
 extern void (*ptr_R_savehistory)(SEXP, SEXP, SEXP, SEXP);
 extern void (*ptr_R_addhistory)(SEXP, SEXP, SEXP, SEXP);
@@ -136,7 +137,7 @@ extern int  (*ptr_R_EditFiles)(int, const char **, const char **, const char *);
 
 /* These two are not used by R itself, but are used by the GNOME front-end
    and the tcltk package */
-extern int  (*R_timeout_handler)();
+extern int  (*R_timeout_handler)(void);
 extern long R_timeout_val;
 
 #endif /* R_INTERFACE_PTRS */

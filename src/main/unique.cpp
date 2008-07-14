@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
  *                            R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -164,18 +164,21 @@ static int shash(SEXP x, int indx, HashData *d)
 
 static int lequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     return (LOGICAL(x)[i] == LOGICAL(y)[j]);
 }
 
 
 static int iequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     return (INTEGER(x)[i] == INTEGER(y)[j]);
 }
 
 /* BDR 2002-1-17  We don't want NA and other NaNs to be equal */
 static int requal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     if (!ISNAN(REAL(x)[i]) && !ISNAN(REAL(y)[j]))
 	return (REAL(x)[i] == REAL(y)[j]);
     else if (R_IsNA(REAL(x)[i]) && R_IsNA(REAL(y)[j])) return 1;
@@ -185,6 +188,7 @@ static int requal(SEXP x, int i, SEXP y, int j)
 
 static int cequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     if (!ISNAN(COMPLEX(x)[i].r) && !ISNAN(COMPLEX(x)[i].i)
        && !ISNAN(COMPLEX(y)[j].r) && !ISNAN(COMPLEX(y)[j].i))
 	return COMPLEX(x)[i].r == COMPLEX(y)[j].r &&
@@ -201,6 +205,7 @@ static int cequal(SEXP x, int i, SEXP y, int j)
 
 static int sequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     /* Two strings which have the same address must be the same,
        so avoid looking at the contents */
     if (STRING_ELT(x, i) == STRING_ELT(y, j)) return 1;
@@ -219,6 +224,7 @@ static int rawhash(SEXP x, int indx, HashData *d)
 
 static int rawequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     return (RAW(x)[i] == RAW(y)[j]);
 }
 
@@ -282,6 +288,7 @@ static int vhash(SEXP x, int indx, HashData *d)
 
 static int vequal(SEXP x, int i, SEXP y, int j)
 {
+    if (i < 0 || j < 0) return 0;
     return compute_identical(VECTOR_ELT(x, i), VECTOR_ELT(y, j));
 }
 
@@ -365,11 +372,27 @@ static int isDuplicated(SEXP x, int indx, HashData *d)
     i = d->hash(x, indx, d);
     while (h[i] != NIL) {
 	if (d->equal(x, h[i], x, indx))
-	    return 1;
+	    return h[i] >= 0 ? 1 : 0;
 	i = (i + 1) % d->M;
     }
     h[i] = indx;
     return 0;
+}
+
+static void removeEntry(SEXP x, int indx, HashData *d)
+{
+    int i, *h;
+
+    h = INTEGER(d->HashTable);
+    i = d->hash(x, indx, d);
+    while (h[i] != NIL) {
+	if (d->equal(x, h[i], x, indx)) {
+	    h[i] = NA_INTEGER;  /* < 0, only index values are inserted */
+	    return;
+	}
+	i = (i + 1) % d->M;
+    }
+    h[i] = NA_INTEGER;
 }
 
 SEXP duplicated(SEXP x, Rboolean from_last)
@@ -390,16 +413,44 @@ SEXP duplicated(SEXP x, Rboolean from_last)
     h = INTEGER(data.HashTable);
     v = LOGICAL(ans);
 
-    for (i = 0; i < data.M; i++)
-	h[i] = NIL;
+    for (i = 0; i < data.M; i++) h[i] = NIL;
 
-    if(from_last) {
-	for (i = n-1; i >= 0; i--)
-	    v[i] = isDuplicated(x, i, &data);
-    } else {
-	for (i = 0; i < n; i++)
-	    v[i] = isDuplicated(x, i, &data);
-    }
+    if(from_last)
+	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
+    else
+	for (i = 0; i < n; i++) v[i] = isDuplicated(x, i, &data);
+
+    return ans;
+}
+
+SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
+{
+    SEXP ans;
+    int *h, *v;
+    int i, n;
+    HashData data;
+
+    if (!isVector(x))
+	error(_("'duplicated' applies only to vectors"));
+    PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
+
+    n = LENGTH(x);
+    HashTableSetup(x, &data);
+    PROTECT(data.HashTable);
+    ans = allocVector(LGLSXP, n);
+    UNPROTECT(1);
+    h = INTEGER(data.HashTable);
+    v = LOGICAL(ans);
+
+    for (i = 0; i < data.M; i++) h[i] = NIL;
+    for (i = 0; i < length(incomp); i++) removeEntry(incomp, i, &data);
+    UNPROTECT(1);
+
+    if(from_last)
+	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
+    else
+	for (i = 0; i < n; i++) v[i] = isDuplicated(x, i, &data);
+
     return ans;
 }
 
@@ -408,7 +459,7 @@ SEXP duplicated(SEXP x, Rboolean from_last)
 */
 SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP x, dup, ans;
+    SEXP x, incomp, dup, ans;
     int i, k, n;
 
     checkArity(op, args);
@@ -423,7 +474,14 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
 	      (PRIMVAL(op) == 0 ? "duplicated" : "unique"));
     }
 
-    dup = duplicated(x, Rboolean(asLogical(CADR(args))));
+    incomp = CADR(args);
+
+    if(length(incomp) && /* S has FALSE to mean empty */
+       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
+	dup = duplicated3(x, incomp, Rboolean(asLogical(CADDR(args))));
+    else
+	dup = duplicated(x, Rboolean(asLogical(CADDR(args))));
+
     if (PRIMVAL(op) == 0) /* "duplicated()" : */
 	return dup;
     /*	ELSE
@@ -496,6 +554,16 @@ static void DoHashing(SEXP table, HashData *d)
 	(void) isDuplicated(table, i, d);
 }
 
+/* invalidate entries */
+static void UndoHashing(SEXP table, HashData *d)
+{
+    int *h, i, n;
+
+    n = LENGTH(table);
+    h = INTEGER(d->HashTable);
+    for (i = 0; i < n; i++) removeEntry(table, i, d);
+}
+
 static int Lookup(SEXP table, SEXP x, int indx, HashData *d)
 {
     int i, *h;
@@ -504,7 +572,7 @@ static int Lookup(SEXP table, SEXP x, int indx, HashData *d)
     i = d->hash(x, indx, d);
     while (h[i] != NIL) {
 	if (d->equal(table, h[i], x, indx))
-	    return h[i] + 1;
+	    return h[i]>= 0 ? h[i] + 1 : d->nomatch;
 	i = (i + 1) % d->M;
     }
     return d->nomatch;
@@ -524,26 +592,20 @@ static SEXP HashLookup(SEXP table, SEXP x, HashData *d)
     return ans;
 }
 
-SEXP attribute_hidden do_match(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    int nomatch;
-
-    checkArity(op, args);
-
-    if ((!isVector(CAR(args)) && !isNull(CAR(args)))
-	|| (!isVector(CADR(args)) && !isNull(CADR(args))))
-	error(_("'match' requires vector arguments"));
-
-    nomatch = asInteger(CAR(CDDR(args)));
-    return match(CADR(args), CAR(args), nomatch);
-}
-
 SEXP match(SEXP itable, SEXP ix, int nmatch)
 {
     SEXP ans, x, table;
     SEXPTYPE type;
     HashData data;
     int i, n = length(ix);
+
+    /* handle zero length arguments */
+    if (n == 0) return allocVector(INTSXP, 0);
+    if (length(itable) == 0) {
+	ans = allocVector(INTSXP, n);
+	for (i = 0; i < n; i++) INTEGER(ans)[i] = nmatch;
+	return ans;
+    }
 
     /* Coerce to a common type; type == NILSXP is ok here.
      * Note that R's match() does only coerce factors (to character).
@@ -554,18 +616,6 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
     PROTECT(x = coerceVector(ix, type));
     PROTECT(table = coerceVector(itable, type));
 
-    /* handle zero length arguments */
-    if (n == 0) {
-	UNPROTECT(2);
-	return allocVector(INTSXP, 0);
-    }
-    if (length(table) == 0) {
-	ans = allocVector(INTSXP, n);
-	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = nmatch;
-	UNPROTECT(2);
-	return ans;
-    }
     data.nomatch = nmatch;
     HashTableSetup(table, &data);
     PROTECT(data.HashTable);
@@ -573,6 +623,71 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
     ans = HashLookup(table, x, &data);
     UNPROTECT(3);
     return ans;
+}
+
+SEXP match4(SEXP itable, SEXP ix, int nmatch, SEXP incomp)
+{
+    SEXP ans, x, table;
+    SEXPTYPE type;
+    HashData data;
+    int i, n = length(ix);
+
+    /* handle zero length arguments */
+    if (n == 0) return allocVector(INTSXP, 0);
+    if (length(itable) == 0) {
+	ans = allocVector(INTSXP, n);
+	for (i = 0; i < n; i++) INTEGER(ans)[i] = nmatch;
+	return ans;
+    }
+
+    /* Coerce to a common type; type == NILSXP is ok here.
+     * Note that R's match() does only coerce factors (to character).
+     * Hence, coerce to character or to `higher' type
+     * (given that we have "Vector" or NULL) */
+    if(TYPEOF(ix)  >= STRSXP || TYPEOF(itable) >= STRSXP) type = STRSXP;
+    else type = TYPEOF(ix) < TYPEOF(itable) ? TYPEOF(itable) : TYPEOF(ix);
+    PROTECT(x = coerceVector(ix, type));
+    PROTECT(table = coerceVector(itable, type));
+    PROTECT(incomp = coerceVector(incomp, type));
+
+    data.nomatch = nmatch;
+    HashTableSetup(table, &data);
+    PROTECT(data.HashTable);
+    DoHashing(table, &data);
+    UndoHashing(incomp, &data);
+    ans = HashLookup(table, x, &data);
+    UNPROTECT(4);
+    return ans;
+}
+
+
+SEXP attribute_hidden do_match(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    int nomatch, nargs = length(args);
+    SEXP incomp;
+
+    /* checkArity(op, args); too many packages have captured 3 from R < 2.7.0 */
+    if (nargs < 3 || nargs > 4)
+	error("%d arguments passed to .Internal(%s) which requires %d",
+	      length(args), PRIMNAME(op), PRIMARITY(op));
+    if (nargs == 3)
+	warning("%d arguments passed to .Internal(%s) which requires %d",
+		length(args), PRIMNAME(op), PRIMARITY(op));
+
+    if ((!isVector(CAR(args)) && !isNull(CAR(args)))
+	|| (!isVector(CADR(args)) && !isNull(CADR(args))))
+	error(_("'match' requires vector arguments"));
+
+    nomatch = asInteger(CADDR(args));
+    if (nargs < 4) return match(CADR(args), CAR(args), nomatch);
+
+    incomp = CADDDR(args);
+
+    if(length(incomp) && /* S has FALSE to mean empty */
+       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
+	return match4(CADR(args), CAR(args), nomatch, incomp);
+    else
+	return match(CADR(args), CAR(args), nomatch);
 }
 
 /* Partial Matching of Strings */

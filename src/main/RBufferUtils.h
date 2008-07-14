@@ -44,7 +44,7 @@ extern "C" {
    scan.c seq.c sysutils.c */
 
 typedef struct {
- char *data; 
+ char *data;
  size_t bufsize;
  size_t defaultSize;
 } R_StringBuffer;

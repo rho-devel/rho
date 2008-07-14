@@ -2,7 +2,6 @@
 ### _and_ must work (no Recommended packages, please)
 
 postscript("reg-tests-2.ps", encoding = "ISOLatin1.enc")
-RNGversion("1.6.2")
 
 ## force standard handling for data frames
 options(stringsAsFactors=TRUE)
@@ -486,7 +485,7 @@ rowsum(matrix(1:12, 3,4), c("Y","X","Y"))
 ## PR#1115 (saving strings with ascii=TRUE)
 x <- y <- unlist(as.list(
     parse(text=paste("\"\\",
-          as.character(structure(0:255,class="octmode")),
+          as.character(structure(1:255,class="octmode")),
              "\"",sep=""))))
 save(x, ascii=T, file=(fn <- tempfile()))
 load(fn)
@@ -798,14 +797,14 @@ relrange <- function(x) {
 x <- c(0.12345678912345678,
        0.12345678912345679,
        0.12345678912345676)
-relrange(x) ## 1.0125
+# relrange(x) ## 1.0125, but depends on strtod
 plot(x) # `extra horizontal' ;  +- ok on Solaris; label off on Linux
 
 y <- c(0.9999563255363383973418,
        0.9999563255363389524533,
        0.9999563255363382863194)
 ## The relative range number:
-relrange(y) ## 3.000131
+# relrange(y) ## 3.000131, but depends on strtod
 plot(y)# once gave infinite loop on Solaris [TL];  y-axis too long
 
 ## Comments: The whole issue was finally deferred to main/graphics.c l.1944
@@ -1293,7 +1292,7 @@ readBin(zz, "integer", n=100, size = 1) # read as small integers
 seek(zz, 0, "start")
 readBin(zz, "character", 100)  # is confused by embedded nul.
 seek(zz, 0, "start")
-readChar(zz, length(xx)) # correct
+readChar(zz, length(xx)) # truncates at embedded nul
 seek(zz) # make sure current position is reported properly
 close(zz)
 unlink("testbin")
@@ -2232,3 +2231,40 @@ writeChar("ABCDEFGHIJ", con=f, eos=NULL)
 readChar(f, nchar=c(3,3,0,3,3,3))
 unlink(f)
 ##
+
+
+## corner cases for cor
+set.seed(1)
+X <- cbind(NA, 1:3, rnorm(3))
+cor(X, use = "complete")
+try(cor(X, use = "complete", method="spearman"))
+try(cor(X, use = "complete", method="kendall"))
+cor(X, use = "pair")
+cor(X, use = "pair", method="spearman")
+cor(X, use = "pair", method="kendall")
+
+X[1,1] <- 1
+cor(X, use = "complete")
+cor(X, use = "complete", method="spearman")
+cor(X, use = "complete", method="kendall")
+cor(X, use = "pair")
+cor(X, use = "pair", method="spearman")
+cor(X, use = "pair", method="kendall")
+## not consistent in 2.6.x
+
+
+## confint on rank-deficient models (in part, PR#10494)
+junk <- data.frame(x = rep(1, 10L),
+                   u = factor(sample(c("Y", "N"), 10, replace=TRUE)),
+                   ans = rnorm(10))
+fit <-  lm(ans ~ x + u, data = junk)
+confint(fit)
+confint.default(fit)
+## Mismatch gave NA for 'u' in 2.6.1
+
+
+## corrupt data frame produced by subsetting (PR#10574)
+x <- data.frame(a=1:3, b=2:4)
+x[,3] <- x
+x
+## warning during printing < 2.7.0

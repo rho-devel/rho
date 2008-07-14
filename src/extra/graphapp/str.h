@@ -78,10 +78,10 @@ typedef char *string;
  */
 class string
 {
-  protected:
+protected:
     char *str;  /* the string itself */
 
-  public:
+public:
     string(void)        {str=new_string(NULL);}
     string(char *s)     {str=new_string(s);}
     string(string& s)   {str=new_string(s.str);}
@@ -95,7 +95,7 @@ class string
     operator char* (void)           {return str;}
 
     string& operator = (string s2)
-      {if (str != s2.str) {del_string(str); str=new_string(s2.str);} return *this;}
+	{if (str != s2.str) {del_string(str); str=new_string(s2.str);} return *this;}
 };
 
 inline string operator + (string s1, string s2)

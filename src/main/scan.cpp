@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2007   The R Development Core Team.
+ *  Copyright (C) 1998-2008   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -103,22 +103,28 @@ typedef struct {
 
 static SEXP insertString(char *str, LocalData *l)
 {
-    if (!utf8strIsASCII(str)) {
-        if (l->isLatin1) return mkCharEnc(str, LATIN1_MASK);
-        if (l->isUTF8)   return mkCharEnc(str, UTF8_MASK);
+    if (!strIsASCII(str)) {
+	if (l->con->UTF8out || l->isUTF8) return mkCharCE(str, CE_UTF8);
+	else if (l->isLatin1) return mkCharCE(str, CE_LATIN1);
     }
-    return mkCharEnc(str, 0);
+    return mkChar(str);
 }
 
-namespace {
-    inline bool Rspace(char c)
-    {
-	return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-    }
+static R_INLINE bool Rspace(unsigned int c)
+{
+    if (c == ' ' || c == '\t' || c == '\n' || c == '\r') return TRUE;
+#ifdef Win32
+    /* 0xa0 is NBSP in all 8-bit Windows locales */
+    if(!mbcslocale && c == 0xa0) return TRUE;
+#else
+     /* 0xa0 is NBSP in Latin-1 */
+    if(known_to_be_latin1 && c == 0xa0) return TRUE;
+#endif
+    return FALSE;
 }
 
 /* used by readline() and menu() */
-static int ConsoleGetchar()
+static int ConsoleGetchar(void)
 {
     if (--ConsoleBufCnt < 0) {
 	ConsoleBuf[CONSOLE_BUFFER_SIZE] = '\0';
@@ -171,53 +177,10 @@ static int Strtoi(const char *nptr, int base)
     return(res);
 }
 
-/* Like R_strtod, but allow NA to be a failure if NA arg is false */
-static double Rs_strtod(const char *c, char **end, Rboolean NA)
-{
-    double x;
-
-    if (NA && strncmp(c, "NA", 2) == 0){
-	x = NA_REAL; *end = const_cast<char*>(c) + 2; /* coercion for -Wall */
-    }
-    else if (strncmp(c, "NaN", 3) == 0) {
-	x = R_NaN; *end = const_cast<char*>(c) + 3;
-    }
-    else if (strncmp(c, "Inf", 3) == 0) {
-	x = R_PosInf; *end = const_cast<char*>(c) + 3;
-    }
-    else if (strncmp(c, "-Inf", 4) == 0) {
-	x = R_NegInf; *end = const_cast<char*>(c) + 4;
-    }
-    else
-        x = strtod(c, end);
-    return x;
-}
-
 static double
 Strtod (const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 {
-    if (d->decchar == '.')
-	return Rs_strtod(nptr, endptr, NA);
-    else {
-	/* jump through some hoops... This is a kludge!
-	   Should most likely use regexps instead */
-
-	char *end;
-	double x;
-	int i;
-
-	strncpy(d->convbuf, nptr, 100);
-	for ( i = 0 ; i < 100 ; i++ )
-	    /* switch '.' and decchar around */
-	    if (d->convbuf[i] == d->decchar)
-		d->convbuf[i] = '.';
-	    else if (d->convbuf[i] == '.')
-		d->convbuf[i] = d->decchar;
-	x = Rs_strtod(d->convbuf, &end, NA);
-	if(endptr)
-	    *endptr = const_cast<char*>(nptr) + (end - d->convbuf);
-	return x;
-    }
+    return R_strtod4(nptr, endptr, d->decchar, NA);
 }
 
 static Rcomplex
@@ -230,25 +193,22 @@ strtoc(const char *nptr, char **endptr, Rboolean NA, LocalData *d)
     x = Strtod(nptr, &endp, NA, d);
     if (isBlankString(endp)) {
 	z.r = x; z.i = 0;
-    }
-    else if (*endp == 'i')  {
+    } else if (*endp == 'i')  {
 	z.r = 0; z.i = x;
 	endp++;
-    }
-    else {
+    } else {
 	s = endp;
 	y = Strtod(s, &endp, NA, d);
 	if (*endp == 'i') {
 	    z.r = x; z.i = y;
 	    endp++;
-	}
-	else {
+	} else {
 	    z.r = 0; z.i = 0;
 	    endp = const_cast<char*>(nptr); /* -Wall */
 	}
     }
     *endptr = endp;
-    return(z);
+    return z;
 }
 
 static Rbyte
@@ -452,7 +412,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			}
 		/* CSV style quoted string handling */
 		if ((type == STRSXP || type == NILSXP)
-		    && strchr(d->quoteset, c)) {
+		    && c != 0 && strchr(d->quoteset, c)) {
 		    quote = c;
 		inquote:
 		    while ((c = scanchar(TRUE, d)) != R_EOF && c != quote) {
@@ -730,7 +690,7 @@ static SEXP scanFrame(SEXP what, int maxitems, int maxlines, int flush,
 	w = VECTOR_ELT(what, i);
 	if (!isNull(w)) {
 	    if (!isVector(w)) {
-		error(_("invalid 'what' specified"));
+		error(_("invalid '%s' argument"), "what");
 	    }
 	    if(TYPEOF(w) == STRSXP) nstring++;
 	    SET_VECTOR_ELT(ans, i, allocVector(TYPEOF(w), blksize));
@@ -897,7 +857,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     comstr = CAR(args);            args = CDR(args);
     escapes = asLogical(CAR(args));args = CDR(args);
     if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
-	error(_("invalid '%s' value"), "encoding");
+	error(_("invalid '%s' argument"), "encoding");
     encoding = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */
     if(streql(encoding, "latin1")) data.isLatin1 = TRUE;
     if(streql(encoding, "UTF-8"))  data.isUTF8 = TRUE;
@@ -910,13 +870,13 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (nmax < 0 || nmax == NA_INTEGER)		nmax = 0;
 
     if (TYPEOF(stripwhite) != LGLSXP)
-	error(_("invalid '%s' value"), "strip.white");
+	error(_("invalid '%s' argument"), "strip.white");
     if (length(stripwhite) != 1 && length(stripwhite) != length(what))
 	error(_("invalid 'strip.white' length"));
     if (TYPEOF(data.NAstrings) != STRSXP)
-	error(_("invalid '%s' value"), "na.strings");
+	error(_("invalid '%s' argument"), "na.strings");
     if (TYPEOF(comstr) != STRSXP || length(comstr) != 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
 
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
@@ -927,7 +887,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    data.sepchar = static_cast<unsigned char>(sc[0]);
 	}
 	/* gets compared to chars: bug prior to 1.7.0 */
-    } else error(_("invalid '%s' value"), "sep");
+    } else error(_("invalid '%s' argument"), "sep");
 
     if (isString(dec) || isNull(dec)) {
 	if (length(dec) == 0)
@@ -954,10 +914,10 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     p = translateChar(STRING_ELT(comstr, 0));
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
     else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
-	error(_("invalid '%s' value"), "allowEscapes");
+	error(_("invalid '%s' argument"), "allowEscapes");
     data.escapes = Rboolean(escapes != 0);
 
     i = asInteger(file);
@@ -968,6 +928,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	data.ttyflag = 0;
 	data.wasopen = data.con->isopen;
 	if(!data.wasopen) {
+	    data.con->UTF8out = TRUE;  /* a request */
 	    strcpy(data.con->mode, "r");
 	    if(!data.con->open(data.con))
 		error(_("cannot open the connection"));
@@ -1002,7 +963,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 			blskip, multiline, &data);
 	break;
     default:
-	error(_("invalid 'what' specified"));
+	error(_("invalid '%s' argument"), "what");
     }
     endcontext(&cntxt);
 
@@ -1041,11 +1002,11 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     blskip = asLogical(CAR(args)); args = CDR(args);
     comstr = CAR(args);
     if (TYPEOF(comstr) != STRSXP || length(comstr) != 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
     p = translateChar(STRING_ELT(comstr, 0));
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
     else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
 
     if (nskip < 0 || nskip == NA_INTEGER) nskip = 0;
@@ -1055,7 +1016,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (length(sep) == 0) data.sepchar = 0;
 	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
-    } else error(_("invalid '%s' value"), "sep");
+    } else error(_("invalid '%s' argument"), "sep");
 
     if (isString(quotes)) {
 	const char *sc = translateChar(STRING_ELT(quotes, 0));
@@ -1201,32 +1162,32 @@ static void ruleout_types(const char *s, Typecvt_Info *typeInfo, LocalData *data
     char *endp;
 
     if (typeInfo->islogical) {
-        if (strcmp(s, "F") == 0 || strcmp(s, "FALSE") == 0
-            || strcmp(s, "T") == 0 || strcmp(s, "TRUE") == 0) {
-            typeInfo->isinteger = FALSE;
-            typeInfo->isreal = FALSE;
-            typeInfo->iscomplex = FALSE;
-        } else {
-            typeInfo->islogical = TRUE;
-        }
+	if (strcmp(s, "F") == 0 || strcmp(s, "FALSE") == 0
+	    || strcmp(s, "T") == 0 || strcmp(s, "TRUE") == 0) {
+	    typeInfo->isinteger = FALSE;
+	    typeInfo->isreal = FALSE;
+	    typeInfo->iscomplex = FALSE;
+	} else {
+	    typeInfo->islogical = TRUE;
+	}
     }
 
     if (typeInfo->isinteger) {
-        res = Strtoi(s, 10);
-        if (res == NA_INTEGER)
-            typeInfo->isinteger = FALSE;
+	res = Strtoi(s, 10);
+	if (res == NA_INTEGER)
+	    typeInfo->isinteger = FALSE;
     }
 
     if (typeInfo->isreal) {
-        Strtod(s, &endp, TRUE, data);
-        if (!isBlankString(endp))
-            typeInfo->isreal = FALSE;
+	Strtod(s, &endp, TRUE, data);
+	if (!isBlankString(endp))
+	    typeInfo->isreal = FALSE;
     }
 
     if (typeInfo->iscomplex) {
-        strtoc(s, &endp, TRUE, data);
-        if (!isBlankString(endp))
-            typeInfo->iscomplex = FALSE;
+	strtoc(s, &endp, TRUE, data);
+	if (!isBlankString(endp))
+	    typeInfo->iscomplex = FALSE;
     }
 }
 
@@ -1264,7 +1225,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     data.NAstrings = CADR(args);
     if (TYPEOF(data.NAstrings) != STRSXP)
-	error(_("invalid '%s' value"), "na.strings");
+	error(_("invalid '%s' argument"), "na.strings");
 
     asIs = asLogical(CADDR(args));
     if (asIs == NA_LOGICAL) asIs = 0;
@@ -1299,7 +1260,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    break;
     }
     if (i < len) {  /* not all entries are NA */
-        ruleout_types(tmp, &typeInfo, &data);
+	ruleout_types(tmp, &typeInfo, &data);
     }
 
     if (typeInfo.islogical) {
@@ -1316,7 +1277,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    LOGICAL(rval)[i] = 1;
 		else {
 		    typeInfo.islogical = FALSE;
-                    ruleout_types(tmp, &typeInfo, &data);
+		    ruleout_types(tmp, &typeInfo, &data);
 		    break;
 		}
 	    }
@@ -1335,7 +1296,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		INTEGER(rval)[i] = Strtoi(tmp, 10);
 		if (INTEGER(rval)[i] == NA_INTEGER) {
 		    typeInfo.isinteger = FALSE;
-                    ruleout_types(tmp, &typeInfo, &data);
+		    ruleout_types(tmp, &typeInfo, &data);
 		    break;
 		}
 	    }
@@ -1354,7 +1315,7 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		REAL(rval)[i] = Strtod(tmp, &endp, FALSE, &data);
 		if (!isBlankString(endp)) {
 		    typeInfo.isreal = FALSE;
-                    ruleout_types(tmp, &typeInfo, &data);
+		    ruleout_types(tmp, &typeInfo, &data);
 		    break;
 		}
 	    }
@@ -1373,8 +1334,8 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		COMPLEX(rval)[i] = strtoc(tmp, &endp, FALSE, &data);
 		if (!isBlankString(endp)) {
 		    typeInfo.iscomplex = FALSE;
-                    /* this is not needed, unless other cases are added */
-                    ruleout_types(tmp, &typeInfo, &data);
+		    /* this is not needed, unless other cases are added */
+		    ruleout_types(tmp, &typeInfo, &data);
 		    break;
 		}
 	    }
@@ -1407,10 +1368,10 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(levs, j++, STRING_ELT(cvec, i));
 	    }
 
-            /* We avoid an allocation by reusing dup,
-             * a LGLSXP of the right length
-             */
-            rval = dup;
+	    /* We avoid an allocation by reusing dup,
+	     * a LGLSXP of the right length
+	     */
+	    rval = dup;
 	    SET_TYPEOF(rval, INTSXP);
 
 	    /* put the levels in lexicographic order */
@@ -1540,7 +1501,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     sep = CAR(args);
 
     if (nlines <= 0 || nlines == NA_INTEGER)
-	error(_("invalid '%s' value"), "nlines");
+	error(_("invalid '%s' argument"), "nlines");
     if (blskip == NA_LOGICAL) blskip = 1;
     if (isString(quotes)) {
 	const char *sc = translateChar(STRING_ELT(quotes, 0));
@@ -1552,17 +1513,17 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid quote symbol set"));
 
     if (TYPEOF(comstr) != STRSXP || length(comstr) != 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
     p = translateChar(STRING_ELT(comstr, 0));
     data.comchar = NO_COMCHAR; /*  here for -Wall */
     if (strlen(p) > 1)
-	error(_("invalid '%s' value"), "comment.char");
+	error(_("invalid '%s' argument"), "comment.char");
     else if (strlen(p) == 1) data.comchar = int(*p);
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
 	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
-    } else error(_("invalid '%s' value"), "sep");
+    } else error(_("invalid '%s' argument"), "sep");
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -1712,7 +1673,7 @@ static void change_dec(char *tmp, char cdec, SEXPTYPE t)
 #endif
 
 /* a version of EncodeElement with different escaping of char strings */
-static const char 
+static const char
 *EncodeElement2(SEXP x, int indx, Rboolean quote,
 		Rboolean qmethod, R_StringBuffer *buff, char cdec)
 {
@@ -1790,15 +1751,15 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     quote = CAR(args);		   args = CDR(args);
     qmethod = asLogical(CAR(args));
 
-    if(nr == NA_INTEGER) error(_("invalid '%s' value"), "nr");
-    if(nc == NA_INTEGER) error(_("invalid '%s' value"), "nc");
+    if(nr == NA_INTEGER) error(_("invalid '%s' argument"), "nr");
+    if(nc == NA_INTEGER) error(_("invalid '%s' argument"), "nc");
     if(!isNull(rnames) && !isString(rnames))
-	error(_("invalid '%s' value"), "rnames");
-    if(!isString(sep)) error(_("invalid '%s' value"), "sep");
-    if(!isString(eol)) error(_("invalid '%s' value"), "eol");
-    if(!isString(na)) error(_("invalid '%s' value"), "na");
-    if(!isString(dec)) error(_("invalid '%s' value"), "dec");
-    if(qmethod == NA_LOGICAL) error(_("invalid '%s' value"), "qmethod");
+	error(_("invalid '%s' argument"), "rnames");
+    if(!isString(sep)) error(_("invalid '%s' argument"), "sep");
+    if(!isString(eol)) error(_("invalid '%s' argument"), "eol");
+    if(!isString(na)) error(_("invalid '%s' argument"), "na");
+    if(!isString(dec)) error(_("invalid '%s' argument"), "dec");
+    if(qmethod == NA_LOGICAL) error(_("invalid '%s' argument"), "qmethod");
     csep = translateChar(STRING_ELT(sep, 0));
     ceol = translateChar(STRING_ELT(eol, 0));
     cna = translateChar(STRING_ELT(na, 0));

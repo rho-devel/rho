@@ -52,7 +52,7 @@
 #include <stdio.h>
 #ifdef Win32
 # include "run.h"
-int Rgui_Edit(char *filename, char *title, int modal);
+int Rgui_Edit(char *filename, int enc, char *title, int modal);
 #endif
 
 #ifdef Unix
@@ -146,7 +146,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(Rfn = findFun(install("srcfilecopy"), R_BaseEnv));
 	PROTECT(srcfile = lang3(Rfn, ScalarString(mkChar("<tmp>")), src));
 	PROTECT(srcfile = eval(srcfile, R_BaseEnv));
-	UNPROTECT(3);                    
+	UNPROTECT(3);
     }
     PROTECT(srcfile);
     ti = CAR(args); args = CDR(args);
@@ -166,7 +166,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    title = R_alloc(strlen(filename)+1, sizeof(char));
 	    strcpy(title, filename);
 	}
-	Rgui_Edit(filename, title, 1);
+	Rgui_Edit(filename, CE_NATIVE, title, 1);
     }
     else {
 	/* Quote path if necessary */
@@ -174,7 +174,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    sprintf(editcmd, "\"%s\" \"%s\"", cmd, filename);
 	else
 	    sprintf(editcmd, "%s \"%s\"", cmd, filename);
-	rc = runcmd(editcmd, 1, 1, "");
+	rc = runcmd(editcmd, CE_NATIVE, 1, 1, "");
 	if (rc == NOLAUNCH)
 	    errorcall(call, _("unable to run editor '%s'"), cmd);
 	if (rc != 0)
@@ -182,21 +182,21 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 #else
     if (ptr_R_EditFile)
-        rc = ptr_R_EditFile(filename);
+	rc = ptr_R_EditFile(filename);
     else {
-        sprintf(editcmd, "%s %s", cmd, filename);
-        rc = R_system(editcmd);
+	sprintf(editcmd, "%s %s", cmd, filename);
+	rc = R_system(editcmd);
     }
     if (rc != 0)
 	errorcall(call, _("problem with running editor %s"), cmd);
 #endif
 
     if (!isNull(srcfile)) {
-    	PROTECT(Rfn = findFun(install("readLines"), R_BaseEnv));
-    	PROTECT(src = lang2(Rfn, ScalarString(mkChar(R_ExpandFileName(filename)))));
-    	PROTECT(src = eval(src, R_BaseEnv));
-    	defineVar(install("lines"), src, srcfile); 
-    	UNPROTECT(3);
+	PROTECT(Rfn = findFun(install("readLines"), R_BaseEnv));
+	PROTECT(src = lang2(Rfn, ScalarString(mkChar(R_ExpandFileName(filename)))));
+	PROTECT(src = eval(src, R_BaseEnv));
+	defineVar(install("lines"), src, srcfile);
+	UNPROTECT(3);
     }
     /* <FIXME> setup a context to close the file, and parse and eval
        line by line */
@@ -206,7 +206,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = PROTECT(R_ParseFile(fp, -1, &status, srcfile));
     fclose(fp);
 
-    
+
     if (status != PARSE_OK)
 	errorcall(call,
 		  _("%s occurred on line %d\n use a command like\n x <- edit()\n to recover"), R_ParseErrorMsg, R_ParseError);

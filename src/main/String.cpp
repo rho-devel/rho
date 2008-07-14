@@ -47,6 +47,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	int (*HASHVALUEptr)(SEXP x) = HASHVALUE;
+	int (*ENC_KNOWNptr)(const SEXP x) = ENC_KNOWN;
 	Rboolean (*IS_LATIN1ptr)(const SEXP x) = IS_LATIN1;
 	Rboolean (*IS_UTF8ptr)(const SEXP x) = IS_UTF8;
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
@@ -62,10 +63,22 @@ SEXP R_NaString = const_cast<String*>(String::NA());
 // String::Comparator::operator()(const String&, const String&) is in
 // sort.cpp
 
-void String::checkEncoding(unsigned int encoding)
+String::String(size_t sz, cetype_t encoding,
+	       const char* c_string)
+    : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
 {
-    if (encoding != 0 && encoding != UTF8_MASK && encoding != LATIN1_MASK)
-        error("unknown encoding mask: %d", encoding);
+    switch(encoding) {
+    case CE_NATIVE:
+	break;          /* don't set encoding */
+    case CE_UTF8:
+	m_flags.m_flags |= UTF8_MASK;
+	break;
+    case CE_LATIN1:
+	m_flags.m_flags |= LATIN1_MASK;
+	break;
+    default:
+	error("character encoding %d not permitted here", encoding);
+    }
 }
 
 // int hash() const is in envir.cpp (for the time being)

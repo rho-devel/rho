@@ -50,7 +50,7 @@
  *         cc -o localecharset -DDEBUG_TEST=2  localecharset.c       *
  *********************************************************************/
 #ifdef DEBUG_TEST
-#define SPRINT(x) printf("%6d:" #x "=%s\n", __LINE__, x) 
+#define SPRINT(x) printf("%6d:" #x "=%s\n", __LINE__, x)
 #define DPRINT(x) printf("%6d:" #x "=%d\n", __LINE__, x)
 #define HAVE_STRING_H
 #endif
@@ -91,9 +91,9 @@ typedef struct {
        sed -e '/\/$/d' | \
        sort | uniq | \
        awk '{NAME=$1;gsub(/-/,"_",NAME);
-             printf("static  const   char    ENC_%-20s\"%s\";\n",
-             NAME "[]=" ,
-             $1)}'
+	     printf("static  const   char    ENC_%-20s\"%s\";\n",
+	     NAME "[]=" ,
+	     $1)}'
   */
 static  char    ENC_ARMSCII_8[]=        "ARMSCII-8";
 static  char    ENC_BIG5[]=             "BIG5";
@@ -133,7 +133,7 @@ static  char    ENC_TCVN[]=             "TCVN";
 static  char    ENC_UTF_8[]=            "UTF-8";
 /* static  char    ENC_VISCII[]=           "VISCII"; */
 
-/* 
+/*
    # charset getscript. iconv list output line is backslant.
  cat /usr/X11R6/lib/X11/locale/locale.alias | \
  sed -e '/#.*$/d ; /^[A-z]*\./d' -e 's/://' | \
@@ -521,6 +521,24 @@ static const name_value known[] = {
     {"sjis", "SHIFT_JIS"},
     {"euccn", "GB2312"},
     {"big5-hkscs", "BIG5-HKSCS"},
+#if __APPLE__
+    /* known additional Apple encodings (see locale -a) up to Mac OS X 10.5,
+       unlike other systems they correspond directly */
+    {"iso8859-1", "ISO8859-1"},
+    {"iso8859-2", "ISO8859-2"},
+    {"iso8859-4", "ISO8859-4"},
+    {"iso8859-7", "ISO8859-7"},
+    {"iso8859-9", "ISO8859-9"},
+    {"iso8859-13", "ISO8859-13"},
+    {"iso8859-15", "ISO8859-15"},
+    {"koi8-u", "KOI8-U"},
+    {"koi8-r", "KOI8-R"},
+    {"pt154", "PT154"},
+    {"us-ascii", "ASCII"},
+    {"armscii-8", "ARMSCII-8"},
+    {"iscii-dev", "ISCII-DEV"},
+    {"big5hkscs", "BIG5-HKSCS"},
+#endif
 };
 static const int known_count = (sizeof(known)/sizeof(name_value));
 
@@ -535,11 +553,11 @@ static const char* name_value_search(const char *name, const name_value table[],
     DPRINT(last);
     last = 0;
 #endif
-    
+
     min = 0;
     max = table_count - 1;
 
-    if ( 0 > strcmp(name,table[min].name) || 
+    if ( 0 > strcmp(name,table[min].name) ||
 	 0 < strcmp(name,table[max].name) ) {
 #if defined(DEBUG_TEST) && DEBUG_TEST > 1
 	DPRINT(strcmp(name, table[min].name));
@@ -590,7 +608,8 @@ const char *locale2charset(const char *locale)
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
 	locale = setlocale(LC_CTYPE,NULL);
 
-    if (0 == strcmp(locale, "C") || 0 == strcmp(locale, "POSIX"))
+    /* in some rare circumstances Darwin may return NULL */
+    if (!locale || !strcmp(locale, "C") || !strcmp(locale, "POSIX"))
 	return ("ASCII");
 
     memset(charset,0,sizeof(charset));
@@ -639,7 +658,7 @@ const char *locale2charset(const char *locale)
 	sprintf(charset, "CP%u", cp);
 	return charset;
     }
-#endif	
+#endif
 
     /*
      * Assume locales are like en_US[.utf8[@euro]]
@@ -686,20 +705,27 @@ const char *locale2charset(const char *locale)
 	/* let's hope it is a ll_* name */
 	if (0 == strcmp(enc, "euc")) {
 	    /* This is OK as encoding names are ASCII */
-	    if(isalpha(int(enc[0])) && isalpha(int(enc[1])) 
-	       && (enc[2] == '_')) {
+	    if(isalpha((int)la_loc[0]) && isalpha((int)la_loc[1])
+	       && (la_loc[2] == '_')) {
 		if (0 == strncmp("ja", la_loc, 2)) return "EUC-JP";
 		if (0 == strncmp("ko", la_loc, 2)) return "EUC-KR";
 		if (0 == strncmp("zh", la_loc, 2)) return "GB2312";
 	    }
 	}
-	
+
     }
+
+#if __APPLE__
+    /* on Mac OS X *all* real locales w/o encoding part are UTF-8 locales
+       (C and POSIX are virtual and taken care of previously) */
+    return "UTF-8";
+#else
 
     if(0 == strcmp(enc, "utf8")) return "UTF-8";
 
     value = name_value_search(la_loc, guess, guess_count);
     return value == NULL ? const_cast<char *>("ASCII") : value;
+#endif
 }
 
 /*****************************************************

@@ -47,6 +47,7 @@
 #include <Fileio.h>
 #include <Rversion.h>
 #include <R_ext/RS.h>           /* for CallocCharBuf, Free */
+#include <errno.h>
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
@@ -751,8 +752,8 @@ static SEXP GetPersistentName(R_outpstream_t stream, SEXP s)
 	case EXTPTRSXP: break;
 	case ENVSXP:
 	    if (s == R_GlobalEnv ||
-	    	s == R_BaseEnv ||
-	    	s == R_EmptyEnv ||
+		s == R_BaseEnv ||
+		s == R_EmptyEnv ||
 		R_IsNamespaceEnv(s) ||
 		R_IsPackageEnv(s))
 		return R_NilValue;
@@ -781,8 +782,8 @@ static SEXP PersistentRestore(R_inpstream_t stream, SEXP s)
 static int SaveSpecialHook(SEXP item)
 {
     if (item == R_NilValue)      return NILVALUE_SXP;
-    if (item == R_EmptyEnv) 	 return EMPTYENV_SXP;
-    if (item == R_BaseEnv) 	 return BASEENV_SXP;
+    if (item == R_EmptyEnv)	 return EMPTYENV_SXP;
+    if (item == R_BaseEnv)	 return BASEENV_SXP;
     if (item == R_GlobalEnv)     return GLOBALENV_SXP;
     if (item == R_UnboundValue)  return UNBOUNDVALUE_SXP;
     if (item == R_MissingArg)    return MISSINGARG_SXP;
@@ -811,10 +812,10 @@ static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
 }
 
 /* e.g., OutVec(fp, obj, INTEGER, OutInteger) */
-#define OutVec(fp, obj, accessor, outfunc)	 			\
-	do { 								\
+#define OutVec(fp, obj, accessor, outfunc)				\
+	do {								\
 		int cnt;						\
-		for (cnt = 0; cnt < LENGTH(obj); ++cnt) 		\
+		for (cnt = 0; cnt < LENGTH(obj); ++cnt)		\
 			outfunc(fp, accessor(obj, cnt));		\
 	} while (0)
 
@@ -1011,7 +1012,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 }
 
 #ifdef BYTECODE
-static SEXP MakeCircleHashTable()
+static SEXP MakeCircleHashTable(void)
 {
     return CONS(R_NilValue, allocVector(VECSXP, HASHSIZE));
 }
@@ -1046,7 +1047,7 @@ static void ScanForCircles1(SEXP s, SEXP ct)
     switch (TYPEOF(s)) {
     case LANGSXP:
     case LISTSXP:
-        if (! AddCircleHash(s, ct)) {
+	if (! AddCircleHash(s, ct)) {
 	    ScanForCircles1(CAR(s), ct);
 	    ScanForCircles1(CDR(s), ct);
 	}
@@ -1092,7 +1093,7 @@ static void WriteBCLang(SEXP s, SEXP ref_table, SEXP reps,
 	    /* we have a cell referenced more than once */
 	    if (TAG(r) == R_NilValue) {
 		/* this is the first reference, so update and register
-                   the counter */
+		   the counter */
 		int i = INTEGER(CAR(reps))[0]++;
 		SET_TAG(r, allocVector(INTSXP, 1));
 		INTEGER(TAG(r))[0] = i;
@@ -1331,13 +1332,13 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	}
     case LISTSXP:
 	/* This handling of dotted pair objects still uses recursion
-           on the CDR and so will overflow the PROTECT stack for long
-           lists.  The save format does permit using an iterative
-           approach; it just has to pass around the place to write the
-           CDR into when it is allocated.  It's more trouble than it
-           is worth to write the code to handle this now, but if it
-           becomes necessary we can do it without needing to change
-           the save format. */
+	   on the CDR and so will overflow the PROTECT stack for long
+	   lists.  The save format does permit using an iterative
+	   approach; it just has to pass around the place to write the
+	   CDR into when it is allocated.  It's more trouble than it
+	   is worth to write the code to handle this now, but if it
+	   becomes necessary we can do it without needing to change
+	   the save format. */
 	PROTECT(s = new PairList);
 	s->expose();
 	SETLEVELS(s, levs);
@@ -1454,22 +1455,32 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (length == -1)
 		PROTECT(s = NA_STRING);
 	    else if (length < 1000) {
+		cetype_t enc = CE_NATIVE;
 		cbuf = reinterpret_cast<char*>(alloca(length+1));
 		InString(stream, cbuf, length);
 		cbuf[length] = '\0';
-                PROTECT(s = mkCharEnc(cbuf, levs & (LATIN1_MASK | UTF8_MASK)));
+		if (levs & UTF8_MASK) enc = CE_UTF8;
+		else if (levs & LATIN1_MASK) enc = CE_LATIN1;
+		if (length > int(strlen(cbuf)))
+		    PROTECT(s = mkCharLen(cbuf, length));
+		else PROTECT(s = mkCharCE(cbuf, enc));
 	    } else {
-                cbuf = CallocCharBuf(length);
+		cetype_t enc = CE_NATIVE;
+		cbuf = CallocCharBuf(length);
 		InString(stream, cbuf, length);
-                PROTECT(s = mkCharEnc(cbuf, levs & (LATIN1_MASK | UTF8_MASK)));
-                Free(cbuf);
+		if (levs & UTF8_MASK) enc = CE_UTF8;
+		else if (levs & LATIN1_MASK) enc = CE_LATIN1;
+		if (length > int(strlen(cbuf)))
+		    PROTECT(s = mkCharLen(cbuf, length));
+		else PROTECT(s = mkCharCE(cbuf, enc));
+		Free(cbuf);
 	    }
 	    break;
 	case LGLSXP:
-            length = InInteger(stream);
-            PROTECT(s = allocVector(type, length));
-            InVec(stream, s, SET_LOGICAL_ELT, InInteger, length);
-            break;
+	    length = InInteger(stream);
+	    PROTECT(s = allocVector(type, length));
+	    InVec(stream, s, SET_LOGICAL_ELT, InInteger, length);
+	    break;
 	case INTSXP:
 	    length = InInteger(stream);
 	    PROTECT(s = allocVector(type, length));
@@ -1512,7 +1523,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case RAWSXP:
 	    length = InInteger(stream);
 	    PROTECT(s = allocVector(type, length));
-            stream->InBytes(stream, RAW(s), length);
+	    stream->InBytes(stream, RAW(s), length);
 	    break;
 	case S4SXP:
 	    PROTECT(s = allocS4Object());
@@ -1527,7 +1538,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	if (TYPEOF(s) == CHARSXP) {
 	    /* With the CHARSXP cache maintained through the ATTRIB
 	       field that field has already been filled in by the
-	       mkChar/mkCharEnc call above, so we need to leave it
+	       mkChar/mkCharCE call above, so we need to leave it
 	       alone.  If there is an attribute (as there might be if
 	       the serialized data was created by an older version) we
 	       read and ignore the value. */
@@ -1792,23 +1803,23 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 	    p[i] = Rconn_fgetc(con);
     }
     else {
-        if (stream->type == R_pstream_ascii_format) {
-            char linebuf[4];
+	if (stream->type == R_pstream_ascii_format) {
+	    char linebuf[4];
 	    unsigned char *p = reinterpret_cast<unsigned char*>(buf);
-            int i, ncread;
+	    int i, ncread;
 	    unsigned int res;
-            for (i = 0; i < length; i++) {
-                ncread = Rconn_getline(con, linebuf, 3);
-                if (ncread != 2)
-                    error(_("error reading from ascii connection"));
-                if (!sscanf(linebuf, "%02x", &res))
-                    error(_("unexpected format in ascii connection"));
+	    for (i = 0; i < length; i++) {
+		ncread = Rconn_getline(con, linebuf, 3);
+		if (ncread != 2)
+		    error(_("error reading from ascii connection"));
+		if (!sscanf(linebuf, "%02x", &res))
+		    error(_("unexpected format in ascii connection"));
                 *p++ = static_cast<unsigned char>(res);
-            }
-        } else {
+	    }
+	} else {
             if (length != int(con->read(buf, 1, length, con)))
-                error(_("error reading from connection"));
-        }
+		error(_("error reading from connection"));
+	}
     }
 }
 
@@ -2135,8 +2146,8 @@ static SEXP CloseMemOutPStream(R_outpstream_t stream)
     return val;
 }
 
-/* This is undocumented and in no header, but used by package taskPR. */
-SEXP R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
+SEXP attribute_hidden
+R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
 {
     struct R_outpstream_st out;
     R_pstream_format_t type;
@@ -2177,8 +2188,8 @@ SEXP R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
     }
 }
 
-/* This is undocumented and in no header, but used by package taskPR */
-SEXP R_unserialize(SEXP icon, SEXP fun)
+
+SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
 {
     struct R_inpstream_st in;
     SEXP (*hook)(SEXP, SEXP);
@@ -2186,19 +2197,19 @@ SEXP R_unserialize(SEXP icon, SEXP fun)
     hook = fun != R_NilValue ? CallHook : NULL;
 
     if (TYPEOF(icon) == STRSXP && LENGTH(icon) > 0) {
-        struct membuf_st mbs;
+	struct membuf_st mbs;
 	void *data = CHAR_RW(STRING_ELT(icon, 0)); /* FIXME, is this right? */
 	int length = LENGTH(STRING_ELT(icon, 0));
+	warning("unserialize()from a character string is deprecated and will be withdrawn in R 2.8.0");
 	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
 	return R_Unserialize(&in);
-    } else if (TYPEOF(icon) == RAWSXP) { /* for future use */
-        struct membuf_st mbs;
+    } else if (TYPEOF(icon) == RAWSXP) {
+	struct membuf_st mbs;
 	void *data = RAW(icon);
 	int length = LENGTH(icon);
 	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
 	return R_Unserialize(&in);
-    }
-    else {
+    } else {
 	Rconnection con = getConnection(asInteger(icon));
 	R_InitConnInPStream(&in, con, R_pstream_any_format, hook, fun);
 	return R_Unserialize(&in);
@@ -2229,11 +2240,23 @@ static SEXP appendRawToFile(SEXP file, SEXP bytes)
 	error(_("not a proper raw vector"));
 #ifdef HAVE_WORKING_FTELL
     /* Windows' ftell returns position 0 with "ab" */
-    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "ab")) == NULL)
-	error(_("file open failed"));
+    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "ab")) == NULL) {
+#ifdef HAVE_STRERROR
+	error( _("cannot open file '%s': %s"), CHAR(STRING_ELT(file, 0)),
+	       strerror(errno));
 #else
-    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "r+b")) == NULL)
-	 error(_("file open failed"));
+	error( _("cannot open file '%s'"), CHAR(STRING_ELT(file, 0)));
+#endif
+    }
+#else
+    if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "r+b")) == NULL) {
+#ifdef HAVE_STRERROR
+	error( _("cannot open file '%s': %s"), CHAR(STRING_ELT(file, 0)),
+	       strerror(errno));
+#else
+	error( _("cannot open file '%s'"), CHAR(STRING_ELT(file, 0)));
+#endif
+    }
     fseek(fp, 0, SEEK_END);
 #endif
 
@@ -2310,8 +2333,13 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 
     if(icache >= 0) {
 	strcpy(names[icache], cfile);
-	if ((fp = R_fopen(cfile, "rb")) == NULL)
-	    error(_("open failed on %s"), cfile);
+	if ((fp = R_fopen(cfile, "rb")) == NULL) {
+#ifdef HAVE_STRERROR
+	    error(_("cannot open file '%s': %s"), cfile, strerror(errno));
+#else
+	    error(_("cannot open file '%s'"), cfile);
+#endif
+	}
 	if (fseek(fp, 0, SEEK_END) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);
@@ -2329,8 +2357,13 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	if (filelen != in) error(_("read failed on %s"), cfile);
 	memcpy(RAW(val), ptr[icache]+offset, len);
     } else {
-	if ((fp = R_fopen(cfile, "rb")) == NULL)
-	    error(_("open failed on %s"), cfile);
+	if ((fp = R_fopen(cfile, "rb")) == NULL) {
+#ifdef HAVE_STRERROR
+	    error(_("cannot open file '%s': %s"), cfile, strerror(errno));
+#else
+	    error(_("cannot open file '%s'"), cfile);
+#endif
+	}
 	if (fseek(fp, offset, SEEK_SET) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);
@@ -2354,13 +2387,13 @@ SEXP attribute_hidden R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
     int i, len;
 
     if (TYPEOF(env) == NILSXP) {
-    	error(_("use of NULL environment is defunct"));
-    	env = R_BaseEnv;
+	error(_("use of NULL environment is defunct"));
+	env = R_BaseEnv;
     } else
     if (TYPEOF(env) != ENVSXP)
-        error(_("bad environment"));
+	error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
-        error(_("bad variable names"));
+	error(_("bad variable names"));
     force = Rboolean(asLogical(forcesxp));
 
     len = LENGTH(vars);
@@ -2374,14 +2407,14 @@ SEXP attribute_hidden R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 		PrintValue(R_GetTraceback(0)); */  /* DJM debugging */
 	    error(_("object '%s' not found"), CHAR(STRING_ELT(vars, i)));
 	    }
-        if (force && TYPEOF(tmp) == PROMSXP) {
-            PROTECT(tmp);
-            tmp = eval(tmp, R_GlobalEnv);
-            SET_NAMED(tmp, 2);
-            UNPROTECT(1);
-        }
-        else if (TYPEOF(tmp) != NILSXP && NAMED(tmp) < 1)
-            SET_NAMED(tmp, 1);
+	if (force && TYPEOF(tmp) == PROMSXP) {
+	    PROTECT(tmp);
+	    tmp = eval(tmp, R_GlobalEnv);
+	    SET_NAMED(tmp, 2);
+	    UNPROTECT(1);
+	}
+	else if (TYPEOF(tmp) != NILSXP && NAMED(tmp) < 1)
+	    SET_NAMED(tmp, 1);
 	SET_VECTOR_ELT(val, i, tmp);
     }
     setAttrib(val, R_NamesSymbol, vars);
@@ -2396,7 +2429,7 @@ SEXP attribute_hidden R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 
 SEXP attribute_hidden
 R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
-                        SEXP compsxp, SEXP hook)
+			SEXP compsxp, SEXP hook)
 {
     PROTECT_INDEX vpi;
     Rboolean compress = Rboolean(asLogical(compsxp));
@@ -2429,15 +2462,15 @@ do_lazyLoadDBfetch(SEXP call, SEXP op, SEXP args, SEXP env)
     compsxp = CAR(args); args = CDR(args);
     hook = CAR(args);
     compressed = Rboolean(asLogical(compsxp));
-    
+
     PROTECT_WITH_INDEX(val = readRawFromFile(file, key), &vpi);
     if (compressed)
 	REPROTECT(val = R_decompress1(val), vpi);
     val = R_unserialize(val, hook);
     if (TYPEOF(val) == PROMSXP) {
-        REPROTECT(val, vpi);
-        val = eval(val, R_GlobalEnv);
-        SET_NAMED(val, 2);
+	REPROTECT(val, vpi);
+	val = eval(val, R_GlobalEnv);
+	SET_NAMED(val, 2);
     }
     UNPROTECT(1);
     return val;

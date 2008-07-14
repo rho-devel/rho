@@ -52,8 +52,7 @@ namespace CXXR {
     }
 }
 
-UncachedString::UncachedString(const std::string& str,
-			       unsigned int encoding)
+UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
       m_data(m_short_string)
 {

@@ -12,7 +12,7 @@ AUTOCONF = @AUTOCONF@
 AUTOMAKE = @AUTOMAKE@
 AUTOHEADER = @AUTOHEADER@
 AWK = @AWK@
-BITMAP_LIBS = @BITMAP_LIBS@
+BITMAP_LIBS = @BITMAP_LIBS@ @TIFF_LIBS@
 BLAS_LIBS = @BLAS_LIBS@
 BUILDDIR_IS_SRCDIR = @BUILDDIR_IS_SRCDIR@
 BUILD_CC = @BUILD_CC@
@@ -24,12 +24,13 @@ CXXFLAGS += @CXXFLAGS@
 CPICFLAGS = @CPICFLAGS@
 CPPFLAGS = @CPPFLAGS@
 DEFS = @DEFS@ @R_DEFS@
-DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=CVS --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)"
+DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=CVS --exclude=Makefile --exclude="*~" --exclude="*.o" --exclude="*$(SHLIB_EXT)"
 DVIPS = @DVIPS@
 DYLIB_EXT = @DYLIB_EXT@
 DYLIB_LD = @DYLIB_LD@
 DYLIB_LDFLAGS = @DYLIB_LDFLAGS@
 DYLIB_LINK = $(DYLIB_LD) $(DYLIB_LDFLAGS) $(LDFLAGS)
+ECHO = echo
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -51,8 +52,7 @@ JAVA_LIBS = @JAVA_LIBS0@
 JAVAC = @JAVAC@
 LATEX = @LATEX@
 LDFLAGS = @LDFLAGS@
-## we only need this is if it is external, as otherwise link to R
-LIBINTL= @BUILD_LIBINTL_FALSE@ @LIBINTL@
+LIBINTL= @LIBINTL@
 LIBM = @LIBM@
 LIBR = @LIBR@
 LIBS = @LIBS@
@@ -94,6 +94,7 @@ SHLIB_LD = @SHLIB_LD@
 SHLIB_LDFLAGS = @SHLIB_LDFLAGS@
 SHLIB_LINK = $(SHLIB_LD) $(SHLIB_LDFLAGS) $(LDFLAGS)
 STRIP_LIBS = @striplib@
+STRIP_STATIC_LIBS = @stripstaticlib@
 TAR = @TAR@
 X_CFLAGS = @X_CFLAGS@
 X_LIBS = @X_LIBS@
@@ -105,6 +106,7 @@ ALL_CFLAGS = $(R_XTRA_CFLAGS) $(MAIN_CFLAGS) $(CFLAGS)
 ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 ALL_CXXFLAGS = $(R_XTRA_CXXFLAGS) $(MAIN_CXXFLAGS) $(CXXFLAGS)
 ALL_FFLAGS = $(R_XTRA_FFLAGS) $(MAIN_FFLAGS) $(FFLAGS)
+ALL_OBJCFLAGS = $(R_XTRA_OBJCFLAGS) $(MAIN_OBJCFLAGS) $(OBJCFLAGS)
 ALL_CFLAGS_LO = $(R_XTRA_CFLAGS) $(CPICFLAGS) $(SHLIB_CFLAGS) $(CFLAGS)
 ALL_FFLAGS_LO = $(R_XTRA_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAGS)
 
@@ -119,11 +121,7 @@ ALL_FFLAGS_LO = $(R_XTRA_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAGS)
 	@gcc -MM $(ALL_CPPFLAGS) $< > $@
 .f.o:
 	$(F77) $(ALL_FFLAGS) -c $< -o $@
-
-## mainly for OS X to allow us to include Obj-C/Cocoa code if necessary
-## the (long-term) goal is to integrate the Obj-C R API in the framework
-.m.o:
-	$(OBJC) $(ALL_CPPFLAGS) $(OBJCFLAGS) -c $< -o $@
+@r_objc_rules_frag@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@

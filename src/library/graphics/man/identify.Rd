@@ -18,10 +18,11 @@ identify(x, \dots)
   \item{x,y}{coordinates of points in a scatter plot.  Alternatively, any
     object which defines coordinates (a plotting structure, time
     series etc: see \code{\link{xy.coords}}) can be given as \code{x},
-    and \code{y} left undefined.}
-  \item{labels}{an optional character vector, the same length as \code{x} and
-    \code{y}, giving labels for the points.  Will be coerced using
-    \code{\link{as.character}}.}
+    and \code{y} left missing.}
+  \item{labels}{an optional character vector giving labels for the
+    points.  Will be coerced using \code{\link{as.character}}, and
+    recycled if necessary to the length of \code{x}.  Excess labels will
+    be discarded, with a warning.}
   \item{pos}{if \code{pos} is \code{TRUE}, a component is added to the
     return value which indicates where text was plotted relative to each
     identified point: see Value.}
@@ -72,7 +73,8 @@ identify(x, \dots)
   For the usual \code{\link{X11}} device the identification process is
   terminated by pressing any mouse button other than the first.
   For the \code{\link{quartz}} device the process is terminated by
-  pressing the \code{ESC} key.
+  pressing either the pop-up menu equivalent (usually second mouse
+  button or \code{Ctrl}-click) or the \code{ESC} key.
 #endif
 #ifdef windows
   The identification process is terminated by clicking the second button

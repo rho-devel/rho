@@ -47,6 +47,14 @@
 #define LATIN1_MASK (1<<2)
 #define UTF8_MASK   (1<<3)
 
+typedef enum {
+    CE_NATIVE = 0,
+    CE_UTF8   = 1,
+    CE_LATIN1 = 2,
+    CE_SYMBOL = 5,
+    CE_ANY    =99
+} cetype_t;
+
 #ifdef __cplusplus
 
 #include "CXXR/SEXP_downcast.hpp"
@@ -172,10 +180,9 @@ namespace CXXR {
 	 *          from the number of Unicode characters represented
 	 *          by the string.
 	 *
-	 * @param encoding The intended encoding of the string, as
-	 *          indicated by the LATIN1_MASK and UTF8_MASK bits.
-	 *          Zero signifies ASCII encoding, and at most one of
-	 *          the MASK bits may be set (checked).
+	 * @param encoding The encoding of the required CachedString.
+	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
+	 *          in this context (checked).
 	 *
 	 * @param c_string Pointer to a representation of the string
 	 *          as a C-style string (but possibly with embedded
@@ -189,13 +196,7 @@ namespace CXXR {
 	 *          supplied later in the construction of the derived
 	 *          class object by calling setCString().
 	 */
-	String(size_t sz, unsigned int encoding,
-	       const char* c_string = 0)
-	    : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
-	{
-	    if (encoding) checkEncoding(encoding);
-	    m_flags.m_flags = encoding;
-	}
+	String(size_t sz, cetype_t encoding, const char* c_string = 0);
 
 	/** @brief Supply pointer to the string representation.
 	 *
@@ -234,9 +235,6 @@ namespace CXXR {
 	// compiler-generated versions:
 	String(const String&);
 	String& operator=(const String&);
-
-	// Report error if encoding is invalid:
-	static void checkEncoding(unsigned int encoding);
     };
 }  // namespace CXXR
 
@@ -257,6 +255,21 @@ extern "C" {
     inline const char *R_CHAR(SEXP x)
     {
 	return CXXR::SEXP_downcast<CXXR::String*>(x)->c_str();
+    }
+#endif
+
+    /**
+     * @param x Pointer to a CXXR::String.
+     *
+     * @return a non-zero value iff \a x is marked as having either
+     * LATIN1 encoding or UTF8 encoding.
+     */
+#ifndef __cplusplus
+    int ENC_KNOWN(SEXP x);
+#else
+    inline int ENC_KNOWN(SEXP x)
+    {
+	return x->m_flags.m_flags & (LATIN1_MASK | UTF8_MASK);
     }
 #endif
 

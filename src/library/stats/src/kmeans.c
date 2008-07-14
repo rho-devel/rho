@@ -36,7 +36,7 @@
 #include <R.h>
 #include "modreg.h" /* for declarations for registration */
 
-void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl, 
+void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl,
 		  int *pmaxiter, int *nc, double *wss)
 {
     int n = *pn, k = *pk, p = *pp, maxiter = *pmaxiter;
@@ -88,7 +88,7 @@ void kmeans_Lloyd(double *x, int *pn, int *pp, double *cen, int *pk, int *cl,
     }
 }
 
-void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk, 
+void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk,
 		     int *cl, int *pmaxiter, int *nc, double *wss)
 {
     int n = *pn, k = *pk, p = *pp, maxiter = *pmaxiter;
@@ -146,7 +146,7 @@ void kmeans_MacQueen(double *x, int *pn, int *pp, double *cen, int *pk,
 		    cen[inew+k*c] += (x[i+n*c] - cen[inew+k*c])/nc[inew];
 		}
 	    }
- 	}
+	}
 	if(!updated) break;
     }
 

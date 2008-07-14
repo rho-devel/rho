@@ -256,21 +256,22 @@ void periodic_spline(int n, double *x, double *y,
 	errno = EDOM;
 	return;
     }
-    
+
     if(n == 2) {
-    	b[1] = b[2] = c[1] = c[2] = d[1] = d[2] = 0.0;
-    	return;
+	b[1] = b[2] = c[1] = c[2] = d[1] = d[2] = 0.0;
+	return;
     } else if (n == 3) {
-        b[1] = b[2] = b[3] = -(y[1] - y[2])*(x[1] - 2*x[2] + x[3])/(x[3]-x[2])/(x[2]-x[1]);
-        c[1] = -3*(y[1]-y[2])/(x[3]-x[2])/(x[2]-x[1]);
-        c[2] = -c[1];
-        c[3] = c[1];
-        d[1] = -2*c[1]/3/(x[2]-x[1]);
-        d[2] = -d[1]*(x[2]-x[1])/(x[3]-x[2]);
-        d[3] = d[1];
-        return;
+	b[1] = b[2] = b[3] = -(y[1] - y[2])*(x[1] - 2*x[2] + x[3])/(x[3]-x[2])/(x[2]-x[1]);
+	c[1] = -3*(y[1]-y[2])/(x[3]-x[2])/(x[2]-x[1]);
+	c[2] = -c[1];
+	c[3] = c[1];
+	d[1] = -2*c[1]/3/(x[2]-x[1]);
+	d[2] = -d[1]*(x[2]-x[1])/(x[3]-x[2]);
+	d[3] = d[1];
+	return;
     }
 
+    /* else --------- n >= 4 --------- */
     nm1 = n-1;
 
     /* Set up the matrix system */
@@ -381,7 +382,7 @@ void spline_eval(int *method, int *nu, double *u, double *v,
     int i, j, k, l;
     double ul, dx, tmp;
 
-    if(*method == 1 && *n > 1) {
+    if(*method == 1 && *n > 1) { /* periodic */
 	dx = x[n_1] - x[0];
 	for(l = 0; l < *nu; l++) {
 	    v[l] = fmod(u[l]-x[0], dx);
@@ -398,6 +399,7 @@ void spline_eval(int *method, int *nu, double *u, double *v,
     for(l = 0; l < *nu; l++) {
 	ul = v[l];
 	if(ul < x[i] || (i < n_1 && x[i+1] < ul)) {
+	    /* reset i  such that  x[i] <= ul <= x[i+1] : */
 	    i = 0;
 	    j = *n;
 	    do {

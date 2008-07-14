@@ -187,12 +187,12 @@ gen_tempname (char *tmpl)
 #endif
 
       if (fd >= 0)
-        {
-          __set_errno (save_errno);
-          return fd;
-        }
+	{
+	  __set_errno (save_errno);
+	  return fd;
+	}
       else if (errno != EEXIST)
-        return -1;
+	return -1;
     }
 
   /* We got out of the loop because we ran out of combinations to try.  */
@@ -216,4 +216,3 @@ mkdtemp (char *Template)
   else
     return Template;
 }
-

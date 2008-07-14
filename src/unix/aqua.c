@@ -14,9 +14,9 @@
  *CXXR to the CXXR website.
  *CXXR */
 
-/* 
+/*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1999-2004 The R Development Core Team
+ *  Copyright (C) 1999-2008 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,41 +48,40 @@
 
 #if defined(HAVE_AQUA)
 
-#include <Rdevices.h>
-#include <R_ext/GraphicsDevice.h> 
- 
+/* tell QuartzDevice to insert definitions for us (to maintain consistency) */
+#define IN_AQUA_C 1
+
+#include <R_ext/GraphicsEngine.h>
+#include <R_ext/Rdynload.h>
+#include <R_ext/QuartzDevice.h>
+
 extern Rboolean useaqua; /* from src/unix/system.c */
 
 
-DL_FUNC ptr_do_wsbrowser, ptr_GetQuartzParameters, 
+DL_FUNC ptr_do_wsbrowser, ptr_GetQuartzParameters,
     ptr_do_dataentry, ptr_do_browsepkgs, ptr_do_datamanger,
     ptr_do_packagemanger, ptr_do_flushconsole, ptr_do_hsbrowser,
     ptr_do_selectlist;
 
-DL_FUNC ptr_R_ProcessEvents, ptr_CocoaInnerQuartzDevice, 
-    ptr_CocoaGetQuartzParameters, ptr_CocoaSystem;
+DL_FUNC ptr_R_ProcessEvents, ptr_CocoaSystem;
 
-int (*ptr_Raqua_CustomPrint)(char *, SEXP);
+int (*ptr_Raqua_CustomPrint)(const char *, SEXP);
 
-Rboolean CocoaInnerQuartzDevice(NewDevDesc *dd,char *display,
-				double width,double height,
-				double pointsize,char *family,
-				Rboolean antialias,
-				Rboolean autorefresh,int quartzpos,
-				int bg){
-    return (Rboolean)ptr_CocoaInnerQuartzDevice(dd, display,
-						width, height,
-						pointsize, family,
-						antialias,
-						autorefresh, quartzpos,
-						bg);
-}
+static QuartzFunctions_t* qfn;
 
-void CocoaGetQuartzParameters(double *width, double *height, double *ps, 
-			      char *family, Rboolean *antialias, 
-			      Rboolean *autorefresh, int *quartzpos){
-    ptr_CocoaGetQuartzParameters(width, height, ps, family, antialias,
-				 autorefresh, quartzpos);
+QuartzFunctions_t *getQuartzFunctions(void) {
+    if (qfn) return qfn;
+    {
+	QuartzFunctions_t *(*fn)(void);
+	fn = (QuartzFunctions_t *(*)(void)) R_FindSymbol("getQuartzAPI", "grDevices", NULL);
+	if (!fn) {
+	    /* we need to load grDevices - not sure if this is the best way, though ... */
+	    eval(LCONS(install("library"),CONS(install("grDevices"),R_NilValue)),R_GlobalEnv);
+	    fn = (QuartzFunctions_t *(*)(void)) R_FindSymbol("getQuartzAPI", "grDevices", NULL);
+	    if (!fn) error(_("unable to load Quartz"));
+	}
+	return fn();
+    }
 }
 
 void R_ProcessEvents(void);
@@ -102,7 +101,7 @@ SEXP do_dataentry(SEXP call, SEXP op, SEXP args, SEXP env)
 	return(ptr_do_dataentry(call, op, args, env));
 #if defined(HAVE_X11)
     else
-	return(X11_do_dataentry(call, op, args, env));	
+	return(X11_do_dataentry(call, op, args, env));
 #endif
 }
 
@@ -132,7 +131,7 @@ SEXP do_flushconsole(SEXP call, SEXP op, SEXP args, SEXP env)
 {
 	if(ptr_do_flushconsole)
 		ptr_do_flushconsole(call, op, args, env);
-	return R_NilValue; 
+	return R_NilValue;
 }
 
 SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -143,24 +142,25 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP do_aqua_custom_print(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     unsigned int vm;
-    char *ct;
-    int cpr;  
+    const char *ct;
+    int cpr;
     SEXP rv, objType, obj;
 
     if (!ptr_Raqua_CustomPrint) return R_NilValue;
 
     checkArity(op, args);
-  
+
     vm = vmaxget();
-  
+
     objType = CAR(args); args = CDR(args);
     obj = CAR(args);
 
     if (!isString(objType) || LENGTH(objType)<1)
-        errorcall(call, "invalid arguments");
+	errorcall(call, "invalid arguments");
     ct=CHAR(STRING_ELT(objType,0));
     cpr=ptr_Raqua_CustomPrint(ct, obj);
 
+    /* FIXME: trying to store a pointer in an integer is wrong */
     PROTECT(rv=allocVector(INTSXP, 1));
     INTEGER(rv)[0]=cpr;
 
@@ -172,11 +172,9 @@ SEXP do_aqua_custom_print(SEXP call, SEXP op, SEXP args, SEXP env)
 
 void R_ProcessEvents(void)
 {
-    if(!useaqua){
-	if (R_interrupts_pending)
-	    onintr();
-	return;
-    } else
-	ptr_R_ProcessEvents();
+  if (ptr_R_ProcessEvents)
+    ptr_R_ProcessEvents();
+  if (R_interrupts_pending)
+    onintr();
 }
 #endif

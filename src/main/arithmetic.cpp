@@ -18,7 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
  *  Copyright (C) 1998--2007	    The R Development Core Team.
- *  Copyright (C) 2003-4       	    The R Foundation
+ *  Copyright (C) 2003-4	    The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -211,8 +211,8 @@ static double myfloor(double x1, double x2)
 }
 
 /* some systems get this wrong, possibly depend on what libs are loaded */
-R_INLINE double R_log(double x) { 
-    return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf; 
+static R_INLINE double R_log(double x) {
+    return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf;
 }
 
 #ifdef POW_DIRTY
@@ -229,8 +229,13 @@ double R_pow(double x, double y) /* = x ^ y */
 	/* y < 0 */ return(R_PosInf);
     }
     if (R_FINITE(x) && R_FINITE(y))
-/* work around a bug in May 2007 snapshots of gcc pre-4.3.0 */
-#if __GNUC__ == 4 && __GNUC_MINOR__ == 3
+/* work around a bug in May 2007 snapshots of gcc pre-4.3.0, also
+   present in the release version.  If compiled with, say, -g -O3
+   on x86_64 Linux this compiles to a call to sqrtsd and gives
+   100^0.5 as 3.162278.  -g is needed, as well as -O2 or higher.
+   example(pbirthday) will fail.
+ */
+#if __GNUC__ == 4 && __GNUC_MINOR__ >= 3
 	return (y == 2.0) ? x*x : pow(x, y);
 #else
 	return (y == 2.0) ? x*x : ((y == 0.5) ? sqrt(x) : pow(x, y));
@@ -327,7 +332,7 @@ SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
 
 #define COERCE_IF_NEEDED(v, tp, vpi) do { \
     if (TYPEOF(v) != (tp)) { \
-        int __vo__ = OBJECT(v); \
+	int __vo__ = OBJECT(v); \
 	REPROTECT(v = coerceVector(v, (tp)), vpi); \
 	if (__vo__) SET_OBJECT(v, 1); \
     } \
@@ -472,7 +477,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
 	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
 	     /* || TYPEOF(x) == LGLSXP || TYPEOF(y) == LGLSXP*/)) {
-            /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
+	    /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
 	    COERCE_IF_NEEDED(x, REALSXP, xpi);
 	    COERCE_IF_NEEDED(y, REALSXP, ypi);
 	}
@@ -854,15 +859,15 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     switch (code) {
     case PLUSOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-   	   mod_iterate(n1, n2, i1, i2) {
-   	         REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
+	   mod_iterate(n1, n2, i1, i2) {
+		 REAL(ans)[i] = REAL(s1)[i1] + REAL(s2)[i2];
 	     }
 	} else	if(TYPEOF(s1) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) + REAL(s2)[i2];
 	     }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = REAL(s1)[i1] + R_INTEGER(s2, i2);
 	     }
 	}
@@ -870,15 +875,15 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	break;
     case MINUSOP:
 	if(TYPEOF(s1) == REALSXP && TYPEOF(s2) == REALSXP) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	      REAL(ans)[i] = REAL(s1)[i1] - REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s1) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) - REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = REAL(s1)[i1] - R_INTEGER(s2, i2);
 	   }
 	}
@@ -889,11 +894,11 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 		REAL(ans)[i] = REAL(s1)[i1] * REAL(s2)[i2];
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) * REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = REAL(s1)[i1] * R_INTEGER(s2, i2);
 	   }
 	}
@@ -904,11 +909,11 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 		REAL(ans)[i] = REAL(s1)[i1] / REAL(s2)[i2];
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_INTEGER(s1, i1) / REAL(s2)[i2];
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = REAL(s1)[i1] / R_INTEGER(s2, i2);
 	   }
 	}
@@ -919,11 +924,11 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	       REAL(ans)[i] = R_pow(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_pow( R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = R_pow(REAL(s1)[i1], R_INTEGER(s2, i2));
 	   }
 	}
@@ -934,11 +939,11 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	       REAL(ans)[i] = myfmod(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = myfmod( R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = myfmod(REAL(s1)[i1], R_INTEGER(s2, i2));
 	   }
 	}
@@ -949,11 +954,11 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	       REAL(ans)[i] = myfloor(REAL(s1)[i1], REAL(s2)[i2]);
 	    }
 	} else if(TYPEOF(s1) == INTSXP ) {
-   	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = myfloor(R_INTEGER(s1, i1), REAL(s2)[i2]);
 	   }
 	} else	if(TYPEOF(s2) == INTSXP ) {
-  	   mod_iterate(n1, n2, i1, i2) {
+	   mod_iterate(n1, n2, i1, i2) {
 	       REAL(ans)[i] = myfloor(REAL(s1)[i1], R_INTEGER(s2,i2));
 	   }
 	}
@@ -1135,11 +1140,11 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
     na = LENGTH(sa);				\
     nb = LENGTH(sb);				\
     if ((na == 0) || (nb == 0))	{		\
-        PROTECT(sy = allocVector(REALSXP, 0));	\
-        if (na == 0) {				\
+	PROTECT(sy = allocVector(REALSXP, 0));	\
+	if (na == 0) {				\
 	    DUPLICATE_ATTRIB(sy, sa);\
-        }					\
-        UNPROTECT(1);				\
+	}					\
+	UNPROTECT(1);				\
 	return(sy);				\
     }						\
     n = (na < nb) ? nb : na;			\
@@ -1366,12 +1371,12 @@ SEXP attribute_hidden do_atan(SEXP call, SEXP op, SEXP args, SEXP env)
 /* The S4 Math2 group, round and signif */
 SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP res;
+    SEXP res, ap;
     int n, nprotect = 1;
 
-    if (length(args) >= 2 && 
-        isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
-        double digits = 0;
+    if (length(args) >= 2 &&
+	isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
+	double digits = 0;
 	if(PRIMVAL(op) == 10004) digits = 6.0;
 	PROTECT(args = list2(CAR(args), ScalarReal(digits))); nprotect++;
     }
@@ -1384,17 +1389,27 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     case 2:
 	break;
     default:
-	error(_("%d arguments passed to '%s' which requires 1 or 2"), 
+	error(_("%d arguments passed to '%s' which requires 1 or 2"),
 	      n, PRIMNAME(op));
     }
-    
+
     if (! DispatchGroup("Math", call, op, args, env, &res)) {
 	if(n == 1) {
 	    double digits = 0.0;
 	    if(PRIMVAL(op) == 10004) digits = 6.0;
 	    SETCDR(args, CONS(ScalarReal(digits), R_NilValue));
-	} else if (length(CADR(args)) == 0)
-            errorcall(call, _("invalid second argument of length 0"));
+	} else {
+	    /* If named, do argument matching by name */
+	    if (TAG(args) != R_NilValue || TAG(CDR(args)) != R_NilValue) {
+		PROTECT(ap = CONS(R_NilValue, list1(R_NilValue)));
+		SET_TAG(ap,  install("x"));
+		SET_TAG(CDR(ap), install("digits"));
+		PROTECT(args = matchArgs(ap, args, call));
+		nprotect +=2;
+	    }
+	    if (length(CADR(args)) == 0)
+		errorcall(call, _("invalid second argument of length 0"));
+	}
 	res = do_math2(call, op, args, env);
     }
     UNPROTECT(nprotect);
@@ -1426,9 +1441,9 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (n >= 2 && isSymbol(CADR(args)) && R_isMissing(CADR(args), env)) {
 #ifdef M_E
-        double e = M_E;
+	double e = M_E;
 #else
-        double e = exp(1.);
+	double e = exp(1.);
 #endif
 	PROTECT(args = list2(CAR(args), ScalarReal(e))); nprotect++;
     }
@@ -1448,7 +1463,7 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
 	    /* match argument names if supplied */
 	    PROTECT(ap = list2(R_NilValue, R_NilValue));
 	    SET_TAG(ap, install("x"));
-	    SET_TAG(CDR(ap), install("base"));	
+	    SET_TAG(CDR(ap), install("base"));
 	    PROTECT(args = matchArgs(ap, args, call));
 	    nprotect += 2;
 	    if (length(CADR(args)) == 0)
@@ -1714,7 +1729,7 @@ SEXP attribute_hidden do_math3(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Mathematical Functions of Four (Real) Arguments */
 
-#define if_NA_Math4_set(y,a,b,c,d)			        	\
+#define if_NA_Math4_set(y,a,b,c,d)				\
 	if      (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)) y = NA_REAL;\
 	else if (ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)) y = R_NaN;
 
@@ -1902,8 +1917,8 @@ SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
 /* Mathematical Functions of Five (Real) Arguments */
 
 #define if_NA_Math5_set(y,a,b,c,d,e)					\
-	if     (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)|| ISNA (e)) 	\
-    		y = NA_REAL;						\
+	if     (ISNA (a)|| ISNA (b)|| ISNA (c)|| ISNA (d)|| ISNA (e))	\
+		y = NA_REAL;						\
 	else if(ISNAN(a)|| ISNAN(b)|| ISNAN(c)|| ISNAN(d)|| ISNAN(e))	\
 		y = R_NaN;
 

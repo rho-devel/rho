@@ -85,6 +85,7 @@ srcfilecopy <- function(filename, lines) {
 
     e$filename <- filename
     e$lines <- as.character(lines)
+    e$timestamp <- Sys.time()
 
     class(e) <- c("srcfilecopy", "srcfile")
     return(e)
@@ -153,5 +154,7 @@ as.character.srcref <- function(x, useSource = TRUE, ...)
     lines
 }
 
-print.srcref <- function(x, useSource = TRUE, ...)
+print.srcref <- function(x, useSource = TRUE, ...) {
     cat(as.character(x, useSource = useSource), sep="\n")
+    invisible(x)
+}

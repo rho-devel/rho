@@ -71,7 +71,7 @@ static SEXP DupSymbol = NULL;
 static SEXP PkgSymbol = NULL;
 static SEXP EncSymbol = NULL;
 
-/* Global variable that should go. Should actually be doing this in 
+/* Global variable that should go. Should actually be doing this in
    a much more straightforward manner. */
 #include <Rdynpriv.h>
 enum {FILENAME, DLL_HANDLE, R_OBJECT, NOT_DEFINED};
@@ -116,37 +116,37 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
     *fun = NULL;
     if(TYPEOF(op) == EXTPTRSXP) {
 	char *p = NULL;
-	if(R_ExternalPtrTag(op) == Rf_install("native symbol")) 
-   	   *fun = R_ExternalPtrAddrFn(op);
+	if(R_ExternalPtrTag(op) == Rf_install("native symbol"))
+	   *fun = R_ExternalPtrAddrFn(op);
 	else if(R_ExternalPtrTag(op) == Rf_install("registered native symbol")) {
-   	   R_RegisteredNativeSymbol *tmp;
+	   R_RegisteredNativeSymbol *tmp;
 	   tmp = reinterpret_cast<R_RegisteredNativeSymbol *>(R_ExternalPtrAddr(op));
 	   if(tmp) {
-  	      if(symbol->type != R_ANY_SYM && symbol->type != tmp->type)
- 	         errorcall(call, _("NULL value passed as symbol address"));
-   	        /* Check the type of the symbol. */
-   	      switch(symbol->type) {
+	      if(symbol->type != R_ANY_SYM && symbol->type != tmp->type)
+		 errorcall(call, _("NULL value passed as symbol address"));
+		/* Check the type of the symbol. */
+	      switch(symbol->type) {
 	      case R_C_SYM:
-  	          *fun = tmp->symbol.c->fun;
-  	          p = tmp->symbol.c->name;
+		  *fun = tmp->symbol.c->fun;
+		  p = tmp->symbol.c->name;
 		  break;
 	      case R_CALL_SYM:
-  	          *fun = tmp->symbol.call->fun;
-  	          p = tmp->symbol.call->name;
+		  *fun = tmp->symbol.call->fun;
+		  p = tmp->symbol.call->name;
 		  break;
 	      case R_FORTRAN_SYM:
-  	          *fun = tmp->symbol.fortran->fun;
-  	          p = tmp->symbol.fortran->name;
+		  *fun = tmp->symbol.fortran->fun;
+		  p = tmp->symbol.fortran->name;
 		  break;
 	      case R_EXTERNAL_SYM:
-  	          *fun = tmp->symbol.external->fun;
-  	          p = tmp->symbol.external->name;
+		  *fun = tmp->symbol.external->fun;
+		  p = tmp->symbol.external->name;
 		  break;
 	      default:
-  	         /* Something unintended has happened if we get here. */
-	          errorcall(call, _("Unimplemented type %d in createRSymbolObject"), 
+		 /* Something unintended has happened if we get here. */
+		  errorcall(call, _("Unimplemented type %d in createRSymbolObject"),
 			    symbol->type);
-  	          break;
+		  break;
 	      }
 	      *symbol = *tmp;
 	   }
@@ -155,7 +155,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
 	if(*fun == NULL)
 	    errorcall(call, _("NULL value passed as symbol address"));
 
-        /* copy the symbol name. */
+	/* copy the symbol name. */
 	if (p) {
 	    if (strlen(p) >= MaxSymbolBytes)
 		error(_("symbol '%s' is too long"), p);
@@ -163,18 +163,18 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
 	    /* Ouch, no length check
 	    q = buf;
 	    while ((*q = *p) != '\0') {
-	        p++;
-	        q++;
+		p++;
+		q++;
 	    } */
 	}
 
 	return;
-    } 
+    }
     else if(inherits(op, "NativeSymbolInfo")) {
 	checkValidSymbolId(VECTOR_ELT(op, 1), call, fun, symbol, buf);
 	return;
     }
-    
+
     errorcall(call,
       _("'name' must be a string (of length 1) or native symbol reference"));
     return; /* not reached */
@@ -202,7 +202,7 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
 
     op = CAR(args);
     /* NB, this sets fun, symbol and buf and is not just a check! */
-    checkValidSymbolId(op, call, fun, symbol, buf); 
+    checkValidSymbolId(op, call, fun, symbol, buf);
 
     /* The following code modifies the argument list */
     /* We know this is ok because do_dotCode is entered */
@@ -236,7 +236,7 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
 	    q++;
 	}
     }
- 
+
     if(!*fun) {
 	if(dll.type != FILENAME) {
 	    /* no PACKAGE= arg, so see if we can identify a DLL
@@ -245,7 +245,7 @@ resolveNativeRoutine(SEXP args, DL_FUNC *fun,
 	    /* need to continue if there is no PACKAGE arg or if the
 	       namespace search failed
 	       if(!fun)
-	           errorcall(call, _("cannot resolve native routine"));
+		   errorcall(call, _("cannot resolve native routine"));
 	    */
 	}
 
@@ -308,13 +308,13 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
     if(length(getAttrib(s, R_ClassSymbol))) {
 	R_CConvertInfo info;
 	int success;
-        void *ans;
+	void *ans;
 
 	info.naok = naok;
 	info.dup = dup;
 	info.narg = narg;
 	info.Fort = Fort;
-        info.name = name;
+	info.name = name;
 
 	ans = Rf_convertToC(s, &info, &success, converter);
 	if(success)
@@ -337,8 +337,8 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
     rawptr = RAW(s);
     if (dup) {
         rawptr = reinterpret_cast<Rbyte *>(R_alloc(n, sizeof(Rbyte)));
-        for (i = 0; i < n; i++)
-            rawptr[i] = RAW(s)[i];
+	for (i = 0; i < n; i++)
+	    rawptr[i] = RAW(s)[i];
     }
     return rawptr;
     break;
@@ -411,7 +411,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
 		char *outbuf;
-                const char *inbuf;
+		const char *inbuf;
 		size_t inb, outb, outb0, res;
 		void *obj = Riconv_open("", encname); /* (to, from) */
 		if(obj == reinterpret_cast<void *>(-1))
@@ -435,7 +435,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    *outbuf = '\0';
 		}
 		Riconv_close(obj);
-	    } else 
+	    } else
 #else
 		warning(_("re-encoding is not supported on this system"));
 	    }
@@ -455,7 +455,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	if(!dup)
 	    error(_("lists must be duplicated in .C"));
 	/* if (!dup) return (void*)VECTOR_PTR(s); ***** Dangerous to GC!!! */
-  	n = length(s);
+	n = length(s);
 	lptr = reinterpret_cast<SEXP*>(R_alloc(n, sizeof(SEXP)));
 	for (i = 0 ; i < n ; i++) {
 	    lptr[i] = VECTOR_ELT(s, i);
@@ -500,14 +500,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     s = allocVector(stype, n);
     rawptr = reinterpret_cast<Rbyte *>(p);
     for (i = 0; i < n; i++)
-        RAW(s)[i] = rawptr[i];
+	RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
     case INTSXP:
 	s = allocVector(stype, n);
 	iptr = reinterpret_cast<int*>(p);
 	for(i=0 ; i<n ; i++)
-            INTEGER(s)[i] = iptr[i];
+	    INTEGER(s)[i] = iptr[i];
 	break;
     case REALSXP:
     case SINGLESXP:
@@ -540,7 +540,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    cptr = reinterpret_cast<char**>(p);
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
-                const char *inbuf;
+		const char *inbuf;
 		char *outbuf, *p;
 		size_t inb, outb, outb0, res;
 		void *obj = Riconv_open(encname, ""); /* (to, from) */
@@ -565,7 +565,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    SET_STRING_ELT(s, i, mkChar(p));
 		}
 		Riconv_close(obj);
-	    } else 
+	    } else
 #else
 		warning(_("re-encoding is not supported on this system"));
 	    }
@@ -657,7 +657,7 @@ static SEXP naokfind(SEXP args, int * len, int *naok, int *dup,
 		*/
 	    } else {
 		    /* Have a DLL object*/
-	        if(TYPEOF(CAR(s)) == EXTPTRSXP) {
+		if(TYPEOF(CAR(s)) == EXTPTRSXP) {
 		    dll->dll = reinterpret_cast<HINSTANCE>(R_ExternalPtrAddr(CAR(s)));
 		    dll->type = DLL_HANDLE;
 		} else if(TYPEOF(CAR(s)) == VECSXP) {
@@ -764,7 +764,7 @@ SEXP attribute_hidden do_isloaded(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     const char *sym, *type="", *pkg = "";
     int val = 1, nargs = length(args);
-    R_RegisteredNativeSymbol symbol = {R_FORTRAN_SYM, {NULL}, NULL};
+    R_RegisteredNativeSymbol symbol = {R_ANY_SYM, {NULL}, NULL};
 
     if (nargs < 1) error(_("no arguments supplied"));
     if (nargs > 3) error(_("too many arguments"));
@@ -786,12 +786,7 @@ SEXP attribute_hidden do_isloaded(SEXP call, SEXP op, SEXP args, SEXP env)
 	else if(strcmp(type, "Call") == 0) symbol.type = R_CALL_SYM;
 	else if(strcmp(type, "External") == 0) symbol.type = R_EXTERNAL_SYM;
     }
-    if(strlen(type)) {
-	if(!(R_FindSymbol(sym, pkg, &symbol))) val = 0;
-    } else {
-	if (!(R_FindSymbol(sym, pkg, NULL)) && 
-	    !(R_FindSymbol(sym, pkg, &symbol))) val = 0;
-    }
+    if(!(R_FindSymbol(sym, pkg, &symbol))) val = 0;
     return ScalarLogical(val);
 }
 
@@ -854,8 +849,8 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     fun = reinterpret_cast<VarFun>(ofun);
 
     for(nargs = 0, pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
-        if (nargs == MAX_ARGS)
-            errorcall(call, _("too many arguments in foreign function call"));
+	if (nargs == MAX_ARGS)
+	    errorcall(call, _("too many arguments in foreign function call"));
 	cargs[nargs] = CAR(pargs);
 	nargs++;
     }
@@ -1526,19 +1521,20 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     return retval;
 }
 
-/*  Call dynamically loaded "internal" graphics functions */
-/*  .External.gr  and  .Call.gr */
+/*  Call dynamically loaded "internal" graphics functions
+    .External.graphics (unused) and  .Call.graphics (used in grid).
+*/
 
 SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP retval;
-    GEDevDesc *dd = GEcurrentDevice();
+    pGEDevDesc dd = GEcurrentDevice();
     Rboolean record = dd->recordGraphics;
     dd->recordGraphics = FALSE;
     PROTECT(retval = do_External(call, op, args, env));
     /*
      * If there is an error or user-interrupt in the above
-     * evaluation, dd->recordGraphics is set to TRUE 
+     * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
      */
     dd->recordGraphics = record;
@@ -1554,13 +1550,13 @@ SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_dotcallgr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP retval;
-    GEDevDesc *dd = GEcurrentDevice();
+    pGEDevDesc dd = GEcurrentDevice();
     Rboolean record = dd->recordGraphics;
     dd->recordGraphics = FALSE;
     PROTECT(retval = do_dotcall(call, op, args, env));
     /*
      * If there is an error or user-interrupt in the above
-     * evaluation, dd->recordGraphics is set to TRUE 
+     * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
      */
     dd->recordGraphics = record;
@@ -1574,7 +1570,7 @@ SEXP attribute_hidden do_dotcallgr(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 static SEXP
-Rf_getCallingDLL()
+Rf_getCallingDLL(void)
 {
     SEXP e, ans;
     RCNTXT *cptr;
@@ -1702,16 +1698,16 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
 #ifdef THROW_REGISTRATION_TYPE_ERROR
-        if(checkTypes &&
+	if(checkTypes &&
 	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), Rboolean(dup))) {
-            /* We can loop over all the arguments and report all the
-               erroneous ones, but then we would also want to avoid
-               the conversions.  Also, in the future, we may just
-               attempt to coerce the value to the appropriate
-               type. This is why we pass the checkTypes[nargs] value
-               to RObjToCPtr(). We just have to sort out the ability
-               to return the correct value which is complicated by
-               dup, etc. */
+	    /* We can loop over all the arguments and report all the
+	       erroneous ones, but then we would also want to avoid
+	       the conversions.  Also, in the future, we may just
+	       attempt to coerce the value to the appropriate
+	       type. This is why we pass the checkTypes[nargs] value
+	       to RObjToCPtr(). We just have to sort out the ability
+	       to return the correct value which is complicated by
+	       dup, etc. */
 	    errorcall(call, _("Wrong type for argument %d in call to %s"),
 		      nargs+1, symName);
 	}
@@ -2334,9 +2330,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	nargs = 0;
 	for (pargs = args ; pargs != R_NilValue ; pargs = CDR(pargs)) {
 	    if(argStyles && argStyles[nargs] == R_ARG_IN) {
-	        PROTECT(s = R_NilValue);
+		PROTECT(s = R_NilValue);
 	    } else if(argConverters[nargs]) {
-                if(argConverters[nargs]->reverse) {
+		if(argConverters[nargs]->reverse) {
 		    info.argIndex = nargs;
 		    s = argConverters[nargs]->reverse(cargs[nargs], CAR(pargs),
 						      &info,
@@ -2353,7 +2349,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 			memtrace_report(cargs[nargs], s);
 			SET_TRACE(s, 1);
 		}
-#endif		
+#endif
 		DUPLICATE_ATTRIB(s, CAR(pargs));
 	    }
 	    if (TAG(pargs) != R_NilValue)
@@ -2381,7 +2377,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(names, nargs++, R_BlankString);
 	    else
 		SET_STRING_ELT(names, nargs++, PRINTNAME(TAG(pargs)));
-        }
+	}
 	setAttrib(ans, R_NamesSymbol, names);
 	UNPROTECT(1);
     }
@@ -2463,7 +2459,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	    for (j = 0 ; j < n ; j++) {
 		char *str = reinterpret_cast<char*>(arguments[i]);
 		SET_STRING_ELT(CAR(pcall), i, mkChar(str));
- 	    }
+	    }
 	    break;
 	    /* FIXME : This copy is unnecessary! */
 	    /* FIXME : This is obviously incorrect so disable

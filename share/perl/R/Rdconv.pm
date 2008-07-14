@@ -199,6 +199,27 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
 	    warn "\n** Rdconv --type '..' : no valid type specified\n";
 	}
 
+	## Remove empty sections.
+	foreach my $key (keys %blocks) {
+	    if($blocks{$key} =~ /^[[:space:]]*$/) {
+		warn "Note: removing empty section \\${key}\n";
+		delete $blocks{$key};
+	    }
+	}
+	my ($section, $title, @nonempty);
+	for($section = 0; $section < $max_section; $section++) {
+	    if($section_body[$section] =~ /^[[:space:]]*$/) {
+		$title = $section_title[$section];
+		warn "Note: removing empty section \\section\{$title\}\n";
+	    }
+	    else {
+		push(@nonempty, $section);
+	    }
+	}
+	@section_title = @section_title[@nonempty];
+	@section_body  = @section_body [@nonempty];
+	$max_section = scalar(@section_title);
+	
 	rdoc2html($htmlfile, $def_encoding)	if $type =~ /html/i;
 	rdoc2txt($txtfile, $def_encoding)	if $type =~ /txt/i;
 	rdoc2Sd($Sdfile)	if $type =~ /Sd/;
@@ -278,10 +299,14 @@ sub mark_brackets {
 		my $extra_info = "\'$1\'" ;
 		$extra_info = "\'$1\'" if $line =~ /(\\\w+{)/ ; # }
 		if( $extra_info =~ /^'}'$/ ) {
-		    warn "Note: unmatched right brace in '$Rdname'".
+		    my $Rd = $Rdname;
+		    $Rd =~ s/\.Rd$//;
+		    warn "Note: unmatched right brace in file '$Rd.Rd'".
 			" on or after line $badlineno\n";
 		} elsif(! ($extra_info =~ /\\alias{/) ) { # }
-		    warn "Warning: unmatched brace ($extra_info) in '$Rdname'".
+		    my $Rd = $Rdname;
+		    $Rd =~ s/\.Rd$//;
+		    warn "Warning: unmatched brace ($extra_info) in file '$Rd.Rd'".
 			" on or after line $badlineno\n"; 
 		}
 	    }
@@ -388,6 +413,7 @@ sub get_multi {
     my @res, $k=0;
     print STDERR "--- Multi: $name\n" if $debug;
     my $loopcount = 0;
+    my $any = 0;
     while(checkloop($loopcount++, $text, "\\name")
 	  && $text =~ /\\$name($ID)/) {
 	my $id = $1;
@@ -398,10 +424,16 @@ sub get_multi {
 	$arg =~ s/^\s*(\S)/$1/;
 	$arg =~ s/\n[ \t]*(\S)/\n$1/g;
 	$arg =~ s/\s*$//;
-	$res[$k++] = $arg;
+	if($arg) {
+	    $res[$k++] = $arg;
+	}
+	else {
+	    $any++;
+	}
 	$text =~ s/\\$name//s;
     }
     print STDERR "\n---\n" if $debug;
+    warn "Note: ignoring empty \\${name} entries\n" if($any);
     @res;
 }
 
@@ -629,12 +661,17 @@ sub transform_S3method {
     ## NB: \w includes _ as well as [:alnum:], which R now allows in name
     my ($text) = @_;
     my ($method, $prefix, $match, $rest);
+    my ($str, $ini, $fun, $cls, @args);
     my $delimround = new Text::DelimMatch("\\(", "\\)");
     $delimround->quote('"');
     $delimround->quote("'");
     my $S3method_RE =
       "([ \t]*)\\\\(S3)?method\{([\\w.]+)\}\{([\\w.]+)\}";
+    
     while($text =~ /$S3method_RE(.*)/s) {
+	$ini = $1;
+	$fun = $3;
+	$cls = $4;
 	$method = "method";
 	($prefix, $match, $rest) = $delimround->match($5);
 	if(($prefix eq "") && ($rest =~ m/^[ \t]*<-/)) {
@@ -642,20 +679,19 @@ sub transform_S3method {
 	    ## that we could check for a syntacticaly valid R name.)
 	    $method = "replacement method";
 	}
-	if($4 eq "default") {
-	    $text =~
-		s/$S3method_RE/$1\#\# Default S3 $method:\n$1$3/s;
+	if($cls eq "default") {
+	    $str = "$ini\#\# Default S3 $method:\n$ini$fun";
 	}
 	else {
-	    $text =~
-		s/$S3method_RE/$1\#\# S3 $method for class '$4':\n$1$3/s;
+	    $str = "$ini\#\# S3 $method for class '$cls':\n$ini$fun";
 	}
+	$text =~ s/$S3method_RE/$str/s;
     }
+
     ## Also try to handle markup for S3 methods for subscripting and
     ## subassigning.
     $S3method_RE = "([ \t]*)\\\\(S3)?method" .
 	"\{(\\\$|\\\[\\\[?)\}\{([\\w.]+)\}\\\(([^)]+)\\\)";
-    my ($str, $name, @args);
     while($text =~ /$S3method_RE(.*)/s) {
 	## <NOTE>
 	## The hard part is to rewrite the argument list, because
@@ -669,20 +705,22 @@ sub transform_S3method {
 	## parentheses (e.g., in default argument strings), so we use
 	## Text::DelimMatch.
 	## </NOTE>
-	$str = "$1\#\# S3 method for class '$4':\n$1";
-	$name = $3;
+	$ini = $1;
+	$fun = $3;
+	$cls = $4;
+	$method = "method";
 	## The match was for something ending in a pair of balanced
 	## parentheses, which are not necessarily the matching ones.
 	($prefix, $match, $rest) = $delimround->match("($5)$6");
+	$method = "replacement method" if($rest =~ m/^[ \t]*<-/);
 	## Extract the first argument from the argument list.
 	substr($match, 1, -1) =~ m/\s*([^,]+),\s*(.*)/s;
 	## Now put things together.
-	$str .= "$1$name$2";
-	$str .= "]" x length($name) if($name ne "\$");
-	$str =~ s/method/replacement method/ if($rest =~ m/^[ \t]*<-/);
-	
+	$str = "$ini\#\# S3 $method for class '$cls':\n$ini$1$fun$2";
+	$str .= "]" x length($fun) if($fun ne "\$");
 	$text =~ s/$S3method_RE.*/$str$rest/s;
     }
+
     ## Also try to handle markup for S3 methods for binary ops and S3
     ## Ops group methods.
     $S3method_RE = "([ \t]*)\\\\(S3)?method" .
@@ -694,21 +732,21 @@ sub transform_S3method {
 	")\}\{([\\w.]+)\}\\\(([^)]+)\\\)";
     while($text =~ /$S3method_RE/) {
 	$str = "$1\#\# S3 method for class '$4':\n$1";
-	$name = $3;
+	$fun = $3;
 	@args = split(/,\s*/, $5);
 	my $nargs = scalar(@args);
-	if(($nargs == 1) && ($name eq "!")) {
+	if(($nargs == 1) && ($fun eq "!")) {
 	    ## Unary: !.
-	    $str .= "$name $args[0]";
+	    $str .= "$fun $args[0]";
 	}
-	elsif(($nargs == 2) && ($name ne "!")) {
+	elsif(($nargs == 2) && ($fun ne "!")) {
 	    ## Binary: everything but !.
-	    $str .= "$args[0] $name $args[1]";
+	    $str .= "$args[0] $fun $args[1]";
 	}
 	else {
 	    ## 
-	    warn "Warning: arity problem for \\$2method{$name}{$4}?\n";
-	    $str .= "`$name`($5)";
+	    warn "Warning: arity problem for \\$2method{$fun}{$4}?\n";
+	    $str .= "`$fun`($5)";
 	}
 	$text =~ s/$S3method_RE/$str/s;
     }
@@ -719,16 +757,57 @@ sub transform_S4method {
     ## \S4method{GENERIC}{SIGLIST}
     ## Note that this markup should really only be used inside \usage.
     my ($text) = @_;
+    my ($method, $prefix, $match, $rest);
+    my ($str, $ini, $fun, $sig, @args);
+    my $delimround = new Text::DelimMatch("\\(", "\\)");
+    $delimround->quote('"');
+    $delimround->quote("'");
     my $S4method_RE =
-      "([ \t]*)\\\\S4method\{([\\w.]+)\}\{([\\w.,]+)\}";
+      "([ \t]*)\\\\(S4)method\{([\\w.]+)\}\{([\\w.,]+)\}";
+    ## Use grouping on 'S4' so that the S3 method code can easily be
+    ## reused.
     local($Text::Wrap::columns) = 60;
-    while($text =~ /$S4method_RE/) {
-	my $pretty = wrap("$1\#\# ", "$1\#\#   ",
-			  "S4 method for signature '" .
-			  join(", ", split(/,/, $3)) . "':\n") .
-			  "$1$2";
-	$text =~ s/$S4method_RE/$pretty/s;
+
+    while($text =~ /$S4method_RE(.*)/s) {
+	$ini = $1;
+	$fun = $3;
+	$sig = join(", ", split(/,/, $4));
+	$method = "method";
+	($prefix, $match, $rest) = $delimround->match($5);
+  	if(($prefix eq "") && ($rest =~ m/^[ \t]*<-/)) {
+  	    ## (Note that the RHS should really be called 'value', and
+  	    ## that we could check for a syntacticaly valid R name.)
+  	    $method = "replacement method";
+  	}
+	$str = wrap("$ini\#\# ", "$ini\#\#   ",
+		    "S4 $method for signature '$sig':\n") .
+			"$ini$fun";
+	$text =~ s/$S4method_RE/$str/s;
     }
+
+    ## Also try to handle markup for S4 methods for subscripting and
+    ## subassigning.  See transform_S3method() above for details.
+    $S4method_RE = "([ \t]*)\\\\(S4)method" .
+	"\{(\\\$|\\\[\\\[?)\}\{([\\w.,]+)\}\\\(([^)]+)\\\)";
+    while($text =~ /$S4method_RE(.*)/s) {
+	$ini = $1;
+	$fun = $3;
+	$sig = join(", ", split(/,/, $4));
+	$method = "method";
+	## The match was for something ending in a pair of balanced
+	## parentheses, which are not necessarily the matching ones.
+	($prefix, $match, $rest) = $delimround->match("($5)$6");
+	$method = "replacement method" if($rest =~ m/^[ \t]*<-/);
+	## Extract the first argument from the argument list.
+	substr($match, 1, -1) =~ m/\s*([^,]+),\s*(.*)/s;
+	## Now put things together.
+	$str = wrap("$ini\#\# ", "$ini\#\#   ",
+		    "S4 $method for signature '$sig':\n") .
+			"$ini$1$fun$2";
+	$str .= "]" x length($fun) if($fun ne "\$");
+	$text =~ s/$S4method_RE.*/$str$rest/s;
+    }
+    
     $text;
 }
 
@@ -1131,6 +1210,7 @@ sub code2html {
 				  "## Not run: ", "## End(Not run)");
     $text = drop_full_command($text, "testonly");
     $text = drop_full_command($text, "dontshow");
+    $text = undefine_command($text, "donttest");
     $text =~ s/\\\\/\\/go;
 
     $text = unmark_brackets($text);
@@ -1621,21 +1701,21 @@ sub text2txt {
 
     $text = replace_command($text,
 			    "itemize",
-			    "\n.in +$INDENT\n",
-			    "\n.in -$INDENT\n");
+			    "\n\n.in +$INDENT\n",
+			    "\n\n.in -$INDENT\n");
 
     $text = replace_command($text,
 			    "enumerate",
-			    "\n.inen +$INDENT\n",
-			    "\n.inen -$INDENT\n");
+			    "\n\n.inen +$INDENT\n",
+			    "\n\n.inen -$INDENT\n");
 
     $text =~ s/\\item\s+/\n.ti * \n/go;
 
     ## Handle '\describe':
     $text = replace_command($text,
 			    "describe",
-			    "\n.in +$INDENTDD\n",
-			    "\n.in -$INDENTDD\n");
+			    "\n\n.in +$INDENTDD\n",
+			    "\n\n.in -$INDENTDD\n");
     while(checkloop($loopcount++, $text, "\\item")
 	  && $text =~ /\\itemnormal/s) {
 	my ($id, $arg, $desc)  = get_arguments("item", $text, 2);
@@ -1674,6 +1754,7 @@ sub code2txt {
 				  "## Not run: ", "## End(Not run)");
     $text = drop_full_command($text, "testonly");
     $text = drop_full_command($text, "dontshow");
+    $text = undefine_command($text, "donttest");
 
     $text = unmark_brackets($text);
 
@@ -2389,6 +2470,7 @@ sub code2nroff {
 				  "## Not run: ", "## End(Not run)");
     $text = drop_full_command($text, "testonly");
     $text = drop_full_command($text, "dontshow");
+    $text = undefine_command($text, "donttest");
 
     $text = unmark_brackets($text);
 
@@ -2487,11 +2569,16 @@ sub rdoc2ex { # (filename)
 	    $Exout->print("### Encoding: $encoding\n\n");
 	}
 
+	my $qaliases = "";
+	foreach my $a (@aliases) {
+	    $a = "'" . $a . "'" if $a =~ / / ;
+	    $qaliases = $qaliases . " " . $a;
+	}
 	$Exout->print(wrap("### Name: ", "###   ", $blocks{"name"}),
 		      "\n",
 		      wrap("### Title: ", "###   ", $tit),
 		      "\n",
-		      wrap("### Aliases: ", "###   ", @aliases),
+		      wrap("### Aliases:", "###   ", $qaliases),
 		      "\n",
 		      wrap("### Keywords: ", "###   ", @keywords),
 		      "\n\n");
@@ -2533,6 +2620,8 @@ sub code2examp {
     $text = replace_prepend_command($text, "dontrun",
 				    "## Not run: ", "## End(Not run)",
 				    "##D ");
+    $text = replace_addnl_command($text, "donttest",
+				  "## No test: ", "## End(No test)");
     $text =~ s/\\\\/\\/g;
 
     $text = unmark_brackets($text);
@@ -2732,6 +2821,7 @@ sub code2latex {
 				  "## Not run: ", "## End(Not run)");
     $text = drop_full_command($text, "testonly");
     $text = drop_full_command($text, "dontshow");
+    $text = undefine_command($text, "donttest");
 
     $text = unmark_brackets($text);
 
@@ -3283,6 +3373,7 @@ sub code2Ssgm {
 				  "## Not run: ", "## End(Not run)");
     $text = drop_full_command($text, "testonly");
     $text = drop_full_command($text, "dontshow");
+    $text = undefine_command($text, "donttest");
     $text =~ s/\\\\/\\/go;
 
     $text = unmark_brackets($text);

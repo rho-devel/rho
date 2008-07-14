@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-2007  The R Development Core Team.
+ *  Copyright (C) 2000-2008  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -61,22 +61,37 @@
 # include <config.h>
 #endif
 
+/* needed on Windows to avoid redefinition of tzname as _tzname */
+#define _NO_OLDNAMES
 #include <time.h>
+#undef _NO_OLDNAMES
+
+#include <errno.h>
+
+#ifdef Win32
+#define gmtime R_gmtime
+#define localtime R_localtime
+#define mktime R_mktime
+extern struct tm*  gmtime (const time_t*);
+extern struct tm*  localtime (const time_t*);
+extern time_t mktime (struct tm*);
+#endif
+
 #include <stdlib.h> /* for setenv or putenv */
 #include <Defn.h>
 
-/* The glibc in RH8.0 is broken and assumes that dates before 1970-01-01
-   do not exist. So does Windows, but at least there we do not need a
-   run-time test.  As from 1.6.2, test the actual mktime code and cache the
-   result on glibc >= 2.2. (It seems this started between 2.2.5 and 2.3,
-   and RH8.0 has an unreleased version in that gap.)
+/* The glibc in RH8.0 was broken and assumed that dates before
+   1970-01-01 do not exist.  So does Windows, but its code was replaced
+   in R 2.7.0.  As from 1.6.2, test the actual mktime code and cache
+   the result on glibc >= 2.2. (It seems this started between 2.2.5
+   and 2.3, and RH8.0 had an unreleased version in that gap.)
 
    Sometime in late 2004 this was reverted in glibc.
 */
 
 static Rboolean have_broken_mktime(void)
 {
-#if defined(Win32) || defined(_AIX)
+#if defined(_AIX)
     return TRUE;
 #elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) && __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 2
     static int test_result = -1;
@@ -116,7 +131,7 @@ namespace {
 
 #ifndef HAVE_POSIX_LEAPSECONDS
 /* There have been 23 leapseconds, the last being on 2005-12-31.
-   But older OSes will not necessarily know about number 23, so we do 
+   But older OSes will not necessarily know about number 23, so we do
    a run-time test (the OS could have been patched since configure).
  */
 static int n_leapseconds = -1;
@@ -230,7 +245,7 @@ static double mktime00 (struct tm *tm)
     int day = 0;
     int i, year, year0;
     double excess = 0.0;
-    
+
     day = tm->tm_mday - 1;
     year0 = 1900 + tm->tm_year;
     /* safety check for unbounded loops */
@@ -271,13 +286,25 @@ static double guess_offset (struct tm *tm)
        the smaller offset at same day in Jan or July of a valid year.
        We don't know the timezone rules, but if we choose a year with
        July 1 on the same day of the week we will likely get guess
-       right (since they are usually on Sunday mornings).
+       right (since they are usually on Sunday mornings not in Jan/Feb).
+
+       Update for 2.7.0: no one had DST before 1916, so just use the offset
+       in 1902, if available.
     */
 
     memcpy(&oldtm, tm, sizeof(struct tm));
+    if(!have_broken_mktime() && tm->tm_year < 2) { /* no DST */
+	tm->tm_year = 2;
+	mktime(tm);
+	offset1 = (double) mktime(tm) - mktime00(tm);
+	memcpy(tm, &oldtm, sizeof(struct tm));
+	tm->tm_isdst = 0;
+	return offset1;
+    }
     oldmonth = tm->tm_mon;
     oldmday = tm->tm_mday;
-    oldisdst = tm->tm_isdst;
+    /* We know there was no DST prior to 1916 */
+    oldisdst = (tm->tm_year < 16) ? 0 : tm->tm_isdst;
 
     /* so now look for a suitable year */
     tm->tm_mon = 6;
@@ -285,12 +312,20 @@ static double guess_offset (struct tm *tm)
     tm->tm_isdst = -1;
     mktime00(tm);  /* to get wday valid */
     wday = tm->tm_wday;
-    /* We cannot use 1970 because of the Windows bug with 1970-01-01 east
-       of GMT. */
-    for(i = 71; i < 82; i++) { /* These cover all the possibilities */
-	tm->tm_year = i;
-	mktime(tm);
-	if(tm->tm_wday == wday) break;
+    if (oldtm.tm_year > 137) { /* in the unknown future */
+	for(i = 130; i < 137; i++) { /* These cover all the possibilities */
+	    tm->tm_year = i;
+	    mktime(tm);
+	    if(tm->tm_wday == wday) break;
+	}
+    } else { /* a benighted OS with date before 1970 */
+	/* We could not use 1970 because of the Windows bug with
+	   1970-01-01 east of GMT. */
+	for(i = 71; i < 82; i++) { /* These cover all the possibilities */
+	    tm->tm_year = i;
+	    mktime(tm);
+	    if(tm->tm_wday == wday) break;
+	}
     }
     year = i;
 
@@ -334,24 +369,26 @@ static double mktime0 (struct tm *tm, const int local)
     int i;
 #endif
 
-    if(validate_tm(tm) < 0) return double(-1);
+    if(validate_tm(tm) < 0) {
+#ifdef EOVERFLOW
+	errno = EOVERFLOW;
+#else
+	errno = 79;
+#endif
+	return (double)(-1);
+    }
     if(!local) return mktime00(tm);
 
     OK = Rboolean(tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
-#ifdef Win32
-    /* Microsoft's mktime regards times before 1970-01-01 00:00:00 GMT as
-       invalid! */
-    if(tm->tm_year == 70 && tm->tm_mon == 0 && tm->tm_mday <= 1) OK = FALSE;
-#endif
     if(OK) {
 	res = double(mktime(tm));
 	if (res == double(-1)) return res;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
-        for(i = 0; i < n_leapseconds; i++)
-            if(res > leapseconds[i]) res -= 1.0;
+	for(i = 0; i < n_leapseconds; i++)
+	    if(res > leapseconds[i]) res -= 1.0;
 #endif
-        return res;
+	return res;
 /* watch the side effect here: both calls alter their arg */
     } else return guess_offset(tm) + mktime00(tm);
 }
@@ -369,7 +406,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	t = time_t(d);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
-        for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
+	for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
 #endif
 	return local ? localtime(&t) : gmtime(&t);
     }
@@ -416,7 +453,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	res->tm_isdst = -1;
 	/* now this might be a different day */
 	if(shift - diff < 0) res->tm_yday--;
-	if(shift - diff > 24) res->tm_yday++;	
+	if(shift - diff > 24) res->tm_yday++;
 	diff2 = int(guess_offset(res)/60);
 	if(diff2 != diff) {
 	    res->tm_min += (diff - diff2);
@@ -451,13 +488,13 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
 	tmp -= n_leapseconds;
 #endif
 	REAL(ans)[0] = tmp;
-    } else 
+    } else
 	REAL(ans)[0] = NA_REAL;
     return ans;
 #else
     time_t res = time(NULL);
     double tmp = res;
-    if(res != (time_t)(-1)) {
+    if(res != (time_t)(-1)) { /* -1 must be an error */
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
 	tmp -= n_leapseconds;
@@ -470,17 +507,18 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 #endif
 	REAL(ans)[0] = tmp;
-    }
+    } else REAL(ans)[0] = NA_REAL;
     return ans;
 #endif
 }
 
 
 #ifdef Win32
-#define tzname _tzname
+extern void tzset(void);
+extern char *tzname[2];
 #elif defined(__CYGWIN__)
 extern __declspec(dllimport) char *tzname[2];
-#else /* Unix */
+#else
 extern char *tzname[2];
 #endif
 
@@ -592,7 +630,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_STRING_ELT(ansnames, i, mkChar(ltnames[i]));
 
     for(i = 0; i < n; i++) {
-        struct tm dummy, *ptm = &dummy;
+	struct tm dummy, *ptm = &dummy;
 	double d = REAL(x)[i];
 	if(R_FINITE(d)) {
 	    ptm = localtime0(&d, 1 - isgmt, &dummy);
@@ -682,9 +720,14 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 	   tm.tm_mon == NA_INTEGER || tm.tm_year == NA_INTEGER)
 	    REAL(ans)[i] = NA_REAL;
 	else {
+	    errno = 0;
 	    tmp = mktime0(&tm, 1 - isgmt);
-	    REAL(ans)[i] = (tmp == double(-1)) ? 
+#ifdef MKTIME_SETS_ERRNO
+	    REAL(ans)[i] = errno ? NA_REAL : tmp + (secs - fsecs);
+#else
+	    REAL(ans)[i] = (tmp == (double)(-1)) ?
 		NA_REAL : tmp + (secs - fsecs);
+#endif
 	}
     }
 
@@ -715,7 +758,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     tz = getAttrib(x, install("tzone"));
 
     /* workaround for glibc & MacOS X bugs in strftime: they have
-       undocumented and non-POSIX/C99 time zone components 
+       undocumented and non-POSIX/C99 time zone components
      */
     memset(&tm, 0, sizeof(tm));
 
@@ -723,7 +766,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     for(i = 0; i < 9; i++) {
 	nlen[i] = LENGTH(VECTOR_ELT(x, i));
 	if(nlen[i] > n) n = nlen[i];
-	SET_VECTOR_ELT(x, i, coerceVector(VECTOR_ELT(x, i), 
+	SET_VECTOR_ELT(x, i, coerceVector(VECTOR_ELT(x, i),
 					  i > 0 ? INTSXP : REALSXP));
     }
     if(n > 0) N = (m > n) ? m:n; else N = 0;
@@ -748,7 +791,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(validate_tm(&tm) < 0) SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		const char *q = CHAR(STRING_ELT(sformat, i%m));
-                char buf2[500];
+		char buf2[500];
 		strcpy(buf2,  q);
 		p = strstr(q, "%OS");
 		if(p) {
@@ -776,7 +819,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    int i = 0;
 		    if(LENGTH(tz) == 3) {
 			if(tm.tm_isdst > 0) i = 2;
-		        else if(tm.tm_isdst == 0) i = 1;
+			else if(tm.tm_isdst == 0) i = 1;
 			else i = 0; /* Use base timezone name */
 		    }
 		    p = CHAR(STRING_ELT(tz, i));
@@ -875,7 +918,7 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* for glibc's sake. That only sets some unspecified fields,
 	   sometimes. */
 	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
-	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_yday = 
+	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_yday =
 	    tm.tm_wday = NA_INTEGER;
 	tm.tm_isdst = -1;
 	invalid = STRING_ELT(x, i%n) == NA_STRING ||
@@ -1020,6 +1063,7 @@ SEXP attribute_hidden do_POSIXlt2D(SEXP call, SEXP op, SEXP args, SEXP env)
 	   tm.tm_year == NA_INTEGER || validate_tm(&tm) < 0)
 	    REAL(ans)[i] = NA_REAL;
 	else {
+	    /* -1 must be error as seconds were zeroed */
 	    double tmp = mktime00(&tm);
 	    REAL(ans)[i] = (tmp == -1) ? NA_REAL : tmp/86400;
 	}

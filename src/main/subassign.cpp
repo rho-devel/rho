@@ -36,7 +36,7 @@
 
 /*		Warnings/Errors
 
-    In this file we generally do not make use of the call, as it 
+    In this file we generally do not make use of the call, as it
     will be something like `[<-`(`*tmp`, ...) and that just confuses
     the user.  The call that is deduced from the context is generally
     much clearer.
@@ -55,7 +55,7 @@
  *  NB these tables are out of date, and exclude tupes 21, 22, 23, 24 ...
  *
  x \ y   NIL  SYM CLOS  ENV PROM LANG SPE- BUI-  LGL  INT REAL CPLX  STR  VEC EXPR  FUN
-			              CIAL LTIN
+				      CIAL LTIN
  LANG    600  601  603  604  605  606  607  608  610  613  614  615  616  619  620  699
  LGL    1000 1001 1003 1004 1005 1006 1007 1008 1010 1013 1014 1015 1016 1019 1020 1099
  INT    1300 1301 1303 1304 1305 1306 1307 1308 1310 1313 1314 1315 1316 1319 1320 1399
@@ -213,11 +213,11 @@ static SEXP embedInVector(SEXP v)
 /* Level 1 is used in VectorAssign, MatrixAssign, ArrayAssign.
    That coerces RHS to a list or expression.
 
-   Level 2 is used in do_subassign2_dflt. 
+   Level 2 is used in do_subassign2_dflt.
    This does not coerce when assigning into a list.
 */
 
-static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level, 
+static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 			    SEXP call)
 {
     /* A rather pointless optimization, but level 2 used to be handled
@@ -228,9 +228,14 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
     Rboolean x_is_object = Rboolean(OBJECT(*x));
 
     switch (which) {
-
+    case 1000:	/* logical    <- null       */
+    case 1300:	/* integer    <- null       */
+    case 1400:	/* real	      <- null       */
+    case 1500:	/* complex    <- null       */
+    case 1606:	/* character  <- null       */
     case 1900:  /* vector     <- null       */
     case 2000:  /* expression <- null       */
+    case 2400:	/* raw        <- null       */
 
     case 1010:	/* logical    <- logical    */
     case 1310:	/* integer    <- logical    */
@@ -470,6 +475,10 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* accept elements from the RHS. */
     which = SubassignTypeFix(&x, &y, stretch, 1, call);
     /* = 100 * TYPEOF(x) + TYPEOF(y);*/
+    if (n == 0) {
+	UNPROTECT(2);
+	return x;
+    }
     ny = length(y);
     nx = length(x);
 
@@ -761,6 +770,7 @@ static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	error(_("number of items to replace is not a multiple of replacement length"));
 
     which = SubassignTypeFix(&x, &y, 0, 1, call);
+    if (n == 0) return x;
 
     PROTECT(x);
 
@@ -825,7 +835,7 @@ static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	}
 	break;
 
-    /* case 1014:  logical   <- real	  */ 
+    /* case 1014:  logical   <- real	  */
     /* case 1314:  integer   <- real	  */
     case 1414:	/* real	     <- real	  */
 
@@ -1043,7 +1053,7 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 
     which = SubassignTypeFix(&x, &y, 0, 1, call);/* = 100 * TYPEOF(x) + TYPEOF(y);*/
 
-    if (ny == 0) {
+    if (n == 0) {
 	UNPROTECT(1);
 	return(x);
     }
@@ -1156,7 +1166,7 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 
 	    RAW(x)[ii] = RAW(y)[i % ny];
 	    break;
-	    
+
 	default:
 	error(_("incompatible types (from %s to %s) in array subset assignment"),
 	      type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
@@ -1322,7 +1332,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* duplicate it so that only the local version is mutated. */
     /* This will duplicate more often than necessary, but saves */
     /* over always duplicating. */
-    /* FIXME: shouldn't x be protected?  It is (as args is)! */
+    /* Shouldn't x be protected?  It is (as args is)! */
 
     if (NAMED(CAR(args)) == 2)
 	x = SETCAR(args, duplicate(CAR(args)));
@@ -1446,7 +1456,7 @@ SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
     return do_subassign2_dflt(call, op, ans, rho);
 }
 
-SEXP attribute_hidden 
+SEXP attribute_hidden
 do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP dims, indx, names, newname, subs, x, xtop, xup, y;
@@ -1463,11 +1473,11 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* convert to a zero length list (VECSXP). */
 
     if (isNull(x)) {
-        if (isNull(y)) {
-            UNPROTECT(1);
+	if (isNull(y)) {
+	    UNPROTECT(1);
 	    return x;
-        }
-        UNPROTECT(1);
+	}
+	UNPROTECT(1);
 	if (length(y) == 1)
 	    PROTECT(x = allocVector(TYPEOF(y), 0));
 	else
@@ -1509,7 +1519,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(isVectorList(x) && length(thesub) > 1) {
 		for(i = 0; i < len - 1; i++) {
 		    if(LENGTH(x) == 0 || !isVectorList(x))
-			error(_("recursive indexing failed at level %d\n"), 
+			error(_("recursive indexing failed at level %d\n"),
 			      i+1);
 		    off = get1index(CAR(subs), getAttrib(x, R_NamesSymbol),
 				    length(x), /*partial ok*/TRUE, i, call);
@@ -1565,7 +1575,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	case 1010:	/* logical   <- logical	  */
 	case 1310:	/* integer   <- logical	  */
-        /* case 1013:	   logical   <- integer	  */
+	/* case 1013:	   logical   <- integer	  */
 	case 1313:	/* integer   <- integer	  */
 
 	    INTEGER(x)[offset] = INTEGER(y)[0];
@@ -1579,7 +1589,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    else
 		REAL(x)[offset] = INTEGER(y)[0];
 	    break;
-        /* case 1014:	   logical   <- real	  */
+	/* case 1014:	   logical   <- real	  */
 	/* case 1314:	   integer   <- real	  */
 	case 1414:	/* real	     <- real	  */
 
@@ -1671,14 +1681,14 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1919:      /* vector     <- vector     */
 	case 2020:	/* expression <- expression */
 
-            if( NAMED(y) ) y = duplicate(y);
+	    if( NAMED(y) ) y = duplicate(y);
 	    SET_VECTOR_ELT(x, offset, y);
 	    break;
 
 	case 2424:      /* raw <- raw */
 
-           RAW(x)[offset] = RAW(y)[0];
-           break;
+	   RAW(x)[offset] = RAW(y)[0];
+	   break;
 
 	default:
 	    error(_("incompatible types (from %s to %s) in [[ assignment"),

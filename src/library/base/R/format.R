@@ -173,7 +173,10 @@ formatC <- function (x, digits = NULL, width = NULL,
     flag <- as.character(flag)
     nf <- strsplit(flag, "")[[1]]
     if(!all(nf %in% c("0", "+", "-", " ", "#")))
-       stop("'flag' can contain only '0+- #'")
+	stop("'flag' can contain only '0+- #'")
+    if(digits > 0 && any(nf == "#"))
+	digits <- -digits # C-code will notice "do not drop trailing zeros"
+
     attr(x, "Csingle") <- NULL	# avoid intepreting as.single
     r <- .C("str_signif",
 	    x = x,
@@ -198,8 +201,10 @@ formatC <- function (x, digits = NULL, width = NULL,
     r
 }
 
-format.factor <- function(x, ...)
-    format(as.character(x), ...)
+format.factor <- function (x, ...)
+    format(structure(as.character(x), names=names(x),
+                     dim=dim(x), dimnames=dimnames(x)), ...)
+
 
 format.data.frame <- function(x, ..., justify = "none")
 {
@@ -257,6 +262,7 @@ format.AsIs <- function(x, width = 12, ...)
     }
     ## AsIs might be around a matrix, which is not a class.
     dim(rvec) <- dim(x)
+    dimnames(rvec) <- dimnames(x)
     format.default(rvec, justify = "right")
 }
 

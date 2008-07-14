@@ -147,7 +147,7 @@ nls_iter(SEXP m, SEXP control, SEXP doTraceArg)
 	error(_("'%s' absent"), "control$printEval");
     printEval = asLogical(conv);
 
-#define CONV_INFO_MSG(_STR_, _I_) 					\
+#define CONV_INFO_MSG(_STR_, _I_)					\
 	ConvInfoMsg(_STR_, i, _I_, fac, minFac, maxIter, convNew)
 
 #define NON_CONV_FINIS(_ID_, _MSG_)		\
@@ -160,9 +160,9 @@ nls_iter(SEXP m, SEXP control, SEXP doTraceArg)
 
 #define NON_CONV_FINIS_1(_ID_, _MSG_, _A1_)	\
     if(warnOnly) {				\
-        char msgbuf[70];			\
+	char msgbuf[70];			\
 	warning(_MSG_, _A1_);			\
-        sprintf(msgbuf, _MSG_, _A1_);		\
+	sprintf(msgbuf, _MSG_, _A1_);		\
 	return CONV_INFO_MSG(msgbuf, _ID_);	\
     }						\
     else					\
@@ -170,9 +170,9 @@ nls_iter(SEXP m, SEXP control, SEXP doTraceArg)
 
 #define NON_CONV_FINIS_2(_ID_, _MSG_, _A1_, _A2_)	\
     if(warnOnly) {					\
-        char msgbuf[70];				\
+	char msgbuf[70];				\
 	warning(_MSG_, _A1_, _A2_);			\
-        sprintf(msgbuf, _MSG_, _A1_, _A2_);		\
+	sprintf(msgbuf, _MSG_, _A1_, _A2_);		\
 	return CONV_INFO_MSG(msgbuf, _ID_);		\
     }							\
     else						\
@@ -361,7 +361,7 @@ numeric_deriv(SEXP expr, SEXP theta, SEXP rho, SEXP dir)
 	    for(k = 0; k < LENGTH(ans); k++) {
 		if (!R_FINITE(REAL(ans_del)[k]))
 		    error(_("Missing value or an infinity produced when evaluating the model"));
-    		REAL(gradient)[start + k] =
+		REAL(gradient)[start + k] =
 		    rDir[i] * (REAL(ans_del)[k] - REAL(ans)[k])/delta;
 	    }
 	    REAL(VECTOR_ELT(pars, i))[j] = origPar;
@@ -371,4 +371,3 @@ numeric_deriv(SEXP expr, SEXP theta, SEXP rho, SEXP dir)
     UNPROTECT(3);
     return ans;
 }
-

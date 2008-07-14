@@ -61,7 +61,7 @@ static Rboolean random1(double (*f) (double), double *a, int na, double *x, int 
     for (i = 0; i < n; i++) {
 	ai = a[i % na];
 	x[i] = f(ai);
-	if (!R_FINITE(x[i])) naflag = TRUE;
+	if (ISNAN(x[i])) naflag = TRUE;
     }
     return(naflag);
 }
@@ -79,7 +79,6 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, a;
     int i, n, na;
-    Rboolean naflag = FALSE;
     checkArity(op, args);
     if (!isVector(CAR(args)) || !isNumeric(CADR(args)))
 	invalid(call);
@@ -98,10 +97,11 @@ SEXP attribute_hidden do_random1(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (na < 1) {
 	for (i = 0; i < n; i++)
 	    REAL(x)[i] = NA_REAL;
+	warning(_("NAs produced"));
     }
     else {
+	Rboolean naflag = FALSE;
 	PROTECT(a = coerceVector(CADR(args), REALSXP));
-	naflag = FALSE;
 	GetRNGstate();
 	switch (PRIMVAL(op)) {
 	    RAND1(0, rchisq);
@@ -133,14 +133,14 @@ static Rboolean random2(double (*f) (double, double), double *a, int na, double 
 	ai = a[i % na];
 	bi = b[i % nb];
 	x[i] = f(ai, bi);
-	if (!R_FINITE(x[i])) naflag = TRUE;
+	if (ISNAN(x[i])) naflag = TRUE;
     }
     return(naflag);
 }
 
 #define RAND2(num,name) \
 	case num: \
-		random2(name, REAL(a), na, REAL(b), nb, REAL(x), n); \
+		naflag = random2(name, REAL(a), na, REAL(b), nb, REAL(x), n); \
 		break
 
 /* "do_random2" - random sampling from 2 parameter families. */
@@ -150,7 +150,6 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, a, b;
     int i, n, na, nb;
-    Rboolean naflag = FALSE;
     checkArity(op, args);
     if (!isVector(CAR(args)) ||
 	!isNumeric(CADR(args)) ||
@@ -172,11 +171,12 @@ SEXP attribute_hidden do_random2(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (na < 1 || nb < 1) {
 	for (i = 0; i < n; i++)
 	    REAL(x)[i] = NA_REAL;
+	warning(_("NAs produced"));
     }
     else {
+	Rboolean naflag = FALSE;
 	PROTECT(a = coerceVector(CADR(args), REALSXP));
 	PROTECT(b = coerceVector(CADDR(args), REALSXP));
-	naflag = FALSE;
 	GetRNGstate();
 	switch (PRIMVAL(op)) {
 	    RAND2(0, rbeta);
@@ -217,14 +217,14 @@ static Rboolean random3(double (*f) (double, double, double), double *a, int na,
 	bi = b[i % nb];
 	ci = c[i % nc];
 	x[i] = f(ai, bi, ci);
-	if (!R_FINITE(x[i])) naflag = TRUE;
+	if (ISNAN(x[i])) naflag = TRUE;
     }
     return(naflag);
 }
 
 #define RAND3(num,name) \
 	case num: \
-		random3(name, REAL(a), na, REAL(b), nb, REAL(c), nc, REAL(x), n); \
+		naflag = random3(name, REAL(a), na, REAL(b), nb, REAL(c), nc, REAL(x), n); \
 		break
 
 
@@ -235,7 +235,6 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, a, b, c;
     int i, n, na, nb, nc;
-    Rboolean naflag = FALSE;
     checkArity(op, args);
     if (!isVector(CAR(args))) invalid(call);
     if (LENGTH(CAR(args)) == 1) {
@@ -261,12 +260,13 @@ SEXP attribute_hidden do_random3(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (na < 1 || nb < 1 || nc < 1) {
 	for (i = 0; i < n; i++)
 	    REAL(x)[i] = NA_REAL;
+	warning(_("NAs produced"));
     }
     else {
+	Rboolean naflag = FALSE;
 	PROTECT(a = coerceVector(a, REALSXP));
 	PROTECT(b = coerceVector(b, REALSXP));
 	PROTECT(c = coerceVector(c, REALSXP));
-	naflag = FALSE;
 	GetRNGstate();
 	switch (PRIMVAL(op)) {
 	    RAND3(0, rhyper);
@@ -330,8 +330,8 @@ static Rboolean Walker_warn = FALSE;
  */
 
 #define SMALL 10000
-static void 
-walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans) 
+static void
+walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
 {
     double *q, rU;
     int i, j, k;
@@ -341,8 +341,8 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
 	Walker_warn = TRUE;
 	warning("Walker's alias method used: results are different from R < 2.2.0");
     }
-    
-    
+
+
     /* Create the alias tables.
        The idea is that for HL[0] ... L-1 label the entries with q < 1
        and L ... H[n-1] label those >= 1.
@@ -482,7 +482,7 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
     k = asInteger(CAR(args)); args = CDR(args);
     sreplace = CAR(args); args = CDR(args);
     if( length(sreplace) != 1 )
-         error(_("invalid '%s' argument"), "replace");
+	 error(_("invalid '%s' argument"), "replace");
     replace = asLogical(sreplace);
     prob = CAR(args);
     if (replace == NA_LOGICAL)

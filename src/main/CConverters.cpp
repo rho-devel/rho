@@ -54,7 +54,7 @@ static R_toCConverter   *StoCConverters = NULL;
 */
 attribute_hidden void *
 Rf_convertToC(SEXP s, R_CConvertInfo *info, int *success,
-              R_toCConverter **converter)
+	      R_toCConverter **converter)
 {
     void *ans;
     R_toCConverter *tmp = StoCConverters;
@@ -196,6 +196,7 @@ R_converterMatchClass(SEXP obj, R_CConvertInfo *inf, R_toCConverter *el)
     SEXP klasses = getAttrib(obj, R_ClassSymbol);
     int i, n;
     n = length(klasses);
+    /* assumes class names are ASCII */
     for(i = 0; i < n ; i++) {
 	if(strcmp(translateChar(STRING_ELT(klasses,i)),
 		  reinterpret_cast<char *>(el->userData)) == 0) {
@@ -332,5 +333,3 @@ do_setToCConverterActiveStatus(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(1);
     return(status);
 }
-
-

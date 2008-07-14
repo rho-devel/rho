@@ -67,16 +67,15 @@ namespace CXXR {
 	 * @param str The text of the required CachedString.
 	 *          (Embedded null characters are permissible.)
 	 *
-	 * @param encoding The encoding of the required CachedString,
-	 *          as  indicated by the LATIN1_MASK and UTF8_MASK
-	 *          bits.  Zero signifies ASCII encoding, and at most
-	 *          one of the MASK bits may be set (checked).
+	 * @param encoding The encoding of the required CachedString.
+	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
+	 *          in this context (checked).
 	 *
 	 * @return Pointer to a CachedString representing the
 	 *         specified text in the specified encoding.
 	 */
 	static const CachedString* obtain(const std::string& str,
-					  unsigned int encoding = 0);
+					  cetype_t encoding = CE_NATIVE);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -92,7 +91,7 @@ namespace CXXR {
     private:
 	// The first element of the key is the text, the second
 	// element the encoding:
-	typedef std::pair<std::string, unsigned int> key;
+	typedef std::pair<std::string, cetype_t> key;
 
 	// Hashing is based simply on the text of the key, not on its
 	// encoding:
@@ -179,22 +178,20 @@ extern "C" {
      *
      * @param str The text of the required cached string.
      *
-     * @param encoding The encoding of the required CachedString,
-     *          as indicated by the LATIN1_MASK and UTF8_MASK
-     *          bits.  Zero signifies ASCII encoding, and at most
-     *          one of the MASK bits may be set (checked).
+     * @param encoding The encoding of the required CachedString.
+     *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted in
+     *          this context (checked).
      *
      * @return Pointer to a string object representing the specified
      *         text in the specified encoding.
      */
 #ifndef __cplusplus
-    SEXP Rf_mkCharEnc(const char * str, int encoding);
+    SEXP Rf_mkCharCE(const char * str, cetype_t encoding);
 #else
-    inline SEXP Rf_mkCharEnc(const char * str, int encoding)
+    inline SEXP Rf_mkCharCE(const char * str, cetype_t encoding)
     {
-	return
-	    const_cast<CXXR::CachedString*>(CXXR::CachedString::obtain(str,
-								       encoding));
+	using namespace CXXR;
+	return const_cast<CachedString*>(CachedString::obtain(str, encoding));
     }
 #endif
 

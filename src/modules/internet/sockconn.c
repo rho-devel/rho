@@ -103,7 +103,7 @@ static Rboolean sock_open(Rconnection con)
 	strcpy(con->description, buf);
     }
     this->fd = sock;
-    
+
     mlen = strlen(con->mode);
     con->isopen = TRUE;
     if(mlen >= 2 && con->mode[mlen - 1] == 'b') con->text = FALSE;
@@ -164,7 +164,7 @@ static int sock_fgetc_internal(Rconnection con)
 {
     unsigned char c;
     int n;
-  
+
     n = sock_read_helper(con, (char *)&c, 1);
     return (n == 1) ? c : R_EOF;
 }
@@ -183,25 +183,25 @@ static size_t sock_write(const void *ptr, size_t size, size_t nitems,
     return R_SockWrite(this->fd, ptr, size * nitems)/size;
 }
 
-Rconnection in_R_newsock(const char *host, int port, int server, 
+Rconnection in_R_newsock(const char *host, int port, int server,
 			 const char * const mode)
 {
     Rconnection new;
 
     new = (Rconnection) malloc(sizeof(struct Rconn));
     if(!new) error(_("allocation of socket connection failed"));
-    new->connclass = (char *) malloc(strlen("socket") + 1);
+    new->connclass = (char *) malloc(strlen("sockconn") + 1);
     if(!new->connclass) {
 	free(new);
 	error(_("allocation of socket connection failed"));
     }
-    strcpy(new->connclass, "socket");
+    strcpy(new->connclass, "sockconn");
     new->description = (char *) malloc(strlen(host) + 10);
     if(!new->description) {
 	free(new->connclass); free(new);
 	error(_("allocation of socket connection failed"));
     }
-    init_con(new, host, mode);
+    init_con(new, host, CE_NATIVE, mode);
     new->open = &sock_open;
     new->close = &sock_close;
     new->vfprintf = &dummy_vfprintf;

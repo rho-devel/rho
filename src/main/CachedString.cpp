@@ -45,7 +45,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*mkCharp)(const char*) = Rf_mkChar;
-	SEXP (*mkCharEncp)(const char*, int) = Rf_mkCharEnc;
+	SEXP (*mkCharCEp)(const char*, cetype_t) = Rf_mkCharCE;
     }
 }
 
@@ -58,13 +58,13 @@ CachedString::map* CachedString::cache()
 }
 
 const CachedString* CachedString::obtain(const std::string& str,
-					 unsigned int encoding)
+					 cetype_t encoding)
 {
     // This will be checked again when we actually construct the
     // CachedString, but we precheck now so that we don't create an
     // invalid cache key:
-    if (encoding != 0 && encoding != UTF8_MASK && encoding != LATIN1_MASK)
-        error("unknown encoding mask: %d", encoding);
+    if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
+        error("unknown encoding: %d", encoding);
     pair<map::iterator, bool> pr
 	= cache()->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;

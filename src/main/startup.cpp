@@ -18,7 +18,7 @@
   R : A Computer Language for Statistical Data Analysis
   Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
   Copyright (C) 1997-2004   Robert Gentleman, Ross Ihaka
-                            and the R Development Core Team
+			    and the R Development Core Team
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -84,8 +84,8 @@ char *R_LibraryFileName(const char *file, char *buf, size_t bsize)
     if (snprintf(buf, bsize, "%s/library/base/R/%s", R_Home, file) < 0)
 	error(_("R_LibraryFileName: buffer too small"));
     return buf;
-}     
-     
+}
+
 attribute_hidden
 FILE *R_OpenSysInitFile(void)
 {
@@ -125,9 +125,9 @@ FILE *R_OpenSiteFile(void)
 static char workspace_name[100] = ".RData";
 
 #else
-static char workspace_name[MAX_PATH] = ".RData";
+static char workspace_name[PATH_MAX] = ".RData";
 
-void set_workspace_name(char *fn)
+void set_workspace_name(const char *fn)
 {
     strcpy(workspace_name, fn);
 }
@@ -224,4 +224,3 @@ void R_SetParams(Rstart Rp)
     R_SetWin32(Rp);
 #endif
 }
-

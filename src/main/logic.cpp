@@ -68,7 +68,7 @@ SEXP attribute_hidden do_logic(SEXP call, SEXP op, SEXP args, SEXP env)
 #define isRaw(x) (TYPEOF(x) == RAWSXP)
 static SEXP lbinary(SEXP call, SEXP op, SEXP args)
 {
-/* logical binary : "&" or "|" */ 
+/* logical binary : "&" or "|" */
     SEXP x, y, dims, tsp, klass, xnames, ynames;
     int mismatch, nx, ny, xarray, yarray, xts, yts;
     mismatch = 0;
@@ -76,7 +76,7 @@ static SEXP lbinary(SEXP call, SEXP op, SEXP args)
     y = CADR(args);
     if (isRaw(x) && isRaw(y)) {
     } else if (!isNumeric(x) || !isNumeric(y))
-	errorcall(call, 
+	errorcall(call,
 		  _("operations are possible only for numeric or logical types"));
     tsp = R_NilValue;		/* -Wall */
     klass = R_NilValue;		/* -Wall */
@@ -131,20 +131,20 @@ static SEXP lbinary(SEXP call, SEXP op, SEXP args)
 	}
     }
     if(mismatch)
-	warningcall(call, 
+	warningcall(call,
 		    _("longer object length is not a multiple of shorter object length"));
 
     if (isRaw(x) && isRaw(y)) {
 	PROTECT(x = binaryLogic2(PRIMVAL(op), x, y));
     } else {
 	if (!isNumeric(x) || !isNumeric(y))
-	    errorcall(call, 
+	    errorcall(call,
 		      _("operations are possible only for numeric or logical types"));
 	x = SETCAR(args, coerceVector(x, LGLSXP));
 	y = SETCADR(args, coerceVector(y, LGLSXP));
 	PROTECT(x = binaryLogic(PRIMVAL(op), x, y));
     }
-    
+
 
     if (dims != R_NilValue) {
 	setAttrib(x, R_DimSymbol, dims);
@@ -181,7 +181,7 @@ static SEXP lunary(SEXP call, SEXP op, SEXP arg)
     PROTECT(names = getAttrib(arg, R_NamesSymbol));
     PROTECT(dim = getAttrib(arg, R_DimSymbol));
     PROTECT(dimnames = getAttrib(arg, R_DimNamesSymbol));
-    PROTECT(x = allocVector(isRaw(arg)?RAWSXP:LGLSXP, len));    
+    PROTECT(x = allocVector(isRaw(arg)?RAWSXP:LGLSXP, len));
     switch(TYPEOF(arg)) {
     case LGLSXP:
 	for (i = 0; i < len; i++)
@@ -230,7 +230,7 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
     s1 = eval(s1, env);
     if (!isNumeric(s1))
 	errorcall(call, _("invalid 'x' type in 'x %s y'"),
-		  PRIMVAL(op) == 1 ? "&&" : "||"); 
+		  PRIMVAL(op) == 1 ? "&&" : "||");
     x1 = asLogical(s1);
 
 #define get_2nd							\
@@ -246,7 +246,7 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    LOGICAL(ans)[0] = FALSE;
 	else {
 	    get_2nd;
-	    if (x1 == NA_LOGICAL) 
+	    if (x1 == NA_LOGICAL)
 		LOGICAL(ans)[0] = (x2 == NA_LOGICAL || x2) ? NA_LOGICAL : x2;
 	    else /* x1 == TRUE */
 		LOGICAL(ans)[0] = x2;
@@ -348,7 +348,7 @@ static SEXP binaryLogic2(int code, SEXP s1, SEXP s2)
     return ans;
 }
 
-static void checkValues(int * x, int n, Rboolean *haveFalse, 
+static void checkValues(int * x, int n, Rboolean *haveFalse,
 			Rboolean *haveTrue, Rboolean *haveNA)
 {
     int i;
@@ -390,9 +390,22 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for (s = args; s != R_NilValue; s = CDR(s)) {
 	t = CAR(s);
+	/* Avoid memeory waste from coercing empty inputs, and also
+	   avoid warnings with empty lists coming from sapply */
+	if(length(t) == 0) continue;
 	/* coerceVector protects its argument so this actually works
 	   just fine */
-	if (TYPEOF(t)  != LGLSXP) t = coerceVector(t, LGLSXP);
+	if (TYPEOF(t)  != LGLSXP) {
+	    /* Coercion of integers seems reasonably safe, but for
+	       other types it is more often than not an error.
+	       One exception is perhaps the result of lapply, but
+	       then sapply was often what was intended. */
+	    if(TYPEOF(t) != INTSXP)
+		warningcall(call,
+			    _("coercing argument of type '%s' to logical"),
+			    type2char(TYPEOF(t)));
+	    t = coerceVector(t, LGLSXP);
+	}
 	checkValues(LOGICAL(t), LENGTH(t), &haveFalse, &haveTrue, &haveNA);
     }
     if (narm)

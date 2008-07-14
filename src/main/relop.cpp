@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  R Development Core Team
+ *  Copyright (C) 1997--2008  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -451,18 +451,6 @@ static SEXP complex_relop(RELOP_TYPE code, SEXP s1, SEXP s2, SEXP call)
     return ans;
 }
 
-#if defined(Win32) && defined(SUPPORT_UTF8)
-#define STRCOLL Rstrcoll
-#else
-
-#ifdef HAVE_STRCOLL
-#define STRCOLL strcoll
-#else
-#define STRCOLL strcmp
-#endif
-
-#endif
-
 
 /* POSIX allows EINVAL when one of the strings contains characters
    outside the collation domain. */
@@ -476,7 +464,7 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
     n = (n1 > n2) ? n1 : n2;
     PROTECT(s1);
     PROTECT(s2);
-    ans = allocVector(LGLSXP, n);
+    PROTECT(ans = allocVector(LGLSXP, n));
 
     switch (code) {
     case EQOP:
@@ -485,13 +473,8 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)  /* This will pretest all cached strings */
-		LOGICAL(ans)[i] = 1;
 	    else
-		if (strcmp(translateChar(c1), translateChar(c2)) == 0)
-		    LOGICAL(ans)[i] = 1;
-		else
-		    LOGICAL(ans)[i] = 0;
+		LOGICAL(ans)[i] = Seql(c1, c2) ? 1 : 0;
 	}
 	break;
     case NEOP:
@@ -500,13 +483,8 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)
-		LOGICAL(ans)[i] = 0;
- 	    else
-		if (strcmp(translateChar(c1), translateChar(c2)) == 0)
-		    LOGICAL(ans)[i] = 0;
-		else
-		    LOGICAL(ans)[i] = 1;
+	    else
+		LOGICAL(ans)[i] = Seql(c1, c2) ? 0 : 1;
 	}
 	break;
     case LTOP:
@@ -515,15 +493,15 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)
+	    else if (c1 == c2)
 		LOGICAL(ans)[i] = 0;
- 	    else {
+	    else {
 		errno = 0;
-		res = STRCOLL(translateChar(c1), translateChar(c2));
-		if(errno)  
+		res = Scollate(c1, c2);
+		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
-		    LOGICAL(ans)[i] = (res < 0)?1:0;
+		    LOGICAL(ans)[i] = (res < 0) ? 1 : 0;
 	    }
 	}
 	break;
@@ -533,15 +511,15 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)
+	    else if (c1 == c2)
 		LOGICAL(ans)[i] = 0;
- 	    else {
+	    else {
 		errno = 0;
-		res = STRCOLL(translateChar(c1), translateChar(c2));
-		if(errno)  
+		res = Scollate(c1, c2);
+		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
-		    LOGICAL(ans)[i] = (res > 0)?1:0;
+		    LOGICAL(ans)[i] = (res > 0) ? 1 : 0;
 	    }
 	}
 	break;
@@ -551,16 +529,15 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)
+	    else if (c1 == c2)
 		LOGICAL(ans)[i] = 1;
- 	    else {
+	    else {
 		errno = 0;
-		res = STRCOLL(translateChar(STRING_ELT(s1, i % n1)),
-			      translateChar(STRING_ELT(s2, i % n2)));
-		if(errno)  
+		res = Scollate(STRING_ELT(s1, i % n1), STRING_ELT(s2, i % n2));
+		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
-		    LOGICAL(ans)[i] = (res <= 0)?1:0;
+		    LOGICAL(ans)[i] = (res <= 0) ? 1 : 0;
 	    }
 	}
 	break;
@@ -570,21 +547,20 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	    c2 = STRING_ELT(s2, i % n2);
 	    if (c1 == NA_STRING || c2 == NA_STRING)
 		LOGICAL(ans)[i] = NA_LOGICAL;
- 	    else if (c1 == c2)
+	    else if (c1 == c2)
 		LOGICAL(ans)[i] = 1;
-  	    else {
+	    else {
 		errno = 0;
-		res = STRCOLL(translateChar(STRING_ELT(s1, i % n1)),
-			      translateChar(STRING_ELT(s2, i % n2)));
-		if(errno)  
+		res = Scollate(STRING_ELT(s1, i % n1), STRING_ELT(s2, i % n2));
+		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
-		    LOGICAL(ans)[i] = (res >= 0)?1:0;
+		    LOGICAL(ans)[i] = (res >= 0) ? 1 : 0;
 	    }
 	}
 	break;
     }
-    UNPROTECT(2);
+    UNPROTECT(3);
     return ans;
 }
 
