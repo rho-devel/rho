@@ -174,7 +174,7 @@ R: Makefile
 	(cd $(@D); $(MAKE) $(@F))
 
 $(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES) @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
-	$(MAIN_LINK) -o $@ -u SETLENGTH $(R_bin_OBJECTS) $(R_bin_LDADD)
+	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ -u _SETLENGTH $(R_bin_OBJECTS) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
 	-@mkdir libs
