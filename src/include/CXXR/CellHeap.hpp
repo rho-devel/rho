@@ -157,27 +157,7 @@ namespace CXXR {
 	 * from this heap, or a null pointer (in which case method
 	 * does nothing).
 	 */
-	void deallocate(void* p)
-	{
-	    if (!p) return;
-#ifdef DEBUG_RELEASE_MEM
-	    checkAllocatedCell(p);
-#endif
-#if VALGRIND_LEVEL >= 2
-	    VALGRIND_MEMPOOL_FREE(this, p);
-	    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
-#endif
-	    // check();
-	    Cell* c = new (p) Cell;
-	    if (!m_free_cells)
-		m_free_cells = c;
-	    else if (c < m_free_cells) {
-		c->m_l = m_free_cells;
-		m_free_cells = c;
-	    } else meld_aux(m_free_cells, c);
-	    --m_cells_allocated;
-	    // check();
-	}
+	void deallocate(void* p);
 
 	/** @brief Allocate a cell 'from stock'.
 	 *
@@ -231,7 +211,9 @@ namespace CXXR {
 	// the free list:
 	void checkAllocatedCell(const void* p) const;
 
-	// Return number of cells in the heap at root:
+	// Return number of cells in the heap at root, in the process
+	// checking that cells are organised in increasing address
+	// order, and that no cell has a right child but no left child.
 	static unsigned int countFreeCells(const Cell* root);
 
 	// Return true iff c belongs to the heap at root:
@@ -240,7 +222,8 @@ namespace CXXR {
 	// Combine the heaps pointed to by a and b into a single heap.
 	// a and b must pointers to disjoint skew heaps.  b may be a
 	// null pointer, and a may be a null pointer provided b is too.
-	static Cell* meld(Cell* a, Cell* b)
+	static Cell* meld(Cell* a, Cell* b);
+	/*
 	{
 	    if (!b) return a;
 	    if (a > b) std::swap(a, b);
@@ -250,6 +233,7 @@ namespace CXXR {
 	    else meld_aux(a, b);
 	    return a;
 	}
+	*/
 
 	// Auxiliary function for meld:
 	static void meld_aux(Cell* host, Cell* guest);

@@ -120,8 +120,43 @@ void CellHeap::checkCell(const void* p) const
 
 unsigned int CellHeap::countFreeCells(const Cell* root)
 {
-    return root
-	? 1 + countFreeCells(root->m_l) + countFreeCells(root->m_r) : 0;
+    if (!root) return 0;
+    unsigned int ans = 1;
+    if (root->m_l) {
+	if (root >= root->m_l) abort();
+	ans += countFreeCells(root->m_l);
+    }
+    if (root->m_r) {
+	if (!root->m_l) abort();
+	if (root >= root->m_r) abort();
+	ans += countFreeCells(root->m_r);
+    }
+    return ans;
+}
+
+// Having this inlined was causing errors when optimising at -O2 with
+// gcc (4.1.2 and 4.2.1) leading up to 2008/07/17.
+void CellHeap::deallocate(void* p)
+{
+    if (!p) return;
+#ifdef DEBUG_RELEASE_MEM
+    checkAllocatedCell(p);
+#endif
+#if VALGRIND_LEVEL >= 2
+    VALGRIND_MEMPOOL_FREE(this, p);
+    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
+#endif
+    // check();
+    Cell* c = new (p) Cell;
+    if (!m_free_cells)
+	m_free_cells = c;
+    else if (c < m_free_cells) {
+	c->m_l = m_free_cells;
+	m_free_cells = c;
+    } else meld_aux(m_free_cells, c);
+    // m_free_cells = meld(m_free_cells, c);
+    --m_cells_allocated;
+    // check();
 }
 
 bool CellHeap::isFreeCell(const Cell* root, const Cell* c)
@@ -131,19 +166,16 @@ bool CellHeap::isFreeCell(const Cell* root, const Cell* c)
 	|| isFreeCell(root->m_r, c);
 }
 
-/*
 CellHeap::Cell* CellHeap::meld(Cell* a, Cell* b)
 {
-    Cell* al = a;
-    Cell* bl = b;
-    if (!al) return bl;
-    if (!bl) return al;
-    if (al > bl) std::swap(al, bl);
-    std::swap(al->m_l, al->m_r);
-    al->m_l = al->m_l ? meld(al->m_l, bl) : bl;
-    return al;
+    if (!b) return a;
+    if (a > b) std::swap(a, b);
+    std::swap(a->m_l, a->m_r);
+    if (!a->m_l)
+	a->m_l = b;
+    else meld_aux(a, b);
+    return a;
 }
-*/
 
 void CellHeap::meld_aux(Cell* host, Cell* guest)
 {
