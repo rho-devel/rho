@@ -131,7 +131,7 @@ STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
 
 R_binary = R.bin
-R_bin_OBJECTS = Rmain.o
+R_bin_OBJECTS = Rmain.o VectorBase.o
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
 R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a
@@ -174,7 +174,7 @@ R: Makefile
 	(cd $(@D); $(MAKE) $(@F))
 
 $(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES) @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
-	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ -u _SETLENGTH $(R_bin_OBJECTS) $(R_bin_LDADD)
+	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
 	-@mkdir libs
