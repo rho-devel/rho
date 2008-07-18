@@ -47,8 +47,11 @@ using namespace CXXR;
 int *INTEGER(SEXP x)
 {
 #ifndef USE_TYPE_CHECKING_STRICT
-    if (LogicalVector* lvec = dynamic_cast<LogicalVector*>(x))
+    // Quicker than dynamic_cast:
+    if (x->sexptype() == LGLSXP) {
+	LogicalVector* lvec = static_cast<LogicalVector*>(x);
 	return &(*lvec)[0];
+    }
 #endif
     return &(*CXXR::SEXP_downcast<IntVector*>(x))[0];
 }

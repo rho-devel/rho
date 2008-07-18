@@ -55,8 +55,11 @@ namespace CXXR {
 int *LOGICAL(SEXP x)
 {
 #ifndef USE_TYPE_CHECKING_STRICT
-    if (IntVector* ivec = dynamic_cast<IntVector*>(x))
+    // Quicker than dynamic_cast:
+    if (x->sexptype() == INTSXP) {
+	IntVector* ivec = static_cast<IntVector*>(x);
 	return &(*ivec)[0];
+    }
 #endif
     return &(*CXXR::SEXP_downcast<LogicalVector*>(x))[0];
 }

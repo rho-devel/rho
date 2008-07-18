@@ -961,7 +961,8 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 
     /* expression -> list, new in R 2.4.0 */
     if (type == VECSXP)
-	if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(v)) {
+	if (v->sexptype() == EXPRSXP) {
+	    ExpressionVector* ev = static_cast<ExpressionVector*>(v);
 	    ListVector* ans = new ListVector(*ev);
 	    ans->expose();
 	    return ans;
@@ -984,8 +985,10 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	for (i = 0; i < n;  i++) {
 	    SEXP elt;
-	    if (ExpressionVector* ev = dynamic_cast<ExpressionVector*>(v))
+	    if (v->sexptype() == EXPRSXP) {
+		ExpressionVector* ev = static_cast<ExpressionVector*>(v);
 		elt = (*ev)[i];
+	    }
 	    else elt = VECTOR_ELT(v, i);
 	    if (isString(elt) && length(elt) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(elt, 0));

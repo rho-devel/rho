@@ -170,17 +170,17 @@ SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 
 SEXP R_WeakRefKey(SEXP w)
 {
-    WeakRef* wr = dynamic_cast<WeakRef*>(w);
-    if (!wr)
+    if (w->sexptype() != WEAKREFSXP)
 	error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
     return wr->key();
 }
 
 SEXP R_WeakRefValue(SEXP w)
 {
-    WeakRef* wr = dynamic_cast<WeakRef*>(w);
-    if (!wr)
+    if (w->sexptype() != WEAKREFSXP)
 	error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
     SEXP v = wr->value();
     if (v && NAMED(v) != 2)
 	SET_NAMED(v, 2);
