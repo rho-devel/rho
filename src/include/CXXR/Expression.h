@@ -109,19 +109,7 @@ extern "C" {
      *
      * @return Pointer to the constructed list.
      */
-#ifndef __cplusplus
     SEXP Rf_lcons(SEXP cr, SEXP tl);
-#else
-    inline SEXP Rf_lcons(SEXP cr, SEXP tl)
-    {
-	using namespace CXXR;
-	GCRoot<> crr(cr);
-	GCRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-	Expression* ans = new Expression(crr, tlr);
-	ans->expose();
-	return ans;
-    }
-#endif
 
 #ifdef __cplusplus
 }

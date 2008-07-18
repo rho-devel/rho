@@ -58,3 +58,14 @@ const char* Expression::typeName() const
 {
     return staticTypeName();
 }
+
+// ***** C interface *****
+
+SEXP Rf_lcons(SEXP cr, SEXP tl)
+{
+    GCRoot<> crr(cr);
+    GCRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
+    Expression* ans = new Expression(crr, tlr);
+    ans->expose();
+    return ans;
+}
