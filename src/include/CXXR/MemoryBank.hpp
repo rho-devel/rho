@@ -88,15 +88,9 @@ namespace CXXR {
 	 */
 	class SchwarzCtr {
 	public:
-	    SchwarzCtr()
-	    {
-		if (!s_count++) MemoryBank::initialize();
-	    }
+	    SchwarzCtr();
 
-	    ~SchwarzCtr()
-	    {
-		if (!--s_count) MemoryBank::cleanup();
-	    }
+	    ~SchwarzCtr();
 	private:
 	    static unsigned int s_count;
 	};
@@ -109,27 +103,7 @@ namespace CXXR {
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
-	static void* allocate(size_t bytes) throw (std::bad_alloc)
-	{
-#ifdef R_MEMORY_PROFILING
-	    if (s_monitor && bytes >= s_threshold) s_monitor(bytes);
-#endif
-#if VALGRIND_LEVEL >= 3
-	    size_t blockbytes = bytes + 1;  // trailing redzone
-#else
-	    size_t blockbytes = bytes;
-#endif
-	    // Assumes sizeof(double) == 8:
-	    void* p;
-	    p = (blockbytes > s_max_cell_size
-		 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes) : p;
-#if VALGRIND_LEVEL >= 3
-	    char* c = reinterpret_cast<char*>(p);
-	    VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
-	    s_bytes_allocated -= 1;
-#endif
-	    return p;
-	}
+	static void* allocate(size_t bytes) throw (std::bad_alloc);
 
 	/** @brief Number of blocks currently allocated.
 	 *
@@ -170,7 +144,7 @@ namespace CXXR {
 	{
 	    if (!p) return;
 	    // Uncommenting this helps to diagnose premature GC:
-	    memset(p, 0x55, bytes);
+	    // memset(p, 0x55, bytes);
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
 	    char* c = reinterpret_cast<char*>(p);

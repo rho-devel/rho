@@ -84,7 +84,39 @@ const unsigned int MemoryBank::s_pooltab[]
    9, 9, 9, 9, 9, 9, 9, 9,
    9, 9, 9, 9, 9, 9, 9, 9,
    9, 9, 9, 9, 9, 9, 9, 9}; // 128
+
+MemoryBank::SchwarzCtr::SchwarzCtr()
+{
+    if (!s_count++) MemoryBank::initialize();
+}
+
+MemoryBank::SchwarzCtr::~SchwarzCtr()
+{
+    if (!--s_count) MemoryBank::cleanup();
+}
     
+void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
+{
+#ifdef R_MEMORY_PROFILING
+    if (s_monitor && bytes >= s_threshold) s_monitor(bytes);
+#endif
+#if VALGRIND_LEVEL >= 3
+    size_t blockbytes = bytes + 1;  // trailing redzone
+#else
+    size_t blockbytes = bytes;
+#endif
+    // Assumes sizeof(double) == 8:
+    void* p;
+    p = (blockbytes > s_max_cell_size
+	 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes) : p;
+#if VALGRIND_LEVEL >= 3
+    char* c = reinterpret_cast<char*>(p);
+    VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
+    s_bytes_allocated -= 1;
+#endif
+    return p;
+}
+
 void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 {
     CellHeap* pool = 0;
