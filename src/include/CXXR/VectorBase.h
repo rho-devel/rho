@@ -106,10 +106,9 @@ extern "C" {
 /* Vector Access Functions */
 
 /**
- * @param x Pointer to an CXXR::RObject .
+ * @param x Pointer to an CXXR::VectorBase .
  *
- * @return The length of \a x, or 0 if \a x is a null pointer, or is
- *         not a pointer to a vector object (VectorBase).  (In 
+ * @return The length of \a x, or 0 if \a x is a null pointer.  (In 
  *         the case of certain hash tables, this means the 'capacity'
  *         of \a x , not all of which may be used.)
  */
@@ -119,13 +118,15 @@ int LENGTH(SEXP x);
 inline int LENGTH(SEXP x)
 {
     using namespace CXXR;
-    VectorBase* vb = dynamic_cast<VectorBase*>(x);
-    return vb ? vb->size() : 0;
+    if (!x) return 0;
+    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+    return vb.size();
 }
 #endif
 
 /**
  * @param x Pointer to a CXXR::VectorBase .
+ *
  * @return The 'true length' of \a x.  According to the R Internals
  *         document for R 2.4.1, this is only used for certain hash
  *         tables, and signifies the number of used slots in the

@@ -2538,19 +2538,19 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 
     Main = sub = xlab = ylab = R_NilValue;
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && length(CAR(args)) > 0)
 	Main = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && length(CAR(args)) > 0)
 	sub = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && length(CAR(args)) > 0)
 	xlab = CAR(args);
     args = CDR(args);
 
-    if (CAR(args) != R_NilValue && LENGTH(CAR(args)) > 0)
+    if (CAR(args) != R_NilValue && length(CAR(args)) > 0)
 	ylab = CAR(args);
     args = CDR(args);
 
