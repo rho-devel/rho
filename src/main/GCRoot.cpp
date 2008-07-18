@@ -63,6 +63,20 @@ vector<RObject*>* GCRootBase::s_pps;
 vector<pair<RObject*, RCNTXT*> >* GCRootBase::s_pps;
 #endif
 
+GCRootBase::GCRootBase(const GCNode* node, bool expose)
+    : m_index(s_roots->size())
+{
+    s_roots->push_back(node);
+    if (expose && node)
+	node->expose();
+}
+
+GCRootBase::GCRootBase(const GCRootBase& source)
+    : m_index(s_roots->size())
+{
+    s_roots->push_back((*s_roots)[source.m_index]);
+}
+
 void GCRootBase::initialize()
 {
     s_roots = new vector<const GCNode*>;

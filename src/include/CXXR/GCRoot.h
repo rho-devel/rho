@@ -169,19 +169,9 @@ namespace CXXR {
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
     protected:
-	GCRootBase(const GCNode* node, bool expose)
-	    : m_index(s_roots->size())
-	{
-	    s_roots->push_back(node);
-	    if (expose && node)
-		node->expose();
-	}
+	GCRootBase(const GCNode* node, bool expose);
 
-	GCRootBase(const GCRootBase& source)
-	    : m_index(s_roots->size())
-	{
-	    s_roots->push_back((*s_roots)[source.m_index]);
-	}
+	GCRootBase(const GCRootBase& source);
 
 	~GCRootBase()
 	{
