@@ -50,7 +50,6 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
-	SEXP (*SET_XVECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_XVECTOR_ELT;
 	SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
     }
 }
@@ -66,4 +65,13 @@ ExpressionVector::ExpressionVector(const ListVector& lv)
 			      R_NamesSymbol);
     if (names)
 	Rf_setAttrib(this, R_NamesSymbol, names);
+}
+
+// ***** C interface *****
+
+SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
+{
+    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    (*ev)[i] = v;
+    return v;
 }

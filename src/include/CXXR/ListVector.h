@@ -97,16 +97,7 @@ extern "C" {
  * @param v Pointer to \c RObject representing the new value.
  * @return The new value \a v.
  */
-#ifndef __cplusplus
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
-#else
-inline SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
-{
-    CXXR::ListVector* lv = CXXR::SEXP_downcast<CXXR::ListVector*>(x);
-    (*lv)[i] = v;
-    return v;
-}
-#endif
 
 /** @brief Examine element of ListVector.
  * @param x Pointer to a \c ListVector .
@@ -118,7 +109,9 @@ SEXP VECTOR_ELT(SEXP x, int i);
 #else
 inline SEXP VECTOR_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::ListVector*>(x))[i];
+    using namespace CXXR;
+    const ListVector* lv = SEXP_downcast<ListVector*>(x);
+    return (*lv)[i];
 }
 #endif
 

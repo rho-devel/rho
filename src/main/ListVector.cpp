@@ -52,7 +52,6 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*SET_VECTOR_ELTp)(SEXP x, int i, SEXP v) = SET_VECTOR_ELT;
 	SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
     }
 }
@@ -68,4 +67,13 @@ ListVector::ListVector(const ExpressionVector& ev)
 			      R_NamesSymbol);
     if (names)
 	Rf_setAttrib(this, R_NamesSymbol, names);
+}
+
+// ***** C interface *****
+
+SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
+{
+    ListVector* lv = SEXP_downcast<ListVector*>(x);
+    (*lv)[i] = v;
+    return v;
 }

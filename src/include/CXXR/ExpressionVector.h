@@ -119,17 +119,7 @@ extern "C" {
  * @param v Pointer to CXXR::RObject representing the new value.
  * @return The new value \a v.
  */
-#ifndef __cplusplus
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
-#else
-inline SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
-{
-    CXXR::ExpressionVector* ev
-	= CXXR::SEXP_downcast<CXXR::ExpressionVector*>(x);
-    (*ev)[i] = v;
-    return v;
-}
-#endif
 
 /**
  * @brief Examine element of a CXXR::ExpressionVector.
@@ -142,7 +132,9 @@ SEXP XVECTOR_ELT(SEXP x, int i);
 #else
 inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::ExpressionVector*>(x))[i];
+    using namespace CXXR;
+    const ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    return (*ev)[i];
 }
 #endif
 
