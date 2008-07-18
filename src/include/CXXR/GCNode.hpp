@@ -305,9 +305,12 @@ namespace CXXR {
 	void expose() const
 	{
 	    if (m_gcgen == 0) {
-		--s_gencount[0];
+		// gcc (4.1.2) fetches s_gencount twice without this
+		// local variable, even with -O2:
+		unsigned int* gc = s_gencount;
+		--gc[0];
 		m_gcgen = 1;
-		++s_gencount[1];
+		++gc[1];
 	    }
 	}
 
