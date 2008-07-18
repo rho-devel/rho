@@ -102,40 +102,8 @@ extern "C" {
 
 /*  length - length of objects  */
 
-int Rf_envlength(SEXP rho);
-
-INLINE_FUN R_len_t Rf_length(SEXP s)
-{
-    int i;
-    switch (TYPEOF(s)) {
-    case NILSXP:
-	return 0;
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case CHARSXP:
-    case VECSXP:
-    case EXPRSXP:
-    case RAWSXP:
-	return LENGTH(s);
-    case LISTSXP:
-    case LANGSXP:
-    case DOTSXP:
-	i = 0;
-	while (s != NULL && s != R_NilValue) {
-	    i++;
-	    s = CDR(s);
-	}
-	return i;
-    case ENVSXP:
-	return Rf_envlength(s);
-    default:
-	return 1;
-    }
-}
-
+/* In CXXR, Rf_length() is not inlined, and is back in dstruct.cpp. */
+R_len_t Rf_length(SEXP s);
 
 /* from list.c */
 /* Return a dotted pair with the given CAR and CDR. */

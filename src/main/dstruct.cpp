@@ -91,6 +91,38 @@ Closure::Closure(const PairList* formal_args, const RObject* body,
 		"Should NEVER happen; please bug.report() [mkCLOSXP]"));
 }
    
+R_len_t Rf_length(SEXP s)
+{
+    int i;
+    switch (TYPEOF(s)) {
+    case NILSXP:
+	return 0;
+    case LGLSXP:
+    case INTSXP:
+    case REALSXP:
+    case CPLXSXP:
+    case STRSXP:
+    case CHARSXP:
+    case VECSXP:
+    case EXPRSXP:
+    case RAWSXP:
+	return LENGTH(s);
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+	i = 0;
+	while (s != NULL && s != R_NilValue) {
+	    i++;
+	    s = CDR(s);
+	}
+	return i;
+    case ENVSXP:
+	return Rf_envlength(s);
+    default:
+	return 1;
+    }
+}
+
 SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
