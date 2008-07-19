@@ -148,13 +148,7 @@ void CellHeap::deallocate(void* p)
 #endif
     // check();
     Cell* c = new (p) Cell;
-    if (!m_free_cells)
-	m_free_cells = c;
-    else if (c < m_free_cells) {
-	c->m_l = m_free_cells;
-	m_free_cells = c;
-    } else meld_aux(m_free_cells, c);
-    // m_free_cells = meld(m_free_cells, c);
+    m_free_cells = meld(c, m_free_cells);
     --m_cells_allocated;
     // check();
 }
@@ -166,19 +160,21 @@ bool CellHeap::isFreeCell(const Cell* root, const Cell* c)
 	|| isFreeCell(root->m_r, c);
 }
 
+/*
 CellHeap::Cell* CellHeap::meld(Cell* a, Cell* b)
 {
     if (!b) return a;
-    if (a > b) std::swap(a, b);
-    std::swap(a->m_l, a->m_r);
+    if (a > b) swap(a, b);
     if (!a->m_l)
 	a->m_l = b;
     else meld_aux(a, b);
     return a;
 }
+*/
 
 void CellHeap::meld_aux(Cell* host, Cell* guest)
 {
+    swap(host->m_l, host->m_r);
     while (host->m_l) {
 	// if (host >= host->m_l) abort();
 	// if (host->m_r && host >= host->m_r) abort();
