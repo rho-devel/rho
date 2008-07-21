@@ -2872,7 +2872,7 @@ int GEstring_to_pch(SEXP pch)
  */
 
 typedef struct {
-    char *name;
+    const char *name;
     int pattern;
 } LineTYPE;
 

@@ -938,7 +938,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     const char *inbuf;
     char *outbuf, *p;
     size_t inb, outb, res, top;
-    char *tocode = NULL, *fromcode = NULL;
+    const char *tocode = NULL, *fromcode = NULL;
 #ifdef Win32
     char buf[20];
 #endif
