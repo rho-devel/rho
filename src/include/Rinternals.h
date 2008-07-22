@@ -249,7 +249,12 @@ LibExtern SEXP	R_BaseNamespace;    /* The (fake) name space for base */
 LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 
 /* Special Values */
-LibExtern SEXP	R_NilValue;	    /* The nil object */
+
+/* Note that NULL will in turn typically expand to (void*)0 in C, and
+ *  simply to 0 in C++.
+ */
+#define R_NilValue NULL
+
 LibExtern SEXP	R_UnboundValue;	    /* Unbound marker */
 LibExtern SEXP	R_MissingArg;	    /* Missing argument marker */
 extern

@@ -82,8 +82,3 @@ void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);
 }
-
-// ***** C interface *****
-
-// In CXXR R_NilValue is simply a null pointer:
-SEXP R_NilValue = 0;
