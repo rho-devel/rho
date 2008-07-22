@@ -68,6 +68,13 @@ namespace CXXR {
      */
     class SpecialSymbol : public RObject {
     public:
+	/** @brief Is this a double-dot symbol?
+	 *
+	 * @return true iff this symbol relates to an element of a
+	 *         <tt>...</tt> argument list.
+	 */
+	virtual bool isDDSymbol() const;
+
 	/** @brief Missing argument.
 	 *
 	 * @return a pointer to the 'missing argument' pseudo-object,
@@ -121,6 +128,24 @@ namespace CXXR {
 	{
 	    return s_unbound_value;
 	}
+
+	/** @brief Access value.
+	 *
+	 * @return pointer to the value of this Symbol.  Returns
+	 *         unboundValue() if no value is currently associated
+	 *         with the Symbol (as will always be the case for
+	 *         SpecialSymbols as opposed to full Symbols).
+	 */
+	virtual RObject* value();
+
+	/** @brief Access value (const variant).
+	 *
+	 * @return const pointer to the value of this Symbol.  Returns
+	 *         unboundValue() if no value is currently associated
+	 *         with the Symbol (as will always be the case for
+	 *         SpecialSymbols as opposed to full Symbols).
+	 */
+	const RObject* value() const;
 
 	// Virtual function of RObject:
 	const char* typeName() const;
@@ -177,6 +202,24 @@ extern "C" {
     }
 #endif
 
+    /** @brief Does symbol relate to a <tt>...</tt> expression?
+     *
+     * @param x Pointer to a CXXR::Symbol (checked).
+     *
+     * @return \c TRUE iff this symbol denotes an element of a
+     *         <tt>...</tt> expression.
+     */
+#ifndef __cplusplus
+    Rboolean DDVAL(SEXP x);
+#else
+    inline Rboolean DDVAL(SEXP x)
+    {
+	using namespace CXXR;
+	const SpecialSymbol& sym = *SEXP_downcast<SpecialSymbol*>(x);
+	return Rboolean(sym.isDDSymbol());
+    }
+#endif
+
     /** @brief Symbol name.
      *
      * @param x Pointer to a CXXR::Symbol (checked).
@@ -191,6 +234,25 @@ extern "C" {
 	const CXXR::SpecialSymbol& sym
 	    = *CXXR::SEXP_downcast<CXXR::SpecialSymbol*>(x);
 	return const_cast<CXXR::String*>(&sym.name());
+    }
+#endif
+
+    /** @brief Symbol value.
+     *
+     * @param x Pointer to a CXXR::Symbol (checked).
+     *
+     * @return Pointer to a CXXR::RObject representings \a x's value.
+     *         Returns R_UnboundValue if no value is currently
+     *         associated with the Symbol.
+     */
+#ifndef __cplusplus
+    SEXP SYMVALUE(SEXP x);
+#else
+    inline SEXP SYMVALUE(SEXP x)
+    {
+	using namespace CXXR;
+	SpecialSymbol& sym = *SEXP_downcast<SpecialSymbol*>(x);
+	return sym.value();
     }
 #endif
 

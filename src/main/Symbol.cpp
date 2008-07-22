@@ -63,9 +63,24 @@ Symbol::Symbol(const String& name, RObject* val,
     m_flags[s_DDBIT] = boost::regex_match(name.c_str(), dd_regex);
 }
 
+bool Symbol::isDDSymbol() const
+{
+    return m_flags[s_DDBIT];
+}
+
 const char* Symbol::typeName() const
 {
     return staticTypeName();
+}
+
+RObject* Symbol::value()
+{
+    return m_value;
+}
+
+const RObject* Symbol::value() const
+{
+    return m_value;
 }
 
 void Symbol::visitChildren(const_visitor* v) const

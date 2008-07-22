@@ -65,9 +65,24 @@ SEXP R_RestartToken = SpecialSymbol::restartToken();
 GCRoot<SpecialSymbol> SpecialSymbol::s_unbound_value(new SpecialSymbol, true);
 SEXP R_UnboundValue = SpecialSymbol::unboundValue();
 
+bool SpecialSymbol::isDDSymbol() const
+{
+    return false;
+}
+
 const char* SpecialSymbol::typeName() const
 {
     return staticTypeName();
+}
+
+RObject* SpecialSymbol::value()
+{
+    return unboundValue();
+}
+
+const RObject* SpecialSymbol::value() const
+{
+    return unboundValue();
 }
 
 void SpecialSymbol::visitChildren(const_visitor* v) const
