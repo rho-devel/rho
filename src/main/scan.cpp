@@ -58,6 +58,8 @@
 #include <Rconnections.h>
 #include <errno.h>
 
+using namespace CXXR;
+
 static R_INLINE int imin2(int x, int y)
 {
     return (x < y) ? x : y;
@@ -1368,11 +1370,11 @@ SEXP attribute_hidden do_typecvt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(levs, j++, STRING_ELT(cvec, i));
 	    }
 
-	    /* We avoid an allocation by reusing dup,
-	     * a LGLSXP of the right length
+	    /* CR avoided an allocation by reusing dup,
+	     * a LGLSXP of the right length.  CXXR doesn't!
 	     */
-	    rval = dup;
-	    SET_TYPEOF(rval, INTSXP);
+	    GCRoot<IntVector> rvalr(new IntVector(LENGTH(dup)), true);
+	    rval = rvalr;
 
 	    /* put the levels in lexicographic order */
 
