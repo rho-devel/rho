@@ -401,15 +401,6 @@ extern "C" {
     inline void SET_TRACE(SEXP x, int v) {x->m_trace = v;}
 #endif
 
-    /**
-     * @deprecated Ought to be private.
-     */
-#ifndef __cplusplus
-    void SET_TYPEOF(SEXP x, SEXPTYPE v);
-#else
-    inline void SET_TYPEOF(SEXP x, SEXPTYPE v) {x->m_type = v;}
-#endif
-
     /** @brief Replace the attributes of \a to by those of \a from.
      *
      * @param to Pointer to CXXR::RObject.

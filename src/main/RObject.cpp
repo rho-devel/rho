@@ -61,7 +61,6 @@ namespace CXXR {
 	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
 	void (*SET_OBJECTptr)(SEXP x, int v) = SET_OBJECT;
 	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
-	void (*SET_TYPEOFptr)(SEXP x, SEXPTYPE v) = SET_TYPEOF;
 	int (*TRACEptr)(SEXP x) = TRACE;
 	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;

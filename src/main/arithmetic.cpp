@@ -66,6 +66,8 @@ extern "C" {
 
 #include <errno.h>
 
+using namespace CXXR;
+
 #ifdef HAVE_MATHERR
 
 /* Override the SVID matherr function:
@@ -542,22 +544,19 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 
 static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
-    int i, n, x;
-    SEXP ans;
-
     switch (code) {
     case PLUSOP:
 	return s1;
     case MINUSOP:
-	ans = duplicate(s1);
-	SET_TYPEOF(ans, INTSXP);
-	n = LENGTH(s1);
-	for (i = 0; i < n; i++) {
-	    x = INTEGER(s1)[i];
-	    INTEGER(ans)[i] = (x == NA_INTEGER) ?
-		NA_INTEGER : ((x == 0.0) ? 0 : -x);
+	{
+	int n = LENGTH(s1);
+	GCRoot<IntVector> ans(new IntVector(n), true);
+	for (int i = 0; i < n; i++) {
+	    int x = INTEGER(s1)[i];
+	    INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;
 	}
 	return ans;
+	}
     default:
 	errorcall(call, _("invalid unary operator"));
     }
