@@ -110,6 +110,8 @@ extern "C" {
 }  // extern "C"
 
 namespace CXXR {
+    class PairList;
+
     /** @brief Replacement for CR's SEXPREC.
      *
      * This class is the rough equivalent within CXXR of the SEXPREC
@@ -145,7 +147,7 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the attributes of this object.
 	 */
-	const RObject* attributes() const {return m_attrib;}
+	const PairList* attributes() const {return m_attrib;}
 
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
@@ -175,7 +177,7 @@ namespace CXXR {
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
 	FlagWord m_flags;
-	RObject *m_attrib;
+	PairList* m_attrib;
     };
 
     /* S4 object bit, set by R_do_new_object for all new() calls */
@@ -313,11 +315,7 @@ extern "C" {
      * @return Pointer to the attributes object of \a x , or 0 if \a x is
      * a null pointer.
      */
-#ifndef __cplusplus
     SEXP ATTRIB(SEXP x);
-#else
-    inline SEXP ATTRIB(SEXP x) {return x ? x->m_attrib : 0;}
-#endif
 
     /**
      * @deprecated

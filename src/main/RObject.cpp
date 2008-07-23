@@ -39,10 +39,9 @@
  * Class RObject and associated C interface functions.
  */
 
-// Needed while visitChildren(visitor* v) is unimplemented.
-#include <iostream>
-
 #include "CXXR/RObject.h"
+
+#include "CXXR/PairList.h"
 
 using namespace std;
 using namespace CXXR;
@@ -51,7 +50,6 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*ATTRIBptr)(SEXP e) = ATTRIB;
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
 	int (*LEVELSptr)(SEXP x) = LEVELS;
@@ -81,4 +79,11 @@ const char*  RObject::typeName() const
 void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);
+}
+
+// ***** C interface *****
+
+SEXP ATTRIB(SEXP x)
+{
+    return x ? x->m_attrib : 0;
 }

@@ -704,7 +704,7 @@ void (SET_ATTRIB)(SEXP x, SEXP v) {
 	      type2char(TYPEOF(x)));
 #endif
     CHECK_OLD_TO_NEW(x, v);
-    x->m_attrib = v; 
+    x->m_attrib = SEXP_downcast<PairList*>(v); 
 }
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     SET_ATTRIB(to, duplicate(ATTRIB(from)));
