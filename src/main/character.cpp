@@ -1679,14 +1679,14 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef SUPPORT_MBCS
 		if (!useBytes && ienc == CE_UTF8) {
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			utf8towcs(NULL, spat, 0):-1;
+			int(utf8towcs(NULL, spat, 0)):-1;
 		} else if (!useBytes && mbcslocale) {
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			mbstowcs(NULL, spat, 0):-1;
+			int(mbstowcs(NULL, spat, 0)):-1;
 		} else
 #endif
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			strlen(spat):-1;
+			int(strlen(spat)):-1;
 	    } else if (perl_opt) {
 		rc = pcre_exec(re_pcre, re_pe, s, strlen(s), 0, 0, ovector, 3);
 		if (rc >= 0) {

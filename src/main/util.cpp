@@ -208,8 +208,8 @@ Rboolean isOrdered(SEXP s)
 
 
 const static struct {
-    const char * const str;
-    const SEXPTYPE type;
+    const char * str;
+    SEXPTYPE type;
 }
 TypeTable[] = {
     { "NULL",		NILSXP	   },  /* real types */
@@ -1034,34 +1034,34 @@ utf8toucs(wchar_t *wc, const char *s)
 	*w = wchar_t(byte);
 	return 1;
     } else if (byte < 0xE0) {
-	if(strlen(s) < 2) return -2;
+	if(strlen(s) < 2) return size_t(-2);
 	if ((s[1] & 0xC0) == 0x80) {
 	    *w = wchar_t(((byte & 0x1F) << 6) | (s[1] & 0x3F));
 	    return 2;
-	} else return -1;
+	} else return size_t(-1);
     } else if (byte < 0xF0) {
-	if(strlen(s) < 3) return -2;
+	if(strlen(s) < 3) return size_t(-2);
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
 	    *w = wchar_t(((byte & 0x0F) << 12)
 			 | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    /* Surrogates range */
-	    if(byte >= 0xD800 && byte <= 0xDFFF) return -1;
-	    if(byte == 0xFFFE || byte == 0xFFFF) return -1;
+	    if(byte >= 0xD800 && byte <= 0xDFFF) return size_t(-1);
+	    if(byte == 0xFFFE || byte == 0xFFFF) return size_t(-1);
 	    return 3;
-	} else return -1;
+	} else return size_t(-1);
     }
-    if(sizeof(wchar_t) < 4) return -2;
+    if(sizeof(wchar_t) < 4) return size_t(-2);
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
-	if(strlen(s) < 4) return -2;
+	if(strlen(s) < 4) return size_t(-2);
 	*w = wchar_t(((byte & 0x0F) << 18)
 		     | ((s[1] & 0x3F) << 12)
 		     | ((s[2] & 0x3F) << 6)
 		     | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
-	if(strlen(s) < 5) return -2;
+	if(strlen(s) < 5) return size_t(-2);
 	*w = wchar_t(((byte & 0x0F) << 24)
 		     | ((s[1] & 0x3F) << 12)
 		     | ((s[2] & 0x3F) << 12)
@@ -1069,7 +1069,7 @@ utf8toucs(wchar_t *wc, const char *s)
 		     | (s[4] & 0x3F));
 	return 5;
     } else {
-	if(strlen(s) < 6) return -2;
+	if(strlen(s) < 6) return size_t(-2);
 	*w = wchar_t(((byte & 0x0F) << 30)
 		     | ((s[1] & 0x3F) << 24)
 		     | ((s[2] & 0x3F) << 18)

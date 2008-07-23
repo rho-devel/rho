@@ -99,7 +99,7 @@ static void get_locale_w_strings(void);
       val += *rp++ - '0';						      \
 /*  } while (--__n > 0 && val * 10 <= to && *rp >= '0' && *rp <= '9');*/      \
     } while (--__n > 0 && *rp >= '0' && *rp <= '9');	      \
-    if (val < from || val > to)						      \
+    if (int(val) < from || val > to)					\
       return NULL;							      \
   } while (0)
 # define get_alt_number(from, to, n) \

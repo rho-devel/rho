@@ -2391,7 +2391,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static const struct {
     const char *name;
-    const SEXPTYPE type;
+    SEXPTYPE type;
 }
 typeinfo[] = {
     {"logical",	  LGLSXP },

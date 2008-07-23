@@ -73,7 +73,7 @@ namespace CXXR {
 	     */
 	    BitProxy& operator=(const BitProxy& rhs)
 	    {
-		return operator=(static_cast<const bool>(rhs));
+		return operator=(static_cast<bool>(rhs));
 	    }
 
 	    /** Assign value of proxied bit.
@@ -92,7 +92,7 @@ namespace CXXR {
 	    /**
 	     * @return Value of proxied bit.
 	     */
-	    operator const bool() const {return *m_flags & m_mask;}
+	    operator bool() const {return *m_flags & m_mask;}
 	private:
 	    unsigned short* m_flags;
 	    unsigned short m_mask;
@@ -134,7 +134,7 @@ namespace CXXR {
 	 * FlagWord.  The return value is const to prevent its use as
 	 * an lvalue.
 	 */ 
-	const bool operator[](unsigned int i) const
+	bool operator[](unsigned int i) const
 	{
 	    return m_flags & s_mask[i];
 	}
@@ -142,7 +142,7 @@ namespace CXXR {
 	/**
 	 * @return the FlagWord as an unsigned short.
 	 */
-	const unsigned short asUshort() const {return m_flags;}
+	unsigned short asUshort() const {return m_flags;}
 
 	// To become private in due course:
 	unsigned short m_flags;

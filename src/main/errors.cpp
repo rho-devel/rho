@@ -1137,8 +1137,8 @@ void UNIMPLEMENTED(const char *s)
 
 /* ERROR_.. codes in Errormsg.h */
 static struct {
-    const R_ERROR code;
-    const char* const format;
+    R_ERROR code;
+    const char* format;
 }
 const ErrorDB[] = {
     { ERROR_NUMARGS,		N_("invalid number of arguments")	},

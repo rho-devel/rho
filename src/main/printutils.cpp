@@ -711,6 +711,7 @@ int vasprintf(char **strp, const char *fmt, va_list ap)
 #endif
 
 #if !HAVE_VA_COPY && HAVE___VA_COPY
+# undef va_copy
 # define va_copy __va_copy
 # undef HAVE_VA_COPY
 # define HAVE_VA_COPY 1

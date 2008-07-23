@@ -328,7 +328,7 @@ namespace CXXR {
 	 *
 	 * @return the pointer currently encapsulated by the node.
 	 */
-	T* const operator->() const
+	T* operator->() const
 	{
 	    return get();
 	}
@@ -351,7 +351,7 @@ namespace CXXR {
 	 * an lvalue, the effect of which would probably not be what
 	 * the programmer wanted.
 	 */
-	operator T* const() const
+	operator T*() const
 	{
 	    return get();
 	}
