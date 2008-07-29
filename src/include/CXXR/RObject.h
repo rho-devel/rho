@@ -147,7 +147,21 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the attributes of this object.
 	 */
+	PairList* attributes() {return m_attrib;}
+
+	/** @brief Get object attributes (const variant).
+	 *
+	 * @return Pointer to the attributes of this object.
+	 */
 	const PairList* attributes() const {return m_attrib;}
+
+	/** @brief Replace the attributes of an object.
+	 *
+	 * @param new_attributes Pointer to the start of the new list
+	 *          of attributes.  May be a null pointer, in which
+	 *          case all attributes are removed.
+	 */
+	void setAttributes(PairList* new_attributes);
 
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
@@ -177,6 +191,7 @@ namespace CXXR {
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
 	FlagWord m_flags;
+    private:
 	PairList* m_attrib;
     };
 

@@ -76,6 +76,12 @@ const char*  RObject::typeName() const
     return Rf_type2char(sexptype());
 }
 
+void RObject::setAttributes(PairList* new_attributes)
+{
+    m_attrib = new_attributes;
+    devolveAge(m_attrib);
+}
+
 void RObject::visitChildren(const_visitor* v) const
 {
     if (m_attrib) m_attrib->conductVisitor(v);
@@ -85,5 +91,11 @@ void RObject::visitChildren(const_visitor* v) const
 
 SEXP ATTRIB(SEXP x)
 {
-    return x ? x->m_attrib : 0;
+    return x ? x->attributes() : 0;
+}
+
+void SET_ATTRIB(SEXP x, SEXP v)
+{
+    PairList* pl = SEXP_downcast<PairList*>(v);
+    x->setAttributes(pl);
 }

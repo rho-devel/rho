@@ -697,15 +697,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 
 /* General Cons Cell Attributes */
 
-void (SET_ATTRIB)(SEXP x, SEXP v) {
-#ifdef USE_TYPE_CHECKING
-    if(TYPEOF(v) != LISTSXP && TYPEOF(v) != NILSXP)
-	error("value of 'SET_ATTRIB' must be a pairlist or NULL, not a '%s'",
-	      type2char(TYPEOF(x)));
-#endif
-    CHECK_OLD_TO_NEW(x, v);
-    x->m_attrib = SEXP_downcast<PairList*>(v); 
-}
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     SET_ATTRIB(to, duplicate(ATTRIB(from)));
     SET_OBJECT(to, OBJECT(from));
