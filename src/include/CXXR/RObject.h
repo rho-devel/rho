@@ -183,9 +183,10 @@ namespace CXXR {
 
 	virtual ~RObject() {}
 
+    private:
+	const SEXPTYPE m_type        : 7;
+    public:
 	// To be private in future:
-
-	SEXPTYPE m_type              : 7;
 	bool m_has_class             : 1;
 	unsigned int m_named         : 2;
 	bool m_debug                 : 1;
