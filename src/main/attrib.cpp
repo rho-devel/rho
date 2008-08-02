@@ -50,7 +50,6 @@ using namespace CXXR;
 #undef TRUE
 #undef FALSE
 
-static SEXP installAttrib(SEXP, SEXP, SEXP);
 static SEXP removeAttrib(SEXP, SEXP);
 
 SEXP comment(SEXP);
@@ -67,7 +66,8 @@ static SEXP row_names_gets(SEXP vec , SEXP val)
 	/* This should not happen, but if a careless user dput()s a
 	   data frame and sources the result, it will */
 	PROTECT(val = coerceVector(val, INTSXP));
-	ans =  installAttrib(vec, R_RowNamesSymbol, val);
+	vec->setAttribute(static_cast<Symbol*>(R_RowNamesSymbol), val);
+	ans = val;
 	UNPROTECT(1);
 	return ans;
     }
@@ -88,7 +88,8 @@ static SEXP row_names_gets(SEXP vec , SEXP val)
 	    PROTECT(val = allocVector(INTSXP, 2));
 	    INTEGER(val)[0] = NA_INTEGER;
 	    INTEGER(val)[1] = n;
-	    ans =  installAttrib(vec, R_RowNamesSymbol, val);
+	    vec->setAttribute(static_cast<Symbol*>(R_RowNamesSymbol), val);
+	    ans = val;
 	    UNPROTECT(1);
 	    return ans;
 	}
@@ -96,7 +97,8 @@ static SEXP row_names_gets(SEXP vec , SEXP val)
 	error(_("row names must be 'character' or 'integer', not '%s'"),
 	      type2char(TYPEOF(val)));
     PROTECT(val);
-    ans =  installAttrib(vec, R_RowNamesSymbol, val);
+    vec->setAttribute(static_cast<Symbol*>(R_RowNamesSymbol), val);
+    ans =  val;
     UNPROTECT(1);
     return ans;
 }
@@ -150,21 +152,21 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
     /* This is where the old/new list adjustment happens. */
     RObject* att = vec->getAttribute(*SEXP_downcast<Symbol*>(name));
     if (!att) return 0;
-	    if (name == R_DimNamesSymbol && TYPEOF(att) == LISTSXP) {
-		SEXP _new, old;
-		int i;
-		_new = allocVector(VECSXP, length(att));
-		old = att;
-		i = 0;
-		while (old != R_NilValue) {
-		    SET_VECTOR_ELT(_new, i++, CAR(old));
-		    old = CDR(old);
-		}
-		SET_NAMED(_new, 2);
-		return _new;
-	    }
-	    SET_NAMED(att, 2);
-	    return att;
+    if (name == R_DimNamesSymbol && TYPEOF(att) == LISTSXP) {
+	SEXP _new, old;
+	int i;
+	_new = allocVector(VECSXP, length(att));
+	old = att;
+	i = 0;
+	while (old != R_NilValue) {
+	    SET_VECTOR_ELT(_new, i++, CAR(old));
+	    old = CDR(old);
+	}
+	SET_NAMED(_new, 2);
+	return _new;
+    }
+    SET_NAMED(att, 2);
+    return att;
 }
 
 SEXP getAttrib(SEXP vec, SEXP name)
@@ -239,6 +241,7 @@ SEXP setAttrib(SEXP vec, SEXP name, SEXP val)
     SET_NAMED(val, NAMED(val) | NAMED(vec));
     UNPROTECT(2);
 
+    GCRoot<> valr(val);
     if (name == R_NamesSymbol)
 	return namesgets(vec, val);
     else if (name == R_DimSymbol)
@@ -253,8 +256,10 @@ SEXP setAttrib(SEXP vec, SEXP name, SEXP val)
 	return commentgets(vec, val);
     else if (name == R_RowNamesSymbol)
 	return row_names_gets(vec, val);
-    else
-	return installAttrib(vec, name, val);
+    else {
+	vec->setAttribute(SEXP_downcast<Symbol*>(name), val);
+	return val;
+    }
 }
 
 /* This is called in the case of binary operations to copy */
@@ -275,7 +280,7 @@ void copyMostAttrib(SEXP inp, SEXP ans)
 	if ((TAG(s) != R_NamesSymbol) &&
 	    (TAG(s) != R_DimSymbol) &&
 	    (TAG(s) != R_DimNamesSymbol)) {
-	    installAttrib(ans, TAG(s), CAR(s));
+	    ans->setAttribute(SEXP_downcast<Symbol*>(TAG(s)), CAR(s));
 	}
     }
     SET_OBJECT(ans, OBJECT(inp));
@@ -299,7 +304,7 @@ void attribute_hidden copyMostAttribNoTs(SEXP inp, SEXP ans)
 	    (TAG(s) != R_TspSymbol) &&
 	    (TAG(s) != R_DimSymbol) &&
 	    (TAG(s) != R_DimNamesSymbol)) {
-	    installAttrib(ans, TAG(s), CAR(s));
+	    ans->setAttribute(SEXP_downcast<Symbol*>(TAG(s)), CAR(s));
 	} else if (TAG(s) == R_ClassSymbol) {
 	    SEXP cl = CAR(s);
 	    int i;
@@ -309,7 +314,7 @@ void attribute_hidden copyMostAttribNoTs(SEXP inp, SEXP ans)
 		    ists = TRUE;
 		    break;
 		}
-	    if (!ists) installAttrib(ans, TAG(s), cl);
+	    if (!ists) ans->setAttribute(static_cast<Symbol*>(TAG(s)), cl);
 	    else if(LENGTH(cl) <= 1) {
 	    } else {
 		SEXP new_cl;
@@ -318,7 +323,7 @@ void attribute_hidden copyMostAttribNoTs(SEXP inp, SEXP ans)
 		for (i = 0, j = 0; i < l; i++)
 		    if (strcmp(CHAR(STRING_ELT(cl, i)), "ts")) /* ASCII */
 			SET_STRING_ELT(new_cl, j++, STRING_ELT(cl, i));
-		installAttrib(ans, TAG(s), new_cl);
+		ans->setAttribute(static_cast<Symbol*>(TAG(s)), new_cl);
 		UNPROTECT(1);
 	    }
 	}
@@ -326,33 +331,6 @@ void attribute_hidden copyMostAttribNoTs(SEXP inp, SEXP ans)
     SET_OBJECT(ans, OBJECT(inp));
     IS_S4_OBJECT(inp) ?  SET_S4_OBJECT(ans) : UNSET_S4_OBJECT(ans);
     UNPROTECT(2);
-}
-
-static SEXP installAttrib(SEXP vec, SEXP name, SEXP val)
-{
-    SEXP s, t;
-
-    PROTECT(vec);
-    PROTECT(name);
-    PROTECT(val);
-    for (s = ATTRIB(vec); s != R_NilValue; s = CDR(s)) {
-	if (TAG(s) == name) {
-	    SETCAR(s, val);
-	    UNPROTECT(3);
-	    return val;
-	}
-    }
-    s = allocList(1);
-    SETCAR(s, val);
-    SET_TAG(s, name);
-    if (!vec->hasAttributes())
-	SET_ATTRIB(vec, s);
-    else {
-	t = nthcdr(ATTRIB(vec), length(ATTRIB(vec)) - 1);
-	SETCDR(t, s);
-    }
-    UNPROTECT(3);
-    return val;
 }
 
 static SEXP removeAttrib(SEXP vec, SEXP name)
@@ -432,7 +410,7 @@ SEXP tspgets(SEXP vec, SEXP val)
     REAL(val)[0] = start;
     REAL(val)[1] = end;
     REAL(val)[2] = frequency;
-    installAttrib(vec, R_TspSymbol, val);
+    vec->setAttribute(static_cast<Symbol*>(R_TspSymbol), val);
     UNPROTECT(2);
     return vec;
 }
@@ -443,12 +421,8 @@ static SEXP commentgets(SEXP vec, SEXP comment)
 	error(_("attempt to set an attribute on NULL"));
 
     if (isNull(comment) || isString(comment)) {
-	if (length(comment) <= 0) {
-	    vec->setAttribute(static_cast<Symbol*>(R_CommentSymbol), 0);
-	}
-	else {
-	    installAttrib(vec, R_CommentSymbol, comment);
-	}
+	vec->setAttribute(static_cast<Symbol*>(R_CommentSymbol),
+			  length(comment) <= 0 ? 0 : comment);
 	return R_NilValue;
     }
     error(_("attempt to set invalid 'comment' attribute"));
@@ -500,7 +474,7 @@ SEXP classgets(SEXP vec, SEXP klass)
 		error(_("adding class \"factor\" to an invalid object"));
 	    }
 
-	    installAttrib(vec, R_ClassSymbol, klass);
+	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), klass);
 	    SET_OBJECT(vec, 1);
 	}
 	return R_NilValue;
@@ -757,7 +731,7 @@ SEXP namesgets(SEXP vec, SEXP val)
     }
     else if (isVector(vec))
 	/* Normal case */
-	installAttrib(vec, R_NamesSymbol, val);
+	vec->setAttribute(static_cast<Symbol*>(R_NamesSymbol), val);
     else
 	error(_("invalid type (%s) to set 'names' attribute"),
 	      type2char(TYPEOF(vec)));
@@ -864,7 +838,7 @@ SEXP dimnamesgets(SEXP vec, SEXP val)
 	    SET_VECTOR_ELT(val, i, dimnamesgets1(_this));
 	}
     }
-    installAttrib(vec, R_DimNamesSymbol, val);
+    vec->setAttribute(static_cast<Symbol*>(R_DimNamesSymbol), val);
     if (isList(vec) && k == 1) {
 	top = VECTOR_ELT(val, 0);
 	i = 0;
@@ -937,7 +911,7 @@ SEXP dimgets(SEXP vec, SEXP val)
     if (total != len)
 	error(_("dims [product %d] do not match the length of object [%d]"), total, len);
     removeAttrib(vec, R_DimNamesSymbol);
-    installAttrib(vec, R_DimSymbol, val);
+    vec->setAttribute(static_cast<Symbol*>(R_DimSymbol), val);
     UNPROTECT(2);
     return vec;
 }
@@ -1058,7 +1032,7 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (isList(object))
 	setAttrib(object, R_NamesSymbol, R_NilValue);
-    SET_ATTRIB(object, R_NilValue);
+    object->clearAttributes();
     /* We have just removed the class, but might reset it later */
     SET_OBJECT(object, 0);
     /* Probably need to fix up S4 bit in other cases, but

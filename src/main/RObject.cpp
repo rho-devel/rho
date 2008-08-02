@@ -112,13 +112,7 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 	else m_attrib = node->tail();
     } else if (value) {  
 	// Create new node:
-	int ithis = *(int*)this;
-	int iname = *(int*)name;
-	int ival = *(int*)value;
-	PairList* newnode = new PairList(name, 0, value);
-	if (ithis != *(int*)this || iname != *(int*)name
-	    || ival != *(int*)value)
-	    abort();
+	PairList* newnode = new PairList(value, 0, name);
 	newnode->expose();
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
