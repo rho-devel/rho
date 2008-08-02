@@ -296,7 +296,7 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
     ans = duplicate(CAR(args));
-    SET_ATTRIB(ans, R_NilValue);  /* this is never called with names */
+    ans->clearAttributes();
     sortVector(ans, decreasing);
     return(ans);
 }
@@ -554,7 +554,7 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("index %d outside bounds"), l[i]);
     }
     SETCAR(args, duplicate(CAR(args)));
-    SET_ATTRIB(CAR(args), R_NilValue);  /* remove all attributes */
+    CAR(args)->clearAttributes();  /* remove all attributes */
     Psort0(CAR(args), 0, n - 1, l, k);
     return CAR(args);
 }

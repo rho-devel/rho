@@ -77,8 +77,7 @@ namespace {
     inline void CLEAR_ATTRIB(SEXP x)
     {
 	if (ATTRIB(x)) {
-	    SET_ATTRIB(x, 0);
-	    if (OBJECT(x)) SET_OBJECT(x, 0);
+	    x->clearAttributes();
 	    if (IS_S4_OBJECT(x)) UNSET_S4_OBJECT(x);
 	}
     }

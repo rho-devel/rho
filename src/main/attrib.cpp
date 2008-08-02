@@ -826,8 +826,7 @@ static SEXP dimnamesgets1(SEXP val1)
     }
     if (!isString(val1)) { /* mimic as.character.default */
 	PROTECT(this2 = coerceVector(val1, STRSXP));
-	SET_ATTRIB(this2, R_NilValue);
-	SET_OBJECT(this2, 0);
+	this2->clearAttributes();
 	UNPROTECT(1);
 	return this2;
     }

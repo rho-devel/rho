@@ -1279,8 +1279,7 @@ SEXP attribute_hidden do_updateform(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* the attribute list of the returned */
     /* value, but it can't hurt. */
 
-    SET_ATTRIB(_new, R_NilValue);
-    SET_OBJECT(_new, 0);
+    _new->clearAttributes();
     setAttrib(_new, R_DotEnvSymbol, getAttrib(old, R_DotEnvSymbol));
 
     return _new;

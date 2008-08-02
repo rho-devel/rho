@@ -633,8 +633,7 @@ int_vectorSubscript(int nx, SEXP s, int *stretch, AttrGetter dng,
     }
     PROTECT(s = duplicate(s));
     if (s) {
-	SET_ATTRIB(s, R_NilValue);
-	SET_OBJECT(s, 0);
+	s->clearAttributes();
     }
     switch (TYPEOF(s)) {
     case NILSXP:

@@ -155,6 +155,14 @@ namespace CXXR {
 	 */
 	const PairList* attributes() const {return m_attrib;}
 
+	/** @brief Remove all attributes.
+	 */
+	void clearAttributes()
+	{
+	    m_attrib = 0;
+	    m_has_class = false;
+	}
+
 	/** @brief Replace the attributes of an object.
 	 *
 	 * @param new_attributes Pointer to the start of the new list
