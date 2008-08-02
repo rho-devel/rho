@@ -157,13 +157,13 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 	}
     }
     /* This is where the old/new list adjustment happens. */
-    for (s = ATTRIB(vec); s != R_NilValue; s = CDR(s))
-	if (TAG(s) == name) {
-	    if (name == R_DimNamesSymbol && TYPEOF(CAR(s)) == LISTSXP) {
+    RObject* att = vec->getAttribute(*SEXP_downcast<Symbol*>(name));
+    if (!att) return 0;
+	    if (name == R_DimNamesSymbol && TYPEOF(att) == LISTSXP) {
 		SEXP _new, old;
 		int i;
-		_new = allocVector(VECSXP, length(CAR(s)));
-		old = CAR(s);
+		_new = allocVector(VECSXP, length(att));
+		old = att;
 		i = 0;
 		while (old != R_NilValue) {
 		    SET_VECTOR_ELT(_new, i++, CAR(old));
@@ -172,16 +172,15 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 		SET_NAMED(_new, 2);
 		return _new;
 	    }
-	    SET_NAMED(CAR(s), 2);
-	    return CAR(s);
-	}
-    return R_NilValue;
+	    SET_NAMED(att, 2);
+	    return att;
 }
 
 SEXP getAttrib(SEXP vec, SEXP name)
 {
+    if (!vec) return 0;
     /* pre-test to avoid expensive operations if clearly not needed -- LT */
-    if (ATTRIB(vec) == R_NilValue &&
+    if (!vec->hasAttributes() &&
 	! (TYPEOF(vec) == LISTSXP || TYPEOF(vec) == LANGSXP))
 	return R_NilValue;
 
@@ -355,7 +354,7 @@ static SEXP installAttrib(SEXP vec, SEXP name, SEXP val)
     s = allocList(1);
     SETCAR(s, val);
     SET_TAG(s, name);
-    if (ATTRIB(vec) == R_NilValue)
+    if (!vec->hasAttributes())
 	SET_ATTRIB(vec, s);
     else {
 	t = nthcdr(ATTRIB(vec), length(ATTRIB(vec)) - 1);

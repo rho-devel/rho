@@ -111,6 +111,7 @@ extern "C" {
 
 namespace CXXR {
     class PairList;
+    class Symbol;
 
     /** @brief Replacement for CR's SEXPREC.
      *
@@ -161,6 +162,37 @@ namespace CXXR {
 	{
 	    m_attrib = 0;
 	    m_has_class = false;
+	}
+
+	/** @brief Get the value a particular attribute.
+	 *
+	 * @param name Reference to a \c Symbol giving the name of the
+	 *          sought attribute.  Note that this \c Symbol is
+	 *          identified by its address.
+	 *
+	 * @return pointer to the value of the attribute with \a name,
+	 * or a null pointer if there is no such attribute.
+	 */
+	RObject* getAttribute(const Symbol& name);
+
+	/** @brief Get the value a particular attribute (const variant).
+	 *
+	 * @param name Reference to a \c Symbol giving the name of the
+	 *          sought attribute.  Note that this \c Symbol is
+	 *          identified by its address.
+	 *
+	 * @return const pointer to the value of the attribute with \a
+	 * name, or a null pointer if there is no such attribute.
+	 */
+	const RObject* getAttribute(const Symbol& name) const;
+
+	/** @brief Has this object any attributes?
+	 *
+	 * @return true iff this object has any attributes.
+	 */
+	bool hasAttributes() const
+	{
+	    return m_attrib != 0;
 	}
 
 	/** @brief Replace the attributes of an object.

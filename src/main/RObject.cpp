@@ -42,6 +42,7 @@
 #include "CXXR/RObject.h"
 
 #include "CXXR/PairList.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
@@ -71,15 +72,29 @@ namespace CXXR {
     }
 }
 
-const char*  RObject::typeName() const
+RObject* RObject::getAttribute(const Symbol& name)
 {
-    return Rf_type2char(sexptype());
+    for (PairList* node = m_attrib; node; node = node->tail())
+	if (node->tag() == &name) return node->car();
+    return 0;
+}
+
+const RObject* RObject::getAttribute(const Symbol& name) const
+{
+    for (PairList* node = m_attrib; node; node = node->tail())
+	if (node->tag() == &name) return node->car();
+    return 0;
 }
 
 void RObject::setAttributes(PairList* new_attributes)
 {
     m_attrib = new_attributes;
     devolveAge(m_attrib);
+}
+
+const char* RObject::typeName() const
+{
+    return Rf_type2char(sexptype());
 }
 
 void RObject::visitChildren(const_visitor* v) const
