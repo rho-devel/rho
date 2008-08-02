@@ -101,15 +101,6 @@ static SEXP row_names_gets(SEXP vec , SEXP val)
     return ans;
 }
 
-/* used in removeAttrib, commentgets and classgets */
-static SEXP stripAttrib(SEXP tag, SEXP lst)
-{
-    if(lst == R_NilValue) return lst;
-    if(tag == TAG(lst)) return stripAttrib(tag, CDR(lst));
-    SETCDR(lst, stripAttrib(tag, CDR(lst)));
-    return lst;
-}
-
 /* NOTE: For environments serialize.c calls this function to find if
    there is a class attribute in order to reconstruct the object bit
    if needed.  This means the function cannot use OBJECT(vec) == 0 to
@@ -375,8 +366,8 @@ static SEXP removeAttrib(SEXP vec, SEXP name)
     }
     else {
 	if (name == R_DimSymbol)
-	    SET_ATTRIB(vec, stripAttrib(R_DimNamesSymbol, ATTRIB(vec)));
-	SET_ATTRIB(vec, stripAttrib(name, ATTRIB(vec)));
+	    vec->setAttribute(static_cast<Symbol*>(R_DimNamesSymbol), 0);
+	vec->setAttribute(SEXP_downcast<Symbol*>(name), 0);
 	if (name == R_ClassSymbol)
 	    SET_OBJECT(vec, 0);
     }
@@ -453,7 +444,7 @@ static SEXP commentgets(SEXP vec, SEXP comment)
 
     if (isNull(comment) || isString(comment)) {
 	if (length(comment) <= 0) {
-	    SET_ATTRIB(vec, stripAttrib(R_CommentSymbol, ATTRIB(vec)));
+	    vec->setAttribute(static_cast<Symbol*>(R_CommentSymbol), 0);
 	}
 	else {
 	    installAttrib(vec, R_CommentSymbol, comment);
@@ -483,8 +474,7 @@ SEXP classgets(SEXP vec, SEXP klass)
 {
     if (isNull(klass) || isString(klass)) {
 	if (length(klass) <= 0) {
-	    SET_ATTRIB(vec, stripAttrib(R_ClassSymbol, ATTRIB(vec)));
-	    SET_OBJECT(vec, 0);
+	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), 0);
 	}
 	else {
 	    /* When data frames were a special data type */

@@ -41,6 +41,8 @@
 
 #include "CXXR/RObject.h"
 
+#include "localization.h"
+#include "R_ext/Error.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
@@ -84,6 +86,46 @@ const RObject* RObject::getAttribute(const Symbol& name) const
     for (PairList* node = m_attrib; node; node = node->tail())
 	if (node->tag() == &name) return node->car();
     return 0;
+}
+
+// This follows CR in adding new attributes at the end of the list,
+// though it would be easier to add them at the beginning.
+void RObject::setAttribute(Symbol* name, RObject* value)
+{
+    if (!name)
+	Rf_error(_("attempt to set an attribute on NULL"));
+    // Update m_has_class if necessary:
+    if (name == R_ClassSymbol)
+	m_has_class = (value != 0);
+    // Find attribute:
+    PairList* prev = 0;
+    PairList* node = m_attrib;
+    while (node && node->tag() != name) {
+	prev = node;
+	node = node->tail();
+    }
+    if (node) {  // Attribute already present
+	// Update existing attribute:
+	if (value) node->setCar(value);
+	// Delete existing attribute:
+	else if (prev) prev->setTail(node->tail());
+	else m_attrib = node->tail();
+    } else if (value) {  
+	// Create new node:
+	int ithis = *(int*)this;
+	int iname = *(int*)name;
+	int ival = *(int*)value;
+	PairList* newnode = new PairList(name, 0, value);
+	if (ithis != *(int*)this || iname != *(int*)name
+	    || ival != *(int*)value)
+	    abort();
+	newnode->expose();
+	if (prev) prev->setTail(newnode);
+	else { // No preexisting attributes at all:
+	    m_attrib = newnode;
+	    devolveAge(m_attrib);
+	}
+    }
 }
 
 void RObject::setAttributes(PairList* new_attributes)

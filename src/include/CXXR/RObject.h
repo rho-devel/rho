@@ -133,7 +133,35 @@ namespace CXXR {
      * <tt>objects()</tt>.  In particular, it does not imply that
      * the object belongs to an R class.
      *
-     * @todo Constrain m_attributes to be a PairList?
+     * @invariant The class currently aims to enforce the following
+     * invariants in regard to each RObject:
+     * <ul>
+     *
+     * <li><tt>m_has_class</tt> is true iff the object has the class
+     * attribute.</li>
+     *
+     * <li>Each attribute in the list of attributes must have a Symbol
+     * as its tag.  Null tags are not allowed.</li>
+     *
+     * <li>Each attribute must have a distinct tag: no duplicates
+     * allowed.</li>
+     *
+     * <li>No attribute may have a null value: an attempt to set the
+     * value of an attribute to null will result in the removal of the
+     * attribute altogether.
+     *
+     * </ul>
+     * The CR code in attrib.cpp applies further consistency
+     * conditions on attributes, but these are not yet enforced via
+     * the class interface.
+     *
+     * @todo Incorporate further attribute consistency checks within
+     * the class interface.  Possibly make setAttribute() virtual so
+     * that these consistency checks can be tailored according to the
+     * derived class.
+     *
+     * @todo Possibly key attributes on (cached) strings rather than
+     * Symbol objects.
      */
     struct RObject : public GCNode {
 	/**
@@ -147,12 +175,16 @@ namespace CXXR {
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
+	 *
+	 * @deprecated This method allows clients to modify the
+	 * attribute list directly, and thus bypass attribute
+	 * consistency checks.
 	 */
 	PairList* attributes() {return m_attrib;}
 
 	/** @brief Get object attributes (const variant).
 	 *
-	 * @return Pointer to the attributes of this object.
+	 * @return const pointer to the attributes of this object.
 	 */
 	const PairList* attributes() const {return m_attrib;}
 
@@ -195,11 +227,31 @@ namespace CXXR {
 	    return m_attrib != 0;
 	}
 
+	/** @brief Set or remove an attribute.
+	 *
+	 * @param name Pointer to the Symbol naming the attribute to
+	 *          be set or removed.
+	 *
+	 * @param value Pointer to the value to be ascribed to the
+	 *          attribute, or a null pointer if the attribute is
+	 *          to be removed.  The object whose attribute is set
+	 *          (i.e. <tt>this</tt>) should be considered to
+	 *          assume ownership of \a value, which should
+	 *          therefore not be subsequently altered externally.
+	 */
+	void setAttribute(Symbol* name, RObject* value);
+
 	/** @brief Replace the attributes of an object.
 	 *
 	 * @param new_attributes Pointer to the start of the new list
 	 *          of attributes.  May be a null pointer, in which
 	 *          case all attributes are removed.
+	 *
+	 * @note The \a new_attributes list should conform to the
+	 * class invariants.  However, attributes with null values are
+	 * silently discarded, and if duplicate attributes are
+	 * present, only the last one is heeded (and if the last
+	 * setting has a null value, the attribute is removed altogether).
 	 */
 	void setAttributes(PairList* new_attributes);
 
