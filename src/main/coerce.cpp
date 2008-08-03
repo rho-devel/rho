@@ -63,11 +63,10 @@ using namespace CXXR;
 #define WARN_IMAG  4
 #define WARN_RAW  8
 
-/* The following two functions copy or clear the attributes.  They also
-   ensure that the object bit is properly set.  They avoid calling the
-   assignment functions when possible, since the write barrier (and
-   possibly cache behavior on some architectures) makes assigning more
-   costly than dereferencing. */
+/* The following two functions copy or clear the attributes.  They
+   avoid calling the assignment functions when possible, since the
+   write barrier (and possibly cache behavior on some architectures)
+   makes assigning more costly than dereferencing. */
 namespace {
     inline void cDUPLICATE_ATTRIB(SEXP to, SEXP from)
     {

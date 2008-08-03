@@ -1079,7 +1079,6 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SETCAR(a, mkString("terms"));
     SET_TAG(a, install("class"));
-    SET_OBJECT(ans, 1);
 
     SETCDR(a, R_NilValue);  /* truncate if necessary */
     SET_ATTRIB(ans, attributes);

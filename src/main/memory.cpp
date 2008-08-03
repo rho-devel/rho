@@ -700,7 +700,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
     GCRoot<> attributes(duplicate(ATTRIB(from)));
     SET_ATTRIB(to, attributes);
-    SET_OBJECT(to, OBJECT(from));
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }
 

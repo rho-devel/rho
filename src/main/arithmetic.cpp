@@ -334,9 +334,7 @@ SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
 
 #define COERCE_IF_NEEDED(v, tp, vpi) do { \
     if (TYPEOF(v) != (tp)) { \
-	int __vo__ = OBJECT(v); \
 	REPROTECT(v = coerceVector(v, (tp)), vpi); \
-	if (__vo__) SET_OBJECT(v, 1); \
     } \
 } while (0)
 

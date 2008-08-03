@@ -113,7 +113,7 @@ namespace CXXR {
 	    if (!cc) return 0;
 	    if (T* ccc = dynamic_cast<T*>(cc)) return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
-	    SET_ATTRIB(ans, ATTRIB(cc));
+	    ans->setAttributes(cc->attributes());
 	    ans->expose();
 	    return ans;
 	}

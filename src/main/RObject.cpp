@@ -60,7 +60,6 @@ namespace CXXR {
 	Rboolean (*OBJECTptr)(SEXP e) = OBJECT;
 	int (*SETLEVELSptr)(SEXP x, int v) = SETLEVELS;
 	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
-	void (*SET_OBJECTptr)(SEXP x, int v) = SET_OBJECT;
 	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
 	int (*TRACEptr)(SEXP x) = TRACE;
 	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;

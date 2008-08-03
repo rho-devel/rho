@@ -619,7 +619,6 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
     if (type != TYPEOF(s))
       error(_("mismatch on types"));
 
-    SET_OBJECT(s, m->InInteger(fp, d));
     SETLEVELS(s, m->InInteger(fp, d));
     SET_ATTRIB(s, OffsetToNode(m->InInteger(fp, d), node));
     switch (TYPEOF(s)) {
@@ -1391,7 +1390,6 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	error(_("NewReadItem: unknown type %i"), type);
     }
     SETLEVELS(s, levs);
-    SET_OBJECT(s, objf);
     SET_ATTRIB(s, NewReadItem(sym_table, env_table, fp, m, d));
     UNPROTECT(1); /* s */
     return s;

@@ -1318,11 +1318,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    SET_FRAME(s, ReadItem(ref_table, stream));
 	    SET_HASHTAB(s, ReadItem(ref_table, stream));
 	    SET_ATTRIB(s, ReadItem(ref_table, stream));
-	    if (ATTRIB(s) != R_NilValue &&
-		getAttrib(s, R_ClassSymbol) != R_NilValue)
-		/* We don't write out the object bit for environments,
-		   so reconstruct it here if needed. */
-		SET_OBJECT(s, 1);
 	    R_RestoreHashCount(s);
 	    if (locked) R_LockEnvironment(s, FALSE);
 	    /* Convert a NULL enclosure to baseenv() */
@@ -1342,7 +1337,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	PROTECT(s = new PairList);
 	s->expose();
 	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
@@ -1353,7 +1347,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	PROTECT(s = new Expression);
 	s->expose();
 	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
@@ -1369,7 +1362,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	PROTECT(s = new DottedArgs);
 	s->expose();
 	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
@@ -1398,7 +1390,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 					     env ? env : Environment::base()),
 				 true);
 	    SETLEVELS(clos, levs);
-	    SET_OBJECT(clos, objf);
 	    SET_ATTRIB(clos, attr);
 	    return clos;
 	}
@@ -1419,7 +1410,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    GCRoot<> valgen(ReadItem(ref_table, stream));
 	    GCRoot<Promise> prom(new Promise(valgen, *env), true);
 	    SETLEVELS(prom, levs);
-	    SET_OBJECT(prom, objf);
 	    SET_ATTRIB(prom, attr);
 	    return prom;
 	}
@@ -1533,7 +1523,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    error(_("ReadItem: unknown type %i, perhaps written by later version of R"), type);
 	}
 	SETLEVELS(s, levs);
-	SET_OBJECT(s, objf);
 #ifdef USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS
 	if (TYPEOF(s) == CHARSXP) {
 	    /* With the CHARSXP cache maintained through the ATTRIB
@@ -1547,7 +1536,10 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	else
 	    SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 #else
-	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
+	{
+	    GCRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    SET_ATTRIB(s, attributes);
+	}
 #endif
 	UNPROTECT(1); /* s */
 	return s;

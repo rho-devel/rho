@@ -296,7 +296,7 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
     ans = duplicate(CAR(args));
-    ans->clearAttributes();
+    ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
     return(ans);
 }

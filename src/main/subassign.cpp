@@ -224,8 +224,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
        differently */
     Rboolean redo_which = TRUE;
     int which = 100 * TYPEOF(*x) + TYPEOF(*y);
-    /* coercion can lose the object bit */
-    Rboolean x_is_object = Rboolean(OBJECT(*x));
 
     switch (which) {
     case 1000:	/* logical    <- null       */
@@ -385,7 +383,6 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 	*x = EnlargeVector(*x, stretch);
 	UNPROTECT(1);
     }
-    SET_OBJECT(*x, x_is_object);
 
     if(redo_which)
 	return(100 * TYPEOF(*x) + TYPEOF(*y));
@@ -1829,7 +1826,6 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	    if (val == R_NilValue) {
 		SET_ATTRIB(CDR(x), ATTRIB(x));
 		IS_S4_OBJECT(x) ?  SET_S4_OBJECT(CDR(x)) : UNSET_S4_OBJECT(CDR(x));
-		SET_OBJECT(CDR(x), OBJECT(x));
 		SET_NAMED(CDR(x), NAMED(x));
 		x = CDR(x);
 	    }

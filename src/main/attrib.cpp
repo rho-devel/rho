@@ -219,7 +219,6 @@ SEXP R_copyDFattr(SEXP in, SEXP out)
 {
     SET_ATTRIB(out, ATTRIB(in));
     IS_S4_OBJECT(in) ?  SET_S4_OBJECT(out) : UNSET_S4_OBJECT(out);
-    SET_OBJECT(out, OBJECT(in));
     return out;
 }
 
@@ -283,7 +282,6 @@ void copyMostAttrib(SEXP inp, SEXP ans)
 	    ans->setAttribute(SEXP_downcast<Symbol*>(TAG(s)), CAR(s));
 	}
     }
-    SET_OBJECT(ans, OBJECT(inp));
     IS_S4_OBJECT(inp) ?  SET_S4_OBJECT(ans) : UNSET_S4_OBJECT(ans);
     UNPROTECT(2);
 }
@@ -328,7 +326,6 @@ void attribute_hidden copyMostAttribNoTs(SEXP inp, SEXP ans)
 	    }
 	}
     }
-    SET_OBJECT(ans, OBJECT(inp));
     IS_S4_OBJECT(inp) ?  SET_S4_OBJECT(ans) : UNSET_S4_OBJECT(ans);
     UNPROTECT(2);
 }
@@ -346,8 +343,6 @@ static SEXP removeAttrib(SEXP vec, SEXP name)
 	if (name == R_DimSymbol)
 	    vec->setAttribute(static_cast<Symbol*>(R_DimNamesSymbol), 0);
 	vec->setAttribute(SEXP_downcast<Symbol*>(name), 0);
-	if (name == R_ClassSymbol)
-	    SET_OBJECT(vec, 0);
     }
     return R_NilValue;
 }
@@ -447,9 +442,8 @@ SEXP attribute_hidden do_comment(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP classgets(SEXP vec, SEXP klass)
 {
     if (isNull(klass) || isString(klass)) {
-	if (length(klass) <= 0) {
+  	if (length(klass) <= 0)
 	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), 0);
-	}
 	else {
 	    /* When data frames were a special data type */
 	    /* we had more exhaustive checks here.  Now that */
@@ -475,7 +469,6 @@ SEXP classgets(SEXP vec, SEXP klass)
 	    }
 
 	    vec->setAttribute(static_cast<Symbol*>(R_ClassSymbol), klass);
-	    SET_OBJECT(vec, 1);
 	}
 	return R_NilValue;
     }
@@ -1033,8 +1026,6 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (isList(object))
 	setAttrib(object, R_NamesSymbol, R_NilValue);
     object->clearAttributes();
-    /* We have just removed the class, but might reset it later */
-    SET_OBJECT(object, 0);
     /* Probably need to fix up S4 bit in other cases, but
        definitely in this one */
     if (nattrs == 0) UNSET_S4_OBJECT(object);

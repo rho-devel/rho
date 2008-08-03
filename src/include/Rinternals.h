@@ -116,7 +116,6 @@ Rboolean (OBJECT)(SEXP x);
 int  (MARK)(SEXP x);
 SEXPTYPE (TYPEOF)(SEXP x);
 int  (NAMED)(SEXP x);
-void (SET_OBJECT)(SEXP x, int v);
 void (SET_NAMED)(SEXP x, int v);
 void SET_ATTRIB(SEXP x, SEXP v);
 void DUPLICATE_ATTRIB(SEXP to, SEXP from);

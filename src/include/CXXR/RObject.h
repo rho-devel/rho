@@ -227,6 +227,15 @@ namespace CXXR {
 	    return m_attrib != 0;
 	}
 
+	/** @brief Has this object the class attribute?
+	 *
+	 * @return true iff this object has the class attribute.
+	 */
+	bool hasClass() const
+	{
+	    return m_has_class;
+	}
+
 	/** @brief Set or remove an attribute.
 	 *
 	 * @param name Pointer to the Symbol naming the attribute to
@@ -281,9 +290,9 @@ namespace CXXR {
 
     private:
 	const SEXPTYPE m_type        : 7;
+	bool m_has_class             : 1;
     public:
 	// To be private in future:
-	bool m_has_class             : 1;
 	unsigned int m_named         : 2;
 	bool m_debug                 : 1;
 	bool m_trace                 : 1;
@@ -385,7 +394,7 @@ extern "C" {
 #else
     inline Rboolean OBJECT(SEXP x)
     {
-	return Rboolean(x && x->m_has_class);
+	return Rboolean(x && x->hasClass());
     }
 #endif
 
@@ -503,15 +512,6 @@ extern "C" {
 	if (!x) return;
 	x->m_named = v;
     }
-#endif
-
-    /**
-     * @deprecated Ought to be private.
-     */
-#ifndef __cplusplus
-    void SET_OBJECT(SEXP x, int v);
-#else
-    inline void SET_OBJECT(SEXP x, int v) {x->m_has_class = v;}
 #endif
 
 #ifndef __cplusplus
