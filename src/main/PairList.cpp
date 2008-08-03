@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include "localization.h"
+#include "R_ext/Error.h"
 
 using namespace std;
 using namespace CXXR;

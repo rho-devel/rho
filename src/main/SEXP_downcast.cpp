@@ -28,62 +28,27 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, a copy is available at
- *  http://www.r-project.org/Licenses/
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
  */
 
-/** @file CachedString.cpp
+/** @file SEXP_downcast.cpp
  *
- * Implementation of class CXXR::CachedString and related functions.
+ * Error reporting for SEXP_downcast.
  */
 
-#include "CXXR/CachedString.h"
+#include "CXXR/SEXP_downcast.hpp"
 
+#include "localization.h"
 #include "R_ext/Error.h"
 
-using namespace std;
 using namespace CXXR;
 
-namespace CXXR {
-    namespace ForceNonInline {
-	SEXP (*mkCharp)(const char*) = Rf_mkChar;
-	SEXP (*mkCharCEp)(const char*, cetype_t) = Rf_mkCharCE;
-    }
+#ifdef USE_TYPE_CHECKING
+
+void CXXR::SEXP_downcast_error(const char* given, const char* wanted)
+{
+    Rf_error(_("'%s' supplied where '%s' expected."), given, wanted);
 }
 
-tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
-
-CachedString::map* CachedString::cache()
-{
-    static map the_cache;
-    return &the_cache;
-}
-
-const CachedString* CachedString::obtain(const std::string& str,
-					 cetype_t encoding)
-{
-    // This will be checked again when we actually construct the
-    // CachedString, but we precheck now so that we don't create an
-    // invalid cache key:
-    if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
-        error("unknown encoding: %d", encoding);
-    pair<map::iterator, bool> pr
-	= cache()->insert(map::value_type(key(str, encoding), 0));
-    map::iterator it = pr.first;
-    if (pr.second) {
-	try {
-	    map::value_type& val = *it;
-	    val.second = new CachedString(&val);
-	    val.second->expose();
-	} catch (...) {
-	    cache()->erase(it);
-	    throw;
-	}
-    }
-    return (*it).second;
-}
- 
-const char* CachedString::typeName() const
-{
-    return CachedString::staticTypeName();
-}
+#endif

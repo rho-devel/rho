@@ -38,7 +38,6 @@
 #ifndef SEXP_DOWNCAST_HPP
 #define SEXP_DOWNCAST_HPP 1
 
-#include "R_ext/Error.h"
 #include "CXXR/RObject.h"
 
 #define USE_TYPE_CHECKING
@@ -51,6 +50,8 @@ namespace CXXR {
 	return static_cast<Ptr>(s);
     }
 #else
+    void SEXP_downcast_error(const char* given, const char* wanted);
+
     /** Down cast from RObject* to a pointer to a class derived from
      *  RObject.
      * @param Ptr Cast the pointer to type Ptr, where Ptr is a pointer
@@ -64,9 +65,7 @@ namespace CXXR {
     {
 	if (!s) return 0;
 	Ptr ans = dynamic_cast<Ptr>(s);
-	if (!ans)
-	    error("'%s' supplied where '%s' expected.",
-		  s->typeName(), ans->staticTypeName());
+	if (!ans) SEXP_downcast_error(s->typeName(), ans->staticTypeName());
 	return ans;
     }
 #endif

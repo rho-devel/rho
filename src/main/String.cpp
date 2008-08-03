@@ -39,6 +39,7 @@
 
 #include "CXXR/String.h"
 
+#include "R_ext/Error.h"
 #include "CXXR/UncachedString.h"
 
 using namespace std;
