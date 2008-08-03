@@ -698,7 +698,8 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 /* General Cons Cell Attributes */
 
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
-    SET_ATTRIB(to, duplicate(ATTRIB(from)));
+    GCRoot<> attributes(duplicate(ATTRIB(from)));
+    SET_ATTRIB(to, attributes);
     SET_OBJECT(to, OBJECT(from));
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }

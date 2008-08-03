@@ -245,7 +245,11 @@ namespace CXXR {
 	 *
 	 * @param new_attributes Pointer to the start of the new list
 	 *          of attributes.  May be a null pointer, in which
-	 *          case all attributes are removed.
+	 *          case all attributes are removed.  The object whose
+	 *          attributes are set (i.e. <tt>this</tt>) should be
+	 *          considered to assume ownership of the 'car' values
+	 *          in \a new_attributes ; they should therefore not
+	 *          be subsequently altered externally.
 	 *
 	 * @note The \a new_attributes list should conform to the
 	 * class invariants.  However, attributes with null values are
@@ -470,8 +474,17 @@ extern "C" {
     /** @brief Replace an object's attributes.
      *
      * @param x Pointer to a CXXR::RObject.
-     * @param v Pointer to the new attributes CXXR::RObject.
-     * @todo Could \a v be \c const ?
+     *
+     * @param v Pointer to a PairList giving the new attributes of \a
+     *          x.  \a x should be considered to assume ownership of
+     *          the 'car' values in \a v ; they should therefore not
+     *          be subsequently altered externally.
+     *
+     * @note Unlike CR, \a v isn't simply plugged into the attributes
+     * field of \x : refer to the documentation for \c
+     * RObject::setAttributes() .  In particular, do not attempt to
+     * modify the attributes by changing \a v \e after SET_ATTRIB
+     * has been called.
      */
     void SET_ATTRIB(SEXP x, SEXP v);
 

@@ -813,14 +813,8 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
     allowDot = asLogical(CAR(a));
     if (allowDot == NA_LOGICAL) allowDot = 0;
 
-    if (specials == R_NilValue) {
-	a = allocList(8);
-	SET_ATTRIB(ans, a);
-    }
-    else {
-	a = allocList(9);
-	SET_ATTRIB(ans, a);
-    }
+    GCRoot<> attributes(allocList(specials == 0 ? 8 : 9));
+    a = attributes;
 
     /* Step 1: Determine the ``variables'' in the model */
     /* Here we create an expression of the form */
@@ -1088,7 +1082,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_OBJECT(ans, 1);
 
     SETCDR(a, R_NilValue);  /* truncate if necessary */
-
+    SET_ATTRIB(ans, attributes);
     UNPROTECT(4);
     return ans;
 }

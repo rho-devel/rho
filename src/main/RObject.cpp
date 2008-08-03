@@ -122,10 +122,16 @@ void RObject::setAttribute(Symbol* name, RObject* value)
     }
 }
 
+// This has complexity O(n^2) where n is the number of attributes, but
+// we assume n is very small.    
 void RObject::setAttributes(PairList* new_attributes)
 {
-    m_attrib = new_attributes;
-    devolveAge(m_attrib);
+    clearAttributes();
+    while (new_attributes) {
+	Symbol* name = SEXP_downcast<Symbol*>(new_attributes->tag());
+	setAttribute(name, new_attributes->car());
+	new_attributes = new_attributes->tail();
+    }
 }
 
 const char* RObject::typeName() const
