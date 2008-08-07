@@ -44,11 +44,9 @@
 #ifndef BUILTINFUNCTION_H
 #define BUILTINFUNCTION_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/FunctionBase.h"
 
 #ifdef __cplusplus
-
-#include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     /** @brief R function implemented within the interpreter.
@@ -59,7 +57,7 @@ namespace CXXR {
      * @note This is an interim implementation: expect major changes
      * in the future.
      */
-    class BuiltInFunction : public RObject {
+    class BuiltInFunction : public FunctionBase {
     public:
 	/**
 	 * @param offset The required table offset.  (Not
@@ -69,7 +67,8 @@ namespace CXXR {
 	 *          otherwise it will be a SPECIALSXP.
 	 */
 	explicit BuiltInFunction(unsigned int offset, bool evaluate = true)
-	    : RObject(evaluate ? BUILTINSXP : SPECIALSXP), m_offset(offset)
+	    : FunctionBase(evaluate ? BUILTINSXP : SPECIALSXP),
+	      m_offset(offset)
 	{}
 
 	/** @brief Get table offset.

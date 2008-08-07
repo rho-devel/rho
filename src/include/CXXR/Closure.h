@@ -41,7 +41,7 @@
 #ifndef RCLOSURE_H
 #define RCLOSURE_H
 
-#include "CXXR/RObject.h"
+#include "CXXR/FunctionBase.h"
 
 #ifdef __cplusplus
 
@@ -57,7 +57,7 @@ namespace CXXR {
      * are interpreted by reference to the specified environment (and
      * its enclosing environments).
      */
-    class Closure : public RObject {
+    class Closure : public FunctionBase {
     public:
 	/**
 	 * @param formal_args List of formal arguments.
@@ -149,10 +149,10 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
     private:
+	bool m_debug;
 	const PairList* m_formals;
 	const RObject* m_body;
 	Environment* m_environment;
-	bool m_debug;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':

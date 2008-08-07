@@ -77,8 +77,8 @@ SEXP Rf_append(SEXP first, SEXP second)
 
 Closure::Closure(const PairList* formal_args, const RObject* body,
 		 Environment* env)
-    : RObject(CLOSXP), m_formals(formal_args), m_body(body),
-      m_environment(env), m_debug(false)
+    : FunctionBase(CLOSXP), m_debug(false), m_formals(formal_args),
+      m_body(body), m_environment(env)
 {
     RObject* bod = const_cast<RObject*>(body);
     if (!isList(bod) && !isLanguage(bod) && !isSymbol(bod)

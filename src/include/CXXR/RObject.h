@@ -163,13 +163,13 @@ namespace CXXR {
      * @todo Possibly key attributes on (cached) strings rather than
      * Symbol objects.
      */
-    struct RObject : public GCNode {
+    class RObject : public GCNode {
+    public:
 	/**
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
-	    : m_type(stype), m_has_class(false), m_named(0), m_trace(false),
-	      m_attrib(0)
+	    : m_type(stype), m_has_class(false), m_named(0), m_attrib(0)
 	{}
 
 	/** @brief Get object attributes.
@@ -284,17 +284,14 @@ namespace CXXR {
 	 */
 	virtual const char* typeName() const;
 
-        // To be protected in future:
-
+    protected:
 	virtual ~RObject() {}
-
     private:
 	const SEXPTYPE m_type        : 7;
 	bool m_has_class             : 1;
     public:
 	// To be private in future:
 	unsigned int m_named         : 2;
-	bool m_trace                 : 1;
 	FlagWord m_flags;
     private:
 	PairList* m_attrib;
@@ -458,18 +455,6 @@ extern "C" {
     inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
 #endif
 
-    /** @brief Get object tracing status.
-     *
-     * @param x Pointer to CXXR::RObject.
-     * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
-     * null pointer.
-     */
-#ifndef __cplusplus
-    int TRACE(SEXP x);
-#else
-    inline int TRACE(SEXP x) {return x ? x->m_trace : 0;}
-#endif
-
     /**
      * @deprecated
      */
@@ -511,12 +496,6 @@ extern "C" {
 	if (!x) return;
 	x->m_named = v;
     }
-#endif
-
-#ifndef __cplusplus
-    void SET_TRACE(SEXP x, int v);
-#else
-    inline void SET_TRACE(SEXP x, int v) {x->m_trace = v;}
 #endif
 
     /** @brief Replace the attributes of \a to by those of \a from.
