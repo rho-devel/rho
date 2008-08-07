@@ -84,6 +84,16 @@ namespace CXXR {
 	    return m_body;
 	}
 
+	/** @brief Is debugging enabled?
+	 *
+	 * @return true iff debugging is currently enabled for this
+	 * Closure.
+	 */
+	bool debugging() const
+	{
+	    return m_debug;
+	}
+
 	/** @brief Access the environment of the Closure.
 	 *
 	 * @return Pointer to the environment of the Closure.
@@ -100,6 +110,16 @@ namespace CXXR {
 	const PairList* formalArgs() const
 	{
 	    return m_formals;
+	}
+
+	/** @brief Set debugging status.
+	 *
+	 * @param on The required new debugging status (true =
+	 *           enabled).
+	 */
+	void setDebugging(bool on)
+	{
+	    m_debug = on;
 	}
 
 	/** @brief Replace the environment of the closure.
@@ -132,6 +152,7 @@ namespace CXXR {
 	const PairList* m_formals;
 	const RObject* m_body;
 	Environment* m_environment;
+	bool m_debug;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':
@@ -198,15 +219,26 @@ extern "C" {
     }
 #endif
 
-    /**
+    /** @brief Query debugging status.
+     *
      * @param x Pointer to a CXXR::Closure object.
+     *
      * @return \c true if debugging is set, i.e. evaluations of the
      *         function should run under the browser.
+     *
+     * @note In CXXR, DEBUG() is applicable only to closures; use
+     * ENV_DEBUG() to query the debugging (single-stepping) state
+     * for environments.
      */
 #ifndef __cplusplus
     Rboolean DEBUG(SEXP x);
 #else
-    inline Rboolean DEBUG(SEXP x) {return Rboolean(x->m_debug);}
+    inline Rboolean DEBUG(SEXP x)
+    {
+	using namespace CXXR;
+	const Closure& clos = *SEXP_downcast<const Closure*>(x);
+	return Rboolean(clos.debugging());
+    }
 #endif
 
     /** @brief Access formal arguments of a CXXR::Closure.
@@ -221,8 +253,8 @@ extern "C" {
     inline SEXP FORMALS(SEXP x)
     {
 	using namespace CXXR;
-	const Closure& clo = *SEXP_downcast<Closure*>(x);
-	return const_cast<PairList*>(clo.formalArgs());
+	const Closure& clos = *SEXP_downcast<Closure*>(x);
+	return const_cast<PairList*>(clos.formalArgs());
     }
 #endif
 
@@ -266,13 +298,24 @@ extern "C" {
 
     /**
      * Set the debugging state of a CXXR::Closure object.
-     * @param x Pointer a closure object.
+     *
+     * @param x Pointer a CXXR::Closure object (checked).
+     *
      * @param v The new debugging state.
+     *
+     * @note In CXXR, SET_DEBUG() is applicable only to closures; use
+     * SET_ENV_DEBUG() to set the debugging (single-stepping) state
+     * for environments.
      */
 #ifndef __cplusplus
     void SET_DEBUG(SEXP x, Rboolean v);
 #else
-    inline void SET_DEBUG(SEXP x, Rboolean v) {x->m_debug = v;}
+    inline void SET_DEBUG(SEXP x, Rboolean v)
+    {
+	using namespace CXXR;
+	Closure& clos = *SEXP_downcast<Closure*>(x);
+	clos.setDebugging(v);
+    }
 #endif
 
 #ifdef __cplusplus

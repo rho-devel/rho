@@ -644,7 +644,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /* Debugging */
 
-    SET_DEBUG(newrho, DEBUG(op));
+    SET_ENV_DEBUG(newrho, DEBUG(op));
     if (DEBUG(op)) {
 	Rprintf("debugging in: ");
 	PrintValueRec(call,rho);
@@ -744,7 +744,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 
     /* Debugging */
 
-    SET_DEBUG(newrho, DEBUG(op));
+    SET_ENV_DEBUG(newrho, DEBUG(op));
     if (DEBUG(op)) {
 	Rprintf("debugging in: ");
 	PrintValueRec(call,rho);
@@ -1032,7 +1032,7 @@ namespace {
 
     inline void DO_LOOP_DEBUG(SEXP call, SEXP op, SEXP args, SEXP rho, int bgn)
     {
-	if (bgn && DEBUG(rho)) {
+	if (bgn && ENV_DEBUG(rho)) {
 	    Rprintf("debug: ");
 	    PrintValue(CAR(args));
 	    do_browser(call,op,args,rho);
@@ -1070,7 +1070,7 @@ SEXP do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     ans = R_NilValue;
 
-    dbg = DEBUG(rho);
+    dbg = ENV_DEBUG(rho);
     bgn = BodyHasBraces(body);
 
     nm = NAMED(val);
@@ -1142,7 +1142,7 @@ SEXP do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     endcontext(&cntxt);
     UNPROTECT(3);
-    SET_DEBUG(rho, dbg);
+    SET_ENV_DEBUG(rho, dbg);
     return ans;
 }
 
@@ -1157,7 +1157,7 @@ SEXP do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-    dbg = DEBUG(rho);
+    dbg = ENV_DEBUG(rho);
     body = CADR(args);
     bgn = BodyHasBraces(body);
 
@@ -1184,7 +1184,7 @@ SEXP do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
     } while (redo);
     endcontext(&cntxt);
-    SET_DEBUG(rho, dbg);
+    SET_ENV_DEBUG(rho, dbg);
     return t;
 }
 
@@ -1199,7 +1199,7 @@ SEXP do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-    dbg = DEBUG(rho);
+    dbg = ENV_DEBUG(rho);
     body = CAR(args);
     bgn = BodyHasBraces(body);
 
@@ -1226,7 +1226,7 @@ SEXP do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
     } while (redo);
     endcontext(&cntxt);
-    SET_DEBUG(rho, dbg);
+    SET_ENV_DEBUG(rho, dbg);
     return t;
 }
 
@@ -1253,7 +1253,7 @@ SEXP do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else {
 	while (args != R_NilValue) {
-	    if (DEBUG(rho)) {
+	    if (ENV_DEBUG(rho)) {
 		Rprintf("debug: ");
 		PrintValue(CAR(args));
 		do_browser(call,op,args,rho);

@@ -49,11 +49,13 @@ namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*ENCLOSp)(SEXP x) = ENCLOS;
 	int (*ENVFLAGSp)(SEXP x) = ENVFLAGS;
+	Rboolean (*ENV_DEBUGp)(SEXP x) = ENV_DEBUG;
 	SEXP (*HASHTABp)(SEXP x) = HASHTAB;
 	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
 	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENVFLAGSp)(SEXP x, int v) = SET_ENVFLAGS;
+	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
 	void (*SET_FRAMEp)(SEXP x, SEXP v) = SET_FRAME;
 	void (*SET_HASHTABp)(SEXP x, SEXP v) = SET_HASHTAB;
     }

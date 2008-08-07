@@ -168,8 +168,8 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
-	    : m_type(stype), m_has_class(false), m_named(0), m_debug(false),
-	      m_trace(false), m_attrib(0)
+	    : m_type(stype), m_has_class(false), m_named(0), m_trace(false),
+	      m_attrib(0)
 	{}
 
 	/** @brief Get object attributes.
@@ -294,7 +294,6 @@ namespace CXXR {
     public:
 	// To be private in future:
 	unsigned int m_named         : 2;
-	bool m_debug                 : 1;
 	bool m_trace                 : 1;
 	FlagWord m_flags;
     private:

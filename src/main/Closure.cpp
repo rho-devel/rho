@@ -47,6 +47,7 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*BODYp)(SEXP x) = BODY;
+	Rboolean (*DEBUGp)(SEXP x) = DEBUG;
 	SEXP (*CLOENVp)(SEXP x) = CLOENV;
 	SEXP (*FORMALSp)(SEXP x) = FORMALS;
 	int (*MISSINGp)(SEXP x) = MISSING;
