@@ -169,7 +169,8 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
-	    : m_type(stype), m_has_class(false), m_named(0), m_attrib(0)
+	    : m_type(stype), m_has_class(false), m_named(0),
+	      m_S4_object(false), m_attrib(0)
 	{}
 
 	/** @brief Get object attributes.
@@ -236,6 +237,32 @@ namespace CXXR {
 	    return m_has_class;
 	}
 
+	/** @brief Is this an S4 object?
+	 *
+	 * @return true iff this is an S4 object.
+	 */
+	bool isS4Object() const
+	{
+	    return m_S4_object;
+	}
+
+	/** @brief Reproduce the \c gp bits field used in CR.
+	 *
+	 * This function is used to reproduce the
+	 * <tt>sxpinfo_struct.gp</tt> field used in CR.  It should be
+	 * used exclusively for serialization.  Refer to the 'R
+	 * Internals' document for details of this field.
+	 *
+	 * @return the reconstructed \c gp bits field (within the
+	 * least significant 16 bits).
+	 *
+	 * @note If this function is overridden in a derived class,
+	 * the overriding function should call packGPBits() for its
+	 * immediate base class, and then 'or' further bits into the
+	 * result.
+	 */
+	virtual unsigned int packGPBits() const;
+
 	/** @brief Set or remove an attribute.
 	 *
 	 * @param name Pointer to the Symbol naming the attribute to
@@ -268,6 +295,32 @@ namespace CXXR {
 	 */
 	void setAttributes(PairList* new_attributes);
 
+	/** @brief Set the status of this RObject as an S4 object.
+	 *
+	 * @param on true iff this is to be considered an S4 object.
+	 */
+	void setS4Object(bool on)
+	{
+	    m_S4_object = on;
+	}
+
+	/** @brief Interpret the \c gp bits field used in CR.
+	 *
+	 * This function is used to interpret the
+	 * <tt>sxpinfo_struct.gp</tt> field used in CR in a way
+	 * appropriate to a particular node class.  It should be
+	 * used exclusively for deserialization.  Refer to the 'R
+	 * Internals' document for details of this field.
+	 *
+	 * @param gpbits the \c gp bits field (within the
+	 *          least significant 16 bits).
+	 *
+	 * @note If this function is overridden in a derived class,
+	 * the overriding function should also pass its argument to
+	 * unpackGPBits() for its immediate base class.
+	 */
+	virtual void unpackGPBits(unsigned int gpbits);
+
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
 
@@ -287,19 +340,19 @@ namespace CXXR {
     protected:
 	virtual ~RObject() {}
     private:
-	const SEXPTYPE m_type        : 7;
-	bool m_has_class             : 1;
+	const SEXPTYPE m_type : 7;
+	bool m_has_class      : 1;
     public:
 	// To be private in future:
-	unsigned int m_named         : 2;
+	unsigned int m_named  : 2;
+    private:
+	bool m_S4_object      : 1;
+    public:
+	// Being phased out in favour of {,un}packGPBits():
 	FlagWord m_flags;
     private:
 	PairList* m_attrib;
     };
-
-    /* S4 object bit, set by R_do_new_object for all new() calls */
-#define S4_OBJECT_MASK (1<<4)
-
 }  // namespace CXXR
 
 typedef CXXR::RObject SEXPREC, *SEXP;
@@ -434,13 +487,12 @@ extern "C" {
      */
     SEXP ATTRIB(SEXP x);
 
-    /**
-     * @deprecated
+    /** @brief (For use only in serialization.)
      */
 #ifndef __cplusplus
     int LEVELS(SEXP x);
 #else
-    inline int LEVELS(SEXP x) {return x->m_flags.m_flags;}
+    inline int LEVELS(SEXP x) {return x->packGPBits();}
 #endif
 
     /** @brief Get object copying status.
@@ -455,13 +507,16 @@ extern "C" {
     inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
 #endif
 
-    /**
-     * @deprecated
+    /** @brief (For use only in deserialization.)
      */
 #ifndef __cplusplus
     int SETLEVELS(SEXP x, int v);
 #else
-    inline int SETLEVELS(SEXP x, int v) {return x->m_flags.m_flags = v;}
+    inline int SETLEVELS(SEXP x, int v)
+    {
+	x->unpackGPBits(v);
+	return v;
+    }
 #endif
 
     /** @brief Replace an object's attributes.
@@ -518,7 +573,7 @@ extern "C" {
 #else
     inline Rboolean IS_S4_OBJECT(SEXP x)
     {
-	return Rboolean(x && (x->m_flags.m_flags & S4_OBJECT_MASK));
+	return Rboolean(x && x->isS4Object());
     }
 #endif
 
@@ -528,7 +583,7 @@ extern "C" {
 #ifndef __cplusplus
     void SET_S4_OBJECT(SEXP x);
 #else
-    inline void SET_S4_OBJECT(SEXP x)  {x->m_flags.m_flags |= S4_OBJECT_MASK;}
+    inline void SET_S4_OBJECT(SEXP x)  {x->setS4Object(true);}
 #endif
 
     /**
@@ -537,10 +592,7 @@ extern "C" {
 #ifndef __cplusplus
     void UNSET_S4_OBJECT(SEXP x);
 #else
-    inline void UNSET_S4_OBJECT(SEXP x)
-    {
-	x->m_flags.m_flags &= ~S4_OBJECT_MASK;
-    }
+    inline void UNSET_S4_OBJECT(SEXP x)  {x->setS4Object(false);}
 #endif
 
     /** @brief Create an S4 object.

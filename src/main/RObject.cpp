@@ -71,6 +71,11 @@ namespace CXXR {
     }
 }
 
+namespace {
+    // Used in {,un}packGPBits():
+    const unsigned int S4_OBJECT_MASK = 1<<4;
+}
+
 RObject* RObject::getAttribute(const Symbol& name)
 {
     for (PairList* node = m_attrib; node; node = node->tail())
@@ -83,6 +88,13 @@ const RObject* RObject::getAttribute(const Symbol& name) const
     for (PairList* node = m_attrib; node; node = node->tail())
 	if (node->tag() == &name) return node->car();
     return 0;
+}
+
+unsigned int RObject::packGPBits() const
+{
+    unsigned int ans = m_flags.m_flags;
+    if (isS4Object()) ans |= S4_OBJECT_MASK;
+    return ans;
 }
 
 // This follows CR in adding new attributes at the end of the list,
@@ -134,6 +146,13 @@ void RObject::setAttributes(PairList* new_attributes)
 const char* RObject::typeName() const
 {
     return Rf_type2char(sexptype());
+}
+
+void RObject::unpackGPBits(unsigned int gpbits)
+{
+    m_flags.m_flags = gpbits;
+    // Be careful with precedence!
+    m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
 }
 
 void RObject::visitChildren(const_visitor* v) const
