@@ -1445,23 +1445,25 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (length == -1)
 		PROTECT(s = NA_STRING);
 	    else if (length < 1000) {
-		cetype_t enc = CE_NATIVE;
+		cetype_t enc = String::GPBits2Encoding(levs);
 		cbuf = static_cast<char*>(alloca(length+1));
 		InString(stream, cbuf, length);
 		cbuf[length] = '\0';
-		if (levs & UTF8_MASK) enc = CE_UTF8;
-		else if (levs & LATIN1_MASK) enc = CE_LATIN1;
-		if (length > int(strlen(cbuf)))
-		    PROTECT(s = mkCharLen(cbuf, length));
+		if (length > int(strlen(cbuf))) {
+		    std::string str(cbuf, length);
+		    PROTECT(s = new UncachedString(str, enc));
+		    s->expose();
+		}
 		else PROTECT(s = mkCharCE(cbuf, enc));
 	    } else {
-		cetype_t enc = CE_NATIVE;
+		cetype_t enc = String::GPBits2Encoding(levs);
 		cbuf = CallocCharBuf(length);
 		InString(stream, cbuf, length);
-		if (levs & UTF8_MASK) enc = CE_UTF8;
-		else if (levs & LATIN1_MASK) enc = CE_LATIN1;
-		if (length > int(strlen(cbuf)))
-		    PROTECT(s = mkCharLen(cbuf, length));
+		if (length > int(strlen(cbuf))) {
+		    std::string str(cbuf, length);
+		    PROTECT(s = new UncachedString(str, enc));
+		    s->expose();
+		}
 		else PROTECT(s = mkCharCE(cbuf, enc));
 		Free(cbuf);
 	    }

@@ -84,6 +84,8 @@
 # include <pcre.h>
 #endif
 
+using namespace CXXR;
+
 #ifndef MAX
 # define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
@@ -3111,11 +3113,10 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(ans = allocVector(STRSXP, 1));
 	/* String is not necessarily 0-terminated and may contain nuls
 	   so don't use mkChar */
-	c = allocString(len); /* adds zero terminator */
+	c = new UncachedString(len, CE_UTF8); /* adds zero terminator */
 	for (i = 0, len = 0; i < nc; i++) {
 	    used = inttomb(buf, INTEGER(x)[i]);
 	    strncpy(CHAR_RW(c) + len, buf, used);
-	    SET_UTF8(c);
 	    len += used;
 	}
 	SET_STRING_ELT(ans, 0, c);

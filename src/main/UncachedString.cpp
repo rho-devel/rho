@@ -45,10 +45,6 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*Rf_allocStringp)(R_len_t) = Rf_allocString;
-	void (*SET_LATIN1ptr)(SEXP x) = SET_LATIN1;
-	void (*SET_UTF8ptr)(SEXP x) = SET_UTF8;
-	void (*UNSET_LATIN1ptr)(SEXP x) = UNSET_LATIN1;
-	void (*UNSET_UTF8ptr)(SEXP x) = UNSET_UTF8;
     }
 }
 

@@ -44,9 +44,6 @@
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
-#define LATIN1_MASK (1<<2)
-#define UTF8_MASK   (1<<3)
-
 typedef enum {
     CE_NATIVE = 0,
     CE_UTF8   = 1,
@@ -126,6 +123,30 @@ namespace CXXR {
 	    return m_c_str;
 	}
 
+	/** @brief Character encoding.
+	 *
+	 * @return the character encoding.  At present the only types
+	 * of encoding are CE_NATIVE, CE_LATIN1 and CE_UTF8.
+	 */
+	cetype_t encoding() const
+	{
+	    return m_encoding;
+	}
+
+	/** @brief Extract encoding information from CR's \c gp bits
+	 * field.
+	 *   
+	 * This function is used to extract the character encoding
+	 * information contained in the <tt>sxpinfo_struct.gp</tt>
+	 * field used in CR.  It should be used exclusively for
+	 * deserialization.  Refer to the 'R Internals' document for
+	 * details of this field.
+	 *
+	 * @param gpbits the \c gp bits field (within the
+	 *          least significant 16 bits).
+	 */
+	static cetype_t GPBits2Encoding(unsigned int gpbits);
+
 	/** @brief Hash value.
 	 *
 	 * @return The hash value of this string.
@@ -171,6 +192,9 @@ namespace CXXR {
 	{
 	    return "char";
 	}
+
+	// Virtual functions of RObject:
+	unsigned int packGPBits() const;
     protected:
 	/** @brief Create a string. 
 	 *
@@ -230,6 +254,7 @@ namespace CXXR {
 	const char* m_c_str;
 
 	mutable int m_hash;  // negative signifies invalid
+	cetype_t m_encoding;
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
@@ -269,7 +294,10 @@ extern "C" {
 #else
     inline int ENC_KNOWN(SEXP x)
     {
-	return x->m_flags.m_flags & (LATIN1_MASK | UTF8_MASK);
+	using namespace CXXR;
+	const String& str = *SEXP_downcast<const String*>(x);
+	cetype_t enc = str.encoding();
+	return enc == CE_LATIN1 || enc == CE_UTF8;
     }
 #endif
 
@@ -282,7 +310,9 @@ extern "C" {
 #else
     inline Rboolean IS_LATIN1(SEXP x)
     {
-	return Rboolean(x->m_flags.m_flags & LATIN1_MASK);
+	using namespace CXXR;
+	const String& str = *SEXP_downcast<const String*>(x);
+	return Rboolean(str.encoding() == CE_LATIN1);
     }
 #endif
 
@@ -295,7 +325,9 @@ extern "C" {
 #else
     inline Rboolean IS_UTF8(SEXP x)
     {
-	return Rboolean(x->m_flags.m_flags & UTF8_MASK);
+	using namespace CXXR;
+	const String& str = *SEXP_downcast<const String*>(x);
+	return Rboolean(str.encoding() == CE_UTF8);
     }
 #endif
 

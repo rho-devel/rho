@@ -172,66 +172,6 @@ extern "C" {
 #endif
 
     /**
-     * @brief Set LATIN1 encoding.
-     *
-     * @param x Pointer to a CXXR::UncachedString (checked).
-     */
-#ifndef __cplusplus
-    void SET_LATIN1(SEXP x);
-#else
-    inline void SET_LATIN1(SEXP x)
-    {
-	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_flags.m_flags |= LATIN1_MASK;
-    }
-#endif
-
-    /**
-     * @brief Unset LATIN1 encoding.
-     *
-     * @param x Pointer to a CXXR::UncachedString (checked).
-     */
-#ifndef __cplusplus
-    void UNSET_LATIN1(SEXP x);
-#else
-    inline void UNSET_LATIN1(SEXP x)
-    {
-	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_flags.m_flags &= ~LATIN1_MASK;
-    }
-#endif
-
-    /**
-     * @brief Set UTF8 encoding.
-     *
-     * @param x Pointer to a CXXR::UncachedString (checked).
-     */
-#ifndef __cplusplus
-    void SET_UTF8(SEXP x);
-#else
-    inline void SET_UTF8(SEXP x)
-    {
-	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_flags.m_flags |= UTF8_MASK;
-    }
-#endif
-
-    /**
-     * @brief Unset UTF8 encoding.
-     *
-     * @param x Pointer to a CXXR::UncachedString (checked).
-     */
-#ifndef __cplusplus
-    void UNSET_UTF8(SEXP x);
-#else
-    inline void UNSET_UTF8(SEXP x)
-    {
-	CXXR::SEXP_downcast<CXXR::UncachedString*>(x);
-	x->m_flags.m_flags &= ~UTF8_MASK;
-    }
-#endif
-
-    /**
      * @brief Create a CXXR::UncachedString object.
      *
      * @param length The length of the string to be created (excluding the

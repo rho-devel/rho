@@ -47,10 +47,10 @@ using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	int (*HASHVALUEptr)(SEXP x) = HASHVALUE;
-	int (*ENC_KNOWNptr)(const SEXP x) = ENC_KNOWN;
-	Rboolean (*IS_LATIN1ptr)(const SEXP x) = IS_LATIN1;
-	Rboolean (*IS_UTF8ptr)(const SEXP x) = IS_UTF8;
+	int (*HASHVALUEp)(SEXP x) = HASHVALUE;
+	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
+	Rboolean (*IS_LATIN1p)(const SEXP x) = IS_LATIN1;
+	Rboolean (*IS_UTF8p)(const SEXP x) = IS_UTF8;
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
     }
 }
@@ -61,25 +61,52 @@ SEXP R_NaString = const_cast<String*>(String::NA());
 // String::s_blank and R_BlankString are defined in SpecialSymbol.cpp
 // to enforce initialization order.
 
-// String::Comparator::operator()(const String&, const String&) is in
-// sort.cpp
-
-String::String(size_t sz, cetype_t encoding,
-	       const char* c_string)
+String::String(size_t sz, cetype_t encoding, const char* c_string)
     : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
 {
     switch(encoding) {
     case CE_NATIVE:
-	break;          /* don't set encoding */
     case CE_UTF8:
-	m_flags.m_flags |= UTF8_MASK;
-	break;
     case CE_LATIN1:
-	m_flags.m_flags |= LATIN1_MASK;
+	m_encoding = encoding;
 	break;
     default:
 	error("character encoding %d not permitted here", encoding);
     }
 }
 
+// String::Comparator::operator()(const String&, const String&) is in
+// sort.cpp
+
 // int hash() const is in envir.cpp (for the time being)
+
+namespace {
+    // Used in GPBits2Encoding() and packGPBits():
+    const unsigned int LATIN1_MASK = 1<<2;
+    const unsigned int UTF8_MASK = 1<<3;
+}
+
+cetype_t String::GPBits2Encoding(unsigned int gpbits)
+{
+    if ((gpbits & LATIN1_MASK) != 0)
+	return CE_LATIN1;
+    if ((gpbits & UTF8_MASK) != 0)
+	return CE_UTF8;
+    return CE_NATIVE;
+}
+
+unsigned int String::packGPBits() const
+{
+    unsigned int ans = VectorBase::packGPBits();
+    switch (m_encoding) {
+    case CE_UTF8:
+	ans |= UTF8_MASK;
+	break;
+    case CE_LATIN1:
+	ans |= LATIN1_MASK;
+	break;
+    default:
+	break;
+    }
+    return ans;
+}
