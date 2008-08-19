@@ -169,6 +169,6 @@ SEXP ATTRIB(SEXP x)
 
 void SET_ATTRIB(SEXP x, SEXP v)
 {
-    PairList* pl = SEXP_downcast<PairList*>(v);
+    GCRoot<PairList> pl(SEXP_downcast<PairList*>(v));
     x->setAttributes(pl);
 }
