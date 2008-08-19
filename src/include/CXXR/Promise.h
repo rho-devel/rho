@@ -66,7 +66,8 @@ namespace CXXR {
 	 */
 	Promise(const RObject* valgen, const Environment& env)
 	    : RObject(PROMSXP), m_value(SpecialSymbol::unboundValue()),
-	      m_valgen(valgen), m_environment(&env)
+	      m_valgen(valgen), m_environment(&env), m_seen(false),
+	      m_interrupted(false)
 	{}
 
 	/** @brief Access the environment of the Promise.
@@ -80,14 +81,38 @@ namespace CXXR {
 	    return m_environment;
 	}
 
-	/** @brief RObject to be evaluated by the Promise.
+	/** @brief Has evaluation been interrupted by a jump?
 	 *
-	 * @return const pointer to the RObject to be evaluated by
-	 * the Promise.
+	 * @return true iff evaluation of this Promise has been
+	 * interrupted by a jump (JMPException).
 	 */
-	const RObject* valueGenerator() const
+	bool evaluationInterrupted() const
 	{
-	    return m_valgen;
+	    return m_interrupted;
+	}
+
+	/** @brief Indicate whether evaluation has been interrupted.
+	 *
+	 * @param on true to indicate that evaluation of this promise
+	 *           has been interrupted by a JMPException.
+	 *
+	 * @note To be removed from public interface in due course.
+	 */
+	void markEvaluationInterrupted(bool on)
+	{
+	    m_interrupted = on;
+	}
+
+	/** @brief Indicate whether this promise is under evaluation.
+	 *
+	 * @param on true to indicate that this promise is currently
+	 *           under evaluation; otherwise false.
+	 *
+	 * @note To be removed from public interface in due course.
+	 */
+	void markUnderEvaluation(bool on)
+	{
+	    m_seen = on;
 	}
 
 	/** @brief Set value of the Promise.
@@ -112,6 +137,15 @@ namespace CXXR {
 	    return "promise";
 	}
 
+	/** @brief Is this promise currently under evaluation?
+	 *
+	 * @return true iff this promise is currently under evaluation.
+	 */
+	bool underEvaluation() const
+	{
+	    return m_seen;
+	}
+
 	/** @brief Access the value of a Promise.
 	 *
 	 * @return pointer to the value of the Promise, or to
@@ -123,7 +157,17 @@ namespace CXXR {
 	    return m_value;
 	}
 
-	// Virtual function of RObject:
+	/** @brief RObject to be evaluated by the Promise.
+	 *
+	 * @return const pointer to the RObject to be evaluated by
+	 * the Promise.
+	 */
+	const RObject* valueGenerator() const
+	{
+	    return m_valgen;
+	}
+
+	// Virtual functions of RObject:
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -132,6 +176,8 @@ namespace CXXR {
 	RObject* m_value;
 	const RObject* m_valgen;
 	const Environment* m_environment;
+	bool m_seen;
+	bool m_interrupted;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':
@@ -191,17 +237,6 @@ extern "C" {
     }
 #endif
 
-    /**
-     * @param x Pointer to a promise.
-     * @return ?
-     * @deprecated Will need to be fixed.
-     */
-#ifndef __cplusplus
-    int PRSEEN(SEXP x);
-#else
-    inline int PRSEEN(SEXP x) {return x->m_flags.m_flags;}
-#endif
-
     /** @brief Access the value of a CXXR::Promise.
      *
      * @param x Pointer to a CXXR::Promise (checked).
@@ -217,16 +252,6 @@ extern "C" {
 	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
 	return const_cast<CXXR::RObject*>(prom.value());
     }
-#endif
-
-    /**
-     * @param x Pointer to a promise.
-     * @deprecated Will need to be fixed.
-     */
-#ifndef __cplusplus
-    void SET_PRSEEN(SEXP x, int v);
-#else
-    inline void SET_PRSEEN(SEXP x, int v) {x->m_flags.m_flags = v;}
 #endif
 
     /** @brief Set the value of a CXXR::Promise.

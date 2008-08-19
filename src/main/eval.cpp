@@ -348,17 +348,19 @@ static SEXP forcePromise(SEXP e)
     if (PRVALUE(e) == R_UnboundValue) {
 	RPRSTACK prstack;
 	SEXP val;
-	if(PRSEEN(e)) {
-	    if (PRSEEN(e) == 1)
-		errorcall(R_GlobalContext->call,
-			  _("promise already under evaluation: recursive default argument reference or earlier problems?"));
-	    else warningcall(R_GlobalContext->call,
-			     _("restarting interrupted promise evaluation"));
+	Promise* prom = SEXP_downcast<Promise*>(e);
+	if (prom->evaluationInterrupted()) {
+	    warningcall(R_GlobalContext->call,
+			_("restarting interrupted promise evaluation"));
+	    prom->markEvaluationInterrupted(false);
 	}
+	else if (prom->underEvaluation())
+	    errorcall(R_GlobalContext->call,
+		      _("promise already under evaluation: recursive default argument reference or earlier problems?"));
 	/* Mark the promise as under evaluation and push it on a stack
 	   that can be used to unmark pending promises if a jump out
 	   of the evaluation occurs. */
-	SET_PRSEEN(e, 1);
+        prom->markUnderEvaluation(true);
 	prstack.promise = e;
 	prstack.next = R_PendingPromises;
 	R_PendingPromises = &prstack;
@@ -370,7 +372,7 @@ static SEXP forcePromise(SEXP e)
 	   reclaim the promise environment; this is also useful for
 	   fancy games with delayedAssign() */
 	R_PendingPromises = prstack.next;
-	SET_PRSEEN(e, 0);
+	prom->markUnderEvaluation(false);
 	SET_PRVALUE(e, val);
     }
     return PRVALUE(e);

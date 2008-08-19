@@ -48,9 +48,7 @@ namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*PRCODEp)(SEXP x) = PRCODE;
 	SEXP (*PRENVp)(SEXP x) = PRENV;
-	int (*PRSEENp)(SEXP x) = PRSEEN;
 	SEXP (*PRVALUEp)(SEXP x) = PRVALUE;
-	void (*SETPRSEENp)(SEXP x, int v) = SET_PRSEEN;
     }
 }
 

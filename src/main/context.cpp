@@ -190,10 +190,11 @@ void R_restore_globals(RCNTXT *cptr)
     R_HandlerStack = cptr->handlerstack;
     R_RestartStack = cptr->restartstack;
     while (R_PendingPromises != cptr->prstack) {
-	/* The value 2 installed in PRSEEN 2 allows forcePromise in
+	/* The following allows forcePromise in
 	   eval.c to signal a warning when asked to evaluate a promise
 	   whose evaluation has been interrupted by a jump. */
-	SET_PRSEEN(R_PendingPromises->promise, 2);
+	Promise* prom = SEXP_downcast<Promise*>(R_PendingPromises->promise);
+	prom->markEvaluationInterrupted(true);
 	R_PendingPromises = R_PendingPromises->next;
     }
     /* Need to reset R_Expressions in case we are jumping after
