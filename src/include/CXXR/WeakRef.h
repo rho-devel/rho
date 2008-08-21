@@ -189,11 +189,11 @@ namespace CXXR {
 	 * @return Pointer to the value of the WeakRef.
 	 */
 	RObject* value() const {return m_value;}
-    private:
-	// Flag positions:
-	static const unsigned int READY_TO_FINALIZE = 0;
-	static const unsigned int FINALIZE_ON_EXIT = 1;
 
+	// Virtual functions of RObject:
+	unsigned int packGPBits() const;
+	void unpackGPBits(unsigned int gpbits);
+    private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
 	static WRList s_live;
 	static WRList s_f10n_pending;  // Finalization pending
@@ -207,6 +207,8 @@ namespace CXXR {
 	RObject* m_Rfinalizer;
 	R_CFinalizer_t m_Cfinalizer;
 	WRList::iterator m_lit;
+	bool m_ready_to_finalize;
+	bool m_finalize_on_exit;
 
 	void finalize();
 

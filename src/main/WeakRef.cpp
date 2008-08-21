@@ -51,18 +51,21 @@
 using namespace std;
 using namespace CXXR;
 
-const unsigned int WeakRef::READY_TO_FINALIZE;
-const unsigned int WeakRef::FINALIZE_ON_EXIT;
-
 WeakRef::WRList WeakRef::s_live;
 WeakRef::WRList WeakRef::s_f10n_pending;
 WeakRef::WRList WeakRef::s_tombstone;
 int WeakRef::s_count = 0;
 
+namespace {
+    // Used in {,un}packGPBits:
+    const unsigned int FINALIZE_ON_EXIT_MASK = 2;
+}
+
 WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer), m_Cfinalizer(0),
-      m_lit(s_live.insert(s_live.end(), this))
+      m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
+      m_finalize_on_exit(finalize_on_exit)
 {
     expose();
     if (m_key)
@@ -71,14 +74,14 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
     // Force old-to-new checks:
     m_key->devolveAge(m_value);
     m_key->devolveAge(m_Rfinalizer);
-    m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;
     ++s_count;
 }
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(0), m_Cfinalizer(C_finalizer),
-      m_lit(s_live.insert(s_live.end(), this))
+      m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
+      m_finalize_on_exit(finalize_on_exit)
 {
     expose();
     if (m_key)
@@ -86,7 +89,6 @@ WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
     else tombstone();
     // Force old-to-new check:
     m_key->devolveAge(m_value);
-    m_flags[FINALIZE_ON_EXIT] = finalize_on_exit;
     ++s_count;
 }
 
@@ -112,7 +114,7 @@ bool WeakRef::check()
     for (WRList::const_iterator lit = s_live.begin();
 	 lit != s_live.end(); ++lit) {
 	const WeakRef* wr = *lit;
-	if (wr->m_flags[READY_TO_FINALIZE]) {
+	if (wr->m_ready_to_finalize) {
 	    cerr << "Node on s_live set READY_TO_FINALIZE\n";
 	    abort();
 	}
@@ -125,7 +127,7 @@ bool WeakRef::check()
     for (WRList::const_iterator lit = s_f10n_pending.begin();
 	 lit != s_f10n_pending.end(); ++lit) {
 	const WeakRef* wr = *lit;
-	if (!wr->m_flags[READY_TO_FINALIZE]) {
+	if (!wr->m_ready_to_finalize) {
 	    cerr << "Node on s_f10n_pending not READY_TO_FINALIZE\n";
 	    abort();
 	}
@@ -142,7 +144,7 @@ bool WeakRef::check()
     for (WRList::const_iterator lit = s_tombstone.begin();
 	 lit != s_tombstone.end(); ++lit) {
 	const WeakRef* wr = *lit;
-	if (wr->m_flags[READY_TO_FINALIZE]) {
+	if (wr->m_ready_to_finalize) {
 	    cerr << "Node on s_tombstone set READY_TO_FINALIZE\n";
 	    abort();
 	}
@@ -193,7 +195,7 @@ void WeakRef::markThru(unsigned int max_gen)
 	    if (Rfinalizer) Rfinalizer->conductVisitor(&marker);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
 		wr->m_key->conductVisitor(&marker);
-		wr->m_flags[READY_TO_FINALIZE] = true;
+		wr->m_ready_to_finalize = true;
 		wr->transfer(&s_live, &s_f10n_pending);
 	    }
 	    else
@@ -211,14 +213,22 @@ void WeakRef::markThru(unsigned int max_gen)
     }
 }
 
+unsigned int WeakRef::packGPBits() const
+{
+    unsigned int ans = RObject::packGPBits();
+    if (m_finalize_on_exit)
+	ans |= FINALIZE_ON_EXIT_MASK;
+    return ans;
+}
+
 void WeakRef::runExitFinalizers()
 {
     WeakRef::check();
     WRList::iterator lit = s_live.begin();
     while (lit != s_live.end()) {
 	WeakRef* wr = *lit++;
-	if (wr->m_flags[FINALIZE_ON_EXIT]) {
-	    wr->m_flags[READY_TO_FINALIZE] = true;
+	if (wr->m_finalize_on_exit) {
+	    wr->m_ready_to_finalize = true;
 	    wr->transfer(&s_live, &s_f10n_pending);
 	}
     }
@@ -271,13 +281,19 @@ void WeakRef::tombstone()
     m_value = 0;
     m_Rfinalizer = 0;
     m_Cfinalizer = 0;
-    m_flags[READY_TO_FINALIZE] = false;
+    m_ready_to_finalize = false;
     transfer(oldl, &s_tombstone);
+}
+
+void WeakRef::unpackGPBits(unsigned int gpbits)
+{
+    RObject::unpackGPBits(gpbits);
+    m_finalize_on_exit = ((gpbits & FINALIZE_ON_EXIT_MASK) != 0);
 }
 
 WeakRef::WRList* WeakRef::wrList() const
 {
-    return m_flags[READY_TO_FINALIZE] ? &s_f10n_pending :
+    return m_ready_to_finalize ? &s_f10n_pending :
 	(m_key ? &s_live : &s_tombstone);
 }
 
