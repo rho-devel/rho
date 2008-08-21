@@ -60,12 +60,12 @@ Symbol::Symbol(const String& name, RObject* val,
 	       const BuiltInFunction* internal_func)
     : SpecialSymbol(name), m_value(val), m_internalfunc(internal_func)
 {
-    m_flags[s_DDBIT] = boost::regex_match(name.c_str(), dd_regex);
+    m_dd_symbol = boost::regex_match(name.c_str(), dd_regex);
 }
 
 bool Symbol::isDDSymbol() const
 {
-    return m_flags[s_DDBIT];
+    return m_dd_symbol;
 }
 
 const char* Symbol::typeName() const

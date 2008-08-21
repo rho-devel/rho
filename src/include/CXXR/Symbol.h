@@ -132,10 +132,9 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
     private:
-	static const unsigned int s_DDBIT = 0;
-
 	RObject* m_value;
 	const BuiltInFunction* m_internalfunc;
+	bool m_dd_symbol;
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
