@@ -202,8 +202,6 @@ void SET_HASHTAB(SEXP x, SEXP v);
 SEXP (PRCODE)(SEXP x);
 SEXP (PRENV)(SEXP x);
 SEXP (PRVALUE)(SEXP x);
-int  (PRSEEN)(SEXP x);
-void (SET_PRSEEN)(SEXP x, int v);
 void SET_PRVALUE(SEXP x, SEXP v);
 void SET_PRSEEN(SEXP x, int v);
 
