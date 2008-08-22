@@ -198,10 +198,6 @@ SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
 /* Match the supplied arguments with the formals and */
 /* return the matched arguments in actuals. */
 
-#define ARGUSED(x) LEVELS(x)
-#define SET_ARGUSED(x,v) SETLEVELS(x,v)
-
-
 /* We need to leave 'supplied' unchanged in case we call UseMethod */
 /* MULTIPLE_MATCHES was added by RI in Jan 2005 but never activated */
 

@@ -62,9 +62,6 @@
 using namespace std;
 using namespace CXXR;
 
-#define ARGUSED(x) LEVELS(x)
-
-
 #ifdef BYTECODE
 static SEXP bcEval(SEXP, SEXP);
 #endif

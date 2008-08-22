@@ -464,8 +464,6 @@ static SEXP fixcall(SEXP call, SEXP args)
 /* the second the object and any remaining are matched with the */
 /* formals of the chosen method. */
 
-#define ARGUSED(x) LEVELS(x)
-
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     char buf[512], b[512], bb[512], tbuf[10];

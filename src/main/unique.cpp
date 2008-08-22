@@ -51,8 +51,6 @@
 using namespace CXXR;
 
 #define NIL -1
-#define ARGUSED(x) LEVELS(x)
-#define SET_ARGUSED(x,v) SETLEVELS(x,v)
 
 /* Hash function and equality test for keys */
 typedef struct _HashData HashData;
@@ -877,8 +875,6 @@ SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 /* Functions for matching the supplied arguments to the */
 /* formal arguments of functions.  The returned value */
 /* is a list with all components named. */
-
-#define ARGUSED(x) LEVELS(x)
 
 static SEXP StripUnmatched(SEXP s)
 {
