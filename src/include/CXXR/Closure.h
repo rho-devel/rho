@@ -258,14 +258,6 @@ extern "C" {
     }
 #endif
 
-#define MISSING_MASK	15 /* reserve 4 bits--only 2 uses now */
-
-#ifndef __cplusplus
-    int MISSING(SEXP x);
-#else
-    inline int MISSING(SEXP x) {return x->m_flags.m_flags & MISSING_MASK;}
-#endif
-
     /** @brief Replace the environment of a closure.
      *
      * @param x Pointer to a CXXR::Closure object (checked).
@@ -283,16 +275,6 @@ extern "C" {
 	Closure& clos = *SEXP_downcast<Closure*>(x);
 	Environment* env = SEXP_downcast<Environment*>(v);
 	clos.setEnvironment(env);
-    }
-#endif
-
-#ifndef __cplusplus
-    void SET_MISSING(SEXP x, int v);
-#else
-    inline void SET_MISSING(SEXP x, int v)
-    {
-	int other_flags = x->m_flags.m_flags & ~MISSING_MASK;
-	x->m_flags.m_flags = other_flags | v;
     }
 #endif
 

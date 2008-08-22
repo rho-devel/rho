@@ -67,7 +67,7 @@ namespace CXXR {
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
 	explicit PairList(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0), m_missing(0)
+	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0)
 	{}
 
 	/** @brief Create a PairList element on the free store.
@@ -132,11 +132,10 @@ namespace CXXR {
 	PairList(const PairList&);
 	PairList& operator=(const PairList&);
     public:
-	// 'Scratchpad' fields used in handling argument lists,
+	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
-	// would be good to remove these from the class altogether.
+	// would be good to remove this from the class altogether.
 	unsigned char m_argused;
-	unsigned char m_missing;
     };
 
     inline void ConsCell::setTail(PairList* tl)
@@ -162,6 +161,7 @@ extern "C" {
 	using namespace CXXR;
 	SEXP_downcast<PairList*>(x)->m_argused = v;
     }
+
 #endif  /* __cplusplus */
 
     /** @brief Get car of CXXR::ConsCell.

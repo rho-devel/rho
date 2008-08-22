@@ -206,7 +206,7 @@ namespace CXXR {
 	 */
 	explicit ConsCell(SEXPTYPE st,
 			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
+	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
 	{
 	    // checkST(st);
 	}
@@ -259,6 +259,11 @@ namespace CXXR {
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
+    public:
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
+	// would be good to remove this from the class altogether.
+	unsigned char m_missing;
     };
 
     /** @brief (For debugging.)
@@ -269,7 +274,23 @@ namespace CXXR {
 } // namespace CXXR
 
 extern "C" {
-#endif
+
+    // Used in argument handling (within envir.cpp, eval.cpp and
+    // match.cpp).  Note comments in the 'R Internals' document.
+    inline int MISSING(SEXP x)
+    {
+	using namespace CXXR;
+	return SEXP_downcast<ConsCell*>(x)->m_missing;
+    }
+
+    // Used in argument handling (within envir.cpp, eval.cpp and
+    // match.cpp).  Note comments in the 'R Internals' document.
+    inline void SET_MISSING(SEXP x, int v)
+    {
+	using namespace CXXR;
+	SEXP_downcast<ConsCell*>(x)->m_missing = v;
+    }
+#endif  /* __cplusplus */
 
     /** @brief Get tag of CXXR::ConsCell.
      *
