@@ -48,17 +48,21 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*ENCLOSp)(SEXP x) = ENCLOS;
-	int (*ENVFLAGSp)(SEXP x) = ENVFLAGS;
 	Rboolean (*ENV_DEBUGp)(SEXP x) = ENV_DEBUG;
 	SEXP (*HASHTABp)(SEXP x) = HASHTAB;
 	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
 	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
-	void (*SET_ENVFLAGSp)(SEXP x, int v) = SET_ENVFLAGS;
 	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
 	void (*SET_FRAMEp)(SEXP x, SEXP v) = SET_FRAME;
 	void (*SET_HASHTABp)(SEXP x, SEXP v) = SET_HASHTAB;
     }
+}
+
+namespace {
+    // Used in {,un}packGPBits():
+    const unsigned int FRAME_LOCK_MASK = 1<<14;
+    const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
 GCRoot<Environment> Environment::s_empty_env(new Environment, true);
@@ -72,9 +76,25 @@ GCRoot<Environment> Environment::s_global_env(new Environment(s_base_env),
 					      true);
 SEXP R_GlobalEnv = Environment::global();
 
+unsigned int Environment::packGPBits() const
+{
+    unsigned int ans = RObject::packGPBits();
+    if (m_locked) ans |= FRAME_LOCK_MASK;
+    if (m_globally_cached) ans |= GLOBAL_FRAME_MASK;
+    return ans;
+}
+
 const char* Environment::typeName() const
 {
     return staticTypeName();
+}
+
+void Environment::unpackGPBits(unsigned int gpbits)
+{
+    RObject::unpackGPBits(gpbits);
+    // Be careful with precedence!
+    m_locked = ((gpbits & FRAME_LOCK_MASK) != 0);
+    m_globally_cached = ((gpbits & GLOBAL_FRAME_MASK) != 0);
 }
 
 void Environment::visitChildren(const_visitor* v) const

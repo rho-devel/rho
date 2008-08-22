@@ -124,19 +124,15 @@ namespace {
 
     /* various definitions of macros/functions in Defn.h */
 
-#define FRAME_LOCK_MASK (1<<14)
-
-    inline bool FRAME_IS_LOCKED(SEXP e) {return ENVFLAGS(e) & FRAME_LOCK_MASK;}
+    inline bool FRAME_IS_LOCKED(SEXP e)
+    {
+	return SEXP_downcast<Environment*>(e)->isLocked();}
 
     inline void LOCK_FRAME(SEXP e)
     {
-	SET_ENVFLAGS(e, ENVFLAGS(e) | FRAME_LOCK_MASK);
+	SEXP_downcast<Environment*>(e)->setLocking(true);
     }
 }
-
-/*#define UNLOCK_FRAME(e) SET_ENVFLAGS(e, ENVFLAGS(e) & (~ FRAME_LOCK_MASK))*/
-
-/* use the same bits (15 and 14) in symbols and bindings */
 
 static SEXP getActiveValue(SEXP fun)
 {
@@ -632,22 +628,20 @@ static SEXP R_HashProfile(SEXP table)
 
    L. T. */
 
-#define GLOBAL_FRAME_MASK (1<<15)
-
 namespace {
     inline bool IS_GLOBAL_FRAME(SEXP e)
     {
-	return ENVFLAGS(e) & GLOBAL_FRAME_MASK;
+	return SEXP_downcast<Environment*>(e)->inGlobalCache();
     }
 
     inline void MARK_AS_GLOBAL_FRAME(SEXP e)
     {
-	SET_ENVFLAGS(e, ENVFLAGS(e) | GLOBAL_FRAME_MASK);
+	SEXP_downcast<Environment*>(e)->setGlobalCaching(true);
     }
 
     inline void MARK_AS_LOCAL_FRAME(SEXP e)
     {
-	SET_ENVFLAGS(e, ENVFLAGS(e) & (~ GLOBAL_FRAME_MASK));
+	SEXP_downcast<Environment*>(e)->setGlobalCaching(false);
     }
 }
 
