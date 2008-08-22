@@ -120,7 +120,8 @@ namespace CXXR {
      * garbage collection has been factored out into the base class
      * GCNode, and as CXXR development proceeds other functionality
      * will be factored out into derived classes (corresponding
-     * roughly, but not exactly, to different SEXPTYPEs within CR).
+     * roughly, but not exactly, to different SEXPTYPEs within CR), or
+     * outside the RObject hierarchy altogether.
      *
      * Eventually this class may end up simply as the home of R
      * attributes.
@@ -170,6 +171,7 @@ namespace CXXR {
 	 */
 	explicit RObject(SEXPTYPE stype = ANYSXP)
 	    : m_type(stype), m_has_class(false), m_named(0),
+	      m_active_binding(false), m_binding_locked(false),
 	      m_S4_object(false), m_attrib(0)
 	{}
 
@@ -345,6 +347,12 @@ namespace CXXR {
     public:
 	// To be private in future:
 	unsigned int m_named  : 2;
+
+	// Used on SYMSXP and LISTSXP in connection with environments,
+	// and formerly hosted in the gp field of sxpinfo_struct.
+	// Try to get rid of these fields when we reengineer Environment.
+	bool m_active_binding : 1;
+	bool m_binding_locked : 1;
     private:
 	bool m_S4_object      : 1;
     public:
@@ -602,17 +610,13 @@ extern "C" {
     SEXP Rf_allocS4Object();
 
     /* Bindings */
-    /* use the same bits (15 and 14) in symbols and bindings */
-#define ACTIVE_BINDING_MASK (1<<15)
-#define BINDING_LOCK_MASK (1<<14)
-#define SPECIAL_BINDING_MASK (ACTIVE_BINDING_MASK | BINDING_LOCK_MASK)
 
 #ifndef __cplusplus
     Rboolean IS_ACTIVE_BINDING(SEXP b);
 #else
     inline Rboolean IS_ACTIVE_BINDING(SEXP b)
     {
-	return Rboolean(b->m_flags.m_flags & ACTIVE_BINDING_MASK);
+	return Rboolean(b->m_active_binding);
     }
 #endif
 
@@ -621,7 +625,7 @@ extern "C" {
 #else
     inline Rboolean BINDING_IS_LOCKED(SEXP b)
     {
-	return Rboolean(b->m_flags.m_flags & BINDING_LOCK_MASK);
+	return Rboolean(b->m_binding_locked);
     }
 #endif
 
@@ -630,23 +634,20 @@ extern "C" {
 #else
     inline void SET_ACTIVE_BINDING_BIT(SEXP b)
     {
-	b->m_flags.m_flags |= ACTIVE_BINDING_MASK;
+	b->m_active_binding = true;
     }
 #endif
 
 #ifndef __cplusplus
     void LOCK_BINDING(SEXP b);
 #else
-    inline void LOCK_BINDING(SEXP b) {b->m_flags.m_flags |= BINDING_LOCK_MASK;}
+    inline void LOCK_BINDING(SEXP b) {b->m_binding_locked = true;}
 #endif
 
 #ifndef __cplusplus
     void UNLOCK_BINDING(SEXP b);
 #else
-    inline void UNLOCK_BINDING(SEXP b)
-    {
-	b->m_flags.m_flags &= (~BINDING_LOCK_MASK);
-    }
+    inline void UNLOCK_BINDING(SEXP b) {b->m_binding_locked = false;}
 #endif
 
 #ifdef __cplusplus
