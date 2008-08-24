@@ -72,38 +72,40 @@ extern "C" {
      */
     /*------ enum_SEXPTYPE ----- */
     typedef enum {
-	NILSXP	= 0,	/* nil = NULL
-			 *
-			 * arr 2007/07/21: no RObject now has this
-			 * type, but for backward compatibility TYPEOF
-			 * will return NILSXP if passed a zero
-			 * pointer.
-			 */
-	SYMSXP	= 1,	/* symbols */
-	LISTSXP	= 2,	/* lists of dotted pairs */
-	CLOSXP	= 3,	/* closures */
-	ENVSXP	= 4,	/* environments */
-	PROMSXP	= 5,	/* promises: [un]evaluated closure arguments */
-	LANGSXP	= 6,	/* language constructs (special lists) */
-	SPECIALSXP	= 7,	/* special forms */
-	BUILTINSXP	= 8,	/* builtin non-special forms */
-	CHARSXP	= 9,	/* "scalar" string type (internal only)*/
-	LGLSXP	= 10,	/* logical vectors */
-	INTSXP	= 13,	/* integer vectors */
-	REALSXP	= 14,	/* real variables */
-	CPLXSXP	= 15,	/* complex variables */
-	STRSXP	= 16,	/* string vectors */
-	DOTSXP	= 17,	/* dot-dot-dot object */
-	ANYSXP	= 18,	/* make "any" args work */
-	VECSXP	= 19,	/* generic vectors */
-	EXPRSXP	= 20,	/* expressions vectors */
+	NILSXP	    = 0,    /* nil = NULL
+			     *
+			     * arr 2007/07/21: no RObject now has this
+			     * type, but for backward compatibility TYPEOF
+			     * will return NILSXP if passed a zero
+			     * pointer.
+			     */
+	SYMSXP	    = 1,    /* symbols */
+	LISTSXP	    = 2,    /* lists of dotted pairs */
+	CLOSXP	    = 3,    /* closures */
+	ENVSXP	    = 4,    /* environments */
+	PROMSXP	    = 5,    /* promises: [un]evaluated closure arguments */
+	LANGSXP	    = 6,    /* language constructs (special lists) */
+	SPECIALSXP  = 7,    /* special forms */
+	BUILTINSXP  = 8,    /* builtin non-special forms */
+	CHARSXP	    = 9,    /* "scalar" string type (internal only)*/
+	LGLSXP	    = 10,   /* logical vectors */
+	INTSXP	    = 13,   /* integer vectors */
+	REALSXP	    = 14,   /* real variables */
+	CPLXSXP	    = 15,   /* complex variables */
+	STRSXP	    = 16,   /* string vectors */
+	DOTSXP	    = 17,   /* dot-dot-dot object */
+	ANYSXP	    = 18,   /* make "any" args work */
+	VECSXP	    = 19,   /* generic vectors */
+	EXPRSXP	    = 20,   /* expressions vectors */
 	BCODESXP    = 21,   /* byte code */
 	EXTPTRSXP   = 22,   /* external pointer */
 	WEAKREFSXP  = 23,   /* weak reference */
 	RAWSXP      = 24,   /* raw bytes */
 	S4SXP       = 25,   /* S4 non-vector */
 
-	FUNSXP	= 99	/* Closure or Builtin */
+	CXXSXP      = 43,   /* object types specific to CXXR (43 = ASCII +) */
+
+	FUNSXP	    = 99    /* Closure or Builtin */
     } SEXPTYPE;
 
 #ifdef __cplusplus
@@ -169,7 +171,7 @@ namespace CXXR {
 	/**
 	 * @param stype Required type of the RObject.
 	 */
-	explicit RObject(SEXPTYPE stype = ANYSXP)
+	explicit RObject(SEXPTYPE stype = CXXSXP)
 	    : m_type(stype), m_has_class(false), m_named(0),
 	      m_active_binding(false), m_binding_locked(false),
 	      m_S4_object(false), m_attrib(0)
