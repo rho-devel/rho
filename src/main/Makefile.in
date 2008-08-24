@@ -36,7 +36,7 @@ SOURCES_CXX = \
 	DottedArgs.cpp \
 	Environment.cpp ExitException.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
-        FlagWord.cpp FunctionBase.cpp \
+        FunctionBase.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
         IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \

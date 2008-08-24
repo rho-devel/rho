@@ -46,7 +46,6 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/FlagWord.hpp"
 #include "CXXR/GCNode.hpp"
 
 extern "C" {
@@ -357,10 +356,6 @@ namespace CXXR {
 	bool m_binding_locked : 1;
     private:
 	bool m_S4_object      : 1;
-    public:
-	// Being phased out in favour of {,un}packGPBits():
-	FlagWord m_flags;
-    private:
 	PairList* m_attrib;
     };
 }  // namespace CXXR

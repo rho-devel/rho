@@ -94,7 +94,7 @@ const RObject* RObject::getAttribute(const Symbol& name) const
 
 unsigned int RObject::packGPBits() const
 {
-    unsigned int ans = m_flags.m_flags;
+    unsigned int ans = 0;
     if (isS4Object()) ans |= S4_OBJECT_MASK;
     if (m_binding_locked) ans |= BINDING_LOCK_MASK;
     if (m_active_binding) ans |= ACTIVE_BINDING_MASK;
@@ -154,7 +154,6 @@ const char* RObject::typeName() const
 
 void RObject::unpackGPBits(unsigned int gpbits)
 {
-    m_flags.m_flags = gpbits;
     // Be careful with precedence!
     m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
     m_binding_locked = ((gpbits & BINDING_LOCK_MASK) != 0);
