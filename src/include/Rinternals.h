@@ -647,7 +647,16 @@ int R_system(const char *);
 #define lang4			Rf_lang4
 #define lastElt			Rf_lastElt
 #define lcons			Rf_lcons
-#define length(x)		Rf_length(x)
+
+#ifndef __cplusplus
+/* Under gcc, this macro can play havoc with some standard C++ header
+ * files.  Consequently, the alternative approach is taken of defining
+ * length as an inline function within the namespace CXXR.  The
+ * relevant definition is at the end of this file.
+ */
+#define length                  Rf_length
+#endif
+
 #define lengthgets		Rf_lengthgets
 #define list1			Rf_list1
 #define list2			Rf_list2
@@ -751,6 +760,20 @@ SEXP	 Rf_ScalarString(SEXP);
 #endif
 
 #ifdef __cplusplus
+}  // extern "C"
+
+namespace CXXR {
+    /** @brief Shorthand for Rf_length().
+     *
+     * @deprecated This is provided only for use in code inherited
+     * from CR, and is a workaround for the problems that CR's length
+     * macro can cause with C++ header files.  New code should invoke
+     * Rf_length() explicitly.
+     */
+    inline R_len_t length(RObject* s)
+    {
+	return Rf_length(s);
+    }
 }
 #endif
 
