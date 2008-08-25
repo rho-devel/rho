@@ -55,10 +55,8 @@ namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
-	int (*LEVELSptr)(SEXP x) = LEVELS;
 	int (*NAMEDptr)(SEXP x) = NAMED;
 	Rboolean (*OBJECTptr)(SEXP e) = OBJECT;
-	int (*SETLEVELSptr)(SEXP x, int v) = SETLEVELS;
 	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
 	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
@@ -76,6 +74,11 @@ namespace {
     const unsigned int S4_OBJECT_MASK = 1<<4;
     const unsigned int BINDING_LOCK_MASK = 1<<14;
     const unsigned int ACTIVE_BINDING_MASK = 1<<15;
+}
+
+void RObject::frozenError()
+{
+    Rf_error(_("attempt to modify frozen object"));
 }
 
 RObject* RObject::getAttribute(const Symbol& name)
@@ -105,6 +108,7 @@ unsigned int RObject::packGPBits() const
 // though it would be easier to add them at the beginning.
 void RObject::setAttribute(Symbol* name, RObject* value)
 {
+    errorIfFrozen();
     if (!name)
 	Rf_error(_("attempt to set an attribute on NULL"));
     // Update m_has_class if necessary:
@@ -154,6 +158,7 @@ const char* RObject::typeName() const
 
 void RObject::unpackGPBits(unsigned int gpbits)
 {
+    errorIfFrozen();
     // Be careful with precedence!
     m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
     m_binding_locked = ((gpbits & BINDING_LOCK_MASK) != 0);

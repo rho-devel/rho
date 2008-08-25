@@ -52,6 +52,7 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
+
 /* This include is to bring in declarations of R_compress1 and
    R_decompress1 */
 #include "basedecl.h"
@@ -1303,6 +1304,29 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	AddReadRef(ref_table, s);
 	UNPROTECT(1);
 	return s;
+    case CHARSXP:
+	length = InInteger(stream);
+	if (length == -1)
+	    return NA_STRING;
+	else {
+	    GCRoot<> str;
+	    cetype_t enc = String::GPBits2Encoding(levs);
+	    cbuf = CallocCharBuf(length);
+	    InString(stream, cbuf, length);
+	    GCRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    if (length > int(strlen(cbuf))) {
+		std::string sstr(cbuf, length);
+		str = new UncachedString(sstr, enc);
+		str->expose();
+		str->unpackGPBits(levs);
+		SET_ATTRIB(str, attributes);
+	    } else {
+		// levs and attributes are ignored for cached strings:
+		str = mkCharCE(cbuf, enc);
+	    }
+	    Free(cbuf);
+	    return str;
+	}
     case ENVSXP:
 	{
 	    int locked = InInteger(stream);
@@ -1440,34 +1464,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    cbuf[length] = '\0';
 	    PROTECT(s = mkPRIMSXP(StrToInternal(cbuf), type == BUILTINSXP));
 	    break;
-	case CHARSXP:
-	    length = InInteger(stream);
-	    if (length == -1)
-		PROTECT(s = NA_STRING);
-	    else if (length < 1000) {
-		cetype_t enc = String::GPBits2Encoding(levs);
-		cbuf = static_cast<char*>(alloca(length+1));
-		InString(stream, cbuf, length);
-		cbuf[length] = '\0';
-		if (length > int(strlen(cbuf))) {
-		    std::string str(cbuf, length);
-		    PROTECT(s = new UncachedString(str, enc));
-		    s->expose();
-		}
-		else PROTECT(s = mkCharCE(cbuf, enc));
-	    } else {
-		cetype_t enc = String::GPBits2Encoding(levs);
-		cbuf = CallocCharBuf(length);
-		InString(stream, cbuf, length);
-		if (length > int(strlen(cbuf))) {
-		    std::string str(cbuf, length);
-		    PROTECT(s = new UncachedString(str, enc));
-		    s->expose();
-		}
-		else PROTECT(s = mkCharCE(cbuf, enc));
-		Free(cbuf);
-	    }
-	    break;
 	case LGLSXP:
 	    length = InInteger(stream);
 	    PROTECT(s = allocVector(type, length));
@@ -1525,24 +1521,10 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    error(_("ReadItem: unknown type %i, perhaps written by later version of R"), type);
 	}
 	SETLEVELS(s, levs);
-#ifdef USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS
-	if (TYPEOF(s) == CHARSXP) {
-	    /* With the CHARSXP cache maintained through the ATTRIB
-	       field that field has already been filled in by the
-	       mkChar/mkCharCE call above, so we need to leave it
-	       alone.  If there is an attribute (as there might be if
-	       the serialized data was created by an older version) we
-	       read and ignore the value. */
-	    if (hasattr) ReadItem(ref_table, stream);
-	}
-	else
-	    SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
-#else
 	{
 	    GCRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    SET_ATTRIB(s, attributes);
 	}
-#endif
 	UNPROTECT(1); /* s */
 	return s;
     }

@@ -53,6 +53,7 @@ namespace CXXR {
 
 void VectorBase::resize(size_t new_size)
 {
+    errorIfFrozen();
     if (new_size > m_size)
 	error("VectorBase::resize() : requested size exceeds current size.");
     m_size = new_size;

@@ -121,7 +121,9 @@ namespace CXXR {
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second,
 		     key_val_pr->first.first.c_str()),
 	      m_key_val_pr(key_val_pr)
-	{}
+	{
+	    freeze();
+	}
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:

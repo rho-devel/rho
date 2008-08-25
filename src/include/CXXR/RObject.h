@@ -171,9 +171,9 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype), m_has_class(false), m_named(0),
-	      m_active_binding(false), m_binding_locked(false),
-	      m_S4_object(false), m_attrib(0)
+	    : m_type(stype), m_named(0), m_active_binding(false),
+	      m_binding_locked(false), m_has_class(false), m_S4_object(false),
+	      m_frozen(false), m_attrib(0)
 	{}
 
 	/** @brief Get object attributes.
@@ -196,6 +196,7 @@ namespace CXXR {
 	 */
 	void clearAttributes()
 	{
+	    errorIfFrozen();
 	    m_attrib = 0;
 	    m_has_class = false;
 	}
@@ -304,6 +305,7 @@ namespace CXXR {
 	 */
 	void setS4Object(bool on)
 	{
+	    errorIfFrozen();
 	    m_S4_object = on;
 	}
 
@@ -339,12 +341,37 @@ namespace CXXR {
 	 *         within R.
 	 */
 	virtual const char* typeName() const;
-
     protected:
 	virtual ~RObject() {}
+
+	/** @brief Raise error if object is frozen.
+	 *
+	 * Code inherited from a CR is apt to hand out non-const
+	 * pointers to objects that ought really to be immutable:
+	 * \c R_UnboundValue for example.  CXXR counters this by
+	 * 'freezing' such objects.  Non-const methods of the affected
+	 * classes should call this function, thus preventing such
+	 * objects being altered.
+	 */
+	void errorIfFrozen()
+	{
+	    if (m_frozen) frozenError();
+	}
+
+	/** @brief Prevent alterations to the object.
+	 *
+	 * Code inherited from a CR is apt to hand out non-const
+	 * pointers to objects that ought really to be immutable:
+	 * \c R_UnboundValue for example.  CXXR counters this by
+	 * 'freezing' such objects, and applying run-time checks.  See
+	 * errorIfFrozen().
+	 */
+	void freeze()
+	{
+	    m_frozen = true;
+	}
     private:
-	const SEXPTYPE m_type : 7;
-	bool m_has_class      : 1;
+	const SEXPTYPE m_type;
     public:
 	// To be private in future:
 	unsigned int m_named  : 2;
@@ -355,8 +382,12 @@ namespace CXXR {
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
+	bool m_has_class      : 1;
 	bool m_S4_object      : 1;
+	bool m_frozen         : 1;
 	PairList* m_attrib;
+
+	static void frozenError();
     };
 }  // namespace CXXR
 
@@ -494,9 +525,7 @@ extern "C" {
 
     /** @brief (For use only in serialization.)
      */
-#ifndef __cplusplus
-    int LEVELS(SEXP x);
-#else
+#ifdef __cplusplus
     inline int LEVELS(SEXP x) {return x->packGPBits();}
 #endif
 
@@ -514,9 +543,7 @@ extern "C" {
 
     /** @brief (For use only in deserialization.)
      */
-#ifndef __cplusplus
-    int SETLEVELS(SEXP x, int v);
-#else
+#ifdef __cplusplus
     inline int SETLEVELS(SEXP x, int v)
     {
 	x->unpackGPBits(v);

@@ -64,6 +64,7 @@ namespace CXXR {
 	{}
 
 	/** @brief Alter the size (number of elements) in the vector.
+	 *
 	 * @param new_size New size required.  Zero is permissible,
 	 *          but (as presently implemented) the new size must
 	 *          not be greater than the current size. 
