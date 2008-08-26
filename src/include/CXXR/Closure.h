@@ -65,9 +65,8 @@ namespace CXXR {
 	 * @param body Pointer to the body of the Closure.  This must
 	 *          be either a null pointer or a pointer to an object
 	 *          of one of the following types: PairList,
-	 *          Expression, Symbol (including SpecialSymbol),
-	 *          ExpressionVector, ListVector or ByteCode
-	 *          (checked).
+	 *          Expression, Symbol, ExpressionVector, ListVector
+	 *          or ByteCode (checked).
 	 *
 	 * @param env pointer to the environment in which the Closure
 	 *          is to be evaluated.

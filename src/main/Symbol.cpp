@@ -41,6 +41,7 @@
 #include "CXXR/Symbol.h"
 
 #include "boost/regex.hpp"
+#include "CXXR/CachedString.h"
 
 using namespace CXXR;
 
@@ -48,24 +49,42 @@ namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*DDVALp)(SEXP x) = DDVAL;
 	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
+	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
+	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
 	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
     }
 }
+
+GCRoot<const String> String::s_blank(CachedString::obtain(""));
+SEXP R_BlankString = const_cast<String*>(String::blank());
+
+GCRoot<Symbol> Symbol::s_missing_arg(new Symbol, true);
+SEXP R_MissingArg = Symbol::missingArgument();
+
+GCRoot<Symbol> Symbol::s_restart_token(new Symbol, true);
+SEXP R_RestartToken = Symbol::restartToken();
+
+GCRoot<Symbol> Symbol::s_unbound_value(new Symbol, true);
+SEXP R_UnboundValue = Symbol::unboundValue();
 
 namespace {
     boost::basic_regex<char> dd_regex("\\.\\.\\d+");
 }
 
-Symbol::Symbol(const String& name, RObject* val,
-	       const BuiltInFunction* internal_func)
-    : SpecialSymbol(name), m_value(val), m_internalfunc(internal_func)
+Symbol::Symbol()
+    : RObject(SYMSXP), m_name(*String::blank()), m_value(s_unbound_value),
+      m_internalfunc(0), m_dd_symbol(false)
 {
-    m_dd_symbol = boost::regex_match(name.c_str(), dd_regex);
+    freeze();
 }
 
-bool Symbol::isDDSymbol() const
+Symbol::Symbol(const String& name, RObject* val,
+	       const BuiltInFunction* internal_func, bool frozen)
+    : RObject(SYMSXP), m_name(name), m_value(val),
+      m_internalfunc(internal_func)
 {
-    return m_dd_symbol;
+    m_dd_symbol = boost::regex_match(name.c_str(), dd_regex);
+    if (frozen) freeze();
 }
 
 const char* Symbol::typeName() const
@@ -73,19 +92,10 @@ const char* Symbol::typeName() const
     return staticTypeName();
 }
 
-RObject* Symbol::value()
-{
-    return m_value;
-}
-
-const RObject* Symbol::value() const
-{
-    return m_value;
-}
-
 void Symbol::visitChildren(const_visitor* v) const
 {
-    SpecialSymbol::visitChildren(v);
+    RObject::visitChildren(v);
+    m_name.conductVisitor(v);
     if (m_value) m_value->conductVisitor(v);
     if (m_internalfunc) m_internalfunc->conductVisitor(v);
 }

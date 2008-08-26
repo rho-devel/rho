@@ -47,7 +47,7 @@
 
 #include "CXXR/Expression.h"
 #include "CXXR/Environment.h"
-#include "CXXR/SpecialSymbol.h"
+#include "CXXR/Symbol.h"
 
 namespace CXXR {
     /** @brief Placeholder for function argument.
@@ -65,7 +65,7 @@ namespace CXXR {
 	 * @param env Environment in which \a valgen is to be evaluated.
 	 */
 	Promise(const RObject* valgen, const Environment& env)
-	    : RObject(PROMSXP), m_value(SpecialSymbol::unboundValue()),
+	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
 	      m_valgen(valgen), m_environment(&env), m_seen(false),
 	      m_interrupted(false)
 	{}
@@ -118,8 +118,8 @@ namespace CXXR {
 	/** @brief Set value of the Promise.
 	 *
 	 * Once the value is set to something other than
-	 * SpecialSymbol::unboundValue(), the environment pointer is
-	 * set null.
+	 * Symbol::unboundValue(), the environment pointer is set
+	 * null.
 	 *
 	 * @param val Value to be associated with the Promise.
 	 *
@@ -149,8 +149,7 @@ namespace CXXR {
 	/** @brief Access the value of a Promise.
 	 *
 	 * @return pointer to the value of the Promise, or to
-	 * SpecialSymbol::unboundValue() if it has not yet been
-	 * evaluated.
+	 * Symbol::unboundValue() if it has not yet been evaluated.
 	 */
 	const RObject* value() const
 	{

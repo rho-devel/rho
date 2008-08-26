@@ -196,9 +196,11 @@ namespace CXXR {
 	 */
 	void clearAttributes()
 	{
-	    errorIfFrozen();
-	    m_attrib = 0;
-	    m_has_class = false;
+	    if (m_attrib) {
+		errorIfFrozen();
+		m_attrib = 0;
+		m_has_class = false;
+	    }
 	}
 
 	/** @brief Get the value a particular attribute.

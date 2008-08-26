@@ -56,7 +56,7 @@ void Promise::setValue(RObject* val)
 {
     m_value = val;
     devolveAge(m_value);
-    if (val != SpecialSymbol::unboundValue())
+    if (val != Symbol::unboundValue())
 	m_environment = 0;
 }
 
