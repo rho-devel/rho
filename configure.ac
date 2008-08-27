@@ -1762,9 +1762,13 @@ AC_SEARCH_LIBS(gethostbyname, [nsl socket])
 AC_SEARCH_LIBS(xdr_string, [nsl])
 R_FUNC___SETFPUCW
 R_FUNC_CALLOC
-if test "${ac_cv_have_decl_isfinite}" = "yes"; then
-R_FUNC_ISFINITE
-fi
+
+## isfinite() is in territory where C++98 clashes with C99,
+## so is not used in CXXR.
+## if test "${ac_cv_have_decl_isfinite}" = "yes"; then
+## R_FUNC_ISFINITE
+## fi
+
 ## check accuracy of log1p
 R_FUNC_LOG1P
 R_FUNC_FTELL

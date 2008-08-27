@@ -39051,79 +39051,13 @@ _ACEOF
 
 fi
 
-if test "${ac_cv_have_decl_isfinite}" = "yes"; then
-{ echo "$as_me:$LINENO: checking for working isfinite" >&5
-echo $ECHO_N "checking for working isfinite... $ECHO_C" >&6; }
-if test "${r_cv_func_isfinite_works+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "$cross_compiling" = yes; then
-  r_cv_func_isfinite_works=no
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
 
-#include <math.h>
-#include <stdlib.h>
-#include "confdefs.h"
-int main () {
-#ifdef HAVE_DECL_ISFINITE
-  exit(isfinite(1./0.) | isfinite(0./0.) | isfinite(-1./0.));
-#else
-  exit(1);
-#endif
-}
+## isfinite() is in territory where C++98 clashes with C99,
+## so is not used in CXXR.
+## if test "${ac_cv_have_decl_isfinite}" = "yes"; then
+## R_FUNC_ISFINITE
+## fi
 
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  r_cv_func_isfinite_works=yes
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-r_cv_func_isfinite_works=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-fi
-{ echo "$as_me:$LINENO: result: $r_cv_func_isfinite_works" >&5
-echo "${ECHO_T}$r_cv_func_isfinite_works" >&6; }
-if test "x${r_cv_func_isfinite_works}" = xyes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_WORKING_ISFINITE 1
-_ACEOF
-
-fi
-
-fi
 ## check accuracy of log1p
 { echo "$as_me:$LINENO: checking for working log1p" >&5
 echo $ECHO_N "checking for working log1p... $ECHO_C" >&6; }
@@ -52362,11 +52296,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:52365: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:52299: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:52369: \$? = $ac_status" >&5
+   echo "$as_me:52303: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -52461,11 +52395,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:52464: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:52398: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:52468: \$? = $ac_status" >&5
+   echo "$as_me:52402: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -52513,11 +52447,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:52516: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:52450: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:52520: \$? = $ac_status" >&5
+   echo "$as_me:52454: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
