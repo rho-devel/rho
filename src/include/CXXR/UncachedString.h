@@ -87,22 +87,26 @@ namespace CXXR {
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
 	 *          in this context (checked).
+	 *
+	 * @param frozen true iff the string must not be altered after
+	 *          creation.
 	 */
 	explicit UncachedString(const std::string& str,
-				cetype_t encoding = CE_NATIVE);
+				cetype_t encoding = CE_NATIVE,
+				bool frozen = false);
 
-	/** @brief Character access.
-	 * @param index Index of required character (counting from
-	 *          zero).  No bounds checking is applied.
-	 * @return Reference to the specified character.  This is
+	/** @brief Provide read-write access to the string.
+	 *
+	 * @return A pointer to the start of the string.  This is
 	 * intended for immediate use: in particular it should not be
 	 * used after any other method has been applied to the
 	 * UncachedString object, including in particular hash().
 	 */
-	char& operator[](unsigned int index)
+	char* ptr()
 	{
+	    errorIfFrozen();
 	    invalidateHash();
-	    return m_data[index];
+	    return m_data;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -113,6 +117,9 @@ namespace CXXR {
 	{
 	    return "char (uncached)";
 	}
+
+	// Virtual function of String:
+	const char* c_str() const;
 
 	// Virtual function of RObject:
 	const char* typeName() const;
@@ -167,7 +174,8 @@ extern "C" {
 #else
     inline char *CHAR_RW(SEXP x)
     {
-	return &(*CXXR::SEXP_downcast<CXXR::UncachedString*>(x))[0];
+	using namespace CXXR;
+	return SEXP_downcast<UncachedString*>(x)->ptr();
     }
 #endif
 

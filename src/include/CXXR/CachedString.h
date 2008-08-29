@@ -88,6 +88,9 @@ namespace CXXR {
 	    return "char (cached)";
 	}
 
+	// Virtual function of String:
+	const char* c_str() const;
+
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
@@ -113,15 +116,14 @@ namespace CXXR {
 	// we cannot use CXXR::Allocator here, because when creating a
 	// new CachedString, the call to insert() might lead to a
 	// garbage collection, which in turn might lead to a call to
-	// erase() before the insert() was complete.  (Yes, I tried
+	// erase() before the insert() was complete.  (Yes, arr tried
 	// this, and it took ages to debug!)
 	typedef std::tr1::unordered_map<key, CachedString*, Hasher> map;
 
 	map::value_type* m_key_val_pr;
 
 	explicit CachedString(map::value_type* key_val_pr)
-	    : String(key_val_pr->first.first.size(), key_val_pr->first.second,
-		     key_val_pr->first.first.c_str()),
+	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
 	      m_key_val_pr(key_val_pr)
 	{
 	    freeze();

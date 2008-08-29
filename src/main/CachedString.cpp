@@ -82,7 +82,12 @@ const CachedString* CachedString::obtain(const std::string& str,
     }
     return (*it).second;
 }
- 
+
+const char* CachedString::c_str() const
+{
+    return m_key_val_pr->first.first.c_str();
+}
+
 const char* CachedString::typeName() const
 {
     return CachedString::staticTypeName();

@@ -102,7 +102,7 @@ namespace CXXR {
 	 */
 	char operator[](unsigned int index) const
 	{
-	    return m_c_str[index];
+	    return c_str()[index];
 	}
 
 	/** @brief Blank string.
@@ -118,10 +118,7 @@ namespace CXXR {
 	 * @return Pointer to the encapsulated C-style (null
 	 * terminated) string.
 	 */
-	const char* c_str() const
-	{
-	    return m_c_str;
-	}
+	virtual const char* c_str() const = 0;
 
 	/** @brief Character encoding.
 	 *
@@ -220,23 +217,7 @@ namespace CXXR {
 	 *          supplied later in the construction of the derived
 	 *          class object by calling setCString().
 	 */
-	String(size_t sz, cetype_t encoding, const char* c_string = 0);
-
-	/** @brief Supply pointer to the string representation.
-	 *
-	 * @param c_string Pointer to a representation of the string
-	 *          as a C-style string (but possibly with embedded
-	 *          null characters), with size() plus one bytes, the
-	 *          last byte being a null byte.  (Because of the
-	 *          possibility of embedded nulls the size of the
-	 *          string is not checked.)  This string
-	 *          representation must remain in existence for the
-	 *          lifetime of the String object.
-	 */
-	void setCString(const char* c_string)
-	{
-	    m_c_str = c_string;
-	}
+	String(size_t sz, cetype_t encoding);
 
 	/** @brief Mark the hash value as invalid.
 	 *
@@ -250,8 +231,6 @@ namespace CXXR {
     private:
 	static GCRoot<const String> s_na;
 	static GCRoot<const String> s_blank;
-
-	const char* m_c_str;
 
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;

@@ -48,13 +48,15 @@ namespace CXXR {
     }
 }
 
-UncachedString::UncachedString(const std::string& str, cetype_t encoding)
+UncachedString::UncachedString(const std::string& str, cetype_t encoding,
+			       bool frozen)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
       m_data(m_short_string)
 {
     size_t sz = str.size();
     allocData(sz);
     memcpy(m_data, str.data(), sz);
+    if (frozen) freeze();
 }
 
 void UncachedString::allocData(size_t sz)
@@ -63,9 +65,13 @@ void UncachedString::allocData(size_t sz)
 	m_data = static_cast<char*>(MemoryBank::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
-    setCString(m_data);
 }
-    
+
+const char* UncachedString::c_str() const
+{
+    return m_data;
+}
+
 const char* UncachedString::typeName() const
 {
     return UncachedString::staticTypeName();

@@ -55,14 +55,15 @@ namespace CXXR {
     }
 }
 
-GCRoot<const String> String::s_na(new UncachedString("NA"), true);
+GCRoot<const String> String::s_na(new UncachedString("NA", CE_NATIVE, true),
+				  true);
 SEXP R_NaString = const_cast<String*>(String::NA());
 
-// String::s_blank and R_BlankString are defined in SpecialSymbol.cpp
-// to enforce initialization order.
+// String::s_blank and R_BlankString are defined in Symbol.cpp to
+// enforce initialization order.
 
-String::String(size_t sz, cetype_t encoding, const char* c_string)
-    : VectorBase(CHARSXP, sz), m_c_str(c_string), m_hash(-1)
+String::String(size_t sz, cetype_t encoding)
+    : VectorBase(CHARSXP, sz), m_hash(-1)
 {
     switch(encoding) {
     case CE_NATIVE:
