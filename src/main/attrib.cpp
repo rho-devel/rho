@@ -114,6 +114,7 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
     SEXP s;
     int len, i, any;
 
+    if (!vec) return 0;
     if (name == R_NamesSymbol) {
 	if(isVector(vec) || isList(vec) || isLanguage(vec)) {
 	    s = getAttrib(vec, R_DimSymbol);
