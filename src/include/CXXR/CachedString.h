@@ -61,8 +61,9 @@ namespace CXXR {
 	/** @brief Get a pointer to a CachedString object.
 	 *
 	 * If no CachedString with the specified text and encoding
-	 * currently exists, one will be created.  Otherwise a pointer
-	 * to the existing CachedString will be returned.
+	 * currently exists, one will be created, and a pointer to it
+	 * returned.  Otherwise a pointer to the existing CachedString
+	 * will be returned.
 	 *
 	 * @param str The text of the required CachedString.
 	 *          (Embedded null characters are permissible.)
@@ -71,8 +72,9 @@ namespace CXXR {
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
 	 *          in this context (checked).
 	 *
-	 * @return Pointer to a CachedString representing the
-	 *         specified text in the specified encoding.
+	 * @return Pointer to a CachedString (preexisting or newly
+	 * created) representing the specified text in the specified
+	 * encoding.
 	 */
 	static const CachedString* obtain(const std::string& str,
 					  cetype_t encoding = CE_NATIVE);
@@ -107,7 +109,7 @@ namespace CXXR {
 
 	// The cache is implemented as a mapping from keys to pointers
 	// to CachedString objects.  Each CachedString simply contains
-	// an pointer locating its entry within the cache.  Note that
+	// a pointer locating its entry within the cache.  Note that
 	// we cannot use CXXR::Allocator here, because when creating a
 	// new CachedString, the call to insert() might lead to a
 	// garbage collection, which in turn might lead to a call to
