@@ -22,7 +22,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2007 University of Cambridge
+           Copyright (c) 1997-2008 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -233,6 +233,13 @@ do
       tcode += 1 + LINK_SIZE;
       break;
 
+      /* SKIPZERO skips the bracket. */
+
+      case OP_SKIPZERO:
+      do tcode += GET(tcode,1); while (*tcode == OP_ALT);
+      tcode += 1 + LINK_SIZE;
+      break;
+
       /* Single-char * or ? sets the bit and tries the next item */
 
       case OP_STAR:
@@ -357,6 +364,7 @@ do
       switch(tcode[1])
         {
         case OP_ANY:
+        case OP_ALLANY:
         return SSB_FAIL;
 
         case OP_NOT_DIGIT:

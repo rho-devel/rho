@@ -51,5 +51,5 @@ double plnorm(double x, double meanlog, double sdlog, int lower_tail, int log_p)
 
     if (x > 0)
 	return pnorm(log(x), meanlog, sdlog, lower_tail, log_p);
-    return lower_tail ? 0 : 1;
+    return R_DT_0;
 }

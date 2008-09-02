@@ -711,14 +711,13 @@ size_t Riconv (void *cd, const char **inbuf, size_t *inbytesleft,
 	       char **outbuf, size_t *outbytesleft)
 {
     /* here libiconv has const char **, glibc has char ** for inbuf */
-    return iconv(reinterpret_cast<iconv_t>(cd),
-		 const_cast<ICONV_CONST char **>(inbuf), inbytesleft, 
+    return iconv(reinterpret_cast<iconv_t>( cd), const_cast<ICONV_CONST char **>( inbuf), inbytesleft,
 		 outbuf, outbytesleft);
 }
 
 int Riconv_close (void *cd)
 {
-    return iconv_close(iconv_t(cd));
+    return iconv_close(iconv_t( cd));
 }
 
 static void *latin1_obj = NULL, *utf8_obj=NULL, *ucsmb_obj=NULL;
@@ -745,8 +744,7 @@ const char *translateChar(SEXP x)
 	if(!latin1_obj) {
 	    obj = Riconv_open("", "latin1");
 	    /* should never happen */
-	    if(obj == reinterpret_cast<void *>(-1))
-		error(_("unsupported conversion"));
+	    if(obj == reinterpret_cast<void *>(-1)) error(_("unsupported conversion"));
 	    latin1_obj = obj;
 	}
 	obj = latin1_obj;
@@ -754,8 +752,7 @@ const char *translateChar(SEXP x)
 	if(!utf8_obj) {
 	    obj = Riconv_open("", "UTF-8");
 	    /* should never happen */
-	    if(obj == reinterpret_cast<void *>(-1))
-		error(_("unsupported conversion"));
+	    if(obj == reinterpret_cast<void *>(-1)) error(_("unsupported conversion"));
 	    utf8_obj = obj;
 	}
 	obj = utf8_obj;
@@ -788,13 +785,13 @@ next_char:
 	    if(clen > 0 && int(inb) >= clen) {
 		inbuf += clen; inb -= clen;
 # ifndef Win32
-		if(static_cast<unsigned int>(wc) < 65536) {
+		if(static_cast<unsigned int>( wc) < 65536) {
 # endif
-		    snprintf(outbuf, 9, "<U+%04X>", static_cast<unsigned int>(wc));
+		    snprintf(outbuf, 9, "<U+%04X>", static_cast<unsigned int>( wc));
 		    outbuf += 8; outb -= 8;
 # ifndef Win32
 		} else {
-		    snprintf(outbuf, 13, "<U+%08X>", static_cast<unsigned int>(wc));
+		    snprintf(outbuf, 13, "<U+%08X>", static_cast<unsigned int>( wc));
 		    outbuf += 12; outb -= 12;
 		}
 # endif
@@ -938,7 +935,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     const char *inbuf;
     char *outbuf, *p;
     size_t inb, outb, res, top;
-    const char *tocode = NULL, *fromcode = NULL;
+    CXXRconst char *tocode = NULL, *fromcode = NULL;
 #ifdef Win32
     char buf[20];
 #endif
@@ -1060,7 +1057,7 @@ size_t ucstomb(char *s, const unsigned int wc)
     char     buf[MB_CUR_MAX+1];
     void    *cd = NULL ;
     unsigned int  wcs[2];
-    const char *inbuf = reinterpret_cast<const char *>(wcs);
+    const char *inbuf = reinterpret_cast<const char *>( wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
     char    *outbuf = buf;
     size_t   outbytesleft = sizeof(buf);
@@ -1078,7 +1075,7 @@ size_t ucstomb(char *s, const unsigned int wc)
 	    char tocode[128];
 	    /* locale set fuzzy case */
 	    strncpy(tocode, locale2charset(NULL), sizeof(tocode));
-	    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open(tocode, UNICODE)))
+	    if(reinterpret_cast<void *>(-1) == (cd = Riconv_open(tocode, UNICODE)))
 		return size_t(-1);
 #else
 	    return size_t(-1);
@@ -1089,17 +1086,17 @@ size_t ucstomb(char *s, const unsigned int wc)
 
     status = Riconv(ucsmb_obj, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == size_t(-1)) {
+    if (status == size_t( -1)) {
 	switch(errno){
 	case EINVAL:
-	    return size_t(-2);
+	    return size_t( -2);
 	case EILSEQ:
-	    return size_t(-1);
+	    return size_t( -1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return size_t(-1);
+	    return size_t( -1);
 	}
     }
     buf[MB_CUR_MAX] = '\0'; /* safety measure */
@@ -1116,28 +1113,29 @@ mbtoucs(unsigned int *wc, const char *s, size_t n)
     void    *cd;
     const char *inbuf = s;
     size_t   inbytesleft = strlen(s);
-    char    *outbuf = reinterpret_cast<char *>(wcs);
+    char    *outbuf = reinterpret_cast<char *>( wcs);
     size_t   outbytesleft = sizeof(buf);
     size_t   status;
 
     if(s[0] == 0) {*wc = 0; return 1;}
 
-    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open(UNICODE, ""))) return size_t(-1);
+    if(reinterpret_cast<void *>(-1) == (cd = Riconv_open(UNICODE, ""))) return size_t(-1);
     status = Riconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == size_t(-1)) {
+    if (status == size_t( -1)) {
 	switch(errno){
 	case EINVAL:
-	    return size_t(-2);
+	    return size_t( -2);
 	case EILSEQ:
-	    return size_t(-1);
+	    return size_t( -1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return size_t(-1);
+	    return size_t( -1);
 	}
     }
+    Riconv_close(cd);
     *wc = wcs[0];
     return 1;
 }
@@ -1148,7 +1146,7 @@ size_t ucstoutf8(char *s, const unsigned int wc)
     char     buf[16];
     void    *cd = NULL ;
     unsigned int  wcs[2];
-    const char *inbuf = reinterpret_cast<const char *>(wcs);
+    const char *inbuf = reinterpret_cast<const char *>( wcs);
     size_t   inbytesleft = sizeof(unsigned int); /* better be 4 */
     char    *outbuf = buf;
     size_t   outbytesleft = sizeof(buf);
@@ -1159,25 +1157,26 @@ size_t ucstoutf8(char *s, const unsigned int wc)
     memset(buf, 0, sizeof(buf));
     wcs[0] = wc; wcs[1] = 0;
 
-    if(reinterpret_cast<void*>(-1) == (cd = Riconv_open("UTF-8", UNICODE)))
+    if(reinterpret_cast<void *>(-1) == (cd = Riconv_open("UTF-8", UNICODE)))
 	return size_t(-1);
     status = Riconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 
-    if (status == size_t(-1)) {
+    if (status == size_t( -1)) {
 	switch(errno){
 	case EINVAL:
-	    return size_t(-2);
+	    return size_t( -2);
 	case EILSEQ:
-	    return size_t(-1);
+	    return size_t( -1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return size_t(-1);
+	    return size_t( -1);
 	}
     }
     *outbuf = '\0';
     strcpy(s, buf);
+    Riconv_close(cd);
     return strlen(buf);
 }
 
@@ -1244,7 +1243,7 @@ ucstoutf8(char *s, const unsigned int wc)
 # define S_IFDIR __S_IFDIR
 #endif
 
-static int isDir(const char *path)
+static int isDir(CXXRconst char *path)
 {
     struct stat sb;
     int isdir = 0;
@@ -1260,7 +1259,7 @@ static int isDir(const char *path)
     return isdir;
 }
 #else
-static int isDir(const char *path)
+static int isDir(CXXRconst char *path)
 {
     return 1;
 }
@@ -1273,7 +1272,7 @@ extern char * mkdtemp (char *template);
 void attribute_hidden InitTempDir()
 {
     char *tmp, tmp1[PATH_MAX+11], *p;
-    const char* tm;
+    CXXRconst char* tm;
     int len;
 #ifdef Win32
     char tmp2[PATH_MAX];

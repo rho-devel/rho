@@ -145,6 +145,9 @@ libR_la_DEPENDENCIES = $(STATIC_LIBS)
 ## The next is needed on darwin only at present
 LIBR_LDFLAGS = @LIBR_LDFLAGS@
 
+%.bakc : %.cpp ../scripts/uncxxr.pl
+	../scripts/uncxxr.pl $< > $@
+
 all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \

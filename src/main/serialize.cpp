@@ -1683,7 +1683,7 @@ void
 R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, const void *, int),
+		      void (*outbytes)(R_outpstream_t, CXXRconst void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     stream->data = data;
@@ -1713,7 +1713,7 @@ static int InCharFile(R_inpstream_t stream)
     return fgetc(fp);
 }
 
-static void OutBytesFile(R_outpstream_t stream, const void *buf, int length)
+static void OutBytesFile(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
     FILE *fp = reinterpret_cast<FILE*>(stream->data);
     size_t out = fwrite(buf, 1, length, fp);
@@ -1813,13 +1813,13 @@ static int InCharConn(R_inpstream_t stream)
     }
 }
 
-static void OutBytesConn(R_outpstream_t stream, const void *buf, int length)
+static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
     Rconnection con = reinterpret_cast<Rconnection>(stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	const char *p = reinterpret_cast<const char*>(buf);
+	CXXRconst char *p = reinterpret_cast<const char*>(buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
@@ -1837,7 +1837,7 @@ static void OutCharConn(R_outpstream_t stream, int c)
 	Rconn_printf(con, "%c", c);
     else {
 	char buf[1];
-	buf[0] = char(c);
+	buf[0] = char( c);
 	if (1 != con->write(buf, 1, 1, con))
 	    error(_("error writing to connection"));
     }
@@ -1973,7 +1973,7 @@ static void OutCharBB(R_outpstream_t stream, int c)
     bb->buf[bb->count++] = c;
 }
 
-static void OutBytesBB(R_outpstream_t stream, const void *buf, int length)
+static void OutBytesBB(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
     bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
     if (bb->count + length > BCONBUFSIZ)
@@ -2047,7 +2047,7 @@ static void OutCharMem(R_outpstream_t stream, int c)
     mb->buf[mb->count++] = c;
 }
 
-static void OutBytesMem(R_outpstream_t stream, const void *buf, int length)
+static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     R_size_t needed = mb->count + R_size_t(length);
@@ -2176,7 +2176,7 @@ SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
 	struct membuf_st mbs;
 	void *data = CHAR_RW(STRING_ELT(icon, 0)); /* FIXME, is this right? */
 	int length = LENGTH(STRING_ELT(icon, 0));
-	warning("unserialize()from a character string is deprecated and will be withdrawn in R 2.8.0");
+	warning("unserialize() from a character string is deprecated and will be withdrawn in R 2.8.0");
 	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
 	return R_Unserialize(&in);
     } else if (TYPEOF(icon) == RAWSXP) {
