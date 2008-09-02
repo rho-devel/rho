@@ -1133,7 +1133,7 @@ SEXP attribute_hidden do_indexsearch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    while (filbuf(linebuf, fp)) {
 		if (strncmp(linebuf, topicbuf, ltopicbuf) == 0) {
 		    p = &linebuf[ltopicbuf - 1];
-		    while(isspace(int(*p))) p++;
+		    while (isspace(int(*p))) p++;
 		    fclose(fp);
 		    if (!strcmp(ctype, "html"))
 			snprintf(topicbuf, 256, "%s%s%s%s%s%s",

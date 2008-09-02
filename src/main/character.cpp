@@ -790,7 +790,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 
     upper = strlen(buff1) -1;
     for (i = upper; i > 0; i--) {
-	if(LOWVOW(buff1, i) && LASTCHAR(buff1, i))
+	if (LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
 	if (int(strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
@@ -846,7 +846,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, ans;
     int i, len, minlen, uclass;
-    bool warn = FALSE;
+    bool warn = false;
     const char *s;
 
     checkArity(op,args);
@@ -942,7 +942,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 		for (wc = wstr; *wc; wc++) {
 		    if (*wc == L'.' || (allow_ && *wc == L'_'))
 			/* leave alone */;
-		    else if(!iswalnum(int(*wc))) *wc = L'.';
+		    else if (!iswalnum(int(*wc))) *wc = L'.';
 		    /* If it changes into dot here,
 		     * length will become short on mbcs.
 		     * The name which became short will contain garbage.
@@ -2362,14 +2362,12 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return (reinterpret_cast<const xtable_t *>(a))->c_old
-	- (reinterpret_cast<const xtable_t *>(b))->c_old;
+    return (reinterpret_cast<CXXRconst xtable_t *>(a))->c_old - (reinterpret_cast<CXXRconst xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *(reinterpret_cast<const wchar_t *>(a))
-	- (reinterpret_cast<const xtable_t *>(b))->c_old;
+    return *(reinterpret_cast<CXXRconst wchar_t *>(a)) - (reinterpret_cast<CXXRconst xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \
@@ -2527,8 +2525,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	*trs_cnt_ptr = trs_cnt->next;
 	for ( xtable_cnt = 0 ; wtr_get_next_char_from_spec(trs_cnt_ptr); xtable_cnt++ );
 	Free(trs_cnt_ptr);
-	xtable = reinterpret_cast<xtable_t *>(R_alloc(xtable_cnt+1,
-						      sizeof(xtable_t)));
+	xtable = reinterpret_cast<xtable_t *>(R_alloc(xtable_cnt+1,sizeof(xtable_t)));
 
 	trs_old_ptr = Calloc(1, struct wtr_spec *);
 	*trs_old_ptr = trs_old->next;
@@ -2646,7 +2643,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		const char *xi = translateChar(STRING_ELT(x, i));
 		cbuf = CallocCharBuf(strlen(xi));
 		strcpy(cbuf, xi);
-		for (p = reinterpret_cast<unsigned char *>(cbuf); *p != '\0'; p++)
+		for (p = reinterpret_cast<unsigned char *>( cbuf); *p != '\0'; p++)
 		    *p = xtable[*p];
 		SET_STRING_ELT(y, i, markKnown(cbuf, STRING_ELT(x, i)));
 		Free(cbuf);
@@ -2713,7 +2710,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	nc = mbstowcs(NULL, str, 0);
 	wpat = Calloc(nc+1, wchar_t);
 	mbstowcs(wpat, str, nc+1);
-	aps = apse_create(reinterpret_cast<unsigned char *>(wpat), apse_size_t(nc),
+	aps = apse_create(reinterpret_cast<unsigned char *>( wpat), apse_size_t(nc),
 			  max_distance_opt, 65536);
     } else
 #endif
@@ -2748,9 +2745,9 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	    mbstowcs(wstr, str, nc+1);
 	    /* Set case ignore flag for the whole string to be matched. */
 	    if (!apse_set_caseignore_slice(aps, 0, nc,
-					   apse_bool_t(igcase_opt)))
+					   apse_bool_t( igcase_opt)))
 		error(_("could not perform case insensitive matching"));
-	    if (apse_match(aps, reinterpret_cast<unsigned char *>(wstr), apse_size_t(nc))) {
+	    if (apse_match(aps, reinterpret_cast<unsigned char *>( wstr), apse_size_t( nc))) {
 		LOGICAL(ind)[i] = 1;
 		nmatches++;
 	    } else LOGICAL(ind)[i] = 0;
@@ -2974,7 +2971,7 @@ static int mbrtoint(int *w, const char *s)
 	*w = 0;
 	return 0;
     } else if (byte < 0xC0) {
-        *w = int(byte);
+        *w = int( byte);
 	return 1;
     } else if (byte < 0xE0) {
 	if (strlen(s) < 2) return -2;
@@ -2998,7 +2995,7 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)) {
             *w = int(((byte & 0x07) << 18)
-			| ((s[1] & 0x3F) << 12)
+		     | ((s[1] & 0x3F) << 12)
 		     | ((s[2] & 0x3F) << 6)
 		     | (s[3] & 0x3F));
 	    byte = *w;
@@ -3011,8 +3008,8 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[3] & 0xC0) == 0x80)
 	    && ((s[4] & 0xC0) == 0x80)) {
             *w = int(((byte & 0x03) << 24)
-			| ((s[1] & 0x3F) << 18)
-			| ((s[2] & 0x3F) << 12)
+		     | ((s[1] & 0x3F) << 18)
+		     | ((s[2] & 0x3F) << 12)
 		     | ((s[3] & 0x3F) << 6)
 		     | (s[4] & 0x3F));
 	    byte = *w;
@@ -3026,8 +3023,8 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[4] & 0xC0) == 0x80)
 	    && ((s[5] & 0xC0) == 0x80)) {
             *w = int(((byte & 0x01) << 30)
-			| ((s[1] & 0x3F) << 24)
-			| ((s[2] & 0x3F) << 18)
+		     | ((s[1] & 0x3F) << 24)
+		     | ((s[2] & 0x3F) << 18)
 		     | ((s[3] & 0x3F) << 12)
 		     | ((s[5] & 0x3F) << 6)
 		     | (s[5] & 0x3F));

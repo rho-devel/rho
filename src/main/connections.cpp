@@ -198,7 +198,7 @@ void set_iconv(Rconnection con)
 				  unless in a UTF-8 locale */
 #endif
 	tmp = Riconv_open(con->UTF8out ? "UTF-8" : "", con->encname);
-	if (tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
+	if(tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
 	else error(_("conversion from encoding '%s' is unsupported"),
 		   con->encname);
 	con->EOF_signalled = FALSE;
@@ -468,8 +468,8 @@ void init_con(Rconnection newconn, const char *description, int enc,
     newconn->inconv = newconn->outconv = NULL;
     newconn->UTF8out = FALSE;
     /* increment id, avoid NULL */
-    current_id = reinterpret_cast<void *>(size_t(current_id)+1);
-    if(!current_id) current_id = reinterpret_cast<void *>(1);
+    current_id = reinterpret_cast<void *>(size_t( current_id)+1);
+    if(!current_id) current_id = reinterpret_cast<void *>( 1);
     newconn->id = current_id;
     newconn->ex_ptr = NULL;
 }
@@ -550,7 +550,7 @@ static Rboolean file_open(Rconnection con)
 #ifdef Win32
 	strncpy(thisconn->name, name, PATH_MAX);
 #endif
-	free(const_cast<char *>(name)); /* only free if allocated by R_tmpnam */
+	free(const_cast<char *>( name)); /* only free if allocated by R_tmpnam */
     }
 #ifdef Win32
     thisconn->anon_file = temp;
@@ -836,7 +836,7 @@ static Rboolean fifo_open(Rconnection con)
     }
     if(temp) {
 	unlink(name);
-	free(const_cast<char*>(name)); /* allocated by R_tmpnam */
+	free(const_cast<char *>( name)); /* allocated by R_tmpnam */
     }
 
     thisconn->fd = fd;
@@ -973,8 +973,7 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1212,11 +1211,11 @@ static double gzfile_seek(Rconnection con, double where, int origin, int rw)
     default: whence = SEEK_SET;
     }
     if(where >= 0) {
-	res = gzseek(fp, z_off_t(where), whence);
+	res = gzseek(fp, z_off_t( where), whence);
 	if(res == -1)
 	    warning(_("seek on a gzfile connection returned an internal error"));
     }
-    return double(pos);
+    return double( pos);
 }
 
 static int gzfile_fflush(Rconnection con)
@@ -1330,8 +1329,7 @@ SEXP attribute_hidden do_gzfile(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1517,8 +1515,7 @@ SEXP attribute_hidden do_bzfile(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1718,7 +1715,7 @@ static size_t clp_write(const void *ptr, size_t size, size_t nitems,
 	thisconn->warned = TRUE;
     }
     if(thisconn->last < thisconn->pos) thisconn->last = thisconn->pos;
-    return size_t(used)/size;
+    return size_t( used)/size;
 }
 
 static Rconnection newclp(const char *url, const char *inmode)
@@ -2114,7 +2111,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 	    PROTECT(tmp = lengthgets(thisconn->data, ++thisconn->len));
 	    SET_STRING_ELT(tmp, thisconn->len - 1, mkCharLocal(p));
 	    if(thisconn->namesymbol) {
-		if(findVarInFrame3(env, thisconn->namesymbol, FALSE) 
+		if(findVarInFrame3(env, thisconn->namesymbol, FALSE)
 		   != R_UnboundValue) R_unLockBinding(thisconn->namesymbol, env);
 		defineVar(thisconn->namesymbol, tmp, env);
 		R_LockBinding(thisconn->namesymbol, env);
@@ -2278,8 +2275,7 @@ SEXP attribute_hidden do_textconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
     return ans;
 }
@@ -2364,8 +2360,7 @@ SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 #else
     error(_("sockets are not available on this system"));
@@ -2419,8 +2414,7 @@ SEXP attribute_hidden do_unz(SEXP call, SEXP op, SEXP args, SEXP env)
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -3910,8 +3904,7 @@ do_getconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     SET_STRING_ELT(connclass, 1, mkChar("connection"));
     classgets(ans, connclass);
     if (what > 2)
-	setAttrib(ans, install("conn_id"),
-		  reinterpret_cast<SEXP>(con->ex_ptr));
+	setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(con->ex_ptr));
     UNPROTECT(2);
     return ans;
 }
@@ -3959,7 +3952,7 @@ SEXP attribute_hidden do_sumconnection(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP scmd, sopen, ans, connclass, enc;
-    const char *class2 = "url";
+    CXXRconst char *class2 = "url";
     const char *url, *open;
     int ncon, block;
     cetype_t ienc = CE_NATIVE;
@@ -4076,7 +4069,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
    connection.  It is mainly intended as a means for C code to do a
    buffered write to sockets, but could be the start of a more
    extensive C-level connection API.  LT */
-size_t R_WriteConnection(Rconnection con, const void *buf, size_t n)
+size_t R_WriteConnection(Rconnection con, CXXRconst void *buf, size_t n)
 {
     if(!con->isopen) error(_("connection is not open"));
     if(!con->canwrite) error(_("cannot write to this connection"));
@@ -4360,7 +4353,7 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     int icon, level, allow;
     Rconnection incon=NULL, newconn=NULL;
     char *m, description[1000];
-    const char* mode = NULL;
+    CXXRconst char* mode = NULL;
 
     checkArity(op, args);
     if(!inherits(CAR(args), "connection"))
@@ -4432,11 +4425,9 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_STRING_ELT(connclass, 0, mkChar("gzcon"));
     SET_STRING_ELT(connclass, 1, mkChar("connection"));
     classgets(ans, connclass);
-    newconn->ex_ptr = R_MakeExternalPtr(newconn->id,
-					install("connection"), R_NilValue);
+    newconn->ex_ptr = R_MakeExternalPtr(newconn->id, install("connection"), R_NilValue);
     setAttrib(ans, install("conn_id"), reinterpret_cast<SEXP>(newconn->ex_ptr));
-    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(newconn->ex_ptr),
-			   conFinalizer, FALSE);
+    R_RegisterCFinalizerEx(reinterpret_cast<SEXP>(newconn->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;

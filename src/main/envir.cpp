@@ -226,7 +226,7 @@ namespace {
  */
 int R_Newhashpjw(const char *s)
 {
-    const char *p;
+    CXXRconst char *p;
     unsigned h = 0, g;
     for (p = s; *p; p++) {
 	h = (h << 4) + (*p);
@@ -897,22 +897,22 @@ R_varloc_t R_findVarLocInFrame(SEXP rho, SEXP symbol)
 
 SEXP R_GetVarLocValue(R_varloc_t vl)
 {
-    return BINDING_VALUE(reinterpret_cast<SEXP>(vl));
+    return BINDING_VALUE(reinterpret_cast<SEXP>( vl));
 }
 
 SEXP R_GetVarLocSymbol(R_varloc_t vl)
 {
-    return TAG(reinterpret_cast<SEXP>(vl));
+    return TAG(reinterpret_cast<SEXP>( vl));
 }
 
 Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
-    return Rboolean(MISSING(reinterpret_cast<SEXP>(vl)));
+    return Rboolean(MISSING(reinterpret_cast<SEXP>( vl)));
 }
 
 void R_SetVarLocValue(R_varloc_t vl, SEXP value)
 {
-    SET_BINDING_VALUE(reinterpret_cast<SEXP>(vl), value);
+    SET_BINDING_VALUE(reinterpret_cast<SEXP>( vl), value);
 }
 
 
@@ -2983,7 +2983,7 @@ Rboolean R_IsPackageEnv(SEXP rho)
     SEXP nameSymbol = install("name");
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, nameSymbol);
-	const char *packprefix = "package:";
+	CXXRconst char *packprefix = "package:";
 	int pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */
@@ -3000,7 +3000,7 @@ SEXP R_PackageEnvName(SEXP rho)
     SEXP nameSymbol = install("name");
     if (TYPEOF(rho) == ENVSXP) {
 	SEXP name = getAttrib(rho, nameSymbol);
-	const char *packprefix = "package:";
+	CXXRconst char *packprefix = "package:";
 	int pplen = strlen(packprefix);
 	if(isString(name) && length(name) > 0 &&
 	   ! strncmp(packprefix, CHAR(STRING_ELT(name, 0)), pplen)) /* ASCII */

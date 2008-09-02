@@ -69,7 +69,7 @@ static R_INLINE double fmax2(double x, double y)
 /*
  * Extract specified par from list of inline pars
  */
-static SEXP getInlinePar(SEXP s, const char *name)
+static SEXP getInlinePar(SEXP s, CXXRconst char *name)
 {
     SEXP result = R_NilValue;
     int found = 0;

@@ -750,7 +750,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		    REAL(ans)[i] = NA_REAL;
 		else
-		    REAL(ans)[i] = double(x1) / double(x2);
+		    REAL(ans)[i] = double( x1) / double( x2);
 	}
 	break;
     case POWOP:
@@ -760,7 +760,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
 		REAL(ans)[i] = NA_REAL;
 	    else {
-		REAL(ans)[i] = R_pow(double(x1), double(x2));
+		REAL(ans)[i] = R_pow(double( x1), double( x2));
 	    }
 	}
 	break;

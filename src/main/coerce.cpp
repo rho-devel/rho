@@ -615,7 +615,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = Rbyte(tmp);
+	    RAW(ans)[i] = Rbyte( tmp);
 	}
 	break;
     case INTSXP:
@@ -625,7 +625,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = Rbyte(tmp);
+	    RAW(ans)[i] = Rbyte( tmp);
 	}
 	break;
     case REALSXP:
@@ -635,7 +635,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = Rbyte(tmp);
+	    RAW(ans)[i] = Rbyte( tmp);
 	}
 	break;
     case CPLXSXP:
@@ -645,7 +645,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = Rbyte(tmp);
+	    RAW(ans)[i] = Rbyte( tmp);
 	}
 	break;
     case STRSXP:
@@ -655,7 +655,7 @@ static SEXP coerceToRaw(SEXP v)
 		tmp = 0;
 		warn |= WARN_RAW;
 	    }
-	    RAW(ans)[i] = Rbyte(tmp);
+	    RAW(ans)[i] = Rbyte( tmp);
 	}
 	break;
     default:
@@ -1034,7 +1034,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 		    tmp = 0;
 		    warn |= WARN_RAW;
 		}
-		RAW(rval)[i] = Rbyte(tmp);
+		RAW(rval)[i] = Rbyte( tmp);
 	    }
 	    break;
 	default:
@@ -1266,7 +1266,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SEXPTYPE type = STRSXP;
     int op0 = PRIMVAL(op);
-    const char *name = NULL /* -Wall */;
+    CXXRconst char *name = NULL /* -Wall */;
 
     switch(op0) {
 	case 0:
@@ -1637,7 +1637,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	default: nm = ""; /* -Wall */
 	}
 	if(DispatchOrEval(call, op, nm, args, rho, &ans, 0, 1))
-	return(ans);
+	    return(ans);
     }
 
     PROTECT(ans = allocVector(LGLSXP, 1));
@@ -2346,7 +2346,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 typedef struct {
-    const char *s;
+    CXXRconst char *s;
     SEXPTYPE sexp;
     Rboolean canChange;
 } classType;
@@ -2376,7 +2376,7 @@ static int class2type(const char *s)
        classes; e.g., "language" is a type but many classes correspond to objects of
        this type.
     */
-    int i; const char *si;
+    int i; CXXRconst char *si;
     for(i = 0; ; i++) {
 	si = classTable[i].s;
 	if(!si)
@@ -2478,7 +2478,7 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isValidString(value) || STRING_ELT(value, 0) == NA_STRING)
 	error(_("'value' must be non-null character string"));
     type = str2type(CHAR(STRING_ELT(value, 0)));
-    if(type == SEXPTYPE(-1)) {
+    if(type == SEXPTYPE( -1)) {
 	/* For backwards compatibility we allow "real" and "single" */
 	if(streql(CHAR(STRING_ELT(value, 0)), "real")) {
 	    error("use of 'real' is defunct: use 'double' instead");

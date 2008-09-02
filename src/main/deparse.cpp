@@ -293,7 +293,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP saveenv, tval;
     int i, ifile, res;
     Rboolean wasopen, havewarned = FALSE, opts;
-    Rconnection con = Rconnection(1); /* stdout */
+    Rconnection con = Rconnection( 1); /* stdout */
 
     checkArity(op, args);
 
