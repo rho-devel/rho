@@ -50,7 +50,7 @@ void attribute_hidden PrintGreeting(void)
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.15-2.7.1, based on:\n");
+    Rprintf("This is CXXR 0.16-2.7.2, based on:\n");
     PrintVersionString(buf);
     Rprintf("%s", buf);
     Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
