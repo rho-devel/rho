@@ -329,7 +329,7 @@ static void OutString(R_outpstream_t stream, const char *s, int length)
 		   is handled above, s[i] > 126 can't happen, but
 		   I'm superstitious...  -pd */
 		if (s[i] <= 32 || s[i] > 126)
-		    sprintf(buf, "\\%03o", static_cast<unsigned char>(s[i]));
+		    sprintf(buf, "\\%03o", static_cast<unsigned char>( s[i]));
 		else
 		    sprintf(buf, "%c", s[i]);
 	    }
@@ -1770,7 +1770,7 @@ static void CheckOutConn(Rconnection con)
 
 static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 {
-    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
+    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
     CheckInConn(con);
     if (con->text) {
 	int i;
@@ -1790,7 +1790,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 		    error(_("error reading from ascii connection"));
 		if (!sscanf(linebuf, "%02x", &res))
 		    error(_("unexpected format in ascii connection"));
-                *p++ = static_cast<unsigned char>(res);
+		*p++ = static_cast<unsigned char>(res);
 	    }
 	} else {
             if (length != int(con->read(buf, 1, length, con)))
@@ -1802,7 +1802,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 static int InCharConn(R_inpstream_t stream)
 {
     char buf[1];
-    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
+    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
     CheckInConn(con);
     if (con->text)
 	return Rconn_fgetc(con);
@@ -1815,7 +1815,7 @@ static int InCharConn(R_inpstream_t stream)
 
 static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
-    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
+    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
@@ -1831,7 +1831,7 @@ static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
 
 static void OutCharConn(R_outpstream_t stream, int c)
 {
-    Rconnection con = reinterpret_cast<Rconnection>(stream->data);
+    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text)
 	Rconn_printf(con, "%c", c);
@@ -2050,9 +2050,9 @@ static void OutCharMem(R_outpstream_t stream, int c)
 static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
-    R_size_t needed = mb->count + R_size_t(length);
+    R_size_t needed = mb->count + R_size_t( length);
     /* There is a potential overflow here on 32-bit systems */
-    if(double(mb->count) + length > double(INT_MAX))
+    if(double(mb->count) + length > double (INT_MAX))
 	error(_("serialization is too large to store in a raw vector"));
     if (needed > mb->size) resize_buffer(mb, needed);
     memcpy(mb->buf + mb->count, buf, length);
@@ -2070,7 +2070,7 @@ static int InCharMem(R_inpstream_t stream)
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
-    if (mb->count + R_size_t(length) > mb->size)
+    if (mb->count + R_size_t( length) > mb->size)
 	error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
     mb->count += length;

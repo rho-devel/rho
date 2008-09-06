@@ -196,7 +196,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		xi = translateChar(sxi);
 		nc = mbstowcs(NULL, xi, 0);
 		if (nc >= 0) {
-		    wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
+		    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 
 		    mbstowcs(wc, xi, nc + 1);
 		    INTEGER(s)[i] = Ri18n_wcswidth(wc, 2147483647);
@@ -579,7 +579,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		PROTECT(t = allocVector(STRSXP, ntok + 1));
 	    /* and fill with the splits */
 	    laststart = bufp = buf;
-	    pt = static_cast<char *>(realloc(pt, (strlen(buf)+1) * sizeof(char)));
+	    pt = static_cast<char *>( realloc(pt, (strlen(buf)+1) * sizeof(char)));
 	    for (j = 0; j < ntok; j++) {
 		if (fixed_opt) {
 		    /* This is UTF-8 safe since it compares whole
@@ -919,8 +919,8 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	{
 	    if (This[0] == '.') {
-		if (l >= 1 && isdigit(0xff & int(This[1]))) need_prefix = TRUE;
-	    } else if (!isalpha(0xff & int(This[0]))) need_prefix = TRUE;
+		if (l >= 1 && isdigit(0xff & int( This[1]))) need_prefix = TRUE;
+	    } else if (!isalpha(0xff & int( This[0]))) need_prefix = TRUE;
 	}
 	if (need_prefix) {
 	    tmp = Calloc(l+2, char);
@@ -959,7 +959,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	{
 	    for (p = tmp; *p; p++) {
 		if (*p == '.' || (allow_ && *p == '_')) /* leave alone */;
-		else if(!isalnum(0xff & int(*p))) *p = '.';
+		else if (!isalnum(0xff & int(*p))) *p = '.';
 		/* else leave alone */
 	    }
 	}
@@ -1836,7 +1836,7 @@ static SEXP gregexpr_Regexc(const regex_t *reg, const char *string,
 		/* Unfortunately these are in bytes, so we need to
 		   use chars instead */
 		if (st > 0) {
-                    buf = static_cast<char*>(R_AllocStringBuffer(st, &cbuff));
+		    buf = static_cast<char*>(R_AllocStringBuffer(st, &cbuff));
 		    memcpy(buf, string, st);
 		    buf[st] = '\0';
 		    INTEGER(matchbuf)[matchIndex] = 1+mbstowcs(NULL, buf, 0);
@@ -1845,7 +1845,7 @@ static SEXP gregexpr_Regexc(const regex_t *reg, const char *string,
 			foundAll = 1;
 		    }
 		}
-                buf = static_cast<char*>(R_AllocStringBuffer(mlen+1, &cbuff));
+		buf = static_cast<char*>(R_AllocStringBuffer(mlen+1, &cbuff));
 		memcpy(buf, string+st, mlen);
 		buf[mlen] = '\0';
 		INTEGER(matchlenbuf)[matchIndex] = mbstowcs(NULL, buf, 0);
@@ -2487,13 +2487,13 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    s = CHAR(STRING_ELT(old, 0));
 	    nc = utf8towcs(NULL, s, 0);
 	    if (nc < 0) error(_("invalid UTF-8 string 'old'"));
-	    wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(old, 0));
 	    nc = mbstowcs(NULL, s, 0);
 	    if (nc < 0) error(_("invalid multibyte string 'old'"));
-        wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
 	}
 	wtr_build_spec(wc, trs_old);
@@ -2506,13 +2506,13 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    s = CHAR(STRING_ELT(_new, 0));
 	    nc = utf8towcs(NULL, s, 0);
 	    if (nc < 0) error(_("invalid UTF-8 string 'new'"));
-	    wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    utf8towcs(wc, s, nc + 1);
 	} else {
 	    s = translateChar(STRING_ELT(_new, 0));
 	    nc = mbstowcs(NULL, s, 0);
 	    if (nc < 0) error(_("invalid multibyte string 'new'"));
-        wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
+	    wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t), &cbuff));
 	    mbstowcs(wc, s, nc + 1);
 	}
 	wtr_build_spec(wc, trs_new);
@@ -2710,13 +2710,13 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	nc = mbstowcs(NULL, str, 0);
 	wpat = Calloc(nc+1, wchar_t);
 	mbstowcs(wpat, str, nc+1);
-	aps = apse_create(reinterpret_cast<unsigned char *>( wpat), apse_size_t(nc),
+	aps = apse_create(reinterpret_cast<unsigned char *>( wpat), apse_size_t( nc),
 			  max_distance_opt, 65536);
     } else
 #endif
     {
 	nc = strlen(str);
-	aps = apse_create(reinterpret_cast<unsigned char *>(const_cast<char*>(str)), apse_size_t(nc),
+	aps = apse_create(reinterpret_cast<unsigned char *>(const_cast<char*>(str)), apse_size_t( nc),
 			  max_distance_opt, 256);
     }
     if (!aps)
@@ -2760,7 +2760,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 					   apse_bool_t(igcase_opt)))
 		error(_("could not perform case insensitive matching"));
 	    if (apse_match(aps, reinterpret_cast<unsigned char *>(const_cast<char*>(str)),
-			   apse_size_t(strlen(str)))) {
+			   apse_size_t( strlen(str)))) {
 		LOGICAL(ind)[i] = 1;
 		nmatches++;
 	    } else LOGICAL(ind)[i] = 0;
@@ -2838,7 +2838,7 @@ SEXP attribute_hidden do_rawToChar(SEXP call, SEXP op, SEXP args, SEXP env)
 	buf[1] = '\0';
 	PROTECT(ans = allocVector(STRSXP, nc));
 	for (i = 0; i < nc; i++) {
-            buf[0] = char(RAW(x)[i]);
+	    buf[0] = char( RAW(x)[i]);
 	    SET_STRING_ELT(ans, i, mkChar(buf));
 	}
 	/* do we want to copy e.g. names here? */
@@ -2884,7 +2884,7 @@ SEXP attribute_hidden do_rawToBits(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument 'x' must be a raw vector"));
     PROTECT(ans = allocVector(RAWSXP, 8*LENGTH(x)));
     for (i = 0; i < LENGTH(x); i++) {
-	tmp = static_cast<unsigned int>(RAW(x)[i]);
+	tmp = static_cast<unsigned int>( RAW(x)[i]);
 	for (k = 0; k < 8; k++, tmp >>= 1)
 	    RAW(ans)[j++] = tmp & 0x1;
     }
@@ -2902,7 +2902,7 @@ SEXP attribute_hidden do_intToBits(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument 'x' must be a integer vector"));
     PROTECT(ans = allocVector(RAWSXP, 32*LENGTH(x)));
     for (i = 0; i < LENGTH(x); i++) {
-	tmp = static_cast<unsigned int>(INTEGER(x)[i]);
+	tmp = static_cast<unsigned int>( INTEGER(x)[i]);
 	for (k = 0; k < 32; k++, tmp >>= 1)
 	    RAW(ans)[j++] = tmp & 0x1;
     }
@@ -2956,7 +2956,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 		    itmp |= j & 0x1;
 		}
 	    }
-            INTEGER(ans)[i] = int(itmp);
+	    INTEGER(ans)[i] = int( itmp);
 	}
     UNPROTECT(1);
     return ans;
@@ -2971,18 +2971,18 @@ static int mbrtoint(int *w, const char *s)
 	*w = 0;
 	return 0;
     } else if (byte < 0xC0) {
-        *w = int( byte);
+	*w = int( byte);
 	return 1;
     } else if (byte < 0xE0) {
 	if (strlen(s) < 2) return -2;
 	if ((s[1] & 0xC0) == 0x80) {
-            *w = int(((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = int( ((byte & 0x1F) << 6) | (s[1] & 0x3F));
 	    return 2;
 	} else return -1;
     } else if (byte < 0xF0) {
 	if (strlen(s) < 3) return -2;
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-            *w = int(((byte & 0x0F) << 12)
+	    *w = int(((byte & 0x0F) << 12)
 		     | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    if (byte >= 0xD800 && byte <= 0xDFFF) return -1; /* surrogate */
@@ -3158,7 +3158,7 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 	w = INTEGER(width)[i % nw];
 	This = translateChar(STRING_ELT(x, i));
 	nc = strlen(This);
-        buf = static_cast<char*>(R_AllocStringBuffer(nc, &cbuff));
+	buf = static_cast<char*>(R_AllocStringBuffer(nc, &cbuff));
 #if defined(SUPPORT_MBCS)
 	wsum = 0;
 	mbs_init(&mb_st);

@@ -357,14 +357,12 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 		bit[chunk] = '\0';
 	    }
 	    if(ss) {
-		outputString
-		    = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
-								  strlen(ss) + 1, &outbuff));
+		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
+									   strlen(ss) + 1, &outbuff));
 		strcat(outputString, ss);
 	    } else {
-		outputString
-		    = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
-								  strlen(bit) + 1, &outbuff));
+		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
+									   strlen(bit) + 1, &outbuff));
 		strcat(outputString, bit);
 	    }
 	}

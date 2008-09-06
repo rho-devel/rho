@@ -352,7 +352,7 @@ walker_ProbSampleReplace(int n, double *p, int *a, int nans, int *ans)
     if(n <= SMALL) {
 	/* might do this repeatedly, so speed matters */
 	HL = static_cast<int *>(alloca(n * sizeof(int)));
-	q = static_cast<double *>(alloca(n * sizeof(double)));
+	q = static_cast<double *>( alloca(n * sizeof(double)));
 	R_CheckStack();
     } else {
 	/* Slow enough anyway not to risk overflow */
@@ -600,12 +600,12 @@ R_r2dtable(SEXP n, SEXP r, SEXP c)
     /* Log-factorials from 0 to n_of_cases.
        (I.e., lgamma(1), ..., lgamma(n_of_cases + 1).)
     */
-    fact = reinterpret_cast<double *>(R_alloc(n_of_cases + 1, sizeof(double)));
+    fact = reinterpret_cast<double *>( R_alloc(n_of_cases + 1, sizeof(double)));
     fact[0] = 0.;
     for(i = 1; i <= n_of_cases; i++)
 	fact[i] = lgammafn(double(i + 1));
 
-    jwork = reinterpret_cast<int *>(R_alloc(nc, sizeof(int)));
+    jwork = reinterpret_cast<int *>( R_alloc(nc, sizeof(int)));
 
     PROTECT(ans = allocVector(VECSXP, n_of_samples));
 

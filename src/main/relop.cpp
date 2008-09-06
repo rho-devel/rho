@@ -81,7 +81,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
     if (ATTRIB(x) == R_NilValue && ATTRIB(y) == R_NilValue &&
 	TYPEOF(x) == REALSXP && TYPEOF(y) == REALSXP &&
 	LENGTH(x) > 0 && LENGTH(y) > 0) {
-	SEXP ans = real_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	SEXP ans = real_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
 	if (nx > 0 && ny > 0)
 	    mismatch = Rboolean(((nx > ny) ? nx % ny : ny % nx) != 0);
 	if (mismatch)
@@ -183,32 +183,32 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
     if (isString(x) || isString(y)) {
 	REPROTECT(x = coerceVector(x, STRSXP), xpi);
 	REPROTECT(y = coerceVector(y, STRSXP), ypi);
-	x = string_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	x = string_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
     }
     else if (isComplex(x) || isComplex(y)) {
 	REPROTECT(x = coerceVector(x, CPLXSXP), xpi);
 	REPROTECT(y = coerceVector(y, CPLXSXP), ypi);
-	x = complex_relop(RELOP_TYPE(PRIMVAL(op)), x, y, call);
+	x = complex_relop(RELOP_TYPE( PRIMVAL(op)), x, y, call);
     }
     else if (isReal(x) || isReal(y)) {
 	REPROTECT(x = coerceVector(x, REALSXP), xpi);
 	REPROTECT(y = coerceVector(y, REALSXP), ypi);
-	x = real_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	x = real_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
     }
     else if (isInteger(x) || isInteger(y)) {
 	REPROTECT(x = coerceVector(x, INTSXP), xpi);
 	REPROTECT(y = coerceVector(y, INTSXP), ypi);
-	x = integer_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	x = integer_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
     }
     else if (isLogical(x) || isLogical(y)) {
 	REPROTECT(x = coerceVector(x, LGLSXP), xpi);
 	REPROTECT(y = coerceVector(y, LGLSXP), ypi);
-	x = integer_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	x = integer_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
     }
     else if (TYPEOF(x) == RAWSXP || TYPEOF(y) == RAWSXP) {
 	REPROTECT(x = coerceVector(x, RAWSXP), xpi);
 	REPROTECT(y = coerceVector(y, RAWSXP), ypi);
-	x = raw_relop(RELOP_TYPE(PRIMVAL(op)), x, y);
+	x = raw_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
     } else errorcall(call, _("comparison of these types is not implemented"));
 
 

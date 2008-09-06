@@ -1329,7 +1329,7 @@ void attribute_hidden InitTempDir()
     }
 
     len = strlen(tmp) + 1;
-    p = static_cast<char *>(malloc(len));
+    p = static_cast<char *>( malloc(len));
     if(!p)
 	R_Suicide(_("cannot allocate R_TempDir"));
     else {
@@ -1366,7 +1366,7 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
     }
     if(!done)
 	error(_("cannot find unused tempfile name"));
-    res = static_cast<char *>(malloc((strlen(tm)+1) * sizeof(char)));
+    res = static_cast<char *>( malloc((strlen(tm)+1) * sizeof(char)));
     strcpy(res, tm);
     return res;
 }

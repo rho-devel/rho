@@ -899,7 +899,7 @@ static void getylimits(double *y, pGEDevDesc dd) {
 SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* axis(side, at, labels, tick, line, pos,
-      	    outer, font, lty, lwd, lwd.ticks, col, col.ticks, 
+            outer, font, lty, lwd, lwd.ticks, col, col.ticks, 
 	    hadj, padj, ...)
     */
 
@@ -1111,7 +1111,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* The code here is long-winded.  Couldn't we just inline things */
     /* below.  Hmmm - we need the min and max of the finite values ... */
 
-    ind = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
+    ind = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
     for(i = 0; i < n; i++) ind[i] = i;
     rsort_with_index(REAL(at), ind, n);
     ntmp = 0;
@@ -1599,13 +1599,13 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 	double *xtemp, *ytemp;
 	int n0 = 0;
 	if(n <= 1000) {
-	    xtemp = static_cast<double *>(alloca(2*n*sizeof(double)));
-	    ytemp = static_cast<double *>(alloca(2*n*sizeof(double)));
+	    xtemp = static_cast<double *>( alloca(2*n*sizeof(double)));
+	    ytemp = static_cast<double *>( alloca(2*n*sizeof(double)));
 	    R_CheckStack();
 	} else {
 	    vmax = vmaxget();
-	    xtemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
-	    ytemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
+	    xtemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
+	    ytemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
 	}
 	gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
@@ -1637,13 +1637,13 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 	double *xtemp, *ytemp;
 	int n0 = 0;
 	if(n < 1000) {
-	    xtemp = static_cast<double *>(alloca(2*n*sizeof(double)));
-	    ytemp = static_cast<double *>(alloca(2*n*sizeof(double)));
+	    xtemp = static_cast<double *>( alloca(2*n*sizeof(double)));
+	    ytemp = static_cast<double *>( alloca(2*n*sizeof(double)));
 	    R_CheckStack();
 	} else {
 	    vmax = vmaxget();
-	    xtemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
-	    ytemp = reinterpret_cast<double *>(R_alloc(2*n, sizeof(double)));
+	    xtemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
+	    ytemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
 	}
 	gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
@@ -3996,8 +3996,8 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     x = REAL(sx);
     y = REAL(sy);
     vmaxsave = vmaxget();
-    xx = reinterpret_cast<double *>(R_alloc(nx, sizeof(double)));
-    yy = reinterpret_cast<double *>(R_alloc(nx, sizeof(double)));
+    xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+    yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in do_xspline)"));
     for (i = 0; i < nx; i++) {

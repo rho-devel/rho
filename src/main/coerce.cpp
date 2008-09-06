@@ -920,7 +920,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    break;
 	case RAWSXP:
 	    for (i = 0, vp = v; i < n; i++, vp = CDR(vp))
-		RAW(rval)[i] = Rbyte(asInteger(CAR(vp)));
+		RAW(rval)[i] = Rbyte( asInteger(CAR(vp)));
 	    break;
 	default:
 	    UNIMPLEMENTED_TYPE("coercePairList", v);

@@ -57,8 +57,8 @@ typedef struct _HashData HashData;
 
 struct _HashData {
   int K, M;
-  int(*hash) (SEXP, int, HashData *);
-  int(*equal) (SEXP, int, SEXP, int);
+  int (*hash) (SEXP, int, HashData *);
+  int (*equal) (SEXP, int, SEXP, int);
   SEXP HashTable;
 
   int nomatch;
@@ -731,12 +731,12 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument is not of mode character"));
 
     if(no_dups) {
-	used = reinterpret_cast<int *>(R_alloc(n_target, sizeof(int)));
+	used = reinterpret_cast<int *>( R_alloc(n_target, sizeof(int)));
 	for (j = 0; j < n_target; j++) used[j] = 0;
     }
 
-    in = reinterpret_cast<const char **>(R_alloc(n_input, sizeof(char *)));
-    tar = reinterpret_cast<const char **>(R_alloc(n_target, sizeof(char *)));
+    in = reinterpret_cast<const char **>( R_alloc(n_input, sizeof(char *)));
+    tar = reinterpret_cast<const char **>( R_alloc(n_target, sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
     for (i = 0; i < n_input; i++) {
@@ -1313,13 +1313,13 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	buf = static_cast<char*>(alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
+	buf = static_cast<char*>( alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
 	if(n < 10000) {
-	    cnts = static_cast<int*>(alloca(n * sizeof(int)));
+	    cnts = static_cast<int *>( alloca(n * sizeof(int)));
 	} else {
 	    /* This is going to be slow so use expensive allocation
 	       that will be recovered if interrupted. */
-	    cnts = reinterpret_cast<int*>(R_alloc(n,  sizeof(int)));
+	    cnts = reinterpret_cast<int *>( R_alloc(n,  sizeof(int)));
 	}
 	R_CheckStack();
 	for(i = 0; i < n; i++) cnts[i] = 1;
@@ -1353,7 +1353,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static int cshash(SEXP x, int indx, HashData *d)
 {
-    intptr_t z = intptr_t(STRING_ELT(x, indx));
+    intptr_t z = intptr_t( STRING_ELT(x, indx));
     unsigned int z1 = z & 0xffffffff, z2 = 0;
 #if SIZEOF_LONG == 8
     z2 = z/0x100000000L;

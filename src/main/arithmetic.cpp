@@ -353,7 +353,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
     int xattr, yattr;
     SEXP lcall = call;
     PROTECT_INDEX xpi, ypi;
-    ARITHOP_TYPE oper = ARITHOP_TYPE(PRIMVAL(op));
+    ARITHOP_TYPE oper = ARITHOP_TYPE( PRIMVAL(op));
     int nprotect = 2; /* x and y */
 
 
@@ -525,7 +525,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 
 SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
 {
-    ARITHOP_TYPE operation = ARITHOP_TYPE(PRIMVAL(op));
+    ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
     case INTSXP:
@@ -547,13 +547,13 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 	return s1;
     case MINUSOP:
 	{
-	int n = LENGTH(s1);
-	GCRoot<IntVector> ans(new IntVector(n), true);
-	for (int i = 0; i < n; i++) {
-	    int x = INTEGER(s1)[i];
-	    INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;
-	}
-	return ans;
+	    int n = LENGTH(s1);
+	    GCRoot<IntVector> ans(new IntVector(n), true);
+	    for (int i = 0; i < n; i++) {
+		int x = INTEGER(s1)[i];
+		INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;
+	    }
+	    return ans;
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -986,7 +986,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
 /* Mathematical Functions of One Argument */
 
-static SEXP math1(SEXP sa, double(*f)(double), SEXP lcall)
+static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
 {
     SEXP sy;
     double *y, *a;
