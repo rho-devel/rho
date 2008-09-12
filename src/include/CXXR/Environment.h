@@ -186,7 +186,7 @@ namespace CXXR {
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{
 	    m_enclosing = new_enclos;
-	    devolveAge(m_enclosing);
+	    propagateAge(m_enclosing);
 	}
 
 	/** @brief Replace the frame.
@@ -199,7 +199,7 @@ namespace CXXR {
 	void setFrame(PairList* new_frame)
 	{
 	    m_frame = new_frame;
-	    devolveAge(m_frame);
+	    propagateAge(m_frame);
 	}
 
 	/** @brief Replace the hash table.
@@ -212,7 +212,7 @@ namespace CXXR {
 	void setHashTable(ListVector* new_hash_table)
 	{
 	    m_hashtable = new_hash_table;
-	    devolveAge(m_hashtable);
+	    propagateAge(m_hashtable);
 	}
 
 	/** @brief Set the frame's status as globally cached.

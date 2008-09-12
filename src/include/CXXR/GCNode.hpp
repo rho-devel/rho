@@ -85,12 +85,12 @@ namespace CXXR {
      *
      * <li>If the derived class contains any pointers to other objects
      * derived from GCNode, then any post-construction operation that
-     * modifies the pointer must invoke the method devolveAge() with the
-     * new destination of the pointer as its argument, to ensure that
-     * no old-to-new references arise.  There is no need to do this
-     * during the operation of a constructor for the derived class,
-     * because then the object under construction will necessarily be
-     * newer than anything to which it refers.</li>
+     * modifies the pointer must invoke the method propagateAge() with
+     * the new destination of the pointer as its argument, to ensure
+     * that no old-to-new references arise.  There is no need to do
+     * this during the operation of a constructor for the derived
+     * class, because then the object under construction will
+     * necessarily be newer than anything to which it refers.</li>
      * </ol>
      *
      * \par Infant immunity:
@@ -111,7 +111,8 @@ namespace CXXR {
      * following events occurs:
      * <ul>
      *
-     * <li>The method expose() is called explicitly for N.</li>
+     * <li>The method expose() is called explicitly for N, or for a
+     * node that refers to N (and so on recursively).</li>
      *
      * <li>N is visited by a \b GCNode::Ager object (as part of
      * write barrier enforcement).  This will happen if
@@ -214,7 +215,8 @@ namespace CXXR {
 	};
 
 	GCNode()
-	    : m_next(s_generation[0]), m_gcgen(0), m_marked(false)
+	    : m_next(s_generation[0]), m_gcgen(0), m_marked(false),
+	      m_aged(false)
 	{
 	    s_generation[0] = this;
 	    ++s_gencount[0];
@@ -276,42 +278,15 @@ namespace CXXR {
 	    return true;
 	}
 
-	/** @brief Prevent old-to-new references.
-	 * 
-	 * If \a node points to a node of a younger generation than
-	 * this node, then raise it to this node's generation, and
-	 * propagate this change to the nodes to which \a node refers,
-	 * and so on recursively.
-	 * @param node Pointer to the node whose generation is to be
-	 *          adjusted if necessary.  If this is a null pointer,
-	 *          the method does nothing.
-	 * @todo Make this protected once CHECK_OLD_TO_NEW in
-	 * memory.cpp is no longer required.
-	 */
-	void devolveAge(const GCNode* node)
-	{
-	    if (node && m_gcgen > node->m_gcgen) {
-		Ager ager(m_gcgen);
-		node->conductVisitor(&ager);
-	    }
-	}
-
 	/** @brief Make node known to the garbage collector.
 	 *
 	 * Makes this node known to the garbage collector (if it isn't
-	 * already).  Beware that this exposes only this single node:
-	 * its effect does not recurse to the node's descendants.
+	 * already), and so on recursively for nodes to which this
+	 * node refers.
 	 */
 	void expose() const
 	{
-	    if (m_gcgen == 0) {
-		// gcc (4.1.2) fetches s_gencount twice without this
-		// local variable, even with -O2:
-		unsigned int* gc = s_gencount;
-		--gc[0];
-		m_gcgen = 1;
-		++gc[1];
-	    }
+	    ageTo(1);
 	}
 
 	/** @brief Initiate a garbage collection.
@@ -334,6 +309,30 @@ namespace CXXR {
 	 * existence.
 	 */
 	static size_t numNodes() {return s_num_nodes;}
+
+	/** @brief Prevent old-to-new references.
+	 * 
+	 * If \a node points to a node of a younger generation than
+	 * this node, then raise it to this node's generation, and
+	 * propagate this change to the nodes to which \a node refers,
+	 * and so on recursively.
+	 *
+	 * @param node Pointer to the node whose generation is to be
+	 *          adjusted if necessary.  If this is a null pointer,
+	 *          the method does nothing.
+	 *
+	 * @note In practice only \a node has its generation changed
+	 * as a direct result of this call; the recursive propagation
+	 * of the change is deferred until the next garbage
+	 * collection.
+	 *
+	 * @todo Make this protected once CHECK_OLD_TO_NEW in
+	 * memory.cpp is no longer required.
+	 */
+	void propagateAge(const GCNode* node)
+	{
+	    if (node) node->ageTo(m_gcgen);
+	}
 
 	/** @brief Delete all nodes with infant immunity.
 	 *
@@ -447,22 +446,27 @@ namespace CXXR {
 		
 	static unsigned int s_num_generations;
 	static const GCNode** s_generation;  // s_generation[g] is
-					     // nominally a list of
-					     // the nodes in
-					     // generation g; however,
-					     // some nodes in the list
-					     // may subsequently have changed 
-	                                     // generation.
+				// nominally a list of the nodes in
+				// generation g; however, some nodes
+				// in the list may subsequently have
+				// changed generation.
 	static unsigned int* s_next_gen; // Look-up table used to
-					 // advance generation number
-					 // following a garbage
-					 // collection.
+			       // advance generation number following
+			       // a garbage collection.
 	static unsigned int* s_gencount;
 	static size_t s_num_nodes;
 
+	typedef std::vector<const GCNode*> AgedList;
+	static AgedList* s_aged_list; // List of nodes whose
+			   // generation numbers have been changed
+			   // since the last garbage collection.
+
 	mutable const GCNode *m_next;
 	mutable unsigned char m_gcgen;
-	mutable bool m_marked;
+	mutable bool m_marked : 1;
+	mutable bool m_aged   : 1;  // true if the generation number
+				    // of this node has been changed
+				    // since the last garbage collection.
 
 	// Special constructor for pegs (i.e. dummy nodes used to
 	// simplify list management).  The parameter is simply to 
@@ -477,6 +481,22 @@ namespace CXXR {
 	// Not implemented.  Declared private to prevent clients
 	// allocating arrays of GCNode.
 	static void* operator new[](size_t);
+
+	// Force the generation number of this node up to mingen, and
+	// if the generation number is changed, flag up the change for
+	// recursive propagation by propagateAges().
+	void ageTo(unsigned int mingen) const
+	{
+	    if (m_gcgen < mingen) {
+		--s_gencount[m_gcgen];
+		m_gcgen = mingen;
+		++s_gencount[m_gcgen];
+		if (!m_aged) {
+		    m_aged = true;
+		    s_aged_list->push_back(this);
+		}
+	    }
+	}
 
 	// Clean up static data at end of run:
 	static void cleanup();
@@ -500,6 +520,11 @@ namespace CXXR {
 	}
 
 	const GCNode* next() const {return m_next;}
+
+	// This is the first stage of garbage collection.  It
+	// propagates the generation changes initiated by expose() or
+	// propagateAge() recursively through the node graph.
+	static void propagateAges();
 
 	/** @brief Carry out the sweep phase of garbage collection.
 	 *

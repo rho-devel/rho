@@ -122,7 +122,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 namespace {
     inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
     {
-	x->devolveAge(y);
+	x->propagateAge(y);
     }
 }
 
@@ -245,6 +245,8 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
     // GCNode::check();
     // cout << "Precheck completed OK\n";
+
+    propagateAges();
 
     GCNode::Marker marker(num_old_gens_to_collect + 1);
     GCRootBase::visitRoots(&marker);

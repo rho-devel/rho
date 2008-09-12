@@ -86,7 +86,7 @@ namespace CXXR {
 	    {
 		*m_it = *rhs.m_it;
 		if (rhs.m_ev != m_ev)
-		    m_ev->devolveAge(*m_it);
+		    m_ev->propagateAge(*m_it);
 		return *this;
 	    }
 
@@ -96,7 +96,7 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(Ptr s)
 	    {
-		m_ev->devolveAge(s);
+		m_ev->propagateAge(s);
 		*m_it = s;
 		return *this;
 	    }

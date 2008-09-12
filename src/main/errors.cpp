@@ -1406,13 +1406,13 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 			   SEXP result, int calling)
 {
     HandlerEntry* entry = new HandlerEntry;
-    entry->expose();
     entry->m_class = SEXP_downcast<String*>(klass);
     entry->m_parent_environment = SEXP_downcast<Environment*>(parentenv);
     entry->m_handler = handler;
     entry->m_environment = SEXP_downcast<Environment*>(rho);
     entry->m_result = SEXP_downcast<ListVector*>(result);
     entry->m_calling = (calling != 0);
+    entry->expose();
     return entry;
 }
 

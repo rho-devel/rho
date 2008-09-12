@@ -134,7 +134,7 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
 	    m_attrib = newnode;
-	    devolveAge(m_attrib);
+	    propagateAge(m_attrib);
 	}
     }
 }

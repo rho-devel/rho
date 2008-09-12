@@ -130,7 +130,7 @@ namespace CXXR {
 	void setEnvironment(Environment* new_env)
 	{
 	    m_environment = new_env;
-	    devolveAge(m_environment);
+	    propagateAge(m_environment);
 	}
 
 	/** @brief The name by which this type is known in R.

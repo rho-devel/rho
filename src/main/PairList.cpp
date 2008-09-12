@@ -72,12 +72,10 @@ PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
 	while (sz--)
 	    ans = new PairList(0, ans, 0);
     } catch(...) {
-	for (PairList* node = ans; node; node = node->tail())
-	    node->expose();
+	if (ans) ans->expose();
 	throw;
     }
-    for (PairList* node = ans; node; node = node->tail())
-	node->expose();
+    if (ans) ans->expose();
     return ans;
 }
 

@@ -54,6 +54,7 @@ const GCNode** GCNode::s_generation;
 unsigned int* GCNode::s_next_gen;
 unsigned int* GCNode::s_gencount;
 size_t GCNode::s_num_nodes;
+GCNode::AgedList* GCNode::s_aged_list;
 
 GCNode::SchwarzCtr::SchwarzCtr()
 {
@@ -72,7 +73,7 @@ GCNode::SchwarzCtr::~SchwarzCtr()
 }
 
 GCNode::GCNode(int)
-    : m_next(0), m_gcgen(0), m_marked(false)
+    : m_next(0), m_gcgen(0), m_marked(false), m_aged(false)
 {
     ++s_gencount[0];
     ++s_num_nodes;
@@ -118,7 +119,7 @@ bool GCNode::check()
 	    }
 	    // Don't try visiting children of nodes in Generation
 	    // 0, because these nodes may still be under construction:
-	    if (gen > 0)
+	    if (gen > 0 && !node->m_aged)
 		node->visitChildren(&o2n);
 	}
     }
@@ -143,6 +144,7 @@ bool GCNode::check()
 
 void GCNode::cleanup()
 {
+    delete s_aged_list;
     delete [] s_gencount;
     delete [] s_next_gen;
     delete [] s_generation;
@@ -156,6 +158,7 @@ void GCNode::initialize()
     s_generation = new const GCNode*[s_num_generations];
     s_next_gen = new unsigned int[s_num_generations];
     s_gencount = new unsigned int[s_num_generations];
+    s_aged_list = new vector<const GCNode*>;
     for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
 	s_generation[gen] = 0;
 	s_next_gen[gen] = gen + 1;
@@ -163,6 +166,28 @@ void GCNode::initialize()
     }
     s_next_gen[0] = 0;
     s_next_gen[s_num_generations - 1] = s_num_generations - 1;
+}
+
+void GCNode::propagateAges()
+{
+    // Why go in reverse?  Earlier nodes in the list may well be
+    // 'subassemblies' of later nodes, and the main assembly may well
+    // be coerced to a higher generation than the subassemblies.
+    // Going in reverse helps to avoid propagating two (or more)
+    // generation changes over the same nodes.
+    for (AgedList::const_reverse_iterator rit = s_aged_list->rbegin();
+	 rit != s_aged_list->rend(); ++rit) {
+	const GCNode* node = *rit;
+	// node may already have been visited by an Ager, in which
+	// case m_aged will have been set false and there's nothing
+	// more to do:
+	if (node->m_aged) {
+	    Ager ager(node->m_gcgen);
+	    node->visitChildren(&ager);
+	    node->m_aged = false;
+	}
+    }
+    s_aged_list->clear();
 }
 
 // Structure used to marshal nodes awaiting transfer to a
@@ -274,6 +299,7 @@ bool GCNode::Ager::operator()(const GCNode* node)
     --s_gencount[node->m_gcgen];
     node->m_gcgen = m_mingen;
     ++s_gencount[node->m_gcgen];
+    node->m_aged = false;
     return true;
 }
 

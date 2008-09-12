@@ -55,7 +55,7 @@ namespace CXXR {
 void Promise::setValue(RObject* val)
 {
     m_value = val;
-    devolveAge(m_value);
+    propagateAge(m_value);
     if (val != Symbol::unboundValue())
 	m_environment = 0;
 }

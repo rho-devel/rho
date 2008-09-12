@@ -58,7 +58,7 @@ ExpressionVector::ExpressionVector(const ListVector& lv)
     : EdgeVector<RObject*, EXPRSXP>(lv.size())
 {
     // The following results in unnecessary invocations of
-    // devolveAge() on the nodes pointed to.
+    // propagateAge() on the nodes pointed to.
     for (unsigned int i = 0; i < size(); ++i)
 	(*this)[i] = lv[i];
     SEXP names = Rf_getAttrib(const_cast<ListVector*>(&lv),

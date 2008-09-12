@@ -72,8 +72,8 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 	m_key->expose();
     else tombstone();
     // Force old-to-new checks:
-    m_key->devolveAge(m_value);
-    m_key->devolveAge(m_Rfinalizer);
+    m_key->propagateAge(m_value);
+    m_key->propagateAge(m_Rfinalizer);
     ++s_count;
 }
 
@@ -88,7 +88,7 @@ WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 	m_key->expose();
     else tombstone();
     // Force old-to-new check:
-    m_key->devolveAge(m_value);
+    m_key->propagateAge(m_value);
     ++s_count;
 }
 

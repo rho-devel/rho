@@ -126,7 +126,7 @@ namespace CXXR {
 	void setCar(RObject* cr)
 	{
 	    m_car = cr;
-	    devolveAge(m_car);
+	    propagateAge(m_car);
 	}
 
 	/** @brief Set the 'tag' value.
@@ -137,7 +137,7 @@ namespace CXXR {
 	void setTag(RObject* tg)
 	{
 	    m_tag = tg;
-	    devolveAge(m_tag);
+	    propagateAge(m_tag);
 	}
 
 	/** @brief Set the 'tail' value.

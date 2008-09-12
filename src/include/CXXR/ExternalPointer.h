@@ -127,7 +127,7 @@ namespace CXXR {
 	void setProtege(RObject* prot)
 	{
 	    m_protege = prot;
-	    devolveAge(m_protege);
+	    propagateAge(m_protege);
 	}
 
 	/** @brief Set the value of the encapsulated pointer
@@ -147,7 +147,7 @@ namespace CXXR {
 	void setTag(RObject* tag)
 	{
 	    m_tag = tag;
-	    devolveAge(m_tag);
+	    propagateAge(m_tag);
 	}
 
 	/** @brief The name by which this type is known in R.
