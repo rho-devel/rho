@@ -81,7 +81,7 @@ namespace CXXR {
      *
      * <li>If the derived class contains any pointers or references to
      * other objects derived from GCNode, it should reimplement the
-     * methods visitChildren() appropriately.</li>
+     * method visitChildren() appropriately.</li>
      *
      * <li>If the derived class contains any pointers to other objects
      * derived from GCNode, then any post-construction operation that
@@ -98,28 +98,31 @@ namespace CXXR {
      * under construction, it is effectively immune from the garbage
      * collector.  Not only does this greatly simplify the coding of
      * the constructors themselves, it also means that in implementing
-     * the virtual methods visitChildren(), it is not necessary to
+     * the virtual method visitChildren(), it is not necessary to
      * consider the possibility that the garbage collector will invoke
      * this method for a node whose construction is not yet complete.
      *
      * \par
-     * The private method expose() is used to end this immunity once
+     * The method expose() is used to end this immunity once
      * construction of an object is complete.  However, there appears
      * to be no clean and general way in C++ of calling expose() \e
-     * exactly when construction is complete.  Consequently, a node N's
-     * infant immunity will in fact continue until one of the
+     * exactly when construction is complete.  Consequently, a node
+     * N's infant immunity will in fact continue until one of the
      * following events occurs:
+     *
      * <ul>
      *
      * <li>The method expose() is called explicitly for N, or for a
      * node that refers to N (and so on recursively).</li>
      *
-     * <li>N is visited by a \b GCNode::Ager object (as part of
-     * write barrier enforcement).  This will happen if
-     * a node that is already exposed to the garbage collector is
-     * modified so that it refers to N.</li>
+     * <li>N is visited by a \b GCNode::Ager object (as part of write
+     * barrier enforcement).  This will happen if a node that is
+     * already exposed to the garbage collector is modified so that it
+     * refers to N (or a node that refers to N, and so on
+     * recursively).</li>
      *
-     * <li>A pointer to N is specified in the constructor of a GCRoot
+     * <li>A pointer to N (or a node that refers to N, and so on
+     * recursively) is specified in the constructor of a GCRoot
      * object, and the optional argument \a expose is set to
      * true.</li>
      *
