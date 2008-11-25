@@ -42,6 +42,11 @@
 using namespace std;
 using namespace CXXR;
 
+DottedArgs* DottedArgs::clone() const
+{
+    return new DottedArgs(*this);
+}
+
 const char* DottedArgs::typeName() const
 {
     return staticTypeName();

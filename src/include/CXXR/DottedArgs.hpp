@@ -63,6 +63,14 @@ namespace CXXR {
 	    : ConsCell(DOTSXP, cr, tl, tg)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern DottedArgs to be copied.
+	 */
+	DottedArgs(const DottedArgs& pattern)
+	    : ConsCell(pattern)
+	{}
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -72,7 +80,8 @@ namespace CXXR {
 	    return "...";
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	DottedArgs* clone() const;
 	const char* typeName() const;
     private:
 	// Declared private to ensure that DottedArgs objects are
@@ -81,7 +90,6 @@ namespace CXXR {
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
-	DottedArgs(const DottedArgs&);
 	DottedArgs& operator=(const DottedArgs&);
     };
 } // namespace CXXR
