@@ -229,10 +229,7 @@ SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 namespace {
     inline void MARK_THRU(GCNode::const_visitor* marker, GCNode* node) {
-	if (node) {
-	    node->expose();
-	    node->conductVisitor(marker);
-	}
+	if (node) node->conductVisitor(marker);
     }
 }
 

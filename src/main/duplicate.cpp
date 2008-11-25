@@ -63,10 +63,23 @@ using namespace CXXR;
    a small but measurable difference, at least for some cases.
    <FIXME>: surely memcpy would be faster here?
 */
+
+/* The following macros avoid the cost of going through calls to the
+   assignment functions (and duplicate in the case of ATTRIB) when the
+   ATTRIB or TAG value to be stored is R_NilValue, the value the field
+   will have been set to by the allocation function */
+#define DUPLICATE_ATTRIB(to, from) do {\
+    (to)->cloneAttributes(*(from));				   \
+    IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
+} while (0)
+
+/* CXXR: no longer carries out the allocation of the duplicate vector,
+ * which must now be done beforehand.
+ */
 #define DUPLICATE_ATOMIC_VECTOR(type, fun, to, from) do {\
   int __n__ = LENGTH(from);\
   PROTECT(from); \
-  PROTECT(to = allocVector(TYPEOF(from), __n__)); \
+  PROTECT(to); \
   if (__n__ == 1) fun(to)[0] = fun(from)[0]; \
   else { \
     int __i__; \
@@ -75,21 +88,9 @@ using namespace CXXR;
     for (__i__ = 0; __i__ < __n__; __i__++) \
       __tp__[__i__] = __fp__[__i__]; \
   } \
-  (DUPLICATE_ATTRIB)(to, from);		\
+  DUPLICATE_ATTRIB(to, from);		\
   SET_TRUELENGTH(to, TRUELENGTH(from)); \
   UNPROTECT(2); \
-} while (0)
-
-/* The following macros avoid the cost of going through calls to the
-   assignment functions (and duplicate in the case of ATTRIB) when the
-   ATTRIB or TAG value to be stored is R_NilValue, the value the field
-   will have been set to by the allocation function */
-#define DUPLICATE_ATTRIB(to, from) do {\
-  SEXP __a__ = ATTRIB(from); \
-  if (__a__ != R_NilValue) { \
-    SET_ATTRIB(to, duplicate1(__a__)); \
-    IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
-  } \
 } while (0)
 
 #define COPY_TAG(to, from) do { \
@@ -108,7 +109,7 @@ using namespace CXXR;
    is not defined, because we still need to be able to
    optionally rename duplicate() as Rf_duplicate().
 */
-static SEXP duplicate1(SEXP);
+SEXP duplicate1(SEXP);
 
 #ifdef R_PROFILING
 static unsigned long duplicate_counter = static_cast<unsigned long>(-1);
@@ -127,6 +128,7 @@ void attribute_hidden reset_duplicate_counter(void)
 #endif
 
 SEXP duplicate(SEXP s){
+    GCRoot<> srt(s);
     SEXP t;
 
 #ifdef R_PROFILING
@@ -141,12 +143,13 @@ SEXP duplicate(SEXP s){
 	    SET_TRACE(t,1);
     }
 #endif
+    if (t) t->expose();
     return t;
 }
 
 /*****************/
 
-static SEXP duplicate1(SEXP s)
+SEXP duplicate1(SEXP s)
 {
     SEXP h, t,  sp;
     int i, n;
@@ -165,32 +168,22 @@ static SEXP duplicate1(SEXP s)
 	return s;
     case CLOSXP:
 	PROTECT(s);
-	PROTECT(t = mkCLOSXP(FORMALS(s), BODY(s), CLOENV(s)));
+	PROTECT(t = new Closure(SEXP_downcast<PairList*>(FORMALS(s)),
+				BODY(s),
+				SEXP_downcast<Environment*>(CLOENV(s))));
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
 	break;
     case LISTSXP:
-	PROTECT(sp = s);
-	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
-	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
-	    t = CDR(t);
-	    COPY_TAG(t, sp);
-	    DUPLICATE_ATTRIB(t, sp);
-	    sp = CDR(sp);
-	}
-	t = CDR(h);
-	UNPROTECT(2);
-	break;
+	return s->clone();
     case LANGSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = new Expression(duplicate1(CAR(sp))));
-	t->expose();
 	COPY_TAG(t, sp);
 	DUPLICATE_ATTRIB(t, sp);
 	sp = CDR(sp);
 	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
+	    SETCDR(t, new PairList(duplicate1(CAR(sp)), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
 	    DUPLICATE_ATTRIB(t, sp);
@@ -203,12 +196,11 @@ static SEXP duplicate1(SEXP s)
     case DOTSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = new DottedArgs(duplicate1(CAR(sp))));
-	t->expose();
 	COPY_TAG(t, sp);
 	DUPLICATE_ATTRIB(t, sp);
 	sp = CDR(sp);
 	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
+	    SETCDR(t, new PairList(duplicate1(CAR(sp)), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
 	    DUPLICATE_ATTRIB(t, sp);
@@ -224,7 +216,7 @@ static SEXP duplicate1(SEXP s)
     case EXPRSXP:
 	n = LENGTH(s);
 	PROTECT(s);
-	PROTECT(t = allocVector(EXPRSXP, n));
+	PROTECT(t = new ExpressionVector(n));
 	for(i = 0 ; i < n ; i++)
 	    SET_XVECTOR_ELT(t, i, duplicate1(XVECTOR_ELT(s, i)));
 	DUPLICATE_ATTRIB(t, s);
@@ -234,22 +226,38 @@ static SEXP duplicate1(SEXP s)
     case VECSXP:
 	n = LENGTH(s);
 	PROTECT(s);
-	PROTECT(t = allocVector(VECSXP, n));
+	PROTECT(t = new ListVector(n));
 	for(i = 0 ; i < n ; i++)
 	    SET_VECTOR_ELT(t, i, duplicate1(VECTOR_ELT(s, i)));
 	DUPLICATE_ATTRIB(t, s);
 	SET_TRUELENGTH(t, TRUELENGTH(s));
 	UNPROTECT(2);
 	break;
-    case LGLSXP: DUPLICATE_ATOMIC_VECTOR(int, LOGICAL, t, s); break;
-    case INTSXP: DUPLICATE_ATOMIC_VECTOR(int, INTEGER, t, s); break;
-    case REALSXP: DUPLICATE_ATOMIC_VECTOR(double, REAL, t, s); break;
-    case CPLXSXP: DUPLICATE_ATOMIC_VECTOR(Rcomplex, COMPLEX, t, s); break;
-    case RAWSXP: DUPLICATE_ATOMIC_VECTOR(Rbyte, RAW, t, s); break;
+    case LGLSXP:
+	t = new LogicalVector(LENGTH(s));
+	DUPLICATE_ATOMIC_VECTOR(int, LOGICAL, t, s);
+	break;
+    case INTSXP:
+	t = new IntVector(LENGTH(s));
+	DUPLICATE_ATOMIC_VECTOR(int, INTEGER, t, s);
+	break;
+    case REALSXP:
+	t = new RealVector(LENGTH(s));
+	DUPLICATE_ATOMIC_VECTOR(double, REAL, t, s);
+	break;
+    case CPLXSXP:
+	t = new ComplexVector(LENGTH(s));
+	DUPLICATE_ATOMIC_VECTOR(Rcomplex, COMPLEX, t, s);
+	break;
+    case RAWSXP:
+	t = new RawVector(LENGTH(s));
+	DUPLICATE_ATOMIC_VECTOR(Rbyte, RAW, t, s);
+	break;
     case STRSXP:
 	/* direct copying and bypassing the write barrier is OK since
 	   t was just allocated and so it cannot be older than any of
 	   the elements in s.  LT */
+	t = new StringVector(LENGTH(s));
 	DUPLICATE_ATOMIC_VECTOR(String*, STRING_PTR, t, s);
 	break;
     case PROMSXP:
@@ -257,7 +265,8 @@ static SEXP duplicate1(SEXP s)
 	break;
     case S4SXP:
 	PROTECT(s);
-	PROTECT(t = allocS4Object());
+	PROTECT(t = new RObject(S4SXP));
+	SET_S4_OBJECT(t);
 	DUPLICATE_ATTRIB(t, s);
 	UNPROTECT(2);
 	break;

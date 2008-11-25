@@ -41,6 +41,7 @@
 
 #include "CXXR/RObject.h"
 
+#include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/PairList.h"
@@ -74,6 +75,25 @@ namespace {
     const unsigned int S4_OBJECT_MASK = 1<<4;
     const unsigned int BINDING_LOCK_MASK = 1<<14;
     const unsigned int ACTIVE_BINDING_MASK = 1<<15;
+}
+
+RObject::RObject(const RObject& pattern)
+    : m_type(pattern.m_type), m_named(0), m_active_binding(false),
+      m_binding_locked(false), m_has_class(pattern.m_has_class),
+      m_S4_object(pattern.m_S4_object), m_frozen(false),
+      m_attrib(clone(pattern.m_attrib))
+{}
+
+RObject* RObject::clone() const
+{
+    cerr << "clone() not yet implemented for this type.\n";
+    abort();
+}
+
+void RObject::cloneAttributes(const RObject& source)
+{
+    m_attrib = clone(source.m_attrib);
+    m_has_class = source.m_has_class;
 }
 
 void RObject::frozenError()

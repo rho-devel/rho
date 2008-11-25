@@ -70,6 +70,12 @@ namespace CXXR {
 	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern PairList to be copied.
+	 */
+	PairList(const PairList& pattern);
+
 	/** @brief Create a PairList element on the free store.
 	 *
 	 * Unlike the constructor (and contrary to CXXR conventions
@@ -115,7 +121,8 @@ namespace CXXR {
 	    return "pairlist";
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	PairList* clone() const;
 	const char* typeName() const;
     private:
 	// Permanent GCRoots used to implement cons() without pushing
@@ -123,13 +130,20 @@ namespace CXXR {
 	static GCRoot<> s_cons_car;
 	static GCRoot<PairList> s_cons_cdr;
 
+	// Tailless copy constructor.  Copies the node without copying
+	// its tail.  Used in implementing the copy constructor
+	// proper.  The second parameter is simply to provide a
+	// distinct signature, and its value is ignored.
+	PairList(const PairList& pattern, int)
+	    : ConsCell(pattern, 0), m_argused(0)
+	{}
+
 	// Declared private to ensure that PairList objects are
 	// allocated only using 'new':
 	~PairList() {}
 
 	// Not implemented yet.  Declared to prevent
-	// compiler-generated versions:
-	PairList(const PairList&);
+	// compiler-generated version:
 	PairList& operator=(const PairList&);
     public:
 	// 'Scratchpad' field used in handling argument lists,

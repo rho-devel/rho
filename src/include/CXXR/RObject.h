@@ -116,6 +116,13 @@ extern "C" {
 #ifdef __cplusplus
 }  // extern "C"
 
+// Remove this once cloning is fully rolled out:
+namespace CXXR {
+    class RObject;
+}
+
+CXXR::RObject* duplicate1(CXXR::RObject* s);
+
 namespace CXXR {
     class PairList;
     class Symbol;
@@ -182,6 +189,12 @@ namespace CXXR {
 	      m_frozen(false), m_attrib(0)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern Object to be copied.
+	 */
+	RObject(const RObject& pattern);
+
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
@@ -207,6 +220,72 @@ namespace CXXR {
 		m_attrib = 0;
 		m_has_class = false;
 	    }
+	}
+
+	// Introduced temporarily while copy constructors are being
+	// rolled out:
+	void cloneAttributes(const RObject& source);
+
+	/** @brief Return pointer to a copy of this object.
+	 *
+	 * This function creates a copy of this object, and returns a
+	 * pointer to that copy.
+	 *
+	 * In certain circumstances, it is permissible for this
+	 * function to return a pointer to this object itself (which
+	 * necessitates casting away const): a 'pseudo-clone'.  This
+	 * follows practice in CR too well-established to change.
+	 * However, pseudo-clones should only be used for frozen
+	 * objects.
+	 *
+	 * @return a pointer to a clone, or pseudo-clone, of this
+	 * object.  On return, the clone will not normally have yet
+	 * been exposed to the garbage collector; consequently, the
+	 * calling code should arrange for this to happen.
+	 *
+	 * @note Derived classes should exploit the covariant return
+	 * type facility to return a pointer to the type of object
+	 * being cloned.
+	 *
+	 * @note While cloning facilities are being rolled out,
+	 * clone() will abort the program if applied to an object
+	 * of a type for which cloning is not yet implemented.
+	 */
+	virtual RObject* clone() const;
+
+	/** @brief Return a pointer to a copy of an object.
+	 *
+	 * @param T RObject or a type derived from RObject.
+	 *
+	 * @param pattern Either a null pointer or a pointer to the
+	 *          object to be cloned.
+	 *
+	 * @return Pointer to a clone (or pseudo-clone) of \a pattern,
+	 * or a null pointer if \a pattern itself is null.  On return,
+	 * the clone will not normally have yet been exposed to the
+	 * garbage collector; consequently, the calling code should
+	 * arrange for this to happen.
+	 */
+	template <class T>
+	static T* clone(const T* pattern)
+	{
+	    return pattern ? pattern->clone() : 0;
+	}
+
+	/** @brief Temporary interface to duplicate1().
+	 *
+	 * @param T RObject or a type derived from RObject.
+	 *
+	 * @param pattern Pointer to object to be duplicated using
+	 * duplicate1().
+	 *
+	 * @note To be removed once copy constructors and clone() are
+	 * fully rolled out.
+	 */
+	template <class T>
+	static T* dup2(const T* pattern)
+	{
+	    return static_cast<T*>(duplicate1(const_cast<T*>(pattern)));
 	}
 
 	/** @brief Get the value a particular attribute.

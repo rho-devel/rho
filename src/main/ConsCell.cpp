@@ -59,6 +59,11 @@ namespace CXXR {
    }
 }
 
+ConsCell::ConsCell(const ConsCell& pattern, int)
+    : RObject(pattern), m_car(dup2(pattern.car())), m_tail(0),
+      m_tag(pattern.tag()), m_missing(0)
+{}
+    
 void ConsCell::checkST(SEXPTYPE st)
 {
     switch (st) {

@@ -64,6 +64,13 @@ namespace CXXR {
      * pointer to the next element of the list, which must be of the
      * derived type PairList.  (Any of these pointers may be null.)
      *
+     * Note that the 'car' and the tail of the list are considered to
+     * be part of the object: when the object is cloned, the clone
+     * thus created will contain clones of the 'car' and of subsequent
+     * elements of the list.  However, the tag is not cloned: the
+     * cloned object will simply contain a pointer to the tag of the
+     * original object.
+     *
      * @note This class is used as a base class to implement CR's
      * LISTSXP, LANGSXP, DOTSXP and (for the time being) BCODESXP.
      * Because what these ::SEXPTYPEs have in common is implementation
@@ -158,18 +165,9 @@ namespace CXXR {
 	}
 
 	/**
-	 * @return a const pointer to the 'tag' of this ConsCell
-	 * element.
-	 */
-	const RObject* tag() const
-	{
-	    return m_tag;
-	}
-
-	/**
 	 * @return a pointer to the 'tag' of this ConsCell.
 	 */
-	RObject* tag()
+	RObject* tag() const
 	{
 	    return m_tag;
 	}
@@ -211,6 +209,25 @@ namespace CXXR {
 	    // checkST(st);
 	}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern ConsCell to be copied.
+	 */
+	ConsCell(const ConsCell& pattern);
+
+	/** @brief Tailless copy constructor.
+	 *
+	 * Copies the node without copying its tail.  Used in
+	 * implementing the PairList copy constructor proper.
+	 *
+	 * @param pattern ConsCell to be copied.
+	 *
+	 * @param dummy This parameter is used simply to provide the
+	 *          constructor with a distinct signature.  Its value
+	 *          is ignored.
+	 */
+	ConsCell(const ConsCell& pattern, int dummy);
+
 	/**
 	 * Declared protected to ensure that ConsCell objects are
 	 * allocated only using 'new'.
@@ -248,13 +265,14 @@ namespace CXXR {
 	    throw (std::bad_alloc, std::out_of_range);
 
     private:
+	friend class PairList;
+
 	RObject* m_car;
 	PairList* m_tail;
 	RObject* m_tag;
 
 	// Not implemented yet.  Declared to prevent
-	// compiler-generated versions:
-	ConsCell(const ConsCell&);
+	// compiler-generated version:
 	ConsCell& operator=(const ConsCell&);
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
