@@ -59,6 +59,11 @@ namespace CXXR {
    }
 }
 
+ConsCell::ConsCell(const ConsCell& pattern)
+    : RObject(pattern), m_car(dup2(pattern.car())),
+      m_tail(clone(pattern.tail())), m_tag(pattern.tag()), m_missing(0)
+{}
+    
 ConsCell::ConsCell(const ConsCell& pattern, int)
     : RObject(pattern), m_car(dup2(pattern.car())), m_tail(0),
       m_tag(pattern.tag()), m_missing(0)

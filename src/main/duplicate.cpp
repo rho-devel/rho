@@ -175,24 +175,8 @@ SEXP duplicate1(SEXP s)
 	UNPROTECT(2);
 	break;
     case LISTSXP:
-	return s->clone();
     case LANGSXP:
-	PROTECT(sp = s);
-	PROTECT(h = t = new Expression(duplicate1(CAR(sp))));
-	COPY_TAG(t, sp);
-	DUPLICATE_ATTRIB(t, sp);
-	sp = CDR(sp);
-	while(sp != R_NilValue) {
-	    SETCDR(t, new PairList(duplicate1(CAR(sp)), R_NilValue));
-	    t = CDR(t);
-	    COPY_TAG(t, sp);
-	    DUPLICATE_ATTRIB(t, sp);
-	    sp = CDR(sp);
-	}
-	t = h;
-	DUPLICATE_ATTRIB(t, s);
-	UNPROTECT(2);
-	break;
+	return s->clone();
     case DOTSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = new DottedArgs(duplicate1(CAR(sp))));

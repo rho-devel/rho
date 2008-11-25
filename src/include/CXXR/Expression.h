@@ -68,6 +68,14 @@ namespace CXXR {
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern Expression to be copied.
+	 */
+	Expression(const Expression& pattern)
+	    : ConsCell(pattern)
+	{}
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -77,7 +85,8 @@ namespace CXXR {
 	    return "language";
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	Expression* clone() const;
 	const char* typeName() const;
     private:
 	// Declared private to ensure that Expression objects are
@@ -86,7 +95,6 @@ namespace CXXR {
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
-	Expression(const Expression&);
 	Expression& operator=(const Expression&);
     };
 } // namespace CXXR

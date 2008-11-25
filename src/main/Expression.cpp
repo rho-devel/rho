@@ -54,6 +54,11 @@ namespace CXXR {
 
 SEXP R_CurrentExpr = 0;
 
+Expression* Expression::clone() const
+{
+    return new Expression(*this);
+}
+
 const char* Expression::typeName() const
 {
     return staticTypeName();
