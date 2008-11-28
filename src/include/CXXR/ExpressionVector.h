@@ -40,7 +40,9 @@
  *
  * (CXXR::ExpressionVector implements EXPRSXP.)
  *
- * @todo Constrain the elements to be Expression objects?
+ * @todo Constrain the elements to be Expression objects?  However, as
+ * currently used, the elements of an ExpressionVector may be Symbols
+ * rather than Expressions.
  */
 
 #ifndef EXPRESSIONVECTOR_H
@@ -64,7 +66,9 @@ namespace CXXR {
     }
 
     /** @brief Vector of language objects, representing an expression.
-     * @todo Replace the type parameter RObject* with something stricter.
+     *
+     * @todo Replace the type parameter RObject* with something
+     * stricter (but is needs to embrace Symbol as well as Expression).
      */
     class ExpressionVector : public RObjectVector<RObject, EXPRSXP> {
     public:
@@ -82,6 +86,11 @@ namespace CXXR {
 	 *           ExpressionVector created will comprise exactly
 	 *           the same sequence of pointers to RObject as \a
 	 *           lv.
+	 *
+	 * @note The objects pointed to by \a lv are not themselves
+	 * copied in creating the ExpressionVector.  This is rather at
+	 * variance with the general semantics of RObjectVector, and
+	 * perhaps ought to be changed.
 	 *
 	 * @note Q: Of all the possible coercions to ExpressionVector,
 	 * why have a constructor to implement this one?  A: Because
