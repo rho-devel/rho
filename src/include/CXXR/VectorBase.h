@@ -60,7 +60,7 @@ namespace CXXR {
 	 * @param sz The required number of elements in the vector.
 	 */
 	VectorBase(SEXPTYPE stype, size_t sz)
-	    : RObject(stype), m_size(sz)
+	    : RObject(stype), m_truelength(sz), m_size(sz)
 	{}
 
 	/** @brief Copy constructor.
@@ -68,7 +68,8 @@ namespace CXXR {
 	 * @param pattern VectorBase to be copied.
 	 */
 	VectorBase(const VectorBase& pattern)
-	    : RObject(pattern), m_size(pattern.m_size)
+	    : RObject(pattern), m_truelength(pattern.m_truelength),
+	      m_size(pattern.m_size)
 	{}
 
 	/** @brief Alter the size (number of elements) in the vector.

@@ -80,6 +80,14 @@ namespace CXXR {
 	    : RObjectVector<RObject, EXPRSXP>(sz)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern ExpressionVector to be copied.
+	 */
+	ExpressionVector(const ExpressionVector& pattern)
+	    : RObjectVector<RObject, EXPRSXP>(pattern)
+	{}
+
 	/** @brief Create an ExpressionVector from a ListVector.
 	 *
 	 * @param lv The ListVector to be copied.  The
@@ -98,6 +106,9 @@ namespace CXXR {
 	 * most trivial modification.
 	 */
 	explicit ExpressionVector(const ListVector& lv);
+
+	// Virtual function of RObject:
+	ExpressionVector* clone() const;
     private:
 	// Declare private to ensure that ExpressionVector objects are
 	// allocated only using 'new':
