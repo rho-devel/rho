@@ -50,13 +50,13 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include "CXXR/EdgeVector.hpp"
+#include "CXXR/RObjectVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* EdgeVector<String*, STRSXP>::staticTypeName()
+    inline const char* RObjectVector<String, STRSXP>::staticTypeName()
     {
 	return "character";
     }
@@ -64,7 +64,7 @@ namespace CXXR {
     /** @brief Vector of strings.
      * @todo Replace the type parameter RObject* with something stricter.
      */
-    class StringVector : public CXXR::EdgeVector<String*, STRSXP> {
+    class StringVector : public CXXR::RObjectVector<String, STRSXP> {
     public:
 	/** @brief Create a StringVector.
 	 *
@@ -72,7 +72,7 @@ namespace CXXR {
 	 *          permissible.
 	 */
 	explicit StringVector(size_t sz)
-	    : EdgeVector<String*, STRSXP>(sz,
+	    : RObjectVector<String, STRSXP>(sz,
 					  const_cast<String*>(String::blank()))
 	{}
     private:
@@ -134,8 +134,10 @@ inline SEXP STRING_ELT(SEXP x, int i)
 /**
  * @param x Pointer to a CXXR::StringVector; an error is raised if \a x
  *          is not a pointer to a CXXR::StringVector.
+ *
  * @return Pointer to the start of \a x 's data, interpreted (riskily)
  *         as an array of CXXR::String*.
+ *
  * @deprecated This function puts the integrity of the write barrier
  * at the mercy of callers.  It is deliberately not made visible
  * to C code.

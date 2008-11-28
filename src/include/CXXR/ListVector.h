@@ -48,7 +48,7 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/EdgeVector.hpp"
+#include "CXXR/RObjectVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -56,14 +56,14 @@ namespace CXXR {
 
     // Template specialization:
     template <>
-    inline const char* EdgeVector<RObject*, VECSXP>::staticTypeName()
+    inline const char* RObjectVector<RObject, VECSXP>::staticTypeName()
     {
 	return "list";
     }
 
-    /** @brief Vector of GCEdge<RObject*>.
+    /** @brief General vector of RObject.
      */
-    class ListVector : public EdgeVector<RObject*, VECSXP> {
+    class ListVector : public RObjectVector<RObject, VECSXP> {
     public:
 	/** @brief Create a ListVector.
          *
@@ -72,7 +72,7 @@ namespace CXXR {
 	 *          permissible.
 	 */
 	explicit ListVector(size_t sz)
-	    : EdgeVector<RObject*, VECSXP>(sz)
+	    : RObjectVector<RObject, VECSXP>(sz)
 	{}
 
 	/** @brief Construct from ExpressionVector.

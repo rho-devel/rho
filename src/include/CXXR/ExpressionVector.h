@@ -50,7 +50,7 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/EdgeVector.hpp"
+#include "CXXR/RObjectVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -58,7 +58,7 @@ namespace CXXR {
 
     // Template specialization:
     template <>
-    inline const char* EdgeVector<RObject*, EXPRSXP>::staticTypeName()
+    inline const char* RObjectVector<RObject, EXPRSXP>::staticTypeName()
     {
 	return "expression";
     }
@@ -66,14 +66,14 @@ namespace CXXR {
     /** @brief Vector of language objects, representing an expression.
      * @todo Replace the type parameter RObject* with something stricter.
      */
-    class ExpressionVector : public EdgeVector<RObject*, EXPRSXP> {
+    class ExpressionVector : public RObjectVector<RObject, EXPRSXP> {
     public:
 	/** @brief Create an ExpressionVector.
 	 *
 	 * @param sz Number of elements required.  Zero is permissible.
 	 */
 	explicit ExpressionVector(size_t sz)
-	    : EdgeVector<RObject*, EXPRSXP>(sz)
+	    : RObjectVector<RObject, EXPRSXP>(sz)
 	{}
 
 	/** @brief Create an ExpressionVector from a ListVector.

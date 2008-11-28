@@ -57,7 +57,7 @@ namespace CXXR {
 }
 
 ListVector::ListVector(const ExpressionVector& ev)
-    : EdgeVector<RObject*, VECSXP>(ev.size())
+    : RObjectVector<RObject, VECSXP>(ev.size())
 {
     // The following results in unnecessary invocations of
     // propagateAge() on the nodes pointed to.
