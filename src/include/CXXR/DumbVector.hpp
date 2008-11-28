@@ -40,6 +40,7 @@
 #ifndef DUMBVECTOR_HPP
 #define DUMBVECTOR_HPP 1
 
+#include <cstring>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCRoot.h"
@@ -86,6 +87,12 @@ namespace CXXR {
 	    if (sz > 1) allocData(sz, true);
 	}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern DumbVector to be copied.
+	 */
+	DumbVector(const DumbVector<T, ST>& pattern);
+
 	/** @brief Element access.
 	 * @param index Index of required element (counting from
 	 *          zero).  No bounds checking is applied.
@@ -117,7 +124,8 @@ namespace CXXR {
 	 */
 	inline static const char* staticTypeName();
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	DumbVector<T, ST>* clone() const;
 	const char* typeName() const;
     protected:
 	/**
@@ -140,13 +148,24 @@ namespace CXXR {
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
-	DumbVector(const DumbVector&);
 	DumbVector& operator=(const DumbVector&);
 
 	// If there is more than one element, this function is used to
 	// allocate the required memory block from CXXR::MemoryBank :
 	void allocData(size_t sz, bool initialize = false);
     };
+
+    template <typename T, SEXPTYPE ST>
+    DumbVector<T, ST>::DumbVector(const DumbVector<T, ST>& pattern)
+	: VectorBase(pattern), m_data(&m_singleton),
+	  m_singleton(pattern.m_singleton)
+    {
+	size_t sz = size();
+	if (sz > 1) {
+	    allocData(sz);
+	    memcpy(m_data, pattern.m_data, sizeof(T)*sz);
+	}
+    }
 
     template <typename T, SEXPTYPE ST>
     void DumbVector<T, ST>::allocData(size_t sz, bool initialize)
@@ -164,6 +183,12 @@ namespace CXXR {
 	// For VALGRIND_LEVEL > 1 this will already have been done:
 	else VALGRIND_MAKE_MEM_UNDEFINED(m_data, bytes);
 #endif
+    }
+
+    template <typename T, SEXPTYPE ST>
+    DumbVector<T, ST>* DumbVector<T, ST>::clone() const
+    {
+	return new DumbVector<T, ST>(*this);
     }
 
     template <typename T, SEXPTYPE ST>

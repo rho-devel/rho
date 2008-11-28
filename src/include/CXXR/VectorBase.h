@@ -63,6 +63,14 @@ namespace CXXR {
 	    : RObject(stype), m_size(sz)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern VectorBase to be copied.
+	 */
+	VectorBase(const VectorBase& pattern)
+	    : RObject(pattern), m_size(pattern.m_size)
+	{}
+
 	/** @brief Alter the size (number of elements) in the vector.
 	 *
 	 * @param new_size New size required.  Zero is permissible,

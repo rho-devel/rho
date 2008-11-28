@@ -151,7 +151,7 @@ SEXP duplicate(SEXP s){
 
 SEXP duplicate1(SEXP s)
 {
-    SEXP h, t,  sp;
+    SEXP t;
     int i, n;
 
     switch (TYPEOF(s)) {
@@ -202,25 +202,11 @@ SEXP duplicate1(SEXP s)
 	UNPROTECT(2);
 	break;
     case LGLSXP:
-	t = new LogicalVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(int, LOGICAL, t, s);
-	break;
     case INTSXP:
-	t = new IntVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(int, INTEGER, t, s);
-	break;
     case REALSXP:
-	t = new RealVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(double, REAL, t, s);
-	break;
     case CPLXSXP:
-	t = new ComplexVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(Rcomplex, COMPLEX, t, s);
-	break;
     case RAWSXP:
-	t = new RawVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(Rbyte, RAW, t, s);
-	break;
+	return s->clone();
     case STRSXP:
 	/* direct copying and bypassing the write barrier is OK since
 	   t was just allocated and so it cannot be older than any of
