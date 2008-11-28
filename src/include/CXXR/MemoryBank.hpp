@@ -40,6 +40,7 @@
 #ifndef MEMORYBANK_HPP
 #define MEMORYBANK_HPP
 
+#include <cstring>
 #include "CXXR/CellHeap.hpp"
 
 namespace CXXR {

@@ -41,6 +41,7 @@
 
 #include "CXXR/RObject.h"
 
+#include <cstdlib>
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"

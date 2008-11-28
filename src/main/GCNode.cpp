@@ -41,6 +41,7 @@
 
 #include "CXXR/GCNode.hpp"
 
+#include <cstdlib>
 #include <iostream>
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"

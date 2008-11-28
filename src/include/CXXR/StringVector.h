@@ -49,6 +49,7 @@
 
 #ifdef __cplusplus
 
+#include <iostream>
 #include "CXXR/EdgeVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 

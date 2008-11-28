@@ -24,6 +24,7 @@
 
 #include "CXXR/CellHeap.hpp"
 
+#include <cstdlib>
 #include <iostream>
 
 using namespace std;

@@ -41,6 +41,8 @@
 
 #include "CXXR/CellPool.hpp"
 
+#include <algorithm>
+#include <cstdlib>
 #include <iostream>
 
 using namespace std;

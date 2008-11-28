@@ -39,6 +39,7 @@
 
 #include "CXXR/RAllocStack.h"
 
+#include <cstring>
 #include <stdexcept>
 #include "R_ext/Error.h"
 #include "Rvalgrind.h"

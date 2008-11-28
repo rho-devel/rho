@@ -39,6 +39,7 @@
 
 #include "CXXR/GCRoot.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 

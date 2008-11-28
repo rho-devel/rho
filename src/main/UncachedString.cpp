@@ -37,6 +37,7 @@
  * Implementation of class CXXR::UncachedString and related functions.
  */
 
+#include <cstring>
 #include "CXXR/UncachedString.h"
 
 using namespace std;
