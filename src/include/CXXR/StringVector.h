@@ -38,7 +38,7 @@
 /** @file StringVector.h
  * @brief Class CXXR::StringVector and associated C interface.
  *
- * (StringVector implementis STRSXP.)
+ * (StringVector implements STRSXP.)
  */
 
 #ifndef STRINGVECTOR_H
@@ -62,7 +62,6 @@ namespace CXXR {
     }
 
     /** @brief Vector of strings.
-     * @todo Replace the type parameter RObject* with something stricter.
      */
     class StringVector : public CXXR::RObjectVector<String, STRSXP> {
     public:
@@ -75,6 +74,17 @@ namespace CXXR {
 	    : RObjectVector<String, STRSXP>(sz,
 					  const_cast<String*>(String::blank()))
 	{}
+
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern StringVector to be copied.
+	 */
+	StringVector(const StringVector& pattern)
+	    : RObjectVector<String, STRSXP>(pattern)
+	{}
+
+	// Virtual function of RObject:
+	StringVector* clone() const;
     private:
 	/**
 	 * Declared private to ensure that StringVector objects are

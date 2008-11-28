@@ -58,12 +58,6 @@ using namespace CXXR;
  *  promises requires that the promises be forced and
  *  the value duplicated.  */
 
-/* This macro pulls out the common code in copying an atomic vector.
-   The special handling of the scalar case (__n__ == 1) seems to make
-   a small but measurable difference, at least for some cases.
-   <FIXME>: surely memcpy would be faster here?
-*/
-
 /* The following macros avoid the cost of going through calls to the
    assignment functions (and duplicate in the case of ATTRIB) when the
    ATTRIB or TAG value to be stored is R_NilValue, the value the field
@@ -71,31 +65,6 @@ using namespace CXXR;
 #define DUPLICATE_ATTRIB(to, from) do {\
     (to)->cloneAttributes(*(from));				   \
     IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
-} while (0)
-
-/* CXXR: no longer carries out the allocation of the duplicate vector,
- * which must now be done beforehand.
- */
-#define DUPLICATE_ATOMIC_VECTOR(type, fun, to, from) do {\
-  int __n__ = LENGTH(from);\
-  PROTECT(from); \
-  PROTECT(to); \
-  if (__n__ == 1) fun(to)[0] = fun(from)[0]; \
-  else { \
-    int __i__; \
-    type *__fp__ = fun(from);   \
-    type *__tp__ = fun(to);	\
-    for (__i__ = 0; __i__ < __n__; __i__++) \
-      __tp__[__i__] = __fp__[__i__]; \
-  } \
-  DUPLICATE_ATTRIB(to, from);		\
-  SET_TRUELENGTH(to, TRUELENGTH(from)); \
-  UNPROTECT(2); \
-} while (0)
-
-#define COPY_TAG(to, from) do { \
-  SEXP __tag__ = TAG(from); \
-  if (__tag__ != R_NilValue) SET_TAG(to, __tag__); \
 } while (0)
 
 
@@ -188,14 +157,8 @@ SEXP duplicate1(SEXP s)
     case REALSXP:
     case CPLXSXP:
     case RAWSXP:
-	return s->clone();
     case STRSXP:
-	/* direct copying and bypassing the write barrier is OK since
-	   t was just allocated and so it cannot be older than any of
-	   the elements in s.  LT */
-	t = new StringVector(LENGTH(s));
-	DUPLICATE_ATOMIC_VECTOR(String*, STRING_PTR, t, s);
-	break;
+	return s->clone();
     case PROMSXP:
 	return s;
 	break;

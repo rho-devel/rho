@@ -53,6 +53,11 @@ namespace CXXR {
     }
 }
 
+StringVector* StringVector::clone() const
+{
+    return new StringVector(*this);
+}
+
 namespace {
     void indent(ostream& os, size_t margin)
     {
