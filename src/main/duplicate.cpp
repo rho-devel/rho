@@ -192,15 +192,6 @@ SEXP duplicate1(SEXP s)
 	UNPROTECT(2);
 	break;
     case VECSXP:
-	n = LENGTH(s);
-	PROTECT(s);
-	PROTECT(t = new ListVector(n));
-	for(i = 0 ; i < n ; i++)
-	    SET_VECTOR_ELT(t, i, duplicate1(VECTOR_ELT(s, i)));
-	DUPLICATE_ATTRIB(t, s);
-	SET_TRUELENGTH(t, TRUELENGTH(s));
-	UNPROTECT(2);
-	break;
     case LGLSXP:
     case INTSXP:
     case REALSXP:

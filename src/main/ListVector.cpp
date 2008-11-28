@@ -69,6 +69,11 @@ ListVector::ListVector(const ExpressionVector& ev)
 	Rf_setAttrib(this, R_NamesSymbol, names);
 }
 
+ListVector* ListVector::clone() const
+{
+    return new ListVector(*this);
+}
+
 // ***** C interface *****
 
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)

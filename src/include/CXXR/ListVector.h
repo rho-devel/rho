@@ -75,12 +75,28 @@ namespace CXXR {
 	    : RObjectVector<RObject, VECSXP>(sz)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern ListVector to be copied.
+	 */
+	ListVector(const ListVector& pattern)
+	    : RObjectVector<RObject, VECSXP>(pattern)
+	{}
+
 	/** @brief Construct from ExpressionVector.
 	 *
 	 * @param ev The ExpressionVector on which the constructed
 	 *          ListVector is to be modelled.
+	 *
+	 * @note The objects pointed to by \a pattern are not
+	 * themselves copied in creating the ListVector.  This is
+	 * rather at variance with the general semantics of
+	 * RObjectVector, and perhaps ought to be changed.
 	 */
 	explicit ListVector(const ExpressionVector& ev);
+
+	// Virtual function of RObject:
+	ListVector* clone() const;
     private:
 	// Declared private to ensure that ListVectors are
 	// allocated only using 'new'.

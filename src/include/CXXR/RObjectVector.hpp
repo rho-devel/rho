@@ -141,6 +141,12 @@ namespace CXXR {
 	    : VectorBase(ST, sz), m_data(sz, init)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern RObjectVector to be copied.
+	 */
+	RObjectVector(const RObjectVector<T, ST>& pattern);
+
 	/** @brief Element access.
 	 * @param index Index of required element (counting from
 	 *          zero).  No bounds checking is applied.
@@ -201,11 +207,19 @@ namespace CXXR {
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:
-	RObjectVector(const RObjectVector&);
 	RObjectVector& operator=(const RObjectVector&);
 
 	friend class ElementProxy;
     };
+
+    template <typename T, SEXPTYPE ST>
+    RObjectVector<T, ST>::RObjectVector(const RObjectVector<T, ST>& pattern)
+	: VectorBase(pattern), m_data(pattern.size())
+    {
+	size_t sz = size();
+	for (size_t i = 0; i < sz; ++i)
+	    m_data[i] = dup2(pattern.m_data[i]);
+    }
 
     template <typename T, SEXPTYPE ST>
     const char* RObjectVector<T, ST>::typeName() const
