@@ -542,7 +542,9 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
-	s = new RObject(type);
+	Rf_error("Loading pre-version-1 serialization not (yet) supported in CXXR");
+	// All this code needs fixing in CXXR!
+	// s = new RObject(type);
 	s->expose();
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);

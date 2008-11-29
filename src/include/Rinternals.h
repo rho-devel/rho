@@ -81,6 +81,7 @@
 #include "CXXR/Promise.h"
 #include "CXXR/RawVector.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/S4Object.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/UncachedString.h"

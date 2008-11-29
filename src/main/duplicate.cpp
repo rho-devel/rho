@@ -156,12 +156,7 @@ SEXP duplicate1(SEXP s)
 	return s;
 	break;
     case S4SXP:
-	PROTECT(s);
-	PROTECT(t = new RObject(S4SXP));
-	SET_S4_OBJECT(t);
-	DUPLICATE_ATTRIB(t, s);
-	UNPROTECT(2);
-	break;
+	return s->clone();
     default:
 	UNIMPLEMENTED_TYPE("duplicate", s);
 	t = s;/* for -Wall */

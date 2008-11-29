@@ -555,15 +555,6 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     return s;
 }
 
-SEXP allocS4Object(void)
-{
-   SEXP s;
-   GC_PROT(s = new RObject(S4SXP));
-   s->expose();
-   SET_S4_OBJECT(s);
-   return s;
-}
-
 
 /* "gc" a mark-sweep or in-place generational garbage collector */
 

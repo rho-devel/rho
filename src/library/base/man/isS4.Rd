@@ -41,6 +41,9 @@ asS4(object, value = TRUE)
 
   Note that S4 methods can only be set on those primitives which are
   \sQuote{\link{internal generic}} and \code{\%*\%}.
+
+  CXXR does not allow the S4 flag to be turned off for objects of the
+  S4 type (S4SXP).
 }
 \seealso{\code{\link{is.object}}}
 \examples{
@@ -49,7 +52,7 @@ isS4(pi) # FALSE
 isS4(getClass("MethodDefinition")) # TRUE
 \dontshow{
 stopifnot(isS4(asS4(Sys.time())))
-stopifnot(!isS4(asS4(getClass("MethodDefinition"), FALSE)))
+stopifnot(!isS4(asS4(asS4(Sys.time()), FALSE)))
 }
 }
 \keyword{programming}

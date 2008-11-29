@@ -180,21 +180,6 @@ namespace CXXR {
      */
     class RObject : public GCNode {
     public:
-	/**
-	 * @param stype Required type of the RObject.
-	 */
-	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype), m_named(0), m_active_binding(false),
-	      m_binding_locked(false), m_has_class(false), m_S4_object(false),
-	      m_frozen(false), m_attrib(0)
-	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern Object to be copied.
-	 */
-	RObject(const RObject& pattern);
-
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
@@ -389,12 +374,12 @@ namespace CXXR {
 	/** @brief Set the status of this RObject as an S4 object.
 	 *
 	 * @param on true iff this is to be considered an S4 object.
+	 *          CXXR raises an error if an attempt is made to
+	 *          unset the S4 object status of an S4Object
+	 *          (S4SXP), whereas CR (at least as of 2.7.2) permits
+	 *          this.
 	 */
-	void setS4Object(bool on)
-	{
-	    errorIfFrozen();
-	    m_S4_object = on;
-	}
+	void setS4Object(bool on);
 
 	/** @brief Interpret the \c gp bits field used in CR.
 	 *
@@ -429,6 +414,21 @@ namespace CXXR {
 	 */
 	virtual const char* typeName() const;
     protected:
+	/**
+	 * @param stype Required type of the RObject.
+	 */
+	explicit RObject(SEXPTYPE stype = CXXSXP)
+	    : m_type(stype), m_named(0), m_active_binding(false),
+	      m_binding_locked(false), m_has_class(false),
+	      m_S4_object(stype == S4SXP), m_frozen(false), m_attrib(0)
+	{}
+
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern Object to be copied.
+	 */
+	RObject(const RObject& pattern);
+
 	virtual ~RObject() {}
 
 	/** @brief Raise error if object is frozen.
@@ -713,12 +713,6 @@ extern "C" {
 #else
     inline void UNSET_S4_OBJECT(SEXP x)  {x->setS4Object(false);}
 #endif
-
-    /** @brief Create an S4 object.
-     *
-     * @return Pointer to the created object.
-     */
-    SEXP Rf_allocS4Object();
 
     /* Bindings */
 
