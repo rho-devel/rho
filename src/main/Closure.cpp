@@ -55,7 +55,12 @@ namespace CXXR {
     }
 }
 
-// Closure constructor is in dstruct.cpp (for the time being).
+// Closure primary constructor is in dstruct.cpp (for the time being).
+
+Closure* Closure::clone() const
+{
+    return new Closure(*this);
+}
 
 const char* Closure::typeName() const
 {

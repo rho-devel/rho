@@ -89,6 +89,14 @@ namespace CXXR {
 	    : RObject(stype), m_tracing(false)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern FunctionBase to be copied.
+	 */
+	FunctionBase(const FunctionBase& pattern)
+	    : RObject(pattern), m_tracing(false)
+	{}
+
 	virtual ~FunctionBase() {}
     private:
 	bool m_tracing;

@@ -74,6 +74,16 @@ namespace CXXR {
 	Closure(const PairList* formal_args, const RObject* body,
 		Environment* env = Environment::global());
 
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern Closure to be copied.
+	 */
+	Closure(const Closure& pattern)
+	    : FunctionBase(pattern), m_debug(false),
+	      m_formals(pattern.m_formals), m_body(pattern.m_body),
+	      m_environment(pattern.m_environment)
+	{}
+
 	/** @brief Access the body of the Closure.
 	 *
 	 * @return Pointer to the body of the Closure.
@@ -142,7 +152,8 @@ namespace CXXR {
 	    return "closure";
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+        Closure* clone() const;
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -159,7 +170,6 @@ namespace CXXR {
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	Closure(const Closure&);
 	Closure& operator=(const Closure&);
     };
 }  // namespace CXXR

@@ -136,13 +136,6 @@ SEXP duplicate1(SEXP s)
     case WEAKREFSXP:
 	return s;
     case CLOSXP:
-	PROTECT(s);
-	PROTECT(t = new Closure(SEXP_downcast<PairList*>(FORMALS(s)),
-				BODY(s),
-				SEXP_downcast<Environment*>(CLOENV(s))));
-	DUPLICATE_ATTRIB(t, s);
-	UNPROTECT(2);
-	break;
     case LISTSXP:
     case LANGSXP:
     case DOTSXP:
