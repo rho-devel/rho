@@ -143,7 +143,11 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern RObjectVector to be copied.
+	 * @param pattern RObjectVector to be copied.  Beware that if
+	 *          any of the elements of \a pattern are unclonable,
+	 *          they will be shared between \a pattern and the
+	 *          created object.  This is necessarily prejudicial
+	 *          to the constness of the \a pattern parameter.
 	 */
 	RObjectVector(const RObjectVector<T, ST>& pattern);
 
@@ -163,7 +167,7 @@ namespace CXXR {
 	 *          zero).  No bounds checking is applied.
 	 * @return the specified element.
 	 */
-	T* const operator[](unsigned int index) const
+	const T* operator[](unsigned int index) const
 	{
 	    return m_data[index];
 	}
@@ -232,7 +236,7 @@ namespace CXXR {
     {
 	VectorBase::visitChildren(v);
 	for (unsigned int i = 0; i < size(); ++i) {
-	    T* ptr = (*this)[i];
+	    const T* ptr = (*this)[i];
 	    if (ptr) ptr->conductVisitor(v);
 	}
     }

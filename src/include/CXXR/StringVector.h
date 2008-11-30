@@ -77,7 +77,11 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern StringVector to be copied.
+	 * @param pattern StringVector to be copied.  Beware that
+	 *          (because String is not currently clonable) the
+	 *          elements of \a pattern will be shared by the
+	 *          created object.  This is necessarily prejudicial
+	 *          to the constness of the \a pattern parameter.
 	 */
 	StringVector(const StringVector& pattern)
 	    : RObjectVector<String, STRSXP>(pattern)

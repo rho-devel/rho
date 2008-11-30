@@ -54,7 +54,7 @@ namespace CXXR {
     }
 }
 
-ExpressionVector::ExpressionVector(const ListVector& lv)
+ExpressionVector::ExpressionVector(ListVector& lv)
     : RObjectVector<RObject, EXPRSXP>(lv.size())
 {
     // The following results in unnecessary invocations of

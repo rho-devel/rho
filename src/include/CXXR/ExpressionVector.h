@@ -82,7 +82,12 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern ExpressionVector to be copied.
+	 * @param pattern ExpressionVector to be copied.  Beware that
+	 *          if any of the elements of \a pattern are
+	 *          unclonable, they will be shared between \a pattern
+	 *          and the created object.  This is necessarily
+	 *          prejudicial to the constness of the \a pattern
+	 *          parameter.
 	 */
 	ExpressionVector(const ExpressionVector& pattern)
 	    : RObjectVector<RObject, EXPRSXP>(pattern)
@@ -91,9 +96,11 @@ namespace CXXR {
 	/** @brief Create an ExpressionVector from a ListVector.
 	 *
 	 * @param lv The ListVector to be copied.  The
-	 *           ExpressionVector created will comprise exactly
-	 *           the same sequence of pointers to RObject as \a
-	 *           lv.
+	 *          ExpressionVector created will comprise exactly
+	 *          the same sequence of pointers to RObject as \a
+	 *          lv.  Consequently, the elements of \a lv will be
+	 *          shared by the created object; this is why the \a lv
+	 *          parameter is not const.
 	 *
 	 * @note The objects pointed to by \a lv are not themselves
 	 * copied in creating the ExpressionVector.  This is rather at
@@ -105,7 +112,7 @@ namespace CXXR {
 	 * in all other cases, existing code in coerce.cpp needed at
 	 * most trivial modification.
 	 */
-	explicit ExpressionVector(const ListVector& lv);
+	explicit ExpressionVector(ListVector& lv);
 
 	// Virtual function of RObject:
 	ExpressionVector* clone() const;
@@ -153,7 +160,7 @@ SEXP XVECTOR_ELT(SEXP x, int i);
 inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    const ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
     return (*ev)[i];
 }
 #endif

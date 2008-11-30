@@ -77,7 +77,11 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern ListVector to be copied.
+	 * @param pattern ListVector to be copied.  Beware that if
+	 *          any of the elements of \a pattern are unclonable,
+	 *          they will be shared between \a pattern and the
+	 *          created object.  This is necessarily prejudicial
+	 *          to the constness of the \a pattern parameter.
 	 */
 	ListVector(const ListVector& pattern)
 	    : RObjectVector<RObject, VECSXP>(pattern)
@@ -86,14 +90,18 @@ namespace CXXR {
 	/** @brief Construct from ExpressionVector.
 	 *
 	 * @param ev The ExpressionVector on which the constructed
-	 *          ListVector is to be modelled.
+	 *          ListVector is to be modelled.  The ListVector
+	 *          created will comprise exactly the same sequence of
+	 *          pointers to RObject as \a ev.  Consequently, the
+	 *          elements of \a ev will be shared by the created
+	 *          object; this is why the \a ev parameter is not const.
 	 *
 	 * @note The objects pointed to by \a pattern are not
 	 * themselves copied in creating the ListVector.  This is
 	 * rather at variance with the general semantics of
 	 * RObjectVector, and perhaps ought to be changed.
 	 */
-	explicit ListVector(const ExpressionVector& ev);
+	explicit ListVector(ExpressionVector& ev);
 
 	// Virtual function of RObject:
 	ListVector* clone() const;
@@ -126,7 +134,7 @@ SEXP VECTOR_ELT(SEXP x, int i);
 inline SEXP VECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    const ListVector* lv = SEXP_downcast<ListVector*>(x);
+    ListVector* lv = SEXP_downcast<ListVector*>(x);
     return (*lv)[i];
 }
 #endif
