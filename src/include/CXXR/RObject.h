@@ -116,13 +116,6 @@ extern "C" {
 #ifdef __cplusplus
 }  // extern "C"
 
-// Remove this once cloning is fully rolled out:
-namespace CXXR {
-    class RObject;
-}
-
-CXXR::RObject* duplicate1(CXXR::RObject* s);
-
 namespace CXXR {
     class PairList;
     class Symbol;
@@ -216,27 +209,33 @@ namespace CXXR {
 	 * This function creates a copy of this object, and returns a
 	 * pointer to that copy.
 	 *
-	 * In certain circumstances, it is permissible for this
-	 * function to return a pointer to this object itself (which
-	 * necessitates casting away const): a 'pseudo-clone'.  This
-	 * follows practice in CR too well-established to change.
-	 * However, pseudo-clones should only be used for frozen
-	 * objects.
+	 * Generally this function (and the copy constructors it
+	 * utilises) will attempt to create a 'deep' copy of the
+	 * object; this follows standard practice within C++, and it
+	 * is intended to extend this practice as CXXR development
+	 * continues.
 	 *
-	 * @return a pointer to a clone, or pseudo-clone, of this
-	 * object.  On return, the clone will not normally have yet
-	 * been exposed to the garbage collector; consequently, the
-	 * calling code should arrange for this to happen.
+	 * However, if the pattern object contains unclonable
+	 * subobjects, then the created copy will at the relevant
+	 * places simply contain pointers to those subobjects, i.e. to
+	 * that extent the copy is 'shallow'.  This practice is
+	 * necessarily prejudicial to the constness of the clone()
+	 * method.
+	 *
+	 * @return a pointer to a clone of this object, or a null
+	 * pointer if this object cannot be cloned.  On return, the
+	 * clone will not normally have yet been exposed to the
+	 * garbage collector; consequently, the calling code should
+	 * arrange for this to happen.
 	 *
 	 * @note Derived classes should exploit the covariant return
 	 * type facility to return a pointer to the type of object
 	 * being cloned.
-	 *
-	 * @note While cloning facilities are being rolled out,
-	 * clone() will abort the program if applied to an object
-	 * of a type for which cloning is not yet implemented.
 	 */
-	virtual RObject* clone() const;
+	virtual RObject* clone() const
+	{
+	    return 0;
+	}
 
 	/** @brief Return a pointer to a copy of an object.
 	 *
@@ -245,11 +244,11 @@ namespace CXXR {
 	 * @param pattern Either a null pointer or a pointer to the
 	 *          object to be cloned.
 	 *
-	 * @return Pointer to a clone (or pseudo-clone) of \a pattern,
-	 * or a null pointer if \a pattern itself is null.  On return,
-	 * the clone will not normally have yet been exposed to the
-	 * garbage collector; consequently, the calling code should
-	 * arrange for this to happen.
+	 * @return Pointer to a clone of \a pattern, or a null pointer
+	 * if \a pattern cannot be cloned or is itself a null pointer.
+	 * On return, the clone will not normally have yet been
+	 * exposed to the garbage collector; consequently, the calling
+	 * code should arrange for this to happen.
 	 */
 	template <class T>
 	static T* clone(const T* pattern)
@@ -257,21 +256,22 @@ namespace CXXR {
 	    return pattern ? pattern->clone() : 0;
 	}
 
-	/** @brief Temporary interface to duplicate1().
+	/** @brief Return a pointer to a copy of an object, or failing
+	 * that to the object itself.
 	 *
 	 * @param T RObject or a type derived from RObject.
 	 *
-	 * @param pattern Pointer to object to be duplicated using
-	 * duplicate1().
+	 * @param pattern Either a null pointer or a pointer to the
+	 *          object to be cloned.
 	 *
-	 * @note To be removed once copy constructors and clone() are
-	 * fully rolled out.
+	 * @return Pointer to a clone of \a pattern, or \a pattern
+	 * itself if \a pattern cannot be cloned or is a null pointer.
+	 * On return, the clone will not normally have yet been
+	 * exposed to the garbage collector; consequently, the calling
+	 * code should arrange for this to happen.
 	 */
 	template <class T>
-	static T* dup2(const T* pattern)
-	{
-	    return static_cast<T*>(duplicate1(const_cast<T*>(pattern)));
-	}
+	static T* cloneElseOrig(T* pattern);
 
 	/** @brief Get the value a particular attribute.
 	 *
@@ -476,6 +476,15 @@ namespace CXXR {
 
 	static void frozenError();
     };
+
+    template <class T>
+    T* RObject::cloneElseOrig(T* pattern)
+    {
+	if (!pattern) return 0;
+	T* t = static_cast<T*>(pattern->clone());
+	return t ? t : pattern;
+    }
+
 }  // namespace CXXR
 
 typedef CXXR::RObject SEXPREC, *SEXP;

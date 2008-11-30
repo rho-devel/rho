@@ -64,12 +64,11 @@ namespace CXXR {
      * pointer to the next element of the list, which must be of the
      * derived type PairList.  (Any of these pointers may be null.)
      *
-     * Note that the 'car' and the tail of the list are considered to
-     * be part of the object: when the object is cloned, the clone
-     * thus created will contain clones of the 'car' and of subsequent
-     * elements of the list.  However, the tag is not cloned: the
-     * cloned object will simply contain a pointer to the tag of the
-     * original object.
+     * When the object is copied, the copy thus created will contain
+     * copies of the 'car' and of subsequent elements of the list.
+     * However, the tag is not copied: the copy object will simply
+     * contain a pointer to the tag of the original object.  Despite
+     * this, the tag is considered to be part of the object.
      *
      * @note This class is used as a base class to implement CR's
      * LISTSXP, LANGSXP, DOTSXP and (for the time being) BCODESXP.
@@ -211,7 +210,12 @@ namespace CXXR {
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern ConsCell to be copied.
+	 * @param pattern ConsCell to be copied.  Beware that if this
+	 *          ConsCell or any of its successors have unclonable
+	 *          'car' objects, they will be shared between \a
+	 *          pattern and the created object.  This is
+	 *          necessarily prejudicial to the constness of the \a
+	 *          pattern parameter.
 	 */
 	ConsCell(const ConsCell& pattern);
 
@@ -220,7 +224,12 @@ namespace CXXR {
 	 * Copies the node without copying its tail.  Used in
 	 * implementing the PairList copy constructor proper.
 	 *
-	 * @param pattern ConsCell to be copied.
+	 * @param pattern ConsCell to be copied.  Beware that if this
+	 *          ConsCell or any of its successors have unclonable
+	 *          'car' objects, they will be shared between \a
+	 *          pattern and the created object.  This is
+	 *          necessarily prejudicial to the constness of the \a
+	 *          pattern parameter.
 	 *
 	 * @param dummy This parameter is used simply to provide the
 	 *          constructor with a distinct signature.  Its value

@@ -41,44 +41,12 @@
 
 #include "Defn.h"
 
-#include <R_ext/RS.h> /* S4 bit */
 #include "CXXR/DottedArgs.hpp"
 
 using namespace std;
 using namespace CXXR;
 
 /*  duplicate  -  object duplication  */
-
-/*  Because we try to maintain the illusion of call by
- *  value, we often need to duplicate entire data
- *  objects.  There are a couple of points to note.
- *  First, duplication of list-like objects is done
- *  iteratively to prevent growth of the pointer
- *  protection stack, and second, the duplication of
- *  promises requires that the promises be forced and
- *  the value duplicated.  */
-
-/* The following macros avoid the cost of going through calls to the
-   assignment functions (and duplicate in the case of ATTRIB) when the
-   ATTRIB or TAG value to be stored is R_NilValue, the value the field
-   will have been set to by the allocation function */
-#define DUPLICATE_ATTRIB(to, from) do {\
-    (to)->cloneAttributes(*(from));				   \
-    IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
-} while (0)
-
-
-/* For memory profiling.  */
-/* We want a count of calls to duplicate from outside
-   which requires a wrapper function.
-
-   The original duplicate() function is now duplicate1().
-
-   I don't see how to make the wrapper go away when R_PROFILING
-   is not defined, because we still need to be able to
-   optionally rename duplicate() as Rf_duplicate().
-*/
-SEXP duplicate1(SEXP);
 
 #ifdef R_PROFILING
 static unsigned long duplicate_counter = static_cast<unsigned long>(-1);
@@ -97,13 +65,12 @@ void attribute_hidden reset_duplicate_counter(void)
 #endif
 
 SEXP duplicate(SEXP s){
+    if (!s) return 0;
     GCRoot<> srt(s);
-    SEXP t;
-
 #ifdef R_PROFILING
     duplicate_counter++;
 #endif
-    t = duplicate1(s);
+    SEXP t = RObject::cloneElseOrig(s);
 #ifdef R_MEMORY_PROFILING
     if (TRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
@@ -112,60 +79,11 @@ SEXP duplicate(SEXP s){
 	    SET_TRACE(t,1);
     }
 #endif
-    if (t) t->expose();
+    t->expose();
     return t;
 }
 
 /*****************/
-
-SEXP duplicate1(SEXP s)
-{
-    SEXP t;
-    int i, n;
-
-    switch (TYPEOF(s)) {
-    case NILSXP:
-    case SYMSXP:
-    case ENVSXP:
-    case SPECIALSXP:
-    case BUILTINSXP:
-    case EXTPTRSXP:
-#ifdef BYTECODE
-    case BCODESXP:
-#endif
-    case WEAKREFSXP:
-	return s;
-    case CLOSXP:
-    case LISTSXP:
-    case LANGSXP:
-    case DOTSXP:
-	return s->clone();
-    case CHARSXP:
-	return s;
-	break;
-    case EXPRSXP:
-    case VECSXP:
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case RAWSXP:
-    case STRSXP:
-	return s->clone();
-    case PROMSXP:
-	return s;
-	break;
-    case S4SXP:
-	return s->clone();
-    default:
-	UNIMPLEMENTED_TYPE("duplicate", s);
-	t = s;/* for -Wall */
-    }
-    if(TYPEOF(t) == TYPEOF(s) ) { /* surely it only makes sense in this case*/
-	(IS_S4_OBJECT(s) ? SET_S4_OBJECT(t) : UNSET_S4_OBJECT(t));
-    }
-    return t;
-}
 
 void copyVector(SEXP s, SEXP t)
 {

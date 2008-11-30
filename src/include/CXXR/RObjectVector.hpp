@@ -206,7 +206,7 @@ namespace CXXR {
 	std::vector<T*, Allocator<T*> > m_data;
 
 	// Not implemented.  Declared to prevent
-	// compiler-generated versions:
+	// compiler-generated version:
 	RObjectVector& operator=(const RObjectVector&);
 
 	friend class ElementProxy;
@@ -218,7 +218,7 @@ namespace CXXR {
     {
 	size_t sz = size();
 	for (size_t i = 0; i < sz; ++i)
-	    m_data[i] = dup2(pattern.m_data[i]);
+	    m_data[i] = cloneElseOrig(pattern.m_data[i]);
     }
 
     template <typename T, SEXPTYPE ST>

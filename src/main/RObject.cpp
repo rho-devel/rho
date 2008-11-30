@@ -85,12 +85,6 @@ RObject::RObject(const RObject& pattern)
       m_attrib(clone(pattern.m_attrib))
 {}
 
-RObject* RObject::clone() const
-{
-    cerr << "clone() not yet implemented for this type.\n";
-    abort();
-}
-
 void RObject::cloneAttributes(const RObject& source)
 {
     m_attrib = clone(source.m_attrib);
