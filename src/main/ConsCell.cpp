@@ -60,15 +60,13 @@ namespace CXXR {
 }
 
 ConsCell::ConsCell(const ConsCell& pattern)
-    : RObject(pattern),
-      m_car(cloneElseOrig(const_cast<RObject*>(pattern.car()))),
-      m_tail(clone(pattern.tail())), m_tag(pattern.tag()), m_missing(0)
+    : RObject(pattern), m_car(pattern.m_car), m_tail(clone(pattern.tail())),
+      m_tag(pattern.tag()), m_missing(0)
 {}
     
 ConsCell::ConsCell(const ConsCell& pattern, int)
-    : RObject(pattern),
-      m_car(cloneElseOrig(const_cast<RObject*>(pattern.car()))),
-      m_tail(0), m_tag(pattern.tag()), m_missing(0)
+    : RObject(pattern), m_car(pattern.m_car), m_tail(0), m_tag(pattern.tag()),
+      m_missing(0)
 {}
     
 void ConsCell::checkST(SEXPTYPE st)

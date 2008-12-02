@@ -354,6 +354,11 @@ namespace CXXR {
 	 *
 	 * @param v Pointer to the visitor object.
 	 *
+	 * @note The metaphor 'children' in this function's name is
+	 * rather at odds with the metaphor of garbage-collection
+	 * 'generations': the children of a node will always be of a
+	 * generation at least as old as the node itself!
+	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
 	 * visitChildren() for the immediate base class of the derived

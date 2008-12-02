@@ -131,7 +131,7 @@ namespace CXXR {
 	 */
 	void setCar(RObject* cr)
 	{
-	    m_car = cr;
+	    m_car.retarget(cr);
 	    propagateAge(m_car);
 	}
 
@@ -213,9 +213,7 @@ namespace CXXR {
 	 * @param pattern ConsCell to be copied.  Beware that if this
 	 *          ConsCell or any of its successors have unclonable
 	 *          'car' objects, they will be shared between \a
-	 *          pattern and the created object.  This is
-	 *          necessarily prejudicial to the constness of the \a
-	 *          pattern parameter.
+	 *          pattern and the created object.
 	 */
 	ConsCell(const ConsCell& pattern);
 
@@ -227,9 +225,7 @@ namespace CXXR {
 	 * @param pattern ConsCell to be copied.  Beware that if this
 	 *          ConsCell or any of its successors have unclonable
 	 *          'car' objects, they will be shared between \a
-	 *          pattern and the created object.  This is
-	 *          necessarily prejudicial to the constness of the \a
-	 *          pattern parameter.
+	 *          pattern and the created object.
 	 *
 	 * @param dummy This parameter is used simply to provide the
 	 *          constructor with a distinct signature.  Its value
@@ -259,7 +255,7 @@ namespace CXXR {
     private:
 	friend class PairList;
 
-	RObject* m_car;
+	Handle<> m_car;
 	PairList* m_tail;
 	RObject* m_tag;
 
