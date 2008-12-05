@@ -50,20 +50,20 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include "CXXR/RObjectVector.hpp"
+#include "CXXR/HandleVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* RObjectVector<String, STRSXP>::staticTypeName()
+    inline const char* HandleVector<String, STRSXP>::staticTypeName()
     {
 	return "character";
     }
 
     /** @brief Vector of strings.
      */
-    class StringVector : public CXXR::RObjectVector<String, STRSXP> {
+    class StringVector : public CXXR::HandleVector<String, STRSXP> {
     public:
 	/** @brief Create a StringVector.
 	 *
@@ -71,20 +71,19 @@ namespace CXXR {
 	 *          permissible.
 	 */
 	explicit StringVector(size_t sz)
-	    : RObjectVector<String, STRSXP>(sz,
-					  const_cast<String*>(String::blank()))
+	    : HandleVector<String, STRSXP>(sz,
+		         Handle<String>(const_cast<String*>(String::blank())))
 	{}
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern StringVector to be copied.  Beware that
-	 *          (because String is not currently clonable) the
-	 *          elements of \a pattern will be shared by the
-	 *          created object.  This is necessarily prejudicial
-	 *          to the constness of the \a pattern parameter.
+	 * Copy the StringVector, using the RObject::Handle copying
+	 * semantics.
+	 *
+	 * @param pattern StringVector to be copied.
 	 */
 	StringVector(const StringVector& pattern)
-	    : RObjectVector<String, STRSXP>(pattern)
+	    : HandleVector<String, STRSXP>(pattern)
 	{}
 
 	// Virtual function of RObject:

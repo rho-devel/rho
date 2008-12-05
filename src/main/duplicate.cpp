@@ -70,7 +70,8 @@ SEXP duplicate(SEXP s){
 #ifdef R_PROFILING
     duplicate_counter++;
 #endif
-    SEXP t = RObject::cloneElseOrig(s);
+    SEXP t = RObject::clone(s);
+    if (!t) return s;
 #ifdef R_MEMORY_PROFILING
     if (TRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||

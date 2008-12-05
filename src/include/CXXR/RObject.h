@@ -359,23 +359,6 @@ namespace CXXR {
 	    return pattern ? pattern->clone() : 0;
 	}
 
-	/** @brief Return a pointer to a copy of an object, or failing
-	 * that to the object itself.
-	 *
-	 * @param T RObject or a type derived from RObject.
-	 *
-	 * @param pattern Either a null pointer or a pointer to the
-	 *          object to be cloned.
-	 *
-	 * @return Pointer to a clone of \a pattern, or \a pattern
-	 * itself if \a pattern cannot be cloned or is a null pointer.
-	 * On return, the clone will not normally have yet been
-	 * exposed to the garbage collector; consequently, the calling
-	 * code should arrange for this to happen.
-	 */
-	template <class T>
-	static T* cloneElseOrig(T* pattern);
-
 	/** @brief Get the value a particular attribute.
 	 *
 	 * @param name Reference to a \c Symbol giving the name of the
@@ -585,17 +568,9 @@ namespace CXXR {
 	: m_ptr(pattern.m_ptr)
     {
         if (m_ptr) {
-	    T* t = m_ptr->clone();
-	    if (t) m_ptr = t;
+	    RObject* t = m_ptr->clone();
+	    if (t) m_ptr = static_cast<T*>(t);
 	}
-    }
-
-    template <class T>
-    T* RObject::cloneElseOrig(T* pattern)
-    {
-	if (!pattern) return 0;
-	T* t = static_cast<T*>(pattern->clone());
-	return t ? t : pattern;
     }
 
 }  // namespace CXXR

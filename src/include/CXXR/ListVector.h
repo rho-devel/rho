@@ -48,7 +48,7 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/RObjectVector.hpp"
+#include "CXXR/HandleVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -56,14 +56,14 @@ namespace CXXR {
 
     // Template specialization:
     template <>
-    inline const char* RObjectVector<RObject, VECSXP>::staticTypeName()
+    inline const char* HandleVector<RObject, VECSXP>::staticTypeName()
     {
 	return "list";
     }
 
-    /** @brief General vector of RObject.
+    /** @brief General vector of RObject::Handle<RObject>.
      */
-    class ListVector : public RObjectVector<RObject, VECSXP> {
+    class ListVector : public HandleVector<RObject, VECSXP> {
     public:
 	/** @brief Create a ListVector.
          *
@@ -72,34 +72,30 @@ namespace CXXR {
 	 *          permissible.
 	 */
 	explicit ListVector(size_t sz)
-	    : RObjectVector<RObject, VECSXP>(sz)
+	    : HandleVector<RObject, VECSXP>(sz)
 	{}
 
 	/** @brief Copy constructor.
 	 *
-	 * @param pattern ListVector to be copied.  Beware that if
-	 *          any of the elements of \a pattern are unclonable,
-	 *          they will be shared between \a pattern and the
-	 *          created object.  This is necessarily prejudicial
-	 *          to the constness of the \a pattern parameter.
+	 * Copy the ListVector, using the RObject::Handle copying semantics.
+	 *
+	 * @param pattern ListVector to be copied.
 	 */
 	ListVector(const ListVector& pattern)
-	    : RObjectVector<RObject, VECSXP>(pattern)
+	    : HandleVector<RObject, VECSXP>(pattern)
 	{}
 
 	/** @brief Construct from ExpressionVector.
 	 *
 	 * @param ev The ExpressionVector on which the constructed
 	 *          ListVector is to be modelled.  The ListVector
-	 *          created will comprise exactly the same sequence of
-	 *          pointers to RObject as \a ev.  Consequently, the
-	 *          elements of \a ev will be shared by the created
-	 *          object; this is why the \a ev parameter is not const.
+	 *          created will encapsulate exactly the same sequence of
+	 *          pointers to RObject as \a ev.
 	 *
-	 * @note The objects pointed to by \a pattern are not
+	 * @note The objects pointed to by \a pattern are never
 	 * themselves copied in creating the ListVector.  This is
 	 * rather at variance with the general semantics of
-	 * RObjectVector, and perhaps ought to be changed.
+	 * HandleVector, and perhaps ought to be changed.
 	 */
 	explicit ListVector(ExpressionVector& ev);
 
