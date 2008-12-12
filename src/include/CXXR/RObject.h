@@ -61,7 +61,8 @@ extern "C" {
     typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
 #define R_LEN_T_MAX INT_MAX
 
-    /* Fundamental Data Types:  These are largely Lisp
+    /* Comment from CR code:
+     * Fundamental Data Types:  These are largely Lisp
      * influenced structures, with the exception of LGLSXP,
      * INTSXP, REALSXP, CPLXSXP and STRSXP which are the
      * element types for S-like data objects.
@@ -75,42 +76,79 @@ extern "C" {
     /*  These exact numeric values are seldom used, but they are, e.g., in
      *  ../main/subassign.c
      */
-    /*------ enum_SEXPTYPE ----- */
+
+    /** @enum SEXPTYPE
+     *
+     * @brief CR's object type identification.
+     *
+     * This enumeration is used within CR to identify different types
+     * of R object.  In CXXR the same purpose could be (and sometimes
+     * is) achieved by C++ run-time type information (RTTI), virtual
+     * function despatch etc.  However, a ::SEXPTYPE field is retained
+     * within each CXXR::RObject for backwards compatibility, and indeed
+     * efficiency.
+     */
     typedef enum {
-	NILSXP	    = 0,    /* nil = NULL
-			     *
-			     * arr 2007/07/21: no RObject now has this
-			     * type, but for backward compatibility TYPEOF
-			     * will return NILSXP if passed a zero
-			     * pointer.
+	NILSXP	    = 0,    /**< NULL. In CXXR no RObject has this type, but
+			     * for backward compatibility TYPEOF will
+			     * return NILSXP if passed a zero pointer.
 			     */
-	SYMSXP	    = 1,    /* symbols */
-	LISTSXP	    = 2,    /* lists of dotted pairs */
-	CLOSXP	    = 3,    /* closures */
-	ENVSXP	    = 4,    /* environments */
-	PROMSXP	    = 5,    /* promises: [un]evaluated closure arguments */
-	LANGSXP	    = 6,    /* language constructs (special lists) */
-	SPECIALSXP  = 7,    /* special forms */
-	BUILTINSXP  = 8,    /* builtin non-special forms */
-	CHARSXP	    = 9,    /* "scalar" string type (internal only)*/
-	LGLSXP	    = 10,   /* logical vectors */
-	INTSXP	    = 13,   /* integer vectors */
-	REALSXP	    = 14,   /* real variables */
-	CPLXSXP	    = 15,   /* complex variables */
-	STRSXP	    = 16,   /* string vectors */
-	DOTSXP	    = 17,   /* dot-dot-dot object */
-	ANYSXP	    = 18,   /* make "any" args work */
-	VECSXP	    = 19,   /* generic vectors */
-	EXPRSXP	    = 20,   /* expressions vectors */
-	BCODESXP    = 21,   /* byte code */
-	EXTPTRSXP   = 22,   /* external pointer */
-	WEAKREFSXP  = 23,   /* weak reference */
-	RAWSXP      = 24,   /* raw bytes */
-	S4SXP       = 25,   /* S4 non-vector */
+	SYMSXP	    = 1,    /**< symbols, implemented in class
+			       CXXR::Symbol. */
+	LISTSXP	    = 2,    /**< lists of dotted pairs, implemented in
+			       class CXXR::PairList. */
+	CLOSXP	    = 3,    /**< closures, implemented in class
+			       CXXR::Closure. */
+	ENVSXP	    = 4,    /**< environments, implemented in class
+			       CXXR::Environment. */
+	PROMSXP	    = 5,    /**< promises: [un]evaluated closure
+			       arguments, implemented in class
+			       CXXR::Promise. */
+	LANGSXP	    = 6,    /**< language constructs (special lists),
+			       implemented in class CXXR::Expression. */
+	SPECIALSXP  = 7,    /**< special forms, implemented in class
+			       CXXR::BuiltInFunction. */
+	BUILTINSXP  = 8,    /**< builtin non-special forms, also
+			       implemented in class
+			       CXXR::BuiltInFunction. */
+	CHARSXP	    = 9,    /**< "scalar" string type (internal only),
+			       implemented in class CXXR::String. */
+	LGLSXP	    = 10,   /**< logical vectors, implemented in class
+			       CXXR::LogicalVector. */
+	INTSXP	    = 13,   /**< integer vectors, implemented in class
+			       CXXR::IntVector. */
+	REALSXP	    = 14,   /**< real variables, implemented in class
+			       CXXR::RealVector. */
+	CPLXSXP	    = 15,   /**< complex variables, implemented in
+			       class CXXR::ComplexVector. */
+	STRSXP	    = 16,   /**< string vectors, implemented in class
+			       CXXR::StringVector. */
+	DOTSXP	    = 17,   /**< dot-dot-dot objects, implemented in
+			       class CXXR::DottedArgs. */
+	ANYSXP	    = 18,   /**< Used to make "any" args work.  No
+			       RObject has this type. */
+	VECSXP	    = 19,   /**< generic vectors, implemented in class
+			       CXXR::ListVector. */
+	EXPRSXP	    = 20,   /**< expression vectors, implemented in
+			       class CXXR::ExpressionVector. */
+	BCODESXP    = 21,   /**< byte code, implemented in class
+			       CXXR::ByteCode. */
+	EXTPTRSXP   = 22,   /**< external pointers, implemented in
+			       class CXXR::ExternalPointer. */
+	WEAKREFSXP  = 23,   /**< weak references, implemented in class
+			       CXXR::WeakRef. */
+	RAWSXP      = 24,   /**< raw bytes, implemented in class
+			       CXXR::RawVector. */
+	S4SXP       = 25,   /**< S4 object not inheriting from another
+			     *   ::SEXPTYPE, implemented in class
+			     *   CXXR::S4Object.
+			     */
 
-	CXXSXP      = 43,   /* object types specific to CXXR (43 = ASCII +) */
+	CXXSXP      = 43,   /**< object types specific to CXXR.*/
+	                    /* (43 = ASCII +) */
 
-	FUNSXP	    = 99    /* Closure or Builtin */
+	FUNSXP	    = 99    /**< Closure or Builtin.  No RObject has
+			       this type. */
     } SEXPTYPE;
 
 #ifdef __cplusplus
@@ -127,8 +165,8 @@ namespace CXXR {
      * garbage collection has been factored out into the base class
      * GCNode, and as CXXR development proceeds other functionality
      * will be factored out into derived classes (corresponding
-     * roughly, but not exactly, to different SEXPTYPEs within CR), or
-     * outside the RObject hierarchy altogether.
+     * roughly, but not exactly, to different ::SEXPTYPE values within
+     * CR), or outside the RObject hierarchy altogether.
      *
      * Eventually this class may end up simply as the home of R
      * attributes.
@@ -462,7 +500,7 @@ namespace CXXR {
 	 * @param on true iff this is to be considered an S4 object.
 	 *          CXXR raises an error if an attempt is made to
 	 *          unset the S4 object status of an S4Object
-	 *          (S4SXP), whereas CR (at least as of 2.7.2) permits
+	 *          (::S4SXP), whereas CR (at least as of 2.7.2) permits
 	 *          this.
 	 */
 	void setS4Object(bool on);
@@ -587,7 +625,8 @@ extern "C" {
     /** @brief Get object's ::SEXPTYPE.
      *
      * @param x Pointer to CXXR::RObject.
-     * @return ::SEXPTYPE of \a x, or NILSXP if x is a null pointer.
+     *
+     * @return ::SEXPTYPE of \a x, or ::NILSXP if x is a null pointer.
      */
 #ifndef __cplusplus
     SEXPTYPE TYPEOF(SEXP x);
@@ -673,7 +712,7 @@ extern "C" {
      * @param s Pointer to a CXXR::RObject.
      * @return TRUE iff the CXXR::RObject pointed to by \a s is either a null
      * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is a CXXR::RObject
-     * with ::SEXPTYPE NILSXP (should not happen in CXXR).
+     * with ::SEXPTYPE ::NILSXP (should not happen in CXXR).
      */
 #ifndef __cplusplus
     Rboolean Rf_isNull(SEXP s);

@@ -37,9 +37,10 @@
 /** @file ConsCell.h
  * @brief Class CXXR::ConsCell and associated C interface.
  *
- * This file includes C functions for examining and setting the TAG of
- * a CXXR::ConsCell; functions for examining and setting the CAR and
- * CDR are to be found in PairList.h.
+ * This file includes C functions for examining and setting the CAR
+ * and TAG of a CXXR::ConsCell; functions for examining and setting
+ * the CDR, and other operations accessing the tail of the list, are
+ * to be found in PairList.h.
  */
 
 #ifndef CONSCELL_H
@@ -272,14 +273,80 @@ namespace CXXR {
 	unsigned char m_missing;
     };
 
+    /** @brief <tt>cc ? cc->car() : 0</tt>
+     *
+     * @param cc Pointer to the ConsCell whose 'car' object is
+     * required.
+     *
+     * @return a null pointer if \a cc is itself null, otherwise a
+     * pointer (possibly null) to the 'car' object of \a cc.
+     *
+     * @deprecated This is a utility function used to implement CADR(SEXP) and
+     * kindred functions in the C interface.  Its use for other
+     * purposes is deprecated.
+     */
+    inline RObject* car0(ConsCell* cc)
+    {
+	return cc ? cc->car() : 0;
+    }
+
     /** @brief (For debugging.)
      *
      * @note The name and interface of this function may well change.
      */
     void ccdump(std::ostream& os, const ConsCell& cc, size_t margin = 0);
+
+    /** @brief <tt>cc ? cc->tail() : 0</tt>
+     *
+     * @param cc Pointer to the ConsCell whose tail pointer is
+     * required.
+     *
+     * @return a null pointer if \a cc is itself null, otherwise a
+     * the tail pointer (possibly null) of \a cc.
+     *
+     * @deprecated This is a utility function used to implement CADR(SEXP) and
+     * kindred functions in the C interface.  Its use for other
+     * purposes is deprecated.
+     */
+    inline PairList* tail0(ConsCell* cc)
+    {
+	return cc ? cc->tail() : 0;
+    }
+
 } // namespace CXXR
 
 extern "C" {
+
+    /** @brief Get car of CXXR::ConsCell.
+     *
+     * @param e Pointer to a CXXR::ConsCell (checked), or a null pointer.
+     * @return Pointer to the value of the list car, or 0 if \a e is
+     * a null pointer.
+     */
+#ifndef __cplusplus
+    SEXP CAR(SEXP e);
+#else
+    inline SEXP CAR(SEXP e)
+    {
+	using namespace CXXR;
+	return car0(SEXP_downcast<ConsCell*>(e));
+    }
+#endif
+
+    /* Why isn't CDR() declared here?  Because this header file isn't
+     * aware that PairList inherits from ConsCell, and so inline
+     * functions cannot convert from PairList* (as returned by tail())
+     * to SEXP.  All such functions are defined instead in PairList.h.
+     */
+
+    /**
+     * @brief Equivalent to CAR(CAR(e)).
+     */
+#ifndef __cplusplus
+    SEXP CAAR(SEXP e);
+#else
+    inline SEXP CAAR(SEXP e) {return CAR(CAR(e));}
+#endif
 
     // Used in argument handling (within envir.cpp, eval.cpp and
     // match.cpp).  Note comments in the 'R Internals' document.
@@ -288,6 +355,16 @@ extern "C" {
 	using namespace CXXR;
 	return SEXP_downcast<ConsCell*>(x)->m_missing;
     }
+
+    /**
+     * @brief Set the 'car' value of a CXXR::ConsCell.
+     * @param x Pointer to a CXXR::ConsCell (checked).
+     * @param y Pointer a CXXR::RObject representing the new value of the
+     *          list car.
+     *
+     * @returns \a y.
+     */
+    SEXP SETCAR(SEXP x, SEXP y);
 
     // Used in argument handling (within envir.cpp, eval.cpp and
     // match.cpp).  Note comments in the 'R Internals' document.
@@ -309,8 +386,9 @@ extern "C" {
 #else
     inline SEXP TAG(SEXP e)
     {
+	using namespace CXXR;
 	if (!e) return 0;
-	CXXR::ConsCell& cc = *CXXR::SEXP_downcast<CXXR::ConsCell*>(e);
+	ConsCell& cc = *SEXP_downcast<ConsCell*>(e);
 	return cc.tag();
     }
 #endif

@@ -54,6 +54,10 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
+	RObject* (*car0p)(ConsCell*) = CXXR::car0;
+	PairList* (*tail0p)(ConsCell*) = CXXR::tail0;
+	SEXP (*CAARp)(SEXP e) = CAAR;
+	SEXP (*CARp)(SEXP e) = CAR;
 	SEXP (*TAGp)(SEXP e) = TAG;
 	SEXP (*allocSExpp)(SEXPTYPE t) = Rf_allocSExp;
    }

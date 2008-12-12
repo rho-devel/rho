@@ -50,8 +50,6 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*CAARp)(SEXP e) = CAAR;
-	SEXP (*CARp)(SEXP e) = CAR;
 	SEXP (*CAD4Rp)(SEXP e) = CAD4R;
 	SEXP (*CADDDRp)(SEXP e) = CADDDR;
 	SEXP (*CADDRp)(SEXP e) = CADDR;

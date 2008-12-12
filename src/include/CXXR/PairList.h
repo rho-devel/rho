@@ -178,32 +178,6 @@ extern "C" {
 
 #endif  /* __cplusplus */
 
-    /** @brief Get car of CXXR::ConsCell.
-     *
-     * @param e Pointer to a CXXR::ConsCell (checked), or a null pointer.
-     * @return Pointer to the value of the list car, or 0 if \a e is
-     * a null pointer.
-     */
-#ifndef __cplusplus
-    SEXP CAR(SEXP e);
-#else
-    inline SEXP CAR(SEXP e)
-    {
-	if (!e) return 0;
-	CXXR::ConsCell& cc = *CXXR::SEXP_downcast<CXXR::ConsCell*>(e);
-	return cc.car();
-    }
-#endif
-
-    /**
-     * @brief Equivalent to CAR(CAR(e)).
-     */
-#ifndef __cplusplus
-    SEXP CAAR(SEXP e);
-#else
-    inline SEXP CAAR(SEXP e) {return CAR(CAR(e));}
-#endif
-
     /** @brief Get tail of CXXR::ConsCell.
      *
      * @param e Pointer to a CXXR::ConsCell (checked), or a null pointer.
@@ -215,9 +189,8 @@ extern "C" {
 #else
     inline SEXP CDR(SEXP e)
     {
-	if (!e) return 0;
-	CXXR::ConsCell& cc = *CXXR::SEXP_downcast<CXXR::ConsCell*>(e);
-	return cc.tail();
+	using namespace CXXR;
+	return tail0(SEXP_downcast<ConsCell*>(e));
     }
 #endif
 
@@ -236,7 +209,11 @@ extern "C" {
 #ifndef __cplusplus
     SEXP CADR(SEXP e);
 #else
-    inline SEXP CADR(SEXP e) {return CAR(CDR(e));}
+    inline SEXP CADR(SEXP e)
+    {
+	using namespace CXXR;
+	return car0(tail0(SEXP_downcast<ConsCell*>(e)));
+    }
 #endif
 
     /**
@@ -245,7 +222,11 @@ extern "C" {
 #ifndef __cplusplus
     SEXP CDDR(SEXP e);
 #else
-    inline SEXP CDDR(SEXP e) {return CDR(CDR(e));}
+    inline SEXP CDDR(SEXP e)
+    {
+	using namespace CXXR;
+	return tail0(tail0(SEXP_downcast<ConsCell*>(e)));
+    }
 #endif
 
     /**
@@ -254,7 +235,11 @@ extern "C" {
 #ifndef __cplusplus
     SEXP CADDR(SEXP e);
 #else
-    inline SEXP CADDR(SEXP e) {return CAR(CDR(CDR(e)));}
+    inline SEXP CADDR(SEXP e)
+    {
+	using namespace CXXR;
+	return car0(tail0(tail0(SEXP_downcast<ConsCell*>(e))));
+    }
 #endif
 
     /**
@@ -263,7 +248,11 @@ extern "C" {
 #ifndef __cplusplus
     SEXP CADDDR(SEXP e);
 #else
-    inline SEXP CADDDR(SEXP e) {return CAR(CDR(CDR(CDR(e))));}
+    inline SEXP CADDDR(SEXP e)
+    {
+	using namespace CXXR;
+	return car0(tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e)))));
+    }
 #endif
 
     /**
@@ -272,18 +261,12 @@ extern "C" {
 #ifndef __cplusplus
     SEXP CAD4R(SEXP e);
 #else
-    inline SEXP CAD4R(SEXP e) {return CAR(CDR(CDR(CDR(CDR(e)))));}
+    inline SEXP CAD4R(SEXP e)
+    {
+	using namespace CXXR;
+	return car0(tail0(tail0(tail0(tail0(SEXP_downcast<ConsCell*>(e))))));
+    }
 #endif
-
-    /**
-     * @brief Set the 'car' value of a CXXR::ConsCell.
-     * @param x Pointer to a CXXR::ConsCell (checked).
-     * @param y Pointer a CXXR::RObject representing the new value of the
-     *          list car.
-     *
-     * @returns \a y.
-     */
-    SEXP SETCAR(SEXP x, SEXP y);
 
     /**
      * @brief Replace the tail of a CXXR::ConsCell.
