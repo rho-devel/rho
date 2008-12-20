@@ -89,9 +89,10 @@ extern "C" {
      * efficiency.
      */
     typedef enum {
-	NILSXP	    = 0,    /**< NULL. In CXXR no RObject has this type, but
-			     * for backward compatibility TYPEOF will
-			     * return NILSXP if passed a zero pointer.
+	NILSXP	    = 0,    /**< NULL. In CXXR no CXXR::RObject has
+			     * this type, but for backward
+			     * compatibility TYPEOF will return ::NILSXP
+			     * if passed a zero pointer.
 			     */
 	SYMSXP	    = 1,    /**< symbols, implemented in class
 			       CXXR::Symbol. */
