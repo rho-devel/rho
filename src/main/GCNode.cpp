@@ -89,6 +89,19 @@ void* GCNode::operator new(size_t bytes)
 }
 */
 
+void GCNode::ageTo(unsigned int mingen) const
+{
+    if (m_gcgen < mingen) {
+	--s_gencount[m_gcgen];
+	m_gcgen = mingen;
+	++s_gencount[m_gcgen];
+	if (!m_aged) {
+	    m_aged = true;
+	    s_aged_list->push_back(this);
+	}
+    }
+}
+
 bool GCNode::check()
 {
     if (s_num_generations == 0) {
@@ -171,17 +184,12 @@ void GCNode::initialize()
 
 void GCNode::propagateAges()
 {
-    // Why go in reverse?  Earlier nodes in the list may well be
-    // 'subassemblies' of later nodes, and the main assembly may well
-    // be coerced to a higher generation than the subassemblies.
-    // Going in reverse helps to avoid propagating two (or more)
-    // generation changes over the same nodes.
-    for (AgedList::const_reverse_iterator rit = s_aged_list->rbegin();
-	 rit != s_aged_list->rend(); ++rit) {
-	const GCNode* node = *rit;
-	// node may already have been visited by an Ager, in which
-	// case m_aged will have been set false and there's nothing
-	// more to do:
+    for (AgedList::const_iterator it = s_aged_list->begin();
+	 it != s_aged_list->end(); ++it) {
+	const GCNode* node = *it;
+	// node may already have been visited by an Ager on an earlier
+	// round of this loop, in which case m_aged will have been set
+	// false and there's nothing more to do:
 	if (node->m_aged) {
 	    Ager ager(node->m_gcgen);
 	    node->visitChildren(&ager);
@@ -290,7 +298,7 @@ void GCNode::sweep(unsigned int max_generation)
 	xferlist[gen]->prependTo(&s_generation[gen]);
 	delete xferlist[gen];
     }
-    //    cerr << "s_gencount[0] = " << s_gencount[0] << endl;
+    // cerr << "s_gencount[0] = " << s_gencount[0] << endl;
 }
 
 bool GCNode::Ager::operator()(const GCNode* node)

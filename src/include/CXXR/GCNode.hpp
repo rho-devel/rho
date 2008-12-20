@@ -286,10 +286,21 @@ namespace CXXR {
 	 * Makes this node known to the garbage collector (if it isn't
 	 * already), and so on recursively for nodes to which this
 	 * node refers.
+	 *
+	 * @note The generation change initiated by expose() must be
+	 * recursively propagated immediately, rather than having the
+	 * recursive propagation deferred until the next garbage
+	 * collection as is the case with propagateAge().  Otherwise,
+	 * if some element A of a structure S were replaced by B, and
+	 * this happened after the top-level element of S was exposed
+	 * but before the next following garbage collection, then at
+	 * that garbage collection propagateAges() would expose B to
+	 * the garbage collector but not A.
 	 */
 	void expose() const
 	{
-	    ageTo(1);
+	    Ager exposer(1);
+	    conductVisitor(&exposer);
 	}
 
 	/** @brief Initiate a garbage collection.
@@ -384,7 +395,7 @@ namespace CXXR {
 
 	/** Visitor class used to impose a minimum generation number.
 	 *
-	 * This visitory class is used to ensure that a node and its
+	 * This visitor class is used to ensure that a node and its
 	 * descendants all have generation numbers that exceed a
 	 * specified minimum value, and is used in implementing the
 	 * write barrier in the generational garbage collector.
@@ -466,15 +477,18 @@ namespace CXXR {
 
 	typedef std::vector<const GCNode*> AgedList;
 	static AgedList* s_aged_list; // List of nodes whose
-			   // generation numbers have been changed
-			   // since the last garbage collection.
+			   // generation numbers have been changed (by
+			   // setting the m_aged flag) since the last
+			   // garbage collection.
 
 	mutable const GCNode *m_next;
 	mutable unsigned char m_gcgen;
 	mutable bool m_marked : 1;
 	mutable bool m_aged   : 1;  // true if the generation number
-				    // of this node has been changed
-				    // since the last garbage collection.
+		       // of this node has been changed (otherwise
+		       // than from 0 to 1) since the last garbage
+		       // collection, and this change has not yet been
+		       // propagated recursively.
 
 	// Special constructor for pegs (i.e. dummy nodes used to
 	// simplify list management).  The parameter is simply to 
@@ -493,18 +507,7 @@ namespace CXXR {
 	// Force the generation number of this node up to mingen, and
 	// if the generation number is changed, flag up the change for
 	// recursive propagation by propagateAges().
-	void ageTo(unsigned int mingen) const
-	{
-	    if (m_gcgen < mingen) {
-		--s_gencount[m_gcgen];
-		m_gcgen = mingen;
-		++s_gencount[m_gcgen];
-		if (!m_aged) {
-		    m_aged = true;
-		    s_aged_list->push_back(this);
-		}
-	    }
-	}
+	void ageTo(unsigned int mingen) const;
 
 	// Clean up static data at end of run:
 	static void cleanup();
@@ -530,7 +533,7 @@ namespace CXXR {
 	const GCNode* next() const {return m_next;}
 
 	// This is the first stage of garbage collection.  It
-	// propagates the generation changes initiated by expose() or
+	// propagates the generation changes initiated by
 	// propagateAge() recursively through the node graph.
 	static void propagateAges();
 
