@@ -225,7 +225,7 @@ static void cov_pairwise2(int n, int ncx, int ncy, double *x, double *y,
 	    for (k = 0 ; k < n ; k++)		\
 		sum += xx[k];			\
 	    tmp = sum / n;			\
-	    if(R_FINITE((double)tmp)) {		\
+	    if(R_FINITE(double(tmp))) {		\
 		sum = 0.;			\
 		for (k = 0 ; k < n ; k++)	\
 		    sum += (xx[k] - tmp);	\

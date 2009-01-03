@@ -1229,7 +1229,7 @@ static size_t gzfile_read(void *ptr, size_t size, size_t nitems,
 {
     gzFile fp = (reinterpret_cast<Rgzfileconn>(con->connprivate))->fp;
     /* uses 'unsigned' for len */
-    if ((double) size * (double) nitems > UINT_MAX)
+    if (double( size) * double( nitems) > UINT_MAX)
 	error(_("too large a block specified"));
     return gzread(fp, ptr, size*nitems)/size;
 }
@@ -1433,7 +1433,7 @@ static size_t bzfile_write(const void *ptr, size_t size, size_t nitems,
     int bzerror;
 
     /* uses 'int' for len */
-    if ((double) size * (double) nitems > INT_MAX)
+    if (double( size) * double( nitems) > INT_MAX)
 	error(_("too large a block specified"));
     BZ2_bzWrite(&bzerror, bfp, const_cast<void*>(ptr), size*nitems);
     if(bzerror != BZ_OK) return 0;
@@ -1920,7 +1920,7 @@ SEXP attribute_hidden do_stderr(SEXP call, SEXP op, SEXP args, SEXP env)
 /* copy a raw vector into a buffer */
 static void raw_init(Rconnection con, SEXP raw)
 {
-    Rrawconn thisconn = (Rrawconn) con->connprivate;
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
 
     thisconn->data = NAMED(raw) ? duplicate(raw) : raw;
     R_PreserveObject(thisconn->data);
@@ -1939,7 +1939,7 @@ static void raw_close(Rconnection con)
 
 static void raw_destroy(Rconnection con)
 {
-    Rrawconn thisconn = Rrawconn( con->connprivate);
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
 
     R_ReleaseObject(thisconn->data);
     free(thisconn);
@@ -1963,7 +1963,7 @@ static void raw_resize(Rrawconn thisconn, size_t needed)
 static size_t raw_write(const void *ptr, size_t size, size_t nitems,
 			Rconnection con)
 {
-    Rrawconn thisconn = (Rrawconn) con->connprivate;
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
     size_t freespace = LENGTH(thisconn->data) - thisconn->pos, bytes = size*nitems;
 
     if (double( size) * double( nitems) + double( thisconn->pos) > R_LEN_T_MAX)
@@ -1979,14 +1979,14 @@ static size_t raw_write(const void *ptr, size_t size, size_t nitems,
 
 static void raw_truncate(Rconnection con)
 {
-    Rrawconn thisconn = Rrawconn(con->connprivate);
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>(con->connprivate);
     thisconn->nbytes = thisconn->pos;
 }
 
 static size_t raw_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    Rrawconn thisconn = (Rrawconn) con->connprivate;
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
     size_t available = thisconn->nbytes - thisconn->pos, request = size*nitems, used;
 
     if (double( size) * double( nitems) + double( thisconn->pos) > R_LEN_T_MAX)
@@ -1998,14 +1998,14 @@ static size_t raw_read(void *ptr, size_t size, size_t nitems,
 
 static int raw_fgetc(Rconnection con)
 {
-    Rrawconn thisconn = Rrawconn( con->connprivate);
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
     if(thisconn->pos >= thisconn->nbytes) return R_EOF;
     else return int( RAW(thisconn->data)[thisconn->pos++]);
 }
 
 static double raw_seek(Rconnection con, double where, int origin, int rw)
 {
-    Rrawconn thisconn = Rrawconn( con->connprivate);
+    Rrawconn thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
     double newpos;
     size_t oldpos = thisconn->pos;
 
@@ -2019,9 +2019,9 @@ static double raw_seek(Rconnection con, double where, int origin, int rw)
     }
     if(newpos < 0 || newpos > thisconn->nbytes)
 	error(_("attempt to seek outside the range of the raw connection"));
-    else thisconn->pos = (size_t) newpos;
+    else thisconn->pos = size_t( newpos);
 
-    return (double) oldpos;
+    return double( oldpos);
 }
 
 static Rconnection newraw(const char *description, SEXP raw, const char *mode)
@@ -2123,7 +2123,7 @@ SEXP attribute_hidden do_rawconvalue(SEXP call, SEXP op, SEXP args, SEXP env)
     con = getConnection(asInteger(CAR(args)));
     if(!con->canwrite)
 	error(_("'con' is not an output rawConnection"));
-    thisconn = Rrawconn( con->connprivate);
+    thisconn = reinterpret_cast<Rrawconn>( con->connprivate);
     ans = allocVector(RAWSXP, thisconn->nbytes); /* later, use TRUELENGTH? */
     memcpy(RAW(ans), RAW(thisconn->data), thisconn->nbytes);
     return ans;
@@ -3151,7 +3151,7 @@ static SEXP rawOneString(Rbyte *bytes, int nbytes, int *np)
 	return mkChar(reinterpret_cast<char *>(p));
     }
     /* so no terminator */
-    buf = reinterpret_cast<char*>(R_chk_calloc(nbytes - (*np) + 1, 1));
+    buf = static_cast<char*>(R_chk_calloc(nbytes - (*np) + 1, 1));
     memcpy(buf, bytes+(*np), nbytes-(*np));
     res = mkChar(buf);
     Free(buf);

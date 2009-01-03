@@ -163,7 +163,7 @@ const char *EncodeEnvironment(SEXP x)
     else if (R_IsNamespaceEnv(x))
 	sprintf(ch, "<environment: namespace:%s>",
 		translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
-    else sprintf(ch, "<environment: %p>", (void *)x);
+    else sprintf(ch, "<environment: %p>", CXXRNOCAST(void *)x);
 
     return ch;
 }
