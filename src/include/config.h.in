@@ -76,6 +76,9 @@
 /* Define to 1 if the compiler understands __builtin_expect. */
 #undef HAVE_BUILTIN_EXPECT
 
+/* Define to 1 if you have the <bzlib.h> header file. */
+#undef HAVE_BZLIB_H
+
 /* Define this if you have support for C99 complex types. */
 #undef HAVE_C99_COMPLEX
 
@@ -373,6 +376,12 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
+/* Define to 1 if you have the `icui18n' library (-licui18n). */
+#undef HAVE_LIBICUI18N
+
+/* Define to 1 if you have the `icuuc' library (-licuuc). */
+#undef HAVE_LIBICUUC
+
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
@@ -580,9 +589,6 @@
 
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
-
-/* Define to 1 if you have the `strerror' function. */
-#undef HAVE_STRERROR
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -919,6 +925,9 @@
 /* Define if your rint() is broken on your system. Apparently needed on HPUX.
    */
 #undef USE_BUILTIN_RINT
+
+/* Define to use ICU for collation. */
+#undef USE_ICU
 
 /* Define if the POSIX multithreading library can be used. */
 #undef USE_POSIX_THREADS

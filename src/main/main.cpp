@@ -40,8 +40,6 @@
  * The main program.
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 // For debugging:
 #include <iostream>
 
@@ -168,6 +166,12 @@ FILE*	R_Consolefile	= NULL;	/* Console output file */
 FILE*	R_Outputfile	= NULL;	/* Output file */
 int	R_DirtyImage	= 0;	/* Current image dirty */
 const char	*R_GUIType	= "unknown";
+double cpuLimit = -1.0;
+double cpuLimit2 = -1.0;
+double cpuLimitValue = -1.0;
+double elapsedLimit = -1.0;
+double elapsedLimit2 = -1.0;
+double elapsedLimitValue = -1.0;
 
 // Data declared extern0 in Defn.h :
 
@@ -258,8 +262,7 @@ extern void InitDynload(void);
 
 	/* Read-Eval-Print Loop [ =: REPL = repl ] with input from a file */
 
-static void R_ReplFile(FILE *fp, SEXP rho,
-		       unsigned int savestack, int browselevel)
+static void R_ReplFile(FILE *fp, SEXP rho, CXXRunsigned int savestack, int browselevel)
 {
     ParseStatus status;
     int count=0;
@@ -273,6 +276,7 @@ static void R_ReplFile(FILE *fp, SEXP rho,
 	case PARSE_OK:
 	    R_Visible = FALSE;
 	    R_EvalDepth = 0;
+	    resetTimeLimits();
 	    count++;
 	    PROTECT(R_CurrentExpr);
 	    R_CurrentExpr = eval(R_CurrentExpr, rho);
@@ -313,12 +317,12 @@ char *R_PromptString(int browselevel, int type)
 		sprintf(BrowsePrompt, "Browse[%d]> ", browselevel);
 		return BrowsePrompt;
 	    }
-	    return const_cast<char*>(CHAR(STRING_ELT(GetOption(install("prompt"),
-							       R_BaseEnv), 0)));
+	    return const_cast<char *>(CHAR(STRING_ELT(GetOption(install("prompt"),
+								R_BaseEnv), 0)));
 	}
 	else {
-	    return const_cast<char*>(CHAR(STRING_ELT(GetOption(install("continue"),
-							       R_BaseEnv), 0)));
+	    return const_cast<char *>(CHAR(STRING_ELT(GetOption(install("continue"),
+								R_BaseEnv), 0)));
 	}
     }
 }
@@ -376,8 +380,7 @@ typedef struct {
  point, i.e. the end of the first line or after the first ;.
  */
 int
-Rf_ReplIteration(SEXP rho, unsigned int savestack,
-		 int browselevel, R_ReplState *state)
+Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplState *state)
 {
     int c, browsevalue;
     SEXP value;
@@ -415,7 +418,7 @@ Rf_ReplIteration(SEXP rho, unsigned int savestack,
 
 	/* The intention here is to break on CR but not on other
 	   null statements: see PR#9063 */
-	if (browselevel && !strcmp(reinterpret_cast<char *>(state->buf), "\n")) return -1;
+	if (browselevel && !strcmp(reinterpret_cast<char *>( state->buf), "\n")) return -1;
 	R_IoBufferWriteReset(&R_ConsoleIob);
 	state->prompt_type = 1;
 	return(1);
@@ -434,6 +437,7 @@ Rf_ReplIteration(SEXP rho, unsigned int savestack,
 	}
 	R_Visible = FALSE;
 	R_EvalDepth = 0;
+	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);
 	value = eval(R_CurrentExpr, rho);
@@ -535,6 +539,7 @@ int R_ReplDLLdo1(void)
 	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &status);
 	R_Visible = FALSE;
 	R_EvalDepth = 0;
+	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);
 	R_CurrentExpr = eval(R_CurrentExpr, rho);
@@ -628,18 +633,18 @@ extern void R_CleanTempDir(void);
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
-    const char *s;
+    CXXRconst char *s;
 
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
      */
-    if(signum == SIGSEGV && (ip != 0) && 
-        intptr_t(R_CStackStart) != -1) {
-	uintptr_t addr = uintptr_t(ip->si_addr);
+    if(signum == SIGSEGV && (ip != CXXRNOCAST(siginfo_t *)0) &&
+       intptr_t( R_CStackStart) != -1) {
+	uintptr_t addr = uintptr_t( ip->si_addr);
 	intptr_t diff = (R_CStackDir > 0) ? R_CStackStart - addr:
 	    addr - R_CStackStart;
 	uintptr_t upper = 0x1000000;  /* 16Mb */
-	if(intptr_t(R_CStackLimit) != -1) upper += R_CStackLimit;
+	if(intptr_t( R_CStackLimit) != -1) upper += R_CStackLimit;
 	if(diff > 0 && diff < int(upper)) {
 	    REprintf(_("Error: segfault from C stack overflow\n"));
 	    jump_to_toplevel();
@@ -653,7 +658,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
     REprintf("\n *** caught %s ***\n",
 	     signum == SIGILL ? "illegal operation" :
 	     signum == SIGBUS ? "bus error" : "segfault");
-    if(ip != 0) {
+    if(ip != CXXRNOCAST(siginfo_t *)0) {
 	if(signum == SIGILL) {
 
 	    switch(ip->si_code) {
@@ -942,8 +947,6 @@ void setup_Rmainloop(void)
 
     InitTempDir(); /* must be before InitEd */
     InitMemory();
-#ifdef USE_CHAR_HASHING
-#endif
     InitNames();
     InitGlobalEnv();
     InitDynload();
@@ -1294,11 +1297,11 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
    is maintained across LONGJMP's */
 static void browser_cend(void *data)
 {
-    int *psaved = reinterpret_cast<int *>(data);
+    int *psaved = reinterpret_cast<int *>( data);
     R_BrowseLevel = *psaved - 1;
 }
 
-SEXP do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *saveToplevelContext;
     RCNTXT *saveGlobalContext;
@@ -1421,7 +1424,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;
@@ -1482,7 +1485,7 @@ Rf_addTaskCallback(R_ToplevelCallback cb, void *data,
 {
     int which;
     R_ToplevelCallbackEl *el;
-    el = static_cast<R_ToplevelCallbackEl *>(malloc(sizeof(R_ToplevelCallbackEl)));
+    el = static_cast<R_ToplevelCallbackEl *>( malloc(sizeof(R_ToplevelCallbackEl)));
     if(!el)
 	error(_("cannot allocate space for toplevel callback element"));
 
@@ -1699,7 +1702,7 @@ Rboolean
 R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 		      Rboolean visible, void *userData)
 {
-    SEXP f = reinterpret_cast<SEXP>(userData);
+    SEXP f = reinterpret_cast<SEXP>( userData);
     SEXP e, tmp, val, cur;
     int errorOccurred;
     Rboolean again;
@@ -1758,8 +1761,8 @@ R_addTaskCallback(SEXP f, SEXP data, SEXP useData, SEXP name)
 
     PROTECT(index = allocVector(INTSXP, 1));
     el = Rf_addTaskCallback(R_taskCallbackRoutine,  internalData,
-			    reinterpret_cast<void (*)(void*)>(R_ReleaseObject),
-			    tmpName, INTEGER(index));
+			    reinterpret_cast<void (*)(void*)>( R_ReleaseObject), tmpName,
+			    INTEGER(index));
 
     if(length(name) == 0) {
 	PROTECT(name = mkString(el->name));

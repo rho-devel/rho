@@ -63,7 +63,7 @@ static char *rmspace(char *s)
    return "" on an error condition.
  */
 
-static const char *subterm(char *s)
+static CXXRconst char *subterm(char *s)
 {
     char *p, *q;
 
@@ -81,7 +81,7 @@ static const char *subterm(char *s)
     } else q = NULL;
     p = getenv(s);
     if(p && strlen(p)) return p; /* variable was set and non-empty */
-    return q ? subterm(q) : "";
+    return q ? subterm(q) : CXXRNOCAST(char *) "";
 }
 
 /* skip along until we find an unmatched right brace */
@@ -104,7 +104,7 @@ static char *findRbrace(char *s)
 }
 
 
-static const char *findterm(const char *s)
+static CXXRconst char *findterm(CXXRconst char *s)
 {
     char *p, *q, *r;
     const char *ss=s;
@@ -123,7 +123,7 @@ static const char *findterm(const char *s)
 	/* copy over leading part */
 	nans = strlen(ans);
 	strncat(ans, s, p-s); ans[nans + p - s] = '\0';
-	r = static_cast<char *>(alloca(q - p + 2));
+	r = static_cast<char *>( alloca(q - p + 2));
 	strncpy(r, p, q - p + 1);
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
@@ -135,14 +135,14 @@ static const char *findterm(const char *s)
     return ans;
 }
 
-static void Putenv(char *a, const char *b)
+static void Putenv(char *a, CXXRconst char *b)
 {
     char *buf, *value, *q, quote='\0';
     const char *p;
     int inquote = 0;
 
 #ifdef HAVE_SETENV
-    buf = static_cast<char *>(malloc((strlen(b) + 1) * sizeof(char)));
+    buf = static_cast<char *>( malloc((strlen(b) + 1) * sizeof(char)));
     if(!buf) R_Suicide("allocation failure in reading Renviron");
     value = buf;
 #else
@@ -275,7 +275,12 @@ void process_site_Renviron ()
 /* try user Renviron: ./.Renviron, then ~/.Renviron */
 void process_user_Renviron()
 {
-    const char *s;
+    const char *s = getenv("R_ENVIRON_USER");
+
+    if(s && strlen(s)) {
+	process_Renviron(R_ExpandFileName(s));
+	return;
+    }
 
     if(process_Renviron(".Renviron")) return;
 #ifdef Unix

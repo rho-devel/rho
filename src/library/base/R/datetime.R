@@ -557,36 +557,35 @@ Math.difftime <- function (x, ...)
 }
 
 mean.difftime <- function (x, ..., na.rm = FALSE)
-{
-    coerceTimeUnit <- function(x)
-    {
-        as.vector(switch(attr(x,"units"),
-               secs = x, mins = 60*x, hours = 60*60*x,
-               days = 60*60*24*x, weeks = 60*60*24*7*x))
-    }
-    if(length(list(...))) {
-        args <- c(lapply(list(x, ...), coerceTimeUnit), na.rm = na.rm)
-        structure(do.call("mean", args), units="secs", class="difftime")
-    } else {
-        structure(mean(as.vector(x), na.rm = na.rm),
-                  units=attr(x, "units"), class="difftime")
-    }
-}
+    structure(mean(unclass(x), ...), units=attr(x, "units"), class="difftime")
 
 Summary.difftime <- function (..., na.rm)
 {
+    ## FIXME: this should return in the smallest of the units of the inputs.
     coerceTimeUnit <- function(x)
     {
         as.vector(switch(attr(x,"units"),
                          secs = x, mins = 60*x, hours = 60*60*x,
                          days = 60*60*24*x, weeks = 60*60*24*7*x))
     }
-    ok <- switch(.Generic, max = , min = , range = TRUE, FALSE)
+    ok <- switch(.Generic, max = , min = , sum=, range = TRUE, FALSE)
     if (!ok)
         stop(gettextf("'%s' not defined for \"difftime\" objects", .Generic),
              domain = NA)
-    args <- c(lapply(list(...), coerceTimeUnit), na.rm = na.rm)
-    structure(do.call(.Generic, args), units="secs", class="difftime")
+    x <- list(...)
+    Nargs <- length(x)
+    if(Nargs == 0) {
+        structure(do.call(.Generic), units="secs", class="difftime")
+    } else {
+        units <- sapply(x, function(x) attr(x, "units"))
+        if(all(units == units[1])) {
+            args <- c(lapply(x, as.vector), na.rm = na.rm)
+        } else {
+            args <- c(lapply(x, coerceTimeUnit), na.rm = na.rm)
+            units <- "secs"
+        }
+        structure(do.call(.Generic, args), units=units[[1]], class="difftime")
+    }
 }
 
 
@@ -752,13 +751,12 @@ cut.POSIXt <-
         breaks <- seq(start, end, paste(step * 3, "months"))
     } else {
         if (length(by2) == 2) incr <- incr * as.integer(by2[1])
-	    maxx <- max(x, na.rm = TRUE)
+        maxx <- max(x, na.rm = TRUE)
         breaks <- seq.int(start, maxx + incr, breaks)
-        breaks <- breaks[1:(1+max(which(breaks < maxx)))]
+        breaks <- breaks[1:(1+max(which(breaks <= maxx)))]
       }
     } else stop("invalid specification of 'breaks'")
-    res <- cut(unclass(x), unclass(breaks), labels = labels,
-               right = right, ...)
+    res <- cut(unclass(x), unclass(breaks), labels = labels, right = right, ...)
     if(is.null(labels)) levels(res) <- as.character(breaks[-length(breaks)])
     res
 }
@@ -817,7 +815,7 @@ round.POSIXt <- function(x, units=c("secs", "mins", "hours", "days"))
     trunc.POSIXt(x, units = units)
 }
 
-# ---- additions in 1.5.0 -----
+## ---- additions in 1.5.0 -----
 
 "[.POSIXlt" <- function(x, ..., drop = TRUE)
 {
@@ -845,7 +843,7 @@ as.data.frame.POSIXlt <- function(x, row.names = NULL, optional = FALSE, ...)
     value
 }
 
-# ---- additions in 1.8.0 -----
+## ---- additions in 1.8.0 -----
 
 rep.POSIXct <- function(x, ...)
 {
@@ -877,7 +875,7 @@ diff.POSIXt <- function (x, lag = 1, differences = 1, ...)
     r
 }
 
-# ---- additions in 2.2.0 -----
+## ---- additions in 2.2.0 -----
 
 duplicated.POSIXlt <- function(x, incomparables = FALSE, ...)
 {
@@ -888,12 +886,24 @@ duplicated.POSIXlt <- function(x, incomparables = FALSE, ...)
 unique.POSIXlt <- function(x, incomparables = FALSE, ...)
     x[!duplicated(x, incomparables, ...)]
 
-# ---- additions in 2.4.0 -----
+## ---- additions in 2.4.0 -----
 
 sort.POSIXlt <- function(x, decreasing = FALSE, na.last = NA, ...)
     x[order(as.POSIXct(x), na.last = na.last, decreasing = decreasing)]
 
 
-# ---- additions in 2.6.0 -----
+## ---- additions in 2.6.0 -----
 
 is.numeric.POSIXt <- function(x) FALSE
+
+## ---- additions in 2.6.0 -----
+
+split.POSIXct <-
+function(x, f, drop = FALSE, ...)
+{
+    lapply(split.default(as.double(x), f, drop = drop), structure,
+           class = c("POSIXt", "POSIXct"), tzone = attr(x, "tzone"))
+}
+
+xtfrm.POSIXct <- function(x) as.numeric(x)
+xtfrm.POSIXlt <- function(x) as.double(x)  # has POSIXlt method

@@ -43,9 +43,6 @@
  *  See ./format.c	 for the  format_FOO_  functions used below.
  */
 
-/* <UTF8> char here is handled as a whole,
-   but lengths were used as display widths */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -586,8 +583,8 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	    dnn = getAttrib(dimnames, R_NamesSymbol);
 	    has_dnn = !isNull(dnn);
 	    if ( has_dnn ) {
-		rn = translateChar(STRING_ELT(dnn, 0));
-		cn = translateChar(STRING_ELT(dnn, 1));
+		rn = CXXRNOCAST(char *) translateChar(STRING_ELT(dnn, 0));
+		cn = CXXRNOCAST(char *) translateChar(STRING_ELT(dnn, 1));
 	    }
 	}
 	/* nb := #{entries} in a slice such as x[1,1,..] or equivalently,

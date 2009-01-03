@@ -35,8 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string */
-
 extern "C" {
 int Rf_initialize_R(int ac, char **av); /* in ../unix/system.c */
 }

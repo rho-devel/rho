@@ -567,7 +567,8 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
-	s = allocString(len);
+	s = new UncachedString(len); /* This is not longer correct */
+	s->expose();
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* skip over the string */
 	/* string = */ m->InString(fp, d);
@@ -861,7 +862,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
     case -3: return R_UnboundValue;
     case -4: return R_MissingArg;
     }
-    return 0;	/* not strictly legal... */
+    return CXXRNOCAST(SEXP) 0;	/* not strictly legal... */
 }
 
 
@@ -889,7 +890,7 @@ static SEXP NewLoadSpecialHook (SEXPTYPE type)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) (uintptr_t(obj) >> 2)
+#define PTRHASH(obj) ((uintptr_t( (obj))) >> 2)
 
 #define HASH_TABLE_KEYS_LIST(ht) CAR(ht)
 #define SET_HASH_TABLE_KEYS_LIST(ht, v) SETCAR(ht, v)
@@ -1400,7 +1401,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 static void newdataload_cleanup(void *data)
 {
     InputCtxtData *cinfo = reinterpret_cast<InputCtxtData*>(data);
-    FILE *fp = reinterpret_cast<FILE *>(data);  // 2007/07/31 arr: Can this be right?
+    FILE *fp = reinterpret_cast<FILE *>( data);  // 2007/07/31 arr: Can this be right?
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 
@@ -1516,7 +1517,7 @@ static void OutStringAscii(FILE *fp, const char *x, SaveLoadData *unused)
 	       is handled above, x[i] > 126 can't happen, but
 	       I'm superstitious...  -pd */
 	    if (x[i] <= 32 || x[i] > 126)
-		fprintf(fp, "\\%03o", static_cast<unsigned char>(x[i]));
+		fprintf(fp, "\\%03o", static_cast<unsigned char>( x[i]));
 	    else
 		fputc(x[i], fp);
 	}
@@ -1537,8 +1538,8 @@ static char *InStringAscii(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1));
-	else newbuf = static_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading ascii string"));
 	buf = newbuf;
@@ -1677,8 +1678,8 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
     if (nbytes >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1)); 
-	else newbuf = static_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1778,8 +1779,8 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     if (int(nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
-	if(buf) newbuf = static_cast<char *>(realloc(buf, nbytes + 1)); 
-	else newbuf = static_cast<char *>(malloc(nbytes + 1));
+	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
+	else newbuf = static_cast<char *>( malloc(nbytes + 1));
 	if (newbuf == NULL)
 	    error(_("out of memory reading binary string"));
 	buf = newbuf;
@@ -1917,7 +1918,7 @@ static int R_ReadMagic(FILE *fp)
     else if (strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	return R_MAGIC_XDR_V2;
     }
-    else if (strncmp(reinterpret_cast<char*>(buf), "RD", 2) == 0)
+    else if (strncmp(reinterpret_cast<char *>(buf), "RD", 2) == 0)
 	return R_MAGIC_MAYBE_TOONEW;
 
     /* Intel gcc seems to screw up a single expression here */
@@ -2021,7 +2022,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 
 static void saveload_cleanup(void *data)
 {
-    FILE *fp = reinterpret_cast<FILE *>(data);
+    FILE *fp = reinterpret_cast<FILE *>( data);
     fclose(fp);
 }
 
@@ -2059,11 +2060,7 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
     fp = RC_fopen(STRING_ELT(CADR(args), 0), "wb", TRUE);
     if (!fp) {
 	const char *cfile = CHAR(STRING_ELT(CADR(args), 0));
-#ifdef HAVE_STERROR
-	error(_("cannot open file '%s': %s"), cfile, strerror(error));
-#else
-	error(_("cannot open file '%s'"), cfile);
-#endif
+	error(_("cannot open file '%s': %s"), cfile, strerror(errno));
     }
 
     /* set up a context which will close the file if there is an error */
@@ -2208,7 +2205,7 @@ void attribute_hidden R_XDREncodeDouble(double d, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2221,7 +2218,7 @@ double attribute_hidden R_XDRDecodeDouble(void *buf)
     double d;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2234,7 +2231,7 @@ void attribute_hidden R_XDREncodeInteger(int i, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2246,7 +2243,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     XDR xdrs;
     int i, success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char*>(buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2261,12 +2258,8 @@ void R_SaveGlobalEnvToFile(const char *name)
     if (findVar(sym, R_GlobalEnv) == R_UnboundValue) { /* not a perfect test */
 	FILE *fp = R_fopen(name, "wb"); /* binary file */
 	if (!fp) {
-#ifdef HAVE_STRERROR
 	    error(_("cannot save data -- unable to open '%s': %s"),
 		  name, strerror(errno));
-#else
-	    error(_("cannot save data -- unable to open '%s'"), name);
-#endif
 	}
 	R_SaveToFile(FRAME(R_GlobalEnv), fp, 0);
 	fclose(fp);
@@ -2328,7 +2321,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    const char *magic;
+    CXXRconst char *magic;
 
     checkArity(op, args);
 
@@ -2357,13 +2350,12 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (ep == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "eval.promises");
 
-    source = CAR(nthcdr(args,4));
-    if (source != R_NilValue && TYPEOF(source) != ENVSXP)
-	error(_("bad environment"));
-
     wasopen = con->isopen;
     if(!wasopen && !con->open(con)) error(_("cannot open the connection"));
-    if(!con->canwrite) error(_("connection not open for writing"));
+    if(!con->canwrite) {
+	if(!wasopen) con->close(con);
+	error(_("connection not open for writing"));
+    }
 
     if (ascii) {
 	magic = "RDA2\n";
@@ -2379,7 +2371,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (con->text)
 	Rconn_printf(con, "%s", magic);
     else {
-	unsigned int len = strlen(magic);
+	CXXRunsigned int len = strlen(magic);
 	if (len != con->write(magic, 1, len, con))
 	    error(_("error writing to connection"));
     }
@@ -2416,7 +2408,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void saveloadcon_cleanup(void *data)
 {
-    FILE *fp = reinterpret_cast<FILE *>(data);
+    FILE *fp = reinterpret_cast<FILE *>( data);
     fclose(fp);
 }
 
@@ -2440,6 +2432,10 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     wasopen = con->isopen;
     if(!wasopen)
 	if(!con->open(con)) error(_("cannot open the connection"));
+    if(!con->canread) {
+	if(!wasopen) con->close(con);
+	error(_("connection not open for reading"));
+    }
 
     aenv = CADR(args);
     if (TYPEOF(aenv) == NILSXP) {

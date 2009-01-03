@@ -36,8 +36,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string */
-
 /* Code to handle list / vector switch */
 
 #ifdef HAVE_CONFIG_H
@@ -116,7 +114,6 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data)
 	data->ans_length += LENGTH(x);
 	break;
     case VECSXP:
-    case EXPRSXP:
 	if (recurse) {
 	    int i, n;
 	    n = length(x);
@@ -130,10 +127,25 @@ AnswerType(SEXP x, int recurse, int usenames, struct BindData *data)
 	    }
 	}
 	else {
-	    if (TYPEOF(x) == EXPRSXP)
-		data->ans_flags |= 512;
-	    else
-		data->ans_flags |= 256;
+	    data->ans_flags |= 256;
+	    data->ans_length += length(x);
+	}
+	break;
+    case EXPRSXP:
+	if (recurse) {
+	    int i, n;
+	    n = length(x);
+	    if (usenames && !data->ans_nnames &&
+		!isNull(getAttrib(x, R_NamesSymbol)))
+		data->ans_nnames = 1;
+	    for (i = 0; i < n; i++) {
+		if (usenames && !data->ans_nnames)
+		    data->ans_nnames = HasNames(XVECTOR_ELT(x, i));
+		AnswerType(XVECTOR_ELT(x, i), recurse, usenames, data);
+	    }
+	}
+	else {
+	    data->ans_flags |= 512;
 	    data->ans_length += length(x);
 	}
 	break;
@@ -500,7 +512,7 @@ static SEXP NewBase(SEXP base, SEXP tag)
     tag = EnsureString(tag);
     if (*CHAR(base) && *CHAR(tag)) { /* test of length */
 	const char *sb = translateChar(base), *st = translateChar(tag);
-        cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff));
+	cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff));
 	sprintf(cbuf, "%s.%s", sb, st);
 	ans = mkChar(cbuf);
     }
@@ -1023,8 +1035,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP a, t, obj, classlist, classname, method, classmethod, rho;
     const char *generic;
-    int deparse_level, compatible=1;
     SEXPTYPE mode;
+    int deparse_level;
+    Rboolean compatible = TRUE;
     struct BindData data;
     char buf[512];
     const char *s, *klass;
@@ -1048,7 +1061,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
      *	  memberships from the class attribute.
      *
      * 2) We inspect each class in turn to see if there is an
-     *	  an applicable method.
+     *	  applicable method.
      *
      * 3) If we find an applicable method we make sure that it is
      *	  identical to any method determined for prior arguments.
@@ -1089,7 +1102,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 			if (strcmp(klass, s)) {
 			    method = R_NilValue;
 			    /* need to end both loops */
-			    compatible = 0;
+			    compatible = FALSE;
 			}
 		    }
 		    break; /* go to next parameter */

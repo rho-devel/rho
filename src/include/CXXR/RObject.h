@@ -47,12 +47,7 @@
 #ifdef __cplusplus
 
 #include "CXXR/GCNode.hpp"
-
-/* Where CXXR inserts additional const declarations into source files
- * inherited from CR, try to use this macro so that the change can be
- * reversed by the uncxxr.pl script.
- */
-#define CXXRconst const
+#include "CXXR/uncxxr.h"
 
 extern "C" {
 #endif

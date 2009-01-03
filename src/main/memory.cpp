@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole */
-
 /** @file memory.cpp
  *
  * Memory management, garbage collection, and memory profiling.
@@ -205,7 +203,7 @@ void WeakRef::finalize()
 
 /* R interface function */
 
-SEXP do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int onexit;
 
@@ -302,7 +300,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
 }
 
 
-SEXP do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i;
     SEXP old = ScalarLogical(!gc_inhibit_torture);
@@ -314,7 +312,7 @@ SEXP do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
     return old;
 }
 
-SEXP do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os = GCManager::setReporting(0);
@@ -328,9 +326,9 @@ SEXP do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* reports memory use to profiler in eval.c */
 
-void attribute_hidden get_current_mem(unsigned long *smallvsize,
-				      unsigned long *largevsize,
-				      unsigned long *nodes)
+void CXXRnot_hidden get_current_mem(unsigned long *smallvsize,
+				    unsigned long *largevsize,
+				    unsigned long *nodes)
 {
     // All subject to change in CXXR:
     *smallvsize = 0;
@@ -339,7 +337,7 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
     return;
 }
 
-SEXP do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os
@@ -430,7 +428,7 @@ void InitMemory()
     GCManager::enableGC(R_VSize);
 
 #ifdef BYTECODE
-    R_BCNodeStackBase = static_cast<SEXP *>(malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
+    R_BCNodeStackBase = static_cast<SEXP *>( malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
     if (R_BCNodeStackBase == NULL)
 	R_Suicide("couldn't allocate node stack");
 # ifdef BC_INT_STACK
@@ -493,11 +491,8 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 /* All vector objects  must be a multiple of sizeof(ALIGN) */
 /* bytes so that alignment is preserved for all objects */
 
-/* allocString is now a macro */
-
-/* Allocate a vector object.  This ensures only validity of list-like
-   SEXPTYPES (as the elements must be initialized).  Initializing of
-   other vector types is done in do_makevector */
+/* Allocate a vector object (and also list-like objects).
+*/
 
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
@@ -514,6 +509,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	s = new RawVector(length);
 	break;
     case CHARSXP:
+	warning("use of allocVector(CHARSXP ...) is deprecated\n");
 	s = new UncachedString(length);
 	break;
     case LGLSXP:
@@ -566,7 +562,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP CXXRnot_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     checkArity(op, args);
@@ -577,7 +573,7 @@ SEXP do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP CXXRnot_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));
@@ -702,12 +698,12 @@ void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
 /*******************************************/
 /* Non-sampling memory use profiler
    reports all large vector heap
-   allocations */
+   allocations and all calls to GetNewPage */
 /*******************************************/
 
 #ifndef R_MEMORY_PROFILING
 
-SEXP do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     error(_("memory profiling is not available on this system"));
     return R_NilValue; /* not reached */
@@ -718,18 +714,20 @@ static FILE *R_MemReportingOutfile;
 
 static void R_OutputStackTrace(FILE *file)
 {
+    int newline = 0;
     RCNTXT *cptr;
 
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
+	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
 		    "<Anonymous>");
 	}
     }
-    fprintf(file, "\n");
+    if (newline) fprintf(file, "\n");
 }
 
 static void R_ReportAllocation(R_size_t size)
@@ -785,6 +783,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include "RBufferUtils.h"
 
+CXXRnot_hidden
 void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
 {
     size_t blen1, bsize = buf->defaultSize;
@@ -802,21 +801,22 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     if(blen < blen1) blen += bsize;
 
     if(buf->data == NULL) {
-	buf->data = static_cast<char *>(malloc(blen));
+	buf->data = static_cast<char *>( malloc(blen));
 	buf->data[0] = '\0';
     } else
-	buf->data = static_cast<char *>(realloc(buf->data, blen));
+	buf->data = static_cast<char *>( realloc(buf->data, blen));
     buf->bufsize = blen;
     if(!buf->data) {
 	buf->bufsize = 0;
 	/* don't translate internal error message */
 	error("could not allocate memory (%u Mb) in C function 'R_AllocStringBuffer'",
-	      static_cast<unsigned int>(blen)/1024/1024);
+	      static_cast<unsigned int>( blen)/1024/1024);
     }
     return buf->data;
 }
 
-void R_FreeStringBuffer(R_StringBuffer *buf)
+void CXXRnot_hidden
+R_FreeStringBuffer(R_StringBuffer *buf)
 {
     if (buf->data != NULL) {
 	free(buf->data);
@@ -825,7 +825,8 @@ void R_FreeStringBuffer(R_StringBuffer *buf)
     }
 }
 
-void R_FreeStringBufferL(R_StringBuffer *buf)
+void CXXRnot_hidden
+R_FreeStringBufferL(R_StringBuffer *buf)
 {
     if (buf->bufsize > buf->defaultSize) {
 	free(buf->data);
@@ -833,3 +834,35 @@ void R_FreeStringBufferL(R_StringBuffer *buf)
 	buf->data = NULL;
     }
 }
+
+/* ======== These need direct access to gp field for efficiency ======== */
+
+/* FIXME: consider inlining here */
+#ifdef Win32
+int Seql(SEXP a, SEXP b)
+{
+    if (a == b) return 1;
+    if (LENGTH(a) != LENGTH(b)) return 0;
+    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+	 return 0;
+    return !strcmp(translateCharUTF8(a), translateCharUTF8(b));
+}
+
+#else
+
+/* this has NA_STRING = NA_STRING */
+int Seql(SEXP a, SEXP b)
+{
+    /* The only case where pointer comparisons do not suffice is where
+      we have two strings in different encodings (which must be
+      non-ASCII strings). Note that one of the strings could be marked
+      as unknown. */
+    if (a == b) return 1;
+    if (LENGTH(a) != LENGTH(b)) return 0;
+    /* Leave this to compiler to optimize */
+    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+	return 0;
+    return !strcmp(translateChar(a), translateChar(b));
+}
+
+#endif

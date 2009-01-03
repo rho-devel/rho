@@ -35,12 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8>
-   regex code should be OK.
-   substitution code does ASCII comparisons only.
-   regexpr returned pos and match length in bytes not chars.
-*/
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -90,13 +84,13 @@ static int length_adj(const char *orig, const char *repl, int *ovec,
 		    int j, nc;
 		    char *xi, *p;
 		    wchar_t *wc;
-		    p = xi = static_cast<char *>(alloca((nb+1)*sizeof(char)));
+		    p = xi = static_cast<char *>( alloca((nb+1)*sizeof(char)));
 		    R_CheckStack();
 		    for (j = 0; j < nb; j++) *p++ = orig[ovec[2*k]+j];
 		    *p = '\0';
 		    nc = mbstowcs(NULL, xi, 0);
 		    if (nc >= 0) {
-			wc = static_cast<wchar_t *>(alloca((nc+1)*sizeof(wchar_t)));
+			wc = static_cast<wchar_t *>( alloca((nc+1)*sizeof(wchar_t)));
 			R_CheckStack();
 			mbstowcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
@@ -144,13 +138,13 @@ static char *string_adj(char *target, const char *orig, const char *repl,
 		    int j, nc;
 		    char *xi, *p;
 		    wchar_t *wc;
-		    p = xi = static_cast<char *>(alloca((nb+1)*sizeof(char)));
+		    p = xi = static_cast<char *>( alloca((nb+1)*sizeof(char)));
 		    R_CheckStack();
 		    for (j = 0; j < nb; j++) *p++ = orig[ovec[2*k]+j];
 		    *p = '\0';
 		    nc = utf8towcs(NULL, xi, 0);
 		    if (nc >= 0) {
-			wc = static_cast<wchar_t *>(alloca((nc+1)*sizeof(wchar_t)));
+			wc = static_cast<wchar_t *>( alloca((nc+1)*sizeof(wchar_t)));
 			R_CheckStack();
 			utf8towcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);
@@ -163,13 +157,13 @@ static char *string_adj(char *target, const char *orig, const char *repl,
 		    int j, nc;
 		    char *xi, *p;
 		    wchar_t *wc;
-		    p = xi = static_cast<char *>(alloca((nb+1)*sizeof(char)));
+		    p = xi = static_cast<char *>( alloca((nb+1)*sizeof(char)));
 		    R_CheckStack();
 		    for (j = 0; j < nb; j++) *p++ = orig[ovec[2*k]+j];
 		    *p = '\0';
 		    nc = mbstowcs(NULL, xi, 0);
 		    if (nc >= 0) {
-			wc = static_cast<wchar_t *>(alloca((nc+1)*sizeof(wchar_t)));
+			wc = static_cast<wchar_t *>( alloca((nc+1)*sizeof(wchar_t)));
 			R_CheckStack();
 			mbstowcs(wc, xi, nc + 1);
 			for (j = 0; j < nc; j++) wc[j] = towctrans(wc[j], tr);

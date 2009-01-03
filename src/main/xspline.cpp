@@ -74,14 +74,14 @@ add_point(double x, double y, pGEDevDesc dd)
 	    error(_("add_point - reached MAXNUMPTS (%d)"),tmp_n);
 	}
 	if (max_points == 0) {
-	    tmp_px = reinterpret_cast<double *>(R_alloc(tmp_n, sizeof(double)));
-	    tmp_py = reinterpret_cast<double *>(R_alloc(tmp_n, sizeof(double)));
+	    tmp_px = reinterpret_cast<double *>( R_alloc(tmp_n, sizeof(double)));
+	    tmp_py = reinterpret_cast<double *>( R_alloc(tmp_n, sizeof(double)));
 	} else {
-	    tmp_px = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>(xpoints), 
-							  tmp_n, max_points, 
+	    tmp_px = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>( xpoints),
+							  tmp_n, max_points,
 							  sizeof(double)));
-	    tmp_py = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>(ypoints), 
-							  tmp_n, max_points, 
+	    tmp_py = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>( ypoints),
+							  tmp_n, max_points,
 							  sizeof(double)));
 	}
 	if (tmp_px == NULL || tmp_py == NULL) {
@@ -225,14 +225,14 @@ point_adding(double *A_blend, double *px, double *py,
 static void
 point_computing(double *A_blend,
 		double *px, double *py,
-		int *x, int *y)
+		double *x, double *y)
 {
   double weights_sum;
 
   weights_sum = A_blend[0] + A_blend[1] + A_blend[2] + A_blend[3];
 
-  *x = int(EQN_NUMERATOR(px) / (weights_sum));
-  *y = int(EQN_NUMERATOR(py) / (weights_sum));
+  *x = EQN_NUMERATOR(px) / (weights_sum);
+  *y = EQN_NUMERATOR(py) / (weights_sum);
 }
 
 static float
@@ -242,8 +242,8 @@ step_computing(int k,
 	       float precision)
 {
   double A_blend[4];
-  int    xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
-  int    start_to_end_dist, number_of_steps;
+  double xstart, ystart, xend, yend, xmid, ymid, xlength, ylength;
+  double start_to_end_dist, number_of_steps;
   float  step, angle_cos, scal_prod, xv1, xv2, yv1, yv2, sides_length_prod;
 
   /* This function computes the step used to draw the segment (p1, p2)
@@ -264,8 +264,8 @@ step_computing(int k,
       }
       point_computing(A_blend, px, py, &xstart, &ystart);
   } else {
-      xstart = int(px[1]);
-      ystart = int(py[1]);
+      xstart = px[1];
+      ystart = py[1];
   }
 
   /* compute coordinates  of the extremity */
@@ -279,8 +279,8 @@ step_computing(int k,
       }
       point_computing(A_blend, px, py, &xend, &yend);
   } else {
-      xend = int(px[2]);
-      yend = int(py[2]);
+      xend = px[2];
+      yend = py[2];
   }
 
   /* compute coordinates  of the middle */
@@ -320,10 +320,10 @@ step_computing(int k,
   xlength = xend - xstart;
   ylength = yend - ystart;
 
-  start_to_end_dist = int(sqrt(xlength*xlength + ylength*ylength));
+  start_to_end_dist = sqrt(xlength*xlength + ylength*ylength);
 
   /* more steps if segment's origin and extremity are remote */
-  number_of_steps = int(sqrt(start_to_end_dist)/2);
+  number_of_steps = sqrt(start_to_end_dist)/2;
 
   /* more steps if the curve is high */
   number_of_steps += int((1 + angle_cos)*10);
@@ -335,6 +335,7 @@ step_computing(int k,
 
   if ((step > MAX_SPLINE_STEP) || (step == 0))
     step = MAX_SPLINE_STEP;
+
   return (step);
 }
 
@@ -484,7 +485,10 @@ compute_open_spline(int n, double *x, double *y, double *s,
 
       for (k = 0 ; ; k++) {
 	  SPLINE_SEGMENT_LOOP(k, px, py, ps[1], ps[2], precision);
-	  if (k + 3 == n)
+          /* Paul 2008-12-05
+           * >= rather than == to handle special case of n == 2
+           */
+	  if (k + 3 >= n)
 	      break;
 	  NEXT_CONTROL_POINTS(k, n);
       }

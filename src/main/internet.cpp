@@ -33,8 +33,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -128,7 +126,7 @@ Rconnection attribute_hidden R_newurl(const char *description,
 	return (*ptr->newurl)(description, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return 0;
+	return CXXRNOCAST(Rconnection)0;
     }
 }
 
@@ -140,7 +138,7 @@ R_newsock(const char *host, int port, int server, const char * const mode)
 	return (*ptr->newsock)(host, port, server, mode);
     else {
 	error(_("internet routines cannot be loaded"));
-	return 0;
+	return CXXRNOCAST(Rconnection)0;
     }
 }
 

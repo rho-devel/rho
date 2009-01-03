@@ -33,8 +33,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -44,7 +42,7 @@
 				   samin() */
 #include <R_ext/Applic.h>	/* setulb() */
 
-static SEXP getListElement(SEXP list, const char *str)
+static SEXP getListElement(SEXP list, CXXRconst char *str)
 {
     SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
     int i;
@@ -82,7 +80,7 @@ static double fminfn(int n, double *p, void *ex)
     SEXP s, x;
     int i;
     double val;
-    OptStruct OS = reinterpret_cast<OptStruct>(ex);
+    OptStruct OS = reinterpret_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     PROTECT(x = allocVector(REALSXP, n));
@@ -107,7 +105,7 @@ static void fmingr(int n, double *p, double *df, void *ex)
     SEXP s, x;
     int i;
     double val1, val2, eps, epsused, tmp;
-    OptStruct OS = reinterpret_cast<OptStruct>(ex);
+    OptStruct OS = reinterpret_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     if (!isNull(OS->R_gcall)) { /* analytical derivatives */
@@ -191,7 +189,7 @@ static void genptry(int n, double *p, double *ptry, double scale, void *ex)
 {
     SEXP s, x;
     int i;
-    OptStruct OS = reinterpret_cast<OptStruct>(ex);
+    OptStruct OS = reinterpret_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     if (!isNull(OS->R_gcall)) {
@@ -230,7 +228,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     OptStruct OS;
 
     checkArity(op, args);
-    OS = reinterpret_cast<OptStruct>(R_alloc(1, sizeof(opt_struct)));
+    OS = reinterpret_cast<OptStruct>( R_alloc(1, sizeof(opt_struct)));
     OS->usebounds = 0;
     OS->R_env = rho;
     par = CAR(args);
@@ -244,6 +242,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     tn = CHAR(STRING_ELT(method, 0));
     args = CDR(args); options = CAR(args);
     PROTECT(OS->R_fcall = lang2(fn, R_NilValue));
+    /* I don't think duplication is needed here */
     PROTECT(par = coerceVector(duplicate(par), REALSXP));
     npar = LENGTH(par);
     dpar = vect(npar);
@@ -275,7 +274,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	beta = asReal(getListElement(options, "beta"));
 	gamm = asReal(getListElement(options, "gamma"));
 	nmmin(npar, dpar, opar, &val, fminfn, &ifail, abstol, reltol,
-	      OS, alpha, beta, gamm, trace, &fncount, maxit);
+	      CXXRNOCAST(void *)OS, alpha, beta, gamm, trace, &fncount, maxit);
 	for (i = 0; i < npar; i++)
 	    REAL(par)[i] = opar[i] * (OS->parscale[i]);
 	grcount = NA_INTEGER;
@@ -284,6 +283,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strcmp(tn, "SANN") == 0) {
 	tmax = asInteger(getListElement(options, "tmax"));
 	temp = asReal(getListElement(options, "temp"));
+	if (trace) trace = asInteger(getListElement(options, "REPORT"));
 	if (tmax == NA_INTEGER) error(_("'tmax' is not an integer"));
 	if (!isNull(gr)) {
 	    if (!isFunction(gr)) error(_("'gr' is not a function"));
@@ -291,7 +291,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else {
 	    PROTECT(OS->R_gcall = R_NilValue); /* for balance */
 	}
-        samin (npar, dpar, &val, fminfn, maxit, tmax, temp, trace, OS);
+	samin (npar, dpar, &val, fminfn, maxit, tmax, temp, trace, CXXRNOCAST(void *)OS);
 	for (i = 0; i < npar; i++)
 	    REAL(par)[i] = dpar[i] * (OS->parscale[i]);
 	fncount = npar > 0 ? maxit : 1;
@@ -315,10 +315,10 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for (i = 0; i < npar; i++) OS->ndeps[i] = REAL(ndeps)[i];
 	    UNPROTECT(1);
 	}
-	mask = reinterpret_cast<int *>(R_alloc(npar, sizeof(int)));
+	mask = reinterpret_cast<int *>( R_alloc(npar, sizeof(int)));
 	for (i = 0; i < npar; i++) mask[i] = 1;
 	vmmin(npar, dpar, &val, fminfn, fmingr, maxit, trace, mask, abstol,
-	      reltol, nREPORT, OS, &fncount, &grcount, &ifail);
+	      reltol, nREPORT, CXXRNOCAST(void *)OS, &fncount, &grcount, &ifail);
 	for (i = 0; i < npar; i++)
 	    REAL(par)[i] = dpar[i] * (OS->parscale[i]);
 	UNPROTECT(1); /* OS->R_gcall */
@@ -341,7 +341,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    UNPROTECT(1);
 	}
 	cgmin(npar, dpar, opar, &val, fminfn, fmingr, &ifail, abstol,
-	      reltol, OS, type, trace, &fncount, &grcount, maxit);
+	      reltol, CXXRNOCAST(void *)OS, type, trace, &fncount, &grcount, maxit);
 	for (i = 0; i < npar; i++)
 	    REAL(par)[i] = opar[i] * (OS->parscale[i]);
 	UNPROTECT(1); /* OS->R_gcall */
@@ -349,7 +349,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else if (strcmp(tn, "L-BFGS-B") == 0) {
 	SEXP ndeps, smsg;
 	double *lower = vect(npar), *upper = vect(npar);
-	int lmm, *nbd = reinterpret_cast<int *>(R_alloc(npar, sizeof(int)));
+	int lmm, *nbd = reinterpret_cast<int *>( R_alloc(npar, sizeof(int)));
 	double factr, pgtol;
 	char msg[60];
 
@@ -385,7 +385,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	OS->lower = lower;
 	OS->upper = upper;
 	lbfgsb(npar, lmm, dpar, lower, upper, nbd, &val, fminfn, fmingr,
-	       &ifail, OS, factr, pgtol, &fncount, &grcount,
+	       &ifail, CXXRNOCAST(void *)OS, factr, pgtol, &fncount, &grcount,
 	       maxit, msg, trace, nREPORT);
 	for (i = 0; i < npar; i++)
 	    REAL(par)[i] = dpar[i] * (OS->parscale[i]);
@@ -415,7 +415,7 @@ SEXP attribute_hidden do_optimhess(SEXP call, SEXP op, SEXP args, SEXP rho)
     double *dpar, *df1, *df2, eps;
 
     checkArity(op, args);
-    OS = reinterpret_cast<OptStruct>(R_alloc(1, sizeof(opt_struct)));
+    OS = reinterpret_cast<OptStruct>( R_alloc(1, sizeof(opt_struct)));
     OS->usebounds = 0;
     OS->R_env = rho;
     par = CAR(args);
@@ -456,9 +456,9 @@ SEXP attribute_hidden do_optimhess(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i < npar; i++) {
 	eps = OS->ndeps[i]/(OS->parscale[i]);
 	dpar[i] = dpar[i] + eps;
-	fmingr(npar, dpar, df1, OS);
+	fmingr(npar, dpar, df1, CXXRNOCAST(void *)OS);
 	dpar[i] = dpar[i] - 2 * eps;
-	fmingr(npar, dpar, df2, OS);
+	fmingr(npar, dpar, df2, CXXRNOCAST(void *)OS);
 	for (j = 0; j < npar; j++)
 	    REAL(ans)[i * npar + j] = (OS->fnscale) * (df1[j] - df2[j])/
 		(2 * eps * (OS->parscale[i]) * (OS->parscale[j]));
@@ -474,9 +474,9 @@ static double ** matrix(int nrh, int nch)
     int   i;
     double **m;
 
-    m = reinterpret_cast<double **>(R_alloc((nrh + 1), sizeof(double *)));
+    m = reinterpret_cast<double **>( R_alloc((nrh + 1), sizeof(double *)));
     for (i = 0; i <= nrh; i++)
-	m[i] = reinterpret_cast<double*>(R_alloc((nch + 1), sizeof(double)));
+	m[i] = reinterpret_cast<double*>( R_alloc((nch + 1), sizeof(double)));
     return m;
 }
 
@@ -485,9 +485,9 @@ static double ** Lmatrix(int n)
     int   i;
     double **m;
 
-    m = reinterpret_cast<double **>(R_alloc(n, sizeof(double *)));
+    m = reinterpret_cast<double **>( R_alloc(n, sizeof(double *)));
     for (i = 0; i < n; i++)
-	m[i] = reinterpret_cast<double *>(R_alloc((i + 1), sizeof(double)));
+	m[i] = reinterpret_cast<double *>( R_alloc((i + 1), sizeof(double)));
     return m;
 }
 
@@ -526,7 +526,7 @@ vmmin(int n0, double *b, double *Fmin, optimfn fminfn, optimgr fmingr,
 
     if (nREPORT <= 0)
 	error(_("REPORT must be > 0 (method = \"BFGS\")"));
-    l = reinterpret_cast<int *>(R_alloc(n0, sizeof(int)));
+    l = reinterpret_cast<int *>( R_alloc(n0, sizeof(int)));
     n = 0;
     for (i = 0; i < n0; i++) if (mask[i]) l[n++] = i;
     g = vect(n0);
@@ -1052,8 +1052,8 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
     *fail = 0;
     g = vect(n);
     /* this needs to be zeroed for snd in mainlb to be zeroed */
-    wa = reinterpret_cast<double *>(S_alloc(2*m*n+4*n+11*m*m+8*m, sizeof(double)));
-    iwa = reinterpret_cast<int *>(R_alloc(3*n, sizeof(int)));
+    wa = reinterpret_cast<double *>( S_alloc(2*m*n+4*n+11*m*m+8*m, sizeof(double)));
+    iwa = reinterpret_cast<int *>( R_alloc(3*n, sizeof(int)));
     strcpy(task, "START");
     while(1) {
 	/* Main workhorse setulb() from ../appl/lbfgsb.c : */
@@ -1098,7 +1098,6 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
 
 
 #define E1 1.7182818  /* exp(1.0)-1.0 */
-#define STEPS 100
 
 void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
 	   int tmax, double ti, int trace, void *ex)
@@ -1117,6 +1116,10 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
     double t, y, dy, ytry, scale;
     double *p, *dp, *ptry;
 
+    /* Above have: if(trace != 0) trace := REPORT control argument = STEPS */
+    if (trace < 0)
+	error(_("trace, REPORT must be >= 0 (method = \"SANN\")"));
+
     if(n == 0) { /* don't even attempt to optimize */
 	*yb = fminfn(n, pb, ex);
 	return;
@@ -1127,8 +1130,7 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
     if (!R_FINITE(*yb)) *yb = big;
     for (j = 0; j < n; j++) p[j] = pb[j];
     y = *yb;  /* init system state p, y */
-    if (trace)
-    {
+    if (trace) {
 	Rprintf ("sann objective function values\n");
 	Rprintf ("initial       value %f\n", *yb);
     }
@@ -1154,12 +1156,11 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
 	    }
 	    its++; k++;
 	}
-	if ((trace) && ((itdoc % STEPS) == 0))
+	if (trace && ((itdoc % trace) == 0))
 	    Rprintf("iter %8d value %f\n", its - 1, *yb);
 	itdoc++;
     }
-    if (trace)
-    {
+    if (trace) {
 	Rprintf ("final         value %f\n", *yb);
 	Rprintf ("sann stopped after %d iterations\n", its - 1);
     }
@@ -1167,4 +1168,3 @@ void samin(int n, double *pb, double *yb, optimfn fminfn, int maxit,
 }
 
 #undef E1
-#undef STEPS

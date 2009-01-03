@@ -35,13 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8>
-   char here is mainly either ASCII or handled as a whole.
-   isBlankString has been improved.
-   do_basename and do_dirname now work in chars.
-*/
-
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -65,7 +58,6 @@ static void R_wfixslash(wchar_t *s);
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 void F77_SYMBOL(rwarnc)(char *msg, int *nchar);
 void F77_SYMBOL(rexitc)(char *msg, int *nchar);
 
@@ -141,7 +133,7 @@ const static char * const truenames[] = {
     "True",
     "TRUE",
     "true",
-    0,
+    CXXRNOCAST(char *) NULL,
 };
 
 const static char * const falsenames[] = {
@@ -149,7 +141,7 @@ const static char * const falsenames[] = {
     "False",
     "FALSE",
     "false",
-    0,
+    CXXRNOCAST(char *) NULL,
 };
 
 SEXP asChar(SEXP x)
@@ -253,7 +245,7 @@ SEXPTYPE str2type(const char *s)
 	if (!strcmp(s, TypeTable[i].str))
 	    return TypeTable[i].type;
     }
-    return SEXPTYPE(-1);
+    return SEXPTYPE( -1);
 }
 
 
@@ -289,7 +281,7 @@ SEXP type2symbol(SEXPTYPE t)
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
 	if (TypeTable[i].type == int(t))
-	    return install(TypeTable[i].str);
+	    return install(CXXRNOCAST(char *) TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
     return R_NilValue; /* for -Wall */
@@ -343,26 +335,26 @@ size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc)
     if (out == NULL || int(wc_len) < 0) return wc_len;
 
     if (reinterpret_cast<void*>(-1) == (cd = Riconv_open(UCS2ENC, (enc == CE_UTF8) ? "UTF-8": "")))
-	return size_t(-1);
+	return size_t( -1);
 
-    i_buf = in;
+    i_buf = CXXRNOCAST(char *)in;
     i_len = strlen(in); /* not including terminator */
-    o_buf = reinterpret_cast<char*>(out);
+    o_buf = reinterpret_cast<char *>(out);
     o_len = nout * sizeof(ucs2_t);
-    status = Riconv(cd, &i_buf, &i_len, &o_buf, &o_len);
+    status = Riconv(cd, &i_buf, CXXRNOCAST(size_t *)&i_len, &o_buf, CXXRNOCAST(size_t *)&o_len);
 
     Riconv_close(cd);
     if (status == size_t(-1)) {
 	switch(errno){
 	case EINVAL:
-            return size_t(-2);
+	    return size_t( -2);
 	case EILSEQ:
-            return size_t(-1);
+	    return size_t( -1);
 	case E2BIG:
 	    break;
 	default:
 	    errno = EILSEQ;
-	    return size_t(-1);
+	    return size_t( -1);
 	}
     }
     return wc_len; /* status would be better? */
@@ -586,8 +578,8 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
-    ix = reinterpret_cast<int*>(R_alloc(nx, sizeof(int)));
-    iy = reinterpret_cast<int*>(R_alloc(ny, sizeof(int)));
+    ix = reinterpret_cast<int *>( R_alloc(nx, sizeof(int)));
+    iy = reinterpret_cast<int *>( R_alloc(ny, sizeof(int)));
     for(i = 0; i < nx; i++) ix[i] = i+1;
     for(i = 0; i < ny; i++) iy[i] = i+1;
     isort_with_index(INTEGER(xi), ix, nx);
@@ -924,7 +916,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
     for(i = 0; i < len; i++) {
 	s = STRING_ELT(x, i);
 	if(na || s != NA_STRING)
-	    SET_STRING_ELT(ans, i, mkChar(EncodeString(s, w, quote, Rprt_adj(justify))));
+	    SET_STRING_ELT(ans, i, mkChar(EncodeString(s, w, quote, Rprt_adj( justify))));
     }
     UNPROTECT(1);
     return ans;
@@ -934,7 +926,7 @@ SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
     int i, n;
-    const char *tmp;
+    CXXRconst char *tmp;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -955,7 +947,7 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, enc, tmp;
     int i, m, n;
-    const char *str;
+    const char *thiss;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -970,15 +962,15 @@ SEXP attribute_hidden do_setencoding(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = LENGTH(x);
     for(i = 0; i < n; i++) {
 	cetype_t ienc = CE_NATIVE;
-	str = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
-	if(streql(str, "latin1")) ienc = CE_LATIN1;
-	else if(streql(str, "UTF-8")) ienc = CE_UTF8;
+	thiss = CHAR(STRING_ELT(enc, i % m)); /* ASCII */
+	if(streql(thiss, "latin1")) ienc = CE_LATIN1;
+	else if(streql(thiss, "UTF-8")) ienc = CE_UTF8;
 	tmp = STRING_ELT(x, i);
 	if(tmp == NA_STRING) continue;
 	if (! ((ienc == CE_LATIN1 && IS_LATIN1(tmp)) ||
 	       (ienc == CE_UTF8 && IS_UTF8(tmp)) ||
 	       (ienc == CE_NATIVE && ! IS_LATIN1(tmp) && ! IS_UTF8(tmp))))
-	    SET_STRING_ELT(x, i, mkCharCE(CHAR(tmp), ienc));
+	    SET_STRING_ELT(x, i, mkCharLenCE(CHAR(tmp), LENGTH(tmp), ienc));
     }
     UNPROTECT(1);
     return x;
@@ -1028,22 +1020,22 @@ utf8toucs(wchar_t *wc, const char *s)
     w = wc ? wc: &local;
 
     if (byte == 0) {
-	*w = wchar_t(0);
+	*w = wchar_t( 0);
 	return 0;
     } else if (byte < 0xC0) {
-	*w = wchar_t(byte);
+	*w = wchar_t( byte);
 	return 1;
     } else if (byte < 0xE0) {
 	if(strlen(s) < 2) return size_t(-2);
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = wchar_t(((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = wchar_t (((byte & 0x1F) << 6) | (s[1] & 0x3F));
 	    return 2;
 	} else return size_t(-1);
     } else if (byte < 0xF0) {
 	if(strlen(s) < 3) return size_t(-2);
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-	    *w = wchar_t(((byte & 0x0F) << 12)
-			 | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
+	    *w = wchar_t (((byte & 0x0F) << 12)
+			  | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    /* Surrogates range */
 	    if(byte >= 0xD800 && byte <= 0xDFFF) return size_t(-1);
@@ -1055,27 +1047,27 @@ utf8toucs(wchar_t *wc, const char *s)
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
 	if(strlen(s) < 4) return size_t(-2);
-	*w = wchar_t(((byte & 0x0F) << 18)
-		     | ((s[1] & 0x3F) << 12)
-		     | ((s[2] & 0x3F) << 6)
-		     | (s[3] & 0x3F));
+	*w = wchar_t (((byte & 0x0F) << 18)
+		      | ((s[1] & 0x3F) << 12)
+		      | ((s[2] & 0x3F) << 6)
+		      | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
 	if(strlen(s) < 5) return size_t(-2);
-	*w = wchar_t(((byte & 0x0F) << 24)
-		     | ((s[1] & 0x3F) << 12)
-		     | ((s[2] & 0x3F) << 12)
-		     | ((s[3] & 0x3F) << 6)
-		     | (s[4] & 0x3F));
+	*w = wchar_t (((byte & 0x0F) << 24)
+		      | ((s[1] & 0x3F) << 12)
+		      | ((s[2] & 0x3F) << 12)
+		      | ((s[3] & 0x3F) << 6)
+		      | (s[4] & 0x3F));
 	return 5;
     } else {
 	if(strlen(s) < 6) return size_t(-2);
-	*w = wchar_t(((byte & 0x0F) << 30)
-		     | ((s[1] & 0x3F) << 24)
-		     | ((s[2] & 0x3F) << 18)
-		     | ((s[3] & 0x3F) << 12)
-		     | ((s[4] & 0x3F) << 6)
-		     | (s[5] & 0x3F));
+	*w = wchar_t (((byte & 0x0F) << 30)
+		      | ((s[1] & 0x3F) << 24)
+		      | ((s[2] & 0x3F) << 18)
+		      | ((s[3] & 0x3F) << 12)
+		      | ((s[4] & 0x3F) << 6)
+		      | (s[5] & 0x3F));
 	return 6;
     }
 }
@@ -1153,6 +1145,7 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
     return res;
 }
 
+
 /* A version that reports failure as an error */
 size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 {
@@ -1160,7 +1153,9 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 
     if(n <= 0 || !*s) return size_t(0);
     used = mbrtowc(wc, s, n, ps);
-    if(int(used) < 0) {
+    if(int( used) < 0) {
+	/* This gets called from the menu setup in RGui */
+	if (!R_Is_Running) return -1;
 	/* let's try to print out a readable version */
 	char *err = static_cast<char*>(alloca(4*strlen(s) + 1)), *q;
 	const char *p;
@@ -1169,7 +1164,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	    /* don't do the first to keep ps state straight */
 	    if(p > s) used = mbrtowc(NULL, p, n, ps);
 	    if(used == 0) break;
-	    else if(int(used) > 0) {
+	    else if(int( used) > 0) {
 		memcpy(q, p, used);
 		p += used;
 		q += used;
@@ -1196,10 +1191,10 @@ Rboolean mbcsValid(const char *str)
 void mbcsToLatin1(const char *in, char *out)
 {
     wchar_t *wbuff;
-    unsigned int i;
+    CXXRunsigned int i;
     size_t res = mbstowcs(NULL, in, 0), mres;
 
-    if(res == size_t(-1)) {
+    if(res == size_t((-1))) {
 	/* let's try to print out a readable version */
 	size_t used, n = strlen(in);
 	char *err = alloca(4*n + 1), *q;
@@ -1225,7 +1220,7 @@ void mbcsToLatin1(const char *in, char *out)
 	*out = '\0';
 	return;
     }
-    wbuff = static_cast<wchar_t*>(alloca((res+1) * sizeof(wchar_t)));
+    wbuff = static_cast<wchar_t *>( alloca((res+1) * sizeof(wchar_t)));
     R_CheckStack();
     if(!wbuff) error(_("allocation failure in '%s'"), "mbcsToLatin1");
     mres = mbstowcs(wbuff, in, res+1);
@@ -1234,7 +1229,7 @@ void mbcsToLatin1(const char *in, char *out)
     for(i = 0; i < res; i++) {
 	/* here we do assume Unicode wchars */
 	if(wbuff[i] > 0xFF) out[i] = '.';
-	else out[i] = char(wbuff[i]);
+	else out[i] = char( wbuff[i]);
     }
     out[res] = '\0';
 }
@@ -1243,7 +1238,7 @@ void mbcsToLatin1(const char *in, char *out)
 /* MBCS-aware versions of common comparisons.  Only used for ASCII c */
 char *Rf_strchr(const char *s, int c)
 {
-    char *p = const_cast<char*>(s);
+    char *p = const_cast<char *>(s);
     mbstate_t mb_st;
     int used;
 
@@ -1253,12 +1248,12 @@ char *Rf_strchr(const char *s, int c)
 	if(*p == c) return p;
 	p += used;
     }
-    return NULL;
+    return CXXRNOCAST(char *)NULL;
 }
 
 char *Rf_strrchr(const char *s, int c)
 {
-    char *p = const_cast<char*>(s), *plast = NULL;
+    char *p = const_cast<char *>(s), *plast = NULL;
     mbstate_t mb_st;
     int used;
 
@@ -1389,52 +1384,6 @@ char *acopy_string(const char *in)
 }
 
 
-/* FIXME: consider inlining here */
-#ifdef Win32
-
-static int Rstrcoll(const char *s1, const char *s2)
-{
-    wchar_t *w1, *w2;
-    w1 = (wchar_t *) alloca((strlen(s1)+1)*sizeof(wchar_t));
-    w2 = (wchar_t *) alloca((strlen(s2)+1)*sizeof(wchar_t));
-    R_CheckStack();
-    utf8towcs(w1, s1, strlen(s1));
-    utf8towcs(w2, s2, strlen(s2));
-    return wcscoll(w1, w2);
-}
-
-int Scollate(SEXP a, SEXP b)
-{
-    if(getCharCE(a) == CE_UTF8 || getCharCE(b) == CE_UTF8)
-	return Rstrcoll(translateCharUTF8(a), translateCharUTF8(b));
-    else
-	return strcoll(translateChar(a), translateChar(b));
-}
-
-int Seql(SEXP a, SEXP b)
-{
-    return (a == b) || !strcmp(translateCharUTF8(a), translateCharUTF8(b));
-}
-
-#else
-
-# ifdef HAVE_STRCOLL
-#  define STRCOLL strcoll
-# else
-#  define STRCOLL strcmp
-# endif
-
-int Scollate(SEXP a, SEXP b)
-{
-    return STRCOLL(translateChar(a), translateChar(b));
-}
-
-int Seql(SEXP a, SEXP b)
-{
-    return (a == b) || !strcmp(translateChar(a), translateChar(b));
-}
-
-#endif
 
 
 /* Table from
@@ -1506,7 +1455,7 @@ int attribute_hidden Rf_AdobeSymbol2ucs2(int n)
 double R_strtod4(const char *str, char **endptr, char dec, Rboolean NA)
 {
     LDOUBLE ans = 0.0, p10 = 10.0, fac = 1.0;
-    int n, expn = 0, sign = 1, ndigits = 0;
+    int n, expn = 0, sign = 1, ndigits = 0, exph = -1;
     const char *p = str;
 
     /* optional whitespace */
@@ -1546,7 +1495,9 @@ double R_strtod4(const char *str, char **endptr, char dec, Rboolean NA)
 	    if('0' <= *p && *p <= '9') ans = 16*ans + (*p -'0');
 	    else if('a' <= *p && *p <= 'f') ans = 16*ans + (*p -'a' + 10);
 	    else if('A' <= *p && *p <= 'F') ans = 16*ans + (*p -'A' + 10);
+	    else if(*p == dec) {exph = 0; continue;}
 	    else break;
+	    if (exph >= 0) exph += 4;
 	}
 	if (*p == 'p' || *p == 'P') {
 	    int expsign = 1;
@@ -1558,6 +1509,7 @@ double R_strtod4(const char *str, char **endptr, char dec, Rboolean NA)
 	    }
 	    for (n = 0; *p >= '0' && *p <= '9'; p++) n = n * 10 + (*p - '0');
 	    expn += expsign * n;
+	    if(exph > 0) expn -= exph;
 	    if (expn < 0) {
 		for (n = -expn, fac = 1.0; n; n >>= 1, p2 *= p2)
 		    if (n & 1) fac *= p2;
@@ -1629,3 +1581,155 @@ double R_atof(const char *str)
 }
 } // extern "C"
 
+#ifdef USE_ICU
+#include <unicode/utypes.h>
+#include <unicode/ucol.h>
+#include <unicode/uloc.h>
+#include <unicode/uiter.h>
+
+static UCollator *collator = NULL;
+
+static const struct {
+    const char * const str;
+    int val;
+} ATtable[] = {
+    { "case_first", UCOL_CASE_FIRST },
+    { "upper", UCOL_UPPER_FIRST },
+    { "lower", UCOL_LOWER_FIRST },
+    { "default ", UCOL_DEFAULT },
+    { "strength", 999 },
+    { "primary ", UCOL_PRIMARY },
+    { "secondary ", UCOL_SECONDARY },
+    { "teritary ", UCOL_TERTIARY },
+    { "guaternary ", UCOL_QUATERNARY },
+    { "identical ", UCOL_IDENTICAL },
+    { "french_collation", UCOL_FRENCH_COLLATION },
+    { "on", UCOL_ON },
+    { "off", UCOL_OFF },
+    { "normalization", UCOL_NORMALIZATION_MODE },
+    { "alternate_handling", UCOL_ALTERNATE_HANDLING },
+    { "non_ignorable", UCOL_NON_IGNORABLE },
+    { "shifted", UCOL_SHIFTED },
+    { "case_level", UCOL_CASE_LEVEL },
+    { "hiragana_quaternary", UCOL_HIRAGANA_QUATERNARY_MODE },
+    { NULL,  0 }
+};
+    
+
+SEXP do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x;
+    UErrorCode  status = U_ZERO_ERROR;
+    
+    for (; args != R_NilValue; args = CDR(args)) {
+	const char *this = CHAR(PRINTNAME(TAG(args)));
+	const char *s;
+
+	x = CAR(args);
+	if (!isString(x) || LENGTH(x) != 1)
+	    error(_("invalid argument"));
+	s = CHAR(STRING_ELT(x, 0));
+	if (streql(this, "locale")) {
+	    if (collator) ucol_close(collator);
+	    uloc_setDefault(s, &status);
+	    if(U_FAILURE(status))
+		error("failed to set ICU locale");
+	    collator = ucol_open(NULL, &status);
+	    if (U_FAILURE(status)) error("failed to open ICU collator");
+	} else {
+	    int i, at = -1, val = -1;
+	    for (i = 0; ATtable[i].str; i++)
+		if (streql(this, ATtable[i].str)) {
+		    at = ATtable[i].val;
+		    break;
+		}
+	    for (i = 0; ATtable[i].str; i++)
+		if (streql(s, ATtable[i].str)) {
+		    val = ATtable[i].val;
+		    break;
+		}
+	    if (collator && at == 999 && val >= 0) {
+		ucol_setStrength(collator, val);
+	    } else if (collator && at >= 0 && val >= 0) {
+		ucol_setAttribute(collator, at, val, &status);
+		if (U_FAILURE(status)) 
+		    error("failed to set ICU collator attribute");
+	    }
+	}
+    }
+
+    return R_NilValue;
+}
+
+
+/* NB: strings can have equal collation weight without being identical */
+int Scollate(SEXP a, SEXP b)
+{
+    int result = 0;
+    UErrorCode  status = U_ZERO_ERROR;
+    UCharIterator aIter, bIter;
+    const char *as = translateCharUTF8(a), *bs = translateCharUTF8(b);
+    size_t len1 = strlen(as), len2 = strlen(bs);
+
+    if (collator == NULL && strcmp("C", setlocale(LC_COLLATE, NULL)) ) {
+	/* do better later */
+	uloc_setDefault(setlocale(LC_COLLATE, NULL), &status);
+	if(U_FAILURE(status))
+	    error("failed to set ICU locale");
+	collator = ucol_open(NULL, &status);
+	if (U_FAILURE(status)) error("failed to open ICU collator");
+    }
+    if (collator == NULL)
+	return strcoll(translateChar(a), translateChar(b));
+    
+    uiter_setUTF8(&aIter, as, len1);
+    uiter_setUTF8(&bIter, bs, len2);
+    result = ucol_strcollIter(collator, &aIter, &bIter, &status);   
+    if (U_FAILURE(status)) error("could not collate");
+    return result;
+}
+
+#else /* not USE_ICU */
+
+SEXP do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    warning(_("ICU is not supported on this build"));
+    return R_NilValue;
+}
+
+# ifdef Win32
+
+static int Rstrcoll(const char *s1, const char *s2)
+{
+    wchar_t *w1, *w2;
+    w1 = (wchar_t *) alloca((strlen(s1)+1)*sizeof(wchar_t));
+    w2 = (wchar_t *) alloca((strlen(s2)+1)*sizeof(wchar_t));
+    R_CheckStack();
+    utf8towcs(w1, s1, strlen(s1));
+    utf8towcs(w2, s2, strlen(s2));
+    return wcscoll(w1, w2);
+}
+
+int Scollate(SEXP a, SEXP b)
+{
+    if(getCharCE(a) == CE_UTF8 || getCharCE(b) == CE_UTF8)
+	return Rstrcoll(translateCharUTF8(a), translateCharUTF8(b));
+    else
+	return strcoll(translateChar(a), translateChar(b));
+}
+
+# else
+
+#  ifdef HAVE_STRCOLL
+#   define STRCOLL strcoll
+#  else
+#   define STRCOLL strcmp
+#  endif
+
+int Scollate(SEXP a, SEXP b)
+{
+    return STRCOLL(translateChar(a), translateChar(b));
+}
+
+# endif
+#endif

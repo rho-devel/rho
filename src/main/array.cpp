@@ -35,8 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> Only ASCII values */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -170,7 +168,8 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ;
 	}
     }
-    if(!isNull(dimnames)) ans = dimnamesgets(ans, dimnames);
+    if(!isNull(dimnames)&& length(dimnames) > 0) 
+	ans = dimnamesgets(ans, dimnames);
     UNPROTECT(1);
     return ans;
 }
@@ -424,7 +423,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    const char *transa = "N", *transb = "N";
+    CXXRconst char *transa = "N", *transb = "N";
     int i,  j, k;
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
@@ -458,7 +457,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    const char *transa = "N", *transb = "N";
+    CXXRconst char *transa = "N", *transb = "N";
     int i;
     Rcomplex one, zero;
 
@@ -501,7 +500,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    const char *trans = "T", *uplo = "U";
+    CXXRconst char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -517,7 +516,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    const char *transa = "T", *transb = "N";
+    CXXRconst char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -531,7 +530,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    const char *transa = "T", *transb = "N";
+    CXXRconst char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -546,7 +545,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    const char *trans = "N", *uplo = "U";
+    CXXRconst char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -562,7 +561,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    const char *transa = "N", *transb = "T";
+    CXXRconst char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -576,7 +575,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    const char *transa = "N", *transb = "T";
+    CXXRconst char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -1022,7 +1021,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* check the permutation */
 
     PROTECT(perm = coerceVector(CADR(args), INTSXP));
-    pp = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
+    pp = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
     if (length(perm) == 0) {
 	for (i=0; i<n; i++)
 	    pp[i] = n-1-i;
@@ -1032,7 +1031,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else
 	error(_("'perm' is of wrong length"));
 
-    iip = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
+    iip = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
     for (i = 0; i < n; iip[i++] = 0);
     for (i = 0; i < n; i++)
 	if (pp[i] >= 0 && pp[i] < n)
@@ -1045,7 +1044,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* create the stride object and permute */
 
-    stride = reinterpret_cast<int *>(R_alloc(n, sizeof(int)));
+    stride = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
 
     for (iip[0] = 1, i = 1; i<n; i++)
 	iip[i] = iip[i-1] * INTEGER(dimsa)[i-1];
@@ -1237,7 +1236,7 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int *Cnt = NULL, *c;
 	    LDOUBLE *rans, *ra;
 	    if(n <= 10000) {
-		rans = static_cast<LDOUBLE *>(alloca(n * sizeof(LDOUBLE)));
+		rans = static_cast<LDOUBLE *>( alloca(n * sizeof(LDOUBLE)));
 		R_CheckStack();
 		memset(rans, 0, n*sizeof(LDOUBLE));
 	    } else rans = Calloc(n, LDOUBLE);

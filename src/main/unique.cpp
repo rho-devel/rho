@@ -35,10 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole or as
-   a leading portion for partial matching
-*/
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -93,7 +89,7 @@ static int ihash(SEXP x, int indx, HashData *d)
 {
     if (INTEGER(x)[indx] == NA_INTEGER)
 	return 0;
-    return scatter(static_cast<unsigned int>(INTEGER(x)[indx]), d);
+    return scatter(static_cast<unsigned int>( (INTEGER(x)[indx])), d);
 }
 
 /* We use unions here because Solaris gcc -O2 has trouble with
@@ -208,11 +204,10 @@ static int sequal(SEXP x, int i, SEXP y, int j)
        so avoid looking at the contents */
     if (STRING_ELT(x, i) == STRING_ELT(y, j)) return 1;
     /* Then if either is NA the other cannot be */
+    /* Once all CHARSXPs are cached, Seql will handle this */
     if (STRING_ELT(x, i) == NA_STRING || STRING_ELT(y, j) == NA_STRING)
 	return 0;
-    /* Finally look at the contents if necessary */
-    return !strcmp(translateChar(STRING_ELT(x, i)),
-		   translateChar(STRING_ELT(y, j)));
+    return Seql(STRING_ELT(x, i), STRING_ELT(y, j));
 }
 
 static int rawhash(SEXP x, int indx, HashData *d)
@@ -377,14 +372,14 @@ static int isDuplicated(SEXP x, int indx, HashData *d)
     return 0;
 }
 
-static void removeEntry(SEXP x, int indx, HashData *d)
+static void removeEntry(SEXP table, SEXP x, int indx, HashData *d)
 {
     int i, *h;
 
     h = INTEGER(d->HashTable);
     i = d->hash(x, indx, d);
     while (h[i] != NIL) {
-	if (d->equal(x, h[i], x, indx)) {
+	if (d->equal(table, h[i], x, indx)) {
 	    h[i] = NA_INTEGER;  /* < 0, only index values are inserted */
 	    return;
 	}
@@ -561,13 +556,13 @@ static void DoHashing(SEXP table, HashData *d)
 }
 
 /* invalidate entries */
-static void UndoHashing(SEXP table, HashData *d)
+static void UndoHashing(SEXP x, SEXP table, HashData *d)
 {
     int *h, i, n;
 
-    n = LENGTH(table);
+    n = LENGTH(x);
     h = INTEGER(d->HashTable);
-    for (i = 0; i < n; i++) removeEntry(table, i, d);
+    for (i = 0; i < n; i++) removeEntry(table, x, i, d);
 }
 
 static int Lookup(SEXP table, SEXP x, int indx, HashData *d)
@@ -660,7 +655,7 @@ SEXP match4(SEXP itable, SEXP ix, int nmatch, SEXP incomp)
     HashTableSetup(table, &data);
     PROTECT(data.HashTable);
     DoHashing(table, &data);
-    UndoHashing(incomp, &data);
+    UndoHashing(incomp, itable, &data);
     ans = HashLookup(table, x, &data);
     UNPROTECT(4);
     return ans;
@@ -1313,7 +1308,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	buf = static_cast<char*>( alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
+	buf = static_cast<char *>( alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
 	if(n < 10000) {
 	    cnts = static_cast<int *>( alloca(n * sizeof(int)));
 	} else {

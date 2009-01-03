@@ -141,10 +141,10 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 	    if (0 <= ii && ii < nx && ii != NA_INTEGER)
 		RAW(result)[i] = RAW(x)[ii];
 	    else
-		RAW(result)[i] = Rbyte(0);
+		RAW(result)[i] = Rbyte( 0);
 	    break;
 	default:
-	    errorcall(call, R_MSG_ob_nonsub);
+	    errorcall(call, R_MSG_ob_nonsub, type2char(SEXPTYPE(mode)));
 	}
     }
     return result;
@@ -191,28 +191,34 @@ static SEXP VectorSubset(SEXP x, SEXP s, SEXP call)
 	SET_NAMED(result, 2);
 
     PROTECT(result = ExtractSubset(x, result, indx, call));
-    if (result != R_NilValue &&
-	(
-	 ((attrib = getAttrib(x, R_NamesSymbol)) != R_NilValue) ||
-	 ( /* here we might have an array.  Use row names if 1D */
-	  isArray(x)
-	  && (attrib = getAttrib(x, R_DimNamesSymbol)) != R_NilValue
-	  && LENGTH(attrib) == 1
-	  && (attrib = GetRowNames(attrib)) != R_NilValue
-	  )
-	 )) {
-	nattrib = allocVector(TYPEOF(attrib), n);
-	PROTECT(nattrib); /* seems unneeded */
-	nattrib = ExtractSubset(attrib, nattrib, indx, call);
-	setAttrib(result, R_NamesSymbol, nattrib);
-	UNPROTECT(1);
-    }
-    if (result != R_NilValue && (attrib = getAttrib(x, R_SrcrefSymbol)) != R_NilValue) {
-	nattrib = allocVector(VECSXP, n);
-	PROTECT(nattrib); /* seems unneeded */
-	nattrib = ExtractSubset(attrib, nattrib, indx, call);
-	setAttrib(result, R_SrcrefSymbol, nattrib);
-	UNPROTECT(1);
+    if (result != R_NilValue) {
+	if (
+	    ((attrib = getAttrib(x, R_NamesSymbol)) != R_NilValue) ||
+	    ( /* here we might have an array.  Use row names if 1D */
+	     isArray(x)
+	     && (attrib = getAttrib(x, R_DimNamesSymbol)) != R_NilValue
+	     && LENGTH(attrib) == 1
+	     && (attrib = GetRowNames(attrib)) != R_NilValue
+	     )
+	    ) {
+	    nattrib = allocVector(TYPEOF(attrib), n);
+	    PROTECT(nattrib); /* seems unneeded */
+	    nattrib = ExtractSubset(attrib, nattrib, indx, call);
+	    setAttrib(result, R_NamesSymbol, nattrib);
+	    UNPROTECT(1);
+	}
+	if ((attrib = getAttrib(x, R_SrcrefSymbol)) != R_NilValue &&
+	    TYPEOF(attrib) == VECSXP) {
+	    nattrib = allocVector(VECSXP, n);
+	    PROTECT(nattrib); /* seems unneeded */
+	    nattrib = ExtractSubset(attrib, nattrib, indx, call);
+	    setAttrib(result, R_SrcrefSymbol, nattrib);
+	    UNPROTECT(1);
+	}
+	if(IS_S4_OBJECT(x)) { /* e.g. contains = "list" */
+	    setAttrib(result, R_ClassSymbol, getAttrib(x, R_ClassSymbol));
+	    SET_S4_OBJECT(result);
+	}
     }
     UNPROTECT(3);
     return result;
@@ -277,7 +283,7 @@ static SEXP MatrixSubset(SEXP x, SEXP s, SEXP call, int drop)
 		    SET_VECTOR_ELT(result, ij, R_NilValue);
 		    break;
 		case RAWSXP:
-		    RAW(result)[ij] = Rbyte(0);
+		    RAW(result)[ij] = Rbyte( 0);
 		    break;
 		default:
 		    errorcall(call, _("matrix subscripting not handled for this type"));
@@ -464,7 +470,7 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
 	    if (ii != NA_INTEGER)
 		RAW(result)[i] = RAW(x)[ii];
 	    else
-		RAW(result)[i] = Rbyte(0);
+		RAW(result)[i] = Rbyte( 0);
 	    break;
 	default:
 	    errorcall(call, _("array subscripting not handled for this type"));
@@ -687,7 +693,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	for(px = x, i = 0 ; px != R_NilValue ; px = CDR(px))
 	    SET_VECTOR_ELT(ax, i++, CAR(px));
     }
-    else errorcall(call, R_MSG_ob_nonsub);
+    else errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
 
     /* This is the actual subsetting code. */
     /* The separation of arrays and matrices is purely an optimization. */
@@ -695,7 +701,8 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(nsubs < 2) {
 	SEXP dim = getAttrib(x, R_DimSymbol);
 	int ndim = length(dim);
-	ans = VectorSubset(ax, (nsubs == 1 ? CAR(subs) : R_MissingArg), call);
+	PROTECT(ans = VectorSubset(ax, (nsubs == 1 ? CAR(subs) : R_MissingArg),
+				   call));
 	/* one-dimensional arrays went through here, and they should
 	   have their dimensions dropped only if the result has
 	   length one and drop == TRUE
@@ -705,7 +712,6 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int len = length(ans);
 
 	    if(!drop || len > 1) {
-		PROTECT(ans);
 		PROTECT(attr = allocVector(INTSXP, 1));
 		INTEGER(attr)[0] = length(ans);
 		setAttrib(ans, R_DimSymbol, attr);
@@ -719,7 +725,6 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    setAttrib(ans, R_NamesSymbol, R_NilValue);
 		    UNPROTECT(1);
 		}
-		UNPROTECT(1);
 	    }
 	}
     } else {
@@ -729,8 +734,8 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ans = MatrixSubset(ax, subs, call, drop);
 	else
 	    ans = ArraySubset(ax, subs, call, drop);
+	PROTECT(ans);
     }
-    PROTECT(ans);
 
     /* Note: we do not coerce back to pair-based lists. */
     /* They are "defunct" in this version of R. */
@@ -763,7 +768,8 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (ATTRIB(ans) != R_NilValue) {
 	setAttrib(ans, R_TspSymbol, R_NilValue);
-	setAttrib(ans, R_ClassSymbol, R_NilValue);
+	if(!IS_S4_OBJECT(x))
+	    setAttrib(ans, R_ClassSymbol, R_NilValue);
     }
     UNPROTECT(4);
     return ans;
@@ -851,7 +857,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* back to the regular program */
     if (!(isVector(x) || isList(x) || isLanguage(x)))
-	errorcall(call, R_MSG_ob_nonsub);
+	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
 
     if(nsubs == 1) { /* vector indexing */
 	SEXP thesub = CAR(subs);
@@ -1162,6 +1168,8 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
     else if( IS_S4_OBJECT(x) ){
 	errorcall(call, "$ operator not defined for this S4 class");
     }
+    else /* e.g. a function */
+	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
     UNPROTECT(2);
     return R_NilValue;
 }

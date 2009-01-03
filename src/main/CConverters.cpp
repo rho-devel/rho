@@ -35,7 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -73,7 +72,7 @@ Rf_convertToC(SEXP s, R_CConvertInfo *info, int *success,
     }
 
     *success = 0;
-    return  NULL;
+    return(CXXRNOCAST(void*) NULL);
 }
 
 
@@ -90,7 +89,7 @@ R_toCConverter
     R_toCConverter *tmp = StoCConverters;
     R_toCConverter *el;
     /* Create and populate the new entry. */
-    el = static_cast<R_toCConverter *>(malloc(sizeof(R_toCConverter)));
+    el = static_cast<R_toCConverter *>( malloc(sizeof(R_toCConverter)));
     el->matcher = matcher;
     el->converter = converter;
     el->userData = userData;
@@ -98,7 +97,7 @@ R_toCConverter
     el->active = TRUE;
     if(desc)
 	el->description = strdup(desc);
-    el->next = NULL;
+    el->next = CXXRNOCAST(R_toCConverter*) NULL;
 
     /* Add the entry to the end of the list. */
     if(StoCConverters == NULL)
@@ -127,7 +126,7 @@ R_toCConverter *R_getToCConverterByIndex(int which)
 	tmp = tmp->next;
     }
 
-    return NULL;
+    return(CXXRNOCAST(R_toCConverter*) NULL);
 }
 
 
@@ -144,7 +143,7 @@ R_toCConverter *R_getToCConverterByDescription(const char *desc)
 	tmp = tmp->next;
     }
 
-    return NULL;
+    return(CXXRNOCAST(R_toCConverter*) NULL);
 }
 
 /*

@@ -25,14 +25,14 @@ dim(x) <- value
 
   \code{dim} has a method for \code{\link{data.frame}}s, which returns
   the lengths of the \code{row.names} attribute of \code{x} and
-  of \code{x} (as the numbers of rows and columns respecitvely).
+  of \code{x} (as the numbers of rows and columns respectitvely).
 }
 \value{
   For an array (and hence in particular, for a matrix) \code{dim} retrieves
   the \code{dim} attribute of the object.  It is \code{NULL} or a vector
   of mode \code{\link{integer}}.
 
-  The replacemnt method changes the \code{"dim"} attribute (provided the
+  The replacement method changes the \code{"dim"} attribute (provided the
   new value is compatible) and removes any \code{"dimnames"} \emph{and}
   \code{"names"} attributes.
 }

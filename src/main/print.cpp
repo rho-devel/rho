@@ -73,8 +73,6 @@
  *  </FIXME>
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -150,7 +148,7 @@ SEXP attribute_hidden do_prmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     collab = CAR(a); a = CDR(a);
 
     quote = asInteger(CAR(a)); a = CDR(a);
-    R_print.right = Rprt_adj(asInteger(CAR(a))); a = CDR(a);
+    R_print.right = Rprt_adj( asInteger(CAR(a))); a = CDR(a);
     naprint = CAR(a);
     if(!isNull(naprint))  {
 	if(!isString(naprint) || LENGTH(naprint) < 1)
@@ -217,7 +215,7 @@ SEXP attribute_hidden do_printdefault(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = CDR(args);
 
-    R_print.right = Rprt_adj(asLogical(CAR(args))); /* Should this be asInteger()? */
+    R_print.right = Rprt_adj( asLogical(CAR(args))); /* Should this be asInteger()? */
     if(R_print.right == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "right");
     args = CDR(args);
@@ -590,29 +588,10 @@ static void PrintExpression(SEXP s)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
 }
 
-
 /* PrintValueRec -- recursively print an SEXP
 
  * This is the "dispatching" function for  print.default()
  */
-
-static void PrintEnvir(SEXP rho)
-{
-    if (rho == R_GlobalEnv)
-	Rprintf("<environment: R_GlobalEnv>\n");
-    else if (rho == R_BaseEnv)
-	Rprintf("<environment: base>\n");
-    else if (rho == R_EmptyEnv)
-	Rprintf("<environment: R_EmptyEnv>\n");
-    else if (R_IsPackageEnv(rho))
-	Rprintf("<environment: %s>\n",
-		translateChar(STRING_ELT(R_PackageEnvName(rho), 0)));
-    else if (R_IsNamespaceEnv(rho))
-	Rprintf("<environment: namespace:%s>\n",
-		translateChar(STRING_ELT(R_NamespaceEnvSpec(rho), 0)));
-    else Rprintf("<environment: %p>\n", rho);
-}
-
 void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 {
     int i;
@@ -655,7 +634,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
     case BUILTINSXP:
 	/* This is OK as .Internals are not visible to be printed */
     {
-	const char *nm = PRIMNAME(s);
+	CXXRconst char *nm = PRIMNAME(s);
 	SEXP env, s2;
 	PROTECT_INDEX xp;
 	PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
@@ -701,13 +680,14 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	if (TYPEOF(s) == CLOSXP && isByteCode(BODY(s)))
 	    Rprintf("<bytecode: %p>\n", BODY(s));
 #endif
-	if (TYPEOF(s) == CLOSXP) t = CLOENV(s);
-	else t = R_GlobalEnv;
-	if (t != R_GlobalEnv)
-	    PrintEnvir(t);
+	if (TYPEOF(s) == CLOSXP) {
+	    t = CLOENV(s);
+	    if (t != R_GlobalEnv)
+		Rprintf("%s\n", EncodeEnvironment(t));
+	}
 	break;
     case ENVSXP:
-	PrintEnvir(s);
+	Rprintf("%s\n", EncodeEnvironment(s));
 	break;
     case PROMSXP:
 	Rprintf("<promise: %p>\n", s);
@@ -850,7 +830,22 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		UNPROTECT(1);
 		goto nextattr;
 	    }
-	    if (isObject(CAR(a))) {
+	    if (isMethodsDispatchOn() && IS_S4_OBJECT(CAR(a))) {
+		SEXP s, showS;
+
+		showS = findVar(install("show"), env);
+		if(showS == R_UnboundValue) {
+		    SEXP methodsNS = R_FindNamespace(mkString("methods"));
+		    if(methodsNS == R_UnboundValue)
+			error("missing methods namespace: this should not happen");
+		    showS = findVarInFrame3(methodsNS, install("show"), TRUE);
+		    if(showS == R_UnboundValue)
+			error("missing show() in methods namespace: this should not happen");
+		}
+		PROTECT(s = lang2(showS, CAR(a)));
+		eval(s, env);
+		UNPROTECT(1);
+	    } else if (isObject(CAR(a))) {
 		/* Need to construct a call to
 		   print(CAR(a), digits)
 		   based on the R_print structure, then eval(call, env).
@@ -858,6 +853,8 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 
 		   quote, right, gap should probably be included if
 		   they have non-missing values.
+
+		   This will not dispatch to show() as 'digits' is supplied.
 		*/
 		SEXP s, t, na_string = R_print.na_string,
 		    na_string_noquote = R_print.na_string_noquote;

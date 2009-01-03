@@ -35,11 +35,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8>
-   Looks OK as byte-level comparions are all with ASCII chars.
-   Has own case-insensitive comparisons which we never use (as from R 2.1.0).
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -117,11 +112,7 @@ extract_one(unzFile uf, const char *const dest, const char * const filename,
 	fout = R_fopen(outname, "wb");
 	if (!fout) {
 	    unzCloseCurrentFile(uf);
-#ifdef HAVE_STRERROR
 	    error(_("cannot open file '%s': %s"), outname, strerror(errno));
-#else
-	    error(_("cannot open file '%s'"), outname);
-#endif
 	    return 3;		/* not reached */
 	}
 	while (1) {
@@ -286,7 +277,7 @@ static Rboolean unz_open(Rconnection con)
 	return FALSE;
     }
     unzOpenCurrentFile(uf);
-    reinterpret_cast<Runzconn>(con->connprivate)->uf = uf;
+    (reinterpret_cast<Runzconn>((con->connprivate)))->uf = uf;
     con->isopen = TRUE;
     con->canwrite = FALSE;
     con->canread = TRUE;
@@ -299,7 +290,7 @@ static Rboolean unz_open(Rconnection con)
 
 static void unz_close(Rconnection con)
 {
-    unzFile uf = reinterpret_cast<Runzconn>(con->connprivate)->uf;    
+    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
     unzCloseCurrentFile(uf);
     unzClose(uf);
     con->isopen = FALSE;
@@ -307,7 +298,7 @@ static void unz_close(Rconnection con)
 
 static int unz_fgetc_internal(Rconnection con)
 {
-    unzFile uf = reinterpret_cast<Runzconn>(con->connprivate)->uf;
+    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
     char buf[1];
     int err, p;
 
@@ -319,7 +310,7 @@ static int unz_fgetc_internal(Rconnection con)
 static size_t unz_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    unzFile uf = reinterpret_cast<Runzconn>(con->connprivate)->uf;
+    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
     return unzReadCurrentFile(uf, ptr, size*nitems)/size;
 }
 
@@ -351,15 +342,15 @@ Rconnection attribute_hidden
 R_newunz(const char *description, const char *const mode)
 {
     Rconnection newconn;
-    newconn = static_cast<Rconnection>(malloc(sizeof(struct Rconn)));
+    newconn = static_cast<Rconnection>( malloc(sizeof(struct Rconn)));
     if(!newconn) error(_("allocation of unz connection failed"));
-    newconn->connclass = static_cast<char *>(malloc(strlen("unz") + 1));
+    newconn->connclass = static_cast<char *>( malloc(strlen("unz") + 1));
     if(!newconn->connclass) {
 	free(newconn);
 	error(_("allocation of unz connection failed"));
     }
     strcpy(newconn->connclass, "unz");
-    newconn->description = static_cast<char *>(malloc(strlen(description) + 1));
+    newconn->description = static_cast<char *>( malloc(strlen(description) + 1));
     if(!newconn->description) {
 	free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));
@@ -376,7 +367,7 @@ R_newunz(const char *description, const char *const mode)
     newconn->fflush = &null_fflush;
     newconn->read = &unz_read;
     newconn->write = &null_write;
-    newconn->connprivate = malloc(sizeof(struct fileconn));
+    newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct fileconn));
     if(!newconn->connprivate) {
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));
@@ -523,7 +514,7 @@ unzlocal_getByte(FILE * fin, int *pi)
     int   err = fread(&c, 1, 1, fin);
 
     if (err == 1) {
-	*pi = int(c);
+	*pi = int( c);
 	return UNZ_OK;
     } else {
 	if (ferror(fin))
@@ -544,9 +535,9 @@ unzlocal_getShort(FILE * fin, uLong * pX)
     int   i = 0 /* -Wall */, err;
 
     err = unzlocal_getByte(fin, &i);
-    x = uLong(i);
+    x = uLong( i);
     if (err == UNZ_OK) err = unzlocal_getByte(fin, &i);
-    x += uLong(i) << 8;
+    x += (uLong( i)) << 8;
     if (err == UNZ_OK) *pX = x; else *pX = 0;
     return err;
 }
@@ -558,14 +549,14 @@ unzlocal_getLong(FILE * fin, uLong * pX)
     int   i = 0 /* -Wall */, err;
 
     err = unzlocal_getByte(fin, &i);
-    x = uLong(i);
+    x = uLong( i);
 
     if (err == UNZ_OK) err = unzlocal_getByte(fin, &i);
-    x += uLong(i) << 8;
+    x += (uLong( i)) << 8;
     if (err == UNZ_OK) err = unzlocal_getByte(fin, &i);
-    x += uLong(i) << 16;
+    x += (uLong( i)) << 16;
     if (err == UNZ_OK) err = unzlocal_getByte(fin, &i);
-    x += uLong(i) << 24;
+    x += (uLong( i)) << 24;
     if (err == UNZ_OK) *pX = x; else *pX = 0;
     return err;
 }
@@ -637,7 +628,7 @@ unzlocal_SearchCentralDir(FILE * fin)
     if (fseek(fin, 0, SEEK_END) != 0) return 0;
     uSizeFile = ftell(fin);
     if (uMaxBack > uSizeFile) uMaxBack = uSizeFile;
-    buf = reinterpret_cast<unsigned char *>(ALLOC(BUFREADCOMMENT + 4));
+    buf = reinterpret_cast<unsigned char *>( ALLOC(BUFREADCOMMENT + 4));
     if (buf == NULL) return 0;
     uBackRead = 4;
     while (uBackRead < uMaxBack) {
@@ -652,9 +643,9 @@ unzlocal_SearchCentralDir(FILE * fin)
 	    (BUFREADCOMMENT + 4) : (uSizeFile - uReadPos);
 	if (fseek(fin, uReadPos, SEEK_SET) != 0) break;
 
-	if (fread(buf, uInt(uReadSize), 1, fin) != 1) break;
+	if (fread(buf, uInt( uReadSize), 1, fin) != 1) break;
 
-	for (i = int(uReadSize) - 3; (i--) > 0;)
+	for (i = int( uReadSize) - 3; (i--) > 0;)
 	    if (((*(buf + i)) == 0x50) && ((*(buf + i + 1)) == 0x4b) &&
 		((*(buf + i + 2)) == 0x05) && ((*(buf + i + 3)) == 0x06)) {
 		uPosFound = uReadPos + i;
@@ -741,10 +732,10 @@ unzOpen(const char *path)
     us.central_pos = central_pos;
     us.pfile_in_zip_read = NULL;
 
-    s = reinterpret_cast<unz_s *>(ALLOC(sizeof(unz_s)));
+    s = reinterpret_cast<unz_s *>( ALLOC(sizeof(unz_s)));
     *s = us;
-    unzGoToFirstFile(reinterpret_cast<unzFile>(s));
-    return reinterpret_cast<unzFile>(s);
+    unzGoToFirstFile(reinterpret_cast<unzFile>( s));
+    return reinterpret_cast<unzFile>( s);
 }
 
 /*
@@ -772,7 +763,7 @@ unzClose(unzFile file)
     unz_s *s;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     if (s->pfile_in_zip_read != NULL) unzCloseCurrentFile(file);
     fclose(s->file);
     TRYFREE(s);
@@ -788,7 +779,7 @@ unzlocal_DosDateToTmuDate(uLong ulDosDate, tm_unz * ptm)
     uLong uDate;
 
     uDate = uLong(ulDosDate >> 16);
-    ptm->tm_mday = uInt(uDate & 0x1f);
+    ptm->tm_mday = uInt( (uDate & 0x1f));
     ptm->tm_mon = uInt((((uDate) & 0x1E0) / 0x20) - 1);
     ptm->tm_year = uInt(((uDate & 0x0FE00) / 0x0200) + 1980);
 
@@ -820,7 +811,7 @@ unzlocal_GetCurrentFileInfoInternal(unzFile file,
 
     if (file == NULL)
 	return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     if (fseek(s->file, s->pos_in_central_dir + s->byte_before_the_zipfile,
 	      SEEK_SET) != 0)
 	err = UNZ_ERRNO;
@@ -891,7 +882,7 @@ unzlocal_GetCurrentFileInfoInternal(unzFile file,
 	    uSizeRead = fileNameBufferSize;
 
 	if ((file_info.size_filename > 0) && (fileNameBufferSize > 0))
-	    if (fread(szFileName, uInt(uSizeRead), 1, s->file) != 1)
+	    if (fread(szFileName, uInt( uSizeRead), 1, s->file) != 1)
 		err = UNZ_ERRNO;
 	lSeek -= uSizeRead;
     }
@@ -910,7 +901,7 @@ unzlocal_GetCurrentFileInfoInternal(unzFile file,
 		err = UNZ_ERRNO;
 	}
 	if ((file_info.size_file_extra > 0) && (extraFieldBufferSize > 0))
-	    if (fread(extraField, uInt(uSizeRead), 1, s->file) != 1)
+	    if (fread(extraField, uInt( uSizeRead), 1, s->file) != 1)
 		err = UNZ_ERRNO;
 	lSeek += file_info.size_file_extra - uSizeRead;
     } else
@@ -933,7 +924,7 @@ unzlocal_GetCurrentFileInfoInternal(unzFile file,
 		err = UNZ_ERRNO;
 	}
 	if ((file_info.size_file_comment > 0) && (commentBufferSize > 0))
-	    if (fread(szComment, uInt(uSizeRead), 1, s->file) != 1)
+	    if (fread(szComment, uInt( uSizeRead), 1, s->file) != 1)
 		err = UNZ_ERRNO;
 	lSeek += file_info.size_file_comment - uSizeRead;
     } else
@@ -980,7 +971,7 @@ unzGoToFirstFile(unzFile file)
     unz_s *s;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     s->pos_in_central_dir = s->offset_central_dir;
     s->num_file = 0;
     err = unzlocal_GetCurrentFileInfoInternal(file, &s->cur_file_info,
@@ -1003,7 +994,7 @@ unzGoToNextFile(unzFile file)
     int   err;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     if (!s->current_file_ok)
 	return UNZ_END_OF_LIST_OF_FILE;
     if (s->num_file + 1 == s->gi.number_entry)
@@ -1043,7 +1034,7 @@ unzLocateFile(unzFile file, const char *szFileName, int iCaseSensitivity)
     if (file == NULL) return UNZ_PARAMERROR;
     if (strlen(szFileName) >= UNZ_MAXFILENAMEINZIP) return UNZ_PARAMERROR;
 
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     if (!s->current_file_ok) return UNZ_END_OF_LIST_OF_FILE;
     num_fileSaved = s->num_file;
     pos_in_central_dirSaved = s->pos_in_central_dir;
@@ -1139,14 +1130,14 @@ unzlocal_CheckCurrentFileCoherencyHeader(unz_s * s, uInt * piSizeVar,
 	     (size_filename != s->cur_file_info.size_filename))
 	err = UNZ_BADZIPFILE;
 
-    *piSizeVar += uInt(size_filename);
+    *piSizeVar += uInt( size_filename);
 
     if (unzlocal_getShort(s->file, &size_extra_field) != UNZ_OK)
 	err = UNZ_ERRNO;
     *poffset_local_extrafield = s->cur_file_info_internal.offset_curfile +
 	SIZEZIPLOCALHEADER + size_filename;
-    *psize_local_extrafield = uInt(size_extra_field);
-    *piSizeVar += uInt(size_extra_field);
+    *psize_local_extrafield = uInt( size_extra_field);
+    *piSizeVar += uInt( size_extra_field);
     return err;
 }
 
@@ -1166,7 +1157,7 @@ unzOpenCurrentFile(unzFile file)
     uInt  size_local_extrafield;/* size of the local extra field */
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     if (!s->current_file_ok) return UNZ_PARAMERROR;
 
     if (s->pfile_in_zip_read != NULL) unzCloseCurrentFile(file);
@@ -1179,7 +1170,7 @@ unzOpenCurrentFile(unzFile file)
 	(ALLOC(sizeof(file_in_zip_read_info_s)));
     if (pfile_in_zip_read_info == NULL) return UNZ_INTERNALERROR;
 
-    pfile_in_zip_read_info->read_buffer = reinterpret_cast<char *>(ALLOC(UNZ_BUFSIZE));
+    pfile_in_zip_read_info->read_buffer = reinterpret_cast<char *>( ALLOC(UNZ_BUFSIZE));
     pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
     pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
     pfile_in_zip_read_info->pos_local_extrafield = 0;
@@ -1205,9 +1196,9 @@ unzOpenCurrentFile(unzFile file)
     pfile_in_zip_read_info->stream.total_out = 0;
 
     if (!Store) {
-	pfile_in_zip_read_info->stream.zalloc = 0;
-	pfile_in_zip_read_info->stream.zfree = 0;
-	pfile_in_zip_read_info->stream.opaque = 0;
+	pfile_in_zip_read_info->stream.zalloc = CXXRNOCAST(alloc_func) 0;
+	pfile_in_zip_read_info->stream.zfree = CXXRNOCAST(free_func) 0;
+	pfile_in_zip_read_info->stream.opaque = CXXRNOCAST(voidpf) 0;
 
 	err = inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
 	if (err == Z_OK)
@@ -1226,7 +1217,7 @@ unzOpenCurrentFile(unzFile file)
     pfile_in_zip_read_info->pos_in_zipfile =
 	s->cur_file_info_internal.offset_curfile + SIZEZIPLOCALHEADER +
 	iSizeVar;
-    pfile_in_zip_read_info->stream.avail_in = uInt(0);
+    pfile_in_zip_read_info->stream.avail_in = uInt( 0);
     s->pfile_in_zip_read = pfile_in_zip_read_info;
     return UNZ_OK;
 }
@@ -1251,17 +1242,17 @@ unzReadCurrentFile(unzFile file, voidp buf, unsigned int len)
     file_in_zip_read_info_s *pfile_in_zip_read_info;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     pfile_in_zip_read_info = s->pfile_in_zip_read;
     if (pfile_in_zip_read_info == NULL) return UNZ_PARAMERROR;
     if ((pfile_in_zip_read_info->read_buffer == NULL))
 	return UNZ_END_OF_LIST_OF_FILE;
     if (len == 0) return 0;
-    pfile_in_zip_read_info->stream.next_out = reinterpret_cast<Bytef *>(buf);
-    pfile_in_zip_read_info->stream.avail_out = uInt(len);
+    pfile_in_zip_read_info->stream.next_out = reinterpret_cast<Bytef *>( buf);
+    pfile_in_zip_read_info->stream.avail_out = uInt( len);
     if (len > pfile_in_zip_read_info->rest_read_uncompressed)
 	pfile_in_zip_read_info->stream.avail_out =
-	    uInt(pfile_in_zip_read_info->rest_read_uncompressed);
+	    uInt( pfile_in_zip_read_info->rest_read_uncompressed);
 
     while (pfile_in_zip_read_info->stream.avail_out > 0) {
 	if ((pfile_in_zip_read_info->stream.avail_in == 0) &&
@@ -1269,7 +1260,7 @@ unzReadCurrentFile(unzFile file, voidp buf, unsigned int len)
 	    uInt  uReadThis = UNZ_BUFSIZE;
 
 	    if (pfile_in_zip_read_info->rest_read_compressed < uReadThis)
-		uReadThis = uInt(pfile_in_zip_read_info->rest_read_compressed);
+		uReadThis = uInt( pfile_in_zip_read_info->rest_read_compressed);
 	    if (uReadThis == 0) return UNZ_EOF;
 	    if (fseek(pfile_in_zip_read_info->file,
 		      pfile_in_zip_read_info->pos_in_zipfile +
@@ -1283,8 +1274,8 @@ unzReadCurrentFile(unzFile file, voidp buf, unsigned int len)
 	    pfile_in_zip_read_info->rest_read_compressed -= uReadThis;
 
 	    pfile_in_zip_read_info->stream.next_in =
-		reinterpret_cast<Bytef *>(pfile_in_zip_read_info->read_buffer);
-	    pfile_in_zip_read_info->stream.avail_in = uInt(uReadThis);
+		reinterpret_cast<Bytef *>( pfile_in_zip_read_info->read_buffer);
+	    pfile_in_zip_read_info->stream.avail_in = uInt( uReadThis);
 	}
 	if (pfile_in_zip_read_info->compression_method == 0) {
 	    uInt  uDoCopy, i;
@@ -1329,7 +1320,7 @@ unzReadCurrentFile(unzFile file, voidp buf, unsigned int len)
 
 	    pfile_in_zip_read_info->crc32 =
 		crc32(pfile_in_zip_read_info->crc32, bufBefore,
-		      uInt(uOutThis));
+		      uInt( (uOutThis)));
 
 	    pfile_in_zip_read_info->rest_read_uncompressed -=
 		uOutThis;
@@ -1357,7 +1348,7 @@ unzCloseCurrentFile(unzFile file)
     file_in_zip_read_info_s *pfile_in_zip_read_info;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>(file);
+    s = reinterpret_cast<unz_s *>( file);
     pfile_in_zip_read_info = s->pfile_in_zip_read;
     if (pfile_in_zip_read_info == NULL) return UNZ_PARAMERROR;
     if (pfile_in_zip_read_info->rest_read_uncompressed == 0) {

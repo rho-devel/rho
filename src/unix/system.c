@@ -65,9 +65,7 @@
 # include <unistd.h>		/* isatty() */
 #endif
 
-#ifdef HAVE_STRERROR
 #include <errno.h>
-#endif
 
 #include "Fileio.h"
 
@@ -325,13 +323,9 @@ int Rf_initialize_R(int ac, char **av)
 		if(strcmp(*av, "-")) {
 		    ifp = R_fopen(*av, "r");
 		    if(!ifp) {
-#ifdef HAVE_STRERROR
 			snprintf(msg, 1024,
 				 _("cannot open file '%s': %s"),
 				 *av, strerror(errno));
-#else
-			snprintf(msg, 1024, _("cannot open file '%s'"), *av);
-#endif
 			R_Suicide(msg);
 		    }
 		}
@@ -340,15 +334,9 @@ int Rf_initialize_R(int ac, char **av)
 		if(strcmp((*av)+7, "-")) {
 		    ifp = R_fopen( (*av)+7, "r");
 		    if(!ifp) {
-#ifdef HAVE_STRERROR
 			snprintf(msg, 1024,
 				 _("cannot open file '%s': %s"),
 				 (*av)+7, strerror(errno));
-#else
-			snprintf(msg, 1024,
-				 _("cannot open file '%s'"),
-				 (*av)+7);
-#endif
 			R_Suicide(msg);
 		    }
 		}
@@ -393,6 +381,7 @@ int Rf_initialize_R(int ac, char **av)
 	size_t res;
 	if(ifp) R_Suicide(_("cannot use -e with -f or --file"));
 	ifp = tmpfile();
+	if(!ifp) R_Suicide(_("creating temporary file for '-e' failed"));
 	res = fwrite(cmdlines, strlen(cmdlines)+1, 1, ifp);
 	/* FIXME: do something with res */
 	fflush(ifp);

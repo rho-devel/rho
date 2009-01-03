@@ -231,9 +231,13 @@ static Rboolean islistfactor(SEXP X)
     if(n == 0) return FALSE;
     switch(TYPEOF(X)) {
     case VECSXP:
-    case EXPRSXP:
 	for(i = 0; i < LENGTH(X); i++)
 	    if(!islistfactor(VECTOR_ELT(X, i))) return FALSE;
+	return TRUE;
+	break;
+    case EXPRSXP:
+	for(i = 0; i < LENGTH(X); i++)
+	    if(!islistfactor(XVECTOR_ELT(X, i))) return FALSE;
 	return TRUE;
 	break;
     default:  // -Wswitch
@@ -268,16 +272,22 @@ SEXP attribute_hidden do_islistfactor(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else {
 	switch(TYPEOF(X)) {
 	case VECSXP:
+	    for(i = 0; i < LENGTH(X); i++)
+		if(!islistfactor(VECTOR_ELT(X, i))) {
+		    lans = FALSE;
+		    break;
+		}
+	    break;
 	case EXPRSXP:
+	    for(i = 0; i < LENGTH(X); i++)
+		if(!islistfactor(XVECTOR_ELT(X, i))) {
+		    lans = FALSE;
+		    break;
+		}
 	    break;
 	default:
-	    goto do_ans;
+	    break;
 	}
-	for(i = 0; i < LENGTH(X); i++)
-	    if(!islistfactor(VECTOR_ELT(X, i))) {
-		lans = FALSE;
-		break;
-	    }
     }
 do_ans:
     return ScalarLogical(lans);

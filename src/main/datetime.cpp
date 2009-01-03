@@ -36,8 +36,6 @@
  *      Interfaces to POSIX date and time functions.
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 /*
     These use POSIX functions that are not available on all platforms,
     and where they are they may be partially or incorrectly implemented.
@@ -296,7 +294,7 @@ static double guess_offset (struct tm *tm)
     if(!have_broken_mktime() && tm->tm_year < 2) { /* no DST */
 	tm->tm_year = 2;
 	mktime(tm);
-	offset1 = double(mktime(tm)) - mktime00(tm);
+	offset1 = double( mktime(tm)) - mktime00(tm);
 	memcpy(tm, &oldtm, sizeof(struct tm));
 	tm->tm_isdst = 0;
 	return offset1;
@@ -334,12 +332,12 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = 0;
     tm->tm_year = year;
     tm->tm_isdst = -1;
-    offset1 = double(mktime(tm)) - mktime00(tm);
+    offset1 = double( mktime(tm)) - mktime00(tm);
     /* and in July */
     tm->tm_year = year;
     tm->tm_mon = 6;
     tm->tm_isdst = -1;
-    offset2 = double(mktime(tm)) - mktime00(tm);
+    offset2 = double( mktime(tm)) - mktime00(tm);
     if(oldisdst > 0) {
 	offset = (offset1 > offset2) ? offset2 : offset1;
     } else {
@@ -349,7 +347,7 @@ static double guess_offset (struct tm *tm)
     tm->tm_mon = oldmonth;
     tm->tm_isdst = -1;
     if(oldisdst < 0) {
-	offset1 = double(mktime(tm)) - mktime00(tm);
+	offset1 = double( mktime(tm)) - mktime00(tm);
 	oldisdst = (offset1 < offset) ? 1:0;
 	if(oldisdst) offset = offset1;
     }
@@ -375,13 +373,13 @@ static double mktime0 (struct tm *tm, const int local)
 #else
 	errno = 79;
 #endif
-	return double(-1);
+	return double((-1));
     }
     if(!local) return mktime00(tm);
 
     OK = Rboolean(tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
     if(OK) {
-	res = double(mktime(tm));
+	res = double( mktime(tm));
 	if (res == double(-1)) return res;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
@@ -403,7 +401,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
     time_t t;
 
     if(d < 2147483647.0 && d > (have_broken_mktime() ? 0. : -2147483647.0)) {
-	t = time_t(d);
+	t = time_t( d);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
 	for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
@@ -411,7 +409,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	return local ? localtime(&t) : gmtime(&t);
     }
 
-    day = int(floor(d/86400.0));
+    day = int( floor(d/86400.0));
     left = int(d - day * 86400.0 + 0.5);
 
     /* hour, min, and sec */
@@ -482,7 +480,7 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
     struct timeval tv;
     int res = gettimeofday(&tv, NULL);
     if(res == 0) {
-	double tmp = double(tv.tv_sec) + 1e-6 * double(tv.tv_usec);
+	double tmp = double( tv.tv_sec) + 1e-6 * double( tv.tv_usec);
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
 	tmp -= n_leapseconds;
@@ -725,7 +723,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef MKTIME_SETS_ERRNO
 	    REAL(ans)[i] = errno ? NA_REAL : tmp + (secs - fsecs);
 #else
-	    REAL(ans)[i] = (tmp == double(-1)) ?
+	    REAL(ans)[i] = (tmp == double((-1))) ?
 		NA_REAL : tmp + (secs - fsecs);
 #endif
 	}
@@ -987,7 +985,7 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for(i = 0; i < n; i++) {
 	if(R_FINITE(REAL(x)[i])) {
-	    day = int(REAL(x)[i]);
+	    day = int( REAL(x)[i]);
 	    tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 	    /* weekday: 1970-01-01 was a Thursday */
 	    if ((tm.tm_wday = ((4 + day) % 7)) < 0) tm.tm_wday += 7;

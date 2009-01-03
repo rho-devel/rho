@@ -1102,6 +1102,8 @@ SEXP do_writeClipboard(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ScalarLogical(success);
 }
 
+const char *formatError(DWORD res);
+
 SEXP do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, paths = CAR(args), el;
@@ -1117,14 +1119,16 @@ SEXP do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i < n; i++) {
 	el = STRING_ELT(paths, i);
 	if(getCharCE(el) == CE_UTF8) {
-	    GetFullPathNameW(filenameToWchar(el, FALSE), MAX_PATH,
-			     wtmp, &wtmp2);
-	    GetLongPathNameW(wtmp, wlongpath, MAX_PATH);
+	    if (!GetFullPathNameW(filenameToWchar(el, FALSE), MAX_PATH,
+			     wtmp, &wtmp2)
+	    	|| !GetLongPathNameW(wtmp, wlongpath, MAX_PATH))
+	    	errorcall(call, "path[%d]: %s", i+1, formatError(GetLastError()));
 	    wcstoutf8(longpath, wlongpath, wcslen(wlongpath)+1);
 	    SET_STRING_ELT(ans, i, mkCharCE(longpath, CE_UTF8));
 	} else {
-	    GetFullPathName(translateChar(el), MAX_PATH, tmp, &tmp2);
-	    GetLongPathName(tmp, longpath, MAX_PATH);
+	    if (!GetFullPathName(translateChar(el), MAX_PATH, tmp, &tmp2)
+	        || !GetLongPathName(tmp, longpath, MAX_PATH))
+	        errorcall(call, "path[%d]: %s", i+1, formatError(GetLastError()));
 	    SET_STRING_ELT(ans, i, mkChar(longpath));
 	}
     }
@@ -1747,7 +1751,7 @@ static SEXP readRegistryKey(HKEY hkey, int depth)
 	/* now sort by name */
 	PROTECT(sind = allocVector(INTSXP, nval));  indx = INTEGER(sind);
 	for (i = 0; i < nval; i++) indx[i] = i;
-	orderVector1(indx, nval, nm0, TRUE, FALSE);
+	orderVector1(indx, nval, nm0, TRUE, FALSE, R_NilValue);
 	for (i = 0; i < nval; i++, k++) {
 	    SET_VECTOR_ELT(ans, k, VECTOR_ELT(ans0, indx[i]));
 	    SET_STRING_ELT(nm, k, STRING_ELT(nm0, indx[i]));
@@ -1771,7 +1775,7 @@ static SEXP readRegistryKey(HKEY hkey, int depth)
 	/* now sort by name */
 	PROTECT(sind = allocVector(INTSXP, nsubkeys));  indx = INTEGER(sind);
 	for (i = 0; i < nsubkeys; i++) indx[i] = i;
-	orderVector1(indx, nsubkeys, nm0, TRUE, FALSE);
+	orderVector1(indx, nsubkeys, nm0, TRUE, FALSE, R_NilValue);
 	for (i = 0; i < nsubkeys; i++, k++) {
 	    SET_VECTOR_ELT(ans, k, VECTOR_ELT(ans0, indx[i]));
 	    SET_STRING_ELT(nm, k, STRING_ELT(nm0, indx[i]));

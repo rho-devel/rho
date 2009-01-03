@@ -102,10 +102,6 @@
 * writing this note.  I guess it needs a bit more thought ...
 */
 
-/* <UTF8> char here is either ASCII or handled as a whole.
-   E.g. backquotify should work.
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -240,7 +236,6 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     }
     PROTECT(svec = allocVector(STRSXP, localData.linenumber));
     deparse2(call, svec, &localData);
-    UNPROTECT(1);
     if (abbrev) {
 	char data[14];
 	strncpy(data, CHAR(STRING_ELT(svec, 0)), 10);
@@ -250,6 +245,9 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     } else if(need_ellipses) {
 	SET_STRING_ELT(svec, R_BrowseLines, mkChar("  ..."));
     }
+    if(nlines > 0 && localData.linenumber < nlines)
+	svec = lengthgets(svec, localData.linenumber);
+    UNPROTECT(1); /* new version does not need to be protected */
     R_print.digits = savedigits;
     if ((opts & WARNINCOMPLETE) && localData.isS4)
 	warning(_("deparse of an S4 object will not be source()able"));
@@ -319,8 +317,14 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (ifile != 1) {
 	con = getConnection(ifile);
 	wasopen = con->isopen;
-	if(!wasopen)
+	if(!wasopen) {
 	    if(!con->open(con)) error(_("cannot open the connection"));
+	    if(!con->canwrite) {
+		con->close(con);
+		error(_("cannot write to this connection"));
+	    }
+	} else if(!con->canwrite)
+	    error(_("cannot write to this connection"));
     }/* else: "Stdout" */
     for (i = 0; i < LENGTH(tval); i++)
 	if (ifile == 1)
@@ -381,6 +385,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (CAR(o) == R_UnboundValue) continue;
 		obj_name = translateChar(STRING_ELT(names, i));
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
+		/* FIXME: should not use backticks when deparsing for S */
 		Rprintf(/* figure out if we need to quote the name */
 			const_cast<char*>(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
 			obj_name);
@@ -393,13 +398,20 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else {
 	    con = getConnection(INTEGER(file)[0]);
 	    wasopen = con->isopen;
-	    if (!wasopen)
+	    if(!wasopen) {
 		if(!con->open(con)) error(_("cannot open the connection"));
+		if(!con->canwrite) {
+		    con->close(con);
+		    error(_("cannot write to this connection"));
+		}
+	    } else if(!con->canwrite)
+		error(_("cannot write to this connection"));
 	    for (i = 0, nout = 0; i < nobjs; i++) {
 		const char *s;
 		if (CAR(o) == R_UnboundValue) continue;
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		s = translateChar(STRING_ELT(names, i));
+		/* FIXME: should not use backticks when deparsing for S */
 		res = Rconn_printf(con, "`%s` <-\n", s);
 		if(!havewarned && res < int(strlen(s)) + 6)
 		    warning(_("wrote too few characters"));
@@ -893,7 +905,11 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		case PP_RETURN:
 		    if (isValidName(CHAR(PRINTNAME(op)))) /* ASCII */
 			print2buff(CHAR(PRINTNAME(op)), d);
-		    else {
+		    else if (d->backtick) {
+			print2buff("`", d);
+			print2buff(CHAR(PRINTNAME(op)), d);
+			print2buff("`", d);
+		    } else {
 			print2buff("\"", d);
 			print2buff(CHAR(PRINTNAME(op)), d);
 			print2buff("\"", d);
@@ -1012,6 +1028,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff("next", d);
 		    break;
 		case PP_SUBASS:
+		  /* FIXME: should not use backticks when deparsing for S */
 		    print2buff("`", d);
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    print2buff("`(", d);
@@ -1064,7 +1081,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			if ( isSymbol(CAR(s)) ){
 			    const char *ss = CHAR(PRINTNAME(CAR(s)));
 			    if ( !isValidName(ss) ){
-
+			      /* FIXME: should not use backticks when deparsing for S */
 				print2buff("`", d);
 				print2buff(ss, d);
 				print2buff("`", d);
@@ -1320,7 +1337,7 @@ static Rboolean src2buff(SEXP sv, int k, LocalParseData *d)
     SEXP t;
     int i, n;
 
-    if (length(sv) > k && !isNull(t = VECTOR_ELT(sv, k))) {
+    if (TYPEOF(sv) == VECSXP && length(sv) > k && !isNull(t = VECTOR_ELT(sv, k))) {
 	PROTECT(t);
 
 	PROTECT(t = lang2(install("as.character"), t));
@@ -1350,9 +1367,11 @@ static void vec2buff(SEXP v, LocalParseData *d)
     nv = getAttrib(v, R_NamesSymbol);
     if (length(nv) == 0) nv = R_NilValue;
 
-    if (d->opts & USESOURCE)
+    if (d->opts & USESOURCE) {
 	sv = getAttrib(v, R_SrcrefSymbol);
-    else
+	if (TYPEOF(sv) != VECSXP)
+	    sv = R_NilValue;
+    } else
 	sv = R_NilValue;
 
     for(i = 0 ; i < n ; i++) {
@@ -1364,7 +1383,11 @@ static void vec2buff(SEXP v, LocalParseData *d)
 	    /* d->opts = SIMPLEDEPARSE; This seems pointless */
 	    if( isValidName(translateChar(STRING_ELT(nv, i))) )
 		deparse2buff(STRING_ELT(nv, i), d);
-	    else {
+	    else if(d->backtick) {
+		print2buff("`", d);
+		deparse2buff(STRING_ELT(nv, i), d);
+		print2buff("`", d);
+	    } else {
 		print2buff("\"", d);
 		deparse2buff(STRING_ELT(nv, i), d);
 		print2buff("\"", d);
@@ -1397,7 +1420,11 @@ static void args2buff(SEXP arglist, int lineb, int formals, LocalParseData *d)
 	    const char *ss = CHAR(PRINTNAME(s));
 	    if( s == R_DotsSymbol || isValidName(ss) )
 		print2buff(ss, d);
-	    else {
+	    else if(d->backtick) {
+		print2buff("`", d);
+		print2buff(ss, d);
+		print2buff("`", d);
+	    } else {
 		print2buff("\"", d);
 		print2buff(ss, d);
 		print2buff("\"", d);

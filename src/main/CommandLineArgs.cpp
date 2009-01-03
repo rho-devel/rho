@@ -34,10 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string,
-   or the strings are ASCII (as in sizes).
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -77,7 +73,7 @@ R_set_command_line_arguments(int argc, char **argv)
     int i;
 
     NumCommandLineArgs = argc;
-    CommandLineArgs = static_cast<char**>(calloc(argc, sizeof(char*)));
+    CommandLineArgs = static_cast<char**>( calloc(argc, sizeof(char*)));
 
     for(i = 0; i < argc; i++)
 	CommandLineArgs[i] = strdup(argv[i]);

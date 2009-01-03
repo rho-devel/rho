@@ -41,10 +41,6 @@
  *  functionality in the AT&T Bell Laboratories GRZ library.
  */
 
-/* <UTF8>
-   OK if we assume GMetricInfo is passed a suitable int (e.g. Unicode)
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -1502,10 +1498,10 @@ static void mapFigureRegion(pGEDevDesc dd)
 	    row = (gpptr(dd)->currentFigure-1) / gpptr(dd)->numcols + 1;
 	    col = gpptr(dd)->currentFigure - (row-1)*gpptr(dd)->numcols;
 	}
-	x0 = double(col-1) / Rf_gpptr(dd)->numcols;
-	x1 = double(col) / Rf_gpptr(dd)->numcols;
-	y0 = double(Rf_gpptr(dd)->numrows - row) / Rf_gpptr(dd)->numrows;
-	y1 = double(Rf_gpptr(dd)->numrows - row + 1) / Rf_gpptr(dd)->numrows;
+	x0 = double(col-1) / gpptr(dd)->numcols;
+	x1 = double( col) / gpptr(dd)->numcols;
+	y0 = double(gpptr(dd)->numrows - row) / gpptr(dd)->numrows;
+	y1 = double(gpptr(dd)->numrows - row + 1) / gpptr(dd)->numrows;
     }
     gpptr(dd)->fig[0] = dpptr(dd)->fig[0] = x0;
     gpptr(dd)->fig[1] = dpptr(dd)->fig[1] = x1;
@@ -1714,7 +1710,7 @@ void GReset(pGEDevDesc dd)
 
 static Rboolean validFigureRegion(pGEDevDesc dd)
 {
-    return Rboolean((Rf_gpptr(dd)->fig[0] > 0-FLT_EPSILON) &&
+    return Rboolean((gpptr(dd)->fig[0] > 0-FLT_EPSILON) &&
 	    (gpptr(dd)->fig[1] < 1+FLT_EPSILON) &&
 	    (gpptr(dd)->fig[2] > 0-FLT_EPSILON) &&
 	    (gpptr(dd)->fig[3] < 1+FLT_EPSILON));
@@ -1724,7 +1720,7 @@ static Rboolean validFigureRegion(pGEDevDesc dd)
 
 static Rboolean validOuterMargins(pGEDevDesc dd)
 {
-    return Rboolean((Rf_gpptr(dd)->fig[0] < Rf_gpptr(dd)->fig[1]) &&
+    return Rboolean((gpptr(dd)->fig[0] < gpptr(dd)->fig[1]) &&
 	    (gpptr(dd)->fig[2] < gpptr(dd)->fig[3]));
 }
 
@@ -1732,7 +1728,7 @@ static Rboolean validOuterMargins(pGEDevDesc dd)
 
 static Rboolean validPlotRegion(pGEDevDesc dd)
 {
-    return Rboolean((Rf_gpptr(dd)->plt[0] > 0-FLT_EPSILON) &&
+    return Rboolean((gpptr(dd)->plt[0] > 0-FLT_EPSILON) &&
 	    (gpptr(dd)->plt[1] < 1+FLT_EPSILON) &&
 	    (gpptr(dd)->plt[2] > 0-FLT_EPSILON) &&
 	    (gpptr(dd)->plt[3] < 1+FLT_EPSILON));
@@ -1742,7 +1738,7 @@ static Rboolean validPlotRegion(pGEDevDesc dd)
 
 static Rboolean validFigureMargins(pGEDevDesc dd)
 {
-    return Rboolean((Rf_gpptr(dd)->plt[0] < Rf_gpptr(dd)->plt[1]) &&
+    return Rboolean((gpptr(dd)->plt[0] < gpptr(dd)->plt[1]) &&
 	    (gpptr(dd)->plt[2] < gpptr(dd)->plt[3]));
 }
 
@@ -1781,7 +1777,7 @@ pGEDevDesc GNewPlot(Rboolean recording)
     /* we can call par(mfg) before any plotting.
        That sets new = TRUE and also sets currentFigure <= lastFigure
        so treat separately. */
-    if (!Rf_gpptr(dd)->newplot) {
+    if (!gpptr(dd)->newplot) {
 	R_GE_gcontext gc;
 	gcontextFromGP(&gc, dd);
 	dpptr(dd)->currentFigure += 1;
@@ -1840,7 +1836,7 @@ pGEDevDesc GNewPlot(Rboolean recording)
 	else {				\
 	    int xpdsaved = gpptr(dd)->xpd; \
 	    gpptr(dd)->xpd = 2; \
-	    GText(0.5,0.5, NFC, msg, cetype_t(-1), 0.5,0.5,  0, dd);	\
+	    GText(0.5,0.5, NFC, msg, cetype_t(-1), 0.5,0.5,  0, dd);  \
 	    gpptr(dd)->xpd = xpdsaved; \
 	}
 
@@ -2519,7 +2515,7 @@ void gcontextFromGP(pGEcontext gc, pGEDevDesc dd)
     /*
      * Scale by "zoom" factor to allow for fit-to-window resizing in Windows
      */
-    gc->ps = double(Rf_gpptr(dd)->ps) * Rf_gpptr(dd)->scale;
+    gc->ps = double( gpptr(dd)->ps) * gpptr(dd)->scale;
     gc->lineheight = gpptr(dd)->lheight;
     gc->fontface = gpptr(dd)->font;
     strncpy(gc->fontfamily, gpptr(dd)->family, 201);
@@ -2819,8 +2815,8 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
-    yy = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    xx = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
+    yy = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {
@@ -2855,8 +2851,8 @@ void GPolyline(int n, double *x, double *y, GUnit coords, pGEDevDesc dd)
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
-    yy = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+    xx = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
+    yy = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {
@@ -3124,7 +3120,7 @@ void GLPretty(double *ul, double *uh, int *n)
     int p1, p2;
     double dl = *ul, dh = *uh;
     p1 = int(ceil(log10(dl)));
-    p2 = int(floor(log10(dh)));	
+    p2 = int(floor(log10(dh)));
     if(p2 <= p1 &&  dh/dl > 10.0) {
 	p1 = int(ceil(log10(dl) - 0.5));
 	p2 = int(floor(log10(dh) + 0.5));

@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 /** @file
  *
  * Coercions from one R type to another, including various 'is' and
@@ -1992,14 +1990,14 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     case LISTSXP:
 	for (i = 0; i < n; i++) {
-	     LOGICAL(ans)[i] = LIST_VEC_NAN(CAR(x));
+	    LOGICAL(ans)[i] = LIST_VEC_NAN(CAR(x));
 	    x = CDR(x);
 	}
 	break;
     case VECSXP:
 	for (i = 0; i < n; i++) {
 	    SEXP s = VECTOR_ELT(x, i);
-	     LOGICAL(ans)[i] = LIST_VEC_NAN(s);
+	    LOGICAL(ans)[i] = LIST_VEC_NAN(s);
 	}
 	break;
     default:
@@ -2245,6 +2243,8 @@ SEXP substitute(SEXP lang, SEXP rho)
 		    do {
 			t = PREXPR(t);
 		    } while(TYPEOF(t) == PROMSXP);
+		    /* make sure code will not be modified: */
+		    if (NAMED(t) < 2) SET_NAMED(t, 2);
 		    return t;
 		}
 		else if (TYPEOF(t) == DOTSXP)

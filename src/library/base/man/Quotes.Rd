@@ -1,6 +1,6 @@
 % File src/library/base/man/Quotes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Quotes}
@@ -61,15 +61,16 @@
 
   These forms will also be used by \code{\link{print.default}}
   when outputting non-printable characters (including backslash).
-  
-  Note that as from \R 2.8.0 are not allowed by the parser in character
+
+  Note that as from \R 2.8.0 embedded nuls are not allowed in character
   strings, so using escapes (such as \code{\\0}) for a nul will result
-  in the string being (silently) truncated at that point.
+  in the string being truncated at that point (usually with a warning).
 }
 \section{Names and Identifiers}{
   Identifiers consist of a sequence of letters, digits, the period
   (\code{.}) and the underscore.  They must not start with a digit nor
-  underscore, nor with a period followed by a digit.
+  underscore, nor with a period followed by a digit.  \link{Reserved}
+  words are not valid identifiers.
 
   The definition of a \emph{letter} depends on the current locale, but
   only ASCII digits are considered to be digits.

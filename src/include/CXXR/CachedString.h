@@ -155,6 +155,23 @@ extern "C" {
 
 #endif /* __cplusplus */
 
+    /** @brief Is a String cached?
+     *
+     * @param x Pointer to a CXXR::String.
+     *
+     * @return a non-zero value iff \a x points to a CachedString.
+     */
+#ifndef __cplusplus
+    int IS_CACHED(SEXP x);
+#else
+    inline int IS_CACHED(SEXP x)
+    {
+	using namespace CXXR;
+	const String* str = SEXP_downcast<const String*>(x);
+	return (dynamic_cast<const CachedString*>(str) != 0);
+    }
+#endif
+
     /** @brief Get a pointer to a cached ASCII string object.
      *
      * If no cached string with the specified text currently exists,

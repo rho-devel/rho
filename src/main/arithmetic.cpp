@@ -228,7 +228,8 @@ double R_pow(double x, double y) /* = x ^ y */
 	return(1.);
     if(x == 0.) {
 	if(y > 0.) return(0.);
-	/* y < 0 */ return(R_PosInf);
+	else if(y < 0) return(R_PosInf);
+	else return(y); /* NA or NaN, we assert */
     }
     if (R_FINITE(x) && R_FINITE(y))
 /* work around a bug in May 2007 snapshots of gcc pre-4.3.0, also
@@ -1032,8 +1033,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
 
-    if (PRIMVAL(op) != 46 &&
-	DispatchGroup("Math", call, op, args, env, &s))
+    if (DispatchGroup("Math", call, op, args, env, &s))
 	return s;
 
     if (isComplex(CAR(args)))
@@ -1073,7 +1073,7 @@ SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 	   removed in 2.0.0
 	*/
 
-    case 46: return MATH1(Rf_gamma_cody);
+	/* case 46: return MATH1(Rf_gamma_cody); removed in 2.8.0 */
 
     default:
 	errorcall(call, _("unimplemented real function of 1 argument"));
@@ -1891,7 +1891,7 @@ SEXP attribute_hidden do_math4(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
 
 	/* Completely dummy for -Wall -- math4() at all! : */
-    case -99: return Math4(args, NULL);
+    case -99: return Math4(args, CXXRNOCAST(double (*)(double, double, double, double))NULL);
 
     case  1: return Math4_1(args, dhyper);
     case  2: return Math4_2(args, phyper);

@@ -38,7 +38,9 @@ type?topic
    For \code{?} the \code{topic} argument may also be a function call,
    to ask for documentation on a corresponding method: see the section
    on S4 method documentation.  Unlike \code{help}, all names are
-   deparsed to give the desired topic.
+   deparsed to give the desired topic.  The forms
+   \code{pkg::topic} and \code{pkg:::topic} are treated specially, and
+   look for help on \code{topic} in package \pkg{package}.
 
    See \sQuote{Details} for what happens if this is omitted for \code{help}.
  }
@@ -120,11 +122,16 @@ type?topic
 #ifdef windows
   If \code{offline} is \code{TRUE}, hardcopy of the documentation is
   produced by running the LaTeX version of the help page through
-  \code{latex}.  You need to customize the file
-  \file{\var{R\_HOME}/bin/helpPRINT.bat} which contains an example.
+  \code{latex}.  You will need to customize the file
+  \file{\var{\link[base:Rhome]{R\_HOME}}/bin/helpPRINT.bat} which
+  examples.  A TeX file named \file{Rdoc.tex} is created in the
+  current working directory and passed as an argument to \file{helpPRINT.bat}.
 #endif
   The appearance of the output can be customized through a file
-  \file{Rhelp.cfg} somewhere in your LaTeX search path.
+  \file{Rhelp.cfg} somewhere in your LaTeX search path: this will be
+  input as a LaTeX style file after \code{Rd.sty}.  Some 
+  \link{environment variables} are consulted, notably \env{R\_PAPERSIZE}
+  (\emph{via} \code{getOption("papersize")}) and \env{R\_RD4DVI}
 
   If LaTeX versions of help pages were not built at the installation of
   the package, the \code{print} method will ask if conversion with
@@ -195,7 +202,7 @@ type?topic
   Wadsworth \& Brooks/Cole.
 }
 \seealso{
-  \code{\link{help.search}()} for finding help pages on a vague
+  \code{\link{help.search}()} or \code{\link{??}} for finding help pages on a vague
   topic;
   \code{\link{help.start}()} which opens the HTML version of the \R
   help pages;

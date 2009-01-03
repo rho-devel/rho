@@ -1125,7 +1125,7 @@ QuartzDesc_t Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int 
         {
 	    const char *devname = "quartz_off_screen";
 	    /* FIXME: check this allocation */
-            pDevDesc dev    = calloc(1, sizeof(NewDevDesc));
+            pDevDesc dev    = calloc(1, sizeof(DevDesc));
 
             if (!dev) {
 		if (errorCode) errorCode[0] = -2;
@@ -1230,7 +1230,7 @@ SEXP Quartz(SEXP args)
     R_GE_checkVersionOrDie(R_GE_version);
     R_CheckDeviceAvailable();
     BEGIN_SUSPEND_INTERRUPTS {
-	pDevDesc dev = calloc(1, sizeof(NewDevDesc));
+	pDevDesc dev = calloc(1, sizeof(DevDesc));
 
 	if (!dev)
 	    error(_("Unable to create device description."));

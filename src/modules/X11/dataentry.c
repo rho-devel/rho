@@ -214,7 +214,7 @@ static char copycontents[sizeof(buf)+1] ;
 /* The next few and used only for the editor in MBCS locales */
 #ifdef USE_FONTSET
 static Status           status;
-static XFontSet         font_set;
+static XFontSet         font_set = NULL;
 static XFontStruct	**fs_list;
 static int		font_set_cnt;
 static char             fontset_name[]="-*-fixed-medium-r-*-*-*-120-*-*-*-*-*-*";
@@ -241,7 +241,7 @@ static XIMStyle status_styles[] = {
     XIMStatusNone,
     (XIMStyle)NULL,
 };
-static XIC ioic;
+static XIC ioic = NULL;
 #endif
 
 #ifndef max
@@ -416,6 +416,17 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     endcontext(&cntxt);
     closewin(DE);
     if(nView == 0) {
+	if(fdView >= 0) { /* might be open after viewers, but unlikely */
+	    removeInputHandler(&R_InputHandlers,
+			       getInputHandler(R_InputHandlers,fdView));
+	    fdView = -1;
+	}
+#ifdef USE_FONTSET
+	if(font_set) {
+	    XFreeFontSet(iodisplay, font_set);
+	    font_set = NULL;
+	}
+#endif
 	XCloseDisplay(iodisplay);
 	iodisplay = NULL;
     }
@@ -1564,11 +1575,16 @@ static void eventloop(DEstruct DE)
 {
     int done;
     DEEvent ioevent;
+    caddr_t temp;
 
     done = 0;
     while (done == 0) {
 	XNextEvent(iodisplay, &ioevent);
-	{
+	XFindContext(iodisplay, ioevent.xany.window, deContext, &temp);
+	if ((DEstruct) temp != DE) { /* so a View window */
+	    if (WhichEvent(ioevent) == Expose)
+		drawwindow((DEstruct) temp);
+	} else {
 #ifdef USE_FONTSET
 	    if (XFilterEvent(&ioevent, None)){
 		if(ioic){
@@ -1640,7 +1656,7 @@ static void R_ProcessX11Events(void *data)
     DEEvent ioevent;
     int done = 0;
 
-    while (XPending(iodisplay)) {
+    while (nView && XPending(iodisplay)) {
 	XNextEvent(iodisplay, &ioevent);
 	XFindContext(iodisplay, ioevent.xany.window, deContext, &temp);
 	DE = (DEstruct) temp;
@@ -1680,9 +1696,17 @@ static void R_ProcessX11Events(void *data)
 	free(DE);
 	nView--;
 	if(nView == 0) {
+	    /* NB: this is removing the handler that is currently
+	       being used: only OK to free here in R > 2.8.0 */
 	    removeInputHandler(&R_InputHandlers,
 			       getInputHandler(R_InputHandlers,fdView));
 	    fdView = -1;
+#ifdef USE_FONTSET
+	    if(font_set) {
+		XFreeFontSet(iodisplay, font_set);
+		font_set = NULL;
+	    }
+#endif
 	    XCloseDisplay(iodisplay);
 	    iodisplay = NULL;
 	}
@@ -2003,10 +2027,12 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	    sprintf(opt_fontset_name, s, "medium", "r", 12);
 	} else strcpy(opt_fontset_name, fontset_name);
 
-	font_set = XCreateFontSet(iodisplay, opt_fontset_name,
-				  &missing_charset_list,
-				  &missing_charset_count, &def_string);
-	if (missing_charset_count) XFreeStringList(missing_charset_list);
+	if(font_set == NULL) {
+	    font_set = XCreateFontSet(iodisplay, opt_fontset_name,
+				      &missing_charset_list,
+				      &missing_charset_count, &def_string);
+	    if (missing_charset_count) XFreeStringList(missing_charset_list);
+	}
 	if (font_set == NULL) {
 	    warning("unable to create fontset %s", opt_fontset_name);
 	    return TRUE; /* ERROR */
@@ -2174,7 +2200,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     DE->iogc = XCreateGC(iodisplay, DE->iowindow, 0, 0);
 
 #ifdef USE_FONTSET
-    if(mbcslocale) {
+    if(mbcslocale && DE->isEditor) {
 	ioim = XOpenIM(iodisplay, NULL, NULL, NULL);
 	if(!ioim) {
 	    XDestroyWindow(iodisplay, DE->iowindow);

@@ -119,7 +119,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 		else {
 		    /* recognise selected types from Table B-1 of K&R */
 		    /* This is MBCS-OK, as we are in a format spec */
-		    chunk = strcspn(formatString + cur + 1, "disfeEgGxX%") + 2;
+		    chunk = strcspn(formatString + cur + 1, "aAdisfeEgGxX%") + 2;
 		    if (cur + chunk > n)
 			error(_("unrecognised format at end of string"));
 
@@ -224,6 +224,8 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				    nprotect++;
 				}
 				break;
+			    case 'a':
+			    case 'A':
 			    case 'e':
 			    case 'f':
 			    case 'g':
@@ -288,9 +290,9 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 			case REALSXP:
 			    {
 				double x = REAL(_this)[ns % thislen];
-				if (strcspn(fmtp, "feEgG") >= strlen(fmtp))
+				if (strcspn(fmtp, "aAfeEgG") >= strlen(fmtp))
 				    error("%s",
-					  _("use format %f, %e or %g for numeric objects"));
+					  _("use format %f, %e, %g or %a for numeric objects"));
 				if (R_FINITE(x)) {
 				    sprintf(bit, fmtp, x);
 				} else {
@@ -357,11 +359,11 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 		bit[chunk] = '\0';
 	    }
 	    if(ss) {
-		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
+		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
 									   strlen(ss) + 1, &outbuff));
 		strcat(outputString, ss);
 	    } else {
-		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) + 
+		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
 									   strlen(bit) + 1, &outbuff));
 		strcat(outputString, bit);
 	    }

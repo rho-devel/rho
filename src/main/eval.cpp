@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 /** @file eval.cpp
  *
  * General evaluation of expressions, including implementation of R flow
@@ -296,7 +294,7 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     R_Profiling = 1;
 }
 
-SEXP do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP filename;
     int append_mode, mem_profiling;
@@ -332,7 +330,7 @@ SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* NEEDED: A fixup is needed in browser, because it can trap errors,
  *	and currently does not reset the limit to the right value. */
 
-void check_stack_balance(SEXP op, unsigned int save)
+void CXXRnot_hidden check_stack_balance(SEXP op, CXXRunsigned int save)
 {
     if(save == GCRootBase::ppsSize()) return;
     REprintf("Warning: stack imbalance in '%s', %d then %d\n",
@@ -396,7 +394,7 @@ SEXP eval(SEXP e, SEXP rho)
 		  _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
     }
     R_CheckStack();
-    if (++evalcount > 100) {
+    if (++evalcount > 1000) { /* was 100 before 2.8.0 */
 	R_CheckUserInterrupt();
 	evalcount = 0 ;
     }
@@ -1007,7 +1005,7 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 }
 
 
-SEXP do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP Cond;
     PROTECT(Cond = eval(CAR(args), rho));
@@ -1039,7 +1037,7 @@ namespace {
     }
 }
 
-SEXP do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     int nm;
@@ -1146,7 +1144,7 @@ SEXP do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1188,7 +1186,7 @@ SEXP do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1230,21 +1228,21 @@ SEXP do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     findcontext(PRIMVAL(op), rho, R_NilValue);
     return R_NilValue;
 }
 
 
-SEXP do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     return CAR(args);
 }
 
 
-SEXP do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
     if (args == R_NilValue) {
@@ -1265,7 +1263,7 @@ SEXP do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP a, v, vals;
     int nv = 0;
@@ -1312,7 +1310,7 @@ SEXP do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP rval;
 
@@ -1390,7 +1388,7 @@ static const char * const asym[] = {":=", "<-", "<<-", "="};
 
 static void tmp_cleanup(void *data)
 {
-    unbindVar(R_TmpvalSymbol, reinterpret_cast<SEXP>(data));
+    unbindVar(R_TmpvalSymbol, reinterpret_cast<SEXP>( data));
 }
 
 
@@ -1501,7 +1499,7 @@ SEXP attribute_hidden do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /*  Assignment in its various forms  */
 
-SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
     if (length(args) != 2)
@@ -1574,7 +1572,7 @@ SEXP do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* called in names.c and objects.c */
 
 /* Prior to 2.4.0 this dropped missing elements */
-SEXP evalList(SEXP el, SEXP rho, SEXP op)
+SEXP CXXRnot_hidden evalList(SEXP el, SEXP rho, SEXP op)
 {
     SEXP ans, h, tail, orig = el;
     int n = 1;
@@ -1603,7 +1601,14 @@ SEXP evalList(SEXP el, SEXP rho, SEXP op)
 	    }
 	    else if (h != R_MissingArg)
 		error(_("'...' used in an incorrect context"));
+/* Uncomment the following to restore old behavior */
+/* #define OLDMISSING */
+#ifdef OLDMISSING
 	} else if (CAR(el) != R_MissingArg) {
+#else
+	} else if (!(CAR(el) == R_MissingArg ||
+                 (isSymbol(CAR(el)) && R_isMissing(CAR(el), rho)))) {
+#endif
 	    SETCDR(tail, CONS(eval(CAR(el), rho), R_NilValue));
 	    tail = CDR(tail);
 	    SET_TAG(tail, CreateTag(TAG(el)));
@@ -1633,7 +1638,7 @@ SEXP evalList(SEXP el, SEXP rho, SEXP op)
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP evalListKeepMissing(SEXP el, SEXP rho)
+SEXP CXXRnot_hidden evalListKeepMissing(SEXP el, SEXP rho)
 {
     SEXP ans, h, tail;
 
@@ -1665,7 +1670,12 @@ SEXP evalListKeepMissing(SEXP el, SEXP rho)
 	    else if(h != R_MissingArg)
 		error(_("'...' used in an incorrect context"));
 	}
+#ifdef OLDMISSING
 	else if (CAR(el) == R_MissingArg) {
+#else
+	else if (CAR(el) == R_MissingArg ||
+                 (isSymbol(CAR(el)) && R_isMissing(CAR(el), rho))) {
+#endif
 	    SETCDR(tail, CONS(R_MissingArg, R_NilValue));
 	    tail = CDR(tail);
 	    SET_TAG(tail, CreateTag(TAG(el)));
@@ -1687,7 +1697,7 @@ SEXP evalListKeepMissing(SEXP el, SEXP rho)
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP promiseArgs(SEXP el, SEXP rho)
+SEXP CXXRnot_hidden promiseArgs(SEXP el, SEXP rho)
 {
     SEXP ans, h, tail;
 
@@ -1739,7 +1749,7 @@ SEXP promiseArgs(SEXP el, SEXP rho)
 /* Check that each formal is a symbol */
 
 /* used in coerce.c */
-void CheckFormals(SEXP ls)
+void CXXRnot_hidden CheckFormals(SEXP ls)
 {
     if (isList(ls)) {
 	for (; ls != R_NilValue; ls = CDR(ls))
@@ -1756,7 +1766,7 @@ void CheckFormals(SEXP ls)
 /* "eval" and "eval.with.vis" : Evaluate the first argument */
 /* in the environment specified by the second argument. */
 
-SEXP do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP encl, x, xptr;
     volatile SEXP expr, env, tmp;
@@ -1876,7 +1886,7 @@ SEXP do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *cptr;
     SEXP s, ans ;
@@ -1930,6 +1940,7 @@ static SEXP evalArgs(SEXP el, SEXP rho, SEXP op, int dropmissing)
  * To call this an ugly hack would be to insult all existing ugly hacks
  * at large in the world.
  */
+CXXRnot_hidden
 int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		   SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
@@ -2017,11 +2028,27 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 
 	if (pt == NULL || strcmp(pt,".default")) {
 	    RCNTXT cntxt;
-	    SEXP pargs;
+	    SEXP pargs, rho1;
 	    PROTECT(pargs = promiseArgs(args, rho)); nprotect++;
+	    /* The context set up here is needed because of the way
+	       usemethod() is written.  DispatchGroup() repeats some
+	       internal usemethod() code and avoids the need for a
+	       context; perhaps the usemethod() code should be
+	       refactored so the contexts around the usemethod() calls
+	       in this file can be removed.
+
+	       Using rho for current and calling environment can be
+	       confusing for things like sys.parent() calls captured
+	       in promises (Gabor G had an example of this).  Also,
+	       since the context is established without a SETJMP using
+	       an R-accessible environment allows a segfault to be
+	       triggered (by something very obscure, but still).
+	       Hence here and in the other usemethod() uses below a
+	       new environment rho1 is created and used.  LT */
+	    PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho)); nprotect++;
 	    SET_PRVALUE(CAR(pargs), x);
-	    begincontext(&cntxt, CTXT_RETURN, call, rho, rho, pargs, op);
-	    if(usemethod(generic, x, call, pargs, rho, rho, R_BaseEnv, ans))
+	    begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, op);
+	    if(usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans))
 	    {
 		endcontext(&cntxt);
 		UNPROTECT(nprotect);
@@ -2084,6 +2111,7 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
     *which = whichclass;
 }
 
+CXXRnot_hidden
 int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		  SEXP *ans)
 {
@@ -2242,7 +2270,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     PROTECT(s = promiseArgs(CDR(call), rho));
     if (length(s) != length(args))
-	error(_("dispatch error"));
+	error(_("dispatch error in group dispatch"));
     for (m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
 	SET_PRVALUE(CAR(m), CAR(args));
 	/* ensure positional matching for operators */
@@ -2289,6 +2317,7 @@ static SEXP R_FalseValue = NULL;
 # define THREADED_CODE
 #endif
 
+CXXRnot_hidden
 void R_initialize_bcode(void)
 {
   R_AddSym = install("+");
@@ -2610,9 +2639,6 @@ namespace {
     }
 }
 
-#define BCCONSTS(e) BCODE_CONSTS(e)
-
-#ifdef BC_INT_STACK
 #define BCIPUSHPTR(v)  do { \
   void *__value__ = (v); \
   IStackval *__ntop__ = R_BCIntStackTop + 1; \
@@ -2632,6 +2658,9 @@ namespace {
 #define BCIPOPPTR() ((--R_BCIntStackTop)->p)
 #define BCIPOPINT() ((--R_BCIntStackTop)->i)
 
+#define BCCONSTS(e) BCODE_CONSTS(e)
+
+#ifdef BC_INT_STACK
 static void intStackOverflow()
 {
     error(_("integer stack overflow"));
@@ -2676,7 +2705,7 @@ static struct { void *addr; int argc; } opinfo[OPCOUNT];
 #define NEXT() (__extension__ ({goto *(*pc++).v;}))
 #define GETOP() (*pc++).i
 
-#define BCCODE(e) reinterpret_cast<BCODE *>(INTEGER(BCODE_CODE(e)))
+#define BCCODE(e) reinterpret_cast<BCODE *>( INTEGER(BCODE_CODE(e)))
 #else
 typedef int BCODE;
 
@@ -2737,19 +2766,21 @@ namespace {
   if (! NAMED(v)) SET_NAMED(v, 1); \
 } while (0)
 
-static int tryDispatch(const char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
+static int tryDispatch(CXXRconst char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
 {
   RCNTXT cntxt;
-  SEXP pargs;
+  SEXP pargs, rho1;
   int dispatched = FALSE;
 
   PROTECT(pargs = promiseArgs(CDR(call), rho));
+  /* See comment at first usemethod() call in this file. LT */
+  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
-  begincontext(&cntxt, CTXT_RETURN, call, rho, rho, pargs, R_NilValue);/**** FIXME: put in op */
-  if (usemethod(generic, x, call, pargs, rho, rho, R_BaseEnv, pv))
+  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+  if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
     dispatched = TRUE;
   endcontext(&cntxt);
-  UNPROTECT(1);
+  UNPROTECT(2);
   return dispatched;
 }
 
@@ -2790,13 +2821,11 @@ static int tryDispatch(const char *generic, SEXP call, SEXP x, SEXP rho, SEXP *p
 			 R_TrueValue : R_FalseValue; \
   NEXT(); \
 } while(0)
-
 #define DO_ISTYPE(type) do { \
   R_BCNodeStackTop[-1] = TYPEOF(R_BCNodeStackTop[-1]) == type ? \
 			 mkTrue() : mkFalse(); \
   NEXT(); \
 } while (0)
-
 #define isNumericOnly(x) (isNumeric(x) && ! isLogical(x))
 
 #ifdef BC_PROFILING
@@ -3039,7 +3068,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	int label = GETOP();
 
 	defineVar(symbol, R_NilValue, rho);
-	BCNPUSH(reinterpret_cast<SEXP>(R_findVarLocInFrame(rho, symbol)));
+	BCNPUSH(reinterpret_cast<SEXP>( R_findVarLocInFrame(rho, symbol)));
 
 	value = allocVector(INTSXP, 2);
 	INTEGER(value)[0] = -1;
@@ -3309,13 +3338,13 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  flag = PRIMPRINT(fun);
 	  R_Visible = Rboolean(flag != 1);
 	  value = PRIMFUN(fun) (call, fun, args, rho);
-          if (flag < 2) R_Visible = Rboolean(flag != 1);
+	  if (flag < 2) R_Visible = Rboolean(flag != 1);
 	  break;
 	case SPECIALSXP:
 	  flag = PRIMPRINT(fun);
 	  R_Visible = Rboolean(flag != 1);
 	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-          if (flag < 2) R_Visible = Rboolean(flag != 1);
+	  if (flag < 2) R_Visible = Rboolean(flag != 1);
 	  break;
 	case CLOSXP:
 	  value = applyClosure(call, fun, args, rho, R_BaseEnv);
@@ -3440,16 +3469,18 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP x = R_BCNodeStackTop[-1];
 	if (isObject(x)) {
 	  RCNTXT cntxt;
-	  SEXP pargs, str;
+	  SEXP pargs, str, rho1;
 	  PROTECT(pargs = promiseArgs(CDR(call), rho));
+	  /* See comment at first usemethod() call in this file. LT */
+	  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
 	  SET_PRVALUE(CAR(pargs), x);
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
-	  begincontext(&cntxt, CTXT_RETURN, call, rho, rho, pargs, R_NilValue);/**** FIXME: put in op */
-	  if (usemethod("$", x, call, pargs, rho, rho, R_BaseEnv, &value))
+	  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	  if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 	    dispatched = TRUE;
 	  endcontext(&cntxt);
-	  UNPROTECT(1);
+	  UNPROTECT(2);
 	}
 	if (dispatched)
 	  R_BCNodeStackTop[-1] = value;
@@ -3466,17 +3497,19 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	value = R_BCNodeStackTop[-2];
 	if (isObject(x)) {
 	  RCNTXT cntxt;
-	  SEXP pargs, str;
+	  SEXP pargs, str, rho1;
 	  PROTECT(pargs = promiseArgs(CDR(call), rho));
+	  /* See comment at first usemethod() call in this file. LT */
+	  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
 	  SET_PRVALUE(CAR(pargs), x);
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
 	  SET_PRVALUE(CADDR(pargs), value);
-	  begincontext(&cntxt, CTXT_RETURN, call, rho, rho, pargs, R_NilValue);/**** FIXME: put in op */
-	  if (usemethod("$<-", x, call, pargs, rho, rho, R_BaseEnv, &value))
+	  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	  if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 	    dispatched = TRUE;
 	  endcontext(&cntxt);
-	  UNPROTECT(1);
+	  UNPROTECT(2);
 	}
 	R_BCNodeStackTop--;
 	if (dispatched)
@@ -3626,7 +3659,7 @@ SEXP R_bcEncode(SEXP x) { return x; }
 SEXP R_bcDecode(SEXP x) { return duplicate(x); }
 #endif
 
-SEXP do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP bytes, consts, ans;
 
@@ -3640,7 +3673,7 @@ SEXP do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-SEXP do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP forms, body, env;
 
@@ -3664,7 +3697,7 @@ SEXP do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     return mkCLOSXP(forms, body, env);
 }
 
-SEXP do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP symbol, i;
 
@@ -3709,7 +3742,7 @@ static SEXP disassemble(SEXP bc)
   return ans;
 }
 
-SEXP do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP code;
 
@@ -3720,14 +3753,14 @@ SEXP do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
   return disassemble(code);
 }
 
-SEXP do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP CXXRnot_hidden do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP ans = allocVector(INTSXP, 1);
   INTEGER(ans)[0] = R_bcVersion;
   return ans;
 }
 
-SEXP do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP CXXRnot_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP file, s;
     FILE *fp;
@@ -3749,7 +3782,7 @@ SEXP do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
     return s;
 }
 
-SEXP do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP CXXRnot_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     FILE *fp;
 
@@ -3819,7 +3852,7 @@ FILE *R_OpenCompiledFile(char *fname, char *buf, size_t bsize)
     else return NULL;
 }
 
-SEXP do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP CXXRnot_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP code, c, ans;
     int i, n;

@@ -179,25 +179,24 @@ extern "C" {
     }
 #endif
 
-    /**
-     * @brief Create a CXXR::UncachedString object.
+    /** @brief Create a CXXR::UncachedString object for specified text
+     * and encoding.
      *
-     * @param length The length of the string to be created (excluding the
-     *          trailing null byte).
+     * @param text The text of the string to be created, possibly
+     *          including embedded null characters.  The encoding is
+     *          assumed to be CE_NATIVE.
+     *
+     * @param length The length of the string pointed to by \a text.
+     *          Must be nonnegative.  The created string will comprise
+     *          the text plus an appended null byte.
+     *
+     * @param encoding The encoding of the required CachedString.
+     *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted in
+     *          this context (checked).
      *
      * @return Pointer to the created string.
      */
-#ifndef __cplusplus
-    SEXP Rf_allocString(R_len_t length);
-#else
-    inline SEXP Rf_allocString(R_len_t length)
-    {
-	using namespace CXXR;
-	UncachedString* ans = new UncachedString(length);
-	ans->expose();
-	return ans;
-    }
-#endif
+    SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding);
 
     /** @brief Create a CXXR::UncachedString object for specified text.
      *
@@ -211,7 +210,14 @@ extern "C" {
      *
      * @return Pointer to the created string.
      */
+#ifndef __cplusplus
     SEXP Rf_mkCharLen(const char* text, int length);
+#else
+    inline SEXP Rf_mkCharLen(const char* text, int length)
+    {
+	return Rf_mkCharLenCE(text, length, CE_NATIVE);
+    }
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

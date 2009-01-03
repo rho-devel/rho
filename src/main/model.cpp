@@ -41,8 +41,6 @@
  *  I knew you could. -- Mr Ro(ss)gers
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -975,7 +973,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 		l += strlen(CHAR(STRING_ELT(varnames, i - 1)));
 	    }
 	}
-        cbuf = static_cast<char *>(alloca(l+1));
+	cbuf = static_cast<char *>( alloca(l+1));
 	cbuf[0] = '\0';
 	l = 0;
 	for (i = 1; i <= nvar; i++) {

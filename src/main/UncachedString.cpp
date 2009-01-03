@@ -45,7 +45,7 @@ using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
-	SEXP (*Rf_allocStringp)(R_len_t) = Rf_allocString;
+	SEXP (*Rf_mkCharLenp)(const char*, int) = Rf_mkCharLen;
     }
 }
 
@@ -80,11 +80,10 @@ const char* UncachedString::typeName() const
 
 // ***** C interface *****
 
-
-SEXP Rf_mkCharLen(const char* text, int length)
+SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
 {
     string str(text, length);
-    UncachedString* ans = new UncachedString(str);
+    UncachedString* ans = new UncachedString(str, encoding);
     ans->expose();
     return ans;
 }

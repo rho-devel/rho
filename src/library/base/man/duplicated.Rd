@@ -58,16 +58,13 @@ duplicated(x, incomparables = FALSE, \dots)
 
   Missing values are regarded as equal, but \code{NaN} is not equal to
   \code{NA_real_}.
-
-  Strings with embedded nuls of the same length will be considered
-  equal if they agree when truncated at the first nul.
   
   Values in \code{incomparables} will never be marked as duplicated.
   This is intended to be used for a fairly small set of values and will
   not be efficient for a very large set.
 }
 \value{
-  For a vector input, a logical vector of the same lemgth as
+  For a vector input, a logical vector of the same length as
   \code{x}.  For a data frame, a logical vector with one element for
   each row.  For a matrix or array, a logical array with the same
   dimensions and dimnames.

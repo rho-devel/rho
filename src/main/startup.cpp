@@ -35,8 +35,6 @@
   http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string */
-
 /*
   See ../unix/system.txt for a description of some of these functions
   Formally part of ../unix/sys-common.c
@@ -199,7 +197,7 @@ static void SetSize(R_size_t vsize)
     }
     if(vsize < Min_Vsize || vsize > Max_Vsize) {
 	sprintf(msg, "WARNING: invalid v(ector heap)size `%lu' ignored\n"
-		"using default = %gM\n", static_cast<unsigned long>(vsize), 
+		 "using default = %gM\n", static_cast<unsigned long>( vsize),
 		R_VSIZE / Mega);
 	R_ShowMessage(msg);
 	R_VSize = R_VSIZE;

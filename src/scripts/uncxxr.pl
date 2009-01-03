@@ -20,10 +20,11 @@ my $castscope = "\\s*[~!+&\*-]*(?:$cs(?:->$cs)*|\\[[^\\]]*\\]|$brack2)*";
 #print $castscope;
 
 my $constype1 = "ARITHOP_TYPE|apse_bool_t|apse_size_t|char|double|float";
-my $constype2 = "iconv_t|int|intptr_t|_lli_t|R_size_t|R_varloc_t|Rboolean";
-my $constype3 = "Rbyte|Rconnection|RELOP_TYPE|SEXPTYPE|short|size_t|uInt";
-my $constype4 = "uintptr_t|uLong|z_off_t";
-my $constype = "(?:$constype1|$constype2|$constype3|$constype4)";
+my $constype2 = "HINSTANCE|iconv_t|int|intptr_t|_lli_t|long";
+my $constype3 = "R_size_t|R_varloc_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
+my $constype4 = "Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|time_t";
+my $constype5 = "uInt|uIntuintptr_t|uintptr_t|uLong|wchar_t|wint_t|z_off_t";
+my $constype = "(?:$constype1|$constype2|$constype3|$constype4|$constype5)";
 
 while (<>) {
   # Convert C++ casts to C cast, discarding outer brackets if poss:
@@ -31,21 +32,27 @@ while (<>) {
   s/[a-z]*_cast<([^>]*)>/\($1\)/g;
 
   # Convert constructor expressions for types known to CR into casts:
-  s/\b($constype)\(($castscope)\)([^.+-]|-[^>-]|\+[^+])/\($1\)$2$3/g;
-  s/\b($constype)\(/\($1\)\(/g;
+  s/\b($constype)(\s*)\(($castscope)\)([^.+-]|-[^>-]|\+[^+])/\($1\)$2$3$4/g;
+  s/\b($constype)(\s*)\(/\($1\)$2\(/g;
 
   # Reinstate C++ reserved words used as identifiers:
   s/connclass/class/g;
   s/connprivate/private/g;
-  s/newbuf([^_\w\.])/new$1/g;
+  s/funstr/this/g;
+  # s/newbuf([^_\w\.])/new$1/g;  # newbuf is used itself in saveload.c
   s/newconn/new/g;
   s/newplot/new/g;
+  s/newv/new/g;
   s/thisconn/this/g;
+  s/thiss/this/g;
 
   # Other changes:
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
   s/CXXRconst\s*//g;
+  s/CXXRNOCAST//g;
+  s/CXXRnot_hidden/attribute_hidden/g;
+  s/CXXRunsigned\s*//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   print;
 }

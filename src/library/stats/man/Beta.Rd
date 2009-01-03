@@ -53,10 +53,10 @@ rbeta(n, shape1, shape2, ncp = 0)
 
   \eqn{I_x(a,b)} is \code{pbeta(x,a,b)}.
 
-  The non-central Beta distribution is defined (Johnson et al, 1995,
-  pp. 502) as the distribution of \eqn{X/(X+Y)} where
-  \eqn{X \sim \chi^2_{2a}(\lambda)}{X ~ chi^2_2a(lambda)} and
-  \eqn{Y \sim \chi^2_{2b}}{Y ~ chi^2_2b}.
+  The noncentral Beta distribution (with \code{ncp} \eqn{ = \lambda})
+  is defined (Johnson et al, 1995, pp. 502) as the distribution of
+  \eqn{X/(X+Y)} where \eqn{X \sim \chi^2_{2a}(\lambda)}{X ~ chi^2_2a(lambda)}
+  and \eqn{Y \sim \chi^2_{2b}}{Y ~ chi^2_2b}.
 }
 \value{
   \code{dbeta} gives the density, \code{pbeta} the distribution
@@ -79,7 +79,8 @@ rbeta(n, shape1, shape2, ncp = 0)
   Algorithm 708: Significant digit computation of the incomplete beta
   function ratios,
   \emph{ACM Transactions on Mathematical Software}, \bold{18}, 360--373.
-  (See also\crBrown, B. and Lawrence Levy, L. (1994)
+  (See also\cr 
+  Brown, B. and Lawrence Levy, L. (1994)
   Certification of algorithm 708: Significant digit computation of the
   incomplete beta,
   \emph{ACM Transactions on Mathematical Software}, \bold{20}, 393--397.)

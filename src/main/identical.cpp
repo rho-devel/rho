@@ -33,8 +33,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -93,11 +91,11 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
 			if(streql(tx, "row.names")) {
                             PROTECT(atrx = getAttrib(x, R_RowNamesSymbol));
                             PROTECT(atry = getAttrib(y, R_RowNamesSymbol));
-			    if(!compute_identical(atrx, atry)) {
-                               UNPROTECT(2);      
+			    if(!compute_identical(atrx, atry)){
+                               UNPROTECT(2);
 			       return FALSE;
                             } else
-                               UNPROTECT(2);
+                              UNPROTECT(2);
 			} else
 			    if(!compute_identical(CAR(elx), CAR(ely)))
 				return FALSE;
@@ -113,12 +111,12 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
     case LGLSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
-        return memcmp(LOGICAL(x), LOGICAL(y),
+	return memcmp(CXXRNOCAST(void *)LOGICAL(x), CXXRNOCAST(void *)LOGICAL(y),
 		      length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case INTSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
-	return memcmp(INTEGER(x), INTEGER(y), 
+	return memcmp(CXXRNOCAST(void *)INTEGER(x), CXXRNOCAST(void *)INTEGER(y),
 		      length(x) * sizeof(int)) == 0 ? TRUE : FALSE;
     case REALSXP:
     {
@@ -214,7 +212,7 @@ Rboolean attribute_hidden compute_identical(SEXP x, SEXP y)
     case RAWSXP:
 	if (length(x) != length(y)) return FALSE;
 	/* Use memcmp (which is ISO C) to speed up the comparison */
-	return memcmp(RAW(x), RAW(y), 
+	return memcmp(CXXRNOCAST(void *)RAW(x), CXXRNOCAST(void *)RAW(y),
 		      length(x) * sizeof(Rbyte)) == 0 ? TRUE : FALSE;
 
 	/*  case PROMSXP: args are evaluated, so will not be seen */

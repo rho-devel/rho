@@ -516,7 +516,7 @@ static int writeline(ConsoleData p, int i, int j)
     col1 = COLS - 1;
     insel = p->sel ? ((i - p->my0) * (i - p->my1)) : 1;
     if (insel < 0) {
-	WLHELPER(0, col1, White, DarkBlue);
+	WLHELPER(0, col1, p->bg, p->fg);
 	return len;
     }
     if ((USER(i) >= 0) && (USER(i) < FC + COLS)) {
@@ -595,7 +595,7 @@ static int writeline(ConsoleData p, int i, int j)
 	c2 = (x1 > FC + COLS) ? (COLS - 1) : (x1 - FC);
     } else
 	c2 = COLS - 1;
-    WLHELPER(c1, c2, White, DarkBlue);
+    WLHELPER(c1, c2, p->bg, p->fg);
     return len;
 }
 
@@ -829,9 +829,9 @@ static void storekey(control c, int k)
     if (p->numkeys >= NKEYS) {
 	gabeep();
 	return;;
-     }
-     p->kbuf[(p->firstkey + p->numkeys) % NKEYS] = k;
-     p->numkeys++;
+    }
+    p->kbuf[(p->firstkey + p->numkeys) % NKEYS] = k;
+    p->numkeys++;
 }
 
 static void storetab(control c)
@@ -982,11 +982,11 @@ static void deleteselected(ConsoleData p)
     }
 }
 
+/* cmd is in native encoding */
 void consolecmd(control c, const char *cmd)
 {
     ConsoleData p = getdata(c);
 
-    const char *ch;
     int i;
     if (p->sel) {
 	deleteselected(p);
@@ -996,9 +996,19 @@ void consolecmd(control c, const char *cmd)
     }
     storekey(c, BEGINLINE);
     storekey(c, KILLRESTOFLINE);
-    for (ch = cmd; *ch; ch++) storekey(c, *ch);
+    if(isUnicodeWindow(c)) {
+	size_t sz = (strlen(cmd) + 1) * sizeof(wchar_t);
+	wchar_t *wcs = (wchar_t *) alloca(sz);
+	memset(wcs, 0, sz);
+	mbstowcs(wcs, cmd, sz-1);
+	for(i = 0; wcs[i]; i++) storekey(c, wcs[i]);
+    } else {
+	const char *ch;
+	for (ch = cmd; *ch; ch++) storekey(c, (unsigned char) *ch);
+    }
     storekey(c, '\n');
-/* if we are editing we save the actual line */
+/* if we are editing we save the actual line
+   FIXME: not right if Unicode */
     if (p->r > -1) {
 	char buf[2000], *cp; /* maximum 2 bytes/char */
 	wchar_t *wc = &(p->lbuf->s[p->lbuf->ns - 1][prompt_len]);
@@ -1621,7 +1631,7 @@ static void wcstobuf(char *buf, int len, const wchar_t *in)
     int used, tot = 0;
     char *p = buf, tmp[7];
     const wchar_t *wc = in;
-    
+
     for(; wc; wc++, p+=used, tot+=used) {
 	if(tot >= len - 2) break;
 	used = wctomb(p, *wc);

@@ -356,7 +356,7 @@ RweaveLatexSetup <-
 
     if(missing(stylepath)) {
         p <- as.vector(Sys.getenv("SWEAVE_STYLEPATH_DEFAULT"))
-        stylepath <- if(length(p) >= 1 && nzchar(p[1])) identical(p, "TRUE") else TRUE
+        stylepath <- if(length(p) >= 1 && nzchar(p[1])) identical(p, "TRUE") else FALSE
     }
     if(stylepath){
         styfile <- file.path(R.home("share"), "texmf", "Sweave")
@@ -374,7 +374,8 @@ RweaveLatexSetup <-
                     width=6, height=6, term=TRUE,
                     echo=echo, keep.source=keep.source, results="verbatim",
                     split=split, strip.white="true", include=TRUE,
-                    pdf.version="1.1", pdf.encoding="default",
+                    pdf.version=grDevices::pdf.options()$version,
+                    pdf.encoding=grDevices::pdf.options()$encoding,
                     concordance=FALSE, expand=TRUE)
 
     ## to be on the safe side: see if defaults pass the check
@@ -712,7 +713,7 @@ RweaveLatexFinish <- function(object, error=FALSE)
         vals <- rle(diff(linesout))
         vals <- c(linesout[1], as.numeric(rbind(vals$lengths, vals$values)))
     	concordance <- paste(strwrap(paste(vals, collapse=" ")), collapse=" %\n")
-    	special <- paste("\\special{concordance:", outputname, ":", inputname, ":%\n",
+    	special <- paste("\\Sconcordance{concordance:", outputname, ":", inputname, ":%\n",
     			 concordance,"}\n", sep="")
     	cat(special, file=object$concordfile)
     }

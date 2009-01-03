@@ -661,6 +661,8 @@ static editor neweditor(void)
     gsetcursor(c, ArrowCursor);
     setforeground(c, consolefg);
     setbackground(c, consolebg);
+    setbackground(t, consolebg);
+    
 #ifdef USE_MDI
     if (ismdi() && (RguiMDI & RW_TOOLBAR)) {
 	int btsize = 24;

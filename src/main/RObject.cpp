@@ -169,8 +169,9 @@ void RObject::setAttributes(PairList* new_attributes)
 void RObject::setS4Object(bool on)
 {
     errorIfFrozen();
-    if (!on && sexptype() == S4SXP)
-	Rf_error("S4 object (S4SXP) cannot cease to be an S4 object.");
+    // Check suppressed (temporarily I hope) during upgrade to R 2.8.1:
+    // if (!on && sexptype() == S4SXP)
+    //      Rf_error("S4 object (S4SXP) cannot cease to be an S4 object.");
     m_S4_object = on;
 }
 

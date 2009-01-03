@@ -90,6 +90,7 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
     $version = $_[5];
     $def_encoding = $_[6];
     $def_encoding = "unknown" unless $def_encoding;
+    $Rdfile = basename($Rdname);
 
     if($type !~ /,/) {
 	## Trivial (R 0.62 case): Only 1 $type at a time ==> one
@@ -97,6 +98,7 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
 	## filename = 0	  ==>	use stdout
 	$htmlfile = $txtfile = $Sdfile = $latexfile = $Exfile =
 	  $chmfile = $_[3];
+	$Rdname = basename($Rdname, (".Rd", ".rd"));
     } else {
 	## Have ',' in $type: Multiple types with multiple output files
 	$dirname = $_[3]; # The super-directory, such as
@@ -202,7 +204,7 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
 	## Remove empty sections.
 	foreach my $key (keys %blocks) {
 	    if($blocks{$key} =~ /^[[:space:]]*$/) {
-		warn "Note: removing empty section \\${key}\n";
+		warn "Note: removing empty section \\${key} in file '$Rdfile'\n";
 		delete $blocks{$key};
 	    }
 	}
@@ -210,7 +212,7 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
 	for($section = 0; $section < $max_section; $section++) {
 	    if($section_body[$section] =~ /^[[:space:]]*$/) {
 		$title = $section_title[$section];
-		warn "Note: removing empty section \\section\{$title\}\n";
+		warn "Note: removing empty section \\section\{$title\} in file '$Rdfile'\n";
 	    }
 	    else {
 		push(@nonempty, $section);
@@ -220,6 +222,7 @@ sub Rdconv { # Rdconv(foobar.Rd, type, debug, filename, pkgname, version, def_en
 	@section_body  = @section_body [@nonempty];
 	$max_section = scalar(@section_title);
 	
+	$issue_warnings = 1;
 	rdoc2html($htmlfile, $def_encoding)	if $type =~ /html/i;
 	rdoc2txt($txtfile, $def_encoding)	if $type =~ /txt/i;
 	rdoc2Sd($Sdfile)	if $type =~ /Sd/;
@@ -280,7 +283,7 @@ sub mark_brackets {
 		    "mismatched or missing braces")
 	  && $complete_text =~ /{([^{}]*)}/s) {
 	my $id = $NB . ++$max_bracket . $BN;
-	die "too many pairs of braces in this file"
+	die "too many pairs of braces in file '$Rdfile'"
 	  if $max_bracket > $MAXLOOPS;
 	$complete_text =~ s/{([^{}]*)}/$id$1$id/s;
 	print STDERR "." if $debug;
@@ -299,14 +302,10 @@ sub mark_brackets {
 		my $extra_info = "\'$1\'" ;
 		$extra_info = "\'$1\'" if $line =~ /(\\\w+{)/ ; # }
 		if( $extra_info =~ /^'}'$/ ) {
-		    my $Rd = $Rdname;
-		    $Rd =~ s/\.Rd$//;
-		    warn "Note: unmatched right brace in file '$Rd.Rd'".
+		    warn "Note: unmatched right brace in file '$Rdfile'".
 			" on or after line $badlineno\n";
 		} elsif(! ($extra_info =~ /\\alias{/) ) { # }
-		    my $Rd = $Rdname;
-		    $Rd =~ s/\.Rd$//;
-		    warn "Warning: unmatched brace ($extra_info) in file '$Rd.Rd'".
+		    warn "Warning: unmatched brace ($extra_info) in file '$Rdfile'".
 			" on or after line $badlineno\n"; 
 		}
 	    }
@@ -395,7 +394,7 @@ sub get_blocks {
 	    # no formatting commands allowed in the title string
 	    if($block =~ /title/) {
 		if($blocks{"title"} =~ /$ID/){
-		    die("\nERROR: Environment ".
+		    die("\nERROR in file '$Rdfile': Environment ".
 			"(text enclosed in \{\}) found in \\title\{...\}.\n".
 			"The title must be plain text!\n\n");
 		}
@@ -433,7 +432,8 @@ sub get_multi {
 	$text =~ s/\\$name//s;
     }
     print STDERR "\n---\n" if $debug;
-    warn "Note: ignoring empty \\${name} entries\n" if($any);
+    warn "Note: ignoring empty \\${name} entries in file '$Rdfile'\n"
+	if($any);
     @res;
 }
 
@@ -482,9 +482,13 @@ sub get_arguments {
 	$id = $3;
 	$text =~ s/$id(.*)$id/$id/s;
 	$retval[1] = $1;
-	my $k=2;
-	while(($k<=$nargs) && ($text =~ /$id($ID)/)){
-	    $id = $1;
+	my $k = 2;
+	while(($k <= $nargs) && ($text =~ /$id($ID)/)){
+	    ## this merely checked for a left or right brace: 
+	    ## we need a left brace starting a pair for \eqn and \deqn
+	    $ie = $1;
+	    if($command =~ /eqn/) {last unless $text =~ /$id.*$ie.*$ie/s ;}
+	    $id = $ie;
 	    $text =~ s/$id\s*(.*)$id/$id/s;
 	    $retval[$k++] = $1;
 	}
@@ -661,12 +665,14 @@ sub transform_S3method {
     ## NB: \w includes _ as well as [:alnum:], which R now allows in name
     my ($text) = @_;
     my ($method, $prefix, $match, $rest);
-    my ($str, $ini, $fun, $cls, @args);
+    my ($str, $ini, $fun, $cls, $lst, @args);
     my $delimround = new Text::DelimMatch("\\(", "\\)");
     $delimround->quote('"');
     $delimround->quote("'");
     my $S3method_RE =
-      "([ \t]*)\\\\(S3)?method\{([\\w.]+)\}\{([\\w.]+)\}";
+      "([ \t]*)\\\\(S3)?method" .
+      "\{([\\w.]+)\}" .
+      "\{([._[:alnum:]]+|`[^`]+`)\}";
     
     while($text =~ /$S3method_RE(.*)/s) {
 	$ini = $1;
@@ -691,7 +697,9 @@ sub transform_S3method {
     ## Also try to handle markup for S3 methods for subscripting and
     ## subassigning.
     $S3method_RE = "([ \t]*)\\\\(S3)?method" .
-	"\{(\\\$|\\\[\\\[?)\}\{([\\w.]+)\}\\\(([^)]+)\\\)";
+	"\{(\\\$|\\\[\\\[?)\}" .
+	"\{([._[:alnum:]]+|`[^`]+`)\}" .
+	"\\\(([^)]+)\\\)";
     while($text =~ /$S3method_RE(.*)/s) {
 	## <NOTE>
 	## The hard part is to rewrite the argument list, because
@@ -723,17 +731,29 @@ sub transform_S3method {
 
     ## Also try to handle markup for S3 methods for binary ops and S3
     ## Ops group methods.
+    ## Argh.  When converting to HTML/SGML, ampersands get replaced by
+    ## '&amp;' entities early on ...
+    my $amp = "\\\&";
+    if($type =~ /html/i || $type =~ /Ssgm/ || $type =~ /chm/i) {
+	$amp = "\\\&amp;";
+    }
     $S3method_RE = "([ \t]*)\\\\(S3)?method" .
 	"\{(" .
 	join("|",
 	     ("\\\+", "\\\-", "\\\*", "\\\/", "\\\^",
-	      "<=?", ">=?", "!=?", "==", "\\\&", "\\\|",
+	      "<=?", ">=?", "!=?", "==", $amp, "\\\|",
 	      "\\\%[[:alnum:][:punct:]]*\\\%")) .
-	")\}\{([\\w.]+)\}\\\(([^)]+)\\\)";
+	")\}" .
+	"\{([._[:alnum:]]+|`[^`]+`)\}" .
+	"\\\(([^)]+)\\\)";
     while($text =~ /$S3method_RE/) {
-	$str = "$1\#\# S3 method for class '$4':\n$1";
+	$ini = $1;
 	$fun = $3;
-	@args = split(/,\s*/, $5);
+	$cls = $4;
+	$lst = $5;
+	$str = "$ini\#\# S3 method for class '$cls':\n$ini";
+	$method = "$2method";
+	@args = split(/,\s*/, $lst);
 	my $nargs = scalar(@args);
 	if(($nargs == 1) && ($fun eq "!")) {
 	    ## Unary: !.
@@ -744,9 +764,8 @@ sub transform_S3method {
 	    $str .= "$args[0] $fun $args[1]";
 	}
 	else {
-	    ## 
-	    warn "Warning: arity problem for \\$2method{$fun}{$4}?\n";
-	    $str .= "`$fun`($5)";
+	    warn "Warning: arity problem for \\$method{$fun}{$cls} in file '$Rdfile'?\n";
+	    $str .= "`$fun`($lst)";
 	}
 	$text =~ s/$S3method_RE/$str/s;
     }
@@ -763,22 +782,25 @@ sub transform_S4method {
     $delimround->quote('"');
     $delimround->quote("'");
     my $S4method_RE =
-      "([ \t]*)\\\\(S4)method\{([\\w.]+)\}\{([\\w.,]+)\}";
-    ## Use grouping on 'S4' so that the S3 method code can easily be
-    ## reused.
+      "([ \t]*)\\\\S4method" .
+      "\{([\\w.]+)\}" .
+      "\{((([._[:alnum:]]+|`[^`]+`),)*([._[:alnum:]]+|`[^`]+`))\}";
     local($Text::Wrap::columns) = 60;
 
     while($text =~ /$S4method_RE(.*)/s) {
 	$ini = $1;
-	$fun = $3;
-	$sig = join(", ", split(/,/, $4));
+	$fun = $2;
+	$sig = $3;
 	$method = "method";
-	($prefix, $match, $rest) = $delimround->match($5);
+	($prefix, $match, $rest) = $delimround->match($7);
   	if(($prefix eq "") && ($rest =~ m/^[ \t]*<-/)) {
   	    ## (Note that the RHS should really be called 'value', and
   	    ## that we could check for a syntacticaly valid R name.)
   	    $method = "replacement method";
   	}
+	$sig = &format_sig($sig);
+	## Note that we reformat the siglist so that wrapping becomes
+	## possible between siglist elements.
 	$str = wrap("$ini\#\# ", "$ini\#\#   ",
 		    "S4 $method for signature '$sig':\n") .
 			"$ini$fun";
@@ -787,20 +809,24 @@ sub transform_S4method {
 
     ## Also try to handle markup for S4 methods for subscripting and
     ## subassigning.  See transform_S3method() above for details.
-    $S4method_RE = "([ \t]*)\\\\(S4)method" .
-	"\{(\\\$|\\\[\\\[?)\}\{([\\w.,]+)\}\\\(([^)]+)\\\)";
+    $S4method_RE =
+	"([ \t]*)\\\\S4method" .
+	"\{(\\\$|\\\[\\\[?)\}" .
+	"\{((([._[:alnum:]]+|`[^`]+`),)*([._[:alnum:]]+|`[^`]+`))\}" .	
+	"\\\(([^)]+)\\\)";
     while($text =~ /$S4method_RE(.*)/s) {
 	$ini = $1;
-	$fun = $3;
-	$sig = join(", ", split(/,/, $4));
+	$fun = $2;
+	$sig = $3;
 	$method = "method";
 	## The match was for something ending in a pair of balanced
 	## parentheses, which are not necessarily the matching ones.
-	($prefix, $match, $rest) = $delimround->match("($5)$6");
+	($prefix, $match, $rest) = $delimround->match("($7)$8");
 	$method = "replacement method" if($rest =~ m/^[ \t]*<-/);
 	## Extract the first argument from the argument list.
 	substr($match, 1, -1) =~ m/\s*([^,]+),\s*(.*)/s;
 	## Now put things together.
+	$sig = &format_sig($sig);
 	$str = wrap("$ini\#\# ", "$ini\#\#   ",
 		    "S4 $method for signature '$sig':\n") .
 			"$ini$1$fun$2";
@@ -809,6 +835,17 @@ sub transform_S4method {
     }
     
     $text;
+}
+
+sub format_sig {
+    ## Add a space after each comma separating sig list entries.
+    my ($str) = @_;
+    my $out;
+    while($str =~ m/^([._[:alnum:]]+|`[^`]+`),(.*)$/) {
+	$out .= $1 . ", ";
+	$str = $2;
+    }
+    $out . $str;
 }
 
 sub striptitle { # text
@@ -858,6 +895,7 @@ sub rdoc2html { # (filename) ; 0 for STDOUT
     html_print_codeblock("examples", "Examples");
 
     print $htmlout (html_functionfoot($pkgname, $version));
+    $issue_warnings = 0;
 }
 
 sub html_striptitle {
@@ -976,7 +1014,7 @@ sub text2html {
 	my $argkey = $dest;
 	$argkey =~ s/&lt;/</go;
 	$argkey =~ s/&gt;/>/go;
-	die "\nERROR: command (e.g. \\url) inside \\link\n"
+	die "\nERROR in file '$Rdfile': command (e.g. \\url) inside \\link\n"
 	    if $arg =~ normal-bracket;
 	$htmlfile = $main::htmlindex{$argkey};
 	if($htmlfile && !length($opt)){
@@ -1236,8 +1274,12 @@ sub html_print_codeblock {
     my ($block,$title) = @_;
 
     if(defined $blocks{$block}){
+	my $ntext = $blocks{$block};
+	if ($ntext =~ /$ECODE/) {
+	    warn "WARNING: \\code inside code block in file '$Rdfile'\n" if $issue_warnings; 
+	}
 	print $htmlout (html_title3($title), "<pre>" ,
-			code2html($blocks{$block}), "</pre>\n\n");
+			code2html($ntext), "</pre>\n\n");
     }
 }
 
@@ -1258,6 +1300,18 @@ sub html_print_argblock {
 	print $htmlout (html_title3($title));
 
 	my $text = $blocks{$block};
+
+	## some people have put \itemize inside \value.
+	## as from R 2.8.1, strip with a warning, providing not after \item{
+	if($text =~ /\\item(ize|$ID)/) {
+	    if($1 eq "ize") {
+		warn "WARNING: found \\itemize inside \\$block in file '$Rdfile'\n" if $issue_warnings;
+		$text =~ /\\itemize($ID)/;
+		$id = $1;
+		$text =~  s/\\itemize$id//;
+		$text =~ s/$id//;
+	    }
+	}
 
 	if($text =~ /\\item/s){
 	    $text =~ /^(.*)(\\item.*)*/s;
@@ -1380,7 +1434,7 @@ sub html_tables {
 		$colformat[$k] = "center";
 	    }
 	    else{
-		die("Error: unknown identifier \{$cf\} in" .
+		die("Error in file '$Rdfile': unknown identifier \{$cf\} in" .
 		    " tabular format \{$format\}\n");
 	    }
 	}
@@ -1391,7 +1445,7 @@ sub html_tables {
 	for($k=0; $k<=$#rows;$k++){
 	    $table .= "<tr>\n";
 	    my @cols = split(/\\tab/, $rows[$k]);
-	    die("Error:\n  $rows[$k]\\cr\n" .
+	    die("Error in file '$Rdfile':\n  $rows[$k]\\cr\n" .
 		"does not fit tabular format \{$format\}\n")
 		if ($#cols != $#colformat);
 	    for($l=0; $l<=$#cols; $l++){
@@ -1528,6 +1582,7 @@ sub rdoc2txt { # (filename, def_encoding); 0 for STDOUT
 
     print $txtout "\n";
     if($_[0]) { close $txtout; }
+    $issue_warnings = 0;
 }
 
 sub txt_striptitle {
@@ -1726,7 +1781,7 @@ sub text2txt {
 	    $descitem = "\n.tide " . $descitem . " \n". text2txt($desc);
 	} else {
 	    warn "Warning: missing text for item '$descitem' " .
-		"in \\describe\n";
+		"in \\describe in file '$Rdfile'\n";
 	    $descitem = "\n.tide " . $descitem . " \n \n"
 	}
 	$text =~ s/\\itemnormal.*$id/$descitem/s;
@@ -1940,7 +1995,7 @@ sub txt_fill { # pre1, base, "text to be formatted"
 	    my $tmp, $line = "";
 	    for($k = 0; $k <= $#rows; $k++){
 		my @cols = split(/\\tab/, $rows[$k]);
-		die("Error:\n  $rows[$k]\\cr\n" .
+		die("Error in file '$Rdfile':\n  $rows[$k]\\cr\n" .
 		    "does not fit tabular format \{$format\}\n")
 		    if ($#cols != $#colformat);
 		for($l = 0; $l <= $#cols; $l++){
@@ -2019,6 +2074,9 @@ sub txt_print_codeblock {
 	print $txtout "\n";
 	print $txtout txt_header($title), ":\n" if $title;
 	$ntext = code2txt($blocks{$block});
+	if ($ntext =~ /$ECODE/) {
+	    warn "WARNING: \\code inside code block in file '$Rdfile'\n" if $issue_warnings; 
+	}
 	# make sure there is precisely one leading "\n"
 	$ntext =~ s/^[\n]*//go;
 	$ntext = "\n". $ntext;
@@ -2048,6 +2106,18 @@ sub txt_print_argblock {
 	print $txtout txt_header($title), ":\n" if $title;
 
 	my $text = $blocks{$block};
+
+	## some people have put \itemize inside \value.
+	## as from R 2.8.1, strip with a warning, providing not after \item{
+	if($text =~ /\\item(ize|$ID)/) {
+	    if($1 eq "ize") {
+		warn "WARNING: found \\itemize inside \\$block in file '$Rdfile'\n" if $issue_warnings;
+		$text =~ /\\itemize($ID)/;
+		$id = $1;
+		$text =~  s/\\itemize$id//;
+		$text =~ s/$id//;
+	    }
+	}
 
 	if($text =~ /\\item/s){
 	    $text =~ /^(.*)(\\item.*)*/s;
@@ -2151,7 +2221,7 @@ sub txt_tables {
 		$colformat[$k] = "c";
 	    }
 	    else{
-		die("Error: unknown identifier \{$cf\} in" .
+		die("Error in file '$Rdfile': unknown identifier \{$cf\} in" .
 		    " tabular format \{$format\}\n");
 	    }
 	}
@@ -2223,6 +2293,9 @@ sub Sd_print_codeblock {
 
     if(defined $blocks{$block}){
 	$ntext = code2txt($blocks{$block});
+	if ($ntext =~ /$ECODE/) {
+	    warn "WARNING: \\code inside code block in file '$Rdfile'\n"; 
+	}
 	# make sure there is precisely one leading "\n"
 	$ntext =~ s/^[\n]*//go;
 	$ntext = "\n". $ntext;
@@ -2240,6 +2313,18 @@ sub Sd_print_argblock {
     if(defined $blocks{$block}){
 	print $Sdout $macro, "\n" if $macro;
 	my $text = $blocks{$block};
+
+	## some people have put \itemize inside \value.
+	## as from R 2.8.1, strip with a warning, providing not after \item{
+	if($text =~ /\\item(ize|$ID)/) {
+	    if($1 eq "ize") {
+		warn "WARNING: found \\itemize inside \\$block in file '$Rdfile'\n";
+		$text =~ /\\itemize($ID)/;
+		$id = $1;
+		$text =~  s/\\itemize$id//;
+		$text =~ s/$id//;
+	    }
+	}
 
 	if($text =~ /\\item/s){
 	    $text =~ /^(.*)(\\item.*)*/s;
@@ -2512,7 +2597,7 @@ sub nroff_tables {
 		$colformat[$k] = "c";
 	    }
 	    else{
-		die("Error: unknown identifier \{$cf\} in" .
+		die("Error in file '$Rdfile': unknown identifier \{$cf\} in" .
 		    " tabular format \{$format\}\n");
 	    }
 	}
@@ -2527,7 +2612,7 @@ sub nroff_tables {
 	my @rows = split(/\\cr/, $arg);
 	for($k=0; $k<=$#rows;$k++){
 	    my @cols = split(/\\tab/, $rows[$k]);
-	    die("Error:\n  $rows[$k]\\cr\n" .
+	    die("Error in file '$Rdfile':\n  $rows[$k]\\cr\n" .
 		"does not fit tabular format \{$format\}\n")
 		if ($#cols != $#colformat);
 	    for($l=0; $l<$#cols; $l++){
@@ -2708,12 +2793,17 @@ sub rdoc2latex {# (filename)
     latex_print_exampleblock("examples", "Examples");
 
     print $latexout "\n";
+    $issue_warnings = 0;
 }
 
 ## The basic translator for 'normal text'
 sub text2latex {
 
-    my $text = $_[0];
+    my ($text, $recursive) = @_;
+
+    ## When processing \item, this calls itself (recursively), hence we
+    ## need to make sure that handling things like \tab and \cr happens
+    ## only once.
 
     $text =~ s/$EOB/\\\{/go;
     $text =~ s/$ECB/\\\}/go;
@@ -2755,7 +2845,8 @@ sub text2latex {
     while(checkloop($loopcount++, $text, "\\item")
 	  && $text =~ /\\itemnormal/s) {
 	my ($id, $arg, $desc) = get_arguments("item", $text, 2);
-	$descitem = "\\DITEM[" . text2latex($arg) . "] " . text2latex($desc);
+	$descitem = "\\DITEM[" .
+	    text2latex($arg, 1) . "] " . text2latex($desc, 1);
 	$text =~ s/\\itemnormal.*$id/$descitem/s;
     }
 
@@ -2771,13 +2862,15 @@ sub text2latex {
 	$text =~ s/$EPREFORMAT$id/$ec/;
     }
 
-    $text =~ s/\\\\/\\bsl{}/go;
-    ## A mess:  map  & \& \\& \\\& to  \& \& \bsl{}\& \bsl{}\&
-    $text =~ s/([^\\])&/$1\\&/go;
-    $text =~ s/\\R(\s+)/\\R\{\}$1/go;
-    $text =~ s/\\cr\n\[/\\\\\{\}\n\[/go;
-    $text =~ s/\\cr/\\\\/go;
-    $text =~ s/\\tab(\s+)/&$1/go;
+    if(!$recursive) {
+	$text =~ s/\\\\/\\bsl{}/go;
+	## A mess:  map  & \& \\& \\\& to  \& \& \bsl{}\& \bsl{}\&
+	$text =~ s/([^\\])&/$1\\&/go;
+	$text =~ s/\\R(\s+)/\\R\{\}$1/go;
+	$text =~ s/\\cr\n\[/\\\\\{\}\n\[/go;
+	$text =~ s/\\cr/\\\\/go;
+	$text =~ s/\\tab(\s+)/&$1/go;
+    }
 
     ## we need to convert \links's
     while(checkloop($loopcount++, $text, "\\link")
@@ -2861,7 +2954,11 @@ sub latex_print_codeblock {
     if(defined $blocks{$block}){
 	print $latexout "\\begin\{$env\}\n";
 	print $latexout "\\begin\{verbatim\}";
-	my $out = &code2latex($blocks{$block},0,1);
+	my $ntext = $blocks{$blocK};
+	if ($ntext =~ /$ECODE/) {
+	    warn "WARNING: \\code inside code block in file '$Rdfile'\n" if $issue_warnings; 
+	}
+	my $out = &code2latex($ntext, 0, 1);
 	$out =~ s/\\\\/\\/go;
 	print $latexout $out;
 	print $latexout "\\end\{verbatim\}\n";
@@ -2890,7 +2987,12 @@ sub latex_print_exampleblock {
     if(defined $blocks{$block}){
 	print $latexout "\\begin\{$env\}\n";
 	print $latexout "\\begin\{ExampleCode\}";
-	my $out = &code2latex($blocks{$block},0,0);
+	my $ntext = $blocks{$block};
+	if ($ntext =~ /$ECODE/) {
+	    warn "WARNING: \\code inside \\examples in file '$Rdfile'\n" 
+		if $issue_warnings; 
+	}
+	my $out = &code2latex($ntext,0,0);
 	$out =~ s/\\\\/\\/go;
 	print $latexout $out;
 	print $latexout "\\end\{ExampleCode\}\n";
@@ -2907,6 +3009,18 @@ sub latex_print_argblock {
 	print $latexout "\\begin\{$env\}\n";
 
 	my $text = $blocks{$block};
+
+	## some people have put \itemize inside \value.
+	## as from R 2.8.1, strip with a warning, providing not after \item{
+	if($text =~ /\\item(ize|$ID)/) {
+	    if($1 eq "ize") {
+		warn "WARNING: found \\itemize inside \\$block in file '$Rdfile'\n" if $issue_warnings;
+		$text =~ /\\itemize($ID)/;
+		$id = $1;
+		$text =~  s/\\itemize$id//;
+		$text =~ s/$id//;
+	    }
+	}
 
 	if($text =~ /\\item/s){#-- if there is >= 1 "\item":  ldescription
 	    $text =~ /^(.*)(\\item.*)*/s;
@@ -3508,6 +3622,18 @@ sub Ssgm_print_valueblock {
 
 	my $text = $blocks{$block};
 
+	## some people have put \itemize inside \value.
+	## as from R 2.8.1, strip with a warning, providing not after \item{
+	if($text =~ /\\item(ize|$ID)/) {
+	    if($1 eq "ize") {
+		warn "WARNING: found \\itemize inside \\$block in file '$Rdfile'\n";
+		$text =~ /\\itemize($ID)/;
+		$id = $1;
+		$text =~  s/\\itemize$id//;
+		$text =~ s/$id//;
+	    }
+	}
+
 	if($text =~ /\\item/s){
 	    $text =~ /^(.*)(\\item.*)*/s;
 	    my ($begin, $rest) = split(/\\item/, $text, 2);
@@ -3630,7 +3756,7 @@ sub Ssgm_tables {
 		$colformat[$k] = "center";
 	    }
 	    else{
-		die("Error: unknown identifier \{$cf\} in" .
+		die("Error in file '$Rdfile': unknown identifier \{$cf\} in" .
 		    " tabular format \{$format\}\n");
 	    }
 	}
@@ -3641,7 +3767,7 @@ sub Ssgm_tables {
 	for($k=0; $k<=$#rows;$k++){
 	    $table .= "    ";
 	    my @cols = split(/\\tab/, $rows[$k]);
-	    die("Error:\n  $rows[$k]\\cr\n" .
+	    die("Error in file '$Rdfile':\n  $rows[$k]\\cr\n" .
 		"does not fit tabular format \{$format\}\n")
 		if ($#cols != $#colformat);
 	    $table .= $cols[0];

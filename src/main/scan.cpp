@@ -91,7 +91,7 @@ typedef struct {
     int quiet;
     int sepchar; /*  = 0 */      /* This gets compared to ints */
     char decchar; /* = '.' */    /* This only gets compared to chars */
-    const char *quoteset; /* = NULL */
+    CXXRconst char *quoteset; /* = NULL */
     int comchar; /* = NO_COMCHAR */
     int ttyflag; /* = 0 */
     Rconnection con; /* = NULL */
@@ -105,11 +105,10 @@ typedef struct {
 
 static SEXP insertString(char *str, LocalData *l)
 {
-    if (!strIsASCII(str)) {
-	if (l->con->UTF8out || l->isUTF8) return mkCharCE(str, CE_UTF8);
-	else if (l->isLatin1) return mkCharCE(str, CE_LATIN1);
-    }
-    return mkChar(str);
+    cetype_t enc = CE_NATIVE;
+    if (l->con->UTF8out || l->isUTF8) enc = CE_UTF8;
+    else if (l->isLatin1) enc = CE_LATIN1;
+    return mkCharCE(str, enc);
 }
 
 static R_INLINE bool Rspace(unsigned int c)
@@ -124,6 +123,7 @@ static R_INLINE bool Rspace(unsigned int c)
 #endif
     return FALSE;
 }
+
 
 /* used by readline() and menu() */
 static int ConsoleGetchar(void)
@@ -206,7 +206,7 @@ strtoc(const char *nptr, char **endptr, Rboolean NA, LocalData *d)
 	    endp++;
 	} else {
 	    z.r = 0; z.i = 0;
-	    endp = const_cast<char*>(nptr); /* -Wall */
+	    endp = const_cast<char *>( nptr); /* -Wall */
 	}
     }
     *endptr = endp;
@@ -228,8 +228,8 @@ strtoraw (const char *nptr, char **endptr)
 	else if (*p >= 'a' && *p <= 'f') val += *p - 'a' + 10;
 	else {val = 0; break;}
     }
-    *endptr = const_cast<char *>(p);
-    return Rbyte(val);
+    *endptr = const_cast<char *>( p);
+    return Rbyte( val);
 }
 
 static R_INLINE int scanchar_raw(LocalData *d)
@@ -465,8 +465,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     /* strip trailing white space, if desired and if item is non-null */
     bufp = &buffer->data[m];
    if (strip && m > 0) {
-       do {c = int(*--bufp);} while(Rspace(c));
-       bufp++;
+	do {c = int(*--bufp);} while(Rspace(c));
+	bufp++;
     }
     *bufp = '\0';
     *bch = filled;
@@ -486,7 +486,7 @@ static R_INLINE int isNAstring(const char *buf, int mode, LocalData *d)
     return 0;
 }
 
-static R_INLINE void expected(const char *what, char *got, LocalData *d)
+static R_INLINE void expected(CXXRconst char *what, char *got, LocalData *d)
 {
     int c;
     if (d->ttyflag) { /* This is safe in a MBCS */
@@ -886,7 +886,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    const char *sc = translateChar(STRING_ELT(sep, 0));
 	    if(strlen(sc) > 1)
 		error(_("invalid 'sep' value: must be one byte"));
-	    data.sepchar = static_cast<unsigned char>(sc[0]);
+	    data.sepchar = static_cast<unsigned char>( sc[0]);
 	}
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else error(_("invalid '%s' argument"), "sep");
@@ -934,6 +934,13 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    strcpy(data.con->mode, "r");
 	    if(!data.con->open(data.con))
 		error(_("cannot open the connection"));
+	    if(!data.con->canread) {
+		data.con->close(data.con);
+		error(_("cannot read from this connection"));
+	    }
+	} else {
+	    if(!data.con->canread) 
+		error(_("cannot read from this connection"));
 	}
 	for (i = 0; i < nskip; i++) /* MBCS-safe */
 	    while ((c = scanchar(FALSE, &data)) != '\n' && c != R_EOF);
@@ -1016,7 +1023,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
-	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
+	else data.sepchar = static_cast<unsigned char>( translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else error(_("invalid '%s' argument"), "sep");
 
@@ -1040,6 +1047,13 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    strcpy(data.con->mode, "r");
 	    if(!data.con->open(data.con))
 		error(_("cannot open the connection"));
+	    if(!data.con->canread) {
+		data.con->close(data.con);
+		error(_("cannot read from this connection"));
+	    } 
+	} else {
+	    if(!data.con->canread) 
+		error(_("cannot read from this connection"));
 	}
 	for (i = 0; i < nskip; i++) /* MBCS-safe */
 	    while ((c = scanchar(FALSE, &data)) != '\n' && c != R_EOF);
@@ -1523,7 +1537,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strlen(p) == 1) data.comchar = int(*p);
     if (isString(sep) || isNull(sep)) {
 	if (length(sep) == 0) data.sepchar = 0;
-	else data.sepchar = static_cast<unsigned char>(translateChar(STRING_ELT(sep, 0))[0]);
+	else data.sepchar = static_cast<unsigned char>( translateChar(STRING_ELT(sep, 0))[0]);
 	/* gets compared to chars: bug prior to 1.7.0 */
     } else error(_("invalid '%s' argument"), "sep");
 
@@ -1540,7 +1554,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    data.con->seek(data.con, data.con->seek(data.con, -1, 1, 1), 1, 1);
     }
 
-    buf = static_cast<char*>(malloc(buf_size));
+    buf = static_cast<char *>( malloc(buf_size));
     if(!buf)
 	error(_("cannot allocate buffer in 'readTableHead'"));
 
@@ -1552,7 +1566,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while((c = scanchar(TRUE, &data)) != R_EOF) {
 	    if(nbuf >= buf_size -1) {
 		buf_size *= 2;
-		buf = static_cast<char*>(realloc(buf, buf_size));
+		buf = static_cast<char *>( realloc(buf, buf_size));
 		if(!buf)
 		    error(_("cannot allocate buffer in 'readTableHead'"));
 	    }
@@ -1769,12 +1783,12 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(strlen(sdec) != 1)
 	error(_("'dec' must be a single character"));
     cdec = sdec[0];
-    quote_col = reinterpret_cast<Rboolean*>(R_alloc(nc, sizeof(Rboolean)));
+    quote_col = reinterpret_cast<Rboolean *>( R_alloc(nc, sizeof(Rboolean)));
     for(j = 0; j < nc; j++) quote_col[j] = FALSE;
     for(i = 0; i < length(quote); i++) { /* NB, quote might be NULL */
-	int that = INTEGER(quote)[i];
-	if(that == 0) quote_rn = TRUE;
-	if(that >  0) quote_col[that - 1] = TRUE;
+	int thiss = INTEGER(quote)[i];
+	if(thiss == 0) quote_rn = TRUE;
+	if(thiss >  0) quote_col[thiss - 1] = TRUE;
     }
     R_AllocStringBuffer(0, &strBuf);
     PrintDefaults(R_NilValue);
@@ -1790,7 +1804,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isVectorList(x)) { /* A data frame */
 
 	/* handle factors internally, check integrity */
-	levels = reinterpret_cast<SEXP*>(R_alloc(nc, sizeof(SEXP)));
+	levels = reinterpret_cast<SEXP *>( R_alloc(nc, sizeof(SEXP)));
 	for(j = 0; j < nc; j++) {
 	    xj = VECTOR_ELT(x, j);
 	    if(LENGTH(xj) != nr)

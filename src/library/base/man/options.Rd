@@ -164,7 +164,7 @@ getOption(x)
     \item{\code{pager}:}{the command used for displaying text files by
       \code{\link{file.show}}.
 #ifdef unix
-      Defaults to \file{\var{R\_HOME}/bin/pager}, which selects a pager
+      Defaults to \file{\var{\link[base:Rhome]{R\_HOME}}/bin/pager}, which selects a pager
       via the \env{PAGER} environment variable (and that usually
       defaults to \code{less}).
 #endif
@@ -235,8 +235,8 @@ getOption(x)
     \item{\code{stringsAsFactors}:}{The default setting for arguments of
       \code{\link{data.frame}} and \code{\link{read.table}}.}
 
-    \item{\code{texi2dvi}:}{used by the unexported function
-      \code{texi2dvi} in name space \pkg{tools}.}
+    \item{\code{texi2dvi}:}{used by function
+      \code{\link{texi2dvi}} in package \pkg{tools}.}
 
     \item{\code{timeout}:}{integer.  The timeout for some Internet
       operations, in seconds.  Default 60 seconds.  See
@@ -263,7 +263,9 @@ getOption(x)
       warnings are turned into errors.}
 
     \item{\code{warnEscapes}:}{logical.  If true (the default) the parser
-      warns on unrecognized (backslash) escape sequences.}
+      warns on unrecognized (backslash) escape sequences and there is a
+      truncation warning on any attempt to create a character string
+      containing an embedded nul.}
 
     \item{\code{warnPartialMatchArgs}:}{logical.  If true, warns if
       partial matching is used in argument matching.}
@@ -402,9 +404,9 @@ getOption(x)
   is loaded if not already set.
   \describe{
     \item{\code{browser}:}{default HTML browser used by
-      \code{\link{help.start}()} on UNIX, or a non-default browser on
-      Windows.  Alternatively, a function that is called with a URL as
-      its argument. }
+      \code{\link{help.start}()} and \code{\link{browseURL}} on UNIX, or
+      a non-default browser on Windows.  Alternatively, an \R function that
+      is called with a URL as its argument.} 
 
     \item{\code{de.cellwidth}:}{integer: the cell widths (number of
       characters) to be used in the data editor \code{\link{dataentry}}.
@@ -445,7 +447,10 @@ getOption(x)
 #endif
 #ifdef unix
       Possible values are \code{"source"} (the default except under the
-      CRAN Mac OS X build) and \code{"mac.binary"}.}
+      CRAN Mac OS X build) and \code{"mac.binary"}. The latter can
+      have a suffix if supported by a special build, such as
+      \code{"mac.binary.leopard"} to access the \code{"leopard"} tree
+      of repositories instead of the default \code{"universal"}.}
 #endif
 
     \item{\code{repos}:}{URLs of the repositories for use by
@@ -477,6 +482,7 @@ getOption(x)
 
 #ifdef unix
 \section{Options used on Unix only}{
+  These will be \code{""} if no suitable path is known.
   \describe{
     \item{\code{latexcmd, dvipscmd}:}{character strings giving commands
       to be used in off-line printing of help pages.}
@@ -502,7 +508,7 @@ getOption(x)
   Wadsworth \& Brooks/Cole.
 }
 \examples{
-op <- options(); utils::str(op) # the values might be e.g. functions
+op <- options(); utils::str(op) # op() may contain functions.
 
 getOption("width") == options()$width # the latter needs more memory
 options(digits = 15)

@@ -140,11 +140,12 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
     hexadecimal representations like \code{\040} and \code{\0x2A}.  Any
     other escaped character is treated as itself, including backslash.
   }
-  \item{encoding}{encoding to be assumed for input strings.  It is
-    used to mark character strings as known to be in
-    Latin-1 or UTF-8: it is not used to re-encode the input.  To do the
-    latter, specify the encoding as part of the connection \code{con} or
-    via \code{\link{options}(encoding=)}: see the example under
+  \item{encoding}{encoding to be assumed for input strings.  If the
+    value is \code{"latin1"} or \code{"UTF-8"} it is used to mark
+    character strings as known to be in Latin-1 or UTF-8: it is not used
+    to re-encode the input.  To do the latter, specify the encoding as
+    part of the connection \code{con} or \emph{via}
+    \code{\link{options}(encoding=)}: see the example under
     \code{\link{file}}.
 #ifdef windows
     See also \sQuote{Details}.
@@ -243,8 +244,8 @@ scan(file = "", what = double(0), nmax = -1, n = -1, sep = "",
   chars: use an explicit separator to avoid this.
 
   Having \code{nul} bytes in fields (including \code{\0} if
-  \code{allowEscapes = TRUE}) may lead to scanning the field being
-  terminated at the \code{nul}.  They not normally present
+  \code{allowEscapes = TRUE}) may lead to interpretation of the
+  field being terminated at the \code{nul}.  They not normally present
   in text files -- see \code{\link{readBin}}.
 }
 \references{

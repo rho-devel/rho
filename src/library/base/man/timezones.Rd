@@ -1,6 +1,6 @@
 % File src/library/base/man/timezones.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{timezones}
@@ -8,6 +8,10 @@
 \alias{timezone}
 \alias{time zone}
 \alias{time zones}
+\alias{TZ}
+#ifdef windows
+\alias{TZDIR}
+#endif
 
 \title{Time Zones}
 \description{
@@ -37,7 +41,7 @@ Sys.timezone()
   history: over the last 100 years places have changed their affiliation
   between major time zones, have opted out of (or in to) DST in
   various years or adopted rule changes late or not at all.  This often
-  involves tiny administative units in the US/Canada: Iowa had 23
+  involves tiny administrative units in the US/Canada: Iowa had 23
   different implementations of DST in the 1960's!
 
   Time zones did not come into use until the second half of the
@@ -103,10 +107,10 @@ Sys.timezone()
 
   As from \R 2.7.0, \R under Windows uses the Olson database.  The
   current version of the database will be given in file
-  \file{\var{R\_HOME}/share/zoneinfo/VERSION}.  Environment variable
+  \file{\var{\link[base:Rhome]{R\_HOME}}/share/zoneinfo/VERSION}.  Environment variable
   \env{TZDIR} can be used to point to a later \file{zoneinfo} directory.
   A file listing most known time zones can be found at
-  \file{\var{R\_HOME}/share/zoneinfo/zone.tab} (see \sQuote{Examples}).
+  \file{\var{\link[base:Rhome]{R\_HOME}}/share/zoneinfo/zone.tab} (see \sQuote{Examples}).
 
   An attempt is made (once only per session) to map Windows' idea of
   the current time zone to a location, following

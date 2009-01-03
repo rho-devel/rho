@@ -219,7 +219,7 @@ plot.dendrogram <-
 	      nodePar = NULL, edgePar = list(),
 	      leaflab = c("perpendicular", "textlike", "none"), dLeaf = NULL,
 	      xlab = "", ylab = "", xaxt="n", yaxt="s",
-	      horiz = FALSE, frame.plot = FALSE, ...)
+	      horiz = FALSE, frame.plot = FALSE, xlim, ylim, ...)
 {
     type <- match.arg(type)
     leaflab <- match.arg(leaflab)
@@ -230,12 +230,14 @@ plot.dendrogram <-
     yTop <- hgt + edge.root
     if(center) { x1 <- 0.5 ; x2 <- mem.x + 0.5 }
     else       { x1 <- 1   ; x2 <- mem.x }
-    xlim <- c(x1 - 1/2, x2 + 1/2)
-    ylim <- c(0, yTop)
+    xl. <- c(x1 - 1/2, x2 + 1/2)
+    yl. <- c(0, yTop)
     if (horiz) {## swap and reverse direction on `x':
-	xl <- xlim; xlim <- rev(ylim); ylim <- xl
+	tmp <- xl.; xl. <- rev(yl.); yl. <- tmp
 	tmp <- xaxt; xaxt <- yaxt; yaxt <- tmp
     }
+    if(missing(xlim) || is.null(xlim)) xlim <- xl.
+    if(missing(ylim) || is.null(ylim)) ylim <- yl.
     plot(0, xlim = xlim, ylim = ylim, type = "n", xlab = xlab, ylab = ylab,
 	 xaxt = xaxt, yaxt = yaxt, frame.plot = frame.plot, ...)
     if(is.null(dLeaf))
@@ -392,9 +394,19 @@ plotNode <-
 		vlm <- strheight(c(edgeText,"h"), cex = t.cex)/2
 		hlm <- strwidth (c(edgeText,"m"), cex = t.cex)/2
 		hl3 <- c(hlm[1], hlm[1] + hlm[2], hlm[1])
-                polygon(mx+ c(-hl3, hl3), my + sum(vlm)*c(-1L:1L, 1L:-1L),
-                        col = p.col, border= p.border, lty = p.lty, lwd = p.lwd)
-		text(mx, my, edgeText, cex = t.cex, col = t.col, font = t.font)
+                if(horiz) {
+                    polygon(my+ c(-hl3, hl3), mx + sum(vlm)*c(-1L:1L, 1L:-1L),
+                            col = p.col, border= p.border,
+                            lty = p.lty, lwd = p.lwd)
+                    text(my, mx, edgeText, cex = t.cex, col = t.col,
+                         font = t.font)
+                } else {
+                    polygon(mx+ c(-hl3, hl3), my + sum(vlm)*c(-1L:1L, 1L:-1L),
+                            col = p.col, border= p.border,
+                            lty = p.lty, lwd = p.lwd)
+                    text(mx, my, edgeText, cex = t.cex, col = t.col,
+                         font = t.font)
+                }
 	    }
 	    plotNode(bx$limit[k], bx$limit[k + 1], subtree = child,
 		     type, center, leaflab, dLeaf, nodePar, edgePar, horiz)

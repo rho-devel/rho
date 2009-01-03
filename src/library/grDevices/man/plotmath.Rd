@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/plotmath.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{plotmath}
@@ -42,13 +42,11 @@
   for titles, subtitles and x- and y-axis labels (but not for axis
   labels on \code{persp} plots).
 
-  In most cases other language objects (names and calls) are coerced to
-  expressions and so can also be used.
-}
-\details{
-  A mathematical expression must obey the normal rules of syntax for any
-  \R expression, but it is interpreted according to very different rules
-  than for normal \R expressions.
+  In most cases other language objects (names and calls, including
+  formulas) are coerced to expressions and so can also be used.  }
+  \details{ A mathematical expression must obey the normal rules of
+  syntax for any \R expression, but it is interpreted according to very
+  different rules than for normal \R expressions.
 
   It is possible to produce many different mathematical symbols, generate
   sub- or superscripts, produce fractions, etc.
@@ -123,8 +121,10 @@
     \code{Alpha} -- \code{Omega} \tab uppercase Greek symbols \cr
     \code{theta1, phi1, sigma1, omega1} \tab cursive Greek symbols\cr
     \code{Upsilon1} \tab capital upsilon with hook\cr
+    \code{aleph} \tab first letter of Hebrew alphabet\cr
     \code{infinity}   \tab infinity symbol \cr
     \code{partialdiff} \tab partial differential symbol \cr
+    \code{nabla} \tab nabla, gradient symbol\cr
     \code{32*degree}   \tab 32 degrees \cr
     \code{60*minute}   \tab 60 minutes of angle \cr
     \code{30*second}   \tab 30 seconds of angle \cr
@@ -160,7 +160,7 @@
   case mu can be obtained either by the special symbol \code{mu} or by
   \code{symbol("m")}.  This provides access to symbols that have no
   special symbol name, for example, the universal, or forall, symbol is
-  \code{symbol("\\042")}, and \emph{aleph} is \code{symbol("\\300")}.
+  \code{symbol("\\042")}.
 
   Note to TeX users: TeX's \code{\Upsilon} is \code{Upsilon1}, TeX's
   \code{\varepsilon} is close to \code{epsilon}, and there is no
@@ -176,6 +176,42 @@
   The fonts used are taken from the current font family, and so can be
   set by \code{\link{par}(family=)} in base graphics, and
   \code{\link{gpar}(fontfamily=)} in package \pkg{grid}.
+}
+\section{Other symbols}{
+  On many OSes and some graphics devices many other symbols are available as
+  part of the standard text font, and all of the symbols in the Adobe
+  Symbol encoding are in principle available \emph{via} changing the
+  font face or (see \sQuote{Details}) plotmath: see the examples section
+  of \code{\link{points}} for a function to display them.  (\sQuote{In
+    principle} because some of the glyphs are missing from some
+  implementations of the symbol font.)  Unfortunately,
+  \code{\link{postscript}} and \code{\link{pdf}} have support for little
+  more than European and CJK characters and the Adobe Symbol encoding
+  (and in a few fonts, also Cyrillic characters).
+
+#ifdef unix
+  In a UTF-8 locale any Unicode character can be entered, perhaps as a
+  \code{\uxxxx} or \code{\Uxxxxxxxx} escape sequence, but the issue is
+  whether the graphics device is apply to display the character.  The
+  widest range of characters is likely to be available in the
+  \code{\link{X11}} device using cairo: see its help page for how
+  installing additional fonts can help.
+
+  In non-UTF-8 locales there is normally no support for symbols not in
+  the languages for which the current encoding was intended.
+#endif
+#ifdef windows
+  Any Unicode character can be entered into a text string \emph{via} a
+  \code{\uxxxx} escape, or used by number in a call to
+  \code{\link{points}}.  The \code{\link{windows}} family of devices can
+  display such characters if they are available in the font in use.  A good
+  way to both find out which characters are available in a font and to
+  determine the Unicode number is to use the \sQuote{Character Map}
+  accessory (usually on the \sQuote{Start} menu under
+  \sQuote{Accessories->System Tools}.  You can also copy-and-paste
+  characters from the \sQuote{Character Map} window to \code{Rgui} (but
+  not to \code{Rterm}).
+#endif
 }
 \references{
   Murrell, P. and Ihaka, R. (2000) An approach to providing
@@ -233,5 +269,30 @@ text(4, 6.4, "expression(bar(x) == sum(frac(x[i], n), i==1, n))",
 text(8, 5, expression(paste(frac(1, sigma*sqrt(2*pi)), " ",
                             plain(e)^{frac(-(x-mu)^2, 2*sigma^2)})),
      cex = 1.2)
+
+## some other useful symbols
+plot.new(); plot.window(c(0,4), c(15,1))
+text(1, 1, "universal", adj=0); text(2.5, 1,  "\\\\042")
+text(3, 1, expression(symbol("\\042")))
+text(1, 2, "existential", adj=0); text(2.5, 2,  "\\\\044")
+text(3, 2, expression(symbol("\\044")))
+text(1, 3, "suchthat", adj=0); text(2.5, 3,  "\\\\047")
+text(3, 3, expression(symbol("\\047")))
+text(1, 4, "therefore", adj=0); text(2.5, 4,  "\\\\134")
+text(3, 4, expression(symbol("\\134")))
+text(1, 5, "perpendicular", adj=0); text(2.5, 5,  "\\\\136")
+text(3, 5, expression(symbol("\\136")))
+text(1, 6, "circlemultiply", adj=0); text(2.5, 6,  "\\\\304")
+text(3, 6, expression(symbol("\\304")))
+text(1, 7, "circleplus", adj=0); text(2.5, 7,  "\\\\305")
+text(3, 7, expression(symbol("\\305")))
+text(1, 8, "emptyset", adj=0); text(2.5, 8,  "\\\\306")
+text(3, 8, expression(symbol("\\306")))
+text(1, 9, "angle", adj=0); text(2.5, 9,  "\\\\320")
+text(3, 9, expression(symbol("\\320")))
+text(1, 10, "leftangle", adj=0); text(2.5, 10,  "\\\\341")
+text(3, 10, expression(symbol("\\341")))
+text(1, 11, "rightangle", adj=0); text(2.5, 11,  "\\\\361")
+text(3, 11, expression(symbol("\\361")))
 }
 \keyword{aplot}

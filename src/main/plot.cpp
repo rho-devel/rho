@@ -36,8 +36,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -968,7 +966,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* should be plotted: TRUE => show, FALSE => don't show. */
 
     doticks = Rboolean(asLogical(CAR(args)));
-    doticks = (doticks == NA_LOGICAL) ? TRUE : Rboolean(doticks);
+    doticks = (doticks == NA_LOGICAL) ? TRUE : Rboolean( doticks);
     args = CDR(args);
 
     /* Optional argument: "line" */
@@ -1735,31 +1733,41 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void xypoints(SEXP call, SEXP args, int *n)
 {
-    int k=0;/* -Wall */
+    int k=0,/* -Wall */ kmin;
 
-    if (!isNumeric(CAR(args)) || (k = LENGTH(CAR(args))) <= 0)
+    if (!isNumeric(CAR(args)))
 	error(_("invalid first argument"));
     SETCAR(args, coerceVector(CAR(args), REALSXP));
-    *n = k;
+    k = LENGTH(CAR(args));
+    *n = k; kmin = k;
     args = CDR(args);
 
-    if (!isNumeric(CAR(args)) || (k = LENGTH(CAR(args))) <= 0)
+    if (!isNumeric(CAR(args)))
 	error(_("invalid second argument"));
+    k = LENGTH(CAR(args));
     SETCAR(args, coerceVector(CAR(args), REALSXP));
     if (k > *n) *n = k;
+    if (k < kmin) kmin = k;
     args = CDR(args);
 
-    if (!isNumeric(CAR(args)) || (k = LENGTH(CAR(args))) <= 0)
+    if (!isNumeric(CAR(args)))
 	error(_("invalid third argument"));
     SETCAR(args, coerceVector(CAR(args), REALSXP));
+    k = LENGTH(CAR(args));
     if (k > *n) *n = k;
+    if (k < kmin) kmin = k;
     args = CDR(args);
 
-    if (!isNumeric(CAR(args)) || (k = LENGTH(CAR(args))) <= 0)
+    if (!isNumeric(CAR(args)))
 	error(_("invalid fourth argument"));
     SETCAR(args, coerceVector(CAR(args), REALSXP));
+    k = LENGTH(CAR(args));
     if (k > *n) *n = k;
+    if (k < kmin) kmin = k;
     args = CDR(args);
+
+    if (*n > 0 && kmin == 0)
+	error(_("cannot mix zero-length and non-zero-length coordinates"));
 }
 
 
@@ -1777,6 +1785,7 @@ SEXP attribute_hidden do_segments(SEXP call, SEXP op, SEXP args, SEXP env)
     GCheckState(dd);
 
     xypoints(call, args, &n);
+    if(n == 0) return R_NilValue;
 
     sx0 = CAR(args); nx0 = length(sx0); args = CDR(args);
     sy0 = CAR(args); ny0 = length(sy0); args = CDR(args);
@@ -1844,6 +1853,8 @@ SEXP attribute_hidden do_rect(SEXP call, SEXP op, SEXP args, SEXP env)
     GCheckState(dd);
 
     xypoints(call, args, &n);
+    if(n == 0) return R_NilValue;
+
     sxl = CAR(args); nxl = length(sxl); args = CDR(args);/* x_left */
     syb = CAR(args); nyb = length(syb); args = CDR(args);/* y_bottom */
     sxr = CAR(args); nxr = length(sxr); args = CDR(args);/* x_right */
@@ -1921,6 +1932,7 @@ SEXP attribute_hidden do_arrows(SEXP call, SEXP op, SEXP args, SEXP env)
     GCheckState(dd);
 
     xypoints(call, args, &n);
+    if(n == 0) return R_NilValue;
 
     sx0 = CAR(args); nx0 = length(sx0); args = CDR(args);
     sy0 = CAR(args); ny0 = length(sy0); args = CDR(args);
@@ -2459,8 +2471,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we don't want to mark the plot as dirty. */
 
     dirtyplot = FALSE;
-    gpnewsave = Rf_gpptr(dd)->newplot;
-    dpnewsave = Rf_dpptr(dd)->newplot;
+    gpnewsave = gpptr(dd)->newplot;
+    dpnewsave = dpptr(dd)->newplot;
     cexsave = gpptr(dd)->cex;
     fontsave = gpptr(dd)->font;
     colsave = gpptr(dd)->col;
@@ -2471,8 +2483,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
 	gpptr(dd)->xpd = 1;
 
     if (outer) {
-	gpnewsave = Rf_gpptr(dd)->newplot;
-	dpnewsave = Rf_dpptr(dd)->newplot;
+	gpnewsave = gpptr(dd)->newplot;
+	dpnewsave = dpptr(dd)->newplot;
 	/* override par("xpd") and force clipping to device region */
 	gpptr(dd)->xpd = 2;
     }
@@ -2522,8 +2534,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
 
     GRestorePars(dd);
     if (!dirtyplot) {
-	Rf_gpptr(dd)->newplot = gpnewsave;
-	Rf_dpptr(dd)->newplot = dpnewsave;
+	gpptr(dd)->newplot = gpnewsave;
+	dpptr(dd)->newplot = dpnewsave;
     }
     UNPROTECT(10);
 
@@ -2543,8 +2555,8 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	 ...) */
 
     SEXP Main, xlab, ylab, sub, string;
-    double adj, adjy, cex, offset, line, hpos, vpos;
-    int i, n, font, outer, where;
+    double adj, adjy, cex, offset, line, hpos, vpos, where;
+    int i, n, font, outer;
     rcolor col;
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
@@ -3960,7 +3972,6 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
 
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
-    gcontextFromGP(&gc, dd);
 
     GCheckState(dd);
 
@@ -3990,6 +4001,10 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
 
     GSavePars(dd);
     ProcessInlinePars(args, dd, call);
+    /* Paul 2008-12-05
+     * Convert GP to gcontext AFTER ProcessInlinePars
+     */
+    gcontextFromGP(&gc, dd);
 
     GMode(1, dd);
 

@@ -25,7 +25,11 @@ getPackageName <- function(where = topenv(parent.frame()), create = TRUE) {
         pkg <- Sys.getenv("R_PACKAGE_NAME")
     env <- as.environment(where)
     envName <- environmentName(env)
-    if(!nzchar(pkg)) {
+    if(nzchar(envName)) {
+        if(regexpr("package:", envName, fixed = TRUE) == 1)
+          pkg <- sub("package:","", envName, fixed = TRUE)
+    }
+    if(!nzchar(pkg)) { ## is still ""
         if(identical(env, .GlobalEnv))
             pkg <- ".GlobalEnv"
         else if(identical(env, .BaseNamespaceEnv))
@@ -76,7 +80,7 @@ setPackageName <- function(pkg, env)
 packageSlot <- function(object)
     attr(object, "package")
 
-"packageSlot<-" <- function(object, value) {
+`packageSlot<-` <- function(object, value) {
     attr(object, "package") <- value
     object
 }

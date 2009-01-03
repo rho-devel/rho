@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is handled as a whole string */
-
 /* The x:y  primitive calls do_colon(); do_colon() calls cross_colon() if
    both arguments are factors and seq_colon() otherwise.
  */
@@ -108,7 +106,7 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     SEXP ans;
     Rboolean useInt;
 
-    in1 = int(n1);
+    in1 = int((n1));
     useInt = Rboolean(n1 == in1);
     if (n1 <= INT_MIN || n2 <= INT_MIN || n1 > INT_MAX || n2 > INT_MAX)
 	useInt = FALSE;
@@ -145,10 +143,10 @@ SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
     s2 = CADR(args);
     n1 = length(s1);
     if( n1 > 1 )
-	warningcall(call, _("numerical expression has %d elements: only the first used"), int(n1));
+	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n1));
     n2 = length(s2);
     if( n2 > 1 )
-	warningcall(call, _("numerical expression has %d elements: only the first used"), int(n2));
+	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n2));
     n1 = asReal(s1);
     n2 = asReal(s2);
     if (ISNAN(n1) || ISNAN(n2))
@@ -225,6 +223,10 @@ static SEXP rep2(SEXP s, SEXP ncopy)
     default:
 	UNIMPLEMENTED_TYPE("rep2", s);
     }
+    if(IS_S4_OBJECT(s)) { /* e.g. contains = "list" */
+	setAttrib(a, R_ClassSymbol, getAttrib(s, R_ClassSymbol));
+	SET_S4_OBJECT(a);
+    }
     if (inherits(s, "factor")) {
 	SEXP tmp;
 	if(inherits(s, "ordered")) {
@@ -243,6 +245,7 @@ static SEXP rep2(SEXP s, SEXP ncopy)
     return a;
 }
 
+/* called in do_rep_int() only */
 static SEXP rep1(SEXP s, SEXP ncopy)
 {
     int i, ns, na, nc;
@@ -270,6 +273,11 @@ static SEXP rep1(SEXP s, SEXP ncopy)
     else
 	a = allocList(na);
     PROTECT(a);
+
+    if(IS_S4_OBJECT(s)) { /* e.g. contains = "list" */
+	setAttrib(a, R_ClassSymbol, getAttrib(s, R_ClassSymbol));
+	SET_S4_OBJECT(a);
+    }
 
     switch (TYPEOF(s)) {
     case LGLSXP:
@@ -422,6 +430,10 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 done:
     ans = do_subset_dflt(R_NilValue, R_NilValue, list2(x, ind), rho);
+    if(IS_S4_OBJECT(x)) { /* e.g. contains = "list" */
+	setAttrib(ans, R_ClassSymbol, getAttrib(x, R_ClassSymbol));
+	SET_S4_OBJECT(ans);
+    }
     /* 1D arrays get dimensions preserved */
     setAttrib(ans, R_DimSymbol, R_NilValue);
     UNPROTECT(nprotect);
@@ -491,7 +503,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double rout = asReal(len);
 	if(ISNAN(rout) || rout <= -0.5)
 	    errorcall(call, _("'length.out' must be a non-negative number"));
-	lout = int(ceil(rout));
+	lout = int( ceil(rout));
     }
 
     if(lout == NA_INTEGER) {
@@ -525,7 +537,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ans = from;
 		goto done;
 	    }
-	    if(n > double(INT_MAX))
+	    if(n > double( INT_MAX))
 		errorcall(call, _("'by' argument is much too small"));
 	    if(n < -FLT_EPSILON)
 		errorcall(call, _("wrong sign in 'by' argument"));

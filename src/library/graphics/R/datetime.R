@@ -29,10 +29,10 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         sc <- 60
         if(missing(format)) format <- "%M:%S"
     } else if (d < 1.1*60*60*24) {# hours
-        sc <- 60*24
+        sc <- 60*60
         if(missing(format)) format <- "%H:%M"
     } else if (d < 2*60*60*24) {
-        sc <- 60*24
+        sc <- 60*60
         if(missing(format)) format <- "%a %H:%M"
     } else if (d < 7*60*60*24) {# days of a week
         sc <- 60*60*24
@@ -55,7 +55,7 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         m <- length(zz$mon); M <- 2*m
         m <- rep.int(zz$year[1], m)
         zz$year <- c(m, m+1)
-        zz <- lapply(zz, function(x) rep(x, length = M))
+        zz <- lapply(zz, function(x) rep(x, length.out = M))
         class(zz) <- c("POSIXt", "POSIXlt")
         z <- as.POSIXct(zz)
         if(missing(format)) format <- "%b"
@@ -65,14 +65,16 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         zz$mday <- zz$wday <- zz$yday <- 1
         zz$isdst <- -1; zz$mon <- zz$hour <- zz$min <- zz$sec <- 0
         zz$year <- pretty(zz$year); M <- length(zz$year)
-        zz <- lapply(zz, function(x) rep(x, length = M))
+        zz <- lapply(zz, function(x) rep(x, length.out = M))
         class(zz) <- c("POSIXt", "POSIXlt")
         z <- as.POSIXct(zz)
         if(missing(format)) format <- "%Y"
     }
     if(!mat) z <- x[is.finite(x)] # override changes
-    z <- z[z >= range[1] & z <= range[2]]
-    if (identical(labels, TRUE))
+    keep <- z >= range[1] & z <= range[2]
+    z <- z[keep]
+    if (!is.logical(labels)) labels <- labels[keep]
+    else if (identical(labels, TRUE))
 	labels <- format(z, format = format)
     else if (identical(labels, FALSE))
 	labels <- rep("", length(z)) # suppress labelling of ticks
@@ -249,9 +251,11 @@ axis.Date <- function(side, x, at, format, labels = TRUE, ...)
         if(missing(format)) format <- "%Y"
     }
     if(!mat) z <- x[is.finite(x)] # override changes
-    z <- z[z >= range[1] & z <= range[2]]
+    keep <- z >= range[1] & z <= range[2]
+    z <- z[keep]
     z <- sort(unique(z)); class(z) <- "Date"
-    if (identical(labels, TRUE))
+    if (!is.logical(labels)) labels <- labels[keep]
+    else if (identical(labels, TRUE))
 	labels <- format.Date(z, format = format)
     else if (identical(labels, FALSE))
 	labels <- rep("", length(z)) # suppress labelling of ticks

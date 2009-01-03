@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -1033,8 +1031,8 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    if (ns > 3) ns2 = ns/2; else ns2 = -1;
 
 	    vmax = vmaxget();
-	    xxx = reinterpret_cast<double *>(R_alloc(ns + 1, sizeof(double)));
-	    yyy = reinterpret_cast<double *>(R_alloc(ns + 1, sizeof(double)));
+	    xxx = reinterpret_cast<double *>( R_alloc(ns + 1, sizeof(double)));
+	    yyy = reinterpret_cast<double *>( R_alloc(ns + 1, sizeof(double)));
 	    /* now have the space, go through again: */
 	    s = start;
 	    ns = 0;
@@ -1713,7 +1711,7 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     y = REAL(sy);
     z = REAL(sz);
     c = REAL(sc);
-    col = reinterpret_cast<rcolor *>(INTEGER(scol));
+    col = reinterpret_cast<rcolor *>( INTEGER(scol));
 
     /* Check of grid coordinates */
     /* We want them to all be finite */

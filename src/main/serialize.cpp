@@ -338,7 +338,7 @@ static void OutString(R_outpstream_t stream, const char *s, int length)
 	stream->OutChar(stream, '\n');
     }
     else
-	stream->OutBytes(stream, s, length); /* FIXME: is this case right? */
+	stream->OutBytes(stream, CXXRNOCAST(void *)s, length); /* FIXME: is this case right? */
 }
 
 
@@ -599,7 +599,7 @@ static void InFormat(R_inpstream_t stream)
 
 #define HASHSIZE 1099
 
-#define PTRHASH(obj) (R_size_t(obj) >> 2)
+#define PTRHASH(obj) ((R_size_t( (obj))) >> 2)
 
 #define HASH_TABLE_COUNT(ht) TRUELENGTH(ht)
 #define SET_HASH_TABLE_COUNT(ht, val) SET_TRUELENGTH(ht, val)
@@ -681,9 +681,9 @@ static int HashGet(SEXP item, SEXP ht)
 #define IS_OBJECT_BIT_MASK (1 << 8)
 #define HAS_ATTR_BIT_MASK (1 << 9)
 #define HAS_TAG_BIT_MASK (1 << 10)
-#define ENCODE_LEVELS(v) (v << 12)
-#define DECODE_LEVELS(v) (v >> 12)
-#define DECODE_TYPE(v) (SEXPTYPE(v & 255))
+#define ENCODE_LEVELS(v) ((v) << 12)
+#define DECODE_LEVELS(v) ((v) >> 12)
+#define DECODE_TYPE(v) (SEXPTYPE((v) & 255))
 
 static int PackFlags(int type, int levs, int isobj, int hasattr, int hastag)
 {
@@ -890,8 +890,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	case PROMSXP:
 	    hastag = (PRENV(s) != 0);
 	    break;
-	default:
-	    hastag = FALSE;
+	default: hastag = FALSE;
 	}
 #ifdef USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS
 	/* With the CHARSXP cache chains maintained through the ATTRIB
@@ -1732,7 +1731,7 @@ R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 			  R_pstream_format_t type, int version,
 			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitOutPStream(stream, fp, type, version,
+    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type, version,
 		     OutCharFile, OutBytesFile, phook, pdata);
 }
 
@@ -1741,7 +1740,7 @@ R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
 			 R_pstream_format_t type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
-    R_InitInPStream(stream, fp, type,
+    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type,
 		    InCharFile, InBytesFile, phook, pdata);
 }
 
@@ -1793,7 +1792,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 		*p++ = static_cast<unsigned char>(res);
 	    }
 	} else {
-            if (length != int(con->read(buf, 1, length, con)))
+	    if (length != int(con->read(buf, 1, length, con)))
 		error(_("error reading from connection"));
 	}
     }
@@ -1819,7 +1818,7 @@ static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	CXXRconst char *p = reinterpret_cast<const char*>(buf);
+	CXXRconst char *p = static_cast<const char*>(buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
@@ -1850,7 +1849,7 @@ void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
     CheckOutConn(con);
     if (con->text && type != R_pstream_ascii_format)
 	error(_("only ascii format can be written to text mode connections"));
-    R_InitOutPStream(stream, con, type, version,
+    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type, version,
 		     OutCharConn, OutBytesConn, phook, pdata);
 }
 
@@ -1865,7 +1864,7 @@ void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
 	else if (type != R_pstream_ascii_format)
 	    error(_("only ascii format can be read from text mode connections"));
     }
-    R_InitInPStream(stream, con, type,
+    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type,
 		    InCharConn, InBytesConn, phook, pdata);
 }
 
@@ -1993,7 +1992,7 @@ static void InitBConOutPStream(R_outpstream_t stream, bconbuf_t bb,
 {
     bb->count = 0;
     bb->con = con;
-    R_InitOutPStream(stream, bb, type, version,
+    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) bb, type, version,
 		     OutCharBB, OutBytesBB, phook, pdata);
 }
 
@@ -2052,7 +2051,7 @@ static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
     membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
     R_size_t needed = mb->count + R_size_t( length);
     /* There is a potential overflow here on 32-bit systems */
-    if(double(mb->count) + length > double (INT_MAX))
+    if(double( mb->count) + length > double( INT_MAX))
 	error(_("serialization is too large to store in a raw vector"));
     if (needed > mb->size) resize_buffer(mb, needed);
     memcpy(mb->buf + mb->count, buf, length);
@@ -2083,7 +2082,7 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = length;
     mb->buf = reinterpret_cast<unsigned char*>(buf);
-    R_InitInPStream(stream, mb, R_pstream_any_format,
+    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, R_pstream_any_format,
 		    InCharMem, InBytesMem, phook, pdata);
 }
 
@@ -2094,7 +2093,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = 0;
     mb->buf = NULL;
-    R_InitOutPStream(stream, mb, type, version,
+    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, type, version,
 		     OutCharMem, OutBytesMem, phook, pdata);
 }
 
@@ -2173,12 +2172,9 @@ SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
     hook = fun != R_NilValue ? CallHook : NULL;
 
     if (TYPEOF(icon) == STRSXP && LENGTH(icon) > 0) {
-	struct membuf_st mbs;
-	void *data = CHAR_RW(STRING_ELT(icon, 0)); /* FIXME, is this right? */
-	int length = LENGTH(STRING_ELT(icon, 0));
-	warning("unserialize() from a character string is deprecated and will be withdrawn in R 2.8.0");
-	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
-	return R_Unserialize(&in);
+	/* was the format in R < 2.4.0, removed in R 2.8.0 */
+	error("character vectors are no longer accepted by unserialize()");
+	return R_NilValue; /* -Wall */
     } else if (TYPEOF(icon) == RAWSXP) {
 	struct membuf_st mbs;
 	void *data = RAW(icon);
@@ -2217,21 +2213,13 @@ static SEXP appendRawToFile(SEXP file, SEXP bytes)
 #ifdef HAVE_WORKING_FTELL
     /* Windows' ftell returns position 0 with "ab" */
     if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "ab")) == NULL) {
-#ifdef HAVE_STRERROR
 	error( _("cannot open file '%s': %s"), CHAR(STRING_ELT(file, 0)),
 	       strerror(errno));
-#else
-	error( _("cannot open file '%s'"), CHAR(STRING_ELT(file, 0)));
-#endif
     }
 #else
     if ((fp = R_fopen(CHAR(STRING_ELT(file, 0)), "r+b")) == NULL) {
-#ifdef HAVE_STRERROR
 	error( _("cannot open file '%s': %s"), CHAR(STRING_ELT(file, 0)),
 	       strerror(errno));
-#else
-	error( _("cannot open file '%s'"), CHAR(STRING_ELT(file, 0)));
-#endif
     }
     fseek(fp, 0, SEEK_END);
 #endif
@@ -2309,13 +2297,8 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 
     if(icache >= 0) {
 	strcpy(names[icache], cfile);
-	if ((fp = R_fopen(cfile, "rb")) == NULL) {
-#ifdef HAVE_STRERROR
+	if ((fp = R_fopen(cfile, "rb")) == NULL)
 	    error(_("cannot open file '%s': %s"), cfile, strerror(errno));
-#else
-	    error(_("cannot open file '%s'"), cfile);
-#endif
-	}
 	if (fseek(fp, 0, SEEK_END) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);
@@ -2333,13 +2316,8 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	if (filelen != in) error(_("read failed on %s"), cfile);
 	memcpy(RAW(val), ptr[icache]+offset, len);
     } else {
-	if ((fp = R_fopen(cfile, "rb")) == NULL) {
-#ifdef HAVE_STRERROR
+	if ((fp = R_fopen(cfile, "rb")) == NULL)
 	    error(_("cannot open file '%s': %s"), cfile, strerror(errno));
-#else
-	    error(_("cannot open file '%s'"), cfile);
-#endif
-	}
 	if (fseek(fp, offset, SEEK_SET) != 0) {
 	    fclose(fp);
 	    error(_("seek failed on %s"), cfile);

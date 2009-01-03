@@ -34,15 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8>
-
-   char here is either ASCII or handled as a whole, apart from Rstrlen
-   and EncodeString.
-
-   Octal representation of strings replaced by \u+4/8hex (can that be
-   improved?).
-*/
-
 
 /* =========
  * Printing:
@@ -155,6 +146,26 @@ const char *EncodeRaw(Rbyte x)
     static char buff[10];
     sprintf(buff, "%02x", x);
     return buff;
+}
+
+const char *EncodeEnvironment(SEXP x)
+{
+    static char ch[100];
+    if (x == R_GlobalEnv)
+	sprintf(ch, "<environment: R_GlobalEnv>");
+    else if (x == R_BaseEnv)
+	sprintf(ch, "<environment: base>");
+    else if (x == R_EmptyEnv)
+	sprintf(ch, "<environment: R_EmptyEnv>");
+    else if (R_IsPackageEnv(x))
+	sprintf(ch, "<environment: %s>",
+		translateChar(STRING_ELT(R_PackageEnvName(x), 0)));
+    else if (R_IsNamespaceEnv(x))
+	sprintf(ch, "<environment: namespace:%s>",
+		translateChar(STRING_ELT(R_NamespaceEnvSpec(x), 0)));
+    else sprintf(ch, "<environment: %p>", (void *)x);
+
+    return ch;
 }
 
 const char *EncodeReal(double x, int w, int d, int e, char cdec)
@@ -361,7 +372,7 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 #endif
 	for (i = 0; i < slen; i++) {
 	    /* ASCII */
-	    if(static_cast<unsigned char>(*p) < 0x80) {
+	    if(static_cast<unsigned char>( *p) < 0x80) {
 		if(isprint(int(*p))) {
 		    switch(*p) {
 		    case '\\':
@@ -446,8 +457,13 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		cnt = LENGTH(s);
 	    } else {
 		p = translateChar(s);
-		cnt = strlen(p);
-		i = Rstrwid(p, cnt, CE_NATIVE, quote);
+		if(p == CHAR(s)) {
+		    i = Rstrlen(s, quote);
+		    cnt = LENGTH(s);
+		} else { /* drop anything after embedded nul */
+		    cnt = strlen(p);
+		    i = Rstrwid(p, cnt, CE_NATIVE, quote);
+		}
 		ienc = CE_NATIVE;
 	    }
 	} else
@@ -556,8 +572,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x",
-			 *(reinterpret_cast<const unsigned char *>(p)));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRconst unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}
@@ -571,7 +586,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	for (i = 0; i < cnt; i++) {
 
 	    /* ASCII */
-	    if(static_cast<unsigned char>(*p) < 0x80) {
+	    if(static_cast<unsigned char>( *p) < 0x80) {
 		if(*p != '\t' && isprint(int(*p))) { /* Windows has \t as printable */
 		    switch(*p) {
 		    case '\\': *q++ = '\\'; *q++ = '\\'; break;
@@ -593,7 +608,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
 		    default:
 			/* print in octal */
-		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>(*p));
+			snprintf(buf, 5, "\\%03o", static_cast<unsigned char>( *p));
 			for(j = 0; j < 4; j++) *q++ = buf[j];
 			break;
 		    }
@@ -604,7 +619,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #else
 		if(!isprint(int(*p) & 0xff)) {
 		    /* print in octal */
-		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>(*p));
+		    snprintf(buf, 5, "\\%03o", static_cast<unsigned char>( *p));
 		    for(j = 0; j < 4; j++) *q++ = buf[j];
 		    p++;
 		} else *q++ = *p++;
@@ -736,8 +751,12 @@ void Rcons_vprintf(const char *format, va_list arg)
     va_end(aq);
 #ifdef HAVE_VASPRINTF
     if(res >= R_BUFSIZE || res < 0) {
-	vasprintf(&p, format, arg);
-	usedVasprintf = TRUE;
+	res = vasprintf(&p, format, arg);
+	if (res < 0) {
+	    p = buf;
+	    buf[R_BUFSIZE - 1] = '\0';
+	    warning("printing of extremely long output is truncated");
+	} else usedVasprintf = TRUE;
     }
 #else
     if(res >= R_BUFSIZE) { /* res is the desired output length */
@@ -748,7 +767,7 @@ void Rcons_vprintf(const char *format, va_list arg)
 	p = R_alloc(10*R_BUFSIZE, sizeof(char));
 	res = vsnprintf(p, 10*R_BUFSIZE, format, arg);
 	if (res < 0) {
-	    *(p + 10*R_BUFSIZE) = '\0';
+	    *(p + 10*R_BUFSIZE - 1) = '\0';
 	    warning("printing of extremely long output is truncated");
 	}
     }

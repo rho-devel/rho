@@ -46,6 +46,7 @@ using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
+	int (*IS_CACHEDp)(SEXP) = IS_CACHED;
 	SEXP (*mkCharp)(const char*) = Rf_mkChar;
 	SEXP (*mkCharCEp)(const char*, cetype_t) = Rf_mkCharCE;
     }

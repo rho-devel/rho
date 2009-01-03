@@ -5,6 +5,8 @@
 
 \name{HoltWinters}
 \alias{HoltWinters}
+\alias{print.HoltWinters}
+\alias{residuals.HoltWinters}
 \title{Holt-Winters Filtering}
 \description{
   Computes Holt-Winters Filtering of a given time series.
@@ -14,7 +16,7 @@
 \usage{
 HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
             seasonal = c("additive", "multiplicative"),
-            start.periods = 3, l.start = NULL, b.start = NULL,
+            start.periods = 2, l.start = NULL, b.start = NULL,
             s.start = NULL,
             optim.start = c(alpha = 0.3, beta = 0.1, gamma = 0.1),
             optim.control = list())
@@ -31,7 +33,7 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
     few characters are sufficient. (Only takes effect if
     \code{gamma} is non-zero).}
   \item{start.periods}{Start periods used in the autodetection of start
-    values. Must be at least 3.}
+    values. Must be at least 2.}
   \item{l.start}{Start value for level (a[0]).}
   \item{b.start}{Start value for trend (b[0]).}
   \item{s.start}{Vector of start values for the seasonal component
@@ -93,7 +95,7 @@ HoltWinters(x, alpha = NULL, beta = NULL, gamma = NULL,
   \item{x}{The original series}
   \item{alpha}{alpha used for filtering}
   \item{beta}{beta used for filtering}
-  \item(gamma){gamma used for filtering}
+  \item{gamma}{gamma used for filtering}
   \item{coefficients}{A vector with named components \code{a, b, s1, ..., sp}
     containing the estimated values for the level, trend and seasonal
     components}
