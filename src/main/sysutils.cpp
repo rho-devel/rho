@@ -707,7 +707,7 @@ size_t Riconv (void *cd, const char **inbuf, size_t *inbytesleft,
 	       char **outbuf, size_t *outbytesleft)
 {
     /* here libiconv has const char **, glibc has char ** for inbuf */
-    return iconv(reinterpret_cast<iconv_t>( cd), const_cast<ICONV_CONST char **>( inbuf), inbytesleft,
+    return iconv(static_cast<iconv_t>( cd), const_cast<ICONV_CONST char **>( inbuf), inbytesleft,
 		 outbuf, outbytesleft);
 }
 

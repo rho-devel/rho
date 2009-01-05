@@ -277,7 +277,7 @@ static Rboolean unz_open(Rconnection con)
 	return FALSE;
     }
     unzOpenCurrentFile(uf);
-    (reinterpret_cast<Runzconn>((con->connprivate)))->uf = uf;
+    (static_cast<Runzconn>((con->connprivate)))->uf = uf;
     con->isopen = TRUE;
     con->canwrite = FALSE;
     con->canread = TRUE;
@@ -290,7 +290,7 @@ static Rboolean unz_open(Rconnection con)
 
 static void unz_close(Rconnection con)
 {
-    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
     unzCloseCurrentFile(uf);
     unzClose(uf);
     con->isopen = FALSE;
@@ -298,7 +298,7 @@ static void unz_close(Rconnection con)
 
 static int unz_fgetc_internal(Rconnection con)
 {
-    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
     char buf[1];
     int err, p;
 
@@ -310,7 +310,7 @@ static int unz_fgetc_internal(Rconnection con)
 static size_t unz_read(void *ptr, size_t size, size_t nitems,
 		       Rconnection con)
 {
-    unzFile uf = (reinterpret_cast<Runzconn>((con->connprivate)))->uf;
+    unzFile uf = (static_cast<Runzconn>((con->connprivate)))->uf;
     return unzReadCurrentFile(uf, ptr, size*nitems)/size;
 }
 
@@ -628,7 +628,7 @@ unzlocal_SearchCentralDir(FILE * fin)
     if (fseek(fin, 0, SEEK_END) != 0) return 0;
     uSizeFile = ftell(fin);
     if (uMaxBack > uSizeFile) uMaxBack = uSizeFile;
-    buf = reinterpret_cast<unsigned char *>( ALLOC(BUFREADCOMMENT + 4));
+    buf = static_cast<unsigned char *>( ALLOC(BUFREADCOMMENT + 4));
     if (buf == NULL) return 0;
     uBackRead = 4;
     while (uBackRead < uMaxBack) {
@@ -732,10 +732,10 @@ unzOpen(const char *path)
     us.central_pos = central_pos;
     us.pfile_in_zip_read = NULL;
 
-    s = reinterpret_cast<unz_s *>( ALLOC(sizeof(unz_s)));
+    s = static_cast<unz_s *>( ALLOC(sizeof(unz_s)));
     *s = us;
-    unzGoToFirstFile(reinterpret_cast<unzFile>( s));
-    return reinterpret_cast<unzFile>( s);
+    unzGoToFirstFile(static_cast<unzFile>( s));
+    return static_cast<unzFile>( s);
 }
 
 /*
@@ -746,7 +746,7 @@ static int unzGetGlobalInfo (unzFile file, unz_global_info *pglobal_info)
 {
     unz_s* s;
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s*>(file);
+    s = static_cast<unz_s*>(file);
     *pglobal_info = s->gi;
     return UNZ_OK;
 }
@@ -763,7 +763,7 @@ unzClose(unzFile file)
     unz_s *s;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     if (s->pfile_in_zip_read != NULL) unzCloseCurrentFile(file);
     fclose(s->file);
     TRYFREE(s);
@@ -811,7 +811,7 @@ unzlocal_GetCurrentFileInfoInternal(unzFile file,
 
     if (file == NULL)
 	return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     if (fseek(s->file, s->pos_in_central_dir + s->byte_before_the_zipfile,
 	      SEEK_SET) != 0)
 	err = UNZ_ERRNO;
@@ -971,7 +971,7 @@ unzGoToFirstFile(unzFile file)
     unz_s *s;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     s->pos_in_central_dir = s->offset_central_dir;
     s->num_file = 0;
     err = unzlocal_GetCurrentFileInfoInternal(file, &s->cur_file_info,
@@ -994,7 +994,7 @@ unzGoToNextFile(unzFile file)
     int   err;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     if (!s->current_file_ok)
 	return UNZ_END_OF_LIST_OF_FILE;
     if (s->num_file + 1 == s->gi.number_entry)
@@ -1034,7 +1034,7 @@ unzLocateFile(unzFile file, const char *szFileName, int iCaseSensitivity)
     if (file == NULL) return UNZ_PARAMERROR;
     if (strlen(szFileName) >= UNZ_MAXFILENAMEINZIP) return UNZ_PARAMERROR;
 
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     if (!s->current_file_ok) return UNZ_END_OF_LIST_OF_FILE;
     num_fileSaved = s->num_file;
     pos_in_central_dirSaved = s->pos_in_central_dir;
@@ -1157,7 +1157,7 @@ unzOpenCurrentFile(unzFile file)
     uInt  size_local_extrafield;/* size of the local extra field */
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     if (!s->current_file_ok) return UNZ_PARAMERROR;
 
     if (s->pfile_in_zip_read != NULL) unzCloseCurrentFile(file);
@@ -1166,11 +1166,11 @@ unzOpenCurrentFile(unzFile file)
 		&offset_local_extrafield, &size_local_extrafield) != UNZ_OK)
 	return UNZ_BADZIPFILE;
 
-    pfile_in_zip_read_info = reinterpret_cast<file_in_zip_read_info_s *>
+    pfile_in_zip_read_info = static_cast<file_in_zip_read_info_s *>
 	(ALLOC(sizeof(file_in_zip_read_info_s)));
     if (pfile_in_zip_read_info == NULL) return UNZ_INTERNALERROR;
 
-    pfile_in_zip_read_info->read_buffer = reinterpret_cast<char *>( ALLOC(UNZ_BUFSIZE));
+    pfile_in_zip_read_info->read_buffer = static_cast<char *>( ALLOC(UNZ_BUFSIZE));
     pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
     pfile_in_zip_read_info->size_local_extrafield = size_local_extrafield;
     pfile_in_zip_read_info->pos_local_extrafield = 0;
@@ -1242,13 +1242,13 @@ unzReadCurrentFile(unzFile file, voidp buf, unsigned int len)
     file_in_zip_read_info_s *pfile_in_zip_read_info;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     pfile_in_zip_read_info = s->pfile_in_zip_read;
     if (pfile_in_zip_read_info == NULL) return UNZ_PARAMERROR;
     if ((pfile_in_zip_read_info->read_buffer == NULL))
 	return UNZ_END_OF_LIST_OF_FILE;
     if (len == 0) return 0;
-    pfile_in_zip_read_info->stream.next_out = reinterpret_cast<Bytef *>( buf);
+    pfile_in_zip_read_info->stream.next_out = static_cast<Bytef *>( buf);
     pfile_in_zip_read_info->stream.avail_out = uInt( len);
     if (len > pfile_in_zip_read_info->rest_read_uncompressed)
 	pfile_in_zip_read_info->stream.avail_out =
@@ -1348,7 +1348,7 @@ unzCloseCurrentFile(unzFile file)
     file_in_zip_read_info_s *pfile_in_zip_read_info;
 
     if (file == NULL) return UNZ_PARAMERROR;
-    s = reinterpret_cast<unz_s *>( file);
+    s = static_cast<unz_s *>( file);
     pfile_in_zip_read_info = s->pfile_in_zip_read;
     if (pfile_in_zip_read_info == NULL) return UNZ_PARAMERROR;
     if (pfile_in_zip_read_info->rest_read_uncompressed == 0) {

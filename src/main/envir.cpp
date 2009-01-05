@@ -707,7 +707,7 @@ static void R_FlushGlobalCacheFromUserTable(SEXP udb)
     int n, i;
     R_ObjectTable *tb;
     SEXP names;
-    tb = reinterpret_cast<R_ObjectTable*>( R_ExternalPtrAddr(udb));
+    tb = static_cast<R_ObjectTable*>( R_ExternalPtrAddr(udb));
     names = tb->objects(tb);
     n = length(names);
     for(i = 0; i < n ; i++)
@@ -849,7 +849,7 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
     if(IS_USER_DATABASE(rho)) {
 	R_ObjectTable *table;
 	SEXP val, tmp = R_NilValue;
-	table = reinterpret_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
+	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
 	/* Better to use exists() here if we don't actually need the value! */
 	val = table->get(CHAR(PRINTNAME(symbol)), canCache, table);
 	if(val != R_UnboundValue) {
@@ -947,7 +947,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean doGet)
 	/* Use the objects function pointer for this symbol. */
 	R_ObjectTable *table;
 	SEXP val = R_UnboundValue;
-	table = reinterpret_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
+	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
 	if(table->active) {
 	    if(doGet)
 		val = table->get(CHAR(PRINTNAME(symbol)), NULL, table);
@@ -1298,7 +1298,7 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 
     if(IS_USER_DATABASE(rho)) {
 	R_ObjectTable *table;
-	table = reinterpret_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
+	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
 	if(table->assign == NULL)
 	    error(_("cannot assign variables to this database"));
 	table->assign(CHAR(PRINTNAME(symbol)), value, table);
@@ -1363,7 +1363,7 @@ static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
     if(IS_USER_DATABASE(rho)) {
 	/* FIXME: This does not behave as described */
 	R_ObjectTable *table;
-	table = reinterpret_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
+	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
 	if(table->assign == NULL)
 	    error(_("cannot assign variables to this database"));
 	return(table->assign(CHAR(PRINTNAME(symbol)), value, table));
@@ -1519,7 +1519,7 @@ static int RemoveVariable(SEXP name, int hashcode, SEXP env)
 
     if(IS_USER_DATABASE(env)) {
 	R_ObjectTable *table;
-	table = reinterpret_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(env)));
+	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(env)));
 	if(table->remove == NULL)
 	    error(_("cannot remove variables from this database"));
 	return(table->remove(CHAR(PRINTNAME(name)), table));
@@ -2044,7 +2044,7 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* Having this here (rather than below) means that the onAttach routine
 	   is called before the table is attached. This may not be necessary or
 	   desirable. */
-	R_ObjectTable *tb = reinterpret_cast<R_ObjectTable*>( R_ExternalPtrAddr(CAR(args)));
+	R_ObjectTable *tb = static_cast<R_ObjectTable*>( R_ExternalPtrAddr(CAR(args)));
 	if(tb->onAttach)
 	    tb->onAttach(tb);
         s = new Environment;
@@ -2121,7 +2121,7 @@ SEXP CXXRnot_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_ENCLOS(t, x);
 	isSpecial = Rboolean(IS_USER_DATABASE(s));
 	if(isSpecial) {
-	    R_ObjectTable *tb = reinterpret_cast<R_ObjectTable*>( R_ExternalPtrAddr(HASHTAB(s)));
+	    R_ObjectTable *tb = static_cast<R_ObjectTable*>( R_ExternalPtrAddr(HASHTAB(s)));
 	    if(tb->onDetach) tb->onDetach(tb);
 	}
 
@@ -2336,7 +2336,7 @@ SEXP CXXRnot_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     if(IS_USER_DATABASE(CAR(args))) {
-	R_ObjectTable *tb = reinterpret_cast<R_ObjectTable*>
+	R_ObjectTable *tb = static_cast<R_ObjectTable*>
 	    (R_ExternalPtrAddr(HASHTAB(CAR(args))));
 	return(tb->objects(tb));
     }

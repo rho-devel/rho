@@ -106,7 +106,7 @@ static CXXRconst char * R_ConciseTraceback(SEXP call, int skip);
 
 static void reset_stack_limit(void *data)
 {
-    unsigned int *limit = reinterpret_cast<unsigned int *>( data);
+    unsigned int *limit = static_cast<unsigned int *>( data);
     R_CStackLimit = *limit;
 }
 
@@ -576,7 +576,7 @@ static void (*R_ErrorHook)(SEXP, char *) = NULL;
 
 static void restore_inError(void *data)
 {
-    int *poldval = reinterpret_cast<int *>( data);
+    int *poldval = static_cast<int *>( data);
     inError = *poldval;
     R_Expressions = R_Expressions_keep;
 }
@@ -1833,7 +1833,7 @@ static void invokeRestart(SEXP r, SEXP arglist)
 	    if (exit == RESTART_EXIT(CAR(R_RestartStack))) {
 		R_RestartStack = CDR(R_RestartStack);
 		if (TYPEOF(exit) == EXTPTRSXP) {
-		    RCNTXT *c = reinterpret_cast<RCNTXT *>( R_ExternalPtrAddr(exit));
+		    RCNTXT *c = static_cast<RCNTXT *>( R_ExternalPtrAddr(exit));
 		    R_JumpToContext(c, CTXT_RESTART, R_RestartToken);
 		}
 		else findcontext(CTXT_FUNCTION, exit, arglist);

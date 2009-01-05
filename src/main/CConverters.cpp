@@ -198,7 +198,7 @@ R_converterMatchClass(SEXP obj, R_CConvertInfo *inf, R_toCConverter *el)
     /* assumes class names are ASCII */
     for(i = 0; i < n ; i++) {
 	if(strcmp(translateChar(STRING_ELT(klasses,i)),
-		  reinterpret_cast<char *>(el->userData)) == 0) {
+		  static_cast<char *>(el->userData)) == 0) {
 	    return(TRUE);
 	}
     }

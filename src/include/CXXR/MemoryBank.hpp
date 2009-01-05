@@ -148,7 +148,7 @@ namespace CXXR {
 	    // memset(p, 0x55, bytes);
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
-	    char* c = reinterpret_cast<char*>(p);
+	    char* c = static_cast<char*>(p);
 	    VALGRIND_MAKE_MEM_UNDEFINED(c + bytes, 1);
 #else
 	    size_t blockbytes = bytes;
@@ -229,7 +229,7 @@ namespace CXXR {
 		// Fence off supernumerary bytes:
 		size_t surplus = pool->cellSize() - bytes;
 		if (surplus > 0) {
-		    char* tail = reinterpret_cast<char*>(p) + bytes;
+		    char* tail = static_cast<char*>(p) + bytes;
 		    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
 		}
 #endif

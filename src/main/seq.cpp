@@ -83,7 +83,7 @@ static SEXP cross_colon(SEXP call, SEXP s, SEXP t)
 	    for (j = 0; j < nlt; j++) {
 		const char *vj = translateChar(STRING_ELT(lt, j));
 		vt = strlen(vj);
-		cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(vs + vt + 1, &cbuff));
+		cbuf = static_cast<char*>(R_AllocStringBuffer(vs + vt + 1, &cbuff));
 		sprintf(cbuf, "%s:%s", vi, vj);
 		SET_STRING_ELT(la, k, mkChar(cbuf));
 		k++;

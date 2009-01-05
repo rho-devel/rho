@@ -512,7 +512,7 @@ static SEXP NewBase(SEXP base, SEXP tag)
     tag = EnsureString(tag);
     if (*CHAR(base) && *CHAR(tag)) { /* test of length */
 	const char *sb = translateChar(base), *st = translateChar(tag);
-	cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff));
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(st) + strlen(sb) + 1, &cbuff));
 	sprintf(cbuf, "%s.%s", sb, st);
 	ans = mkChar(cbuf);
     }
@@ -541,13 +541,13 @@ static SEXP NewName(SEXP base, SEXP tag, int i, int n, int seqno)
     tag = EnsureString(tag);
     if (*CHAR(base) && *CHAR(tag)) {
 	const char *sb = translateChar(base), *st = translateChar(tag);
-	cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(sb) + strlen(st) + 1, &cbuff));
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(sb) + strlen(st) + 1, &cbuff));
 	sprintf(cbuf, "%s.%s", sb, st);
 	ans = mkChar(cbuf);
     }
     else if (*CHAR(base)) {
 	const char *sb = translateChar(base);
-	cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(sb) + IndexWidth(seqno), &cbuff));
+	cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(sb) + IndexWidth(seqno), &cbuff));
 	sprintf(cbuf, "%s%d", sb, seqno);
 	ans = mkChar(cbuf);
     }
@@ -555,7 +555,7 @@ static SEXP NewName(SEXP base, SEXP tag, int i, int n, int seqno)
 	if(tag == NA_STRING) ans = NA_STRING;
 	else {
 	    const char *st = translateChar(tag);
-	    cbuf = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(st), &cbuff));
+	    cbuf = static_cast<char*>(R_AllocStringBuffer(strlen(st), &cbuff));
 	    sprintf(cbuf, "%s", st);
 	    ans = mkChar(cbuf);
 	}

@@ -167,7 +167,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    u_sepw = strlen(u_csep);
 	}
 	pwidth += (nx - 1) * (use_UTF8 ? u_sepw : sepw);
-	cbuf = buf = reinterpret_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
 	    if (k > 0) {
@@ -224,7 +224,7 @@ SEXP attribute_hidden do_paste(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else
 		pwidth += strlen(CHAR(STRING_ELT(ans, i)));
 	pwidth += (nx - 1) * sepw;
-	cbuf = buf = reinterpret_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	for (i = 0; i < nx; i++) {
 	    if(i > 0) {
 		strcpy(buf, csep);
@@ -313,7 +313,7 @@ SEXP attribute_hidden do_filepath(SEXP call, SEXP op, SEXP args, SEXP env)
 	    pwidth += strlen(translateChar(STRING_ELT(VECTOR_ELT(x, j), i % k)));
 	}
 	pwidth += (nx - 1) * sepw;
-	cbuf = buf = reinterpret_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
+	cbuf = buf = static_cast<char*>(R_AllocStringBuffer(pwidth, &cbuff));
 	for (j = 0; j < nx; j++) {
 	    k = length(VECTOR_ELT(x, j));
 	    if (k > 0) {

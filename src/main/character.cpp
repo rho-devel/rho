@@ -2339,12 +2339,12 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return (reinterpret_cast<CXXRconst xtable_t *>(a))->c_old - (reinterpret_cast<CXXRconst xtable_t *>(b))->c_old;
+    return (static_cast<CXXRconst xtable_t *>(a))->c_old - (static_cast<CXXRconst xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *(reinterpret_cast<CXXRconst wchar_t *>(a)) - (reinterpret_cast<CXXRconst xtable_t *>(b))->c_old;
+    return *(static_cast<CXXRconst wchar_t *>(a)) - (static_cast<CXXRconst xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \

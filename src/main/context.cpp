@@ -675,7 +675,7 @@ typedef struct {
 static void
 protectedEval(void *d)
 {
-    ProtectedEvalData *data = reinterpret_cast<ProtectedEvalData *>(d);
+    ProtectedEvalData *data = static_cast<ProtectedEvalData *>(d);
     SEXP env = R_GlobalEnv;
     if(data->env) {
 	env = data->env;

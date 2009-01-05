@@ -1297,7 +1297,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
    is maintained across LONGJMP's */
 static void browser_cend(void *data)
 {
-    int *psaved = reinterpret_cast<int *>( data);
+    int *psaved = static_cast<int *>( data);
     R_BrowseLevel = *psaved - 1;
 }
 
@@ -1702,7 +1702,7 @@ Rboolean
 R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 		      Rboolean visible, void *userData)
 {
-    SEXP f = reinterpret_cast<SEXP>( userData);
+    SEXP f = static_cast<SEXP>( userData);
     SEXP e, tmp, val, cur;
     int errorOccurred;
     Rboolean again;

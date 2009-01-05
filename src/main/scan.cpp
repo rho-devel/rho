@@ -320,7 +320,7 @@ static int scanchar(Rboolean inQuote, LocalData *d)
 /* utility to close connections after interrupts */
 static void scan_cleanup(void *data)
 {
-    LocalData *ld = reinterpret_cast<LocalData*>(data);
+    LocalData *ld = static_cast<LocalData*>(data);
     if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
     if (ld->quoteset[0]) free(const_cast<char*>(ld->quoteset));
 }
@@ -1724,7 +1724,7 @@ typedef struct wt_info {
 /* utility to cleanup e.g. after interrpts */
 static void wt_cleanup(void *data)
 {
-    wt_info *ld = reinterpret_cast<wt_info*>(data);
+    wt_info *ld = static_cast<wt_info*>(data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;

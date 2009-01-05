@@ -110,7 +110,7 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     p = (blockbytes > s_max_cell_size
 	 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes) : p;
 #if VALGRIND_LEVEL >= 3
-    char* c = reinterpret_cast<char*>(p);
+    char* c = static_cast<char*>(p);
     VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
     s_bytes_allocated -= 1;
 #endif
@@ -150,7 +150,7 @@ void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 	// Fence off supernumerary bytes:
 	size_t surplus = pool->cellSize() - bytes;
 	if (surplus > 0) {
-	    char* tail = reinterpret_cast<char*>(p) + bytes;
+	    char* tail = static_cast<char*>(p) + bytes;
 	    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
 	}
     }

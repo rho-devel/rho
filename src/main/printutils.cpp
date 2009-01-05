@@ -490,7 +490,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 
        +2 allows for quotes, +6 for UTF_8 escapes.
      */
-    q = reinterpret_cast<char*>(R_AllocStringBuffer(imax2(5*cnt+8, w), buffer));
+    q = static_cast<char*>(R_AllocStringBuffer(imax2(5*cnt+8, w), buffer));
     b = w - i - (quote ? 2 : 0); /* total amount of padding */
     if(justify == Rprt_adj_none) b = 0;
     if(b > 0 && justify != Rprt_adj_left) {

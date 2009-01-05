@@ -80,7 +80,7 @@ static double fminfn(int n, double *p, void *ex)
     SEXP s, x;
     int i;
     double val;
-    OptStruct OS = reinterpret_cast<OptStruct>( ex);
+    OptStruct OS = static_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     PROTECT(x = allocVector(REALSXP, n));
@@ -105,7 +105,7 @@ static void fmingr(int n, double *p, double *df, void *ex)
     SEXP s, x;
     int i;
     double val1, val2, eps, epsused, tmp;
-    OptStruct OS = reinterpret_cast<OptStruct>( ex);
+    OptStruct OS = static_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     if (!isNull(OS->R_gcall)) { /* analytical derivatives */
@@ -189,7 +189,7 @@ static void genptry(int n, double *p, double *ptry, double scale, void *ex)
 {
     SEXP s, x;
     int i;
-    OptStruct OS = reinterpret_cast<OptStruct>( ex);
+    OptStruct OS = static_cast<OptStruct>( ex);
     PROTECT_INDEX ipx;
 
     if (!isNull(OS->R_gcall)) {

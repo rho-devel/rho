@@ -1616,7 +1616,7 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 	    for(s = str; *s ; s++)
 		if (*s == '\n') n++;
 	    /* Allocate a temporary buffer */
-	    sb = sbuf = reinterpret_cast<char*>( R_alloc(strlen(str) + 1, sizeof(char)));
+	    sb = sbuf = static_cast<char*>( R_alloc(strlen(str) + 1, sizeof(char)));
 	    i = 0;
 	    sin_rot = DEG2RAD * rot;
 	    cos_rot = cos(sin_rot);

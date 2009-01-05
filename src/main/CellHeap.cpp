@@ -95,7 +95,7 @@ void CellHeap::checkCell(const void* p) const
     bool found = false;
     for (vector<void*>::const_iterator it = m_superblocks.begin();
 	 !found && it != m_superblocks.end(); ++it) {
-	ptrdiff_t offset = pc - reinterpret_cast<const char*>(*it);
+	ptrdiff_t offset = pc - static_cast<const char*>(*it);
 	if (offset >= 0 && offset < static_cast<long>(m_superblocksize)) {
 	    found = true;
 	    if (offset%m_cellsize != 0) {

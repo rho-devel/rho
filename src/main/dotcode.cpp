@@ -120,7 +120,7 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
 	   *fun = R_ExternalPtrAddrFn(op);
 	else if(R_ExternalPtrTag(op) == Rf_install("registered native symbol")) {
 	   R_RegisteredNativeSymbol *tmp;
-	   tmp = reinterpret_cast<R_RegisteredNativeSymbol *>( R_ExternalPtrAddr(op));
+	   tmp = static_cast<R_RegisteredNativeSymbol *>( R_ExternalPtrAddr(op));
 	   if(tmp) {
 	      if(symbol->type != R_ANY_SYM && symbol->type != tmp->type)
 		 errorcall(call, _("NULL value passed as symbol address"));
@@ -402,7 +402,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    if(n > 1)
 		warning(_("only first string in char vector used in .Fortran"));
 	    l = strlen(ss);
-	    fptr = reinterpret_cast<char*>(R_alloc(max(255, l) + 1, sizeof(char)));
+	    fptr = static_cast<char*>(R_alloc(max(255, l) + 1, sizeof(char)));
 	    strcpy(fptr, ss);
 	    return CXXRNOCAST(void*)fptr;
 	} else {
@@ -420,7 +420,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    inb = strlen(inbuf);
 		    outb0 = 3*inb;
 		restart_in:
-		    cptr[i] = outbuf = reinterpret_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
+		    cptr[i] = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -443,7 +443,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		for (i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    l = strlen(ss);
-		    cptr[i] = reinterpret_cast<char*>(R_alloc(l + 1, sizeof(char)));
+		    cptr[i] = static_cast<char*>(R_alloc(l + 1, sizeof(char)));
 		    strcpy(cptr[i], ss);
 		}
 	    }
@@ -497,14 +497,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     switch(stype) {
     case RAWSXP:
     s = allocVector(stype, n);
-    rawptr = reinterpret_cast<Rbyte *>(p);
+    rawptr = static_cast<Rbyte *>(p);
     for (i = 0; i < n; i++)
 	RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
     case INTSXP:
 	s = allocVector(stype, n);
-	iptr = reinterpret_cast<int*>(p);
+	iptr = static_cast<int*>(p);
 	for(i=0 ; i<n ; i++)
 	    INTEGER(s)[i] = iptr[i];
 	break;
@@ -512,16 +512,16 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case SINGLESXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
-	    sptr = reinterpret_cast<float*>( p);
+	    sptr = static_cast<float*>( p);
 	    for(i=0 ; i<n ; i++) REAL(s)[i] = double( sptr[i]);
 	} else {
-	    rptr = reinterpret_cast<double*>( p);
+	    rptr = static_cast<double*>( p);
 	    for(i=0 ; i<n ; i++) REAL(s)[i] = rptr[i];
 	}
 	break;
     case CPLXSXP:
 	s = allocVector(stype, n);
-	zptr = reinterpret_cast<Rcomplex*>(p);
+	zptr = static_cast<Rcomplex*>(p);
 	for(i=0 ; i<n ; i++) {
 	    COMPLEX(s)[i] = zptr[i];
 	}
@@ -529,14 +529,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     case STRSXP:
 	if(Fort) {
 	    /* only return one string: warned on the R -> Fortran step */
-	    strncpy(buf, reinterpret_cast<char*>(p), 255);
+	    strncpy(buf, static_cast<char*>(p), 255);
 	    buf[255] = '\0';
 	    PROTECT(s = allocVector(stype, 1));
 	    SET_STRING_ELT(s, 0, mkChar(buf));
 	    UNPROTECT(1);
 	} else {
 	    PROTECT(s = allocVector(stype, n));
-	    cptr = reinterpret_cast<char**>(p);
+	    cptr = static_cast<char**>(p);
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
 		const char *inbuf;
@@ -549,7 +549,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    inbuf = cptr[i]; inb = strlen(inbuf);
 		    outb0 = 3*inb;
 		restart_out:
-		    p = outbuf = reinterpret_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
+		    p = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
@@ -578,7 +578,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	break;
     case VECSXP:
 	PROTECT(s = allocVector(VECSXP, n));
-	lptr = reinterpret_cast<SEXP*>(p);
+	lptr = static_cast<SEXP*>(p);
 	for (i = 0 ; i < n ; i++) {
 	    SET_VECTOR_ELT(s, i, lptr[i]);
 	}
@@ -586,14 +586,14 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	break;
     case LISTSXP:
 	PROTECT(t = s = allocList(n));
-	lptr = reinterpret_cast<SEXP*>(p);
+	lptr = static_cast<SEXP*>(p);
 	for(i=0 ; i<n ; i++) {
 	    SETCAR(t, lptr[i]);
 	    t = CDR(t);
 	}
 	UNPROTECT(1);
     default:
-	s = reinterpret_cast<SEXP>(p);
+	s = static_cast<SEXP>(p);
     }
     return s;
 }
@@ -657,14 +657,14 @@ static SEXP naokfind(SEXP args, int * len, int *naok, int *dup,
 	    } else {
 		    /* Have a DLL object*/
 		if(TYPEOF(CAR(s)) == EXTPTRSXP) {
-		    dll->dll = reinterpret_cast<HINSTANCE>( R_ExternalPtrAddr(CAR(s)));
+		    dll->dll = static_cast<HINSTANCE>( R_ExternalPtrAddr(CAR(s)));
 		    dll->type = DLL_HANDLE;
 		} else if(TYPEOF(CAR(s)) == VECSXP) {
 		    dll->type = R_OBJECT;
 		    dll->obj = s;
 		    strcpy(dll->DLLname,
 			   translateChar(STRING_ELT(VECTOR_ELT(CAR(s), 1), 0)));
-		    dll->dll = reinterpret_cast<HINSTANCE>( R_ExternalPtrAddr(VECTOR_ELT(s, 4)));
+		    dll->dll = static_cast<HINSTANCE>( R_ExternalPtrAddr(VECTOR_ELT(s, 4)));
 		}
 	    }
 	} else {
@@ -865,7 +865,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     fun = reinterpret_cast<VarFun>( ofun);
     switch (nargs) {
     case 0:
-	retval = reinterpret_cast<SEXP>(ofun());
+	retval = static_cast<SEXP>(ofun());
 	break;
     case 1:
 	retval = CXXRNOCAST(SEXP)fun(cargs[0]);
@@ -1632,7 +1632,7 @@ R_FindNativeSymbolFromDLL(char *name, DllReference *dll,
     if(inherits(dll->obj, "DLLInfo")) {
 	SEXP tmp;
 	tmp = VECTOR_ELT(dll->obj, 4);
-	info = reinterpret_cast<DllInfo *>( R_ExternalPtrAddr(tmp));
+	info = static_cast<DllInfo *>( R_ExternalPtrAddr(tmp));
 	if(!info)
 	    error(_("NULL value for DLLInfoReference when looking for DLL"));
 	fun = R_dlsym(info, name, symbol);
@@ -2455,7 +2455,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	    n = lengths[i];
 	    SETCAR(pcall, allocVector(STRSXP, n));
 	    for (j = 0 ; j < n ; j++) {
-		char *str = reinterpret_cast<char*>((arguments[i]));
+		char *str = static_cast<char*>((arguments[i]));
 		SET_STRING_ELT(CAR(pcall), i, mkChar(str));
 	    }
 	    break;
@@ -2483,14 +2483,14 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     case CPLXSXP:
     case STRSXP:
 	if(nres > 0)
-	    results[0] = reinterpret_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
+	    results[0] = static_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
 							      NULL, NILSXP, ""));
 	break;
     case VECSXP:
 	n = length(s);
 	if (nres < n) n = nres;
 	for (i = 0 ; i < n ; i++) {
-	    results[i] = reinterpret_cast<char *>( RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
+	    results[i] = static_cast<char *>( RObjToCPtr(VECTOR_ELT(s, i), 1, 1, 0, 0,
 							      CXXRNOCAST(const char *)NULL, NULL, NILSXP, ""));
 	}
 	break;
@@ -2498,7 +2498,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
 	n = length(s);
 	if(nres < n) n = nres;
 	for(i=0 ; i<n ; i++) {
-	    results[i] = reinterpret_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
+	    results[i] = static_cast<char *>( RObjToCPtr(s, 1, 1, 0, 0, CXXRNOCAST(const char *)NULL,
 							      NULL, NILSXP, ""));
 	    s = CDR(s);
 	}

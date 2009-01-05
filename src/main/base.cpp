@@ -31,7 +31,7 @@ int attribute_hidden baseRegisterIndex = -1;
 
 static R_INLINE GPar* dpSavedptr(pGEDevDesc dd) {
     baseSystemState *bss
-	= reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dpSaved);
 }
 
@@ -225,8 +225,8 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
     {
 	/* called from GEcopyDisplayList */
 	pGEDevDesc curdd = GEcurrentDevice();
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
-	bss2 = reinterpret_cast<baseSystemState*>(curdd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss2 = static_cast<baseSystemState*>(curdd->gesd[baseRegisterIndex]->systemSpecific);
 	copyGPar(&(bss->dpSaved), &(bss2->dpSaved));
 	restoredpSaved(curdd);
 	copyGPar(&(bss2->dp), &(bss2->gp));
@@ -235,19 +235,19 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
     }
     case GE_SaveState:
 	/* called from GEinitDisplayList */
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	copyGPar(&(bss->dp), &(bss->dpSaved));
 	break;
     case GE_RestoreState:
 	/* called from GEplayDisplayList */
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	restoredpSaved(dd);
 	copyGPar(&(bss->dp), &(bss->gp));
 	GReset(dd);
 	break;
     case GE_SaveSnapshotState:
 	/* called from GEcreateSnapshot */
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	/* Changed from INTSXP in 2.7.0: but saved graphics lists
 	   are protected by an R version number */
 	PROTECT(result = allocVector(RAWSXP, sizeof(GPar)));
@@ -256,7 +256,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	break;
     case GE_RestoreSnapshotState:
 	/* called from GEplaySnapshot */
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	copyGPar(reinterpret_cast<GPar*>(RAW(data)), &(bss->dpSaved));
 	restoredpSaved(dd);
 	copyGPar(&(bss->dp), &(bss->gp));
@@ -266,7 +266,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
 	/* called from GEcheckState:
 	   Check that the current plotting state is "valid"
 	 */
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	result = ScalarLogical(bss->baseDevice ?
 			       (bss->gp.state == 1) && bss->gp.valid :
 			       TRUE);
@@ -275,7 +275,7 @@ static SEXP baseCallback(GEevent task, pGEDevDesc dd, SEXP data)
     {
 	/* called from GEhandleEvent in devWindows.c */
 	GPar *ddp, *ddpSaved;
-	bss = reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	bss = static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
 	ddp = &(bss->dp);
 	ddpSaved = &(bss->dpSaved);
 	if (isReal(data) && LENGTH(data) == 1) {
@@ -310,20 +310,20 @@ unregisterBase(void) {
 attribute_hidden
 GPar* gpptr(pGEDevDesc dd) {
     baseSystemState *bss
-	= reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->gp);
 }
 
 attribute_hidden
 GPar* dpptr(pGEDevDesc dd) {
     baseSystemState *bss
-	= reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
     return &(bss->dp);
 }
 
 attribute_hidden /* used in GNewPlot */
 void Rf_setBaseDevice(Rboolean val, pGEDevDesc dd) {
     baseSystemState *bss
-	= reinterpret_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
+	= static_cast<baseSystemState*>(dd->gesd[baseRegisterIndex]->systemSpecific);
     bss->baseDevice = val;
 }

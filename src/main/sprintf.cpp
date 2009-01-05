@@ -59,7 +59,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
     static R_StringBuffer outbuff = {NULL, 0, MAXELTSIZE};
     bool use_UTF8;
 
-    outputString = reinterpret_cast<char*>(R_AllocStringBuffer(0, &outbuff));
+    outputString = static_cast<char*>(R_AllocStringBuffer(0, &outbuff));
 
     /* grab the format string */
     nargs = length(args);
@@ -359,11 +359,11 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 		bit[chunk] = '\0';
 	    }
 	    if(ss) {
-		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
+		outputString = static_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
 									   strlen(ss) + 1, &outbuff));
 		strcat(outputString, ss);
 	    } else {
-		outputString = reinterpret_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
+		outputString = static_cast<char*>(R_AllocStringBuffer(strlen(outputString) +
 									   strlen(bit) + 1, &outbuff));
 		strcat(outputString, bit);
 	    }

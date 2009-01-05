@@ -174,7 +174,7 @@ namespace CXXR {
 	// Check for integer overflow:
 	if (bytes/sizeof(T) != sz)
 	    Rf_error(_("Request to create impossibly large vector."));
-	m_data = reinterpret_cast<T*>(MemoryBank::allocate(bytes));
+	m_data = static_cast<T*>(MemoryBank::allocate(bytes));
 	if (initialize) {
 	    for (unsigned int i = 0; i < sz; ++i)
 		m_data[i] = m_singleton;

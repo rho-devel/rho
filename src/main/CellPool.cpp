@@ -76,7 +76,7 @@ bool CellPool::check() const
 void CellPool::checkAllocatedCell(const void* p) const 
 {
     checkCell(p);
-    const Cell* cp = reinterpret_cast<const Cell*>(p);
+    const Cell* cp = static_cast<const Cell*>(p);
     bool found = false;
     for (Cell* c = m_free_cells; !found && c; c = c->m_next)
 	found = (c == cp);
@@ -90,11 +90,11 @@ void CellPool::checkAllocatedCell(const void* p) const
 void CellPool::checkCell(const void* p) const
 {
     if (!p) return;
-    const char* pc = reinterpret_cast<const char*>(p);
+    const char* pc = static_cast<const char*>(p);
     bool found = false;
     for (vector<void*>::const_iterator it = m_superblocks.begin();
 	 !found && it != m_superblocks.end(); ++it) {
-	ptrdiff_t offset = pc - reinterpret_cast<const char*>(*it);
+	ptrdiff_t offset = pc - static_cast<const char*>(*it);
 	if (offset >= 0 && offset < static_cast<long>(m_superblocksize)) {
 	    found = true;
 	    if (offset%m_cellsize != 0) {
@@ -145,7 +145,7 @@ void CellPool::seekMemory() throw (std::bad_alloc)
     if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
 	char* superblock
-	    = reinterpret_cast<char*>(::operator new(m_superblocksize));
+	    = static_cast<char*>(::operator new(m_superblocksize));
 	m_superblocks.push_back(superblock);
 	// Initialise cells:
 	{

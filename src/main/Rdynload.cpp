@@ -729,7 +729,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 		symbol->dll = info;
 	    }
 
-	    return(reinterpret_cast<DL_FUNC>( sym->fun));
+	    return(static_cast<DL_FUNC>( sym->fun));
 	}
 	fail = 1;
     }
@@ -744,7 +744,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 		symbol->symbol.call = sym;
 		symbol->dll = info;
 	    }
-	    return(reinterpret_cast<DL_FUNC>( sym->fun));
+	    return(static_cast<DL_FUNC>( sym->fun));
 	}
 	fail = 1;
     }
@@ -759,7 +759,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 		symbol->symbol.fortran = sym;
 		symbol->dll = info;
 	    }
-	    return(reinterpret_cast<DL_FUNC>( sym->fun));
+	    return(static_cast<DL_FUNC>( sym->fun));
 	}
 	fail = 1;
     }
@@ -774,7 +774,7 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 		symbol->symbol.external = sym;
 		symbol->dll = info;
 	    }
-	    return(reinterpret_cast<DL_FUNC>( sym->fun));
+	    return(static_cast<DL_FUNC>( sym->fun));
 	}
 	fail = 1;
     }
@@ -810,14 +810,14 @@ R_dlsym(DllInfo *info, char const *name,
     }
 #endif
 
-    f = reinterpret_cast<DL_FUNC>( R_osDynSymbol->dlsym(info, buf));
+    f = static_cast<DL_FUNC>( R_osDynSymbol->dlsym(info, buf));
 #ifdef HAVE_F77_UNDERSCORE
     if (!f && symbol && symbol->type == R_ANY_SYM) {
 	strcat(buf, "_");
 # ifdef HAVE_F77_EXTRA_UNDERSCORE
 	if(strchr(name, '_')) strcat(buf, "_");
 # endif
-	f = reinterpret_cast<DL_FUNC>( R_osDynSymbol->dlsym(info, buf));
+	f = static_cast<DL_FUNC>( R_osDynSymbol->dlsym(info, buf));
     }
 #endif
 
@@ -1107,7 +1107,7 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
 	    package = translateChar(STRING_ELT(spackage, 0));
 	else if(TYPEOF(spackage) == EXTPTRSXP &&
 		R_ExternalPtrTag(spackage) == Rf_install("DLLInfo")) {
-	    f = R_dlsym(reinterpret_cast<DllInfo *>( R_ExternalPtrAddr(spackage)), name, &symbol);
+	    f = R_dlsym(static_cast<DllInfo *>( R_ExternalPtrAddr(spackage)), name, &symbol);
 	    package = NULL;
 	} else
 	    error(_("must pass package name or DllInfo reference"));
@@ -1280,7 +1280,7 @@ R_getRegisteredRoutines(SEXP dll)
        R_ExternalPtrTag(dll) != Rf_install("DLLInfo"))
 	error(_("R_getRegisteredRoutines() expects a DllInfo reference"));
 
-    info = reinterpret_cast<DllInfo *>( R_ExternalPtrAddr(dll));
+    info = static_cast<DllInfo *>( R_ExternalPtrAddr(dll));
     if(!info) error(_("NULL value passed for DllInfo"));
 
 

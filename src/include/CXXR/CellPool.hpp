@@ -161,7 +161,7 @@ namespace CXXR {
 	    VALGRIND_MEMPOOL_FREE(this, p);
 	    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
 #endif
-	    Cell* c = reinterpret_cast<Cell*>(p);
+	    Cell* c = static_cast<Cell*>(p);
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
 	    --m_cells_allocated;

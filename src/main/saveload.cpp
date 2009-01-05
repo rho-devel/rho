@@ -1170,7 +1170,7 @@ static void NewWriteItem (SEXP s, SEXP sym_list, SEXP env_list, FILE *fp, Output
 
 static void newdatasave_cleanup(void *data)
 {
-    OutputCtxtData *cinfo = reinterpret_cast<OutputCtxtData*>(data);
+    OutputCtxtData *cinfo = static_cast<OutputCtxtData*>(data);
     FILE *fp = cinfo->fp;
     cinfo->methods->OutTerm(fp, cinfo->data);
 }
@@ -1400,8 +1400,8 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 
 static void newdataload_cleanup(void *data)
 {
-    InputCtxtData *cinfo = reinterpret_cast<InputCtxtData*>(data);
-    FILE *fp = reinterpret_cast<FILE *>( data);  // 2007/07/31 arr: Can this be right?
+    InputCtxtData *cinfo = static_cast<InputCtxtData*>(data);
+    FILE *fp = static_cast<FILE *>( data);  // 2007/07/31 arr: Can this be right?
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 
@@ -2022,7 +2022,7 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 
 static void saveload_cleanup(void *data)
 {
-    FILE *fp = reinterpret_cast<FILE *>( data);
+    FILE *fp = static_cast<FILE *>( data);
     fclose(fp);
 }
 
@@ -2205,7 +2205,7 @@ void attribute_hidden R_XDREncodeDouble(double d, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_ENCODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2218,7 +2218,7 @@ double attribute_hidden R_XDRDecodeDouble(void *buf)
     double d;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_DOUBLE_SIZE, XDR_DECODE);
     success = xdr_double(&xdrs, &d);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2231,7 +2231,7 @@ void attribute_hidden R_XDREncodeInteger(int i, void *buf)
     XDR xdrs;
     int success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_ENCODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2243,7 +2243,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     XDR xdrs;
     int i, success;
 
-    xdrmem_create(&xdrs, reinterpret_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
+    xdrmem_create(&xdrs, static_cast<char *>( buf), R_XDR_INTEGER_SIZE, XDR_DECODE);
     success = xdr_int(&xdrs, &i);
     xdr_destroy(&xdrs);
     if (! success)
@@ -2408,7 +2408,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void saveloadcon_cleanup(void *data)
 {
-    FILE *fp = reinterpret_cast<FILE *>( data);
+    FILE *fp = static_cast<FILE *>( data);
     fclose(fp);
 }
 

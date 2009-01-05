@@ -1701,27 +1701,27 @@ R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 
 static void OutCharFile(R_outpstream_t stream, int c)
 {
-    FILE *fp = reinterpret_cast<FILE*>(stream->data);
+    FILE *fp = static_cast<FILE*>(stream->data);
     fputc(c, fp);
 }
 
 
 static int InCharFile(R_inpstream_t stream)
 {
-    FILE *fp = reinterpret_cast<FILE*>(stream->data);
+    FILE *fp = static_cast<FILE*>(stream->data);
     return fgetc(fp);
 }
 
 static void OutBytesFile(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
-    FILE *fp = reinterpret_cast<FILE*>(stream->data);
+    FILE *fp = static_cast<FILE*>(stream->data);
     size_t out = fwrite(buf, 1, length, fp);
     if (int(out) != length) error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 {
-    FILE *fp = reinterpret_cast<FILE*>(stream->data);
+    FILE *fp = static_cast<FILE*>(stream->data);
     size_t in = fread(buf, 1, length, fp);
     if (int(in) != length) error(_("read failed"));
 }
@@ -1769,18 +1769,18 @@ static void CheckOutConn(Rconnection con)
 
 static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 {
-    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
+    Rconnection con = static_cast<Rconnection>( stream->data);
     CheckInConn(con);
     if (con->text) {
 	int i;
-	char *p = reinterpret_cast<char*>(buf);
+	char *p = static_cast<char*>(buf);
 	for (i = 0; i < length; i++)
 	    p[i] = Rconn_fgetc(con);
     }
     else {
 	if (stream->type == R_pstream_ascii_format) {
 	    char linebuf[4];
-	    unsigned char *p = reinterpret_cast<unsigned char*>(buf);
+	    unsigned char *p = static_cast<unsigned char*>(buf);
 	    int i, ncread;
 	    unsigned int res;
 	    for (i = 0; i < length; i++) {
@@ -1801,7 +1801,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 static int InCharConn(R_inpstream_t stream)
 {
     char buf[1];
-    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
+    Rconnection con = static_cast<Rconnection>( stream->data);
     CheckInConn(con);
     if (con->text)
 	return Rconn_fgetc(con);
@@ -1814,7 +1814,7 @@ static int InCharConn(R_inpstream_t stream)
 
 static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
-    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
+    Rconnection con = static_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
@@ -1830,7 +1830,7 @@ static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
 
 static void OutCharConn(R_outpstream_t stream, int c)
 {
-    Rconnection con = reinterpret_cast<Rconnection>( stream->data);
+    Rconnection con = static_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text)
 	Rconn_printf(con, "%c", c);
@@ -1966,7 +1966,7 @@ static void flush_bcon_buffer(bconbuf_t bb)
 
 static void OutCharBB(R_outpstream_t stream, int c)
 {
-    bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
+    bconbuf_t bb = static_cast<bconbuf_st*>(stream->data);
     if (bb->count >= BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     bb->buf[bb->count++] = c;
@@ -1974,7 +1974,7 @@ static void OutCharBB(R_outpstream_t stream, int c)
 
 static void OutBytesBB(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
-    bconbuf_t bb = reinterpret_cast<bconbuf_st*>(stream->data);
+    bconbuf_t bb = static_cast<bconbuf_st*>(stream->data);
     if (bb->count + length > BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     if (length <= BCONBUFSIZ) {
@@ -2040,7 +2040,7 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
 
 static void OutCharMem(R_outpstream_t stream, int c)
 {
-    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
+    membuf_t mb = static_cast<membuf_st*>(stream->data);
     if (mb->count >= mb->size)
 	resize_buffer(mb, mb->count + 1);
     mb->buf[mb->count++] = c;
@@ -2048,7 +2048,7 @@ static void OutCharMem(R_outpstream_t stream, int c)
 
 static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
 {
-    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
+    membuf_t mb = static_cast<membuf_st*>(stream->data);
     R_size_t needed = mb->count + R_size_t( length);
     /* There is a potential overflow here on 32-bit systems */
     if(double( mb->count) + length > double( INT_MAX))
@@ -2060,7 +2060,7 @@ static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
 
 static int InCharMem(R_inpstream_t stream)
 {
-    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
+    membuf_t mb = static_cast<membuf_st*>(stream->data);
     if (mb->count >= mb->size)
 	error(_("read error"));
     return mb->buf[mb->count++];
@@ -2068,7 +2068,7 @@ static int InCharMem(R_inpstream_t stream)
 
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
-    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
+    membuf_t mb = static_cast<membuf_st*>(stream->data);
     if (mb->count + R_size_t( length) > mb->size)
 	error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
@@ -2081,7 +2081,7 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
 {
     mb->count = 0;
     mb->size = length;
-    mb->buf = reinterpret_cast<unsigned char*>(buf);
+    mb->buf = static_cast<unsigned char*>(buf);
     R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, R_pstream_any_format,
 		    InCharMem, InBytesMem, phook, pdata);
 }
@@ -2099,7 +2099,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
 
 static void free_mem_buffer(void *data)
 {
-    membuf_t mb = reinterpret_cast<membuf_st*>(data);
+    membuf_t mb = static_cast<membuf_st*>(data);
     if (mb->buf != NULL) {
 	unsigned char *buf = mb->buf;
 	mb->buf = NULL;
@@ -2110,7 +2110,7 @@ static void free_mem_buffer(void *data)
 static SEXP CloseMemOutPStream(R_outpstream_t stream)
 {
     SEXP val;
-    membuf_t mb = reinterpret_cast<membuf_st*>(stream->data);
+    membuf_t mb = static_cast<membuf_st*>(stream->data);
     /* duplicate check, for future proofing */
     if(mb->count > INT_MAX)
 	error(_("serialization is too large to store in a raw vector"));
