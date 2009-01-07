@@ -1783,7 +1783,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(strlen(sdec) != 1)
 	error(_("'dec' must be a single character"));
     cdec = sdec[0];
-    quote_col = reinterpret_cast<Rboolean *>( R_alloc(nc, sizeof(Rboolean)));
+    quote_col = static_cast<Rboolean *>( CXXR_alloc(nc, sizeof(Rboolean)));
     for(j = 0; j < nc; j++) quote_col[j] = FALSE;
     for(i = 0; i < length(quote); i++) { /* NB, quote might be NULL */
 	int thiss = INTEGER(quote)[i];
@@ -1804,7 +1804,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isVectorList(x)) { /* A data frame */
 
 	/* handle factors internally, check integrity */
-	levels = reinterpret_cast<SEXP *>( R_alloc(nc, sizeof(SEXP)));
+	levels = static_cast<SEXP *>( CXXR_alloc(nc, sizeof(SEXP)));
 	for(j = 0; j < nc; j++) {
 	    xj = VECTOR_ELT(x, j);
 	    if(LENGTH(xj) != nr)

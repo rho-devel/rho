@@ -2815,8 +2815,8 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
-    yy = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
+    xx = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
+    yy = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {
@@ -2851,8 +2851,8 @@ void GPolyline(int n, double *x, double *y, GUnit coords, pGEDevDesc dd)
      * Work in device coordinates because that is what the
      * graphics engine needs.
      */
-    xx = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
-    yy = reinterpret_cast<double*>( R_alloc(n, sizeof(double)));
+    xx = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
+    yy = static_cast<double*>( CXXR_alloc(n, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in GPolygon)"));
     for (i=0; i<n; i++) {

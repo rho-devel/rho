@@ -4749,7 +4749,7 @@ SEXP R_compress1(SEXP in)
 	error(_("R_decompress1 requires a raw vector"));
     inlen = LENGTH(in);
     outlen = uLong(1.001*inlen) + 20;
-    buf = reinterpret_cast<Bytef *>( R_alloc(outlen, sizeof(Bytef)));
+    buf = static_cast<Bytef *>( CXXR_alloc(outlen, sizeof(Bytef)));
     /* we want this to be system-independent */
     *(reinterpret_cast<unsigned int *>(buf)) = static_cast<unsigned int>( uiSwap(inlen));
     res = compress(buf + 4, &outlen, static_cast<Bytef *>(RAW(in)), inlen);
@@ -4772,7 +4772,7 @@ SEXP R_decompress1(SEXP in)
 	error(_("R_decompress1 requires a raw vector"));
     inlen = LENGTH(in);
     outlen = uLong( uiSwap(*(reinterpret_cast<unsigned int *>( p))));
-    buf = reinterpret_cast<Bytef *>( R_alloc(outlen, sizeof(Bytef)));
+    buf = static_cast<Bytef *>( CXXR_alloc(outlen, sizeof(Bytef)));
     res = uncompress(buf, &outlen, static_cast<Bytef *>(p + 4), inlen - 4);
     if(res != Z_OK) error(_("internal error in R_decompress1"));
     ans = allocVector(RAWSXP, outlen);

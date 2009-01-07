@@ -303,18 +303,18 @@ static void FT_init(int n, int FT_size, function_info *state)
     have_gradient = state->have_gradient;
     have_hessian = state->have_hessian;
 
-    Ftable = reinterpret_cast<ftable *>(R_alloc(FT_size, sizeof(ftable)));
+    Ftable = static_cast<ftable *>(CXXR_alloc(FT_size, sizeof(ftable)));
 
     for (i = 0; i < FT_size; i++) {
-	Ftable[i].x = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
+	Ftable[i].x = static_cast<double *>(CXXR_alloc(n, sizeof(double)));
 				/* initialize to unlikely parameter values */
 	for (j = 0; j < n; j++) {
 	    Ftable[i].x[j] = DBL_MAX;
 	}
 	if (have_gradient) {
-	    Ftable[i].grad = reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
+	    Ftable[i].grad = static_cast<double *>(CXXR_alloc(n, sizeof(double)));
 	    if (have_hessian) {
-		Ftable[i].hess = reinterpret_cast<double *>(R_alloc(n * n, sizeof(double)));
+		Ftable[i].hess = static_cast<double *>(CXXR_alloc(n * n, sizeof(double)));
 	    }
 	}
     }
@@ -480,7 +480,7 @@ static double *fixparam(SEXP p, int *n, SEXP call)
 	*n = LENGTH(p);
     }
 
-    x = reinterpret_cast<double*>(R_alloc(*n, sizeof(double)));
+    x = static_cast<double*>(CXXR_alloc(*n, sizeof(double)));
     switch(TYPEOF(p)) {
     case LGLSXP:
     case INTSXP:
@@ -594,7 +594,7 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     PrintDefaults(rho);
 
-    state = reinterpret_cast<function_info *>(R_alloc(1, sizeof(function_info)));
+    state = static_cast<function_info *>(CXXR_alloc(1, sizeof(function_info)));
 
     /* the function to be minimized */
 
@@ -701,10 +701,10 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     iexp = iahflg ? 0 : 1; /* Function calls are expensive */
     dlt = 1.0;
 
-    xpls = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
-    gpls = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
-    a = reinterpret_cast<double*>(R_alloc(n*n, sizeof(double)));
-    wrk = reinterpret_cast<double*>(R_alloc(8*n, sizeof(double)));
+    xpls = static_cast<double*>(CXXR_alloc(n, sizeof(double)));
+    gpls = static_cast<double*>(CXXR_alloc(n, sizeof(double)));
+    a = static_cast<double*>(CXXR_alloc(n*n, sizeof(double)));
+    wrk = static_cast<double*>(CXXR_alloc(8*n, sizeof(double)));
 
     /*
      *	 Dennis + Schnabel Minimizer

@@ -382,10 +382,10 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
     k = length(xdims);
 
     vmaxsave = vmaxget();
-    subs = reinterpret_cast<int**>(R_alloc(k, sizeof(int*)));
-    indx = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
-    offset = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
-    bound = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    subs = static_cast<int**>(CXXR_alloc(k, sizeof(int*)));
+    indx = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    offset = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    bound = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
 
     /* Construct a vector to contain the returned values. */
     /* Store its extents. */

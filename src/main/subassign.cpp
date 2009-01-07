@@ -1001,10 +1001,10 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     if (dims == R_NilValue || (k = LENGTH(dims)) != length(s))
 	error(_("incorrect number of subscripts"));
 
-    subs = reinterpret_cast<int**>(R_alloc(k, sizeof(int*)));
-    indx = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
-    bound = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
-    offset = reinterpret_cast<int*>(R_alloc(k, sizeof(int)));
+    subs = static_cast<int**>(CXXR_alloc(k, sizeof(int*)));
+    indx = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    bound = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    offset = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
 
     ny = LENGTH(y);
 

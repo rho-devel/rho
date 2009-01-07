@@ -600,12 +600,12 @@ R_r2dtable(SEXP n, SEXP r, SEXP c)
     /* Log-factorials from 0 to n_of_cases.
        (I.e., lgamma(1), ..., lgamma(n_of_cases + 1).)
     */
-    fact = reinterpret_cast<double *>( R_alloc(n_of_cases + 1, sizeof(double)));
+    fact = static_cast<double *>( CXXR_alloc(n_of_cases + 1, sizeof(double)));
     fact[0] = 0.;
     for(i = 1; i <= n_of_cases; i++)
 	fact[i] = lgammafn(double(i + 1));
 
-    jwork = reinterpret_cast<int *>( R_alloc(nc, sizeof(int)));
+    jwork = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
 
     PROTECT(ans = allocVector(VECSXP, n_of_samples));
 

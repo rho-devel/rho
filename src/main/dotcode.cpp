@@ -336,7 +336,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
     n = LENGTH(s);
     rawptr = RAW(s);
     if (dup) {
-	rawptr = reinterpret_cast<Rbyte *>( R_alloc(n, sizeof(Rbyte)));
+	rawptr = static_cast<Rbyte *>( CXXR_alloc(n, sizeof(Rbyte)));
 	for (i = 0; i < n; i++)
 	    rawptr[i] = RAW(s)[i];
     }
@@ -351,7 +351,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		if(iptr[i] == NA_INTEGER)
 		    error(_("NAs in foreign function call (arg %d)"), narg);
 	if (dup) {
-	    iptr = reinterpret_cast<int*>(R_alloc(n, sizeof(int)));
+	    iptr = static_cast<int*>(CXXR_alloc(n, sizeof(int)));
 	    for (i = 0 ; i < n ; i++)
 		iptr[i] = INTEGER(s)[i];
 	}
@@ -366,12 +366,12 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    error(_("NA/NaN/Inf in foreign function call (arg %d)"), narg);
 	if (dup) {
 	    if(asLogical(getAttrib(s, CSingSymbol)) == 1) {
-		sptr = reinterpret_cast<float*>(R_alloc(n, sizeof(float)));
+		sptr = static_cast<float*>(CXXR_alloc(n, sizeof(float)));
 		for (i = 0 ; i < n ; i++)
 		    sptr[i] = float( REAL(s)[i]);
 		return CXXRNOCAST(void*)sptr;
 	    } else {
-		rptr = reinterpret_cast<double*>(R_alloc(n, sizeof(double)));
+		rptr = static_cast<double*>(CXXR_alloc(n, sizeof(double)));
 		for (i = 0 ; i < n ; i++)
 		    rptr[i] = REAL(s)[i];
 		return CXXRNOCAST(void*)rptr;
@@ -387,7 +387,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		if(!R_FINITE(zptr[i].r) || !R_FINITE(zptr[i].i))
 		    error(_("complex NA/NaN/Inf in foreign function call (arg %d)"), narg);
 	if (dup) {
-	    zptr = reinterpret_cast<Rcomplex*>(R_alloc(n, sizeof(Rcomplex)));
+	    zptr = static_cast<Rcomplex*>(CXXR_alloc(n, sizeof(Rcomplex)));
 	    for (i = 0 ; i < n ; i++)
 		zptr[i] = COMPLEX(s)[i];
 	}
@@ -406,7 +406,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    strcpy(fptr, ss);
 	    return CXXRNOCAST(void*)fptr;
 	} else {
-	    cptr = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
+	    cptr = static_cast<char**>(CXXR_alloc(n, sizeof(char*)));
 	    if(strlen(encname)) {
 #ifdef HAVE_ICONV
 		char *outbuf;
@@ -455,7 +455,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	    error(_("lists must be duplicated in .C"));
 	/* if (!dup) return (void*)VECTOR_PTR(s); ***** Dangerous to GC!!! */
 	n = length(s);
-	lptr = reinterpret_cast<SEXP*>(R_alloc(n, sizeof(SEXP)));
+	lptr = static_cast<SEXP*>(CXXR_alloc(n, sizeof(SEXP)));
 	for (i = 0 ; i < n ; i++) {
 	    lptr[i] = VECTOR_ELT(s, i);
 	}
@@ -466,7 +466,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	/* Warning : The following looks like it could bite ... */
 	if(!dup) return CXXRNOCAST(void*)s;
 	n = length(s);
-	cptr = reinterpret_cast<char**>(R_alloc(n, sizeof(char*)));
+	cptr = static_cast<char**>(CXXR_alloc(n, sizeof(char*)));
 	for(i=0 ; i<n ; i++) {
 	    cptr[i] = reinterpret_cast<char*>(s);
 	    s = CDR(s);
@@ -1693,7 +1693,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     /* function calls.  Note that we copy twice */
     /* once here, on the way into the call, and */
     /* once below on the way out. */
-    cargs = reinterpret_cast<void**>(R_alloc(nargs, sizeof(void*)));
+    cargs = static_cast<void**>(CXXR_alloc(nargs, sizeof(void*)));
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
 #ifdef THROW_REGISTRATION_TYPE_ERROR

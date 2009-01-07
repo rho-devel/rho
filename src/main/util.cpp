@@ -578,8 +578,8 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'all.y' must be TRUE or FALSE"));
 
     /* 0. sort the indices */
-    ix = reinterpret_cast<int *>( R_alloc(nx, sizeof(int)));
-    iy = reinterpret_cast<int *>( R_alloc(ny, sizeof(int)));
+    ix = static_cast<int *>( CXXR_alloc(nx, sizeof(int)));
+    iy = static_cast<int *>( CXXR_alloc(ny, sizeof(int)));
     for(i = 0; i < nx; i++) ix[i] = i+1;
     for(i = 0; i < ny; i++) iy[i] = i+1;
     isort_with_index(INTEGER(xi), ix, nx);

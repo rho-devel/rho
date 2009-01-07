@@ -1109,7 +1109,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* The code here is long-winded.  Couldn't we just inline things */
     /* below.  Hmmm - we need the min and max of the finite values ... */
 
-    ind = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
+    ind = static_cast<int *>( CXXR_alloc(n, sizeof(int)));
     for(i = 0; i < n; i++) ind[i] = i;
     rsort_with_index(REAL(at), ind, n);
     ntmp = 0;
@@ -1602,8 +1602,8 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 	    R_CheckStack();
 	} else {
 	    vmax = vmaxget();
-	    xtemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
-	    ytemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
+	    xtemp = static_cast<double *>( CXXR_alloc(2*n, sizeof(double)));
+	    ytemp = static_cast<double *>( CXXR_alloc(2*n, sizeof(double)));
 	}
 	gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
@@ -1640,8 +1640,8 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
 	    R_CheckStack();
 	} else {
 	    vmax = vmaxget();
-	    xtemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
-	    ytemp = reinterpret_cast<double *>( R_alloc(2*n, sizeof(double)));
+	    xtemp = static_cast<double *>( CXXR_alloc(2*n, sizeof(double)));
+	    ytemp = static_cast<double *>( CXXR_alloc(2*n, sizeof(double)));
 	}
 	gpptr(dd)->col = INTEGER(col)[0];
 	xold = NA_REAL;
@@ -3558,8 +3558,8 @@ SEXP attribute_hidden do_dendwindow(SEXP call, SEXP op, SEXP args, SEXP env)
     dnd_offset = GStrWidth("m", CE_ANY, INCHES, dd);
     vmax = vmaxget();
     /* n is the number of merges, so the points are labelled 1 ... n+1 */
-    y =  reinterpret_cast<double*>(R_alloc(n+1, sizeof(double)));
-    ll = reinterpret_cast<double*>(R_alloc(n+1, sizeof(double)));
+    y =  static_cast<double*>(CXXR_alloc(n+1, sizeof(double)));
+    ll = static_cast<double*>(CXXR_alloc(n+1, sizeof(double)));
     dnd_lptr = &(INTEGER(merge)[0]);
     dnd_rptr = &(INTEGER(merge)[n]);
     ymax = ymin = REAL(height)[0];
@@ -3806,9 +3806,9 @@ SEXP attribute_hidden do_symbols(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (!SymbolRange(REAL(p), nc * nr, &pmax, &pmin))
 	    error(_("invalid symbol parameter"));
 	vmax = vmaxget();
-	pp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
-	xp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
-	yp = reinterpret_cast<double*>(R_alloc(nc, sizeof(double)));
+	pp = static_cast<double*>(CXXR_alloc(nc, sizeof(double)));
+	xp = static_cast<double*>(CXXR_alloc(nc, sizeof(double)));
+	yp = static_cast<double*>(CXXR_alloc(nc, sizeof(double)));
 	p1 = 2.0 * M_PI / nc;
 	for (i = 0; i < nr; i++) {
 	    xx = REAL(x)[i];
@@ -4011,8 +4011,8 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     x = REAL(sx);
     y = REAL(sy);
     vmaxsave = vmaxget();
-    xx = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
-    yy = reinterpret_cast<double *>( R_alloc(nx, sizeof(double)));
+    xx = static_cast<double *>( CXXR_alloc(nx, sizeof(double)));
+    yy = static_cast<double *>( CXXR_alloc(nx, sizeof(double)));
     if (!xx || !yy)
 	error(_("unable to allocate memory (in do_xspline)"));
     for (i = 0; i < nx; i++) {

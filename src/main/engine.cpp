@@ -800,8 +800,8 @@ static void CScliplines(int n, double *x, double *y,
     else
 	getClipRect(&cr.xl, &cr.yb, &cr.xr, &cr.yt, dd);
 
-    xx = reinterpret_cast<double *>( R_alloc(n, sizeof(double)));
-    yy = reinterpret_cast<double *>( R_alloc(n, sizeof(double)));
+    xx = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
+    yy = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
     if (xx == NULL || yy == NULL)
 	error(_("out of memory while clipping polyline"));
 
@@ -1063,8 +1063,8 @@ static void clipPolygon(int n, double *x, double *y,
      * If bg was NA then it has been converted to fully transparent */
     if (R_TRANSPARENT(gc->fill)) {
 	int i;
-	xc = reinterpret_cast<double*>( R_alloc(n + 1, sizeof(double)));
-	yc = reinterpret_cast<double*>( R_alloc(n + 1, sizeof(double)));
+	xc = static_cast<double*>( CXXR_alloc(n + 1, sizeof(double)));
+	yc = static_cast<double*>( CXXR_alloc(n + 1, sizeof(double)));
 	for (i=0; i<n; i++) {
 	    xc[i] = x[i];
 	    yc[i] = y[i];
@@ -1078,8 +1078,8 @@ static void clipPolygon(int n, double *x, double *y,
 	xc = yc = 0;		/* -Wall */
 	npts = clipPoly(x, y, n, 0, toDevice, xc, yc, dd);
 	if (npts > 1) {
-	    xc = reinterpret_cast<double*>( R_alloc(npts, sizeof(double)));
-	    yc = reinterpret_cast<double*>( R_alloc(npts, sizeof(double)));
+	    xc = static_cast<double*>( CXXR_alloc(npts, sizeof(double)));
+	    yc = static_cast<double*>( CXXR_alloc(npts, sizeof(double)));
 	    npts = clipPoly(x, y, n, 1, toDevice, xc, yc, dd);
 	    dd->dev->polygon(npts, xc, yc, gc, dd->dev);
 	}
@@ -1251,8 +1251,8 @@ void GECircle(double x, double y, double radius, const pGEcontext gc, pGEDevDesc
 	}
 	else {
 	    vmax = vmaxget();
-	    xc = reinterpret_cast<double*>(R_alloc(result+1, sizeof(double)));
-	    yc = reinterpret_cast<double*>(R_alloc(result+1, sizeof(double)));
+	    xc = static_cast<double*>(CXXR_alloc(result+1, sizeof(double)));
+	    yc = static_cast<double*>(CXXR_alloc(result+1, sizeof(double)));
 	    convertCircle(x, y, radius, result, xc, yc);
 	    if (R_TRANSPARENT(gc->fill)) {
 		GEPolyline(result+1, xc, yc, gc, dd);
@@ -1264,8 +1264,8 @@ void GECircle(double x, double y, double radius, const pGEcontext gc, pGEDevDesc
 		npts = clipPoly(xc, yc, result, 0, !dd->dev->canClip,
 				    xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
-		    ycc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
+		    xcc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
+		    ycc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, result, 1, !dd->dev->canClip,
 					xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
@@ -1338,8 +1338,8 @@ void GERect(double x0, double y0, double x1, double y1,
 	    dd->dev->rect(x0, y0, x1, y1, gc, dd->dev);
 	else {
 	    vmax = vmaxget();
-	    xc = reinterpret_cast<double*>(R_alloc(5, sizeof(double)));
-	    yc = reinterpret_cast<double*>(R_alloc(5, sizeof(double)));
+	    xc = static_cast<double*>(CXXR_alloc(5, sizeof(double)));
+	    yc = static_cast<double*>(CXXR_alloc(5, sizeof(double)));
 	    xc[0] = x0; yc[0] = y0;
 	    xc[1] = x0; yc[1] = y1;
 	    xc[2] = x1; yc[2] = y1;
@@ -1354,8 +1354,8 @@ void GERect(double x0, double y0, double x1, double y1,
 		xcc = ycc = 0;		/* -Wall */
 		npts = clipPoly(xc, yc, 4, 0, !dd->dev->canClip, xcc, ycc, dd);
 		if (npts > 1) {
-		    xcc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
-		    ycc = reinterpret_cast<double*>(R_alloc(npts, sizeof(double)));
+		    xcc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
+		    ycc = static_cast<double*>(CXXR_alloc(npts, sizeof(double)));
 		    npts = clipPoly(xc, yc, 4, 1, !dd->dev->canClip, xcc, ycc, dd);
 		    dd->dev->polygon(npts, xcc, ycc, gc, dd->dev);
 		}
@@ -1824,7 +1824,7 @@ SEXP GEXspline(int n, double *x, double *y, double *s, Rboolean open,
      * after any R_alloc's done by functions I call.
      */
     unsigned int vmaxsave = vmaxget();
-    ys = reinterpret_cast<double *>( R_alloc(n, sizeof(double)));
+    ys = static_cast<double *>( CXXR_alloc(n, sizeof(double)));
     for (i = 0; i < n; i++) ys[i] = y[i]*asp;
     if (open) {
       compute_open_spline(n, x, ys, s, repEnds, LOW_PRECISION, dd);

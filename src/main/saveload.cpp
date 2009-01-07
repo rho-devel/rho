@@ -709,7 +709,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     /* save the current non-relocatable base */
 
     vmaxsave = vmaxget();
-    node.OldOffset = reinterpret_cast<int*>(R_alloc(node.NSymbol + node.NSave, sizeof(int)));
+    node.OldOffset = static_cast<int*>(CXXR_alloc(node.NSymbol + node.NSave, sizeof(int)));
     PROTECT(node.NewAddress = allocVector(VECSXP, node.NSymbol + node.NSave));
     for (i = 0 ; i < node.NTotal ; i++) {
 	node.OldOffset[i] = 0;

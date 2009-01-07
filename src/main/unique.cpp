@@ -726,12 +726,12 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument is not of mode character"));
 
     if(no_dups) {
-	used = reinterpret_cast<int *>( R_alloc(n_target, sizeof(int)));
+	used = static_cast<int *>( CXXR_alloc(n_target, sizeof(int)));
 	for (j = 0; j < n_target; j++) used[j] = 0;
     }
 
-    in = reinterpret_cast<const char **>( R_alloc(n_input, sizeof(char *)));
-    tar = reinterpret_cast<const char **>( R_alloc(n_target, sizeof(char *)));
+    in = static_cast<const char **>( CXXR_alloc(n_input, sizeof(char *)));
+    tar = static_cast<const char **>( CXXR_alloc(n_target, sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
     for (i = 0; i < n_input; i++) {
@@ -1314,7 +1314,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
 	} else {
 	    /* This is going to be slow so use expensive allocation
 	       that will be recovered if interrupted. */
-	    cnts = reinterpret_cast<int *>( R_alloc(n,  sizeof(int)));
+	    cnts = static_cast<int *>( CXXR_alloc(n,  sizeof(int)));
 	}
 	R_CheckStack();
 	for(i = 0; i < n; i++) cnts[i] = 1;

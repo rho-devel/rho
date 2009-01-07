@@ -298,7 +298,7 @@ static int ctr_intersect(double z0, double z1, double zc, double *f)
 
 static SEGP ctr_newseg(double x0, double y0, double x1, double y1, SEGP prev)
 {
-    SEGP seg = reinterpret_cast<SEGP>(R_alloc(1, sizeof(SEG)));
+    SEGP seg = static_cast<SEGP>(CXXR_alloc(1, sizeof(SEG)));
     seg->x0 = x0;
     seg->y0 = y0;
     seg->x1 = x1;
@@ -496,7 +496,7 @@ static SEGP* contourLines(double *x, int nx, double *y, int ny,
     /*
      * This reset is done out in GEcontourLines
      */
-    segmentDB = reinterpret_cast<SEGP*>(R_alloc(nx*ny, sizeof(SEGP)));
+    segmentDB = static_cast<SEGP*>(CXXR_alloc(nx*ny, sizeof(SEGP)));
     for (i = 0; i < nx; i++)
 	for (j = 0; j < ny; j++)
 	    segmentDB[i + j * nx] = NULL;
@@ -1031,8 +1031,8 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    if (ns > 3) ns2 = ns/2; else ns2 = -1;
 
 	    vmax = vmaxget();
-	    xxx = reinterpret_cast<double *>( R_alloc(ns + 1, sizeof(double)));
-	    yyy = reinterpret_cast<double *>( R_alloc(ns + 1, sizeof(double)));
+	    xxx = static_cast<double *>( CXXR_alloc(ns + 1, sizeof(double)));
+	    yyy = static_cast<double *>( CXXR_alloc(ns + 1, sizeof(double)));
 	    /* now have the space, go through again: */
 	    s = start;
 	    ns = 0;
@@ -1494,7 +1494,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     /* memory after a sequence of displaylist replays */
 
     vmax0 = vmaxget();
-    ctr_SegDB = reinterpret_cast<SEGP*>(R_alloc(nx*ny, sizeof(SEGP)));
+    ctr_SegDB = static_cast<SEGP*>(CXXR_alloc(nx*ny, sizeof(SEGP)));
 
     for (i = 0; i < nx; i++)
 	for (j = 0; j < ny; j++)

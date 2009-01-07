@@ -57,7 +57,7 @@ static SEXP getListElement(SEXP list, CXXRconst char *str)
 
 static double * vect(int n)
 {
-    return reinterpret_cast<double *>(R_alloc(n, sizeof(double)));
+    return static_cast<double *>(CXXR_alloc(n, sizeof(double)));
 }
 
 typedef struct opt_struct
@@ -228,7 +228,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     OptStruct OS;
 
     checkArity(op, args);
-    OS = reinterpret_cast<OptStruct>( R_alloc(1, sizeof(opt_struct)));
+    OS = static_cast<OptStruct>( CXXR_alloc(1, sizeof(opt_struct)));
     OS->usebounds = 0;
     OS->R_env = rho;
     par = CAR(args);
@@ -315,7 +315,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for (i = 0; i < npar; i++) OS->ndeps[i] = REAL(ndeps)[i];
 	    UNPROTECT(1);
 	}
-	mask = reinterpret_cast<int *>( R_alloc(npar, sizeof(int)));
+	mask = static_cast<int *>( CXXR_alloc(npar, sizeof(int)));
 	for (i = 0; i < npar; i++) mask[i] = 1;
 	vmmin(npar, dpar, &val, fminfn, fmingr, maxit, trace, mask, abstol,
 	      reltol, nREPORT, CXXRNOCAST(void *)OS, &fncount, &grcount, &ifail);
@@ -349,7 +349,7 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else if (strcmp(tn, "L-BFGS-B") == 0) {
 	SEXP ndeps, smsg;
 	double *lower = vect(npar), *upper = vect(npar);
-	int lmm, *nbd = reinterpret_cast<int *>( R_alloc(npar, sizeof(int)));
+	int lmm, *nbd = static_cast<int *>( CXXR_alloc(npar, sizeof(int)));
 	double factr, pgtol;
 	char msg[60];
 
@@ -415,7 +415,7 @@ SEXP attribute_hidden do_optimhess(SEXP call, SEXP op, SEXP args, SEXP rho)
     double *dpar, *df1, *df2, eps;
 
     checkArity(op, args);
-    OS = reinterpret_cast<OptStruct>( R_alloc(1, sizeof(opt_struct)));
+    OS = static_cast<OptStruct>( CXXR_alloc(1, sizeof(opt_struct)));
     OS->usebounds = 0;
     OS->R_env = rho;
     par = CAR(args);
@@ -474,9 +474,9 @@ static double ** matrix(int nrh, int nch)
     int   i;
     double **m;
 
-    m = reinterpret_cast<double **>( R_alloc((nrh + 1), sizeof(double *)));
+    m = static_cast<double **>( CXXR_alloc((nrh + 1), sizeof(double *)));
     for (i = 0; i <= nrh; i++)
-	m[i] = reinterpret_cast<double*>( R_alloc((nch + 1), sizeof(double)));
+	m[i] = static_cast<double*>( CXXR_alloc((nch + 1), sizeof(double)));
     return m;
 }
 
@@ -485,9 +485,9 @@ static double ** Lmatrix(int n)
     int   i;
     double **m;
 
-    m = reinterpret_cast<double **>( R_alloc(n, sizeof(double *)));
+    m = static_cast<double **>( CXXR_alloc(n, sizeof(double *)));
     for (i = 0; i < n; i++)
-	m[i] = reinterpret_cast<double *>( R_alloc((i + 1), sizeof(double)));
+	m[i] = static_cast<double *>( CXXR_alloc((i + 1), sizeof(double)));
     return m;
 }
 
@@ -526,7 +526,7 @@ vmmin(int n0, double *b, double *Fmin, optimfn fminfn, optimgr fmingr,
 
     if (nREPORT <= 0)
 	error(_("REPORT must be > 0 (method = \"BFGS\")"));
-    l = reinterpret_cast<int *>( R_alloc(n0, sizeof(int)));
+    l = static_cast<int *>( CXXR_alloc(n0, sizeof(int)));
     n = 0;
     for (i = 0; i < n0; i++) if (mask[i]) l[n++] = i;
     g = vect(n0);
@@ -1053,7 +1053,7 @@ void lbfgsb(int n, int m, double *x, double *l, double *u, int *nbd,
     g = vect(n);
     /* this needs to be zeroed for snd in mainlb to be zeroed */
     wa = reinterpret_cast<double *>( S_alloc(2*m*n+4*n+11*m*m+8*m, sizeof(double)));
-    iwa = reinterpret_cast<int *>( R_alloc(3*n, sizeof(int)));
+    iwa = static_cast<int *>( CXXR_alloc(3*n, sizeof(int)));
     strcpy(task, "START");
     while(1) {
 	/* Main workhorse setulb() from ../appl/lbfgsb.c : */

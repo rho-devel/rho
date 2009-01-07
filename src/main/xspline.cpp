@@ -74,8 +74,8 @@ add_point(double x, double y, pGEDevDesc dd)
 	    error(_("add_point - reached MAXNUMPTS (%d)"),tmp_n);
 	}
 	if (max_points == 0) {
-	    tmp_px = reinterpret_cast<double *>( R_alloc(tmp_n, sizeof(double)));
-	    tmp_py = reinterpret_cast<double *>( R_alloc(tmp_n, sizeof(double)));
+	    tmp_px = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
+	    tmp_py = static_cast<double *>( CXXR_alloc(tmp_n, sizeof(double)));
 	} else {
 	    tmp_px = reinterpret_cast<double *>(S_realloc(reinterpret_cast<char *>( xpoints),
 							  tmp_n, max_points,

@@ -53,14 +53,14 @@ do_mapply(SEXP f, SEXP varyingArgs, SEXP constantArgs, SEXP rho)
 
     named = vnames!=R_NilValue;
 
-    lengths = reinterpret_cast<int *>(R_alloc(m, sizeof(int)));
+    lengths = static_cast<int *>(CXXR_alloc(m, sizeof(int)));
     for(i = 0; i < m; i++){
 	lengths[i] = length(VECTOR_ELT(varyingArgs,i));
 	if (lengths[i] > longest) longest=lengths[i];
     }
 
 
-    counters = reinterpret_cast<int *>(R_alloc(m, sizeof(int)));
+    counters = static_cast<int *>(CXXR_alloc(m, sizeof(int)));
     for(i = 0; i < m; counters[i++]=0);
 
     mindex=PROTECT(allocVector(VECSXP, m));

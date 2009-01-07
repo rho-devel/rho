@@ -201,7 +201,7 @@ int attribute_hidden R_TextBufferInit(TextBuffer *txtb, SEXP text)
 	    }
 	}
 	txtb->vmax = vmaxget();
-	txtb->buf = reinterpret_cast<unsigned char *>(R_alloc(l+2, sizeof(char))); /* '\n' and '\0' */
+	txtb->buf = static_cast<unsigned char *>(CXXR_alloc(l+2, sizeof(char))); /* '\n' and '\0' */
 	txtb->bufp = txtb->buf;
 	txtb->text = text;
 	txtb->ntext = n;

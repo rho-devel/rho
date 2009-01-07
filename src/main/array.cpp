@@ -1021,7 +1021,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* check the permutation */
 
     PROTECT(perm = coerceVector(CADR(args), INTSXP));
-    pp = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
+    pp = static_cast<int *>( CXXR_alloc(n, sizeof(int)));
     if (length(perm) == 0) {
 	for (i=0; i<n; i++)
 	    pp[i] = n-1-i;
@@ -1031,7 +1031,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else
 	error(_("'perm' is of wrong length"));
 
-    iip = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
+    iip = static_cast<int *>( CXXR_alloc(n, sizeof(int)));
     for (i = 0; i < n; iip[i++] = 0);
     for (i = 0; i < n; i++)
 	if (pp[i] >= 0 && pp[i] < n)
@@ -1044,7 +1044,7 @@ SEXP attribute_hidden do_aperm(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* create the stride object and permute */
 
-    stride = reinterpret_cast<int *>( R_alloc(n, sizeof(int)));
+    stride = static_cast<int *>( CXXR_alloc(n, sizeof(int)));
 
     for (iip[0] = 1, i = 1; i<n; i++)
 	iip[i] = iip[i-1] * INTEGER(dimsa)[i-1];

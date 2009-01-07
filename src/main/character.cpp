@@ -2502,7 +2502,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	*trs_cnt_ptr = trs_cnt->next;
 	for ( xtable_cnt = 0 ; wtr_get_next_char_from_spec(trs_cnt_ptr); xtable_cnt++ );
 	Free(trs_cnt_ptr);
-	xtable = reinterpret_cast<xtable_t *>(R_alloc(xtable_cnt+1,sizeof(xtable_t)));
+	xtable = static_cast<xtable_t *>(CXXR_alloc(xtable_cnt+1,sizeof(xtable_t)));
 
 	trs_old_ptr = Calloc(1, struct wtr_spec *);
 	*trs_old_ptr = trs_old->next;
@@ -3026,7 +3026,7 @@ SEXP attribute_hidden do_utf8ToInt(SEXP call, SEXP op, SEXP args, SEXP env)
     if (LENGTH(x) > 1)
 	warning(_("argument should be a character vector of length 1\nall but the first element will be ignored"));
     nc = LENGTH(STRING_ELT(x, 0)); /* ints will be shorter */
-    ians = reinterpret_cast<int *>( R_alloc(nc,  sizeof(int *)));
+    ians = static_cast<int *>( CXXR_alloc(nc,  sizeof(int *)));
     for (i = 0, j = 0; i < nc; i++) {
 	used = mbrtoint(&tmp, s);
 	if (used <= 0) break;

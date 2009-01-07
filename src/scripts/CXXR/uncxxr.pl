@@ -49,6 +49,7 @@ while (<>) {
   # Other changes:
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
+  s/CXXR_alloc/R_alloc/g;
   s/CXXRconst\s*//g;
   s/CXXRNOCAST//g;
   s/CXXRnot_hidden/attribute_hidden/g;
