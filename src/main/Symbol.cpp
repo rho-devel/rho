@@ -55,8 +55,8 @@ namespace CXXR {
     }
 }
 
-GCRoot<const String> String::s_blank(CachedString::obtain(""));
-SEXP R_BlankString = const_cast<String*>(String::blank());
+GCRoot<const CachedString> CachedString::s_blank(CachedString::obtain(""));
+SEXP R_BlankString = const_cast<CachedString*>(CachedString::blank());
 
 GCRoot<Symbol> Symbol::s_missing_arg(new Symbol, true);
 SEXP R_MissingArg = Symbol::missingArgument();
@@ -72,13 +72,13 @@ namespace {
 }
 
 Symbol::Symbol()
-    : RObject(SYMSXP), m_name(*String::blank()), m_value(s_unbound_value),
-      m_internalfunc(0), m_dd_symbol(false)
+    : RObject(SYMSXP), m_name(*CachedString::blank()),
+      m_value(s_unbound_value), m_internalfunc(0), m_dd_symbol(false)
 {
     freeze();
 }
 
-Symbol::Symbol(const String& name, RObject* val,
+Symbol::Symbol(const CachedString& name, RObject* val,
 	       const BuiltInFunction* internal_func, bool frozen)
     : RObject(SYMSXP), m_name(name), m_value(val),
       m_internalfunc(internal_func)
@@ -104,7 +104,8 @@ void Symbol::visitChildren(const_visitor* v) const
 
 SEXP Rf_mkSYMSXP(SEXP name, SEXP value)
 {
-    GCRoot<const String> namert(SEXP_downcast<const String*>(name));
+    GCRoot<const CachedString>
+	namert(SEXP_downcast<const CachedString*>(name));
     GCRoot<> valuert(value);
     Symbol* ans = new Symbol(*namert, valuert);
     ans->expose();

@@ -105,14 +105,6 @@ namespace CXXR {
 	    return c_str()[index];
 	}
 
-	/** @brief Blank string.
-	 * @return <tt>const</tt> pointer to the string "".
-	 */
-	static const String* blank()
-	{
-	    return s_blank;
-	}
-
 	/** @brief Access encapsulated C-style string.
 	 *
 	 * @return Pointer to the encapsulated C-style (null
@@ -230,7 +222,6 @@ namespace CXXR {
 	}
     private:
 	static GCRoot<const String> s_na;
-	static GCRoot<const String> s_blank;
 
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;

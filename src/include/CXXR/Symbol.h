@@ -48,7 +48,7 @@
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
-#include "CXXR/String.h"
+#include "CXXR/CachedString.h"
 
 namespace CXXR {
     /** @brief Class used to represent R symbols.
@@ -86,7 +86,8 @@ namespace CXXR {
 	 * @param frozen true iff the Symbol should not be altered
 	 *          after it is created.
 	 */
-	explicit Symbol(const String& name, RObject* val = unboundValue(),
+	explicit Symbol(const CachedString& name,
+			RObject* val = unboundValue(),
 			const BuiltInFunction* internal_func = 0,
 			bool frozen = false);
 
@@ -123,7 +124,7 @@ namespace CXXR {
 	 *
 	 * @return const reference to the name of this Symbol.
 	 */
-	const String& name() const
+	const CachedString& name() const
 	{
 	    return m_name;
 	}
@@ -219,7 +220,7 @@ namespace CXXR {
 	static GCRoot<Symbol> s_restart_token;
 	static GCRoot<Symbol> s_unbound_value;
 
-	const String& m_name;
+	const CachedString& m_name;
 	RObject* m_value;
 	const BuiltInFunction* m_internalfunc;
 	bool m_dd_symbol;
@@ -333,7 +334,7 @@ extern "C" {
      *
      * @param x Pointer to a CXXR::Symbol (checked).
      *
-     * @return Pointer to a CXXR::String representings \a x's name.
+     * @return Pointer to a CXXR::CachedString representing \a x's name.
      */
 #ifndef __cplusplus
     SEXP PRINTNAME(SEXP x);
@@ -342,7 +343,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return const_cast<String*>(&sym.name());
+	return const_cast<CachedString*>(&sym.name());
     }
 #endif
 

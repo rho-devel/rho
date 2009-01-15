@@ -44,7 +44,7 @@
 #ifndef STRINGVECTOR_H
 #define STRINGVECTOR_H
 
-#include "CXXR/String.h"
+#include "CXXR/CachedString.h"
 #include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
@@ -72,7 +72,7 @@ namespace CXXR {
 	 */
 	explicit StringVector(size_t sz)
 	    : HandleVector<String, STRSXP>(sz,
-		         Handle<String>(const_cast<String*>(String::blank())))
+	      Handle<String>(const_cast<CachedString*>(CachedString::blank())))
 	{}
 
 	/** @brief Copy constructor.
