@@ -106,7 +106,7 @@ namespace {
     const char* sympname(const RObject* sym) {
 	const Symbol* symb = dynamic_cast<const Symbol*>(sym);
 	if (!symb) return "(SYMSXP is not a Symbol)";
-	return symb->name().c_str();
+	return symb->name()->c_str();
     }
 }
 

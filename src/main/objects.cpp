@@ -463,7 +463,7 @@ static SEXP fixcall(SEXP call, SEXP args)
 
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    char buf[512], b[512], bb[512], tbuf[10];
+    char buf[512], b[512], bb[512];
     const char *sb, *sg, *sk;
     SEXP ans, s, t, klass, method, matchedarg, generic, nextfun;
     SEXP sysp, m, formals, actuals, tmp, newcall;
@@ -531,8 +531,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(TYPEOF(CAR(s)) == DOTSXP) {
 		for(i = 1, a = CAR(s); a != R_NilValue;
 		    a = CDR(a), i++, m = CDR(m)) {
-		    sprintf(tbuf, "..%d", i);
-		    SET_TAG(m, mkSYMSXP(mkChar(tbuf), R_UnboundValue));
+		    SET_TAG(m, Symbol::obtainDDSymbol(i));
 		    SETCAR(m, CAR(a));
 		}
 	    } else {

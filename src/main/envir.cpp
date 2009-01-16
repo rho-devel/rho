@@ -108,10 +108,12 @@
 # include <config.h>
 #endif
 
+#include <functional>
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
 
+using namespace std;
 using namespace CXXR;
 
 namespace {
@@ -2254,23 +2256,24 @@ static void HashTableValues(SEXP table, int all, SEXP values, int *indx)
 	FrameValues(VECTOR_ELT(table, i), all, values, indx);
 }
 
+static bool BuiltinTest(const Symbol* sym, bool all, bool intern)
+{
+    if (intern && sym->internalFunction())
+	return true;
+    if ((all || sym->name()->c_str()[0] != '.')
+	&& sym->value() != R_UnboundValue)
+	return true;
+    return false;
+}
+
 static int BuiltinSize(int all, int intern)
 {
     int count = 0;
-    SEXP s;
-    int j;
-    for (j = 0; j < HSIZE; j++) {
-	for (s = R_SymbolTable[j]; s != R_NilValue; s = CDR(s)) {
-	    if (intern) {
-		if (INTERNAL(CAR(s)) != R_NilValue)
-		    count++;
-	    }
-	    else {
-		if ((all || CHAR(PRINTNAME(CAR(s)))[0] != '.')
-		    && SYMVALUE(CAR(s)) != R_UnboundValue)
-		    count++;
-	    }
-	}
+    for (Symbol::const_iterator it = Symbol::begin();
+	 it != Symbol::end(); ++it) {
+	const Symbol* sym = (*it).second;
+	if (BuiltinTest(sym, all, intern))
+	    ++count;
     }
     return count;
 }
@@ -2278,53 +2281,29 @@ static int BuiltinSize(int all, int intern)
 static void
 BuiltinNames(int all, int intern, SEXP names, int *indx)
 {
-    SEXP s;
-    int j;
-    for (j = 0; j < HSIZE; j++) {
-	for (s = R_SymbolTable[j]; s != R_NilValue; s = CDR(s)) {
-	    if (intern) {
-		if (INTERNAL(CAR(s)) != R_NilValue)
-		    SET_STRING_ELT(names, (*indx)++, PRINTNAME(CAR(s)));
-	    }
-	    else {
-		if ((all || CHAR(PRINTNAME(CAR(s)))[0] != '.')
-		    && SYMVALUE(CAR(s)) != R_UnboundValue)
-		    SET_STRING_ELT(names, (*indx)++, PRINTNAME(CAR(s)));
-	    }
-	}
+    StringVector* sv = SEXP_downcast<StringVector*>(names);
+    for (Symbol::const_iterator it = Symbol::begin();
+	 it != Symbol::end(); ++it) {
+	const Symbol* sym = (*it).second;
+	if (BuiltinTest(sym, all, intern))
+	    (*sv)[(*indx)++] = const_cast<CachedString*>(sym->name());
     }
 }
 
 static void
 BuiltinValues(int all, int intern, SEXP values, int *indx)
 {
-    SEXP s, vl;
-    int j;
-    for (j = 0; j < HSIZE; j++) {
-	for (s = R_SymbolTable[j]; s != R_NilValue; s = CDR(s)) {
-	    if (intern) {
-		if (INTERNAL(CAR(s)) != R_NilValue) {
-		    vl = SYMVALUE(CAR(s));
-		    if (TYPEOF(vl) == PROMSXP) {
-			PROTECT(vl);
-			vl = eval(vl, R_BaseEnv);
-			UNPROTECT(1);
-		    }
-		    SET_VECTOR_ELT(values, (*indx)++, duplicate(vl));
-		}
+    ListVector* lv = SEXP_downcast<ListVector*>(values);
+    for (Symbol::const_iterator it = Symbol::begin();
+	 it != Symbol::end(); ++it) {
+	Symbol* sym = (*it).second;
+	if (BuiltinTest(sym, all, intern)) {
+	    RObject* vl = sym->value();
+	    if (vl->sexptype() == PROMSXP) {
+		GCRoot<> vlr(vl);
+		vl = eval(vl, R_BaseEnv);
 	    }
-	    else {
-		if ((all || CHAR(PRINTNAME(CAR(s)))[0] != '.')
-		    && SYMVALUE(CAR(s)) != R_UnboundValue) {
-		    vl = SYMVALUE(CAR(s));
-		    if (TYPEOF(vl) == PROMSXP) {
-			PROTECT(vl);
-			vl = eval(vl, R_BaseEnv);
-			UNPROTECT(1);
-		    }
-		    SET_VECTOR_ELT(values, (*indx)++, duplicate(vl));
-		}
-	    }
+	    (*lv)[(*indx)++] = duplicate(vl);
 	}
     }
 }
@@ -2699,12 +2678,12 @@ void R_LockEnvironment(SEXP env, Rboolean bindings)
 {
     if (env == R_BaseEnv || env == R_BaseNamespace) {
 	if (bindings) {
-	    SEXP s;
-	    int j;
-	    for (j = 0; j < HSIZE; j++)
-		for (s = R_SymbolTable[j]; s != R_NilValue; s = CDR(s))
-		    if(SYMVALUE(CAR(s)) != R_UnboundValue)
-			LOCK_BINDING(CAR(s));
+	    for (Symbol::const_iterator it = Symbol::begin();
+		 it != Symbol::end(); ++it) {
+		Symbol* sym = (*it).second;
+		if (sym->value() != R_UnboundValue)
+		    LOCK_BINDING(sym);
+	    }
 	}
 #ifdef NOT_YET
 	/* causes problems with Matrix */

@@ -53,43 +53,57 @@
 namespace CXXR {
     /** @brief Class used to represent R symbols.
      *
-     * A symbol associates a String object with an arbitrary RObject,
-     * and (or?) with a BuiltInFunction object.  (I'll document it
-     * better when I understand it better! - arr)  Generally speaking,
-     * although each Symbol has a name (except pseudo-objects, see
-     * below), a Symbol object is identified by its address rather
-     * than by its name.
+     * A symbol associates a CachedString object (its name) with an
+     * arbitrary RObject, and (or?) with a BuiltInFunction object.
+     * (I'll document it better when I understand it better! - arr)
+     * Generally speaking, although each Symbol has a name (except
+     * pseudo-objects, see below), a Symbol object is identified by
+     * its address rather than by its name.
      *
-     * This class is also used to implement certain pseudo-objects
+     * Symbols come in two varieties, standard symbols and special
+     * symbols, both implemented by this class.  Dot-dot symbols are a
+     * subvariety of standard symbols.
+     *
+     * Standard symbols are generated using the static member function
+     * obtain(), and have the property that there is at most one
+     * standard symbol with a given name.  This is enforced by an
+     * internal table mapping names to standard symbols.
+     *
+     * Dot-dot symbols have names of the form '<tt>..</tt><i>n</i>',
+     * where <i>n</i> is a positive integer.  These are preferably
+     * generated using the static member function obtainDDSymbol()
+     * (though they can also be generated using obtain() ), and are
+     * used internally by the interpreter to refer to elements of a
+     * '<tt>...</tt>' argument list.  (Note that CR does not
+     * consistently enforce the 'at most one Symbol per name' rule for
+     * dot-dot symbols; CXXR does.)
+     *
+     * Special symbols are used to implement certain pseudo-objects
      * (::R_MissingArg, ::R_RestartToken and ::R_UnboundValue) that CR
-     * expects to have ::SEXPTYPE SYMSXP.  Each pseudo-object has a
-     * blank string as its name.
+     * expects to have ::SEXPTYPE SYMSXP.  Each special symbol has a
+     * blank string as its name, but despite this each of them is a
+     * distinct symbol.
      */
     class Symbol : public RObject {
+    private:
+	// This table is used to ensure that, for standard symbols,
+	// there is at most one Symbol object with a particular name.
+	typedef std::tr1::unordered_map<const CachedString*, Symbol*> map;
+	static map s_table;
     public:
-	/**
-	 * @param name Pointer to String object representing the name
-	 *          of the symbol.  Names of the form
-	 *          <tt>..<em>n</em></tt>, where n is a (non-negative)
-	 *          decimal integer signify that the Symbol to be
-	 *          constructed relates to an element of a
-	 *          <tt>...</tt> argument list.
-	 *
-	 * @param val Value to be associated with the constructed
-	 *          Symbol object.  The default value is a placeholder
-	 *          signifying that no value has yet been associated
-	 *          with the Symbol.
-	 *
-	 * @param internal_func Pointer to an internal function to be
-	 *          denoted by the constructed Symbol.
-	 *
-	 * @param frozen true iff the Symbol should not be altered
-	 *          after it is created.
-	 */
-	explicit Symbol(const CachedString& name,
-			RObject* val = unboundValue(),
-			const BuiltInFunction* internal_func = 0,
-			bool frozen = false);
+	// It is assumed that this dereferences to
+	// const std::pair<const CachedString*, Symbol*>.
+	typedef map::const_iterator const_iterator;
+
+	static const_iterator begin()
+	{
+	    return s_table.begin();
+	}
+
+	static const_iterator end()
+	{
+	    return s_table.end();
+	}
 
 	/** @brief Access internal function.
 	 *
@@ -124,10 +138,37 @@ namespace CXXR {
 	 *
 	 * @return const reference to the name of this Symbol.
 	 */
-	const CachedString& name() const
+	const CachedString* name() const
 	{
 	    return m_name;
 	}
+
+	/** @brief Get a pointer to a regular Symbol object.
+	 *
+	 * If no Symbol with the specified name currently exists, one
+	 * will be created, and a pointer to it returned.  Otherwise a
+	 * pointer to the existing Symbol will be returned.
+	 *
+	 * @param name The name of the required Symbol.  At present no
+	 *          check is made that the supplied string is a valid
+	 *          symbol name.
+	 *
+	 * @return Pointer to a Symbol (preexisting or newly
+	 * created) with the required name.  If a symbol is newly
+	 * created, it will have value Symbol::unboundValue(), and
+	 * the internal function will be a null pointer.
+	 */
+	static Symbol* obtain(const CachedString* name);
+
+	/** @brief Create a double-dot symbol.
+	 *
+	 * @param n Index number of the required symbol; must be
+	 *          strictly positive.
+	 *
+	 * @return a pointer to the created symbol, whose name will be
+	 * <tt>..</tt><i>n</i>.
+	 */
+	static Symbol* obtainDDSymbol(unsigned int n);
 
 	/** @brief Restart token.
 	 *
@@ -210,6 +251,12 @@ namespace CXXR {
 	    return m_value;
 	}
 
+	/** @brief Conduct a visitor to all standard symbols.
+	 *
+	 * @param v Pointer to the visitor object.
+	 */
+	static void visitTable(const_visitor* v);
+
 	// Virtual function of RObject:
 	const char* typeName() const;
 
@@ -220,13 +267,24 @@ namespace CXXR {
 	static GCRoot<Symbol> s_restart_token;
 	static GCRoot<Symbol> s_unbound_value;
 
-	const CachedString& m_name;
+	const CachedString* m_name;
 	RObject* m_value;
 	const BuiltInFunction* m_internalfunc;
 	bool m_dd_symbol;
 
-	// Special constructor for 'pseudo-objects':
-	Symbol();
+	/**
+	 * @param name Pointer to String object representing the name
+	 *          of the symbol.  Names of the form
+	 *          <tt>..<em>n</em></tt>, where n is a (non-negative)
+	 *          decimal integer signify that the Symbol to be
+	 *          constructed relates to an element of a
+	 *          <tt>...</tt> argument list.
+	 *
+	 * @param frozen true iff the Symbol should not be altered
+	 *          after it is created.
+	 */
+	explicit Symbol(const CachedString* name = CachedString::blank(),
+			bool frozen = true);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
@@ -317,19 +375,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Create a CXXR::Symbol object.
-     *
-     * @param name Pointer to a CXXR::String object (checked) to be
-     *          taken as the name of the constructed symbol.
-     *
-     * @param val Pointer to the CXXR::RObject to be considered as
-     *          the value of the constructed symbol.  A null pointer or
-     *          R_UnboundValue are permissible values of \a val.
-     *
-     * @return Pointer to the created CXXR::Symbol object.
-     */
-    SEXP Rf_mkSYMSXP(SEXP name, SEXP value);
-
     /** @brief Symbol name.
      *
      * @param x Pointer to a CXXR::Symbol (checked).
@@ -343,7 +388,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return const_cast<CachedString*>(&sym.name());
+	return const_cast<CachedString*>(sym.name());
     }
 #endif
 

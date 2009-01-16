@@ -40,9 +40,13 @@
 
 #include "CXXR/Symbol.h"
 
+#include <sstream>
+#include "localization.h"
 #include "boost/regex.hpp"
+#include "R_ext/Error.h"
 #include "CXXR/CachedString.h"
 
+using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
@@ -67,24 +71,51 @@ SEXP R_RestartToken = Symbol::restartToken();
 GCRoot<Symbol> Symbol::s_unbound_value(new Symbol, true);
 SEXP R_UnboundValue = Symbol::unboundValue();
 
+Symbol::map Symbol::s_table;
+
+// As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
+// (Discovered 2009-01-16)  So we use boost:
+
 namespace {
     boost::basic_regex<char> dd_regex("\\.\\.\\d+");
 }
 
-Symbol::Symbol()
-    : RObject(SYMSXP), m_name(*CachedString::blank()),
-      m_value(s_unbound_value), m_internalfunc(0), m_dd_symbol(false)
+Symbol::Symbol(const CachedString* name, bool frozen)
+    : RObject(SYMSXP), m_name(name), m_value(unboundValue()),
+      m_internalfunc(0)
 {
-    freeze();
+    // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
+    // seem comfortable with empty strings, hence the size check.
+    m_dd_symbol
+	= name->size() > 2 && boost::regex_match(name->c_str(), dd_regex);
+    if (frozen) freeze();
 }
 
-Symbol::Symbol(const CachedString& name, RObject* val,
-	       const BuiltInFunction* internal_func, bool frozen)
-    : RObject(SYMSXP), m_name(name), m_value(val),
-      m_internalfunc(internal_func)
+Symbol* Symbol::obtain(const CachedString* name)
 {
-    m_dd_symbol = boost::regex_match(name.c_str(), dd_regex);
-    if (frozen) freeze();
+    pair<map::iterator, bool> pr = s_table.insert(map::value_type(name, 0));
+    map::iterator it = pr.first;
+    map::value_type& val = *it;
+    if (pr.second) {
+	try {
+	    val.second = new Symbol(name, false);
+	    val.second->expose();
+	} catch (...) {
+	    s_table.erase(it);
+	    throw;
+	}
+    }
+    return val.second;
+}
+
+Symbol* Symbol::obtainDDSymbol(unsigned int n)
+{
+    if (n == 0)
+	Rf_error(_("..0 is not a permitted symbol name"));
+    ostringstream nameos;
+    nameos << ".." << n;
+    GCRoot<const CachedString> name(CachedString::obtain(nameos.str()));
+    return obtain(name);
 }
 
 const char* Symbol::typeName() const
@@ -95,22 +126,18 @@ const char* Symbol::typeName() const
 void Symbol::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
-    m_name.conductVisitor(v);
+    m_name->conductVisitor(v);
     if (m_value) m_value->conductVisitor(v);
     if (m_internalfunc) m_internalfunc->conductVisitor(v);
 }
 
-// ***** C interface *****
-
-SEXP Rf_mkSYMSXP(SEXP name, SEXP value)
+void Symbol::visitTable(const_visitor* v)
 {
-    GCRoot<const CachedString>
-	namert(SEXP_downcast<const CachedString*>(name));
-    GCRoot<> valuert(value);
-    Symbol* ans = new Symbol(*namert, valuert);
-    ans->expose();
-    return ans;
+    for (map::iterator it = s_table.begin(); it != s_table.end(); ++it)
+	(*it).second->conductVisitor(v);
 }
+
+// ***** C interface *****
 
 void SET_INTERNAL(SEXP x, SEXP v)
 {

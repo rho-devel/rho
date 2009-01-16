@@ -538,7 +538,6 @@ LibExtern int	R_Is_Running;	    /* for Windows memory manager */
 /* Evaluation Environment */
 LibExtern SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
 extern0 SEXP	R_ReturnedValue;    /* Slot for return-ing values */
-extern0 SEXP*	R_SymbolTable;	    /* The symbol table */
 LibExtern RCNTXT R_Toplevel;	    /* Storage for the toplevel environment */
 LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
 LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
@@ -768,7 +767,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define mkFalse		Rf_mkFalse
 # define mkPROMISE		Rf_mkPROMISE
 # define mkQUOTE		Rf_mkQUOTE
-# define mkSYMSXP		Rf_mkSYMSXP
 # define mkTrue			Rf_mkTrue
 # define NewEnvironment		Rf_NewEnvironment
 # define OneIndex		Rf_OneIndex
@@ -951,7 +949,6 @@ SEXP mkFalse(void);
 SEXP mkPRIMSXP (int, int);
 SEXP mkPROMISE(SEXP, SEXP);
 SEXP mkQUOTE(SEXP);
-SEXP mkSYMSXP(SEXP, SEXP);
 SEXP mkTrue(void);
 SEXP NewEnvironment(SEXP, SEXP, SEXP);
 void onintr(void);

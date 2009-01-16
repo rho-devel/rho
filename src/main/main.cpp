@@ -190,7 +190,6 @@ attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Size of the vector heap */
 attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
 attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */
 attribute_hidden SEXP	R_ReturnedValue;    /* Slot for return-ing values */
-attribute_hidden SEXP*	R_SymbolTable;	    /* The symbol table */
 attribute_hidden Rboolean R_Visible;	    /* Value visibility flag */
 attribute_hidden int	R_BrowseLevel	= 0;	/* how deep the browser is */
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */

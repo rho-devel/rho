@@ -1065,11 +1065,6 @@ void InitNames()
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /* Initialize the symbol Table */
-    if (!(R_SymbolTable = static_cast<SEXP *>( malloc(HSIZE * sizeof(SEXP)))))
-	R_Suicide("couldn't allocate memory for symbol table");
-    for (i = 0; i < HSIZE; i++)
-	R_SymbolTable[i] = R_NilValue;
     /* Set up a set of globals so that a symbol table search can be
        avoided when matching something like dim or dimnames. */
     SymbolShortcuts();
@@ -1089,25 +1084,12 @@ void InitNames()
 
 SEXP install(const char *name)
 {
-    char buf[MAXIDSIZE+1];
-    SEXP sym;
-    int i, hashcode;
-
     if (*name == '\0')
 	error(_("attempt to use zero-length variable name"));
     if (strlen(name) > MAXIDSIZE)
 	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
-    strcpy(buf, name);
-    hashcode = R_Newhashpjw(buf);
-    i = hashcode % HSIZE;
-    /* Check to see if the symbol is already present;  if it is, return it. */
-    for (sym = R_SymbolTable[i]; sym != R_NilValue; sym = CDR(sym))
-	if (strcmp(buf, CHAR(PRINTNAME(CAR(sym)))) == 0)
-	    return (CAR(sym));
-    /* Create a new symbol node and link it into the table. */
-    sym = mkSYMSXP(mkChar(buf), R_UnboundValue);
-    R_SymbolTable[i] = CONS(sym, R_SymbolTable[i]);
-    return (sym);
+    GCRoot<const CachedString> namestr(CachedString::obtain(name));
+    return Symbol::obtain(namestr);
 }
 
 
