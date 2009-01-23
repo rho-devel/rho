@@ -119,7 +119,12 @@ using namespace CXXR;
 namespace {
     inline bool IS_USER_DATABASE(SEXP rho)
     {
-	return OBJECT(rho) && inherits(rho, "UserDefinedDatabase");
+	if (OBJECT(rho) && inherits(rho, "UserDefinedDatabase")) {
+	    cerr << "User-defined databases "
+		"not currently available in CXXR.\n";
+	    abort();
+	}
+	return false;
     }
 
     /* various definitions of macros/functions in Defn.h */
@@ -714,25 +719,6 @@ static SEXP findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean *canCache)
     if (!rho || rho == R_EmptyEnv)
 	return(R_NilValue);
 
-    if(IS_USER_DATABASE(rho)) {
-	R_ObjectTable *table;
-	SEXP val, tmp = R_NilValue;
-	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
-	/* Better to use exists() here if we don't actually need the value! */
-	val = table->get(CHAR(PRINTNAME(symbol)), canCache, table);
-	if(val != R_UnboundValue) {
-	    tmp = new PairList;
-	    tmp->expose();
-	    SETCAR(tmp, val);
-	    SET_TAG(tmp, symbol);
-	    /* If the database has a canCache method, then call that.
-	       Otherwise, we believe the setting for canCache. */
-	    if(canCache && table->canCache)
-		*canCache = table->canCache(CHAR(PRINTNAME(symbol)), table);
-	}
-	return(tmp);
-    }
-
     if (HASHTAB(rho) == R_NilValue) {
 	frame = FRAME(rho);
 	while (frame != R_NilValue && TAG(frame) != symbol)
@@ -811,23 +797,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean doGet)
     if (rho == R_EmptyEnv)
 	return R_UnboundValue;
 
-    if(IS_USER_DATABASE(rho)) {
-	/* Use the objects function pointer for this symbol. */
-	R_ObjectTable *table;
-	SEXP val = R_UnboundValue;
-	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
-	if(table->active) {
-	    if(doGet)
-		val = table->get(CHAR(PRINTNAME(symbol)), NULL, table);
-	    else {
-		if(table->exists(CHAR(PRINTNAME(symbol)), NULL, table))
-		    val = table->get(CHAR(PRINTNAME(symbol)), NULL, table);
-		else
-		    val = R_UnboundValue;
-	    }
-	}
-	return(val);
-    } else if (HASHTAB(rho) == R_NilValue) {
+    if (HASHTAB(rho) == R_NilValue) {
 	frame = FRAME(rho);
 	while (frame != R_NilValue) {
 	    if (TAG(frame) == symbol)
@@ -1112,15 +1082,6 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     if (rho == R_EmptyEnv)
 	error(_("cannot assign values in the empty environment"));
 
-    if(IS_USER_DATABASE(rho)) {
-	R_ObjectTable *table;
-	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
-	if(table->assign == NULL)
-	    error(_("cannot assign variables to this database"));
-	table->assign(CHAR(PRINTNAME(symbol)), value, table);
-	return;
-    }
-
     if (rho == R_BaseNamespace || rho == R_BaseEnv) {
 	gsetVar(symbol, value, rho);
     } else {
@@ -1169,15 +1130,6 @@ static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
     /* R_DirtyImage should only be set if assigning to R_GlobalEnv. */
     if (rho == R_GlobalEnv) R_DirtyImage = 1;
     if (rho == R_EmptyEnv) return R_NilValue;
-
-    if(IS_USER_DATABASE(rho)) {
-	/* FIXME: This does not behave as described */
-	R_ObjectTable *table;
-	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(rho)));
-	if(table->assign == NULL)
-	    error(_("cannot assign variables to this database"));
-	return(table->assign(CHAR(PRINTNAME(symbol)), value, table));
-    }
 
     if (rho == R_BaseNamespace || rho == R_BaseEnv) {
 	if (SYMVALUE(symbol) == R_UnboundValue) return R_NilValue;
@@ -1323,14 +1275,6 @@ static int RemoveVariable(SEXP name, int hashcode, SEXP env)
 	error(_("cannot remove variables from the empty environment"));
     if (FRAME_IS_LOCKED(env))
 	error(_("cannot remove bindings from a locked environment"));
-
-    if(IS_USER_DATABASE(env)) {
-	R_ObjectTable *table;
-	table = static_cast<R_ObjectTable *>( R_ExternalPtrAddr(HASHTAB(env)));
-	if(table->remove == NULL)
-	    error(_("cannot remove variables from this database"));
-	return(table->remove(CHAR(PRINTNAME(name)), table));
-    }
 
     if (IS_HASHED(env)) {
 	SEXP hashtab = HASHTAB(env);
@@ -1778,7 +1722,6 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name, s, t, x;
     int pos, hsize;
-    Rboolean isSpecial;
 
     checkArity(op, args);
 
@@ -1790,67 +1733,52 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isValidStringF(name))
 	error(_("invalid '%s' argument"), "name");
 
-    isSpecial = Rboolean(IS_USER_DATABASE(CAR(args)));
+    if (isNewList(CAR(args))) {
+	SETCAR(args, VectorToPairList(CAR(args)));
 
-    if(!isSpecial) {
-	if (isNewList(CAR(args))) {
-	    SETCAR(args, VectorToPairList(CAR(args)));
-
-	    for (x = CAR(args); x != R_NilValue; x = CDR(x))
-		if (TAG(x) == R_NilValue)
-		    error(_("all elements of a list must be named"));
-	    PROTECT(s = new Environment(0, SEXP_downcast<PairList*>(duplicate(CAR(args)))));
-	    s->expose();
-	} else if (isEnvironment(CAR(args))) {
-	    SEXP p, loadenv = CAR(args);
-
-	    PROTECT(s = new Environment);
-	    s->expose();
-	    if (HASHTAB(loadenv) != R_NilValue) {
-		int i, n;
-		n = length(HASHTAB(loadenv));
-		for (i = 0; i < n; i++) {
-		    p = VECTOR_ELT(HASHTAB(loadenv), i);
-		    while (p != R_NilValue) {
-			defineVar(TAG(p), duplicate(CAR(p)), s);
-			p = CDR(p);
-		    }
-		}
-		/* FIXME: duplicate the hash table and assign here */
-	    } else {
-		for(p = FRAME(loadenv); p != R_NilValue; p = CDR(p))
-		    defineVar(TAG(p), duplicate(CAR(p)), s);
-	    }
-	} else {
-	    error(_("'attach' only works for lists, data frames and environments"));
-	    s = R_NilValue; /* -Wall */
-	}
-
-	/* Connect FRAME(s) into HASHTAB(s) */
-	if (length(s) < HASHMINSIZE)
-	    hsize = HASHMINSIZE;
-	else
-	    hsize = length(s);
-
-	SET_HASHTAB(s, R_NewHashTable(hsize));
-	s = R_HashFrame(s);
-
-	/* FIXME: A little inefficient */
-	while (R_HashSizeCheck(HASHTAB(s)))
-	    SET_HASHTAB(s, R_HashResize(HASHTAB(s)));
-
-    } else { /* is a user object */
-	/* Having this here (rather than below) means that the onAttach routine
-	   is called before the table is attached. This may not be necessary or
-	   desirable. */
-	R_ObjectTable *tb = static_cast<R_ObjectTable*>( R_ExternalPtrAddr(CAR(args)));
-	if(tb->onAttach)
-	    tb->onAttach(tb);
-        s = new Environment;
+	for (x = CAR(args); x != R_NilValue; x = CDR(x))
+	    if (TAG(x) == R_NilValue)
+		error(_("all elements of a list must be named"));
+	PROTECT(s = new Environment(0, SEXP_downcast<PairList*>(duplicate(CAR(args)))));
 	s->expose();
-	SET_HASHTAB(s, CAR(args));
-	setAttrib(s, R_ClassSymbol, getAttrib(HASHTAB(s), R_ClassSymbol));
+    } else if (isEnvironment(CAR(args))) {
+	SEXP p, loadenv = CAR(args);
+
+	PROTECT(s = new Environment);
+	s->expose();
+	if (HASHTAB(loadenv) != R_NilValue) {
+	    int i, n;
+	    n = length(HASHTAB(loadenv));
+	    for (i = 0; i < n; i++) {
+		p = VECTOR_ELT(HASHTAB(loadenv), i);
+		while (p != R_NilValue) {
+		    defineVar(TAG(p), duplicate(CAR(p)), s);
+		    p = CDR(p);
+		}
+	    }
+	    /* FIXME: duplicate the hash table and assign here */
+	} else {
+	    for(p = FRAME(loadenv); p != R_NilValue; p = CDR(p))
+		defineVar(TAG(p), duplicate(CAR(p)), s);
+	}
+    } else {
+	error(_("'attach' only works for lists, data frames and environments"));
+	s = R_NilValue; /* -Wall */
     }
+
+    /* Connect FRAME(s) into HASHTAB(s) */
+    if (length(s) < HASHMINSIZE)
+	hsize = HASHMINSIZE;
+    else
+	hsize = length(s);
+
+    SET_HASHTAB(s, R_NewHashTable(hsize));
+    s = R_HashFrame(s);
+
+    /* FIXME: A little inefficient */
+    while (R_HashSizeCheck(HASHTAB(s)))
+	SET_HASHTAB(s, R_HashResize(HASHTAB(s)));
+
 
     setAttrib(s, install("name"), name);
     for (t = R_GlobalEnv; ENCLOS(t) != R_BaseEnv && pos > 2; t = ENCLOS(t))
@@ -1866,10 +1794,7 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_ENCLOS(s, x);
     }
 
-    if(!isSpecial) { /* Temporary: need to remove the elements identified by objects(CAR(args)) */
-	UNPROTECT(1);
-    } else {
-    }
+    UNPROTECT(1);
 
     return s;
 }
@@ -1889,7 +1814,6 @@ SEXP CXXRnot_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, t, x;
     int pos, n;
-    Rboolean isSpecial = FALSE;
 
     checkArity(op, args);
     pos = asInteger(CAR(args));
@@ -1910,12 +1834,6 @@ SEXP CXXRnot_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(s = ENCLOS(t));
 	x = ENCLOS(s);
 	SET_ENCLOS(t, x);
-	isSpecial = Rboolean(IS_USER_DATABASE(s));
-	if(isSpecial) {
-	    R_ObjectTable *tb = static_cast<R_ObjectTable*>( R_ExternalPtrAddr(HASHTAB(s)));
-	    if(tb->onDetach) tb->onDetach(tb);
-	}
-
 	SET_ENCLOS(s, R_BaseEnv);
     }
     UNPROTECT(1);
@@ -2093,12 +2011,6 @@ SEXP CXXRnot_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP env;
     int all;
     checkArity(op, args);
-
-    if(IS_USER_DATABASE(CAR(args))) {
-	R_ObjectTable *tb = static_cast<R_ObjectTable*>
-	    (R_ExternalPtrAddr(HASHTAB(CAR(args))));
-	return(tb->objects(tb));
-    }
 
     env = CAR(args);
 
