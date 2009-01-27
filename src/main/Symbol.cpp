@@ -133,8 +133,17 @@ void Symbol::visitChildren(const_visitor* v) const
 
 void Symbol::visitTable(const_visitor* v)
 {
-    for (map::iterator it = s_table.begin(); it != s_table.end(); ++it)
-	(*it).second->conductVisitor(v);
+    for (map::iterator it = s_table.begin(); it != s_table.end(); ++it) {
+	// Beware that a garbage collection may occur in
+	// Symbol::obtain(), after a new entry has been placed in the
+	// symbol table but not yet made to point to a Symbol.  In
+	// that case we need to visit the table key (i.e. the symbol
+	// name); otherwise we don't bother, because it will be
+	// reached via the Symbol anyway.
+	const Symbol* symbol = (*it).second;
+        if (symbol) symbol->conductVisitor(v);
+	else (*it).first->conductVisitor(v);
+    }
 }
 
 // ***** C interface *****
