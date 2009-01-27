@@ -1339,7 +1339,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    /* Now fill it in  */
 	    SET_ENCLOS(s, ReadItem(ref_table, stream));
 	    SET_FRAME(s, ReadItem(ref_table, stream));
-	    SET_HASHTAB(s, ReadItem(ref_table, stream));
+	    // Throw away the hash table:
+	    ReadItem(ref_table, stream);
 	    SET_ATTRIB(s, ReadItem(ref_table, stream));
 	    R_RestoreHashCount(s);
 	    if (locked) R_LockEnvironment(s, FALSE);
