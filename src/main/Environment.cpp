@@ -49,13 +49,11 @@ namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*ENCLOSp)(SEXP x) = ENCLOS;
 	Rboolean (*ENV_DEBUGp)(SEXP x) = ENV_DEBUG;
-	SEXP (*HASHTABp)(SEXP x) = HASHTAB;
 	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
 	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
 	void (*SET_FRAMEp)(SEXP x, SEXP v) = SET_FRAME;
-	void (*SET_HASHTABp)(SEXP x, SEXP v) = SET_HASHTAB;
     }
 }
 
@@ -102,5 +100,4 @@ void Environment::visitChildren(const_visitor* v) const
     RObject::visitChildren(v);
     if (m_enclosing) m_enclosing->conductVisitor(v);
     if (m_frame) m_frame->conductVisitor(v);
-    if (m_hashtable) m_hashtable->conductVisitor(v);
 }

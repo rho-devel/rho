@@ -81,8 +81,8 @@ namespace CXXR {
 	explicit Environment(Environment* enclosing = 0,
 			     PairList* namevals = 0)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(namevals),
-	      m_hashtable(0), m_single_stepping(false),
-	      m_globally_cached(false), m_locked(false)
+	      m_single_stepping(false), m_globally_cached(false),
+	      m_locked(false)
 	{}
 
 	/** @brief Base environment.
@@ -157,24 +157,6 @@ namespace CXXR {
 	    return m_locked;
 	}
 
-	/** @brief Access the hash table.
-	 *
-	 * @return pointer to the hash table of this environment.
-	 */
-	ListVector* hashTable()
-	{
-	    return m_hashtable;
-	}
-
-	/** @brief Access the hash table (const variant).
-	 *
-	 * @return pointer to the hash table of this environment.
-	 */
-	const ListVector* hashTable() const
-	{
-	    return m_hashtable;
-	}
-
 	/** @brief Replace the enclosing environment.
 	 *
 	 * @param new_enclos Pointer to the environment now to be
@@ -200,19 +182,6 @@ namespace CXXR {
 	{
 	    m_frame = new_frame;
 	    propagateAge(m_frame);
-	}
-
-	/** @brief Replace the hash table.
-	 *
-	 * @param new_hash_table Pointer to the new hash table.
-	 *          (Because this member function will soon be
-	 *          replaced, we won't go into the detailed
-	 *          requirements for a hash table.)
-	 */
-	void setHashTable(ListVector* new_hash_table)
-	{
-	    m_hashtable = new_hash_table;
-	    propagateAge(m_hashtable);
 	}
 
 	/** @brief Set the frame's status as globally cached.
@@ -282,7 +251,6 @@ namespace CXXR {
 
 	Environment* m_enclosing;
 	PairList* m_frame;
-	ListVector* m_hashtable;
 	bool m_single_stepping;
 	bool m_globally_cached;
 	bool m_locked;
@@ -372,23 +340,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Access an environment's hash table.
-     *
-     * @param x Pointer to a CXXR::Environment (checked).
-     *
-     * @return Pointer to the hash table of \a x (may be null).
-     */
-#ifndef __cplusplus
-    SEXP HASHTAB(SEXP x);
-#else
-    inline SEXP HASHTAB(SEXP x)
-    {
-	CXXR::Environment* env
-	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
-	return env->hashTable();
-    }
-#endif
-
     /** @brief Set an environment's enclosing environment.
      *
      * @param x Pointer to a CXXR::Environment (checked).
@@ -447,28 +398,6 @@ extern "C" {
 	CXXR::PairList* pl
 	    = CXXR::SEXP_downcast<CXXR::PairList*>(v);
 	env->setFrame(pl);
-    }
-#endif
-
-    /** @brief Set environment's hash table.
-     *
-     * @param x Pointer to a CXXR::Environment (checked).
-     *
-     * @param v Pointer to the new hash table, which must be a
-     * CXXR::ListVector (checked), and satisfy other conditions.
-     *
-     * @todo To be removed quite soon.
-     */
-#ifndef __cplusplus
-    void SET_HASHTAB(SEXP x, SEXP v);
-#else
-    inline void SET_HASHTAB(SEXP x, SEXP v)
-    {
-	CXXR::Environment* env
-	    = CXXR::SEXP_downcast<CXXR::Environment*>(x);
-	CXXR::ListVector* lv
-	    = CXXR::SEXP_downcast<CXXR::ListVector*>(v);
-	env->setHashTable(lv);
     }
 #endif
 

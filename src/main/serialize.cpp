@@ -872,7 +872,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    OutInteger(stream, R_EnvironmentIsLocked(s) ? 1 : 0);
 	    WriteItem(ENCLOS(s), ref_table, stream);
 	    WriteItem(FRAME(s), ref_table, stream);
-	    WriteItem(HASHTAB(s), ref_table, stream);
+	    WriteItem(0, ref_table, stream);  // No hashtab field in CXXR
 	    WriteItem(ATTRIB(s), ref_table, stream);
 	}
     }

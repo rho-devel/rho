@@ -43,7 +43,6 @@
  *
  *	FRAME(envir) = environment frame
  *	ENCLOS(envir) = parent environment
- *	HASHTAB(envir) = (optional) hash table
  *
  *  Each frame is a (tagged) list with
  *
@@ -191,28 +190,6 @@ namespace {
 
 /* Macro version of isNull for only the test against R_NilValue */
 #define ISNULL(x) ((x) == R_NilValue)
-
-/*----------------------------------------------------------------------
-
-  Hash Tables
-
-  We use a basic separate chaining algorithm.	A hash table consists
-  of SEXP (vector) which contains a number of SEXPs (lists).
-
-  The only non-static function is R_NewHashedEnv, which allows code to
-  request a hashed environment.  All others are static to allow
-  internal changes of implementation without affecting client code.
-*/
-
-#define HASHSIZE(x)	     LENGTH(x)
-#define HASHPRI(x)	     TRUELENGTH(x)
-#define HASHTABLEGROWTHRATE  1.2
-#define HASHMINSIZE	     29
-#define SET_HASHPRI(x,v)     SET_TRUELENGTH(x,v)
-
-namespace {
-    inline bool IS_HASHED(SEXP x) {return HASHTAB(x) != R_NilValue;}
-}
 
 /*----------------------------------------------------------------------
 
@@ -1791,7 +1768,6 @@ SEXP CXXRnot_hidden do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 	defineVar(TAG(p), CAR(p), libenv);
 	p = CDR(p);
     }
-    SET_HASHTAB(loadenv, R_NilValue);
     SET_FRAME(loadenv, R_NilValue);
     return libenv;
 }
