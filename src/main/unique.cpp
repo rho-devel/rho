@@ -898,6 +898,8 @@ static SEXP StripUnmatched(SEXP s)
 static SEXP ExpandDots(SEXP s, int expdots)
 {
     SEXP r;
+    // The call to ConsCell::convert below will allocate memory:
+    GCRoot<> sr(s);
     if (s == R_NilValue)
 	return s;
     if (TYPEOF(CAR(s)) == DOTSXP ) {
