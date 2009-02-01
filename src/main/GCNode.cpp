@@ -182,6 +182,11 @@ void GCNode::initialize()
     s_next_gen[s_num_generations - 1] = s_num_generations - 1;
 }
 
+void GCNode::nodeCheck(const GCNode* node)
+{
+    if (node && node->m_gcgen >= s_num_generations) abort();
+}
+
 void GCNode::propagateAges()
 {
     for (AgedList::const_iterator it = s_aged_list->begin();

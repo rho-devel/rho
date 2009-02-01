@@ -310,6 +310,21 @@ namespace CXXR {
 	 */
 	static void gc(unsigned int num_old_gens);
 
+	/** @brief Perform sanity checks on a GCNode.
+	 *
+	 * This function performs simple sanity checks on a GCNode,
+	 * and is typically used to detect premature garbage
+	 * collection.  In this regard, it is particularly effective
+	 * when MemoryBank.hpp is configured to fill freed blocks with
+	 * 0x55 bytes.  If the sanity check fails, the function aborts
+	 * the program.
+	 *
+	 * @param node Either a null pointer (in which case the check
+	 *          succeeds) or a pointer to the GCNode to be
+	 *          checked.
+	 */
+	static void nodeCheck(const GCNode* node);
+
 	/** @brief Number of generations used by garbage collector.
 	 *
 	 * @return The number of generations into which GCNode objects
