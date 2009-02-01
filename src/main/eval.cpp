@@ -56,6 +56,7 @@
 
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/StdEnvironment.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -557,7 +558,7 @@ SEXP eval(SEXP e, SEXP rho)
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
     SEXP body, formals, actuals, savedrho;
-    volatile  SEXP newrho;
+    Environment* newrho;
     SEXP f, a;
     GCRoot<> tmp;
     RCNTXT cntxt;
@@ -580,7 +581,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	hashed.  */
 
     PROTECT(actuals = matchArgs(formals, arglist, call));
-    PROTECT(newrho = NewEnvironment(formals, actuals, savedrho));
+    PROTECT(newrho = static_cast<Environment*>(NewEnvironment(formals, actuals, savedrho)));
 
     /*  Use the default code for unbound formals.  FIXME: It looks like
 	this code should preceed the building of the environment so that
@@ -594,12 +595,16 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
        environment layout.  We can live with it for now since it only
        happens immediately after the environment creation.  LT */
 
+    // The above rewriting is in progress for CXXR.
+
     f = formals;
     a = actuals;
     while (f != R_NilValue) {
 	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
-	    SETCAR(a, mkPROMISE(CAR(f), newrho));
-	    SET_MISSING(a, 2);
+	    const Symbol* symbol = static_cast<Symbol*>(TAG(a));
+	    PairList* bdg = newrho->binding(symbol, false).second;
+	    bdg->setCar(mkPROMISE(CAR(f), newrho));
+	    SET_MISSING(bdg, 2);
 	}
 	f = CDR(f);
 	a = CDR(a);
@@ -821,10 +826,9 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		  CHAR(PRINTNAME(symbol)));
 	missing = R_GetVarLocMISSING(loc);
 	val = R_GetVarLocValue(loc);
-	SET_FRAME(newrho, CONS(val, FRAME(newrho)));
-	SET_TAG(FRAME(newrho), symbol);
+	defineVar(symbol, val, newrho);
 	if (missing) {
-	    SET_MISSING(FRAME(newrho), missing);
+	    SET_MISSING(FRAME(newrho), missing); // FIXME
 	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
 		SEXP deflt;
 		/* find the symbol in the method, copy its expression
@@ -2190,7 +2194,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(newrho = new Environment);
+    PROTECT(newrho = new StdEnvironment);
     newrho->expose();
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;

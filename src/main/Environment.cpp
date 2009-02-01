@@ -41,6 +41,7 @@
 
 #include "CXXR/Environment.h"
 
+using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -53,7 +54,6 @@ namespace CXXR {
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
 	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
-	void (*SET_FRAMEp)(SEXP x, SEXP v) = SET_FRAME;
     }
 }
 
@@ -63,22 +63,43 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-GCRoot<Environment> Environment::s_empty_env(new Environment, true);
-SEXP R_EmptyEnv = const_cast<Environment*>(Environment::emptyEnvironment());
+// Environment::s_base_env etc. are defined in StdEnvironment.cpp
 
-GCRoot<Environment> Environment::s_base_env(new Environment(s_empty_env),
-					    true);
 SEXP R_BaseEnv = Environment::base();
 
-GCRoot<Environment> Environment::s_global_env(new Environment(s_base_env),
-					      true);
+SEXP R_EmptyEnv = const_cast<Environment*>(Environment::emptyEnvironment());
+
 SEXP R_GlobalEnv = Environment::global();
+
+pair<Environment*, PairList*>
+Environment::binding(const Symbol* symbol, bool recursive)
+{
+    if (recursive) abort();
+    PairList* bdg = frameBinding(symbol);
+    return (bdg ? make_pair(this, bdg) : pair<Environment*, PairList*>(0, 0));
+}
+
+pair<const Environment*, const PairList*>
+Environment::binding(const Symbol* symbol, bool recursive) const
+{
+    if (recursive) abort();
+    const PairList* bdg = frameBinding(symbol);
+    return (bdg ? make_pair(this, bdg)
+	    : pair<const Environment*, const PairList*>(0, 0));
+}
+
+bool Environment::erase(const Symbol* symbol)
+{
+    if (isLocked())
+	error(_("cannot remove bindings from a locked environment"));
+    return frameErase(symbol);
+}
 
 unsigned int Environment::packGPBits() const
 {
     unsigned int ans = RObject::packGPBits();
     if (m_locked) ans |= FRAME_LOCK_MASK;
-    if (m_globally_cached) ans |= GLOBAL_FRAME_MASK;
+    // if (m_globally_cached) ans |= GLOBAL_FRAME_MASK;
     return ans;
 }
 
@@ -92,12 +113,13 @@ void Environment::unpackGPBits(unsigned int gpbits)
     RObject::unpackGPBits(gpbits);
     // Be careful with precedence!
     m_locked = ((gpbits & FRAME_LOCK_MASK) != 0);
-    m_globally_cached = ((gpbits & GLOBAL_FRAME_MASK) != 0);
+    // m_globally_cached = ((gpbits & GLOBAL_FRAME_MASK) != 0);
 }
 
 void Environment::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
     if (m_enclosing) m_enclosing->conductVisitor(v);
-    if (m_frame) m_frame->conductVisitor(v);
 }
+
+// envReadPairList() is currently implemented within envir.cpp

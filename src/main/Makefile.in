@@ -44,7 +44,8 @@ SOURCES_CXX = \
         PairList.cpp Promise.cpp \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \
-        S4Object.cpp SEXP_downcast.cpp String.cpp StringVector.cpp Symbol.cpp \
+        S4Object.cpp SEXP_downcast.cpp StdEnvironment.cpp String.cpp \
+	StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

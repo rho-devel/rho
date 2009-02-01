@@ -54,6 +54,7 @@
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/StdEnvironment.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -459,15 +460,10 @@ void InitMemory()
   pairing the variable names given by the tags on "namelist" with
   the values given by the elements of "valuelist".
 
-  NewEnvironment is defined directly to avoid the need to protect its
-  arguments unless a GC will actually occur.  This definition allows
-  the namelist argument to be shorter than the valuelist; in this
-  case the remaining values must be named already.  (This is useful
-  in cases where the entire valuelist is already named--namelist can
-  then be R_NilValue.)
-
-  The valuelist is destructively modified and used as the
-  environment's frame.
+  This definition allows the namelist argument to be shorter than the
+  valuelist; in this case the remaining values must be named already.
+  (This is useful in cases where the entire valuelist is already
+  named--namelist can then be R_NilValue.)
 */
 SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 {
@@ -482,7 +478,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCRoot<> namelistr(namelist);
     GCRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
-    Environment* ans = new Environment(rhor, namevalr);
+    // +5 to leave some room for local variables:
+    Environment* ans = new StdEnvironment(rhor, Rf_length(namevalr) + 5);
+    envReadPairList(ans, namevalr);
     ans->expose();
     return ans;
 }

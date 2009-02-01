@@ -46,6 +46,7 @@
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
 #include "CXXR/GCRoot.h"
+#include "CXXR/StdEnvironment.hpp"
 
 using namespace CXXR;
 
@@ -248,7 +249,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     /* Create a new environment without any */
     /* of the formals to the generic in it. */
 
-    PROTECT(newrho = new Environment);
+    PROTECT(newrho = new StdEnvironment);
     newrho->expose();
     op = CAR(cptr->call);
     switch (TYPEOF(op)) {
@@ -735,7 +736,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     PROTECT(s = allocVector(STRSXP, length(klass) - i));
     PROTECT(klass = duplicate(klass));
-    PROTECT(m = new Environment);
+    PROTECT(m = new StdEnvironment);
     m->expose();
     for (j = 0; j < length(s); j++)
 	SET_STRING_ELT(s, j, duplicate(STRING_ELT(klass, i++)));

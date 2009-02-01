@@ -50,6 +50,7 @@
 #include <errno.h>
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/StdEnvironment.hpp"
 #include "CXXR/WeakRef.h"
 
 
@@ -1330,24 +1331,38 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    PROTECT(s = new Environment);
-	    s->expose();
+	    GCRoot<Environment> env(new StdEnvironment, true);
 
 	    /* MUST register before filling in */
-	    AddReadRef(ref_table, s);
+	    AddReadRef(ref_table, env);
 
 	    /* Now fill it in  */
-	    SET_ENCLOS(s, ReadItem(ref_table, stream));
-	    SET_FRAME(s, ReadItem(ref_table, stream));
-	    // Throw away the hash table:
+	    // Enclosing environment:
+	    {
+		Environment* enc
+		    = SEXP_downcast<Environment*>(ReadItem(ref_table, stream));
+		env->setEnclosingEnvironment(enc);
+	    }
+	    // Frame:
+	    {
+		PairList* frame
+		    = SEXP_downcast<PairList*>(ReadItem(ref_table, stream));
+		while (frame) {
+		    const Symbol* sym = SEXP_downcast<Symbol*>(frame->tag());
+		    PairList* bdg = env->obtainBinding(sym);
+		    bdg->setCar(frame->car());
+		    frame = frame->tail();
+		}
+	    }
+	    // Ignore hash table:
 	    ReadItem(ref_table, stream);
-	    SET_ATTRIB(s, ReadItem(ref_table, stream));
-	    R_RestoreHashCount(s);
-	    if (locked) R_LockEnvironment(s, FALSE);
+	    // Attributes:
+	    SET_ATTRIB(env, ReadItem(ref_table, stream));
+	    if (locked) R_LockEnvironment(env, FALSE);
 	    /* Convert a NULL enclosure to baseenv() */
-	    if (ENCLOS(s) == R_NilValue) SET_ENCLOS(s, R_BaseEnv);
-	    UNPROTECT(1);
-	    return s;
+	    if (!env->enclosingEnvironment())
+		env->setEnclosingEnvironment(Environment::base());
+	    return env;
 	}
     case LISTSXP:
 	/* This handling of dotted pair objects still uses recursion

@@ -49,6 +49,7 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/StdEnvironment.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -1435,15 +1436,24 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
     }
     /* Allocate the environments */
     for (count = 0; count < env_count; ++count)
-	SET_VECTOR_ELT(env_table, count, new Environment);
+	SET_VECTOR_ELT(env_table, count, new StdEnvironment);
 
     /* Now fill them in  */
     for (count = 0; count < env_count; ++count) {
-	obj = VECTOR_ELT(env_table, count);
-	SET_ENCLOS(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_FRAME(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	SET_TAG(obj, NewReadItem(sym_table, env_table, fp, m, d));
-	R_RestoreHashCount(obj);
+	Environment* env
+	    = static_cast<Environment*>(VECTOR_ELT(env_table, count));
+	Environment* enc
+	    = SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
+						      fp, m, d));
+	env->setEnclosingEnvironment(enc);
+	PairList* bindings
+	    = SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
+						   fp, m, d));
+	envReadPairList(env, bindings);
+	// Throw away the hash table:
+	NewReadItem(sym_table, env_table, fp, m, d);
+	
+	env->expose();
     }
 
     /* Read the actual object back */
