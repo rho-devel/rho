@@ -52,14 +52,12 @@
 namespace CXXR {
     class FunctionBase;
 
-    /** @brief Mapping from names to R objects.
+    /** @brief Mapping from Symbols to R objects.
      *
      * An Environment defines a mapping from (pointers to)
      * CXXR::Symbol objects to (pointers to) arbitrary objects of
      * classes derived from RObject.  Each Environment (except for the
-     * standard empty environment) has an 'enclosing environment';
-     * under the 'enclosing' relationship, Environment objects form a
-     * directed acyclic graph under the 'enclosing' relationship.
+     * standard empty environment) has an 'enclosing environment'.
      *
      * @note In CR, working up the enclosing relationship will always
      * lead to the empty environment.  This is not enforced in this
@@ -75,8 +73,8 @@ namespace CXXR {
 	 * FunctionBase).  The value of the binding, as returned by
 	 * value(), is then determined by evaluating this function
 	 * with no arguments.  Setting the value of the binding, by
-	 * calling setValue(), simply invokes that same function with the
-	 * supplied value as its single argument: the encapsulated
+	 * calling assign(), simply invokes that same function with
+	 * the supplied value as its single argument: the encapsulated
 	 * function is not altered.
 	 *
 	 * @note Arguably plain bindings and active bindings ought to
@@ -162,7 +160,8 @@ namespace CXXR {
 	     *
 	     * This function initializes the Environment and Symbol
 	     * pointers of this Binding.  This function may be called
-	     * at most once for any Binding object.
+	     * at most once for any Binding object, and must be called
+	     * before any other use is made of the Binding.
 	     *
 	     * @param env Pointer to the Environment to which this
 	     *          Binding belongs.  Must be non-null.
@@ -207,9 +206,9 @@ namespace CXXR {
 	    /** @brief Get raw value bound to the Symbol.
 	     *
 	     * 'raw' here means that in the case of an active Binding,
-	     * the functionreturns a pointer to the encapsulated
-	     * function rather than the result of evaluating this
-	     * function.
+	     * the function returns a pointer to the encapsulated
+	     * function rather than the result of evaluating the
+	     * encapsulated function.
 	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
@@ -279,7 +278,7 @@ namespace CXXR {
 	     *
 	     * For an active binding, this evaluates the encapsulated
 	     * function and returns the result rather than returning a
-	     * pointer to the function itself.
+	     * pointer to the encapsulated function itself.
 	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
@@ -305,12 +304,15 @@ namespace CXXR {
 	    bool m_locked;
 	};
 
+	typedef void (*monitor)(const Binding&);
+
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
 	explicit Environment(Environment* enclosing = 0)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_single_stepping(false), m_locked(false)
+	      m_single_stepping(false), m_locked(false), 
+	      m_read_monitor(0), m_write_monitor(0)
 	{}
 
 	/** @brief Base environment.
@@ -325,7 +327,7 @@ namespace CXXR {
 	/** @briefing Access binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to the Binding of a
-	 * symbol.  In this variant the pointer is non-const, and
+	 * Symbol.  In this variant the pointer is non-const, and
 	 * consequently the calling code can use it to modify the
 	 * binding (provided the Binding is not locked).
 	 *
@@ -333,9 +335,7 @@ namespace CXXR {
 	 *
 	 * @param recursive If false, a mapping is sought only in this
 	 *          environment.  If true, the search works up through
-	 *          enclosing environments: if an environment contains
-	 *          a mapping, but to an object that does not satisfy
-	 *          the test, then the search continues upwards.
+	 *          enclosing environments.
 	 *
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found..
@@ -353,9 +353,7 @@ namespace CXXR {
 	 *
 	 * @param recursive If false, a mapping is sought only in this
 	 *          environment.  If true, the search works up through
-	 *          enclosing environments: if an environment contains
-	 *          a mapping, but to an object that does not satisfy
-	 *          the test, then the search continues upwards.
+	 *          enclosing environments.
 	 *
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found..
@@ -507,6 +505,69 @@ namespace CXXR {
 	    propagateAge(m_enclosing);
 	}
 
+	/** @brief Monitor reading of Symbol values.
+	 *
+	 * This function allows the user to define a function to be
+	 * called whenever a Symbol's value is read from a Binding
+	 * within (the local frame of) this Environment.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * whenever the encapsulated function is accessed: note that
+	 * this includes calls to Binding::assign().
+	 *
+	 * @param new_monitor Pointer, possibly null, to the new
+	 *          monitor function.  A null pointer signifies that
+	 *          no read monitoring is to take place, which is the
+	 *          default state.
+	 *
+	 * @return Pointer, possibly null, to the monitor being
+	 * displaced by \a new_monitor.
+	 *
+	 * @note The presence or absence of a monitor is not
+	 * considered to be part of the state of an Environment
+	 * object, and hence this function is const.
+	 */
+	monitor setReadMonitor(monitor new_monitor) const
+	{
+	    monitor old = m_read_monitor;
+	    m_read_monitor = new_monitor;
+	    return old;
+	}
+
+	/** @brief Monitor writing of Symbol values.
+	 *
+	 * This function allows the user to define a function to be
+	 * called whenever a Symbol's value is modified in a Binding
+	 * within (the local frame of) this Environment.
+	 *
+	 * In the case of an active Binding, the monitor is called
+	 * only when the encapsulated function is initially set or
+	 * changed: in particular the monitor is \e not invoked by
+	 * calls to Binding::assign().
+	 *
+	 * The monitor is not called when a Binding is newly created
+	 * within an Environment (with the Symbol bound by default to
+	 * a null pointer).
+	 *
+	 * @param new_monitor Pointer, possibly null, to the new
+	 *          monitor function.  A null pointer signifies that
+	 *          no write monitoring is to take place, which is the
+	 *          default state.
+	 *
+	 * @return Pointer, possibly null, to the monitor being
+	 * displaced by \a new_monitor.
+	 *
+	 * @note The presence or absence of a monitor is not
+	 * considered to be part of the state of an Environment
+	 * object, and hence this function is const.
+	 */
+	monitor setWriteMonitor(monitor new_monitor) const
+	{
+	    monitor old = m_write_monitor;
+	    m_write_monitor = new_monitor;
+	    return old;
+	}
+
 	/** @brief Set single-stepping status
 	 *
 	 * @param on The required single-stepping status (true =
@@ -527,9 +588,10 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
-	/** @brief Number of symbols defined.
+	/** @brief Number of Symbols bound.
 	 *
-	 * @return the number of symbols defined in this environment.
+	 * @return the number of Symbols for which Bindings exist in
+	 * this environment.
 	 */
 	virtual size_t size() const = 0;
 
@@ -561,6 +623,8 @@ namespace CXXR {
 	Environment* m_enclosing;
 	bool m_single_stepping;
 	bool m_locked;
+	mutable monitor m_read_monitor;
+	mutable monitor m_write_monitor;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -571,6 +635,19 @@ namespace CXXR {
 	// frame.  No locking checks.
 	virtual Binding* frameBinding(const Symbol* symbol) = 0;
 	virtual const Binding* frameBinding(const Symbol* symbol) const = 0;
+
+	// Monitoring functions:
+	friend class Binding;
+
+	void monitorRead(const Binding& bdg) const
+	{
+	    if (m_read_monitor) m_read_monitor(bdg);
+	}
+
+	void monitorWrite(const Binding& bdg) const
+	{
+	    if (m_write_monitor) m_write_monitor(bdg);
+	}
     };
 
     /** @brief Incorporate bindings defined by a PairList into an

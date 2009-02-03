@@ -57,7 +57,7 @@ namespace CXXR {
 	 * @param initial_capacity A hint to the implementation that
 	 *          the constructed StdEnvironment should be
 	 *          configured to have capacity for at least \a
-	 *          initial_capacity symbols.  This does not impose an
+	 *          initial_capacity Bindings.  This does not impose an
 	 *          upper limit on the capacity of the StdEnvironment,
 	 *          but some reconfiguration (and consequent time
 	 *          penalty) may occur if it is exceeded.

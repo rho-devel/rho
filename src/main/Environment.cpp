@@ -127,6 +127,7 @@ void Environment::Binding::setFunction(FunctionBase* function)
     m_value = function;
     m_environment->propagateAge(m_value);
     m_active = true;
+    m_environment->monitorWrite(*this);
 }
 
 void Environment::Binding::setMissing(short int missingval)
@@ -146,6 +147,7 @@ void Environment::Binding::setValue(RObject* new_value)
 		 "setFunction()");
     m_value = new_value;
     m_environment->propagateAge(m_value);
+    m_environment->monitorWrite(*this);
 }
 
 // Environment::Binding::value() is defined in envir.cpp (for the time being).

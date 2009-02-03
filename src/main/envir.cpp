@@ -163,17 +163,21 @@ void Environment::Binding::assign(RObject* new_value)
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
 		 symbol()->name()->c_str());
-    if (isActive())
+    if (isActive()) {
 	setActiveValue(m_value, new_value);
-    else {
+	m_environment->monitorRead(*this);
+    } else {
 	m_value = new_value;
 	m_environment->propagateAge(m_value);
+	m_environment->monitorWrite(*this);
     }
 }
 
  RObject* Environment::Binding::value() const
 {
-    return (isActive() ? getActiveValue(m_value) : m_value);
+    RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
+    m_environment->monitorRead(*this);
+    return ans;
 }
 
 /* Macro version of isNull for only the test against R_NilValue */
