@@ -36,8 +36,6 @@
 
 /** @file Environment.h
  * @brief Class CXXR::Environment and associated C interface.
- *
- * @todo Arguably R_GlobalEnv etc. should have type RObject* const.
  */
 
 #ifndef RENVIRONMENT_H
@@ -52,6 +50,8 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    class FunctionBase;
+
     /** @brief Mapping from names to R objects.
      *
      * An Environment defines a mapping from (pointers to)
@@ -63,19 +63,248 @@ namespace CXXR {
      *
      * @note In CR, working up the enclosing relationship will always
      * lead to the empty environment.  This is not enforced in this
-     * class, but is faked up in the C interface, which will translate
-     * a null pointer to an Environment to a pointer to the empty
-     * environment and <i>vice versa</i> as required.  (Not yet
-     * implemented.)
-     *
-     * @note Unlike CR, this class does not use R_UnboundValue to
-     * denote a non-existent mapping, but the CR behaviour is faked up
-     * in the C interface: for example, an attempt to map a Symbol to
-     * R_UnboundValue is converted to a removal of the Symbol's
-     * mapping altogether.  (Not yet implemented.)
+     * class.
      */
     class Environment : public RObject {
     public:
+	/** @brief Representation of a binding of a Symbol to an
+	 *  RObject.
+	 *
+	 * A binding may be identified as 'active', in which case it
+	 * encapsulates a function (i.e. an object of type
+	 * FunctionBase).  The value of the binding, as returned by
+	 * value(), is then determined by evaluating this function
+	 * with no arguments.  Setting the value of the binding, by
+	 * calling setValue(), simply invokes that same function with the
+	 * supplied value as its single argument: the encapsulated
+	 * function is not altered.
+	 *
+	 * @note Arguably plain bindings and active bindings ought to
+	 * be modelled by different classes.
+	 */
+	class Binding {
+	public:
+	    /** @brief Default constructor
+	     *
+	     * initialize() must be called before the Binding object
+	     * can be used.
+	     */
+	    Binding()
+		: m_environment(0), m_symbol(0), m_value(0),
+		  m_missing(0), m_active(false), m_locked(false)
+	    {}
+
+	    /** @brief Represent this Binding as a PairList element.
+	     *
+	     * This function creates a new PairList element which
+	     * represents the information in the Binding in the form
+	     * returned by CR's FRAME() function.
+	     *
+	     * If the Binding is active, then the 'car' of the created
+	     * PairList element will contain a pointer to the
+	     * encapsulated function.
+	     *
+	     * @param tail Value to be set as the tail (CDR) of the
+	     *          created PairList element.
+	     *
+	     * @return The created PairList element.
+	     */
+	    PairList* asPairList(PairList* tail = 0) const;
+
+	    /** @brief Bind value to Symbol.
+	     *
+	     * In the case of non-active bindings, this function has
+	     * exactly the same effect as setValue(): it changes the
+	     * value to which this Binding's symbol is bound to \a
+	     * new_value.
+	     *
+	     * For active bindings, it invokes the encapsulated
+	     * function with \a new_value as its sole argument.
+	     *
+	     * Raises an error if the Binding is locked.
+	     *
+	     * @param new_value Pointer (possibly null) to the new
+	     *          value.  See function description.
+	     */
+	    void assign(RObject* new_value);
+
+	    /** @brief Get pointer to environment.
+	     *
+	     * @return Pointer to the Environment to which this
+	     * Binding belongs.
+	     */
+	    const Environment* environment() const
+	    {
+		return m_environment;
+	    }
+
+	    /** @brief Get binding information from a PairList
+	     * element.
+	     *
+	     * This function sets the value of this Binding, and its
+	     * active, locked and missing status, from the
+	     * corresponding fields of a PairList element.
+	     *
+	     * If the PairList element defines the Binding as active,
+	     * then its 'car' is considered to contain a pointer to
+	     * the active binding function.
+	     *
+	     * Raises an error if the Binding is locked.
+	     *
+	     * @param pl Non-null pointer to the PairList element from
+	     *          which binding information is to be obtained.
+	     *          If \a pl has a tag, it must be a pointer to
+	     *          the Symbol bound by this Binding.
+	     */
+	    void fromPairList(PairList* pl);
+
+	    /** @brief Initialize the Binding.
+	     *
+	     * This function initializes the Environment and Symbol
+	     * pointers of this Binding.  This function may be called
+	     * at most once for any Binding object.
+	     *
+	     * @param env Pointer to the Environment to which this
+	     *          Binding belongs.  Must be non-null.
+	     *
+	     * @param sym Pointer to the Symbol bound by this
+	     *          Binding.  Must be non-null.
+	     */
+	    void initialize(const Environment* env, const Symbol* sym);
+
+	    /** @brief Is this an active Binding?
+	     *
+	     * @return true iff this is an active Binding.
+	     */
+	    bool isActive() const
+	    {
+		return m_active;
+	    }
+
+	    /** @brief Is this Binding locked?
+	     *
+	     * @return true iff this Binding is locked.
+	     */
+	    bool isLocked() const
+	    {
+		return m_locked;
+	    }
+
+	    /** @brief Binding's missing status.
+	     *
+	     * @return the 'missing' status of this Binding.  0 means
+	     * 'not missing'.
+	     *
+	     * @todo Document the other possible return values, and
+	     * clarify the relationship of this field to
+	     * <tt>R_MissingArg</tt>.
+	     */
+	    short int missing() const
+	    {
+		return m_missing;
+	    }
+
+	    /** @brief Get raw value bound to the Symbol.
+	     *
+	     * 'raw' here means that in the case of an active Binding,
+	     * the functionreturns a pointer to the encapsulated
+	     * function rather than the result of evaluating this
+	     * function.
+	     *
+	     * @return The value bound to a Symbol by this Binding.
+	     */
+	    RObject* rawValue() const
+	    {
+		return m_value;
+	    }
+
+	    /** @brief Sets this to be an active Binding encapsulating
+	     * a specified function.
+	     *
+	     * When invoked for an existing active Binding, this
+	     * function simply replaces the encapsulated function.
+	     *
+	     * Raises an error if the Binding is locked.
+	     *
+	     * Also raises an error if the Binding is not currently
+	     * marked active but has a non-null value.  (This is
+	     * slightly less strict than CR, which only allows active
+	     * status to be set on a newly created binding.)
+	     *
+	     * @param function The function used to implement the
+	     *          active binding.
+	     */
+	    void setFunction(FunctionBase* function);
+
+	    /** @brief Lock/unlock this Binding.
+	     *
+	     * @param on true iff the Binding is to be locked.
+	     */
+	    void setLocking(bool on)
+	    {
+		m_locked = on;
+	    }
+
+	    /** @brief Set the 'missing status of this Binding'.
+	     *
+	     * Raises an error if the Binding is locked.
+	     *
+	     * @param missingval The required 'missing' status.  Refer
+	     *          to the documentation of missing() for the
+	     *          possible values.
+	     */
+	    void setMissing(short int missingval);
+
+	    /** @brief Define the object to which this Binding's
+	     *         Symbol is bound.
+	     *
+	     * Raises an error if the Binding is locked or active.
+	     *
+	     * @param new_value Pointer (possibly null) to the RObject
+	     *          to which this Binding's Symbol is now to be
+	     *          bound.
+	     */
+	    void setValue(RObject* new_value);
+
+	    /** @brief Bound symbol.
+	     *
+	     * @return Pointer to the Symbol bound by this Binding.
+	     */
+	    const Symbol* symbol() const
+	    {
+		return m_symbol;
+	    }
+
+	    /** @brief Get value bound to the Symbol.
+	     *
+	     * For an active binding, this evaluates the encapsulated
+	     * function and returns the result rather than returning a
+	     * pointer to the function itself.
+	     *
+	     * @return The value bound to a Symbol by this Binding.
+	     */
+	    RObject* value() const;
+
+	    /** @brief Auxiliary function to
+	     *         Environment::visitChildren().
+	     *
+	     * This function conducts a visitor to those objects
+	     * derived from GCNode which become 'children' of this
+	     * Binding's Environment as a result of its containing
+	     * this Binding.
+	     *
+	     * @param v Pointer to the visitor object.
+	     */
+	    void visitChildren(const_visitor* v) const;
+	private:
+	    const Environment* m_environment;
+	    const Symbol* m_symbol;
+	    RObject* m_value;
+	    short int m_missing;
+	    bool m_active;
+	    bool m_locked;
+	};
+
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
@@ -95,11 +324,10 @@ namespace CXXR {
 
 	/** @briefing Access binding of an already-defined Symbol.
 	 *
-	 * This function provides a pointer to a PairList element
-	 * representing the binding of a symbol.  In this variant the
-	 * pointer is non-const, and consequently the calling code can
-	 * use it to modify the binding.  An error is raised if the
-	 * environment is locked.
+	 * This function provides a pointer to the Binding of a
+	 * symbol.  In this variant the pointer is non-const, and
+	 * consequently the calling code can use it to modify the
+	 * binding (provided the Binding is not locked).
 	 *
 	 * @param symbol The Symbol for which a mapping is sought.
 	 *
@@ -109,26 +337,17 @@ namespace CXXR {
 	 *          a mapping, but to an object that does not satisfy
 	 *          the test, then the search continues upwards.
 	 *
-	 * @return If no mapping was found, both elements of the
-	 * returned pair are null pointers.  Otherwise, the first
-	 * element of the pair is a pointer to the environment where
-	 * the mapping was found, and the second element of the pair
-	 * points to a PairList element defining the mapping: the tag
-	 * of the element points to the Symbol, the car points to the
-	 * mapped object (and may be a mapping to a null pointer).
-	 * The PairList element also indicates whether the binding is
-	 * locked.
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not found..
 	 */
-	std::pair<Environment*, PairList*>
-	binding(const Symbol* symbol, bool recursive = true);
+	Binding* binding(const Symbol* symbol, bool recursive = true);
 
 	/** @briefing Access const binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to a PairList element
 	 * representing the binding of a symbol.  In this variant the
 	 * pointer is const, and consequently the calling code can use
-	 * it only to examine the binding.  No error is raised if the
-	 * environment is locked.
+	 * it only to examine the binding.
 	 *
 	 * @param symbol The Symbol for which a mapping is sought.
 	 *
@@ -138,73 +357,17 @@ namespace CXXR {
 	 *          a mapping, but to an object that does not satisfy
 	 *          the test, then the search continues upwards.
 	 *
-	 * @return If no mapping was found, both elements of the
-	 * returned pair are null pointers.  Otherwise, the first
-	 * element of the pair is a pointer to the environment where
-	 * the mapping was found, and the second element of the pair
-	 * points to a PairList element defining the mapping: the tag
-	 * of the element points to the Symbol, the car points to the
-	 * mapped object (and may be a mapping to a null pointer).
-	 * The PairList element also indicates whether the binding is
-	 * locked.
+	 * @return A pointer to the required binding, or a null
+	 * pointer if it was not found..
 	 */
-	std::pair<const Environment*, const PairList*>
-	binding(const Symbol* symbol, bool recursive = true) const;
+	const Binding* binding(const Symbol* symbol,
+			       bool recursive = true) const;
 
-	/** @brief Remove all symbols from environment.
+	/** @brief Remove all symbols from the Environment.
+	 *
+	 * Raises an error if the Environment is locked.
 	 */
 	virtual void clear() = 0;
-
-	/** @brief Does the environment map a Symbol?
-	 *
-	 * This function tests whether an environment contains a
-	 * definition of a Symbol.
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param recursive If false, a mapping is sought only in this
-	 *          environment.  If true, the search works up through
-	 *          enclosing environments: if an environment contains
-	 *          a mapping, but to an object that does not satisfy
-	 *          the test, then the search continues upwards.
-	 *
-	 * @return A null pointer if no mapping was found, or a
-	 * pointer to the environment in which a mapping was found.
-	 */
-	const Environment* contains(const Symbol* symbol,
-				    bool recursive = true) const
-	{
-	    return binding(symbol, recursive).first;
-	}
-
-	/** @brief Does the environment map a Symbol?
-	 *
-	 * This function tests whether an environment contains a
-	 * definition of a Symbol which maps the Symbol to an object
-	 * which satisfies a caller-specified test.
-	 *
-	 * @param Test A type of function or function object type
-	 * capable of accepting a <tt>const Symbol*</tt> and returning
-	 * a type convertible to <tt>bool</tt>. 
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param test A \a Test object/function used to determine
-	 *          whether a satisfactory mapping has been found.
-	 *
-	 * @param recursive If false, a mapping is sought only in this
-	 *          environment.  If true, the search works up through
-	 *          enclosing environments: if an environment contains
-	 *          a mapping, but to an object that does not satisfy
-	 *          the test, then the search continues upwards.
-	 *
-	 * @return A null pointer if no satisfactory mapping was
-	 * found, or a pointer to the environment in which a mapping
-	 * passing the test was found.
-	 */
-	// template <typename Test>
-	// Environment* contains(const Symbol* symbol, Test test, 
-	//		      bool recursive = true);
 
 	/** @brief Access the enclosing environment.
 	 *
@@ -224,35 +387,41 @@ namespace CXXR {
 	    return s_empty_env;
 	}
 
-	/** @brief Remove the mapping (if any) of a Symbol.
+	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
-	 * This function causes any mapping for a specified Symbol to
+	 * This function causes any Binding for a specified Symbol to
 	 * be removed from the environment.  Note that this function
 	 * always applies to this specific environment: there is no
 	 * search up through enclosing environments.
 	 *
-	 * An error is raised if the environment or the relevant
-	 * binding is locked.
+	 * An error is raised if the Environment is locked (whether or
+	 * not it contains a binding of \a symbol ).
 	 *
-	 * @param symbol The Symbol for which the mapping is to be
+	 * @param symbol The Symbol for which the Binding is to be
 	 *          removed.
 	 *
 	 * @return True iff the environment previously contained a
 	 * mapping for \a symbol.
 	 */
-	bool erase(const Symbol* symbol);
+	virtual bool erase(const Symbol* symbol) = 0;
 
 	/** @brief Get contents as a PairList.
 	 *
-	 * Access the contents of this environment expressed
+	 * Access the contents of this Environment expressed
 	 * as a PairList, with the tag of each PairList element
 	 * representing a Symbol and the car value representing
-	 * the object to which that Symbol is mapped.
+	 * the object to which that Symbol is mapped, and with the
+	 * Binding's active, locked and missing status indicated as in
+	 * CR's FRAME() function.
 	 *
-	 * @return pointer to a PairList as described above.  The
-	 * caller should not modify this PairList.
+	 * @return pointer to a PairList as described above.
+	 *
+	 * @note The PairList is generated on demand, so this
+	 * operation is relatively expensive in time.  Modifications
+	 * to the returned PairList will have no effect on the
+	 * Environment itself.
 	 */
-	virtual const PairList* frameList() const = 0;
+	virtual PairList* frameList() const = 0;
 
 	/** @brief Global environment.
 	 *
@@ -272,71 +441,57 @@ namespace CXXR {
 	    return m_locked;
 	}
 
-	/** @brief Find the mapping of a Symbol.
+	/** @brief Lock this Environment.
 	 *
-	 * This function tests whether an environment contains a
-	 * definition of a Symbol which maps the Symbol to an object
-	 * which satisfies a caller-specified test, and if so returns
-	 * a pointer to that object and the environment in which the
-	 * definition was found.
+	 * Locking an Environment prevents the addition or removal of
+	 * Bindings.  Optionally, the existing bindings can be locked,
+	 * preventing them from being modified.
 	 *
-	 * @param Test A type of function or function object type
-	 * capable of accepting a <tt>const Symbol*</tt> and returning
-	 * a type convertible to <tt>bool</tt>. 
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param test A \a Test object/function used to determine
-	 *          whether a satisfactory mapping has been found.
-	 *
-	 * @param recursive If false, a mapping is sought only in this
-	 *          environment.  If true, the search works up through
-	 *          enclosing environments: if an environment contains
-	 *          a mapping, but to an object that does not satisfy
-	 *          the test, then the search continues upwards.
-	 *
-	 * @return If no satisfactory mapping was found, both elements
-	 * of the returned pair are null pointers.  Otherwise, the
-	 * first element of the pair is a pointer to the environment
-	 * where the mapping was found, and the second element of the
-	 * pair points to a PairList element defining the mapping: the
-	 * tag of the element points to the Symbol, the car points to
-	 * the mapped object (and may be a mapping to a null pointer).
-	 * The PairList element also indicates whether the binding is
-	 * locked.
-	 *
-	 * @note The type of the return value will almost certainly
-	 * change in subsequent refactorisation steps.
+	 * This operation is permitted even if the Environment is
+	 * already locked, but will have no effect unless it newly
+	 * locks the Bindings in the Environment.
+	 * 
+	 * @param lock_bindings true iff all the existing Bindings in
+	 * the Environment are to be locked.
 	 */
-	//template <typename Test>
-	//std::pair<const Environment*, PairList*>
-	//lookup(const Symbol* symbol, Test test = True(), 
-	//       bool recursive = true) const;
+	void lock(bool lock_bindings)
+	{
+	    m_locked = true;
+	    if (lock_bindings)
+		lockBindings();
+	}
 
-	/** @brief Get or create a binding for a Symbol.
+	/** @brief Lock all Bindings in this Environment.
 	 *
-	 * If the environment already contains a binding for a
+	 * This operation affects only Bindings currently existing.
+	 * It does not prevent Bindings being added subsequently, and
+	 * such Bindings will not be locked.
+	 *
+	 * It is permitted to apply this function to a locked
+	 * Environment.
+	 */
+	virtual void lockBindings() = 0;
+
+	/** @brief Get or create a Binding for a Symbol.
+	 *
+	 * If the environment already contains a Binding for a
 	 * specified Symbol, the function returns it.  Otherwise a
-	 * binding to the null pointer is created, and a pointer to
-	 * that binding returned.
+	 * Binding to the null pointer is created, and a pointer to
+	 * that Binding returned.
 	 *
 	 * Note that this function always applies to this specific
 	 * environment: there is no search up through enclosing
 	 * environments.
 	 *
-	 * An error is raised if the environment or the relevant
-	 * binding is locked.
+	 * An error is raised if a new Binding needs to be created and
+	 * the Environment is locked.
 	 *
-	 * @param symbol The Symbol for which a mapping is to be
-	 *          created or modified.
+	 * @param symbol The Symbol for which a Binding is to be
+	 *          obtained.
 	 *
-	 * @return Pointer to the required binding, via which the
-	 * calling code can modify the binding.
+	 * @return Pointer to the required Binding.
 	 */
-	PairList* obtainBinding(const Symbol* symbol)
-	{
-	    return frameObtainBinding(symbol);
-	}
+	virtual Binding* obtainBinding(const Symbol* symbol) = 0;
 
 	/** @brief Replace the enclosing environment.
 	 *
@@ -350,18 +505,6 @@ namespace CXXR {
 	{
 	    m_enclosing = new_enclos;
 	    propagateAge(m_enclosing);
-	}
-
-	/** @brief Set locking status.
-	 *
-	 * @param on The required locking status (true = locked).
-	 *
-	 * @note Possibly replace by a plain lock(): unlocking doesn't
-	 * seem to happen.
-	 */
-	void setLocking(bool on)
-	{
-	    m_locked = on;
 	}
 
 	/** @brief Set single-stepping status
@@ -424,20 +567,10 @@ namespace CXXR {
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
 
-	// Erase symbol from this environment's own frame.
-	// No locking checks.  Returns true iff symbol was previously
-	// bound.
-	virtual bool frameErase(const Symbol* symbol) = 0;
-
 	// Access the binding of a symbol in this environment's own
 	// frame.  No locking checks.
-	virtual PairList* frameBinding(const Symbol* symbol) = 0;
-	virtual const PairList* frameBinding(const Symbol* symbol) const = 0;
-
-	// Access the binding of a symbol in this environment's own
-	// frame; create a binding if symbol wasn't previously bound.
-	// No locking checks.
-	virtual PairList* frameObtainBinding(const Symbol* symbol) = 0;
+	virtual Binding* frameBinding(const Symbol* symbol) = 0;
+	virtual const Binding* frameBinding(const Symbol* symbol) const = 0;
     };
 
     /** @brief Incorporate bindings defined by a PairList into an
@@ -462,7 +595,7 @@ namespace CXXR {
 
 }  // namespace CXXR
 
-typedef CXXR::PairList* R_varloc_t;
+typedef CXXR::Environment::Binding* R_varloc_t;
 
 extern "C" {
 #else /* if not __cplusplus */

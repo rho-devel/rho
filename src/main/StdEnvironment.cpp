@@ -77,79 +77,66 @@ namespace {
 }
 
 StdEnvironment::StdEnvironment(Environment* enclosing, size_t initial_capacity)
-    : Environment(enclosing), m_framelist(0), m_frame_stale(false),
-      m_map(ceil(initial_capacity/maximum_load_factor))
+    : Environment(enclosing), m_map(ceil(initial_capacity/maximum_load_factor))
 {
     m_map.max_load_factor(maximum_load_factor);
 }
 
-PairList* StdEnvironment::frameBinding(const Symbol* symbol)
+Environment::Binding* StdEnvironment::frameBinding(const Symbol* symbol)
 {
     map::iterator it = m_map.find(symbol);
     if (it == m_map.end())
 	return 0;
-    return (*it).second;
+    return &(*it).second;
 }
 
-const PairList* StdEnvironment::frameBinding(const Symbol* symbol) const
+const Environment::Binding*
+StdEnvironment::frameBinding(const Symbol* symbol) const
 {
     map::const_iterator it = m_map.find(symbol);
     if (it == m_map.end())
 	return 0;
-    return (*it).second;
+    return &(*it).second;
 }
 
 void StdEnvironment::clear()
 {
     m_map.clear();
-    m_framelist = 0;
-    m_frame_stale = false;
 }
 
-bool StdEnvironment::frameErase(const Symbol* symbol)
+bool StdEnvironment::erase(const Symbol* symbol)
 {
-    bool erased = m_map.erase(symbol);
-    if (erased)
-	m_frame_stale = true;
-    return erased;
+    if (isLocked())
+	Rf_error(_("cannot remove bindings from a locked environment"));
+    return m_map.erase(symbol);
 }
 
-const PairList* StdEnvironment::frameList() const
+PairList* StdEnvironment::frameList() const
 {
-    if (m_frame_stale)
-	refreshFrameList();
-    return m_framelist;
+    GCRoot<PairList> ans(0);
+    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
+	ans = (*it).second.asPairList(ans);
+    return ans;
 }
 
-PairList* StdEnvironment::frameObtainBinding(const Symbol* symbol)
+void StdEnvironment::lockBindings()
 {
-    PairList*& bdg = m_map[symbol];
-    if (!bdg) {
-	if (isLocked())
-	    error(_("cannot add bindings to a locked environment"));
-	// We delay setting the tail, in case the 'new' results in a
-	// garbage collection which leads to the frame list being restrung:
-	bdg = new PairList(0, 0, const_cast<Symbol*>(symbol));
-	propagateAge(bdg);
-	bdg->setTail(m_framelist);
-	m_framelist = bdg;
-    }
-    return bdg;
+    for (map::iterator it = m_map.begin(); it != m_map.end(); ++it)
+	(*it).second.setLocking(true);
 }
 
-void StdEnvironment::refreshFrameList() const
+Environment::Binding* StdEnvironment::obtainBinding(const Symbol* symbol)
 {
-    m_framelist = 0;
-    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
-	PairList* pl = (*it).second;
-	// Beware that pl may be null, if this function is invoked by
-	// a garbage collection in the course of frameObtainBinding():
-	if (pl) {
-	    pl->setTail(m_framelist);
-	    m_framelist = pl;
+    Binding& bdg = m_map[symbol];
+    // Was this binding newly created?
+    if (!bdg.environment()) {
+	if (isLocked()) {
+	    m_map.erase(symbol);
+	    Rf_error(_("cannot add bindings to a locked environment"));
 	}
+	bdg.initialize(this, symbol);
     }
-    m_frame_stale = false;
+    return &bdg;
 }
 
 size_t StdEnvironment::size() const
@@ -160,7 +147,6 @@ size_t StdEnvironment::size() const
 void StdEnvironment::visitChildren(const_visitor* v) const
 {
     Environment::visitChildren(v);
-    if (m_frame_stale)
-	refreshFrameList();
-    if (m_framelist) m_framelist->conductVisitor(v);
+    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
+	(*it).second.visitChildren(v);
 }

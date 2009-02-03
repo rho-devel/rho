@@ -49,7 +49,7 @@ namespace CXXR {
      */
     class StdEnvironment : public Environment {
     private:
-	typedef std::tr1::unordered_map<const Symbol*, PairList*> map;
+	typedef std::tr1::unordered_map<const Symbol*, Binding> map;
     public:
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
@@ -72,14 +72,15 @@ namespace CXXR {
 
 	// Virtual functions of Environment (qv):
 	void clear();
-	const PairList* frameList() const;
+	bool erase(const Symbol* symbol);
+	PairList* frameList() const;
+	void lockBindings();
+	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
 
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
     private:
-	mutable PairList* m_framelist;
-	mutable bool m_frame_stale;
 	map m_map;
 
 	// Declared private to ensure that StdEnvironment objects are
@@ -91,14 +92,9 @@ namespace CXXR {
 	StdEnvironment(const Environment&);
 	StdEnvironment& operator=(const Environment&);
 
-	// Recreate the frame list:
-	void refreshFrameList() const;
-
 	// Virtual functions of Environment (qv):
-	bool frameErase(const Symbol* symbol);
-	PairList* frameBinding(const Symbol* symbol);
-	const PairList* frameBinding(const Symbol* symbol) const;
-	PairList* frameObtainBinding(const Symbol* symbol);
+	Binding* frameBinding(const Symbol* symbol);
+	const Binding* frameBinding(const Symbol* symbol) const;
     };
 }  // namespace CXXR
 

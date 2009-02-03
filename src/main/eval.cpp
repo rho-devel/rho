@@ -602,9 +602,9 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     while (f != R_NilValue) {
 	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
 	    const Symbol* symbol = static_cast<Symbol*>(TAG(a));
-	    PairList* bdg = newrho->binding(symbol, false).second;
-	    bdg->setCar(mkPROMISE(CAR(f), newrho));
-	    SET_MISSING(bdg, 2);
+	    Environment::Binding* bdg = newrho->binding(symbol, false);
+	    bdg->setValue(mkPROMISE(CAR(f), newrho));
+	    bdg->setMissing(2);
 	}
 	f = CDR(f);
 	a = CDR(a);
@@ -826,9 +826,12 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		  CHAR(PRINTNAME(symbol)));
 	missing = R_GetVarLocMISSING(loc);
 	val = R_GetVarLocValue(loc);
-	defineVar(symbol, val, newrho);
+	Environment* newenv = static_cast<Environment*>(newrho);
+	const Symbol* sym = static_cast<Symbol*>(symbol);
+	Environment::Binding* bdg = newenv->obtainBinding(sym);
+	bdg->setValue(val);
 	if (missing) {
-	    SET_MISSING(FRAME(newrho), missing); // FIXME
+	    bdg->setMissing(missing);
 	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
 		SEXP deflt;
 		/* find the symbol in the method, copy its expression
