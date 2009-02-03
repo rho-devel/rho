@@ -358,7 +358,7 @@ namespace CXXR {
 	 * @todo Make this protected once CHECK_OLD_TO_NEW in
 	 * memory.cpp is no longer required.
 	 */
-	void propagateAge(const GCNode* node)
+	void propagateAge(const GCNode* node) const
 	{
 	    if (node) node->ageTo(m_gcgen);
 	}
