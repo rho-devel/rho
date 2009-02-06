@@ -49,7 +49,13 @@ namespace CXXR {
      */
     class StdEnvironment : public Environment {
     private:
-	typedef std::tr1::unordered_map<const Symbol*, Binding> map;
+	typedef
+	std::tr1::unordered_map<const Symbol*, Binding,
+				std::tr1::hash<const Symbol*>,
+				std::equal_to<const Symbol*>,
+				CXXR::Allocator<std::pair<const Symbol*,
+							  Binding> >
+	                        > map;
     public:
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
