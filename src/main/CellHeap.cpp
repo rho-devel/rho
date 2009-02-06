@@ -190,7 +190,6 @@ void CellHeap::meld_aux(Cell* host, Cell* guest)
 
 void CellHeap::seekMemory() throw (std::bad_alloc)
 {
-    if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
 #ifdef HAVE_POSIX_MEMALIGN
 	void* memblock;

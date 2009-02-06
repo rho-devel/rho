@@ -163,12 +163,10 @@ void GCManager::adjustThreshold(size_t bytes_needed)
 #endif
 }
 
-bool GCManager::cue(size_t bytes_wanted, bool force)
+size_t GCManager::cue(size_t bytes_wanted)
 {
-    if (!force && MemoryBank::bytesAllocated() + bytes_wanted < s_threshold)
-	return false;
     gc(bytes_wanted);
-    return true;
+    return s_threshold;
 }
 
 void GCManager::enableGC(size_t initial_threshold)
@@ -177,7 +175,7 @@ void GCManager::enableGC(size_t initial_threshold)
     gc_count = 0;
     for (unsigned int i = 0; i <= s_num_old_generations; ++i)
 	s_gen_gc_counts[i] = 0;
-    MemoryBank::setGCCuer(cue);
+    MemoryBank::setGCCuer(cue, s_threshold);
 }
 
 void GCManager::gc(size_t bytes_wanted, bool full)

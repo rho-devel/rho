@@ -73,23 +73,11 @@ namespace CXXR {
 	 * @param cells_per_superblock (must be >= 1).  Memory for cells is
 	 *         obtained from the main heap in 'superblocks'
 	 *         sufficient to contain this many cells.
-	 *
-	 * @param out_of_cells This function (if specified) is called
-	 *         by a CellHeap when an allocation attempt finds that
-	 *         there are no cells available within the currently
-	 *         allocated superblocks; the function's argument is set to
-	 *         point to the CellHeap concerned.  The function may
-	 *         for example initiate garbage collection.  If when
-	 *         this function returns there are still no free
-	 *         cells, only then will the CellHeap allocate a new
-	 *         superblock.
 	 */
-	CellHeap(size_t dbls_per_cell, size_t cells_per_superblock,
-		 void (*out_of_cells)(CellHeap*) = 0)
+	CellHeap(size_t dbls_per_cell, size_t cells_per_superblock)
 	    : m_cellsize(dbls_per_cell*sizeof(double)),
 	      m_cells_per_superblock(cells_per_superblock),
 	      m_superblocksize(m_cellsize*cells_per_superblock),
-	      m_out_of_cells(out_of_cells),
 	      m_free_cells(0),
 	      m_cells_allocated(0)
 	{
@@ -215,7 +203,6 @@ namespace CXXR {
 	const size_t m_cellsize;
 	const size_t m_cells_per_superblock;
 	const size_t m_superblocksize;
-	void (*m_out_of_cells)(CellHeap*);
 	std::vector<void*> m_superblocks;
 	Cell* m_free_cells;
 	unsigned int m_cells_allocated;

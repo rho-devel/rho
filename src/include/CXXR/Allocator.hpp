@@ -27,11 +27,16 @@ namespace CXXR {
     /** @brief STL-compatible allocator front-ending CXXR::MemoryBank.
      *
      * This templated class enables container classes within the C++
-     * standard library to allocate their memory via CXXR::MemoryBank.  It
-     * is adapted from an example in the book "The C++ Standard
-     * Library - A Tutorial and Reference" by Nicolai M. Josuttis,
-     * Addison-Wesley, 1999.  Also see Item 10 of Meyers' 'Effective
-     * STL' for the arcana of STL allocators.
+     * standard library to allocate their memory via CXXR::MemoryBank.
+     * However, its calls to MemoryBank are configured so that they do
+     * not give rise to garbage collections: this is to avoid any
+     * reentrant calls to the code for C++ standard library
+     * containers.
+     *
+     * The code below is adapted from an example in the book "The C++
+     * Standard Library - A Tutorial and Reference" by Nicolai
+     * M. Josuttis, Addison-Wesley, 1999.  Also see Item 10 of Meyers'
+     * 'Effective STL' for the arcana of STL allocators.
      */
     template <typename T>
     class Allocator {
@@ -79,7 +84,8 @@ namespace CXXR {
 
 	// allocate but don't initialize num elements of type T
 	pointer allocate (size_type num, const void* /*hint*/ = 0) {
-	    return static_cast<pointer>(MemoryBank::allocate(num*sizeof(T)));
+	    return static_cast<pointer>(MemoryBank::allocate(num*sizeof(T),
+							     false));
 	}
 
 	// initialize elements of allocated storage p with value value

@@ -78,7 +78,8 @@ namespace {
     // Allocate an exponentially-distributed number of bytes:
     void alloc(double mean) {
 	size_t bytes = size_t(mean*rexp());
-	cout << " Allocating " << bytes << " bytes\n";
+	cout << " (" << MemoryBank::bytesAllocated()
+	     << ")  Allocating " << bytes << " bytes\n";
 	allocs.push_back(make_pair(bytes, MemoryBank::allocate(bytes)));
     }
 }
@@ -112,9 +113,9 @@ void GCNode::gc(unsigned int num_old_gens)
 	pair<size_t, void*>& pr = allocs.back();
 	MemoryBank::deallocate(pr.second, pr.first);
 	allocs.pop_back();
-	cout << " Released " << pr.first << " bytes\n";
+	cout << " Released " << pr.first << " bytes ("
+	     << MemoryBank::bytesAllocated() << ")\n";
     }
-    // cout << MemoryBank::bytesAllocated() << " bytes allocated at end\n";
 }
 
 void GCNode::initialize()
@@ -141,8 +142,8 @@ bool WeakRef::runFinalizers()
 int main() {
     ios_base::sync_with_stdio();
     GCManager::setMonitors(gcstart, gcend);
-    GCManager::enableGC(1000000);
     GCManager::setReporting(&cout);
+    GCManager::enableGC(1000000);
     //    GCManager::setMaxTrigger(8000000);
     for (int k = 0; k < 100; ++k)
 	alloc(200000.0);

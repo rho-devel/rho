@@ -53,11 +53,10 @@ namespace {
 	ilv.push_back(ilist.insert(ilist.end(), serial++));
     }
 
-    bool cueGC(size_t bytes, bool force)
+    size_t cueGC(size_t bytes)
     {
-	cout << "GC cued for " << bytes
-	     << (force ? " (forced)\n" : " (not forced)\n");
-	return false;
+	cout << "GC cued for " << bytes << '\n';
+	return 0;
     }
 
     void monitor(size_t bytes)
@@ -101,7 +100,7 @@ int main(int argc, char* argv[]) {
     // Carry out churns:
     {
 	MemoryBank::setMonitor(0);
-	MemoryBank::setGCCuer(cueGC);
+	MemoryBank::setGCCuer(cueGC, 0);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = qrnd();
 	    if (rnd & 2 || ilv.empty()) alloc();

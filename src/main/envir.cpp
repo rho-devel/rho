@@ -1152,8 +1152,9 @@ R_isMissing(SEXP symbol, SEXP rho)
 SEXP CXXRnot_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int ddv=0;
-    SEXP rval, sym, s;
+    SEXP sym, s;
 
+    GCRoot<> rval;
     GCRoot<> t;  // Binding defined in PairList form
 
     checkArity(op, args);

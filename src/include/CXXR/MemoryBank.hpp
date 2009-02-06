@@ -100,11 +100,15 @@ namespace CXXR {
 	 *
 	 * @param bytes Required size in bytes of the block.
 	 *
+	 * @param alloc_gc If false, the call will under no
+	 *          circumstances cue garbage collection.
+	 *
 	 * @return a pointer to the allocated cell.
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
-	static void* allocate(size_t bytes) throw (std::bad_alloc);
+	static void* allocate(size_t bytes, bool allow_gc = true)
+	    throw (std::bad_alloc);
 
 	/** @brief Number of blocks currently allocated.
 	 *
@@ -162,22 +166,26 @@ namespace CXXR {
 
 	/** @brief Set a callback to cue garbage collection.
 	 *
-	 * @param cue_gc This is a pointer to a function that this
-	 *         class will call before it attempts to allocate
-	 *         memory from the main heap (second argument set to
-	 *         false), or has just failed to allocate memory from
-	 *         the heap (second argument set to true).  The first
-	 *         argument is the amount of memory, in bytes, sought
-	 *         from the main heap.  The function should return
-	 *         false if it is certain that no release of memory
-	 *         too place (e.g. because no garbage collection was
-	 *         carried out on this occasion), and otherwise return
-	 *         true.
+	 * @param cue_gc This is a pointer, possibly null, to a
+	 *          function that this class will call to cue garbage 
+	 *          collection, either because the garbage collection
+	 *          threshold has been exceeded, or because the class
+	 *          has just failed to allocate memory from the main
+	 *          heap.  The argument is set to the number of bytes
+	 *          of memory currently being sought.  The function
+	 *          should return the new value of the garbage
+	 *          collection threshold.  If \a cue_gc is a null
+	 *          pointer, then such callbacks are discontinued.
+	 *
+	 * @param initial_threshold The initial threshold for garbage
+	 *          collection.  If garbage collection is allowed,
+	 *          allocate() will call \a cue_gc when it looks as if
+	 *          the number of bytes allocated via MemoryBank is
+	 *          about to exceed the threshold.  The parameter is
+	 *          ignored if \a cue_gc is a null pointer.
 	 */
-	static void setGCCuer(bool (*cue_gc)(size_t, bool) = 0)
-	{
-	    s_cue_gc = cue_gc;
-	}
+	static void setGCCuer(size_t (*cue_gc)(size_t),
+			      size_t initial_threshold);
 
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
@@ -203,14 +211,15 @@ namespace CXXR {
     private:
 	static const size_t s_num_pools = 10;
 	static const size_t s_max_cell_size = 128;
-	static unsigned int s_blocks_allocated;
-	static unsigned int s_bytes_allocated;
-	static bool (*s_cue_gc)(size_t, bool);
+	static size_t s_blocks_allocated;
+	static size_t s_bytes_allocated;
+	static size_t s_gc_threshold;
+	static size_t (*s_cue_gc)(size_t);
 	static CellHeap* s_pools[];
 	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);
-	static size_t s_threshold;
+	static size_t s_monitor_threshold;
 #endif
 
 	// Not implemented.  Declared to stop the compiler generating
@@ -235,14 +244,15 @@ namespace CXXR {
 #endif
 	    }
 #ifdef R_MEMORY_PROFILING
-	    if (bytes >= s_threshold && s_monitor) s_monitor(bytes);
+	    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
 #endif
 	    return p;
 	}
 
 	// Allocation of large objects, and second-line allocation
 	// attempt for small objects:
-	static void* alloc2(size_t bytes) throw (std::bad_alloc);
+	static void* alloc2(size_t bytes, bool alloc_gc)
+	    throw (std::bad_alloc);
 
 	// Free memory used by the static data members:
 	static void cleanup();

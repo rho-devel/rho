@@ -1,19 +1,17 @@
 Cell size: 8
 Superblock size: 40
 Allocating dptrs[0]
-Out of memory
 Allocating dptrs[1]
 Allocating dptrs[2]
 Allocating dptrs[3]
 Allocating dptrs[4]
 Allocating dptrs[5]
-Out of memory: freeing dptrs[1]
 Allocating dptrs[6]
-Out of memory
 Allocating dptrs[7]
 Allocating dptrs[8]
 Allocating dptrs[9]
-Cells allocated: 9
+Cells allocated: 10
+Deallocating dptrs[1]
 Deallocating dptrs[3]
 Deallocating dptrs[5]
 Deallocating dptrs[7]
@@ -26,8 +24,6 @@ Allocated dptrs[7]
 Allocated dptrs[9]
 easyAllocate() failed
 Allocating dptrs[11]
-Out of memory: freeing dptrs[1]
 Allocating dptrs[13]
-Out of memory
 Allocating dptrs[15]
-Cells allocated: 12
+Cells allocated: 13

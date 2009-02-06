@@ -223,7 +223,7 @@ namespace CXXR {
 	static void cleanup() {}
 
 	// Callback for CXXR::MemoryBank to cue a garbage collection:
-	static bool cue(size_t bytes_wanted, bool force);
+	static size_t cue(size_t bytes_wanted);
 
 	// Callbacks e.g. for timing:
 	static void (*s_pre_gc)();

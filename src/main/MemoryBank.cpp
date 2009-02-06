@@ -40,27 +40,20 @@
 #include "CXXR/MemoryBank.hpp"
 
 #include <iostream>
-
-#ifdef R_MEMORY_PROFILING
 #include <limits>
-#endif
 
 using namespace std;
 using namespace CXXR;
 
 unsigned int MemoryBank::SchwarzCtr::s_count = 0;
-unsigned int MemoryBank::s_blocks_allocated = 0;
-unsigned int MemoryBank::s_bytes_allocated = 0;
-bool (*MemoryBank::s_cue_gc)(size_t, bool) = 0;
+size_t MemoryBank::s_blocks_allocated = 0;
+size_t MemoryBank::s_bytes_allocated = 0;
+size_t MemoryBank::s_gc_threshold = numeric_limits<size_t>::max();
+size_t (*MemoryBank::s_cue_gc)(size_t) = 0;
 #ifdef R_MEMORY_PROFILING
 void (*MemoryBank::s_monitor)(size_t) = 0;
-size_t MemoryBank::s_threshold = numeric_limits<size_t>::max();
+size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
-
-void MemoryBank::pool_out_of_memory(CellHeap* pool)
-{
-    if (s_cue_gc) s_cue_gc(pool->superblockSize(), false);
-}
 
 CellHeap* MemoryBank::s_pools[s_num_pools];
 
@@ -95,20 +88,26 @@ MemoryBank::SchwarzCtr::~SchwarzCtr()
     if (!--s_count) MemoryBank::cleanup();
 }
     
-void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
+void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 {
 #ifdef R_MEMORY_PROFILING
-    if (s_monitor && bytes >= s_threshold) s_monitor(bytes);
+    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
 #endif
 #if VALGRIND_LEVEL >= 3
     size_t blockbytes = bytes + 1;  // trailing redzone
 #else
     size_t blockbytes = bytes;
 #endif
+    // If GC is allowed and 'blockbytes' would take us over the
+    // garbage collection threshold, cue a GC and update the threshold:
+    if (allow_gc
+	&& s_bytes_allocated + blockbytes > s_gc_threshold
+	&& s_cue_gc)
+	s_gc_threshold = s_cue_gc(blockbytes);
     // Assumes sizeof(double) == 8:
     void* p;
     p = (blockbytes > s_max_cell_size
-	 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes) : p;
+	 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes, allow_gc) : p;
 #if VALGRIND_LEVEL >= 3
     char* c = static_cast<char*>(p);
     VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
@@ -117,14 +116,12 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     return p;
 }
 
-void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
+void* MemoryBank::alloc2(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 {
     CellHeap* pool = 0;
     void* p = 0;
-    bool joy = false;  // true if GC succeeds after bad_alloc
     try {
 	if (bytes > s_max_cell_size) {
-	    if (s_cue_gc) s_cue_gc(bytes, false);
 	    p = ::operator new(bytes);
 	} else {
 	    pool = s_pools[s_pooltab[bytes]];
@@ -132,14 +129,14 @@ void* MemoryBank::alloc2(size_t bytes) throw (std::bad_alloc)
 	}
     }
     catch (bad_alloc) {
-	if (s_cue_gc) {
-	    // Try to force garbage collection if available:
+	if (allow_gc && s_cue_gc) {
+	    // Force garbage collection if available:
 	    size_t sought_bytes = (pool ? pool->superblockSize() : bytes);
-	    joy = s_cue_gc(sought_bytes, true);
+	    s_gc_threshold = s_cue_gc(sought_bytes);
 	}
 	else throw;
     }
-    if (!p && joy) {
+    if (!p && allow_gc) {
 	// Try once more:
 	p = (pool ? pool->allocate() : ::operator new(bytes));
     }
@@ -177,22 +174,29 @@ void MemoryBank::cleanup()
 // for the next page there.
 void MemoryBank::initialize()
 {
-    s_pools[0] = new CellHeap(1, 496, pool_out_of_memory);
-    s_pools[1] = new CellHeap(2, 248, pool_out_of_memory);
-    s_pools[2] = new CellHeap(3, 165, pool_out_of_memory);
-    s_pools[3] = new CellHeap(4, 124, pool_out_of_memory);
-    s_pools[4] = new CellHeap(5, 99, pool_out_of_memory);
-    s_pools[5] = new CellHeap(6, 83, pool_out_of_memory);
-    s_pools[6] = new CellHeap(8, 62, pool_out_of_memory);
-    s_pools[7] = new CellHeap(10, 49, pool_out_of_memory);
-    s_pools[8] = new CellHeap(12, 41, pool_out_of_memory);
-    s_pools[9] = new CellHeap(16, 31, pool_out_of_memory);
+    s_pools[0] = new CellHeap(1, 496);
+    s_pools[1] = new CellHeap(2, 248);
+    s_pools[2] = new CellHeap(3, 165);
+    s_pools[3] = new CellHeap(4, 124);
+    s_pools[4] = new CellHeap(5, 99);
+    s_pools[5] = new CellHeap(6, 83);
+    s_pools[6] = new CellHeap(8, 62);
+    s_pools[7] = new CellHeap(10, 49);
+    s_pools[8] = new CellHeap(12, 41);
+    s_pools[9] = new CellHeap(16, 31);
+}
+
+void MemoryBank::setGCCuer(size_t (*cue_gc)(size_t), size_t threshold)
+{
+    s_cue_gc = cue_gc;
+    s_gc_threshold = (cue_gc ? threshold : numeric_limits<size_t>::max());
 }
 
 #ifdef R_MEMORY_PROFILING
 void MemoryBank::setMonitor(void (*monitor)(size_t), size_t threshold)
 {
     s_monitor = monitor;
-    s_threshold = (monitor ? threshold : numeric_limits<size_t>::max());
+    s_monitor_threshold
+	= (monitor ? threshold : numeric_limits<size_t>::max());
 }
 #endif
