@@ -88,7 +88,14 @@ namespace CXXR {
     private:
 	// This table is used to ensure that, for standard symbols,
 	// there is at most one Symbol object with a particular name.
-	typedef std::tr1::unordered_map<const CachedString*, Symbol*> map;
+	typedef
+	std::tr1::unordered_map<const CachedString*, Symbol*,
+				std::tr1::hash<const CachedString*>,
+				std::equal_to<const CachedString*>,
+				CXXR::Allocator<std::pair<const CachedString*,
+							  Symbol*> >
+	                        > map;
+
 	static map s_table;
     public:
 	// It is assumed that this dereferences to
