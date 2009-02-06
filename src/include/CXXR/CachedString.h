@@ -122,13 +122,13 @@ namespace CXXR {
 
 	// The cache is implemented as a mapping from keys to pointers
 	// to CachedString objects.  Each CachedString simply contains
-	// a pointer locating its entry within the cache.  Note that
-	// we cannot use CXXR::Allocator here, because when creating a
-	// new CachedString, the call to insert() might lead to a
-	// garbage collection, which in turn might lead to a call to
-	// erase() before the insert() was complete.  (Yes, arr tried
-	// this, and it took ages to debug!)
-	typedef std::tr1::unordered_map<key, CachedString*, Hasher> map;
+	// a pointer locating its entry within the cache.
+	typedef
+	std::tr1::unordered_map<key, CachedString*, Hasher,
+				std::equal_to<key>,
+				CXXR::Allocator<std::pair<const key,
+							  CachedString*> >
+	                        > map;
 
 	map::value_type* m_key_val_pr;
 
