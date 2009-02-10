@@ -48,14 +48,13 @@ env.profile(env)
     \code{NULL}, which is the default.}
   \item{value}{an environment to associate with the function}
   \item{x}{an arbitrary \R object.}
-  \item{hash}{a logical, if \code{TRUE} the environment will be hashed}
+  \item{hash}{a logical, ignored in CXXR.}
   \item{parent}{an environment to be used as the enclosure of the
     environment created.}
   \item{env}{an environment}
-  \item{size}{an integer specifying the initial size for a hashed
-    environment.  An internal default value will be used if
-    \code{size} is \code{NA} or zero.  This argument is ignored if
-    \code{hash} is \code{FALSE}.}
+  \item{size}{an integer giving a hint to CXXR regarding the initial capacity
+    of the environment.  An internal default value will be used if \code{size}
+    is \code{NA} or zero.}
 }
 \value{
   If \code{fun} is a function or a formula then \code{environment(fun)}
@@ -80,14 +79,7 @@ env.profile(env)
   \code{environmentName} returns a character string, that given when
   the environment is printed or \code{""} if it is not a named environment.
 
-  \code{env.profile} returns a list with the following components:
-  \code{size} the number of chains that can be stored in the hash table,
-  \code{nchains} the
-  number of non-empty chains in the table (as reported by HASHPRI),
-  and \code{counts} an integer vector giving the length of each chain
-  (zero for empty chains).  This function is intended to assess the
-  performance of hashed environments.  When \code{env} is a non-hashed
-  environment, \code{NULL} is returned.
+  \code{env.profile} Always returns \code{NULL} in CXXR.
 }
 
 \details{
