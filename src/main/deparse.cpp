@@ -198,6 +198,14 @@ SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 			      opts, -1);
 }
 
+SEXP DEPARSE(SEXP s)
+{
+    GCRoot<Expression> e(SEXP_downcast<Expression*>(s));
+    GCRoot<StringVector>
+	sv(static_cast<StringVector*>(deparse1(e, FALSE, DEFAULTDEPARSE)));
+    return (*sv)[0];
+}
+	
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
 			       Rboolean backtick, int opts, int nlines)
 {

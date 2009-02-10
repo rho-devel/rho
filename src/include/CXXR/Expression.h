@@ -106,6 +106,18 @@ extern "C" {
      */
     extern SEXP R_CurrentExpr;
 
+    /** @brief Deparse an Expression.
+     *
+     * This function is added in CXXR, mainly to facilitate debugging:
+     * from within gdb, <tt>p R_CHAR(DEPARSE(e))</tt> is useful.
+     *
+     * @param e Pointer to a CXXR::Expression (checked) to be deparsed.
+     *
+     * @return pointer to CXXR::String representing the deparsed
+     * expression.
+     */
+    SEXP DEPARSE(SEXP e);
+
     /** @brief Create a CXXR::Expression with a specified car and tail.
      *
      * This function protects its arguments from the garbage collector.
