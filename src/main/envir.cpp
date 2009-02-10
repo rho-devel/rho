@@ -1447,7 +1447,7 @@ static bool BuiltinTest(const Symbol* sym, bool all, bool intern)
     if (intern && sym->internalFunction())
 	return true;
     if ((all || sym->name()->c_str()[0] != '.')
-	&& sym->value() != R_UnboundValue)
+	&& SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue)
 	return true;
     return false;
 }
@@ -1484,7 +1484,7 @@ BuiltinValues(int all, int intern, SEXP values, int *indx)
 	 it != Symbol::end(); ++it) {
 	Symbol* sym = (*it).second;
 	if (BuiltinTest(sym, all, intern)) {
-	    RObject* vl = sym->value();
+	    RObject* vl = SYMVALUE(sym);
 	    if (vl->sexptype() == PROMSXP) {
 		GCRoot<> vlr(vl);
 		vl = eval(vl, R_BaseEnv);
@@ -1824,7 +1824,7 @@ void R_LockEnvironment(SEXP env, Rboolean bindings)
 	    for (Symbol::const_iterator it = Symbol::begin();
 		 it != Symbol::end(); ++it) {
 		Symbol* sym = (*it).second;
-		if (sym->value() != R_UnboundValue)
+		if (SYMVALUE(sym) != R_UnboundValue)
 		    LOCK_BINDING(sym);
 	    }
 	}
