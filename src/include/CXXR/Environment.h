@@ -48,6 +48,7 @@
 #include "CXXR/ListVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/SEXP_downcast.hpp"
+#include "CXXR/Symbol.h"
 
 namespace CXXR {
     class FunctionBase;
@@ -787,6 +788,46 @@ extern "C" {
 	using namespace CXXR;
 	Environment& env = *SEXP_downcast<Environment*>(x);
 	env.setSingleStepping(v);
+    }
+#endif
+
+    /** @brief Set symbol's value.
+     *
+     * @param x Pointer to a CXXR::Symbol (checked).
+     *
+     * @param val Pointer to the RObject now to be considered as
+     *            the value of this symbol.  A null pointer or
+     *            R_UnboundValue are permissible values of \a val.
+     */
+#ifndef __cplusplus
+    void SET_SYMVALUE(SEXP x, SEXP v);
+#else
+    inline void SET_SYMVALUE(SEXP x, SEXP v)
+    {
+	using namespace CXXR;
+	const Symbol* sym = SEXP_downcast<Symbol*>(x);
+	Environment::base()->obtainBinding(sym)->setValue(v);
+    }
+#endif
+
+    /** @brief Symbol value.
+     *
+     * @param x Pointer to a CXXR::Symbol (checked).
+     *
+     * @return Pointer to a CXXR::RObject representings \a x's value.
+     *         Returns R_UnboundValue if no value is currently
+     *         associated with the Symbol.
+     */
+#ifndef __cplusplus
+    SEXP SYMVALUE(SEXP x);
+#else
+    inline SEXP SYMVALUE(SEXP x)
+    {
+	using namespace CXXR;
+	const Symbol* sym = SEXP_downcast<Symbol*>(x);
+	Environment::Binding* bdg
+	    = Environment::base()->binding(sym, false);
+	return bdg ? bdg->rawValue() : Symbol::unboundValue();
     }
 #endif
 

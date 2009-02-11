@@ -612,7 +612,12 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /*  Fix up any extras that were supplied by usemethod. */
 
-    if (suppliedenv != R_NilValue) {
+    // 2009-02-11: The test '&& suppliedenv != R_BaseEnv' is added in
+    // CXXR.  CR at this point appears to rely on the fact that in CR,
+    // the FRAME of the base environment will be empty, which is no
+    // longer true in CXXR.  Possibly the base namespace ought also to
+    // be excluded at this point.  ARR.
+    if (suppliedenv != R_NilValue && suppliedenv != R_BaseEnv) {
 	for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
 	    for (a = actuals; a != R_NilValue; a = CDR(a))
 		if (TAG(a) == TAG(tmp))

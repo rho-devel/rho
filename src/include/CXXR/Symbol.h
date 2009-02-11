@@ -53,21 +53,29 @@
 namespace CXXR {
     /** @brief Class used to represent R symbols.
      *
-     * A symbol associates a CachedString object (its name) with an
-     * arbitrary RObject, and (or?) with a BuiltInFunction object.
-     * (I'll document it better when I understand it better! - arr)
-     * Generally speaking, although each Symbol has a name (except
-     * pseudo-objects, see below), a Symbol object is identified by
-     * its address rather than by its name.
+     * A Symbol is an R identifier.  Each Symbol (except for special
+     * symbols, see below) has a name, namely a String giving the
+     * textual representation of the identifier.  Generally speaking,
+     * however, a Symbol object is identified by its address rather
+     * than by its name.  Consequently, the class enforces the
+     * invariant that there is a most one Symbol object with a given
+     * name (but this does not apply to special symbols).
+     *
+     * Currently CXXR follows CR in having a Symbol object optionally
+     * contain a pointer to a function, which is the function invoked
+     * when the Symbol is used as the operator in a call to R's \c
+     * .Internal() function.  However, in the future CXXR will handle
+     * this function mapping outside the Symbol class.
      *
      * Symbols come in two varieties, standard symbols and special
      * symbols, both implemented by this class.  Dot-dot symbols are a
      * subvariety of standard symbols.
      *
      * Standard symbols are generated using the static member function
-     * obtain(), and have the property that there is at most one
-     * standard symbol with a given name.  This is enforced by an
-     * internal table mapping names to standard symbols.
+     * obtain(), and (as explained above) have the property that there
+     * is at most one standard symbol with a given name.  This is
+     * enforced by an internal table mapping names to standard
+     * symbols.
      *
      * Dot-dot symbols have names of the form '<tt>..</tt><i>n</i>',
      * where <i>n</i> is a positive integer.  These are preferably
@@ -202,19 +210,6 @@ namespace CXXR {
 	    propagateAge(m_internalfunc);
 	}
 
-	/** @brief Set value.
-	 *
-	 * @param val Pointer to the RObject now to be considered as
-	 *            the value of this symbol.  A null pointer or
-	 *            unboundValue() are permissible values of \a val.
-	 */
-	void setValue(RObject* val)
-	{
-	    errorIfFrozen();
-	    m_value = val;
-	    propagateAge(m_value);
-	}
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -236,28 +231,6 @@ namespace CXXR {
 	    return s_unbound_value;
 	}
 
-	/** @brief Access value.
-	 *
-	 * @return pointer to the value of this Symbol.  Returns
-	 *         unboundValue() if no value is currently associated
-	 *         with the Symbol.
-	 */
-	RObject* value()
-	{
-	    return m_value;
-	}
-
-	/** @brief Access value (const variant).
-	 *
-	 * @return const pointer to the value of this Symbol.  Returns
-	 *         unboundValue() if no value is currently associated
-	 *         with the Symbol.
-	 */
-	const RObject* value() const
-	{
-	    return m_value;
-	}
-
 	/** @brief Conduct a visitor to all standard symbols.
 	 *
 	 * @param v Pointer to the visitor object.
@@ -275,7 +248,6 @@ namespace CXXR {
 	static GCRoot<Symbol> s_unbound_value;
 
 	const CachedString* m_name;
-	RObject* m_value;
 	const BuiltInFunction* m_internalfunc;
 	bool m_dd_symbol;
 
@@ -420,16 +392,7 @@ extern "C" {
      *            the value of this symbol.  A null pointer or
      *            R_UnboundValue are permissible values of \a val.
      */
-#ifndef __cplusplus
     void SET_SYMVALUE(SEXP x, SEXP v);
-#else
-    inline void SET_SYMVALUE(SEXP x, SEXP v)
-    {
-	using namespace CXXR;
-	Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	sym.setValue(v);
-    }
-#endif
 
     /** @brief Symbol value.
      *
@@ -439,16 +402,7 @@ extern "C" {
      *         Returns R_UnboundValue if no value is currently
      *         associated with the Symbol.
      */
-#ifndef __cplusplus
     SEXP SYMVALUE(SEXP x);
-#else
-    inline SEXP SYMVALUE(SEXP x)
-    {
-	using namespace CXXR;
-	Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return sym.value();
-    }
-#endif
 
 #ifdef __cplusplus
 }

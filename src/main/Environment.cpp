@@ -56,6 +56,8 @@ namespace CXXR {
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
 	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
+	void (*SET_SYMVALUEp)(SEXP x, SEXP v) = SET_SYMVALUE;
+	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
     }
 }
 
@@ -217,3 +219,27 @@ namespace CXXR {
 	}
     }
 }
+
+/*
+void SET_SYMVALUE(SEXP x, SEXP v)
+    {
+	Symbol* sym = SEXP_downcast<Symbol*>(x);
+	sym->setValue(v);
+	Environment::base()->obtainBinding(sym)->setValue(v);
+    }
+
+SEXP SYMVALUE(SEXP x)
+{
+    Symbol* sym = SEXP_downcast<Symbol*>(x);
+    RObject* val = sym->value();
+    Environment::Binding* bdg = Environment::base()->binding(sym, false);
+    if (bdg) {
+	if (bdg->rawValue() != val)
+	    abort();
+    } else {
+	if (val != Symbol::unboundValue())
+	    abort();
+    }
+    return val;
+}
+*/

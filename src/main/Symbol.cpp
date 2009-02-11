@@ -55,7 +55,6 @@ namespace CXXR {
 	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
 	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
-	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
     }
 }
 
@@ -81,8 +80,7 @@ namespace {
 }
 
 Symbol::Symbol(const CachedString* name, bool frozen)
-    : RObject(SYMSXP), m_name(name), m_value(unboundValue()),
-      m_internalfunc(0)
+    : RObject(SYMSXP), m_name(name), m_internalfunc(0)
 {
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
@@ -127,7 +125,6 @@ void Symbol::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
     m_name->conductVisitor(v);
-    if (m_value) m_value->conductVisitor(v);
     if (m_internalfunc) m_internalfunc->conductVisitor(v);
 }
 
