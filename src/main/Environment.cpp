@@ -219,27 +219,3 @@ namespace CXXR {
 	}
     }
 }
-
-/*
-void SET_SYMVALUE(SEXP x, SEXP v)
-    {
-	Symbol* sym = SEXP_downcast<Symbol*>(x);
-	sym->setValue(v);
-	Environment::base()->obtainBinding(sym)->setValue(v);
-    }
-
-SEXP SYMVALUE(SEXP x)
-{
-    Symbol* sym = SEXP_downcast<Symbol*>(x);
-    RObject* val = sym->value();
-    Environment::Binding* bdg = Environment::base()->binding(sym, false);
-    if (bdg) {
-	if (bdg->rawValue() != val)
-	    abort();
-    } else {
-	if (val != Symbol::unboundValue())
-	    abort();
-    }
-    return val;
-}
-*/
