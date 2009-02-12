@@ -57,7 +57,7 @@ void attribute_hidden PrintGreeting(void)
 	    R_YEAR);
 
     Rprintf("ISBN 3-900051-07-0\n\n");
-    Rprintf(_("CXXR Copyright (C) 2008 Andrew Runnalls.  CXXR like\n"));
+    Rprintf(_("CXXR Copyright (C) 2008-9 Andrew Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
