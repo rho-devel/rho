@@ -1035,6 +1035,7 @@ void setup_Rmainloop(void)
     /* methods package needs to trample here */
     R_LockEnvironment(R_BaseEnv, TRUE);
 #endif
+    R_unLockBinding(R_LastvalueSymbol, R_BaseEnv);  // CXXR addition
     /* At least temporarily unlock some bindings used in graphics */
     R_unLockBinding(install(".Device"), R_BaseEnv);
     R_unLockBinding(install(".Devices"), R_BaseEnv);
