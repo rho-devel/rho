@@ -63,24 +63,16 @@ namespace CXXR {
 	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
 	void (*UNSET_S4_OBJECTptr)(SEXP x) = UNSET_S4_OBJECT;
-	Rboolean (*BINDING_IS_LOCKEDptr)(SEXP b) = BINDING_IS_LOCKED;
-	Rboolean (*IS_ACTIVE_BINDINGptr)(SEXP b) = IS_ACTIVE_BINDING;
-	void (*LOCK_BINDINGptr)(SEXP b) = LOCK_BINDING;
-	void (*SET_ACTIVE_BINDING_BITptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
-	void (*UNLOCK_BINDINGptr)(SEXP b) = UNLOCK_BINDING;
     }
 }
 
 namespace {
     // Used in {,un}packGPBits():
     const unsigned int S4_OBJECT_MASK = 1<<4;
-    const unsigned int BINDING_LOCK_MASK = 1<<14;
-    const unsigned int ACTIVE_BINDING_MASK = 1<<15;
 }
 
 RObject::RObject(const RObject& pattern)
-    : m_type(pattern.m_type), m_named(0), m_active_binding(false),
-      m_binding_locked(false), m_has_class(pattern.m_has_class),
+    : m_type(pattern.m_type), m_named(0), m_has_class(pattern.m_has_class),
       m_S4_object(pattern.m_S4_object), m_frozen(false),
       m_attrib(clone(pattern.m_attrib))
 {}
@@ -114,8 +106,6 @@ unsigned int RObject::packGPBits() const
 {
     unsigned int ans = 0;
     if (isS4Object()) ans |= S4_OBJECT_MASK;
-    if (m_binding_locked) ans |= BINDING_LOCK_MASK;
-    if (m_active_binding) ans |= ACTIVE_BINDING_MASK;
     return ans;
 }
 
@@ -185,8 +175,6 @@ void RObject::unpackGPBits(unsigned int gpbits)
     errorIfFrozen();
     // Be careful with precedence!
     m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
-    m_binding_locked = ((gpbits & BINDING_LOCK_MASK) != 0);
-    m_active_binding = ((gpbits & ACTIVE_BINDING_MASK) != 0);
 }
 
 void RObject::visitChildren(const_visitor* v) const

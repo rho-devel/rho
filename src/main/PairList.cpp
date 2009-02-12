@@ -50,6 +50,7 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
+	Rboolean (*BINDING_IS_LOCKEDptr)(SEXP b) = BINDING_IS_LOCKED;
 	SEXP (*CAD4Rp)(SEXP e) = CAD4R;
 	SEXP (*CADDDRp)(SEXP e) = CADDDR;
 	SEXP (*CADDRp)(SEXP e) = CADDR;
@@ -57,14 +58,26 @@ namespace CXXR {
 	SEXP (*CDARp)(SEXP e) = CDAR;
 	SEXP (*CDDRp)(SEXP e) = CDDR;
 	SEXP (*CDRp)(SEXP e) = CDR;
+	Rboolean (*IS_ACTIVE_BINDINGptr)(SEXP b) = IS_ACTIVE_BINDING;
+	void (*LOCK_BINDINGptr)(SEXP b) = LOCK_BINDING;
+	void (*SET_ACTIVE_BINDING_BITptr)(SEXP b) = SET_ACTIVE_BINDING_BIT;
+	void (*UNLOCK_BINDINGptr)(SEXP b) = UNLOCK_BINDING;
    }
 }
 
 GCRoot<> PairList::s_cons_car;
 GCRoot<PairList> PairList::s_cons_cdr;
 
+namespace {
+    // Used in {,un}packGPBits():
+    const unsigned int BINDING_LOCK_MASK = 1<<14;
+    const unsigned int ACTIVE_BINDING_MASK = 1<<15;
+}
+
 PairList::PairList(const PairList& pattern)
-    : ConsCell(pattern, 0), m_argused(0)
+    : ConsCell(pattern, 0), m_argused(0),
+      m_active_binding(pattern.m_active_binding),
+      m_binding_locked(pattern.m_binding_locked)
 {
     // Clone the tail:
     PairList* c = this;
@@ -95,9 +108,24 @@ PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
     return ans;
 }
 
+unsigned int PairList::packGPBits() const
+{
+    unsigned int ans = ConsCell::packGPBits();
+    if (m_binding_locked) ans |= BINDING_LOCK_MASK;
+    if (m_active_binding) ans |= ACTIVE_BINDING_MASK;
+    return ans;
+}
+
 const char* PairList::typeName() const
 {
     return staticTypeName();
+}
+
+void PairList::unpackGPBits(unsigned int gpbits)
+{
+    ConsCell::unpackGPBits(gpbits);
+    m_binding_locked = ((gpbits & BINDING_LOCK_MASK) != 0);
+    m_active_binding = ((gpbits & ACTIVE_BINDING_MASK) != 0);
 }
 
 // ***** C interface *****

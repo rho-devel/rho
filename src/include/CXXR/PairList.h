@@ -67,7 +67,8 @@ namespace CXXR {
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
 	explicit PairList(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0)
+	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0),
+	      m_active_binding(false), m_binding_locked(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -123,7 +124,9 @@ namespace CXXR {
 
 	// Virtual functions of RObject:
 	PairList* clone() const;
+	unsigned int packGPBits() const;
 	const char* typeName() const;
+	void unpackGPBits(unsigned int gpbits);
     private:
 	// Permanent GCRoots used to implement cons() without pushing
 	// and popping:
@@ -150,6 +153,13 @@ namespace CXXR {
 	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
 	// would be good to remove this from the class altogether.
 	unsigned char m_argused;
+
+	// Used when the contents of an Environment are represented as
+	// a PairList, for example during serialization and
+	// deserialization, and formerly hosted in the gp field of
+	// sxpinfo_struct.
+	bool m_active_binding;
+	bool m_binding_locked;
     };
 
     inline void ConsCell::setTail(PairList* tl)
@@ -177,6 +187,17 @@ extern "C" {
     }
 
 #endif  /* __cplusplus */
+
+#ifndef __cplusplus
+    Rboolean BINDING_IS_LOCKED(SEXP b);
+#else
+    inline Rboolean BINDING_IS_LOCKED(SEXP b)
+    {
+	using namespace CXXR;
+	const PairList* pl = SEXP_downcast<PairList*>(b);
+	return Rboolean(pl->m_binding_locked);
+    }
+#endif
 
     /** @brief Get tail of CXXR::ConsCell.
      *
@@ -268,6 +289,38 @@ extern "C" {
     }
 #endif
 
+#ifndef __cplusplus
+    Rboolean IS_ACTIVE_BINDING(SEXP b);
+#else
+    inline Rboolean IS_ACTIVE_BINDING(SEXP b)
+    {
+	using namespace CXXR;
+	const PairList* pl = SEXP_downcast<PairList*>(b);
+	return Rboolean(pl->m_active_binding);
+    }
+#endif
+
+#ifndef __cplusplus
+    void LOCK_BINDING(SEXP b);
+#else
+    inline void LOCK_BINDING(SEXP b)
+    {
+	using namespace CXXR;
+	PairList* pl = SEXP_downcast<PairList*>(b);
+	pl->m_binding_locked = true;}
+#endif
+
+#ifndef __cplusplus
+    void SET_ACTIVE_BINDING_BIT(SEXP b);
+#else
+    inline void SET_ACTIVE_BINDING_BIT(SEXP b)
+    {
+	using namespace CXXR;
+	PairList* pl = SEXP_downcast<PairList*>(b);
+	pl->m_active_binding = true;
+    }
+#endif
+
     /**
      * @brief Replace the tail of a CXXR::ConsCell.
      * @param x Pointer to a CXXR::ConsCell (checked).
@@ -320,6 +373,17 @@ extern "C" {
      * @returns \a y.
      */
     SEXP SETCAD4R(SEXP x, SEXP y);
+
+#ifndef __cplusplus
+    void UNLOCK_BINDING(SEXP b);
+#else
+    inline void UNLOCK_BINDING(SEXP b)
+    {
+	using namespace CXXR;
+	PairList* pl = SEXP_downcast<PairList*>(b);
+	pl->m_binding_locked = false;
+    }
+#endif
 
     /** @brief Create a CXXR::PairList of a specified length.
      *

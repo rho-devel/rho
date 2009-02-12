@@ -141,23 +141,6 @@ static void setActiveValue(SEXP fun, SEXP val)
     UNPROTECT(1);
 }
 
-namespace {
-    inline SEXP SYMBOL_BINDING_VALUE(SEXP s)
-    {
-	return IS_ACTIVE_BINDING(s)
-	    ? getActiveValue(SYMVALUE(s)) : SYMVALUE(s);
-    }
-
-    inline void SET_SYMBOL_BINDING_VALUE(SEXP sym, SEXP val)
-    {
-	if (BINDING_IS_LOCKED(sym))
-	    error(_("cannot change value of locked binding for '%s'"),
-		  CHAR(PRINTNAME(sym)));
-	if (IS_ACTIVE_BINDING(sym)) setActiveValue(SYMVALUE(sym), val);
-	else SET_SYMVALUE(sym, val);
-    }
-}
-
 void Environment::Binding::assign(RObject* new_value)
 {
     if (isLocked())
@@ -319,18 +302,11 @@ void CXXRnot_hidden unbindVar(SEXP symbol, SEXP rho)
 // unimplemented in CXXR.
 static R_varloc_t findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean * /*canCache*/)
 {
-    SEXP c;
-
-    if (rho == R_BaseNamespace) {
-	c = SYMBOL_BINDING_VALUE(symbol);
-	return (c == R_UnboundValue) ? R_NilValue
-	    : reinterpret_cast<R_varloc_t>(c);  // FIXME
-    }
-
     if (!rho || rho == R_EmptyEnv)
 	return(R_NilValue);
 
-    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment* env = (rho == R_BaseNamespace ? Environment::base()
+			: SEXP_downcast<Environment*>(rho));
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     return env->binding(sym, false);
 }
@@ -391,13 +367,11 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     if (TYPEOF(rho) == NILSXP)
 	error(_("use of NULL environment is defunct"));
 
-    if (rho == R_BaseNamespace)
-	return SYMBOL_BINDING_VALUE(symbol);
-
     if (rho == R_EmptyEnv)
 	return R_UnboundValue;
 
-    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment* env = (rho == R_BaseNamespace ? Environment::base()
+			: SEXP_downcast<Environment*>(rho));
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment::Binding* bdg = env->binding(sym, false);
     return (bdg ? bdg->value() : R_UnboundValue);
@@ -696,13 +670,8 @@ static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
     if (rho == R_GlobalEnv) R_DirtyImage = 1;
     if (rho == R_EmptyEnv) return R_NilValue;
 
-    if (rho == R_BaseNamespace) {
-	if (SYMVALUE(symbol) == R_UnboundValue) return R_NilValue;
-	SET_SYMBOL_BINDING_VALUE(symbol, value);
-	return symbol;
-    }
-
-    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment* env = (rho == R_BaseNamespace ? Environment::base()
+			: SEXP_downcast<Environment*>(rho));
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment::Binding* bdg = env->binding(sym, false);
     if (!bdg)
@@ -753,12 +722,11 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 
 void gsetVar(SEXP symbol, SEXP value, SEXP rho)
 {
-    if (FRAME_IS_LOCKED(rho)) {
-	if(SYMVALUE(symbol) == R_UnboundValue)
-	    error(_("cannot add binding of '%s' to the base environment"),
-		  CHAR(PRINTNAME(symbol)));
-    }
-    SET_SYMBOL_BINDING_VALUE(symbol, value);
+    GCRoot<> valrt(value);
+    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment::Binding* bdg = Environment::base()->obtainBinding(sym);
+    bdg->assign(value);
+    bdg->setMissing(0);  /* over-ride */
 }
 
 
@@ -2039,8 +2007,7 @@ SEXP CXXRnot_hidden do_mkUnbound(SEXP call, SEXP op, SEXP args, SEXP rho)
     sym = CAR(args);
 
     if (TYPEOF(sym) != SYMSXP) error(_("not a symbol"));
-    /* This is not quite the same as SET_SYMBOL_BINDING_VALUE as it
-       does not allow active bindings to be unbound */
+    /* This does not allow active bindings to be unbound */
     if (R_BindingIsLocked(sym, R_BaseEnv))
 	error(_("cannot unbind a locked binding"));
     if (R_BindingIsActive(sym, R_BaseEnv))
