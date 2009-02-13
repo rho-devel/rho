@@ -32,13 +32,13 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file StdEnvironment.cpp
+/** @file StdFrame.cpp
  *
  *
- * @brief Implementation of class CXXR:StdEnvironment.
+ * @brief Implementation of class CXXR:StdFrame.
  */
 
-// A StdEnvironment is implemented using two data structures.  First
+// A StdFrame is implemented using two data structures.  First
 // there is a PairList, each of whose elements represents a binding,
 // and so maps a symbol (held as the tag) to a value (held as the
 // 'car'), and also contains information about locking, active binding
@@ -50,7 +50,7 @@
 // private function refreshFrameList() is invoked when necessary to
 // restring the PairList by iterating over the hash table.
 
-#include "CXXR/StdEnvironment.hpp"
+#include "CXXR/StdFrame.hpp"
 
 #include <cmath>
 #include "localization.h"
@@ -61,57 +61,22 @@
 using namespace std;
 using namespace CXXR;
 
-GCRoot<Environment> Environment::s_empty_env(new StdEnvironment, true);
-GCRoot<Environment> Environment::s_base_env(new StdEnvironment(s_empty_env),
-					    true);
-GCRoot<Environment> Environment::s_global_env(new StdEnvironment(s_base_env),
-					      true);
-
 // We want to be able to determine quickly if a symbol is *not*
-// defined in an environment, so that we can carry on working up the
-// chain of enclosing environments.  On average the number of tests
+// defined in an frame, so that we can carry on working up the
+// chain of enclosing frames.  On average the number of tests
 // needed to determine that a symbol is not present is 1 + 2L, where L
 // is the load factor.  So we keep the load factor small:
 namespace {
     const float maximum_load_factor = 0.5;
 }
 
-StdEnvironment::StdEnvironment(Environment* enclosing, size_t initial_capacity)
-    : Environment(enclosing), m_map(ceil(initial_capacity/maximum_load_factor))
+StdFrame::StdFrame(size_t initial_capacity)
+    : m_map(ceil(initial_capacity/maximum_load_factor))
 {
     m_map.max_load_factor(maximum_load_factor);
 }
 
-Environment::Binding* StdEnvironment::frameBinding(const Symbol* symbol)
-{
-    map::iterator it = m_map.find(symbol);
-    if (it == m_map.end())
-	return 0;
-    return &(*it).second;
-}
-
-const Environment::Binding*
-StdEnvironment::frameBinding(const Symbol* symbol) const
-{
-    map::const_iterator it = m_map.find(symbol);
-    if (it == m_map.end())
-	return 0;
-    return &(*it).second;
-}
-
-void StdEnvironment::clear()
-{
-    m_map.clear();
-}
-
-bool StdEnvironment::erase(const Symbol* symbol)
-{
-    if (isLocked())
-	Rf_error(_("cannot remove bindings from a locked environment"));
-    return m_map.erase(symbol);
-}
-
-PairList* StdEnvironment::frameList() const
+PairList* StdFrame::asPairList() const
 {
     GCRoot<PairList> ans(0);
     for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
@@ -119,34 +84,62 @@ PairList* StdEnvironment::frameList() const
     return ans;
 }
 
-void StdEnvironment::lockBindings()
+Frame::Binding* StdFrame::binding(const Symbol* symbol)
+{
+    map::iterator it = m_map.find(symbol);
+    if (it == m_map.end())
+	return 0;
+    return &(*it).second;
+}
+
+const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
+{
+    map::const_iterator it = m_map.find(symbol);
+    if (it == m_map.end())
+	return 0;
+    return &(*it).second;
+}
+
+void StdFrame::clear()
+{
+    m_map.clear();
+}
+
+bool StdFrame::erase(const Symbol* symbol)
+{
+    if (isLocked())
+	Rf_error(_("cannot remove bindings from a locked frame"));
+    return m_map.erase(symbol);
+}
+
+void StdFrame::lockBindings()
 {
     for (map::iterator it = m_map.begin(); it != m_map.end(); ++it)
 	(*it).second.setLocking(true);
 }
 
-Environment::Binding* StdEnvironment::obtainBinding(const Symbol* symbol)
+Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
 {
     Binding& bdg = m_map[symbol];
     // Was this binding newly created?
-    if (!bdg.environment()) {
+    if (!bdg.frame()) {
 	if (isLocked()) {
 	    m_map.erase(symbol);
-	    Rf_error(_("cannot add bindings to a locked environment"));
+	    Rf_error(_("cannot add bindings to a locked frame"));
 	}
 	bdg.initialize(this, symbol);
     }
     return &bdg;
 }
 
-size_t StdEnvironment::size() const
+size_t StdFrame::size() const
 {
     return m_map.size();
 }
 
-void StdEnvironment::visitChildren(const_visitor* v) const
+void StdFrame::visitChildren(const_visitor* v) const
 {
-    Environment::visitChildren(v);
+    Frame::visitChildren(v);
     for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
 	(*it).second.visitChildren(v);
 }

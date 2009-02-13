@@ -34,20 +34,22 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file StdEnvironment.hpp
- * @brief Class CXXR::StdEnvironment.
+/** @file StdFrame.hpp
+ *
+ * @brief Class CXXR::StdFrame.
  */
 
-#ifndef STDENVIRONMENT_HPP
-#define STDENVIRONMENT_HPP
+#ifndef STDFRAME_HPP
+#define STDFRAME_HPP
 
 #include <tr1/unordered_map>
-#include "CXXR/Environment.h"
+#include "CXXR/Allocator.hpp"
+#include "CXXR/Frame.hpp"
 
 namespace CXXR {
-    /** @brief General-purpose implementation of CXXR::Environment.
+    /** @brief General-purpose implementation of CXXR::Frame.
      */
-    class StdEnvironment : public Environment {
+    class StdFrame : public Frame {
     private:
 	typedef
 	std::tr1::unordered_map<const Symbol*, Binding,
@@ -58,28 +60,27 @@ namespace CXXR {
 	                        > map;
     public:
 	/**
-	 * @param enclosing Pointer to the enclosing environment.
-	 *
 	 * @param initial_capacity A hint to the implementation that
-	 *          the constructed StdEnvironment should be
+	 *          the constructed StdFrame should be
 	 *          configured to have capacity for at least \a
 	 *          initial_capacity Bindings.  This does not impose an
-	 *          upper limit on the capacity of the StdEnvironment,
+	 *          upper limit on the capacity of the StdFrame,
 	 *          but some reconfiguration (and consequent time
 	 *          penalty) may occur if it is exceeded.
 	 */
-	explicit StdEnvironment(Environment* enclosing = 0,
-				size_t initial_capacity = 11);
-	// Why 11?  Because if the implementation uses a prime number
+	explicit StdFrame(size_t initial_capacity = 15);
+	// Why 15?  Because if the implementation uses a prime number
 	// hash table sizing policy, this will result in the
-	// allocation of a hash table array comprising 23 buckets.  On
-	// a 32-bit architecture, this will fit well into three
-	// 32-byte cache lines.
+	// allocation of a hash table array comprising 31 buckets.  On
+	// a 32-bit architecture, this will fit well into two 64-byte
+	// cache lines.
 
-	// Virtual functions of Environment (qv):
+	// Virtual functions of Frame (qv):
+	PairList* asPairList() const;
+	Binding* binding(const Symbol* symbol);
+	const Binding* binding(const Symbol* symbol) const;
 	void clear();
 	bool erase(const Symbol* symbol);
-	PairList* frameList() const;
 	void lockBindings();
 	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
@@ -89,19 +90,15 @@ namespace CXXR {
     private:
 	map m_map;
 
-	// Declared private to ensure that StdEnvironment objects are
+	// Declared private to ensure that StdFrame objects are
 	// created only using 'new':
-	~StdEnvironment() {}
+	~StdFrame() {}
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	StdEnvironment(const Environment&);
-	StdEnvironment& operator=(const Environment&);
-
-	// Virtual functions of Environment (qv):
-	Binding* frameBinding(const Symbol* symbol);
-	const Binding* frameBinding(const Symbol* symbol) const;
+	StdFrame(const Frame&);
+	StdFrame& operator=(const Frame&);
     };
 }  // namespace CXXR
 
-#endif // STDENVIRONMENT_HPP
+#endif // STDFRAME_HPP

@@ -65,119 +65,26 @@ namespace {
     // Used in {,un}packGPBits():
     const unsigned int FRAME_LOCK_MASK = 1<<14;
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
+
+    // Predefined environments:
+    GCRoot<Environment> emptyenvrt(new Environment(0), true);
+    GCRoot<Environment> baseenvrt(new Environment(emptyenvrt), true);
+    GCRoot<Environment> globalenvrt(new Environment(baseenvrt), true);
+    GCRoot<Environment>
+    basensrt(new Environment(globalenvrt, baseenvrt->frame()), true);
 }
 
-// Environment::s_base_env etc. are defined in StdEnvironment.cpp
-
-SEXP R_BaseEnv = Environment::base();
-
-SEXP R_EmptyEnv = const_cast<Environment*>(Environment::emptyEnvironment());
-
-SEXP R_GlobalEnv = Environment::global();
-
-
-// ***** Class Environment::Binding *****
-
-PairList* Environment::Binding::asPairList(PairList* tail) const
-{
-    PairList* ans
-	= new PairList(m_value, tail, const_cast<Symbol*>(symbol()));
-    SET_MISSING(ans, missing());
-    if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
-    if (isLocked()) LOCK_BINDING(ans);
-    ans->expose();
-    return ans;
+namespace CXXR {
+    Environment* EmptyEnvironment = emptyenvrt;
+    Environment* BaseEnvironment = baseenvrt;
+    Environment* GlobalEnvironment = globalenvrt;
+    Environment* BaseNamespace = basensrt;
 }
 
-// Environment::Binding::assign() is defined in envir.cpp (for the time being).
-	
-void Environment::Binding::fromPairList(PairList* pl)
-{
-    const RObject* tag = pl->tag();
-    if (tag && tag != m_symbol)
-	Rf_error(_("internal error in %s"),
-		 "Environment::Binding::fromPairList()");
-    if (pl->m_active_binding)
-	setFunction(SEXP_downcast<FunctionBase*>(pl->car()));
-    else setValue(pl->car());
-    setMissing(pl->m_missing);
-    setLocking(pl->m_binding_locked);
-}
-    
-void Environment::Binding::initialize(const Environment* env,
-				      const Symbol* sym)
-{
-    if (m_environment)
-	Rf_error(_("internal error: binding already initialized"));
-    if (!env || !sym)
-	Rf_error(_("internal error in %s"),
-		 "Environment::Binding::initialize()");
-    m_environment = env;
-    m_symbol = sym;
-    env->propagateAge(sym);
-}
-
-void Environment::Binding::setFunction(FunctionBase* function)
-{
-    // See if binding already has a non-null value:
-    if (m_value) {
-	if (!isActive())
-	    Rf_error(_("symbol already has a regular binding"));
-	if (isLocked())
-	    Rf_error(_("cannot change active binding if binding is locked"));
-    }
-    m_value = function;
-    m_environment->propagateAge(m_value);
-    m_active = true;
-    m_environment->monitorWrite(*this);
-}
-
-void Environment::Binding::setMissing(short int missingval)
-{
-    if (isLocked())
-	Rf_error(_("cannot change missing status of a locked binding"));
-    m_missing = missingval;
-}
-
-void Environment::Binding::setValue(RObject* new_value)
-{
-    if (isLocked())
-	Rf_error(_("cannot change value of locked binding for '%s'"),
-		 symbol()->name()->c_str());
-    if (isActive())
-	Rf_error(_("internal error: use %s for active bindings"),
-		 "setFunction()");
-    m_value = new_value;
-    m_environment->propagateAge(m_value);
-    m_environment->monitorWrite(*this);
-}
-
-// Environment::Binding::value() is defined in envir.cpp (for the time being).
-	
-void Environment::Binding::visitChildren(const_visitor* v) const
-{
-    // We assume the visitor has just from m_environment, so we don't
-    // visit that.
-    if (m_symbol) m_symbol->conductVisitor(v);
-    if (m_value) m_value->conductVisitor(v);
-}
-
-
-// ***** Class Environment itself *****
-
-Environment::Binding*
-Environment::binding(const Symbol* symbol, bool recursive)
-{
-    if (recursive) abort();
-    return frameBinding(symbol);
-}
-
-const Environment::Binding*
-Environment::binding(const Symbol* symbol, bool recursive) const
-{
-    if (recursive) abort();
-    return frameBinding(symbol);
-}
+SEXP R_EmptyEnv = EmptyEnvironment;
+SEXP R_BaseEnv = BaseEnvironment;
+SEXP R_GlobalEnv = GlobalEnvironment;
+SEXP R_BaseNamespace = BaseNamespace;
 
 unsigned int Environment::packGPBits() const
 {
@@ -204,18 +111,5 @@ void Environment::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
     if (m_enclosing) m_enclosing->conductVisitor(v);
-}
-
-namespace CXXR {
-    void envReadPairList(Environment* env, PairList* bindings)
-    {
-	for (PairList* pl = bindings; pl != 0; pl = pl->tail()) {
-	    RObject* tag = pl->tag();
-	    Symbol* symbol = dynamic_cast<Symbol*>(tag);
-	    if (!symbol) Rf_error(_("list used to set environment bindings"
-				    " must have symbols as tags throughout"));
-	    Environment::Binding* bdg = env->obtainBinding(symbol);
-	    bdg->fromPairList(pl);
-	}
-    }
+    if (m_frame) m_frame->conductVisitor(v);
 }

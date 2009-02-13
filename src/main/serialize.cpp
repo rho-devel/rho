@@ -50,7 +50,6 @@
 #include <errno.h>
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
-#include "CXXR/StdEnvironment.hpp"
 #include "CXXR/WeakRef.h"
 
 
@@ -1331,7 +1330,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCRoot<Environment> env(new StdEnvironment, true);
+	    GCRoot<Environment> env(new Environment(0), true);
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, env);
@@ -1349,7 +1348,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		    = SEXP_downcast<PairList*>(ReadItem(ref_table, stream));
 		while (frame) {
 		    const Symbol* sym = SEXP_downcast<Symbol*>(frame->tag());
-		    Environment::Binding* bdg = env->obtainBinding(sym);
+		    Frame::Binding* bdg = env->frame()->obtainBinding(sym);
 		    bdg->fromPairList(frame);
 		    frame = frame->tail();
 		}
@@ -1361,7 +1360,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (locked) R_LockEnvironment(env, FALSE);
 	    /* Convert a NULL enclosure to baseenv() */
 	    if (!env->enclosingEnvironment())
-		env->setEnclosingEnvironment(Environment::base());
+		env->setEnclosingEnvironment(BaseEnvironment);
 	    return env;
 	}
     case LISTSXP:
@@ -1426,7 +1425,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
 	    GCRoot<> body(ReadItem(ref_table, stream));
 	    GCRoot<Closure> clos(new Closure(formals, body,
-					     env ? env : Environment::base()),
+					     env ? env : BaseEnvironment),
 				 true);
 	    SETLEVELS(clos, levs);
 	    SET_ATTRIB(clos, attr);
@@ -1444,7 +1443,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		    : 0);
 	    // For reading promises stored in earlier versions,
 	    // convert null env to base env:
-	    if (!env) env = Environment::base();
+	    if (!env) env = BaseEnvironment;
 	    GCRoot<> val(ReadItem(ref_table, stream));
 	    GCRoot<> valgen(ReadItem(ref_table, stream));
 	    GCRoot<Promise> prom(new Promise(valgen, *env), true);

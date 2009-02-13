@@ -120,7 +120,6 @@ LibExport RCNTXT* R_GlobalContext;    /* The global environment */
 
 // Data declared LibExtern in Rinternals.h :
 
-LibExport SEXP	R_BaseNamespace;    /* The (fake) name space for base */
 LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 LibExport SEXP	R_Bracket2Symbol;   /* "[[" */
 LibExport SEXP	R_BracketSymbol;    /* "[" */

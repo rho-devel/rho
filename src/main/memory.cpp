@@ -54,7 +54,6 @@
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/JMPException.hpp"
-#include "CXXR/StdEnvironment.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -198,7 +197,7 @@ void WeakRef::finalize()
     else if (Rfin) {
 	GCRoot<PairList> tail(new PairList(key), true);
 	GCRoot<Expression> e(new Expression(Rfin, tail), true);
-	eval(e, Environment::global());
+	eval(e, GlobalEnvironment);
     }
 }
 
@@ -479,8 +478,8 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
-    Environment* ans = new StdEnvironment(rhor, Rf_length(namevalr) + 5);
-    envReadPairList(ans, namevalr);
+    Environment* ans = new Environment(rhor, Rf_length(namevalr) + 5);
+    frameReadPairList(ans->frame(), namevalr);
     ans->expose();
     return ans;
 }

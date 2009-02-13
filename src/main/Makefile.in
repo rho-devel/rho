@@ -36,7 +36,7 @@ SOURCES_CXX = \
 	DottedArgs.cpp \
 	Environment.cpp ExitException.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
-        FunctionBase.cpp \
+        Frame.cpp FunctionBase.cpp \
         GCManager.cpp GCNode.cpp GCRoot.cpp \
         IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
@@ -44,7 +44,7 @@ SOURCES_CXX = \
         PairList.cpp Promise.cpp \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \
-        S4Object.cpp SEXP_downcast.cpp StdEnvironment.cpp String.cpp \
+        S4Object.cpp SEXP_downcast.cpp StdFrame.cpp String.cpp \
 	StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \
         VectorBase.cpp \

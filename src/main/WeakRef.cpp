@@ -39,6 +39,7 @@
  * Class WeakRef
  */
 
+#include <cstdlib>
 #include <iostream>
 
 #include "CXXR/Environment.h"
@@ -247,7 +248,7 @@ bool WeakRef::runFinalizers()
 	// insure that any errors that might occur do not spill into
 	// the call that triggered the collection:
 	Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
-			0, Environment::global(), R_BaseEnv, 0, 0);
+			0, GlobalEnvironment, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
 	GCRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = GCRootBase::ppsSize();

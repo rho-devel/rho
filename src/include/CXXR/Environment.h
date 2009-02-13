@@ -45,9 +45,7 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/ListVector.h"
-#include "CXXR/PairList.h"
-#include "CXXR/SEXP_downcast.hpp"
+#include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
@@ -55,10 +53,14 @@ namespace CXXR {
 
     /** @brief Mapping from Symbols to R objects.
      *
-     * An Environment defines a mapping from (pointers to)
-     * CXXR::Symbol objects to (pointers to) arbitrary objects of
-     * classes derived from RObject.  Each Environment (except for the
-     * standard empty environment) has an 'enclosing environment'.
+     * An Environment has an associated Frame, which defines a mapping
+     * from (pointers to) CXXR::Symbol objects to (pointers to)
+     * arbitrary objects of classes derived from RObject.  Each
+     * Environment (except for the standard empty environment) has an
+     * 'enclosing environment', and the Environment class provides
+     * facilities for searching for a binding for a Symbol first in
+     * the Environment's own Frame, and then successively in enclosing
+     * frames.
      *
      * @note In CR, working up the enclosing relationship will always
      * lead to the empty environment.  This is not enforced in this
@@ -66,264 +68,46 @@ namespace CXXR {
      */
     class Environment : public RObject {
     public:
-	/** @brief Representation of a binding of a Symbol to an
-	 *  RObject.
-	 *
-	 * A binding may be identified as 'active', in which case it
-	 * encapsulates a function (i.e. an object of type
-	 * FunctionBase).  The value of the binding, as returned by
-	 * value(), is then determined by evaluating this function
-	 * with no arguments.  Setting the value of the binding, by
-	 * calling assign(), simply invokes that same function with
-	 * the supplied value as its single argument: the encapsulated
-	 * function is not altered.
-	 *
-	 * @note Arguably plain bindings and active bindings ought to
-	 * be modelled by different classes.
-	 */
-	class Binding {
-	public:
-	    /** @brief Default constructor
-	     *
-	     * initialize() must be called before the Binding object
-	     * can be used.
-	     */
-	    Binding()
-		: m_environment(0), m_symbol(0), m_value(0),
-		  m_missing(0), m_active(false), m_locked(false)
-	    {}
-
-	    /** @brief Represent this Binding as a PairList element.
-	     *
-	     * This function creates a new PairList element which
-	     * represents the information in the Binding in the form
-	     * returned by CR's FRAME() function.
-	     *
-	     * If the Binding is active, then the 'car' of the created
-	     * PairList element will contain a pointer to the
-	     * encapsulated function.
-	     *
-	     * @param tail Value to be set as the tail (CDR) of the
-	     *          created PairList element.
-	     *
-	     * @return The created PairList element.
-	     */
-	    PairList* asPairList(PairList* tail = 0) const;
-
-	    /** @brief Bind value to Symbol.
-	     *
-	     * In the case of non-active bindings, this function has
-	     * exactly the same effect as setValue(): it changes the
-	     * value to which this Binding's symbol is bound to \a
-	     * new_value.
-	     *
-	     * For active bindings, it invokes the encapsulated
-	     * function with \a new_value as its sole argument.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * @param new_value Pointer (possibly null) to the new
-	     *          value.  See function description.
-	     */
-	    void assign(RObject* new_value);
-
-	    /** @brief Get pointer to environment.
-	     *
-	     * @return Pointer to the Environment to which this
-	     * Binding belongs.
-	     */
-	    const Environment* environment() const
-	    {
-		return m_environment;
-	    }
-
-	    /** @brief Get binding information from a PairList
-	     * element.
-	     *
-	     * This function sets the value of this Binding, and its
-	     * active, locked and missing status, from the
-	     * corresponding fields of a PairList element.
-	     *
-	     * If the PairList element defines the Binding as active,
-	     * then its 'car' is considered to contain a pointer to
-	     * the active binding function.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * @param pl Non-null pointer to the PairList element from
-	     *          which binding information is to be obtained.
-	     *          If \a pl has a tag, it must be a pointer to
-	     *          the Symbol bound by this Binding.
-	     */
-	    void fromPairList(PairList* pl);
-
-	    /** @brief Initialize the Binding.
-	     *
-	     * This function initializes the Environment and Symbol
-	     * pointers of this Binding.  This function may be called
-	     * at most once for any Binding object, and must be called
-	     * before any other use is made of the Binding.
-	     *
-	     * @param env Pointer to the Environment to which this
-	     *          Binding belongs.  Must be non-null.
-	     *
-	     * @param sym Pointer to the Symbol bound by this
-	     *          Binding.  Must be non-null.
-	     */
-	    void initialize(const Environment* env, const Symbol* sym);
-
-	    /** @brief Is this an active Binding?
-	     *
-	     * @return true iff this is an active Binding.
-	     */
-	    bool isActive() const
-	    {
-		return m_active;
-	    }
-
-	    /** @brief Is this Binding locked?
-	     *
-	     * @return true iff this Binding is locked.
-	     */
-	    bool isLocked() const
-	    {
-		return m_locked;
-	    }
-
-	    /** @brief Binding's missing status.
-	     *
-	     * @return the 'missing' status of this Binding.  0 means
-	     * 'not missing'.
-	     *
-	     * @todo Document the other possible return values, and
-	     * clarify the relationship of this field to
-	     * <tt>R_MissingArg</tt>.
-	     */
-	    short int missing() const
-	    {
-		return m_missing;
-	    }
-
-	    /** @brief Get raw value bound to the Symbol.
-	     *
-	     * 'raw' here means that in the case of an active Binding,
-	     * the function returns a pointer to the encapsulated
-	     * function rather than the result of evaluating the
-	     * encapsulated function.
-	     *
-	     * @return The value bound to a Symbol by this Binding.
-	     */
-	    RObject* rawValue() const
-	    {
-		return m_value;
-	    }
-
-	    /** @brief Sets this to be an active Binding encapsulating
-	     * a specified function.
-	     *
-	     * When invoked for an existing active Binding, this
-	     * function simply replaces the encapsulated function.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * Also raises an error if the Binding is not currently
-	     * marked active but has a non-null value.  (This is
-	     * slightly less strict than CR, which only allows active
-	     * status to be set on a newly created binding.)
-	     *
-	     * @param function The function used to implement the
-	     *          active binding.
-	     */
-	    void setFunction(FunctionBase* function);
-
-	    /** @brief Lock/unlock this Binding.
-	     *
-	     * @param on true iff the Binding is to be locked.
-	     */
-	    void setLocking(bool on)
-	    {
-		m_locked = on;
-	    }
-
-	    /** @brief Set the 'missing status of this Binding'.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * @param missingval The required 'missing' status.  Refer
-	     *          to the documentation of missing() for the
-	     *          possible values.
-	     */
-	    void setMissing(short int missingval);
-
-	    /** @brief Define the object to which this Binding's
-	     *         Symbol is bound.
-	     *
-	     * Raises an error if the Binding is locked or active.
-	     *
-	     * @param new_value Pointer (possibly null) to the RObject
-	     *          to which this Binding's Symbol is now to be
-	     *          bound.
-	     */
-	    void setValue(RObject* new_value);
-
-	    /** @brief Bound symbol.
-	     *
-	     * @return Pointer to the Symbol bound by this Binding.
-	     */
-	    const Symbol* symbol() const
-	    {
-		return m_symbol;
-	    }
-
-	    /** @brief Get value bound to the Symbol.
-	     *
-	     * For an active binding, this evaluates the encapsulated
-	     * function and returns the result rather than returning a
-	     * pointer to the encapsulated function itself.
-	     *
-	     * @return The value bound to a Symbol by this Binding.
-	     */
-	    RObject* value() const;
-
-	    /** @brief Auxiliary function to
-	     *         Environment::visitChildren().
-	     *
-	     * This function conducts a visitor to those objects
-	     * derived from GCNode which become 'children' of this
-	     * Binding's Environment as a result of its containing
-	     * this Binding.
-	     *
-	     * @param v Pointer to the visitor object.
-	     */
-	    void visitChildren(const_visitor* v) const;
-	private:
-	    const Environment* m_environment;
-	    const Symbol* m_symbol;
-	    RObject* m_value;
-	    short int m_missing;
-	    bool m_active;
-	    bool m_locked;
-	};
-
-	typedef void (*monitor)(const Binding&);
-
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
-	explicit Environment(Environment* enclosing = 0)
-	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_single_stepping(false), m_locked(false), 
-	      m_read_monitor(0), m_write_monitor(0)
+	explicit Environment(Environment* enclosing)
+	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(new StdFrame),
+	      m_single_stepping(false)
 	{}
 
-	/** @brief Base environment.
+	/**
+	 * @param enclosing Pointer to the enclosing environment.
 	 *
-	 * @return pointer to the base environment.
+	 * @param initial_capacity A hint to the implementation that
+	 *          the Frame of the constructed Environment should be
+	 *          configured to have capacity for at least \a
+	 *          initial_capacity Bindings.  This does not impose an
+	 *          upper limit on the capacity of the Frame,
+	 *          but some reconfiguration (and consequent time
+	 *          penalty) may occur if it is exceeded.
 	 */
-	static Environment* base()
-	{
-	    return s_base_env;
-	}
+	Environment(Environment* enclosing, size_t initial_capacity)
+	    : RObject(ENVSXP), m_enclosing(enclosing),
+	      m_frame(new StdFrame(initial_capacity)),
+	      m_single_stepping(false)
+	{}
+
+	/** @brief Constructor with specified Frame.
+	 *
+	 * This constructor is used, for example, in constructing the
+	 * base namespace, which shares the Frame of the base
+	 * environment.
+	 *
+	 * @param enclosing Pointer to the enclosing environment.
+	 *
+	 * @param frame Pointer to the Frame to be used by the
+	 *          constructed Environment.
+	 */
+	Environment(Environment* enclosing, Frame* frame)
+	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
+	      m_single_stepping(false)
+	{}
 
 	/** @briefing Access binding of an already-defined Symbol.
 	 *
@@ -341,7 +125,7 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found..
 	 */
-	Binding* binding(const Symbol* symbol, bool recursive = true);
+	//Binding* binding(const Symbol* symbol, bool recursive = true);
 
 	/** @briefing Access const binding of an already-defined Symbol.
 	 *
@@ -359,138 +143,35 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found..
 	 */
-	const Binding* binding(const Symbol* symbol,
-			       bool recursive = true) const;
+	//const Binding* binding(const Symbol* symbol,
+	//		       bool recursive = true) const;
 
-	/** @brief Remove all symbols from the Environment.
+	/** @brief Access the enclosing Environment.
 	 *
-	 * Raises an error if the Environment is locked.
-	 */
-	virtual void clear() = 0;
-
-	/** @brief Access the enclosing environment.
-	 *
-	 * @return pointer to the enclosing environment.
+	 * @return pointer to the enclosing Environment.
 	 */
 	Environment* enclosingEnvironment() const
 	{
 	    return m_enclosing;
 	}
 
-	/** @brief Empty environment.
+	/** @brief Access the Environment's Frame.
 	 *
-	 * @return const pointer to the standard empty environment.
+	 * @return pointer to the Environment's Frame.
 	 */
-	static const Environment* emptyEnvironment()
+	Frame* frame()
 	{
-	    return s_empty_env;
+	    return m_frame;
 	}
 
-	/** @brief Remove the Binding (if any) of a Symbol.
+	/** @brief Access the Environment's Frame (const variant).
 	 *
-	 * This function causes any Binding for a specified Symbol to
-	 * be removed from the environment.  Note that this function
-	 * always applies to this specific environment: there is no
-	 * search up through enclosing environments.
-	 *
-	 * An error is raised if the Environment is locked (whether or
-	 * not it contains a binding of \a symbol ).
-	 *
-	 * @param symbol The Symbol for which the Binding is to be
-	 *          removed.
-	 *
-	 * @return True iff the environment previously contained a
-	 * mapping for \a symbol.
+	 * @return const pointer to the Environment's Frame.
 	 */
-	virtual bool erase(const Symbol* symbol) = 0;
-
-	/** @brief Get contents as a PairList.
-	 *
-	 * Access the contents of this Environment expressed
-	 * as a PairList, with the tag of each PairList element
-	 * representing a Symbol and the car value representing
-	 * the object to which that Symbol is mapped, and with the
-	 * Binding's active, locked and missing status indicated as in
-	 * CR's FRAME() function.
-	 *
-	 * @return pointer to a PairList as described above.
-	 *
-	 * @note The PairList is generated on demand, so this
-	 * operation is relatively expensive in time.  Modifications
-	 * to the returned PairList will have no effect on the
-	 * Environment itself.
-	 */
-	virtual PairList* frameList() const = 0;
-
-	/** @brief Global environment.
-	 *
-	 * @return pointer to the global environment.
-	 */
-	static Environment* global()
+	const Frame* frame() const
 	{
-	    return s_global_env;
+	    return m_frame;
 	}
-
-	/** @brief Is the environment locked?
-	 *
-	 * @return true iff the environment is locked.
-	 */
-	bool isLocked() const
-	{
-	    return m_locked;
-	}
-
-	/** @brief Lock this Environment.
-	 *
-	 * Locking an Environment prevents the addition or removal of
-	 * Bindings.  Optionally, the existing bindings can be locked,
-	 * preventing them from being modified.
-	 *
-	 * This operation is permitted even if the Environment is
-	 * already locked, but will have no effect unless it newly
-	 * locks the Bindings in the Environment.
-	 * 
-	 * @param lock_bindings true iff all the existing Bindings in
-	 * the Environment are to be locked.
-	 */
-	void lock(bool lock_bindings)
-	{
-	    m_locked = true;
-	    if (lock_bindings)
-		lockBindings();
-	}
-
-	/** @brief Lock all Bindings in this Environment.
-	 *
-	 * This operation affects only Bindings currently existing.
-	 * It does not prevent Bindings being added subsequently, and
-	 * such Bindings will not be locked.
-	 *
-	 * It is permitted to apply this function to a locked
-	 * Environment.
-	 */
-	virtual void lockBindings() = 0;
-
-	/** @brief Get or create a Binding for a Symbol.
-	 *
-	 * If the environment already contains a Binding for a
-	 * specified Symbol, the function returns it.  Otherwise a
-	 * Binding to the null pointer is created, and a pointer to
-	 * that Binding returned.
-	 *
-	 * Note that this function always applies to this specific
-	 * environment: there is no search up through enclosing
-	 * environments.
-	 *
-	 * An error is raised if a new Binding needs to be created and
-	 * the Environment is locked.
-	 *
-	 * @param symbol The Symbol for which a Binding is to be
-	 *          obtained.
-	 *
-	 * @return Pointer to the required Binding.
-	 */
-	virtual Binding* obtainBinding(const Symbol* symbol) = 0;
 
 	/** @brief Replace the enclosing environment.
 	 *
@@ -504,69 +185,6 @@ namespace CXXR {
 	{
 	    m_enclosing = new_enclos;
 	    propagateAge(m_enclosing);
-	}
-
-	/** @brief Monitor reading of Symbol values.
-	 *
-	 * This function allows the user to define a function to be
-	 * called whenever a Symbol's value is read from a Binding
-	 * within (the local frame of) this Environment.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * whenever the encapsulated function is accessed: note that
-	 * this includes calls to Binding::assign().
-	 *
-	 * @param new_monitor Pointer, possibly null, to the new
-	 *          monitor function.  A null pointer signifies that
-	 *          no read monitoring is to take place, which is the
-	 *          default state.
-	 *
-	 * @return Pointer, possibly null, to the monitor being
-	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of an Environment
-	 * object, and hence this function is const.
-	 */
-	monitor setReadMonitor(monitor new_monitor) const
-	{
-	    monitor old = m_read_monitor;
-	    m_read_monitor = new_monitor;
-	    return old;
-	}
-
-	/** @brief Monitor writing of Symbol values.
-	 *
-	 * This function allows the user to define a function to be
-	 * called whenever a Symbol's value is modified in a Binding
-	 * within (the local frame of) this Environment.
-	 *
-	 * In the case of an active Binding, the monitor is called
-	 * only when the encapsulated function is initially set or
-	 * changed: in particular the monitor is \e not invoked by
-	 * calls to Binding::assign().
-	 *
-	 * The monitor is not called when a Binding is newly created
-	 * within an Environment (with the Symbol bound by default to
-	 * a null pointer).
-	 *
-	 * @param new_monitor Pointer, possibly null, to the new
-	 *          monitor function.  A null pointer signifies that
-	 *          no write monitoring is to take place, which is the
-	 *          default state.
-	 *
-	 * @return Pointer, possibly null, to the monitor being
-	 * displaced by \a new_monitor.
-	 *
-	 * @note The presence or absence of a monitor is not
-	 * considered to be part of the state of an Environment
-	 * object, and hence this function is const.
-	 */
-	monitor setWriteMonitor(monitor new_monitor) const
-	{
-	    monitor old = m_write_monitor;
-	    m_write_monitor = new_monitor;
-	    return old;
 	}
 
 	/** @brief Set single-stepping status
@@ -589,13 +207,6 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
-	/** @brief Number of Symbols bound.
-	 *
-	 * @return the number of Symbols for which Bindings exist in
-	 * this environment.
-	 */
-	virtual size_t size() const = 0;
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -617,63 +228,23 @@ namespace CXXR {
 	// created only using 'new':
 	~Environment() {}
     private:
-	static GCRoot<Environment> s_empty_env;
-	static GCRoot<Environment> s_base_env;
-	static GCRoot<Environment> s_global_env;
-
 	Environment* m_enclosing;
+	Frame* m_frame;
 	bool m_single_stepping;
 	bool m_locked;
-	mutable monitor m_read_monitor;
-	mutable monitor m_write_monitor;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
-
-	// Access the binding of a symbol in this environment's own
-	// frame.  No locking checks.
-	virtual Binding* frameBinding(const Symbol* symbol) = 0;
-	virtual const Binding* frameBinding(const Symbol* symbol) const = 0;
-
-	// Monitoring functions:
-	friend class Binding;
-
-	void monitorRead(const Binding& bdg) const
-	{
-	    if (m_read_monitor) m_read_monitor(bdg);
-	}
-
-	void monitorWrite(const Binding& bdg) const
-	{
-	    if (m_write_monitor) m_write_monitor(bdg);
-	}
     };
 
-    /** @brief Incorporate bindings defined by a PairList into an
-     *  Environment.
-     *
-     * Raises an error if the Environment is locked, or an attempt is made
-     * to modify a binding that is locked.
-     *
-     * @param env Pointer to the Environment into whose frame new or
-     *          modified bindings are to be incorporated.
-     *
-     * @param bindings List of symbol-value pairs defining bindings to
-     *          be incorporated into the environment.  Every element
-     *          of this list must have a Symbol as its tag (checked).
-     *          If the list contains duplicate tags, later
-     *          symbol-value pairs override earlier ones. Each
-     *          resulting binding is locked and/or set active
-     *          according to the m_active_binding and m_binding_locked
-     *          fields of the corresponding PairList element.
-     */
-    void envReadPairList(Environment* env, PairList* bindings);
-
+    // Predefined environments visible in 'namespace CXXR':
+    extern Environment* EmptyEnvironment;
+    extern Environment* BaseEnvironment;
+    extern Environment* GlobalEnvironment;
+    extern Environment* BaseNamespace;
 }  // namespace CXXR
-
-typedef CXXR::Environment::Binding* R_varloc_t;
 
 extern "C" {
 #else /* if not __cplusplus */
@@ -683,9 +254,11 @@ extern "C" {
 
 #endif
 
+    /* C-visible names for CXXR::EmptyEnvironment etc. */
     extern SEXP R_EmptyEnv;
     extern SEXP R_BaseEnv;
     extern SEXP R_GlobalEnv;
+    extern SEXP R_BaseNamespace;
 
     /** @brief Is this a CXXR::Environment?
      *
@@ -737,12 +310,14 @@ extern "C" {
     }
 #endif
 
-    /** @brief Access an environment's frame list.
+    /** @brief Access an environment's Frame, represented as a PairList.
      *
      * @param x Pointer to a CXXR::Environment (checked).
      *
-     * @return Pointer to the frame list of \a x (may be null).  The
-     * calling code should not modify this list.
+     * @return Pointer to a PairList representing the contents of the
+     * Frame of \a x (may be null).  This PairList is generated on the
+     * fly, so this is a relatively expensive operation.  Alterations
+     * to the returned PairList will not alter the Environment's Frame.
      */
 #ifndef __cplusplus
     SEXP FRAME(SEXP x);
@@ -751,7 +326,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	Environment* env = SEXP_downcast<Environment*>(x);
-	return const_cast<PairList*>(env->frameList());
+	return env->frame()->asPairList();
     }
 #endif
 
@@ -791,13 +366,15 @@ extern "C" {
     }
 #endif
 
-    /** @brief Set symbol's value.
+    /** @brief Set symbol's value in the base environment.
      *
      * @param x Pointer to a CXXR::Symbol (checked).
      *
      * @param val Pointer to the RObject now to be considered as
      *            the value of this symbol.  A null pointer or
      *            R_UnboundValue are permissible values of \a val.
+     *
+     * @todo No binding to R_UnboundValue ought to be created.
      */
 #ifndef __cplusplus
     void SET_SYMVALUE(SEXP x, SEXP v);
@@ -806,11 +383,11 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	Environment::base()->obtainBinding(sym)->setValue(v);
+	BaseEnvironment->frame()->obtainBinding(sym)->setValue(v);
     }
 #endif
 
-    /** @brief Symbol value.
+    /** @brief Symbol's value in the base environment.
      *
      * @param x Pointer to a CXXR::Symbol (checked).
      *
@@ -825,9 +402,8 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	Environment::Binding* bdg
-	    = Environment::base()->binding(sym, false);
-	return bdg ? bdg->rawValue() : Symbol::unboundValue();
+	Frame::Binding* bdg = BaseEnvironment->frame()->binding(sym);
+	return bdg ? bdg->value() : Symbol::unboundValue();
     }
 #endif
 

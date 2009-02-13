@@ -49,7 +49,6 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include "CXXR/DottedArgs.hpp"
-#include "CXXR/StdEnvironment.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -1436,7 +1435,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
     }
     /* Allocate the environments */
     for (count = 0; count < env_count; ++count)
-	SET_VECTOR_ELT(env_table, count, new StdEnvironment);
+	SET_VECTOR_ELT(env_table, count, new Environment(0));
 
     /* Now fill them in  */
     for (count = 0; count < env_count; ++count) {
@@ -1449,7 +1448,7 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	PairList* bindings
 	    = SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
 						   fp, m, d));
-	envReadPairList(env, bindings);
+	frameReadPairList(env->frame(), bindings);
 	// Throw away the hash table:
 	NewReadItem(sym_table, env_table, fp, m, d);
 	

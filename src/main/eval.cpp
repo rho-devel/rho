@@ -56,7 +56,6 @@
 
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/JMPException.hpp"
-#include "CXXR/StdEnvironment.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -602,7 +601,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     while (f != R_NilValue) {
 	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
 	    const Symbol* symbol = static_cast<Symbol*>(TAG(a));
-	    Environment::Binding* bdg = newrho->binding(symbol, false);
+	    Frame::Binding* bdg = newrho->frame()->binding(symbol);
 	    bdg->setValue(mkPROMISE(CAR(f), newrho));
 	    bdg->setMissing(2);
 	}
@@ -833,7 +832,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	val = R_GetVarLocValue(loc);
 	Environment* newenv = static_cast<Environment*>(newrho);
 	const Symbol* sym = static_cast<Symbol*>(symbol);
-	Environment::Binding* bdg = newenv->obtainBinding(sym);
+	Frame::Binding* bdg = newenv->frame()->obtainBinding(sym);
 	bdg->setValue(val);
 	if (missing) {
 	    bdg->setMissing(missing);
@@ -2202,7 +2201,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(newrho = new StdEnvironment);
+    PROTECT(newrho = new Environment(0));
     newrho->expose();
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;
