@@ -246,8 +246,6 @@ static SEXP R_BaseNamespaceName;
 
 void CXXRnot_hidden InitGlobalEnv()
 {
-    R_BaseNamespace = NewEnvironment(R_NilValue, R_NilValue, R_GlobalEnv);
-    R_PreserveObject(R_BaseNamespace);
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
     R_BaseNamespaceName = ScalarString(mkChar("base"));
     R_PreserveObject(R_BaseNamespaceName);
@@ -304,8 +302,7 @@ static R_varloc_t findVarLocInFrame(SEXP rho, SEXP symbol, Rboolean * /*canCache
     if (!rho || rho == R_EmptyEnv)
 	return(R_NilValue);
 
-    Environment* env = (rho == R_BaseNamespace ? BaseEnvironment
-			: SEXP_downcast<Environment*>(rho));
+    Environment* env = SEXP_downcast<Environment*>(rho);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     return env->frame()->binding(sym);
 }
@@ -366,11 +363,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     if (TYPEOF(rho) == NILSXP)
 	error(_("use of NULL environment is defunct"));
 
-    if (rho == R_EmptyEnv)
-	return R_UnboundValue;
-
-    Environment* env = (rho == R_BaseNamespace ? BaseEnvironment
-			: SEXP_downcast<Environment*>(rho));
+    Environment* env = SEXP_downcast<Environment*>(rho);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->binding(sym);
     return (bdg ? bdg->value() : R_UnboundValue);
@@ -641,16 +634,12 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     if (rho == R_EmptyEnv)
 	error(_("cannot assign values in the empty environment"));
 
-    if (rho == R_BaseNamespace) {
-	gsetVar(symbol, value, rho);
-    } else {
-	GCRoot<> valrt(value);
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
-	Frame::Binding* bdg = env->frame()->obtainBinding(sym);
-	bdg->assign(value);
-	bdg->setMissing(0);  /* over-ride */
-    }
+    GCRoot<> valrt(value);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Frame::Binding* bdg = env->frame()->obtainBinding(sym);
+    bdg->assign(value);
+    bdg->setMissing(0);  /* over-ride */
 }
 
 /*----------------------------------------------------------------------
@@ -669,8 +658,7 @@ static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
     if (rho == R_GlobalEnv) R_DirtyImage = 1;
     if (rho == R_EmptyEnv) return R_NilValue;
 
-    Environment* env = (rho == R_BaseNamespace ? BaseEnvironment
-			: SEXP_downcast<Environment*>(rho));
+    Environment* env = SEXP_downcast<Environment*>(rho);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->binding(sym);
     if (!bdg)
@@ -1438,24 +1426,6 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
     }
 }
 
-static void
-BuiltinValues(int all, int intern, SEXP values, int *indx)
-{
-    ListVector* lv = SEXP_downcast<ListVector*>(values);
-    for (Symbol::const_iterator it = Symbol::begin();
-	 it != Symbol::end(); ++it) {
-	Symbol* sym = (*it).second;
-	if (BuiltinTest(sym, all, intern)) {
-	    RObject* vl = SYMVALUE(sym);
-	    if (vl->sexptype() == PROMSXP) {
-		GCRoot<> vlr(vl);
-		vl = eval(vl, R_BaseEnv);
-	    }
-	    (*lv)[(*indx)++] = duplicate(vl);
-	}
-    }
-}
-
 SEXP CXXRnot_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP env;
@@ -1463,8 +1433,6 @@ SEXP CXXRnot_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     env = CAR(args);
-
-    /* if (env == R_BaseNamespace) env = R_BaseEnv; */
 
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
@@ -1482,9 +1450,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
 
     /* Step 1 : Compute the Vector Size */
     k = 0;
-    if (env == R_BaseNamespace)
-	k += BuiltinSize(all, 0);
-    else if (isEnvironment(env)) {
+    if (isEnvironment(env)) {
 	k += FrameSize(FRAME(env), all);
     }
     else
@@ -1493,11 +1459,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
     /* Step 2 : Allocate and Fill the Result */
     PROTECT(ans = allocVector(STRSXP, k));
     k = 0;
-    if (env == R_BaseNamespace)
-	BuiltinNames(all, 0, ans, &k);
-    else if (isEnvironment(env)) {
-	FrameNames(FRAME(env), all, ans, &k);
-    }
+    FrameNames(FRAME(env), all, ans, &k);
 
     UNPROTECT(1);
     sortVector(ans, FALSE);
@@ -1522,25 +1484,16 @@ SEXP CXXRnot_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
 
-    if (env == R_BaseNamespace)
-	k = BuiltinSize(all, 0);
-    else
-	k = FrameSize(FRAME(env), all);
+    k = FrameSize(FRAME(env), all);
 
     PROTECT(names = allocVector(STRSXP, k));
     PROTECT(ans = allocVector(VECSXP, k));
 
     k = 0;
-    if (env == R_BaseNamespace)
-	BuiltinValues(all, 0, ans, &k);
-    else
-	FrameValues(FRAME(env), all, ans, &k);
+    FrameValues(FRAME(env), all, ans, &k);
 
     k = 0;
-    if (env == R_BaseNamespace)
-	BuiltinNames(all, 0, names, &k);
-    else
-	FrameNames(FRAME(env), all, names, &k);
+    FrameNames(FRAME(env), all, names, &k);
 
     setAttrib(ans, R_NamesSymbol, names);
     UNPROTECT(2);
@@ -1573,20 +1526,14 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(eval(CADDR(args), rho));
     if (all == NA_LOGICAL) all = 0;
 
-    if (env == R_BaseNamespace)
-	k = BuiltinSize(all, 0);
-    else
-	k = FrameSize(FRAME(env), all);
+    k = FrameSize(FRAME(env), all);
 
     PROTECT(names = allocVector(STRSXP, k));
     PROTECT(ans = allocVector(VECSXP, k));
     PROTECT(tmp2 = allocVector(VECSXP, k));
 
     k = 0;
-    if (env == R_BaseNamespace)
-	BuiltinValues(all, 0, tmp2, &k);
-    else
-	FrameValues(FRAME(env), all, tmp2, &k);
+    FrameValues(FRAME(env), all, tmp2, &k);
 
     PROTECT(ind = allocVector(INTSXP, 1));
     PROTECT(tmp = LCONS(R_Bracket2Symbol,
@@ -1599,10 +1546,7 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     k = 0;
-    if (env == R_BaseNamespace)
-	BuiltinNames(all, 0, names, &k);
-    else
-	FrameNames(FRAME(env), all, names, &k);
+    FrameNames(FRAME(env), all, names, &k);
 
     setAttrib(ans, R_NamesSymbol, names);
     UNPROTECT(6);
@@ -1833,8 +1777,7 @@ void R_LockBinding(SEXP sym, SEXP env)
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
-    Environment* envir = (env == R_BaseNamespace ? BaseEnvironment
-			  : static_cast<Environment*>(env));
+    Environment* envir = static_cast<Environment*>(env);
     Frame::Binding* binding = envir->frame()->binding(symbol);
     if (!binding)
 	error(_("no binding for \"%s\""), symbol->name()->c_str());
@@ -1850,8 +1793,7 @@ void R_unLockBinding(SEXP sym, SEXP env)
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
-    Environment* envir = (env == R_BaseNamespace ? BaseEnvironment
-			  : static_cast<Environment*>(env));
+    Environment* envir = static_cast<Environment*>(env);
     Frame::Binding* binding = envir->frame()->binding(symbol);
     if (!binding)
 	error(_("no binding for \"%s\""), symbol->name()->c_str());
@@ -1868,23 +1810,11 @@ void R_MakeActiveBinding(SEXP sym, SEXP fun, SEXP env)
 	error(_("use of NULL environment is defunct"));
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
-    if (env == R_BaseNamespace) {
-	if (SYMVALUE(sym) != R_UnboundValue && ! IS_ACTIVE_BINDING(sym))
-	    error(_("symbol already has a regular binding"));
-	else if (BINDING_IS_LOCKED(sym))
-	    error(_("cannot change active binding if binding is locked"));
-	SET_SYMVALUE(sym, fun);
-	SET_ACTIVE_BINDING_BIT(sym);
-	/* we don't need to worry about the global cache here as
-	   a regular binding cannot be changed */
-    }
-    else {
-	Environment* envir = static_cast<Environment*>(env);
-	const Symbol* symbol = static_cast<Symbol*>(sym);
-	Frame::Binding* binding = envir->frame()->obtainBinding(symbol);
-	FunctionBase* function = static_cast<FunctionBase*>(fun);
-	binding->setFunction(function);
-    }
+    Environment* envir = static_cast<Environment*>(env);
+    const Symbol* symbol = static_cast<Symbol*>(sym);
+    Frame::Binding* binding = envir->frame()->obtainBinding(symbol);
+    FunctionBase* function = static_cast<FunctionBase*>(fun);
+    binding->setFunction(function);
 }
 
 Rboolean R_BindingIsLocked(SEXP sym, SEXP env)
@@ -1896,8 +1826,7 @@ Rboolean R_BindingIsLocked(SEXP sym, SEXP env)
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
-    Environment* envir = (env == R_BaseNamespace ? BaseEnvironment
-			  : static_cast<Environment*>(env));
+    Environment* envir = static_cast<Environment*>(env);
     Frame::Binding* binding = envir->frame()->binding(symbol);
     if (!binding)
 	error(_("no binding for \"%s\""), symbol->name()->c_str());
@@ -1912,16 +1841,10 @@ Rboolean R_BindingIsActive(SEXP sym, SEXP env)
 	error(_("use of NULL environment is defunct"));
     if (TYPEOF(env) != ENVSXP)
 	error(_("not an environment"));
-    if (env == R_BaseNamespace)
-	/* It is a symbol, so must have a binding even if it is
-	   R_UnboundSymbol */
-	return Rboolean(IS_ACTIVE_BINDING(sym) != 0);
-    else {
-	Frame::Binding* binding = findVarLocInFrame(env, sym, NULL);
-	if (!binding)
-	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
-	return Rboolean(binding->isActive());
-    }
+    Frame::Binding* binding = findVarLocInFrame(env, sym, NULL);
+    if (!binding)
+	error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
+    return Rboolean(binding->isActive());
 }
 
 Rboolean R_HasFancyBindings(SEXP rho)
@@ -2198,16 +2121,10 @@ SEXP CXXRnot_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* find the binding--may be a CONS cell or a symbol */
 	for (env = expenv, binding = R_NilValue;
 	     env != R_EmptyEnv && binding == R_NilValue;
-	     env = ENCLOS(env))
-	    if (env == R_BaseNamespace) {
-		if (SYMVALUE(expsym) != R_UnboundValue)
-		    binding = expsym;
-	    }
-	    else {
-		Frame::Binding* bdg
-		    = findVarLocInFrame(env, expsym, NULL);
-		binding = (bdg ? bdg->asPairList() : 0);
-	    }
+	     env = ENCLOS(env)) {
+	    Frame::Binding* bdg = findVarLocInFrame(env, expsym, NULL);
+	    binding = (bdg ? bdg->asPairList() : 0);
+	}
 	if (binding == R_NilValue)
 	    binding = expsym;
 
@@ -2223,11 +2140,7 @@ SEXP CXXRnot_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* import the binding */
 	if (IS_ACTIVE_BINDING(binding))
 	    R_MakeActiveBinding(impsym, val, impenv);
-	/* This is just a tiny optimization */
-	else if (impenv == R_BaseNamespace)
-	    gsetVar(impsym, val, impenv);
-	else
-	    defineVar(impsym, val, impenv);
+	else defineVar(impsym, val, impenv);
     }
     return R_NilValue;
 }
