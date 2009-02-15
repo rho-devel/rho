@@ -385,20 +385,16 @@ inline SEXP findVarInFrame(SEXP rho, SEXP symbol)
 
 SEXP findVar(SEXP symbol, SEXP rho)
 {
-    SEXP vl;
-
     if (TYPEOF(rho) == NILSXP)
 	error(_("use of NULL environment is defunct"));
 
     if (!isEnvironment(rho))
 	error(_("argument to '%s' is not an environment"), "findVar");
 
-    while (rho != R_EmptyEnv) {
-	vl = findVarInFrame3(rho, symbol, TRUE);
-	if (vl != R_UnboundValue) return (vl);
-	rho = ENCLOS(rho);
-    }
-    return R_UnboundValue;
+    Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = static_cast<Environment*>(rho);
+    Frame::Binding* bdg = findBinding(sym, env).first;
+    return (bdg ? bdg->value() : R_UnboundValue);
 }
 
 
@@ -644,33 +640,6 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 
 /*----------------------------------------------------------------------
 
-  setVarInFrame
-
-  Assign a new value to an existing symbol in a frame.
-  Return the symbol if successful and R_NilValue if not.
-
-  [ Taken static in 2.4.0: not called for emptyenv or baseenv. ]
-*/
-
-static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
-{
-    /* R_DirtyImage should only be set if assigning to R_GlobalEnv. */
-    if (rho == R_GlobalEnv) R_DirtyImage = 1;
-    if (rho == R_EmptyEnv) return R_NilValue;
-
-    Environment* env = SEXP_downcast<Environment*>(rho);
-    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
-    Frame::Binding* bdg = env->frame()->binding(sym);
-    if (!bdg)
-	return 0;
-    bdg->assign(value);
-    bdg->setMissing(0);      /* same as defineVar */
-    return symbol;
-}
-
-
-/*----------------------------------------------------------------------
-
     setVar
 
     Assign a new value to bound symbol.	 Note this does the "inherits"
@@ -687,13 +656,19 @@ static SEXP setVarInFrame(SEXP rho, SEXP symbol, SEXP value)
 
 void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
-    SEXP vl;
-    while (rho != R_EmptyEnv) {
-	vl = setVarInFrame(rho, symbol, value);
-	if (vl != R_NilValue) return;
-	rho = ENCLOS(rho);
+    Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    pair<Frame::Binding*, Environment*> pr = findBinding(sym, env);
+    Frame::Binding* bdg = pr.first;
+    env = pr.second;
+    if (!env) {
+	env = GlobalEnvironment;
+	bdg = env->frame()->obtainBinding(sym);
     }
-    defineVar(symbol, value, R_GlobalEnv);
+    if (env == GlobalEnvironment)
+	R_DirtyImage = 1;
+    bdg->assign(value);
+    bdg->setMissing(0);
 }
 
 

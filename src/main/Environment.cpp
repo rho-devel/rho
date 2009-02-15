@@ -75,10 +75,10 @@ namespace {
 }
 
 namespace CXXR {
-    Environment* EmptyEnvironment = emptyenvrt;
-    Environment* BaseEnvironment = baseenvrt;
-    Environment* GlobalEnvironment = globalenvrt;
-    Environment* BaseNamespace = basensrt;
+    Environment* const EmptyEnvironment = emptyenvrt;
+    Environment* const BaseEnvironment = baseenvrt;
+    Environment* const GlobalEnvironment = globalenvrt;
+    Environment* const BaseNamespace = basensrt;
 }
 
 SEXP R_EmptyEnv = EmptyEnvironment;
@@ -112,4 +112,32 @@ void Environment::visitChildren(const_visitor* v) const
     RObject::visitChildren(v);
     if (m_enclosing) m_enclosing->conductVisitor(v);
     if (m_frame) m_frame->conductVisitor(v);
+}
+
+// ***** Free-standing functions *****
+
+namespace CXXR {
+    pair<Frame::Binding*, Environment*>
+    findBinding(const Symbol* symbol, Environment* env)
+    {
+	while (env) {
+	    Frame::Binding* bdg = env->frame()->binding(symbol);
+	    if (bdg)
+		return make_pair(bdg, env);
+	    env = env->enclosingEnvironment();
+	}
+	return pair<Frame::Binding*, Environment*>(0, 0);
+    }
+
+    pair<const Frame::Binding*, const Environment*>
+    findBinding(const Symbol* symbol, const Environment* env)
+    {
+	while (env) {
+	    const Frame::Binding* bdg = env->frame()->binding(symbol);
+	    if (bdg)
+		return make_pair(bdg, env);
+	    env = env->enclosingEnvironment();
+	}
+	return pair<const Frame::Binding*, const Environment*>(0, 0);
+    }
 }

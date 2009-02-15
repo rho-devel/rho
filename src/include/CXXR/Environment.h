@@ -109,43 +109,6 @@ namespace CXXR {
 	      m_single_stepping(false)
 	{}
 
-	/** @briefing Access binding of an already-defined Symbol.
-	 *
-	 * This function provides a pointer to the Binding of a
-	 * Symbol.  In this variant the pointer is non-const, and
-	 * consequently the calling code can use it to modify the
-	 * binding (provided the Binding is not locked).
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param recursive If false, a mapping is sought only in this
-	 *          environment.  If true, the search works up through
-	 *          enclosing environments.
-	 *
-	 * @return A pointer to the required binding, or a null
-	 * pointer if it was not found..
-	 */
-	//Binding* binding(const Symbol* symbol, bool recursive = true);
-
-	/** @briefing Access const binding of an already-defined Symbol.
-	 *
-	 * This function provides a pointer to a PairList element
-	 * representing the binding of a symbol.  In this variant the
-	 * pointer is const, and consequently the calling code can use
-	 * it only to examine the binding.
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param recursive If false, a mapping is sought only in this
-	 *          environment.  If true, the search works up through
-	 *          enclosing environments.
-	 *
-	 * @return A pointer to the required binding, or a null
-	 * pointer if it was not found..
-	 */
-	//const Binding* binding(const Symbol* symbol,
-	//		       bool recursive = true) const;
-
 	/** @brief Access the enclosing Environment.
 	 *
 	 * @return pointer to the enclosing Environment.
@@ -239,11 +202,51 @@ namespace CXXR {
 	Environment& operator=(const Environment&);
     };
 
+    /** @brief Search for a Binding for a Symbol.
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Environment in whose Frame a Binding is first to be
+     *          sought; if no Binding is found there, the search will
+     *          proceed through successive enclosing Environments.  It
+     *          is permissible for \a env to be a null pointer, in
+     *          which case (of course) no Binding will be found.
+     *
+     * @return The first element of the pair is a pointer to the
+     * sought Binding, or a null pointer if no Binding was found.  The
+     * second element of the pair is a pointer to the Environment in
+     * whose frame the Binding was found, or a null pointer if no
+     * Binding was found.
+     */
+    std::pair<Frame::Binding*, Environment*>
+    findBinding(const Symbol* symbol, Environment* env);
+
+    /** @brief Search for a Binding for a Symbol (const variant).
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Environment in whose Frame a Binding is first to be
+     *          sought; if no Binding is found there, the search will
+     *          proceed through successive enclosing Environments.  It
+     *          is permissible for \a env to be a null pointer, in
+     *          which case (of course) no Binding will be found.
+     *
+     * @return The first element of the pair is a pointer to the
+     * sought Binding, or a null pointer if no Binding was found.  The
+     * second element of the pair is a pointer to the Environment in
+     * whose Frame the Binding was found, or a null pointer if no
+     * Binding was found.
+     */
+    std::pair<const Frame::Binding*, const Environment*>
+    findBinding(const Symbol* symbol, const Environment* env);
+
     // Predefined environments visible in 'namespace CXXR':
-    extern Environment* EmptyEnvironment;
-    extern Environment* BaseEnvironment;
-    extern Environment* GlobalEnvironment;
-    extern Environment* BaseNamespace;
+    extern Environment* const EmptyEnvironment;
+    extern Environment* const BaseEnvironment;
+    extern Environment* const GlobalEnvironment;
+    extern Environment* const BaseNamespace;
 }  // namespace CXXR
 
 extern "C" {
