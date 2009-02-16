@@ -53,6 +53,23 @@ namespace CXXR {
      */
     class FunctionBase : public RObject {
     public:
+	/** @brief Is an RObject a FunctionBase?
+	 *
+	 * @param obj Pointer to RObject to be tested.  This may be a
+	 *          null pointer, in which case the function returns
+	 *          false.
+	 *
+	 * @return true iff \a obj is a FunctionBase.
+	 */
+	static bool isA(const RObject* obj)
+	{
+	    // We could of course use dynamic_cast here, but the
+	    // following is probably faster:
+	    if (!obj) return false;
+	    SEXPTYPE st = obj->sexptype();
+	    return st == CLOSXP || st == BUILTINSXP || st == SPECIALSXP;
+	}
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
