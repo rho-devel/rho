@@ -62,6 +62,8 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
+// Frame::Binding::forcedValue() is defined in envir.cpp (for the time being).
+	
 void Frame::Binding::fromPairList(PairList* pl)
 {
     const RObject* tag = pl->tag();

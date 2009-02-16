@@ -45,6 +45,7 @@
 #include "CXXR/PairList.h"
 
 namespace CXXR {
+    class Environment;
     class FunctionBase;
 
     /** @brief Mapping from Symbols to R objects.
@@ -267,6 +268,48 @@ namespace CXXR {
 		return m_symbol;
 	    }
 
+	    /** @brief Test whether the Binding's value satisfies a
+	     *         predicate, and if so return the value.
+	     *
+	     * If the Binding's value is a Promise, the Promise is
+	     * forced within a specified Environment \a env, and the
+	     * test is then applied to the result of evaluating the
+	     * Promise.
+	     *
+	     * If a read monitor is set, the monitor is called only if
+	     * the test succeeds.
+	     *
+	     * @param UnaryPredicate A function or function type
+	     *          capable of accepting const RObject* and
+	     *          returning bool.
+	     *
+	     * @param env Environment to be used for forcing Promises.
+	     *
+	     * @param pred The UnaryPredicate object to be used to
+	     *          test the value.
+	     *
+	     * @return The first element of the pair is true or false
+	     * according to the result of the test.  If the test
+	     * failed, the second element is a null pointer; otherwise
+	     * the second element is the value of the Binding, except
+	     * that if the value was a Promise, the second element is
+	     * the result of evaluating the Promise.
+	     */
+	    template <typename UnaryPredicate>
+	    std::pair<bool, RObject*>
+	    testedValue(const Environment* env,
+			UnaryPredicate pred = UnaryPredicate()) const
+	    {
+		using namespace std;
+		RObject* fv = forcedValue(env);
+		if (!pred(fv))
+		    return pair<bool, RObject*>(0, 0);
+		else {
+		    m_frame->monitorRead(*this);
+		    return make_pair(true, fv);
+		}
+	    }
+		
 	    /** @brief Get value bound to the Symbol.
 	     *
 	     * For an active binding, this evaluates the encapsulated
@@ -294,6 +337,12 @@ namespace CXXR {
 	    short int m_missing;
 	    bool m_active;
 	    bool m_locked;
+
+	    // The value of the binding, or - if the value is a
+	    // Promise - the result of forcing this promise within
+	    // env.  This is used by testedValue(), and does not in
+	    // itself prompt any monitors.
+	    RObject* forcedValue(const Environment* env) const;
 	};
 
 	typedef void (*monitor)(const Binding&);

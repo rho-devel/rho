@@ -118,7 +118,8 @@ using namespace CXXR;
 namespace {
     inline bool FRAME_IS_LOCKED(SEXP e)
     {
-	return SEXP_downcast<Environment*>(e)->frame()->isLocked();}
+	return SEXP_downcast<Environment*>(e)->frame()->isLocked();
+    }
 }
 
 static SEXP getActiveValue(SEXP fun)
@@ -155,7 +156,17 @@ void Frame::Binding::assign(RObject* new_value)
     }
 }
 
- RObject* Frame::Binding::value() const
+RObject* Frame::Binding::forcedValue(const Environment* env) const
+{
+    RObject* ans = m_value;
+    if (ans && ans->sexptype() == PROMSXP) {
+	GCRoot<> ansrt(ans);
+	ans = eval(ans, const_cast<Environment*>(env));
+    }
+    return ans;
+}
+
+RObject* Frame::Binding::value() const
 {
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
@@ -587,28 +598,44 @@ SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
   This could call findVar1.  NB: they behave differently on failure.
 */
 
+namespace {
+    // Predicate used to test whether a Binding's value is a function.
+    class FunctionTester : public unary_function<RObject*, bool> {
+    public:
+	FunctionTester(const Symbol* symbol)
+	    : m_symbol(symbol)
+	{}
+
+	bool operator()(const RObject* obj);
+    private:
+	const Symbol* m_symbol;
+    };
+
+    bool FunctionTester::operator()(const RObject* obj)
+    {
+	if (obj == R_MissingArg)
+	    Rf_error(_("argument \"%s\" is missing, with no default"),
+		     m_symbol->name()->c_str());
+	return FunctionBase::isA(obj);
+    }
+}
+
 SEXP findFun(SEXP symbol, SEXP rho)
 {
-    SEXP vl;
-    while (rho != R_EmptyEnv) {
-	/* This is not really right.  Any variable can mask a function */
-	vl = findVarInFrame3(rho, symbol, TRUE);
-	if (vl != R_UnboundValue) {
-	    if (TYPEOF(vl) == PROMSXP) {
-		PROTECT(vl);
-		vl = eval(vl, rho);
-		UNPROTECT(1);
-	    }
-	    if (TYPEOF(vl) == CLOSXP || TYPEOF(vl) == BUILTINSXP ||
-		TYPEOF(vl) == SPECIALSXP)
-		return (vl);
-	    if (vl == R_MissingArg)
-		error(_("argument \"%s\" is missing, with no default"),
-		      CHAR(PRINTNAME(symbol)));
+    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    FunctionTester functest(sym);
+    while (env) {
+	pair<Frame::Binding*, Environment*> pr = findBinding(sym, env);
+	env = pr.second;
+	if (env) {
+	    pair<bool, RObject*> tv = pr.first->testedValue(env, functest);
+	    if (tv.first)
+		return tv.second;
+	    env = env->enclosingEnvironment();
 	}
-	rho = ENCLOS(rho);
     }
-    error(_("could not find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    error(_("could not find function \"%s\""), sym->name()->c_str());
     /* NOT REACHED */
     return R_UnboundValue;
 }

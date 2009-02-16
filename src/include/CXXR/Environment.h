@@ -62,9 +62,13 @@ namespace CXXR {
      * the Environment's own Frame, and then successively in enclosing
      * frames.
      *
-     * @note In CR, working up the enclosing relationship will always
-     * lead to the empty environment.  This is not enforced in this
-     * class.
+     * @note This class does not in itself enforce the requirement
+     * that working up the enclosing relationship will always lead to
+     * the empty environment.
+     *
+     * @todo For provenance-tracking, there ought to be some way of
+     * monitoring the event that the program \e fails to find a
+     * binding for a Symbol.
      */
     class Environment : public RObject {
     public:
