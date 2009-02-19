@@ -138,7 +138,9 @@ namespace CXXR {
 	// proper.  The second parameter is simply to provide a
 	// distinct signature, and its value is ignored.
 	PairList(const PairList& pattern, int)
-	    : ConsCell(pattern, 0), m_argused(0)
+	    : ConsCell(pattern, 0), m_argused(0),
+	    m_active_binding(pattern.m_active_binding),
+	    m_binding_locked(pattern.m_binding_locked)
 	{}
 
 	// Declared private to ensure that PairList objects are
