@@ -247,10 +247,10 @@ namespace CXXR {
     findBinding(const Symbol* symbol, const Environment* env);
 
     // Predefined environments visible in 'namespace CXXR':
-    extern Environment* const EmptyEnvironment;
-    extern Environment* const BaseEnvironment;
-    extern Environment* const GlobalEnvironment;
-    extern Environment* const BaseNamespace;
+    extern const GCRoot<Environment> EmptyEnvironment;
+    extern const GCRoot<Environment> BaseEnvironment;
+    extern const GCRoot<Environment> GlobalEnvironment;
+    extern const GCRoot<Environment> BaseNamespace;
 }  // namespace CXXR
 
 extern "C" {

@@ -65,20 +65,21 @@ namespace {
     // Used in {,un}packGPBits():
     const unsigned int FRAME_LOCK_MASK = 1<<14;
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
-
-    // Predefined environments:
-    GCRoot<Environment> emptyenvrt(new Environment(0), true);
-    GCRoot<Environment> baseenvrt(new Environment(emptyenvrt), true);
-    GCRoot<Environment> globalenvrt(new Environment(baseenvrt), true);
-    GCRoot<Environment>
-    basensrt(new Environment(globalenvrt, baseenvrt->frame()), true);
 }
 
+// Predefined environments:
 namespace CXXR {
-    Environment* const EmptyEnvironment = emptyenvrt;
-    Environment* const BaseEnvironment = baseenvrt;
-    Environment* const GlobalEnvironment = globalenvrt;
-    Environment* const BaseNamespace = basensrt;
+    const GCRoot<Environment> EmptyEnvironment(new Environment(0), true);
+
+    const GCRoot<Environment>
+    BaseEnvironment(new Environment(EmptyEnvironment), true);
+
+    const GCRoot<Environment>
+    GlobalEnvironment(new Environment(BaseEnvironment), true);
+
+    const GCRoot<Environment>
+    BaseNamespace(new Environment(GlobalEnvironment, BaseEnvironment->frame()),
+		  true);
 }
 
 SEXP R_EmptyEnv = EmptyEnvironment;
