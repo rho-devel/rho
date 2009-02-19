@@ -1239,8 +1239,8 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
 	newenv = new Environment(0);
-	frameReadPairList(newenv->frame(),
-			  static_cast<PairList*>(duplicate(CAR(args))));
+	GCRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
+	frameReadPairList(newenv->frame(), dupcar);
 	newenv->expose();
     } else if (isEnvironment(CAR(args))) {
 	SEXP p, loadenv = CAR(args);
