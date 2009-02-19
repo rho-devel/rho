@@ -1371,6 +1371,7 @@ SEXP R_do_new_object(SEXP class_def)
     value = duplicate(R_do_slot(class_def, s_prototype));
     if(TYPEOF(value) == S4SXP || getAttrib(e, R_packageSymbol) != R_NilValue)
     { /* Anything but an object from a base "class" (numeric, matrix,..) */
+	GCRoot<> valrt(value);
 	setAttrib(value, R_ClassSymbol, e);
 	SET_S4_OBJECT(value);
     }
