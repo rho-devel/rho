@@ -273,14 +273,14 @@ namespace CXXR {
 	     *
 	     * If the Binding's value is a Promise, the Promise is
 	     * forced within a specified Environment \a env, and the
-	     * test is then applied to the result of evaluating the
+	     * predicate is then applied to the result of evaluating the
 	     * Promise.
 	     *
 	     * If a read monitor is set, the monitor is called only if
 	     * the test succeeds.
 	     *
-	     * @param UnaryPredicate A function or function type
-	     *          capable of accepting const RObject* and
+	     * @param UnaryPredicate A type of function or function
+	     *          object capable of accepting const RObject* and
 	     *          returning bool.
 	     *
 	     * @param env Environment to be used for forcing Promises.

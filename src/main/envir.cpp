@@ -404,7 +404,7 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = static_cast<Environment*>(rho);
-    Frame::Binding* bdg = findBinding(sym, env).first;
+    Frame::Binding* bdg = findBinding(sym, env).second;
     return (bdg ? bdg->value() : R_UnboundValue);
 }
 
@@ -419,68 +419,109 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
 */
 
+namespace {
+    // Predicate used to test whether a Binding's value is of a
+    // specified type.
+    class TypeTester : public unary_function<RObject*, bool> {
+    public:
+	TypeTester(SEXPTYPE type)
+	    : m_type(type)
+	{}
+
+	bool operator()(const RObject* obj);
+    private:
+	SEXPTYPE m_type;
+    };
+
+    bool TypeTester::operator()(const RObject* obj)
+    {
+	if (m_type == ANYSXP)
+	    return true;
+	if (!obj)
+	    return m_type == NILSXP;
+	if (obj->sexptype() == m_type)
+	    return true;
+	if (m_type == FUNSXP && FunctionBase::isA(obj))
+	    return true;
+	return false;
+    }
+}
+
 SEXP CXXRnot_hidden
 findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
 {
-    SEXP vl;
-    while (rho != R_EmptyEnv) {
-	vl = findVarInFrame3(rho, symbol, TRUE);
-	if (vl != R_UnboundValue) {
-	    if (mode == ANYSXP) return vl;
-	    if (TYPEOF(vl) == PROMSXP) {
-		PROTECT(vl);
-		vl = eval(vl, rho);
-		UNPROTECT(1);
-	    }
-	    if (TYPEOF(vl) == mode) return vl;
-	    if (mode == FUNSXP && (TYPEOF(vl) == CLOSXP ||
-				   TYPEOF(vl) == BUILTINSXP ||
-				   TYPEOF(vl) == SPECIALSXP))
-		return (vl);
-	}
-	if (inherits)
-	    rho = ENCLOS(rho);
-	else
-	    return (R_UnboundValue);
+    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    TypeTester typetest(mode);
+    pair<bool, RObject*> pr(false, 0);
+    if (inherits)
+	pr = findTestedValue(sym, env, typetest);
+    else {
+	Frame::Binding* bdg = env->frame()->binding(sym);
+	if (bdg)
+	    pr = bdg->testedValue(env, typetest);
     }
-    return (R_UnboundValue);
+    return (pr.first ? pr.second : R_UnboundValue);
 }
+
 
 /*
  *  ditto, but check *mode* not *type*
  */
 
+namespace {
+    // Predicate used to test whether a Binding's value is of a
+    // specified mode.
+    class ModeTester : public unary_function<RObject*, bool> {
+    public:
+	ModeTester(SEXPTYPE mode);
+
+	bool operator()(const RObject* obj);
+    private:
+	SEXPTYPE m_mode;
+    };
+
+    ModeTester::ModeTester(SEXPTYPE mode)
+	: m_mode(mode)
+    {
+	if (mode == INTSXP) m_mode = REALSXP;
+	if (mode == CLOSXP || mode == BUILTINSXP || mode == SPECIALSXP)
+	    m_mode = FUNSXP;
+    }
+
+    bool ModeTester::operator()(const RObject* obj)
+    {
+	if (m_mode == ANYSXP)
+	    return true;
+	if (!obj)
+	    return m_mode == NILSXP;
+	SEXPTYPE ost = obj->sexptype();
+	if (ost == INTSXP)
+	    ost = REALSXP;
+	if (ost == m_mode)
+	    return true;
+	if (m_mode == FUNSXP && FunctionBase::isA(obj))
+	    return true;
+	return false;
+    }
+}
+
 static SEXP
 findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	     Rboolean doGet)
 {
-    SEXP vl;
-    SEXPTYPE tl;
-    if (mode == INTSXP) mode = REALSXP;
-    if (mode == FUNSXP || mode ==  BUILTINSXP || mode == SPECIALSXP)
-	mode = CLOSXP;
-    while (rho != R_EmptyEnv) {
-	vl = findVarInFrame3(rho, symbol, doGet);
-
-	if (vl != R_UnboundValue) {
-	    if (mode == ANYSXP) return vl;
-	    if (TYPEOF(vl) == PROMSXP) {
-		PROTECT(vl);
-		vl = eval(vl, rho);
-		UNPROTECT(1);
-	    }
-	    tl = TYPEOF(vl);
-	    if (tl == INTSXP) tl = REALSXP;
-	    if (tl == FUNSXP || tl ==  BUILTINSXP || tl == SPECIALSXP)
-		tl = CLOSXP;
-	    if (tl == mode) return vl;
-	}
-	if (inherits)
-	    rho = ENCLOS(rho);
-	else
-	    return (R_UnboundValue);
+    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    ModeTester modetest(mode);
+    pair<bool, RObject*> pr(false, 0);
+    if (inherits)
+	pr = findTestedValue(sym, env, modetest);
+    else {
+	Frame::Binding* bdg = env->frame()->binding(sym);
+	if (bdg)
+	    pr = bdg->testedValue(env, modetest);
     }
-    return (R_UnboundValue);
+    return (pr.first ? pr.second : R_UnboundValue);
 }
 
 
@@ -625,16 +666,9 @@ SEXP findFun(SEXP symbol, SEXP rho)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     FunctionTester functest(sym);
-    while (env) {
-	pair<Frame::Binding*, Environment*> pr = findBinding(sym, env);
-	env = pr.second;
-	if (env) {
-	    pair<bool, RObject*> tv = pr.first->testedValue(env, functest);
-	    if (tv.first)
-		return tv.second;
-	    env = env->enclosingEnvironment();
-	}
-    }
+    pair<Environment*, RObject*> pr = findTestedValue(sym, env, functest);
+    if (pr.first)
+	return pr.second;
     error(_("could not find function \"%s\""), sym->name()->c_str());
     /* NOT REACHED */
     return R_UnboundValue;
@@ -685,9 +719,9 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    pair<Frame::Binding*, Environment*> pr = findBinding(sym, env);
-    Frame::Binding* bdg = pr.first;
-    env = pr.second;
+    pair<Environment*, Frame::Binding*> pr = findBinding(sym, env);
+    Frame::Binding* bdg = pr.second;
+    env = pr.first;
     if (!env) {
 	env = GlobalEnvironment;
 	bdg = env->frame()->obtainBinding(sym);

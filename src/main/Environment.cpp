@@ -118,27 +118,27 @@ void Environment::visitChildren(const_visitor* v) const
 // ***** Free-standing functions *****
 
 namespace CXXR {
-    pair<Frame::Binding*, Environment*>
+    pair<Environment*, Frame::Binding*>
     findBinding(const Symbol* symbol, Environment* env)
     {
 	while (env) {
 	    Frame::Binding* bdg = env->frame()->binding(symbol);
 	    if (bdg)
-		return make_pair(bdg, env);
+		return make_pair(env, bdg);
 	    env = env->enclosingEnvironment();
 	}
-	return pair<Frame::Binding*, Environment*>(0, 0);
+	return pair<Environment*, Frame::Binding*>(0, 0);
     }
 
-    pair<const Frame::Binding*, const Environment*>
+    pair<const Environment*, const Frame::Binding*>
     findBinding(const Symbol* symbol, const Environment* env)
     {
 	while (env) {
 	    const Frame::Binding* bdg = env->frame()->binding(symbol);
 	    if (bdg)
-		return make_pair(bdg, env);
+		return make_pair(env, bdg);
 	    env = env->enclosingEnvironment();
 	}
-	return pair<const Frame::Binding*, const Environment*>(0, 0);
+	return pair<const Environment*, const Frame::Binding*>(0, 0);
     }
 }

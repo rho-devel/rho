@@ -223,7 +223,7 @@ namespace CXXR {
      * whose frame the Binding was found, or a null pointer if no
      * Binding was found.
      */
-    std::pair<Frame::Binding*, Environment*>
+    std::pair<Environment*, Frame::Binding*>
     findBinding(const Symbol* symbol, Environment* env);
 
     /** @brief Search for a Binding for a Symbol (const variant).
@@ -243,8 +243,65 @@ namespace CXXR {
      * whose Frame the Binding was found, or a null pointer if no
      * Binding was found.
      */
-    std::pair<const Frame::Binding*, const Environment*>
+    std::pair<const Environment*, const Frame::Binding*>
     findBinding(const Symbol* symbol, const Environment* env);
+
+    /** @brief Search for a Binding whose value satisfies a predicate.
+     *
+     * This function looks for a Binding of \a symbol, and tests
+     * whether the Binding's value satisfies a predicate \a pred.  The
+     * search propagates as necessary to enclosing environments until
+     * either a Binding satisfying the predicate is found, or the
+     * chain of enclosing environments is exhausted.
+     *
+     * If a Binding of \a symbol to a Promise is encountered, the
+     * Promise is forced (within the Binding's environment) before
+     * applying the predicate to the result of evaluating the Promise.
+     * In this case, if the predicate is satisfied, the result of
+     * evaluating the Promise is part of the returned value.
+     *
+     * If a read monitor is set, it is called only when a Binding
+     * satisfying the predicate is found.
+     *
+     * @param UnaryPredicate A type of function or function object
+     *          capable of accepting const RObject* and returning
+     *          bool.
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Pointer to the Environment in which the search for a
+     *          Binding is to start.
+     *
+     * @param pred The UnaryPredicate object to be used to test
+     *          candidate values.
+     *
+     * @return If a Binding satisfying the predicate was found, the
+     * first element of of the pair is a pointer to the Environment in
+     * which it was found, and the second element is the value of the
+     * Binding, except that if the value was a Promise, the second
+     * element is the result of evaluating the Promise.  If no Binding
+     * satisfying the predicate was found, both elements of the pair
+     * are null pointers.
+     */
+    template <typename UnaryPredicate>
+    std::pair<Environment*, RObject*>
+    findTestedValue(const Symbol* symbol, Environment* env,
+		    UnaryPredicate pred)
+    {
+	using namespace std;
+	while (env) {
+	    Frame::Binding* bdg = env->frame()->binding(symbol);
+	    if (bdg) {
+		pair<bool, RObject*> tv = bdg->testedValue(env, pred);
+		if (tv.first)
+		    return make_pair(env, tv.second);
+	    }
+	    env = env->enclosingEnvironment();
+	}
+	return pair<Environment*, RObject*>(0, 0);
+    }
+	    
 
     // Predefined environments visible in 'namespace CXXR':
     extern const GCRoot<Environment> EmptyEnvironment;
