@@ -531,7 +531,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(TYPEOF(CAR(s)) == DOTSXP) {
 		for(i = 1, a = CAR(s); a != R_NilValue;
 		    a = CDR(a), i++, m = CDR(m)) {
-		    SET_TAG(m, Symbol::obtainDDSymbol(i));
+		    SET_TAG(m, Symbol::obtainDotDotSymbol(i));
 		    SETCAR(m, CAR(a));
 		}
 	    } else {

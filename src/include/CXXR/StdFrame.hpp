@@ -84,6 +84,7 @@ namespace CXXR {
 	void lockBindings();
 	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
+	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;

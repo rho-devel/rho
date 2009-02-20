@@ -79,7 +79,7 @@ namespace CXXR {
      *
      * Dot-dot symbols have names of the form '<tt>..</tt><i>n</i>',
      * where <i>n</i> is a positive integer.  These are preferably
-     * generated using the static member function obtainDDSymbol()
+     * generated using the static member function obtainDotDotSymbol()
      * (though they can also be generated using obtain() ), and are
      * used internally by the interpreter to refer to elements of a
      * '<tt>...</tt>' argument list.  (Note that CR does not
@@ -135,7 +135,7 @@ namespace CXXR {
 	 * @return true iff this symbol relates to an element of a
 	 *         <tt>...</tt> argument list.
 	 */
-	bool isDDSymbol() const
+	bool isDotDotSymbol() const
 	{
 	    return m_dd_symbol;
 	}
@@ -183,7 +183,7 @@ namespace CXXR {
 	 * @return a pointer to the created symbol, whose name will be
 	 * <tt>..</tt><i>n</i>.
 	 */
-	static Symbol* obtainDDSymbol(unsigned int n);
+	static Symbol* obtainDotDotSymbol(unsigned int n);
 
 	/** @brief Restart token.
 	 *
@@ -274,6 +274,30 @@ namespace CXXR {
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
     };
+
+    /** @brief Does Symbol's name start with '.'?
+     *
+     * @param symbol pointer to Symbol to be tested, or a null pointer
+     *          in which case the function returns false.
+     *
+     * @return true if the Symbol's name starts with '.'.
+     */
+    inline bool isDotSymbol(const Symbol* symbol)
+    {
+	return symbol && symbol->name()->c_str()[0] == '.';
+    }
+
+    /** @brief Does Symbol's name start with '..'?
+     *
+     * @param symbol pointer to Symbol to be tested, or a null pointer
+     *          in which case the function returns false.
+     *
+     * @return true if the Symbol's name starts with '..'.
+     */
+    inline bool isDotDotSymbol(const Symbol* symbol)
+    {
+	return symbol && symbol->isDotDotSymbol();
+    }
 }  // namespace CXXR
 
 extern "C" {
@@ -315,7 +339,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return Rboolean(sym.isDDSymbol());
+	return Rboolean(sym.isDotDotSymbol());
     }
 #endif
 

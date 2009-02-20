@@ -106,7 +106,7 @@ Symbol* Symbol::obtain(const CachedString* name)
     return val.second;
 }
 
-Symbol* Symbol::obtainDDSymbol(unsigned int n)
+Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
 {
     if (n == 0)
 	Rf_error(_("..0 is not a permitted symbol name"));

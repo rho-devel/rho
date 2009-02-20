@@ -137,6 +137,17 @@ size_t StdFrame::size() const
     return m_map.size();
 }
 
+vector<const Symbol*> StdFrame::symbols(bool include_dotsymbols) const
+{
+    vector<const Symbol*> ans;
+    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
+	const Symbol* symbol = (*it).first;
+	if (include_dotsymbols || !isDotSymbol(symbol))
+	    ans.push_back(symbol);
+    }
+    return ans;
+}
+
 void StdFrame::visitChildren(const_visitor* v) const
 {
     Frame::visitChildren(v);

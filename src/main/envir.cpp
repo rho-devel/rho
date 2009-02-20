@@ -1476,28 +1476,16 @@ SEXP CXXRnot_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_lsInternal(env, Rboolean(all));
 }
 
-/* takes a *list* of environments and a boolean indicating whether to get all
-   names */
 SEXP R_lsInternal(SEXP env, Rboolean all)
 {
-    int  k;
-    SEXP ans;
-
-
-    /* Step 1 : Compute the Vector Size */
-    k = 0;
-    if (isEnvironment(env)) {
-	k += FrameSize(FRAME(env), all);
-    }
-    else
+    if (!isEnvironment(env))
 	error(_("invalid '%s' argument"), "envir");
-
-    /* Step 2 : Allocate and Fill the Result */
-    PROTECT(ans = allocVector(STRSXP, k));
-    k = 0;
-    FrameNames(FRAME(env), all, ans, &k);
-
-    UNPROTECT(1);
+    const Environment* envir = static_cast<Environment*>(env);
+    vector<const Symbol*> syms = envir->frame()->symbols(all);
+    size_t sz = syms.size();
+    GCRoot<StringVector> ans(new StringVector(sz));
+    for (unsigned int i = 0; i < sz; ++i)
+	(*ans)[i] = const_cast<CachedString*>(syms[i]->name());
     sortVector(ans, FALSE);
     return ans;
 }

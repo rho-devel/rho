@@ -543,6 +543,17 @@ namespace CXXR {
 	 * this Frame.
 	 */
 	virtual size_t size() const = 0;
+
+	/** @brief Symbols bound by this Frame.
+	 *
+	 * @param include_dotsymbols If false, any Symbol whose name
+	 * begins with '.' will not be included in the result.
+	 *
+	 * @return A vector containing pointers to the Symbol objects
+	 * bound by this Frame.
+	 */
+	virtual std::vector<const Symbol*>
+	symbols(bool include_dotsymbols) const = 0;
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
