@@ -200,7 +200,7 @@ namespace CXXR {
 	    return (*s_roots)[m_index];
 	}
     private:
-	friend class GCNode::SchwarzCtr;
+	friend class GCNode;
 
 	// Note that we deliberately do not use CXXR::Allocator in
 	// declaring the following vectors: we really don't want a

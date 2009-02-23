@@ -42,6 +42,7 @@
 #define GCNODE_HPP
 
 #include "CXXR/MemoryBank.hpp"
+#include "CXXR/SchwarzCounter.hpp"
 
 #define EXPEL_OLD_TO_NEW
 
@@ -178,21 +179,6 @@ namespace CXXR {
      */
     class GCNode {
     public:
-	/** @brief Schwarz counter for managing static data associated
-	 * with garbage collection.
-	 *
-	 * (See MemoryBank::SchwarzCtr for a description of how
-	 * Schwarz counters work.)
-	 */
-	class SchwarzCtr {
-	public:
-	    SchwarzCtr();
-
-	    ~SchwarzCtr();
-	private:
-	    static unsigned int s_count;
-	};
-
 	/** @brief Abstract base class for the Visitor design pattern.
 	 *
 	 * See Gamma et al 'Design Patterns' Ch. 5 for a description
@@ -573,12 +559,12 @@ namespace CXXR {
 
 	void unmark() const {m_marked = false;}
 
-	friend class SchwarzCtr;
+	friend class SchwarzCounter<GCNode>;
     };
 }  // namespace CXXR
 
 namespace {
-    CXXR::GCNode::SchwarzCtr gcnode_schwarz_ctr;
+    CXXR::SchwarzCounter<CXXR::GCNode> gcnode_schwarz_ctr;
 }
 
 #endif /* GCNODE_HPP */

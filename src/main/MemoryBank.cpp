@@ -45,7 +45,8 @@
 using namespace std;
 using namespace CXXR;
 
-unsigned int MemoryBank::SchwarzCtr::s_count = 0;
+//template <> unsigned int SchwarzCounter<MemoryBank>::s_count = 0;
+
 size_t MemoryBank::s_blocks_allocated = 0;
 size_t MemoryBank::s_bytes_allocated = 0;
 size_t MemoryBank::s_gc_threshold = numeric_limits<size_t>::max();
@@ -78,16 +79,6 @@ const unsigned int MemoryBank::s_pooltab[]
    9, 9, 9, 9, 9, 9, 9, 9,
    9, 9, 9, 9, 9, 9, 9, 9}; // 128
 
-MemoryBank::SchwarzCtr::SchwarzCtr()
-{
-    if (!s_count++) MemoryBank::initialize();
-}
-
-MemoryBank::SchwarzCtr::~SchwarzCtr()
-{
-    if (!--s_count) MemoryBank::cleanup();
-}
-    
 void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 {
 #ifdef R_MEMORY_PROFILING

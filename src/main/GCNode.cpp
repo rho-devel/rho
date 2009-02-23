@@ -49,29 +49,12 @@
 using namespace std;
 using namespace CXXR;
 
-unsigned int GCNode::SchwarzCtr::s_count = 0;
 unsigned int GCNode::s_num_generations = 0;
 const GCNode** GCNode::s_generation;
 unsigned int* GCNode::s_next_gen;
 unsigned int* GCNode::s_gencount;
 size_t GCNode::s_num_nodes;
 GCNode::AgedList* GCNode::s_aged_list;
-
-GCNode::SchwarzCtr::SchwarzCtr()
-{
-    if (!s_count++) {
-	GCNode::initialize();
-	GCRootBase::initialize();
-    }
-}
-
-GCNode::SchwarzCtr::~SchwarzCtr()
-{
-    if (!--s_count) {
-	GCRootBase::cleanup();
-	GCNode::cleanup();
-    }
-}
 
 GCNode::GCNode(int)
     : m_next(0), m_gcgen(0), m_marked(false), m_aged(false)
@@ -158,6 +141,7 @@ bool GCNode::check()
 
 void GCNode::cleanup()
 {
+    GCRootBase::cleanup();
     delete s_aged_list;
     delete [] s_gencount;
     delete [] s_next_gen;
@@ -180,6 +164,7 @@ void GCNode::initialize()
     }
     s_next_gen[0] = 0;
     s_next_gen[s_num_generations - 1] = s_num_generations - 1;
+    GCRootBase::initialize();
 }
 
 void GCNode::nodeCheck(const GCNode* node)
