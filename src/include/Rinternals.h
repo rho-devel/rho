@@ -70,6 +70,7 @@
 #include "CXXR/CachedString.h"
 #include "CXXR/Closure.h"
 #include "CXXR/ComplexVector.h"
+#include "CXXR/DotInternal.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"

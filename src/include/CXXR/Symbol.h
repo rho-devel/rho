@@ -61,12 +61,6 @@ namespace CXXR {
      * invariant that there is a most one Symbol object with a given
      * name (but this does not apply to special symbols).
      *
-     * Currently CXXR follows CR in having a Symbol object optionally
-     * contain a pointer to a function, which is the function invoked
-     * when the Symbol is used as the operator in a call to R's \c
-     * .Internal() function.  However, in the future CXXR will handle
-     * this function mapping outside the Symbol class.
-     *
      * Symbols come in two varieties, standard symbols and special
      * symbols, both implemented by this class.  Dot-dot symbols are a
      * subvariety of standard symbols.
@@ -118,16 +112,6 @@ namespace CXXR {
 	static const_iterator end()
 	{
 	    return s_table.end();
-	}
-
-	/** @brief Access internal function.
-	 *
-	 * @return const pointer to the internal function (if any)
-	 *         denoted by this Symbol.
-	 */
-	const BuiltInFunction* internalFunction() const
-	{
-	    return m_internalfunc;
 	}
 
 	/** @brief Is this a double-dot symbol?
@@ -194,22 +178,6 @@ namespace CXXR {
 	    return s_restart_token;
 	}
 
-	/** @brief Set internal function.
-	 *
-	 * @param func Pointer to the internal function now to be
-	 *          denoted by this symbol.  A null pointer is
-	 *          permissible.
-	 *
-	 * @note It would be better if this was set exclusively during
-	 * construction.
-	 */
-	void setInternalFunction(const BuiltInFunction* fun)
-	{
-	    errorIfFrozen();
-	    m_internalfunc = fun;
-	    propagateAge(m_internalfunc);
-	}
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -248,7 +216,6 @@ namespace CXXR {
 	static GCRoot<Symbol> s_unbound_value;
 
 	const CachedString* m_name;
-	const BuiltInFunction* m_internalfunc;
 	bool m_dd_symbol;
 
 	/**
@@ -343,25 +310,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Internal function value.
-     *
-     * @param x Pointer to a CXXR::Symbol (checked).
-     *
-     * @return If \a x denotes an internal function, a pointer to
-     *         the appropriate CXXR::BuiltInFunction, otherwise a null
-     *         pointer..
-     */
-#ifndef __cplusplus
-    SEXP INTERNAL(SEXP x);
-#else
-    inline SEXP INTERNAL(SEXP x)
-    {
-	using namespace CXXR;
-	Symbol& sym = *SEXP_downcast<Symbol*>(x);
-	return const_cast<BuiltInFunction*>(sym.internalFunction());
-    }
-#endif
-
     /** @brief Test if SYMSXP.
      *
      * @param s Pointer to a CXXR::RObject.
@@ -394,39 +342,6 @@ extern "C" {
 	return const_cast<CachedString*>(sym.name());
     }
 #endif
-
-    /** @brief Set internal function denoted by a symbol.
-     *
-     * @param x Pointer to a CXXR::Symbol (checked).
-     *
-     * @param func Pointer to the CXXR::BuiltInFunction (checked) to
-     *          be denoted by this symbol.  A null pointer is
-     *          permissible.
-     *
-     * @note It would be better if this was set exclusively during
-     * construction.
-     */
-    void SET_INTERNAL(SEXP x, SEXP v);
-
-    /** @brief Set symbol's value.
-     *
-     * @param x Pointer to a CXXR::Symbol (checked).
-     *
-     * @param val Pointer to the RObject now to be considered as
-     *            the value of this symbol.  A null pointer or
-     *            R_UnboundValue are permissible values of \a val.
-     */
-    void SET_SYMVALUE(SEXP x, SEXP v);
-
-    /** @brief Symbol value.
-     *
-     * @param x Pointer to a CXXR::Symbol (checked).
-     *
-     * @return Pointer to a CXXR::RObject representings \a x's value.
-     *         Returns R_UnboundValue if no value is currently
-     *         associated with the Symbol.
-     */
-    SEXP SYMVALUE(SEXP x);
 
 #ifdef __cplusplus
 }

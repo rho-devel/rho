@@ -52,7 +52,6 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*DDVALp)(SEXP x) = DDVAL;
-	SEXP (*INTERNALp)(SEXP x) = INTERNAL;
 	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
     }
@@ -80,7 +79,7 @@ namespace {
 }
 
 Symbol::Symbol(const CachedString* name, bool frozen)
-    : RObject(SYMSXP), m_name(name), m_internalfunc(0)
+    : RObject(SYMSXP), m_name(name)
 {
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
@@ -125,7 +124,6 @@ void Symbol::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
     m_name->conductVisitor(v);
-    if (m_internalfunc) m_internalfunc->conductVisitor(v);
 }
 
 void Symbol::visitTable(const_visitor* v)
@@ -141,13 +139,4 @@ void Symbol::visitTable(const_visitor* v)
         if (symbol) symbol->conductVisitor(v);
 	else (*it).first->conductVisitor(v);
     }
-}
-
-// ***** C interface *****
-
-void SET_INTERNAL(SEXP x, SEXP v)
-{
-    Symbol& sym = *SEXP_downcast<Symbol*>(x);
-    BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
-    sym.setInternalFunction(fun);
 }

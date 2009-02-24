@@ -30,7 +30,7 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 ## Partially included by the API (1) headers in .., but not part of the
 ## API per se. 
 CXXR_HEADERS = \
-  CachedString.h Closure.h ComplexVector.h ConsCell.h \
+  CachedString.h Closure.h ComplexVector.h ConsCell.h DotInternal.h \
   Environment.h Expression.h ExpressionVector.h ExternalPointer.h \
   FunctionBase.h GCRoot.h \
   IntVector.h \

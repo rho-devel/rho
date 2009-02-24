@@ -33,7 +33,7 @@ SOURCES_CXX = \
 	BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CachedString.cpp CellHeap.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
-	DottedArgs.cpp \
+	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp ExitException.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp \

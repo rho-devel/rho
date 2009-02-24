@@ -1430,7 +1430,7 @@ static void FrameValues(SEXP frame, int all, SEXP values, int *indx)
 
 static bool BuiltinTest(const Symbol* sym, bool all, bool intern)
 {
-    if (intern && sym->internalFunction())
+    if (intern && DotInternalTable::get(sym))
 	return true;
     if ((all || sym->name()->c_str()[0] != '.')
 	&& SYMVALUE(const_cast<Symbol*>(sym)) != R_UnboundValue)
