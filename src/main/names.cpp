@@ -1022,37 +1022,6 @@ static void installFunTab(int i)
 		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
 }
 
-static void SymbolShortcuts(void)
-{
-    R_Bracket2Symbol = install("[[");
-    R_BracketSymbol = install("[");
-    R_BraceSymbol = install("{");
-    R_TmpvalSymbol = install("*tmp*");
-    R_ClassSymbol = install("class");
-    R_DimNamesSymbol = install("dimnames");
-    R_DimSymbol = install("dim");
-    R_DollarSymbol = install("$");
-    R_DotsSymbol = install("...");
-    R_DropSymbol = install("drop");
-    R_ExactSymbol = install("exact");
-    R_LevelsSymbol = install("levels");
-    R_ModeSymbol = install("mode");
-    R_NamesSymbol = install("names");
-    R_NaRmSymbol = install("na.rm");
-    R_RowNamesSymbol = install("row.names");
-    R_SeedsSymbol = install(".Random.seed");
-    R_LastvalueSymbol = install(".Last.value");
-    R_TspSymbol = install("tsp");
-    R_CommentSymbol = install("comment");
-    R_SourceSymbol = install("source");
-    R_DotEnvSymbol = install(".Environment");
-    R_RecursiveSymbol = install("recursive");
-    R_UseNamesSymbol = install("use.names");
-    R_RowNamesSymbol = install("row.names");
-    R_SrcfileSymbol = install("srcfile");
-    R_SrcrefSymbol = install("srcref");
-}
-
 extern SEXP framenames; /* from model.c */
 
 /* initialize the symbol table */
@@ -1065,9 +1034,6 @@ void InitNames()
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /* Set up a set of globals so that a symbol table search can be
-       avoided when matching something like dim or dimnames. */
-    SymbolShortcuts();
     /*  Builtin Functions */
     for (i = 0; R_FunTab[i].name; i++)
 	installFunTab(i);
@@ -1088,8 +1054,7 @@ SEXP install(const char *name)
 	error(_("attempt to use zero-length variable name"));
     if (strlen(name) > MAXIDSIZE)
 	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
-    GCRoot<const CachedString> namestr(CachedString::obtain(name));
-    return Symbol::obtain(namestr);
+    return Symbol::obtain(name);
 }
 
 

@@ -303,7 +303,7 @@ namespace CXXR {
     }
 	    
 
-    // Predefined environments visible in 'namespace CXXR':
+    // Predefined Environments visible in 'namespace CXXR':
     extern const GCRoot<Environment> EmptyEnvironment;
     extern const GCRoot<Environment> BaseEnvironment;
     extern const GCRoot<Environment> GlobalEnvironment;

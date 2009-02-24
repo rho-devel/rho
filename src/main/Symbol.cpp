@@ -105,6 +105,12 @@ Symbol* Symbol::obtain(const CachedString* name)
     return val.second;
 }
 
+Symbol* Symbol::obtain(const std::string& name)
+{
+    GCRoot<const CachedString> str(CachedString::obtain(name));
+    return Symbol::obtain(str);
+}
+
 Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
 {
     if (n == 0)
@@ -140,3 +146,66 @@ void Symbol::visitTable(const_visitor* v)
 	else (*it).first->conductVisitor(v);
     }
 }
+
+// Predefined Symbols:
+namespace CXXR {
+    const GCRoot<Symbol> Bracket2Symbol(Symbol::obtain("[["), true);
+    const GCRoot<Symbol> BracketSymbol(Symbol::obtain("["), true);
+    const GCRoot<Symbol> BraceSymbol(Symbol::obtain("{"), true);
+    const GCRoot<Symbol> TmpvalSymbol(Symbol::obtain("*tmp*"), true);
+    const GCRoot<Symbol> ClassSymbol(Symbol::obtain("class"), true);
+    const GCRoot<Symbol> DimNamesSymbol(Symbol::obtain("dimnames"), true);
+    const GCRoot<Symbol> DimSymbol(Symbol::obtain("dim"), true);
+    const GCRoot<Symbol> DollarSymbol(Symbol::obtain("$"), true);
+    const GCRoot<Symbol> DotsSymbol(Symbol::obtain("..."), true);
+    const GCRoot<Symbol> DropSymbol(Symbol::obtain("drop"), true);
+    const GCRoot<Symbol> ExactSymbol(Symbol::obtain("exact"), true);
+    const GCRoot<Symbol> LevelsSymbol(Symbol::obtain("levels"), true);
+    const GCRoot<Symbol> ModeSymbol(Symbol::obtain("mode"), true);
+    const GCRoot<Symbol> NamesSymbol(Symbol::obtain("names"), true);
+    const GCRoot<Symbol> NaRmSymbol(Symbol::obtain("na.rm"), true);
+    const GCRoot<Symbol> RowNamesSymbol(Symbol::obtain("row.names"), true);
+    const GCRoot<Symbol> SeedsSymbol(Symbol::obtain(".Random.seed"), true);
+    const GCRoot<Symbol> LastvalueSymbol(Symbol::obtain(".Last.value"), true);
+    const GCRoot<Symbol> TspSymbol(Symbol::obtain("tsp"), true);
+    const GCRoot<Symbol> CommentSymbol(Symbol::obtain("comment"), true);
+    const GCRoot<Symbol> SourceSymbol(Symbol::obtain("source"), true);
+    const GCRoot<Symbol> DotEnvSymbol(Symbol::obtain(".Environment"), true);
+    const GCRoot<Symbol> RecursiveSymbol(Symbol::obtain("recursive"), true);
+    const GCRoot<Symbol> UseNamesSymbol(Symbol::obtain("use.names"), true);
+    const GCRoot<Symbol> SrcfileSymbol(Symbol::obtain("srcfile"), true);
+    const GCRoot<Symbol> SrcrefSymbol(Symbol::obtain("srcref"), true);
+}
+
+// ***** C interface *****
+
+SEXP R_Bracket2Symbol = CXXR::Bracket2Symbol;
+SEXP R_BracketSymbol = CXXR::BracketSymbol;
+SEXP R_BraceSymbol = CXXR::BraceSymbol;
+SEXP R_ClassSymbol = CXXR::ClassSymbol;
+SEXP R_DimNamesSymbol = CXXR::DimNamesSymbol;
+SEXP R_DimSymbol = CXXR::DimSymbol;
+SEXP R_DollarSymbol = CXXR::DollarSymbol;
+SEXP R_DotsSymbol = CXXR::DotsSymbol;
+SEXP R_DropSymbol = CXXR::DropSymbol;
+SEXP R_LevelsSymbol = CXXR::LevelsSymbol;
+SEXP R_ModeSymbol = CXXR::ModeSymbol;
+SEXP R_NamesSymbol = CXXR::NamesSymbol;
+SEXP R_RowNamesSymbol = CXXR::RowNamesSymbol;
+SEXP R_SeedsSymbol = CXXR::SeedsSymbol;
+SEXP R_TspSymbol = CXXR::TspSymbol;
+
+SEXP R_CommentSymbol = CXXR::CommentSymbol;
+SEXP R_DotEnvSymbol = CXXR::DotEnvSymbol;
+SEXP R_ExactSymbol = CXXR::ExactSymbol;
+SEXP R_LastvalueSymbol = CXXR::LastvalueSymbol;
+SEXP R_NaRmSymbol = CXXR::NaRmSymbol;
+SEXP R_RecursiveSymbol = CXXR::RecursiveSymbol;
+SEXP R_SourceSymbol = CXXR::SourceSymbol;
+SEXP R_SrcfileSymbol = CXXR::SrcfileSymbol;
+SEXP R_SrcrefSymbol = CXXR::SrcrefSymbol;
+SEXP R_TmpvalSymbol = CXXR::TmpvalSymbol;
+SEXP R_UseNamesSymbol = CXXR::UseNamesSymbol;
+
+// Rf_install() is currently defined in main.cpp
+

@@ -153,11 +153,24 @@ namespace CXXR {
 	 *          symbol name.
 	 *
 	 * @return Pointer to a Symbol (preexisting or newly
-	 * created) with the required name.  If a symbol is newly
-	 * created, it will have value Symbol::unboundValue(), and
-	 * the internal function will be a null pointer.
+	 * created) with the required name.
 	 */
 	static Symbol* obtain(const CachedString* name);
+
+	/** @brief Get a pointer to a regular Symbol object.
+	 *
+	 * If no Symbol with the specified name currently exists, one
+	 * will be created, and a pointer to it returned.  Otherwise a
+	 * pointer to the existing Symbol will be returned.
+	 *
+	 * @param name The name of the required Symbol (CE_NATIVE
+	 *          encoding is assumed).  At present no check is made
+	 *          that the supplied string is a valid symbol name.
+	 *
+	 * @return Pointer to a Symbol (preexisting or newly
+	 * created) with the required name.
+	 */
+	static Symbol* obtain(const std::string& name);
 
 	/** @brief Create a double-dot symbol.
 	 *
@@ -265,6 +278,34 @@ namespace CXXR {
     {
 	return symbol && symbol->isDotDotSymbol();
     }
+
+    // Predefined Symbols visible in 'namespace CXXR':
+    extern const GCRoot<Symbol> Bracket2Symbol;   // "[["
+    extern const GCRoot<Symbol> BracketSymbol;    // "["
+    extern const GCRoot<Symbol> BraceSymbol;      // "{"
+    extern const GCRoot<Symbol> ClassSymbol;	  // "class"
+    extern const GCRoot<Symbol> DimNamesSymbol;   // "dimnames"
+    extern const GCRoot<Symbol> DimSymbol;	  // "dim"
+    extern const GCRoot<Symbol> DollarSymbol;	  // "$"
+    extern const GCRoot<Symbol> DotsSymbol;	  // "..."
+    extern const GCRoot<Symbol> DropSymbol;	  // "drop"
+    extern const GCRoot<Symbol> ExactSymbol;      // "exact"
+    extern const GCRoot<Symbol> LevelsSymbol;	  // "levels"
+    extern const GCRoot<Symbol> ModeSymbol;	  // "mode"
+    extern const GCRoot<Symbol> NamesSymbol;	  // "names"
+    extern const GCRoot<Symbol> NaRmSymbol;       // "ra.rm"
+    extern const GCRoot<Symbol> RowNamesSymbol;   // "row.names"
+    extern const GCRoot<Symbol> SeedsSymbol;	  // ".Random.seed"
+    extern const GCRoot<Symbol> LastvalueSymbol;  // ".Last.value"
+    extern const GCRoot<Symbol> TspSymbol;	  // "tsp"
+    extern const GCRoot<Symbol> CommentSymbol;    // "comment"
+    extern const GCRoot<Symbol> SourceSymbol;     // "source"
+    extern const GCRoot<Symbol> DotEnvSymbol;     // ".Environment"
+    extern const GCRoot<Symbol> RecursiveSymbol;  // "recursive"
+    extern const GCRoot<Symbol> SrcfileSymbol;    // "srcfile"
+    extern const GCRoot<Symbol> SrcrefSymbol;     // "srcref"
+    extern const GCRoot<Symbol> TmpvalSymbol;     // "*tmp*"
+    extern const GCRoot<Symbol> UseNamesSymbol;   // "use.names"
 }  // namespace CXXR
 
 extern "C" {
@@ -276,21 +317,21 @@ extern "C" {
     extern SEXP R_UnboundValue;
 
     /* Symbol Table Shortcuts */
-    extern SEXP R_Bracket2Symbol;   /* "[[" */
-    extern SEXP R_BracketSymbol;    /* "[" */
-    extern SEXP R_BraceSymbol;      /* "{" */
-    extern SEXP R_ClassSymbol;	/* "class" */
-    extern SEXP R_DimNamesSymbol;   /* "dimnames" */
-    extern SEXP R_DimSymbol;	/* "dim" */
-    extern SEXP R_DollarSymbol;	/* "$" */
-    extern SEXP R_DotsSymbol;	/* "..." */
-    extern SEXP R_DropSymbol;	/* "drop" */
-    extern SEXP R_LevelsSymbol;	/* "levels" */
-    extern SEXP R_ModeSymbol;	/* "mode" */
-    extern SEXP R_NamesSymbol;	/* "names" */
-    extern SEXP R_RowNamesSymbol;   /* "row.names" */
-    extern SEXP R_SeedsSymbol;	/* ".Random.seed" */
-    extern SEXP R_TspSymbol;	/* "tsp" */
+    extern SEXP R_Bracket2Symbol;  /* "[[" */
+    extern SEXP R_BracketSymbol;   /* "[" */
+    extern SEXP R_BraceSymbol;     /* "{" */
+    extern SEXP R_ClassSymbol;	   /* "class" */
+    extern SEXP R_DimNamesSymbol;  /* "dimnames" */
+    extern SEXP R_DimSymbol;	   /* "dim" */
+    extern SEXP R_DollarSymbol;	   /* "$" */
+    extern SEXP R_DotsSymbol;	   /* "..." */
+    extern SEXP R_DropSymbol;	   /* "drop" */
+    extern SEXP R_LevelsSymbol;	   /* "levels" */
+    extern SEXP R_ModeSymbol;	   /* "mode" */
+    extern SEXP R_NamesSymbol;	   /* "names" */
+    extern SEXP R_RowNamesSymbol;  /* "row.names" */
+    extern SEXP R_SeedsSymbol;	   /* ".Random.seed" */
+    extern SEXP R_TspSymbol;	   /* "tsp" */
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?
      *
@@ -309,6 +350,20 @@ extern "C" {
 	return Rboolean(sym.isDotDotSymbol());
     }
 #endif
+
+    /** @brief Get a pointer to a regular Symbol object.
+     *
+     * If no Symbol with the specified name currently exists, one will
+     * be created, and a pointer to it returned.  Otherwise a pointer
+     * to the existing Symbol will be returned.
+     *
+     * @param name The name of the required Symbol (CE_NATIVE encoding
+     *          is assumed).
+     *
+     * @return Pointer to a Symbol (preexisting or newly created) with
+     * the required name.
+     */
+    SEXP Rf_install(const char *name);
 
     /** @brief Test if SYMSXP.
      *

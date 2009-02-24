@@ -121,21 +121,6 @@ LibExport RCNTXT* R_GlobalContext;    /* The global environment */
 // Data declared LibExtern in Rinternals.h :
 
 LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
-LibExport SEXP	R_Bracket2Symbol;   /* "[[" */
-LibExport SEXP	R_BracketSymbol;    /* "[" */
-LibExport SEXP	R_BraceSymbol;      /* "{" */
-LibExport SEXP	R_ClassSymbol;	    /* "class" */
-LibExport SEXP	R_DimNamesSymbol;   /* "dimnames" */
-LibExport SEXP	R_DimSymbol;	    /* "dim" */
-LibExport SEXP	R_DollarSymbol;	    /* "$" */
-LibExport SEXP	R_DotsSymbol;	    /* "..." */
-LibExport SEXP	R_DropSymbol;	    /* "drop" */
-LibExport SEXP	R_LevelsSymbol;	    /* "levels" */
-LibExport SEXP	R_ModeSymbol;	    /* "mode" */
-LibExport SEXP	R_NamesSymbol;	    /* "names" */
-LibExport SEXP	R_RowNamesSymbol;   /* "row.names" */
-LibExport SEXP	R_SeedsSymbol;	    /* ".Random.seed" */
-LibExport SEXP	R_TspSymbol;	    /* "tsp" */
 
 // Data declared LibExtern in Defn.h :
 
@@ -174,17 +159,6 @@ double elapsedLimitValue = -1.0;
 
 // Data declared extern0 in Defn.h :
 
-attribute_hidden SEXP	R_CommentSymbol;    /* "comment" */
-attribute_hidden SEXP	R_DotEnvSymbol;     /* ".Environment" */
-attribute_hidden SEXP	R_ExactSymbol;	    /* "exact" */
-attribute_hidden SEXP	R_LastvalueSymbol;  /* ".Last.value" */
-attribute_hidden SEXP	R_NaRmSymbol;	    /* "na.rm" */
-attribute_hidden SEXP	R_RecursiveSymbol;  /* "recursive" */
-attribute_hidden SEXP	R_SourceSymbol;     /* "source" */
-attribute_hidden SEXP	R_SrcfileSymbol;    /* "srcfile" */
-attribute_hidden SEXP	R_SrcrefSymbol;     /* "srcref" */
-attribute_hidden SEXP	R_TmpvalSymbol;     /* "*tmp*" */
-attribute_hidden SEXP	R_UseNamesSymbol;   /* "use.names" */
 attribute_hidden R_size_t R_VSize  = R_VSIZE;/* Size of the vector heap */
 attribute_hidden SEXP	R_NHeap;	    /* Start of the cons cell heap */
 attribute_hidden SEXP	R_FreeSEXP;	    /* Cons cell free list */

@@ -67,7 +67,7 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-// Predefined environments:
+// Predefined Environments:
 namespace CXXR {
     const GCRoot<Environment> EmptyEnvironment(new Environment(0), true);
 
