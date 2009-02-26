@@ -260,8 +260,12 @@ namespace CXXR {
      * In this case, if the predicate is satisfied, the result of
      * evaluating the Promise is part of the returned value.
      *
-     * If a read monitor is set, it is called only when a Binding
-     * satisfying the predicate is found.
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * that Binding is called immediately afterwards.  (ii) If this
+     * function succeeds in finding a Binding satisfying the
+     * predicate, then any read monitor for that Binding is called.
      *
      * @param UnaryPredicate A type of function or function object
      *          capable of accepting const RObject* and returning

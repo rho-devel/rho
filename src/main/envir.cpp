@@ -161,7 +161,9 @@ RObject* Frame::Binding::forcedValue(const Environment* env) const
     RObject* ans = m_value;
     if (ans && ans->sexptype() == PROMSXP) {
 	GCRoot<> ansrt(ans);
+	m_frame->monitorRead(*this);
 	ans = eval(ans, const_cast<Environment*>(env));
+	m_frame->monitorWrite(*this);
     }
     return ans;
 }
