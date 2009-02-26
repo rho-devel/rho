@@ -54,10 +54,10 @@ namespace CXXR {
     /** @brief Class used to represent R symbols.
      *
      * A Symbol is an R identifier.  Each Symbol (except for special
-     * symbols, see below) has a name, namely a String giving the
-     * textual representation of the identifier.  Generally speaking,
-     * however, a Symbol object is identified by its address rather
-     * than by its name.  Consequently, the class enforces the
+     * symbols, see below) has a name, namely a CachedString giving
+     * the textual representation of the identifier.  Generally
+     * speaking, however, a Symbol object is identified by its address
+     * rather than by its name.  Consequently, the class enforces the
      * invariant that there is a most one Symbol object with a given
      * name (but this does not apply to special symbols).
      *
@@ -85,6 +85,11 @@ namespace CXXR {
      * expects to have ::SEXPTYPE SYMSXP.  Each special symbol has a
      * blank string as its name, but despite this each of them is a
      * distinct symbol.
+     *
+     * @note Following the practice with CR's symbol table, Symbol
+     * objects, once created, are permanently preserved against
+     * garbage collection.  There is no inherent reason for this in
+     * CXXR, but some packages may rely on it.
      */
     class Symbol : public RObject {
     private:
@@ -97,8 +102,6 @@ namespace CXXR {
 				CXXR::Allocator<std::pair<const CachedString*,
 							  Symbol*> >
 	                        > map;
-
-	static map s_table;
     public:
 	// It is assumed that this dereferences to
 	// const std::pair<const CachedString*, Symbol*>.
@@ -106,12 +109,12 @@ namespace CXXR {
 
 	static const_iterator begin()
 	{
-	    return s_table.begin();
+	    return s_table->begin();
 	}
 
 	static const_iterator end()
 	{
-	    return s_table.end();
+	    return s_table->end();
 	}
 
 	/** @brief Is this a double-dot symbol?
@@ -139,7 +142,7 @@ namespace CXXR {
 	 */
 	const CachedString* name() const
 	{
-	    return m_name;
+	    return (m_name ? m_name : CachedString::blank());
 	}
 
 	/** @brief Get a pointer to a regular Symbol object.
@@ -212,18 +215,18 @@ namespace CXXR {
 	    return s_unbound_value;
 	}
 
-	/** @brief Conduct a visitor to all standard symbols.
-	 *
-	 * @param v Pointer to the visitor object.
-	 */
-	static void visitTable(const_visitor* v);
-
 	// Virtual function of RObject:
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
 	void visitChildren(const_visitor* v) const;
     private:
+	struct Table : public GCNode, public map {
+	    // Virtual function of GCNode:
+	    void visitChildren(const_visitor *v) const;
+	};
+
+	static GCRoot<Table> s_table;
 	static GCRoot<Symbol> s_missing_arg;
 	static GCRoot<Symbol> s_restart_token;
 	static GCRoot<Symbol> s_unbound_value;
@@ -237,17 +240,18 @@ namespace CXXR {
 	 *          <tt>..<em>n</em></tt>, where n is a (non-negative)
 	 *          decimal integer signify that the Symbol to be
 	 *          constructed relates to an element of a
-	 *          <tt>...</tt> argument list.
+	 *          <tt>...</tt> argument list.  A null pointer
+	 *          signifies a special Symbol, which is not entered
+	 *          into s_table.
 	 *
 	 * @param frozen true iff the Symbol should not be altered
 	 *          after it is created.
 	 */
-	explicit Symbol(const CachedString* name = CachedString::blank(),
-			bool frozen = true);
+	explicit Symbol(const CachedString* name = 0, bool frozen = true);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
-	~Symbol() {}
+	~Symbol();
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -280,32 +284,32 @@ namespace CXXR {
     }
 
     // Predefined Symbols visible in 'namespace CXXR':
-    extern const GCRoot<Symbol> Bracket2Symbol;   // "[["
-    extern const GCRoot<Symbol> BracketSymbol;    // "["
-    extern const GCRoot<Symbol> BraceSymbol;      // "{"
-    extern const GCRoot<Symbol> ClassSymbol;	  // "class"
-    extern const GCRoot<Symbol> DimNamesSymbol;   // "dimnames"
-    extern const GCRoot<Symbol> DimSymbol;	  // "dim"
-    extern const GCRoot<Symbol> DollarSymbol;	  // "$"
-    extern const GCRoot<Symbol> DotsSymbol;	  // "..."
-    extern const GCRoot<Symbol> DropSymbol;	  // "drop"
-    extern const GCRoot<Symbol> ExactSymbol;      // "exact"
-    extern const GCRoot<Symbol> LevelsSymbol;	  // "levels"
-    extern const GCRoot<Symbol> ModeSymbol;	  // "mode"
-    extern const GCRoot<Symbol> NamesSymbol;	  // "names"
-    extern const GCRoot<Symbol> NaRmSymbol;       // "ra.rm"
-    extern const GCRoot<Symbol> RowNamesSymbol;   // "row.names"
-    extern const GCRoot<Symbol> SeedsSymbol;	  // ".Random.seed"
-    extern const GCRoot<Symbol> LastvalueSymbol;  // ".Last.value"
-    extern const GCRoot<Symbol> TspSymbol;	  // "tsp"
-    extern const GCRoot<Symbol> CommentSymbol;    // "comment"
-    extern const GCRoot<Symbol> SourceSymbol;     // "source"
-    extern const GCRoot<Symbol> DotEnvSymbol;     // ".Environment"
-    extern const GCRoot<Symbol> RecursiveSymbol;  // "recursive"
-    extern const GCRoot<Symbol> SrcfileSymbol;    // "srcfile"
-    extern const GCRoot<Symbol> SrcrefSymbol;     // "srcref"
-    extern const GCRoot<Symbol> TmpvalSymbol;     // "*tmp*"
-    extern const GCRoot<Symbol> UseNamesSymbol;   // "use.names"
+    extern Symbol* const Bracket2Symbol;   // "[["
+    extern Symbol* const BracketSymbol;    // "["
+    extern Symbol* const BraceSymbol;      // "{"
+    extern Symbol* const ClassSymbol;	   // "class"
+    extern Symbol* const DimNamesSymbol;   // "dimnames"
+    extern Symbol* const DimSymbol;	   // "dim"
+    extern Symbol* const DollarSymbol;	   // "$"
+    extern Symbol* const DotsSymbol;	   // "..."
+    extern Symbol* const DropSymbol;	   // "drop"
+    extern Symbol* const ExactSymbol;      // "exact"
+    extern Symbol* const LevelsSymbol;	   // "levels"
+    extern Symbol* const ModeSymbol;	   // "mode"
+    extern Symbol* const NamesSymbol;	   // "names"
+    extern Symbol* const NaRmSymbol;       // "ra.rm"
+    extern Symbol* const RowNamesSymbol;   // "row.names"
+    extern Symbol* const SeedsSymbol;	   // ".Random.seed"
+    extern Symbol* const LastvalueSymbol;  // ".Last.value"
+    extern Symbol* const TspSymbol;	   // "tsp"
+    extern Symbol* const CommentSymbol;    // "comment"
+    extern Symbol* const SourceSymbol;     // "source"
+    extern Symbol* const DotEnvSymbol;     // ".Environment"
+    extern Symbol* const RecursiveSymbol;  // "recursive"
+    extern Symbol* const SrcfileSymbol;    // "srcfile"
+    extern Symbol* const SrcrefSymbol;     // "srcref"
+    extern Symbol* const TmpvalSymbol;     // "*tmp*"
+    extern Symbol* const UseNamesSymbol;   // "use.names"
 }  // namespace CXXR
 
 extern "C" {

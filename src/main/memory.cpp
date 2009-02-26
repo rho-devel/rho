@@ -252,8 +252,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     MARK_THRU(&marker, R_HandlerStack);          /* Condition handler stack */
     MARK_THRU(&marker, R_RestartStack);          /* Available restarts stack */
 
-    Symbol::visitTable(&marker);	         /* Symbol table */
-
     if (R_CurrentExpr != NULL)             /* Current expression */
 	MARK_THRU(&marker, R_CurrentExpr);
 

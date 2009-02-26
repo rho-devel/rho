@@ -57,6 +57,8 @@ namespace CXXR {
     }
 }
 
+GCRoot<Symbol::Table> Symbol::s_table(new Table, true);
+
 GCRoot<const CachedString> CachedString::s_blank(CachedString::obtain(""));
 SEXP R_BlankString = const_cast<CachedString*>(CachedString::blank());
 
@@ -69,8 +71,6 @@ SEXP R_RestartToken = Symbol::restartToken();
 GCRoot<Symbol> Symbol::s_unbound_value(new Symbol, true);
 SEXP R_UnboundValue = Symbol::unboundValue();
 
-Symbol::map Symbol::s_table;
-
 // As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
 // (Discovered 2009-01-16)  So we use boost:
 
@@ -78,27 +78,54 @@ namespace {
     boost::basic_regex<char> dd_regex("\\.\\.\\d+");
 }
 
-Symbol::Symbol(const CachedString* name, bool frozen)
-    : RObject(SYMSXP), m_name(name)
+// ***** Class Symbol::Table *****
+
+void Symbol::Table::visitChildren(const_visitor *v) const
+{
+    for (map::iterator it = s_table->begin(); it != s_table->end(); ++it) {
+	// Beware that a garbage collection may occur in
+	// Symbol::obtain(), after a new entry has been placed in the
+	// symbol table but not yet made to point to a Symbol.  In
+	// that case we need to visit the table key (i.e. the symbol
+	// name); otherwise we don't bother, because it will be
+	// reached via the Symbol anyway.
+	const Symbol* symbol = (*it).second;
+        if (symbol) symbol->conductVisitor(v);
+	else (*it).first->conductVisitor(v);
+    }
+}    
+
+// ***** Class Symbol itself *****
+
+Symbol::Symbol(const CachedString* the_name, bool frozen)
+    : RObject(SYMSXP), m_name(the_name)
 {
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
     m_dd_symbol
-	= name->size() > 2 && boost::regex_match(name->c_str(), dd_regex);
+	= name()->size() > 2 && boost::regex_match(name()->c_str(), dd_regex);
     if (frozen) freeze();
+}
+
+// Because Symbols are permanently preserved against garbage
+// collection (see class description) this is never actually invoked.
+Symbol::~Symbol()
+{
+    if (m_name) s_table->erase(m_name);
 }
 
 Symbol* Symbol::obtain(const CachedString* name)
 {
-    pair<map::iterator, bool> pr = s_table.insert(map::value_type(name, 0));
+    pair<map::iterator, bool> pr = s_table->insert(map::value_type(name, 0));
     map::iterator it = pr.first;
     map::value_type& val = *it;
     if (pr.second) {
 	try {
 	    val.second = new Symbol(name, false);
 	    val.second->expose();
+	    s_table->propagateAge(val.second);
 	} catch (...) {
-	    s_table.erase(it);
+	    s_table->erase(it);
 	    throw;
 	}
     }
@@ -129,52 +156,37 @@ const char* Symbol::typeName() const
 void Symbol::visitChildren(const_visitor* v) const
 {
     RObject::visitChildren(v);
-    m_name->conductVisitor(v);
-}
-
-void Symbol::visitTable(const_visitor* v)
-{
-    for (map::iterator it = s_table.begin(); it != s_table.end(); ++it) {
-	// Beware that a garbage collection may occur in
-	// Symbol::obtain(), after a new entry has been placed in the
-	// symbol table but not yet made to point to a Symbol.  In
-	// that case we need to visit the table key (i.e. the symbol
-	// name); otherwise we don't bother, because it will be
-	// reached via the Symbol anyway.
-	const Symbol* symbol = (*it).second;
-        if (symbol) symbol->conductVisitor(v);
-	else (*it).first->conductVisitor(v);
-    }
+    if (m_name) m_name->conductVisitor(v);
 }
 
 // Predefined Symbols:
 namespace CXXR {
-    const GCRoot<Symbol> Bracket2Symbol(Symbol::obtain("[["), true);
-    const GCRoot<Symbol> BracketSymbol(Symbol::obtain("["), true);
-    const GCRoot<Symbol> BraceSymbol(Symbol::obtain("{"), true);
-    const GCRoot<Symbol> TmpvalSymbol(Symbol::obtain("*tmp*"), true);
-    const GCRoot<Symbol> ClassSymbol(Symbol::obtain("class"), true);
-    const GCRoot<Symbol> DimNamesSymbol(Symbol::obtain("dimnames"), true);
-    const GCRoot<Symbol> DimSymbol(Symbol::obtain("dim"), true);
-    const GCRoot<Symbol> DollarSymbol(Symbol::obtain("$"), true);
-    const GCRoot<Symbol> DotsSymbol(Symbol::obtain("..."), true);
-    const GCRoot<Symbol> DropSymbol(Symbol::obtain("drop"), true);
-    const GCRoot<Symbol> ExactSymbol(Symbol::obtain("exact"), true);
-    const GCRoot<Symbol> LevelsSymbol(Symbol::obtain("levels"), true);
-    const GCRoot<Symbol> ModeSymbol(Symbol::obtain("mode"), true);
-    const GCRoot<Symbol> NamesSymbol(Symbol::obtain("names"), true);
-    const GCRoot<Symbol> NaRmSymbol(Symbol::obtain("na.rm"), true);
-    const GCRoot<Symbol> RowNamesSymbol(Symbol::obtain("row.names"), true);
-    const GCRoot<Symbol> SeedsSymbol(Symbol::obtain(".Random.seed"), true);
-    const GCRoot<Symbol> LastvalueSymbol(Symbol::obtain(".Last.value"), true);
-    const GCRoot<Symbol> TspSymbol(Symbol::obtain("tsp"), true);
-    const GCRoot<Symbol> CommentSymbol(Symbol::obtain("comment"), true);
-    const GCRoot<Symbol> SourceSymbol(Symbol::obtain("source"), true);
-    const GCRoot<Symbol> DotEnvSymbol(Symbol::obtain(".Environment"), true);
-    const GCRoot<Symbol> RecursiveSymbol(Symbol::obtain("recursive"), true);
-    const GCRoot<Symbol> UseNamesSymbol(Symbol::obtain("use.names"), true);
-    const GCRoot<Symbol> SrcfileSymbol(Symbol::obtain("srcfile"), true);
-    const GCRoot<Symbol> SrcrefSymbol(Symbol::obtain("srcref"), true);
+    Symbol* const Bracket2Symbol = Symbol::obtain("[[");
+    Symbol* const BracketSymbol = Symbol::obtain("[");
+    Symbol* const BraceSymbol = Symbol::obtain("{");
+    Symbol* const TmpvalSymbol = Symbol::obtain("*tmp*");
+    Symbol* const ClassSymbol = Symbol::obtain("class");
+    Symbol* const DimNamesSymbol = Symbol::obtain("dimnames");
+    Symbol* const DimSymbol = Symbol::obtain("dim");
+    Symbol* const DollarSymbol = Symbol::obtain("$");
+    Symbol* const DotsSymbol = Symbol::obtain("...");
+    Symbol* const DropSymbol = Symbol::obtain("drop");
+    Symbol* const ExactSymbol = Symbol::obtain("exact");
+    Symbol* const LevelsSymbol = Symbol::obtain("levels");
+    Symbol* const ModeSymbol = Symbol::obtain("mode");
+    Symbol* const NamesSymbol = Symbol::obtain("names");
+    Symbol* const NaRmSymbol = Symbol::obtain("na.rm");
+    Symbol* const RowNamesSymbol = Symbol::obtain("row.names");
+    Symbol* const SeedsSymbol = Symbol::obtain(".Random.seed");
+    Symbol* const LastvalueSymbol = Symbol::obtain(".Last.value");
+    Symbol* const TspSymbol = Symbol::obtain("tsp");
+    Symbol* const CommentSymbol = Symbol::obtain("comment");
+    Symbol* const SourceSymbol = Symbol::obtain("source");
+    Symbol* const DotEnvSymbol = Symbol::obtain(".Environment");
+    Symbol* const RecursiveSymbol = Symbol::obtain("recursive");
+    Symbol* const UseNamesSymbol = Symbol::obtain("use.names");
+    Symbol* const SrcfileSymbol = Symbol::obtain("srcfile");
+    Symbol* const SrcrefSymbol = Symbol::obtain("srcref");
 }
 
 // ***** C interface *****
