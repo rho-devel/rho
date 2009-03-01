@@ -382,7 +382,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     return (bdg ? bdg->value() : R_UnboundValue);
 }
 
-inline SEXP findVarInFrame(SEXP rho, SEXP symbol)
+SEXP findVarInFrame(SEXP rho, SEXP symbol)
 {
     return findVarInFrame3(rho, symbol, TRUE);
 }
