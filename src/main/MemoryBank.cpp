@@ -56,7 +56,7 @@ void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
 
-CellHeap* MemoryBank::s_pools[s_num_pools];
+MemoryBank::Pool* MemoryBank::s_pools[s_num_pools];
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
@@ -109,7 +109,7 @@ void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 
 void* MemoryBank::alloc2(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 {
-    CellHeap* pool = 0;
+    Pool* pool = 0;
     void* p = 0;
     try {
 	if (bytes > s_max_cell_size) {
@@ -165,16 +165,16 @@ void MemoryBank::cleanup()
 // for the next page there.
 void MemoryBank::initialize()
 {
-    s_pools[0] = new CellHeap(1, 496);
-    s_pools[1] = new CellHeap(2, 248);
-    s_pools[2] = new CellHeap(3, 165);
-    s_pools[3] = new CellHeap(4, 124);
-    s_pools[4] = new CellHeap(5, 99);
-    s_pools[5] = new CellHeap(6, 83);
-    s_pools[6] = new CellHeap(8, 62);
-    s_pools[7] = new CellHeap(10, 49);
-    s_pools[8] = new CellHeap(12, 41);
-    s_pools[9] = new CellHeap(16, 31);
+    s_pools[0] = new Pool(1, 496);
+    s_pools[1] = new Pool(2, 248);
+    s_pools[2] = new Pool(3, 165);
+    s_pools[3] = new Pool(4, 124);
+    s_pools[4] = new Pool(5, 99);
+    s_pools[5] = new Pool(6, 83);
+    s_pools[6] = new Pool(8, 62);
+    s_pools[7] = new Pool(10, 49);
+    s_pools[8] = new Pool(12, 41);
+    s_pools[9] = new Pool(16, 31);
 }
 
 void MemoryBank::setGCCuer(size_t (*cue_gc)(size_t), size_t threshold)

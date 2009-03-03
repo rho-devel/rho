@@ -142,7 +142,6 @@ void CellPool::defragment()
 
 void CellPool::seekMemory() throw (std::bad_alloc)
 {
-    if (m_out_of_cells) (*m_out_of_cells)(this);
     if (!m_free_cells) {
 	char* superblock
 	    = static_cast<char*>(::operator new(m_superblocksize));

@@ -47,7 +47,7 @@
 namespace CXXR {
     /** @brief Class to manage memory allocation and deallocation for CXXR.
      * 
-     * Small objects are quickly allocated from CellHeaps of various cell
+     * Small objects are quickly allocated from pools of various cell
      * sizes; large objects are obtained directly from the main heap.
      */
     class MemoryBank {
@@ -165,13 +165,14 @@ namespace CXXR {
 			       size_t threshold = 0);
 #endif
     private:
+	typedef CellHeap Pool;
 	static const size_t s_num_pools = 10;
 	static const size_t s_max_cell_size = 128;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
 	static size_t s_gc_threshold;
 	static size_t (*s_cue_gc)(size_t);
-	static CellHeap* s_pools[];
+	static Pool* s_pools[];
 	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);
@@ -185,7 +186,7 @@ namespace CXXR {
 	// First-line allocation attempt for small objects:
 	static void* alloc1(size_t bytes) throw()
 	{
-	    CellHeap* pool = s_pools[s_pooltab[bytes]];
+	    Pool* pool = s_pools[s_pooltab[bytes]];
 	    void* p = pool->easyAllocate();
 	    if (p) {
 		++s_blocks_allocated;
@@ -216,7 +217,7 @@ namespace CXXR {
 	// Initialize the static data members:
 	static void initialize();
 
-	static void pool_out_of_memory(CellHeap* pool);
+	static void pool_out_of_memory(Pool* pool);
 
 	friend class SchwarzCounter<MemoryBank>;
     };
