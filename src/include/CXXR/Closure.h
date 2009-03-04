@@ -79,10 +79,12 @@ namespace CXXR {
 	 * @param pattern Closure to be copied.
 	 */
 	Closure(const Closure& pattern)
-	    : FunctionBase(pattern), m_debug(false),
-	      m_formals(pattern.m_formals), m_body(pattern.m_body),
-	      m_environment(pattern.m_environment)
-	{}
+	    : FunctionBase(pattern), m_debug(false)
+	{
+	    m_formals.retarget(this, pattern.m_formals);
+	    m_body.retarget(this, pattern.m_body);
+	    m_environment.retarget(this, pattern.m_environment);
+	}
 
 	/** @brief Access the body of the Closure.
 	 *
@@ -139,8 +141,7 @@ namespace CXXR {
 	 */
 	void setEnvironment(Environment* new_env)
 	{
-	    m_environment = new_env;
-	    propagateAge(m_environment);
+	    m_environment.retarget(this, new_env);
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -157,12 +158,12 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     private:
 	bool m_debug;
-	const PairList* m_formals;
-	const RObject* m_body;
-	Environment* m_environment;
+	GCEdge<const PairList> m_formals;
+	GCEdge<const RObject> m_body;
+	GCEdge<Environment> m_environment;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':

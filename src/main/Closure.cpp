@@ -67,10 +67,10 @@ const char* Closure::typeName() const
     return staticTypeName();
 }
 
-void Closure::visitChildren(const_visitor* v) const
+void Closure::visitReferents(const_visitor* v) const
 {
-    RObject::visitChildren(v);
-    if (m_formals) m_formals->conductVisitor(v);
-    if (m_body) m_body->conductVisitor(v);
-    if (m_environment) m_environment->conductVisitor(v);
+    RObject::visitReferents(v);
+    m_formals.conductVisitor(v);
+    m_body.conductVisitor(v);
+    m_environment.conductVisitor(v);
 }
