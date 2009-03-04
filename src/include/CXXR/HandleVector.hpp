@@ -89,9 +89,7 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(const ElementProxy& rhs)
 	    {
-		*m_it = *rhs.m_it;
-		if (rhs.m_ev != m_ev)
-		    m_ev->propagateAge(*m_it);
+		(*m_it).retarget(m_ev, *rhs.m_it);
 		return *this;
 	    }
 
@@ -104,8 +102,7 @@ namespace CXXR {
 	     */
 	    ElementProxy& operator=(T* s)
 	    {
-		m_ev->propagateAge(s);
-		(*m_it).retarget(s);
+		(*m_it).retarget(m_ev, s);
 		return *this;
 	    }
 
@@ -140,9 +137,7 @@ namespace CXXR {
 	 * @param init Initial value for the destination of each
 	 *          \a T* in the HandleVector.
 	 */
-	explicit HandleVector(size_t sz, Handle<T> init = Handle<T>())
-	    : VectorBase(ST, sz), m_data(sz, init)
-	{}
+	explicit HandleVector(size_t sz, T* init = 0);
 
 	/** @brief Copy constructor.
 	 *
@@ -212,7 +207,8 @@ namespace CXXR {
 	 */
 	~HandleVector() {}
     private:
-	std::vector<Handle<T>, Allocator<Handle<T> > > m_data;
+	typedef std::vector<Handle<T>, Allocator<Handle<T> > > Vector;
+	Vector m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated version:
@@ -220,6 +216,17 @@ namespace CXXR {
 
 	friend class ElementProxy;
     };
+
+    template <typename T, SEXPTYPE ST>
+    HandleVector<T, ST>::HandleVector(size_t sz, T* init)
+	: VectorBase(ST, sz), m_data(sz)
+    {
+	if (init) {
+	    for (typename Vector::iterator it = m_data.begin();
+		 it != m_data.end(); ++it)
+		(*it).retarget(this, init);
+	}
+    }
 
     template <typename T, SEXPTYPE ST>
     const char* HandleVector<T, ST>::typeName() const

@@ -132,8 +132,7 @@ namespace CXXR {
 	 */
 	void setCar(RObject* cr)
 	{
-	    m_car.retarget(cr);
-	    propagateAge(m_car);
+	    m_car.retarget(this, cr);
 	}
 
 	/** @brief Set the 'tag' value.
@@ -204,8 +203,9 @@ namespace CXXR {
 	 */
 	explicit ConsCell(SEXPTYPE st,
 			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
+	    : RObject(st), m_tail(tl), m_tag(tg), m_missing(0)
 	{
+	    m_car.retarget(this, cr);
 	    // checkST(st);
 	}
 

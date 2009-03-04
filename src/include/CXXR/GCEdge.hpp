@@ -117,7 +117,7 @@ namespace CXXR {
 	    if (m_target) m_target->conductVisitor(v);
 	}
 
-	/** Redirect the GCEdge to point at a (possibly) different node.
+	/** @brief Redirect the GCEdge to point at a (possibly) different node.
 	 *
 	 * @param from This \e must point to the GCNode object that
 	 *          contains this GCEdge object.
@@ -129,6 +129,19 @@ namespace CXXR {
 	{
 	    m_target = to;
 	    from->propagateAge(to);
+	}
+    protected:
+	/** @brief Designate the node to be pointed to by this GCEdge.
+	 *
+	 * This function is like retarget(), but skips age
+	 * propagation.  It should be used only in the constructors of
+	 * derived classes.
+	 *
+	 * @param to Pointer to the object to this GCEdge is to refer.
+	 */
+	void setTarget(T* to)
+	{
+	    m_target = to;
 	}
     private:
 	T* m_target;
