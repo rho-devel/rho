@@ -142,8 +142,7 @@ namespace CXXR {
 	 */
 	void setTag(RObject* tg)
 	{
-	    m_tag = tg;
-	    propagateAge(m_tag);
+	    m_tag.retarget(this, tg);
 	}
 
 	/** @brief Set the 'tail' value.
@@ -189,7 +188,7 @@ namespace CXXR {
 	}
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     protected:
 	/**
 	 * @param st The required ::SEXPTYPE of the ConsCell.  Must
@@ -202,12 +201,7 @@ namespace CXXR {
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
 	explicit ConsCell(SEXPTYPE st,
-			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : RObject(st), m_tail(tl), m_tag(tg), m_missing(0)
-	{
-	    m_car.retarget(this, cr);
-	    // checkST(st);
-	}
+			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0);
 
 	/** @brief Copy constructor.
 	 *
@@ -239,26 +233,12 @@ namespace CXXR {
 	 * allocated only using 'new'.
 	 */
 	~ConsCell() {}
-
-	/** @brief Set the 'tail' value during construction.
-	 *
-	 * This method should only be used during the construction of
-	 * an object of a class derived from ConsCell, because it
-	 * skips write-barrier checks.
-	 *
-	 * @param tl Pointer to the new tail list (or a null
-	 *           pointer).
-	 */
-	void constructTail(PairList* tl)
-	{
-	    m_tail = tl;
-	}
     private:
 	friend class PairList;
 
 	Handle<> m_car;
-	PairList* m_tail;
-	RObject* m_tag;
+	GCEdge<PairList> m_tail;
+	GCEdge<> m_tag;
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:

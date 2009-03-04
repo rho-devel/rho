@@ -63,15 +63,27 @@ namespace CXXR {
    }
 }
 
+ConsCell::ConsCell(SEXPTYPE st, RObject* cr, PairList* tl, RObject* tg)
+    : RObject(st), m_missing(0)
+{
+    m_car.retarget(this, cr);
+    m_tail.retarget(this, tl);
+    m_tag.retarget(this, tg);
+    // checkST(st);
+}
+
 ConsCell::ConsCell(const ConsCell& pattern)
-    : RObject(pattern), m_car(pattern.m_car), m_tail(clone(pattern.tail())),
-      m_tag(pattern.tag()), m_missing(0)
-{}
+    : RObject(pattern), m_car(pattern.m_car), m_missing(0)
+{
+    m_tail.retarget(this, clone(pattern.tail()));
+    m_tag.retarget(this, pattern.tag());
+}
     
 ConsCell::ConsCell(const ConsCell& pattern, int)
-    : RObject(pattern), m_car(pattern.m_car), m_tail(0), m_tag(pattern.tag()),
-      m_missing(0)
-{}
+    : RObject(pattern), m_car(pattern.m_car), m_missing(0)
+{
+    m_tag.retarget(this, pattern.tag());
+}
     
 void ConsCell::checkST(SEXPTYPE st)
 {
@@ -86,13 +98,13 @@ void ConsCell::checkST(SEXPTYPE st)
     }
 }
 
-void ConsCell::visitChildren(const_visitor* v) const
+void ConsCell::visitReferents(const_visitor* v) const
 {
     const ConsCell* p = this;
     do {
-	p->RObject::visitChildren(v);
-	if (p->m_car) p->m_car->conductVisitor(v);
-	if (p->m_tag) p->m_tag->conductVisitor(v);
+	p->RObject::visitReferents(v);
+	p->m_car.conductVisitor(v);
+	p->m_tag.conductVisitor(v);
 	p = p->m_tail;
     } while (p && (*v)(p));
 }

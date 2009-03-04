@@ -166,8 +166,7 @@ namespace CXXR {
 
     inline void ConsCell::setTail(PairList* tl)
     {
-	m_tail = tl;
-	propagateAge(m_tail);
+	m_tail.retarget(this, tl);
     }
 } // namespace CXXR
 
