@@ -73,13 +73,23 @@ namespace {
 
 RObject::RObject(const RObject& pattern)
     : m_type(pattern.m_type), m_named(0), m_has_class(pattern.m_has_class),
-      m_S4_object(pattern.m_S4_object), m_frozen(false),
-      m_attrib(clone(pattern.m_attrib))
-{}
+      m_S4_object(pattern.m_S4_object), m_frozen(false)
+{
+    m_attrib.retarget(this, clone<PairList>(pattern.m_attrib));
+}
+
+void RObject::clearAttributes()
+{
+    if (m_attrib) {
+	errorIfFrozen();
+	m_attrib.retarget(this, 0);
+	m_has_class = false;
+    }
+}
 
 void RObject::cloneAttributes(const RObject& source)
 {
-    m_attrib = clone(source.m_attrib);
+    m_attrib.retarget(this, clone<PairList>(source.m_attrib));
     m_has_class = source.m_has_class;
 }
 
@@ -131,14 +141,14 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 	if (value) node->setCar(value);
 	// Delete existing attribute:
 	else if (prev) prev->setTail(node->tail());
-	else m_attrib = node->tail();
+	else m_attrib.retarget(this, node->tail());
     } else if (value) {  
 	// Create new node:
 	PairList* newnode = new PairList(value, 0, name);
 	newnode->expose();
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
-	    m_attrib = newnode;
+	    m_attrib.retarget(this, newnode);
 	    propagateAge(m_attrib);
 	}
     }
@@ -177,9 +187,9 @@ void RObject::unpackGPBits(unsigned int gpbits)
     m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
 }
 
-void RObject::visitChildren(const_visitor* v) const
+void RObject::visitReferents(const_visitor* v) const
 {
-    if (m_attrib) m_attrib->conductVisitor(v);
+    m_attrib.conductVisitor(v);
 }
 
 // ***** C interface *****

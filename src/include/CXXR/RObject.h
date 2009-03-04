@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/uncxxr.h"
 
@@ -329,14 +330,7 @@ namespace CXXR {
 
 	/** @brief Remove all attributes.
 	 */
-	void clearAttributes()
-	{
-	    if (m_attrib) {
-		errorIfFrozen();
-		m_attrib = 0;
-		m_has_class = false;
-	    }
-	}
+	void clearAttributes();
 
 	// Introduced temporarily while copy constructors are being
 	// rolled out:
@@ -539,7 +533,7 @@ namespace CXXR {
 	 */
 	explicit RObject(SEXPTYPE stype = CXXSXP)
 	    : m_type(stype), m_named(0), m_has_class(false),
-	      m_S4_object(stype == S4SXP), m_frozen(false), m_attrib(0)
+	      m_S4_object(stype == S4SXP), m_frozen(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -585,7 +579,7 @@ namespace CXXR {
 	bool m_has_class      : 1;
 	bool m_S4_object      : 1;
 	bool m_frozen         : 1;
-	PairList* m_attrib;
+	GCEdge<PairList> m_attrib;
 
 	static void frozenError();
     };

@@ -263,7 +263,7 @@ namespace CXXR {
 	bool conductVisitor(const_visitor* v) const
 	{
 	    if (!(*v)(this)) return false;
-	    visitChildren(v);
+	    visitReferents(v);
 	    return true;
 	}
 
@@ -358,26 +358,23 @@ namespace CXXR {
 	 */
 	static size_t slaughterInfants();
 
-	/** @brief Conduct a visitor to the children of this node.
+	/** @brief Conduct a visitor to the nodes referred to by this
+	 * one.
 	 *
-	 * The children of this node are those objects derived from
-	 * GCNode to which this node contains a pointer or a
-	 * reference.
+	 * The referents of this node are those objects (derived from
+	 * GCNode) designated by a GCEdge within this object.
 	 *
 	 * @param v Pointer to the visitor object.
 	 *
-	 * @note The metaphor 'children' in this function's name is
-	 * rather at odds with the metaphor of garbage-collection
-	 * 'generations': the children of a node will always be of a
-	 * generation at least as old as the node itself!
-	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
-	 * visitChildren() for the immediate base class of the derived
-	 * class, to ensure that \e all children of the object get
-	 * visited.
+	 * visitReferents() for the immediate base class of the
+	 * derived class, to ensure that \e all referents of the
+	 * object get visited.
 	 */
-	virtual void visitChildren(const_visitor* v) const {}
+	virtual void visitReferents(const_visitor* v) const {}
+
+#define visitChildren visitReferents
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode
