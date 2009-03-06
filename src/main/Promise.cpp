@@ -54,10 +54,9 @@ namespace CXXR {
 
 void Promise::setValue(RObject* val)
 {
-    m_value = val;
-    propagateAge(m_value);
+    m_value.retarget(this, val);
     if (val != Symbol::unboundValue())
-	m_environment = 0;
+	m_environment.retarget(this, 0);
 }
 
 const char* Promise::typeName() const
@@ -65,12 +64,12 @@ const char* Promise::typeName() const
     return staticTypeName();
 }
 
-void Promise::visitChildren(const_visitor* v) const
+void Promise::visitReferents(const_visitor* v) const
 {
-    RObject::visitChildren(v);
-    if (m_value) m_value->conductVisitor(v);
-    if (m_valgen) m_valgen->conductVisitor(v);
-    if (m_environment) m_environment->conductVisitor(v);
+    RObject::visitReferents(v);
+    m_value.conductVisitor(v);
+    m_valgen.conductVisitor(v);
+    m_environment.conductVisitor(v);
 }
 
 // ***** C interface *****

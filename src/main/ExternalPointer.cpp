@@ -61,11 +61,11 @@ const char* ExternalPointer::typeName() const
     return ExternalPointer::staticTypeName();
 }
 
-void ExternalPointer::visitChildren(const_visitor* v) const
+void ExternalPointer::visitReferents(const_visitor* v) const
 {
-    RObject::visitChildren(v);
-    if (m_protege) m_protege->conductVisitor(v);
-    if (m_tag) m_tag->conductVisitor(v);
+    RObject::visitReferents(v);
+    m_protege.conductVisitor(v);
+    m_tag.conductVisitor(v);
 }
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)

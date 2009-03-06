@@ -126,8 +126,7 @@ namespace CXXR {
 	 */
 	void setProtege(RObject* prot)
 	{
-	    m_protege = prot;
-	    propagateAge(m_protege);
+	    m_protege.retarget(this, prot);
 	}
 
 	/** @brief Set the value of the encapsulated pointer
@@ -146,8 +145,7 @@ namespace CXXR {
 	 */
 	void setTag(RObject* tag)
 	{
-	    m_tag = tag;
-	    propagateAge(m_tag);
+	    m_tag.retarget(this, tag);
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -181,11 +179,11 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     private:
 	void* m_ptr;
-	RObject* m_tag;
-	RObject* m_protege;
+	GCEdge<> m_tag;
+	GCEdge<> m_protege;
 
 	// Declared private to ensure that ExternalPointer objects are
 	// allocated only using 'new':

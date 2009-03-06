@@ -150,8 +150,7 @@ namespace CXXR {
 	 */
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{
-	    m_enclosing = new_enclos;
-	    propagateAge(m_enclosing);
+	    m_enclosing.retarget(this, new_enclos);
 	}
 
 	/** @brief Set single-stepping status
@@ -189,14 +188,14 @@ namespace CXXR {
 	void unpackGPBits(unsigned int gpbits);
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     protected:
 	// Declared protected to ensure that Environment objects are
 	// created only using 'new':
 	~Environment() {}
     private:
-	Environment* m_enclosing;
-	Frame* m_frame;
+	GCEdge<Environment> m_enclosing;
+	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
 	bool m_locked;
 

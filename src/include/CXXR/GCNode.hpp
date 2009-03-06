@@ -82,7 +82,7 @@ namespace CXXR {
      *
      * <li>If the derived class contains any pointers or references to
      * other objects derived from GCNode, it should reimplement the
-     * method visitChildren() appropriately.</li>
+     * method visitReferents() appropriately.</li>
      *
      * <li>If the derived class contains any pointers to other objects
      * derived from GCNode, then any post-construction operation that
@@ -99,7 +99,7 @@ namespace CXXR {
      * under construction, it is effectively immune from the garbage
      * collector.  Not only does this greatly simplify the coding of
      * the constructors themselves, it also means that in implementing
-     * the virtual method visitChildren(), it is not necessary to
+     * the virtual method visitReferents(), it is not necessary to
      * consider the possibility that the garbage collector will invoke
      * this method for a node whose construction is not yet complete.
      *

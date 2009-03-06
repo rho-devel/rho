@@ -456,7 +456,7 @@ namespace CXXR {
 	virtual void unpackGPBits(unsigned int gpbits);
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
 
 	/** @brief Get an object's ::SEXPTYPE.
 	 *

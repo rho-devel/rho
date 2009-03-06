@@ -108,11 +108,11 @@ void Environment::unpackGPBits(unsigned int gpbits)
     // m_globally_cached = ((gpbits & GLOBAL_FRAME_MASK) != 0);
 }
 
-void Environment::visitChildren(const_visitor* v) const
+void Environment::visitReferents(const_visitor* v) const
 {
-    RObject::visitChildren(v);
-    if (m_enclosing) m_enclosing->conductVisitor(v);
-    if (m_frame) m_frame->conductVisitor(v);
+    RObject::visitReferents(v);
+    m_enclosing.conductVisitor(v);
+    m_frame.conductVisitor(v);
 }
 
 // ***** Free-standing functions *****

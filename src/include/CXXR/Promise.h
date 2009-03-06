@@ -170,11 +170,11 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     private:
-	RObject* m_value;
-	const RObject* m_valgen;
-	const Environment* m_environment;
+	GCEdge<> m_value;
+	GCEdge<const RObject> m_valgen;
+	GCEdge<const Environment> m_environment;
 	bool m_seen;
 	bool m_interrupted;
 
