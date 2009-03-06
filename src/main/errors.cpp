@@ -1399,12 +1399,20 @@ static CXXRconst char * R_ConciseTraceback(SEXP call, int skip)
 
 namespace {
     struct HandlerEntry : RObject {
-	String* m_class;
-	Environment* m_parent_environment;
-	RObject* m_handler;
-	Environment* m_environment;
-	ListVector* m_result;
+	GCEdge<String> m_class;
+	GCEdge<Environment> m_parent_environment;
+	GCEdge<> m_handler;
+	GCEdge<Environment> m_environment;
+	GCEdge<ListVector> m_result;
 	bool m_calling;
+
+	HandlerEntry(String* the_class, Environment* parent_env,
+		     RObject* handler, Environment* environment,
+		     ListVector* result, bool calling)
+	    : m_class(the_class), m_parent_environment(parent_env),
+	      m_handler(handler), m_environment(environment),
+	      m_result(result), m_calling(calling)
+	{}
 
 	static const char* staticTypeName()
 	{
@@ -1412,30 +1420,29 @@ namespace {
 	}
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     };
 
-    void HandlerEntry::visitChildren(const_visitor* v) const
+    void HandlerEntry::visitReferents(const_visitor* v) const
     {
-	RObject::visitChildren(v);
-	if (m_class) m_class->conductVisitor(v);
-	if (m_parent_environment) m_parent_environment->conductVisitor(v);
-	if (m_handler) m_handler->conductVisitor(v);
-	if (m_environment) m_environment->conductVisitor(v);
-	if (m_result) m_result->conductVisitor(v);
+	RObject::visitReferents(v);
+	m_class.conductVisitor(v);
+	m_parent_environment.conductVisitor(v);
+	m_handler.conductVisitor(v);
+	m_environment.conductVisitor(v);
+	m_result.conductVisitor(v);
     }
 }
 
 static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 			   SEXP result, int calling)
 {
-    HandlerEntry* entry = new HandlerEntry;
-    entry->m_class = SEXP_downcast<String*>(klass);
-    entry->m_parent_environment = SEXP_downcast<Environment*>(parentenv);
-    entry->m_handler = handler;
-    entry->m_environment = SEXP_downcast<Environment*>(rho);
-    entry->m_result = SEXP_downcast<ListVector*>(result);
-    entry->m_calling = (calling != 0);
+    HandlerEntry* entry
+	= new HandlerEntry(SEXP_downcast<String*>(klass),
+			   SEXP_downcast<Environment*>(parentenv), handler,
+			   SEXP_downcast<Environment*>(rho),
+			   SEXP_downcast<ListVector*>(result),
+			   (calling != 0));
     entry->expose();
     return entry;
 }

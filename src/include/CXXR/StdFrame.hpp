@@ -87,7 +87,7 @@ namespace CXXR {
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     private:
 	map m_map;
 

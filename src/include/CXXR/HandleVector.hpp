@@ -201,7 +201,7 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     protected:
 	/**
 	 * Declared protected to ensure that HandleVector objects are
@@ -226,13 +226,12 @@ namespace CXXR {
     }
 
     template <typename T, SEXPTYPE ST>
-    void HandleVector<T, ST>::visitChildren(const_visitor* v) const
+    void HandleVector<T, ST>::visitReferents(const_visitor* v) const
     {
-	VectorBase::visitChildren(v);
-	for (unsigned int i = 0; i < size(); ++i) {
-	    const T* ptr = (*this)[i];
-	    if (ptr) ptr->conductVisitor(v);
-	}
+	VectorBase::visitReferents(v);
+	for (typename Vector::const_iterator it = m_data.begin();
+	     it != m_data.end(); ++it)
+	    (*it).conductVisitor(v);
     }
 }  // namespace CXXR
 

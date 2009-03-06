@@ -397,8 +397,6 @@ namespace CXXR {
 	 * object get visited.
 	 */
 	virtual void visitReferents(const_visitor* v) const {}
-
-#define visitChildren visitReferents
     protected:
 	/**
 	 * @note The destructor is protected to ensure that GCNode

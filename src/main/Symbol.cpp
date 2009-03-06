@@ -125,7 +125,6 @@ Symbol* Symbol::obtain(const CachedString* name)
 	try {
 	    val.second.retarget(s_table, new Symbol(name, false));
 	    val.second->expose();
-	    s_table->propagateAge(val.second);
 	} catch (...) {
 	    s_table->erase(it);
 	    throw;

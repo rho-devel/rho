@@ -148,9 +148,9 @@ vector<const Symbol*> StdFrame::symbols(bool include_dotsymbols) const
     return ans;
 }
 
-void StdFrame::visitChildren(const_visitor* v) const
+void StdFrame::visitReferents(const_visitor* v) const
 {
-    Frame::visitChildren(v);
+    Frame::visitReferents(v);
     for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
-	(*it).second.visitChildren(v);
+	(*it).second.visitReferents(v);
 }

@@ -117,13 +117,6 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 #define DEBUG_ADJUST_HEAP_PRINT(node_occup, vect_occup)
 #endif /* DEBUG_ADJUST_HEAP */
 
-namespace {
-    inline void CHECK_OLD_TO_NEW(SEXP x, SEXP y)
-    {
-	x->propagateAge(y);
-    }
-}
-
 /* Finalization and Weak References */
 
 /* The design of this mechanism is very close to the one described in
