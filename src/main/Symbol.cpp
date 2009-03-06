@@ -80,7 +80,7 @@ namespace {
 
 // ***** Class Symbol::Table *****
 
-void Symbol::Table::visitChildren(const_visitor *v) const
+void Symbol::Table::visitReferents(const_visitor *v) const
 {
     for (map::iterator it = s_table->begin(); it != s_table->end(); ++it) {
 	// Beware that a garbage collection may occur in
@@ -89,9 +89,9 @@ void Symbol::Table::visitChildren(const_visitor *v) const
 	// that case we need to visit the table key (i.e. the symbol
 	// name); otherwise we don't bother, because it will be
 	// reached via the Symbol anyway.
-	const Symbol* symbol = (*it).second;
-        if (symbol) symbol->conductVisitor(v);
-	else (*it).first->conductVisitor(v);
+	const GCEdge<Symbol>& symbol = (*it).second;
+        if (symbol) symbol.conductVisitor(v);
+	else (*it).first.conductVisitor(v);
     }
 }    
 
@@ -116,12 +116,14 @@ Symbol::~Symbol()
 
 Symbol* Symbol::obtain(const CachedString* name)
 {
-    pair<map::iterator, bool> pr = s_table->insert(map::value_type(name, 0));
+    GCEdge<const CachedString> e(name);
+    pair<map::iterator, bool> pr
+	= s_table->insert(map::value_type(e, GCEdge<Symbol>(0)));
     map::iterator it = pr.first;
     map::value_type& val = *it;
     if (pr.second) {
 	try {
-	    val.second = new Symbol(name, false);
+	    val.second.retarget(s_table, new Symbol(name, false));
 	    val.second->expose();
 	    s_table->propagateAge(val.second);
 	} catch (...) {
@@ -153,10 +155,10 @@ const char* Symbol::typeName() const
     return staticTypeName();
 }
 
-void Symbol::visitChildren(const_visitor* v) const
+void Symbol::visitReferents(const_visitor* v) const
 {
-    RObject::visitChildren(v);
-    if (m_name) m_name->conductVisitor(v);
+    RObject::visitReferents(v);
+    m_name.conductVisitor(v);
 }
 
 // Predefined Symbols:

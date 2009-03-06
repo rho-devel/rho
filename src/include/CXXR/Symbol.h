@@ -96,7 +96,7 @@ namespace CXXR {
 	// This table is used to ensure that, for standard symbols,
 	// there is at most one Symbol object with a particular name.
 	typedef
-	std::tr1::unordered_map<const CachedString*, Symbol*,
+	std::tr1::unordered_map<GCEdge<const CachedString>, GCEdge<Symbol>,
 				std::tr1::hash<const CachedString*>,
 				std::equal_to<const CachedString*>,
 				CXXR::Allocator<std::pair<const CachedString*,
@@ -219,11 +219,11 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
-	void visitChildren(const_visitor* v) const;
+	void visitReferents(const_visitor* v) const;
     private:
 	struct Table : public GCNode, public map {
 	    // Virtual function of GCNode:
-	    void visitChildren(const_visitor *v) const;
+	    void visitReferents(const_visitor *v) const;
 	};
 
 	static GCRoot<Table> s_table;
@@ -231,7 +231,7 @@ namespace CXXR {
 	static GCRoot<Symbol> s_restart_token;
 	static GCRoot<Symbol> s_unbound_value;
 
-	const CachedString* m_name;
+	GCEdge<const CachedString> m_name;
 	bool m_dd_symbol;
 
 	/**
