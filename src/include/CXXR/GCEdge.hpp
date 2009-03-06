@@ -66,31 +66,30 @@ namespace CXXR {
     template <class T = RObject>
     class GCEdge {
     public:
-	/** @brief Default constructor.
+	/** @brief Primary constructor.
 	 *
-	 * @note Why can't I specify the target in the constructor?
-	 * Suppose that <tt>Foo</tt>, Bar and \c Baz are all classes
-	 * derived from GCNode, and that a \c Foo object in effect
-	 * 'contains' a \c Bar and a <tt>Baz</tt>.  If it were
-	 * possibly to initialize a GCEdge in its constructor, it
-	 * would be tempting to implement the \c Foo constructor as
-	 * follows:
-	 * <pre>
-	 * Foo()
-	 *      : m_edge1(new Bar), m_edge2(new Baz)
-	 * {}
-	 * </pre>
-	 * But now consider what would happen if the call <tt>new
-	 * Bar</tt> resulted in a garbage collection.  Then the
-	 * visitReferents() function of the object under construction
-	 * may be called before the field <tt>m_edge2</tt> has been
-	 * initialized, i.e. when it still contains junk, and this
-	 * will result in undefined behaviour, probably a program
-	 * crash.  This bug would remain latent until a garbage
-	 * collection happened at precisely this point.
+	 * @param target Pointer to the object to which this GCEdge is
+	 *          to refer. 
+	 *
+	 * @note Unless \a target is a null pointer, this constructor
+	 * should be called only as part of the construction of the
+	 * object derived from GCNode of which this GCEdge forms a part.
 	 */
-	GCEdge()
-	    : m_target(0)
+	explicit GCEdge(T* target = 0)
+	    : m_target(target)
+	{}
+
+	/** @brief Copy constructor.
+	 *
+	 * @param source GCEdge to be copied.  The constructed GCEdge
+	 * will point to the same object (if any) as \a source. 
+	 *
+	 * @note This constructor should be called only as part of the
+	 * construction of the object derived from GCNode of which
+	 * this GCEdge forms a part.
+	 */
+	explicit GCEdge(const GCEdge<T>& source)
+	    : m_target(source.m_target)
 	{}
 
 	T* operator->() const
@@ -130,25 +129,11 @@ namespace CXXR {
 	    m_target = to;
 	    from->propagateAge(to);
 	}
-    protected:
-	/** @brief Designate the node to be pointed to by this GCEdge.
-	 *
-	 * This function is like retarget(), but skips age
-	 * propagation.  It should be used only in the constructors of
-	 * derived classes.
-	 *
-	 * @param to Pointer to the object to this GCEdge is to refer.
-	 */
-	void setTarget(T* to)
-	{
-	    m_target = to;
-	}
     private:
 	T* m_target;
 
-	// Not implemented (yet).  Declared to prevent
-	// compiler-generated versions:
-	GCEdge(const GCEdge&);
+	// Not implemented.  Declared to prevent compiler-generated
+	// version:
 	GCEdge& operator=(const GCEdge&);
     };
 }

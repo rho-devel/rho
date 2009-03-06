@@ -79,12 +79,10 @@ namespace CXXR {
 	 * @param pattern Closure to be copied.
 	 */
 	Closure(const Closure& pattern)
-	    : FunctionBase(pattern), m_debug(false)
-	{
-	    m_formals.retarget(this, pattern.m_formals);
-	    m_body.retarget(this, pattern.m_body);
-	    m_environment.retarget(this, pattern.m_environment);
-	}
+	    : FunctionBase(pattern), m_debug(false),
+	      m_formals(pattern.m_formals), m_body(pattern.m_body),
+	      m_environment(pattern.m_environment)
+	{}
 
 	/** @brief Access the body of the Closure.
 	 *

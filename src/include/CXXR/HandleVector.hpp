@@ -131,13 +131,15 @@ namespace CXXR {
 
 	/** @brief Create a vector.
          *
-         * Create a vector.
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
+	 *
 	 * @param init Initial value for the destination of each
 	 *          \a T* in the HandleVector.
 	 */
-	explicit HandleVector(size_t sz, T* init = 0);
+	explicit HandleVector(size_t sz, T* init = 0)
+	    : VectorBase(ST, sz), m_data(sz, Handle<T>(init))
+	{}
 
 	/** @brief Copy constructor.
 	 *
@@ -216,17 +218,6 @@ namespace CXXR {
 
 	friend class ElementProxy;
     };
-
-    template <typename T, SEXPTYPE ST>
-    HandleVector<T, ST>::HandleVector(size_t sz, T* init)
-	: VectorBase(ST, sz), m_data(sz)
-    {
-	if (init) {
-	    for (typename Vector::iterator it = m_data.begin();
-		 it != m_data.end(); ++it)
-		(*it).retarget(this, init);
-	}
-    }
 
     template <typename T, SEXPTYPE ST>
     const char* HandleVector<T, ST>::typeName() const

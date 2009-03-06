@@ -212,6 +212,30 @@ namespace CXXR {
 	    ++s_num_nodes;
 	}
 
+	/* Comment not yet applicable; parked here temporarily.
+	 *
+	 * @note Why can't I specify the target in the constructor?
+	 * Suppose that <tt>Foo</tt>, Bar and \c Baz are all classes
+	 * derived from GCNode, and that a \c Foo object in effect
+	 * 'contains' a \c Bar and a <tt>Baz</tt>.  If it were
+	 * possibly to initialize a GCEdge in its constructor, it
+	 * would be tempting to implement the \c Foo constructor as
+	 * follows:
+	 * <pre>
+	 * Foo()
+	 *      : m_edge1(new Bar), m_edge2(new Baz)
+	 * {}
+	 * </pre>
+	 * But now consider what would happen if the call <tt>new
+	 * Bar</tt> resulted in a garbage collection.  Then the
+	 * visitReferents() function of the object under construction
+	 * may be called before the field <tt>m_edge2</tt> has been
+	 * initialized, i.e. when it still contains junk, and this
+	 * will result in undefined behaviour, probably a program
+	 * crash.  This bug would remain latent until a garbage
+	 * collection happened at precisely this point.
+	 */
+
 	/** @brief Allocate memory.
          *
 	 * Allocates memory for a new object of a class derived from

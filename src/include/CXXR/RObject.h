@@ -223,9 +223,18 @@ namespace CXXR {
 	template <class T = RObject>
 	class Handle : public GCEdge<T> {
 	public:
-	    /** @brief Default constructor.
+	    /** @brief Primary constructor.
+	     *
+	     * @param target Pointer to the object to which this
+	     *          GCEdge is to refer.
+	     *
+	     * @note Unless \a target is a null pointer, this
+	     * constructor should be called only as part of the
+	     * construction of the object derived from GCNode of which
+	     * this GCEdge forms a part.
 	     */
-	    Handle()
+	    explicit Handle(T* target = 0)
+		: GCEdge<T>(target)
 	    {}
 
 	    /** @brief Copy constructor.
@@ -239,7 +248,11 @@ namespace CXXR {
 	     *          x itself.  If \a pattern encapsulates a null
 	     *          pointer, so will the created object.
 	     */
-	    Handle(const Handle<T>& pattern);
+	    Handle(const Handle<T>& pattern)
+		: GCEdge<T>(cloneOrSelf(pattern))
+	    {}
+	private:
+	    T* cloneOrSelf(T*);
 	};
 		
 	/** @brief Get object attributes.
@@ -314,7 +327,7 @@ namespace CXXR {
 	template <class T>
 	static T* clone(const T* pattern)
 	{
-	    return pattern ? pattern->clone() : 0;
+	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
 	}
 
 	/** @brief Get the value a particular attribute.
@@ -509,21 +522,17 @@ namespace CXXR {
 	bool m_has_class      : 1;
 	bool m_S4_object      : 1;
 	bool m_frozen         : 1;
-	GCEdge<PairList> m_attrib;
+	Handle<PairList> m_attrib;
 
 	static void frozenError();
     };
 
     template <class T>
-    RObject::Handle<T>::Handle(const Handle<T>& pattern)
+    T* RObject::Handle<T>::cloneOrSelf(T* pattern)
     {
-        if (pattern) {
-	    RObject* t = pattern->clone();
-	    if (t) setTarget(static_cast<T*>(t));
-	    else setTarget(pattern);
-	}
+        T* t = clone(pattern);
+	return (t ? t : pattern);
     }
-
 }  // namespace CXXR
 
 typedef CXXR::RObject SEXPREC, *SEXP;
