@@ -163,7 +163,7 @@ namespace CXXR {
 	     * @param sym Pointer to the Symbol bound by this
 	     *          Binding.  Must be non-null.
 	     */
-	    void initialize(const Frame* frame, const Symbol* sym);
+	    void initialize(Frame* frame, const Symbol* sym);
 
 	    /** @brief Is this an active Binding?
 	     *
@@ -324,7 +324,7 @@ namespace CXXR {
 	     */
 	    RObject* value() const;
 
-	    /** @brief Auxiliary function to Frame::visitChildren().
+	    /** @brief Auxiliary function to Frame::visitReferents().
 	     *
 	     * This function conducts a visitor to those objects
 	     * derived from GCNode which become 'children' of this
@@ -333,11 +333,11 @@ namespace CXXR {
 	     *
 	     * @param v Pointer to the visitor object.
 	     */
-	    void visitChildren(const_visitor* v) const;
+	    void visitReferents(const_visitor* v) const;
 	private:
-	    const Frame* m_frame;
-	    const Symbol* m_symbol;
-	    RObject* m_value;
+	    Frame* m_frame;
+	    GCEdge<const Symbol> m_symbol;
+	    GCEdge<> m_value;
 	    short int m_missing;
 	    bool m_active;
 	    bool m_locked;

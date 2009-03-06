@@ -150,8 +150,7 @@ void Frame::Binding::assign(RObject* new_value)
 	setActiveValue(m_value, new_value);
 	m_frame->monitorRead(*this);
     } else {
-	m_value = new_value;
-	m_frame->propagateAge(m_value);
+	m_value.retarget(m_frame, new_value);
 	m_frame->monitorWrite(*this);
     }
 }

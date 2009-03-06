@@ -77,7 +77,7 @@ void Frame::Binding::fromPairList(PairList* pl)
     setLocking(pl->m_binding_locked);
 }
     
-void Frame::Binding::initialize(const Frame* frame, const Symbol* sym)
+void Frame::Binding::initialize(Frame* frame, const Symbol* sym)
 {
     if (m_frame)
 	Rf_error(_("internal error: binding already initialized"));
@@ -85,8 +85,7 @@ void Frame::Binding::initialize(const Frame* frame, const Symbol* sym)
 	Rf_error(_("internal error in %s"),
 		 "Frame::Binding::initialize()");
     m_frame = frame;
-    m_symbol = sym;
-    frame->propagateAge(sym);
+    m_symbol.retarget(frame, sym);
 }
 
 void Frame::Binding::setFunction(FunctionBase* function)
@@ -98,8 +97,7 @@ void Frame::Binding::setFunction(FunctionBase* function)
 	if (isLocked())
 	    Rf_error(_("cannot change active binding if binding is locked"));
     }
-    m_value = function;
-    m_frame->propagateAge(m_value);
+    m_value.retarget(m_frame, function);
     m_active = true;
     m_frame->monitorWrite(*this);
 }
@@ -119,19 +117,18 @@ void Frame::Binding::setValue(RObject* new_value)
     if (isActive())
 	Rf_error(_("internal error: use %s for active bindings"),
 		 "setFunction()");
-    m_value = new_value;
-    m_frame->propagateAge(m_value);
+    m_value.retarget(m_frame, new_value);
     m_frame->monitorWrite(*this);
 }
 
 // Frame::Binding::value() is defined in envir.cpp (for the time being).
 	
-void Frame::Binding::visitChildren(const_visitor* v) const
+void Frame::Binding::visitReferents(const_visitor* v) const
 {
-    // We assume the visitor has just from m_frame, so we don't
+    // We assume the visitor has just come from m_frame, so we don't
     // visit that.
-    if (m_symbol) m_symbol->conductVisitor(v);
-    if (m_value) m_value->conductVisitor(v);
+    m_symbol.conductVisitor(v);
+    m_value.conductVisitor(v);
 }
 
 
