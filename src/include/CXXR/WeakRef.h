@@ -202,9 +202,9 @@ namespace CXXR {
 	static int s_count;  // Count of references in existence (for
 			     // debugging)
 
-	RObject* m_key;
-	RObject* m_value;
-	RObject* m_Rfinalizer;
+	GCEdge<> m_key;
+	GCEdge<> m_value;
+	GCEdge<> m_Rfinalizer;
 	R_CFinalizer_t m_Cfinalizer;
 	WRList::iterator m_lit;
 	bool m_ready_to_finalize;

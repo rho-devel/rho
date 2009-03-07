@@ -278,9 +278,9 @@ bool WeakRef::runFinalizers()
 void WeakRef::tombstone()
 {
     WRList* oldl = wrList();
-    m_key = 0;
-    m_value = 0;
-    m_Rfinalizer = 0;
+    m_key.retarget(this, 0);
+    m_value.retarget(this, 0);
+    m_Rfinalizer.retarget(this, 0);
     m_Cfinalizer = 0;
     m_ready_to_finalize = false;
     transfer(oldl, &s_tombstone);
