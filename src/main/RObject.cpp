@@ -75,9 +75,7 @@ RObject::RObject(const RObject& pattern)
     : m_type(pattern.m_type), m_named(0), m_has_class(pattern.m_has_class),
       m_S4_object(pattern.m_S4_object), m_frozen(false),
       m_attrib(pattern.m_attrib)
-{
-    m_attrib.retarget(this, clone<PairList>(pattern.m_attrib));
-}
+{}
 
 void RObject::clearAttributes()
 {
