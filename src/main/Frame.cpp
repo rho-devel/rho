@@ -62,8 +62,6 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
-// Frame::Binding::forcedValue() is defined in envir.cpp (for the time being).
-	
 void Frame::Binding::fromPairList(PairList* pl)
 {
     const RObject* tag = pl->tag();
@@ -131,6 +129,7 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     m_value.conductVisitor(v);
 }
 
+// Frame::forcedValue() is defined in envir.cpp (for the time being).
 
 namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)

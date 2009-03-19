@@ -248,10 +248,7 @@ namespace CXXR {
     /** @brief Search for a Binding whose value satisfies a predicate.
      *
      * This function looks for a Binding of \a symbol, and tests
-     * whether the Binding's value satisfies a predicate \a pred.  The
-     * search propagates as necessary to enclosing environments until
-     * either a Binding satisfying the predicate is found, or the
-     * chain of enclosing environments is exhausted.
+     * whether the Binding's value satisfies a predicate \a pred.
      *
      * If a Binding of \a symbol to a Promise is encountered, the
      * Promise is forced (within the Binding's environment) before
@@ -262,8 +259,8 @@ namespace CXXR {
      * Read/write monitors are invoked in the following circumstances:
      * (i) If a Promise is forced, any read monitor for the relevant
      * Binding is called before forcing it, and any write monitor for
-     * that Binding is called immediately afterwards.  (ii) If this
-     * function succeeds in finding a Binding satisfying the
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding satisfying the
      * predicate, then any read monitor for that Binding is called.
      *
      * @param UnaryPredicate A type of function or function object
@@ -274,10 +271,16 @@ namespace CXXR {
      *          sought.
      *
      * @param env Pointer to the Environment in which the search for a
-     *          Binding is to start.
+     *          Binding is to start.  Must not be null.
      *
      * @param pred The UnaryPredicate object to be used to test
      *          candidate values.
+     *
+     * @param inherits If false, only the Frame of \a env will be
+     *          searched; if true, the search will propagate as
+     *          necessary to enclosing environments until either a
+     *          Binding satisfying the predicate is found, or the
+     *          chain of enclosing environments is exhausted.
      *
      * @return If a Binding satisfying the predicate was found, the
      * first element of of the pair is a pointer to the Environment in
@@ -290,22 +293,24 @@ namespace CXXR {
     template <typename UnaryPredicate>
     std::pair<Environment*, RObject*>
     findTestedValue(const Symbol* symbol, Environment* env,
-		    UnaryPredicate pred)
+		    UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	while (env) {
-	    Frame::Binding* bdg = env->frame()->binding(symbol);
-	    if (bdg) {
-		pair<bool, RObject*> tv = bdg->testedValue(env, pred);
-		if (tv.first)
-		    return make_pair(env, tv.second);
+	RObject* val;
+	bool found = false;
+	do {
+	    pair<bool, RObject*> pr = env->frame()->forcedValue(symbol, env);
+	    if (pr.first) {
+		val = pr.second;
+		found = pred(val);
 	    }
 	    env = env->enclosingEnvironment();
-	}
+	} while (!found && inherits && env);
+	if (found)
+	    return make_pair(env, val);
 	return pair<Environment*, RObject*>(0, 0);
     }
 	    
-
     // Predefined Environments visible in 'namespace CXXR':
     extern const GCRoot<Environment> EmptyEnvironment;
     extern const GCRoot<Environment> BaseEnvironment;

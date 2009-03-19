@@ -155,23 +155,40 @@ void Frame::Binding::assign(RObject* new_value)
     }
 }
 
-RObject* Frame::Binding::forcedValue(const Environment* env) const
-{
-    RObject* ans = m_value;
-    if (ans && ans->sexptype() == PROMSXP) {
-	GCRoot<> ansrt(ans);
-	m_frame->monitorRead(*this);
-	ans = eval(ans, const_cast<Environment*>(env));
-	m_frame->monitorWrite(*this);
-    }
-    return ans;
-}
-
 RObject* Frame::Binding::value() const
 {
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
     return ans;
+}
+
+pair<bool, RObject*>
+Frame::forcedValue(const Symbol* symbol, const Environment* env)
+{
+    Binding* bdg = binding(symbol);
+    RObject* val;
+    if (bdg) {
+	val = bdg->rawValue();
+	if (val && val->sexptype() == PROMSXP) {
+	    Promise* prom = static_cast<Promise*>(val);
+	    if (prom->environment()) {
+		GCRoot<Promise> promrt(prom);
+		monitorRead(*bdg);
+		val = Rf_eval(val, const_cast<Environment*>(env));
+		if (m_write_monitor) {
+		    GCRoot<> valrt(val);
+		    // The eval() may have invalidated bdg, so we need
+		    // to look it up again.
+		    bdg = binding(symbol);
+		    if (bdg)
+			m_write_monitor(*bdg);
+		}
+	    }
+	    val = const_cast<RObject*>(prom->value());
+	}
+	return make_pair(true, val);
+    }
+    return pair<bool, RObject*>(false, 0);
 }
 
 /* Macro version of isNull for only the test against R_NilValue */
@@ -454,14 +471,7 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     TypeTester typetest(mode);
-    pair<bool, RObject*> pr(false, 0);
-    if (inherits)
-	pr = findTestedValue(sym, env, typetest);
-    else {
-	Frame::Binding* bdg = env->frame()->binding(sym);
-	if (bdg)
-	    pr = bdg->testedValue(env, typetest);
-    }
+    pair<bool, RObject*> pr = findTestedValue(sym, env, typetest, inherits);
     return (pr.first ? pr.second : R_UnboundValue);
 }
 
@@ -514,14 +524,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     ModeTester modetest(mode);
-    pair<bool, RObject*> pr(false, 0);
-    if (inherits)
-	pr = findTestedValue(sym, env, modetest);
-    else {
-	Frame::Binding* bdg = env->frame()->binding(sym);
-	if (bdg)
-	    pr = bdg->testedValue(env, modetest);
-    }
+    pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
     return (pr.first ? pr.second : R_UnboundValue);
 }
 
@@ -667,7 +670,8 @@ SEXP findFun(SEXP symbol, SEXP rho)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     FunctionTester functest(sym);
-    pair<Environment*, RObject*> pr = findTestedValue(sym, env, functest);
+    pair<Environment*, RObject*> pr
+	= findTestedValue(sym, env, functest, true);
     if (pr.first)
 	return pr.second;
     error(_("could not find function \"%s\""), sym->name()->c_str());

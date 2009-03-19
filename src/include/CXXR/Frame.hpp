@@ -268,52 +268,6 @@ namespace CXXR {
 		return m_symbol;
 	    }
 
-	    /** @brief Test whether the Binding's value satisfies a
-	     *         predicate, and if so return the value.
-	     *
-	     * If the Binding's value is a Promise, the Promise is
-	     * forced within a specified Environment \a env, and the
-	     * predicate is then applied to the result of evaluating the
-	     * Promise.
-	     *
-	     * Read/write monitors are invoked in the following
-	     * circumstances: (i) If a Promise is forced, any read
-	     * monitor for this Binding is called before forcing it,
-	     * and any write monitor is called immediately afterwards.
-	     * (ii) If this Binding is found to satisfy the predicate,
-	     * then any read monitor for it is called.
-	     *
-	     * @param UnaryPredicate A type of function or function
-	     *          object capable of accepting const RObject* and
-	     *          returning bool.
-	     *
-	     * @param env Environment to be used for forcing Promises.
-	     *
-	     * @param pred The UnaryPredicate object to be used to
-	     *          test the value.
-	     *
-	     * @return The first element of the pair is true or false
-	     * according to the result of the test.  If the test
-	     * failed, the second element is a null pointer; otherwise
-	     * the second element is the value of the Binding, except
-	     * that if the value was a Promise, the second element is
-	     * the result of evaluating the Promise.
-	     */
-	    template <typename UnaryPredicate>
-	    std::pair<bool, RObject*>
-	    testedValue(const Environment* env,
-			UnaryPredicate pred = UnaryPredicate()) const
-	    {
-		using namespace std;
-		RObject* fv = forcedValue(env);
-		if (!pred(fv))
-		    return pair<bool, RObject*>(0, 0);
-		else {
-		    m_frame->monitorRead(*this);
-		    return make_pair(true, fv);
-		}
-	    }
-		
 	    /** @brief Get value bound to the Symbol.
 	     *
 	     * For an active binding, this evaluates the encapsulated
@@ -341,12 +295,6 @@ namespace CXXR {
 	    short int m_missing;
 	    bool m_active;
 	    bool m_locked;
-
-	    // The value of the binding, or - if the value is a
-	    // Promise - the result of forcing this promise within
-	    // env.  This is used by testedValue(), and does not in
-	    // itself prompt any monitors.
-	    RObject* forcedValue(const Environment* env) const;
 	};
 
 	typedef void (*monitor)(const Binding&);
@@ -421,6 +369,28 @@ namespace CXXR {
 	 * mapping for \a symbol.
 	 */
 	virtual bool erase(const Symbol* symbol) = 0;
+
+	/** @brief Look up bound value, forcing Promises if necessary.
+	 *
+	 * If a Symbol is bound to anything other than a Promise, this
+	 * function returns a pointer to that bound value.  However,
+	 * if the symbol is bound to a Promise, the function forces
+	 * the Promise if necessary, and returns a pointer to the
+	 * value of the Promise.
+	 *
+	 * @param symbol The Symbol for which a mapping is sought.
+	 *
+	 * @param env The Environment within which Promises are to be
+	 *          forced.
+	 *
+	 * @return If the Frame does not bind \a symbol, the first
+	 * element will be false and the second element a null
+	 * pointer.  Otherwise the first element will be true and the
+	 * second element a pointer to the bound value (or the Promise
+	 * value if the bound value is a Promise).
+	 */
+	std::pair<bool, RObject*>
+	forcedValue(const Symbol* symbol, const Environment* env);
 
 	/** @brief Is the Frame locked?
 	 *
