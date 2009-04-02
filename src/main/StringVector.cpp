@@ -55,7 +55,7 @@ namespace CXXR {
 
 StringVector* StringVector::clone() const
 {
-    return new StringVector(*this);
+    return expose(new StringVector(*this));
 }
 
 namespace {

@@ -21,19 +21,20 @@ valgrind_flags = -DVALGRIND_LEVEL=2
 endif
 
 sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
-              MemoryBanktest.cpp RObject_sizer.cpp
+              HeterogeneousListtest.cpp MemoryBanktest.cpp RObject_sizer.cpp \
+              splice_test.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        GCManagertest splice_test
+        HeterogeneousListtest GCManagertest splice_test
 
 check : $(tests:=.ts)
 
 Allocatortest.o : Allocatortest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
-Allocatortest_objs = Allocatortest.o MemoryBank.o CellHeap.o
+Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
 
 Allocatortest : $(Allocatortest_objs)
 	$(LINK.cc) -o $@ $(Allocatortest_objs)
@@ -81,7 +82,7 @@ CellPooltest.ts : CellPooltest CellPooltest.save
 GCManager.o : $(maindir)/GCManager.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
 
-GCManagertest_objs = GCManagertest.o CellHeap.o GCManager.o MemoryBank.o
+GCManagertest_objs = GCManagertest.o CellPool.o GCManager.o MemoryBank.o
 
 GCManagertest : $(GCManagertest_objs)
 	$(LINK.cc) -o $@ $(GCManagertest_objs)
@@ -98,13 +99,30 @@ GCNode.o : $(maindir)/GCNode.cpp
 GCRoot.o : $(maindir)/GCRoot.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -DDEBUG_ADJUST_HEAP -c -o $@ $<
 
+HeterogeneousListtest.o : HeterogeneousListtest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
+
+HeterogeneousList.o : $(maindir)/HeterogeneousList.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c -o $@ $<
+
+HeterogeneousListtest_objs =  HeterogeneousListtest.o HeterogeneousList.o
+
+HeterogeneousListtest : $(HeterogeneousListtest_objs)
+	$(LINK.cc) -o $@ $(HeterogeneousListtest_objs)
+
+HeterogeneousListtest.ts : HeterogeneousListtest HeterogeneousListtest.save
+	./$< > HeterogeneousListtest.out
+	diff HeterogeneousListtest.save HeterogeneousListtest.out
+	rm HeterogeneousListtest.out
+	touch $@
+
 MemoryBank.o : $(maindir)/MemoryBank.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
 MemoryBanktest.o : MemoryBanktest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 
-MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellHeap.o
+MemoryBanktest_objs = MemoryBanktest.o MemoryBank.o CellPool.o
 
 MemoryBanktest : $(MemoryBanktest_objs)
 	$(LINK.cc) -o $@ $(MemoryBanktest_objs)

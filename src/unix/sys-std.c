@@ -60,7 +60,6 @@
 #include "Runix.h"
 #include "Startup.h"
 #include <R_ext/Riconv.h>
-#include "CXXR/ExitException.h"
 #include "CXXR/WeakRef.h"
 
 #ifdef HAVE_UNISTD_H
@@ -1096,7 +1095,7 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
     if(ifp) fclose(ifp);
     fpu_setup(FALSE);
 
-    CXXR_exit(status);
+    exit(status);
 }
 
 /*

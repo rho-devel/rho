@@ -44,6 +44,7 @@
 #include "localization.h"
 #include "boost/regex.hpp"
 #include "R_ext/Error.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/CachedString.h"
 
 using namespace std;
@@ -57,18 +58,15 @@ namespace CXXR {
     }
 }
 
-GCRoot<Symbol::Table> Symbol::s_table(new Table, true);
+GCRoot<Symbol::Table> Symbol::s_table(expose(new Table));
 
-GCRoot<const CachedString> CachedString::s_blank(CachedString::obtain(""));
-SEXP R_BlankString = const_cast<CachedString*>(CachedString::blank());
-
-GCRoot<Symbol> Symbol::s_missing_arg(new Symbol, true);
+GCRoot<Symbol> Symbol::s_missing_arg(expose(new Symbol));
 SEXP R_MissingArg = Symbol::missingArgument();
 
-GCRoot<Symbol> Symbol::s_restart_token(new Symbol, true);
+GCRoot<Symbol> Symbol::s_restart_token(expose(new Symbol));
 SEXP R_RestartToken = Symbol::restartToken();
 
-GCRoot<Symbol> Symbol::s_unbound_value(new Symbol, true);
+GCRoot<Symbol> Symbol::s_unbound_value(expose(new Symbol));
 SEXP R_UnboundValue = Symbol::unboundValue();
 
 // As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
@@ -82,7 +80,8 @@ namespace {
 
 void Symbol::Table::visitReferents(const_visitor *v) const
 {
-    for (map::iterator it = s_table->begin(); it != s_table->end(); ++it) {
+    map::iterator end = s_table->end();
+    for (map::iterator it = s_table->begin(); it != end; ++it) {
 	// Beware that a garbage collection may occur in
 	// Symbol::obtain(), after a new entry has been placed in the
 	// symbol table but not yet made to point to a Symbol.  In
@@ -90,8 +89,11 @@ void Symbol::Table::visitReferents(const_visitor *v) const
 	// name); otherwise we don't bother, because it will be
 	// reached via the Symbol anyway.
 	const GCEdge<Symbol>& symbol = (*it).second;
-        if (symbol) symbol.conductVisitor(v);
-	else (*it).first.conductVisitor(v);
+        if (symbol) symbol->conductVisitor(v);
+	else {
+	    const GCNode* name = (*it).first;
+	    if (name) name->conductVisitor(v);
+	}
     }
 }    
 
@@ -123,8 +125,7 @@ Symbol* Symbol::obtain(const CachedString* name)
     map::value_type& val = *it;
     if (pr.second) {
 	try {
-	    val.second.retarget(s_table, new Symbol(name, false));
-	    val.second->expose();
+	    val.second.retarget(s_table, expose(new Symbol(name, false)));
 	} catch (...) {
 	    s_table->erase(it);
 	    throw;
@@ -135,7 +136,7 @@ Symbol* Symbol::obtain(const CachedString* name)
 
 Symbol* Symbol::obtain(const std::string& name)
 {
-    GCRoot<const CachedString> str(CachedString::obtain(name));
+    GCStackRoot<const CachedString> str(CachedString::obtain(name));
     return Symbol::obtain(str);
 }
 
@@ -145,7 +146,7 @@ Symbol* Symbol::obtainDotDotSymbol(unsigned int n)
 	Rf_error(_("..0 is not a permitted symbol name"));
     ostringstream nameos;
     nameos << ".." << n;
-    GCRoot<const CachedString> name(CachedString::obtain(nameos.str()));
+    GCStackRoot<const CachedString> name(CachedString::obtain(nameos.str()));
     return obtain(name);
 }
 
@@ -156,8 +157,9 @@ const char* Symbol::typeName() const
 
 void Symbol::visitReferents(const_visitor* v) const
 {
+    const GCNode* name = m_name;
     RObject::visitReferents(v);
-    m_name.conductVisitor(v);
+    if (name) name->conductVisitor(v);
 }
 
 // Predefined Symbols:

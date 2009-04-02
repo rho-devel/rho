@@ -41,7 +41,7 @@
 #define MEMORYBANK_HPP
 
 #include <cstring>
-#include "CXXR/CellHeap.hpp"
+#include "CXXR/CellPool.hpp"
 #include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
@@ -104,8 +104,10 @@ namespace CXXR {
 	static void deallocate(void* p, size_t bytes)
 	{
 	    if (!p) return;
-	    // Uncommenting this helps to diagnose premature GC:
-	    // memset(p, 0x55, bytes);
+#ifdef FILL55
+	    // This helps to diagnose premature GC:
+	    memset(p, 0x55, bytes);
+#endif
 #if VALGRIND_LEVEL >= 3
 	    size_t blockbytes = bytes + 1;  // trailing redzone
 	    char* c = static_cast<char*>(p);
@@ -165,7 +167,7 @@ namespace CXXR {
 			       size_t threshold = 0);
 #endif
     private:
-	typedef CellHeap Pool;
+	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
 	static const size_t s_max_cell_size = 128;
 	static size_t s_blocks_allocated;

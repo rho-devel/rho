@@ -40,6 +40,7 @@
 #include "CXXR/Expression.h"
 
 #include <iostream>
+#include "CXXR/GCStackRoot.h"
 
 using namespace std;
 using namespace CXXR;
@@ -56,7 +57,7 @@ SEXP R_CurrentExpr = 0;
 
 Expression* Expression::clone() const
 {
-    return new Expression(*this);
+    return expose(new Expression(*this));
 }
 
 const char* Expression::typeName() const
@@ -68,9 +69,7 @@ const char* Expression::typeName() const
 
 SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
-    GCRoot<> crr(cr);
-    GCRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-    Expression* ans = new Expression(crr, tlr);
-    ans->expose();
-    return ans;
+    GCStackRoot<> crr(cr);
+    GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
+    return GCNode::expose(new Expression(crr, tlr));
 }

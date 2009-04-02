@@ -45,7 +45,7 @@
 #include "Defn.h"
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
-#include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 
 using namespace CXXR;
 
@@ -116,7 +116,7 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
 {
     SEXP ans;
     if (TYPEOF(op) == SPECIALSXP) {
-	unsigned int save = GCRootBase::ppsSize();
+	unsigned int save = GCStackRootBase::ppsSize();
 	int flag = PRIMPRINT(op);
 	unsigned int vmax = vmaxget();
 	R_Visible = Rboolean(flag != 1);
@@ -131,7 +131,7 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
        found).
      */
     else if (TYPEOF(op) == BUILTINSXP) {
-	unsigned int save = GCRootBase::ppsSize();
+	unsigned int save = GCStackRootBase::ppsSize();
 	int flag = PRIMPRINT(op);
 	unsigned int vmax = vmaxget();
 	PROTECT(args = evalList(args, rho, op));
@@ -248,8 +248,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     /* Create a new environment without any */
     /* of the formals to the generic in it. */
 
-    PROTECT(newrho = new Environment(0));
-    newrho->expose();
+    PROTECT(newrho = GCNode::expose(new Environment(0)));
     op = CAR(cptr->call);
     switch (TYPEOF(op)) {
     case SYMSXP:
@@ -579,7 +578,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (t != R_NilValue && t != R_MissingArg) {
 	    // Convert t to a PairList:
 	    {
-		GCRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t));
+		GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t));
 		t = ConsCell::convert<PairList>(cc);
 	    }
 	    s = matchmethargs(matchedarg, t);
@@ -735,8 +734,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     PROTECT(s = allocVector(STRSXP, length(klass) - i));
     PROTECT(klass = duplicate(klass));
-    PROTECT(m = new Environment(0));
-    m->expose();
+    PROTECT(m = GCNode::expose(new Environment(0)));
     for (j = 0; j < length(s); j++)
 	SET_STRING_ELT(s, j, duplicate(STRING_ELT(klass, i++)));
     setAttrib(s, install("previous"), klass);
@@ -1371,7 +1369,7 @@ SEXP R_do_new_object(SEXP class_def)
     value = duplicate(R_do_slot(class_def, s_prototype));
     if(TYPEOF(value) == S4SXP || getAttrib(e, R_packageSymbol) != R_NilValue)
     { /* Anything but an object from a base "class" (numeric, matrix,..) */
-	GCRoot<> valrt(value);
+	GCStackRoot<> valrt(value);
 	setAttrib(value, R_ClassSymbol, e);
 	SET_S4_OBJECT(value);
     }

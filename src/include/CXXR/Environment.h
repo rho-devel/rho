@@ -76,8 +76,8 @@ namespace CXXR {
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
 	explicit Environment(Environment* enclosing)
-	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(new StdFrame),
-	      m_single_stepping(false)
+	    : RObject(ENVSXP), m_enclosing(enclosing),
+	      m_frame(expose(new StdFrame)), m_single_stepping(false)
 	{}
 
 	/**
@@ -93,7 +93,7 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(new StdFrame(initial_capacity)),
+	      m_frame(expose(new StdFrame(initial_capacity))),
 	      m_single_stepping(false)
 	{}
 

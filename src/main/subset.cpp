@@ -746,11 +746,10 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ans = 0;
 	    size_t len = LENGTH(ax);
 	    if (len > 0) {
-		GCRoot<PairList> tl(PairList::makeList(len - 1));
-		ans = new Expression(0, tl);
+		GCStackRoot<PairList> tl(PairList::makeList(len - 1));
+		ans = GCNode::expose(new Expression(0, tl));
 	    }
 	    PROTECT(ans);
-	    if (ans) ans->expose();
 	}
 	for(px = ans, i = 0 ; px != R_NilValue ; px = CDR(px))
 	    SETCAR(px, VECTOR_ELT(ax, i++));

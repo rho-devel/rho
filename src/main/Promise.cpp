@@ -40,6 +40,8 @@
 
 #include "CXXR/Promise.h"
 
+#include "CXXR/GCStackRoot.h"
+
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -66,21 +68,22 @@ const char* Promise::typeName() const
 
 void Promise::visitReferents(const_visitor* v) const
 {
+    const GCNode* value = m_value;
+    const GCNode* valgen = m_valgen;
+    const GCNode* env = m_environment;
     RObject::visitReferents(v);
-    m_value.conductVisitor(v);
-    m_valgen.conductVisitor(v);
-    m_environment.conductVisitor(v);
+    if (value) value->conductVisitor(v);
+    if (valgen) valgen->conductVisitor(v);
+    if (env) env->conductVisitor(v);
 }
 
 // ***** C interface *****
 
 SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
 {
-    GCRoot<> exprt(expr);
-    GCRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
-    Promise* ans = new Promise(exprt, *rhort);
-    ans->expose();
-    return ans;
+    GCStackRoot<> exprt(expr);
+    GCStackRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
+    return GCNode::expose(new Promise(exprt, *rhort));
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

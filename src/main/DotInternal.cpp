@@ -51,16 +51,14 @@ namespace CXXR {
     }
 }
 
-const GCRoot<StdFrame> DotInternalTable::s_table(new StdFrame);
+DotInternalTable::map DotInternalTable::s_table;
 
 void DotInternalTable::set(const Symbol* sym, BuiltInFunction* fun)
 {
     if (!fun)
-	s_table->erase(sym);
-    else {
-	Frame::Binding* bdg = s_table->obtainBinding(sym);
-	bdg->setValue(fun);
-    }
+	s_table.erase(sym);
+    else
+	s_table[sym] = fun;
 }
 
 

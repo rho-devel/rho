@@ -41,28 +41,10 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
+#include "CXXR/Allocator.hpp"
+#include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
-
-#define EXPEL_OLD_TO_NEW
-
-/* Comment formerly in memory.c:
-
-   The Heap Structure.  Nodes for each generation are arranged in
-   circular doubly-linked lists.  The double linking allows nodes to
-   be removed in constant time; this is used by the collector to move
-   reachable nodes out of free space and into the appropriate
-   generation.  The circularity eliminates the need for end checks.
-   In addition, each link is anchored at an artificial node called a
-   peg, which simplifies pointer maintenance.  The circular
-   doubly-linked arrangement is taken from Baker's in-place
-   incremental collector design; see
-   ftp://ftp.netcom.com/pub/hb/hbaker/NoMotionGC.html or the Jones and
-   Lins GC book.  The linked lists are implemented by adding two
-   pointer fields to the SEXPREC structure, which increases its size
-   from 5 to 7 words. Other approaches are possible but don't seem
-   worth pursuing for R.
-*/
 
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
@@ -81,91 +63,40 @@ namespace CXXR {
      * derived from GCNode can be created only using 'new'.</li>
      *
      * <li>If the derived class contains any pointers or references to
-     * other objects derived from GCNode, it should reimplement the
-     * method visitReferents() appropriately.</li>
-     *
-     * <li>If the derived class contains any pointers to other objects
-     * derived from GCNode, then any post-construction operation that
-     * modifies the pointer must invoke the method propagateAge() with
-     * the new destination of the pointer as its argument, to ensure
-     * that no old-to-new references arise.  There is no need to do
-     * this during the operation of a constructor for the derived
-     * class, because then the object under construction will
-     * necessarily be newer than anything to which it refers.</li>
+     * other objects derived from GCNode, these should be encapsulated
+     * within an object of the templated class GCEdge, and the class
+     * should reimplement the method visitReferents()
+     * appropriately.</li>
      * </ol>
      *
      * \par Infant immunity:
      * While a GCNode or an object of a class derived from GCNode is
      * under construction, it is effectively immune from the garbage
-     * collector.  Not only does this greatly simplify the coding of
-     * the constructors themselves, it also means that in implementing
-     * the virtual method visitReferents(), it is not necessary to
-     * consider the possibility that the garbage collector will invoke
-     * this method for a node whose construction is not yet complete.
+     * collector: the garbage collector regards it as 'reachable', and
+     * so leaves it and any nodes reachable \e via it in place.  This
+     * greatly simplifies the coding of the constructors.
      *
      * \par
-     * The method expose() is used to end this immunity once
-     * construction of an object is complete.  However, there appears
-     * to be no clean and general way in C++ of calling expose() \e
-     * exactly when construction is complete.  Consequently, a node
-     * N's infant immunity will in fact continue until one of the
-     * following events occurs:
+     * A node's infant immunity continues until it is explicitly
+     * exposed to the garbage collection by calling the member
+     * function expose() (in one of its two forms).  It is the
+     * responsibility of any code that creates an object of a class
+     * derived from GCNode to ensure that, under normal operation, the
+     * object is in due course exposed to the garbage collector,
+     * e.g. before a pointer to the node is returned as the value of a
+     * function.  In particular, a node must be exposed before it is
+     * designated as the target of a GCEdge or a GCRoot, or protected
+     * with PROTECT() or REPROTECT(): if the preprocessor variable
+     * CHECK_EXPOSURE is defined, runtime checks for this are inserted
+     * into the code.
      *
-     * <ul>
+     * The simplest way of ensuring timely exposure is always to wrap
+     * the \c new call in a call to expose():
+     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
      *
-     * <li>The method expose() is called explicitly for N, or for a
-     * node that refers to N (and so on recursively).</li>
-     *
-     * <li>N is visited by a \b GCNode::Ager object (as part of write
-     * barrier enforcement).  This will happen if a node that is
-     * already exposed to the garbage collector is modified so that it
-     * refers to N (or a node that refers to N, and so on
-     * recursively).</li>
-     *
-     * <li>A pointer to N (or a node that refers to N, and so on
-     * recursively) is specified in the constructor of a GCRoot
-     * object, and the optional argument \a expose is set to
-     * true.</li>
-     *
-     * <li>N is designated as the key, value or R finalizer of a weak
-     * reference object.</li>
-     *
-     * <li>N is itself a weak reference object (in which case it is
-     * exposed to garbage collection during construction).</li>
-     *
-     * </ul>
-     * 
-     * \par
-     * It is the responsibility of any code that creates an object of
-     * a class derived from GCNode to ensure that, under normal
-     * operation, the object is in due course exposed to the garbage
-     * collector.  However, if exceptions occur, the static member
-     * function slaughterInfants() can be used to delete \e all the
-     * nodes currently enjoying infant immunity.
-     *
-     * \par Nested <tt>new</tt>:
-     * Consider the following code to create a PairList of two
-     * elements, with \c first as the 'car' of the first element and
-     * \c second as the 'car' of the second element:
-     * \code
-     * CXXR::GCRoot<CXXR::PairList>
-     *   pl2(new CXXR::PairList(first, new CXXR::PairList(second)));
-     * \endcode
-     * Is this code sound?  You might suppose that there is a risk
-     * that the second element of the list will be garbage-collected
-     * when \c new is invoked to allocate space for the first element.
-     * But this is not so: at this stage, the second element will
-     * still enjoy infant immunity.
-     *
-     * \par
-     * However, a potential problem arises from a different quarter.
-     * Suppose that the \c new to allocate space for the second
-     * element succeeds, but that the \c new to allocate space for the
-     * first element fails because of shortage of memory, and throws
-     * <tt>std::bad_alloc</tt>.  Then the second element will not be
-     * exposed to the garbage collector, and the space it occupies is
-     * potentially lost.  An easy workaround is for the handler that
-     * catches the exception to invoke slaughterInfants().
+     * If exceptions occur, the static member function
+     * slaughterInfants() can be used to delete \e all the nodes
+     * currently enjoying infant immunity.
      *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
@@ -177,7 +108,7 @@ namespace CXXR {
      * release some external resource (e.g. a lock).  Maybe a garbage
      * collection without a 'mark' phase would do the trick.
      */
-    class GCNode {
+    class GCNode : public HeterogeneousListBase::Link {
     public:
 	/** @brief Abstract base class for the Visitor design pattern.
 	 *
@@ -204,50 +135,57 @@ namespace CXXR {
 	};
 
 	GCNode()
-	    : m_next(s_generation[0]), m_gcgen(0), m_marked(false),
-	      m_aged(false)
+	    : m_bits(s_mark)
 	{
-	    s_generation[0] = this;
-	    ++s_gencount[0];
+	    s_generation[0].splice_back(this);
 	    ++s_num_nodes;
 	}
 
-	/* Comment not yet applicable; parked here temporarily.
+	/** @brief Allocate memory.
+         *
+	 * Allocates memory for a new object of a class derived from
+	 * GCNode, and fills the memory with zero bytes.
 	 *
-	 * @note Why can't I specify the target in the constructor?
-	 * Suppose that <tt>Foo</tt>, Bar and \c Baz are all classes
-	 * derived from GCNode, and that a \c Foo object in effect
-	 * 'contains' a \c Bar and a <tt>Baz</tt>.  If it were
-	 * possibly to initialize a GCEdge in its constructor, it
-	 * would be tempting to implement the \c Foo constructor as
-	 * follows:
+	 * @param bytes Number of bytes of memory required.
+	 *
+	 * @return Pointer to the allocated memory block.
+	 *
+	 * @par Why zero out the memory?
+	 * Suppose that <tt>Foo</tt> and \c Bar are classes derived
+	 * from GCNode, and that a \c Foo object in effect 'contains'
+	 * a <tt>Bar</tt>.  Consider the following implementation of
+	 * <tt>Foo</tt>'s constructor:
 	 * <pre>
 	 * Foo()
-	 *      : m_edge1(new Bar), m_edge2(new Baz)
+	 *      : m_edge(new Bar)
 	 * {}
 	 * </pre>
 	 * But now consider what would happen if the call <tt>new
 	 * Bar</tt> resulted in a garbage collection.  Then the
 	 * visitReferents() function of the object under construction
-	 * may be called before the field <tt>m_edge2</tt> has been
-	 * initialized, i.e. when it still contains junk, and this
-	 * will result in undefined behaviour, probably a program
-	 * crash.  This bug would remain latent until a garbage
-	 * collection happened at precisely this point.
+	 * may be called before the field <tt>m_edge</tt> has been
+	 * initialized.  Were <tt>operator new</tt> not to zero out
+	 * the memory for the \c Foo object, then \c m_edge would at
+	 * this point contain junk, so when visitReferents() tries to
+	 * explore <tt>m_edge</tt>, this would result in undefined
+	 * behaviour, probably a program crash.  (This bug would
+	 * remain latent until a garbage collection happened at
+	 * precisely this point.)  With prezeroing by <tt>operator
+	 * new</tt> however, visitReferents() will not attempt to
+	 * explore <tt>m_edge</tt>, because it will regard it as a
+	 * null edge.  (This assumes that a null pointer is
+	 * represented by a zero bit pattern.  In the unlikely event
+	 * that CXXR needs to be ported to a platform for which this
+	 * is not true, an extra test in GCEdge<T>::conductVisitor()
+	 * will be necessary.
 	 */
+	static void* operator new(size_t bytes);
 
-	/** @brief Allocate memory.
-         *
-	 * Allocates memory for a new object of a class derived from
-	 * GCNode.
-	 *
-	 * @param bytes Number of bytes of memory required.
-	 *
-	 * @return Pointer to the allocated memory block.
+	/** @brief Placement new for GCNode.
 	 */
-	static void* operator new(size_t bytes)
+	static void* operator new(size_t, void* where)
 	{
-	    return MemoryBank::allocate(bytes);
+	    return where;
 	}
 
 	/** @brief Deallocate memory
@@ -291,26 +229,44 @@ namespace CXXR {
 	    return true;
 	}
 
-	/** @brief Make node known to the garbage collector.
+	/** @brief Exposes node to the garbage collector.
 	 *
-	 * Makes this node known to the garbage collector (if it isn't
-	 * already), and so on recursively for nodes to which this
-	 * node refers.
-	 *
-	 * @note The generation change initiated by expose() must be
-	 * recursively propagated immediately, rather than having the
-	 * recursive propagation deferred until the next garbage
-	 * collection as is the case with propagateAge().  Otherwise,
-	 * if some element A of a structure S were replaced by B, and
-	 * this happened after the top-level element of S was exposed
-	 * but before the next following garbage collection, then at
-	 * that garbage collection propagateAges() would expose B to
-	 * the garbage collector but not A.
+	 * Exposes this node to garbage collection by terminating its
+	 * infant immunity.
 	 */
 	void expose() const
 	{
-	    Ager exposer(1);
-	    conductVisitor(&exposer);
+	    if (!(m_bits & GENERATION)) {
+		m_bits |= 1;
+		s_generation[1].splice_back(this);
+	    }
+	}
+
+	/** @brief Is node exposed to garbage collection?
+	 *
+	 * @return true iff this node is exposed to the garbage
+	 * collector.
+	 */
+	bool exposed() const
+	{
+	    return (m_bits & GENERATION);
+	}
+
+	/** @brief Exposes node to the garbage collector.
+	 *
+	 * @param T GCNode or any class derived from it, possibly
+	 *          qualified by const.
+	 *
+	 * @param node Pointer to the node to be exposed to garbage
+	 *          collection by terminating its infant immunity.
+	 *
+	 * @return the pointer \a node itself.
+	 */
+	template <class T>
+	static T* expose(T* node)
+	{
+	    node->expose();
+	    return node;
 	}
 
 	/** @brief Initiate a garbage collection.
@@ -319,6 +275,24 @@ namespace CXXR {
 	 * collect.  Must be strictly smaller than numGenerations().
 	 */
 	static void gc(unsigned int num_old_gens);
+
+	/** @brief Subject to configuration, check that a GCNode is exposed.
+	 *
+	 * Normally, this function is an inlined no-op.  However, if
+	 * the preprocessor variable CHECK_EXPOSURE is defined, it
+	 * checks that a GCNode is exposed to garbage collection, and
+	 * aborts the program if not.  This can be a useful diagnostic
+	 * aid.
+	 *
+	 * @param node Pointer to the node to be checked, or a null
+	 *          pointer in which case the check passes.
+	 */
+	static void maybeCheckExposed(const GCNode* node)
+	{
+#ifdef CHECK_EXPOSURE
+	    abortIfNotExposed(node);
+#endif
+	}
 
 	/** @brief Perform sanity checks on a GCNode.
 	 *
@@ -349,30 +323,6 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
-	/** @brief Prevent old-to-new references.
-	 * 
-	 * If \a node points to a node of a younger generation than
-	 * this node, then raise it to this node's generation, and
-	 * propagate this change to the nodes to which \a node refers,
-	 * and so on recursively.
-	 *
-	 * @param node Pointer to the node whose generation is to be
-	 *          adjusted if necessary.  If this is a null pointer,
-	 *          the method does nothing.
-	 *
-	 * @note In practice only \a node has its generation changed
-	 * as a direct result of this call; the recursive propagation
-	 * of the change is deferred until the next garbage
-	 * collection.
-	 *
-	 * @todo Make this protected once CHECK_OLD_TO_NEW in
-	 * memory.cpp is no longer required.
-	 */
-	void propagateAge(const GCNode* node) const
-	{
-	    if (node) node->ageTo(m_gcgen);
-	}
-
 	/** @brief Delete all nodes with infant immunity.
 	 *
 	 * This function is typically called during error recovery,
@@ -394,7 +344,11 @@ namespace CXXR {
 	 * the reimplemented version must remember to invoke
 	 * visitReferents() for the immediate base class of the
 	 * derived class, to ensure that \e all referents of the
-	 * object get visited.
+	 * object get visited.  It is recommended that implementations
+	 * set up stack-based pointers to all the referents of a node
+	 * before visiting any of them; in that case, if the
+	 * (recursive) visiting pushes the node out of the processor
+	 * cache, there is no need to fetch it back in.
 	 */
 	virtual void visitReferents(const_visitor* v) const {}
     protected:
@@ -407,7 +361,27 @@ namespace CXXR {
 	virtual ~GCNode()
 	{
 	    --s_num_nodes;
-	    --s_gencount[m_gcgen];
+	}
+
+	/** @brief Prevent old-to-new references.
+	 * 
+	 * If \a node points to a node of a younger generation than
+	 * this node, then raise it to this node's generation, and
+	 * propagate this change to the nodes to which \a node refers,
+	 * and so on recursively.
+	 *
+	 * @param node Pointer to the node whose generation is to be
+	 *          adjusted if necessary.  If this is a null pointer,
+	 *          the method does nothing.
+	 *
+	 * @note In practice only \a node has its generation changed
+	 * as a direct result of this call; the recursive propagation
+	 * of the change is deferred until the next garbage
+	 * collection.
+	 */
+	void propagateAge(const GCNode* node) const
+	{
+	    if (node) node->ageTo(generation());
 	}
     private:
 	friend class WeakRef;
@@ -479,41 +453,49 @@ namespace CXXR {
 	    unsigned int m_mingen;
 	};
 
-	// Class used to marshal nodes awaiting transfer to a
-	// different generation.  Defined in GCNode.cpp.
-	class XferList;
+	typedef HeterogeneousList<GCNode> List;
 		
 	static unsigned int s_num_generations;
-	static const GCNode** s_generation;  // s_generation[g] is
-				// nominally a list of the nodes in
-				// generation g; however, some nodes
-				// in the list may subsequently have
-				// changed generation.
+	static List* s_generation;  // s_generation[g] is a list of
+		       // the nodes in generation g, excluding those
+		       // on s_aged_list.
+	static List* s_aged_list; // List of nodes whose generation has
+		       // been changed since the last garbage
+		       // collection.  They are here awaiting
+		       // propagation of the generation change to
+		       // their referents (and so on recursively),
+		       // which will happen at the start of the next
+		       // garbage collection.
+	static List* s_reachable;  // During the mark phase of garbage
+		       // collection, if a node within the generations
+		       // being collected is found to be reachable
+		       // from the roots, it is moved to the list
+		       // s_reachable[g], where g is the generation
+		       // that this node will be promoted to following
+		       // the garbage collection.  (Consequently,
+		       // s_reachable[1] is unused.)  Between garbage
+		       // collections, all these lists should be empty.
+	static List* s_lists[];  // Look-up table used to determine
+			// from the m_bits field which list a node is
+			// currently on.
 	static unsigned int* s_next_gen; // Look-up table used to
 			       // advance generation number following
 			       // a garbage collection.
-	static unsigned int* s_gencount;
+	static unsigned char s_mark;  // During garbage collection, a
+			       // node is considered marked if its
+			       // MARK field matches the corresponding
+			       // bits of s_mark.
 	static size_t s_num_nodes;
 
-	typedef std::vector<const GCNode*> AgedList;
-	static AgedList* s_aged_list; // List of nodes whose
-			   // generation numbers have been changed (by
-			   // setting the m_aged flag) since the last
-			   // garbage collection.
+	// Masks applicable to the m_bits field:
+	enum {GENERATION = 3, AGED = 4, LIST = 7, MARK = 0x70};
 
-	mutable const GCNode *m_next;
-	mutable unsigned char m_gcgen;
-	mutable bool m_marked : 1;
-	mutable bool m_aged   : 1;  // true if the generation number
-		       // of this node has been changed (otherwise
-		       // than from 0 to 1) since the last garbage
-		       // collection, and this change has not yet been
-		       // propagated recursively.
+	mutable unsigned char m_bits;
 
-	// Special constructor for pegs (i.e. dummy nodes used to
-	// simplify list management).  The parameter is simply to 
-	// give this constructor a distinct signature.
-	explicit GCNode(int /*ignored*/);
+	// m_bits&AGED is non-zero if the generation number of the
+	// node has been changed (otherwise than from 0 to 1) since
+	// the last garbage collection, and this change has not yet
+	// been propagated recursively.
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
@@ -524,6 +506,9 @@ namespace CXXR {
 	// allocating arrays of GCNode.
 	static void* operator new[](size_t);
 
+	// Abort program if 'node' is not exposed to GC.
+	static void abortIfNotExposed(const GCNode* node);
+
 	// Force the generation number of this node up to mingen, and
 	// if the generation number is changed, flag up the change for
 	// recursive propagation by propagateAges().
@@ -531,6 +516,11 @@ namespace CXXR {
 
 	// Clean up static data at end of run:
 	static void cleanup();
+
+	unsigned char generation() const
+	{
+	    return m_bits & GENERATION;
+	}
 
 	/** @brief Initialize static members.
 	 *
@@ -543,14 +533,20 @@ namespace CXXR {
 	 */
 	static void initialize();
 
-	bool isMarked() const {return m_marked;}
+	bool isMarked() const {return (m_bits & MARK) == s_mark;}
 
-	void mark() const
+	// List on which this node is currently recorded.
+	List& list() const
 	{
-	    m_marked = true;
+	    return (*s_lists)[m_bits & LIST];
 	}
 
-	const GCNode* next() const {return m_next;}
+	/** @brief Carry out the mark phase of garbage collection.
+	 *
+	 * @param max_generation The highest generation number to be
+	 *          swept.
+	 */
+	static void mark(unsigned int max_generation);
 
 	// This is the first stage of garbage collection.  It
 	// propagates the generation changes initiated by
@@ -559,25 +555,16 @@ namespace CXXR {
 
 	/** @brief Carry out the sweep phase of garbage collection.
 	 *
-	 * Exit conditions: (i) All nodes that on entry were within
-	 * the singly-linked lists of the swept generations will have
-	 * been moved, if necessary, to the singly-linked list
-	 * appropriate to their generation.  (This generation is subject to
-	 * further change as under (iv) below.)  (ii) all nodes within the
-	 * swept generations that were not marked on entry, apart from
-	 * those in Generation 0, will have been deleted.  (iii) all
-	 * nodes will be unmarked.  (iv) Each node within the swept
-	 * generations, other than Generation 0, will have been moved
-	 * to the next higher generation, unless it was already in the
-	 * highest generation.
-	 *
 	 * @param max_generation The highest generation number to be
 	 *          swept.
 	 */
 	static void sweep(unsigned int max_generation);
 
-	void unmark() const {m_marked = false;}
+	// Conduct visitor to all nodes currently enjoying infant
+	// immunity.
+	static void visitInfants(const_visitor* v);
 
+	friend class GCEdgeBase;
 	friend class SchwarzCounter<GCNode>;
     };
 }  // namespace CXXR

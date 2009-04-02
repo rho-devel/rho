@@ -44,7 +44,7 @@
 
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
-#include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
 #include "RCNTXT.h"
@@ -68,10 +68,8 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
       m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
-    expose();
-    if (m_key)
-	m_key->expose();
-    else tombstone();
+    if (!m_key)
+	tombstone();
     // Force old-to-new checks:
     m_key->propagateAge(m_value);
     m_key->propagateAge(m_Rfinalizer);
@@ -84,10 +82,8 @@ WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
       m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
-    expose();
-    if (m_key)
-	m_key->expose();
-    else tombstone();
+    if (!m_key)
+	tombstone();
     // Force old-to-new check:
     m_key->propagateAge(m_value);
     ++s_count;
@@ -175,7 +171,7 @@ void WeakRef::markThru(unsigned int max_gen)
 	    while (lit != s_live.end()) {
 		WeakRef* wr = *lit++;
 		RObject* key = wr->key();
-		if (key->m_gcgen > max_gen || key->isMarked()) {
+		if (key->generation() > max_gen || key->isMarked()) {
 		    RObject* value = wr->value();
 		    if (value && value->conductVisitor(&marker))
 			newmarks = true;
@@ -250,8 +246,8 @@ bool WeakRef::runFinalizers()
 	Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
 			0, GlobalEnvironment, R_BaseEnv, 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
-	GCRoot<> topExp(R_CurrentExpr);
-	unsigned int savestack = GCRootBase::ppsSize();
+	GCStackRoot<> topExp(R_CurrentExpr);
+	unsigned int savestack = GCStackRootBase::ppsSize();
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << &thiscontext << endl;
 	try {
@@ -269,7 +265,7 @@ bool WeakRef::runFinalizers()
 	//	     << &thiscontext << endl;
 	Rf_endcontext(&thiscontext);
 	R_ToplevelContext = saveToplevelContext;
-	GCRootBase::ppsRestoreSize(savestack);
+	GCStackRootBase::ppsRestoreSize(savestack);
 	R_CurrentExpr = topExp;
     }
     return finalizer_run;

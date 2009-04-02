@@ -28,20 +28,26 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
-/** @file ExitException.cpp
+/** @file GCEdge.cpp
  *
- * Implementation of function CXXR_exit().
+ * Implementation of class GCEdgeBase.
  */
 
-#include "CXXR/ExitException.h"
+#include "CXXR/GCEdge.hpp"
 
+#include <cstdlib>
+#include <iostream>
+
+using namespace std;
 using namespace CXXR;
 
-void CXXR_exit(int exit_status)
+void GCEdgeBase::retarget(GCNode* from, const GCNode* to)
 {
-    throw ExitException(exit_status);
+    GCNode::maybeCheckExposed(to);
+    if (to && from->generation() > 1)
+	to->ageTo(from->generation());
 }

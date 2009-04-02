@@ -72,6 +72,7 @@
 #include "CXXR/ComplexVector.h"
 #include "CXXR/DotInternal.h"
 #include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 #include "CXXR/ExpressionVector.h"

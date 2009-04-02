@@ -45,6 +45,23 @@
 namespace CXXR {
     class RObject;
 
+    /** @brief Untemplated base class for GCEdge.
+     */
+    class GCEdgeBase {
+    public:
+	/** @brief Redirect the GCEdgeBase to point at a different node.
+	 *
+	 * @param from This \e must point to the GCNode object that
+	 *          contains this GCEdge object.
+	 *
+	 * @param to Pointer to the object to which reference is now
+	 *           to be made.
+	 */
+	void retarget(GCNode* from, const GCNode* to);
+    private:
+	static void abortIfNotExposed(const GCNode* target);
+    };
+
     /** @brief Directed edge in the graph whose nodes are GCNode objects.
      *
      * This class encapsulates a pointer from one GCNode to another,
@@ -64,20 +81,35 @@ namespace CXXR {
      *          GCEdge<const String>.
      */
     template <class T = RObject>
-    class GCEdge {
+    class GCEdge : public GCEdgeBase {
     public:
+	GCEdge()
+	    : m_target(0)
+	{}
+
 	/** @brief Primary constructor.
 	 *
 	 * @param target Pointer to the object to which this GCEdge is
-	 *          to refer. 
+	 *          to refer.  A null pointer is permissible.
 	 *
-	 * @note Unless \a target is a null pointer, this constructor
-	 * should be called only as part of the construction of the
-	 * object derived from GCNode of which this GCEdge forms a part.
+	 * @note This constructor should be called only as part of the
+	 * construction of the object derived from GCNode of which
+	 * this GCEdge forms a part.
 	 */
-	explicit GCEdge(T* target = 0)
+	explicit GCEdge(T* target)
 	    : m_target(target)
-	{}
+	{
+	    // This rather inelegant conditional compilation is
+	    // necessary to allow the primary constructor of ConsCell
+	    // to be inlined when CHECK_EXPOSURE is not defined.  Were
+	    // the call to maybeCheckExposed() included in that case,
+	    // the instantiation would fail for ConsCell::m_tail
+	    // because the compiler wouldn't know that PairList
+	    // inherits from RObject.
+#ifdef CHECK_EXPOSURE
+	    GCNode::maybeCheckExposed(m_target);
+#endif
+	}
 
 	/** @brief Copy constructor.
 	 *
@@ -106,16 +138,6 @@ namespace CXXR {
 	    return m_target;
 	}
 
-	/** @brief Present the target (if any) of this GCEdge to a
-	 *  visitor.
-	 *
-	 * @param v Reference to the visitor object.
-	 */
-	void conductVisitor(GCNode::const_visitor* v) const
-	{
-	    if (m_target) m_target->conductVisitor(v);
-	}
-
 	/** @brief Redirect the GCEdge to point at a (possibly) different node.
 	 *
 	 * @param from This \e must point to the GCNode object that
@@ -127,7 +149,7 @@ namespace CXXR {
 	void retarget(GCNode* from, T* to)
 	{
 	    m_target = to;
-	    from->propagateAge(to);
+	    GCEdgeBase::retarget(from, to);
 	}
     private:
 	T* m_target;

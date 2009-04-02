@@ -59,7 +59,7 @@ namespace CXXR {
 
 Closure* Closure::clone() const
 {
-    return new Closure(*this);
+    return expose(new Closure(*this));
 }
 
 const char* Closure::typeName() const
@@ -69,8 +69,11 @@ const char* Closure::typeName() const
 
 void Closure::visitReferents(const_visitor* v) const
 {
+    const GCNode* formals = m_formals;
+    const GCNode* body = m_body;
+    const GCNode* environment = m_environment;
     RObject::visitReferents(v);
-    m_formals.conductVisitor(v);
-    m_body.conductVisitor(v);
-    m_environment.conductVisitor(v);
+    if (formals) formals->conductVisitor(v);
+    if (body) body->conductVisitor(v);
+    if (environment) environment->conductVisitor(v);
 }

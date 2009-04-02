@@ -131,9 +131,7 @@ extern "C" {
     inline SEXP mkPRIMSXP(int offset, int eval)
     {
 	using namespace CXXR;
-	BuiltInFunction* ans =  new BuiltInFunction(offset, eval);
-	ans->expose();
-	return ans;
+	return GCNode::expose(new BuiltInFunction(offset, eval));
     }
 #endif
 

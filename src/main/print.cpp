@@ -93,12 +93,13 @@ static void printAttributes(SEXP, SEXP, Rboolean);
 #define TAGBUFLEN 256
 static char tagbuf[TAGBUFLEN + 5];
 
+static GCRoot<> na_string_noquote(mkChar("<NA>"));
 
 /* Used in X11 module for dataentry */
 void PrintDefaults(SEXP rho)
 {
     R_print.na_string = NA_STRING;
-    R_print.na_string_noquote = mkChar("<NA>");
+    R_print.na_string_noquote = na_string_noquote;
     R_print.na_width = strlen(CHAR(R_print.na_string));
     R_print.na_width_noquote = strlen(CHAR(R_print.na_string_noquote));
     R_print.quote = 1;
@@ -379,9 +380,8 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
 	{
-	    GCRoot<PairList> tl(new PairList, true);
-	    PROTECT(newcall = new Expression(0, tl));
-	    newcall->expose();
+	    GCStackRoot<PairList> tl(GCNode::expose(new PairList));
+	    PROTECT(newcall = GCNode::expose(new Expression(0, tl)));
 	}
 	SETCAR(newcall, install("print"));
 
@@ -530,9 +530,8 @@ static void printList(SEXP s, SEXP env)
 	taglen = strlen(tagbuf);
 	ptag = tagbuf + taglen;
 	{
-	    GCRoot<PairList> tl(new PairList, true);
-	    PROTECT(newcall = new Expression(0, tl));
-	    newcall->expose();
+	    GCStackRoot<PairList> tl(GCNode::expose(new PairList));
+	    PROTECT(newcall = GCNode::expose(new Expression(0, tl)));
 	}
 	SETCAR(newcall, install("print"));
 	while (TYPEOF(s) == LISTSXP) {
@@ -865,9 +864,8 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		Rprt_adj right = Rprt_adj(R_print.right);
 
 		{
-		    GCRoot<PairList> tl(PairList::makeList(2));
-		    PROTECT(t = s = new Expression(0, tl));
-		    s->expose();
+		    GCStackRoot<PairList> tl(PairList::makeList(2));
+		    PROTECT(t = s = GCNode::expose(new Expression(0, tl)));
 		}
 		SETCAR(t, install("print")); t = CDR(t);
 		SETCAR(t,  CAR(a)); t = CDR(t);

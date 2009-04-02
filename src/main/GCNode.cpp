@@ -42,45 +42,47 @@
 #include "CXXR/GCNode.hpp"
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 
 using namespace std;
 using namespace CXXR;
 
 unsigned int GCNode::s_num_generations = 0;
-const GCNode** GCNode::s_generation;
+GCNode::List* GCNode::s_generation;
+GCNode::List* GCNode::s_aged_list;
+GCNode::List* GCNode::s_reachable;
+GCNode::List* GCNode::s_lists[8];
 unsigned int* GCNode::s_next_gen;
-unsigned int* GCNode::s_gencount;
-size_t GCNode::s_num_nodes;
-GCNode::AgedList* GCNode::s_aged_list;
+unsigned char GCNode::s_mark = 0;
+size_t GCNode::s_num_nodes = 0;
 
-GCNode::GCNode(int)
-    : m_next(0), m_gcgen(0), m_marked(false), m_aged(false)
-{
-    ++s_gencount[0];
-    ++s_num_nodes;
-}
-
-/*
 void* GCNode::operator new(size_t bytes)
 {
     void* ans = MemoryBank::allocate(bytes);
-    cout << "Node of " << bytes << " bytes allocated at " << ans << endl;
+    memset(ans, 0, bytes);
     return ans;
 }
-*/
+
+void GCNode::abortIfNotExposed(const GCNode* node)
+{
+    if (node && !node->exposed()) {
+	cerr << "Internal error: GCNode not exposed to garbage collection\n";
+	abort();
+    }
+}
 
 void GCNode::ageTo(unsigned int mingen) const
 {
-    if (m_gcgen < mingen) {
-	--s_gencount[m_gcgen];
-	m_gcgen = mingen;
-	++s_gencount[m_gcgen];
-	if (!m_aged) {
-	    m_aged = true;
-	    s_aged_list->push_back(this);
+    if (generation() < mingen) {
+	m_bits &= ~GENERATION;
+	m_bits |= mingen;
+	if (!(m_bits & AGED)) {
+	    m_bits |= AGED;
+	    s_aged_list->splice_back(this);
 	}
     }
 }
@@ -91,49 +93,48 @@ bool GCNode::check()
 	cerr << "GCNode::check() : class not initialised.\n";
 	abort();
     }
-    vector<unsigned int> genct(s_num_generations);
     unsigned int numnodes = 0;
-    // Check each generation:
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
-	OldToNewChecker o2n(gen);
-	for (const GCNode* node = s_generation[gen];
-	     node != 0; node = node->next()) {
-	    unsigned int ngen = node->m_gcgen;
-	    ++genct[ngen];
-	    if (node->isMarked()) {
-		cerr << "GCNode::check() : marked node found.\n";
+    // Check aged list:
+    {
+	List::const_iterator end = s_aged_list->end();
+	for (List::const_iterator it = s_aged_list->begin();
+	     it != end; ++it) {
+	    const GCNode* node = *it;
+	    ++numnodes;
+	    if (node->generation() >= s_num_generations) {
+		cerr << "GCNode::check() : "
+		    "Illegal generation number.\n";
 		abort();
 	    }
+	}
+    }
+    // Check generation lists:
+    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
+	OldToNewChecker o2n(gen);
+	List::const_iterator end = s_generation[gen].end();
+	for (List::const_iterator it = s_generation[gen].begin();
+	     it != end; ++it) {
+	    const GCNode* node = *it;
+	    ++numnodes;
+	    unsigned int ngen = node->generation();
 	    if (ngen >= s_num_generations) {
 		cerr << "GCNode::check() : "
 		    "Illegal generation number.\n";
 		abort();
 	    }
-	    if (ngen < gen) {
+	    if (ngen != gen) {
 		cerr << "GCNode::check() : "
 		    "node has wrong generation for its list.\n";
 		abort();
 	    }
-	    // Don't try visiting children of nodes in Generation
-	    // 0, because these nodes may still be under construction:
-	    if (gen > 0 && !node->m_aged)
+	    if (gen > 1)
 		node->visitReferents(&o2n);
 	}
-    }
-    // Check generation counts:
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
-	if (genct[gen] != s_gencount[gen]) {
-	    cerr << "GCNode::check() : nodes in generation " << gen
-		 << " wrongly counted.\nCounted " << genct[gen]
-		 << "; expected " << s_gencount[gen] << "\n";
-	    abort();
-	}
-	numnodes += genct[gen];
     }
     // Check total number of nodes:
     if (numnodes != s_num_nodes) {
 	cerr << "GCNode::check() :"
-	    "generation node totals inconsistent with grand total.\n";
+	    "recorded number of nodes inconsistent with nodes found.\n";
 	abort();
     }
     return true;
@@ -141,184 +142,142 @@ bool GCNode::check()
 
 void GCNode::cleanup()
 {
+    GCStackRootBase::cleanup();
     GCRootBase::cleanup();
-    delete s_aged_list;
-    delete [] s_gencount;
     delete [] s_next_gen;
+    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
+	s_reachable[gen].freeLinks();
+	s_generation[gen].freeLinks();
+    }
+    delete [] s_reachable;
+    s_aged_list->freeLinks();
+    delete s_aged_list;
     delete [] s_generation;
 }
 
-// GCNode::gc() is in memory.cpp (for the time being)
+void GCNode::gc(unsigned int num_old_gens_to_collect)
+{
+    // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
+    // GCNode::check();
+    // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
+
+    unsigned int max_generation = num_old_gens_to_collect + 1;
+    propagateAges();
+    mark(max_generation);
+    sweep(max_generation);
+
+    // cout << "Finishing garbage collection\n";
+    // GCNode::check();
+    // cout << "Postcheck completed OK: " << s_num_nodes << " nodes\n";
+}
 
 void GCNode::initialize()
 {
     s_num_generations = GCManager::numGenerations();
-    s_generation = new const GCNode*[s_num_generations];
-    s_next_gen = new unsigned int[s_num_generations];
-    s_gencount = new unsigned int[s_num_generations];
-    s_aged_list = new vector<const GCNode*>;
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
-	s_generation[gen] = 0;
-	s_next_gen[gen] = gen + 1;
-	s_gencount[gen] = 0;
+    if (s_num_generations > 4) {
+	cerr << "GCNode::initialize(): "
+	    "current implementation can handle at most 4 generations.\n";
+	abort();
     }
+    s_generation = new List[s_num_generations];
+    s_aged_list = new List;
+    s_reachable = new List[s_num_generations];
+    for (unsigned int i = 0; i < 4; ++i) {
+	s_lists[i] = &s_generation[i];
+	s_lists[i+4] = s_aged_list;
+    }
+    s_next_gen = new unsigned int[s_num_generations];
+    for (unsigned int gen = 1; gen < s_num_generations; ++gen)
+	s_next_gen[gen] = gen + 1;
     s_next_gen[0] = 0;
     s_next_gen[s_num_generations - 1] = s_num_generations - 1;
     GCRootBase::initialize();
+    GCStackRootBase::initialize();
 }
+
+// GCNode::mark() is in memory.cpp (for the time being)
 
 void GCNode::nodeCheck(const GCNode* node)
 {
-    if (node && node->m_gcgen >= s_num_generations) abort();
+    if (node && (node->m_bits & ~(LIST|MARK))) abort();
 }
 
 void GCNode::propagateAges()
 {
-    for (AgedList::const_iterator it = s_aged_list->begin();
-	 it != s_aged_list->end(); ++it) {
-	const GCNode* node = *it;
-	// node may already have been visited by an Ager on an earlier
-	// round of this loop, in which case m_aged will have been set
-	// false and there's nothing more to do:
-	if (node->m_aged) {
-	    Ager ager(node->m_gcgen);
-	    node->visitReferents(&ager);
-	    node->m_aged = false;
-	}
+    while (!s_aged_list->empty()) {
+	const GCNode* node = s_aged_list->front();
+	node->m_bits &= ~AGED;
+	node->list().splice_back(node);
+	Ager ager(node->generation());
+	node->visitReferents(&ager);
     }
-    s_aged_list->clear();
 }
-
-// Structure used to marshal nodes awaiting transfer to a
-// different generation.  Nodes are added to the end of the
-// list to help maintain the generation lists as far as
-// possible in reverse order of node allocation.
-class GCNode::XferList {
-public:
-    XferList()
-	: m_peg(0), m_last(&m_peg)
-    {}
-
-    void append(const GCNode* node)
-    {
-	node->m_next = 0;
-	m_last->m_next = node;
-	m_last = node;
-    }
-
-    // Export the transfer list by prepending it to the list
-    // whose first element is pointed to by *listp.  Following
-    // this operation, the transfer list will itself be empty.
-    void prependTo(const GCNode** listp)
-    {
-	m_last->m_next = *listp;
-	*listp = m_peg.m_next;
-	m_peg.m_next = 0;
-	m_last = &m_peg;
-    }
-private:
-    const GCNode m_peg;  // Dummy first element of list
-    const GCNode* m_last;  // Pointer to last element
-};
-		
 
 size_t GCNode::slaughterInfants()
 {
-    vector<XferList*> xferlist(s_num_generations);
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen)
-	xferlist[gen] = new XferList;
     size_t ans = 0;
-    const GCNode* node = s_generation[0];
-    while (node) {
-	const GCNode* next = node->next();
-	if (node->m_gcgen > 0)
-	    xferlist[node->m_gcgen]->append(node);
-	else {
-	    delete node;
-	    ++ans;
-	}
-	node = next;
-    }
-    // Now move nodes on each transfer list into the generation list itself:
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
-	xferlist[gen]->prependTo(&s_generation[gen]);
-	delete xferlist[gen];
+    while (!s_generation[0].empty()) {
+	delete s_generation[0].front();
+	++ans;
     }
     return ans;
 }
 
-// In implementing sweep(), as far as possible: (i) visit each node
-// only once; (ii) deallocate nodes in the reverse order of
-// allocation.
-
 void GCNode::sweep(unsigned int max_generation)
 {
-    vector<XferList*> xferlist(s_num_generations);
+    // Zap nodes in the collected generations that haven't been moved
+    // to a reachable list (i.e. are unreachable):
+    for (unsigned int gen = 1; gen <= max_generation; ++gen)
+	s_generation[gen].clear();
+    // Transfer the s_reachable lists to the relevant generation list:
     for (unsigned int gen = 0; gen < s_num_generations; ++gen)
-	xferlist[gen] = new XferList;
-    // Process generations:
-    for (unsigned int gen = 0; gen <= max_generation; ++gen) {
-	// Scan through generation:
-	const GCNode* node = s_generation[gen];
-	while (node) {
-	    const GCNode* next = node->next();
-	    unsigned int ngen = node->m_gcgen;
-	    if (ngen <= max_generation && ngen != 0) {
-		if (!node->isMarked()) {
-		    delete node;
-		    node = 0;
-		} else {
-		    // Advance generation:
-		    --s_gencount[ngen];
-		    node->m_gcgen = s_next_gen[ngen];
-		    ++s_gencount[node->m_gcgen];
-		}
-	    }
-	    if (node) {
-		node->m_marked = false;
-		xferlist[node->m_gcgen]->append(node);
-	    }
-	    node = next;
-	}
-	// Zap the list:
-	s_generation[gen] = 0;
+	s_generation[gen].splice_back(&s_reachable[gen]);
+}
+
+void GCNode::visitInfants(const_visitor* v)
+{
+    List& gen0 = s_generation[0];
+    List::const_iterator end = gen0.end();
+    List::const_iterator it = gen0.begin();
+    while (it != end) {
+	// Allow for the possibility that the visitor will the visited
+	// node to another list:
+	List::const_iterator next = it;
+	++next;
+	(*it)->conductVisitor(v);
+	it = next;
     }
-    // Now move nodes on each transfer list into the generation list itself:
-    for (unsigned int gen = 0; gen < s_num_generations; ++gen) {
-	xferlist[gen]->prependTo(&s_generation[gen]);
-	delete xferlist[gen];
-    }
-    // cerr << "s_gencount[0] = " << s_gencount[0] << endl;
 }
 
 bool GCNode::Ager::operator()(const GCNode* node)
 {
-    if (node->m_gcgen >= m_mingen)
+    if (node->generation() >= m_mingen)
 	return false;
-    --s_gencount[node->m_gcgen];
-    node->m_gcgen = m_mingen;
-    ++s_gencount[node->m_gcgen];
-    node->m_aged = false;
+    node->m_bits &= ~(AGED | GENERATION);
+    node->m_bits |= m_mingen;
+    node->list().splice_back(node);
     return true;
 }
 
 bool GCNode::Marker::operator()(const GCNode* node)
 {
-    /*
-    if (node->m_gcgen == 0)
-	cerr << "Warning: Marker encountered gen 0 node.\n";
-    */
-    if (node->isMarked() || node->m_gcgen > m_maxgen)
+    unsigned int gen = node->generation();
+    if (node->isMarked() || gen > m_maxgen)
 	return false;
-    node->mark();
+    // Update mark and adjust generation:
+    unsigned int next_gen = s_next_gen[gen];
+    node->m_bits &= ~(MARK | GENERATION);
+    node->m_bits |= (s_mark | next_gen);
+    s_reachable[next_gen].splice_back(node);
     return true;
 }
 
 bool GCNode::OldToNewChecker::operator()(const GCNode* node)
 {
-    if (node->m_gcgen < m_mingen) {
+    if (node->generation() < m_mingen) {
 	cerr << "GCNode: old to new reference found.\n";
 	abort();
     }
     return false;
 }
+

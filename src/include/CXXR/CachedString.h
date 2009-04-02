@@ -49,6 +49,7 @@
 #include <string>
 
 #include "CXXR/Allocator.hpp"
+#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief String object held in a cache.
@@ -63,7 +64,7 @@ namespace CXXR {
 	 */
 	static const CachedString* blank()
 	{
-	    return s_blank;
+	    return *s_blank;
 	}
 
 	/** @brief Get a pointer to a CachedString object.
@@ -102,8 +103,6 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
-	static GCRoot<const CachedString> s_blank;
-
 	// The first element of the key is the text, the second
 	// element the encoding:
 	typedef std::pair<std::string, cetype_t> key;
@@ -132,6 +131,9 @@ namespace CXXR {
 
 	map::value_type* m_key_val_pr;
 
+	static map* s_cache;
+	static GCRoot<const CachedString>* s_blank;
+
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
 	      m_key_val_pr(key_val_pr)
@@ -157,9 +159,24 @@ namespace CXXR {
 	}
 
 	// Return pointer to the cache:
-	static map* cache();
+	static map* cache()
+	{
+	    return s_cache;
+	}
+
+	// Free memory used by the static data members:
+	static void cleanup();
+
+	// Initialize the static data members:
+	static void initialize();
+
+	friend class SchwarzCounter<CachedString>;
     };
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::CachedString> cachedstring_schwarz_ctr;
+}
 
 extern "C" {
 

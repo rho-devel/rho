@@ -223,6 +223,9 @@ namespace CXXR {
 	template <class T = RObject>
 	class Handle : public GCEdge<T> {
 	public:
+	    Handle()
+	    {}
+
 	    /** @brief Primary constructor.
 	     *
 	     * @param target Pointer to the object to which this
@@ -233,7 +236,7 @@ namespace CXXR {
 	     * construction of the object derived from GCNode of which
 	     * this GCEdge forms a part.
 	     */
-	    explicit Handle(T* target = 0)
+	    explicit Handle(T* target)
 		: GCEdge<T>(target)
 	    {}
 
@@ -252,7 +255,11 @@ namespace CXXR {
 		: GCEdge<T>(cloneOrSelf(pattern))
 	    {}
 	private:
-	    T* cloneOrSelf(T*);
+	    static T* cloneOrSelf(T*);
+
+	    // Not implemented.  Declared to prevent
+	    // compiler-generated version:
+	    Handle<T>& operator=(const Handle<T>&);
 	};
 		
 	/** @brief Get object attributes.
@@ -275,10 +282,6 @@ namespace CXXR {
 	 */
 	void clearAttributes();
 
-	// Introduced temporarily while copy constructors are being
-	// rolled out:
-	void cloneAttributes(const RObject& source);
-
 	/** @brief Return pointer to a copy of this object.
 	 *
 	 * This function creates a copy of this object, and returns a
@@ -297,10 +300,7 @@ namespace CXXR {
 	 * the smart pointers defined by nested class RObject::Handle.
 	 *
 	 * @return a pointer to a clone of this object, or a null
-	 * pointer if this object cannot be cloned.  On return, the
-	 * clone will not normally have yet been exposed to the
-	 * garbage collector; consequently, the calling code should
-	 * arrange for this to happen.
+	 * pointer if this object cannot be cloned.
 	 *
 	 * @note Derived classes should exploit the covariant return
 	 * type facility to return a pointer to the type of object

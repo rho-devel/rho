@@ -150,8 +150,14 @@ namespace CXXR {
 	 *          to the constness of the \a pattern parameter.
 	 */
 	HandleVector(const HandleVector<T, ST>& pattern)
-	    : VectorBase(pattern), m_data(pattern.m_data)
-	{}
+	    : VectorBase(pattern), m_data(pattern.m_data.size())
+	{
+	    for (unsigned int i = 0; i < m_data.size(); ++i) {
+		// Use copy constructor to apply object copying logic:
+		Handle<T> handle(pattern.m_data[i]);
+		m_data[i].retarget(this, handle);
+	    }
+	}
 
 	/** @brief Element access.
 	 * @param index Index of required element (counting from
@@ -229,9 +235,13 @@ namespace CXXR {
     void HandleVector<T, ST>::visitReferents(const_visitor* v) const
     {
 	VectorBase::visitReferents(v);
+	typename Vector::const_iterator end = m_data.end();
 	for (typename Vector::const_iterator it = m_data.begin();
-	     it != m_data.end(); ++it)
-	    (*it).conductVisitor(v);
+	     it != end; ++it) {
+	    T* node = *it;
+	    if (node)
+		node->conductVisitor(v);
+	}
     }
 }  // namespace CXXR
 

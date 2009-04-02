@@ -1425,12 +1425,17 @@ namespace {
 
     void HandlerEntry::visitReferents(const_visitor* v) const
     {
+	const GCNode* cl = m_class;
+	const GCNode* parenv = m_parent_environment;
+	const GCNode* handler = m_handler;
+	const GCNode* env = m_environment;
+	const GCNode* result = m_result;
 	RObject::visitReferents(v);
-	m_class.conductVisitor(v);
-	m_parent_environment.conductVisitor(v);
-	m_handler.conductVisitor(v);
-	m_environment.conductVisitor(v);
-	m_result.conductVisitor(v);
+	if (cl) cl->conductVisitor(v);
+	if (parenv) parenv->conductVisitor(v);
+	if (handler) handler->conductVisitor(v);
+	if (env) env->conductVisitor(v);
+	if (result) result->conductVisitor(v);
     }
 }
 
@@ -1443,8 +1448,7 @@ static SEXP mkHandlerEntry(SEXP klass, SEXP parentenv, SEXP handler, SEXP rho,
 			   SEXP_downcast<Environment*>(rho),
 			   SEXP_downcast<ListVector*>(result),
 			   (calling != 0));
-    entry->expose();
-    return entry;
+    return GCNode::expose(entry);
 }
 
 namespace {

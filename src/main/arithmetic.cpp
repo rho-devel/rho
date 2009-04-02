@@ -565,7 +565,7 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     case MINUSOP:
 	{
 	    int n = LENGTH(s1);
-	    GCRoot<IntVector> ans(new IntVector(n), true);
+	    GCStackRoot<IntVector> ans(GCNode::expose(new IntVector(n)));
 	    for (int i = 0; i < n; i++) {
 		int x = INTEGER(s1)[i];
 		INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;

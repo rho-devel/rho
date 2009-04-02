@@ -54,11 +54,9 @@ namespace CXXR {
 
 tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
 
-CachedString::map* CachedString::cache()
-{
-    static map the_cache;
-    return &the_cache;
-}
+CachedString::map* CachedString::s_cache = 0;
+GCRoot<const CachedString>* CachedString::s_blank = 0;
+SEXP R_BlankString = 0;
 
 const CachedString* CachedString::obtain(const std::string& str,
 					 cetype_t encoding)
@@ -74,8 +72,7 @@ const CachedString* CachedString::obtain(const std::string& str,
     if (pr.second) {
 	try {
 	    map::value_type& val = *it;
-	    val.second = new CachedString(&val);
-	    val.second->expose();
+	    val.second = expose(new CachedString(&val));
 	} catch (...) {
 	    cache()->erase(it);
 	    throw;
@@ -89,6 +86,20 @@ const char* CachedString::c_str() const
     return m_key_val_pr->first.first.c_str();
 }
 
+void CachedString::cleanup()
+{
+    R_BlankString = 0;
+    delete s_blank;
+    delete s_cache;
+}
+
+void CachedString::initialize()
+{
+    s_cache = new map;
+    s_blank = new GCRoot<const CachedString>(CachedString::obtain(""));
+    R_BlankString = const_cast<CachedString*>(CachedString::blank());
+}
+    
 const char* CachedString::typeName() const
 {
     return CachedString::staticTypeName();

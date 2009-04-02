@@ -332,9 +332,9 @@ SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 void CXXRnot_hidden check_stack_balance(SEXP op, CXXRunsigned int save)
 {
-    if(save == GCRootBase::ppsSize()) return;
+    if(save == GCStackRootBase::ppsSize()) return;
     REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-	     PRIMNAME(op), save, GCRootBase::ppsSize());
+	     PRIMNAME(op), save, GCStackRootBase::ppsSize());
 }
 
 
@@ -486,7 +486,7 @@ SEXP eval(SEXP e, SEXP rho)
 	    PrintValue(e);
 	}
 	if (TYPEOF(op) == SPECIALSXP) {
-	    unsigned int save = GCRootBase::ppsSize();
+	    unsigned int save = GCStackRootBase::ppsSize();
 	    int flag = PRIMPRINT(op);
 	    unsigned int vmax = vmaxget();
 	    PROTECT(CDR(e));
@@ -507,7 +507,7 @@ SEXP eval(SEXP e, SEXP rho)
 	    vmaxset(vmax);
 	}
 	else if (TYPEOF(op) == BUILTINSXP) {
-	    unsigned int save = GCRootBase::ppsSize();
+	    unsigned int save = GCStackRootBase::ppsSize();
 	    int flag = PRIMPRINT(op);
 	    unsigned int vmax = vmaxget();
 	    RCNTXT cntxt;
@@ -559,7 +559,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     SEXP body, formals, actuals, savedrho;
     Environment* newrho;
     SEXP f, a;
-    GCRoot<> tmp;
+    GCStackRoot<> tmp;
     RCNTXT cntxt;
 
     /* formals = list of formal parameters */
@@ -717,7 +717,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 			  SEXP newrho)
 {
     SEXP body;
-    GCRoot<> tmp;
+    GCStackRoot<> tmp;
     RCNTXT cntxt;
 
     body = BODY(op);
@@ -920,9 +920,8 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(args);
     PROTECT(rhs);
     PROTECT(val);
-    GCRoot<PairList> tl(PairList::makeList(length(args) + 2));
-    ptmp = tmp = new Expression(0, tl);
-    tmp->expose();
+    GCStackRoot<PairList> tl(PairList::makeList(length(args) + 2));
+    ptmp = tmp = GCNode::expose(new Expression(0, tl));
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);
     SETCAR(ptmp, val); ptmp = CDR(ptmp);
@@ -1020,7 +1019,7 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile int i, n, bgn;
     SEXP sym, body;
     volatile SEXP val;
-    GCRoot<> ans, v;
+    GCStackRoot<> ans, v;
     RCNTXT cntxt;
 
     sym = CAR(args);
@@ -1124,7 +1123,7 @@ SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
-    GCRoot<> t;
+    GCStackRoot<> t;
     volatile SEXP body;
     RCNTXT cntxt;
 
@@ -1166,7 +1165,7 @@ SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
-    GCRoot<> t;
+    GCStackRoot<> t;
     volatile SEXP body;
     RCNTXT cntxt;
 
@@ -1327,21 +1326,19 @@ SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 {
     SEXP val, nexpr;
-    GCRoot<> nval;
+    GCStackRoot<> nval;
     if (isNull(expr))
 	error(_("invalid (NULL) left side of assignment"));
     if (isSymbol(expr)) {
-	GCRoot<> exprr(expr);
+	GCStackRoot<> exprr(expr);
 	if(forcelocal) {
 	    nval = EnsureLocal(expr, rho);
 	}
 	else {/* now we are down to the target symbol */
 	  nval = eval(expr, ENCLOS(rho));
 	}
-	GCRoot<PairList> pl(new PairList(expr), true);
-	PairList* ans = new PairList(nval, pl);
-	ans->expose();
-	return ans;
+	GCStackRoot<PairList> pl(GCNode::expose(new PairList(expr)));
+	return GCNode::expose(new PairList(nval, pl));
     }
     else if (isLanguage(expr)) {
 	PROTECT(expr);
@@ -1371,7 +1368,7 @@ static void tmp_cleanup(void *data)
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP expr, lhs, rhs, tmp, tmp2;
-    GCRoot<> saverhs;
+    GCStackRoot<> saverhs;
     R_varloc_t tmploc;
     char buf[32];
     RCNTXT cntxt;
@@ -2201,8 +2198,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(newrho = new Environment(0));
-    newrho->expose();
+    PROTECT(GCNode::expose(newrho = new Environment(0)));
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;
     for (i = 0 ; i < nargs ; i++) {
@@ -3637,16 +3633,14 @@ SEXP R_bcDecode(SEXP x) { return duplicate(x); }
 
 SEXP CXXRnot_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP bytes, consts, ans;
+    SEXP bytes, consts;
 
     checkArity(op, args);
     bytes = CAR(args);
     consts = CADR(args);
-    GCRoot<> enc(R_bcEncode(bytes));
-    GCRoot<PairList> pl(SEXP_downcast<PairList*>(consts));
-    ans = new ByteCode(enc, pl);
-    ans->expose();
-    return ans;
+    GCStackRoot<> enc(R_bcEncode(bytes));
+    GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(consts));
+    return GCNode::expose(new ByteCode(enc, pl));
 }
 
 SEXP CXXRnot_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)

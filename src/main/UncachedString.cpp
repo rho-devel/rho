@@ -83,7 +83,5 @@ const char* UncachedString::typeName() const
 SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
 {
     string str(text, length);
-    UncachedString* ans = new UncachedString(str, encoding);
-    ans->expose();
-    return ans;
+    return GCNode::expose(new UncachedString(str, encoding));
 }

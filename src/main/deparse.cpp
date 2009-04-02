@@ -200,8 +200,8 @@ SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 
 SEXP DEPARSE(SEXP s)
 {
-    GCRoot<Expression> e(SEXP_downcast<Expression*>(s));
-    GCRoot<StringVector>
+    GCStackRoot<Expression> e(SEXP_downcast<Expression*>(s));
+    GCStackRoot<StringVector>
 	sv(static_cast<StringVector*>(deparse1(e, FALSE, DEFAULTDEPARSE)));
     return (*sv)[0];
 }

@@ -446,9 +446,8 @@ static SEXP D(SEXP expr, SEXP var)
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == SqrtSymbol) {
-	    GCRoot<PairList> tl(PairList::makeList(2));
-	    PROTECT(expr1 = new Expression(0, tl));
-	    expr1->expose();
+	    GCStackRoot<PairList> tl(PairList::makeList(2));
+	    PROTECT(expr1 = GCNode::expose(new Expression(0, tl)));
 	    SETCAR(expr1, PowerSymbol);
 	    SETCADR(expr1, CADR(expr));
 	    SETCADDR(expr1, Constant(0.5));
@@ -1104,7 +1103,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 	funarg = mkCLOSXP(FORMALS(funarg), exprlist, CLOENV(funarg));
     }
     else if (isString(funarg)) {
-	GCRoot<> formals(allocList(length(funarg)));
+	GCStackRoot<> formals(allocList(length(funarg)));
 	ans = formals;
 	for(i = 0; i < length(funarg); i++) {
 	    SET_TAG(ans, install(translateChar(STRING_ELT(funarg, i))));

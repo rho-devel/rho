@@ -55,6 +55,7 @@
 #include <cmath>
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
 
@@ -78,7 +79,7 @@ StdFrame::StdFrame(size_t initial_capacity)
 
 PairList* StdFrame::asPairList() const
 {
-    GCRoot<PairList> ans(0);
+    GCStackRoot<PairList> ans(0);
     for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it)
 	ans = (*it).second.asPairList(ans);
     return ans;

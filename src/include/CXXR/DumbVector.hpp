@@ -188,7 +188,7 @@ namespace CXXR {
     template <typename T, SEXPTYPE ST>
     DumbVector<T, ST>* DumbVector<T, ST>::clone() const
     {
-	return new DumbVector<T, ST>(*this);
+	return expose(new DumbVector<T, ST>(*this));
     }
 
     template <typename T, SEXPTYPE ST>

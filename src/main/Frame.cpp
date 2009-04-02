@@ -56,8 +56,7 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
     SET_MISSING(ans, missing());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
-    ans->expose();
-    return ans;
+    return expose(ans);
 }
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
@@ -125,8 +124,8 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 {
     // We assume the visitor has just come from m_frame, so we don't
     // visit that.
-    m_symbol.conductVisitor(v);
-    m_value.conductVisitor(v);
+    if (m_symbol) m_symbol->conductVisitor(v);
+    if (m_value) m_value->conductVisitor(v);
 }
 
 // Frame::forcedValue() is defined in envir.cpp (for the time being).

@@ -172,11 +172,11 @@ Frame::forcedValue(const Symbol* symbol, const Environment* env)
 	if (val && val->sexptype() == PROMSXP) {
 	    Promise* prom = static_cast<Promise*>(val);
 	    if (prom->environment()) {
-		GCRoot<Promise> promrt(prom);
+		GCStackRoot<Promise> promrt(prom);
 		monitorRead(*bdg);
 		val = Rf_eval(val, const_cast<Environment*>(env));
 		if (m_write_monitor) {
-		    GCRoot<> valrt(val);
+		    GCStackRoot<> valrt(val);
 		    // The eval() may have invalidated bdg, so we need
 		    // to look it up again.
 		    bdg = binding(symbol);
@@ -240,9 +240,7 @@ int CXXR::String::hash() const
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     Environment* enc = SEXP_downcast<Environment*>(enclos);
-    Environment* env = new Environment(enc, asInteger(size));
-    env->expose();
-    return env;
+    return GCNode::expose(new Environment(enc, asInteger(size)));
 }
 
 /*----------------------------------------------------------------------
@@ -696,7 +694,7 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     if (rho == R_EmptyEnv)
 	error(_("cannot assign values in the empty environment"));
 
-    GCRoot<> valrt(value);
+    GCStackRoot<> valrt(value);
     Environment* env = SEXP_downcast<Environment*>(rho);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->obtainBinding(sym);
@@ -750,7 +748,7 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 
 void gsetVar(SEXP symbol, SEXP value, SEXP rho)
 {
-    GCRoot<> valrt(value);
+    GCStackRoot<> valrt(value);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = BaseEnvironment->frame()->obtainBinding(sym);
     bdg->assign(value);
@@ -1104,7 +1102,7 @@ R_isMissing(SEXP symbol, SEXP rho)
     int ddv=0;
     SEXP s;
 
-    GCRoot<> vl;  // Binding defined in PairList form
+    GCStackRoot<> vl;  // Binding defined in PairList form
 
     if (symbol == R_MissingArg) /* Yes, this can happen */
 	return 1;
@@ -1150,8 +1148,8 @@ SEXP CXXRnot_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     int ddv=0;
     SEXP sym, s;
 
-    GCRoot<> rval;
-    GCRoot<> t;  // Binding defined in PairList form
+    GCStackRoot<> rval;
+    GCStackRoot<> t;  // Binding defined in PairList form
 
     checkArity(op, args);
     s = sym = CAR(args);
@@ -1259,7 +1257,7 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name, t, x;
     int pos;
-    GCRoot<Environment> newenv;
+    GCStackRoot<Environment> newenv;
 
     checkArity(op, args);
 
@@ -1277,15 +1275,13 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (x = CAR(args); x != R_NilValue; x = CDR(x))
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
-	newenv = new Environment(0);
-	GCRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
+	newenv = GCNode::expose(new Environment(0));
+	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
-	newenv->expose();
     } else if (isEnvironment(CAR(args))) {
 	SEXP p, loadenv = CAR(args);
 
-	newenv = new Environment(0);
-	newenv->expose();
+	newenv = GCNode::expose(new Environment(0));
 	for(p = FRAME(loadenv); p != R_NilValue; p = CDR(p))
 	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
     } else {
@@ -1488,7 +1484,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
     const Environment* envir = static_cast<Environment*>(env);
     vector<const Symbol*> syms = envir->frame()->symbols(all);
     size_t sz = syms.size();
-    GCRoot<StringVector> ans(new StringVector(sz));
+    GCStackRoot<StringVector> ans(GCNode::expose(new StringVector(sz)));
     for (unsigned int i = 0; i < sz; ++i)
 	(*ans)[i] = const_cast<CachedString*>(syms[i]->name());
     sortVector(ans, FALSE);
@@ -2120,7 +2116,7 @@ SEXP CXXRnot_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP impsym, expsym, env, val;
     int i, n;
 
-    GCRoot<> binding;  // represented in PairList form.
+    GCStackRoot<> binding;  // represented in PairList form.
 
     checkArity(op, args);
 

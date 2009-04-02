@@ -65,8 +65,7 @@ namespace CXXR {
    }
 }
 
-GCRoot<> PairList::s_cons_car;
-GCRoot<PairList> PairList::s_cons_cdr;
+void* PairList::s_cons_pad = GCNode::operator new(sizeof(PairList));
 
 namespace {
     // Used in {,un}packGPBits():
@@ -83,7 +82,7 @@ PairList::PairList(const PairList& pattern)
     PairList* c = this;
     const PairList* pl = pattern.m_tail;
     while (pl) {
-	c->m_tail.retarget(c, new PairList(*pl, 0));
+	c->m_tail.retarget(c, expose(new PairList(*pl, 0)));
 	c = c->m_tail;
 	pl = pl->m_tail;
     }
@@ -91,20 +90,14 @@ PairList::PairList(const PairList& pattern)
     
 PairList* PairList::clone() const
 {
-    return new PairList(*this);
+    return expose(new PairList(*this));
 }
 
 PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
 {
     PairList* ans = 0;
-    try {
-	while (sz--)
-	    ans = new PairList(0, ans, 0);
-    } catch(...) {
-	if (ans) ans->expose();
-	throw;
-    }
-    if (ans) ans->expose();
+    while (sz--)
+	ans = cons(0, ans);
     return ans;
 }
 

@@ -55,8 +55,8 @@ namespace CXXR {
     }
 }
 
-GCRoot<const String> String::s_na(new UncachedString("NA", CE_NATIVE, true),
-				  true);
+GCRoot<const String>
+String::s_na(expose(new UncachedString("NA", CE_NATIVE, true)));
 SEXP R_NaString = const_cast<String*>(String::NA());
 
 // String::s_blank and R_BlankString are defined in Symbol.cpp to

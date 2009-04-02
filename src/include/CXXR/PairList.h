@@ -93,13 +93,9 @@ namespace CXXR {
 	 */
 	static PairList* cons(RObject* cr, PairList* tl=0)
 	{
-	    s_cons_car = cr;
-	    s_cons_cdr = tl;
-	    PairList* ans = new PairList(cr, tl);
-	    s_cons_cdr = 0;
-	    s_cons_car = 0;
-	    ans->expose();
-	    return ans;
+	    PairList* ans = new (s_cons_pad) PairList(cr, tl);
+	    s_cons_pad = GCNode::operator new(sizeof(PairList));
+	    return expose(ans);
 	}
 
 	/** @brief Create a PairList of a specified length.
@@ -128,10 +124,8 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
     private:
-	// Permanent GCRoots used to implement cons() without pushing
-	// and popping:
-	static GCRoot<> s_cons_car;
-	static GCRoot<PairList> s_cons_cdr;
+	// Pointer to a preallocated block of memory used by cons():
+	static void* s_cons_pad;
 
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor

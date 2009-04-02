@@ -121,8 +121,7 @@ namespace CXXR {
 	    if (T* ccc = dynamic_cast<T*>(cc)) return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
 	    ans->setAttributes(cc->attributes());
-	    ans->expose();
-	    return ans;
+	    return expose(ans);
 	}
 			   
 	/** @brief Set the 'car' value.
@@ -193,19 +192,24 @@ namespace CXXR {
 	/**
 	 * @param st The required ::SEXPTYPE of the ConsCell.  Must
 	 *           be one of LISTSXP, LANGSXP, DOTSXP or BCODESXP (not
-	 *           checked).
+	 *           normally checked).
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
+#ifdef CHECK_EXPOSURE
+	explicit ConsCell(SEXPTYPE st,
+			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0);
+#else
 	explicit ConsCell(SEXPTYPE st,
 			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
 	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
 	{
 	    // checkST(st);
 	}
+#endif
 
 	/** @brief Copy constructor.
 	 *

@@ -368,9 +368,8 @@ nextarg2:
 	    if(!ARGUSED(a)) i++;
 
 	if (i) {
-	    GCRoot<PairList> tl(PairList::makeList(i - 1));
-	    a = new DottedArgs(0, tl);
-	    a->expose();
+	    GCStackRoot<PairList> tl(PairList::makeList(i - 1));
+	    a = GCNode::expose(new DottedArgs(0, tl));
 	    f=a;
 	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {

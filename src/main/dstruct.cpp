@@ -125,11 +125,9 @@ R_len_t Rf_length(SEXP s)
 
 SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
-    GCRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
-    GCRoot<> bodyrt(body);
-    GCRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
+    GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
+    GCStackRoot<> bodyrt(body);
+    GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
 			      : GlobalEnvironment);
-    Closure* ans = new Closure(formrt, bodyrt, envrt);
-    ans->expose();
-    return ans;
+    return GCNode::expose(new Closure(formrt, bodyrt, envrt));
 }

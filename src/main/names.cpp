@@ -41,7 +41,7 @@
 
 #include <iostream>
 #include "CXXR/CachedString.h"
-#include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 
 #define __R_Names__ /* used in Defn.h for extern on R_FunTab */
 #include <Defn.h>
@@ -1063,7 +1063,7 @@ SEXP install(const char *name)
 SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, fun, ans;
-    int save = GCRootBase::ppsSize();
+    int save = GCStackRootBase::ppsSize();
     int flag;
     unsigned int vmax = vmaxget();
 

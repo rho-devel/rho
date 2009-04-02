@@ -110,12 +110,12 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 
 static SEXP makeErrorCall(SEXP fun)
 {
-  SEXP call;
-  PROTECT(call = new CXXR::Expression);
-  call->expose();
-  SETCAR(call, fun);
-  UNPROTECT(1);
-  return call;
+    using namespace CXXR;
+    SEXP call;
+    PROTECT(call = GCNode::expose(new Expression));
+    SETCAR(call, fun);
+    UNPROTECT(1);
+    return call;
 }
 
 SEXP GetOption(SEXP tag, SEXP rho)

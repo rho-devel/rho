@@ -70,8 +70,10 @@ namespace CXXR {
 	 */
 	static BuiltInFunction* get(const Symbol* sym)
 	{
-	    Frame::Binding* bdg = s_table->binding(sym);
-	    return (bdg ? static_cast<BuiltInFunction*>(bdg->value()) : 0);
+	    map::iterator it = s_table.find(sym);
+	    if (it == s_table.end())
+		return 0;
+	    return (*it).second;
 	}
 
 	/** @brief Associate a Symbol with a <tt>.Internal()</tt> function.
@@ -85,7 +87,16 @@ namespace CXXR {
 	 */
 	static void set(const Symbol* sym, BuiltInFunction* fun);
     private:
-	static const GCRoot<StdFrame> s_table;
+	typedef
+	std::tr1::unordered_map<const Symbol*,
+				GCRoot<BuiltInFunction>,
+				std::tr1::hash<const Symbol*>,
+				std::equal_to<const Symbol*>,
+				CXXR::Allocator<std::pair<const Symbol*,
+							  GCRoot<BuiltInFunction> > >
+	                        > map;
+
+	static map s_table;
     };
 }  // namespace CXXR
 

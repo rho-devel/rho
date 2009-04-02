@@ -239,7 +239,7 @@ SEXP setAttrib(SEXP vec, SEXP name, SEXP val)
     SET_NAMED(val, NAMED(val) | NAMED(vec));
     UNPROTECT(2);
 
-    GCRoot<> valr(val);
+    GCStackRoot<> valr(val);
     if (name == R_NamesSymbol)
 	return namesgets(vec, val);
     else if (name == R_DimSymbol)
@@ -661,9 +661,8 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) == 2)
 	SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
-	GCRoot<PairList> tl(new PairList, true);
-        PROTECT(call = new Expression(0, tl));
-	call->expose();
+	GCStackRoot<PairList> tl(GCNode::expose(new PairList));
+        PROTECT(call = GCNode::expose(new Expression(0, tl)));
 	SETCAR(call, install("as.character"));
 	SETCADR(call, CADR(args));
 	SETCADR(args, eval(call, env));

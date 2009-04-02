@@ -66,7 +66,7 @@ void attribute_hidden reset_duplicate_counter(void)
 
 SEXP duplicate(SEXP s){
     if (!s) return 0;
-    GCRoot<> srt(s);
+    GCStackRoot<> srt(s);
 #ifdef R_PROFILING
     duplicate_counter++;
 #endif
@@ -80,7 +80,6 @@ SEXP duplicate(SEXP s){
 	    SET_TRACE(t,1);
     }
 #endif
-    t->expose();
     return t;
 }
 

@@ -45,6 +45,7 @@
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
@@ -84,12 +85,6 @@ void RObject::clearAttributes()
 	m_attrib.retarget(this, 0);
 	m_has_class = false;
     }
-}
-
-void RObject::cloneAttributes(const RObject& source)
-{
-    m_attrib.retarget(this, clone<PairList>(source.m_attrib));
-    m_has_class = source.m_has_class;
 }
 
 void RObject::frozenError()
@@ -143,8 +138,7 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 	else m_attrib.retarget(this, node->tail());
     } else if (value) {  
 	// Create new node:
-	PairList* newnode = new PairList(value, 0, name);
-	newnode->expose();
+	PairList* newnode = expose(new PairList(value, 0, name));
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
 	    m_attrib.retarget(this, newnode);
@@ -187,7 +181,7 @@ void RObject::unpackGPBits(unsigned int gpbits)
 
 void RObject::visitReferents(const_visitor* v) const
 {
-    m_attrib.conductVisitor(v);
+    if (m_attrib) m_attrib->conductVisitor(v);
 }
 
 // ***** C interface *****
@@ -199,6 +193,6 @@ SEXP ATTRIB(SEXP x)
 
 void SET_ATTRIB(SEXP x, SEXP v)
 {
-    GCRoot<PairList> pl(SEXP_downcast<PairList*>(v));
+    GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(v));
     x->setAttributes(pl);
 }

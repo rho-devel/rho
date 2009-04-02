@@ -32,7 +32,7 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 CXXR_HEADERS = \
   CachedString.h Closure.h ComplexVector.h ConsCell.h DotInternal.h \
   Environment.h Expression.h ExpressionVector.h ExternalPointer.h \
-  FunctionBase.h GCRoot.h \
+  FunctionBase.h GCRoot.h GCStackRoot.h \
   IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \

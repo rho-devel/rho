@@ -183,7 +183,7 @@ please bug.report() [R_run_onexits]"));
 
 void R_restore_globals(RCNTXT *cptr)
 {
-    GCRootBase::ppsRestoreSize(cptr->cstacktop);
+    GCStackRootBase::ppsRestoreSize(cptr->cstacktop);
     R_EvalDepth = cptr->evaldepth;
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);
@@ -246,7 +246,7 @@ void begincontext(RCNTXT * cptr, int flags,
 		  SEXP promargs, SEXP callfun)
 {
     cptr->nextcontext = R_GlobalContext;
-    cptr->cstacktop = GCRootBase::ppsSize();
+    cptr->cstacktop = GCStackRootBase::ppsSize();
     cptr->evaldepth = R_EvalDepth;
     cptr->callflag = flags;
     cptr->call = syscall;
@@ -668,7 +668,7 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
  */
 typedef struct {
     SEXP expression;
-    GCRoot<> val;
+    GCStackRoot<> val;
     SEXP env;
 } ProtectedEvalData;
 

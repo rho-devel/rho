@@ -40,10 +40,8 @@
 
 #include "CXXR/RObject.h"
 
-#define USE_TYPE_CHECKING
-
 namespace CXXR {
-#ifndef USE_TYPE_CHECKING
+#ifdef UNCHECKED_SEXP_DOWNCAST
     template <typename Ptr>
     inline Ptr SEXP_downcast(SEXP s)
     {

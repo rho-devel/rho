@@ -40,7 +40,7 @@
 #include "CXXR/ExternalPointer.h"
 
 #include "localization.h"
-#include "CXXR/GCRoot.h"
+#include "CXXR/GCStackRoot.h"
 
 using namespace std;
 using namespace CXXR;
@@ -63,16 +63,16 @@ const char* ExternalPointer::typeName() const
 
 void ExternalPointer::visitReferents(const_visitor* v) const
 {
+    const GCNode* protege = m_protege;
+    const GCNode* tag = m_tag;
     RObject::visitReferents(v);
-    m_protege.conductVisitor(v);
-    m_tag.conductVisitor(v);
+    if (protege) protege->conductVisitor(v);
+    if (tag) tag->conductVisitor(v);
 }
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)
 {
-    ExternalPointer* ans = new ExternalPointer(p, tag, prot);
-    ans->expose();
-    return ans;
+    return GCNode::expose(new ExternalPointer(p, tag, prot));
 }
 
 void R_SetExternalPtrAddr(SEXP s, void *p)

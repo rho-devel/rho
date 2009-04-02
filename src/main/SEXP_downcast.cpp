@@ -44,11 +44,9 @@
 
 using namespace CXXR;
 
-#ifdef USE_TYPE_CHECKING
-
+#ifndef UNCHECKED_SEXP_DOWNCAST
 void CXXR::SEXP_downcast_error(const char* given, const char* wanted)
 {
     Rf_error(_("'%s' supplied where '%s' expected."), given, wanted);
 }
-
 #endif

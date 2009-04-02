@@ -899,7 +899,7 @@ static SEXP ExpandDots(SEXP s, int expdots)
 {
     SEXP r;
     // The call to ConsCell::convert below will allocate memory:
-    GCRoot<> sr(s);
+    GCStackRoot<> sr(s);
     if (s == R_NilValue)
 	return s;
     if (TYPEOF(CAR(s)) == DOTSXP ) {
@@ -1105,8 +1105,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = new CXXR::Expression);
-    rval->expose();
+    PROTECT(rval = GCNode::expose(new CXXR::Expression));
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(4);

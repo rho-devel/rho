@@ -69,17 +69,18 @@ namespace {
 
 // Predefined Environments:
 namespace CXXR {
-    const GCRoot<Environment> EmptyEnvironment(new Environment(0), true);
+    const GCRoot<Environment>
+    EmptyEnvironment(GCNode::expose(new Environment(0)));
 
     const GCRoot<Environment>
-    BaseEnvironment(new Environment(EmptyEnvironment), true);
+    BaseEnvironment(GCNode::expose(new Environment(EmptyEnvironment)));
 
     const GCRoot<Environment>
-    GlobalEnvironment(new Environment(BaseEnvironment), true);
+    GlobalEnvironment(GCNode::expose(new Environment(BaseEnvironment)));
 
     const GCRoot<Environment>
-    BaseNamespace(new Environment(GlobalEnvironment, BaseEnvironment->frame()),
-		  true);
+    BaseNamespace(GCNode::expose(new Environment(GlobalEnvironment,
+						 BaseEnvironment->frame())));
 }
 
 SEXP R_EmptyEnv = EmptyEnvironment;
@@ -110,9 +111,11 @@ void Environment::unpackGPBits(unsigned int gpbits)
 
 void Environment::visitReferents(const_visitor* v) const
 {
+    const GCNode* enc = m_enclosing;
+    const GCNode* frame = m_frame;
     RObject::visitReferents(v);
-    m_enclosing.conductVisitor(v);
-    m_frame.conductVisitor(v);
+    if (enc) enc->conductVisitor(v);
+    if (frame) frame->conductVisitor(v);
 }
 
 // ***** Free-standing functions *****

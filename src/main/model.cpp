@@ -811,7 +811,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
     allowDot = asLogical(CAR(a));
     if (allowDot == NA_LOGICAL) allowDot = 0;
 
-    GCRoot<> attributes(allocList(specials == 0 ? 8 : 9));
+    GCStackRoot<> attributes(allocList(specials == 0 ? 8 : 9));
     a = attributes;
 
     /* Step 1: Determine the ``variables'' in the model */
@@ -1726,9 +1726,8 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     {
 	PROTECT(contr1 = allocVector(VECSXP, nVar));
 	PROTECT(contr2 = allocVector(VECSXP, nVar));
-	GCRoot<PairList> tl(PairList::makeList(2));
-	PROTECT(expr = new Expression(0, tl));
-	expr->expose();
+	GCStackRoot<PairList> tl(PairList::makeList(2));
+	PROTECT(expr = GCNode::expose(new Expression(0, tl)));
 	SETCAR(expr, install("contrasts"));
 	SETCADDR(expr, allocVector(LGLSXP, 1));
     }

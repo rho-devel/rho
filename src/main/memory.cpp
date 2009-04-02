@@ -96,11 +96,6 @@ extern SEXP framenames;
 
 /* Miscellaneous Globals. */
 
-static SEXP R_PreciousList = NULL;      /* List of Persistent Objects */
-
-/* Node Classes ... don't exist any more.  The sxpinfo.gccls field is
-   ignored. */
-
 /* Debugging Routines. */
 
 #ifdef DEBUG_ADJUST_HEAP
@@ -146,17 +141,13 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 	break;
     default: error(_("finalizer must be a function or NULL"));
     }
-    WeakRef* ans = new WeakRef(key, val, fin, onexit);
-    ans->expose();
-    return ans;
+    return GCNode::expose(new WeakRef(key, val, fin, onexit));
 }
 
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 {
     checkKey(key);
-    WeakRef* ans = new WeakRef(key, val, fin, onexit);
-    ans->expose();
-    return ans;
+    return GCNode::expose(new WeakRef(key, val, fin, onexit));
 }
 
 SEXP R_WeakRefKey(SEXP w)
@@ -181,15 +172,15 @@ SEXP R_WeakRefValue(SEXP w)
 void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
-    GCRoot<> key(m_key);
-    GCRoot<> Rfin(m_Rfinalizer);
+    GCStackRoot<> key(m_key);
+    GCStackRoot<> Rfin(m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
     if (Cfin) Cfin(key);
     else if (Rfin) {
-	GCRoot<PairList> tail(new PairList(key), true);
-	GCRoot<Expression> e(new Expression(Rfin, tail), true);
+	GCStackRoot<PairList> tail(expose(new PairList(key)));
+	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
 	eval(e, GlobalEnvironment);
     }
 }
@@ -225,19 +216,18 @@ namespace {
 }
 
 // The MARK_THRU invocations below could be eliminated by
-// encapsulating the pointers concerned in GCRoot<> objects declared
+// encapsulating the pointers concerned in GCStackRoot<> objects declared
 // at file/global/static scope.
 
-void GCNode::gc(unsigned int num_old_gens_to_collect)
+void GCNode::mark(unsigned int max_generation)
 {
-    // cout << "GCNode::gc(" << num_old_gens_to_collect << ")\n";
-    // GCNode::check();
-    // cout << "Precheck completed OK\n";
-
-    propagateAges();
-
-    GCNode::Marker marker(num_old_gens_to_collect + 1);
+    // Create a new mark, different from that currently borne by any
+    // node in generations up to max_generation:
+    s_mark ^= 1 << (3 + max_generation);
+    GCNode::Marker marker(max_generation);
     GCRootBase::visitRoots(&marker);
+    GCStackRootBase::visitRoots(&marker);
+    visitInfants(&marker);
     MARK_THRU(&marker, R_CommentSxp);	        /* Builtin constants */
 
     MARK_THRU(&marker, R_Warnings);	           /* Warnings, if any */
@@ -271,8 +261,6 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     MARK_THRU(&marker, framenames); 		   /* used for interprocedure
 					      communication in model.c */
 
-    MARK_THRU(&marker, R_PreciousList);
-
 #ifdef BYTECODE
     {
 	SEXP *sp;
@@ -281,12 +269,7 @@ void GCNode::gc(unsigned int num_old_gens_to_collect)
     }
 #endif
 
-    WeakRef::markThru(num_old_gens_to_collect + 1);
-    sweep(num_old_gens_to_collect + 1);
-
-    // cout << "Finishing garbage collection\n";
-    // GCNode::check();
-    // cout << "Postcheck completed OK\n";
+    WeakRef::markThru(max_generation);
 }
 
 
@@ -336,7 +319,7 @@ SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCManager::gc(0, true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
-    GCRoot<> value(allocVector(REALSXP, 6));
+    GCStackRoot<> value(allocVector(REALSXP, 6));
     REAL(value)[0] = GCNode::numNodes();
     REAL(value)[1] = NA_REAL;
     REAL(value)[2] = GCManager::maxNodes();
@@ -436,9 +419,6 @@ void InitMemory()
 #endif
 
     R_HandlerStack = R_RestartStack = R_NilValue;
-
-    /*  Unbound values which are to be preserved through GCs */
-    R_PreciousList = R_NilValue;
 }
 
 
@@ -465,14 +445,13 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 	n = CDR(n);
     }
     
-    GCRoot<> namelistr(namelist);
-    GCRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
-    GCRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
+    GCStackRoot<> namelistr(namelist);
+    GCStackRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
+    GCStackRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
     Environment* ans = new Environment(rhor, Rf_length(namevalr) + 5);
     frameReadPairList(ans->frame(), namevalr);
-    ans->expose();
-    return ans;
+    return GCNode::expose(ans);
 }
 
 /* All vector objects  must be a multiple of sizeof(ALIGN) */
@@ -523,7 +502,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     case LANGSXP:
 	{
 	    if(length == 0) return 0;
-	    GCRoot<PairList> tl(PairList::makeList(length - 1));
+	    GCStackRoot<PairList> tl(PairList::makeList(length - 1));
 	    s = new Expression(0, tl);
 	    break;
 	}
@@ -534,8 +513,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	      type2char(type), length);
 	return 0;  // -Wall
     }
-    s->expose();
-    return s;
+    return GCNode::expose(s);
 }
 
 
@@ -608,32 +586,6 @@ void R_chk_free(void *ptr)
 			  better to be safe here */
 }
 
-/* This code keeps a list of objects which are not assigned to variables
-   but which are required to persist across garbage collections.  The
-   objects are registered with R_PreserveObject and deregistered with
-   R_ReleaseObject. */
-
-void R_PreserveObject(SEXP object)
-{
-    R_PreciousList = CONS(object, R_PreciousList);
-}
-
-static SEXP RecursiveRelease(SEXP object, SEXP list)
-{
-    if (!isNull(list)) {
-	if (object == CAR(list))
-	    return CDR(list);
-	else
-            SETCDR(list, RecursiveRelease(object, CDR(list)));
-    }
-    return list;
-}
-
-void R_ReleaseObject(SEXP object)
-{
-    R_PreciousList =  RecursiveRelease(object, R_PreciousList);
-}
-
 
 /* External Pointer Objects */
 
@@ -671,7 +623,7 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 /* General Cons Cell Attributes */
 
 void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
-    GCRoot<> attributes(duplicate(ATTRIB(from)));
+    GCStackRoot<> attributes(duplicate(ATTRIB(from)));
     SET_ATTRIB(to, attributes);
     IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
 }

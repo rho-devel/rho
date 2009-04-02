@@ -1308,15 +1308,14 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	if (length == -1)
 	    return NA_STRING;
 	else {
-	    GCRoot<> str;
+	    GCStackRoot<> str;
 	    cetype_t enc = String::GPBits2Encoding(levs);
 	    cbuf = CallocCharBuf(length);
 	    InString(stream, cbuf, length);
-	    GCRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    if (length > int(strlen(cbuf))) {
 		std::string sstr(cbuf, length);
-		str = new UncachedString(sstr, enc);
-		str->expose();
+		str = GCNode::expose(new UncachedString(sstr, enc));
 		str->unpackGPBits(levs);
 		SET_ATTRIB(str, attributes);
 	    } else {
@@ -1330,7 +1329,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCRoot<Environment> env(new Environment(0), true);
+	    GCStackRoot<Environment> env(GCNode::expose(new Environment(0)));
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, env);
@@ -1372,8 +1371,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   is worth to write the code to handle this now, but if it
 	   becomes necessary we can do it without needing to change
 	   the save format. */
-	PROTECT(s = new PairList);
-	s->expose();
+	PROTECT(s = GCNode::expose(new PairList));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1382,30 +1380,28 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case LANGSXP:
-	PROTECT(s = new Expression);
-	s->expose();
+	PROTECT(s = GCNode::expose(new Expression));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
 	// Convert tail to PairList if necessary:
 	{
-	    GCRoot<ConsCell>
+	    GCStackRoot<ConsCell>
 		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
 	    SETCDR(s, ConsCell::convert<PairList>(cc));
 	}
 	UNPROTECT(1); /* s */
 	return s;
     case DOTSXP:
-	PROTECT(s = new DottedArgs);
-	s->expose();
+	PROTECT(s = GCNode::expose(new DottedArgs));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
 	SETCAR(s, ReadItem(ref_table, stream));
 	// Convert tail to PairList if necessary:
 	{
-	    GCRoot<ConsCell>
+	    GCStackRoot<ConsCell>
 		cc(SEXP_downcast<ConsCell*>(ReadItem(ref_table, stream)));
 	    SETCDR(s, ConsCell::convert<PairList>(cc));
 	}
@@ -1413,40 +1409,41 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	return s;
     case CLOSXP:
 	{
-	    GCRoot<PairList>
+	    GCStackRoot<PairList>
 		attr(hasattr
 		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
 		     : 0);
-	    GCRoot<Environment>
+	    GCStackRoot<Environment>
 		env(hastag
 		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
 		    : 0);
-	    GCRoot<PairList>
+	    if (!env)
+		env = BaseEnvironment;
+	    GCStackRoot<PairList>
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
-	    GCRoot<> body(ReadItem(ref_table, stream));
-	    GCRoot<Closure> clos(new Closure(formals, body,
-					     env ? env : BaseEnvironment),
-				 true);
+	    GCStackRoot<> body(ReadItem(ref_table, stream));
+	    GCStackRoot<Closure>
+		clos(GCNode::expose(new Closure(formals, body, env)));
 	    SETLEVELS(clos, levs);
 	    SET_ATTRIB(clos, attr);
 	    return clos;
 	}
     case PROMSXP:
 	{
-	    GCRoot<PairList>
+	    GCStackRoot<PairList>
 		attr(hasattr
 		     ? SEXP_downcast<PairList*>(ReadItem(ref_table, stream))
 		     : 0);
-	    GCRoot<Environment>
+	    GCStackRoot<Environment>
 		env(hastag
 		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
 		    : 0);
 	    // For reading promises stored in earlier versions,
 	    // convert null env to base env:
 	    if (!env) env = BaseEnvironment;
-	    GCRoot<> val(ReadItem(ref_table, stream));
-	    GCRoot<> valgen(ReadItem(ref_table, stream));
-	    GCRoot<Promise> prom(new Promise(valgen, *env), true);
+	    GCStackRoot<> val(ReadItem(ref_table, stream));
+	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
+	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, *env)));
 	    SETLEVELS(prom, levs);
 	    SET_ATTRIB(prom, attr);
 	    return prom;
@@ -1457,8 +1454,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   newly allocated value PROTECTed */
 	switch (type) {
 	case EXTPTRSXP:
-	    PROTECT(s = new ExternalPointer);
-	    s->expose();
+	    PROTECT(s = GCNode::expose(new ExternalPointer));
 	    AddReadRef(ref_table, s);
 	    R_SetExternalPtrAddr(s, NULL);
 	    R_SetExternalPtrProtected(s, ReadItem(ref_table, stream));
@@ -1536,7 +1532,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	}
 	SETLEVELS(s, levs);
 	{
-	    GCRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
+	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    SET_ATTRIB(s, attributes);
 	}
 	UNPROTECT(1); /* s */
@@ -1609,8 +1605,7 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
     SEXP s;
-    PROTECT(s = new ByteCode);
-    s->expose();
+    PROTECT(s = GCNode::expose(new ByteCode));
     SETCAR(s, ReadItem(ref_table, stream)); /* code */
     SETCAR(s, R_bcEncode(CAR(s)));
     SETCDR(s, ReadBCConsts(ref_table, reps, stream)); /* consts */

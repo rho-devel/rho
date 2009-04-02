@@ -63,6 +63,17 @@ namespace CXXR {
    }
 }
 
+// Normally this constructor is inlined, but if CHECK_EXPOSURE is
+// defined, we can't do that because the constructor of m_tail will
+// then need to know that PairList inherits from RObject.
+#ifdef CHECK_EXPOSURE
+ConsCell::ConsCell(SEXPTYPE st, RObject* cr, PairList* tl, RObject* tg)
+    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
+{
+    // checkST(st);
+}
+#endif
+
 ConsCell::ConsCell(const ConsCell& pattern)
     : RObject(pattern), m_car(pattern.m_car), m_tail(clone(pattern.tail())),
       m_tag(pattern.tag()), m_missing(0)
@@ -90,10 +101,13 @@ void ConsCell::visitReferents(const_visitor* v) const
 {
     const ConsCell* p = this;
     do {
+	const GCNode* car = p->m_car;
+	const GCNode* tag = p->m_tag;
+	const ConsCell* tail = p->m_tail;
 	p->RObject::visitReferents(v);
-	p->m_car.conductVisitor(v);
-	p->m_tag.conductVisitor(v);
-	p = p->m_tail;
+	if (car) car->conductVisitor(v);
+	if (tag) tag->conductVisitor(v);
+	p = tail;
     } while (p && (*v)(p));
 }
 
@@ -179,6 +193,5 @@ SEXP Rf_allocSExp(SEXPTYPE t)
     default:
 	throw invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }
-    ans->expose();
-    return ans;
+    return GCNode::expose(ans);
 }

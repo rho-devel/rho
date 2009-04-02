@@ -63,13 +63,16 @@ ExpressionVector::ExpressionVector(ListVector& lv)
 	(*this)[i] = lv[i];
     SEXP names = Rf_getAttrib(const_cast<ListVector*>(&lv),
 			      R_NamesSymbol);
-    if (names)
+    if (names) {
+	// Rf_setAttrib protects its args, so we need to expose first:
+	expose();
 	Rf_setAttrib(this, R_NamesSymbol, names);
+    }
 }
 
 ExpressionVector* ExpressionVector::clone() const
 {
-    return new ExpressionVector(*this);
+    return expose(new ExpressionVector(*this));
 }
 
 // ***** C interface *****
