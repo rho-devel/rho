@@ -194,18 +194,6 @@ namespace CXXR {
 	    return m_data.begin();
 	}
 
-	/**
-	 * @return pointer to the start of this object's data,
-	 * interpreted (riskily) as an array of \a T*.
-	 *
-	 * @deprecated This function puts the integrity of the write barrier
-	 * at the mercy of class clients.
-	 */
-	T** dataPtr()
-	{
-	    return reinterpret_cast<T**>(&m_data[0]);
-	}
-
 	/** @brief One-past-the-end iterator.
 	 *
 	 * @return An iterator designating a position 'one past the
