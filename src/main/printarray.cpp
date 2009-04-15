@@ -150,7 +150,8 @@ static void MatrixRowLabel(SEXP rl, int i, int rlabw, int lbloff)
  * and comment the common code here (only):
 */
 static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+                               const char *rn, const char *cn)
 {
     int *x;
 
@@ -162,9 +163,10 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     int width, rlabw = -1, clabw = -1; /* -Wall */	\
     int i, j, jmin = 0, jmax = 0, lbloff = 0;		\
 							\
-    if (!isNull(rl))					\
-	formatString(STRING_PTR(rl), r, &rlabw, 0);	\
-    else						\
+    if (!isNull(rl)) {					\
+	StringVector::const_iterator beg = rl->begin(); \
+        rlabw = accumulate(beg, beg + r, 0, stringWidth); \
+    } else						\
 	rlabw = IndexWidth(r + 1) + 3;			\
 							\
     if (rn) {						\
@@ -248,7 +250,8 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+			       const char *rn, const char *cn)
 {
     int *x;
 
@@ -289,7 +292,8 @@ static void printIntegerMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			    SEXP rl, SEXP cl, const char *rn, const char *cn)
+			    StringVector* rl, SEXP cl,
+			    const char *rn, const char *cn)
 {
     SEXP sd, se;
     double *x;
@@ -337,7 +341,8 @@ static void printRealMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			       SEXP rl, SEXP cl, const char *rn, const char *cn)
+			       StringVector* rl, SEXP cl,
+			       const char *rn, const char *cn)
 {
     SEXP sdr, ser, swr, sdi, sei, swi;
     Rcomplex *x;
@@ -405,8 +410,9 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 }
 
 static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
-			      int r, int c, int quote, int right, SEXP rl,
-			      SEXP cl, const char *rn, const char *cn)
+			      int r, int c, int quote, int right,
+			      StringVector* rl, SEXP cl,
+			      const char *rn, const char *cn)
 {
     _PRINT_INIT_rl_rn;
 
@@ -453,7 +459,8 @@ static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
 }
 
 static void printRawMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			   SEXP rl, SEXP cl, const char *rn, const char *cn)
+			   StringVector* rl, SEXP cl,
+			   const char *rn, const char *cn)
 {
     Rbyte *x;
     _PRINT_INIT_rl_rn;
@@ -509,32 +516,33 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 	return;
     }
     r_pr = r;
+    StringVector* rlabs = SEXP_downcast<StringVector*>(rl);
     if(c > 0 && R_print.max / c < r) /* avoid integer overflow */
 	/* using floor(), not ceil(), since 'c' could be huge: */
 	r_pr = R_print.max / c;
     switch (TYPEOF(x)) {
     case LGLSXP:
-	printLogicalMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printLogicalMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case INTSXP:
-	printIntegerMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printIntegerMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case REALSXP:
-	printRealMatrix	  (x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printRealMatrix	  (x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case CPLXSXP:
-	printComplexMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printComplexMatrix(x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     case STRSXP:
 	{
 	    if (quote) quote = '"';
 	    const StringVector* sv = SEXP_downcast<StringVector*>(x);
 	    printStringMatrix (sv, offset, r_pr, r, c, quote,
-			       right, rl, cl, rn, cn);
+			       right, rlabs, cl, rn, cn);
 	    break;
 	}
     case RAWSXP:
-	printRawMatrix	  (x, offset, r_pr, r, c, rl, cl, rn, cn);
+	printRawMatrix	  (x, offset, r_pr, r, c, rlabs, cl, rn, cn);
 	break;
     default:
 	UNIMPLEMENTED_TYPE("printMatrix", x);
@@ -568,7 +576,8 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	printMatrix(x, 0, dim, quote, 0, rl, cl, rn, cn);
     }
     else { /* ndim >= 3 */
-	SEXP dn, dnn, dn0, dn1;
+	SEXP dn, dnn, dn1;
+	StringVector* dn0;
 	int i, j, has_dimnames, has_dnn, nb, nb_pr;
 	int nr = INTEGER(dim)[0], nr_last;
 	int nc = INTEGER(dim)[1];
@@ -583,7 +592,7 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 	    dnn = R_NilValue; /* -Wall */
 	}
 	else {
-	    dn0 = VECTOR_ELT(dimnames, 0);
+	    dn0 = SEXP_downcast<StringVector*>(VECTOR_ELT(dimnames, 0));
 	    dn1 = VECTOR_ELT(dimnames, 1);
 	    has_dimnames = 1;
 	    dnn = getAttrib(dimnames, R_NamesSymbol);
