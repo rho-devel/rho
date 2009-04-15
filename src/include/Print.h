@@ -41,11 +41,17 @@
 #include "Defn.h"
 
 #ifdef __cplusplus
+namespace CXXR {
+    unsigned int stringWidth(unsigned int minwidth,
+                             const CXXR::String* string);
+    unsigned int stringWidthQuote(unsigned int minwidth,
+			          const CXXR::String* string);
+}
+
 extern "C" {
 #endif
 
 #define formatRaw           Rf_formatRaw
-#define formatString        Rf_formatString
 #define EncodeElement       Rf_EncodeElement
 #define EncodeEnvironment   Rf_EncodeEnvironment
 #define printArray          Rf_printArray
@@ -71,12 +77,6 @@ extern R_print_par_t R_print;
 
 /* Computation of printing formats */
 void formatRaw(Rbyte *, int, int *);
-#ifdef __cplusplus
-void formatString(CXXR::String**, int, int*, int);
-unsigned int stringWidth(unsigned int minwidth, const CXXR::String* string);
-unsigned int stringWidthQuote(unsigned int minwidth,
-			      const CXXR::String* string);
-#endif
 
 /* Formating of values */
 const char *EncodeElement(SEXP, int, int, char);
