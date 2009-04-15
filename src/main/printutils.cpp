@@ -82,6 +82,9 @@
 #include <Rconnections.h>
 
 #include "RBufferUtils.h"
+#include "CXXR/StringVector.h"
+
+using namespace CXXR;
 
 extern int R_OutputCon; /* from connections.c */
 
@@ -658,9 +661,13 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	res = EncodeReal(REAL(x)[indx], w, d, e, dec);
 	break;
     case STRSXP:
-	formatString(&STRING_PTR(x)[indx], 1, &w, quote);
-	res = EncodeString(STRING_ELT(x, indx), w, quote, Rprt_adj_left);
-	break;
+	{
+	    StringVector* sv = static_cast<StringVector*>(x);
+	    String* str = (*sv)[indx];
+	    w = (quote ? stringWidthQuote(0, str) : stringWidth(0, str));
+	    res = EncodeString(str, w, quote, Rprt_adj_left);
+	    break;
+	}
     case CPLXSXP:
 	formatComplex(&COMPLEX(x)[indx], 1, &w, &d, &e, &wi, &di, &ei, 0);
 	res = EncodeComplex(COMPLEX(x)[indx], w, d, e, wi, di, ei, dec);
