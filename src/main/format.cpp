@@ -69,6 +69,24 @@ void formatRaw(Rbyte *x, int n, int *fieldwidth)
     *fieldwidth = 2;
 }
 
+// Designed for use with std::accumulate():
+unsigned int stringWidth(unsigned int minwidth, const String* string)
+{
+    unsigned int width = R_print.na_width_noquote;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), false);
+    return max(minwidth, width);
+}
+
+// Designed for use with std::accumulate():
+unsigned int stringWidthQuote(unsigned int minwidth, const String* string)
+{
+    unsigned int width = R_print.na_width;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), true) + 2;
+    return max(minwidth, width);
+}
+
 void formatString(String** x, int n, int *fieldwidth, int quote)
 {
     int xmax = 0;

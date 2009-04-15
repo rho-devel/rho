@@ -73,6 +73,9 @@ extern R_print_par_t R_print;
 void formatRaw(Rbyte *, int, int *);
 #ifdef __cplusplus
 void formatString(CXXR::String**, int, int*, int);
+unsigned int stringWidth(unsigned int minwidth, const CXXR::String* string);
+unsigned int stringWidthQuote(unsigned int minwidth,
+			      const CXXR::String* string);
 #endif
 
 /* Formating of values */

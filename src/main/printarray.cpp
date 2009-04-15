@@ -47,6 +47,7 @@
 #include <config.h>
 #endif
 
+#include <numeric>
 #include "Defn.h"
 #include "Print.h"
 
@@ -403,18 +404,19 @@ static void printComplexMatrix(SEXP sx, int offset, int r_pr, int r, int c,
     }
 }
 
-static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
-			      int quote, int right, SEXP rl, SEXP cl,
-			      const char *rn, const char *cn)
+static void printStringMatrix(const StringVector* sx, int offset, int r_pr,
+			      int r, int c, int quote, int right, SEXP rl,
+			      SEXP cl, const char *rn, const char *cn)
 {
-    String** x;
     _PRINT_INIT_rl_rn;
 
     sw = allocVector(INTSXP, c);
-    x = STRING_PTR(sx)+offset;
+    StringVector::const_iterator beg = sx->begin() + offset;
     w = INTEGER(sw);
     for (j = 0; j < c; j++) {
-	formatString(&x[j * r], r, &w[j], quote);
+	StringVector::const_iterator jbeg = beg + j*r;
+	w[j] = accumulate(jbeg, jbeg + r, 0,
+			  (quote ? stringWidthQuote : stringWidth));
 	_PRINT_SET_clabw;
 	if (w[j] < clabw)
 	    w[j] = clabw;
@@ -442,7 +444,7 @@ static void printStringMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 	    MatrixRowLabel(rl, i, rlabw, lbloff);
 	    for (j = jmin; j < jmax; j++) {
 		Rprintf("%*s%s", R_print.gap, "",
-			EncodeString(x[i + j * r], w[j], quote, Rprt_adj(right)));
+			EncodeString(*(beg + i + j*r), w[j], quote, Rprt_adj(right)));
 	    }
 	}
 	Rprintf("\n");
@@ -524,9 +526,13 @@ void printMatrix(SEXP x, int offset, SEXP dim, int quote, int right,
 	printComplexMatrix(x, offset, r_pr, r, c, rl, cl, rn, cn);
 	break;
     case STRSXP:
-	if (quote) quote = '"';
-	printStringMatrix (x, offset, r_pr, r, c, quote, right, rl, cl, rn, cn);
-	break;
+	{
+	    if (quote) quote = '"';
+	    const StringVector* sv = SEXP_downcast<StringVector*>(x);
+	    printStringMatrix (sv, offset, r_pr, r, c, quote,
+			       right, rl, cl, rn, cn);
+	    break;
+	}
     case RAWSXP:
 	printRawMatrix	  (x, offset, r_pr, r, c, rl, cl, rn, cn);
 	break;
@@ -639,10 +645,13 @@ static void printArrayGeneral(SEXP x, SEXP dim, int quote, int right,
 		printComplexMatrix(x, i * b, use_nr, nr, nc, dn0, dn1, rn, cn);
 		break;
 	    case STRSXP:
-		if (quote) quote = '"';
-		printStringMatrix (x, i * b, use_nr, nr, nc,
-				   quote, right, dn0, dn1, rn, cn);
-		break;
+		{
+		    if (quote) quote = '"';
+		    const StringVector* sv = SEXP_downcast<StringVector*>(x);
+		    printStringMatrix (sv, i * b, use_nr, nr, nc,
+				       quote, right, dn0, dn1, rn, cn);
+		    break;
+		}
 	    case RAWSXP:
 		printRawMatrix    (x, i * b, use_nr, nr, nc, dn0, dn1, rn, cn);
 		break;

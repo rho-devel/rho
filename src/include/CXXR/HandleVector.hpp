@@ -64,7 +64,11 @@ namespace CXXR {
      */
     template <typename T, SEXPTYPE ST>
     class HandleVector : public VectorBase {
+    private:
+	typedef std::vector<Handle<T>, Allocator<Handle<T> > > Vector;
     public:
+	typedef typename Vector::const_iterator const_iterator;
+
 	/** @brief Proxy object for an element of an HandleVector<T, ST>.
 	 *
 	 * Objects of this class are used to allow the elements of an
@@ -180,6 +184,16 @@ namespace CXXR {
 	    return m_data[index];
 	}
 
+	/** @brief Iterator designating first element.
+	 *
+	 * @return An iterator designating the first element of the
+	 * HandleVector.  Returns end() if the vector is empty.
+	 */
+	const_iterator begin() const
+	{
+	    return m_data.begin();
+	}
+
 	/**
 	 * @return pointer to the start of this object's data,
 	 * interpreted (riskily) as an array of \a T*.
@@ -190,6 +204,16 @@ namespace CXXR {
 	T** dataPtr()
 	{
 	    return reinterpret_cast<T**>(&m_data[0]);
+	}
+
+	/** @brief One-past-the-end iterator.
+	 *
+	 * @return An iterator designating a position 'one past the
+	 * end' of the HandleVector.
+	 */
+	const_iterator end() const
+	{
+	    return m_data.end();
 	}
 
 	/** @brief Name by which this type is known in R.
@@ -215,7 +239,6 @@ namespace CXXR {
 	 */
 	~HandleVector() {}
     private:
-	typedef std::vector<Handle<T>, Allocator<Handle<T> > > Vector;
 	Vector m_data;
 
 	// Not implemented.  Declared to prevent
