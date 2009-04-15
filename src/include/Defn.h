@@ -988,7 +988,7 @@ void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
 void sortVector(SEXP, Rboolean);
 #ifdef __cplusplus
-void ssort(CXXR::String**,int);
+void ssort(CXXR::StringVector*,int);
 #endif
 int StrToInternal(const char *);
 SEXP substituteList(SEXP, SEXP);

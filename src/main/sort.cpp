@@ -245,8 +245,9 @@ void R_csort(Rcomplex *x, int n)
 
 
 /* used in platform.c */
-void attribute_hidden ssort(String** x, int n)
+void attribute_hidden ssort(StringVector* sv, int n)
 {
+    StringVector& x(*sv);
     String* v;
 #define TYPE_CMP scmp
     sort_body
@@ -415,7 +416,7 @@ static void R_csort2(Rcomplex *x, int n, Rboolean decreasing)
 	}
 }
 
-static void ssort2(String** x, int n, Rboolean decreasing)
+static void ssort2(StringVector* sv, int n, Rboolean decreasing)
 {
     String* v;
     int i, j, h, t;
@@ -423,15 +424,15 @@ static void ssort2(String** x, int n, Rboolean decreasing)
     for (t = 0; incs[t] > n; t++);
     for (h = incs[t]; t < 16; h = incs[++t])
 	for (i = h; i < n; i++) {
-	    v = x[i];
+	    v = (*sv)[i];
 	    j = i;
 	    if(decreasing)
-		while (j >= h && scmp(x[j - h], v, TRUE) < 0)
-		{ x[j] = x[j - h]; j -= h; }
+		while (j >= h && scmp((*sv)[j - h], v, TRUE) < 0)
+		{ (*sv)[j] = (*sv)[j - h]; j -= h; }
 	    else
-		while (j >= h && scmp(x[j - h], v, TRUE) > 0)
-		{ x[j] = x[j - h]; j -= h; }
-	    x[j] = v;
+		while (j >= h && scmp((*sv)[j - h], v, TRUE) > 0)
+		{ (*sv)[j] = (*sv)[j - h]; j -= h; }
+	    (*sv)[j] = v;
 	}
 }
 
@@ -451,8 +452,11 @@ void sortVector(SEXP s, Rboolean decreasing)
 	    R_csort2(COMPLEX(s), n, decreasing);
 	    break;
 	case STRSXP:
-	    ssort2(STRING_PTR(s), n, decreasing);
-	    break;
+	    {
+		StringVector* sv = static_cast<StringVector*>(s);
+		ssort2(sv, n, decreasing);
+		break;
+	    }
 	default:
 	    UNIMPLEMENTED_TYPE("sortVector", s);
 	}
@@ -509,8 +513,9 @@ static void cPsort2(Rcomplex *x, int lo, int hi, int k)
 }
 
 
-static void sPsort2(String** x, int lo, int hi, int k)
+static void sPsort2(StringVector* sv, int lo, int hi, int k)
 {
+    StringVector& x(*sv);
     String *v, *w;
 #define TYPE_CMP scmp
     psort_body
@@ -534,8 +539,11 @@ static void Psort(SEXP x, int lo, int hi, int k)
 	cPsort2(COMPLEX(x), lo, hi, k);
 	break;
     case STRSXP:
-	sPsort2(STRING_PTR(x), lo, hi, k);
-	break;
+	{
+	    StringVector* sv = static_cast<StringVector*>(x);
+	    sPsort2(sv, lo, hi, k);
+	    break;
+	}
     default:
 	UNIMPLEMENTED_TYPE("Psort", x);
     }
@@ -762,7 +770,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
     int *ix = NULL /* -Wall */;
     double *x = NULL /* -Wall */;
     Rcomplex *cx = NULL /* -Wall */;
-    String** sx = NULL /* -Wall */;
+    StringVector* sv = NULL /* -Wall */;
 
     switch (TYPEOF(key)) {
     case LGLSXP:
@@ -773,7 +781,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	x = REAL(key);
 	break;
     case STRSXP:
-	sx = STRING_PTR(key);
+	sv = static_cast<StringVector*>(key);
 	break;
     case CPLXSXP:
 	cx = COMPLEX(key);
@@ -794,7 +802,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(x[i]);
 	    break;
 	case STRSXP:
-	    for (i = 0; i < n; i++) isna[i] = (sx[i] == NA_STRING);
+	    for (i = 0; i < n; i++) isna[i] = ((*sv)[i] == NA_STRING);
 	    break;
 	case CPLXSXP:
 	    for (i = 0; i < n; i++) isna[i] = ISNAN(cx[i].r) || ISNAN(cx[i].i);
@@ -862,11 +870,11 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 	break;
     case STRSXP:
 	if (decreasing)
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c < 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c < 0 || (c == 0 && a > b))
 	    sort2_with_index
 #undef less
 	else
-#define less(a, b) (c=Scollate(sx[a], sx[b]), c > 0 || (c == 0 && a > b))
+#define less(a, b) (c=Scollate((*sv)[a], (*sv)[b]), c > 0 || (c == 0 && a > b))
 	    sort2_with_index
 #undef less
 	break;

@@ -49,6 +49,10 @@
 # include <errno.h>
 #endif
 
+#include "CXXR/StringVector.h"
+
+using namespace CXXR;
+
 /* Machine Constants */
 
 static void Init_R_Machine(SEXP rho)
@@ -1017,7 +1021,8 @@ SEXP attribute_hidden do_listfiles(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (pattern)
 	regfree(&reg);
-    ssort(STRING_PTR(ans), count);
+    StringVector* sv = static_cast<StringVector*>(ans);
+    ssort(sv, count);
     UNPROTECT(1);
     return ans;
 }
