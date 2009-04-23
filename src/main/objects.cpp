@@ -291,7 +291,8 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	method = install(buf);
 	sxp = R_LookupMethod(method, rho, callrho, defrho);
 	if (isFunction(sxp)) {
-	    defineVar(install(".Generic"), mkString(generic), newrho);
+	    GCRoot<> genstr(mkString(generic));
+	    defineVar(install(".Generic"), genstr, newrho);
 	    if (i > 0) {
 		PROTECT(t = allocVector(STRSXP, nclass - i));
 		for (j = 0; j < length(t); j++, i++)

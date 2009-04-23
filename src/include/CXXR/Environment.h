@@ -390,6 +390,10 @@ extern "C" {
      * Frame of \a x (may be null).  This PairList is generated on the
      * fly, so this is a relatively expensive operation.  Alterations
      * to the returned PairList will not alter the Environment's Frame.
+     *
+     * @note Beware that since (unlike CR) this isn't a simple
+     * accessor function, its return value will need protection from
+     * garbage collection.
      */
 #ifndef __cplusplus
     SEXP FRAME(SEXP x);

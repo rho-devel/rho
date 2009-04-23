@@ -1282,7 +1282,8 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	SEXP p, loadenv = CAR(args);
 
 	newenv = GCNode::expose(new Environment(0));
-	for(p = FRAME(loadenv); p != R_NilValue; p = CDR(p))
+	GCRoot<> framelist(FRAME(loadenv));
+	for(p = framelist; p != R_NilValue; p = CDR(p))
 	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
     } else {
 	error(_("'attach' only works for lists, data frames and environments"));
@@ -1506,19 +1507,21 @@ SEXP CXXRnot_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( !isEnvironment(env) )
 	error(_("argument must be an environment"));
 
+    GCRoot<> framelist(FRAME(env));
+
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
 
-    k = FrameSize(FRAME(env), all);
+    k = FrameSize(framelist, all);
 
     PROTECT(names = allocVector(STRSXP, k));
     PROTECT(ans = allocVector(VECSXP, k));
 
     k = 0;
-    FrameValues(FRAME(env), all, ans, &k);
+    FrameValues(framelist, all, ans, &k);
 
     k = 0;
-    FrameNames(FRAME(env), all, names, &k);
+    FrameNames(framelist, all, names, &k);
 
     setAttrib(ans, R_NamesSymbol, names);
     UNPROTECT(2);
@@ -1551,14 +1554,16 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(eval(CADDR(args), rho));
     if (all == NA_LOGICAL) all = 0;
 
-    k = FrameSize(FRAME(env), all);
+    GCRoot<> framelist(FRAME(env));
+
+    k = FrameSize(framelist, all);
 
     PROTECT(names = allocVector(STRSXP, k));
     PROTECT(ans = allocVector(VECSXP, k));
     PROTECT(tmp2 = allocVector(VECSXP, k));
 
     k = 0;
-    FrameValues(FRAME(env), all, tmp2, &k);
+    FrameValues(framelist, all, tmp2, &k);
 
     PROTECT(ind = allocVector(INTSXP, 1));
     PROTECT(tmp = LCONS(R_Bracket2Symbol,
@@ -1571,7 +1576,7 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     k = 0;
-    FrameNames(FRAME(env), all, names, &k);
+    FrameNames(framelist, all, names, &k);
 
     setAttrib(ans, R_NamesSymbol, names);
     UNPROTECT(6);
