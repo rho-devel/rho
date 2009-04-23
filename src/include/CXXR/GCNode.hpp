@@ -536,9 +536,9 @@ namespace CXXR {
 	bool isMarked() const {return (m_bits & MARK) == s_mark;}
 
 	// List on which this node is currently recorded.
-	List& list() const
+	List* list() const
 	{
-	    return (*s_lists)[m_bits & LIST];
+	    return s_lists[m_bits & LIST];
 	}
 
 	/** @brief Carry out the mark phase of garbage collection.

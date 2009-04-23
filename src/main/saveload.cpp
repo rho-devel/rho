@@ -2459,7 +2459,8 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cntxt.cenddata = con;
 	}
 	R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
-	PROTECT(res = RestoreToEnv(R_Unserialize(&in), aenv));
+	GCStackRoot<> unser(R_Unserialize(&in));
+	PROTECT(res = RestoreToEnv(unser, aenv));
 	if (wasopen) {
 	    endcontext(&cntxt);
 	} else {

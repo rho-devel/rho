@@ -207,7 +207,7 @@ void GCNode::propagateAges()
     while (!s_aged_list->empty()) {
 	const GCNode* node = s_aged_list->front();
 	node->m_bits &= ~AGED;
-	node->list().splice_back(node);
+	node->list()->splice_back(node);
 	Ager ager(node->generation());
 	node->visitReferents(&ager);
     }
@@ -255,7 +255,7 @@ bool GCNode::Ager::operator()(const GCNode* node)
 	return false;
     node->m_bits &= ~(AGED | GENERATION);
     node->m_bits |= m_mingen;
-    node->list().splice_back(node);
+    node->list()->splice_back(node);
     return true;
 }
 
