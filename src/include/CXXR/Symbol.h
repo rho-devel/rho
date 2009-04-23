@@ -93,14 +93,14 @@ namespace CXXR {
      */
     class Symbol : public RObject {
     private:
-	// This table is used to ensure that, for standard symbols,
+	// A table is used to ensure that, for standard symbols,
 	// there is at most one Symbol object with a particular name.
 	typedef
-	std::tr1::unordered_map<GCEdge<const CachedString>, GCEdge<Symbol>,
+	std::tr1::unordered_map<const CachedString*, GCRoot<Symbol>,
 				std::tr1::hash<const CachedString*>,
 				std::equal_to<const CachedString*>,
 				CXXR::Allocator<std::pair<const CachedString*,
-							  Symbol*> >
+							  GCRoot<Symbol> > >
 	                        > map;
     public:
 	// It is assumed that this dereferences to
@@ -133,7 +133,7 @@ namespace CXXR {
 	 */
 	static Symbol* missingArgument()
 	{
-	    return s_missing_arg;
+	    return *s_missing_arg;
 	}
 
 	/** @brief Access name.
@@ -191,7 +191,7 @@ namespace CXXR {
 	 */
 	static Symbol* restartToken()
 	{
-	    return s_restart_token;
+	    return *s_restart_token;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -212,7 +212,7 @@ namespace CXXR {
 	 */
 	static Symbol* unboundValue()
 	{
-	    return s_unbound_value;
+	    return *s_unbound_value;
 	}
 
 	// Virtual function of RObject:
@@ -221,15 +221,10 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     private:
-	struct Table : public GCNode, public map {
-	    // Virtual function of GCNode:
-	    void visitReferents(const_visitor *v) const;
-	};
-
-	static GCRoot<Table> s_table;
-	static GCRoot<Symbol> s_missing_arg;
-	static GCRoot<Symbol> s_restart_token;
-	static GCRoot<Symbol> s_unbound_value;
+	static map* s_table;
+	static GCRoot<Symbol>* s_missing_arg;
+	static GCRoot<Symbol>* s_restart_token;
+	static GCRoot<Symbol>* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
 	bool m_dd_symbol;
@@ -257,6 +252,14 @@ namespace CXXR {
 	// compiler-generated versions:
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
+
+	// Free memory used by the static data members:
+	static void cleanup();
+
+	// Initialize the static data members:
+	static void initialize();
+
+	friend class SchwarzCounter<Symbol>;
     };
 
     /** @brief Does Symbol's name start with '.'?
@@ -311,6 +314,10 @@ namespace CXXR {
     extern Symbol* const TmpvalSymbol;     // "*tmp*"
     extern Symbol* const UseNamesSymbol;   // "use.names"
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::Symbol> symbol_schwarz_ctr;
+}
 
 extern "C" {
 #endif
