@@ -92,9 +92,11 @@ namespace CXXR {
 	 * @param target Pointer to the object to which this GCEdge is
 	 *          to refer.  A null pointer is permissible.
 	 *
-	 * @note This constructor should be called only as part of the
-	 * construction of the object derived from GCNode of which
-	 * this GCEdge forms a part.
+	 * @note Unless \a target is a null pointer, this constructor
+	 * should be called only as part of the construction of the
+	 * object derived from GCNode of which this GCEdge forms a
+	 * part.  In other cases, construct the GCEdge with a null
+	 * target, and then retarget it.
 	 */
 	explicit GCEdge(T* target)
 	    : m_target(target)

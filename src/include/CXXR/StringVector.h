@@ -144,26 +144,6 @@ inline SEXP STRING_ELT(SEXP x, int i)
 }
 #endif
 
-/**
- * @param x Pointer to a CXXR::StringVector; an error is raised if \a x
- *          is not a pointer to a CXXR::StringVector.
- *
- * @return Pointer to the start of \a x 's data, interpreted (riskily)
- *         as an array of CXXR::String*.
- *
- * @deprecated This function puts the integrity of the write barrier
- * at the mercy of callers.  It is deliberately not made visible
- * to C code.
- */
-#ifdef __cplusplus
-inline CXXR::String** STRING_PTR(SEXP x)
-{
-    CXXR::StringVector* sv
-	= CXXR::SEXP_downcast<CXXR::StringVector*>(x);
-    return sv->dataPtr();
-}
-#endif
-
 #ifdef __cplusplus
 }
 #endif

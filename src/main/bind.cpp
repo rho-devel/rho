@@ -1204,7 +1204,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mrows, lenmin = 0;
-    SEXP dn, t, u, result, dims, expr;
+    SEXP dn, t, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1410,7 +1410,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
 		else {
-		    expr = substitute(CAR(t), R_NilValue);
+		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2)
@@ -1436,7 +1436,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
     Rboolean have_rnames = FALSE, have_cnames = FALSE, warned = FALSE;
     int nnames, mnames;
     int rows, cols, mcols, lenmin = 0;
-    SEXP dn, t, u, result, dims, expr;
+    SEXP dn, t, u, result, dims;
 
     nnames = 0;
     mnames = 0;
@@ -1649,7 +1649,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
 		else {
-		    expr = substitute(CAR(t), R_NilValue);
+		    GCStackRoot<> expr(substitute(CAR(t), R_NilValue));
 		    if (deparse_level == 1 && isSymbol(expr))
 			SET_STRING_ELT(nam, j++, PRINTNAME(expr));
 		    else if (deparse_level == 2)

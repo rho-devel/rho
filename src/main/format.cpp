@@ -69,18 +69,23 @@ void formatRaw(Rbyte *x, int n, int *fieldwidth)
     *fieldwidth = 2;
 }
 
-void formatString(String** x, int n, int *fieldwidth, int quote)
+// Designed for use with std::accumulate():
+unsigned int CXXR::stringWidth(unsigned int minwidth, const String* string)
 {
-    int xmax = 0;
-    int i, l;
+    unsigned int width = R_print.na_width_noquote;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), false);
+    return max(minwidth, width);
+}
 
-    for (i = 0; i < n; i++) {
-	if (x[i] == NA_STRING) {
-	    l = quote ? R_print.na_width : R_print.na_width_noquote;
-	} else l = Rstrlen(x[i], quote) + (quote ? 2 : 0);
-	if (l > xmax) xmax = l;
-    }
-    *fieldwidth = xmax;
+// Designed for use with std::accumulate():
+    unsigned int CXXR::stringWidthQuote(unsigned int minwidth,
+				    const String* string)
+{
+    unsigned int width = R_print.na_width;
+    if (string != NA_STRING)
+	width = Rstrlen(const_cast<String*>(string), true) + 2;
+    return max(minwidth, width);
 }
 
 void formatLogical(int *x, int n, int *fieldwidth)

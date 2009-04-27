@@ -100,7 +100,6 @@ extern "C" {
 #define LOGICAL_POINTER(x)	LOGICAL(x)
 #define INTEGER_POINTER(x)	INTEGER(x)
 #define NUMERIC_POINTER(x)	REAL(x)
-#define CHARACTER_POINTER(x)	STRING_PTR(x)
 #define COMPLEX_POINTER(x)	COMPLEX(x)
 /* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
    This is probably unused.
@@ -120,7 +119,6 @@ extern "C" {
 #define INTEGER_DATA(x)		(INTEGER(x))
 #define DOUBLE_DATA(x)		(REAL(x))
 #define NUMERIC_DATA(x)		(REAL(x))
-#define CHARACTER_DATA(x)	(STRING_PTR(x))
 #define COMPLEX_DATA(x)		(COMPLEX(x))
 /* Use of VECTOR_PTR will fail unless USE_RINTERNALS is in use
    VECTOR_DATA seems unused, and RECURSIVE_DATA is used only in

@@ -58,16 +58,16 @@ namespace CXXR {
     }
 }
 
-GCRoot<Symbol::Table> Symbol::s_table(expose(new Table));
+Symbol::map* Symbol::s_table = 0;
 
-GCRoot<Symbol> Symbol::s_missing_arg(expose(new Symbol));
-SEXP R_MissingArg = Symbol::missingArgument();
+GCRoot<Symbol>* Symbol::s_missing_arg;
+SEXP R_MissingArg;
 
-GCRoot<Symbol> Symbol::s_restart_token(expose(new Symbol));
-SEXP R_RestartToken = Symbol::restartToken();
+GCRoot<Symbol>* Symbol::s_restart_token;
+SEXP R_RestartToken;
 
-GCRoot<Symbol> Symbol::s_unbound_value(expose(new Symbol));
-SEXP R_UnboundValue = Symbol::unboundValue();
+GCRoot<Symbol>* Symbol::s_unbound_value;
+SEXP R_UnboundValue;
 
 // As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
 // (Discovered 2009-01-16)  So we use boost:
@@ -75,27 +75,6 @@ SEXP R_UnboundValue = Symbol::unboundValue();
 namespace {
     boost::basic_regex<char> dd_regex("\\.\\.\\d+");
 }
-
-// ***** Class Symbol::Table *****
-
-void Symbol::Table::visitReferents(const_visitor *v) const
-{
-    map::iterator end = s_table->end();
-    for (map::iterator it = s_table->begin(); it != end; ++it) {
-	// Beware that a garbage collection may occur in
-	// Symbol::obtain(), after a new entry has been placed in the
-	// symbol table but not yet made to point to a Symbol.  In
-	// that case we need to visit the table key (i.e. the symbol
-	// name); otherwise we don't bother, because it will be
-	// reached via the Symbol anyway.
-	const GCEdge<Symbol>& symbol = (*it).second;
-        if (symbol) symbol->conductVisitor(v);
-	else {
-	    const GCNode* name = (*it).first;
-	    if (name) name->conductVisitor(v);
-	}
-    }
-}    
 
 // ***** Class Symbol itself *****
 
@@ -116,16 +95,35 @@ Symbol::~Symbol()
     if (m_name) s_table->erase(m_name);
 }
 
+void Symbol::cleanup()
+{
+    delete s_unbound_value;
+    delete s_restart_token;
+    delete s_missing_arg;
+    delete s_table;
+}
+
+void Symbol::initialize()
+{
+    s_table = new map;
+    s_missing_arg = new GCRoot<Symbol>(expose(new Symbol));
+    R_MissingArg = Symbol::missingArgument();
+    s_restart_token = new GCRoot<Symbol>(expose(new Symbol));
+    R_RestartToken = Symbol::restartToken();
+    s_unbound_value = new GCRoot<Symbol>(expose(new Symbol));
+    R_UnboundValue = Symbol::unboundValue();
+}
+
 Symbol* Symbol::obtain(const CachedString* name)
 {
-    GCEdge<const CachedString> e(name);
+    GCStackRoot<const CachedString> namert(name);
     pair<map::iterator, bool> pr
-	= s_table->insert(map::value_type(e, GCEdge<Symbol>(0)));
+	= s_table->insert(map::value_type(name, GCRoot<Symbol>(0)));
     map::iterator it = pr.first;
     map::value_type& val = *it;
     if (pr.second) {
 	try {
-	    val.second.retarget(s_table, expose(new Symbol(name, false)));
+	    val.second = expose(new Symbol(name, false));
 	} catch (...) {
 	    s_table->erase(it);
 	    throw;
