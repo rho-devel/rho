@@ -833,7 +833,6 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	Environment* newenv = static_cast<Environment*>(newrho);
 	const Symbol* sym = static_cast<Symbol*>(symbol);
 	Frame::Binding* bdg = newenv->frame()->obtainBinding(sym);
-	bdg->setValue(val);
 	if (missing) {
 	    bdg->setMissing(missing);
 	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
@@ -850,6 +849,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		val = mkPROMISE(CAR(deflt), newrho);
 	    }
 	}
+	bdg->setValue(val);
     }
 
     /* copy the bindings of the spacial dispatch variables in the top
