@@ -1209,7 +1209,6 @@ SEXP CXXRnot_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_NilValue;
 }
 
-
 SEXP CXXRnot_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);

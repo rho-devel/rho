@@ -947,6 +947,11 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"nsl",	do_nsl,		0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"gzcon",	do_gzcon,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 
+/* Provenance Functions */
+{"castestfun", do_castestfun, 0, 0, 0, {PP_FUNCALL, PREC_FN, 0}},
+{"hasProvenance", do_hasProvenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"provCommand", do_provCommand, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"provenance", do_provenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
 
 {"readDCF",	do_readDCF,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 

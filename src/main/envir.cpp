@@ -111,6 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
+#include "CXXR/Provenance.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -271,6 +272,21 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 
 static SEXP R_BaseNamespaceName;
 
+void prov_readmonitor(const CXXR::Frame::Binding &bind) {
+	printf("Read '%s'\n",bind.symbol()->name()->c_str());
+}
+
+void prov_writemonitor(const CXXR::Frame::Binding &bind) {
+	CXXR::Frame::Binding& bdg=const_cast<CXXR::Frame::Binding&>(bind);
+	printf("Written '%s'\n",bind.symbol()->name()->c_str());
+	if (bdg.hasProvenance())
+		printf("Object already has provenance. This will now be replaced.\n");
+
+	Expression* exp=SEXP_downcast<Expression*>(R_CurrentExpr);
+	Symbol* sym=const_cast<CXXR::Symbol*>(bind.symbol());
+	bdg.setProvenance(GCNode::expose(new Provenance(exp,sym)));
+}
+
 void CXXRnot_hidden InitGlobalEnv()
 {
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
@@ -279,6 +295,9 @@ void CXXRnot_hidden InitGlobalEnv()
     R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
+		Frame *glEnvFrame=SEXP_downcast<Environment*>(R_GlobalEnv)->frame();
+		glEnvFrame->setReadMonitor(prov_readmonitor);
+		glEnvFrame->setWriteMonitor(prov_writemonitor);
     /**** needed to properly initialize the base name space */
 }
 

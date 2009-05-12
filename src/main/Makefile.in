@@ -42,7 +42,7 @@ SOURCES_CXX = \
         IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
-        PairList.cpp Promise.cpp \
+        PairList.cpp Promise.cpp Provenance.cpp \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \
         S4Object.cpp SEXP_downcast.cpp StdFrame.cpp String.cpp \
@@ -65,8 +65,8 @@ SOURCES_CXX = \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
 	par.cpp paste.cpp pcre.cpp platform.cpp \
 	plot.cpp plot3d.cpp plotmath.cpp \
-	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
-	random.cpp registration.cpp relop.cpp rlocale.cpp \
+	print.cpp printarray.cpp printvector.cpp printutils.cpp provenance.cpp \
+	qsort.cpp	random.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \

@@ -579,6 +579,11 @@ SEXP do_sockselect(SEXP, SEXP, SEXP, SEXP);
 SEXP do_nsl(SEXP, SEXP, SEXP, SEXP);
 SEXP do_gzcon(SEXP, SEXP, SEXP, SEXP);
 
+SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
+SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provCommand(SEXP, SEXP, SEXP, SEXP);
+SEXP do_provenance(SEXP, SEXP, SEXP, SEXP);
+
 SEXP do_lockEnv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_envIsLocked(SEXP, SEXP, SEXP, SEXP);
 SEXP do_lockBnd(SEXP, SEXP, SEXP, SEXP);

@@ -43,6 +43,7 @@
 
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
+#include "CXXR/Provenance.hpp"
 
 namespace CXXR {
     class Environment;
@@ -82,7 +83,7 @@ namespace CXXR {
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_value(0), m_missing(0),
+		: m_frame(0), m_symbol(0), m_provenance(0), m_value(0), m_missing(0),
 		  m_active(false), m_locked(false)
 	    {}
 
@@ -165,6 +166,34 @@ namespace CXXR {
 	     */
 	    void initialize(Frame* frame, const Symbol* sym);
 
+		/** @brief Does this Binding have provenance?
+		 *
+		 * @return true iff this binding has associated provenance
+		 */
+		bool hasProvenance() const
+		{
+			return (m_provenance!=NULL);
+		}
+
+		/** @brief Set provenance object association with this binding
+		 *
+		 * @param prov Pointer to Provenance object to associate with this
+		 * 		Binding.
+		 */
+		void setProvenance(Provenance *prov)
+		{
+			m_provenance.retarget(m_frame,prov);
+		}
+
+		/** @brief Retrieve pointer to Provenance object associated
+		 * with this binding
+		 *
+		 * @return Pointer to Provenance object
+		 */
+		const Provenance *getProvenance()
+		{
+			return m_provenance;
+		}
 	    /** @brief Is this an active Binding?
 	     *
 	     * @return true iff this is an active Binding.
@@ -291,6 +320,7 @@ namespace CXXR {
 	private:
 	    Frame* m_frame;
 	    GCEdge<const Symbol> m_symbol;
+			GCEdge<const Provenance> m_provenance;
 	    GCEdge<> m_value;
 	    short int m_missing;
 	    bool m_active;
