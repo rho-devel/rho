@@ -1,4 +1,4 @@
-/*CXXR $Id: $
+/*CXXR $Id:$
  *CXXR
  *CXXR This file is part of CXXR, a project to refactor the R interpreter
  *CXXR into C++.  It may consist in whole or in part of program code and
@@ -45,6 +45,7 @@
 
 #include <Defn.h>
 #include "CXXR/Provenance.hpp"
+#include "CXXR/Parentage.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -105,21 +106,29 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
+	Parentage* parentage=bdg->getProvenance()->getParentage();
 	if (!bdg) return R_NilValue;
 
-	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(3)));
+	const int nfields=3 + (parentage ? 1 : 0);
+
+	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
 	GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
-	GCStackRoot<StringVector> names(GCNode::expose(new StringVector(3)));
+	GCStackRoot<StringVector> names(GCNode::expose(new StringVector(nfields)));
 
 	(*timestamp)[0]=const_cast<CachedString*>(bdg->getProvenance()->getTime());
+
 
 	(*names)[0]=const_cast<CachedString*>(CachedString::obtain("command"));
 	(*names)[1]=const_cast<CachedString*>(CachedString::obtain("symbol"));
 	(*names)[2]=const_cast<CachedString*>(CachedString::obtain("timestamp"));
+	if (parentage)
+		(*names)[3]=const_cast<CachedString*>(CachedString::obtain("parents"));
 
 	(*list)[0]=bdg->getProvenance()->getCommand();
 	(*list)[1]=bdg->getProvenance()->getSymbol();
 	(*list)[2]=timestamp;
+	if (parentage)
+		(*list)[3]=parentage->asStringVector();
 
 	setAttrib(list,R_NamesSymbol,names);
 

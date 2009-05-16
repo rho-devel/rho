@@ -122,7 +122,7 @@ namespace CXXR {
 	 * construction of the object derived from GCNode of which
 	 * this GCEdge forms a part.
 	 */
-	explicit GCEdge(const GCEdge<T>& source)
+	GCEdge(const GCEdge<T>& source)
 	    : m_target(source.m_target)
 	{}
 

@@ -13,11 +13,14 @@
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
+	class Parentage;
+
 	class Provenance : public GCNode {
 	public:
-	Provenance(Expression*,Symbol*);
+	Provenance(Expression*,Symbol*,Parentage*);
 	Expression* getCommand() const;
 	Symbol* getSymbol() const;
+	Parentage* getParentage() const;
 	const CachedString* getTime() const;
 	void visitReferents(const_visitor*) const;
 
@@ -25,6 +28,7 @@ namespace CXXR {
 	struct timeval m_timestamp;
 	GCEdge<Expression> m_expression;
 	GCEdge<Symbol> m_symbol;
+	GCEdge<Parentage> m_parentage;
 	};
 }
 

@@ -1,12 +1,14 @@
 #include <sys/time.h>
 #include <ctime>
 #include "CXXR/Provenance.hpp"
+#include "CXXR/Parentage.hpp"
 
 using namespace CXXR;
 
-Provenance::Provenance(Expression* exp, Symbol* sym) {
+Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
 	m_expression.retarget(this,expose(exp->clone()));
 	m_symbol.retarget(this,sym);
+	m_parentage.retarget(this,par);
 	gettimeofday(&m_timestamp,NULL);
 }
 
@@ -16,6 +18,10 @@ Expression* Provenance::getCommand() const {
 
 Symbol* Provenance::getSymbol() const {
 	return m_symbol;
+}
+
+Parentage* Provenance::getParentage() const {
+	return m_parentage;
 }
 
 const CachedString* Provenance::getTime() const{

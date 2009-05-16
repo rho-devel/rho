@@ -112,6 +112,7 @@
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
 #include "CXXR/Provenance.hpp"
+#include "CXXR/Parentage.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -271,9 +272,19 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 */
 
 static SEXP R_BaseNamespaceName;
+static GCRoot<Parentage> R_CurrentParentage;
 
 void prov_readmonitor(const CXXR::Frame::Binding &bind) {
 	printf("Read '%s'\n",bind.symbol()->name()->c_str());
+	Frame::Binding& bdg=const_cast<Frame::Binding&>(bind);
+	Provenance* prov=const_cast<Provenance*>(bdg.getProvenance());
+
+	R_CurrentParentage->pushProvenance(prov);
+	// Resize vector
+	//R_CurrentParentage->resize(1);
+	//GCEdge<Provenance> pe(prov);
+	//R_CurrentParentage->push_back(pe);
+//	R_CurrentParentage->back()->retarget(R_CurrentParentage,prov);
 }
 
 void prov_writemonitor(const CXXR::Frame::Binding &bind) {
@@ -284,7 +295,13 @@ void prov_writemonitor(const CXXR::Frame::Binding &bind) {
 
 	Expression* exp=SEXP_downcast<Expression*>(R_CurrentExpr);
 	Symbol* sym=const_cast<CXXR::Symbol*>(bind.symbol());
-	bdg.setProvenance(GCNode::expose(new Provenance(exp,sym)));
+	Parentage* parentage=(R_CurrentParentage);
+	bdg.setProvenance(GCNode::expose(
+		new Provenance(exp,sym,(R_CurrentParentage->size() ? parentage : 0))
+	));
+	// Reset Current Parentage
+	if (R_CurrentParentage->size())
+		R_CurrentParentage=GCNode::expose(new Parentage());
 }
 
 void CXXRnot_hidden InitGlobalEnv()
@@ -295,6 +312,11 @@ void CXXRnot_hidden InitGlobalEnv()
     R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
+
+		/* Also need to initialise a Parentage object so that
+		 * it is ready
+		 */
+		R_CurrentParentage=new Parentage();
 		Frame *glEnvFrame=SEXP_downcast<Environment*>(R_GlobalEnv)->frame();
 		glEnvFrame->setReadMonitor(prov_readmonitor);
 		glEnvFrame->setWriteMonitor(prov_writemonitor);
