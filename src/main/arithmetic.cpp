@@ -58,22 +58,6 @@
 
 #include <Rmath.h>
 
-// isnan() was introduced by C99, which prescribes that it shall be a
-// macro. ISO14882, even in its 2003 issue, requires only that <cmath>
-// offer the facilities of math.h as defined in ISO/IEC 9899:1990.
-// TR1 proposed that <cmath> make isnan() available to C++ programs as
-// a templated function within the std namespace.  On Linux, gcc
-// appears to make the ordinary isnan() macro available to C++
-// programs.  However, on Mac OS X (at least as of 10.5.6) gcc appears
-// to make isnan() available to C++ programs only as std::isnan().
-//
-// The following covers these two cases.  Another possibility that may
-// need to be addressed is that C++'s isnan() is to be found in
-// namespace std::tr1.
-#ifndef isnan
-#define isnan std::isnan
-#endif
-
 extern "C" {
     extern double Rf_gamma_cody(double);
 }
@@ -172,15 +156,6 @@ Rboolean R_IsNaN(double x)
 	return Rboolean(y.word[lw] != 1954);
     }
     return FALSE;
-}
-
-/* ISNAN uses isnan, which is undefined by C++ headers
-   This workaround is called only when ISNAN() is used
-   in a user code in a file with __cplusplus defined */
-
-Rboolean R_isnancpp(double x)
-{
-   return Rboolean(isnan(x)!=0);
 }
 
 
