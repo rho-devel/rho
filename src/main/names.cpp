@@ -952,6 +952,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"hasProvenance", do_hasProvenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
 {"provCommand", do_provCommand, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
 {"provenance", do_provenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"pedigree", do_pedigree, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
 
 {"readDCF",	do_readDCF,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 

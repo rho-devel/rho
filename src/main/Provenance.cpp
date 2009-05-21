@@ -1,8 +1,10 @@
 #include <sys/time.h>
 #include <ctime>
+#include <set>
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"
 
+using namespace std;
 using namespace CXXR;
 
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
@@ -50,4 +52,14 @@ void Provenance::visitReferents(const_visitor* v) const {
 	if (exp) exp->conductVisitor(v);
 	if (sym) sym->conductVisitor(v);
 	if (par) par->conductVisitor(v);
+}
+
+void Provenance::collatePedigree(set<Provenance*,Provenance::CompTime>* s) {
+	s->insert(this);
+	const Parentage* par=m_parentage;
+	if (par)
+		for (unsigned int i=0;i<par->size();i++) {
+			Provenance *p=par->at(i);
+			p->collatePedigree(s);
+		}
 }

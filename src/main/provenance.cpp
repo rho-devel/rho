@@ -44,6 +44,7 @@
 #endif
 
 #include <Defn.h>
+#include <set>
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"
 
@@ -167,4 +168,33 @@ SEXP CXXRnot_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
 	return bdg->getProvenance()->getCommand();
+}
+
+SEXP CXXRnot_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'pedigree' which requires 1"),n);
+
+	if (TYPEOF(CAR(args))!=SYMSXP)
+		errorcall(call,_("pedigree expects Symbol argument"));
+	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
+	Environment* env=static_cast<Environment*>(rho);
+	Frame::Binding* bdg=findBinding(sym,env).second;
+	Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
+
+	if (!prov) {
+		cout<<"prov==NULL"<<endl;
+		return R_NilValue;
+	}
+	set<Provenance*,Provenance::CompTime> provs;
+	prov->collatePedigree(&provs);
+	for (set<Provenance*,Provenance::CompTime>::iterator it=provs.begin();
+	     it!=provs.end();
+	     it++) {
+		Provenance* p=(*it);
+		PrintValue(p->getCommand());
+	}
+
+	return R_NilValue;
 }

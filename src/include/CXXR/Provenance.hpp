@@ -5,6 +5,7 @@
 
 #include <sys/time.h>
 #include <ctime>
+#include <set>
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/RObject.h"
@@ -17,18 +18,27 @@ namespace CXXR {
 
 	class Provenance : public GCNode {
 	public:
-	Provenance(Expression*,Symbol*,Parentage*);
-	Expression* getCommand() const;
-	Symbol* getSymbol() const;
-	Parentage* getParentage() const;
-	const CachedString* getTime() const;
-	void visitReferents(const_visitor*) const;
+		class CompTime {
+		public:
+			bool operator()(Provenance* const& lhs, Provenance* const& rhs) {
+				return (lhs->m_timestamp.tv_sec==rhs->m_timestamp.tv_sec) ?
+					(lhs->m_timestamp.tv_usec<rhs->m_timestamp.tv_usec) :
+					(lhs->m_timestamp.tv_sec<rhs->m_timestamp.tv_sec);
+			}
+		};
+		Provenance(Expression*,Symbol*,Parentage*);
+		Expression* getCommand() const;
+		Symbol* getSymbol() const;
+		Parentage* getParentage() const;
+		const CachedString* getTime() const;
+		void visitReferents(const_visitor*) const;
+		void collatePedigree(std::set<Provenance*,Provenance::CompTime>*);
 
 	private:
-	struct timeval m_timestamp;
-	GCEdge<Expression> m_expression;
-	GCEdge<Symbol> m_symbol;
-	GCEdge<Parentage> m_parentage;
+		struct timeval m_timestamp;
+		GCEdge<Expression> m_expression;
+		GCEdge<Symbol> m_symbol;
+		GCEdge<Parentage> m_parentage;
 	};
 }
 
