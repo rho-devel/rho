@@ -111,8 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
-#include "CXXR/Provenance.hpp"
-#include "CXXR/Parentage.hpp"
+#include "CXXR/ProvenanceTracker.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -272,37 +271,6 @@ SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 */
 
 static SEXP R_BaseNamespaceName;
-static GCRoot<Parentage> R_CurrentParentage;
-
-void prov_readmonitor(const CXXR::Frame::Binding &bind) {
-	printf("Read '%s'\n",bind.symbol()->name()->c_str());
-	Frame::Binding& bdg=const_cast<Frame::Binding&>(bind);
-	Provenance* prov=const_cast<Provenance*>(bdg.getProvenance());
-
-	R_CurrentParentage->pushProvenance(prov);
-	// Resize vector
-	//R_CurrentParentage->resize(1);
-	//GCEdge<Provenance> pe(prov);
-	//R_CurrentParentage->push_back(pe);
-//	R_CurrentParentage->back()->retarget(R_CurrentParentage,prov);
-}
-
-void prov_writemonitor(const CXXR::Frame::Binding &bind) {
-	CXXR::Frame::Binding& bdg=const_cast<CXXR::Frame::Binding&>(bind);
-	printf("Written '%s'\n",bind.symbol()->name()->c_str());
-	if (bdg.hasProvenance())
-		printf("Object already has provenance. This will now be replaced.\n");
-
-	Expression* exp=SEXP_downcast<Expression*>(R_CurrentExpr);
-	Symbol* sym=const_cast<CXXR::Symbol*>(bind.symbol());
-	Parentage* parentage=(R_CurrentParentage);
-	bdg.setProvenance(GCNode::expose(
-		new Provenance(exp,sym,(R_CurrentParentage->size() ? parentage : 0))
-	));
-	// Reset Current Parentage
-	if (R_CurrentParentage->size())
-		R_CurrentParentage=GCNode::expose(new Parentage());
-}
 
 void CXXRnot_hidden InitGlobalEnv()
 {
@@ -313,13 +281,9 @@ void CXXRnot_hidden InitGlobalEnv()
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
 
-		/* Also need to initialise a Parentage object so that
-		 * it is ready
-		 */
-		R_CurrentParentage=new Parentage();
-		Frame *glEnvFrame=SEXP_downcast<Environment*>(R_GlobalEnv)->frame();
-		glEnvFrame->setReadMonitor(prov_readmonitor);
-		glEnvFrame->setWriteMonitor(prov_writemonitor);
+    Frame *glEnvFrame=static_cast<Environment*>(R_GlobalEnv)->frame();
+    glEnvFrame->setReadMonitor(ProvenanceTracker::readMonitor);
+    glEnvFrame->setWriteMonitor(ProvenanceTracker::writeMonitor);
     /**** needed to properly initialize the base name space */
 }
 

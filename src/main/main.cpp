@@ -68,6 +68,7 @@
 #endif
 
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ProvenanceTracker.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -357,6 +358,7 @@ Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplSt
     int c, browsevalue;
     SEXP value;
     Rboolean wasDisplayed = FALSE;
+    ProvenanceTracker::resetParentage();
 
     if(!*state->bufp) {
 	    R_Busy(0);

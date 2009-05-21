@@ -15,7 +15,7 @@ namespace CXXR {
 		public GCNode, public std::vector<GCEdge<Provenance> > {
 	public:
 	Parentage();
-	void Display();
+	void Display() const;
 	GCStackRoot<StringVector> asStringVector();
 	void pushProvenance(Provenance*);
 	size_type size() const;

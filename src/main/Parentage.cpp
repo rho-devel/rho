@@ -3,22 +3,20 @@
 using namespace std;
 using namespace CXXR;
 
-Parentage::Parentage() : std::vector<GCEdge<Provenance> >(20,GCEdge<Provenance>(0)), index(0) {
-	printf("Parentage object initialised\n");
-}
+Parentage::Parentage() : std::vector<GCEdge<Provenance> >(2048,GCEdge<Provenance>(0)), index(0) { }
 
 // Display method, mostly for debugging purposes
-void Parentage::Display() {
-	printf("Printing Parentage..\n");
-	for (int i=0;i<index;i++) {
-		Provenance* p=at(i);
+void Parentage::Display() const {
+	printf("Printing Parentage..size() = %d\n",size());
+	for (unsigned int i=0;i<size();i++) {
+		GCRoot<Provenance> p(at(i));
 		printf("Symbol Name : %s\n",p->getSymbol()->name()->c_str());
 	}
 }
 
 GCStackRoot<StringVector> Parentage::asStringVector() {
 	GCStackRoot<StringVector> rc(expose(new StringVector(index)));
-	for (int i=0;i<index;i++) {
+	for (unsigned int i=0;i<size();i++) {
 		Provenance *p=at(i);
 		(*rc)[i]=const_cast<CachedString*>(p->getSymbol()->name());
 	}
@@ -34,5 +32,9 @@ std::vector<GCEdge<Provenance> >::size_type Parentage::size() const {
 }
 
 void Parentage::visitReferents(const_visitor* v) const {
-	return;
+	for (unsigned int i=0;i<size();i++) {
+		//cout<<"Parentage::at("<<i<<")..."<<endl;
+		GCNode* prov=at(i);
+		if (prov) prov->conductVisitor(v);
+	}
 }

@@ -52,6 +52,12 @@ using namespace CXXR;
 
 SEXP CXXRnot_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'castestfun' which requires 1"),n);
+
+	if (TYPEOF(CAR(args))!=SYMSXP)
+		errorcall(call,_("castestfun expects Symbol argument"));
     /*GCStackRoot<IntVector> v(GCNode::expose(new IntVector(3)));
     (*v)[0]=1;
     (*v)[1]=2;
@@ -93,6 +99,13 @@ SEXP CXXRnot_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP CXXRnot_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'hasProvenance' which requires 1"),n);
+
+	if (TYPEOF(CAR(args))!=SYMSXP)
+		errorcall(call,_("hasProvenance expects Symbol argument"));
+
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
@@ -103,6 +116,12 @@ SEXP CXXRnot_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'provenance' which requires 1"),n);
+
+	if (TYPEOF(CAR(args))!=SYMSXP)
+		errorcall(call,_("provenance expects Symbol argument"));
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
@@ -137,6 +156,13 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP CXXRnot_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'provCommand' which requires 1"),n);
+
+	if (TYPEOF(CAR(args))!=SYMSXP)
+		errorcall(call,_("provCommand expects Symbol argument"));
+
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;

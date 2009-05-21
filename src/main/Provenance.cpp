@@ -6,7 +6,15 @@
 using namespace CXXR;
 
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
-	m_expression.retarget(this,expose(exp->clone()));
+	if (!exp)
+		m_expression.retarget(this,0);
+	else {
+		GCStackRoot<Expression> expCpy(exp->clone());
+		if (expCpy!=NULL)
+			m_expression.retarget(this,expCpy);
+		else
+			m_expression.retarget(this,0);
+	}
 	m_symbol.retarget(this,sym);
 	m_parentage.retarget(this,par);
 	gettimeofday(&m_timestamp,NULL);
@@ -37,5 +45,9 @@ const CachedString* Provenance::getTime() const{
 
 void Provenance::visitReferents(const_visitor* v) const {
 	const GCNode* exp=m_expression;
+	const GCNode* sym=m_symbol;
+	const GCNode* par=m_parentage;
 	if (exp) exp->conductVisitor(v);
+	if (sym) sym->conductVisitor(v);
+	if (par) par->conductVisitor(v);
 }

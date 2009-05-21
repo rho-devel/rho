@@ -126,6 +126,7 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     // visit that.
     if (m_symbol) m_symbol->conductVisitor(v);
     if (m_value) m_value->conductVisitor(v);
+    if (m_provenance) m_provenance->conductVisitor(v);
 }
 
 // Frame::forcedValue() is defined in envir.cpp (for the time being).

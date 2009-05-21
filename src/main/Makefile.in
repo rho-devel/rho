@@ -43,6 +43,7 @@ SOURCES_CXX = \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
         PairList.cpp Parentage.cpp Promise.cpp Provenance.cpp \
+				ProvenanceTracker.cpp \
         RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
         Renviron.cpp \
         S4Object.cpp SEXP_downcast.cpp StdFrame.cpp String.cpp \
