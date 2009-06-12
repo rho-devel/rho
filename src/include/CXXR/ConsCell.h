@@ -37,6 +37,9 @@
 /** @file ConsCell.h
  * @brief Class CXXR::ConsCell and associated C interface.
  *
+ * To facilitate inlining of various ConsCell member functions, this
+ * file also includes the definition of class CXXR::PairList.
+ *
  * This file includes C functions for examining and setting the CAR
  * and TAG of a CXXR::ConsCell; functions for examining and setting
  * the CDR, and other operations accessing the tail of the list, are
@@ -131,7 +134,7 @@ namespace CXXR {
 	 */
 	void setCar(RObject* cr)
 	{
-	    m_car.retarget(this, cr);
+	    m_car = cr;
 	}
 
 	/** @brief Set the 'tag' value.
@@ -141,7 +144,7 @@ namespace CXXR {
 	 */
 	void setTag(RObject* tg)
 	{
-	    m_tag.retarget(this, tg);
+	    m_tag = tg;
 	}
 
 	/** @brief Set the 'tail' value.
@@ -173,18 +176,12 @@ namespace CXXR {
 	 * @return a const pointer to the 'tail' of this ConsCell
 	 * element.
 	 */
-	const PairList* tail() const
-	{
-	    return m_tail;
-	}
+	const PairList* tail() const;
 
 	/**
 	 * @return a pointer to the 'tail' of this ConsCell.
 	 */
-	PairList* tail()
-	{
-	    return m_tail;
-	}
+	PairList* tail();
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
@@ -199,17 +196,8 @@ namespace CXXR {
 	 *           to be constructed.
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-#ifdef CHECK_EXPOSURE
 	explicit ConsCell(SEXPTYPE st,
 			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0);
-#else
-	explicit ConsCell(SEXPTYPE st,
-			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
-	{
-	    // checkST(st);
-	}
-#endif
 
 	/** @brief Copy constructor.
 	 *
@@ -241,6 +229,9 @@ namespace CXXR {
 	 * allocated only using 'new'.
 	 */
 	~ConsCell() {}
+
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	friend class PairList;
 
@@ -301,6 +292,147 @@ namespace CXXR {
 	return cc ? cc->tail() : 0;
     }
 
+    /** @brief Singly linked list of pairs.
+     *
+     * LISP-like singly-linked list, each element containing pointers to a
+     * 'car' object (this is LISP terminology, and has nothing to do
+     * with automobiles) and to a 'tag' object, as well as a pointer to
+     * the next element of the list.  (Any of these pointers may be
+     * null.)  A PairList object is considered to 'own' its car, its
+     * tag, and all its successors.
+     */
+    class PairList : public ConsCell {
+    public:
+	/**
+	 * @param cr Pointer to the 'car' of the element to be
+	 *           constructed.
+	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
+	 *           to be constructed.
+	 * @param tg Pointer to the 'tag' of the element to be constructed.
+	 */
+	explicit PairList(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
+	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0),
+	      m_active_binding(false), m_binding_locked(false)
+	{}
+
+	/** @brief Copy constructor.
+	 *
+	 * @param pattern PairList to be copied.
+	 */
+	PairList(const PairList& pattern);
+
+	/** @brief Create a PairList element on the free store.
+	 *
+	 * Unlike the constructor (and contrary to CXXR conventions
+	 * generally) this function protects its arguments from the
+	 * garbage collector.
+	 *
+	 * @param cr Pointer to the 'car' of the element to be
+	 *           constructed.
+	 *
+	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
+	 *           to be constructed.
+	 *
+	 * @return Pointer to newly created PairList element.
+	 */
+	static PairList* cons(RObject* cr, PairList* tl=0)
+	{
+	    PairList* ans = new (s_cons_pad) PairList(cr, tl);
+	    s_cons_pad = GCNode::operator new(sizeof(PairList));
+	    return expose(ans);
+	}
+
+	/** @brief Create a PairList of a specified length.
+	 *
+	 * This constructor creates a chain of PairList nodes with a
+	 * specified number of elements.  On creation, each element
+	 * has null 'car' and 'tag'.
+	 *
+	 * @param sz Number of elements required in the list.  If
+	 *           zero, the function returns a null pointer.
+	 */
+	static PairList* makeList(size_t sz) throw (std::bad_alloc);
+
+	/** @brief The name by which this type is known in R.
+	 *
+	 * @return the name by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "pairlist";
+	}
+
+	// Virtual functions of RObject:
+	PairList* clone() const;
+	unsigned int packGPBits() const;
+	const char* typeName() const;
+	void unpackGPBits(unsigned int gpbits);
+    private:
+	// Pointer to a preallocated block of memory used by cons():
+	static void* s_cons_pad;
+
+	// Tailless copy constructor.  Copies the node without copying
+	// its tail.  Used in implementing the copy constructor
+	// proper.  The second parameter is simply to provide a
+	// distinct signature, and its value is ignored.
+	PairList(const PairList& pattern, int)
+	    : ConsCell(pattern, 0), m_argused(0),
+	    m_active_binding(pattern.m_active_binding),
+	    m_binding_locked(pattern.m_binding_locked)
+	{}
+
+	// Declared private to ensure that PairList objects are
+	// allocated only using 'new':
+	~PairList() {}
+
+	// Not implemented yet.  Declared to prevent
+	// compiler-generated version:
+	PairList& operator=(const PairList&);
+    public:
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
+	// would be good to remove this from the class altogether.
+	unsigned char m_argused;
+
+	// Used when the contents of an Environment are represented as
+	// a PairList, for example during serialization and
+	// deserialization, and formerly hosted in the gp field of
+	// sxpinfo_struct.
+	bool m_active_binding;
+	bool m_binding_locked;
+    };
+
+    inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
+			      PairList* tl, RObject* tg)
+	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
+    {
+	// checkST(st);
+    }
+
+    inline ConsCell::ConsCell(const ConsCell& pattern)
+	: RObject(pattern), m_car(pattern.m_car),
+	  m_tail(clone(pattern.tail())), m_tag(pattern.tag()), m_missing(0)
+    {}
+    
+    inline ConsCell::ConsCell(const ConsCell& pattern, int)
+	: RObject(pattern), m_car(pattern.m_car), m_tail(0),
+	  m_tag(pattern.tag()), m_missing(0)
+    {}
+    
+    inline void ConsCell::setTail(PairList* tl)
+    {
+	m_tail = tl;
+    }
+
+    inline const PairList* ConsCell::tail() const
+    {
+	return m_tail;
+    }
+
+    inline PairList* ConsCell::tail()
+    {
+	return m_tail;
+    }
 } // namespace CXXR
 
 extern "C" {

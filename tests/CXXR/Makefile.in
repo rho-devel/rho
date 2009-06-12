@@ -27,7 +27,7 @@ sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest GCManagertest splice_test
+        HeterogeneousListtest splice_test
 
 check : $(tests:=.ts)
 

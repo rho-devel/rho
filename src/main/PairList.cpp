@@ -82,7 +82,7 @@ PairList::PairList(const PairList& pattern)
     PairList* c = this;
     const PairList* pl = pattern.m_tail;
     while (pl) {
-	c->m_tail.retarget(c, expose(new PairList(*pl, 0)));
+	c->m_tail = expose(new PairList(*pl, 0));
 	c = c->m_tail;
 	pl = pl->m_tail;
     }

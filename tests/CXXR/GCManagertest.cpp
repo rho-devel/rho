@@ -91,9 +91,9 @@ void GCNode::cleanup()
     cout << "GCNode::cleanup()\n";
 }
 
-void GCNode::gc(unsigned int num_old_gens)
+void GCNode::gc()
 {
-    cout << "GCNode::gc(" << num_old_gens << ")\n";
+    cout << "GCNode::gc()\n";
     // cout << MemoryBank::bytesAllocated() << " bytes allocated at start\n";
     double keptfrac = sqrt(uni01());
     size_t keptallocs = size_t(ceil(allocs.size()*keptfrac));
@@ -104,6 +104,10 @@ void GCNode::gc(unsigned int num_old_gens)
 	cout << " Released " << pr.first << " bytes ("
 	     << MemoryBank::bytesAllocated() << ")\n";
     }
+}
+
+void GCNode::gclite()
+{
 }
 
 void GCNode::initialize()

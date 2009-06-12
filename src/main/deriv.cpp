@@ -981,6 +981,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 	d_index[i] = FindSubexprs(ans, exprlist, tag); /* examine the derivative first */
 	ans = duplicate(ans2);	/* restore the copy */
 	if (hessian) {
+	    GCRoot<> ansrt(ans);
 	    for(j = i; j < nderiv; j++) {
 		PROTECT(ans2 = duplicate(ans));
 		PROTECT(ans2 = D(ans2, install(translateChar(STRING_ELT(names, j)))));

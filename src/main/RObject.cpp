@@ -78,11 +78,21 @@ RObject::RObject(const RObject& pattern)
       m_attrib(pattern.m_attrib)
 {}
 
+PairList* RObject::attributes()
+{
+    return m_attrib;
+}
+
+const PairList* RObject::attributes() const
+{
+    return m_attrib;
+}
+
 void RObject::clearAttributes()
 {
     if (m_attrib) {
 	errorIfFrozen();
-	m_attrib.retarget(this, 0);
+	m_attrib = 0;
 	m_has_class = false;
     }
 }
@@ -135,13 +145,13 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 	if (value) node->setCar(value);
 	// Delete existing attribute:
 	else if (prev) prev->setTail(node->tail());
-	else m_attrib.retarget(this, node->tail());
+	else m_attrib = node->tail();
     } else if (value) {  
 	// Create new node:
 	PairList* newnode = expose(new PairList(value, 0, name));
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
-	    m_attrib.retarget(this, newnode);
+	    m_attrib = newnode;
 	}
     }
 }

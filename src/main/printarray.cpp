@@ -158,7 +158,7 @@ static void printLogicalMatrix(SEXP sx, int offset, int r_pr, int r, int c,
 /* initialization; particularly of row labels, rl= dimnames(.)[[1]] and
  * rn = names(dimnames(.))[1] : */
 #define _PRINT_INIT_rl_rn				\
-    SEXP sw;						\
+    GCStackRoot<> sw;					\
     int *w;						\
     int width, rlabw = -1, clabw = -1; /* -Wall */	\
     int i, j, jmin = 0, jmax = 0, lbloff = 0;		\

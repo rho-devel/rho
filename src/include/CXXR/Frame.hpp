@@ -182,7 +182,7 @@ namespace CXXR {
 		 */
 		void setProvenance(Provenance *prov)
 		{
-			m_provenance.retarget(m_frame,prov);
+			m_provenance=prov;
 		}
 
 		/** @brief Retrieve pointer to Provenance object associated

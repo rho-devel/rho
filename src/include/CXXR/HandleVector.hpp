@@ -69,70 +69,6 @@ namespace CXXR {
     public:
 	typedef typename Vector::const_iterator const_iterator;
 
-	/** @brief Proxy object for an element of an HandleVector<T, ST>.
-	 *
-	 * Objects of this class are used to allow the elements of an
-	 * HandleVector<T, ST> to be examined and modified using
-	 * the same syntax as would be used for accessing an array of
-	 * \a T*, whilst nevertheless enforcing the write barrier.
-	 * See Item 30 of Scott Meyers's 'More Effective C++' for a
-	 * general discussion of proxy objects, but see the
-	 * <a href="http://www.aristeia.com/BookErrata/mec++-errata_frames.html">errata</a>.
-	 * (It may look complicated, but an optimising compiler should
-	 * be able to distil an invocation of HandleVector<T,
-	 * ST>::operator[] into very few instructions.)
-	 */
-	class ElementProxy {
-	public:
-	    /** Copy the value of the proxied element from another
-	     *  proxied element.
-	     *
-	     * @param rhs Proxied element whose value is to be copied.
-	     *
-	     * @return Reference to this ElementProxy.
-	     */
-	    ElementProxy& operator=(const ElementProxy& rhs)
-	    {
-		(*m_it).retarget(m_ev, *rhs.m_it);
-		return *this;
-	    }
-
-	    /** Redirect the pointer encapsulated by the proxied
-	     * element.
-	     *
-	     * @param s New pointer value.
-	     *
-	     * @return Reference to this ElementProxy.
-	     */
-	    ElementProxy& operator=(T* s)
-	    {
-		(*m_it).retarget(m_ev, s);
-		return *this;
-	    }
-
-	    /**
-	     * @return The pointer encapsulated by the proxied
-	     *         element.
-	     */
-	    operator T* const() const
-	    {
-		return *m_it;
-	    }
-	private:
-	    HandleVector<T, ST>* m_ev;
-	    typename std::vector<Handle<T>,
-				 Allocator<Handle<T> > >::iterator m_it;
-
-	    ElementProxy(HandleVector<T, ST>* ev, unsigned int index)
-		: m_ev(ev), m_it(m_ev->m_data.begin() + index)
-	    {}
-
-	    // Not implemented:
-	    ElementProxy(const ElementProxy&);
-
-	    friend class HandleVector<T, ST>;
-	};
-
 	/** @brief Create a vector.
          *
 	 * @param sz Number of elements required.  Zero is
@@ -159,24 +95,27 @@ namespace CXXR {
 	    for (unsigned int i = 0; i < m_data.size(); ++i) {
 		// Use copy constructor to apply object copying logic:
 		Handle<T> handle(pattern.m_data[i]);
-		m_data[i].retarget(this, handle);
+		m_data[i] = handle;
 	    }
 	}
 
 	/** @brief Element access.
+	 *
 	 * @param index Index of required element (counting from
 	 *          zero).  No bounds checking is applied.
-	 * @return Proxy for the specified element, via which the
-	 *         element can be examined or modified.
+	 *
+	 * @return the specified element.
 	 */
-	ElementProxy operator[](unsigned int index)
+        Handle<T>& operator[](unsigned int index)
 	{
-	    return ElementProxy(this, index);
+	    return m_data[index];
 	}
 
 	/** @brief Read-only element access.
+	 *
 	 * @param index Index of required element (counting from
 	 *          zero).  No bounds checking is applied.
+	 *
 	 * @return the specified element.
 	 */
 	const T* operator[](unsigned int index) const
@@ -226,6 +165,9 @@ namespace CXXR {
 	 * allocated only using 'new'.
 	 */
 	~HandleVector() {}
+
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	Vector m_data;
 
@@ -240,6 +182,13 @@ namespace CXXR {
     const char* HandleVector<T, ST>::typeName() const
     {
 	return HandleVector<T, ST>::staticTypeName();
+    }
+
+    template <typename T, SEXPTYPE ST>
+    void HandleVector<T, ST>::detachReferents()
+    {
+	VectorBase::detachReferents();
+	m_data.clear();
     }
 
     template <typename T, SEXPTYPE ST>

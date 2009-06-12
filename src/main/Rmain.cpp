@@ -46,6 +46,7 @@ extern int R_running_as_main_program;   /* in ../unix/system.c */
 int main(int ac, char **av)
 {
     R_running_as_main_program = 1;
+    R_GlobalContext = NULL; /* Make R_Suicide less messy... */
     Rf_initialize_R(ac, av);
     Rf_mainloop(); /* does not return */
     return 0;

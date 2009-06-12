@@ -193,6 +193,9 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const;
 	void unpackGPBits(unsigned int gpbits);
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
 	static WRList s_live;
@@ -205,6 +208,8 @@ namespace CXXR {
 	GCEdge<> m_key;
 	GCEdge<> m_value;
 	GCEdge<> m_Rfinalizer;
+	GCEdge<> m_self;  // Each WeakRef refers to itself, to stop
+			  // WeakRef nodes being deleted by gclite().
 	R_CFinalizer_t m_Cfinalizer;
 	WRList::iterator m_lit;
 	bool m_ready_to_finalize;
@@ -222,7 +227,7 @@ namespace CXXR {
 	 * the key is not marked and there is no finalizer, the
 	 * WeakRef is tombstoned.
 	 */
-	static void markThru(unsigned int max_gen);
+	static void markThru();
 
 	// Tombstone the node:
 	void tombstone();

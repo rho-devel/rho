@@ -1028,8 +1028,6 @@ static void installFunTab(int i)
 		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
 }
 
-extern SEXP framenames; /* from model.c */
-
 /* initialize the symbol table */
 void InitNames()
 {
@@ -1043,7 +1041,6 @@ void InitNames()
     /*  Builtin Functions */
     for (i = 0; R_FunTab[i].name; i++)
 	installFunTab(i);
-    framenames = R_NilValue;
 #ifdef BYTECODE
     R_initialize_bcode();
 #endif

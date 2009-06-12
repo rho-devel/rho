@@ -187,14 +187,14 @@ SEXP CXXRnot_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 		cout<<"prov==NULL"<<endl;
 		return R_NilValue;
 	}
-	set<Provenance*,Provenance::CompTime> provs;
-	prov->collatePedigree(&provs);
-	for (set<Provenance*,Provenance::CompTime>::iterator it=provs.begin();
-	     it!=provs.end();
+	Provenance::Set *provs;
+	provs=prov->pedigree();
+	for (Provenance::Set::iterator it=provs->begin();
+	     it!=provs->end();
 	     it++) {
 		Provenance* p=(*it);
 		PrintValue(p->getCommand());
 	}
-
+	delete provs;
 	return R_NilValue;
 }

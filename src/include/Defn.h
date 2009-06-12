@@ -536,11 +536,12 @@ extern0 SEXP	R_FreeSEXP;	    /* Cons cell free list */
 LibExtern int	R_Is_Running;	    /* for Windows memory manager */
 
 /* Evaluation Environment */
-LibExtern SEXP	R_CurrentExpr;	    /* Currently evaluating expression */
 extern0 SEXP	R_ReturnedValue;    /* Slot for return-ing values */
-LibExtern RCNTXT R_Toplevel;	    /* Storage for the toplevel environment */
+#ifdef __cplusplus
+LibExtern RCNTXT* R_Toplevel;	    /* The ultimate toplevel environment */
 LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
 LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
+#endif
 extern0 Rboolean R_Visible;	    /* Value visibility flag */
 LibExtern int	R_EvalDepth	INI_as(0);	/* Evaluation recursion depth */
 extern0 int	R_BrowseLevel	INI_as(0);	/* how deep the browser is */
@@ -573,7 +574,9 @@ extern0 char   *Sys_TempDir	INI_as(NULL);	/* Name of per-session dir
 extern0 char	R_StdinEnc[31]  INI_as("");	/* Encoding assumed for stdin */
 
 /* Objects Used In Parsing  */
-extern0 SEXP	R_CommentSxp;	    /* Comments accumulate here */
+#ifdef __cplusplus
+extern CXXR::GCRoot<> R_CommentSxp;	    /* Comments accumulate here */
+#endif
 extern0 int	R_ParseError	INI_as(0); /* Line where parse error occured */
 extern0 SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
 #define PARSE_ERROR_SIZE 256	    /* Parse error messages saved here */
@@ -593,10 +596,14 @@ extern void 	R_setupHistory(void);
 
 /* Warnings/Errors */
 extern0 int	R_CollectWarnings INI_as(0);	/* the number of warnings */
-extern0 SEXP	R_Warnings;	    /* the warnings and their calls */
+#ifdef __cplusplus
+extern CXXR::GCRoot<> R_Warnings;	    /* the warnings and their calls */
+#endif
 extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
-extern0 SEXP	R_HandlerStack;	/* Condition handler stack */
-extern0 SEXP	R_RestartStack;	/* Stack of available restarts */
+#ifdef __cplusplus
+extern CXXR::GCRoot<> R_HandlerStack;	/* Condition handler stack */
+extern CXXR::GCRoot<> R_RestartStack;	/* Stack of available restarts */
+#endif
 extern0 Rboolean R_warn_partial_match_args   INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
@@ -877,7 +884,9 @@ SEXP Rf_EnsureString(SEXP);
 
 SEXP Rf_allocCharsxp(R_len_t);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
+#ifdef __cplusplus
 void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
+#endif
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
 void CheckFormals(SEXP);
 void R_check_locale(void);
@@ -894,8 +903,10 @@ SEXP deparse1s(SEXP call);
 int DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
+#ifdef __cplusplus
 SEXP dynamicfindVar(SEXP, RCNTXT*);
 void endcontext(RCNTXT*);
+#endif
 int envlength(SEXP);
 SEXP evalList(SEXP, SEXP, SEXP);
 SEXP evalListKeepMissing(SEXP, SEXP);
@@ -903,7 +914,9 @@ int factorsConform(SEXP, SEXP);
 void findcontext(int, SEXP, SEXP);
 SEXP findVar1(SEXP, SEXP, SEXPTYPE, int);
 void FrameClassFix(SEXP);
+#ifdef __cplusplus
 int framedepth(RCNTXT*);
+#endif
 SEXP frameSubscript(int, SEXP, SEXP);
 int get1index(SEXP, SEXP, int, int, int, SEXP);
 SEXP getVar(SEXP, SEXP);
@@ -926,12 +939,16 @@ void InitStringHash(void);
 void Init_R_Variables(SEXP);
 void InitTempDir(void);
 void initStack(void);
+#ifdef __cplusplus
 void R_InsertRestartHandlers(RCNTXT *, Rboolean);
+#endif
 void internalTypeCheck(SEXP, SEXP, SEXPTYPE);
 Rboolean isMethodsDispatchOn(void);
 int isValidName(const char *);
+#ifdef __cplusplus
 void R_JumpToContext(RCNTXT *, int, SEXP);
 void jump_to_toplevel(void);
+#endif
 void KillAllDevices(void);
 SEXP levelsgets(SEXP, SEXP);
 void mainloop(void);
@@ -992,10 +1009,12 @@ void ssort(CXXR::StringVector*,int);
 #endif
 int StrToInternal(const char *);
 SEXP substituteList(SEXP, SEXP);
+#ifdef __cplusplus
 SEXP R_syscall(int,RCNTXT*);
 int R_sysparent(int,RCNTXT*);
 SEXP R_sysframe(int,RCNTXT*);
 SEXP R_sysfunction(int,RCNTXT*);
+#endif
 Rboolean tsConform(SEXP,SEXP);
 SEXP tspgets(SEXP, SEXP);
 SEXP type2symbol(SEXPTYPE);
@@ -1023,8 +1042,10 @@ void R_SetMaxNSize(R_size_t);
 R_size_t R_Decode2Long(char *p, int *ierr);
 void R_SetPPSize(R_size_t);
 
+#ifdef __cplusplus
 void R_run_onexits(RCNTXT *);
 void R_restore_globals(RCNTXT *);
+#endif
 
 /* ../main/devices.c, used in memory.c, gnuwin32/extra.c */
 #define R_MaxDevices 64

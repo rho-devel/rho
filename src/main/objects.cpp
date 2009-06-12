@@ -808,7 +808,7 @@ static SEXP do_S4inherits(SEXP obj, SEXP what, SEXP which) {
 
 SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP x, klass, what, which, rval = R_NilValue /* -Wall */;
+    SEXP x, what, which, rval = R_NilValue /* -Wall */;
     int i, j, nwhat, isvec, nclass;
 
     checkArity(op, args);
@@ -816,7 +816,7 @@ SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
     x = CAR(args);
     if(IS_S4_OBJECT(x))
         return do_S4inherits(x, CADR(args), CADDR(args));
-    klass = R_data_class(x, FALSE);
+    GCStackRoot<> klass(R_data_class(x, FALSE));
     nclass = length(klass);
 
     what = CADR(args);

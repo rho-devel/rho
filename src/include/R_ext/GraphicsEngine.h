@@ -226,6 +226,9 @@ typedef struct {
 } GESystemDesc;
 
 struct _GEDevDesc {
+    /* Location within the R_Devices table, or -1 if not (yet) in
+     * table. (Temporary CXXR kludge.) */
+    int index;
     /* 
      * Stuff that the devices can see (and modify).
      * All detailed in GraphicsDevice.h
@@ -233,7 +236,10 @@ struct _GEDevDesc {
     pDevDesc dev;
     /*
      * Stuff about the device that only the graphics engine sees
-     * (the devices don't see it).
+     * (the devices don't see it).  Note that in CXXR, displayList and
+     * savedSnapshot must be modified only by using the functions
+     * setDisplayList() and saveSnapshot() respectively.  (In future,
+     * this should be enforced by class access controls.)
      */
     Rboolean displayListOn;  /* toggle for display list status */
     SEXP displayList;        /* display list */
@@ -267,6 +273,11 @@ struct _GEDevDesc {
  */
 
 typedef GEDevDesc* pGEDevDesc;
+
+/* Mutator functions introduced in CXXR pending fuller refactorisation:
+ */
+void setDisplayList(pGEDevDesc dev, SEXP newDisplayList);
+void saveSnapshot(pGEDevDesc dev, SEXP newSnapshot);
 
 /* functions from devices.c for use by graphics devices */
 

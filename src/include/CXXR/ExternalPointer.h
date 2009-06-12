@@ -126,7 +126,7 @@ namespace CXXR {
 	 */
 	void setProtege(RObject* prot)
 	{
-	    m_protege.retarget(this, prot);
+	    m_protege = prot;
 	}
 
 	/** @brief Set the value of the encapsulated pointer
@@ -145,7 +145,7 @@ namespace CXXR {
 	 */
 	void setTag(RObject* tag)
 	{
-	    m_tag.retarget(this, tag);
+	    m_tag = tag;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -180,6 +180,9 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	void* m_ptr;
 	GCEdge<> m_tag;

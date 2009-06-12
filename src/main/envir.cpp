@@ -151,7 +151,7 @@ void Frame::Binding::assign(RObject* new_value)
 	setActiveValue(m_value, new_value);
 	m_frame->monitorRead(*this);
     } else {
-	m_value.retarget(m_frame, new_value);
+	m_value = new_value;
 	m_frame->monitorWrite(*this);
     }
 }
@@ -277,7 +277,8 @@ void CXXRnot_hidden InitGlobalEnv()
     SET_SYMVALUE(install(".BaseNamespaceEnv"), R_BaseNamespace);
     R_BaseNamespaceName = ScalarString(mkChar("base"));
     R_PreserveObject(R_BaseNamespaceName);
-    R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
+    GCStackRoot<> zero(ScalarInteger(0));
+    R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, zero);
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
 

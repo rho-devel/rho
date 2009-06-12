@@ -43,6 +43,8 @@
 
 #include "Defn.h"
 
+using namespace CXXR;
+
 /* A count of the memory used by an object. The following assumptions
    are made.
 
@@ -58,7 +60,7 @@ static R_size_t objectsize(SEXP s)
 {
     int i;
     R_size_t cnt = 0, vcnt = 0;
-    SEXP tmp, dup;
+    SEXP tmp;
     Rboolean isVec = FALSE;
 
     switch (TYPEOF(s)) {
@@ -101,15 +103,17 @@ static R_size_t objectsize(SEXP s)
 	isVec = TRUE;
 	break;
     case STRSXP:
-	vcnt = PTR2VEC(length(s));
-	dup = csduplicated(s);
-	for (i = 0; i < length(s); i++) {
-	    tmp = STRING_ELT(s, i);
-	    if(tmp != NA_STRING && !LOGICAL(dup)[i])
-		cnt += objectsize(tmp);
+	{
+	    vcnt = PTR2VEC(length(s));
+	    GCStackRoot<> dup(csduplicated(s));
+	    for (i = 0; i < length(s); i++) {
+		tmp = STRING_ELT(s, i);
+		if(tmp != NA_STRING && !LOGICAL(dup)[i])
+		    cnt += objectsize(tmp);
+	    }
+	    isVec = TRUE;
+	    break;
 	}
-	isVec = TRUE;
-	break;
     case DOTSXP:
     case ANYSXP:
 	/* we don't know about these */

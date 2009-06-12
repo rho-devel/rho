@@ -139,7 +139,7 @@ namespace CXXR {
 	 */
 	void setEnvironment(Environment* new_env)
 	{
-	    m_environment.retarget(this, new_env);
+	    m_environment = new_env;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -157,6 +157,9 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	bool m_debug;
 	GCEdge<const PairList> m_formals;

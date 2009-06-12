@@ -56,6 +56,13 @@ namespace CXXR {
     }
 }
 
+void ExternalPointer::detachReferents()
+{
+    m_protege.detach();
+    m_tag.detach();
+    RObject::detachReferents();
+}
+
 const char* ExternalPointer::typeName() const
 {
     return ExternalPointer::staticTypeName();

@@ -62,6 +62,14 @@ Closure* Closure::clone() const
     return expose(new Closure(*this));
 }
 
+void Closure::detachReferents()
+{
+    m_formals.detach();
+    m_body.detach();
+    m_environment.detach();
+    RObject::detachReferents();
+}
+
 const char* Closure::typeName() const
 {
     return staticTypeName();

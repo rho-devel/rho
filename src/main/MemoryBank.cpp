@@ -49,8 +49,7 @@ using namespace CXXR;
 
 size_t MemoryBank::s_blocks_allocated = 0;
 size_t MemoryBank::s_bytes_allocated = 0;
-size_t MemoryBank::s_gc_threshold = numeric_limits<size_t>::max();
-size_t (*MemoryBank::s_cue_gc)(size_t) = 0;
+void (*MemoryBank::s_cue_gc)(size_t) = 0;
 #ifdef R_MEMORY_PROFILING
 void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
@@ -91,10 +90,8 @@ void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 #endif
     // If GC is allowed and 'blockbytes' would take us over the
     // garbage collection threshold, cue a GC and update the threshold:
-    if (allow_gc
-	&& s_bytes_allocated + blockbytes > s_gc_threshold
-	&& s_cue_gc)
-	s_gc_threshold = s_cue_gc(blockbytes);
+    if (allow_gc && s_cue_gc)
+	s_cue_gc(blockbytes);
     // Assumes sizeof(double) == 8:
     void* p;
     p = (blockbytes > s_max_cell_size
@@ -123,7 +120,7 @@ void* MemoryBank::alloc2(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 	if (allow_gc && s_cue_gc) {
 	    // Force garbage collection if available:
 	    size_t sought_bytes = (pool ? pool->superblockSize() : bytes);
-	    s_gc_threshold = s_cue_gc(sought_bytes);
+	    s_cue_gc(sought_bytes);
 	}
 	else throw;
     }
@@ -177,10 +174,9 @@ void MemoryBank::initialize()
     s_pools[9] = new Pool(16, 31);
 }
 
-void MemoryBank::setGCCuer(size_t (*cue_gc)(size_t), size_t threshold)
+void MemoryBank::setGCCuer(void (*cue_gc)(size_t))
 {
     s_cue_gc = cue_gc;
-    s_gc_threshold = (cue_gc ? threshold : numeric_limits<size_t>::max());
 }
 
 #ifdef R_MEMORY_PROFILING

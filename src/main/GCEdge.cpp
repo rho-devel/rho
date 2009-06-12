@@ -45,9 +45,9 @@
 using namespace std;
 using namespace CXXR;
 
-void GCEdgeBase::retarget(GCNode* from, const GCNode* to)
+void GCEdgeBase::detach()
 {
-    GCNode::maybeCheckExposed(to);
-    if (to && from->generation() > 1)
-	to->ageTo(from->generation());
+    if (m_target && m_target->decRefCount() == 0)
+	m_target->makeMoribund();
+    m_target = 0;
 }

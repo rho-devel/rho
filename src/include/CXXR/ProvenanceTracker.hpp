@@ -6,6 +6,8 @@
 #include "CXXR/SchwarzCounter.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/Parentage.hpp"
+#include "CXXR/Provenance.hpp"
+#include "CXXR/ProvenanceSet.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/Frame.hpp"
 
@@ -23,8 +25,9 @@ namespace CXXR {
 
 	private:
 	ProvenanceTracker();
+	static ProvenanceSet* seen();
 	static GCRoot<Parentage>* p_current;
-	static GCRoot<Expression>* e_current;
+	static GCRoot<ProvenanceSet>* p_seen;
 
 	// Required for SchwarzCounter
 	static void cleanup();

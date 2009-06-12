@@ -54,6 +54,7 @@
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
 
+using namespace CXXR;
 
 /*
  *  TeX Math Styles
@@ -1241,7 +1242,8 @@ static BBOX RenderNumber(SEXP expr, int draw, mathContext *mc,
 {
     BBOX bbox;
     FontType prevfont = SetFont(PlainFont, gc);
-    bbox = RenderStr(CHAR(asChar(expr)), draw, mc, gc, dd);
+    GCStackRoot<> str(asChar(expr));
+    bbox = RenderStr(CHAR(str), draw, mc, gc, dd);
     SetFont(prevfont, gc);
     return bbox;
 }

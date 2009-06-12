@@ -18,12 +18,10 @@ namespace CXXR {
 	void Display() const;
 	GCStackRoot<StringVector> asStringVector();
 	void pushProvenance(Provenance*);
-	size_type size() const;
 	
 	// Virtual method of GCNode
+	void detachReferents();
 	void visitReferents(const_visitor*) const;
-	
-	int index;
 	};
 }
 

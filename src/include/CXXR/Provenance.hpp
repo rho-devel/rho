@@ -20,19 +20,21 @@ namespace CXXR {
 	public:
 		class CompTime {
 		public:
-			bool operator()(Provenance* const& lhs, Provenance* const& rhs) {
+			bool operator()(Provenance* lhs, Provenance* rhs) {
 				return (lhs->m_timestamp.tv_sec==rhs->m_timestamp.tv_sec) ?
 					(lhs->m_timestamp.tv_usec<rhs->m_timestamp.tv_usec) :
 					(lhs->m_timestamp.tv_sec<rhs->m_timestamp.tv_sec);
 			}
 		};
+		typedef std::set<Provenance*,Provenance::CompTime> Set;
 		Provenance(Expression*,Symbol*,Parentage*);
 		Expression* getCommand() const;
 		Symbol* getSymbol() const;
 		Parentage* getParentage() const;
 		const CachedString* getTime() const;
+		void detachReferents();
 		void visitReferents(const_visitor*) const;
-		void collatePedigree(std::set<Provenance*,Provenance::CompTime>*);
+		Set* pedigree(void);
 
 	private:
 		struct timeval m_timestamp;
@@ -40,7 +42,7 @@ namespace CXXR {
 		GCEdge<Symbol> m_symbol;
 		GCEdge<Parentage> m_parentage;
 	};
-}
+} // Namespace CXXR
 
 #endif
 #endif

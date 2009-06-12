@@ -65,7 +65,7 @@ namespace CXXR {
      * <li>If the derived class contains any pointers or references to
      * other objects derived from GCNode, these should be encapsulated
      * within an object of the templated class GCEdge, and the class
-     * should reimplement the method visitReferents()
+     * should reimplement the methods detachReferents() and visitReferents()
      * appropriately.</li>
      * </ol>
      *
@@ -100,8 +100,8 @@ namespace CXXR {
      *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
-     * 'meaning' of an object of a derived class, all of its data
-     * members are mutable.
+     * 'meaning' of an object of a derived class, its data members are
+     * mutable.
      *
      * @todo The (private) cleanup() method needs to address the
      * possibility that derived classes may have destructors that
@@ -135,10 +135,17 @@ namespace CXXR {
 	};
 
 	GCNode()
-	    : m_bits(s_mark)
+            :
+#ifdef GCID
+	    m_id(++s_last_id),
+#endif
+	    m_bits(s_mark), m_refcount(0)
 	{
-	    s_generation[0].splice_back(this);
+	    s_infants->splice_back(this);
 	    ++s_num_nodes;
+#ifdef GCID
+	    watch();
+#endif
 	}
 
 	/** @brief Allocate memory.
@@ -236,9 +243,9 @@ namespace CXXR {
 	 */
 	void expose() const
 	{
-	    if (!(m_bits & GENERATION)) {
-		m_bits |= 1;
-		s_generation[1].splice_back(this);
+	    if (!(m_bits & EXPOSED)) {
+		m_bits |= EXPOSED;
+		s_exposed->splice_back(this);
 	    }
 	}
 
@@ -249,7 +256,7 @@ namespace CXXR {
 	 */
 	bool exposed() const
 	{
-	    return (m_bits & GENERATION);
+	    return (m_bits & EXPOSED);
 	}
 
 	/** @brief Exposes node to the garbage collector.
@@ -270,11 +277,21 @@ namespace CXXR {
 	}
 
 	/** @brief Initiate a garbage collection.
-	 *
-	 * @param num_old_gens The number of old generations to
-	 * collect.  Must be strictly smaller than numGenerations().
 	 */
-	static void gc(unsigned int num_old_gens);
+	static void gc();
+
+	/** @brief Lightweight garbage collection.
+	 *
+	 * This function deletes nodes whose reference counts have
+	 * fallen to zero: if the deletion of these nodes in turn
+	 * causes the reference counts of other nodes to fall to zero,
+	 * those nodes are also deleted, and so on recursively.
+	 *
+	 * @note Infant nodes are not deleted by this function,
+	 * because their reference counts should never have risen
+	 * above zero.
+	 */
+	static void gclite();
 
 	/** @brief Subject to configuration, check that a GCNode is exposed.
 	 *
@@ -308,13 +325,6 @@ namespace CXXR {
 	 *          checked.
 	 */
 	static void nodeCheck(const GCNode* node);
-
-	/** @brief Number of generations used by garbage collector.
-	 *
-	 * @return The number of generations into which GCNode objects
-	 * are ranked by the garbage collector.
-	 */
-	static size_t numGenerations() {return s_num_generations;}
 
 	/** @brief Number of GCNode objects in existence.
 	 *
@@ -360,142 +370,95 @@ namespace CXXR {
 	 */
 	virtual ~GCNode()
 	{
+#ifdef GCID
+	    watch();
+#endif
 	    --s_num_nodes;
 	}
 
-	/** @brief Prevent old-to-new references.
-	 * 
-	 * If \a node points to a node of a younger generation than
-	 * this node, then raise it to this node's generation, and
-	 * propagate this change to the nodes to which \a node refers,
-	 * and so on recursively.
+	/** @brief Null out all references from this node to other nodes.
 	 *
-	 * @param node Pointer to the node whose generation is to be
-	 *          adjusted if necessary.  If this is a null pointer,
-	 *          the method does nothing.
+	 * The referents of this node are those objects (derived from
+	 * GCNode) designated by a GCEdge within this object.  This
+	 * function changes all GCEdges within this object to
+	 * encapsulate a null pointer.  It is used during the sweep
+	 * phase of a mark-sweep garbage collection to break up
+	 * unreachable subgraphs, and in particular to remove
+	 * reference loops from them.  After the application of this
+	 * method, the GCNode should be regarded as a 'zombie', kept
+	 * in existence only so other nodes can detach their
+	 * references to it cleanly (using decRefCount()).
 	 *
-	 * @note In practice only \a node has its generation changed
-	 * as a direct result of this call; the recursive propagation
-	 * of the change is deferred until the next garbage
-	 * collection.
+	 * @note If this method is reimplemented in a derived class,
+	 * the reimplemented version must remember to invoke
+	 * visitReferents() for the immediate base class of the
+	 * derived class, to ensure that \e all referents of the
+	 * object get detached.
 	 */
-	void propagateAge(const GCNode* node) const
-	{
-	    if (node) node->ageTo(generation());
-	}
+	virtual void detachReferents()  {}
+
     private:
 	friend class WeakRef;
 	friend class GCRootBase;
-
-	/** Visitor class used to impose a minimum generation number.
-	 *
-	 * This visitor class is used to ensure that a node and its
-	 * descendants all have generation numbers that exceed a
-	 * specified minimum value, and is used in implementing the
-	 * write barrier in the generational garbage collector.
-	 */
-	class Ager : public const_visitor {
-	public:
-	    /**
-	     * @param min_gen The minimum generation number that the
-	     * visitor is to apply.
-	     */
-	    Ager(unsigned int min_gen)
-		: m_mingen(min_gen)
-	    {}
-
-	    // Virtual function of const_visitor:
-	    bool operator()(const GCNode* node);
-	private:
-	    unsigned int m_mingen;
-	};
+	friend class GCStackRootBase;
 
 	/** Visitor class used to mark nodes.
 	 *
 	 * This visitor class is used during the mark phase of garbage
 	 * collection to ensure that a node and its descendants are
-	 * marked.  However, nodes with generation numbers exceeding a
-	 * specified level are left unmarked.  It is assumed that no
-	 * node references a node with a younger generation number.
+	 * marked.
 	 */
 	class Marker : public const_visitor {
 	public:
-	    /**
-	     * @param max_gen Nodes with a generation number exceeding
-	     *          this are not to be marked.
-	     */
-	    Marker(unsigned int max_gen)
-		: m_maxgen(max_gen)
+	    Marker()
 	    {}
 	    
 	    // Virtual function of const_visitor:
 	    bool operator()(const GCNode* node);
-	private:
-	    unsigned int m_maxgen;
-	};
-
-	/** Visitor class used to abort the program if old-to-new
-	 * references are found.
-	 */
-	class OldToNewChecker : public const_visitor {
-	public:
-	    /**
-	     * @param min_gen The minimum generation number that is
-	     * acceptable in visited nodes.
-	     */
-	    OldToNewChecker(unsigned int min_gen)
-		: m_mingen(min_gen)
-	    {}
-
-	    // Virtual function of const_visitor:
-	    bool operator()(const GCNode* node);
-	private:
-	    unsigned int m_mingen;
 	};
 
 	typedef HeterogeneousList<GCNode> List;
 		
-	static unsigned int s_num_generations;
-	static List* s_generation;  // s_generation[g] is a list of
-		       // the nodes in generation g, excluding those
-		       // on s_aged_list.
-	static List* s_aged_list; // List of nodes whose generation has
-		       // been changed since the last garbage
-		       // collection.  They are here awaiting
-		       // propagation of the generation change to
-		       // their referents (and so on recursively),
-		       // which will happen at the start of the next
-		       // garbage collection.
+	static List* s_infants;  // List of nodes not yet exposed to
+		       // the garbage collector.
+	static List* s_exposed;  // List of nodes exposed to the
+		       // garbage collector, other than 'moribund'
+		       // nodes.
+	static List* s_moribund;  // List of nodes whose reference
+		       // count has fallen to zero (but may
+		       // subsequently have increased again).
 	static List* s_reachable;  // During the mark phase of garbage
 		       // collection, if a node within the generations
 		       // being collected is found to be reachable
-		       // from the roots, it is moved to the list
-		       // s_reachable[g], where g is the generation
-		       // that this node will be promoted to following
-		       // the garbage collection.  (Consequently,
-		       // s_reachable[1] is unused.)  Between garbage
-		       // collections, all these lists should be empty.
-	static List* s_lists[];  // Look-up table used to determine
-			// from the m_bits field which list a node is
-			// currently on.
-	static unsigned int* s_next_gen; // Look-up table used to
-			       // advance generation number following
-			       // a garbage collection.
+		       // from the roots, it is moved to this list.
+		       // Between garbage collections, this list
+		       // should be empty.
 	static unsigned char s_mark;  // During garbage collection, a
 			       // node is considered marked if its
 			       // MARK field matches the corresponding
 			       // bits of s_mark.
 	static size_t s_num_nodes;
+#ifdef GCID
+	// If GCID is defined, each GCNode is given an identity
+	// number.  The numbers are not unique: they wrap around
+	// eventually.  This is the number that was most recently
+	// assigned to a node:
+	static unsigned int s_last_id;
+
+	// Using a debugger, the following can be set to non-null values
+	// to monitor operations on particular nodes:
+	static const GCNode* s_watch_node;
+	static unsigned int s_watch_id;
+#endif
 
 	// Masks applicable to the m_bits field:
-	enum {GENERATION = 3, AGED = 4, LIST = 7, MARK = 0x70};
+	enum {EXPOSED = 1, MORIBUND = 2, MARK = 4};
 
+#ifdef GCID
+	unsigned int m_id;
+#endif
 	mutable unsigned char m_bits;
-
-	// m_bits&AGED is non-zero if the generation number of the
-	// node has been changed (otherwise than from 0 to 1) since
-	// the last garbage collection, and this change has not yet
-	// been propagated recursively.
+	mutable unsigned char m_refcount;
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
@@ -509,17 +472,38 @@ namespace CXXR {
 	// Abort program if 'node' is not exposed to GC.
 	static void abortIfNotExposed(const GCNode* node);
 
-	// Force the generation number of this node up to mingen, and
-	// if the generation number is changed, flag up the change for
-	// recursive propagation by propagateAges().
-	void ageTo(unsigned int mingen) const;
-
 	// Clean up static data at end of run:
 	static void cleanup();
 
-	unsigned char generation() const
+	// Decrement the reference count (unless it is at its maximum
+	// value), and return the resulting count:
+	unsigned char decRefCount() const
 	{
-	    return m_bits & GENERATION;
+	    // The following code is intended to be equivalent to:
+	    //
+	    // if (m_refcount != 255) --m_refcount;
+	    //
+	    // but without using a branch.
+	    unsigned short rc = m_refcount;
+	    ++rc;
+	    rc += (rc >> 8) - 2;
+	    m_refcount = rc;
+	    return m_refcount;
+	}
+
+	// Increment the reference count, unless it is already at its
+	// maximum value.
+	void incRefCount() const
+	{
+	    // The following code is intended to be equivalent to:
+	    //
+	    // if (m_refcount != 255) ++m_refcount;
+	    //
+	    // but without using a branch.
+	    unsigned short rc = m_refcount;
+	    ++rc;
+	    rc -= (rc >> 8);
+	    m_refcount = rc;
 	}
 
 	/** @brief Initialize static members.
@@ -535,34 +519,35 @@ namespace CXXR {
 
 	bool isMarked() const {return (m_bits & MARK) == s_mark;}
 
-	// List on which this node is currently recorded.
-	List* list() const
-	{
-	    return s_lists[m_bits & LIST];
-	}
+	// Designate a node (whose reference count has fallen to zero)
+	// as 'moribund'.  Such a node will be deleted by the next
+	// call to gclite(), unless by that time its reference count
+	// is non-zero once more, in which case it will be 'resurrected'.
+	void makeMoribund() const;
 
 	/** @brief Carry out the mark phase of garbage collection.
-	 *
-	 * @param max_generation The highest generation number to be
-	 *          swept.
 	 */
-	static void mark(unsigned int max_generation);
+	static void mark();
 
-	// This is the first stage of garbage collection.  It
-	// propagates the generation changes initiated by
-	// propagateAge() recursively through the node graph.
-	static void propagateAges();
+	// Some structures, particularly those accessed from C code, have
+	// not been refactored to protect their members using GCRoot<>.
+	// This function is used to provide temporary protection using
+	// PROTECT().  It returns the number of items thus protected.
+	static unsigned int protectCstructs();
 
 	/** @brief Carry out the sweep phase of garbage collection.
-	 *
-	 * @param max_generation The highest generation number to be
-	 *          swept.
 	 */
-	static void sweep(unsigned int max_generation);
+	static void sweep();
 
 	// Conduct visitor to all nodes currently enjoying infant
 	// immunity.
 	static void visitInfants(const_visitor* v);
+
+#ifdef GCID
+	// Used to monitor a particular node (or nodes at a particular
+	// address) using a debugger.
+	void watch() const;
+#endif
 
 	friend class GCEdgeBase;
 	friend class SchwarzCounter<GCNode>;

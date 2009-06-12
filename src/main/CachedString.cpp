@@ -90,7 +90,7 @@ void CachedString::cleanup()
 {
     R_BlankString = 0;
     delete s_blank;
-    delete s_cache;
+    // Don't delete s_cache: there will still be CachedStrings in existence.
 }
 
 void CachedString::initialize()

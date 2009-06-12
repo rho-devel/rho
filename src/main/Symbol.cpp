@@ -100,7 +100,13 @@ void Symbol::cleanup()
     delete s_unbound_value;
     delete s_restart_token;
     delete s_missing_arg;
-    delete s_table;
+    // Don't delete s_table: there will still be Symbols in existence.
+}
+
+void Symbol::detachReferents()
+{
+    m_name.detach();
+    RObject::detachReferents();
 }
 
 void Symbol::initialize()

@@ -52,6 +52,8 @@
 #include <Graphics.h>
 #include <GraphicsBase.h> /* registerBase */
 
+using namespace CXXR;
+
 static SEXP R_INLINE getSymbolValue(const char *symbolName)
 {
     return findVar(install(symbolName), R_BaseEnv);
@@ -110,6 +112,14 @@ static int R_NumDevices = 1;
  */
 static pGEDevDesc R_Devices[R_MaxDevices];
 static Rboolean active[R_MaxDevices];
+
+/* The following are used in CXXR to protect the displayList and
+ * savedSnapshot fields of a device from garbage collection.
+ * Functions setDisplayList() and saveSnapshot() update them in
+ * parallel with the fields concerned.
+ */
+static GCRoot<> displayListGuards[R_MaxDevices];
+static GCRoot<> savedSnapshotGuards[R_MaxDevices];
 
 /* a dummy description to point to when there are no active devices */
 
@@ -485,6 +495,7 @@ void GEaddDevice(pGEDevDesc gdd)
     R_CurrentDevice = i;
     R_NumDevices++;
     R_Devices[i] = gdd;
+    gdd->index = i;
     active[i] = TRUE;
 
     GEregisterWithDevice(gdd);
@@ -535,6 +546,7 @@ pGEDevDesc GEcreateDevDesc(pDevDesc dev)
     if (!gdd)
 	error(_("not enough memory to allocate device (in GEcreateDevDesc)"));
     for (i = 0; i < MAX_GRAPHICS_SYSTEMS; i++) gdd->gesd[i] = NULL;
+    gdd->index = -1;
     gdd->dev = dev;
     gdd->displayListOn = dev->displayListOn;
     gdd->displayList = R_NilValue; /* gc needs this */
@@ -613,4 +625,20 @@ SEXP do_devsize(SEXP call, SEXP op, SEXP args, SEXP env)
     REAL(ans)[0] = fabs(right - left);
     REAL(ans)[1] = fabs(bottom - top);
     return(ans);
+}
+
+// CXXR mutator functions:
+
+void setDisplayList(pGEDevDesc dev, SEXP newDisplayList)
+{
+    dev->displayList = newDisplayList;
+    if (dev->index >= 0)
+	displayListGuards[dev->index] = newDisplayList;
+}
+
+void saveSnapshot(pGEDevDesc dev, SEXP newSnapshot)
+{
+    dev->savedSnapshot = newSnapshot;
+    if (dev->index >= 0)
+	savedSnapshotGuards[dev->index] = newSnapshot;
 }

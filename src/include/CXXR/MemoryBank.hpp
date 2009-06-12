@@ -125,25 +125,14 @@ namespace CXXR {
 	/** @brief Set a callback to cue garbage collection.
 	 *
 	 * @param cue_gc This is a pointer, possibly null, to a
-	 *          function that this class will call to cue garbage 
-	 *          collection, either because the garbage collection
-	 *          threshold has been exceeded, or because the class
-	 *          has just failed to allocate memory from the main
-	 *          heap.  The argument is set to the number of bytes
-	 *          of memory currently being sought.  The function
-	 *          should return the new value of the garbage
-	 *          collection threshold.  If \a cue_gc is a null
-	 *          pointer, then such callbacks are discontinued.
-	 *
-	 * @param initial_threshold The initial threshold for garbage
-	 *          collection.  If garbage collection is allowed,
-	 *          allocate() will call \a cue_gc when it looks as if
-	 *          the number of bytes allocated via MemoryBank is
-	 *          about to exceed the threshold.  The parameter is
-	 *          ignored if \a cue_gc is a null pointer.
+	 *          function that this class will call before
+	 *          allocating memory, and which may for example
+	 *          result in a garbage collection.  The argument is
+	 *          set to the number of bytes of memory currently
+	 *          being sought.  If \a cue_gc is a null pointer,
+	 *          then such callbacks are discontinued.
 	 */
-	static void setGCCuer(size_t (*cue_gc)(size_t),
-			      size_t initial_threshold);
+	static void setGCCuer(void (*cue_gc)(size_t));
 
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
@@ -172,8 +161,7 @@ namespace CXXR {
 	static const size_t s_max_cell_size = 128;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
-	static size_t s_gc_threshold;
-	static size_t (*s_cue_gc)(size_t);
+	static void (*s_cue_gc)(size_t);
 	static Pool* s_pools[];
 	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING

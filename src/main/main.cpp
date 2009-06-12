@@ -115,7 +115,10 @@ LibExport int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 
 // Data declared LibExtern in RCNTXT.h :
 
-LibExport RCNTXT R_Toplevel;     /* Storage for the toplevel environment */
+// Note that in CXXR, the top-level environment itself must be located
+// on the stack, so it's declared in mainloop(), which then
+// initialises R_Toplevel to point to it.
+LibExport RCNTXT* R_Toplevel;     /* The ultimate toplevel environment */
 LibExport RCNTXT* R_ToplevelContext;  /* The toplevel environment */
 LibExport RCNTXT* R_GlobalContext;    /* The global environment */
 
@@ -180,17 +183,17 @@ attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
 attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
 						   if set by R itself */
 attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
-attribute_hidden SEXP	R_CommentSxp;	    /* Comments accumulate here */
+GCRoot<>	R_CommentSxp;	    /* Comments accumulate here */
 attribute_hidden int	R_ParseError	= 0; /* Line where parse error occured */
 attribute_hidden SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
 attribute_hidden char	R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
 attribute_hidden char	R_ParseContext[PARSE_CONTEXT_SIZE] = "";
 attribute_hidden int	R_ParseContextLast = 0; /* last character in context buffer */
 attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
-attribute_hidden SEXP	R_Warnings;	    /* the warnings and their calls */
-attribute_hidden int	R_ShowErrorMessages = 1;	/* show error messages? */
-attribute_hidden SEXP	R_HandlerStack;	/* Condition handler stack */
-attribute_hidden SEXP	R_RestartStack;	/* Stack of available restarts */
+GCRoot<>	R_Warnings;	    /* the warnings and their calls */
+attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
+GCRoot<>	R_HandlerStack;	/* Condition handler stack */
+GCRoot<>	R_RestartStack;	/* Stack of available restarts */
 attribute_hidden Rboolean R_warn_partial_match_args   = FALSE;
 attribute_hidden Rboolean R_warn_partial_match_dollar = FALSE;
 attribute_hidden Rboolean R_warn_partial_match_attr = FALSE;
@@ -475,7 +478,7 @@ static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 void R_ReplDLLinit(void)
 {
     R_IoBufferInit(&R_ConsoleIob);
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     R_IoBufferWriteReset(&R_ConsoleIob);
     prompt_type = 1;
     DLLbuf[0] = DLLbuf[CONSOLE_BUFFER_SIZE] = '\0';
@@ -804,20 +807,20 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
     FILE * volatile fp = fparg; /* is this needed? */
     if (fp != NULL) {
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &R_Toplevel << endl;
+	//	     << R_Toplevel << endl;
 	try {
-	    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	    R_GlobalContext = R_ToplevelContext = R_Toplevel;
 	    R_ReplFile(fp, env, 0, 0);
 	}
 	catch (JMPException& e) {
 	    //	    cout << __FILE__":" << __LINE__
 	    //		 << " Seeking " << e.context
-	    //		 << "; in " << &R_Toplevel << endl;
-	    if (e.context != &R_Toplevel)
+	    //		 << "; in " << R_Toplevel << endl;
+	    if (e.context != R_Toplevel)
 		throw;
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &R_Toplevel << endl;
+	//	     << R_Toplevel << endl;
 	fclose(fp);
     }
 }
@@ -937,27 +940,28 @@ void setup_Rmainloop(void)
     /* This provides a target for any non-local gotos */
     /* which occur during error handling */
 
-    R_Toplevel.nextcontext = NULL;
-    R_Toplevel.callflag = CTXT_TOPLEVEL;
-    R_Toplevel.cstacktop = 0;
-    R_Toplevel.promargs = R_NilValue;
-    R_Toplevel.callfun = R_NilValue;
-    R_Toplevel.call = R_NilValue;
-    R_Toplevel.cloenv = R_BaseEnv;
-    R_Toplevel.sysparent = R_BaseEnv;
-    R_Toplevel.conexit = R_NilValue;
-    R_Toplevel.vmax = 0;
+    R_Toplevel->nextcontext = NULL;
+    R_Toplevel->callflag = CTXT_TOPLEVEL;
+    R_Toplevel->cstacktop = 0;
+    R_Toplevel->promargs = R_NilValue;
+    R_Toplevel->callfun = R_NilValue;
+    R_Toplevel->call = R_NilValue;
+    R_Toplevel->cloenv = R_BaseEnv;
+    R_Toplevel->sysparent = R_BaseEnv;
+    R_Toplevel->conexit = R_NilValue;
+    R_Toplevel->vmax = 0;
 #ifdef BYTECODE
-    R_Toplevel.nodestack = R_BCNodeStackTop;
+    R_Toplevel->nodestack = R_BCNodeStackTop;
 # ifdef BC_INT_STACK
-    R_Toplevel.intstack = R_BCIntStackTop;
+    R_Toplevel->intstack = R_BCIntStackTop;
 # endif
 #endif
-    R_Toplevel.cend = NULL;
-    R_Toplevel.intsusp = FALSE;
-    R_Toplevel.handlerstack = R_HandlerStack;
-    R_Toplevel.restartstack = R_RestartStack;
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_Toplevel->cend = NULL;
+    R_Toplevel->intsusp = FALSE;
+    R_Toplevel->handlerstack = R_HandlerStack;
+    R_Toplevel->restartstack = R_RestartStack;
+    R_Toplevel->prstack = 0;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
 
     R_Warnings = R_NilValue;
 
@@ -978,9 +982,9 @@ void setup_Rmainloop(void)
     if (fp == NULL)
 	R_Suicide(_("unable to open the base package\n"));
 
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     try {
 	if (R_SignalHandlers) init_signal_handlers();
 	R_ReplFile(fp, baseEnv, 0, 0);
@@ -988,14 +992,14 @@ void setup_Rmainloop(void)
     catch (JMPException& e) {
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
-	//	     << "; in " << &R_Toplevel << endl;
-	if (e.context != &R_Toplevel)
+	//	     << "; in " << R_Toplevel << endl;
+	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
 	if (R_SignalHandlers) init_signal_handlers();
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     fclose(fp);
 
     /* This is where we source the system-wide, the site's and the
@@ -1017,9 +1021,9 @@ void setup_Rmainloop(void)
     R_unLockBinding(install(".Library.site"), R_BaseEnv);
 
     /* require(methods) if it is in the default packages */
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     try {
 	PROTECT(cmd = install(".OptRequireMethods"));
 	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
@@ -1034,13 +1038,13 @@ void setup_Rmainloop(void)
     catch (JMPException& e) {
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
-	//	     << "; in " << &R_Toplevel << endl;
-	if (e.context != &R_Toplevel)
+	//	     << "; in " << R_Toplevel << endl;
+	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
 
     if (strcmp(R_GUIType, "Tk") == 0) {
 	char buf[256];
@@ -1073,30 +1077,30 @@ void setup_Rmainloop(void)
        we look in any documents which might have been double clicked on
        or dropped on the application.
     */
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     try {
 	R_InitialData();
     }
     catch (JMPException& e) {
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
-	//	     << "; in " << &R_Toplevel << endl;
-	if (e.context != &R_Toplevel)
+	//	     << "; in " << R_Toplevel << endl;
+	if (e.context != R_Toplevel)
 	    throw;
 	R_Suicide(_("unable to restore saved data in .RData\n"));
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
 
     /* Initial Loading is done.
        At this point we try to invoke the .First Function.
        If there is an error we continue. */
 
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     try {
 	PROTECT(cmd = install(".First"));
 	R_CurrentExpr = findVar(cmd, R_GlobalEnv);
@@ -1111,20 +1115,20 @@ void setup_Rmainloop(void)
     catch (JMPException& e) {
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
-	//	     << "; in " << &R_Toplevel << endl;
-	if (e.context != &R_Toplevel)
+	//	     << "; in " << R_Toplevel << endl;
+	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
 
     /* Try to invoke the .First.sys function, which loads the default packages.
        If there is an error we continue. */
 
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     try {
 	PROTECT(cmd = install(".First.sys"));
 	R_CurrentExpr = findVar(cmd, baseEnv);
@@ -1139,13 +1143,13 @@ void setup_Rmainloop(void)
     catch (JMPException& e) {
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
-	//	     << "; in " << &R_Toplevel << endl;
-	if (e.context != &R_Toplevel)
+	//	     << "; in " << R_Toplevel << endl;
+	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &R_Toplevel << endl;
+    //	 << R_Toplevel << endl;
     /* gc_inhibit_torture = 0; */
     {
 	int i;
@@ -1179,16 +1183,16 @@ void run_Rmainloop(void)
     do {
 	redo = false;
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &R_Toplevel << endl;
+	//	     << R_Toplevel << endl;
 	try {
-	    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+	    R_GlobalContext = R_ToplevelContext = R_Toplevel;
 	    R_ReplConsole(R_GlobalEnv, 0, 0);
 	}
 	catch (JMPException& e) {
 	    //	    cout << __FILE__":" << __LINE__
 	    //		 << " Seeking " << e.context
-	    //		 << "; in " << &R_Toplevel << endl;
-	    if (e.context != &R_Toplevel)
+	    //		 << "; in " << R_Toplevel << endl;
+	    if (e.context != R_Toplevel)
 		throw;
 	    redo = true;
 	}
@@ -1196,13 +1200,15 @@ void run_Rmainloop(void)
 	//	    cout << "Non-JMPException caught" << endl;
 	//	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &R_Toplevel << endl;
+	//	     << R_Toplevel << endl;
     } while (redo);
     end_Rmainloop(); /* must go here */
 }
 
 void mainloop(void)
 {
+    RCNTXT top_level_context;
+    R_Toplevel = &top_level_context;
     setup_Rmainloop();
     run_Rmainloop();
 }
@@ -1380,7 +1386,7 @@ void R_dot_Last(void)
     /* Run the .Last function. */
     /* Errors here should kick us back into the repl. */
 
-    R_GlobalContext = R_ToplevelContext = &R_Toplevel;
+    R_GlobalContext = R_ToplevelContext = R_Toplevel;
     PROTECT(cmd = install(".Last"));
     R_CurrentExpr = findVar(cmd, R_GlobalEnv);
     if (R_CurrentExpr != R_UnboundValue && TYPEOF(R_CurrentExpr) == CLOSXP) {

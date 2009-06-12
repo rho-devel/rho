@@ -41,9 +41,13 @@
 */
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned short Sock_port_t;
 
-typedef struct Sock_error_t {
+typedef struct Sock_error_st {
     int error;
     int h_error;
 } *Sock_error_t;
@@ -74,3 +78,7 @@ int R_SockConnect(int port, char *host);
 int R_SockClose(int sockp);
 int R_SockRead(int sockp, void *buf, int maxlen, int blocking);
 int R_SockWrite(int sockp, const void *buf, int len);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif

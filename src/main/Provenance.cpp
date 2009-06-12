@@ -9,16 +9,16 @@ using namespace CXXR;
 
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
 	if (!exp)
-		m_expression.retarget(this,0);
+		m_expression=NULL;
 	else {
 		GCStackRoot<Expression> expCpy(exp->clone());
 		if (expCpy!=NULL)
-			m_expression.retarget(this,expCpy);
+			m_expression=expCpy;
 		else
-			m_expression.retarget(this,0);
+			m_expression=NULL;
 	}
-	m_symbol.retarget(this,sym);
-	m_parentage.retarget(this,par);
+	m_symbol=sym;
+	m_parentage=par;
 	gettimeofday(&m_timestamp,NULL);
 }
 
@@ -45,6 +45,12 @@ const CachedString* Provenance::getTime() const{
 	return CachedString::obtain(buffer);
 }
 
+void Provenance::detachReferents() {
+	m_expression.detach();
+	m_symbol.detach();
+	m_parentage.detach();
+}
+
 void Provenance::visitReferents(const_visitor* v) const {
 	const GCNode* exp=m_expression;
 	const GCNode* sym=m_symbol;
@@ -54,12 +60,28 @@ void Provenance::visitReferents(const_visitor* v) const {
 	if (par) par->conductVisitor(v);
 }
 
-void Provenance::collatePedigree(set<Provenance*,Provenance::CompTime>* s) {
-	s->insert(this);
-	const Parentage* par=m_parentage;
-	if (par)
-		for (unsigned int i=0;i<par->size();i++) {
-			Provenance *p=par->at(i);
-			p->collatePedigree(s);
+Provenance::Set *Provenance::pedigree(void) {
+	Set *open, *closed;
+	open=new Set();
+	closed=new Set();
+
+	open->insert(this);
+	
+	while (!open->empty()) {
+		Provenance* n=*(open->begin());
+		Parentage* p=n->getParentage();
+		if (p) {
+			for (unsigned int i=0;i<p->size();i++) {
+				Provenance* s=p->at(i);
+				// If s isn't in closed set, put it in open
+				if (closed->find(s)==closed->end())
+					open->insert(s);
+			}
 		}
+		open->erase(n);
+		closed->insert(n);
+	}
+	delete open;
+
+	return closed;
 }

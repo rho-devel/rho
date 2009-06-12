@@ -82,7 +82,7 @@ void Frame::Binding::initialize(Frame* frame, const Symbol* sym)
 	Rf_error(_("internal error in %s"),
 		 "Frame::Binding::initialize()");
     m_frame = frame;
-    m_symbol.retarget(frame, sym);
+    m_symbol = sym;
 }
 
 void Frame::Binding::setFunction(FunctionBase* function)
@@ -94,7 +94,7 @@ void Frame::Binding::setFunction(FunctionBase* function)
 	if (isLocked())
 	    Rf_error(_("cannot change active binding if binding is locked"));
     }
-    m_value.retarget(m_frame, function);
+    m_value = function;
     m_active = true;
     m_frame->monitorWrite(*this);
 }
@@ -114,7 +114,7 @@ void Frame::Binding::setValue(RObject* new_value)
     if (isActive())
 	Rf_error(_("internal error: use %s for active bindings"),
 		 "setFunction()");
-    m_value.retarget(m_frame, new_value);
+    m_value = new_value;
     m_frame->monitorWrite(*this);
 }
 

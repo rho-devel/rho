@@ -254,12 +254,31 @@ namespace CXXR {
 	    Handle(const Handle<T>& pattern)
 		: GCEdge<T>(cloneOrSelf(pattern))
 	    {}
+
+	    /** @brief Assignment operator.
+	     *
+	     * Note that this does not attempt to clone \a source: it
+	     * merely changes this Handle to point to the same T
+	     * object (if any) as \a source.
+	     */
+	    Handle<T>& operator=(const Handle<T>& source)
+	    {
+		GCEdge<T>::operator=(source);
+		return *this;
+	    }
+
+	    /** @brief Assignment from pointer.
+	     *
+	     * Note that this does not attempt to clone \a newtarget: it
+	     * merely changes this Handle to point to \a newtarget.
+	     */
+	    Handle<T>& operator=(T* newtarget)
+	    {
+		GCEdge<T>::operator=(newtarget);
+		return *this;
+	    }
 	private:
 	    static T* cloneOrSelf(T*);
-
-	    // Not implemented.  Declared to prevent
-	    // compiler-generated version:
-	    Handle<T>& operator=(const Handle<T>&);
 	};
 		
 	/** @brief Get object attributes.
@@ -270,13 +289,13 @@ namespace CXXR {
 	 * attribute list directly, and thus bypass attribute
 	 * consistency checks.
 	 */
-	PairList* attributes() {return m_attrib;}
+	PairList* attributes();
 
 	/** @brief Get object attributes (const variant).
 	 *
 	 * @return const pointer to the attributes of this object.
 	 */
-	const PairList* attributes() const {return m_attrib;}
+	const PairList* attributes() const;
 
 	/** @brief Remove all attributes.
 	 */
@@ -358,7 +377,7 @@ namespace CXXR {
 	 */
 	bool hasAttributes() const
 	{
-	    return m_attrib != 0;
+	    return attributes() != 0;
 	}
 
 	/** @brief Has this object the class attribute?
@@ -438,6 +457,19 @@ namespace CXXR {
 	 */
 	void setS4Object(bool on);
 
+	/** @brief Get an object's ::SEXPTYPE.
+	 *
+	 * @return ::SEXPTYPE of this object.
+	 */
+	SEXPTYPE sexptype() const {return m_type;}
+
+	/** @brief Name within R of this type of object.
+	 *
+	 * @return the name by which this type of object is known
+	 *         within R.
+	 */
+	virtual const char* typeName() const;
+
 	/** @brief Interpret the \c gp bits field used in CR.
 	 *
 	 * This function is used to interpret the
@@ -457,19 +489,6 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
-
-	/** @brief Get an object's ::SEXPTYPE.
-	 *
-	 * @return ::SEXPTYPE of this object.
-	 */
-	SEXPTYPE sexptype() const {return m_type;}
-
-	/** @brief Name within R of this type of object.
-	 *
-	 * @return the name by which this type of object is known
-	 *         within R.
-	 */
-	virtual const char* typeName() const;
     protected:
 	/**
 	 * @param stype Required type of the RObject.
@@ -512,6 +531,12 @@ namespace CXXR {
 	void freeze()
 	{
 	    m_frozen = true;
+	}
+
+	// Virtual function of GCNode:
+	void detachReferents()
+	{
+	    m_attrib.detach();
 	}
     private:
 	const SEXPTYPE m_type;

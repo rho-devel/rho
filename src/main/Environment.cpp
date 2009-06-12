@@ -88,6 +88,13 @@ SEXP R_BaseEnv = BaseEnvironment;
 SEXP R_GlobalEnv = GlobalEnvironment;
 SEXP R_BaseNamespace = BaseNamespace;
 
+void Environment::detachReferents()
+{
+    m_enclosing.detach();
+    m_frame.detach();
+    RObject::detachReferents();
+}
+
 unsigned int Environment::packGPBits() const
 {
     unsigned int ans = RObject::packGPBits();

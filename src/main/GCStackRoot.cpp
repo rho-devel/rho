@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
+#include "RCNTXT.h"
 
 using namespace std;
 using namespace CXXR;
@@ -78,21 +79,50 @@ void GCStackRootBase::ppsRestoreSize(size_t new_size)
     if (new_size > s_pps->size())
 	throw out_of_range("GCStackRootBase::ppsRestoreSize: requested size"
 			   " greater than current size.");
-    s_pps->resize(new_size);
+    while (s_pps->size() > new_size) {
+#ifdef NDEBUG
+	RObject* node = s_pps->back();
+#else
+	const pair<RObject*, RCNTXT*>& pr = s_pps->back();
+	RObject* node = pr.first;
+#endif
+	if (node && node->decRefCount() == 0)
+	    node->makeMoribund();
+	s_pps->pop_back();
+    }
 }
+
+#ifndef NDEBUG
+unsigned int GCStackRootBase::protect(RObject* node)
+{
+    GCNode::maybeCheckExposed(node);
+    unsigned int index = s_pps->size();
+    if (node)
+	node->incRefCount();
+    s_pps->push_back(std::make_pair(node, R_GlobalContext));
+    return index;
+}
+#endif
 
 void GCStackRootBase::reprotect(RObject* node, unsigned int index)
 {
     GCNode::maybeCheckExposed(node);
     if (index >= s_pps->size())
 	throw out_of_range("GCStackRootBase::reprotect: index out of range.");
+    if (node)
+	node->incRefCount();
 #ifdef NDEBUG
+    RObject* entry = (*s_pps)[index];
+    if (entry && entry->decRefCount() == 0)
+	entry->makeMoribund();
     (*s_pps)[index] = node;
 #else
     pair<RObject*, RCNTXT*>& pr = (*s_pps)[index];
     if (pr.second != R_GlobalContext)
 	throw logic_error("GCStackRootBase::reprotect: not in same context"
 			  " as the corresponding call of protect().");
+    if (pr.first && pr.first->decRefCount() == 0)
+	pr.first->makeMoribund();
     pr.first = node;
 #endif
 }
@@ -110,21 +140,26 @@ void GCStackRootBase::unprotect(unsigned int count)
     if (count > sz)
 	throw out_of_range("GCStackRootBase::unprotect: count greater"
 			   " than current stack size.");
-#ifdef NDEBUG
-    s_pps->resize(sz - count);
-#else
     for (unsigned int i = 0; i < count; ++i) {
+#ifdef NDEBUG
+	RObject* node = s_pps->back();
+#else
 	const pair<RObject*, RCNTXT*>& pr = s_pps->back();
+	RObject* node = pr.first;
 	if (pr.second != R_GlobalContext)
 	    throw logic_error("GCStackRootBase::unprotect: not in same context"
 			      " as the corresponding call of protect().");
+#endif
+	if (node && node->decRefCount() == 0)
+	    node->makeMoribund();
 	s_pps->pop_back();
     }
-#endif
 }
 
 void GCStackRootBase::unprotectPtr(RObject* node)
 {
+    if (node && node->decRefCount() == 0)
+	node->makeMoribund();
 #ifdef NDEBUG
     vector<RObject*>::reverse_iterator rit
 	= find(s_pps->rbegin(), s_pps->rend(), node);

@@ -60,6 +60,8 @@ GCRootBase::GCRootBase(const GCNode* node)
     : m_it(s_roots->insert(s_roots->end(), node))
 {
     GCNode::maybeCheckExposed(node);
+    if (node)
+	node->incRefCount();
 }
 
 void GCRootBase::cleanup()

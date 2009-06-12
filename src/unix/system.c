@@ -220,8 +220,6 @@ int Rf_initialize_R(int ac, char **av)
     R_timeout_handler = NULL;
     R_timeout_val = 0;
 
-    R_GlobalContext = NULL; /* Make R_Suicide less messy... */
-
     if((R_Home = R_HomeDir()) == NULL)
 	R_Suicide("R home directory is not defined");
 #ifdef ENABLE_NLS

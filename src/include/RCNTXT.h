@@ -49,7 +49,7 @@
 #define BYTECODE
 
 #ifdef __cplusplus
-extern "C" {
+#include "CXXR/GCStackRoot.h"
 #endif
 
 #ifdef BYTECODE
@@ -64,25 +64,26 @@ extern "C" {
 	struct RPRSTACK *next;
     } RPRSTACK;
 
+#ifdef __cplusplus
     /* Evaluation Context Structure */
-    typedef struct RCNTXT {
+    struct RCNTXT {
 	struct RCNTXT *nextcontext; /* The next context up the chain */
 	int callflag;		    /* The context "type" */
 	/* JMP_BUF cjmpbuf; */	    /* C stack and register information */
 	unsigned int cstacktop;	    /* Top of the pointer protection stack */
 	int evaldepth;	            /* evaluation depth at inception */
-	SEXP promargs;		    /* Promises supplied to closure */
-	SEXP callfun;		    /* The closure called */
-	SEXP sysparent;		    /* environment the closure was called from */
-	SEXP call;		    /* The call that effected this context*/
-	SEXP cloenv;		    /* The environment */
-	SEXP conexit;		    /* Interpreted "on.exit" code */
+	CXXR::GCStackRoot<> promargs;   /* Promises supplied to closure */
+	CXXR::GCStackRoot<> callfun;    /* The closure called */
+	CXXR::GCStackRoot<> sysparent;  /* environment the closure was called from */
+	CXXR::GCStackRoot<> call;       /* The call that effected this context*/
+	CXXR::GCStackRoot<> cloenv;	/* The environment */
+	CXXR::GCStackRoot<> conexit;	/* Interpreted "on.exit" code */
 	void (*cend)(void *);	    /* C "on.exit" thunk */
 	void *cenddata;		    /* data for C "on.exit" thunk */
 	unsigned int vmax;	    /* size of R_alloc stack */
 	int intsusp;                /* interrupts are suspended */
-	SEXP handlerstack;          /* condition handler stack */
-	SEXP restartstack;          /* stack of available restarts */
+	CXXR::GCStackRoot<> handlerstack;  /* condition handler stack */
+	CXXR::GCStackRoot<> restartstack;  /* stack of available restarts */
 	struct RPRSTACK *prstack;   /* stack of pending promises */
 #ifdef BYTECODE
 	SEXP *nodestack;
@@ -90,8 +91,11 @@ extern "C" {
 	IStackval *intstack;
 # endif
 #endif
-    } RCNTXT, *context;
+    };
 
+    typedef RCNTXT* context;
+
+extern "C" {
     /* The Various Context Types.
 
     * In general the type is a bitwise OR of the values below.
@@ -134,7 +138,7 @@ extern "C" {
 #define SET_RESTART_BIT_ON(flags) (flags |= CTXT_RESTART)
 #define SET_RESTART_BIT_OFF(flags) (flags &= ~CTXT_RESTART)
 
-    LibExtern RCNTXT R_Toplevel;     /* Storage for the toplevel environment */
+    LibExtern RCNTXT* R_Toplevel;     /* The ultimate toplevel environment */
     LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
     LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
 
@@ -153,8 +157,7 @@ extern "C" {
     void R_run_onexits(RCNTXT *);
     void R_restore_globals(RCNTXT *);
 
-#ifdef __cplusplus
 }  /* extern "C" */
-#endif
+#endif  /* __cplusplus */
 
 #endif /* RCNTXT_H */

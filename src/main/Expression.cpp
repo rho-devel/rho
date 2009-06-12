@@ -53,7 +53,7 @@ namespace CXXR {
    }
 }
 
-SEXP R_CurrentExpr = 0;
+GCRoot<> R_CurrentExpr;
 
 Expression* Expression::clone() const
 {
@@ -67,9 +67,19 @@ const char* Expression::typeName() const
 
 // ***** C interface *****
 
+SEXP Rf_currentExpression()
+{
+    return R_CurrentExpr;
+}
+
 SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
     GCStackRoot<> crr(cr);
     GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
     return GCNode::expose(new Expression(crr, tlr));
+}
+
+void Rf_setCurrentExpression(SEXP e)
+{
+    R_CurrentExpr = e;
 }

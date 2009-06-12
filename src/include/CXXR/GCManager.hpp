@@ -53,14 +53,14 @@ namespace CXXR {
      * This class only has static members.  When CXXR::MemoryBank indicates
      * that it is on the point of requesting additional memory from
      * the operating system, the class decides whether to initiate a
-     * garbage collection, and if so how many levels to collect.
+     * garbage collection.
      *
      * In the current implementation of GCManager, when cued by CXXR
      * as above, a garbage collection will be carried out if the
-     * number of bytes currently allocated via CXXR::MemoryBank is at least
-     * as great as a threshold value.  This threshold value varies
-     * during the run, subject to a minimum value specified in the
-     * enableGC() method.
+     * number of bytes currently allocated via CXXR::MemoryBank, plus
+     * the number of bytes now required, is at least as great as a
+     * threshold value.  This threshold value varies during the run,
+     * subject to a minimum value specified in the enableGC() method.
      */
     class GCManager {
     public:
@@ -83,13 +83,8 @@ namespace CXXR {
 	 * @param bytes_wanted An indication of the number of bytes
 	 *          wanted in the event that prompted garbage
 	 *          collection.  If in doubt, set it to 0.
-	 *
-	 * @param full If this is true, a garbage collection of all
-	 *          generations of nodes is forced.  Otherwise
-	 *          GCManager decides for itself how many generations
-	 *          should be collected.
 	 */
-	static void gc(size_t bytes_wanted, bool full = false);
+	static void gc(size_t bytes_wanted);
 
 	/** @brief Enable garbage collection.
 	 *
@@ -127,16 +122,6 @@ namespace CXXR {
 	 * of garbage collection in CXXR.
 	 */
 	static size_t maxNodes() {return s_max_nodes;}
-
-	/** @brief Number of generations used by garbage collector.
-	 * This will be at least 2, since one generation (Generation
-	 * 0) is for newly created nodes still enjoying infant
-	 * immunity.
-	 *
-	 * @return The number of generations into which GCNode objects
-	 * are ranked by the garbage collector.
-	 */
-	static size_t numGenerations() {return s_num_old_generations + 2;}
 
 	/** @brief Reset the tallies of the maximum numbers of bytes and
 	 *  GCNode objects.
@@ -199,10 +184,6 @@ namespace CXXR {
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
-	static const size_t s_num_old_generations = 2;
-	static const unsigned int s_collect_counts_max[s_num_old_generations];
-	static unsigned int s_gen_gc_counts[s_num_old_generations + 1];
-	
 	static size_t s_threshold;
 	static size_t s_min_threshold;
 
@@ -223,36 +204,15 @@ namespace CXXR {
 	static void cleanup() {}
 
 	// Callback for CXXR::MemoryBank to cue a garbage collection:
-	static size_t cue(size_t bytes_wanted);
+	static void cue(size_t bytes_wanted);
 
 	// Callbacks e.g. for timing:
 	static void (*s_pre_gc)();
 	static void (*s_post_gc)();
 
-	// Detailed control of the garbage collection, in particular
-	// choosing how many generations to collect, is carried out
+	// Detailed control of the garbage collection is carried out
 	// here.
-	static void gcGenController(size_t bytes_wanted, bool full);
-
-	/** Choose how many generations to collect according to a rota.
-	 *
-	 * There are three levels of collections.  Level 0 collects only
-	 * the youngest generation, Level 1 collects the two youngest
-	 * generations, and Level 2 collects all generations.  This
-	 * function decides how many old generations to collect according
-	 * to a rota.  Most collections are Level 0.  However, after every
-	 * collect_counts_max[0] Level 0 collections, a Level 1 collection
-	 * will be carried out; similarly after every
-	 * collect_counts_max[1] Level 1 collections a Level 2 collection
-	 * will be carried out.
-	 *
-	 * @param minlevel (<= 2, not checked) This parameter places a
-	 *          minimum on the number of old generations to be
-	 *          collected.  If minlevel is higher than the number of
-	 *          generations that genRota would have chosen for itself,
-	 *          the position in the rota is advanced accordingly.
-	 */
-	static unsigned int genRota(unsigned int minlevel);
+	static void gcController(size_t bytes_wanted);
     };
 }  // namespace CXXR
 

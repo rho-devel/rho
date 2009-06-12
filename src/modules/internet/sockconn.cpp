@@ -52,25 +52,25 @@
 
 static void listencleanup(void *data)
 {
-    int *psock = data;
+    int *psock = static_cast<int*>(data);
     R_SockClose(*psock);
 }
 
 static Rboolean sock_open(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->connprivate;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
     int sock, sock1, mlen;
     int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
     char buf[256];
 
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;
     R_SockTimeout(timeout);
-    this->pend = this->pstart = this->inbuf;
+    thisconn->pend = thisconn->pstart = thisconn->inbuf;
 
-    if(this->server) {
-	sock1 = R_SockOpen(this->port);
+    if(thisconn->server) {
+	sock1 = R_SockOpen(thisconn->port);
 	if(sock1 < 0) {
-	    warning("port %d cannot be opened", this->port);
+	    warning("port %d cannot be opened", thisconn->port);
 	    return FALSE;
 	}
 	{
@@ -91,18 +91,18 @@ static Rboolean sock_open(Rconnection con)
 	}
 	free(con->description);
 	con->description = (char *) malloc(strlen(buf) + 10);
-	sprintf(con->description, "<-%s:%d", buf, this->port);
+	sprintf(con->description, "<-%s:%d", buf, thisconn->port);
 	R_SockClose(sock1);
     } else {
-	sock = R_SockConnect(this->port, con->description);
+	sock = R_SockConnect(thisconn->port, con->description);
 	if(sock < 0) {
-	    warning("%s:%d cannot be opened", con->description, this->port);
+	    warning("%s:%d cannot be opened", con->description, thisconn->port);
 	    return FALSE;
 	}
-	sprintf(buf, "->%s:%d", con->description, this->port);
+	sprintf(buf, "->%s:%d", con->description, thisconn->port);
 	strcpy(con->description, buf);
     }
-    this->fd = sock;
+    thisconn->fd = sock;
 
     mlen = strlen(con->mode);
     con->isopen = TRUE;
@@ -115,23 +115,23 @@ static Rboolean sock_open(Rconnection con)
 
 static void sock_close(Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->connprivate;
-    R_SockClose(this->fd);
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
+    R_SockClose(thisconn->fd);
     con->isopen = FALSE;
 }
 
 static int sock_read_helper(Rconnection con, void *ptr, size_t size)
 {
-    Rsockconn this = (Rsockconn)con->connprivate;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
     int res;
     int nread = 0, n;
 
     do {
 	/* read data into the buffer if it's empty and size > 0 */
-	if (size > 0 && this->pstart == this->pend) {
-	    this->pstart = this->pend = this->inbuf;
+	if (size > 0 && thisconn->pstart == thisconn->pend) {
+	    thisconn->pstart = thisconn->pend = thisconn->inbuf;
 	    do
-		res = R_SockRead(this->fd, this->inbuf, 4096, con->blocking);
+		res = R_SockRead(thisconn->fd, thisconn->inbuf, 4096, con->blocking);
 	    while (-res == EINTR);
 	    if (! con->blocking && -res == EAGAIN) {
 		con->incomplete = TRUE;
@@ -140,17 +140,17 @@ static int sock_read_helper(Rconnection con, void *ptr, size_t size)
 	    else if (con->blocking && res == 0) /* should mean EOF */
 		return nread;
 	    else if (res < 0) return res;
-	    else this->pend = this->inbuf + res;
+	    else thisconn->pend = thisconn->inbuf + res;
 	}
 
 	/* copy data from buffer to ptr */
-	if (this->pstart + size <= this->pend)
+	if (thisconn->pstart + size <= thisconn->pend)
 	    n = size;
 	else
-	    n = this->pend - this->pstart;
-	memcpy(ptr, this->pstart, n);
+	    n = thisconn->pend - thisconn->pstart;
+	memcpy(ptr, thisconn->pstart, n);
 	ptr = ((char *) ptr) + n;
-	this->pstart += n;
+	thisconn->pstart += n;
 	size -= n;
 	nread += n;
     } while (size > 0);
@@ -178,45 +178,45 @@ static size_t sock_read(void *ptr, size_t size, size_t nitems,
 static size_t sock_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
-    Rsockconn this = (Rsockconn)con->connprivate;
+    Rsockconn thisconn = (Rsockconn)con->connprivate;
 
-    return R_SockWrite(this->fd, ptr, size * nitems)/size;
+    return R_SockWrite(thisconn->fd, ptr, size * nitems)/size;
 }
 
 Rconnection in_R_newsock(const char *host, int port, int server,
 			 const char * const mode)
 {
-    Rconnection new;
+    Rconnection newconn;
 
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of socket connection failed"));
-    new->connclass = (char *) malloc(strlen("sockconn") + 1);
-    if(!new->connclass) {
-	free(new);
+    newconn = (Rconnection) malloc(sizeof(struct Rconn));
+    if(!newconn) error(_("allocation of socket connection failed"));
+    newconn->connclass = (char *) malloc(strlen("sockconn") + 1);
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    strcpy(new->connclass, "sockconn");
-    new->description = (char *) malloc(strlen(host) + 10);
-    if(!new->description) {
-	free(new->connclass); free(new);
+    strcpy(newconn->connclass, "sockconn");
+    newconn->description = (char *) malloc(strlen(host) + 10);
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    init_con(new, host, CE_NATIVE, mode);
-    new->open = &sock_open;
-    new->close = &sock_close;
-    new->vfprintf = &dummy_vfprintf;
-    new->fgetc_internal = &sock_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->read = &sock_read;
-    new->write = &sock_write;
-    new->connprivate = (void *) malloc(sizeof(struct sockconn));
-    if(!new->connprivate) {
-	free(new->description); free(new->connclass); free(new);
+    init_con(newconn, host, CE_NATIVE, mode);
+    newconn->open = &sock_open;
+    newconn->close = &sock_close;
+    newconn->vfprintf = &dummy_vfprintf;
+    newconn->fgetc_internal = &sock_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->read = &sock_read;
+    newconn->write = &sock_write;
+    newconn->connprivate = (void *) malloc(sizeof(struct sockconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of socket connection failed"));
     }
-    ((Rsockconn)new->connprivate)-> port = port;
-    ((Rsockconn)new->connprivate)-> server = server;
-    return new;
+    ((Rsockconn)newconn->connprivate)-> port = port;
+    ((Rsockconn)newconn->connprivate)-> server = server;
+    return newconn;
 }
 
 #endif /* HAVE_SOCKETS */
