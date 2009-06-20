@@ -49,8 +49,6 @@ using namespace CXXR;
 
 size_t MemoryBank::s_blocks_allocated = 0;
 size_t MemoryBank::s_bytes_allocated = 0;
-size_t MemoryBank::s_gc_threshold = numeric_limits<size_t>::max();
-size_t (*MemoryBank::s_cue_gc)(size_t) = 0;
 #ifdef R_MEMORY_PROFILING
 void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
@@ -79,7 +77,7 @@ const unsigned int MemoryBank::s_pooltab[]
    9, 9, 9, 9, 9, 9, 9, 9,
    9, 9, 9, 9, 9, 9, 9, 9}; // 128
 
-void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
+void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
 #ifdef R_MEMORY_PROFILING
     if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
@@ -89,63 +87,30 @@ void* MemoryBank::allocate(size_t bytes, bool allow_gc) throw (std::bad_alloc)
 #else
     size_t blockbytes = bytes;
 #endif
-    // If GC is allowed and 'blockbytes' would take us over the
-    // garbage collection threshold, cue a GC and update the threshold:
-    if (allow_gc
-	&& s_bytes_allocated + blockbytes > s_gc_threshold
-	&& s_cue_gc)
-	s_gc_threshold = s_cue_gc(blockbytes);
-    // Assumes sizeof(double) == 8:
     void* p;
-    p = (blockbytes > s_max_cell_size
-	 || !(p = alloc1(blockbytes))) ? alloc2(blockbytes, allow_gc) : p;
+    if (blockbytes > s_max_cell_size)
+	p = ::operator new(blockbytes);
+    else {
+	Pool* pool = s_pools[s_pooltab[blockbytes]];
+	p = pool->allocate();
+#if VALGRIND_LEVEL >= 2
+	// Fence off supernumerary bytes:
+	size_t surplus = pool->cellSize() - blockbytes;
+	if (surplus > 0) {
+	    char* tail = static_cast<char*>(p) + blockbytes;
+	    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
+	}
+#endif
+    }
 #if VALGRIND_LEVEL >= 3
     char* c = static_cast<char*>(p);
     VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
-    s_bytes_allocated -= 1;
 #endif
+    ++s_blocks_allocated;
+    s_bytes_allocated += bytes;
     return p;
 }
 
-void* MemoryBank::alloc2(size_t bytes, bool allow_gc) throw (std::bad_alloc)
-{
-    Pool* pool = 0;
-    void* p = 0;
-    try {
-	if (bytes > s_max_cell_size) {
-	    p = ::operator new(bytes);
-	} else {
-	    pool = s_pools[s_pooltab[bytes]];
-	    p = pool->allocate();
-	}
-    }
-    catch (bad_alloc) {
-	if (allow_gc && s_cue_gc) {
-	    // Force garbage collection if available:
-	    size_t sought_bytes = (pool ? pool->superblockSize() : bytes);
-	    s_gc_threshold = s_cue_gc(sought_bytes);
-	}
-	else throw;
-    }
-    if (!p && allow_gc) {
-	// Try once more:
-	p = (pool ? pool->allocate() : ::operator new(bytes));
-    }
-    ++s_blocks_allocated;
-    s_bytes_allocated += bytes;
-#if VALGRIND_LEVEL >= 2
-    if (pool) {
-	// Fence off supernumerary bytes:
-	size_t surplus = pool->cellSize() - bytes;
-	if (surplus > 0) {
-	    char* tail = static_cast<char*>(p) + bytes;
-	    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
-	}
-    }
-#endif
-    return p;
-}
-				
 void MemoryBank::check()
 {
     for (unsigned int i = 0; i < s_num_pools; ++i)
@@ -175,12 +140,6 @@ void MemoryBank::initialize()
     s_pools[7] = new Pool(10, 49);
     s_pools[8] = new Pool(12, 41);
     s_pools[9] = new Pool(16, 31);
-}
-
-void MemoryBank::setGCCuer(size_t (*cue_gc)(size_t), size_t threshold)
-{
-    s_cue_gc = cue_gc;
-    s_gc_threshold = (cue_gc ? threshold : numeric_limits<size_t>::max());
 }
 
 #ifdef R_MEMORY_PROFILING

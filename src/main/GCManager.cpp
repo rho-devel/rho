@@ -60,7 +60,6 @@ size_t GCManager::s_threshold;
 size_t GCManager::s_min_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
-bool GCManager::s_tortured = false;
 ostream* GCManager::s_os = 0;
 
 void (*GCManager::s_pre_gc)() = 0;
@@ -163,21 +162,6 @@ void GCManager::adjustThreshold(size_t bytes_needed)
 #endif
 }
 
-size_t GCManager::cue(size_t bytes_wanted)
-{
-    gc(bytes_wanted);
-    return s_threshold;
-}
-
-void GCManager::enableGC(size_t initial_threshold)
-{
-    s_min_threshold = s_threshold = initial_threshold;
-    gc_count = 0;
-    for (unsigned int i = 0; i <= s_num_old_generations; ++i)
-	s_gen_gc_counts[i] = 0;
-    MemoryBank::setGCCuer(cue, s_threshold);
-}
-
 void GCManager::gc(size_t bytes_wanted, bool full)
 {
     static bool running_finalizers = false;
@@ -205,7 +189,7 @@ void GCManager::gcGenController(size_t bytes_wanted, bool full)
 
     unsigned int gens_collected;
 
-    gc_count++;
+    ++gc_count;
 
     s_max_bytes = max(s_max_bytes, MemoryBank::bytesAllocated());
     s_max_nodes = max(s_max_nodes, GCNode::numNodes());
@@ -272,10 +256,23 @@ unsigned int GCManager::genRota(unsigned int minlevel)
     return level;
 }
 	
+void GCManager::initialize()
+{
+    setGCThreshold(numeric_limits<size_t>::max());
+    gc_count = 0;
+    for (unsigned int i = 0; i <= s_num_old_generations; ++i)
+	s_gen_gc_counts[i] = 0;
+}
+
 void GCManager::resetMaxTallies()
 {
     s_max_bytes = MemoryBank::bytesAllocated();
     s_max_nodes = GCNode::numNodes();
+}
+
+void GCManager::setGCThreshold(size_t initial_threshold)
+{
+    s_min_threshold = s_threshold = initial_threshold;
 }
 
 ostream* GCManager::setReporting(ostream* os)

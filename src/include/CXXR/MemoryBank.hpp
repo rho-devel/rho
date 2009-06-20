@@ -56,15 +56,11 @@ namespace CXXR {
 	 *
 	 * @param bytes Required size in bytes of the block.
 	 *
-	 * @param alloc_gc If false, the call will under no
-	 *          circumstances cue garbage collection.
-	 *
 	 * @return a pointer to the allocated cell.
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
-	static void* allocate(size_t bytes, bool allow_gc = true)
-	    throw (std::bad_alloc);
+	static void* allocate(size_t bytes) throw (std::bad_alloc);
 
 	/** @brief Number of blocks currently allocated.
 	 *
@@ -83,7 +79,7 @@ namespace CXXR {
 	 * of 2.
 	 *
 	 * @note If redzoning is operation (<tt>VALGRIND_LEVEL >=
-	 * 2</tt>), the value returned does not include the size of the
+	 * 3</tt>), the value returned does not include the size of the
 	 * redzones.
 	 */
 	static size_t bytesAllocated() {return s_bytes_allocated;}
@@ -122,29 +118,6 @@ namespace CXXR {
 	    s_bytes_allocated -= bytes;
 	}
 
-	/** @brief Set a callback to cue garbage collection.
-	 *
-	 * @param cue_gc This is a pointer, possibly null, to a
-	 *          function that this class will call to cue garbage 
-	 *          collection, either because the garbage collection
-	 *          threshold has been exceeded, or because the class
-	 *          has just failed to allocate memory from the main
-	 *          heap.  The argument is set to the number of bytes
-	 *          of memory currently being sought.  The function
-	 *          should return the new value of the garbage
-	 *          collection threshold.  If \a cue_gc is a null
-	 *          pointer, then such callbacks are discontinued.
-	 *
-	 * @param initial_threshold The initial threshold for garbage
-	 *          collection.  If garbage collection is allowed,
-	 *          allocate() will call \a cue_gc when it looks as if
-	 *          the number of bytes allocated via MemoryBank is
-	 *          about to exceed the threshold.  The parameter is
-	 *          ignored if \a cue_gc is a null pointer.
-	 */
-	static void setGCCuer(size_t (*cue_gc)(size_t),
-			      size_t initial_threshold);
-
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
 	 *
@@ -172,8 +145,6 @@ namespace CXXR {
 	static const size_t s_max_cell_size = 128;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
-	static size_t s_gc_threshold;
-	static size_t (*s_cue_gc)(size_t);
 	static Pool* s_pools[];
 	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
@@ -185,41 +156,11 @@ namespace CXXR {
 	// a constructor.
 	MemoryBank();
 
-	// First-line allocation attempt for small objects:
-	static void* alloc1(size_t bytes) throw()
-	{
-	    Pool* pool = s_pools[s_pooltab[bytes]];
-	    void* p = pool->easyAllocate();
-	    if (p) {
-		++s_blocks_allocated;
-		s_bytes_allocated += bytes;
-#if VALGRIND_LEVEL >= 2
-		// Fence off supernumerary bytes:
-		size_t surplus = pool->cellSize() - bytes;
-		if (surplus > 0) {
-		    char* tail = static_cast<char*>(p) + bytes;
-		    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
-		}
-#endif
-	    }
-#ifdef R_MEMORY_PROFILING
-	    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
-#endif
-	    return p;
-	}
-
-	// Allocation of large objects, and second-line allocation
-	// attempt for small objects:
-	static void* alloc2(size_t bytes, bool alloc_gc)
-	    throw (std::bad_alloc);
-
 	// Free memory used by the static data members:
 	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();
-
-	static void pool_out_of_memory(Pool* pool);
 
 	friend class SchwarzCounter<MemoryBank>;
     };

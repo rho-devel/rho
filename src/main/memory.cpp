@@ -227,7 +227,6 @@ void GCNode::mark(unsigned int max_generation)
     GCNode::Marker marker(max_generation);
     GCRootBase::visitRoots(&marker);
     GCStackRootBase::visitRoots(&marker);
-    visitInfants(&marker);
     MARK_THRU(&marker, R_CommentSxp);	        /* Builtin constants */
 
     MARK_THRU(&marker, R_Warnings);	           /* Warnings, if any */
@@ -316,7 +315,7 @@ SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
     bool reset_max = asLogical(CADR(args));
-    GCManager::gc(0, true);
+    GCManager::gc(true);
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
     GCStackRoot<> value(allocVector(REALSXP, 6));
@@ -398,7 +397,7 @@ void InitMemory()
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
 #endif
     GCManager::setReporting(R_Verbose ? &cerr : 0);
-    GCManager::enableGC(R_VSize);
+    GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
     R_BCNodeStackBase = static_cast<SEXP *>( malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));

@@ -74,12 +74,6 @@ namespace {
 	trs.push_back(Tr(serial++, bytes, cptr));
     }
 
-    size_t cueGC(size_t bytes)
-    {
-	cout << "GC cued for " << bytes << '\n';
-	return 0;
-    }
-
     void monitor(size_t bytes)
     {
 	cout << "Monitored allocation of " << bytes << " bytes\n";
@@ -110,7 +104,6 @@ int main(int argc, char* argv[]) {
     // Carry out churns:
     {
 	MemoryBank::setMonitor(0);
-	MemoryBank::setGCCuer(cueGC, 0);
 	for (unsigned int i = 0; i < num_churns; ++i) {
 	    long rnd = qrnd();
 	    if (rnd & 2 || trs.empty()) alloc(rnd);

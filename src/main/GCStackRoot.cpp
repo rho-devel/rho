@@ -39,6 +39,7 @@
 
 #include "CXXR/GCStackRoot.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
