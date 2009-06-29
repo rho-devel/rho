@@ -1419,8 +1419,8 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
 	sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
 	tmp = install(buf);
-	UNPROTECT(1);
 	R_SetVarLocValue(tmploc, CAR(lhs));
+	UNPROTECT(1);
 	PROTECT(tmp2 = mkPROMISE(rhs, rho));
 	SET_PRVALUE(tmp2, rhs);
 	PROTECT(rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr),

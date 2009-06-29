@@ -300,17 +300,23 @@ namespace CXXR {
     {
 	using namespace std;
 	RObject* val;
+	Frame::Binding* bdg;
 	bool found = false;
 	do {
-	    pair<bool, RObject*> pr = env->frame()->forcedValue(symbol, env);
+	    pair<Frame::Binding*, RObject*> pr
+		= env->frame()->forcedValue(symbol, env);
 	    if (pr.first) {
+		bdg = pr.first;
 		val = pr.second;
 		found = pred(val);
 	    }
-	    env = env->enclosingEnvironment();
+	    if (!found)
+		env = env->enclosingEnvironment();
 	} while (!found && inherits && env);
-	if (found)
+	if (found) {
+	    env->frame()->monitorRead(*bdg);
 	    return make_pair(env, val);
+	}
 	return pair<Environment*, RObject*>(0, 0);
     }
 	    

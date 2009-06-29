@@ -231,7 +231,8 @@ namespace CXXR {
 	     * 'raw' here means that in the case of an active Binding,
 	     * the function returns a pointer to the encapsulated
 	     * function rather than the result of evaluating the
-	     * encapsulated function.
+	     * encapsulated function.  This function will not result
+	     * in the calling of a read monitor.
 	     *
 	     * @return The value bound to a Symbol by this Binding.
 	     */
@@ -413,13 +414,17 @@ namespace CXXR {
 	 * @param env The Environment within which Promises are to be
 	 *          forced.
 	 *
-	 * @return If the Frame does not bind \a symbol, the first
-	 * element will be false and the second element a null
-	 * pointer.  Otherwise the first element will be true and the
+	 * @return If the Frame does not bind \a symbol, both elements
+	 * of the returned pair will be null pointers.  Otherwise the
+	 * first element will be a pointer to the Binding of \a symbol and the
 	 * second element a pointer to the bound value (or the Promise
 	 * value if the bound value is a Promise).
+	 *
+	 * @note If a Promise is forced, the Binding pointer returned
+	 * as the first part of the return value will be the binding
+	 * of \a symbol (if any) \e after the Promise is forced.
 	 */
-	std::pair<bool, RObject*>
+	std::pair<Frame::Binding*, RObject*>
 	forcedValue(const Symbol* symbol, const Environment* env);
 
 	/** @brief Is the Frame locked?
@@ -574,12 +579,12 @@ namespace CXXR {
 
 	// Monitoring functions:
 	friend class Binding;
-
+    public:
 	void monitorRead(const Binding& bdg) const
 	{
 	    if (m_read_monitor) m_read_monitor(bdg);
 	}
-
+    private:
 	void monitorWrite(const Binding& bdg) const
 	{
 	    if (m_write_monitor) m_write_monitor(bdg);

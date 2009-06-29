@@ -163,7 +163,7 @@ RObject* Frame::Binding::value() const
     return ans;
 }
 
-pair<bool, RObject*>
+pair<Frame::Binding*, RObject*>
 Frame::forcedValue(const Symbol* symbol, const Environment* env)
 {
     Binding* bdg = binding(symbol);
@@ -176,20 +176,18 @@ Frame::forcedValue(const Symbol* symbol, const Environment* env)
 		GCStackRoot<Promise> promrt(prom);
 		monitorRead(*bdg);
 		val = Rf_eval(val, const_cast<Environment*>(env));
-		if (m_write_monitor) {
-		    GCStackRoot<> valrt(val);
-		    // The eval() may have invalidated bdg, so we need
-		    // to look it up again.
-		    bdg = binding(symbol);
-		    if (bdg)
-			m_write_monitor(*bdg);
-		}
+		GCStackRoot<> valrt(val);
+		// The eval() may have invalidated bdg, so we need
+		// to look it up again.
+		bdg = binding(symbol);
+		if (bdg)
+		    monitorWrite(*bdg);
 	    }
 	    val = const_cast<RObject*>(prom->value());
 	}
-	return make_pair(true, val);
+	return make_pair(bdg, val);
     }
-    return pair<bool, RObject*>(false, 0);
+    return pair<Binding*, RObject*>(0, 0);
 }
 
 /* Macro version of isNull for only the test against R_NilValue */

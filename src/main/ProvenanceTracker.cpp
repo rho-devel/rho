@@ -27,8 +27,12 @@ void ProvenanceTracker::resetParentage() {
 
 void ProvenanceTracker::readMonitor(const Frame::Binding& bdg) { 
 	Frame::Binding& b=const_cast<Frame::Binding&>(bdg);
+#ifdef VERBOSEMONITOR
+	cout<<"Read '"<<b.symbol()->name()->c_str()<<"'"<<endl;
+#endif
 	Provenance* p=const_cast<Provenance*>(b.getProvenance());
 	// If 'p' has not been written to
+	if (!p) return;
 	GCEdge<Provenance> needle(p);
 	if (seen()->find(needle)==seen()->end())
 		parentage()->pushProvenance(p);
@@ -38,6 +42,9 @@ void ProvenanceTracker::readMonitor(const Frame::Binding& bdg) {
 
 void ProvenanceTracker::writeMonitor(const Frame::Binding &bind) {
         CXXR::Frame::Binding& bdg=const_cast<CXXR::Frame::Binding&>(bind);
+#ifdef VERBOSEMONITOR
+	cout<<"Write '"<<bdg.symbol()->name()->c_str()<<"'"<<endl;
+#endif
 	RObject* e=R_CurrentExpr;
         Expression* expr=static_cast<Expression*>(e);
         Symbol* sym=const_cast<Symbol*>(bind.symbol());

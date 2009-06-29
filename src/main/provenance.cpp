@@ -127,9 +127,10 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
 	Parentage* parentage=bdg->getProvenance()->getParentage();
+	Provenance::Set* children=bdg->getProvenance()->children();
 	if (!bdg) return R_NilValue;
 
-	const int nfields=3 + (parentage ? 1 : 0);
+	const int nfields=3 + (children->empty()?0:1) + (parentage ? 1 : 0);
 
 	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
 	GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
@@ -137,18 +138,24 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	(*timestamp)[0]=const_cast<CachedString*>(bdg->getProvenance()->getTime());
 
-
+	// Field Names. This is fairly messy ;-)
 	(*names)[0]=const_cast<CachedString*>(CachedString::obtain("command"));
 	(*names)[1]=const_cast<CachedString*>(CachedString::obtain("symbol"));
 	(*names)[2]=const_cast<CachedString*>(CachedString::obtain("timestamp"));
+	int field=3;
 	if (parentage)
-		(*names)[3]=const_cast<CachedString*>(CachedString::obtain("parents"));
+		(*names)[field++]=const_cast<CachedString*>(CachedString::obtain("parents"));
+	if (!children->empty())
+		(*names)[field++]=const_cast<CachedString*>(CachedString::obtain("children"));
 
 	(*list)[0]=bdg->getProvenance()->getCommand();
 	(*list)[1]=bdg->getProvenance()->getSymbol();
 	(*list)[2]=timestamp;
+	field=3;
 	if (parentage)
-		(*list)[3]=parentage->asStringVector();
+		(*list)[field++]=parentage->asStringVector();
+	if (!children->empty())
+		(*list)[field++]=Provenance::setAsStringVector(children);
 
 	setAttrib(list,R_NamesSymbol,names);
 

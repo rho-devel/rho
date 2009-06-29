@@ -6,11 +6,12 @@
 #include <sys/time.h>
 #include <ctime>
 #include <set>
+#include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/RObject.h"
-#include "CXXR/CachedString.h"
-#include "CXXR/Expression.h"
+#include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
@@ -27,20 +28,34 @@ namespace CXXR {
 			}
 		};
 		typedef std::set<Provenance*,Provenance::CompTime> Set;
+
 		Provenance(Expression*,Symbol*,Parentage*);
+		~Provenance();
+
+		static Set* ancestors(Set*);
+		static Set* descendants(Set*);
+		static GCStackRoot<StringVector> setAsStringVector(Set*);
+
+		Set* children() const;
+		void detachReferents();
 		Expression* getCommand() const;
 		Symbol* getSymbol() const;
 		Parentage* getParentage() const;
 		const CachedString* getTime() const;
-		void detachReferents();
+		Set* pedigree();
 		void visitReferents(const_visitor*) const;
-		Set* pedigree(void);
-
 	private:
 		struct timeval m_timestamp;
+		unsigned int m_parentpos;
+		Set* m_children;
 		GCEdge<Expression> m_expression;
 		GCEdge<Symbol> m_symbol;
 		GCEdge<Parentage> m_parentage;
+
+		void announceBirth();
+		void announceDeath();
+		void deregisterChild(Provenance*);
+		void registerChild(Provenance*);
 	};
 } // Namespace CXXR
 

@@ -8,18 +8,86 @@ using namespace std;
 using namespace CXXR;
 
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
-	if (!exp)
-		m_expression=NULL;
-	else {
-		GCStackRoot<Expression> expCpy(exp->clone());
-		if (expCpy!=NULL)
-			m_expression=expCpy;
-		else
-			m_expression=NULL;
-	}
+	m_expression=(exp)?exp->clone():NULL;
 	m_symbol=sym;
 	m_parentage=par;
+	m_parentpos=(m_parentage) ? m_parentage->size() : 0;
 	gettimeofday(&m_timestamp,NULL);
+	m_children=new Set();
+	announceBirth();
+}
+
+Provenance::~Provenance() {
+	delete m_children;
+}
+
+Provenance::Set* Provenance::ancestors(Set* open) {
+	Set *closed;
+	closed=new Set();
+
+	while (!open->empty()) {
+		Provenance* n=*(open->begin());
+		Parentage* p=n->getParentage();
+		if (p) {
+			for (unsigned int i=0;i<p->size();i++) {
+				Provenance* s=p->at(i);
+				// If s isn't in closed set, put it in open
+				if (closed->find(s)==closed->end())
+					open->insert(s);
+			}
+		}
+		open->erase(n);
+		closed->insert(n);
+	}
+	return closed;
+}
+
+Provenance::Set* Provenance::descendants(Set* open) {
+	Set *closed;
+	closed=new Set();
+
+	while (!open->empty()) {
+		Provenance* n=*(open->begin());
+		Set* c=n->children();
+		for (Set::iterator it=c->begin();
+		     it!=c->end();
+		     ++it) {
+			Provenance* s=(*it);
+			// If s isn't in closed set, put it in open
+			if (closed->find(s)==closed->end())
+				open->insert(s);
+		}
+		open->erase(n);
+		closed->insert(n);
+	}
+	return closed;
+}
+
+void Provenance::announceBirth() {
+	if (!m_parentage)
+		return;
+	for (Parentage::iterator it=m_parentage->begin();
+	     it!=m_parentage->end();
+	     ++it)
+		(*it)->registerChild(this);
+}
+
+void Provenance::announceDeath() {
+	if (!m_parentage) return;
+	for (unsigned int i=0;
+	     i<m_parentpos;
+	     ++i) {
+		Provenance* p=(*m_parentage).at(i);
+		p->deregisterChild(this);
+	}
+}
+
+Provenance::Set* Provenance::children() const {
+	return m_children;
+}
+
+void Provenance::deregisterChild(Provenance* child) {
+	m_children->erase(child);
 }
 
 Expression* Provenance::getCommand() const {
@@ -48,7 +116,24 @@ const CachedString* Provenance::getTime() const{
 void Provenance::detachReferents() {
 	m_expression.detach();
 	m_symbol.detach();
+	announceDeath();
 	m_parentage.detach();
+}
+
+void Provenance::registerChild(Provenance* child) {
+	m_children->insert(child);
+}
+
+GCStackRoot<StringVector> Provenance::setAsStringVector(Set* s) {
+	GCStackRoot<StringVector> rc(expose(new StringVector(s->size())));
+	unsigned int i=0;
+	for (Set::iterator it=s->begin();
+	     it!=s->end();
+	     ++it) {
+		Provenance* p=(*it);
+		(*rc)[i++]=const_cast<CachedString*>(p->getSymbol()->name());
+	}
+	return rc;
 }
 
 void Provenance::visitReferents(const_visitor* v) const {
@@ -60,28 +145,10 @@ void Provenance::visitReferents(const_visitor* v) const {
 	if (par) par->conductVisitor(v);
 }
 
-Provenance::Set *Provenance::pedigree(void) {
-	Set *open, *closed;
-	open=new Set();
-	closed=new Set();
-
+Provenance::Set *Provenance::pedigree() {
+	Set *open=new Set(), *rc;
 	open->insert(this);
-	
-	while (!open->empty()) {
-		Provenance* n=*(open->begin());
-		Parentage* p=n->getParentage();
-		if (p) {
-			for (unsigned int i=0;i<p->size();i++) {
-				Provenance* s=p->at(i);
-				// If s isn't in closed set, put it in open
-				if (closed->find(s)==closed->end())
-					open->insert(s);
-			}
-		}
-		open->erase(n);
-		closed->insert(n);
-	}
+	rc=ancestors(open);
 	delete open;
-
-	return closed;
+	return rc;
 }
