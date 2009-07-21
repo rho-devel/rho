@@ -118,7 +118,7 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
     if (TYPEOF(op) == SPECIALSXP) {
 	unsigned int save = GCStackRootBase::ppsSize();
 	int flag = PRIMPRINT(op);
-	unsigned int vmax = vmaxget();
+	void *vmax = vmaxget();
 	R_Visible = Rboolean(flag != 1);
 	ans = PRIMFUN(op) (call, op, args, rho);
 	if (flag < 2) R_Visible = Rboolean(flag != 1);
@@ -133,7 +133,7 @@ static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
     else if (TYPEOF(op) == BUILTINSXP) {
 	unsigned int save = GCStackRootBase::ppsSize();
 	int flag = PRIMPRINT(op);
-	unsigned int vmax = vmaxget();
+	void *vmax = vmaxget();
 	PROTECT(args = evalList(args, rho, op));
 	R_Visible = Rboolean(flag != 1);
 	ans = PRIMFUN(op) (call, op, args, rho);

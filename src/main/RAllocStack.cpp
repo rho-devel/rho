@@ -53,8 +53,8 @@ using namespace CXXR;
 // interface:
 namespace CXXR {
     namespace ForceNonInline {
-	unsigned int (*vmaxgetp)(void) = vmaxget;
-	void (*vmaxsetp)(unsigned int) = vmaxset;
+	void* (*vmaxgetp)(void) = vmaxget;
+	void (*vmaxsetp)(const void*) = vmaxset;
     }
 }
 

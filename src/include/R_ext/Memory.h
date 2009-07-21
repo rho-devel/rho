@@ -50,8 +50,8 @@
 extern "C" {
 #endif
 
-unsigned int vmaxget(void);
-void	vmaxset(unsigned int);
+void*   vmaxget(void);
+void	vmaxset(const void *);
 
 void	R_gc(void);
 

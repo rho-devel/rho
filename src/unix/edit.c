@@ -104,8 +104,7 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
     int   i, rc;
     ParseStatus status;
     SEXP  x, fn, envir, ti, ed, src, srcfile, Rfn;
-    char *filename, *editcmd;
-    unsigned int vmaxsave;
+    char *filename, *editcmd, *vmaxsave;
     const char *cmd;
     FILE *fp;
 #ifdef Win32

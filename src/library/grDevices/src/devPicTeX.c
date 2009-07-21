@@ -759,7 +759,7 @@ Rboolean PicTeXDeviceDriver(pDevDesc dd, const char *filename,
 SEXP PicTeX(SEXP args)
 {
     pGEDevDesc dd;
-    unsigned int vmax;
+    char *vmax;
     const char *file, *bg, *fg;
     double height, width;
     Rboolean debug;

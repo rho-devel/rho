@@ -749,7 +749,7 @@ void Rcons_vprintf(const char *format, va_list arg)
     char buf[R_BUFSIZE], *p = buf;
     int res;
 #ifdef HAVE_VA_COPY
-    unsigned int vmax = vmaxget();
+    void *vmax = vmaxget();
     int usedRalloc = FALSE, usedVasprintf = FALSE;
     va_list aq;
 

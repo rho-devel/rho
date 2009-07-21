@@ -2512,7 +2512,7 @@ static void GA_Polyline(int n, double *x, double *y,
 			const pGEcontext gc,
 			pDevDesc dd)
 {
-    unsigned int vmax = vmaxget();
+    char *vmax = vmaxget();
     point *p = (point *) R_alloc(n, sizeof(point));
     double devx, devy;
     int   i;
@@ -2561,7 +2561,7 @@ static void GA_Polygon(int n, double *x, double *y,
 		       const pGEcontext gc,
 		       pDevDesc dd)
 {
-    unsigned int vmax = vmaxget();
+    char *vmax = vmaxget();
     point *points;
     rect r;
     double devx, devy;
@@ -3247,7 +3247,7 @@ SEXP devga(SEXP args)
 {
     pGEDevDesc gdd;
     const char *display, *title;
-    unsigned int vmax;
+    char *vmax;
     double height, width, ps, xpinch, ypinch, gamma;
     int recording = 0, resize = 1, bg, canvas, xpos, ypos, buffered;
     Rboolean restoreConsole, clickToConfirm;

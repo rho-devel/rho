@@ -1065,7 +1065,7 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP s, fun, ans;
     int save = GCStackRootBase::ppsSize();
     int flag;
-    unsigned int vmax = vmaxget();
+    void *vmax = vmaxget();
 
     checkArity(op, args);
     s = CAR(args);

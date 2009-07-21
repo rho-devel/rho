@@ -55,7 +55,7 @@ double bessel_j(double x, double alpha)
     long nb, ncalc;
     double *bj;
 #ifndef MATHLIB_STANDALONE
-    unsigned int vmax;
+    char *vmax;
 #endif
 
 #ifdef IEEE_754

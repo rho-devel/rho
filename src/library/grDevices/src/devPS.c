@@ -7175,7 +7175,7 @@ static void PDF_MetricInfo(int c,
 SEXP PostScript(SEXP args)
 {
     pGEDevDesc gdd;
-    unsigned int vmax;
+    char *vmax;
     const char *file, *paper, *family=NULL, *bg, *fg, *cmd;
     const char *afms[5];
     const char *encoding, *title, call[] = "postscript", *colormodel;
@@ -7259,7 +7259,7 @@ SEXP PostScript(SEXP args)
 SEXP XFig(SEXP args)
 {
     pGEDevDesc gdd;
-    unsigned int vmax;
+    char *vmax;
     const char *file, *paper, *family, *bg, *fg, *encoding;
     int horizontal, onefile, pagecentre;
     double height, width, ps;
@@ -7325,7 +7325,7 @@ SEXP XFig(SEXP args)
 SEXP PDF(SEXP args)
 {
     pGEDevDesc gdd;
-    unsigned int vmax;
+    char *vmax;
     const char *file, *paper, *encoding, *family = NULL /* -Wall */,
 	*bg, *fg, *title, call[] = "PDF", *colormodel;
     const char *afms[5];

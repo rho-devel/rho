@@ -194,22 +194,24 @@ extern "C" {
     /** @brief Number of memory blocks allocated.
      *
      * @return The current number of blocks allocated via R_alloc(),
-     *         S_alloc() and S_realloc().
+     *         S_alloc() and S_realloc(), coerced into a char* for
+     *         compatibility with CR.  (This function and vmaxset()
+     *         are declared in the R.h API.)
      *
      * @note C++ code should preferably use CXXR::RAllocStack::size() directly.
      */
 #ifndef __cplusplus
-    unsigned int vmaxget(void);
+    void* vmaxget(void);
 #else
-    inline unsigned int vmaxget(void)
+    inline void* vmaxget(void)
     {
-	return CXXR::RAllocStack::size();
+	return static_cast<char*>(0) + CXXR::RAllocStack::size();
     }
 #endif
 
     /** @brief Reclaims memory blocks.
      *
-     * @param stack_size A value previously returned by a call to
+     * @param stack_sizep A value previously returned by a call to
      *          vmaxget().  vmaxset() will reclaim the memory
      *          from all blocks allocated via R_alloc(),
      *          S_alloc() and S_realloc() subsequent to that call of
@@ -219,10 +221,12 @@ extern "C" {
      * use CXXR::RAllocStack::restoreSize() directly.
      */
 #ifndef __cplusplus
-    void vmaxset(unsigned int stack_size);
+    void vmaxset(const void* stack_sizep);
 #else
-    inline void vmaxset(unsigned int stack_size)
+    inline void vmaxset(const void* stack_sizep)
     {
+	size_t stack_size = static_cast<const char*>(stack_sizep)
+	                    - static_cast<const char*>(0);
 	CXXR::RAllocStack::restoreSize(stack_size);
     }
 #endif

@@ -686,7 +686,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
 		     int version, SaveLoadData *d)
 {
     int i, j;
-    unsigned int vmaxsave;
+    void *vmaxsave;
     fpos_t savepos;
     NodeInfo node;
 
