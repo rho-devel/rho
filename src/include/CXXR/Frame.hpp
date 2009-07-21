@@ -120,6 +120,35 @@ namespace CXXR {
 	     */
 	    void assign(RObject* new_value);
 
+	    /** @brief Look up bound value, forcing Promises if
+	     * necessary.
+	     *
+	     * If the value of this Binding is anything other than a
+	     * Promise, this function returns a pointer to that bound
+	     * value.  However, if the value is a Promise, the
+	     * function forces the Promise if necessary, and returns a
+	     * pointer to the value of the Promise.
+	     *
+	     * @param env The Environment within which Promises are to
+	     *          be forced.
+	     *
+	     * @return The first element of the returned pair is a
+	     * pointer - possibly null - to the bound value, or the
+	     * Promise value if the bound value is a Promise.  The
+	     * second element is true iff the function call resulted
+	     * in the forcing of a Promise.
+	     *
+	     * @note If this Binding's frame has a read monitor set,
+	     * the function will call it only in the event that a
+	     * Promise is forced (and in that event the evaluation of
+	     * the Promise may trigger other read and write monitors).
+	     *
+	     * @note It is conceivable that forcing a Promise will
+	     * result in the destruction of this Binding object.
+	     */
+	    std::pair<RObject*, bool>
+	    forcedValue(const Environment* env);
+
 	    /** @brief Get pointer to Frame.
 	     *
 	     * @return Pointer to the Frame to which this Binding
@@ -208,6 +237,7 @@ namespace CXXR {
 	     */
 	    RObject* rawValue() const
 	    {
+		m_frame->monitorRead(*this);
 		return m_value;
 	    }
 
@@ -369,28 +399,6 @@ namespace CXXR {
 	 * mapping for \a symbol.
 	 */
 	virtual bool erase(const Symbol* symbol) = 0;
-
-	/** @brief Look up bound value, forcing Promises if necessary.
-	 *
-	 * If a Symbol is bound to anything other than a Promise, this
-	 * function returns a pointer to that bound value.  However,
-	 * if the symbol is bound to a Promise, the function forces
-	 * the Promise if necessary, and returns a pointer to the
-	 * value of the Promise.
-	 *
-	 * @param symbol The Symbol for which a mapping is sought.
-	 *
-	 * @param env The Environment within which Promises are to be
-	 *          forced.
-	 *
-	 * @return If the Frame does not bind \a symbol, the first
-	 * element will be false and the second element a null
-	 * pointer.  Otherwise the first element will be true and the
-	 * second element a pointer to the bound value (or the Promise
-	 * value if the bound value is a Promise).
-	 */
-	std::pair<bool, RObject*>
-	forcedValue(const Symbol* symbol, const Environment* env);
 
 	/** @brief Is the Frame locked?
 	 *

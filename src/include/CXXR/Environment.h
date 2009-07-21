@@ -297,17 +297,33 @@ namespace CXXR {
     {
 	using namespace std;
 	RObject* val;
+	Frame::Binding* bdg;
 	bool found = false;
 	do {
-	    pair<bool, RObject*> pr = env->frame()->forcedValue(symbol, env);
-	    if (pr.first) {
-		val = pr.second;
+	    bdg = env->frame()->binding(symbol);
+	    if (bdg) {
+		pair<RObject*, bool> pr = bdg->forcedValue(env);
+		// If a Promise was forced, this may have invalidated
+		// 'bdg', so we look it up again.  However, beware
+		// that in this event, the subsequent call to
+		// monitorRead() will be applied to the wrong Binding,
+		// i.e. not the one from which 'val' was derived.
+		// It's hard to see how to avoid this, because by the
+		// time that we've verified that 'val' satisfies the
+		// predicate, the original binding may have been
+		// destroyed.
+		if (pr.second)
+		    bdg = env->frame()->binding(symbol);
+		val = pr.first;
 		found = pred(val);
 	    }
-	    env = env->enclosingEnvironment();
-	} while (!found && inherits && env);
-	if (found)
+	} while (!found && inherits
+		 && (env = env->enclosingEnvironment()));
+	if (found) {
+	    // Invoke read monitor (if any);
+	    bdg->rawValue();
 	    return make_pair(env, val);
+	}
 	return pair<Environment*, RObject*>(0, 0);
     }
 	    

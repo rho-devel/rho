@@ -155,40 +155,29 @@ void Frame::Binding::assign(RObject* new_value)
     }
 }
 
+pair<RObject*, bool>
+Frame::Binding::forcedValue(const Environment* env)
+{
+    bool promise_forced = false;
+    RObject* val = m_value;
+    if (val && val->sexptype() == PROMSXP) {
+	Promise* prom = static_cast<Promise*>(val);
+	if (prom->environment()) {
+	    GCStackRoot<Promise> promrt(prom);
+	    frame()->monitorRead(*this);
+	    val = Rf_eval(val, const_cast<Environment*>(env));
+	    promise_forced = true;
+	}
+	val = const_cast<RObject*>(prom->value());
+    }
+    return make_pair(val, promise_forced);
+}
+
 RObject* Frame::Binding::value() const
 {
     RObject* ans = (isActive() ? getActiveValue(m_value) : m_value);
     m_frame->monitorRead(*this);
     return ans;
-}
-
-pair<bool, RObject*>
-Frame::forcedValue(const Symbol* symbol, const Environment* env)
-{
-    Binding* bdg = binding(symbol);
-    RObject* val;
-    if (bdg) {
-	val = bdg->rawValue();
-	if (val && val->sexptype() == PROMSXP) {
-	    Promise* prom = static_cast<Promise*>(val);
-	    if (prom->environment()) {
-		GCStackRoot<Promise> promrt(prom);
-		monitorRead(*bdg);
-		val = Rf_eval(val, const_cast<Environment*>(env));
-		if (m_write_monitor) {
-		    GCStackRoot<> valrt(val);
-		    // The eval() may have invalidated bdg, so we need
-		    // to look it up again.
-		    bdg = binding(symbol);
-		    if (bdg)
-			m_write_monitor(*bdg);
-		}
-	    }
-	    val = const_cast<RObject*>(prom->value());
-	}
-	return make_pair(true, val);
-    }
-    return pair<bool, RObject*>(false, 0);
 }
 
 /* Macro version of isNull for only the test against R_NilValue */
