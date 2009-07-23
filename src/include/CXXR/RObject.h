@@ -710,6 +710,9 @@ extern "C" {
      * RObject::setAttributes() .  In particular, do not attempt to
      * modify the attributes by changing \a v \e after SET_ATTRIB
      * has been called.
+     *
+     * @note For compatibility with CR, garbage collection is
+     * inhibited within this function.
      */
     void SET_ATTRIB(SEXP x, SEXP v);
 

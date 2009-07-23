@@ -128,6 +128,36 @@ namespace CXXR {
 	    virtual bool operator()(const GCNode* node) = 0;
 	};
 
+	/** @brief Not for general use.
+	 *
+	 * All garbage collection will be inhibited while any object
+	 * of this type exists.
+	 *
+	 * @deprecated This class is provided for use in implementing
+	 * functions (such as SET_ATTRIB()) in the Rinternals.h
+	 * interface which would not give rise to any memory
+	 * allocations as implemented in CR but may do so as
+	 * implemented in CXXR.  Its use for other purposes is
+	 * deprecated: use instead more selective protection against
+	 * garbage collection such as that provided by class
+	 * GCStackRoot<T>.
+	 *
+	 * @note GC inhibition is implemented as an object type to
+	 * facilitate reinstatement of garbage collection when an
+	 * exception is thrown.
+	 */
+	struct GCInhibitor {
+	    GCInhibitor()
+	    {
+		++GCNode::s_inhibitor_count;
+	    }
+
+	    ~GCInhibitor()
+	    {
+		--GCNode::s_inhibitor_count;
+	    }
+	};
+
 	GCNode()
 	    : m_bits(s_mark)
 	{
@@ -357,8 +387,9 @@ namespace CXXR {
 	    if (node) node->ageTo(generation());
 	}
     private:
-	friend class WeakRef;
+	friend class GCInhibitor;
 	friend class GCRootBase;
+	friend class WeakRef;
 
 	/** Visitor class used to impose a minimum generation number.
 	 *
@@ -427,7 +458,7 @@ namespace CXXR {
 	};
 
 	typedef HeterogeneousList<GCNode> List;
-		
+
 	static unsigned int s_num_generations;
 	static List* s_generation;  // s_generation[g] is a list of
 		       // the nodes in generation g, excluding those
@@ -462,6 +493,8 @@ namespace CXXR {
 	static unsigned int s_under_construction;  // Number of nodes
 	                      // currently under construction
 	                      // (i.e. not yet exposed).
+	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
+	                      // objects in existence.
 
 	// Masks applicable to the m_bits field:
 	enum {GENERATION = 3, AGED = 4, LIST = 7, MARK = 0x70};

@@ -194,5 +194,6 @@ SEXP ATTRIB(SEXP x)
 void SET_ATTRIB(SEXP x, SEXP v)
 {
     GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(v));
+    GCNode::GCInhibitor inhibitor;
     x->setAttributes(pl);
 }

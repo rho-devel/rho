@@ -59,11 +59,12 @@ unsigned int* GCNode::s_next_gen;
 unsigned char GCNode::s_mark = 0;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_under_construction = 0;
+unsigned int GCNode::s_inhibitor_count = 0;
 
 void* GCNode::operator new(size_t bytes)
 {
     if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
-	&& s_under_construction == 0)
+	&& s_under_construction == 0 && s_inhibitor_count == 0)
 	GCManager::gc(bytes);
     return MemoryBank::allocate(bytes);
 }
