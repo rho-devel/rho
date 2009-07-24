@@ -389,6 +389,7 @@ namespace CXXR {
     private:
 	friend class GCInhibitor;
 	friend class GCRootBase;
+	friend class GCStackRootBase;
 	friend class WeakRef;
 
 	/** Visitor class used to impose a minimum generation number.

@@ -127,8 +127,8 @@ namespace CXXR {
 		: m_ev(ev), m_it(m_ev->m_data.begin() + index)
 	    {}
 
-	    // Not implemented:
-	    ElementProxy(const ElementProxy&);
+	    // Some versions of gcc (e.g. 4.2.1) seem to require a
+	    // copy constructor; the compiler-generated form suffices.
 
 	    friend class HandleVector<T, ST>;
 	};
