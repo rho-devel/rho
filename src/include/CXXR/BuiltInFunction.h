@@ -126,12 +126,12 @@ extern "C" {
      * @return Pointer to the created CXXR::BuiltInFunction object.
      */
 #ifndef __cplusplus
-    SEXP mkPRIMSXP(int offset, int eval);
+    SEXP mkPRIMSXP(int offset, int evaluate);
 #else
-    inline SEXP mkPRIMSXP(int offset, int eval)
+    inline SEXP mkPRIMSXP(int offset, int evaluate)
     {
 	using namespace CXXR;
-	return GCNode::expose(new BuiltInFunction(offset, eval));
+	return GCNode::expose(new BuiltInFunction(offset, evaluate));
     }
 #endif
 

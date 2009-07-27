@@ -96,6 +96,10 @@ namespace CXXR {
 	 * @param p Pointer to a block of memory previously allocated
 	 *          by MemoryBank::allocate(), or a null pointer (in which
 	 *          case method does nothing).
+	 *
+	 * @param bytes The number of bytes in the memory block,
+	 *          i.e. the number of bytes requested in the
+	 *          corresponding call to allocate().
 	 */
 	static void deallocate(void* p, size_t bytes)
 	{

@@ -350,7 +350,7 @@ namespace CXXR {
 	 */
 	virtual PairList* asPairList() const = 0;
 
-	/** @briefing Access binding of an already-defined Symbol.
+	/** @brief Access binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to the Binding of a
 	 * Symbol.  In this variant the pointer is non-const, and
@@ -364,7 +364,7 @@ namespace CXXR {
 	 */
 	virtual Binding* binding(const Symbol* symbol) = 0;
 
-	/** @briefing Access const binding of an already-defined Symbol.
+	/** @brief Access const binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to a PairList element
 	 * representing the binding of a symbol.  In this variant the

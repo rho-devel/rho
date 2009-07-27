@@ -183,6 +183,14 @@ extern "C" {
 
 #endif  /* __cplusplus */
 
+    /** @brief Is a Binding locked?
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     *
+     * @return true iff this Binding is locked.
+     */
 #ifndef __cplusplus
     Rboolean BINDING_IS_LOCKED(SEXP b);
 #else
@@ -284,6 +292,14 @@ extern "C" {
     }
 #endif
 
+    /** @brief Is a Binding active?
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     *
+     * @return true iff this is an active Binding.
+     */
 #ifndef __cplusplus
     Rboolean IS_ACTIVE_BINDING(SEXP b);
 #else
@@ -295,6 +311,12 @@ extern "C" {
     }
 #endif
 
+    /** @brief Lock the binding represented by a PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void LOCK_BINDING(SEXP b);
 #else
@@ -305,6 +327,13 @@ extern "C" {
 	pl->m_binding_locked = true;}
 #endif
 
+    /** @brief Designate as active the binding represented by a
+     * PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void SET_ACTIVE_BINDING_BIT(SEXP b);
 #else
@@ -369,6 +398,12 @@ extern "C" {
      */
     SEXP SETCAD4R(SEXP x, SEXP y);
 
+    /** @brief Unlock the binding represented by a PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void UNLOCK_BINDING(SEXP b);
 #else

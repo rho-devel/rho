@@ -469,13 +469,13 @@ extern "C" {
      * @todo No binding to R_UnboundValue ought to be created.
      */
 #ifndef __cplusplus
-    void SET_SYMVALUE(SEXP x, SEXP v);
+    void SET_SYMVALUE(SEXP x, SEXP val);
 #else
-    inline void SET_SYMVALUE(SEXP x, SEXP v)
+    inline void SET_SYMVALUE(SEXP x, SEXP val)
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	BaseEnvironment->frame()->obtainBinding(sym)->setValue(v);
+	BaseEnvironment->frame()->obtainBinding(sym)->setValue(val);
     }
 #endif
 

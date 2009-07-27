@@ -191,7 +191,7 @@ extern "C" {
      *
      * @return pointer to the created closure object.
      */
-    SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho);
+    SEXP Rf_mkCLOSXP(SEXP formal_args, SEXP body, SEXP env);
 
     /** @brief Access the body of a CXXR::Closure.
      *

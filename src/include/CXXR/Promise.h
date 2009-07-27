@@ -199,7 +199,7 @@ extern "C" {
      *
      * @param env CXXR::Environment in which \a expr is to be evaluated.
      */
-    SEXP Rf_mkPROMISE(SEXP expr, SEXP rho);
+    SEXP Rf_mkPROMISE(SEXP expr, SEXP env);
 
     /** @brief Access the expression of a CXXR::Promise.
      *

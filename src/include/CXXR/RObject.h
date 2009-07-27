@@ -706,7 +706,7 @@ extern "C" {
      *          be subsequently altered externally.
      *
      * @note Unlike CR, \a v isn't simply plugged into the attributes
-     * field of \x : refer to the documentation for \c
+     * field of \a x : refer to the documentation for \c
      * RObject::setAttributes() .  In particular, do not attempt to
      * modify the attributes by changing \a v \e after SET_ATTRIB
      * has been called.

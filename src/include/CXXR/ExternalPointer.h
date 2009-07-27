@@ -288,7 +288,7 @@ inline SEXP R_ExternalPtrTag(SEXP s)
      *
      * @param s Pointer to a CXXR::ExternalPointer (checked).
      *
-     * @param p Pointer to the new tag object (or a null
+     * @param tag Pointer to the new tag object (or a null
      *          pointer).
      */
     void R_SetExternalPtrTag(SEXP s, SEXP tag);
