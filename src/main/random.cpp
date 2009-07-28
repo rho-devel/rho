@@ -47,6 +47,8 @@
 #include "basedecl.h"
 #include <errno.h>
 
+using namespace CXXR;
+
 static void invalid(SEXP call)
 {
     error(_("invalid arguments"));
@@ -520,8 +522,8 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 	/* avoid allocation for a single sample */
 	if (replace || k < 2) SampleReplace(k, n, INTEGER(y));
 	else {
-	    x = allocVector(INTSXP, n);
-	    SampleNoReplace(k, n, INTEGER(y), INTEGER(x));
+	    GCStackRoot<> x2(allocVector(INTSXP, n));
+	    SampleNoReplace(k, n, INTEGER(y), INTEGER(x2));
 	}
     }
     PutRNGstate();

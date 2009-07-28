@@ -377,7 +377,8 @@ static SEXP forcePromise(SEXP e)
 
 SEXP eval(SEXP e, SEXP rho)
 {
-    SEXP op, tmp;
+    SEXP op;
+    GCStackRoot<> tmp;
     static int evalcount = 0;
 
     /* The use of depthsave below is necessary because of the
@@ -458,10 +459,8 @@ SEXP eval(SEXP e, SEXP rho)
 	    else error(_("argument is missing, with no default"));
 	}
 	else if (TYPEOF(tmp) == PROMSXP) {
-	    PROTECT(tmp);
 	    tmp = eval(tmp, rho);
 	    SET_NAMED(tmp, 2);
-	    UNPROTECT(1);
 	}
 	else if (!isNull(tmp) && NAMED(tmp) < 1)
 	    SET_NAMED(tmp, 1);
@@ -511,7 +510,7 @@ SEXP eval(SEXP e, SEXP rho)
 	    int flag = PRIMPRINT(op);
 	    void *vmax = vmaxget();
 	    RCNTXT cntxt;
-	    PROTECT(tmp = evalList(CDR(e), rho, op));
+	    tmp = evalList(CDR(e), rho, op);
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
 	    /* We used to insert a context only if profiling,
 	       but helps for tracebacks on .C etc. */
@@ -530,14 +529,12 @@ SEXP eval(SEXP e, SEXP rho)
 	    }
 #endif
 	    if (flag < 2) R_Visible = Rboolean(flag != 1);
-	    UNPROTECT(1);
 	    check_stack_balance(op, save);
 	    vmaxset(vmax);
 	}
 	else if (TYPEOF(op) == CLOSXP) {
-	    PROTECT(tmp = promiseArgs(CDR(e), rho));
+	    tmp = promiseArgs(CDR(e), rho);
 	    tmp = applyClosure(e, op, tmp, rho, R_BaseEnv);
-	    UNPROTECT(1);
 	}
 	else
 	    error(_("attempt to apply non-function"));
@@ -1287,7 +1284,7 @@ SEXP CXXRnot_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP rval;
+    GCRoot<> rval;
 
     if (TYPEOF(op) == PROMSXP) {
 	op = forcePromise(op);
@@ -3084,6 +3081,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    SET_STRING_ELT(value, 0, STRING_ELT(seq, i));
 	    break;
 	  case EXPRSXP:
+	    value = XVECTOR_ELT(seq, i);
+	    break;
 	  case VECSXP:
 	    value = VECTOR_ELT(seq, i);
 	    break;

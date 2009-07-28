@@ -99,12 +99,12 @@ namespace CXXR {
     };
 } // namespace CXXR
 
-extern "C" {
-#endif
-
     /** @brief Pointer to expression currently being evaluated.
      */
-    extern SEXP R_CurrentExpr;
+    extern CXXR::GCRoot<> R_CurrentExpr;
+
+extern "C" {
+#endif
 
     /** @brief Deparse an Expression.
      *
@@ -117,6 +117,12 @@ extern "C" {
      * expression.
      */
     SEXP DEPARSE(SEXP e);
+
+    /** @brief Expression currently being evaluated.
+     *
+     * @return Pointer to the Expression currently being evaluated.
+     */
+    SEXP Rf_currentExpression();
 
     /** @brief Create a CXXR::Expression with a specified car and tail.
      *
@@ -131,6 +137,12 @@ extern "C" {
      */
     SEXP Rf_lcons(SEXP cr, SEXP tl);
 
+    /** @brief Designate the Expression currently being evaluated.
+     *
+     * @param Pointer to the Expression now to be evaluated.  (Not
+     * currently checked in any way.)
+     */
+    void Rf_setCurrentExpression(SEXP e);
 #ifdef __cplusplus
 }
 #endif

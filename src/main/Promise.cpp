@@ -54,11 +54,19 @@ namespace CXXR {
     }
 }
 
+void Promise::detachReferents()
+{
+    m_value.detach();
+    m_valgen.detach();
+    m_environment.detach();
+    RObject::detachReferents();
+}
+
 void Promise::setValue(RObject* val)
 {
-    m_value.retarget(this, val);
+    m_value = val;
     if (val != Symbol::unboundValue())
-	m_environment.retarget(this, 0);
+	m_environment = 0;
 }
 
 const char* Promise::typeName() const

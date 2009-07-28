@@ -106,6 +106,12 @@ void StdFrame::clear()
     m_map.clear();
 }
 
+void StdFrame::detachReferents()
+{
+    m_map.clear();
+    Frame::detachReferents();
+}
+
 bool StdFrame::erase(const Symbol* symbol)
 {
     if (isLocked())

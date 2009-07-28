@@ -46,6 +46,9 @@
 #include <Rmath.h>
 
 #include "RBufferUtils.h"
+
+using namespace CXXR;
+
 static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 
 static SEXP cross_colon(SEXP call, SEXP s, SEXP t)
@@ -429,7 +432,8 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
 done:
-    ans = do_subset_dflt(R_NilValue, R_NilValue, list2(x, ind), rho);
+    GCStackRoot<> l2(list2(x, ind));
+    ans = do_subset_dflt(R_NilValue, R_NilValue, l2, rho);
     if(IS_S4_OBJECT(x)) { /* e.g. contains = "list" */
 	setAttrib(ans, R_ClassSymbol, getAttrib(x, R_ClassSymbol));
 	SET_S4_OBJECT(ans);

@@ -49,16 +49,64 @@ namespace CXXR {
      */
     class GCEdgeBase {
     public:
-	/** @brief Redirect the GCEdgeBase to point at a different node.
-	 *
-	 * @param from This \e must point to the GCNode object that
-	 *          contains this GCEdge object.
-	 *
-	 * @param to Pointer to the object to which reference is now
-	 *           to be made.
+	/** @brief Null the encapsulated pointer.
 	 */
-	void retarget(GCNode* from, const GCNode* to);
+	void detach();
+    protected:
+	GCEdgeBase()
+	    : m_target(0)
+	{}
+
+	/** @brief Primary constructor.
+	 *
+	 * @param target Pointer to the object (if any) to which this 
+	 *          GCEdgeBase is initially to refer.
+	 */
+	GCEdgeBase(const GCNode* target)
+	    : m_target(target)
+	{
+	    GCNode::maybeCheckExposed(m_target);
+	    if (m_target) {
+		m_target->incRefCount();
+	    }
+	}
+
+	GCEdgeBase(const GCEdgeBase& source)
+	    : m_target(source.m_target)
+	{
+	    if (m_target) {
+		m_target->incRefCount();
+	    }
+	}
+	    
+	~GCEdgeBase()
+	{
+	    if (m_target && m_target->decRefCount() == 0)
+		m_target->makeMoribund();
+	}
+
+	/** @brief Get target of this edge.
+	 *
+	 * @return Pointer to the target (if any) of this GCEdgeBase.
+	 */
+	const GCNode* target() const
+	{
+	    return m_target;
+	}
+    protected:
+	/** @brief Redirect the GCEdge to point at a (possibly) different node.
+-        *
+        * @param newtarget Pointer to the object to which reference is now
+-        *           to be made.
+-        */
+	void retarget(const GCNode* newtarget)
+	{
+	    GCEdgeBase tmp(newtarget);
+	    std::swap(m_target, tmp.m_target);
+	}
     private:
+	const GCNode* m_target;
+
 	static void abortIfNotExposed(const GCNode* target);
     };
 
@@ -84,51 +132,43 @@ namespace CXXR {
     class GCEdge : public GCEdgeBase {
     public:
 	GCEdge()
-	    : m_target(0)
 	{}
 
 	/** @brief Primary constructor.
 	 *
 	 * @param target Pointer to the object to which this GCEdge is
 	 *          to refer.  A null pointer is permissible.
-	 *
-	 * @note Unless \a target is a null pointer, this constructor
-	 * should be called only as part of the construction of the
-	 * object derived from GCNode of which this GCEdge forms a
 	 * part.  In other cases, construct the GCEdge with a null
 	 * target, and then retarget it.
 	 */
 	explicit GCEdge(T* target)
-	    : m_target(target)
-	{
-	    // This rather inelegant conditional compilation is
-	    // necessary to allow the primary constructor of ConsCell
-	    // to be inlined when CHECK_EXPOSURE is not defined.  Were
-	    // the call to maybeCheckExposed() included in that case,
-	    // the instantiation would fail for ConsCell::m_tail
-	    // because the compiler wouldn't know that PairList
-	    // inherits from RObject.
-#ifdef CHECK_EXPOSURE
-	    GCNode::maybeCheckExposed(m_target);
-#endif
-	}
+	    : GCEdgeBase(target)
+	{}
 
 	/** @brief Copy constructor.
 	 *
 	 * @param source GCEdge to be copied.  The constructed GCEdge
 	 * will point to the same object (if any) as \a source. 
-	 *
-	 * @note This constructor should be called only as part of the
-	 * construction of the object derived from GCNode of which
-	 * this GCEdge forms a part.
 	 */
 	GCEdge(const GCEdge<T>& source)
-	    : m_target(source.m_target)
+	    : GCEdgeBase(source)
 	{}
+
+	GCEdge<T>& operator=(const GCEdge<T>& source)
+	{
+	    retarget(source);
+	    return *this;
+	}
+
+	GCEdge<T>& operator=(T* newtarget)
+	{
+	    retarget(newtarget);
+	    return *this;
+	}
 
 	T* operator->() const
 	{
-	    return m_target;
+	    return get();
 	}
 
 	/** @brief Extract encapsulated pointer
@@ -137,28 +177,17 @@ namespace CXXR {
 	 */
 	operator T*() const
 	{
-	    return m_target;
+	    return get();
 	}
 
-	/** @brief Redirect the GCEdge to point at a (possibly) different node.
+	/** @brief Access the target pointer.
 	 *
-	 * @param from This \e must point to the GCNode object that
-	 *          contains this GCEdge object.
-	 *
-	 * @param to Pointer to the object to which reference is now
-	 *           to be made.
+	 * @return pointer to the current target (if any) of the edge.
 	 */
-	void retarget(GCNode* from, T* to)
+	T* get() const
 	{
-	    m_target = to;
-	    GCEdgeBase::retarget(from, to);
+	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
-    private:
-	T* m_target;
-
-	// Not implemented.  Declared to prevent compiler-generated
-	// version:
-	GCEdge& operator=(const GCEdge&);
     };
 }
 

@@ -1474,11 +1474,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    UNPROTECT(1);
 	    return x;
 	}
-	UNPROTECT(1);
 	if (length(y) == 1)
-	    PROTECT(x = allocVector(TYPEOF(y), 0));
+	    SETCAR(args, x = allocVector(TYPEOF(y), 0));
 	else
-	    PROTECT(x = allocVector(VECSXP, 0));
+	    SETCAR(args, x = allocVector(VECSXP, 0));
     }
 
     /* Ensure that the LHS is a local variable. */
@@ -1788,6 +1787,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     if(DispatchOrEval(call, op, "$<-", args, env, &ans, 0, 0))
       return(ans);
 
+    GCRoot<> ansrt(ans);
     if (! iS)
 	nlist = install(translateChar(STRING_ELT(input, 0)));
 

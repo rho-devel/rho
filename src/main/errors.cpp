@@ -291,7 +291,7 @@ void warning(const char *format, ...)
     if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
     if (c && (c->callflag & CTXT_BUILTIN)) c = c->nextcontext;
-    warningcall(c ? c->call : R_NilValue, "%s", buf);
+    warningcall(c ? c->call : static_cast<RObject*>(0), "%s", buf);
 }
 
 /* temporary hook to allow experimenting with alternate warning mechanisms */
@@ -738,7 +738,7 @@ void error(const char *format, ...)
     /* This can be called before R_GlobalContext is defined, so... */
     /* If profiling is on, this can be a CTXT_BUILTIN */
     if (c && (c->callflag & CTXT_BUILTIN)) c = c->nextcontext;
-    errorcall(c ? c->call : R_NilValue, "%s", buf);
+    errorcall(c ? c->call : static_cast<RObject*>(0), "%s", buf);
 }
 
 static void try_jump_to_restart(void)
@@ -1419,9 +1419,20 @@ namespace {
 	    return "(error handler entry)";
 	}
 
-	// Virtual function of GCNode:
+	// Virtual functions of GCNode:
+	void detachReferents();
 	void visitReferents(const_visitor* v) const;
     };
+
+    void HandlerEntry::detachReferents()
+    {
+	m_class.detach();
+	m_parent_environment.detach();
+	m_handler.detach();
+	m_environment.detach();
+	m_result.detach();
+	RObject::detachReferents();
+    }
 
     void HandlerEntry::visitReferents(const_visitor* v) const
     {
@@ -1799,13 +1810,11 @@ SEXP CXXRnot_hidden do_getRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return CAR(list);
     else if (i == 1) {
 	/**** need to pre-allocate */
-	SEXP name, entry;
-	PROTECT(name = ScalarString(mkChar("abort")));
-	entry = allocVector(VECSXP, 2);
+        GCStackRoot<> name(ScalarString(mkChar("abort")));
+	GCStackRoot<> entry(allocVector(VECSXP, 2));
 	SET_VECTOR_ELT(entry, 0, name);
 	SET_VECTOR_ELT(entry, 1, R_NilValue);
 	setAttrib(entry, R_ClassSymbol, ScalarString(mkChar("restart")));
-	UNPROTECT(1);
 	return entry;
     }
     else return R_NilValue;

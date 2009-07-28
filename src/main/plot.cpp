@@ -45,6 +45,8 @@
 #include <Colors.h> /* for isNAcol */
 #include <Print.h>
 
+using namespace CXXR;
+
 #define imax2(x, y) ((x < y) ? y : x)
 
 static R_INLINE double fmin2(double x, double y)
@@ -999,23 +1001,29 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     args = CDR(args);
 
     /* Optional argument: "font" */
-    font = asInteger(FixupFont(CAR(args), NA_INTEGER));
+    GCStackRoot<> fu(FixupFont(CAR(args), NA_INTEGER));
+    font = asInteger(fu);
     args = CDR(args);
 
     /* Optional argument: "lty" */
-    lty = asInteger(FixupLty(CAR(args), NA_INTEGER));
+    fu = FixupLty(CAR(args), NA_INTEGER); 
+    lty = asInteger(fu);
     args = CDR(args);
 
     /* Optional argument: "lwd" */
-    lwd = asReal(FixupLwd(CAR(args), 1));
+    fu = FixupLwd(CAR(args), 1);
+    lwd = asReal(fu);
     args = CDR(args);
-    lwdticks = asReal(FixupLwd(CAR(args), 1));
+    fu = FixupLwd(CAR(args), 1);
+    lwdticks = asReal(fu);
     args = CDR(args);
 
     /* Optional argument: "col" */
-    col = asInteger(FixupCol(CAR(args), gpptr(dd)->fg));
+    fu = FixupCol(CAR(args), gpptr(dd)->fg);
+    col = asInteger(fu);
     args = CDR(args);
-    colticks = asInteger(FixupCol(CAR(args), col));
+    fu = FixupCol(CAR(args), col);
+    colticks = asInteger(fu);
     args = CDR(args);
 
     /* Optional argument: "hadj" */

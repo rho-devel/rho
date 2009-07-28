@@ -139,13 +139,14 @@ SEXP attribute_hidden do_edit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (LENGTH(STRING_ELT(fn, 0)) == 0) EdFileUsed++;
 	if (TYPEOF(x) != CLOSXP || isNull(src = getAttrib(x, R_SourceSymbol)))
 	    src = deparse1(x, 0, FORSOURCING); /* deparse for sourcing, not for display */
+	PROTECT(src);
 	for (i = 0; i < LENGTH(src); i++)
 	    fprintf(fp, "%s\n", translateChar(STRING_ELT(src, i)));
 	fclose(fp);
 	PROTECT(Rfn = findFun(install("srcfilecopy"), R_BaseEnv));
 	PROTECT(srcfile = lang3(Rfn, ScalarString(mkChar("<tmp>")), src));
 	PROTECT(srcfile = eval(srcfile, R_BaseEnv));
-	UNPROTECT(3);
+	UNPROTECT(4);
     }
     PROTECT(srcfile);
     ti = CAR(args); args = CDR(args);

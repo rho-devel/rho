@@ -64,28 +64,24 @@ namespace {
 
 WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer), m_Cfinalizer(0),
+    : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
+      m_self(expose(this)), m_Cfinalizer(0),
       m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
       m_finalize_on_exit(finalize_on_exit)
 {
     if (!m_key)
 	tombstone();
-    // Force old-to-new checks:
-    m_key->propagateAge(m_value);
-    m_key->propagateAge(m_Rfinalizer);
     ++s_count;
 }
 
 WeakRef::WeakRef(RObject* key, RObject* value, R_CFinalizer_t C_finalizer,
 		 bool finalize_on_exit)
-    : m_key(key), m_value(value), m_Rfinalizer(0), m_Cfinalizer(C_finalizer),
-      m_lit(s_live.insert(s_live.end(), this)), m_ready_to_finalize(false),
-      m_finalize_on_exit(finalize_on_exit)
+    : m_key(key), m_value(value), m_Rfinalizer(0), m_self(expose(this)),
+      m_Cfinalizer(C_finalizer), m_lit(s_live.insert(s_live.end(), this)),
+      m_ready_to_finalize(false), m_finalize_on_exit(finalize_on_exit)
 {
     if (!m_key)
 	tombstone();
-    // Force old-to-new check:
-    m_key->propagateAge(m_value);
     ++s_count;
 }
 
@@ -153,13 +149,22 @@ bool WeakRef::check()
     return true;
 }
 
+void WeakRef::detachReferents()
+{
+    m_key.detach();
+    m_value.detach();
+    m_Rfinalizer.detach();
+    m_self.detach();
+    RObject::detachReferents();
+}
+
 // WeakRef::finalize() is in memory.cpp (for the time being, until
 // eval() is declared in a CXXR header).
 
-void WeakRef::markThru(unsigned int max_gen)
+void WeakRef::markThru()
 {
     WeakRef::check();
-    GCNode::Marker marker(max_gen);
+    GCNode::Marker marker;
     WRList newlive;
     // Step 2-3 of algorithm.  Mark the value and R finalizer if the
     // key is marked, or in a generation not being collected.
@@ -171,7 +176,7 @@ void WeakRef::markThru(unsigned int max_gen)
 	    while (lit != s_live.end()) {
 		WeakRef* wr = *lit++;
 		RObject* key = wr->key();
-		if (key->generation() > max_gen || key->isMarked()) {
+		if (key->isMarked()) {
 		    RObject* value = wr->value();
 		    if (value && value->conductVisitor(&marker))
 			newmarks = true;
@@ -274,9 +279,9 @@ bool WeakRef::runFinalizers()
 void WeakRef::tombstone()
 {
     WRList* oldl = wrList();
-    m_key.retarget(this, 0);
-    m_value.retarget(this, 0);
-    m_Rfinalizer.retarget(this, 0);
+    m_key = 0;
+    m_value = 0;
+    m_Rfinalizer = 0;
     m_Cfinalizer = 0;
     m_ready_to_finalize = false;
     transfer(oldl, &s_tombstone);

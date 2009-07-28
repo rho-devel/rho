@@ -88,10 +88,7 @@ static int nvar;		/* Number of variables in the formula */
 static int nwords;		/* # of words (ints) to code a term */
 static int nterm;		/* # of model terms */
 static SEXP varlist;		/* variables in the model */
-attribute_hidden
-SEXP framenames;		/* variables names for specified frame */
-/* NOTE: framenames can't be static because it must be protected from
-   garbage collection. */
+static GCRoot<> framenames;	/* variables names for specified frame */
 static Rboolean haveDot;	/* does RHS of formula contain `.'? */
 
 static int isZeroOne(SEXP x)

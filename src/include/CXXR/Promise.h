@@ -171,6 +171,9 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	GCEdge<> m_value;
 	GCEdge<const RObject> m_valgen;

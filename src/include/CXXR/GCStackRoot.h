@@ -52,8 +52,9 @@
 #ifdef __cplusplus
 
 #include <vector>
-#include "RCNTXT.h"
 #include "CXXR/GCNode.hpp"
+
+class RCNTXT;
 
 namespace CXXR {
     class RObject;
@@ -112,17 +113,19 @@ namespace CXXR {
 	 * @return Index of the stack cell thus created, for
 	 *          subsequent use with reprotect().
 	 */
+#ifndef NDEBUG
+	static unsigned int protect(RObject* node);
+#else
 	static unsigned int protect(RObject* node)
 	{
 	    GCNode::maybeCheckExposed(node);
 	    unsigned int index = s_pps->size();
-#ifdef NDEBUG
+	    if (node)
+		node->incRefCount();
 	    s_pps->push_back(node);
-#else
-	    s_pps->push_back(std::make_pair(node, R_GlobalContext));
-#endif
 	    return index;
 	}
+#endif
 
 	/** @brief Change the target of a pointer on the PPS.
 	 *
@@ -183,23 +186,35 @@ namespace CXXR {
 	{
 	    s_roots = this;
 	    GCNode::maybeCheckExposed(node);
+	    if (m_target)
+		m_target->incRefCount();
 	}
 
 	GCStackRootBase(const GCStackRootBase& source)
 	    : m_next(s_roots), m_target(source.m_target)
 	{
 	    s_roots = this;
+	    if (m_target)
+		m_target->incRefCount();
 	}
 
 	~GCStackRootBase()
 	{
+#ifndef NDEBUG
 	    if (this != s_roots)
 		seq_error();
+#endif
+	    if (m_target && m_target->decRefCount() == 0)
+		m_target->makeMoribund();
 	    s_roots = m_next;
 	}
 
 	GCStackRootBase& operator=(const GCStackRootBase& source)
 	{
+	    if (source.m_target)
+		source.m_target->incRefCount();
+	    if (m_target && m_target->decRefCount() == 0)
+		m_target->makeMoribund();
 	    m_target = source.m_target;
 	    return *this;
 	}
@@ -212,6 +227,10 @@ namespace CXXR {
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
+	    if (node)
+		node->incRefCount();
+	    if (m_target && m_target->decRefCount() == 0)
+		m_target->makeMoribund();
 	    m_target = node;
 	}
 
@@ -475,7 +494,15 @@ extern "C" {
      *          garbage collector.
      * @return a copy of \a node .
      */
+#ifndef __cplusplus
     SEXP Rf_protect(SEXP node);
+#else
+    inline SEXP Rf_protect(SEXP node)
+    {
+	CXXR::GCStackRootBase::protect(node);
+	return node;
+    }
+#endif
 
     /** @brief Pop cells from the C pointer protection stack.
      *
@@ -487,7 +514,14 @@ extern "C" {
      *          larger than the current size of the C pointer
      *          protection stack.
      */
+#ifndef __cplusplus
     void Rf_unprotect(int count);
+#else
+    inline void Rf_unprotect(int count)
+    {
+	CXXR::GCStackRootBase::unprotect(count);
+    }
+#endif	
 
     /** @brief Remove entry from pointer protection stack.
      *

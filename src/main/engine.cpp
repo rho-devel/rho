@@ -2507,7 +2507,7 @@ void GErecordGraphicOperation(SEXP op, SEXP args, pGEDevDesc dd)
     if (dd->displayListOn) {
 	SEXP newOperation = list2(op, args);
 	if (lastOperation == R_NilValue) {
-	    dd->displayList = CONS(newOperation, R_NilValue);
+	    setDisplayList(dd, CONS(newOperation, R_NilValue));
 	    dd->DLlastElt = dd->displayList;
 	} else {
 	    SETCDR(lastOperation, CONS(newOperation, R_NilValue));
@@ -2527,14 +2527,15 @@ void GEinitDisplayList(pGEDevDesc dd)
     /* Save the current displayList so that, for example, a device
      * can maintain a plot history
      */
-    dd->savedSnapshot = GEcreateSnapshot(dd);
+    saveSnapshot(dd, GEcreateSnapshot(dd));
     /* Get each graphics system to save state required for
      * replaying the display list
      */
     for (i = 0; i < numGraphicsSystems; i++)
 	if (dd->gesd[i] != NULL)
 	    (dd->gesd[i]->callback)(GE_SaveState, dd, R_NilValue);
-    dd->displayList = dd->DLlastElt = R_NilValue;
+    dd->DLlastElt = R_NilValue;
+    setDisplayList(dd, 0);
 }
 
 /****************************************************************
@@ -2607,7 +2608,7 @@ void GEcopyDisplayList(int fromDevice)
 
     tmp = gd->displayList;
     if(!isNull(tmp)) tmp = duplicate(tmp);
-    dd->displayList = tmp;
+    setDisplayList(dd, tmp);
     dd->DLlastElt = lastElt(dd->displayList);
     /* Get each registered graphics system to copy system state
      * information from the "from" device to the current device
@@ -2707,7 +2708,7 @@ void GEplaySnapshot(SEXP snapshot, pGEDevDesc dd)
 				    VECTOR_ELT(snapshot, i + 1));
     /* Replay the display list
      */
-    dd->displayList = duplicate(VECTOR_ELT(snapshot, 0));
+    setDisplayList(dd, duplicate(VECTOR_ELT(snapshot, 0)));
     dd->DLlastElt = lastElt(dd->displayList);
     GEplayDisplayList(dd);
     if (!dd->displayListOn) GEinitDisplayList(dd);

@@ -2633,7 +2633,7 @@ static int xxvalue(SEXP v, int k, YYLTYPE *lloc)
     	    REPROTECT(SrcRefs = GrowList(SrcRefs, makeSrcref(lloc, SrcFile)), srindex);
     	UNPROTECT_PTR(v);
     }
-    R_CurrentExpr = v;
+    Rf_setCurrentExpression(v);
     return k;
 }
 
@@ -3287,7 +3287,7 @@ static SEXP R_Parse1(ParseStatus *status)
         *status = PARSE_OK;
         break;
     }
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
 static FILE *fp_parse;
@@ -3307,7 +3307,7 @@ SEXP R_Parse1File(FILE *fp, int gencode, ParseStatus *status)
     fp_parse = fp;
     ptr_getc = file_getc;
     R_Parse1(status);
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
 static IoBuffer *iob;
@@ -3329,7 +3329,7 @@ SEXP R_Parse1Buffer(IoBuffer *buffer, int gencode, ParseStatus *status)
     iob = buffer;
     ptr_getc = buffer_getc;
     R_Parse1(status);
-    return R_CurrentExpr;
+    return Rf_currentExpression();
 }
 
 static TextBuffer *txtb;
@@ -3503,7 +3503,7 @@ SEXP R_ParseBuffer(IoBuffer *buffer, int n, ParseStatus *status, SEXP prompt, SE
 	ParseInit();
 	ParseContextInit();
 	R_Parse1(status);
-        rval = R_CurrentExpr;
+        rval = Rf_currentExpression();
     
 	switch(*status) {
 	case PARSE_NULL:

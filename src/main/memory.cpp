@@ -89,8 +89,6 @@ extern void *Rm_realloc(void * p, size_t n);
 # define FORCE_GC 0
 #endif
 
-extern SEXP framenames;
-
 #define GC_PROT(X) {int __t = gc_inhibit_torture; \
 	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
 
@@ -209,68 +207,21 @@ SEXP CXXRnot_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
-namespace {
-    inline void MARK_THRU(GCNode::const_visitor* marker, GCNode* node) {
-	if (node) node->conductVisitor(marker);
-    }
-}
-
-// The MARK_THRU invocations below could be eliminated by
-// encapsulating the pointers concerned in GCStackRoot<> objects declared
-// at file/global/static scope.
-
-void GCNode::mark(unsigned int max_generation)
+unsigned int GCNode::protectCstructs()
 {
-    // Create a new mark, different from that currently borne by any
-    // node in generations up to max_generation:
-    s_mark ^= 1 << (3 + max_generation);
-    GCNode::Marker marker(max_generation);
-    GCRootBase::visitRoots(&marker);
-    GCStackRootBase::visitRoots(&marker);
-    MARK_THRU(&marker, R_CommentSxp);	        /* Builtin constants */
-
-    MARK_THRU(&marker, R_Warnings);	           /* Warnings, if any */
-
-    MARK_THRU(&marker, R_HandlerStack);          /* Condition handler stack */
-    MARK_THRU(&marker, R_RestartStack);          /* Available restarts stack */
-
-    if (R_CurrentExpr != NULL)             /* Current expression */
-	MARK_THRU(&marker, R_CurrentExpr);
-
-    for (unsigned int i = 0; i < R_MaxDevices; i++) {  /* Device display lists */
-	pGEDevDesc gdd = GEgetDevice(i);
-	if (gdd) {
-	    MARK_THRU(&marker, gdd->displayList);
-	    MARK_THRU(&marker, gdd->savedSnapshot);
-	}
-    }
-
-    for (RCNTXT* ctxt = R_GlobalContext;
-	 ctxt != NULL ; ctxt = ctxt->nextcontext) {
-	MARK_THRU(&marker, ctxt->conexit);       /* on.exit expressions */
-	MARK_THRU(&marker, ctxt->promargs);	   /* promises supplied to closure */
-	MARK_THRU(&marker, ctxt->callfun);       /* the closure called */
-        MARK_THRU(&marker, ctxt->sysparent);     /* calling environment */
-	MARK_THRU(&marker, ctxt->call);          /* the call */
-	MARK_THRU(&marker, ctxt->cloenv);        /* the closure environment */
-	MARK_THRU(&marker, ctxt->handlerstack);  /* the condition handler stack */
-	MARK_THRU(&marker, ctxt->restartstack);  /* the available restarts stack */
-    }
-
-    MARK_THRU(&marker, framenames); 		   /* used for interprocedure
-					      communication in model.c */
-
+    unsigned int protect_count = 0;
 #ifdef BYTECODE
+    // Bytecode stack:
     {
 	SEXP *sp;
-	for (sp = R_BCNodeStackBase; sp < R_BCNodeStackTop; sp++)
-	    MARK_THRU(&marker, *sp);
+	for (sp = R_BCNodeStackBase; sp < R_BCNodeStackTop; sp++) {
+	    PROTECT(*sp);
+	    ++protect_count;
+	}
     }
 #endif
-
-    WeakRef::markThru(max_generation);
+    return protect_count;
 }
-
 
 SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -315,7 +266,7 @@ SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
     bool reset_max = asLogical(CADR(args));
-    GCManager::gc(true);
+    GCManager::gc();
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
     GCStackRoot<> value(allocVector(REALSXP, 6));
@@ -416,8 +367,6 @@ void InitMemory()
     R_BCIntStackEnd = R_BCIntStackBase + R_BCINTSTACKSIZE;
 # endif
 #endif
-
-    R_HandlerStack = R_RestartStack = R_NilValue;
 }
 
 
@@ -520,7 +469,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 
 void R_gc(void)
 {
-    GCManager::gc(0);
+    GCManager::gc();
 }
 
 

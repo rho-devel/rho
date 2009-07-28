@@ -340,12 +340,14 @@ static SEXP MatrixSubset(SEXP x, SEXP s, SEXP call, int drop)
 	if (!isNull(dimnames)) {
 	    PROTECT(newdimnames = allocVector(VECSXP, 2));
 	    if (TYPEOF(dimnames) == VECSXP) {
-	      SET_VECTOR_ELT(newdimnames, 0,
-		    ExtractSubset(VECTOR_ELT(dimnames, 0),
-				  allocVector(STRSXP, nrs), sr, call));
-	      SET_VECTOR_ELT(newdimnames, 1,
-		    ExtractSubset(VECTOR_ELT(dimnames, 1),
-				  allocVector(STRSXP, ncs), sc, call));
+		GCStackRoot<> rv(allocVector(STRSXP, nrs));
+		SET_VECTOR_ELT(newdimnames, 0,
+			       ExtractSubset(VECTOR_ELT(dimnames, 0),
+					     rv, sr, call));
+		GCStackRoot<> cv(allocVector(STRSXP, ncs));
+		SET_VECTOR_ELT(newdimnames, 1,
+			       ExtractSubset(VECTOR_ELT(dimnames, 1),
+					     cv, sc, call));
 	    }
 	    else {
 	      SET_VECTOR_ELT(newdimnames, 0,

@@ -113,6 +113,8 @@
 #include <basedecl.h>
 #include "CXXR/WeakRef.h"
 
+using namespace CXXR;
+
 #ifdef Unix
 /* HP-UX 11.0 has dlfcn.h, but according to libtool as of Dec 2001
    this support is broken. So we force use of shlib even when dlfcn.h
@@ -1359,14 +1361,15 @@ static SEXP get_package_CEntry_table(const char *package)
 {
     SEXP penv, pname;
 
+    GCStackRoot<> zero(ScalarInteger(0));
     if (CEntryTable == NULL) {
-	CEntryTable = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
+	CEntryTable = R_NewHashedEnv(R_NilValue, zero);
 	R_PreserveObject(CEntryTable);
     }
     pname = install(package);
     penv = findVarInFrame(CEntryTable, pname);
     if (penv == R_UnboundValue) {
-	penv = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
+	penv = R_NewHashedEnv(R_NilValue, zero);
 	defineVar(pname, penv, CEntryTable);
     }
     return penv;

@@ -26,14 +26,15 @@ R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES = Rsock.c internet.c nanoftp.c nanohttp.c sock.c sockconn.c
+SOURCES_C = Rsock.c nanoftp.c nanohttp.c sock.c
+SOURCES_CPP = internet.cpp sockconn.cpp
 HEADERS = sock.h
-DEPENDS = $(SOURCES:.c=.d)
-OBJECTS = $(SOURCES:.c=.o)
+DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CPP:.cpp=.d)
+OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CPP:.cpp=.o)
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = \
-	README Makefile.in Makefile.win $(SOURCES) $(HEADERS) \
+	README Makefile.in Makefile.win $(SOURCES_C) $(SOURCES_CPP) $(HEADERS) \
 	dllversion.rc
 
 internet_la = internet$(SHLIB_EXT)
@@ -45,7 +46,7 @@ all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
-  $(SOURCES)
+  $(SOURCES_C) $(SOURCES_CPP)
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)

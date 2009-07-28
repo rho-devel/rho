@@ -94,7 +94,10 @@ typedef enum { UP, DOWN, LEFT, RIGHT } DE_DIRECTION;
 typedef enum {UNKNOWNN, NUMERIC, CHARACTER} CellType;
 
 /* EXPORTS : */
-SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho);
+extern "C" {
+    SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho);
+    SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho);
+}
 
 /* Global variables needed for the graphics */
 static Display *iodisplay = NULL;
@@ -174,7 +177,7 @@ static void copyH(DEstruct, int, int, int);
 static void copyarea(DEstruct, int, int, int, int);
 static void doConfigure(DEstruct, DEEvent *ioevent);
 static void drawrectangle(DEstruct, int, int, int, int, int, int);
-static void drawtext(DEstruct, int, int, char*, int);
+static void drawtext(DEstruct, int, int, CXXRconst char*, int);
 static void RefreshKeyboardMapping(DEEvent *ioevent);
 static void Rsync(DEstruct);
 static int textwidth(DEstruct, const char*, int);
@@ -289,7 +292,7 @@ static XIC ioic = NULL;
 
  */
 
-static char *menu_label[] =
+static CXXRconst char *menu_label[] =
 {
     " Real",
     " Character",
@@ -330,7 +333,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, j, cnt, len, nprotect;
     RCNTXT cntxt;
     char clab[25];
-    char *title = "R Data Editor";
+    CXXRconst char *title = "R Data Editor";
     destruct DE1;
     DEstruct DE = &DE1;
 
@@ -359,7 +362,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     nprotect++;
     DE->bwidth = 5;
     DE->hht = 30;
-    DE->isEditor = TRUE;
+    DE->isEditor = Rboolean(TRUE);
 
     /* setup work, names, lens  */
     DE->xmaxused = length(DE->work); DE->ymaxused = 0;
@@ -517,7 +520,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     DE->rowmin = 1;
     DE->bwidth = 5;
     DE->hht = 10;
-    DE->isEditor = FALSE;
+    DE->isEditor = Rboolean(FALSE);
 
     /* setup work, names, lens  */
     DE->xmaxused = length(DE->work); DE->ymaxused = 0;
@@ -1032,7 +1035,7 @@ static Rboolean getccol(DEstruct DE)
     int i, len, newlen, wcol, wrow;
     SEXPTYPE type;
     char clab[25];
-    Rboolean newcol = FALSE;
+    Rboolean newcol = Rboolean(FALSE);
 
     wcol = DE->ccol + DE->colmin - 1;
     wrow = DE->crow + DE->rowmin - 1;
@@ -1048,7 +1051,7 @@ static Rboolean getccol(DEstruct DE)
 	DE->xmaxused = wcol;
     }
     if (isNull(VECTOR_ELT(DE->work, wcol - 1))) {
-	newcol = TRUE;
+	newcol = Rboolean(TRUE);
 	SET_VECTOR_ELT(DE->work, wcol - 1,
 		       ssNewVector(REALSXP, max(100, wrow)));
 	INTEGER(DE->lens)[wcol - 1] = 0;
@@ -1166,8 +1169,8 @@ static void closerect(DEstruct DE)
 	    if (clength != 0) {
 		/* do it this way to ensure NA, Inf, ...  can get set */
 		char *endp;
-		double new = R_strtod(buf, &endp);
-		Rboolean warn = !isBlankString(endp);
+		double newd = R_strtod(buf, &endp);
+		Rboolean warn = Rboolean(!isBlankString(endp));
 		if (TYPEOF(cvec) == STRSXP) {
 		    SEXP newval;
 		    PROTECT( newval = mkString(buf) );
@@ -1178,7 +1181,7 @@ static void closerect(DEstruct DE)
 			warning("dataentry: parse error on string");
 		    UNPROTECT(2);
 		} else
-		    REAL(cvec)[wrow - 1] = new;
+		    REAL(cvec)[wrow - 1] = newd;
 		if (newcol && warn) {
 		    /* change mode to character */
 		    SEXP tmp = coerceVector(cvec, STRSXP);
@@ -1195,7 +1198,7 @@ static void closerect(DEstruct DE)
 	    if(wrow > wrow0) drawcol(DE, wcol); /* to fill in NAs */
 	}
     }
-    CellModified = FALSE;
+    CellModified = Rboolean(FALSE);
 
     downlightrect(DE);
 
@@ -1325,14 +1328,14 @@ static void handlechar(DEstruct DE, char *text)
 #endif
 
     if ( c == '\033' ) { /* ESC */
-	CellModified = FALSE;
+	CellModified = Rboolean(FALSE);
 	clength = 0;
 	bufp = buf;
 	drawelt(DE, DE->crow, DE->ccol);
 	cell_cursor_init(DE);
 	return;
     } else
-	CellModified = TRUE;
+	CellModified = Rboolean(TRUE);
 
     if (clength == 0) {
 
@@ -1774,7 +1777,7 @@ static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 	    clength -= last_w;
 	    bufp -= last_w;
 	    *bufp = '\0';
-	    CellModified = TRUE;
+	    CellModified = Rboolean(TRUE);
 	    printstring(DE, buf, clength, DE->crow, DE->ccol, 1);
 	} else bell();
     }
@@ -1979,7 +1982,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     int ioscreen;
     unsigned long iowhite, ioblack;
     char digits[] = "123456789.0";
-    char             *font_name="9x15";
+    CXXRconst char             *font_name="9x15";
     Window root;
     XEvent ioevent;
     XSetWindowAttributes winattr;
@@ -2003,7 +2006,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     if(!iodisplay) {
 	if ((iodisplay = XOpenDisplay(NULL)) == NULL) {
 	    warning("unable to open display");
-	    return TRUE;
+	    return Rboolean(TRUE);
 	}
 	deContext = XUniqueContext();
 	XSetErrorHandler(R_X11Err);
@@ -2035,7 +2038,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	}
 	if (font_set == NULL) {
 	    warning("unable to create fontset %s", opt_fontset_name);
-	    return TRUE; /* ERROR */
+	    return Rboolean(TRUE); /* ERROR */
 	}
     } else
 #endif
@@ -2043,7 +2046,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	DE->font_info = XLoadQueryFont(iodisplay, font_name);
 	if (DE->font_info == NULL) {
 	    warning("unable to losd font %s", font_name);
-	    return TRUE; /* ERROR */
+	    return Rboolean(TRUE); /* ERROR */
 	}
     }
 
@@ -2171,7 +2174,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	     ioblack,
 	     iowhite)) == 0) {
 	warning("unable to open window for data editor");
-	return TRUE;
+	return Rboolean(TRUE);
     }
 
     /*
@@ -2206,7 +2209,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	    XDestroyWindow(iodisplay, DE->iowindow);
 	    XCloseDisplay(iodisplay);
 	    warning("unable to open X Input Method");
-	    return TRUE;
+	    return Rboolean(TRUE);
 	}
 
 	/* search supported input style */
@@ -2241,7 +2244,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	    XDestroyWindow(iodisplay, DE->iowindow);
 	    XCloseDisplay(iodisplay);
 	    warning("unable to open X Input Context");
-	    return TRUE;
+	    return Rboolean(TRUE);
 	}
 
 	/* get XIM processes event. */
@@ -2278,7 +2281,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
        dimensions as above */
 
     /* font size consideration */
-    for(i = 0; i < (sizeof(menu_label)/sizeof(char *)); i++)
+    for(i = 0; i < int((sizeof(menu_label)/sizeof(char *))); i++)
 	twidth = (twidth<textwidth(DE, menu_label[i],strlen(menu_label[i]))) ?
 	    textwidth(DE, menu_label[i],strlen(menu_label[i])) : twidth;
 
@@ -2319,9 +2322,9 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     /* set the active rectangle to be the upper left one */
     DE->crow = 1;
     DE->ccol = 1;
-    CellModified = FALSE;
+    CellModified = Rboolean(FALSE);
     XSaveContext(iodisplay, DE->iowindow, deContext, (caddr_t) DE);
-    return FALSE;/* success */
+    return Rboolean(FALSE);/* success */
 }
 
 /* MAC/X11 BASICS */
@@ -2381,7 +2384,7 @@ static void drawrectangle(DEstruct DE,
 		   width, height);
 }
 
-static void drawtext(DEstruct DE, int xpos, int ypos, char *text, int len)
+static void drawtext(DEstruct DE, int xpos, int ypos, CXXRconst char *text, int len)
 {
 #ifdef USE_FONTSET
     if(mbcslocale)
@@ -2431,7 +2434,8 @@ static int textwidth(DEstruct DE, const char *text, int nchar)
 
 void popupmenu(DEstruct DE, int x_pos, int y_pos, int col, int row)
 {
-    int i, button, popupcol = col + DE->colmin - 1;
+    int i, popupcol = col + DE->colmin - 1;
+    unsigned int button;
     const char *name;
     char clab[20];
     XEvent event;
@@ -2658,7 +2662,7 @@ static void pastecell(DEstruct DE, int row, int col)
 	strcpy(buf, copycontents);
 	clength = strlen(copycontents);
 	bufp = buf + clength;
-	CellModified = TRUE;
+	CellModified = Rboolean(TRUE);
     }
     closerect(DE);
     highlightrect(DE);
@@ -2710,7 +2714,7 @@ static int last_wchar_bytes(char *str)
 #ifdef USE_FONTSET
     wchar_t   wcs[BOOSTED_BUF_SIZE];
     mbstate_t mb_st;
-    int cnt;
+    CXXRunsigned int cnt;
     char last_mbs[8];
     char *mbs;
     size_t bytes;

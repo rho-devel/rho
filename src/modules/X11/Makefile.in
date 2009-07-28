@@ -30,14 +30,14 @@ ALL_CPPFLAGS = $(R_XTRA_CPPFLAGS) $(X_CFLAGS) @CAIRO_CPPFLAGS@ $(CPPFLAGS) $(DEF
 ALL_CFLAGS = $(ALL_CFLAGS_LO)
 ALL_X_LIBS = $(X_PRE_LIBS) @CAIRO_LIBS@ $(X_LIBS) $(X_EXTRA_LIBS)
 
-SOURCES = dataentry.c devX11.c rotated.c rbitmap.c 
-DEPENDS = $(SOURCES:.c=.d)
-OBJECTS = $(SOURCES:.c=.o)
+SOURCES_C = devX11.c rotated.c rbitmap.c 
+DEPENDS = $(SOURCES_C:.c=.d) dataentry.d
+OBJECTS = $(SOURCES_C:.c=.o) dataentry.o
 HEADERS = cairoX11.c devX11.h rotated.h
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = \
-	Makefile.in $(SOURCES) $(HEADERS)
+	Makefile.in $(SOURCES_C) dataentry.cpp $(HEADERS)
 
 R_X11_la = R_X11$(SHLIB_EXT)
 ## AIX needs LIBM
@@ -47,7 +47,7 @@ all: Makefile Makedeps R
 
 Makefile: $(srcdir)/Makefile.in \
   $(top_builddir)/config.status \
-  $(SOURCES)
+  $(SOURCES_C) dataentry.cpp
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 Makedeps: Makefile $(DEPENDS)

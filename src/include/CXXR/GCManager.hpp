@@ -53,49 +53,33 @@ namespace CXXR {
      * This class only has static members.  When CXXR::MemoryBank indicates
      * that it is on the point of requesting additional memory from
      * the operating system, the class decides whether to initiate a
-     * garbage collection, and if so how many levels to collect.
+     * garbage collection.
      *
      * In the current implementation of GCManager, when cued by CXXR
      * as above, a garbage collection will be carried out if the
-     * number of bytes currently allocated via CXXR::MemoryBank is at least
-     * as great as a threshold value.  This threshold value varies
-     * during the run, subject to a minimum value specified in the
-     * enableGC() method.
+     * number of bytes currently allocated via CXXR::MemoryBank, plus
+     * the number of bytes now required, is at least as great as a
+     * threshold value.  This threshold value varies during the run,
+     * subject to a minimum value specified in the enableGC() method.
      */
     class GCManager {
     public:
-	/** @brief Adjust the garbage collection threshold.
-	 *
-	 *  Adjust the garbage collection threshold in the light of
-	 *  current allocations, and the space demand currently being
-	 *  addressed.
-	 *
-	 * @param bytes_needed If specified, the number of bytes
-	 *          currently being sought by CXXR::MemoryBank.
-	 */
-	static void adjustThreshold(size_t bytes_needed = 0);
-
-	/** @brief Initiate a garbage collection.
+	/** @brief Initiate a mark-sweep garbage collection.
 	 *
 	 * It is currently an error to initiate a mark-sweep garbage
 	 * collection while a GCNode object is under construction.
-	 *
-	 *
-	 * @param bytes_wanted The number of bytes being sought by the
-	 *          event that gave rise to a garbage collection.  If
-	 *          in doubt, set it to 0.
-	 *
-	 * @param full If this is true, a garbage collection of all
-	 *          generations of nodes is forced.  Otherwise
-	 *          GCManager decides for itself how many generations
-	 *          should be collected.
 	 */
-	static void gc(size_t bytes_wanted, bool full = false);
+	static void gc();
 
 	/** @brief Maximum number of bytes used.
 	 *
 	 * @return the maximum number of bytes used (up to the time of
 	 *         the most recent garbage collection.)
+	 *
+	 * @note In CXXR, the record of the maximum number of bytes
+	 * used is reviewed (and updated if necessary) only at the
+	 * start of a mark-sweep garbage collection, and so will almost
+	 * certainly underestimate the true maximum.
 	 */
 	static size_t maxBytes() {return s_max_bytes;}
 
@@ -105,20 +89,15 @@ namespace CXXR {
 	 * to the time of the most recent garbage collection.)
 	 *
 	 * @note This method is provided for compatibility with CR.
-	 * The number of GCNode objects doesn't directly affect the operation
-	 * of garbage collection in CXXR.
+	 * The number of GCNode objects doesn't directly affect the
+	 * operation of garbage collection in CXXR.
+	 *
+	 * @note In CXXR, the record of the maximum number of GCNode
+	 * objects allocated is reviewed (and updated if necessary)
+	 * only at the start of a mark-sweep garbage collection, and
+	 * so will almost certainly underestimate the true maximum.
 	 */
 	static size_t maxNodes() {return s_max_nodes;}
-
-	/** @brief Number of generations used by garbage collector.
-	 * This will be at least 2, since one generation (Generation
-	 * 0) is for newly created nodes still enjoying infant
-	 * immunity.
-	 *
-	 * @return The number of generations into which GCNode objects
-	 * are ranked by the garbage collector.
-	 */
-	static size_t numGenerations() {return s_num_old_generations + 2;}
 
 	/** @brief Reset the tallies of the maximum numbers of bytes and
 	 *  GCNode objects.
@@ -142,7 +121,7 @@ namespace CXXR {
 	 */
 	static void setGCThreshold(size_t initial_threshold);
 
-	/** @brief Set/unset monitors on garbage collection.
+	/** @brief Set/unset monitors on mark-sweep garbage collection.
 	 *
 	 * @param pre_gc If not a null pointer, this function will be
 	 *          called just before garbage collection begins,
@@ -172,10 +151,6 @@ namespace CXXR {
 
 	/** @brief Turn garbage collection torture on or off.
 	 *
-	 * If enabled, every time that CXXR::MemoryBank indicates that it is
-	 * about to request additional memory from the operating
-	 * system, a garbage collection is carried out.
-	 *
 	 * @param on The required torturing status.
 	 *
 	 * @note GC torture is no longer implemented in CXXR, so this
@@ -183,22 +158,19 @@ namespace CXXR {
 	 */
 	static void torture(bool on) {}
 
-	/** @brief Current GC threshold level.
+	/** @brief Current threshold level for mark-sweep garbage
+	 * collection.
 	 *
-	 * @return The current threshold level.  When CXXR::MemoryBank
-	 * indicates that it is on the point of requesting additional
-	 * memory from the operating system, garbage collection will
-	 * be triggered if the number of bytes currently allocated via
-	 * CXXR::MemoryBank is at least as great as this level.
+	 * @return The current threshold level.  When GCNode::operator
+	 * new is on the point of requesting memory from MemoryBank,
+	 * if it finds that the number of bytes already allocated via
+	 * MemoryBank is at least as great as this threshold level, it
+	 * may initiate a mark-sweep garbage collection.
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
 	friend class GCNode;
 
-	static const size_t s_num_old_generations = 2;
-	static const unsigned int s_collect_counts_max[s_num_old_generations];
-	static unsigned int s_gen_gc_counts[s_num_old_generations + 1];
-	
 	static size_t s_threshold;
 	static size_t s_min_threshold;
 
@@ -219,30 +191,9 @@ namespace CXXR {
 	static void (*s_pre_gc)();
 	static void (*s_post_gc)();
 
-	// Detailed control of the garbage collection, in particular
-	// choosing how many generations to collect, is carried out
+	// Detailed control of the garbage collection is carried out
 	// here.
-	static void gcGenController(size_t bytes_wanted, bool full);
-
-	/** Choose how many generations to collect according to a rota.
-	 *
-	 * There are three levels of collections.  Level 0 collects only
-	 * the youngest generation, Level 1 collects the two youngest
-	 * generations, and Level 2 collects all generations.  This
-	 * function decides how many old generations to collect according
-	 * to a rota.  Most collections are Level 0.  However, after every
-	 * collect_counts_max[0] Level 0 collections, a Level 1 collection
-	 * will be carried out; similarly after every
-	 * collect_counts_max[1] Level 1 collections a Level 2 collection
-	 * will be carried out.
-	 *
-	 * @param minlevel (<= 2, not checked) This parameter places a
-	 *          minimum on the number of old generations to be
-	 *          collected.  If minlevel is higher than the number of
-	 *          generations that genRota would have chosen for itself,
-	 *          the position in the rota is advanced accordingly.
-	 */
-	static unsigned int genRota(unsigned int minlevel);
+	static void gcController();
 
 	// Initialize static data associated with garbage collection.
 	static void initialize();

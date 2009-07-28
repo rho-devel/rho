@@ -131,8 +131,8 @@ static Rboolean url_open(Rconnection con)
     }
 
     con->isopen = TRUE;
-    con->canwrite = (con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = !con->canwrite;
+    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
+    con->canread = Rboolean(!con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     con->save = -1000;
@@ -184,10 +184,10 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
     switch(type) {
     case HTTPSsh:
     case HTTPsh:
-	n = in_R_HTTPRead(ctxt, ptr, size*nitems);
+	n = in_R_HTTPRead(ctxt, static_cast<char*>(ptr), size*nitems);
 	break;
     case FTPsh:
-	n = in_R_FTPRead(ctxt, ptr, size*nitems);
+	n = in_R_FTPRead(ctxt, static_cast<char*>(ptr), size*nitems);
 	break;
     }
     return n/size;
@@ -196,46 +196,46 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
 
 static Rconnection in_R_newurl(const char *description, const char * const mode)
 {
-    Rconnection new;
+    Rconnection newconn;
 
-    new = (Rconnection) malloc(sizeof(struct Rconn));
-    if(!new) error(_("allocation of url connection failed"));
-    new->connclass = (char *) malloc(strlen("url") + 1);
-    if(!new->connclass) {
-	free(new);
+    newconn = (Rconnection) malloc(sizeof(struct Rconn));
+    if(!newconn) error(_("allocation of url connection failed"));
+    newconn->connclass = (char *) malloc(strlen("url") + 1);
+    if(!newconn->connclass) {
+	free(newconn);
 	error(_("allocation of url connection failed"));
     }
-    strcpy(new->connclass, "url");
-    new->description = (char *) malloc(strlen(description) + 1);
-    if(!new->description) {
-	free(new->connclass); free(new);
+    strcpy(newconn->connclass, "url");
+    newconn->description = (char *) malloc(strlen(description) + 1);
+    if(!newconn->description) {
+	free(newconn->connclass); free(newconn);
 	error(_("allocation of url connection failed"));
     }
-    init_con(new, description, CE_NATIVE, mode);
-    new->canwrite = FALSE;
-    new->open = &url_open;
-    new->close = &url_close;
-    new->fgetc_internal = &url_fgetc_internal;
-    new->fgetc = &dummy_fgetc;
-    new->read = &url_read;
-    new->connprivate = (void *) malloc(sizeof(struct urlconn));
-    if(!new->connprivate) {
-	free(new->description); free(new->connclass); free(new);
+    init_con(newconn, description, CE_NATIVE, mode);
+    newconn->canwrite = FALSE;
+    newconn->open = &url_open;
+    newconn->close = &url_close;
+    newconn->fgetc_internal = &url_fgetc_internal;
+    newconn->fgetc = &dummy_fgetc;
+    newconn->read = &url_read;
+    newconn->connprivate = (void *) malloc(sizeof(struct urlconn));
+    if(!newconn->connprivate) {
+	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of url connection failed"));
     }
 
     IDquiet = TRUE;
-    return new;
+    return newconn;
 }
 
 
 
 #ifndef Win32
-static void putdots(int *pold, int new)
+static void putdots(int *pold, int newi)
 {
     int i, old = *pold;
-    *pold = new;
-    for(i = old; i < new; i++) {
+    *pold = newi;
+    for(i = old; i < newi; i++) {
 	REprintf(".");
 	if((i+1) % 50 == 0) REprintf("\n");
 	else if((i+1) % 10 == 0) REprintf(" ");
@@ -243,11 +243,11 @@ static void putdots(int *pold, int new)
     if(R_Consolefile) fflush(R_Consolefile);
 }
 
-static void putdashes(int *pold, int new)
+static void putdashes(int *pold, int newi)
 {
     int i, old = *pold;
-    *pold = new;
-    for(i = old; i < new; i++)  REprintf("=");
+    *pold = newi;
+    for(i = old; i < newi; i++)  REprintf("=");
     if(R_Consolefile) fflush(R_Consolefile);
 }
 #endif
@@ -287,7 +287,8 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP scmd, sfile, smode, sheaders, agentFun;
     const char *url, *file, *mode, *headers;
-    int quiet, status = 0, cacheOK;
+    Rboolean quiet;
+    int status = 0, cacheOK;
 #ifdef Win32
     char pbuf[30];
     int pc;
@@ -306,7 +307,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
     if(length(sfile) > 1)
 	warning(_("only first element of 'destfile' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    IDquiet = quiet = asLogical(CAR(args)); args = CDR(args);
+    IDquiet = quiet = Rboolean(asLogical(CAR(args))); args = CDR(args);
     if(quiet == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "quiet");
     smode =  CAR(args); args = CDR(args);
@@ -420,7 +421,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    while ((len = in_R_HTTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(res != len) error(_("write failed"));
+		if(int(res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {
@@ -525,7 +526,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    while ((len = in_R_FTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(res != len) error(_("write failed"));
+		if(int(res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {
@@ -1054,6 +1055,15 @@ void RxmlMessage(int level, const char *format, ...)
 #define STRICT_R_HEADERS
 #include <R_ext/RS.h> /* for R_Calloc */
 #include <R_ext/Rdynload.h>
+
+extern "C" {
+    void
+#ifdef USE_WININET
+    R_init_internet2(DllInfo *info);
+#else
+    R_init_internet(DllInfo *info);
+#endif
+}
 
 void
 #ifdef HAVE_VISIBILITY_ATTRIBUTE

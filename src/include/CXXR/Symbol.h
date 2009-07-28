@@ -220,6 +220,9 @@ namespace CXXR {
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	static map* s_table;
 	static GCRoot<Symbol>* s_missing_arg;

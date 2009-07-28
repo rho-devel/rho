@@ -41,6 +41,7 @@ while (<>) {
   s/funstr/this/g;
   # s/newbuf([^_\w\.])/new$1/g;  # newbuf is used itself in saveload.c
   s/newconn/new/g;
+  s/newd/new/g;
   s/newplot/new/g;
   s/newv/new/g;
   s/thisconn/this/g;

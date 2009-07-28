@@ -150,7 +150,7 @@ namespace CXXR {
 	 */
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{
-	    m_enclosing.retarget(this, new_enclos);
+	    m_enclosing = new_enclos;
 	}
 
 	/** @brief Set single-stepping status
@@ -193,6 +193,9 @@ namespace CXXR {
 	// Declared protected to ensure that Environment objects are
 	// created only using 'new':
 	~Environment() {}
+
+	// Virtual function of GCNode:
+	void detachReferents();
     private:
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;

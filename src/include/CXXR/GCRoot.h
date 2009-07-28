@@ -73,22 +73,39 @@ namespace CXXR {
 
 	GCRootBase(const GCRootBase& source)
 	    : m_it(s_roots->insert(s_roots->end(), *source.m_it))
-	{}
+	{
+	    if (*m_it)
+		(*m_it)->incRefCount();
+	}
 
 	~GCRootBase()
 	{
+	    const GCNode* node = *m_it;
+	    if (node && node->decRefCount() == 0)
+		node->makeMoribund();
 	    s_roots->erase(m_it);
 	}
 
 	GCRootBase& operator=(const GCRootBase& source)
 	{
-	    *m_it = *(source.m_it);
+	    const GCNode* newnode = *source.m_it;
+	    if (newnode)
+		newnode->incRefCount();
+	    const GCNode* oldnode = *m_it;
+	    if (oldnode && oldnode->decRefCount() == 0)
+		oldnode->makeMoribund();
+	    *m_it = newnode;
 	    return *this;
 	}
 
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
+	    if (node)
+		node->incRefCount();
+	    const GCNode* oldnode = *m_it;
+	    if (oldnode && oldnode->decRefCount() == 0)
+		oldnode->makeMoribund();
 	    *m_it = node;
 	}
 
