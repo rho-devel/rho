@@ -92,7 +92,7 @@ namespace CXXR {
 				GCRoot<BuiltInFunction>,
 				std::tr1::hash<const Symbol*>,
 				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol*,
+				CXXR::Allocator<std::pair<const Symbol* const,
 							  GCRoot<BuiltInFunction> > >
 	                        > map;
 

@@ -55,7 +55,7 @@ namespace CXXR {
 	std::tr1::unordered_map<const Symbol*, Binding,
 				std::tr1::hash<const Symbol*>,
 				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol*,
+				CXXR::Allocator<std::pair<const Symbol* const,
 							  Binding> >
 	                        > map;
     public:

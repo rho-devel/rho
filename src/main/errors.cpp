@@ -399,8 +399,10 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	CXXRconst char *tr; int nc;
 	if(!R_CollectWarnings)
 	    setupwarnings();
-	if( R_CollectWarnings > 49 )
+	if( R_CollectWarnings > 49 ) {
+	    endcontext(&cntxt);
 	    return;
+	}
 	SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
 	Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
 	if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)

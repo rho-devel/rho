@@ -58,6 +58,11 @@
 
 #include <Rmath.h>
 
+#ifndef isnan
+// Needed for example with MacOS 10.5.7 + Xcode 3.1.3:
+#define isnan std::isnan
+#endif
+
 extern "C" {
     extern double Rf_gamma_cody(double);
 }

@@ -99,7 +99,7 @@ namespace CXXR {
 	std::tr1::unordered_map<const CachedString*, GCRoot<Symbol>,
 				std::tr1::hash<const CachedString*>,
 				std::equal_to<const CachedString*>,
-				CXXR::Allocator<std::pair<const CachedString*,
+				CXXR::Allocator<std::pair<const CachedString* const,
 							  GCRoot<Symbol> > >
 	                        > map;
     public:
