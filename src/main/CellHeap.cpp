@@ -39,7 +39,11 @@
  * @todo Include valgrind instrumentation (conditionally compiled).
  */
 
+
 #include "CXXR/CellHeap.hpp"
+
+#include <cstdlib>
+#include <iostream>
 
 #ifndef __APPLE__
 #define HAVE_POSIX_MEMALIGN
@@ -47,11 +51,7 @@
 
 #ifdef HAVE_POSIX_MEMALIGN
 #define _XOPEN_SOURCE 600
-
-#include <cstdlib>
 #endif
-
-#include <iostream>
 
 using namespace std;
 using namespace CXXR;
