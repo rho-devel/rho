@@ -132,7 +132,7 @@ namespace CXXR {
     protected:
 	/** @brief Get link preceding a specified link.
 	 *
-	 * @param Pointer to the link whose predecessor is desired.
+	 * @param link Pointer to the link whose predecessor is desired.
 	 *
 	 * @return Pointer to the predecessor of \a link.
 	 */
@@ -143,7 +143,7 @@ namespace CXXR {
 
 	/** @brief Get link following a specified link.
 	 *
-	 * @param Pointer to the link whose successor is desired.
+	 * @param link Pointer to the link whose successor is desired.
 	 *
 	 * @return Pointer to the successor of \a link.
 	 */

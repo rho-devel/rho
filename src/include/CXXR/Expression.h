@@ -139,7 +139,7 @@ extern "C" {
 
     /** @brief Designate the Expression currently being evaluated.
      *
-     * @param Pointer to the Expression now to be evaluated.  (Not
+     * @param e Pointer to the Expression now to be evaluated.  (Not
      * currently checked in any way.)
      */
     void Rf_setCurrentExpression(SEXP e);

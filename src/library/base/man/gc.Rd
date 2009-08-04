@@ -14,26 +14,27 @@ gcinfo(verbose)
 \arguments{
   \item{verbose}{logical; if \code{TRUE}, the garbage collection prints
     statistics about the total memory allocated via CXXR's
-    internal heap.}
+    internal heap.  Currently ignored in CXXR.}
   \item{reset}{logical; if \code{TRUE} the values for maximum space used
     are reset to the current values.}
 }
 \description{
-  A call of \code{gc} causes a garbage collection to take place.
+  A call of \code{gc} causes a mark-sweep garbage collection to take place.
   \code{gcinfo} sets a flag so that
   automatic collection is either silent (\code{verbose=FALSE}) or
-  prints memory usage statistics (\code{verbose=TRUE}).
+  prints memory usage statistics (\code{verbose=TRUE}).  (But see below for
+  CXXR.)
 }
 \details{
-  A call of \code{gc} causes a garbage collection to take place.
+  A call of \code{gc} causes a mark-sweep garbage collection to take place.
   This will also take place automatically without user intervention, and the
   primary purpose of calling \code{gc} is for the report on memory usage.
 
-  However, it can be useful to call \code{gc} after a large object
+  However, in CR it can be useful to call \code{gc} after a large object
   has been removed, as this may prompt \R to return memory to the
-  operating system.
+  operating system.  In CXXR this will be useful only in rare circumstances.
 
-  When \code{gcinfo(TRUE)} is in force, messages are sent to the message
+  In CR, when \code{gcinfo(TRUE)} is in force, messages are sent to the message
   connection at each garbage collection of the form
   \preformatted{
     Garbage collection 12 = 10+0+2 (level 0) ...
@@ -43,7 +44,8 @@ gcinfo(verbose)
   next 0.1Mb and as a  percentage of the current trigger value.  The
   first line gives a  breakdown of the number of garbage collections
   at various levels (for an explanation see the \sQuote{R Internals}
-  manual). 
+  manual).  Nothing like this is currently implemented in CR, i.e.
+  \code{gcinfo} is a no-op. 
 }
 
 \value{

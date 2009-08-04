@@ -98,6 +98,11 @@ namespace CXXR {
 	    return *this;
 	}
 
+	/** @brief Change the node protected by this GCRootBase.
+	 *
+	 * @param node Pointer to the node now to be protected, or a
+	 * null pointer.
+	 */
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
