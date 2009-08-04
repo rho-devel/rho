@@ -82,6 +82,7 @@ namespace CXXR {
 	void clear();
 	bool erase(const Symbol* symbol);
 	void lockBindings();
+	size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;

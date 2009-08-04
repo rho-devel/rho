@@ -1575,7 +1575,8 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 int envlength(SEXP rho)
 {
-    return FrameSize(FRAME(rho), 1);
+    const Environment* env = SEXP_downcast<Environment*>(rho);
+    return env->frame()->numBindings();
 }
 
 /*----------------------------------------------------------------------
