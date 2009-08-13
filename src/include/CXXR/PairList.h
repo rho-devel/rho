@@ -183,22 +183,16 @@ extern "C" {
 
     /** @brief Is a Binding active?
      *
-     * @param b Pointer to a PairList object (checked) representing a
-     *          Frame::Binding (e.g. because it was produced using
+     * @param b Pointer to a ConsCell object (checked). If \a b points
+     *          to any type of ConsCell other than a PairList, the
+     *          function returns FALSE.  Otherwise \a b should point
+     *          to a PairList object representing a Frame::Binding
+     *          (e.g. because it was produced using
      *          Frame::asPairList() ).
      *
      * @return true iff this is an active Binding.
      */
-#ifndef __cplusplus
     Rboolean IS_ACTIVE_BINDING(SEXP b);
-#else
-    inline Rboolean IS_ACTIVE_BINDING(SEXP b)
-    {
-	using namespace CXXR;
-	const PairList* pl = SEXP_downcast<PairList*>(b);
-	return Rboolean(pl->m_active_binding);
-    }
-#endif
 
     /** @brief Lock the binding represented by a PairList object.
      *

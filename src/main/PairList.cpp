@@ -133,6 +133,15 @@ SEXP Rf_cons(SEXP cr, SEXP tl)
     return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
 }
 
+Rboolean IS_ACTIVE_BINDING(SEXP b)
+{
+    const ConsCell* cc = SEXP_downcast<ConsCell*>(b);
+    if (cc->sexptype() != LISTSXP)
+	return FALSE;
+    const PairList* pl = static_cast<const PairList*>(cc);
+    return Rboolean(pl->m_active_binding);
+}
+
 SEXP SETCDR(SEXP x, SEXP y)
 {
     if (!x) Rf_error(_("bad value"));
