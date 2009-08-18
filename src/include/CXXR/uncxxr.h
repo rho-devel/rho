@@ -40,6 +40,12 @@
  */
 #define CXXRconst const
 
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRconvert(type, expr) type(expr)
+
+/* uncxxr.pl replaces this by '0': */
+#define CXXRFALSE FALSE
+
 /* uncxxr.pl deletes the characters CXXRNOCAST so as to leave a
  * C-style cast to type t.  CXXR uses this macro in files inherited from
  * CX to suppress casts (usually of NULL) that are unnecessary in C++
@@ -49,6 +55,9 @@
 
 /* uncxxr.pl replaces this by 'attribute_hidden'. */
 #define CXXRnot_hidden
+
+/* uncxxr.pl replaces this by '1': */
+#define CXXRTRUE TRUE
 
 /* uncxxr.pl deletes this. */
 #define CXXRunsigned unsigned

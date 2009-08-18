@@ -26,14 +26,15 @@ matlines  <-
 	    add=TRUE, ...)
 
 matplot <- function(x, y, type = "p",
-		    lty = 1:5, lwd = 1, pch=NULL, col=1:6, cex=NULL, bg=NA,
+		    lty = 1:5, lwd = 1, lend = par("lend"),
+                    pch=NULL, col=1:6, cex=NULL, bg=NA,
 		    xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL,
 		    ..., add= FALSE, verbose = getOption("verbose"))
 {
     paste.ch <- function(chv) paste('"',chv,'"', sep="", collapse=" ")
     str2vec <- function(string) {
-	if(nchar(string, type="c")[1] > 1)
-	    strsplit(string[1], NULL)[[1]]
+	if(nchar(string, type="c")[1L] > 1)
+	    strsplit(string[1L], NULL)[[1L]]
 	else string
     }
     ## These from plot.default :
@@ -42,10 +43,10 @@ matplot <- function(x, y, type = "p",
     ##
     if(missing(x)) {
 	if(missing(y)) stop("must specify at least one of 'x' and 'y'")
-	else x <- 1:NROW(y)
+	else x <- 1L:NROW(y)
     } else if(missing(y)) {
 	y <- x;		ylabel <- xlabel
-	x <- 1:NROW(y); xlabel <- ""
+	x <- 1L:NROW(y); xlabel <- ""
     }
     kx <- ncol(x <- as.matrix(x))
     ky <- ncol(y <- as.matrix(y))
@@ -60,7 +61,7 @@ matplot <- function(x, y, type = "p",
 
     type <- str2vec(type)
     if(is.null(pch)) {
-	pch <- c(1:9, 0, letters, LETTERS)
+	pch <- c(1L:9, 0, letters, LETTERS)
 	if(k > length(pch))
 	    warning("default 'pch' is smaller than number of columns and hence recycled")
     } else if(is.character(pch))
@@ -71,7 +72,7 @@ matplot <- function(x, y, type = "p",
 	    paste(" col= (", paste.ch(col), ")", sep=''),
 	    paste(" pch= (", paste.ch(pch), ")", sep=''),
 	    " ...\n", domain=NA)
-    ii <- match("log", names(xargs <- list(...)), nomatch = 0)
+    ii <- match("log", names(xargs <- list(...)), nomatch = 0L)
     log <- if (ii != 0) xargs[[ii]]
     xy <- xy.coords(x, y, xlabel, ylabel, log=log)
     xlab <- if (is.null(xlab)) xy$xlab else xlab
@@ -80,20 +81,21 @@ matplot <- function(x, y, type = "p",
     ylim <- if (is.null(ylim)) range(xy$y[is.finite(xy$y)]) else ylim
     if(length(type)< k) type<- rep(type,length.out = k)
     if(length(lty) < k) lty <- rep(lty, length.out = k)
+    if(length(lend)< k) lend <- rep(lend, length.out = k)
     if(length(lwd) < k) lwd <- rep(lwd, length.out = k)
     if(length(pch) < k) pch <- rep(pch, length.out = k)
     if(length(col) < k) col <- rep(col, length.out = k)
     if(length(bg) < k)	bg  <- rep(bg,	length.out = k)
     if(length(cex) < k) cex <- rep(cex, length.out = k)
-    ii <- 1:k
+    ii <- 1L:k
     if(!add) {
-	ii <- ii[-1]
-	plot(x[,1],y[,1], type=type[1], xlab=xlab, ylab=ylab,
-	     xlim = xlim, ylim = ylim, lty=lty[1], lwd=lwd[1],
-	     pch=pch[1], col=col[1], cex=cex[1], bg=bg[1], ...)
+	ii <- ii[-1L]
+	plot(x[,1],y[,1], type=type[1L], xlab=xlab, ylab=ylab,
+	     xlim = xlim, ylim = ylim, lty=lty[1L], lwd=lwd[1L], lend=lend[1L],
+	     pch=pch[1L], col=col[1L], cex=cex[1L], bg=bg[1L], ...)
     }
     for (i in ii) {
 	lines(x[,i], y[,i], type=type[i], lty=lty[i],
-	      lwd=lwd[i], pch=pch[i], col=col[i], cex=cex[i], bg=bg[i])
+	      lwd=lwd[i], lend=lend[i], pch=pch[i], col=col[i], cex=cex[i], bg=bg[i])
     }
 }

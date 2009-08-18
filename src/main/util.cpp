@@ -234,7 +234,7 @@ TypeTable[] = {
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { 0,	        SEXPTYPE(-1)}
+    { CXXRNOCAST(char *)NULL,     CXXRconvert(SEXPTYPE, -1)         }
 };
 
 
@@ -254,7 +254,7 @@ SEXP type2str(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == int(t))
+	if (TypeTable[i].type == CXXRconvert(int, t))
 	    return mkChar(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2str");
@@ -266,7 +266,7 @@ const char *type2char(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == int(t))
+	if (TypeTable[i].type == CXXRconvert(int, t))
 	    return TypeTable[i].str;
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2char");
@@ -280,7 +280,7 @@ SEXP type2symbol(SEXPTYPE t)
        with TypeTable pointing to both the
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == int(t))
+	if (TypeTable[i].type == CXXRconvert(int, t))
 	    return install(CXXRNOCAST(char *) TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
@@ -292,7 +292,7 @@ void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == int(t))
+	if (TypeTable[i].type == CXXRconvert(int, t))
 	    error(_("unimplemented type '%s' in '%s'\n"), TypeTable[i].str, s);
     }
     error(_("unimplemented type (%d) in '%s'\n"), t, s);
@@ -387,7 +387,7 @@ Rboolean isBlankString(const char *s)
 Rboolean StringBlank(SEXP x)
 {
     if (x == R_NilValue) return TRUE;
-    else return Rboolean(CHAR(x)[0] == '\0');
+    else return CXXRconvert(Rboolean, CHAR(x)[0] == '\0');
 }
 
 /* Function to test whether a string is a true value */
@@ -435,12 +435,13 @@ void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 {
     if (PRIMARITY(op) >= 0 && PRIMARITY(op) != length(args)) {
 	if (PRIMINTERNAL(op))
-	    error(P_("%d argument passed to .Internal(%s) which requires %d",
+	    error(ngettext("%d argument passed to .Internal(%s) which requires %d",
 		     "%d arguments passed to .Internal(%s) which requires %d",
 		     length(args)),
 		  length(args), PRIMNAME(op), PRIMARITY(op));
 	else
-	    errorcall(call, P_("%d argument passed to '%s' which requires %d",
+	    errorcall(call,
+		      ngettext("%d argument passed to '%s' which requires %d",
 			       "%d arguments passed to '%s' which requires %d",
 			       length(args)),
 		      length(args), PRIMNAME(op), PRIMARITY(op));
@@ -452,12 +453,12 @@ SEXP nthcdr(SEXP s, int n)
     if (isList(s) || isLanguage(s) || isFrame(s) || TYPEOF(s) == DOTSXP ) {
 	while( n-- > 0 ) {
 	    if (s == R_NilValue)
-		error(_("\"nthcdr\" list shorter than %d"), n);
+		error(_("'nthcdr' list shorter than %d"), n);
 	    s = CDR(s);
 	}
 	return s;
     }
-    else error(_("\"nthcdr\" needs a list to CDR down"));
+    else error(_("'nthcdr' needs a list to CDR down"));
     return R_NilValue;/* for -Wall */
 }
 
@@ -660,8 +661,9 @@ SEXP static intern_getwd(void)
 	if(res > 0) {
 	    wcstoutf8(buf, wbuf, PATH_MAX+1);
 	    R_UTF8fixslash(buf);
-	    rval = allocVector(STRSXP, 1);
+	    PROTECT(rval = allocVector(STRSXP, 1));
 	    SET_STRING_ELT(rval, 0, mkCharCE(buf, CE_UTF8));
+	    UNPROTECT(1);
 	}
     }
 #elif defined(HAVE_GETCWD)
@@ -887,7 +889,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(w != NA_INTEGER && w < 0)
 	    error(_("invalid '%s' value"), "width");
     }
-    findWidth = Rboolean(w == NA_INTEGER);
+    findWidth = CXXRconvert(Rboolean, (w == NA_INTEGER));
     s = CADDR(args);
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	error(_("invalid '%s' value"), "quote");
@@ -1026,48 +1028,48 @@ utf8toucs(wchar_t *wc, const char *s)
 	*w = wchar_t( byte);
 	return 1;
     } else if (byte < 0xE0) {
-	if(strlen(s) < 2) return size_t(-2);
+	if(strlen(s) < 2) return CXXRconvert(size_t, -2);
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = wchar_t (((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = wchar_t ((((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
-	} else return size_t(-1);
+	} else return CXXRconvert(size_t, -1);
     } else if (byte < 0xF0) {
-	if(strlen(s) < 3) return size_t(-2);
+	if(strlen(s) < 3) return CXXRconvert(size_t, -2);
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
 	    *w = wchar_t (((byte & 0x0F) << 12)
-			  | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
+		    | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    /* Surrogates range */
-	    if(byte >= 0xD800 && byte <= 0xDFFF) return size_t(-1);
-	    if(byte == 0xFFFE || byte == 0xFFFF) return size_t(-1);
+	    if(byte >= 0xD800 && byte <= 0xDFFF) return CXXRconvert(size_t, -1);
+	    if(byte == 0xFFFE || byte == 0xFFFF) return CXXRconvert(size_t, -1);
 	    return 3;
-	} else return size_t(-1);
+	} else return CXXRconvert(size_t, -1);
     }
-    if(sizeof(wchar_t) < 4) return size_t(-2);
+    if(sizeof(wchar_t) < 4) return CXXRconvert(size_t, -2);
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
-	if(strlen(s) < 4) return size_t(-2);
+	if(strlen(s) < 4) return CXXRconvert(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 18)
-		      | ((s[1] & 0x3F) << 12)
-		      | ((s[2] & 0x3F) << 6)
-		      | (s[3] & 0x3F));
+		        | ((s[1] & 0x3F) << 12)
+		        | ((s[2] & 0x3F) << 6)
+		        | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
-	if(strlen(s) < 5) return size_t(-2);
+	if(strlen(s) < 5) return CXXRconvert(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 24)
-		      | ((s[1] & 0x3F) << 12)
-		      | ((s[2] & 0x3F) << 12)
-		      | ((s[3] & 0x3F) << 6)
-		      | (s[4] & 0x3F));
+		        | ((s[1] & 0x3F) << 12)
+		        | ((s[2] & 0x3F) << 12)
+		        | ((s[3] & 0x3F) << 6)
+		        | (s[4] & 0x3F));
 	return 5;
     } else {
-	if(strlen(s) < 6) return size_t(-2);
+	if(strlen(s) < 6) return CXXRconvert(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 30)
-		      | ((s[1] & 0x3F) << 24)
-		      | ((s[2] & 0x3F) << 18)
-		      | ((s[3] & 0x3F) << 12)
-		      | ((s[4] & 0x3F) << 6)
-		      | (s[5] & 0x3F));
+		        | ((s[1] & 0x3F) << 24)
+		        | ((s[2] & 0x3F) << 18)
+		        | ((s[3] & 0x3F) << 12)
+		        | ((s[4] & 0x3F) << 6)
+		        | (s[5] & 0x3F));
 	return 6;
     }
 }
@@ -1086,7 +1088,7 @@ utf8towcs(wchar_t *wc, const char *s, size_t n)
 	    if (m < 0) error(_("invalid input '%s' in 'utf8towcs'"), s);
 	    if (m == 0) break;
 	    res ++;
-	    if (res >= int(n)) break;
+	    if (res >= CXXRconvert(int, n)) break;
 	}
     else
 	for(t = s; ; res++, t += m) {
@@ -1110,8 +1112,8 @@ static size_t Rwcrtomb(char *s, const wchar_t wc)
 
     b = s ? s : buf;
     if(cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < int(sizeof(utf8_table1)/sizeof(int)); i++)
-	if (int(cvalue) <= utf8_table1[i]) break;
+    for (i = 0; i < CXXRconvert(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (CXXRconvert(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
 	*b-- = 0x80 | (cvalue & 0x3f);
@@ -1132,7 +1134,7 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
 	    m  = Rwcrtomb(t, *p);
 	    if(m <= 0) break;
 	    res += m;
-	    if(res >= int(n)) break;
+	    if(res >= CXXRconvert(int, n)) break;
 	    t += m;
 	}
     } else {
@@ -1157,7 +1159,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	/* This gets called from the menu setup in RGui */
 	if (!R_Is_Running) return -1;
 	/* let's try to print out a readable version */
-	char *err = static_cast<char*>(alloca(4*strlen(s) + 1)), *q;
+	char *err = CXXRconvert(static_cast<char*>, alloca(4*strlen(s) + 1)), *q;
 	const char *p;
 	R_CheckStack();
 	for(p = s, q = err; *p; ) {
@@ -1183,57 +1185,9 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 
 Rboolean mbcsValid(const char *str)
 {
-    return  Rboolean(int(mbstowcs(NULL, str, 0)) >= 0);
+    return  CXXRconvert(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
 }
 
-#ifdef UNUSED
-/* We do this conversion ourselves to do our own error recovery */
-void mbcsToLatin1(const char *in, char *out)
-{
-    wchar_t *wbuff;
-    CXXRunsigned int i;
-    size_t res = mbstowcs(NULL, in, 0), mres;
-
-    if(res == size_t((-1))) {
-	/* let's try to print out a readable version */
-	size_t used, n = strlen(in);
-	char *err = alloca(4*n + 1), *q;
-	const char *p;
-	mbstate_t ps;
-	R_CheckStack();
-	for(p = in, q = err; *p; ) {
-	    used = mbrtowc(NULL, p, n, &ps);
-	    if(used == 0) break;
-	    else if((int) used > 0) {
-		memcpy(q, p, used);
-		p += used;
-		q += used;
-		n -= used;
-	    } else {
-		sprintf(q, "<%02x>", (unsigned char) *p++);
-		q += 4;
-		n--;
-	    }
-	}
-	*q = '\0';
-	warning(_("invalid input '%s' in mbcsToLatin1: omitted"), err);
-	*out = '\0';
-	return;
-    }
-    wbuff = static_cast<wchar_t *>( alloca((res+1) * sizeof(wchar_t)));
-    R_CheckStack();
-    if(!wbuff) error(_("allocation failure in '%s'"), "mbcsToLatin1");
-    mres = mbstowcs(wbuff, in, res+1);
-    if(mres == size_t(-1)) /* we checked above, so should not get here */
-	error("invalid input in 'mbcsToLatin1'");
-    for(i = 0; i < res; i++) {
-	/* here we do assume Unicode wchars */
-	if(wbuff[i] > 0xFF) out[i] = '.';
-	else out[i] = char( wbuff[i]);
-    }
-    out[res] = '\0';
-}
-#endif
 
 /* MBCS-aware versions of common comparisons.  Only used for ASCII c */
 char *Rf_strchr(const char *s, int c)
@@ -1271,9 +1225,6 @@ int utf8clen(char c) { return 1;}
 size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, void *ps)
 { return (size_t)(-1);}
 Rboolean mbcsValid(const char *str) { return TRUE; }
-#ifdef UNUSED
-void mbcsToLatin1(char *in, char *out) {}
-#endif
 #undef Rf_strchr
 char *Rf_strchr(const char *s, int c) {return strchr(s, c);}
 #undef Rf_strrchr
@@ -1379,7 +1330,7 @@ char *acopy_string(const char *in)
 	out = (char *) R_alloc(1+strlen(in), sizeof(char));
 	strcpy(out, in);
     } else
-        out = const_cast<char*>("");
+	out = CXXRconvert(const_cast<char*>, "");
     return out;
 }
 
@@ -1582,10 +1533,88 @@ double R_atof(const char *str)
 } // extern "C"
 
 #ifdef USE_ICU
+# ifdef HAVE_LOCALE_H
+#  include <locale.h>
+# endif
+#ifdef USE_ICU_APPLE
+/* Mac OS X is missing the headers */
+typedef int UErrorCode; /* really an enum these days */
+struct UCollator;
+typedef struct UCollator UCollator;
+
+typedef enum {
+  UCOL_EQUAL    = 0,
+  UCOL_GREATER    = 1,
+  UCOL_LESS    = -1
+} UCollationResult ;
+
+typedef enum {
+  UCOL_DEFAULT = -1,
+  UCOL_PRIMARY = 0,
+  UCOL_SECONDARY = 1,
+  UCOL_TERTIARY = 2,
+  UCOL_DEFAULT_STRENGTH = UCOL_TERTIARY,
+  UCOL_CE_STRENGTH_LIMIT,
+  UCOL_QUATERNARY=3,
+  UCOL_IDENTICAL=15,
+  UCOL_STRENGTH_LIMIT,
+  UCOL_OFF = 16,
+  UCOL_ON = 17,
+  UCOL_SHIFTED = 20,
+  UCOL_NON_IGNORABLE = 21,
+  UCOL_LOWER_FIRST = 24,
+  UCOL_UPPER_FIRST = 25,
+  UCOL_ATTRIBUTE_VALUE_COUNT
+} UColAttributeValue;
+
+typedef UColAttributeValue UCollationStrength;
+
+typedef enum {
+      UCOL_FRENCH_COLLATION, 
+      UCOL_ALTERNATE_HANDLING, 
+      UCOL_CASE_FIRST, 
+      UCOL_CASE_LEVEL,
+      UCOL_NORMALIZATION_MODE, 
+      UCOL_DECOMPOSITION_MODE = UCOL_NORMALIZATION_MODE,
+      UCOL_STRENGTH,
+      UCOL_HIRAGANA_QUATERNARY_MODE,
+      UCOL_NUMERIC_COLLATION, 
+      UCOL_ATTRIBUTE_COUNT
+} UColAttribute;
+
+/* UCharIterator struct has to be defined sice we use its instances as
+   local variables, but we don't acutally use any of its members. */
+typedef struct UCharIterator {
+  const void *context;
+  int32_t length, start, index, limit, reservedField;
+  void *fns[16]; /* we overshoot here (there is just 10 fns in ICU 3.6),
+		    but we have to make sure that enough stack space
+		    is allocated when used as a local var in future
+		    versions */
+} UCharIterator;
+
+UCollator* ucol_open(const char *loc, UErrorCode *status);
+void ucol_close(UCollator *coll);
+void ucol_setAttribute(UCollator *coll, UColAttribute attr, 
+		       UColAttributeValue value, UErrorCode *status);
+void ucol_setStrength(UCollator *coll, UCollationStrength strength);
+UCollationResult ucol_strcollIter(const UCollator *coll,
+				  UCharIterator *sIter,
+				  UCharIterator *tIter,
+				  UErrorCode *status);
+void uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length);
+
+void uloc_setDefault(const char* localeID, UErrorCode* status);
+
+#define U_ZERO_ERROR 0
+#define U_FAILURE(x) ((x)>U_ZERO_ERROR)
+
+#else
 #include <unicode/utypes.h>
 #include <unicode/ucol.h>
 #include <unicode/uloc.h>
 #include <unicode/uiter.h>
+#endif
 
 static UCollator *collator = NULL;
 

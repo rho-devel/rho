@@ -181,6 +181,14 @@ Rconnection getConnection_no_err(int n)
 
 }
 
+static void set_iconv_error(Rconnection con, CXXRconst char* from, CXXRconst char* to)
+{
+    char buf[100];
+    snprintf(buf, 100, _("unsupported conversion from '%s' to '%s'"), from, to);
+    con_destroy(ConnIndex(con));
+    error(buf);
+}
+
 void set_iconv(Rconnection con)
 {
     void *tmp;
@@ -201,8 +209,7 @@ void set_iconv(Rconnection con)
 #endif
 	tmp = Riconv_open(con->UTF8out ? "UTF-8" : "", con->encname);
 	if(tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
-	else error(_("unsupported conversion from '%s' to '%s'"),
-		   con->encname, con->UTF8out ? "UTF-8" : "");
+	else set_iconv_error(con, con->encname, con->UTF8out ? "UTF-8" : "");
 	con->EOF_signalled = FALSE;
 	/* initialize state, and prepare any initial bytes */
 	Riconv(tmp, NULL, NULL, &ob, &onb);
@@ -216,8 +223,7 @@ void set_iconv(Rconnection con)
 	char *ob = con->init_out;
 	tmp = Riconv_open(con->encname, "");
 	if(tmp != reinterpret_cast<void *>(-1)) con->outconv = tmp;
-	else error(_("unsupported conversion from '%s' to '%s'"),
-		   con->encname, "");
+	else set_iconv_error(con, con->encname, "");
 	/* initialize state, and prepare any initial bytes */
 	Riconv(tmp, NULL, NULL, &ob, &onb);
 	ob[25-onb] = '\0';
@@ -345,7 +351,8 @@ int dummy_vfprintf(Rconnection con, const char *format, va_list ap)
 		warning(_("invalid char string in output conversion"));
 	    *ob = '\0';
 	    con->write(outbuf, 1, strlen(outbuf), con);
-	} while(again);
+	} while(again && inb > 0);  /* it seems some iconv signal -1 on
+				       zero-length input */
     } else
 #endif /* HAVE_VA_COPY */
 	con->write(b, 1, res, con);
@@ -503,7 +510,7 @@ static Rboolean file_open(Rconnection con)
 {
     const char *name;
     FILE *fp = NULL;
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     Rboolean temp = FALSE;
 #ifdef HAVE_FCNTL
     int fd, flags;
@@ -559,11 +566,11 @@ static Rboolean file_open(Rconnection con)
 #endif
     thisconn->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     if(mlen >= 2 && con->mode[1] == '+')
 	con->canread = con->canwrite = TRUE;
-    thisconn->last_was_write = Rboolean(!con->canread);
+    thisconn->last_was_write = CXXRconvert(Rboolean, !con->canread);
     thisconn->rpos = 0;
     if(con->canwrite) thisconn->wpos = f_tell(fp);
     if(mlen >= 2 && con->mode[mlen-1] == 'b') con->text = FALSE;
@@ -584,7 +591,7 @@ static Rboolean file_open(Rconnection con)
 
 static void file_close(Rconnection con)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     if(strcmp(con->description, "stdin")) fclose(thisconn->fp);
     con->isopen = FALSE;
 #ifdef Win32
@@ -594,7 +601,7 @@ static void file_close(Rconnection con)
 
 static int file_vfprintf(Rconnection con, const char *format, va_list ap)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
 
     if(!thisconn->last_was_write) {
 	thisconn->rpos = f_tell(thisconn->fp);
@@ -607,7 +614,7 @@ static int file_vfprintf(Rconnection con, const char *format, va_list ap)
 
 static int file_fgetc_internal(Rconnection con)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     FILE *fp = thisconn->fp;
     int c;
 
@@ -622,7 +629,7 @@ static int file_fgetc_internal(Rconnection con)
 
 static double file_seek(Rconnection con, double where, int origin, int rw)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     FILE *fp = thisconn->fp;
 #if defined(HAVE_OFF_T) && defined(HAVE_FSEEKO)
     off_t pos;
@@ -660,7 +667,7 @@ static double file_seek(Rconnection con, double where, int origin, int rw)
 	    break;
     default: whence = SEEK_SET;
     }
-    f_seek(fp, int(where), whence);
+    f_seek(fp, CXXRconvert(int, where), whence);
     if(thisconn->last_was_write) thisconn->wpos = f_tell(thisconn->fp);
     else thisconn->rpos = f_tell(thisconn->fp);
     return pos;
@@ -668,7 +675,7 @@ static double file_seek(Rconnection con, double where, int origin, int rw)
 
 static void file_truncate(Rconnection con)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
 #ifdef HAVE_FTRUNCATE
     FILE *fp = thisconn->fp;
     int fd = fileno(fp);
@@ -707,7 +714,7 @@ static int file_fflush(Rconnection con)
 static size_t file_read(void *ptr, size_t size, size_t nitems,
 			Rconnection con)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     FILE *fp = thisconn->fp;
 
     if(thisconn->last_was_write) {
@@ -721,7 +728,7 @@ static size_t file_read(void *ptr, size_t size, size_t nitems,
 static size_t file_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
-    Rfileconn thisconn = static_cast<fileconn*>(con->connprivate);
+    Rfileconn thisconn = CXXRconvert(static_cast<fileconn*>, con->connprivate);
     FILE *fp = thisconn->fp;
 
     if(!thisconn->last_was_write) {
@@ -788,7 +795,7 @@ static Rconnection newfile(const char *description, int enc, const char *mode)
 static Rboolean fifo_open(Rconnection con)
 {
     const char *name;
-    Rfifoconn thisconn = static_cast<fifoconn*>(con->connprivate);
+    Rfifoconn thisconn = CXXRconvert(static_cast<fifoconn*>, con->connprivate);
     int fd, flags, res;
     int mlen = strlen(con->mode);
     struct stat sb;
@@ -798,8 +805,8 @@ static Rboolean fifo_open(Rconnection con)
 	temp = TRUE;
 	name = R_tmpnam("Rf", R_TempDir);
     } else name = R_ExpandFileName(con->description);
-    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     if(mlen >= 2 && con->mode[1] == '+') con->canread = TRUE;
 
     /* if we are to write, create the fifo if needed */
@@ -849,7 +856,7 @@ static Rboolean fifo_open(Rconnection con)
 
 static void fifo_close(Rconnection con)
 {
-    close((static_cast<Rfifoconn>(con->connprivate))->fd);
+    close((static_cast<Rfifoconn>((con->connprivate)))->fd);
     con->isopen = FALSE;
 }
 
@@ -956,8 +963,8 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     ncon = NextConnection();
-    con = Connections[ncon] = newfifo(file, strlen(open) ? open : const_cast<char*>("r"));
-    con->blocking = Rboolean(block);
+    con = Connections[ncon] = newfifo(file, strlen(open) ? open : CXXRconvert(const_cast<char*>, "r"));
+    con->blocking = CXXRconvert(Rboolean, block);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -976,8 +983,8 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1021,8 +1028,8 @@ static Rboolean pipe_open(Rconnection con)
     }
     static_cast<Rfileconn>(con->connprivate)->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = Rboolean(con->mode[0] == 'w');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     set_iconv(con);
@@ -1032,7 +1039,7 @@ static Rboolean pipe_open(Rconnection con)
 
 static void pipe_close(Rconnection con)
 {
-    pclose((static_cast<Rfileconn>(con->connprivate))->fp);
+    pclose((static_cast<Rfileconn>((con->connprivate)))->fp);
     con->isopen = FALSE;
 }
 
@@ -1092,12 +1099,16 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
     if(length(scmd) > 1)
 	warning(_("only first element of 'description' argument used"));
 #ifdef Win32
-    ienc = getCharCE(STRING_ELT(scmd, 0));
-    if(ienc == CE_UTF8)
-	file = CHAR(STRING_ELT(scmd, 0));
-    else
-#endif
+    if( !strIsASCII(CHAR(STRING_ELT(scmd, 0))) ) {
+	ienc = CE_UTF8;
+	file = translateCharUTF8(STRING_ELT(scmd, 0));
+    } else {
+	ienc = CE_NATIVE;
 	file = translateChar(STRING_ELT(scmd, 0));
+    }
+#else
+    file = translateChar(STRING_ELT(scmd, 0));
+#endif
     sopen = CADR(args);
     if(!isString(sopen) || length(sopen) != 1)
 	error(_("invalid '%s' argument"), "open");
@@ -1137,8 +1148,8 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1167,8 +1178,8 @@ static Rboolean gzfile_open(Rconnection con)
     }
     static_cast<Rgzfileconn>(con->connprivate)->fp = fp;
     con->isopen = TRUE;
-    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     set_iconv(con);
@@ -1178,13 +1189,13 @@ static Rboolean gzfile_open(Rconnection con)
 
 static void gzfile_close(Rconnection con)
 {
-    gzclose((static_cast<Rgzfileconn>(con->connprivate))->fp);
+    gzclose((static_cast<Rgzfileconn>((con->connprivate)))->fp);
     con->isopen = FALSE;
 }
 
 static int gzfile_fgetc_internal(Rconnection con)
 {
-    gzFile fp = (static_cast<Rgzfileconn>(con->connprivate))->fp;
+    gzFile fp = (static_cast<Rgzfileconn>((con->connprivate)))->fp;
     int c;
 
     /* Looks like eof is signalled one char early */
@@ -1196,7 +1207,7 @@ static int gzfile_fgetc_internal(Rconnection con)
 
 static double gzfile_seek(Rconnection con, double where, int origin, int rw)
 {
-    gzFile  fp = (static_cast<Rgzfileconn>(con->connprivate))->fp;
+    gzFile  fp = (static_cast<Rgzfileconn>((con->connprivate)))->fp;
     z_off_t pos = gztell(fp);
     int res, whence = SEEK_SET;
 
@@ -1227,7 +1238,7 @@ static int gzfile_fflush(Rconnection con)
 static size_t gzfile_read(void *ptr, size_t size, size_t nitems,
 			Rconnection con)
 {
-    gzFile fp = (static_cast<Rgzfileconn>(con->connprivate))->fp;
+    gzFile fp = (static_cast<Rgzfileconn>((con->connprivate)))->fp;
     /* uses 'unsigned' for len */
     if (double( size) * double( nitems) > UINT_MAX)
 	error(_("too large a block specified"));
@@ -1237,7 +1248,7 @@ static size_t gzfile_read(void *ptr, size_t size, size_t nitems,
 static size_t gzfile_write(const void *ptr, size_t size, size_t nitems,
 			   Rconnection con)
 {
-    gzFile fp = (static_cast<Rgzfileconn>(con->connprivate))->fp;
+    gzFile fp = (static_cast<Rgzfileconn>((con->connprivate)))->fp;
     /* uses 'unsigned' for len */
     if (double( size) * double( nitems) > UINT_MAX)
 	error(_("too large a block specified"));
@@ -1312,7 +1323,7 @@ SEXP attribute_hidden do_gzfile(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "compress");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     ncon = NextConnection();
-    con = Connections[ncon] = newgzfile(file, strlen(open) ? open : const_cast<char*>("r"),
+    con = Connections[ncon] = newgzfile(file, strlen(open) ? open : CXXRconvert(const_cast<char*>, "r"),
 					compress);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
@@ -1332,8 +1343,8 @@ SEXP attribute_hidden do_gzfile(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1350,8 +1361,8 @@ static Rboolean bzfile_open(Rconnection con)
     int bzerror;
     char mode[] = "rb";
 
-    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     /* regardless of the R view of the file, the file must be opened in
        binary mode where it matters */
     mode[0] = con->mode[0];
@@ -1380,8 +1391,8 @@ static Rboolean bzfile_open(Rconnection con)
 	    return FALSE;
 	}
     }
-    (static_cast<Rbzfileconn>(con->connprivate))->fp = fp;
-    (static_cast<Rbzfileconn>(con->connprivate))->bfp = bfp;
+    (static_cast<Rbzfileconn>((con->connprivate)))->fp = fp;
+    (static_cast<Rbzfileconn>((con->connprivate)))->bfp = bfp;
     con->isopen = TRUE;
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
@@ -1394,7 +1405,7 @@ static void bzfile_close(Rconnection con)
 {
     int bzerror;
     BZFILE* bfp = static_cast<BZFILE *>(static_cast<Rbzfileconn>(con->connprivate)->bfp);
-    FILE* fp = CXXRNOCAST(FILE *)(static_cast<Rbzfileconn>(con->connprivate))->fp;
+    FILE* fp = CXXRNOCAST(FILE *)(static_cast<Rbzfileconn>((con->connprivate)))->fp;
 
     if(con->canread)
 	BZ2_bzReadClose(&bzerror, bfp);
@@ -1500,7 +1511,7 @@ SEXP attribute_hidden do_bzfile(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "encoding");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     ncon = NextConnection();
-    con = Connections[ncon] = newbzfile(file, strlen(open) ? open : const_cast<char*>("r"));
+    con = Connections[ncon] = newbzfile(file, strlen(open) ? open : CXXRconvert(const_cast<char*>, "r"));
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -1519,8 +1530,8 @@ SEXP attribute_hidden do_bzfile(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -1544,11 +1555,11 @@ Rboolean R_ReadClipboard(Rclpconn clpcon, char *type);
 
 static Rboolean clp_open(Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
 
     con->isopen = TRUE;
-    con->canwrite = Rboolean(con->mode[0] == 'w' || con->mode[0] == 'a');
-    con->canread = Rboolean(!con->canwrite);
+    con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     thisconn->pos = 0;
     if(con->canread) {
 	/* copy the clipboard contents now */
@@ -1629,7 +1640,7 @@ static void clp_writeout(Rconnection con)
 
 static void clp_close(Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
 
     con->isopen = FALSE;
     if(con->canwrite)
@@ -1639,7 +1650,7 @@ static void clp_close(Rconnection con)
 
 static int clp_fgetc_internal(Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
 
     if (thisconn->pos >= thisconn->len) return R_EOF;
     return thisconn->buff[thisconn->pos++];
@@ -1647,7 +1658,7 @@ static int clp_fgetc_internal(Rconnection con)
 
 static double clp_seek(Rconnection con, double where, int origin, int rw)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
     int newpos, oldpos = thisconn->pos;
 
     if(ISNA(where)) return oldpos;
@@ -1655,7 +1666,7 @@ static double clp_seek(Rconnection con, double where, int origin, int rw)
     switch(origin) {
     case 2: newpos = thisconn->pos + int(where); break;
     case 3: newpos = thisconn->last + int(where); break;
-    default: newpos = int(where);
+    default: newpos = CXXRconvert(int, where);
     }
     if(newpos < 0 || newpos >= thisconn->last)
 	error(_("attempt to seek outside the range of the clipboard"));
@@ -1666,7 +1677,7 @@ static double clp_seek(Rconnection con, double where, int origin, int rw)
 
 static void clp_truncate(Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
 
     if(!con->isopen || !con->canwrite)
 	error(_("can only truncate connections open for writing"));
@@ -1683,21 +1694,21 @@ static int clp_fflush(Rconnection con)
 static size_t clp_read(void *ptr, size_t size, size_t nitems,
 			Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
     int available = thisconn->len - thisconn->pos, request = size*nitems, used;
     if (double( size) * double( nitems) > INT_MAX)
 	error(_("too large a block specified"));
     used = (request < available) ? request : available;
-    strncpy(static_cast<char*>(ptr), thisconn->buff, used);
+    strncpy(CXXRconvert(static_cast<char*>, ptr), thisconn->buff, used);
     return size_t( used)/size;
 }
 
 static size_t clp_write(const void *ptr, size_t size, size_t nitems,
 			 Rconnection con)
 {
-    Rclpconn thisconn = static_cast<clpconn*>(con->connprivate);
+    Rclpconn thisconn = CXXRconvert(static_cast<clpconn*>, con->connprivate);
     int i, len = size * nitems, used = 0;
-    char c, *p = static_cast<char *>(const_cast<void *>(ptr)), *q = thisconn->buff + thisconn->pos;
+    char c, *p = static_cast<char *>(CXXRconvert(const_cast<void *>, ptr)), *q = thisconn->buff + thisconn->pos;
 
     if(!con->canwrite)
 	error(_("clipboard connection is open for reading only"));
@@ -1859,8 +1870,8 @@ static Rconnection newterminal(const char *description, const char *mode)
     }
     init_con(newconn, description, CE_NATIVE, mode);
     newconn->isopen = TRUE;
-    newconn->canread = Rboolean(strcmp(mode, "r") == 0);
-    newconn->canwrite = Rboolean(strcmp(mode, "w") == 0);
+    newconn->canread = CXXRconvert(Rboolean, (strcmp(mode, "r") == 0));
+    newconn->canwrite = CXXRconvert(Rboolean, (strcmp(mode, "w") == 0));
     newconn->destroy = &null_close;
     newconn->connprivate = NULL;
     return newconn;
@@ -2046,8 +2057,8 @@ static Rconnection newraw(const char *description, SEXP raw, const char *mode)
     newconn->text = FALSE;
     newconn->blocking = TRUE;
     newconn->canseek = TRUE;
-    newconn->canwrite = Rboolean(mode[0] == 'w' || mode[0] == 'a');
-    newconn->canread = Rboolean(mode[0] == 'r');
+    newconn->canwrite = CXXRconvert(Rboolean, (mode[0] == 'w' || mode[0] == 'a'));
+    newconn->canread = CXXRconvert(Rboolean, mode[0] == 'r');
     if(strlen(mode) >= 2 && mode[1] == '+') newconn->canread = newconn->canwrite = TRUE;
     newconn->open = &raw_open;
     newconn->close = &raw_close;
@@ -2105,8 +2116,8 @@ SEXP attribute_hidden do_rawconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
     return ans;
 }
@@ -2348,13 +2359,13 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 	    UNPROTECT(1);
 	} else {
 	    /* retain the last line */
-	    if(int(strlen(p)) >= thisconn->lastlinelength) {
+	    if(CXXRconvert(int, strlen(p)) >= thisconn->lastlinelength) {
 		int newlen = strlen(p) + 1;
-		thisconn->lastline = static_cast<char*>(realloc(thisconn->lastline, newlen));
+		thisconn->lastline = CXXRconvert(static_cast<char*>, realloc(thisconn->lastline, newlen));
 		thisconn->lastlinelength = newlen;
 	    }
 	    strcpy(thisconn->lastline, p);
-	    con->incomplete = Rboolean(strlen(thisconn->lastline) > 0);
+	    con->incomplete = CXXRconvert(Rboolean, strlen(thisconn->lastline) > 0);
 	    break;
 	}
     }
@@ -2498,8 +2509,8 @@ SEXP attribute_hidden do_textconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
     return ans;
 }
@@ -2564,7 +2575,7 @@ SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
     ncon = NextConnection();
     con = R_newsock(host, port, server, open);
     Connections[ncon] = con;
-    con->blocking = Rboolean(blocking);
+    con->blocking = CXXRconvert(Rboolean, blocking);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -2583,8 +2594,8 @@ SEXP attribute_hidden do_sockconn(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 #else
     error(_("sockets are not available on this system"));
@@ -2618,7 +2629,7 @@ SEXP attribute_hidden do_unz(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "encoding");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     ncon = NextConnection();
-    con = Connections[ncon] = R_newunz(file, strlen(open) ? open : const_cast<char*>("r"));
+    con = Connections[ncon] = R_newunz(file, strlen(open) ? open : CXXRconvert(const_cast<char*>, "r"));
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -2637,8 +2648,8 @@ SEXP attribute_hidden do_unz(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -2672,7 +2683,7 @@ SEXP attribute_hidden do_open(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "blocking");
     open = CHAR(STRING_ELT(sopen, 0)); /* ASCII */
     if(strlen(open) > 0) strcpy(con->mode, open);
-    con->blocking = Rboolean(block);
+    con->blocking = CXXRconvert(Rboolean, block);
     success = con->open(con);
     if(!success) {
 	/* con_destroy(i); user might have a reference */
@@ -2727,7 +2738,7 @@ static void con_close1(Rconnection con)
     if(con->isGzcon) {
 	Rgzconn priv = static_cast<Rgzconn>(con->connprivate);
 	con_close1(priv->con);
-	R_ReleaseObject(static_cast<SEXP>(priv->con->ex_ptr));
+	R_ReleaseObject(CXXRconvert(static_cast<SEXP>, priv->con->ex_ptr));
     }
     /* close inconv and outconv if open */
     if(con->inconv) Riconv_close(con->inconv);
@@ -2856,7 +2867,7 @@ int Rconn_fgetc(Rconnection con)
     }
     curLine = con->PushBack[con->nPushBack-1];
     c = static_cast<unsigned char>( curLine[con->posPushBack++]);
-    if(con->posPushBack >= int(strlen(curLine))) {
+    if(con->posPushBack >= CXXRconvert(int, strlen(curLine))) {
 	/* last character on a line, so pop the line */
 	free(curLine);
 	con->nPushBack--;
@@ -3000,7 +3011,7 @@ no_more_lines:
     if(nbuf > 0) { /* incomplete last line */
 	if(con->text && !con->blocking) {
 	    /* push back the rest */
-	    con_pushback(con, FALSE, buf);
+	    con_pushback(con, CXXRFALSE, buf);
 	    con->incomplete = TRUE;
 	} else {
 	    nread++;
@@ -3083,7 +3094,7 @@ SEXP attribute_hidden do_writelines(SEXP call, SEXP op, SEXP args, SEXP env)
 static void swapb(void *result, int size)
 {
     int i;
-    char *p = static_cast<char*>(result), tmp;
+    char *p = CXXRconvert(static_cast<char*>, result), tmp;
 
     if (size == 1) return;
     for (i = 0; i < size/2; i++) {
@@ -3095,7 +3106,7 @@ static void swapb(void *result, int size)
 
 static SEXP readOneString(Rconnection con)
 {
-    char *buf, *p, *newbuf;
+    char *buf, *p, *newbuff;
     int ibfs = 500, pos, m;
 
     buf = static_cast<char *>( R_alloc(ibfs, sizeof(char)));
@@ -3109,9 +3120,9 @@ static SEXP readOneString(Rconnection con)
 	}
 	if(*p == '\0') break;
 	if(pos >= ibfs - 1) {
-	    newbuf = static_cast<char *>( R_alloc(2*ibfs, sizeof(char)));
-	    memcpy(newbuf, buf, pos+1);
-	    buf = newbuf;
+	    newbuff = static_cast<char *>( R_alloc(2*ibfs, sizeof(char)));
+	    memcpy(newbuff, buf, pos+1);
+	    buf = newbuff;
 	    ibfs *= 2;
 	}
     }
@@ -3151,7 +3162,7 @@ static SEXP rawOneString(Rbyte *bytes, int nbytes, int *np)
 	return mkChar(reinterpret_cast<char *>(p));
     }
     /* so no terminator */
-    buf = static_cast<char*>(R_chk_calloc(nbytes - (*np) + 1, 1));
+    buf = CXXRconvert(static_cast<char*>, R_chk_calloc(nbytes - (*np) + 1, 1));
     memcpy(buf, bytes+(*np), nbytes-(*np));
     res = mkChar(buf);
     Free(buf);
@@ -3231,7 +3242,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("size changing is not supported for complex vectors"));
 	PROTECT(ans = allocVector(CPLXSXP, n));
 	p = CXXRNOCAST(void *) COMPLEX(ans);
-	m = isRaw ? rawRead(static_cast<char*>(p), size, n, bytes, nbytes, &np)
+	m = isRaw ? rawRead(CXXRconvert(static_cast<char*>, p), size, n, bytes, nbytes, &np)
 	    : con->read(p, size, n, con);
 	if(swap)
 	    for(i = 0; i < m; i++) {
@@ -3305,7 +3316,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("invalid '%s' argument"), "what");
 
 	if(size == sizedef) {
-	    m = isRaw ? rawRead(static_cast<char*>(p), size, n, bytes, nbytes, &np)
+	    m = isRaw ? rawRead(CXXRconvert(static_cast<char*>, p), size, n, bytes, nbytes, &np)
 		: con->read(p, size, n, con);
 	    if(swap && size > 1)
 		for(i = 0; i < m; i++) swapb(static_cast<char *>(p)+i*size, size);
@@ -3493,7 +3504,7 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	default:
 	    UNIMPLEMENTED_TYPE("writeBin", object);
 	}
-	buf = static_cast<char*>(R_chk_calloc(len, size)); /* R_alloc(len, size); */
+	buf = CXXRconvert(static_cast<char*>, R_chk_calloc(len, size)); /* R_alloc(len, size); */
 	switch(TYPEOF(object)) {
 	case LGLSXP:
 	case INTSXP:
@@ -3686,7 +3697,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 #endif
     {
 	/* no terminator */
-	buf = static_cast<char*>(R_chk_calloc(len + 1, 1));
+	buf = CXXRconvert(static_cast<char*>, R_chk_calloc(len + 1, 1));
 	memcpy(buf, bytes + (*np), len);
 	*np += len;
 	res = mkCharLenCE(buf, len, CE_NATIVE);
@@ -3843,7 +3854,7 @@ SEXP attribute_hidden do_writechar(SEXP call, SEXP op, SEXP args, SEXP env)
     for(i = 0; i < n; i++) {
 	len = INTEGER(nchars)[i];
 	si = STRING_ELT(object, i);
-	if(int(strlen(CHAR(si))) < LENGTH(si)) {
+	if(CXXRconvert(int, strlen(CHAR(si))) < LENGTH(si)) {
 	    if(len > LENGTH(si)) {
 		warning(_("writeChar: more bytes requested than are in the string - will zero-pad"));
 	    }
@@ -4051,7 +4062,7 @@ switch_or_tee_stdout(int icon, int closeOnExit, int tee)
 	R_OutputCon = SinkCons[++R_SinkNumber] = icon;
 	SinkConsClose[R_SinkNumber] = toclose;
 	R_SinkSplit[R_SinkNumber] = tee;
-	R_PreserveObject(static_cast<SEXP>(con->ex_ptr));
+	R_PreserveObject(CXXRconvert(static_cast<SEXP>, con->ex_ptr));
    } else { /* removing a sink */
 	if (R_SinkNumber <= 0) {
 	    warning(_("no sink to remove"));
@@ -4060,7 +4071,7 @@ switch_or_tee_stdout(int icon, int closeOnExit, int tee)
 	    R_OutputCon = SinkCons[--R_SinkNumber];
 	    if((icon = SinkCons[R_SinkNumber + 1]) >= 3) {
 		Rconnection con = getConnection(icon);
-		R_ReleaseObject(static_cast<SEXP>(con->ex_ptr));
+		R_ReleaseObject(CXXRconvert(static_cast<SEXP>, con->ex_ptr));
 		if(SinkConsClose[R_SinkNumber + 1] == 1) /* close it */
 		    con->close(con);
 		else if (SinkConsClose[R_SinkNumber + 1] == 2) /* destroy it */
@@ -4103,11 +4114,11 @@ SEXP attribute_hidden do_sink(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else {
 	if(icon < 0) {
 	    R_ErrorCon = 2;
-	    R_ReleaseObject(static_cast<SEXP>(getConnection(R_ErrorCon)->ex_ptr));
+	    R_ReleaseObject(CXXRconvert(static_cast<SEXP>, getConnection(R_ErrorCon)->ex_ptr));
 	} else {
 	    getConnection(icon); /* check validity */
 	    R_ErrorCon = icon;
-	    R_PreserveObject(static_cast<SEXP>(getConnection(icon)->ex_ptr));
+	    R_PreserveObject(CXXRconvert(static_cast<SEXP>, getConnection(icon)->ex_ptr));
 	}
     }
 
@@ -4189,7 +4200,7 @@ do_getconnection(SEXP call, SEXP op, SEXP args, SEXP env)
     SET_STRING_ELT(connclass, 1, mkChar("connection"));
     classgets(ans, connclass);
     if (what > 2)
-	setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
+	setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
     UNPROTECT(2);
     return ans;
 }
@@ -4254,12 +4265,19 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 	warning(_("only first element of 'description' argument used"));
     url = CHAR(STRING_ELT(scmd, 0)); /* ASCII */
 #ifdef Win32
-    ienc = getCharCE(STRING_ELT(scmd, 0));
-    if(ienc == CE_UTF8)
-	url = CHAR(STRING_ELT(scmd, 0));
-    else
-#endif
+    if(PRIMVAL(op) && !strIsASCII(CHAR(STRING_ELT(scmd, 0))) ) {
+	ienc = CE_UTF8;
+	url = translateCharUTF8(STRING_ELT(scmd, 0));
+    } else {
+	ienc = getCharCE(STRING_ELT(scmd, 0));
+	if(ienc == CE_UTF8)
+	    url = CHAR(STRING_ELT(scmd, 0));
+	else
+	    url = translateChar(STRING_ELT(scmd, 0));
+    }
+#else
 	url = translateChar(STRING_ELT(scmd, 0));
+#endif
 #ifdef HAVE_INTERNET
     if (strncmp(url, "http://", 7) == 0) type = HTTPsh;
     else if (strncmp(url, "ftp://", 6) == 0) type = FTPsh;
@@ -4313,7 +4331,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 	       || strcmp(url, "X11_clipboard") == 0
 #endif
 		)
-		con = newclp(url, strlen(open) ? open : const_cast<char*>("r"));
+		con = newclp(url, strlen(open) ? open : CXXRconvert(const_cast<char*>, "r"));
 	    else
 		con = newfile(url, ienc, strlen(open) ? open : "r");
 	    class2 = "file";
@@ -4323,7 +4341,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     Connections[ncon] = con;
-    con->blocking = Rboolean(block);
+    con->blocking = CXXRconvert(Rboolean, block);
     strncpy(con->encname, CHAR(STRING_ELT(enc, 0)), 100); /* ASCII */
 
     /* open it if desired */
@@ -4342,8 +4360,8 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     con->ex_ptr = R_MakeExternalPtr(con->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(con->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(con->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, con->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, con->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -4385,7 +4403,7 @@ static Rboolean gzcon_open(Rconnection con)
     if(!icon->open(icon)) return FALSE;
     con->isopen = TRUE;
     con->canwrite = icon->canwrite;
-    con->canread = Rboolean(!con->canwrite);
+    con->canread = CXXRconvert(Rboolean, !con->canwrite);
     con->save = -1000;
 
     priv->s.zalloc = CXXRNOCAST(alloc_func)0;
@@ -4607,7 +4625,7 @@ static size_t gzcon_write(const void *ptr, size_t size, size_t nitems,
 
     if (double( size) * double( nitems) > INT_MAX)
 	error(_("too large a block specified"));
-    priv->s.next_in = static_cast<Bytef*>(const_cast<void*>(ptr));
+    priv->s.next_in = static_cast<Bytef*>(CXXRconvert(const_cast<void*>, ptr));
     priv->s.avail_in = size*nitems;
 
     while (priv->s.avail_in != 0) {
@@ -4695,14 +4713,14 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of 'gzcon' connection failed"));
     }
-    (static_cast<Rgzconn>(newconn->connprivate))->con = incon;
-    (static_cast<Rgzconn>(newconn->connprivate))->cp = level;
-    (static_cast<Rgzconn>(newconn->connprivate))->nsaved = -1;
-    (static_cast<Rgzconn>(newconn->connprivate))->allow = Rboolean(allow);
+    (static_cast<Rgzconn>((newconn->connprivate)))->con = incon;
+    (static_cast<Rgzconn>((newconn->connprivate)))->cp = level;
+    (static_cast<Rgzconn>((newconn->connprivate)))->nsaved = -1;
+    (static_cast<Rgzconn>((newconn->connprivate)))->allow = CXXRconvert(Rboolean, allow);
 
     /* as there might not be an R-level reference to the wrapped
        connection */
-    R_PreserveObject(static_cast<SEXP>(incon->ex_ptr));
+    R_PreserveObject(CXXRconvert(static_cast<SEXP>, incon->ex_ptr));
 
     Connections[icon] = newconn;
     strncpy(newconn->encname, incon->encname, 100);
@@ -4716,8 +4734,8 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
     classgets(ans, connclass);
     newconn->ex_ptr = R_MakeExternalPtr(CXXRNOCAST(void *)newconn->id, install("connection"),
 				    R_NilValue);
-    setAttrib(ans, install("conn_id"), static_cast<SEXP>(newconn->ex_ptr));
-    R_RegisterCFinalizerEx(static_cast<SEXP>(newconn->ex_ptr), conFinalizer, FALSE);
+    setAttrib(ans, install("conn_id"), CXXRconvert(static_cast<SEXP>, newconn->ex_ptr));
+    R_RegisterCFinalizerEx(CXXRconvert(static_cast<SEXP>, newconn->ex_ptr), conFinalizer, FALSE);
     UNPROTECT(2);
 
     return ans;
@@ -4748,7 +4766,7 @@ SEXP R_compress1(SEXP in)
     if(TYPEOF(in) != RAWSXP)
 	error(_("R_decompress1 requires a raw vector"));
     inlen = LENGTH(in);
-    outlen = uLong(1.001*inlen) + 20;
+    outlen = CXXRconvert(uLong, 1.001*inlen) + 20;
     buf = static_cast<Bytef *>( CXXR_alloc(outlen, sizeof(Bytef)));
     /* we want this to be system-independent */
     *(reinterpret_cast<unsigned int *>(buf)) = static_cast<unsigned int>( uiSwap(inlen));

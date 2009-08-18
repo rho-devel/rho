@@ -1,18 +1,20 @@
 % File src/library/base/man/expand.grid.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{expand.grid}
 \title{Create a Data Frame from All Combinations of Factors}
 \usage{
-expand.grid(\dots, KEEP.OUT.ATTRS = TRUE)
+expand.grid(\dots, KEEP.OUT.ATTRS = TRUE, stringsAsFactors = TRUE)
 }
 \alias{expand.grid}
 \arguments{
   \item{\dots}{vectors, factors or a list containing these. }
   \item{KEEP.OUT.ATTRS}{a logical indicating the \code{"out.attrs"}
     attribute (see below) should be computed and returned.}
+  \item{stringsAsFactors}{logical specifying if character vectors are
+    converted to factors.}
 }
 \description{
   Create a data frame from all combinations of the supplied vectors or
@@ -29,11 +31,17 @@ expand.grid(\dots, KEEP.OUT.ATTRS = TRUE)
   dimnames for use by \code{\link{predict}} methods.
   %% currently, from "base R", only predict.loess() makes use of it.
 }
+\note{
+  Character vectors have always been converted to factors: this because
+  optional in \R 2.9.1.  Conversion is done with levels in the order
+  they occur in the character vectors (and not alphabetically, as is
+  most common when converting to factors).
+}
 
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S.}
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link[utils]{combn}} (package \code{utils}) for the generation

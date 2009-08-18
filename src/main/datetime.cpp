@@ -104,7 +104,7 @@ static Rboolean have_broken_mktime(void)
 	res = mktime(&t);
 	test_result = (res == time_t(-1));
     }
-    return Rboolean(test_result > 0);
+    return CXXRconvert(Rboolean, test_result > 0);
 #else
     return FALSE;
 #endif
@@ -131,13 +131,16 @@ namespace {
 /* There have been 23 leapseconds, the last being on 2005-12-31.
    But older OSes will not necessarily know about number 23, so we do
    a run-time test (the OS could have been patched since configure).
+
+   And a 24th on 2008-12-31, but all OSes seem to ignore
+   leap secnds these days.
  */
 static int n_leapseconds = -1;
 static const time_t leapseconds[] =
 {  78796800, 94694400,126230400,157766400,189302400,220924800,252460800,
   283996800,315532800,362793600,394329600,425865600,489024000,567993600,
   631152000,662688000,709948800,741484800,773020800,820454400,867715200,
-  915148800,1136073600};
+  915148800,1136073600,1230768000};
 
 static void set_n_leapseconds(void)
 {
@@ -155,7 +158,7 @@ static void set_n_leapseconds(void)
     tm.tm_mon = 0;
     tm.tm_mday = 1;
     t2 = mktime(&tm);
-    n_leapseconds = t2 - t1 == 84601) ? 23 : 22;
+    n_leapseconds = t2 - t1 == 84601) ? 24 : 22;
 }
 #endif
 
@@ -377,7 +380,7 @@ static double mktime0 (struct tm *tm, const int local)
     }
     if(!local) return mktime00(tm);
 
-    OK = Rboolean(tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
+    OK = CXXRconvert(Rboolean, tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
     if(OK) {
 	res = double( mktime(tm));
 	if (res == double(-1)) return res;
@@ -410,7 +413,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
     }
 
     day = int( floor(d/86400.0));
-    left = int(d - day * 86400.0 + 0.5);
+    left = int (d - day * 86400.0 + 0.5);
 
     /* hour, min, and sec */
     res->tm_hour = left / 3600;
@@ -444,7 +447,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	res->tm_isdst = -1;
 
 	/* Try to fix up timezone differences */
-        diff = int(guess_offset(res)/60);
+	diff = CXXRconvert(int, guess_offset(res)/60);
 	shift = res->tm_min + 60*res->tm_hour;
 	res->tm_min -= diff;
 	validate_tm(res);
@@ -452,7 +455,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	/* now this might be a different day */
 	if(shift - diff < 0) res->tm_yday--;
 	if(shift - diff > 24) res->tm_yday++;
-	diff2 = int(guess_offset(res)/60);
+	diff2 = CXXRconvert(int, guess_offset(res)/60);
 	if(diff2 != diff) {
 	    res->tm_min += (diff - diff2);
 	    validate_tm(res);
@@ -511,7 +514,10 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-#ifdef Win32
+#ifdef W64
+extern void tzset(void);
+/* tzname is in the headers */
+#elif defined Win32
 extern void tzset(void);
 extern char *tzname[2];
 #elif defined(__CYGWIN__)
@@ -705,7 +711,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(REALSXP, n));
     for(i = 0; i < n; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = int(fsecs);
+	tm.tm_sec   = CXXRconvert(int, fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
@@ -772,7 +778,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(STRSXP, N));
     for(i = 0; i < N; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = int(fsecs);
+	tm.tm_sec   = CXXRconvert(int, fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];

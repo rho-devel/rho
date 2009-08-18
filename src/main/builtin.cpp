@@ -75,23 +75,6 @@ static R_len_t asVecSize(SEXP x)
     return -1;
 }
 
-#ifdef UNUSED
-SEXP attribute_hidden do_delay(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    SEXP expr, env;
-    checkArity(op, args);
-    expr = CAR(args);
-    env = eval(CADR(args), rho);
-    if (isNull(env)) {
-	error(_("use of NULL environment is defunct"));
-	env = R_BaseEnv;
-    } else
-    if (!isEnvironment(env))
-	errorcall(call, R_MSG_IA);
-    return mkPROMISE(expr, env);
-}
-#endif
-
 SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
@@ -716,7 +699,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(s) == 0)
 	error(_("vector: zero-length 'type' argument"));
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
-    if (int(mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
+    if (CXXRconvert(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
     switch (mode) {
     case LGLSXP:
@@ -733,7 +716,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	s = allocList(len);
 	break;
     default:
-	error(_("vector: cannot make a vector of mode \"%s\"."),
+	error(_("vector: cannot make a vector of mode '%s'."),
 	      translateChar(STRING_ELT(s, 0))); /* should be ASCII */
     }
     if (mode == INTSXP || mode == LGLSXP)

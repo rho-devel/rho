@@ -134,6 +134,10 @@
 # define TRIO_PLATFORM_WIN32
 #endif
 
+#if defined(_WIN32_WCE)
+# define TRIO_PLATFORM_WINCE
+#endif
+
 #if defined(mpeix) || defined(__mpexl)
 # define TRIO_PLATFORM_MPEIX
 #endif

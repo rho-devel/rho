@@ -175,7 +175,7 @@ static void scientific(double *x, int *sgn, int *kpower, int *nsig, double eps)
 	} else {
 	    *sgn = 0; r = *x;
 	}
-	kp = int(floor(log10(r)));/*-->	 r = |x| ;  10^k <= r */
+	kp = CXXRconvert(int, floor(log10(r)));/*-->	 r = |x| ;  10^k <= r */
 	if (abs(kp) < 10) {
 	    if (kp >= 0)
 		alpha = r / tbl[kp + 1]; /* division slow ? */
@@ -284,20 +284,25 @@ void formatReal(double *x, int n, int *w, int *d, int *e, int nsmall)
     wF = mxsl + rgt + (rgt != 0);	/* width for F format */
 
     /*-- 'see' how "E" Exponential format would be like : */
-    if (mxl > 100 || mnl <= -99) *e = 2;/* 3 digit exponent */
-    else *e = 1;
-    *d = mxns - 1;
-    *w = neg + (*d > 0) + *d + 4 + *e; /* width for E format */
-
-    if (wF <= *w  + R_print.scipen) { /* Fixpoint if it needs less space */
+    *e = (mxl > 100 || mnl <= -99) ? 2 /* 3 digit exponent */ : 1;
+    if (mxns > 0) {
+	*d = mxns - 1;
+	*w = neg + (*d > 0) + *d + 4 + *e; /* width for E format */
+	if (wF <= *w + R_print.scipen) { /* Fixpoint if it needs less space */
+	    *e = 0;
+	    if (nsmall > rgt) {
+		rgt = nsmall;
+		wF = mxsl + rgt + (rgt != 0);
+	    }
+	    *d = rgt;
+	    *w = wF;
+	} /* else : "E" Exponential format -- all done above */
+    }
+    else { /* when all x[i] are non-finite */
+	*w = 0;/* to be increased */
+	*d = 0;
 	*e = 0;
-	if (nsmall > rgt) {
-	    rgt = nsmall;
-	    wF = mxsl + rgt + (rgt != 0);
-	}
-	*d = rgt;
-	*w = wF;
-    } /* else : "E" Exponential format -- all done above */
+    }
     if (naflag && *w < R_print.na_width)
 	*w = R_print.na_width;
     if (nanflag && *w < 3) *w = 3;
@@ -404,8 +409,7 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 	if (rt < 0) rt = 0;
 	wF = mxsl + rt + (rt != 0);
 
-	if (mxl > 100 || mnl < -99) *er = 2;
-	else *er = 1;
+	*er = (mxl > 100 || mnl < -99) ? 2 : 1;
 	*dr = mxns - 1;
 	*wr = neg + (*dr > 0) + *dr + 4 + *er;
     } else {
@@ -422,8 +426,7 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 	if (i_rt < 0) i_rt = 0;
 	i_wF = i_mxsl + i_rt + (i_rt != 0);
 
-	if (i_mxl > 100 || i_mnl < -99) *ei = 2;
-	else *ei = 1;
+	*ei = (i_mxl > 100 || i_mnl < -99) ? 2 : 1;
 	*di = i_mxns - 1;
 	*wi = (*di > 0) + *di + 4 + *ei;
     } else {
@@ -471,8 +474,8 @@ void formatComplex(Rcomplex *x, int n, int *wr, int *dr, int *er,
 
     /* Ensure space for Inf and NaN */
     if (rnanflag && *wr < 3) *wr = 3;
-    if (rposinf && *wr < 3) *wr = 3;
-    if (rneginf && *wr < 4) *wr = 4;
+    if (rposinf &&  *wr < 3) *wr = 3;
+    if (rneginf &&  *wr < 4) *wr = 4;
     if (inanflag && *wi < 3) *wi = 3;
     if (iposinf  && *wi < 3) *wi = 3;
 

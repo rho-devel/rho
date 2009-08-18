@@ -45,6 +45,8 @@ attr(x, which) <- value
 
   The extractor function allows (and does not match) empty and missing
   values of \code{which}: the replacement function does not.
+  
+  These functions are \link{primitive}, so argument names are ignored.  
 }
 \value{
   For the extractor, the value of the attribute matched, or \code{NULL}
@@ -53,7 +55,7 @@ attr(x, which) <- value
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{attributes}}

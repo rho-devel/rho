@@ -51,11 +51,13 @@ mostattributes(obj) <- value
 
   The names of a pairlist are not stored as attributes, but are reported
   as if they were (and can be set by the replacement method for attributes).
+  
+  These functions are \link{primitive}, so argument names are ignored.  
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{\code{\link{attr}}.
 }

@@ -143,7 +143,7 @@ IntegerFromReal(double x, int *warn)
 	*warn |= WARN_NA;
 	return NA_INTEGER;
     }
-    return int(x);
+    return CXXRconvert(int, x);
 }
 
 int attribute_hidden
@@ -157,7 +157,7 @@ IntegerFromComplex(Rcomplex x, int *warn)
     }
     if (x.i != 0)
 	*warn |= WARN_IMAG;
-    return int(x.r);
+    return CXXRconvert(int, x.r);
 }
 
 
@@ -178,7 +178,7 @@ IntegerFromString(SEXP x, int *warn)
 		return INT_MIN;
 	    }
 	    else
-		return int(xdouble);
+		return CXXRconvert(int, xdouble);
 	}
 	else *warn |= WARN_NA;
     }
@@ -397,7 +397,7 @@ static SEXP coerceToSymbol(SEXP v)
     SEXP ans = R_NilValue;
     int warn = 0;
     if (length(v) <= 0)
-	error(_("invalid data of mode \"%s\" (too short)"),
+	error(_("invalid data of mode '%s' (too short)"),
 	      type2char(TYPEOF(v)));
     PROTECT(v);
     switch(TYPEOF(v)) {
@@ -889,7 +889,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
+		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
     }
     else if (type == VECSXP) {
@@ -994,7 +994,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	    else
 		SET_STRING_ELT(rval, i,
-			       STRING_ELT(deparse1line(elt, FALSE), 0));
+			       STRING_ELT(deparse1line(elt, CXXRFALSE), 0));
 	}
     }
     else if (type == LISTSXP) {
@@ -1064,6 +1064,15 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 
     if (TYPEOF(v) == type)
 	return v;
+    /* code to allow classes to extend ENVSXP, SYMSXP, etc */
+    if(IS_S4_OBJECT(v) && TYPEOF(v) == S4SXP) {
+        SEXP vv = R_getS4DataSlot(v, ANYSXP);
+	if(vv == R_NilValue)
+	  error(_("no method for coercing this S4 class to a vector"));
+	else if(TYPEOF(vv) == type)
+	  return vv;
+	v = vv;
+    }
 
     switch (TYPEOF(v)) {
 #ifdef NOTYET
@@ -1109,7 +1118,7 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(ans, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
+		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
 	UNPROTECT(1);
 	break;
@@ -1174,7 +1183,7 @@ SEXP CreateTag(SEXP x)
 	&& length(STRING_ELT(x, 0)) >= 1)
 	x = install(translateChar(STRING_ELT(x, 0)));
     else
-	x = install(CHAR(STRING_ELT(deparse1(x, TRUE, SIMPLEDEPARSE), 0)));
+	x = install(CHAR(STRING_ELT(deparse1(x, CXXRTRUE, SIMPLEDEPARSE), 0)));
     return x;
 }
 
@@ -1253,6 +1262,27 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
+SEXP asCharacterFactor(SEXP x)
+{
+    SEXP ans;
+
+    if( !inherits(x, "factor") )
+        error(_("attempting to coerce non-factor"));
+
+    int i, n = LENGTH(x);
+    SEXP labels = getAttrib(x, install("levels"));
+    PROTECT(ans = allocVector(STRSXP, n));
+    for(i = 0; i < n; i++) {
+      int ii = INTEGER(x)[i];
+      SET_STRING_ELT(ans, i,
+		   (ii == NA_INTEGER) ? NA_STRING
+		   : STRING_ELT(labels, ii - 1));
+    }
+    UNPROTECT(1);
+    return ans;
+}
+
+
 /* A historical anomaly: as.character is primitive, the other ops are not */
 SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -1312,6 +1342,7 @@ SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     else
 	type = str2type(CHAR(STRING_ELT(CADR(args), 0))); /* ASCII */
 
+
     if(TYPEOF(x) == type) {
 	switch(type) {
 	case LGLSXP:
@@ -1327,6 +1358,13 @@ SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	default:
 	    ;
 	}
+    }
+
+    if(IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP) {
+        SEXP v = R_getS4DataSlot(x, ANYSXP);
+	if(v == R_NilValue)
+	  error(_("no method for coercing this S4 class to a vector"));
+	x = v;
     }
 
     switch(type) {/* only those are valid : */
@@ -1493,6 +1531,8 @@ int asLogical(SEXP x)
 	    return Rf_LogicalFromComplex(COMPLEX(x)[0], &warn);
 	case STRSXP:
 	    return Rf_LogicalFromString(STRING_ELT(x, 0), &warn);
+	case RAWSXP:
+	    return Rf_LogicalFromInteger(int(RAW(x)[0]), &warn);
 	default:
 	    UNIMPLEMENTED_TYPE("asLogical", x);
 	}
@@ -1619,7 +1659,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
        evaluating arguments in DispatchOrEval */
     if(PRIMVAL(op) >= 100 && PRIMVAL(op) < 200 &&
        isObject(CAR(args))) {
-	/* This used CHAR(PRINTNAME(CAR(call))), but that is not 
+	/* This used CHAR(PRINTNAME(CAR(call))), but that is not
 	   necessarily correct, e.g. when called from lapply() */
 	const char *nm;
 	switch(PRIMVAL(op)) {
@@ -2380,6 +2420,18 @@ static int class2type(const char *s)
     /* cannot get here return -1; */
 }
 
+static SEXP do_unsetS4(SEXP obj, SEXP newClass) {
+  if(isNull(newClass))  { /* NULL class is only valid for S3 objects */
+    warning(_("Setting class(x) to NULL;   result will no longer be an S4 object"));
+  }
+  else if(length(newClass) > 1)
+    warning(_("Setting class(x) to multiple strings (\"%s\", \"%s\", ...); result will no longer be an S4 object"), translateChar(STRING_ELT(newClass, 0)), translateChar(STRING_ELT(newClass, 1)));
+  else
+    warning(_("Setting class(x) to \"%s\" sets attribut to NULL;   result will no longer be an S4 object"), CHAR(asChar(newClass)));
+  UNSET_S4_OBJECT(obj);
+  return obj;
+}
+
 /* set the class to value, and return the modified object.  This is
    NOT a primitive assignment operator , because there is no code in R
    that changes type in place. */
@@ -2388,6 +2440,8 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     int nProtect = 0;
     if(isNull(value)) {
 	setAttrib(obj, R_ClassSymbol, value);
+	if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	  do_unsetS4(obj, value);
 	return obj;
     }
     if(TYPEOF(value) != STRSXP) {
@@ -2396,8 +2450,11 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	PROTECT(value = coerceVector(duplicate(value), STRSXP));
 	nProtect++;
     }
-    if(length(value) > 1)
+    if(length(value) > 1) {
 	setAttrib(obj, R_ClassSymbol, value);
+	if(IS_S4_OBJECT(obj)) /*  multiple strings only valid for S3 objects */
+	  do_unsetS4(obj, value);
+    }
     else if(length(value) == 0) {
 	UNPROTECT(nProtect); nProtect = 0;
 	error(_("invalid replacement object to be a class string"));
@@ -2411,10 +2468,12 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	classString = CHAR(asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */
-	if(int(valueType) != -1) {
+	if(CXXRconvert(int, valueType) != -1) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      do_unsetS4(obj, value);
 	    if(classTable[whichType].canChange) {
-		PROTECT(obj = ascommon(call, obj, SEXPTYPE(valueType)));
+		PROTECT(obj = ascommon(call, obj, CXXRconvert(SEXPTYPE, valueType)));
 		nProtect++;
 	    }
 	    else if(valueType != TYPEOF(obj))
@@ -2424,6 +2483,8 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	}
 	else if(!strcmp("numeric", valueString)) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      do_unsetS4(obj, value);
 	    switch(TYPEOF(obj)) {
 	    case INTSXP: case REALSXP: break;
 	    default: PROTECT(obj = coerceVector(obj, REALSXP));
@@ -2437,11 +2498,15 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 		error(_("invalid to set the class to matrix unless the dimension attribute is of length 2 (was %d)"),
 		 length(getAttrib(obj, R_DimSymbol)));
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj))
+	      do_unsetS4(obj, value);
 	}
 	else if(!strcmp("array", valueString)) {
 	    if(length(getAttrib(obj, R_DimSymbol))<= 0)
 		error(_("cannot set class to \"array\" unless the dimension attribute has length > 0"));
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      UNSET_S4_OBJECT(obj);
 	}
 	else { /* set the class but don't do the coercion; that's
 		  supposed to be done by an as() method */

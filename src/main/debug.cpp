@@ -43,6 +43,8 @@
 
 SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    SEXP ans = R_NilValue;
+
     checkArity(op,args);
 #define find_char_fun \
     if (isValidString(CAR(args))) {				\
@@ -57,15 +59,18 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("argument must be a closure"));
     switch(PRIMVAL(op)) {
     case 0:
-	SET_DEBUG(CAR(args), TRUE);
+	SET_DEBUG(CAR(args), CXXRTRUE);
 	break;
     case 1:
 	if( DEBUG(CAR(args)) != 1 )
 	    warningcall(call, "argument is not being debugged");
-	SET_DEBUG(CAR(args), FALSE);
+	SET_DEBUG(CAR(args), CXXRFALSE);
 	break;
+    case 2:
+        ans = ScalarLogical(DEBUG(CAR(args)));
+        break;
     }
-    return R_NilValue;
+    return ans;
 }
 
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -101,7 +106,7 @@ SEXP R_traceOnOff(SEXP onOff)
 {
     Rboolean prev = GET_TRACE_STATE;
     if(length(onOff) > 0) {
-        Rboolean _new = Rboolean(asLogical(onOff));
+	Rboolean _new = CXXRconvert(Rboolean, asLogical(onOff));
 	if(_new == TRUE || _new == FALSE)
 	    SET_TRACE_STATE(_new);
 	else

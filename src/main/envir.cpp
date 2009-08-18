@@ -463,7 +463,6 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     return (pr.first ? pr.second : R_UnboundValue);
 }
 
-
 /*
  *  ditto, but check *mode* not *type*
  */
@@ -564,13 +563,9 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
     int i;
     SEXP vl;
 
-    /* first look for the .. symbol itself */
-    vl = findVarInFrame3(rho, symbol, TRUE);
-    if (vl != R_UnboundValue)
-	return(vl);
-
+    /* first look for ... symbol  */
+    vl = findVar(R_DotsSymbol, rho);
     i = ddVal(symbol);
-    vl = findVarInFrame3(rho, R_DotsSymbol, TRUE);
     if (vl != R_UnboundValue) {
 	if (length(vl) >= i) {
 	    vl = nthcdr(vl, i - 1);
@@ -579,12 +574,8 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 	else
 	    error(_("The ... list does not contain %d elements"), i);
     }
-    else {
-	vl = findVar(symbol, rho);
-	if( vl != R_UnboundValue )
-	    return(vl);
-	error(_("..%d used in an incorrect context, no ... to look in"), i);
-    }
+    else error(_("..%d used in an incorrect context, no ... to look in"), i);
+    
     return R_NilValue;
 }
 
@@ -850,7 +841,7 @@ SEXP CXXRnot_hidden do_remove(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    tenv = CDR(tenv);
 	}
 	if (!done)
-	    warning(_("variable \"%s\" was not found"),
+	    warning(_("object '%s' not found"),
 		    CHAR(PRINTNAME(tsym)));
     }
     return R_NilValue;
@@ -924,7 +915,7 @@ SEXP CXXRnot_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "inherits");
 
     /* Search for the object */
-    rval = findVar1mode(t1, genv, gmode, ginherits, Rboolean(PRIMVAL(op)));
+    rval = findVar1mode(t1, genv, gmode, ginherits, CXXRconvert(Rboolean, PRIMVAL(op)));
 
     if (PRIMVAL(op)) { /* have get(.) */
 	if (rval == R_MissingArg)
@@ -932,10 +923,10 @@ SEXP CXXRnot_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 		  CHAR(PRINTNAME(t1)));
 	if (rval == R_UnboundValue) {
 	    if (gmode == ANYSXP)
-		error(_("variable \"%s\" was not found"),
+		error(_("object '%s' not found"),
 		      CHAR(PRINTNAME(t1)));
 	    else
-		error(_("variable \"%s\" of mode \"%s\" was not found"),
+		error(_("object '%s' of mode '%s' was not found"),
 		      CHAR(PRINTNAME(t1)),
 		      CHAR(STRING_ELT(CAR(CDDR(args)), 0))); /* ASCII */
 	}
@@ -964,8 +955,8 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
 
     t1 = install(name);
 
-    /* Search for the object - last arg is TRUE to 'get' */
-    rval = findVar1mode(t1, env, mode, inherits, TRUE);
+    /* Search for the object - last arg is 1 to 'get' */
+    rval = findVar1mode(t1, env, mode, inherits, CXXRTRUE);
 
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {
@@ -1122,10 +1113,31 @@ R_isMissing(SEXP symbol, SEXP rho)
 	}
 	if (MISSING(vl) == 1 || CAR(vl) == R_MissingArg)
 	    return 1;
+	if (IS_ACTIVE_BINDING(vl))
+	    return 0;
 	if (TYPEOF(CAR(vl)) == PROMSXP &&
 	    PRVALUE(CAR(vl)) == R_UnboundValue &&
-	    TYPEOF(PREXPR(CAR(vl))) == SYMSXP)
-	    return R_isMissing(PREXPR(CAR(vl)), PRENV(CAR(vl)));
+	    TYPEOF(PREXPR(CAR(vl))) == SYMSXP) {
+	    Promise* prom = static_cast<Promise*>(CAR(vl));
+	    /* This code uses the PRSEEN bit to detect cycles.  If a
+	       cycle occurs then a missing argument was encountered,
+	       so the return value is TRUE.  It would be a little
+	       safer to use the promise stack to ensure unsetting of
+	       the bits in the event of a longjump, but doing so would
+	       require distinguishing between evaluating promises and
+	       checking for missingness.  Because of the test above
+	       for an active binding a longjmp should only happen if
+	       the stack check fails.  LT */
+	    if (prom->underEvaluation())
+		return 1;
+	    else {
+		int val;
+		prom->markUnderEvaluation(true);
+		val = R_isMissing(PREXPR(CAR(vl)), PRENV(CAR(vl)));
+		prom->markUnderEvaluation(false);
+		return val;
+	    }
+	}
 	else
 	    return 0;
     }
@@ -1494,8 +1506,15 @@ SEXP CXXRnot_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
     env = CAR(args);
     if (ISNULL(env))
 	error(_("use of NULL environment is defunct"));
-    if( !isEnvironment(env) )
+    if( !isEnvironment(env) ) {
+        SEXP xdata;
+	if( IS_S4_OBJECT(env) && TYPEOF(env) == S4SXP &&
+	    (xdata = R_getS4DataSlot(env, ENVSXP)) != R_NilValue)
+	    env = xdata;
+	else
+	    
 	error(_("argument must be an environment"));
+    }
 
     GCRoot<> framelist(FRAME(env));
 
@@ -1738,6 +1757,13 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
     case NILSXP:
 	errorcall(call,_("using 'as.environment(NULL)' is defunct"));
 	return R_BaseEnv;	/* -Wall */
+    case S4SXP: {
+        SEXP dot_xData = R_getS4DataSlot(arg, ENVSXP);
+        if(arg == R_NilValue)
+	    errorcall(call, _("S4 object does not extend class \"environment\""));
+	else
+	    return(dot_xData);
+    }
     default:
 	errorcall(call, _("invalid object for 'as.environment'"));
 	return R_NilValue;	/* -Wall */

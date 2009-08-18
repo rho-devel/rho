@@ -252,11 +252,11 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     /* according to man setitimer, it waits until the next clock
        tick, usually 10ms, so avoid too small intervals here
     double clock_incr = R_getClockIncrement();
-    int nclock = int(floor(dinterval/clock_incr + 0.5));
+    int nclock = CXXRconvert(int, floor(dinterval/clock_incr + 0.5));
     interval = 1e6 * ((nclock > 1)?nclock:1) * clock_incr + 0.5; */
-    interval = int(1e6 * dinterval + 0.5);
+    interval = CXXRconvert(int, 1e6 * dinterval + 0.5);
 #else
-    interval = int(1e6 * dinterval + 0.5);
+    interval = CXXRconvert(int, 1e6 * dinterval + 0.5);
 #endif
     if(R_ProfileOutfile != NULL) R_EndProfiling();
     R_ProfileOutfile = RC_fopen(filename, append ? "a" : "w", TRUE);
@@ -450,7 +450,7 @@ SEXP eval(SEXP e, SEXP rho)
 	else
 		tmp = findVar(e, rho);
 	if (tmp == R_UnboundValue)
-	    error(_("object \"%s\" not found"), CHAR(PRINTNAME(e)));
+	    error(_("object '%s' not found"), CHAR(PRINTNAME(e)));
 	/* if ..d is missing then ddfindVar will signal */
 	else if (tmp == R_MissingArg && !DDVAL(e) ) {
 	    const char *n = CHAR(PRINTNAME(e));
@@ -896,7 +896,7 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
 
     vl = eval(symbol, ENCLOS(rho));
     if (vl == R_UnboundValue)
-	error(_("object \"%s\" not found"), CHAR(PRINTNAME(symbol)));
+	error(_("object '%s' not found"), CHAR(PRINTNAME(symbol)));
 
     PROTECT(vl = duplicate(vl));
     defineVar(symbol, vl, rho);
@@ -1029,6 +1029,17 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(rho);
     PROTECT(val = eval(val, rho));
     defineVar(sym, R_NilValue, rho);
+
+    /* deal with the case where we are iterating over a factor
+       we need to coerce to character - then iterate */
+
+    if( inherits(val, "factor") ) {
+        PROTECT(ans = asCharacterFactor(val));
+	val = ans;
+	UNPROTECT(2);  /* ans and val from above */
+        PROTECT(val);
+    }
+
     if (isList(val) || isNull(val)) {
 	n = length(val);
 	v = 0;
@@ -1042,6 +1053,11 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     dbg = ENV_DEBUG(rho);
     bgn = BodyHasBraces(body);
 
+    /* bump up NAMED count of sequence to avoid modification by loop code */
+    if (NAMED(val) < 2) SET_NAMED(val, NAMED(val) + 1);
+
+    /***** nm may not be needed anymore now that NAMED(val) is at
+	   least 1.  LT */
     nm = NAMED(val);
     begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
@@ -1447,7 +1463,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(4);
     endcontext(&cntxt); /* which does not run the remove */
     unbindVar(R_TmpvalSymbol, rho);
-#ifdef CONSERVATIVE_COPYING
+#ifdef CONSERVATIVE_COPYING /* not default */
     return duplicate(saverhs);
 #else
     /* we do not duplicate the value, so to be conservative mark the
@@ -1474,14 +1490,21 @@ SEXP CXXRnot_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP s;
     if (length(args) != 2)
 	WrongArgCount(asym[PRIMVAL(op)]);
-    if (isString(CAR(args)))
+    if (isString(CAR(args))) {
+	/* fix up a duplicate or args and recursively call do_set */
+	SEXP val;
+	PROTECT(args = duplicate(args));
 	SETCAR(args, install(translateChar(STRING_ELT(CAR(args), 0))));
+	val = do_set(call, op, args, rho);
+	UNPROTECT(1);
+	return val;
+    }
 
     switch (PRIMVAL(op)) {
     case 1: case 3:					/* <-, = */
 	if (isSymbol(CAR(args))) {
 	    s = eval(CADR(args), rho);
-#ifdef CONSERVATIVE_COPYING
+#ifdef CONSERVATIVE_COPYING /* not default */
 	    if (NAMED(s))
 	    {
 		SEXP t;
@@ -1571,19 +1594,13 @@ SEXP CXXRnot_hidden evalList(SEXP el, SEXP rho, SEXP op)
 	    }
 	    else if (h != R_MissingArg)
 		error(_("'...' used in an incorrect context"));
-/* Uncomment the following to restore old behavior */
-/* #define OLDMISSING */
-#ifdef OLDMISSING
-	} else if (CAR(el) != R_MissingArg) {
-#else
 	} else if (!(CAR(el) == R_MissingArg ||
                  (isSymbol(CAR(el)) && R_isMissing(CAR(el), rho)))) {
-#endif
 	    SETCDR(tail, CONS(eval(CAR(el), rho), R_NilValue));
 	    tail = CDR(tail);
 	    SET_TAG(tail, CreateTag(TAG(el)));
 	} else { /* It was a missing element */
-	    SEXP line = STRING_ELT(deparse1line(orig, FALSE), 0);
+	    SEXP line = STRING_ELT(deparse1line(orig, CXXRFALSE), 0);
 	    PROTECT(line);
 	    if(op == R_NilValue)
 		error(_("element %d is empty;\n   the part of the args "
@@ -1640,12 +1657,8 @@ SEXP CXXRnot_hidden evalListKeepMissing(SEXP el, SEXP rho)
 	    else if(h != R_MissingArg)
 		error(_("'...' used in an incorrect context"));
 	}
-#ifdef OLDMISSING
-	else if (CAR(el) == R_MissingArg) {
-#else
 	else if (CAR(el) == R_MissingArg ||
                  (isSymbol(CAR(el)) && R_isMissing(CAR(el), rho))) {
-#endif
 	    SETCDR(tail, CONS(R_MissingArg, R_NilValue));
 	    tail = CDR(tail);
 	    SET_TAG(tail, CreateTag(TAG(el)));
@@ -1855,6 +1868,24 @@ SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     return expr;
 }
 
+SEXP CXXRnot_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x, nm, ret;
+
+    checkArity(op, args);
+    x = CAR(args);
+    x = eval(x, rho);
+    PROTECT(x);
+    PROTECT(ret = allocVector(VECSXP, 2));
+    PROTECT(nm = allocVector(STRSXP, 2));
+    SET_STRING_ELT(nm, 0, mkChar("value"));
+    SET_STRING_ELT(nm, 1, mkChar("visible"));
+    SET_VECTOR_ELT(ret, 0, x);
+    SET_VECTOR_ELT(ret, 1, ScalarLogical(R_Visible));
+    setAttrib(ret, R_NamesSymbol, nm);
+    UNPROTECT(3);
+    return ret;
+}
 
 SEXP CXXRnot_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -2086,8 +2117,9 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		  SEXP *ans)
 {
     int i, j, nargs, lwhich, rwhich, set;
-    SEXP lclass, s, t, m, lmeth, lsxp, lgr, newrho;
-    SEXP rclass, rmeth, rgr, rsxp;
+    GCStackRoot<> lclass;
+    SEXP s, t, m, lmeth, lsxp, lgr, newrho;
+    SEXP rclass, rmeth, rgr, rsxp, value;
     char lbuf[512], rbuf[512], generic[128], *pt;
     Rboolean useS4 = TRUE, isOps = FALSE;
 
@@ -2101,20 +2133,18 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	(CDR(args) == R_NilValue || ! isObject(CADR(args))))
 	return 0;
 
-    isOps = Rboolean(strcmp(group, "Ops") == 0);
+    isOps = CXXRconvert(Rboolean, strcmp(group, "Ops") == 0);
 
     /* try for formal method */
     if(length(args) == 1 && !IS_S4_OBJECT(CAR(args))) useS4 = FALSE;
     if(length(args) == 2 &&
        !IS_S4_OBJECT(CAR(args)) && !IS_S4_OBJECT(CADR(args))) useS4 = FALSE;
-    if(useS4 && R_has_methods(op)) {
-	SEXP value;
+    if(useS4) {
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
 	    for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-
-	value = R_possible_dispatch(call, op, args, rho, FALSE);
-	if(value) {
+	if(R_has_methods(op) && 
+	   (value = R_possible_dispatch(call, op, args, rho, FALSE))) {
 	    *ans = value;
 	    return 1;
 	}
@@ -2148,10 +2178,12 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	error(_("generic name too long in '%s'"), PRIMNAME(op));
     sprintf(generic, "%s", PRIMNAME(op) );
 
-    lclass = getAttrib(CAR(args), R_ClassSymbol);
+    lclass = IS_S4_OBJECT(CAR(args)) ? R_data_class2(CAR(args))
+      : getAttrib(CAR(args), R_ClassSymbol);
 
     if( nargs == 2 )
-	rclass = getAttrib(CADR(args), R_ClassSymbol);
+	rclass = IS_S4_OBJECT(CADR(args)) ? R_data_class2(CADR(args))
+      : getAttrib(CADR(args), R_ClassSymbol);
     else
 	rclass = R_NilValue;
 
@@ -2161,12 +2193,31 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     findmethod(lclass, group, generic, &lsxp, &lgr, &lmeth, &lwhich,
 	       lbuf, rho);
     PROTECT(lgr);
+    if(isFunction(lsxp) && IS_S4_OBJECT(CAR(args)) && lwhich > 0
+       && isBasicClass(translateChar(STRING_ELT(lclass, lwhich)))) {
+	/* This and the similar test below implement the strategy
+	 for S3 methods selected for S4 objects.  See ?Methods */
+        value = CAR(args);
+	if(NAMED(value)) SET_NAMED(value, 2);
+	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
+	if(value != R_NilValue) /* use the S3Part as the inherited object */
+	  SETCAR(args, value);
+    }
 
     if( nargs == 2 )
 	findmethod(rclass, group, generic, &rsxp, &rgr, &rmeth,
 		   &rwhich, rbuf, rho);
     else
 	rwhich = 0;
+
+    if(isFunction(rsxp) && IS_S4_OBJECT(CADR(args)) && rwhich > 0
+       && isBasicClass(translateChar(STRING_ELT(rclass, rwhich)))) {
+        value = CADR(args);
+	if(NAMED(value)) SET_NAMED(value, 2);
+	value = R_getS4DataSlot(value, S4SXP);
+	if(value != R_NilValue)
+	  SETCADR(args, value);
+    }
 
     PROTECT(rgr);
 
@@ -2199,7 +2250,8 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     PROTECT(m = allocVector(STRSXP,nargs));
     s = args;
     for (i = 0 ; i < nargs ; i++) {
-	t = getAttrib(CAR(s), R_ClassSymbol);
+	t = IS_S4_OBJECT(CAR(s)) ? R_data_class2(CAR(s))
+	  : getAttrib(CAR(s), R_ClassSymbol);
 	set = 0;
 	if (isString(t)) {
 	    for (j = 0 ; j < length(t) ; j++) {
@@ -2699,7 +2751,7 @@ typedef int BCODE;
   value = (dd) ? ddfindVar(symbol, rho) : findVar(symbol, rho); \
   R_Visible = TRUE; \
   if (value == R_UnboundValue) \
-    error(_("Object \"%s\" not found"), CHAR(PRINTNAME(symbol))); \
+    error(_("object '%s' not found"), CHAR(PRINTNAME(symbol))); \
   else if (value == R_MissingArg) { \
     const char *n = CHAR(PRINTNAME(symbol)); \
     if(*n) error(_("argument \"%s\" is missing, with no default"), n); \
@@ -3048,6 +3100,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	else error(_("invalid sequence argument in for loop"));
 	BCNPUSH(value);
 
+	/* bump up NAMED count of seq to avoid modification by loop code */
+	if (NAMED(seq) < 2) SET_NAMED(seq, NAMED(seq) + 1);
+
 	BCNPUSH(R_NilValue);
 
 	BC_CHECK_SIGINT();
@@ -3093,7 +3148,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  default:  // -Wswitch
 	      break;
 	  }
-	  R_SetVarLocValue(reinterpret_cast<R_varloc_t>(cell), value);
+	  R_SetVarLocValue(reinterpret_cast<R_varloc_t>( cell), value);
 	  BC_CHECK_SIGINT();
 	  pc = codebase + label;
 	}
@@ -3307,15 +3362,15 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	switch (ftype) {
 	case BUILTINSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = Rboolean(flag != 1);
+	  R_Visible = CXXRconvert(Rboolean, flag != 1);
 	  value = PRIMFUN(fun) (call, fun, args, rho);
-	  if (flag < 2) R_Visible = Rboolean(flag != 1);
+	  if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
 	  break;
 	case SPECIALSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = Rboolean(flag != 1);
+	  R_Visible = CXXRconvert(Rboolean, flag != 1);
 	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	  if (flag < 2) R_Visible = Rboolean(flag != 1);
+	  if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
 	  break;
 	case CLOSXP:
 	  value = applyClosure(call, fun, args, rho, R_BaseEnv);
@@ -3336,9 +3391,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = Rboolean(flag != 1);
+	R_Visible = CXXRconvert(Rboolean, flag != 1);
 	value = PRIMFUN(fun) (call, fun, args, rho);
-	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
 	vmaxset(vmax);
 	R_BCNodeStackTop -= 2;
 	R_BCNodeStackTop[-1] = value;
@@ -3362,9 +3417,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != SPECIALSXP)
 	  error(_("not a SPECIAL function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = Rboolean(flag != 1);
+	R_Visible = CXXRconvert(Rboolean, flag != 1);
 	value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
 	vmaxset(vmax);
 	BCNPUSH(value);
 	NEXT();

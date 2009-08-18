@@ -77,7 +77,7 @@ extern	Rboolean useaqua;
 Rboolean attribute_hidden R_FileExists(const char *path)
 {
     struct stat sb;
-    return Rboolean(stat(R_ExpandFileName(path), &sb) == 0);
+    return CXXRconvert(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
 }
 
 double attribute_hidden R_FileMtime(const char *path)
@@ -94,8 +94,8 @@ double attribute_hidden R_FileMtime(const char *path)
 
 Rboolean attribute_hidden R_HiddenFile(const char *name)
 {
-    if (name && name[0] != '.') return FALSE;
-    else return TRUE;
+    if (name && name[0] != '.') return CXXRFALSE;
+    else return CXXRTRUE;
 }
 
 /* The MSVC runtime has a global to determine whether an unspecified
@@ -316,10 +316,6 @@ int R_system(const char *command)
 #endif
 
 #ifdef Win32
-# define WC_ENVIRON
-#endif
-
-#ifdef WC_ENVIRON
 /* _wenviron is declared in stdlib.h */
 # define WIN32_LEAN_AND_MEAN 1
 # include <windows.h> /* _wgetenv etc */
@@ -341,7 +337,7 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
 
     i = LENGTH(CAR(args));
     if (i == 0) {
-#ifdef WC_ENVIRON
+#ifdef Win32
 	char *buf;
 	int n = 0, N;
 	wchar_t **w;
@@ -364,7 +360,7 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
     } else {
 	PROTECT(ans = allocVector(STRSXP, i));
 	for (j = 0; j < i; j++) {
-#ifdef WC_ENVIRON
+#ifdef Win32
 	    const wchar_t *wnm = wtransChar(STRING_ELT(CAR(args), j));
 	    wchar_t *w = _wgetenv(wnm);
 	    if (w == NULL)
@@ -394,13 +390,14 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
     return (ans);
 }
 
-#ifdef WC_ENVIRON
+#ifdef Win32
 static int Rwputenv(const wchar_t *nm, const wchar_t *val)
 {
     wchar_t *buf;
     buf = (wchar_t *) malloc((wcslen(nm) + wcslen(val) + 2) * sizeof(wchar_t));
     if(!buf) return 1;
-    wsprintfW(buf, L"%s=%s", nm, val);
+    /* previously wsprintfW, which had a limit of 1024 chars */
+    wcscpy(buf, nm); wcscat(buf, L"="); wcscat(buf, val);
     if(_wputenv(buf)) return 1;
     /* no free here: storage remains in use */
     return 0;
@@ -441,7 +438,7 @@ SEXP attribute_hidden do_setenv(SEXP call, SEXP op, SEXP args, SEXP env)
 	LOGICAL(ans)[i] = setenv(translateChar(STRING_ELT(nm, i)),
 				 translateChar(STRING_ELT(vars, i)),
 				 1) == 0;
-#elif defined(WC_ENVIRON)
+#elif defined(Win32)
     for (i = 0; i < n; i++)
 	LOGICAL(ans)[i] = Rwputenv(wtransChar(STRING_ELT(nm, i)),
 				   wtransChar(STRING_ELT(vars, i))) == 0;
@@ -479,7 +476,7 @@ SEXP attribute_hidden do_unsetenv(SEXP call, SEXP op, SEXP args, SEXP env)
 	putenv(buf);
     }
 #elif defined(HAVE_PUTENV_UNSET2)
-# ifdef WC_ENVIRON
+# ifdef Win32
     for (i = 0; i < n; i++) {
 	const wchar_t *w = wtransChar(STRING_ELT(vars, i));
 	wchar_t *buf = (wchar_t *) alloca(2*wcslen(w));
@@ -619,10 +616,10 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    *outbuf = '\0';
 	    /* other possible error conditions are incomplete
 	       and invalid multibyte chars */
-	    if(res == size_t(-1) && errno == E2BIG) {
+	    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
-	    } else if(res == size_t(-1) && errno == EILSEQ && sub) {
+	    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ && sub) {
 		/* it seems this gets thrown for non-convertible input too */
 		if(strcmp(sub, "byte") == 0) {
 		    if(outb < 5) {
@@ -644,7 +641,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 		goto next_char;
 	    }
 
-	    if(res != size_t(-1) && inb == 0) {
+	    if(res != CXXRconvert(size_t, -1) && inb == 0) {
 		cetype_t ienc = CE_NATIVE;
 
 		nout = cbuff.bufsize - 1 - outb;
@@ -778,10 +775,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == size_t(-1) && errno == E2BIG) {
+    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == size_t(-1) && errno == EILSEQ) {
+    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
 	if(outb < 13) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -793,7 +790,7 @@ next_char:
 	    int clen;
 	    wchar_t wc;
 	    clen = utf8toucs(&wc, inbuf);
-	    if(clen > 0 && int(inb) >= clen) {
+	    if(clen > 0 && CXXRconvert(int, inb) >= clen) {
 		inbuf += clen; inb -= clen;
 # ifndef Win32
 		if(static_cast<unsigned int>( wc) < 65536) {
@@ -860,10 +857,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == size_t(-1) && errno == E2BIG) {
+    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == size_t(-1) && errno == EILSEQ) {
+    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -1029,10 +1026,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == size_t(-1) && errno == E2BIG) {
+    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == size_t(-1) && errno == EILSEQ) {
+    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
 	switch(subst) {
 	case 1: /* substitute hex */
 	    if(outb < 5) {
@@ -1050,6 +1047,14 @@ next_char:
 		goto top_of_loop;
 	    }
 	    *outbuf++ = '.'; inbuf++; outb--; inb--;
+	    goto next_char;
+	    break;
+	case 3: /* substitute ? */
+	    if(outb < 1) {
+		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
+		goto top_of_loop;
+	    }
+	    *outbuf++ = '?'; inbuf++; outb--; inb--;
 	    goto next_char;
 	    break;
 	default: /* skip byte */

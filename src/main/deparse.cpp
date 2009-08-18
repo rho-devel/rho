@@ -187,7 +187,7 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args);
     nlines = asInteger(CAR(args));
     if (nlines == NA_INTEGER) nlines = -1;
-    ca1 = deparse1WithCutoff(ca1, FALSE, cut0, Rboolean(backtick), opts, nlines);
+    ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRconvert(Rboolean, backtick), opts, nlines);
     return ca1;
 }
 
@@ -309,11 +309,11 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
-    opts = Rboolean(SHOWATTRIBUTES);
+    opts = CXXRconvert(Rboolean, SHOWATTRIBUTES);
     if(!isNull(CADDR(args)))
-       	opts = Rboolean(asInteger(CADDR(args)));
+	opts = CXXRconvert(Rboolean, asInteger(CADDR(args)));
 
-    tval = deparse1(tval, FALSE, opts);
+    tval = deparse1(tval, CXXRFALSE, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
 	SET_CLOENV(CAR(args), saveenv);
 	UNPROTECT(1);
@@ -321,7 +321,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(tval); /* against Rconn_printf */
     ifile = asInteger(CADR(args));
 
-    wasopen = TRUE;
+    wasopen = CXXRTRUE;
     if (ifile != 1) {
 	con = getConnection(ifile);
 	wasopen = con->isopen;
@@ -340,7 +340,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else {
 	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
 	    if(!havewarned &&
-	       res < int(strlen(CHAR(STRING_ELT(tval, i)))) + 1)
+	       res < CXXRconvert(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
 		warning(_("wrote too few characters"));
 	}
     UNPROTECT(1); /* tval */
@@ -373,7 +373,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 256)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = Rboolean(asLogical(CAD4R(args)));
+    evaluate = CXXRconvert(Rboolean, asLogical(CAD4R(args)));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));
@@ -382,7 +382,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_TAG(o, install(translateChar(STRING_ELT(names, j))));
 	SETCAR(o, findVar(TAG(o), source));
 	if (CAR(o) == R_UnboundValue)
-	    warning(_("Object \"%s\" not found"), CHAR(PRINTNAME(TAG(o))));
+	    warning(_("object '%s' not found"), CHAR(PRINTNAME(TAG(o))));
 	else nout++;
     }
     o = objs;
@@ -393,11 +393,10 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (CAR(o) == R_UnboundValue) continue;
 		obj_name = translateChar(STRING_ELT(names, i));
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
-		/* FIXME: should not use backticks when deparsing for S */
-		Rprintf(/* figure out if we need to quote the name */
-			const_cast<char*>(isValidName(obj_name) ? "%s <-\n" : "`%s` <-\n"),
-			obj_name);
-		tval = deparse1(CAR(o), FALSE, opts);
+		if(isValidName(obj_name)) Rprintf("%s <-\n", obj_name);
+		else if(opts & S_COMPAT) Rprintf("\"%s\" <-\n", obj_name);
+		else Rprintf("`%s` <-\n", obj_name);
+		tval = deparse1(CAR(o), CXXRFALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++)
 		    Rprintf("%s\n", CHAR(STRING_ELT(tval, j)));/* translated */
 		o = CDR(o);
@@ -416,18 +415,24 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		error(_("cannot write to this connection"));
 	    for (i = 0, nout = 0; i < nobjs; i++) {
 		const char *s;
+		int extra = 6;
 		if (CAR(o) == R_UnboundValue) continue;
 		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
 		s = translateChar(STRING_ELT(names, i));
-		/* FIXME: should not use backticks when deparsing for S */
-		res = Rconn_printf(con, "`%s` <-\n", s);
-		if(!havewarned && res < int(strlen(s)) + 6)
+		if(isValidName(s)) {
+		    extra = 4;
+		    res = Rconn_printf(con, "%s <-\n", s);
+		} else if(opts & S_COMPAT)
+		    res = Rconn_printf(con, "\"%s\" <-\n", s);
+		else
+		    res = Rconn_printf(con, "`%s` <-\n", s);
+		if(!havewarned && res < CXXRconvert(int, strlen(s)) + extra)
 		    warning(_("wrote too few characters"));
-		tval = deparse1(CAR(o), FALSE, opts);
+		tval = deparse1(CAR(o), CXXRFALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++) {
 		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 		    if(!havewarned &&
-		       res < int(strlen(CHAR(STRING_ELT(tval, j)))) + 1)
+		       res < CXXRconvert(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
 			warning(_("wrote too few characters"));
 		}
 		o = CDR(o);
@@ -514,7 +519,7 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		case PP_IF:
 		case PP_WHILE:
 		case PP_REPEAT:
-		    return Rboolean(left == 1);
+		    return CXXRconvert(Rboolean, left == 1);
 		    break;
 		default:
 		    return FALSE;
@@ -687,7 +692,15 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    attr1(s, d);
 	    print2buff("quote(", d);
 	}
-	if (d->backtick)
+	if (localOpts & S_COMPAT) {
+	    const char *ss = CHAR(PRINTNAME(s));
+	    if (isValidName(ss)) print2buff(ss, d);
+	    else {
+		print2buff("\"", d);
+		print2buff(ss, d);
+		print2buff("\"", d);
+	    }
+	} else if (d->backtick)
 	    print2buff(backquotify(CHAR(PRINTNAME(s))), d);
 	else
 	    print2buff(CHAR(PRINTNAME(s)), d);
@@ -1036,10 +1049,15 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff("next", d);
 		    break;
 		case PP_SUBASS:
-		  /* FIXME: should not use backticks when deparsing for S */
-		    print2buff("`", d);
-		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
-		    print2buff("`(", d);
+		    if(d->opts & S_COMPAT) {
+			print2buff("\"", d);
+			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
+			print2buff("\'(", d);
+		    } else {
+			print2buff("`", d);
+			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
+			print2buff("`(", d);
+		    }
 		    args2buff(s, 0, 0, d);
 		    print2buff(")", d);
 		    break;
@@ -1088,13 +1106,17 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    else {
 			if ( isSymbol(CAR(s)) ){
 			    const char *ss = CHAR(PRINTNAME(CAR(s)));
-			    if ( !isValidName(ss) ){
-			      /* FIXME: should not use backticks when deparsing for S */
+			    if (isValidName(ss))
+				print2buff(ss, d);
+			    else if(d->opts & S_COMPAT) {
+				print2buff("\'", d);
+				print2buff(ss, d);
+				print2buff("\'", d);
+			    } else {
 				print2buff("`", d);
 				print2buff(ss, d);
 				print2buff("`", d);
-			    } else
-				print2buff(ss, d);
+			    }
 			}
 			else
 			    deparse2buff(CAR(s), d);
@@ -1225,7 +1247,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	   Also, it is neat to deparse m:n in that form,
 	   so we do so as from 2.5.0.
 	 */
-	Rboolean intSeq = Rboolean(tlen > 1);
+	Rboolean intSeq = CXXRconvert(Rboolean, (tlen > 1));
 	int *tmp = INTEGER(vector);
 
 	for(i = 1; i < tlen; i++) {
@@ -1241,8 +1263,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		strp = EncodeElement(vector, tlen - 1, '"', '.');
 		print2buff(strp, d);
 	} else {
-	    addL = Rboolean(d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
-	    allNA = Rboolean((d->opts & KEEPNA) || addL);
+	    addL = CXXRconvert(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
+	    allNA = CXXRconvert(Rboolean, (d->opts & KEEPNA) || addL);
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
 		    allNA = FALSE;
@@ -1252,7 +1274,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.integer(", d);
 	    }
-	    allNA = Rboolean(allNA && !(d->opts & S_COMPAT));
+	    allNA = CXXRconvert(Rboolean, allNA && !(d->opts & S_COMPAT));
 	    if(tlen > 1) print2buff("c(", d);
 	    for (i = 0; i < tlen; i++) {
 		if(allNA && tmp[i] == NA_INTEGER) {
@@ -1270,7 +1292,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(surround) print2buff(")", d);
 	}
     } else {
-	allNA = Rboolean(d->opts & KEEPNA);
+	allNA = CXXRconvert(Rboolean, d->opts & KEEPNA);
 	if((d->opts & KEEPNA) && TYPEOF(vector) == REALSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(!ISNA(REAL(vector)[i])) {
@@ -1305,7 +1327,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    }
 	}
 	if(tlen > 1) print2buff("c(", d);
-	allNA = Rboolean(allNA && !(d->opts & S_COMPAT));
+	allNA = CXXRconvert(Rboolean, allNA && !(d->opts & S_COMPAT));
 	for (i = 0; i < tlen; i++) {
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {

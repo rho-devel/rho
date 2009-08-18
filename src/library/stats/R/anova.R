@@ -55,7 +55,7 @@ printCoefmat <-
 	     dig.tst = max(1, min(5, digits - 1)),
 	     cs.ind = 1:k, tst.ind = k+1, zap.ind = integer(0),
 	     P.values = NULL,
-	     has.Pvalue = nc >= 4 && substr(colnames(x)[nc],1,3) == "Pr(",
+	     has.Pvalue = nc >= 4 && substr(colnames(x)[nc], 1, 3) == "Pr(",
              eps.Pvalue = .Machine$double.eps,
 	     na.print = "NA", ...)
 {
@@ -65,12 +65,12 @@ printCoefmat <-
     ## By Default
     ## Assume: x is a matrix-like numeric object.
     ## ------  with *last* column = P-values  --iff-- P.values (== TRUE)
-    ##	  columns {cs.ind}= numbers, such as coefficients & std.err  [def.: 1:k]
+    ##	  columns {cs.ind}= numbers, such as coefficients & std.err  [def.: 1L:k]
     ##	  columns {tst.ind}= test-statistics (as "z", "t", or "F")  [def.: k+1]
 
     if(is.null(d <- dim(x)) || length(d) != 2)
 	stop("'x' must be coefficient matrix/data frame")
-    nc <- d[2]
+    nc <- d[2L]
     if(is.null(P.values)) {
         scp <- getOption("show.coef.Pvalues")
         if(!is.logical(scp) || is.na(scp)) {
@@ -94,22 +94,23 @@ printCoefmat <-
     Cf <- array("", dim=d, dimnames = dimnames(xm))
 
     ok <- !(ina <- is.na(xm))
-    if(length(cs.ind)>0) {
+    if(length(cs.ind)) {
 	acs <- abs(coef.se <- xm[, cs.ind, drop=FALSE])# = abs(coef. , stderr)
-        if(any(is.finite(acs))) {
-            ## #{digits} BEFORE decimal point -- for min/max. value:
-            digmin <- 1+floor(log10(range(acs[acs != 0], na.rm= TRUE)))
+	if(any(ia <- is.finite(acs))) {
+	    ## #{digits} BEFORE decimal point -- for min/max. value:
+	    digmin <- 1 + if(length(acs <- acs[ia & acs != 0]))
+		floor(log10(range(acs[acs != 0], finite = TRUE))) else 0
             Cf[,cs.ind] <- format(round(coef.se, max(1,digits-digmin)),
                                   digits=digits)
         }
     }
-    if(length(tst.ind)>0)
+    if(length(tst.ind))
 	Cf[, tst.ind]<- format(round(xm[, tst.ind], digits = dig.tst),
                                digits = digits)
-    if(length(zap.ind)>0)
+    if(length(zap.ind))
 	Cf[, zap.ind]<- format(zapsmall(xm[,zap.ind], digits = digits),
                                digits = digits)
-    if(any(r.ind <- !((1:nc) %in%
+    if(any(r.ind <- !((1L:nc) %in%
                       c(cs.ind, tst.ind, zap.ind, if(has.Pvalue)nc))))
 	Cf[, r.ind] <- format(xm[, r.ind], digits=digits)
     okP <- if(has.Pvalue) ok[, -nc] else ok
@@ -155,10 +156,10 @@ print.anova <- function(x, digits = max(getOption("digits") - 2, 3),
 {
     if (!is.null(heading <- attr(x, "heading")))
 	cat(heading, sep = "\n")
-    nc <- dim(x)[2]
+    nc <- dim(x)[2L]
     if(is.null(cn <- colnames(x))) stop("'anova' object must have colnames")
     has.P <- substr(cn[nc],1,3) == "Pr(" # P-value as last column
-    zap.i <- 1:(if(has.P) nc-1 else nc)
+    zap.i <- 1L:(if(has.P) nc-1 else nc)
     i <- which(substr(cn,2,7) == " value")
     i <- c(i, which(!is.na(match(cn, c("F", "Cp", "Chisq")))))
     if(length(i))

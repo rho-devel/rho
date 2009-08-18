@@ -68,7 +68,7 @@
   \item{time1, time2}{date-time objects or character vectors.  (Character
     vectors are converted by \code{\link{as.POSIXct}}.)}
   \item{z}{a numeric vector (in seconds)}
-  %\emph{or} an object of class \code{"\link{difftime}"}.}
+%   \emph{or} an object of class \code{"\link{difftime}"}.}
   \item{lop}{One of \code{==}, \code{!=}, \code{<}, \code{<=}, \code{>}
     or \code{>=}.}
 }
@@ -90,7 +90,7 @@
       force, zero if not, negative if unknown.}
   }
   The classes correspond to the POSIX/C99 constructs of \sQuote{calendar
-    time} (the \code{time\_t} data type) and \sQuote{local time} (or
+    time} (the \code{time_t} data type) and \sQuote{local time} (or
   broken-down time, the \code{struct tm} data type), from which they
   also inherit their names.
 
@@ -157,7 +157,9 @@
   \file{zoneinfo} database.)
 
   Using \code{\link{c}} on \code{"POSIXlt"} objects converts them to the
-  current time zone.
+  current time zone, and on \code{"POSIXct"} objects drops any
+  \code{"tzone"} attributes (even if they are all marked with the same
+  time zone).
 
   A few times have specific issues.  First, the leapseconds are ignored,
   and real times such as \code{"2005-12-31 23:59:60"} are (probably)

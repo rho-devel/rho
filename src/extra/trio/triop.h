@@ -157,6 +157,16 @@ extern "C" {
 # define TRIO_EXTENSION 1
 #endif
 
+/*
+ * TRIO_DEPRECATED (=0 or =1)
+ *
+ * Define this to 0 to disable deprecated functionality, or define
+ * to 1 to enable them.
+ */
+#if !defined(TRIO_DEPRECATED)
+# define TRIO_DEPRECATED 1
+#endif
+
 /*************************************************************************
  * Features
  */

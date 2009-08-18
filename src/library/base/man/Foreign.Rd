@@ -27,8 +27,8 @@
 \arguments{
   \item{name}{a character string giving the name of a C function or
     Fortran subroutine, or an object of class
-    \code{"\link{NativeSymbolInfo}"} or \code{"\link{NativeSymbol}"}
-    referring to such a name.}
+    \code{"\link{NativeSymbolInfo}"}, \code{"\link{RegisteredNativeSymbol}"}
+    or \code{"\link{NativeSymbol}"} referring to such a name.}
   \item{\dots}{arguments to be passed to the foreign function.}
   \item{NAOK}{if \code{TRUE} then any \code{\link{NA}} or
     \code{\link{NaN}} or \code{\link{Inf}} values in the arguments are
@@ -75,14 +75,14 @@
   compatibility with S version 4.
 
   Specifying \code{ENCODING} overrides any declared encodings (see
-  \code{link{Encoding}}) which are otherwise used to translate to the
+  \code{\link{Encoding}}) which are otherwise used to translate to the
   current locale before passing the strings to the compiled code.
- 
+
   For details about how to write code to use with \code{.Call} and
   \code{.External}, see the chapter on \dQuote{System and foreign language
     interfaces} in the \dQuote{Writing \R Extensions} manual.
 #ifdef windows
-  
+
   For Windows-specific details on producing the external code, see the
   \dQuote{R Installation and Administration} manual.
 #endif
@@ -173,7 +173,7 @@
 
   In addition, character vectors and lists cannot be used with
   \code{DUP=FALSE}.
-  
+
   It is safe and useful to set \code{DUP=FALSE} if you do not change any
   of the variables that might be affected, e.g.,
 
@@ -191,7 +191,7 @@
 \section{Fortran symbol names}{
   All compilers that can be used with \R map symbol names to lower case,
   and so does \code{.Fortran}.
-  
+
   Symbol names containing underscores are not valid Fortran 77 (although
   they are valid in Fortran 9x).  Many Fortran 77 compilers (including
   \code{g77}) will allow them but translate them in a different way to
@@ -206,7 +206,7 @@
 #ifdef windows
   This \emph{is} the case under Windows, where \code{gfortran} and
   \code{g95} treat underscores differently from \code{g77} with which \R
-  is compiled. 
+  is compiled.
 #endif
 }
 
@@ -221,7 +221,7 @@
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole. (\code{.C} and \code{.Fortran}.)
+  Wadsworth & Brooks/Cole. (\code{.C} and \code{.Fortran}.)
 
   Chambers, J. M. (1998)
   \emph{Programming with Data. A Guide to the S Language}.

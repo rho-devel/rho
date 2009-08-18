@@ -29,7 +29,7 @@ as <-
     thisClass <- .class1(object) ## always one string
     if(.identC(thisClass, Class) || .identC(Class, "ANY"))
         return(object)
-    where <- .classEnv(thisClass)
+    where <- .classEnv(thisClass, mustFind = FALSE)
     coerceFun <- getGeneric("coerce", where = where)
     ## get the methods table, use inherited table
     coerceMethods <- .getMethodsTable(coerceFun,environment(coerceFun),inherited= TRUE)
@@ -370,7 +370,7 @@ setAs <-
     if(is.null(cdef))
         return(FALSE) # only for booting the methods package?
     prevCoerce <- !is.null(selectMethod("coerce", sig, TRUE, FALSE,
-                                      fdef = cdef))
+                                        fdef = cdef))
     rdef <- getGeneric("coerce<-", where = where)
     if(is.null(rdef))
         return(FALSE) # only for booting the methods package?
@@ -404,7 +404,7 @@ canCoerce <- function(object, Class) {
     fdef <-
 	if(replace) quote(function(from, to = TO, value) NULL)
 	else	    quote(function(from, to = TO, strict = TRUE) NULL)
-    fdef[[2]]$to <- sig[[2]]
+    fdef[[2L]]$to <- sig[[2L]]
     fdef <- eval(fdef)
     body(fdef, environment(def)) <- body(def)
     attr(fdef, "source") <- deparse(fdef) # because it's wrong from the quote()

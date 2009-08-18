@@ -423,8 +423,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	s = new RawVector(length);
 	break;
     case CHARSXP:
-	warning("use of allocVector(CHARSXP ...) is deprecated\n");
-	s = new UncachedString(length);
+	error("use of allocVector(CHARSXP ...) is defunct\n");
 	break;
     case LGLSXP:
 	s = new LogicalVector(length);
@@ -556,12 +555,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 }
 
 
-#define USE_TYPE_CHECKING
-
-#if defined(USE_TYPE_CHECKING_STRICT) && !defined(USE_TYPE_CHECKING)
-# define USE_TYPE_CHECKING
-#endif
-
 
 /* The following functions are replacements for the accessor macros.
    They are used by code that does not have direct access to the
@@ -656,7 +649,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
     filename = STRING_ELT(CAR(args), 0);
-    threshold = R_size_t(REAL(CADDR(args))[0]);
+    threshold = CXXRconvert(R_size_t, REAL(CADDR(args))[0]);
     if (strlen(CHAR(filename)))
 	R_InitMemReporting(filename, append_mode, threshold);
     else

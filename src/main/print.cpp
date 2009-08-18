@@ -318,13 +318,16 @@ static void PrintGenericVector(SEXP s, SEXP env)
 	    case CPLXSXP:
 		if (LENGTH(tmp) == 1) {
 		    Rcomplex *x = COMPLEX(tmp);
-		    formatComplex(x, 1, &wr, &dr, &er, &wi, &di, &ei, 0);
 		    if (ISNA(x[0].r) || ISNA(x[0].i))
+			/* formatReal(NA) --> w=R_print.na_width, d=0, e=0 */
 			snprintf(pbuf, 115, "%s",
-				 EncodeReal(NA_REAL, w, 0, 0, OutDec));
-		    else
-			snprintf(pbuf, 115, "%s", EncodeComplex(x[0],
-			wr, dr, er, wi, di, ei, OutDec));
+				 EncodeReal(NA_REAL, R_print.na_width, 0, 0, OutDec));
+		    else {
+			formatComplex(x, 1, &wr, &dr, &er, &wi, &di, &ei, 0);
+			snprintf(pbuf, 115, "%s",
+				 EncodeComplex(x[0],
+					       wr, dr, er, wi, di, ei, OutDec));
+		    }
 		} else
 		snprintf(pbuf, 115, "Complex,%d", LENGTH(tmp));
 		break;
@@ -581,7 +584,7 @@ static void PrintExpression(SEXP s)
     SEXP u;
     int i, n;
 
-    u = deparse1(s, FALSE, R_print.useSource | DEFAULTDEPARSE);
+    u = deparse1(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
     n = LENGTH(u);
     for (i = 0; i < n ; i++)
 	Rprintf("%s\n", CHAR(STRING_ELT(u, i))); /*translated */
@@ -626,7 +629,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	break;
     case SYMSXP: /* Use deparse here to handle backtick quotification
 		  * of "weird names" */
-	t = deparse1(s, FALSE, SIMPLEDEPARSE);
+	t = deparse1(s, CXXRFALSE, SIMPLEDEPARSE);
 	Rprintf("%s\n", CHAR(STRING_ELT(t, 0))); /* translated */
 	break;
     case SPECIALSXP:
@@ -651,7 +654,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
 	}
 	if(s2 != R_UnboundValue) {
 	    PROTECT(s2);
-	    t = deparse1(s2, FALSE, DEFAULTDEPARSE);
+	    t = deparse1(s2, CXXRFALSE, DEFAULTDEPARSE);
 	    Rprintf("%s ", CHAR(STRING_ELT(t, 0))); /* translated */
 	    Rprintf(".Primitive(\"%s\")\n", PRIMNAME(s));
 	    UNPROTECT(1);
@@ -672,7 +675,7 @@ void attribute_hidden PrintValueRec(SEXP s, SEXP env)
     case LANGSXP:
 	t = getAttrib(s, R_SourceSymbol);
 	if (!isString(t) || !R_print.useSource)
-	    t = deparse1(s, FALSE, R_print.useSource | DEFAULTDEPARSE);
+	    t = deparse1(s, CXXRFALSE, R_print.useSource | DEFAULTDEPARSE);
 	for (i = 0; i < LENGTH(t); i++)
 	    Rprintf("%s\n", CHAR(STRING_ELT(t, i))); /* translated */
 #ifdef BYTECODE
@@ -861,7 +864,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    digits = R_print.digits, gap = R_print.gap,
 		    na_width = R_print.na_width,
 		    na_width_noquote = R_print.na_width_noquote;
-		Rprt_adj right = Rprt_adj(R_print.right);
+		Rprt_adj right = CXXRconvert(Rprt_adj, R_print.right);
 
 		{
 		    GCStackRoot<PairList> tl(PairList::makeList(2));

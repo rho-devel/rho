@@ -1,6 +1,6 @@
 % File src/library/base/man/cumsum.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{cumsum}
@@ -25,7 +25,7 @@ cummin(x)
 }
 \details{
   These are generic functions: methods can be defined for them
-  individually or via the \code{\link{Math}} group generic.
+  individually or via the \code{\link[base:groupGeneric]{Math}} group generic.
 }
 \value{
   A vector of the same length and type as \code{x} (after coercion),
@@ -45,7 +45,7 @@ cummin(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole. (\code{cumsum} only.)
+  Wadsworth & Brooks/Cole. (\code{cumsum} only.)
 }
 \examples{
 cumsum(1:10)

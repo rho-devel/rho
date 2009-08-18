@@ -103,6 +103,10 @@ stars(x, full = TRUE, scale = TRUE, radius = TRUE,
 
   Only one page of output is produced.
 }
+\value{
+  Returns the locations of the plots in a two column matrix, invisibly
+  when \code{plot=TRUE}.
+}
 \author{Thomas S. Dye}
 \seealso{
   \code{\link{symbols}} for another way to draw stars and other symbols.
@@ -110,7 +114,7 @@ stars(x, full = TRUE, scale = TRUE, radius = TRUE,
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \note{
   This code started life as spatial star plots by David A. Andrews.

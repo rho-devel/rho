@@ -1,6 +1,6 @@
 % File src/library/base/man/factor.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{factor}
@@ -133,7 +133,7 @@ addNA(x, ifany=FALSE)
   \code{"levels"} attribute.  Be careful only to compare factors with
   the same set of levels (in the same order).  In particular,
   \code{as.numeric} applied to a factor is meaningless, and may
-  happen by implicit coercion.	To transform a factor \code{f} to
+  happen by implicit coercion.  To transform a factor \code{f} to
   its original numeric values, \code{as.numeric(levels(f))[f]} is
   recommended and slightly more efficient than
   \code{as.numeric(as.character(f))}.
@@ -166,19 +166,17 @@ addNA(x, ifany=FALSE)
   ordered factors they must have the same level set.
 }
 \note{
-  Storing character data as a factor is more efficient storage if
-  there is even a small proportion of repeats.  On a 32-bit machine
-  storing a string of \eqn{n} bytes takes
-  \eqn{28 + 8\lceil(n+1)/8\rceil}{28 + 8*ceiling((n+1)/8)}
-  bytes whereas storing a factor code takes 4 bytes.  (On a 64-bit
-  machine 28 is replaced by 56 or more.)  Only if they were computed
-  from the same values (or in some cases read from a file: see
-  \code{\link{scan}}) will identical strings share storage.
+  In earlier versions of \R, storing character data as a factor was more
+  space efficient if there is even a small proportion of
+  repeats.  Since \R 2.6.0 identical character strings share storage, so
+  the difference is now small in most cases.  (Integer values are stored
+  in 4 bytes whereas each reference to a character string needs a
+  pointer of 4 or 8 bytes.)
 }
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{[.factor}} for subsetting of factors.
@@ -191,7 +189,7 @@ addNA(x, ifany=FALSE)
 \examples{
 (ff <- factor(substring("statistics", 1:10, 1:10), levels=letters))
 as.integer(ff)  # the internal codes
-factor(ff)	# drops the levels that do not occur
+factor(ff)      # drops the levels that do not occur
 ff[, drop=TRUE] # the same, more transparently
 
 factor(letters[1:20], labels="letter")

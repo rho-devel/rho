@@ -58,16 +58,18 @@ Conj(z)
   \code{Conj} have their usual interpretation as returning the real
   part, imaginary part, modulus, argument and complex conjugate for
   complex values.  Modulus and argument are also called the \emph{polar
-    coordinates}.  If \eqn{z = x + i y} with real \eqn{x} and \eqn{y},
-  for \eqn{r = \code{Mod}(z) = \sqrt{x^2 + y^2}}, and
-  \eqn{\phi = \code{Arg}(z)}, \eqn{x = r*\cos(\phi)} and
-  \eqn{y = r*\sin(\phi)}.
-  They are all generic functions: methods can be defined
-  for them individually or via the
+  coordinates}.  If \eqn{z = x + i y} with real \eqn{x} and \eqn{y}, for
+  \eqn{r = Mod(z) = \sqrt{x^2 + y^2}}, and \eqn{\phi = Arg(z)},
+  \eqn{x = r*\cos(\phi)} and \eqn{y = r*\sin(\phi)}.  They are all generic
+  functions: methods can be defined for them individually or via the
   \code{\link[base:groupGeneric]{Complex}} group generic.
 
   In addition, the elementary trigonometric, logarithmic and exponential
   functions are available for complex values.
+
+  \code{as.complex} and \code{is.complex} are \link{primitive}, so
+  positional matching is used and any names of supplied arguments are
+  ignored.  This may not be true of methods for \code{as.complex}.
 }
 \section{S4 methods}{
   \code{as.complex} is primitive and can have S4 methods set.
@@ -80,7 +82,7 @@ Conj(z)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 require(graphics)

@@ -391,23 +391,26 @@ static void removeEntry(SEXP table, SEXP x, int indx, HashData *d)
 SEXP duplicated(SEXP x, Rboolean from_last)
 {
     SEXP ans;
-    int *h, *v;
-    int i, n;
-    HashData data;
+    int *v;
+#define DUPLICATED_INIT						\
+    int *h, i, n;						\
+    HashData data;						\
+								\
+    if (!isVector(x))						\
+	error(_("'duplicated' applies only to vectors"));	\
+								\
+    n = LENGTH(x);						\
+    HashTableSetup(x, &data);					\
+    h = INTEGER(data.HashTable)
 
-    if (!isVector(x))
-	error(_("'duplicated' applies only to vectors"));
+    DUPLICATED_INIT;
 
-    n = LENGTH(x);
-    HashTableSetup(x, &data);
     PROTECT(data.HashTable);
     ans = allocVector(LGLSXP, n);
     UNPROTECT(1);
-    h = INTEGER(data.HashTable);
     v = LOGICAL(ans);
 
     for (i = 0; i < data.M; i++) h[i] = NIL;
-
     if(from_last)
 	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
     else
@@ -416,26 +419,33 @@ SEXP duplicated(SEXP x, Rboolean from_last)
     return ans;
 }
 
+/* simpler version of the above : return 1-based index of first, or 0 : */
+int attribute_hidden any_duplicated(SEXP x, Rboolean from_last)
+{
+    DUPLICATED_INIT;
+
+    for (i = 0; i < data.M; i++) h[i] = NIL;
+    if(from_last) {
+	for (i = n-1; i >= 0; i--) if(isDuplicated(x, i, &data)) return ++i;
+    } else {
+	for (i = 0; i < n; i++)    if(isDuplicated(x, i, &data)) return ++i;
+    }
+    return 0;
+}
+
 SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 {
     SEXP ans;
-    int *h, *v;
-    int i, j, n,m;
-    HashData data;
+    int *v, j, m;
 
-    if (!isVector(x))
-	error(_("'duplicated' applies only to vectors"));
+    DUPLICATED_INIT;
 
-    n = LENGTH(x);
-    HashTableSetup(x, &data);
     PROTECT(data.HashTable);
     ans = allocVector(LGLSXP, n);
     UNPROTECT(1);
-    h = INTEGER(data.HashTable);
     v = LOGICAL(ans);
 
     for (i = 0; i < data.M; i++) h[i] = NIL;
-
     if(from_last)
 	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
     else
@@ -444,7 +454,7 @@ SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
     if(length(incomp)) {
 	PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
 	m = length(incomp);
-	for (i = 0; i < n; i++) 
+	for (i = 0; i < n; i++)
 	    if(v[i]) {
 		for(j = 0; j < m; j++)
 		    if(data.equal(x, i, incomp, j)) {v[i] = 0; break;}
@@ -455,8 +465,53 @@ SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
     return ans;
 }
 
+/* return (1-based) index of first duplication, or 0 : */
+int attribute_hidden any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
+{
+    int j, m = length(incomp);
+
+    DUPLICATED_INIT;
+
+    if(!m)
+	error(_("any_duplicated3(., <0-length incomp>)"));
+
+    PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
+    m = length(incomp);
+
+    for (i = 0; i < data.M; i++) h[i] = NIL;
+    if(from_last)
+	for (i = n-1; i >= 0; i--) {
+#define IS_DUPLICATED_CHECK				\
+	    if(isDuplicated(x, i, &data)) {		\
+		Rboolean isDup = TRUE;			\
+		for(j = 0; j < m; j++)			\
+		    if(data.equal(x, i, incomp, j)) {	\
+			isDup = FALSE; break;		\
+		    }					\
+		if(isDup) {				\
+		    UNPROTECT(1);			\
+		    return ++i;				\
+ 	        }					\
+		/* else continue */			\
+	    }
+	    IS_DUPLICATED_CHECK;
+	}
+    else {
+	for (i = 0; i < n; i++)
+            IS_DUPLICATED_CHECK;
+    }
+
+    UNPROTECT(1);
+    return 0;
+}
+
+#undef IS_DUPLICATED_CHECK
+#undef DUPLICATED_INIT
+
+
 /* .Internal(duplicated(x))       [op=0]
    .Internal(unique(x))	          [op=1]
+   .Internal(anyDuplicated(x))    [op=2]
 */
 SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -467,23 +522,32 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
     x = CAR(args);
     /* handle zero length vectors, and NULL */
     if ((n = length(x)) == 0)
-	return(allocVector(PRIMVAL(op) != 1 ? LGLSXP : TYPEOF(x), 0));
+	return(PRIMVAL(op) <= 1
+	       ? allocVector(PRIMVAL(op) != 1 ? LGLSXP : TYPEOF(x), 0)
+	       : ScalarInteger(0));
 
     if (!isVector(x)) {
-	PrintValue(x);
 	error(_("%s() applies only to vectors"),
-	      (PRIMVAL(op) == 0 ? "duplicated" : "unique"));
+	      (PRIMVAL(op) == 0 ? "duplicated" :
+	       (PRIMVAL(op) == 1 ? "unique" : /* 2 */ "anyDuplicated")));
     }
 
     incomp = CADR(args);
 
     if(length(incomp) && /* S has FALSE to mean empty */
-       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
-	dup = duplicated3(x, incomp, Rboolean(asLogical(CADDR(args))));
-    else
-	dup = duplicated(x, Rboolean(asLogical(CADDR(args))));
-
-    if (PRIMVAL(op) == 0) /* "duplicated()" : */
+       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
+	if(PRIMVAL(op) == 2) /* return R's 1-based index :*/
+	    return ScalarInteger(any_duplicated3(x, incomp, CXXRconvert(Rboolean, asLogical(CADDR(args)))));
+	else
+	    dup = duplicated3(x, incomp, CXXRconvert(Rboolean, asLogical(CADDR(args))));
+    }
+    else {
+	if(PRIMVAL(op) == 2)
+	    return ScalarInteger(any_duplicated(x, CXXRconvert(Rboolean, asLogical(CADDR(args)))));
+	else
+	    dup = duplicated(x, CXXRconvert(Rboolean, asLogical(CADDR(args))));
+    }
+    if (PRIMVAL(op) == 0) /* "duplicated()" */
 	return dup;
     /*	ELSE
 	use the results of "duplicated" to get "unique" */
@@ -720,7 +784,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     dups_ok = asLogical(CADDDR(args));
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
-    no_dups = Rboolean(!dups_ok);
+    no_dups = CXXRconvert(Rboolean, !dups_ok);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
@@ -1307,7 +1371,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	buf = static_cast<char *>( alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
+	buf = static_cast<char *>( alloca(maxlen + strlen(csep) + int (log(double(n))/log(10.0)) + 2));
 	if(n < 10000) {
 	    cnts = static_cast<int *>( alloca(n * sizeof(int)));
 	} else {

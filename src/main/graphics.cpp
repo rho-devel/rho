@@ -125,7 +125,7 @@ GUnit GMapUnits(int Runits)
     case 1:	return USER;
     case 2:	return NFC;
     case 3:	return INCHES;
-    default:	return GUnit(0);
+    default:	return CXXRconvert(GUnit, 0);
     }
 }
 
@@ -1291,12 +1291,12 @@ static void someCmRegions(double widths[], double heights[],
 
 static Rboolean allCm(pGEDevDesc dd)
 {
-    return Rboolean(allCmWidths(dd) && allCmHeights(dd));
+    return CXXRconvert(Rboolean, allCmWidths(dd) && allCmHeights(dd));
 }
 
 static Rboolean noCm(pGEDevDesc dd)
 {
-    return Rboolean(noCmWidths(dd) && noCmHeights(dd));
+    return CXXRconvert(Rboolean, noCmWidths(dd) && noCmHeights(dd));
 }
 
 static void layoutRegions(double widths[], double heights[],
@@ -1323,12 +1323,12 @@ static void subRegion(double *left, double *right, double *bottom, double *top,
 {
     double totalWidth = sumRegions(widths, 0, gpptr(dd)->numcols-1);
     double totalHeight = sumRegions(heights, 0, gpptr(dd)->numrows-1);
-    *left = (0.5 - totalWidth/2) + sumRegions(widths, 0, int(mincol-1));
-    *right = (0.5 - totalWidth/2) + sumRegions(widths, 0, int(maxcol));
+    *left = (0.5 - totalWidth/2) + sumRegions(widths, 0, CXXRconvert(int, mincol-1));
+    *right = (0.5 - totalWidth/2) + sumRegions(widths, 0, CXXRconvert(int, maxcol));
     *bottom = (0.5 - totalHeight/2) + totalHeight
-	- sumRegions(heights, 0, int(maxrow));
+	- sumRegions(heights, 0, CXXRconvert(int, maxrow));
     *top = (0.5 - totalHeight/2) + totalHeight
-	- sumRegions(heights, 0, int(minrow-1));
+	- sumRegions(heights, 0, CXXRconvert(int, minrow-1));
 }
 
 /* a fudge for backwards compatibility (of sorts) with par(mfg) */
@@ -1498,10 +1498,10 @@ static void mapFigureRegion(pGEDevDesc dd)
 	    row = (gpptr(dd)->currentFigure-1) / gpptr(dd)->numcols + 1;
 	    col = gpptr(dd)->currentFigure - (row-1)*gpptr(dd)->numcols;
 	}
-	x0 = double(col-1) / gpptr(dd)->numcols;
+	x0 = double (col-1) / gpptr(dd)->numcols;
 	x1 = double( col) / gpptr(dd)->numcols;
-	y0 = double(gpptr(dd)->numrows - row) / gpptr(dd)->numrows;
-	y1 = double(gpptr(dd)->numrows - row + 1) / gpptr(dd)->numrows;
+	y0 = double (gpptr(dd)->numrows - row) / gpptr(dd)->numrows;
+	y1 = double (gpptr(dd)->numrows - row + 1) / gpptr(dd)->numrows;
     }
     gpptr(dd)->fig[0] = dpptr(dd)->fig[0] = x0;
     gpptr(dd)->fig[1] = dpptr(dd)->fig[1] = x1;
@@ -1836,7 +1836,7 @@ pGEDevDesc GNewPlot(Rboolean recording)
 	else {				\
 	    int xpdsaved = gpptr(dd)->xpd; \
 	    gpptr(dd)->xpd = 2; \
-	    GText(0.5,0.5, NFC, msg, cetype_t(-1), 0.5,0.5,  0, dd);  \
+	    GText(0.5,0.5, NFC, msg, CXXRconvert(cetype_t, -1), 0.5,0.5,  0, dd);  \
 	    gpptr(dd)->xpd = xpdsaved; \
 	}
 
@@ -1875,7 +1875,7 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 #define EPS_FAC_1  16
 #define EPS_FAC_2 100
 
-    Rboolean swap, is_xaxis = Rboolean(axis == 1 || axis == 3);
+    Rboolean swap, is_xaxis = CXXRconvert(Rboolean, (axis == 1 || axis == 3));
     int log, n, style;
     double temp, min_o = 0., max_o = 0., tmp2 = 0.;/*-Wall*/
 
@@ -1949,11 +1949,6 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 	} else {
 	    gpptr(dd)->usr[0] = dpptr(dd)->usr[0] = min;
 	    gpptr(dd)->usr[1] = dpptr(dd)->usr[1] = max;
-/* MM: logusr is only used " when (log)" : */
-#ifdef NEVER_USED
-	    gpptr(dd)->logusr[0] = dpptr(dd)->logusr[0] = log10(min);
-	    gpptr(dd)->logusr[1] = dpptr(dd)->logusr[1] = log10(max);
-#endif
 	}
     } else {
 	if (log) {
@@ -1964,10 +1959,6 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 	} else {
 	    gpptr(dd)->usr[2] = dpptr(dd)->usr[2] = min;
 	    gpptr(dd)->usr[3] = dpptr(dd)->usr[3] = max;
-#ifdef NEVER_USED
-	    gpptr(dd)->logusr[2] = dpptr(dd)->logusr[2] = log10(min);
-	    gpptr(dd)->logusr[3] = dpptr(dd)->logusr[3] = log10(max);
-#endif
 	}
     }
 
@@ -1981,7 +1972,7 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
      * subroutine which could be called by do_axis {when [xy]axt != 'n'} ..
      */
 
-    swap = Rboolean(min > max);
+    swap = CXXRconvert(Rboolean, min > max);
     if(swap) { /* Feature: in R, something like  xlim = c(100,0)  just works */
 	temp = min; min = max; max = temp;
     }
@@ -2045,7 +2036,7 @@ void GSetupAxis(int axis, pGEDevDesc dd)
  *   xlog or ylog = TRUE ? */
     double min, max;
     int n;
-    Rboolean is_xaxis = Rboolean(axis == 1 || axis == 3);
+    Rboolean is_xaxis = CXXRconvert(Rboolean, (axis == 1 || axis == 3));
 
     if(is_xaxis) {
 	n = gpptr(dd)->lab[0];
@@ -2338,7 +2329,7 @@ void GSavePars(pGEDevDesc dd)
 void GRestorePars(pGEDevDesc dd)
 {
     gpptr(dd)->adj = adjsave;
-    Rf_gpptr(dd)->ann = Rboolean(annsave);
+    gpptr(dd)->ann = CXXRconvert(Rboolean, annsave);
     gpptr(dd)->bty = btysave;
     gpptr(dd)->cex = cexsave;
     gpptr(dd)->lheight = lheightsave;
@@ -2455,16 +2446,16 @@ static void setClipRect(double *x1, double *y1, double *x2, double *y2,
     *y2 = 1.0;
     switch (gpptr(dd)->xpd) {
     case 0:
-	GConvert(x1, y1, NPC, GUnit(coords), dd);
-	GConvert(x2, y2, NPC, GUnit(coords), dd);
+	GConvert(x1, y1, NPC, CXXRconvert(GUnit, coords), dd);
+	GConvert(x2, y2, NPC, CXXRconvert(GUnit, coords), dd);
 	break;
     case 1:
-	GConvert(x1, y1, NFC, GUnit(coords), dd);
-	GConvert(x2, y2, NFC, GUnit(coords), dd);
+	GConvert(x1, y1, NFC, CXXRconvert(GUnit, coords), dd);
+	GConvert(x2, y2, NFC, CXXRconvert(GUnit, coords), dd);
 	break;
     case 2:
-	GConvert(x1, y1, NDC, GUnit(coords), dd);
-	GConvert(x2, y2, NDC, GUnit(coords), dd);
+	GConvert(x1, y1, NDC, CXXRconvert(GUnit, coords), dd);
+	GConvert(x2, y2, NDC, CXXRconvert(GUnit, coords), dd);
 	break;
     }
 }
@@ -2702,7 +2693,7 @@ void clipPoint (Edge b, double x, double y,
 	if (cross (b, x, y, cs[b].sx, cs[b].sy, clip)) {
 	    intersect (b, x, y, cs[b].sx, cs[b].sy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store,
+		clipPoint (CXXRconvert(Edge, b + 1), ix, iy, xout, yout, cnt, store,
 			   clip, cs);
 	    else {
 		if (store) {
@@ -2721,7 +2712,7 @@ void clipPoint (Edge b, double x, double y,
     /* proceed to next clip edge, if any */
     if (inside (b, x, y, clip)) {
 	if (b < Top)
-	    clipPoint (Edge(b + 1), x, y, xout, yout, cnt, store, clip, cs);
+	    clipPoint (CXXRconvert(Edge, b + 1), x, y, xout, yout, cnt, store, clip, cs);
 	else {
 	    if (store) {
 		xout[*cnt] = x;
@@ -2744,7 +2735,7 @@ void closeClip (double *xout, double *yout, int *cnt, int store,
 	    intersect (b, cs[b].sx, cs[b].sy,
 		       cs[b].fx, cs[b].fy, &ix, &iy, clip);
 	    if (b < Top)
-		clipPoint (Edge(b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
+		clipPoint (CXXRconvert(Edge, b + 1), ix, iy, xout, yout, cnt, store, clip, cs);
 	    else {
 		if (store) {
 		    xout[*cnt] = ix;
@@ -3119,11 +3110,11 @@ void GLPretty(double *ul, double *uh, int *n)
  * The real work happens when the axis is drawn. */
     int p1, p2;
     double dl = *ul, dh = *uh;
-    p1 = int(ceil(log10(dl)));
-    p2 = int(floor(log10(dh)));
+    p1 = CXXRconvert(int, ceil(log10(dl)));
+    p2 = CXXRconvert(int, floor(log10(dh)));
     if(p2 <= p1 &&  dh/dl > 10.0) {
-	p1 = int(ceil(log10(dl) - 0.5));
-	p2 = int(floor(log10(dh) + 0.5));
+	p1 = CXXRconvert(int, ceil(log10(dl) - 0.5));
+	p2 = CXXRconvert(int, floor(log10(dh) + 0.5));
     }
 
     if (p2 <= p1) { /* floor(log10(uh)) <= ceil(log10(ul))
@@ -3207,7 +3198,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 
     /* Init to keep -Wall happy: */
     angle = 0.;
-    coords = GUnit(0);
+    coords = CXXRconvert(GUnit, 0);
 
     xadj = gpptr(dd)->adj;	/* ALL cases */
     if(outer) {
@@ -3325,7 +3316,7 @@ void GMathText(double x, double y, int coords, SEXP expr,
 {
     R_GE_gcontext gc;
     gcontextFromGP(&gc, dd);
-    GConvert(&x, &y, GUnit(coords), DEVICE, dd);
+    GConvert(&x, &y, CXXRconvert(GUnit, coords), DEVICE, dd);
     GClip(dd);
     GEMathText(x, y, expr, xc, yc, rot, &gc, dd);
 }

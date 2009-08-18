@@ -19,7 +19,7 @@
  *  file extra.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004	      The R Foundation
- *  Copyright (C) 2005--2008  The R Development Core Team
+ *  Copyright (C) 2005--2009  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -167,13 +167,13 @@ static void internal_shellexecW(const wchar_t * file)
     if(ret <= 32) { /* an error condition */
 	if(ret == ERROR_FILE_NOT_FOUND  || ret == ERROR_PATH_NOT_FOUND
 	   || ret == SE_ERR_FNF || ret == SE_ERR_PNF)
-	    error(_("'%s' not found"), file);
+	    error(_("'%ls' not found"), file);
 	if(ret == SE_ERR_ASSOCINCOMPLETE || ret == SE_ERR_NOASSOC)
-	    error(_("file association for '%s' not available or invalid"),
+	    error(_("file association for '%ls' not available or invalid"),
 		  file);
 	if(ret == SE_ERR_ACCESSDENIED || ret == SE_ERR_SHARE)
-	    error(_("access to '%s' denied"), file);
-	error(_("problem in displaying '%s'"), file);
+	    error(_("access to '%ls' denied"), file);
+	error(_("problem in displaying '%ls'"), file);
     }
 }
 
@@ -471,6 +471,8 @@ SEXP do_setwinprogressbar(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
     pbar = R_ExternalPtrAddr(ptr);
+    if(!pbar)
+	error("invalid progressbar -- has it been closed?");
     value = pbar->val;
     if(!isNull(CADR(args))) {
 	int iv;
@@ -519,7 +521,8 @@ SEXP do_savehistory(SEXP call, SEXP op, SEXP args, SEXP env)
 	errorcall(call, _("invalid '%s' argument"), "file");
     if (CharacterMode == RGui) {
 	R_setupHistory(); /* re-read the history size */
-	wgl_savehistory(translateChar(STRING_ELT(sfile, 0)), R_HistorySize);
+	wgl_savehistoryW(filenameToWchar(STRING_ELT(sfile, 0), 0), 
+			 R_HistorySize);
     } else if (R_Interactive && CharacterMode == RTerm) {
 	R_setupHistory(); /* re-read the history size */
 	gl_savehistory(translateChar(STRING_ELT(sfile, 0)), R_HistorySize);
@@ -537,7 +540,7 @@ SEXP do_loadhistory(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!isString(sfile) || LENGTH(sfile) < 1)
 	errorcall(call, _("invalid '%s' argument"), "file");
     if (CharacterMode == RGui)
-	wgl_loadhistory(translateChar(STRING_ELT(sfile, 0)));
+	wgl_loadhistoryW(filenameToWchar(STRING_ELT(sfile, 0), 0));
     else if (R_Interactive && CharacterMode == RTerm)
 	gl_loadhistory(translateChar(STRING_ELT(sfile, 0)));
     else
@@ -704,26 +707,12 @@ struct mallinfo mallinfo(void);
 SEXP do_memsize(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
-    int maxmem;
+    int maxmem = NA_LOGICAL;
 
     checkArity(op, args);
-    if(isLogical(CAR(args))) {
+    if(isLogical(CAR(args))) 
 	maxmem = asLogical(CAR(args));
-	PROTECT(ans = allocVector(REALSXP, 1));
-#ifdef LEA_MALLOC
-	if(maxmem == NA_LOGICAL)
-	    REAL(ans)[0] = R_max_memory;
-	else if(maxmem)
-	    REAL(ans)[0] = mallinfo().usmblks;
-	else
-	    REAL(ans)[0] = mallinfo().uordblks;
-	REAL(ans)[0] /= 1048576.0;
-#else
-	REAL(ans)[0] = NA_REAL;
-#endif
-	UNPROTECT(1);
-	return ans;
-    } else if(isReal(CAR(args))) {
+    else if(isReal(CAR(args))) {
 	unsigned int newmax;
 	double mem = asReal(CAR(args));
 	if (!R_FINITE(mem))
@@ -739,7 +728,21 @@ SEXP do_memsize(SEXP call, SEXP op, SEXP args, SEXP rho)
 #endif
     } else
 	errorcall(call, _("incorrect argument"));
-    return R_NilValue;
+	
+    PROTECT(ans = allocVector(REALSXP, 1));
+#ifdef LEA_MALLOC
+    if(maxmem == NA_LOGICAL)
+	REAL(ans)[0] = R_max_memory;
+    else if(maxmem)
+	REAL(ans)[0] = mallinfo().usmblks;
+    else
+	REAL(ans)[0] = mallinfo().uordblks;
+    REAL(ans)[0] /= 1048576.0;
+#else
+    REAL(ans)[0] = NA_REAL;
+#endif
+    UNPROTECT(1);
+    return ans;
 }
 
 SEXP do_dllversion(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1122,13 +1125,15 @@ SEXP do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (!GetFullPathNameW(filenameToWchar(el, FALSE), MAX_PATH,
 			     wtmp, &wtmp2)
 	    	|| !GetLongPathNameW(wtmp, wlongpath, MAX_PATH))
-	    	errorcall(call, "path[%d]: %s", i+1, formatError(GetLastError()));
+	    	errorcall(call, "path[%d]=\"%ls\": %s", i+1, filenameToWchar(el,FALSE), 
+	    	          formatError(GetLastError()));
 	    wcstoutf8(longpath, wlongpath, wcslen(wlongpath)+1);
 	    SET_STRING_ELT(ans, i, mkCharCE(longpath, CE_UTF8));
 	} else {
 	    if (!GetFullPathName(translateChar(el), MAX_PATH, tmp, &tmp2)
 	        || !GetLongPathName(tmp, longpath, MAX_PATH))
-	        errorcall(call, "path[%d]: %s", i+1, formatError(GetLastError()));
+	        errorcall(call, "path[%d]=\"%s\": %s", i+1, translateChar(el), 
+	                  formatError(GetLastError()));
 	    SET_STRING_ELT(ans, i, mkChar(longpath));
 	}
     }
@@ -1174,17 +1179,29 @@ SEXP do_shortpath(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ans;
 }
 
-static SEXP mkCharUTF8(const char *s)
+static int countFilenamesW(const wchar_t *list)
 {
-    return mkCharCE(reEnc(s, CE_NATIVE, CE_UTF8, 1), CE_UTF8);
+    const wchar_t *temp;
+    int count;
+    count = 0;
+    for (temp = list; *temp; temp += wcslen(temp)+1) count++;
+    return count;
+}
+
+
+static SEXP mkCharUTF8(const wchar_t *wc)
+{
+    char s[4*MAX_PATH];
+    wcstoutf8(s, wc, 4*MAX_PATH);
+    return mkCharCE(s, CE_UTF8);
 }
 
 SEXP do_chooseFiles(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, def, caption, filters;
-    char *temp, *cfilters, list[65520];
-    const char *p;
-    char path[MAX_PATH], filename[MAX_PATH];
+    wchar_t *temp, *res, *cfilters;
+    const wchar_t *p;
+    wchar_t path[MAX_PATH], filename[MAX_PATH];
     int multi, filterindex, i, count, lfilters, pathlen;
 
     checkArity(op, args);
@@ -1195,15 +1212,10 @@ SEXP do_chooseFiles(SEXP call, SEXP op, SEXP args, SEXP rho)
     filterindex = asInteger(CAD4R(args));
     if(length(def) != 1 )
 	errorcall(call, _("'default' must be a character string"));
-    p = translateChar(STRING_ELT(def, 0));
-    if(strlen(p) >= MAX_PATH) errorcall(call, _("'default' is overlong"));
-    strcpy(path, R_ExpandFileName(p));
-    R_fixbackslash(path);
-/*    temp = Rf_strchr(path,'/');
-      while (temp) {
-      *temp = '\\';
-      temp = strchr(temp,'/');
-      }*/
+    p = filenameToWchar(STRING_ELT(def, 0), 1);
+    if(wcslen(p) >= MAX_PATH) errorcall(call, _("'default' is overlong"));
+    wcscpy(path, p);
+    for(temp = path; *temp; temp++) if(*temp == L'/') *temp = L'\\';
     if(length(caption) != 1 )
 	errorcall(call, _("'caption' must be a character string"));
     if(multi == NA_LOGICAL)
@@ -1212,27 +1224,26 @@ SEXP do_chooseFiles(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("'filterindex' must be an integer value"));
     lfilters = 1 + length(filters);
     for (i = 0; i < length(filters); i++)
-	lfilters += strlen(translateChar(STRING_ELT(filters,i)));
-    cfilters = R_alloc(lfilters, sizeof(char));
+	lfilters += wcslen(filenameToWchar(STRING_ELT(filters, i), 0));
+    cfilters = (wchar_t *) R_alloc(lfilters, sizeof(wchar_t));
     temp = cfilters;
     for (i = 0; i < length(filters)/2; i++) {
-	strcpy(temp,translateChar(STRING_ELT(filters,i)));
-	temp += strlen(temp)+1;
-	strcpy(temp,translateChar(STRING_ELT(filters,i+length(filters)/2)));
-	temp += strlen(temp)+1;
+	wcscpy(temp, filenameToWchar(STRING_ELT(filters, i), 0));
+	temp += wcslen(temp)+1;
+	wcscpy(temp, filenameToWchar(STRING_ELT(filters, i+length(filters)/2),
+				     0));
+	temp += wcslen(temp)+1;
     }
     *temp = 0;
 
-    *list = '\0'; /* no initialization */
-    askfilenames(translateChar(STRING_ELT(caption, 0)), path,
-		 multi, cfilters, filterindex,
-		 list, 65500, NULL);  /* list declared larger to protect against overwrites */
+    res = askfilenamesW(filenameToWchar(STRING_ELT(caption, 0), 0), path,
+			multi, cfilters, filterindex, NULL);
 
     if(!multi) {
 	/* only one filename possible */
 	count = 1;
     } else {
-	count = countFilenames(list);
+	count = countFilenamesW(res);
     }
 
     if (count < 2) PROTECT(ans = allocVector(STRSXP, count));
@@ -1240,21 +1251,21 @@ SEXP do_chooseFiles(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     switch (count) {
     case 0: break;
-    case 1: SET_STRING_ELT(ans, 0, mkChar(list));
+    case 1: SET_STRING_ELT(ans, 0, mkCharUTF8(res));
 	break;
     default:
-	strncpy(path,list,sizeof(path));
-	pathlen = strlen(path);
-	if (path[pathlen-1] == '\\') path[--pathlen] = '\0';
-	temp = list;
+	wcsncpy(path, res, MAX_PATH);
+	pathlen = wcslen(path);
+	if (path[pathlen-1] == L'\\') path[--pathlen] = L'\0';
+	temp = res;
 	for (i = 0; i < count-1; i++) {
-	    temp += strlen(temp) + 1;
-	    if (Rf_strchr(temp,':') || *temp == '\\' || *temp == '/')
+	    temp += wcslen(temp) + 1;
+	    if (wcschr(temp,L':') || *temp == L'\\' || *temp == L'/')
 		SET_STRING_ELT(ans, i, mkCharUTF8(temp));
 	    else {
-		strncpy(filename, path, sizeof(filename));
-		filename[pathlen] = '\\';
-		strncpy(filename+pathlen+1, temp, sizeof(filename)-pathlen-1);
+		wcsncpy(filename, path, MAX_PATH);
+		filename[pathlen] = L'\\';
+		wcsncpy(filename+pathlen+1, temp, MAX_PATH-pathlen-1);
 		SET_STRING_ELT(ans, i, mkCharUTF8(filename));
 	    }
 	}
@@ -1283,7 +1294,7 @@ SEXP do_chooseDir(SEXP call, SEXP op, SEXP args, SEXP rho)
     p = askcdstring(translateChar(STRING_ELT(caption, 0)), path);
 
     PROTECT(ans = allocVector(STRSXP, 1));
-    SET_STRING_ELT(ans, 0, p ? mkCharUTF8(p): NA_STRING);
+    SET_STRING_ELT(ans, 0, p ? mkChar(p): NA_STRING);
     UNPROTECT(1);
     return ans;
 }
@@ -1445,6 +1456,37 @@ SEXP do_bringtotop(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!xd) errorcall(call, _("invalid device"));
 	if(stay && ismdi()) error(_("requires SDI mode"));
 	BringToTop(xd->gawin, stay);
+    }
+    return R_NilValue;
+}
+
+SEXP do_msgwindow(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    int dev, type;
+    pGEDevDesc gdd;
+    gadesc *xd;
+
+    checkArity(op, args);
+    dev = asInteger(CAR(args));
+    type = asInteger(CADR(args));
+
+    if(dev == -1) { /* console */
+	if(CharacterMode == RGui) GA_msgWindow(RConsole, type);
+    } else {
+	if(dev < 1 || dev > R_MaxDevices || dev == NA_INTEGER)
+	    errorcall(call, _("invalid '%s' argument"), "which");
+	gdd = GEgetDevice(dev - 1);
+	if(!gdd) errorcall(call, _("invalid device"));
+	xd = (gadesc *) gdd->dev->deviceSpecific;
+	if(!xd) errorcall(call, _("invalid device"));
+	if(type == 5) {
+	    xd->recording = TRUE;
+	    check(xd->mrec);
+	} else if(type == 6) {
+	    xd-> recording = FALSE;
+	    uncheck(xd->mrec);
+	} else
+	    GA_msgWindow(xd->gawin, type);
     }
     return R_NilValue;
 }
@@ -1808,7 +1850,7 @@ SEXP do_readRegistry(SEXP call, SEXP op, SEXP args, SEXP env)
     hive = find_hive(CHAR(STRING_ELT(CADR(args), 0)));
     res = RegOpenKeyExW(hive, key, 0, KEY_READ, &hkey);
     if (res == ERROR_FILE_NOT_FOUND)
-	error(_("Registry key '%s' not found"), key);
+	error(_("Registry key '%ls' not found"), key);
     if (res != ERROR_SUCCESS)
 	error("RegOpenKeyEx error code %d: '%s'", (int) res, formatError(res));
     ans = readRegistryKey(hkey, maxdepth);
@@ -1891,3 +1933,21 @@ size_t Rmbstowcs(wchar_t *wc, const char *s, size_t n)
 #endif
 }
 #endif
+
+SEXP attribute_hidden do_filechoose(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP ans;
+    wchar_t *fn;
+    char str[MAX_PATH+1];
+
+    checkArity(op, args);
+    setuserfilterW(L"All files (*.*)\0*.*\0\0");
+    fn = askfilenameW(G_("Select file"), "");
+    if (!fn)
+	error(_("file choice cancelled"));
+    wcstoutf8(str, fn, MAX_PATH+1);
+    PROTECT(ans = allocVector(STRSXP, 1));
+    SET_STRING_ELT(ans, 0, mkCharCE(str, CE_UTF8));
+    UNPROTECT(1);
+    return ans;
+}

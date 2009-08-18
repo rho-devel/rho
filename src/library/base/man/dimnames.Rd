@@ -44,6 +44,9 @@ dimnames(x) <- value
 
   For a 1D matrix the \code{\link{names}} are the same thing as the
   (only) component of the \code{dimnames}.
+  
+  These functions are \link{primitive}, so argument names are ignored
+  (but this might not be true of their methods).
 }
 \value{
   The dimnames of a matrix or array can be \code{NULL} or a list of the
@@ -64,7 +67,7 @@ dimnames(x) <- value
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{rownames}}, \code{\link{colnames}};

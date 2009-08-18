@@ -39,6 +39,8 @@ on.exit(expr, add = FALSE)
   expression will be looked for in the function and its environment at
   the time of exit: to capture the current value in \code{expr} use
   \code{\link{substitute}} or similar.
+
+  This is a \link{primitive} function and uses positional matching.
 }
 \value{
   Invisible \code{NULL}.
@@ -46,7 +48,7 @@ on.exit(expr, add = FALSE)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{sys.on.exit}} which returns the expression stored for use

@@ -30,6 +30,10 @@ is.integer(x)
   representable integers is restricted to about
   \eqn{\pm 2 \times 10^9}{+/-2*10^9}: \code{\link{double}}s can hold
   much larger integers exactly.
+
+  \code{as.integer} and \code{is.integer} are \link{primitive}, so
+  positional matching is used and any names of supplied arguments are
+  ignored.  This may not be true of their methods.  
 }
 \value{
   \code{integer} creates a integer vector of the specified length.
@@ -56,7 +60,7 @@ is.integer(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{numeric}}, \code{\link{storage.mode}}.

@@ -375,7 +375,7 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, int stretch, int level,
 
     default:
 	error(_("incompatible types (from %s to %s) in subassignment type fix"),
-	      type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
+	      type2char(CXXRconvert(SEXPTYPE, which%100)), type2char(CXXRconvert(SEXPTYPE, which/100)));
     }
 
     if (stretch) {
@@ -982,7 +982,7 @@ static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 
     default:
 	error(_("incompatible types (from %s to %s) in matrix subset assignment"),
-	      type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
+	          type2char(CXXRconvert(SEXPTYPE, which%100)), type2char(CXXRconvert(SEXPTYPE, which/100)));
     }
     UNPROTECT(2);
     return x;
@@ -1166,7 +1166,7 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 
 	default:
 	error(_("incompatible types (from %s to %s) in array subset assignment"),
-	      type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
+	          type2char(CXXRconvert(SEXPTYPE, which%100)), type2char(CXXRconvert(SEXPTYPE, which/100)));
 	}
     next_i:
 	;
@@ -1183,7 +1183,7 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     return x;
 }
 
-
+/* This is only used for [[<-, so only adding one element */
 static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
     SEXP indx, xi, yi, yp;
@@ -1221,7 +1221,15 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	error(_("number of items to replace is not a multiple of replacement length"));
 
     if (stretch) {
+	SEXP t = CAR(s);
 	yi = allocList(stretch - nx);
+	/* This is general enough for only usage */
+	if(isString(t) && length(t) == stretch - nx) {
+	    SEXP z = yi;
+	    int i;
+	    for(i = 0; i < LENGTH(t); i++, z = CDR(z))
+		SET_TAG(z, install(translateChar(STRING_ELT(t, i))));
+	}
 	PROTECT(x = listAppend(x, yi));
 	nx = stretch;
     }
@@ -1336,7 +1344,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	x = SETCAR(args, duplicate(CAR(args)));
 
     SubAssignArgs(args, &x, &subs, &y);
-    S4 = Rboolean(IS_S4_OBJECT(x));
+    S4 = CXXRconvert(Rboolean, IS_S4_OBJECT(x));
     nsubs = length(subs);
 
     oldtype = 0;
@@ -1438,11 +1446,11 @@ static SEXP DeleteOneVectorListItem(SEXP x, int which)
     return x;
 }
 
-/* The [[<- operator, it should be fast. */
-/* args[1] = object being subscripted */
-/* args[2] = list of subscripts */
-/* args[3] = replacement values */
-
+/* The [[<- operator; should be fast.
+ *     ====
+ * args[1] = object being subscripted
+ * args[2] = list of subscripts
+ * args[3] = replacement values */
 SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
@@ -1463,7 +1471,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(args);
 
     SubAssignArgs(args, &x, &subs, &y);
-    S4 = Rboolean(IS_S4_OBJECT(x));
+    S4 = CXXRconvert(Rboolean, IS_S4_OBJECT(x));
 
     /* Handle NULL left-hand sides.  If the right-hand side */
     /* is NULL, just return the left-hand size otherwise, */
@@ -1483,20 +1491,27 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Ensure that the LHS is a local variable. */
     /* If it is not, then make a local copy. */
 
-    if (NAMED(x) == 2) {
+    if (NAMED(x) == 2)
 	SETCAR(args, x = duplicate(x));
-    }
+
     xtop = xup = x; /* x will be the element which is assigned to */
 
     dims = getAttrib(x, R_DimSymbol);
     ndims = length(dims);
     nsubs = length(subs);
 
+    /* code to allow classes to extend ENVSXP */
+    if(TYPEOF(x) == S4SXP) {
+        x = R_getS4DataSlot(x, ANYSXP);
+	if(x == R_NilValue)
+	  errorcall(call, _("no method for assigning subsets of this S4 class"));
+    }
+
     /* ENVSXP special case first */
     if( TYPEOF(x) == ENVSXP) {
       if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
 	error(_("wrong args for environment subassignment"));
-      defineVar(install(translateChar(STRING_ELT(CAR(subs),0))), y, x);
+      defineVar(install(translateChar(STRING_ELT(CAR(subs), 0))), y, x);
       UNPROTECT(1);
       return(x);
     }
@@ -1688,7 +1703,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 	default:
 	    error(_("incompatible types (from %s to %s) in [[ assignment"),
-		  type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
+		  type2char(CXXRconvert(SEXPTYPE, which%100)), type2char(CXXRconvert(SEXPTYPE, which/100)));
 	}
 	/* If we stretched, we may have a new name. */
 	/* In this case we must create a names attribute */
@@ -1742,6 +1757,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		offset = (offset + INTEGER(indx)[i]) * INTEGER(dims)[i - 1];
 	    offset += INTEGER(indx)[0];
 	    SETCAR(nthcdr(x, offset), duplicate(y));
+	    /* FIXME: add name */
 	    UNPROTECT(1);
 	}
 	xtop = x;
@@ -1804,7 +1820,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 
     PROTECT_WITH_INDEX(x, &pxidx);
     PROTECT_WITH_INDEX(val, &pvalidx);
-    S4 = Rboolean(IS_S4_OBJECT(x));
+    S4 = CXXRconvert(Rboolean, IS_S4_OBJECT(x));
 
     if (NAMED(x) == 2)
 	REPROTECT(x = duplicate(x), pxidx);
@@ -1818,8 +1834,17 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	maybe_duplicate=TRUE;
     else if (NAMED(val)==1)
 	REPROTECT(val = duplicate(val), pvalidx);
+    /* code to allow classes to extend ENVSXP */
+    if(TYPEOF(x) == S4SXP) {
+        x = R_getS4DataSlot(x, ANYSXP);
+	if(x == R_NilValue)
+	  errorcall(call, _("no method for assigning subsets of this S4 class"));
+    }
 
     if ((isList(x) || isLanguage(x)) && !isNull(x)) {
+	/* Here we do need to duplicate */
+	if (maybe_duplicate)
+	    REPROTECT(val = duplicate(val), pvalidx);
 	if (TAG(x) == nlist) {
 	    if (val == R_NilValue) {
 		SET_ATTRIB(CDR(x), ATTRIB(x));

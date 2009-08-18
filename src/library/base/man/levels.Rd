@@ -38,11 +38,14 @@ levels(x) <- value
   Note that for a factor, replacing the levels via
   \code{levels(x) <- value} is not the same as (and is preferred to)
   \code{attr(x, "levels") <- value}.
+
+  The replacemnt function is \link{primitive}, so argument names are
+  ignored (but this might not be true of its methods).
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{nlevels}}, \code{\link{relevel}}, \code{\link{reorder}}.

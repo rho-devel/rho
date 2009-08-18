@@ -158,7 +158,7 @@ Rboolean R_IsNaN(double x)
     if (isnan(x)) {
 	ieee_double y;
 	y.value = x;
-	return Rboolean(y.word[lw] != 1954);
+	return CXXRconvert(Rboolean, (y.word[lw] != 1954));
     }
     return FALSE;
 }
@@ -168,9 +168,9 @@ Rboolean R_IsNaN(double x)
 Rboolean R_finite(double x)
 {
 #ifdef HAVE_WORKING_ISFINITE
-    return Rboolean(isfinite(x));
+    return CXXRconvert(Rboolean, isfinite(x));
 #else
-    return Rboolean(!isnan(x) && (x != R_PosInf) && (x != R_NegInf));
+    return CXXRconvert(Rboolean, !isnan(x) && (x != R_PosInf) && (x != R_NegInf));
 #endif
 }
 
@@ -213,11 +213,6 @@ static R_INLINE double R_log(double x) {
     return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf;
 }
 
-#ifdef POW_DIRTY
-
-# define R_pow	pow
-
-#else
 double R_pow(double x, double y) /* = x ^ y */
 {
     if(x == 1. || y == 0.)
@@ -260,7 +255,6 @@ double R_pow(double x, double y) /* = x ^ y */
     return(R_NaN);		/* all other cases: (-Inf)^{+-Inf,
 				   non-int}; (neg)^{+-Inf} */
 }
-#endif
 
 double R_pow_di(double x, int n)
 {

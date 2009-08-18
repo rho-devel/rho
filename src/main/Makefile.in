@@ -27,7 +27,8 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
+SOURCES_C = RNG.c complex.c gram.c gramRd.c inlined.c regex.c \
+            unzip.c
 
 SOURCES_CXX = \
 	BuiltInFunction.cpp ByteCode.cpp \
@@ -39,7 +40,7 @@ SOURCES_CXX = \
         Frame.cpp FunctionBase.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
-        IntVector.cpp \
+        inspect.cpp IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
         PairList.cpp Promise.cpp \
@@ -106,7 +107,8 @@ DISTFILES = Makefile.in Makefile.win \
 	$(SOURCES_CXX) \
 	$(EXTRA_SOURCES_CXX) \
 	$(SOURCES_F) \
-	gram.y
+	gram.y \
+	gramRd.y
 
 ZLIB_CPPFLAGS = @BUILD_ZLIB_TRUE@ -I$(top_srcdir)/src/extra/zlib
 BZLIB_CPPFLAGS = @BUILD_BZLIB_TRUE@ -I$(top_srcdir)/src/extra/bzip2
@@ -137,13 +139,13 @@ R_bin_OBJECTS = Rmain.o VectorBase.o
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
-R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a
+R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 libR_la = libR$(DYLIB_EXT)
 ## have to force in Rembedded.o
 libR_la_OBJECTS = $(OBJECTS) ../unix/Rembedded.o
-libR_la_LIBADD = $(STATIC_LIBS) $(EXTRA_LIBS)
-libR_la_DEPENDENCIES = $(STATIC_LIBS)
+libR_la_LIBADD = $(STATIC_LIBS) $(EXTRA_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
+libR_la_DEPENDENCIES = $(STATIC_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 ## The next is needed on darwin only at present
 LIBR_LDFLAGS = @LIBR_LDFLAGS@
@@ -179,7 +181,7 @@ R: Makefile
 ../include/config.h ../include/Rversion.h:
 	(cd $(@D); $(MAKE) $(@F))
 
-$(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES) @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
+$(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES)
 	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
@@ -223,11 +225,15 @@ $(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
 	@$(ECHO) "re-making gram.c"
 	$(YACC) $(YFLAGS) $(srcdir)/gram.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c
+$(srcdir)/gramRd.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
+	@$(ECHO) "re-making gramRd.c"
+	$(YACC) $(YFLAGS) $(srcdir)/gramRd.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.c	
 
 install: installdirs
 	@$(MAKE) install-bin
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
-	@WANT_R_STATIC_TRUE@ @$(MAKE) install-static
+@WANT_R_STATIC_TRUE@	@$(MAKE) install-static
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexecbindir2)"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
@@ -240,7 +246,7 @@ install-static: installdirs
 install-strip: installdirs
 	@${INSTALL_PROGRAM} -s $(R_binary) "$(DESTDIR)$(Rexecbindir2)/R"
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
-	@WANT_R_STATIC_TRUE@ @$(MAKE) install-static
+@WANT_R_STATIC_TRUE@	@$(MAKE) install-static
 	@if test -n "$(STRIP_LIBS)"; then \
 	  if test -f $(libR_la); then $(STRIP_LIBS) "$(DESTDIR)$(Rexeclibdir)/$(libR_la)"; fi; \
 	fi
@@ -263,7 +269,7 @@ distclean: clean
 maintainer-clean: distclean
 	@$(ECHO) "This command is intended for maintainers to use; it"
 	@$(ECHO) "deletes files that may need special rules to rebuild"
-	@-rm -f $(srcdir)/gram.c
+	@-rm -f $(srcdir)/gram.c $(srcdir)/gramRd.c
 
 tags: TAGS
 TAGS: $(SOURCES) $(EXTRA_SOURCES_CXX) $(HEADERS)

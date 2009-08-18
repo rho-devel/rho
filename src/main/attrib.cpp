@@ -171,6 +171,8 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 SEXP getAttrib(SEXP vec, SEXP name)
 {
     if (!vec) return 0;
+    if(TYPEOF(vec) == CHARSXP)
+	error("cannot have attributes on a CHARSXP");
     /* pre-test to avoid expensive operations if clearly not needed -- LT */
     if (!vec->hasAttributes() &&
 	! (TYPEOF(vec) == LISTSXP || TYPEOF(vec) == LANGSXP))
@@ -333,6 +335,8 @@ static SEXP removeAttrib(SEXP vec, SEXP name)
 {
     SEXP t;
     if (!vec) return 0;  // 2007/07/24 arr
+    if(TYPEOF(vec) == CHARSXP)
+	error("cannot set attribute on a CHARSXP");
     if (name == R_NamesSymbol && isList(vec)) {
 	for (t = vec; t != R_NilValue; t = CDR(t))
 	    SET_TAG(t, R_NilValue);
@@ -379,7 +383,7 @@ SEXP tspgets(SEXP vec, SEXP val)
 
     if(IS_S4_OBJECT(vec)) { /* leave validity checking to validObject */
         if (!isNumeric(val)) /* but should have been checked */
-	    error(_("'tsp' attribute must be numeric"));
+	    error(_("'tsp' attribute must be numeric")); 
 	vec->setAttribute(static_cast<Symbol*>(R_TspSymbol), val);
 	return vec;
     }
@@ -491,6 +495,8 @@ SEXP attribute_hidden do_classgets(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
     if (NAMED(CAR(args)) == 2) SETCAR(args, duplicate(CAR(args)));
     if (length(CADR(args)) == 0) SETCADR(args, R_NilValue);
+    if(IS_S4_OBJECT(CAR(args)))
+      UNSET_S4_OBJECT(CAR(args));
     setAttrib(CAR(args), R_ClassSymbol, CADR(args));
     return CAR(args);
 }
@@ -498,7 +504,13 @@ SEXP attribute_hidden do_classgets(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_class(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    return getAttrib(CAR(args), R_ClassSymbol);
+    SEXP x = CAR(args), s3class;
+    if(IS_S4_OBJECT(x)) {
+      if((s3class = S3Class(x)) != R_NilValue) {
+	return s3class;
+      }
+    } /* else */
+    return getAttrib(x, R_ClassSymbol);
 }
 
 /* character elements corresponding to the syntactic types in the
@@ -576,20 +588,83 @@ SEXP R_data_class(SEXP obj, Rboolean singleString)
     return value;
 }
 
-static SEXP s_dot_S3Class;
+static SEXP s_dot_S3Class = 0;
+
+#ifdef UNUSED
+static SEXP R_S4_extends_table = 0;
+
+static SEXP S4_extends(SEXP klass) {
+    static SEXP s_extends = 0;
+    SEXP e, val; const char *class; 
+    if(!s_extends) {
+	s_extends = install("extends");
+	R_S4_extends_table = R_NewHashedEnv(R_NilValue, ScalarInteger(0));
+	R_PreserveObject(R_S4_extends_table);
+    }
+    /* sanity check for methods package available */
+    if(findVar(s_extends, R_GlobalEnv) == R_UnboundValue)
+        return klass;
+    class = translateChar(STRING_ELT(klass, 0)); /* TODO: include package attr. */
+    val = findVarInFrame(R_S4_extends_table, install(class));
+    if(val != R_UnboundValue)
+       return val;
+    PROTECT(e = allocVector(LANGSXP, 2));
+    SETCAR(e, s_extends);
+    val = CDR(e);
+    SETCAR(val, klass);
+    val = eval(e, R_GlobalEnv);
+    defineVar(install(class), val, R_S4_extends_table);
+    UNPROTECT(1);
+    return(val);
+}
+#endif
+
 /* Version for S3-dispatch */
 SEXP attribute_hidden R_data_class2 (SEXP obj)
 {
     SEXP klass = getAttrib(obj, R_ClassSymbol);
       if(length(klass) > 0) {
-	if(IS_S4_OBJECT(obj)) {  /* try for an S4 object with an S3Class slot */
-  	    SEXP S3Class = getAttrib(obj, s_dot_S3Class);
-	    if(S3Class != R_NilValue)
-       	        klass = S3Class;
-	}
-	return(klass);
+	if(IS_S4_OBJECT(obj)) { 
+	    /* return an S3Class slot, if it exists,
+	       or else the S4 class inheritance */
+	    /* The S4 class is included for compatibility with
+	       the deprecated practice of defining S3 methods 
+	       for S4 classes.  Someday this should be disallowed. 
+	       JMC iii.9.09 */
+  	    SEXP s3class = S3Class(obj);
+	    if(s3class != R_NilValue) {
+	      SEXP value; int i, j = 0, n = length(s3class);
+		PROTECT(value =  allocVector(STRSXP, n+1));
+		if(STRING_ELT(value, 0) != STRING_ELT(klass, 0)) {
+		  /* always include the S4 class itself.  It would be
+		     cleaner NOT to do this & require the class to
+		     specify that it wants S3 methods for its own
+		     class. (see S3method= argument to setClass())
+		  */
+		  SET_STRING_ELT(value, 0, STRING_ELT(klass, 0));
+		  j++;
+		}
+		for(i=0; i<n; i++, j++)
+		  SET_STRING_ELT(value, j, STRING_ELT(s3class, i));
+		UNPROTECT(1);
+		return value;
+	    }
+	    else if(TYPEOF(obj) == S4SXP &&
+		    (s3class = R_getS4DataSlot(obj, ANYSXP)) != R_NilValue) {
+	        SEXP value; /* an object extending an abnormal type*/
+	        PROTECT(value = allocVector(STRSXP, 2));
+		SET_STRING_ELT(value, 0, STRING_ELT(klass, 0));
+		SET_STRING_ELT(value, 1, type2str(TYPEOF(s3class)));
+		UNPROTECT(1);
+		return value; /* return c(class(obj), typeof(obj)) */
+	    }
+	    else
+	        return klass;
+	    }
+	else
+	    return klass;
     }
-    else {
+      else { /* length(klass) == 0 */
 	SEXPTYPE t;
 	SEXP value, class0 = R_NilValue, dim = getAttrib(obj, R_DimSymbol);
 	int n = length(dim);
@@ -782,19 +857,8 @@ static SEXP dimnamesgets1(SEXP val1)
     if (LENGTH(val1) == 0) return R_NilValue;
     /* if (isObject(val1)) dispatch on as.character.foo, but we don't
        have the context at this point to do so */
-    if (inherits(val1, "factor")) { /* mimic as.character.factor */
-	int i, n = LENGTH(val1);
-	SEXP labels = getAttrib(val1, install("levels"));
-	PROTECT(this2 = allocVector(STRSXP, n));
-	for(i = 0; i < n; i++) {
-	    int ii = INTEGER(val1)[i];
-	    SET_STRING_ELT(this2, i,
-			   (ii == NA_INTEGER) ? NA_STRING
-			   : STRING_ELT(labels, ii - 1));
-	}
-	UNPROTECT(1);
-	return this2;
-    }
+    if (inherits(val1, "factor"))  /* mimic as.character.factor */
+        return asCharacterFactor(val1);
     if (!isString(val1)) { /* mimic as.character.default */
 	PROTECT(this2 = coerceVector(val1, STRSXP));
 	this2->clearAttributes();
@@ -927,8 +991,14 @@ SEXP dimgets(SEXP vec, SEXP val)
     if (ndim == 0)
 	error(_("length-0 dimension vector is invalid"));
     total = 1;
-    for (i = 0; i < ndim; i++)
+    for (i = 0; i < ndim; i++) {
+	/* need this test first as NA_INTEGER is < 0 */
+	if (INTEGER(val)[i] == NA_INTEGER)
+	    error(_("the dims contain missing values"));
+	if (INTEGER(val)[i] < 0)
+	    error(_("the dims contain negative values"));
 	total *= INTEGER(val)[i];
+    }
     if (total != len)
 	error(_("dims [product %d] do not match the length of object [%d]"), total, len);
     removeAttrib(vec, R_DimNamesSymbol);
@@ -1302,6 +1372,12 @@ static SEXP set_data_part(SEXP obj,  SEXP rhs) {
     return(val);
 }
 
+SEXP S3Class(SEXP obj)
+{
+    if(!s_dot_S3Class) init_slot_handling();
+    return getAttrib(obj, s_dot_S3Class);
+}
+
 /* Slots are stored as attributes to
    provide some back-compatibility
 */
@@ -1320,7 +1396,7 @@ int R_has_slot(SEXP obj, SEXP name) {
     if(isString(name)) name = install(CHAR(STRING_ELT(name, 0)))
 
     R_SLOT_INIT;
-    if(name == s_dot_Data)
+    if(name == s_dot_Data && TYPEOF(obj) != S4SXP)
 	return(1);
     /* else */
     return(getAttrib(obj, name) != R_NilValue);
@@ -1363,6 +1439,11 @@ SEXP R_do_slot(SEXP obj, SEXP name) {
 }
 #undef R_SLOT_INIT
 
+
+/* the @ operator, and its assignment form.  Processed much like $
+   (see do_subset3) but without S3-style methods.
+*/
+
 SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value) {
     PROTECT(obj); PROTECT(value);
 				/* Ensure that name is a symbol */
@@ -1389,18 +1470,6 @@ SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value) {
     return obj;
 }
 
-#ifdef UNUSED
-SEXP R_pseudo_null() {
-    if(pseudo_NULL == 0)
-	init_slot_handling();
-    return pseudo_NULL;
-}
-#endif
-
-
-/* the @ operator, and its assignment form.  Processed much like $
-   (see do_subset3) but without S3-style methods.
-*/
 SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP  nlist, object, ans, klass;
@@ -1431,3 +1500,60 @@ SEXP attribute_hidden do_AT(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(1);
     return ans;
 }
+
+/* Return a suitable S3 object (OK, the name of the routine comes from
+   an earlier version and isn't quite accurate.) If there is a .S3Class 
+   slot convert to that S3 class.
+   Otherwise, unless type == S4SXP, look for a .Data or .xData slot.  The
+   value of type controls what's wanted.  If it is S4SXP, then ONLY 
+   .S3class is used.  If it is ANYSXP, don't check except that automatic 
+   conversion from the current type only applies for classes that extend 
+   one of the basic types (i.e., not S4SXP).  For all other types, the 
+   recovered data must match the type. 
+   Because S3 objects can't have type S4SXP, .S3Class slot is not searched
+   for in that type object, unless ONLY that class is wanted.
+   (Obviously, this is another routine that has accumulated barnacles and 
+   should at some time be broken into separate parts.)
+*/
+SEXP attribute_hidden
+R_getS4DataSlot(SEXP obj, SEXPTYPE type)
+{
+  static SEXP s_xData, s_dotData; SEXP value = R_NilValue;
+  if(!s_xData) {
+    s_xData = install(".xData");
+    s_dotData = install(".Data");
+  }
+  if(TYPEOF(obj) != S4SXP || type == S4SXP) {
+    SEXP s3class = S3Class(obj);
+    if(s3class == R_NilValue && type == S4SXP)
+      return R_NilValue;
+    PROTECT(s3class);
+    if(NAMED(obj)) obj = duplicate(obj);
+    UNPROTECT(1);
+    if(s3class != R_NilValue) {/* replace class with S3 class */
+      setAttrib(obj, R_ClassSymbol, s3class);
+      setAttrib(obj, s_dot_S3Class, R_NilValue); /* not in the S3 class */
+    }
+    else { /* to avoid inf. recursion, must unset class attribute */
+      setAttrib(obj, R_ClassSymbol, R_NilValue);
+    }
+    UNSET_S4_OBJECT(obj);
+    if(type == S4SXP)
+      return obj;
+    value = obj;
+  }  
+  else
+      value = getAttrib(obj, s_dotData);
+  if(value == R_NilValue)
+      value = getAttrib(obj, s_xData);
+/* the mechanism for extending abnormal types.  In the future, would b
+   good to consolidate under the ".Data" slot, but this has
+   been used to mean S4 objects with non-S4 type, so for now
+   a secondary slot name, ".xData" is used to avoid confusion
+*/  if(value != R_NilValue &&
+     (type == ANYSXP || type == TYPEOF(value)))
+     return value;
+  else
+     return R_NilValue;
+}
+

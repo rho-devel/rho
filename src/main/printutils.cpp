@@ -102,11 +102,11 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
 	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return R_size_t(Giga*v);
+	return CXXRconvert(R_size_t, (Giga*v));
     }
     else if(p[0] == 'M') {
 	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return R_size_t(Mega*v);
+	return CXXRconvert(R_size_t, (Mega*v));
     }
     else if(p[0] == 'K') {
 	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
@@ -257,8 +257,9 @@ const char
     if (x.i == 0.0) x.i = 0.0;
 
     if (ISNA(x.r) || ISNA(x.i)) {
-	snprintf(buff, NB, "%*s%*s", R_print.gap, "", wr+wi+2,
-		CHAR(R_print.na_string));
+	snprintf(buff, NB,
+		 "%*s", /* was "%*s%*s", R_print.gap, "", */
+		 wr+wi+2, CHAR(R_print.na_string));
     } else {
 	/* formatComplex rounded, but this does not, and we need to
 	   keep it that way so we don't get strange trailing zeros.
@@ -872,7 +873,7 @@ void REvprintf(const char *format, va_list arg)
 
 int attribute_hidden IndexWidth(int n)
 {
-    return int(log10(n + 0.5) + 1);
+    return int (log10(n + 0.5) + 1);
 }
 
 void attribute_hidden VectorIndex(int i, int w)

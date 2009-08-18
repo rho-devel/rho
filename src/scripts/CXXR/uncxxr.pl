@@ -38,13 +38,15 @@ while (<>) {
   # Reinstate C++ reserved words used as identifiers:
   s/connclass/class/g;
   s/connprivate/private/g;
+  s/devnum/this/g;
   s/funstr/this/g;
-  # s/newbuf([^_\w\.])/new$1/g;  # newbuf is used itself in saveload.c
+  s/newbuff/new/g;
   s/newconn/new/g;
-  s/newd/new/g;
+  s/newd\b/new/g;
   s/newplot/new/g;
-  s/newv/new/g;
+  s/newv\b/new/g;
   s/thisconn/this/g;
+  s/thispath/this/g;
   s/thiss/this/g;
 
   # Other changes:
@@ -52,8 +54,11 @@ while (<>) {
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
   s/CXXR_alloc/R_alloc/g;
   s/CXXRconst\s*//g;
+  s/CXXRconvert\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRFALSE/0/g;
   s/CXXRNOCAST//g;
   s/CXXRnot_hidden/attribute_hidden/g;
+  s/CXXRTRUE/1/g;
   s/CXXRunsigned\s*//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   print;

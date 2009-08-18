@@ -23,24 +23,27 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         retval[fields] <- NA
     }
 
-    pkgpath <- ""
     ## If the NULL default for lib.loc is used, the loaded packages are
     ## searched before the libraries.
-    if(is.null(lib.loc)) {
-        if(pkg == "base")
-            pkgpath <- file.path(.Library, "base")
-        else if((envname <- paste("package:", pkg, sep = ""))
-                %in% search()) {
-            pkgpath <- attr(as.environment(envname), "path")
-            ## could be NULL if a perverse user has been naming environmnents
-            ## to look like packages.
-            if(is.null(pkgpath)) pkgpath <- ""
-        }
-    }
+    pkgpath <-
+	if(is.null(lib.loc)) {
+	    if(pkg == "base")
+		file.path(.Library, "base")
+	    else if((envname <- paste("package:", pkg, sep = ""))
+		    %in% search()) {
+		pp <- attr(as.environment(envname), "path")
+		## could be NULL if a perverse user has been naming
+		## environmnents to look like packages.
+	    } else if(pkg %in% loadedNamespaces())
+		## correct path for a loaded (not attached) namespace:
+		getNamespaceInfo(pkg, "path")
+	}
+    if(is.null(pkgpath)) pkgpath <- ""
+
     if(pkgpath == "") {
         libs <- if(is.null(lib.loc)) .libPaths() else lib.loc
         for(lib in libs)
-            if(file.access(file.path(lib, pkg), 5) == 0) {
+            if(file.access(file.path(lib, pkg), 5) == 0L) {
                 pkgpath <- file.path(lib, pkg)
                 break
             }
@@ -65,7 +68,7 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         desc <- as.list(desc)
     } else if(file.exists(file <- file.path(pkgpath,"DESCRIPTION"))) {
         dcf <- read.dcf(file=file)
-        if(NROW(dcf) < 1)
+        if(NROW(dcf) < 1L)
             stop(gettextf("DESCRIPTION file of package '%s' is corrupt", pkg),
                  domain = NA)
         desc <- as.list(dcf[1,])
@@ -84,7 +87,7 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
                 else
                     warning("'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible", call. = FALSE)
             } else
-                warning("'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible", call. = FALSE)
+            warning("'DESCRIPTION' file has 'Encoding' field and re-encoding is not possible", call. = FALSE)
         }
         if(!is.null(fields)){
             ok <- names(desc) %in% fields
@@ -99,8 +102,8 @@ packageDescription <- function(pkg, lib.loc=NULL, fields=NULL, drop=TRUE,
         return(NA)
     }
 
-    if(drop & length(fields)==1)
-        return(retval[[1]])
+    if(drop & length(fields) == 1L)
+        return(retval[[1L]])
 
     class(retval) <- "packageDescription"
     if(!is.null(fields)) attr(retval, "fields") <- fields
@@ -113,7 +116,7 @@ print.packageDescription <- function(x, ...)
 {
     xx <- x
     xx[] <- lapply(xx, function(x) if(is.na(x)) "NA" else x)
-    write.dcf(as.data.frame.list(xx))
+    write.dcf(as.data.frame.list(xx, optional = TRUE))
     cat("\n-- File:", attr(x, "file"), "\n")
     if(!is.null(attr(x, "fields"))){
         cat("-- Fields read: ")
@@ -131,7 +134,7 @@ function(x, ...)
 {
     db <- x$results
     ## Split according to Package.
-    out <- if(nrow(db) == 0)
+    out <- if(nrow(db) == 0L)
          NULL
     else
         lapply(split(1 : nrow(db), db[, "Package"]),

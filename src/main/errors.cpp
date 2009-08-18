@@ -116,13 +116,13 @@ void R_CheckStack(void)
     intptr_t usage = R_CStackDir * (R_CStackStart - uintptr_t(&dummy));
 
     /* printf("usage %ld\n", usage); */
-    if(R_CStackLimit != uintptr_t(-1) && usage > 0.95 * R_CStackLimit) {
+    if(R_CStackLimit != CXXRconvert(uintptr_t, -1) && usage > 0.95 * R_CStackLimit) {
 	/* We do need some stack space to process error recovery,
 	   so temporarily raise the limit.
 	 */
 	RCNTXT cntxt;
 	unsigned int stacklimit = R_CStackLimit;
-	R_CStackLimit += uintptr_t(0.05*R_CStackLimit);
+	R_CStackLimit += CXXRconvert(uintptr_t, 0.05*R_CStackLimit);
 	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &reset_stack_limit;
@@ -288,7 +288,7 @@ void warning(const char *format, ...)
     va_end(ap);
     p = buf + strlen(buf) - 1;
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
-    if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)
+    if(R_WarnLength < BUFSIZE - 20 && CXXRconvert(int, strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
     if (c && (c->callflag & CTXT_BUILTIN)) c = c->nextcontext;
     warningcall(c ? c->call : static_cast<RObject*>(0), "%s", buf);
@@ -366,7 +366,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 
     if(w >= 2) { /* make it an error */
 	Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
-	if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)
+	if(R_WarnLength < BUFSIZE - 20 && CXXRconvert(int, strlen(buf)) == R_WarnLength)
 	    strcat(buf, " [... truncated]");
 	inWarning = 0; /* PR#1570 */
 	errorcall(call, _("(converted from warning) %s"), buf);
@@ -377,7 +377,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	    dcall = CHAR(STRING_ELT(deparse1s(call), 0));
 	} else dcall = "";
 	Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
-	if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)
+	if(R_WarnLength < BUFSIZE - 20 && CXXRconvert(int, strlen(buf)) == R_WarnLength)
 	    strcat(buf, " [... truncated]");
 	if(dcall[0] == '\0')
 	    REprintf(_("Warning: %s\n"), buf);
@@ -405,7 +405,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	}
 	SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
 	Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
-	if(R_WarnLength < BUFSIZE - 20 && int(strlen(buf)) == R_WarnLength)
+	if(R_WarnLength < BUFSIZE - 20 && CXXRconvert(int, strlen(buf)) == R_WarnLength)
 	    strcat(buf, " [... truncated]");
 	if(R_ShowWarnCalls && call != R_NilValue) {
 	    tr =  R_ConciseTraceback(call, 0); nc = strlen(tr);
@@ -485,7 +485,7 @@ void PrintWarnings(void)
     cntxt.cend = &cleanup_PrintWarnings;
 
     inPrintWarnings = 1;
-    header = P_("Warning message:\n", "Warning messages:\n", R_CollectWarnings);
+    header = ngettext("Warning message:\n", "Warning messages:\n", R_CollectWarnings);
     if( R_CollectWarnings == 1 ) {
 	REprintf("%s", header);
 	names = CAR(ATTRIB(R_Warnings));
@@ -1331,7 +1331,7 @@ SEXP R_GetTraceback(int skip)
 	    if (skip > 0)
 		skip--;
 	    else {
-		SETCAR(t, deparse1(c->call, FALSE, DEFAULTDEPARSE));
+		SETCAR(t, deparse1(c->call, CXXRFALSE, DEFAULTDEPARSE));
 		t = CDR(t);
 	    }
 	}
@@ -1367,7 +1367,7 @@ static CXXRconst char * R_ConciseTraceback(SEXP call, int skip)
 		    ncalls++;
 		    if(too_many) {
 			top = funstr;
-		    } else if(int(strlen(buf)) > R_NShowCalls) {
+		    } else if(CXXRconvert(int, strlen(buf)) > R_NShowCalls) {
 			memmove(buf+4, buf, strlen(buf)+1);
 			memcpy(buf, "... ", 4);
 			too_many = TRUE;
@@ -1876,7 +1876,7 @@ SEXP CXXRnot_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     if (R_GlobalContext == R_ToplevelContext ||
-	! R_GlobalContext->callflag & CTXT_FUNCTION)
+	! (R_GlobalContext->callflag & CTXT_FUNCTION))
 	errorcall(call, _("not in a try context"));
     SET_RESTART_BIT_ON(R_GlobalContext->callflag);
     R_InsertRestartHandlers(R_GlobalContext, FALSE);
@@ -1908,7 +1908,7 @@ do_interruptsSuspended(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     int orig_value = R_interrupts_suspended;
     if (args != R_NilValue) 
-	R_interrupts_suspended = Rboolean(asLogical(CAR(args)));
+	R_interrupts_suspended = CXXRconvert(Rboolean, asLogical(CAR(args)));
     return ScalarLogical(orig_value);
 }
 	

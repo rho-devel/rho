@@ -51,7 +51,7 @@
 static unsigned int rgb2col(const char *);
 static char *RGB2rgb(unsigned int, unsigned int, unsigned int);
 static char *RGBA2rgb(unsigned int, unsigned int, unsigned int, unsigned int);
-static unsigned int str2col(const char *s, unsigned int bg);
+static double str2col(const char *s, double bg);
 
 static int R_ColorTableSize;
 static unsigned int R_ColorTable[COLOR_TABLE_SIZE];
@@ -262,9 +262,9 @@ SEXP attribute_hidden do_hcl(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (L < 0 || L > WHITE_Y || C < 0 || A < 0 || A > 1)
 	    error(_("invalid hcl color"));
 	hcl2rgb(H, C, L, &r, &g, &b);
-        ir = int(255 * r + .5);
-        ig = int(255 * g + .5);
-        ib = int(255 * b + .5);
+	ir = CXXRconvert(int, 255 * r + .5);
+	ig = CXXRconvert(int, 255 * g + .5);
+	ib = CXXRconvert(int, 255 * b + .5);
 	if (FixupColor(&ir, &ig, &ib) && !fixup)
 	    SET_STRING_ELT(ans, i, NA_STRING);
 	else
@@ -357,7 +357,7 @@ SEXP attribute_hidden do_gray(SEXP call, SEXP op, SEXP args, SEXP env)
 	level = REAL(lev)[i];
 	if (ISNAN(level) || level < 0 || level > 1)
 	    error(_("invalid gray level, must be in [0,1]."));
-	ilevel = int(255 * level + 0.5);
+	ilevel = CXXRconvert(int, 255 * level + 0.5);
 	SET_STRING_ELT(ans, i, mkChar(RGB2rgb(ilevel, ilevel, ilevel)));
     }
     UNPROTECT(2);
@@ -369,7 +369,8 @@ SEXP attribute_hidden do_col2RGB(SEXP call, SEXP op, SEXP args, SEXP env)
 /* colorname, "#rrggbb" or "col.number" to (r,g,b) conversion */
 
     SEXP colors, ans, names, dmns;
-    unsigned int col, bg;
+    double col, bg;
+    unsigned int icol;
     int n, i, i4;
 
     checkArity(op, args);
@@ -398,34 +399,37 @@ SEXP attribute_hidden do_col2RGB(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* avoid looking up the background unless we will need it;
        this may avoid opening a new window.  Unfortunately, there is no
-       unavailable colour, so */
+       unavailable colour, so we work with doubles and convert at the 
+       last minute */
 
-#define BG_NEEDED NA_INTEGER
+#define BG_NEEDED -1.0
 
     bg = BG_NEEDED;
 
     if(isString(colors)) {
 	for(i = i4 = 0; i < n; i++, i4 += 4) {
 	    col = str2col(CHAR(STRING_ELT(colors, i)), bg);
-	    if (int(col) == BG_NEEDED)
+	    if (col == BG_NEEDED)
 	    	col = bg = dpptr(GEcurrentDevice())->bg;
-	    INTEGER(ans)[i4 +0] = R_RED(col);
-	    INTEGER(ans)[i4 +1] = R_GREEN(col);
-	    INTEGER(ans)[i4 +2] = R_BLUE(col);
-	    INTEGER(ans)[i4 +3] = R_ALPHA(col);
+	    icol = static_cast<unsigned int>(col);
+	    INTEGER(ans)[i4 +0] = R_RED(icol);
+	    INTEGER(ans)[i4 +1] = R_GREEN(icol);
+	    INTEGER(ans)[i4 +2] = R_BLUE(icol);
+	    INTEGER(ans)[i4 +3] = R_ALPHA(icol);
 	}
     } else {
 	for(i = i4 = 0; i < n; i++, i4 += 4) {
 	    col = INTEGER(colors)[i];
-	    if      (int(col) == NA_INTEGER) col = R_TRANWHITE;
+	    if      (col == NA_INTEGER) col = R_TRANWHITE;
 	    else if (col == 0)          col = bg;
-	    else 		        col = R_ColorTable[(col-1) % R_ColorTableSize];
-	    if (int(col) == BG_NEEDED)
-	    	col = bg = dpptr(GEcurrentDevice())->bg;	    
-	    INTEGER(ans)[i4 +0] = R_RED(col);
-	    INTEGER(ans)[i4 +1] = R_GREEN(col);
-	    INTEGER(ans)[i4 +2] = R_BLUE(col);
-	    INTEGER(ans)[i4 +3] = R_ALPHA(col);
+	    else 		        col = R_ColorTable[static_cast<unsigned int>(col-1) % R_ColorTableSize];
+	    if (col == BG_NEEDED)
+	    	col = bg = dpptr(GEcurrentDevice())->bg;
+	    icol = static_cast<unsigned int>(col);
+	    INTEGER(ans)[i4 +0] = R_RED(icol);
+	    INTEGER(ans)[i4 +1] = R_GREEN(icol);
+	    INTEGER(ans)[i4 +2] = R_BLUE(icol);
+	    INTEGER(ans)[i4 +3] = R_ALPHA(icol);
 	}
     }
     UNPROTECT(3);
@@ -1333,14 +1337,6 @@ static unsigned int hexdigit(int digit)
     return digit; /* never occurs (-Wall) */
 }
 
-#ifdef UNUSED
-/* Integer to Hex Digit */
-
-static unsigned int digithex(int digit)
-{
-    return HexDigits[abs(digit) % 16];
-}
-#endif
 
 /* #RRGGBB[AA] String to Internal Color Code */
 static unsigned int rgb2col(const char *rgb)
@@ -1394,11 +1390,11 @@ unsigned int attribute_hidden name2col(const char *nm)
     return 0;		/* never occurs but avoid compiler warnings */
 }
 
-static unsigned int number2col(const char *nm, unsigned int bg)
+static double number2col(const char *nm, double bg)
 {
     int indx;
     char *ptr;
-    indx = int(strtod(nm, &ptr));
+    indx = CXXRconvert(int, strtod(nm, &ptr));
     if(*ptr) error(_("invalid color specification '%s'"), nm);
     if(indx == 0) return bg;
     else return R_ColorTable[(indx-1) % R_ColorTableSize];
@@ -1478,7 +1474,7 @@ const char *col2name(unsigned int col)
     }
 }
 
-static unsigned int str2col(const char *s, unsigned int bg)
+static double str2col(const char *s, double bg)
 {
     if(s[0] == '#') return rgb2col(s);
     /* This seems rather strange,
@@ -1492,7 +1488,7 @@ static unsigned int str2col(const char *s, unsigned int bg)
 /* used in grDevices, public */
 unsigned int R_GE_str2col(const char *s)
 {
-    return str2col(s, R_TRANWHITE);
+    return static_cast<unsigned int>(str2col(s, R_TRANWHITE));
 }
 
 /* Convert a sexp element to an R color desc */
@@ -1505,7 +1501,7 @@ unsigned int RGBpar3(SEXP x, int i, unsigned int bg)
     switch(TYPEOF(x))
     {
     case STRSXP:
-	return str2col(CHAR(STRING_ELT(x, i)), bg);
+	return static_cast<unsigned int>(str2col(CHAR(STRING_ELT(x, i)), bg));
     case LGLSXP:
 	indx = LOGICAL(x)[i];
 	if (indx == NA_LOGICAL) return R_TRANWHITE;
@@ -1516,7 +1512,7 @@ unsigned int RGBpar3(SEXP x, int i, unsigned int bg)
 	break;
     case REALSXP:
 	if(!R_FINITE(REAL(x)[i])) return R_TRANWHITE;
-	indx = int(REAL(x)[i]);
+	indx = CXXRconvert(int, REAL(x)[i]);
 	break;
 	   default:
 	   warning(_("supplied color is not numeric nor character"));
@@ -1553,7 +1549,7 @@ Rboolean attribute_hidden isNAcol(SEXP col, int index, int ncol)
 	else
 	    error(_("Invalid color specification"));
     }
-    return Rboolean(result);
+    return CXXRconvert(Rboolean, result);
 }
 
 /* Initialize the Color Databases */

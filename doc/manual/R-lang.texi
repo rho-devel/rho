@@ -2323,6 +2323,11 @@ namespaces (normally) have the package namespace as their environment.
 @node Argument matching, Argument evaluation, Evaluation environment, Evaluation
 @subsection Argument matching
 
+This subsection applies to closures but not to primitive functions.  The
+latter typicaly ignore tags and do positional matching, but their help
+pages should be consulted for exceptions, which include @code{log},
+@code{round}, @code{signif}, @code{rep} and @code{seq.int}.
+
 The first thing that occurs in a
 @cindex function
 function evaluation is the matching of
@@ -3683,7 +3688,7 @@ call, so it is distinctly different from @code{round(x)}.  The form is
 used rather rarely, but is occasionally useful where the name of a
 function is available as a character variable.
 
-The function @code{do.call} is related, but evaluates the call immediate
+The function @code{do.call} is related, but evaluates the call immediately
 and takes the arguments from an object of mode @code{"list"} containing
 all the arguments.  A natural use of this is when one wants to apply a
 function like @code{cbind} to all elements of a list or data frame.

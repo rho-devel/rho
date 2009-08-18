@@ -48,7 +48,7 @@
 #define HAVE_ACCESS 1
 
 /* Define to 1 if you have the `acosh' function. */
-/* #define HAVE_ACOSH 1 */
+#define HAVE_ACOSH 1
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
@@ -77,13 +77,13 @@
 /* #undef HAVE_ARPA_INET_H */
 
 /* Define to 1 if you have the `asinh' function. */
-/* #define HAVE_ASINH 1 */
+#define HAVE_ASINH 1
 
 /* Define to 1 if you have the `asprintf' function. */
 /* #undef HAVE_ASPRINTF */
 
 /* Define to 1 if you have the `atanh' function. */
-/* #define HAVE_ATANH 1 */
+#define HAVE_ATANH 1
 
 /* Define if you have BSD networking headers and libraries. */
 /* #undef HAVE_BSD_NETWORKING */
@@ -126,7 +126,7 @@
 
 /* Define to 1 if you have the declaration of `acosh', and to 0 if you don't.
    */
-#define HAVE_DECL_ACOSH 0
+#define HAVE_DECL_ACOSH 1
 
 /* Define to 1 if you have the declaration of `alloca', and to 0 if you don't.
    */
@@ -134,11 +134,11 @@
 
 /* Define to 1 if you have the declaration of `asinh', and to 0 if you don't.
    */
-#define HAVE_DECL_ASINH 0
+#define HAVE_DECL_ASINH 1
 
 /* Define to 1 if you have the declaration of `atanh', and to 0 if you don't.
    */
-#define HAVE_DECL_ATANH 0
+#define HAVE_DECL_ATANH 1
 
 /* Define to 1 if you have the declaration of `feof_unlocked', and to 0 if you
    don't. */
@@ -232,7 +232,7 @@
 #define HAVE_EXECV 1
 
 /* Define to 1 if you have the `expm1' function. */
-/* #define HAVE_EXPM1 1 */
+#define HAVE_EXPM1 1
 
 /* Define if your Fortran compiler appends an extra_underscore to external
    names containing an underscore. */
@@ -661,7 +661,7 @@
 #define HAVE_TCLTK 1
 
 /* Define this if libtiff is available. */
-/* #undef HAVE_TIFF */
+#define HAVE_TIFF 1
 
 /* Define to 1 if you have the <tiffio.h> header file. */
 /* #undef HAVE_TIFFIO_H */

@@ -604,7 +604,9 @@ CXXRconst char *locale2charset(const char *locale)
     char enc[128], *p;
     int i;
     int  cp;
+#ifndef __APPLE__
     CXXRconst char *value;
+#endif
 
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
 	locale = setlocale(LC_CTYPE,NULL);

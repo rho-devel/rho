@@ -116,12 +116,18 @@
 
 #if defined(TRIO_PLATFORM_WIN32)
 # define USE_STRCASECMP
-# define strcasecmp(x,y) strcmpi(x,y)
+# if defined(TRIO_PLATFORM_WINCE)
+#  define strcasecmp(x,y) _stricmp(x,y)
+# else
+#  define strcasecmp(x,y) strcmpi(x,y)
+# endif
 #endif
 
-#if !(defined(TRIO_PLATFORM_SUNOS))
-# define USE_TOLOWER
-# define USE_TOUPPER
+#if !defined(HAVE_CONFIG_H)
+# if !(defined(TRIO_PLATFORM_SUNOS))
+#  define HAVE_TOLOWER
+#  define HAVE_TOUPPER
+# endif
 #endif
 
 #if defined(USE_MATH)
@@ -306,7 +312,7 @@ internal_to_upper
 TRIO_ARGS1((source),
 	   int source)
 {
-# if defined(USE_TOUPPER)
+# if defined(HAVE_TOUPPER)
   
   return toupper(source);
   
@@ -375,6 +381,33 @@ TRIO_ARGS1((string),
 	   TRIO_CONST char *string)
 {
   return strlen(string);
+}
+
+#endif
+
+/**
+   Count at most @p max characters in a string.
+
+   @param string String to measure.
+   @param max Maximum number of characters to count.
+   @return The maximum value of @p max and number of characters in @p string.
+*/
+#if defined(TRIO_FUNC_LENGTH)
+
+TRIO_PUBLIC_STRING size_t
+trio_length_max
+TRIO_ARGS2((string, max),
+	   TRIO_CONST char *string,
+	   size_t max)
+{
+  size_t i;
+
+  for (i = 0; i < max; ++i)
+    {
+      if (string[i] == 0)
+	break;
+    }
+  return i;
 }
 
 #endif
@@ -828,7 +861,7 @@ TRIO_ARGS4((target, max, format, datetime),
   assert(format);
   assert(datetime);
   assert(max > 0);
-  
+
   return strftime(target, max, format, datetime);
 }
 
@@ -1410,7 +1443,7 @@ trio_to_lower
 TRIO_ARGS1((source),
 	   int source)
 {
-# if defined(USE_TOLOWER)
+# if defined(HAVE_TOLOWER)
   
   return tolower(source);
   

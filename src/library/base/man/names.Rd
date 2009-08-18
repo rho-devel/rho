@@ -50,6 +50,9 @@ names(x) <- value
 
   A name can be character \code{NA}, but such a name will never be
   matched and is likely to lead to confusion.
+  
+  These functions are \link{primitive}, so argument names are ignored
+  (but this might not be true of their methods).
 }
 \note{
   For vectors, the names are one of the \link{attributes} with
@@ -62,7 +65,7 @@ names(x) <- value
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 # print the names attribute of the islands data set

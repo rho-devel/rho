@@ -152,9 +152,9 @@ function(x, y, alternative = c("two.sided", "less", "greater"),
                     if(n <= 1290 && exact) # n*(n^2 - 1) does not overflow
                         .C("prho",
                            as.integer(n),
-                           as.double(round(q) + lower.tail),
-                           p = double(1),
-                           integer(1),
+                           as.double(round(q) + 2*lower.tail),
+                           p = double(1L),
+                           integer(1L),
                            as.logical(lower.tail),
                            PACKAGE = "stats")$p
 		    else { # for large n: asymptotic t_{n-2}
@@ -214,7 +214,7 @@ function(formula, data, subset, na.action, ...)
     m <- match.call(expand.dots = FALSE)
     if(is.matrix(eval(m$data, parent.frame())))
         m$data <- as.data.frame(data)
-    m[[1]] <- as.name("model.frame")
+    m[[1L]] <- as.name("model.frame")
     m$... <- NULL
     mf <- eval(m, environment(formula))
     if(length(mf) != 2)

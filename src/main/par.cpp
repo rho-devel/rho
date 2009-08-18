@@ -168,17 +168,6 @@ static int ParCode(const char *what)
 }
 
 
-#ifdef UNUSED
-/* par(.)'s call */
-
-static SEXP gcall;
-
-void RecordGraphicsCall(SEXP call)
-{
-    gcall = call;
-}
-#endif
-
 static void par_error(const char *what)
 {
     error(_("invalid value specified for graphical parameter \"%s\""),  what);
@@ -204,14 +193,6 @@ static void posIntCheck(int x, const char *s)
     if (x == NA_INTEGER || x <= 0)
 	par_error(s);
 }
-
-#ifdef UNUSED
-static void naIntCheck(int x, const char *s)
-{
-    if (x == NA_INTEGER)
-	par_error(s);
-}
-#endif
 
 static void posRealCheck(double x, const char *s)
 {
@@ -322,7 +303,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 /*--- and these are "Specify() only" {i.e. par(nam = val)} : */
     else if (streql(what, "ask")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
-	dd->ask = Rboolean(ix == 1);/* NA |-> FALSE */
+	dd->ask = CXXRconvert(Rboolean, (ix == 1));/* NA |-> FALSE */
     }
     else if (streql(what, "fig")) {
 	value = coerceVector(value, REALSXP);
@@ -331,7 +312,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	    REAL(value)[1] <= 1.0 &&
 	    0.0 <= REAL(value)[2] && REAL(value)[2] < REAL(value)[3] &&
 	    REAL(value)[3] <= 1.0) {
-	    R_DEV_2(defaultFigure) = FALSE;
+	    R_DEV_2(defaultFigure) = CXXRFALSE;
 	    R_DEV_2(fUnits) = NIC;
 	    R_DEV_2(numrows) = 1;
 	    R_DEV_2(numcols) = 1;
@@ -365,7 +346,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
     else if (streql(what, "fin")) {
 	value = coerceVector(value, REALSXP);
 	lengthCheck(what, value, 2, call);
-	R_DEV_2(defaultFigure) = FALSE;
+	R_DEV_2(defaultFigure) = CXXRFALSE;
 	R_DEV_2(fUnits) = INCHES;
 	R_DEV_2(numrows) = 1;
 	R_DEV_2(numcols) = 1;
@@ -531,7 +512,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	if(!gpptr(dd)->state) {
 	    /* no need to warn with new=FALSE and no plot */
 	    if(ix != 0) warning(_("calling par(new=TRUE) with no plot"));
-	} else R_DEV__(newplot) = Rboolean(ix != 0);
+	} else R_DEV__(newplot) = CXXRconvert(Rboolean, (ix != 0));
     }
     /* -- */
 
@@ -671,13 +652,13 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(xlog) = Rboolean(ix != 0);
+	R_DEV__(xlog) = CXXRconvert(Rboolean, (ix != 0));
     }
     else if (streql(what, "ylog")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(ylog) = Rboolean(ix != 0);
+	R_DEV__(ylog) = CXXRconvert(Rboolean, (ix != 0));
     }
     /* We do not need these as Query will already have warned.
     else if (streql(what, "type")) {
@@ -1030,7 +1011,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
     else if (streql(what, "ps")) {
 	value = allocVector(INTSXP, 1);
 	/* was reporting unscaled prior to 2.7.0 */
-	INTEGER(value)[0] = int(dpptr(dd)->ps * dpptr(dd)->scale);
+	INTEGER(value)[0] = CXXRconvert(int, dpptr(dd)->ps * dpptr(dd)->scale);
     }
     else if (streql(what, "pty")) {
 	char buf[2];
@@ -1176,7 +1157,7 @@ SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	    else {
 		SET_VECTOR_ELT(value, i, R_NilValue);
-		SET_STRING_ELT(newnames, i, R_NilValue);
+		SET_STRING_ELT(newnames, i, R_BlankString);
 	    }
 	}
 	setAttrib(value, R_NamesSymbol, newnames);

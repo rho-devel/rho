@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.2.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-10-06 07:30\n"
-"PO-Revision-Date: 2008-09-30 19:34+0100\n"
+"POT-Creation-Date: 2009-05-08 17:39\n"
+"PO-Revision-Date: 2009-03-29 21:44+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
 "MIME-Version: 1.0\n"
@@ -531,20 +531,17 @@ msgstr "Les étapes suivantes sont décrites dans '%s'."
 msgid "unable to access index for repository %s"
 msgstr "impossible d'accéder à l'index de l'entrepôt %s"
 
-msgid "invalid 'oldPkgs'; must be as result from old.packages()"
-msgstr ""
+msgid "invalid 'oldPkgs'; must be a result from old.packages()"
+msgstr "'oldPkgs' incorrect ; il faut des données renvoyées par old.packages()"
 
 msgid "illformed 'instPkgs' matrix"
-msgstr ""
+msgstr "matrice 'instPkgs' incorrecte"
 
 msgid "no installed packages for (invalid?) 'lib.loc=%s'"
 msgstr "aucun package installé pour 'lib.loc=%s' (incorrect ?)"
 
-msgid "bundle '%s' is incompletely installed"
-msgstr "le bundle '%s' n'est pas installé complètement"
-
-msgid "bundle '%s' has extra contents %s"
-msgstr "le bundle '%s' possède un contenu surnuméraire %s"
+msgid "read.dcf() error on file '%s'"
+msgstr "erreur de read.dcf() dans le fichier %s"
 
 msgid "'priority' must be character or NULL"
 msgstr "'priority' doit être de type caractère ou NULL"
@@ -591,6 +588,13 @@ msgstr "tout package dépend au moins d'un autre"
 msgid "packages %s are mutually dependent"
 msgstr "les packages %s sont mutuellement dépendants"
 
+msgid ""
+"Do not know which element of 'lib' to install dependencies into\n"
+"skipping dependencies"
+msgstr ""
+"Je ne sais pas dans quel élément de 'lib' installer les dépendances\n"
+"dépendances ignorées"
+
 msgid "no packages were specified"
 msgstr "aucun package spécifié"
 
@@ -614,6 +618,9 @@ msgstr "impossible d'installer les packages"
 
 msgid "unable to create"
 msgstr "impossible de créer"
+
+msgid "inferring 'repos = NULL' from the file name"
+msgstr "supposition de 'repos = NULL' à partir du nom de fichier"
 
 msgid "cannot install MacOS X binary packages on Windows"
 msgstr "impossible d'installer les packages MacOS X binaire sous Windows"
@@ -640,11 +647,11 @@ msgid "unable to create temporary directory '%s'"
 msgstr "impossible de créer le répertoire temporaire '%s'"
 
 msgid ""
-"Do not know which element of 'lib' to install dependencies into\n"
-"skipping dependencies"
+"installation of one of more packages failed,\n"
+"  probably %s"
 msgstr ""
-"Je ne sais pas dans quel élément de 'lib' installer les dépendances\n"
-"dépendances ignorées"
+"l'installation de un package ou plus a échoué,\n"
+" probablement %s"
 
 msgid ""
 "The downloaded packages are in\n"
@@ -807,6 +814,12 @@ msgstr "impossible de convertir 'x' en roman"
 msgid "Invalid roman numeral(s): %s"
 msgstr "Nombre(s) roman(s) incorrect(s) : %s"
 
+msgid "length mismatch: bug in code!"
+msgstr "longueur incompatible : bogue dans le code !"
+
+msgid "Processing file"
+msgstr "Traitement du fichier"
+
 msgid "no valid packages were specified"
 msgstr "aucun package valide n'a été spécifié"
 
@@ -909,6 +922,12 @@ msgstr ""
 msgid "options(\"browser\") not set"
 msgstr "options(\"browser\") non fixée"
 
+msgid "'latexcmd' is empty"
+msgstr "'latexcmd' est vide"
+
+msgid "'dvipscmd' is empty"
+msgstr "'dvipscmd' est vide"
+
 msgid "invalid browser name, check options(\"browser\")."
 msgstr "nom de navigateur incorrect, vérifiez options(\"browser\")."
 
@@ -948,6 +967,28 @@ msgstr "impossible de créer l'index HTML de recherche"
 msgid "Updating HTML index of packages in '.Library'"
 msgstr "mise à jour de la liste HTML des packages dans '.Library'"
 
+msgid "'tar' returned non-zero exit code %d"
+msgstr "'tar' a renvoyé un code de sortie non nul %d"
+
+msgid "package '%s' successfully unpacked and MD5 sums checked"
+msgstr ""
+"le package '%s' a été décompressé et les sommes MD5 ont été vérifiées avec "
+"succés"
+
+msgid "malformed bundle DESCRIPTION file, no Contains field"
+msgstr "fichier DESCRIPTION du bundle erroné, pas de champ Contains"
+
+msgid "bundle '%s' successfully unpacked and MD5 sums checked"
+msgstr ""
+"le bundle '%s' a été décompressé et les sommes MD5 ont été vérifiées avec "
+"succès"
+
+msgid "unable to move temporary installation '%s' to '%s'"
+msgstr "impossible de déplacer l'installation temporaire '%s' vers '%s'"
+
+msgid "cannot remove prior installation of package"
+msgstr "impossible de supprimer l'installation précédente du package"
+
 msgid "'memory.size()' is Windows-specific"
 msgstr "'memory.size()' est spécifique à Windows"
 
@@ -966,24 +1007,8 @@ msgstr "correction des URL dans les librairies non standard"
 msgid "If nothing happens, you should open '%s' yourself"
 msgstr "Si rien ne se passe, vous devrez ouvrir '%s' vous-même"
 
-msgid "package '%s' successfully unpacked and MD5 sums checked"
-msgstr ""
-"le package '%s' a été décompressé et les sommes MD5 ont été vérifiées avec "
-"succés"
-
-msgid "malformed bundle DESCRIPTION file, no Contains field"
-msgstr "fichier DESCRIPTION du bundle erroné, pas de champ Contains"
-
-msgid "bundle '%s' successfully unpacked and MD5 sums checked"
-msgstr ""
-"le bundle '%s' a été décompressé et les sommes MD5 ont été vérifiées avec "
-"succès"
-
 msgid "failed to create '%s'"
 msgstr "la création de '%s' a échoué"
-
-msgid "unable to move temporary installation '%s' to '%s'"
-msgstr "impossible de déplacer l'installation temporaire '%s' vers '%s'"
 
 msgid "cannot remove prior installation of package '%s'"
 msgstr "impossible de supprimer l'installation précédente du package '%s'"
@@ -1006,15 +1031,6 @@ msgstr "winDialogString() ne peut être utilisé en mode non interactif"
 msgid "'pb' is not from class \"winProgressBar\""
 msgstr "'pb' n'est pas un objet de classe \"winProgressBar\""
 
-msgid "this function is intended to work with the Aqua GUI"
-msgstr "cette fonction est conçue pour fontionner avec l'interface Aqua"
-
-msgid "'tar' returned non-zero exit code %d"
-msgstr "'tar' a renvoyé un code de sortie non nul %d"
-
-msgid "cannot remove prior installation of package"
-msgstr "impossible de supprimer l'installation précédente du package"
-
 msgid "class discarded from column %s"
 msgid_plural "classes discarded from columns %s"
 msgstr[0] "classe écartée dans la colonne %s"
@@ -1024,13 +1040,6 @@ msgid "object '%s' not found"
 msgid_plural "objects '%s' not found"
 msgstr[0] "objet '%s' introuvable"
 msgstr[1] "objets '%s' introuvables"
-
-msgid "'lib' element '%s'  is not a writable directory"
-msgid_plural "'lib' elements '%s' are not writable directories"
-msgstr[0] ""
-"l'élément '%s' de 'lib' n'est pas un répertoire ouvrable en écriture"
-msgstr[1] ""
-"les éléments '%s' de 'lib' ne sont pas des répertoires ouvrables en écriture"
 
 msgid "package %s is not available"
 msgid_plural "packages %s are not available"
@@ -1047,11 +1056,27 @@ msgid_plural "also installing the dependencies %s"
 msgstr[0] "installation de la dépendance %s"
 msgstr[1] "installation des dépendances %s"
 
+msgid "'lib' element '%s'  is not a writable directory"
+msgid_plural "'lib' elements '%s' are not writable directories"
+msgstr[0] ""
+"l'élément '%s' de 'lib' n'est pas un répertoire ouvrable en écriture"
+msgstr[1] ""
+"les éléments '%s' de 'lib' ne sont pas des répertoires ouvrables en écriture"
+
 msgid "package '%s' is in use and will not be installed"
 msgid_plural "packages '%s' are in use and will not be installed"
 msgstr[0] "le package '%s' est en cours d'utilisation et ne sera pas installé"
 msgstr[1] ""
 "les packages '%s' sont en cours d'utilisation et ne seront pas installés"
+
+#~ msgid "bundle '%s' is incompletely installed"
+#~ msgstr "le bundle '%s' n'est pas installé complètement"
+
+#~ msgid "bundle '%s' has extra contents %s"
+#~ msgstr "le bundle '%s' possède un contenu surnuméraire %s"
+
+#~ msgid "this function is intended to work with the Aqua GUI"
+#~ msgstr "cette fonction est conçue pour fontionner avec l'interface Aqua"
 
 #~ msgid "Maintainer:"
 #~ msgstr "Responsable :"

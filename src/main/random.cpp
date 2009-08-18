@@ -432,7 +432,7 @@ static void SampleReplace(int k, int n, int *y)
 {
     int i;
     for (i = 0; i < k; i++)
-	y[i] = int(n * unif_rand() + 1);
+	y[i] = CXXRconvert(int, n * unif_rand() + 1);
 }
 
 /* Equal probability sampling; without-replacement case */
@@ -443,7 +443,7 @@ static void SampleNoReplace(int k, int n, int *y, int *x)
     for (i = 0; i < n; i++)
 	x[i] = i;
     for (i = 0; i < k; i++) {
-	j = int(n * unif_rand());
+	j = CXXRconvert(int, n * unif_rand());
 	y[i] = x[j] + 1;
 	x[j] = x[--n];
     }
@@ -491,7 +491,7 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (replace == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "replace");
     if (n == NA_INTEGER || n < 1)
-	error(_("invalid '%s' argument"), "x");
+	error(_("invalid first argument"));
     if (k == NA_INTEGER || k < 0)
 	error(_("invalid '%s' argument"), "size");
     if (!replace && k > n)
@@ -605,7 +605,7 @@ R_r2dtable(SEXP n, SEXP r, SEXP c)
     fact = static_cast<double *>( CXXR_alloc(n_of_cases + 1, sizeof(double)));
     fact[0] = 0.;
     for(i = 1; i <= n_of_cases; i++)
-	fact[i] = lgammafn(double(i + 1));
+	fact[i] = lgammafn(double (i + 1));
 
     jwork = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
 

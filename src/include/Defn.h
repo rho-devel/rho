@@ -577,13 +577,15 @@ extern0 char	R_StdinEnc[31]  INI_as("");	/* Encoding assumed for stdin */
 #ifdef __cplusplus
 extern CXXR::GCRoot<> R_CommentSxp;	    /* Comments accumulate here */
 #endif
-extern0 int	R_ParseError	INI_as(0); /* Line where parse error occured */
+extern0 int	R_ParseError	INI_as(0); /* Line where parse error occurred */
+extern0 int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
 extern0 SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
 #define PARSE_ERROR_SIZE 256	    /* Parse error messages saved here */
 extern0 char	R_ParseErrorMsg[PARSE_ERROR_SIZE] INI_as("");
 #define PARSE_CONTEXT_SIZE 256	    /* Recent parse context kept in a circular buffer */
 extern0 char	R_ParseContext[PARSE_CONTEXT_SIZE] INI_as("");
 extern0 int	R_ParseContextLast INI_as(0); /* last character in context buffer */
+extern0 int	R_ParseContextLine; /* Line in file of the above */
 
 /* Image Dump/Restore */
 extern int	R_DirtyImage	INI_as(0);	/* Current image dirty */
@@ -903,6 +905,9 @@ SEXP deparse1s(SEXP call);
 int DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
+SEXP duplicated3(SEXP, SEXP, Rboolean);
+int any_duplicated(SEXP, Rboolean);
+int any_duplicated3(SEXP, SEXP, Rboolean);
 #ifdef __cplusplus
 SEXP dynamicfindVar(SEXP, RCNTXT*);
 void endcontext(RCNTXT*);
@@ -1138,6 +1143,24 @@ void set_rl_word_breaks(const char *str);
 
 /* From localecharset.c */
 extern const char *locale2charset(const char *);
+
+/* Localization */
+
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#ifdef Win32
+#define _(String) libintl_gettext (String)
+#undef gettext /* needed for graphapp */
+#else
+#define _(String) gettext (String)
+#endif
+#define gettext_noop(String) String
+#define N_(String) gettext_noop (String)
+#else /* not NLS */
+#define _(String) (String)
+#define N_(String) String
+#define ngettext(String, StringP, N) (N > 1 ? StringP: String)
+#endif
 
 
 /* Macros for suspending interrupts: also in GraphicsDevice.h */

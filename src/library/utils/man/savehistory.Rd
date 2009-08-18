@@ -1,6 +1,6 @@
 % File src/library/utils/man/savehistory.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{savehistory}
@@ -50,8 +50,9 @@ timestamp(stamp = date(),
   The history mechanism is controlled by two environment
 #endif
 #ifdef unix
-  This works under the \code{readline} and GNOME and MacOS X consoles,
-  but not otherwise (for example, in batch use or in an embedded application).
+  This works under the \code{readline} command-line interface and the
+  \code{R.app} Mac OS X console, but not otherwise (for example, in
+  batch use or in an embedded application).
 
   The \code{readline} history mechanism is controlled by two environment
 #endif
@@ -66,17 +67,25 @@ timestamp(stamp = date(),
   These variables are read at the time of saving, so can be altered
   within a session by the use of \code{\link{Sys.setenv}}.
 
+#ifdef unix
+  Note that \code{readline} history library save files with permission
+  \code{0600}, that is with read/write permission for the user and not
+  even read permission for any other account.
+#endif
+
   \code{history} shows only unique matching lines if \code{pattern} is
   supplied.
   
   The \code{timestamp} function writes a timestamp (or other message)
-  into the history and echos it to the console.  On platforms that do not 
-  support a history mechanism (where the mechanism does not yet support
+  into the history and echos it to the console.  On platforms that do not
+  support a history mechanism (where the mechanism does not support
   timestamps) only the console message is printed.
 }
 \note{
-  If you want to save the history (almost) every session, you can put a
-  call to \code{savehistory()} in \code{\link{.Last}}.  See the examples.
+  If you want to save the history at the end of (almost) every
+  interactive session (even those in which you do not save the
+  workspace), you can put a call to \code{savehistory()} in
+  \code{\link{.Last}}.  See the examples.
 }
 \examples{\dontrun{
 .Last <- function()

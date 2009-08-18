@@ -1,6 +1,6 @@
 % File src/library/base/man/sprintf.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{sprintf}
@@ -33,15 +33,18 @@ gettextf(fmt, \dots, domain = NULL)
 
   The arguments (including \code{fmt}) are recycled if possible a whole
   number of times to the length of the longest, and then the formatting
-  is done in parallel.
-  
+  is done in parallel.  As from \R 2.9.0 zero-length arguments are
+  allowed and will give a zero-length result.  All arguments are
+  evaluated even if unused, and hence some types (e.g., \code{"symbol"}
+  or \code{"language"}, see \code{\link{typeof}}) are not allowed.
+
   The following is abstracted from Kernighan and Ritchie
   (see References).  The string \code{fmt} contains normal characters,
   which are passed through to the output string, and also conversion
   specifications which operate on the arguments provided through
   \code{\dots}.  The allowed conversion specifications start with a
   \code{\%} and end with one of the letters in the set
-  \code{difeEgGsxX\%}.  These letters denote the following types:
+  \code{difeEgGsxXaA\%}.  These letters denote the following types:
 
   \describe{
     \item{\code{d, i, x, X}}{Integer value, \code{x} and \code{X}
@@ -51,18 +54,23 @@ gettextf(fmt, \dots, domain = NULL)
       logical variables, which will be converted to \code{0}, \code{1}
       or \code{NA}.
     }
-    \item{\code{f}}{Double precision value, in decimal notation of the
-      form "[-]mmm.ddd".  The number of decimal places is specified by
-      the precision: the default is 6; a precision of 0 suppresses the
-      decimal point.  Non-finite values are converted to \code{NA},
-      \code{NaN} or (perhaps a sign followed by) \code{Inf}.
+    \item{\code{f}}{Double precision value, in \dQuote{\bold{f}ixed
+	point} decimal notation of the form "[-]mmm.ddd".  The number of
+      decimal places ("d") is specified by the precision: the default is 6;
+      a precision of 0 suppresses the decimal point.  Non-finite values
+      are converted to \code{NA}, \code{NaN} or (perhaps a sign followed
+      by) \code{Inf}.
     }
-    \item{\code{e, E}}{Double precision value, in decimal notation of the
+    \item{\code{e, E}}{Double precision value, in
+      \dQuote{\bold{e}xponential} decimal notation of the
       form \code{[-]m.ddde[+-]xx} or \code{[-]m.dddE[+-]xx}.
     }
     \item{\code{g, G}}{Double precision value, in \code{\%e} or
       \code{\%E} format if the exponent is less than -4 or greater than or
       equal to the precision, and \code{\%f} format otherwise.
+      (The precision (default 6) specifies the number of
+      \emph{significant} digits here, whereas in \code{\%f, \%e}, it is
+      the number of digits after the decimal point.)
     }
     \item{\code{a, A}}{Double precision value, in binary notation of the
       form \code{[-]0xh.hhhp[+-]d}.  This is a binary fraction
@@ -73,17 +81,17 @@ gettextf(fmt, \dots, domain = NULL)
       \code{NaN} or (perhaps a sign followed by) \code{Inf}.  Format
       \code{\%a} uses lower-case for \code{x}, \code{p} and the hex
       values: format \code{\%A} uses upper-case.
-  
-      This might not be supported on all platforms as if is a feature of C99.
+
+      This might not be supported on all platforms as it is a feature of C99.
       The format is not uniquely defined: although it would be possible
       to make the leading \code{h} always zero or one, this is not
       always done.  Most systems will suppress trailing zeros, but a few
-      do not. On a well-written platform, for normal numbers there will
+      do not.  On a well-written platform, for normal numbers there will
       be a leading one before the decimal point plus (by default) 13
       hexadecimal digits, hence 53 bits.  (The treatment of denormalized
       numbers is very platform-dependent.)
     }
-    \item{\code{s}}{Character string.   Character \code{NA}s are
+    \item{\code{s}}{Character string.  Character \code{NA}s are
       converted to \code{"NA"}.
     }
     \item{\code{\%}}{Literal \code{\%} (none of the extra formatting
@@ -96,8 +104,8 @@ gettextf(fmt, \dots, domain = NULL)
   determined before conversion, so do not rely on the internal
   coercion if this would change the length.  The coercion is done only
   once, so if \code{length(fmt) > 1} then all elements must expect the
-  same types of arguments. 
-  
+  same types of arguments.
+
   In addition, between the initial \code{\%} and the terminating
   conversion character there may be, in any order:
 
@@ -109,6 +117,15 @@ gettextf(fmt, \dots, domain = NULL)
       negative numbers are printed with a sign.}
     \item{a space}{Prefix a space if the first character is not a sign.}
     \item{\code{0}}{For numbers, pad to the field width with leading zeros.}
+    \item{\code{#}}{specifies \dQuote{alternate output} for numbers, its
+      action depending on the type:
+      %% This is from Kernighan & Ritchie, p. 243:
+      %% For \code{o}, the first digit will be zero.
+      For \code{x} or \code{X}, \code{0x} or \code{0X} will be prefixed
+      to a non-zero result.  For \code{e}, \code{e}, \code{f}, \code{g}
+      and \code{G}, the output will always have a decimal point; for
+      \code{g} and \code{G}, trailing zeros will not be removed.
+    }
   }
   Further, immediately after \code{\%} may come \code{1$} to \code{99$}
   to refer to numbered argument: this allows arguments to be
@@ -126,8 +143,9 @@ gettextf(fmt, \dots, domain = NULL)
   precision were omitted.  The argument should be integer, but a double
   argument will be coerced to integer.
 
-  There is a limit of 8192 bytes on elements of \code{fmt} and also on
-  strings included by a \code{\%s} conversion specification.
+  There is a limit of 8192 bytes on elements of \code{fmt}, and on
+  strings included from a single \code{\%}\emph{letter} conversion
+  specification.
 
   Field widths and precisions of \code{\%s} conversions are interpreted
   as bytes, not characters, as described in the C standard.
@@ -144,8 +162,9 @@ gettextf(fmt, \dots, domain = NULL)
 \section{Warning}{
   The format string is passed down the OS's \code{sprintf} function, and
   incorrect formats can cause the latter to crash the \R process .  \R
-  does perform basic sanity checks on the format, but not all possible user
-  errors will be caught and some might be terminal.
+  does perform sanity checks on the format, and since \R 2.10.0, we have
+  not seen crashes anymore.  But not all possible user errors on all
+  platforms have been tested, and some might be terminal.
 }
 
 \references{
@@ -176,7 +195,7 @@ gettextf(fmt, \dots, domain = NULL)
 
 sprintf("\%s is \%f feet tall\n", "Sven", 7.1)      # OK
 try(sprintf("\%s is \%i feet tall\n", "Sven", 7.1)) # not OK
-try(sprintf("\%s is \%i feet tall\n", "Sven", 7))   # OK
+    sprintf("\%s is \%i feet tall\n", "Sven", 7  )  # OK
 
 ## use a literal \% :
 
@@ -224,7 +243,7 @@ sprintf("precision \%.*f, width '\%*.3f'", 3, pi, 8, pi)
 ## Asterisk and argument re-use, 'e' example reiterated:
 sprintf("e with \%1$2d digits = \%2$.*1$g", n, exp(1))
 
-## re-cycle arguments 
+## re-cycle arguments
 sprintf("\%s \%d", "test", 1:3)
 
 ## binary output showing rounding/representation errors

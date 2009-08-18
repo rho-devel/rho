@@ -513,7 +513,7 @@ static SEXPTYPE FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return SEXPTYPE(type);
+    return CXXRconvert(SEXPTYPE, type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
@@ -572,14 +572,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -587,7 +587,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -596,7 +596,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++) {
+	for (j = 0; j < CXXRconvert(uint, len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -644,29 +644,29 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRconvert(uint, len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -772,45 +772,6 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     return OffsetToNode(i, &node);
 }
 
-#ifdef UNUSED
-/* These functions convert old (pairlist) lists into new */
-/* (vectorlist) lists.	The conversion can be defeated by */
-/* hiding things inside closures, but it is doubtful that */
-/* anyone has done this. */
-
-static SEXP ConvertPairToVector(SEXP);
-
-static SEXP ConvertAttributes(SEXP attrs)
-{
-    SEXP ap = attrs;
-    while (ap != R_NilValue) {
-	if (TYPEOF(CAR(ap)) == LISTSXP)
-	    SETCAR(ap, ConvertPairToVector(CAR(ap)));
-	ap = CDR(ap);
-    }
-    return attrs;
-}
-
-static SEXP ConvertPairToVector(SEXP obj)
-{
-    int i, n;
-    switch (TYPEOF(obj)) {
-    case LISTSXP:
-	PROTECT(obj = PairToVectorList(obj));
-	n = length(obj);
-	for (i = 0; i < n; i++)
-	    SET_VECTOR_ELT(obj, i, ConvertPairToVector(VECTOR_ELT(obj, i)));
-	UNPROTECT(1);
-	break;
-    case VECSXP:
-	break;
-    default:
-	;
-    }
-    SET_ATTRIB(obj, ConvertAttributes(ATTRIB(obj)));
-    return obj;
-}
-#endif
 
 /* ----- V e r s i o n -- O n e -- S a v e / R e s t o r e ----- */
 
@@ -851,7 +812,7 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (int(type)) {
+    switch (CXXRconvert(int, type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
@@ -1297,7 +1258,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     int pos, levs, objf;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = SEXPTYPE(m->InInteger(fp, d));
+    type = CXXRconvert(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
@@ -1685,7 +1646,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (int(fread(buf, sizeof(char), nbytes, fp)) != nbytes)
+    if (CXXRconvert(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1776,7 +1737,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = NULL;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (int(nbytes) >= buflen) {
+    if (CXXRconvert(int, nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
@@ -2251,7 +2212,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     return i;
 }
 
-/* Next two used in gnomeGUI package */
+/* Next two were used in gnomeGUI package, are in Rintterface.h  */
 void R_SaveGlobalEnvToFile(const char *name)
 {
     SEXP sym = install("sys.save.image");
@@ -2333,7 +2294,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = Rboolean(INTEGER(CADDR(args))[0]);
+    ascii = CXXRconvert(Rboolean, INTEGER(CADDR(args))[0]);
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSaveFormatVersion;

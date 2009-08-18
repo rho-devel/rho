@@ -1,6 +1,6 @@
 % File src/library/base/man/print.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{print}
@@ -63,7 +63,7 @@ print(x, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S.}
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   The default method \code{\link{print.default}}, and help for the
@@ -76,8 +76,7 @@ print(x, \dots)
 require(stats)
 
 ts(1:20)#-- print is the "Default function" --> print.ts(.) is called
-rr <- for(i in 1:3) print(1:i)
-rr
+for(i in 1:3) print(1:i)
 
 ## Printing of factors
 attenu$station ## 117 levels -> 'max.levels' depending on width

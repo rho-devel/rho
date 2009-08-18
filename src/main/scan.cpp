@@ -140,7 +140,7 @@ static int ConsoleGetchar(void)
 	ConsoleBufCnt--;
     }
     /* at this point we need to use unsigned char or similar */
-    return int(*ConsoleBufp++);
+    return int( *ConsoleBufp++);
 }
 
 /* used by scan() */
@@ -152,7 +152,7 @@ static int ConsoleGetcharWithPushBack(Rconnection con)
     if(con->nPushBack > 0) {
 	curLine = con->PushBack[con->nPushBack-1];
 	c = curLine[con->posPushBack++];
-	if(con->posPushBack >= int(strlen(curLine))) {
+	if(con->posPushBack >= CXXRconvert(int, strlen(curLine))) {
 	    /* last character on a line, so pop the line */
 	    free(curLine);
 	    con->nPushBack--;
@@ -320,9 +320,9 @@ static int scanchar(Rboolean inQuote, LocalData *d)
 /* utility to close connections after interrupts */
 static void scan_cleanup(void *data)
 {
-    LocalData *ld = static_cast<LocalData*>(data);
+    LocalData *ld = CXXRconvert(static_cast<LocalData*>, data);
     if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(const_cast<char*>(ld->quoteset));
+    if (ld->quoteset[0]) free(CXXRconvert(const_cast<char*>, ld->quoteset));
 }
 
 #include "RBufferUtils.h"
@@ -345,7 +345,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m;
 #ifdef SUPPORT_MBCS
-    Rboolean dbcslocale = Rboolean(MB_CUR_MAX == 2);
+    Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
 #endif
 
     m = 0;
@@ -920,7 +920,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "allowEscapes");
-    data.escapes = Rboolean(escapes != 0);
+    data.escapes = CXXRconvert(Rboolean, escapes != 0);
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -985,7 +985,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
-    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
+    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
     return ans;
 }
 
@@ -996,7 +996,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     int blocksize, nlines, blskip;
     const char *p;
 #ifdef SUPPORT_MBCS
-    Rboolean dbcslocale = Rboolean(MB_CUR_MAX == 2);
+    Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
 #endif
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE, FALSE};
@@ -1068,7 +1068,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.save = 0;
 
     for (;;) {
-	c = scanchar(Rboolean(inquote), &data);
+	c = scanchar(CXXRconvert(Rboolean, inquote), &data);
 	if (c == R_EOF)	 {
 	    if (nfields != 0)
 		INTEGER(ans)[nlines] = nfields;
@@ -1112,7 +1112,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (strchr(data.quoteset, c)) {
 		quote = c;
 		inquote = 1;
-		while ((c = scanchar(Rboolean(inquote), &data)) != quote) {
+		while ((c = scanchar(CXXRconvert(Rboolean, inquote), &data)) != quote) {
 		    if (c == R_EOF || c == '\n') {
 			if(!data.wasopen) data.con->close(data.con);
 			error(_("string terminated by newline or EOF"));
@@ -1156,7 +1156,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i <= nlines; i++)
 	INTEGER(bns)[i] = INTEGER(ans)[i];
     UNPROTECT(1);
-    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
+    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
     return bns;
 }
 
@@ -1490,7 +1490,7 @@ SEXP attribute_hidden do_menu(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
     }
-    return ScalarInteger(int(first));
+    return ScalarInteger(CXXRconvert(int, first));
 }
 
 /* readTableHead(file, nlines, comment.char, blank.lines.skip, quote, sep) */
@@ -1598,6 +1598,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    /* A line is empty only if it contains nothing before
 	       EOL, EOF or a comment char.
 	       A line containing just white space is not empty if sep=","
+	       However foo\nEOF does not have a final empty line.
 	    */
 	    if(empty && !skip)
 		if(c != '\n' && c != data.comchar) empty = FALSE;
@@ -1606,7 +1607,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	buf[nbuf] = '\0';
 	if(data.ttyflag && empty) goto no_more_lines;
-	if(!empty || !blskip) {
+	if(!empty || (c != R_EOF && !blskip)) { /* see previous comment */
 	    SET_STRING_ELT(ans, nread, mkChar(buf));
 	    nread++;
 	}
@@ -1615,7 +1616,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     free(buf);
     if(!data.wasopen) data.con->close(data.con);
-    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
+    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
     return ans;
 
 no_more_lines:
@@ -1633,7 +1634,7 @@ no_more_lines:
     for(i = 0; i < nread; i++)
 	SET_STRING_ELT(ans2, i, STRING_ELT(ans, i));
     UNPROTECT(2);
-    if (data.quoteset[0]) free(const_cast<char*>(data.quoteset));
+    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
     return ans2;
 }
 
@@ -1652,41 +1653,26 @@ static Rboolean isna(SEXP x, int indx)
     Rcomplex rc;
     switch(TYPEOF(x)) {
     case LGLSXP:
-	return Rboolean(LOGICAL(x)[indx] == NA_LOGICAL);
+	return CXXRconvert(Rboolean, LOGICAL(x)[indx] == NA_LOGICAL);
 	break;
     case INTSXP:
-	return Rboolean(INTEGER(x)[indx] == NA_INTEGER);
+	return CXXRconvert(Rboolean, INTEGER(x)[indx] == NA_INTEGER);
 	break;
     case REALSXP:
-	return Rboolean(ISNAN(REAL(x)[indx]));
+	return CXXRconvert(Rboolean, ISNAN(REAL(x)[indx]));
 	break;
     case STRSXP:
-	return Rboolean(STRING_ELT(x, indx) == NA_STRING);
+	return CXXRconvert(Rboolean, STRING_ELT(x, indx) == NA_STRING);
 	break;
     case CPLXSXP:
 	rc = COMPLEX(x)[indx];
-	return Rboolean(ISNAN(rc.r) || ISNAN(rc.i));
+	return CXXRconvert(Rboolean, ISNAN(rc.r) || ISNAN(rc.i));
 	break;
     default:
 	break;
     }
     return FALSE;
 }
-
-#ifdef UNUSED
-static void change_dec(char *tmp, char cdec, SEXPTYPE t)
-{
-    char *p;
-    switch(t) {
-    case REALSXP:
-    case CPLXSXP:
-	for(p = tmp; *p; p++) if(*p == '.') *p = cdec;
-	break;
-    default:
-	break;
-    }
-}
-#endif
 
 /* a version of EncodeElement with different escaping of char strings */
 static const char
@@ -1724,7 +1710,7 @@ typedef struct wt_info {
 /* utility to cleanup e.g. after interrpts */
 static void wt_cleanup(void *data)
 {
-    wt_info *ld = static_cast<wt_info*>(data);
+    wt_info *ld = CXXRconvert(static_cast<wt_info*>, data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
@@ -1818,7 +1804,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
+			     EncodeElement2(rnames, i, quote_rn, CXXRconvert(Rboolean, qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		xj = VECTOR_ELT(x, j);
@@ -1829,16 +1815,16 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 			/* We cannot assume factors have integer levels */
 			if(TYPEOF(xj) == INTSXP)
 			    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						 quote_col[j], Rboolean(qmethod),
+						 quote_col[j], CXXRconvert(Rboolean, qmethod),
 						 &strBuf, cdec);
 			else if(TYPEOF(xj) == REALSXP)
-			    tmp = EncodeElement2(levels[j], int(REAL(xj)[i] - 1),
-						 quote_col[j], Rboolean(qmethod),
+			    tmp = EncodeElement2(levels[j], CXXRconvert(int, REAL(xj)[i] - 1),
+						 quote_col[j], CXXRconvert(Rboolean, qmethod),
 						 &strBuf, cdec);
 			else
 			    error("column %s claims to be a factor but does not have numeric codes", j+1);
 		    } else {
-			tmp = EncodeElement2(xj, i, quote_col[j], Rboolean(qmethod),
+			tmp = EncodeElement2(xj, i, quote_col[j], CXXRconvert(Rboolean, qmethod),
 					     &strBuf, cdec);
 		    }
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
@@ -1860,13 +1846,13 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, Rboolean(qmethod),
+			     EncodeElement2(rnames, i, quote_rn, CXXRconvert(Rboolean, qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		if(j > 0) Rconn_printf(con, "%s", csep);
 		if(isna(x, i + j*nr)) tmp = cna;
 		else {
-		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], Rboolean(qmethod),
+		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRconvert(Rboolean, qmethod),
 					&strBuf, cdec);
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
 		}

@@ -51,6 +51,7 @@
 \alias{symbol.For}
 \alias{unix}
 \alias{gammaCody}
+\alias{manglePackageName}
 %
 \description{
   The functions or variables listed here are no longer part of \R as
@@ -102,7 +103,7 @@ printNoClass(x, digits = NULL, quote = TRUE, na.print = NULL,
 % Removed in 1.9.0
 codes(x, \dots)
 codes(x, \dots) <- value
-print.atomic(x, quote = TRUE, \dots)
+% print.atomic(x, quote = TRUE, \dots)
 % </Removed 1.9.0>
 % Removed in 2.0.0
 La.eigen(x, symmetric, only.values = FALSE, method = c("dsyevr", "dsyev"))
@@ -131,6 +132,9 @@ unix(call, intern = FALSE)
 % Removed in 2.8.0
 gammaCody(x)
 % </Removed 2.8.0>
+% Removed in 2.9.0
+manglePackageName(pkgName, pkgVersion)
+% </Removed 2.9.0>
 }
 \details{
   \code{category} has been an old-S function before there were factors;
@@ -184,9 +188,6 @@ gammaCody(x)
   equivalent to these, but for \emph{unordered} factors it assumed an
   an alphabetical ordering of the levels in the locale in use.
 
-  \code{print.atomic} differed from \code{print.default} only in its
-  argument sequence.  It is not a method for \code{print}.
-
   \code{La.eigen} has become the default for \code{\link{eigen}}.
 
   \code{tetragamma} and \code{pentagamma} have been replaced by
@@ -221,8 +222,11 @@ gammaCody(x)
   \code{gammaCody} is the \eqn{(\Gamma)} function from the Specfun
   package used at C level in the Bessel code.  It may be
   somewhat faster but less precise and/or robust than \R's standard
-  \code{\link{gamma}}.  Re R-level interface  was here for experimental
+  \code{\link{gamma}}.  The \R-level interface was here for experimental
   purposes.
+
+  \code{manglePackageName} was part of the defunct support for versioned
+  installs.
 }
 \seealso{
   \code{\link{Defunct}}, \code{\link{base-deprecated}}

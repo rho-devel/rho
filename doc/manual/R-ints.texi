@@ -70,6 +70,7 @@ The current version of this document is @value{VERSION}.
 * .Internal vs .Primitive::     
 * Internationalization in the R sources::  
 * Graphics Devices::            
+* Tools::                       
 * R coding standards::          
 * Testing R code::              
 * Function and variable index::  
@@ -101,6 +102,7 @@ checked against the current version of the source code.
 * Memory allocators::           
 * Internal use of global and base environments::  
 * Modules::                     
+* Visibility::                  
 @end menu
 
 @node SEXPs, Environments and variable lookup, R Internal Structures, R Internal Structures
@@ -976,7 +978,7 @@ Recall that the evaluation frame for a function initially contains the
 this will be true for @code{...} as well.  The value of @code{...} is a
 (special) pairlist whose elements are referred to by the special symbols
 @code{..1}, @code{..2}, @dots{} which have the @code{DDVAL} bit set:
-when one of these is encountered it is looked up (via @code{ddfndVar})
+when one of these is encountered it is looked up (via @code{ddfindVar})
 in the value of the @code{...} symbol in the evaluation frame.
 
 Values of arguments matched to a @code{...} argument can be missing.
@@ -1729,7 +1731,7 @@ to store display lists of saved plots for later display.  This is
 regarded as a variable created by the user.
 
 
-@node Modules,  , Internal use of global and base environments, R Internal Structures
+@node Modules, Visibility, Internal use of global and base environments, R Internal Structures
 @section Modules
 
 @cindex modules
@@ -1759,15 +1761,15 @@ The code which makes use of the LAPACK library, and is linked to
 The Hershey font databases and the code to draw from them.
 
 @item @code{X11}
-(Unix-alikes only.)
-The @code{X11()}, @code{jpeg()} and @code{png()} devices. These are
-optional, and link to the @code{X11}, @code{jpeg} and @code{libpng}
-libraries.
+(Unix-alikes only.)  The @code{X11()}, @code{jpeg()}, @code{png()} and
+@code{tiff()} devices. These are optional, and links to some or all of
+the @code{X11}, @code{pango}, @code{cairo}, @code{jpeg}, @code{libpng}
+and @code{libtiff} libraries.
 
 @item @file{Rbitmap.dll}
-(Windows only.)  The code for the BMP, JPEG and PNG devices and for
-saving on-screen graphs to those formats. This is technically optional,
-and needs source code not in the tarball.
+(Windows only.)  The code for the BMP, JPEG, PNG and TIFF devices and
+for saving on-screen graphs to those formats. This is technically
+optional, and needs source code not in the tarball.
 
 @item @file{Rchtml.dll}
 (Windows only.)  A link to an ActiveX control that displays Compiled
@@ -1782,6 +1784,93 @@ routines to convert between character sets.
 compiled against Internet Explorer internals (and so loads
 @file{wininet.dll} and @file{wsock32.dll}).
 @end table
+
+@node Visibility,  , Modules, R Internal Structures
+@section Visibility
+@cindex visibility
+
+@menu
+* Hiding C entry points::       
+* Variables in Windows DLLs::   
+@end menu
+
+@node Hiding C entry points, Variables in Windows DLLs, Visibility, Visibility
+@subsection Hiding C entry points
+
+We make use of the visibility mechanisms discussed in
+@ifset UseExternalXrefs
+@ref{Controlling visibility, , Controlling visibility, R-exts, Writing R Extensions},
+@end ifset
+@ifclear UseExternalXrefs
+section `Controlling Visibility' in `Writing R Extensions',
+@end ifclear
+C entry points not needed outside the main @R{} executable/dynamic
+library (and in particular in no package nor module) should be prefixed
+by @code{attribute_hidden}.
+@findex attribute_hidden
+Minimizing the visibility of symbols in the @R{} dynamic library will
+speed up linking to it (which packages will do) and reduce the
+possibility of linking to the wrong entry points of the same name.  In
+addition, on some platforms reducing the number of entry points allows
+more efficient versions of PIC to be used: somewhat over half the entry
+points are hidden.  A convenient way to hide variables (as distinct from
+functions) is to declare them @code{extern0} in @file{Defn.h}.
+
+The visibility mechanism used is only available with some compilers and
+platforms, and in particular not on Windows, where are alternative
+mechanism is used.  Entry points will not be made available in
+@file{R.dll} if they are listed in the file
+@file{src/gnuwin32/Rdll.hide}.  
+@findex Rdll.hide
+Entries in that file start with a space and must be strictly in
+alphabetic order in the C locale (use @command{sort} on the file to
+ensure this if you change it).  It is possible to hide Fortran as well
+as C entry points via this file: the former are lower-cased and have an
+underline as suffix, and the suffixed name should be included in the
+file.  Some entry points exist only on Windows or need to be visible
+only on Windows, and some notes on these are provided in file
+@file{src/gnuwin32/Maintainters.notes}.
+
+Because of the advantages of reducing the number of visible entry
+points, they should be declared @code{attribute_hidden} where possible.
+Note that this only has an effect on a shared-R-library build, and so
+care is needed not to hide entry points that are legitimately used by
+packages.  So it is best if the decision on visibility is made when a
+new entry point is created, including the decision if it should be
+included in @file{Rinternals.h}.  A list of the visible entry points on
+shared-R-library build on a reasonably standard Unix-alike can be made
+by something like
+
+@example
+nm -g libR.so | grep ' [BCDT] ' | cut -b20-
+@end example
+
+@node Variables in Windows DLLs,  , Hiding C entry points, Visibility
+@subsection Variables in Windows DLLs
+
+Windows is unique in that it conventionally treats importing variables
+differently from functions: variables that are imported from a DLL need
+to be specified  by a prefix (often @samp{_imp_}) when being linked to
+(`imported') but not when being linked from (`exported').  The details
+depend on the compiler system, and have changed for MinGW during the
+lifetime of that port.  They are in the main hidden behind some macros
+defined in header @file{R_ext/libextern.h}.
+
+A (non-function) variable in the main @R{} sources that needs to be
+referred to outside @file{R.dll} (in a package, module or another DLL
+such as @file{Rgraphapp.dll}) should be declared with prefix
+@code{LibExtern}.  The main use is in @file{Rinternals.h}, but it needs
+to be considered for any public header and also @file{Defn.h}.
+
+It would nowadays be possible to make use of the `auto-import' feature
+of the MinGW port of @command{ld} to fix up imports from DLLs (and if
+@R{} is built for the Cygwin platform this is what happens).  However,
+this was not possible when the MinGW build of @R{} was first constructed
+in ca 1998, allows less control of visibility and would not work for
+other Windows compiler suites.
+
+It is only possible to check if this has been handled correctly by
+compiling the @R{} sources on Windows.
 
 @node .Internal vs .Primitive, Internationalization in the R sources, R Internal Structures, Top
 @chapter @code{.Internal} vs @code{.Primitive}
@@ -1816,15 +1905,15 @@ axis <- function(side, at = NULL, labels = NULL, ...)
 
 However, for reasons of convenience and also efficiency (as there is
 some overhead in using the @code{.Internal} interface wrapped in a
-function closure), there are exceptions which can be accessed directly.
-Note that these functions make no use of @R{} code, and hence are very
-different from the usual interpreted functions.  In particular,
-@code{args}, @code{formals} and @code{body} return @code{NULL} for such
-objects, and argument matching is purely positional (with two exceptions
-described below).
+function closure), the primitive functions are exceptions that can be
+accessed directly.  Note that primitive functions make no use of @R{}
+code, and hence are very different from the usual interpreted functions.
+In particular, @code{args}, @code{formals} and @code{body} return
+@code{NULL} for such objects, and argument matching is purely positional
+(with two exceptions described below).  
 
-The list of these ``primitive'' functions is subject to change:
-currently, it includes the following.
+The list of primitive functions is subject to change; currently, it
+includes the following.
 
 @enumerate
 
@@ -1929,7 +2018,7 @@ The programming and session management utilities
 
 @example
 @group
-debug  undebug browser  proc.time  gc.time
+browser  proc.time  gc.time
 tracemem retracemem untracemem
 @end group
 @end example
@@ -2102,7 +2191,7 @@ internationalized in the same way as other packages.
 * R code::                      
 * Main C code::                 
 * Windows-GUI-specific code::   
-* MacOS X GUI::                 
+* Mac OS X GUI::                
 * Updating::                    
 @end menu
 
@@ -2148,17 +2237,18 @@ macro, for example
 @noindent
 from @file{src/main/errors.c}.
 
-A macro
+The @code{P_} macro
 
 @example
 #ifdef ENABLE_NLS
 #define P_(StringS, StringP, N) ngettext (StringS, StringP, N)
 #else
-#define P_(String, StringP, N) (N > 1 ? StringP: String)
+#define P_(StringS, StringP, N) (N > 1 ? StringP: StringS)
 #endif
 @end example
 
 @noindent
+may be used
 as a wrapper for @code{ngettext}: however in some cases the preferred
 approach has been to conditionalize (on @code{ENABLE_NLS}) code using
 @code{ngettext}.
@@ -2168,7 +2258,7 @@ header for standalone @samp{nmath} skips possible translation.  (This
 does not apply to @code{N_} or @code{P_}).
 
 
-@node Windows-GUI-specific code, MacOS X GUI, Main C code, Internationalization in the R sources
+@node Windows-GUI-specific code, Mac OS X GUI, Main C code, Internationalization in the R sources
 @section Windows-GUI-specific code
 
 Messages for the Windows GUI are in a separate domain @samp{RGui}.  This
@@ -2198,19 +2288,19 @@ The template and message catalogs for the @samp{RGui} domain are in the
 top-level @file{po} directory.
 
 
-@node MacOS X GUI, Updating, Windows-GUI-specific code, Internationalization in the R sources
-@section MacOS X GUI
+@node Mac OS X GUI, Updating, Windows-GUI-specific code, Internationalization in the R sources
+@section Mac OS X GUI
 
 This is handled separately: see
 @uref{http://developer.r-project.org/Translations.html}.
 
 
-@node Updating,  , MacOS X GUI, Internationalization in the R sources
+@node Updating,  , Mac OS X GUI, Internationalization in the R sources
 @section Updating
 
 See @file{po/README} for how to update the message templates and catalogs.
 
-@node Graphics Devices, R coding standards, Internationalization in the R sources, Top
+@node Graphics Devices, Tools, Internationalization in the R sources, Top
 @chapter Graphics
 
 @R{}'s graphics internals were revised for version 1.4.0 (and tidied up
@@ -2378,7 +2468,7 @@ The @code{GEDevDesc} type is a structure defined in
 @example
 typedef struct _GEDevDesc GEDevDesc;
 struct _GEDevDesc @{
-    DevDesc dev;
+    pDevDesc dev;
     Rboolean displayListOn;
     SEXP displayList;
     SEXP DLlastElt;
@@ -2983,13 +3073,155 @@ package @pkg{grDevices}.
 
 [At least pointers to documentation.]
 
+@node Tools, R coding standards, Graphics Devices, Top
+@chapter Tools
 
-@node R coding standards, Testing R code, Graphics Devices, Top
+The behavior of @command{R CMD check} can be controlled through a
+variety of command line arguments, Perl configuration variables, and
+internal environment variables.
+
+There is an internal @option{--install=@var{value}} command line
+argument not shown by @command{R CMD check --help}, with possible values
+
+@table @code
+@item check:@var{file}
+Assume that installation was already performed with stdout/stderr to
+@var{file}, the contents of which need to be checked (without repeating
+the installation).  This is useful for checks applied by repository
+maintainers: it reduces the check time by the installation time given
+that the package has already been installed.  In this case, one also
+needs to specify @emph{where} the package was installed to using command
+line option @option{--library}.
+@item fake
+Fake installation, and turn off the run-time tests.
+@item skip
+Skip installation, e.g., when testing recommended packages bundled with
+R.
+@item no
+The same as @option{--no-install}: turns off installation and the tests
+which require the package to be installed.
+@end table
+
+The following internal environment variables are used for initializing
+the corresponding public Perl configuration variables
+(@pxref{Customizing checking and building, , Customizing checking and
+building, R-exts, Writing R Extensions}):
+
+@quotation
+@multitable {@code{_R_CHECK_LATEX_VIGNETTES_}} {@code{$R_check_latex_vignettes}}
+@item Environment variable
+@tab Configuration variable
+@item @code{_R_CHECK_ALL_NON_ISO_C_}
+@vindex _R_CHECK_ALL_NON_ISO_C_
+@tab @code{$R_check_all_non_ISO_C} 
+@item @code{_R_CHECK_FORCE_SUGGESTS_}
+@vindex_R_CHECK_FORCE_SUGGESTS_
+@tab @code{$R_check_force_suggests}
+@item @code{_R_CHECK_LATEX_VIGNETTES_}
+@vindex_R_CHECK_LATEX_VIGNETTES_
+@tab @code{$R_check_latex_vignettes}
+@item @code{_R_CHECK_RD_STYLE_}
+@vindex_R_CHECK_RD_STYLE_
+@tab @code{$R_check_Rd_style}
+@item @code{_R_CHECK_RD_XREFS_}
+@vindex_R_CHECK_RD_XREFS_
+@tab @code{$R_check_Rd_xrefs}
+@item @code{_R_CHECK_SUBDIRS_NOCASE_}
+@vindex_R_CHECK_SUBDIRS_NOCASE_
+@tab @code{$R_check_subdirs_nocase}
+@item @code{_R_CHECK_SUBDIRS_STRICT_}
+@vindex_R_CHECK_SUBDIRS_STRICT_
+@tab @code{$R_check_subdirs_strict}
+@item @code{_R_CHECK_USE_INSTALL_LOG_}
+@vindex_R_CHECK_USE_INSTALL_LOG_
+@tab @code{$R_check_use_install_log}
+@item @code{_R_CHECK_WEAVE_VIGNETTES_}
+@vindex_R_CHECK_WEAVE_VIGNETTES_
+@tab @code{$R_check_weave_vignettes}
+@item @code{_R_CHECK_USE_CODETOOLS_}
+@vindex_R_CHECK_USE_CODETOOLS_
+@tab @code{$R_check_use_codetools}
+@end multitable
+@end quotation
+
+The following internal environment variables have no corresponding
+configuration variable.
+@vtable @code
+@item _R_CHECK_CODOC_S4_METHODS_
+Control whether @code{codoc()} testing is also performed on S4 methods.
+This is off by default because this can result in false positives, as
+@code{rematchDefinition()} currently does not preserve the given
+formals.
+@item _R_CHECK_DOT_INTERNAL_
+Control whether the package code is scanned for @code{.Internal} calls.
+Default: false.
+@item _R_CHECK_EXECUTABLES_
+Control checking for executable (binary) files.
+Default: true.
+@item _R_CHECK_EXECUTABLES_EXCLUSIONS_
+Control whether checking for executable (binary) files ignores files
+listed in the package's @file{BinaryFiles} file.
+Default: true.
+However, most likely this package-level override mechanism will be
+removed eventually.
+@item _R_CHECK_FF_CALLS_
+Allows turning off @code{checkFF()} testing.  Legacy mostly.
+Default: true.
+@item _R_CHECK_LICENSE_
+Control whether license checks are performed.
+Default: false.
+@item _R_CHECK_RD_EMPTY_SECTIONS_
+Control whether @code{Rd_parse()} and @code{check_Rd_files_in_Rd_db()}
+worry about empty sections.  Of questionable use, as Rdconv drops empty
+sections anyways with a note.
+Default: false.
+@item _R_CHECK_RD_EXAMPLES_T_AND_F_
+Control whether @code{check_T_and_F()} also looks for ``bad'' (global)
+@samp{T}/@samp{F} uses in examples.
+Off by default because this can result in false positives.
+@item _R_CHECK_RD_PARSE_
+Control whether Rd files are checked against the Rd version 2 parser.
+Default: true.
+@item _R_CHECK_RD_USAGE_METHOD_BINOPS_
+Control whether binops generics are considered as allowing useful S3
+method markup. 
+Default: true (as this Rd feature was added some time ago).
+OBSOLETE.
+@item _R_CHECK_RD_USAGE_METHOD_SUBSET_
+Control whether subset generics are considered as allowing useful S3
+method markup.
+Default: true (as this Rd feature was added some time ago).
+OBSOLETE.
+@item _R_CHECK_SRC_MINUS_W_IMPLICIT_
+Control whether installation output is checked for compilation warnings
+about implicit function declarations (as spotted by GCC with command
+line option @option{-Wimplicit-function-declaration}, which is implied
+by @option{-Wall}).
+Default: false.
+This should really be a configuration variable, but we need a better
+name.
+@item _R_CHECK_SRC_MINUS_W_UNUSED_
+Control whether installation output is checked for compilation warnings
+about unused code constituents (as spotted by GCC with command line
+option @option{-Wunused}, which is implied by @option{-Wall}).
+@item _R_CHECK_WALL_FORTRAN_
+Control whether gfortran 4.0 or better @option{-Wall} warnings are used in
+the analysis of installation output.
+Default: false, even though the warnings are justifiable.
+This should really be a configuration variable, but we need a better name.
+@item _R_CHECK_WARN_BAD_USAGE_LINES_
+Control whether @code{checkDocFiles()} warns about bad Rd @code{\usage}
+lines.
+Default: true (as @code{\special} was rolled out a long time ago).
+OBSOLETE.
+@end vtable
+
+@node R coding standards, Testing R code, Tools, Top
 @chapter R coding standards
 
 @cindex coding standards
 @R{} is meant to run on a wide variety of platforms, including Linux and
-most variants of Unix as well as 32-bit Windows versions and on MacOS X.
+most variants of Unix as well as 32-bit Windows versions and on Mac OS X.
 Therefore, when extending @R{} by either adding to the @R{} base
 distribution or by providing an add-on package, one should not rely on
 features specific to only a few supported platforms, if this can be
@@ -3007,7 +3239,7 @@ The following tools can ``safely be assumed'' for @R{} extensions.
 An ISO C99 C compiler.  Note that extensions such as @acronym{POSIX}
 1003.1 must be tested for, typically using Autoconf unless you are sure
 they are supported on all mainstream @R{} platforms (including Windows
-and MacOS X).  Packages will be more portable if written assuming only
+and Mac OS X).  Packages will be more portable if written assuming only
 C89, but this should not be done where using C99 features will make for
 cleaner or more robust code.
 
@@ -3084,20 +3316,14 @@ understand it.  This is particularly helpful for fixing problems, and
 includes using self-descriptive variable names, commenting the code, and
 also formatting it properly.  The @R{} Core Team recommends to use a
 basic indentation of 4 for @R{} and C (and most likely also Perl) code,
-and 2 for documentation in Rd format.  Emacs users can implement this
-indentation style by putting the following in one of their startup
-files.
-Alternatively, (for @acronym{GNU} Emacs 21 or later),
-use customization to set the @code{c-default-style} to @code{"bsd"} and
-@code{c-basic-offset} to @code{4}.)
+and 2 for documentation in Rd format.  Emacs (21 or later) users can
+implement this indentation style by putting the following in one of
+their startup files, and using customization to set the
+@code{c-default-style} to @code{"bsd"} and @code{c-basic-offset} to
+@code{4}.)
 @findex emacs
 
 @smallexample
-@group
-;;; C
-(add-hook 'c-mode-hook
-          (lambda () (c-set-style "bsd")))
-@end group
 @group
 ;;; ESS
 (add-hook 'ess-mode-hook

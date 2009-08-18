@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
  *                            R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -456,9 +456,9 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef SUPPORT_MBCS
     if (fixed_opt || perl_opt) {
 	for (i = 0; i < tlen; i++)
-	if (getCharCE(STRING_ELT(tok, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	if (getCharCE(STRING_ELT(tok, i)) == CE_UTF8) use_UTF8 = TRUE;
 	for (i = 0; i < len; i++)
-	    if (getCharCE(STRING_ELT(x, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	    if (getCharCE(STRING_ELT(x, i)) == CE_UTF8) use_UTF8 = TRUE;
     }
     if (use_UTF8 && !fixed_opt && perl_opt) options = PCRE_UTF8;
 #endif
@@ -748,7 +748,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     mystrcpy(buff1, &buff1[j]);
     upper = strlen(buff1) - 1;
 
-    if (int(strlen(buff1)) < minlen)
+    if (CXXRconvert(int, strlen(buff1)) < minlen)
 	goto donesc;
 
     for (i = upper, j = 1; i > 0; i--) {
@@ -761,7 +761,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	else
 	    j = 0;
 	/*strcpy(buff1[i],buff1[i+1]);*/
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -769,7 +769,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -777,7 +777,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -785,7 +785,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -793,7 +793,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -803,7 +803,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (!FIRSTCHAR(buff1, i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (int(strlen(buff1)) - nspace <= minlen)
+	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -1050,7 +1050,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP pat, vec, ind, ans;
     regex_t reg;
     int i, j, n, nmatches = 0, cflags = 0, ov, erroffset, ienc, rc;
-    int igcase_opt, extended_opt, value_opt, perl_opt, fixed_opt, useBytes;
+    int igcase_opt, extended_opt, value_opt, perl_opt, fixed_opt, useBytes, invert;
     const char *cpat, *errorptr;
     pcre *re_pcre = NULL /* -Wall */;
     pcre_extra *re_pe = NULL;
@@ -1066,12 +1066,14 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     perl_opt = asLogical(CAR(args)); args = CDR(args);
     fixed_opt = asLogical(CAR(args)); args = CDR(args);
     useBytes = asLogical(CAR(args)); args = CDR(args);
+    invert = asLogical(CAR(args));
     if (igcase_opt == NA_INTEGER) igcase_opt = 0;
     if (extended_opt == NA_INTEGER) extended_opt = 1;
     if (value_opt == NA_INTEGER) value_opt = 0;
     if (perl_opt == NA_INTEGER) perl_opt = 0;
     if (fixed_opt == NA_INTEGER) fixed_opt = 0;
     if (useBytes == NA_INTEGER) useBytes = 0;
+    if (invert == NA_INTEGER) invert = 0;
     if (fixed_opt && igcase_opt)
 	warning(_("argument '%s' will be ignored"), "ignore.case = TRUE");
     if (fixed_opt && perl_opt)
@@ -1104,7 +1106,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     if ((fixed_opt || perl_opt) && !useBytes) {
 	if (getCharCE(STRING_ELT(pat, 0)) == CE_UTF8) use_UTF8 = TRUE;
 	for (i = 0; i < n; i++)
-	    if (getCharCE(STRING_ELT(vec, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	    if (getCharCE(STRING_ELT(vec, i)) == CE_UTF8) use_UTF8 = TRUE;
     }
     if (use_UTF8) {
 	cpat = translateCharUTF8(STRING_ELT(pat, 0));
@@ -1181,7 +1183,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 		    INTEGER(ind)[i] = 1;
 	    } else if (regexec(&reg, s, 0, NULL, 0) == 0) LOGICAL(ind)[i] = 1;
 	}
-	if (LOGICAL(ind)[i]) nmatches++;
+	if (invert ^ LOGICAL(ind)[i]) nmatches++;
     }
     if (fixed_opt);
     else if (perl_opt) {
@@ -1191,17 +1193,22 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     } else
 	regfree(&reg);
 
+    if (PRIMVAL(op)) {/* grepl case */
+	UNPROTECT(1);
+	return ind;
+    }	
+
     if (value_opt) {
 	SEXP nmold = getAttrib(vec, R_NamesSymbol), nm;
 	ans = allocVector(STRSXP, nmatches);
 	for (i = 0, j = 0; i < n ; i++)
-	    if (LOGICAL(ind)[i])
+	    if (invert ^ LOGICAL(ind)[i])
 		SET_STRING_ELT(ans, j++, STRING_ELT(vec, i));
 	/* copy across names and subset */
 	if (!isNull(nmold)) {
 	    nm = allocVector(STRSXP, nmatches);
 	    for (i = 0, j = 0; i < n ; i++)
-		if (LOGICAL(ind)[i])
+		if (invert ^ LOGICAL(ind)[i])
 		    SET_STRING_ELT(nm, j++, STRING_ELT(nmold, i));
 	    setAttrib(ans, R_NamesSymbol, nm);
 	}
@@ -1209,7 +1216,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 	ans = allocVector(INTSXP, nmatches);
 	j = 0;
 	for (i = 0 ; i < n ; i++)
-	    if (LOGICAL(ind)[i]) INTEGER(ans)[j++] = i + 1;
+	    if (invert ^ LOGICAL(ind)[i]) INTEGER(ans)[j++] = i + 1;
     }
     UNPROTECT(1);
     return ans;
@@ -1367,7 +1374,7 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (getCharCE(STRING_ELT(pat, 0)) == CE_UTF8) use_UTF8 = TRUE;
 	if (getCharCE(STRING_ELT(rep, 0)) == CE_UTF8) use_UTF8 = TRUE;
 	for (i = 0; i < n; i++)
-	    if (getCharCE(STRING_ELT(vec, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	    if (getCharCE(STRING_ELT(vec, i)) == CE_UTF8) use_UTF8 = TRUE;
     }
 
     if (use_UTF8) {
@@ -1581,7 +1588,7 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     if ((fixed_opt || perl_opt) && !useBytes) {
 	if (getCharCE(STRING_ELT(pat, 0)) == CE_UTF8) use_UTF8 = TRUE;
 	for (i = 0; i < n; i++)
-	    if (getCharCE(STRING_ELT(text, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	    if (getCharCE(STRING_ELT(text, i)) == CE_UTF8) use_UTF8 = TRUE;
     }
     if (use_UTF8) {
 	spat = translateCharUTF8(STRING_ELT(pat, 0));
@@ -1658,14 +1665,14 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef SUPPORT_MBCS
 		if (!useBytes && ienc == CE_UTF8) {
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			int(utf8towcs(NULL, spat, 0)):-1;
+			CXXRconvert(int, utf8towcs(NULL, spat, 0)):-1;
 		} else if (!useBytes && mbcslocale) {
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			int(mbstowcs(NULL, spat, 0)):-1;
+			CXXRconvert(int, mbstowcs(NULL, spat, 0)):-1;
 		} else
 #endif
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
-			int(strlen(spat)):-1;
+			CXXRconvert(int, strlen(spat)):-1;
 	    } else if (perl_opt) {
 		rc = pcre_exec(re_pcre, re_pe, s, strlen(s), 0, 0, ovector, 3);
 		if (rc >= 0) {
@@ -2011,7 +2018,7 @@ SEXP attribute_hidden do_gregexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     if (fixed_opt && !useBytes) {
 	if (getCharCE(STRING_ELT(pat, 0)) == CE_UTF8) use_UTF8 = TRUE;
 	for (i = 0; i < n; i++)
-	    if (getCharCE(STRING_ELT(text, 0)) == CE_UTF8) use_UTF8 = TRUE;
+	    if (getCharCE(STRING_ELT(text, i)) == CE_UTF8) use_UTF8 = TRUE;
     }
     if (use_UTF8) {
 	spat = translateCharUTF8(STRING_ELT(pat, 0));
@@ -2546,8 +2553,8 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		if (nc < 0)
 		    error(_("invalid input multibyte string %d"), i+1);
-                wc = static_cast<wchar_t *>(R_AllocStringBuffer((nc+1)*sizeof(wchar_t),
-						     &cbuff));
+                wc = static_cast<wchar_t *>( R_AllocStringBuffer((nc+1)*sizeof(wchar_t),
+								 &cbuff));
 		if (ienc == CE_UTF8) utf8towcs(wc, xi, nc + 1);
 		else mbstowcs(wc, xi, nc + 1);
 		for (j = 0; j < nc; j++){
@@ -2693,7 +2700,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
     {
 	nc = strlen(str);
-	aps = apse_create(reinterpret_cast<unsigned char *>(const_cast<char*>(str)), apse_size_t( nc),
+	aps = apse_create(reinterpret_cast<unsigned char *>( CXXRconvert(const_cast<char*>, str)), apse_size_t( nc),
 			  max_distance_opt, 256);
     }
     if (!aps)
@@ -2736,7 +2743,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (!apse_set_caseignore_slice(aps, 0, strlen(str),
 					  apse_bool_t( igcase_opt)))
 		error(_("could not perform case insensitive matching"));
-	    if (apse_match(aps, reinterpret_cast<unsigned char *>(const_cast<char*>(str)),
+	    if (apse_match(aps, reinterpret_cast<unsigned char *>( CXXRconvert(const_cast<char*>, str)),
 			  apse_size_t( strlen(str)))) {
 		LOGICAL(ind)[i] = 1;
 		nmatches++;
@@ -2944,7 +2951,7 @@ SEXP attribute_hidden do_packBits(SEXP call, SEXP op, SEXP args, SEXP env)
 static int mbrtoint(int *w, const char *s)
 {
     unsigned int byte;
-    byte = uint(*s);
+    byte = static_cast<unsigned int>(*s);
 
     if (byte == 0) {
 	*w = 0;
@@ -2955,7 +2962,7 @@ static int mbrtoint(int *w, const char *s)
     } else if (byte < 0xE0) {
 	if (strlen(s) < 2) return -2;
 	if ((s[1] & 0xC0) == 0x80) {
-	    *w = int( ((byte & 0x1F) << 6) | (s[1] & 0x3F));
+	    *w = int( (((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
 	} else return -1;
     } else if (byte < 0xF0) {
@@ -3052,8 +3059,8 @@ static size_t inttomb(char *s, const int wc)
 
     b = s ? s : buf;
     if (cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < int(sizeof(utf8_table1)/sizeof(int)); i++)
-        if (int(cvalue) <= utf8_table1[i]) break;
+    for (i = 0; i < CXXRconvert(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (CXXRconvert(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
 	*b-- = 0x80 | (cvalue & 0x3f);
@@ -3089,7 +3096,7 @@ SEXP attribute_hidden do_intToUtf8(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* Note that this gives zero length for input '0', so it is omitted */
 	for (i = 0, len = 0; i < nc; i++)
 	    len += inttomb(NULL, INTEGER(x)[i]);
-	tmp = static_cast<char*>(alloca(len));
+	tmp = CXXRconvert(static_cast<char*>, alloca(len+1)); tmp[len] = '\0';
 	R_CheckStack();
 	for (i = 0, len = 0; i < nc; i++) {
 	    used = inttomb(buf, INTEGER(x)[i]);

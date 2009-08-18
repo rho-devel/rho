@@ -110,13 +110,13 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     Rboolean useInt;
 
     in1 = int((n1));
-    useInt = Rboolean(n1 == in1);
+    useInt = CXXRconvert(Rboolean, (n1 == in1));
     if (n1 <= INT_MIN || n2 <= INT_MIN || n1 > INT_MAX || n2 > INT_MAX)
 	useInt = FALSE;
     r = fabs(n2 - n1);
     if(r >= INT_MAX) errorcall(call,_("result would be too long a vector"));
 
-    n = int(r + 1 + FLT_EPSILON);
+    n = CXXRconvert(int, r + 1 + FLT_EPSILON);
     if (useInt) {
 	ans = allocVector(INTSXP, n);
 	if (n1 <= n2)
@@ -453,7 +453,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
     int i, nargs = length(args), lf, lout = NA_INTEGER;
-    Rboolean One = Rboolean(nargs == 1);
+    Rboolean One = CXXRconvert(Rboolean, nargs == 1);
 
     if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
 	return(ans);
@@ -511,7 +511,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if(lout == NA_INTEGER) {
-	double rfrom = asReal(from), rto = asReal(to), rby = asReal(by);
+	double rfrom = asReal(from), rto = asReal(to), rby = asReal(by), *ra;
 	if(from == R_MissingArg) rfrom = 1.0;
 	if(to == R_MissingArg) rto = 1.0;
 	if(by == R_MissingArg)
@@ -547,8 +547,13 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall(call, _("wrong sign in 'by' argument"));
 	    nn = int(n + FLT_EPSILON);
 	    ans = allocVector(REALSXP, nn+1);
+	    ra = REAL(ans);
 	    for(i = 0; i <= nn; i++)
-		REAL(ans)[i] = rfrom + i * rby;
+		ra[i] = rfrom + i * rby;
+	    /* Added in 2.9.0 */
+	    if (nn > 0)
+		if((rby > 0 && ra[nn] > rto) || (rby < 0 && ra[nn] < rto))
+		    ra[nn] = rto;
 	}
     } else if (lout == 0) {
 	ans = allocVector(INTSXP, 0);
@@ -581,7 +586,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = int(rfrom + i*rby);
+		INTEGER(ans)[i] = CXXRconvert(int, rfrom + i*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -598,7 +603,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = int(rto - (lout - 1 - i)*rby);
+		INTEGER(ans)[i] = CXXRconvert(int, rto - (lout - 1 - i)*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)

@@ -5,6 +5,8 @@ The files are as follows.
 
   config.guess
   config.sub
+	From http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD etc
+
   install-sh
   mdate-sh
   missing
@@ -22,10 +24,6 @@ The files are as follows.
 	be improved].
   GETVERSION
 	create API 'Rversion.h' from 'VERSION' and 'SVN-REVISION'.
-  
-  Rdnewer.pl
-	determine whether any Rd file in an Rd tree is newer than a
-	given file.
   
   copy-if-change
 	copy a file if changed; otherwise, do nothing.
@@ -67,10 +65,6 @@ The files are as follows.
 
   move-if-change
 	move a file if changed; otherwise, remove.
-
-  pkg2tex.pl
-	create a single 'PKGNAME-pkg.tex' file from the package docs in
-	LaTeX format.
 
   rsync-recommended
 	obtain sources for the recommended packages using rsync, and then

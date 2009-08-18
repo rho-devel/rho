@@ -281,9 +281,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return Rboolean(actualType == INTSXP || actualType == LGLSXP);
+	    return CXXRconvert(Rboolean, (actualType == INTSXP || actualType == LGLSXP));
 	}
-	return Rboolean(targetType == actualType);
+	return CXXRconvert(Rboolean, (targetType == actualType));
     }
 
     return(TRUE);
@@ -424,11 +424,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == size_t(-1) && errno == E2BIG) {
+		    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_in;
 		    }
-		    if(res == size_t(-1)) 
+		    if(res == CXXRconvert(size_t, -1))
 			error(_("conversion problem in re-encoding to '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -553,11 +553,11 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == size_t(-1) && errno == E2BIG) {
+		    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_out;
 		    }
-		    if(res == size_t(-1)) 
+		    if(res == CXXRconvert(size_t, -1))
 			error(_("conversion problem in re-encoding from '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -598,9 +598,6 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     return s;
 }
 
-#define THROW_REGISTRATION_TYPE_ERROR
-
-#ifdef THROW_REGISTRATION_TYPE_ERROR
 static Rboolean
 comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 {
@@ -613,7 +610,6 @@ comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 
     return(FALSE);
 }
-#endif /* end of THROW_REGISTRATION_TYPE_ERROR */
 
 
 /* Foreign Function Interface.  This code allows a user to call C */
@@ -818,8 +814,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(symbol.symbol.external->numArgs != length(args))
 	    errorcall(call,
 		      _("Incorrect number of arguments (%d), expecting %d for %s"),
-		      length(args), symbol.symbol.external->numArgs,
-		      translateChar(STRING_ELT(CAR(args), 0)));
+		      length(args), symbol.symbol.external->numArgs, buf);
     }
 #endif
 
@@ -857,8 +852,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(symbol.symbol.call->numArgs != nargs)
 	    errorcall(call,
 		      _("Incorrect number of arguments (%d), expecting %d for %s"),
-		      nargs, symbol.symbol.call->numArgs,
-		      translateChar(STRING_ELT(nm, 0)));
+		      nargs, symbol.symbol.call->numArgs, buf);
     }
 
     retval = R_NilValue;	/* -Wall */
@@ -1535,6 +1529,14 @@ SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
      * If there is an error or user-interrupt in the above
      * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
+     * 
+     * NOTE: if someone uses try() around this call and there
+     * is an error, then dd->recordGraphics stays FALSE, so
+     * subsequent pages of graphics output are NOT saved on
+     * the display list.  A workaround is to deliberately
+     * force an error in a graphics call (e.g., a grid popViewport()
+     * while in the ROOT viewport) which will reset dd->recordGraphics
+     * to TRUE as per the comment above.
      */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
@@ -1557,6 +1559,14 @@ SEXP attribute_hidden do_dotcallgr(SEXP call, SEXP op, SEXP args, SEXP env)
      * If there is an error or user-interrupt in the above
      * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
+     * 
+     * NOTE: if someone uses try() around this call and there
+     * is an error, then dd->recordGraphics stays FALSE, so
+     * subsequent pages of graphics output are NOT saved on
+     * the display list.  A workaround is to deliberately
+     * force an error in a graphics call (e.g., a grid popViewport()
+     * while in the ROOT viewport) which will reset dd->recordGraphics
+     * to TRUE as per the comment above.
      */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
@@ -1696,9 +1706,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     cargs = static_cast<void**>(CXXR_alloc(nargs, sizeof(void*)));
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
-#ifdef THROW_REGISTRATION_TYPE_ERROR
 	if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), Rboolean(dup))) {
+	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), CXXRconvert(Rboolean, dup))) {
 	    /* We can loop over all the arguments and report all the
 	       erroneous ones, but then we would also want to avoid
 	       the conversions.  Also, in the future, we may just
@@ -1710,10 +1719,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	    errorcall(call, _("Wrong type for argument %d in call to %s"),
 		      nargs+1, symName);
 	}
-#endif
 	cargs[nargs] = RObjToCPtr(CAR(pargs), naok, dup, nargs + 1,
 				  which, symName, argConverters + nargs,
-				  checkTypes ? SEXPTYPE(checkTypes[nargs]) : NILSXP,
+				  checkTypes ? CXXRconvert(SEXPTYPE, checkTypes[nargs]) : NILSXP,
 				  encname);
 #ifdef R_MEMORY_PROFILING
 	if (TRACE(CAR(pargs)) && dup)

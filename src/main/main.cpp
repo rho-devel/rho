@@ -183,11 +183,13 @@ attribute_hidden char   *Sys_TempDir	= NULL;	/* Name of per-session dir
 						   if set by R itself */
 attribute_hidden char	R_StdinEnc[31]  = "";	/* Encoding assumed for stdin */
 GCRoot<>	R_CommentSxp;	    /* Comments accumulate here */
-attribute_hidden int	R_ParseError	= 0; /* Line where parse error occured */
+attribute_hidden int	R_ParseError	= 0; /* Line where parse error occurred */
+attribute_hidden int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
 attribute_hidden SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
 attribute_hidden char	R_ParseErrorMsg[PARSE_ERROR_SIZE] = "";
 attribute_hidden char	R_ParseContext[PARSE_CONTEXT_SIZE] = "";
 attribute_hidden int	R_ParseContextLast = 0; /* last character in context buffer */
+attribute_hidden int	R_ParseContextLine; /* Line in file of the above */
 attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
 GCRoot<>	R_Warnings;	    /* the warnings and their calls */
 attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
@@ -368,7 +370,7 @@ Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplSt
 		return(-1);
 	    state->bufp = state->buf;
     }
-#ifdef SHELL_ESCAPE
+#ifdef SHELL_ESCAPE /* not default */
     if (*state->bufp == '!') {
 #ifdef HAVE_SYSTEM
 	    R_system(&(state->buf[1]));
@@ -620,7 +622,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 	    addr - R_CStackStart;
 	uintptr_t upper = 0x1000000;  /* 16Mb */
 	if(intptr_t( R_CStackLimit) != -1) upper += R_CStackLimit;
-	if(diff > 0 && diff < int(upper)) {
+	if(diff > 0 && diff < CXXRconvert(int, upper)) {
 	    REprintf(_("Error: segfault from C stack overflow\n"));
 	    jump_to_toplevel();
 	}
@@ -1236,16 +1238,16 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
     if (isSymbol(CExpr)) {
 	const char *expr = CHAR(PRINTNAME(CExpr));
 	if (!strcmp(expr, "n")) {
-	    SET_ENV_DEBUG(rho, TRUE);
+	    SET_ENV_DEBUG(rho, CXXRTRUE);
 	    rval = 1;
 	}
 	if (!strcmp(expr, "c")) {
 	    rval = 1;
-	    SET_ENV_DEBUG(rho, FALSE);
+	    SET_ENV_DEBUG(rho, CXXRFALSE);
 	}
 	if (!strcmp(expr, "cont")) {
 	    rval = 1;
-	    SET_ENV_DEBUG(rho, FALSE);
+	    SET_ENV_DEBUG(rho, CXXRFALSE);
 	}
 	if (!strcmp(expr, "Q")) {
 
@@ -1259,7 +1261,7 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 
 	    /* this is really dynamic state that should be managed as such */
 	    R_BrowseLevel = 0;
-	    SET_ENV_DEBUG(rho, FALSE); /*PR#1721*/
+	    SET_ENV_DEBUG(rho, CXXRFALSE); /*PR#1721*/
 
 	    jump_to_toplevel();
 	}
@@ -1686,7 +1688,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     int errorOccurred;
     Rboolean again;
     Rboolean useData;
-    useData = Rboolean(LOGICAL(VECTOR_ELT(f, 2))[0]);
+    useData = CXXRconvert(Rboolean, LOGICAL(VECTOR_ELT(f, 2))[0]);
 
     PROTECT(e = allocVector(LANGSXP, 5 + useData));
     SETCAR(e, VECTOR_ELT(f, 0));
@@ -1712,7 +1714,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 	      /* It would be nice to identify the function. */
 	    warning(_("top-level task callback did not return a logical value"));
 	}
-	again = Rboolean(asLogical(val));
+	again = CXXRconvert(Rboolean, asLogical(val));
 	UNPROTECT(1);
     } else {
 	/* warning("error occurred in top-level task callback\n"); */
