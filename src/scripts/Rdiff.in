@@ -49,7 +49,7 @@ s1="s/‘/'/g"
 s2="s/’/'/g"
 
 ## egrep pattern to get rid of some more
-pattern='(^Time |^Loading required package.*|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer): )'
+pattern='(^Time |^Loading required package.*|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer): |CXXR)'
 
 if test ${ffile} = '-' ; then
   ffile=''
