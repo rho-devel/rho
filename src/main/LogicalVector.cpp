@@ -49,17 +49,6 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isLogicalptr)(SEXP s) = Rf_isLogical;
+	int* (*LOGICALp)(SEXP) = LOGICAL;
     }
-}
-
-int *LOGICAL(SEXP x)
-{
-#ifndef USE_TYPE_CHECKING_STRICT
-    // Quicker than dynamic_cast:
-    if (x->sexptype() == INTSXP) {
-	IntVector* ivec = static_cast<IntVector*>(x);
-	return &(*ivec)[0];
-    }
-#endif
-    return &(*CXXR::SEXP_downcast<LogicalVector*>(x))[0];
 }

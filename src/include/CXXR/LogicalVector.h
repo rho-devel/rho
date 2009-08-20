@@ -80,13 +80,19 @@ extern "C" {
 #endif
 
 /**
- * @param x Pointer to a CXXR::LogicalVector or a CXXR::IntVector (i.e. an
- *          R logical or integer vector).
- *          An error is generated if \a x is not pointer to a
- *          CXXR::LogicalVector or a CXXR::IntVector .
+ * @param x Pointer to a CXXR::LogicalVector (checked).
+ *
  * @return Pointer to element 0 of \a x .
  */
-int *LOGICAL(SEXP x);
+#ifndef __cplusplus
+int* LOGICAL(SEXP x);
+#else
+inline int* LOGICAL(SEXP x)
+{
+    using namespace CXXR;
+    return &(*SEXP_downcast<LogicalVector*>(x))[0];
+}
+#endif
 
 #ifdef __cplusplus
 }
