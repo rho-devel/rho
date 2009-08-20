@@ -510,6 +510,15 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
+    // For ANYSXP, we use shortcuts to avoid running active binding
+    // functions.  cf. comment to existsVarInFrame() in CR.
+    if (mode == ANYSXP) {
+	Frame::Binding* bdg;
+	if (!inherits)
+	    bdg = env->frame()->binding(sym);
+	else bdg = findBinding(sym, env).second;
+	return bdg ? bdg->value() : R_UnboundValue;
+    }
     ModeTester modetest(mode);
     pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
     return (pr.first ? pr.second : R_UnboundValue);
