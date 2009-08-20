@@ -2461,19 +2461,19 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     }
     else {
 	const char *valueString, *classString; int whichType;
-	SEXP cur_class; int valueType;
+	SEXP cur_class; SEXPTYPE valueType;
 	valueString = CHAR(asChar(value)); /* ASCII */
 	whichType = class2type(valueString);
-	valueType = (whichType == -1) ? -1 : classTable[whichType].sexp;
+	valueType = (whichType == -1) ? CXXRconvert(SEXPTYPE, -1) : classTable[whichType].sexp;
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	classString = CHAR(asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */
-	if(CXXRconvert(int, valueType) != -1) {
+	if(valueType != -1) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
 	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
 	      do_unsetS4(obj, value);
 	    if(classTable[whichType].canChange) {
-		PROTECT(obj = ascommon(call, obj, CXXRconvert(SEXPTYPE, valueType)));
+		PROTECT(obj = ascommon(call, obj, valueType));
 		nProtect++;
 	    }
 	    else if(valueType != TYPEOF(obj))
