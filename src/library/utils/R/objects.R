@@ -243,7 +243,7 @@ assignInNamespace <-
             stop("environment specified is not a package")
         ns <- asNamespace(substring(nm, 9L))
     } else ns <- asNamespace(ns)
-    if(bindingIsLocked(x, ns)) {
+    if(exists(x, envir = ns, inherits = FALSE) && bindingIsLocked(x, ns)) {
         unlockBinding(x, ns)
         assign(x, value, envir = ns, inherits = FALSE)
         w <- options("warn")
