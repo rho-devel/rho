@@ -84,7 +84,7 @@ void* GCNode::operator new(size_t bytes)
 void GCNode::abortIfNotExposed(const GCNode* node)
 {
     if (node && (node->m_bits & UNDER_CONSTRUCTION)) {
-	cerr << "Internal error: GCNode still under construction\n";
+	cerr << "Internal error: GCNode not exposed to GC.\n";
 	abort();
     }
 }
