@@ -44,17 +44,17 @@ gcinfo(verbose)
   next 0.1Mb and as a  percentage of the current trigger value.  The
   first line gives a  breakdown of the number of garbage collections
   at various levels (for an explanation see the \sQuote{R Internals}
-  manual).  Nothing like this is currently implemented in CR, i.e.
+  manual).  Nothing like this is currently implemented in CXXR, i.e.
   \code{gcinfo} is a no-op. 
 }
 
 \value{
   \code{gc} returns a matrix with columns \code{"Nodes"} and
-  \code{"Mbytes"} (total memory allocated via CXXR's internal heap,
-  rounded up to next 0.1 MB), and rows \code{"used"} and \code{"gc
-  trigger"}.  Since CXXR triggers exclusively on the number of bytes
-  and not on the number of nodes, the first entry in the second row is
-  always NA.
+  \code{"Mbytes"} (total memory allocated via CXXR's internal memory
+  allocation mechanism, rounded up to next 0.1 MB), and rows
+  \code{"used"} and \code{"gc trigger"}.  Since CXXR triggers
+  exclusively on the number of bytes and not on the number of nodes,
+  the first entry in the second row is always NA.
 
   The final row shows the maximum node count and space used since the
   last call to \code{gc(reset=TRUE)} (or since \R started).

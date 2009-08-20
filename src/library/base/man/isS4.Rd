@@ -65,8 +65,6 @@ asS4(object, flag = TRUE, complete = TRUE)
   extending the pseudo-classes \code{array} and \code{matrix}: such
   objects will have their class attribute set to \code{NULL}.
 
-  CXXR does not allow the S4 flag to be turned off for objects of the
-  S4 type (S4SXP).
 }
 \seealso{\code{\link{is.object}} for a more general test; \link{Methods}
 for general information on S4.}
