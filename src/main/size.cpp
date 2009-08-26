@@ -139,8 +139,6 @@ static R_size_t objectsize(SEXP s)
 	isVec = TRUE;
 	break;
     case S4SXP:
-	/* Has TAG and ATRIB but no CAR nor CDR */
-	cnt += objectsize(TAG(s));
 	break;
     default:
 	UNIMPLEMENTED_TYPE("object.size", s);
