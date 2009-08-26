@@ -129,8 +129,11 @@ void CellPool::defragment()
     // Restring the pearls:
     {
 	Cell* next = 0;
-	for (vector<Cell*>::reverse_iterator rit = vf.rbegin();
-	     rit != vf.rend(); ++rit) {
+	vector<Cell*>::reverse_iterator rit = vf.rbegin();
+#ifdef CELLFIFO
+	m_last_free_cell = (rit == vf.rend() ? 0 : *rit);
+#endif
+	for ( ; rit != vf.rend(); ++rit) {
 	    Cell* c = *rit;
 	    c->m_next = next;
 	    next = c;
@@ -149,6 +152,9 @@ void CellPool::seekMemory() throw (std::bad_alloc)
 	// Initialise cells:
 	{
 	    int offset = m_superblocksize - m_cellsize;
+#ifdef CELLFIFO
+	    m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
+#endif
 	    Cell* next = 0;
 	    while (offset >= 0) {
 		next = new (superblock + offset) Cell(next);

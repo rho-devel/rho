@@ -54,6 +54,18 @@ namespace CXXR {
      * specified size, and is intended as a back-end to implementations of
      * operator new and operator delete to enable the allocation and
      * deallocation of small objects quickly.
+     *
+     * Normally class CellPool operates a last-in-first-out allocation
+     * policy; that is to say, if there are cells that have been
+     * deallocated and not yet reallocated, the next one to be
+     * reallocated will be the one that was most recently
+     * deallocated.  This makes for efficient utilisation of the
+     * processor caches.  However, if the class is compiled with the
+     * preprocessor variable CELLFIFO defined, it instead operates a
+     * first-in-first-out policy.  This results in a longer turnround
+     * time in reallocating cells, which improves the lethality of the
+     * FILL55 preprocessor variable in showing up premature
+     * deallocation of cells.
      */
     class CellPool {
     public:
@@ -75,6 +87,9 @@ namespace CXXR {
 	      m_cells_per_superblock(cells_per_superblock),
 	      m_superblocksize(m_cellsize*cells_per_superblock),
 	      m_free_cells(0),
+#ifdef CELLFIFO
+	      m_last_free_cell(0),
+#endif
 	      m_cells_allocated(0)
 	{
 #if VALGRIND_LEVEL >= 2
@@ -104,6 +119,10 @@ namespace CXXR {
 	    if (!m_free_cells) seekMemory();
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
+#ifdef CELLFIFO
+	    if (!m_free_cells)
+		m_last_free_cell = 0;
+#endif
 	    ++m_cells_allocated;
 #if VALGRIND_LEVEL >= 2
 	    VALGRIND_MEMPOOL_ALLOC(this, c, cellSize());
@@ -150,8 +169,18 @@ namespace CXXR {
 	    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
 #endif
 	    Cell* c = static_cast<Cell*>(p);
+#ifdef CELLFIFO
+	    c->m_next = 0;
+	    if (!m_free_cells)
+		m_free_cells = m_last_free_cell = c;
+	    else {
+		m_last_free_cell->m_next = c;
+		m_last_free_cell = c;
+	    }
+#else
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
+#endif
 	    --m_cells_allocated;
 	}
 
@@ -201,6 +230,9 @@ namespace CXXR {
 	const size_t m_superblocksize;
 	std::vector<void*> m_superblocks;
 	Cell* m_free_cells;
+#ifdef CELLFIFO
+	Cell* m_last_free_cell;
+#endif
 	unsigned int m_cells_allocated;
 
 	// Checks that p is either null or points to a cell belonging

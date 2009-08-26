@@ -49,6 +49,14 @@ namespace CXXR {
      * 
      * Small objects are quickly allocated from pools of various cell
      * sizes; large objects are obtained directly from the main heap.
+     *
+     * If the class is compiled with the FILL55 preprocessor variable
+     * defined, released memory blocks are filled with 0x55 bytes
+     * (though some of these may be overwritten by data used for free
+     * list management).  This can be useful to show up premature
+     * deallocation of memory block, especially if used in conjunction
+     * with the CELLFIFO preprocessor variable documented in class
+     * CellPool.
      */
     class MemoryBank {
     public:
