@@ -94,8 +94,8 @@ set_double_by_name(SEXP obj, double val, char *nm)
 SEXP as_det_obj(double val, int log, int sign)
 {
     SEXP det = PROTECT(allocVector(VECSXP, 2)),
-	nms = allocVector(STRSXP, 2),
-	vv = ScalarReal(val);
+	nms = PROTECT(allocVector(STRSXP, 2)),
+	vv = PROTECT(ScalarReal(val));
 
     setAttrib(det, R_NamesSymbol, nms);
     SET_STRING_ELT(nms, 0, mkChar("modulus"));
@@ -104,7 +104,7 @@ SEXP as_det_obj(double val, int log, int sign)
     SET_VECTOR_ELT(det, 0, vv);
     SET_VECTOR_ELT(det, 1, ScalarInteger(sign));
     setAttrib(det, R_ClassSymbol, mkString("det"));
-    UNPROTECT(1);
+    UNPROTECT(3);
     return det;
 }
 
@@ -142,6 +142,7 @@ SEXP set_factors(SEXP obj, SEXP val, char *nm)
 	    return val;
 	}
     }
+    PROTECT(val);
     nfac = PROTECT(allocVector(VECSXP, len + 1));
     nnms = PROTECT(allocVector(STRSXP, len + 1));
     setAttrib(nfac, R_NamesSymbol, nnms);
@@ -152,7 +153,7 @@ SEXP set_factors(SEXP obj, SEXP val, char *nm)
     SET_VECTOR_ELT(nfac, len, duplicate(val));
     SET_STRING_ELT(nnms, len, mkChar(nm));
     SET_SLOT(obj, Matrix_factorSym, nfac);
-    UNPROTECT(2);
+    UNPROTECT(3);
     return VECTOR_ELT(nfac, len);
 }
 

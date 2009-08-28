@@ -120,10 +120,10 @@ SEXP R_to_CMatrix(SEXP x)
     }
     SET_SLOT(ans, Matrix_iSym, duplicate(GET_SLOT(x, Matrix_jSym)));
     slot_dup(ans, x, Matrix_pSym);
-    ans = Csparse_transpose(ans, tri);
+    PROTECT(ans = Csparse_transpose(ans, tri));
     SET_DimNames(ans, x);
     free(ncl);
-    UNPROTECT(2);
+    UNPROTECT(3);
     return ans;
 }
 
