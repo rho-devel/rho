@@ -61,7 +61,7 @@ unsigned int GCNode::s_under_construction = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
 #ifdef GCID
 unsigned int GCNode::s_last_id = 0;
-const GCNode* GCNode::s_watch_node = 0;
+const GCNode* GCNode::s_watch_addr = 0;
 unsigned int GCNode::s_watch_id = 0;
 #endif
 
@@ -106,7 +106,7 @@ bool GCNode::check()
 	    ++numnodes;
 	    if (node->m_bits & MORIBUND) {
 		cerr << "GCNode::check() : "
-		    " moribund node on exposed list.\n";
+		    " moribund node on live list.\n";
 		abort();
 	    }
 	    if (node->m_refcount == 0)
@@ -196,12 +196,13 @@ void GCNode::initialize()
     s_reachable = new List;
 #ifdef GCID
     s_last_id = 0;
-    s_watch_node = 0;
+    s_watch_addr = 0;
     s_watch_id = 0;
-    // To monitor operations on a particular node (or nodes at a
-    // particular address, put a breakpoint on the following line, and
-    // on arrival at that bp, use the debugger to set s_watch_node
-    // and/or s_watch_id to the required values.
+    // To monitor operations on a node with a particular id (or nodes at a
+    // particular address), put a breakpoint on the following line, and
+    // on arrival at that bp, use the debugger to set s_watch_id (or
+    // s_watch_addr) to the required value.  Also set a breakpoint as
+    // indicated within the watch() function below.
 #endif
     GCRootBase::initialize();
     GCStackRootBase::initialize();
@@ -269,7 +270,7 @@ void GCNode::sweep()
 void GCNode::watch() const
 {
     if ((s_watch_id && m_id == s_watch_id)
-	|| (s_watch_node && this == s_watch_node))
+	|| (s_watch_addr && this == s_watch_addr))
 	// This is just somewhere to put a breakpoint:
 	m_bits = m_bits;
 }

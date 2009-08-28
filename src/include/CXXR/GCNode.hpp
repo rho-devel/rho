@@ -453,8 +453,9 @@ namespace CXXR {
 	static unsigned int s_last_id;
 
 	// Using a debugger, the following can be set to non-null values
-	// to monitor operations on particular nodes:
-	static const GCNode* s_watch_node;
+	// to monitor operations on nodes at a particular address, or
+	// a node with a particular id:
+	static const GCNode* s_watch_addr;
 	static unsigned int s_watch_id;
 #endif
 
