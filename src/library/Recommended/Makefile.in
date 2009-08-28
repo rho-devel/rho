@@ -43,7 +43,7 @@ CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
 
 .SUFFIXES:
-.SUFFIXES: .tgz .ts
+.SUFFIXES: .dts .tgz .ts
 
 all: Makefile R @USE_RECOMMENDED_PACKAGES_TRUE@ recommended-packages
 
@@ -56,7 +56,7 @@ stamp-recommended: $(OBJECTS)
 	@touch $@
 
 ## need to allow parallel installs
-INSTALL_OPTS=--no-lock
+INSTALL_OPTS=--no-lock --install-tests
 
 .tgz.ts:
 	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
@@ -69,6 +69,20 @@ INSTALL_OPTS=--no-lock
 ## </FIXME>
 	@cat $@.out; rm $@.out
 	@touch $@
+
+# Matrix.dts is an empty file with the same timestamp as the most
+# recent file in the Matrix directory.
+Matrix.dts : Matrix FORCE
+	touch -r $< $@
+	find $< -newer $@ -exec touch -r {} $@ \;
+
+FORCE:
+
+.dts.ts:
+	@$(ECHO) "begin installing recommended package" `basename $< .dts`
+	rm -f $@.out
+	MAKE="$(MAKE)" $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" `basename $< .dts`
+	touch $@
 
 R docs:
 
