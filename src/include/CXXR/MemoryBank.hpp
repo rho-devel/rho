@@ -124,7 +124,8 @@ namespace CXXR {
 	    size_t blockbytes = bytes;
 #endif
 	    // Assumes sizeof(double) == 8:
-	    if (blockbytes > s_max_cell_size) ::operator delete(p);
+	    if (blockbytes > s_max_cell_size)
+		::operator delete(p);
 	    else s_pools[s_pooltab[blockbytes]]->deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
