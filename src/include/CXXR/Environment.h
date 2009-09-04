@@ -299,7 +299,7 @@ namespace CXXR {
 		    UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	RObject* val;
+	RObject* val = 0;
 	Frame::Binding* bdg;
 	bool found = false;
 	do {
