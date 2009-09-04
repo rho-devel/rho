@@ -1,0 +1,824 @@
+# English translations for R package.
+# Copyright (C) 2009 The R Foundation
+# This file is distributed under the same license as the R package.
+# Automatically generated, 2009.
+#
+# All this catalog "translates" are quotation characters.
+# The msgids must be ASCII and therefore cannot contain real quotation
+# characters, only substitutes like grave accent (0x60), apostrophe (0x27)
+# and double quote (0x22). These substitutes look strange; see
+# http://www.cl.cam.ac.uk/~mgk25/ucs/quotes.html
+#
+# This catalog translates grave accent (0x60) and apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019).
+# It also translates pairs of apostrophe (0x27) to
+# left single quotation mark (U+2018) and right single quotation mark (U+2019)
+# and pairs of quotation mark (0x22) to
+# left double quotation mark (U+201C) and right double quotation mark (U+201D).
+#
+# When output to an UTF-8 terminal, the quotation characters appear perfectly.
+# When output to an ISO-8859-1 terminal, the single quotation marks are
+# transliterated to apostrophes (by iconv in glibc 2.2 or newer) or to
+# grave/acute accent (by libiconv), and the double quotation marks are
+# transliterated to 0x22.
+# When output to an ASCII terminal, the single quotation marks are
+# transliterated to apostrophes, and the double quotation marks are
+# transliterated to 0x22.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.10.0\n"
+"Report-Msgid-Bugs-To: bugs@R-project.org\n"
+"POT-Creation-Date: 2009-06-12 12:20+0200\n"
+"PO-Revision-Date: 2009-06-12 12:20+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: CHMfactor.c:14
+#, c-format
+msgid "cholmod_l_change_factor failed with status %d"
+msgstr "cholmod_l_change_factor failed with status %d"
+
+#: CHMfactor.c:29 CHMfactor.c:45
+msgid "system argument is not valid"
+msgstr "system argument is not valid"
+
+#: CHMfactor.c:82
+#, c-format
+msgid "diagonal element %d of Cholesky factor is missing"
+msgstr "diagonal element %d of Cholesky factor is missing"
+
+#: CHMfactor.c:117
+#, c-format
+msgid "cholmod_l_factorize_p failed: status %d, minor %d of ncol %d"
+msgstr "cholmod_l_factorize_p failed: status %d, minor %d of ncol %d"
+
+#: Csparse.c:57
+msgid "slot p must have length = ncol(.) + 1"
+msgstr "slot p must have length = ncol(.) + 1"
+
+#: Csparse.c:59 Csparse.c:118
+msgid "first element of slot p must be zero"
+msgstr "first element of slot p must be zero"
+
+#: Csparse.c:62
+msgid "last element of slot p must match length of slots i and x"
+msgstr "last element of slot p must match length of slots i and x"
+
+#: Csparse.c:65 Tsparse.c:27
+msgid "all row indices must be between 0 and nrow-1"
+msgstr "all row indices must be between 0 and nrow-1"
+
+#: Csparse.c:70 Csparse.c:129
+msgid "slot p must be non-decreasing"
+msgstr "slot p must be non-decreasing"
+
+#: Csparse.c:91
+msgid ""
+"slot i is not *strictly* increasing inside a column (even after "
+"cholmod_l_sort)"
+msgstr ""
+"slot i is not *strictly* increasing inside a column (even after "
+"cholmod_l_sort)"
+
+#: Csparse.c:94
+msgid "row indices are not sorted within columns"
+msgstr "row indices are not sorted within columns"
+
+#: Csparse.c:97
+msgid "slot i is not *strictly* increasing inside a column"
+msgstr "slot i is not *strictly* increasing inside a column"
+
+#: Csparse.c:116
+msgid "slot p must have length = nrow(.) + 1"
+msgstr "slot p must have length = nrow(.) + 1"
+
+#: Csparse.c:121
+msgid "last element of slot p must match length of slots j and x"
+msgstr "last element of slot p must match length of slots j and x"
+
+#: Csparse.c:124 Tsparse.c:29
+msgid "all column indices must be between 0 and ncol-1"
+msgstr "all column indices must be between 0 and ncol-1"
+
+#: Csparse.c:140
+msgid "slot j is not increasing inside a column"
+msgstr "slot j is not increasing inside a column"
+
+#: Csparse.c:142
+msgid "slot j is not *strictly* increasing inside a column"
+msgstr "slot j is not *strictly* increasing inside a column"
+
+#: Csparse.c:205
+msgid "Nonsymmetric matrix in Csparse_symmetric_to_general"
+msgstr "Nonsymmetric matrix in Csparse_symmetric_to_general"
+
+#: Csparse.c:377
+msgid "Csparse_crossprod(): error return from cholmod_l_aat()"
+msgstr "Csparse_crossprod(): error return from cholmod_l_aat()"
+
+#: Csparse.c:403
+msgid "cholmod_l_drop() failed"
+msgstr "cholmod_l_drop() failed"
+
+#: Csparse.c:500
+msgid "Index i must be NULL or integer"
+msgstr "Index i must be NULL or integer"
+
+#: Csparse.c:502
+msgid "Index j must be NULL or integer"
+msgstr "Index j must be NULL or integer"
+
+#: Csparse.c:516
+#, c-format
+msgid "failure to open file \"%s\" for writing"
+msgstr "failure to open file “%s” for writing"
+
+#: Csparse.c:520
+msgid "cholmod_l_write_sparse returned error code"
+msgstr "cholmod_l_write_sparse returned error code"
+
+#: Csparse.c:593
+msgid "resultKind = 'diagBack' (back-permuted) is experimental"
+msgstr "resultKind = ‘diagBack’ (back-permuted) is experimental"
+
+#: Csparse.c:602
+msgid "diag_tC(): invalid 'resultKind'"
+msgstr "diag_tC(): invalid ‘resultKind’"
+
+#: Csparse.c:663
+#, c-format
+msgid "negative vector lengths not allowed: np = %d, nnz = %d"
+msgstr "negative vector lengths not allowed: np = %d, nnz = %d"
+
+#: Csparse.c:668
+msgid "exactly 1 of 'i', 'j' or 'p' must be NULL"
+msgstr "exactly 1 of 'i', ‘j’ or ‘p’ must be NULL"
+
+#: Csparse.c:670
+#, c-format
+msgid "np = %d, must be zero when p is NULL"
+msgstr "np = %d, must be zero when p is NULL"
+
+#: Csparse.c:673
+#, c-format
+msgid "p[0] = %d, should be zero"
+msgstr "p[0] = %d, should be zero"
+
+#: Csparse.c:676
+msgid "p must be non-decreasing"
+msgstr "p must be non-decreasing"
+
+#: Csparse.c:692
+#, c-format
+msgid "Inconsistent dimensions: np = 0 and nnz = %d"
+msgstr "Inconsistent dimensions: np = 0 and nnz = %d"
+
+#: Csparse.c:700
+#, c-format
+msgid "invalid row index at position %d"
+msgstr "invalid row index at position %d"
+
+#: Csparse.c:707
+#, c-format
+msgid "invalid column index at position %d"
+msgstr "invalid column index at position %d"
+
+#: Csparse.c:717
+#, c-format
+msgid "strlen of cls argument = %d, should be 8"
+msgstr "strlen of cls argument = %d, should be 8"
+
+#: Csparse.c:719
+#, c-format
+msgid "cls = \"%s\" does not end in \"CMatrix\""
+msgstr "cls = “%s” does not end in “CMatrix”"
+
+#: Csparse.c:729
+#, c-format
+msgid "cls = \"%s\" must begin with 'd', 'l' or 'n'"
+msgstr "cls = “%s” must begin with 'd', ‘l’ or ‘n’"
+
+#: Csparse.c:732
+msgid "Only 'g'eneral sparse matrix types allowed"
+msgstr "Only 'g'eneral sparse matrix types allowed"
+
+#: Csparse.c:760
+msgid "code not yet written for cls = \"lgCMatrix\""
+msgstr "code not yet written for cls = “lgCMatrix”"
+
+#: Mutils.c:18 Mutils.c:37
+#, c-format
+msgid "argument type[1]='%s' must be a one-letter character string"
+msgstr "argument type[1]='%s' must be a one-letter character string"
+
+#: Mutils.c:26
+#, c-format
+msgid "argument type[1]='%s' must be one of 'M','1','O','I','F' or 'E'"
+msgstr "argument type[1]='%s' must be one of 'M','1','O','I','F' or ‘E’"
+
+#: Mutils.c:43
+#, c-format
+msgid "argument type[1]='%s' must be one of '1','O', or 'I'"
+msgstr "argument type[1]='%s' must be one of '1','O', or ‘I’"
+
+#: Mutils.c:55 Mutils.c:71
+msgid "object must be a named, numeric vector"
+msgstr "object must be a named, numeric vector"
+
+#: Mutils.c:118 Mutils.c:138
+msgid "'factors' slot must be a named list"
+msgstr "‘factors’ slot must be a named list"
+
+#: Mutils.c:258
+#, c-format
+msgid "'%s' slot must have length 1"
+msgstr "‘%s’ slot must have length 1"
+
+#: Mutils.c:262
+#, c-format
+msgid "'%s' must have string length 1"
+msgstr "‘%s’ must have string length 1"
+
+#: Mutils.c:269
+#, c-format
+msgid "'%s' must be in '%s'"
+msgstr "‘%s’ must be in ‘%s’"
+
+#: Mutils.c:288
+msgid "'s1' and 's2' must be \"character\" vectors"
+msgstr "‘s1’ and ‘s2’ must be “character” vectors"
+
+#: Mutils.c:310
+msgid "length of x slot != prod(Dim)"
+msgstr "length of x slot != prod(Dim)"
+
+#: Mutils.c:331 Mutils.c:357
+msgid "'uplo' must be UPP or LOW"
+msgstr "‘uplo’ must be UPP or LOW"
+
+#: Mutils.c:563
+#, c-format
+msgid "invalid class '%s' to dup_mMatrix_as_geMatrix"
+msgstr "invalid class ‘%s’ to dup_mMatrix_as_geMatrix"
+
+#: Mutils.c:683
+#, c-format
+msgid "unexpected ctype = %d in dup_mMatrix_as_geMatrix"
+msgstr "unexpected ctype = %d in dup_mMatrix_as_geMatrix"
+
+#: Mutils.c:714
+#, c-format
+msgid "invalid class '%s' to dup_mMatrix_as_dgeMatrix"
+msgstr "invalid class ‘%s’ to dup_mMatrix_as_dgeMatrix"
+
+#: Mutils.c:758
+msgid "Argument ij must be 2-column integer matrix"
+msgstr "Argument ij must be 2-column integer matrix"
+
+#: Mutils.c:799
+msgid "i and j must be integer vectors of the same length"
+msgstr "i and j must be integer vectors of the same length"
+
+#: Mutils.c:907
+msgid "could not find correct environment; please report!"
+msgstr "could not find correct environment; please report!"
+
+#: Tsparse.c:20
+msgid "lengths of slots i and j must match"
+msgstr "lengths of slots i and j must match"
+
+#: Tsparse.c:23
+msgid "slot Dim must have length 2"
+msgstr "slot Dim must have length 2"
+
+#: chm_common.c:106
+msgid "invalid class of object to as_cholmod_sparse"
+msgstr "invalid class of object to as_cholmod_sparse"
+
+#: chm_common.c:108
+msgid "invalid object passed to as_cholmod_sparse"
+msgstr "invalid object passed to as_cholmod_sparse"
+
+#: chm_common.c:133
+msgid "in_place cholmod_l_sort returned an error code"
+msgstr "in_place cholmod_l_sort returned an error code"
+
+#: chm_common.c:139
+msgid "cholmod_l_sort returned an error code"
+msgstr "cholmod_l_sort returned an error code"
+
+#: chm_common.c:211
+msgid "unknown xtype in cholmod_sparse object"
+msgstr "unknown xtype in cholmod_sparse object"
+
+#: chm_common.c:236 chm_common.c:424 chm_common.c:642 chm_common.c:682
+msgid "complex sparse matrix code not yet written"
+msgstr "complex sparse matrix code not yet written"
+
+#: chm_common.c:240 chm_common.c:428
+msgid "Symmetric and triangular both set"
+msgstr "Symmetric and triangular both set"
+
+#: chm_common.c:282
+msgid "invalid class of object to as_cholmod_triplet"
+msgstr "invalid class of object to as_cholmod_triplet"
+
+#: chm_common.c:312
+msgid "as_cholmod_l_triplet(): could not reallocate for internal diagU2N()"
+msgstr "as_cholmod_l_triplet(): could not reallocate for internal diagU2N()"
+
+#: chm_common.c:396
+msgid "unknown xtype in cholmod_triplet object"
+msgstr "unknown xtype in cholmod_triplet object"
+
+#: chm_common.c:477
+msgid "invalid class of object to as_cholmod_dense"
+msgstr "invalid class of object to as_cholmod_dense"
+
+#: chm_common.c:541
+#, c-format
+msgid "Cholmod error '%s' at file:%s, line %d"
+msgstr "Cholmod error ‘%s’ at file:%s, line %d"
+
+#: chm_common.c:568
+#, c-format
+msgid "Unable to initialize cholmod_l: error code %d"
+msgstr "Unable to initialize cholmod_l: error code %d"
+
+#: chm_common.c:609
+msgid "unknown 'Rkind'"
+msgstr "unknown ‘Rkind’"
+
+#: chm_common.c:615 chm_common.c:675
+msgid "unknown xtype"
+msgstr "unknown xtype"
+
+#: chm_common.c:645 chm_common.c:687
+msgid "code for cholmod_dense with holes not yet written"
+msgstr "code for cholmod_dense with holes not yet written"
+
+#: chm_common.c:684
+msgid "don't know if a dense pattern matrix makes sense"
+msgstr "don't know if a dense pattern matrix makes sense"
+
+#: chm_common.c:728
+msgid "invalid class of object to as_cholmod_factor"
+msgstr "invalid class of object to as_cholmod_factor"
+
+#: chm_common.c:742
+msgid "Supernodal LDL' decomposition not available"
+msgstr "Supernodal LDL' decomposition not available"
+
+#: chm_common.c:744
+msgid "Supernodal/simplicial class inconsistent with type flags"
+msgstr "Supernodal/simplicial class inconsistent with type flags"
+
+#: chm_common.c:762
+msgid "Number of supernodes must be positive when is_super is TRUE"
+msgstr "Number of supernodes must be positive when is_super is TRUE"
+
+#: chm_common.c:765
+msgid "Lengths of super and pi must be equal"
+msgstr "Lengths of super and pi must be equal"
+
+#: chm_common.c:769
+msgid "Lengths of super and px must be equal"
+msgstr "Lengths of super and px must be equal"
+
+#: chm_common.c:782
+msgid "failure in as_cholmod_factor"
+msgstr "failure in as_cholmod_factor"
+
+#: chm_common.c:809
+#, c-format
+msgid "f->xtype of %d not recognized"
+msgstr "f->xtype of %d not recognized"
+
+#: chm_common.c:813
+msgid "CHOLMOD factorization was unsuccessful"
+msgstr "CHOLMOD factorization was unsuccessful"
+
+#: chm_common.c:877
+#, c-format
+msgid "chm_diagN2U(<non-square matrix>): nrow=%d, ncol=%d"
+msgstr "chm_diagN2U(<non-square matrix>): nrow=%d, ncol=%d"
+
+#: chm_common.c:920
+#, c-format
+msgid "chm_diagN2U(x, uploT = %d): uploT should be +- 1"
+msgstr "chm_diagN2U(x, uploT = %d): uploT should be +- 1"
+
+#: cs_utils.c:37
+msgid "csp_eye argument n must be positive"
+msgstr "csp_eye argument n must be positive"
+
+#: cs_utils.c:68
+msgid "invalid class of 'x' in Matrix_as_cs(a, x)"
+msgstr "invalid class of ‘x’ in Matrix_as_cs(a, x)"
+
+#: cs_utils.c:127 cs_utils.c:171 cs_utils.c:186 cs_utils.c:206 cs_utils.c:219
+#, c-format
+msgid "invalid class of object to %s"
+msgstr "invalid class of object to %s"
+
+#: cs_utils.c:140
+#, c-format
+msgid "cs matrix not compatible with class '%s'"
+msgstr "cs matrix not compatible with class ‘%s’"
+
+#: cs_utils.c:243 cs_utils.c:262
+#, c-format
+msgid "Inappropriate class cl='%s' in Matrix_css_to_SEXP(S, cl, ..)"
+msgstr "Inappropriate class cl='%s' in Matrix_css_to_SEXP(S, cl, ..)"
+
+#: cs_utils.c:288 cs_utils.c:307
+#, c-format
+msgid "Inappropriate class cl='%s' in Matrix_csn_to_SEXP(S, cl, ..)"
+msgstr "Inappropriate class cl='%s' in Matrix_csn_to_SEXP(S, cl, ..)"
+
+#: dense.c:29
+#, c-format
+msgid "incorrect left cyclic shift, j (%d) >= k (%d)"
+msgstr "incorrect left cyclic shift, j (%d) >= k (%d)"
+
+#: dense.c:31
+#, c-format
+msgid "incorrect left cyclic shift, j (%d) < 0"
+msgstr "incorrect left cyclic shift, j (%d) < 0"
+
+#: dense.c:33
+#, c-format
+msgid "incorrect left cyclic shift, k (%d) > ldx (%d)"
+msgstr "incorrect left cyclic shift, k (%d) > ldx (%d)"
+
+#: dense.c:78
+msgid "Unknown error in getGivens"
+msgstr "Unknown error in getGivens"
+
+#: dense.c:90 dense.c:106 dense.c:139
+msgid "X must be a numeric (double precision) matrix"
+msgstr "X must be a numeric (double precision) matrix"
+
+#: dense.c:111 dense.c:144
+msgid "y must be a numeric (double precision) matrix"
+msgstr "y must be a numeric (double precision) matrix"
+
+#: dense.c:115 dense.c:148
+#, c-format
+msgid "number of rows in y (%d) does not match number of rows in X (%d)"
+msgstr "number of rows in y (%d) does not match number of rows in X (%d)"
+
+#: dense.c:126
+#, c-format
+msgid "Lapack routine dposv returned error code %d"
+msgstr "Lapack routine dposv returned error code %d"
+
+#: dense.c:159
+#, c-format
+msgid "First call to Lapack routine dgels returned error code %d"
+msgstr "First call to Lapack routine dgels returned error code %d"
+
+#: dense.c:166
+#, c-format
+msgid "Second call to Lapack routine dgels returned error code %d"
+msgstr "Second call to Lapack routine dgels returned error code %d"
+
+#: dense.c:179
+msgid "X must be a real (numeric) matrix"
+msgstr "X must be a real (numeric) matrix"
+
+#: dense.c:180
+#, c-format
+msgid "tol, given as %g, must be non-negative"
+msgstr "tol, given as %g, must be non-negative"
+
+#: dense.c:181
+#, c-format
+msgid "tol, given as %g, must be <= 1"
+msgstr "tol, given as %g, must be <= 1"
+
+#: dense.c:205
+#, c-format
+msgid "First call to dgeqrf returned error code %d"
+msgstr "First call to dgeqrf returned error code %d"
+
+#: dense.c:211
+#, c-format
+msgid "Second call to dgeqrf returned error code %d"
+msgstr "Second call to dgeqrf returned error code %d"
+
+#: dense.c:216 dense.c:236
+#, c-format
+msgid "Lapack routine dtrcon returned error code %d"
+msgstr "Lapack routine dtrcon returned error code %d"
+
+#: dense.c:285
+#, c-format
+msgid "Lower band %d > upper band %d"
+msgstr "Lower band %d > upper band %d"
+
+#: dense.c:356
+msgid "ddense_to_symmetric(): matrix is not square!"
+msgstr "ddense_to_symmetric(): matrix is not square!"
+
+#: dense.c:364
+#, c-format
+msgid "matrix is not symmetric [%d,%d]"
+msgstr "matrix is not symmetric [%d,%d]"
+
+#: dense.c:412
+msgid "matrix is not square! (symmetric part)"
+msgstr "matrix is not square! (symmetric part)"
+
+#: dense.c:456
+msgid "matrix is not square! (skew-symmetric part)"
+msgstr "matrix is not square! (skew-symmetric part)"
+
+#: dgCMatrix.c:17
+msgid "lengths of slots 'i' and 'x' must match"
+msgstr "lengths of slots ‘i’ and ‘x’ must match"
+
+#: dgCMatrix.c:29
+msgid "lengths of slots 'j' and 'x' must match"
+msgstr "lengths of slots ‘j’ and ‘x’ must match"
+
+#: dgCMatrix.c:61
+#, c-format
+msgid "invalid class(x) '%s' in compressed_to_TMatrix(x)"
+msgstr "invalid class(x) ‘%s’ in compressed_to_TMatrix(x)"
+
+#: dgCMatrix.c:99
+#, c-format
+msgid "invalid class(x) '%s' in R_to_CMatrix(x)"
+msgstr "invalid class(x) ‘%s’ in R_to_CMatrix(x)"
+
+#: dgCMatrix.c:165
+msgid "dgCMatrix_lusol requires a square, non-empty matrix"
+msgstr "dgCMatrix_lusol requires a square, non-empty matrix"
+
+#: dgCMatrix.c:167 dgCMatrix.c:188 dgCMatrix.c:420 dgCMatrix.c:450
+#: dgeMatrix.c:312 dpoMatrix.c:91 dpoMatrix.c:116 dppMatrix.c:80
+#: dspMatrix.c:80 dsyMatrix.c:87 dtCMatrix.c:92 dtCMatrix.c:116 dtrMatrix.c:81
+msgid "Dimensions of system to be solved are inconsistent"
+msgstr "Dimensions of system to be solved are inconsistent"
+
+#: dgCMatrix.c:169
+msgid "cs_lusol failed"
+msgstr "cs_lusol failed"
+
+#: dgCMatrix.c:185
+msgid "dgCMatrix_qrsol(., order) needs order in {0,..,3}"
+msgstr "dgCMatrix_qrsol(., order) needs order in {0,..,3}"
+
+#: dgCMatrix.c:193
+#, c-format
+msgid "dgCMatrix_qrsol(<%d x %d>-matrix) requires a 'tall' rectangular matrix"
+msgstr "dgCMatrix_qrsol(<%d x %d>-matrix) requires a ‘tall’ rectangular matrix"
+
+#: dgCMatrix.c:200
+msgid "cs_qrsol failed"
+msgstr "cs_qrsol failed"
+
+#: dgCMatrix.c:226
+msgid "A must have #{rows} >= #{columns}"
+msgstr "A must have #{rows} >= #{columns}"
+
+#: dgCMatrix.c:229
+msgid "cs_sqr failed"
+msgstr "cs_sqr failed"
+
+#: dgCMatrix.c:231
+msgid "cs_qr failed"
+msgstr "cs_qr failed"
+
+#: dgCMatrix.c:297
+msgid "SuiteSparseQR_C_QR returned an error code"
+msgstr "SuiteSparseQR_C_QR returned an error code"
+
+#: dgCMatrix.c:341
+msgid "LU decomposition applies only to square matrices"
+msgstr "LU decomposition applies only to square matrices"
+
+#: dgCMatrix.c:349
+msgid "cs_lu(A) failed: near-singular A (or out of memory)"
+msgstr "cs_lu(A) failed: near-singular A (or out of memory)"
+
+#: dgCMatrix.c:448
+msgid "dgCMatrix_cholsol requires a 'short, wide' rectangular matrix"
+msgstr "dgCMatrix_cholsol requires a ‘short, wide’ rectangular matrix"
+
+#: dgCMatrix.c:453
+msgid "cholmod_l_sdmult error"
+msgstr "cholmod_l_sdmult error"
+
+#: dgCMatrix.c:456
+#, c-format
+msgid "cholmod_l_factorize failed: status %d, minor %d from ncol %d"
+msgstr "cholmod_l_factorize failed: status %d, minor %d from ncol %d"
+
+#: dgCMatrix.c:460
+#, c-format
+msgid "cholmod_l_solve (CHOLMOD_A) failed: status %d, minor %d from ncol %d"
+msgstr "cholmod_l_solve (CHOLMOD_A) failed: status %d, minor %d from ncol %d"
+
+#: dgTMatrix.c:15
+msgid "lengths of slots i and x must match"
+msgstr "lengths of slots i and x must match"
+
+#: dgTMatrix.c:56
+#, c-format
+msgid "Cannot coerce to too large *geMatrix with %.0f entries"
+msgstr "Cannot coerce to too large *geMatrix with %.0f entries"
+
+#: dgeMatrix.c:10
+msgid "Dim slot must have length 2"
+msgstr "Dim slot must have length 2"
+
+#: dgeMatrix.c:15
+msgid "Negative value in Dim"
+msgid_plural "Negative values in Dim"
+msgstr[0] "Negative value in Dim"
+msgstr[1] "Negative values in Dim"
+
+#: dgeMatrix.c:19
+msgid "Negative value(s) in Dim"
+msgstr "Negative value(s) in Dim"
+
+#: dgeMatrix.c:22
+msgid "x slot must be numeric \"double\""
+msgstr "x slot must be numeric “double”"
+
+#: dgeMatrix.c:35
+msgid "factors slot must be named list"
+msgstr "factors slot must be named list"
+
+#: dgeMatrix.c:73
+msgid "rcond requires a square, non-empty matrix"
+msgstr "rcond requires a square, non-empty matrix"
+
+#: dgeMatrix.c:128 dgeMatrix.c:163
+#, c-format
+msgid "Dimensions of x and y are not compatible for %s"
+msgstr "Dimensions of x and y are not compatible for %s"
+
+#: dgeMatrix.c:157
+msgid "Argument y must be a numeric matrix"
+msgstr "Argument y must be a numeric matrix"
+
+#: dgeMatrix.c:223
+msgid "Cannot factor a matrix with zero extents"
+msgstr "Cannot factor a matrix with zero extents"
+
+#: dgeMatrix.c:233 dpoMatrix.c:42 dppMatrix.c:36 dspMatrix.c:149
+#, c-format
+msgid "Lapack routine %s returned error code %d"
+msgstr "Lapack routine %s returned error code %d"
+
+#: dgeMatrix.c:235
+msgid "Exact singularity detected during LU decomposition."
+msgstr "Exact singularity detected during LU decomposition."
+
+#: dgeMatrix.c:253
+msgid "Determinant requires a square matrix"
+msgstr "Determinant requires a square matrix"
+
+#: dgeMatrix.c:288
+msgid "Solve requires a square matrix"
+msgstr "Solve requires a square matrix"
+
+#: dgeMatrix.c:298
+msgid "Lapack routine dgetri: system is exactly singular"
+msgstr "Lapack routine dgetri: system is exactly singular"
+
+#: dgeMatrix.c:317
+msgid "Lapack routine dgetrs: system is exactly singular"
+msgstr "Lapack routine dgetrs: system is exactly singular"
+
+#: dgeMatrix.c:334 dgeMatrix.c:349 dspMatrix.c:120 dsyMatrix.c:124
+#: dtrMatrix.c:103 dtrMatrix.c:163
+msgid "Matrices are not conformable for multiplication"
+msgstr "Matrices are not conformable for multiplication"
+
+#: dgeMatrix.c:441
+msgid "Matrix exponential requires square, non-null matrix"
+msgstr "Matrix exponential requires square, non-null matrix"
+
+#: dgeMatrix.c:458 dgeMatrix.c:460
+#, c-format
+msgid "dgeMatrix_exp: LAPACK routine dgebal returned %d"
+msgstr "dgeMatrix_exp: LAPACK routine dgebal returned %d"
+
+#: dgeMatrix.c:498
+#, c-format
+msgid "dgeMatrix_exp: dgetrf returned error code %d"
+msgstr "dgeMatrix_exp: dgetrf returned error code %d"
+
+#: dgeMatrix.c:500
+#, c-format
+msgid "dgeMatrix_exp: dgetrs returned error code %d"
+msgstr "dgeMatrix_exp: dgetrs returned error code %d"
+
+#: dgeMatrix.c:561
+msgid "dgeMatrix_Schur: argument x must be a non-null square matrix"
+msgstr "dgeMatrix_Schur: argument x must be a non-null square matrix"
+
+#: dgeMatrix.c:570
+msgid "dgeMatrix_Schur: first call to dgees failed"
+msgstr "dgeMatrix_Schur: first call to dgees failed"
+
+#: dgeMatrix.c:578
+#, c-format
+msgid "dgeMatrix_Schur: dgees returned code %d"
+msgstr "dgeMatrix_Schur: dgees returned code %d"
+
+#: dpoMatrix.c:12
+msgid "dpoMatrix is not positive definite"
+msgstr "dpoMatrix is not positive definite"
+
+#: dpoMatrix.c:39 dppMatrix.c:33
+#, c-format
+msgid "the leading minor of order %d is not positive definite"
+msgstr "the leading minor of order %d is not positive definite"
+
+#: dpoMatrix.c:93
+msgid "Cannot solve() for matrices with zero extents"
+msgstr "Cannot solve() for matrices with zero extents"
+
+#: dpoMatrix.c:114
+msgid "Argument b must be a numeric matrix"
+msgstr "Argument b must be a numeric matrix"
+
+#: dsCMatrix.c:74
+msgid "Cholesky factorization failed"
+msgstr "Cholesky factorization failed"
+
+#: dsCMatrix.c:198
+msgid "Non-symmetric matrix passed to dsCMatrix_to_dgTMatrix"
+msgstr "Non-symmetric matrix passed to dsCMatrix_to_dgTMatrix"
+
+#: dspMatrix.c:13 dtpMatrix.c:17
+msgid "Incorrect length of 'x' slot"
+msgstr "Incorrect length of ‘x’ slot"
+
+#: dsyMatrix.c:7 dtrMatrix.c:10
+msgid "'Dim' slot has length less than two"
+msgstr "‘Dim’ slot has length less than two"
+
+#: dsyMatrix.c:9 dtrMatrix.c:12
+msgid "Matrix is not square"
+msgstr "Matrix is not square"
+
+#: dsyMatrix.c:160
+#, c-format
+msgid "Lapack routine dsytrf returned error code %d"
+msgstr "Lapack routine dsytrf returned error code %d"
+
+#: dtCMatrix.c:28 dtCMatrix.c:63 dtTMatrix.c:24
+msgid "uplo='U' must not have sparse entries below the diagonal"
+msgstr "uplo='U' must not have sparse entries below the diagonal"
+
+#: dtCMatrix.c:34 dtCMatrix.c:69 dtTMatrix.c:29
+msgid "uplo='L' must not have sparse entries above the diagonal"
+msgstr "uplo='L' must not have sparse entries above the diagonal"
+
+#: dtpMatrix.c:100 dtpMatrix.c:121 dtpMatrix.c:144
+#, c-format
+msgid "Dimensions of a (%d,%d) and b (%d,%d) do not conform"
+msgstr "Dimensions of a (%d,%d) and b (%d,%d) do not conform"
+
+#: dtrMatrix.c:101
+msgid "dtrMatrix in %*% must be square"
+msgstr "dtrMatrix in %*% must be square"
+
+#: init.c:310
+msgid "missing 'Matrix' namespace: should never happen"
+msgstr "missing ‘Matrix’ namespace: should never happen"
+
+#: init.c:321
+msgid "Matrix namespace not determined correctly"
+msgstr "Matrix namespace not determined correctly"
+
+#: lgCMatrix.c:58
+msgid "A must be a logical matrix"
+msgstr "A must be a logical matrix"
+
+#: sparseQR.c:14
+msgid "length(p) must match nrow(V)"
+msgstr "length(p) must match nrow(V)"
+
+#: sparseQR.c:16
+msgid "length(beta) must match nrow(V)"
+msgstr "length(beta) must match nrow(V)"
+
+#: sparseQR.c:18
+msgid "length(q) must be zero or ncol(R)"
+msgstr "length(q) must be zero or ncol(R)"
+
+#: sparseQR.c:45
+msgid "Dimensions of system are inconsistent"
+msgstr "Dimensions of system are inconsistent"

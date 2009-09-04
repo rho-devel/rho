@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Cleans up after the auxiliary files that were created when installing
+# the Matrix package (shamelessly taken from the XML source pkg)
+#
+echo "  Cleaning up after installing the Matrix package"
+
+## No configure currently --> empty for now: not yet really needed
+for f in config.log config.status config.cache ; do
+  if test -w $f ; then
+    rm -f $f
+  fi
+done
+
+for D in `sed -n '/^SUBDIRS *= */s///p' src/Makevars`
+do
+ if test -d src/$D
+ then (cd src/$D ; make clean )
+ fi
+done
+
+
