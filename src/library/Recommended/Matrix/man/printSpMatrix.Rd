@@ -97,7 +97,8 @@ op <- options(max.print = 25000, width = 80)
 sink(print(tempfile()))
 M <- Matrix(0, 10000, 100)
 M[1,1] <- M[2,3] <- 3.14
-stopifnot((st <- system.time(show(M)))[1] < 1.0) # only 0.09 on cmath-3
+## Time limit relaxed for CXXR debugging version (was 1 second):
+stopifnot((st <- system.time(show(M)))[1] < 2.0) # only 0.09 on cmath-3
 sink()
 st
 options(op)
