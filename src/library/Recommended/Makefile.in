@@ -70,11 +70,13 @@ INSTALL_OPTS=--no-lock --install-tests
 	@cat $@.out; rm $@.out
 	@touch $@
 
-# Matrix.dts is an empty file with the same timestamp as the most
-# recent file in the Matrix directory.
+# Matrix.dts is an empty file whose timestamp will be newer than that
+# of Matrix.ts if the Matrix directory contains anything newer than
+# Matrix.ts.  If Matrix.ts does not already exist, it is created with
+# an ancient timestamp.
 Matrix.dts : Matrix FORCE
-	touch -r $< $@
-	find $< -newer $@ -exec touch -r {} $@ \;
+	[ -e Matrix.ts ] || touch -t 200001010000 Matrix.ts
+	find $< -newer Matrix.ts -exec touch $@ \; -quit
 
 FORCE:
 
