@@ -52,6 +52,12 @@ Furthermore:
 extern "C" {
 #endif
 
+#ifdef HAVE_LONG_LONG_INT
+#define APSE_SIZE_T unsigned long long
+#define APSE_VEC_T unsigned long long
+#define APSE_SSIZE_T long long
+#endif
+
 #ifdef APSE_VEC_T
 typedef	APSE_VEC_T	apse_vec_t;
 #else

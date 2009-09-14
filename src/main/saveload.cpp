@@ -1353,7 +1353,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 static void newdataload_cleanup(void *data)
 {
     InputCtxtData *cinfo = static_cast<InputCtxtData*>(data);
-    FILE *fp = static_cast<FILE *>( data);  // 2007/07/31 arr: Can this be right?
+    FILE *fp = static_cast<FILE *>( data);
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 
@@ -2089,11 +2089,12 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
     if (! isList(ans))
 	error(_("loaded data is not in pair list form"));
 
+    PROTECT(ans);
     a = ans;
     while (a != R_NilValue) {a = CDR(a); cnt++;}
     PROTECT(names = allocVector(STRSXP, cnt));
     cnt = 0;
-    PROTECT(a = ans);
+    a = ans;
     while (a != R_NilValue) {
 	SET_STRING_ELT(names, cnt++, PRINTNAME(TAG(a)));
 	defineVar(TAG(a), CAR(a), aenv);

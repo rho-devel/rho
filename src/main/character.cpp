@@ -1200,7 +1200,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (value_opt) {
 	SEXP nmold = getAttrib(vec, R_NamesSymbol), nm;
-	ans = allocVector(STRSXP, nmatches);
+	PROTECT(ans = allocVector(STRSXP, nmatches));
 	for (i = 0, j = 0; i < n ; i++)
 	    if (invert ^ LOGICAL(ind)[i])
 		SET_STRING_ELT(ans, j++, STRING_ELT(vec, i));
@@ -1212,6 +1212,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 		    SET_STRING_ELT(nm, j++, STRING_ELT(nmold, i));
 	    setAttrib(ans, R_NamesSymbol, nm);
 	}
+	UNPROTECT(1);
     } else {
 	ans = allocVector(INTSXP, nmatches);
 	j = 0;
@@ -1446,14 +1447,13 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(ans, i, NA_STRING);
 	    else {
 		if (global) { /* need to find number of matches */
+		    const char *ss= s;
+		    int sst = st;
 		    nr = 0;
 		    do {
 			nr++;
-			s += st+patlen;
-		    } while((st = fgrep_one_bytes(spat, s, useBytes)) >= 0);
-		    /* and reset */
-		    s = translateChar(STRING_ELT(vec, i));
-		    st = fgrep_one_bytes(spat, s, useBytes);
+			ss += sst+patlen;
+		    } while((sst = fgrep_one_bytes(spat, ss, useBytes)) >= 0);
 		} else nr = 1;
 		cbuf = u = CallocCharBuf(ns + nr*(replen - patlen));
 		*u = '\0';
@@ -1498,7 +1498,10 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else {
 		offset = 0;
 		nmatch = 0;
-		s = translateChar(STRING_ELT(vec, i));
+		if(use_UTF8)
+		    s = translateCharUTF8(STRING_ELT(vec, i));
+		else
+		    s = translateChar(STRING_ELT(vec, i));
 		t = srep;
 		cbuf = u = CallocCharBuf(ns);
 		ns = strlen(s);
@@ -2968,8 +2971,8 @@ static int mbrtoint(int *w, const char *s)
     } else if (byte < 0xF0) {
 	if (strlen(s) < 3) return -2;
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
-	    *w = int( ((byte & 0x0F) << 12)
-		      | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
+	    *w = int (((byte & 0x0F) << 12)
+		        | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    if (byte >= 0xD800 && byte <= 0xDFFF) return -1; /* surrogate */
 	    if (byte == 0xFFFE || byte == 0xFFFF) return -1;
@@ -2980,10 +2983,10 @@ static int mbrtoint(int *w, const char *s)
 	if (((s[1] & 0xC0) == 0x80)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)) {
-            *w = int( ((byte & 0x07) << 18)
-		      | ((s[1] & 0x3F) << 12)
-		      | ((s[2] & 0x3F) << 6)
-		      | (s[3] & 0x3F));
+	    *w = int (((byte & 0x07) << 18)
+		        | ((s[1] & 0x3F) << 12)
+		        | ((s[2] & 0x3F) << 6)
+		        | (s[3] & 0x3F));
 	    byte = *w;
 	    return 4;
 	} else return -1;
@@ -2993,11 +2996,11 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[2] & 0xC0) == 0x80)
 	    && ((s[3] & 0xC0) == 0x80)
 	    && ((s[4] & 0xC0) == 0x80)) {
-            *w = int( ((byte & 0x03) << 24)
-		      | ((s[1] & 0x3F) << 18)
-		      | ((s[2] & 0x3F) << 12)
-		      | ((s[3] & 0x3F) << 6)
-		      | (s[4] & 0x3F));
+	    *w = int (((byte & 0x03) << 24)
+		        | ((s[1] & 0x3F) << 18)
+		        | ((s[2] & 0x3F) << 12)
+		        | ((s[3] & 0x3F) << 6)
+		        | (s[4] & 0x3F));
 	    byte = *w;
 	    return 5;
 	} else return -1;
@@ -3008,12 +3011,12 @@ static int mbrtoint(int *w, const char *s)
 	    && ((s[3] & 0xC0) == 0x80)
 	    && ((s[4] & 0xC0) == 0x80)
 	    && ((s[5] & 0xC0) == 0x80)) {
-            *w = int( ((byte & 0x01) << 30)
-		      | ((s[1] & 0x3F) << 24)
-		      | ((s[2] & 0x3F) << 18)
-		      | ((s[3] & 0x3F) << 12)
-		      | ((s[5] & 0x3F) << 6)
-		      | (s[5] & 0x3F));
+	    *w = int (((byte & 0x01) << 30)
+		        | ((s[1] & 0x3F) << 24)
+		        | ((s[2] & 0x3F) << 18)
+		        | ((s[3] & 0x3F) << 12)
+		        | ((s[5] & 0x3F) << 6)
+		        | (s[5] & 0x3F));
 	    byte = *w;
 	    return 5;
 	} else return -1;

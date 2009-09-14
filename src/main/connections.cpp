@@ -1026,7 +1026,7 @@ static Rboolean pipe_open(Rconnection con)
 			strerror(errno));
 	return FALSE;
     }
-    static_cast<Rfileconn>(con->connprivate)->fp = fp;
+    (static_cast<Rfileconn>((con->connprivate)))->fp = fp;
     con->isopen = TRUE;
     con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w'));
     con->canread = CXXRconvert(Rboolean, !con->canwrite);
@@ -1176,7 +1176,7 @@ static Rboolean gzfile_open(Rconnection con)
 	      R_ExpandFileName(con->description), strerror(errno));
 	return FALSE;
     }
-    static_cast<Rgzfileconn>(con->connprivate)->fp = fp;
+    (static_cast<Rgzfileconn>((con->connprivate)))->fp = fp;
     con->isopen = TRUE;
     con->canwrite = CXXRconvert(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
     con->canread = CXXRconvert(Rboolean, !con->canwrite);
@@ -1404,7 +1404,7 @@ static Rboolean bzfile_open(Rconnection con)
 static void bzfile_close(Rconnection con)
 {
     int bzerror;
-    BZFILE* bfp = static_cast<BZFILE *>(static_cast<Rbzfileconn>(con->connprivate)->bfp);
+    BZFILE* bfp = static_cast<BZFILE *>((static_cast<Rbzfileconn>(con->connprivate))->bfp);
     FILE* fp = CXXRNOCAST(FILE *)(static_cast<Rbzfileconn>((con->connprivate)))->fp;
 
     if(con->canread)
@@ -1417,7 +1417,7 @@ static void bzfile_close(Rconnection con)
 
 static int bzfile_fgetc_internal(Rconnection con)
 {
-    BZFILE* bfp = static_cast<BZFILE *>(static_cast<Rbzfileconn>(con->connprivate)->bfp);
+    BZFILE* bfp = static_cast<BZFILE *>((static_cast<Rbzfileconn>(con->connprivate))->bfp);
     char buf[1];
     int bzerror, size;
 
@@ -1428,7 +1428,7 @@ static int bzfile_fgetc_internal(Rconnection con)
 static size_t bzfile_read(void *ptr, size_t size, size_t nitems,
 			  Rconnection con)
 {
-    BZFILE* bfp = static_cast<BZFILE *>(static_cast<Rbzfileconn>(con->connprivate)->bfp);
+    BZFILE* bfp = static_cast<BZFILE *>((static_cast<Rbzfileconn>(con->connprivate))->bfp);
     int bzerror;
 
     /* uses 'int' for len */
@@ -1440,13 +1440,13 @@ static size_t bzfile_read(void *ptr, size_t size, size_t nitems,
 static size_t bzfile_write(const void *ptr, size_t size, size_t nitems,
 			   Rconnection con)
 {
-    BZFILE* bfp = static_cast<BZFILE *>(static_cast<Rbzfileconn>(con->connprivate)->bfp);
+    BZFILE* bfp = static_cast<BZFILE *>((static_cast<Rbzfileconn>(con->connprivate))->bfp);
     int bzerror;
 
     /* uses 'int' for len */
     if (double( size) * double( nitems) > INT_MAX)
 	error(_("too large a block specified"));
-    BZ2_bzWrite(&bzerror, bfp, const_cast<void*>(ptr), size*nitems);
+    BZ2_bzWrite(&bzerror, bfp, const_cast<voidp>(ptr), size*nitems);
     if(bzerror != BZ_OK) return 0;
     else return nitems;
 }
@@ -1789,13 +1789,13 @@ static Rconnection newclp(const char *url, const char *inmode)
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of clipboard connection failed"));
     }
-    static_cast<Rclpconn>(newconn->connprivate)->buff = NULL;
+    (static_cast<Rclpconn>(newconn->connprivate))->buff = NULL;
     if (strncmp(url, "clipboard-", 10) == 0) {
 	sizeKB = atoi(url+10);
 	if(sizeKB < 32) sizeKB = 32;
 	/* Rprintf("setting clipboard size to %dKB\n", sizeKB); */
     }
-    static_cast<Rclpconn>(newconn->connprivate)->sizeKB = sizeKB;
+    (static_cast<Rclpconn>(newconn->connprivate))->sizeKB = sizeKB;
     return newconn;
 }
 
@@ -4311,7 +4311,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 	       strncmp(url, "https://", 8) == 0 ||
 	       strncmp(url, "ftp://", 6) == 0) {
        con = R_newurl(url, strlen(open) ? open : "r");
-       static_cast<Rurlconn>(con->connprivate)->type = type;
+       (static_cast<Rurlconn>(con->connprivate))->type = type;
 #endif
     } else {
 	if(PRIMVAL(op)) { /* call to file() */
@@ -4400,7 +4400,7 @@ static Rboolean gzcon_open(Rconnection con)
     Rconnection icon = priv->con;
     int err;
 
-    if(!icon->open(icon)) return FALSE;
+    if(!icon->isopen && !icon->open(icon)) return FALSE;
     con->isopen = TRUE;
     con->canwrite = icon->canwrite;
     con->canread = CXXRconvert(Rboolean, !con->canwrite);

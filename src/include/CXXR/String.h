@@ -143,7 +143,10 @@ namespace CXXR {
 	 * @note The current hashing algorithm (taken from CR) does
 	 * not deal satisfactorily with strings containing embedded
 	 * null characters: the hashing processes characters only up
-	 * to the first null.
+	 * to the first null.  This function is mainly provided for
+	 * backward compatibility with CR: CXXR's own hash tables are
+	 * based on the value of the <em>pointer</em> to a
+	 * CachedString.
 	 */
 	int hash() const;
 
@@ -274,8 +277,10 @@ extern "C" {
     }
 #endif
 
-    /**
-     * @param x Pointer to a CXXR::String.
+    /** @brief Is a CXXR::String UTF8?
+     *
+     * @param x Pointer to a CXXR::String (checked).
+     *
      * @return true iff \a x is marked as having UTF8 encoding.
      */
 #ifndef __cplusplus
@@ -289,8 +294,15 @@ extern "C" {
     }
 #endif
 
-    /* Hashing Functions */
-
+    /** @brief Hash value of CXXR::String.
+     *
+     * The hash value is obtained using String::hash().  See the
+     * caveats in the description of that function.
+     *
+     * @param x Pointer to a CXXR::String (checked).
+     *
+     * @return The string's hash value.
+     */
 #ifndef __cplusplus
     int HASHVALUE(SEXP x);
 #else

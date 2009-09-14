@@ -114,7 +114,7 @@ env.profile(env)
   it can be used to destructively change environments in ways that
   violate assumptions made by the internal C code.  It may be removed
   in the near future.
-  
+
   The replacement form of \code{environment}, \code{is.environment},
   \code{baseenv}, \code{emptyenv} and \code{globalenv} are
   \link{primitive} functions.
@@ -148,6 +148,10 @@ ls(e2)
 exists("a", envir=e2)   # this succeeds by inheritance
 exists("a", envir=e2, inherits = FALSE)
 exists("+", envir=e2)   # this succeeds by inheritance
+
+eh <- new.env(hash = TRUE, size = NA)
+# env.profile always returns NULL in CXXR, so foll. not applicable
+#with(env.profile(eh), stopifnot(size == length(counts)))
 }
 \keyword{data}
 \keyword{programming}

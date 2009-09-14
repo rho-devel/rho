@@ -123,7 +123,7 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
-    /** @brief Get object tracing status.
+    /** @brief Get function tracing status.
      *
      * @param x Pointer to a CXXR::FunctionBase (checked), or a null
      *          pointer.
@@ -143,6 +143,14 @@ extern "C" {
     }
 #endif
 
+    /** @brief Set function tracing status.
+     *
+     * @param x Pointer to a CXXR::FunctionBase (checked), or a null
+     * pointer.
+     *
+     * @param v The desired tracing status: non-zero if tracing is
+     * required.
+     */
 #ifndef __cplusplus
     void SET_TRACE(SEXP x, int v);
 #else

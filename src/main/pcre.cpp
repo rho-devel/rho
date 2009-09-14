@@ -286,7 +286,7 @@ do_pgsub(SEXP pat, SEXP rep, SEXP vec, int global, int igcase_opt, int useBytes)
 	    /* Do not repeat a 0-length match after a match, so
 	       gsub("a*", "x", "baaac") is "xbxcx" not "xbxxcx" */
 	    if (ovector[1] > last_end) {
-		ns += length_adj(s, t, ovector, re_nsub, Rboolean(useBytes));
+		ns += length_adj(s, t, ovector, re_nsub, CXXRconvert(Rboolean, useBytes));
 		last_end = ovector[1];
 	    }
 	    offset = ovector[1];
@@ -323,7 +323,10 @@ do_pgsub(SEXP pat, SEXP rep, SEXP vec, int global, int igcase_opt, int useBytes)
 	    SET_STRING_ELT(ans, i, STRING_ELT(vec, i));
 	else {
 	    offset = 0;
-	    s = translateChar(STRING_ELT(vec, i));
+	    if (use_UTF8)
+		s = translateCharUTF8(STRING_ELT(vec, i));
+	    else
+		s = translateChar(STRING_ELT(vec, i));
 	    t = srep;
 	    cbuf = u = CallocCharBuf(ns);
 	    eflag = 0; last_end = -1;
@@ -333,7 +336,7 @@ do_pgsub(SEXP pat, SEXP rep, SEXP vec, int global, int igcase_opt, int useBytes)
 		   ovector[0], ovector[1]); */
 		for (j = offset; j < ovector[0]; j++) *u++ = s[j];
 		if (ovector[1] > last_end) {
-		    u = string_adj(u, s, t, ovector, Rboolean(useBytes), ienc);
+		    u = string_adj(u, s, t, ovector, CXXRconvert(Rboolean, useBytes), ienc);
 		    last_end = ovector[1];
 		}
 		offset = ovector[1];

@@ -323,8 +323,8 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( hash ) {
 	args = CDR(args);
 	PROTECT(size = coerceVector(CAR(args), INTSXP));
-	if (INTEGER(size)[0] == NA_INTEGER || INTEGER(size)[0] <= 0)
-	    error(_("'size' must be a positive integer"));
+	if (INTEGER(size)[0] == NA_INTEGER)
+	    INTEGER(size)[0] = 0; /* so it will use the internal default */
 	ans = R_NewHashedEnv(enclos, size);
 	UNPROTECT(1);
     } else
@@ -745,7 +745,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
     lenx = length(x);
     if (lenx == len)
 	return (x);
-    rval = allocVector(TYPEOF(x), len);
+    PROTECT(rval = allocVector(TYPEOF(x), len));
     PROTECT(xnames = getAttrib(x, R_NamesSymbol));
     if (xnames != R_NilValue)
 	names = allocVector(STRSXP, len);
@@ -824,7 +824,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
     }
     if (isVector(x) && xnames != R_NilValue)
 	setAttrib(rval, R_NamesSymbol, names);
-    UNPROTECT(1);
+    UNPROTECT(2);
     return rval;
 }
 
@@ -892,7 +892,7 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(w = switchList(CDR(args), rho));
     if (isString(x)) {
 	for (y = w; y != R_NilValue; y = CDR(y))
-	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), TRUE)) {
+	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE)) {
 		while (CAR(y) == R_MissingArg && y != R_NilValue)
 		    y = CDR(y);
 		UNPROTECT(1);
