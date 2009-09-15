@@ -76,7 +76,8 @@ INSTALL_OPTS=--no-lock --install-tests
 # an ancient timestamp.
 Matrix.dts : Matrix FORCE
 	[ -e Matrix.ts ] || touch -t 200001010000 Matrix.ts
-	find $< -newer Matrix.ts -exec touch $@ \; -quit
+	# Beware Posix find doesn't have -quit:
+	find $< -newer Matrix.ts -exec touch $@ \;
 
 FORCE:
 
