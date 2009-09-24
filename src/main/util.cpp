@@ -1653,7 +1653,10 @@ SEXP do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
     UErrorCode  status = U_ZERO_ERROR;
     
     for (; args != R_NilValue; args = CDR(args)) {
-	const char *thiss = CHAR(PRINTNAME(TAG(args)));
+	SEXP tag = TAG(args);
+	if (!tag)
+	    error(_("invalid argument"));
+	const char *thiss = CHAR(PRINTNAME(tag));
 	const char *s;
 
 	x = CAR(args);
