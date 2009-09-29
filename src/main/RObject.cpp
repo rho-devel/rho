@@ -97,6 +97,8 @@ void RObject::clearAttributes()
     }
 }
 
+// RObject::evaluate() is defined in eval.cpp (for the time being).
+
 void RObject::frozenError()
 {
     Rf_error(_("attempt to modify frozen object"));

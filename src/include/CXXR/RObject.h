@@ -152,6 +152,7 @@ extern "C" {
 }  // extern "C"
 
 namespace CXXR {
+    class Environment;
     class PairList;
     class Symbol;
 
@@ -348,6 +349,15 @@ namespace CXXR {
 	{
 	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
 	}
+
+	/** @brief Evaluate object in specified Environment.
+	 *
+	 * @param env Pointer to the environment in which evaluation
+	 *          is to take place.
+	 *
+	 * @return Pointer to the result of evaluation.
+	 */
+	virtual RObject* evaluate(Environment* env);
 
 	/** @brief Get the value a particular attribute.
 	 *

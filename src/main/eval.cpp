@@ -375,45 +375,11 @@ static SEXP forcePromise(SEXP e)
 
 /* Return value of "e" evaluated in "rho". */
 
-SEXP eval(SEXP e, SEXP rho)
+static SEXP innerEval(SEXP e, SEXP rho)
 {
     SEXP op;
     GCStackRoot<> tmp;
-    static int evalcount = 0;
-
-    /* The use of depthsave below is necessary because of the
-       possibility of non-local returns from evaluation.  Without this
-       an "expression too complex error" is quite likely. */
-
-    int depthsave = R_EvalDepth++;
-
-    /* We need to explicit set a NULL call here to circumvent attempts
-       to deparse the call in the error-handler */
-    if (R_EvalDepth > R_Expressions) {
-	R_Expressions = R_Expressions_keep + 500;
-	errorcall(R_NilValue,
-		  _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
-    }
-    R_CheckStack();
-    if (++evalcount > 1000) { /* was 100 before 2.8.0 */
-	R_CheckUserInterrupt();
-	evalcount = 0 ;
-    }
-
-    tmp = R_NilValue;		/* -Wall */
-#ifdef Win32
-    /* This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
-       and resets the precision, rounding and exception modes of a ix86
-       fpu.
-     */
-    __asm__ ( "fninit" );
-#endif
-
-    R_Visible = TRUE;
     switch (TYPEOF(e)) {
-    case NILSXP:
-	tmp = e;
-	break;
     case LISTSXP:
     case LGLSXP:
     case INTSXP:
@@ -545,8 +511,55 @@ SEXP eval(SEXP e, SEXP rho)
     default:
 	UNIMPLEMENTED_TYPE("eval", e);
     }
-    R_EvalDepth = depthsave;
     return (tmp);
+}
+
+RObject* RObject::evaluate(Environment* env)
+{
+    return innerEval(this, env);
+}
+
+/* Return value of "e" evaluated in "rho". */
+
+SEXP eval(SEXP e, SEXP rho)
+{
+    static int evalcount = 0;
+
+    /* The use of depthsave below is necessary because of the
+       possibility of non-local returns from evaluation.  Without this
+       an "expression too complex error" is quite likely. */
+
+    int depthsave = R_EvalDepth++;
+
+    /* We need to explicit set a NULL call here to circumvent attempts
+       to deparse the call in the error-handler */
+    if (R_EvalDepth > R_Expressions) {
+	R_Expressions = R_Expressions_keep + 500;
+	errorcall(R_NilValue,
+		  _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
+    }
+    R_CheckStack();
+    if (++evalcount > 1000) { /* was 100 before 2.8.0 */
+	R_CheckUserInterrupt();
+	evalcount = 0 ;
+    }
+
+#ifdef Win32
+    /* This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
+       and resets the precision, rounding and exception modes of a ix86
+       fpu.
+     */
+    __asm__ ( "fninit" );
+#endif
+
+    R_Visible = TRUE;
+    RObject* ans = 0;
+    if (e) {
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	ans = e->evaluate(env);
+    }
+    R_EvalDepth = depthsave;
+    return ans;
 }
 
 /* Apply SEXP op of type CLOSXP to actuals */
