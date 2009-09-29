@@ -340,37 +340,8 @@ void CXXRnot_hidden check_stack_balance(SEXP op, CXXRunsigned int save)
 
 static SEXP forcePromise(SEXP e)
 {
-    if (PRVALUE(e) == R_UnboundValue) {
-	RPRSTACK prstack;
-	SEXP val;
-	Promise* prom = SEXP_downcast<Promise*>(e);
-	if (prom->evaluationInterrupted()) {
-	    warningcall(R_GlobalContext->call,
-			_("restarting interrupted promise evaluation"));
-	    prom->markEvaluationInterrupted(false);
-	}
-	else if (prom->underEvaluation())
-	    errorcall(R_GlobalContext->call,
-		      _("promise already under evaluation: recursive default argument reference or earlier problems?"));
-	/* Mark the promise as under evaluation and push it on a stack
-	   that can be used to unmark pending promises if a jump out
-	   of the evaluation occurs. */
-        prom->markUnderEvaluation(true);
-	prstack.promise = e;
-	prstack.next = R_PendingPromises;
-	R_PendingPromises = &prstack;
-
-	val = eval(PRCODE(e), PRENV(e));
-
-	/* Pop the stack, unmark the promise and set its value field.
-	   Also set the environment to R_NilValue to allow GC to
-	   reclaim the promise environment; this is also useful for
-	   fancy games with delayedAssign() */
-	R_PendingPromises = prstack.next;
-	prom->markUnderEvaluation(false);
-	SET_PRVALUE(e, val);
-    }
-    return PRVALUE(e);
+    Promise* prom = SEXP_downcast<Promise*>(e);
+    return prom->evaluate(0);
 }
 
 /* Return value of "e" evaluated in "rho". */
@@ -402,14 +373,6 @@ static SEXP innerEval(SEXP e, SEXP rho)
 	   to assignment functions won't modify constants in
 	   expressions.  */
 	if (NAMED(tmp) != 2) SET_NAMED(tmp, 2);
-	break;
-    case PROMSXP:
-	if (PRVALUE(e) == R_UnboundValue)
-	    /* We could just unconditionally use the return value from
-	       forcePromise; the test avoids the function call if the
-	       promise is already evaluated. */
-	    forcePromise(e);
-	tmp = PRVALUE(e);
 	break;
     case LANGSXP:
 	if (TYPEOF(CAR(e)) == SYMSXP)

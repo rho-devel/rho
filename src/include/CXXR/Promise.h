@@ -49,6 +49,17 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
+// Stack entry and stack top for pending promises, to be moved inside
+// the Promise class in due course:
+extern "C" {
+    typedef struct RPRSTACK {
+	SEXP promise;
+	struct RPRSTACK *next;
+    } RPRSTACK;
+
+    extern RPRSTACK* R_PendingPromises;
+}
+
 namespace CXXR {
     /** @brief Placeholder for function argument.
      *
@@ -62,11 +73,12 @@ namespace CXXR {
 	 * @param valgen pointer to RObject to be evaluated to provide
 	 *          the value of the Promise.  Can be null.
 	 *
-	 * @param env Environment in which \a valgen is to be evaluated.
+	 * @param env pointer to the Environment in which \a valgen is
+	 *          to be evaluated.
 	 */
-	Promise(const RObject* valgen, const Environment& env)
+	Promise(const RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
-	      m_valgen(valgen), m_environment(&env), m_seen(false),
+	      m_valgen(valgen), m_environment(env), m_seen(false),
 	      m_interrupted(false)
 	{}
 
@@ -76,7 +88,7 @@ namespace CXXR {
 	 * will be a null pointer after the promise has been
 	 * evaluated.
 	 */
-	const Environment* environment() const
+	Environment* environment() const
 	{
 	    return m_environment;
 	}
@@ -167,6 +179,7 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -177,7 +190,7 @@ namespace CXXR {
     private:
 	GCEdge<> m_value;
 	GCEdge<const RObject> m_valgen;
-	GCEdge<const Environment> m_environment;
+	GCEdge<Environment> m_environment;
 	bool m_seen;
 	bool m_interrupted;
 

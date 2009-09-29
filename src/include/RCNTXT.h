@@ -58,12 +58,6 @@
 # endif
 #endif
 
-    /* Stack entry for pending promises */
-    typedef struct RPRSTACK {
-	SEXP promise;
-	struct RPRSTACK *next;
-    } RPRSTACK;
-
 #ifdef __cplusplus
     /* Evaluation Context Structure */
     struct RCNTXT {

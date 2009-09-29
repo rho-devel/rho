@@ -1302,7 +1302,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, *env)));
+	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));
 	    prom->setValue(val);
 	    PROTECT(s = prom);
 	}

@@ -1426,7 +1426,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (!env) env = BaseEnvironment;
 	    GCStackRoot<> val(ReadItem(ref_table, stream));
 	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
-	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, *env)));
+	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));
 	    SETLEVELS(prom, levs);
 	    SET_ATTRIB(prom, attr);
 	    return prom;
