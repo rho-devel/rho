@@ -44,6 +44,7 @@
 #include "localization.h"
 #include "boost/regex.hpp"
 #include "R_ext/Error.h"
+#include "CXXR/Environment.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/CachedString.h"
 
@@ -107,6 +108,33 @@ void Symbol::detachReferents()
 {
     m_name.detach();
     RObject::detachReferents();
+}
+
+RObject* Symbol::evaluate(Environment* env)
+{
+    if (this == DotsSymbol)
+	Rf_error(_("'...' used in an incorrect context"));
+    GCStackRoot<> val;
+    if (isDotDotSymbol())
+	val = Rf_ddfindVar(this, env);
+    else {
+	Frame::Binding* bdg = findBinding(this, env).second;
+	val = (bdg ? bdg->value() : unboundValue());
+    }
+    if (!val)
+	return 0;
+    if (val == unboundValue())
+	Rf_error(_("object '%s' not found"), name()->c_str());
+    if (val == missingArgument() && !isDotDotSymbol())
+	Rf_error(_("argument \"%s\" is missing, with no default"),
+		 name()->c_str());
+    if (val->sexptype() == PROMSXP) {
+	val = Rf_eval(val, env);
+	SET_NAMED(val, 2);
+    }
+    else if (NAMED(val) < 1)
+	SET_NAMED(val, 1);
+    return val;
 }
 
 void Symbol::initialize()

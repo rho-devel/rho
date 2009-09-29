@@ -215,7 +215,8 @@ namespace CXXR {
 	    return *s_unbound_value;
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -364,6 +365,21 @@ extern "C" {
 	return Rboolean(sym.isDotDotSymbol());
     }
 #endif
+
+    /** Find value of a <tt>..<e>n</e></tt> Symbol.
+     *
+     * @param symbol Pointer to a Symbol (checked) whose name is of
+     *          the form <tt>..<e>n</e></tt>, where <e>n</e> is a
+     *          positive integer.
+     *
+     * @param rho Pointer to an Environment, which must bind the
+     *          symbol <tt>...</tt> to a PairList comprising at least
+     *          <e>n</e> elements.  (All checked.)
+     *
+     * @return The 'car' of the <e>n</e>th element of the PairList to
+     * which <tt>...</tt> is bound.
+     */
+    SEXP Rf_ddfindVar(SEXP symbol, SEXP rho);
 
     /** @brief Get a pointer to a regular Symbol object.
      *

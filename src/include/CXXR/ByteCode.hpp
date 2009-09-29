@@ -68,7 +68,8 @@ namespace CXXR {
 	    return "bytecode";
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
 	// Declared private to ensure that ByteCode objects are

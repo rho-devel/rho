@@ -350,7 +350,7 @@ namespace CXXR {
 	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
 	}
 
-	/** @brief Evaluate object in specified Environment.
+	/** @brief Evaluate object in a specified Environment.
 	 *
 	 * @param env Pointer to the environment in which evaluation
 	 *          is to take place.
@@ -574,134 +574,43 @@ typedef CXXR::RObject SEXPREC, *SEXP;
 
 extern "C" {
 #else /* if not __cplusplus */
-
+    // Opaque pointer (SEXPREC doesn't exist in CXXR):
     typedef struct SEXPREC *SEXP;
 
 #endif /* __cplusplus */
 
-    /** @brief Get object's ::SEXPTYPE.
-     *
-     * @param x Pointer to CXXR::RObject.
-     *
-     * @return ::SEXPTYPE of \a x, or ::NILSXP if x is a null pointer.
-     */
-#ifndef __cplusplus
-    SEXPTYPE TYPEOF(SEXP x);
-#else
-    inline SEXPTYPE TYPEOF(SEXP x)  {return x ? x->sexptype() : NILSXP;}
-#endif
-
-    /** @brief Name of type within R.
-     *
-     * Translate a ::SEXPTYPE to the name by which it is known within R.
-     * @param st The ::SEXPTYPE whose name is required.
-     * @return The ::SEXPTYPE's name within R.
-     */
-    const char* Rf_type2char(SEXPTYPE st);
-
-    /** @brief Copy attributes, with some exceptions.
-     *
-     * This is called in the case of binary operations to copy most
-     * attributes from one of the input arguments to the output.
-     * Note that the Dim, Dimnames and Names attributes are not
-     * copied: these should have been assigned elsewhere.  The
-     * function also copies the S4 object status.
-     * @param inp Pointer to the CXXR::RObject from which attributes are to
-     *          be copied.
-     * @param ans Pointer to the CXXR::RObject to which attributes are to be
-     *          copied.
-     * @note The above documentation is probably incomplete: refer to the
-     *       source code for further details.
-     */
-    void Rf_copyMostAttrib(SEXP inp, SEXP ans);
-
-    /** @brief Access a named attribute.
-     * @param vec Pointer to the CXXR::RObject whose attributes are to be
-     *          accessed.
-     * @param name Either a pointer to the symbol representing the
-     *          required attribute, or a pointer to a CXXR::StringVector
-     *          containing the required symbol name as element 0; in
-     *          the latter case, as a side effect, the corresponding
-     *          symbol is installed if necessary.
-     * @return Pointer to the requested attribute, or a null pointer
-     *         if there is no such attribute.
-     * @note The above documentation is incomplete: refer to the
-     *       source code for further details.
-     */
-    SEXP Rf_getAttrib(SEXP vec, SEXP name);
-
-    /** @brief Set or remove a named attribute.
-     * @param vec Pointer to the CXXR::RObject whose attributes are to be
-     *          modified.
-     * @param name Either a pointer to the symbol representing the
-     *          required attribute, or a pointer to a CXXR::StringVector
-     *          containing the required symbol name as element 0; in
-     *          the latter case, as a side effect, the corresponding
-     *          symbol is installed if necessary.
-     * @param val Either the value to which the attribute is to be
-     *          set, or a null pointer.  In the latter case the
-     *          attribute (if present) is removed.
-     * @return Refer to source code.  (Sometimes \a vec, sometimes \a
-     * val, sometime a null pointer ...)
-     * @note The above documentation is probably incomplete: refer to the
-     *       source code for further details.
-     */
-    SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
-
-    /** @brief Does an object have a class attribute?
-     *
-     * @param x Pointer to a CXXR::RObject.
-     * @return true iff \a x has a class attribute.  Returns false if \a x
-     * is 0.
-     */
-#ifndef __cplusplus
-    Rboolean OBJECT(SEXP x);
-#else
-    inline Rboolean OBJECT(SEXP x)
-    {
-	return Rboolean(x && x->hasClass());
-    }
-#endif
-
-    /* Various tests */
-
-    /**
-     * @param s Pointer to a CXXR::RObject.
-     * @return TRUE iff the CXXR::RObject pointed to by \a s is either a null
-     * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is a CXXR::RObject
-     * with ::SEXPTYPE ::NILSXP (should not happen in CXXR).
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isNull(SEXP s);
-#else
-    inline Rboolean Rf_isNull(SEXP s)
-    {
-	return Rboolean(!s || TYPEOF(s) == NILSXP);
-    }
-#endif
-
-    /** @brief Does an object have a class attribute?
-     *
-     * @param s Pointer to a CXXR::RObject.
-     * @return TRUE iff the CXXR::RObject pointed to by \a s has a
-     * class attribute.
-     */
-#ifndef __cplusplus
-    Rboolean Rf_isObject(SEXP s);
-#else
-    inline Rboolean Rf_isObject(SEXP s)
-    {
-	return OBJECT(s);
-    }
-#endif
-
     /** @brief Get the attributes of a CXXR::RObject.
      *
      * @param x Pointer to the CXXR::RObject whose attributes are required.
+     *
      * @return Pointer to the attributes object of \a x , or 0 if \a x is
      * a null pointer.
      */
     SEXP ATTRIB(SEXP x);
+
+    /** @brief Replace the attributes of \a to by those of \a from.
+     *
+     * @param to Pointer to CXXR::RObject.
+     *
+     * @param from Pointer to another CXXR::RObject.
+     */
+    void DUPLICATE_ATTRIB(SEXP to, SEXP from);
+
+    /** @brief Is this an S4 object?
+     *
+     * @param x Pointer to CXXR::RObject.
+     *
+     * @return true iff \a x is an S4 object.  Returns false if \a x
+     * is 0.
+     */
+#ifndef __cplusplus
+    Rboolean IS_S4_OBJECT(SEXP x);
+#else
+    inline Rboolean IS_S4_OBJECT(SEXP x)
+    {
+	return Rboolean(x && x->isS4Object());
+    }
+#endif
 
     /** @brief (For use only in serialization.)
      */
@@ -712,6 +621,7 @@ extern "C" {
     /** @brief Get object copying status.
      *
      * @param x Pointer to CXXR::RObject.
+     *
      * @return Refer to 'R Internals' document.  Returns 0 if \a x is a
      * null pointer.
      */
@@ -719,6 +629,22 @@ extern "C" {
     int NAMED(SEXP x);
 #else
     inline int NAMED(SEXP x) {return x ? x->m_named : 0;}
+#endif
+
+    /** @brief Does an object have a class attribute?
+     *
+     * @param x Pointer to a CXXR::RObject.
+     *
+     * @return true iff \a x has a class attribute.  Returns false if \a x
+     * is 0.
+     */
+#ifndef __cplusplus
+    Rboolean OBJECT(SEXP x);
+#else
+    inline Rboolean OBJECT(SEXP x)
+    {
+	return Rboolean(x && x->hasClass());
+    }
 #endif
 
     /** @brief (For use only in deserialization.)
@@ -755,7 +681,9 @@ extern "C" {
      *
      * @param x Pointer to CXXR::RObject.  The function does nothing
      *          if \a x is a null pointer.
+     *
      * @param v Refer to 'R Internals' document.
+     *
      * @deprecated Ought to be private.
      */
 #ifndef __cplusplus
@@ -768,30 +696,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Replace the attributes of \a to by those of \a from.
-     *
-     * @param to Pointer to CXXR::RObject.
-     * @param from Pointer to another CXXR::RObject.
-     */
-    void DUPLICATE_ATTRIB(SEXP to, SEXP from);
-
-    /* S4 object testing */
-
-    /** @brief Is this an S4 object?
-     *
-     * @param x Pointer to CXXR::RObject.
-     * @return true iff \a x is an S4 object.  Returns false if \a x
-     * is 0.
-     */
-#ifndef __cplusplus
-    Rboolean IS_S4_OBJECT(SEXP x);
-#else
-    inline Rboolean IS_S4_OBJECT(SEXP x)
-    {
-	return Rboolean(x && x->isS4Object());
-    }
-#endif
-
     /**
      * @deprecated Ought to be private.
      */
@@ -799,6 +703,18 @@ extern "C" {
     void SET_S4_OBJECT(SEXP x);
 #else
     inline void SET_S4_OBJECT(SEXP x)  {x->setS4Object(true);}
+#endif
+
+    /** @brief Get object's ::SEXPTYPE.
+     *
+     * @param x Pointer to CXXR::RObject.
+     *
+     * @return ::SEXPTYPE of \a x, or ::NILSXP if x is a null pointer.
+     */
+#ifndef __cplusplus
+    SEXPTYPE TYPEOF(SEXP x);
+#else
+    inline SEXPTYPE TYPEOF(SEXP x)  {return x ? x->sexptype() : NILSXP;}
 #endif
 
     /**
@@ -809,6 +725,121 @@ extern "C" {
 #else
     inline void UNSET_S4_OBJECT(SEXP x)  {x->setS4Object(false);}
 #endif
+
+    /** @brief Copy attributes, with some exceptions.
+     *
+     * This is called in the case of binary operations to copy most
+     * attributes from one of the input arguments to the output.
+     * Note that the Dim, Dimnames and Names attributes are not
+     * copied: these should have been assigned elsewhere.  The
+     * function also copies the S4 object status.
+     *
+     * @param inp Pointer to the CXXR::RObject from which attributes are to
+     *          be copied.
+     *
+     * @param ans Pointer to the CXXR::RObject to which attributes are to be
+     *          copied.
+     *
+     * @note The above documentation is probably incomplete: refer to the
+     *       source code for further details.
+     */
+    void Rf_copyMostAttrib(SEXP inp, SEXP ans);
+
+    /** @brief Evaluate an object in a specified Environment.
+     *
+     * @param e Pointer (possibly null) to the object to be evaluated.
+     *
+     * @param rho Pointer to an Environment (checked unless \a e is null).
+     *
+     * @return Pointer to the result of evaluating \a e in \a rho, or
+     * a null pointer if \a e is null.
+     */
+    SEXP Rf_eval(SEXP e, SEXP rho);
+ 
+    /** @brief Access a named attribute.
+     *
+     * @param vec Pointer to the CXXR::RObject whose attributes are to be
+     *          accessed.
+     *
+     * @param name Either a pointer to the symbol representing the
+     *          required attribute, or a pointer to a CXXR::StringVector
+     *          containing the required symbol name as element 0; in
+     *          the latter case, as a side effect, the corresponding
+     *          symbol is installed if necessary.
+     *
+     * @return Pointer to the requested attribute, or a null pointer
+     *         if there is no such attribute.
+     *
+     * @note The above documentation is incomplete: refer to the
+     *       source code for further details.
+     */
+    SEXP Rf_getAttrib(SEXP vec, SEXP name);
+
+    /** @brief Is this the null object pointer?
+     *
+     * @param s Pointer to a CXXR::RObject.
+     *
+     * @return TRUE iff the CXXR::RObject pointed to by \a s is either a null
+     * pointer (i.e. <tt>== R_NilValue</tt> in CXXR), or is a CXXR::RObject
+     * with ::SEXPTYPE ::NILSXP (should not happen in CXXR).
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isNull(SEXP s);
+#else
+    inline Rboolean Rf_isNull(SEXP s)
+    {
+	return Rboolean(!s || TYPEOF(s) == NILSXP);
+    }
+#endif
+
+    /** @brief Does an object have a class attribute?
+     *
+     * @param s Pointer to a CXXR::RObject.
+     *
+     * @return TRUE iff the CXXR::RObject pointed to by \a s has a
+     * class attribute.
+     */
+#ifndef __cplusplus
+    Rboolean Rf_isObject(SEXP s);
+#else
+    inline Rboolean Rf_isObject(SEXP s)
+    {
+	return OBJECT(s);
+    }
+#endif
+
+    /** @brief Set or remove a named attribute.
+     *
+     * @param vec Pointer to the CXXR::RObject whose attributes are to be
+     *          modified.
+     *
+     * @param name Either a pointer to the symbol representing the
+     *          required attribute, or a pointer to a CXXR::StringVector
+     *          containing the required symbol name as element 0; in
+     *          the latter case, as a side effect, the corresponding
+     *          symbol is installed if necessary.
+     *
+     * @param val Either the value to which the attribute is to be
+     *          set, or a null pointer.  In the latter case the
+     *          attribute (if present) is removed.
+     *
+     * @return Refer to source code.  (Sometimes \a vec, sometimes \a
+     * val, sometime a null pointer ...)
+     *
+     * @note The above documentation is probably incomplete: refer to the
+     *       source code for further details.
+     */
+    SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
+
+    /** @brief Name of type within R.
+     *
+     * Translate a ::SEXPTYPE to the name by which it is known within R.
+     *
+     * @param st The ::SEXPTYPE whose name is required.
+     *
+     * @return The ::SEXPTYPE's name within R.
+     */
+    const char* Rf_type2char(SEXPTYPE st);
 
 #ifdef __cplusplus
 }

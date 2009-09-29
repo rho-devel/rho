@@ -42,6 +42,8 @@
 using namespace std;
 using namespace CXXR;
 
+// ByteCode::evaluate() is defined in eval.cpp
+
 const char* ByteCode::typeName() const
 {
     return staticTypeName();

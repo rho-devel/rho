@@ -403,34 +403,6 @@ static SEXP innerEval(SEXP e, SEXP rho)
 	   expressions.  */
 	if (NAMED(tmp) != 2) SET_NAMED(tmp, 2);
 	break;
-#ifdef BYTECODE
-    case BCODESXP:
-	    tmp = bcEval(e, rho);
-	    break;
-#endif
-    case SYMSXP:
-	if (e == R_DotsSymbol)
-	    error(_("'...' used in an incorrect context"));
-	if( DDVAL(e) )
-		tmp = ddfindVar(e,rho);
-	else
-		tmp = findVar(e, rho);
-	if (tmp == R_UnboundValue)
-	    error(_("object '%s' not found"), CHAR(PRINTNAME(e)));
-	/* if ..d is missing then ddfindVar will signal */
-	else if (tmp == R_MissingArg && !DDVAL(e) ) {
-	    const char *n = CHAR(PRINTNAME(e));
-	    if(*n) error(_("argument \"%s\" is missing, with no default"),
-			 CHAR(PRINTNAME(e)));
-	    else error(_("argument is missing, with no default"));
-	}
-	else if (TYPEOF(tmp) == PROMSXP) {
-	    tmp = eval(tmp, rho);
-	    SET_NAMED(tmp, 2);
-	}
-	else if (!isNull(tmp) && NAMED(tmp) < 1)
-	    SET_NAMED(tmp, 1);
-	break;
     case PROMSXP:
 	if (PRVALUE(e) == R_UnboundValue)
 	    /* We could just unconditionally use the return value from
@@ -3614,6 +3586,11 @@ static SEXP bcEval(SEXP body, SEXP rho)
   current_opcode = old_current_opcode;
 #endif
   return value;
+}
+
+RObject* ByteCode::evaluate(Environment* env)
+{
+    return bcEval(this, env);
 }
 
 #ifdef THREADED_CODE
