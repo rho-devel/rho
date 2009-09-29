@@ -117,6 +117,20 @@ namespace CXXR {
 	    return s_table->end();
 	}
 
+	/** @brief Index of a double-dot symbol.
+	 *
+	 * @return If this is a Symbol whose name is of the form
+	 * <tt>..<e>n</e></tt>, where <e>n</e> is a positive integer,
+	 * returns <e>n</e>.  Otherwise returns <e>0</e>.
+	 *
+	 * @note This function returns 0 in the (pathological)
+	 * case of a Symbol called <tt>..0</tt>.
+	 */
+	unsigned int dotDotIndex() const
+	{
+	    return m_dd_index;
+	}
+
 	/** @brief Is this a double-dot symbol?
 	 *
 	 * @return true iff this symbol relates to an element of a
@@ -124,7 +138,7 @@ namespace CXXR {
 	 */
 	bool isDotDotSymbol() const
 	{
-	    return m_dd_symbol;
+	    return m_dd_index != 0;
 	}
 
 	/** @brief Missing argument.
@@ -231,7 +245,7 @@ namespace CXXR {
 	static GCRoot<Symbol>* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
-	bool m_dd_symbol;
+	unsigned int m_dd_index;
 
 	/**
 	 * @param name Pointer to String object representing the name

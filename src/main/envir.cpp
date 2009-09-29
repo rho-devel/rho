@@ -532,20 +532,8 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 */
 static int ddVal(SEXP symbol)
 {
-    const char *buf;
-    char *endp;
-    int rval;
-
-    buf = CHAR(PRINTNAME(symbol));
-    if( !strncmp(buf,"..",2) && strlen(buf) > 2 ) {
-	buf += 2;
-	rval = strtol(buf, &endp, 10);
-	if( *endp != '\0')
-	    return 0;
-	else
-	    return rval;
-    }
-    return 0;
+    Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    return sym->dotDotIndex();
 }
 
 /*----------------------------------------------------------------------

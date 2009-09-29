@@ -74,19 +74,27 @@ SEXP R_UnboundValue;
 // (Discovered 2009-01-16)  So we use boost:
 
 namespace {
-    boost::basic_regex<char> dd_regex("\\.\\.\\d+");
+    boost::basic_regex<char> dd_regex("\\.\\.(\\d+)");
 }
 
 // ***** Class Symbol itself *****
 
 Symbol::Symbol(const CachedString* the_name, bool frozen)
-    : RObject(SYMSXP), m_name(the_name)
+    : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
 {
+    // If this is a ..n symbol, extract the value of n.
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
-    m_dd_symbol
-	= name()->size() > 2 && boost::regex_match(name()->c_str(), dd_regex);
-    if (frozen) freeze();
+    if (m_name && m_name->size() > 2) {
+	string name(m_name->c_str());
+	boost::smatch dd_match;
+	if (boost::regex_match(name, dd_match, dd_regex)) {
+	    istringstream iss(dd_match[1]);
+	    iss >> m_dd_index;
+	}
+    }
+    if (frozen)
+	freeze();
 }
 
 // Because Symbols are permanently preserved against garbage
@@ -125,9 +133,12 @@ RObject* Symbol::evaluate(Environment* env)
 	return 0;
     if (val == unboundValue())
 	Rf_error(_("object '%s' not found"), name()->c_str());
-    if (val == missingArgument() && !isDotDotSymbol())
-	Rf_error(_("argument \"%s\" is missing, with no default"),
-		 name()->c_str());
+    if (val == missingArgument() && !isDotDotSymbol()) {
+	if (name())
+	    Rf_error(_("argument \"%s\" is missing, with no default"),
+		     name()->c_str());
+	else Rf_error(_("argument is missing, with no default"));
+    }
     if (val->sexptype() == PROMSXP) {
 	val = Rf_eval(val, env);
 	SET_NAMED(val, 2);
