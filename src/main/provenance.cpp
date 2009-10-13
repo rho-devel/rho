@@ -127,15 +127,19 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
 	Frame::Binding* bdg=findBinding(sym,env).second;
-	Parentage* parentage=bdg->getProvenance()->getParentage();
-	Provenance::Set* children=bdg->getProvenance()->children();
-	if (!bdg) return R_NilValue;
+	if (!bdg)
+		errorcall(call,_("invalid Symbol passed to 'provenance'"));
+	Provenance* provenance=const_cast<Provenance*>(bdg->getProvenance());
+	if (!provenance)
+		errorcall(call,_("object does not have any provenance"));
+	Parentage* parentage=provenance->getParentage();
+	Provenance::Set* children=provenance->children();
 
 	GCStackRoot<ListVector> list(GCNode::expose(new ListVector(nfields)));
 	GCStackRoot<StringVector> timestamp(GCNode::expose(new StringVector(1)));
 	GCStackRoot<StringVector> names(GCNode::expose(new StringVector(nfields)));
 
-	(*timestamp)[0]=const_cast<CachedString*>(bdg->getProvenance()->getTime());
+	(*timestamp)[0]=const_cast<CachedString*>(provenance->getTime());
 
 	(*names)[0]=const_cast<CachedString*>(CachedString::obtain("command"));
 	(*names)[1]=const_cast<CachedString*>(CachedString::obtain("symbol"));
@@ -143,8 +147,8 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	(*names)[3]=const_cast<CachedString*>(CachedString::obtain("parents"));
 	(*names)[4]=const_cast<CachedString*>(CachedString::obtain("children"));
 
-	(*list)[0]=bdg->getProvenance()->getCommand();
-	(*list)[1]=bdg->getProvenance()->getSymbol();
+	(*list)[0]=provenance->getCommand();
+	(*list)[1]=provenance->getSymbol();
 	(*list)[2]=timestamp;
 	(*list)[3]=(parentage) ?
 		    parentage->asStringVector() : 
@@ -179,25 +183,44 @@ SEXP CXXRnot_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	if ((n=length(args))!=1)
 		errorcall(call,_("%d arguments passed to 'pedigree' which requires 1"),n);
 
-	if (TYPEOF(CAR(args))!=SYMSXP)
-		errorcall(call,_("pedigree expects Symbol argument"));
-	Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
 	Environment* env=static_cast<Environment*>(rho);
-	Frame::Binding* bdg=findBinding(sym,env).second;
-	Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
-
-	if (!prov) {
-		cout<<"prov==NULL"<<endl;
-		return R_NilValue;
-	}
+	
 	Provenance::Set *provs;
-	provs=prov->pedigree();
-	for (Provenance::Set::iterator it=provs->begin();
-	     it!=provs->end();
+
+	if (TYPEOF(CAR(args))==SYMSXP) {
+		Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
+		Frame::Binding* bdg=findBinding(sym,env).second;
+		Provenance* prov=const_cast<Provenance*>(bdg->getProvenance());
+		provs=new Provenance::Set();
+		provs->insert(prov);
+	} else if (TYPEOF(CAR(args))==LANGSXP) {
+		SEXP rc;
+		rc=eval(CAR(args),rho);
+		if (TYPEOF(rc)!=STRSXP)
+			errorcall(call,_("Expression supplied to pedigree does not yield a String vector"));
+
+		provs=new Provenance::Set();
+		StringVector *sv=static_cast<StringVector*>(rc);
+		for (int i=0;i<length(rc);i++) {
+			Symbol *sym=Symbol::obtain((*sv)[i]->c_str());
+			Frame::Binding *bdg=findBinding(sym,env).second;
+			if (bdg) {
+				Provenance *prov=const_cast<Provenance*>(bdg->getProvenance());
+				if (prov)
+					provs->insert(prov);
+			}
+		}
+	} else
+		errorcall(call,_("pedigree expects a Symbol or Expression that evaluates to a String vector"));
+
+	Provenance::Set *ancestors=Provenance::ancestors(provs);
+	for (Provenance::Set::iterator it=ancestors->begin();
+	     it!=ancestors->end();
 	     it++) {
 		Provenance* p=(*it);
 		PrintValue(p->getCommand());
 	}
 	delete provs;
+	delete ancestors;
 	return R_NilValue;
 }

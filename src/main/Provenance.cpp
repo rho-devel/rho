@@ -18,6 +18,7 @@ Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
 }
 
 Provenance::~Provenance() {
+	announceDeath();
 	delete m_children;
 }
 
@@ -116,7 +117,6 @@ const CachedString* Provenance::getTime() const{
 void Provenance::detachReferents() {
 	m_expression.detach();
 	m_symbol.detach();
-	announceDeath();
 	m_parentage.detach();
 }
 

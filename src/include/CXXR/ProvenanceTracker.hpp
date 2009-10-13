@@ -23,6 +23,8 @@ namespace CXXR {
 	static void readMonitor(const Frame::Binding&);
 	static void writeMonitor(const Frame::Binding&);
 
+	static void initEnv(Environment*);
+
 	private:
 	ProvenanceTracker();
 	static ProvenanceSet* seen();

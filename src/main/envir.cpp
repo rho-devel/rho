@@ -280,9 +280,8 @@ void CXXRnot_hidden InitGlobalEnv()
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
 
-    Frame *glEnvFrame=static_cast<Environment*>(R_GlobalEnv)->frame();
-    glEnvFrame->setReadMonitor(ProvenanceTracker::readMonitor);
-    glEnvFrame->setWriteMonitor(ProvenanceTracker::writeMonitor);
+    ProvenanceTracker::initEnv(static_cast<Environment*>(R_GlobalEnv));
+    ProvenanceTracker::initEnv(static_cast<Environment*>(R_BaseEnv));
     /**** needed to properly initialize the base name space */
 }
 

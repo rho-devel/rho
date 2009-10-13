@@ -12,6 +12,12 @@ using namespace CXXR;
 GCRoot<Parentage>* ProvenanceTracker::p_current;
 GCRoot<ProvenanceSet>* ProvenanceTracker::p_seen;
 
+void ProvenanceTracker::initEnv(Environment* env) {
+	Frame* frame=env->frame();
+	frame->setReadMonitor(ProvenanceTracker::readMonitor);
+	frame->setWriteMonitor(ProvenanceTracker::writeMonitor);
+}
+
 Parentage* ProvenanceTracker::parentage() {
 	return *p_current;
 }
