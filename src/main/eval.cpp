@@ -344,46 +344,6 @@ static SEXP forcePromise(SEXP e)
     return prom->evaluate(0);
 }
 
-/* Return value of "e" evaluated in "rho". */
-
-static SEXP innerEval(SEXP e, SEXP rho)
-{
-    GCStackRoot<> tmp;
-    switch (TYPEOF(e)) {
-    case LISTSXP:
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case STRSXP:
-    case CPLXSXP:
-    case RAWSXP:
-    case S4SXP:
-    case SPECIALSXP:
-    case BUILTINSXP:
-    case ENVSXP:
-    case CLOSXP:
-    case VECSXP:
-    case EXTPTRSXP:
-    case WEAKREFSXP:
-    case EXPRSXP:
-	tmp = e;
-	/* Make sure constants in expressions are NAMED before being
-	   used as values.  Setting NAMED to 2 makes sure weird calls
-	   to assignment functions won't modify constants in
-	   expressions.  */
-	if (NAMED(tmp) != 2) SET_NAMED(tmp, 2);
-	break;
-    default:
-	UNIMPLEMENTED_TYPE("eval", e);
-    }
-    return (tmp);
-}
-
-RObject* RObject::evaluate(Environment* env)
-{
-    return innerEval(this, env);
-}
-
 RObject* Expression::evaluate(Environment* env)
 {
     SEXP op;

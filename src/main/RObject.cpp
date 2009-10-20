@@ -97,7 +97,12 @@ void RObject::clearAttributes()
     }
 }
 
-// RObject::evaluate() is defined in eval.cpp (for the time being).
+RObject* RObject::evaluate(Environment* env)
+{
+    if (NAMED(this) != 2)
+	SET_NAMED(this, 2);
+    return this;
+}
 
 void RObject::frozenError()
 {
