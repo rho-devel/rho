@@ -103,6 +103,19 @@ namespace CXXR {
 	    return m_interrupted;
 	}
 
+	/** @brief Force the Promise.
+	 *
+	 * i.e. evaluate the Promise within its environment.
+	 * Following this, the environment pointer is set null, thus
+	 * possibly allowing the Environment to be garbage-collected.
+	 *
+	 * @return The result of evaluating the promise.
+	 */
+	RObject* force()
+	{
+	    return evaluate(0);
+	}
+
 	/** @brief Indicate whether evaluation has been interrupted.
 	 *
 	 * @param on true to indicate that evaluation of this promise
@@ -135,8 +148,8 @@ namespace CXXR {
 	 *
 	 * @param val Value to be associated with the Promise.
 	 *
-	 * @todo Replace this with a method to evaluate the promise.
-	 * Possibly have method value() itself force the promise.
+	 * @todo Should be private (or removed entirely), but current
+	 * still used in saveload.cpp.
 	 */
 	void setValue(RObject* val);
 

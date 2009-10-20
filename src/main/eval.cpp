@@ -342,7 +342,7 @@ void CXXRnot_hidden check_stack_balance(SEXP op, CXXRunsigned int save)
 static SEXP forcePromise(SEXP e)
 {
     Promise* prom = SEXP_downcast<Promise*>(e);
-    return prom->evaluate(0);
+    return prom->force();
 }
 
 RObject* Expression::evaluate(Environment* env)

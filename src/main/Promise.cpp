@@ -43,6 +43,7 @@
 #include "RCNTXT.h"
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/GCStackRoot.h"
 
 using namespace CXXR;
@@ -85,8 +86,9 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	prstack.promise = this;
 	prstack.next = R_PendingPromises;
 	R_PendingPromises = &prstack;
-	RObject* val = Rf_eval(const_cast<RObject*>(valueGenerator()),
-			       environment());
+	RObject* val
+	    = Evaluator::evaluate(const_cast<RObject*>(valueGenerator()),
+				  environment());
 
 	/* Pop the stack, unmark the promise and set its value field.
 	   Also set the environment to R_NilValue to allow GC to
