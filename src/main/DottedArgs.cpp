@@ -39,12 +39,21 @@
 
 #include "CXXR/DottedArgs.hpp"
 
+#include "localization.h"
+#include "R_ext/Error.h"
+
 using namespace std;
 using namespace CXXR;
 
 DottedArgs* DottedArgs::clone() const
 {
     return expose(new DottedArgs(*this));
+}
+
+RObject* DottedArgs::evaluate(Environment* env)
+{
+    Rf_error(_("'...' used in an incorrect context"));
+    return 0;
 }
 
 const char* DottedArgs::typeName() const

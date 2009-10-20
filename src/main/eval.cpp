@@ -441,8 +441,6 @@ static SEXP innerEval(SEXP e, SEXP rho)
 	    error(_("attempt to apply non-function"));
 	UNPROTECT(1);
 	break;
-    case DOTSXP:
-	error(_("'...' used in an incorrect context"));
     default:
 	UNIMPLEMENTED_TYPE("eval", e);
     }
