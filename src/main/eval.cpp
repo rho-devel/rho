@@ -348,7 +348,6 @@ static SEXP forcePromise(SEXP e)
 
 static SEXP innerEval(SEXP e, SEXP rho)
 {
-    SEXP op;
     GCStackRoot<> tmp;
     switch (TYPEOF(e)) {
     case LISTSXP:
@@ -374,73 +373,6 @@ static SEXP innerEval(SEXP e, SEXP rho)
 	   expressions.  */
 	if (NAMED(tmp) != 2) SET_NAMED(tmp, 2);
 	break;
-    case LANGSXP:
-	if (TYPEOF(CAR(e)) == SYMSXP)
-	    /* This will throw an error if the function is not found */
-	    PROTECT(op = findFun(CAR(e), rho));
-	else
-	    PROTECT(op = eval(CAR(e), rho));
-
-	if(TRACE(op) && R_current_trace_state()) {
-	    Rprintf("trace: ");
-	    PrintValue(e);
-	}
-	if (TYPEOF(op) == SPECIALSXP) {
-	    unsigned int save = GCStackRootBase::ppsSize();
-	    int flag = PRIMPRINT(op);
-	    void *vmax = vmaxget();
-	    PROTECT(CDR(e));
-	    R_Visible = Rboolean(flag != 1);
-	    tmp = PRIMFUN(op) (e, op, CDR(e), rho);
-#ifdef CHECK_VISIBILITY
-	    if(flag < 2 && R_Visible == flag) {
-		char *nm = PRIMNAME(op);
-		if(strcmp(nm, "for")
-		   && strcmp(nm, "repeat") && strcmp(nm, "while")
-		   && strcmp(nm, "[[<-") && strcmp(nm, "on.exit"))
-		    printf("vis: special %s\n", nm);
-	    }
-#endif
-	    if (flag < 2) R_Visible = Rboolean(flag != 1);
-	    UNPROTECT(1);
-	    check_stack_balance(op, save);
-	    vmaxset(vmax);
-	}
-	else if (TYPEOF(op) == BUILTINSXP) {
-	    unsigned int save = GCStackRootBase::ppsSize();
-	    int flag = PRIMPRINT(op);
-	    void *vmax = vmaxget();
-	    RCNTXT cntxt;
-	    tmp = evalList(CDR(e), rho, op);
-	    if (flag < 2) R_Visible = Rboolean(flag != 1);
-	    /* We used to insert a context only if profiling,
-	       but helps for tracebacks on .C etc. */
-	    if (R_Profiling || (PPINFO(op).kind == PP_FOREIGN)) {
-		begincontext(&cntxt, CTXT_BUILTIN, e,
-			     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
-		tmp = PRIMFUN(op) (e, op, tmp, rho);
-		endcontext(&cntxt);
-	    } else {
-		tmp = PRIMFUN(op) (e, op, tmp, rho);
-	    }
-#ifdef CHECK_VISIBILITY
-	    if(flag < 2 && R_Visible == flag) {
-		char *nm = PRIMNAME(op);
-		printf("vis: builtin %s\n", nm);
-	    }
-#endif
-	    if (flag < 2) R_Visible = Rboolean(flag != 1);
-	    check_stack_balance(op, save);
-	    vmaxset(vmax);
-	}
-	else if (TYPEOF(op) == CLOSXP) {
-	    tmp = promiseArgs(CDR(e), rho);
-	    tmp = applyClosure(e, op, tmp, rho, R_BaseEnv);
-	}
-	else
-	    error(_("attempt to apply non-function"));
-	UNPROTECT(1);
-	break;
     default:
 	UNIMPLEMENTED_TYPE("eval", e);
     }
@@ -450,6 +382,78 @@ static SEXP innerEval(SEXP e, SEXP rho)
 RObject* RObject::evaluate(Environment* env)
 {
     return innerEval(this, env);
+}
+
+RObject* Expression::evaluate(Environment* env)
+{
+    SEXP op;
+    GCStackRoot<> tmp;
+    if (TYPEOF(CAR(this)) == SYMSXP)
+	/* This will throw an error if the function is not found */
+	PROTECT(op = findFun(CAR(this), env));
+    else
+	PROTECT(op = eval(CAR(this), env));
+
+    if(TRACE(op) && R_current_trace_state()) {
+	Rprintf("trace: ");
+	PrintValue(this);
+    }
+    if (TYPEOF(op) == SPECIALSXP) {
+	unsigned int save = GCStackRootBase::ppsSize();
+	int flag = PRIMPRINT(op);
+	void *vmax = vmaxget();
+	PROTECT(CDR(this));
+	R_Visible = Rboolean(flag != 1);
+	tmp = PRIMFUN(op) (this, op, CDR(this), env);
+#ifdef CHECK_VISIBILITY
+	if(flag < 2 && R_Visible == flag) {
+	    char *nm = PRIMNAME(op);
+	    if(strcmp(nm, "for")
+	       && strcmp(nm, "repeat") && strcmp(nm, "while")
+	       && strcmp(nm, "[[<-") && strcmp(nm, "on.exit"))
+		printf("vis: special %s\n", nm);
+	}
+#endif
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	UNPROTECT(1);
+	check_stack_balance(op, save);
+	vmaxset(vmax);
+    }
+    else if (TYPEOF(op) == BUILTINSXP) {
+	unsigned int save = GCStackRootBase::ppsSize();
+	int flag = PRIMPRINT(op);
+	void *vmax = vmaxget();
+	RCNTXT cntxt;
+	tmp = evalList(CDR(this), env, op);
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	/* We used to insert a context only if profiling,
+	   but helps for tracebacks on .C etc. */
+	if (R_Profiling || (PPINFO(op).kind == PP_FOREIGN)) {
+	    begincontext(&cntxt, CTXT_BUILTIN, this,
+			 R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
+	    tmp = PRIMFUN(op) (this, op, tmp, env);
+	    endcontext(&cntxt);
+	} else {
+	    tmp = PRIMFUN(op) (this, op, tmp, env);
+	}
+#ifdef CHECK_VISIBILITY
+	if(flag < 2 && R_Visible == flag) {
+	    char *nm = PRIMNAME(op);
+	    printf("vis: builtin %s\n", nm);
+	}
+#endif
+	if (flag < 2) R_Visible = Rboolean(flag != 1);
+	check_stack_balance(op, save);
+	vmaxset(vmax);
+    }
+    else if (TYPEOF(op) == CLOSXP) {
+	tmp = promiseArgs(CDR(this), env);
+	tmp = applyClosure(this, op, tmp, env, R_BaseEnv);
+    }
+    else
+	error(_("attempt to apply non-function"));
+    UNPROTECT(1);
+    return (tmp);
 }
 
 /* Return value of "e" evaluated in "rho". */

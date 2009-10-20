@@ -87,6 +87,7 @@ namespace CXXR {
 
 	// Virtual functions of RObject:
 	Expression* clone() const;
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
 	// Declared private to ensure that Expression objects are
