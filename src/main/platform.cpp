@@ -49,6 +49,7 @@
 # include <errno.h>
 #endif
 
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/StringVector.h"
 
 using namespace CXXR;
@@ -2333,7 +2334,7 @@ SEXP attribute_hidden do_Cstack_info(SEXP call, SEXP op, SEXP args, SEXP rho)
     INTEGER(ans)[1] = (R_CStackLimit == CXXRconvert(uintptr_t, -1)) ? NA_INTEGER :
 	R_CStackDir * (R_CStackStart - uintptr_t( &ans));
     INTEGER(ans)[2] = R_CStackDir;
-    INTEGER(ans)[3] = R_EvalDepth;
+    INTEGER(ans)[3] = Evaluator::depth();
     SET_STRING_ELT(nms, 0, mkChar("size"));
     SET_STRING_ELT(nms, 1, mkChar("current"));
     SET_STRING_ELT(nms, 2, mkChar("direction"));

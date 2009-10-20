@@ -63,6 +63,7 @@ extern void R_ProcessEvents(void);
 #include <R_ext/eventloop.h> /* for R_PolledEvents */
 #endif
 
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -580,7 +581,7 @@ static void restore_inError(void *data)
 {
     int *poldval = static_cast<int *>( data);
     inError = *poldval;
-    R_Expressions = R_Expressions_keep;
+    Evaluator::extraDepth(false);
 }
 
 static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
@@ -606,7 +607,7 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	    R_Warnings = R_NilValue;
 	    REprintf(_("Lost warning messages\n"));
 	}
-	R_Expressions = R_Expressions_keep;
+	Evaluator::extraDepth(false);
 	jump_to_top_ex(FALSE, FALSE, FALSE, FALSE, FALSE);
     }
 

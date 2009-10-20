@@ -127,6 +127,7 @@
 
 #include "Defn.h"
 
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -165,7 +166,7 @@ please bug.report() [R_run_onexits]"));
 	       evaluation stack in case the jump is from handling a
 	       stack overflow. To be safe it is good to also call
 	       R_CheckStack. LT */
-	    R_Expressions = R_Expressions_keep + 500;
+	    Evaluator::extraDepth(true);
 	    R_CheckStack();
 	    eval(s, c->cloenv);
 	    UNPROTECT(1);
@@ -184,7 +185,7 @@ please bug.report() [R_run_onexits]"));
 void R_restore_globals(RCNTXT *cptr)
 {
     GCStackRootBase::ppsRestoreSize(cptr->cstacktop);
-    R_EvalDepth = cptr->evaldepth;
+    Evaluator::setDepth(cptr->evaldepth);
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);
     R_HandlerStack = cptr->handlerstack;
@@ -197,9 +198,9 @@ void R_restore_globals(RCNTXT *cptr)
 	prom->markEvaluationInterrupted(true);
 	R_PendingPromises = R_PendingPromises->next;
     }
-    /* Need to reset R_Expressions in case we are jumping after
+    /* Need to reset nesting depth in case we are jumping after
        handling a stack overflow. */
-    R_Expressions = R_Expressions_keep;
+    Evaluator::extraDepth(false);
 #ifdef BYTECODE
     R_BCNodeStackTop = cptr->nodestack;
 # ifdef BC_INT_STACK
@@ -247,7 +248,7 @@ void begincontext(RCNTXT * cptr, int flags,
 {
     cptr->nextcontext = R_GlobalContext;
     cptr->cstacktop = GCStackRootBase::ppsSize();
-    cptr->evaldepth = R_EvalDepth;
+    cptr->evaldepth = Evaluator::depth();
     cptr->callflag = flags;
     cptr->call = syscall;
     cptr->cloenv = env;

@@ -67,6 +67,7 @@
 # include <locale.h>
 #endif
 
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -131,7 +132,6 @@ LibExport Rboolean R_interrupts_suspended = FALSE;
 LibExport int R_interrupts_pending = 0;
 LibExport char *R_Home;		    /* Root of the R tree */
 LibExport int	R_Is_Running;	    /* for Windows memory manager */
-LibExport int	R_EvalDepth = 0;    /* Evaluation recursion depth */
 LibExport Rboolean R_Interactive = TRUE;  /* TRUE during interactive use*/
 LibExport char *R_TempDir = NULL;   /* Name of per-session dir */
 LibExport char *R_HistoryFile;	    /* Name of the history file */
@@ -169,8 +169,6 @@ attribute_hidden SEXP	R_ReturnedValue;    /* Slot for return-ing values */
 attribute_hidden Rboolean R_Visible;	    /* Value visibility flag */
 attribute_hidden int	R_BrowseLevel	= 0;	/* how deep the browser is */
 attribute_hidden int	R_BrowseLines	= 0;	/* lines/per call in browser */
-attribute_hidden int	R_Expressions	= 5000;	/* options(expressions) */
-attribute_hidden int	R_Expressions_keep = 5000;	/* options(expressions) */
 attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
 attribute_hidden int	R_WarnLength	= 1000;	/* Error/warning max length */
 attribute_hidden int	R_CStackDir	= 1;	/* C stack direction */
@@ -252,7 +250,7 @@ static void R_ReplFile(FILE *fp, SEXP rho, CXXRunsigned int savestack, int brows
 	    break;
 	case PARSE_OK:
 	    R_Visible = FALSE;
-	    R_EvalDepth = 0;
+	    Evaluator::setDepth(0);
 	    resetTimeLimits();
 	    count++;
 	    PROTECT(R_CurrentExpr);
@@ -413,7 +411,7 @@ Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplSt
 	    }
 	}
 	R_Visible = FALSE;
-	R_EvalDepth = 0;
+	Evaluator::setDepth(0);
 	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);
@@ -515,7 +513,7 @@ int R_ReplDLLdo1(void)
 	R_IoBufferReadReset(&R_ConsoleIob);
 	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &status);
 	R_Visible = FALSE;
-	R_EvalDepth = 0;
+	Evaluator::setDepth(0);
 	resetTimeLimits();
 	PROTECT(R_CurrentExpr);
 	R_Busy(1);

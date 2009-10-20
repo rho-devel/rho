@@ -55,6 +55,7 @@
 #include "basedecl.h"
 
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -416,47 +417,45 @@ RObject* Expression::evaluate(Environment* env)
     return (tmp);
 }
 
+RObject* Evaluator::evaluate(RObject* object, Environment* env)
+{
+    // The use of depthsave below is necessary because of the
+    // possibility of non-local returns from evaluation.  Without this
+    // an "expression too complex error" is quite likely.
+    unsigned int depthsave = s_depth++;
+    if (s_depth > s_depth_threshold) {
+	extraDepth(true);
+	Rf_errorcall(R_NilValue,
+		     _("evaluation nested too deeply: "
+		       "infinite recursion / options(expressions=)?"));
+    }
+    R_CheckStack();
+    if (--s_countdown == 0) {
+	R_CheckUserInterrupt();
+	s_countdown = s_countdown_start;
+    }
+#ifdef Win32
+    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
+    // and resets the precision, rounding and exception modes of a
+    // ix86 fpu.
+    __asm__ ( "fninit" );
+#endif
+    R_Visible = TRUE;
+    RObject* ans = 0;
+    if (object)
+	ans = object->evaluate(env);
+    s_depth = depthsave;
+    return ans;
+}
+
 /* Return value of "e" evaluated in "rho". */
 
 SEXP eval(SEXP e, SEXP rho)
 {
-    static int evalcount = 0;
-
-    /* The use of depthsave below is necessary because of the
-       possibility of non-local returns from evaluation.  Without this
-       an "expression too complex error" is quite likely. */
-
-    int depthsave = R_EvalDepth++;
-
-    /* We need to explicit set a NULL call here to circumvent attempts
-       to deparse the call in the error-handler */
-    if (R_EvalDepth > R_Expressions) {
-	R_Expressions = R_Expressions_keep + 500;
-	errorcall(R_NilValue,
-		  _("evaluation nested too deeply: infinite recursion / options(expressions=)?"));
-    }
-    R_CheckStack();
-    if (++evalcount > 1000) { /* was 100 before 2.8.0 */
-	R_CheckUserInterrupt();
-	evalcount = 0 ;
-    }
-
-#ifdef Win32
-    /* This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
-       and resets the precision, rounding and exception modes of a ix86
-       fpu.
-     */
-    __asm__ ( "fninit" );
-#endif
-
-    R_Visible = TRUE;
-    RObject* ans = 0;
-    if (e) {
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	ans = e->evaluate(env);
-    }
-    R_EvalDepth = depthsave;
-    return ans;
+    Environment* env = 0;
+    if (e)
+	env = SEXP_downcast<Environment*>(rho);	
+    return evaluate(e, env);
 }
 
 /* Apply SEXP op of type CLOSXP to actuals */

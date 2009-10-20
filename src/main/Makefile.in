@@ -35,7 +35,7 @@ SOURCES_CXX = \
 	CConverters.cpp CachedString.cpp CellPool.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
-	Environment.cpp Expression.cpp ExpressionVector.cpp \
+	Environment.cpp Evaluator.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \

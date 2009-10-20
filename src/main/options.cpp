@@ -41,9 +41,9 @@
 #include "Defn.h"
 #include "Print.h"
 
-/* The global var. R_Expressions is in Defn.h */
-#define R_MIN_EXPRESSIONS_OPT	25
-#define R_MAX_EXPRESSIONS_OPT	500000
+#include "CXXR/Evaluator.hpp"
+
+using namespace CXXR;
 
 /* Interface to the (polymorphous!)  options(...)  command.
  *
@@ -248,7 +248,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     SET_TAG(v, install("expressions"));
-    SETCAR(v, ScalarInteger(R_Expressions));
+    SETCAR(v, ScalarInteger(Evaluator::depthLimit()));
     v = CDR(v);
 
     SET_TAG(v, install("width"));
@@ -409,10 +409,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "expressions")) {
 		k = asInteger(argi);
-		if (k < R_MIN_EXPRESSIONS_OPT || k > R_MAX_EXPRESSIONS_OPT)
-		    error(_("'expressions' parameter invalid, allowed %d...%d"),
-			  R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
-		R_Expressions = R_Expressions_keep = k;
+		Evaluator::setDepthLimit(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
 	    }
 	    else if (streql(CHAR(namei), "keep.source")) {
