@@ -386,31 +386,7 @@ RObject* Expression::evaluate(Environment* env)
 	vmaxset(vmax);
     }
     else if (TYPEOF(op) == BUILTINSXP) {
-	unsigned int save = GCStackRootBase::ppsSize();
-	int flag = PRIMPRINT(op);
-	void *vmax = vmaxget();
-	RCNTXT cntxt;
-	tmp = evalList(CDR(this), env, op);
-	if (flag < 2) R_Visible = Rboolean(flag != 1);
-	/* We used to insert a context only if profiling,
-	   but helps for tracebacks on .C etc. */
-	if (R_Profiling || (PPINFO(op).kind == PP_FOREIGN)) {
-	    begincontext(&cntxt, CTXT_BUILTIN, this,
-			 R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
-	    tmp = PRIMFUN(op) (this, op, tmp, env);
-	    endcontext(&cntxt);
-	} else {
-	    tmp = PRIMFUN(op) (this, op, tmp, env);
-	}
-#ifdef CHECK_VISIBILITY
-	if(flag < 2 && R_Visible == flag) {
-	    char *nm = PRIMNAME(op);
-	    printf("vis: builtin %s\n", nm);
-	}
-#endif
-	if (flag < 2) R_Visible = Rboolean(flag != 1);
-	check_stack_balance(op, save);
-	vmaxset(vmax);
+	tmp = func->apply(this, env);
     }
     else if (TYPEOF(op) == CLOSXP) {
 	tmp = func->apply(this, env);
