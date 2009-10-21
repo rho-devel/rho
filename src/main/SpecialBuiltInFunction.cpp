@@ -41,6 +41,8 @@
 
 using namespace CXXR;
 
+// SpecialBuiltInFunction::apply() is in eval.cpp (for the time being).
+
 const char* SpecialBuiltInFunction::typeName() const
 {
     return staticTypeName();

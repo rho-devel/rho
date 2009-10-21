@@ -151,6 +151,9 @@ namespace CXXR {
 	    return "closure";
 	}
 
+	// Virtual function of FunctionBase:
+	RObject* apply(Expression* call, Environment* env);
+
 	// Virtual functions of RObject:
         Closure* clone() const;
 	const char* typeName() const;

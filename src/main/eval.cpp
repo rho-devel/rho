@@ -57,6 +57,8 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/Evaluator.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/OrdinaryBuiltInFunction.hpp"
+#include "CXXR/SpecialBuiltInFunction.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -359,6 +361,9 @@ RObject* Expression::evaluate(Environment* env)
 	Rprintf("trace: ");
 	PrintValue(this);
     }
+    if (!FunctionBase::isA(op))
+	error(_("attempt to apply non-function"));
+    FunctionBase* func = static_cast<FunctionBase*>(op);
     if (TYPEOF(op) == SPECIALSXP) {
 	unsigned int save = GCStackRootBase::ppsSize();
 	int flag = PRIMPRINT(op);
@@ -408,13 +413,72 @@ RObject* Expression::evaluate(Environment* env)
 	vmaxset(vmax);
     }
     else if (TYPEOF(op) == CLOSXP) {
-	tmp = promiseArgs(CDR(this), env);
-	tmp = applyClosure(this, op, tmp, env, R_BaseEnv);
+	tmp = func->apply(this, env);
     }
     else
 	error(_("attempt to apply non-function"));
     UNPROTECT(1);
     return (tmp);
+}
+
+RObject* Closure::apply(Expression* call, Environment* env)
+{
+    GCStackRoot<> tmp(promiseArgs(call->tail(), env));
+    return applyClosure(call, this, tmp, env, R_BaseEnv);
+}
+
+RObject* OrdinaryBuiltInFunction::apply(Expression* call, Environment* env)
+{
+    unsigned int save = GCStackRootBase::ppsSize();
+    int flag = PRIMPRINT(this);
+    void *vmax = vmaxget();
+    RCNTXT cntxt;
+    GCStackRoot<> tmp(evalList(call->tail(), env, this));
+    if (flag < 2) R_Visible = Rboolean(flag != 1);
+    /* We used to insert a context only if profiling,
+       but helps for tracebacks on .C etc. */
+    if (R_Profiling || (PPINFO(this).kind == PP_FOREIGN)) {
+	begincontext(&cntxt, CTXT_BUILTIN, call,
+		     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
+	tmp = PRIMFUN(this) (call, this, tmp, env);
+	endcontext(&cntxt);
+    } else {
+	tmp = PRIMFUN(this) (call, this, tmp, env);
+    }
+#ifdef CHECK_VISIBILITY
+    if(flag < 2 && R_Visible == flag) {
+	char *nm = PRIMNAME(this);
+	printf("vis: builtin %s\n", nm);
+    }
+#endif
+    if (flag < 2) R_Visible = Rboolean(flag != 1);
+    check_stack_balance(this, save);
+    vmaxset(vmax);
+    return tmp;
+}
+
+RObject* SpecialBuiltInFunction::apply(Expression* call, Environment* env)
+{
+    unsigned int save = GCStackRootBase::ppsSize();
+    int flag = PRIMPRINT(this);
+    void *vmax = vmaxget();
+    GCStackRoot<PairList> args(call->tail());
+    R_Visible = Rboolean(flag != 1);
+    GCStackRoot<> ans(PRIMFUN(this) (call, this, args, env));
+#ifdef CHECK_VISIBILITY
+    if(flag < 2 && R_Visible == flag) {
+	char *nm = PRIMNAME(this);
+	if(strcmp(nm, "for")
+	   && strcmp(nm, "repeat") && strcmp(nm, "while")
+	   && strcmp(nm, "[[<-") && strcmp(nm, "on.exit"))
+	    printf("vis: special %s\n", nm);
+    }
+#endif
+    if (flag < 2)
+	R_Visible = Rboolean(flag != 1);
+    check_stack_balance(this, save);
+    vmaxset(vmax);
+    return ans;
 }
 
 RObject* Evaluator::evaluate(RObject* object, Environment* env)

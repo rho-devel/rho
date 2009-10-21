@@ -49,10 +49,24 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    class Expression;
+    class Environment;
+
     /** @brief Base class for function types.
      */
     class FunctionBase : public RObject {
     public:
+	/** @brief Apply the function.
+	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
+	 * @param env Pointer to the Environment in which the function
+	 *          is to be evaluated.
+	 *
+	 * @return The result of applying the function.
+	 */
+	virtual RObject* apply(Expression* call, Environment* env) = 0;
+
 	/** @brief Is an RObject a FunctionBase?
 	 *
 	 * @param obj Pointer to RObject to be tested.  This may be a

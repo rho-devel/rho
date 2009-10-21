@@ -72,6 +72,9 @@ namespace CXXR {
 	    return "builtin";
 	}
 
+	// Virtual function of FunctionBase:
+	RObject* apply(Expression* call, Environment* env);
+
 	// Virtual function of RObject:
 	const char* typeName() const;
     };

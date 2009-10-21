@@ -57,6 +57,8 @@ namespace CXXR {
 
 // Closure primary constructor is in dstruct.cpp (for the time being).
 
+// Closure::apply() is in eval.cpp (for the time being).
+
 Closure* Closure::clone() const
 {
     return expose(new Closure(*this));

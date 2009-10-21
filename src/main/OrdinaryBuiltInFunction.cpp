@@ -41,6 +41,9 @@
 
 using namespace CXXR;
 
+// OrdinaryBuiltInFunction::apply() is in eval.cpp (for the time
+// being).
+
 const char* OrdinaryBuiltInFunction::typeName() const
 {
     return staticTypeName();
