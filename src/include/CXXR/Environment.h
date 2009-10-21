@@ -248,6 +248,51 @@ namespace CXXR {
     std::pair<const Environment*, const Frame::Binding*>
     findBinding(const Symbol* symbol, const Environment* env);
 
+    /** @brief Search for a Binding of a Symbol to a FunctionBase.
+     *
+     * This function looks for a Binding of \a symbol, and tests
+     * whether the Binding's value is a FunctionBase.
+     *
+     * If a Binding of \a symbol to a Promise is encountered, the
+     * Promise is forced (within the Binding's environment) before
+     * testing whether the value of the Promise is a FunctionBase.  In
+     * this case, if the predicate is satisfied, the result of
+     * evaluating the Promise is part of the returned value.
+     *
+     * If, in the course of searching for a suitable Binding, a
+     * Binding of \a symbol to R_MissingArg is encountered, an error
+     * is raised.
+     *
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding to a FunctionBas,
+     * then any read monitor for that Binding is called.
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Pointer to the Environment in which the search for a
+     *          Binding is to start.  Must not be null.
+     *
+     * @param inherits If false, only the Frame of \a env will be
+     *          searched; if true, the search will propagate as
+     *          necessary to enclosing environments until either a
+     *          Binding to a FunctionBase is found, or the chain of
+     *          enclosing environments is exhausted.
+     *
+     * @return If a Binding to a FunctionBase was found, the
+     * first element of of the pair is a pointer to the Environment in
+     * which it was found, and the second element is the value of the
+     * Binding, except that if the value was a Promise, the second
+     * element is the result of evaluating the Promise.  If no Binding
+     * satisfying the predicate was found, both elements of the pair
+     * are null pointers.
+     */
+    std::pair<Environment*, FunctionBase*>
+    findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
+
     /** @brief Search for a Binding whose value satisfies a predicate.
      *
      * This function looks for a Binding of \a symbol, and tests

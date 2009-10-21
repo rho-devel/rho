@@ -40,7 +40,12 @@
 #include "CXXR/Expression.h"
 
 #include <iostream>
+#include "R_ext/Error.h"
+#include "localization.h"
+#include "CXXR/Environment.h"
+#include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
@@ -59,6 +64,8 @@ Expression* Expression::clone() const
 {
     return expose(new Expression(*this));
 }
+
+// Expression::evaluate() is in eval.cpp (for the time being).
 
 const char* Expression::typeName() const
 {

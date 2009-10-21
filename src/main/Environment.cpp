@@ -41,6 +41,8 @@
 
 #include "CXXR/Environment.h"
 
+#include "R_ext/Error.h"
+#include "localization.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -127,6 +129,28 @@ void Environment::visitReferents(const_visitor* v) const
 
 // ***** Free-standing functions *****
 
+namespace {
+    // Predicate used to test whether a Binding's value is a function.
+    class FunctionTester : public unary_function<RObject*, bool> {
+    public:
+	FunctionTester(const Symbol* symbol)
+	    : m_symbol(symbol)
+	{}
+
+	bool operator()(const RObject* obj);
+    private:
+	const Symbol* m_symbol;
+    };
+
+    bool FunctionTester::operator()(const RObject* obj)
+    {
+	if (obj == R_MissingArg)
+	    Rf_error(_("argument \"%s\" is missing, with no default"),
+		     m_symbol->name()->c_str());
+	return FunctionBase::isA(obj);
+    }
+}
+
 namespace CXXR {
     pair<Environment*, Frame::Binding*>
     findBinding(const Symbol* symbol, Environment* env)
@@ -150,5 +174,14 @@ namespace CXXR {
 	    env = env->enclosingEnvironment();
 	}
 	return pair<const Environment*, const Frame::Binding*>(0, 0);
+    }
+
+    pair<Environment*, FunctionBase*>
+    findFunction(const Symbol* symbol, Environment* env, bool inherits)
+    {
+	FunctionTester functest(symbol);
+	pair<Environment*, RObject*> pr
+	    = findTestedValue(symbol, env, functest, inherits);
+	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
     }
 }

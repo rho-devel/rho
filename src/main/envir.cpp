@@ -619,35 +619,11 @@ SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
   This could call findVar1.  NB: they behave differently on failure.
 */
 
-namespace {
-    // Predicate used to test whether a Binding's value is a function.
-    class FunctionTester : public unary_function<RObject*, bool> {
-    public:
-	FunctionTester(const Symbol* symbol)
-	    : m_symbol(symbol)
-	{}
-
-	bool operator()(const RObject* obj);
-    private:
-	const Symbol* m_symbol;
-    };
-
-    bool FunctionTester::operator()(const RObject* obj)
-    {
-	if (obj == R_MissingArg)
-	    Rf_error(_("argument \"%s\" is missing, with no default"),
-		     m_symbol->name()->c_str());
-	return FunctionBase::isA(obj);
-    }
-}
-
 SEXP findFun(SEXP symbol, SEXP rho)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    FunctionTester functest(sym);
-    pair<Environment*, RObject*> pr
-	= findTestedValue(sym, env, functest, true);
+    pair<Environment*, FunctionBase*> pr = findFunction(sym, env);
     if (pr.first)
 	return pr.second;
     error(_("could not find function \"%s\""), sym->name()->c_str());

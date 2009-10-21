@@ -349,16 +349,21 @@ static SEXP forcePromise(SEXP e)
 
 RObject* Expression::evaluate(Environment* env)
 {
-    GCStackRoot<> op;
+    GCStackRoot<FunctionBase> func;
     RObject* head = car();
-    if (head->sexptype() == SYMSXP)
-	// This will throw an error if the function is not found:
-	op = findFun(head, env);
-    else
-	op = Evaluator::evaluate(head, env);
-    if (!FunctionBase::isA(op))
-	error(_("attempt to apply non-function"));
-    FunctionBase* func = static_cast<FunctionBase*>(op.get());
+    if (head->sexptype() == SYMSXP) {
+	Symbol* symbol = static_cast<Symbol*>(head);
+	pair<Environment*, FunctionBase*> pr = findFunction(symbol, env);
+	if (!pr.first)
+	    error(_("could not find function \"%s\""),
+		  symbol->name()->c_str());
+	func = pr.second;
+    } else {
+	RObject* val = Evaluator::evaluate(head, env);
+	if (!FunctionBase::isA(val))
+	    error(_("attempt to apply non-function"));
+	func = static_cast<FunctionBase*>(val);
+    }
     if(func->tracing() && R_current_trace_state()) {
 	Rprintf("trace: ");
 	PrintValue(this);
