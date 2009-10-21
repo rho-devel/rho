@@ -349,52 +349,21 @@ static SEXP forcePromise(SEXP e)
 
 RObject* Expression::evaluate(Environment* env)
 {
-    SEXP op;
-    GCStackRoot<> tmp;
-    if (TYPEOF(CAR(this)) == SYMSXP)
-	/* This will throw an error if the function is not found */
-	PROTECT(op = findFun(CAR(this), env));
+    GCStackRoot<> op;
+    RObject* head = car();
+    if (head->sexptype() == SYMSXP)
+	// This will throw an error if the function is not found:
+	op = findFun(head, env);
     else
-	PROTECT(op = eval(CAR(this), env));
-
-    if(TRACE(op) && R_current_trace_state()) {
+	op = Evaluator::evaluate(head, env);
+    if (!FunctionBase::isA(op))
+	error(_("attempt to apply non-function"));
+    FunctionBase* func = static_cast<FunctionBase*>(op.get());
+    if(func->tracing() && R_current_trace_state()) {
 	Rprintf("trace: ");
 	PrintValue(this);
     }
-    if (!FunctionBase::isA(op))
-	error(_("attempt to apply non-function"));
-    FunctionBase* func = static_cast<FunctionBase*>(op);
-    if (TYPEOF(op) == SPECIALSXP) {
-	unsigned int save = GCStackRootBase::ppsSize();
-	int flag = PRIMPRINT(op);
-	void *vmax = vmaxget();
-	PROTECT(CDR(this));
-	R_Visible = Rboolean(flag != 1);
-	tmp = PRIMFUN(op) (this, op, CDR(this), env);
-#ifdef CHECK_VISIBILITY
-	if(flag < 2 && R_Visible == flag) {
-	    char *nm = PRIMNAME(op);
-	    if(strcmp(nm, "for")
-	       && strcmp(nm, "repeat") && strcmp(nm, "while")
-	       && strcmp(nm, "[[<-") && strcmp(nm, "on.exit"))
-		printf("vis: special %s\n", nm);
-	}
-#endif
-	if (flag < 2) R_Visible = Rboolean(flag != 1);
-	UNPROTECT(1);
-	check_stack_balance(op, save);
-	vmaxset(vmax);
-    }
-    else if (TYPEOF(op) == BUILTINSXP) {
-	tmp = func->apply(this, env);
-    }
-    else if (TYPEOF(op) == CLOSXP) {
-	tmp = func->apply(this, env);
-    }
-    else
-	error(_("attempt to apply non-function"));
-    UNPROTECT(1);
-    return (tmp);
+    return func->apply(this, env);
 }
 
 RObject* Closure::apply(Expression* call, Environment* env)
@@ -410,7 +379,8 @@ RObject* OrdinaryBuiltInFunction::apply(Expression* call, Environment* env)
     void *vmax = vmaxget();
     RCNTXT cntxt;
     GCStackRoot<> tmp(evalList(call->tail(), env, this));
-    if (flag < 2) R_Visible = Rboolean(flag != 1);
+    if (flag < 2)
+	R_Visible = Rboolean(flag != 1);
     /* We used to insert a context only if profiling,
        but helps for tracebacks on .C etc. */
     if (R_Profiling || (PPINFO(this).kind == PP_FOREIGN)) {
