@@ -38,7 +38,8 @@
 /** @file BuiltInFunction.h
  * @brief Class CXXR::BuiltInFunction and associated C interface.
  *
- * CXXR::BuiltInFunction implements BUILTINSXP and SPECIALSXP.
+ * CXXR::BuiltInFunction implements functionality common to BUILTINSXP
+ * and SPECIALSXP.
  */
 
 #ifndef BUILTINFUNCTION_H
@@ -51,26 +52,15 @@
 namespace CXXR {
     /** @brief R function implemented within the interpreter.
      *
-     * This class implements BUILTINSXP and SPECIALSXP, and is
-     * basically an offset into a table of functions.
+     * This class provides functionality common to BUILTINSXP and
+     * SPECIALSXP, and is basically an offset into a table of
+     * functions.
      *
      * @note This is an interim implementation: expect major changes
      * in the future.
      */
     class BuiltInFunction : public FunctionBase {
     public:
-	/**
-	 * @param offset The required table offset.  (Not
-	 * range-checked in any way.)
-	 *
-	 * @param evaluate true iff this is to be a BUILTINSXP;
-	 *          otherwise it will be a SPECIALSXP.
-	 */
-	explicit BuiltInFunction(unsigned int offset, bool evaluate = true)
-	    : FunctionBase(evaluate ? BUILTINSXP : SPECIALSXP),
-	      m_offset(offset)
-	{}
-
 	/** @brief Get table offset.
 	 *
 	 * @return The offset into the table of functions.
@@ -79,18 +69,18 @@ namespace CXXR {
 	{
 	    return m_offset;
 	}
-
-	/** @brief The names by which this type is known in R.
+    protected:
+	/**
+	 * @param offset The required table offset.  (Not
+	 * range-checked in any way.)
 	 *
-	 * @return the names by which this type is known in R.
+	 * @param evaluate true iff this is to be a BUILTINSXP;
+	 *          otherwise it will be a SPECIALSXP.
 	 */
-	static const char* staticTypeName()
-	{
-	    return "(builtin or special)";
-	}
-
-	// Virtual function of RObject:
-	const char* typeName() const;
+	BuiltInFunction(unsigned int offset, bool evaluate)
+	    : FunctionBase(evaluate ? BUILTINSXP : SPECIALSXP),
+	      m_offset(offset)
+	{}
     private:
 	unsigned int m_offset;
     };
@@ -102,6 +92,7 @@ extern "C" {
     /** @brief Get offset of a CXXR::BuiltInFunction.
      *
      * @param x Pointer to a CXXR::BuiltInFunction.
+     *
      * @return The offset of this function within the function table.
      */
 #ifndef __cplusplus
@@ -118,22 +109,16 @@ extern "C" {
     /** @brief Create a CXXR::BuiltInFunction object.
      *
      * @param offset The required table offset.  (Not
-     * range-checked in any way.)
+     *          range-checked in any way.)
      *
-     * @param evaluate true iff this is to be a BUILTINSXP;
-     *          otherwise it will be a SPECIALSXP.
+     * @param evaluate true iff this is to be a
+     *          CXXR::OrdinaryBuiltInFunction (BUILTINSXP); otherwise
+     *          it will be a CXXR::SpecialBuiltInFunction
+     *          (SPECIALSXP).
      *
      * @return Pointer to the created CXXR::BuiltInFunction object.
      */
-#ifndef __cplusplus
     SEXP mkPRIMSXP(int offset, int evaluate);
-#else
-    inline SEXP mkPRIMSXP(int offset, int evaluate)
-    {
-	using namespace CXXR;
-	return GCNode::expose(new BuiltInFunction(offset, evaluate));
-    }
-#endif
 
 #ifdef __cplusplus
 }

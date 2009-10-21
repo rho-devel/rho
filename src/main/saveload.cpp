@@ -49,6 +49,8 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/OrdinaryBuiltInFunction.hpp"
+#include "CXXR/SpecialBuiltInFunction.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -552,14 +554,13 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new BuiltInFunction(StrToInternal(m->InString(fp, d)),
-					       false));
+	s = GCNode::expose(new SpecialBuiltInFunction(StrToInternal(m->InString(fp, d))));
 	break;
     case BUILTINSXP:
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new BuiltInFunction(StrToInternal(m->InString(fp, d))));
+	s = GCNode::expose(new OrdinaryBuiltInFunction(StrToInternal(m->InString(fp, d))));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);

@@ -16,45 +16,65 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
+ *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
+ *  Copyright (C) 1999-2006   The R Development Core Team.
+ *  Andrew Runnalls (C) 2007
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
+ *  the Free Software Foundation; either version 2.1 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file BuiltInFunction.cpp
+/** @file SpecialBuiltInFunction.h
+ * @brief Class CXXR::SpecialBuiltInFunction.
  *
- * Implementation of class CXXR::BuiltInFunction and associated
- * C interface.
+ * CXXR::SpecialBuiltInFunction SPECIALSXP.
  */
 
-#include "CXXR/OrdinaryBuiltInFunction.hpp"
-#include "CXXR/SpecialBuiltInFunction.hpp"
+#ifndef SPECIALBUILTINFUNCTION_H
+#define SPECIALBUILTINFUNCTION_H
 
-using namespace CXXR;
+#include "CXXR/BuiltInFunction.h"
 
 namespace CXXR {
-    namespace ForceNonInline {
-	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
-    }
-}
+    /** @brief Built-in function taking unevaluated arguments.
+     *
+     * This class implements SPECIALSXP, and represents a built-in
+     * function whose arguments are not evaluated before being passed
+     * to the underlying C/C++ function.
+     */
+    class SpecialBuiltInFunction : public BuiltInFunction {
+    public:
+	/**
+	 * @param offset The required table offset.  (Not
+	 * range-checked in any way.)
+	 */
+	explicit SpecialBuiltInFunction(unsigned int offset)
+	    : BuiltInFunction(offset, false)
+	{}
 
-// ***** C interface *****
+	/** @brief The name by which this type is known in R.
+	 *
+	 * @return the name by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "special";
+	}
 
-SEXP mkPRIMSXP(int offset, int evaluate)
-{
-    using namespace CXXR;
-    if (evaluate)
-	return GCNode::expose(new OrdinaryBuiltInFunction(offset));
-    else return GCNode::expose(new SpecialBuiltInFunction(offset));
-}
+	// Virtual function of RObject:
+	const char* typeName() const;
+    };
+}  // namespace CXXR
+
+#endif /* SPECIALBUILTINFUNCTION_H */

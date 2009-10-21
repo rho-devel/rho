@@ -32,29 +32,16 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file BuiltInFunction.cpp
+/** @file SpecialBuiltInFunction.cpp
  *
- * Implementation of class CXXR::BuiltInFunction and associated
- * C interface.
+ * Implementation of class CXXR::SpecialBuiltInFunction.
  */
 
-#include "CXXR/OrdinaryBuiltInFunction.hpp"
 #include "CXXR/SpecialBuiltInFunction.hpp"
 
 using namespace CXXR;
 
-namespace CXXR {
-    namespace ForceNonInline {
-	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
-    }
-}
-
-// ***** C interface *****
-
-SEXP mkPRIMSXP(int offset, int evaluate)
+const char* SpecialBuiltInFunction::typeName() const
 {
-    using namespace CXXR;
-    if (evaluate)
-	return GCNode::expose(new OrdinaryBuiltInFunction(offset));
-    else return GCNode::expose(new SpecialBuiltInFunction(offset));
+    return staticTypeName();
 }
