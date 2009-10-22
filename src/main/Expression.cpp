@@ -43,6 +43,7 @@
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.hpp"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/Symbol.h"
@@ -65,7 +66,26 @@ Expression* Expression::clone() const
     return expose(new Expression(*this));
 }
 
-// Expression::evaluate() is in eval.cpp (for the time being).
+RObject* Expression::evaluate(Environment* env)
+{
+    GCStackRoot<FunctionBase> func;
+    RObject* head = car();
+    if (head->sexptype() == SYMSXP) {
+	Symbol* symbol = static_cast<Symbol*>(head);
+	pair<Environment*, FunctionBase*> pr = findFunction(symbol, env);
+	if (!pr.first)
+	    error(_("could not find function \"%s\""),
+		  symbol->name()->c_str());
+	func = pr.second;
+    } else {
+	RObject* val = Evaluator::evaluate(head, env);
+	if (!FunctionBase::isA(val))
+	    error(_("attempt to apply non-function"));
+	func = static_cast<FunctionBase*>(val);
+    }
+    func->maybeTrace(this);
+    return func->apply(this, env);
+}
 
 const char* Expression::typeName() const
 {

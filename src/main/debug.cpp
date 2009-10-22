@@ -40,6 +40,9 @@
 
 #include "Defn.h"
 #include "basedecl.h"
+#include "CXXR/FunctionBase.h"
+
+using namespace CXXR;
 
 SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -98,17 +101,13 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace state */
 
-static Rboolean tracing_state = TRUE;
-#define GET_TRACE_STATE tracing_state
-#define SET_TRACE_STATE(value) tracing_state = value
-
 SEXP R_traceOnOff(SEXP onOff)
 {
-    Rboolean prev = GET_TRACE_STATE;
+    Rboolean prev = Rboolean(FunctionBase::tracingEnabled());
     if(length(onOff) > 0) {
 	Rboolean _new = CXXRconvert(Rboolean, asLogical(onOff));
 	if(_new == TRUE || _new == FALSE)
-	    SET_TRACE_STATE(_new);
+	    FunctionBase::enableTracing(_new);
 	else
 	    error("Value for tracingState must be TRUE or FALSE");
     }
@@ -116,7 +115,7 @@ SEXP R_traceOnOff(SEXP onOff)
 }
 
 Rboolean attribute_hidden
-R_current_trace_state() { return GET_TRACE_STATE; }
+R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 
 
 /* memory tracing */

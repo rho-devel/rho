@@ -67,6 +67,15 @@ namespace CXXR {
 	 */
 	virtual RObject* apply(Expression* call, Environment* env) = 0;
 
+	/** @brief Enable/disable function tracing.
+	 *
+	 * @param on True iff function tracing is to be enabled.
+	 */
+	static void enableTracing(bool on)
+	{
+	    s_tracing_enabled = on;
+	}
+
 	/** @brief Is an RObject a FunctionBase?
 	 *
 	 * @param obj Pointer to RObject to be tested.  This may be a
@@ -82,6 +91,19 @@ namespace CXXR {
 	    if (!obj) return false;
 	    SEXPTYPE st = obj->sexptype();
 	    return st == CLOSXP || st == BUILTINSXP || st == SPECIALSXP;
+	}
+
+	/** @brief Produce a tracing report if appropriate.
+	 *
+	 * A tracing report is generated if this function is set to be
+	 * traced and tracing in general is enabled.
+	 *
+	 * @param call The call to this function to be reported.
+	 */
+	void maybeTrace(const Expression* call) const
+	{
+	    if (traced() && tracingEnabled())
+		reportCall(call);
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -100,7 +122,7 @@ namespace CXXR {
 	 */
 	void setTracing(bool on)
 	{
-	    m_tracing = on;
+	    m_traced = on;
 	}
 
 	/** @brief Is this function being traced?
@@ -108,16 +130,25 @@ namespace CXXR {
 	 * @return true if this function object is currently being
 	 * traced.
 	 */
-	bool tracing() const
+	bool traced() const
 	{
-	    return m_tracing;
+	    return m_traced;
+	}
+
+	/** @brief If function tracing currently enabled?
+	 *
+	 * @return true iff function tracing is currently enabled.
+	 */
+	static bool tracingEnabled()
+	{
+	    return s_tracing_enabled;
 	}
     protected:
 	/**
 	 * @param stype Required type of the FunctionBase.
 	 */
 	explicit FunctionBase(SEXPTYPE stype)
-	    : RObject(stype), m_tracing(false)
+	    : RObject(stype), m_traced(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -125,12 +156,15 @@ namespace CXXR {
 	 * @param pattern FunctionBase to be copied.
 	 */
 	FunctionBase(const FunctionBase& pattern)
-	    : RObject(pattern), m_tracing(false)
+	    : RObject(pattern), m_traced(false)
 	{}
 
 	virtual ~FunctionBase() {}
     private:
-	bool m_tracing;
+	static bool s_tracing_enabled;
+	bool m_traced;
+
+	static void reportCall(const Expression* call);
     };
 }  // namespace CXXR
 
@@ -153,7 +187,7 @@ extern "C" {
 	using namespace CXXR;
 	if (!x) return 0;
 	const FunctionBase& f = *SEXP_downcast<const FunctionBase*>(x);
-	return f.tracing();
+	return f.traced();
     }
 #endif
 

@@ -41,6 +41,9 @@
 
 #include "CXXR/FunctionBase.h"
 
+#include "R_ext/Print.h"
+#include "Rinternals.h"  // For Rf_PrintValue
+
 using namespace std;
 using namespace CXXR;
 
@@ -51,4 +54,12 @@ namespace CXXR {
 	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
 	int (*TRACEptr)(SEXP x) = TRACE;
     }
+}
+
+bool FunctionBase::s_tracing_enabled = true;
+
+void FunctionBase::reportCall(const Expression* call)
+{
+    Rprintf("trace: ");
+    Rf_PrintValue(const_cast<Expression*>(call));
 }
