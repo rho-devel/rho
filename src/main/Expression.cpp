@@ -43,7 +43,7 @@
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/Environment.h"
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/Symbol.h"

@@ -43,7 +43,7 @@
 #include "RCNTXT.h"
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
 
 using namespace CXXR;

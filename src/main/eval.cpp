@@ -55,7 +55,7 @@
 #include "basedecl.h"
 
 #include "CXXR/ByteCode.hpp"
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
 #include "CXXR/SpecialBuiltInFunction.hpp"
@@ -360,11 +360,11 @@ RObject* OrdinaryBuiltInFunction::apply(Expression* call, Environment* env)
     void *vmax = vmaxget();
     RCNTXT cntxt;
     GCStackRoot<> tmp(evalList(call->tail(), env, this));
-    if (flag < 2)
+    //if (flag < 2)
 	R_Visible = Rboolean(flag != 1);
     /* We used to insert a context only if profiling,
        but helps for tracebacks on .C etc. */
-    if (R_Profiling || (PPINFO(this).kind == PP_FOREIGN)) {
+	if (R_Profiling || kind() == PP_FOREIGN) {
 	begincontext(&cntxt, CTXT_BUILTIN, call,
 		     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
 	tmp = PRIMFUN(this) (call, this, tmp, env);
@@ -378,7 +378,8 @@ RObject* OrdinaryBuiltInFunction::apply(Expression* call, Environment* env)
 	printf("vis: builtin %s\n", nm);
     }
 #endif
-    if (flag < 2) R_Visible = Rboolean(flag != 1);
+    if (flag < 2)
+	R_Visible = Rboolean(flag != 1);
     check_stack_balance(this, save);
     vmaxset(vmax);
     return tmp;

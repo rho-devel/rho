@@ -33,6 +33,10 @@
 #ifndef UNCXXR_H
 #define UNCXXR_H
 
+/* uncxxr.pl deletes 'CXXRBuiltInFunction::'
+ */
+#define CXXRBuiltInFunction BuiltInFunction
+
 /* Where CXXR inserts additional const declarations into source files
  * inherited from CR, try to use this macro so that the change can be
  * reversed by the uncxxr.pl script, which deletes any occurrence of

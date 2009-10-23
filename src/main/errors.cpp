@@ -63,7 +63,7 @@ extern void R_ProcessEvents(void);
 #include <R_ext/eventloop.h> /* for R_PolledEvents */
 #endif
 
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;

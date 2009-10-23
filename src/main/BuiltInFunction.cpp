@@ -38,15 +38,51 @@
  * C interface.
  */
 
+#include "CXXR/BuiltInFunction.h"
+
+#include "CXXR/DotInternal.h"
+#include "CXXR/Environment.h"
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
 #include "CXXR/SpecialBuiltInFunction.hpp"
+#include "CXXR/Symbol.h"
 
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
+	const char* (*PRIMNAMEp)(SEXP x) = PRIMNAME;
 	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
+	unsigned int (*PRIMVALp)(SEXP x) = PRIMVAL;
     }
+}
+
+// BuiltInFunction::s_function_table is defined in names.cpp
+
+int BuiltInFunction::indexInTable(const char* name)
+{
+    for (int i = 0; s_function_table[i].name; ++i)
+	if (strcmp(name, s_function_table[i].name) == 0)
+	    return i;
+    return -1;
+}
+
+void BuiltInFunction::initialize()
+{
+    for (int i = 0; s_function_table[i].name; ++i) {
+	Symbol* sym = Symbol::obtain(s_function_table[i].name);
+	BuiltInFunction* bif = BuiltInFunction::make(i);
+	if ((s_function_table[i].flags%100)/10)
+	    DotInternalTable::set(sym, bif);
+	else
+	    BaseEnvironment->frame()->obtainBinding(sym)->setValue(bif);
+    }
+}
+
+BuiltInFunction* BuiltInFunction::make(unsigned int i)
+{
+    if (s_function_table[i].flags%10)
+	return GCNode::expose(new OrdinaryBuiltInFunction(i));
+    else return GCNode::expose(new SpecialBuiltInFunction(i));
 }
 
 // ***** C interface *****

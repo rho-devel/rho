@@ -127,7 +127,7 @@
 
 #include "Defn.h"
 
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;

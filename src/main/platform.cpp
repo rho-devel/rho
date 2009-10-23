@@ -49,7 +49,7 @@
 # include <errno.h>
 #endif
 
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 #include "CXXR/StringVector.h"
 
 using namespace CXXR;

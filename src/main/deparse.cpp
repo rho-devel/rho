@@ -118,6 +118,7 @@
 /* ----- MAX_Cutoff  <	BUFSIZE !! */
 
 #include "RBufferUtils.h"
+#include "CXXR/BuiltInFunction.h"
 
 using namespace std;
 using namespace CXXR;
@@ -478,6 +479,24 @@ curlyahead(SEXP s)
     return FALSE;
 }
 
+// In CXXR, BuiltInFunction::PPinfo is (deliberately) private, so as
+// not to expose the function table format outside the BuiltInFunction
+// class.  We now declare introduce local definitions to keep the CR
+// code working.
+
+struct PPinfo {
+    BuiltInFunction::Kind kind;
+    BuiltInFunction::Precedence precedence;
+    unsigned int rightassoc;
+};
+
+static PPinfo PPINFO(SEXP s)
+{
+    BuiltInFunction* bif = SEXP_downcast<BuiltInFunction*>(s);
+    PPinfo ans = {bif->kind(), bif->precedence(), bif->rightAssociative()};
+    return ans;
+}
+    
 /* needsparens looks at an arg to a unary or binary operator to
    determine if it needs to be parenthesized when deparsed
    mainop is a unary or binary operator,
@@ -492,33 +511,33 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		(TYPEOF(SYMVALUE(CAR(arg))) == SPECIALSXP)) {
 		arginfo = PPINFO(SYMVALUE(CAR(arg)));
 		switch(arginfo.kind) {
-		case PP_BINARY:	      /* Not all binary ops are binary! */
-		case PP_BINARY2:
+		case CXXRBuiltInFunction::PP_BINARY:	      /* Not all binary ops are binary! */
+		case CXXRBuiltInFunction::PP_BINARY2:
 		    switch(length(CDR(arg))) {
 		    case 1:
 			if (!left)
 			    return FALSE;
-			if (arginfo.precedence == PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    arginfo.precedence = PREC_SIGN;
+			if (arginfo.precedence == CXXRBuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    arginfo.precedence = CXXRBuiltInFunction::PREC_SIGN;
 		    case 2:
 			break;
 		    default:
 			return FALSE;
 		    }
-		case PP_ASSIGN:
-		case PP_ASSIGN2:
-		case PP_SUBSET:
-		case PP_UNARY:
-		case PP_DOLLAR:
+		case CXXRBuiltInFunction::PP_ASSIGN:
+		case CXXRBuiltInFunction::PP_ASSIGN2:
+		case CXXRBuiltInFunction::PP_SUBSET:
+		case CXXRBuiltInFunction::PP_UNARY:
+		case CXXRBuiltInFunction::PP_DOLLAR:
 		    if (mainop.precedence > arginfo.precedence
 			|| (mainop.precedence == arginfo.precedence && left == mainop.rightassoc)) {
 			return TRUE;
 		    }
 		    break;
-		case PP_FOR:
-		case PP_IF:
-		case PP_WHILE:
-		case PP_REPEAT:
+		case CXXRBuiltInFunction::PP_FOR:
+		case CXXRBuiltInFunction::PP_IF:
+		case CXXRBuiltInFunction::PP_WHILE:
+		case CXXRBuiltInFunction::PP_REPEAT:
 		    return CXXRconvert(Rboolean, left == 1);
 		    break;
 		default:
@@ -528,8 +547,8 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 	}
     }
     else if ((TYPEOF(arg) == CPLXSXP) && (length(arg) == 1)) {
-	if (mainop.precedence > PREC_SUM
-	    || (mainop.precedence == PREC_SUM && left == mainop.rightassoc)) {
+	if (mainop.precedence > CXXRBuiltInFunction::PREC_SUM
+	    || (mainop.precedence == CXXRBuiltInFunction::PREC_SUM && left == mainop.rightassoc)) {
 	    return TRUE;
 	}
     }
@@ -823,26 +842,26 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		op = CAR(s);
 		fop = PPINFO(SYMVALUE(op));
 		s = CDR(s);
-		if (fop.kind == PP_BINARY) {
+		if (fop.kind == CXXRBuiltInFunction::PP_BINARY) {
 		    switch (length(s)) {
 		    case 1:
-			fop.kind = PP_UNARY;
-			if (fop.precedence == PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    fop.precedence = PREC_SIGN;
+			fop.kind = CXXRBuiltInFunction::PP_UNARY;
+			if (fop.precedence == CXXRBuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    fop.precedence = CXXRBuiltInFunction::PREC_SIGN;
 			break;
 		    case 2:
 			break;
 		    default:
-			fop.kind = PP_FUNCALL;
+			fop.kind = CXXRBuiltInFunction::PP_FUNCALL;
 			break;
 		    }
 		}
-		else if (fop.kind == PP_BINARY2) {
+		else if (fop.kind == CXXRBuiltInFunction::PP_BINARY2) {
 		    if (length(s) != 2)
-			fop.kind = PP_FUNCALL;
+			fop.kind = CXXRBuiltInFunction::PP_FUNCALL;
 		}
 		switch (fop.kind) {
-		case PP_IF:
+		case CXXRBuiltInFunction::PP_IF:
 		    print2buff("if (", d);
 		    /* print the predicate */
 		    deparse2buff(CAR(s), d);
@@ -873,13 +892,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    d->indent--;
 		    }
 		    break;
-		case PP_WHILE:
+		case CXXRBuiltInFunction::PP_WHILE:
 		    print2buff("while (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(") ", d);
 		    deparse2buff(CADR(s), d);
 		    break;
-		case PP_FOR:
+		case CXXRBuiltInFunction::PP_FOR:
 		    print2buff("for (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(" in ", d);
@@ -887,11 +906,11 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff(") ", d);
 		    deparse2buff(CADR(CDR(s)), d);
 		    break;
-		case PP_REPEAT:
+		case CXXRBuiltInFunction::PP_REPEAT:
 		    print2buff("repeat ", d);
 		    deparse2buff(CAR(s), d);
 		    break;
-		case PP_CURLY:
+		case CXXRBuiltInFunction::PP_CURLY:
 		    print2buff("{", d);
 		    d->incurly += 1;
 		    d->indent++;
@@ -905,12 +924,12 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff("}", d);
 		    d->incurly -= 1;
 		    break;
-		case PP_PAREN:
+		case CXXRBuiltInFunction::PP_PAREN:
 		    print2buff("(", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(")", d);
 		    break;
-		case PP_SUBSET:
+		case CXXRBuiltInFunction::PP_SUBSET:
 		    deparse2buff(CAR(s), d);
 		    if (PRIMVAL(SYMVALUE(op)) == 1)
 			print2buff("[", d);
@@ -922,8 +941,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    else
 			print2buff("]]", d);
 		    break;
-		case PP_FUNCALL:
-		case PP_RETURN:
+		case CXXRBuiltInFunction::PP_FUNCALL:
+		case CXXRBuiltInFunction::PP_RETURN:
 		    if (isValidName(CHAR(PRINTNAME(op)))) /* ASCII */
 			print2buff(CHAR(PRINTNAME(op)), d);
 		    else if (d->backtick) {
@@ -941,7 +960,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case PP_FOREIGN:
+		case CXXRBuiltInFunction::PP_FOREIGN:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    print2buff("(", d);
 		    d->inlist++;
@@ -949,7 +968,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case PP_FUNCTION:
+		case CXXRBuiltInFunction::PP_FUNCTION:
 		    printcomment(s, d);
 		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
@@ -966,8 +985,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			}
 		    }
 		    break;
-		case PP_ASSIGN:
-		case PP_ASSIGN2:
+		case CXXRBuiltInFunction::PP_ASSIGN:
+		case CXXRBuiltInFunction::PP_ASSIGN2:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -982,7 +1001,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case PP_DOLLAR:
+		case CXXRBuiltInFunction::PP_DOLLAR:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1001,7 +1020,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    print2buff(")", d);
 		    }
 		    break;
-		case PP_BINARY:
+		case CXXRBuiltInFunction::PP_BINARY:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1021,7 +1040,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			lbreak = FALSE;
 		    }
 		    break;
-		case PP_BINARY2:	/* no space between op and args */
+		case CXXRBuiltInFunction::PP_BINARY2:	/* no space between op and args */
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1034,7 +1053,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case PP_UNARY:
+		case CXXRBuiltInFunction::PP_UNARY:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    if ((parens = needsparens(fop, CAR(s), 0)))
 			print2buff("(", d);
@@ -1042,13 +1061,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case PP_BREAK:
+		case CXXRBuiltInFunction::PP_BREAK:
 		    print2buff("break", d);
 		    break;
-		case PP_NEXT:
+		case CXXRBuiltInFunction::PP_NEXT:
 		    print2buff("next", d);
 		    break;
-		case PP_SUBASS:
+		case CXXRBuiltInFunction::PP_SUBASS:
 		    if(d->opts & S_COMPAT) {
 			print2buff("\"", d);
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */

@@ -40,6 +40,25 @@
 #ifndef EVALUATOR_HPP
 #define EVALUATOR_HPP
 
+#include "R_ext/Boolean.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    /** @brief Print expression value?
+     *
+     * If R_Visible is TRUE when the evaluation of a top-level R
+     * expression completes, the value of the expression is printed.
+     *
+     * @note In CXXR, R_Visible is evolving towards becoming a static
+     * data member of class CXXR::Evaluator.
+     */
+    extern Rboolean R_Visible;
+
+#ifdef __cplusplus
+} // extern "C"
+
 namespace CXXR {
     class RObject;
     class Environment;
@@ -74,6 +93,16 @@ namespace CXXR {
 	    return s_depth_limit;
 	}
 
+	/** @brief Specify whether the result of top-level expression
+	 * be printed.
+	 *
+	 * @param on true iff printing is required.
+	 */
+	static void enableResultPrinting(bool on)
+	{
+	    R_Visible = Rboolean(on);
+	}
+
 	/** @brief Evaluate RObject in a specified Environment.
 	 *
 	 * For most types of RObject, this simply returns a pointer to
@@ -101,6 +130,17 @@ namespace CXXR {
 	static void extraDepth(bool on)
 	{
 	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
+	}
+
+	/** @brief Is the result of top-level expression evaluation
+	 * printed?
+	 *
+	 * @return true iff it is currently specified that the result
+	 * of a top-level R expression evaluation should be printed.
+	 */
+	static bool resultPrinted()
+	{
+	    return R_Visible;
 	}
 
 	/** @brief (Not for general use.)
@@ -162,5 +202,6 @@ namespace CXXR {
 	return Evaluator::evaluate(object, env);
     }
 }
+#endif /* __cplusplus */
 
 #endif /* EVALUATOR_HPP */

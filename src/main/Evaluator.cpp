@@ -19,13 +19,15 @@
  * Implementation of class Evaluator.
  */
 
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 
 #include "localization.h"
 #include "R_ext/Error.h"
 
 using namespace std;
 using namespace CXXR;
+
+Rboolean R_Visible = TRUE;
 
 unsigned int Evaluator::s_depth = 0;
 unsigned int Evaluator::s_depth_threshold = 5000;

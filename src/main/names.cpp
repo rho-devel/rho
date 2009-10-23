@@ -100,7 +100,8 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-CXXRnot_hidden FUNTAB R_FunTab[] =
+
+BuiltInFunction::FunctionTableEntry BuiltInFunction::s_function_table[] =
 {
 
 /* Language Related Constructs */
@@ -997,45 +998,28 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name;
-    int i;
     checkArity(op, args);
     name = CAR(args);
     if (!isString(name) || length(name) < 1 ||
 	STRING_ELT(name, 0) == R_NilValue)
 	errorcall(call, _("string argument required"));
-    for (i = 0; R_FunTab[i].name; i++)  /* all names are ASCII */
-	if (strcmp(CHAR(STRING_ELT(name, 0)), R_FunTab[i].name) == 0) {
-	    if ((R_FunTab[i].eval % 100 )/10)
-		return mkPRIMSXP(i, R_FunTab[i].eval % 10);
-	    else
-		return mkPRIMSXP(i, R_FunTab[i].eval % 10);
-	}
-    errorcall(call, _("no such primitive function"));
-    return(R_NilValue);		/* -Wall */
+    const char* namestr = CHAR(STRING_ELT(name, 0));
+    int index = BuiltInFunction::indexInTable(namestr);
+    if (index < 0)
+	 errorcall(call, _("no such primitive function"));
+    return BuiltInFunction::make(index);
 }
 
 int StrToInternal(const char *s)
 {
-    int i;
-    for (i = 0; R_FunTab[i].name; i++)
-	if (strcmp(s, R_FunTab[i].name) == 0) return i;
-    return 0;
-}
-
-static void installFunTab(int i)
-{
-    if ((R_FunTab[i].eval % 100 )/10)
-	SET_INTERNAL(install(R_FunTab[i].name),
-		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
-    else
-	SET_SYMVALUE(install(R_FunTab[i].name),
-		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
+    // Yes, CR really does confound 'found at position 0' with 'not found':
+    return std::max(0, BuiltInFunction::indexInTable(s));
 }
 
 /* initialize the symbol table */
+// Well, now just odds and ends in CXXR.
 void InitNames()
 {
-    int i;
     /* Parser Structures */
     R_CommentSxp = R_NilValue;
     /* String constants (CHARSXP values) */
@@ -1043,8 +1027,7 @@ void InitNames()
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
     /*  Builtin Functions */
-    for (i = 0; R_FunTab[i].name; i++)
-	installFunTab(i);
+    BuiltInFunction::initialize();
 #ifdef BYTECODE
     R_initialize_bcode();
 #endif

@@ -41,7 +41,7 @@
 #include "Defn.h"
 #include "Print.h"
 
-#include "CXXR/Evaluator.hpp"
+#include "CXXR/Evaluator.h"
 
 using namespace CXXR;
 
