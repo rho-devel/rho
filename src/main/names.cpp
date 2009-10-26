@@ -101,8 +101,10 @@ using namespace CXXR;
  *
  */
 
-BuiltInFunction::FunctionTableEntry BuiltInFunction::s_function_table[] =
+void BuiltInFunction::initialize()
 {
+    static TableEntry function_table[] = {
+	// Now begins the function table, deliberately retaining CR's indentation:
 
 /* Language Related Constructs */
 \
@@ -994,6 +996,21 @@ BuiltInFunction::FunctionTableEntry BuiltInFunction::s_function_table[] =
 {NULL,		NULL,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
+    // code of BuiltInFunction::initialize() now continues:
+    s_function_table = function_table;
+    DotInternalTable::initialize();
+    for (int i = 0; s_function_table[i].name; ++i) {
+	const char* symname = s_function_table[i].name;
+	Symbol* sym = Symbol::obtain(symname);
+	BuiltInFunction* bif = BuiltInFunction::make(i);
+	if ((s_function_table[i].flags%100)/10)
+	    DotInternalTable::set(sym, bif);
+	else
+	    BaseEnvironment->frame()->obtainBinding(sym)->setValue(bif);
+    }
+    
+}
+
 
 SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -1026,8 +1043,6 @@ void InitNames()
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /*  Builtin Functions */
-    BuiltInFunction::initialize();
 #ifdef BYTECODE
     R_initialize_bcode();
 #endif

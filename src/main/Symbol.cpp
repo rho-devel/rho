@@ -74,7 +74,7 @@ SEXP R_UnboundValue;
 // (Discovered 2009-01-16)  So we use boost:
 
 namespace {
-    boost::basic_regex<char> dd_regex("\\.\\.(\\d+)");
+    boost::basic_regex<char>* dd_regex;  // "\\.\\.(\\d+)"
 }
 
 // ***** Class Symbol itself *****
@@ -88,7 +88,7 @@ Symbol::Symbol(const CachedString* the_name, bool frozen)
     if (m_name && m_name->size() > 2) {
 	string name(m_name->c_str());
 	boost::smatch dd_match;
-	if (boost::regex_match(name, dd_match, dd_regex)) {
+	if (boost::regex_match(name, dd_match, *dd_regex)) {
 	    istringstream iss(dd_match[1]);
 	    iss >> m_dd_index;
 	}
@@ -157,6 +157,8 @@ void Symbol::initialize()
     R_RestartToken = Symbol::restartToken();
     s_unbound_value = new GCRoot<Symbol>(expose(new Symbol));
     R_UnboundValue = Symbol::unboundValue();
+    static boost::basic_regex<char> dd_rx("\\.\\.(\\d+)");
+    dd_regex = &dd_rx;
 }
 
 Symbol* Symbol::obtain(const CachedString* name)

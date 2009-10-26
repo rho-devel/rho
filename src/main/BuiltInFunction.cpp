@@ -56,7 +56,7 @@ namespace CXXR {
     }
 }
 
-// BuiltInFunction::s_function_table is defined in names.cpp
+BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
 int BuiltInFunction::indexInTable(const char* name)
 {
@@ -66,17 +66,7 @@ int BuiltInFunction::indexInTable(const char* name)
     return -1;
 }
 
-void BuiltInFunction::initialize()
-{
-    for (int i = 0; s_function_table[i].name; ++i) {
-	Symbol* sym = Symbol::obtain(s_function_table[i].name);
-	BuiltInFunction* bif = BuiltInFunction::make(i);
-	if ((s_function_table[i].flags%100)/10)
-	    DotInternalTable::set(sym, bif);
-	else
-	    BaseEnvironment->frame()->obtainBinding(sym)->setValue(bif);
-    }
-}
+// BuiltInFunction::initialize() is in names.cpp
 
 BuiltInFunction* BuiltInFunction::make(unsigned int i)
 {

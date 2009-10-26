@@ -155,10 +155,6 @@ namespace CXXR {
 	 */
 	static int indexInTable(const char* name);
 
-	// Put primitive functions into the base environment, and
-	// internal functions into the DotInternalTable:
-	static void initialize();
-
 	/** @brief Kind of built-in function.
 	 *
 	 * (Used mainly in deparsing.)
@@ -273,7 +269,7 @@ namespace CXXR {
 	    unsigned int rightassoc;
 	};
 
-	struct FunctionTableEntry {
+	struct TableEntry {
 	    const char* name;  // name of function
 	    CCODE cfun;        // pointer to relevant do_xxx function
 	    unsigned int variant;  // used to select alternative
@@ -289,13 +285,30 @@ namespace CXXR {
 	// result printing, this should not be overridden.
 	enum ResultPrintingMode {FORCE_ON = 0, FORCE_OFF, SOFT_ON};
 
-	static FunctionTableEntry s_function_table[];
+	// Actually an array:
+	static TableEntry* s_function_table;
 
 	unsigned int m_offset;
 	CCODE m_function;
 	ResultPrintingMode m_result_printing_mode;
+
+	static void cleanup()
+	{}
+
+	// Put primitive functions into the base environment, and
+	// internal functions into the DotInternalTable:
+	static void initialize();
+
+	friend class SchwarzCounter<BuiltInFunction>;
     };
 }  // namespace CXXR
+
+// Force Environment and Symbol classes to be initialised first:
+#include "CXXR/Environment.h"
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::BuiltInFunction> bif_schwarz_ctr;
+}
 
 // Old-style accessor functions.  Get rid of these in due course.
 

@@ -41,6 +41,7 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/FunctionBase.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;

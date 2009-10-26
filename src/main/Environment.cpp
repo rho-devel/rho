@@ -43,6 +43,7 @@
 
 #include "R_ext/Error.h"
 #include "localization.h"
+#include "CXXR/FunctionBase.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -71,30 +72,40 @@ namespace {
 
 // Predefined Environments:
 namespace CXXR {
-    const GCRoot<Environment>
-    EmptyEnvironment(GCNode::expose(new Environment(0)));
-
-    const GCRoot<Environment>
-    BaseEnvironment(GCNode::expose(new Environment(EmptyEnvironment)));
-
-    const GCRoot<Environment>
-    GlobalEnvironment(GCNode::expose(new Environment(BaseEnvironment)));
-
-    const GCRoot<Environment>
-    BaseNamespace(GCNode::expose(new Environment(GlobalEnvironment,
-						 BaseEnvironment->frame())));
+    Environment* EmptyEnvironment;
+    Environment* BaseEnvironment;
+    Environment* GlobalEnvironment;
+    Environment* BaseNamespace;
 }
 
-SEXP R_EmptyEnv = EmptyEnvironment;
-SEXP R_BaseEnv = BaseEnvironment;
-SEXP R_GlobalEnv = GlobalEnvironment;
-SEXP R_BaseNamespace = BaseNamespace;
+SEXP R_EmptyEnv;
+SEXP R_BaseEnv;
+SEXP R_GlobalEnv;
+SEXP R_BaseNamespace;
 
 void Environment::detachReferents()
 {
     m_enclosing.detach();
     m_frame.detach();
     RObject::detachReferents();
+}
+
+void Environment::initialize()
+{
+    static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
+    EmptyEnvironment = empty_env.get();
+    R_EmptyEnv = EmptyEnvironment;
+    static GCRoot<Environment> base_env(GCNode::expose(new Environment(EmptyEnvironment)));
+    BaseEnvironment = base_env.get();
+    R_BaseEnv = BaseEnvironment;
+    static GCRoot<Environment> global_env(GCNode::expose(new Environment(BaseEnvironment)));
+    GlobalEnvironment = global_env.get();
+    R_GlobalEnv = GlobalEnvironment;
+    static GCRoot<Environment>
+	base_namespace(GCNode::expose(new Environment(GlobalEnvironment,
+						      BaseEnvironment->frame())));
+    BaseNamespace = base_namespace.get();
+    R_BaseNamespace = BaseNamespace;
 }
 
 unsigned int Environment::packGPBits() const

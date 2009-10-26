@@ -51,14 +51,20 @@ namespace CXXR {
     }
 }
 
-DotInternalTable::map DotInternalTable::s_table;
+DotInternalTable::map* DotInternalTable::s_table = 0;
+
+void DotInternalTable::initialize()
+{
+    static map the_map;
+    s_table = &the_map;
+}
 
 void DotInternalTable::set(const Symbol* sym, BuiltInFunction* fun)
 {
     if (!fun)
-	s_table.erase(sym);
+	s_table->erase(sym);
     else
-	s_table[sym] = fun;
+	(*s_table)[sym] = fun;
 }
 
 

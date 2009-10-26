@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/StdFrame.hpp"
@@ -70,8 +71,8 @@ namespace CXXR {
 	 */
 	static BuiltInFunction* get(const Symbol* sym)
 	{
-	    map::iterator it = s_table.find(sym);
-	    if (it == s_table.end())
+	    map::iterator it = s_table->find(sym);
+	    if (it == s_table->end())
 		return 0;
 	    return (*it).second;
 	}
@@ -96,7 +97,12 @@ namespace CXXR {
 							  GCRoot<BuiltInFunction> > >
 	                        > map;
 
-	static map s_table;
+	static map* s_table;
+
+	// Called from BuiltInFunction::initialize():
+	static void initialize();
+
+	friend class BuiltInFunction;
     };
 }  // namespace CXXR
 

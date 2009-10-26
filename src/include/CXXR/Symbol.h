@@ -45,7 +45,6 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/CachedString.h"

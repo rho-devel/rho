@@ -206,6 +206,12 @@ namespace CXXR {
 	// compiler-generated versions:
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
+
+	static void cleanup() {}
+
+	static void initialize();
+
+	friend class SchwarzCounter<Environment>;
     };
 
     /** @brief Search for a Binding for a Symbol.
@@ -376,11 +382,15 @@ namespace CXXR {
     }
 	    
     // Predefined Environments visible in 'namespace CXXR':
-    extern const GCRoot<Environment> EmptyEnvironment;
-    extern const GCRoot<Environment> BaseEnvironment;
-    extern const GCRoot<Environment> GlobalEnvironment;
-    extern const GCRoot<Environment> BaseNamespace;
+    extern Environment* EmptyEnvironment;
+    extern Environment* BaseEnvironment;
+    extern Environment* GlobalEnvironment;
+    extern Environment* BaseNamespace;
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;
+}
 
 extern "C" {
 #else /* if not __cplusplus */
