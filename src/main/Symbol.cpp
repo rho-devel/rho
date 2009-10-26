@@ -61,13 +61,13 @@ namespace CXXR {
 
 Symbol::map* Symbol::s_table = 0;
 
-GCRoot<Symbol>* Symbol::s_missing_arg;
+Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
 
-GCRoot<Symbol>* Symbol::s_restart_token;
+Symbol* Symbol::s_restart_token;
 SEXP R_RestartToken;
 
-GCRoot<Symbol>* Symbol::s_unbound_value;
+Symbol* Symbol::s_unbound_value;
 SEXP R_UnboundValue;
 
 // As of gcc 4.3.2, gcc's std::tr1::regex didn't appear to be working.
@@ -102,14 +102,6 @@ Symbol::Symbol(const CachedString* the_name, bool frozen)
 Symbol::~Symbol()
 {
     if (m_name) s_table->erase(m_name);
-}
-
-void Symbol::cleanup()
-{
-    delete s_unbound_value;
-    delete s_restart_token;
-    delete s_missing_arg;
-    // Don't delete s_table: there will still be Symbols in existence.
 }
 
 void Symbol::detachReferents()
@@ -150,13 +142,18 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
+    // We don't delete s_table in the cleanup() function, because
+    // there will still be Symbol objects in existence on exit.
     s_table = new map;
-    s_missing_arg = new GCRoot<Symbol>(expose(new Symbol));
-    R_MissingArg = Symbol::missingArgument();
-    s_restart_token = new GCRoot<Symbol>(expose(new Symbol));
-    R_RestartToken = Symbol::restartToken();
-    s_unbound_value = new GCRoot<Symbol>(expose(new Symbol));
-    R_UnboundValue = Symbol::unboundValue();
+    static GCRoot<Symbol> missing_arg(expose(new Symbol));
+    s_missing_arg = missing_arg.get();
+    R_MissingArg = s_missing_arg;
+    static GCRoot<Symbol> restart_token(expose(new Symbol));
+    s_restart_token = restart_token.get();
+    R_RestartToken = s_restart_token;
+    static GCRoot<Symbol> unbound_value(expose(new Symbol));
+    s_unbound_value = unbound_value.get();
+    R_UnboundValue = s_unbound_value;
     static boost::basic_regex<char> dd_rx("\\.\\.(\\d+)");
     dd_regex = &dd_rx;
 }

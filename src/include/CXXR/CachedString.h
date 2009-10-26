@@ -64,7 +64,7 @@ namespace CXXR {
 	 */
 	static const CachedString* blank()
 	{
-	    return *s_blank;
+	    return s_blank;
 	}
 
 	/** @brief Get a pointer to a CachedString object.
@@ -132,7 +132,7 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 
 	static map* s_cache;
-	static GCRoot<const CachedString>* s_blank;
+	static const CachedString* s_blank;
 
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
@@ -164,8 +164,7 @@ namespace CXXR {
 	    return s_cache;
 	}
 
-	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();

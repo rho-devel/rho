@@ -146,7 +146,7 @@ namespace CXXR {
 	 */
 	static Symbol* missingArgument()
 	{
-	    return *s_missing_arg;
+	    return s_missing_arg;
 	}
 
 	/** @brief Access name.
@@ -204,7 +204,7 @@ namespace CXXR {
 	 */
 	static Symbol* restartToken()
 	{
-	    return *s_restart_token;
+	    return s_restart_token;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -225,7 +225,7 @@ namespace CXXR {
 	 */
 	static Symbol* unboundValue()
 	{
-	    return *s_unbound_value;
+	    return s_unbound_value;
 	}
 
 	// Virtual functions of RObject:
@@ -239,9 +239,9 @@ namespace CXXR {
 	void detachReferents();
     private:
 	static map* s_table;
-	static GCRoot<Symbol>* s_missing_arg;
-	static GCRoot<Symbol>* s_restart_token;
-	static GCRoot<Symbol>* s_unbound_value;
+	static Symbol* s_missing_arg;
+	static Symbol* s_restart_token;
+	static Symbol* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
 	unsigned int m_dd_index;
@@ -270,8 +270,7 @@ namespace CXXR {
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
 
-	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();

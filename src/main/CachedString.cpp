@@ -55,7 +55,7 @@ namespace CXXR {
 tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
 
 CachedString::map* CachedString::s_cache = 0;
-GCRoot<const CachedString>* CachedString::s_blank = 0;
+const CachedString* CachedString::s_blank;
 SEXP R_BlankString = 0;
 
 const CachedString* CachedString::obtain(const std::string& str,
@@ -86,18 +86,14 @@ const char* CachedString::c_str() const
     return m_key_val_pr->first.first.c_str();
 }
 
-void CachedString::cleanup()
-{
-    R_BlankString = 0;
-    delete s_blank;
-    // Don't delete s_cache: there will still be CachedStrings in existence.
-}
-
 void CachedString::initialize()
 {
+    // We don't delete s_cache in cleanup() because there will still
+    // be CachedStrings in existence on exit.
     s_cache = new map;
-    s_blank = new GCRoot<const CachedString>(CachedString::obtain(""));
-    R_BlankString = const_cast<CachedString*>(CachedString::blank());
+    static GCRoot<const CachedString> blank(CachedString::obtain(""));
+    s_blank = blank.get();
+    R_BlankString = const_cast<CachedString*>(s_blank);
 }
     
 const char* CachedString::typeName() const
