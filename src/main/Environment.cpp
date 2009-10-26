@@ -70,13 +70,9 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-// Predefined Environments:
-namespace CXXR {
-    Environment* EmptyEnvironment;
-    Environment* BaseEnvironment;
-    Environment* GlobalEnvironment;
-    Environment* BaseNamespace;
-}
+Environment* Environment::s_base;
+Environment* Environment::s_base_namespace;
+Environment* Environment::s_global;
 
 SEXP R_EmptyEnv;
 SEXP R_BaseEnv;
@@ -93,19 +89,20 @@ void Environment::detachReferents()
 void Environment::initialize()
 {
     static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
-    EmptyEnvironment = empty_env.get();
-    R_EmptyEnv = EmptyEnvironment;
-    static GCRoot<Environment> base_env(GCNode::expose(new Environment(EmptyEnvironment)));
-    BaseEnvironment = base_env.get();
-    R_BaseEnv = BaseEnvironment;
-    static GCRoot<Environment> global_env(GCNode::expose(new Environment(BaseEnvironment)));
-    GlobalEnvironment = global_env.get();
-    R_GlobalEnv = GlobalEnvironment;
+    R_EmptyEnv = empty_env.get();
     static GCRoot<Environment>
-	base_namespace(GCNode::expose(new Environment(GlobalEnvironment,
-						      BaseEnvironment->frame())));
-    BaseNamespace = base_namespace.get();
-    R_BaseNamespace = BaseNamespace;
+	base_env(GCNode::expose(new Environment(empty_env)));
+    s_base = base_env.get();
+    R_BaseEnv = s_base;
+    static GCRoot<Environment>
+	global_env(GCNode::expose(new Environment(s_base)));
+    s_global = global_env.get();
+    R_GlobalEnv = s_global;
+    static GCRoot<Environment>
+	base_namespace(GCNode::expose(new Environment(s_global,
+						      s_base->frame())));
+    s_base_namespace = base_namespace.get();
+    R_BaseNamespace = s_base_namespace;
 }
 
 unsigned int Environment::packGPBits() const

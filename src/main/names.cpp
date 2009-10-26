@@ -1006,7 +1006,7 @@ void BuiltInFunction::initialize()
 	if ((s_function_table[i].flags%100)/10)
 	    DotInternalTable::set(sym, bif);
 	else
-	    BaseEnvironment->frame()->obtainBinding(sym)->setValue(bif);
+	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
     }
     
 }

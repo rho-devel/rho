@@ -295,7 +295,7 @@ void CXXRnot_hidden unbindVar(SEXP symbol, SEXP rho)
 
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    if (env->frame()->erase(sym) && env == GlobalEnvironment)
+    if (env->frame()->erase(sym) && env == Environment::global())
 	R_DirtyImage = 1;
 }
 
@@ -680,10 +680,10 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
     Frame::Binding* bdg = pr.second;
     env = pr.first;
     if (!env) {
-	env = GlobalEnvironment;
+	env = Environment::global();
 	bdg = env->frame()->obtainBinding(sym);
     }
-    if (env == GlobalEnvironment)
+    if (env == Environment::global())
 	R_DirtyImage = 1;
     bdg->assign(value);
     bdg->setMissing(0);
@@ -704,7 +704,7 @@ void gsetVar(SEXP symbol, SEXP value, SEXP rho)
 {
     GCStackRoot<> valrt(value);
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
-    Frame::Binding* bdg = BaseEnvironment->frame()->obtainBinding(sym);
+    Frame::Binding* bdg = Environment::base()->frame()->obtainBinding(sym);
     bdg->assign(value);
     bdg->setMissing(0);  /* over-ride */
 }
@@ -1747,7 +1747,7 @@ void R_LockEnvironment(SEXP env, Rboolean bindings)
 {
     if (env == R_BaseEnv || env == R_BaseNamespace) {
 	if (bindings) {
-	    BaseEnvironment->frame()->lockBindings();
+	    Environment::base()->frame()->lockBindings();
 	}
 #ifdef NOT_YET
 	/* causes problems with Matrix */

@@ -179,7 +179,7 @@ void WeakRef::finalize()
     else if (Rfin) {
 	GCStackRoot<PairList> tail(expose(new PairList(key)));
 	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
-	eval(e, GlobalEnvironment);
+	eval(e, Environment::global());
     }
 }
 

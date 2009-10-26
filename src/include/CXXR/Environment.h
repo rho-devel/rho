@@ -113,6 +113,24 @@ namespace CXXR {
 	      m_single_stepping(false)
 	{}
 
+	/** @brief Base environment.
+	 *
+	 * @return Pointer to the base environment.
+	 */
+	static Environment* base()
+	{
+	    return s_base;
+	}
+
+	/** @brief Base namespace.
+	 *
+	 * @return Pointer to the base namespace.
+	 */
+	static Environment* baseNamespace()
+	{
+	    return s_base_namespace;
+	}
+
 	/** @brief Access the enclosing Environment.
 	 *
 	 * @return pointer to the enclosing Environment.
@@ -138,6 +156,15 @@ namespace CXXR {
 	const Frame* frame() const
 	{
 	    return m_frame;
+	}
+
+	/** @brief Global environment.
+	 *
+	 * @return Pointer to the global environment.
+	 */
+	static Environment* global()
+	{
+	    return s_global;
 	}
 
 	/** @brief Replace the enclosing environment.
@@ -197,6 +224,13 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	// Predefined environments.  R_EmptyEnvironment has no special
+	// significance in CXXR, and may be abolished, so is not
+	// included here:
+	static Environment* s_base;
+	static Environment* s_base_namespace;
+	static Environment* s_global;
+
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
@@ -380,12 +414,6 @@ namespace CXXR {
 	}
 	return pair<Environment*, RObject*>(0, 0);
     }
-	    
-    // Predefined Environments visible in 'namespace CXXR':
-    extern Environment* EmptyEnvironment;
-    extern Environment* BaseEnvironment;
-    extern Environment* GlobalEnvironment;
-    extern Environment* BaseNamespace;
 }  // namespace CXXR
 
 namespace {
@@ -400,7 +428,7 @@ extern "C" {
 
 #endif
 
-    /* C-visible names for CXXR::EmptyEnvironment etc. */
+    /* C-visible names for predefined environments */
     extern SEXP R_EmptyEnv;
     extern SEXP R_BaseEnv;
     extern SEXP R_GlobalEnv;
@@ -533,7 +561,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	BaseEnvironment->frame()->obtainBinding(sym)->setValue(val);
+	Environment::base()->frame()->obtainBinding(sym)->setValue(val);
     }
 #endif
 
@@ -552,7 +580,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	Frame::Binding* bdg = BaseEnvironment->frame()->binding(sym);
+	Frame::Binding* bdg = Environment::base()->frame()->binding(sym);
 	return bdg ? bdg->value() : Symbol::unboundValue();
     }
 #endif

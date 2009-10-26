@@ -72,7 +72,7 @@ namespace CXXR {
 	 *          is to be evaluated.
 	 */
 	Closure(const PairList* formal_args, const RObject* body,
-		Environment* env = GlobalEnvironment);
+		Environment* env = Environment::global());
 
 	/** @brief Copy constructor.
 	 *

@@ -1342,7 +1342,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (locked) R_LockEnvironment(env, FALSE);
 	    /* Convert a NULL enclosure to baseenv() */
 	    if (!env->enclosingEnvironment())
-		env->setEnclosingEnvironment(BaseEnvironment);
+		env->setEnclosingEnvironment(Environment::base());
 	    return env;
 	}
     case LISTSXP:
@@ -1401,7 +1401,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		    ? SEXP_downcast<Environment*>(ReadItem(ref_table, stream))
 		    : 0);
 	    if (!env)
-		env = BaseEnvironment;
+		env = Environment::base();
 	    GCStackRoot<PairList>
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
 	    GCStackRoot<> body(ReadItem(ref_table, stream));
@@ -1423,7 +1423,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		    : 0);
 	    // For reading promises stored in earlier versions,
 	    // convert null env to base env:
-	    if (!env) env = BaseEnvironment;
+	    if (!env) env = Environment::base();
 	    GCStackRoot<> val(ReadItem(ref_table, stream));
 	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
 	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));

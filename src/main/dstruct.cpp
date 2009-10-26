@@ -106,6 +106,6 @@ SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCStackRoot<> bodyrt(body);
     GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
-			      : GlobalEnvironment);
+				   : Environment::global());
     return GCNode::expose(new Closure(formrt, bodyrt, envrt));
 }

@@ -249,7 +249,7 @@ bool WeakRef::runFinalizers()
 	// insure that any errors that might occur do not spill into
 	// the call that triggered the collection:
 	Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
-			0, GlobalEnvironment, R_BaseEnv, 0, 0);
+			0, Environment::global(), Environment::base(), 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
 	GCStackRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = GCStackRootBase::ppsSize();
