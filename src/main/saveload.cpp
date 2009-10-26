@@ -554,13 +554,13 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new SpecialBuiltInFunction(StrToInternal(m->InString(fp, d))));
+	s = GCNode::expose(new SpecialBuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d))));
 	break;
     case BUILTINSXP:
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new OrdinaryBuiltInFunction(StrToInternal(m->InString(fp, d))));
+	s = GCNode::expose(new OrdinaryBuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d))));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
@@ -1328,7 +1328,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case SPECIALSXP:
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	PROTECT(s = mkPRIMSXP(StrToInternal(m->InString(fp, d)), type == BUILTINSXP));
+	PROTECT(s = BuiltInFunction::make(BuiltInFunction::indexInTable(m->InString(fp, d))));
 	break;
     case CHARSXP:
     case LGLSXP:

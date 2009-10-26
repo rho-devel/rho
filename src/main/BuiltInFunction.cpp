@@ -74,13 +74,3 @@ BuiltInFunction* BuiltInFunction::make(unsigned int i)
 	return GCNode::expose(new OrdinaryBuiltInFunction(i));
     else return GCNode::expose(new SpecialBuiltInFunction(i));
 }
-
-// ***** C interface *****
-
-SEXP mkPRIMSXP(int offset, int evaluate)
-{
-    using namespace CXXR;
-    if (evaluate)
-	return GCNode::expose(new OrdinaryBuiltInFunction(offset));
-    else return GCNode::expose(new SpecialBuiltInFunction(offset));
-}

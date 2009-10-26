@@ -704,7 +704,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define StringFromLogical	Rf_StringFromLogical
 # define StringFromReal		Rf_StringFromReal
 # define strIsASCII		Rf_strIsASCII
-# define StrToInternal		Rf_StrToInternal
 # define substituteList		Rf_substituteList
 # define tsConform		Rf_tsConform
 # define tspgets		Rf_tspgets
@@ -867,7 +866,6 @@ SEXP matchPar(const char *, SEXP*);
 void memtrace_report(void *, void *);
 SEXP mkCLOSXP(SEXP, SEXP, SEXP);
 SEXP mkFalse(void);
-SEXP mkPRIMSXP (int, int);
 SEXP mkPROMISE(SEXP, SEXP);
 SEXP mkQUOTE(SEXP);
 SEXP mkTrue(void);
@@ -912,7 +910,6 @@ void sortVector(SEXP, Rboolean);
 #ifdef __cplusplus
 void ssort(CXXR::StringVector*,int);
 #endif
-int StrToInternal(const char *);
 SEXP substituteList(SEXP, SEXP);
 #ifdef __cplusplus
 SEXP R_syscall(int,RCNTXT*);

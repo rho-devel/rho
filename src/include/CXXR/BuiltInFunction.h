@@ -382,25 +382,6 @@ inline unsigned int PRIMVAL(SEXP x)
 }
 #endif
   
-    /** @brief Create a CXXR::BuiltInFunction object.
-     *
-     * @param offset The required table offset.  (Not
-     *          range-checked in any way.)
-     *
-     * @param evaluate true iff this is to be a
-     *          CXXR::OrdinaryBuiltInFunction (BUILTINSXP); otherwise
-     *          it will be a CXXR::SpecialBuiltInFunction
-     *          (SPECIALSXP).
-     *
-     * @return Pointer to the created CXXR::BuiltInFunction object.
-     *
-     * @deprecated Function table details ought not to be exposed
-     * outside the class.  To be phased out in due course.  Also note
-     * that no check is made that \a evaluate is consistent with the
-     * data in the function table.
-     */
-    SEXP mkPRIMSXP(int offset, int evaluate);
-
 #ifdef __cplusplus
 }
 #endif

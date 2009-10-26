@@ -1027,12 +1027,6 @@ SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
     return BuiltInFunction::make(index);
 }
 
-int StrToInternal(const char *s)
-{
-    // Yes, CR really does confound 'found at position 0' with 'not found':
-    return std::max(0, BuiltInFunction::indexInTable(s));
-}
-
 /* initialize the symbol table */
 // Well, now just odds and ends in CXXR.
 void InitNames()
