@@ -450,19 +450,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Check that C pointer protection stack has expected size.
-     *
-     * Check that the C pointer protection stack has the expected
-     * size, and print a warning if not.
-     *
-     * @param op Operation being performed.
-     *
-     * @param save The expected size of the pointer protection stack.
-     *
-     * @todo A warning seems too mild a response in this eventuality.
-     */
-    void Rf_check_stack_balance(SEXP op, unsigned int save);
-
     /** @brief Restore C pointer protection stack to a previous size.
      *
      * Restore the C pointer protection stack to a previous size by

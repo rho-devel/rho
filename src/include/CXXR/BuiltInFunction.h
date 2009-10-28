@@ -339,14 +339,14 @@ inline int PRIMINTERNAL(SEXP x)
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.viaDotInternal();
 }
-    
+
 inline int PRIMPRINT(SEXP x)
 {
     using namespace CXXR;
     BuiltInFunction& bif = *SEXP_downcast<BuiltInFunction*>(x);
     return bif.printHandling();
 }
-    
+  
 extern "C" {
 #endif
 

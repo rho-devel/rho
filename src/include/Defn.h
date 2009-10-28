@@ -599,7 +599,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 # define allocCharsxp		Rf_allocCharsxp
 # define begincontext		Rf_begincontext
-# define check_stack_balance	Rf_check_stack_balance
 # define CheckFormals		Rf_CheckFormals
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
@@ -791,7 +790,6 @@ void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
 void CheckFormals(SEXP);
 void R_check_locale(void);
-void check_stack_balance(SEXP op, unsigned int save);
 void CleanEd(void);
 void copyListMatrix(SEXP, SEXP, Rboolean);
 void copyMostAttribNoTs(SEXP, SEXP);

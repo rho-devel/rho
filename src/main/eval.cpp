@@ -333,14 +333,6 @@ SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* NEEDED: A fixup is needed in browser, because it can trap errors,
  *	and currently does not reset the limit to the right value. */
 
-void CXXRnot_hidden check_stack_balance(SEXP op, CXXRunsigned int save)
-{
-    if(save == GCStackRootBase::ppsSize()) return;
-    REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-	     PRIMNAME(op), save, GCStackRootBase::ppsSize());
-}
-
-
 static SEXP forcePromise(SEXP e)
 {
     Promise* prom = SEXP_downcast<Promise*>(e);
