@@ -76,7 +76,7 @@ namespace CXXR {
 	const char* typeName() const;
     private:
 	// Virtual function of FunctionBase:
-	RObject* innerApply(Expression* call, Environment* env);
+	RObject* innerApply(Expression* call, PairList* args, Environment* env);
     };
 }  // namespace CXXR
 

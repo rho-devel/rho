@@ -62,12 +62,13 @@ namespace CXXR {
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
-RObject* BuiltInFunction::apply(Expression* call, Environment* env)
+RObject* BuiltInFunction::apply(Expression* call, PairList* args,
+				Environment* env)
 {
     size_t pps_size = GCStackRootBase::ppsSize();
     size_t ralloc_size = RAllocStack::size();
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    GCStackRoot<> ans(innerApply(call, env));
+    GCStackRoot<> ans(innerApply(call, args, env));
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     if (pps_size != GCStackRootBase::ppsSize())

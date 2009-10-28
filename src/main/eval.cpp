@@ -347,25 +347,25 @@ static SEXP forcePromise(SEXP e)
     return prom->force();
 }
 
-RObject* Closure::apply(Expression* call, Environment* env)
+RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 {
-    GCStackRoot<> tmp(promiseArgs(call->tail(), env));
+    GCStackRoot<> tmp(promiseArgs(args, env));
     return applyClosure(call, this, tmp, env, R_BaseEnv);
 }
 
-RObject* OrdinaryBuiltInFunction::innerApply(Expression* call,
+RObject* OrdinaryBuiltInFunction::innerApply(Expression* call, PairList* args,
 					     Environment* env)
 {
-    GCStackRoot<> args(evalList(call->tail(), env, this));
+    GCStackRoot<> evaluated_args(evalList(args, env, this));
     if (R_Profiling || kind() == PP_FOREIGN) {
 	RCNTXT cntxt;
 	begincontext(&cntxt, CTXT_BUILTIN, call,
 		     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
-	RObject* ans = function()(call, this, args, env);
+	RObject* ans = function()(call, this, evaluated_args, env);
 	endcontext(&cntxt);
 	return ans;
     } else {
-	return function()(call, this, args, env);
+	return function()(call, this, evaluated_args, env);
     }
 }
 

@@ -60,12 +60,16 @@ namespace CXXR {
 	 *
 	 * @param call Pointer to the Expression calling the function.
 	 *
+	 * @param args List of arguments with which the function is to
+	 *          be invoked.
+	 *
 	 * @param env Pointer to the Environment in which the function
 	 *          is to be evaluated.
 	 *
 	 * @return The result of applying the function.
 	 */
-	virtual RObject* apply(Expression* call, Environment* env) = 0;
+	virtual RObject* apply(Expression* call, PairList* args,
+			       Environment* env) = 0;
 
 	/** @brief Enable/disable function tracing.
 	 *

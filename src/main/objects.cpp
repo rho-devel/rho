@@ -115,34 +115,13 @@ static SEXP GetObject(RCNTXT *cptr)
 static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
 {
     SEXP ans;
-    if (TYPEOF(op) == SPECIALSXP) {
-	unsigned int save = GCStackRootBase::ppsSize();
-	int flag = PRIMPRINT(op);
-	void *vmax = vmaxget();
-	R_Visible = CXXRconvert(Rboolean, flag != 1);
-	ans = PRIMFUN(op) (call, op, args, rho);
-	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
-	check_stack_balance(op, save);
-	vmaxset(vmax);
-    }
-    /* In other places we add a context to builtins when profiling,
-       but we have not bothered here (as there seem to be no primitives
-       used as methods, and this would have to be a primitive to be
-       found).
-     */
-    else if (TYPEOF(op) == BUILTINSXP) {
-	unsigned int save = GCStackRootBase::ppsSize();
-	int flag = PRIMPRINT(op);
-	void *vmax = vmaxget();
-	PROTECT(args = evalList(args, rho, op));
-	R_Visible = CXXRconvert(Rboolean, flag != 1);
-	ans = PRIMFUN(op) (call, op, args, rho);
-	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
-	UNPROTECT(1);
-	check_stack_balance(op, save);
-	vmaxset(vmax);
-    }
-    else if (TYPEOF(op) == CLOSXP) {
+    if (TYPEOF(op) == SPECIALSXP || TYPEOF(op) == BUILTINSXP) {
+	BuiltInFunction* func = static_cast<BuiltInFunction*>(op);
+	Expression* callx = SEXP_downcast<Expression*>(call);
+	GCStackRoot<PairList> argslist(SEXP_downcast<PairList*>(args));
+	Environment* env = SEXP_downcast<Environment*>(newrho);
+	ans = func->apply(callx, argslist, env);
+    } else if (TYPEOF(op) == CLOSXP) {
 	ans = applyClosure(call, op, args, rho, newrho);
     }
     else

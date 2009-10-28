@@ -44,9 +44,9 @@
 
 using namespace CXXR;
 
-RObject* SpecialBuiltInFunction::innerApply(Expression* call, Environment* env)
+RObject* SpecialBuiltInFunction::innerApply(Expression* call, PairList* args,
+					    Environment* env)
 {
-    GCStackRoot<PairList> args(call->tail());
     return function()(call, this, args, env);
 }
 

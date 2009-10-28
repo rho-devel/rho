@@ -1072,5 +1072,5 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 	Rf_errorcall(call, _("no internal function \"%s\""),
 		     CHAR(PRINTNAME(funsym)));
     Environment* envir = SEXP_downcast<Environment*>(env);
-    return func->apply(innercall, envir);
+    return func->apply(innercall, innercall->tail(), envir);
 }

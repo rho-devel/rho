@@ -152,7 +152,7 @@ namespace CXXR {
 	}
 
 	// Virtual function of FunctionBase:
-	RObject* apply(Expression* call, Environment* env);
+	RObject* apply(Expression* call, PairList* args, Environment* env);
 
 	// Virtual functions of RObject:
         Closure* clone() const;

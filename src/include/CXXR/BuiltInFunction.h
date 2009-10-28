@@ -248,7 +248,7 @@ namespace CXXR {
 	}
 
 	// Virtual function of FunctionBase:
-	RObject* apply(Expression* call, Environment* env);
+	RObject* apply(Expression* call, PairList* args, Environment* env);
     protected:
 	/**
 	 * @param offset The required table offset.  (Not
@@ -303,7 +303,8 @@ namespace CXXR {
 	static void initialize();
 
 	// 'apply' behaviour where SPECIALSXP differs from BUILTINSXP:
-	virtual RObject* innerApply(Expression* call, Environment* env) = 0;
+	virtual RObject* innerApply(Expression* call, PairList* args,
+				    Environment* env) = 0;
 
 	friend class SchwarzCounter<BuiltInFunction>;
     };

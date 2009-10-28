@@ -84,7 +84,7 @@ RObject* Expression::evaluate(Environment* env)
 	func = static_cast<FunctionBase*>(val);
     }
     func->maybeTrace(this);
-    return func->apply(this, env);
+    return func->apply(this, tail(), env);
 }
 
 const char* Expression::typeName() const
