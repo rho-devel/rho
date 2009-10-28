@@ -42,9 +42,13 @@
 
 #include "CXXR/DotInternal.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
+#include "CXXR/RAllocStack.h"
 #include "CXXR/SpecialBuiltInFunction.hpp"
 #include "CXXR/Symbol.h"
+#include "R_ext/Print.h"
 
 using namespace CXXR;
 
@@ -57,6 +61,21 @@ namespace CXXR {
 }
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
+
+RObject* BuiltInFunction::apply(Expression* call, Environment* env)
+{
+    size_t pps_size = GCStackRootBase::ppsSize();
+    size_t ralloc_size = RAllocStack::size();
+    Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+    GCStackRoot<> ans(innerApply(call, env));
+    if (m_result_printing_mode != SOFT_ON)
+	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+    if (pps_size != GCStackRootBase::ppsSize())
+	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
+		 name(), pps_size, GCStackRootBase::ppsSize());
+    RAllocStack::restoreSize(ralloc_size);
+    return ans;
+}
 
 int BuiltInFunction::indexInTable(const char* name)
 {

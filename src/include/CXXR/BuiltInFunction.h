@@ -246,6 +246,9 @@ namespace CXXR {
 	{
 	    return (s_function_table[m_offset].flags%100)/10 == 1;
 	}
+
+	// Virtual function of FunctionBase:
+	RObject* apply(Expression* call, Environment* env);
     protected:
 	/**
 	 * @param offset The required table offset.  (Not
@@ -298,6 +301,9 @@ namespace CXXR {
 	// Put primitive functions into the base environment, and
 	// internal functions into the DotInternalTable:
 	static void initialize();
+
+	// 'apply' behaviour where SPECIALSXP differs from BUILTINSXP:
+	virtual RObject* innerApply(Expression* call, Environment* env) = 0;
 
 	friend class SchwarzCounter<BuiltInFunction>;
     };

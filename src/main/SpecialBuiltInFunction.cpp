@@ -39,9 +39,16 @@
 
 #include "CXXR/SpecialBuiltInFunction.hpp"
 
+#include "CXXR/Expression.h"
+#include "CXXR/GCStackRoot.h"
+
 using namespace CXXR;
 
-// SpecialBuiltInFunction::apply() is in eval.cpp (for the time being).
+RObject* SpecialBuiltInFunction::innerApply(Expression* call, Environment* env)
+{
+    GCStackRoot<PairList> args(call->tail());
+    return function()(call, this, args, env);
+}
 
 const char* SpecialBuiltInFunction::typeName() const
 {

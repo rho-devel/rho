@@ -353,60 +353,20 @@ RObject* Closure::apply(Expression* call, Environment* env)
     return applyClosure(call, this, tmp, env, R_BaseEnv);
 }
 
-RObject* OrdinaryBuiltInFunction::apply(Expression* call, Environment* env)
+RObject* OrdinaryBuiltInFunction::innerApply(Expression* call,
+					     Environment* env)
 {
-    unsigned int save = GCStackRootBase::ppsSize();
-    int flag = PRIMPRINT(this);
-    void *vmax = vmaxget();
-    RCNTXT cntxt;
-    GCStackRoot<> tmp(evalList(call->tail(), env, this));
-    //if (flag < 2)
-	R_Visible = Rboolean(flag != 1);
-    /* We used to insert a context only if profiling,
-       but helps for tracebacks on .C etc. */
-	if (R_Profiling || kind() == PP_FOREIGN) {
+    GCStackRoot<> args(evalList(call->tail(), env, this));
+    if (R_Profiling || kind() == PP_FOREIGN) {
+	RCNTXT cntxt;
 	begincontext(&cntxt, CTXT_BUILTIN, call,
 		     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
-	tmp = PRIMFUN(this) (call, this, tmp, env);
+	RObject* ans = function()(call, this, args, env);
 	endcontext(&cntxt);
+	return ans;
     } else {
-	tmp = PRIMFUN(this) (call, this, tmp, env);
+	return function()(call, this, args, env);
     }
-#ifdef CHECK_VISIBILITY
-    if(flag < 2 && R_Visible == flag) {
-	char *nm = PRIMNAME(this);
-	printf("vis: builtin %s\n", nm);
-    }
-#endif
-    if (flag < 2)
-	R_Visible = Rboolean(flag != 1);
-    check_stack_balance(this, save);
-    vmaxset(vmax);
-    return tmp;
-}
-
-RObject* SpecialBuiltInFunction::apply(Expression* call, Environment* env)
-{
-    unsigned int save = GCStackRootBase::ppsSize();
-    int flag = PRIMPRINT(this);
-    void *vmax = vmaxget();
-    GCStackRoot<PairList> args(call->tail());
-    R_Visible = Rboolean(flag != 1);
-    GCStackRoot<> ans(PRIMFUN(this) (call, this, args, env));
-#ifdef CHECK_VISIBILITY
-    if(flag < 2 && R_Visible == flag) {
-	char *nm = PRIMNAME(this);
-	if(strcmp(nm, "for")
-	   && strcmp(nm, "repeat") && strcmp(nm, "while")
-	   && strcmp(nm, "[[<-") && strcmp(nm, "on.exit"))
-	    printf("vis: special %s\n", nm);
-    }
-#endif
-    if (flag < 2)
-	R_Visible = Rboolean(flag != 1);
-    check_stack_balance(this, save);
-    vmaxset(vmax);
-    return ans;
 }
 
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
