@@ -43,7 +43,6 @@
 #include "CXXR/CachedString.h"
 #include "CXXR/GCStackRoot.h"
 
-#define __R_Names__ /* used in Defn.h for extern on R_FunTab */
 #include <Defn.h>
 #include <Print.h>
 #include "arithmetic.h"
@@ -1061,44 +1060,17 @@ SEXP install(const char *name)
 
 SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP s, fun, ans;
-    int save = GCStackRootBase::ppsSize();
-    int flag;
-    void *vmax = vmaxget();
-
     checkArity(op, args);
-    s = CAR(args);
-    if (!isPairList(s))
-	errorcall(call, _("invalid .Internal() argument"));
-    fun = CAR(s);
-    if (!isSymbol(fun))
-	errorcall(call, _("invalid internal function"));
-    if (INTERNAL(fun) == R_NilValue)
-	errorcall(call, _("no internal function \"%s\""),
-		  CHAR(PRINTNAME(fun)));
-    args = CDR(s);
-    if (TYPEOF(INTERNAL(fun)) == BUILTINSXP)
-	args = evalList(args, env, op);
-    PROTECT(args);
-    flag = PRIMPRINT(INTERNAL(fun));
-    R_Visible = CXXRconvert(Rboolean, flag != 1);
-    ans = PRIMFUN(INTERNAL(fun)) (s, INTERNAL(fun), args, env);
-    /* This resetting of R_Visible=FALSE  was to fix PR#7397,
-       now fixed in GEText */
-    if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
-#ifdef CHECK_VISIBILITY
-    if(flag < 2 && flag == R_Visible) {
-	char *nm = CHAR(PRINTNAME(fun));
-	if(strcmp(nm, "eval") && strcmp(nm, "options") && strcmp(nm, "Recall")
-	   && strcmp(nm, "do.call") && strcmp(nm, "switch")
-	   && strcmp(nm, "recordGraphics") && strcmp(nm, "writeBin")
-	   && strcmp(nm, "NextMethod") && strcmp(nm, "eval.with.vis"))
-	    printf("vis: internal %s\n", nm);
-    }
-#endif
-    UNPROTECT(1);
-    check_stack_balance(INTERNAL(fun), save);
-    vmaxset(vmax);
-    return (ans);
+    Expression* innercall = dynamic_cast<Expression*>(CAR(args));
+    if (!innercall)
+	Rf_errorcall(call, _("invalid .Internal() argument"));
+    Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
+    if (!funsym)
+	Rf_errorcall(call, _("invalid internal function"));
+    BuiltInFunction* func = DotInternalTable::get(funsym);
+    if (!func)
+	Rf_errorcall(call, _("no internal function \"%s\""),
+		     CHAR(PRINTNAME(funsym)));
+    Environment* envir = SEXP_downcast<Environment*>(env);
+    return func->apply(innercall, envir);
 }
-#undef __R_Names__
