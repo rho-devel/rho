@@ -38,9 +38,12 @@
  */
 
 #include "CXXR/DotInternal.h"
+#include "Internal.h"
 
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/CachedString.h"
+#include "CXXR/Expression.h"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -75,4 +78,24 @@ void SET_INTERNAL(SEXP x, SEXP v)
     const Symbol* sym = SEXP_downcast<Symbol*>(x);
     BuiltInFunction* fun = SEXP_downcast<BuiltInFunction*>(v);
     DotInternalTable::set(sym, fun);
+}
+
+SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
+    PairList* arglist = SEXP_downcast<PairList*>(args);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    opfun->checkNumArgs(arglist, callx);
+    Expression* innercall = dynamic_cast<Expression*>(arglist->car());
+    if (!innercall)
+	Rf_errorcall(call, _("invalid .Internal() argument"));
+    Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
+    if (!funsym)
+	Rf_errorcall(call, _("invalid internal function"));
+    BuiltInFunction* func = DotInternalTable::get(funsym);
+    if (!func)
+	Rf_errorcall(call, _("no internal function \"%s\""),
+		     funsym->name()->c_str());
+    Environment* envir = SEXP_downcast<Environment*>(env);
+    return func->apply(innercall, innercall->tail(), envir);
 }

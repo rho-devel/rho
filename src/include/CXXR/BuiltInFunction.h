@@ -132,10 +132,25 @@ namespace CXXR {
 	    return s_function_table[m_offset].arity;
 	}
 
+	/** @brief Report error if argument list is wrong length.
+	 *
+	 * This function raises an error if \a args is not of a
+	 * permissible length for all call to this BuiltInFunction.
+	 *
+	 * @param args Argument list to be checked, possibly null.
+	 *
+	 * @param call The call being processed (for error reporting).
+	 */
+	void checkNumArgs(PairList* args, Expression* call) const;
+
 	/** @brief C/C++ function implementing this R function.
 	 *
 	 * @return Pointer to the C/C++ function implementing this R
 	 * function.
+	 *
+	 * @note This would be called checkArity(), except that in
+	 * code inherited from CR this would get macro-expanded to
+	 * Rf_checkArityCall.
 	 */
 	CCODE function() const
 	{

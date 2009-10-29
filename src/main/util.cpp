@@ -41,6 +41,11 @@
 #endif
 
 #include <Defn.h>
+
+#include "CXXR/BuiltInFunction.h"
+
+using namespace CXXR;
+
 #undef COMPILING_R
 
 #define imax2(x, y) ((x < y) ? y : x)
@@ -431,6 +436,7 @@ SEXP attribute_hidden EnsureString(SEXP s)
 }
 
 /* used in modules */
+/*
 void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 {
     if (PRIMARITY(op) >= 0 && PRIMARITY(op) != length(args)) {
@@ -446,6 +452,15 @@ void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
 			       length(args)),
 		      length(args), PRIMNAME(op), PRIMARITY(op));
     }
+}
+*/
+
+void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
+{
+    BuiltInFunction* func = SEXP_downcast<BuiltInFunction*>(op);
+    PairList* arglist = SEXP_downcast<PairList*>(args);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    func->checkNumArgs(arglist, callx);
 }
 
 SEXP nthcdr(SEXP s, int n)

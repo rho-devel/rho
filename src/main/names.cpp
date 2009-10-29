@@ -1054,23 +1054,3 @@ SEXP install(const char *name)
 	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
     return Symbol::obtain(name);
 }
-
-
-/*  do_internal - This is the code for .Internal(). */
-
-SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    checkArity(op, args);
-    Expression* innercall = dynamic_cast<Expression*>(CAR(args));
-    if (!innercall)
-	Rf_errorcall(call, _("invalid .Internal() argument"));
-    Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
-    if (!funsym)
-	Rf_errorcall(call, _("invalid internal function"));
-    BuiltInFunction* func = DotInternalTable::get(funsym);
-    if (!func)
-	Rf_errorcall(call, _("no internal function \"%s\""),
-		     CHAR(PRINTNAME(funsym)));
-    Environment* envir = SEXP_downcast<Environment*>(env);
-    return func->apply(innercall, innercall->tail(), envir);
-}

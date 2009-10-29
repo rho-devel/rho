@@ -126,7 +126,21 @@ namespace CXXR {
 	    ans->setAttributes(cc->attributes());
 	    return expose(ans);
 	}
-			   
+
+	/** @brief Number of elements in list.
+	 *
+	 * @param start Pointer to a ConsCell, possibly null.
+	 *
+	 * @return zero if \a start is a null pointer, otherwise the
+	 * number of elements in the list starting at the ConsCell
+	 * pointed to by \a start.
+	 *
+	 * @note This would have been called length(), except that in
+	 * code inherited from CR that would be apt to be
+	 * macro-expanded to Rf_length().
+	 */
+	static size_t listLength(const ConsCell* start);
+
 	/** @brief Set the 'car' value.
 	 *
 	 * @param cr Pointer to the new car object (or a null

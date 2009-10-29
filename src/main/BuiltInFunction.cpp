@@ -42,12 +42,14 @@
 
 #include "CXXR/DotInternal.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/SpecialBuiltInFunction.hpp"
 #include "CXXR/Symbol.h"
+#include "CXXR/errors.h"
 #include "R_ext/Print.h"
 
 using namespace CXXR;
@@ -76,6 +78,22 @@ RObject* BuiltInFunction::apply(Expression* call, PairList* args,
 		 name(), pps_size, GCStackRootBase::ppsSize());
     RAllocStack::restoreSize(ralloc_size);
     return ans;
+}
+
+void BuiltInFunction::checkNumArgs(PairList* args, Expression* call) const
+{
+    if (arity() >= 0) {
+	size_t nargs = ConsCell::listLength(args);
+	if (int(nargs) != arity()) {
+	    if (viaDotInternal())
+		Rf_error(_("%d arguments passed to .Internal(%s)"
+			   " which requires %d"), nargs, name(), arity());
+	    else
+		Rf_errorcall(call,
+			     _("%d arguments passed to '%s' which requires %d"),
+			     nargs, name(), arity());
+	}
+    }
 }
 
 int BuiltInFunction::indexInTable(const char* name)
