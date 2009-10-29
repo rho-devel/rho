@@ -1153,7 +1153,7 @@ SEXP CXXRnot_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    GCRoot<> rval;
+    GCStackRoot<> rval;
 
     if (TYPEOF(op) == PROMSXP) {
 	op = forcePromise(op);

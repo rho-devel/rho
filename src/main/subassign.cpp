@@ -1803,7 +1803,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     if(DispatchOrEval(call, op, "$<-", args, env, &ans, 0, 0))
       return(ans);
 
-    GCRoot<> ansrt(ans);
+    GCStackRoot<> ansrt(ans);
     if (! iS)
 	nlist = install(translateChar(STRING_ELT(input, 0)));
 

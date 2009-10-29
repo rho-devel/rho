@@ -1257,7 +1257,7 @@ SEXP CXXRnot_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	SEXP p, loadenv = CAR(args);
 
 	newenv = GCNode::expose(new Environment(0));
-	GCRoot<> framelist(FRAME(loadenv));
+	GCStackRoot<> framelist(FRAME(loadenv));
 	for(p = framelist; p != R_NilValue; p = CDR(p))
 	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
     } else {
@@ -1489,7 +1489,7 @@ SEXP CXXRnot_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("argument must be an environment"));
     }
 
-    GCRoot<> framelist(FRAME(env));
+    GCStackRoot<> framelist(FRAME(env));
 
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
@@ -1536,7 +1536,7 @@ SEXP CXXRnot_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(eval(CADDR(args), rho));
     if (all == NA_LOGICAL) all = 0;
 
-    GCRoot<> framelist(FRAME(env));
+    GCStackRoot<> framelist(FRAME(env));
 
     k = FrameSize(framelist, all);
 
