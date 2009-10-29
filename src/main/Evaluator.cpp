@@ -38,6 +38,7 @@ unsigned int Evaluator::s_depth_threshold = 5000;
 unsigned int Evaluator::s_depth_limit = 5000;
 unsigned int Evaluator::s_countdown = 1000;
 unsigned int Evaluator::s_countdown_start = 1000;
+bool Evaluator::s_profiling = false;
 
 namespace {
     int R_MIN_EXPRESSIONS_OPT = 25;

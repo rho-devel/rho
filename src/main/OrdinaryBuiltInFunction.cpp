@@ -39,10 +39,32 @@
 
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
 
+#include "RCNTXT.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/Expression.h"
+#include "CXXR/GCStackRoot.h"
+
+using namespace std;
 using namespace CXXR;
 
-// OrdinaryBuiltInFunction::innerApply() is in eval.cpp (for the time
-// being).
+RObject* OrdinaryBuiltInFunction::innerApply(Expression* call, PairList* args,
+					     Environment* env)
+{
+    pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
+    if (pr.first != 0)
+	BuiltInFunction::missingArgumentError(this, args, pr.first);
+    GCStackRoot<> evaluated_args(pr.second);
+    if (Evaluator::profiling() || kind() == PP_FOREIGN) {
+	RCNTXT cntxt;
+	Rf_begincontext(&cntxt, CTXT_BUILTIN, call, Environment::base(),
+		     Environment::base(), 0, 0);
+	RObject* ans = function()(call, this, evaluated_args, env);
+	Rf_endcontext(&cntxt);
+	return ans;
+    } else {
+	return function()(call, this, evaluated_args, env);
+    }
+}
 
 const char* OrdinaryBuiltInFunction::typeName() const
 {

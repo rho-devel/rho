@@ -50,7 +50,7 @@
  * nevertheless also retained in this file.  This is so that any
  * changes to these declarations that appear in a new release of CR
  * are picked up automatically during the 'svn merge' process.  The
- * compiler will then pick up any inconsistencies between the new
+ * compiler will then detect any inconsistencies between the new
  * declaration in this file and the 'factored-out' declaration.
  */
 

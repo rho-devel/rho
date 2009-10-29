@@ -112,6 +112,18 @@ namespace CXXR {
 	    return s_depth_limit;
 	}
 
+	/** @brief (Not for general use.)
+	 *
+	 * This function is for use by the profiling code in eval.cpp
+	 * to record whether profiling is currently enabled.
+	 *
+	 * @param on true iff printing is required.
+	 */
+	static void enableProfiling(bool on)
+	{
+	    s_profiling = on;
+	}
+
 	/** @brief Specify whether the result of top-level expression
 	 * be printed.
 	 *
@@ -195,6 +207,15 @@ namespace CXXR {
 	static std::pair<unsigned int, PairList*>
 	mapEvaluate(PairList* inlist, Environment* env);
 
+	/** @brief Is profiling currently enabled?
+	 *
+	 * @return true iff profiling is currently in progress.
+	 */
+	static bool profiling()
+	{
+	    return s_profiling;
+	}
+
 	/** @brief Is the result of top-level expression evaluation
 	 * printed?
 	 *
@@ -246,6 +267,7 @@ namespace CXXR {
 			      // check is made for user interrupts.
 	static unsigned int s_countdown_start;  // Value from which
 			      // s_countdown starts counting down
+	static bool s_profiling;  // True iff profiling enabled
     };
 
     /** @brief Shorthand for Evaluator::evaluate().

@@ -58,8 +58,6 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
-#include "CXXR/OrdinaryBuiltInFunction.hpp"
-#include "CXXR/SpecialBuiltInFunction.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -72,8 +70,6 @@ static SEXP bcEval(SEXP, SEXP);
 #ifdef BC_PROFILING
 static Rboolean bc_profiling = FALSE;
 #endif
-
-static int R_Profiling = 0;
 
 #ifdef R_PROFILING
 
@@ -234,7 +230,7 @@ static void R_EndProfiling(void)
 #endif /* not Win32 */
     if(R_ProfileOutfile) fclose(R_ProfileOutfile);
     R_ProfileOutfile = NULL;
-    R_Profiling = 0;
+    Evaluator::enableProfiling(false);
 }
 
 #if !defined(Win32) && defined(_R_HAVE_TIMING_)
@@ -295,7 +291,7 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     if (setitimer(ITIMER_PROF, &itv, NULL) == -1)
 	R_Suicide("setting profile timer failed");
 #endif /* not Win32 */
-    R_Profiling = 1;
+    Evaluator::enableProfiling(true);
 }
 
 SEXP CXXRnot_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -344,25 +340,6 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 {
     GCStackRoot<> tmp(promiseArgs(args, env));
     return applyClosure(call, this, tmp, env, R_BaseEnv);
-}
-
-RObject* OrdinaryBuiltInFunction::innerApply(Expression* call, PairList* args,
-					     Environment* env)
-{
-    pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
-    if (pr.first != 0)
-	BuiltInFunction::missingArgumentError(this, args, pr.first);
-    GCStackRoot<> evaluated_args(pr.second);
-    if (R_Profiling || kind() == PP_FOREIGN) {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_BUILTIN, call,
-		     R_BaseEnv, R_BaseEnv, R_NilValue, R_NilValue);
-	RObject* ans = function()(call, this, evaluated_args, env);
-	endcontext(&cntxt);
-	return ans;
-    } else {
-	return function()(call, this, evaluated_args, env);
-    }
 }
 
 RObject* Evaluator::evaluate(RObject* object, Environment* env)
@@ -3799,7 +3776,7 @@ SEXP R_startbcprof()
     double dinterval = 0.02;
     int i;
 
-    if (R_Profiling)
+    if (Evaluator::profiling())
 	error(_("profile timer in use"));
     if (bc_profiling)
 	error(_("already byte code profiling"));
