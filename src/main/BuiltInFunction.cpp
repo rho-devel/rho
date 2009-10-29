@@ -94,3 +94,6 @@ BuiltInFunction* BuiltInFunction::make(unsigned int i)
 	return GCNode::expose(new OrdinaryBuiltInFunction(i));
     else return GCNode::expose(new SpecialBuiltInFunction(i));
 }
+
+// BuiltInFunction::missingArgumentError() is in eval.cpp (for the
+// time being).

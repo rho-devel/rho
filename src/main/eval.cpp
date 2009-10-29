@@ -55,6 +55,7 @@
 #include "basedecl.h"
 
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/OrdinaryBuiltInFunction.hpp"
@@ -348,7 +349,10 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 RObject* OrdinaryBuiltInFunction::innerApply(Expression* call, PairList* args,
 					     Environment* env)
 {
-    GCStackRoot<> evaluated_args(evalList(args, env, this));
+    pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
+    if (pr.first != 0)
+	BuiltInFunction::missingArgumentError(this, args, pr.first);
+    GCStackRoot<> evaluated_args(pr.second);
     if (R_Profiling || kind() == PP_FOREIGN) {
 	RCNTXT cntxt;
 	begincontext(&cntxt, CTXT_BUILTIN, call,
@@ -1525,6 +1529,67 @@ SEXP CXXRnot_hidden evalListKeepMissing(SEXP el, SEXP rho)
     }
     UNPROTECT(1);
     return CDR(ans);
+}
+
+pair<unsigned int, PairList*>
+Evaluator::mapEvaluate(PairList* inlist, Environment* env)
+{
+    // Outlist has a dummy element at the front, to simplify coding:
+    GCStackRoot<PairList> outlist(GCNode::expose(new PairList));
+    unsigned int first_missing_arg = 0;
+    unsigned int arg_number = 1;
+    PairList* lastout = outlist;
+    while (inlist) {
+	RObject* incar = inlist->car();
+	if (incar == DotsSymbol) {
+	    Frame::Binding* bdg = findBinding(CXXR::DotsSymbol, env).second;
+	    if (!bdg)
+		Rf_error(_("'...' used but not bound"));
+	    RObject* h = bdg->value();
+	    if (h && h->sexptype() == DOTSXP) {
+		ConsCell* dotlist = static_cast<DottedArgs*>(h);
+		while (dotlist) {
+		    RObject* dotcar = dotlist->car();
+		    RObject* tag = Rf_CreateTag(dotlist->tag());
+		    RObject* outcar = Symbol::missingArgument();
+		    if (dotcar != Symbol::missingArgument())
+			outcar = evaluate(dotcar, env);
+		    lastout->setTail(PairList::construct(outcar, 0, tag));
+		    lastout = lastout->tail();
+		    dotlist = dotlist->tail();
+		}
+	    } else if (h != Symbol::missingArgument())
+		Rf_error(_("'...' used in an incorrect context"));
+	} else {
+	    RObject* tag = Rf_CreateTag(inlist->tag());
+	    RObject* outcar = Symbol::missingArgument();
+	    if (incar != Symbol::missingArgument()
+		&& !(isSymbol(incar) && R_isMissing(incar, env)))
+		outcar = evaluate(incar, env);
+	    else if (first_missing_arg == 0)
+		first_missing_arg = arg_number;
+	    lastout->setTail(PairList::construct(outcar, 0, tag));
+	    lastout = lastout->tail();
+	}
+	inlist = inlist->tail();
+	++arg_number;
+    }
+    return make_pair(first_missing_arg, outlist->tail());
+}
+		
+void BuiltInFunction::missingArgumentError(const BuiltInFunction* func,
+					   const PairList* args,
+					   unsigned int index)
+{
+    GCRoot<> line(STRING_ELT(deparse1line(const_cast<PairList*>(args), FALSE),
+			     0));
+    if (!func)
+	Rf_error(_("element %d is empty;\n   the part of the args "
+		   "list of a builtin being evaluated was:\n   %s"),
+		   index, R_CHAR(line)+4);
+    else Rf_error(_("element %d is empty;\n   the part of the args "
+		    "list of '%s' being evaluated was:\n   %s"),
+		  index, func->name(), R_CHAR(line)+4);
 }
 
 

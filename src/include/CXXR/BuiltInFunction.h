@@ -181,6 +181,20 @@ namespace CXXR {
 	 */
 	static BuiltInFunction* make(unsigned int i);
 
+	/** @brief Raise error because of missing argument.
+	 *
+	 * @param func Pointer, possibly null, to the BuiltInFunction
+	 *          being evaluated.
+	 *
+	 * @param args The list of arguments.
+	 *
+	 * @param index Position (counting from one) of the first
+	 * missing argument.
+	 */
+	static void missingArgumentError(const BuiltInFunction* func,
+					 const PairList* args,
+					 unsigned int index);
+
 	/** @brief Name of function.
 	 *
 	 * @return The textual name of this function.

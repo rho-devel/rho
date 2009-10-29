@@ -40,7 +40,9 @@
 #ifndef EVALUATOR_HPP
 #define EVALUATOR_HPP
 
+#include <utility>
 #include "R_ext/Boolean.h"
+#include "CXXR/PairList.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -131,6 +133,48 @@ namespace CXXR {
 	{
 	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
 	}
+
+	/** @brief Map RObject::evaluate() over a PairList.
+	 *
+	 * Except as regards the ... handling described next, this
+	 * function produces an output list of the same length as \a
+	 * inlist, and whose tags are the same as the tags of \a
+	 * inlist, but whose elements ('car' values) are the result of
+	 * evaluating the corresponding elements of \a inlist within
+	 * \a env.
+	 *
+	 * If an element of the list is R_DotsSymbol, its binding
+	 * within \a env is examined.  If it is bound to NULL or to
+	 * Symbol::missingArgument() (R_MissingArg), this element of
+	 * \a inlist is skipped.  If it is bound to a DottedArgs list,
+	 * then this element of \a inlist is replaced by the one or
+	 * more elements resulting from evaluating the elements of the
+	 * DottedArgs list, and carrying across the corresponding
+	 * tags.
+	 *
+	 * If any element of \a inlist is missing (i.e. it is
+	 * Symbol::missingArgument(), or is a Symbol missing within \a
+	 * env), then the corresponding element of the output list is
+	 * set to Symbol::missingArgument(), and the presence of a
+	 * missing value is reported in the return value.
+	 *
+	 * @param inlist The PairList to be mapped through
+	 *          RObject::evaluate().
+	 *
+	 * @param env The Environment in which evaluations are to take
+	 *          place.
+	 *
+	 * @return The second element of the pair is the output list.
+	 * The first element is the index, counting from one, of the
+	 * first position in \a inlist in which a missing value was
+	 * encountered, or zero if \a inlist contained no missing
+	 * values.
+	 *
+	 * @note This function is intended within CXXR to supersede
+	 * CR's evalList() and evalListKeepMissing().
+	 */
+	static std::pair<unsigned int, PairList*>
+	mapEvaluate(PairList* inlist, Environment* env);
 
 	/** @brief Is the result of top-level expression evaluation
 	 * printed?
