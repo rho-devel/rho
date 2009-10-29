@@ -32,19 +32,20 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file Evaluator.hpp
+/** @file Evaluator.h
  *
  * @brief Class CXXR::Evaluator
  */
 
-#ifndef EVALUATOR_HPP
-#define EVALUATOR_HPP
+#ifndef EVALUATOR_H
+#define EVALUATOR_H
 
-#include <utility>
 #include "R_ext/Boolean.h"
 #include "CXXR/PairList.h"
 
 #ifdef __cplusplus
+#include <utility>
+
 extern "C" {
 #endif
 
@@ -57,6 +58,22 @@ extern "C" {
      * data member of class CXXR::Evaluator.
      */
     extern Rboolean R_Visible;
+
+    /** @brief Is a Symbol missing within an Environment?
+     *
+     * @param symbol Pointer to the Symbol whose missing status is
+     * required.
+     *
+     * @param rho Pointer to the Environment in whose Frame \a symbol
+     *          is to be sought.
+     *
+     * @return A non-zero value iff \a symbol is missing in the Frame
+     * of \a rho.
+     *
+     * @note For more information, refer to the code, which is
+     * surprisingly complicated.
+     */
+    int R_isMissing(SEXP symbol, SEXP rho);
 
 #ifdef __cplusplus
 } // extern "C"
@@ -171,7 +188,9 @@ namespace CXXR {
 	 * values.
 	 *
 	 * @note This function is intended within CXXR to supersede
-	 * CR's evalList() and evalListKeepMissing().
+	 * CR's evalList() and evalListKeepMissing().  However, note
+	 * that these CR functions coerce the tags in the output list
+	 * to be Symbol objects, whereas this function does not.
 	 */
 	static std::pair<unsigned int, PairList*>
 	mapEvaluate(PairList* inlist, Environment* env);
@@ -248,4 +267,4 @@ namespace CXXR {
 }
 #endif /* __cplusplus */
 
-#endif /* EVALUATOR_HPP */
+#endif /* EVALUATOR_H */

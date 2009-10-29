@@ -44,6 +44,14 @@
  * code should use the class-related header files directly, as required,
  * rather than <tt>\#include</tt>ing this file, which is retained for
  * backwards compatibility only.
+ *
+ * In most cases, function prototypes and extern declarations that
+ * have been factored out into CXXR's own header files are
+ * nevertheless also retained in this file.  This is so that any
+ * changes to these declarations that appear in a new release of CR
+ * are picked up automatically during the 'svn merge' process.  The
+ * compiler will then pick up any inconsistencies between the new
+ * declaration in this file and the 'factored-out' declaration.
  */
 
 #ifndef DEFN_H_
@@ -52,6 +60,7 @@
 #include "RCNTXT.h"
 #include "localization.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/Evaluator.h"
 
 /* seems unused */
 #define COUNTING

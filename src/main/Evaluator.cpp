@@ -23,6 +23,10 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/DottedArgs.hpp"
+#include "CXXR/Environment.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
@@ -40,8 +44,51 @@ namespace {
     int R_MAX_EXPRESSIONS_OPT = 500000;
 }
 
-// Implementation of Evaluator::evaluate() is in eval.cpp (for the time being)
-
+pair<unsigned int, PairList*>
+Evaluator::mapEvaluate(PairList* inlist, Environment* env)
+{
+    // Outlist has a dummy element at the front, to simplify coding:
+    GCStackRoot<PairList> outlist(GCNode::expose(new PairList));
+    unsigned int first_missing_arg = 0;
+    unsigned int arg_number = 1;
+    PairList* lastout = outlist;
+    while (inlist) {
+	RObject* incar = inlist->car();
+	if (incar == DotsSymbol) {
+	    Frame::Binding* bdg = findBinding(CXXR::DotsSymbol, env).second;
+	    if (!bdg)
+		Rf_error(_("'...' used but not bound"));
+	    RObject* h = bdg->value();
+	    if (h && h->sexptype() == DOTSXP) {
+		ConsCell* dotlist = static_cast<DottedArgs*>(h);
+		while (dotlist) {
+		    RObject* dotcar = dotlist->car();
+		    RObject* outcar = Symbol::missingArgument();
+		    if (dotcar != Symbol::missingArgument())
+			outcar = evaluate(dotcar, env);
+		    lastout->setTail(PairList::construct(outcar, 0,
+							 dotlist->tag()));
+		    lastout = lastout->tail();
+		    dotlist = dotlist->tail();
+		}
+	    } else if (h != Symbol::missingArgument())
+		Rf_error(_("'...' used in an incorrect context"));
+	} else {
+	    RObject* outcar = Symbol::missingArgument();
+	    if (incar != Symbol::missingArgument()
+		&& !(Rf_isSymbol(incar) && R_isMissing(incar, env)))
+		outcar = evaluate(incar, env);
+	    else if (first_missing_arg == 0)
+		first_missing_arg = arg_number;
+	    lastout->setTail(PairList::construct(outcar, 0, inlist->tag()));
+	    lastout = lastout->tail();
+	}
+	inlist = inlist->tail();
+	++arg_number;
+    }
+    return make_pair(first_missing_arg, outlist->tail());
+}
+		
 void Evaluator::setDepthLimit(int depth)
 {
     if (depth < R_MIN_EXPRESSIONS_OPT || depth > R_MAX_EXPRESSIONS_OPT)

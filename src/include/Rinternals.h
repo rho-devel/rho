@@ -43,6 +43,14 @@
  * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
  * code should use the class-related header files directly, as required,
  * rather than <tt>\#include</tt>ing this file.
+ *
+ * In most cases, function prototypes and extern declarations that
+ * have been factored out into CXXR's own header files are
+ * nevertheless also retained in this file.  This is so that any
+ * changes to these declarations that appear in a new release of CR
+ * are picked up automatically during the 'svn merge' process.  The
+ * compiler will then detect any inconsistencies between the new
+ * declaration in this file and the 'factored-out' declaration.
  */
 
 #ifndef R_INTERNALS_H_
