@@ -333,11 +333,18 @@ namespace CXXR {
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
 	 *
+	 * @param tag Pointer to the tag of the element to be constructed.
+	 *
 	 * @return Pointer to newly created PairList element.
+	 *
+	 * @note This function was previously called PairList::cons(),
+	 * but in code inherited from CR the preprocessor was apt to
+	 * macro-expand this to Rf_cons.
 	 */
-	static PairList* cons(RObject* cr, PairList* tl=0)
+	static PairList* construct(RObject* cr, PairList* tl=0,
+				   RObject* tag = 0)
 	{
-	    PairList* ans = new (s_cons_pad) PairList(cr, tl);
+	    PairList* ans = new (s_cons_pad) PairList(cr, tl, tag);
 	    s_cons_pad = GCNode::operator new(sizeof(PairList));
 	    return expose(ans);
 	}
