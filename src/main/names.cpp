@@ -1040,17 +1040,3 @@ void InitNames()
     R_initialize_bcode();
 #endif
 }
-
-
-/*  install - probe the symbol table */
-/*  If "name" is not found, it is installed in the symbol table.
-    The symbol corresponding to the string "name" is returned. */
-
-SEXP install(const char *name)
-{
-    if (*name == '\0')
-	error(_("attempt to use zero-length variable name"));
-    if (strlen(name) > MAXIDSIZE)
-	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
-    return Symbol::obtain(name);
-}

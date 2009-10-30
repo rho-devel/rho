@@ -333,9 +333,6 @@ extern int putenv(char *string);
 # define _R_HAVE_TIMING_ 1
 #endif
 
-#define HSIZE	   4119	/* The size of the hash table for symbols */
-#define MAXIDSIZE   256	/* Largest symbol size, in bytes excluding terminator */
-
 #ifdef __cplusplus
 /* There is much more in Rinternals.h, including function versions
  * of the Promise and Hasking groups.

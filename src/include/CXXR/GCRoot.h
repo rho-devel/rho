@@ -158,6 +158,13 @@ namespace CXXR {
      * the price of this is that there is a slightly greater time overhead
      * to construction and destruction.
      *
+     * It is not recommended to declare a GCRoot (or indeed any object
+     * requiring non-trivial construction) at file or namespace scope
+     * in circumstances where the order of initialisation of data in
+     * different source files may be an issue.  See the way in which
+     * <tt>Environment::s_base</tt> is declared and initialised in
+     * Environment.cpp for a preferable approach.
+     *
      * @param T GCNode or a type publicly derived from GCNode.  This
      *          may be qualified by const, so for example a const
      *          String* may be encapsulated in a GCRoot using the type

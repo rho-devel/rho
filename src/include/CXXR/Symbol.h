@@ -140,6 +140,15 @@ namespace CXXR {
 	    return m_dd_index != 0;
 	}
 
+	/** @brief Maximum length of symbol names.
+	 *
+	 * @return The maximum permitted length of symbol names.
+	 */
+	static size_t maxLength()
+	{
+	    return s_max_length;
+	}
+
 	/** @brief Missing argument.
 	 *
 	 * @return a pointer to the 'missing argument' pseudo-object.
@@ -238,6 +247,7 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	static const size_t s_max_length = 256;
 	static map* s_table;
 	static Symbol* s_missing_arg;
 	static Symbol* s_restart_token;
@@ -405,7 +415,14 @@ extern "C" {
      * @return Pointer to a Symbol (preexisting or newly created) with
      * the required name.
      */
+#ifndef __cplusplus
     SEXP Rf_install(const char *name);
+#else
+    inline SEXP Rf_install(const char *name)
+    {
+	return CXXR::Symbol::obtain(name);
+    }
+#endif
 
     /** @brief Test if SYMSXP.
      *

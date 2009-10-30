@@ -650,7 +650,8 @@ static const char * backquotify(const char *s)
 {
     /* backquotifying can at most double the length of the symbol in bytes,
        plus surrounding quotes and terminator. */
-    static char buf[2*MAXIDSIZE+10];
+    // 'buf' is (intentionally) never deleted.
+    static char* buf = new char[2*Symbol::maxLength()+10];
     char *t = buf;
 
     /* If a symbol is not a valid name, put it in backquotes, escaping
@@ -662,7 +663,7 @@ static const char * backquotify(const char *s)
     if (isValidName(s) || *s == '\0') return s;
 
     /* Don't translate 'impossible' error condition. */
-    if(strlen(s) > MAXIDSIZE)
+    if(strlen(s) > Symbol::maxLength())
 	error("symbol '%s' is too long to be a valid symbol", s);
 
     *t++ = '`';

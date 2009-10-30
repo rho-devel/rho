@@ -54,7 +54,8 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*DDVALp)(SEXP x) = DDVAL;
-	Rboolean (*isSymbolptr)(SEXP s) = Rf_isSymbol;
+	SEXP (*Rf_installp)(const char *name) = Rf_install;
+	Rboolean (*isSymbolp)(SEXP s) = Rf_isSymbol;
 	SEXP (*PRINTNAMEp)(SEXP x) = PRINTNAME;
     }
 }
@@ -160,7 +161,10 @@ void Symbol::initialize()
 
 Symbol* Symbol::obtain(const CachedString* name)
 {
-    GCStackRoot<const CachedString> namert(name);
+    if (name->size() == 0)
+	Rf_error(_("attempt to use zero-length variable name"));
+    if (name->size() > maxLength())
+	Rf_error(_("variable names are limited to %d bytes"), maxLength());
     pair<map::iterator, bool> pr
 	= s_table->insert(map::value_type(name, GCRoot<Symbol>(0)));
     map::iterator it = pr.first;
