@@ -153,12 +153,13 @@ namespace CXXR {
 
 	/** @brief (Not for general use.)
 	 *
-	 * @param on If true, an increase is applied to the
-	 *          permissible depth of nested evaluations to allow
-	 *          error reporting to be carried out.  If false, any
-	 *          such extra depth currently in force is removed.
+	 * @param on If true, and extra depth is not already enabled,
+	 *          an increase is applied to the permissible depth of
+	 *          nested evaluations to allow error reporting to be
+	 *          carried out.  If false, any such extra depth
+	 *          currently in force is removed.
 	 */
-	static void extraDepth(bool on)
+	static void enableExtraDepth(bool on)
 	{
 	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
 	}

@@ -166,7 +166,7 @@ please bug.report() [R_run_onexits]"));
 	       evaluation stack in case the jump is from handling a
 	       stack overflow. To be safe it is good to also call
 	       R_CheckStack. LT */
-	    Evaluator::extraDepth(true);
+	    Evaluator::enableExtraDepth(true);
 	    R_CheckStack();
 	    eval(s, c->cloenv);
 	    UNPROTECT(1);
@@ -200,7 +200,7 @@ void R_restore_globals(RCNTXT *cptr)
     }
     /* Need to reset nesting depth in case we are jumping after
        handling a stack overflow. */
-    Evaluator::extraDepth(false);
+    Evaluator::enableExtraDepth(false);
 #ifdef BYTECODE
     R_BCNodeStackTop = cptr->nodestack;
 # ifdef BC_INT_STACK

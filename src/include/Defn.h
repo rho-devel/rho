@@ -35,32 +35,31 @@
  */
 
 /** @file Defn.h
+ *
  * @brief A ragbag.
  *
- * As CXXR development proceeds, the type definitions, function
- * prototypes etc. defined in this header file will be progressively
- * factored out into individual class-related header files, which will
- * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
- * code should use the class-related header files directly, as required,
- * rather than <tt>\#include</tt>ing this file, which is retained for
- * backwards compatibility only.
+ * As CXXR development proceeds, the type definitions, many function
+ * prototypes etc. defined in this header file will disappear, because
+ * the relevant functionality will have been absorbed into the CXXR
+ * core, and declared within the appropriate header file in the
+ * <tt>src/include/CXXR</tt> directory.
  *
- * In most cases, function prototypes and extern declarations that
- * have been factored out into CXXR's own header files are
- * nevertheless also retained in this file.  This is so that any
- * changes to these declarations that appear in a new release of CR
- * are picked up automatically during the 'svn merge' process.  The
- * compiler will then detect any inconsistencies between the new
- * declaration in this file and the 'factored-out' declaration.
+ * In a few cases, a declaration within this file is repeated in a
+ * header file under <tt>src/include/CXXR</tt>; this is because source
+ * files within the CXXR core never <tt>\#include</tt>s
+ * <tt>Defn.h</tt> itself (nor <tt>Rinternals.h</tt>.  In such a case
+ * the relevant CXXR header file is <tt>\#include</tt>d back into
+ * <tt>Defn.h</tt>, so that the compiler can detect any inconsistency
+ * between the two declarations.
  */
 
 #ifndef DEFN_H_
 #define DEFN_H_
 
 #include "RCNTXT.h"
-#include "localization.h"
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/Evaluator.h"
+#include "CXXR/errors.h"
 
 /* seems unused */
 #define COUNTING

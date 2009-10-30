@@ -21,12 +21,11 @@
 
 #include "CXXR/Evaluator.h"
 
-#include "localization.h"
-#include "R_ext/Error.h"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/Symbol.h"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -43,6 +42,36 @@ bool Evaluator::s_profiling = false;
 namespace {
     int R_MIN_EXPRESSIONS_OPT = 25;
     int R_MAX_EXPRESSIONS_OPT = 500000;
+}
+
+RObject* Evaluator::evaluate(RObject* object, Environment* env)
+{
+    // The use of depthsave below is necessary because of the
+    // possibility of non-local returns from evaluation.  Without this
+    // an "expression too complex error" is quite likely.
+    unsigned int depthsave = s_depth++;
+    if (s_depth > s_depth_threshold) {
+	enableExtraDepth(true);
+	Rf_errorcall(0, _("evaluation nested too deeply: "
+			  "infinite recursion / options(expressions=)?"));
+    }
+    R_CheckStack();
+    if (--s_countdown == 0) {
+	R_CheckUserInterrupt();
+	s_countdown = s_countdown_start;
+    }
+#ifdef Win32
+    // This is an inlined version of Rwin_fpreset (src/gnuwin/extra.c)
+    // and resets the precision, rounding and exception modes of a
+    // ix86 fpu.
+    __asm__ ( "fninit" );
+#endif
+    enableResultPrinting(true);
+    RObject* ans = 0;
+    if (object)
+	ans = object->evaluate(env);
+    s_depth = depthsave;
+    return ans;
 }
 
 pair<unsigned int, PairList*>
