@@ -119,8 +119,8 @@ namespace CXXR {
 	/** @brief Index of a double-dot symbol.
 	 *
 	 * @return If this is a Symbol whose name is of the form
-	 * <tt>..<e>n</e></tt>, where <e>n</e> is a positive integer,
-	 * returns <e>n</e>.  Otherwise returns <e>0</e>.
+	 * <tt>..<em>n</em></tt>, where <em>n</em> is a positive integer,
+	 * returns <em>n</em>.  Otherwise returns <em>0</em>.
 	 *
 	 * @note This function returns 0 in the (pathological)
 	 * case of a Symbol called <tt>..0</tt>.
@@ -388,17 +388,17 @@ extern "C" {
     }
 #endif
 
-    /** Find value of a <tt>..<e>n</e></tt> Symbol.
+    /** Find value of a <tt>..<em>n</em></tt> Symbol.
      *
      * @param symbol Pointer to a Symbol (checked) whose name is of
-     *          the form <tt>..<e>n</e></tt>, where <e>n</e> is a
+     *          the form <tt>..<em>n</em></tt>, where <em>n</em> is a
      *          positive integer.
      *
      * @param rho Pointer to an Environment, which must bind the
      *          symbol <tt>...</tt> to a PairList comprising at least
-     *          <e>n</e> elements.  (All checked.)
+     *          <em>n</em> elements.  (All checked.)
      *
-     * @return The 'car' of the <e>n</e>th element of the PairList to
+     * @return The 'car' of the <em>n</em>th element of the PairList to
      * which <tt>...</tt> is bound.
      */
     SEXP Rf_ddfindVar(SEXP symbol, SEXP rho);

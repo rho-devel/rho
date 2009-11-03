@@ -247,8 +247,6 @@ namespace CXXR {
 	 *          supplied value lies outside the permissible range,
 	 *          an error is reported and the nesting depth is left
 	 *          unchanged.
-	 *
-	 * @param The maximum nesting depth previously in force.
 	 */
 	static void setDepthLimit(int depth);
    private:

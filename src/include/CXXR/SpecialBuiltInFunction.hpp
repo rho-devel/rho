@@ -35,7 +35,8 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file SpecialBuiltInFunction.h
+/** @file SpecialBuiltInFunction.hpp
+ *
  * @brief Class CXXR::SpecialBuiltInFunction.
  *
  * CXXR::SpecialBuiltInFunction SPECIALSXP.
