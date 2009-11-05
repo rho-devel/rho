@@ -402,8 +402,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
 	    const Symbol* symbol = static_cast<Symbol*>(TAG(a));
 	    Frame::Binding* bdg = newrho->frame()->binding(symbol);
-	    bdg->setValue(mkPROMISE(CAR(f), newrho));
-	    bdg->setMissing(2);
+	    bdg->setValue(mkPROMISE(CAR(f), newrho),
+			  Frame::Binding::DEFAULTED);
 	}
 	f = CDR(f);
 	a = CDR(a);
@@ -634,7 +634,6 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	const Symbol* sym = static_cast<Symbol*>(symbol);
 	Frame::Binding* bdg = newenv->frame()->obtainBinding(sym);
 	if (missing) {
-	    bdg->setMissing(missing);
 	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
 		SEXP deflt;
 		/* find the symbol in the method, copy its expression
@@ -649,7 +648,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		val = mkPROMISE(CAR(deflt), newrho);
 	    }
 	}
-	bdg->setValue(val);
+	bdg->setValue(val, Frame::Binding::Origin(missing));
     }
 
     /* copy the bindings of the spacial dispatch variables in the top

@@ -54,7 +54,7 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 {
     PairList* ans
 	= new PairList(m_value, tail, const_cast<Symbol*>(symbol()));
-    SET_MISSING(ans, missing());
+    SET_MISSING(ans, origin());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
     return expose(ans);
@@ -68,10 +68,11 @@ void Frame::Binding::fromPairList(PairList* pl)
     if (tag && tag != m_symbol)
 	Rf_error(_("internal error in %s"),
 		 "Frame::Binding::fromPairList()");
+    Origin pl_origin = Origin(pl->m_missing);
     if (pl->m_active_binding)
-	setFunction(SEXP_downcast<FunctionBase*>(pl->car()));
-    else setValue(pl->car());
-    setMissing(pl->m_missing);
+	setFunction(SEXP_downcast<FunctionBase*>(pl->car()),
+		    pl_origin);
+    else setValue(pl->car(), pl_origin);
     setLocking(pl->m_binding_locked);
 }
     
@@ -86,7 +87,7 @@ void Frame::Binding::initialize(Frame* frame, const Symbol* sym)
     m_symbol = sym;
 }
 
-void Frame::Binding::setFunction(FunctionBase* function)
+void Frame::Binding::setFunction(FunctionBase* function, Origin origin)
 {
     // See if binding already has a non-null value:
     if (m_value) {
@@ -100,14 +101,7 @@ void Frame::Binding::setFunction(FunctionBase* function)
     m_frame->monitorWrite(*this);
 }
 
-void Frame::Binding::setMissing(short int missingval)
-{
-    if (isLocked())
-	Rf_error(_("cannot change missing status of a locked binding"));
-    m_missing = missingval;
-}
-
-void Frame::Binding::setValue(RObject* new_value)
+void Frame::Binding::setValue(RObject* new_value, Origin origin)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
@@ -116,6 +110,7 @@ void Frame::Binding::setValue(RObject* new_value)
 	Rf_error(_("internal error: use %s for active bindings"),
 		 "setFunction()");
     m_value = new_value;
+    m_origin = origin;
     m_frame->monitorWrite(*this);
 }
 

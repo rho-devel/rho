@@ -76,13 +76,36 @@ namespace CXXR {
 	 */
 	class Binding {
 	public:
+	    /** @brief How the binding arrived at its current setting.
+	     */
+	    enum Origin {
+		EXPLICIT = 0, /**< The Binding was specified
+			       * explicitly, e.g. by supplying an
+			       * actual argument to a function, or by
+			       * direct assignment into the relevant
+			       * Environment.
+			       */
+		MISSING,      /**< The Binding corresponds to a formal
+			       * argument of a function, for which no
+			       * actual value was supplied, and which
+			       * has no default value.  This is the
+			       * default for newly created Binding
+			       * objects.
+			       */
+		DEFAULTED     /**< The Binding represents the default
+			       * value of the formal argument of a
+			       * function call, no actual argument
+			       * having been supplied.
+			       */
+	    };
+
 	    /** @brief Default constructor
 	     *
 	     * initialize() must be called before the Binding object
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_value(0), m_missing(0),
+		: m_frame(0), m_symbol(0), m_value(0), m_origin(MISSING),
 		  m_active(false), m_locked(false)
 	    {}
 
@@ -117,8 +140,10 @@ namespace CXXR {
 	     *
 	     * @param new_value Pointer (possibly null) to the new
 	     *          value.  See function description.
+	     *
+	     * @param origin Origin of the newly-assigned value.
 	     */
-	    void assign(RObject* new_value);
+	    void assign(RObject* new_value, Origin origin = EXPLICIT);
 
 	    /** @brief Look up bound value, forcing Promises if
 	     * necessary.
@@ -212,18 +237,13 @@ namespace CXXR {
 		return m_locked;
 	    }
 
-	    /** @brief Binding's missing status.
+	    /** @brief Origin of this Binding.
 	     *
-	     * @return the 'missing' status of this Binding.  0 means
-	     * 'not missing'.
-	     *
-	     * @todo Document the other possible return values, and
-	     * clarify the relationship of this field to
-	     * <tt>R_MissingArg</tt>.
+	     * @return the Origin of this Binding.
 	     */
-	    short int missing() const
+	    Origin origin() const
 	    {
-		return m_missing;
+		return m_origin;
 	    }
 
 	    /** @brief Get raw value bound to the Symbol.
@@ -256,8 +276,11 @@ namespace CXXR {
 	     *
 	     * @param function The function used to implement the
 	     *          active binding.
+	     *
+	     * @param origin Origin now to be associated with this Binding.
 	     */
-	    void setFunction(FunctionBase* function);
+	    void setFunction(FunctionBase* function,
+			     Origin origin = EXPLICIT);
 
 	    /** @brief Lock/unlock this Binding.
 	     *
@@ -268,16 +291,6 @@ namespace CXXR {
 		m_locked = on;
 	    }
 
-	    /** @brief Set the 'missing' status of this Binding.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * @param missingval The required 'missing' status.  Refer
-	     *          to the documentation of missing() for the
-	     *          possible values.
-	     */
-	    void setMissing(short int missingval);
-
 	    /** @brief Define the object to which this Binding's
 	     *         Symbol is bound.
 	     *
@@ -286,8 +299,10 @@ namespace CXXR {
 	     * @param new_value Pointer (possibly null) to the RObject
 	     *          to which this Binding's Symbol is now to be
 	     *          bound.
+	     *
+	     * @param origin Origin of the newly assigned value.
 	     */
-	    void setValue(RObject* new_value);
+	    void setValue(RObject* new_value, Origin origin = EXPLICIT);
 
 	    /** @brief Bound symbol.
 	     *
@@ -322,7 +337,7 @@ namespace CXXR {
 	    Frame* m_frame;
 	    GCEdge<const Symbol> m_symbol;
 	    GCEdge<> m_value;
-	    short int m_missing;
+	    Origin m_origin;
 	    bool m_active;
 	    bool m_locked;
 	};

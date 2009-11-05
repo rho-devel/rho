@@ -141,11 +141,12 @@ static void setActiveValue(SEXP fun, SEXP val)
     UNPROTECT(1);
 }
 
-void Frame::Binding::assign(RObject* new_value)
+void Frame::Binding::assign(RObject* new_value, Origin origin)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
 		 symbol()->name()->c_str());
+    m_origin = origin;
     if (isActive()) {
 	setActiveValue(m_value, new_value);
 	m_frame->monitorRead(*this);
@@ -349,7 +350,7 @@ SEXP R_GetVarLocSymbol(R_varloc_t vl)
 
 Rboolean R_GetVarLocMISSING(R_varloc_t vl)
 {
-    return Rboolean(vl->missing());
+    return Rboolean(vl->origin());
 }
 
 void R_SetVarLocValue(R_varloc_t vl, SEXP value)
@@ -653,7 +654,6 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->obtainBinding(sym);
     bdg->assign(value);
-    bdg->setMissing(0);  /* over-ride */
 }
 
 /*----------------------------------------------------------------------
@@ -686,7 +686,6 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
     if (env == Environment::global())
 	R_DirtyImage = 1;
     bdg->assign(value);
-    bdg->setMissing(0);
 }
 
 
@@ -706,7 +705,6 @@ void gsetVar(SEXP symbol, SEXP value, SEXP rho)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = Environment::base()->frame()->obtainBinding(sym);
     bdg->assign(value);
-    bdg->setMissing(0);  /* over-ride */
 }
 
 
