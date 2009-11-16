@@ -26,6 +26,10 @@
 #include <iostream>
 #include "boost/regex.hpp"
 #include "Rinterface.h"
+
+// Otherwise expanded to Rf_match:
+#undef match
+
 #include "CXXR/CachedString.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/PairList.h"
@@ -78,7 +82,10 @@ namespace {
 		 rit != keyvals.rend(); ++rit) {
 		const string& namestr = (*rit).first;
 		const string& valstr = (*rit).second;
-		CachedString* value
+		RObject* value;
+		if (valstr.empty())
+		    value = Symbol::missingArgument();
+		else value
 		    = const_cast<CachedString*>(CachedString::obtain(valstr.c_str()));
 		const RObject* tag = 0;
 		if (!namestr.empty()) {
@@ -90,6 +97,38 @@ namespace {
 					  const_cast<RObject*>(tag));
 	    }
 	    return ans;
+	}
+    }
+
+    void showFrame(const Frame* frame)
+    {
+	typedef map<const CachedString*, RObject*, String::Comparator> FrameMap;
+	FrameMap fmap;
+	// Get bindings sorted by name:
+	{
+	    GCStackRoot<PairList> pl(frame->asPairList());
+	    while (pl) {
+		const Symbol* sym = dynamic_cast<const Symbol*>(pl->tag());
+		if (!sym) {
+		    cerr << "Binding tag isn't a Symbol.\n";
+		    abort();
+		}
+		fmap[sym->name()] = pl->car();
+		pl = pl->tail();
+	    }
+	}
+	// Write out bindings in name order:
+	for (FrameMap::const_iterator it = fmap.begin();
+	     it != fmap.end(); ++it) {
+	    const FrameMap::value_type& pr = *it;
+	    const CachedString* val
+		= dynamic_cast<const CachedString*>(pr.second);
+	    if (!val) {
+		cerr << "Binding value isn't a CachedString\n";
+		abort();
+	    }
+	    cout << pr.first->stdstring() << " : "
+		 << val->stdstring() << endl;
 	}
     }
 
@@ -113,6 +152,11 @@ int main(int argc, char* argv[]) {
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     GCStackRoot<PairList> supplied(getArgs(argv[2], false));
+    // Perform match and show result:
+    GCStackRoot<Frame> frame(GCNode::expose(new StdFrame));
+    matcher->match(frame, supplied);
+    cout << "\nMatch result:\n\n";
+    showFrame(frame);
     return 0;
 }
 

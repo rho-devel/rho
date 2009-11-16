@@ -27,8 +27,8 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test ArgMatchertest1 ArgMatchertest2 \
-        ArgMatchertest3
+        HeterogeneousListtest splice_test ArgMatchertest0 ArgMatchertest1 \
+	ArgMatchertest2 ArgMatchertest3
 
 check : $(tests:=.ts)
 
@@ -39,6 +39,13 @@ ArgMatchertest : ArgMatchertest.o
 	$(LINK.cc) -o $@ $< -L../../lib -Wl,-R../../lib -L../../src/main -lR -lRblas \
                    -lreadline -lboost_regex-mt
 
+# OK match:
+ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt
+	./$< formals_ok.txt supplied_ok.txt > ArgMatchertest0.out 2>&1
+	diff ArgMatchertest0.save ArgMatchertest0.out
+	rm ArgMatchertest0.out
+	touch $@
+ 
 # Unnamed formal argument:
 ArgMatchertest1.ts : ArgMatchertest formals_unnamed.txt
 	-./$< formals_unnamed.txt /dev/null > ArgMatchertest1.out 2>&1

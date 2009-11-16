@@ -1,0 +1,31 @@
+Formal arguments:
+
+black : BLACK
+brown : 
+red : RED
+orange : ORANGE
+yellow : 
+green : 
+blue : BLUE
+violet : VIOLET
+grey : GREY
+white : 
+
+Supplied arguments:
+
+brown : brun
+red : rouge
+yellow : jaune
+green : vert
+spurious : canard
+violet : violette
+white : blanc
+
+Match result:
+
+brown : brun
+green : vert
+red : rouge
+violet : violette
+white : blanc
+yellow : jaune
