@@ -27,7 +27,8 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test ArgMatchertest1
+        HeterogeneousListtest splice_test ArgMatchertest1 ArgMatchertest2 \
+        ArgMatchertest3
 
 check : $(tests:=.ts)
 
@@ -43,6 +44,20 @@ ArgMatchertest1.ts : ArgMatchertest formals_unnamed.txt
 	-./$< formals_unnamed.txt /dev/null > ArgMatchertest1.out 2>&1
 	diff ArgMatchertest1.save ArgMatchertest1.out
 	rm ArgMatchertest1.out
+	touch $@
+ 
+# ... appears twice:
+ArgMatchertest2.ts : ArgMatchertest formals_dotstwice.txt
+	-./$< formals_dotstwice.txt /dev/null > ArgMatchertest2.out 2>&1
+	diff ArgMatchertest2.save ArgMatchertest2.out
+	rm ArgMatchertest2.out
+	touch $@
+ 
+# Duplicated formal name:
+ArgMatchertest3.ts : ArgMatchertest formals_dupnames.txt
+	-./$< formals_dupnames.txt /dev/null > ArgMatchertest3.out 2>&1
+	diff ArgMatchertest3.save ArgMatchertest3.out
+	rm ArgMatchertest3.out
 	touch $@
  
 Allocatortest.o : Allocatortest.cpp
