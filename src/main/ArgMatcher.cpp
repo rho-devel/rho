@@ -83,7 +83,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 {
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
-    for (PairList* s = supplied; s; s->tail()) {
+    for (PairList* s = supplied; s; s = s->tail()) {
 	const CachedString* name = tag2cs(s->tag());
 	if (name) {
 	    FormalMap::const_iterator fit = m_formal_index.find(name);
