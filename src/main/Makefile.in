@@ -31,6 +31,7 @@ SOURCES_C = RNG.c complex.c gram.c gramRd.c inlined.c regex.c \
             unzip.c
 
 SOURCES_CXX = \
+	ArgMatcher.cpp \
 	BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CachedString.cpp CellPool.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \

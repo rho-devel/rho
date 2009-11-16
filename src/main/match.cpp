@@ -59,6 +59,7 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/ArgMatcher.hpp"
 #include "CXXR/DottedArgs.hpp"
 
 using namespace CXXR;
@@ -127,7 +128,30 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
     return FALSE;/* for -Wall */
 }
 
-
+const CachedString* ArgMatcher::tag2cs(RObject* tag)
+{
+    if (!tag)
+	return 0;
+    switch (tag->sexptype()) {
+    case SYMSXP:
+	{
+	    Symbol* sym = static_cast<Symbol*>(tag);
+	    return sym->name();
+	}
+    case CHARSXP:
+	{
+	    // Uncached strings not allowed here:
+	    CachedString* cs = SEXP_downcast<CachedString*>(tag);
+	    return cs;
+	}
+    case STRSXP:
+	return CachedString::obtain(translateChar(STRING_ELT(tag, 0)));
+    default:
+	Rf_error(_("invalid tag for argument matching"));
+	return 0;
+    }
+}
+	
 /* Destructively Extract A Named List Element. */
 /* Returns the first partially matching tag found. */
 /* Pattern is a C string. */

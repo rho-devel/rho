@@ -85,11 +85,14 @@ namespace CXXR {
 	    {}
 
 	    /** @brief Comparison operation.
-	     * @param l const reference to a string.
-	     * @param r const reference to a string.
+	     *
+	     * @param l non-null pointer to a String.
+	     *
+	     * @param r non-null pointer to a String.
+	     *
 	     * @return true iff \a l < \a r in the defined ordering.
 	     */
-	    bool operator()(const String& l, const String& r) const;
+	    bool operator()(const String* l, const String* r) const;
 	private:
 	    bool m_na_last;
 	};

@@ -97,6 +97,15 @@ namespace CXXR {
 	    return "char (cached)";
 	}
 
+	/** @brief Access encapsulated std::string.
+	 *
+	 * @return Reference to the encapsulated std::string.
+	 */
+	const std::string& stdstring() const
+	{
+	    return m_key_val_pr->first.first;
+	}
+
 	// Virtual function of String:
 	const char* c_str() const;
 

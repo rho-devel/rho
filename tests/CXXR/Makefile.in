@@ -20,17 +20,31 @@ ifdef valgrind
 valgrind_flags = -DVALGRIND_LEVEL=2
 endif
 
-sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
-              HeterogeneousListtest.cpp MemoryBanktest.cpp RObject_sizer.cpp \
-              splice_test.cpp
+sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
+              GCManagertest.cpp HeterogeneousListtest.cpp MemoryBanktest.cpp \
+              RObject_sizer.cpp splice_test.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test
+        HeterogeneousListtest splice_test ArgMatchertest1
 
 check : $(tests:=.ts)
 
+ArgMatchertest.o : ArgMatchertest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
+
+ArgMatchertest : ArgMatchertest.o
+	$(LINK.cc) -o $@ $< -L../../lib -Wl,-R../../lib -L../../src/main -lR -lRblas \
+                   -lreadline -lboost_regex-mt
+
+# Unnamed formal argument:
+ArgMatchertest1.ts : ArgMatchertest formals_unnamed.txt
+	-./$< formals_unnamed.txt /dev/null > ArgMatchertest1.out 2>&1
+	diff ArgMatchertest1.save ArgMatchertest1.out
+	rm ArgMatchertest1.out
+	touch $@
+ 
 Allocatortest.o : Allocatortest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 

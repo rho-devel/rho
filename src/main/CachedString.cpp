@@ -65,7 +65,7 @@ const CachedString* CachedString::obtain(const std::string& str,
     // CachedString, but we precheck now so that we don't create an
     // invalid cache key:
     if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
-        error("unknown encoding: %d", encoding);
+        Rf_error("unknown encoding: %d", encoding);
     pair<map::iterator, bool> pr
 	= cache()->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;

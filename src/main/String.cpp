@@ -76,7 +76,7 @@ String::String(size_t sz, cetype_t encoding)
     }
 }
 
-// String::Comparator::operator()(const String&, const String&) is in
+// String::Comparator::operator()(const String*, const String*) is in
 // sort.cpp
 
 // int hash() const is in envir.cpp (for the time being)

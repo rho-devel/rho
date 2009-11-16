@@ -107,7 +107,17 @@ extern uintptr_t R_CStackStart;	/* Initial stack address */
 /* formerly in src/unix/devUI.h */
 
 #ifdef R_INTERFACE_PTRS
+
+/* In CXXR, Rinternals.h must not itself be wrapped in extern "C": */
+#ifdef __cplusplus
+}
+#endif
+
 #include <Rinternals.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __SYSTEM__
 # define extern
