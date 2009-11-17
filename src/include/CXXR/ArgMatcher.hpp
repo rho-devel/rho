@@ -127,10 +127,28 @@ namespace CXXR {
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
 	FormalVector m_formal_data;
 
+	// ***** FIXME Allocator *****
 	// Mapping from tag names to index within m_formal_data:
 	typedef std::map<const CachedString*, unsigned int,
 			 String::Comparator> FormalMap;
 	FormalMap m_formal_index;
+
+	struct SuppliedData {
+	    GCEdge<const CachedString> name;
+	    unsigned int index;
+	    FormalMap::const_iterator fm_iter;
+	    RObject* value;
+	};
+
+	// Data relating to supplied arguments that have not yet been
+	// matched.  Empty except during the operation of match().
+	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
+	SuppliedList m_supplied_list;
+
+	// Return true if 'shorter' is a prefix of 'longer', or is
+	// identical to 'longer':
+	static bool isPrefix(const CachedString* shorter,
+			     const CachedString* longer);
 
 	// Create a Binding in frame for the Symbol in fdata, setting
 	// its Origin and apply default value appropriately:

@@ -60,6 +60,14 @@ void ArgMatcher::detachReferents()
     m_defaults_env.detach();
     m_formal_data.clear();
     m_formal_index.clear();
+    m_supplied_list.clear();
+}
+
+bool ArgMatcher::isPrefix(const CachedString* shorter, const CachedString* longer)
+{
+    const string& shortstr = shorter->stdstring();
+    const string& longstr = longer->stdstring();
+    return longstr.compare(0, shortstr.size(), shortstr) == 0;
 }
 
 void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
@@ -83,19 +91,72 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 {
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
-    for (PairList* s = supplied; s; s = s->tail()) {
-	const CachedString* name = tag2cs(s->tag());
-	if (name) {
-	    FormalMap::const_iterator fit = m_formal_index.find(name);
-	    if ((*fit).first == name) {
-		// Exact match:
-		unsigned int index = (*fit).second;
-		const FormalData& fdata = m_formal_data[index];
-		formals_status[index] = EXACT_TAG;
-		makeBinding(frame, fdata, s->car());
+    // Exact matches by tag:
+    {
+	unsigned int sindex = 0;
+	for (PairList* s = supplied; s; s = s->tail()) {
+	    ++sindex;
+	    const CachedString* name = tag2cs(s->tag());
+	    if (name) {
+		FormalMap::const_iterator fmit
+		    = m_formal_index.lower_bound(name);
+		if ((*fmit).first == name) {
+		    // Exact match:
+		    unsigned int findex = (*fmit).second;
+		    const FormalData& fdata = m_formal_data[findex];
+		    formals_status[findex] = EXACT_TAG;
+		    makeBinding(frame, fdata, s->car());
+		} else {
+		    // No exact tag match, so place on list:
+		    SuppliedData supplied_data
+			= {GCEdge<const CachedString>(), sindex, fmit, s->car()};
+		    m_supplied_list.push_back(supplied_data);
+		    m_supplied_list.back().name = name;
+		}
 	    }
 	}
     }
+    // Partial matches by tag:
+    {
+	SuppliedList::iterator slit = m_supplied_list.begin();
+	while (slit != m_supplied_list.end()) {
+	    SuppliedList::iterator next = slit;
+	    ++next;
+	    const SuppliedData& supplied_data = *slit;
+	    FormalMap::const_iterator fmit = supplied_data.fm_iter;
+	    // Skip formals with exact matches in m_formal_index:
+	    while (fmit != m_formal_index.end()
+		   && formals_status[(*fmit).second] == EXACT_TAG)
+		++fmit;
+	    if (fmit != m_formal_index.end()
+		&& isPrefix(supplied_data.name, (*fmit).first)) {
+		// This is a potential partial match.  Remember the formal:
+		unsigned int findex = (*fmit).second;
+		// Has this formal already been partially matched? :
+		if (formals_status[(*fmit).second] == PARTIAL_TAG)
+		    Rf_error(_("formal argument '%s' matched by "
+			       "multiple actual arguments"),
+			     (*fmit).first->c_str());
+		// Does supplied arg partially match anything else? :
+		do {
+		    ++fmit;
+		} while (fmit != m_formal_index.end()
+			 && formals_status[(*fmit).second] == EXACT_TAG);
+		if (fmit != m_formal_index.end()
+		    && isPrefix(supplied_data.name, (*fmit).first))
+		    Rf_error(_("argument %d matches multiple formal arguments"),
+			     supplied_data.index);
+		// Partial match is OK:
+		const FormalData& fdata = m_formal_data[findex];
+		formals_status[findex] = PARTIAL_TAG;
+		makeBinding(frame, fdata, supplied_data.value);
+		m_supplied_list.erase(slit);
+	    }
+	    slit = next;
+	}
+    }
+    // Temporary tidy up:
+    m_supplied_list.clear();
 }
 
 // Implementation of ArgMatcher::tag2cs() is in match.cpp
@@ -104,4 +165,10 @@ void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals) m_formals->conductVisitor(v);
     if (m_defaults_env) m_defaults_env->conductVisitor(v);
+    for (list<SuppliedData>::const_iterator it = m_supplied_list.begin();
+	 it != m_supplied_list.end(); ++it) {
+	const CachedString* name = (*it).name;
+	if (name)
+	    name->conductVisitor(v);
+    }
 }

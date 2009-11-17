@@ -15,19 +15,12 @@ Supplied arguments:
 
 brown : brun
 red : rouge
-ye : jaune
+yellow : jaune
 green : vert
+bl : noir
 spurious : canard
 violet : violette
-gre : gris
-white : blanc
-
-Match result:
-
-brown : brun
-green : vert
 grey : gris
-red : rouge
-violet : violette
 white : blanc
-yellow : jaune
+Error: argument 5 matches multiple formal arguments
+
