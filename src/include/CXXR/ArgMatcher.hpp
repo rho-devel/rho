@@ -157,6 +157,10 @@ namespace CXXR {
 
 	// Convert tag to CachedString, raising error if not convertible.
 	static const CachedString* tag2cs(RObject* tag);
+
+	// Raise an error because there are unused supplied arguments,
+	// as indicated in m_supplied_list.  Leave m_supplied_list empty.
+	void unusedArgsError();
     };
 }
 

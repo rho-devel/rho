@@ -151,6 +151,30 @@ const CachedString* ArgMatcher::tag2cs(RObject* tag)
 	return 0;
     }
 }
+
+void ArgMatcher::unusedArgsError()
+{
+    GCStackRoot<PairList> unused_list;
+    // Produce a PairList of the unused args:
+    for (SuppliedList::const_reverse_iterator rit = m_supplied_list.rbegin();
+	 rit != m_supplied_list.rend(); ++rit) {
+	const SuppliedData& supplied_data = *rit;
+	CachedString* tag = const_cast<CachedString*>(supplied_data.name.get());
+	RObject* value = supplied_data.value;
+	if (value->sexptype() == PROMSXP) {
+	    Promise* prom = static_cast<Promise*>(value);
+	    value = const_cast<RObject*>(prom->valueGenerator());
+	}
+	unused_list = PairList::construct(value, unused_list, tag);
+    }
+    m_supplied_list.clear();
+    // Prepare error message:
+    GCStackRoot<StringVector>
+	argstrv(static_cast<StringVector*>(Rf_deparse1line(unused_list, FALSE)));
+    // '+ 4' is to remove 'list' from 'list(badTag1, ...' :
+    const char* errdetails = (*argstrv)[0]->c_str() + 4;
+    Rf_error(_("unused argument(s) %s"), errdetails);
+}		 
 	
 /* Destructively Extract A Named List Element. */
 /* Returns the first partially matching tag found. */

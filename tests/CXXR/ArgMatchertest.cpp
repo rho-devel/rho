@@ -25,6 +25,11 @@
 #include <fstream>
 #include <iostream>
 #include "boost/regex.hpp"
+
+// For Rf_InitOptions():
+#include "Defn.h"
+
+// Inclusion of Defn.h must precede this:
 #include "Rinterface.h"
 
 // Otherwise expanded to Rf_match:
@@ -144,6 +149,7 @@ int main(int argc, char* argv[]) {
 	usage(argv[0]);
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
+    Rf_InitOptions();
     // Process formals:
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1], true));

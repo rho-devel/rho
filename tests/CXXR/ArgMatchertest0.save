@@ -13,20 +13,25 @@ white :
 
 Supplied arguments:
 
-brown : brun
-red : rouge
-ye : jaune
-green : vert
-spurious : canard
-violet : violette
-gre : gris
 white : blanc
+ : noir
+brown : brun
+ : corail
+gre : gris
+ye : jaune
+ : bleu
+red : rouge
+green : vert
+violet : violette
 
 Match result:
 
+black : noir
+blue : bleu
 brown : brun
 green : vert
 grey : gris
+orange : corail
 red : rouge
 violet : violette
 white : blanc

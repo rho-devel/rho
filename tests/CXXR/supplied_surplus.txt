@@ -1,3 +1,4 @@
+silver : argent
 white : blanc
 : noir
 brown : brun
@@ -5,6 +6,8 @@ brown : brun
 gre : gris
 ye : jaune
 : bleu
+gold : or
+pink : rose
 red : rouge
 green : vert
 violet : violette

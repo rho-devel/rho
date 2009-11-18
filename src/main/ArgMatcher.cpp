@@ -97,22 +97,21 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	for (PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
 	    const CachedString* name = tag2cs(s->tag());
-	    if (name) {
-		FormalMap::const_iterator fmit
-		    = m_formal_index.lower_bound(name);
-		if ((*fmit).first == name) {
-		    // Exact match:
-		    unsigned int findex = (*fmit).second;
-		    const FormalData& fdata = m_formal_data[findex];
-		    formals_status[findex] = EXACT_TAG;
-		    makeBinding(frame, fdata, s->car());
-		} else {
-		    // No exact tag match, so place on list:
-		    SuppliedData supplied_data
-			= {GCEdge<const CachedString>(), sindex, fmit, s->car()};
-		    m_supplied_list.push_back(supplied_data);
-		    m_supplied_list.back().name = name;
-		}
+	    FormalMap::const_iterator fmit 
+		= (name ? m_formal_index.lower_bound(name)
+		   : m_formal_index.end());
+	    if (fmit != m_formal_index.end() && (*fmit).first == name) {
+		// Exact tag match:
+		unsigned int findex = (*fmit).second;
+		const FormalData& fdata = m_formal_data[findex];
+		formals_status[findex] = EXACT_TAG;
+		makeBinding(frame, fdata, s->car());
+	    } else {
+		// No exact tag match, so place supplied arg on list:
+		SuppliedData supplied_data
+		    = {GCEdge<const CachedString>(), sindex, fmit, s->car()};
+		m_supplied_list.push_back(supplied_data);
+		m_supplied_list.back().name = name;
 	    }
 	}
     }
@@ -155,11 +154,34 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	    slit = next;
 	}
     }
-    // Temporary tidy up:
-    m_supplied_list.clear();
+    // Positional matching:
+    {
+	const size_t numformals = m_formal_data.size();
+	SuppliedList::iterator slit = m_supplied_list.begin();
+	for (unsigned int findex = 0; findex < numformals; ++findex) {
+	    if (formals_status[findex] == UNMATCHED) {
+		// Skip supplied arguments with names:
+		while (slit != m_supplied_list.end() && (*slit).name.get())
+		    ++slit;
+		if (slit != m_supplied_list.end()) {
+		    // Handle positional match:
+		    const FormalData& fdata = m_formal_data[findex];
+		    const SuppliedData& supplied_data = *slit;
+		    formals_status[findex] = POSITIONAL;
+		    makeBinding(frame, fdata, supplied_data.value);
+		    m_supplied_list.erase(slit++);
+		}
+	    }
+	}
+    }
+    // Check for unused supplied args:
+    if (!m_supplied_list.empty())
+	unusedArgsError();
 }
 
 // Implementation of ArgMatcher::tag2cs() is in match.cpp
+
+// Implementation of ArgMatcher::unusedArgsError() is in match.cpp
 
 void ArgMatcher::visitReferents(const_visitor* v) const
 {
