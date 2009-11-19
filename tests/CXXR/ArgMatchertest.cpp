@@ -115,9 +115,16 @@ namespace {
 	return str->stdstring();
     }
 
+    string originString(Frame::Binding::Origin origin)
+    {
+	static string origstr[] = {"EXPLICIT  ", "MISSING   ", "DEFAULTED "};
+	return origstr[origin];
+    }
+
     void showFrame(const Frame* frame)
     {
-	typedef map<const CachedString*, RObject*, String::Comparator> FrameMap;
+	typedef map<const CachedString*, const Frame::Binding*,
+	    String::Comparator> FrameMap;
 	FrameMap fmap;
 	// Get bindings sorted by name:
 	{
@@ -128,16 +135,17 @@ namespace {
 		    cerr << "Binding tag isn't a Symbol.\n";
 		    abort();
 		}
-		fmap[sym->name()] = pl->car();
+		fmap[sym->name()] = frame->binding(sym);
 		pl = pl->tail();
 	    }
 	}
 	// Write out bindings in name order:
 	for (FrameMap::const_iterator it = fmap.begin();
 	     it != fmap.end(); ++it) {
-	    const FrameMap::value_type& pr = *it;
-	    string tag = pr.first->stdstring();
-	    RObject* value = pr.second;
+	    const Frame::Binding* bdg = (*it).second;
+	    string tag = bdg->symbol()->name()->stdstring();
+	    RObject* value = bdg->value();
+	    cout << originString(bdg->origin());
 	    switch (value->sexptype()) {
 	    case CHARSXP:
 		{
