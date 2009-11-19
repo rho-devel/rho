@@ -105,6 +105,16 @@ namespace {
 	}
     }
 
+    string getString(const RObject* value)
+    {
+	const CachedString* str = dynamic_cast<const CachedString*>(value);
+	if (!str) {
+	    cerr << "CachedString expected.\n";
+	    abort();
+	}
+	return str->stdstring();
+    }
+
     void showFrame(const Frame* frame)
     {
 	typedef map<const CachedString*, RObject*, String::Comparator> FrameMap;
@@ -126,26 +136,49 @@ namespace {
 	for (FrameMap::const_iterator it = fmap.begin();
 	     it != fmap.end(); ++it) {
 	    const FrameMap::value_type& pr = *it;
-	    const CachedString* val
-		= dynamic_cast<const CachedString*>(pr.second);
-	    if (!val) {
-		cerr << "Binding value isn't a CachedString\n";
+	    string tag = pr.first->stdstring();
+	    RObject* value = pr.second;
+	    switch (value->sexptype()) {
+	    case CHARSXP:
+		{
+		    cout << tag << " : "
+			 << getString(value) << endl;
+		}
+		break;
+	    case PROMSXP:
+		{
+		    Promise* prom = static_cast<Promise*>(value);
+		    cout << tag << " : Promise("
+			 << getString(prom->valueGenerator())
+			 << ')' << endl;
+		}
+		break;
+	    case SYMSXP:
+		{
+		    if (value != Symbol::missingArgument()) {
+			cerr << "Unexpected Symbol.\n";
+			abort();
+		    }
+		    cout << tag << " : Symbol::missingArgument()" << endl;
+		}
+		break;
+	    default:
+		cerr << "Unexpected SEXPTYPE.\n";
 		abort();
 	    }
-	    cout << pr.first->stdstring() << " : "
-		 << val->stdstring() << endl;
 	}
     }
 
     void usage(const char* cmd)
     {
-	cerr << "Usage: " << cmd << " formal_args_file supplied_args_file\n";
+	cerr << "Usage: " << cmd
+	     << " formal_args_file supplied_args_file [prior_bindings]\n";
 	exit(1);
     }
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3)
+    if (argc < 3 || argc > 4)
 	usage(argv[0]);
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
@@ -158,8 +191,18 @@ int main(int argc, char* argv[]) {
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     GCStackRoot<PairList> supplied(getArgs(argv[2], false));
-    // Perform match and show result:
+    // Set up frame and prior bindings (if any):
     GCStackRoot<Frame> frame(GCNode::expose(new StdFrame));
+    if (argc == 4) {
+	cout << "\nPrior bindings:\n\n";
+	GCStackRoot<PairList> prior_bindings(getArgs(argv[3], true));
+	for (PairList* pb = prior_bindings; pb; pb = pb->tail()) {
+	    Symbol* tag = static_cast<Symbol*>(pb->tag());
+	    Frame::Binding* bdg = frame->obtainBinding(tag);
+	    bdg->setValue(pb->car(), Frame::Binding::EXPLICIT);
+	}
+    }
+    // Perform match and show result:
     matcher->match(frame, supplied);
     cout << "\nMatch result:\n\n";
     showFrame(frame);

@@ -7,9 +7,10 @@ orange : ORANGE
 yellow : 
 green : 
 blue : BLUE
-violet : VIOLET
+violet : 
 grey : GREY
 white : 
+silver : SILVER
 
 Supplied arguments:
 

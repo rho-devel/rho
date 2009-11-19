@@ -41,8 +41,10 @@ ArgMatchertest : ArgMatchertest.o ../../src/main/libR.a
                    -lreadline -lboost_regex-mt
 
 # OK match:
-ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt
-	./$< formals_ok.txt supplied_ok.txt > ArgMatchertest0.out 2>&1
+ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt \
+                     prior_bindings.txt
+	./$< formals_ok.txt supplied_ok.txt prior_bindings.txt \
+	     > ArgMatchertest0.out 2>&1
 	diff ArgMatchertest0.save ArgMatchertest0.out
 	rm ArgMatchertest0.out
 	touch $@

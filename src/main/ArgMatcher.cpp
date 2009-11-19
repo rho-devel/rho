@@ -75,16 +75,15 @@ void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
 {
     RObject* value = supplied_value;
     Frame::Binding::Origin origin = Frame::Binding::EXPLICIT;
-    if (value == Symbol::missingArgument()) {
-	if (fdata.value == Symbol::missingArgument())
-	    origin = Frame::Binding::MISSING;
-	else {
-	    origin = Frame::Binding::DEFAULTED;
-	    value = GCNode::expose(new Promise(fdata.value, m_defaults_env));
-	}
+    if (value == Symbol::missingArgument()
+	&& fdata.value != Symbol::missingArgument()) {
+	origin = Frame::Binding::DEFAULTED;
+	value = GCNode::expose(new Promise(fdata.value, m_defaults_env));
     }
     Frame::Binding* bdg = frame->obtainBinding(fdata.symbol);
-    bdg->setValue(value, origin);
+    // Don't trump a previous binding with Symbol::missingArgument() :
+    if (value != Symbol::missingArgument())
+	bdg->setValue(value, origin);
 }
     
 void ArgMatcher::match(Frame* frame, PairList* supplied)
@@ -154,23 +153,25 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	    slit = next;
 	}
     }
-    // Positional matching:
+    // Positional matching and default values:
     {
 	const size_t numformals = m_formal_data.size();
 	SuppliedList::iterator slit = m_supplied_list.begin();
 	for (unsigned int findex = 0; findex < numformals; ++findex) {
 	    if (formals_status[findex] == UNMATCHED) {
+		const FormalData& fdata = m_formal_data[findex];
+		RObject* value = Symbol::missingArgument();
 		// Skip supplied arguments with names:
 		while (slit != m_supplied_list.end() && (*slit).name.get())
 		    ++slit;
 		if (slit != m_supplied_list.end()) {
 		    // Handle positional match:
-		    const FormalData& fdata = m_formal_data[findex];
 		    const SuppliedData& supplied_data = *slit;
+		    value = supplied_data.value;
 		    formals_status[findex] = POSITIONAL;
-		    makeBinding(frame, fdata, supplied_data.value);
 		    m_supplied_list.erase(slit++);
 		}
+		makeBinding(frame, fdata, value);
 	    }
 	}
     }

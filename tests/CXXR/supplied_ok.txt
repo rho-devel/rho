@@ -1,4 +1,3 @@
-white : blanc
 : noir
 brown : brun
 : corail
@@ -7,4 +6,3 @@ ye : jaune
 : bleu
 red : rouge
 green : vert
-violet : violette

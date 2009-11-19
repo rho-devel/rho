@@ -87,6 +87,27 @@ namespace CXXR {
 	 * Argument matching is carried out as described in Sec. 4.3.2
 	 * of the 'R Language Definition' document.
 	 *
+	 * Following the call, the bindings in \a frame will be set
+	 * according to the following decreasing order of precedence:
+	 *
+	 * <ol>
+	 * <li>Bindings, other than to Symbol::missingArgument()
+	 * (<tt>R_MissingArg</tt>), provided by the list of \a
+	 * supplied arguments.  The Binding will have origin EXPLICIT.</li>
+	 *
+	 * <li>Bindings (other than to Symbol::missingArgument())
+	 * supplied as default values to the formal parameters in the
+	 * constructor to this ArgMatcher object.  The Binding will have
+	 * origin DEFAULTED.</li>
+	 *
+	 * <li>Bindings already present in \a frame prior to the call
+	 * of this function.</li>
+	 *
+	 * <li>Formal arguments not bound by the preceding clauses
+	 * will be bound to Symbol::missingArgument(), and the Binding
+	 * will have origin MISSING.</li>
+	 * </ol>
+	 *
 	 * @param frame Pointer to the Frame in which bindings will be
 	 *          inserted as a result of the argument matching
 	 *          process.

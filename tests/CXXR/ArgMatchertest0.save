@@ -7,13 +7,13 @@ orange : ORANGE
 yellow : 
 green : 
 blue : BLUE
-violet : VIOLET
+violet : 
 grey : GREY
 white : 
+silver : SILVER
 
 Supplied arguments:
 
-white : blanc
  : noir
 brown : brun
  : corail
@@ -22,7 +22,12 @@ ye : jaune
  : bleu
 red : rouge
 green : vert
-violet : violette
+
+Prior bindings:
+
+red : rot
+silver : silbern
+white : weiss
 
 Match result:
 
@@ -33,6 +38,7 @@ green : vert
 grey : gris
 orange : corail
 red : rouge
-violet : violette
-white : blanc
+silver : Promise(SILVER)
+violet : Symbol::missingArgument()
+white : weiss
 yellow : jaune

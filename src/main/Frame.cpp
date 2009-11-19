@@ -42,7 +42,6 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/FunctionBase.h"
-#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
@@ -89,8 +88,8 @@ void Frame::Binding::initialize(Frame* frame, const Symbol* sym)
 
 void Frame::Binding::setFunction(FunctionBase* function, Origin origin)
 {
-    // See if binding already has a non-null value:
-    if (m_value) {
+    // See if binding already has a non-default value:
+    if (m_value != Symbol::missingArgument()) {
 	if (!isActive())
 	    Rf_error(_("symbol already has a regular binding"));
 	if (isLocked())

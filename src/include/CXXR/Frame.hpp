@@ -43,6 +43,7 @@
 
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
+#include "CXXR/Symbol.h"
 
 namespace CXXR {
     class Environment;
@@ -105,8 +106,8 @@ namespace CXXR {
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_value(0), m_origin(MISSING),
-		  m_active(false), m_locked(false)
+		: m_frame(0), m_symbol(0), m_value(Symbol::missingArgument()),
+		  m_origin(MISSING), m_active(false), m_locked(false)
 	    {}
 
 	    /** @brief Represent this Binding as a PairList element.
