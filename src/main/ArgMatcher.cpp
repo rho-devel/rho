@@ -21,7 +21,9 @@
 
 #include "CXXR/ArgMatcher.hpp"
 
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
+#include "CXXR/GCStackRoot.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
 #include "CXXR/Symbol.h"
@@ -31,26 +33,27 @@ using namespace std;
 using namespace CXXR;
 
 ArgMatcher::ArgMatcher(PairList* formals, Environment* defaults_env)
-    : m_formals(formals), m_defaults_env(defaults_env)
+    : m_formals(formals), m_defaults_env(defaults_env), m_has_dots(false)
 {
-    bool dotsseen = false;
     for (PairList* f = formals; f; f = f->tail()) {
 	Symbol* sym = SEXP_downcast<Symbol*>(f->tag());
 	if (!sym)
 	    Rf_error(_("formal arguments must be named"));
-	FormalData fdata = {sym, dotsseen, f->car()};
 	if (sym == DotsSymbol) {
-	    if (dotsseen)
+	    if (m_has_dots)
 		Rf_error(_("formals list contains more than one '...'"));
-	    dotsseen = true;
+	    if (f->car() != Symbol::missingArgument())
+		Rf_error(_("'...' formal cannot have a default value"));
+	    m_has_dots = true;
 	} else {
+	    FormalData fdata = {sym, m_has_dots, f->car()};
 	    pair<FormalMap::const_iterator, bool> pr =
 		m_formal_index.insert(make_pair(sym->name(),
 						m_formal_data.size()));
 	    if (!pr.second)
 		Rf_error(_("duplicated name in formals list"));
+	    m_formal_data.push_back(fdata);
 	}
-	m_formal_data.push_back(fdata);
     }
 }
 
@@ -63,7 +66,28 @@ void ArgMatcher::detachReferents()
     m_supplied_list.clear();
 }
 
-bool ArgMatcher::isPrefix(const CachedString* shorter, const CachedString* longer)
+void ArgMatcher::handleDots(Frame* frame)
+{
+    Frame::Binding* bdg = frame->obtainBinding(DotsSymbol);
+    if (m_supplied_list.empty())
+	bdg->setValue(0, Frame::Binding::EXPLICIT);
+    else {
+	SuppliedList::iterator first = m_supplied_list.begin();
+	DottedArgs* dotted_args
+	    = GCNode::expose(new DottedArgs((*first).value, 0, (*first).name));
+	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
+	m_supplied_list.erase(first);
+	GCStackRoot<PairList> tail;
+	for (SuppliedList::const_reverse_iterator rit = m_supplied_list.rbegin();
+	     rit != m_supplied_list.rend(); ++rit)
+	    tail = PairList::construct((*rit).value, tail, (*rit).name);
+	dotted_args->setTail(tail);
+	m_supplied_list.clear();
+    }
+}
+	     
+bool ArgMatcher::isPrefix(const CachedString* shorter,
+			  const CachedString* longer)
 {
     const string& shortstr = shorter->stdstring();
     const string& longstr = longer->stdstring();
@@ -95,7 +119,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	unsigned int sindex = 0;
 	for (PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
-	    const CachedString* name = tag2cs(s->tag());
+	    CachedString* name = tag2cs(s->tag());
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
 		   : m_formal_index.end());
@@ -108,7 +132,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
-		    = {GCEdge<const CachedString>(), sindex, fmit, s->car()};
+		    = {GCEdge<CachedString>(), sindex, fmit, s->car()};
 		m_supplied_list.push_back(supplied_data);
 		m_supplied_list.back().name = name;
 	    }
@@ -122,9 +146,11 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	    ++next;
 	    const SuppliedData& supplied_data = *slit;
 	    FormalMap::const_iterator fmit = supplied_data.fm_iter;
-	    // Skip formals with exact matches in m_formal_index:
+	    // Within m_formal_index, skip formals formals following
+	    // '...' and formals with exact matches:
 	    while (fmit != m_formal_index.end()
-		   && formals_status[(*fmit).second] == EXACT_TAG)
+		   && (m_formal_data[(*fmit).second].follows_dots
+		       || formals_status[(*fmit).second] == EXACT_TAG))
 		++fmit;
 	    if (fmit != m_formal_index.end()
 		&& isPrefix(supplied_data.name, (*fmit).first)) {
@@ -175,8 +201,11 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	    }
 	}
     }
-    // Check for unused supplied args:
-    if (!m_supplied_list.empty())
+    // Any remaining supplied args are either rolled into ... or
+    // there's an error:
+    if (m_has_dots)
+	handleDots(frame);
+    else if (!m_supplied_list.empty())
 	unusedArgsError();
 }
 

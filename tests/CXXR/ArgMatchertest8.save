@@ -15,14 +15,19 @@ silver : SILVER
 
 Supplied arguments:
 
+silver : argent
+whit : blan
  : noir
 brown : brun
  : corail
 gre : gris
 ye : jaune
  : bleu
+gold : or
+pink : rose
 red : rouge
 green : vert
+violet : violette
 
 Prior bindings:
 
@@ -32,7 +37,7 @@ white : weiss
 
 Match result:
 
-EXPLICIT  ... : NULL
+EXPLICIT  ... : DottedArgs(whit : blan, gold : or, pink : rose)
 EXPLICIT  black : noir
 EXPLICIT  blue : bleu
 EXPLICIT  brown : brun
@@ -40,7 +45,7 @@ EXPLICIT  green : vert
 EXPLICIT  grey : gris
 EXPLICIT  orange : corail
 EXPLICIT  red : rouge
-DEFAULTED silver : Promise(SILVER)
-MISSING   violet : Symbol::missingArgument()
+EXPLICIT  silver : argent
+EXPLICIT  violet : violette
 EXPLICIT  white : weiss
 EXPLICIT  yellow : jaune

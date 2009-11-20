@@ -2,11 +2,11 @@ black : BLACK
 brown : 
 red : RED
 orange : ORANGE
-yellow : 
+yellow :
+... : DOTS
 green :
 blue : BLUE
 violet :
 grey : GREY
-... :
 white :
 silver : SILVER

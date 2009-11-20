@@ -1,5 +1,5 @@
 silver : argent
-white : blanc
+whit : blan
 : noir
 brown : brun
 : corail

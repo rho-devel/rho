@@ -144,7 +144,7 @@ namespace CXXR {
 	GCEdge<PairList> m_formals;
 	GCEdge<Environment> m_defaults_env;
 
-	// Data on formals in order of occurrence:
+	// Data on formals (other than "...") in order of occurrence:
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
 	FormalVector m_formal_data;
 
@@ -154,8 +154,10 @@ namespace CXXR {
 			 String::Comparator> FormalMap;
 	FormalMap m_formal_index;
 
+	bool m_has_dots;  // True if formals include "..."
+
 	struct SuppliedData {
-	    GCEdge<const CachedString> name;
+	    GCEdge<CachedString> name;
 	    unsigned int index;
 	    FormalMap::const_iterator fm_iter;
 	    RObject* value;
@@ -165,6 +167,10 @@ namespace CXXR {
 	// matched.  Empty except during the operation of match().
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 	SuppliedList m_supplied_list;
+
+	// Turn remaining arguments, if any, into a DottedArgs object
+	// bound to '...'.  Leave m_supplied_list empty.
+	void handleDots(Frame* frame);
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
@@ -177,7 +183,7 @@ namespace CXXR {
 			 RObject* supplied_value);
 
 	// Convert tag to CachedString, raising error if not convertible.
-	static const CachedString* tag2cs(RObject* tag);
+	static CachedString* tag2cs(RObject* tag);
 
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in m_supplied_list.  Leave m_supplied_list empty.

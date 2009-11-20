@@ -121,6 +121,65 @@ namespace {
 	return origstr[origin];
     }
 
+    void showValue(RObject* value);
+
+    void showConsCell(ConsCell* cell)
+    {
+	const CachedString* tag
+	    = SEXP_downcast<const CachedString*>(cell->tag());
+	cout << tag->c_str() << " : ";
+	showValue(cell->car());
+    }
+
+    void showValue(RObject* value)
+    {
+	if (!value)
+	    cout << "NULL";
+	else {
+	    switch (value->sexptype()) {
+	    case CHARSXP:
+		{
+		    cout << getString(value);
+		}
+		break;
+	    case DOTSXP:
+		{
+		    ConsCell* cell = static_cast<ConsCell*>(value);
+		    cout << "DottedArgs(";
+		    showConsCell(cell);
+		    cell = cell->tail();
+		    while (cell) {
+			cout << ", ";
+			showConsCell(cell);
+			cell = cell->tail();
+		    }
+		    cout << ')';
+		}
+		break;
+	    case PROMSXP:
+		{
+		    Promise* prom = static_cast<Promise*>(value);
+		    cout << "Promise("
+			 << getString(prom->valueGenerator())
+			 << ')';
+		}
+		break;
+	    case SYMSXP:
+		{
+		    if (value != Symbol::missingArgument()) {
+			cerr << "Unexpected Symbol.\n";
+			abort();
+		    }
+		    cout << "Symbol::missingArgument()";
+		}
+		break;
+	    default:
+		cerr << "Unexpected SEXPTYPE.\n";
+		abort();
+	    }
+	}
+    }
+
     void showFrame(const Frame* frame)
     {
 	typedef map<const CachedString*, const Frame::Binding*,
@@ -145,35 +204,9 @@ namespace {
 	    const Frame::Binding* bdg = (*it).second;
 	    string tag = bdg->symbol()->name()->stdstring();
 	    RObject* value = bdg->value();
-	    cout << originString(bdg->origin());
-	    switch (value->sexptype()) {
-	    case CHARSXP:
-		{
-		    cout << tag << " : "
-			 << getString(value) << endl;
-		}
-		break;
-	    case PROMSXP:
-		{
-		    Promise* prom = static_cast<Promise*>(value);
-		    cout << tag << " : Promise("
-			 << getString(prom->valueGenerator())
-			 << ')' << endl;
-		}
-		break;
-	    case SYMSXP:
-		{
-		    if (value != Symbol::missingArgument()) {
-			cerr << "Unexpected Symbol.\n";
-			abort();
-		    }
-		    cout << tag << " : Symbol::missingArgument()" << endl;
-		}
-		break;
-	    default:
-		cerr << "Unexpected SEXPTYPE.\n";
-		abort();
-	    }
+	    cout << originString(bdg->origin()) << tag << " : ";
+	    showValue(value);
+	    cout << endl;
 	}
     }
 

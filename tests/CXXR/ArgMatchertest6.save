@@ -9,20 +9,23 @@ green :
 blue : BLUE
 violet : 
 grey : GREY
-... : 
 white : 
 silver : SILVER
 
 Supplied arguments:
 
+silver : argent
+whit : blan
+ : noir
 brown : brun
+ : corail
+gre : gris
+ye : jaune
+ : bleu
+gold : or
+pink : rose
 red : rouge
-yellow : jaune
 green : vert
-bl : noir
-spurious : canard
 violet : violette
-grey : gris
-white : blanc
-Error: argument 5 matches multiple formal arguments
+Error: unused argument(s) (gold = or, pink = rose)
 

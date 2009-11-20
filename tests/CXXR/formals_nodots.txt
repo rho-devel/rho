@@ -7,6 +7,5 @@ green :
 blue : BLUE
 violet :
 grey : GREY
-... :
 white :
 silver : SILVER

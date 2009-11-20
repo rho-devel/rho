@@ -128,7 +128,7 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
     return FALSE;/* for -Wall */
 }
 
-const CachedString* ArgMatcher::tag2cs(RObject* tag)
+CachedString* ArgMatcher::tag2cs(RObject* tag)
 {
     if (!tag)
 	return 0;
@@ -136,7 +136,7 @@ const CachedString* ArgMatcher::tag2cs(RObject* tag)
     case SYMSXP:
 	{
 	    Symbol* sym = static_cast<Symbol*>(tag);
-	    return sym->name();
+	    return const_cast<CachedString*>(sym->name());
 	}
     case CHARSXP:
 	{
@@ -145,7 +145,10 @@ const CachedString* ArgMatcher::tag2cs(RObject* tag)
 	    return cs;
 	}
     case STRSXP:
-	return CachedString::obtain(translateChar(STRING_ELT(tag, 0)));
+	{
+	    const char* tagstr = translateChar(STRING_ELT(tag, 0));
+	    return const_cast<CachedString*>(CachedString::obtain(tagstr));
+	}
     default:
 	Rf_error(_("invalid tag for argument matching"));
 	return 0;
