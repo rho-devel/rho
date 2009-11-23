@@ -51,6 +51,8 @@ extern "C" {
 }
 
 namespace {
+    Environment *fenv, *senv;
+
     string kv_regex_string("([\\w\\.]*)\\s*:\\s*(\\w*)");
     boost::basic_regex<char> kv_regex(kv_regex_string);
 
@@ -161,7 +163,16 @@ namespace {
 		    Promise* prom = static_cast<Promise*>(value);
 		    cout << "Promise("
 			 << getString(prom->valueGenerator())
-			 << ')';
+			 << ", ";
+		    Environment* env = prom->environment();
+		    if (env == fenv)
+			cout << "fenv)";
+		    else if (env == senv)
+			cout << "senv)";
+		    else {
+			cerr << "Unexpected environment.\n";
+			abort();
+		    }
 		}
 		break;
 	    case SYMSXP:
@@ -224,11 +235,16 @@ int main(int argc, char* argv[]) {
     // Set up error reporting:
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     Rf_InitOptions();
+    // Set up Environments:
+    GCStackRoot<Environment> fenvrt(GCNode::expose(new Environment(0)));
+    fenv = fenvrt;
+    GCStackRoot<Environment> senvrt(GCNode::expose(new Environment(0)));
+    senv = senvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1], true));
     GCStackRoot<ArgMatcher>
-	matcher(GCNode::expose(new ArgMatcher(formals, 0)));
+	matcher(GCNode::expose(new ArgMatcher(formals, fenv)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     GCStackRoot<PairList> supplied(getArgs(argv[2], false));
@@ -244,7 +260,7 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(frame, supplied);
+    matcher->match(frame, supplied, senv);
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;

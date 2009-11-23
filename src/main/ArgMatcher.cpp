@@ -74,7 +74,7 @@ void ArgMatcher::handleDots(Frame* frame)
     else {
 	SuppliedList::iterator first = m_supplied_list.begin();
 	DottedArgs* dotted_args
-	    = GCNode::expose(new DottedArgs((*first).value, 0, (*first).name));
+	    = expose(new DottedArgs((*first).value, 0, (*first).name));
 	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
 	m_supplied_list.erase(first);
 	GCStackRoot<PairList> tail;
@@ -102,7 +102,7 @@ void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
     if (value == Symbol::missingArgument()
 	&& fdata.value != Symbol::missingArgument()) {
 	origin = Frame::Binding::DEFAULTED;
-	value = GCNode::expose(new Promise(fdata.value, m_defaults_env));
+	value = expose(new Promise(fdata.value, m_defaults_env));
     }
     Frame::Binding* bdg = frame->obtainBinding(fdata.symbol);
     // Don't trump a previous binding with Symbol::missingArgument() :
@@ -110,7 +110,8 @@ void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Frame* frame, PairList* supplied)
+void ArgMatcher::match(Frame* frame, PairList* supplied,
+		       Environment* supplieds_env)
 {
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
@@ -119,7 +120,10 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 	unsigned int sindex = 0;
 	for (PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
-	    CachedString* name = tag2cs(s->tag());
+	    GCStackRoot<CachedString> name(tag2cs(s->tag()));
+	    GCStackRoot<> value(s->car());
+	    if (supplieds_env)
+		value = expose(new Promise(value, supplieds_env));
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
 		   : m_formal_index.end());
@@ -128,13 +132,13 @@ void ArgMatcher::match(Frame* frame, PairList* supplied)
 		unsigned int findex = (*fmit).second;
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = EXACT_TAG;
-		makeBinding(frame, fdata, s->car());
+		makeBinding(frame, fdata, value);
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
-		    = {GCEdge<CachedString>(), sindex, fmit, s->car()};
+		    = {GCEdge<CachedString>(name),
+		       GCEdge<>(value), fmit, sindex};
 		m_supplied_list.push_back(supplied_data);
-		m_supplied_list.back().name = name;
 	    }
 	}
     }
@@ -222,5 +226,8 @@ void ArgMatcher::visitReferents(const_visitor* v) const
 	const CachedString* name = (*it).name;
 	if (name)
 	    name->conductVisitor(v);
+	RObject* value = (*it).value;
+	if (value)
+	    value->conductVisitor(v);
     }
 }

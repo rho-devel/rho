@@ -33,14 +33,14 @@ white : weiss
 Match result:
 
 EXPLICIT  ... : NULL
-EXPLICIT  black : noir
-EXPLICIT  blue : bleu
-EXPLICIT  brown : brun
-EXPLICIT  green : vert
-EXPLICIT  grey : gris
-EXPLICIT  orange : corail
-EXPLICIT  red : rouge
-DEFAULTED silver : Promise(SILVER)
+EXPLICIT  black : Promise(noir, senv)
+EXPLICIT  blue : Promise(bleu, senv)
+EXPLICIT  brown : Promise(brun, senv)
+EXPLICIT  green : Promise(vert, senv)
+EXPLICIT  grey : Promise(gris, senv)
+EXPLICIT  orange : Promise(corail, senv)
+EXPLICIT  red : Promise(rouge, senv)
+DEFAULTED silver : Promise(SILVER, fenv)
 MISSING   violet : Symbol::missingArgument()
 EXPLICIT  white : weiss
-EXPLICIT  yellow : jaune
+EXPLICIT  yellow : Promise(jaune, senv)

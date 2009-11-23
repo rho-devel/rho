@@ -60,6 +60,8 @@ namespace CXXR {
      * facilities to match the formal arguments to a list of supplied
      * arguments and place the resulting bindings within a specified
      * Frame.
+     *
+     * @todo Move R_warn_partial_match_args functionality into this class.
      */
     class ArgMatcher : public GCNode {
     public:
@@ -121,10 +123,14 @@ namespace CXXR {
 	 *          the first element is considered, and it is
 	 *          translated into the current locale if necessary.
 	 *
+	 * @param supplieds_env If non-null, then each supplied
+	 *          argument is wrapped inside a Promise to be
+	 *          evaluated within \a supplieds_env.
+	 *
 	 * @todo Try to change the type of \a supplied to <tt>const
 	 * PairList*</tt> in due course.
 	 */
-	void match(Frame* frame, PairList* supplied);
+	void match(Frame* frame, PairList* supplied, Environment* supplieds_env);
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
@@ -158,9 +164,9 @@ namespace CXXR {
 
 	struct SuppliedData {
 	    GCEdge<CachedString> name;
-	    unsigned int index;
+	    GCEdge<> value;
 	    FormalMap::const_iterator fm_iter;
-	    RObject* value;
+	    unsigned int index;
 	};
 
 	// Data relating to supplied arguments that have not yet been
