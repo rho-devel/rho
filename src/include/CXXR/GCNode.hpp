@@ -396,7 +396,7 @@ namespace CXXR {
 	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
-	 * visitReferents() for the immediate base class of the
+	 * detachReferents() for the immediate base class of the
 	 * derived class, to ensure that \e all referents of the
 	 * object get detached.
 	 */
