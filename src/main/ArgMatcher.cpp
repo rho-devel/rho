@@ -32,8 +32,8 @@
 using namespace std;
 using namespace CXXR;
 
-ArgMatcher::ArgMatcher(PairList* formals, Environment* defaults_env)
-    : m_formals(formals), m_defaults_env(defaults_env), m_has_dots(false)
+ArgMatcher::ArgMatcher(PairList* formals)
+    : m_formals(formals), m_has_dots(false)
 {
     for (PairList* f = formals; f; f = f->tail()) {
 	Symbol* sym = SEXP_downcast<Symbol*>(f->tag());
@@ -60,7 +60,6 @@ ArgMatcher::ArgMatcher(PairList* formals, Environment* defaults_env)
 void ArgMatcher::detachReferents()
 {
     m_formals.detach();
-    m_defaults_env.detach();
     m_formal_data.clear();
     m_formal_index.clear();
     m_supplied_list.clear();
@@ -94,7 +93,7 @@ bool ArgMatcher::isPrefix(const CachedString* shorter,
     return longstr.compare(0, shortstr.size(), shortstr) == 0;
 }
 
-void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
+void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 			     RObject* supplied_value)
 {
     RObject* value = supplied_value;
@@ -102,17 +101,18 @@ void ArgMatcher::makeBinding(Frame* frame, const FormalData& fdata,
     if (value == Symbol::missingArgument()
 	&& fdata.value != Symbol::missingArgument()) {
 	origin = Frame::Binding::DEFAULTED;
-	value = expose(new Promise(fdata.value, m_defaults_env));
+	value = expose(new Promise(fdata.value, target_env));
     }
-    Frame::Binding* bdg = frame->obtainBinding(fdata.symbol);
+    Frame::Binding* bdg = target_env->frame()->obtainBinding(fdata.symbol);
     // Don't trump a previous binding with Symbol::missingArgument() :
     if (value != Symbol::missingArgument())
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Frame* frame, PairList* supplied,
+void ArgMatcher::match(Environment* target_env, PairList* supplied,
 		       Environment* supplieds_env)
 {
+    Frame* frame = target_env->frame();
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
     // Exact matches by tag:
@@ -132,7 +132,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied,
 		unsigned int findex = (*fmit).second;
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = EXACT_TAG;
-		makeBinding(frame, fdata, value);
+		makeBinding(target_env, fdata, value);
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
@@ -177,7 +177,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied,
 		// Partial match is OK:
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = PARTIAL_TAG;
-		makeBinding(frame, fdata, supplied_data.value);
+		makeBinding(target_env, fdata, supplied_data.value);
 		m_supplied_list.erase(slit);
 	    }
 	    slit = next;
@@ -201,7 +201,7 @@ void ArgMatcher::match(Frame* frame, PairList* supplied,
 		    formals_status[findex] = POSITIONAL;
 		    m_supplied_list.erase(slit++);
 		}
-		makeBinding(frame, fdata, value);
+		makeBinding(target_env, fdata, value);
 	    }
 	}
     }
@@ -220,7 +220,6 @@ void ArgMatcher::match(Frame* frame, PairList* supplied,
 void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals) m_formals->conductVisitor(v);
-    if (m_defaults_env) m_defaults_env->conductVisitor(v);
     for (list<SuppliedData>::const_iterator it = m_supplied_list.begin();
 	 it != m_supplied_list.end(); ++it) {
 	const CachedString* name = (*it).name;

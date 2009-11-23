@@ -72,25 +72,19 @@ namespace CXXR {
 	 *          distinct Symbol objects as their tags.  At most
 	 *          one element may have '...' as its tag.
 	 *
-	 * @param defaults_env If the \a formals list contains default
-	 *          values for any arguments, the default values will
-	 *          be evaluated in the Environment pointed to by \a
-	 *          defaults_env.  \a defaults_env may be a null
-	 *          pointer only if there are no default arguments.
-	 *
 	 * @todo Try to change the type of \a formals to <tt>const
 	 * PairList*</tt> in due course.
 	 */
-	explicit ArgMatcher(PairList* formals,
-			    Environment* defaults_env);
+	explicit ArgMatcher(PairList* formals);
 
 	/** @brief Match formal and supplied arguments.
 	 *
 	 * Argument matching is carried out as described in Sec. 4.3.2
 	 * of the 'R Language Definition' document.
 	 *
-	 * Following the call, the bindings in \a frame will be set
-	 * according to the following decreasing order of precedence:
+	 * Following the call, the bindings in the Frame of \a
+	 * target_env will be set according to the following
+	 * decreasing order of precedence:
 	 *
 	 * <ol>
 	 * <li>Bindings, other than to Symbol::missingArgument()
@@ -100,19 +94,22 @@ namespace CXXR {
 	 * <li>Bindings (other than to Symbol::missingArgument())
 	 * supplied as default values to the formal parameters in the
 	 * constructor to this ArgMatcher object.  The Binding will have
-	 * origin DEFAULTED.</li>
+	 * origin DEFAULTED.  The default value will be wrapped in a
+	 * Promise object keyed to \a target_env .</li>
 	 *
-	 * <li>Bindings already present in \a frame prior to the call
-	 * of this function.</li>
+	 * <li>Bindings already present in the Frame of \a target_env
+	 * prior to the call of this function.</li>
 	 *
 	 * <li>Formal arguments not bound by the preceding clauses
 	 * will be bound to Symbol::missingArgument(), and the Binding
 	 * will have origin MISSING.</li>
 	 * </ol>
 	 *
-	 * @param frame Pointer to the Frame in which bindings will be
-	 *          inserted as a result of the argument matching
-	 *          process.
+	 * @param target_env Pointer to the Environment in whose Frame
+	 *          bindings will be inserted as a result of the
+	 *          argument matching process.  Any default arguments
+	 *          used will be wrapped in Promise objects keyed to
+	 *          this Environment.
 	 *
 	 * @param supplied PairList, possibly empty, of supplied
 	 *          arguments.  It is not required for the elements of
@@ -130,7 +127,8 @@ namespace CXXR {
 	 * @todo Try to change the type of \a supplied to <tt>const
 	 * PairList*</tt> in due course.
 	 */
-	void match(Frame* frame, PairList* supplied, Environment* supplieds_env);
+	void match(Environment* target_env, PairList* supplied,
+		   Environment* supplieds_env);
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
@@ -148,7 +146,6 @@ namespace CXXR {
 	enum MatchStatus {UNMATCHED = 0, EXACT_TAG, PARTIAL_TAG, POSITIONAL};
 
 	GCEdge<PairList> m_formals;
-	GCEdge<Environment> m_defaults_env;
 
 	// Data on formals (other than "...") in order of occurrence:
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
@@ -183,9 +180,11 @@ namespace CXXR {
 	static bool isPrefix(const CachedString* shorter,
 			     const CachedString* longer);
 
-	// Create a Binding in frame for the Symbol in fdata, setting
-	// its Origin and apply default value appropriately:
-	void makeBinding(Frame* frame, const FormalData& fdata,
+	// Create a Binding in the Frame of target_env for the Symbol
+	// in fdata, setting its Origin and applying default value
+	// appropriately.  Default values are wrapped in Promises
+	// keyed to target_env.
+	void makeBinding(Environment* target_env, const FormalData& fdata,
 			 RObject* supplied_value);
 
 	// Convert tag to CachedString, raising error if not convertible.

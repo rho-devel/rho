@@ -244,12 +244,12 @@ int main(int argc, char* argv[]) {
     cout << "Formal arguments:\n\n";
     GCStackRoot<PairList> formals(getArgs(argv[1], true));
     GCStackRoot<ArgMatcher>
-	matcher(GCNode::expose(new ArgMatcher(formals, fenv)));
+	matcher(GCNode::expose(new ArgMatcher(formals)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
     GCStackRoot<PairList> supplied(getArgs(argv[2], false));
     // Set up frame and prior bindings (if any):
-    GCStackRoot<Frame> frame(GCNode::expose(new StdFrame));
+    Frame* frame = fenv->frame();
     if (argc == 4) {
 	cout << "\nPrior bindings:\n\n";
 	GCStackRoot<PairList> prior_bindings(getArgs(argv[3], true));
@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(frame, supplied, senv);
+    matcher->match(fenv, supplied, senv);
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;
