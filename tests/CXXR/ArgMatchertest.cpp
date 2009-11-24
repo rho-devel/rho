@@ -129,7 +129,9 @@ namespace {
     {
 	const CachedString* tag
 	    = SEXP_downcast<const CachedString*>(cell->tag());
-	cout << tag->c_str() << " : ";
+	if (tag)
+	    cout << tag->c_str() << ' ';
+	cout << ": ";
 	showValue(cell->car());
     }
 

@@ -154,7 +154,9 @@ namespace CXXR {
 	// ***** FIXME Allocator *****
 	// Mapping from tag names to index within m_formal_data:
 	typedef std::map<const CachedString*, unsigned int,
-			 String::Comparator> FormalMap;
+			 String::Comparator,
+			 Allocator<std::pair<const CachedString*,
+					     unsigned int> > > FormalMap;
 	FormalMap m_formal_index;
 
 	bool m_has_dots;  // True if formals include "..."

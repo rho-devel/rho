@@ -194,7 +194,8 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 		// Skip supplied arguments with names:
 		while (slit != m_supplied_list.end() && (*slit).name.get())
 		    ++slit;
-		if (slit != m_supplied_list.end()) {
+		if (slit != m_supplied_list.end()
+		    && !fdata.follows_dots) {
 		    // Handle positional match:
 		    const SuppliedData& supplied_data = *slit;
 		    value = supplied_data.value;

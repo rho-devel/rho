@@ -24,6 +24,7 @@ gre : gris
 ye : jaune
  : bleu
 gold : or
+ : notmatchedtowhite
 pink : rose
 red : rouge
 green : vert
@@ -37,7 +38,7 @@ white : weiss
 
 Match result:
 
-EXPLICIT  ... : DottedArgs(whit : Promise(blan, senv), gold : Promise(or, senv), pink : Promise(rose, senv))
+EXPLICIT  ... : DottedArgs(whit : Promise(blan, senv), gold : Promise(or, senv), : Promise(notmatchedtowhite, senv), pink : Promise(rose, senv))
 EXPLICIT  black : Promise(noir, senv)
 EXPLICIT  blue : Promise(bleu, senv)
 EXPLICIT  brown : Promise(brun, senv)

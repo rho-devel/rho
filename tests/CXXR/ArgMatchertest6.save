@@ -23,9 +23,10 @@ gre : gris
 ye : jaune
  : bleu
 gold : or
+ : notmatchedtowhite
 pink : rose
 red : rouge
 green : vert
 violet : violette
-Error: unused argument(s) (gold = or, pink = rose)
+Error: unused argument(s) (gold = or, notmatchedtowhite, pink = rose)
 
