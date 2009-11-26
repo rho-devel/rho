@@ -149,6 +149,42 @@ namespace CXXR {
 	    return m_formal_data.size() + m_has_dots;
 	}
 
+	/** @brief Prepare argument list for matching.
+	 *
+	 * This function takes the argument list \a raw_args, converts
+	 * into a form suitable for argument matching by
+	 * ArgMatcher::match(), and returns the resulting list.
+	 * Basically, any argument whose value is not
+	 * Symbol::missingArgument() is wrapped in a Promise to be
+	 * evaluated in \a env.
+	 *
+	 * If any argument in \a raw_args has the value
+	 * CXXR::DotsSymbol, the action depends on what this Symbol is
+	 * bound to within \a env (and its enclosing environments).
+	 * If it is unbound, or bound to a null pointer or to
+	 * Symbol::missingArgument(), then this element of \a raw_args
+	 * is ignored: nothing corresponding to it is added to the
+	 * output list.  If it is bound to a DottedArgs list, then the
+	 * elements of that list are added to the output list as
+	 * arguments in their own right, with each argument value
+	 * being wrapped in a Promise to be evaluated in \a env.  Any
+	 * other binding of DotsSymbol is an error.
+	 *
+	 * Any tags in \a raw_args or in a DottedArgs list are carried
+	 * across to the corresponding element of the output list, but
+	 * coerced using prepareTag() into a form suitable for
+	 * argument matching.
+	 *
+	 * @param raw_args Pointer (possibly null) to the argument
+	 *          list to be prepared for matching.
+	 *
+	 * @param env Pointer to the Environment to which Promises in
+	 *          the output list are to be keyed.
+	 *
+	 * @return the list of prepared arguments.
+	 */
+	static PairList* prepareArgs(PairList* raw_args, Environment* env);
+
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:

@@ -1486,60 +1486,6 @@ void BuiltInFunction::missingArgumentError(const BuiltInFunction* func,
 }
 
 
-/* Create a promise to evaluate each argument.	Although this is most */
-/* naturally attacked with a recursive algorithm, we use the iterative */
-/* form below because it is does not cause growth of the pointer */
-/* protection stack, and because it is a little more efficient. */
-
-SEXP CXXRnot_hidden promiseArgs(SEXP el, SEXP rho)
-{
-    SEXP ans, h, tail;
-
-    PROTECT(ans = tail = CONS(R_NilValue, R_NilValue));
-
-    while(el != R_NilValue) {
-
-	/* If we have a ... symbol, we look to see what it is bound to.
-	 * If its binding is Null (i.e. zero length)
-	 * we just ignore it and return the cdr with all its
-	 * expressions promised; if it is bound to a ... list
-	 * of promises, we repromise all the promises and then splice
-	 * the list of resulting values into the return value.
-	 * Anything else bound to a ... symbol is an error
-	 */
-
-	/* Is this double promise mechanism really needed? */
-
-	if (CAR(el) == R_DotsSymbol) {
-	    h = findVar(CAR(el), rho);
-	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
-		while (h != R_NilValue) {
-		    SETCDR(tail, CONS(mkPROMISE(CAR(h), rho), R_NilValue));
-		    SET_TAG(CDR(tail), CreateTag(TAG(h)));
-		    tail = CDR(tail);
-		    h = CDR(h);
-		}
-	    }
-	    else if (h != R_MissingArg)
-		error(_("'...' used in an incorrect context"));
-	}
-	else if (CAR(el) == R_MissingArg) {
-	    SETCDR(tail, CONS(R_MissingArg, R_NilValue));
-	    tail = CDR(tail);
-	    SET_TAG(tail, CreateTag(TAG(el)));
-	}
-	else {
-	    SETCDR(tail, CONS(mkPROMISE(CAR(el), rho), R_NilValue));
-	    tail = CDR(tail);
-	    SET_TAG(tail, CreateTag(TAG(el)));
-	}
-	el = CDR(el);
-    }
-    UNPROTECT(1);
-    return CDR(ans);
-}
-
-
 /* Check that each formal is a symbol */
 
 /* used in coerce.c */
@@ -3801,48 +3747,51 @@ SEXP R_stopbcprof() { return R_NilValue; }
 
 #include "CXXR/ArgMatcher.hpp"
 
-RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
+PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
 {
-    GCStackRoot<PairList> promised_args(static_cast<PairList*>(Rf_promiseArgs(args, env)));
-    GCStackRoot<Environment> newenv(expose(new Environment(environment())));
-    // Set up environment:
-    {
-	RCNTXT cntxt;
-	Rf_begincontext(&cntxt, CTXT_RETURN, call, environment(), env, args, this);
-	GCStackRoot<ArgMatcher>
-	    matcher(expose(new ArgMatcher(const_cast<PairList*>(m_formals.get()))));
-	matcher->match(newenv, promised_args, 0);
-	Rf_endcontext(&cntxt);
-    }
-    // Perform evaluation:
-    GCStackRoot<> ans;
-    {
-	RCNTXT cntxt;
-	if (R_GlobalContext->callflag == CTXT_GENERIC)
-	    Rf_begincontext(&cntxt, CTXT_RETURN, call, newenv,
-			    R_GlobalContext->sysparent, promised_args, this);
-	else
-	    Rf_begincontext(&cntxt, CTXT_RETURN, call, newenv, env, promised_args, this);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
-		ans = Evaluator::evaluate(const_cast<RObject*>(m_body.get()),
-					  newenv);
+    // args has a dummy element at the front, to simplify coding:
+    GCStackRoot<PairList> args(GCNode::expose(new PairList));
+    PairList* last = args;
+    while (raw_args) {
+	RObject* rawvalue = raw_args->car();
+	if (rawvalue == DotsSymbol) {
+	    pair<Environment*, Frame::Binding*> pr
+		= findBinding(DotsSymbol, env);
+	    if (pr.first) {
+		RObject* dval = pr.second->value();
+		if (!dval || dval->sexptype() == DOTSXP) {
+		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
+		    while (dotlist) {
+			Promise* prom
+			    = GCNode::expose(new Promise(dotlist->car(), env));
+			RObject* tag = Rf_CreateTag(dotlist->tag());
+			last->setTail(PairList::construct(prom, 0, tag));
+			last = last->tail();
+			dotlist = dotlist->tail();
+		    }
+		} else if (dval != Symbol::missingArgument())
+		    Rf_error(_("'...' used in an incorrect context"));
 	    }
-	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
-		    throw;
-		if (R_ReturnedValue == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		    R_ReturnedValue = 0;  /* remove restart token */
-		    redo = true;
-		}
-		else ans = R_ReturnedValue;
-	    }
-	} while (redo);
-	Rf_endcontext(&cntxt);
+	} else {
+	    RObject* tag = Rf_CreateTag(raw_args->tag());
+	    RObject* value = Symbol::missingArgument();
+	    if (rawvalue != Symbol::missingArgument())
+		value = GCNode::expose(new Promise(rawvalue, env));
+	    last->setTail(PairList::construct(value, 0, tag));
+	    last = last->tail();
+	}
+	raw_args = raw_args->tail();
     }
-    return ans;
+    return args->tail();
+}
+
+/* Create a promise to evaluate each argument.	Although this is most */
+/* naturally attacked with a recursive algorithm, we use the iterative */
+/* form below because it is does not cause growth of the pointer */
+/* protection stack, and because it is a little more efficient. */
+
+SEXP CXXRnot_hidden promiseArgs(SEXP el, SEXP rho)
+{
+    return ArgMatcher::prepareArgs(SEXP_downcast<PairList*>(el),
+				   SEXP_downcast<Environment*>(rho));
 }

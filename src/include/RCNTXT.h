@@ -90,6 +90,9 @@
     typedef RCNTXT* context;
 
 extern "C" {
+    // Declaration from Defn.h added here also in CXXR:
+    extern SEXP R_ReturnedValue;
+
     /* The Various Context Types.
 
     * In general the type is a bitwise OR of the values below.

@@ -40,6 +40,13 @@
 
 #include "CXXR/Closure.h"
 
+#include "RCNTXT.h"
+#include "CXXR/ArgMatcher.hpp"
+#include "CXXR/Evaluator.h"
+#include "CXXR/Expression.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/JMPException.hpp"
+
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -57,7 +64,53 @@ namespace CXXR {
 
 // Closure primary constructor is in dstruct.cpp (for the time being).
 
-// Closure::apply() is in eval.cpp (for the time being).
+RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
+{
+    GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
+    GCStackRoot<Environment> newenv(expose(new Environment(environment())));
+    // Set up environment:
+    {
+	RCNTXT cntxt;
+	Rf_begincontext(&cntxt, CTXT_RETURN, call, environment(), env, args, this);
+	GCStackRoot<ArgMatcher>
+	    matcher(expose(new ArgMatcher(const_cast<PairList*>(m_formals.get()))));
+	matcher->match(newenv, prepared_args, 0);
+	Rf_endcontext(&cntxt);
+    }
+    // Perform evaluation:
+    GCStackRoot<> ans;
+    {
+	RCNTXT cntxt;
+	if (R_GlobalContext->callflag == CTXT_GENERIC)
+	    Rf_begincontext(&cntxt, CTXT_RETURN, call, newenv,
+			    R_GlobalContext->sysparent, prepared_args, this);
+	else
+	    Rf_begincontext(&cntxt, CTXT_RETURN, call,
+			    newenv, env, prepared_args, this);
+	// ***** FIXME: add debugging logic here *****
+	bool redo;
+	do {
+	    redo = false;
+	    try {
+		ans = Evaluator::evaluate(const_cast<RObject*>(m_body.get()),
+					  newenv);
+	    }
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (R_ReturnedValue == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    R_ReturnedValue = 0;  /* remove restart token */
+		    redo = true;
+		}
+		else ans = R_ReturnedValue;
+	    }
+	} while (redo);
+	Rf_endcontext(&cntxt);
+    }
+    return ans;
+}
 
 Closure* Closure::clone() const
 {

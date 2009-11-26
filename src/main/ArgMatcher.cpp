@@ -214,6 +214,9 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 	unusedArgsError();
 }
 
+// Implementation of ArgMatcher::prepareArgs() is in eval.cpp (for the
+// time being)
+
 // Implementation of ArgMatcher::tag2cs() is in match.cpp
 
 // Implementation of ArgMatcher::unusedArgsError() is in match.cpp
