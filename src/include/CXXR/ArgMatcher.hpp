@@ -77,6 +77,15 @@ namespace CXXR {
 	 */
 	explicit ArgMatcher(PairList* formals);
 
+	/** @brief Do the formals include '...'?
+	 *
+	 * @return true iff the formals list includes '...'.
+	 */
+	bool has3Dots() const
+	{
+	    return m_has_dots;
+	}
+
 	/** @brief Match formal and supplied arguments.
 	 *
 	 * Argument matching is carried out as described in Sec. 4.3.2
@@ -130,6 +139,16 @@ namespace CXXR {
 	void match(Environment* target_env, PairList* supplied,
 		   Environment* supplieds_env);
 
+	/** @brief Number of formal arguments.
+	 *
+	 * @return the number of formal arguments. '<tt>...</tt>' is
+	 * counted as a single argument.
+	 */
+	size_t numFormals() const
+	{
+	    return m_formal_data.size() + m_has_dots;
+	}
+
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
@@ -151,7 +170,6 @@ namespace CXXR {
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
 	FormalVector m_formal_data;
 
-	// ***** FIXME Allocator *****
 	// Mapping from tag names to index within m_formal_data:
 	typedef std::map<const CachedString*, unsigned int,
 			 String::Comparator,
@@ -162,6 +180,7 @@ namespace CXXR {
 	bool m_has_dots;  // True if formals include "..."
 
 	struct SuppliedData {
+	    RObject* tag;
 	    GCEdge<CachedString> name;
 	    GCEdge<> value;
 	    FormalMap::const_iterator fm_iter;

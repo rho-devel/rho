@@ -179,11 +179,12 @@ namespace {
 		break;
 	    case SYMSXP:
 		{
-		    if (value != Symbol::missingArgument()) {
-			cerr << "Unexpected Symbol.\n";
-			abort();
+		    if (value == Symbol::missingArgument())
+			cout << "Symbol::missingArgument()";
+		    else {
+			Symbol* sym = static_cast<Symbol*>(value);
+			cout << "Symbol(" << getString(sym->name()) << ')';
 		    }
-		    cout << "Symbol::missingArgument()";
 		}
 		break;
 	    default:

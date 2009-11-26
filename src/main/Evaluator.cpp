@@ -89,7 +89,7 @@ Evaluator::mapEvaluate(PairList* inlist, Environment* env)
 	    if (!bdg)
 		Rf_error(_("'...' used but not bound"));
 	    RObject* h = bdg->value();
-	    if (h && h->sexptype() == DOTSXP) {
+	    if (!h || h->sexptype() == DOTSXP) {
 		ConsCell* dotlist = static_cast<DottedArgs*>(h);
 		while (dotlist) {
 		    RObject* dotcar = dotlist->car();

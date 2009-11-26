@@ -73,13 +73,13 @@ void ArgMatcher::handleDots(Frame* frame)
     else {
 	SuppliedList::iterator first = m_supplied_list.begin();
 	DottedArgs* dotted_args
-	    = expose(new DottedArgs((*first).value, 0, (*first).name));
+	    = expose(new DottedArgs((*first).value, 0, (*first).tag));
 	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
 	m_supplied_list.erase(first);
 	GCStackRoot<PairList> tail;
 	for (SuppliedList::const_reverse_iterator rit = m_supplied_list.rbegin();
 	     rit != m_supplied_list.rend(); ++rit)
-	    tail = PairList::construct((*rit).value, tail, (*rit).name);
+	    tail = PairList::construct((*rit).value, tail, (*rit).tag);
 	dotted_args->setTail(tail);
 	m_supplied_list.clear();
     }
@@ -136,7 +136,7 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
-		    = {GCEdge<CachedString>(name),
+		    = {s->tag(), GCEdge<CachedString>(name),
 		       GCEdge<>(value), fmit, sindex};
 		m_supplied_list.push_back(supplied_data);
 	    }

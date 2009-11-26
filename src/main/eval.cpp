@@ -336,12 +336,6 @@ static SEXP forcePromise(SEXP e)
     return prom->force();
 }
 
-RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
-{
-    GCStackRoot<> tmp(promiseArgs(args, env));
-    return applyClosure(call, this, tmp, env, R_BaseEnv);
-}
-
 /* Return value of "e" evaluated in "rho". */
 
 SEXP eval(SEXP e, SEXP rho)
@@ -3801,3 +3795,54 @@ SEXP R_startbcprof() { return R_NilValue; }
 SEXP R_stopbcprof() { return R_NilValue; }
 #endif
 #endif
+
+// Suppress Rf_match expansion:
+#undef match
+
+#include "CXXR/ArgMatcher.hpp"
+
+RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
+{
+    GCStackRoot<PairList> promised_args(static_cast<PairList*>(Rf_promiseArgs(args, env)));
+    GCStackRoot<Environment> newenv(expose(new Environment(environment())));
+    // Set up environment:
+    {
+	RCNTXT cntxt;
+	Rf_begincontext(&cntxt, CTXT_RETURN, call, environment(), env, args, this);
+	GCStackRoot<ArgMatcher>
+	    matcher(expose(new ArgMatcher(const_cast<PairList*>(m_formals.get()))));
+	matcher->match(newenv, promised_args, 0);
+	Rf_endcontext(&cntxt);
+    }
+    // Perform evaluation:
+    GCStackRoot<> ans;
+    {
+	RCNTXT cntxt;
+	if (R_GlobalContext->callflag == CTXT_GENERIC)
+	    Rf_begincontext(&cntxt, CTXT_RETURN, call, newenv,
+			    R_GlobalContext->sysparent, promised_args, this);
+	else
+	    Rf_begincontext(&cntxt, CTXT_RETURN, call, newenv, env, promised_args, this);
+	bool redo;
+	do {
+	    redo = false;
+	    try {
+		ans = Evaluator::evaluate(const_cast<RObject*>(m_body.get()),
+					  newenv);
+	    }
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (R_ReturnedValue == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    R_ReturnedValue = 0;  /* remove restart token */
+		    redo = true;
+		}
+		else ans = R_ReturnedValue;
+	    }
+	} while (redo);
+	Rf_endcontext(&cntxt);
+    }
+    return ans;
+}
