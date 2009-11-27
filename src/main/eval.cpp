@@ -3747,44 +3747,6 @@ SEXP R_stopbcprof() { return R_NilValue; }
 
 #include "CXXR/ArgMatcher.hpp"
 
-PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
-{
-    // args has a dummy element at the front, to simplify coding:
-    GCStackRoot<PairList> args(GCNode::expose(new PairList));
-    PairList* last = args;
-    while (raw_args) {
-	RObject* rawvalue = raw_args->car();
-	if (rawvalue == DotsSymbol) {
-	    pair<Environment*, Frame::Binding*> pr
-		= findBinding(DotsSymbol, env);
-	    if (pr.first) {
-		RObject* dval = pr.second->value();
-		if (!dval || dval->sexptype() == DOTSXP) {
-		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
-		    while (dotlist) {
-			Promise* prom
-			    = GCNode::expose(new Promise(dotlist->car(), env));
-			RObject* tag = Rf_CreateTag(dotlist->tag());
-			last->setTail(PairList::construct(prom, 0, tag));
-			last = last->tail();
-			dotlist = dotlist->tail();
-		    }
-		} else if (dval != Symbol::missingArgument())
-		    Rf_error(_("'...' used in an incorrect context"));
-	    }
-	} else {
-	    RObject* tag = Rf_CreateTag(raw_args->tag());
-	    RObject* value = Symbol::missingArgument();
-	    if (rawvalue != Symbol::missingArgument())
-		value = GCNode::expose(new Promise(rawvalue, env));
-	    last->setTail(PairList::construct(value, 0, tag));
-	    last = last->tail();
-	}
-	raw_args = raw_args->tail();
-    }
-    return args->tail();
-}
-
 /* Create a promise to evaluate each argument.	Although this is most */
 /* naturally attacked with a recursive algorithm, we use the iterative */
 /* form below because it is does not cause growth of the pointer */

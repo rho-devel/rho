@@ -44,6 +44,7 @@
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/String.h"
+#include "CXXR/Symbol.h"
 
 namespace CXXR {
     class CachedString;
@@ -123,21 +124,15 @@ namespace CXXR {
 	 * @param supplied PairList, possibly empty, of supplied
 	 *          arguments.  It is not required for the elements of
 	 *          the list to have tags, but if an element does have
-	 *          a tag, the tag must be either a Symbol, a
-	 *          CachedString, or a StringVector with at least one
-	 *          element.  In the last case (StringVector), only
-	 *          the first element is considered, and it is
-	 *          translated into the current locale if necessary.
-	 *
-	 * @param supplieds_env If non-null, then each supplied
-	 *          argument is wrapped inside a Promise to be
-	 *          evaluated within \a supplieds_env.
+	 *          a tag, the tag must be a Symbol.  (The function
+	 *          does not check this, so strange bugs may ensue if
+	 *          this precondition is not fulfilled.)  Typically
+	 *          this list will be the output of prepareArgs().
 	 *
 	 * @todo Try to change the type of \a supplied to <tt>const
 	 * PairList*</tt> in due course.
 	 */
-	void match(Environment* target_env, PairList* supplied,
-		   Environment* supplieds_env);
+	void match(Environment* target_env, PairList* supplied) const;
 
 	/** @brief Number of formal arguments.
 	 *
@@ -172,7 +167,7 @@ namespace CXXR {
 	 *
 	 * Any tags in \a raw_args or in a DottedArgs list are carried
 	 * across to the corresponding element of the output list, but
-	 * coerced using prepareTag() into a form suitable for
+	 * coerced using tagSymbol() into a form suitable for
 	 * argument matching.
 	 *
 	 * @param raw_args Pointer (possibly null) to the argument
@@ -182,8 +177,44 @@ namespace CXXR {
 	 *          the output list are to be keyed.
 	 *
 	 * @return the list of prepared arguments.
+	 *
+	 * @note It would be desirable to avoid producing a new
+	 * PairList, and to absorb this functionality directly into
+	 * the match() function.  But at present the output list in
+	 * recorded in the context set up by Closure::apply(), and
+	 * used for other purposes.
 	 */
 	static PairList* prepareArgs(PairList* raw_args, Environment* env);
+
+	/** @brief Convert tag of supplied argument to a Symbol.
+	 *
+	 * If \a tag is a null pointer or already points to a Symbol,
+	 * then \a tag itself is returned.
+	 *
+	 * If \a tag points to a StringVector with at least one
+	 * element, and the first element is a String of length at
+	 * least one, then the function returns a pointer to a Symbol
+	 * with that first element, translated in the current locale,
+	 * as its name.
+	 *
+	 * In all other cases the function returns a Symbol whose name
+	 * is obtained by an abbreviated SIMPLEDEPARSE of \a tag.
+	 *
+	 * @param tag Pointer (possibly null) to the tag to be
+	 *          processed.
+	 *
+	 * @return pointer to the representation of \a tag as a
+	 * Symbol.
+	 *
+	 * @todo This function probably ought to be fussier about what
+	 * it accepts as input.
+	 */
+	inline static Symbol* tagSymbol(RObject* tag)
+	{
+	    return ((!tag || tag->sexptype() == SYMSXP)
+		    ? static_cast<Symbol*>(tag)
+		    : coerceTag(tag));
+	}
 
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
@@ -216,9 +247,8 @@ namespace CXXR {
 	bool m_has_dots;  // True if formals include "..."
 
 	struct SuppliedData {
-	    RObject* tag;
-	    GCEdge<CachedString> name;
-	    GCEdge<> value;
+	    Symbol* tag;
+	    RObject* value;
 	    FormalMap::const_iterator fm_iter;
 	    unsigned int index;
 	};
@@ -226,11 +256,13 @@ namespace CXXR {
 	// Data relating to supplied arguments that have not yet been
 	// matched.  Empty except during the operation of match().
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
-	SuppliedList m_supplied_list;
+
+	// Coerce a tag that is not already a Symbol into Symbol form:
+	static Symbol* coerceTag(RObject* tag);
 
 	// Turn remaining arguments, if any, into a DottedArgs object
-	// bound to '...'.  Leave m_supplied_list empty.
-	void handleDots(Frame* frame);
+	// bound to '...'.  Leave supplied_list empty.
+	static void handleDots(Frame* frame, SuppliedList* supplied_list);
 
 	// Return true if 'shorter' is a prefix of 'longer', or is
 	// identical to 'longer':
@@ -242,14 +274,11 @@ namespace CXXR {
 	// appropriately.  Default values are wrapped in Promises
 	// keyed to target_env.
 	void makeBinding(Environment* target_env, const FormalData& fdata,
-			 RObject* supplied_value);
-
-	// Convert tag to CachedString, raising error if not convertible.
-	static CachedString* tag2cs(RObject* tag);
+			 RObject* supplied_value) const;
 
 	// Raise an error because there are unused supplied arguments,
-	// as indicated in m_supplied_list.  Leave m_supplied_list empty.
-	void unusedArgsError();
+	// as indicated in supplied_list.
+	static void unusedArgsError(const SuppliedList& supplied_list);
     };
 }
 

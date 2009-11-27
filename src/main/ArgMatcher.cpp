@@ -26,7 +26,6 @@
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
-#include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 
 using namespace std;
@@ -57,31 +56,32 @@ ArgMatcher::ArgMatcher(PairList* formals)
     }
 }
 
+// Implementation of ArgMatcher::coerceTag() is in coerce.cpp
+
 void ArgMatcher::detachReferents()
 {
     m_formals.detach();
     m_formal_data.clear();
     m_formal_index.clear();
-    m_supplied_list.clear();
 }
 
-void ArgMatcher::handleDots(Frame* frame)
+void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 {
     Frame::Binding* bdg = frame->obtainBinding(DotsSymbol);
-    if (m_supplied_list.empty())
+    if (supplied_list->empty())
 	bdg->setValue(0, Frame::Binding::EXPLICIT);
     else {
-	SuppliedList::iterator first = m_supplied_list.begin();
+	SuppliedList::iterator first = supplied_list->begin();
 	DottedArgs* dotted_args
 	    = expose(new DottedArgs((*first).value, 0, (*first).tag));
 	bdg->setValue(dotted_args, Frame::Binding::EXPLICIT);
-	m_supplied_list.erase(first);
+	supplied_list->erase(first);
 	GCStackRoot<PairList> tail;
-	for (SuppliedList::const_reverse_iterator rit = m_supplied_list.rbegin();
-	     rit != m_supplied_list.rend(); ++rit)
+	for (SuppliedList::const_reverse_iterator rit = supplied_list->rbegin();
+	     rit != supplied_list->rend(); ++rit)
 	    tail = PairList::construct((*rit).value, tail, (*rit).tag);
 	dotted_args->setTail(tail);
-	m_supplied_list.clear();
+	supplied_list->clear();
     }
 }
 	     
@@ -94,7 +94,7 @@ bool ArgMatcher::isPrefix(const CachedString* shorter,
 }
 
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
-			     RObject* supplied_value)
+			     RObject* supplied_value) const
 {
     RObject* value = supplied_value;
     Frame::Binding::Origin origin = Frame::Binding::EXPLICIT;
@@ -109,21 +109,20 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Environment* target_env, PairList* supplied,
-		       Environment* supplieds_env)
+void ArgMatcher::match(Environment* target_env, PairList* supplied) const
 {
     Frame* frame = target_env->frame();
     vector<MatchStatus, Allocator<MatchStatus> >
 	formals_status(m_formal_data.size(), UNMATCHED);
+    SuppliedList supplied_list;
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
 	for (PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
-	    GCStackRoot<CachedString> name(tag2cs(s->tag()));
-	    GCStackRoot<> value(s->car());
-	    if (supplieds_env)
-		value = expose(new Promise(value, supplieds_env));
+	    GCStackRoot<Symbol> tag(static_cast<Symbol*>(s->tag()));
+	    const CachedString* name = (tag ? tag->name() : 0);
+	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 
 		= (name ? m_formal_index.lower_bound(name)
 		   : m_formal_index.end());
@@ -136,19 +135,20 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 	    } else {
 		// No exact tag match, so place supplied arg on list:
 		SuppliedData supplied_data
-		    = {s->tag(), GCEdge<CachedString>(name),
-		       GCEdge<>(value), fmit, sindex};
-		m_supplied_list.push_back(supplied_data);
+		    = {tag, value, fmit, sindex};
+		supplied_list.push_back(supplied_data);
 	    }
 	}
     }
     // Partial matches by tag:
     {
-	SuppliedList::iterator slit = m_supplied_list.begin();
-	while (slit != m_supplied_list.end()) {
+	SuppliedList::iterator slit = supplied_list.begin();
+	while (slit != supplied_list.end()) {
 	    SuppliedList::iterator next = slit;
 	    ++next;
 	    const SuppliedData& supplied_data = *slit;
+	    const CachedString* supplied_name
+		= (supplied_data.tag ? supplied_data.tag->name() : 0);
 	    FormalMap::const_iterator fmit = supplied_data.fm_iter;
 	    // Within m_formal_index, skip formals formals following
 	    // '...' and formals with exact matches:
@@ -157,7 +157,7 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 		       || formals_status[(*fmit).second] == EXACT_TAG))
 		++fmit;
 	    if (fmit != m_formal_index.end()
-		&& isPrefix(supplied_data.name, (*fmit).first)) {
+		&& isPrefix(supplied_name, (*fmit).first)) {
 		// This is a potential partial match.  Remember the formal:
 		unsigned int findex = (*fmit).second;
 		// Has this formal already been partially matched? :
@@ -171,14 +171,14 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
 		} while (fmit != m_formal_index.end()
 			 && formals_status[(*fmit).second] == EXACT_TAG);
 		if (fmit != m_formal_index.end()
-		    && isPrefix(supplied_data.name, (*fmit).first))
+		    && isPrefix(supplied_name, (*fmit).first))
 		    Rf_error(_("argument %d matches multiple formal arguments"),
 			     supplied_data.index);
 		// Partial match is OK:
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = PARTIAL_TAG;
 		makeBinding(target_env, fdata, supplied_data.value);
-		m_supplied_list.erase(slit);
+		supplied_list.erase(slit);
 	    }
 	    slit = next;
 	}
@@ -186,21 +186,21 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
     // Positional matching and default values:
     {
 	const size_t numformals = m_formal_data.size();
-	SuppliedList::iterator slit = m_supplied_list.begin();
+	SuppliedList::iterator slit = supplied_list.begin();
 	for (unsigned int findex = 0; findex < numformals; ++findex) {
 	    if (formals_status[findex] == UNMATCHED) {
 		const FormalData& fdata = m_formal_data[findex];
 		RObject* value = Symbol::missingArgument();
-		// Skip supplied arguments with names:
-		while (slit != m_supplied_list.end() && (*slit).name.get())
+		// Skip supplied arguments with tags:
+		while (slit != supplied_list.end() && (*slit).tag)
 		    ++slit;
-		if (slit != m_supplied_list.end()
+		if (slit != supplied_list.end()
 		    && !fdata.follows_dots) {
 		    // Handle positional match:
 		    const SuppliedData& supplied_data = *slit;
 		    value = supplied_data.value;
 		    formals_status[findex] = POSITIONAL;
-		    m_supplied_list.erase(slit++);
+		    supplied_list.erase(slit++);
 		}
 		makeBinding(target_env, fdata, value);
 	    }
@@ -209,28 +209,53 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied,
     // Any remaining supplied args are either rolled into ... or
     // there's an error:
     if (m_has_dots)
-	handleDots(frame);
-    else if (!m_supplied_list.empty())
-	unusedArgsError();
+	handleDots(frame, &supplied_list);
+    else if (!supplied_list.empty())
+	unusedArgsError(supplied_list);
 }
 
-// Implementation of ArgMatcher::prepareArgs() is in eval.cpp (for the
-// time being)
-
-// Implementation of ArgMatcher::tag2cs() is in match.cpp
+PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
+{
+    // args has a dummy element at the front, to simplify coding:
+    GCStackRoot<PairList> args(GCNode::expose(new PairList));
+    PairList* last = args;
+    while (raw_args) {
+	RObject* rawvalue = raw_args->car();
+	if (rawvalue == DotsSymbol) {
+	    pair<Environment*, Frame::Binding*> pr
+		= findBinding(DotsSymbol, env);
+	    if (pr.first) {
+		RObject* dval = pr.second->value();
+		if (!dval || dval->sexptype() == DOTSXP) {
+		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
+		    while (dotlist) {
+			Promise* prom
+			    = GCNode::expose(new Promise(dotlist->car(), env));
+			Symbol* tag = tagSymbol(dotlist->tag());
+			last->setTail(PairList::construct(prom, 0, tag));
+			last = last->tail();
+			dotlist = dotlist->tail();
+		    }
+		} else if (dval != Symbol::missingArgument())
+		    Rf_error(_("'...' used in an incorrect context"));
+	    }
+	} else {
+	    Symbol* tag = tagSymbol(raw_args->tag());
+	    RObject* value = Symbol::missingArgument();
+	    if (rawvalue != Symbol::missingArgument())
+		value = GCNode::expose(new Promise(rawvalue, env));
+	    last->setTail(PairList::construct(value, 0, tag));
+	    last = last->tail();
+	}
+	raw_args = raw_args->tail();
+    }
+    return args->tail();
+}
 
 // Implementation of ArgMatcher::unusedArgsError() is in match.cpp
 
 void ArgMatcher::visitReferents(const_visitor* v) const
 {
-    if (m_formals) m_formals->conductVisitor(v);
-    for (list<SuppliedData>::const_iterator it = m_supplied_list.begin();
-	 it != m_supplied_list.end(); ++it) {
-	const CachedString* name = (*it).name;
-	if (name)
-	    name->conductVisitor(v);
-	RObject* value = (*it).value;
-	if (value)
-	    value->conductVisitor(v);
-    }
+    if (m_formals)
+	m_formals->conductVisitor(v);
 }

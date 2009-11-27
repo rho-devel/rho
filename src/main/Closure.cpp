@@ -74,7 +74,7 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 	Rf_begincontext(&cntxt, CTXT_RETURN, call, environment(), env, args, this);
 	GCStackRoot<ArgMatcher>
 	    matcher(expose(new ArgMatcher(const_cast<PairList*>(m_formals.get()))));
-	matcher->match(newenv, prepared_args, 0);
+	matcher->match(newenv, prepared_args);
 	Rf_endcontext(&cntxt);
     }
     // Perform evaluation:

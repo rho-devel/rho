@@ -128,49 +128,20 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
     return FALSE;/* for -Wall */
 }
 
-CachedString* ArgMatcher::tag2cs(RObject* tag)
-{
-    if (!tag)
-	return 0;
-    switch (tag->sexptype()) {
-    case SYMSXP:
-	{
-	    Symbol* sym = static_cast<Symbol*>(tag);
-	    return const_cast<CachedString*>(sym->name());
-	}
-    case CHARSXP:
-	{
-	    // Uncached strings not allowed here:
-	    CachedString* cs = SEXP_downcast<CachedString*>(tag);
-	    return cs;
-	}
-    case STRSXP:
-	{
-	    const char* tagstr = translateChar(STRING_ELT(tag, 0));
-	    return const_cast<CachedString*>(CachedString::obtain(tagstr));
-	}
-    default:
-	Rf_error(_("invalid tag for argument matching"));
-	return 0;
-    }
-}
-
-void ArgMatcher::unusedArgsError()
+void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
 {
     GCStackRoot<PairList> unused_list;
     // Produce a PairList of the unused args:
-    for (SuppliedList::const_reverse_iterator rit = m_supplied_list.rbegin();
-	 rit != m_supplied_list.rend(); ++rit) {
+    for (SuppliedList::const_reverse_iterator rit = supplied_list.rbegin();
+	 rit != supplied_list.rend(); ++rit) {
 	const SuppliedData& supplied_data = *rit;
-	CachedString* tag = const_cast<CachedString*>(supplied_data.name.get());
 	RObject* value = supplied_data.value;
 	if (value->sexptype() == PROMSXP) {
 	    Promise* prom = static_cast<Promise*>(value);
 	    value = const_cast<RObject*>(prom->valueGenerator());
 	}
-	unused_list = PairList::construct(value, unused_list, tag);
+	unused_list = PairList::construct(value, unused_list, supplied_data.tag);
     }
-    m_supplied_list.clear();
     // Prepare error message:
     GCStackRoot<StringVector>
 	argstrv(static_cast<StringVector*>(Rf_deparse1line(unused_list, FALSE)));

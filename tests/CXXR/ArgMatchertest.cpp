@@ -51,12 +51,12 @@ extern "C" {
 }
 
 namespace {
-    Environment *fenv, *senv;
+    Environment *fenv;
 
     string kv_regex_string("([\\w\\.]*)\\s*:\\s*(\\w*)");
     boost::basic_regex<char> kv_regex(kv_regex_string);
 
-    PairList* getArgs(const char* filename, bool names_as_symbols)
+    PairList* getArgs(const char* filename)
     {
 	ifstream astrm(filename);
 	if (!astrm) {
@@ -95,11 +95,8 @@ namespace {
 		else value
 		    = const_cast<CachedString*>(CachedString::obtain(valstr.c_str()));
 		const RObject* tag = 0;
-		if (!namestr.empty()) {
-		    if (names_as_symbols)
-			tag = Symbol::obtain(namestr.c_str());
-		    else tag = CachedString::obtain(namestr.c_str());
-		}
+		if (!namestr.empty())
+		    tag = Symbol::obtain(namestr.c_str());
 		ans = PairList::construct(value, ans,
 					  const_cast<RObject*>(tag));
 	    }
@@ -127,10 +124,9 @@ namespace {
 
     void showConsCell(ConsCell* cell)
     {
-	const CachedString* tag
-	    = SEXP_downcast<const CachedString*>(cell->tag());
+	const Symbol* tag = SEXP_downcast<const Symbol*>(cell->tag());
 	if (tag)
-	    cout << tag->c_str() << ' ';
+	    cout << tag->name()->c_str() << ' ';
 	cout << ": ";
 	showValue(cell->car());
     }
@@ -169,8 +165,6 @@ namespace {
 		    Environment* env = prom->environment();
 		    if (env == fenv)
 			cout << "fenv)";
-		    else if (env == senv)
-			cout << "senv)";
 		    else {
 			cerr << "Unexpected environment.\n";
 			abort();
@@ -241,21 +235,19 @@ int main(int argc, char* argv[]) {
     // Set up Environments:
     GCStackRoot<Environment> fenvrt(GCNode::expose(new Environment(0)));
     fenv = fenvrt;
-    GCStackRoot<Environment> senvrt(GCNode::expose(new Environment(0)));
-    senv = senvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";
-    GCStackRoot<PairList> formals(getArgs(argv[1], true));
+    GCStackRoot<PairList> formals(getArgs(argv[1]));
     GCStackRoot<ArgMatcher>
 	matcher(GCNode::expose(new ArgMatcher(formals)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
-    GCStackRoot<PairList> supplied(getArgs(argv[2], false));
+    GCStackRoot<PairList> supplied(getArgs(argv[2]));
     // Set up frame and prior bindings (if any):
     Frame* frame = fenv->frame();
     if (argc == 4) {
 	cout << "\nPrior bindings:\n\n";
-	GCStackRoot<PairList> prior_bindings(getArgs(argv[3], true));
+	GCStackRoot<PairList> prior_bindings(getArgs(argv[3]));
 	for (PairList* pb = prior_bindings; pb; pb = pb->tail()) {
 	    Symbol* tag = static_cast<Symbol*>(pb->tag());
 	    Frame::Binding* bdg = frame->obtainBinding(tag);
@@ -263,7 +255,7 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(fenv, supplied, senv);
+    matcher->match(fenv, supplied);
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;
