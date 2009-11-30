@@ -347,6 +347,9 @@ SEXP eval(SEXP e, SEXP rho)
 }
 
 /* Apply SEXP op of type CLOSXP to actuals */
+// In CXXR, applyClosure() currently exists alongside
+// Closure::apply(), with neither calling the other.  The resulting
+// code duplication will be rectified in due course.
 
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
@@ -503,6 +506,34 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     }
     return (tmp);
 }
+
+void Closure::debug(Environment* newenv, Expression* call,
+		    PairList* args, Environment* argsenv)
+{
+    Rprintf("debugging in: ");
+    Rf_PrintValueRec(call, argsenv);
+    /* Is the body a bare symbol (PR#6804) */
+    RObject* body = const_cast<RObject*>(m_body.get());
+    if (!isSymbol(body) & !isVectorAtomic(body)){
+	/* Find out if the body is function with only one statement. */
+	RObject* tmp;
+	if (isSymbol(CAR(body)))
+	    tmp = findFun(CAR(body), argsenv);
+	else
+	    tmp = eval(CAR(body), argsenv);
+	if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+	   && !strcmp( PRIMNAME(tmp), "for")
+	   && !strcmp( PRIMNAME(tmp), "{")
+	   && !strcmp( PRIMNAME(tmp), "repeat")
+	   && !strcmp( PRIMNAME(tmp), "while")
+	   )
+	    return;
+    }
+    Rprintf("debug: ");
+    Rf_PrintValue(body);
+    do_browser(call, this, args, newenv);
+}
+
 
 /* **** FIXME: This code is factored out of applyClosure.  If we keep
    **** it we should change applyClosure to run through this routine

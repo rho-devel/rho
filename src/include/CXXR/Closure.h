@@ -177,6 +177,10 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
+
+	// Called by apply() to handle debugging:
+	void debug(Environment* newenv, Expression* call,
+		   PairList* args, Environment* argsenv);
     };
 }  // namespace CXXR
 

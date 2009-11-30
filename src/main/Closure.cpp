@@ -95,7 +95,9 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 	else
 	    Rf_begincontext(&cntxt, CTXT_RETURN, call,
 			    newenv, env, prepared_args, this);
-	// ***** FIXME: add debugging logic here *****
+	newenv->setSingleStepping(m_debug);
+	if (m_debug)
+	    debug(newenv, call, prepared_args, env);
 	bool redo;
 	do {
 	    redo = false;
@@ -124,6 +126,9 @@ Closure* Closure::clone() const
 {
     return expose(new Closure(*this));
 }
+
+// Implementation of Closure::debug() is in eval.cpp (for the time
+// being).
 
 void Closure::detachReferents()
 {
