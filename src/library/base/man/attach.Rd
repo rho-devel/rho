@@ -66,8 +66,8 @@ attach(what, pos = 2, name = deparse(substitute(what)),
   given for the attached environment will be used by \code{\link{search}}
   and can be used as the argument to \code{\link{as.environment}}.
 
-  There are hooks to attach user-defined table objects of class
-  \code{"UserDefinedDatabase"}, supported by the Omegahat package
+  CXXR does not support user-defined table objects of class
+  \code{"UserDefinedDatabase"}, associated with the Omegahat package
   \pkg{RObjectTables}.  See \url{http://www.omegahat.org/RObjectTables/}.
 }
 \value{
