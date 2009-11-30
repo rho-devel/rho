@@ -40,18 +40,18 @@
 
 #include "CXXR/BuiltInFunction.h"
 
+#include "RCNTXT.h"
 #include "CXXR/DotInternal.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
-#include "CXXR/OrdinaryBuiltInFunction.hpp"
 #include "CXXR/RAllocStack.h"
-#include "CXXR/SpecialBuiltInFunction.hpp"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
 #include "R_ext/Print.h"
 
+using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
@@ -70,7 +70,24 @@ RObject* BuiltInFunction::apply(Expression* call, PairList* args,
     size_t pps_size = GCStackRootBase::ppsSize();
     size_t ralloc_size = RAllocStack::size();
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    GCStackRoot<> ans(innerApply(call, args, env));
+    GCStackRoot<> ans;
+    if (sexptype() == SPECIALSXP)
+	ans = m_function(call, this, args, env);
+    else {
+	pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
+	if (pr.first != 0)
+	    missingArgumentError(this, args, pr.first);
+	GCStackRoot<> evaluated_args(pr.second);
+	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
+	    RCNTXT cntxt;
+	    Rf_begincontext(&cntxt, CTXT_BUILTIN, call, Environment::base(),
+			    Environment::base(), 0, 0);
+	    ans = m_function(call, this, evaluated_args, env);
+	    Rf_endcontext(&cntxt);
+	} else {
+	    ans = m_function(call, this, evaluated_args, env);
+	}
+    }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     if (pps_size != GCStackRootBase::ppsSize())
@@ -106,12 +123,10 @@ int BuiltInFunction::indexInTable(const char* name)
 
 // BuiltInFunction::initialize() is in names.cpp
 
-BuiltInFunction* BuiltInFunction::make(unsigned int i)
-{
-    if (s_function_table[i].flags%10)
-	return GCNode::expose(new OrdinaryBuiltInFunction(i));
-    else return GCNode::expose(new SpecialBuiltInFunction(i));
-}
-
 // BuiltInFunction::missingArgumentError() is in eval.cpp (for the
 // time being).
+
+const char* BuiltInFunction::typeName() const
+{
+    return sexptype() == SPECIALSXP ? "special" : "builtin";
+}

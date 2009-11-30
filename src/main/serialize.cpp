@@ -1455,7 +1455,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    cbuf = CXXRconvert(static_cast<char*>, alloca(length+1));
 	    InString(stream, cbuf, length);
 	    cbuf[length] = '\0';
-	    PROTECT(s = BuiltInFunction::make(BuiltInFunction::indexInTable(cbuf)));
+	    PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
 	    break;
 	case LGLSXP:
 	    length = InInteger(stream);

@@ -1001,7 +1001,7 @@ void BuiltInFunction::initialize()
     for (int i = 0; s_function_table[i].name; ++i) {
 	const char* symname = s_function_table[i].name;
 	Symbol* sym = Symbol::obtain(symname);
-	BuiltInFunction* bif = BuiltInFunction::make(i);
+	BuiltInFunction* bif = expose(new BuiltInFunction(i));
 	if ((s_function_table[i].flags%100)/10)
 	    DotInternalTable::set(sym, bif);
 	else
@@ -1023,7 +1023,7 @@ SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
     int index = BuiltInFunction::indexInTable(namestr);
     if (index < 0)
 	 errorcall(call, _("no such primitive function"));
-    return BuiltInFunction::make(index);
+    return GCNode::expose(new BuiltInFunction(index));
 }
 
 /* initialize the symbol table */

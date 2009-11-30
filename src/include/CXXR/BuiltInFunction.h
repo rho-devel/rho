@@ -37,9 +37,6 @@
 
 /** @file BuiltInFunction.h
  * @brief Class CXXR::BuiltInFunction and associated C interface.
- *
- * CXXR::BuiltInFunction implements functionality common to BUILTINSXP
- * and SPECIALSXP.
  */
 
 #ifndef BUILTINFUNCTION_H
@@ -63,12 +60,16 @@ extern "C" {
 namespace CXXR {
     /** @brief R function implemented within the interpreter.
      *
-     * This class provides functionality common to BUILTINSXP and
-     * SPECIALSXP, and is basically an offset into a table of
-     * functions.
+     * A BuiltInFunction object represents an R function that is
+     * implemented within the interpreter by a function in C++ or C.
+     * These objects are of two kinds, according to whether the
+     * arguments passed to BuiltInFunction::apply() are evaluated
+     * before being passed on to the encapsulated C/C++ function (CR's
+     * BUILTINSXP), or are passed on unevaluated (SPECIALSXP).
      *
-     * @note This is an interim implementation: expect major changes
-     * in the future.
+     * A BuiltInFunction object is implemented essentially as an
+     * offset into a table of function information, which in CXXR is a
+     * private static member (<tt>s_function_table</tt>) of this class.
      */
     class BuiltInFunction : public FunctionBase {
     public:
@@ -121,6 +122,25 @@ namespace CXXR {
 	    PREC_SUBSET	 = 17
 	};
 
+	/** @brief Constructor.
+	 *
+	 * @param offset The required table offset.  (Not
+	 *          range-checked in any way.)  Whether the
+	 *          constructed object is a BUILTINSXP or a SPECIALSXP
+	 *          is determined from the table entry.
+	 *
+	 * @todo This constructor ought really to be private, but is
+	 * currently used by deserialization code.
+	 */
+	BuiltInFunction(unsigned int offset)
+	    : FunctionBase(s_function_table[offset].flags%10
+			   ? BUILTINSXP : SPECIALSXP),
+	      m_offset(offset), m_function(s_function_table[offset].cfun)
+	{
+	    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
+	    m_result_printing_mode = ResultPrintingMode(pmdigit);
+	}
+
 	/** @brief 'Arity' of the function.
 	 *
 	 * @return The number of arguments expected by the function.
@@ -140,6 +160,10 @@ namespace CXXR {
 	 * @param args Argument list to be checked, possibly null.
 	 *
 	 * @param call The call being processed (for error reporting).
+	 *
+	 * @note This would be called checkArity(), except that in
+	 * code inherited from CR this would get macro-expanded to
+	 * Rf_checkArityCall.
 	 */
 	void checkNumArgs(PairList* args, Expression* call) const;
 
@@ -147,10 +171,6 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the C/C++ function implementing this R
 	 * function.
-	 *
-	 * @note This would be called checkArity(), except that in
-	 * code inherited from CR this would get macro-expanded to
-	 * Rf_checkArityCall.
 	 */
 	CCODE function() const
 	{
@@ -180,35 +200,6 @@ namespace CXXR {
 	{
 	    return s_function_table[m_offset].gram.kind;
 	}
-
-	/** @brief Create a BuiltInFunction object corresponding to a
-	 * table entry.
-	 * 
-	 * @param i Index within the table for which a BuiltInFunction
-	 * object is to be created.  No range check is applied.
-	 *
-	 * @return A pointer to a newly created BuiltInFunction.  This
-	 * will be either an OrdinaryBuiltInFunction or a
-	 * SpecialBuiltInFunction, according to the table data.
-	 *
-	 * @deprecated Function table details ought not to be exposed
-	 * outside the class.
-	 */
-	static BuiltInFunction* make(unsigned int i);
-
-	/** @brief Raise error because of missing argument.
-	 *
-	 * @param func Pointer, possibly null, to the BuiltInFunction
-	 *          being evaluated.
-	 *
-	 * @param args The list of arguments.
-	 *
-	 * @param index Position (counting from one) of the first
-	 * missing argument.
-	 */
-	static void missingArgumentError(const BuiltInFunction* func,
-					 const PairList* args,
-					 unsigned int index);
 
 	/** @brief Name of function.
 	 *
@@ -252,11 +243,21 @@ namespace CXXR {
 	    return s_function_table[m_offset].gram.rightassoc;
 	}
 
+	/** @brief The names by which this type is known in R.
+	 *
+	 * @return The names by which this type is known in R.
+	 */
+	static const char* staticTypeName()
+	{
+	    return "(builtin or special)";
+	}
+
 	/** @brief Index of variant behaviour.
 	 *
-	 * Where a single C/C++ implements more than one built-in R
-	 * function, this function provides the C/C++ code with an
-	 * index indicating which R function is to be implemented.
+	 * Where a single C/C++ function implements more than one
+	 * built-in R function, this function provides the C/C++ code
+	 * with an index indicating which R function is to be
+	 * implemented.
 	 *
 	 * @return index of the required behaviour; interpretation is
 	 * up to the C/C++ function called.
@@ -276,23 +277,11 @@ namespace CXXR {
 	    return (s_function_table[m_offset].flags%100)/10 == 1;
 	}
 
+	// Virtual function of RObject:
+	const char* typeName() const;
+
 	// Virtual function of FunctionBase:
 	RObject* apply(Expression* call, PairList* args, Environment* env);
-    protected:
-	/**
-	 * @param offset The required table offset.  (Not
-	 * range-checked in any way.)
-	 *
-	 * @param evaluate true iff this is to be a BUILTINSXP;
-	 *          otherwise it will be a SPECIALSXP.
-	 */
-	BuiltInFunction(unsigned int offset, bool evaluate)
-	    : FunctionBase(evaluate ? BUILTINSXP : SPECIALSXP),
-	      m_offset(offset), m_function(s_function_table[offset].cfun)
-	{
-	    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
-	    m_result_printing_mode = ResultPrintingMode(pmdigit);
-	}
     private:
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -331,9 +320,19 @@ namespace CXXR {
 	// internal functions into the DotInternalTable:
 	static void initialize();
 
-	// 'apply' behaviour where SPECIALSXP differs from BUILTINSXP:
-	virtual RObject* innerApply(Expression* call, PairList* args,
-				    Environment* env) = 0;
+	/** @brief Raise error because of missing argument.
+	 *
+	 * @param func Pointer, possibly null, to the BuiltInFunction
+	 *          being evaluated.
+	 *
+	 * @param args The list of arguments.
+	 *
+	 * @param index Position (counting from one) of the first
+	 * missing argument.
+	 */
+	static void missingArgumentError(const BuiltInFunction* func,
+					 const PairList* args,
+					 unsigned int index);
 
 	friend class SchwarzCounter<BuiltInFunction>;
     };
