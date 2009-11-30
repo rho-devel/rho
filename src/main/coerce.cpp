@@ -1434,7 +1434,6 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_TAG(pargs, R_NilValue);
 	pargs = CDR(pargs);
     }
-    CheckFormals(args);
     PROTECT(body = VECTOR_ELT(arglist, n-1));
     /* the main (only?) thing to rule out is body being
        a function already. If we test here then

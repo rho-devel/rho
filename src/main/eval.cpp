@@ -1104,7 +1104,6 @@ SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (length(args) < 2)
 	WrongArgCount("lambda");
-    CheckFormals(CAR(args));
     rval = mkCLOSXP(CAR(args), CADR(args), rho);
     setAttrib(rval, R_SourceSymbol, CADDR(args));
     return rval;
@@ -1484,23 +1483,6 @@ void BuiltInFunction::missingArgumentError(const BuiltInFunction* func,
 		    "list of '%s' being evaluated was:\n   %s"),
 		  index, func->name(), R_CHAR(line)+4);
 }
-
-
-/* Check that each formal is a symbol */
-
-/* used in coerce.c */
-void CXXRnot_hidden CheckFormals(SEXP ls)
-{
-    if (isList(ls)) {
-	for (; ls != R_NilValue; ls = CDR(ls))
-	    if (TYPEOF(TAG(ls)) != SYMSXP)
-		goto err;
-	return;
-    }
- err:
-    error(_("invalid formal argument list for \"function\""));
-}
-
 
 
 /* "eval" and "eval.with.vis" : Evaluate the first argument */
@@ -3467,8 +3449,6 @@ SEXP CXXRnot_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     forms = CAR(args);
     body = CADR(args);
     env = CADDR(args);
-
-    CheckFormals(forms);
 
     if (! isByteCode(body))
 	errorcall(call, _("invalid environment"));

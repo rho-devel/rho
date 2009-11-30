@@ -604,7 +604,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 # define allocCharsxp		Rf_allocCharsxp
 # define begincontext		Rf_begincontext
-# define CheckFormals		Rf_CheckFormals
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
 # define ComplexFromInteger	Rf_ComplexFromInteger
@@ -793,7 +792,6 @@ SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
 void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
 #endif
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
-void CheckFormals(SEXP);
 void R_check_locale(void);
 void CleanEd(void);
 void copyListMatrix(SEXP, SEXP, Rboolean);
