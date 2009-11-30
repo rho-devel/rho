@@ -78,6 +78,16 @@ namespace CXXR {
 	 */
 	explicit ArgMatcher(PairList* formals);
 
+	/** @brief Formal arguments.
+	 *
+	 * @return Pointer to the formal argument list of this
+	 * ArgMatcher object.
+	 */
+	const PairList* formalArgs() const
+	{
+	    return m_formals;
+	}
+
 	/** @brief Do the formals include '...'?
 	 *
 	 * @return true iff the formals list includes '...'.
@@ -237,9 +247,15 @@ namespace CXXR {
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;
 	FormalVector m_formal_data;
 
+	struct Comparator {
+	    bool operator()(const CachedString* l, const CachedString* r) const
+	    {
+		return l->stdstring() < r->stdstring();
+	    }
+	};
+
 	// Mapping from tag names to index within m_formal_data:
-	typedef std::map<const CachedString*, unsigned int,
-			 String::Comparator,
+	typedef std::map<const CachedString*, unsigned int, Comparator,
 			 Allocator<std::pair<const CachedString*,
 					     unsigned int> > > FormalMap;
 	FormalMap m_formal_index;

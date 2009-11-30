@@ -62,19 +62,27 @@ namespace CXXR {
     }
 }
 
-// Closure primary constructor is in dstruct.cpp (for the time being).
+Closure::Closure(PairList* formal_args, const RObject* body,
+		 Environment* env)
+    : FunctionBase(CLOSXP), m_debug(false),
+      m_matcher(expose(new ArgMatcher(formal_args))),
+      m_body(body), m_environment(env)
+{
+}
 
 RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 {
     GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
-    GCStackRoot<Environment> newenv(expose(new Environment(environment())));
+    // +5 to allow some capacity for local variables:
+    GCStackRoot<Environment>
+	newenv(expose(new Environment(environment(),
+				      m_matcher->numFormals() + 5)));
     // Set up environment:
     {
 	RCNTXT cntxt;
-	Rf_begincontext(&cntxt, CTXT_RETURN, call, environment(), env, args, this);
-	GCStackRoot<ArgMatcher>
-	    matcher(expose(new ArgMatcher(const_cast<PairList*>(m_formals.get()))));
-	matcher->match(newenv, prepared_args);
+	Rf_begincontext(&cntxt, CTXT_RETURN, call,
+			environment(), env, args, this);
+	m_matcher->match(newenv, prepared_args);
 	Rf_endcontext(&cntxt);
     }
     // Perform evaluation:
@@ -119,7 +127,7 @@ Closure* Closure::clone() const
 
 void Closure::detachReferents()
 {
-    m_formals.detach();
+    m_matcher.detach();
     m_body.detach();
     m_environment.detach();
     RObject::detachReferents();
@@ -132,11 +140,14 @@ const char* Closure::typeName() const
 
 void Closure::visitReferents(const_visitor* v) const
 {
-    const GCNode* formals = m_formals;
+    const ArgMatcher* matcher = m_matcher;
     const GCNode* body = m_body;
     const GCNode* environment = m_environment;
     RObject::visitReferents(v);
-    if (formals) formals->conductVisitor(v);
-    if (body) body->conductVisitor(v);
-    if (environment) environment->conductVisitor(v);
+    if (matcher)
+	matcher->conductVisitor(v);
+    if (body)
+	body->conductVisitor(v);
+    if (environment)
+	environment->conductVisitor(v);
 }

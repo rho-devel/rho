@@ -45,30 +45,6 @@
 
 using namespace CXXR;
 
-/* This is called by function() {}, where an invalid
-   body should be impossible. When called from
-   other places (eg do_asfunction) they
-   should do this checking in advance */
-
-/*  mkCLOSXP - return a closure with formals f,  */
-/*             body b, and environment rho       */
-
-Closure::Closure(const PairList* formal_args, const RObject* body,
-		 Environment* env)
-    : FunctionBase(CLOSXP), m_debug(false), m_formals(formal_args),
-      m_body(body), m_environment(env)
-{
-    RObject* bod = const_cast<RObject*>(body);
-    if (!isList(bod) && !isLanguage(bod) && !isSymbol(bod)
-	&& !isExpression(bod) && !isVector(bod)
-#ifdef BYTECODE
-	&& !isByteCode(bod)
-#endif
-	)
-	Rf_error(_("invalid body argument for \"function\"\n"
-		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
-}
-   
 R_len_t Rf_length(SEXP s)
 {
     int i;
@@ -101,11 +77,27 @@ R_len_t Rf_length(SEXP s)
     }
 }
 
+/* This is called by function() {}, where an invalid
+   body should be impossible. When called from
+   other places (eg do_asfunction) they
+   should do this checking in advance */
+
+/*  mkCLOSXP - return a closure with formals f,  */
+/*             body b, and environment rho       */
+
 SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCStackRoot<> bodyrt(body);
     GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
 				   : Environment::global());
+    if (!isList(body) && !isLanguage(body) && !isSymbol(body)
+	&& !isExpression(body) && !isVector(body)
+#ifdef BYTECODE
+	&& !isByteCode(body)
+#endif
+	)
+	Rf_error(_("invalid body argument for \"function\"\n"
+		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
     return GCNode::expose(new Closure(formrt, bodyrt, envrt));
 }

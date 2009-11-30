@@ -45,6 +45,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
@@ -71,7 +72,7 @@ namespace CXXR {
 	 * @param env pointer to the environment in which the Closure
 	 *          is to be evaluated.
 	 */
-	Closure(const PairList* formal_args, const RObject* body,
+	Closure(PairList* formal_args, const RObject* body,
 		Environment* env = Environment::global());
 
 	/** @brief Copy constructor.
@@ -80,7 +81,7 @@ namespace CXXR {
 	 */
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
-	      m_formals(pattern.m_formals), m_body(pattern.m_body),
+	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{}
 
@@ -118,7 +119,7 @@ namespace CXXR {
 	 */
 	const PairList* formalArgs() const
 	{
-	    return m_formals;
+	    return m_matcher->formalArgs();
 	}
 
 	/** @brief Set debugging status.
@@ -165,7 +166,7 @@ namespace CXXR {
 	void detachReferents();
     private:
 	bool m_debug;
-	GCEdge<const PairList> m_formals;
+	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<const RObject> m_body;
 	GCEdge<Environment> m_environment;
 
