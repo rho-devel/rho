@@ -80,7 +80,7 @@ namespace {
 
 // ***** Class Symbol itself *****
 
-Symbol::Symbol(const CachedString* the_name, bool frozen)
+Symbol::Symbol(const CachedString* the_name)
     : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
 {
     // If this is a ..n symbol, extract the value of n.
@@ -94,8 +94,7 @@ Symbol::Symbol(const CachedString* the_name, bool frozen)
 	    iss >> m_dd_index;
 	}
     }
-    if (frozen)
-	freeze();
+    freeze();
 }
 
 // Because Symbols are permanently preserved against garbage
@@ -171,7 +170,7 @@ Symbol* Symbol::obtain(const CachedString* name)
     map::value_type& val = *it;
     if (pr.second) {
 	try {
-	    val.second = expose(new Symbol(name, false));
+	    val.second = expose(new Symbol(name));
 	} catch (...) {
 	    s_table->erase(it);
 	    throw;

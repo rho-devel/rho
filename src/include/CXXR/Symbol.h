@@ -265,11 +265,8 @@ namespace CXXR {
 	 *          <tt>...</tt> argument list.  A null pointer
 	 *          signifies a special Symbol, which is not entered
 	 *          into s_table.
-	 *
-	 * @param frozen true iff the Symbol should not be altered
-	 *          after it is created.
 	 */
-	explicit Symbol(const CachedString* name = 0, bool frozen = true);
+	explicit Symbol(const CachedString* name = 0);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
