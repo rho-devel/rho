@@ -71,8 +71,7 @@ namespace CXXR {
 	 *          permissible.
 	 */
 	explicit StringVector(size_t sz)
-	    : HandleVector<String, STRSXP>(sz,
-	      const_cast<CachedString*>(CachedString::blank()))
+	    : HandleVector<String, STRSXP>(sz, CachedString::blank())
 	{}
 
 	/** @brief Copy constructor.

@@ -72,7 +72,7 @@ namespace CXXR {
 	 * @param env pointer to the environment in which the Closure
 	 *          is to be evaluated.
 	 */
-	Closure(PairList* formal_args, const RObject* body,
+	Closure(PairList* formal_args, RObject* body,
 		Environment* env = Environment::global());
 
 	/** @brief Copy constructor.
@@ -167,7 +167,7 @@ namespace CXXR {
     private:
 	bool m_debug;
 	GCEdge<const ArgMatcher> m_matcher;
-	GCEdge<const RObject> m_body;
+	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
 
 	// Declared private to ensure that Environment objects are

@@ -164,7 +164,9 @@ namespace CXXR {
 	 */
 	const CachedString* name() const
 	{
-	    return (m_name ? m_name : CachedString::blank());
+	    if (m_name)
+		return m_name;
+	    return CachedString::blank();
 	}
 
 	/** @brief Get a pointer to a regular Symbol object.

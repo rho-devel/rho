@@ -51,8 +51,7 @@ using namespace CXXR;
 
 PairList* Frame::Binding::asPairList(PairList* tail) const
 {
-    PairList* ans
-	= new PairList(m_value, tail, const_cast<Symbol*>(symbol()));
+    PairList* ans = new PairList(m_value, tail, symbol());
     SET_MISSING(ans, origin());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
@@ -129,8 +128,8 @@ namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)
     {
 	for (PairList* pl = bindings; pl != 0; pl = pl->tail()) {
-	    RObject* tag = pl->tag();
-	    Symbol* symbol = dynamic_cast<Symbol*>(tag);
+	    const RObject* tag = pl->tag();
+	    const Symbol* symbol = dynamic_cast<const Symbol*>(tag);
 	    if (!symbol) Rf_error(_("list used to set frame bindings"
 				    " must have symbols as tags throughout"));
 	    Frame::Binding* bdg = frame->obtainBinding(symbol);

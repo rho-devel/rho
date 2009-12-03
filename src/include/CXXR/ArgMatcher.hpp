@@ -219,10 +219,10 @@ namespace CXXR {
 	 * @todo This function probably ought to be fussier about what
 	 * it accepts as input.
 	 */
-	inline static Symbol* tagSymbol(RObject* tag)
+	inline static const Symbol* tagSymbol(const RObject* tag)
 	{
 	    return ((!tag || tag->sexptype() == SYMSXP)
-		    ? static_cast<Symbol*>(tag)
+		    ? static_cast<const Symbol*>(tag)
 		    : coerceTag(tag));
 	}
 
@@ -233,7 +233,7 @@ namespace CXXR {
 	void detachReferents();
     private:
 	struct FormalData {
-	    Symbol* symbol;
+	    const Symbol* symbol;
 	    bool follows_dots;  // true if ... occurs earlier in the
 				// formals list.
 	    RObject* value;
@@ -263,7 +263,7 @@ namespace CXXR {
 	bool m_has_dots;  // True if formals include "..."
 
 	struct SuppliedData {
-	    Symbol* tag;
+	    const Symbol* tag;
 	    RObject* value;
 	    FormalMap::const_iterator fm_iter;
 	    unsigned int index;
@@ -274,7 +274,7 @@ namespace CXXR {
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
-	static Symbol* coerceTag(RObject* tag);
+	static const Symbol* coerceTag(const RObject* tag);
 
 	// Turn remaining arguments, if any, into a DottedArgs object
 	// bound to '...'.  Leave supplied_list empty.

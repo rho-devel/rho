@@ -52,17 +52,25 @@ namespace CXXR {
 
     /** Down cast from RObject* to a pointer to a class derived from
      *  RObject.
-     * @param Ptr Cast the pointer to type Ptr, where Ptr is a pointer
-     *          or const pointer to RObject or a class derived from
-     *          RObject.
+     *
+     * @param PtrOut Cast the pointer to type \a PtrOut, where \a
+     *          PtrOut is a pointer or const pointer to RObject or a
+     *          class derived from RObject.
+     *
+     * @param PtrIn Cast the pointer from type \a PtrIn, where \a
+     *          PtrIn is a pointer or const pointer to RObject or a
+     *          class derived from RObject.  This type is usually
+     *          inferred from the supplied parameter \a s.
+     *
      * @param s The pointer to be cast.
+     *
      * @return The cast pointer.
      */
-    template <typename Ptr>
-    Ptr SEXP_downcast(SEXP s)
+    template <typename PtrOut, typename PtrIn>
+    PtrOut SEXP_downcast(PtrIn s)
     {
 	if (!s) return 0;
-	Ptr ans = dynamic_cast<Ptr>(s);
+	PtrOut ans = dynamic_cast<PtrOut>(s);
 	if (!ans) SEXP_downcast_error(s->typeName(), ans->staticTypeName());
 	return ans;
     }

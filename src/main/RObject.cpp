@@ -132,7 +132,7 @@ unsigned int RObject::packGPBits() const
 
 // This follows CR in adding new attributes at the end of the list,
 // though it would be easier to add them at the beginning.
-void RObject::setAttribute(Symbol* name, RObject* value)
+void RObject::setAttribute(const Symbol* name, RObject* value)
 {
     errorIfFrozen();
     if (!name)
@@ -169,7 +169,8 @@ void RObject::setAttributes(PairList* new_attributes)
 {
     clearAttributes();
     while (new_attributes) {
-	Symbol* name = SEXP_downcast<Symbol*>(new_attributes->tag());
+	const Symbol* name
+	    = SEXP_downcast<const Symbol*>(new_attributes->tag());
 	setAttribute(name, new_attributes->car());
 	new_attributes = new_attributes->tail();
     }

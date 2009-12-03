@@ -157,7 +157,7 @@ void Frame::Binding::assign(RObject* new_value, Origin origin)
 }
 
 pair<RObject*, bool>
-Frame::Binding::forcedValue(const Environment* env)
+Frame::Binding::forcedValue(Environment* env)
 {
     bool promise_forced = false;
     RObject* val = m_value;
@@ -166,10 +166,10 @@ Frame::Binding::forcedValue(const Environment* env)
 	if (prom->environment()) {
 	    GCStackRoot<Promise> promrt(prom);
 	    frame()->monitorRead(*this);
-	    val = Rf_eval(val, const_cast<Environment*>(env));
+	    val = evaluate(val, env);
 	    promise_forced = true;
 	}
-	val = const_cast<RObject*>(prom->value());
+	val = prom->value();
     }
     return make_pair(val, promise_forced);
 }

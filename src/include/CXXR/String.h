@@ -174,7 +174,7 @@ namespace CXXR {
 	 * @return <tt>const</tt> pointer to the string representing
 	 *         'not available'.
 	 */
-	static const String* NA()
+	static String* NA()
 	{
 	    return s_na;
 	}
@@ -215,7 +215,7 @@ namespace CXXR {
 	    m_hash = -1;
 	}
     private:
-	static GCRoot<const String> s_na;
+	static GCRoot<String> s_na;
 
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;

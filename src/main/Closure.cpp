@@ -62,8 +62,7 @@ namespace CXXR {
     }
 }
 
-Closure::Closure(PairList* formal_args, const RObject* body,
-		 Environment* env)
+Closure::Closure(PairList* formal_args, RObject* body, Environment* env)
     : FunctionBase(CLOSXP), m_debug(false),
       m_matcher(expose(new ArgMatcher(formal_args))),
       m_body(body), m_environment(env)
@@ -102,8 +101,7 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
 	do {
 	    redo = false;
 	    try {
-		ans = Evaluator::evaluate(const_cast<RObject*>(m_body.get()),
-					  newenv);
+		ans = Evaluator::evaluate(m_body, newenv);
 	    }
 	    catch (JMPException& e) {
 		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;

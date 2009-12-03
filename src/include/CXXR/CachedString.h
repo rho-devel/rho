@@ -62,7 +62,7 @@ namespace CXXR {
 	/** @brief Blank string.
 	 * @return <tt>const</tt> pointer to the string "".
 	 */
-	static const CachedString* blank()
+	static CachedString* blank()
 	{
 	    return s_blank;
 	}
@@ -85,8 +85,8 @@ namespace CXXR {
 	 * created) representing the specified text in the specified
 	 * encoding.
 	 */
-	static const CachedString* obtain(const std::string& str,
-					  cetype_t encoding = CE_NATIVE);
+	static CachedString* obtain(const std::string& str,
+				    cetype_t encoding = CE_NATIVE);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -141,7 +141,7 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 
 	static map* s_cache;
-	static const CachedString* s_blank;
+	static CachedString* s_blank;
 
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
@@ -223,8 +223,7 @@ extern "C" {
 #else
     inline SEXP Rf_mkChar(const char * str)
     {
-	return
-	    const_cast<CXXR::CachedString*>(CXXR::CachedString::obtain(str));
+	return CXXR::CachedString::obtain(str);
     }
 #endif
     
@@ -248,8 +247,7 @@ extern "C" {
 #else
     inline SEXP Rf_mkCharCE(const char * str, cetype_t encoding)
     {
-	using namespace CXXR;
-	return const_cast<CachedString*>(CachedString::obtain(str, encoding));
+	return CXXR::CachedString::obtain(str, encoding);
     }
 #endif
 

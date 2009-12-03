@@ -437,7 +437,7 @@ namespace CXXR {
 	 *          assume ownership of \a value, which should
 	 *          therefore not be subsequently altered externally.
 	 */
-	void setAttribute(Symbol* name, RObject* value);
+	void setAttribute(const Symbol* name, RObject* value);
 
 	/** @brief Replace the attributes of an object.
 	 *

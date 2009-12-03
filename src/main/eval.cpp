@@ -513,14 +513,13 @@ void Closure::debug(Environment* newenv, Expression* call,
     Rprintf("debugging in: ");
     Rf_PrintValueRec(call, argsenv);
     /* Is the body a bare symbol (PR#6804) */
-    RObject* body = const_cast<RObject*>(m_body.get());
-    if (!isSymbol(body) & !isVectorAtomic(body)){
+    if (!isSymbol(m_body) & !isVectorAtomic(m_body)){
 	/* Find out if the body is function with only one statement. */
 	RObject* tmp;
-	if (isSymbol(CAR(body)))
-	    tmp = findFun(CAR(body), argsenv);
+	if (isSymbol(CAR(m_body)))
+	    tmp = findFun(CAR(m_body), argsenv);
 	else
-	    tmp = eval(CAR(body), argsenv);
+	    tmp = eval(CAR(m_body), argsenv);
 	if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
 	   && !strcmp( PRIMNAME(tmp), "for")
 	   && !strcmp( PRIMNAME(tmp), "{")
@@ -530,7 +529,7 @@ void Closure::debug(Environment* newenv, Expression* call,
 	    return;
     }
     Rprintf("debug: ");
-    Rf_PrintValue(body);
+    Rf_PrintValue(m_body);
     do_browser(call, this, args, newenv);
 }
 

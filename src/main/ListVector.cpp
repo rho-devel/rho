@@ -63,8 +63,7 @@ ListVector::ListVector(ExpressionVector& ev)
     // propagateAge() on the nodes pointed to.
     for (unsigned int i = 0; i < size(); ++i)
 	(*this)[i] = ev[i];
-    SEXP names = Rf_getAttrib(const_cast<ExpressionVector*>(&ev),
-			      R_NamesSymbol);
+    SEXP names = Rf_getAttrib(&ev, R_NamesSymbol);
     if (names) {
 	// Rf_setAttrib protects its args, so we need to expose first:
 	expose();

@@ -156,7 +156,7 @@ namespace CXXR {
 	 * @param tg Pointer to the new tag object (or a null
 	 *           pointer).
 	 */
-	void setTag(RObject* tg)
+	void setTag(const RObject* tg)
 	{
 	    m_tag = tg;
 	}
@@ -181,7 +181,7 @@ namespace CXXR {
 	/**
 	 * @return a pointer to the 'tag' of this ConsCell.
 	 */
-	RObject* tag() const
+	const RObject* tag() const
 	{
 	    return m_tag;
 	}
@@ -204,14 +204,18 @@ namespace CXXR {
 	 * @param st The required ::SEXPTYPE of the ConsCell.  Must
 	 *           be one of LISTSXP, LANGSXP, DOTSXP or BCODESXP (not
 	 *           normally checked).
+	 *
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
+	 *
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
+	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
 	explicit ConsCell(SEXPTYPE st,
-			  RObject* cr = 0, PairList* tl = 0, RObject* tg = 0);
+			  RObject* cr = 0, PairList* tl = 0,
+			  const RObject* tg = 0);
 
 	/** @brief Copy constructor.
 	 *
@@ -251,7 +255,7 @@ namespace CXXR {
 
 	Handle<> m_car;
 	GCEdge<PairList> m_tail;
-	GCEdge<> m_tag;
+	GCEdge<const RObject> m_tag;
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:
@@ -320,11 +324,14 @@ namespace CXXR {
 	/**
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
+	 *
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
+	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit PairList(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
+	explicit PairList(RObject* cr = 0, PairList* tl = 0,
+			  const RObject* tg = 0)
 	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0),
 	      m_active_binding(false), m_binding_locked(false)
 	{}
@@ -356,7 +363,7 @@ namespace CXXR {
 	 * macro-expand this to Rf_cons.
 	 */
 	static PairList* construct(RObject* cr, PairList* tl=0,
-				   RObject* tag = 0)
+				   const RObject* tag = 0)
 	{
 	    PairList* ans = new (s_cons_pad) PairList(cr, tl, tag);
 	    s_cons_pad = GCNode::operator new(sizeof(PairList));
@@ -424,7 +431,7 @@ namespace CXXR {
     };
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
-			      PairList* tl, RObject* tg)
+			      PairList* tl, const RObject* tg)
 	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
     {
 	// checkST(st);
@@ -524,7 +531,7 @@ extern "C" {
 	using namespace CXXR;
 	if (!e) return 0;
 	ConsCell& cc = *SEXP_downcast<ConsCell*>(e);
-	return cc.tag();
+	return const_cast<RObject*>(cc.tag());
     }
 #endif
 

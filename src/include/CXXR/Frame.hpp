@@ -172,8 +172,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool>
-	    forcedValue(const Environment* env);
+	    std::pair<RObject*, bool> forcedValue(Environment* env);
 
 	    /** @brief Get pointer to Frame.
 	     *

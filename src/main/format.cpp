@@ -79,7 +79,7 @@ unsigned int CXXR::stringWidth(unsigned int minwidth, const String* string)
 }
 
 // Designed for use with std::accumulate():
-    unsigned int CXXR::stringWidthQuote(unsigned int minwidth,
+unsigned int CXXR::stringWidthQuote(unsigned int minwidth,
 				    const String* string)
 {
     unsigned int width = R_print.na_width;

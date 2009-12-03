@@ -35,9 +35,9 @@ ArgMatcher::ArgMatcher(PairList* formals)
     : m_formals(formals), m_has_dots(false)
 {
     for (PairList* f = formals; f; f = f->tail()) {
-	Symbol* sym = SEXP_downcast<Symbol*>(f->tag());
+	const Symbol* sym = dynamic_cast<const Symbol*>(f->tag());
 	if (!sym)
-	    Rf_error(_("formal arguments must be named"));
+	    Rf_error(_("invalid formal arguments for 'function'"));
 	if (sym == DotsSymbol) {
 	    if (m_has_dots)
 		Rf_error(_("formals list contains more than one '...'"));
@@ -120,7 +120,8 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied) const
 	unsigned int sindex = 0;
 	for (PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
-	    GCStackRoot<Symbol> tag(static_cast<Symbol*>(s->tag()));
+	    GCStackRoot<const Symbol>
+		tag(static_cast<const Symbol*>(s->tag()));
 	    const CachedString* name = (tag ? tag->name() : 0);
 	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 
@@ -231,7 +232,7 @@ PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
 		    while (dotlist) {
 			Promise* prom
 			    = GCNode::expose(new Promise(dotlist->car(), env));
-			Symbol* tag = tagSymbol(dotlist->tag());
+			const Symbol* tag = tagSymbol(dotlist->tag());
 			last->setTail(PairList::construct(prom, 0, tag));
 			last = last->tail();
 			dotlist = dotlist->tail();
@@ -240,7 +241,7 @@ PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
 		    Rf_error(_("'...' used in an incorrect context"));
 	    }
 	} else {
-	    Symbol* tag = tagSymbol(raw_args->tag());
+	    const Symbol* tag = tagSymbol(raw_args->tag());
 	    RObject* value = Symbol::missingArgument();
 	    if (rawvalue != Symbol::missingArgument())
 		value = GCNode::expose(new Promise(rawvalue, env));

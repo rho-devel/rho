@@ -86,9 +86,7 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	prstack.promise = this;
 	prstack.next = R_PendingPromises;
 	R_PendingPromises = &prstack;
-	RObject* val
-	    = Evaluator::evaluate(const_cast<RObject*>(valueGenerator()),
-				  environment());
+	RObject* val = Evaluator::evaluate(m_valgen, environment());
 
 	/* Pop the stack, unmark the promise and set its value field.
 	   Also set the environment to R_NilValue to allow GC to
@@ -98,7 +96,7 @@ RObject* Promise::evaluate(Environment* /*env*/)
 	markUnderEvaluation(false);
 	setValue(val);
     }
-    return const_cast<RObject*>(value());
+    return value();
 }
 
 void Promise::setValue(RObject* val)

@@ -1329,7 +1329,8 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		PairList* frame
 		    = SEXP_downcast<PairList*>(ReadItem(ref_table, stream));
 		while (frame) {
-		    const Symbol* sym = SEXP_downcast<Symbol*>(frame->tag());
+		    const Symbol* sym
+			= SEXP_downcast<const Symbol*>(frame->tag());
 		    Frame::Binding* bdg = env->frame()->obtainBinding(sym);
 		    bdg->fromPairList(frame);
 		    frame = frame->tail();

@@ -76,7 +76,7 @@ namespace CXXR {
 	 * @param env pointer to the Environment in which \a valgen is
 	 *          to be evaluated.
 	 */
-	Promise(const RObject* valgen, Environment* env)
+	Promise(RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
 	      m_valgen(valgen), m_environment(env), m_seen(false),
 	      m_interrupted(false)
@@ -176,7 +176,7 @@ namespace CXXR {
 	 * @return pointer to the value of the Promise, or to
 	 * Symbol::unboundValue() if it has not yet been evaluated.
 	 */
-	const RObject* value() const
+	RObject* value()
 	{
 	    return m_value;
 	}
@@ -202,7 +202,7 @@ namespace CXXR {
 	void detachReferents();
     private:
 	GCEdge<> m_value;
-	GCEdge<const RObject> m_valgen;
+	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
 	bool m_seen;
 	bool m_interrupted;
@@ -242,8 +242,9 @@ extern "C" {
 #else
     inline SEXP PRCODE(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::RObject*>(prom.valueGenerator());
+	using namespace CXXR;
+	const Promise& prom = *SEXP_downcast<Promise*>(x);
+	return const_cast<RObject*>(prom.valueGenerator());
     }
 #endif
 
@@ -260,8 +261,9 @@ extern "C" {
 #else
     inline SEXP PRENV(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::Environment*>(prom.environment());
+	using namespace CXXR;
+	const Promise& prom = *SEXP_downcast<Promise*>(x);
+	return prom.environment();
     }
 #endif
 
@@ -277,8 +279,9 @@ extern "C" {
 #else
     inline SEXP PRVALUE(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::RObject*>(prom.value());
+	using namespace CXXR;
+	Promise& prom = *SEXP_downcast<Promise*>(x);
+	return prom.value();
     }
 #endif
 

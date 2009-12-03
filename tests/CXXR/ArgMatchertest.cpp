@@ -249,7 +249,7 @@ int main(int argc, char* argv[]) {
 	cout << "\nPrior bindings:\n\n";
 	GCStackRoot<PairList> prior_bindings(getArgs(argv[3]));
 	for (PairList* pb = prior_bindings; pb; pb = pb->tail()) {
-	    Symbol* tag = static_cast<Symbol*>(pb->tag());
+	    const Symbol* tag = static_cast<const Symbol*>(pb->tag());
 	    Frame::Binding* bdg = frame->obtainBinding(tag);
 	    bdg->setValue(pb->car(), Frame::Binding::EXPLICIT);
 	}

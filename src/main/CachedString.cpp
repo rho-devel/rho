@@ -55,11 +55,10 @@ namespace CXXR {
 tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
 
 CachedString::map* CachedString::s_cache = 0;
-const CachedString* CachedString::s_blank;
+CachedString* CachedString::s_blank;
 SEXP R_BlankString = 0;
 
-const CachedString* CachedString::obtain(const std::string& str,
-					 cetype_t encoding)
+CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
 {
     // This will be checked again when we actually construct the
     // CachedString, but we precheck now so that we don't create an
@@ -91,9 +90,9 @@ void CachedString::initialize()
     // We don't delete s_cache in cleanup() because there will still
     // be CachedStrings in existence on exit.
     s_cache = new map;
-    static GCRoot<const CachedString> blank(CachedString::obtain(""));
+    static GCRoot<CachedString> blank(CachedString::obtain(""));
     s_blank = blank.get();
-    R_BlankString = const_cast<CachedString*>(s_blank);
+    R_BlankString = s_blank;
 }
     
 const char* CachedString::typeName() const

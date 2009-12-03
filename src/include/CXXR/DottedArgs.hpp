@@ -55,11 +55,14 @@ namespace CXXR {
 	/**
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
+	 *
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
+	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit DottedArgs(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
+	explicit DottedArgs(RObject* cr = 0, PairList* tl = 0,
+			    const RObject* tg = 0)
 	    : ConsCell(DOTSXP, cr, tl, tg)
 	{}
 

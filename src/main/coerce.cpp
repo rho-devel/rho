@@ -2555,20 +2555,21 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
 
 #include "CXXR/ArgMatcher.hpp"
 
-Symbol* ArgMatcher::coerceTag(RObject* tag)
+const Symbol* ArgMatcher::coerceTag(const RObject* tag)
 {
     const char* symname = 0;
     if (tag->sexptype() == STRSXP) {
-	StringVector* strv = static_cast<StringVector*>(tag);
+	const StringVector* strv = static_cast<const StringVector*>(tag);
 	if (strv->size() >= 1) {
-	    String* strv0 = (*strv)[0];
+	    const String* strv0 = (*strv)[0];
 	    if (strv0 && strv0->size() >= 1)
-		symname = Rf_translateChar(strv0);
+		symname = Rf_translateChar(const_cast<String*>(strv0));
 	}
     }
     if (!symname) {
 	StringVector* strv
-	    = static_cast<StringVector*>(Rf_deparse1(tag, TRUE, SIMPLEDEPARSE));
+	    = static_cast<StringVector*>(Rf_deparse1(const_cast<RObject*>(tag),
+						     TRUE, SIMPLEDEPARSE));
 	symname = (*strv)[0]->c_str();
     }
     return Symbol::obtain(symname);
