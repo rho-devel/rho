@@ -41,7 +41,10 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/Promise.h"
 
 using namespace std;
 using namespace CXXR;
@@ -60,6 +63,24 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
+pair<RObject*, bool>
+Frame::Binding::forcedValue(Environment* env)
+{
+    bool promise_forced = false;
+    RObject* val = m_value;
+    if (val && val->sexptype() == PROMSXP) {
+	Promise* prom = static_cast<Promise*>(val);
+	if (prom->environment()) {
+	    GCStackRoot<Promise> promrt(prom);
+	    frame()->monitorRead(*this);
+	    val = evaluate(val, env);
+	    promise_forced = true;
+	}
+	val = prom->value();
+    }
+    return make_pair(val, promise_forced);
+}
+
 void Frame::Binding::fromPairList(PairList* pl)
 {
     const RObject* tag = pl->tag();
@@ -121,8 +142,6 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     if (m_symbol) m_symbol->conductVisitor(v);
     if (m_value) m_value->conductVisitor(v);
 }
-
-// Frame::forcedValue() is defined in envir.cpp (for the time being).
 
 namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)

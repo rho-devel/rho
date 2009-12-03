@@ -206,7 +206,7 @@ namespace CXXR {
 	 * to be Symbol objects, whereas this function does not.
 	 */
 	static std::pair<unsigned int, PairList*>
-	mapEvaluate(PairList* inlist, Environment* env);
+	mapEvaluate(const PairList* inlist, Environment* env);
 
 	/** @brief Is profiling currently enabled?
 	 *

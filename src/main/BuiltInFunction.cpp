@@ -42,8 +42,6 @@
 
 #include "RCNTXT.h"
 #include "CXXR/DotInternal.h"
-#include "CXXR/Environment.h"
-#include "CXXR/Expression.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/RAllocStack.h"
@@ -64,7 +62,7 @@ namespace CXXR {
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
-RObject* BuiltInFunction::apply(Expression* call, PairList* args,
+RObject* BuiltInFunction::apply(Expression* call, const PairList* args,
 				Environment* env)
 {
     size_t pps_size = GCStackRootBase::ppsSize();
@@ -72,20 +70,20 @@ RObject* BuiltInFunction::apply(Expression* call, PairList* args,
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
     if (sexptype() == SPECIALSXP)
-	ans = m_function(call, this, args, env);
+	ans = invoke(call, args, env);
     else {
 	pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
 	if (pr.first != 0)
 	    missingArgumentError(this, args, pr.first);
-	GCStackRoot<> evaluated_args(pr.second);
+	GCStackRoot<const PairList> evaluated_args(pr.second);
 	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
 	    RCNTXT cntxt;
 	    Rf_begincontext(&cntxt, CTXT_BUILTIN, call, Environment::base(),
 			    Environment::base(), 0, 0);
-	    ans = m_function(call, this, evaluated_args, env);
+	    ans = invoke(call, evaluated_args, env);
 	    Rf_endcontext(&cntxt);
 	} else {
-	    ans = m_function(call, this, evaluated_args, env);
+	    ans = invoke(call, evaluated_args, env);
 	}
     }
     if (m_result_printing_mode != SOFT_ON)
@@ -97,7 +95,7 @@ RObject* BuiltInFunction::apply(Expression* call, PairList* args,
     return ans;
 }
 
-void BuiltInFunction::checkNumArgs(PairList* args, Expression* call) const
+void BuiltInFunction::checkNumArgs(const PairList* args, Expression* call) const
 {
     if (arity() >= 0) {
 	size_t nargs = ConsCell::listLength(args);

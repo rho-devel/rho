@@ -288,7 +288,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 			if (ARGUSED(f) == 1)
 			    error(_("formal argument \"%s\" matched by multiple actual arguments"),
 				  CHAR(PRINTNAME(TAG(f))));
-			if (R_warn_partial_match_args) {
+			if (ArgMatcher::warnOnPartialMatch()) {
 			    warningcall(call,
 					_("partial argument match of '%s' to '%s'"),
 					CHAR(PRINTNAME(TAG(b))),

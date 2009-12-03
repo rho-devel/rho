@@ -198,13 +198,69 @@ namespace CXXR {
      * conditions on attributes, but these are not yet enforced via
      * the class interface.
      *
+     * @par <tt>const RObject*</tt> policy:
+     * There is an inherent tension between the way CR is implemented
+     * and the 'const-correctness' that C++ programmers seek, and this
+     * particularly arises in connection with pointers to objects of
+     * classes derived from RObject.  CR accesses such objects
+     * exclusively using SEXP, which is a non-const pointer.  (The
+     * occasional use within the CR code of <tt>const SEXP</tt> is
+     * misguided: the compiler interprets this in effect as
+     * <tt>RObject* const</tt>, not as <tt>const RObject*</tt>.)  One
+     * possible policy would be simply never to use <tt>const T*</tt>,
+     * where \c T is \c RObject* or a class inheriting from it: that
+     * would remove any need for <tt>const_cast</tt>s at the interface
+     * between new CXXR code and code inherited from CR.  But CXXR
+     * tries to move closer to C++ idiom than that, notwithstanding
+     * the resulting need for <tt>const_cast</tt>s at the interface,
+     * and applies a policy driven by the following considerations:
+     * <ol>
+     *
+     * <li><code>RObject::evaluate()</code> cannot return a
+     * <code>const RObject*</code>, because some functions return a
+     * pointer to an <code>Environment</code>, which may well need
+     * subsequently to be modified by inserting or changing
+     * bindings.</li>
+     *
+     * <li>This in turn means that <code>RObject::evaluate()</code>
+     * cannot itself be a <code>const</code> function, because the default
+     * implementation returns <code>this</code>. (Another view would
+     * be that the default implementation is an elided copy.)  Also,
+     * <code>Promise</code>s change internally when they are
+     * evaluated (though this might conceivably be swept up by
+     * <code>mutable</code>).</li>
+     *
+     * <li>It is a moot point whether
+     * <code>FunctionBase::apply()</code> can be
+     * <code>const</code>. <code>Closure::apply()</code> entails
+     * evaluating the body, and if the body is regarded as part of the
+     * <code>Closure</code> object, that would point to
+     * <code>apply()</code> not being <code>const</code>. (Note that
+     * some of the types which <code>mkCLOSXP()</code> accepts as a
+     * <code>Closure</code> body use the default
+     * <code>evaluate()</code>, so Point 2 definitely applies.)</li>
+     *
+     * <li>Should <code>PairList</code>s and suchlike emulate (roughly
+     * speaking) (a) <code>list&lt;pair&lt;const RObject*, const
+     * RObject*&gt; &gt;</code> (where the first element of the pair
+     * is the tag and the second the 'car'),
+     * (b) <code>list&lt;pair&lt;const RObject*, RObject*&gt;
+     * &gt;</code> or (c) <code>list&lt;pair&lt;RObject*, RObject*&gt;
+     * &gt;</code> ? Since the 'cars' of list elements will often need
+     * to be evaluated, Point 2 rules out (a).  At present CXXR
+     * follows (b).</li>
+     *
+     * <li>Since Symbol objects may well need to be evaluated,
+     * Symbol::obtain() returns a non-const pointer, but the Symbol
+     * object is nevertheless immutable because the Symbol object is
+     * frozen. Similarly, CachedString::obtain() returns a non-const
+     * pointer to a frozen CachedString object.</li>
+     * </ol>
+     *
      * @todo Incorporate further attribute consistency checks within
      * the class interface.  Possibly make setAttribute() virtual so
      * that these consistency checks can be tailored according to the
      * derived class.
-     *
-     * @todo Possibly key attributes on (cached) strings rather than
-     * Symbol objects.
      */
     class RObject : public GCNode {
     public:

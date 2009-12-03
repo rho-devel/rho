@@ -75,7 +75,7 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
 }
 
 pair<unsigned int, PairList*>
-Evaluator::mapEvaluate(PairList* inlist, Environment* env)
+Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 {
     // Outlist has a dummy element at the front, to simplify coding:
     GCStackRoot<PairList> outlist(GCNode::expose(new PairList));

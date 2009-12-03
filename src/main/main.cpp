@@ -192,7 +192,6 @@ GCRoot<>	R_Warnings;	    /* the warnings and their calls */
 attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
 GCRoot<>	R_HandlerStack;	/* Condition handler stack */
 GCRoot<>	R_RestartStack;	/* Stack of available restarts */
-attribute_hidden Rboolean R_warn_partial_match_args   = FALSE;
 attribute_hidden Rboolean R_warn_partial_match_dollar = FALSE;
 attribute_hidden Rboolean R_warn_partial_match_attr = FALSE;
 attribute_hidden Rboolean R_ShowWarnCalls = FALSE;

@@ -511,7 +511,6 @@ extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
 extern CXXR::GCRoot<> R_HandlerStack;	/* Condition handler stack */
 extern CXXR::GCRoot<> R_RestartStack;	/* Stack of available restarts */
 #endif
-extern0 Rboolean R_warn_partial_match_args   INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
 extern0 Rboolean R_ShowWarnCalls INI_as(FALSE);

@@ -45,6 +45,10 @@
 #include "CXXR/FunctionBase.h"
 
 #ifdef __cplusplus
+
+#include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
+
 extern "C" {
 #endif
 
@@ -165,7 +169,7 @@ namespace CXXR {
 	 * code inherited from CR this would get macro-expanded to
 	 * Rf_checkArityCall.
 	 */
-	void checkNumArgs(PairList* args, Expression* call) const;
+	void checkNumArgs(const PairList* args, Expression* call) const;
 
 	/** @brief C/C++ function implementing this R function.
 	 *
@@ -281,7 +285,7 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of FunctionBase:
-	RObject* apply(Expression* call, PairList* args, Environment* env);
+	RObject* apply(Expression* call, const PairList* args, Environment* env);
     private:
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -319,6 +323,13 @@ namespace CXXR {
 	// Put primitive functions into the base environment, and
 	// internal functions into the DotInternalTable:
 	static void initialize();
+
+	// Invoke the encapsulated function:
+	RObject* invoke(Expression* call, const PairList* args,
+			Environment* env)
+	{
+	    return m_function(call, this, const_cast<PairList*>(args), env);
+	}
 
 	/** @brief Raise error because of missing argument.
 	 *

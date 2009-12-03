@@ -83,7 +83,13 @@ namespace CXXR {
      * however, it would have been difficult efficiently to implement
      * functions such as CAR(), which are ubiquitous in the CR code.
      *
-     * @todo Constrain the tag to be a String?
+     * @note The semantics of this class are somewhat inconsistent.
+     * When a ConsCell is copied, the copy constructor tries to copy
+     * the 'car', implying that the car is considered part of the
+     * object.  But the const member function car() passes back a
+     * non-const pointer to the car.  See the discussion in the
+     * documentation of class RObject regarding the handling of const
+     * pointers.
      */
     class ConsCell : public RObject {
     public:
@@ -91,15 +97,7 @@ namespace CXXR {
 	 * @return a const pointer to the 'car' of this ConsCell
 	 * element.
 	 */
-	const RObject* car() const
-	{
-	    return m_car;
-	}
-
-	/**
-	 * @return a pointer to the 'car' of this ConsCell. 
-	 */
-	RObject* car()
+	RObject* car() const
 	{
 	    return m_car;
 	}

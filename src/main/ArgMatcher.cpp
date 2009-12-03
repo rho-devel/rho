@@ -31,10 +31,12 @@
 using namespace std;
 using namespace CXXR;
 
-ArgMatcher::ArgMatcher(PairList* formals)
+bool ArgMatcher::s_warn_on_partial_match = false;
+
+ArgMatcher::ArgMatcher(const PairList* formals)
     : m_formals(formals), m_has_dots(false)
 {
-    for (PairList* f = formals; f; f = f->tail()) {
+    for (const PairList* f = formals; f; f = f->tail()) {
 	const Symbol* sym = dynamic_cast<const Symbol*>(f->tag());
 	if (!sym)
 	    Rf_error(_("invalid formal arguments for 'function'"));
@@ -109,7 +111,7 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Environment* target_env, PairList* supplied) const
+void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
 {
     Frame* frame = target_env->frame();
     vector<MatchStatus, Allocator<MatchStatus> >
@@ -118,7 +120,7 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied) const
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (PairList* s = supplied; s; s = s->tail()) {
+	for (const PairList* s = supplied; s; s = s->tail()) {
 	    ++sindex;
 	    GCStackRoot<const Symbol>
 		tag(static_cast<const Symbol*>(s->tag()));
@@ -176,6 +178,9 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied) const
 		    Rf_error(_("argument %d matches multiple formal arguments"),
 			     supplied_data.index);
 		// Partial match is OK:
+		if (s_warn_on_partial_match)
+		    Rf_warning(_("partial argument match of '%s' to '%s'"),
+			       supplied_name->c_str(), (*fmit).first->c_str());
 		const FormalData& fdata = m_formal_data[findex];
 		formals_status[findex] = PARTIAL_TAG;
 		makeBinding(target_env, fdata, supplied_data.value);
@@ -215,7 +220,7 @@ void ArgMatcher::match(Environment* target_env, PairList* supplied) const
 	unusedArgsError(supplied_list);
 }
 
-PairList* ArgMatcher::prepareArgs(PairList* raw_args, Environment* env)
+PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 {
     // args has a dummy element at the front, to simplify coding:
     GCStackRoot<PairList> args(GCNode::expose(new PairList));

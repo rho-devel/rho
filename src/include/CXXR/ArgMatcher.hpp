@@ -61,8 +61,6 @@ namespace CXXR {
      * facilities to match the formal arguments to a list of supplied
      * arguments and place the resulting bindings within a specified
      * Frame.
-     *
-     * @todo Move R_warn_partial_match_args functionality into this class.
      */
     class ArgMatcher : public GCNode {
     public:
@@ -72,11 +70,20 @@ namespace CXXR {
 	 *          empty.  The elements of this list must have
 	 *          distinct Symbol objects as their tags.  At most
 	 *          one element may have '...' as its tag.
-	 *
-	 * @todo Try to change the type of \a formals to <tt>const
-	 * PairList*</tt> in due course.
 	 */
-	explicit ArgMatcher(PairList* formals);
+	explicit ArgMatcher(const PairList* formals);
+
+	/** @brief Enable/disable warning if tag partially matched.
+	 *
+	 * @param on true iff the class is to be configured to raise a warning
+	 *          if a supplied argument is matched to a formal
+	 *          argument by virtue of partial matching on the
+	 *          tag.  The default is not to raise such warnings.
+	 */
+	static void enableWarnOnPartialMatch(bool on)
+	{
+	    s_warn_on_partial_match = on;
+	}
 
 	/** @brief Formal arguments.
 	 *
@@ -138,11 +145,8 @@ namespace CXXR {
 	 *          does not check this, so strange bugs may ensue if
 	 *          this precondition is not fulfilled.)  Typically
 	 *          this list will be the output of prepareArgs().
-	 *
-	 * @todo Try to change the type of \a supplied to <tt>const
-	 * PairList*</tt> in due course.
 	 */
-	void match(Environment* target_env, PairList* supplied) const;
+	void match(Environment* target_env, const PairList* supplied) const;
 
 	/** @brief Number of formal arguments.
 	 *
@@ -194,7 +198,7 @@ namespace CXXR {
 	 * recorded in the context set up by Closure::apply(), and
 	 * used for other purposes.
 	 */
-	static PairList* prepareArgs(PairList* raw_args, Environment* env);
+	static PairList* prepareArgs(const PairList* raw_args, Environment* env);
 
 	/** @brief Convert tag of supplied argument to a Symbol.
 	 *
@@ -226,12 +230,25 @@ namespace CXXR {
 		    : coerceTag(tag));
 	}
 
+	/** @brief Give warning if tag partially matched?
+	 *
+	 * @return true iff the class is configured to raise a warning
+	 * if a supplied argument is matched to a formal argument by
+	 * virtue of partial matching on the tag.
+	 */
+	static bool warnOnPartialMatch()
+	{
+	    return s_warn_on_partial_match;
+	}
+
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	static bool s_warn_on_partial_match;
+
 	struct FormalData {
 	    const Symbol* symbol;
 	    bool follows_dots;  // true if ... occurs earlier in the
@@ -241,7 +258,7 @@ namespace CXXR {
 
 	enum MatchStatus {UNMATCHED = 0, EXACT_TAG, PARTIAL_TAG, POSITIONAL};
 
-	GCEdge<PairList> m_formals;
+	GCEdge<const PairList> m_formals;
 
 	// Data on formals (other than "...") in order of occurrence:
 	typedef std::vector<FormalData, Allocator<FormalData> > FormalVector;

@@ -69,7 +69,7 @@ Closure::Closure(PairList* formal_args, RObject* body, Environment* env)
 {
 }
 
-RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
+RObject* Closure::apply(Expression* call, const PairList* args, Environment* env)
 {
     GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
     // +5 to allow some capacity for local variables:
@@ -80,7 +80,7 @@ RObject* Closure::apply(Expression* call, PairList* args, Environment* env)
     {
 	RCNTXT cntxt;
 	Rf_begincontext(&cntxt, CTXT_RETURN, call,
-			environment(), env, args, this);
+			environment(), env, const_cast<PairList*>(args), this);
 	m_matcher->match(newenv, prepared_args);
 	Rf_endcontext(&cntxt);
     }
