@@ -88,7 +88,7 @@ extern "C" {
 	NILSXP	    = 0,    /**< NULL. In CXXR no CXXR::RObject has
 			     * this type, but for backward
 			     * compatibility TYPEOF will return ::NILSXP
-			     * if passed a zero pointer.
+			     * if passed a null pointer.
 			     */
 	SYMSXP	    = 1,    /**< symbols, implemented in class
 			       CXXR::Symbol. */
@@ -123,7 +123,7 @@ extern "C" {
 	DOTSXP	    = 17,   /**< dot-dot-dot objects, implemented in
 			       class CXXR::DottedArgs. */
 	ANYSXP	    = 18,   /**< Used to make "any" args work.  No
-			       RObject has this type. */
+			       CXXR::RObject has this type. */
 	VECSXP	    = 19,   /**< generic vectors, implemented in class
 			       CXXR::ListVector. */
 	EXPRSXP	    = 20,   /**< expression vectors, implemented in
@@ -144,7 +144,7 @@ extern "C" {
 	CXXSXP      = 43,   /**< object types specific to CXXR.*/
 	                    /* (43 = ASCII +) */
 
-	FUNSXP	    = 99    /**< Closure or Builtin.  No RObject has
+	FUNSXP	    = 99    /**< Closure or Builtin.  No CXXR::RObject has
 			       this type. */
     } SEXPTYPE;
 
@@ -156,7 +156,7 @@ namespace CXXR {
     class PairList;
     class Symbol;
 
-    /** @brief Replacement for CR's SEXPREC.
+    /** @brief Replacement for CR's ::SEXPREC.
      *
      * This class is the rough equivalent within CXXR of the SEXPREC
      * union within CR.  However, all functionality relating to
@@ -203,7 +203,7 @@ namespace CXXR {
      * and the 'const-correctness' that C++ programmers seek, and this
      * particularly arises in connection with pointers to objects of
      * classes derived from RObject.  CR accesses such objects
-     * exclusively using SEXP, which is a non-const pointer.  (The
+     * exclusively using ::SEXP, which is a non-const pointer.  (The
      * occasional use within the CR code of <tt>const SEXP</tt> is
      * misguided: the compiler interprets this in effect as
      * <tt>RObject* const</tt>, not as <tt>const RObject*</tt>.)  One
@@ -216,38 +216,35 @@ namespace CXXR {
      * and applies a policy driven by the following considerations:
      * <ol>
      *
-     * <li><code>RObject::evaluate()</code> cannot return a
-     * <code>const RObject*</code>, because some functions return a
-     * pointer to an <code>Environment</code>, which may well need
-     * subsequently to be modified by inserting or changing
-     * bindings.</li>
+     * <li>RObject::evaluate() cannot return a <code>const
+     * RObject*</code>, because some functions return a pointer to an
+     * <code>Environment</code>, which may well need subsequently to
+     * be modified e.g. by inserting or changing bindings.</li>
      *
-     * <li>This in turn means that <code>RObject::evaluate()</code>
-     * cannot itself be a <code>const</code> function, because the default
+     * <li>This in turn means that RObject::evaluate() cannot itself
+     * be a <code>const</code> function, because the default
      * implementation returns <code>this</code>. (Another view would
      * be that the default implementation is an elided copy.)  Also,
-     * <code>Promise</code>s change internally when they are
-     * evaluated (though this might conceivably be swept up by
+     * Promise objects change internally when they are evaluated
+     * (though this might conceivably be swept up by
      * <code>mutable</code>).</li>
      *
-     * <li>It is a moot point whether
-     * <code>FunctionBase::apply()</code> can be
-     * <code>const</code>. <code>Closure::apply()</code> entails
-     * evaluating the body, and if the body is regarded as part of the
-     * <code>Closure</code> object, that would point to
-     * <code>apply()</code> not being <code>const</code>. (Note that
-     * some of the types which <code>mkCLOSXP()</code> accepts as a
-     * <code>Closure</code> body use the default
-     * <code>evaluate()</code>, so Point 2 definitely applies.)</li>
+     * <li>It is a moot point whether FunctionBase::apply() can be
+     * <code>const</code>.  Closure::apply() entails evaluating the
+     * body, and if the body is regarded as part of the Closure
+     * object, that would point to <code>apply()</code> not being
+     * <code>const</code>. (Note that some of the types which
+     * Rf_mkCLOSXP() accepts as a Closure body use the default
+     * RObject::evaluate(), so Point&nbsp;2 definitely applies.)</li>
      *
-     * <li>Should <code>PairList</code>s and suchlike emulate (roughly
+     * <li>Should PairList objects and suchlike emulate (roughly
      * speaking) (a) <code>list&lt;pair&lt;const RObject*, const
      * RObject*&gt; &gt;</code> (where the first element of the pair
      * is the tag and the second the 'car'),
      * (b) <code>list&lt;pair&lt;const RObject*, RObject*&gt;
      * &gt;</code> or (c) <code>list&lt;pair&lt;RObject*, RObject*&gt;
      * &gt;</code> ? Since the 'cars' of list elements will often need
-     * to be evaluated, Point 2 rules out (a).  At present CXXR
+     * to be evaluated, Point&nbsp;2 rules out (a).  At present CXXR
      * follows (b).</li>
      *
      * <li>Since Symbol objects may well need to be evaluated,
@@ -417,25 +414,23 @@ namespace CXXR {
 
 	/** @brief Get the value a particular attribute.
 	 *
-	 * @param name Reference to a \c Symbol giving the name of the
-	 *          sought attribute.  Note that this \c Symbol is
-	 *          identified by its address.
+	 * @param name Pointer to a \c Symbol giving the name of the
+	 *          sought attribute.
 	 *
 	 * @return pointer to the value of the attribute with \a name,
 	 * or a null pointer if there is no such attribute.
 	 */
-	RObject* getAttribute(const Symbol& name);
+	RObject* getAttribute(const Symbol* name);
 
 	/** @brief Get the value a particular attribute (const variant).
 	 *
-	 * @param name Reference to a \c Symbol giving the name of the
-	 *          sought attribute.  Note that this \c Symbol is
-	 *          identified by its address.
+	 * @param name Pointer to a \c Symbol giving the name of the
+	 *          sought attribute.
 	 *
 	 * @return const pointer to the value of the attribute with \a
 	 * name, or a null pointer if there is no such attribute.
 	 */
-	const RObject* getAttribute(const Symbol& name) const;
+	const RObject* getAttribute(const Symbol* name) const;
 
 	/** @brief Has this object any attributes?
 	 *
@@ -511,7 +506,7 @@ namespace CXXR {
 	 * present, only the last one is heeded (and if the last
 	 * setting has a null value, the attribute is removed altogether).
 	 */
-	void setAttributes(PairList* new_attributes);
+	void setAttributes(const PairList* new_attributes);
 
 	/** @brief Set the status of this RObject as an S4 object.
 	 *
@@ -626,7 +621,18 @@ namespace CXXR {
     }
 }  // namespace CXXR
 
-typedef CXXR::RObject SEXPREC, *SEXP;
+/** @brief Pointer to an RObject.
+ *
+ * In CR, almost all interpreter code could access R objects only \e
+ * via the opaque pointer SEXP.  In CXXR, C code continues to see SEXP
+ * as an opaque pointer, but C++ code sees SEXP defined as 'pointer to
+ * RObject'.
+ *
+ * @note This typedef is provided for compatibility with code
+ * inherited from CR.  New CXXR code should write RObject*
+ * explicitly.
+ */
+typedef CXXR::RObject *SEXP;
 
 extern "C" {
 #else /* if not __cplusplus */

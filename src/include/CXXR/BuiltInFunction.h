@@ -169,7 +169,7 @@ namespace CXXR {
 	 * code inherited from CR this would get macro-expanded to
 	 * Rf_checkArityCall.
 	 */
-	void checkNumArgs(const PairList* args, Expression* call) const;
+	void checkNumArgs(const PairList* args, const Expression* call) const;
 
 	/** @brief C/C++ function implementing this R function.
 	 *
@@ -285,7 +285,8 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of FunctionBase:
-	RObject* apply(Expression* call, const PairList* args, Environment* env);
+	RObject* apply(const Expression* call,
+		       const PairList* args, Environment* env);
     private:
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -325,10 +326,11 @@ namespace CXXR {
 	static void initialize();
 
 	// Invoke the encapsulated function:
-	RObject* invoke(Expression* call, const PairList* args,
+	RObject* invoke(const Expression* call, const PairList* args,
 			Environment* env)
 	{
-	    return m_function(call, this, const_cast<PairList*>(args), env);
+	    return m_function(const_cast<Expression*>(call), this,
+			      const_cast<PairList*>(args), env);
 	}
 
 	/** @brief Raise error because of missing argument.

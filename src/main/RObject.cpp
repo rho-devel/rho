@@ -109,17 +109,17 @@ void RObject::frozenError()
     Rf_error(_("attempt to modify frozen object"));
 }
 
-RObject* RObject::getAttribute(const Symbol& name)
+RObject* RObject::getAttribute(const Symbol* name)
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == &name) return node->car();
+	if (node->tag() == name) return node->car();
     return 0;
 }
 
-const RObject* RObject::getAttribute(const Symbol& name) const
+const RObject* RObject::getAttribute(const Symbol* name) const
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == &name) return node->car();
+	if (node->tag() == name) return node->car();
     return 0;
 }
 
@@ -165,7 +165,7 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
 
 // This has complexity O(n^2) where n is the number of attributes, but
 // we assume n is very small.    
-void RObject::setAttributes(PairList* new_attributes)
+void RObject::setAttributes(const PairList* new_attributes)
 {
     clearAttributes();
     while (new_attributes) {

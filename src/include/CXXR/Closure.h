@@ -72,7 +72,7 @@ namespace CXXR {
 	 * @param env pointer to the environment in which the Closure
 	 *          is to be evaluated.
 	 */
-	Closure(PairList* formal_args, RObject* body,
+	Closure(const PairList* formal_args, RObject* body,
 		Environment* env = Environment::global());
 
 	/** @brief Copy constructor.
@@ -153,7 +153,8 @@ namespace CXXR {
 	}
 
 	// Virtual function of FunctionBase:
-	RObject* apply(Expression* call, const PairList* args, Environment* env);
+	RObject* apply(const Expression* call,
+		       const PairList* args, Environment* env);
 
 	// Virtual functions of RObject:
         Closure* clone() const;
@@ -179,8 +180,8 @@ namespace CXXR {
 	Closure& operator=(const Closure&);
 
 	// Called by apply() to handle debugging:
-	void debug(Environment* newenv, Expression* call,
-		   PairList* args, Environment* argsenv);
+	void debug(Environment* newenv, const Expression* call,
+		   const PairList* args, Environment* argsenv);
     };
 }  // namespace CXXR
 

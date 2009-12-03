@@ -149,7 +149,7 @@ SEXP attribute_hidden getAttrib0(SEXP vec, SEXP name)
 	}
     }
     /* This is where the old/new list adjustment happens. */
-    RObject* att = vec->getAttribute(*SEXP_downcast<Symbol*>(name));
+    RObject* att = vec->getAttribute(SEXP_downcast<Symbol*>(name));
     if (!att) return 0;
     if (name == R_DimNamesSymbol && TYPEOF(att) == LISTSXP) {
 	SEXP _new, old;

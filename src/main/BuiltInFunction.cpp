@@ -62,7 +62,7 @@ namespace CXXR {
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
-RObject* BuiltInFunction::apply(Expression* call, const PairList* args,
+RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 				Environment* env)
 {
     size_t pps_size = GCStackRootBase::ppsSize();
@@ -78,7 +78,8 @@ RObject* BuiltInFunction::apply(Expression* call, const PairList* args,
 	GCStackRoot<const PairList> evaluated_args(pr.second);
 	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
 	    RCNTXT cntxt;
-	    Rf_begincontext(&cntxt, CTXT_BUILTIN, call, Environment::base(),
+	    Rf_begincontext(&cntxt, CTXT_BUILTIN,
+			    const_cast<Expression*>(call), Environment::base(),
 			    Environment::base(), 0, 0);
 	    ans = invoke(call, evaluated_args, env);
 	    Rf_endcontext(&cntxt);
@@ -95,7 +96,8 @@ RObject* BuiltInFunction::apply(Expression* call, const PairList* args,
     return ans;
 }
 
-void BuiltInFunction::checkNumArgs(const PairList* args, Expression* call) const
+void BuiltInFunction::checkNumArgs(const PairList* args,
+				   const Expression* call) const
 {
     if (arity() >= 0) {
 	size_t nargs = ConsCell::listLength(args);
@@ -104,7 +106,7 @@ void BuiltInFunction::checkNumArgs(const PairList* args, Expression* call) const
 		Rf_error(_("%d arguments passed to .Internal(%s)"
 			   " which requires %d"), nargs, name(), arity());
 	    else
-		Rf_errorcall(call,
+		Rf_errorcall(const_cast<Expression*>(call),
 			     _("%d arguments passed to '%s' which requires %d"),
 			     nargs, name(), arity());
 	}

@@ -507,11 +507,11 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     return (tmp);
 }
 
-void Closure::debug(Environment* newenv, Expression* call,
-		    PairList* args, Environment* argsenv)
+void Closure::debug(Environment* newenv, const Expression* call,
+		    const PairList* args, Environment* argsenv)
 {
     Rprintf("debugging in: ");
-    Rf_PrintValueRec(call, argsenv);
+    Rf_PrintValueRec(const_cast<Expression*>(call), argsenv);
     /* Is the body a bare symbol (PR#6804) */
     if (!isSymbol(m_body) & !isVectorAtomic(m_body)){
 	/* Find out if the body is function with only one statement. */
@@ -530,7 +530,8 @@ void Closure::debug(Environment* newenv, Expression* call,
     }
     Rprintf("debug: ");
     Rf_PrintValue(m_body);
-    do_browser(call, this, args, newenv);
+    do_browser(const_cast<Expression*>(call), this,
+	       const_cast<PairList*>(args), newenv);
 }
 
 
