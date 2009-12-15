@@ -167,7 +167,7 @@ void WeakRef::markThru()
     GCNode::Marker marker;
     WRList newlive;
     // Step 2-3 of algorithm.  Mark the value and R finalizer if the
-    // key is marked, or in a generation not being collected.
+    // key is marked.
     {
 	bool newmarks;
 	do {
@@ -194,8 +194,10 @@ void WeakRef::markThru()
 	while (lit != s_live.end()) {
 	    WeakRef* wr = *lit++;
 	    RObject* Rfinalizer = wr->m_Rfinalizer;
-	    if (Rfinalizer) Rfinalizer->conductVisitor(&marker);
+	    if (Rfinalizer)
+		Rfinalizer->conductVisitor(&marker);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
+		wr->conductVisitor(&marker);
 		wr->m_key->conductVisitor(&marker);
 		wr->m_ready_to_finalize = true;
 		wr->transfer(&s_live, &s_f10n_pending);

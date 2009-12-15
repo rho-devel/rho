@@ -78,19 +78,29 @@ namespace CXXR {
      * href="www.research.microsoft.com/Users/simonpj/papers/weak.ps.gz">www.research.microsoft.com/Users/simonpj/papers/weak.ps.gz</a>)
      * for the motivation and implementation of this class.
      *
-     * Each weak reference has a key and, optionally, a value and/or a
+     * Each WeakRef has a key and, optionally, a value and/or a
      * finalizer.  The finalizer may either be a C function or an R
-     * object.  The garbage collector will consider the value and
-     * finalizer to be reachable provided the key is reachable.
+     * object.  The mark-sweep garbage collector will consider the
+     * value and finalizer to be reachable provided the key is
+     * reachable.
      *
      * If, during a garbage collection, the key is found not to be
      * reachable then the finalizer (if any) will be run, and the weak
      * reference object will be 'tombstoned', so that subsequent calls
      * to key() and value() will return null pointers.
      *
-     * A weak reference object with a reachable key will not be
-     * garbage collected even if the weak reference object is not
-     * itself reachable.
+     * A WeakRef object with a reachable key will not be garbage
+     * collected even if the WeakRef object is not itself reachable.
+     *
+     * @note A WeakRef object takes steps to ensure that the reference
+     * counts of itself and its key, value and R finalizer (if they
+     * exist) never fall to zero until the WeakRef is tombstoned.
+     * Consequently these objects will only be garbage collected as
+     * part of a mark-sweep collection.  In particular, it can be
+     * guaranteed that the finalizer of a WeakRef will be run as part
+     * of the same mark-sweep collection in which the key of that
+     * WeakRef is garbage-collected (having been found to be
+     * unreachable).
      *
      * @todo It would probably make more sense for this class to
      * inherit directly from GCNode, and for the key, value etc. to be
@@ -99,22 +109,21 @@ namespace CXXR {
     class WeakRef : public RObject {
     public:
 	/**
-	 * @param key Pointer to the key of the weak reference.  It is
-	 *          not forbidden but probably pointless for the key
-	 *          to be null: in this event the reference will
-	 *          immediately be tombstoned, and its finalizer (if
-	 *          any) will never be run.
+	 * @param key Pointer to the key of the WeakRef.  It is not
+	 * forbidden but probably pointless for the key to be null: in
+	 * this event the reference will immediately be tombstoned,
+	 * and its finalizer (if any) will never be run.
 	 *
-	 * @param value Pointer to the value of the weak reference
-	 *          (may be null)
+	 * @param value Pointer to the value of the WeakRef (may be
+	 *          null)
 	 *
 	 * @param R_finalizer Pointer to an R object to be evaluated
 	 *          as a finalizer (may be null).  The finalizer will
-	 *          be called with the key of the weak reference
-	 *          object as its argument, and at the time of call
-	 *          the key and finalizer will be protected from the
-	 *          garbage collector.  However, the weak reference
-	 *          object itself will already have been tombstoned.
+	 *          be called with the key of the WeakRef object as
+	 *          its argument, and at the time of call the key and
+	 *          finalizer will be protected from the garbage
+	 *          collector.  However, the WeakRef object itself
+	 *          will already have been tombstoned.
 	 *
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
@@ -123,18 +132,18 @@ namespace CXXR {
 		bool finalize_on_exit = false);
 
 	/**
-	 * @param key Pointer to the key of the weak reference.  It is
+	 * @param key Pointer to the key of the WeakRef.  It is
 	 *          not forbidden but probably pointless for the key
 	 *          to be null: in this event the reference will
 	 *          immediately be tombstoned, and its finalizer (if
 	 *          any) will never be run.
 	 *
-	 * @param value Pointer to the value of the weak reference
+	 * @param value Pointer to the value of the WeakRef
 	 *          (may be null).  The finalizer will be called with
-	 *          a pointer to the key of the weak reference object
+	 *          a pointer to the key of the WeakRef object
 	 *          as its argument, and at the time of call the key
 	 *          object will be protected from the garbage
-	 *          collector.  However, the weak reference object
+	 *          collector.  However, the WeakRef object
 	 *          itself will already have been tombstoned.
 	 *
 	 * @param C_finalizer Pointer to an C function to be invoked
