@@ -94,7 +94,6 @@ Symbol::Symbol(const CachedString* the_name)
 	    iss >> m_dd_index;
 	}
     }
-    freeze();
 }
 
 // Because Symbols are permanently preserved against garbage

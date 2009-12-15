@@ -89,6 +89,11 @@ namespace CXXR {
      * objects, once created, are permanently preserved against
      * garbage collection.  There is no inherent reason for this in
      * CXXR, but some packages may rely on it.
+     *
+     * @todo It would be desirable if Symbol objects were frozen by
+     * the constructor.  But this is not feasible at present because,
+     * for example, the methods package attempts to set a class
+     * attribute on the Symbol "<UNDEFINED>".
      */
     class Symbol : public RObject {
     private:
