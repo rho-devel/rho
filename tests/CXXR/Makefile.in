@@ -38,7 +38,7 @@ ArgMatchertest.o : ArgMatchertest.cpp
 
 ArgMatchertest : ArgMatchertest.o ../../src/main/libR.a
 	$(LINK.cc) -o $@ $< -L../../lib -Wl,-R../../lib -L../../src/main -lR -lRblas \
-                   -lreadline -lboost_regex-mt
+                   -lreadline $(MAIN_LDFLAGS)
 
 # OK match:
 ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt \
