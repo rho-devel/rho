@@ -64,7 +64,7 @@ namespace {
     const unsigned int FINALIZE_ON_EXIT_MASK = 2;
 }
 
-WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
+WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
       m_self(expose(this)), m_Cfinalizer(0),
@@ -171,7 +171,7 @@ void WeakRef::finalize()
 {
     R_CFinalizer_t Cfin = m_Cfinalizer;
     GCStackRoot<> key(m_key);
-    GCStackRoot<> Rfin(m_Rfinalizer);
+    GCStackRoot<FunctionBase> Rfin(m_Rfinalizer);
     // Do this now to ensure that finalizer is run only once, even if
     // an error occurs:
     tombstone();
@@ -202,7 +202,7 @@ void WeakRef::markThru()
 		    RObject* value = wr->value();
 		    if (value && value->conductVisitor(&marker))
 			newmarks = true;
-		    RObject* Rfinalizer = wr->m_Rfinalizer;
+		    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 		    if (Rfinalizer && Rfinalizer->conductVisitor(&marker))
 			newmarks = true;
 		    wr->transfer(&s_live, &newlive);
@@ -215,7 +215,7 @@ void WeakRef::markThru()
 	WRList::iterator lit = s_live.begin();
 	while (lit != s_live.end()) {
 	    WeakRef* wr = *lit++;
-	    RObject* Rfinalizer = wr->m_Rfinalizer;
+	    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 	    if (Rfinalizer)
 		Rfinalizer->conductVisitor(&marker);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
@@ -332,15 +332,13 @@ WeakRef::WRList* WeakRef::wrList() const
 
 SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 {
-    switch (TYPEOF(fin)) {
-    case NILSXP:
-    case CLOSXP:
-    case BUILTINSXP:
-    case SPECIALSXP:
-	break;
-    default: Rf_error(_("finalizer must be a function or NULL"));
-    }
-    return GCNode::expose(new WeakRef(key, val, fin, onexit));
+    FunctionBase* finf = 0;
+    if (fin) {
+	finf = dynamic_cast<FunctionBase*>(fin);
+	if (!finf)
+	    Rf_error(_("finalizer must be a function or NULL"));
+    } 
+    return GCNode::expose(new WeakRef(key, val, finf, onexit));
 }
 
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)

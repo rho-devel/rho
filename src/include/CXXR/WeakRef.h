@@ -68,6 +68,7 @@ extern "C" {
 
 #include <list>
 #include "CXXR/Allocator.hpp"
+#include "CXXR/FunctionBase.h"
 
 namespace CXXR {
     /** @brief Weak reference.
@@ -128,7 +129,7 @@ namespace CXXR {
 	 * @param finalize_on_exit True iff the finalizer should be
 	 *          run when CXXR exits.
 	 */
-	WeakRef(RObject* key, RObject* value, RObject* R_finalizer = 0,
+	WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer = 0,
 		bool finalize_on_exit = false);
 
 	/**
@@ -216,7 +217,7 @@ namespace CXXR {
 
 	GCEdge<> m_key;
 	GCEdge<> m_value;
-	GCEdge<> m_Rfinalizer;
+	GCEdge<FunctionBase> m_Rfinalizer;
 	GCEdge<> m_self;  // Each WeakRef refers to itself, to stop
 			  // WeakRef nodes being deleted by gclite().
 	R_CFinalizer_t m_Cfinalizer;
