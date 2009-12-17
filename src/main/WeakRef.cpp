@@ -43,10 +43,12 @@
 #include <iostream>
 
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
+#include "CXXR/errors.h"
 #include "RCNTXT.h"
 
 using namespace std;
@@ -71,6 +73,13 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 {
     if (!m_key)
 	tombstone();
+    else switch (m_key->sexptype()) {
+    case ENVSXP:
+    case EXTPTRSXP:
+	break;
+    default:
+	Rf_error(_("can only weakly reference/finalize reference objects"));
+    }
     ++s_count;
 }
 
@@ -158,8 +167,21 @@ void WeakRef::detachReferents()
     RObject::detachReferents();
 }
 
-// WeakRef::finalize() is in memory.cpp (for the time being, until
-// eval() is declared in a CXXR header).
+void WeakRef::finalize()
+{
+    R_CFinalizer_t Cfin = m_Cfinalizer;
+    GCStackRoot<> key(m_key);
+    GCStackRoot<> Rfin(m_Rfinalizer);
+    // Do this now to ensure that finalizer is run only once, even if
+    // an error occurs:
+    tombstone();
+    if (Cfin) Cfin(key);
+    else if (Rfin) {
+	GCStackRoot<PairList> tail(expose(new PairList(key)));
+	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
+	Evaluator::evaluate(e, Environment::global());
+    }
+}
 
 void WeakRef::markThru()
 {
@@ -202,8 +224,11 @@ void WeakRef::markThru()
 		wr->m_ready_to_finalize = true;
 		wr->transfer(&s_live, &s_f10n_pending);
 	    }
-	    else
+	    else {
 		wr->tombstone();
+		// Expose to reference-counting collection:
+		wr->m_self = 0;
+	    }
 	}
     }
     // Step 5 of algorithm.  Mark all live references with reachable keys.
@@ -270,6 +295,8 @@ bool WeakRef::runFinalizers()
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &thiscontext << endl;
+	// Expose WeakRef to reference-counting collection:
+	wr->m_self = 0;
 	Rf_endcontext(&thiscontext);
 	R_ToplevelContext = saveToplevelContext;
 	GCStackRootBase::ppsRestoreSize(savestack);
@@ -303,6 +330,24 @@ WeakRef::WRList* WeakRef::wrList() const
 
 // ***** C interface *****
 
+SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
+{
+    switch (TYPEOF(fin)) {
+    case NILSXP:
+    case CLOSXP:
+    case BUILTINSXP:
+    case SPECIALSXP:
+	break;
+    default: Rf_error(_("finalizer must be a function or NULL"));
+    }
+    return GCNode::expose(new WeakRef(key, val, fin, onexit));
+}
+
+SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
+{
+    return GCNode::expose(new WeakRef(key, val, fin, onexit));
+}
+
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
 {
     R_MakeWeakRef(s, 0, fun, onexit);
@@ -328,5 +373,21 @@ void R_RunExitFinalizers()
     WeakRef::runExitFinalizers();
 }
 
-// Other C interface functions are still in memory.cpp for the time
-// being.
+SEXP R_WeakRefKey(SEXP w)
+{
+    if (w->sexptype() != WEAKREFSXP)
+	Rf_error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
+    return wr->key();
+}
+
+SEXP R_WeakRefValue(SEXP w)
+{
+    if (w->sexptype() != WEAKREFSXP)
+	Rf_error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
+    SEXP v = wr->value();
+    if (v && NAMED(v) != 2)
+	SET_NAMED(v, 2);
+    return v;
+}
