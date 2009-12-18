@@ -1,5 +1,7 @@
 # Low-level tests for the CXXR classes.
 
+uname = $(shell uname)
+
 top_builddir = ../..
 
 top_srcdir = ../..
@@ -36,9 +38,15 @@ check : $(tests:=.ts)
 ArgMatchertest.o : ArgMatchertest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
 
-ArgMatchertest : ArgMatchertest.o ../../src/main/libR.a
-	$(LINK.cc) -o $@ $< -L../../lib -Wl,-R../../lib -L../../src/main -lR -lRblas \
+ifeq ($(uname),Darwin)
+ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
+	ln -sf ../../lib/libR.dylib ../../lib/libRblas.dylib .
+	$(LINK.cc) -o $@ $< -L../../lib -lR -lRblas -lreadline $(MAIN_LDFLAGS)
+else
+ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib -lR -lRblas \
                    -lreadline $(MAIN_LDFLAGS)
+endif
 
 # OK match:
 ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt \
