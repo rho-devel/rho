@@ -498,7 +498,7 @@ void PrintWarnings(void)
 #ifdef SUPPORT_MBCS
 	    if (mbcslocale) {
 		int msgline1;
-		char *p = strchr(msg, '\n');
+		char *p = const_cast<char*>(strchr(msg, '\n'));
 		if (p) {
 		    *p = '\0';
 		    msgline1 = wd(msg);
@@ -509,7 +509,7 @@ void PrintWarnings(void)
 #endif
 	    {
 		int msgline1 = strlen(msg);
-		char *p = strchr(msg, '\n');
+		CXXRconst char *p = strchr(msg, '\n');
 		if (p) msgline1 = int(p - msg);
 		if (6+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 	    }
@@ -527,7 +527,7 @@ void PrintWarnings(void)
 #ifdef SUPPORT_MBCS
 		if (mbcslocale) {
 		    int msgline1;
-		    char *p = strchr(msg, '\n');
+		    char *p = const_cast<char*>(strchr(msg, '\n'));
 		    if (p) {
 			*p = '\0';
 			msgline1 = wd(msg);
@@ -538,7 +538,7 @@ void PrintWarnings(void)
 #endif
 		{
 		    int msgline1 = strlen(msg);
-		    char *p = strchr(msg, '\n');
+		    CXXRconst char *p = strchr(msg, '\n');
 		    if (p) msgline1 = int(p - msg);
 		    if (10+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		}

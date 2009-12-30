@@ -677,7 +677,7 @@ static int PackFlags(int type, int levs, int isobj, int hasattr, int hastag)
     return val;
 }
 
-static void UnpackFlags(int flags, SEXPTYPE *ptype, int *plevs,
+static void UnpackFlags(int flags, int *ptype, int *plevs,
 			int *pisobj, int *phasattr, int *phastag)
 {
     *ptype = DECODE_TYPE(flags);
@@ -1241,7 +1241,7 @@ static SEXP InStringVec(R_inpstream_t stream, SEXP ref_table)
 
 static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 {
-    SEXPTYPE type;
+    int type;
     SEXP s;
     int flags, levs, objf, hasattr, hastag, length, count;
     char *cbuf;
@@ -1460,34 +1460,34 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    break;
 	case LGLSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(LGLSXP, length));
 	    InVec(stream, s, SET_LOGICAL_ELT, InInteger, length);
 	    break;
 	case INTSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(INTSXP, length));
 	    InVec(stream, s, SET_INTEGER_ELT, InInteger, length);
 	    break;
 	case REALSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(REALSXP, length));
 	    InVec(stream, s, SET_REAL_ELT, InReal, length);
 	    break;
 	case CPLXSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(CPLXSXP, length));
 	    InVec(stream, s, SET_COMPLEX_ELT, InComplex, length);
 	    break;
 	case STRSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(STRSXP, length));
 	    for (count = 0; count < length; ++count)
 		SET_STRING_ELT(s, count, ReadItem(ref_table, stream));
 	    break;
 	case VECSXP:
 	case EXPRSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(SEXPTYPE(type), length));
 	    for (count = 0; count < length; ++count)
 		SET_VECTOR_ELT(s, count, ReadItem(ref_table, stream));
 	    break;
@@ -1504,7 +1504,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    error(_("this version of R cannot read generic function references"));
 	case RAWSXP:
 	    length = InInteger(stream);
-	    PROTECT(s = allocVector(type, length));
+	    PROTECT(s = allocVector(RAWSXP, length));
 	    stream->InBytes(stream, RAW(s), length);
 	    break;
 	case S4SXP:

@@ -492,7 +492,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     SEXP *lptr, CSingSymbol = install("Csingle");
     int i;
     SEXP s, t;
-    SEXPTYPE stype = SEXPTYPE(type);
+    SEXPTYPE stype = (type == SINGLESXP ? REALSXP : SEXPTYPE(type));
 
     switch(stype) {
     case RAWSXP:
@@ -509,7 +509,6 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    INTEGER(s)[i] = iptr[i];
 	break;
     case REALSXP:
-    case SINGLESXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 	    sptr = static_cast<float*>( p);

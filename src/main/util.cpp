@@ -1211,7 +1211,7 @@ char *Rf_strchr(const char *s, int c)
     mbstate_t mb_st;
     int used;
 
-    if(!mbcslocale || utf8locale) return strchr(s, c);
+    if(!mbcslocale || utf8locale) return const_cast<char*>(strchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) return p;
@@ -1226,7 +1226,7 @@ char *Rf_strrchr(const char *s, int c)
     mbstate_t mb_st;
     int used;
 
-    if(!mbcslocale || utf8locale) return strrchr(s, c);
+    if(!mbcslocale || utf8locale) return const_cast<char*>(strrchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) plast = p;

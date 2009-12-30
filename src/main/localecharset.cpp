@@ -622,7 +622,7 @@ CXXRconst char *locale2charset(const char *locale)
      */
     memset(la_loc, 0, sizeof(la_loc));
     memset(enc, 0, sizeof(enc));
-    p = strrchr(locale, '.');
+    p = const_cast<char*>(strrchr(locale, '.'));
     if(p) {
 	strncpy(enc, p+1, sizeof(enc)-1);
 	strncpy(la_loc, locale, sizeof(la_loc)-1);
