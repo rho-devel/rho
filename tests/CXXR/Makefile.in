@@ -41,11 +41,12 @@ ArgMatchertest.o : ArgMatchertest.cpp
 ifeq ($(uname),Darwin)
 ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
 	ln -sf ../../lib/libR.dylib ../../lib/libRblas.dylib .
-	$(LINK.cc) -o $@ $< -L../../lib -lR -lRblas -lreadline $(MAIN_LDFLAGS)
+	$(LINK.cc) -o $@ $< -L../../lib -lR -lRblas -lreadline \
+	           $(MAIN_LDFLAGS)
 else
 ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
-	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib -lR -lRblas \
-                   -lreadline $(MAIN_LDFLAGS)
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+                   -lR -lRblas -lreadline -ldl $(MAIN_LDFLAGS)
 endif
 
 # OK match:
