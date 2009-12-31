@@ -42,16 +42,15 @@
 
 namespace CXXR {
 #ifdef UNCHECKED_SEXP_DOWNCAST
-    template <typename Ptr>
-    inline Ptr SEXP_downcast(SEXP s)
+    template <typename PtrOut, typename PtrIn>
+    inline PtrOut SEXP_downcast(PtrIn s)
     {
-	return static_cast<Ptr>(s);
+	return static_cast<PtrOut>(s);
     }
 #else
     void SEXP_downcast_error(const char* given, const char* wanted);
 
-    /** Down cast from RObject* to a pointer to a class derived from
-     *  RObject.
+    /** Down cast within the RObject class tree.
      *
      * @param PtrOut Cast the pointer to type \a PtrOut, where \a
      *          PtrOut is a pointer or const pointer to RObject or a
