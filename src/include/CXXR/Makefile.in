@@ -43,7 +43,7 @@ CXXR_HPPS = \
   Allocator.hpp ArgMatcher.hpp CellPool.hpp \
   DumbVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp \
   HandleVector.hpp HeterogeneousList.hpp MemoryBank.hpp \
-  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp
+  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp config.hpp
 
 CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)
 
@@ -51,7 +51,7 @@ DISTFILES = Makefile.in $(CXXR_HS) $(CXXR_HPPS)
 TIMESTAMPS = $(CXXR_HS:.h=.ts) $(CXXR_HPPS:.hpp=.ts)
 
 CLEANFILES = stamp-R $(TIMESTAMPS)
-DISTCLEANFILES = Makefile
+DISTCLEANFILES = Makefile config.hpp
 
 .SUFFIXES:
 .SUFFIXES: .h .hpp .ts
@@ -64,7 +64,7 @@ DISTCLEANFILES = Makefile
 	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
 	@touch $@
 
-all: Makefile R
+all: Makefile R config.hpp
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -101,3 +101,6 @@ distdir: $(DISTFILES)
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
+
+config.hpp :
+	cp config.hpp.in $@

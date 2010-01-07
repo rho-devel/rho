@@ -45,6 +45,7 @@
 #include <vector>
 
 #include "Rvalgrind.h"
+#include "CXXR/config.hpp"
 
 namespace CXXR {
     /** Class to manage a pool of memory cells of a fixed size.
