@@ -1,6 +1,6 @@
 % File src/library/base/man/gzcon.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{gzcon}
@@ -32,10 +32,6 @@ gzcon(con, level = 6, allowNonCompressed = TRUE)
 
   The original connection becomes unusable: any object pointing to it will
   now refer to the modified connection.
-
-  When the connection is opened for reading, the input is expected to
-  start with the \code{gzip} magic header.  If it does not and if
-  \code{allowNonCompressed = TRUE} (the default) the input is read as-is.
 }
 \value{
   An object inheriting from class \code{"connection"}.  This is the same
@@ -63,7 +59,6 @@ close(zz)
 readLines(zz <- gzcon(file("ex.gz", "rb")))
 close(zz)
 unlink("ex.gz")
-
 % Cygwin seems to require a different name
 zz <- gzcon(file("ex2.gz", "wb"))
 cat("TITLE extra line", "2 3 5 7", "", "11 13 17", file = zz, sep = "\n")

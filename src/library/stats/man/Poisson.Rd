@@ -41,8 +41,7 @@ rpois(n, lambda)
 \details{
   The Poisson distribution has density
 %-- please leave the linebreaking for the next two ! --
-  \deqn{p(x) = \frac{\lambda^x e^{-\lambda}}{x!}}{%
-        p(x) = lambda^x exp(-lambda)/x!}
+  \deqn{p(x) = \frac{\lambda^x e^{-\lambda}}{x!}}{p(x) = lambda^x exp(-lambda)/x!}
   for \eqn{x = 0, 1, 2, \ldots}.  The mean and variance are
   \eqn{E(X) = Var(X) = \lambda}.
 
@@ -52,7 +51,7 @@ rpois(n, lambda)
   \code{\link{dbinom}}.
 
   The quantile is right continuous: \code{qpois(q, lambda)} is the smallest
-  integer \eqn{x} such that \eqn{P(X \le x) \ge q}.
+  integer \eqn{x} such that \eqn{P(X \le x) \ge q}{P(X <= x) >= q}.
 
   Setting \code{lower.tail = FALSE} allows to get much more precise
   results when the default, \code{lower.tail = TRUE} would return 1, see

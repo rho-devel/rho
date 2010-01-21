@@ -1,6 +1,6 @@
 % File src/library/stats/man/NegBinomial.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{NegBinomial}
@@ -40,9 +40,9 @@ rnbinom(n, size, prob, mu)
   The negative binomial distribution with \code{size} \eqn{= n} and
   \code{prob} \eqn{= p} has density
   \deqn{
-    p(x) = \frac{\Gamma(x+n)}{\Gamma(n) x!} p^n (1-p)^x}{%
-    p(x) = Gamma(x+n)/(Gamma(n) x!) p^n (1-p)^x}
-  for \eqn{x = 0, 1, 2, \ldots}, \eqn{n > 0} and \eqn{0 < p \le 1}.
+    p(x) = \frac{\Gamma(x+n)}{\Gamma(n) x!} p^n (1-p)^x}{p(x) = Gamma(x+n)/(Gamma(n) x!) p^n (1-p)^x}
+  for \eqn{x = 0, 1, 2, \ldots}, \eqn{n > 0} and
+  \eqn{0 < p \le 1}{0 < p <= 1}.
 
   This represents the number of failures which occur in a sequence of
   Bernoulli trials before a target number of successes is reached.
@@ -65,7 +65,7 @@ rnbinom(n, size, prob, mu)
   is zero, with a warning.
 
   The quantile is defined as the smallest value \eqn{x} such that
-  \eqn{F(x) \ge p}, where \eqn{F} is the distribution function.
+  \eqn{F(x) \ge p}{F(x) >= p}, where \eqn{F} is the distribution function.
 }
 \value{
   \code{dnbinom} gives the density,

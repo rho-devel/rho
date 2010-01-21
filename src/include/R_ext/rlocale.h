@@ -51,7 +51,6 @@ extern "C" {
 
 extern const char *locale2charset(const char *);
 
-#ifdef SUPPORT_MBCS
 /*
  * Windows CJK
  * In Unicode, there is not a rule about character width. 
@@ -125,7 +124,6 @@ extern int      Ri18n_iswctype(wint_t, wctype_t);
 #define iswctype(__x,__y) Ri18n_iswctype(__x,__y)
 #endif
 
-#endif /* SUPPORT_MBCS */
 #ifdef  __cplusplus
 }
 #endif

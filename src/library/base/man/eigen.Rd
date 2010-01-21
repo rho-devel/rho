@@ -1,10 +1,12 @@
 % File src/library/base/man/eigen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{eigen}
 \alias{eigen}
+\concept{eigen vector}
+\concept{eigen value}
 \title{Spectral Decomposition of a Matrix}
 \usage{
 eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
@@ -22,11 +24,12 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
     \R < 1.7.0)?}
 }
 \description{
-  Computes eigenvalues and eigenvectors of real or complex matrices.
+  Computes eigenvalues and eigenvectors of real (double, integer,
+  logical) or complex matrices.
 }
 \details{
   By default \code{eigen} uses the LAPACK routines DSYEVR,
-  DGEEV, ZHEEV and ZGEEV whereas \code{eigen(EISPACK=TRUE)} provides an
+  DGEEV, ZHEEV and ZGEEV whereas \code{eigen(EISPACK = TRUE)} provides an
   interface to the EISPACK routines \code{RS}, \code{RG}, \code{CH}
   and \code{CG}.
 
@@ -80,7 +83,7 @@ eigen(x, symmetric, only.values = FALSE, EISPACK = FALSE)
   Smith, B. T, Boyle, J. M., Dongarra, J. J., Garbow, B. S., Ikebe,Y.,
   Klema, V., and  Moler, C. B. (1976).
   \emph{Matrix Eigensystems Routines -- EISPACK Guide}.
-  Springer-Verlag Lecture Notes in Computer Science.
+  Springer-Verlag Lecture Notes in Computer Science \bold{6}.
 
   Anderson. E. and ten others (1999)
   \emph{LAPACK Users' Guide}. Third Edition. SIAM.\cr

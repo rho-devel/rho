@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996	Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2006	The R Development Core Team.
+ *  Copyright (C) 1998--2009	The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -167,7 +167,6 @@ static void doprof(void)
     if(strlen(buf))
 	fprintf(R_ProfileOutfile, "%s\n", buf);
 }
-
 
 /* Profiling thread main function */
 static void __cdecl ProfileThread(void *pwait)
@@ -346,6 +345,26 @@ SEXP eval(SEXP e, SEXP rho)
     return evaluate(e, env);
 }
 
+attribute_hidden
+void SrcrefPrompt(const char * prefix, SEXP srcref)
+{
+    /* If we have a valid srcref, use it */
+    if (srcref && srcref != R_NilValue) {
+        if (TYPEOF(srcref) == VECSXP) srcref = VECTOR_ELT(srcref, 0);
+	SEXP srcfile = getAttrib(srcref, R_SrcfileSymbol);
+	if (TYPEOF(srcfile) == ENVSXP) {
+	    SEXP filename = findVar(install("filename"), srcfile);
+	    if (TYPEOF(filename) == STRSXP && length(filename) == 1) {
+	    	Rprintf(_("%s at %s#%d: "), prefix, CHAR(STRING_ELT(filename, 0)), 
+	                                    asInteger(srcref));
+	        return;
+	    }
+	}
+    }
+    /* default: */
+    Rprintf("%s: ", prefix);
+}
+
 /* Apply SEXP op of type CLOSXP to actuals */
 // In CXXR, applyClosure() currently exists alongside
 // Closure::apply(), with neither calling the other.  The resulting
@@ -447,10 +466,18 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /* Debugging */
 
-    SET_ENV_DEBUG(newrho, DEBUG(op));
-    if (DEBUG(op)) {
+    SET_ENV_DEBUG(newrho, CXXRconvert(Rboolean, RDEBUG(op) || RSTEP(op)));
+    if( RSTEP(op) ) SET_RSTEP(op, 0);
+    if (ENV_DEBUG(newrho)) {
+	int old_bl = R_BrowseLines,
+	    blines = asInteger(GetOption(install("deparse.max.lines"),
+					 R_BaseEnv));
 	Rprintf("debugging in: ");
+	if(blines != NA_INTEGER && blines > 0)
+	    R_BrowseLines = blines;
 	PrintValueRec(call,rho);
+	R_BrowseLines = old_bl;
+
 	/* Is the body a bare symbol (PR#6804) */
 	if (!isSymbol(body) & !isVectorAtomic(body)){
 		/* Find out if the body is function with only one statement. */
@@ -466,9 +493,9 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 			)
 			goto regdb;
 	}
-	Rprintf("debug: ");
+	SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
 	PrintValue(body);
-	do_browser(call, op, arglist, newrho);
+	do_browser(call, op, R_NilValue, newrho);
     }
 
  regdb:
@@ -500,7 +527,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     UNPROTECT(2);
     endcontext(&cntxt);
 
-    if (DEBUG(op)) {
+    if (RDEBUG(op)) {
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
@@ -556,8 +583,9 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 
     /* Debugging */
 
-    SET_ENV_DEBUG(newrho, DEBUG(op));
-    if (DEBUG(op)) {
+    SET_ENV_DEBUG(newrho, CXXRconvert(Rboolean, RDEBUG(op) || RSTEP(op)));
+    if( RSTEP(op) ) SET_RSTEP(op, 0);
+    if (RDEBUG(op)) {
 	Rprintf("debugging in: ");
 	PrintValueRec(call,rho);
 	/* Find out if the body is function with only one statement. */
@@ -572,9 +600,9 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	   && !strcmp( PRIMNAME(tmp), "while")
 	   )
 	    goto regdb;
-	Rprintf("debug: ");
+	SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
 	PrintValue(body);
-	do_browser(call,op,arglist,newrho);
+	do_browser(call, op, R_NilValue, newrho);
     }
 
  regdb:
@@ -605,7 +633,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     } while (redo);
     endcontext(&cntxt);
 
-    if (DEBUG(op)) {
+    if (RDEBUG(op)) {
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
@@ -774,7 +802,7 @@ static SEXP assignCall(SEXP op, SEXP symbol, SEXP fun,
 
 static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 {
-    Rboolean cond = Rboolean(NA_LOGICAL);
+    Rboolean cond = CXXRconvert(Rboolean, NA_LOGICAL);
 
     if (length(s) > 1)
 	warningcall(call,
@@ -783,13 +811,13 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 	/* inline common cases for efficiency */
 	switch(TYPEOF(s)) {
 	case LGLSXP:
-	    cond = Rboolean(LOGICAL(s)[0]);
+	    cond = CXXRconvert(Rboolean, LOGICAL(s)[0]);
 	    break;
 	case INTSXP:
-	    cond = Rboolean(INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
+	    cond = CXXRconvert(Rboolean, INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
 	    break;
 	default:
-	    cond = Rboolean(asLogical(s));
+	    cond = CXXRconvert(Rboolean, asLogical(s));
 	}
     }
 
@@ -806,18 +834,29 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 
 SEXP CXXRnot_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP Cond;
+    SEXP Cond, Stmt=R_NilValue;
+    int vis=0;
+
     PROTECT(Cond = eval(CAR(args), rho));
-    if (asLogicalNoNA(Cond, call)) {
-	UNPROTECT(1);
-	return (eval(CAR(CDR(args)), rho));
-    } else if (length(args) > 2) {
-	UNPROTECT(1);
-	return (eval(CAR(CDR(CDR(args))), rho));
+    if (asLogicalNoNA(Cond, call)) 
+        Stmt = CAR(CDR(args));
+    else {
+        if (length(args) > 2) 
+           Stmt = CAR(CDR(CDR(args)));
+        else
+           vis = 1;
+    } 
+    if( ENV_DEBUG(rho) ) {
+	SrcrefPrompt("debug", R_Srcref);
+        PrintValue(Stmt);
+        do_browser(call, op, R_NilValue, rho);
+    } 
+    UNPROTECT(1);
+    if( vis ) {
+        R_Visible = FALSE; /* case of no 'else' so return invisible NULL */
+        return Stmt;
     }
-    R_Visible = FALSE; /* case of no 'else' so return invisible NULL */
-	UNPROTECT(1);
-    return R_NilValue;
+    return (eval(Stmt, rho));
 }
 
 namespace {
@@ -826,12 +865,12 @@ namespace {
 	return (isLanguage(body) && CAR(body) == R_BraceSymbol) ? 1 : 0;
     }
 
-    inline void DO_LOOP_DEBUG(SEXP call, SEXP op, SEXP args, SEXP rho, int bgn)
+    inline void DO_LOOP_RDEBUG(SEXP call, SEXP op, SEXP args, SEXP rho, int bgn)
     {
 	if (bgn && ENV_DEBUG(rho)) {
-	    Rprintf("debug: ");
+	    SrcrefPrompt("debug", R_Srcref);
 	    PrintValue(CAR(args));
-	    do_browser(call,op,args,rho);
+	    do_browser(call, op, 0, rho);
 	}
     }
 }
@@ -890,7 +929,7 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		 R_NilValue);
     for (i = 0; i < n; i++) {
 	try {
-	    DO_LOOP_DEBUG(call, op, args, rho, bgn);
+	    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 	    switch (TYPEOF(val)) {
 	    case LGLSXP:
 		v = allocVector(TYPEOF(val), 1);
@@ -955,7 +994,7 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     endcontext(&cntxt);
     UNPROTECT(3);
     SET_ENV_DEBUG(rho, dbg);
-    return ans;
+    return R_NilValue;
 }
 
 
@@ -982,8 +1021,8 @@ SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
 	try {
 	    while (asLogicalNoNA(eval(CAR(args), rho), call)) {
-		DO_LOOP_DEBUG(call, op, args, rho, bgn);
-		t = eval(body, rho);
+		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+		eval(body, rho);
 	    }
 	}
 	catch (JMPException& e) {
@@ -997,7 +1036,7 @@ SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     } while (redo);
     endcontext(&cntxt);
     SET_ENV_DEBUG(rho, dbg);
-    return t;
+    return R_NilValue;
 }
 
 
@@ -1024,8 +1063,8 @@ SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	//	     << &cntxt << endl;
 	try {
 	    for (;;) {
-		DO_LOOP_DEBUG(call, op, args, rho, bgn);
-		t = eval(body, rho);
+		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+		eval(body, rho);
 	    }
 	}
 	catch (JMPException& e) {
@@ -1039,7 +1078,7 @@ SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     } while (redo);
     endcontext(&cntxt);
     SET_ENV_DEBUG(rho, dbg);
-    return t;
+    return R_NilValue;
 }
 
 
@@ -1056,23 +1095,43 @@ SEXP CXXRnot_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
     return CAR(args);
 }
 
-
-SEXP CXXRnot_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
+/* this function gets the srcref attribute from a statement block, 
+   and confirms it's in the expected format */
+   
+static SEXP getSrcrefs(SEXP call, SEXP args)
 {
-    SEXP s;
-    if (args == R_NilValue) {
-	s = R_NilValue;
-    }
-    else {
+    SEXP srcrefs = getAttrib(call, R_SrcrefSymbol);
+    if (   TYPEOF(srcrefs) == VECSXP
+        && length(srcrefs) == length(args)+1 ) return srcrefs;
+    return R_NilValue;
+}
+
+SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP s = R_NilValue;
+    if (args != R_NilValue) {
+    	SEXP srcrefs = getSrcrefs(call, args);
+    	int i = 1;
+    	R_Srcref = R_NilValue;
 	while (args != R_NilValue) {
+	    if (srcrefs != R_NilValue) {
+	    	PROTECT(R_Srcref = VECTOR_ELT(srcrefs, i++));
+	    	if (  TYPEOF(R_Srcref) != INTSXP
+	    	    || length(R_Srcref) != 6) {
+	    	    srcrefs = R_Srcref = R_NilValue;
+	    	    UNPROTECT(1);
+	    	}
+	    }
 	    if (ENV_DEBUG(rho)) {
-		Rprintf("debug: ");
+	    	SrcrefPrompt("debug", R_Srcref);
 		PrintValue(CAR(args));
-		do_browser(call,op,args,rho);
+		do_browser(call, op, R_NilValue, rho);
 	    }
 	    s = eval(CAR(args), rho);
+	    if (srcrefs != R_NilValue) UNPROTECT(1);
 	    args = CDR(args);
 	}
+	R_Srcref = R_NilValue;
     }
     return s;
 }
@@ -1855,9 +1914,10 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
 
     len = length(Class);
 
-    /* Need to interleave looking for group and generic methods */
-    /* eg if class(x) is "foo" "bar" then x>3 should invoke */
-    /* "Ops.foo" rather than ">.bar" */
+    /* Need to interleave looking for group and generic methods
+       e.g. if class(x) is c("foo", "bar") then x > 3 should invoke
+       "Ops.foo" rather than ">.bar"
+    */
     for (whichclass = 0 ; whichclass < len ; whichclass++) {
 	const char *ss = translateChar(STRING_ELT(Class, whichclass));
 	if(strlen(generic) + strlen(ss) + 2 > 512)
@@ -1913,10 +1973,10 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
 	    for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	if(R_has_methods(op) && 
+	if(R_has_methods(op) &&
 	   (value = R_possible_dispatch(call, op, args, rho, FALSE))) {
-	    *ans = value;
-	    return 1;
+	       *ans = value;
+	       return 1;
 	}
 	/* else go on to look for S3 methods */
     }
@@ -1971,7 +2031,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(NAMED(value)) SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
 	if(value != R_NilValue) /* use the S3Part as the inherited object */
-	  SETCAR(args, value);
+	    SETCAR(args, value);
     }
 
     if( nargs == 2 )
@@ -1985,8 +2045,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
         value = CADR(args);
 	if(NAMED(value)) SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP);
-	if(value != R_NilValue)
-	  SETCADR(args, value);
+	if(value != R_NilValue) SETCADR(args, value);
     }
 
     PROTECT(rgr);
@@ -1997,11 +2056,23 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     if( lsxp != rsxp ) {
-	if( isFunction(lsxp) && isFunction(rsxp) ) {
-	    warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
-		    CHAR(PRINTNAME(lmeth)), CHAR(PRINTNAME(rmeth)), generic);
-	    UNPROTECT(2);
-	    return 0;
+	if ( isFunction(lsxp) && isFunction(rsxp) ) {
+	    /* special-case some methods involving difftime */
+	    const char *lname = CHAR(PRINTNAME(lmeth)),
+		*rname = CHAR(PRINTNAME(rmeth));
+	    if( streql(rname, "Ops.difftime") && 
+		(streql(lname, "+.POSIXt") || streql(lname, "-.POSIXt") ||
+		 streql(lname, "+.Date") || streql(lname, "-.Date")) )
+		rsxp = R_NilValue;
+	    else if (streql(lname, "Ops.difftime") && 
+		     (streql(rname, "+.POSIXt") || streql(rname, "+.Date")) )
+		lsxp = R_NilValue;
+	    else {
+		warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
+			lname, rname, generic);
+		UNPROTECT(2);
+		return 0;
+	    }
 	}
 	/* if the right hand side is the one */
 	if( !isFunction(lsxp) ) { /* copy over the righthand stuff */
@@ -2127,10 +2198,10 @@ void R_initialize_bcode(void)
   R_AndSym = install("&");
   R_OrSym = install("|");
   R_NotSym = install("!");
-  R_SubsetSym = install("[");
+  R_SubsetSym = R_BracketSymbol; /* "[" */
   R_SubassignSym = install("[<-");
   R_CSym = install("c");
-  R_Subset2Sym = install("[[");
+  R_Subset2Sym = R_Bracket2Symbol; /* "[[" */
   R_Subassign2Sym = install("[[<-");
   FakeCall0 = CONS(R_NilValue, R_NilValue);
   FakeCall1 = CONS(R_NilValue, FakeCall0);
@@ -2931,7 +3002,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	R_BCNodeStackTop[-1] = value;
 	NEXT();
       }
-    OP(SETLOOPVAL, 0): value = BCNPOP(); R_BCNodeStackTop[-1] = value; NEXT();
+    OP(SETLOOPVAL, 0): BCNPOP(); R_BCNodeStackTop[-1] = R_NilValue; NEXT();
     OP(INVISIBLE,0): R_Visible = FALSE; NEXT();
     OP(LDCONST, 1): DO_LDCONST(value); BCNPUSH(value); NEXT();
     OP(LDNULL, 0):  BCNPUSH(R_NilValue); NEXT();
@@ -2955,7 +3026,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	/* get the function */
 	SEXP symbol = VECTOR_ELT(constants, GETOP());
 	value = findFun(symbol, rho);
-	if(TRACE(value)) {
+	if(RTRACE(value)) {
 	  Rprintf("trace: ");
 	  PrintValue(symbol);
 	}
@@ -2975,7 +3046,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	/* get the function */
 	SEXP symbol = VECTOR_ELT(constants, GETOP());
 	value = findFun(symbol, R_GlobalEnv);
-	if(TRACE(value)) {
+	if(RTRACE(value)) {
 	  Rprintf("trace: ");
 	  PrintValue(symbol);
 	}
@@ -2999,7 +3070,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    value = forcePromise(value);
 	    SET_NAMED(value, 2);
 	}
-	if(TRACE(value)) {
+	if(RTRACE(value)) {
 	  Rprintf("trace: ");
 	  PrintValue(symbol);
 	}
@@ -3025,7 +3096,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	}
 	if (TYPEOF(value) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
-	if(TRACE(value)) {
+	if(RTRACE(value)) {
 	  Rprintf("trace: ");
 	  PrintValue(symbol);
 	}
@@ -3180,7 +3251,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    fun = forcePromise(fun);
 	    SET_NAMED(fun, 2);
 	}
-	if(TRACE(fun)) {
+	if(RTRACE(fun)) {
 	  Rprintf("trace: ");
 	  PrintValue(symbol);
 	}

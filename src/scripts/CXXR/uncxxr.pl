@@ -43,6 +43,7 @@ while (<>) {
   s/newbuff/new/g;
   s/newconn/new/g;
   s/newd\b/new/g;
+  s/newi\b/new/g;
   s/newplot/new/g;
   s/newv\b/new/g;
   s/thisconn/this/g;
@@ -53,8 +54,11 @@ while (<>) {
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
   s/CXXR_alloc/R_alloc/g;
+  s/CXXRBuiltInFunction:://g;
   s/CXXRconst\s*//g;
   s/CXXRconvert\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRccast\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRscast\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
   s/CXXRFALSE/0/g;
   s/CXXRNOCAST//g;
   s/CXXRnot_hidden/attribute_hidden/g;

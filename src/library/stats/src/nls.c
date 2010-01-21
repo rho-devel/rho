@@ -78,22 +78,16 @@ static SEXP
 ConvInfoMsg(char* msg, int iter, int whystop, double fac,
 	    double minFac, int maxIter, double convNew)
 {
-    SEXP ans, rnames;
-
-    PROTECT(ans = allocVector(VECSXP, 5));
-    setAttrib(ans, R_NamesSymbol, rnames = allocVector(STRSXP, 5));
+    const char *nms[] = {"isConv", "finIter", "finTol",
+			 "stopCode", "stopMessage",  ""};
+    SEXP ans;
+    PROTECT(ans = mkNamed(VECSXP, nms));
 
     SET_VECTOR_ELT(ans, 0, ScalarLogical(whystop == 0)); /* isConv */
     SET_VECTOR_ELT(ans, 1, ScalarInteger(iter));	 /* finIter */
     SET_VECTOR_ELT(ans, 2, ScalarReal   (convNew));	 /* finTol */
     SET_VECTOR_ELT(ans, 3, ScalarInteger(whystop));      /* stopCode */
     SET_VECTOR_ELT(ans, 4, mkString(msg));               /* stopMessage */
-
-    SET_STRING_ELT(rnames, 0, mkChar("isConv"));
-    SET_STRING_ELT(rnames, 1, mkChar("finIter"));
-    SET_STRING_ELT(rnames, 2, mkChar("finTol"));
-    SET_STRING_ELT(rnames, 3, mkChar("stopCode"));
-    SET_STRING_ELT(rnames, 4, mkChar("stopMessage"));
 
     UNPROTECT(1);
     return ans;
@@ -160,9 +154,9 @@ nls_iter(SEXP m, SEXP control, SEXP doTraceArg)
 
 #define NON_CONV_FINIS_1(_ID_, _MSG_, _A1_)	\
     if(warnOnly) {				\
-	char msgbuf[70];			\
+	char msgbuf[1000];			\
 	warning(_MSG_, _A1_);			\
-	sprintf(msgbuf, _MSG_, _A1_);		\
+	snprintf(msgbuf, 1000, _MSG_, _A1_);	\
 	return CONV_INFO_MSG(msgbuf, _ID_);	\
     }						\
     else					\
@@ -170,9 +164,9 @@ nls_iter(SEXP m, SEXP control, SEXP doTraceArg)
 
 #define NON_CONV_FINIS_2(_ID_, _MSG_, _A1_, _A2_)	\
     if(warnOnly) {					\
-	char msgbuf[70];				\
+	char msgbuf[1000];				\
 	warning(_MSG_, _A1_, _A2_);			\
-	sprintf(msgbuf, _MSG_, _A1_, _A2_);		\
+	snprintf(msgbuf, 1000, _MSG_, _A1_, _A2_);	\
 	return CONV_INFO_MSG(msgbuf, _ID_);		\
     }							\
     else						\

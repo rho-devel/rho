@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2004   The R Development Core Team.
+ *  Copyright (C) 1999--2009   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,9 +75,10 @@ static SEXP lbinary(SEXP call, SEXP op, SEXP args)
     x = CAR(args);
     y = CADR(args);
     if (isRaw(x) && isRaw(y)) {
-    } else if (!isNumeric(x) || !isNumeric(y))
+    }
+    else if (!isNumber(x) || !isNumber(y))
 	errorcall(call,
-		  _("operations are possible only for numeric or logical types"));
+		  _("operations are possible only for numeric, logical or complex types"));
     tsp = R_NilValue;		/* -Wall */
     klass = R_NilValue;		/* -Wall */
     xarray = isArray(x);
@@ -137,9 +138,9 @@ static SEXP lbinary(SEXP call, SEXP op, SEXP args)
     if (isRaw(x) && isRaw(y)) {
 	PROTECT(x = binaryLogic2(PRIMVAL(op), x, y));
     } else {
-	if (!isNumeric(x) || !isNumeric(y))
+	if (!isNumber(x) || !isNumber(y))
 	    errorcall(call,
-		      _("operations are possible only for numeric or logical types"));
+		      _("operations are possible only for numeric, logical or complex types"));
 	x = SETCAR(args, coerceVector(x, LGLSXP));
 	y = SETCADR(args, coerceVector(y, LGLSXP));
 	PROTECT(x = binaryLogic(PRIMVAL(op), x, y));
@@ -176,7 +177,7 @@ static SEXP lunary(SEXP call, SEXP op, SEXP arg)
 
     len = LENGTH(arg);
     if(len == 0) return(allocVector(LGLSXP, 0));
-    if (!isLogical(arg) && !isNumeric(arg) && !isRaw(arg))
+    if (!isLogical(arg) && !isNumber(arg) && !isRaw(arg))
 	errorcall(call, _("invalid argument type"));
     PROTECT(names = getAttrib(arg, R_NamesSymbol));
     PROTECT(dim = getAttrib(arg, R_DimSymbol));
@@ -197,6 +198,11 @@ static SEXP lunary(SEXP call, SEXP op, SEXP arg)
 	for (i = 0; i < len; i++)
 	    LOGICAL(x)[i] = ISNAN(REAL(arg)[i]) ?
 		NA_LOGICAL : REAL(arg)[i] == 0;
+	break;
+    case CPLXSXP:
+	for (i = 0; i < len; i++)
+	    LOGICAL(x)[i] = (ISNAN(COMPLEX(arg)[i].r) || ISNAN(COMPLEX(arg)[i].i))
+		? NA_LOGICAL : (COMPLEX(arg)[i].r == 0. && COMPLEX(arg)[i].i == 0.);
 	break;
     case RAWSXP:
 	for (i = 0; i < len; i++)
@@ -228,14 +234,14 @@ SEXP attribute_hidden do_logic2(SEXP call, SEXP op, SEXP args, SEXP env)
     s2 = CADR(args);
     PROTECT(ans = allocVector(LGLSXP, 1));
     s1 = eval(s1, env);
-    if (!isNumeric(s1))
+    if (!isNumber(s1))
 	errorcall(call, _("invalid 'x' type in 'x %s y'"),
 		  PRIMVAL(op) == 1 ? "&&" : "||");
     x1 = asLogical(s1);
 
 #define get_2nd							\
 	s2 = eval(s2, env);					\
-	if (!isNumeric(s2))					\
+	if (!isNumber(s2))					\
 	    errorcall(call, _("invalid 'y' type in 'x %s y'"),	\
 		      PRIMVAL(op) == 1 ? "&&" : "||");		\
 	x2 = asLogical(s2);
@@ -415,7 +421,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     if (PRIMVAL(op) == 1) {	/* ALL */
 	LOGICAL(s)[0] = haveNA ? (haveFalse ? 0 : NA_LOGICAL) : !haveFalse;
     } else {			/* ANY */
-	LOGICAL(s)[0] = haveNA ? (haveTrue  ? 1 : NA_LOGICAL) : int(haveTrue);
+	LOGICAL(s)[0] = haveNA ? (haveTrue  ? 1 : NA_LOGICAL) : CXXRconvert(int, haveTrue);
     }
     UNPROTECT(2);
     return s;

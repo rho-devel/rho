@@ -51,8 +51,8 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
-	int (*TRACEptr)(SEXP x) = TRACE;
+	int (*RTRACEptr)(SEXP x) = RTRACE;
+	void (*SET_RTRACEptr)(SEXP x, int v) = SET_RTRACE;
     }
 }
 

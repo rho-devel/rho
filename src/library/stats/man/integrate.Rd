@@ -1,6 +1,6 @@
 % File src/library/stats/man/integrate.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{integrate}
@@ -75,10 +75,6 @@ integrate(f, lower, upper, \dots, subdivisions=100,
   R. Piessens, E. deDoncker-Kapenga, C. Uberhuber, D. Kahaner (1983)
   \emph{Quadpack: a Subroutine Package for Automatic Integration};
   Springer Verlag.
-}
-\seealso{
-  The function \code{\link[adapt]{adapt}} in the \pkg{adapt} package on
-  CRAN, for multivariate integration.
 }
 \examples{
 integrate(dnorm, -1.96, 1.96)

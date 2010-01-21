@@ -98,10 +98,14 @@ namespace CXXR {
 	 * ppsRestoreSize(), and like it may cease to be public in
 	 * future.
 	 */
+#ifdef DEBUG_PPS
+	static size_t ppsSize();
+#else
 	static size_t ppsSize()
 	{
 	    return s_pps->size();
 	}
+#endif
 
 	/** @brief Push a node pointer onto the PPS.
 	 *

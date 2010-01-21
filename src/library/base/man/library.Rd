@@ -153,8 +153,11 @@ require(package, lib.loc = NULL, quietly = FALSE,
 }
 \section{Packages that require other packages}{
   \bold{NB:} This mechanism has been almost entirely superseded by
-  using the \code{Depends:} field in the \file{DESCRIPTION} file of a package.
-  
+  using the \samp{Depends:} field in the \file{DESCRIPTION} file of a
+  package. 
+
+  % But this only works without lazy-loading or in .First.lib,
+  % and if only works in packages without namespaces.
   The source code for a
   package that requires one or more other packages should have a call
   to \code{require}, preferably near the beginning of the source, and
@@ -163,10 +166,7 @@ require(package, lib.loc = NULL, quietly = FALSE,
   save the names of all required packages in the environment of the
   new package.  The saved package names are used by
   \code{\link{detach}} when a package is detached to warn if other
-  packages still require the to-be-detached package.  Also, if a package is
-  installed with saved image (see \link{INSTALL}), the saved package
-  names are used to require these packages when the new package is
-  attached.
+  packages still require the to-be-detached package.
 }
 \section{Formal methods}{
   \code{library} takes some further actions when package \pkg{methods}
@@ -184,7 +184,7 @@ require(package, lib.loc = NULL, quietly = FALSE,
 \note{
   \code{library} and \code{require} can only load an \emph{installed}
   package, and this is detected by having a \file{DESCRIPTION} file
-  containing a \code{Built:} field.
+  containing a \samp{Built:} field.
 
   Under Unix-alikes, the code checks that the package was installed
   under a similar operating system as given by \code{R.version$platform}

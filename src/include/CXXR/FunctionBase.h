@@ -184,9 +184,9 @@ extern "C" {
      * null pointer.
      */
 #ifndef __cplusplus
-    int TRACE(SEXP x);
+    int RTRACE(SEXP x);
 #else
-    inline int TRACE(SEXP x)
+    inline int RTRACE(SEXP x)
     {
 	using namespace CXXR;
 	if (!x) return 0;
@@ -204,9 +204,9 @@ extern "C" {
      * required.
      */
 #ifndef __cplusplus
-    void SET_TRACE(SEXP x, int v);
+    void SET_RTRACE(SEXP x, int v);
 #else
-    inline void SET_TRACE(SEXP x, int v)
+    inline void SET_RTRACE(SEXP x, int v)
     {
 	using namespace CXXR;
 	FunctionBase* f = SEXP_downcast<FunctionBase*>(x);

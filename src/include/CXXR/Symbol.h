@@ -321,16 +321,21 @@ namespace CXXR {
     extern Symbol* const BracketSymbol;    // "["
     extern Symbol* const BraceSymbol;      // "{"
     extern Symbol* const ClassSymbol;	   // "class"
+    extern Symbol* const DeviceSymbol;     // ".Device"
     extern Symbol* const DimNamesSymbol;   // "dimnames"
     extern Symbol* const DimSymbol;	   // "dim"
     extern Symbol* const DollarSymbol;	   // "$"
     extern Symbol* const DotsSymbol;	   // "..."
     extern Symbol* const DropSymbol;	   // "drop"
     extern Symbol* const ExactSymbol;      // "exact"
+    extern Symbol* const LastvalueSymbol;  // ".Last.value"
     extern Symbol* const LevelsSymbol;	   // "levels"
     extern Symbol* const ModeSymbol;	   // "mode"
+    extern Symbol* const NameSymbol;       // "name"
     extern Symbol* const NamesSymbol;	   // "names"
-    extern Symbol* const NaRmSymbol;       // "ra.rm"
+    extern Symbol* const NaRmSymbol;       // "na.rm"
+    extern Symbol* const PackageSymbol;    // "package"
+    extern Symbol* const QuoteSymbol;      // "quote"
     extern Symbol* const RowNamesSymbol;   // "row.names"
     extern Symbol* const SeedsSymbol;	   // ".Random.seed"
     extern Symbol* const LastvalueSymbol;  // ".Last.value"
@@ -362,16 +367,23 @@ extern "C" {
     extern SEXP R_BracketSymbol;   /* "[" */
     extern SEXP R_BraceSymbol;     /* "{" */
     extern SEXP R_ClassSymbol;	   /* "class" */
+    extern SEXP	R_DeviceSymbol;    /* ".Device" */
     extern SEXP R_DimNamesSymbol;  /* "dimnames" */
     extern SEXP R_DimSymbol;	   /* "dim" */
     extern SEXP R_DollarSymbol;	   /* "$" */
     extern SEXP R_DotsSymbol;	   /* "..." */
     extern SEXP R_DropSymbol;	   /* "drop" */
+    extern SEXP	R_LastvalueSymbol; /* ".Last.value" */
     extern SEXP R_LevelsSymbol;	   /* "levels" */
     extern SEXP R_ModeSymbol;	   /* "mode" */
+    extern SEXP	R_NameSymbol;	   /* "name" */
     extern SEXP R_NamesSymbol;	   /* "names" */
+    extern SEXP	R_NaRmSymbol;	   /* "na.rm" */
+    extern SEXP R_PackageSymbol;   /* "package" */
+    extern SEXP R_QuoteSymbol;	   /* "quote" */
     extern SEXP R_RowNamesSymbol;  /* "row.names" */
     extern SEXP R_SeedsSymbol;	   /* ".Random.seed" */
+    extern SEXP	R_SourceSymbol;    /* "source" */
     extern SEXP R_TspSymbol;	   /* "tsp" */
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?

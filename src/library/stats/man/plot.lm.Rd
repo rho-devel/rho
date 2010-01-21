@@ -29,18 +29,17 @@
     the numbers \code{1:6}.}
   \item{caption}{captions to appear above the plots;
     \code{\link{character}} vector or \code{\link{list}} of valid
-    graphics annotations, see \code{\link[grDevices]{as.graphicsAnnot}}.
+    graphics annotations, see \code{\link{as.graphicsAnnot}}.
     Can be set to \code{""} or \code{NA} to suppress all captions.
   }
   \item{panel}{panel function.  The useful alternative to
     \code{\link{points}}, \code{\link{panel.smooth}} can be chosen
     by \code{add.smooth = TRUE}.}
-  \item{sub.caption}{common title---above figures if there are multiple;
-    used as \code{sub} (s.\code{\link{title}}) otherwise.  If \code{NULL},
-    as by default, a possible shortened version of
+  \item{sub.caption}{common title---above the figures if there are more
+    than one; used as \code{sub} (s.\code{\link{title}}) otherwise.  If
+    \code{NULL}, as by default, a possible abbreviated version of
     \code{deparse(x$call)} is used.}
-  \item{main}{title to each plot---in addition to the above
-    \code{caption}.}
+  \item{main}{title to each plot---in addition to \code{caption}.}
   \item{ask}{logical; if \code{TRUE}, the user is \emph{ask}ed before
     each plot, see \code{\link{par}(ask=.)}.}
   \item{\dots}{other parameters to be passed through to plotting
@@ -65,9 +64,7 @@
   \eqn{\sqrt{| residuals |}} against fitted values, a Normal Q-Q plot, a
   plot of Cook's distances versus row labels, a plot of residuals
   against leverages, and a plot of Cook's distances against
-  leverage/(1-leverage).  By default, the first
-  % four of these are provided.
-  three and \code{5} are provided.
+  leverage/(1-leverage).  By default, the first three and \code{5} are provided.
 }
 \details{
   \code{sub.caption}---by default the function call---is shown as
@@ -85,9 +82,8 @@
   hypothesis).  They are given as
   \eqn{R_i / (s \times \sqrt{1 - h_{ii}})}{R[i] / (s*sqrt(1 - h.ii))}
   where \eqn{h_{ii}}{h.ii} are the diagonal entries of the hat matrix,
-% bug in Rdconv: "$" and \link inside \code fails; '\$' doesn't help :
-  \code{\link{influence}()}\code{$hat}, see also \code{\link{hat}}, and
-  where the Residual-Leverage uses standardized Pearson residuals
+  \code{\link{influence}()$hat} (see also \code{\link{hat}}), and
+  where the Residual-Leverage plot uses standardized Pearson residuals
   (\code{\link{residuals.glm}(type = "pearson")}) for \eqn{R[i]}.
 
   The Residual-Leverage plot shows contours of equal Cook's distance,

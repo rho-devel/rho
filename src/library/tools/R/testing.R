@@ -18,7 +18,7 @@
 
 massageExamples <- function(pkg, files, outFile = stdout())
 {
-    if(utils::file_test("-d", files[1]))
+    if(file_test("-d", files[1]))
         files <- sort(Sys.glob(file.path(files, "*.R")))
 
     if(is.character(outFile)) {
@@ -26,8 +26,12 @@ massageExamples <- function(pkg, files, outFile = stdout())
         on.exit(close(out))
     } else out <- outFile
 
-    lines <- readLines(file.path(R.home("share"), "R", "examples-header.R"))
-    cat(sub("@PKG@", pkg, lines), sep = "\n", file = out)
+#    lines <- readLines(file.path(R.home("share"), "R", "examples-header.R"))
+#    cat(sub("@PKG@", pkg, lines), sep = "\n", file = out)
+    lines <- c(paste('pkgname <- "', pkg, '"', sep =""),
+               'source(file.path(R.home("share"), "R", "examples-header.R"))',
+               "options(warn = 1)")
+    cat(lines, sep = "\n", file = out)
     if(.Platform$OS.type == "windows")
         cat("options(pager = \"console\")\n", file = out)
 
@@ -38,34 +42,37 @@ massageExamples <- function(pkg, files, outFile = stdout())
         cat("library('", pkg, "')\n\n", sep = "", file = out)
 
     cat("assign(\".oldSearch\", search(), pos = 'CheckExEnv')\n", file = out)
-    cat("assign(\".oldNS\", loadedNamespaces(), pos = 'CheckExEnv')\n",
-        file = out)
+    ##cat("assign(\".oldNS\", loadedNamespaces(), pos = 'CheckExEnv')\n", file = out)
 
     for(file in files) {
         nm <- sub("\\.R$", "", basename(file))
         ## make a syntactic name out of the filename
-        nm <- gsub("[^- .a-zA-Z0-9_]", ".", nm, perl = TRUE)
+        nm <- gsub("[^- .a-zA-Z0-9_]", ".", nm, perl = TRUE, useBytes = TRUE)
         if (pkg == "graphics" && nm == "text") next
         if(!file.exists(file)) stop("file ", file, " cannot be opened")
         lines <- readLines(file)
-        have_examples <- any(grepl("_ Examples _|### \\*+ Examples", lines))
+        have_examples <- any(grepl("_ Examples _|### \\*+ Examples",
+                                   lines, perl = TRUE, useBytes = TRUE))
         ## skip comment lines
-        com <- grep("^#", lines)
+        com <- grep("^#", lines, perl = TRUE, useBytes = TRUE)
         lines1 <- if(length(com)) lines[-com] else lines
-        have_par <- length(grep("[^a-zA-Z0-9.]par\\(|^par\\(", lines1)) > 0L
-        have_contrasts <- length(grep("options\\(contrasts", lines1)) > 0L
+        have_par <- any(grepl("[^a-zA-Z0-9.]par\\(|^par\\(",
+                                lines1, perl = TRUE, useBytes = TRUE))
+        have_contrasts <- any(grepl("options\\(contrasts",
+                                   lines1, perl = TRUE, useBytes = TRUE))
 
         if(have_examples)
-            cat("cleanEx(); nameEx(\"", nm, "\")\n", sep = "", file = out)
+            cat("cleanEx()\nnameEx(\"", nm, "\")\n", sep = "", file = out)
 
         cat("### * ", nm, "\n\n", sep = "", file = out)
         cat("flush(stderr()); flush(stdout())\n\n", file = out)
         dont_test <- FALSE
         for (line in lines) {
-            if(length(grep("^[[:space:]]*## No test:", line)))
+            if(any(grepl("^[[:space:]]*## No test:", line, perl = TRUE, useBytes = TRUE)))
                 dont_test <- TRUE
             if(!dont_test) cat(line, "\n", sep = "", file = out)
-            if(length(grep("^[[:space:]]*## End\\(No test\\)", line)))
+            if(any(grepl("^[[:space:]]*## End\\(No test\\)",
+                         line, perl = TRUE, useBytes = TRUE)))
                 dont_test <- FALSE
         }
 
@@ -81,7 +88,7 @@ massageExamples <- function(pkg, files, outFile = stdout())
 }
 
 ## compares 2 files
-Rdiff <- function(from, to, useDiff = FALSE)
+Rdiff <- function(from, to, useDiff = FALSE, forEx = FALSE)
 {
     clean <- function(txt)
     {
@@ -101,9 +108,18 @@ Rdiff <- function(from, to, useDiff = FALSE)
         pat <- '(^Time |^Loading required package|^Package [A-Za-z][A-Za-z0-9]+ loaded|^<(environment|promise|pointer): |CXXR)'
         txt[!grepl(pat, txt, perl = TRUE, useBytes = TRUE)]
     }
+    clean2 <- function(txt)
+    {
+        eoh <- grep("^> options\\(warn = 1\\)$", txt)
+        if(length(eoh)) txt[-(1:eoh[1])] else txt
+    }
 
     left <- clean(readLines(from))
     right <- clean(readLines(to))
+    if (forEx) {
+        left <- clean2(left)
+        right <- clean2(right)
+    }
     if (!useDiff && (length(left) == length(right))) {
         bleft <- gsub("[[:space:]]+", " ", left)
         bright <- gsub("[[:space:]]+", " ", right)
@@ -166,31 +182,33 @@ testInstalledPackage <-
     owd <- setwd(outDir)
     on.exit(setwd(owd))
 
-    if (1 %in% types && file_test("-d", exdir)) {
+    if (1 %in% types) { # && file_test("-d", exdir)) {
         message("\nCollecting examples for package ", sQuote(pkg))
-        Rfile <- .createExdotR(pkg, exdir)
-        outfile <- paste(pkg, "-Ex.Rout", sep = "")
-        failfile <- paste(outfile, "fail", sep = "." )
-        savefile <- paste(outfile, "prev", sep = "." )
-        if (file.exists(outfile)) file.rename(outfile, savefile)
-        unlink(failfile)
-        message("Running examples in package ", sQuote(pkg))
-        ## Create as .fail in case this R session gets killed
-        cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
-                     "CMD BATCH --vanilla --no-timing",
-                     shQuote(Rfile), shQuote(failfile))
-        if (.Platform$OS.type == "windows") Sys.setenv(R_LIBS="")
-        else cmd =paste("R_LIBS=", cmd)
-        res <- system(cmd)
-        if (res) return(invisible(1L)) else file.rename(failfile, outfile)
+        Rfile <- .createExdotR(pkg, pkgdir)
+        if (length(Rfile)) {
+            outfile <- paste(pkg, "-Ex.Rout", sep = "")
+            failfile <- paste(outfile, "fail", sep = "." )
+            savefile <- paste(outfile, "prev", sep = "." )
+            if (file.exists(outfile)) file.rename(outfile, savefile)
+            unlink(failfile)
+            message("Running examples in package ", sQuote(pkg))
+            ## Create as .fail in case this R session gets killed
+            cmd <- paste(shQuote(file.path(R.home(), "bin", "R")),
+                         "CMD BATCH --vanilla --no-timing",
+                         shQuote(Rfile), shQuote(failfile))
+            if (.Platform$OS.type == "windows") Sys.setenv(R_LIBS="")
+            else cmd <- paste("R_LIBS=", cmd)
+            res <- system(cmd)
+            if (res) return(invisible(1L)) else file.rename(failfile, outfile)
 
-        savefile <- paste(outfile, "prev", sep = "." )
-        if (file.exists(savefile)) {
-            message("  Comparing ", sQuote(outfile), " to ",
-                    sQuote(basename(savefile)), " ...", appendLF = FALSE)
-            res <- Rdiff(outfile, savefile)
-            if (!res) message(" OK")
-        }
+            savefile <- paste(outfile, "prev", sep = "." )
+            if (file.exists(savefile)) {
+                message("  Comparing ", sQuote(outfile), " to ",
+                        sQuote(basename(savefile)), " ...", appendLF = FALSE)
+                res <- Rdiff(outfile, savefile)
+                if (!res) message(" OK")
+            }
+        } else warning("no examples found")
     }
 
     ## FIXME merge with code in .runPackageTests
@@ -299,16 +317,45 @@ testInstalledPackage <-
     return(nfail)
 }
 
-.createExdotR <- function(pkg, exdir)
+.createExdotR <- function(pkg, pkgdir, silent = FALSE)
 {
     Rfile <- paste(pkg, "-Ex.R", sep = "")
     ## might be zipped:
-    if (file.exists(fzip <- file.path(exdir, "Rex.zip"))) {
-        files <- tempfile()
-        unzip(fzip, exdir = files)
-        # system(paste("unzip -q", fzip, "-d", files))
-    } else files <- exdir
-    massageExamples(pkg, files, Rfile)
+    exdir <- file.path(pkgdir, "R-ex")
+    if (file_test("-d", exdir)) {
+        if (file.exists(fzip <- file.path(exdir, "Rex.zip"))) {
+            filedir <- tempfile()
+            unzip(fzip, exdir = filedir)
+            on.exit(unlink(filedir, recursive = TRUE))
+        } else filedir <- exdir
+    } else {
+        db <- Rd_db(basename(pkgdir), lib.loc = dirname(pkgdir))
+        if (!length(db)) {
+            message("no parsed files found")
+            return(invisible(NULL))
+        }
+        if (!silent) message("  Extracting from parsed Rd's ",
+                             appendLF = FALSE, domain = NA)
+        files <- names(db)
+        filedir <- tempfile()
+        dir.create(filedir)
+        on.exit(unlink(filedir, recursive = TRUE))
+        cnt <- 0L
+        for(f in files) {
+            ## names are 'fullpath.Rd' if from 'man' dir, 'topic' if from RdDB
+            nm <- sub("\\.[Rr]d$", "", basename(f))
+            Rd2ex(db[[f]],
+                  file.path(filedir, paste(nm, "R", sep = ".")),
+                  defines = NULL)
+            cnt <- cnt + 1L
+            if(!silent && cnt %% 10L == 0L)
+                message(".", appendLF = FALSE, domain = NA)
+        }
+        if (!silent) message()
+        nof <- length(Sys.glob(file.path(filedir, "*.R")))
+        if(!nof) return(invisible(NULL))
+    }
+    massageExamples(pkg, filedir, Rfile)
     invisible(Rfile)
 }
 

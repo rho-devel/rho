@@ -47,6 +47,12 @@
 /* uncxxr.pl replaces this by 'expr': */
 #define CXXRconvert(type, expr) type(expr)
 
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRccast(type, expr) const_cast<type>(expr)
+
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRscast(type, expr) static_cast<type>(expr)
+
 /* uncxxr.pl replaces this by '0': */
 #define CXXRFALSE FALSE
 

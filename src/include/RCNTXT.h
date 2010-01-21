@@ -30,8 +30,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file RCNTXT.h
@@ -61,30 +61,31 @@
 #ifdef __cplusplus
     /* Evaluation Context Structure */
     struct RCNTXT {
-	struct RCNTXT *nextcontext; /* The next context up the chain */
-	int callflag;		    /* The context "type" */
-	/* JMP_BUF cjmpbuf; */	    /* C stack and register information */
-	unsigned int cstacktop;	    /* Top of the pointer protection stack */
-	int evaldepth;	            /* evaluation depth at inception */
-	CXXR::GCStackRoot<> promargs;   /* Promises supplied to closure */
-	CXXR::GCStackRoot<> callfun;    /* The closure called */
-	CXXR::GCStackRoot<> sysparent;  /* environment the closure was called from */
-	CXXR::GCStackRoot<> call;       /* The call that effected this context*/
-	CXXR::GCStackRoot<> cloenv;	/* The environment */
-	CXXR::GCStackRoot<> conexit;	/* Interpreted "on.exit" code */
-	void (*cend)(void *);	    /* C "on.exit" thunk */
-	void *cenddata;		    /* data for C "on.exit" thunk */
-	void *vmax;	            /* size of R_alloc stack */
-	int intsusp;                /* interrupts are suspended */
-	CXXR::GCStackRoot<> handlerstack;  /* condition handler stack */
-	CXXR::GCStackRoot<> restartstack;  /* stack of available restarts */
-	struct RPRSTACK *prstack;   /* stack of pending promises */
+	struct RCNTXT *nextcontext;       /* The next context up the chain */
+	int callflag;		          /* The context "type" */
+	/* JMP_BUF cjmpbuf; */	          /* C stack and register information */
+	unsigned int cstacktop;	          /* Top of the pointer protection stack */
+	int evaldepth;	                  /* evaluation depth at inception */
+	CXXR::GCStackRoot<> promargs;     /* Promises supplied to closure */
+	CXXR::GCStackRoot<> callfun;      /* The closure called */
+	CXXR::GCStackRoot<> sysparent;    /* environment the closure was called from */
+	CXXR::GCStackRoot<> call;         /* The call that effected this context*/
+	CXXR::GCStackRoot<> cloenv;	  /* The environment */
+	CXXR::GCStackRoot<> conexit;	  /* Interpreted "on.exit" code */
+	void (*cend)(void *);	          /* C "on.exit" thunk */
+	void *cenddata;		          /* data for C "on.exit" thunk */
+	void *vmax;	                  /* size of R_alloc stack */
+	int intsusp;                      /* interrupts are suspended */
+	CXXR::GCStackRoot<> handlerstack; /* condition handler stack */
+	CXXR::GCStackRoot<> restartstack; /* stack of available restarts */
+	struct RPRSTACK *prstack;         /* stack of pending promises */
 #ifdef BYTECODE
 	SEXP *nodestack;
 # ifdef BC_INT_STACK
 	IStackval *intstack;
 # endif
 #endif
+	CXXR::GCStackRoot<> srcref;	  /* The source line in effect */
     };
 
     typedef RCNTXT* context;

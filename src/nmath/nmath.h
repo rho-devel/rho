@@ -154,7 +154,7 @@ int R_finite(double);
 	   msg = "convergence failed in '%s'\n"; \
 	   break; \
        case ME_PRECISION: \
-	   msg = "full precision was not achieved in '%s'\n"; \
+	   msg = "full precision may not have been achieved in '%s'\n"; \
 	   break; \
        case ME_UNDERFLOW: \
 	   msg = "underflow occurred in '%s'\n"; \

@@ -54,11 +54,13 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*BODYp)(SEXP x) = BODY;
-	Rboolean (*DEBUGp)(SEXP x) = DEBUG;
 	SEXP (*CLOENVp)(SEXP x) = CLOENV;
 	SEXP (*FORMALSp)(SEXP x) = FORMALS;
+	Rboolean (*RDEBUGp)(SEXP x) = RDEBUG;
+	int (*RSTEPp)(SEXP x) = RSTEP;
 	void (*SET_CLOENVp)(SEXP x, SEXP v) = SET_CLOENV;
-	void (*SET_DEBUGp)(SEXP x, Rboolean v) = SET_DEBUG;
+	void (*SET_RDEBUGp)(SEXP x, Rboolean v) = SET_RDEBUG;
+	void (*SET_RSTEPp)(SEXP x, int v) = SET_RSTEP;
     }
 }
 

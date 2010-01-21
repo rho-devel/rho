@@ -41,10 +41,7 @@
 
 #include <Defn.h>
 
-#ifdef SUPPORT_MBCS
-# include <R_ext/rlocale.h>
-# include <wchar.h>
-#endif
+# include <R_ext/rlocale.h> /* includes wchar.h */
 
 #define R_USE_PROTOTYPES 1
 #include <R_ext/GraphicsEngine.h>
@@ -503,7 +500,6 @@ static double PicTeX_StrWidth(const char *str,
     size = gc->cex * gc->ps + 0.5;
     SetFont(gc->fontface, size, ptd);
     sum = 0;
-#if defined(SUPPORT_MBCS)
     if(mbcslocale && ptd->fontface != 5) {
 	/* This version at least uses the state of the MBCS */
 	int i, status, ucslen = mbcsToUcs2(str, NULL, 0, CE_NATIVE);
@@ -520,9 +516,9 @@ static double PicTeX_StrWidth(const char *str,
 	} else
 	    warning(_("invalid string in '%s'"), "PicTeX_StrWidth");
     } else
-#endif
 	for(p = str; *p; p++)
 	    sum += charwidth[ptd->fontface-1][(int)*p];
+
     return sum * ptd->fontsize;
 }
 

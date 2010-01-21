@@ -39,7 +39,7 @@ runif(n, min=0, max=1)
 
   The uniform distribution has density
   \deqn{f(x) = \frac{1}{max-min}}{f(x) = 1/(max-min)}
-  for \eqn{min \le x \le max}.
+  for \eqn{min \le x \le max}{min <= x <= max}.
 
   For the case of \eqn{u := min == max}, the limit case of
   \eqn{X \equiv u}{X == u} is assumed, although there is no density in
@@ -48,6 +48,11 @@ runif(n, min=0, max=1)
   \code{runif} will not generate either of the extreme values unless
   \code{max = min} or \code{max-min} is small compared to \code{min},
   and in particular not for the default arguments.
+}
+\note{The characteristics of output from pseudo-random number generators
+  (such as precision and periodicity) vary widely.  See
+  \code{\link{.Random.seed}} for more information on \R's random number
+  generation algorithms.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

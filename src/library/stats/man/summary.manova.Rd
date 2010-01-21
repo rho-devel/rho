@@ -22,10 +22,8 @@
     matching is used so the name can be abbreviated.}
   \item{intercept}{logical.  If \code{TRUE}, the intercept term is
     included in the table.}
-  
-  % Avoid Matrix's grab of qr.
   \item{tol}{tolerance to be used in deciding if the residuals are
-    rank-deficient: see \code{\link[base]{qr}}.}
+    rank-deficient: see \code{\link{qr}}.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \details{

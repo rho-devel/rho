@@ -65,10 +65,7 @@ static R_INLINE int imin2(int x, int y)
     return (x < y) ? x : y;
 }
 
-#ifdef SUPPORT_MBCS
-#include <wchar.h> /* for btowc */
 #include <R_ext/rlocale.h> /* for btowc */
-#endif
 
 /* The size of vector initially allocated by scan */
 #define SCAN_BLOCKSIZE		1000
@@ -111,7 +108,7 @@ static SEXP insertString(char *str, LocalData *l)
     return mkCharCE(str, enc);
 }
 
-static R_INLINE bool Rspace(unsigned int c)
+static R_INLINE Rboolean Rspace(unsigned int c)
 {
     if (c == ' ' || c == '\t' || c == '\n' || c == '\r') return TRUE;
 #ifdef Win32
@@ -344,9 +341,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 */
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m;
-#ifdef SUPPORT_MBCS
     Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
-#endif
 
     m = 0;
     filled = 1;
@@ -372,10 +367,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    if(c != quote) buffer->data[m++] = '\\';
 		}
 		buffer->data[m++] = c;
-#ifdef SUPPORT_MBCS
 		if(dbcslocale && btowc(c) == WEOF)
 		    buffer->data[m++] = scanchar2(d);
-#endif
 	    }
 	    c = scanchar(FALSE, d);
 	}
@@ -386,10 +379,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 		    R_AllocStringBuffer(nbuf, buffer);
 		}
 		buffer->data[m++] = c;
-#ifdef SUPPORT_MBCS
 		if(dbcslocale && btowc(c) == WEOF)
 		    buffer->data[m++] = scanchar2(d);
-#endif
 		c = scanchar(FALSE, d);
 	    } while (!Rspace(c) && c != R_EOF);
 	}
@@ -423,10 +414,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			    R_AllocStringBuffer(nbuf, buffer);
 			}
 			buffer->data[m++] = c;
-#ifdef SUPPORT_MBCS
 			if(dbcslocale && btowc(c) == WEOF)
 			    buffer->data[m++] = scanchar2(d);
-#endif
 		    }
 		    c = scanchar(TRUE, d); /* only peek at lead byte
 					      unless ASCII */
@@ -453,10 +442,8 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 			R_AllocStringBuffer(nbuf, buffer);
 		    }
 		    buffer->data[m++] = c;
-#ifdef SUPPORT_MBCS
 		    if(dbcslocale && btowc(c) == WEOF)
 			buffer->data[m++] = scanchar2(d);
-#endif
 		}
 	    }
 	filled = c; /* last lead byte in a DBCS */
@@ -995,9 +982,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     int nfields, nskip, i, c, inquote, quote = 0;
     int blocksize, nlines, blskip;
     const char *p;
-#ifdef SUPPORT_MBCS
     Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
-#endif
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
@@ -1121,9 +1106,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 		inquote = 0;
 	    } else {
 		do {
-#ifdef SUPPORT_MBCS
 		    if(dbcslocale && btowc(c) == WEOF) scanchar2(&data);
-#endif
 		    c = scanchar(FALSE, &data);
 		} while (!Rspace(c) && c != R_EOF);
 		if (c == R_EOF) c = '\n';
@@ -1466,7 +1449,7 @@ SEXP attribute_hidden do_menu(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op,args);
 
     if (!isString(CAR(args)))
-	error(_("invalid argument"));
+	error(_("invalid '%s' argument"), "choices");
 
     sprintf(ConsolePrompt, _("Selection: "));
 

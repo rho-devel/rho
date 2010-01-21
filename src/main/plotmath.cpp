@@ -44,11 +44,7 @@
 #include <Defn.h>
 
 #include <ctype.h>
-#ifdef SUPPORT_MBCS
 # include <R_ext/rlocale.h>
-# include <wchar.h>
-# include <wctype.h>
-#endif
 
 
 #include <Rmath.h>
@@ -986,7 +982,6 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
     FontType font = prevfont;
 
     if (str) {
-#ifdef SUPPORT_MBCS
 	/* Need to advance by character, not byte, except in the symbol font.
 	   The latter would be hard to achieve, but perhaps not impossible.
 	 */
@@ -1030,9 +1025,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		lastItalicCorr = bboxItalic(glyphBBox);
 		s += res;
 	    }
-	} else
-#endif
-	{
+	} else {
 	    while (*s) {
 		if (isdigit(int(*s)) && font != PlainFont) {
 		    font = PlainFont;
@@ -1081,13 +1074,11 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
     bbox = GlyphBBox(ascii, gc, dd);
     if (draw) {
 	memset(asciiStr, 0, sizeof(asciiStr));
-#ifdef SUPPORT_MBCS
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, NULL);
 	    if(res == CXXRconvert(size_t, -1))
 		error("invalid character in current multibyte locale");
 	} else
-#endif
 	    asciiStr[0] = ascii;
 	GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), asciiStr, CE_NATIVE,
 	       0.0, 0.0, mc->CurrentAngle, gc,
@@ -1107,7 +1098,6 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
     cetype_t enc = (gc->fontface == 5) ? CE_SYMBOL : CE_NATIVE;
 
     if (str) {
-#ifdef SUPPORT_MBCS
 	/* need to advance by character, not byte, except in the symbol font */
 	if(mbcslocale && gc->fontface != 5) {
 	    int n = strlen(str), used;
@@ -1121,9 +1111,7 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
 		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
 		p += used; n -= used; nc++;
 	    }
-	} else
-#endif
-	{
+	} else {
 	    const char *s = str;
 	    while (*s) {
 		/* Watch for sign extension here - fixed > 2.7.1 */

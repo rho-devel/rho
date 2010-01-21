@@ -17,6 +17,8 @@
 select.list <- function(list, preselect=NULL, multiple=FALSE, title=NULL)
 {
     if(!interactive()) stop("select.list() cannot be used non-interactively")
+    if(!is.null(title) && (!is.character(title) || length(title) != 1))
+        stop("'title' must be NULL or a length-1 character vector")
     if(.Platform$OS.type == "windows" | .Platform$GUI == "AQUA")
         return(.Internal(select.list(list, preselect, multiple, title)))
     ## simple text-based alternatives.
@@ -42,8 +44,9 @@ select.list <- function(list, preselect=NULL, multiple=FALSE, title=NULL)
         } else cat("", op, "", sep="\n")
 	cat(gettext("Enter zero or more numbers separated by space\n"))
 	repeat {
-            res <- try(scan("", what=0, quiet=TRUE, nlines=1), silent=TRUE)
-	    if(!inherits(res, "try-error")) break
+            res <- tryCatch(scan("", what=0, quiet=TRUE, nlines=1),
+                            error = identity)
+	    if(!inherits(res, "error")) break
 	    cat(gettext("Invalid input, please try again\n"))
 	}
         if(!length(res) || (length(res) == 1L && !res[1L])) return(character(0L))

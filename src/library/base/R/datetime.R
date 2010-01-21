@@ -143,16 +143,16 @@ format.POSIXlt <- function(x, format = "", usetz = FALSE, ...)
     if(!inherits(x, "POSIXlt")) stop("wrong class")
     if(format == "") {
         ## need list [ method here.
-        times <- unlist(unclass(x)[1L:3])
+        times <- unlist(unclass(x)[1L:3L])
         secs <- x$sec; secs <- secs[!is.na(secs)]
         np <- getOption("digits.secs")
-        if(is.null(np)) np <- 0 else np <- min(6, np)
-        if(np >= 1) {
-            for (i in (1L:np)- 1L) if(all( abs(secs - round(secs, i)) < 1e-6 )) {
-                np <- i
-                break
-            }
-        }
+        if(is.null(np)) np <- 0L else np <- min(6L, np)
+        if(np >= 1L)
+            for (i in seq_len(np)- 1L)
+                if(all( abs(secs - round(secs, i)) < 1e-6 )) {
+                    np <- i
+                    break
+                }
         format <- if(all(times[!is.na(times)] == 0)) "%Y-%m-%d"
         else if(np == 0L) "%Y-%m-%d %H:%M:%S"
         else paste("%Y-%m-%d %H:%M:%OS", np, sep="")
@@ -191,7 +191,7 @@ print.POSIXlt <- function(x, ...)
 
 summary.POSIXct <- function(object, digits=15, ...)
 {
-    x <- summary.default(unclass(object), digits=digits, ...)[1L:6]# no NA's
+    x <- summary.default(unclass(object), digits=digits, ...)[1L:6L]# no NA's
     class(x) <- oldClass(object)
     attr(x, "tzone") <- attr(object, "tzone")
     x
@@ -203,12 +203,11 @@ summary.POSIXlt <- function(object, digits = 15, ...)
 
 "+.POSIXt" <- function(e1, e2)
 {
+    ## need to drop "units" attribute here
     coerceTimeUnit <- function(x)
-    {
-        switch(attr(x,"units"),
-               secs = x, mins = 60*x, hours = 60*60*x,
-               days = 60*60*24*x, weeks = 60*60*24*7*x)
-    }
+        as.vector(switch(attr(x,"units"),
+                         secs = x, mins = 60*x, hours = 60*60*x,
+                         days = 60*60*24*x, weeks = 60*60*24*7*x))
 
     if (nargs() == 1) return(e1)
     # only valid if one of e1 and e2 is a scalar.
@@ -225,16 +224,14 @@ summary.POSIXlt <- function(object, digits = 15, ...)
 "-.POSIXt" <- function(e1, e2)
 {
     coerceTimeUnit <- function(x)
-    {
-        switch(attr(x,"units"),
-               secs = x, mins = 60*x, hours = 60*60*x,
-               days = 60*60*24*x, weeks = 60*60*24*7*x)
-    }
+        as.vector(switch(attr(x,"units"),
+                         secs = x, mins = 60*x, hours = 60*60*x,
+                         days = 60*60*24*x, weeks = 60*60*24*7*x))
     if(!inherits(e1, "POSIXt"))
         stop("Can only subtract from POSIXt objects")
     if (nargs() == 1) stop("unary '-' is not defined for \"POSIXt\" objects")
     if(inherits(e2, "POSIXt")) return(difftime(e1, e2))
-    if (inherits(e2, "difftime")) e2 <- unclass(coerceTimeUnit(e2))
+    if (inherits(e2, "difftime")) e2 <- coerceTimeUnit(e2)
     if(!is.null(attr(e2, "class")))
         stop("can only subtract numbers from POSIXt objects")
     structure(unclass(as.POSIXct(e1)) - e2, class = c("POSIXt", "POSIXct"))
@@ -472,12 +469,6 @@ print.difftime <- function(x, digits = getOption("digits"), ...)
     invisible(x)
 }
 
-round.difftime <- function (x, digits = 0, ...)
-{
-   units <- attr(x, "units")
-   structure(NextMethod(), units=units, class="difftime")
-}
-
 "[.difftime" <- function(x, ..., drop = TRUE)
 {
     cl <- oldClass(x)
@@ -553,13 +544,23 @@ Ops.difftime <- function(e1, e2)
               class = "difftime")
 }
 
+## "Math": some methods *should* work; the other ones are meaningless :
 Math.difftime <- function (x, ...)
 {
-    stop(gettextf("'%s' not defined for \"difftime\" objects", .Generic),
-         domain = NA)
+    switch(.Generic,
+           'abs'=, 'sign'=,
+           'floor'=, 'ceiling'=, 'trunc'=,
+           'round'=, 'signif'= {
+               units <- attr(x, "units")
+               structure(NextMethod(), units=units, class="difftime")
+           },
+           ### otherwise :
+           stop(gettextf("'%s' not defined for \"difftime\" objects", .Generic),
+                domain = NA))
 }
 
-mean.difftime <- function (x, ..., na.rm = FALSE)
+
+mean.difftime <- function (x, ...)
     structure(mean(unclass(x), ...), units=attr(x, "units"), class="difftime")
 
 Summary.difftime <- function (..., na.rm)
@@ -756,7 +757,7 @@ cut.POSIXt <-
         if (length(by2) == 2L) incr <- incr * as.integer(by2[1L])
         maxx <- max(x, na.rm = TRUE)
         breaks <- seq.int(start, maxx + incr, breaks)
-        breaks <- breaks[1L:(1+max(which(breaks <= maxx)))]
+        breaks <- breaks[seq_len(1+max(which(breaks <= maxx)))]
       }
     } else stop("invalid specification of 'breaks'")
     res <- cut(unclass(x), unclass(breaks), labels = labels, right = right, ...)
@@ -861,7 +862,7 @@ rep.POSIXlt <- function(x, ...)
     y
 }
 
-diff.POSIXt <- function (x, lag = 1, differences = 1, ...)
+diff.POSIXt <- function (x, lag = 1L, differences = 1L, ...)
 {
     ismat <- is.matrix(x)
     r <- if(inherits(x, "POSIXlt")) as.POSIXct(x) else x
@@ -870,11 +871,11 @@ diff.POSIXt <- function (x, lag = 1, differences = 1, ...)
         stop("'lag' and 'differences' must be integers >= 1")
     if (lag * differences >= xlen)
         return(structure(numeric(0L), class="difftime", units="secs"))
-    i1 <- -1L:-lag
-    if (ismat) for (i in 1L:differences) r <- r[i1, , drop = FALSE] -
+    i1 <- -seq_len(lag)
+    if (ismat) for (i in seq_len(differences)) r <- r[i1, , drop = FALSE] -
             r[-nrow(r):-(nrow(r) - lag + 1), , drop = FALSE]
-    else for (i in 1L:differences)
-        r <- r[i1] - r[-length(r):-(length(r) - lag + 1)]
+    else for (i in seq_len(differences))
+        r <- r[i1] - r[-length(r):-(length(r) - lag + 1L)]
     r
 }
 

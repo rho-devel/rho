@@ -523,7 +523,7 @@ static const name_value known[] = {
     {"sjis", "SHIFT_JIS"},
     {"euccn", "GB2312"},
     {"big5-hkscs", "BIG5-HKSCS"},
-#if __APPLE__
+#ifdef __APPLE__
     /* known additional Apple encodings (see locale -a) up to Mac OS X 10.5,
        unlike other systems they correspond directly */
     {"iso8859-1", "ISO8859-1"},
@@ -545,6 +545,7 @@ static const name_value known[] = {
 static const int known_count = (sizeof(known)/sizeof(name_value));
 
 
+#ifndef __APPLE__
 static CXXRconst char* name_value_search(const char *name, const name_value table[],
 			       const int table_count)
 {
@@ -594,7 +595,7 @@ static CXXRconst char* name_value_search(const char *name, const name_value tabl
     }
     return (NULL);
 }
-
+#endif
 
 CXXRconst char *locale2charset(const char *locale)
 {
@@ -714,7 +715,7 @@ CXXRconst char *locale2charset(const char *locale)
 
     }
 
-#if __APPLE__
+#ifdef __APPLE__
     /* on Mac OS X *all* real locales w/o encoding part are UTF-8 locales
        (C and POSIX are virtual and taken care of previously) */
     return "UTF-8";

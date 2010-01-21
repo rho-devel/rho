@@ -93,7 +93,20 @@ void GCStackRootBase::ppsRestoreSize(size_t new_size)
 	    node->makeMoribund();
 	s_pps->pop_back();
     }
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " ppsRestoreSize" << endl;
+#endif
 }
+
+#ifdef DEBUG_PPS
+size_t GCStackRootBase::ppsSize()
+{
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " ppsSize" << endl;
+    return s_pps->size();
+}
+#endif
 
 #ifndef NDEBUG
 unsigned int GCStackRootBase::protect(RObject* node)
@@ -103,6 +116,10 @@ unsigned int GCStackRootBase::protect(RObject* node)
     if (node)
 	node->incRefCount();
     s_pps->push_back(std::make_pair(node, R_GlobalContext));
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " protect at index " << index << endl;
+#endif
     return index;
 }
 #endif
@@ -129,6 +146,10 @@ void GCStackRootBase::reprotect(RObject* node, unsigned int index)
     if (pr.first && pr.first->decRefCount() == 0)
 	pr.first->makeMoribund();
     pr.first = node;
+#endif
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " reprotect at index " << index << endl;
 #endif
 }
 
@@ -161,6 +182,10 @@ void GCStackRootBase::unprotect(unsigned int count)
 	    node->makeMoribund();
 	s_pps->pop_back();
     }
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " unprotect " << count << endl;
+#endif
 }
 
 void GCStackRootBase::unprotectPtr(RObject* node)
@@ -180,6 +205,10 @@ void GCStackRootBase::unprotectPtr(RObject* node)
 			       " pointer not found.");
     // See Josuttis p.267 for the need for -- :
     s_pps->erase(--(rit.base()));
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " unprotectPtr " << node << endl;
+#endif
 }
 
 void GCStackRootBase::visitRoots(GCNode::const_visitor* v)

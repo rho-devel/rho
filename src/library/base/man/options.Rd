@@ -1,10 +1,9 @@
 % File src/library/base/man/options.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{options}
-\Rdversion{1.1}
 \alias{options}
 \alias{.Options}
 \alias{getOption}
@@ -16,7 +15,7 @@
 \usage{
 options(\dots)
 
-getOption(x)
+getOption(x, default = NULL)
 
 .Options
 }
@@ -29,7 +28,11 @@ getOption(x)
     Further, \code{options('name') == options()['name']}, see the example.
   }
   \item{x}{a character string holding an option name.}
-}
+
+  \item{default}{if the specified option is not set in the options list,
+     this value is returned.  This facilitates retrieving an option and
+     checking whether it is set and setting it separately if not.}
+ }
 \details{
   Invoking \code{options()} with no arguments returns a list with the
   current values of the options.  Note that not all options listed below
@@ -56,7 +59,7 @@ getOption(x)
     \item{\code{add.smooth}:}{typically logical, defaulting to
       \code{TRUE}.  Could also be set to an integer for specifying how
       many (simulated) smooths should be added.  This is currently only
-      used by \code{\link[stats]{plot.lm}}.}
+      used by \code{\link{plot.lm}}.}
 
       \item{\code{check.bounds}:}{logical, defaulting to \code{FALSE}.  If
       true, a \link{warning} is produced whenever a
@@ -66,10 +69,10 @@ getOption(x)
     \item{\code{continue}:}{a non-empty string setting the prompt used
       for lines which continue over one line.}
 
+    %%  default is set in ../../profile/Common.R :
     \item{\code{defaultPackages}:}{the packages that are attached by
       default when \R starts up.  Initially set from value of the
       environment variable \env{R_DEFAULT_PACKAGES}, or if that is unset
-      %%  default is set in ../../profile/Common.R :
       to \code{c("datasets", "utils", "grDevices", "graphics", "stats",
         "methods")}.  (Set \env{R_DEFAULT_PACKAGES} to \code{NULL} or
       a comma-separated list of package names.)   A call to
@@ -78,9 +81,9 @@ getOption(x)
       initialized (see \code{\link{Startup}}).}
 
     \item{\code{deparse.max.lines}:}{controls the number of lines used
-      when deparsing in \code{\link{traceback}} and
-      \code{\link{browser}}.  Initially unset, and only used if set to
-      a positive integer.}
+      when deparsing in \code{\link{traceback}}, \code{\link{browser}},
+      and upon entry to a function whose debugging flag is set.
+      Initially unset, and only used if set to a positive integer.}
 
     \item{\code{digits}:}{controls the number of digits to print when
       printing numeric values.  It is a suggestion only.  Valid values
@@ -97,10 +100,9 @@ getOption(x)
       There is no default for this option, when \code{method = "auto"}
       is chosen: see \code{\link{download.file}}.}
 
-    % note use of \code as otherwise -- is an en-dash.
     \item{\code{echo}:}{logical.  Only used in non-interactive mode,
       when it controls whether input is echoed.  Command-line option
-      \code{--slave} sets this to \code{FALSE}, but otherwise
+      \option{--slave} sets this to \code{FALSE}, but otherwise
       it starts the session as \code{TRUE}.}
 
     \item{\code{encoding}:}{The name of an encoding, default
@@ -115,14 +117,14 @@ getOption(x)
       that case.  The functions \code{\link{dump.frames}} and
       \code{\link{recover}} provide alternatives that allow post-mortem
       debugging.  Note that these need to specified as e.g.
-      \code{options=utils::recover} in startup files such as
+      \code{options(error=utils::recover)} in startup files such as
       \file{\link{.Rprofile}}.}
 
     \item{\code{expressions}:}{sets a limit on the number of nested
       expressions that will be evaluated.  Valid values are
       25\dots500000 with default 5000.  If you increase it, you may
       also want to start \R with a larger protection stack;
-      see \code{--max-ppsize} in \code{\link{Memory}}.  Note too that
+      see \option{--max-ppsize} in \code{\link{Memory}}.  Note too that
       you may cause a segfault from overflow of the C stack, and on OSes
       where it is possible you may want to increase that.}
 
@@ -166,9 +168,9 @@ getOption(x)
     \item{\code{pager}:}{the command used for displaying text files by
       \code{\link{file.show}}.
 #ifdef unix
-      Defaults to \file{\var{\link[base:Rhome]{R_HOME}}/bin/pager}, which selects a pager
-      via the \env{PAGER} environment variable (and that usually
-      defaults to \code{less}).
+      Defaults to \file{\var{\link{R_HOME}}/bin/pager},
+      which selects a pager via the \env{\link{PAGER}} environment variable
+      (and that usually defaults to \code{less}).
 #endif
 #ifdef windows
       Defaults to \code{"internal"}, which uses a pager similar to the
@@ -194,32 +196,35 @@ getOption(x)
 
     \item{\code{pdfviewer}:}{default PDF viewer.
 #ifdef unix
-      The default is set from the environment variable \env{R_PDFVIEWER}.
+      The default is set from the environment variable
+      \env{R_PDFVIEWER}, the default value of which is set when \R is
+      configured.
 #endif
 #ifdef windows
-      Defaults to the full path to \samp{open.exe}, a utility supplied with \R
+      Defaults to the full path to \samp{open.exe}, a utility supplied with \R.
 #endif
     }
-    
+
     \item{\code{printcmd}:}{the command used by \code{\link{postscript}}
       for printing; set by environment variable \env{R_PRINTCMD} when
       \R is started.  This should be a command that expects either input
       to be piped to \file{stdin} or to be given a single filename
-      argument.}
+      argument.  Usually set to \code{"lpr"} on a Unix-alike.}
 
     \item{\code{prompt}:}{a non-empty string to be used for \R's prompt;
       should usually end in a blank (\code{" "}).}
 
+      % verbatim, for checking " \t\n\"\\'`><=%;,|&{()}"    
 #ifdef unix
     \item{\code{rl_word_breaks}:}{Used for the readline-based terminal
-      % verbatim, for checking " \t\n\"\\'`><=%;,|&{()}"
       interface.  Default value \code{" \\t\\n\\"\\\\'`><=\%;,|&\{()\}"}.%"
       This is the set of characters use to break the input line up into
       tokens for object- and file-name completion.  Those who do not use
-      spaces around operators may prefer
-      \code{" \\t\\n\\"\\\\'`><=+-*\%;,|&\{()\}"}.%"
+      spaces around operators may prefer\cr
+      \code{" \\t\\n\\"\\\\'`><=+-*\%;,|&\{()\}"}%"
       which was the default in \R 2.5.0.  (The default in pre-2.5.0
-      versions of \R was \code{" \\t\\n\\"\\\\'`@$><=;|&\{("}.)}%"
+      versions of \R was\cr
+      \code{" \\t\\n\\"\\\\'`@$><=;|&\{("}.)}%"
 #endif
 
     \item{\code{save.defaults}, \code{save.image.defaults}:}{
@@ -261,7 +266,9 @@ getOption(x)
     \item{\code{topLevelEnvironment}:}{see \code{\link{topenv}} and
       \code{\link{sys.source}}.}
 
-    \item{\code{useFancyQuotes}:}{see \code{\link{sQuote}}.}
+    \item{\code{useFancyQuotes}:}{logical: controls the use of
+      directional quotes in \code{\link{sQuote}}, \code{dQuote} and in
+      rendering text help (see \code{\link{Rd2txt}}).}
 
     \item{\code{verbose}:}{logical.  Should \R report extra information
       on progress?  Set to \code{TRUE} by the command-line option
@@ -422,7 +429,7 @@ getOption(x)
     \item{\code{browser}:}{default HTML browser used by
       \code{\link{help.start}()} and \code{\link{browseURL}} on UNIX, or
       a non-default browser on Windows.  Alternatively, an \R function that
-      is called with a URL as its argument.} 
+      is called with a URL as its argument.}
 
     \item{\code{de.cellwidth}:}{integer: the cell widths (number of
       characters) to be used in the data editor \code{\link{dataentry}}.
@@ -430,19 +437,25 @@ getOption(x)
       cell widths are used.}
 
     \item{\code{demo.ask}:}{default for the \code{ask} argument of
-      \code{\link{demo}}.}      
+      \code{\link{demo}}.}
 
     \item{\code{editor}:}{a non-empty string, or a function that is
-      called with a file path as argument.
-      Sets the default text editor, e.g., for
-      \code{\link{edit}}.  Set from the environment variable
-      \env{VISUAL} on UNIX.}
+      called with a file path as argument.  Sets the default text
+      editor, e.g., for \code{\link{edit}}.  Set from the environment
+      variable \env{EDITOR} on UNIX, or if unset \env{VISUAL} or
+      \command{vi}.}
 
     \item{\code{example.ask}:}{default for the \code{ask} argument of
       \code{\link{example}}.}
 
+    \item{\code{help_text_width}:}{The target pager width when
+      formatting text help.  Usually unset, when the default is 80
+      columns.}
+
     \item{\code{help.try.all.packages}:}{default for an argument of
       \code{\link{help}}.}
+    
+    \item{\code{help_type}:}{default for an argument of \code{\link{help}}.}
 
     \item{\code{HTTPUserAgent}:}{string used as the user agent in HTTP
       requests.  If \code{NULL}, HTTP requests will be made without a
@@ -472,7 +485,7 @@ getOption(x)
       of repositories instead of the default \code{"universal"}.
 #endif
     }
-    
+
     \item{\code{repos}:}{URLs of the repositories for use by
       \code{\link{update.packages}}.  Defaults to
       \code{c(CRAN="@CRAN@")}, a value that causes some utilities to
@@ -505,8 +518,8 @@ getOption(x)
 \section{Options used on Unix only}{
   These will be \code{""} if no suitable path is known.
   \describe{
-    \item{\code{latexcmd, dvipscmd}:}{character strings giving commands
-      to be used in off-line printing of help pages.}
+    \item{\code{latexcmd}, \code{dvipscmd}:}{character strings giving
+      commands to be used in off-line printing of help pages.}
   }
 }
 #endif
@@ -562,7 +575,23 @@ options(error = recover)
 options(error = dump.frames)
 ## A possible setting for non-interactive sessions
 options(error = quote({dump.frames(to.file=TRUE); q()}))
-}}
+}
+
+  # Compare the two ways to get an option and use it
+  # acconting for the possibility it might not be set.
+if(as.logical(getOption("performCleanp", TRUE)))
+   cat("do cleanup\n")
+
+\dontrun{
+  # a clumsier way of expressing the above w/o the default.
+tmp <- getOption("performCleanup")
+if(is.null(tmp))
+  tmp <- TRUE
+if(tmp)
+   cat("do cleanup\n")
+}
+
+}
 \keyword{environment}
 \keyword{error}
 \keyword{print}

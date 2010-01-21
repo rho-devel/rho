@@ -26,7 +26,7 @@ R_HOME = $(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = Rsock.c nanoftp.c nanohttp.c sock.c
+SOURCES = Rhttpd.c Rsock.c nanoftp.c nanohttp.c sock.c
 SOURCES_CPP = internet.cpp sockconn.cpp
 HEADERS = sock.h
 DEPENDS = $(SOURCES_C:.c=.d) $(SOURCES_CPP:.cpp=.d)

@@ -239,28 +239,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Query debugging status.
-     *
-     * @param x Pointer to a CXXR::Closure object.
-     *
-     * @return \c true if debugging is set, i.e. evaluations of the
-     *         function should run under the browser.
-     *
-     * @note In CXXR, DEBUG() is applicable only to closures; use
-     * ENV_DEBUG() to query the debugging (single-stepping) state
-     * for environments.
-     */
-#ifndef __cplusplus
-    Rboolean DEBUG(SEXP x);
-#else
-    inline Rboolean DEBUG(SEXP x)
-    {
-	using namespace CXXR;
-	const Closure& clos = *SEXP_downcast<const Closure*>(x);
-	return Rboolean(clos.debugging());
-    }
-#endif
-
     /** @brief Access formal arguments of a CXXR::Closure.
      *
      * @param x Pointer to a CXXR::Closure object (checked).
@@ -275,6 +253,37 @@ extern "C" {
 	using namespace CXXR;
 	const Closure& clos = *SEXP_downcast<Closure*>(x);
 	return const_cast<PairList*>(clos.formalArgs());
+    }
+#endif
+
+    /** @brief Query debugging status.
+     *
+     * @param x Pointer to a CXXR::Closure object.
+     *
+     * @return \c true if debugging is set, i.e. evaluations of the
+     *         function should run under the browser.
+     *
+     * @note In CXXR, RDEBUG() is applicable only to closures; use
+     * ENV_DEBUG() to query the debugging (single-stepping) state
+     * for environments.
+     */
+#ifndef __cplusplus
+    Rboolean RDEBUG(SEXP x);
+#else
+    inline Rboolean RDEBUG(SEXP x)
+    {
+	using namespace CXXR;
+	const Closure& clos = *SEXP_downcast<const Closure*>(x);
+	return Rboolean(clos.debugging());
+    }
+#endif
+
+#ifndef __cplusplus
+    int RSTEP(SEXP x);
+#else
+    inline int RSTEP(SEXP x)
+    {
+	return 0;
     }
 #endif
 
@@ -305,18 +314,26 @@ extern "C" {
      *
      * @param v The new debugging state.
      *
-     * @note In CXXR, SET_DEBUG() is applicable only to closures; use
+     * @note In CXXR, SET_RDEBUG() is applicable only to closures; use
      * SET_ENV_DEBUG() to set the debugging (single-stepping) state
      * for environments.
      */
 #ifndef __cplusplus
-    void SET_DEBUG(SEXP x, Rboolean v);
+    void SET_RDEBUG(SEXP x, Rboolean v);
 #else
-    inline void SET_DEBUG(SEXP x, Rboolean v)
+    inline void SET_RDEBUG(SEXP x, Rboolean v)
     {
 	using namespace CXXR;
 	Closure& clos = *SEXP_downcast<Closure*>(x);
 	clos.setDebugging(v);
+    }
+#endif
+
+#ifndef __cplusplus
+    void SET_RSTEP(SEXP x, int v);
+#else
+    inline void SET_RSTEP(SEXP x, int v)
+    {
     }
 #endif
 

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2008   The R Development Core Team.
+ *  Copyright (C) 1999-2009   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -102,6 +102,7 @@
 extern "C" {
 #endif
 
+
 #define CHAR(x)		R_CHAR(x)
 const char *(R_CHAR)(SEXP x);
 
@@ -183,10 +184,12 @@ SEXP SETCAD4R(SEXP e, SEXP y);
 SEXP (FORMALS)(SEXP x);
 SEXP (BODY)(SEXP x);
 SEXP (CLOENV)(SEXP x);
-Rboolean (DEBUG)(SEXP x);
-int  (TRACE)(SEXP x);
-void (SET_DEBUG)(SEXP x, Rboolean v);
-void (SET_TRACE)(SEXP x, int v);
+Rboolean (RDEBUG)(SEXP x);
+int  (RSTEP)(SEXP x);
+int  (RTRACE)(SEXP x);
+void (SET_RDEBUG)(SEXP x, Rboolean v);
+void (SET_RSTEP)(SEXP x, int v);
+void (SET_RTRACE)(SEXP x, int v);
 void SET_CLOENV(SEXP x, SEXP v);
 
 /* Symbol Access Functions */
@@ -269,16 +272,23 @@ LibExtern SEXP	R_Bracket2Symbol;   /* "[[" */
 LibExtern SEXP	R_BracketSymbol;    /* "[" */
 LibExtern SEXP	R_BraceSymbol;      /* "{" */
 LibExtern SEXP	R_ClassSymbol;	    /* "class" */
+LibExtern SEXP	R_DeviceSymbol;     /* ".Device" */
 LibExtern SEXP	R_DimNamesSymbol;   /* "dimnames" */
 LibExtern SEXP	R_DimSymbol;	    /* "dim" */
 LibExtern SEXP	R_DollarSymbol;	    /* "$" */
 LibExtern SEXP	R_DotsSymbol;	    /* "..." */
 LibExtern SEXP	R_DropSymbol;	    /* "drop" */
+LibExtern SEXP	R_LastvalueSymbol;  /* ".Last.value" */
 LibExtern SEXP	R_LevelsSymbol;	    /* "levels" */
 LibExtern SEXP	R_ModeSymbol;	    /* "mode" */
+LibExtern SEXP	R_NameSymbol;	    /* "name" */
 LibExtern SEXP	R_NamesSymbol;	    /* "names" */
+LibExtern SEXP	R_NaRmSymbol;	    /* "na.rm" */
+LibExtern SEXP  R_PackageSymbol;    /* "package" */
+LibExtern SEXP  R_QuoteSymbol;	    /* "quote" */
 LibExtern SEXP	R_RowNamesSymbol;   /* "row.names" */
 LibExtern SEXP	R_SeedsSymbol;	    /* ".Random.seed" */
+LibExtern SEXP	R_SourceSymbol;     /* "source" */
 LibExtern SEXP	R_TspSymbol;	    /* "tsp" */
 
 /* Missing Values - others from Arith.h */
@@ -312,6 +322,8 @@ SEXP Rf_allocList(unsigned int);
 SEXP Rf_allocS4Object(void);
 SEXP Rf_allocSExp(SEXPTYPE);
 SEXP Rf_allocVector(SEXPTYPE, R_len_t);
+int  Rf_any_duplicated(SEXP x, Rboolean from_last);
+int  Rf_any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last);
 SEXP Rf_applyClosure(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
@@ -321,9 +333,12 @@ int Rf_asLogical(SEXP);
 double Rf_asReal(SEXP);
 SEXP Rf_classgets(SEXP, SEXP);
 SEXP Rf_cons(SEXP, SEXP);
+Rboolean R_compute_identical(SEXP, SEXP, Rboolean num_eq,
+			     Rboolean single_NA, Rboolean attr_asSet);
 void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
 void Rf_copyVector(SEXP, SEXP);
+int Rf_countContexts(int, int);
 SEXP Rf_CreateTag(SEXP);
 void Rf_defineVar(SEXP, SEXP, SEXP);
 SEXP Rf_dimgets(SEXP, SEXP);
@@ -360,6 +375,7 @@ Rboolean Rf_NonNullStringMatch(SEXP, SEXP);
 int Rf_ncols(SEXP);
 int Rf_nrows(SEXP);
 SEXP Rf_nthcdr(SEXP, int);
+
 Rboolean Rf_pmatch(SEXP, SEXP, Rboolean);
 Rboolean Rf_psmatch(const char *, const char *, Rboolean);
 void Rf_PrintValue(SEXP);
@@ -578,6 +594,8 @@ int R_system(const char *);
 #define allocS4Object		Rf_allocS4Object
 #define allocSExp		Rf_allocSExp
 #define allocVector		Rf_allocVector
+#define any_duplicated		Rf_any_duplicated
+#define any_duplicated3		Rf_any_duplicated3
 #define applyClosure		Rf_applyClosure
 #define arraySubscript		Rf_arraySubscript
 #define asChar			Rf_asChar
@@ -594,6 +612,7 @@ int R_system(const char *);
 #define copyMatrix		Rf_copyMatrix
 #define copyMostAttrib		Rf_copyMostAttrib
 #define copyVector		Rf_copyVector
+#define countContexts		Rf_countContexts
 #define CreateTag		Rf_CreateTag
 #define defineVar		Rf_defineVar
 #define dimgets			Rf_dimgets
@@ -638,6 +657,7 @@ int R_system(const char *);
 #define isNewList		Rf_isNewList
 #define isNull			Rf_isNull
 #define isNumeric		Rf_isNumeric
+#define isNumber		Rf_isNumber
 #define isObject		Rf_isObject
 #define isOrdered		Rf_isOrdered
 #define isPairList		Rf_isPairList
@@ -682,6 +702,7 @@ int R_system(const char *);
 #define mkCharCE		Rf_mkCharCE
 #define mkCharLen		Rf_mkCharLen
 #define mkCharLenCE		Rf_mkCharLenCE
+#define mkNamed			Rf_mkNamed
 #define mkString		Rf_mkString
 #define namesgets		Rf_namesgets
 #define ncols			Rf_ncols
@@ -742,6 +763,7 @@ Rboolean Rf_isLanguage(SEXP);
 Rboolean Rf_isList(SEXP);
 Rboolean Rf_isMatrix(SEXP);
 Rboolean Rf_isNewList(SEXP);
+Rboolean Rf_isNumber(SEXP);
 Rboolean Rf_isNumeric(SEXP);
 Rboolean Rf_isPairList(SEXP);
 Rboolean Rf_isPrimitive(SEXP);
@@ -765,6 +787,7 @@ SEXP	 Rf_list2(SEXP, SEXP);
 SEXP	 Rf_list3(SEXP, SEXP, SEXP);
 SEXP	 Rf_list4(SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_listAppend(SEXP, SEXP);
+SEXP	 Rf_mkNamed(int, const char **);
 SEXP	 Rf_mkString(const char *);
 int	 Rf_nlevels(SEXP);
 SEXP	 Rf_ScalarComplex(Rcomplex);

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996 Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2008 The R Development Core Team
+ *  Copyright (C) 1997-2009 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -647,9 +647,11 @@ addDLL(char *dpath, CXXRconst char *DLLname, HINSTANCE handle)
     LoadedDLL[CountDLL].numCSymbols = 0;
     LoadedDLL[CountDLL].numCallSymbols = 0;
     LoadedDLL[CountDLL].numFortranSymbols = 0;
+    LoadedDLL[CountDLL].numExternalSymbols = 0;
     LoadedDLL[CountDLL].CSymbols = NULL;
     LoadedDLL[CountDLL].CallSymbols = NULL;
     LoadedDLL[CountDLL].FortranSymbols = NULL;
+    LoadedDLL[CountDLL].ExternalSymbols = NULL;
     CountDLL++;
 
     return(ans);

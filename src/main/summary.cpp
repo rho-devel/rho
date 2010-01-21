@@ -42,6 +42,7 @@
 
 using namespace CXXR;
 
+#define R_MSG_type	_("invalid 'type' (%s) of argument")
 #define imax2(x, y) ((x < y) ? y : x)
 
 #define R_INT_MIN	(1+INT_MIN)
@@ -79,7 +80,7 @@ static Rboolean isum(int *x, int n, int *value, Rboolean narm, SEXP call)
 	warningcall(call, _("Integer overflow - use sum(as.numeric(.))"));
 	*value = NA_INTEGER;
     }
-    else *value = int(s);
+    else *value = CXXRconvert(int, s);
 
     return(updated);
 }
@@ -424,7 +425,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 	    COMPLEX(ans)[0].i = si;
 	    break;
 	default:
-	    error(R_MSG_type, type2str(TYPEOF(x)));
+	    error(R_MSG_type, type2char(TYPEOF(x)));
 	}
 	UNPROTECT(1);
 	return ans;
@@ -446,7 +447,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
     ans = matchArgExact(R_NaRmSymbol, &args);
-    narm = Rboolean(asLogical(ans));
+    narm = CXXRconvert(Rboolean, asLogical(ans));
     updated = 0;
     empty = 1;/*- =1: only zero-length arguments, or NA with na.rm=T */
 
@@ -587,7 +588,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 		    if(updated) {
 			if(itmp == NA_INTEGER) goto na_answer;
 			if(ans_type == INTSXP) {
-			    s = double(icum) + double(itmp);
+			    s = double( icum) + double( itmp);
 			    if(s > INT_MAX || s < R_INT_MIN){
 				warningcall(call,_("Integer overflow - use sum(as.numeric(.))"));
 				goto na_answer;
@@ -815,7 +816,7 @@ SEXP attribute_hidden do_compcases(SEXP call, SEXP op, SEXP args, SEXP rho)
     len = -1;
 
     for (s = args; s != R_NilValue; s = CDR(s)) {
-	if (isList(CAR(s))/* || isFrame(CAR(s)) */) {
+	if (isList(CAR(s))) {
 	    for (t = CAR(s); t != R_NilValue; t = CDR(t))
 		if (isMatrix(CAR(t))) {
 		    u = getAttrib(CAR(t), R_DimSymbol);
@@ -834,29 +835,39 @@ SEXP attribute_hidden do_compcases(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    error(R_MSG_type, type2char(TYPEOF(CAR(t))));
 	}
 	/* FIXME : Need to be careful with the use of isVector() */
-	/* since this includes the new list structure and expressions. */
+	/* since this includes lists and expressions. */
 	else if (isNewList(CAR(s))) {
 	    int it, nt;
 	    t = CAR(s);
 	    nt = length(t);
-	    for (it = 0 ; it < nt ; it++) {
-		if (isMatrix(VECTOR_ELT(t, it))) {
-		    u = getAttrib(VECTOR_ELT(t, it), R_DimSymbol);
+	    /* 0-column data frames are a special case */
+	    if(nt) {
+		for (it = 0 ; it < nt ; it++) {
+		    if (isMatrix(VECTOR_ELT(t, it))) {
+			u = getAttrib(VECTOR_ELT(t, it), R_DimSymbol);
+			if (len < 0)
+			    len = INTEGER(u)[0];
+			else if (len != INTEGER(u)[0])
+			    goto bad;
+		    }
+		    else if (isVector(VECTOR_ELT(t, it))) {
+			if (len < 0)
+			    len = LENGTH(VECTOR_ELT(t, it));
+			else if (len != LENGTH(VECTOR_ELT(t, it)))
+			    goto bad;
+		    }
+		    else
+			error(R_MSG_type, "unknown");
+		}
+	    } else {
+		u = getAttrib(t, R_RowNamesSymbol);
+		if (!isNull(u)) {
 		    if (len < 0)
-			len = INTEGER(u)[0];
+			len = LENGTH(u);
 		    else if (len != INTEGER(u)[0])
 			goto bad;
 		}
-		else if (isVector(VECTOR_ELT(t, it))) {
-		    if (len < 0)
-			len = LENGTH(VECTOR_ELT(t, it));
-		    else if (len != LENGTH(VECTOR_ELT(t, it)))
-			goto bad;
-		}
-		else
-		    error(R_MSG_type, "unknown");
 	    }
-
 	}
 	else if (isMatrix(CAR(s))) {
 	    u = getAttrib(CAR(s), R_DimSymbol);
@@ -874,13 +885,15 @@ SEXP attribute_hidden do_compcases(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else
 	    error(R_MSG_type, type2char(TYPEOF(CAR(s))));
     }
+
+    if (len < 0)
+	error(_("no input has determined the number of cases"));
     PROTECT(rval = allocVector(LGLSXP, len));
-    for (i = 0; i < len; i++)
-	INTEGER(rval)[i] = 1;
+    for (i = 0; i < len; i++) INTEGER(rval)[i] = 1;
     /* FIXME : there is a lot of shared code here for vectors. */
     /* It should be abstracted out and optimized. */
     for (s = args; s != R_NilValue; s = CDR(s)) {
-	if (isList(CAR(s)) /* || isFrame(CAR(s))*/) {
+	if (isList(CAR(s))) {
 	    /* Now we only need to worry about vectors */
 	    /* since we use mod to handle arrays. */
 	    /* FIXME : using mod like this causes */

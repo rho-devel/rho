@@ -24,7 +24,7 @@ cor.test(x, \dots)
 \method{cor.test}{default}(x, y,
          alternative = c("two.sided", "less", "greater"),
          method = c("pearson", "kendall", "spearman"),
-         exact = NULL, conf.level = 0.95, \dots)
+         exact = NULL, conf.level = 0.95, continuity = FALSE, \dots)
 
 \method{cor.test}{formula}(formula, data, subset, na.action, \dots)
 }
@@ -46,6 +46,9 @@ cor.test(x, \dots)
     interval.  Currently only used for the Pearson product moment
     correlation coefficient if there are at least 4 complete pairs of
     observations.}
+  \item{continuity}{logical: if true, a continuity correction is used
+    for Kendall's \eqn{\tau}{tau} and Spearman's \eqn{\rho}{rho} when
+    not computed exactly.}
   \item{formula}{a formula of the form \code{~ u + v}, where each of
     \code{u} and \code{v} are numeric variables giving the data values
     for one sample.  The samples must be of the same length.}
@@ -109,12 +112,13 @@ cor.test(x, \dots)
 
   For Spearman's test, p-values are computed using algorithm AS 89 for
   \eqn{n < 1290} and \code{exact = TRUE}, otherwise via the asymptotic
-  \eqn{t} approximation.
+  \eqn{t} approximation.  Note that these are \sQuote{exact} for \eqn{n
+  < 10}, and use an Edgeworth series approximation for larger sample
+  sizes (the cutoff has been changed from the original paper).
 }
 \references{
   D. J. Best & D. E. Roberts (1975),
-  Algorithm AS 89: The Upper Tail Probabilities of Spearman's
-  \eqn{\rho}{rho}.
+  Algorithm AS 89: The Upper Tail Probabilities of Spearman's \eqn{\rho}{rho}.
   \emph{Applied Statistics}, \bold{24}, 377--379.
 
   Myles Hollander & Douglas A. Wolfe (1973),
@@ -128,7 +132,9 @@ cor.test(x, \dots)
 
   \code{\link[SuppDists:Kendall]{pKendall}} and
   \code{\link[SuppDists:Spearman]{pSpearman}} in package \pkg{SuppDists},
-  which use different (and often more accurate) approximations.
+  \code{\link[pspearman:spearman.test]{spearman.test}} in package
+  \code{pspearman}, 
+  which supply different (and often more accurate) approximations.
 }
 
 \examples{

@@ -40,12 +40,10 @@
 #include <R.h>
 #include "tools.h"
 
-#ifdef SUPPORT_MBCS
 #include <stdlib.h> /* for MB_CUR_MAX */
 #include <wchar.h>
 LibExtern Rboolean mbcslocale;
 size_t Rf_mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps);
-#endif
 
 SEXP
 delim_match(SEXP x, SEXP delims)
@@ -77,9 +75,8 @@ delim_match(SEXP x, SEXP delims)
     int lstart, lend;
     Rboolean is_escaped, equal_start_and_end_delims;
     SEXP ans, matchlen;
-#ifdef SUPPORT_MBCS
     mbstate_t mb_st; int used;
-#endif
+
     if(!isString(x) || !isString(delims) || (length(delims) != 2))
 	error(_("invalid argument type"));
 
@@ -93,9 +90,7 @@ delim_match(SEXP x, SEXP delims)
     PROTECT(matchlen = allocVector(INTSXP, n));
 
     for(i = 0; i < n; i++) {
-#ifdef SUPPORT_MBCS
 	memset(&mb_st, 0, sizeof(mbstate_t));
-#endif
 	start = end = -1;
 	s0 = s = translateChar(STRING_ELT(x, i));
 	pos = is_escaped = delim_depth = 0;
@@ -111,13 +106,11 @@ delim_match(SEXP x, SEXP delims)
 	    }
 	    else if(c == '%') {
 		while((c != '\0') && (c != '\n')) {
-#ifdef SUPPORT_MBCS
 		    if(mbcslocale) {
 			used = Rf_mbrtowc(NULL, s, MB_CUR_MAX, &mb_st);
 			if(used == 0) break;
 			s += used; c = *s;
 		    } else
-#endif
 			c = *++s;
 		    pos++;
 		}
@@ -137,15 +130,12 @@ delim_match(SEXP x, SEXP delims)
 		if(delim_depth == 0) start = pos;
 		delim_depth++;
 	    }
-#ifdef SUPPORT_MBCS
 	    if(mbcslocale) {
 		used = Rf_mbrtowc(NULL, s, MB_CUR_MAX, &mb_st);
 		if(used == 0) break;
 		s += used;
 	    } else
-#endif
-		s++;
-	    pos++;
+		s++; pos++;
 	}
 	if(end > -1) {
 	    INTEGER(ans)[i] = start + 1; /* index from one */
@@ -204,4 +194,42 @@ check_nonASCII(SEXP text, SEXP ignore_quotes)
 	}
     }
     return ScalarLogical(FALSE);
+}
+
+SEXP doTabExpand(SEXP strings, SEXP starts)  /* does tab expansion for UTF-8 strings only */
+{
+    int i,start, bufsize = 1024;
+    char *buffer = malloc(bufsize*sizeof(char)), *b;
+    const char *input;
+    SEXP result;
+    if (!buffer) error(_("out of memory"));
+    PROTECT(result = allocVector(STRSXP, length(strings)));
+    for (i = 0; i < length(strings); i++) {
+    	input = CHAR(STRING_ELT(strings, i));
+    	start = INTEGER(starts)[i];
+    	for (b = buffer; *input; ) {   
+    	    /* only the first byte of multi-byte chars counts */
+    	    if (0x80 <= (unsigned char)*input && (unsigned char)*input <= 0xBF)
+    		start--;
+    	    else if (*input == '\n')
+    	    	start = buffer-b-1;
+    	    if (*input == '\t') do {
+    	    	*b++ = ' ';
+    	    } while (((b-buffer+start) & 7) != 0);
+    	    else *b++ = *input;
+    	    if (b - buffer >= bufsize - 8) {
+    	    	int pos = b - buffer;
+    	        bufsize *= 2;
+    	    	buffer = realloc(buffer, bufsize*sizeof(char));
+    	    	if (!buffer) error(_("out of memory"));
+    	    	b = buffer + pos;
+    	    }
+    	    input++;
+    	}
+    	*b = '\0';
+    	SET_STRING_ELT(result, i, mkCharCE(buffer, Rf_getCharCE(STRING_ELT(strings, i))));
+    }
+    UNPROTECT(1);
+    free(buffer);
+    return result;
 }

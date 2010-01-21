@@ -26,7 +26,7 @@ Rdindex(RdFiles, outFile = "", type = NULL,
   \item{type}{a character string giving the documentation type of the Rd
     files to be included in the index, or \code{NULL} (the default).
     The type of an Rd file is typically specified via the
-    \code{\\docType} tag; if \code{type} is \code{"data"}, Rd files
+    \verb{\docType} tag; if \code{type} is \code{"data"}, Rd files
     whose \emph{only} keyword is \code{datasets} are included as well.}
   \item{width}{a positive integer giving the target column for wrapping
     lines in the output.}
@@ -39,8 +39,6 @@ Rdindex(RdFiles, outFile = "", type = NULL,
   if there is none) is used instead.
 }
 %% Currently no \example: at run time we do not have direct access to Rd
-%% files.  What we could do is take an installed Rd archive, and extract
-%% by splitting on the new-style \eof file separator, but we really want
-%% a simple example, right?
+%% files.
 \keyword{documentation}
 \keyword{utilities}

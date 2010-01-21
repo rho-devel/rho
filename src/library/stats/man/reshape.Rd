@@ -32,7 +32,7 @@ reshape(data, varying = NULL, v.names = NULL, timevar = "time",
     (\sQuote{time-varying}).  This is canonically a list of vectors of
     variable names, but it can optionally be a matrix of names, or a
     single vector of names. In each case, the names can be replaced by
-    indexes which are interpreted as referring to \code{names(data)}. 
+    indices which are interpreted as referring to \code{names(data)}. 
     See below for more details and
     options.}
   \item{v.names}{names of variables in the long format that correspond
@@ -114,7 +114,7 @@ reshape(data, varying = NULL, v.names = NULL, timevar = "time",
   back to the original form.
 }
 \seealso{\code{\link{stack}}, \code{\link{aperm}};
-  \code{\link[utils]{relist}} for reshaping the result of \code{\link{unlist}}.
+  \code{\link{relist}} for reshaping the result of \code{\link{unlist}}.
 }
 \examples{
 summary(Indometh)
