@@ -329,11 +329,11 @@ SEXP attribute_hidden do_fileshow(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else
 	    h[i] = "";
     }
-    if (length(tl) >= 1 || !isNull(STRING_ELT(tl, 0)))
+    if (length(tl) >= 1 && !isNull(STRING_ELT(tl, 0)))
 	t = acopy_string(translateChar(STRING_ELT(tl, 0)));
     else
 	t = "";
-    if (length(pg) >= 1 || !isNull(STRING_ELT(pg, 0))) {
+    if (length(pg) >= 1 && !isNull(STRING_ELT(pg, 0))) {
 	SEXP pg0 = STRING_ELT(pg, 0);
 	pager = acopy_string(CHAR(pg0));
     } else
