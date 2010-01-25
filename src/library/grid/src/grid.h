@@ -49,6 +49,10 @@
 #define _(String) (String)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* All grid type names are prefixed with an "L" 
  * All grid global variable names are prefixed with an "L_" 
  */
@@ -623,3 +627,6 @@ SEXP validUnits(SEXP units);
 SEXP L_getGPar(void);
 SEXP L_setGPar(SEXP gpars);
     
+#ifdef __cplusplus
+}  // extern "C"
+#endif

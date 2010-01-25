@@ -28,12 +28,14 @@ R_HOME = $(top_builddir)
 R_SHARE_DIR = $(R_HOME)/share
 R_INCLUDE_DIR = $(R_HOME)/include
 
-SOURCES_C = gpar.c grid.c just.c layout.c matrix.c register.c state.c \
+SOURCES_C = gpar.c just.c layout.c matrix.c register.c state.c \
   unit.c util.c viewport.c
+
+SOURCES_CXX = grid.cpp
 
 SOURCES_F =
 DEPENDS = $(SOURCES_C:.c=.d)
-OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_F:.f=.o)
+OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o) $(SOURCES_F:.f=.o)
 
 PKG_CFLAGS=$(C_VISIBILITY)
 
