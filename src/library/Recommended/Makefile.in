@@ -42,7 +42,7 @@ CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
 
 .SUFFIXES:
-.SUFFIXES: .dts .tgz .ts
+.SUFFIXES: .tgz .ts
 
 all: Makefile R @USE_RECOMMENDED_PACKAGES_TRUE@ recommended-packages
 
@@ -68,23 +68,6 @@ INSTALL_OPTS=--no-lock --install-tests
 ## </FIXME>
 	@cat $@.out; rm $@.out
 	@touch $@
-
-# Matrix.dts is an empty file whose timestamp will be newer than that
-# of Matrix.ts if the Matrix directory contains anything newer than
-# Matrix.ts.  If Matrix.ts does not already exist, it is created with
-# an ancient timestamp.
-Matrix.dts : Matrix FORCE
-	[ -e Matrix.ts ] || touch -t 200001010000 Matrix.ts
-	# Beware Posix find doesn't have -quit:
-	find $< -newer Matrix.ts -exec touch $@ \;
-
-FORCE:
-
-.dts.ts:
-	@$(ECHO) "begin installing recommended package" `basename $< .dts`
-	rm -f $@.out
-	MAKE="$(MAKE)" $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" `basename $< .dts`
-	touch $@
 
 R docs:
 
