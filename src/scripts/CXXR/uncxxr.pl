@@ -39,6 +39,7 @@ while (<>) {
   s/connclass/class/g;
   s/connprivate/private/g;
   s/devnum/this/g;
+  s/ffalse/false/g;
   s/funstr/this/g;
   s/newbuff/new/g;
   s/newconn/new/g;
