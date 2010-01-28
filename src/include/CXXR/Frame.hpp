@@ -155,9 +155,6 @@ namespace CXXR {
 	     * function forces the Promise if necessary, and returns a
 	     * pointer to the value of the Promise.
 	     *
-	     * @param env The Environment within which Promises are to
-	     *          be forced.
-	     *
 	     * @return The first element of the returned pair is a
 	     * pointer - possibly null - to the bound value, or the
 	     * Promise value if the bound value is a Promise.  The
@@ -172,7 +169,7 @@ namespace CXXR {
 	     * @note It is conceivable that forcing a Promise will
 	     * result in the destruction of this Binding object.
 	     */
-	    std::pair<RObject*, bool> forcedValue(Environment* env);
+	    std::pair<RObject*, bool> forcedValue();
 
 	    /** @brief Get pointer to Frame.
 	     *

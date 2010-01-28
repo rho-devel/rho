@@ -646,8 +646,11 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef R_291_and_less
     len = length(CAR(args));
 #else
+    static RObject* length_func
+	= Environment::base()->frame()->binding(Symbol::obtain("length"))->forcedValue().first;
     if(isObject(CAR(args)) &&
-       DispatchOrEval(call, op, "length", args, rho, &ans, 0, 1)) {
+       DispatchOrEval(call, length_func,
+		      "length", args, rho, &ans, 0, 1)) {
 	len = asInteger(ans);
     }
     else

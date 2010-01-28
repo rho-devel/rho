@@ -390,16 +390,16 @@ namespace CXXR {
 	do {
 	    bdg = env->frame()->binding(symbol);
 	    if (bdg) {
-		pair<RObject*, bool> pr = bdg->forcedValue(env);
+		pair<RObject*, bool> pr = bdg->forcedValue();
 		// If a Promise was forced, this may have invalidated
-		// 'bdg', so we look it up again.  However, beware
-		// that in this event, the subsequent call to
-		// monitorRead() will be applied to the wrong Binding,
-		// i.e. not the one from which 'val' was derived.
-		// It's hard to see how to avoid this, because by the
-		// time that we've verified that 'val' satisfies the
-		// predicate, the original binding may have been
-		// destroyed.
+		// 'bdg' (Um, is this actually possible?), so we look
+		// it up again.  However, beware that in this event,
+		// the subsequent call to monitorRead() will be
+		// applied to the wrong Binding, i.e. not the one from
+		// which 'val' was derived.  It's hard to see how to
+		// avoid this, because by the time that we've verified
+		// that 'val' satisfies the predicate, the original
+		// binding may have been destroyed.
 		if (pr.second)
 		    bdg = env->frame()->binding(symbol);
 		val = pr.first;

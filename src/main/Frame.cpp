@@ -64,7 +64,7 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
 pair<RObject*, bool>
-Frame::Binding::forcedValue(Environment* env)
+Frame::Binding::forcedValue()
 {
     bool promise_forced = false;
     RObject* val = m_value;
@@ -73,7 +73,7 @@ Frame::Binding::forcedValue(Environment* env)
 	if (prom->environment()) {
 	    GCStackRoot<Promise> promrt(prom);
 	    frame()->monitorRead(*this);
-	    val = evaluate(val, env);
+	    val = evaluate(val, 0);
 	    promise_forced = true;
 	}
 	val = prom->value();
