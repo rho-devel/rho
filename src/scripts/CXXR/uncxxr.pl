@@ -55,16 +55,15 @@ while (<>) {
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
   s/CXXR_alloc/R_alloc/g;
-  s/CXXRBuiltInFunction:://g;
-  s/CXXRconst\s*//g;
-  s/CXXRconvert\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
-  s/CXXRccast\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
-  s/CXXRscast\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRBUILTINFUNCTION:://g;
+  s/CXXRCONSTRUCT\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRCONST\s*//g;
+  s/CXXRCCAST\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRSCAST\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
   s/CXXRFALSE/0/g;
   s/CXXRNOCAST//g;
-  s/CXXRnot_hidden/attribute_hidden/g;
   s/CXXRTRUE/1/g;
-  s/CXXRunsigned\s*//g;
+  s/CXXRUNSIGNED\s*//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   print;
 }

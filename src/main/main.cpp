@@ -357,7 +357,7 @@ typedef struct {
  point, i.e. the end of the first line or after the first ;.
  */
 int
-Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplState *state)
+Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, int browselevel, R_ReplState *state)
 {
     int c, browsevalue;
     SEXP value;
@@ -610,7 +610,7 @@ extern void R_CleanTempDir(void);
 
 static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 {
-    CXXRconst char *s;
+    CXXRCONST char *s;
 
     /* First check for stack overflow if we know the stack position.
        We assume anything within 16Mb beyond the stack end is a stack overflow.
@@ -622,7 +622,7 @@ static void sigactionSegv(int signum, siginfo_t *ip, void *context)
 	    addr - R_CStackStart;
 	uintptr_t upper = 0x1000000;  /* 16Mb */
 	if(intptr_t( R_CStackLimit) != -1) upper += R_CStackLimit;
-	if(diff > 0 && diff < CXXRconvert(int, upper)) {
+	if(diff > 0 && diff < CXXRCONSTRUCT(int, upper)) {
 	    REprintf(_("Error: segfault from C stack overflow\n"));
 	    jump_to_toplevel();
 	}
@@ -1345,7 +1345,7 @@ static SEXP matchargs(SEXP args)
     return(argList);
 }
 
-SEXP CXXRnot_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *saveToplevelContext;
     RCNTXT *saveGlobalContext;
@@ -1483,7 +1483,7 @@ void R_dot_Last(void)
     UNPROTECT(1);
 }
 
-SEXP CXXRnot_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     const char *tmp;
     SA_TYPE ask=SA_DEFAULT;
@@ -1765,7 +1765,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
     SEXP f = static_cast<SEXP>( userData);
     SEXP e, tmp, val, cur;
     int errorOccurred;
-    Rboolean again, useData = CXXRconvert(Rboolean, LOGICAL(VECTOR_ELT(f, 2))[0]);
+    Rboolean again, useData = CXXRCONSTRUCT(Rboolean, LOGICAL(VECTOR_ELT(f, 2))[0]);
 
     PROTECT(e = allocVector(LANGSXP, 5 + useData));
     SETCAR(e, VECTOR_ELT(f, 0));
@@ -1791,7 +1791,7 @@ R_taskCallbackRoutine(SEXP expr, SEXP value, Rboolean succeeded,
 	      /* It would be nice to identify the function. */
 	    warning(_("top-level task callback did not return a logical value"));
 	}
-	again = CXXRconvert(Rboolean, asLogical(val));
+	again = CXXRCONSTRUCT(Rboolean, asLogical(val));
 	UNPROTECT(1);
     } else {
 	/* warning("error occurred in top-level task callback\n"); */

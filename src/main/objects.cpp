@@ -965,7 +965,7 @@ SEXP R_isMethodsDispatchOn(SEXP onOff) {
     R_stdGen_ptr_t old = R_get_standardGeneric_ptr();
     LOGICAL(value)[0] = !NOT_METHODS_DISPATCH_PTR(old);
     if(length(onOff) > 0) {
-	    onOffValue = CXXRconvert(Rboolean, asLogical(onOff));
+	    onOffValue = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
 	    if(onOffValue == FALSE)
 		    R_set_standardGeneric_ptr(0, 0);
 	    else if(NOT_METHODS_DISPATCH_PTR(old)) {
@@ -985,7 +985,7 @@ SEXP R_isMethodsDispatchOn(SEXP onOff) {
 attribute_hidden
 Rboolean isMethodsDispatchOn(void)
 {
-    return CXXRconvert(Rboolean, !NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr));
+    return CXXRCONSTRUCT(Rboolean, !NOT_METHODS_DISPATCH_PTR(R_standardGeneric_ptr));
 }
 
 
@@ -1447,8 +1447,8 @@ SEXP R_isS4Object(SEXP object)
 
 SEXP R_setS4Object(SEXP object, SEXP onOff, SEXP do_complete)
 {
-    Rboolean flag = CXXRconvert(Rboolean, asLogical(onOff)), complete = CXXRconvert(Rboolean, asInteger(do_complete));
-    if(flag == CXXRconvert(Rboolean, IS_S4_OBJECT(object)))
+    Rboolean flag = CXXRCONSTRUCT(Rboolean, asLogical(onOff)), complete = CXXRCONSTRUCT(Rboolean, asInteger(do_complete));
+    if(flag == CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(object)))
 	return object;
     else
       return asS4(object, flag, complete);

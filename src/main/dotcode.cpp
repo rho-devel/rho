@@ -279,9 +279,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return CXXRconvert(Rboolean, (actualType == INTSXP || actualType == LGLSXP));
+	    return CXXRCONSTRUCT(Rboolean, (actualType == INTSXP || actualType == LGLSXP));
 	}
-	return CXXRconvert(Rboolean, (targetType == actualType));
+	return CXXRCONSTRUCT(Rboolean, (targetType == actualType));
     }
 
     return(TRUE);
@@ -289,7 +289,7 @@ checkNativeType(int targetType, int actualType)
 
 static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 			const char *name, R_toCConverter **converter,
-			SEXPTYPE targetType, CXXRconst char* encname)
+			SEXPTYPE targetType, CXXRCONST char* encname)
 {
     Rbyte *rawptr;
     int *iptr;
@@ -421,11 +421,11 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_in;
 		    }
-		    if(res == CXXRconvert(size_t, -1))
+		    if(res == CXXRCONSTRUCT(size_t, -1))
 			error(_("conversion problem in re-encoding to '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -543,11 +543,11 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_out;
 		    }
-		    if(res == CXXRconvert(size_t, -1))
+		    if(res == CXXRCONSTRUCT(size_t, -1))
 			error(_("conversion problem in re-encoding from '%s'"),
 			      encname);
 		    *outbuf = '\0';
@@ -1692,7 +1692,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
 	if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), CXXRconvert(Rboolean, dup))) {
+	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), CXXRCONSTRUCT(Rboolean, dup))) {
 	    /* We can loop over all the arguments and report all the
 	       erroneous ones, but then we would also want to avoid
 	       the conversions.  Also, in the future, we may just
@@ -1706,7 +1706,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	cargs[nargs] = RObjToCPtr(CAR(pargs), naok, dup, nargs + 1,
 				  which, symName, argConverters + nargs,
-				  checkTypes ? CXXRconvert(SEXPTYPE, checkTypes[nargs]) : NILSXP,
+				  checkTypes ? CXXRCONSTRUCT(SEXPTYPE, checkTypes[nargs]) : NILSXP,
 				  encname);
 #ifdef R_MEMORY_PROFILING
 	if (RTRACE(CAR(pargs)) && dup)

@@ -63,7 +63,7 @@ static char *rmspace(char *s)
    return "" on an error condition.
  */
 
-static CXXRconst char *subterm(char *s)
+static CXXRCONST char *subterm(char *s)
 {
     char *p, *q;
 
@@ -104,7 +104,7 @@ static char *findRbrace(char *s)
 }
 
 
-static CXXRconst char *findterm(CXXRconst char *s)
+static CXXRCONST char *findterm(CXXRCONST char *s)
 {
     char *p, *q, *r;
     const char *ss=s;
@@ -135,7 +135,7 @@ static CXXRconst char *findterm(CXXRconst char *s)
     return ans;
 }
 
-static void Putenv(char *a, CXXRconst char *b)
+static void Putenv(char *a, CXXRCONST char *b)
 {
     char *buf, *value, *q, quote='\0';
     const char *p;

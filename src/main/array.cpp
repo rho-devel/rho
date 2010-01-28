@@ -122,9 +122,9 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocMatrix(TYPEOF(vals), nr, nc));
     if(lendat) {
 	if (isVector(vals))
-	    copyMatrix(ans, vals, CXXRconvert(Rboolean, byrow));
+	    copyMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
 	else
-	    copyListMatrix(ans, vals, CXXRconvert(Rboolean, byrow));
+	    copyListMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
     } else if (isVector(vals)) { /* fill with NAs */
 	int i, j;
 	switch(TYPEOF(vals)) {
@@ -432,7 +432,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     int i,  j, k;
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
@@ -466,7 +466,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    CXXRconst char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     int i;
     Rcomplex one, zero;
 
@@ -509,7 +509,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRconst char *trans = "T", *uplo = "U";
+    CXXRCONST char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -525,7 +525,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -539,7 +539,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRconst char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -554,7 +554,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRconst char *trans = "N", *uplo = "U";
+    CXXRCONST char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -570,7 +570,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -584,7 +584,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRconst char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -1187,13 +1187,13 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args); args = CDR(args);
     n = asInteger(CAR(args)); args = CDR(args);
     p = asInteger(CAR(args)); args = CDR(args);
-    NaRm = CXXRconvert(Rboolean, asLogical(CAR(args)));
+    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
 	error(_("invalid '%s' argument"), "p");
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
-    keepNA = CXXRconvert(Rboolean, !NaRm);
+    keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
 
     OP = PRIMVAL(op);
     switch (type = TYPEOF(x)) {

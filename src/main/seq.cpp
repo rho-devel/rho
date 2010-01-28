@@ -115,10 +115,10 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     r = fabs(n2 - n1);
     if(r >= INT_MAX) errorcall(call,_("result would be too long a vector"));
 
-    n = CXXRconvert(int, r + 1 + FLT_EPSILON);
+    n = CXXRCONSTRUCT(int, r + 1 + FLT_EPSILON);
 
     in1 = int((n1));
-    useInt = (CXXRconvert(Rboolean, n1 == in1));
+    useInt = (CXXRCONSTRUCT(Rboolean, n1 == in1));
     if(useInt) {
 	if(n1 <= INT_MIN || n1 > INT_MAX)
 	    useInt = FALSE;
@@ -473,7 +473,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
     int i, nargs = length(args), lf, lout = NA_INTEGER;
-    Rboolean One = CXXRconvert(Rboolean, nargs == 1);
+    Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
 
     if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
 	return(ans);
@@ -606,7 +606,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = CXXRconvert(int, rfrom + i*rby);
+		INTEGER(ans)[i] = CXXRCONSTRUCT(int, rfrom + i*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -623,7 +623,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = CXXRconvert(int, rto - (lout - 1 - i)*rby);
+		INTEGER(ans)[i] = CXXRCONSTRUCT(int, rto - (lout - 1 - i)*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)

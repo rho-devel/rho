@@ -251,11 +251,11 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     /* according to man setitimer, it waits until the next clock
        tick, usually 10ms, so avoid too small intervals here
     double clock_incr = R_getClockIncrement();
-    int nclock = CXXRconvert(int, floor(dinterval/clock_incr + 0.5));
+    int nclock = CXXRCONSTRUCT(int, floor(dinterval/clock_incr + 0.5));
     interval = 1e6 * ((nclock > 1)?nclock:1) * clock_incr + 0.5; */
-    interval = CXXRconvert(int, 1e6 * dinterval + 0.5);
+    interval = CXXRCONSTRUCT(int, 1e6 * dinterval + 0.5);
 #else
-    interval = CXXRconvert(int, 1e6 * dinterval + 0.5);
+    interval = CXXRCONSTRUCT(int, 1e6 * dinterval + 0.5);
 #endif
     if(R_ProfileOutfile != NULL) R_EndProfiling();
     R_ProfileOutfile = RC_fopen(filename, append ? "a" : "w", TRUE);
@@ -293,7 +293,7 @@ static void R_InitProfiling(SEXP filename, int append, double dinterval, int mem
     Evaluator::enableProfiling(true);
 }
 
-SEXP CXXRnot_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_Rprof(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP filename;
     int append_mode, mem_profiling;
@@ -466,7 +466,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /* Debugging */
 
-    SET_ENV_DEBUG(newrho, CXXRconvert(Rboolean, RDEBUG(op) || RSTEP(op)));
+    SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
     if( RSTEP(op) ) SET_RSTEP(op, 0);
     if (ENV_DEBUG(newrho)) {
 	int old_bl = R_BrowseLines,
@@ -583,7 +583,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 
     /* Debugging */
 
-    SET_ENV_DEBUG(newrho, CXXRconvert(Rboolean, RDEBUG(op) || RSTEP(op)));
+    SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
     if( RSTEP(op) ) SET_RSTEP(op, 0);
     if (RDEBUG(op)) {
 	Rprintf("debugging in: ");
@@ -802,7 +802,7 @@ static SEXP assignCall(SEXP op, SEXP symbol, SEXP fun,
 
 static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 {
-    Rboolean cond = CXXRconvert(Rboolean, NA_LOGICAL);
+    Rboolean cond = CXXRCONSTRUCT(Rboolean, NA_LOGICAL);
 
     if (length(s) > 1)
 	warningcall(call,
@@ -811,13 +811,13 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 	/* inline common cases for efficiency */
 	switch(TYPEOF(s)) {
 	case LGLSXP:
-	    cond = CXXRconvert(Rboolean, LOGICAL(s)[0]);
+	    cond = CXXRCONSTRUCT(Rboolean, LOGICAL(s)[0]);
 	    break;
 	case INTSXP:
-	    cond = CXXRconvert(Rboolean, INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
+	    cond = CXXRCONSTRUCT(Rboolean, INTEGER(s)[0]); /* relies on NA_INTEGER == NA_LOGICAL */
 	    break;
 	default:
-	    cond = CXXRconvert(Rboolean, asLogical(s));
+	    cond = CXXRCONSTRUCT(Rboolean, asLogical(s));
 	}
     }
 
@@ -832,7 +832,7 @@ static R_INLINE Rboolean asLogicalNoNA(SEXP s, SEXP call)
 }
 
 
-SEXP CXXRnot_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP Cond, Stmt=R_NilValue;
     int vis=0;
@@ -875,7 +875,7 @@ namespace {
     }
 }
 
-SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     int nm;
@@ -998,7 +998,7 @@ SEXP CXXRnot_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1040,7 +1040,7 @@ SEXP CXXRnot_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Rboolean dbg;
     volatile int bgn;
@@ -1082,14 +1082,14 @@ SEXP CXXRnot_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP CXXRnot_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     findcontext(PRIMVAL(op), rho, R_NilValue);
     return R_NilValue;
 }
 
 
-SEXP CXXRnot_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_paren(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     return CAR(args);
@@ -1137,7 +1137,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP CXXRnot_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP a, v, vals;
     int nv = 0;
@@ -1184,7 +1184,7 @@ SEXP CXXRnot_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-SEXP CXXRnot_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     GCStackRoot<> rval;
 
@@ -1370,7 +1370,7 @@ SEXP attribute_hidden do_alias(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /*  Assignment in its various forms  */
 
-SEXP CXXRnot_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s;
     if (length(args) != 2)
@@ -1450,7 +1450,7 @@ SEXP CXXRnot_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* called in names.c and objects.c */
 
 /* Prior to 2.4.0 this dropped missing elements */
-SEXP CXXRnot_hidden evalList(SEXP el, SEXP rho, SEXP op)
+SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP op)
 {
     SEXP ans, h, tail, orig = el;
     int n = 1;
@@ -1510,7 +1510,7 @@ SEXP CXXRnot_hidden evalList(SEXP el, SEXP rho, SEXP op)
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP CXXRnot_hidden evalListKeepMissing(SEXP el, SEXP rho)
+SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
 {
     SEXP ans, h, tail;
 
@@ -1578,7 +1578,7 @@ void BuiltInFunction::missingArgumentError(const BuiltInFunction* func,
 /* "eval" and "eval.with.vis" : Evaluate the first argument */
 /* in the environment specified by the second argument. */
 
-SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP encl, x, xptr;
     volatile SEXP expr, env, tmp;
@@ -1697,7 +1697,7 @@ SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     return expr;
 }
 
-SEXP CXXRnot_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, nm, ret;
 
@@ -1716,7 +1716,7 @@ SEXP CXXRnot_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
     return ret;
 }
 
-SEXP CXXRnot_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *cptr;
     SEXP s, ans ;
@@ -1770,7 +1770,7 @@ static SEXP evalArgs(SEXP el, SEXP rho, SEXP op, int dropmissing)
  * To call this an ugly hack would be to insult all existing ugly hacks
  * at large in the world.
  */
-CXXRnot_hidden
+attribute_hidden
 int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		   SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
@@ -1942,7 +1942,7 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
     *which = whichclass;
 }
 
-CXXRnot_hidden
+attribute_hidden
 int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		  SEXP *ans)
 {
@@ -1963,7 +1963,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	(CDR(args) == R_NilValue || ! isObject(CADR(args))))
 	return 0;
 
-    isOps = CXXRconvert(Rboolean, strcmp(group, "Ops") == 0);
+    isOps = CXXRCONSTRUCT(Rboolean, strcmp(group, "Ops") == 0);
 
     /* try for formal method */
     if(length(args) == 1 && !IS_S4_OBJECT(CAR(args))) useS4 = FALSE;
@@ -2179,7 +2179,7 @@ static SEXP R_FalseValue = NULL;
 # define THREADED_CODE
 #endif
 
-CXXRnot_hidden
+attribute_hidden
 void R_initialize_bcode(void)
 {
   R_AddSym = install("+");
@@ -2628,7 +2628,7 @@ namespace {
   if (! NAMED(v)) SET_NAMED(v, 1); \
 } while (0)
 
-static int tryDispatch(CXXRconst char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
+static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
 {
   RCNTXT cntxt;
   SEXP pargs, rho1;
@@ -3203,15 +3203,15 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	switch (ftype) {
 	case BUILTINSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRconvert(Rboolean, flag != 1);
+	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	  value = PRIMFUN(fun) (call, fun, args, rho);
-	  if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
+	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	  break;
 	case SPECIALSXP:
 	  flag = PRIMPRINT(fun);
-	  R_Visible = CXXRconvert(Rboolean, flag != 1);
+	  R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	  if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
+	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	  break;
 	case CLOSXP:
 	  value = applyClosure(call, fun, args, rho, R_BaseEnv);
@@ -3232,9 +3232,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != BUILTINSXP)
 	  error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = CXXRconvert(Rboolean, flag != 1);
+	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	value = PRIMFUN(fun) (call, fun, args, rho);
-	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
+	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	vmaxset(vmax);
 	R_BCNodeStackTop -= 2;
 	R_BCNodeStackTop[-1] = value;
@@ -3258,9 +3258,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	if (TYPEOF(fun) != SPECIALSXP)
 	  error(_("not a SPECIAL function"));
 	flag = PRIMPRINT(fun);
-	R_Visible = CXXRconvert(Rboolean, flag != 1);
+	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	if (flag < 2) R_Visible = CXXRconvert(Rboolean, flag != 1);
+	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	vmaxset(vmax);
 	BCNPUSH(value);
 	NEXT();
@@ -3531,7 +3531,7 @@ SEXP R_bcEncode(SEXP x) { return x; }
 SEXP R_bcDecode(SEXP x) { return duplicate(x); }
 #endif
 
-SEXP CXXRnot_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP bytes, consts;
 
@@ -3543,7 +3543,7 @@ SEXP CXXRnot_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     return GCNode::expose(new ByteCode(enc, pl));
 }
 
-SEXP CXXRnot_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP forms, body, env;
 
@@ -3565,7 +3565,7 @@ SEXP CXXRnot_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     return mkCLOSXP(forms, body, env);
 }
 
-SEXP CXXRnot_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP symbol, i;
 
@@ -3610,7 +3610,7 @@ static SEXP disassemble(SEXP bc)
   return ans;
 }
 
-SEXP CXXRnot_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP code;
 
@@ -3621,14 +3621,14 @@ SEXP CXXRnot_hidden do_disassemble(SEXP call, SEXP op, SEXP args, SEXP rho)
   return disassemble(code);
 }
 
-SEXP CXXRnot_hidden do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_bcversion(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
   SEXP ans = allocVector(INTSXP, 1);
   INTEGER(ans)[0] = R_bcVersion;
   return ans;
 }
 
-SEXP CXXRnot_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP file, s;
     FILE *fp;
@@ -3650,7 +3650,7 @@ SEXP CXXRnot_hidden do_loadfile(SEXP call, SEXP op, SEXP args, SEXP env)
     return s;
 }
 
-SEXP CXXRnot_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     FILE *fp;
 
@@ -3720,7 +3720,7 @@ FILE *R_OpenCompiledFile(char *fname, char *buf, size_t bsize)
     else return NULL;
 }
 
-SEXP CXXRnot_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_putconst(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP code, c, ans;
     int i, n;
@@ -3834,7 +3834,7 @@ SEXP R_stopbcprof() { return R_NilValue; }
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP CXXRnot_hidden promiseArgs(SEXP el, SEXP rho)
+SEXP attribute_hidden promiseArgs(SEXP el, SEXP rho)
 {
     return ArgMatcher::prepareArgs(SEXP_downcast<PairList*>(el),
 				   SEXP_downcast<Environment*>(rho));

@@ -131,8 +131,8 @@ static Rboolean url_open(Rconnection con)
     }
 
     con->isopen = TRUE;
-    con->canwrite = (CXXRconvert(Rboolean, con->mode[0] == 'w' || con->mode[0] == 'a'));
-    con->canread = CXXRconvert(Rboolean, !con->canwrite);
+    con->canwrite = (CXXRCONSTRUCT(Rboolean, con->mode[0] == 'w' || con->mode[0] == 'a'));
+    con->canread = CXXRCONSTRUCT(Rboolean, !con->canwrite);
     if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
     else con->text = TRUE;
     con->save = -1000;
@@ -184,10 +184,10 @@ static size_t url_read(void *ptr, size_t size, size_t nitems,
     switch(type) {
     case HTTPSsh:
     case HTTPsh:
-	n = in_R_HTTPRead(ctxt, CXXRscast(char*, ptr), size*nitems);
+	n = in_R_HTTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
 	break;
     case FTPsh:
-	n = in_R_FTPRead(ctxt, CXXRscast(char*, ptr), size*nitems);
+	n = in_R_FTPRead(ctxt, CXXRSCAST(char*, ptr), size*nitems);
 	break;
     }
     return n/size;
@@ -307,7 +307,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
     if(length(sfile) > 1)
 	warning(_("only first element of 'destfile' argument used"));
     file = translateChar(STRING_ELT(sfile, 0));
-    IDquiet = quiet = CXXRconvert(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    IDquiet = quiet = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
     if(quiet == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "quiet");
     smode =  CAR(args); args = CDR(args);
@@ -421,7 +421,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    while ((len = in_R_HTTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(CXXRconvert(int, res) != len) error(_("write failed"));
+		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {
@@ -526,7 +526,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    while ((len = in_R_FTPRead(ctxt, buf, sizeof(buf))) > 0) {
 		size_t res = fwrite(buf, 1, len, out);
-		if(CXXRconvert(int, res) != len) error(_("write failed"));
+		if(CXXRCONSTRUCT(int, res) != len) error(_("write failed"));
 		nbytes += len;
 #ifdef Win32
 		if(!quiet) {

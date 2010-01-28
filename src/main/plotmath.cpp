@@ -564,7 +564,7 @@ static double CenterShift(BBOX bbox)
 
 
 typedef struct {
-    CXXRconst char *name;
+    CXXRCONST char *name;
     int code;
 } SymTab;
 
@@ -877,12 +877,12 @@ static int StringAtom(SEXP expr)
 
 static FontType GetFont(pGEcontext gc)
 {
-    return CXXRconvert(FontType, gc->fontface);
+    return CXXRCONSTRUCT(FontType, gc->fontface);
 }
 
 static FontType SetFont(FontType font, pGEcontext gc)
 {
-    FontType prevfont = CXXRconvert(FontType, gc->fontface);
+    FontType prevfont = CXXRCONSTRUCT(FontType, gc->fontface);
     gc->fontface = font;
     return prevfont;
 }
@@ -994,7 +994,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 	    while (*s) {
 		wc = 0;
 		res = mbrtowc(&wc, s, MB_LEN_MAX, &mb_st);
-		if(res == CXXRconvert(size_t, -1)) error("invalid multibyte string '%s'", s);
+		if(res == CXXRCONSTRUCT(size_t, -1)) error("invalid multibyte string '%s'", s);
 		if (iswdigit(wc) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
@@ -1012,7 +1012,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		if (draw) {
 		    memset(chr, 0, sizeof(chr));
 		    /* should not be possible, as we just converted to wc */
-		    if(wcrtomb(chr, wc, &mb_st) == CXXRconvert(size_t, -1))
+		    if(wcrtomb(chr, wc, &mb_st) == CXXRCONSTRUCT(size_t, -1))
 			error("invalid multibyte string");
 		    PMoveAcross(lastItalicCorr, mc);
 		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
@@ -1076,7 +1076,7 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
 	memset(asciiStr, 0, sizeof(asciiStr));
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, NULL);
-	    if(res == CXXRconvert(size_t, -1))
+	    if(res == CXXRCONSTRUCT(size_t, -1))
 		error("invalid character in current multibyte locale");
 	} else
 	    asciiStr[0] = ascii;
@@ -1657,7 +1657,7 @@ static BBOX RenderBar(SEXP expr, int draw, mathContext *mc,
 }
 
 static struct {
-    CXXRconst char *name;
+    CXXRCONST char *name;
     int code;
 }
 AccentTable[] = {
@@ -2125,7 +2125,7 @@ static BBOX RenderDelim(int which, double dist, int draw, mathContext *mc,
 		- (bboxHeight(topBBox) + bboxDepth(topBBox));
 	    ybot = axisHeight - dist
 		+ (bboxHeight(botBBox) + bboxDepth(botBBox));
-	    n = CXXRconvert(int, ceil((ytop - ybot) / (0.99 * extHeight)));
+	    n = CXXRCONSTRUCT(int, ceil((ytop - ybot) / (0.99 * extHeight)));
 	    if (n > 0) {
 		delta = (ytop - ybot) / n;
 		for (i = 0; i < n; i++) {

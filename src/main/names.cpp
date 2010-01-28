@@ -1024,7 +1024,7 @@ void BuiltInFunction::initialize()
 }
 
 
-SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name;
     checkArity(op, args);

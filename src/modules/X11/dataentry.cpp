@@ -174,7 +174,7 @@ static void copyH(DEstruct, int, int, int);
 static void copyarea(DEstruct, int, int, int, int);
 static void doConfigure(DEstruct, DEEvent *ioevent);
 static void drawrectangle(DEstruct, int, int, int, int, int, int);
-static void drawtext(DEstruct, int, int, CXXRconst char*, int);
+static void drawtext(DEstruct, int, int, CXXRCONST char*, int);
 static void RefreshKeyboardMapping(DEEvent *ioevent);
 static void Rsync(DEstruct);
 static int textwidth(DEstruct, const char*, int);
@@ -285,7 +285,7 @@ static XIC ioic = NULL;
 
  */
 
-static CXXRconst char *menu_label[] =
+static CXXRCONST char *menu_label[] =
 {
     " Real",
     " Character",
@@ -326,7 +326,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, j, cnt, len, nprotect;
     RCNTXT cntxt;
     char clab[25];
-    CXXRconst char *title = "R Data Editor";
+    CXXRCONST char *title = "R Data Editor";
     destruct DE1;
     DEstruct DE = &DE1;
 
@@ -355,7 +355,7 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     nprotect++;
     DE->bwidth = 5;
     DE->hht = 30;
-    DE->isEditor = CXXRconvert(Rboolean, TRUE);
+    DE->isEditor = CXXRCONSTRUCT(Rboolean, TRUE);
 
     /* setup work, names, lens  */
     DE->xmaxused = length(DE->work); DE->ymaxused = 0;
@@ -511,7 +511,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     DE->rowmin = 1;
     DE->bwidth = 5;
     DE->hht = 10;
-    DE->isEditor = CXXRconvert(Rboolean, FALSE);
+    DE->isEditor = CXXRCONSTRUCT(Rboolean, FALSE);
 
     /* setup work, names, lens  */
     DE->xmaxused = length(DE->work); DE->ymaxused = 0;
@@ -1026,7 +1026,7 @@ static Rboolean getccol(DEstruct DE)
     int i, len, newlen, wcol, wrow;
     SEXPTYPE type;
     char clab[25];
-    Rboolean newcol = CXXRconvert(Rboolean, FALSE);
+    Rboolean newcol = CXXRCONSTRUCT(Rboolean, FALSE);
 
     wcol = DE->ccol + DE->colmin - 1;
     wrow = DE->crow + DE->rowmin - 1;
@@ -1042,7 +1042,7 @@ static Rboolean getccol(DEstruct DE)
 	DE->xmaxused = wcol;
     }
     if (isNull(VECTOR_ELT(DE->work, wcol - 1))) {
-	newcol = CXXRconvert(Rboolean, TRUE);
+	newcol = CXXRCONSTRUCT(Rboolean, TRUE);
 	SET_VECTOR_ELT(DE->work, wcol - 1,
 		       ssNewVector(REALSXP, max(100, wrow)));
 	INTEGER(DE->lens)[wcol - 1] = 0;
@@ -1161,7 +1161,7 @@ static void closerect(DEstruct DE)
 		/* do it this way to ensure NA, Inf, ...  can get set */
 		char *endp;
 		double newd = R_strtod(buf, &endp);
-		Rboolean warn = CXXRconvert(Rboolean, !isBlankString(endp));
+		Rboolean warn = CXXRCONSTRUCT(Rboolean, !isBlankString(endp));
 		if (TYPEOF(cvec) == STRSXP) {
 		    SEXP newval;
 		    PROTECT( newval = mkString(buf) );
@@ -1189,7 +1189,7 @@ static void closerect(DEstruct DE)
 	    if(wrow > wrow0) drawcol(DE, wcol); /* to fill in NAs */
 	}
     }
-    CellModified = CXXRconvert(Rboolean, FALSE);
+    CellModified = CXXRCONSTRUCT(Rboolean, FALSE);
 
     downlightrect(DE);
 
@@ -1290,14 +1290,14 @@ static void handlechar(DEstruct DE, char *text)
     memset(wcs,0,sizeof(wcs));
 
     if ( c == '\033' ) { /* ESC */
-	CellModified = CXXRconvert(Rboolean, FALSE);
+	CellModified = CXXRCONSTRUCT(Rboolean, FALSE);
 	clength = 0;
 	bufp = buf;
 	drawelt(DE, DE->crow, DE->ccol);
 	cell_cursor_init(DE);
 	return;
     } else
-	CellModified = CXXRconvert(Rboolean, TRUE);
+	CellModified = CXXRCONSTRUCT(Rboolean, TRUE);
 
     if (clength == 0) {
 
@@ -1707,7 +1707,7 @@ static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 	    clength -= last_w;
 	    bufp -= last_w;
 	    *bufp = '\0';
-	    CellModified = CXXRconvert(Rboolean, TRUE);
+	    CellModified = CXXRCONSTRUCT(Rboolean, TRUE);
 	    printstring(DE, buf, clength, DE->crow, DE->ccol, 1);
 	} else bell();
     }
@@ -1908,7 +1908,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     int ioscreen;
     unsigned long iowhite, ioblack;
     char digits[] = "123456789.0";
-    CXXRconst char             *font_name="9x15";
+    CXXRCONST char             *font_name="9x15";
     Window root;
     XEvent ioevent;
     XSetWindowAttributes winattr;
@@ -1928,7 +1928,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     if(!iodisplay) {
 	if ((iodisplay = XOpenDisplay(NULL)) == NULL) {
 	    warning("unable to open display");
-	    return CXXRconvert(Rboolean, TRUE);
+	    return CXXRCONSTRUCT(Rboolean, TRUE);
 	}
 	deContext = XUniqueContext();
 	XSetErrorHandler(R_X11Err);
@@ -1959,13 +1959,13 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	}
 	if (font_set == NULL) {
 	    warning("unable to create fontset %s", opt_fontset_name);
-	    return CXXRconvert(Rboolean, TRUE); /* ERROR */
+	    return CXXRCONSTRUCT(Rboolean, TRUE); /* ERROR */
 	}
     } else {
 	DE->font_info = XLoadQueryFont(iodisplay, font_name);
 	if (DE->font_info == NULL) {
 	    warning("unable to losd font %s", font_name);
-	    return CXXRconvert(Rboolean, TRUE); /* ERROR */
+	    return CXXRCONSTRUCT(Rboolean, TRUE); /* ERROR */
 	}
     }
 
@@ -2090,7 +2090,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	     ioblack,
 	     iowhite)) == 0) {
 	warning("unable to open window for data editor");
-	return CXXRconvert(Rboolean, TRUE);
+	return CXXRCONSTRUCT(Rboolean, TRUE);
     }
 
     /*
@@ -2124,7 +2124,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	    XDestroyWindow(iodisplay, DE->iowindow);
 	    XCloseDisplay(iodisplay);
 	    warning("unable to open X Input Method");
-	    return CXXRconvert(Rboolean, TRUE);
+	    return CXXRCONSTRUCT(Rboolean, TRUE);
 	}
 
 	/* search supported input style */
@@ -2159,7 +2159,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	    XDestroyWindow(iodisplay, DE->iowindow);
 	    XCloseDisplay(iodisplay);
 	    warning("unable to open X Input Context");
-	    return CXXRconvert(Rboolean, TRUE);
+	    return CXXRCONSTRUCT(Rboolean, TRUE);
 	}
 
 	/* get XIM processes event. */
@@ -2235,9 +2235,9 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     /* set the active rectangle to be the upper left one */
     DE->crow = 1;
     DE->ccol = 1;
-    CellModified = CXXRconvert(Rboolean, FALSE);
+    CellModified = CXXRCONSTRUCT(Rboolean, FALSE);
     XSaveContext(iodisplay, DE->iowindow, deContext, (caddr_t) DE);
-    return CXXRconvert(Rboolean, FALSE);/* success */
+    return CXXRCONSTRUCT(Rboolean, FALSE);/* success */
 }
 
 /* MAC/X11 BASICS */
@@ -2297,7 +2297,7 @@ static void drawrectangle(DEstruct DE,
 		   width, height);
 }
 
-static void drawtext(DEstruct DE, int xpos, int ypos, CXXRconst char *text, int len)
+static void drawtext(DEstruct DE, int xpos, int ypos, CXXRCONST char *text, int len)
 {
     if(mbcslocale)
 #ifdef HAVE_XUTF8DRAWIMAGESTRING
@@ -2563,7 +2563,7 @@ static void pastecell(DEstruct DE, int row, int col)
 	strcpy(buf, copycontents);
 	clength = strlen(copycontents);
 	bufp = buf + clength;
-	CellModified = CXXRconvert(Rboolean, TRUE);
+	CellModified = CXXRCONSTRUCT(Rboolean, TRUE);
     }
     closerect(DE);
     highlightrect(DE);
@@ -2612,7 +2612,7 @@ static int last_wchar_bytes(char *str)
 {
     wchar_t   wcs[BOOSTED_BUF_SIZE];
     mbstate_t mb_st;
-    CXXRunsigned int cnt;
+    CXXRUNSIGNED int cnt;
     char last_mbs[8];
     char *mbs;
     size_t bytes;

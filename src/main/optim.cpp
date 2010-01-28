@@ -42,7 +42,7 @@
 				   samin() */
 #include <R_ext/Applic.h>	/* setulb() */
 
-static SEXP getListElement(SEXP list, CXXRconst char *str)
+static SEXP getListElement(SEXP list, CXXRCONST char *str)
 {
     SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
     int i;

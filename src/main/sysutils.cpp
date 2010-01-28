@@ -77,7 +77,7 @@ extern	Rboolean useaqua;
 Rboolean attribute_hidden R_FileExists(const char *path)
 {
     struct stat sb;
-    return CXXRconvert(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
+    return CXXRCONSTRUCT(Rboolean, stat(R_ExpandFileName(path), &sb) == 0);
 }
 
 double attribute_hidden R_FileMtime(const char *path)
@@ -617,10 +617,10 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    *outbuf = '\0';
 	    /* other possible error conditions are incomplete
 	       and invalid multibyte chars */
-	    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+	    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
-	    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ && sub) {
+	    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ && sub) {
 		/* it seems this gets thrown for non-convertible input too */
 		if(strcmp(sub, "byte") == 0) {
 		    if(outb < 5) {
@@ -642,7 +642,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 		goto next_char;
 	    }
 
-	    if(res != CXXRconvert(size_t, -1) && inb == 0) {
+	    if(res != CXXRCONSTRUCT(size_t, -1) && inb == 0) {
 		cetype_t ienc = CE_NATIVE;
 
 		nout = cbuff.bufsize - 1 - outb;
@@ -771,10 +771,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
 	if(outb < 13) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -785,7 +785,7 @@ next_char:
 	    int clen;
 	    wchar_t wc;
 	    clen = utf8toucs(&wc, inbuf);
-	    if(clen > 0 && CXXRconvert(int, inb) >= clen) {
+	    if(clen > 0 && CXXRCONSTRUCT(int, inb) >= clen) {
 		inbuf += clen; inb -= clen;
 # ifndef Win32
 		if(static_cast<unsigned int>( wc) < 65536) {
@@ -850,10 +850,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -944,10 +944,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(CXXRconvert(int, res) == -1 && errno == E2BIG) {
+    if(CXXRCONSTRUCT(int, res) == -1 && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(CXXRconvert(int, res) == -1 && errno == EILSEQ) {
+    } else if(CXXRCONSTRUCT(int, res) == -1 && errno == EILSEQ) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -978,7 +978,7 @@ const char *reEnc(const char *x, cetype_t ce_in, cetype_t ce_out, int subst)
     const char *inbuf;
     char *outbuf, *p;
     size_t inb, outb, res, top;
-    CXXRconst char *tocode = NULL, *fromcode = NULL;
+    CXXRCONST char *tocode = NULL, *fromcode = NULL;
 #ifdef Win32
     char buf[20];
 #endif
@@ -1048,10 +1048,10 @@ top_of_loop:
 next_char:
     /* Then convert input  */
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-    if(res == CXXRconvert(size_t, -1) && errno == E2BIG) {
+    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRconvert(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
 	switch(subst) {
 	case 1: /* substitute hex */
 	    if(outb < 5) {
@@ -1265,7 +1265,7 @@ size_t ucstoutf8(char *s, const unsigned int wc)
 # define S_IFDIR __S_IFDIR
 #endif
 
-static int isDir(CXXRconst char *path)
+static int isDir(CXXRCONST char *path)
 {
     struct stat sb;
     int isdir = 0;
@@ -1281,7 +1281,7 @@ static int isDir(CXXRconst char *path)
     return isdir;
 }
 #else
-static int isDir(CXXRconst char *path)
+static int isDir(CXXRCONST char *path)
 {
     return 1;
 }
@@ -1294,7 +1294,7 @@ extern char * mkdtemp (char *template);
 void attribute_hidden InitTempDir()
 {
     char *tmp, tmp1[PATH_MAX+11], *p;
-    CXXRconst char* tm;
+    CXXRCONST char* tm;
     int len;
 #ifdef Win32
     char tmp2[PATH_MAX];

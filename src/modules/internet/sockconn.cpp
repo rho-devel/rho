@@ -52,7 +52,7 @@
 
 static void listencleanup(void *data)
 {
-    int *psock = CXXRscast(int*, data);
+    int *psock = CXXRSCAST(int*, data);
     R_SockClose(*psock);
 }
 

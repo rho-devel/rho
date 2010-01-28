@@ -164,7 +164,7 @@ static int CountDLL = 0;
 
 static DllInfo LoadedDLL[MAX_NUM_DLLS];
 
-static int addDLL(char *dpath, CXXRconst char *name, HINSTANCE handle);
+static int addDLL(char *dpath, CXXRCONST char *name, HINSTANCE handle);
 static SEXP Rf_MakeDLLInfo(DllInfo *info);
 
 static SEXP createRSymbolObject(SEXP sname, DL_FUNC f,
@@ -627,7 +627,7 @@ static DllInfo *R_RegisterDLL(HINSTANCE handle, const char *path)
 }
 
 static int
-addDLL(char *dpath, CXXRconst char *DLLname, HINSTANCE handle)
+addDLL(char *dpath, CXXRCONST char *DLLname, HINSTANCE handle)
 {
     int ans = CountDLL;
     char *name = static_cast<char *>( malloc(strlen(DLLname)+1));
@@ -1115,7 +1115,7 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
 
     if(f)
 	sym = createRSymbolObject(sname, f, &symbol,
-				  CXXRconvert(Rboolean, LOGICAL(withRegistrationInfo)[0]));
+				  CXXRCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
 
     return(sym);
 }
@@ -1173,7 +1173,7 @@ createRSymbolObject(SEXP sname, DL_FUNC f, R_RegisteredNativeSymbol *symbol,
 	   the number of arguments and the classname.
 	*/
 	int nargs = -1;
-	CXXRconst char *className = "";
+	CXXRCONST char *className = "";
 	switch(symbol->type) {
 	case R_C_SYM:
 	    nargs = symbol->symbol.c->numArgs;

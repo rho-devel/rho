@@ -187,7 +187,7 @@ SEXP attribute_hidden do_isunsorted(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = length(x);
     if(n < 2) return ScalarLogical(FALSE);
     if(isVectorAtomic(x))
-	return ScalarLogical(isUnsorted(x, CXXRconvert(Rboolean, strictly)));
+	return ScalarLogical(isUnsorted(x, CXXRCONSTRUCT(Rboolean, strictly)));
     if(isObject(x)) {
 	/* try dispatch */
 	SEXP call;
@@ -330,7 +330,7 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
 
-    decreasing = CXXRconvert(Rboolean, asLogical(CADR(args)));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     if(CAR(args) == R_NilValue) return R_NilValue;
@@ -737,7 +737,7 @@ static void orderVector(int *indx, int n, SEXP key, Rboolean nalast,
 	    itmp = indx[i];
 	    j = i;
 	    while (j >= h &&
-		   greater_sub(indx[j - h], itmp, key, CXXRconvert(Rboolean, nalast^decreasing),
+		   greater_sub(indx[j - h], itmp, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing),
 			       decreasing)) {
 		indx[j] = indx[j - h];
 		j -= h;
@@ -836,7 +836,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
     
     if (isObject(key) && !isNull(rho)) {
 /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, CXXRconvert(Rboolean, nalast^decreasing), decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
     } else {
@@ -886,7 +886,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 #undef less
 	    break;
 	default:  /* only reached from do_rank */
-#define less(a, b) greater(a, b, key, CXXRconvert(Rboolean, nalast^decreasing), decreasing, rho)
+#define less(a, b) greater(a, b, key, CXXRCONSTRUCT(Rboolean, nalast^decreasing), decreasing, rho)
 	    sort2_with_index
 #undef less
 	}
@@ -901,11 +901,11 @@ SEXP attribute_hidden do_order(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n = -1, narg = 0;
     Rboolean nalast, decreasing;
 
-    nalast = CXXRconvert(Rboolean, asLogical(CAR(args)));
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
     args = CDR(args);
-    decreasing = CXXRconvert(Rboolean, asLogical(CAR(args)));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     args = CDR(args);
@@ -1001,10 +1001,10 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     x = CAR(args);
-    nalast = CXXRconvert(Rboolean, asLogical(CADR(args)));
+    nalast = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     if(nalast == NA_LOGICAL)
 	error(_("invalid '%s' value"), "na.last");
-    decreasing = CXXRconvert(Rboolean, asLogical(CADDR(args)));
+    decreasing = CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)));
     if(decreasing == NA_LOGICAL)
 	error(_("'decreasing' must be TRUE or FALSE"));
     off = nalast^decreasing ? 0 : 1;

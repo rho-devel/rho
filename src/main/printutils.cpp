@@ -102,11 +102,11 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
 	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return CXXRconvert(R_size_t, (Giga*v));
+	return CXXRCONSTRUCT(R_size_t, (Giga*v));
     }
     else if(p[0] == 'M') {
 	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return CXXRconvert(R_size_t, (Mega*v));
+	return CXXRCONSTRUCT(R_size_t, (Mega*v));
     }
     else if(p[0] == 'K') {
 	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
@@ -567,7 +567,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRconst unsigned char *>(p)));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRCONST unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}

@@ -239,7 +239,7 @@ TypeTable[] = {
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },
 
-    { CXXRNOCAST(char *)NULL,     CXXRconvert(SEXPTYPE, -1)         }
+    { CXXRNOCAST(char *)NULL,     CXXRCONSTRUCT(SEXPTYPE, -1)         }
 };
 
 
@@ -259,7 +259,7 @@ SEXP type2str(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == CXXRconvert(int, t))
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    return mkChar(TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2str");
@@ -271,7 +271,7 @@ const char *type2char(SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == CXXRconvert(int, t))
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    return TypeTable[i].str;
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2char");
@@ -285,7 +285,7 @@ SEXP type2symbol(SEXPTYPE t)
        with TypeTable pointing to both the
        character string and to the symbol would be better */
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == CXXRconvert(int, t))
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    return install(CXXRNOCAST(char *) TypeTable[i].str);
     }
     error(_("type %d is unimplemented in '%s'"), t, "type2symbol");
@@ -297,7 +297,7 @@ void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t)
     int i;
 
     for (i = 0; TypeTable[i].str; i++) {
-	if (TypeTable[i].type == CXXRconvert(int, t))
+	if (TypeTable[i].type == CXXRCONSTRUCT(int, t))
 	    error(_("unimplemented type '%s' in '%s'\n"), TypeTable[i].str, s);
     }
     error(_("unimplemented type (%d) in '%s'\n"), t, s);
@@ -386,7 +386,7 @@ Rboolean isBlankString(const char *s)
 Rboolean StringBlank(SEXP x)
 {
     if (x == R_NilValue) return TRUE;
-    else return CXXRconvert(Rboolean, CHAR(x)[0] == '\0');
+    else return CXXRCONSTRUCT(Rboolean, CHAR(x)[0] == '\0');
 }
 
 /* Function to test whether a string is a true value */
@@ -893,7 +893,7 @@ SEXP attribute_hidden do_encodeString(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if(w != NA_INTEGER && w < 0)
 	    error(_("invalid '%s' value"), "width");
     }
-    findWidth = CXXRconvert(Rboolean, (w == NA_INTEGER));
+    findWidth = CXXRCONSTRUCT(Rboolean, (w == NA_INTEGER));
     s = CADDR(args);
     if(LENGTH(s) != 1 || TYPEOF(s) != STRSXP)
 	error(_("invalid '%s' value"), "quote");
@@ -932,7 +932,7 @@ SEXP attribute_hidden do_encoding(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
     int i, n;
-    CXXRconst char *tmp;
+    CXXRCONST char *tmp;
 
     checkArity(op, args);
     if (TYPEOF(x = CAR(args)) != STRSXP)
@@ -1031,34 +1031,34 @@ utf8toucs(wchar_t *wc, const char *s)
 	*w = wchar_t( byte);
 	return 1;
     } else if (byte < 0xE0) {
-	if(strlen(s) < 2) return CXXRconvert(size_t, -2);
+	if(strlen(s) < 2) return CXXRCONSTRUCT(size_t, -2);
 	if ((s[1] & 0xC0) == 0x80) {
 	    *w = wchar_t ((((byte & 0x1F) << 6) | (s[1] & 0x3F)));
 	    return 2;
-	} else return CXXRconvert(size_t, -1);
+	} else return CXXRCONSTRUCT(size_t, -1);
     } else if (byte < 0xF0) {
-	if(strlen(s) < 3) return CXXRconvert(size_t, -2);
+	if(strlen(s) < 3) return CXXRCONSTRUCT(size_t, -2);
 	if (((s[1] & 0xC0) == 0x80) && ((s[2] & 0xC0) == 0x80)) {
 	    *w = wchar_t (((byte & 0x0F) << 12)
 		    | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F));
 	    byte = *w;
 	    /* Surrogates range */
-	    if(byte >= 0xD800 && byte <= 0xDFFF) return CXXRconvert(size_t, -1);
-	    if(byte == 0xFFFE || byte == 0xFFFF) return CXXRconvert(size_t, -1);
+	    if(byte >= 0xD800 && byte <= 0xDFFF) return CXXRCONSTRUCT(size_t, -1);
+	    if(byte == 0xFFFE || byte == 0xFFFF) return CXXRCONSTRUCT(size_t, -1);
 	    return 3;
-	} else return CXXRconvert(size_t, -1);
+	} else return CXXRCONSTRUCT(size_t, -1);
     }
-    if(sizeof(wchar_t) < 4) return CXXRconvert(size_t, -2);
+    if(sizeof(wchar_t) < 4) return CXXRCONSTRUCT(size_t, -2);
     /* So now handle 4,5.6 byte sequences with no testing */
     if (byte < 0xf8) {
-	if(strlen(s) < 4) return CXXRconvert(size_t, -2);
+	if(strlen(s) < 4) return CXXRCONSTRUCT(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 18)
 		        | ((s[1] & 0x3F) << 12)
 		        | ((s[2] & 0x3F) << 6)
 		        | (s[3] & 0x3F));
 	return 4;
     } else if (byte < 0xFC) {
-	if(strlen(s) < 5) return CXXRconvert(size_t, -2);
+	if(strlen(s) < 5) return CXXRCONSTRUCT(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 24)
 		        | ((s[1] & 0x3F) << 12)
 		        | ((s[2] & 0x3F) << 12)
@@ -1066,7 +1066,7 @@ utf8toucs(wchar_t *wc, const char *s)
 		        | (s[4] & 0x3F));
 	return 5;
     } else {
-	if(strlen(s) < 6) return CXXRconvert(size_t, -2);
+	if(strlen(s) < 6) return CXXRCONSTRUCT(size_t, -2);
 	*w = wchar_t (((byte & 0x0F) << 30)
 		        | ((s[1] & 0x3F) << 24)
 		        | ((s[2] & 0x3F) << 18)
@@ -1091,7 +1091,7 @@ utf8towcs(wchar_t *wc, const char *s, size_t n)
 	    if (m < 0) error(_("invalid input '%s' in 'utf8towcs'"), s);
 	    if (m == 0) break;
 	    res ++;
-	    if (res >= CXXRconvert(int, n)) break;
+	    if (res >= CXXRCONSTRUCT(int, n)) break;
 	}
     else
 	for(t = s; ; res++, t += m) {
@@ -1115,8 +1115,8 @@ static size_t Rwcrtomb(char *s, const wchar_t wc)
 
     b = s ? s : buf;
     if(cvalue == 0) {*b = 0; return 0;}
-    for (i = 0; i < CXXRconvert(int, sizeof(utf8_table1)/sizeof(int)); i++)
-	if (CXXRconvert(int, cvalue) <= utf8_table1[i]) break;
+    for (i = 0; i < CXXRCONSTRUCT(int, sizeof(utf8_table1)/sizeof(int)); i++)
+	if (CXXRCONSTRUCT(int, cvalue) <= utf8_table1[i]) break;
     b += i;
     for (j = i; j > 0; j--) {
 	*b-- = 0x80 | (cvalue & 0x3f);
@@ -1137,7 +1137,7 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n)
 	    m  = Rwcrtomb(t, *p);
 	    if(m <= 0) break;
 	    res += m;
-	    if(res >= CXXRconvert(int, n)) break;
+	    if(res >= CXXRCONSTRUCT(int, n)) break;
 	    t += m;
 	}
     } else {
@@ -1162,7 +1162,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	/* This gets called from the menu setup in RGui */
 	if (!R_Is_Running) return -1;
 	/* let's try to print out a readable version */
-	char *err = CXXRconvert(static_cast<char*>, alloca(4*strlen(s) + 1)), *q;
+	char *err = CXXRCONSTRUCT(static_cast<char*>, alloca(4*strlen(s) + 1)), *q;
 	const char *p;
 	R_CheckStack();
 	for(p = s, q = err; *p; ) {
@@ -1188,7 +1188,7 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 
 Rboolean mbcsValid(const char *str)
 {
-    return  CXXRconvert(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
+    return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
 }
 
 
@@ -1199,7 +1199,7 @@ char *Rf_strchr(const char *s, int c)
     mbstate_t mb_st;
     int used;
 
-    if(!mbcslocale || utf8locale) return CXXRccast(char*, strchr(s, c));
+    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) return p;
@@ -1214,7 +1214,7 @@ char *Rf_strrchr(const char *s, int c)
     mbstate_t mb_st;
     int used;
 
-    if(!mbcslocale || utf8locale) return CXXRccast(char*, strrchr(s, c));
+    if(!mbcslocale || utf8locale) return CXXRCCAST(char*, strrchr(s, c));
     mbs_init(&mb_st);
     while( (used = Mbrtowc(NULL, p, MB_CUR_MAX, &mb_st)) ) {
 	if(*p == c) plast = p;
@@ -1318,7 +1318,7 @@ char *acopy_string(const char *in)
 	out = (char *) R_alloc(1+strlen(in), sizeof(char));
 	strcpy(out, in);
     } else
-	out = CXXRconvert(const_cast<char*>, "");
+	out = CXXRCONSTRUCT(const_cast<char*>, "");
     return out;
 }
 
@@ -1677,9 +1677,9 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    break;
 		}
 	    if (collator && at == 999 && val >= 0) {
-		ucol_setStrength(collator, CXXRconvert(UCollationStrength, val));
+		ucol_setStrength(collator, CXXRCONSTRUCT(UCollationStrength, val));
 	    } else if (collator && at >= 0 && val >= 0) {
-		ucol_setAttribute(collator, CXXRconvert(UColAttribute, at), CXXRconvert(UColAttributeValue, val), &status);
+		ucol_setAttribute(collator, CXXRCONSTRUCT(UColAttribute, at), CXXRCONSTRUCT(UColAttributeValue, val), &status);
 		if (U_FAILURE(status)) 
 		    error("failed to set ICU collator attribute");
 	    }

@@ -148,7 +148,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 		RAW(result)[i] = Rbyte( 0);
 	    break;
 	default:
-	    errorcall(call, R_MSG_ob_nonsub, type2char(CXXRconvert(SEXPTYPE, mode)));
+	    errorcall(call, R_MSG_ob_nonsub, type2char(CXXRCONSTRUCT(SEXPTYPE, mode)));
 	}
     }
     return result;
@@ -642,7 +642,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    switch (TYPEOF(x)) {
 	    case REALSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? CXXRconvert(int, REAL(s)[0]) : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}
@@ -651,7 +651,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		break;
 	    case INTSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? CXXRconvert(int, REAL(s)[0]) : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}
@@ -998,7 +998,7 @@ pstrmatch(SEXP target, SEXP input, int slen)
 	break;
     }
     if(strncmp(st, translateChar(input), slen) == 0)
-	return (CXXRconvert(int, strlen(st)) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
+	return (CXXRCONSTRUCT(int, strlen(st)) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
     else return NO_MATCH;
 }
 

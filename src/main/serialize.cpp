@@ -665,7 +665,7 @@ static int HashGet(SEXP item, SEXP ht)
 #define HAS_TAG_BIT_MASK (1 << 10)
 #define ENCODE_LEVELS(v) ((v) << 12)
 #define DECODE_LEVELS(v) ((v) >> 12)
-#define DECODE_TYPE(v) (CXXRconvert(SEXPTYPE, (v) & 255))
+#define DECODE_TYPE(v) (CXXRCONSTRUCT(SEXPTYPE, (v) & 255))
 
 static int PackFlags(int type, int levs, int isobj, int hasattr, int hastag)
 {
@@ -1452,7 +1452,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case BUILTINSXP:
 	    /* These are all short strings */
 	    length = InInteger(stream);
-	    cbuf = CXXRconvert(static_cast<char*>, alloca(length+1));
+	    cbuf = CXXRCONSTRUCT(static_cast<char*>, alloca(length+1));
 	    InString(stream, cbuf, length);
 	    cbuf[length] = '\0';
 	    PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
@@ -1543,7 +1543,7 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 		pos = InInteger(stream);
 		type = InInteger(stream);
 	    }
-	    PROTECT(ans = allocSExp(CXXRconvert(SEXPTYPE, type)));
+	    PROTECT(ans = allocSExp(CXXRCONSTRUCT(SEXPTYPE, type)));
 	    if (pos >= 0)
 		SET_VECTOR_ELT(reps, pos, ans);
 	    SET_TAG(ans, ReadItem(ref_table, stream));
@@ -1676,7 +1676,7 @@ void
 R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 		      R_pstream_format_t type, int version,
 		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, CXXRconst void *, int),
+		      void (*outbytes)(R_outpstream_t, CXXRCONST void *, int),
 		      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     stream->data = data;
@@ -1695,29 +1695,29 @@ R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
 
 static void OutCharFile(R_outpstream_t stream, int c)
 {
-    FILE *fp = CXXRconvert(static_cast<FILE*>, stream->data);
+    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
     fputc(c, fp);
 }
 
 
 static int InCharFile(R_inpstream_t stream)
 {
-    FILE *fp = CXXRconvert(static_cast<FILE*>, stream->data);
+    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
     return fgetc(fp);
 }
 
-static void OutBytesFile(R_outpstream_t stream, CXXRconst void *buf, int length)
+static void OutBytesFile(R_outpstream_t stream, CXXRCONST void *buf, int length)
 {
-    FILE *fp = CXXRconvert(static_cast<FILE*>, stream->data);
+    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
     size_t out = fwrite(buf, 1, length, fp);
-    if (CXXRconvert(int, out) != length) error(_("write failed"));
+    if (CXXRCONSTRUCT(int, out) != length) error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 {
-    FILE *fp = CXXRconvert(static_cast<FILE*>, stream->data);
+    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
     size_t in = fread(buf, 1, length, fp);
-    if (CXXRconvert(int, in) != length) error(_("read failed"));
+    if (CXXRCONSTRUCT(int, in) != length) error(_("read failed"));
 }
 
 void
@@ -1767,14 +1767,14 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
     CheckInConn(con);
     if (con->text) {
 	int i;
-	char *p = CXXRconvert(static_cast<char*>, buf);
+	char *p = CXXRCONSTRUCT(static_cast<char*>, buf);
 	for (i = 0; i < length; i++)
 	    p[i] = Rconn_fgetc(con);
     }
     else {
 	if (stream->type == R_pstream_ascii_format) {
 	    char linebuf[4];
-	    unsigned char *p = CXXRconvert(static_cast<unsigned char*>, buf);
+	    unsigned char *p = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
 	    int i, ncread;
 	    unsigned int res;
 	    for (i = 0; i < length; i++) {
@@ -1786,7 +1786,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 		*p++ = static_cast<unsigned char>(res);
 	    }
 	} else {
-	    if (length != CXXRconvert(int, con->read(buf, 1, length, con)))
+	    if (length != CXXRCONSTRUCT(int, con->read(buf, 1, length, con)))
 		error(_("error reading from connection"));
 	}
     }
@@ -1806,18 +1806,18 @@ static int InCharConn(R_inpstream_t stream)
     }
 }
 
-static void OutBytesConn(R_outpstream_t stream, CXXRconst void *buf, int length)
+static void OutBytesConn(R_outpstream_t stream, CXXRCONST void *buf, int length)
 {
     Rconnection con = static_cast<Rconnection>( stream->data);
     CheckOutConn(con);
     if (con->text) {
 	int i;
-	CXXRconst char *p = CXXRconvert(static_cast<const char*>, buf);
+	CXXRCONST char *p = CXXRCONSTRUCT(static_cast<const char*>, buf);
 	for (i = 0; i < length; i++)
 	    Rconn_printf(con, "%c", p[i]);
     }
     else {
-	if (length != CXXRconvert(int, con->write(buf, 1, length, con)))
+	if (length != CXXRCONSTRUCT(int, con->write(buf, 1, length, con)))
 	    error(_("error writing to connection"));
     }
 }
@@ -1892,7 +1892,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = CXXRconvert(Rboolean, INTEGER(CADDR(args))[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
     if (ascii) type = R_pstream_ascii_format;
     else type = R_pstream_xdr_format;
 
@@ -1953,29 +1953,29 @@ typedef struct bconbuf_st {
 
 static void flush_bcon_buffer(bconbuf_t bb)
 {
-    if (CXXRconvert(int, R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
+    if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
 	error(_("error writing to connection"));
     bb->count = 0;
 }
 
 static void OutCharBB(R_outpstream_t stream, int c)
 {
-    bconbuf_t bb = CXXRconvert(static_cast<bconbuf_st*>, stream->data);
+    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
     if (bb->count >= BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     bb->buf[bb->count++] = c;
 }
 
-static void OutBytesBB(R_outpstream_t stream, CXXRconst void *buf, int length)
+static void OutBytesBB(R_outpstream_t stream, CXXRCONST void *buf, int length)
 {
-    bconbuf_t bb = CXXRconvert(static_cast<bconbuf_st*>, stream->data);
+    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
     if (bb->count + length > BCONBUFSIZ)
 	flush_bcon_buffer(bb);
     if (length <= BCONBUFSIZ) {
 	memcpy(bb->buf + bb->count, buf, length);
 	bb->count += length;
     }
-    else if (CXXRconvert(int, R_WriteConnection(bb->con, buf, length)) != length)
+    else if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, buf, length)) != length)
 	error(_("error writing to connection"));
 }
 
@@ -2026,7 +2026,7 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
     if(needed > INT_MAX)
 	error(_("serialization is too large to store in a raw vector"));
     if(needed < INT_MAX - MAXELTSIZE) needed += MAXELTSIZE;
-    mb->buf = CXXRconvert(static_cast<unsigned char*>, realloc(mb->buf, newsize));
+    mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, realloc(mb->buf, newsize));
     if (mb->buf == NULL)
 	error(_("cannot allocate buffer"));
     mb->size = newsize;
@@ -2034,15 +2034,15 @@ static void resize_buffer(membuf_t mb, R_size_t needed)
 
 static void OutCharMem(R_outpstream_t stream, int c)
 {
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count >= mb->size)
 	resize_buffer(mb, mb->count + 1);
     mb->buf[mb->count++] = c;
 }
 
-static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
+static void OutBytesMem(R_outpstream_t stream, CXXRCONST void *buf, int length)
 {
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     R_size_t needed = mb->count + R_size_t( length);
     /* There is a potential overflow here on 32-bit systems */
     if(double( mb->count) + length > double( INT_MAX))
@@ -2054,7 +2054,7 @@ static void OutBytesMem(R_outpstream_t stream, CXXRconst void *buf, int length)
 
 static int InCharMem(R_inpstream_t stream)
 {
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count >= mb->size)
 	error(_("read error"));
     return mb->buf[mb->count++];
@@ -2062,7 +2062,7 @@ static int InCharMem(R_inpstream_t stream)
 
 static void InBytesMem(R_inpstream_t stream, void *buf, int length)
 {
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count + R_size_t( length) > mb->size)
 	error(_("read error"));
     memcpy(buf, mb->buf + mb->count, length);
@@ -2075,7 +2075,7 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
 {
     mb->count = 0;
     mb->size = length;
-    mb->buf = CXXRconvert(static_cast<unsigned char*>, buf);
+    mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
     R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, R_pstream_any_format,
 		    InCharMem, InBytesMem, phook, pdata);
 }
@@ -2093,7 +2093,7 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
 
 static void free_mem_buffer(void *data)
 {
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, data);
     if (mb->buf != NULL) {
 	unsigned char *buf = mb->buf;
 	mb->buf = NULL;
@@ -2104,7 +2104,7 @@ static void free_mem_buffer(void *data)
 static SEXP CloseMemOutPStream(R_outpstream_t stream)
 {
     SEXP val;
-    membuf_t mb = CXXRconvert(static_cast<membuf_st*>, stream->data);
+    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     /* duplicate check, for future proofing */
     if(mb->count > INT_MAX)
 	error(_("serialization is too large to store in a raw vector"));
@@ -2304,7 +2304,7 @@ static SEXP readRawFromFile(SEXP file, SEXP key)
 	    /* fprintf(stderr, "adding file '%s' at pos %d in cache, length %d\n",
 	       cfile, icache, filelen); */
 	    strcpy(names[icache], cfile);
-	    ptr[icache] = CXXRconvert(static_cast<char*>, malloc(filelen));
+	    ptr[icache] = CXXRCONSTRUCT(static_cast<char*>, malloc(filelen));
 	    if (fseek(fp, 0, SEEK_SET) != 0) {
 		fclose(fp);
 		error(_("seek failed on %s"), cfile);
@@ -2356,7 +2356,7 @@ SEXP attribute_hidden R_getVarsFromFrame(SEXP vars, SEXP env, SEXP forcesxp)
 	error(_("bad environment"));
     if (TYPEOF(vars) != STRSXP)
 	error(_("bad variable names"));
-    force = CXXRconvert(Rboolean, asLogical(forcesxp));
+    force = CXXRCONSTRUCT(Rboolean, asLogical(forcesxp));
 
     len = LENGTH(vars);
     PROTECT(val = allocVector(VECSXP, len));
@@ -2401,7 +2401,7 @@ R_lazyLoadDBinsertValue(SEXP value, SEXP file, SEXP ascii,
 			SEXP compsxp, SEXP hook)
 {
     PROTECT_INDEX vpi;
-    Rboolean compress = CXXRconvert(Rboolean, asInteger(compsxp));
+    Rboolean compress = CXXRCONSTRUCT(Rboolean, asInteger(compsxp));
     SEXP key;
 
     value = R_serialize(value, R_NilValue, ascii, hook);
@@ -2437,7 +2437,7 @@ do_lazyLoadDBfetch(SEXP call, SEXP op, SEXP args, SEXP env)
     file = CAR(args); args = CDR(args);
     compsxp = CAR(args); args = CDR(args);
     hook = CAR(args);
-    compressed = CXXRconvert(Rboolean, asInteger(compsxp));
+    compressed = CXXRCONSTRUCT(Rboolean, asInteger(compsxp));
 
     PROTECT_WITH_INDEX(val = readRawFromFile(file, key), &vpi);
 #ifdef HAVE_LZMA

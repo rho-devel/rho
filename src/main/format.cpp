@@ -175,7 +175,7 @@ static void scientific(double *x, int *sgn, int *kpower, int *nsig, double eps)
 	} else {
 	    *sgn = 0; r = *x;
 	}
-	kp = CXXRconvert(int, floor(log10(r)));/*-->	 r = |x| ;  10^k <= r */
+	kp = CXXRCONSTRUCT(int, floor(log10(r)));/*-->	 r = |x| ;  10^k <= r */
 	if (abs(kp) < 10) {
 	    if (kp >= 0)
 		alpha = r / tbl[kp + 1]; /* division slow ? */

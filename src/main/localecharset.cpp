@@ -74,8 +74,8 @@
 
 /* name_value struct */
 typedef struct {
-    CXXRconst char *name;
-    CXXRconst char *value;
+    CXXRCONST char *name;
+    CXXRCONST char *value;
 } name_value;
 
 
@@ -546,7 +546,7 @@ static const int known_count = (sizeof(known)/sizeof(name_value));
 
 
 #ifndef __APPLE__
-static CXXRconst char* name_value_search(const char *name, const name_value table[],
+static CXXRCONST char* name_value_search(const char *name, const name_value table[],
 			       const int table_count)
 {
     int min, mid, max;
@@ -597,7 +597,7 @@ static CXXRconst char* name_value_search(const char *name, const name_value tabl
 }
 #endif
 
-CXXRconst char *locale2charset(const char *locale)
+CXXRCONST char *locale2charset(const char *locale)
 {
     static char charset[128];
 
@@ -606,7 +606,7 @@ CXXRconst char *locale2charset(const char *locale)
     int i;
     int  cp;
 #ifndef __APPLE__
-    CXXRconst char *value;
+    CXXRCONST char *value;
 #endif
 
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))

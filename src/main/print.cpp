@@ -181,7 +181,7 @@ SEXP attribute_hidden do_printfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP s = CAR(args);
     switch (TYPEOF(s)) {
     case CLOSXP:
-	PrintLanguageEtc(s, CXXRconvert(Rboolean, asLogical(CADR(args))), /*is closure = */ TRUE);
+	PrintLanguageEtc(s, CXXRCONSTRUCT(Rboolean, asLogical(CADR(args))), /*is closure = */ TRUE);
 	printAttributes(s, rho, FALSE);
 	break;
     case BUILTINSXP:
@@ -651,7 +651,7 @@ static void PrintExpression(SEXP s)
 static void PrintSpecial(SEXP s)
 {
     /* This is OK as .Internals are not visible to be printed */
-    CXXRconst char *nm = PRIMNAME(s);
+    CXXRCONST char *nm = PRIMNAME(s);
     SEXP env, s2;
     PROTECT_INDEX xp;
     PROTECT_WITH_INDEX(env = findVarInFrame3(R_BaseEnv,
@@ -915,7 +915,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		    digits = R_print.digits, gap = R_print.gap,
 		    na_width = R_print.na_width,
 		    na_width_noquote = R_print.na_width_noquote;
-		Rprt_adj right = CXXRconvert(Rprt_adj, R_print.right);
+		Rprt_adj right = CXXRCONSTRUCT(Rprt_adj, R_print.right);
 
 		{
 		    GCStackRoot<PairList> tl(PairList::makeList(2));

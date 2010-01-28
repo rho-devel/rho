@@ -112,7 +112,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-SEXP CXXRnot_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int onexit;
 
@@ -150,7 +150,7 @@ unsigned int GCNode::protectCstructs()
     return protect_count;
 }
 
-SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i;
     SEXP old = ScalarLogical(!gc_inhibit_torture);
@@ -162,7 +162,7 @@ SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
     return old;
 }
 
-SEXP CXXRnot_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os = GCManager::setReporting(0);
@@ -176,7 +176,7 @@ SEXP CXXRnot_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* reports memory use to profiler in eval.c */
 
-void CXXRnot_hidden get_current_mem(unsigned long *smallvsize,
+void attribute_hidden get_current_mem(unsigned long *smallvsize,
 				    unsigned long *largevsize,
 				    unsigned long *nodes)
 {
@@ -187,7 +187,7 @@ void CXXRnot_hidden get_current_mem(unsigned long *smallvsize,
     return;
 }
 
-SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os
@@ -398,7 +398,7 @@ void R_gc(void)
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP CXXRnot_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     checkArity(op, args);
@@ -409,7 +409,7 @@ SEXP CXXRnot_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP CXXRnot_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));
@@ -507,7 +507,7 @@ void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
 
 #ifndef R_MEMORY_PROFILING
 
-SEXP CXXRnot_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     error(_("memory profiling is not available on this system"));
     return R_NilValue; /* not reached */
@@ -573,7 +573,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
     filename = STRING_ELT(CAR(args), 0);
-    threshold = CXXRconvert(R_size_t, REAL(CADDR(args))[0]);
+    threshold = CXXRCONSTRUCT(R_size_t, REAL(CADDR(args))[0]);
     if (strlen(CHAR(filename)))
 	R_InitMemReporting(filename, append_mode, threshold);
     else
@@ -587,7 +587,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include "RBufferUtils.h"
 
-CXXRnot_hidden
+attribute_hidden
 void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
 {
     size_t blen1, bsize = buf->defaultSize;
@@ -619,7 +619,7 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     return buf->data;
 }
 
-void CXXRnot_hidden
+void attribute_hidden
 R_FreeStringBuffer(R_StringBuffer *buf)
 {
     if (buf->data != NULL) {
@@ -629,7 +629,7 @@ R_FreeStringBuffer(R_StringBuffer *buf)
     }
 }
 
-void CXXRnot_hidden
+void attribute_hidden
 R_FreeStringBufferL(R_StringBuffer *buf)
 {
     if (buf->bufsize > buf->defaultSize) {

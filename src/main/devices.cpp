@@ -607,7 +607,7 @@ SEXP do_devAskNewPage(SEXP call, SEXP op, SEXP args, SEXP env)
 	ask = asLogical(CAR(args));
 	if (ask == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "ask");
-	gdd->ask = CXXRconvert(Rboolean, ask);
+	gdd->ask = CXXRCONSTRUCT(Rboolean, ask);
 	R_Visible = FALSE;
     } else R_Visible = TRUE;
 

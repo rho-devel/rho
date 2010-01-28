@@ -158,7 +158,7 @@ zipunzip(const char *zipname, const char *dest, int nfiles, const char **files,
     if (nfiles == 0) { /* all files */
 	unz_global_info gi;
 	unzGetGlobalInfo(uf, &gi);
-	for (i = 0; i < CXXRconvert(int, gi.number_entry); i++) {
+	for (i = 0; i < CXXRCONSTRUCT(int, gi.number_entry); i++) {
 	    if (i > 0) if ((err = unzGoToNextFile(uf)) != UNZ_OK) break;
 	    if (*nnames+1 >= LENGTH(names)) {
 		SEXP onames = names;
@@ -214,7 +214,7 @@ static SEXP ziplist(const char *zipname)
     SET_VECTOR_ELT(ans, 1, lengths = allocVector(INTSXP, nfiles));
     SET_VECTOR_ELT(ans, 2, dates = allocVector(STRSXP, nfiles));
 
-    for (i = 0; CXXRconvert(int, i) < nfiles; i++) {
+    for (i = 0; CXXRCONSTRUCT(int, i) < nfiles; i++) {
         char filename_inzip[PATH_MAX], date[50];
         unz_file_info file_info;
 
@@ -232,7 +232,7 @@ static SEXP ziplist(const char *zipname)
 		 file_info.tmu_date.tm_min);
 	SET_STRING_ELT(dates, i, mkChar(date));
 
-        if (CXXRconvert(int, i) < nfiles - 1) {
+        if (CXXRCONSTRUCT(int, i) < nfiles - 1) {
             err = unzGoToNextFile(uf);
             if (err != UNZ_OK)
                 error("error %d with zipfile in unzGoToNextFile\n",err);

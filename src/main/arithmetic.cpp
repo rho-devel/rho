@@ -161,7 +161,7 @@ Rboolean R_IsNaN(double x)
     if (isnan(x)) {
 	ieee_double y;
 	y.value = x;
-	return CXXRconvert(Rboolean, (y.word[lw] != 1954));
+	return CXXRCONSTRUCT(Rboolean, (y.word[lw] != 1954));
     }
     return FALSE;
 }
@@ -171,9 +171,9 @@ Rboolean R_IsNaN(double x)
 Rboolean R_finite(double x)
 {
 #ifdef HAVE_WORKING_ISFINITE
-    return CXXRconvert(Rboolean, isfinite(x));
+    return CXXRCONSTRUCT(Rboolean, isfinite(x));
 #else
-    return CXXRconvert(Rboolean, !isnan(x) && (x != R_PosInf) && (x != R_NegInf));
+    return CXXRCONSTRUCT(Rboolean, !isnan(x) && (x != R_PosInf) && (x != R_NegInf));
 #endif
 }
 

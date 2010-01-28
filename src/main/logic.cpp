@@ -421,7 +421,7 @@ SEXP attribute_hidden do_logic3(SEXP call, SEXP op, SEXP args, SEXP env)
     if (PRIMVAL(op) == 1) {	/* ALL */
 	LOGICAL(s)[0] = haveNA ? (haveFalse ? 0 : NA_LOGICAL) : !haveFalse;
     } else {			/* ANY */
-	LOGICAL(s)[0] = haveNA ? (haveTrue  ? 1 : NA_LOGICAL) : CXXRconvert(int, haveTrue);
+	LOGICAL(s)[0] = haveNA ? (haveTrue  ? 1 : NA_LOGICAL) : CXXRCONSTRUCT(int, haveTrue);
     }
     UNPROTECT(2);
     return s;

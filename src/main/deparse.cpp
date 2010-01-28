@@ -188,7 +188,7 @@ SEXP attribute_hidden do_deparse(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args);
     nlines = asInteger(CAR(args));
     if (nlines == NA_INTEGER) nlines = -1;
-    ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRconvert(Rboolean, backtick), opts, nlines);
+    ca1 = deparse1WithCutoff(ca1, CXXRFALSE, cut0, CXXRCONSTRUCT(Rboolean, backtick), opts, nlines);
     return ca1;
 }
 
@@ -310,9 +310,9 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(saveenv = CLOENV(tval));
 	SET_CLOENV(tval, R_GlobalEnv);
     }
-    opts = CXXRconvert(Rboolean, SHOWATTRIBUTES);
+    opts = CXXRCONSTRUCT(Rboolean, SHOWATTRIBUTES);
     if(!isNull(CADDR(args)))
-	opts = CXXRconvert(Rboolean, asInteger(CADDR(args)));
+	opts = CXXRCONSTRUCT(Rboolean, asInteger(CADDR(args)));
 
     tval = deparse1(tval, CXXRFALSE, opts);
     if (TYPEOF(CAR(args)) == CLOSXP) {
@@ -345,7 +345,7 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else {
 	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
 	    if(!havewarned &&
-	       res < CXXRconvert(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
+	       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
 		warning(_("wrote too few characters"));
 	}
     UNPROTECT(1); /* tval */
@@ -378,7 +378,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* <NOTE>: change this if extra options are added */
     if(opts == NA_INTEGER || opts < 0 || opts > 256)
 	errorcall(call, _("'opts' should be small non-negative integer"));
-    evaluate = CXXRconvert(Rboolean, asLogical(CAD4R(args)));
+    evaluate = CXXRCONSTRUCT(Rboolean, asLogical(CAD4R(args)));
     if (!evaluate) opts |= DELAYPROMISES;
 
     PROTECT(o = objs = allocList(nobjs));
@@ -435,13 +435,13 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    res = Rconn_printf(con, "\"%s\" <-\n", s);
 		else
 		    res = Rconn_printf(con, "`%s` <-\n", s);
-		if(!havewarned && res < CXXRconvert(int, strlen(s)) + extra)
+		if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
 		    warning(_("wrote too few characters"));
 		tval = deparse1(CAR(o), CXXRFALSE, opts);
 		for (j = 0; j < LENGTH(tval); j++) {
 		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
 		    if(!havewarned &&
-		       res < CXXRconvert(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
+		       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
 			warning(_("wrote too few characters"));
 		}
 		o = CDR(o);
@@ -519,34 +519,34 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 		(TYPEOF(SYMVALUE(CAR(arg))) == SPECIALSXP)) {
 		arginfo = PPINFO(SYMVALUE(CAR(arg)));
 		switch(arginfo.kind) {
-		case CXXRBuiltInFunction::PP_BINARY:	      /* Not all binary ops are binary! */
-		case CXXRBuiltInFunction::PP_BINARY2:
+		case CXXRBUILTINFUNCTION::PP_BINARY:	      /* Not all binary ops are binary! */
+		case CXXRBUILTINFUNCTION::PP_BINARY2:
 		    switch(length(CDR(arg))) {
 		    case 1:
 			if (!left)
 			    return FALSE;
-			if (arginfo.precedence == CXXRBuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    arginfo.precedence = CXXRBuiltInFunction::PREC_SIGN;
+			if (arginfo.precedence == CXXRBUILTINFUNCTION::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    arginfo.precedence = CXXRBUILTINFUNCTION::PREC_SIGN;
 		    case 2:
 			break;
 		    default:
 			return FALSE;
 		    }
-		case CXXRBuiltInFunction::PP_ASSIGN:
-		case CXXRBuiltInFunction::PP_ASSIGN2:
-		case CXXRBuiltInFunction::PP_SUBSET:
-		case CXXRBuiltInFunction::PP_UNARY:
-		case CXXRBuiltInFunction::PP_DOLLAR:
+		case CXXRBUILTINFUNCTION::PP_ASSIGN:
+		case CXXRBUILTINFUNCTION::PP_ASSIGN2:
+		case CXXRBUILTINFUNCTION::PP_SUBSET:
+		case CXXRBUILTINFUNCTION::PP_UNARY:
+		case CXXRBUILTINFUNCTION::PP_DOLLAR:
 		    if (mainop.precedence > arginfo.precedence
 			|| (mainop.precedence == arginfo.precedence && left == mainop.rightassoc)) {
 			return TRUE;
 		    }
 		    break;
-		case CXXRBuiltInFunction::PP_FOR:
-		case CXXRBuiltInFunction::PP_IF:
-		case CXXRBuiltInFunction::PP_WHILE:
-		case CXXRBuiltInFunction::PP_REPEAT:
-		    return CXXRconvert(Rboolean, left == 1);
+		case CXXRBUILTINFUNCTION::PP_FOR:
+		case CXXRBUILTINFUNCTION::PP_IF:
+		case CXXRBUILTINFUNCTION::PP_WHILE:
+		case CXXRBUILTINFUNCTION::PP_REPEAT:
+		    return CXXRCONSTRUCT(Rboolean, left == 1);
 		    break;
 		default:
 		    return FALSE;
@@ -555,8 +555,8 @@ static Rboolean needsparens(PPinfo mainop, SEXP arg, unsigned int left)
 	}
     }
     else if ((TYPEOF(arg) == CPLXSXP) && (length(arg) == 1)) {
-	if (mainop.precedence > CXXRBuiltInFunction::PREC_SUM
-	    || (mainop.precedence == CXXRBuiltInFunction::PREC_SUM && left == mainop.rightassoc)) {
+	if (mainop.precedence > CXXRBUILTINFUNCTION::PREC_SUM
+	    || (mainop.precedence == CXXRBUILTINFUNCTION::PREC_SUM && left == mainop.rightassoc)) {
 	    return TRUE;
 	}
     }
@@ -849,26 +849,26 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		op = CAR(s);
 		fop = PPINFO(SYMVALUE(op));
 		s = CDR(s);
-		if (fop.kind == CXXRBuiltInFunction::PP_BINARY) {
+		if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY) {
 		    switch (length(s)) {
 		    case 1:
-			fop.kind = CXXRBuiltInFunction::PP_UNARY;
-			if (fop.precedence == CXXRBuiltInFunction::PREC_SUM)   /* binary +/- precedence upgraded as unary */
-			    fop.precedence = CXXRBuiltInFunction::PREC_SIGN;
+			fop.kind = CXXRBUILTINFUNCTION::PP_UNARY;
+			if (fop.precedence == CXXRBUILTINFUNCTION::PREC_SUM)   /* binary +/- precedence upgraded as unary */
+			    fop.precedence = CXXRBUILTINFUNCTION::PREC_SIGN;
 			break;
 		    case 2:
 			break;
 		    default:
-			fop.kind = CXXRBuiltInFunction::PP_FUNCALL;
+			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;
 			break;
 		    }
 		}
-		else if (fop.kind == CXXRBuiltInFunction::PP_BINARY2) {
+		else if (fop.kind == CXXRBUILTINFUNCTION::PP_BINARY2) {
 		    if (length(s) != 2)
-			fop.kind = CXXRBuiltInFunction::PP_FUNCALL;
+			fop.kind = CXXRBUILTINFUNCTION::PP_FUNCALL;
 		}
 		switch (fop.kind) {
-		case CXXRBuiltInFunction::PP_IF:
+		case CXXRBUILTINFUNCTION::PP_IF:
 		    print2buff("if (", d);
 		    /* print the predicate */
 		    deparse2buff(CAR(s), d);
@@ -899,13 +899,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    d->indent--;
 		    }
 		    break;
-		case CXXRBuiltInFunction::PP_WHILE:
+		case CXXRBUILTINFUNCTION::PP_WHILE:
 		    print2buff("while (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(") ", d);
 		    deparse2buff(CADR(s), d);
 		    break;
-		case CXXRBuiltInFunction::PP_FOR:
+		case CXXRBUILTINFUNCTION::PP_FOR:
 		    print2buff("for (", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(" in ", d);
@@ -913,11 +913,11 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff(") ", d);
 		    deparse2buff(CADR(CDR(s)), d);
 		    break;
-		case CXXRBuiltInFunction::PP_REPEAT:
+		case CXXRBUILTINFUNCTION::PP_REPEAT:
 		    print2buff("repeat ", d);
 		    deparse2buff(CAR(s), d);
 		    break;
-		case CXXRBuiltInFunction::PP_CURLY:
+		case CXXRBUILTINFUNCTION::PP_CURLY:
 		    print2buff("{", d);
 		    d->incurly += 1;
 		    d->indent++;
@@ -931,12 +931,12 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    print2buff("}", d);
 		    d->incurly -= 1;
 		    break;
-		case CXXRBuiltInFunction::PP_PAREN:
+		case CXXRBUILTINFUNCTION::PP_PAREN:
 		    print2buff("(", d);
 		    deparse2buff(CAR(s), d);
 		    print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_SUBSET:
+		case CXXRBUILTINFUNCTION::PP_SUBSET:
 		    deparse2buff(CAR(s), d);
 		    if (PRIMVAL(SYMVALUE(op)) == 1)
 			print2buff("[", d);
@@ -948,8 +948,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    else
 			print2buff("]]", d);
 		    break;
-		case CXXRBuiltInFunction::PP_FUNCALL:
-		case CXXRBuiltInFunction::PP_RETURN:
+		case CXXRBUILTINFUNCTION::PP_FUNCALL:
+		case CXXRBUILTINFUNCTION::PP_RETURN:
 		    if (isValidName(CHAR(PRINTNAME(op)))) /* ASCII */
 			print2buff(CHAR(PRINTNAME(op)), d);
 		    else if (d->backtick) {
@@ -967,7 +967,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_FOREIGN:
+		case CXXRBUILTINFUNCTION::PP_FOREIGN:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    print2buff("(", d);
 		    d->inlist++;
@@ -975,7 +975,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    d->inlist--;
 		    print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_FUNCTION:
+		case CXXRBUILTINFUNCTION::PP_FUNCTION:
 		    printcomment(s, d);
 		    if (!(d->opts & USESOURCE) || !isString(CADDR(s))) {
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
@@ -992,8 +992,8 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			}
 		    }
 		    break;
-		case CXXRBuiltInFunction::PP_ASSIGN:
-		case CXXRBuiltInFunction::PP_ASSIGN2:
+		case CXXRBUILTINFUNCTION::PP_ASSIGN:
+		case CXXRBUILTINFUNCTION::PP_ASSIGN2:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1008,7 +1008,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_DOLLAR:
+		case CXXRBUILTINFUNCTION::PP_DOLLAR:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1027,7 +1027,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			    print2buff(")", d);
 		    }
 		    break;
-		case CXXRBuiltInFunction::PP_BINARY:
+		case CXXRBUILTINFUNCTION::PP_BINARY:
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1047,7 +1047,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 			lbreak = FALSE;
 		    }
 		    break;
-		case CXXRBuiltInFunction::PP_BINARY2:	/* no space between op and args */
+		case CXXRBUILTINFUNCTION::PP_BINARY2:	/* no space between op and args */
 		    if ((parens = needsparens(fop, CAR(s), 1)))
 			print2buff("(", d);
 		    deparse2buff(CAR(s), d);
@@ -1060,7 +1060,7 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_UNARY:
+		case CXXRBUILTINFUNCTION::PP_UNARY:
 		    print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
 		    if ((parens = needsparens(fop, CAR(s), 0)))
 			print2buff("(", d);
@@ -1068,13 +1068,13 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 		    if (parens)
 			print2buff(")", d);
 		    break;
-		case CXXRBuiltInFunction::PP_BREAK:
+		case CXXRBUILTINFUNCTION::PP_BREAK:
 		    print2buff("break", d);
 		    break;
-		case CXXRBuiltInFunction::PP_NEXT:
+		case CXXRBUILTINFUNCTION::PP_NEXT:
 		    print2buff("next", d);
 		    break;
-		case CXXRBuiltInFunction::PP_SUBASS:
+		case CXXRBUILTINFUNCTION::PP_SUBASS:
 		    if(d->opts & S_COMPAT) {
 			print2buff("\"", d);
 			print2buff(CHAR(PRINTNAME(op)), d); /* ASCII */
@@ -1273,7 +1273,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	   Also, it is neat to deparse m:n in that form,
 	   so we do so as from 2.5.0.
 	 */
-	Rboolean intSeq = CXXRconvert(Rboolean, (tlen > 1));
+	Rboolean intSeq = CXXRCONSTRUCT(Rboolean, (tlen > 1));
 	int *tmp = INTEGER(vector);
 
 	for(i = 1; i < tlen; i++) {
@@ -1289,8 +1289,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		strp = EncodeElement(vector, tlen - 1, '"', '.');
 		print2buff(strp, d);
 	} else {
-	    addL = CXXRconvert(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
-	    allNA = CXXRconvert(Rboolean, (d->opts & KEEPNA) || addL);
+	    addL = CXXRCONSTRUCT(Rboolean, d->opts & KEEPINTEGER && !(d->opts & S_COMPAT));
+	    allNA = CXXRCONSTRUCT(Rboolean, (d->opts & KEEPNA) || addL);
 	    for(i = 0; i < tlen; i++)
 		if(tmp[i] != NA_INTEGER) {
 		    allNA = FALSE;
@@ -1300,7 +1300,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.integer(", d);
 	    }
-	    allNA = CXXRconvert(Rboolean, allNA && !(d->opts & S_COMPAT));
+	    allNA = CXXRCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
 	    if(tlen > 1) print2buff("c(", d);
 	    for (i = 0; i < tlen; i++) {
 		if(allNA && tmp[i] == NA_INTEGER) {
@@ -1318,7 +1318,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    if(surround) print2buff(")", d);
 	}
     } else {
-	allNA = CXXRconvert(Rboolean, d->opts & KEEPNA);
+	allNA = CXXRCONSTRUCT(Rboolean, d->opts & KEEPNA);
 	if((d->opts & KEEPNA) && TYPEOF(vector) == REALSXP) {
 	    for(i = 0; i < tlen; i++)
 		if(!ISNA(REAL(vector)[i])) {
@@ -1353,7 +1353,7 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 	    }
 	}
 	if(tlen > 1) print2buff("c(", d);
-	allNA = CXXRconvert(Rboolean, allNA && !(d->opts & S_COMPAT));
+	allNA = CXXRCONSTRUCT(Rboolean, allNA && !(d->opts & S_COMPAT));
 	for (i = 0; i < tlen; i++) {
 	    if(allNA && TYPEOF(vector) == REALSXP &&
 	       ISNA(REAL(vector)[i])) {

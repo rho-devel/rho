@@ -66,7 +66,7 @@
 using namespace CXXR;
 
 typedef struct {
-    CXXRconst char *name;
+    CXXRCONST char *name;
     int code; /* 0 normal, 1 not inline, 2 read-only
 		 -1 unknown, -2 obselete, -3 graphical args
 	       */
@@ -305,7 +305,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 /*--- and these are "Specify() only" {i.e. par(nam = val)} : */
     else if (streql(what, "ask")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
-	dd->ask = CXXRconvert(Rboolean, (ix == 1));/* NA |-> FALSE */
+	dd->ask = CXXRCONSTRUCT(Rboolean, (ix == 1));/* NA |-> FALSE */
     }
     else if (streql(what, "fig")) {
 	value = coerceVector(value, REALSXP);
@@ -514,7 +514,7 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	if(!gpptr(dd)->state) {
 	    /* no need to warn with new=FALSE and no plot */
 	    if(ix != 0) warning(_("calling par(new=TRUE) with no plot"));
-	} else R_DEV__(newplot) = CXXRconvert(Rboolean, (ix != 0));
+	} else R_DEV__(newplot) = CXXRCONSTRUCT(Rboolean, (ix != 0));
     }
     /* -- */
 
@@ -654,13 +654,13 @@ static void Specify(const char *what, SEXP value, pGEDevDesc dd, SEXP call)
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(xlog) = CXXRconvert(Rboolean, (ix != 0));
+	R_DEV__(xlog) = CXXRCONSTRUCT(Rboolean, (ix != 0));
     }
     else if (streql(what, "ylog")) {
 	lengthCheck(what, value, 1, call);	ix = asLogical(value);
 	if (ix == NA_LOGICAL)
 	    par_error(what);
-	R_DEV__(ylog) = CXXRconvert(Rboolean, (ix != 0));
+	R_DEV__(ylog) = CXXRCONSTRUCT(Rboolean, (ix != 0));
     }
     /* We do not need these as Query will already have warned.
     else if (streql(what, "type")) {
@@ -1013,7 +1013,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
     else if (streql(what, "ps")) {
 	value = allocVector(INTSXP, 1);
 	/* was reporting unscaled prior to 2.7.0 */
-	INTEGER(value)[0] = CXXRconvert(int, dpptr(dd)->ps * dpptr(dd)->scale);
+	INTEGER(value)[0] = CXXRCONSTRUCT(int, dpptr(dd)->ps * dpptr(dd)->scale);
     }
     else if (streql(what, "pty")) {
 	char buf[2];

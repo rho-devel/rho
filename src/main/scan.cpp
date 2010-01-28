@@ -88,7 +88,7 @@ typedef struct {
     int quiet;
     int sepchar; /*  = 0 */      /* This gets compared to ints */
     char decchar; /* = '.' */    /* This only gets compared to chars */
-    CXXRconst char *quoteset; /* = NULL */
+    CXXRCONST char *quoteset; /* = NULL */
     int comchar; /* = NO_COMCHAR */
     int ttyflag; /* = 0 */
     Rconnection con; /* = NULL */
@@ -149,7 +149,7 @@ static int ConsoleGetcharWithPushBack(Rconnection con)
     if(con->nPushBack > 0) {
 	curLine = con->PushBack[con->nPushBack-1];
 	c = curLine[con->posPushBack++];
-	if(con->posPushBack >= CXXRconvert(int, strlen(curLine))) {
+	if(con->posPushBack >= CXXRCONSTRUCT(int, strlen(curLine))) {
 	    /* last character on a line, so pop the line */
 	    free(curLine);
 	    con->nPushBack--;
@@ -317,9 +317,9 @@ static int scanchar(Rboolean inQuote, LocalData *d)
 /* utility to close connections after interrupts */
 static void scan_cleanup(void *data)
 {
-    LocalData *ld = CXXRconvert(static_cast<LocalData*>, data);
+    LocalData *ld = CXXRCONSTRUCT(static_cast<LocalData*>, data);
     if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(CXXRconvert(const_cast<char*>, ld->quoteset));
+    if (ld->quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, ld->quoteset));
 }
 
 #include "RBufferUtils.h"
@@ -341,7 +341,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
 */
     char *bufp;
     int c, quote, filled, nbuf = MAXELTSIZE, m;
-    Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
+    Rboolean dbcslocale = CXXRCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
 
     m = 0;
     filled = 1;
@@ -473,7 +473,7 @@ static R_INLINE int isNAstring(const char *buf, int mode, LocalData *d)
     return 0;
 }
 
-static R_INLINE void expected(CXXRconst char *what, char *got, LocalData *d)
+static R_INLINE void expected(CXXRCONST char *what, char *got, LocalData *d)
 {
     int c;
     if (d->ttyflag) { /* This is safe in a MBCS */
@@ -907,7 +907,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     else if (strlen(p) == 1) data.comchar = static_cast<unsigned char>(*p);
     if(escapes == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "allowEscapes");
-    data.escapes = CXXRconvert(Rboolean, escapes != 0);
+    data.escapes = CXXRCONSTRUCT(Rboolean, escapes != 0);
 
     i = asInteger(file);
     data.con = getConnection(i);
@@ -972,7 +972,7 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (!data.ttyflag && !data.wasopen)
 	data.con->close(data.con);
-    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
+    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
     return ans;
 }
 
@@ -982,7 +982,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     int nfields, nskip, i, c, inquote, quote = 0;
     int blocksize, nlines, blskip;
     const char *p;
-    Rboolean dbcslocale = CXXRconvert(Rboolean, (MB_CUR_MAX == 2));
+    Rboolean dbcslocale = CXXRCONSTRUCT(Rboolean, (MB_CUR_MAX == 2));
     LocalData data = {NULL, 0, 0, '.', NULL, NO_COMCHAR, 0, NULL, FALSE,
 		      FALSE, 0, FALSE, FALSE};
     data.NAstrings = R_NilValue;
@@ -1053,7 +1053,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     data.save = 0;
 
     for (;;) {
-	c = scanchar(CXXRconvert(Rboolean, inquote), &data);
+	c = scanchar(CXXRCONSTRUCT(Rboolean, inquote), &data);
 	if (c == R_EOF)	 {
 	    if (nfields != 0)
 		INTEGER(ans)[nlines] = nfields;
@@ -1097,7 +1097,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (strchr(data.quoteset, c)) {
 		quote = c;
 		inquote = 1;
-		while ((c = scanchar(CXXRconvert(Rboolean, inquote), &data)) != quote) {
+		while ((c = scanchar(CXXRCONSTRUCT(Rboolean, inquote), &data)) != quote) {
 		    if (c == R_EOF || c == '\n') {
 			if(!data.wasopen) data.con->close(data.con);
 			error(_("string terminated by newline or EOF"));
@@ -1139,7 +1139,7 @@ SEXP attribute_hidden do_countfields(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i <= nlines; i++)
 	INTEGER(bns)[i] = INTEGER(ans)[i];
     UNPROTECT(1);
-    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
+    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
     return bns;
 }
 
@@ -1473,7 +1473,7 @@ SEXP attribute_hidden do_menu(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
     }
-    return ScalarInteger(CXXRconvert(int, first));
+    return ScalarInteger(CXXRCONSTRUCT(int, first));
 }
 
 /* readTableHead(file, nlines, comment.char, blank.lines.skip, quote, sep) */
@@ -1599,7 +1599,7 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
     UNPROTECT(1);
     free(buf);
     if(!data.wasopen) data.con->close(data.con);
-    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
+    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
     return ans;
 
 no_more_lines:
@@ -1617,7 +1617,7 @@ no_more_lines:
     for(i = 0; i < nread; i++)
 	SET_STRING_ELT(ans2, i, STRING_ELT(ans, i));
     UNPROTECT(2);
-    if (data.quoteset[0]) free(CXXRconvert(const_cast<char*>, data.quoteset));
+    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
     return ans2;
 }
 
@@ -1636,20 +1636,20 @@ static Rboolean isna(SEXP x, int indx)
     Rcomplex rc;
     switch(TYPEOF(x)) {
     case LGLSXP:
-	return CXXRconvert(Rboolean, LOGICAL(x)[indx] == NA_LOGICAL);
+	return CXXRCONSTRUCT(Rboolean, LOGICAL(x)[indx] == NA_LOGICAL);
 	break;
     case INTSXP:
-	return CXXRconvert(Rboolean, INTEGER(x)[indx] == NA_INTEGER);
+	return CXXRCONSTRUCT(Rboolean, INTEGER(x)[indx] == NA_INTEGER);
 	break;
     case REALSXP:
-	return CXXRconvert(Rboolean, ISNAN(REAL(x)[indx]));
+	return CXXRCONSTRUCT(Rboolean, ISNAN(REAL(x)[indx]));
 	break;
     case STRSXP:
-	return CXXRconvert(Rboolean, STRING_ELT(x, indx) == NA_STRING);
+	return CXXRCONSTRUCT(Rboolean, STRING_ELT(x, indx) == NA_STRING);
 	break;
     case CPLXSXP:
 	rc = COMPLEX(x)[indx];
-	return CXXRconvert(Rboolean, ISNAN(rc.r) || ISNAN(rc.i));
+	return CXXRCONSTRUCT(Rboolean, ISNAN(rc.r) || ISNAN(rc.i));
 	break;
     default:
 	break;
@@ -1693,7 +1693,7 @@ typedef struct wt_info {
 /* utility to cleanup e.g. after interrpts */
 static void wt_cleanup(void *data)
 {
-    wt_info *ld = CXXRconvert(static_cast<wt_info*>, data);
+    wt_info *ld = CXXRCONSTRUCT(static_cast<wt_info*>, data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
@@ -1787,7 +1787,7 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, CXXRconvert(Rboolean, qmethod),
+			     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		xj = VECTOR_ELT(x, j);
@@ -1798,16 +1798,16 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 			/* We cannot assume factors have integer levels */
 			if(TYPEOF(xj) == INTSXP)
 			    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						 quote_col[j], CXXRconvert(Rboolean, qmethod),
+						 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 						 &strBuf, cdec);
 			else if(TYPEOF(xj) == REALSXP)
-			    tmp = EncodeElement2(levels[j], CXXRconvert(int, REAL(xj)[i] - 1),
-						 quote_col[j], CXXRconvert(Rboolean, qmethod),
+			    tmp = EncodeElement2(levels[j], CXXRCONSTRUCT(int, REAL(xj)[i] - 1),
+						 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 						 &strBuf, cdec);
 			else
 			    error("column %s claims to be a factor but does not have numeric codes", j+1);
 		    } else {
-			tmp = EncodeElement2(xj, i, quote_col[j], CXXRconvert(Rboolean, qmethod),
+			tmp = EncodeElement2(xj, i, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 					     &strBuf, cdec);
 		    }
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
@@ -1829,13 +1829,13 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(i % 1000 == 999) R_CheckUserInterrupt();
 	    if(!isNull(rnames))
 		Rconn_printf(con, "%s%s",
-			     EncodeElement2(rnames, i, quote_rn, CXXRconvert(Rboolean, qmethod),
+			     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
 					    &strBuf, cdec), csep);
 	    for(j = 0; j < nc; j++) {
 		if(j > 0) Rconn_printf(con, "%s", csep);
 		if(isna(x, i + j*nr)) tmp = cna;
 		else {
-		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRconvert(Rboolean, qmethod),
+		    tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 					&strBuf, cdec);
 		    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
 		}

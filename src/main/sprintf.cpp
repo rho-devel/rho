@@ -143,12 +143,12 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 
     CHECK_maxlen;
 
-    outputString = CXXRconvert(static_cast<char*>, R_AllocStringBuffer(0, &outbuff));
+    outputString = CXXRCONSTRUCT(static_cast<char*>, R_AllocStringBuffer(0, &outbuff));
 
     /* We do the format analysis a row at a time */
     for(ns = 0; ns < maxlen; ns++) {
 	outputString[0] = '\0';
-	use_UTF8 = CXXRconvert(Rboolean, getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8);
+	use_UTF8 = CXXRCONSTRUCT(Rboolean, getCharCE(STRING_ELT(format, ns % nfmt)) == CE_UTF8);
 	if (!use_UTF8) {
 	    for(i = 0; i < nargs; i++) {
 		if (!isString(a[i])) continue;
@@ -314,7 +314,7 @@ SEXP attribute_hidden do_sprintf(SEXP call, SEXP op, SEXP args, SEXP env)
 				    nprotect++;				\
 				    did_this = TRUE;			\
 				    CHECK_this_length;			\
-				    do_check = (CXXRconvert(Rboolean, lens[nthis] == maxlen)); \
+				    do_check = (CXXRCONSTRUCT(Rboolean, lens[nthis] == maxlen)); \
 				    lens[nthis] = thislen; /* may have changed! */ \
 				    if(do_check && thislen < maxlen) {	\
 					CHECK_maxlen;			\

@@ -432,7 +432,7 @@ static void SampleReplace(int k, int n, int *y)
 {
     int i;
     for (i = 0; i < k; i++)
-	y[i] = CXXRconvert(int, n * unif_rand() + 1);
+	y[i] = CXXRCONSTRUCT(int, n * unif_rand() + 1);
 }
 
 /* Equal probability sampling; without-replacement case */
@@ -443,7 +443,7 @@ static void SampleNoReplace(int k, int n, int *y, int *x)
     for (i = 0; i < n; i++)
 	x[i] = i;
     for (i = 0; i < k; i++) {
-	j = CXXRconvert(int, n * unif_rand());
+	j = CXXRCONSTRUCT(int, n * unif_rand());
 	y[i] = x[j] + 1;
 	x[j] = x[--n];
     }

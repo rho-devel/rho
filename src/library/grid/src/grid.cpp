@@ -331,7 +331,7 @@ SEXP L_setviewport(SEXP invp, SEXP hasParent)
      * to modify it to hell and gone.
      */
     PROTECT(vp = duplicate(invp));
-    vp = doSetViewport(vp, CXXRconvert(Rboolean, !LOGICAL(hasParent)[0]), TRUE, dd);
+    vp = doSetViewport(vp, CXXRCONSTRUCT(Rboolean, !LOGICAL(hasParent)[0]), TRUE, dd);
     /* Set the value of the current viewport for the current device
      * Need to do this in here so that redrawing via R BASE display
      * list works 
@@ -359,7 +359,7 @@ static Rboolean noChildren(SEXP children)
 			  children));
     PROTECT(result = eval(fcall, R_gridEvalEnv)); 
     UNPROTECT(2);
-    return CXXRconvert(Rboolean, LOGICAL(result)[0]);
+    return CXXRCONSTRUCT(Rboolean, LOGICAL(result)[0]);
 }
 
 static Rboolean childExists(SEXP name, SEXP children) 
@@ -369,7 +369,7 @@ static Rboolean childExists(SEXP name, SEXP children)
 			  name, children));
     PROTECT(result = eval(fcall, R_gridEvalEnv)); 
     UNPROTECT(2);
-    return CXXRconvert(Rboolean, LOGICAL(result)[0]);
+    return CXXRCONSTRUCT(Rboolean, LOGICAL(result)[0]);
 }
 
 static SEXP childList(SEXP children) 
@@ -413,7 +413,7 @@ static SEXP findInChildren(SEXP name, SEXP strict, SEXP children, int depth)
 			      findVar(install(CHAR(STRING_ELT(childnames, count))),
 				      children),
 			      depth);
-	found = CXXRconvert(Rboolean, INTEGER(VECTOR_ELT(result, 0))[0] > 0);
+	found = CXXRCONSTRUCT(Rboolean, INTEGER(VECTOR_ELT(result, 0))[0] > 0);
 	count = count + 1;
     }
     if (!found) {
@@ -533,7 +533,7 @@ static Rboolean pathMatch(SEXP path, SEXP pathsofar, SEXP strict)
 			  path, pathsofar, strict));
     PROTECT(result = eval(fcall, R_gridEvalEnv)); 
     UNPROTECT(2);
-    return CXXRconvert(Rboolean, LOGICAL(result)[0]);    
+    return CXXRCONSTRUCT(Rboolean, LOGICAL(result)[0]);    
 }
 
 static SEXP growPath(SEXP pathsofar, SEXP name) 
@@ -570,7 +570,7 @@ static SEXP findvppathInChildren(SEXP path, SEXP name,
 	PROTECT(newpathsofar = growPath(pathsofar,
 					VECTOR_ELT(vp, VP_NAME)));
 	result = findvppath(path, name, strict, newpathsofar, vp, depth);
-	found = CXXRconvert(Rboolean, INTEGER(VECTOR_ELT(result, 0))[0] > 0);
+	found = CXXRCONSTRUCT(Rboolean, INTEGER(VECTOR_ELT(result, 0))[0] > 0);
 	count = count + 1;
 	UNPROTECT(2);
     }
@@ -1510,7 +1510,7 @@ static void hullEdge(double *x, double *y, int n,
     PROTECT(chullFn = findFun(install("chull"), R_gridEvalEnv));
     PROTECT(R_fcall = lang3(chullFn, xin, yin));
     PROTECT(hull = eval(R_fcall, R_gridEvalEnv));
-    vmax = CXXRscast(char*, vmaxget());
+    vmax = CXXRSCAST(char*, vmaxget());
     nh = LENGTH(hull);
     hx = (double *) R_alloc(nh, sizeof(double));
     hy = (double *) R_alloc(nh, sizeof(double));
@@ -1795,7 +1795,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
 	 */
 	nx = LENGTH(indices); 
 	/* Convert the x and y values to CM locations */
-	vmax = CXXRscast(char*, vmaxget());
+	vmax = CXXRSCAST(char*, vmaxget());
 	xx = (double *) R_alloc(nx, sizeof(double));
 	yy = (double *) R_alloc(nx, sizeof(double));
 	xold = NA_REAL;
@@ -1825,7 +1825,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
 			 * because we have just broken the line for an NA.
 			 */
 		        arrows(xx+start, yy+start, i-start,
-			       arrow, j,  CXXRconvert(Rboolean, start == 0), FALSE,
+			       arrow, j,  CXXRCONSTRUCT(Rboolean, start == 0), FALSE,
 			       vpc, vpWidthCM, vpHeightCM, &gc, dd);
 		    }
 		}
@@ -1840,7 +1840,7 @@ SEXP L_lines(SEXP x, SEXP y, SEXP index, SEXP arrow)
 		     * Can draw an arrow at the end point.
 		     */
  		    arrows(xx+start, yy+start, nx-start, 
-			   arrow, j, CXXRconvert(Rboolean, start == 0), TRUE,
+			   arrow, j, CXXRCONSTRUCT(Rboolean, start == 0), TRUE,
 			   vpc, vpWidthCM, vpHeightCM, &gc, dd);
 		}
 	    } 
@@ -1900,7 +1900,7 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 	 */
 	nx = LENGTH(indices); 
 	/* Convert the x and y values to CM locations */
-	vmax = CXXRscast(char*, vmaxget());
+	vmax = CXXRSCAST(char*, vmaxget());
 	if (draw)
 	    GEMode(1, dd);
 	xx = (double *) R_alloc(nx, sizeof(double));
@@ -1937,7 +1937,7 @@ SEXP gridXspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index,
 	    }
 	}
 	PROTECT(points = GEXspline(nx, xx, yy, ss,
-				   CXXRconvert(Rboolean, LOGICAL(o)[0]), CXXRconvert(Rboolean, LOGICAL(rep)[0]),
+				   CXXRCONSTRUCT(Rboolean, LOGICAL(o)[0]), CXXRCONSTRUCT(Rboolean, LOGICAL(rep)[0]),
 				   draw, &gc, dd));
 	if (draw && !isNull(a) && !isNull(points)) {
 	    /*
@@ -2303,7 +2303,7 @@ SEXP L_polygon(SEXP x, SEXP y, SEXP index)
 	 */
 	nx = LENGTH(indices); 
 	/* Convert the x and y values to CM locations */
-	vmax = CXXRscast(char*, vmaxget());
+	vmax = CXXRSCAST(char*, vmaxget());
 	xx = (double *) R_alloc(nx + 1, sizeof(double));
 	yy = (double *) R_alloc(nx + 1, sizeof(double));
 	xold = NA_REAL;
@@ -2761,7 +2761,7 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
     ny = unitLength(y);
     if (ny > nx) 
 	nx = ny;
-    vmax = CXXRscast(char*, vmaxget());
+    vmax = CXXRSCAST(char*, vmaxget());
     xx = (double *) R_alloc(nx, sizeof(double));
     yy = (double *) R_alloc(nx, sizeof(double));
     for (i=0; i<nx; i++) {
@@ -2992,7 +2992,7 @@ SEXP L_points(SEXP x, SEXP y, SEXP pch, SEXP size)
     nx = unitLength(x); 
     npch = LENGTH(pch);
     /* Convert the x and y values to CM locations */
-    vmax = CXXRscast(char*, vmaxget());
+    vmax = CXXRSCAST(char*, vmaxget());
     xx = (double *) R_alloc(nx, sizeof(double));
     yy = (double *) R_alloc(nx, sizeof(double));
     for (i=0; i<nx; i++) {
@@ -3137,7 +3137,7 @@ SEXP L_pretty(SEXP scale) {
     double axp[3];
     /* FIXME:  Default preferred number of ticks hard coded ! */
     int n = 5;
-    Rboolean swap = CXXRconvert(Rboolean, min > max);
+    Rboolean swap = CXXRCONSTRUCT(Rboolean, min > max);
     /* 
      * Feature: 
      * like R, something like  xscale = c(100,0)  just works 
@@ -3244,7 +3244,7 @@ SEXP L_locnBounds(SEXP x, SEXP y, SEXP theta)
     if (ny > nx) 
 	nx = ny;
     nloc = 0;
-    vmax = CXXRscast(char*, vmaxget());
+    vmax = CXXRSCAST(char*, vmaxget());
     if (nx > 0) {
 	xx = (double *) R_alloc(nx, sizeof(double));
 	yy = (double *) R_alloc(nx, sizeof(double));

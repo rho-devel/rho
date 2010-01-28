@@ -282,7 +282,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 		i = 1;
 		for (b = supplied; b != R_NilValue; b = CDR(b)) {
 		    if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
-			pmatch(TAG(f), TAG(b), CXXRconvert(Rboolean, seendots))) {
+			pmatch(TAG(f), TAG(b), CXXRCONSTRUCT(Rboolean, seendots))) {
 			if (ARGUSED(b))
 			    error(_("argument %d matches multiple formal arguments"), i);
 			if (ARGUSED(f) == 1)

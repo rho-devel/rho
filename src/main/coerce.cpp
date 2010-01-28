@@ -146,7 +146,7 @@ IntegerFromReal(double x, int *warn)
 	*warn |= WARN_NA;
 	return NA_INTEGER;
     }
-    return CXXRconvert(int, x);
+    return CXXRCONSTRUCT(int, x);
 }
 
 int attribute_hidden
@@ -160,7 +160,7 @@ IntegerFromComplex(Rcomplex x, int *warn)
     }
     if (x.i != 0)
 	*warn |= WARN_IMAG;
-    return CXXRconvert(int, x.r);
+    return CXXRCONSTRUCT(int, x.r);
 }
 
 
@@ -181,7 +181,7 @@ IntegerFromString(SEXP x, int *warn)
 		return INT_MIN;
 	    }
 	    else
-		return CXXRconvert(int, xdouble);
+		return CXXRCONSTRUCT(int, xdouble);
 	}
 	else *warn |= WARN_NA;
     }
@@ -1318,7 +1318,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     SEXPTYPE type = STRSXP;
     int op0 = PRIMVAL(op);
-    CXXRconst char *name = NULL /* -Wall */;
+    CXXRCONST char *name = NULL /* -Wall */;
 
     switch(op0) {
 	case 0:
@@ -2416,7 +2416,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 typedef struct {
-    CXXRconst char *s;
+    CXXRCONST char *s;
     SEXPTYPE sexp;
     Rboolean canChange;
 } classType;
@@ -2446,7 +2446,7 @@ static int class2type(const char *s)
        classes; e.g., "language" is a type but many classes correspond to objects of
        this type.
     */
-    int i; CXXRconst char *si;
+    int i; CXXRCONST char *si;
     for(i = 0; ; i++) {
 	si = classTable[i].s;
 	if(!si)
@@ -2501,7 +2501,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	SEXP cur_class; SEXPTYPE valueType;
 	valueString = CHAR(asChar(value)); /* ASCII */
 	whichType = class2type(valueString);
-	valueType = (whichType == -1) ? CXXRconvert(SEXPTYPE, -1) : classTable[whichType].sexp;
+	valueType = (whichType == -1) ? CXXRCONSTRUCT(SEXPTYPE, -1) : classTable[whichType].sexp;
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	classString = CHAR(asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */

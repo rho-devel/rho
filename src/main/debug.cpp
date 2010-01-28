@@ -109,7 +109,7 @@ SEXP R_traceOnOff(SEXP onOff)
 {
     Rboolean prev = Rboolean(FunctionBase::tracingEnabled());
     if(length(onOff) > 0) {
-	Rboolean _new = CXXRconvert(Rboolean, asLogical(onOff));
+	Rboolean _new = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
 	if(_new == TRUE || _new == FALSE)
 	    FunctionBase::enableTracing(_new);
 	else

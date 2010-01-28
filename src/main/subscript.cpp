@@ -97,7 +97,7 @@ OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos, SEXP call
 	indx = integerOneIndex(INTEGER(s)[pos], len, call);
 	break;
     case REALSXP:
-	indx = integerOneIndex(CXXRconvert(int, REAL(s)[pos]), len, call);
+	indx = integerOneIndex(CXXRCONSTRUCT(int, REAL(s)[pos]), len, call);
 	break;
     case STRSXP:
 	nx = length(x);
@@ -470,7 +470,7 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
     int i, j, nnames, sub, extra;
     int canstretch = *stretch;
     /* product may overflow, so check factors as well. */
-    Rboolean usehashing = CXXRconvert(Rboolean, in && ( ((ns > 1000 && nx) || (nx > 1000 && ns)) || (ns * nx > 15*nx + ns) ));
+    Rboolean usehashing = CXXRCONSTRUCT(Rboolean, in && ( ((ns > 1000 && nx) || (nx > 1000 && ns)) || (ns * nx > 15*nx + ns) ));
 
     PROTECT(s);
     PROTECT(names);

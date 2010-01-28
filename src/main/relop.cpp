@@ -79,7 +79,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
 	LENGTH(x) > 0 && LENGTH(y) > 0) {
 	SEXP ans = real_relop(RELOP_TYPE( PRIMVAL(op)), x, y);
 	if (nx > 0 && ny > 0)
-	    mismatch = CXXRconvert(Rboolean, ((nx > ny) ? nx % ny : ny % nx) != 0);
+	    mismatch = CXXRCONSTRUCT(Rboolean, ((nx > ny) ? nx % ny : ny % nx) != 0);
 	if (mismatch)
 	    warningcall(call, _("longer object length is not a multiple of shorter object length"));
 	UNPROTECT(2);
@@ -131,7 +131,7 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP x, SEXP y)
     xts = isTs(x);
     yts = isTs(y);
     if (nx > 0 && ny > 0)
-	mismatch = CXXRconvert(Rboolean, ((nx > ny) ? nx % ny : ny % nx) != 0);
+	mismatch = CXXRCONSTRUCT(Rboolean, ((nx > ny) ? nx % ny : ny % nx) != 0);
 
     if (xarray || yarray) {
 	if (xarray && yarray) {

@@ -69,7 +69,7 @@ static R_INLINE double fmax2(double x, double y)
 /*
  * Extract specified par from list of inline pars
  */
-static SEXP getInlinePar(SEXP s, CXXRconst char *name)
+static SEXP getInlinePar(SEXP s, CXXRCONST char *name)
 {
     SEXP result = R_NilValue;
     int found = 0;
@@ -113,7 +113,7 @@ static SEXP FixupPch(SEXP pch, int dflt)
     else if (isReal(pch)) {
 	for (i = 0; i < n; i++)
 	    INTEGER(ans)[i] = R_FINITE(REAL(pch)[i]) ?
-		CXXRconvert(int, REAL(pch)[i]) : NA_INTEGER;
+		CXXRCONSTRUCT(int, REAL(pch)[i]) : NA_INTEGER;
     }
     else if (isString(pch)) {
 	for (i = 0; i < n; i++) {
@@ -208,7 +208,7 @@ static SEXP FixupFont(SEXP font, int dflt)
     else if (isReal(font)) {
 	ans = allocVector(INTSXP, n);
 	for (i = 0; i < n; i++) {
-	    k = CXXRconvert(int, REAL(font)[i]);
+	    k = CXXRCONSTRUCT(int, REAL(font)[i]);
 #ifndef Win32
 	    if (k < 1 || k > 5) k = NA_INTEGER;
 #else
@@ -684,7 +684,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     double umin, umax, dn, rng, small;
     int i, n, ne;
     if (!logflag || axp[2] < 0) { /* --- linear axis --- Only use axp[] arg. */
-	n = CXXRconvert(int, fabs(axp[2]) + 0.25);/* >= 0 */
+	n = CXXRCONSTRUCT(int, fabs(axp[2]) + 0.25);/* >= 0 */
 	dn = imax2(1, n);
 	rng = axp[1] - axp[0];
 	small = fabs(rng)/(100.*dn);
@@ -698,14 +698,14 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     else { /* ------ log axis ----- */
 	Rboolean reversed = FALSE;
 
-	n = CXXRconvert(int, (axp[2] + 0.5));
+	n = CXXRCONSTRUCT(int, (axp[2] + 0.5));
 	/* {xy}axp[2] for 'log': GLpretty() [./graphics.c] sets
 	   n < 0: very small scale ==> linear axis, above, or
 	   n = 1,2,3.  see switch() below */
 	umin = usr[0];
 	umax = usr[1];
 	if (umin > umax) {
-	    reversed = CXXRconvert(Rboolean, (axp[0] > axp[1]));
+	    reversed = CXXRCONSTRUCT(Rboolean, (axp[0] > axp[1]));
 	    if (reversed) {
 		/* have *reversed* log axis -- whereas
 		 * the switch(n) { .. } below assumes *increasing* values
@@ -733,7 +733,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	 */
 	switch(n) {
 	case 1: /* large range:	1	 * 10^k */
-	    i = CXXRconvert(int, floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
+	    i = CXXRCONSTRUCT(int, floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
 	    ne = i / nint + 1;
 #ifdef DEBUG_axis
 	    REprintf("CreateAtVector [log-axis(), case 1]: (nint, ne) = (%d,%d)\n",
@@ -971,7 +971,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* This indicates whether or not ticks and the axis line */
     /* should be plotted: TRUE => show, FALSE => don't show. */
 
-    doticks = CXXRconvert(Rboolean, asLogical(CAR(args)));
+    doticks = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     doticks = (doticks == NA_LOGICAL) ? TRUE : Rboolean( doticks);
     args = CDR(args);
 
@@ -1083,7 +1083,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!R_FINITE(line)) {
 	/* Except that here mgp values are not relative to themselves */
 	line = gpptr(dd)->mgp[2];
-	lineoff = CXXRconvert(int, line);
+	lineoff = CXXRCONSTRUCT(int, line);
     }
     if (!R_FINITE(pos)) pos = NA_REAL; else lineoff = 0;
 
@@ -1169,7 +1169,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base = GConvertY(0.0, CXXRconvert(GUnit, outer), NFC, dd)
+		axis_base = GConvertY(0.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    - GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1191,7 +1191,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertY(1.0, CXXRconvert(GUnit, outer), NFC, dd)
+		axis_base =  GConvertY(1.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    + GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1226,7 +1226,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	/* Tickmark labels. */
 	gpptr(dd)->col = gpptr(dd)->colaxis;
-	gap = GStrWidth("m", CXXRconvert(cetype_t, -1), NFC, dd);	/* FIXUP x/y distance */
+	gap = GStrWidth("m", CXXRCONSTRUCT(cetype_t, -1), NFC, dd);	/* FIXUP x/y distance */
 	tlast = -1.0;
 	if (!R_FINITE(hadj)) {
 	    if (gpptr(dd)->las == 2 || gpptr(dd)->las == 3) {
@@ -1279,7 +1279,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 			label = STRING_ELT(lab, ind[i]);
 			if(label != NA_STRING) {
 			    const char *ss = CHAR(label);
-			    labw = GStrWidth(ss, CXXRconvert(cetype_t, 0), NFC, dd);
+			    labw = GStrWidth(ss, CXXRCONSTRUCT(cetype_t, 0), NFC, dd);
 			    tnew = temp - 0.5 * labw;
 			    /* Check room for perpendicular labels. */
 			    if (gpptr(dd)->las == 2 ||
@@ -1310,7 +1310,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(0.0, CXXRconvert(GUnit, outer), NFC, dd)
+		axis_base =  GConvertX(0.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    - GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1331,7 +1331,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(1.0, CXXRconvert(GUnit, outer), NFC, dd)
+		axis_base =  GConvertX(1.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    + GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -2658,7 +2658,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	  for (i = 0; i < n; i++) {
 		string = STRING_ELT(Main, i);
 		if(string != NA_STRING)
-		    GText(hpos, offset - i, CXXRconvert(GUnit, where), CHAR(string), getCharCE(string),
+		    GText(hpos, offset - i, CXXRCONSTRUCT(GUnit, where), CHAR(string), getCharCE(string),
 			  adj, adjy, 0.0, dd);
 	  }
 	}
@@ -3674,7 +3674,7 @@ static Rboolean SymbolRange(double *x, int n, double *xmax, double *xmin)
 	    if (*xmax < x[i]) *xmax = x[i];
 	    if (*xmin > x[i]) *xmin = x[i];
 	}
-    return CXXRconvert(Rboolean, (*xmax >= *xmin && *xmin >= 0));
+    return CXXRCONSTRUCT(Rboolean, (*xmax >= *xmin && *xmin >= 0));
 }
 
 static void CheckSymbolPar(SEXP call, SEXP p, int *nr, int *nc)
@@ -3999,9 +3999,9 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     sy = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
     nx = LENGTH(sx);
     ss = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
-    open = CXXRconvert(Rboolean, asLogical(CAR(args))); args = CDR(args);
-    repEnds = CXXRconvert(Rboolean, asLogical(CAR(args))); args = CDR(args);
-    draw = CXXRconvert(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    open = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    repEnds = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    draw = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
 
     PROTECT(col = FixupCol(CAR(args), R_TRANWHITE));	args = CDR(args);
     ncol = LENGTH(col);
@@ -4134,9 +4134,9 @@ SEXP attribute_hidden do_convertXY(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = duplicate(x));
     rx = REAL(ans);
     if (PRIMVAL(op) == 1)
-	for (i = 0; i < n; i++) rx[i] = GConvertY(rx[i], CXXRconvert(GUnit, from), CXXRconvert(GUnit, to), gdd);
+	for (i = 0; i < n; i++) rx[i] = GConvertY(rx[i], CXXRCONSTRUCT(GUnit, from), CXXRCONSTRUCT(GUnit, to), gdd);
     else
-	for (i = 0; i < n; i++) rx[i] = GConvertX(rx[i], CXXRconvert(GUnit, from), CXXRconvert(GUnit, to), gdd);
+	for (i = 0; i < n; i++) rx[i] = GConvertX(rx[i], CXXRCONSTRUCT(GUnit, from), CXXRCONSTRUCT(GUnit, to), gdd);
     UNPROTECT(1);
 
     return ans;

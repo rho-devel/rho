@@ -460,7 +460,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     mystrcpy(buff1, &buff1[j]);
     upper = strlen(buff1) - 1;
 
-    if (CXXRconvert(int, strlen(buff1)) < minlen)
+    if (CXXRCONSTRUCT(int, strlen(buff1)) < minlen)
 	goto donesc;
 
     for (i = upper, j = 1; i > 0; i--) {
@@ -473,7 +473,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
 	else
 	    j = 0;
 	/*strcpy(buff1[i],buff1[i+1]);*/
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -481,7 +481,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -489,7 +489,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (LOWVOW(buff1, i) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -497,7 +497,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && LASTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -505,7 +505,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (islower(int(buff1[i])) && !FIRSTCHAR(buff1, i))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -515,7 +515,7 @@ static SEXP stripchars(const char * const inchar, int minlen)
     for (i = upper; i > 0; i--) {
 	if (!FIRSTCHAR(buff1, i) && !isspace(int(buff1[i])))
 	    mystrcpy(&buff1[i], &buff1[i + 1]);
-	if (CXXRconvert(int, strlen(buff1)) - nspace <= minlen)
+	if (CXXRCONSTRUCT(int, strlen(buff1)) - nspace <= minlen)
 	    goto donesc;
     }
 
@@ -934,12 +934,12 @@ typedef struct { wchar_t c_old, c_new; } xtable_t;
 
 static R_INLINE int xtable_comp(const void *a, const void *b)
 {
-    return (static_cast<CXXRconst xtable_t *>(a))->c_old - (static_cast<CXXRconst xtable_t *>(b))->c_old;
+    return (static_cast<CXXRCONST xtable_t *>(a))->c_old - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
 }
 
 static R_INLINE int xtable_key_comp(const void *a, const void *b)
 {
-    return *(static_cast<CXXRconst wchar_t *>(a)) - (static_cast<CXXRconst xtable_t *>(b))->c_old;
+    return *(static_cast<CXXRCONST wchar_t *>(a)) - (static_cast<CXXRCONST xtable_t *>(b))->c_old;
 }
 
 #define SWAP(_a, _b, _TYPE)                                    \

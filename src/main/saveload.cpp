@@ -513,7 +513,7 @@ static SEXPTYPE FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return CXXRconvert(SEXPTYPE, type);
+    return CXXRCONSTRUCT(SEXPTYPE, type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
@@ -566,14 +566,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -581,7 +581,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -590,7 +590,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < CXXRconvert(uint, len); j++) {
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -638,29 +638,29 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < CXXRconvert(uint, len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -806,7 +806,7 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (CXXRconvert(int, type)) {
+    switch (CXXRCONSTRUCT(int, type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
@@ -1252,7 +1252,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     int pos, levs, objf;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = CXXRconvert(SEXPTYPE, m->InInteger(fp, d));
+    type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
@@ -1640,7 +1640,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (CXXRconvert(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
+    if (CXXRCONSTRUCT(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1731,7 +1731,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = NULL;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (CXXRconvert(int, nbytes) >= buflen) {
+    if (CXXRCONSTRUCT(int, nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
@@ -2278,7 +2278,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    CXXRconst char *magic;
+    CXXRCONST char *magic;
 
     checkArity(op, args);
 
@@ -2290,7 +2290,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = CXXRconvert(Rboolean, INTEGER(CADDR(args))[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
@@ -2334,7 +2334,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (con->text)
 	Rconn_printf(con, "%s", magic);
     else {
-	CXXRunsigned int len = strlen(magic);
+	CXXRUNSIGNED int len = strlen(magic);
 	if (len != con->write(magic, 1, len, con))
 	    error(_("error writing to connection"));
     }
@@ -2370,7 +2370,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static void load_con_cleanup(void *data)
 {
-    Rconnection con = CXXRscast(Rconnection, data);
+    Rconnection con = CXXRSCAST(Rconnection, data);
     con->close(con);
 }
 

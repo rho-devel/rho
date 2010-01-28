@@ -166,7 +166,7 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
 	    double *xp = REAL(x), *yp = REAL(y);
 	    int i, ne_strict = num_eq | (single_NA << 1);
 	    for(i = 0; i < n; i++)
-		if(neWithNaN(xp[i], yp[i], CXXRconvert(ne_strictness_type, ne_strict))) return FALSE;
+		if(neWithNaN(xp[i], yp[i], CXXRCONSTRUCT(ne_strictness_type, ne_strict))) return FALSE;
 	}
 	return TRUE;
     }
@@ -178,8 +178,8 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
 	    Rcomplex *xp = COMPLEX(x), *yp = COMPLEX(y);
 	    int i, ne_strict = num_eq | (single_NA << 1);
 	    for(i = 0; i < n; i++)
-		if(neWithNaN(xp[i].r, yp[i].r, CXXRconvert(ne_strictness_type, ne_strict)) ||
-		   neWithNaN(xp[i].i, yp[i].i, CXXRconvert(ne_strictness_type, ne_strict)))
+		if(neWithNaN(xp[i].r, yp[i].r, CXXRCONSTRUCT(ne_strictness_type, ne_strict)) ||
+		   neWithNaN(xp[i].i, yp[i].i, CXXRCONSTRUCT(ne_strictness_type, ne_strict)))
 		    return FALSE;
 	}
 	return TRUE;
@@ -190,8 +190,8 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
 	if(n != length(y)) return FALSE;
 	for(i = 0; i < n; i++) {
 	    /* This special-casing for NAs is not needed */
-	    Rboolean na1 = (CXXRconvert(Rboolean, STRING_ELT(x, i) == NA_STRING)),
-		na2 = (CXXRconvert(Rboolean, STRING_ELT(y, i) == NA_STRING));
+	    Rboolean na1 = (CXXRCONSTRUCT(Rboolean, STRING_ELT(x, i) == NA_STRING)),
+		na2 = (CXXRCONSTRUCT(Rboolean, STRING_ELT(y, i) == NA_STRING));
 	    if(na1 ^ na2) return FALSE;
 	    if(na1 && na2) continue;
 	    if (! Seql(STRING_ELT(x, i), STRING_ELT(y, i))) return FALSE;
@@ -201,7 +201,7 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
     case CHARSXP:
     {
 	/* This matches NAs */
-	return CXXRconvert(Rboolean, Seql(x, y));
+	return CXXRCONSTRUCT(Rboolean, Seql(x, y));
     }
     case VECSXP:
     case EXPRSXP:
@@ -236,7 +236,7 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
 	    x = CDR(x);
 	    y = CDR(y);
 	}
-	return(CXXRconvert(Rboolean, y == R_NilValue));
+	return(CXXRCONSTRUCT(Rboolean, y == R_NilValue));
     }
     case CLOSXP:
 	return(R_compute_identical(FORMALS(x), FORMALS(y),
@@ -316,10 +316,10 @@ static Rboolean neWithNaN(double x,  double y, ne_strictness_type str)
 
     switch (str) {
     case single_NA__num_eq:
-	return(CXXRconvert(Rboolean, x != y));
+	return(CXXRCONSTRUCT(Rboolean, x != y));
     case bit_NA__num_eq:
 	if(!ISNAN(x) && !ISNAN(y))
-	    return(CXXRconvert(Rboolean, x != y));
+	    return(CXXRCONSTRUCT(Rboolean, x != y));
 	else /* bitwise check for NA/NaN's */
 	    return memcmp(CXXRNOCAST(const void *) &x,
 			  CXXRNOCAST(const void *) &y, sizeof(double)) ? TRUE : FALSE;

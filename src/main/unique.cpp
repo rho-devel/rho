@@ -548,15 +548,15 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
     if(length(incomp) && /* S has FALSE to mean empty */
        !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
 	if(PRIMVAL(op) == 2) /* return R's 1-based index :*/
-	    return ScalarInteger(any_duplicated3(x, incomp, CXXRconvert(Rboolean, asLogical(CADDR(args)))));
+	    return ScalarInteger(any_duplicated3(x, incomp, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)))));
 	else
-	    dup = duplicated3(x, incomp, CXXRconvert(Rboolean, asLogical(CADDR(args))));
+	    dup = duplicated3(x, incomp, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args))));
     }
     else {
 	if(PRIMVAL(op) == 2)
-	    return ScalarInteger(any_duplicated(x, CXXRconvert(Rboolean, asLogical(CADDR(args)))));
+	    return ScalarInteger(any_duplicated(x, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)))));
 	else
-	    dup = duplicated(x, CXXRconvert(Rboolean, asLogical(CADDR(args))));
+	    dup = duplicated(x, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args))));
     }
     if (PRIMVAL(op) == 0) /* "duplicated()" */
 	return dup;
@@ -816,7 +816,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     dups_ok = asLogical(CADDDR(args));
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
-    no_dups = CXXRconvert(Rboolean, !dups_ok);
+    no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));

@@ -75,7 +75,7 @@ static void Init_R_Machine(SEXP rho)
 	   &R_AccuracyInfo.xmin,
 	   &R_AccuracyInfo.xmax);
 
-    R_dec_min_exponent = CXXRconvert(int, floor(log10(R_AccuracyInfo.xmin))); /* smallest decimal exponent */
+    R_dec_min_exponent = CXXRCONSTRUCT(int, floor(log10(R_AccuracyInfo.xmin))); /* smallest decimal exponent */
     PROTECT(ans = allocVector(VECSXP, 18));
     PROTECT(nms = allocVector(STRSXP, 18));
     SET_STRING_ELT(nms, 0, mkChar("double.eps"));
@@ -242,7 +242,7 @@ void attribute_hidden R_check_locale(void)
 #endif
     }
 #endif
-    mbcslocale = CXXRconvert(Rboolean, MB_CUR_MAX > 1);
+    mbcslocale = CXXRCONSTRUCT(Rboolean, MB_CUR_MAX > 1);
 #ifdef Win32
     {
 	char *ctype = setlocale(LC_CTYPE, NULL), *p;
@@ -1044,15 +1044,15 @@ SEXP attribute_hidden do_listfiles(SEXP call, SEXP op, SEXP args, SEXP rho)
     for (i = 0; i < ndir ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	count_files(dnp, &count, CXXRconvert(Rboolean, allfiles), CXXRconvert(Rboolean, recursive), pattern, reg);
+	count_files(dnp, &count, CXXRCONSTRUCT(Rboolean, allfiles), CXXRCONSTRUCT(Rboolean, recursive), pattern, reg);
     }
     PROTECT(ans = allocVector(STRSXP, count));
     count = 0;
     for (i = 0; i < ndir ; i++) {
 	if (STRING_ELT(d, i) == NA_STRING) continue;
 	dnp = R_ExpandFileName(translateChar(STRING_ELT(d, i)));
-	list_files(dnp, fullnames ? dnp : NULL, &count, ans, CXXRconvert(Rboolean, allfiles),
-		   CXXRconvert(Rboolean, recursive), pattern, reg);
+	list_files(dnp, fullnames ? dnp : NULL, &count, ans, CXXRCONSTRUCT(Rboolean, allfiles),
+		   CXXRCONSTRUCT(Rboolean, recursive), pattern, reg);
     }
     if (pattern)
 	regfree(&reg);
@@ -1755,7 +1755,7 @@ static Rboolean R_can_use_X11(void)
 #endif
     }
 
-    return CXXRconvert(Rboolean, var_R_can_use_X11 > 0);
+    return CXXRCONSTRUCT(Rboolean, var_R_can_use_X11 > 0);
 }
 #endif
 
@@ -2115,7 +2115,7 @@ static int do_copy(const char* from, const char* name, const char* to,
 	    while ((nc = fread(buf, 1, APPENDBUFSIZE, fp1)) == APPENDBUFSIZE)
 		if (fwrite(buf, 1, APPENDBUFSIZE, fp2) != APPENDBUFSIZE) 
 		    goto copy_error;
-	    if (CXXRconvert(int, fwrite(buf, 1, nc, fp2)) != nc) goto copy_error;
+	    if (CXXRCONSTRUCT(int, fwrite(buf, 1, nc, fp2)) != nc) goto copy_error;
 	    nfail = 0;
 	}
 copy_error:
@@ -2234,12 +2234,12 @@ SEXP attribute_hidden do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocVector(STRSXP, n));
     for (i = 0; i < n; i++) {
 	path = translateChar(STRING_ELT(paths, i));
-	OK = CXXRconvert(Rboolean, strlen(path) <= PATH_MAX);
+	OK = CXXRCONSTRUCT(Rboolean, strlen(path) <= PATH_MAX);
 	if (OK) {
 	    if (path[0] == '/') strncpy(abspath, path, PATH_MAX);
 	    else {
-		OK = CXXRconvert(Rboolean, getcwd(abspath, PATH_MAX) != NULL);
-		OK = CXXRconvert(Rboolean, OK && (strlen(path) + strlen(abspath) + 1 <= PATH_MAX));
+		OK = CXXRCONSTRUCT(Rboolean, getcwd(abspath, PATH_MAX) != NULL);
+		OK = CXXRCONSTRUCT(Rboolean, OK && (strlen(path) + strlen(abspath) + 1 <= PATH_MAX));
 		if (OK) {
 		    strcat(abspath, "/");
 		    strcat(abspath, path);
@@ -2369,8 +2369,8 @@ SEXP attribute_hidden do_Cstack_info(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     PROTECT(ans = allocVector(INTSXP, 4));
     PROTECT(nms = allocVector(STRSXP, 4));
-    INTEGER(ans)[0] = (R_CStackLimit == CXXRconvert(uintptr_t, -1)) ? NA_INTEGER : R_CStackLimit;
-    INTEGER(ans)[1] = (R_CStackLimit == CXXRconvert(uintptr_t, -1)) ? NA_INTEGER :
+    INTEGER(ans)[0] = (R_CStackLimit == CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER : R_CStackLimit;
+    INTEGER(ans)[1] = (R_CStackLimit == CXXRCONSTRUCT(uintptr_t, -1)) ? NA_INTEGER :
 	R_CStackDir * (R_CStackStart - uintptr_t( &ans));
     INTEGER(ans)[2] = R_CStackDir;
     INTEGER(ans)[3] = Evaluator::depth();

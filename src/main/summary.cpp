@@ -80,7 +80,7 @@ static Rboolean isum(int *x, int n, int *value, Rboolean narm, SEXP call)
 	warningcall(call, _("Integer overflow - use sum(as.numeric(.))"));
 	*value = NA_INTEGER;
     }
-    else *value = CXXRconvert(int, s);
+    else *value = CXXRCONSTRUCT(int, s);
 
     return(updated);
 }
@@ -447,7 +447,7 @@ SEXP attribute_hidden do_summary(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
     ans = matchArgExact(R_NaRmSymbol, &args);
-    narm = CXXRconvert(Rboolean, asLogical(ans));
+    narm = CXXRCONSTRUCT(Rboolean, asLogical(ans));
     updated = 0;
     empty = 1;/*- =1: only zero-length arguments, or NA with na.rm=T */
 

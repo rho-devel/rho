@@ -104,7 +104,7 @@ static Rboolean have_broken_mktime(void)
 	res = mktime(&t);
 	test_result = (res == time_t(-1));
     }
-    return CXXRconvert(Rboolean, test_result > 0);
+    return CXXRCONSTRUCT(Rboolean, test_result > 0);
 #else
     return FALSE;
 #endif
@@ -380,7 +380,7 @@ static double mktime0 (struct tm *tm, const int local)
     }
     if(!local) return mktime00(tm);
 
-    OK = CXXRconvert(Rboolean, tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
+    OK = CXXRCONSTRUCT(Rboolean, tm->tm_year < 138 && tm->tm_year >= (have_broken_mktime() ? 70 : 02));
     if(OK) {
 	res = double( mktime(tm));
 	if (res == double(-1)) return res;
@@ -447,7 +447,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	res->tm_isdst = -1;
 
 	/* Try to fix up timezone differences */
-	diff = CXXRconvert(int, guess_offset(res)/60);
+	diff = CXXRCONSTRUCT(int, guess_offset(res)/60);
 	shift = res->tm_min + 60*res->tm_hour;
 	res->tm_min -= diff;
 	validate_tm(res);
@@ -455,7 +455,7 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 	/* now this might be a different day */
 	if(shift - diff < 0) res->tm_yday--;
 	if(shift - diff > 24) res->tm_yday++;
-	diff2 = CXXRconvert(int, guess_offset(res)/60);
+	diff2 = CXXRCONSTRUCT(int, guess_offset(res)/60);
 	if(diff2 != diff) {
 	    res->tm_min += (diff - diff2);
 	    validate_tm(res);
@@ -711,7 +711,7 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(REALSXP, n));
     for(i = 0; i < n; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = CXXRconvert(int, fsecs);
+	tm.tm_sec   = CXXRCONSTRUCT(int, fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
@@ -778,7 +778,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(STRSXP, N));
     for(i = 0; i < N; i++) {
 	double secs = REAL(VECTOR_ELT(x, 0))[i%nlen[0]], fsecs = floor(secs);
-	tm.tm_sec   = CXXRconvert(int, fsecs);
+	tm.tm_sec   = CXXRCONSTRUCT(int, fsecs);
 	tm.tm_min   = INTEGER(VECTOR_ELT(x, 1))[i%nlen[1]];
 	tm.tm_hour  = INTEGER(VECTOR_ELT(x, 2))[i%nlen[2]];
 	tm.tm_mday  = INTEGER(VECTOR_ELT(x, 3))[i%nlen[3]];
