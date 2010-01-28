@@ -63,6 +63,8 @@
 #include <Graphics.h>		/* "GPar" structure + COMMENTS */
 #include "basedecl.h"
 
+using namespace CXXR;
+
 typedef struct {
     CXXRconst char *name;
     int code; /* 0 normal, 1 not inline, 2 read-only
@@ -1118,7 +1120,7 @@ static SEXP Query(const char *what, pGEDevDesc dd)
 
 SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP value;
+    GCStackRoot<> value;
     SEXP originalArgs = args;
     pGEDevDesc dd;
     int new_spec, nargs;
@@ -1133,7 +1135,7 @@ SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 	SEXP oldnames, newnames, tag, val;
 	int i;
 	PROTECT(newnames = allocVector(STRSXP, nargs));
-	PROTECT(value = allocVector(VECSXP, nargs));
+	value = allocVector(VECSXP, nargs);
 	oldnames = getAttrib(args, R_NamesSymbol);
 	for (i = 0 ; i < nargs ; i++) {
 	    if (oldnames != R_NilValue)
@@ -1161,7 +1163,7 @@ SEXP attribute_hidden do_par(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
 	setAttrib(value, R_NamesSymbol, newnames);
-	UNPROTECT(2);
+	UNPROTECT(1);
     }
     else {
 	error(_("invalid argument passed to par()"));
