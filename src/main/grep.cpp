@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
@@ -60,11 +76,11 @@ static void reg_report(int rc,  regex_t *reg, const char *pat)
 static SEXP mkCharWLen(const wchar_t *wc, int nc)
 {
     int nb; char *xi; wchar_t *wt;
-    wt = (wchar_t *) alloca((nc+1)*sizeof(wchar_t));
+    wt = static_cast<wchar_t *>( alloca((nc+1)*sizeof(wchar_t)));
     R_CheckStack();
     wcsncpy(wt, wc, nc); wt[nc] = 0;
     nb = wcstoutf8(NULL, wt, nc);
-    xi = (char *) alloca((nb+1)*sizeof(char));
+    xi = static_cast<char *>( alloca((nb+1)*sizeof(char)));
     R_CheckStack();
     wcstoutf8(xi, wt, nb + 1);
     return mkCharLenCE(xi, nb, CE_UTF8);
@@ -73,7 +89,7 @@ static SEXP mkCharWLen(const wchar_t *wc, int nc)
 static SEXP mkCharW(const wchar_t *wc)
 {
     int nb = wcstoutf8(NULL, wc, 0);
-    char *xi = (char *) alloca((nb+1)*sizeof(char));
+    char *xi = static_cast<char *>( alloca((nb+1)*sizeof(char)));
     R_CheckStack();
     wcstoutf8(xi, wc, nb + 1);
     return mkCharCE(xi, CE_UTF8);
@@ -161,13 +177,13 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
     /* group by token for efficiency with PCRE/TRE versions */
     PROTECT(ans = allocVector(VECSXP, len));
     for (itok = 0; itok < tlen; itok++) {
-	SEXP this = STRING_ELT(tok, itok);
+	SEXP thiss = STRING_ELT(tok, itok);
 
-	if (this == NA_STRING) { /* NA token doesn't split */
+	if (thiss == NA_STRING) { /* NA token doesn't split */
 	    for (i = itok; i < len; i += tlen)
 		SET_VECTOR_ELT(ans, i, ScalarString(STRING_ELT(x, i)));
 	    continue;
-	} else if (!CHAR(this)[0]) { /* empty */
+	} else if (!CHAR(thiss)[0]) { /* empty */
 	    for (i = itok; i < len; i += tlen) {
 		SEXP t;
 		if (STRING_ELT(x, i) == NA_STRING) {
@@ -512,7 +528,7 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 	namesgets(ans, getAttrib(x, R_NamesSymbol));
     UNPROTECT(1);
     Free(pt); Free(wpt);
-    if (tables) pcre_free((void *)tables);
+    if (tables) pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
     return ans;
 }
 
@@ -759,7 +775,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 
 	    if (fixed_opt)
-		LOGICAL(ind)[i] = fgrep_one(spat, s, useBytes, ienc, NULL) >= 0;
+		LOGICAL(ind)[i] = fgrep_one(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), ienc, NULL) >= 0;
 	    else if (perl_opt) {
 		if (pcre_exec(re_pcre, re_pe, s, strlen(s), 0, 0, &ov, 0) >= 0)
 		    INTEGER(ind)[i] = 1;
@@ -778,7 +794,7 @@ SEXP attribute_hidden do_grep(SEXP call, SEXP op, SEXP args, SEXP env)
     else if (perl_opt) {
 	if(re_pe) pcre_free(re_pe);
 	pcre_free(re_pcre);
-	pcre_free((void *)tables);
+	pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char*, tables));
     } else
 	tre_regfree(&reg);
 
@@ -1027,7 +1043,7 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	ns = strlen(s);
 	if (fixed_opt) {
 	    int st, nr;
-	    st = fgrep_one_bytes(spat, s, useBytes, use_UTF8);
+	    st = fgrep_one_bytes(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8);
 	    if (st < 0)
 		SET_STRING_ELT(ans, i, STRING_ELT(text, i));
 	    else if (STRING_ELT(rep, 0) == NA_STRING)
@@ -1040,7 +1056,7 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		    do {
 			nr++;
 			ss += sst+patlen;
-		    } while((sst = fgrep_one_bytes(spat, ss, useBytes, use_UTF8)) >= 0);
+		    } while((sst = fgrep_one_bytes(spat, ss, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
 		} else nr = 1;
 		cbuf = u = Calloc(ns + nr*(replen - patlen) + 1, char);
 		*u = '\0';
@@ -1048,7 +1064,7 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		    nr = strlen(u);
 		    strncat(u, s, st); u[nr+st] = '\0'; s += st+patlen;
 		    strcat(u, srep);
-		} while(global && (st = fgrep_one_bytes(spat, s, useBytes, use_UTF8)) >= 0);
+		} while(global && (st = fgrep_one_bytes(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), use_UTF8)) >= 0);
 		strcat(u, s);
 		if (useBytes)
 		    SET_STRING_ELT(ans, i, mkChar(cbuf));
@@ -1320,7 +1336,7 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 	    }
 	    if (fixed_opt) {
-		st = fgrep_one(spat, s, useBytes, ienc, NULL);
+		st = fgrep_one(spat, s, CXXRCONSTRUCT(Rboolean, useBytes), ienc, NULL);
 		INTEGER(ans)[i] = (st > -1)?(st+1):-1;
 		if (!useBytes && use_UTF8) {
 		    INTEGER(matchlen)[i] = INTEGER(ans)[i] >= 0 ?
@@ -1343,14 +1359,14 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 			/* Unfortunately these are in bytes, so we need to
 			   use chars instead */
 			if (st > 0) {
-			    buf = R_AllocStringBuffer(st, &cbuff);
+			    buf = CXXRSCAST(char*, R_AllocStringBuffer(st, &cbuff));
 			    memcpy(buf, s, st);
 			    buf[st] = '\0';
 			    INTEGER(ans)[i] = 1+utf8towcs(NULL, buf, 0);
 			    if (INTEGER(ans)[i] <= 0) /* an invalid string */
 				INTEGER(ans)[i] = NA_INTEGER;
 			}
-			buf = R_AllocStringBuffer(mlen+1, &cbuff);
+			buf = CXXRSCAST(char*, R_AllocStringBuffer(mlen+1, &cbuff));
 			memcpy(buf, s+st, mlen);
 			buf[mlen] = '\0';
 			INTEGER(matchlen)[i] = utf8towcs(NULL, buf, 0);
@@ -1377,7 +1393,7 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
     else if (perl_opt) {
 	if(re_pe) pcre_free(re_pe);
 	pcre_free(re_pcre);
-	pcre_free((void *)tables);
+	pcre_free(CXXRNOCAST(void *)CXXRCCAST(unsigned char *, tables));
     } else
 	tre_regfree(&reg);
     setAttrib(ans, install("match.length"), matchlen);
@@ -1482,7 +1498,7 @@ gregexpr_fixed(const char *pattern, const char *string, int useBytes, int ienc)
 	patlen = strlen(pattern);
     slen = strlen(string);
     foundAll = curpos = st = foundAny = 0;
-    st = fgrep_one(pattern, string, useBytes, ienc, &nb);
+    st = fgrep_one(pattern, string, CXXRCONSTRUCT(Rboolean, useBytes), ienc, &nb);
     matchIndex = -1;
     if (st < 0) {
 	INTEGER(matchbuf)[0] = -1;
@@ -1500,7 +1516,7 @@ gregexpr_fixed(const char *pattern, const char *string, int useBytes, int ienc)
 		curpos += st + patlen;
 	    if (curpos >= slen)
 		break;
-	    st = fgrep_one(pattern, string, useBytes, ienc, &nb);
+	    st = fgrep_one(pattern, string, CXXRCONSTRUCT(Rboolean, useBytes), ienc, &nb);
 	    if (st >= 0) {
 		if ((matchIndex + 1) == bufsize) {
 		    /* Reallocate match buffers */

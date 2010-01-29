@@ -27,8 +27,7 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = RNG.c agrep.c complex.c gram.c gramRd.c grep.c inlined.c raw.c \
-            unzip.c
+SOURCES_C = complex.c gram.c gramRd.c inlined.c unzip.c
 
 SOURCES_CXX = \
 	ArgMatcher.cpp \
@@ -45,14 +44,14 @@ SOURCES_CXX = \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
         PairList.cpp Promise.cpp \
-        RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
-        Renviron.cpp \
+        RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
+        RealVector.cpp Renviron.cpp \
         S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \
-	apply.cpp arithmetic.cpp array.cpp attrib.cpp \
+	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
 	cov.cpp cum.cpp \
@@ -60,7 +59,7 @@ SOURCES_CXX = \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
 	engine.cpp envir.cpp errors.cpp eval.cpp \
 	format.cpp fourier.cpp \
-	gevents.cpp gram-ex.cpp graphics.cpp \
+	gevents.cpp gram-ex.cpp graphics.cpp grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
@@ -68,7 +67,7 @@ SOURCES_CXX = \
 	par.cpp paste.cpp pcre.cpp platform.cpp \
 	plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
-	random.cpp registration.cpp relop.cpp rlocale.cpp \
+	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \

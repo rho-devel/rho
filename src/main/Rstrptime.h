@@ -1186,12 +1186,12 @@ R_strptime (const char *buf, const char *format, struct tm *tm, double *psecs)
 	n = mbstowcs(NULL, buf, 1000);
 	if(n > 1000) error(_("input string is too long"));
 	n = mbstowcs(wbuf, buf, 1000);
-	if(n == -1) error(_("invalid multibyte input string"));
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte input string"));
 	
 	n = mbstowcs(NULL, format, 1000);
 	if(n > 1000) error(_("format string is too long"));
 	n = mbstowcs(wfmt, format, 1000);
-	if(n == -1) error(_("invalid multibyte format string"));
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte format string"));
 	return (char *) w_strptime_internal (wbuf, wfmt, tm, &decided, psecs);
     } else
 #endif

@@ -70,7 +70,7 @@ extern N01type N01_kind; /* from ../nmath/snorm.c */
 typedef struct {
     RNGtype kind;
     N01type Nkind;
-    char *name; /* print name */
+    CXXRCONST char *name; /* print name */
     int n_seed; /* length of seed vector */
     Int32 *i_seed;
 } RNGTAB;
@@ -126,7 +126,7 @@ double unif_rand(void)
 	I2 = I2 * 172 % 30307;
 	I3 = I3 * 170 % 30323;
 	value = I1 / 30269.0 + I2 / 30307.0 + I3 / 30323.0;
-	return fixup(value - (int) value);/* in [0,1) */
+	return fixup(value - int( value));/* in [0,1) */
 
     case MARSAGLIA_MULTICARRY:/* 0177777(octal) == 65535(decimal)*/
 	I1= 36969*(I1 & 0177777) + (I1>>16);
@@ -150,7 +150,7 @@ double unif_rand(void)
 	return fixup(KT_next() * KT);
 
     case USER_UNIF:
-	return *((double *) User_unif_fun());
+	return *(static_cast<double *>( User_unif_fun()));
 
     default:
 	error(_("unif_rand: unimplemented RNG kind %d"), RNG_kind);
@@ -254,7 +254,7 @@ static void RNG_Init(RNGtype kind, Int32 seed)
     case USER_UNIF:
 	User_unif_fun = R_FindSymbol("user_unif_rand", "", NULL);
 	if (!User_unif_fun) error(_("'user_unif_rand' not in load table"));
-	User_unif_init = (UnifInitFun) R_FindSymbol("user_unif_init", "", NULL);
+	User_unif_init = reinterpret_cast<UnifInitFun>( R_FindSymbol("user_unif_init", "", NULL));
 	if (User_unif_init) (void) User_unif_init(seed);
 	User_unif_nseed = R_FindSymbol("user_unif_nseed", "", NULL);
 	User_unif_seedloc = R_FindSymbol("user_unif_seedloc", "",  NULL);
@@ -264,13 +264,13 @@ static void RNG_Init(RNGtype kind, Int32 seed)
 		warning(_("cannot read seeds unless 'user_unif_nseed' is supplied"));
 		break;
 	    }
-	    ns = *((int *) User_unif_nseed());
+	    ns = *(static_cast<int *>( User_unif_nseed()));
 	    if (ns < 0 || ns > 625) {
 		warning(_("seed length must be in 0...625; ignored"));
 		break;
 	    }
 	    RNG_Table[kind].n_seed = ns;
-	    RNG_Table[kind].i_seed = (Int32 *) User_unif_seedloc();
+	    RNG_Table[kind].i_seed = static_cast<Int32 *>( User_unif_seedloc());
 	}
 	break;
     default:
@@ -291,7 +291,7 @@ static void Randomize(RNGtype kind)
   {
     struct timeval tv;
     gettimeofday (&tv, NULL);
-    seed = ((uint64_t) tv.tv_usec << 16) ^ tv.tv_sec;
+    seed = (uint64_t( tv.tv_usec) << 16) ^ tv.tv_sec;
   }
 #elif HAVE_TIME
     seed = (Int32) time(NULL);
@@ -322,8 +322,8 @@ static void GetRNGkind(SEXP seeds)
     tmp = is[0];
     if (tmp == NA_INTEGER)
 	error(_(".Random.seed[1] is not a valid integer"));
-    newRNG = (RNGtype) (tmp % 100);
-    newN01 = (N01type) (tmp / 100);
+    newRNG = RNGtype( (tmp % 100));
+    newN01 = N01type( (tmp / 100));
     if (newN01 < 0 || newN01 > KINDERMAN_RAMAGE)
 	error(_(".Random.seed[0] is not a valid Normal type"));
     switch(newRNG) {
@@ -454,10 +454,10 @@ SEXP attribute_hidden do_RNGkind (SEXP call, SEXP op, SEXP args, SEXP env)
     norm = CADR(args);
     GetRNGkind(R_NilValue); /* pull from .Random.seed if present */
     if(!isNull(rng)) { /* set a new RNG kind */
-	RNGkind((RNGtype) asInteger(rng));
+	RNGkind(RNGtype( asInteger(rng)));
     }
     if(!isNull(norm)) { /* set a new normal kind */
-	Norm_kind((N01type) asInteger(norm));
+	Norm_kind(N01type( asInteger(norm)));
     }
     UNPROTECT(1);
     return ans;
@@ -477,9 +477,9 @@ SEXP attribute_hidden do_setseed (SEXP call, SEXP op, SEXP args, SEXP env)
     nkind = CADDR(args);
     GetRNGkind(R_NilValue); /* pull RNG_kind, N01_kind from 
 			       .Random.seed if present */
-    if (!isNull(skind)) RNGkind((RNGtype) asInteger(skind));
-    if (!isNull(nkind)) Norm_kind((N01type) asInteger(nkind));
-    RNG_Init(RNG_kind, (Int32) seed); /* zaps BM history */
+    if (!isNull(skind)) RNGkind(RNGtype( asInteger(skind)));
+    if (!isNull(nkind)) Norm_kind(N01type( asInteger(nkind)));
+    RNG_Init(RNG_kind, Int32( seed)); /* zaps BM history */
     PutRNGstate();
     return R_NilValue;
 }
@@ -603,7 +603,7 @@ static double MT_genrand(void)
     y ^= TEMPERING_SHIFT_L(y);
     dummy[0] = mti;
 
-    return ( (double)y * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
+    return ( double(y) * 2.3283064365386963e-10 ); /* reals: [0,1)-interval */
 }
 
 /*
@@ -636,7 +636,7 @@ static void ran_array(long aa[],int n)    /* put n new random numbers in aa */
 }
 #define QUALITY 1009 /* recommended quality level for high-res use */
 static long ran_arr_buf[QUALITY];
-static long ran_arr_sentinel=(long)-1;
+static long ran_arr_sentinel=long(-1);
 static long *ran_arr_ptr=&ran_arr_sentinel; /* the next random number, or -1 */
 
 static long ran_arr_cycle(void)

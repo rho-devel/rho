@@ -1,3 +1,19 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 2002--2009  The R Development Core Team
@@ -71,7 +87,7 @@ SEXP attribute_hidden do_agrep(SEXP call, SEXP op, SEXP args, SEXP env)
     if (igcase_opt) cflags |= REG_ICASE;
 
     if (!useBytes) {
-	useWC = !strIsASCII(CHAR(STRING_ELT(pat, 0)));
+	useWC = CXXRCONSTRUCT(Rboolean, !strIsASCII(CHAR(STRING_ELT(pat, 0))));
 	if (!useWC) {
 	    for (i = 0 ; i < LENGTH(vec) ; i++) {
 		if (STRING_ELT(vec, i) == NA_STRING) continue;
