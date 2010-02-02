@@ -1194,7 +1194,10 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     if (length(args) < 2)
 	WrongArgCount("lambda");
-    rval = mkCLOSXP(CAR(args), CADR(args), rho);
+    SEXP formals = CAR(args);
+    if (formals && formals->sexptype() != LISTSXP)
+	Rf_error(_("invalid formal argument list for 'function'"));
+    rval = mkCLOSXP(formals, CADR(args), rho);
     setAttrib(rval, R_SourceSymbol, CADDR(args));
     return rval;
 }
