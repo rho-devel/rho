@@ -58,11 +58,12 @@ namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
+	Rboolean (*IS_S4_OBJECTptr)(SEXP x) = IS_S4_OBJECT;
 	int (*NAMEDptr)(SEXP x) = NAMED;
 	Rboolean (*OBJECTptr)(SEXP e) = OBJECT;
 	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
-	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
+	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*UNSET_S4_OBJECTptr)(SEXP x) = UNSET_S4_OBJECT;
     }
 }
