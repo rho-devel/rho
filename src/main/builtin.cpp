@@ -366,7 +366,8 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( !isEnvironment(parent) )
 	error(_("'parent' is not an environment"));
 
-    SET_ENCLOS(env, parent);
+    Environment* parenv = static_cast<Environment*>(parent);
+    static_cast<Environment*>(env)->setEnclosingEnvironment(parenv);
 
     return( env );
 }

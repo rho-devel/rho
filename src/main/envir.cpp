@@ -1210,7 +1210,7 @@ SEXP attribute_hidden do_emptyenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP name, t, x;
+    SEXP name, x;
     int pos;
     GCStackRoot<Environment> newenv;
 
@@ -1219,7 +1219,6 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
     pos = asInteger(CADR(args));
     if (pos == NA_INTEGER)
 	error(_("'pos' must be an integer"));
-
     name = CADDR(args);
     if (!isValidStringF(name))
 	error(_("invalid '%s' argument"), "name");
@@ -1246,13 +1245,17 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     setAttrib(newenv, install("name"), name);
-    for (t = R_GlobalEnv; ENCLOS(t) != R_BaseEnv && pos > 2; t = ENCLOS(t))
-	pos--;
 
-    x = ENCLOS(t);
-    SET_ENCLOS(t, newenv);
-    SET_ENCLOS(newenv, x);
-
+    // Interpolate the new environment into the chain of enclosing environments:
+    {
+	Environment* anchor = Environment::global();
+	while (anchor->enclosingEnvironment() != Environment::base()
+	       && pos > 2) {
+	    anchor = anchor->enclosingEnvironment();
+	    --pos;
+	}
+	newenv->slotBehind(anchor);
+    }
     return newenv;
 }
 
@@ -1269,7 +1272,8 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP s, t, x;
+    GCStackRoot<> s;
+    SEXP t;
     int pos, n;
 
     checkArity(op, args);
@@ -1288,12 +1292,10 @@ SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 	s = t;	/* for -Wall */
     }
     else {
-	PROTECT(s = ENCLOS(t));
-	x = ENCLOS(s);
-	SET_ENCLOS(t, x);
-	SET_ENCLOS(s, R_BaseEnv);
+	Environment* tenv = static_cast<Environment*>(t);
+	s = tenv->enclosingEnvironment();
+	tenv->skipEnclosing();
     }
-    UNPROTECT(1);
     return FRAME(s);
 }
 

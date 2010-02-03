@@ -172,8 +172,11 @@ namespace CXXR {
 	 * @param new_enclos Pointer to the environment now to be
 	 *          considered to enclose this Environment.
 	 *
-	 * @todo This ought to check that the chain of ancestors
-	 * is free of loops and terminates with the empty environment.
+	 * @deprecated Retained for use in deserialization and in the
+	 * R function \c parent.env<- (itself deprecated).  For other
+	 * purposes, use instead slotBehind() and skipEnclosing(),
+	 * which ensure that the 'enclosing' relationship remains
+	 * acyclic.
 	 */
 	void setEnclosingEnvironment(Environment* new_enclos)
 	{
@@ -200,6 +203,33 @@ namespace CXXR {
 	    return m_single_stepping;
 	}
 
+	/** @brief Interpolate this Environment between a given
+	 * Environment and its enclosing Environment.
+	 *
+	 * This causes this Environment T to be interpolated between
+	 * \a anchor and the current enclosing Environment of \a
+	 * anchor.  Suppose that prior to the call E (possibly null)
+	 * is the enclosing Environment of \a anchor.  Then after the
+	 * call, E will be the enclosing Environment of T, and T will
+	 * be the enclosing Environment of \a anchor.
+	 *
+	 * @param anchor Pointer to the Environment 'behind' which this
+	 *          Environment is to be interpolated.  Must not
+	 *          be a null pointer.
+	 */
+	void slotBehind(Environment* anchor);
+
+	/** @brief Grandparent becomes parent.
+	 *
+	 * Suppose that prior to the call, E is the enclosing
+	 * Environment of this Environment (it is an error for E to be
+	 * null), and that EE (possibly null) is the enclosing
+	 * Environment of E.  Then after the call EE will be the
+	 * enclosing Environment both of this Environment and of E.
+	 * (However, this change may expose E to garbage collection.)
+	 */
+	void skipEnclosing();
+	    
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -505,25 +535,6 @@ extern "C" {
 	using namespace CXXR;
 	Environment* env = SEXP_downcast<Environment*>(x);
 	return env->frame()->asPairList();
-    }
-#endif
-
-    /** @brief Set an environment's enclosing environment.
-     *
-     * @param x Pointer to a CXXR::Environment (checked).
-     *
-     * @param v Pointer to a CXXR::Environment (checked) intended to be
-     *          the new enclosing environment of \a x.
-     */
-#ifndef __cplusplus
-    void SET_ENCLOS(SEXP x, SEXP v);
-#else
-    inline void SET_ENCLOS(SEXP x, SEXP v)
-    {
-	using namespace CXXR;
-	Environment* env = SEXP_downcast<Environment*>(x);
-	Environment* enc = SEXP_downcast<Environment*>(v);
-	env->setEnclosingEnvironment(enc);
     }
 #endif
 

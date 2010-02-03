@@ -57,7 +57,6 @@ namespace CXXR {
 	Rboolean (*ENV_DEBUGp)(SEXP x) = ENV_DEBUG;
 	Rboolean (*isEnvironmentptr)(SEXP s) = Rf_isEnvironment;
 	SEXP (*FRAMEp)(SEXP x) = FRAME;
-	void (*SET_ENCLOSp)(SEXP x, SEXP v) = SET_ENCLOS;
 	void (*SET_ENV_DEBUGp)(SEXP x, Rboolean v) = SET_ENV_DEBUG;
 	void (*SET_SYMVALUEp)(SEXP x, SEXP v) = SET_SYMVALUE;
 	SEXP (*SYMVALUEp)(SEXP x) = SYMVALUE;
@@ -111,6 +110,21 @@ unsigned int Environment::packGPBits() const
     if (m_locked) ans |= FRAME_LOCK_MASK;
     // if (m_globally_cached) ans |= GLOBAL_FRAME_MASK;
     return ans;
+}
+
+void Environment::skipEnclosing()
+{
+    if (!m_enclosing)
+	Rf_error(_("this Environment has no enclosing Environment."));
+    m_enclosing = m_enclosing->m_enclosing;
+}
+
+void Environment::slotBehind(Environment* anchor)
+{
+    if (!anchor || anchor == this)
+	Rf_error("internal error in Environment::slotBehind()");
+    m_enclosing = anchor->m_enclosing;
+    anchor->m_enclosing = this;
 }
 
 const char* Environment::typeName() const

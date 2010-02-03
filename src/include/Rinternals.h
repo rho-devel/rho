@@ -205,7 +205,6 @@ void SET_INTERNAL(SEXP x, SEXP v);
 /* Environment Access Functions */
 SEXP (FRAME)(SEXP x);
 SEXP (ENCLOS)(SEXP x);
-void SET_ENCLOS(SEXP x, SEXP v);
 
 /* Promise Access Functions */
 /* First five have macro versions in Defn.h */
