@@ -9,8 +9,32 @@
 using namespace std;
 using namespace CXXR;
 
-GCRoot<Parentage>* ProvenanceTracker::p_current;
+RObject* ProvenanceTracker::e_current;
+GCRoot<Parentage::Protector>* ProvenanceTracker::p_current;
 GCRoot<ProvenanceSet>* ProvenanceTracker::p_seen;
+
+Expression* ProvenanceTracker::expression() {
+	RObject* exp=R_CurrentExpr;
+	if (!e_current)
+		return static_cast<Expression*>(exp);
+
+	if (TYPEOF(e_current)==EXPRSXP) {
+		ExpressionVector* ev=static_cast<ExpressionVector*>(e_current);
+		RObject* o=(*ev)[0];
+		Expression* e=static_cast<Expression*>(o);
+		return e;
+	}
+	
+	return static_cast<Expression*>(exp);
+}
+
+void ProvenanceTracker::resetExpression() {
+	setExpression(NULL);
+}
+
+void ProvenanceTracker::setExpression(RObject* expr) {
+	e_current=expr;
+}
 
 void ProvenanceTracker::initEnv(Environment* env) {
 	Frame* frame=env->frame();
@@ -19,7 +43,7 @@ void ProvenanceTracker::initEnv(Environment* env) {
 }
 
 Parentage* ProvenanceTracker::parentage() {
-	return *p_current;
+	return (*p_current)->parentage();
 }
 
 ProvenanceSet* ProvenanceTracker::seen() {
@@ -27,8 +51,21 @@ ProvenanceSet* ProvenanceTracker::seen() {
 }
 
 void ProvenanceTracker::resetParentage() {
-	(*p_current)=GCNode::expose(new Parentage);
 	(*p_seen)=GCNode::expose(new ProvenanceSet);
+	(*p_current)->set(new Parentage());
+	return;
+}
+
+/*
+ * Promises need to be handled slightly differently.
+ * As illustrated by the case of lazy-loading, promises may
+ * result in a new binding being created.
+ * This binding would ordinarily be placed on the 'seen' set,
+ * and so not recorded in parentage.
+ */
+void ProvenanceTracker::forcedPromise(const Frame::Binding& bdg) {
+	writeMonitor(bdg,false); // Set up the new Provenance
+	                         // but don't add to seen set
 }
 
 void ProvenanceTracker::readMonitor(const Frame::Binding& bdg) { 
@@ -42,28 +79,33 @@ void ProvenanceTracker::readMonitor(const Frame::Binding& bdg) {
 	GCEdge<Provenance> needle(p);
 	if (seen()->find(needle)==seen()->end())
 		parentage()->pushProvenance(p);
-	GCEdge<Provenance> tmp(p);
-	seen()->insert(tmp);
+	seen()->insert(needle);
 }
 
+/* Default behaviour is that the new object has been seen */
 void ProvenanceTracker::writeMonitor(const Frame::Binding &bind) {
+	writeMonitor(bind, true);
+}
+
+/* Have control over whether or not the object gets added to the seen set */
+void ProvenanceTracker::writeMonitor(const Frame::Binding &bind, bool beenSeen) {
         CXXR::Frame::Binding& bdg=const_cast<CXXR::Frame::Binding&>(bind);
 #ifdef VERBOSEMONITOR
 	cout<<"Write '"<<bdg.symbol()->name()->c_str()<<"'"<<endl;
 #endif
-	RObject* e=R_CurrentExpr;
+	RObject* e=expression();
         Expression* expr=static_cast<Expression*>(e);
         Symbol* sym=const_cast<Symbol*>(bind.symbol());
-        Parentage* parentage=ProvenanceTracker::parentage();
-
 
         bdg.setProvenance(GCNode::expose(
-                new Provenance(expr,sym,(parentage->size() ? parentage : 0))
+                new Provenance(expr,sym,parentage())
         ));
 	Provenance* prov=const_cast<Provenance*>(bdg.getProvenance());
 
-	GCEdge<Provenance> tmp(prov);
-	seen()->insert(tmp);
+	if (beenSeen) {
+		GCEdge<Provenance> tmp(prov);
+		seen()->insert(tmp);
+	}
 }
 
 void ProvenanceTracker::cleanup() {
@@ -71,7 +113,9 @@ void ProvenanceTracker::cleanup() {
 	delete p_seen;
 }
 
-void ProvenanceTracker::initialize() { 
-	p_current=new GCRoot<Parentage>(GCNode::expose(new Parentage()));
+void ProvenanceTracker::initialize() {
+	e_current=NULL;
+	p_current=new GCRoot<Parentage::Protector>(GCNode::expose(new Parentage::Protector()));
+	(*p_current)->set(new Parentage());
 	p_seen=new GCRoot<ProvenanceSet>(GCNode::expose(new ProvenanceSet()));
 }

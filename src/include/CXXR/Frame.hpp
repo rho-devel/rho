@@ -190,7 +190,7 @@ namespace CXXR {
 		 *
 		 * @return Pointer to Provenance object
 		 */
-		const Provenance *getProvenance()
+		const Provenance *getProvenance() const
 		{
 			return m_provenance;
 		}

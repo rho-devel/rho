@@ -11,17 +11,29 @@
 #include "CXXR/Provenance.hpp"
 
 namespace CXXR {
-	class Parentage :
-		public GCNode, public std::vector<GCEdge<Provenance> > {
+	class Parentage : public std::vector<GCEdge<Provenance> > {
 	public:
-	Parentage();
-	void Display() const;
+
+	class Protector : public GCNode {
+	public:
+		Protector() : p_parentage(0) {}
+		void detachReferents();
+		Parentage* parentage();
+		void set(Parentage*);
+		void visitReferents(const_visitor*) const;
+	private:
+		Parentage* p_parentage;
+	};
+		
+	Parentage() : p_refcount(0) { };
 	GCStackRoot<StringVector> asStringVector();
+	unsigned long decRefCount();
+	void Display() const;
+	unsigned long incRefCount();
 	void pushProvenance(Provenance*);
 	
-	// Virtual method of GCNode
-	void detachReferents();
-	void visitReferents(const_visitor*) const;
+	private:
+	unsigned long p_refcount;
 	};
 }
 

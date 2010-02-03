@@ -18,18 +18,22 @@ namespace CXXR {
 	static void resetParentage();
 
 	static Expression* expression();
-	static void setExpression(Expression*);
+	static void resetExpression();
+	static void setExpression(RObject*);
 
+	static void forcedPromise(const Frame::Binding&);
 	static void readMonitor(const Frame::Binding&);
 	static void writeMonitor(const Frame::Binding&);
+	static void writeMonitor(const Frame::Binding&,bool);
 
 	static void initEnv(Environment*);
 
 	private:
 	ProvenanceTracker();
 	static ProvenanceSet* seen();
-	static GCRoot<Parentage>* p_current;
+	static GCRoot<Parentage::Protector>* p_current;
 	static GCRoot<ProvenanceSet>* p_seen;
+	static RObject* e_current;
 
 	// Required for SchwarzCounter
 	static void cleanup();

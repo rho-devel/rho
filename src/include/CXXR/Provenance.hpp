@@ -50,7 +50,7 @@ namespace CXXR {
 		Set* m_children;
 		GCEdge<Expression> m_expression;
 		GCEdge<Symbol> m_symbol;
-		GCEdge<Parentage> m_parentage;
+		Parentage* m_parentage;
 
 		void announceBirth();
 		void announceDeath();

@@ -56,6 +56,7 @@
 
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ProvenanceTracker.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -1747,6 +1748,16 @@ SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     expr = CAR(args);
     env = CADR(args);
     encl = CADDR(args);
+
+    /* cas 14/01/10
+     * *eval.with.vis*
+     * (probably?) from a call to source
+     */
+    if (PRIMVAL(op)==1) {
+	ProvenanceTracker::setExpression(static_cast<Expression*>(expr));
+	ProvenanceTracker::resetParentage();
+    }
+
     if (isNull(encl)) {
 	/* This is supposed to be defunct, but has been kept here
 	   (and documented as such */
@@ -1849,6 +1860,7 @@ SEXP CXXRnot_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	setAttrib(env, R_NamesSymbol, encl);
 	expr = env;
 	UNPROTECT(3);
+	ProvenanceTracker::resetExpression(); // PA-source
     }
     UNPROTECT(1);
     return expr;

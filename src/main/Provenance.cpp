@@ -10,15 +10,21 @@ using namespace CXXR;
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
 	m_expression=(exp)?exp->clone():NULL;
 	m_symbol=sym;
+
 	m_parentage=par;
-	m_parentpos=(m_parentage) ? m_parentage->size() : 0;
+	if (m_parentage) {
+		m_parentage->incRefCount(); // Increment reference count
+		m_parentpos=m_parentage->size();
+	}
+	
 	gettimeofday(&m_timestamp,NULL);
 	m_children=new Set();
+
 	announceBirth();
 }
 
 Provenance::~Provenance() {
-	announceDeath();
+	announceDeath(); // Necessary house-keeping
 	delete m_children;
 }
 
@@ -67,20 +73,25 @@ Provenance::Set* Provenance::descendants(Set* open) {
 void Provenance::announceBirth() {
 	if (!m_parentage)
 		return;
-	for (Parentage::iterator it=m_parentage->begin();
-	     it!=m_parentage->end();
-	     ++it)
-		(*it)->registerChild(this);
+	for (unsigned int i=0;i<m_parentpos;++i)
+		m_parentage->at(i)->registerChild(this);
 }
 
 void Provenance::announceDeath() {
 	if (!m_parentage) return;
-	for (unsigned int i=0;
-	     i<m_parentpos;
-	     ++i) {
-		Provenance* p=(*m_parentage).at(i);
-		p->deregisterChild(this);
+	// Firstly, tell all of our parents we're dying
+	for (unsigned int i=0;i<m_parentpos;i++)
+		m_parentage->at(i)->deregisterChild(this);
+	// If this is the last Provenance refering to this Parentage
+	// then we should destroy it.
+	if (!m_parentage->decRefCount()) {
+		for (Parentage::iterator it=m_parentage->begin();
+		     it!=m_parentage->end();
+		     ++it)
+			(*it).detach();
+		delete m_parentage;
 	}
+	m_parentage=NULL;
 }
 
 Provenance::Set* Provenance::children() const {
@@ -117,7 +128,7 @@ const CachedString* Provenance::getTime() const{
 void Provenance::detachReferents() {
 	m_expression.detach();
 	m_symbol.detach();
-	m_parentage.detach();
+	announceDeath(); // Do necessary house-keeping
 }
 
 void Provenance::registerChild(Provenance* child) {
@@ -139,10 +150,16 @@ GCStackRoot<StringVector> Provenance::setAsStringVector(Set* s) {
 void Provenance::visitReferents(const_visitor* v) const {
 	const GCNode* exp=m_expression;
 	const GCNode* sym=m_symbol;
-	const GCNode* par=m_parentage;
 	if (exp) exp->conductVisitor(v);
 	if (sym) sym->conductVisitor(v);
-	if (par) par->conductVisitor(v);
+	if (m_parentage) { // cas : manually conduct to parents
+		for (unsigned int i=0;
+		     i<m_parentage->size();
+		     i++) {
+			const GCNode* rent=m_parentage->at(i);
+			rent->conductVisitor(v);
+		}
+	}
 }
 
 Provenance::Set *Provenance::pedigree() {

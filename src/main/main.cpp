@@ -362,6 +362,7 @@ Rf_ReplIteration(SEXP rho, CXXRunsigned int savestack, int browselevel, R_ReplSt
     SEXP value;
     Rboolean wasDisplayed = FALSE;
     ProvenanceTracker::resetParentage();
+    ProvenanceTracker::resetExpression();
 
     if(!*state->bufp) {
 	    R_Busy(0);

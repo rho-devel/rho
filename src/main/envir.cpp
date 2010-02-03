@@ -181,7 +181,7 @@ Frame::forcedValue(const Symbol* symbol, const Environment* env)
 		// to look it up again.
 		bdg = binding(symbol);
 		if (bdg)
-		    monitorWrite(*bdg);
+		    ProvenanceTracker::forcedPromise(*bdg);
 	    }
 	    val = const_cast<RObject*>(prom->value());
 	}
