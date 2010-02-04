@@ -81,6 +81,8 @@ SEXP R_BaseNamespace;
 void Environment::detachReferents()
 {
     m_enclosing.detach();
+    if (m_cached && m_frame)
+	m_frame->decCacheCount();
     m_frame.detach();
     RObject::detachReferents();
 }
@@ -92,16 +94,25 @@ void Environment::initialize()
     static GCRoot<Environment>
 	base_env(GCNode::expose(new Environment(empty_env)));
     s_base = base_env.get();
+    s_base->makeCached();
     R_BaseEnv = s_base;
     static GCRoot<Environment>
 	global_env(GCNode::expose(new Environment(s_base)));
     s_global = global_env.get();
+    s_global->makeCached();
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
 	base_namespace(GCNode::expose(new Environment(s_global,
 						      s_base->frame())));
     s_base_namespace = base_namespace.get();
     R_BaseNamespace = s_base_namespace;
+}
+
+void Environment::makeCached()
+{
+    if (!m_cached && m_frame)
+	m_frame->incCacheCount();
+    m_cached = true;
 }
 
 unsigned int Environment::packGPBits() const
@@ -112,10 +123,26 @@ unsigned int Environment::packGPBits() const
     return ans;
 }
 
+void  Environment::setEnclosingEnvironment(Environment* new_enclos)
+{
+    m_enclosing = new_enclos;
+    // Recursively propagate participation in search list cache:
+    if (m_cached) {
+	Environment* env = m_enclosing;
+	while (env && !env->m_cached) {
+	    env->makeCached();
+	    env = env->m_enclosing;
+	}
+	flushFromCache(0);
+    }
+}
+
 void Environment::skipEnclosing()
 {
     if (!m_enclosing)
 	Rf_error(_("this Environment has no enclosing Environment."));
+    if (m_enclosing->m_cached)
+	flushFromCache(0);
     m_enclosing = m_enclosing->m_enclosing;
 }
 
@@ -123,6 +150,11 @@ void Environment::slotBehind(Environment* anchor)
 {
     if (!anchor || anchor == this)
 	Rf_error("internal error in Environment::slotBehind()");
+    // Propagate participation in search list cache:
+    if (anchor->m_cached) {
+	makeCached();
+	flushFromCache(0);
+    }
     m_enclosing = anchor->m_enclosing;
     anchor->m_enclosing = this;
 }

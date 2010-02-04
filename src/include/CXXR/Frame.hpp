@@ -342,7 +342,8 @@ namespace CXXR {
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
-	    : m_locked(false), m_read_monitor(0), m_write_monitor(0)
+	    : m_read_monitor(0), m_write_monitor(0), m_cache_count(0),
+	      m_locked(false)
 	{}
 
 	/** @brief Get contents as a PairList.
@@ -557,11 +558,33 @@ namespace CXXR {
     protected:
 	// Declared protected to ensure that Frame objects are created
 	// only using 'new':
-	~Frame() {}
+	~Frame()
+	{
+	    statusChanged(0);
+	}
+
+	/** @brief Report change in the bound/unbound status of Symbol
+	 *         objects.
+	 *
+	 * This function should be called when a Symbol that was not
+	 * formerly bound within this Frame becomes bound, or <em>vice
+	 * versa</em>.  If called with a null pointer, this signifies
+	 * that all bindings are about to be removed from the Frame.
+	 */
+	void statusChanged(const Symbol* sym)
+	{
+	    if (m_cache_count > 0)
+		flush(sym);
+	}
     private:
-	bool m_locked;
+	friend class Environment;
+
 	mutable monitor m_read_monitor;
 	mutable monitor m_write_monitor;
+	unsigned char m_cache_count;  // Number of cached Environments
+			// of which this is the Frame.  Normally
+			// either 0 or 1.
+	bool m_locked;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -570,6 +593,19 @@ namespace CXXR {
 
 	// Monitoring functions:
 	friend class Binding;
+
+	void decCacheCount()
+	{
+	    --m_cache_count;
+	}
+
+	// Flush symbol(s) from search list cache:
+	void flush(const Symbol* sym);
+
+	void incCacheCount()
+	{
+	    ++m_cache_count;
+	}
 
 	void monitorRead(const Binding& bdg) const
 	{

@@ -143,6 +143,11 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     if (m_value) m_value->conductVisitor(v);
 }
 
+void Frame::flush(const Symbol* sym)
+{
+    Environment::flushFromCache(sym);
+}
+
 namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)
     {

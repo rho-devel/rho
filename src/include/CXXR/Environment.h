@@ -77,7 +77,8 @@ namespace CXXR {
 	 */
 	explicit Environment(Environment* enclosing)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame)), m_single_stepping(false)
+	      m_frame(expose(new StdFrame)), m_single_stepping(false),
+	      m_locked(false), m_cached(false)
 	{}
 
 	/**
@@ -94,7 +95,7 @@ namespace CXXR {
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_single_stepping(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false)
 	{}
 
 	/** @brief Constructor with specified Frame.
@@ -110,7 +111,7 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false)
 	{}
 
 	/** @brief Base environment.
@@ -178,10 +179,7 @@ namespace CXXR {
 	 * which ensure that the 'enclosing' relationship remains
 	 * acyclic.
 	 */
-	void setEnclosingEnvironment(Environment* new_enclos)
-	{
-	    m_enclosing = new_enclos;
-	}
+	void setEnclosingEnvironment(Environment* new_enclos);
 
 	/** @brief Set single-stepping status
 	 *
@@ -247,13 +245,12 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
-	// Declared protected to ensure that Environment objects are
-	// created only using 'new':
-	~Environment() {}
-
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class SchwarzCounter<Environment>;
+	friend class Frame;
+
 	// Predefined environments.  R_EmptyEnvironment has no special
 	// significance in CXXR, and may be abolished, so is not
 	// included here:
@@ -265,17 +262,38 @@ namespace CXXR {
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
 	bool m_locked;
+	bool m_cached;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
 
+	// Declared private to ensure that Environment objects are
+	// created only using 'new':
+	~Environment()
+	{
+	    if (m_cached && m_frame)
+		m_frame->decCacheCount();
+	}
+
 	static void cleanup() {}
+
+	// Remove any mapping of 'sym' from the cache.  If called with
+	// a null pointer, clear the cache entirely.
+	static void flushFromCache(const Symbol* sym) {}
 
 	static void initialize();
 
-	friend class SchwarzCounter<Environment>;
+	bool isCachePortal() const
+	{
+	    return (this == s_global);
+	}
+
+	// Designate this Environment as a participant in the search
+	// list cache:
+	void makeCached();
+
     };
 
     /** @brief Search for a Binding for a Symbol.

@@ -103,6 +103,7 @@ const Frame::Binding* StdFrame::binding(const Symbol* symbol) const
 
 void StdFrame::clear()
 {
+    statusChanged(0);
     m_map.clear();
 }
 
@@ -116,7 +117,10 @@ bool StdFrame::erase(const Symbol* symbol)
 {
     if (isLocked())
 	Rf_error(_("cannot remove bindings from a locked frame"));
-    return m_map.erase(symbol);
+    bool ans = m_map.erase(symbol);
+    if (ans)
+	statusChanged(symbol);
+    return ans;
 }
 
 void StdFrame::lockBindings()
@@ -140,6 +144,7 @@ Frame::Binding* StdFrame::obtainBinding(const Symbol* symbol)
 	    Rf_error(_("cannot add bindings to a locked frame"));
 	}
 	bdg.initialize(this, symbol);
+	statusChanged(symbol);
     }
     return &bdg;
 }
