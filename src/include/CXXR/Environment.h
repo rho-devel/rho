@@ -432,35 +432,33 @@ namespace CXXR {
 		    UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	RObject* val = 0;
-	Frame::Binding* bdg;
+	pair<Environment*, RObject*> ans(0, 0);
 	bool found = false;
 	do {
-	    bdg = env->frame()->binding(symbol);
-	    if (bdg) {
-		pair<RObject*, bool> pr = bdg->forcedValue();
-		// If a Promise was forced, this may have invalidated
-		// 'bdg' (Um, is this actually possible?), so we look
-		// it up again.  However, beware that in this event,
-		// the subsequent call to monitorRead() will be
-		// applied to the wrong Binding, i.e. not the one from
-		// which 'val' was derived.  It's hard to see how to
-		// avoid this, because by the time that we've verified
-		// that 'val' satisfies the predicate, the original
-		// binding may have been destroyed.
-		if (pr.second)
-		    bdg = env->frame()->binding(symbol);
-		val = pr.first;
-		found = pred(val);
+	    Frame::Binding* bdg;
+	    if (!inherits) {
+		// Note that the cache is not updated in this case:
+		bdg = env->frame()->binding(symbol);
+	    } else {
+		pair<Environment*, Frame::Binding*> pr
+		    = findBinding(symbol, env);
+		env = pr.first;
+		bdg = pr.second;
 	    }
-	} while (!found && inherits
-		 && (env = env->enclosingEnvironment()));
-	if (found) {
-	    // Invoke read monitor (if any);
-	    bdg->rawValue();
-	    return make_pair(env, val);
-	}
-	return pair<Environment*, RObject*>(0, 0);
+	    if (bdg) {
+		// We assume that forcing a Binding's value
+		// will not alter the Binding:
+		RObject* val = bdg->forcedValue().first;
+		found = pred(val);
+		if (found) {
+		    // Invoke read monitor (if any);
+		    bdg->rawValue();
+		    ans = make_pair(env, val);
+		}
+		env = env->enclosingEnvironment();
+	    }
+	} while (!found && inherits && env);
+	return ans;
     }
 }  // namespace CXXR
 
