@@ -393,7 +393,7 @@ SEXP findVar(SEXP symbol, SEXP rho)
 
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = static_cast<Environment*>(rho);
-    Frame::Binding* bdg = findBinding(sym, env).second;
+    Frame::Binding* bdg = env->findBinding(sym).second;
     return (bdg ? bdg->value() : R_UnboundValue);
 }
 
@@ -499,7 +499,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	Frame::Binding* bdg;
 	if (!inherits)
 	    bdg = env->frame()->binding(sym);
-	else bdg = findBinding(sym, env).second;
+	else bdg = env->findBinding(sym).second;
 	return bdg ? bdg->value() : R_UnboundValue;
     }
     ModeTester modetest(mode);
@@ -658,7 +658,7 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    pair<Environment*, Frame::Binding*> pr = findBinding(sym, env);
+    pair<Environment*, Frame::Binding*> pr = env->findBinding(sym);
     Frame::Binding* bdg = pr.second;
     env = pr.first;
     if (!env) {

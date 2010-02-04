@@ -229,7 +229,7 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 	RObject* rawvalue = raw_args->car();
 	if (rawvalue == DotsSymbol) {
 	    pair<Environment*, Frame::Binding*> pr
-		= findBinding(DotsSymbol, env);
+		= env->findBinding(DotsSymbol);
 	    if (pr.first) {
 		RObject* dval = pr.second->value();
 		if (!dval || dval->sexptype() == DOTSXP) {

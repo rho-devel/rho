@@ -141,6 +141,42 @@ namespace CXXR {
 	    return m_enclosing;
 	}
 
+	/** @brief Search for a Binding for a Symbol.
+	 *
+	 * The search starts in this Environment; if no Binding is
+	 * found there, the search will proceed through successive
+	 * enclosing Environments.
+
+	 * @param symbol Pointer to the Symbol for which a Binding is
+	 *          sought.
+	 *
+	 * @return The first element of the pair is a pointer to the
+	 * sought Binding, or a null pointer if no Binding was found.
+	 * The second element of the pair is a pointer to the
+	 * Environment in whose frame the Binding was found, or a null
+	 * pointer if no Binding was found.
+	 */
+	std::pair<Environment*, Frame::Binding*>
+	findBinding(const Symbol* symbol);
+
+	/** @brief Search for a Binding for a Symbol (const variant).
+	 *
+	 * The search starts in this Environment; if no Binding is
+	 * found there, the search will proceed through successive
+	 * enclosing Environments.
+
+	 * @param symbol Pointer to the Symbol for which a Binding is
+	 *          sought.
+	 *
+	 * @return The first element of the pair is a pointer to the
+	 * sought Binding, or a null pointer if no Binding was found.
+	 * The second element of the pair is a pointer to the
+	 * Environment in whose frame the Binding was found, or a null
+	 * pointer if no Binding was found.
+	 */
+	std::pair<const Environment*, const Frame::Binding*>
+	findBinding(const Symbol* symbol) const;
+
 	/** @brief Access the Environment's Frame.
 	 *
 	 * @return pointer to the Environment's Frame.
@@ -251,6 +287,20 @@ namespace CXXR {
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
 
+	// The class maintains a cache of Symbol Bindings found along
+	// the search path:
+
+	typedef std::pair<Environment*, Frame::Binding*> EBPair;
+	typedef
+	std::tr1::unordered_map<const Symbol*, EBPair,
+				std::tr1::hash<const Symbol*>,
+				std::equal_to<const Symbol*>,
+				CXXR::Allocator<std::pair<const Symbol*,
+							  EBPair> >
+	                        > Cache;
+
+	static Cache* s_cache;
+
 	// Predefined environments.  R_EmptyEnvironment has no special
 	// significance in CXXR, and may be abolished, so is not
 	// included here:
@@ -277,11 +327,11 @@ namespace CXXR {
 		m_frame->decCacheCount();
 	}
 
-	static void cleanup() {}
+	static void cleanup();
 
 	// Remove any mapping of 'sym' from the cache.  If called with
 	// a null pointer, clear the cache entirely.
-	static void flushFromCache(const Symbol* sym) {}
+	static void flushFromCache(const Symbol* sym);
 
 	static void initialize();
 
@@ -295,46 +345,6 @@ namespace CXXR {
 	void makeCached();
 
     };
-
-    /** @brief Search for a Binding for a Symbol.
-     *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
-     *
-     * @param env Environment in whose Frame a Binding is first to be
-     *          sought; if no Binding is found there, the search will
-     *          proceed through successive enclosing Environments.  It
-     *          is permissible for \a env to be a null pointer, in
-     *          which case (of course) no Binding will be found.
-     *
-     * @return The first element of the pair is a pointer to the
-     * sought Binding, or a null pointer if no Binding was found.  The
-     * second element of the pair is a pointer to the Environment in
-     * whose frame the Binding was found, or a null pointer if no
-     * Binding was found.
-     */
-    std::pair<Environment*, Frame::Binding*>
-    findBinding(const Symbol* symbol, Environment* env);
-
-    /** @brief Search for a Binding for a Symbol (const variant).
-     *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
-     *
-     * @param env Environment in whose Frame a Binding is first to be
-     *          sought; if no Binding is found there, the search will
-     *          proceed through successive enclosing Environments.  It
-     *          is permissible for \a env to be a null pointer, in
-     *          which case (of course) no Binding will be found.
-     *
-     * @return The first element of the pair is a pointer to the
-     * sought Binding, or a null pointer if no Binding was found.  The
-     * second element of the pair is a pointer to the Environment in
-     * whose Frame the Binding was found, or a null pointer if no
-     * Binding was found.
-     */
-    std::pair<const Environment*, const Frame::Binding*>
-    findBinding(const Symbol* symbol, const Environment* env);
 
     /** @brief Search for a Binding of a Symbol to a FunctionBase.
      *
@@ -441,7 +451,7 @@ namespace CXXR {
 		bdg = env->frame()->binding(symbol);
 	    } else {
 		pair<Environment*, Frame::Binding*> pr
-		    = findBinding(symbol, env);
+		    = env->findBinding(symbol);
 		env = pr.first;
 		bdg = pr.second;
 	    }

@@ -117,7 +117,7 @@ RObject* Symbol::evaluate(Environment* env)
     if (isDotDotSymbol())
 	val = Rf_ddfindVar(this, env);
     else {
-	Frame::Binding* bdg = findBinding(this, env).second;
+	Frame::Binding* bdg = env->findBinding(this).second;
 	val = (bdg ? bdg->value() : unboundValue());
     }
     if (!val)

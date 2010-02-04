@@ -85,7 +85,7 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
     while (inlist) {
 	RObject* incar = inlist->car();
 	if (incar == DotsSymbol) {
-	    Frame::Binding* bdg = findBinding(CXXR::DotsSymbol, env).second;
+	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
 	    if (!bdg)
 		Rf_error(_("'...' used but not bound"));
 	    RObject* h = bdg->value();

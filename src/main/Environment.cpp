@@ -69,6 +69,7 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
+Environment::Cache* Environment::s_cache;
 Environment* Environment::s_base;
 Environment* Environment::s_base_namespace;
 Environment* Environment::s_global;
@@ -77,6 +78,11 @@ SEXP R_EmptyEnv;
 SEXP R_BaseEnv;
 SEXP R_GlobalEnv;
 SEXP R_BaseNamespace;
+
+void Environment::cleanup()
+{
+    delete s_cache;
+}
 
 void Environment::detachReferents()
 {
@@ -87,8 +93,43 @@ void Environment::detachReferents()
     RObject::detachReferents();
 }
 
+pair<Environment*, Frame::Binding*>
+Environment::findBinding(const Symbol* symbol)
+{
+    Environment* env = this;
+    while (env) {
+	Frame::Binding* bdg = env->frame()->binding(symbol);
+	if (bdg)
+	    return make_pair(env, bdg);
+	env = env->enclosingEnvironment();
+    }
+    return pair<Environment*, Frame::Binding*>(0, 0);
+}
+
+pair<const Environment*, const Frame::Binding*>
+Environment::findBinding(const Symbol* symbol) const
+{
+    const Environment* env = this;
+    while (env) {
+	const Frame::Binding* bdg = env->frame()->binding(symbol);
+	if (bdg)
+	    return make_pair(env, bdg);
+	env = env->enclosingEnvironment();
+    }
+    return pair<const Environment*, const Frame::Binding*>(0, 0);
+}
+
+void Environment::flushFromCache(const Symbol* sym)
+{
+    if (!sym)
+	s_cache->clear();
+    else 
+	s_cache->erase(sym);
+}
+
 void Environment::initialize()
 {
+    s_cache = new Cache;
     static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
     R_EmptyEnv = empty_env.get();
     static GCRoot<Environment>
@@ -206,30 +247,6 @@ namespace {
 }
 
 namespace CXXR {
-    pair<Environment*, Frame::Binding*>
-    findBinding(const Symbol* symbol, Environment* env)
-    {
-	while (env) {
-	    Frame::Binding* bdg = env->frame()->binding(symbol);
-	    if (bdg)
-		return make_pair(env, bdg);
-	    env = env->enclosingEnvironment();
-	}
-	return pair<Environment*, Frame::Binding*>(0, 0);
-    }
-
-    pair<const Environment*, const Frame::Binding*>
-    findBinding(const Symbol* symbol, const Environment* env)
-    {
-	while (env) {
-	    const Frame::Binding* bdg = env->frame()->binding(symbol);
-	    if (bdg)
-		return make_pair(env, bdg);
-	    env = env->enclosingEnvironment();
-	}
-	return pair<const Environment*, const Frame::Binding*>(0, 0);
-    }
-
     pair<Environment*, FunctionBase*>
     findFunction(const Symbol* symbol, Environment* env, bool inherits)
     {
