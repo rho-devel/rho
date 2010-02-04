@@ -41,6 +41,7 @@
 
 #include "CXXR/Environment.h"
 
+#include <cstdlib>
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/FunctionBase.h"
@@ -96,11 +97,25 @@ void Environment::detachReferents()
 pair<Environment*, Frame::Binding*>
 Environment::findBinding(const Symbol* symbol)
 {
+    bool cache_miss = false;
     Environment* env = this;
+    EBPair ebpr(0, 0);
     while (env) {
+	if (env->isCachePortal()) {
+	    Cache::iterator it = s_cache->find(symbol);
+	    if (it == s_cache->end())
+		cache_miss = true;
+	    else ebpr = (*it).second;
+	}
 	Frame::Binding* bdg = env->frame()->binding(symbol);
-	if (bdg)
-	    return make_pair(env, bdg);
+	if (bdg) {
+	    EBPair ans(env, bdg);
+	    if (ebpr.first && ebpr != ans)
+		abort();
+	    if (cache_miss)
+		(*s_cache)[symbol] = ans;;
+	    return ans;
+	}
 	env = env->enclosingEnvironment();
     }
     return pair<Environment*, Frame::Binding*>(0, 0);
@@ -109,14 +124,9 @@ Environment::findBinding(const Symbol* symbol)
 pair<const Environment*, const Frame::Binding*>
 Environment::findBinding(const Symbol* symbol) const
 {
-    const Environment* env = this;
-    while (env) {
-	const Frame::Binding* bdg = env->frame()->binding(symbol);
-	if (bdg)
-	    return make_pair(env, bdg);
-	env = env->enclosingEnvironment();
-    }
-    return pair<const Environment*, const Frame::Binding*>(0, 0);
+    EBPair ebpr = const_cast<Environment*>(this)->findBinding(symbol);
+    return pair<const Environment*, const Frame::Binding*>(ebpr.first,
+							   ebpr.second);
 }
 
 void Environment::flushFromCache(const Symbol* sym)
