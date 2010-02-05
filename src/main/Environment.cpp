@@ -124,7 +124,7 @@ Environment::findBinding(const Symbol* symbol)
 		abort();
 #endif
 	    if (cache_miss)
-		(*s_cache)[symbol] = ans;;
+		(*s_cache)[symbol] = ans;
 	    return ans;
 	}
 	env = env->enclosingEnvironment();
@@ -143,6 +143,7 @@ void Environment::flushFromCache(const Symbol* sym)
 void Environment::initialize()
 {
     s_cache = new Cache;
+    s_cache->max_load_factor(0.5);
     static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
     R_EmptyEnv = empty_env.get();
     static GCRoot<Environment>
