@@ -175,7 +175,12 @@ namespace CXXR {
 	 * pointer if no Binding was found.
 	 */
 	std::pair<const Environment*, const Frame::Binding*>
-	findBinding(const Symbol* symbol) const;
+	findBinding(const Symbol* symbol) const
+	{
+	    EBPair ebpr = const_cast<Environment*>(this)->findBinding(symbol);
+	    return std::pair<const Environment*,
+		             const Frame::Binding*>(ebpr.first, ebpr.second);
+	}
 
 	/** @brief Access the Environment's Frame.
 	 *

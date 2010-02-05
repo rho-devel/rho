@@ -94,39 +94,42 @@ void Environment::detachReferents()
     RObject::detachReferents();
 }
 
+// Define the preprocessor variable CHECK_CACHE to verify that the
+// search list cache is delivering correct results.
+
 pair<Environment*, Frame::Binding*>
 Environment::findBinding(const Symbol* symbol)
 {
     bool cache_miss = false;
     Environment* env = this;
-    EBPair ebpr(0, 0);
+#ifdef CHECK_CACHE
+    EBPair cachepr(0, 0);
+#endif
     while (env) {
 	if (env->isCachePortal()) {
 	    Cache::iterator it = s_cache->find(symbol);
 	    if (it == s_cache->end())
 		cache_miss = true;
-	    else ebpr = (*it).second;
+#ifdef CHECK_CACHE
+	    else cachepr = (*it).second;
+#else
+	    else return (*it).second;
+#endif
 	}
 	Frame::Binding* bdg = env->frame()->binding(symbol);
 	if (bdg) {
 	    EBPair ans(env, bdg);
-	    if (ebpr.first && ebpr != ans)
+#ifdef CHECK_CACHE
+	    if (cachepr.first && cachepr != ans)
 		abort();
+#endif
 	    if (cache_miss)
 		(*s_cache)[symbol] = ans;;
 	    return ans;
 	}
 	env = env->enclosingEnvironment();
     }
-    return pair<Environment*, Frame::Binding*>(0, 0);
-}
-
-pair<const Environment*, const Frame::Binding*>
-Environment::findBinding(const Symbol* symbol) const
-{
-    EBPair ebpr = const_cast<Environment*>(this)->findBinding(symbol);
-    return pair<const Environment*, const Frame::Binding*>(ebpr.first,
-							   ebpr.second);
+    return EBPair(0, 0);
 }
 
 void Environment::flushFromCache(const Symbol* sym)
