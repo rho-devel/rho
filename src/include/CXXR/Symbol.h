@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,7 +45,6 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/CachedString.h"
@@ -90,6 +89,11 @@ namespace CXXR {
      * objects, once created, are permanently preserved against
      * garbage collection.  There is no inherent reason for this in
      * CXXR, but some packages may rely on it.
+     *
+     * @todo It would be desirable if Symbol objects were frozen by
+     * the constructor.  But this is not feasible at present because,
+     * for example, the methods package attempts to set a class
+     * attribute on the Symbol "<UNDEFINED>".
      */
     class Symbol : public RObject {
     private:
@@ -99,7 +103,7 @@ namespace CXXR {
 	std::tr1::unordered_map<const CachedString*, GCRoot<Symbol>,
 				std::tr1::hash<const CachedString*>,
 				std::equal_to<const CachedString*>,
-				CXXR::Allocator<std::pair<const CachedString*,
+				CXXR::Allocator<std::pair<const CachedString* const,
 							  GCRoot<Symbol> > >
 	                        > map;
     public:
@@ -117,6 +121,20 @@ namespace CXXR {
 	    return s_table->end();
 	}
 
+	/** @brief Index of a double-dot symbol.
+	 *
+	 * @return If this is a Symbol whose name is of the form
+	 * <tt>..<em>n</em></tt>, where <em>n</em> is a positive integer,
+	 * returns <em>n</em>.  Otherwise returns <em>0</em>.
+	 *
+	 * @note This function returns 0 in the (pathological)
+	 * case of a Symbol called <tt>..0</tt>.
+	 */
+	unsigned int dotDotIndex() const
+	{
+	    return m_dd_index;
+	}
+
 	/** @brief Is this a double-dot symbol?
 	 *
 	 * @return true iff this symbol relates to an element of a
@@ -124,7 +142,16 @@ namespace CXXR {
 	 */
 	bool isDotDotSymbol() const
 	{
-	    return m_dd_symbol;
+	    return m_dd_index != 0;
+	}
+
+	/** @brief Maximum length of symbol names.
+	 *
+	 * @return The maximum permitted length of symbol names.
+	 */
+	static size_t maxLength()
+	{
+	    return s_max_length;
 	}
 
 	/** @brief Missing argument.
@@ -133,7 +160,7 @@ namespace CXXR {
 	 */
 	static Symbol* missingArgument()
 	{
-	    return *s_missing_arg;
+	    return s_missing_arg;
 	}
 
 	/** @brief Access name.
@@ -142,7 +169,9 @@ namespace CXXR {
 	 */
 	const CachedString* name() const
 	{
-	    return (m_name ? m_name : CachedString::blank());
+	    if (m_name)
+		return m_name;
+	    return CachedString::blank();
 	}
 
 	/** @brief Get a pointer to a regular Symbol object.
@@ -191,7 +220,7 @@ namespace CXXR {
 	 */
 	static Symbol* restartToken()
 	{
-	    return *s_restart_token;
+	    return s_restart_token;
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -212,10 +241,11 @@ namespace CXXR {
 	 */
 	static Symbol* unboundValue()
 	{
-	    return *s_unbound_value;
+	    return s_unbound_value;
 	}
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -224,13 +254,14 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	static const size_t s_max_length = 256;
 	static map* s_table;
-	static GCRoot<Symbol>* s_missing_arg;
-	static GCRoot<Symbol>* s_restart_token;
-	static GCRoot<Symbol>* s_unbound_value;
+	static Symbol* s_missing_arg;
+	static Symbol* s_restart_token;
+	static Symbol* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;
-	bool m_dd_symbol;
+	unsigned int m_dd_index;
 
 	/**
 	 * @param name Pointer to String object representing the name
@@ -241,11 +272,8 @@ namespace CXXR {
 	 *          <tt>...</tt> argument list.  A null pointer
 	 *          signifies a special Symbol, which is not entered
 	 *          into s_table.
-	 *
-	 * @param frozen true iff the Symbol should not be altered
-	 *          after it is created.
 	 */
-	explicit Symbol(const CachedString* name = 0, bool frozen = true);
+	explicit Symbol(const CachedString* name = 0);
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
@@ -256,8 +284,7 @@ namespace CXXR {
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
 
-	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();
@@ -294,16 +321,21 @@ namespace CXXR {
     extern Symbol* const BracketSymbol;    // "["
     extern Symbol* const BraceSymbol;      // "{"
     extern Symbol* const ClassSymbol;	   // "class"
+    extern Symbol* const DeviceSymbol;     // ".Device"
     extern Symbol* const DimNamesSymbol;   // "dimnames"
     extern Symbol* const DimSymbol;	   // "dim"
     extern Symbol* const DollarSymbol;	   // "$"
     extern Symbol* const DotsSymbol;	   // "..."
     extern Symbol* const DropSymbol;	   // "drop"
     extern Symbol* const ExactSymbol;      // "exact"
+    extern Symbol* const LastvalueSymbol;  // ".Last.value"
     extern Symbol* const LevelsSymbol;	   // "levels"
     extern Symbol* const ModeSymbol;	   // "mode"
+    extern Symbol* const NameSymbol;       // "name"
     extern Symbol* const NamesSymbol;	   // "names"
-    extern Symbol* const NaRmSymbol;       // "ra.rm"
+    extern Symbol* const NaRmSymbol;       // "na.rm"
+    extern Symbol* const PackageSymbol;    // "package"
+    extern Symbol* const QuoteSymbol;      // "quote"
     extern Symbol* const RowNamesSymbol;   // "row.names"
     extern Symbol* const SeedsSymbol;	   // ".Random.seed"
     extern Symbol* const LastvalueSymbol;  // ".Last.value"
@@ -335,16 +367,23 @@ extern "C" {
     extern SEXP R_BracketSymbol;   /* "[" */
     extern SEXP R_BraceSymbol;     /* "{" */
     extern SEXP R_ClassSymbol;	   /* "class" */
+    extern SEXP	R_DeviceSymbol;    /* ".Device" */
     extern SEXP R_DimNamesSymbol;  /* "dimnames" */
     extern SEXP R_DimSymbol;	   /* "dim" */
     extern SEXP R_DollarSymbol;	   /* "$" */
     extern SEXP R_DotsSymbol;	   /* "..." */
     extern SEXP R_DropSymbol;	   /* "drop" */
+    extern SEXP	R_LastvalueSymbol; /* ".Last.value" */
     extern SEXP R_LevelsSymbol;	   /* "levels" */
     extern SEXP R_ModeSymbol;	   /* "mode" */
+    extern SEXP	R_NameSymbol;	   /* "name" */
     extern SEXP R_NamesSymbol;	   /* "names" */
+    extern SEXP	R_NaRmSymbol;	   /* "na.rm" */
+    extern SEXP R_PackageSymbol;   /* "package" */
+    extern SEXP R_QuoteSymbol;	   /* "quote" */
     extern SEXP R_RowNamesSymbol;  /* "row.names" */
     extern SEXP R_SeedsSymbol;	   /* ".Random.seed" */
+    extern SEXP	R_SourceSymbol;    /* "source" */
     extern SEXP R_TspSymbol;	   /* "tsp" */
 
     /** @brief Does symbol relate to a <tt>...</tt> expression?
@@ -365,6 +404,21 @@ extern "C" {
     }
 #endif
 
+    /** Find value of a <tt>..<em>n</em></tt> Symbol.
+     *
+     * @param symbol Pointer to a Symbol (checked) whose name is of
+     *          the form <tt>..<em>n</em></tt>, where <em>n</em> is a
+     *          positive integer.
+     *
+     * @param rho Pointer to an Environment, which must bind the
+     *          symbol <tt>...</tt> to a PairList comprising at least
+     *          <em>n</em> elements.  (All checked.)
+     *
+     * @return The 'car' of the <em>n</em>th element of the PairList to
+     * which <tt>...</tt> is bound.
+     */
+    SEXP Rf_ddfindVar(SEXP symbol, SEXP rho);
+
     /** @brief Get a pointer to a regular Symbol object.
      *
      * If no Symbol with the specified name currently exists, one will
@@ -377,7 +431,14 @@ extern "C" {
      * @return Pointer to a Symbol (preexisting or newly created) with
      * the required name.
      */
+#ifndef __cplusplus
     SEXP Rf_install(const char *name);
+#else
+    inline SEXP Rf_install(const char *name)
+    {
+	return CXXR::Symbol::obtain(name);
+    }
+#endif
 
     /** @brief Test if SYMSXP.
      *

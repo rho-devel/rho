@@ -28,16 +28,13 @@ use Getopt::Long;
 use IO::File;
 use R::Dcf;
 use R::Logfile;
-use R::Rd;
 use R::Utils;
-use R::Vars;
-use Text::DelimMatch;
 use Text::Wrap;
 
 ## Don't buffer output.
 $| = 1;
 
-my $revision = ' $Rev: 47146 $ ';
+my $revision = ' $Rev: 49175 $ ';
 my $version;
 my $name;
 $revision =~ / ([\d\.]*) /;
@@ -51,16 +48,13 @@ my $WINDOWS = ($R::Vars::OSTYPE eq "windows");
 my @exclude_patterns = R::Utils::get_exclude_patterns();
 
 my @known_options = ("help|h", "version|v", "binary", "no-docs",
-		     "use-zip", "use-zip-help", "use-zip-data",
-		     "force", "no-vignettes");
+		     "use-zip-data", "force", "no-vignettes");
 
 if($WINDOWS) {
     die "Please set TMPDIR to a valid temporary directory\n"
 	unless (-d ${R::Vars::TMPDIR});
-    @known_options = ("help|h", "version|v", "binary", "docs:s",
-		      "auto-zip",
-		      "use-zip", "use-zip-help", "use-zip-data",
-		      "force", "no-vignettes");
+    @known_options = ("help|h", "version|v", "binary", "no-docs",
+		      "auto-zip", "use-zip-data", "force", "no-vignettes");
 }
 
 GetOptions(@known_options) or usage();
@@ -82,15 +76,12 @@ my $tar = R_getenv("TAR", $tar_default);
 my $libdir = R_tempfile("Rinst");
 
 my $INSTALL_opts = "";
-$INSTALL_opts .= " --use-zip" if $opt_use_zip;
 $INSTALL_opts .= " --use-zip-data" if $opt_use_zip_data;
-$INSTALL_opts .= " --use-zip-help" if $opt_use_zip_help;
+$INSTALL_opts .= " --no-docs" if $opt_no_docs;
 if($WINDOWS) {
-    $INSTALL_opts .= " --docs=$opt_docs" if $opt_docs;
     $INSTALL_opts .= " --auto-zip" if $opt_auto_zip;
-} else {
-    $INSTALL_opts .= " --no-docs" if $opt_no_docs;
 }
+
 ## <FIXME>
 ## Once we have a 'global' log file, use $log->warning() instead of just
 ## print().
@@ -171,8 +162,8 @@ foreach my $pkg (@ARGV) {
     $log->message("removing junk files");
     find(\&unlink_junk_files, $pkgdir);
 
-       chdir(dirname($pkgdir));
-       my $filename = "${intname}_" . $description->{"Version"} . ".tar";
+    chdir(dirname($pkgdir));
+    my $filename = "${intname}_" . $description->{"Version"} . ".tar";
     my $filepath = &file_path($startdir, $filename);
     R_system(join(" ",
                  ("$tar -chf",
@@ -201,6 +192,7 @@ foreach my $pkg (@ARGV) {
 	open(RBUILDIGNORE, &file_path($pkgdir, ".Rbuildignore"));
 	while(<RBUILDIGNORE>) {
 	    chomp;
+	    s/\r$//;  # careless people get Windows files on other OSes
 	    push(@exclude_patterns, $_) if $_;
 	}
 	close(RBUILDIGNORE);
@@ -217,6 +209,8 @@ foreach my $pkg (@ARGV) {
 	print EXCLUDE "$File::Find::name\n" if(-d $_ && /^\.git$/);
 	## some authors managed to create ..Rcheck as well as pkgname.Rcheck
 	print EXCLUDE "$File::Find::name\n" if(-d $_ && /\.Rcheck$/);
+	## some authors have problems with 'Read-and-delete-me'
+	print EXCLUDE "$File::Find::name\n" if /^Read-and-delete-me$/;
 	print EXCLUDE "$File::Find::name\n" if /^GNUMakefile$/;
 	## Mac resource forks
 	print EXCLUDE "$File::Find::name\n" if(/^\._/);
@@ -450,9 +444,9 @@ sub add_build_stamp_to_description_file {
     ## Do not keep previous build stamps.
     @lines = grep(!/^Packaged:/, @lines);
     $fh->print(join("\n", @lines), "\n");
-    $fh->print("Packaged: ",
-	       scalar(localtime()), "; ",
-	       $user_name, "\n");
+    my @dt = R_runR("cat(format(Sys.time(), '', tz='UTC', usetz=TRUE))",
+		    "--vanilla --slave", "R_DEFAULT_PACKAGES=NULL");
+    $fh->print("Packaged: ", @dt, "; ", $user_name, "\n");
     $fh->close();
 }
 
@@ -553,21 +547,44 @@ sub cleanup_pkg {
 	    ## $(RHOME)/src/gnuwin32/MkRules.
 	    $ENV{RHOME} = $ENV{R_HOME};
 	    if(-r "Makefile.win") {
+		## FIXME: why not use 'Makefile' if Makefile.win does not exist?
 		R_system("${R::Vars::MAKE} -f Makefile.win clean");
 	    } else {
+		if(-r "Makevars.win") {
+		    my $makefiles = " -f " .
+			&shell_quote_file_path(&file_path(${R::Vars::R_SHARE_DIR},
+							  "make", "clean.mk"));
+		    $makefiles .= " -f Makevars.win";
+		    R_system("${R::Vars::MAKE} $makefiles clean");
+		} elsif (-r "Makevars") {
+		    my $makefiles = " -f " .
+			&shell_quote_file_path(&file_path(${R::Vars::R_SHARE_DIR},
+							  "make", "clean.mk"));
+		    $makefiles .= " -f Makevars";
+		    R_system("${R::Vars::MAKE} $makefiles clean");
+		}
 		foreach my $file (<*.o $pkgname.a $pkgname.dll $pkgname.def>) {
 		    unlink($file);
 		}
 		rmtree("_libs") if (-d "_libs");
 	    }
 	} else {
+	    my $makefiles = "-f " .
+		&shell_quote_file_path(&file_path(${R::Vars::R_HOME},
+						  "etc".$ENV{"R_ARCH"},
+						  "Makeconf"));
 	    if(-r "Makefile") {
-		my $makefiles = "-f " .
-		    &shell_quote_file_path(&file_path(${R::Vars::R_HOME},
-						      "etc", "Makeconf"));
 		$makefiles .= " -f Makefile";
 		R_system("${R::Vars::MAKE} $makefiles clean");
 	    } else {
+		if(-r "Makevars") {
+		    ## ensure we do have a 'clean' target.
+		    $makefiles .= " -f " .
+			&shell_quote_file_path(&file_path(${R::Vars::R_SHARE_DIR},
+							  "make", "clean.mk"));
+		    $makefiles .= " -f Makevars";
+		    R_system("${R::Vars::MAKE} $makefiles clean");
+		}
 		## Also cleanup possible Windows leftovers ...
 		unlink((<*.o *.s[lo] *.dylib>,
 			"$pkgname.a", "$pkgname.dll", "$pkgname.def"));
@@ -724,7 +741,7 @@ sub fix_nonLF_in_make_files {
 
 
 sub usage {
-    print STDERR <<END;
+    print <<END;
 Usage: R CMD $name [options] pkgdirs
 
 Build R packages from package sources in the directories specified by
@@ -732,7 +749,7 @@ pkgdirs.
 
 Options:
   -h, --help		print short help message and exit
-  -v, --version		print 'build' version info and exit
+  -v, --version		print version info and exit
 
   --force               force overwriting of INDEX file
   --no-vignettes        do not rebuild package vignettes
@@ -740,22 +757,14 @@ Options:
   --binary              build pre-compiled binary packages, with options:
 END
     if($WINDOWS) {
-	print STDERR "  --docs=TYPE           " .
-	    "type(s) of documentation to build and INSTALL\n";
-	print STDERR "                        " .
-	    "See Rcmd INSTALL --help for possible values of TYPE\n";
-	print STDERR "  --auto-zip            " .
-	    "select zipping of data and help based on size\n";
-    } else {
-	print STDERR "  --no-docs             " .
-	    "do not build and install documentation\n";
+	print "  --auto-zip            " .
+	    "select zipping of data based on size\n";
     }
-    print STDERR <<END;
+    print <<END;
   --use-zip-data        collect data files in zip archive
-  --use-zip-help        collect help and examples into zip archives
-  --use-zip             combine '--use-zip-data' and '--use-zip-help'
+  --no-docs             do not build and install documentation
 
-Email bug reports to <r-bugs\@r-project.org>.
+Report bugs to <r-bugs\@r-project.org>.
 END
     exit 0;
 }

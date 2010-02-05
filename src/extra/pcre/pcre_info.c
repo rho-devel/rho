@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -22,7 +22,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2008 University of Cambridge
+           Copyright (c) 1997-2009 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -99,7 +99,7 @@ if (re->magic_number != MAGIC_NUMBER)
   re = _pcre_try_flipped(re, &internal_re, NULL, NULL);
   if (re == NULL) return PCRE_ERROR_BADMAGIC;
   }
-if (optptr != NULL) *optptr = (int)(re->options & PUBLIC_OPTIONS);
+if (optptr != NULL) *optptr = (int)(re->options & PUBLIC_COMPILE_OPTIONS);
 if (first_byte != NULL)
   *first_byte = ((re->flags & PCRE_FIRSTSET) != 0)? re->first_byte :
      ((re->flags & PCRE_STARTLINE) != 0)? -1 : -2;

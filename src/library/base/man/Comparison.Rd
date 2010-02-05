@@ -1,6 +1,6 @@
 % File src/library/base/man/Comparison.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Comparison}
@@ -11,6 +11,7 @@
 \alias{>=}
 \alias{>}
 \alias{Comparison}
+\alias{collation}
 \title{Relational Operators}
 \description{
   Binary operators which allow the comparison of values in atomic vectors.
@@ -30,13 +31,13 @@ x != y
 \details{
   The binary comparison operators are generic functions: methods can be
   written for them individually or via the
-  \code{\link[base:groupGeneric]{Ops}}) group generic function.  (See
-  \code{\link[base:groupGeneric]{Ops}} for how dispatch is computed.)
+  \code{\link[=S3groupGeneric]{Ops}}) group generic function.  (See
+  \code{\link[=S3groupGeneric]{Ops}} for how dispatch is computed.)
 
   Comparison of strings in character vectors is lexicographic within the
   strings using the collating sequence of the locale in use: see
   \code{\link{locales}}.  The collating sequence of locales such as
-  \samp{en\_US} is normally different from \samp{C} (which should use
+  \samp{en_US} is normally different from \samp{C} (which should use
   ASCII) and can be surprising.  Beware of making \emph{any} assumptions
   about the collation order: e.g. in Estonian \code{Z} comes between
   \code{S} and \code{T}, and collation is not necessarily
@@ -96,14 +97,15 @@ x != y
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 
   Collation of character strings is a complex topic.  For an
   introduction see
   \url{http://en.wikipedia.org/wiki/Collating_sequence}.  The
   \emph{Unicode Collation Algorithm}
-  (\url{http://unicode.org/reports/tr10/}) is likely to be increasing
-  influential. 
+  (\url{http://unicode.org/reports/tr10/}) is likely to be increasingly
+  influential.  Where available \R makes use of ICU
+  (\url{http://site.icu-project.org/} for collation.
 }
 \seealso{
   \code{\link{factor}} for the behaviour with factor arguments.

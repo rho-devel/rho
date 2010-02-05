@@ -42,8 +42,8 @@
    */
 #undef HAVE_ALLOCA_H
 
-/* Define if you have the Aqua headers and libraries, and want the Aqua GUI to
-   be built. */
+/* Define if you have the Aqua headers and libraries, and want the Aqua GUI
+   components and quartz() device to be built. */
 #undef HAVE_AQUA
 
 /* Define to 1 if you have the `argz_count' function. */
@@ -376,11 +376,8 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
 
-/* Define to 1 if you have the `icui18n' library (-licui18n). */
-#undef HAVE_LIBICUI18N
-
-/* Define to 1 if you have the `icuuc' library (-licuuc). */
-#undef HAVE_LIBICUUC
+/* Define to 1 if you have the `icucore' library (-licucore). */
+#undef HAVE_LIBICUCORE
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
@@ -420,6 +417,12 @@
 
 /* Define to 1 if the system has the type `long long int'. */
 #undef HAVE_LONG_LONG_INT
+
+/* Define if your system has lzma >= 4.999. */
+#undef HAVE_LZMA
+
+/* Define to 1 if you have the <lzma.h> header file. */
+#undef HAVE_LZMA_H
 
 /* Define to 1 if you have the `matherr' function. */
 #undef HAVE_MATHERR
@@ -519,6 +522,9 @@
 
 /* Define to 1 if you have the <readline/readline.h> header file. */
 #undef HAVE_READLINE_READLINE_H
+
+/* Define to 1 if you have the `readlink' function. */
+#undef HAVE_READLINK
 
 /* Define to 1 if you have the `realpath' function. */
 #undef HAVE_REALPATH
@@ -781,9 +787,6 @@
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
 
-/* Define if `iconv' accepts "UTF-8", "latin1" and "UCS-*". */
-#undef ICONV_LATIN1
-
 /* Define if you have IEEE 754 floating point arithmetic. */
 #undef IEEE_754
 
@@ -910,12 +913,6 @@
 /* Define if you provide support for the libxml ftp/http functions. */
 #undef SUPPORT_LIBXML
 
-/* Define this to enable support for MBCS locales. */
-#undef SUPPORT_MBCS
-
-/* Define this to enable support for UTF-8 locales. */
-#undef SUPPORT_UTF8
-
 /* Define to enable provoking compile errors on write barrier violation. */
 #undef TESTING_WRITE_BARRIER
 
@@ -928,6 +925,9 @@
 
 /* Define to use ICU for collation. */
 #undef USE_ICU
+
+/* Define to use Apple's ICU. */
+#undef USE_ICU_APPLE
 
 /* Define if the POSIX multithreading library can be used. */
 #undef USE_POSIX_THREADS
@@ -949,6 +949,28 @@
 /* Define if references to the old Solaris multithreading library should be
    made weak. */
 #undef USE_SOLARIS_THREADS_WEAK
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
 
 /* Define if the Win32 multithreading API can be used. */
 #undef USE_WIN32_THREADS
@@ -972,16 +994,21 @@
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-# undef _GNU_SOURCE
-#endif
-
 /* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 #undef _LARGEFILE_SOURCE
 
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
 
 /* Define to 'long' if <sys/types.h> does not define. Apparently necessary to
    fix a GCC bug on AIX? */

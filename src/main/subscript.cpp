@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,6 +33,19 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
+ *
+ * EXPORTS:
+ *
+ *  OneIndex()        -- used for "[[<-" in ./subassign.c
+ *  get1index()       -- used for "[["   in ./subassign.c & subset.c
+ *  vectorIndex()     -- used for "[[" with a vector arg
+
+ *  mat2indsub()      -- for "mat[i]"     "    "            "
+
+ *  makeSubscript()   -- for "[" and "[<-" in ./subset.c and ./subassign.c,
+ *			 and "[[<-" with a scalar in ./subassign.c
+ *  vectorSubscript() -- for makeSubscript()   {currently unused externally}
+ *  arraySubscript()  -- for "[i,j,..." and "[<-..." in ./subset.c, ./subassign.c
  */
 
 #ifdef HAVE_CONFIG_H
@@ -60,6 +73,7 @@ static int integerOneIndex(int i, int len, SEXP call)
     return(indx);
 }
 
+/* Utility used (only in) do_subassign2_dflt(), i.e. "[[<-" in ./subassign.c : */
 int attribute_hidden
 OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos, SEXP call)
 {
@@ -83,7 +97,7 @@ OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos, SEXP call
 	indx = integerOneIndex(INTEGER(s)[pos], len, call);
 	break;
     case REALSXP:
-	indx = integerOneIndex(int(REAL(s)[pos]), len, call);
+	indx = integerOneIndex(CXXRCONSTRUCT(int, REAL(s)[pos]), len, call);
 	break;
     case STRSXP:
 	nx = length(x);
@@ -246,6 +260,27 @@ get1index(SEXP s, SEXP names, int len, int pok, int pos, SEXP call)
 		      type2char(TYPEOF(s)));
     }
     return indx;
+}
+
+SEXP attribute_hidden
+vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call) 
+{
+    int i, offset;
+
+    for(i = start; i < stop; i++) {
+	if(!isVectorList(x) && !isPairList(x))
+	    errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
+	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
+		           length(x), pok, i, call);
+	if(offset < 0 || offset >= length(x))
+	    errorcall(call, _("no such index at level %d\n"), i+1);
+	if(isPairList(x)) {
+	    x = CAR(nthcdr(x, offset));
+	} else {
+	    x = VECTOR_ELT(x, offset);
+    	}
+    }
+    return x;
 }
 
 /* Special Matrix Subscripting: Handles the case x[i] where */
@@ -427,7 +462,6 @@ typedef SEXP (*StringEltGetter)(SEXP x, int i);
  * large, then it will be too slow unless ns is very small.
  */
 
-#define USE_HASHING 1
 static SEXP
 stringSubscript(SEXP s, int ns, int nx, SEXP names,
 		StringEltGetter strg, int *stretch, Rboolean in, SEXP call)
@@ -435,12 +469,8 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
     SEXP indx, indexnames;
     int i, j, nnames, sub, extra;
     int canstretch = *stretch;
-#ifdef USE_HASHING
     /* product may overflow, so check factors as well. */
-    Rboolean usehashing = Rboolean(in && ( (ns > 1000 && nx) || (nx > 1000 && ns) || (ns * nx > 1000) ));
-#else
-    Rboolean usehashing = FALSE;
-#endif
+    Rboolean usehashing = CXXRCONSTRUCT(Rboolean, in && ( ((ns > 1000 && nx) || (nx > 1000 && ns)) || (ns * nx > 15*nx + ns) ));
 
     PROTECT(s);
     PROTECT(names);
@@ -455,7 +485,6 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
      * nonmatch will have given an error.)
      */
 
-#ifdef USE_HASHING
     if(usehashing) {
 	/* must be internal, so names contains a character vector */
 	/* NB: this does not behave in the same way with respect to ""
@@ -465,9 +494,9 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
 	for (i = 0; i < ns; i++)
 	    if(STRING_ELT(s, i) == NA_STRING || !CHAR(STRING_ELT(s, i))[0])
 		INTEGER(indx)[i] = 0;
+	/* FIXME: this should not be allowed, CHARSXPs only */
 	for (i = 0; i < ns; i++) SET_STRING_ELT(indexnames, i, R_NilValue);
     } else {
-#endif
 	PROTECT(indx = allocVector(INTSXP, ns));
 	for (i = 0; i < ns; i++) {
 	    sub = 0;
@@ -479,6 +508,7 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
 		    }
 		    if (NonNullStringMatch(STRING_ELT(s, i), names_j)) {
 			sub = j + 1;
+			/* FIXME: this should not be allowed, CHARSXPs only */
 			SET_STRING_ELT(indexnames, i, R_NilValue);
 			break;
 		    }
@@ -486,9 +516,8 @@ stringSubscript(SEXP s, int ns, int nx, SEXP names,
 	    }
 	    INTEGER(indx)[i] = sub;
 	}
-#ifdef USE_HASHING
     }
-#endif
+
 
     for (i = 0; i < ns; i++) {
 	sub = INTEGER(indx)[i];

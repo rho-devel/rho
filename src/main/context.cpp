@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -66,6 +66,7 @@
  *			non-local return (i.e. an error)
  *	cenddata	a void pointer to data for cend to use
  *	vmax		the current setting of the R_alloc stack
+ *	srcref		the srcref at the time of the call
  *
  *  Context types can be one of:
  *
@@ -127,6 +128,7 @@
 
 #include "Defn.h"
 
+#include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 
 using namespace std;
@@ -138,7 +140,7 @@ using namespace CXXR;
    determines the argument is responsible for making sure
    CTXT_TOPLEVEL's are not crossed unless appropriate. */
 
-void R_run_onexits(RCNTXT *cptr)
+void attribute_hidden R_run_onexits(RCNTXT *cptr)
 {
     RCNTXT *c;
 
@@ -165,7 +167,7 @@ please bug.report() [R_run_onexits]"));
 	       evaluation stack in case the jump is from handling a
 	       stack overflow. To be safe it is good to also call
 	       R_CheckStack. LT */
-	    R_Expressions = R_Expressions_keep + 500;
+	    Evaluator::enableExtraDepth(true);
 	    R_CheckStack();
 	    eval(s, c->cloenv);
 	    UNPROTECT(1);
@@ -181,10 +183,10 @@ please bug.report() [R_run_onexits]"));
    three should be unified so there is only one place where a LONGJMP
    occurs. */
 
-void R_restore_globals(RCNTXT *cptr)
+void attribute_hidden R_restore_globals(RCNTXT *cptr)
 {
     GCStackRootBase::ppsRestoreSize(cptr->cstacktop);
-    R_EvalDepth = cptr->evaldepth;
+    Evaluator::setDepth(cptr->evaldepth);
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);
     R_HandlerStack = cptr->handlerstack;
@@ -197,15 +199,16 @@ void R_restore_globals(RCNTXT *cptr)
 	prom->markEvaluationInterrupted(true);
 	R_PendingPromises = R_PendingPromises->next;
     }
-    /* Need to reset R_Expressions in case we are jumping after
+    /* Need to reset nesting depth in case we are jumping after
        handling a stack overflow. */
-    R_Expressions = R_Expressions_keep;
+    Evaluator::enableExtraDepth(false);
 #ifdef BYTECODE
     R_BCNodeStackTop = cptr->nodestack;
 # ifdef BC_INT_STACK
     R_BCIntStackTop = cptr->intstack;
 # endif
 #endif
+    R_Srcref = cptr->srcref;
 }
 
 
@@ -247,7 +250,7 @@ void begincontext(RCNTXT * cptr, int flags,
 {
     cptr->nextcontext = R_GlobalContext;
     cptr->cstacktop = GCStackRootBase::ppsSize();
-    cptr->evaldepth = R_EvalDepth;
+    cptr->evaldepth = Evaluator::depth();
     cptr->callflag = flags;
     cptr->call = syscall;
     cptr->cloenv = env;
@@ -267,6 +270,7 @@ void begincontext(RCNTXT * cptr, int flags,
     cptr->intstack = R_BCIntStackTop;
 # endif
 #endif
+    cptr->srcref = R_Srcref;
     R_GlobalContext = cptr;
 }
 
@@ -292,7 +296,7 @@ void endcontext(RCNTXT * cptr)
 
 /* findcontext - find the correct context */
 
-void findcontext(int mask, SEXP env, SEXP val)
+void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 {
     RCNTXT *cptr;
     cptr = R_GlobalContext;
@@ -314,7 +318,7 @@ void findcontext(int mask, SEXP env, SEXP val)
     }
 }
 
-void R_JumpToContext(RCNTXT *target, int mask, SEXP val)
+void attribute_hidden R_JumpToContext(RCNTXT *target, int mask, SEXP val)
 {
     RCNTXT *cptr;
     for (cptr = R_GlobalContext;
@@ -332,7 +336,7 @@ void R_JumpToContext(RCNTXT *target, int mask, SEXP val)
 /* negative n counts back from the current frame */
 /* positive n counts up from the globalEnv */
 
-SEXP R_sysframe(int n, RCNTXT *cptr)
+SEXP attribute_hidden R_sysframe(int n, RCNTXT *cptr)
 {
     if (n == 0)
 	return(R_GlobalEnv);
@@ -371,7 +375,7 @@ SEXP R_sysframe(int n, RCNTXT *cptr)
 /* It would be much simpler if sysparent just returned cptr->sysparent */
 /* but then we wouldn't be compatible with S. */
 
-int R_sysparent(int n, RCNTXT *cptr)
+int attribute_hidden R_sysparent(int n, RCNTXT *cptr)
 {
     int j;
     SEXP s;
@@ -404,7 +408,7 @@ int R_sysparent(int n, RCNTXT *cptr)
     return n;
 }
 
-int framedepth(RCNTXT *cptr)
+int attribute_hidden framedepth(RCNTXT *cptr)
 {
     int nframe = 0;
     while (cptr->nextcontext != NULL) {
@@ -415,10 +419,12 @@ int framedepth(RCNTXT *cptr)
     return nframe;
 }
 
-SEXP R_syscall(int n, RCNTXT *cptr)
+SEXP attribute_hidden R_syscall(int n, RCNTXT *cptr)
 {
     /* negative n counts back from the current frame */
     /* positive n counts up from the globalEnv */
+    SEXP result;
+    
     if (n > 0)
 	n = framedepth(cptr) - n;
     else
@@ -428,20 +434,29 @@ SEXP R_syscall(int n, RCNTXT *cptr)
 		  _("not that many frames on the stack"));
     while (cptr->nextcontext != NULL) {
 	if (cptr->callflag & CTXT_FUNCTION ) {
-	    if (n == 0)
-		return (duplicate(cptr->call));
-	    else
+	    if (n == 0) {
+	    	PROTECT(result = duplicate(cptr->call));
+	    	if (cptr->srcref && !isNull(cptr->srcref))
+	    	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->srcref));
+	    	UNPROTECT(1);
+	    	return result;
+	    } else
 		n--;
 	}
 	cptr = cptr->nextcontext;
     }
-    if (n == 0 && cptr->nextcontext == NULL)
-	return (duplicate(cptr->call));
+    if (n == 0 && cptr->nextcontext == NULL) {
+	PROTECT(result = duplicate(cptr->call));
+	if (cptr->srcref && !isNull(cptr->srcref))
+	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->srcref));
+	UNPROTECT(1);
+	return result;
+    }
     errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
-SEXP R_sysfunction(int n, RCNTXT *cptr)
+SEXP attribute_hidden R_sysfunction(int n, RCNTXT *cptr)
 {
     if (n > 0)
 	n = framedepth(cptr) - n;
@@ -471,7 +486,7 @@ SEXP R_sysfunction(int n, RCNTXT *cptr)
    then get the context of the call that owns the environment.  As it
    is, it will restart the wrong function if used in a promise.
    L.T. */
-SEXP do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *cptr;
 
@@ -491,13 +506,99 @@ SEXP do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
     return(R_NilValue);
 }
 
+/* count how many contexts of the specified type are present on the stack */
+/* browser contexts are a bit special because they are transient and for  */
+/* any closure context with the debug bit set one will be created; so we  */
+/* need to count those as well                                            */
+int countContexts(int ctxttype, int browser) {
+    int n=0;
+    RCNTXT *cptr;
+
+    cptr = R_GlobalContext;
+    while( cptr != R_ToplevelContext) {
+        if( cptr->callflag == ctxttype ) 
+            n++;
+        else if( browser ) {
+           if(cptr->callflag & CTXT_FUNCTION && ENV_DEBUG(cptr->cloenv) )
+              n++;
+        }
+        cptr = cptr->nextcontext;
+    }
+    return n;
+}
+  
+   
+/* functions to support looking up information about the browser */
+/* contexts that are in the evaluation stack */
+
+SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP rval=R_NilValue;
+    RCNTXT *cptr;
+    int n;
+
+    checkArity(op, args);
+    n = asInteger(CAR(args));
+    if(n < 1 ) error(_("number of contexts must be positive"));
+
+    /* first find the closest  browser context */
+    cptr = R_GlobalContext;
+    while (cptr != R_ToplevelContext) {
+        if (cptr->callflag == CTXT_BROWSER) {
+                break;
+        }
+        cptr = cptr->nextcontext;
+    }
+    /* error if not a browser context */
+
+    if( !(cptr->callflag == CTXT_BROWSER) )
+        error(_("no browser context to query"));
+
+    switch (PRIMVAL(op)) {
+    case 1: /* text */
+    case 2: /* condition */
+        /* first rewind to the right place if needed */
+        /* note we want n>1, as we have already      */
+        /* rewound to the first context              */
+        if( n > 1 ) {
+           while (cptr != R_ToplevelContext && n > 0 ) {
+               if (cptr->callflag == CTXT_BROWSER) {
+                   n--;
+                   break;
+               }
+               cptr = cptr->nextcontext;
+           }
+        }
+        if( !(cptr->callflag == CTXT_BROWSER) )
+           error(_("not that many calls to browser are active"));
+
+        if( PRIMVAL(op) == 1 )
+            rval = CAR(cptr->promargs);
+        else
+            rval = CADR(cptr->promargs);
+        break;
+    case 3: /* turn on debugging n levels up */
+        while ( (cptr != R_ToplevelContext) && n > 0 ) {
+            if (cptr->callflag & CTXT_FUNCTION) 
+                  n--;
+            cptr = cptr->nextcontext;
+        } 
+        if( !(cptr->callflag & CTXT_FUNCTION) )
+           error(_("not that many functions on the call stack"));
+        else
+           SET_RDEBUG(cptr->cloenv, CXXRTRUE);
+        break;
+    }
+    return(rval);
+}
+
 /* An implementation of S's frame access functions. They usually count */
 /* up from the globalEnv while we like to count down from the currentEnv. */
 /* So if the argument is negative count down if positive count up. */
 /* We don't want to count the closure that do_sys is contained in, so the */
 /* indexing is adjusted to handle this. */
 
-SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
@@ -573,7 +674,7 @@ SEXP do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 }
 
-SEXP do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int n;
     SEXP t;

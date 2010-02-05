@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -28,8 +28,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street Fifth Floor, Boston, MA 02110-1301  USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file SEXP_downcast.cpp
@@ -44,9 +44,7 @@
 
 using namespace CXXR;
 
-#ifndef UNCHECKED_SEXP_DOWNCAST
 void CXXR::SEXP_downcast_error(const char* given, const char* wanted)
 {
     Rf_error(_("'%s' supplied where '%s' expected."), given, wanted);
 }
-#endif

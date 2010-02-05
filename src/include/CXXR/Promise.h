@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -49,6 +49,17 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
+// Stack entry and stack top for pending promises, to be moved inside
+// the Promise class in due course:
+extern "C" {
+    typedef struct RPRSTACK {
+	SEXP promise;
+	struct RPRSTACK *next;
+    } RPRSTACK;
+
+    extern RPRSTACK* R_PendingPromises;
+}
+
 namespace CXXR {
     /** @brief Placeholder for function argument.
      *
@@ -62,11 +73,12 @@ namespace CXXR {
 	 * @param valgen pointer to RObject to be evaluated to provide
 	 *          the value of the Promise.  Can be null.
 	 *
-	 * @param env Environment in which \a valgen is to be evaluated.
+	 * @param env pointer to the Environment in which \a valgen is
+	 *          to be evaluated.
 	 */
-	Promise(const RObject* valgen, const Environment& env)
+	Promise(RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
-	      m_valgen(valgen), m_environment(&env), m_seen(false),
+	      m_valgen(valgen), m_environment(env), m_seen(false),
 	      m_interrupted(false)
 	{}
 
@@ -76,7 +88,7 @@ namespace CXXR {
 	 * will be a null pointer after the promise has been
 	 * evaluated.
 	 */
-	const Environment* environment() const
+	Environment* environment() const
 	{
 	    return m_environment;
 	}
@@ -89,6 +101,19 @@ namespace CXXR {
 	bool evaluationInterrupted() const
 	{
 	    return m_interrupted;
+	}
+
+	/** @brief Force the Promise.
+	 *
+	 * i.e. evaluate the Promise within its environment.
+	 * Following this, the environment pointer is set null, thus
+	 * possibly allowing the Environment to be garbage-collected.
+	 *
+	 * @return The result of evaluating the promise.
+	 */
+	RObject* force()
+	{
+	    return evaluate(0);
 	}
 
 	/** @brief Indicate whether evaluation has been interrupted.
@@ -123,8 +148,8 @@ namespace CXXR {
 	 *
 	 * @param val Value to be associated with the Promise.
 	 *
-	 * @todo Replace this with a method to evaluate the promise.
-	 * Possibly have method value() itself force the promise.
+	 * @todo Should be private (or removed entirely), but current
+	 * still used in saveload.cpp.
 	 */
 	void setValue(RObject* val);
 
@@ -151,7 +176,7 @@ namespace CXXR {
 	 * @return pointer to the value of the Promise, or to
 	 * Symbol::unboundValue() if it has not yet been evaluated.
 	 */
-	const RObject* value() const
+	RObject* value()
 	{
 	    return m_value;
 	}
@@ -167,6 +192,7 @@ namespace CXXR {
 	}
 
 	// Virtual functions of RObject:
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
 	// Virtual function of GCNode:
@@ -176,8 +202,8 @@ namespace CXXR {
 	void detachReferents();
     private:
 	GCEdge<> m_value;
-	GCEdge<const RObject> m_valgen;
-	GCEdge<const Environment> m_environment;
+	GCEdge<RObject> m_valgen;
+	GCEdge<Environment> m_environment;
 	bool m_seen;
 	bool m_interrupted;
 
@@ -202,7 +228,7 @@ extern "C" {
      *
      * @param env CXXR::Environment in which \a expr is to be evaluated.
      */
-    SEXP Rf_mkPROMISE(SEXP expr, SEXP rho);
+    SEXP Rf_mkPROMISE(SEXP expr, SEXP env);
 
     /** @brief Access the expression of a CXXR::Promise.
      *
@@ -216,8 +242,9 @@ extern "C" {
 #else
     inline SEXP PRCODE(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::RObject*>(prom.valueGenerator());
+	using namespace CXXR;
+	const Promise& prom = *SEXP_downcast<Promise*>(x);
+	return const_cast<RObject*>(prom.valueGenerator());
     }
 #endif
 
@@ -234,8 +261,9 @@ extern "C" {
 #else
     inline SEXP PRENV(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::Environment*>(prom.environment());
+	using namespace CXXR;
+	const Promise& prom = *SEXP_downcast<Promise*>(x);
+	return prom.environment();
     }
 #endif
 
@@ -251,8 +279,9 @@ extern "C" {
 #else
     inline SEXP PRVALUE(SEXP x)
     {
-	const CXXR::Promise& prom = *CXXR::SEXP_downcast<CXXR::Promise*>(x);
-	return const_cast<CXXR::RObject*>(prom.value());
+	using namespace CXXR;
+	Promise& prom = *SEXP_downcast<Promise*>(x);
+	return prom.value();
     }
 #endif
 

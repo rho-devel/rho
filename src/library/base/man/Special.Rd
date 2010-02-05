@@ -1,6 +1,6 @@
 % File src/library/base/man/Special.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Special}
@@ -49,8 +49,7 @@ lfactorial(x)
 \details{
   The functions \code{beta} and \code{lbeta} return the beta function
   and the natural logarithm of the beta function,
-  \deqn{B(a,b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}.}{%
-    B(a,b) = (Gamma(a)Gamma(b))/(Gamma(a+b)).}
+  \deqn{B(a,b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}.}{B(a,b) = (Gamma(a)Gamma(b))/(Gamma(a+b)).}
   The formal definition is
   \deqn{B(a, b) = \int_0^1 t^{a-1} (1-t)^{b-1} dt}{integral_0^1 t^(a-1) (1-t)^(b-1) dt}
   (Abramowitz and Stegun section 6.2.1, page 258).  Note that it is only
@@ -61,7 +60,7 @@ lfactorial(x)
   \eqn{\Gamma(x)} and the natural logarithm of \emph{the absolute value of} the
   gamma function.  The gamma function is defined by
   (Abramowitz and Stegun section 6.1.1, page 255)
-  \deqn{\Gamma(x) = \int_0^\infty t^{a-1} e^{-t} dt}{integral_0^Inf t^(a-1) exp(-t) dt}
+  \deqn{\Gamma(x) = \int_0^\infty t^{x-1} e^{-t} dt}{integral_0^Inf t^(x-1) exp(-t) dt}
   for all real \code{x} except zero and negative integers (when
   \code{NaN} is returned).
   \code{factorial(x)} (\eqn{x!} for non-negative integer \code{x})
@@ -73,8 +72,7 @@ lfactorial(x)
   \code{psigamma(x, deriv)} (\code{deriv >= 0}) computes the
   \code{deriv}-th derivative of \eqn{\psi(x)}.
   \deqn{\code{digamma(x)} = \psi(x) = \frac{d}{dx}\ln\Gamma(x) =
-    \frac{\Gamma'(x)}{\Gamma(x)}}{%
-    \code{digamma(x)} = psi(x) = d/dx {ln Gamma(x)} = Gamma'(x) / Gamma(x)}
+    \frac{\Gamma'(x)}{\Gamma(x)}}{digamma(x) = psi(x) = d/dx{ln Gamma(x)} = Gamma'(x) / Gamma(x)}
   This is often called the \sQuote{polygamma} function, e.g. in
   Abramowitz and Stegun (section 6.4.1, page 260); and its higher
   derivatives (\code{deriv = 2:4}) have occasionally been called
@@ -93,7 +91,7 @@ lfactorial(x)
 
   The \code{gamma}, \code{lgamma}, \code{digamma} and \code{trigamma}
   functions are generic: methods can be defined for them individually or
-  via the \code{\link[base:groupGeneric]{Math}} group generic.
+  via the \code{\link[=S3groupGeneric]{Math}} group generic.
 }
 \source{
   \code{gamma}, \code{lgamma}, \code{beta} and \code{lbeta} are based on
@@ -110,7 +108,7 @@ lfactorial(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole. (For \code{gamma} and \code{lgamma}.)
+  Wadsworth & Brooks/Cole. (For \code{gamma} and \code{lgamma}.)
 
   Abramowitz, M. and Stegun, I. A. (1972)
   \emph{Handbook of Mathematical Functions.} New York: Dover.
@@ -119,9 +117,7 @@ lfactorial(x)
 \seealso{
   \code{\link{Arithmetic}} for simple, \code{\link{sqrt}} for
   miscellaneous mathematical functions and \code{\link{Bessel}} for the
-  real Bessel functions.  Note that \code{\link{gammaCody}(x)} is
-  considerably faster than \code{gamma(x)} but slightly less accurate
-  and (potentially) less reliable.
+  real Bessel functions.
 
   For the incomplete gamma function see \code{\link{pgamma}}.
 }

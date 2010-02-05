@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,7 +27,7 @@
  *
  *  Auxiliary routines required:
  *	lgamma - log-gamma function
- *      pbeta  - incomplete-beta function
+ *      pbeta  - incomplete-beta function {nowadays: pbeta_raw() -> bratio()}
  */
 
 #include "nmath.h"
@@ -41,7 +41,7 @@ pnbeta_raw(double x, double o_x, double a, double b, double ncp)
     /* change errmax and itrmax if desired;
      * original (AS 226, R84) had  (errmax; itrmax) = (1e-6; 100) */
     const static double errmax = 1.0e-9;
-    const int    itrmax = 10000;  /* 100 is not enough for pf(ncp=200) 
+    const int    itrmax = 10000;  /* 100 is not enough for pf(ncp=200)
 				     see PR#11277 */
 
     double a0, ax, lbeta, c, errbd, temp, x0, tmp_c;

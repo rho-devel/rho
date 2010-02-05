@@ -5,10 +5,6 @@
 
 \name{deviance}
 \alias{deviance}
-%\alias{deviance.default}
-%\alias{deviance.lm}
-%\alias{deviance.glm}
-%\alias{deviance.mlm}
 \title{Model Deviance}
 \description{
   Returns the deviance of a fitted model object.
@@ -31,7 +27,7 @@ deviance(object, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S.}
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{df.residual}},

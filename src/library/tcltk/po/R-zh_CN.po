@@ -2,12 +2,12 @@
 # Copyright (C) 2006 The R Foundation
 # This file is distributed under the same license as the PACKAGE package.
 # 陈斐 <feic@avaya.com>, 2007.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-04-05 11:08\n"
+"POT-Creation-Date: 2009-03-17 19:27\n"
 "PO-Revision-Date: 2005-02-04 08:37+0000\n"
 "Last-Translator: 陈斐 <feic@avaya.com>\n"
 "Language-Team: Chinese\n"
@@ -93,6 +93,9 @@ msgstr "取消"
 
 msgid "'pb' is not from class \"tkProgressBar\""
 msgstr "'pb'不属于\"tkProgressBar\"这一类别"
+
+msgid "'filters' must be a 2-column character matrix"
+msgstr "'filters'必需是有两个列的字符矩阵"
 
 msgid "Loading Tcl/Tk interface ..."
 msgstr "载入Tcl/Tk接口..."

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -58,11 +58,12 @@ namespace CXXR {
     namespace ForceNonInline {
 	Rboolean (*isNullptr)(SEXP s) = Rf_isNull;
 	Rboolean (*isObjectptr)(SEXP s) = Rf_isObject;
+	Rboolean (*IS_S4_OBJECTptr)(SEXP x) = IS_S4_OBJECT;
 	int (*NAMEDptr)(SEXP x) = NAMED;
 	Rboolean (*OBJECTptr)(SEXP e) = OBJECT;
 	void (*SET_NAMEDptr)(SEXP x, int v) = SET_NAMED;
-	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*SET_S4_OBJECTptr)(SEXP x) = SET_S4_OBJECT;
+	SEXPTYPE (*TYPEOFptr)(SEXP e) = TYPEOF;
 	void (*UNSET_S4_OBJECTptr)(SEXP x) = UNSET_S4_OBJECT;
     }
 }
@@ -97,22 +98,29 @@ void RObject::clearAttributes()
     }
 }
 
+RObject* RObject::evaluate(Environment* env)
+{
+    if (NAMED(this) != 2)
+	SET_NAMED(this, 2);
+    return this;
+}
+
 void RObject::frozenError()
 {
     Rf_error(_("attempt to modify frozen object"));
 }
 
-RObject* RObject::getAttribute(const Symbol& name)
+RObject* RObject::getAttribute(const Symbol* name)
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == &name) return node->car();
+	if (node->tag() == name) return node->car();
     return 0;
 }
 
-const RObject* RObject::getAttribute(const Symbol& name) const
+const RObject* RObject::getAttribute(const Symbol* name) const
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == &name) return node->car();
+	if (node->tag() == name) return node->car();
     return 0;
 }
 
@@ -125,7 +133,7 @@ unsigned int RObject::packGPBits() const
 
 // This follows CR in adding new attributes at the end of the list,
 // though it would be easier to add them at the beginning.
-void RObject::setAttribute(Symbol* name, RObject* value)
+void RObject::setAttribute(const Symbol* name, RObject* value)
 {
     errorIfFrozen();
     if (!name)
@@ -158,11 +166,12 @@ void RObject::setAttribute(Symbol* name, RObject* value)
 
 // This has complexity O(n^2) where n is the number of attributes, but
 // we assume n is very small.    
-void RObject::setAttributes(PairList* new_attributes)
+void RObject::setAttributes(const PairList* new_attributes)
 {
     clearAttributes();
     while (new_attributes) {
-	Symbol* name = SEXP_downcast<Symbol*>(new_attributes->tag());
+	const Symbol* name
+	    = SEXP_downcast<const Symbol*>(new_attributes->tag());
 	setAttribute(name, new_attributes->car());
 	new_attributes = new_attributes->tail();
     }
@@ -204,5 +213,6 @@ SEXP ATTRIB(SEXP x)
 void SET_ATTRIB(SEXP x, SEXP v)
 {
     GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(v));
+    GCNode::GCInhibitor inhibitor;
     x->setAttributes(pl);
 }

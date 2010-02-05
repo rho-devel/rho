@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -22,9 +22,8 @@
 #define _UCP_H
 
 /* This file contains definitions of the property values that are returned by
-the function _pcre_ucp_findprop(). New values that are added for new releases
-of Unicode should always be at the end of each enum, for backwards
-compatibility. */
+the UCD access macros. New values that are added for new releases of Unicode
+should always be at the end of each enum, for backwards compatibility. */
 
 /* These are the general character categories. */
 

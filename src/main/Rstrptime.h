@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -22,15 +22,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef HAVE_LOCALE_H
-# include <locale.h>
-#endif
-
-static void get_locale_strings(void);
-#ifdef SUPPORT_MBCS
-static void get_locale_w_strings(void);
 #endif
 
 /* Convert a string representation of time to a time value.
@@ -189,7 +180,6 @@ day_of_the_year (struct tm *tm)
 		   + (tm->tm_mday - 1));
 }
 
-#ifdef SUPPORT_MBCS
 #include <wchar.h>
 #include <wctype.h>
 
@@ -669,7 +659,6 @@ w_strptime_internal (wchar_t *rp, const wchar_t *fmt, struct tm *tm,
 
   return rp;
 }
-#endif
 
 
 static char * 
@@ -1109,39 +1098,10 @@ strptime_internal (const char *rp, const char *fmt, struct tm *tm,
     return (char *) rp;
 }
 
-/* We only care if the result is null or not */
-static char *
-R_strptime (const char *buf, const char *format, struct tm *tm, double *psecs)
-{
-    enum locale_status decided;
-    decided = raw;
-#ifdef SUPPORT_MBCS
-    if(mbcslocale) {
-	wchar_t wbuf[1001], wfmt[1001]; size_t n;
-#if defined(HAVE_LOCALE_H) && defined(HAVE_WCSFTIME)
-	get_locale_w_strings();
-#endif
-	n = mbstowcs(NULL, buf, 1000);
-	if(n > 1000) error(_("input string is too long"));
-	n = mbstowcs(wbuf, buf, 1000);
-	if(n == size_t(-1)) error(_("invalid multibyte input string"));
-	
-	n = mbstowcs(NULL, format, 1000);
-	if(n > 1000) error(_("format string is too long"));
-	n = mbstowcs(wfmt, format, 1000);
-	if(n == size_t(-1)) error(_("invalid multibyte format string"));
-	return (char *) w_strptime_internal (wbuf, wfmt, tm, &decided, psecs);
-    } else
-#endif
-    {
-#ifdef HAVE_LOCALE_H
-    get_locale_strings();
-#endif
-    return strptime_internal (buf, format, tm, &decided, psecs);
-    }
-}
 
 #ifdef HAVE_LOCALE_H
+# include <locale.h>
+
 /* We check for a changed locale here, as setting the locale strings is
    on some systems slow compared to the conversions. */
 
@@ -1176,7 +1136,7 @@ static void get_locale_strings(void)
     if(strlen(buff)) strcpy(am_pm[1], buff);
 }
 
-#if defined(SUPPORT_MBCS) && defined(HAVE_WCSFTIME)
+#if defined(HAVE_WCSTOD) && defined(HAVE_WCSFTIME)
 static void get_locale_w_strings(void)
 {
     int i;
@@ -1208,7 +1168,40 @@ static void get_locale_w_strings(void)
     if(wcslen(buff)) wcscpy(w_am_pm[1], buff);
 }
 #endif
+#endif /* HAVE_LOCALE_H */
+
+
+/* We only care if the result is null or not */
+static char *
+R_strptime (const char *buf, const char *format, struct tm *tm, double *psecs)
+{
+    enum locale_status decided;
+    decided = raw;
+#if defined(HAVE_WCSTOD)
+    if(mbcslocale) {
+	wchar_t wbuf[1001], wfmt[1001]; size_t n;
+#if defined(HAVE_LOCALE_H) && defined(HAVE_WCSFTIME)
+	get_locale_w_strings();
 #endif
+	n = mbstowcs(NULL, buf, 1000);
+	if(n > 1000) error(_("input string is too long"));
+	n = mbstowcs(wbuf, buf, 1000);
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte input string"));
+	
+	n = mbstowcs(NULL, format, 1000);
+	if(n > 1000) error(_("format string is too long"));
+	n = mbstowcs(wfmt, format, 1000);
+	if(CXXRCONSTRUCT(int, n) == -1) error(_("invalid multibyte format string"));
+	return (char *) w_strptime_internal (wbuf, wfmt, tm, &decided, psecs);
+    } else
+#endif
+    {
+#ifdef HAVE_LOCALE_H
+    get_locale_strings();
+#endif
+    return strptime_internal (buf, format, tm, &decided, psecs);
+    }
+}
 
 #ifdef __cplusplus
 }

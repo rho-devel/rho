@@ -17,7 +17,7 @@
 .Defunct <- function(new, package=NULL, msg) {
     if (missing(msg)) {
 	msg <- gettextf("'%s' is defunct.\n",
-			as.character(sys.call(sys.parent())[[1]]))
+			as.character(sys.call(sys.parent())[[1L]]))
 	if(!missing(new))
 	    msg <- c(msg, gettextf("Use '%s' instead.\n", new))
 	msg <- c(msg,
@@ -93,7 +93,8 @@ codes <- function(x, ...) .Defunct()
 codes.factor <- function(x, ...) .Defunct("unclass")
 codes.ordered <- function(x, ...) .Defunct("unclass")
 "codes<-" <- function(x, ..., value) .Defunct()
-print.atomic <- function(x, quote = TRUE, ...) .Defunct("print.default")
+# removed in 2.9.1, as it caused confusion for an S4 class union of this name.
+#print.atomic <- function(x, quote = TRUE, ...) .Defunct("print.default")
 ## </entry>
 
 ## <entry>
@@ -158,4 +159,10 @@ unix <- function(call, intern = FALSE) .Defunct("system")
 ## Deprecated in 2.7.0
 ## Defunct in 2.8.0
 gammaCody <- function(x) .Defunct("gamma")
+## </entry>
+
+## <entry>
+## Deprecated inter alia in 2.8.1
+## Defunct in 2.9.0
+manglePackageName <- function (pkgName, pkgVersion) .Defunct()
 ## </entry>

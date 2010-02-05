@@ -69,17 +69,17 @@
                 whereF <- temp$whereF
                 pname <- temp$pname
             }
-            else if(is.call(fname) && identical(fname[[1]], as.name("::"))) {
-                whereF <-as.character(fname[[2]])
+            else if(is.call(fname) && identical(fname[[1L]], as.name("::"))) {
+                whereF <-as.character(fname[[2L]])
                 require(whereF, character.only = TRUE)
                 whereF <- as.environment(paste("package", whereF, sep=":"))
-                pname <-  fname[[2]]
-                what <- as.character(fname[[3]])
+                pname <-  fname[[2L]]
+                what <- as.character(fname[[3L]])
             }
-            else if(is.call(fname) && identical(fname[[1]], as.name(":::"))) {
-                pname <- paste(fname[[2]], "(not-exported)")
-                whereF <- loadNamespace(as.character(fname[[2]]))
-                what <- as.character(fname[[3]])
+            else if(is.call(fname) && identical(fname[[1L]], as.name(":::"))) {
+                pname <- paste(fname[[2L]], "(not-exported)")
+                whereF <- loadNamespace(as.character(fname[[2L]]))
+                what <- as.character(fname[[3L]])
             }
             else
                 stop("argument 'what' should be the name of a function")
@@ -114,7 +114,7 @@
         if(length(allWhere)==0)
             stop(gettextf("no function definition for \"%s\" found", what),
                  domain = NA)
-        whereF <- as.environment(allWhere[[1]])
+        whereF <- as.environment(allWhere[[1L]])
     }
     ## detect use with no action specified (old-style R trace())
     if(is.null(tracer) && is.null(exit) && identical(edit, FALSE))
@@ -296,7 +296,9 @@
             for(i in at) {
                 if(print)
                     expri <- substitute({.doTrace(TRACE, MSG); EXPR},
-                                        list(TRACE = tracer, MSG = paste("step",i), EXPR = fBody[[i]]))
+                                        list(TRACE = tracer,
+                                        MSG = paste("step",paste(i, collapse=",")),
+                                        EXPR = fBody[[i]]))
                 else
                     expri <- substitute({.doTrace(TRACE); EXPR},
                                         list(TRACE=tracer, EXPR = fBody[[i]]))
@@ -372,27 +374,13 @@
 .doTracePrint <- function(msg = "") {
     call <- deparse(sys.call(sys.parent(1)))
     if(length(call)>1)
-        call <- paste(call[[1]], "....")
+        call <- paste(call[[1L]], "....")
     cat("Tracing", call, msg, "\n")
 }
 
 .traceClassName <- function(className) {
     className[] <- paste(className, "WithTrace", sep="")
     className
-}
-
-trySilent <- function(expr) {
-    call <- sys.call()
-    call[[1]] <- quote(try)
-    opt1 <- options(show.error.messages = FALSE)
-    opt2 <- options(error = quote(empty.dump()))
-    ## following is a workaround of a bug in options that does not
-    ## acknowledge NULL as an options value => delete this element.
-    if(is.null(opt1[[1]]))
-      on.exit({options(show.error.messages = TRUE); options(opt2)})
-    else
-      on.exit({options(opt1); options(opt2)})
-    eval.parent(call)
 }
 
 .assignOverBinding <- function(what, value, where, verbose = TRUE) {
@@ -437,7 +425,7 @@ trySilent <- function(expr) {
         hasFunction <- FALSE
     if(hasFunction) {
         ## find the generic in the corresponding namespace
-        where2 <- findFunction(what, where = environment(fdef))[[1]] # must find it?
+        where2 <- findFunction(what, where = environment(fdef))[[1L]] # must find it?
         unlockBinding(what, where)
         setMethod(what, signature, method, where = where)
         lockBinding(what, where)
@@ -467,7 +455,7 @@ trySilent <- function(expr) {
     if(is.null(signature)) {
         whereF <- findFunction(what, where = where)
         if(length(whereF)>0)
-            whereF <- whereF[[1]]
+            whereF <- whereF[[1L]]
         else return(list(pname = pname, whereF = baseenv()))
     } else
         whereF <- .genEnv(what, where)

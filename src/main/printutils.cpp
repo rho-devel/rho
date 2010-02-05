@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -102,11 +102,11 @@ R_size_t R_Decode2Long(char *p, int *ierr)
 	REprintf("R_Decode2Long(): v=%ld\n", v);
     if(p[0] == 'G') {
 	if((Giga * double(v)) > R_SIZE_T_MAX) { *ierr = 4; return(v); }
-	return R_size_t(Giga*v);
+	return CXXRCONSTRUCT(R_size_t, (Giga*v));
     }
     else if(p[0] == 'M') {
 	if((Mega * double(v)) > R_SIZE_T_MAX) { *ierr = 1; return(v); }
-	return R_size_t(Mega*v);
+	return CXXRCONSTRUCT(R_size_t, (Mega*v));
     }
     else if(p[0] == 'K') {
 	if((1024 * double(v)) > R_SIZE_T_MAX) { *ierr = 2; return(v); }
@@ -257,8 +257,9 @@ const char
     if (x.i == 0.0) x.i = 0.0;
 
     if (ISNA(x.r) || ISNA(x.i)) {
-	snprintf(buff, NB, "%*s%*s", R_print.gap, "", wr+wi+2,
-		CHAR(R_print.na_string));
+	snprintf(buff, NB,
+		 "%*s", /* was "%*s%*s", R_print.gap, "", */
+		 wr+wi+2, CHAR(R_print.na_string));
     } else {
 	/* formatComplex rounded, but this does not, and we need to
 	   keep it that way so we don't get strange trailing zeros.
@@ -292,11 +293,7 @@ const char
    which Western versions at least do not.).
 */
 
-#ifdef SUPPORT_MBCS
 # include <R_ext/rlocale.h> /* redefines isw* functions */
-# include <wchar.h>
-# include <wctype.h>
-#endif
 
 #ifdef Win32
 #include "rgui_UTF8.h"
@@ -313,7 +310,6 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
     const char *p = str;
     int len = 0, i;
 
-#ifdef SUPPORT_MBCS
     if(mbcslocale || ienc == CE_UTF8) {
 	int res;
 	mbstate_t mb_st;
@@ -372,7 +368,6 @@ int Rstrwid(const char *str, int slen, cetype_t ienc, int quote)
 	    }
 	}
     } else
-#endif
 	for (i = 0; i < slen; i++) {
 	    /* ASCII */
 	    if(static_cast<unsigned char>( *p) < 0x80) {
@@ -434,9 +429,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 {
     int b, b0, i, j, cnt;
     const char *p; char *q, buf[11];
-#ifdef SUPPORT_MBCS /* always true on Win32 */
     cetype_t ienc = CE_NATIVE;
-#endif
 
     /* We have to do something like this as the result is returned, and
        passed on by EncodeElement -- so no way could be end user be
@@ -502,7 +495,6 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	b -= b0;
     }
     if(quote) *q++ = quote;
-#ifdef SUPPORT_MBCS
     if(mbcslocale || ienc == CE_UTF8) {
 	int j, res;
 	mbstate_t mb_st;
@@ -556,7 +548,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		    if(iswprint(wc)) {
 			/* The problem here is that wc may be
 			   printable according to the Unicode tables,
-			   but it may not be printable on the ouput
+			   but it may not be printable on the output
 			   device concerned. */
 			for(j = 0; j < res; j++) *q++ = *p++;
 		    } else {
@@ -575,7 +567,7 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		}
 
 	    } else { /* invalid char */
-		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRconst unsigned char *>(p)));
+		snprintf(q, 5, "\\x%02x", *(reinterpret_cast<CXXRCONST unsigned char *>(p)));
 		q += 4; p++;
 	    }
 	}
@@ -585,7 +577,6 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 #endif
 
     } else
-#endif
 	for (i = 0; i < cnt; i++) {
 
 	    /* ASCII */
@@ -749,7 +740,7 @@ void Rcons_vprintf(const char *format, va_list arg)
     char buf[R_BUFSIZE], *p = buf;
     int res;
 #ifdef HAVE_VA_COPY
-    unsigned int vmax = vmaxget();
+    void *vmax = vmaxget();
     int usedRalloc = FALSE, usedVasprintf = FALSE;
     va_list aq;
 
@@ -872,7 +863,7 @@ void REvprintf(const char *format, va_list arg)
 
 int attribute_hidden IndexWidth(int n)
 {
-    return int(log10(n + 0.5) + 1);
+    return int (log10(n + 0.5) + 1);
 }
 
 void attribute_hidden VectorIndex(int i, int w)

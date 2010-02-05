@@ -14,23 +14,32 @@
 #  A copy of the GNU General Public License is available at
 #  http://www.r-project.org/Licenses/
 
-factor <- function (x = character(), levels = sort(unique.default(x),
-                    na.last = TRUE), labels=levels, exclude = NA,
-                    ordered = is.ordered(x))
+factor <- function(x = character(), levels, labels=levels,
+                   exclude = NA, ordered = is.ordered(x))
 {
-    exclude <- as.vector(exclude, typeof(x))
+    if(is.null(x)) x <- character()
+    nx <- names(x)
+    if (missing(levels)) {
+	y <- unique(x)
+	ind <- sort.list(y) # or possibly order(x) which is more (too ?) tolerant
+	y <- as.character(y)
+	levels <- unique(y[ind])
+    }
+    force(ordered)
+    exclude <- as.vector(exclude, typeof(x))# may result in NA
+    x <- as.character(x)
     levels <- levels[is.na(match(levels, exclude))]
     f <- match(x, levels)
-    names(f) <- names(x)
+    if(!is.null(nx))
+	names(f) <- nx
     nl <- length(labels)
-    attr(f, "levels") <-
-	if (nl == length(levels))
-	    as.character(labels)
-	else if(nl == 1)
-	    paste(labels, seq_along(levels), sep = "")
-	else
-	    stop(gettextf("invalid labels; length %d should be 1 or %d",
-                          nl, length(levels)), domain = NA)
+    nL <- length(levels)
+    if(!any(nl == c(1L, nL)))
+	stop(gettextf("invalid labels; length %d should be 1 or %d", nl, nL),
+	     domain = NA)
+    levels(f) <- ## nl == nL or 1
+	if (nl == nL) as.character(labels)
+	else paste(labels, seq_along(levels), sep="")
     class(f) <- c(if(ordered)"ordered", "factor")
     f
 }
@@ -60,8 +69,8 @@ nlevels <- function(x) length(levels(x))
     if (is.list(value)) {
         nlevs <- rep.int(names(value), lapply(value, length))
         value <- unlist(value)
-        m <- match(value, xlevs, nomatch=0)
-        xlevs[m] <- nlevs[m > 0]
+        m <- match(value, xlevs, nomatch = 0L)
+        xlevs[m] <- nlevs[m > 0L]
     } else {
         if (length(xlevs) > length(value))
             stop("number of levels differs")
@@ -101,7 +110,7 @@ print.factor <- function (x, quote = FALSE, max.levels = NULL,
                           width = getOption("width"), ...)
 {
     ord <- is.ordered(x)
-    if (length(x) <= 0)
+    if (length(x) == 0L)
         cat(if(ord)"ordered" else "factor", "(0)\n", sep = "")
     else {
         ## The idea here is to preserve all relevant attributes such as
@@ -119,15 +128,15 @@ print.factor <- function (x, quote = FALSE, max.levels = NULL,
         T0 <- "Levels: "
         if(is.logical(maxl))
             maxl <- { ## smart default
-                width <- width - (nchar(T0, "w") + 3 + 1 + 3)
+                width <- width - (nchar(T0, "w") + 3L + 1L + 3L)
                                         # 3='...', 3=#lev, 1=extra
                 lenl <- cumsum(nchar(lev, "w") + nchar(colsep, "w"))
-                if(n <= 1 || lenl[n] <= width) n
-                else max(1, which(lenl > width)[1] - 1)
+                if(n <= 1L || lenl[n] <= width) n
+                else max(1L, which(lenl > width)[1L] - 1L)
             }
         drop <- n > maxl
         cat(if(drop)paste(format(n),""), T0,
-            paste(if(drop)c(lev[1:max(1,maxl-1)],"...",if(maxl > 1) lev[n])
+            paste(if(drop)c(lev[1L:max(1,maxl-1)],"...",if(maxl > 1) lev[n])
                       else lev, collapse= colsep), "\n", sep="")
     }
     invisible(x)
@@ -158,11 +167,11 @@ Ops.factor <- function(e1, e2)
 	}
 	r
     }
-    if (nzchar(.Method[1])) { # e1 *is* a factor
+    if (nzchar(.Method[1L])) { # e1 *is* a factor
 	l1 <- noNA.levels(e1)
 	e1 <- l1[e1]
     }
-    if (nzchar(.Method[2])) { # e2 *is* a factor
+    if (nzchar(.Method[2L])) { # e2 *is* a factor
 	l2 <- noNA.levels(e2)
 	e2 <- l2[e2]
     }
@@ -200,6 +209,7 @@ Ops.factor <- function(e1, e2)
     class(x) <- cx
     x
 }
+
 "[[.factor" <- function(x, ...)
 {
     y <- NextMethod("[[")
@@ -233,11 +243,11 @@ function (e1, e2)
     nas <- is.na(e1) | is.na(e2)
     ord1 <- FALSE
     ord2 <- FALSE
-    if (nzchar(.Method[1])) {
+    if (nzchar(.Method[1L])) {
 	l1 <- levels(e1)
 	ord1 <- TRUE
     }
-    if (nzchar(.Method[2])) {
+    if (nzchar(.Method[2L])) {
 	l2 <- levels(e2)
 	ord2 <- TRUE
     }

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -52,9 +52,9 @@ static void Y_bessel(double *x, double *alpha, long *nb,
 double bessel_y(double x, double alpha)
 {
     long nb, ncalc;
-    double *by;
+    double na, *by;
 #ifndef MATHLIB_STANDALONE
-    unsigned int vmax;
+    char *vmax;
 #endif
 
 #ifdef IEEE_754
@@ -65,13 +65,15 @@ double bessel_y(double x, double alpha)
 	ML_ERROR(ME_RANGE, "bessel_y");
 	return ML_NAN;
     }
+    na = floor(alpha);
     if (alpha < 0) {
 	/* Using Abramowitz & Stegun  9.1.2
 	 * this may not be quite optimal (CPU and accuracy wise) */
 	return(bessel_y(x, -alpha) * cos(M_PI * alpha) -
-	       bessel_j(x, -alpha) * sin(M_PI * alpha));
+	       ((alpha == na) ? 0 :
+		bessel_j(x, -alpha) * sin(M_PI * alpha)));
     }
-    nb = 1+ (long)floor(alpha);/* nb-1 <= alpha < nb */
+    nb = 1+ (long)na;/* nb-1 <= alpha < nb */
     alpha -= (nb-1);
 #ifdef MATHLIB_STANDALONE
     by = (double *) calloc(nb, sizeof(double));

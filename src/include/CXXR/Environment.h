@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -113,6 +113,24 @@ namespace CXXR {
 	      m_single_stepping(false)
 	{}
 
+	/** @brief Base environment.
+	 *
+	 * @return Pointer to the base environment.
+	 */
+	static Environment* base()
+	{
+	    return s_base;
+	}
+
+	/** @brief Base namespace.
+	 *
+	 * @return Pointer to the base namespace.
+	 */
+	static Environment* baseNamespace()
+	{
+	    return s_base_namespace;
+	}
+
 	/** @brief Access the enclosing Environment.
 	 *
 	 * @return pointer to the enclosing Environment.
@@ -138,6 +156,15 @@ namespace CXXR {
 	const Frame* frame() const
 	{
 	    return m_frame;
+	}
+
+	/** @brief Global environment.
+	 *
+	 * @return Pointer to the global environment.
+	 */
+	static Environment* global()
+	{
+	    return s_global;
 	}
 
 	/** @brief Replace the enclosing environment.
@@ -197,6 +224,13 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	// Predefined environments.  R_EmptyEnvironment has no special
+	// significance in CXXR, and may be abolished, so is not
+	// included here:
+	static Environment* s_base;
+	static Environment* s_base_namespace;
+	static Environment* s_global;
+
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
 	bool m_single_stepping;
@@ -206,6 +240,12 @@ namespace CXXR {
 	// compiler-generated versions:
 	Environment(const Environment&);
 	Environment& operator=(const Environment&);
+
+	static void cleanup() {}
+
+	static void initialize();
+
+	friend class SchwarzCounter<Environment>;
     };
 
     /** @brief Search for a Binding for a Symbol.
@@ -247,6 +287,51 @@ namespace CXXR {
      */
     std::pair<const Environment*, const Frame::Binding*>
     findBinding(const Symbol* symbol, const Environment* env);
+
+    /** @brief Search for a Binding of a Symbol to a FunctionBase.
+     *
+     * This function looks for a Binding of \a symbol, and tests
+     * whether the Binding's value is a FunctionBase.
+     *
+     * If a Binding of \a symbol to a Promise is encountered, the
+     * Promise is forced (within the Binding's environment) before
+     * testing whether the value of the Promise is a FunctionBase.  In
+     * this case, if the predicate is satisfied, the result of
+     * evaluating the Promise is part of the returned value.
+     *
+     * If, in the course of searching for a suitable Binding, a
+     * Binding of \a symbol to R_MissingArg is encountered, an error
+     * is raised.
+     *
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding to a FunctionBas,
+     * then any read monitor for that Binding is called.
+     *
+     * @param symbol Pointer to the Symbol for which a Binding is
+     *          sought.
+     *
+     * @param env Pointer to the Environment in which the search for a
+     *          Binding is to start.  Must not be null.
+     *
+     * @param inherits If false, only the Frame of \a env will be
+     *          searched; if true, the search will propagate as
+     *          necessary to enclosing environments until either a
+     *          Binding to a FunctionBase is found, or the chain of
+     *          enclosing environments is exhausted.
+     *
+     * @return If a Binding to a FunctionBase was found, the
+     * first element of of the pair is a pointer to the Environment in
+     * which it was found, and the second element is the value of the
+     * Binding, except that if the value was a Promise, the second
+     * element is the result of evaluating the Promise.  If no Binding
+     * satisfying the predicate was found, both elements of the pair
+     * are null pointers.
+     */
+    std::pair<Environment*, FunctionBase*>
+    findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
 
     /** @brief Search for a Binding whose value satisfies a predicate.
      *
@@ -299,33 +384,41 @@ namespace CXXR {
 		    UnaryPredicate pred, bool inherits)
     {
 	using namespace std;
-	RObject* val;
+	RObject* val = 0;
 	Frame::Binding* bdg;
 	bool found = false;
 	do {
-	    pair<Frame::Binding*, RObject*> pr
-		= env->frame()->forcedValue(symbol, env);
-	    if (pr.first) {
-		bdg = pr.first;
-		val = pr.second;
+	    bdg = env->frame()->binding(symbol);
+	    if (bdg) {
+		pair<RObject*, bool> pr = bdg->forcedValue();
+		// If a Promise was forced, this may have invalidated
+		// 'bdg' (Um, is this actually possible?), so we look
+		// it up again.  However, beware that in this event,
+		// the subsequent call to monitorRead() will be
+		// applied to the wrong Binding, i.e. not the one from
+		// which 'val' was derived.  It's hard to see how to
+		// avoid this, because by the time that we've verified
+		// that 'val' satisfies the predicate, the original
+		// binding may have been destroyed.
+		if (pr.second)
+		    bdg = env->frame()->binding(symbol);
+		val = pr.first;
 		found = pred(val);
 	    }
-	    if (!found)
-		env = env->enclosingEnvironment();
-	} while (!found && inherits && env);
+	} while (!found && inherits
+		 && (env = env->enclosingEnvironment()));
 	if (found) {
-	    env->frame()->monitorRead(*bdg);
+	    // Invoke read monitor (if any);
+	    bdg->rawValue();
 	    return make_pair(env, val);
 	}
 	return pair<Environment*, RObject*>(0, 0);
     }
-	    
-    // Predefined Environments visible in 'namespace CXXR':
-    extern const GCRoot<Environment> EmptyEnvironment;
-    extern const GCRoot<Environment> BaseEnvironment;
-    extern const GCRoot<Environment> GlobalEnvironment;
-    extern const GCRoot<Environment> BaseNamespace;
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;
+}
 
 extern "C" {
 #else /* if not __cplusplus */
@@ -335,7 +428,7 @@ extern "C" {
 
 #endif
 
-    /* C-visible names for CXXR::EmptyEnvironment etc. */
+    /* C-visible names for predefined environments */
     extern SEXP R_EmptyEnv;
     extern SEXP R_BaseEnv;
     extern SEXP R_GlobalEnv;
@@ -462,13 +555,13 @@ extern "C" {
      * @todo No binding to R_UnboundValue ought to be created.
      */
 #ifndef __cplusplus
-    void SET_SYMVALUE(SEXP x, SEXP v);
+    void SET_SYMVALUE(SEXP x, SEXP val);
 #else
-    inline void SET_SYMVALUE(SEXP x, SEXP v)
+    inline void SET_SYMVALUE(SEXP x, SEXP val)
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	BaseEnvironment->frame()->obtainBinding(sym)->setValue(v);
+	Environment::base()->frame()->obtainBinding(sym)->setValue(val);
     }
 #endif
 
@@ -487,7 +580,7 @@ extern "C" {
     {
 	using namespace CXXR;
 	const Symbol* sym = SEXP_downcast<Symbol*>(x);
-	Frame::Binding* bdg = BaseEnvironment->frame()->binding(sym);
+	Frame::Binding* bdg = Environment::base()->frame()->binding(sym);
 	return bdg ? bdg->value() : Symbol::unboundValue();
     }
 #endif

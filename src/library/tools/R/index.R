@@ -37,8 +37,9 @@ function(dataDir, contents)
     ## We could also have an interface like
     ##   .build_data_index(dir, contents = NULL)
     ## where @code{dir} is the path to a package's root source dir and
-    ## contents is Rdcontents(list_files_with_type(file.path(dir, "man"),
-    ## "docs")).
+    ## contents is
+    ##    Rd_contents(list_files_with_type(file.path(dir, "man"),
+    ##                                     "docs")).
     ## </NOTE>
 
     if(!file_test("-d", dataDir))
@@ -141,11 +142,11 @@ function(demoDir)
 print.check_demo_index <-
 function(x, ...)
 {
-    if(length(x$missing_from_index) > 0L) {
+    if(length(x$missing_from_index)) {
         writeLines("Demos with missing or empty index information:")
         print(x$missing_from_index)
     }
-    if(length(x$missing_from_demos) > 0L) {
+    if(length(x$missing_from_demos)) {
         writeLines("Demo index entries without corresponding demo:")
         print(x$missing_from_demos)
     }
@@ -204,27 +205,26 @@ function(contents, packageName, defaultEncoding = NULL)
         ## If there are no aliases at all, cbind() below would give
         ## matrix(packageName, ncol = 1L).  (Of course, Rd objects
         ## without aliases are useless ...)
-        if(length(tmp <- unlist(aliases)) > 0L)
+        if(length(tmp <- unlist(aliases)))
             dbAliases <-
                 cbind(tmp, rep.int(IDs, sapply(aliases, length)),
                       packageName)
         ## And similarly if there are no keywords at all.
-        if(length(tmp <- unlist(keywords)) > 0L)
+        if(length(tmp <- unlist(keywords)))
             dbKeywords <-
                 cbind(tmp, rep.int(IDs, sapply(keywords, length)),
                       packageName)
         ## Finally, concepts are a feature added in R 1.8 ...
         if("Concepts" %in% colnames(contents)) {
             concepts <- contents[, "Concepts"]
-            if(length(tmp <- unlist(concepts)) > 0L)
+            if(length(tmp <- unlist(concepts)))
                 dbConcepts <-
                     cbind(tmp, rep.int(IDs, sapply(concepts, length)),
                           packageName)
         }
     }
-    else {
+    else
         dbBase <- matrix(character(), ncol = 7L)
-    }
 
     colnames(dbBase) <-
         c("Package", "LibPath", "ID", "name", "title", "topic",
@@ -239,8 +239,21 @@ function(contents, packageName, defaultEncoding = NULL)
     list(dbBase, dbAliases, dbKeywords, dbConcepts)
 }
 
+### * .build_links_index
 
-### Local variables: ***
+.build_links_index <-
+function(contents, package)
+{
+    if(length(contents)) {
+        aliases <- contents$Aliases
+        lens <- sapply(aliases, length)
+        files <- sub("\\.[Rr]d$", "\\.html", contents$File)
+        structure(file.path("../..", package, "html", rep.int(files, lens)),
+                  names = unlist(aliases))
+    } else character()
+}
+
+
 ### mode: outline-minor ***
 ### outline-regexp: "### [*]+" ***
 ### End: ***

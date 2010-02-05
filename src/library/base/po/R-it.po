@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-08 14:13\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
 "PO-Revision-Date: 2005-02-16 08:34\n"
 "Last-Translator: Stefano M. Iacus <Stefano.Iacus@R-project.org>\n"
 "Language-Team: Italian\n"
@@ -211,6 +211,10 @@ msgstr "si possono scrivere solo oggetti di tipo character"
 msgid "supplied timeout must be NULL or a non-negative number"
 msgstr "il timeout indicato deve essere NULL o un numero non negativo"
 
+#, fuzzy
+msgid "'from' must be raw or character"
+msgstr "'normal.kind' deve essere una stringa di caratteri di lunghezza 1"
+
 msgid "'x' must be numeric"
 msgstr "'x' deve essere numerico"
 
@@ -236,7 +240,8 @@ msgstr "'row.names' mancanti non sono permesse"
 msgid "invalid 'dimnames' given for data frame"
 msgstr "'dimnames' fornita per i ldata frame non valida"
 
-msgid "cannot coerce class \"%s\" into a data.frame"
+#, fuzzy
+msgid "cannot coerce class %s into a data.frame"
 msgstr "non posso trasformare un oggetto di classe \"%s\" in un data.frame"
 
 msgid "invalid 'row.names', length %d for a data frame with %d rows"
@@ -280,11 +285,23 @@ msgstr ""
 "row.names ricavati da una variabile con pochi elementi e quindi non "
 "utlizzabili"
 
+#, fuzzy
+msgid "named arguments other than 'drop' are discouraged"
+msgstr "'row.names' mancanti non sono permesse"
+
 msgid "drop argument will be ignored"
 msgstr "l'argomento drop verrà ignorato"
 
 msgid "undefined columns selected"
 msgstr "selezionate colonne non definite"
+
+#, fuzzy
+msgid "named arguments other than 'exact' are discouraged"
+msgstr "'row.names' mancanti non sono permesse"
+
+#, fuzzy
+msgid "named arguments are discouraged"
+msgstr "'row.names' duplicate non sono permesse"
 
 msgid "rhs is the wrong length for indexing by a logical matrix"
 msgstr ""
@@ -551,7 +568,11 @@ msgstr "'x' deve essere una matrice quadrata"
 msgid "determinant not currently defined for complex matrices"
 msgstr "il deteminante di matrici complesse non è definito"
 
-msgid "first argument is array, but not matrix."
+msgid "'nrow' or 'ncol' cannot be specified when 'x' is a matrix"
+msgstr ""
+
+#, fuzzy
+msgid "'x' is an array, but not 1D."
 msgstr "il primo argomento è un array, ma non una matrice"
 
 msgid "only matrix diagonals can be replaced"
@@ -601,9 +622,6 @@ msgstr "matrice 0 x 0"
 msgid "non-square matrix in 'eigen'"
 msgstr "matrice non quadrata in 'eigen'"
 
-msgid "numeric or complex values required in 'eigen'"
-msgstr "valori numeric o complex necessari in 'eigen'"
-
 msgid "'ch' returned code %d in 'eigen'"
 msgstr "'ch' ha restituito codice %d in 'eigen'"
 
@@ -644,6 +662,10 @@ msgstr "nessun file su cui copiare"
 msgid "more 'from' files than 'to' files"
 msgstr "ci sono più file 'from' che file 'to'"
 
+#, fuzzy
+msgid "'recursive' will be ignored"
+msgstr "l'argomento drop verrà ignorato"
+
 msgid "file can not be copied both 'from' and 'to'"
 msgstr "il file non può essere copiato sia da 'from' che su 'to'"
 
@@ -682,8 +704,11 @@ msgstr "'vec' contiene NA"
 msgid "'vec' must be sorted non-decreasingly"
 msgstr "'vec' deve essere ordinato in ordine non decrescente"
 
-msgid "'mode' must be \"double\" (\"real\") or \"integer\""
-msgstr "'mode' deve essere \"double\" (\"real\") o \"integer\""
+msgid "using the first element of 'value' of type expression"
+msgstr ""
+
+msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
+msgstr "'mode' deve essere \"double\" (\"real\"), \"integer\" o \"character\""
 
 msgid "coercing argument to \"character\" for format=\"s\""
 msgstr "trasformo l'argomento in \"character\" in format=\"s\""
@@ -739,6 +764,9 @@ msgstr "le componenti sconosciute della distanza verranno ignorate"
 msgid "'max.distance' components must be non-negative"
 msgstr "le componenti di 'max.distance' devono essere non negative"
 
+msgid "norm '%s' currently always uses exact = FALSE"
+msgstr ""
+
 #, fuzzy
 msgid "triangular matrix should be square"
 msgstr "la matrice deve essere quadrata"
@@ -756,6 +784,25 @@ msgstr ""
 
 msgid "package '%s' was built under R version %s"
 msgstr "il pacchetto '%s' è stato creato con R versione %s"
+
+#, fuzzy
+msgid ""
+"package '%s' was built under R version %s and help will not work correctly\n"
+"Please re-install it"
+msgstr ""
+"il pacchetto '%s' è stato creato prima di R 2.0.0: si prega di re-installarlo"
+
+#, fuzzy
+msgid ""
+"package '%s' was built under R version %s and help may not work correctly"
+msgstr "il pacchetto '%s' è stato creato con R versione %s"
+
+#, fuzzy
+msgid ""
+"package '%s' claims to be built under R version %s but is missing some help "
+"files and needs to be re-installed"
+msgstr ""
+"il pacchetto '%s' è stato creato prima di R 2.0.0: si prega di re-installarlo"
 
 msgid "package '%s' was built for %s"
 msgstr "il pacchetto '%s' è stato creato per %s"
@@ -789,29 +836,15 @@ msgstr ""
 msgid "invalid package name"
 msgstr "nome non valido"
 
-msgid "package '%s' has been merged into '%s'"
-msgstr "il pacchetto '%s' è stato integrato in '%s'"
-
-msgid "package 'lqs' has been moved back to package 'MASS'"
-msgstr "il pacchetto 'lqs' è stato reinserito nel pacchetto 'MASS'"
-
-msgid "package 'MASS' has now been loaded"
-msgstr "il pacchetto 'MASS' è stato caricato"
-
-msgid "package 'MASS' seems to be missing from this R installation"
-msgstr "il pacchetto 'MASS' sembra mancare in questa installazione di R"
-
-msgid "there is no package called '%s', version %s"
-msgstr "non c'è alcun pacchetto chiamato '%s', versione %s"
-
 msgid "there is no package called '%s'"
 msgstr "non c'è alcun pacchetto chiamato '%s'"
 
 msgid "no library trees found in 'lib.loc'"
 msgstr ""
 
-msgid "'%s' is not a valid package -- installed < 2.0.0?"
-msgstr "'%s' non è un pacchetto valido -- installato < 2.0.0?"
+#, fuzzy
+msgid "'%s' is not a valid installed package"
+msgstr "'%s' non è una scelta valida"
 
 msgid "'%s' not found on search path, using pos = 2"
 msgstr "'%s' non trovato nel percorso di ricerca, uso pos = 2"
@@ -1037,7 +1070,7 @@ msgstr ""
 "Il 'trace' delle funzioni richiede il pacchetto method, ma non è possibile "
 "caricare il namespace methods"
 
-msgid "Expected a single logical value for the S4 object state"
+msgid "Expected a single logical value for the S4 state flag"
 msgstr ""
 
 msgid "invalid to change the storage mode of a factor"
@@ -1094,7 +1127,13 @@ msgstr ""
 msgid "package '%s' does not have a name space"
 msgstr "il pacchetto '%s' non ha un namespace"
 
-msgid "in '%s' classes for export not defined: %s"
+msgid ""
+"exportClassPattern specified in NAMESPACE but no matching classes in package "
+"'%s'"
+msgstr ""
+
+#, fuzzy
+msgid "in package '%s' classes for export not defined: %s"
 msgstr "in '%s', classi da esportare non definite: %s"
 
 msgid "in '%s' methods for export not found: %s"
@@ -1118,10 +1157,11 @@ msgstr "non trovato"
 msgid "not loading a name space"
 msgstr "non sto caricando un namespace"
 
-msgid "name space '%s' is loaded"
-msgstr "namespace '%s' caricato"
-
-msgid "%s failed in unloadNamespace(%s)"
+#, fuzzy
+msgid ""
+"%s failed in unloadNamespace(\"%s\"), details:\n"
+"  call: %s\n"
+"  message: %s"
 msgstr "%s non riuscito in unloadNamespace(%s)"
 
 #, fuzzy
@@ -1424,9 +1464,6 @@ msgstr "'x' e 'y' devono avere la stessa lunghezza"
 msgid "incorrect values of 'indent' and 'width'"
 msgstr "valori non corretti per 'indent' e 'width'"
 
-msgid "argument to 'svd' must be numeric"
-msgstr "l'argomento di 'svd' deve essere numeric"
-
 msgid "'nv' must be 0 or ncol(x)"
 msgstr "'nv' deve essere 0 o ncol(x)"
 
@@ -1538,6 +1575,35 @@ msgstr "'cmd' non può essere eseguito"
 msgid "'%s' execution failed with error code %d"
 msgstr "l'esecuzione di 'cmd' non è fallita con errore"
 
+msgid "-l option without value"
+msgstr ""
+
+#, fuzzy
+msgid "ERROR: no packages specified"
+msgstr "nessun pacchetto trovato"
+
+msgid "Removing from library"
+msgstr ""
+
+msgid "ERROR: cannot cd to directory"
+msgstr ""
+
+msgid "ERROR: no permission to remove from directory"
+msgstr ""
+
+msgid "T used instead of TRUE"
+msgstr ""
+
+msgid "F used instead of FALSE"
+msgstr ""
+
+msgid "items"
+msgstr ""
+
+#, fuzzy
+msgid "have been removed from the search path"
+msgstr "'%s' non trovato nel percorso di ricerca, uso pos = 2"
+
 msgid "cannot find name space environment"
 msgstr ""
 
@@ -1592,6 +1658,37 @@ msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] "Messaggio di avvertimento:\n"
 msgstr[1] "Messaggi di avvertimento:\n"
+
+#~ msgid "name space '%s' is loaded"
+#~ msgstr "namespace '%s' caricato"
+
+#, fuzzy
+#~ msgid "extra arguments ignored:"
+#~ msgstr "l'argomento drop verrà ignorato"
+
+#~ msgid "numeric or complex values required in 'eigen'"
+#~ msgstr "valori numeric o complex necessari in 'eigen'"
+
+#~ msgid "argument to 'svd' must be numeric"
+#~ msgstr "l'argomento di 'svd' deve essere numeric"
+
+#~ msgid "package '%s' has been merged into '%s'"
+#~ msgstr "il pacchetto '%s' è stato integrato in '%s'"
+
+#~ msgid "package 'lqs' has been moved back to package 'MASS'"
+#~ msgstr "il pacchetto 'lqs' è stato reinserito nel pacchetto 'MASS'"
+
+#~ msgid "package 'MASS' has now been loaded"
+#~ msgstr "il pacchetto 'MASS' è stato caricato"
+
+#~ msgid "package 'MASS' seems to be missing from this R installation"
+#~ msgstr "il pacchetto 'MASS' sembra mancare in questa installazione di R"
+
+#~ msgid "there is no package called '%s', version %s"
+#~ msgstr "non c'è alcun pacchetto chiamato '%s', versione %s"
+
+#~ msgid "'%s' is not a valid package -- installed < 2.0.0?"
+#~ msgstr "'%s' non è un pacchetto valido -- installato < 2.0.0?"
 
 #~ msgid "non-numeric data type in frame"
 #~ msgstr "dati in frame non di tipo numeric"

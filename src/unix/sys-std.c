@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -208,6 +208,9 @@ InputHandler * initStdinHandler(void)
   This sets the global variable InputHandlers if it is not already set.
   In the standard interactive case, this will have been set to be the
   BasicInputHandler object.
+  Returns the newly created handler which can be used in a call to
+  removeInputHandler (prior to R 2.10.0 it returned the handler root [never
+  used] which made it impossible to identify the new handler).
  */
 InputHandler *
 addInputHandler(InputHandler *handlers, int fd, InputHandlerProc handler,
@@ -233,7 +236,7 @@ addInputHandler(InputHandler *handlers, int fd, InputHandlerProc handler,
     }
     tmp->next = input;
 
-    return(handlers);
+    return(input);
 }
 
 /*
@@ -392,7 +395,7 @@ void R_runHandlers(InputHandler *handlers, fd_set *readMask)
 	    next = tmp->next;
 	    if(FD_ISSET(tmp->fileDescriptor, readMask)
 	       && tmp->handler != NULL)
-		tmp->handler((void*) NULL);
+		tmp->handler((void*) tmp->userData);
 	    tmp = next;
 	}
 }
@@ -698,9 +701,6 @@ static void initialize_rlcompletion(void)
     /* Tell the completer that we want a crack first. */
     rl_attempted_completion_function = R_custom_completion;
 
-    /* Don't want spaces appended at the end */
-    rl_completion_append_character = '\0';
-
     /* token boundaries.  Includes *,+ etc, but not $,@ because those
        are easier to handle at the R level if the whole thing is
        available.  However, this breaks filename completion if partial
@@ -755,6 +755,10 @@ R_custom_completion(const char *text, int start, int end)
 	startCall = PROTECT(lang2(RComp_assignStartSym, ScalarInteger(start))),
 	endCall = PROTECT(lang2(RComp_assignEndSym,ScalarInteger(end)));
 
+    /* Don't want spaces appended at the end.  Need to do this
+       everytime because readline (>5) resets it to space. */
+    rl_completion_append_character = '\0';
+
     eval(linebufferCall, rcompgen_rho);
     eval(startCall, rcompgen_rho);
     eval(endCall, rcompgen_rho);
@@ -799,7 +803,7 @@ static char *R_completion_generator(const char *text, int state)
 	if (ncomp > 0) {
 	    compstrings = (char **) malloc(ncomp * sizeof(char*));
 	    for (i = 0; i < ncomp; i++)
-		compstrings[i] = strdup(CHAR(STRING_ELT(completions, i)));
+		compstrings[i] = strdup(translateChar(STRING_ELT(completions, i)));
 	}
 	UNPROTECT(4);
     }
@@ -853,7 +857,6 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 	}
 	/* translate if necessary */
 	if(strlen(R_StdinEnc) && strcmp(R_StdinEnc, "native.enc")) {
-#if defined(HAVE_ICONV) && defined(ICONV_LATIN1)
 	    size_t res, inb = strlen((char *)buf), onb = len;
 	    /* NB: this is somewhat dangerous.  R's main loop and
 	       scan will not call it with a larger value, but
@@ -872,12 +875,6 @@ Rstd_ReadConsole(const char *prompt, unsigned char *buf, int len,
 	    if(err) printf(_("<ERROR: re-encoding failure from encoding '%s'>\n"),
 			   R_StdinEnc);
 	    strncpy((char *)buf, obuf, len);
-#else
-	    if(!cd) {
-		warning(_("re-encoding is not available on this system"));
-		cd = (void *)1;
-	    }
-#endif
 	}
 /* according to system.txt, should be terminated in \n, so check this
    at eof and error */
@@ -1072,9 +1069,12 @@ void attribute_hidden Rstd_CleanUp(SA_TYPE saveact, int status, int runLast)
 #ifdef HAVE_LIBREADLINE
 # ifdef HAVE_READLINE_HISTORY_H
 	if(R_Interactive && UsingReadline) {
+	    int err;
 	    R_setupHistory(); /* re-read the history size and filename */
 	    stifle_history(R_HistorySize);
-	    write_history(R_HistoryFile);
+	    err = write_history(R_HistoryFile);
+	    if(err) warning(_("problem in saving the history file '%s'"), 
+			    R_HistoryFile);
 	}
 # endif /* HAVE_READLINE_HISTORY_H */
 #endif /* HAVE_LIBREADLINE */
@@ -1239,10 +1239,15 @@ void attribute_hidden Rstd_savehistory(SEXP call, SEXP op, SEXP args, SEXP env)
     strcpy(file, p);
 #if defined(HAVE_LIBREADLINE) && defined(HAVE_READLINE_HISTORY_H)
     if(R_Interactive && UsingReadline) {
-	write_history(file);
+	int err;
+	err = write_history(file);
+	if(err) error(_("problem in saving the history file '%s'"), file);
+	/* Note that q() uses stifle_history, but here we do not want
+	 * to truncate the active history when saving during a session */
 #ifdef HAVE_HISTORY_TRUNCATE_FILE
 	R_setupHistory(); /* re-read the history size */
-	history_truncate_file(file, R_HistorySize);
+	err = history_truncate_file(file, R_HistorySize);
+	if(err) warning(_("problem in truncating the history file"));
 #endif
     } else errorcall(call, _("no history available to save"));
 #else

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -75,10 +75,10 @@ LibExtern int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 int R_IsNA(double);		/* True for R's NA only */
 Rboolean R_IsNaN(double);		/* True for special NaN, *not* for NA */
 Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
-
 #define ISNA(x)	       R_IsNA(x)
-/* True for *both* NA and NaN.
-   NOTE: some systems do not return 1 for TRUE. 
+
+/* ISNAN(): True for *both* NA and NaN.
+   NOTE: some systems do not return 1 for TRUE.
    Also note that C++ math headers specifically undefine
    isnan if it is a macro (it is on OS X and in C99),
    hence the workaround.  This code also appears in Rmath.h

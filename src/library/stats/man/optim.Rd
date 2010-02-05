@@ -1,6 +1,6 @@
 % File src/library/stats/man/optim.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{optim}
@@ -112,17 +112,20 @@ optim(par, fn, gr = NULL, \dots,
       turns the problem into a maximization problem. Optimization is
       performed on \code{fn(par)/fnscale}.}
     \item{\code{parscale}}{A vector of scaling values for the parameters.
-	Optimization is performed on \code{par/parscale} and these should be
-	comparable in the sense that a unit change in any element produces
-	about a unit change in the scaled value.}
+        Optimization is performed on \code{par/parscale} and these should be
+        comparable in the sense that a unit change in any element produces
+        about a unit change in the scaled value.}
     \item{\code{ndeps}}{A vector of step sizes for the finite-difference
       approximation to the gradient, on \code{par/parscale}
       scale. Defaults to \code{1e-3}.}
     \item{\code{maxit}}{The maximum number of iterations. Defaults to
       \code{100} for the derivative-based methods, and
-      \code{500} for \code{"Nelder-Mead"}. For \code{"SANN"}
-      \code{maxit} gives the total number of function evaluations. There is
-      no other stopping criterion. Defaults to \code{10000}.}
+      \code{500} for \code{"Nelder-Mead"}.
+
+      For \code{"SANN"} \code{maxit} gives the total number of function
+      evaluations: there is no other stopping criterion. Defaults to
+      \code{10000}.
+    }
     \item{\code{abstol}}{The absolute convergence tolerance. Only
       useful for non-negative functions, as a tolerance for reaching zero.}
     \item{\code{reltol}}{Relative convergence tolerance.  The algorithm
@@ -170,7 +173,8 @@ optim(par, fn, gr = NULL, \dots,
     to compute the Hessian, if requested, and any calls to \code{fn} to
     compute a finite-difference approximation to the gradient.}
   \item{convergence}{An integer code. \code{0} indicates successful
-    convergence. Error codes are
+    completion (which is always the case for \code{"SANN"}). Possible
+  error codes are
     \describe{
       \item{\code{1}}{indicates that the iteration limit \code{maxit}
       had been reached.}
@@ -184,7 +188,7 @@ optim(par, fn, gr = NULL, \dots,
   \item{message}{A character string giving any additional information
     returned by the optimizer, or \code{NULL}.}
   \item{hessian}{Only if argument \code{hessian} is true. A symmetric
-    matrix giving an estimate of the Hessian at the solution found. Note
+    matrix giving an estimate of the Hessian at the solution found.  Note
     that this is the Hessian of the unconstrained problem even if the
     box constraints are active.}
 }
@@ -201,7 +205,7 @@ optim(par, fn, gr = NULL, \dots,
 
   The code for method \code{"L-BFGS-B"} is based on Fortran code by Zhu,
   Byrd, Lu-Chen and Nocedal obtained from Netlib (file
-  \file{opt/lbfgs\_bcm.shar}: another version is in \file{toms/778}).
+  \file{opt/lbfgs_bcm.shar}: another version is in \file{toms/778}).
 
   The code for method \code{"SANN"} was contributed by A. Trapletti.
 }

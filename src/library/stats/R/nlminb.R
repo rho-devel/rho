@@ -65,17 +65,26 @@ nlminb <-
     if (any(lower != -Inf) || any(upper != Inf)) {
         low <- rep(as.double(lower), length.out = length(par))
         upp <- rep(as.double(upper), length.out = length(par))
-    } else low <- upp <- numeric(0)
+    } else low <- upp <- numeric(0L)
 
     ## Do the optimization
     .Call(R_port_nlminb, obj, grad, hess, rho, low, upp,
           d = rep(as.double(scale), length.out = length(par)), iv, v)
 
     ans <- list(par = get(".par", envir = rho))
-    ans$objective <- v[10]
-    ans$convergence <- as.integer(if (iv[1] %in% 3:6) 0 else 1)
-    ans$message <-
-        switch(as.character(iv[1]),
+    ans$objective <- v[10L]
+    ans$convergence <- as.integer(if (iv[1] %in% 3L:6L) 0L else 1L)
+
+    ans$message <- if (19 <= iv[1] && iv[1] <= 43) {
+	if(any(B <- iv[1] == cpos))
+	    sprintf("'control' component '%s' = %g, is out of range",
+		    names(cpos)[B], v[iv[1]])
+	else
+	    sprintf("V[IV[1]] = V[%d] = %g is out of range (see PORT docu.)",
+		    iv[1], v[iv[1]])
+    }
+    else
+	switch(as.character(iv[1]),
                "3" = "X-convergence (3)",
                "4" = "relative convergence (4)",
                "5" = "both X-convergence and relative convergence (5)",

@@ -50,16 +50,16 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   \code{\link{xtfrm}}.
 
   If \code{partial} is not \code{NULL}, it is taken to contain indices
-  of elements of \code{x} which are to be placed in their correct
-  positions by partial sorting.  After the sort, the values specified in
-  \code{partial} are in their correct position in the sorted array.  Any
-  values smaller than these values are guaranteed to have a smaller
-  index in the sorted array and any values which are greater are
-  guaranteed to have a bigger index in the sorted array.  (This is included
-  for efficiency, and many of the options are not available for partial
-  sorting.  It is only substantially more efficient if \code{partial} has a
-  handful of elements, and a full sort is done if there
-  are more than 10.)  Names are discarded for partial sorting.
+  of elements of the result which are to be placed in their correct
+  positions in the sorted array by partial sorting.  For each of the
+  result values in a specified position, any values smaller than that
+  one are guaranteed to have a smaller index in the sorted array and any
+  values which are greater are guaranteed to have a bigger index in the
+  sorted array.  (This is included for efficiency, and many of the
+  options are not available for partial sorting.  It is only
+  substantially more efficient if \code{partial} has a handful of
+  elements, and a full sort is done if there are more than 10.)  Names
+  are discarded for partial sorting.
 
   Complex values are sorted first by the real part, then the imaginary
   part.
@@ -91,7 +91,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   \code{[} (and also that \code{\link{order}} will work, which is not
   the case for a class based on a list).
 
-  For \code{sort.int} the sorted vector unless
+  For \code{sort.int} the value is the sorted vector unless
   \code{index.return} is true, when the result is
   a list with components named \code{x} and \code{ix} containing the
   sorted numbers and the ordering index vector.  In the latter case,
@@ -108,7 +108,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 
   Sedgewick, R. (1986)
   A new upper bound for Shell sort.
@@ -119,6 +119,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   \emph{Communications of the ACM} \bold{12}, 185--187.
 }
 \seealso{
+  \sQuote{\link{Comparison}} for how character strings are collated.
+  
   \code{\link{order}} for sorting on or reordering multiple variables.
 
   \code{\link{is.unsorted}}. \code{\link{rank}}.
@@ -143,7 +145,8 @@ x <- c(1:3, 3:5, 10)
 is.unsorted(x)                #-> FALSE: is sorted
 is.unsorted(x, strictly=TRUE) #-> TRUE : is not (and cannot be) sorted strictly
 
-\dontrun{## Small speed comparison simulation:
+\dontrun{
+## Small speed comparison simulation:
 N <- 2000
 Sim <- 20
 rep <- 1000 # << adjust to your CPU

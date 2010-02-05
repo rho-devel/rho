@@ -71,7 +71,7 @@ el <-
   ##
   ## the definition allows indexing beyond current length of vector
   ## (consistent with [[]] in S but not in R).
-  object[where][[1]]
+  object[where][[1L]]
 
 "el<-" <-
   ## set the element of a vector; numeric index only.
@@ -124,16 +124,16 @@ findFunction <-
 }
 
 existsFunction <- function(f, generic=TRUE, where = topenv(parent.frame()))
-    length(findFunction(f, generic, where)) > 0
+    length(findFunction(f, generic, where)) > 0L
 
 Quote <- base::quote #was get("quote" , mode = "function")
 
-.message <- function(...) {
+.message <- function(..., domain = NULL, appendLF = TRUE) {
     ## Output all the arguments, pasted together with no intervening spaces,
     ## wrapping long lines
     text <- paste(..., collapse="", sep="")
     lines <- strwrap(text, width = max(20, 7 * getOption("width") %/% 8))
-    message(paste(lines, collapse="\n"))
+    message(paste(lines, collapse="\n"), domain = domain, appendLF = appendLF)
 }
 
 hasArg <- function(name) {

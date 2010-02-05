@@ -33,6 +33,8 @@ as.expression(x, \dots)
   As an object of mode \code{"expression"} is a list, it can be
   subsetted by both \code{[} and by \code{[[}, the latter extracting
   individual calls etc.
+  
+  \code{expression} and \code{is.expression} are \link{primitive} functions.
 }
 \value{
   \code{expression} returns a vector of type \code{"expression"}
@@ -52,7 +54,7 @@ as.expression(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{call}},

@@ -3,14 +3,14 @@
 #
 # Copyright (C) 2008 The R Foundation
 # This file is distributed under the same license as the R package.
-# Alexey Shipunov <dactylorhiza at gmail> 2008
+# Alexey Shipunov <dactylorhiza at gmail> 2009
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-06-05 19:48\n"
-"PO-Revision-Date: 2008-10-06 16:47-0500\n"
+"POT-Creation-Date: 2009-05-08 17:33\n"
+"PO-Revision-Date: 2009-10-15 02:18-0500\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
@@ -226,6 +226,15 @@ msgstr "загрузка снимка из версии R до 2.0.0"
 msgid "loading snapshot from different R version"
 msgstr "загрузка снимка из другой версии R"
 
+msgid "'nbin' must be numeric of length 1 or 2"
+msgstr "'nbin' должен быть числовым вектором длиной 1 или 2"
+
+msgid "'bandwidth' must be numeric"
+msgstr "'bandwidth' должна быть числовой"
+
+msgid "'bandwidth' must be positive"
+msgstr "'bandwidth' должна быть положительной"
+
 msgid "'r' must be a \"range\", hence of length 2"
 msgstr "'r' должен быть \"range\", то есть длины 2"
 
@@ -268,9 +277,6 @@ msgstr "неправильные аргументы в quartzFonts (должен быть имена шрифтов)"
 msgid "invalid arguments in quartzFonts (need named args)"
 msgstr "неправильные аргументы в quartzFonts (нужны именованные аргументы)"
 
-msgid "invalid value for 'antialias'"
-msgstr "неправильное значение 'antialias'"
-
 msgid "invalid 'filename'"
 msgstr "неправильное 'filename'"
 
@@ -291,6 +297,12 @@ msgstr "неправильное значение 'rescale'"
 
 msgid "can only bring windows devices to the front"
 msgstr "могу лишь переместить устройства windows на первый план"
+
+msgid "'type' not applicable to the R console"
+msgstr "'type' неприменим к консоли R"
+
+msgid "can only manipulate windows devices"
+msgstr "могу работать только с 'windows'-устройствами"
 
 msgid "can only copy from 'windows' devices"
 msgstr "могу копировать лишь с 'windows'-устройств"
@@ -337,6 +349,8 @@ msgstr[0] "%d значение z <= 0 пропущено на логарифмическом графике"
 msgstr[1] "%d значения z <= 0 пропущены на логарифмическом графике"
 msgstr[2] "%d значения z <= 0 пропущены на логарифмическом графике"
 
+#~ msgid "invalid value for 'antialias'"
+#~ msgstr "неправильное значение 'antialias'"
 #~ msgid "quartz() device interactivity reduced without an event loop manager"
 #~ msgstr ""
 #~ "устройство quartz() интерактивно сокращено без использования обработчика "

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,14 +50,14 @@ void attribute_hidden PrintGreeting(void)
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.19-2.8.1, based on:\n");
+    Rprintf("This is CXXR 0.26-2.10.1, based on:\n");
     PrintVersionString(buf);
     Rprintf("%s", buf);
     Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
 	    R_YEAR);
 
     Rprintf("ISBN 3-900051-07-0\n\n");
-    Rprintf(_("CXXR Copyright (C) 2008-9 Andrew Runnalls.  CXXR like\n"));
+    Rprintf(_("CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));

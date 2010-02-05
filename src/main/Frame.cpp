@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,7 +41,10 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Symbol.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/FunctionBase.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/Promise.h"
 
 using namespace std;
 using namespace CXXR;
@@ -51,9 +54,8 @@ using namespace CXXR;
 
 PairList* Frame::Binding::asPairList(PairList* tail) const
 {
-    PairList* ans
-	= new PairList(m_value, tail, const_cast<Symbol*>(symbol()));
-    SET_MISSING(ans, missing());
+    PairList* ans = new PairList(m_value, tail, symbol());
+    SET_MISSING(ans, origin());
     if (isActive()) SET_ACTIVE_BINDING_BIT(ans);
     if (isLocked()) LOCK_BINDING(ans);
     return expose(ans);
@@ -61,16 +63,35 @@ PairList* Frame::Binding::asPairList(PairList* tail) const
 
 // Frame::Binding::assign() is defined in envir.cpp (for the time being).
 	
+pair<RObject*, bool>
+Frame::Binding::forcedValue()
+{
+    bool promise_forced = false;
+    RObject* val = m_value;
+    if (val && val->sexptype() == PROMSXP) {
+	Promise* prom = static_cast<Promise*>(val);
+	if (prom->environment()) {
+	    GCStackRoot<Promise> promrt(prom);
+	    frame()->monitorRead(*this);
+	    val = evaluate(val, 0);
+	    promise_forced = true;
+	}
+	val = prom->value();
+    }
+    return make_pair(val, promise_forced);
+}
+
 void Frame::Binding::fromPairList(PairList* pl)
 {
     const RObject* tag = pl->tag();
     if (tag && tag != m_symbol)
 	Rf_error(_("internal error in %s"),
 		 "Frame::Binding::fromPairList()");
+    Origin pl_origin = Origin(pl->m_missing);
     if (pl->m_active_binding)
-	setFunction(SEXP_downcast<FunctionBase*>(pl->car()));
-    else setValue(pl->car());
-    setMissing(pl->m_missing);
+	setFunction(SEXP_downcast<FunctionBase*>(pl->car()),
+		    pl_origin);
+    else setValue(pl->car(), pl_origin);
     setLocking(pl->m_binding_locked);
 }
     
@@ -85,10 +106,10 @@ void Frame::Binding::initialize(Frame* frame, const Symbol* sym)
     m_symbol = sym;
 }
 
-void Frame::Binding::setFunction(FunctionBase* function)
+void Frame::Binding::setFunction(FunctionBase* function, Origin origin)
 {
-    // See if binding already has a non-null value:
-    if (m_value) {
+    // See if binding already has a non-default value:
+    if (m_value != Symbol::missingArgument()) {
 	if (!isActive())
 	    Rf_error(_("symbol already has a regular binding"));
 	if (isLocked())
@@ -99,14 +120,7 @@ void Frame::Binding::setFunction(FunctionBase* function)
     m_frame->monitorWrite(*this);
 }
 
-void Frame::Binding::setMissing(short int missingval)
-{
-    if (isLocked())
-	Rf_error(_("cannot change missing status of a locked binding"));
-    m_missing = missingval;
-}
-
-void Frame::Binding::setValue(RObject* new_value)
+void Frame::Binding::setValue(RObject* new_value, Origin origin)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
@@ -115,6 +129,7 @@ void Frame::Binding::setValue(RObject* new_value)
 	Rf_error(_("internal error: use %s for active bindings"),
 		 "setFunction()");
     m_value = new_value;
+    m_origin = origin;
     m_frame->monitorWrite(*this);
 }
 
@@ -129,14 +144,12 @@ void Frame::Binding::visitReferents(const_visitor* v) const
     if (m_provenance) m_provenance->conductVisitor(v);
 }
 
-// Frame::forcedValue() is defined in envir.cpp (for the time being).
-
 namespace CXXR {
     void frameReadPairList(Frame* frame, PairList* bindings)
     {
 	for (PairList* pl = bindings; pl != 0; pl = pl->tail()) {
-	    RObject* tag = pl->tag();
-	    Symbol* symbol = dynamic_cast<Symbol*>(tag);
+	    const RObject* tag = pl->tag();
+	    const Symbol* symbol = dynamic_cast<const Symbol*>(tag);
 	    if (!symbol) Rf_error(_("list used to set frame bindings"
 				    " must have symbols as tags throughout"));
 	    Frame::Binding* bdg = frame->obtainBinding(symbol);

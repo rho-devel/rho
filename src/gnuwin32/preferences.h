@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -35,6 +35,8 @@
  *  http://www.r-project.org/Licenses/
  */
  
+#include "guicolors.h"
+
 /*                configuration editor                        */
 
 /* current state */
@@ -51,7 +53,7 @@ struct structGUI
     char style[20];
     int crows, ccols, cx, cy, setWidthOnResize, prows, pcols,
 	cbb, cbl, grx, gry;
-    rgb bg, fg, user, hlt;
+    rgb guiColors[numGuiColors];
     rect MDIsize;
     char language[20];
     int buffered;

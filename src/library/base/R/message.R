@@ -17,7 +17,7 @@
 simpleMessage <-
 function(message, call = NULL)
     structure(list(message = message, call = call),
-              class=c("condition", "message", "simpleMessage"))
+              class = c("simpleMessage", "message", "condition"))
 
 suppressMessages <-
 function(expr)
@@ -29,10 +29,10 @@ message <-
 function(..., domain = NULL, appendLF = TRUE)
 {
     args <- list(...)
-    cond <- if (length(args) == 1 && inherits(args[[1]], "condition")) {
-        if(nargs() > 1)
+    cond <- if (length(args) == 1L && inherits(args[[1L]], "condition")) {
+        if(nargs() > 1L)
             warning("additional arguments ignored in message()")
-        args[[1]]
+        args[[1L]]
     } else {
         msg <- .makeMessage(..., domain=domain, appendLF = appendLF)
         call <- sys.call()
@@ -56,13 +56,12 @@ function(..., domain = NULL, appendLF = TRUE)
 .makeMessage <- function(..., domain = NULL, appendLF = FALSE)
  {
     args <- list(...)
-    if(length(args) > 0) {
+    msg <- if(length(args)) {
         args <- lapply(list(...), as.character)
         if(is.null(domain) || !is.na(domain))
             args <- .Internal(gettext(domain, unlist(args)))
-        msg <- paste(args, collapse = "")
-    }
-    else msg <- ""
+        paste(args, collapse = "")
+    } else ""
     if(appendLF) paste(msg, "\n", sep = "") else msg
 }
 

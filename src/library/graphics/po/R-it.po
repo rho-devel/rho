@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
 "PO-Revision-Date: 2005-02-26 22:56+0100\n"
 "Last-Translator: Stefano M. Iacus <Stefano.Iacus@R-project.org>\n"
 "Language-Team: Italian\n"
@@ -28,6 +28,9 @@ msgstr ""
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr ""
 
+msgid "one of 'x1' and 'y1' must be given"
+msgstr ""
+
 msgid "'x' must be a 2-d contingency table"
 msgstr "'x' deve essere una tabella di contigenza a 2 vie"
 
@@ -40,6 +43,7 @@ msgstr "almeno un termine di 'x' deve essere positivo"
 msgid "incorrect 'col': must be length 2"
 msgstr "'col' non valido: deve essere di lunghezza 2"
 
+#, fuzzy
 msgid "'side' must be in {1:4}"
 msgstr "'side' deve essere in {1:4}"
 
@@ -49,6 +53,7 @@ msgstr "'axp' non valido"
 msgid "invalid 'log'"
 msgstr "'log' non valido"
 
+#, fuzzy
 msgid "invalid positive 'axp[3]'"
 msgstr "valore positivo 'axp[3]' non valido"
 
@@ -251,7 +256,11 @@ msgstr "'text.width' deve essere numeric, >= 0"
 msgid "horizontal specification overrides: Number of columns :="
 msgstr "la specificazione orizzontale eccede: Numero di colonne :="
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr ""
+
+#, fuzzy
+msgid "not using pch[2..] since pch[1L] has multiple chars"
 msgstr "non uso pch[2..] poiché pch[1] contiene più caratteri"
 
 msgid "must specify at least one of 'x' and 'y'"
@@ -343,6 +352,9 @@ msgstr "'figs' deve essere un vettore o una matrice con 4 colonne"
 
 msgid "'figs' must specify at least one screen"
 msgstr "'figs' deve specificare almeno uno schermo"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr ""
 
 msgid "a 2-way table has to be specified"
 msgstr ""

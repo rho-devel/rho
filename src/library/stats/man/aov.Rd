@@ -28,7 +28,7 @@ aov(formula, data = NULL, projections = FALSE, qr = TRUE,
     supplying contrasts for factors only in the \code{Error} term will give
     a warning.}
   \item{\dots}{Arguments to be passed to \code{lm}, such as \code{subset}
-    or \code{na.action}.}
+    or \code{na.action}.  See \sQuote{Details} about \code{weights}.}
 }
 \details{
   This provides a wrapper to \code{lm} for fitting linear models to
@@ -54,7 +54,8 @@ aov(formula, data = NULL, projections = FALSE, qr = TRUE,
   hard to interpret without balance: beware that missing values in the
   response(s) will likely lose the balance.  If there are two or more
   error strata, the methods used are statistically inefficient without
-  balance, and it may be better to use \code{\link[nlme]{lme}}.
+  balance, and it may be better to use \code{\link[nlme]{lme}} in
+  package \pkg{nlme}.
 
   Balance can be checked with the \code{\link{replications}} function.
 
@@ -72,7 +73,7 @@ aov(formula, data = NULL, projections = FALSE, qr = TRUE,
   Chambers, J. M., Freeny, A and Heiberger, R. M. (1992)
   \emph{Analysis of variance; designed experiments.}
   Chapter 5 of \emph{Statistical Models in S}
-  eds J. M. Chambers and T. J. Hastie, Wadsworth \& Brooks/Cole.
+  eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 }
 \author{
   The design was inspired by the S function of the same name described

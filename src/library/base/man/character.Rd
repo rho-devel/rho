@@ -39,6 +39,10 @@ is.character(x)
   back to numeric may change the number.  If you want to convert numbers
   to character with the maximum possible precision, use
   \code{\link{format}}.
+
+  \code{as.character} and \code{is.character} are \link{primitive}, so
+  positional matching is used and any names of supplied arguments are
+  ignored.  This may not be true of their methods.
 }
 \value{
   \code{character} creates a character vector of the specified length.
@@ -63,14 +67,14 @@ is.character(x)
   upper to lower case) and \code{\link{sub}}, \code{\link{grep}} etc for
   string matching and substitutions.  Note that
   \code{help.search(keyword = "character")} gives even more links.
-%
+
   \code{\link{deparse}}, which is normally preferable to
   \code{as.character} for language objects.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 form <- y ~ a + b + c

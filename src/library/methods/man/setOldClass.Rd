@@ -60,9 +60,13 @@ setOldClass(Classes, prototype, where, test = FALSE, S4Class)
 }
 \arguments{
   \item{Classes}{
-    A character vector, giving the names for old-style
+    A character vector, giving the names for S3
     classes, as they would appear on the right side of an assignment of
     the \code{class} attribute in S3 computations.
+
+    In addition to S3 classes, an object type or other valid data part
+    can be specified, if the S3 class is known to require its data to
+    be of that form.
   }
 \item{prototype}{
     An optional object to use as the prototype.  This should be provided
@@ -214,7 +218,15 @@ contain the slots of \code{"A"}.  The additional arguments to
 In order for the new class to inherit S3 methods, the coerce method must
 ensure that the class \code{"A"} object produced has a suitable S3
 class.  The only likely reason to prefer this third approach is that
-class \code{"B"} is not consistent with known attributes in class \code{"A"}.
+class \code{"B"} is not consistent with known attributes in class
+\code{"A"}.
+
+Beginning with version 2.9.0 of \R, objects from a class extending an
+S3 class will be converted to the corresponding S3 class when being
+passed to an S3 method defined for that class (that is, for one of the
+strings in the S3 class attribute).  This is intended to ensure, as
+far as possible, that such methods will work if they work for ordinary
+S3 objects.  See \code{\link{Classes}} for details.
 
  }
 

@@ -22,9 +22,9 @@ contour(x, \dots)
         ylim = range(y, finite = TRUE),
         zlim = range(z, finite = TRUE),
         labcex = 0.6, drawlabels = TRUE, method = "flattest",
-	vfont, axes = TRUE, frame.plot = axes,
+        vfont, axes = TRUE, frame.plot = axes,
         col = par("fg"), lty = par("lty"), lwd = par("lwd"),
-	add = FALSE, \dots)
+        add = FALSE, \dots)
 }
 \arguments{
   \item{x,y}{locations of grid lines at which the values in \code{z} are
@@ -88,7 +88,7 @@ contour(x, \dots)
   i.e. a 90 degree clockwise rotation of the conventional textual
   layout.
 
-  Alternatively, use \code{\link[lattice]{contourplot}} from the
+  Alternatively, use \code{\link[lattice:levelplot]{contourplot}} from the
   \pkg{lattice} package where the \code{\link{formula}} notation allows
   to use vectors \code{x,y,z} of the same length.
 
@@ -100,17 +100,18 @@ contour(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
-  \code{\link{options}("max.countour.segments")} for the maximal
+  \code{\link{options}("max.contour.segments")} for the maximal
   complexity of a single contour line.
 
-  \code{\link[grDevices]{contourLines}},
-  \code{\link{filled.contour}} for color-filled contours,
-  \code{\link[lattice]{contourplot}} (and \code{\link[lattice]{levelplot}})
-  from package \pkg{lattice}.  Further, \code{\link{image}} and the
-  graphics demo which can be invoked as \code{demo(graphics)}.
+  \code{\link{contourLines}}, \code{\link{filled.contour}}
+  for color-filled contours,
+  \code{\link[lattice:levelplot]{contourplot}} (and
+  \code{\link[lattice]{levelplot}}) from package \pkg{lattice}.
+  Further, \code{\link{image}} and the graphics demo which can be
+  invoked as \code{demo(graphics)}.
 }
 \examples{
 require(grDevices) # for colours
@@ -120,7 +121,7 @@ contour(outer(x, x), method = "edge", vfont = c("sans serif", "plain"))
 z <- outer(x, sqrt(abs(x)), FUN = "/")
 image(x, x, z)
 contour(x, x, z, col = "pink", add = TRUE, method = "edge",
-	vfont = c("sans serif", "plain"))
+        vfont = c("sans serif", "plain"))
 contour(x, x, z, ylim = c(1, 6), method = "simple", labcex = 1)
 contour(x, x, z, ylim = c(-6, 6), nlev = 20, lty = 2, method = "simple")
 par(op)
@@ -142,7 +143,7 @@ plot(x = 0, y = 0,type = "n", xlim = rx, ylim = ry, xlab = "", ylab = "")
 u <- par("usr")
 rect(u[1], u[3], u[2], u[4], col = tcol[8], border = "red")
 contour(x, y, volcano, col = tcol[2], lty = "solid", add = TRUE,
-	vfont = c("sans serif", "plain"))
+        vfont = c("sans serif", "plain"))
 title("A Topographic Map of Maunga Whau", font = 4)
 abline(h = 200*0:4, v = 200*0:4, col = "lightgray", lty = 2, lwd = 0.1)
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -131,8 +131,7 @@ SEXP attribute_hidden do_fmin(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(res = allocVector(REALSXP, 1));
     SETCADR(info.R_fcall, allocVector(REALSXP, 1));
     REAL(res)[0] = Brent_fmin(xmin, xmax,
-			      reinterpret_cast<double (*)(double, void*)>(fcn1),
-			      &info, tol);
+			      reinterpret_cast<double (*)(double, void*)>( fcn1), &info, tol);
     UNPROTECT(2);
     return res;
 }
@@ -226,8 +225,8 @@ SEXP attribute_hidden do_zeroin(SEXP call, SEXP op, SEXP args, SEXP rho)
     DO_ZEROIN_part_2;
 
     REAL(res)[0] =
-	R_zeroin(xmin, xmax, reinterpret_cast<double (*)(double, void*)>(fcn2),
-		 &info, &tol, &iter);
+	R_zeroin(xmin, xmax,   reinterpret_cast<double (*)(double, void*)>( fcn2),
+		 CXXRNOCAST(void *) &info, &tol, &iter);
     REAL(res)[1] = double(iter);
     REAL(res)[2] = tol;
     UNPROTECT(2);
@@ -255,9 +254,8 @@ SEXP attribute_hidden do_zeroin2(SEXP call, SEXP op, SEXP args, SEXP rho)
     DO_ZEROIN_part_2;
 
     REAL(res)[0] =
-	R_zeroin2(xmin, xmax, f_ax, f_bx,
-		  reinterpret_cast<double (*)(double, void*)>(fcn2),
-		  &info, &tol, &iter);
+	R_zeroin2(xmin, xmax, f_ax, f_bx, reinterpret_cast<double (*)(double, void*)>( fcn2),
+		 CXXRNOCAST(void *) &info, &tol, &iter);
     REAL(res)[1] = double(iter);
     REAL(res)[2] = tol;
     UNPROTECT(2);
@@ -381,7 +379,7 @@ static void fcn(int n, const double x[], double *f, function_info
 {
     SEXP s, R_fcall;
     ftable *Ftable;
-    double *g = 0, *h = 0;
+    double *g = CXXRNOCAST(double *) 0, *h = CXXRNOCAST(double *) 0;
     int i;
 
     R_fcall = state->R_fcall;
@@ -396,7 +394,7 @@ static void fcn(int n, const double x[], double *f, function_info
 	if (!R_FINITE(x[i])) error(_("non-finite value supplied by 'nlm'"));
 	REAL(s)[i] = x[i];
     }
-    s = eval(state->R_fcall, state->R_env);
+    s = PROTECT(eval(state->R_fcall, state->R_env));
     switch(TYPEOF(s)) {
     case INTSXP:
 	if (length(s) != 1) goto badvalue;
@@ -418,13 +416,14 @@ static void fcn(int n, const double x[], double *f, function_info
 	goto badvalue;
     }
     if (state->have_gradient) {
-	g = REAL(coerceVector(getAttrib(s, install("gradient")), REALSXP));
+	g = REAL(PROTECT(coerceVector(getAttrib(s, install("gradient")), REALSXP)));
 	if (state->have_hessian) {
-	    h = REAL(coerceVector(getAttrib(s, install("hessian")), REALSXP));
+	    h = REAL(PROTECT(coerceVector(getAttrib(s, install("hessian")), REALSXP)));
 	}
     }
     FT_store(n, *f, x, g, h, state);
-    return;
+    UNPROTECT(1 + state->have_gradient + state->have_hessian);
+    return; 
 
  badvalue:
     error(_("invalid function value in 'nlm' optimizer"));
@@ -594,7 +593,7 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     PrintDefaults(rho);
 
-    state = static_cast<function_info *>(CXXR_alloc(1, sizeof(function_info)));
+    state = static_cast<function_info *>( CXXR_alloc(1, sizeof(function_info)));
 
     /* the function to be minimized */
 
@@ -726,8 +725,7 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
      *	 I think we always check gradients and hessians
      */
 
-    optif9(n, n, x, reinterpret_cast<fcn_p>(fcn),
-	   reinterpret_cast<fcn_p>(Cd1fcn), reinterpret_cast<d2fcn_p>(Cd2fcn),
+    optif9(n, n, x, reinterpret_cast<fcn_p>( fcn), reinterpret_cast<fcn_p>( Cd1fcn), reinterpret_cast<d2fcn_p>( Cd2fcn),
 	   state, typsiz, fscale, method, iexp, &msg, ndigit, itnlim,
 	   iagflg, iahflg, dlt, gradtl, stepmx, steptol, xpls, &fpls,
 	   gpls, &code, a, wrk, &itncnt);
@@ -740,8 +738,8 @@ SEXP attribute_hidden do_nlm(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (want_hessian) {
 	PROTECT(value = allocVector(VECSXP, 6));
 	PROTECT(names = allocVector(STRSXP, 6));
-	fdhess(n, xpls, fpls, reinterpret_cast<fcn_p>(fcn), state, a, n,
-	       &wrk[0], &wrk[n], ndigit, typsiz);
+	fdhess(n, xpls, fpls, reinterpret_cast<fcn_p>( fcn), state, a, n, &wrk[0], &wrk[n],
+	       ndigit, typsiz);
 	for (i = 0; i < n; i++)
 	    for (j = 0; j < i; j++)
 		a[i + j * n] = a[j + i * n];

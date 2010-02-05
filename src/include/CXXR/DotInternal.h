@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/StdFrame.hpp"
@@ -70,8 +71,8 @@ namespace CXXR {
 	 */
 	static BuiltInFunction* get(const Symbol* sym)
 	{
-	    map::iterator it = s_table.find(sym);
-	    if (it == s_table.end())
+	    map::iterator it = s_table->find(sym);
+	    if (it == s_table->end())
 		return 0;
 	    return (*it).second;
 	}
@@ -92,11 +93,16 @@ namespace CXXR {
 				GCRoot<BuiltInFunction>,
 				std::tr1::hash<const Symbol*>,
 				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol*,
+				CXXR::Allocator<std::pair<const Symbol* const,
 							  GCRoot<BuiltInFunction> > >
 	                        > map;
 
-	static map s_table;
+	static map* s_table;
+
+	// Called from BuiltInFunction::initialize():
+	static void initialize();
+
+	friend class BuiltInFunction;
     };
 }  // namespace CXXR
 

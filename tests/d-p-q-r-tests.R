@@ -676,4 +676,33 @@ stopifnot(all.equal(1/(1+mu), dnbinom(0, size = 1, mu = mu), tol=1e-13))
 ## was wrong in 2.7.2 (only)
 
 
+## Non-central F for large x
+x <- 1e16 * 1.1 ^ (0:20)
+dP <- diff(pf(x, df1=1, df2=1, ncp=20, lower.tail=FALSE, log=TRUE))
+stopifnot(-0.047 < dP, dP < -0.0455)
+## pf(*, log) jumped to -Inf prematurely in 2.8.0 and earlier
+
+
+## Non-central Chi^2 density for large x
+stopifnot(0 == dchisq(c(Inf, 1e80, 1e50, 1e40), df=10, ncp=1))
+## did hang in 2.8.0 and earlier (PR#13309).
+
+## qbinom() .. particuarly for large sizes, small prob:
+p.s <- c(.01, .001, .1, .25)
+pr <- (2:20)*1e-7
+sizes <- 1000*(5000 + c(0,6,16)) + 279
+k.s <- 0:15; q.xct <- rep(k.s, each=length(pr))
+for(sz in sizes) {
+    for(p in p.s) {
+	qb <- qbinom(p=p, size = sz, prob=pr)
+	pb <- qpois (p=p, lambda = sz * pr)
+	stopifnot(All.eq(qb, pb))
+    }
+    pp.x <- outer(pr, k.s, function(pr, q) pbinom(q, size = sz, prob=pr))
+    qq.x <- apply(pp.x, 2, function(p)     qbinom(p, size = sz, prob=pr))
+    stopifnot(qq.x == q.xct)
+}
+## do_search() in qbinom() contained a thinko up to 2.9.0 (PR#13711)
+
+
 cat("Time elapsed: ", proc.time() - .ptime,"\n")

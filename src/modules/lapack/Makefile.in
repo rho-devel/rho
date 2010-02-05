@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -121,7 +121,7 @@ mostlyclean: clean
 clean:
 	@-rm -rf .libs _libs
 	@-rm -f Makedeps *.d *.o *.a *.lo *.la \
-	  lapack$(SHLIB_EXT) @USE_EXTERNAL_LAPACK_FALSE@ libRlapack$(DYLIB_EXT)
+	  lapack$(SHLIB_EXT) libRlapack$(DYLIB_EXT)
 distclean: clean
 	@-rm -f Makefile
 maintainer-clean: distclean

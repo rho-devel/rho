@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -34,19 +34,97 @@
 
 /** @file BuiltInFunction.cpp
  *
- * Brief Implementation of class CXXR::BuiltInFunction and associated
+ * Implementation of class CXXR::BuiltInFunction and associated
  * C interface.
  */
 
 #include "CXXR/BuiltInFunction.h"
 
+#include "RCNTXT.h"
+#include "CXXR/DotInternal.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/RAllocStack.h"
+#include "CXXR/Symbol.h"
+#include "CXXR/errors.h"
+#include "R_ext/Print.h"
+
+using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
     namespace ForceNonInline {
+	const char* (*PRIMNAMEp)(SEXP x) = PRIMNAME;
 	int (*PRIMOFFSETp)(SEXP x) = PRIMOFFSET;
+	unsigned int (*PRIMVALp)(SEXP x) = PRIMVAL;
     }
 }
+
+BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
+
+RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
+				Environment* env)
+{
+    size_t pps_size = GCStackRootBase::ppsSize();
+    size_t ralloc_size = RAllocStack::size();
+    Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+    GCStackRoot<> ans;
+    if (sexptype() == SPECIALSXP)
+	ans = invoke(call, args, env);
+    else {
+	pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
+	if (pr.first != 0)
+	    missingArgumentError(this, args, pr.first);
+	GCStackRoot<const PairList> evaluated_args(pr.second);
+	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
+	    RCNTXT cntxt;
+	    Rf_begincontext(&cntxt, CTXT_BUILTIN,
+			    const_cast<Expression*>(call), Environment::base(),
+			    Environment::base(), 0, 0);
+	    ans = invoke(call, evaluated_args, env);
+	    Rf_endcontext(&cntxt);
+	} else {
+	    ans = invoke(call, evaluated_args, env);
+	}
+    }
+    if (m_result_printing_mode != SOFT_ON)
+	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+    if (pps_size != GCStackRootBase::ppsSize())
+	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
+		 name(), pps_size, GCStackRootBase::ppsSize());
+    RAllocStack::restoreSize(ralloc_size);
+    return ans;
+}
+
+void BuiltInFunction::checkNumArgs(const PairList* args,
+				   const Expression* call) const
+{
+    if (arity() >= 0) {
+	size_t nargs = ConsCell::listLength(args);
+	if (int(nargs) != arity()) {
+	    if (viaDotInternal())
+		Rf_error(_("%d arguments passed to .Internal(%s)"
+			   " which requires %d"), nargs, name(), arity());
+	    else
+		Rf_errorcall(const_cast<Expression*>(call),
+			     _("%d arguments passed to '%s' which requires %d"),
+			     nargs, name(), arity());
+	}
+    }
+}
+
+int BuiltInFunction::indexInTable(const char* name)
+{
+    for (int i = 0; s_function_table[i].name; ++i)
+	if (strcmp(name, s_function_table[i].name) == 0)
+	    return i;
+    return -1;
+}
+
+// BuiltInFunction::initialize() is in names.cpp
+
+// BuiltInFunction::missingArgumentError() is in eval.cpp (for the
+// time being).
 
 const char* BuiltInFunction::typeName() const
 {

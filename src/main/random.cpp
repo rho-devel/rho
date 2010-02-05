@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -432,7 +432,7 @@ static void SampleReplace(int k, int n, int *y)
 {
     int i;
     for (i = 0; i < k; i++)
-	y[i] = int(n * unif_rand() + 1);
+	y[i] = CXXRCONSTRUCT(int, n * unif_rand() + 1);
 }
 
 /* Equal probability sampling; without-replacement case */
@@ -443,13 +443,13 @@ static void SampleNoReplace(int k, int n, int *y, int *x)
     for (i = 0; i < n; i++)
 	x[i] = i;
     for (i = 0; i < k; i++) {
-	j = int(n * unif_rand());
+	j = CXXRCONSTRUCT(int, n * unif_rand());
 	y[i] = x[j] + 1;
 	x[j] = x[--n];
     }
 }
 
-static void FixupProb(SEXP call, double *p, int n, int k, int replace)
+void FixupProb(double *p, int n, int require_k, Rboolean replace)
 {
     double sum;
     int i, npos;
@@ -465,7 +465,7 @@ static void FixupProb(SEXP call, double *p, int n, int k, int replace)
 	    sum += p[i];
 	}
     }
-    if (npos == 0 || (!replace && k > npos))
+    if (npos == 0 || (!replace && require_k > npos))
 	error(_("too few positive probabilities"));
     for (i = 0; i < n; i++)
 	p[i] /= sum;
@@ -491,7 +491,7 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (replace == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "replace");
     if (n == NA_INTEGER || n < 1)
-	error(_("invalid '%s' argument"), "x");
+	error(_("invalid first argument"));
     if (k == NA_INTEGER || k < 0)
 	error(_("invalid '%s' argument"), "size");
     if (!replace && k > n)
@@ -505,7 +505,7 @@ SEXP attribute_hidden do_sample(SEXP call, SEXP op, SEXP args, SEXP rho)
 	p = REAL(prob);
 	if (length(prob) != n)
 	    error(_("incorrect number of probabilities"));
-	FixupProb(call, p, n, k, replace);
+	FixupProb(p, n, k, Rboolean(replace));
 	PROTECT(x = allocVector(INTSXP, n));
 	if (replace) {
 	    int i, nc = 0;
@@ -547,7 +547,8 @@ SEXP attribute_hidden do_rmultinom(SEXP call, SEXP op, SEXP args, SEXP rho)
     k = length(prob);/* k = #{components or classes} = X-vector length */
     if (NAMED(prob)) prob = duplicate(prob);/*as `do_sample' -- need this line? */
     PROTECT(prob);
-    FixupProb(call, REAL(prob), k, 0, 1);/*check and make sum = 1 */
+    /* check and make sum = 1: */
+    FixupProb(REAL(prob), k, /*require_k = */ 0, TRUE);
     GetRNGstate();
     PROTECT(ans = allocMatrix(INTSXP, k, n));/* k x n : natural for columnwise store */
     for(i=ik = 0; i < n; i++, ik += k)
@@ -605,7 +606,7 @@ R_r2dtable(SEXP n, SEXP r, SEXP c)
     fact = static_cast<double *>( CXXR_alloc(n_of_cases + 1, sizeof(double)));
     fact[0] = 0.;
     for(i = 1; i <= n_of_cases; i++)
-	fact[i] = lgammafn(double(i + 1));
+	fact[i] = lgammafn(double (i + 1));
 
     jwork = static_cast<int *>( CXXR_alloc(nc, sizeof(int)));
 

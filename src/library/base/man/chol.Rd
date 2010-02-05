@@ -1,6 +1,6 @@
 % File src/library/base/man/chol.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{chol}
@@ -68,7 +68,7 @@ chol(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 
   Dongarra, J. J., Bunch, J. R., Moler, C. B. and Stewart, G. W. (1978)
   \emph{LINPACK Users Guide.}  Philadelphia: SIAM Publications.
@@ -106,8 +106,7 @@ try(chol(m))
 (Q <- chol(m, pivot = TRUE)) # NB wrong rank here - see Warning section.
 ## we can use this by
 pivot <- attr(Q, "pivot")
-oo <- order(pivot)
-t(Q[, oo]) \%*\% Q[, oo] # recover m
+crossprod(Q[, order(pivot)]) # recover m
 
 ## now for a non-positive-definite matrix
 ( m <- matrix(c(5,-5,-5,3),2,2) )

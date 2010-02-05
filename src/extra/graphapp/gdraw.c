@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,7 +43,11 @@
 extern unsigned int TopmostDialogs; /* from dialogs.c */
 #include <winbase.h>
 #include <wchar.h>
-#define alloca(x) __builtin_alloca((x)) /* always GNU C */
+#ifdef __GNUC__
+# define alloca(x) __builtin_alloca((x))
+#else
+# error need appropriate declaration for alloca
+#endif
 
 /* from extra.c */
 extern size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
@@ -519,6 +523,11 @@ void gfillellipse(drawing d, rgb fill, rect r)
     DeleteObject(br);
 }
 
+void gsetpolyfillmode(drawing d, int oddeven)
+{
+    HDC dc = GETHDC(d);
+    SetPolyFillMode(dc, oddeven ? ALTERNATE : WINDING);
+}
 
 void gfillpolygon(drawing d, rgb fill, point *p, int n)
 {
@@ -937,4 +946,23 @@ void BringToTop(window c, int stay) /* stay=0 for regular, 1 for topmost, 2 for 
 		      SWP_NOMOVE | SWP_NOSIZE);
     TopmostDialogs &= !MB_TOPMOST;
     apply_to_list(c->parent->child, setMessageBoxTopmost);
+}
+
+/* type = 1 minimize
+          2 restore
+	  3 maximize
+	  4 hide
+*/
+void GA_msgWindow(window c, int type)
+{
+    int state = -1;
+    switch(type){
+    case 1: state = SW_MINIMIZE; break;
+    case 2: state = SW_SHOWNOACTIVATE; break;
+    case 3: state = SW_MAXIMIZE; break;
+    case 4: state = SW_HIDE; break;
+    default: break;
+    }
+    if (state >= 0) ShowWindow(c->handle, state);
+
 }

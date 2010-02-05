@@ -1,8 +1,8 @@
-### configure.ac					-*- Autoconf -*-
+	### configure.ac					-*- Autoconf -*-
 ###
 ### Process this file with autoconf to produce a configure script.
 ###
-### Copyright (C) 1998-2008 R Core Team
+### Copyright (C) 1998-2009 R Core Team
 ###
 ### This file is part of R.
 ###
@@ -94,28 +94,27 @@ AC_SUBST(R_OSTYPE)
 
 ### ** Defaults.
 
+## NB: autoconf loads such files too
 cfile="${srcdir}/config.site"
 if test -r "${cfile}"; then
   echo "loading site script '${cfile}'"
   . "${cfile}"
 fi
-cfile="${HOME}/.Rconfig"
+cfile="${HOME}/.R/config"
 if test -r "${cfile}"; then
   echo "loading user script '${cfile}'"
   . "${cfile}"
-## <FIXME>
-## Remove support for ~/.Rconf eventually.
 else
-  cfile="${HOME}/.Rconf"
+  ## NB: undocumented, replaced ~/.Rconf in late 2004, latter removed in 2009
+  cfile="${HOME}/.Rconfig"
   if test -r "${cfile}"; then
     echo "loading user script '${cfile}'"
     . "${cfile}"
   fi
-## </FIXME>
 fi
 cfile="./config.site"
 if test -r "${cfile}"; then
-  echo "loading build specific script '${cfile}'"
+  echo "loading build-specific script '${cfile}'"
   . "${cfile}"
 fi
 
@@ -123,6 +122,7 @@ fi
 libnn=lib
 case "${host_os}" in
   linux*)
+    ## Not all distros use this: some choose to march out of step  
     case "${host_cpu}" in
       x86_64|mips64|ppc64|powerpc64|sparc64|s390x)
         libnn=lib64
@@ -193,7 +193,7 @@ fi],
 
 ## Allow the user to specify support for memory profiling.
 AC_ARG_ENABLE([memory-profiling],
-[AS_HELP_STRING([--enable-memory-profiling],[attempt to compile support for Rmemprof(), tracemem() @<:@no@:>@])],
+[AS_HELP_STRING([--enable-memory-profiling],[attempt to compile support for Rprofmem(), tracemem() @<:@no@:>@])],
 [if test "${enableval}" = no; then
   want_memory_profiling=no
 elif test "${enableval}" = yes; then
@@ -237,7 +237,8 @@ if test "${want_R_framework}" != no; then
 fi
 AM_CONDITIONAL(WANT_R_FRAMEWORK, [test "x${want_R_framework}" = xyes])
 
-## Allow the user to specify building R shared libraries.
+## Allow the user to specify building R as a shared library.
+## (but a 'dynamic library' in the terminology of Mac OS X).
 ## <NOTE>
 ## Building a framework implies building R shared libraries, hence the
 ## strange default.
@@ -262,9 +263,9 @@ if test "x${want_R_static}" = xyes; then
 fi
 AM_CONDITIONAL(WANT_R_STATIC, [test "x${want_R_static}" = xyes])
 
-## Build separate shared library containing R's BLAS if desired 
+## Build separate shared/dynamic library containing R's BLAS if desired 
 AC_ARG_ENABLE([BLAS-shlib],
-[AS_HELP_STRING([--enable-BLAS-shlib],[build BLAS into a shared library @<:@perhaps@:>@])],
+[AS_HELP_STRING([--enable-BLAS-shlib],[build BLAS into a shared/dynamic library @<:@perhaps@:>@])],
 [use_blas_shlib="${enableval}"],
 [use_blas_shlib="unset"])
 
@@ -294,10 +295,11 @@ if test x"${use_strict_barrier}" = xyes; then
              violation.])
 fi
 
-AC_ARG_ENABLE([mbcs],
-[AS_HELP_STRING([--enable-mbcs],[enable support for UTF-8 and other MBCS locales @<:@yes@:>@])],
-[want_mbcs_support="${enableval}"],
-[want_mbcs_support=yes])
+AC_ARG_ENABLE([prebuilt-html],
+[AS_HELP_STRING([--enable-prebuilt-html],[build static HTML help pages @<:@no@:>@])],
+[want_prebuilt_html="${enableval}"],
+[want_prebuilt_html=no])
+AM_CONDITIONAL(BUILD_HTML, [test "x${want_prebuilt_html}" = xyes])
 
 
 ### ** Optional packages.
@@ -384,6 +386,10 @@ AC_ARG_WITH([system-pcre],
 [AS_HELP_STRING([--with-system-pcre],[use system PCRE library (if available) @<:@no@:>@])],
 [R_ARG_USE_SYSTEM(pcre)],
 [use_system_pcre=no])
+AC_ARG_WITH([system-xz],
+[AS_HELP_STRING([--with-system-xz],[use system xz (lzma) library (if available) @<:@yes@:>@])],
+[R_ARG_USE_SYSTEM(xz)],
+[use_system_xz=yes])
 
 ## Valgrind instrumentation
 AC_ARG_WITH([valgrind-instrumentation],
@@ -407,18 +413,11 @@ AC_ARG_WITH([recommended-packages],
 [R_ARG_USE(recommended_packages)],
 [use_recommended_packages=yes])
 
-## Iconv.
-AC_ARG_WITH([iconv],
-[AS_HELP_STRING([--with-iconv],[use iconv library @<:@yes@:>@])],
-[R_ARG_USE(iconv)],
-[use_iconv=yes])
-
 ## ICU
 AC_ARG_WITH([ICU],
-[AS_HELP_STRING([--with-ICU],[use ICU library @<:@no@:>@])],
+[AS_HELP_STRING([--with-ICU],[use ICU library @<:@yes@:>@])],
 [R_ARG_USE(ICU)],
-[use_ICU=no])
-
+[use_ICU=yes])
 
 ### ** Precious variables.
 
@@ -477,8 +476,10 @@ AC_ARG_VAR([TCLTK_LIBS],
            [flags needed for linking against the Tcl and Tk libraries])
 AC_ARG_VAR([TCLTK_CPPFLAGS],
            [flags needed for finding the tcl.h and tk.h headers])
-AC_ARG_VAR([MAKE], [Make command])
+AC_ARG_VAR([MAKE], [make command])
+AC_ARG_VAR([TAR], [tar command])
 AC_ARG_VAR([R_BROWSER], [default browser])
+AC_ARG_VAR([R_PDFVIEWER], [default PDF viewer])
 AC_ARG_VAR([BLAS_LIBS],
            [flags needed for linking against external BLAS libraries])
 AC_ARG_VAR([LAPACK_LIBS],
@@ -491,6 +492,8 @@ AC_ARG_VAR([r_arch],
 AC_ARG_VAR([DEFS], [C defines for use when compiling R])
 AC_ARG_VAR([JAVA_HOME],
            [Path to the root of the Java environment])
+AC_ARG_VAR([R_SHELL],
+           [shell to be used for shell scripts, including 'R'])
 
 if test -z "${r_arch}"; then
   R_ARCH=
@@ -539,15 +542,15 @@ AC_SUBST(MAKE)
 R_PROG_PAGER
 ## Perl
 R_PROG_PERL
-## Tar
-: ${TAR=tar}
-AC_SUBST(TAR)
+## Tar -- we prefer a GNU version
+AC_PATH_PROGS(TAR, [${TAR} gtar tar], "")
 ## TeXMF stuff
 R_PROG_TEXMF
-## Unzip && zip && gzip
+## Unzip && zip && gzip && bip2
 AC_PATH_PROGS(R_UNZIPCMD, [${UNZIP} unzip], "")
 AC_PATH_PROGS(R_ZIPCMD, [${ZIP} zip], "")
 AC_PATH_PROGS(R_GZIPCMD, [${GZIP} gzip], true)
+AC_PATH_PROGS(R_BZIPCMD, [${BZIP} bzip2], "")
 ## Browser
 R_PROG_BROWSER
 ## PDF viewer
@@ -561,6 +564,8 @@ AC_PROG_CC
 AC_PROG_GCC_TRADITIONAL
 AC_PROG_CPP
 R_PROG_CPP_CPPFLAGS
+## see if the user set FFLAGS
+userFFLAGS=${FFLAGS}
 R_PROG_F77
 AC_PROG_CXX
 AC_PROG_CXXCPP
@@ -691,8 +696,6 @@ if test "${use_readline}" = yes; then
   fi
   ## the NetBSD version as used in MacOS X does not have this
   AC_CHECK_FUNCS(history_truncate_file)
-  READLINE_LIBS="${LIBS}"
-  LIBS="${r_save_LIBS}"
   if test "${use_readline}" = no; then
     AC_MSG_ERROR([--with-readline=yes (default) and headers/libs are not available])
   else
@@ -701,6 +704,8 @@ if test "${use_readline}" = yes; then
 #include <readline/readline.h>]
                  )
   fi
+  READLINE_LIBS="${LIBS}"
+  LIBS="${r_save_LIBS}"
 fi
 AC_SUBST(READLINE_LIBS)
 
@@ -763,7 +768,7 @@ AC_CHECK_TYPES([intptr_t, uintptr_t], , , [#ifdef HAVE_INTTYPES_H
 
 ### *** C compiler.
 
-AC_C_BIGENDIAN
+R_BIGENDIAN
 AC_C_CONST
 R_C_INLINE
 AC_CHECK_SIZEOF(int)
@@ -805,7 +810,11 @@ R_PROG_CXX_MAKEFRAG
 
 R_PROG_OBJC_MAKEFRAG
 R_PROG_OBJC_RUNTIME
-R_OBJC_FOUNDATION
+case "${host_os}" in
+  darwin*)
+    R_OBJC_FOUNDATION
+  ;;
+esac
 
 ### ** Platform-specific overrides for the C, Fortran 77 and C++ compilers.
 
@@ -950,9 +959,31 @@ case "${host_os}" in
         ;;
     esac
     case  "${F77}" in
+      ## gfortran: At least for 4.3.x -O2 gives faulty code
+      gfortran*)
+ 	if test "x$userFFLAGS" = x; then
+          if test $ac_cv_prog_f77_g = yes; then
+	    case "${host_cpu}" in
+	      x86_64)
+	        FFLAGS="-g -O"
+		;;
+	      *)
+		;;
+	    esac
+          else
+	    case "${host_cpu}" in
+	      x86_64)
+	        FFLAGS="-O"
+		;;
+	      *)
+		;;
+	    esac
+          fi
+        fi
+        ;;
       ## Intel compilers
       *ifc|*ifort)
-	if test "$ac_test_FFLAGS" != set; then
+	if test "x$userFFLAGS" = x; then
           if test $ac_cv_prog_f77_g = yes; then
 	    case "${host_cpu}" in
 	      x86_64)
@@ -1176,10 +1207,7 @@ case "${host_os}" in
     AC_MSG_ERROR([AIX prior to 4.2 is not supported])
     ;;
   aix*)
-    ## now use run-time linking
-    if test "${want_R_shlib}" != yes; then
-      use_exportfiles=yes
-    fi
+    use_exportfiles=yes
     ## All AIX code is PIC.
     cpicflags=
     cxxpicflags=
@@ -1198,18 +1226,14 @@ case "${host_os}" in
       main_ldflags="${wl}-brtl ${wl}-bexpall -lc"
     fi
     shlib_ldflags="${wl}-brtl ${wl}-G ${wl}-bexpall ${wl}-bnoentry -lc"
-    if test "${want_R_shlib}" != yes; then
-      ## symbol of an archive(RLIBS and EXTRA_LIBS) is thrown away
-      ## unless export it in a main link when unused.
-      R_SH_VAR_ADD(main_ldflags, [-Wl,-bE:\$(top_builddir)/etc/R.exp])
-      ## Import symbol is IMPid = '.'
-      ## no import symbol is IMPid = '..' (run-time link style)
-      ## R_SH_VAR_ADD(LIBR, [-Wl,-bI:\$(R_HOME)/etc/R.exp])
-    fi
-#    main_ldflags="${wl}-bdynamic ${wl}-bE:\$(top_builddir)/etc/R.exp ${wl}-bM:SRE"
-#    shlib_ldflags="${wl}-bM:SRE ${wl}-H512 ${wl}-T512 ${wl}-bnoentry ${wl}-bexpall ${wl}-bI:\$(R_HOME)/etc/R.exp"
     SHLIB_LIBADD="\$(LIBM)"
     shlib_cxxldflags="${shlib_ldflags}"
+    if test "${GCC}" = yes; then
+      shlib_ldflags="-shared ${shlib_ldflags}"
+    fi
+    if test "${GXX}" = yes; then
+      shlib_cxxldflags="-shared ${shlib_cxxldflags}"
+    fi 
     ;;
   cygwin*)
     ## All Windows code is PIC
@@ -1681,7 +1705,7 @@ R_CHECK_FUNCS([chmod mkfifo stat umask], [#include <sys/stat.h>])
 R_CHECK_FUNCS([gettimeofday], [#include <sys/time.h>])
 R_CHECK_FUNCS([times], [#include <sys/times.h>])
 R_CHECK_FUNCS([time], [#include <time.h>])
-R_CHECK_FUNCS([access chdir execv ftruncate getcwd getuid symlink sysconf],
+R_CHECK_FUNCS([access chdir execv ftruncate getcwd getuid readlink symlink sysconf],
 [#ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif])
@@ -1716,6 +1740,16 @@ fi
 if test "${ac_cv_search_opendir}" = "no"; then
    AC_MSG_ERROR([Building R requires the 'opendir' system call])
 fi
+## Lots of uses of Sys.glob, e.g. install.packages
+case "${host_os}" in
+  mingw*)
+  ;;
+  *)
+    if test "${ac_cv_search_glob}" = "no"; then
+       AC_MSG_ERROR([Building R requires the 'glob' system call])
+    fi
+  ;;
+esac
 
 
 ## <NOTE>
@@ -1934,59 +1968,34 @@ AM_CONDITIONAL(USE_EXTERNAL_LAPACK, [test "${acx_lapack_ok}" = "yes"])
 
 ### * Checks for system services.
 
-AC_SUBST(R_MODULES)
-
 ## iconv headers and function.
-if test "${use_iconv}" = yes; then
-  R_ICONV
-  if test "$r_cv_iconv_latin1" != yes; then
-    AC_MSG_ERROR([--with-iconv=yes (default) and a suitable iconv is not available])
-  fi
-else
-    AC_MSG_WARN([--with-iconv=no is deprecated and will be withdrawn shortly])
-fi
+R_ICONV
 
-## support for MBCS
-case "${host_os}" in
-  mingw*)
-    r_cv_iconv_latin1=yes
-    ;;
-esac
+## check sufficient support for MBCS
 R_MBCS
 
 ## support for ICU
 if test "$use_ICU" = yes ; then
-  ## FIXME: later, warn not error
-  AC_CHECK_LIB(icui18n, ucol_open_3_8, [], [
-    AC_CHECK_LIB(icui18n, ucol_open_3_6, [], [
-      AC_CHECK_LIB(icui18n, ucol_open_3_4, [], 
-        [AC_MSG_ERROR([library 'icui18n' is required for ICU])])
-    ])
-  ])
-  AC_CHECK_LIB(icuuc, ucnv_fromUChars_3_8, [], [
-    AC_CHECK_LIB(icuuc, ucnv_fromUChars_3_6, [], [
-      AC_CHECK_LIB(icuuc, ucnv_fromUChars_3_4, [], 
-        [AC_MSG_ERROR([library 'icuuc' is required for ICU])])
-    ])
-  ])
-  if test "$use_ICU" = yes ; then
-    AC_CHECK_HEADER(unicode/utypes.h, [], 
-      [AC_MSG_ERROR([header file <unicode/utypes.h> is required for ICU])])
+  R_ICU
+  if test "$use_ICU" = no ; then
+    case "${host_os}" in
+      ## darwin has ICU 3.2 in 10.4, 3.6 in 10.5
+      darwin*)
+        AC_CHECK_LIB(icucore, ucol_open, [],
+            [AC_MSG_ERROR([library 'icucore' is required for ICU])])
+        AC_DEFINE(USE_ICU_APPLE, 1, [Define to use Apple's ICU.])
+        AC_DEFINE(USE_ICU, 1, [Define to use ICU for collation.])
+	use_ICU=yes
+      ;;
+    esac
   fi
 fi
-if test "$use_ICU" = yes ; then
-  AC_DEFINE_UNQUOTED([USE_ICU], 1, [Define to use ICU for collation.])
-fi
 AC_SUBST(USE_ICU)
-
+AC_SUBST(USE_ICU_APPLE)
 
 ## X11.
 R_X11
-if test "${use_X11}" = yes; then
-  R_MODULES=X11
-else
-  R_MODULES=
-fi
+AM_CONDITIONAL(BUILD_X11, [test "x${use_X11}" = "xyes"])
 ## check if X11 typedefs KeySym
 R_TYPE_KEYSYM
 ## check if Xmu is supported
@@ -1996,12 +2005,21 @@ if test "x${want_cairo}" = "xyes"; then
 R_PANGO_CAIRO
 fi
 
-## check for CoreFoundation framework (chances are much higher
-## that we can build AQUA if this one is present)
-R_CHECK_FRAMEWORK(CFStringGetSystemEncoding, CoreFoundation)
 
 ## Aqua
-R_AQUA
+case "${host_os}" in
+  darwin*)
+    ## check for CoreFoundation framework (chances are much higher
+    ## that we can build AQUA if this one is present)
+    R_CHECK_FRAMEWORK(CFStringGetSystemEncoding, CoreFoundation)
+    R_AQUA
+  ;;
+  *)
+    use_aqua=no
+  ;;
+esac
+## Now used only in etc/Renviron to set the personal library,
+## and in grDevices to select building quartz()
 AM_CONDITIONAL(BUILD_AQUA, [test "x${use_aqua}" = xyes])
 AC_SUBST(use_aqua)
 
@@ -2023,12 +2041,16 @@ R_ZLIB
 ## bzlib headers and libraries.
 R_BZLIB
 
+## LZMA headers and libraries from xz-utils
+R_LZMA
+
 ## PCRE headers and libraries.
 R_PCRE
 
 ## libtiff
 AC_CHECK_HEADERS(tiffio.h)
-AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [])
+# may need to resolve jpeg routines
+AC_CHECK_LIB(tiff, TIFFOpen, [have_tiff=yes], [have_tiff=no], [${BITMAP_LIBS}])
 if test "x${ac_cv_header_tiffio_h}" = xyes ; then
   if test "x${have_tiff}" = xyes; then
     AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
@@ -2111,6 +2133,7 @@ AC_SUBST(R_BATCHSAVE)
 R_JAVA
 
 ## F90/F95 support
+userFCFLAGS=${FCFLAGS}
 AC_PROG_FC()
 AC_LANG_PUSH(Fortran)
 AC_FC_SRCEXT(f90, [dummy=1], [dummy=0])
@@ -2120,6 +2143,7 @@ AC_LANG_POP()
 : ${SHLIB_FCLDFLAGS="${SHLIB_LDFLAGS}"}
 AC_SUBST(SHLIB_FCLD)
 AC_SUBST(SHLIB_FCLDFLAGS)
+
 
 ## Look for FCPICFLAGS
 ## Debian in their wisdom have f95 as a link to gfortran, so
@@ -2147,6 +2171,27 @@ case "${host_os}" in
     ;;
   linux*)
     case  "${FC}" in
+      gfortran)
+ 	if test "x$userFCFLAGS" = x; then
+          if test $ac_cv_prog_fc_g = yes; then
+	    case "${host_cpu}" in
+	      x86_64)
+	        FCFLAGS="-g -O"
+		;;
+	      *)
+		;;
+	    esac
+          else
+	    case "${host_cpu}" in
+	      x86_64)
+	        FCFLAGS="-O"
+		;;
+	      *)
+		;;
+	    esac
+          fi
+        fi
+        ;;
       ## Intel compilers: probably get identified as GNU, but make sure.
       *ifc|*ifort)
         fcpicflags="-fpic"
@@ -2317,24 +2362,34 @@ case "${host_os}" in
 esac
 AC_SUBST(OSF_SH_BUG)
 
+### shell for use in scripts: we allow R_SHELL to set the script,
+### since some AIX systems have zsh as sh.
+: ${R_SHELL=${SHELL}}
+AC_SUBST(R_SHELL)
+AC_MSG_RESULT([using as R_SHELL for scripts ... ${R_SHELL}])
+
 
 ### * Win32 overrides
 case "${host_os}" in
   mingw*)
-    AC_DEFINE(HAVE_ICONV, 1)
-    AC_DEFINE(HAVE_ICONVLIST, 1)
-    AC_DEFINE(HAVE_ICONV_H, 1)
-    AC_DEFINE(HAVE_INTERNET, 1)
-    AC_DEFINE(HAVE_JPEG, 1)
-    AC_DEFINE(HAVE_PNG, 1)
-    AC_DEFINE(HAVE_POSIX_SETJMP, 1)
-    AC_DEFINE(HAVE_SOCKETS, 1)
-    AC_DEFINE(HAVE_TCLTK, 1)
-    AC_DEFINE(HAVE_TIMES, 1)
-    AC_DEFINE(ICONV_LATIN1, 1)
+    AC_DEFINE(HAVE_ICONV, 1, [Define if you have the iconv() function.])
+    AC_DEFINE(HAVE_ICONVLIST, 1, [Define if you have the `iconvlist' function.])
+    AC_DEFINE(HAVE_ICONV_H, 1, [Define to 1 if you have the <iconv.h> header file.])
+    AC_DEFINE(HAVE_INTERNET, 1, [Define if you have support for ftp/http
+                                 access.])
+    AC_DEFINE(HAVE_JPEG, 1,[Define if you have the JPEG headers and libraries.])
+    AC_DEFINE(HAVE_PNG, 1, [Define if you have the PNG headers and libraries.])
+    AC_DEFINE(HAVE_POSIX_SETJMP, 1, [Define if you have POSIX.1 compatible
+                                     sigsetjmp/siglongjmp.])
+    AC_DEFINE(HAVE_SOCKETS, 1, [Define if you have support for sockets.])
+    AC_DEFINE(HAVE_TCLTK, 1, [Define if you have the Tcl/Tk headers and 
+                              libraries and want Tcl/Tk support to be built.] )
+    AC_DEFINE(HAVE_TIFF, 1, [Define this if libtiff is available.])
+    AC_DEFINE(HAVE_TIMES, 1, [Define to 1 if you have the `times' function.])
     want_R_profiling=yes
-    AC_DEFINE(R_PROFILING, 1)
-    AC_DEFINE(SUPPORT_LIBXML, 1)
+    AC_DEFINE(R_PROFILING, 1, [Define this to enable R-level profiling.])
+    AC_DEFINE(SUPPORT_LIBXML, 1, [Define if you provide support for the libxml
+                                  ftp/http functions.])
     ;;
 esac
 
@@ -2346,7 +2401,6 @@ AC_CONFIG_FILES(
   Makefile
   doc/Makefile
   doc/html/Makefile
-  doc/html/search/Makefile
   doc/manual/Makefile
   etc/Makefile
   etc/Makeconf
@@ -2362,7 +2416,9 @@ AC_CONFIG_FILES(
   src/extra/bzip2/Makefile
   src/extra/intl/Makefile
   src/extra/pcre/Makefile
+  src/extra/tre/Makefile
   src/extra/xdr/Makefile
+  src/extra/xz/Makefile
   src/extra/zlib/Makefile
   src/include/Makefile
   src/include/Rmath.h0
@@ -2411,16 +2467,16 @@ AC_CONFIG_FILES(
   src/nmath/Makefile
   src/nmath/standalone/Makefile
   src/scripts/Makefile
-  src/scripts/COMPILE
-  src/scripts/INSTALL
-  src/scripts/REMOVE
   src/scripts/R.sh
-  src/scripts/Rdconv
+  src/scripts/Rcmd
+  src/scripts/Rdiff
   src/scripts/Rprof
-  src/scripts/SHLIB
   src/scripts/Sd2Rd
   src/scripts/build
   src/scripts/check
+  src/scripts/f77_f2c
+  src/scripts/mkinstalldirs
+  src/scripts/pager
   src/unix/Makefile
   tests/Makefile
   tests/CXXR/Makefile
@@ -2485,6 +2541,12 @@ if test "${acx_lapack_ok}" = "yes"; then
   esac
   R_SH_VAR_ADD(r_external_libs, [LAPACK(${r_lapack})], [, ])
 fi
+if test "${use_ICU}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [ICU], [, ])
+fi
+if test "${have_lzma}" = yes; then
+  R_SH_VAR_ADD(r_external_libs, [lzma], [, ])
+fi
 r_capabilities=
 if test "${have_png}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [PNG], [, ])
@@ -2495,20 +2557,11 @@ fi
 if test "${have_tiff}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [TIFF], [, ])
 fi
-if test "${r_cv_iconv_latin1}" = yes; then
-  R_SH_VAR_ADD(r_capabilities, [iconv], [, ])
-fi
-if test "${want_mbcs_support}" = yes; then
-  R_SH_VAR_ADD(r_capabilities, [MBCS], [, ])
-fi
 if test "${USE_NLS}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [NLS], [, ])
 fi
 if test "${r_cv_cairo_works}" = yes; then
   R_SH_VAR_ADD(r_capabilities, [cairo], [, ])
-fi
-if test "${use_ICU}" = yes; then
-  R_SH_VAR_ADD(r_capabilities, [ICU], [, ])
 fi
 r_options=
 if test "${want_R_framework}" = yes; then
@@ -2538,6 +2591,9 @@ if test "${want_linux_lfs}" = yes; then
 fi
 if test -n "${JAVA}"; then
   R_SH_VAR_ADD(r_options, [Java], [, ])
+fi
+if test "${want_prebuilt_html}" = yes; then
+  R_SH_VAR_ADD(r_options, [static HTML], [, ])
 fi
 
 AC_MSG_RESULT(
@@ -2594,14 +2650,20 @@ fi
 if test -n "${warn_perl5}"; then
   AC_MSG_WARN([${warn_perl5}])
 fi
-if test -n "${warn_dvi}"; then
-  AC_MSG_WARN([${warn_dvi}])
+if test -n "${warn_dvi1}"; then
+  AC_MSG_WARN([${warn_dvi1}])
+fi
+if test -n "${warn_dvi2}"; then
+  AC_MSG_WARN([${warn_dvi2}])
 fi
 if test -n "${warn_info}"; then
   AC_MSG_WARN([${warn_info}])
 fi
-if test -n "${warn_pdf}"; then
-  AC_MSG_WARN([${warn_pdf}])
+if test -n "${warn_pdf1}"; then
+  AC_MSG_WARN([${warn_pdf1}])
+fi
+if test -n "${warn_pdf2}"; then
+  AC_MSG_WARN([${warn_pdf2}])
 fi
 if test -n "${warn_pager}"; then
   AC_MSG_WARN([${warn_pager}])

@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.ls.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{grid.ls}
@@ -8,7 +8,6 @@
 \alias{nestedListing}
 \alias{pathListing}
 \alias{grobPathListing}
-%- Also NEED an '\alias' for EACH other topic documented here.
 \title{ List the names of grobs or viewports }
 \description{
   Returns a listing of the names of grobs or viewports.
@@ -85,7 +84,7 @@ grobPathListing(x, ...)
   for working programmatically with the list of grob and viewport
   names, or for writing a new display function for the listing.
 
-  The latter is a more complex heiararchical object (list of lists),
+  The latter is a more complex hierarchical object (list of lists),
   but it does contain more detailed information so may be of use for
   more advanced customisations.
 }
@@ -122,4 +121,4 @@ grid.ls(sampleGTree, view=TRUE, grob=FALSE, print=pathListing)
 # raw flat listing
 str(grid.ls(sampleGTree, view=TRUE, print=FALSE))
 }
-\keyword{ dplot }% at least one, from doc/KEYWORDS
+\keyword{ dplot }

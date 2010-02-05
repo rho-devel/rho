@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -36,7 +36,7 @@
 #include "nmath.h"
 #include "dpq.h"
 
-double qnbeta(double p, double a, double b, double ncp, 
+double qnbeta(double p, double a, double b, double ncp,
 	      int lower_tail, int log_p)
 {
     const static double accu = 1e-15;
@@ -52,10 +52,9 @@ double qnbeta(double p, double a, double b, double ncp,
 
     if (ncp < 0. || a <= 0. || b <= 0.) ML_ERR_return_NAN;
 
-    R_Q_P01_boundaries(p, 0, ML_POSINF);
+    R_Q_P01_boundaries(p, 0, 1);
 
-    p = R_D_qIv(p);
-    if(!lower_tail) p = 1-p;
+    p = R_DT_qIv(p);
 
     /* Invert pnbeta(.) :
      * 1. finding an upper and lower bound */

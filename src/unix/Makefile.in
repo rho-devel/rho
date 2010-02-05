@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -73,7 +73,7 @@ libunix.a: $(OBJECTS)
 
 mostlyclean: clean
 clean:
-	@-rm -rf .libs _libs
+	@-rm -rf .libs _libs Rscript.dSYM
 	@-rm -f Makedeps *.d *.o *.a *.lo *.la stamp-lo
 distclean: clean
 	@-rm -f Makefile Rscript
@@ -88,7 +88,7 @@ install-Rscript:
 ## substitute at install time to allow 'prefix' to be overridden
 install-pc:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(libdir)/pkgconfig"
-	@$(SED) -e "s:@rhome:$(rhome):" -e "s:@rincludedir:$(rincludedir):" \
+	-@$(SED) -e "s:@rhome:$(rhome):" -e "s:@rincludedir:$(rincludedir):" \
 	  -e 's:@libsprivate:$(STATIC_LIBR_PC):' \
 	  -e 's/@VERSION/$(VERSION)/' $(srcdir)/libR.pc.in \
 	  > "$(DESTDIR)$(libdir)/pkgconfig/libR.pc"

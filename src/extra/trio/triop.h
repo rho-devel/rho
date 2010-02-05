@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -155,6 +155,16 @@ extern "C" {
  */
 #if !defined(TRIO_EXTENSION)
 # define TRIO_EXTENSION 1
+#endif
+
+/*
+ * TRIO_DEPRECATED (=0 or =1)
+ *
+ * Define this to 0 to disable deprecated functionality, or define
+ * to 1 to enable them.
+ */
+#if !defined(TRIO_DEPRECATED)
+# define TRIO_DEPRECATED 1
 #endif
 
 /*************************************************************************

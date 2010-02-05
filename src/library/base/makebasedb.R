@@ -13,10 +13,12 @@ local({
             idx <- 0
             envs <- NULL
             enames <- character(0)
-            find <- function(v, keys, vals)
-                for (i in seq(along=keys))
+            find <- function(v, keys, vals) {
+                for (i in seq_along(keys))
                     if (identical(v, keys[[i]]))
                         return(vals[i])
+		NULL
+	    }
             getname <- function(e) find(e, envs, enames)
             getenv <- function(n) find(n, enames, envs)
             insert <- function(e) {
@@ -77,7 +79,7 @@ local({
         }
         else stop("source must be an environment or a list");
 
-        for (i in seq(along = vars)) {
+        for (i in seq_along(vars)) {
             if (is.environment(from))
                 key <- lazyLoadDBinsertVariable(vars[i], from, datafile,
                                                 ascii, compress,  envhook)

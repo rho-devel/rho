@@ -15,12 +15,17 @@
 #  http://www.r-project.org/Licenses/
 
 data <-
-function(..., list = character(0), package = NULL, lib.loc = NULL,
+function(..., list = character(0L), package = NULL, lib.loc = NULL,
          verbose = getOption("verbose"), envir = .GlobalEnv)
 {
-    fileExt <- function(x) sub(".*\\.", "", x)
+    fileExt <- function(x) {
+        db <- grepl("\\.[^.]+\\.(gz|bz2|xz)$", x)
+        ans <- sub(".*\\.", "", x)
+        ans[db] <-  sub(".*\\.([^.]+\\.)(gz|bz2|xz)$", "\\1\\2", x[db])
+        ans
+    }
 
-    names <- c(as.character(substitute(list(...))[-1]), list)
+    names <- c(as.character(substitute(list(...))[-1L]), list)
 
     ## Find the directories of the given packages and maybe the working
     ## directory.
@@ -45,11 +50,11 @@ function(..., list = character(0), package = NULL, lib.loc = NULL,
 
     dataExts <- tools:::.make_file_exts("data")
 
-    if(length(names) == 0) {
+    if(length(names) == 0L) {
         ## List all possible data sets.
 
         ## Build the data db.
-        db <- matrix(character(0), nrow = 0, ncol = 4)
+        db <- matrix(character(0L), nrow = 0L, ncol = 4L)
         for(path in paths) {
             entries <- NULL
             ## Use "." as the 'package name' of the working directory.
@@ -65,14 +70,14 @@ function(..., list = character(0), package = NULL, lib.loc = NULL,
                 ## No index: should only be true for ./data >= 2.0.0
                 dataDir <- file.path(path, "data")
                 entries <- tools::list_files_with_type(dataDir, "data")
-                if(length(entries) > 0) {
+                if(length(entries)) {
                     entries <-
                         unique(tools::file_path_sans_ext(basename(entries)))
                     entries <- cbind(entries, "")
                 }
             }
-            if(NROW(entries) > 0) {
-                if(is.matrix(entries) && ncol(entries) == 2)
+            if(NROW(entries)) {
+                if(is.matrix(entries) && ncol(entries) == 2L)
                     db <- rbind(db, cbind(packageName, dirname(path), entries))
                 else
                     warning(gettextf("data index for package '%s' is invalid and will be ignored", packageName), domain=NA, call.=FALSE)
@@ -129,14 +134,15 @@ function(..., list = character(0), package = NULL, lib.loc = NULL,
                 files <- list.files(p, full.names = TRUE)
             }
             files <- files[grep(name, files, fixed = TRUE)]
-            if(length(files) > 1) {
+            if(length(files) > 1L) {
                 ## more than one candidate
-                o <- match(fileExt(files), dataExts, nomatch = 100)
+                o <- match(fileExt(files), dataExts, nomatch = 100L)
                 paths0 <- dirname(files)
-                paths0 <- factor(paths0, levels=paths0)
+		## Next line seems unnecessary to MM (FIXME?)
+		paths0 <- factor(paths0, levels= unique(paths0))
                 files <- files[order(paths0, o)]
             }
-            if(length(files) > 0) {
+            if(length(files)) {
                 ## have a plausible candidate (or more)
                 for(file in files) {
                     if(verbose)
@@ -149,7 +155,9 @@ function(..., list = character(0), package = NULL, lib.loc = NULL,
                         found <- FALSE
                     else {
                         found <- TRUE
-                        zfile <- zip.file.extract(file, "Rdata.zip")
+                        Rdatadir <- file.path(tempdir(), "Rdata")
+                        dir.create(Rdatadir, showWarnings=FALSE)
+                        zfile <- zip.file.extract(file, "Rdata.zip", dir=Rdatadir)
                         if(zfile != file) on.exit(unlink(zfile))
                         switch(ext,
                                R = , r = {
@@ -160,14 +168,16 @@ function(..., list = character(0), package = NULL, lib.loc = NULL,
                                },
                                RData = , rdata = , rda =
                                load(zfile, envir = envir),
-                               TXT = , txt = , tab =
+                               TXT = , txt = , tab = ,
+                               tab.gz = , tab.bz2 = , tab.xz = ,
+                               txt.gz = , txt.bz2 = , txt.xz =
                                assign(name,
-                                      ## ensure default has not been
-                                      ## overridden by options(charToFactor)
-                                      read.table(zfile, header = TRUE,
-                                                 as.is = FALSE),
+                                      ## ensure default for as.is has not been
+                                      ## overridden by options(stringsAsFactor)
+                                      read.table(zfile, header = TRUE, as.is = FALSE),
                                       envir = envir),
-                               CSV = , csv =
+                               CSV = , csv = ,
+                               csv.gz = , csv.bz2 = , csv.xz =
                                assign(name,
                                       read.table(zfile, header = TRUE,
                                                  sep = ";", as.is = FALSE),

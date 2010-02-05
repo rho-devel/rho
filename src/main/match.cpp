@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -59,6 +59,7 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/ArgMatcher.hpp"
 #include "CXXR/DottedArgs.hpp"
 
 using namespace CXXR;
@@ -80,9 +81,7 @@ Rboolean psmatch(const char *f, const char *t, Rboolean exact)
     if (exact)
 	return Rboolean(!strcmp(f, t));
     /* else */
-    while (*f || *t) {
-	if (*t == '\0') return TRUE;
-	if (*f == '\0') return FALSE;
+    while (*t) {
 	if (*t != *f)   return FALSE;
 	t++;
 	f++;
@@ -129,7 +128,28 @@ Rboolean pmatch(SEXP formal, SEXP tag, Rboolean exact)
     return FALSE;/* for -Wall */
 }
 
-
+void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
+{
+    GCStackRoot<PairList> unused_list;
+    // Produce a PairList of the unused args:
+    for (SuppliedList::const_reverse_iterator rit = supplied_list.rbegin();
+	 rit != supplied_list.rend(); ++rit) {
+	const SuppliedData& supplied_data = *rit;
+	RObject* value = supplied_data.value;
+	if (value->sexptype() == PROMSXP) {
+	    Promise* prom = static_cast<Promise*>(value);
+	    value = const_cast<RObject*>(prom->valueGenerator());
+	}
+	unused_list = PairList::construct(value, unused_list, supplied_data.tag);
+    }
+    // Prepare error message:
+    GCStackRoot<StringVector>
+	argstrv(static_cast<StringVector*>(Rf_deparse1line(unused_list, FALSE)));
+    // '+ 4' is to remove 'list' from 'list(badTag1, ...' :
+    const char* errdetails = (*argstrv)[0]->c_str() + 4;
+    Rf_error(_("unused argument(s) %s"), errdetails);
+}		 
+	
 /* Destructively Extract A Named List Element. */
 /* Returns the first partially matching tag found. */
 /* Pattern is a C string. */
@@ -194,21 +214,16 @@ SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
 /* return the matched arguments in actuals. */
 
 /* We need to leave 'supplied' unchanged in case we call UseMethod */
-/* MULTIPLE_MATCHES was added by RI in Jan 2005 but never activated */
+/* MULTIPLE_MATCHES was added by RI in Jan 2005 but never activated:
+   code in R-2-8-branch */
 
 SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 {
     int i, seendots;
     SEXP f, a, b, dots, actuals;
-#ifdef MULTIPLE_MATCHES
-    int havedots = 0;
-#endif
 
     actuals = R_NilValue;
     for (f = formals ; f != R_NilValue ; f = CDR(f)) {
-#ifdef MULTIPLE_MATCHES
-	if (TAG(f) ==  R_DotsSymbol) havedots = 1;
-#endif
 	actuals = CONS(R_MissingArg, actuals);
 	SET_MISSING(actuals, 1);
 	SET_ARGUSED(f, 0);
@@ -229,17 +244,10 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 	if (TAG(f) != R_DotsSymbol) {
 	    i = 1;
 	    for (b = supplied; b != R_NilValue; b = CDR(b)) {
-		if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), TRUE)) {
+		if (TAG(b) != R_NilValue && pmatch(TAG(f), TAG(b), CXXRTRUE)) {
 		    if (ARGUSED(f) == 2)
-#ifdef MULTIPLE_MATCHES
-{
-			if (havedots) goto nextarg1;
-#endif
 			error(_("formal argument \"%s\" matched by multiple actual arguments"),
 			      CHAR(PRINTNAME(TAG(f))));
-#ifdef MULTIPLE_MATCHES
-		    }
-#endif
 		    if (ARGUSED(b) == 2)
 			error(_("argument %d matches multiple formal arguments"), i);
 		    SETCAR(a, CAR(b));
@@ -249,10 +257,6 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 		    SET_ARGUSED(f, 2);
 		}
 		i++;
-#ifdef MULTIPLE_MATCHES
-nextarg1:
-		;
-#endif
 	    }
 	}
 	f = CDR(f);
@@ -278,20 +282,13 @@ nextarg1:
 		i = 1;
 		for (b = supplied; b != R_NilValue; b = CDR(b)) {
 		    if (ARGUSED(b) != 2 && TAG(b) != R_NilValue &&
-			pmatch(TAG(f), TAG(b), Rboolean(seendots))) {
+			pmatch(TAG(f), TAG(b), CXXRCONSTRUCT(Rboolean, seendots))) {
 			if (ARGUSED(b))
 			    error(_("argument %d matches multiple formal arguments"), i);
 			if (ARGUSED(f) == 1)
-#ifdef MULTIPLE_MATCHES
-			{
-			    if (havedots) goto nextarg2;
-#endif
 			    error(_("formal argument \"%s\" matched by multiple actual arguments"),
 				  CHAR(PRINTNAME(TAG(f))));
-#ifdef MULTIPLE_MATCHES
-			}
-#endif
-			if (R_warn_partial_match_args) {
+			if (ArgMatcher::warnOnPartialMatch()) {
 			    warningcall(call,
 					_("partial argument match of '%s' to '%s'"),
 					CHAR(PRINTNAME(TAG(b))),
@@ -304,10 +301,6 @@ nextarg1:
 			SET_ARGUSED(f, 1);
 		    }
 		    i++;
-#ifdef MULTIPLE_MATCHES
-nextarg2:
-		    ;
-#endif
 		}
 	    }
 	}
@@ -398,9 +391,28 @@ nextarg2:
 	    }
 
 	if(last != R_NilValue) {
+            /* show bad arguments in call without evaluating them */
+            SEXP unusedForError = R_NilValue, last = R_NilValue ;
+            for(b = unused ; b != R_NilValue ; b = CDR(b)) {
+                SEXP tagB = TAG(b) ;
+                SEXP carB = CAR(b) ;
+                if (TYPEOF(carB) == PROMSXP) {
+                    carB = PREXPR(carB) ;
+                }
+                if (last == R_NilValue) {
+                    PROTECT(last = CONS(carB, R_NilValue));
+                    SET_TAG(last, tagB);
+                    unusedForError = last ;
+                } else {
+                    SETCDR(last, CONS(carB, R_NilValue));
+                    last = CDR(last) ;
+                    SET_TAG(last, tagB);
+                }
+            }
 	    errorcall(R_GlobalContext->call,
 		      _("unused argument(s) %s"),
-		      CHAR(STRING_ELT(deparse1line(unused, FALSE), 0)) + 4);
+		      CHAR(STRING_ELT(deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
+                      /* '+ 4' is to remove 'list' from 'list(badTag1,...)' */
 	}
     }
     UNPROTECT(1);

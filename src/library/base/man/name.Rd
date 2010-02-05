@@ -41,6 +41,8 @@ is.name(x)
 
   \code{as.name} is implemented as \code{\link{as.vector}(x, "symbol")},
   and hence will dispatch methods for the generic function \code{as.vector}.
+  
+  \code{is.name} and \code{is.symbol} are \link{primitive} functions.
 }
 \value{
   For \code{as.name} and \code{as.symbol}, an \R object of type
@@ -56,7 +58,7 @@ is.name(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{call}}, \code{\link{is.language}}.

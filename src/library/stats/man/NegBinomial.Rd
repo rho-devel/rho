@@ -1,6 +1,6 @@
 % File src/library/stats/man/NegBinomial.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{NegBinomial}
@@ -29,7 +29,7 @@ rnbinom(n, size, prob, mu)
     is taken to be the number required.}
   \item{size}{target for number of successful trials, or dispersion
     parameter (the shape parameter of the gamma mixing distribution).
-    Must be strictly positive.}
+    Must be strictly positive, need not be integer.}
   \item{prob}{probability of success in each trial. \code{0 < prob <= 1}.}
   \item{mu}{alternative parametrization via mean: see \sQuote{Details}.}
   \item{log, log.p}{logical; if TRUE, probabilities p are given as log(p).}
@@ -40,9 +40,9 @@ rnbinom(n, size, prob, mu)
   The negative binomial distribution with \code{size} \eqn{= n} and
   \code{prob} \eqn{= p} has density
   \deqn{
-    p(x) = \frac{\Gamma(x+n)}{\Gamma(n) x!} p^n (1-p)^x}{%
-    p(x) = Gamma(x+n)/(Gamma(n) x!) p^n (1-p)^x}
-  for \eqn{x = 0, 1, 2, \ldots}, \eqn{n > 0} and \eqn{0 < p \le 1}.
+    p(x) = \frac{\Gamma(x+n)}{\Gamma(n) x!} p^n (1-p)^x}{p(x) = Gamma(x+n)/(Gamma(n) x!) p^n (1-p)^x}
+  for \eqn{x = 0, 1, 2, \ldots}, \eqn{n > 0} and
+  \eqn{0 < p \le 1}{0 < p <= 1}.
 
   This represents the number of failures which occur in a sequence of
   Bernoulli trials before a target number of successes is reached.
@@ -52,7 +52,7 @@ rnbinom(n, size, prob, mu)
   \eqn{\Gamma} (\code{\link{pgamma}}) distribution with scale parameter
   \code{(1 - prob)/prob} and shape parameter \code{size}.  (This
   definition allows non-integer values of \code{size}.)
-  In this model \code{prob} = \code{scale/(1+scale)}, and the mean is
+  In this model \code{prob} = \code{1/(1+size)}, and the mean is
   \code{size * (1 - prob)/prob}.
 
   The alternative parametrization (often used in ecology) is by the
@@ -65,7 +65,7 @@ rnbinom(n, size, prob, mu)
   is zero, with a warning.
 
   The quantile is defined as the smallest value \eqn{x} such that
-  \eqn{F(x) \ge p}, where \eqn{F} is the distribution function.
+  \eqn{F(x) \ge p}{F(x) >= p}, where \eqn{F} is the distribution function.
 }
 \value{
   \code{dnbinom} gives the density,

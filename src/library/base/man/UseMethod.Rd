@@ -142,7 +142,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
 
   \code{.Method} is a character vector (normally of length one) naming
   the method function.  (For functions in the group generic
-  \code{\link[base:groupGeneric]{Ops}} it is of length two.)
+  \code{\link[=S3groupGeneric]{Ops}} it is of length two.)
 
   \code{.Class} is a character vector of classes used to find the next
   method.  \code{NextMethod} adds an attribute \code{"previous"} to
@@ -158,7 +158,7 @@ NextMethod(generic = NULL, object = NULL, \dots)
   method.  It is possible to change the method that \code{NextMethod}
   would dispatch by manipulating \code{.Class}, but \sQuote{this is not
     recommended unless you understand the inheritance mechanism
-    thoroughly} (Chambers \& Hastie, 1992, p. 469).
+    thoroughly} (Chambers & Hastie, 1992, p. 469).
 }
 \note{
   This scheme is called \emph{S3} (S version 3).  For new projects,
@@ -168,13 +168,13 @@ NextMethod(generic = NULL, object = NULL, \dots)
 \seealso{
   The draft \sQuote{R Language Definition}.
 
-  \code{\link{methods}}, \code{\link[base]{class}},
+  \code{\link{methods}}, \code{\link{class}},
   \code{\link{getS3method}}, \code{\link{is.object}}.
 }
 \references{
   Chambers, J. M. (1992)
   \emph{Classes and methods: object-oriented programming in S.}
   Appendix A of \emph{Statistical Models in S}
-  eds J. M. Chambers and T. J. Hastie, Wadsworth \& Brooks/Cole.
+  eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 }
 \keyword{methods}

@@ -12,6 +12,7 @@
 \alias{as.list.data.frame}
 \alias{as.list.environment}
 \alias{as.list.factor}
+\alias{as.list.function}
 \alias{as.pairlist}
 \alias{is.list}
 \alias{is.pairlist}
@@ -82,11 +83,14 @@ alist(\dots)
 
   \code{as.pairlist} is implemented as \code{\link{as.vector}(x, "pairlist")},
   and hence will dispatch methods for the generic function \code{as.vector}.
+  
+  \code{list}, \code{is.list} and \code{is.pairlist} are
+  \link{primitive} functions.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{vector}("list", length)} for creation of a list with empty

@@ -11,7 +11,7 @@ replace(x, list, values)
 \alias{replace}
 \description{
 \code{replace} replaces the values in \code{x}
-with indexes given in \code{list} by those given in \code{values}.
+with indices given in \code{list} by those given in \code{values}.
 If necessary, the values in \code{values} are recycled.
 }
 \arguments{
@@ -25,7 +25,7 @@ If necessary, the values in \code{values} are recycled.
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \note{
   \code{x} is unchanged: remember to assign the result.

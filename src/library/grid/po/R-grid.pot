@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.3.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-08-01 09:16\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -113,9 +113,6 @@ msgstr ""
 msgid "Must specify at least one viewport"
 msgstr ""
 
-msgid "Viewport '%s' was not found"
-msgstr ""
-
 msgid "Must pop at least one viewport"
 msgstr ""
 
@@ -203,6 +200,9 @@ msgstr ""
 msgid "It is only valid to add a child to a 'gTree'"
 msgstr ""
 
+msgid "'gPath' (%s) not found"
+msgstr ""
+
 msgid "It is only valid to remove a child from a 'gTree'"
 msgstr ""
 
@@ -219,9 +219,6 @@ msgid "The new 'grob' must have the same name as the old 'grob'"
 msgstr ""
 
 msgid "Slot '%s' not found"
-msgstr ""
-
-msgid "'gPath' (%s) not found"
 msgstr ""
 
 msgid "gPath (%s) not found"
@@ -344,6 +341,12 @@ msgstr ""
 msgid "'x' and 'y' must all be units of length 1"
 msgstr ""
 
+msgid "'r' must be a unit object"
+msgstr ""
+
+msgid "'x', 'y', 'width', and 'height' must have length 1"
+msgstr ""
+
 msgid "'x' and 'units' must have length > 0"
 msgstr ""
 
@@ -381,6 +384,9 @@ msgid "'Summary' function '%s' not meaningful for units"
 msgstr ""
 
 msgid "Zero arguments where at least one expected"
+msgstr ""
+
+msgid "Cannot mix signs of indices"
 msgstr ""
 
 msgid "Index out of bounds (unit subsetting)"
@@ -446,8 +452,17 @@ msgstr ""
 msgid "Invalid viewport name(s)"
 msgstr ""
 
+msgid "How did we get here?"
+msgstr ""
+
+msgid "Must start new page if showing leaves separately"
+msgstr ""
+
 msgid "Must specify at least one of 'x' or 'xscale'"
 msgstr ""
 
 msgid "Must specify at least one of 'y' or 'yscale'"
+msgstr ""
+
+msgid "shutting down all devices when unloading 'grid' name space"
 msgstr ""

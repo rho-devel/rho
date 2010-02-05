@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
  *                            R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -52,12 +52,13 @@ using namespace CXXR;
 typedef struct _HashData HashData;
 
 struct _HashData {
-  int K, M;
-  int (*hash) (SEXP, int, HashData *);
-  int (*equal) (SEXP, int, SEXP, int);
-  SEXP HashTable;
+    int K, M;
+    int (*hash)(SEXP, int, HashData *);
+    int (*equal)(SEXP, int, SEXP, int);
+    SEXP HashTable;
 
-  int nomatch;
+    int nomatch;
+    Rboolean useUTF8;
 };
 
 
@@ -149,7 +150,11 @@ static int chash(SEXP x, int indx, HashData *d)
 static int shash(SEXP x, int indx, HashData *d)
 {
     unsigned int k;
-    const char *p = translateChar(STRING_ELT(x, indx));
+    const char *p;
+    if(d->useUTF8)
+	p = translateCharUTF8(STRING_ELT(x, indx));
+    else
+	p = translateChar(STRING_ELT(x, indx));
     k = 0;
     while (*p++)
 	    k = 11 * k + *p; /* was 8 but 11 isn't a power of 2 */
@@ -282,7 +287,8 @@ static int vhash(SEXP x, int indx, HashData *d)
 static int vequal(SEXP x, int i, SEXP y, int j)
 {
     if (i < 0 || j < 0) return 0;
-    return compute_identical(VECTOR_ELT(x, i), VECTOR_ELT(y, j));
+    return R_compute_identical(VECTOR_ELT(x, i), VECTOR_ELT(y, j),
+			       TRUE, TRUE, TRUE);
 }
 
 /*
@@ -310,6 +316,7 @@ static void MKsetup(int n, HashData *d)
 
 static void HashTableSetup(SEXP x, HashData *d)
 {
+    d->useUTF8 = FALSE;
     switch (TYPEOF(x)) {
     case LGLSXP:
 	d->hash = lhash;
@@ -391,23 +398,30 @@ static void removeEntry(SEXP table, SEXP x, int indx, HashData *d)
 SEXP duplicated(SEXP x, Rboolean from_last)
 {
     SEXP ans;
-    int *h, *v;
-    int i, n;
-    HashData data;
+    int *v;
+#define DUPLICATED_INIT						\
+    int *h, i, n;						\
+    HashData data;						\
+								\
+    if (!isVector(x))						\
+	error(_("'duplicated' applies only to vectors"));	\
+								\
+    n = LENGTH(x);						\
+    HashTableSetup(x, &data);					\
+    h = INTEGER(data.HashTable);				\
+    if(TYPEOF(x) == STRSXP) {					\
+	for(i = 0; i < length(x); i++) 				\
+	    if(ENC_KNOWN(STRING_ELT(x, i))) {data.useUTF8 = TRUE; break;} \
+    }
 
-    if (!isVector(x))
-	error(_("'duplicated' applies only to vectors"));
+    DUPLICATED_INIT;
 
-    n = LENGTH(x);
-    HashTableSetup(x, &data);
     PROTECT(data.HashTable);
     ans = allocVector(LGLSXP, n);
     UNPROTECT(1);
-    h = INTEGER(data.HashTable);
     v = LOGICAL(ans);
 
     for (i = 0; i < data.M; i++) h[i] = NIL;
-
     if(from_last)
 	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
     else
@@ -416,26 +430,33 @@ SEXP duplicated(SEXP x, Rboolean from_last)
     return ans;
 }
 
+/* simpler version of the above : return 1-based index of first, or 0 : */
+int any_duplicated(SEXP x, Rboolean from_last)
+{
+    DUPLICATED_INIT;
+
+    for (i = 0; i < data.M; i++) h[i] = NIL;
+    if(from_last) {
+	for (i = n-1; i >= 0; i--) if(isDuplicated(x, i, &data)) return ++i;
+    } else {
+	for (i = 0; i < n; i++)    if(isDuplicated(x, i, &data)) return ++i;
+    }
+    return 0;
+}
+
 SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
 {
     SEXP ans;
-    int *h, *v;
-    int i, j, n,m;
-    HashData data;
+    int *v, j, m;
 
-    if (!isVector(x))
-	error(_("'duplicated' applies only to vectors"));
+    DUPLICATED_INIT;
 
-    n = LENGTH(x);
-    HashTableSetup(x, &data);
     PROTECT(data.HashTable);
     ans = allocVector(LGLSXP, n);
     UNPROTECT(1);
-    h = INTEGER(data.HashTable);
     v = LOGICAL(ans);
 
     for (i = 0; i < data.M; i++) h[i] = NIL;
-
     if(from_last)
 	for (i = n-1; i >= 0; i--) v[i] = isDuplicated(x, i, &data);
     else
@@ -444,7 +465,7 @@ SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
     if(length(incomp)) {
 	PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
 	m = length(incomp);
-	for (i = 0; i < n; i++) 
+	for (i = 0; i < n; i++)
 	    if(v[i]) {
 		for(j = 0; j < m; j++)
 		    if(data.equal(x, i, incomp, j)) {v[i] = 0; break;}
@@ -455,8 +476,53 @@ SEXP duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
     return ans;
 }
 
+/* return (1-based) index of first duplication, or 0 : */
+int any_duplicated3(SEXP x, SEXP incomp, Rboolean from_last)
+{
+    int j, m = length(incomp);
+
+    DUPLICATED_INIT;
+
+    if(!m)
+	error(_("any_duplicated3(., <0-length incomp>)"));
+
+    PROTECT(incomp = coerceVector(incomp, TYPEOF(x)));
+    m = length(incomp);
+
+    for (i = 0; i < data.M; i++) h[i] = NIL;
+    if(from_last)
+	for (i = n-1; i >= 0; i--) {
+#define IS_DUPLICATED_CHECK				\
+	    if(isDuplicated(x, i, &data)) {		\
+		Rboolean isDup = TRUE;			\
+		for(j = 0; j < m; j++)			\
+		    if(data.equal(x, i, incomp, j)) {	\
+			isDup = FALSE; break;		\
+		    }					\
+		if(isDup) {				\
+		    UNPROTECT(1);			\
+		    return ++i;				\
+ 	        }					\
+		/* else continue */			\
+	    }
+	    IS_DUPLICATED_CHECK;
+	}
+    else {
+	for (i = 0; i < n; i++)
+            IS_DUPLICATED_CHECK;
+    }
+
+    UNPROTECT(1);
+    return 0;
+}
+
+#undef IS_DUPLICATED_CHECK
+#undef DUPLICATED_INIT
+
+
 /* .Internal(duplicated(x))       [op=0]
    .Internal(unique(x))	          [op=1]
+   .Internal(anyDuplicated(x))    [op=2]
 */
 SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -467,23 +533,32 @@ SEXP attribute_hidden do_duplicated(SEXP call, SEXP op, SEXP args, SEXP env)
     x = CAR(args);
     /* handle zero length vectors, and NULL */
     if ((n = length(x)) == 0)
-	return(allocVector(PRIMVAL(op) != 1 ? LGLSXP : TYPEOF(x), 0));
+	return(PRIMVAL(op) <= 1
+	       ? allocVector(PRIMVAL(op) != 1 ? LGLSXP : TYPEOF(x), 0)
+	       : ScalarInteger(0));
 
     if (!isVector(x)) {
-	PrintValue(x);
 	error(_("%s() applies only to vectors"),
-	      (PRIMVAL(op) == 0 ? "duplicated" : "unique"));
+	      (PRIMVAL(op) == 0 ? "duplicated" :
+	       (PRIMVAL(op) == 1 ? "unique" : /* 2 */ "anyDuplicated")));
     }
 
     incomp = CADR(args);
 
     if(length(incomp) && /* S has FALSE to mean empty */
-       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0))
-	dup = duplicated3(x, incomp, Rboolean(asLogical(CADDR(args))));
-    else
-	dup = duplicated(x, Rboolean(asLogical(CADDR(args))));
-
-    if (PRIMVAL(op) == 0) /* "duplicated()" : */
+       !(isLogical(incomp) && length(incomp) == 1 && LOGICAL(incomp)[0] == 0)) {
+	if(PRIMVAL(op) == 2) /* return R's 1-based index :*/
+	    return ScalarInteger(any_duplicated3(x, incomp, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)))));
+	else
+	    dup = duplicated3(x, incomp, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args))));
+    }
+    else {
+	if(PRIMVAL(op) == 2)
+	    return ScalarInteger(any_duplicated(x, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)))));
+	else
+	    dup = duplicated(x, CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args))));
+    }
+    if (PRIMVAL(op) == 0) /* "duplicated()" */
 	return dup;
     /*	ELSE
 	use the results of "duplicated" to get "unique" */
@@ -619,6 +694,17 @@ SEXP match(SEXP itable, SEXP ix, int nmatch)
 
     data.nomatch = nmatch;
     HashTableSetup(table, &data);
+    data.nomatch = nmatch;
+    HashTableSetup(table, &data);
+    if(type == STRSXP) {
+	Rboolean useUTF8 = FALSE;
+	for(i = 0; i < length(x); i++)
+	    if(ENC_KNOWN(STRING_ELT(x, i))) {useUTF8 = TRUE; break;}
+	if (!useUTF8)
+	    for(i = 0; i < length(table); i++)
+		if(ENC_KNOWN(STRING_ELT(table, i))) {useUTF8 = TRUE; break;}
+	data.useUTF8 = useUTF8;
+    }
     PROTECT(data.HashTable);
     DoHashing(table, &data);
     ans = HashLookup(table, x, &data);
@@ -653,6 +739,15 @@ SEXP match4(SEXP itable, SEXP ix, int nmatch, SEXP incomp)
 
     data.nomatch = nmatch;
     HashTableSetup(table, &data);
+    if(type == STRSXP) {
+	Rboolean useUTF8 = FALSE;
+	for(i = 0; i < length(x); i++)
+	    if(ENC_KNOWN(STRING_ELT(x, i))) {useUTF8 = TRUE; break;}
+	if (!useUTF8)
+	    for(i = 0; i < length(table); i++)
+		if(ENC_KNOWN(STRING_ELT(table, i))) {useUTF8 = TRUE; break;}
+	data.useUTF8 = useUTF8;
+    }
     PROTECT(data.HashTable);
     DoHashing(table, &data);
     UndoHashing(incomp, itable, &data);
@@ -710,6 +805,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     int *used = NULL, *ians;
     const char **in, **tar;
     Rboolean no_dups;
+    Rboolean useUTF8 = FALSE;
 
     checkArity(op, args);
     input = CAR(args);
@@ -720,7 +816,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     dups_ok = asLogical(CADDDR(args));
     if (dups_ok == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "duplicates.ok");
-    no_dups = Rboolean(!dups_ok);
+    no_dups = CXXRCONSTRUCT(Rboolean, !dups_ok);
 
     if (!isString(input) || !isString(target))
 	error(_("argument is not of mode character"));
@@ -730,17 +826,31 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (j = 0; j < n_target; j++) used[j] = 0;
     }
 
+    for(i = 0; i < n_input; i++)
+	if(ENC_KNOWN(STRING_ELT(input, i))) {useUTF8 = TRUE; break;}
+    if (!useUTF8)
+	for(i = 0; i < n_target; i++)
+	    if(ENC_KNOWN(STRING_ELT(target, i))) {useUTF8 = TRUE; break;}
+
     in = static_cast<const char **>( CXXR_alloc(n_input, sizeof(char *)));
     tar = static_cast<const char **>( CXXR_alloc(n_target, sizeof(char *)));
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
-    for (i = 0; i < n_input; i++) {
-	in[i] = translateChar(STRING_ELT(input, i));
-	ians[i] = 0;
+    if(useUTF8) {
+	for (i = 0; i < n_input; i++) {
+	    in[i] = translateCharUTF8(STRING_ELT(input, i));
+	    ians[i] = 0;
+	}
+	for (j = 0; j < n_target; j++)
+	    tar[j] = translateCharUTF8(STRING_ELT(target, j));
+    } else {
+	for (i = 0; i < n_input; i++) {
+	    in[i] = translateChar(STRING_ELT(input, i));
+	    ians[i] = 0;
+	}
+	for (j = 0; j < n_target; j++)
+	    tar[j] = translateChar(STRING_ELT(target, j));
     }
-    for (j = 0; j < n_target; j++)
-	tar[j] = translateChar(STRING_ELT(target, j));
-
     /* First pass, exact matching */
     if(no_dups) {
 	for (i = 0; i < n_input; i++) {
@@ -764,6 +874,7 @@ SEXP attribute_hidden do_pmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(n_target > 100 && 10*n_input > n_target) {
 	    HashData data;
 	    HashTableSetup(target, &data);
+	    data.useUTF8 = useUTF8;
 	    data.nomatch = 0;
 	    DoHashing(target, &data);
 	    for (i = 0; i < n_input; i++) {
@@ -828,6 +939,7 @@ SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, j, k, imatch, n_input, n_target, no_match, *ians;
     unsigned int temp;
     const char *ss, *st;
+    Rboolean useUTF8 = FALSE;
 
     checkArity(op, args);
 
@@ -840,16 +952,28 @@ SEXP attribute_hidden do_charmatch(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("argument is not of mode character"));
     no_match = asInteger(CADDR(args));
 
+    for(i = 0; i < n_input; i++)
+	if(ENC_KNOWN(STRING_ELT(input, i))) {useUTF8 = TRUE; break;}
+    if (!useUTF8)
+	for(i = 0; i < n_target; i++)
+	    if(ENC_KNOWN(STRING_ELT(target, i))) {useUTF8 = TRUE; break;}
+
     PROTECT(ans = allocVector(INTSXP, n_input));
     ians = INTEGER(ans);
 
     for (i = 0; i < n_input; i++) {
-	ss = translateChar(STRING_ELT(input, i));
+	if (useUTF8)
+	    ss = translateCharUTF8(STRING_ELT(input, i));
+	else
+	    ss = translateChar(STRING_ELT(input, i));
 	temp = strlen(ss);
 	imatch = NA_INTEGER;
 	perfect = FALSE;
 	for (j = 0; j < n_target; j++) {
-	    st = translateChar(STRING_ELT(target, j));
+	    if (useUTF8)
+		st = translateCharUTF8(STRING_ELT(target, j));
+	    else
+		st = translateChar(STRING_ELT(target, j));
 	    k = strncmp(ss, st, temp);
 	    if (k == 0) {
 		if (strlen(st) == temp) {
@@ -1307,7 +1431,7 @@ SEXP attribute_hidden do_makeunique(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(n > 1) {
 	/* +2 for terminator and rounding error */
-	buf = static_cast<char *>( alloca(maxlen + strlen(csep) + int(log(double(n))/log(10.0)) + 2));
+	buf = static_cast<char *>( alloca(maxlen + strlen(csep) + int (log(double(n))/log(10.0)) + 2));
 	if(n < 10000) {
 	    cnts = static_cast<int *>( alloca(n * sizeof(int)));
 	} else {

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,9 +40,14 @@
 
 #include "Defn.h"
 #include "basedecl.h"
+#include "CXXR/FunctionBase.h"
+
+using namespace CXXR;
 
 SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    SEXP ans = R_NilValue;
+
     checkArity(op,args);
 #define find_char_fun \
     if (isValidString(CAR(args))) {				\
@@ -53,19 +58,26 @@ SEXP attribute_hidden do_debug(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     find_char_fun
 
-    if (TYPEOF(CAR(args)) != CLOSXP)
+    if (TYPEOF(CAR(args)) != CLOSXP && TYPEOF(CAR(args)) != SPECIALSXP 
+         &&  TYPEOF(CAR(args)) != BUILTINSXP )
 	errorcall(call, _("argument must be a closure"));
     switch(PRIMVAL(op)) {
     case 0:
-	SET_DEBUG(CAR(args), TRUE);
+	SET_RDEBUG(CAR(args), CXXRTRUE);
 	break;
     case 1:
-	if( DEBUG(CAR(args)) != 1 )
+	if( RDEBUG(CAR(args)) != 1 )
 	    warningcall(call, "argument is not being debugged");
-	SET_DEBUG(CAR(args), FALSE);
+	SET_RDEBUG(CAR(args), CXXRFALSE);
 	break;
+    case 2:
+        ans = ScalarLogical(RDEBUG(CAR(args)));
+        break;
+    case 3:
+        SET_RSTEP(CAR(args), 1);
+        break;
     }
-    return R_NilValue;
+    return ans;
 }
 
 SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -81,10 +93,10 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     switch(PRIMVAL(op)) {
     case 0:
-	SET_TRACE(CAR(args), 1);
+	SET_RTRACE(CAR(args), 1);
 	break;
     case 1:
-	SET_TRACE(CAR(args), 0);
+	SET_RTRACE(CAR(args), 0);
 	break;
     }
     return R_NilValue;
@@ -93,17 +105,13 @@ SEXP attribute_hidden do_trace(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* maintain global trace state */
 
-static Rboolean tracing_state = TRUE;
-#define GET_TRACE_STATE tracing_state
-#define SET_TRACE_STATE(value) tracing_state = value
-
 SEXP R_traceOnOff(SEXP onOff)
 {
-    Rboolean prev = GET_TRACE_STATE;
+    Rboolean prev = Rboolean(FunctionBase::tracingEnabled());
     if(length(onOff) > 0) {
-        Rboolean _new = Rboolean(asLogical(onOff));
+	Rboolean _new = CXXRCONSTRUCT(Rboolean, asLogical(onOff));
 	if(_new == TRUE || _new == FALSE)
-	    SET_TRACE_STATE(_new);
+	    FunctionBase::enableTracing(_new);
 	else
 	    error("Value for tracingState must be TRUE or FALSE");
     }
@@ -111,7 +119,7 @@ SEXP R_traceOnOff(SEXP onOff)
 }
 
 Rboolean attribute_hidden
-R_current_trace_state() { return GET_TRACE_STATE; }
+R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 
 
 /* memory tracing */
@@ -141,7 +149,7 @@ SEXP attribute_hidden do_memtrace(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,
 		  _("'tracemem' is not useful for weak reference or external pointer objects"));
 
-    SET_TRACE(object, 1);
+    SET_RTRACE(object, 1);
     snprintf(buffer, 20, "<%p>", (void *) object);
     return mkString(buffer);
 #else
@@ -164,8 +172,8 @@ SEXP attribute_hidden do_memuntrace(SEXP call, SEXP op, SEXP args, SEXP rho)
 	TYPEOF(object) == SPECIALSXP)
 	errorcall(call, _("argument must not be a function"));
 
-    if (TRACE(object))
-	SET_TRACE(object, 0);
+    if (RTRACE(object))
+	SET_RTRACE(object, 0);
 #else
     errorcall(call, _("R was not compiled with support for memory profiling"));
 #endif
@@ -225,13 +233,13 @@ SEXP attribute_hidden do_memretrace(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    errorcall(call, _("invalid '%s' argument"), "origin");
     } else origin = R_NilValue;
 
-    if (TRACE(object)){
+    if (RTRACE(object)){
 	snprintf(buffer, 20, "<%p>", (void *) object);
 	ans = mkString(buffer);
     } else ans = R_NilValue;
 
     if (origin != R_NilValue){
-	SET_TRACE(object, 1);
+	SET_RTRACE(object, 1);
 	if (R_current_trace_state()) {
 	    Rprintf("tracemem[%s -> %p]: ",
 		    translateChar(STRING_ELT(origin, 0)), (void *) object);

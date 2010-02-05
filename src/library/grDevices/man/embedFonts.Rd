@@ -39,7 +39,7 @@ embedFonts(file, format, outfile = file, fontpaths = "",
   something like \code{options="-sFONTPATH=path/to/font"}.
 
   This function relies on a suitable Ghostscript executable being in
-  your path, or the environment variable \env{R\_GSCMD} (the same as
+  your path, or the environment variable \env{R_GSCMD} (the same as
   \code{\link{bitmap}}) being set as the full path to the Ghostscript
   executable.
 #ifdef unix

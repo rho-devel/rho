@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -102,6 +102,16 @@ char *  askfilenames(const char *title, const char *default_name, int multi,
 		     int bufsize, const char *dir);
 int     countFilenames(const char *strbuf); /* Note that first name is path when there are multiple names */
 
+void	setuserfilterW(const wchar_t *);
+wchar_t *askfilenameW(const char *title, const char *default_name);
+wchar_t *askfilenamesW(const wchar_t *title, const wchar_t *default_name,
+		       int multi,
+		       const wchar_t *filters, int filterindex,
+		       const wchar_t *dir);
+wchar_t *askfilesaveW(const char *title, const char *default_name);
+
+
+
 /*  rgb.c */
 rgb     nametorgb(const char *colourname);
 const char *  rgbtoname(rgb in);
@@ -163,6 +173,7 @@ void  gdrawpolyline(drawing d, int width, int style, rgb c,
 		    point *p, int n, int closepath, int fast,
 		    int lend, int ljoin, float lmitre);
 #define gdrawpolygon(d,w,s,c,p,n,f,e,j,m) gdrawpolyline(d,w,s,c,p,n,1,f,e,j,m)
+void  gsetpolyfillmode(drawing d, int oddeven);
 void  gfillpolygon(drawing d, rgb fill, point *p, int n);
 int   gdrawstr(drawing d, font f, rgb c, point p, const char *s);
 void  gdrawstr1(drawing d, font f, rgb c, point p, const char *s, double hadj);
@@ -198,6 +209,8 @@ int   devicepixelsy(drawing dev);
 int	isTopmost(window w);
 void	BringToTop(window w, int stay); /* stay=0 for regular, 1 for topmost, 2 for toggle */
 void *	getHandle(window w);
+void 	GA_msgWindow(window c, int type);
+
 
 /* gbuttons.c */
 /* horizontal, vertical and control scrollbar */

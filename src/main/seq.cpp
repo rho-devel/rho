@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,6 +50,9 @@
 using namespace CXXR;
 
 static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
+
+#define _S4_rep_keepClass
+/* ==>  rep(<S4>, .) keeps class e.g., for list-like */
 
 static SEXP cross_colon(SEXP call, SEXP s, SEXP t)
 {
@@ -109,14 +112,23 @@ static SEXP seq_colon(double n1, double n2, SEXP call)
     SEXP ans;
     Rboolean useInt;
 
-    in1 = int((n1));
-    useInt = Rboolean(n1 == in1);
-    if (n1 <= INT_MIN || n2 <= INT_MIN || n1 > INT_MAX || n2 > INT_MAX)
-	useInt = FALSE;
     r = fabs(n2 - n1);
     if(r >= INT_MAX) errorcall(call,_("result would be too long a vector"));
 
-    n = int(r + 1 + FLT_EPSILON);
+    n = CXXRCONSTRUCT(int, r + 1 + FLT_EPSILON);
+
+    in1 = int((n1));
+    useInt = (CXXRCONSTRUCT(Rboolean, n1 == in1));
+    if(useInt) {
+	if(n1 <= INT_MIN || n1 > INT_MAX)
+	    useInt = FALSE;
+	else {
+	    /* r := " the effective 'to' "  of  from:to */
+	    r = n1 + ((n1 <= n2) ? n-1 : -(n-1));
+	    if(r <= INT_MIN || r > INT_MAX)
+		useInt = FALSE;
+	}
+    }
     if (useInt) {
 	ans = allocVector(INTSXP, n);
 	if (n1 <= n2)
@@ -145,9 +157,11 @@ SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
     s1 = CAR(args);
     s2 = CADR(args);
     n1 = length(s1);
+    n2 = length(s2);
     if( n1 > 1 )
 	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n1));
-    n2 = length(s2);
+    else if (n1 == 0 || n2 == 0)
+	errorcall(call, _("argument of length 0"));
     if( n2 > 1 )
 	warningcall(call, _("numerical expression has %d elements: only the first used"), int( n2));
     n1 = asReal(s1);
@@ -226,10 +240,12 @@ static SEXP rep2(SEXP s, SEXP ncopy)
     default:
 	UNIMPLEMENTED_TYPE("rep2", s);
     }
+#ifdef _S4_rep_keepClass
     if(IS_S4_OBJECT(s)) { /* e.g. contains = "list" */
 	setAttrib(a, R_ClassSymbol, getAttrib(s, R_ClassSymbol));
 	SET_S4_OBJECT(a);
     }
+#endif
     if (inherits(s, "factor")) {
 	SEXP tmp;
 	if(inherits(s, "ordered")) {
@@ -277,10 +293,12 @@ static SEXP rep1(SEXP s, SEXP ncopy)
 	a = allocList(na);
     PROTECT(a);
 
+#ifdef _S4_rep_keepClass
     if(IS_S4_OBJECT(s)) { /* e.g. contains = "list" */
 	setAttrib(a, R_ClassSymbol, getAttrib(s, R_ClassSymbol));
 	SET_S4_OBJECT(a);
     }
+#endif
 
     switch (TYPEOF(s)) {
     case LGLSXP:
@@ -403,7 +421,7 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    it = INTEGER(times)[0];
 	    if (it == NA_INTEGER || it < 0)
 		errorcall(call, _("invalid '%s' argument"), "times");
-	    sum = lx * it;
+	    len = lx * it * each;
 	} else {
 	    for(i = 0; i < nt; i++) {
 		it = INTEGER(times)[i];
@@ -411,8 +429,8 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    errorcall(call, _("invalid '%s' argument"), "times");
 		sum += it;
 	    }
+            len = sum;
 	}
-	len = sum * each;
     }
     PROTECT(ind = allocVector(INTSXP, len));
     if(len > 0 && each == 0)
@@ -434,10 +452,12 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
 done:
     GCStackRoot<> l2(list2(x, ind));
     ans = do_subset_dflt(R_NilValue, R_NilValue, l2, rho);
+#ifdef _S4_rep_keepClass
     if(IS_S4_OBJECT(x)) { /* e.g. contains = "list" */
 	setAttrib(ans, R_ClassSymbol, getAttrib(x, R_ClassSymbol));
 	SET_S4_OBJECT(ans);
     }
+#endif
     /* 1D arrays get dimensions preserved */
     setAttrib(ans, R_DimSymbol, R_NilValue);
     UNPROTECT(nprotect);
@@ -453,7 +473,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans = R_NilValue /* -Wall */, ap, tmp, from, to, by, len, along;
     int i, nargs = length(args), lf, lout = NA_INTEGER;
-    Rboolean One = Rboolean(nargs == 1);
+    Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
 
     if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
 	return(ans);
@@ -511,7 +531,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if(lout == NA_INTEGER) {
-	double rfrom = asReal(from), rto = asReal(to), rby = asReal(by);
+	double rfrom = asReal(from), rto = asReal(to), rby = asReal(by), *ra;
 	if(from == R_MissingArg) rfrom = 1.0;
 	if(to == R_MissingArg) rto = 1.0;
 	if(by == R_MissingArg)
@@ -547,8 +567,13 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall(call, _("wrong sign in 'by' argument"));
 	    nn = int(n + FLT_EPSILON);
 	    ans = allocVector(REALSXP, nn+1);
+	    ra = REAL(ans);
 	    for(i = 0; i <= nn; i++)
-		REAL(ans)[i] = rfrom + i * rby;
+		ra[i] = rfrom + i * rby;
+	    /* Added in 2.9.0 */
+	    if (nn > 0)
+		if((rby > 0 && ra[nn] > rto) || (rby < 0 && ra[nn] < rto))
+		    ra[nn] = rto;
 	}
     } else if (lout == 0) {
 	ans = allocVector(INTSXP, 0);
@@ -581,7 +606,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = int(rfrom + i*rby);
+		INTEGER(ans)[i] = CXXRCONSTRUCT(int, rfrom + i*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -598,7 +623,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   && rto <= INT_MAX && rto >= INT_MIN) {
 	    ans = allocVector(INTSXP, lout);
 	    for(i = 0; i < lout; i++)
-		INTEGER(ans)[i] = int(rto - (lout - 1 - i)*rby);
+		INTEGER(ans)[i] = CXXRCONSTRUCT(int, rto - (lout - 1 - i)*rby);
 	} else {
 	    ans = allocVector(REALSXP, lout);
 	    for(i = 0; i < lout; i++)
@@ -618,7 +643,20 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, len, *p;
 
     checkArity(op, args);
+#ifdef R_291_and_less
     len = length(CAR(args));
+#else
+    static RObject* length_func
+	= Environment::base()->frame()->binding(Symbol::obtain("length"))->forcedValue().first;
+    if(isObject(CAR(args)) &&
+       DispatchOrEval(call, length_func,
+		      "length", args, rho, &ans, 0, 1)) {
+	len = asInteger(ans);
+    }
+    else
+	len = length(CAR(args));
+#endif
+
     ans = allocVector(INTSXP, len);
     p = INTEGER(ans);
     for(i = 0; i < len; i++) p[i] = i+1;

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,7 +43,6 @@
 #include "CXXR/CachedString.h"
 #include "CXXR/GCStackRoot.h"
 
-#define __R_Names__ /* used in Defn.h for extern on R_FunTab */
 #include <Defn.h>
 #include <Print.h>
 #include "arithmetic.h"
@@ -100,8 +99,11 @@ using namespace CXXR;
  * rightassoc: Right (1) or left (0) associative operator
  *
  */
-CXXRnot_hidden FUNTAB R_FunTab[] =
+
+void BuiltInFunction::initialize()
 {
+    static TableEntry function_table[] = {
+	// Now begins the function table, deliberately retaining CR's indentation:
 
 /* Language Related Constructs */
 \
@@ -150,9 +152,11 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"[[<-",	do_subassign2,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"$<-",		do_subassign3,	1,	0,	3,	{PP_SUBASS,  PREC_LEFT,	  1}},
 {"switch",	do_switch,	0,	210,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"browser",	do_browser,	0,	100,	0,	{PP_FUNCALL, PREC_FN,	  0}},
-{"debug",	do_debug,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"undebug",	do_debug,	1,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"browser",	do_browser,	0,	101,	3,	{PP_FUNCALL, PREC_FN,	  0}},
+{"debug",	do_debug,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},
+{"undebug",	do_debug,	1,	111,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"isdebugged",	do_debug,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
+{"debugonce",	do_debug,	3,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},
 {".primTrace",	do_trace,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".primUntrace",do_trace,	1,	101,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".Internal",	do_internal,	0,	200,	1,	{PP_FUNCALL, PREC_FN,	  0}},
@@ -161,7 +165,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"delayedAssign",do_delayed,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	  0}},
 {"makeLazy",	do_makelazy,	0,	111,	5,	{PP_FUNCALL, PREC_FN,	  0}},
 {".Primitive",	do_primitive,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	  0}},
-{"identical",	do_identical,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
+{"identical",	do_identical,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	  0}},
 
 
 /* Binary Operators */
@@ -243,6 +247,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"remove",	do_remove,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"duplicated",	do_duplicated,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"unique",	do_duplicated,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"anyDuplicated",do_duplicated,	2,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"which.min",	do_first_min,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"pmin",	do_pmin,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"pmax",	do_pmin,	1,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -510,10 +515,11 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"nzchar",	do_nzchar,	1,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"substr",	do_substr,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"substr<-",	do_substrgets,	1,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
-{"strsplit",	do_strsplit,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"strsplit",	do_strsplit,	1,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"abbreviate",	do_abbrev,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"make.names",	do_makenames,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"grep",	do_grep,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
+{"grep",	do_grep,	0,	11,	9,	{PP_FUNCALL, PREC_FN,	0}},
+{"grepl",	do_grep,	1,	11,	9,	{PP_FUNCALL, PREC_FN,	0}},
 {"sub",		do_gsub,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"gsub",	do_gsub,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"regexpr",	do_regexpr,	1,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
@@ -533,7 +539,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"utf8ToInt",	do_utf8ToInt,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"intToUtf8",	do_intToUtf8,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"encodeString",do_encodeString,1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
-{"iconv",	do_iconv,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
+{"iconv",	do_iconv,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"strtrim",	do_strtrim,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
 /* Type Checking (typically implemented in ./coerce.c ) */
@@ -581,7 +587,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"Version",	do_version,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"machine",	do_machine,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"commandArgs", do_commandArgs, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
-{"int.unzip",	do_int_unzip,	0,	11,    -1,	{PP_FUNCALL, PREC_FN,	0}},
+{"unzip",	do_unzip,	0,	111,    6,	{PP_FUNCALL, PREC_FN,	0}},
 #ifdef Win32
 {"system",	do_system,	0,	211,	3,	{PP_FUNCALL, PREC_FN,	0}},
 #else
@@ -600,6 +606,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"memory.size",	do_memsize,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"DLL.version",	do_dllversion,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"bringToTop",	do_bringtotop,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"msgWindow",	do_msgwindow,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"select.list",	do_selectlist,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"getClipboardFormats",do_getClipboardFormats,0,11,0,	{PP_FUNCALL, PREC_FN,	0}},
 {"readClipboard",do_readClipboard,0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -608,8 +615,10 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"chooseDir",	do_chooseDir,	0,	11,	2,	{PP_FUNCALL, PREC_FN,   0}},
 {"getIdentification", do_getIdentification,0,11,0,	{PP_FUNCALL, PREC_FN,	0}},
 {"getWindowHandle", do_getWindowHandle,0,11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"getWindowHandles",do_getWindowHandles,0,11,   2,	{PP_FUNCALL, PREC_FN,   0}},
 {"getWindowTitle",do_getWindowTitle,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"setWindowTitle",do_setTitle,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"arrangeWindows",do_arrangeWindows,0,  111,    4,      {PP_FUNCALL, PREC_FN,   0}},
 {"setStatusBar",do_setStatusBar,0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"shortPathName",do_shortpath,	0,	11,	1,	{PP_FUNCALL, PREC_FN,   0}},
 {"loadRconsole", do_loadRconsole,0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -618,6 +627,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"winProgressBar",do_winprogressbar,0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"closeWinProgressBar",do_closewinprogressbar,0,111,1,	{PP_FUNCALL, PREC_FN,	0}},
 {"setWinProgressBar",do_setwinprogressbar,0,11,	4,	{PP_FUNCALL, PREC_FN,	0}},
+{"useInternet2",do_setInternet2,0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
 #endif
 #if defined(__APPLE_CC__) && defined(HAVE_AQUA)
 {"wsbrowser",	do_wsbrowser,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
@@ -630,14 +640,15 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"aqua.custom.print", do_aqua_custom_print, 0, 11, 2,   {PP_FUNCALL, PREC_FN,   0}},
 #endif
 {"parse",	do_parse,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
+{"parse_Rd", 	do_parseRd,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 {"save",	do_save,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"saveToConn",	do_saveToConn,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"load",	do_load,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"loadFromConn",do_loadFromConn,0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"loadFromConn2",do_loadFromConn2,0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"serializeToConn",	do_serializeToConn,	0,	111,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"unserializeFromConn",	do_unserializeFromConn,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"deparse",	do_deparse,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"deparseRd", 	do_deparseRd, 	0, 	11, 	2,	{PP_FUNCALL, PREC_FN, 	0}},
 {"dput",	do_dput,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"dump",	do_dump,	0,	111,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"substitute",	do_substitute,	0,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -647,6 +658,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"readline",	do_readln,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"menu",	do_menu,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"print.default",do_printdefault,0,	111,	9,	{PP_FUNCALL, PREC_FN,	0}},
+{"print.function",do_printfunction,0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"prmatrix",	do_prmatrix,	0,	111,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"invisible",	do_invisible,	0,	101,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"gc",		do_gc,		0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -674,6 +686,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"typeof",	do_typeof,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"eval",	do_eval,	0,	211,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"eval.with.vis",do_eval,	1,	211,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"withVisible", do_withVisible,	1,	10,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"expression",	do_expression,	1,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.parent",	do_sys,		1,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.call",	do_sys,		2,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -684,6 +697,9 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"sys.on.exit",	do_sys,		7,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.parents",	do_sys,		8,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sys.function",do_sys,		9,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"browserText", do_sysbrowser,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"browserCondition", do_sysbrowser,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"browserSetDebug", do_sysbrowser,	3,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"parent.frame",do_parentframe,	0,	11,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"sort",	do_sort,	1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"is.unsorted",	do_isunsorted,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -720,7 +736,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"sink.number",	do_sinknumber,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"lib.fixup",	do_libfixup,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"pos.to.env",	do_pos2env,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"eapply",	do_eapply,	0,	10,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"eapply",	do_eapply,	0,	10,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"lapply",	do_lapply,	0,	10,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"rapply",	do_rapply,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"islistfactor",do_islistfactor,0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
@@ -734,6 +750,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"retracemem",  do_memretrace,  0,      1,     -1,      {PP_FUNCALL, PREC_FN,	0}},
 {"untracemem",  do_memuntrace,  0,      101,	1,      {PP_FUNCALL, PREC_FN,	0}},
 {"object.size",	do_objectsize,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"inspect",	do_inspect,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"mem.limits",	do_memlimits,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"merge",	do_merge,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"capabilities",do_capabilities,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
@@ -746,6 +763,8 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 #endif
 {"l10n_info",	do_l10n_info,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"Cstack_info", do_Cstack_info,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
+{"startHTTPD",  do_startHTTPD,  0,      11,     2,      {PP_FUNCALL, PREC_FN,   0}},
+{"stopHTTPD",	do_stopHTTPD,	0,      11,     0,      {PP_FUNCALL, PREC_FN,   0}},
 
 /* Functions To Interact with the Operating System */
 
@@ -757,6 +776,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"file.append",	do_fileappend,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"codeFiles.append",do_fileappend,1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.symlink",do_filesymlink,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"file.copy",	do_filecopy,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"list.files",	do_listfiles,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.exists", do_fileexists,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.choose", do_filechoose,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -775,8 +795,10 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"setwd",	do_setwd,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"basename",	do_basename,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"dirname",	do_dirname,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"dirchmod",	do_dirchmod,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.chmod",	do_syschmod,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.umask",	do_sysumask,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"Sys.readlink", do_readlink,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.info",	do_sysinfo,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.sleep",	do_syssleep,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.getlocale",do_getlocale,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -911,11 +933,11 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"stdout",	do_stdout,	0,      11,     0,      {PP_FUNCALL, PREC_FN,	0}},
 {"stderr",	do_stderr,	0,      11,     0,      {PP_FUNCALL, PREC_FN,	0}},
 {"readLines",	do_readLines,	0,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
-{"writeLines",	do_writelines,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
+{"writeLines",	do_writelines,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"readBin",	do_readbin,	0,      11,     6,      {PP_FUNCALL, PREC_FN,	0}},
-{"writeBin",	do_writebin,	0,      211,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"writeBin",	do_writebin,	0,      211,    5,      {PP_FUNCALL, PREC_FN,	0}},
 {"readChar",	do_readchar,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
-{"writeChar",	do_writechar,	0,      211,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"writeChar",	do_writechar,	0,      211,    5,      {PP_FUNCALL, PREC_FN,	0}},
 {"open",	do_open,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"isOpen",	do_isopen,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"isIncomplete",do_isincomplete,0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
@@ -923,12 +945,13 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"close",	do_close,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 {"flush",	do_flush,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"file",	do_url,		1,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
-{"url",	do_url,		0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"url",	        do_url,		0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"pipe",	do_pipe,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"fifo",	do_fifo,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"gzfile",	do_gzfile,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
-{"unz",	do_unz,		0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
-{"bzfile",	do_bzfile,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
+{"bzfile",	do_gzfile,	1,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"xzfile",	do_gzfile,	2,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"unz",	        do_unz,		0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
 {"seek",	do_seek,	0,      11,     4,      {PP_FUNCALL, PREC_FN,	0}},
 {"truncate",	do_truncate,	0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"pushBack",	do_pushback,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
@@ -936,7 +959,7 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"pushBackLength",do_pushbacklength,0,  11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"rawConnection",do_rawconnection,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"rawConnectionValue",do_rawconvalue,0, 11,     1,      {PP_FUNCALL, PREC_FN,	0}},
-{"textConnection",do_textconnection,0,	11,     4,      {PP_FUNCALL, PREC_FN,	0}},
+{"textConnection",do_textconnection,0,	11,     5,      {PP_FUNCALL, PREC_FN,	0}},
 {"textConnectionValue",do_textconvalue,0,11,    1,      {PP_FUNCALL, PREC_FN,	0}},
 {"socketConnection",do_sockconn,0,	11,     6,      {PP_FUNCALL, PREC_FN,	0}},
 {"sockSelect",do_sockselect,	0,	11,     3,      {PP_FUNCALL, PREC_FN,	0}},
@@ -944,8 +967,10 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {"getAllConnections",do_getallconnections,0,11, 0,      {PP_FUNCALL, PREC_FN,	0}},
 {"summary.connection",do_sumconnection,0,11,    1,      {PP_FUNCALL, PREC_FN,	0}},
 {"download",	do_download,	0,      11,     5,      {PP_FUNCALL, PREC_FN,	0}},
-{"nsl",	do_nsl,		0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
+{"nsl",	        do_nsl,		0,      11,     1,      {PP_FUNCALL, PREC_FN,	0}},
 {"gzcon",	do_gzcon,	0,      11,     3,      {PP_FUNCALL, PREC_FN,	0}},
+{"memCompress",do_memCompress,	0,	11,     2,      {PP_FUNCALL, PREC_FN,	0}},
+{"memDecompress",do_memDecompress,0,	11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 
 /* Provenance Functions */
 {"provenance", do_provenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
@@ -986,120 +1011,46 @@ CXXRnot_hidden FUNTAB R_FunTab[] =
 {NULL,		NULL,		0,	0,	0,	{PP_INVALID, PREC_FN,	0}},
 };
 
+    // code of BuiltInFunction::initialize() now continues:
+    s_function_table = function_table;
+    DotInternalTable::initialize();
+    for (int i = 0; s_function_table[i].name; ++i) {
+	const char* symname = s_function_table[i].name;
+	Symbol* sym = Symbol::obtain(symname);
+	BuiltInFunction* bif = expose(new BuiltInFunction(i));
+	if ((s_function_table[i].flags%100)/10)
+	    DotInternalTable::set(sym, bif);
+	else
+	    Environment::base()->frame()->obtainBinding(sym)->setValue(bif);
+    }
+    
+}
 
-SEXP CXXRnot_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
+
+SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP name;
-    int i;
     checkArity(op, args);
     name = CAR(args);
     if (!isString(name) || length(name) < 1 ||
 	STRING_ELT(name, 0) == R_NilValue)
 	errorcall(call, _("string argument required"));
-    for (i = 0; R_FunTab[i].name; i++)  /* all names are ASCII */
-	if (strcmp(CHAR(STRING_ELT(name, 0)), R_FunTab[i].name) == 0) {
-	    if ((R_FunTab[i].eval % 100 )/10)
-		return mkPRIMSXP(i, R_FunTab[i].eval % 10);
-	    else
-		return mkPRIMSXP(i, R_FunTab[i].eval % 10);
-	}
-    errorcall(call, _("no such primitive function"));
-    return(R_NilValue);		/* -Wall */
-}
-
-int StrToInternal(const char *s)
-{
-    int i;
-    for (i = 0; R_FunTab[i].name; i++)
-	if (strcmp(s, R_FunTab[i].name) == 0) return i;
-    return 0;
-}
-
-static void installFunTab(int i)
-{
-    if ((R_FunTab[i].eval % 100 )/10)
-	SET_INTERNAL(install(R_FunTab[i].name),
-		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
-    else
-	SET_SYMVALUE(install(R_FunTab[i].name),
-		     mkPRIMSXP(i, R_FunTab[i].eval % 10));
+    const char* namestr = CHAR(STRING_ELT(name, 0));
+    int index = BuiltInFunction::indexInTable(namestr);
+    if (index < 0)
+	 errorcall(call, _("no such primitive function"));
+    return GCNode::expose(new BuiltInFunction(index));
 }
 
 /* initialize the symbol table */
+// Well, now just odds and ends in CXXR.
 void InitNames()
 {
-    int i;
-    /* Parser Structures */
-    R_CommentSxp = R_NilValue;
     /* String constants (CHARSXP values) */
     /* NA_STRING */
     // CXXR: NA_STRING is initialised in String.cpp
     R_print.na_string = NA_STRING;
-    /*  Builtin Functions */
-    for (i = 0; R_FunTab[i].name; i++)
-	installFunTab(i);
 #ifdef BYTECODE
     R_initialize_bcode();
 #endif
 }
-
-
-/*  install - probe the symbol table */
-/*  If "name" is not found, it is installed in the symbol table.
-    The symbol corresponding to the string "name" is returned. */
-
-SEXP install(const char *name)
-{
-    if (*name == '\0')
-	error(_("attempt to use zero-length variable name"));
-    if (strlen(name) > MAXIDSIZE)
-	error(_("variable names are limited to %d bytes"), MAXIDSIZE);
-    return Symbol::obtain(name);
-}
-
-
-/*  do_internal - This is the code for .Internal(). */
-
-SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    SEXP s, fun, ans;
-    int save = GCStackRootBase::ppsSize();
-    int flag;
-    unsigned int vmax = vmaxget();
-
-    checkArity(op, args);
-    s = CAR(args);
-    if (!isPairList(s))
-	errorcall(call, _("invalid .Internal() argument"));
-    fun = CAR(s);
-    if (!isSymbol(fun))
-	errorcall(call, _("invalid internal function"));
-    if (INTERNAL(fun) == R_NilValue)
-	errorcall(call, _("no internal function \"%s\""),
-		  CHAR(PRINTNAME(fun)));
-    args = CDR(s);
-    if (TYPEOF(INTERNAL(fun)) == BUILTINSXP)
-	args = evalList(args, env, op);
-    PROTECT(args);
-    flag = PRIMPRINT(INTERNAL(fun));
-    R_Visible = Rboolean(flag != 1);
-    ans = PRIMFUN(INTERNAL(fun)) (s, INTERNAL(fun), args, env);
-    /* This resetting of R_Visible=FALSE  was to fix PR#7397,
-       now fixed in GEText */
-    if (flag < 2) R_Visible = Rboolean(flag != 1);
-#ifdef CHECK_VISIBILITY
-    if(flag < 2 && flag == R_Visible) {
-	char *nm = CHAR(PRINTNAME(fun));
-	if(strcmp(nm, "eval") && strcmp(nm, "options") && strcmp(nm, "Recall")
-	   && strcmp(nm, "do.call") && strcmp(nm, "switch")
-	   && strcmp(nm, "recordGraphics") && strcmp(nm, "writeBin")
-	   && strcmp(nm, "NextMethod") && strcmp(nm, "eval.with.vis"))
-	    printf("vis: internal %s\n", nm);
-    }
-#endif
-    UNPROTECT(1);
-    check_stack_balance(INTERNAL(fun), save);
-    vmaxset(vmax);
-    return (ans);
-}
-#undef __R_Names__

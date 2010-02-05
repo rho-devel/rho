@@ -11,7 +11,6 @@
 anova.lmlist(object, \dots, scale = 0, test = "F")
 }
 \alias{anova.lm}
-%\alias{anova.lm.null}
 \alias{anova.lmlist}
 \description{
   Compute an analysis of variance table for one or more linear model fits.
@@ -68,7 +67,7 @@ anova.lmlist(object, \dots, scale = 0, test = "F")
   Chambers, J. M. (1992)
   \emph{Linear models.}
   Chapter 4 of \emph{Statistical Models in S}
-  eds J. M. Chambers and T. J. Hastie, Wadsworth \& Brooks/Cole.
+  eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 }
 \seealso{
   The model fitting function \code{\link{lm}}, \code{\link{anova}}.

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -47,6 +47,10 @@
 #define _(String) dgettext ("grid", String)
 #else
 #define _(String) (String)
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* All grid type names are prefixed with an "L" 
@@ -623,3 +627,6 @@ SEXP validUnits(SEXP units);
 SEXP L_getGPar(void);
 SEXP L_setGPar(SEXP gpars);
     
+#ifdef __cplusplus
+}  // extern "C"
+#endif

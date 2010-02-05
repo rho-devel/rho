@@ -31,7 +31,7 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
     }
 
     type <- match.arg(type)
-    if(missing(what) || length(what) != 1 || !is.character(what)) {
+    if(missing(what) || length(what) != 1L || !is.character(what)) {
         message("   RShowDoc() should be used with a character string argument specifying\n   a documentation file")
         return(invisible())
     }
@@ -76,7 +76,16 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
                       what, package), domain = NA)
     }
     if(what == "FAQ") what <- "R-FAQ"
-    if(what %in% c("NEWS", "COPYING")) {
+    if(what == "NEWS") {
+        ## This is in UTF-8 and has a BOM on the first line
+        path <- file.path(R.home(), what)
+        tf <- tempfile()
+        tmp <- readLines(path)
+        tmp[1] <- ""
+        writeLines(tmp, tf)
+        file.show(tf, delete.file = TRUE, encoding = "UTF-8")
+        return(invisible(path))
+    } else if(what == "COPYING") {
         path <- file.path(R.home(), what)
         file.show(path)
         return(invisible(path))
@@ -111,7 +120,7 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
                 return(invisible(path))
             }
         }
-        path <- file.path(R.home(), "doc", what)
+        path <- file.path(R.home("doc"), what)
         if(file.exists(path)) {
             file.show(path)
             return(invisible(path))
@@ -125,8 +134,8 @@ RShowDoc <- function(what, type=c("pdf", "html", "txt"), package)
         rdocdir <- R.home("doc")
         docs <- dir(rdocdir, full.names=TRUE)
         docs <- docs[sapply(docs, function(x) file_test("-f", x))]
-        m <- match(what, basename(docs), 0)
-        if(m > 0) {
+        m <- match(what, basename(docs), 0L)
+        if(m > 0L) {
             file.show(docs[m])
             return(invisible(docs[m]))
         }

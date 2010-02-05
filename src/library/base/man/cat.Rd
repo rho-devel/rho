@@ -71,9 +71,10 @@ cat(\dots , file = "", sep = " ", fill = FALSE, labels = NULL,
   same field width for all elements.
 }
 \note{
-  Despite its name and earlier documentation, \code{sep} is a vector of
-  terminators rather than separators, being output after every vector
-  element (including the last).  Entries are recycled as needed.
+  If any element of \code{sep} contains a newline character, it is
+  treated as a vector of terminators rather than separators, an element
+  being output after every vector element \emph{and} a newline after the
+  last.  Entries are recycled as needed.
 }
 \value{
   None (invisible \code{NULL}).
@@ -81,7 +82,7 @@ cat(\dots , file = "", sep = " ", fill = FALSE, labels = NULL,
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{print}}, \code{\link{format}}, and \code{\link{paste}}

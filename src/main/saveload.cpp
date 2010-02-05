@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2007  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
+ *  Copyright (C) 1997--2009  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,6 +47,7 @@
 #include <Fileio.h>
 #include <R_ext/RS.h>
 #include <errno.h>
+#include "CXXR/BuiltInFunction.h"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -513,7 +513,7 @@ static SEXPTYPE FixupType(unsigned int type, int VersionId)
     if (type == 11 || type == 12)
 	type = 13;
 
-    return SEXPTYPE(type);
+    return CXXRCONSTRUCT(SEXPTYPE, type);
 }
 
 static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines *m, SaveLoadData *d)
@@ -549,17 +549,11 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* TAG(s) = */ m->InInteger(fp, d);
 	break;
     case SPECIALSXP:
-	/* skip over length and name fields */
-	/* length = */ m->InInteger(fp, d);
-	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new BuiltInFunction(StrToInternal(m->InString(fp, d)),
-					       false));
-	break;
     case BUILTINSXP:
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new BuiltInFunction(StrToInternal(m->InString(fp, d))));
+	s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d))));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
@@ -572,14 +566,14 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /*REAL(s)[j] = */ m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* COMPLEX(s)[j] = */ m->InComplex(fp, d);
 	break;
     case INTSXP:
@@ -587,7 +581,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);;
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    /* INTEGER(s)[j] = */ m->InInteger(fp, d);
 	break;
     case STRSXP:
@@ -596,7 +590,7 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	len = m->InInteger(fp, d);
 	s = allocVector(type, len);
 	/* skip over the vector content */
-	for (j = 0; j < uint(len); j++) {
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++) {
 	    /* VECTOR(s)[j] = */ m->InInteger(fp, d);
 	}
 	break;
@@ -644,29 +638,29 @@ static void RestoreSEXP(SEXP s, FILE *fp, InputRoutines *m, NodeInfo *node, int 
 	break;
     case REALSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    REAL(s)[j] = m->InReal(fp, d);
 	break;
     case CPLXSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    COMPLEX(s)[j] = m->InComplex(fp, d);
 	break;
     case INTSXP:
     case LGLSXP:
 	len = m->InInteger(fp, d);;
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    INTEGER(s)[j] = m->InInteger(fp, d);
 	break;
     case STRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_STRING_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     case VECSXP:
     case EXPRSXP:
 	len = m->InInteger(fp, d);
-	for (j = 0; j < uint(len); j++)
+	for (j = 0; j < CXXRCONSTRUCT(uint, len); j++)
 	    SET_VECTOR_ELT(s, j, OffsetToNode(m->InInteger(fp, d), node));
 	break;
     default: error(_("bad SEXP type in data file"));
@@ -686,7 +680,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
 		     int version, SaveLoadData *d)
 {
     int i, j;
-    unsigned int vmaxsave;
+    void *vmaxsave;
     fpos_t savepos;
     NodeInfo node;
 
@@ -772,45 +766,6 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     return OffsetToNode(i, &node);
 }
 
-#ifdef UNUSED
-/* These functions convert old (pairlist) lists into new */
-/* (vectorlist) lists.	The conversion can be defeated by */
-/* hiding things inside closures, but it is doubtful that */
-/* anyone has done this. */
-
-static SEXP ConvertPairToVector(SEXP);
-
-static SEXP ConvertAttributes(SEXP attrs)
-{
-    SEXP ap = attrs;
-    while (ap != R_NilValue) {
-	if (TYPEOF(CAR(ap)) == LISTSXP)
-	    SETCAR(ap, ConvertPairToVector(CAR(ap)));
-	ap = CDR(ap);
-    }
-    return attrs;
-}
-
-static SEXP ConvertPairToVector(SEXP obj)
-{
-    int i, n;
-    switch (TYPEOF(obj)) {
-    case LISTSXP:
-	PROTECT(obj = PairToVectorList(obj));
-	n = length(obj);
-	for (i = 0; i < n; i++)
-	    SET_VECTOR_ELT(obj, i, ConvertPairToVector(VECTOR_ELT(obj, i)));
-	UNPROTECT(1);
-	break;
-    case VECSXP:
-	break;
-    default:
-	;
-    }
-    SET_ATTRIB(obj, ConvertAttributes(ATTRIB(obj)));
-    return obj;
-}
-#endif
 
 /* ----- V e r s i o n -- O n e -- S a v e / R e s t o r e ----- */
 
@@ -851,7 +806,7 @@ static int NewSaveSpecialHook (SEXP item)
 
 static SEXP NewLoadSpecialHook (SEXPTYPE type)
 {
-    switch (int(type)) {
+    switch (CXXRCONSTRUCT(int, type)) {
     case -1: return R_NilValue;
     case -2: return R_GlobalEnv;
     case -3: return R_UnboundValue;
@@ -1297,7 +1252,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     int pos, levs, objf;
 
     R_assert(TYPEOF(sym_table) == VECSXP && TYPEOF(env_table) == VECSXP);
-    type = SEXPTYPE(m->InInteger(fp, d));
+    type = CXXRCONSTRUCT(SEXPTYPE, m->InInteger(fp, d));
     if ((s = NewLoadSpecialHook(type)))
 	return s;
     levs = m->InInteger(fp, d);
@@ -1341,7 +1296,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, *env)));
+	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));
 	    prom->setValue(val);
 	    PROTECT(s = prom);
 	}
@@ -1366,7 +1321,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case SPECIALSXP:
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	PROTECT(s = mkPRIMSXP(StrToInternal(m->InString(fp, d)), type == BUILTINSXP));
+	PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d)))));
 	break;
     case CHARSXP:
     case LGLSXP:
@@ -1392,7 +1347,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 static void newdataload_cleanup(void *data)
 {
     InputCtxtData *cinfo = static_cast<InputCtxtData*>(data);
-    FILE *fp = static_cast<FILE *>( data);  // 2007/07/31 arr: Can this be right?
+    FILE *fp = static_cast<FILE *>( data);
     cinfo->methods->InTerm(fp, cinfo->data);
 }
 
@@ -1685,7 +1640,7 @@ static char *InStringBinary(FILE *fp, SaveLoadData *unused)
 	buf = newbuf;
 	buflen = nbytes + 1;
     }
-    if (int(fread(buf, sizeof(char), nbytes, fp)) != nbytes)
+    if (CXXRCONSTRUCT(int, fread(buf, sizeof(char), nbytes, fp)) != nbytes)
 	error(_("a binary string read error occurred"));
     buf[nbytes] = '\0';
     return buf;
@@ -1776,7 +1731,7 @@ static char *InStringXdr(FILE *fp, SaveLoadData *d)
     static char *buf = NULL;
     static int buflen = 0;
     unsigned int nbytes = InIntegerXdr(fp, d);
-    if (int(nbytes) >= buflen) {
+    if (CXXRCONSTRUCT(int, nbytes) >= buflen) {
 	char *newbuf;
 	/* Protect against broken realloc */
 	if(buf) newbuf = static_cast<char *>( realloc(buf, nbytes + 1));
@@ -2026,6 +1981,7 @@ static void saveload_cleanup(void *data)
     fclose(fp);
 }
 
+/* Only used for version 1 saves */
 SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* save(list, file, ascii, version, environment) */
@@ -2128,11 +2084,12 @@ static SEXP RestoreToEnv(SEXP ans, SEXP aenv)
     if (! isList(ans))
 	error(_("loaded data is not in pair list form"));
 
+    PROTECT(ans);
     a = ans;
     while (a != R_NilValue) {a = CDR(a); cnt++;}
     PROTECT(names = allocVector(STRSXP, cnt));
     cnt = 0;
-    PROTECT(a = ans);
+    a = ans;
     while (a != R_NilValue) {
 	SET_STRING_ELT(names, cnt++, PRINTNAME(TAG(a)));
 	defineVar(TAG(a), CAR(a), aenv);
@@ -2251,7 +2208,7 @@ int attribute_hidden R_XDRDecodeInteger(void *buf)
     return i;
 }
 
-/* Next two used in gnomeGUI package */
+/* Next two were used in gnomeGUI package, are in Rintterface.h  */
 void R_SaveGlobalEnvToFile(const char *name)
 {
     SEXP sym = install("sys.save.image");
@@ -2321,7 +2278,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     struct R_outpstream_st out;
     R_pstream_format_t type;
-    CXXRconst char *magic;
+    CXXRCONST char *magic;
 
     checkArity(op, args);
 
@@ -2333,7 +2290,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
-    ascii = Rboolean(INTEGER(CADDR(args))[0]);
+    ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSaveFormatVersion;
@@ -2351,7 +2308,13 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "eval.promises");
 
     wasopen = con->isopen;
-    if(!wasopen && !con->open(con)) error(_("cannot open the connection"));
+    if(!wasopen) {
+	char mode[5];	
+	strcpy(mode, con->mode);
+	strcpy(con->mode, "wb");
+	if(!con->open(con)) error(_("cannot open the connection"));
+	strcpy(con->mode, mode);
+    }
     if(!con->canwrite) {
 	if(!wasopen) con->close(con);
 	error(_("connection not open for writing"));
@@ -2371,7 +2334,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (con->text)
 	Rconn_printf(con, "%s", magic);
     else {
-	CXXRunsigned int len = strlen(magic);
+	CXXRUNSIGNED int len = strlen(magic);
 	if (len != con->write(magic, 1, len, con))
 	    error(_("error writing to connection"));
     }
@@ -2403,13 +2366,12 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-/* This version reads and checks the magic number,
-   opens the connection if needed */
+/* Read and checks the magic number, open the connection if needed */
 
-static void saveloadcon_cleanup(void *data)
+static void load_con_cleanup(void *data)
 {
-    FILE *fp = static_cast<FILE *>( data);
-    fclose(fp);
+    Rconnection con = CXXRSCAST(Rconnection, data);
+    con->close(con);
 }
 
 SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -2430,8 +2392,13 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     if(!con->canread) error(_("cannot read from this connection"));
     if(con->text) error(_("can only read from a binary connection"));
     wasopen = con->isopen;
-    if(!wasopen)
+    if(!wasopen) {
+	char mode[5];	
+	strcpy(mode, con->mode);
+	strcpy(con->mode, "rb");
 	if(!con->open(con)) error(_("cannot open the connection"));
+	strcpy(con->mode, mode);
+    }
     if(!con->canread) {
 	if(!wasopen) con->close(con);
 	error(_("connection not open for reading"));
@@ -2451,11 +2418,14 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
 	strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
 	strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
-	/* set up a context which will clean up if there is an error */
+	/* FIXME: this is odd: we did not open that connection, so
+	   why should we be closing it? */
+	/* set up a context which will close the connection 
+	   if there is an error */
 	if (wasopen) {
 	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 			 R_NilValue, R_NilValue);
-	    cntxt.cend = &saveloadcon_cleanup;
+	    cntxt.cend = &load_con_cleanup;
 	    cntxt.cenddata = con;
 	}
 	R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
@@ -2470,31 +2440,4 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     } else
 	error(_("the input does not start with a magic number compatible with loading from a connection"));
     return res;
-}
-
-/* This assumes the magic number has already been read, and its format
-   specification (A or X) is ignored.  For saved images with many
-   variables and the values saved in a pair list this internal version
-   will be faster than a version in R */
-
-SEXP attribute_hidden do_loadFromConn(SEXP call, SEXP op, SEXP args, SEXP env)
-{
-    /* loadFromConn(conn, environment) */
-
-    struct R_inpstream_st in;
-    Rconnection con;
-    SEXP aenv;
-
-    checkArity(op, args);
-
-    con = getConnection(asInteger(CAR(args)));
-    aenv = CADR(args);
-    if (TYPEOF(aenv) == NILSXP) {
-	error(_("use of NULL environment is defunct"));
-	aenv = R_BaseEnv;
-    } else if (TYPEOF(aenv) != ENVSXP)
-	error(_("invalid '%s' argument"), "envir");
-
-    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
-    return RestoreToEnv(R_Unserialize(&in), aenv);
 }

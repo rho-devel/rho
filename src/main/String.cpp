@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,9 +55,8 @@ namespace CXXR {
     }
 }
 
-GCRoot<const String>
-String::s_na(expose(new UncachedString("NA", CE_NATIVE, true)));
-SEXP R_NaString = const_cast<String*>(String::NA());
+GCRoot<String> String::s_na(expose(new UncachedString("NA", CE_NATIVE, true)));
+SEXP R_NaString = String::NA();
 
 // String::s_blank and R_BlankString are defined in Symbol.cpp to
 // enforce initialization order.
@@ -76,7 +75,7 @@ String::String(size_t sz, cetype_t encoding)
     }
 }
 
-// String::Comparator::operator()(const String&, const String&) is in
+// String::Comparator::operator()(const String*, const String*) is in
 // sort.cpp
 
 // int hash() const is in envir.cpp (for the time being)

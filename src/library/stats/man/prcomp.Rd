@@ -1,6 +1,6 @@
 % File src/library/stats/man/prcomp.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{prcomp}
@@ -88,7 +88,7 @@ prcomp(x, \dots)
     centred (and scaled if requested) data multiplied by the
     \code{rotation} matrix) is returned.  Hence, \code{cov(x)} is the
     diagonal matrix \code{diag(sdev^2)}.  For the formula method,
-    \code{napredict} is applied to handle the treatment of values
+    \code{\link{napredict}()} is applied to handle the treatment of values
     omitted by the \code{na.action}.}
   \item{center, scale}{the centering and scaling used, or \code{FALSE}.}
 }
@@ -99,7 +99,10 @@ prcomp(x, \dots)
   is generally the preferred method for numerical accuracy.  The
   \code{print} method for these objects prints the results in a nice
   format and the \code{plot} method produces a scree plot.
-
+  
+  Unlike \code{\link{princomp}}, variances are computed with the usual
+  divisor \eqn{N - 1}.
+  
   Note that \code{scale = TRUE} cannot be used if there are zero or
   constant (for \code{center = TRUE}) variables.
 }
@@ -111,7 +114,7 @@ prcomp(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 
   Mardia, K. V., J. T. Kent, and J. M. Bibby (1979)
   \emph{Multivariate Analysis}, London: Academic Press.

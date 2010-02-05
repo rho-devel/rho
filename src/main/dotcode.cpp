@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -54,9 +54,7 @@
 #include <R_ext/GraphicsEngine.h> /* needed for GEDevDesc in do_Externalgr */
 
 #include <R_ext/RConverters.h>
-#ifdef HAVE_ICONV
 #include <R_ext/Riconv.h>
-#endif
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
@@ -116,9 +114,9 @@ checkValidSymbolId(SEXP op, SEXP call, DL_FUNC *fun,
     *fun = NULL;
     if(TYPEOF(op) == EXTPTRSXP) {
 	char *p = NULL;
-	if(R_ExternalPtrTag(op) == Rf_install("native symbol"))
+	if(R_ExternalPtrTag(op) == install("native symbol"))
 	   *fun = R_ExternalPtrAddrFn(op);
-	else if(R_ExternalPtrTag(op) == Rf_install("registered native symbol")) {
+	else if(R_ExternalPtrTag(op) == install("registered native symbol")) {
 	   R_RegisteredNativeSymbol *tmp;
 	   tmp = static_cast<R_RegisteredNativeSymbol *>( R_ExternalPtrAddr(op));
 	   if(tmp) {
@@ -281,9 +279,9 @@ checkNativeType(int targetType, int actualType)
 {
     if(targetType > 0) {
 	if(targetType == INTSXP || targetType == LGLSXP) {
-	    return Rboolean(actualType == INTSXP || actualType == LGLSXP);
+	    return CXXRCONSTRUCT(Rboolean, (actualType == INTSXP || actualType == LGLSXP));
 	}
-	return Rboolean(targetType == actualType);
+	return CXXRCONSTRUCT(Rboolean, (targetType == actualType));
     }
 
     return(TRUE);
@@ -291,7 +289,7 @@ checkNativeType(int targetType, int actualType)
 
 static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 			const char *name, R_toCConverter **converter,
-			SEXPTYPE targetType, CXXRconst char* encname)
+			SEXPTYPE targetType, CXXRCONST char* encname)
 {
     Rbyte *rawptr;
     int *iptr;
@@ -408,7 +406,6 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 	} else {
 	    cptr = static_cast<char**>(CXXR_alloc(n, sizeof(char*)));
 	    if(strlen(encname)) {
-#ifdef HAVE_ICONV
 		char *outbuf;
 		const char *inbuf;
 		size_t inb, outb, outb0, res;
@@ -424,22 +421,17 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == size_t(-1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_in;
 		    }
-		    if(res == size_t(-1)) 
+		    if(res == CXXRCONSTRUCT(size_t, -1))
 			error(_("conversion problem in re-encoding to '%s'"),
 			      encname);
 		    *outbuf = '\0';
 		}
 		Riconv_close(obj);
-	    } else
-#else
-		warning(_("re-encoding is not supported on this system"));
-	    }
-#endif
-	    {
+	    } else {
 		for (i = 0 ; i < n ; i++) {
 		    const char *ss = translateChar(STRING_ELT(s, i));
 		    l = strlen(ss);
@@ -492,7 +484,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     SEXP *lptr, CSingSymbol = install("Csingle");
     int i;
     SEXP s, t;
-    SEXPTYPE stype = SEXPTYPE(type);
+    SEXPTYPE stype = (type == SINGLESXP ? REALSXP : SEXPTYPE(type));
 
     switch(stype) {
     case RAWSXP:
@@ -509,7 +501,6 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    INTEGER(s)[i] = iptr[i];
 	break;
     case REALSXP:
-    case SINGLESXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 	    sptr = static_cast<float*>( p);
@@ -538,7 +529,6 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 	    PROTECT(s = allocVector(stype, n));
 	    cptr = static_cast<char**>(p);
 	    if(strlen(encname)) {
-#ifdef HAVE_ICONV
 		const char *inbuf;
 		char *outbuf, *p;
 		size_t inb, outb, outb0, res;
@@ -553,23 +543,18 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
-		    if(res == size_t(-1) && errno == E2BIG) {
+		    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
 			goto restart_out;
 		    }
-		    if(res == size_t(-1)) 
+		    if(res == CXXRCONSTRUCT(size_t, -1))
 			error(_("conversion problem in re-encoding from '%s'"),
 			      encname);
 		    *outbuf = '\0';
 		    SET_STRING_ELT(s, i, mkChar(p));
 		}
 		Riconv_close(obj);
-	    } else
-#else
-		warning(_("re-encoding is not supported on this system"));
-	    }
-#endif
-	    {
+	    } else {
 		for(i = 0 ; i < n ; i++)
 		    SET_STRING_ELT(s, i, mkChar(cptr[i]));
 	    }
@@ -598,9 +583,6 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     return s;
 }
 
-#define THROW_REGISTRATION_TYPE_ERROR
-
-#ifdef THROW_REGISTRATION_TYPE_ERROR
 static Rboolean
 comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 {
@@ -613,7 +595,6 @@ comparePrimitiveTypes(R_NativePrimitiveArgType type, SEXP s, Rboolean dup)
 
     return(FALSE);
 }
-#endif /* end of THROW_REGISTRATION_TYPE_ERROR */
 
 
 /* Foreign Function Interface.  This code allows a user to call C */
@@ -769,16 +750,16 @@ SEXP attribute_hidden do_isloaded(SEXP call, SEXP op, SEXP args, SEXP env)
     if (nargs > 3) error(_("too many arguments"));
 
     if(!isValidString(CAR(args)))
-	error(R_MSG_IA);
+	error(_("invalid '%s' argument"), "symbol");
     sym = translateChar(STRING_ELT(CAR(args), 0));
     if(nargs >= 2) {
 	if(!isValidString(CADR(args)))
-	    error(R_MSG_IA);
+	    error(_("invalid '%s' argument"), "PACKAGE");
 	pkg = translateChar(STRING_ELT(CADR(args), 0));
     }
     if(nargs >= 3) {
 	if(!isValidString(CADDR(args)))
-	    error(R_MSG_IA);
+	    error(_("invalid '%s' argument"), "type");
 	type = CHAR(STRING_ELT(CADDR(args), 0)); /* ASCII */
 	if(strcmp(type, "C") == 0) symbol.type = R_C_SYM;
 	else if(strcmp(type, "Fortran") == 0) symbol.type = R_FORTRAN_SYM;
@@ -800,7 +781,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
     R_ExternalRoutine fun = NULL;
     SEXP retval;
     R_RegisteredNativeSymbol symbol = {R_EXTERNAL_SYM, {NULL}, NULL};
-    unsigned int vmax = vmaxget();
+    void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
     args = resolveNativeRoutine(args, &ofun, &symbol, buf, NULL, NULL,
@@ -818,8 +799,7 @@ SEXP attribute_hidden do_External(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(symbol.symbol.external->numArgs != length(args))
 	    errorcall(call,
 		      _("Incorrect number of arguments (%d), expecting %d for %s"),
-		      length(args), symbol.symbol.external->numArgs,
-		      translateChar(STRING_ELT(CAR(args), 0)));
+		      length(args), symbol.symbol.external->numArgs, buf);
     }
 #endif
 
@@ -838,7 +818,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP retval, nm, cargs[MAX_ARGS], pargs;
     R_RegisteredNativeSymbol symbol = {R_CALL_SYM, {NULL}, NULL};
     int nargs;
-    unsigned int vmax = vmaxget();
+    void *vmax = vmaxget();
     char buf[MaxSymbolBytes];
 
     nm = CAR(args);
@@ -857,8 +837,7 @@ SEXP attribute_hidden do_dotcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(symbol.symbol.call->numArgs != nargs)
 	    errorcall(call,
 		      _("Incorrect number of arguments (%d), expecting %d for %s"),
-		      nargs, symbol.symbol.call->numArgs,
-		      translateChar(STRING_ELT(nm, 0)));
+		      nargs, symbol.symbol.call->numArgs, buf);
     }
 
     retval = R_NilValue;	/* -Wall */
@@ -1535,6 +1514,14 @@ SEXP attribute_hidden do_Externalgr(SEXP call, SEXP op, SEXP args, SEXP env)
      * If there is an error or user-interrupt in the above
      * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
+     * 
+     * NOTE: if someone uses try() around this call and there
+     * is an error, then dd->recordGraphics stays FALSE, so
+     * subsequent pages of graphics output are NOT saved on
+     * the display list.  A workaround is to deliberately
+     * force an error in a graphics call (e.g., a grid popViewport()
+     * while in the ROOT viewport) which will reset dd->recordGraphics
+     * to TRUE as per the comment above.
      */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
@@ -1557,6 +1544,14 @@ SEXP attribute_hidden do_dotcallgr(SEXP call, SEXP op, SEXP args, SEXP env)
      * If there is an error or user-interrupt in the above
      * evaluation, dd->recordGraphics is set to TRUE
      * on all graphics devices (see GEonExit(); called in errors.c)
+     * 
+     * NOTE: if someone uses try() around this call and there
+     * is an error, then dd->recordGraphics stays FALSE, so
+     * subsequent pages of graphics output are NOT saved on
+     * the display list.  A workaround is to deliberately
+     * force an error in a graphics call (e.g., a grid popViewport()
+     * while in the ROOT viewport) which will reset dd->recordGraphics
+     * to TRUE as per the comment above.
      */
     dd->recordGraphics = record;
     if (GErecording(call, dd)) {
@@ -1600,7 +1595,7 @@ Rf_getCallingDLL(void)
     }
     if(!found) return R_NilValue;
 
-    PROTECT(e = lang2(Rf_install("getCallingDLLe"), rho));
+    PROTECT(e = lang2(install("getCallingDLLe"), rho));
     ans = eval(e,  R_GlobalEnv);
     UNPROTECT(1);
     return(ans);
@@ -1659,7 +1654,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     R_RegisteredNativeSymbol symbol = {R_C_SYM, {NULL}, NULL};
     R_NativePrimitiveArgType *checkTypes = NULL;
     R_NativeArgStyle *argStyles = NULL;
-    unsigned int vmax;
+    void *vmax;
     char symName[MaxSymbolBytes], encname[101];
 
     if (NaokSymbol == NULL || DupSymbol == NULL || PkgSymbol == NULL) {
@@ -1696,9 +1691,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
     cargs = static_cast<void**>(CXXR_alloc(nargs, sizeof(void*)));
     nargs = 0;
     for(pargs = args ; pargs != R_NilValue; pargs = CDR(pargs)) {
-#ifdef THROW_REGISTRATION_TYPE_ERROR
 	if(checkTypes &&
-	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), Rboolean(dup))) {
+	   !comparePrimitiveTypes(checkTypes[nargs], CAR(pargs), CXXRCONSTRUCT(Rboolean, dup))) {
 	    /* We can loop over all the arguments and report all the
 	       erroneous ones, but then we would also want to avoid
 	       the conversions.  Also, in the future, we may just
@@ -1710,13 +1704,12 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 	    errorcall(call, _("Wrong type for argument %d in call to %s"),
 		      nargs+1, symName);
 	}
-#endif
 	cargs[nargs] = RObjToCPtr(CAR(pargs), naok, dup, nargs + 1,
 				  which, symName, argConverters + nargs,
-				  checkTypes ? SEXPTYPE(checkTypes[nargs]) : NILSXP,
+				  checkTypes ? CXXRCONSTRUCT(SEXPTYPE, checkTypes[nargs]) : NILSXP,
 				  encname);
 #ifdef R_MEMORY_PROFILING
-	if (TRACE(CAR(pargs)) && dup)
+	if (RTRACE(CAR(pargs)) && dup)
 		memtrace_report(CAR(pargs), cargs[nargs]);
 #endif
 	nargs++;
@@ -2343,9 +2336,9 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 				       checkTypes ? checkTypes[nargs] : TYPEOF(CAR(pargs)),
 				       encname));
 #if R_MEMORY_PROFILING
-		if (TRACE(CAR(pargs)) && dup){
+		if (RTRACE(CAR(pargs)) && dup){
 			memtrace_report(cargs[nargs], s);
-			SET_TRACE(s, 1);
+			SET_RTRACE(s, 1);
 		}
 #endif
 		DUPLICATE_ATTRIB(s, CAR(pargs));

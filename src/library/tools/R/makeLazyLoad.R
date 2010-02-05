@@ -20,7 +20,7 @@ code2LazyLoadDB <-
              compress = TRUE)
 {
     pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
-    if(length(pkgpath) == 0)
+    if(!length(pkgpath))
         stop(gettextf("there is no package called '%s'", package),
              domain = NA)
     barepackage <- sub("([^-]+)_.*", "\\1", package)
@@ -48,22 +48,6 @@ code2LazyLoadDB <-
     }
 }
 
-rda2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
-{
-    pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
-    if(length(pkgpath) == 0)
-        stop(gettextf("there is no package called '%s'", package),
-             domain = NA)
-    rdafile <- file.path(pkgpath, "R", "all.rda")
-    if (! file.exists(rdafile))
-        stop(gettextf("package '%s' has no .rda file", package),
-             domain = NA)
-    dbbase <- file.path(pkgpath, "R", package)
-    e <- new.env(hash=TRUE)
-    load(rdafile, e)
-    makeLazyLoadDB(e, dbbase, compress = compress)
-}
-
 sysdata2LazyLoadDB <- function(srcFile, destDir, compress = TRUE)
 {
     e <- new.env(hash=TRUE)
@@ -75,7 +59,7 @@ list_data_in_pkg <- function(package, lib.loc = NULL, dataDir = NULL)
 {
     if(is.null(dataDir)) {
         pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
-        if(length(pkgpath) == 0)
+        if(!length(pkgpath))
             stop(gettextf("there is no package called '%s'", package),
                  domain = NA)
         dataDir <- file.path(pkgpath, "data")
@@ -90,10 +74,10 @@ list_data_in_pkg <- function(package, lib.loc = NULL, dataDir = NULL)
             ans <- .readRDS(sv)
         } else if(file.exists(sv <- file.path(dataDir, "datalist"))) {
             ans <- strsplit(readLines(sv), ":")
-            nms <- lapply(ans, function(x) x[1])
+            nms <- lapply(ans, function(x) x[1L])
             ans <- lapply(ans, function(x)
-                          if(length(x)==1) x[1] else
-                          strsplit(x[2], " +")[[1]][-1])
+                          if(length(x) == 1L) x[1L] else
+                          strsplit(x[2L], " +")[[1L]][-1L])
             names(ans) <- nms
         } else {
             files <- list_files_with_type(dataDir, "data")
@@ -116,13 +100,16 @@ data2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
 {
     options(warn=1)
     pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
-    if(length(pkgpath) == 0)
+    if(!length(pkgpath))
         stop(gettextf("there is no package called '%s'", package),
              domain = NA)
     dataDir <- file.path(pkgpath, "data")
     ## set the encoding for text files to be read, if specified
     enc <- .read_description(file.path(pkgpath, "DESCRIPTION"))["Encoding"]
-    if(!is.na(enc)) options(encoding=enc)
+    if(!is.na(enc)) {
+        op <- options(encoding=enc)
+        on.exit(options(encoding=op[[1L]]))
+    }
     if(file_test("-d", dataDir)) {
         if(file.exists(file.path(dataDir, "Rdata.rds")) &&
 	    file.exists(file.path(dataDir, paste(package, "rdx", sep="."))) &&
@@ -136,7 +123,7 @@ data2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
             files <- unique(basename(file_path_sans_ext(files)))
             dlist <- vector("list", length(files))
             names(dlist) <- files
-            loaded <- character(0)
+            loaded <- character(0L)
             for(f in files) {
                 utils::data(list = f, package = package, lib.loc = lib.loc,
                         envir = dataEnv)
@@ -159,7 +146,6 @@ data2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
                 makeLazyLoadDB(dataEnv, dbbase, compress = compress)
                 .saveRDS(dlist, file.path(dataDir, "Rdata.rds"),
                          compress = compress)
-                print(f0)
                 unlink(f0)
                 if(file.exists(file.path(dataDir, "filelist")))
                     unlink(file.path(dataDir, c("filelist", "Rdata.zip")))
@@ -179,11 +165,13 @@ makeLazyLoadDB <- function(from, filebase, compress = TRUE, ascii = FALSE,
     envtable <- function() {
         idx <- 0
         envs <- NULL
-        enames <- character(0)
-        find <- function(v, keys, vals)
+        enames <- character(0L)
+        find <- function(v, keys, vals) {
             for (i in seq_along(keys))
                 if (identical(v, keys[[i]]))
                     return(vals[i])
+	    NULL
+	}
         getname <- function(e) find(e, envs, enames)
         getenv <- function(n) find(n, enames, envs)
         insert <- function(e) {
@@ -206,7 +194,7 @@ makeLazyLoadDB <- function(from, filebase, compress = TRUE, ascii = FALSE,
 
     lazyLoadDBinsertVariable <- function(n, e, file, ascii, compress, hook) {
         x <- .Call("R_getVarsFromFrame", n, e, FALSE, PACKAGE="base")
-       .Call("R_lazyLoadDBinsertValue", x[[1]], file, ascii, compress, hook,
+       .Call("R_lazyLoadDBinsertValue", x[[1L]], file, ascii, compress, hook,
               PACKAGE = "base")
     }
 
@@ -272,7 +260,7 @@ makeLazyLoading <-
     options(warn=1)
     findpack <- function(package, lib.loc) {
         pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
-        if(length(pkgpath) == 0)
+        if(!length(pkgpath))
             stop(gettextf("there is no package called '%s'", package),
                  domain = NA)
         pkgpath
@@ -296,12 +284,8 @@ makeLazyLoading <-
     if (file.info(codeFile)["size"] == file.info(loaderFile)["size"])
         warning("package seems to be using lazy loading already")
     else {
-        rdaFile <- file.path(pkgpath, "R", "all.rda")
-        if (file.exists(rdaFile))
-            rda2LazyLoadDB(package, lib.loc, compress = compress)
-        else
-            code2LazyLoadDB(package, lib.loc = lib.loc,
-                            keep.source = keep.source, compress = compress)
+        code2LazyLoadDB(package, lib.loc = lib.loc,
+                        keep.source = keep.source, compress = compress)
         file.copy(loaderFile, codeFile, TRUE)
     }
 

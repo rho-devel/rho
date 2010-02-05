@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -140,8 +140,9 @@ extern int errno;
 #if defined __GNUC__ && __GNUC__ >= 2
 # define alignof(TYPE) __alignof__ (TYPE)
 #else
+/* R change: was (int) */
 # define alignof(TYPE) \
-    ((int) &((struct { char dummy1; TYPE dummy2; } *) 0)->dummy2)
+    ((size_t) &((struct { char dummy1; TYPE dummy2; } *) 0)->dummy2)
 #endif
 
 /* Some compilers, like SunOS4 cc, don't have offsetof in <stddef.h>.  */

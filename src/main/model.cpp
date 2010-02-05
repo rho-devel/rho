@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -316,9 +316,9 @@ static void SetBit(SEXP term, int whichBit, int value)
     word = (whichBit - 1) / WORDSIZE;
     offset = (WORDSIZE - whichBit) % WORDSIZE;
     if (value)
-	reinterpret_cast<unsigned int*>(INTEGER(term))[word] |= (1U << offset);
+	(reinterpret_cast<unsigned int*>( INTEGER(term)))[word] |= (1U << offset);
     else
-	reinterpret_cast<unsigned int*>(INTEGER(term))[word] &= ~(1U << offset);
+	(reinterpret_cast<unsigned int*>( INTEGER(term)))[word] &= ~(1U << offset);
 }
 
 
@@ -330,7 +330,7 @@ static int GetBit(SEXP term, int whichBit)
     unsigned int word, offset;
     word = (whichBit - 1) / WORDSIZE;
     offset = (WORDSIZE - whichBit) % WORDSIZE;
-    return ((reinterpret_cast<unsigned int*>(INTEGER(term))[word]) >> offset) & 1;
+    return (((reinterpret_cast<unsigned int*>( INTEGER(term)))[word]) >> offset) & 1;
 }
 
 
@@ -854,7 +854,7 @@ SEXP attribute_hidden do_termsform(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(varnames = allocVector(STRSXP, nvar));
     for (v = CDR(varlist), i = 0; v != R_NilValue; v = CDR(v))
-	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), FALSE), 0));
+	SET_STRING_ELT(varnames, i++, STRING_ELT(deparse1line(CAR(v), CXXRFALSE), 0));
 
     /* Step 2b: Find and remove any offset(s) */
 
@@ -1580,6 +1580,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP variable, var_i;
     int fik, first, i, j, k, kk, ll, n, nc, nterms, nVar;
     int intrcept, jstart, jnext, risponse, indx, rhs_response;
+    double dk, dnc;
     char buf[BUFSIZE]="\0";
     char *bufp;
     const char *addp;
@@ -1779,34 +1780,37 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(count = allocVector(INTSXP, nterms));
     if (intrcept)
-	nc = 1;
+	dnc = 1;
     else
-	nc = 0;
+	dnc = 0;
     for (j = 0; j < nterms; j++) {
 	if (j == rhs_response) {
 	    warning(_("the response appeared on the right-hand side and was dropped"));
 	    INTEGER(count)[j] = 0;  /* need this initialised */
 	    continue;
 	}
-	k = 1;
+	dk = 1;	/* accumulate in a double to detect overflow */
 	for (i = 0; i < nVar; i++) {
 	    if (INTEGER(factors)[i + j * nVar]) {
 		if (INTEGER(nlevs)[i]) {
 		    switch(INTEGER(factors)[i + j * nVar]) {
 		    case 1:
-			k *= ncols(VECTOR_ELT(contr1, i));
+			dk *= ncols(VECTOR_ELT(contr1, i));
 			break;
 		    case 2:
-			k *= ncols(VECTOR_ELT(contr2, i));
+			dk *= ncols(VECTOR_ELT(contr2, i));
 			break;
 		    }
 		}
-		else k *= INTEGER(columns)[i];
+		else dk *= INTEGER(columns)[i];
 	    }
 	}
-	INTEGER(count)[j] = k;
-	nc = nc + k;
+	if (dk > INT_MAX) error(_("term %d would require %.0g columns"), j+1, dk);
+	INTEGER(count)[j] = dk;
+	dnc = dnc + dk;
     }
+    if (dnc > INT_MAX) error(_("matrix would require %.0g columns"), dnc);
+    nc = dnc;
 
     /* Record which columns of the design matrix are associated */
     /* with which model terms. */
@@ -1917,9 +1921,9 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(x = allocMatrix(REALSXP, n, nc));
 
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(vars)){
+    if (RTRACE(vars)){
        memtrace_report(vars, x);
-       SET_TRACE(x, 1);
+       SET_RTRACE(x, 1);
     }
 #endif
 
@@ -1941,9 +1945,9 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 		continue;
 	    var_i = VECTOR_ELT(variable, i);
 #ifdef R_MEMORY_PROFILING
-	    if (TRACE(var_i)){
+	    if (RTRACE(var_i)){
 	       memtrace_report(var_i, x);
-	       SET_TRACE(x, 1);
+	       SET_RTRACE(x, 1);
 	    }
 #endif
 	    fik = INTEGER(factors)[i + k * nVar];

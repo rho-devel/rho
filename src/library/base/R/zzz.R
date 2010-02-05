@@ -74,11 +74,11 @@ assign("attr<-", function(x, which, value) NULL, envir = .ArgsEnv)
 assign("attributes", function(obj) NULL, envir = .ArgsEnv)
 assign("attributes<-", function(obj, value) NULL, envir = .ArgsEnv)
 assign("baseenv", function() NULL, envir = .ArgsEnv)
-assign("browser", function() NULL, envir = .ArgsEnv)
+assign("browser", function(text="", condition=NULL, expr = TRUE) NULL, 
+       envir = .ArgsEnv)
 assign("call", function(name, ...) NULL, envir = .ArgsEnv)
 assign("class", function(x) NULL, envir = .ArgsEnv)
 assign("class<-", function(x, value) NULL, envir = .ArgsEnv)
-assign("debug", function(fun) NULL, envir = .ArgsEnv)
 assign("emptyenv", function() NULL, envir = .ArgsEnv)
 assign("environment<-", function(fun, value) NULL, envir = .ArgsEnv)
 assign("expression", function(...) NULL, envir = .ArgsEnv)
@@ -127,7 +127,6 @@ assign("storage.mode<-", function(x, value) NULL, envir = .ArgsEnv)
 assign("substitute", function(expr, env) NULL, envir = .ArgsEnv)
 assign("tracemem", function(x) NULL, envir = .ArgsEnv)
 assign("unclass", function(x) NULL, envir = .ArgsEnv)
-assign("undebug", function(fun) NULL, envir = .ArgsEnv)
 assign("untracemem", function(x) NULL, envir = .ArgsEnv)
 assign("UseMethod", function(generic, object) NULL, envir = .ArgsEnv)
 
@@ -151,12 +150,12 @@ assign("UseMethod", function(generic, object) NULL, envir = .ArgsEnv)
     ## now add the group generics
     ## round, signif, log, trunc are handled below
     fx <- function(x) {}
-    for(f in c('abs', 'sign', 'sqrt', 'floor', 'ceiling',
-               'exp', 'expm1', 'log1p', 'log10', 'log2',
-               'cos', 'sin', 'tan', 'acos', 'asin', 'atan', 'cosh', 'sinh',
-               'tanh', 'acosh', 'asinh', 'atanh',
-               'gamma', 'lgamma', 'digamma', 'trigamma',
-               'cumsum', 'cumprod', 'cummax', 'cummin')) {
+    for(f in c("abs", "sign", "sqrt", "floor", "ceiling",
+               "exp", "expm1", "log1p", "log10", "log2",
+               "cos", "sin", "tan", "acos", "asin", "atan", "cosh", "sinh",
+               "tanh", "acosh", "asinh", "atanh",
+               "gamma", "lgamma", "digamma", "trigamma",
+               "cumsum", "cumprod", "cummax", "cummin")) {
         body(fx) <- substitute(UseMethod(ff), list(ff=f))
         environment(fx) <- .BaseNamespaceEnv
         assign(f, fx, envir = env)
@@ -164,8 +163,8 @@ assign("UseMethod", function(generic, object) NULL, envir = .ArgsEnv)
 
     ## ! is unary and handled below
     fx <- function(e1, e2) {}
-    for(f in c('+', '-', '*', '/', '^', '%%', '%/%', '&', '|',
-               '==', '!=', '<', '<=', '>=', '>')) {
+    for(f in c("+", "-", "*", "/", "^", "%%", "%/%", "&", "|",
+               "==", "!=", "<", "<=", ">=", ">")) {
         body(fx) <- substitute(UseMethod(ff), list(ff=f))
         environment(fx) <- .BaseNamespaceEnv
         assign(f, fx, envir = env)

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -84,11 +84,11 @@ void rcmdusage (char *RCMD)
 	    "  build    Build add-on packages.\n",
 	    "  check    Check add-on packages.\n",
 	    "  Rprof    Post process R profiling files.\n",
-	    "  Rdconv   Convert Rd format to various other formats, including html, Nroff,\n",
-	    "           LaTeX, plain text, and S documentation format.\n",
+	    "  Rdconv   Convert Rd format to various other formats.\n",
 	    "  Rdiff    difference R output files.\n",
-	    "  Rd2dvi   Convert Rd format to DVI/PDF.\n",
-	    "  Rd2txt   Convert Rd format to text.\n",
+	    "  Rd2dvi   Convert Rd format to DVI.\n",
+	    "  Rd2pdf   Convert Rd format to PDF.\n",
+	    "  Rd2txt   Convert Rd format to pretty text.\n",
 	    "  Sd2Rd    Convert S documentation to Rd format.\n",
 	    "  Stangle  Extract S/R code from Sweave documentation.\n",
 	    "  Sweave   Process Sweave documentation.\n",
@@ -120,6 +120,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
     char RCMD[] = "R CMD";
     int len = strlen(argv[0]);
     char env_path[MAX_PATH];
+    int timing = 1;
 
     if(!strncmp(argv[0]+len-4, "Rcmd", 4) ||
        !strncmp(argv[0]+len-4, "rcmd", 4) ||
@@ -152,7 +153,8 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	return(0);
     }
 
-    if (cmdarg > 0 && argc > cmdarg && strcmp(argv[cmdarg], "BATCH") == 0) {
+    if (cmdarg > 0 && argc > cmdarg && 
+	strcmp(argv[cmdarg], "BATCH") == 0) {
 	/* handle Rcmd BATCH internally */
 	char infile[MAX_PATH], outfile[MAX_PATH], *p, cmd_extra[CMD_LEN];
 	DWORD ret;
@@ -174,7 +176,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 
 	for(i = cmdarg + 1, iused = cmdarg; i < argc; i++) {
 	    if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+		fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 "Usage: ", RCMD, " BATCH [options] infile [outfile]\n\n",
 "Run R non-interactively with input from infile and place output (stdout\n",
 "and stderr) to another file.  If not given, the name of the output file\n",
@@ -183,6 +185,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 "Options:\n"
 "  -h, --help		print short help message and exit\n",
 "  -v, --version		print version info and exit\n",
+"  --no-timing		do not report the timings\n",
 "  --			end processing of options\n\n",
 "Further arguments starting with a '-' are considered as options as long\n",
 "as '--' was not encountered, and are passed on to the R process, which\n",
@@ -190,13 +193,19 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 "Report bugs to <r-bugs@r-project.org>.");
 		return(0);
 	    }
-	    if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "-version")) {
+	    if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
 		fprintf(stderr, "BATCH %s\n%s%s%s\n", "1.2",
 "Copyright (C) 1997-2004 R Core Development Team.\n",
 "This is free software; see the GNU General Public Licence version 2\n",
 "or later for copying conditions.  There is NO warranty.");
 		return(0);
 	    }
+	    if (!strcmp(argv[i], "--no-timing")) {
+		timing = 0;
+		iused = i;
+		continue;
+	    }
+
 	    if (!strcmp(argv[i], "--")) {
 		iused = i;
 		break;
@@ -233,7 +242,9 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	    return(27);
 	}
 	strcat(cmd, cmd_extra);
-	putenv("R_BATCH=1234"); /* to get Last.sys run */
+	if(timing) 
+	    putenv("R_BATCH=1234"); 
+	/* to get ,Last.sys run: see profile/Common.R */
 
 	/* fprintf(stderr, "%s->%s\n", infile, outfile);
 	   fprintf(stderr, "%s\n", cmd); */
@@ -266,9 +277,48 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	}
 	CloseHandle(pi.hThread);
 	return(pwait(pi.hProcess));
+    } else if (cmdarg > 0 && argc > cmdarg && 
+	      strcmp(argv[cmdarg], "INSTALL") == 0) {
+	/* handle Rcmd INSTALL internally */
+	snprintf(cmd, CMD_LEN, 
+		 "%s/bin/Rterm.exe -e tools:::.install_packages() R_DEFAULT_PACKAGES= LC_COLLATE=C --no-restore --slave --args ",
+		 getRHOME());
+	for (i = cmdarg + 1; i < argc; i++) {
+	    strcat(cmd, "nextArg");
+	    if (strlen(cmd) + strlen(argv[i]) > 9900) {
+		fprintf(stderr, "command line too long\n");
+		return(27);
+	    }
+	    strcat(cmd, argv[i]);
+	}
+	status = system(cmd);
+	return(status);
+    } else if (cmdarg > 0 && argc > cmdarg && 
+	      strcmp(argv[cmdarg], "REMOVE") == 0) {
+	/* handle Rcmd REMOVE internally */
+	snprintf(cmd, CMD_LEN, 
+		 "%s/bin/Rterm.exe -f \"%s/share/R/REMOVE.R\" R_DEFAULT_PACKAGES=NULL --slave --args",
+		 getRHOME(), getRHOME());
+	for (i = cmdarg + 1; i < argc; i++){
+	    strcat(cmd, " ");
+	    if (strlen(cmd) + strlen(argv[i]) > 9900) {
+		fprintf(stderr, "command line too long\n");
+		return(27);
+	    }
+	    /* Library names could contain spaces */
+	    if(strchr(argv[i], ' ')) {
+		strcat(cmd, "\"");
+		strcat(cmd, argv[i]);
+		strcat(cmd, "\"");
+	    } else strcat(cmd, argv[i]);
+	}
+	status = system(cmd);
+	return(status);
     } else {
 	RHome = getRHOME();
-	if (argc > cmdarg+1 && strcmp(argv[cmdarg+1], "RHOME") == 0) {	    fprintf(stdout, "%s", RHome);
+	if (argc > cmdarg+1 && 
+	    strcmp(argv[cmdarg+1], "RHOME") == 0) {
+	    fprintf(stdout, "%s", RHome);
 	    return(0);
 	}
 	strcpy(RHOME, "R_HOME=");
@@ -327,16 +377,50 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	    } else if (strcmp(p, "Stangle") == 0) {
 		strcpy(cmd, "sh ");
 		strcat(cmd, RHome); strcat(cmd, "/bin/Stangle.sh");
+	    } else if (strcmp(p, "rtags") == 0) {
+		strcpy(cmd, "sh ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/rtags.sh");
 	    } else if (strcmp(p, "config") == 0) {
 		strcpy(cmd, "sh ");
 		strcat(cmd, RHome); strcat(cmd, "/bin/config.sh");
+	    } else if (strcmp(p, "SHLIB") == 0) {
+		strcpy(cmd, "sh ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/SHLIB.sh");
+	    } else if (strcmp(p, "Rdconv") == 0) {
+		strcpy(cmd, "sh ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/Rdconv.sh");
+	    } else if (strcmp(p, "Rd2txt") == 0) {
+		strcpy(cmd, "sh ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/Rdconv.sh -t txt");
+	    } else if (strcmp(p, "Rd2pdf") == 0) {
+		strcpy(cmd, "sh ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/Rd2dvi.sh --pdf");
+	    } else if (strcmp(p, "build") == 0) {
+		strcpy(cmd, "perl ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/build.pl");
+	    } else if (strcmp(p, "check") == 0) {
+		strcpy(cmd, "perl ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/check.pl");
+	    } else if (strcmp(p, "Rprof") == 0) {
+		strcpy(cmd, "perl ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/Rprof.pl");
+	    } else if (strcmp(p, "Sd2Rd") == 0) {
+		strcpy(cmd, "perl ");
+		strcat(cmd, RHome); strcat(cmd, "/bin/Sd2Rd.pl");
+	    } else if (strcmp(p, "open") == 0) {
+		strcpy(cmd, RHome); strcat(cmd, "/bin/open.exe");
 	    } else {
+		/* RHOME/bin is first in the path, so looks there first
+		   for .sh, .pl, .bat, .exe
+		*/
 		if (!strcmp(".sh", p + strlen(p) - 3)) {
 		    strcpy(cmd, "sh ");
-		    strcat(cmd, RHome); strcat(cmd, "/bin/");
+		} else if (!strcmp(".pl", p + strlen(p) - 3)) {
+		    strcpy(cmd, "perl ");
 		} else if (!strcmp(".bat", p + strlen(p) - 4)) strcpy(cmd, "");
 		else if (!strcmp(".exe", p + strlen(p) - 4)) strcpy(cmd, "");
 		else {
+		    /* FIXME: is this still a sensible default? */
 		    strcpy(cmd, "perl ");
 		    strcat(cmd, RHome); strcat(cmd, "/bin/");
 		}

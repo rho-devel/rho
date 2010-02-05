@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -30,17 +30,26 @@ DISTFILES = Makefile.in Makefile.win
 
 SUBDIRS = X11 internet lapack vfonts
 
-MODULES = $(R_MODULES) internet lapack vfonts
+MODULES = internet lapack vfonts @BUILD_X11_TRUE@X11
 
 all: Makefile R
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
-R: Makefile
-	@for d in $(MODULES); do \
-	  (cd $${d} && $(MAKE) $@) || exit 1; \
-	done
+R: Makefile make.internet make.lapack make.vfonts @BUILD_X11_TRUE@make.X11
+
+make.X11: Makefile
+	@(cd X11 && $(MAKE))
+
+make.internet: Makefile
+	@(cd internet && $(MAKE))
+
+make.lapack: Makefile
+	@(cd lapack && $(MAKE))
+
+make.vfonts: Makefile
+	@(cd vfonts && $(MAKE))
 
 install install-strip:
 	@for d in $(MODULES); do \

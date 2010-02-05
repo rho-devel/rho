@@ -1,12 +1,11 @@
 % File src/library/base/man/Rhome.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Rhome}
 \alias{R.home}
 \alias{R_HOME}
-\alias{R\_HOME} % to allow \file{\var{\link{R\_HOME}}/Tcl/doc}
 \title{Return the R Home Directory}
 \description{
   Return the \R home directory.
@@ -24,7 +23,7 @@ R.home(component="home")
   The \R home directory is the top-level directory of the \R
   installation being run.
 
-  The \R home directory is often referred to as \var{R\_HOME},
+  The \R home directory is often referred to as \var{R_HOME},
   and is the value of an environment variable of that name in an \R
   session.
 #ifdef unix

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,9 @@
 
 #include "CXXR/Environment.h"
 
+#include "R_ext/Error.h"
+#include "localization.h"
+#include "CXXR/FunctionBase.h"
 #include "CXXR/Symbol.h"
 
 using namespace std;
@@ -67,32 +70,39 @@ namespace {
     const unsigned int GLOBAL_FRAME_MASK = 1<<15;
 }
 
-// Predefined Environments:
-namespace CXXR {
-    const GCRoot<Environment>
-    EmptyEnvironment(GCNode::expose(new Environment(0)));
+Environment* Environment::s_base;
+Environment* Environment::s_base_namespace;
+Environment* Environment::s_global;
 
-    const GCRoot<Environment>
-    BaseEnvironment(GCNode::expose(new Environment(EmptyEnvironment)));
-
-    const GCRoot<Environment>
-    GlobalEnvironment(GCNode::expose(new Environment(BaseEnvironment)));
-
-    const GCRoot<Environment>
-    BaseNamespace(GCNode::expose(new Environment(GlobalEnvironment,
-						 BaseEnvironment->frame())));
-}
-
-SEXP R_EmptyEnv = EmptyEnvironment;
-SEXP R_BaseEnv = BaseEnvironment;
-SEXP R_GlobalEnv = GlobalEnvironment;
-SEXP R_BaseNamespace = BaseNamespace;
+SEXP R_EmptyEnv;
+SEXP R_BaseEnv;
+SEXP R_GlobalEnv;
+SEXP R_BaseNamespace;
 
 void Environment::detachReferents()
 {
     m_enclosing.detach();
     m_frame.detach();
     RObject::detachReferents();
+}
+
+void Environment::initialize()
+{
+    static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
+    R_EmptyEnv = empty_env.get();
+    static GCRoot<Environment>
+	base_env(GCNode::expose(new Environment(empty_env)));
+    s_base = base_env.get();
+    R_BaseEnv = s_base;
+    static GCRoot<Environment>
+	global_env(GCNode::expose(new Environment(s_base)));
+    s_global = global_env.get();
+    R_GlobalEnv = s_global;
+    static GCRoot<Environment>
+	base_namespace(GCNode::expose(new Environment(s_global,
+						      s_base->frame())));
+    s_base_namespace = base_namespace.get();
+    R_BaseNamespace = s_base_namespace;
 }
 
 unsigned int Environment::packGPBits() const
@@ -127,6 +137,28 @@ void Environment::visitReferents(const_visitor* v) const
 
 // ***** Free-standing functions *****
 
+namespace {
+    // Predicate used to test whether a Binding's value is a function.
+    class FunctionTester : public unary_function<RObject*, bool> {
+    public:
+	FunctionTester(const Symbol* symbol)
+	    : m_symbol(symbol)
+	{}
+
+	bool operator()(const RObject* obj);
+    private:
+	const Symbol* m_symbol;
+    };
+
+    bool FunctionTester::operator()(const RObject* obj)
+    {
+	if (obj == R_MissingArg)
+	    Rf_error(_("argument \"%s\" is missing, with no default"),
+		     m_symbol->name()->c_str());
+	return FunctionBase::isA(obj);
+    }
+}
+
 namespace CXXR {
     pair<Environment*, Frame::Binding*>
     findBinding(const Symbol* symbol, Environment* env)
@@ -150,5 +182,14 @@ namespace CXXR {
 	    env = env->enclosingEnvironment();
 	}
 	return pair<const Environment*, const Frame::Binding*>(0, 0);
+    }
+
+    pair<Environment*, FunctionBase*>
+    findFunction(const Symbol* symbol, Environment* env, bool inherits)
+    {
+	FunctionTester functest(symbol);
+	pair<Environment*, RObject*> pr
+	    = findTestedValue(symbol, env, functest, inherits);
+	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
     }
 }

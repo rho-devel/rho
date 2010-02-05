@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -98,6 +98,11 @@ namespace CXXR {
 	    return *this;
 	}
 
+	/** @brief Change the node protected by this GCRootBase.
+	 *
+	 * @param node Pointer to the node now to be protected, or a
+	 * null pointer.
+	 */
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
@@ -152,6 +157,13 @@ namespace CXXR {
      * objects be destroyed in the reverse order of their creation;
      * the price of this is that there is a slightly greater time overhead
      * to construction and destruction.
+     *
+     * It is not recommended to declare a GCRoot (or indeed any object
+     * requiring non-trivial construction) at file or namespace scope
+     * in circumstances where the order of initialisation of data in
+     * different source files may be an issue.  See the way in which
+     * <tt>Environment::s_base</tt> is declared and initialised in
+     * Environment.cpp for a preferable approach.
      *
      * @param T GCNode or a type publicly derived from GCNode.  This
      *          may be qualified by const, so for example a const

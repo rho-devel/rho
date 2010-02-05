@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -49,6 +49,14 @@ namespace CXXR {
      * 
      * Small objects are quickly allocated from pools of various cell
      * sizes; large objects are obtained directly from the main heap.
+     *
+     * If the class is compiled with the FILL55 preprocessor variable
+     * defined, released memory blocks are filled with 0x55 bytes
+     * (though some of these may be overwritten by data used for free
+     * list management).  This can be useful to show up premature
+     * deallocation of memory block, especially if used in conjunction
+     * with the CELLFIFO preprocessor variable documented in class
+     * CellPool.
      */
     class MemoryBank {
     public:
@@ -56,15 +64,11 @@ namespace CXXR {
 	 *
 	 * @param bytes Required size in bytes of the block.
 	 *
-	 * @param alloc_gc If false, the call will under no
-	 *          circumstances cue garbage collection.
-	 *
 	 * @return a pointer to the allocated cell.
 	 *
 	 * @throws bad_alloc if a cell cannot be allocated.
 	 */
-	static void* allocate(size_t bytes, bool allow_gc = true)
-	    throw (std::bad_alloc);
+	static void* allocate(size_t bytes) throw (std::bad_alloc);
 
 	/** @brief Number of blocks currently allocated.
 	 *
@@ -83,7 +87,7 @@ namespace CXXR {
 	 * of 2.
 	 *
 	 * @note If redzoning is operation (<tt>VALGRIND_LEVEL >=
-	 * 2</tt>), the value returned does not include the size of the
+	 * 3</tt>), the value returned does not include the size of the
 	 * redzones.
 	 */
 	static size_t bytesAllocated() {return s_bytes_allocated;}
@@ -100,6 +104,10 @@ namespace CXXR {
 	 * @param p Pointer to a block of memory previously allocated
 	 *          by MemoryBank::allocate(), or a null pointer (in which
 	 *          case method does nothing).
+	 *
+	 * @param bytes The number of bytes in the memory block,
+	 *          i.e. the number of bytes requested in the
+	 *          corresponding call to allocate().
 	 */
 	static void deallocate(void* p, size_t bytes)
 	{
@@ -116,23 +124,12 @@ namespace CXXR {
 	    size_t blockbytes = bytes;
 #endif
 	    // Assumes sizeof(double) == 8:
-	    if (blockbytes > s_max_cell_size) ::operator delete(p);
+	    if (blockbytes > s_max_cell_size)
+		::operator delete(p);
 	    else s_pools[s_pooltab[blockbytes]]->deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
-
-	/** @brief Set a callback to cue garbage collection.
-	 *
-	 * @param cue_gc This is a pointer, possibly null, to a
-	 *          function that this class will call before
-	 *          allocating memory, and which may for example
-	 *          result in a garbage collection.  The argument is
-	 *          set to the number of bytes of memory currently
-	 *          being sought.  If \a cue_gc is a null pointer,
-	 *          then such callbacks are discontinued.
-	 */
-	static void setGCCuer(void (*cue_gc)(size_t));
 
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
@@ -161,7 +158,6 @@ namespace CXXR {
 	static const size_t s_max_cell_size = 128;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
-	static void (*s_cue_gc)(size_t);
 	static Pool* s_pools[];
 	static const unsigned int s_pooltab[];
 #ifdef R_MEMORY_PROFILING
@@ -173,41 +169,11 @@ namespace CXXR {
 	// a constructor.
 	MemoryBank();
 
-	// First-line allocation attempt for small objects:
-	static void* alloc1(size_t bytes) throw()
-	{
-	    Pool* pool = s_pools[s_pooltab[bytes]];
-	    void* p = pool->easyAllocate();
-	    if (p) {
-		++s_blocks_allocated;
-		s_bytes_allocated += bytes;
-#if VALGRIND_LEVEL >= 2
-		// Fence off supernumerary bytes:
-		size_t surplus = pool->cellSize() - bytes;
-		if (surplus > 0) {
-		    char* tail = static_cast<char*>(p) + bytes;
-		    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
-		}
-#endif
-	    }
-#ifdef R_MEMORY_PROFILING
-	    if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
-#endif
-	    return p;
-	}
-
-	// Allocation of large objects, and second-line allocation
-	// attempt for small objects:
-	static void* alloc2(size_t bytes, bool alloc_gc)
-	    throw (std::bad_alloc);
-
 	// Free memory used by the static data members:
 	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();
-
-	static void pool_out_of_memory(Pool* pool);
 
 	friend class SchwarzCounter<MemoryBank>;
     };

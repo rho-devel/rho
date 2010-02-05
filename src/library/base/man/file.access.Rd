@@ -32,14 +32,13 @@ file.access(names, mode = 0)
   than the effective IDs).
 #endif
 #ifdef windows
-  As from \R 2.6.0 this function no longer uses the C function
-  \code{_access} in \file{msvcrt.dll}, but has been rewritten using
-  Win32 API functions.
+  This function does uses the C function \code{_access} in
+  \file{msvcrt.dll}, but was written using Win32 API functions.
 
   Windows does not have the concept of an \sQuote{executable file}, so
   this function regards directories and files with extension
   \file{.exe}, \file{.bat}, \file{.cmd} and \file{.com} as executable.
-  (\code{\link{system}} makes the same assumption.)
+  (\code{\link{system}} and \code{\link{Sys.which}} make the same assumption.)
 #endif
 
   Please note that it is not good to use this function to test before
@@ -59,7 +58,13 @@ file.access(names, mode = 0)
   the return value is \bold{false} for \bold{success}.
 }
 
-\seealso{\code{\link{file.info}}, \code{\link{try}}}
+\seealso{
+  \code{\link{file.info}} for more details on permissions,
+  \code{\link{Sys.chmod}} to change permissions, and
+  \code{\link{try}} for a \sQuote{test it and see} approach.
+
+  \code{\link{file_test}} for shell-style file tests.
+}
 
 \examples{
 fa <- file.access(dir("."))

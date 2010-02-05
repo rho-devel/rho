@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,12 +39,21 @@
 
 #include "CXXR/DottedArgs.hpp"
 
+#include "localization.h"
+#include "R_ext/Error.h"
+
 using namespace std;
 using namespace CXXR;
 
 DottedArgs* DottedArgs::clone() const
 {
     return expose(new DottedArgs(*this));
+}
+
+RObject* DottedArgs::evaluate(Environment* env)
+{
+    Rf_error(_("'...' used in an incorrect context"));
+    return 0;
 }
 
 const char* DottedArgs::typeName() const

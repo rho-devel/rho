@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -44,11 +44,7 @@
 #include <Defn.h>
 
 #include <ctype.h>
-#ifdef SUPPORT_MBCS
 # include <R_ext/rlocale.h>
-# include <wchar.h>
-# include <wctype.h>
-#endif
 
 
 #include <Rmath.h>
@@ -566,54 +562,9 @@ static double CenterShift(BBOX bbox)
     return 0.5 * (bboxHeight(bbox) - bboxDepth(bbox));
 }
 
-#ifdef NOT_used_currently/*-- out 'def'	 (-Wall) --*/
-static BBOX DrawBBox(BBOX bbox, double xoffset, double yoffset,
-		     mathContext *mc, pGEcontext gc, pGEDevDesc dd)
-{
-    double xsaved = mc->CurrentX;
-    double ysaved = mc->CurrentY;
-    double x[5], y[5];
-    int savedcol = gc->col;
-    int savedlty = gc->lty;
-    double savedlwd = gc->lwd;
-    mc->CurrentX += xoffset;
-    mc->CurrentY += yoffset;
-    PMoveUp(-bboxDepth(bbox), mc);
-    x[4] = x[0] = ConvertedX(mc, dd);
-    y[4] = y[0] = ConvertedY(mc, dd);
-    PMoveAcross(bboxWidth(bbox), mc);
-    x[1] = ConvertedX(mc, dd);
-    y[1] = ConvertedY(mc, dd);
-    PMoveUp(bboxHeight(bbox) + bboxDepth(bbox), mc);
-    x[2] = ConvertedX(mc, dd);
-    y[2] = ConvertedY(mc, dd);
-    PMoveAcross(-bboxWidth(bbox), mc);
-    x[3] = ConvertedX(mc, dd);
-    y[3] = ConvertedY(mc, dd);
-    gc->col = mc->BoxColor;
-    gc->lty = LTY_SOLID;
-    /*
-     * We used to just force lwd = 1, which is a reasonable sanity check
-     * because if the user had set lwd = 10 for something, your
-     * mathematical annotation would look REALLY bad.
-     * Unfortunately, this meant that the user could not set a nice
-     * small lwd to get a finer line;  we always bumped it back up to 1.
-     * NOW we just reduce lwd to 1 (as a sanity check) ONLY if
-     * lwd is greater than 1.
-     */
-    if (gc->lwd > 1)
-	gc->lwd = 1;
-    GEPolyline(5, x, y, gc, dd);
-    PMoveTo(xsaved, ysaved, mc);
-    gc->col = savedcol;
-    gc->lty = savedlty;
-    gc->lwd = savedlwd;
-    return bbox;
-}
-#endif
 
 typedef struct {
-    CXXRconst char *name;
+    CXXRCONST char *name;
     int code;
 } SymTab;
 
@@ -921,32 +872,17 @@ static int StringAtom(SEXP expr)
     return (TYPEOF(expr) == STRSXP);
 }
 
-#ifdef NOT_used_currently/*-- out 'def'	 (-Wall) --*/
-static int symbolAtom(SEXP expr)
-{
-    int i;
-    if (NameAtom(expr)) {
-	for (i = 0; SymbolTable[i].code; i++)
-	    if (NameMatch(expr, SymbolTable[i].name))
-		return 1;
-    }
-    return 0;
-}
-#endif
 /* Code to determine a font from the */
 /* nature of the expression */
 
-#ifdef NOT_used_currently/*-- out 'def'	 (-Wall) --*/
-static FontType mc->CurrentFont = 3;
-#endif
 static FontType GetFont(pGEcontext gc)
 {
-    return FontType(gc->fontface);
+    return CXXRCONSTRUCT(FontType, gc->fontface);
 }
 
 static FontType SetFont(FontType font, pGEcontext gc)
 {
-    FontType prevfont = FontType(gc->fontface);
+    FontType prevfont = CXXRCONSTRUCT(FontType, gc->fontface);
     gc->fontface = font;
     return prevfont;
 }
@@ -1046,7 +982,6 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
     FontType font = prevfont;
 
     if (str) {
-#ifdef SUPPORT_MBCS
 	/* Need to advance by character, not byte, except in the symbol font.
 	   The latter would be hard to achieve, but perhaps not impossible.
 	 */
@@ -1059,7 +994,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 	    while (*s) {
 		wc = 0;
 		res = mbrtowc(&wc, s, MB_LEN_MAX, &mb_st);
-		if(res == size_t(-1)) error("invalid multibyte string '%s'", s);
+		if(res == CXXRCONSTRUCT(size_t, -1)) error("invalid multibyte string '%s'", s);
 		if (iswdigit(wc) && font != PlainFont) {
 		    font = PlainFont;
 		    SetFont(PlainFont, gc);
@@ -1077,7 +1012,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		if (draw) {
 		    memset(chr, 0, sizeof(chr));
 		    /* should not be possible, as we just converted to wc */
-		    if(wcrtomb(chr, wc, &mb_st) == size_t(-1))
+		    if(wcrtomb(chr, wc, &mb_st) == CXXRCONSTRUCT(size_t, -1))
 			error("invalid multibyte string");
 		    PMoveAcross(lastItalicCorr, mc);
 		    GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), chr,
@@ -1090,9 +1025,7 @@ static BBOX RenderSymbolStr(const char *str, int draw, mathContext *mc,
 		lastItalicCorr = bboxItalic(glyphBBox);
 		s += res;
 	    }
-	} else
-#endif
-	{
+	} else {
 	    while (*s) {
 		if (isdigit(int(*s)) && font != PlainFont) {
 		    font = PlainFont;
@@ -1141,13 +1074,11 @@ static BBOX RenderChar(int ascii, int draw, mathContext *mc,
     bbox = GlyphBBox(ascii, gc, dd);
     if (draw) {
 	memset(asciiStr, 0, sizeof(asciiStr));
-#ifdef SUPPORT_MBCS
 	if(mbcslocale) {
 	    size_t res = wcrtomb(asciiStr, ascii, NULL);
-	    if(res == size_t(-1))
+	    if(res == CXXRCONSTRUCT(size_t, -1))
 		error("invalid character in current multibyte locale");
 	} else
-#endif
 	    asciiStr[0] = ascii;
 	GEText(ConvertedX(mc ,dd), ConvertedY(mc, dd), asciiStr, CE_NATIVE,
 	       0.0, 0.0, mc->CurrentAngle, gc,
@@ -1167,7 +1098,6 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
     cetype_t enc = (gc->fontface == 5) ? CE_SYMBOL : CE_NATIVE;
 
     if (str) {
-#ifdef SUPPORT_MBCS
 	/* need to advance by character, not byte, except in the symbol font */
 	if(mbcslocale && gc->fontface != 5) {
 	    int n = strlen(str), used;
@@ -1181,9 +1111,7 @@ static BBOX RenderStr(const char *str, int draw, mathContext *mc,
 		resultBBox = CombineBBoxes(resultBBox, glyphBBox);
 		p += used; n -= used; nc++;
 	    }
-	} else
-#endif
-	{
+	} else {
 	    const char *s = str;
 	    while (*s) {
 		/* Watch for sign extension here - fixed > 2.7.1 */
@@ -1376,32 +1304,9 @@ static int BinAtom(SEXP expr)
     return 0;
 }
 
-#define SLASH2
-
 static BBOX RenderSlash(int draw, mathContext *mc, pGEcontext gc,
 			pGEDevDesc dd)
 {
-#ifdef SLASH0
-    /* The Default Font Character */
-    return RenderSymbolChar(S_SLASH, draw, mc, gc, dd);
-#endif
-#ifdef SLASH1
-    /* Symbol Magnify Version */
-    double savecex = gc->cex;
-    BBOX bbox;
-    double height1, height2;
-    height1 = bboxHeight(RenderSymbolChar(S_SLASH, 0), mc, gc, dd);
-    gc->cex = 1.2 * gc->cex;
-    height2 = bboxHeight(RenderSymbolChar(S_SLASH, 0), mc, gc, dd);
-    if (draw)
-	PMoveUp(- 0.5 * (height2 - height1), mc);
-    bbox = RenderSymbolChar(S_SLASH, draw, mc, gc, dd);
-    if (draw)
-	PMoveUp(0.5 * (height2 - height1), mc);
-    gc->cex = savecex;
-    return bbox;
-#endif
-#ifdef SLASH2
     /* Line Drawing Version */
     double x[2], y[2];
     double depth = 0.5 * TeX(sigma22, gc, dd);
@@ -1428,27 +1333,6 @@ static BBOX RenderSlash(int draw, mathContext *mc, pGEcontext gc,
 	gc->lwd = savedlwd;
     }
     return MakeBBox(height, depth, 2 * width);
-#endif
-#ifdef SLASH3
-    /* Offset Overprinting - A Failure! */
-    BBOX slashBBox = RenderSymbolChar(S_SLASH, 0, mc, gc, dd);
-    BBOX ansBBox;
-    double height = bboxHeight(slashBBox);
-    double depth = bboxDepth(slashBBox);
-    double width = bboxWidth(slashBBox);
-    double slope = (height + depth) / slope;
-    double delta = TeX(sigma22, gc, dd);
-    if (draw)
-	PMoveUp(-delta, mc);
-    ansBBox = ShiftBBox(RenderSymbolChar(S_SLASH, draw), -delta, mc, gc, dd);
-    PMoveUp(2 * delta, mc);
-    ansBBox = CombineBBoxes(ansBBox, RenderGap(2 * delta / slope, draw,
-					       mc, gc, dd));
-    ansBBox = ShiftBBox(RenderSymbolChar(S_SLASH, draw), 2 * delta,
-			mc, gc, dd);
-    PMoveUp(-delta, mc);
-    return ansBBox;
-#endif
 }
 
 static BBOX RenderBin(SEXP expr, int draw, mathContext *mc,
@@ -1773,7 +1657,7 @@ static BBOX RenderBar(SEXP expr, int draw, mathContext *mc,
 }
 
 static struct {
-    CXXRconst char *name;
+    CXXRCONST char *name;
     int code;
 }
 AccentTable[] = {
@@ -2241,7 +2125,7 @@ static BBOX RenderDelim(int which, double dist, int draw, mathContext *mc,
 		- (bboxHeight(topBBox) + bboxDepth(topBBox));
 	    ybot = axisHeight - dist
 		+ (bboxHeight(botBBox) + bboxDepth(botBBox));
-	    n = int(ceil((ytop - ybot) / (0.99 * extHeight)));
+	    n = CXXRCONSTRUCT(int, ceil((ytop - ybot) / (0.99 * extHeight)));
 	    if (n > 0) {
 		delta = (ytop - ybot) / n;
 		for (i = 0; i < n; i++) {

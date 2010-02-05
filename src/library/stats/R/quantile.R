@@ -20,6 +20,7 @@ quantile.default <-
     function(x, probs = seq(0, 1, 0.25), na.rm = FALSE, names = TRUE,
              type = 7, ...)
 {
+    if(is.factor(x)) stop("need numeric data")
     if (na.rm)
 	x <- x[!is.na(x)]
     else if (any(is.na(x)))
@@ -76,7 +77,7 @@ quantile.default <-
             x <- sort(x, partial =
                       unique(c(1, j[j>0 & j<=n], (j+1)[j>0 & j<n], n))
                       )
-            x <- c(x[1], x[1], x, x[n], x[n])
+            x <- c(x[1L], x[1L], x, x[n], x[n])
             ## h can be zero or one (types 1 to 3), and infinities matter
 ####        qs <- (1 - h) * x[j + 2] + h * x[j + 3]
             qs <- ifelse(h == 0, x[j+2],

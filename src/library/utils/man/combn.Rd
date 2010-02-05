@@ -1,6 +1,6 @@
 % File src/library/utils/man/combn.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{combn}
@@ -30,8 +30,8 @@ combn(x, m, FUN = NULL, simplify = TRUE, \dots)
     to an \code{\link{array}} (typically a \code{\link{matrix}}); if
     FALSE, the function returns a \code{\link{list}}.  Note that when
     \code{simplify = TRUE} as by default, the dimension of the result is
-    simply determined from \code{FUN(\emph{<1st combination>})}, for
-    efficiency reasons.  This will badly fail if \code{FUN(u)} is not of
+    simply determined from \code{FUN(\var{1st combination})} (for
+    efficiency reasons).  This will badly fail if \code{FUN(u)} is not of
     constant length.}
   \item{\dots}{optionally, further arguments to \code{FUN}.}
 }
@@ -70,5 +70,4 @@ combn(c(1,1,1,1,2,2,2,3,3,4), 3, tabulate, nbins = 4)
 # table.mat(t(combn(c(1,1,1,1,2,2,2,3,3,4), 3, tabulate,nbins=4)))
 }
 \keyword{utilities}
-%\keyword{ combinatorics }% substitute:
 \keyword{iteration}

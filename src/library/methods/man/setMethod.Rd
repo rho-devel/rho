@@ -63,9 +63,12 @@ package name.
 The package name of a generic is set according to the package
 from which it originally comes; in particular, and frequently, the
 package where a non-generic version of the function originated.
-For example, generic functions for all the functions in package \code{base} will
+For example, generic functions for all the functions in package \pkg{base} will
 have \code{"base"} as the package name, although none of them is an
 S4 generic on that package.
+These include most of the base functions that are primitives, rather than
+true functions; see the section on primitive functions in the
+documentation for \code{\link{setGeneric}} for details.
 
 Multiple packages can have methods for the same generic function; that
 is, for the same combination of generic function name and package

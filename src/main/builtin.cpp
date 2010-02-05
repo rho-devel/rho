@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2007  The R Development Core Team.
+ *  Copyright (C) 1999-2009  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -75,23 +75,6 @@ static R_len_t asVecSize(SEXP x)
     return -1;
 }
 
-#ifdef UNUSED
-SEXP attribute_hidden do_delay(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    SEXP expr, env;
-    checkArity(op, args);
-    expr = CAR(args);
-    env = eval(CADR(args), rho);
-    if (isNull(env)) {
-	error(_("use of NULL environment is defunct"));
-	env = R_BaseEnv;
-    } else
-    if (!isEnvironment(env))
-	errorcall(call, R_MSG_IA);
-    return mkPROMISE(expr, env);
-}
-#endif
-
 SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP name = R_NilValue /* -Wall */, expr, eenv, aenv;
@@ -111,7 +94,7 @@ SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 	eenv = R_BaseEnv;
     } else
     if (!isEnvironment(eenv))
-	errorcall(call, R_MSG_IA);
+	errorcall(call,_("invalid '%s' argument"), "eval.env");
 
     args = CDR(args);
     aenv = CAR(args);
@@ -120,7 +103,7 @@ SEXP attribute_hidden do_delayed(SEXP call, SEXP op, SEXP args, SEXP rho)
 	aenv = R_BaseEnv;
     } else
     if (!isEnvironment(aenv))
-	errorcall(call, R_MSG_IA);
+	errorcall(call,_("invalid '%s' argument"), "assign.env");
 
     defineVar(name, mkPROMISE(expr, eenv), aenv);
     return R_NilValue;
@@ -139,9 +122,9 @@ SEXP attribute_hidden do_makelazy(SEXP call, SEXP op, SEXP args, SEXP rho)
     values = CAR(args); args = CDR(args);
     expr = CAR(args); args = CDR(args);
     eenv = CAR(args); args = CDR(args);
-    if (!isEnvironment(eenv)) error(R_MSG_IA);
+    if (!isEnvironment(eenv)) error(_("invalid '%s' argument"), "eval.env");
     aenv = CAR(args);
-    if (!isEnvironment(aenv)) error(R_MSG_IA);
+    if (!isEnvironment(aenv)) error(_("invalid '%s' argument"), "assign.env");
 
     for(i = 0; i < LENGTH(names); i++) {
 	SEXP name = install(CHAR(STRING_ELT(names, i)));
@@ -229,7 +212,7 @@ SEXP attribute_hidden do_args(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (TYPEOF(CAR(args)) == BUILTINSXP || TYPEOF(CAR(args)) == SPECIALSXP) {
-	CXXRconst char *nm = PRIMNAME(CAR(args));
+	CXXRCONST char *nm = PRIMNAME(CAR(args));
 	SEXP env, s2;
 	PROTECT_INDEX xp;
 
@@ -340,8 +323,8 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( hash ) {
 	args = CDR(args);
 	PROTECT(size = coerceVector(CAR(args), INTSXP));
-	if (INTEGER(size)[0] == NA_INTEGER || INTEGER(size)[0] <= 0)
-	    error(_("'size' must be a positive integer"));
+	if (INTEGER(size)[0] == NA_INTEGER)
+	    INTEGER(size)[0] = 0; /* so it will use the internal default */
 	ans = R_NewHashedEnv(enclos, size);
 	UNPROTECT(1);
     } else
@@ -401,7 +384,7 @@ SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ans = ScalarString(STRING_ELT(R_PackageEnvName(env), 0));
 	else if (R_IsNamespaceEnv(env))
 	    ans = ScalarString(STRING_ELT(R_NamespaceEnvSpec(env), 0));
-	else if (!isNull(res = getAttrib(env, install("name")))) ans = res;
+	else if (!isNull(res = getAttrib(env, R_NameSymbol))) ans = res;
     }
     return ans;
 }
@@ -471,7 +454,8 @@ static void cat_cleanup(void *data)
 
     con->fflush(con);
     if(changedcon) switch_stdout(-1, 0);
-    if(!wasopen) con->close(con);
+    /* previous line might have closed it */
+    if(!wasopen && con->isopen) con->close(con);
 #ifdef Win32
     WinUTF8out = FALSE;
 #endif
@@ -493,9 +477,6 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* Use standard printing defaults */
     PrintDefaults(rho);
-#ifdef Win32
-    WinCheckUTF8();
-#endif
 
     objs = CAR(args);
     args = CDR(args);
@@ -545,6 +526,10 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     ci.changedcon = switch_stdout(ifile, 0);
     /* will open new connection if required, and check for writeable */
+#ifdef Win32
+    /* do this after re-sinking output */
+    WinCheckUTF8();
+#endif
 
     ci.con = con;
 
@@ -716,7 +701,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (length(s) == 0)
 	error(_("vector: zero-length 'type' argument"));
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
-    if (int(mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
+    if (CXXRCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
     switch (mode) {
     case LGLSXP:
@@ -733,7 +718,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	s = allocList(len);
 	break;
     default:
-	error(_("vector: cannot make a vector of mode \"%s\"."),
+	error(_("vector: cannot make a vector of mode '%s'."),
 	      translateChar(STRING_ELT(s, 0))); /* should be ASCII */
     }
     if (mode == INTSXP || mode == LGLSXP)
@@ -762,7 +747,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
     lenx = length(x);
     if (lenx == len)
 	return (x);
-    rval = allocVector(TYPEOF(x), len);
+    PROTECT(rval = allocVector(TYPEOF(x), len));
     PROTECT(xnames = getAttrib(x, R_NamesSymbol));
     if (xnames != R_NilValue)
 	names = allocVector(STRSXP, len);
@@ -841,7 +826,7 @@ SEXP lengthgets(SEXP x, R_len_t len)
     }
     if (isVector(x) && xnames != R_NilValue)
 	setAttrib(rval, R_NamesSymbol, names);
-    UNPROTECT(1);
+    UNPROTECT(2);
     return rval;
 }
 
@@ -907,9 +892,13 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isVector(x) || length(x) != 1)
 	error(_("switch: EXPR must return a length 1 vector"));
     PROTECT(w = switchList(CDR(args), rho));
+#define Return_NULL    UNPROTECT(1); return R_NilValue
+    if(w == R_MissingArg) {
+	Return_NULL;
+    }
     if (isString(x)) {
 	for (y = w; y != R_NilValue; y = CDR(y))
-	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), TRUE)) {
+	    if (TAG(y) != R_NilValue && pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE)) {
 		while (CAR(y) == R_MissingArg && y != R_NilValue)
 		    y = CDR(y);
 		UNPROTECT(1);
@@ -920,13 +909,11 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 		UNPROTECT(1);
 		return (eval(CAR(y), rho));
 	    }
-	UNPROTECT(1);
-	return R_NilValue;
+	Return_NULL;
     }
     argval = asInteger(x);
-    if (argval <= 0 || argval > (length(w))) {
-	UNPROTECT(1);
-	return R_NilValue;
+    if (argval <= 0 || argval > length(w)) {
+	Return_NULL;
     }
     x = eval(CAR(nthcdr(w, argval - 1)), rho);
     UNPROTECT(1);

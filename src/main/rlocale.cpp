@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -51,30 +51,8 @@
 #include <config.h>
 #endif
 
-#ifndef _GNU_SOURCE
-#endif
 #include <string.h>
 #include <stdlib.h>
-
-#ifndef SUPPORT_MBCS
-void Ri18n_wcswidth(void)
-{
-   return;
-}
-void Ri18n_wcwidth(void)
-{
-   return;
-}
-void Ri18n_wctype(void)
-{
-   return;
-}
-void Ri18n_iswctype(void)
-{
-   return;
-}
-
-#else /* SUPPORT_MBCS */
 
 #define IN_RLOCALE_C 1 /* used in rlocale.h */
 #include <R_ext/rlocale.h>
@@ -86,6 +64,7 @@ void Ri18n_iswctype(void)
 #include <locale.h>
 #include <limits.h>
 #include <R_ext/Riconv.h>
+#include "CXXR/uncxxr.h"
 
 static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 			 int max, int locale)
@@ -109,7 +88,7 @@ static int wcwidthsearch(int wint, const struct interval_wcwidth *table,
 }
 
 typedef struct {
-    const char *name;
+    CXXRCONST char *name;
     int locale;
 } cjk_locale_name_t;
 
@@ -147,7 +126,7 @@ int Ri18n_wcwidth(wchar_t c)
     char lc_str[128];
     unsigned int i, j;
 
-    static const char *lc_cache = "";
+    static CXXRCONST char *lc_cache = "";
     static int lc = 0;
 
     if (0 != strcmp(setlocale(LC_CTYPE, NULL), lc_cache)) {
@@ -210,8 +189,8 @@ static int wcsearch(int wint, const struct interval *table, int max)
  *  (wchar_t != unicode)
  *  However, it is Unicode at the time of UTF-8.
  ********************************************************************/
-#if defined(HAVE_ICONV) && defined(ICONV_LATIN1) && defined(__APPLE_CC__)
-/* allow for MacIntel platforms */
+#if defined(__APPLE_CC__)
+/* allow for both PPC and Intel platforms */
 #ifdef WORDS_BIGENDIAN
 static const char UNICODE[] = "UCS-4BE";
 #else
@@ -311,7 +290,7 @@ static int Ri18n_iswalnum (wint_t wc)
  * iswctype
  */
 typedef struct {
-    const char * name;
+    CXXRCONST char * name;
     wctype_t wctype;
     int(*func)(wint_t);
 } Ri18n_wctype_func_l ;
@@ -349,5 +328,3 @@ int Ri18n_iswctype(wint_t wc, wctype_t desc)
 	     Ri18n_wctype_func[i].wctype != desc ; i++ );
     return (*Ri18n_wctype_func[i].func)(wc);
 }
-
-#endif /* SUPPORT_MBCS */

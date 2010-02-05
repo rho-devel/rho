@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -1405,7 +1405,7 @@ gl_locale_name_default (void)
 	switch (sub)
 	  {
 	  case SUBLANG_SINDHI_PAKISTAN: return "sd_PK";
-	  case SUBLANG_SINDHI_AFGHANISTAN: return "sd_AF";
+	  // case SUBLANG_SINDHI_AFGHANISTAN: return "sd_AF";
 	  }
 	return "sd";
       case LANG_SINHALESE: return "si_LK";

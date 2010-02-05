@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
  *                            R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -69,6 +69,7 @@ SEXP do_aqua_custom_print(SEXP, SEXP, SEXP, SEXP);
 /* Function Names */
 
 #if Win32
+SEXP do_arrangeWindows(SEXP, SEXP, SEXP, SEXP);
 SEXP do_bringtotop(SEXP, SEXP, SEXP, SEXP);
 SEXP do_chooseFiles(SEXP, SEXP, SEXP, SEXP);
 SEXP do_chooseDir(SEXP, SEXP, SEXP, SEXP);
@@ -77,9 +78,11 @@ SEXP do_flushconsole(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getClipboardFormats(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getIdentification(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getWindowHandle(SEXP, SEXP, SEXP, SEXP);
+SEXP do_getWindowHandles(SEXP, SEXP, SEXP, SEXP);
 SEXP do_getWindowTitle(SEXP, SEXP, SEXP, SEXP);
 SEXP do_loadRconsole(SEXP, SEXP, SEXP, SEXP);
 SEXP do_memsize(SEXP, SEXP, SEXP, SEXP);
+SEXP do_msgwindow(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readClipboard(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readRegistry(SEXP, SEXP, SEXP, SEXP);
 SEXP do_selectlist(SEXP, SEXP, SEXP, SEXP);
@@ -99,6 +102,7 @@ SEXP do_writeClipboard(SEXP, SEXP, SEXP, SEXP);
 SEXP do_winprogressbar(SEXP, SEXP, SEXP, SEXP);
 SEXP do_closewinprogressbar(SEXP, SEXP, SEXP, SEXP);
 SEXP do_setwinprogressbar(SEXP, SEXP, SEXP, SEXP);
+SEXP do_setInternet2(SEXP, SEXP, SEXP, SEXP);
 #endif
 
 SEXP do_abbrev(SEXP, SEXP, SEXP, SEXP);
@@ -183,6 +187,7 @@ SEXP do_delayed(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dend(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dendwindow(SEXP, SEXP, SEXP, SEXP);
 SEXP do_deparse(SEXP, SEXP, SEXP, SEXP);
+SEXP do_deparseRd(SEXP, SEXP, SEXP, SEXP);
 SEXP do_deriv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_detach(SEXP,SEXP,SEXP,SEXP);
 SEXP do_devcontrol(SEXP,SEXP,SEXP,SEXP);
@@ -199,6 +204,7 @@ SEXP do_dim(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dimgets(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dimnames(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dimnamesgets(SEXP, SEXP, SEXP, SEXP);
+SEXP do_dirchmod(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dircreate(SEXP, SEXP, SEXP, SEXP);
 SEXP do_dirname(SEXP, SEXP, SEXP, SEXP);
 SEXP do_docall(SEXP, SEXP, SEXP, SEXP);
@@ -228,6 +234,7 @@ SEXP do_expression(SEXP, SEXP, SEXP, SEXP);
 SEXP do_fileaccess(SEXP, SEXP, SEXP, SEXP);
 SEXP do_fileappend(SEXP, SEXP, SEXP, SEXP);
 SEXP do_filechoose(SEXP, SEXP, SEXP, SEXP);
+SEXP do_filecopy(SEXP, SEXP, SEXP, SEXP);
 SEXP do_filecreate(SEXP, SEXP, SEXP, SEXP);
 SEXP do_fileexists(SEXP, SEXP, SEXP, SEXP);
 SEXP do_fileinfo(SEXP, SEXP, SEXP, SEXP);
@@ -279,7 +286,7 @@ SEXP do_if(SEXP, SEXP, SEXP, SEXP);
 SEXP do_image(SEXP, SEXP, SEXP, SEXP);
 SEXP do_indexsearch(SEXP, SEXP, SEXP, SEXP);
 SEXP do_inherits(SEXP, SEXP, SEXP, SEXP);
-SEXP do_int_unzip(SEXP, SEXP, SEXP, SEXP);
+SEXP do_inspect(SEXP, SEXP, SEXP, SEXP);
 SEXP do_intToUtf8(SEXP, SEXP, SEXP, SEXP);
 SEXP do_interactive(SEXP, SEXP, SEXP, SEXP);
 SEXP do_internal(SEXP, SEXP, SEXP, SEXP);
@@ -305,7 +312,6 @@ SEXP do_levelsgets(SEXP, SEXP, SEXP, SEXP);
 SEXP do_libfixup(SEXP, SEXP, SEXP, SEXP);
 SEXP do_listfiles(SEXP, SEXP, SEXP, SEXP);
 SEXP do_load(SEXP, SEXP, SEXP, SEXP);
-SEXP do_loadFromConn(SEXP, SEXP, SEXP, SEXP);
 SEXP do_loadFromConn2(SEXP, SEXP, SEXP, SEXP);
 SEXP do_loadhistory(SEXP, SEXP, SEXP, SEXP);
 SEXP do_localeconv(SEXP, SEXP, SEXP, SEXP);
@@ -368,6 +374,7 @@ SEXP do_parentenv(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parentenvgets(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parentframe(SEXP, SEXP, SEXP, SEXP);
 SEXP do_parse(SEXP, SEXP, SEXP, SEXP);
+SEXP do_parseRd(SEXP, SEXP, SEXP, SEXP);
 SEXP do_paste(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pathexpand(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pause(SEXP, SEXP, SEXP, SEXP);
@@ -385,6 +392,7 @@ SEXP do_primitive(SEXP, SEXP, SEXP, SEXP);
 SEXP do_printdefault(SEXP, SEXP, SEXP, SEXP);
 SEXP do_printDeferredWarnings(SEXP, SEXP, SEXP, SEXP);
 SEXP do_printdf(SEXP, SEXP, SEXP, SEXP);
+SEXP do_printfunction(SEXP, SEXP, SEXP, SEXP);
 SEXP do_prmatrix(SEXP, SEXP, SEXP, SEXP);
 SEXP do_proctime(SEXP, SEXP, SEXP, SEXP);
 SEXP do_psort(SEXP, SEXP, SEXP, SEXP);
@@ -402,6 +410,7 @@ SEXP do_rawShift(SEXP, SEXP, SEXP, SEXP);
 SEXP do_rawToBits(SEXP, SEXP, SEXP, SEXP);
 SEXP do_rawToChar(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readDCF(SEXP, SEXP, SEXP, SEXP);
+SEXP do_readlink(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readLines(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readln(SEXP, SEXP, SEXP, SEXP);
 SEXP do_readtablehead(SEXP, SEXP, SEXP, SEXP);
@@ -459,7 +468,9 @@ SEXP do_sort(SEXP, SEXP, SEXP, SEXP);
 SEXP do_split(SEXP, SEXP, SEXP, SEXP);
 SEXP do_sprintf(SEXP, SEXP, SEXP, SEXP);
 SEXP do_standardGeneric(SEXP, SEXP, SEXP, SEXP);
+SEXP do_startHTTPD(SEXP, SEXP, SEXP, SEXP);
 SEXP do_stop(SEXP, SEXP, SEXP, SEXP);
+SEXP do_stopHTTPD(SEXP, SEXP, SEXP, SEXP);
 SEXP do_storage_mode(SEXP, SEXP, SEXP, SEXP);
 SEXP do_strsplit(SEXP,SEXP,SEXP,SEXP);
 SEXP do_strptime(SEXP,SEXP,SEXP,SEXP);
@@ -492,6 +503,7 @@ SEXP do_surface(SEXP, SEXP, SEXP, SEXP);
 SEXP do_switch(SEXP, SEXP, SEXP, SEXP);
 SEXP do_symbols(SEXP, SEXP, SEXP, SEXP);
 SEXP do_sys(SEXP, SEXP, SEXP, SEXP);
+SEXP do_sysbrowser(SEXP, SEXP, SEXP, SEXP);
 SEXP do_sysgetpid(SEXP, SEXP, SEXP, SEXP);
 SEXP do_system(SEXP, SEXP, SEXP, SEXP);
 SEXP do_systime(SEXP, SEXP, SEXP, SEXP);
@@ -512,12 +524,14 @@ SEXP do_unlink(SEXP, SEXP, SEXP, SEXP);
 SEXP do_unlist(SEXP, SEXP, SEXP, SEXP);
 SEXP do_unserializeFromConn(SEXP, SEXP, SEXP, SEXP);
 SEXP do_unsetenv(SEXP, SEXP, SEXP, SEXP);
+SEXP do_unzip(SEXP, SEXP, SEXP, SEXP);
 SEXP do_updateform(SEXP, SEXP, SEXP, SEXP);
 SEXP do_usemethod(SEXP, SEXP, SEXP, SEXP);
 SEXP do_utf8ToInt(SEXP, SEXP, SEXP, SEXP);
 SEXP do_version(SEXP, SEXP, SEXP, SEXP);
 SEXP do_warning(SEXP, SEXP, SEXP, SEXP);
 SEXP do_while(SEXP, SEXP, SEXP, SEXP);
+SEXP do_withVisible(SEXP, SEXP, SEXP, SEXP);
 SEXP do_writetable(SEXP, SEXP, SEXP, SEXP);
 SEXP do_xspline(SEXP, SEXP, SEXP, SEXP);
 SEXP do_zeroin(SEXP, SEXP, SEXP, SEXP);
@@ -528,6 +542,7 @@ SEXP do_playSnapshot(SEXP, SEXP, SEXP, SEXP);
 
 SEXP R_do_data_class(SEXP call, SEXP op, SEXP args, SEXP env);
 SEXP R_do_set_class(SEXP call, SEXP op, SEXP args, SEXP env);
+SEXP R_getS4DataSlot(SEXP obj, SEXPTYPE type);
 
 #ifdef BYTECODE
 SEXP do_mkcode(SEXP, SEXP, SEXP, SEXP);
@@ -560,7 +575,6 @@ SEXP do_pipe(SEXP, SEXP, SEXP, SEXP);
 SEXP do_url(SEXP, SEXP, SEXP, SEXP);
 SEXP do_gzfile(SEXP, SEXP, SEXP, SEXP);
 SEXP do_unz(SEXP, SEXP, SEXP, SEXP);
-SEXP do_bzfile(SEXP, SEXP, SEXP, SEXP);
 SEXP do_seek(SEXP, SEXP, SEXP, SEXP);
 SEXP do_truncate(SEXP, SEXP, SEXP, SEXP);
 SEXP do_pushback(SEXP, SEXP, SEXP, SEXP);
@@ -578,6 +592,8 @@ SEXP do_sockconn(SEXP, SEXP, SEXP, SEXP);
 SEXP do_sockselect(SEXP, SEXP, SEXP, SEXP);
 SEXP do_nsl(SEXP, SEXP, SEXP, SEXP);
 SEXP do_gzcon(SEXP, SEXP, SEXP, SEXP);
+SEXP do_memCompress(SEXP, SEXP, SEXP, SEXP);
+SEXP do_memDecompress(SEXP, SEXP, SEXP, SEXP);
 
 SEXP do_castestfun(SEXP, SEXP, SEXP, SEXP);
 SEXP do_hasProvenance(SEXP, SEXP, SEXP, SEXP);

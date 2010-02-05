@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -50,9 +50,12 @@ static void mdimenu(menuitem m)
 	SendMessage(hwndClient,WM_MDICASCADE,0,0);
 	break;
     case 2:
-	SendMessage(hwndClient,WM_MDITILE,0,0);
+	SendMessage(hwndClient,WM_MDITILE,MDITILE_HORIZONTAL,0);
 	break;
     case 3:
+	SendMessage(hwndClient,WM_MDITILE,MDITILE_VERTICAL,0);
+	break;	
+    case 4:
 	SendMessage(hwndClient,WM_MDIICONARRANGE,0,0);
 	break;
     }
@@ -64,8 +67,9 @@ menu newmdimenu()
     if (!ismdi()) return NULL;
     m = newmenu(G_("Windows"));
     setvalue(newmenuitem(G_("Cascade"),0,mdimenu),1);
-    setvalue(newmenuitem(G_("Tile"),0,mdimenu),2);
-    setvalue(newmenuitem(G_("Arrange Icons"),0,mdimenu),3);
+    setvalue(newmenuitem(G_("Tile &Horizontally"),0,mdimenu),2);
+    setvalue(newmenuitem(G_("Tile &Vertically"),0,mdimenu),3);
+    setvalue(newmenuitem(G_("Arrange Icons"),0,mdimenu),4);
     current_menubar->menubar = m;
     return m;
 }

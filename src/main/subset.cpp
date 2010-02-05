@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -59,6 +59,10 @@
 
 using namespace std;
 using namespace CXXR;
+
+/* JMC convinced MM that this was not a good idea: */
+#undef _S4_subsettable
+
 
 /* ExtractSubset does the transfer of elements from "x" to "result" */
 /* according to the integer subscripts given in "indx". */
@@ -144,7 +148,7 @@ static SEXP ExtractSubset(SEXP x, SEXP result, SEXP indx, SEXP call)
 		RAW(result)[i] = Rbyte( 0);
 	    break;
 	default:
-	    errorcall(call, R_MSG_ob_nonsub, type2char(SEXPTYPE(mode)));
+	    errorcall(call, R_MSG_ob_nonsub, type2char(CXXRCONSTRUCT(SEXPTYPE, mode)));
 	}
     }
     return result;
@@ -215,10 +219,13 @@ static SEXP VectorSubset(SEXP x, SEXP s, SEXP call)
 	    setAttrib(result, R_SrcrefSymbol, nattrib);
 	    UNPROTECT(1);
 	}
+	/* FIXME:  this is wrong, because the slots are gone, so result is an invalid object of the S4 class! JMC 3/3/09 */
+#ifdef _S4_subsettable
 	if(IS_S4_OBJECT(x)) { /* e.g. contains = "list" */
 	    setAttrib(result, R_ClassSymbol, getAttrib(x, R_ClassSymbol));
 	    SET_S4_OBJECT(result);
 	}
+#endif
     }
     UNPROTECT(3);
     return result;
@@ -377,7 +384,7 @@ static SEXP ArraySubset(SEXP x, SEXP s, SEXP call, int drop)
     SEXPTYPE mode;
     int **subs, *indx, *offset, *bound;
     SEXP dimnames, dimnamesnames, p, q, r, result, xdims;
-    unsigned int vmaxsave;
+    void *vmaxsave;
 
     mode = TYPEOF(x);
     xdims = getAttrib(x, R_DimSymbol);
@@ -635,7 +642,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    switch (TYPEOF(x)) {
 	    case REALSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? int(REAL(s)[0]) : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}
@@ -644,7 +651,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		break;
 	    case INTSXP:
 		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? int(REAL(s)[0]) : -1; break;
+		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
 		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
 		default:  i = -1;
 		}
@@ -767,9 +774,11 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     else {
 	PROTECT(ans);
     }
-    if (ATTRIB(ans) != R_NilValue) {
+    if (ATTRIB(ans) != R_NilValue) { /* remove probably erroneous attr's */
 	setAttrib(ans, R_TspSymbol, R_NilValue);
+#ifdef _S4_subsettable
 	if(!IS_S4_OBJECT(x))
+#endif
 	    setAttrib(ans, R_ClassSymbol, R_NilValue);
     }
     UNPROTECT(4);
@@ -804,6 +813,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP ans, dims, dimnames, indx, subs, x;
     int i, ndims, nsubs, offset = 0;
     int drop = 1, pok, exact = -1;
+    int named_x;
 
     PROTECT(args);
     ExtractDropArg(args, &drop);
@@ -837,6 +847,13 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(nsubs > 1 && nsubs != ndims)
 	errorcall(call, _("incorrect number of subscripts"));
 
+    /* code to allow classes to extend environment */
+    if(TYPEOF(x) == S4SXP) {
+        x = R_getS4DataSlot(x, ANYSXP);
+	if(x == R_NilValue)
+	  errorcall(call, _("this S4 class is not subsettable"));
+    }
+
     /* split out ENVSXP for now */
     if( TYPEOF(x) == ENVSXP ) {
       if( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
@@ -860,24 +877,17 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!(isVector(x) || isList(x) || isLanguage(x)))
 	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
 
+    named_x = NAMED(x);  /* x may change below; save this now.  See PR#13411 */
+
     if(nsubs == 1) { /* vector indexing */
 	SEXP thesub = CAR(subs);
-	int i = -1, len = length(thesub);
+	int len = length(thesub);
 
-	/* new case in 1.7.0, one vector index for a list */
-	if(isVectorList(x) && length(CAR(subs)) > 1) {
-	    for(i = 0; i < len - 1; i++) {
-		if(!isVectorList(x))
-		    errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
-		offset = get1index(CAR(subs), getAttrib(x, R_NamesSymbol),
-				   length(x), pok, i, call);
-		if(offset < 0 || offset >= length(x))
-		    errorcall(call, _("no such index at level %d\n"), i+1);
-		x = VECTOR_ELT(x, offset);
-	    }
-	}
-	offset = get1index(CAR(subs), getAttrib(x, R_NamesSymbol),
-			   length(x), pok, i, call);
+	if (len > 1)
+	    x = vectorIndex(x, thesub, 0, len-1, pok, call);
+	    
+	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
+			   length(x), pok, len > 1 ? len-1 : -1, call);
 	if (offset < 0 || offset >= length(x)) {
 	    /* a bold attempt to get the same behaviour for $ and [[ */
 	    if (offset < 0 && (isNewList(x) ||
@@ -919,8 +929,8 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if(isPairList(x)) {
 	ans = CAR(nthcdr(x, offset));
-	if (NAMED(x) > NAMED(ans))
-	    SET_NAMED(ans, NAMED(x));
+	if (named_x > NAMED(ans))
+	    SET_NAMED(ans, named_x);
     } else if(isVectorList(x)) {
 	/* did unconditional duplication before 2.4.0 */
 	if (x->sexptype() == EXPRSXP) {
@@ -928,8 +938,8 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ans = (*ev)[offset];
 	}
 	else ans = VECTOR_ELT(x, offset);
-	if (NAMED(x) > NAMED(ans))
-	    SET_NAMED(ans, NAMED(x));
+	if (named_x > NAMED(ans))
+	    SET_NAMED(ans, named_x);
     } else {
 	ans = allocVector(TYPEOF(x), 1);
 	switch (TYPEOF(x)) {
@@ -988,7 +998,7 @@ pstrmatch(SEXP target, SEXP input, int slen)
 	break;
     }
     if(strncmp(st, translateChar(input), slen) == 0)
-	return (int(strlen(st)) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
+	return (CXXRCONSTRUCT(int, strlen(st)) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
     else return NO_MATCH;
 }
 
@@ -1050,6 +1060,12 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 
     /* Optimisation to prevent repeated recalculation */
     slen = strlen(translateChar(input));
+     /* The mechanism to allow  a class extending "environment" */
+    if( IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP ){
+        x = R_getS4DataSlot(x, ANYSXP);
+	if(x == R_NilValue)
+	    errorcall(call, "$ operator not defined for this S4 class");
+    }
 
     /* If this is not a list object we return NULL. */
     /* Or should this be allocVector(VECSXP, 0)? */
@@ -1165,9 +1181,6 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
     }
     else if( isVectorAtomic(x) ){
 	errorcall(call, "$ operator is invalid for atomic vectors");
-    }
-    else if( IS_S4_OBJECT(x) ){
-	errorcall(call, "$ operator not defined for this S4 class");
     }
     else /* e.g. a function */
 	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));

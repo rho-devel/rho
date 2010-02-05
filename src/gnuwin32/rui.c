@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1998--2005  Guido Masarotto and Brian Ripley
- *  Copyright (C) 2004--2008  The R Foundation
+ *  Copyright (C) 2004--2009  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ console RConsole = NULL;
 #ifdef USE_MDI
 int   RguiMDI = RW_MDI | RW_TOOLBAR | RW_STATUSBAR;
 int   MDIset = 0;
-window RFrame;
+window RFrame = NULL; /* some compilers want initialized for export */
 rect MDIsize;
 #endif
 extern int ConsoleAcceptCmd, R_is_running;
@@ -104,7 +104,6 @@ static void double_backslashes(char *s, char *out)
 {
     char *p = s;
 
-#ifdef SUPPORT_MBCS
     int i;
     if(mbcslocale) {
 	mbstate_t mb_st; int used;
@@ -114,12 +113,8 @@ static void double_backslashes(char *s, char *out)
 	    for(i = 0; i < used; i++) *out++ = *p++;
 	}
     } else
-#endif
-    for (; *p; p++)
-	if (*p == '\\') {
-	    *out++ = *p;
-	    *out++ = *p;
-	} else *out++ = *p;
+	for (; *p; p++)
+	    if (*p == '\\') {*out++ = *p; *out++ = *p;} else *out++ = *p;
     *out = '\0';
 }
 
@@ -134,16 +129,38 @@ void closeconsole(control m)  /* can also be called from editor menus */
     R_CleanUp(SA_DEFAULT, 0, 1);
 }
 
+static void quote_fn(wchar_t *fn, char *s)
+{
+    char *p = s;
+    wchar_t *w;
+    int used;
+    for (w = fn; *w; w++) {
+	if(*w  == L'\\') {
+	    *p++ = '\\';
+	    *p++ = '\\';
+	} else {
+	    used = wctomb(p, *w);
+	    if(used > 0) p += used;
+	    else {
+		sprintf(p, "\\u%04x", (unsigned int) *w);
+		p += 6;
+	    }
+	}
+    }
+    *p = '\0';
+}
+
+
 static void menusource(control m)
 {
-    char *fn, local[MAX_PATH];
+    wchar_t *fn;
+    char local[MAX_PATH];
 
     if (!ConsoleAcceptCmd) return;
-    setuserfilter("R files (*.R)\0*.R\0S files (*.q, *.ssc, *.S)\0*.q;*.ssc;*.S\0All files (*.*)\0*.*\0\0");
-    fn = askfilename(G_("Select file to source"), "");
-/*    show(RConsole); */
+    setuserfilterW(L"R files (*.R)\0*.R\0S files (*.q, *.ssc, *.S)\0*.q;*.ssc;*.S\0All files (*.*)\0*.*\0\0");
+    fn = askfilenameW(G_("Select file to source"), "");
     if (fn) {
-	double_backslashes(fn, local);
+	quote_fn(fn, local);
 	snprintf(cmd, 1024, "source(\"%s\")", local);
 	consolecmd(RConsole, cmd);
     }
@@ -157,14 +174,14 @@ static void menudisplay(control m)
 
 static void menuloadimage(control m)
 {
-    char *fn, s[2*MAX_PATH];
+    wchar_t *fn;
+    char s[MAX_PATH];
 
     if (!ConsoleAcceptCmd) return;
-    setuserfilter("R images (*.RData)\0*.RData\0R images - old extension (*.rda)\0*.rda\0All files (*.*)\0*.*\0\0");
-    fn = askfilename(G_("Select image to load"), "");
-/*    show(RConsole); */
+    setuserfilterW(L"R images (*.RData)\0*.RData\0R images - old extension (*.rda)\0*.rda\0All files (*.*)\0*.*\0\0");
+    fn = askfilenameW(G_("Select image to load"), "");
     if (fn) {
-	double_backslashes(fn, s);
+	quote_fn(fn, s);
 	snprintf(cmd, 1024, "load(\"%s\")", s);
 	consolecmd(RConsole, cmd);
     }
@@ -172,14 +189,14 @@ static void menuloadimage(control m)
 
 static void menusaveimage(control m)
 {
-    char *fn, s[2*MAX_PATH];
+    wchar_t *fn;
+    char s[MAX_PATH];
 
     if (!ConsoleAcceptCmd) return;
-    setuserfilter("R images (*.RData)\0*.RData\0All files (*.*)\0*.*\0\0");
-    fn = askfilesave(G_("Save image in"), ".RData");
-/*    show(RConsole); */
+    setuserfilterW(L"R images (*.RData)\0*.RData\0All files (*.*)\0*.*\0\0");
+    fn = askfilesaveW(G_("Save image in"), ".RData");
     if (fn) {
-	double_backslashes(fn, s);
+	quote_fn(fn, s);
 	if (!strcmp(&s[strlen(s) - 2], ".*")) s[strlen(s) - 2] = '\0';
 	snprintf(cmd, 1024, "save.image(\"%s\")", s);
 	consolecmd(RConsole, cmd);
@@ -210,19 +227,16 @@ static void menusavehistory(control m)
 static void menuchangedir(control m)
 {
     askchangedir();
-/*    show(RConsole); */
 }
 
 static void menuprint(control m)
 {
     consoleprint(RConsole);
-/*    show(RConsole); */
 }
 
 static void menusavefile(control m)
 {
     consolesavefile(RConsole, 0);
-/*    show(RConsole); */
 }
 
 static void menuexit(control m)
@@ -522,6 +536,37 @@ static void menupkginstalllocal(control m)
     if (!ConsoleAcceptCmd) return;
     consolecmd(RConsole, "utils:::menuInstallLocal()");
 }
+ 
+ 
+static void menucascade(control m)
+{
+    if (!ConsoleAcceptCmd) return;
+    consolecmd(RConsole, "utils::arrangeWindows(action='cascade')");
+}
+
+static void menutilehoriz(control m)
+{
+    if (!ConsoleAcceptCmd) return;
+    consolecmd(RConsole, "utils::arrangeWindows(action='horizontal')");
+}
+
+static void menutilevert(control m)
+{
+    if (!ConsoleAcceptCmd) return;
+    consolecmd(RConsole, "utils::arrangeWindows(action='vertical')");
+}
+
+static void menuminimizegroup(control m)
+{
+    if (!ConsoleAcceptCmd) return;
+    consolecmd(RConsole, "utils::arrangeWindows(action='minimize')");
+}
+
+static void menurestoregroup(control m)
+{
+    if (!ConsoleAcceptCmd) return;
+    consolecmd(RConsole, "utils::arrangeWindows(action='restore')");
+}
 
 static void menuconsolehelp(control m)
 {
@@ -628,18 +673,10 @@ static void menuapropos(control m)
 
 static void menuhelpstart(control m)
 {
-/*    if (!ConsoleAcceptCmd) return;
+    if (!ConsoleAcceptCmd) return;
     consolecmd(RConsole, "help.start()");
-    show(RConsole);*/
-    internal_shellexec("doc\\html\\index.html");
-}
-
-static void menuhelpsearchstart(control m)
-{
-/*    if (!ConsoleAcceptCmd) return;
-    consolecmd(RConsole, "help.start()");
-    show(RConsole);*/
-    internal_shellexec("doc\\html\\search\\SearchEngine.html");
+/*    show(RConsole); 
+    internal_shellexec("doc\\html\\index.html"); */
 }
 
 static void menuFAQ(control m)
@@ -683,12 +720,14 @@ void helpmenuact(HelpMenuItems hmenu)
 {
     if (ConsoleAcceptCmd) {
 	enable(hmenu->mhelp);
+	enable(hmenu->mhelpstart);
 	enable(hmenu->mhelpsearch);
 	enable(hmenu->msearchRsite);
 	enable(hmenu->mapropos);
 	enable(hmenu->mCRAN);
     } else {
 	disable(hmenu->mhelp);
+	disable(hmenu->mhelpstart);
 	disable(hmenu->mhelpsearch);
 	disable(hmenu->msearchRsite);
 	disable(hmenu->mapropos);
@@ -817,7 +856,7 @@ void readconsolecfg()
     }
     setconsoleoptions(fn, sty, gui.pointsize, gui.crows, gui.ccols,
 		      gui.cx, gui.cy,
-		      gui.fg, gui.user, gui.bg, gui.hlt,
+		      gui.guiColors,
 		      gui.prows, gui.pcols, gui.pagerMultiple, gui.setWidthOnResize,
 		      gui.cbb, gui.cbl, gui.buffered);
 }
@@ -980,9 +1019,6 @@ int RguiCommonHelp(menu m, HelpMenuItems hmenu)
 				      menuhelp));
     MCHECK(hmenu->mhelpstart = newmenuitem(G_("Html help"), 0, menuhelpstart));
     if (!check_doc_file("doc\\html\\index.html")) disable(hmenu->mhelpstart);
-    MCHECK(hmenu->mhelpsearchstart = newmenuitem(G_("Html search page"), 0, menuhelpsearchstart));
-    if (!check_doc_file("doc\\html\\search\\SearchEngine.html"))
-	disable(hmenu->mhelpsearchstart);
     MCHECK(hmenu->mhelpsearch = newmenuitem(G_("Search help..."), 0,
 					    menuhelpsearch));
     MCHECK(hmenu->msearchRsite = newmenuitem("search.r-project.org ...", 0,
@@ -994,6 +1030,24 @@ int RguiCommonHelp(menu m, HelpMenuItems hmenu)
     MCHECK(hmenu->mCRAN = newmenuitem(G_("CRAN home page"), 0, menuCRAN));
     MCHECK(newmenuitem("-", 0, NULL));
     MCHECK(newmenuitem(G_("About"), 0, menuabout));
+    return 0;
+}
+
+static int RguiWindowMenu()
+{
+#ifdef USE_MDI
+    if (ismdi())
+	newmdimenu();
+    else 
+#endif
+    {
+	MCHECK(newmenu(G_("Windows")));
+	MCHECK(newmenuitem(G_("Cascade"), 0, menucascade));
+	MCHECK(newmenuitem(G_("Tile &Horizontally"), 0, menutilehoriz));
+	MCHECK(newmenuitem(G_("Tile &Vertically"), 0, menutilevert));
+	MCHECK(newmenuitem(G_("Minimize group"), 0, menuminimizegroup));
+	MCHECK(newmenuitem(G_("Restore group"), 0, menurestoregroup));
+    }
     return 0;
 }
 
@@ -1155,9 +1209,7 @@ int setupui(void)
 
     pmenu = (PkgMenuItems) malloc(sizeof(struct structPkgMenuItems));
     RguiPackageMenu(pmenu);
-#ifdef USE_MDI
-    newmdimenu();
-#endif
+    RguiWindowMenu();
     MCHECK(m = newmenu(G_("Help")));
     MCHECK(newmenuitem(G_("Console"), 0, menuconsolehelp));
     MCHECK(newmenuitem("-", 0, NULL));
@@ -1191,6 +1243,7 @@ int RgetMDIheight(void)
 }
 #endif
 
+#if 0
 extern int  CharacterMode;
 int DialogSelectFile(char *buf, int len)
 {
@@ -1206,6 +1259,7 @@ int DialogSelectFile(char *buf, int len)
 	strcpy(buf, "");
     return (strlen(buf));
 }
+#endif
 
 static menu *usermenus;
 static char **usermenunames;

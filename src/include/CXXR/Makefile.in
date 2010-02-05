@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -29,30 +29,42 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 ## Partially included by the API (1) headers in .., but not part of the
 ## API per se. 
-CXXR_HEADERS = \
-  CachedString.h Closure.h ComplexVector.h ConsCell.h DotInternal.h \
+CXXR_HS = \
+  BuiltInFunction.h CachedString.h Closure.h ComplexVector.h ConsCell.h \
+  DotInternal.h \
   Environment.h Expression.h ExpressionVector.h ExternalPointer.h \
-  FunctionBase.h GCRoot.h GCStackRoot.h \
-  IntVector.h \
+  FunctionBase.h GCRoot.h GCStackRoot.h IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   S4Object.h String.h StringVector.h Symbol.h \
-  UncachedString.h VectorBase.h WeakRef.h
+  UncachedString.h VectorBase.h WeakRef.h uncxxr.h
 
-DISTFILES = Makefile.in $(CXXR_HEADERS)
-TIMESTAMPS = $(CXXR_HEADERS:.h=.ts)
+CXXR_HPPS = \
+  Allocator.hpp ArgMatcher.hpp CellPool.hpp \
+  DumbVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp \
+  HandleVector.hpp HeterogeneousList.hpp MemoryBank.hpp \
+  SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp config.hpp
+
+CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)
+
+DISTFILES = Makefile.in $(CXXR_HS) $(CXXR_HPPS)
+TIMESTAMPS = $(CXXR_HS:.h=.ts) $(CXXR_HPPS:.hpp=.ts)
 
 CLEANFILES = stamp-R $(TIMESTAMPS)
-DISTCLEANFILES = Makefile
+DISTCLEANFILES = Makefile config.hpp
 
 .SUFFIXES:
-.SUFFIXES: .h .ts
+.SUFFIXES: .h .hpp .ts
 
 .h.ts: 
 	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
 	@touch $@
 
-all: Makefile R
+.hpp.ts: 
+	@$(INSTALL_DATA) $< $(top_builddir)/include/CXXR/`basename $<`
+	@touch $@
+
+all: Makefile R config.hpp
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
@@ -89,3 +101,6 @@ distdir: $(DISTFILES)
 	    || ln $(srcdir)/$${f} $(distdir)/$${f} 2>/dev/null \
 	    || cp -p $(srcdir)/$${f} $(distdir)/$${f}; \
 	done
+
+config.hpp :
+	cp config.hpp.in $@

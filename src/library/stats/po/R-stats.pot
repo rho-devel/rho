@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.3.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-26 08:39\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "object not interpretable as a factor"
 msgstr ""
 
-msgid "cannot fit models without level ('alpha' must not be 0)."
+msgid "cannot fit models without level ('alpha' must not be 0 or FALSE)."
 msgstr ""
 
 msgid "'alpha', 'beta' and 'gamma' must be within the unit interval."
@@ -128,6 +128,9 @@ msgstr ""
 msgid "length of FUN, %d,\n does not match the length of the margins, %d"
 msgstr ""
 
+msgid "no rows to aggregate"
+msgstr ""
+
 msgid "'by' must be a list"
 msgstr ""
 
@@ -186,6 +189,9 @@ msgid "'formula' missing or incorrect"
 msgstr ""
 
 msgid "grouping factor must have exactly 2 levels"
+msgstr ""
+
+msgid "weights are not supported in a multistratum aov() fit"
 msgstr ""
 
 msgid "Error() model is singular"
@@ -350,7 +356,7 @@ msgstr ""
 msgid "no solution in the specified range of bandwidths"
 msgstr ""
 
-msgid "increasing bw.SJ() search interval (%d)"
+msgid "increasing bw.SJ() search interval (%d) to [%.4g,%.4g]"
 msgstr ""
 
 msgid "minimum occurred at one end of the range"
@@ -489,6 +495,9 @@ msgid "singular contrast matrix"
 msgstr ""
 
 msgid "numeric contrasts or contrast name expected"
+msgstr ""
+
+msgid "contr*(.., sparse=TRUE) needs package \"Matrix\" correctly installed"
 msgstr ""
 
 msgid "not enough degrees of freedom to define contrasts"
@@ -743,6 +752,9 @@ msgstr ""
 msgid "negative values not allowed for the Poisson family"
 msgstr ""
 
+msgid "ignoring prior weights"
+msgstr ""
+
 msgid "link \"%s\" not available for quasipoisson family; available links are %s"
 msgstr ""
 
@@ -773,6 +785,9 @@ msgstr ""
 msgid "or a 2 column matrix where col 1 is no. successes and col 2 is no. failures"
 msgstr ""
 
+msgid "cannot simulate from non-integer prior.weights"
+msgstr ""
+
 msgid "link \"%s\" not available for quasibinomial family; available links are %s"
 msgstr ""
 
@@ -785,10 +800,19 @@ msgstr ""
 msgid "non-positive values not allowed for the gamma family"
 msgstr ""
 
+msgid "using weights as shape parameters"
+msgstr ""
+
 msgid "link \"%s\" not available for inverse.gaussian family; available links are %s"
 msgstr ""
 
 msgid "positive values only allowed for the inverse.gaussian family"
+msgstr ""
+
+msgid "Need CRAN package 'SuppDists' for 'inverse.gaussian' family"
+msgstr ""
+
+msgid "using weights as inverse variances"
 msgstr ""
 
 msgid "'variance' \"%s\" is invalid: possible values are \"mu(1-mu)\", \"mu\", \"mu^2\", \"mu^3\" and \"constant\""
@@ -908,7 +932,10 @@ msgstr ""
 msgid "'family' not recognized"
 msgstr ""
 
-msgid "invalid 'method':"
+msgid "invalid 'method': %s"
+msgstr ""
+
+msgid "invalid 'method'"
 msgstr ""
 
 msgid "'weights' must be a numeric vector"
@@ -1184,6 +1211,12 @@ msgstr ""
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr ""
 
+msgid "family '"
+msgstr ""
+
+msgid "' not implemented"
+msgstr ""
+
 msgid "ANOVA F-tests on an essentially perfect fit are unreliable"
 msgstr ""
 
@@ -1364,6 +1397,9 @@ msgstr ""
 msgid "Design is unbalanced - use se.contrast() for se's"
 msgstr ""
 
+msgid "design is unbalanced so cannot proceed"
+msgstr ""
+
 msgid "Standard error information not returned as design is unbalanced. \nStandard errors can be obtained through 'se.contrast'."
 msgstr ""
 
@@ -1401,6 +1437,9 @@ msgid "'data' must be a data.frame, not a matrix or an array"
 msgstr ""
 
 msgid "'newdata' had %d rows but variable(s) found have %d rows"
+msgstr ""
+
+msgid "character variable '%s' changed to a factor"
 msgstr ""
 
 msgid "variable '%s' is not a factor"
@@ -1478,7 +1517,7 @@ msgstr ""
 msgid "'params' has wrong length"
 msgstr ""
 
-msgid "'varying' must be in 1:length(pars)"
+msgid "'varying' must be in seq_along(pars)"
 msgstr ""
 
 msgid "'varying' has wrong length"
@@ -1592,13 +1631,13 @@ msgstr ""
 msgid "too few groups"
 msgstr ""
 
+msgid "Not plotting observations with leverage one:"
+msgstr ""
+
 msgid "use only with \"lm\" objects"
 msgstr ""
 
 msgid "'which' must be in 1:6"
-msgstr ""
-
-msgid "Not plotting observations with leverage one:"
 msgstr ""
 
 msgid "'id.n' must be in {1,..,%d}"
@@ -1608,6 +1647,24 @@ msgid "hat values (leverages) are all ="
 msgstr ""
 
 msgid "and there are no factor predictors; no plot no. 5"
+msgstr ""
+
+msgid "'x' and 'T' have incompatible length"
+msgstr ""
+
+msgid "'x' must be finite, nonnegative, and integer"
+msgstr ""
+
+msgid "'T' must be nonnegative"
+msgstr ""
+
+msgid "not enough data"
+msgstr ""
+
+msgid "The case k > 2 is unimplemented"
+msgstr ""
+
+msgid "'r' must be a single positive number"
 msgstr ""
 
 msgid "exactly one of 'n', 'delta', 'sd', 'power', and 'sig.level' must be NULL"
@@ -1688,9 +1745,6 @@ msgstr ""
 msgid "'proj' is not implemented for multiple responses"
 msgstr ""
 
-msgid "not enough data"
-msgstr ""
-
 msgid "elements of 'n' must be positive"
 msgstr ""
 
@@ -1742,7 +1796,7 @@ msgstr ""
 msgid "'ref' must be an existing level"
 msgstr ""
 
-msgid "ref = %d must be in 1:%d"
+msgid "ref = %d must be in 1L:%d"
 msgstr ""
 
 msgid "Failed to guess time-varying variables from their names"
@@ -1890,6 +1944,9 @@ msgid "spline: first and last y values differ - using y[1] for both"
 msgstr ""
 
 msgid "'spline' requires n >= 1"
+msgstr ""
+
+msgid "spline: first and last y values differ - using y[1L] for both"
 msgstr ""
 
 msgid "'deriv' must be between 0 and 3"
@@ -2103,6 +2160,12 @@ msgid "cannot compute exact confidence interval with zeroes"
 msgstr ""
 
 msgid "must supply either 'formula' or 'data'"
+msgstr ""
+
+msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
+msgstr ""
+
+msgid "xtabs(*, sparse=TRUE) needs package \"Matrix\" correctly installed"
 msgstr ""
 
 msgid "too few distinct input values to fit an asymptotic regression model"

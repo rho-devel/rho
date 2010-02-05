@@ -11,10 +11,6 @@
 \alias{ppr}
 \alias{ppr.default}
 \alias{ppr.formula}
-%\alias{predict.ppr}
-%\alias{print.ppr}
-%\alias{summary.ppr}
-%\alias{print.summary.ppr}
 \title{Projection Pursuit Regression}
 \description{
   Fit a projection pursuit regression model.
@@ -167,7 +163,7 @@ method functions.
   Laboratory for Computational Statistics, Stanford University Technical
   Report No. 1.
 
-  Venables, W. N. & Ripley, B. D. (2002)
+  Venables, W. N. and Ripley, B. D. (2002)
   \emph{Modern Applied Statistics with S.}  Springer.
 }
 \seealso{

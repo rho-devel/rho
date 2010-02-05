@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -100,7 +100,10 @@ namespace CXXR {
 	 * @param lv The ListVector to be copied.  The
 	 *          ExpressionVector created will comprise exactly
 	 *          the same sequence of pointers to RObject as \a
-	 *          lv.
+	 *          lv.  (Logically this parameter would have type
+	 *          <tt>const ListVector&</tt>, but that creates
+	 *          implementational difficulties out of proportion to
+	 *          the niche role of this constructor.)
 	 *
 	 * @note The objects pointed to by \a lv are never themselves
 	 * copied in creating the ExpressionVector.  This is rather at

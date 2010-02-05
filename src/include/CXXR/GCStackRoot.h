@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -98,10 +98,14 @@ namespace CXXR {
 	 * ppsRestoreSize(), and like it may cease to be public in
 	 * future.
 	 */
+#ifdef DEBUG_PPS
+	static size_t ppsSize();
+#else
 	static size_t ppsSize()
 	{
 	    return s_pps->size();
 	}
+#endif
 
 	/** @brief Push a node pointer onto the PPS.
 	 *
@@ -200,8 +204,10 @@ namespace CXXR {
 
 	~GCStackRootBase()
 	{
+#ifndef NDEBUG
 	    if (this != s_roots)
 		seq_error();
+#endif
 	    if (m_target && m_target->decRefCount() == 0)
 		m_target->makeMoribund();
 	    s_roots = m_next;
@@ -217,6 +223,11 @@ namespace CXXR {
 	    return *this;
 	}
 
+	/** @brief Change the node protected by this GCStackRootBase.
+	 *
+	 * @param node Pointer to the node now to be protected, or a
+	 * null pointer.
+	 */
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
@@ -443,19 +454,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Check that C pointer protection stack has expected size.
-     *
-     * Check that the C pointer protection stack has the expected
-     * size, and print a warning if not.
-     *
-     * @param op Operation being performed.
-     *
-     * @param save The expected size of the pointer protection stack.
-     *
-     * @todo A warning seems too mild a response in this eventuality.
-     */
-    void Rf_check_stack_balance(SEXP op, unsigned int save);
-
     /** @brief Restore C pointer protection stack to a previous size.
      *
      * Restore the C pointer protection stack to a previous size by
@@ -487,7 +485,15 @@ extern "C" {
      *          garbage collector.
      * @return a copy of \a node .
      */
+#ifndef __cplusplus
     SEXP Rf_protect(SEXP node);
+#else
+    inline SEXP Rf_protect(SEXP node)
+    {
+	CXXR::GCStackRootBase::protect(node);
+	return node;
+    }
+#endif
 
     /** @brief Pop cells from the C pointer protection stack.
      *
@@ -499,7 +505,14 @@ extern "C" {
      *          larger than the current size of the C pointer
      *          protection stack.
      */
+#ifndef __cplusplus
     void Rf_unprotect(int count);
+#else
+    inline void Rf_unprotect(int count)
+    {
+	CXXR::GCStackRootBase::unprotect(count);
+    }
+#endif	
 
     /** @brief Remove entry from pointer protection stack.
      *

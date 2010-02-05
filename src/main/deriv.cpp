@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -547,7 +547,7 @@ static SEXP D(SEXP expr, SEXP var)
 	}
 
 	else {
-	    SEXP u = deparse1(CAR(expr), FALSE, SIMPLEDEPARSE);
+	    SEXP u = deparse1(CAR(expr), CXXRFALSE, SIMPLEDEPARSE);
 	    error(_("Function '%s' is not in the derivatives table"),
 		  translateChar(STRING_ELT(u, 0)));
 	}
@@ -668,9 +668,9 @@ SEXP attribute_hidden do_D(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* ------ FindSubexprs ------ and ------ Accumulate ------ */
 
-static void InvalidExpression(const char *where)
+static void InvalidExpression(CXXRCONST char *where)
 {
-    error(_("invalid expression in \"%s\""), where);
+    error(_("invalid expression in '%s'"), where);
 }
 
 static int equal(SEXP expr1, SEXP expr2)
@@ -981,7 +981,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 	d_index[i] = FindSubexprs(ans, exprlist, tag); /* examine the derivative first */
 	ans = duplicate(ans2);	/* restore the copy */
 	if (hessian) {
-	    GCRoot<> ansrt(ans);
+	    GCStackRoot<> ansrt(ans);
 	    for(j = i; j < nderiv; j++) {
 		PROTECT(ans2 = duplicate(ans));
 		PROTECT(ans2 = D(ans2, install(translateChar(STRING_ELT(names, j)))));

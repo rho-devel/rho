@@ -102,11 +102,11 @@ ansari.test(x, \dots)
   \emph{Journal of the American Statistical Association}
   \bold{67}, 687--690.
 
-  Jaroslav Hajek, Zbynek Sidak & Pranab K. Sen (1999),
+  Jaroslav Hajek, Zbynek Sidak and Pranab K. Sen (1999),
   \emph{Theory of Rank Tests}.
   San Diego, London: Academic Press.
 
-  Myles Hollander & Douglas A. Wolfe (1973),
+  Myles Hollander and Douglas A. Wolfe (1973),
   \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 83--92.
@@ -119,7 +119,7 @@ ansari.test(x, \dots)
   \code{\link{var.test}} and \code{\link{bartlett.test}} for parametric
   tests for the homogeneity in variance.
 
-  \code{\link[coin]{ansari_test}} in package \pkg{coin} for exact and
+  \code{\link[coin:ScaleTests]{ansari_test}} in package \pkg{coin} for exact and
   approximate \emph{conditional} p-values for the Ansari-Bradley
   test, as well as different methods for handling ties.
 }

@@ -25,7 +25,7 @@ range(\dots, na.rm = FALSE)
 }
 \details{
   \code{range} is a generic function: methods can be defined for it
-  directly or via the \code{\link[base:groupGeneric]{Summary}} group generic.
+  directly or via the \code{\link[=S3groupGeneric]{Summary}} group generic.
   For this to work properly, the arguments \code{\dots} should be
   unnamed, and dispatch is on the first argument.
 
@@ -41,19 +41,19 @@ range(\dots, na.rm = FALSE)
   of \code{NA}s) nonempty argument left, see \code{\link{min}}.% Extremes.Rd
 }
 \section{S4 methods}{
-  This is part of the S4 \code{\link[methods:S4groupGeneric]{Summary}}
+  This is part of the S4 \code{\link[=S4groupGeneric]{Summary}}
   group generic.  Methods for it must use the signature
   \code{x, \dots, na.rm}.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
-  The \code{\link[grDevices]{extendrange}()} utility;
-  \code{\link{min}}, \code{\link{max}},
-  \code{\link[base]{Methods}}.
+  \code{\link{min}}, \code{\link{max}}.
+
+  The \code{\link{extendrange}()} utility in package \pkg{grDevices}.
 }
 \examples{
 (r.x <- range(stats::rnorm(100)))

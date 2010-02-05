@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,7 +40,13 @@
 #include "CXXR/Expression.h"
 
 #include <iostream>
+#include "R_ext/Error.h"
+#include "localization.h"
+#include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/FunctionBase.h"
 #include "CXXR/GCStackRoot.h"
+#include "CXXR/Symbol.h"
 
 using namespace std;
 using namespace CXXR;
@@ -58,6 +64,27 @@ GCRoot<> R_CurrentExpr;
 Expression* Expression::clone() const
 {
     return expose(new Expression(*this));
+}
+
+RObject* Expression::evaluate(Environment* env)
+{
+    GCStackRoot<FunctionBase> func;
+    RObject* head = car();
+    if (head->sexptype() == SYMSXP) {
+	Symbol* symbol = static_cast<Symbol*>(head);
+	pair<Environment*, FunctionBase*> pr = findFunction(symbol, env);
+	if (!pr.first)
+	    error(_("could not find function \"%s\""),
+		  symbol->name()->c_str());
+	func = pr.second;
+    } else {
+	RObject* val = Evaluator::evaluate(head, env);
+	if (!FunctionBase::isA(val))
+	    error(_("attempt to apply non-function"));
+	func = static_cast<FunctionBase*>(val);
+    }
+    func->maybeTrace(this);
+    return func->apply(this, tail(), env);
 }
 
 const char* Expression::typeName() const

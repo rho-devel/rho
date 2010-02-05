@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
 "PO-Revision-Date: 2005-02-04 08:37+0000\n"
 "Last-Translator: 陈斐 <feic@avaya.com>\n"
 "Language-Team: Chinese\n"
@@ -27,6 +27,9 @@ msgstr "回归系数"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "'a'和'b'被' coef'覆盖"
+
+msgid "one of 'x1' and 'y1' must be given"
+msgstr ""
 
 msgid "'x' must be a 2-d contingency table"
 msgstr "'x'必需是二维列联表"
@@ -50,7 +53,7 @@ msgid "invalid 'log'"
 msgstr "'log'不对"
 
 msgid "invalid positive 'axp[3]'"
-msgstr "正数'axp[3]'不对"
+msgstr "正的'axp[3]'不对"
 
 msgid "invalid 'usr'"
 msgstr "'usr'不对"
@@ -243,8 +246,11 @@ msgstr "'text.width'必需为大于等于零的数值"
 msgid "horizontal specification overrides: Number of columns :="
 msgstr "水平定义超越其它的定义： 列的数目为 :="
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
-msgstr "pch[2..] 没用，因为pch[1] 包含多个字符"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr "不画线断时'merge = TRUE'就沿用"
+
+msgid "not using pch[2..] since pch[1L] has multiple chars"
+msgstr "pch[2..]没用，因为pch[1L] 包含多个字符"
 
 msgid "must specify at least one of 'x' and 'y'"
 msgstr "必需设定'x'和'y'中的一个"
@@ -336,8 +342,11 @@ msgstr "'figs'要么是向量，要么是有四条列的矩阵"
 msgid "'figs' must specify at least one screen"
 msgstr "'figs'至少要设定一个屏幕"
 
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr "'nrpoints'必需为大于0的数字标量。"
+
 msgid "a 2-way table has to be specified"
-msgstr "没有设定二维表"
+msgstr "没有设定双向表"
 
 msgid "x axis is on a cumulative probability scale, 'xlim' must be in [0,1]"
 msgstr "因为x轴的尺度为累计概率, 'xlim'的值必需在[0,1]"
@@ -400,4 +409,3 @@ msgstr[0] "boxplot%2$d里没有画离群值(%1$s)"
 msgid "argument %s is not made use of"
 msgid_plural "arguments %s are not made use of"
 msgstr[0] "没有用%s这个变元"
-

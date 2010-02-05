@@ -1,6 +1,6 @@
 % File src/library/utils/man/savehistory.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{savehistory}
@@ -50,33 +50,42 @@ timestamp(stamp = date(),
   The history mechanism is controlled by two environment
 #endif
 #ifdef unix
-  This works under the \code{readline} and GNOME and MacOS X consoles,
-  but not otherwise (for example, in batch use or in an embedded application).
+  This works under the \code{readline} command-line interface and the
+  \file{R.app} Mac OS X GUI, but not otherwise (for example, in
+  batch use or in an embedded application).
 
   The \code{readline} history mechanism is controlled by two environment
 #endif
-  variables: \code{R_HISTSIZE} controls the number of lines that are
-  saved (default 512), and \code{R_HISTFILE} sets the filename used for
+  variables: \env{R_HISTSIZE} controls the number of lines that are
+  saved (default 512), and \env{R_HISTFILE} sets the filename used for
   the loading/saving of history if requested at the beginning/end of a
   session (but not the default for these functions).  There is no limit
   on the number of lines of history retained during a session, so
-  setting \code{R_HISTSIZE} to a large value has no penalty unless a
+  setting \env{R_HISTSIZE} to a large value has no penalty unless a
   large file is actually generated.
 
   These variables are read at the time of saving, so can be altered
   within a session by the use of \code{\link{Sys.setenv}}.
 
+#ifdef unix
+  Note that \code{readline} history library save files with permission
+  \code{0600}, that is with read/write permission for the user and not
+  even read permission for any other account.
+#endif
+
   \code{history} shows only unique matching lines if \code{pattern} is
   supplied.
   
   The \code{timestamp} function writes a timestamp (or other message)
-  into the history and echos it to the console.  On platforms that do not 
-  support a history mechanism (where the mechanism does not yet support
+  into the history and echos it to the console.  On platforms that do not
+  support a history mechanism (where the mechanism does not support
   timestamps) only the console message is printed.
 }
 \note{
-  If you want to save the history (almost) every session, you can put a
-  call to \code{savehistory()} in \code{\link{.Last}}.  See the examples.
+  If you want to save the history at the end of (almost) every
+  interactive session (even those in which you do not save the
+  workspace), you can put a call to \code{savehistory()} in
+  \code{\link{.Last}}.  See the examples.
 }
 \examples{\dontrun{
 .Last <- function()

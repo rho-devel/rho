@@ -2,15 +2,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-08 14:13\n"
-"PO-Revision-Date: 2008-09-30 10:48+0900 \n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
+"PO-Revision-Date: 2009-10-07 19:17+0900 \n"
 "Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
 "Plural-Forms: nplurals=1; plural=0; \n"
-"X-Generator: Pootle 0.10.1 \n"
+"X-Generator: Pootle 1.1.0 \n"
 
 msgid "'%s' is defunct."
 msgstr " '%s' は廃止されました。 "
@@ -199,6 +199,9 @@ msgstr " 文字オブジェクトしか書き込めません "
 msgid "supplied timeout must be NULL or a non-negative number"
 msgstr " タイムアウトは NULL か非負の数値でなければなりません "
 
+msgid "'from' must be raw or character"
+msgstr " 'from'はrawまたは文字でなければなりません "
+
 msgid "'x' must be numeric"
 msgstr " 'x' は数値でなければなりません "
 
@@ -223,7 +226,7 @@ msgstr " 'row.names' に欠損値があってはなりません "
 msgid "invalid 'dimnames' given for data frame"
 msgstr " データフレームに無効な 'dimnames' が与えられました "
 
-msgid "cannot coerce class \"%s\" into a data.frame"
+msgid "cannot coerce class %s into a data.frame"
 msgstr " クラス \"%s\" はデータフレームに強制変換できません "
 
 msgid "invalid 'row.names', length %d for a data frame with %d rows"
@@ -267,11 +270,20 @@ msgstr " 与えられた列名は誤った長さです "
 msgid "row names were found from a short variable and have been discarded"
 msgstr " 列名は短い変数から見つけられ、捨て去られました "
 
+msgid "named arguments other than 'drop' are discouraged"
+msgstr " 'drop'以外での名前付き引数は推奨されません "
+
 msgid "drop argument will be ignored"
 msgstr " drop 引数は無視されます "
 
 msgid "undefined columns selected"
 msgstr " 未定義の列が選ばれました "
+
+msgid "named arguments other than 'exact' are discouraged"
+msgstr " 'exact'以外での名前付き引数は推奨されません "
+
+msgid "named arguments are discouraged"
+msgstr "名前付き引数は推奨されません "
 
 msgid "rhs is the wrong length for indexing by a logical matrix"
 msgstr " 右辺は論理値行列によって添字操作するには間違った長さです "
@@ -531,8 +543,11 @@ msgstr " 'x' は正方行列でなければなりません "
 msgid "determinant not currently defined for complex matrices"
 msgstr " 行列式は現在複素行列には定義されていません "
 
-msgid "first argument is array, but not matrix."
-msgstr " 第一引数は配列ですが、行列ではありません "
+msgid "'nrow' or 'ncol' cannot be specified when 'x' is a matrix"
+msgstr " 'x'が行列の時は'nrow'と'ncol'は指定できません "
+
+msgid "'x' is an array, but not 1D."
+msgstr " 'x'は行列ですが、一次元ではありません "
 
 msgid "only matrix diagonals can be replaced"
 msgstr " 行列の対角成分だけが置き換えられます "
@@ -580,9 +595,6 @@ msgstr " 0 x 0 行列です "
 msgid "non-square matrix in 'eigen'"
 msgstr " 'eigen' に非正方行列が与えられました "
 
-msgid "numeric or complex values required in 'eigen'"
-msgstr " 'eigen' には数値か複素数値が必要です "
-
 msgid "'ch' returned code %d in 'eigen'"
 msgstr " 'eigen' で 'ch' がコード %d を返しました "
 
@@ -622,6 +634,9 @@ msgstr " そこへコピーすべきファイルがありません "
 msgid "more 'from' files than 'to' files"
 msgstr " コピー先ファイルよりも多くのコピー元ファイルがあります "
 
+msgid "'recursive' will be ignored"
+msgstr " 'recursive' は無視されます "
+
 msgid "file can not be copied both 'from' and 'to'"
 msgstr " 同じファイルにコピーすることはできません "
 
@@ -655,9 +670,13 @@ msgstr " 'vec' は NA 値を含んでいます "
 msgid "'vec' must be sorted non-decreasingly"
 msgstr " 'vec' は非減少順にソートされていなければいけません "
 
-msgid "'mode' must be \"double\" (\"real\") or \"integer\""
+msgid "using the first element of 'value' of type expression"
+msgstr "タイプ表現 'value' の最初の要素だけを使います "
+
+msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
 msgstr ""
-" 'mode' は \"double\" (\"real\") または \"integer\" でなければなりません "
+" 'mode' は \"double\" (\"real\") , \"integer\" または \"character\" でなけれ"
+"ばなりません "
 
 msgid "coercing argument to \"character\" for format=\"s\""
 msgstr " 引数を \"format=\"s\" に対する \"character\" へ強制変換します "
@@ -713,6 +732,9 @@ msgstr " 未知の一致距離成分は無視されました "
 msgid "'max.distance' components must be non-negative"
 msgstr " 'max.distance' 成分は非負でなければなりません "
 
+msgid "norm '%s' currently always uses exact = FALSE"
+msgstr " norm '%S'は現在は常に exact = FALSE を使います "
+
 msgid "triangular matrix should be square"
 msgstr " 三角行列は正方行列であるべきです "
 
@@ -728,6 +750,27 @@ msgstr ""
 
 msgid "package '%s' was built under R version %s"
 msgstr " パッケージ '%s' はバージョン %s の R の下で造られました "
+
+msgid ""
+"package '%s' was built under R version %s and help will not work correctly\n"
+"Please re-install it"
+msgstr ""
+"パッケージ '%s' はバージョン %s の R の下で造られました。ヘルプは正しく機能し"
+"ません。新しくインストールしてください "
+
+msgid ""
+"package '%s' was built under R version %s and help may not work correctly"
+msgstr ""
+" パッケージ '%s' はバージョン %s の R の下で造られました。ヘルプは正しく機能"
+"しないかもしれません "
+
+#, fuzzy
+msgid ""
+"package '%s' claims to be built under R version %s but is missing some help "
+"files and needs to be re-installed"
+msgstr ""
+"パッケージ '%s' はバージョン %s の R の下で造られました。ヘルプは正しく機能し"
+"ません。新しくインストールしてください "
 
 msgid "package '%s' was built for %s"
 msgstr " パッケージ '%s' は %s に対して造られました "
@@ -759,31 +802,14 @@ msgstr "  :  "
 msgid "invalid package name"
 msgstr " 不当なパッケージ名です "
 
-msgid "package '%s' has been merged into '%s'"
-msgstr " パッケージ '%s' は '%s' に併合されました "
-
-msgid "package 'lqs' has been moved back to package 'MASS'"
-msgstr " パッケージ 'lqs' はパッケージ 'MASS' へ戻さました "
-
-msgid "package 'MASS' has now been loaded"
-msgstr " パッケージ 'MASS' は現在ロードされています "
-
-msgid "package 'MASS' seems to be missing from this R installation"
-msgstr " パッケージ 'MASS' はこの R のインストールでは存在しないようです "
-
-msgid "there is no package called '%s', version %s"
-msgstr " '%s' という名前のパッケージ(%s 版)がありません "
-
 msgid "there is no package called '%s'"
 msgstr " '%s' という名前のパッケージはありません "
 
 msgid "no library trees found in 'lib.loc'"
 msgstr " 'lib.loc' 中に如何なるライブラリー木も見つかりません "
 
-msgid "'%s' is not a valid package -- installed < 2.0.0?"
-msgstr ""
-" '%s' は有効なパッケージではありません。バージョン < 2.0.0 でインストールされ"
-"たかも知れません "
+msgid "'%s' is not a valid installed package"
+msgstr " '%s' は有効なインストール済みパッケージではありません "
 
 msgid "'%s' not found on search path, using pos = 2"
 msgstr " '%s' は検索パス上には見つかりませんでした。pos = 2 を使用します "
@@ -1007,8 +1033,8 @@ msgstr ""
 " トレース関数は methods パッケージを必要としていますが、その名前空間をロード"
 "できません "
 
-msgid "Expected a single logical value for the S4 object state"
-msgstr " この S4 オブジェクト状態に対しては単一の論理値が期待されています "
+msgid "Expected a single logical value for the S4 state flag"
+msgstr " S4 状態フラグに対しては単一の論理値が期待されています "
 
 msgid "invalid to change the storage mode of a factor"
 msgstr " factor　の格納モードを変えるのは不正です "
@@ -1062,7 +1088,15 @@ msgstr " 以下に対する NativeSymbolInfo を代入できません "
 msgid "package '%s' does not have a name space"
 msgstr " パッケージ '%s' は名前空間を持っていません "
 
-msgid "in '%s' classes for export not defined: %s"
+#, fuzzy
+msgid ""
+"exportClassPattern specified in NAMESPACE but no matching classes in package "
+"'%s'"
+msgstr ""
+" exportClassPattern が指定されましたが、%s 中には対応するクラスがありません "
+
+#, fuzzy
+msgid "in package '%s' classes for export not defined: %s"
 msgstr " '%s' 中にはエクスポートのためのクラスは見付かりません： %s "
 
 msgid "in '%s' methods for export not found: %s"
@@ -1088,10 +1122,11 @@ msgstr " 見つかりません "
 msgid "not loading a name space"
 msgstr " 名前空間をロードしません "
 
-msgid "name space '%s' is loaded"
-msgstr " 名前空間 '%s' がロードされました "
-
-msgid "%s failed in unloadNamespace(%s)"
+#, fuzzy
+msgid ""
+"%s failed in unloadNamespace(\"%s\"), details:\n"
+"  call: %s\n"
+"  message: %s"
 msgstr " %s は unloadNamespace(%s) で失敗しました "
 
 msgid "name space '%s' is still used by: %s"
@@ -1396,9 +1431,6 @@ msgstr " 'x' と 'y' は同じ長さを持たなければなりません "
 msgid "incorrect values of 'indent' and 'width'"
 msgstr " 'indent' と 'width' に対する値が不正です "
 
-msgid "argument to 'svd' must be numeric"
-msgstr " 'svd' への引数は数値でなければなりません "
-
 msgid "'nv' must be 0 or ncol(x)"
 msgstr " 'nv' は 0 か ncol(x) でなければなりません "
 
@@ -1505,6 +1537,33 @@ msgstr " '%s' を実行できませんでした "
 msgid "'%s' execution failed with error code %d"
 msgstr " '%s' の実行は失敗しました(エラーコード %d) "
 
+msgid "-l option without value"
+msgstr " 値がない -l  オプション"
+
+msgid "ERROR: no packages specified"
+msgstr " エラー：いかなるパッケージも指定されていません "
+
+msgid "Removing from library"
+msgstr "ライブラリーから取り除いています "
+
+msgid "ERROR: cannot cd to directory"
+msgstr " エラー：ディレクトリーに変更できません "
+
+msgid "ERROR: no permission to remove from directory"
+msgstr " エラー：このディレクトリーから抹消する許可がありません "
+
+msgid "T used instead of TRUE"
+msgstr " TRUE の代わりに T が使われました "
+
+msgid "F used instead of FALSE"
+msgstr " FALSE の代わりに F が使われました "
+
+msgid "items"
+msgstr " 項目"
+
+msgid "have been removed from the search path"
+msgstr " 検索パスから抹消されています "
+
 msgid "cannot find name space environment"
 msgstr " 名前空間環境を見つけられません "
 
@@ -1548,6 +1607,38 @@ msgstr[0] ""
 msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] " 警告メッセージ： \n"
+
+#~ msgid "name space '%s' is loaded"
+#~ msgstr " 名前空間 '%s' がロードされました "
+
+#~ msgid "extra arguments ignored:"
+#~ msgstr " 余計な引数は無視されました: "
+
+#~ msgid "numeric or complex values required in 'eigen'"
+#~ msgstr " 'eigen' には数値か複素数値が必要です "
+
+#~ msgid "argument to 'svd' must be numeric"
+#~ msgstr " 'svd' への引数は数値でなければなりません "
+
+#~ msgid "package '%s' has been merged into '%s'"
+#~ msgstr " パッケージ '%s' は '%s' に併合されました "
+
+#~ msgid "package 'lqs' has been moved back to package 'MASS'"
+#~ msgstr " パッケージ 'lqs' はパッケージ 'MASS' へ戻さました "
+
+#~ msgid "package 'MASS' has now been loaded"
+#~ msgstr " パッケージ 'MASS' は現在ロードされています "
+
+#~ msgid "package 'MASS' seems to be missing from this R installation"
+#~ msgstr " パッケージ 'MASS' はこの R のインストールでは存在しないようです "
+
+#~ msgid "there is no package called '%s', version %s"
+#~ msgstr " '%s' という名前のパッケージ(%s 版)がありません "
+
+#~ msgid "'%s' is not a valid package -- installed < 2.0.0?"
+#~ msgstr ""
+#~ " '%s' は有効なパッケージではありません。バージョン < 2.0.0 でインストール"
+#~ "されたかも知れません "
 
 #~ msgid "non-numeric data type in frame"
 #~ msgstr " フレーム中に数値でないデータタイプがあります "

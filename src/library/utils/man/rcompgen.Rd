@@ -1,6 +1,6 @@
 % File src/library/utils/man/rcompgen.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2008 R Core Development Team
+% Copyright 2008-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{rcompgen}
@@ -9,6 +9,10 @@
 \alias{rc.status}
 \alias{rc.getOption}
 \alias{rc.options}
+\alias{.DollarNames}
+\alias{.DollarNames.default}
+\alias{.DollarNames.list}
+\alias{.DollarNames.environment}
 \title{A Completion Generator for R}
 
 \description{
@@ -23,13 +27,17 @@
 \usage{
 
 rc.settings(ops, ns, args, func, ipck, S3, data, help,
-           argdb, files)
+            argdb, files)
 
 rc.status()
-
 rc.getOption(name)
-
 rc.options(\dots)
+
+.DollarNames(x, pattern)
+
+\S3method{.DollarNames}{default}(x, pattern = "")
+\S3method{.DollarNames}{list}(x, pattern = "")
+\S3method{.DollarNames}{environment}(x, pattern = "")
 
 }
 
@@ -40,58 +48,57 @@ rc.options(\dots)
 
     \describe{
       \item{\code{ops}:}{activates completion after the \code{$} and
-	\code{@} operators}
+        \code{@} operators}
 
       \item{\code{ns}:}{controls name space related completions}
 
       \item{\code{args}:}{enables completion of function arguments}
 
       \item{\code{func}:}{enables detection of functions.  If enabled,
-	a customizable extension (\code{"("} by default) is appended to
-	function names.  The process of determining whether a potential
-	completion is a function requires evaluation, including for lazy
-	loaded symbols.  This is extremely undesirable for large
-	objects, because of potentially wasteful use of memory in
-	addition to the time overhead associated with loading.  For this
-	reason, this feature is disabled by default. }
+        a customizable extension (\code{"("} by default) is appended to
+        function names.  The process of determining whether a potential
+        completion is a function requires evaluation, including for lazy
+        loaded symbols.  This is extremely undesirable for large
+        objects, because of potentially wasteful use of memory in
+        addition to the time overhead associated with loading.  For this
+        reason, this feature is disabled by default. }
 
       \item{\code{S3}:}{ when \code{args=TRUE}, activates completion on
-	arguments of all S3 methods (otherwise just the generic, which
-	usually has very few arguments) }
+        arguments of all S3 methods (otherwise just the generic, which
+        usually has very few arguments) }
 
       \item{\code{ipck}:}{ enables completion of installed package names
-	inside \code{\link{library}} and \code{\link{require}} }
+        inside \code{\link{library}} and \code{\link{require}} }
 
       \item{\code{data}:}{ enables completion of data sets (including
-	those already visible) inside \code{\link{data}} }
+        those already visible) inside \code{\link{data}} }
 
       \item{\code{help}:}{ enables completion of help requests starting
-	with a question mark, by looking inside help index files }
+        with a question mark, by looking inside help index files }
 
       \item{\code{argdb}:}{ when \code{args=TRUE}, completion is
-	attempted on function arguments.  Generally, the list of
-	valid arguments is determined by dynamic calls to
-	\code{\link{args}}.  While this gives results that are
-	technically correct, the use of the \code{\dots} argument often
-	hides some useful arguments.  To give more flexibility in this
-	regard, \code{rcompgen} internally retains an optional table of
-	valid arguments names for specific functions.  Setting
-	\code{argdb=TRUE} enables preferential lookup in this internal
-	data base for functions with an entry in it.  Of course, this is
-	useful only when the data base contains information about the
-	function of interest.  Some functions are included in the
-	package (the maintainer is happy to add more upon request), and
-	more can be added by the user through the unexported function
-	\code{.addFunctionInfo} (see below).
+        attempted on function arguments.  Generally, the list of valid
+        arguments is determined by dynamic calls to \code{\link{args}}.
+        While this gives results that are technically correct, the use
+        of the \code{\dots} argument often hides some useful arguments.
+        To give more flexibility in this regard, an optional table of
+        valid arguments names for specific functions is retained
+        internally.  Setting \code{argdb=TRUE} enables preferential
+        lookup in this internal data base for functions with an entry in
+        it.  Of course, this is useful only when the data base contains
+        information about the function of interest.  Some functions are
+        included in the package (the maintainer is happy to add more
+        upon request), and more can be added by the user through the
+        unexported function \code{.addFunctionInfo} (see below).
       }
-
+      
       \item{\code{files}:}{ enables filename completion in R code.  This
-	is initially set to \code{FALSE}, in which case the underlying
-	completion front-end can take over (and hopefully do a better
-	job than we would have done).  For systems where no such
-	facilities exist, this can be set to \code{TRUE} if file name
-	completion is desired.  This is currently experimental and may
-	not work very well.  }
+        is initially set to \code{FALSE}, in which case the underlying
+        completion front-end can take over (and hopefully do a better
+        job than we would have done).  For systems where no such
+        facilities exist, this can be set to \code{TRUE} if file name
+        completion is desired.  This is currently experimental and may
+        not work very well.  }
 
     }
 
@@ -107,6 +114,14 @@ rc.options(\dots)
       \item{\code{package.suffix}}{ default \code{"::"} }
     }
     See \code{\link{options}} for detailed usage description
+  }
+
+  \item{x}{ An R object for which valid names after \code{"$"}
+    are computed and returned.
+  }
+
+  \item{pattern}{ A regular expression.  Only matching names are
+    returned.
   }
 }
 
@@ -128,6 +143,10 @@ rc.options(\dots)
       be evaluated, which is attempted unless it involves an explicit
       function call (implicit function calls involving the use of
       \code{[}, \code{$}, etc \emph{do not} inhibit evaluation).
+
+      Valid completions after the \code{$} extractor are determined by
+      the generic function \code{.DollarNames}.  Some basic methods are
+      provided, and more can be written for custom classes.
     }
 
     \item{\bold{Completion inside name spaces}:}{
@@ -274,7 +293,7 @@ rc.options(\dots)
     .guessTokenFromLine()
     .win32consoleCompletion(linebuffer, cursorPosition,
                             check.repeat = TRUE, 
-			    minlength = -1)
+                            minlength = -1)
 
     .addFunctionInfo(...)
   }
@@ -284,7 +303,7 @@ rc.options(\dots)
   (\code{start} and \code{end}, which should be integers) the token is
   placed within the complete line typed so far (\code{line}).
 
-  Potenial completions of the token are generated by
+  Potential completions of the token are generated by
   \code{.completeToken}, and the completions can be retrieved as an \R
   character vector using \code{.retrieveCompletions}.
 
@@ -323,7 +342,7 @@ rc.options(\dots)
   \code{TRUE}, it is detected if the same completion is being requested
   more than once in a row, and ambiguous completions are returned only
   in that case.  This is an attempt to emulate GNU Readline behaviour,
-  where a single TAB completes upto any unambiguous part, and multiple
+  where a single TAB completes up to any unambiguous part, and multiple
   possibilities are reported only on two consecutive TABs.
 
   As the various front-end interfaces evolve, the details of these

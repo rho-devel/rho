@@ -41,7 +41,7 @@ grobName <- function(grob=NULL, prefix="GRID") {
         if (!is.grob(grob))
             stop("Invalid 'grob' argument")
         else
-            grobAutoName(prefix, class(grob)[1])
+            grobAutoName(prefix, class(grob)[1L])
     }
 }
 
@@ -67,7 +67,7 @@ checkvpSlot <- function(vp) {
 checkNameSlot <- function(x) {
   # Supply a default name if one is not given
   if (is.null(x$name))
-    grobAutoName(suffix=class(x)[1])
+    grobAutoName(suffix=class(x)[1L])
   else
     as.character(x$name)
 }
@@ -126,7 +126,7 @@ is.grob <- function(x) {
 }
 
 as.character.grob <- function(x, ...) {
-  paste(class(x)[1], "[", x$name, "]", sep="")
+  paste(class(x)[1L], "[", x$name, "]", sep="")
 }
 
 print.grob <- function(x, ...) {
@@ -142,12 +142,12 @@ print.grob <- function(x, ...) {
 
 gPathFromVector <- function(names) {
   n <- length(names)
-  if (n < 1)
+  if (n < 1L)
     stop("A 'grob' path must contain at least one 'grob' name")
   if (!all(is.character(names)))
     stop("Invalid 'grob' name(s)")
   path <- list(path=if (n==1) NULL else
-               paste(names[1:(n-1)], collapse=.grid.pathSep),
+               paste(names[1L:(n-1)], collapse=.grid.pathSep),
                name=names[n],
                n=n)
   class(path) <- c("gPath", "path")
@@ -194,7 +194,7 @@ as.gList <- function(x) {
 
 gList <- function(...) {
     gl <- list(...)
-    if (length(gl) == 0 ||
+    if (length(gl) == 0L ||
         all(sapply(gl, okGListelt, simplify=TRUE))) {
         # Ensure gList is "flat"
         # Don't want gList containing gList ...
@@ -222,7 +222,7 @@ addToGList.grob <- function(x, gList) {
   if (is.null(gList))
     gList(x)
   else {
-    gList[[length(gList) + 1]] <- x
+    gList[[length(gList) + 1L]] <- x
     return(gList)
   }
 }
@@ -270,7 +270,7 @@ setChildren <- function(x, children) {
     children <- children[!sapply(children, is.null)]
     class(children) <- cl
   }
-  if (length(children) > 0) {
+  if (length(children)) {
     x$children <- children
     childNames <- sapply(children, childName)
     names(x$children) <- childNames
@@ -338,7 +338,7 @@ getName <- function(elt) {
 }
 
 getNames <- function() {
-  dl <- grid.Call("L_getDisplayList")[1:grid.Call("L_getDLindex")]
+  dl <- grid.Call("L_getDisplayList")[1L:grid.Call("L_getDLindex")]
   names <- sapply(dl, getName)
   names[nzchar(names)]
 }
@@ -439,7 +439,7 @@ setGrob <- function(gTree, gPath, newGrob, strict=FALSE, grep=FALSE) {
     # gPath must specify an existing child
     if (old.pos <- nameMatch(gPath$name, gTree$childrenOrder, grep)) {
       # newGrob name must match existing name
-      if (match(gTree$childrenOrder[old.pos], newGrob$name, nomatch=FALSE)) {
+      if (match(gTree$childrenOrder[old.pos], newGrob$name, nomatch=0L)) {
         gTree$children[[newGrob$name]] <- newGrob
       } else {
           stop(gettextf("New 'grob' name (%s) does not match 'gPath' (%s)",
@@ -474,22 +474,32 @@ grid.add <- function(gPath, child, strict=FALSE,
 
 # Add a grob to a gTree (or a child of a (child of a ...) gTree)
 addGrob <- function(gTree, child, gPath=NULL, strict=FALSE,
-                    grep=FALSE, global=FALSE) {
-  if (!inherits(child, "grob"))
-    stop("It is only valid to add a 'grob' to a 'gTree'")
-  if (is.null(gPath)) {
-    addToGTree(gTree, child)
-  } else {
-    if (is.character(gPath))
-      gPath <- gPathDirect(gPath)
-    # Only makes sense to specify a gPath for a gTree
-    if (!inherits(gTree, "gTree"))
-      stop("It is only valid to add a child to a 'gTree'")
-    if (!is.logical(grep))
-      stop("Invalid 'grep' value")
-    grep <- rep(grep, length.out=depth(gPath))
-    addGTree(gTree, child, NULL, gPath, strict, grep, global)
-  }
+                    grep=FALSE, global=FALSE, warn=TRUE) {
+    if (!inherits(child, "grob"))
+        stop("It is only valid to add a 'grob' to a 'gTree'")
+    if (is.null(gPath)) {
+        addToGTree(gTree, child)
+    } else {
+        if (is.character(gPath))
+            gPath <- gPathDirect(gPath)
+        # Only makes sense to specify a gPath for a gTree
+        if (!inherits(gTree, "gTree"))
+            stop("It is only valid to add a child to a 'gTree'")
+        if (!is.logical(grep))
+            stop("Invalid 'grep' value")
+        grep <- rep(grep, length.out=depth(gPath))
+        # result will be NULL if no match
+        result <- addGTree(gTree, child, NULL, gPath, strict, grep, global)
+        if (is.null(result)) {
+            if (warn)
+                warning(gettextf("'gPath' (%s) not found",
+                                 as.character(gPath)),
+                        domain = NA)
+            gTree
+        } else {
+            result
+        }
+    }
 }
 
 # Remove a grob (or child of ...) from the display list
@@ -526,35 +536,35 @@ grid.gremove <- function(..., grep=TRUE, global=TRUE) {
 # Remove a child from a (child of ...) gTree
 removeGrob <- function(gTree, gPath, strict=FALSE,
                        grep=FALSE, global=FALSE, warn=TRUE) {
-  if (!inherits(gTree, "gTree"))
-    stop("It is only valid to remove a child from a 'gTree'")
-  if (is.character(gPath))
-    gPath <- gPathDirect(gPath)
-  if (!inherits(gPath, "gPath"))
-    stop("Invalid 'gPath'")
-  if (!is.logical(grep))
-    stop("Invalid 'grep' value")
-  grep <- rep(grep, length.out=depth(gPath))
-  if (depth(gPath) == 1) {
-    # result will be NULL if no match
-    result <- removeName(gTree, gPath$name, strict, grep, global, warn)
-    if (is.null(result))
-      gTree
-    else
-      result
-  } else {
-    name <- gPath$name
-    gPath <- gPathDirect(gPath$path)
-    greppath <- grep[-length(grep)]
-    grepname <- grep[length(grep)]
-    # result will be NULL if no match
-    result <- removeGTree(gTree, name, NULL, gPath, strict, greppath, grepname,
-                          global, warn)
-    if (is.null(result))
-      gTree
-    else
-      result
-  }
+    if (!inherits(gTree, "gTree"))
+        stop("It is only valid to remove a child from a 'gTree'")
+    if (is.character(gPath))
+        gPath <- gPathDirect(gPath)
+    if (!inherits(gPath, "gPath"))
+        stop("Invalid 'gPath'")
+    if (!is.logical(grep))
+        stop("Invalid 'grep' value")
+    grep <- rep(grep, length.out=depth(gPath))
+    if (depth(gPath) == 1) {
+        # result will be NULL if no match
+        result <- removeName(gTree, gPath$name, strict, grep, global, warn)
+    } else {
+        name <- gPath$name
+        gPath <- gPathDirect(gPath$path)
+        greppath <- grep[-length(grep)]
+        grepname <- grep[length(grep)]
+        # result will be NULL if no match
+        result <- removeGTree(gTree, name, NULL, gPath, strict,
+                              greppath, grepname, global, warn)
+    }
+    if (is.null(result)) {
+        if (warn)
+            warning(gettextf("'gPath' (%s) not found", as.character(gPath)),
+                    domain = NA)
+        gTree
+    } else {
+        result
+    }
 }
 
 # Edit a grob on the display list
@@ -582,21 +592,31 @@ grid.gedit <- function(..., grep=TRUE, global=TRUE) {
 
 # Edit a (child of a ...) grob
 editGrob <- function(grob, gPath=NULL, ..., strict=FALSE,
-                     grep=FALSE, global=FALSE) {
-  specs <- list(...)
-  if (is.null(gPath)) {
-    editThisGrob(grob, specs)
-  } else {
-    if (is.character(gPath))
-      gPath <- gPathDirect(gPath)
-    # Only makes sense to specify a gPath for a gTree
-    if (!inherits(grob, "gTree"))
-      stop("It is only valid to edit a child of a 'gTree'")
-    if (!is.logical(grep))
-      stop("Invalid 'grep' value")
-    grep <- rep(grep, length.out=depth(gPath))
-    editGTree(grob, specs, NULL, gPath, strict, grep, global)
-  }
+                     grep=FALSE, global=FALSE, warn=TRUE) {
+    specs <- list(...)
+    if (is.null(gPath)) {
+        editThisGrob(grob, specs)
+    } else {
+        if (is.character(gPath))
+            gPath <- gPathDirect(gPath)
+        # Only makes sense to specify a gPath for a gTree
+        if (!inherits(grob, "gTree"))
+            stop("It is only valid to edit a child of a 'gTree'")
+        if (!is.logical(grep))
+            stop("Invalid 'grep' value")
+        grep <- rep(grep, length.out=depth(gPath))
+        # result will be NULL if no match
+        result <- editGTree(grob, specs, NULL, gPath, strict, grep, global)
+        if (is.null(result)) {
+            if (warn)
+                warning(gettextf("'gPath' (%s) not found",
+                                 as.character(gPath)),
+                        domain = NA)
+            grob
+        } else {
+            result
+        }
+    }
 }
 
 #########
@@ -629,9 +649,9 @@ editDetails.gTree <- function(x, specs) {
 nameMatch <- function(pathName, grobName, grep) {
   if (grep) {
     pos <- grep(pathName, grobName)
-    (length(pos) > 0 && pos == 1)
+    (length(pos) && pos == 1)
   } else {
-    match(pathName, grobName, nomatch=FALSE)
+    match(pathName, grobName, nomatch=0L)
   }
 }
 
@@ -641,10 +661,10 @@ nameMatch <- function(pathName, grobName, grep) {
 namePos <- function(pathName, names, grep) {
   if (grep) {
     pos <- grep(pathName, names)
-    if (length(pos) == 0)
+    if (length(pos) == 0L)
       pos <- FALSE
   } else {
-    pos <- match(pathName, names, nomatch=FALSE)
+    pos <- match(pathName, names, nomatch=0L)
   }
   pos
 }
@@ -652,7 +672,7 @@ namePos <- function(pathName, names, grep) {
 partialPathMatch <- function(pathsofar, path, strict=FALSE, grep) {
   if (strict) {
     if (!any(grep))
-      length(grep(paste("^", pathsofar, sep=""), path)) > 0
+      length(grep(paste("^", pathsofar, sep=""), path)) > 0L
     else {
       pathSoFarElts <- explodePath(pathsofar)
       pathElts <- explodePath(path)
@@ -663,7 +683,7 @@ partialPathMatch <- function(pathsofar, path, strict=FALSE, grep) {
         if (grep[index])
           ok <- (grep(pathSoFarElts[index], pathElts[index]) == 1)
         else
-          ok <- match(pathSoFarElts[index], pathElts[index], nomatch=FALSE)
+          ok <- match(pathSoFarElts[index], pathElts[index], nomatch=0L)
         index <- index + 1
       }
       ok
@@ -683,9 +703,9 @@ fullPathMatch <- function(pathsofar, gPath, strict, grep) {
     path <- gPath$path
     if (!any(grep))
       if (strict)
-        match <- match(pathsofar, path, nomatch=FALSE)
+        match <- match(pathsofar, path, nomatch=0L)
       else
-        match <- (length(grep(paste(path, "$", sep=""), pathsofar)) > 0)
+        match <- (length(grep(paste(path, "$", sep=""), pathsofar)) > 0L)
     else {
       pathSoFarElts <- explodePath(pathsofar)
       pathElts <- explodePath(path)
@@ -702,10 +722,9 @@ fullPathMatch <- function(pathsofar, gPath, strict, grep) {
         }
         while (match && index <= npe) {
           if (grep[index])
-            match <- (length(grep(pathElts[index], pathSoFarElts[index])) > 0)
+            match <- (length(grep(pathElts[index], pathSoFarElts[index])) > 0L)
           else
-            match <- match(pathSoFarElts[index], pathElts[index],
-                           nomatch=FALSE)
+            match <- match(pathSoFarElts[index], pathElts[index], nomatch = 0L)
           index <- index + 1
         }
       }
@@ -892,7 +911,7 @@ setGrobFromGPath.grob <- function(grob, pathsofar, gPath, newGrob,
     NULL
   else {
     if (nameMatch(gPath$name, grob$name, grep))
-      if (match(grob$name, newGrob$name, nomatch=FALSE))
+      if (match(grob$name, newGrob$name, nomatch=0L))
         newGrob
       else
         NULL
@@ -920,7 +939,7 @@ setGTree <- function(gTree, pathsofar, gPath, newGrob, strict, grep) {
       # Just check for gPath$name amongst children and recurse if no match
       if (!strict && depth(gPath) == 1) {
         if (nameMatch(gPath$name, childName, grep)) {
-          if (match(childName, newGrob$name, nomatch=FALSE)) {
+          if (match(childName, newGrob$name, nomatch=0L)) {
             gTree$children[[newGrob$name]] <- newGrob
             found <- TRUE
           } else {
@@ -944,7 +963,7 @@ setGTree <- function(gTree, pathsofar, gPath, newGrob, strict, grep) {
         # NOTE: may be called directly with pathsofar=NULL
         if (fullPathMatch(pathsofar, gPath, strict, grep)) {
           if (nameMatch(gPath$name, childName, grep[depth(gPath)])) {
-            if (match(childName, newGrob$name, nomatch=FALSE)) {
+            if (match(childName, newGrob$name, nomatch=0L)) {
               gTree$children[[newGrob$name]] <- newGrob
               found <- TRUE
             }
@@ -979,7 +998,7 @@ setGrobFromGPath.gTree <- function(grob, pathsofar, gPath, newGrob,
                                    strict, grep) {
   if (depth(gPath) == 1) {
     if (nameMatch(gPath$name, grob$name, grep))
-      if (match(grob$name, newGrob$name, nomatch=FALSE))
+      if (match(grob$name, newGrob$name, nomatch=0L))
         newGrob
       else
         stop("The new 'grob' must have the same name as the old 'grob'")
@@ -1360,7 +1379,7 @@ removeFromGTree <- function(gTree, name, grep) {
     stop("It is only valid to remove a child from a 'gTree'")
   if (grep) {
     old.pos <- grep(name, gTree$childrenOrder)
-    if (length(old.pos) == 0)
+    if (length(old.pos) == 0L)
       old.pos <- 0
   } else {
     old.pos <- match(name, gTree$childrenOrder, nomatch=0)
@@ -1635,7 +1654,7 @@ findgrob.default <- function(x, name) {
 }
 
 findgrob.grob <- function(x, name) {
-  if (match(name, x$name, nomatch=FALSE))
+  if (match(name, x$name, nomatch=0L))
     x
   else
     NULL

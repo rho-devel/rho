@@ -18,10 +18,11 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
 {
     mat <- missing(at) || is.null(at)
     if(!mat) x <- as.POSIXct(at) else x <- as.POSIXct(x)
-    range <- par("usr")[if(side %%2) 1:2 else 3:4]
+    range <- par("usr")[if(side %%2) 1L:2L else 3L:4L]
     ## find out the scale involved
-    d <- range[2] - range[1]
+    d <- range[2L] - range[1L]
     z <- c(range, x[is.finite(x)])
+    attr(z, "tzone") <- attr(x, "tzone")
     if(d < 1.1*60) { # seconds
         sc <- 1
         if(missing(format)) format <- "%S"
@@ -44,23 +45,27 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         zz <- pretty(z/sc)
         z <- zz*sc
         class(z) <- c("POSIXt", "POSIXct")
+        attr(z, "tzone") <- attr(x, "tzone")
         if(sc == 60*60*24) z <- as.POSIXct(round(z, "days"))
         if(missing(format)) format <- "%b %d"
     } else if(d < 1.1*60*60*24*365) { # months
         class(z) <- c("POSIXt", "POSIXct")
+        attr(z, "tzone") <- attr(x, "tzone")
         zz <- as.POSIXlt(z)
         zz$mday <- zz$wday <- zz$yday <- 1
         zz$isdst <- -1; zz$hour <- zz$min <- zz$sec <- 0
         zz$mon <- pretty(zz$mon)
         m <- length(zz$mon); M <- 2*m
-        m <- rep.int(zz$year[1], m)
+        m <- rep.int(zz$year[1L], m)
         zz$year <- c(m, m+1)
         zz <- lapply(zz, function(x) rep(x, length.out = M))
         class(zz) <- c("POSIXt", "POSIXlt")
+        attr(z, "tzone") <- attr(x, "tzone")
         z <- as.POSIXct(zz)
         if(missing(format)) format <- "%b"
     } else { # years
         class(z) <- c("POSIXt", "POSIXct")
+        attr(z, "tzone") <- attr(x, "tzone")
         zz <- as.POSIXlt(z)
         zz$mday <- zz$wday <- zz$yday <- 1
         zz$isdst <- -1; zz$mon <- zz$hour <- zz$min <- zz$sec <- 0
@@ -71,7 +76,7 @@ axis.POSIXct <- function(side, x, at, format, labels = TRUE, ...)
         if(missing(format)) format <- "%Y"
     }
     if(!mat) z <- x[is.finite(x)] # override changes
-    keep <- z >= range[1] & z <= range[2]
+    keep <- z >= range[1L] & z <= range[2L]
     z <- z[keep]
     if (!is.logical(labels)) labels <- labels[keep]
     else if (identical(labels, TRUE))
@@ -90,7 +95,7 @@ plot.POSIXct <- function(x, y, xlab = "", ...)
 
     dots <- list(...)
     Call <- match.call()
-    Call[[1]] <- as.name("plot.default")
+    Call[[1L]] <- as.name("plot.default")
     Call$xaxt <- "n"
     Call$xlab <- xlab
     eval.parent(Call)
@@ -107,7 +112,7 @@ plot.POSIXlt <- function(x, y, xlab = "", ...)
         axis.POSIXct(1, x, ...)
     dots <- list(...)
     Call <- match.call()
-    Call[[1]] <- as.name("plot.default")
+    Call[[1L]] <- as.name("plot.default")
     Call$x <- as.POSIXct(x)
     Call$xaxt <- "n"
     Call$xlab <- xlab
@@ -148,43 +153,43 @@ hist.POSIXt <- function(x, breaks, ..., xlab = deparse(substitute(x)),
             if(is.na(valid)) stop("invalid specification of 'breaks'")
             start <- as.POSIXlt(min(x, na.rm = TRUE))
             incr <- 1
-            if(valid > 1) { start$sec <- 0; incr <- 59.99 }
-            if(valid > 2) { start$min <- 0; incr <- 3600 - 1 }
-            if(valid > 3) { start$hour <- 0; incr <- 86400 - 1 }
-            if(valid > 4) { start$isdst <- -1}
-            if(valid == 5) {
+            if(valid > 1L) { start$sec <- 0; incr <- 59.99 }
+            if(valid > 2L) { start$min <- 0L; incr <- 3600 - 1 }
+            if(valid > 3L) { start$hour <- 0L; incr <- 86400 - 1 }
+            if(valid > 4L) { start$isdst <- -1L}
+            if(valid == 5L) { # "weeks"
                 start$mday <- start$mday - start$wday
                 if(start.on.monday)
                     start$mday <- start$mday + ifelse(start$wday > 0, 1, -6)
                 incr <- 7*86400
             }
-            if(valid == 6) {
-                start$mday <- 1
+            if(valid == 6L) { # "months"
+                start$mday <- 1L
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (31 * 86400))
                 end$mday <- 1
                 breaks <- seq(start, end, "months") - 86400
-            } else if(valid == 7) {
-                start$mon <- 0
-                start$mday <- 1
+            } else if(valid == 7L) { # "years"
+                start$mon <- 0L
+                start$mday <- 1L
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (366 * 86400))
-                end$mon <- 0
-                end$mday <- 1
+                end$mon <- 0L
+                end$mday <- 1L
                 breaks <- seq(start, end, "years") - 86400
-            } else if(valid == 8) {
-                qtr <- rep(c(0, 3, 6, 9), each = 3)
-                start$mon <- qtr[start$mon + 1]
-                start$mday <- 1
+            } else if(valid == 8L) { # "quarters"
+                qtr <- rep(c(0L, 3L, 6L, 9L), each = 3L)
+                start$mon <- qtr[start$mon + 1L]
+                start$mday <- 1L
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (93 * 86400))
-                end$mon <- qtr[end$mon + 1]
-                end$mday <- 1
+                end$mon <- qtr[end$mon + 1L]
+                end$mday <- 1L
                 breaks <- seq(start, end, "3 months") - 86400
-            } else {
+            } else { # "days" or "weeks"
                 maxx <- max(x, na.rm = TRUE)
                 breaks <- seq.int(start, maxx + incr, breaks)
-                breaks <- breaks[1:(1+max(which(breaks < maxx)))]
+                breaks <- breaks[seq_len(1L + max(which(breaks < maxx)))]
             }
         }
         else stop("invalid specification of 'breaks'")
@@ -222,11 +227,11 @@ axis.Date <- function(side, x, at, format, labels = TRUE, ...)
 {
     mat <- missing(at) || is.null(at)
     if(!mat) x <- as.Date(at) else x <- as.Date(x)
-    range <- par("usr")[if(side %%2) 1:2 else 3:4]
-    range[1] <- ceiling(range[1])
-    range[2] <- floor(range[2])
+    range <- par("usr")[if(side %%2) 1L:2L else 3:4L]
+    range[1L] <- ceiling(range[1L])
+    range[2L] <- floor(range[2L])
     ## find out the scale involved
-    d <- range[2] - range[1]
+    d <- range[2L] - range[1L]
     z <- c(range, x[is.finite(x)])
     class(z) <- "Date"
     if (d < 7) # days of a week
@@ -239,19 +244,19 @@ axis.Date <- function(side, x, at, format, labels = TRUE, ...)
         zz$mday <- 1
         zz$mon <- pretty(zz$mon)
         m <- length(zz$mon)
-        m <- rep.int(zz$year[1], m)
+        m <- rep.int(zz$year[1L], m)
         zz$year <- c(m, m+1)
-        z <- .Internal(POSIXlt2Date(zz))
+        z <- as.Date(zz)
         if(missing(format)) format <- "%b"
     } else { # years
         zz <- as.POSIXlt(z)
         zz$mday <- 1; zz$mon <- 0
         zz$year <- pretty(zz$year)
-        z <- .Internal(POSIXlt2Date(zz))
+        z <- as.Date(zz)
         if(missing(format)) format <- "%Y"
     }
     if(!mat) z <- x[is.finite(x)] # override changes
-    keep <- z >= range[1] & z <= range[2]
+    keep <- z >= range[1L] & z <= range[2L]
     z <- z[keep]
     z <- sort(unique(z)); class(z) <- "Date"
     if (!is.logical(labels)) labels <- labels[keep]
@@ -271,7 +276,7 @@ plot.Date <- function(x, y, xlab = "", ...)
 
     dots <- list(...)
     Call <- match.call()
-    Call[[1]] <- as.name("plot.default")
+    Call[[1L]] <- as.name("plot.default")
     Call$xaxt <- "n"
     Call$xlab <- xlab
     eval.parent(Call)
@@ -281,12 +286,11 @@ plot.Date <- function(x, y, xlab = "", ...)
 }
 
 hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
-                        plot = TRUE, freq = FALSE,
-                        start.on.monday = TRUE, format)
+                      plot = TRUE, freq = FALSE,
+                      start.on.monday = TRUE, format)
 {
     if(!inherits(x, "Date")) stop("wrong method")
-    xlab
-    x <- as.Date(x)
+    force(xlab)
     incr <- 1
     ## handle breaks ourselves
     if (inherits(breaks, "Date")) {
@@ -298,50 +302,51 @@ hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
         if(d > 366) incr <- 366
         num.br <- FALSE
     } else {
-        num.br <- is.numeric(breaks) && length(breaks) == 1
+        num.br <- is.numeric(breaks) && length(breaks) == 1L
         if(num.br) {
-        ## specified number of breaks
-        } else if(is.character(breaks) && length(breaks) == 1) {
+            ## specified number of breaks
+        } else if(is.character(breaks) && length(breaks) == 1L) {
             valid <- pmatch(breaks, c("days", "weeks", "months", "years",
                                       "quarters"))
             if(is.na(valid)) stop("invalid specification of 'breaks'")
             start <- as.POSIXlt(min(x, na.rm = TRUE))
             incr <- 1
-            if(valid > 1) { start$isdst <- -1}
-            if(valid == 2) {
+            if(valid > 1L) { start$isdst <- -1L}
+            if(valid == 2L) { ## "weeks"
                 start$mday <- start$mday - start$wday
                 if(start.on.monday)
-                    start$mday <- start$mday + ifelse(start$wday > 0, 1, -6)
+                    start$mday <- start$mday + ifelse(start$wday > 0L, 1L, -6L)
                 incr <- 7
+                ## drops through to "days".
             }
-            if(valid == 3) {
+            if(valid == 3L) { ## "months"
                 start$mday <- 1
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (31 * 86400))
                 end$mday <- 1
                 breaks <- as.Date(seq(start, end, "months")) - 1
-            } else if(valid == 4) {
-                start$mon <- 0
-                start$mday <- 1
+            } else if(valid == 4L) { ## "years"
+                start$mon <- 0L
+                start$mday <- 1L
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (366 * 86400))
-                end$mon <- 0
-                end$mday <- 1
+                end$mon <- 0L
+                end$mday <- 1L
                 breaks <- as.Date(seq(start, end, "years")) - 1
-            } else if(valid == 5) {
-                qtr <- rep(c(0, 3, 6, 9), each = 3)
-                start$mon <- qtr[start$mon + 1]
-                start$mday <- 1
+            } else if(valid == 5L) { ## "quarters"
+                qtr <- rep(c(0L, 3L, 6L, 9L), each = 3L)
+                start$mon <- qtr[start$mon + 1L]
+                start$mday <- 1L
                 end <- as.POSIXlt(max(x, na.rm = TRUE))
                 end <- as.POSIXlt(end + (93 * 86400))
-                end$mon <- qtr[end$mon + 1]
-                end$mday <- 1
+                end$mon <- qtr[end$mon + 1L]
+                end$mday <- 1L
                 breaks <- as.Date(seq(start, end, "3 months")) - 1
-            } else {
-                start <- .Internal(POSIXlt2Date(start))
+            } else { ## "days" (or "weeks")
+                start <- as.Date(start)
                 maxx <- max(x, na.rm = TRUE)
                 breaks <- seq.int(start, maxx + incr, breaks)
-                breaks <- breaks[1:(1+max(which(breaks < maxx)))]
+                breaks <- breaks[seq_len(1L + max(which(breaks < maxx)))]
             }
         } else stop("invalid specification of 'breaks'")
     }

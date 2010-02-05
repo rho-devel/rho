@@ -37,7 +37,7 @@ storage.mode(x) <- value
   \code{"name"}, \code{"symbol"} and \code{"function"}.  Attributes are
   preserved (but see below).
 
-  \code{storage.mode(x) <- "newmode"} is a more efficient internal
+  \code{storage.mode(x) <- "newmode"} is a more efficient \link{primitive}
   version of \code{mode<-}, which works for \code{"newmode"} which is
   one of the internal types (see \code{\link{typeof}}), but not for
   \code{"single"}.  Attributes are preserved.
@@ -68,7 +68,7 @@ storage.mode(x) <- value
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{typeof}} for the R-internal \sQuote{mode},

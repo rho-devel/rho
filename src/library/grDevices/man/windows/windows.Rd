@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/windows/windows.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{windows}
@@ -26,7 +26,7 @@
 \usage{
 windows(width, height, pointsize, record, rescale, xpinch, ypinch,
         bg, canvas, gamma, xpos, ypos, buffered, title,
-        restoreConsole, clickToConfirm)
+        restoreConsole, clickToConfirm, fillOddEven)
 
 win.graph(width, height, pointsize)
 x11(width, height, pointsize)
@@ -88,6 +88,8 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
   \item{clickToConfirm}{logical: if true confirmation of a new frame
     will be by clicking on the device rather than answering a problem in
     the console.  Default \code{TRUE}.}
+  \item{fillOddEven}{logical controlling the polygon fill mode:  see
+    \code{\link{polygon}} for details.  Default \code{TRUE}.}
 }
 
 \details{
@@ -107,7 +109,7 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
   \code{xpinch} and \code{ypinch}, most conveniently \emph{via}
   \code{\link{windows.options}}.  For example, a 13.3 inch 1280x800
   screen (a typical laptop display) was reported as 96 dpi even though
-  it is phyiscally about 114 dpi.
+  it is physically about 114 dpi.
 
   If the \code{filename} is omitted (or specified as \code{""} for a
   \code{win.metafile} device), the output is copied to the clipboard

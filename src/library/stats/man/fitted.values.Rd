@@ -11,10 +11,7 @@ fitted.values(object, \dots)
 }
 \alias{fitted.values}
 \alias{fitted}
-%%- methods:
 \alias{fitted.default}
-%\alias{fitted.lm}
-%\alias{fitted.glm}
 \arguments{
   \item{object}{an object for which the extraction of model fitted values is
     meaningful.}
@@ -39,7 +36,7 @@ fitted.values(object, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{coefficients}}, \code{\link{glm}}, \code{\link{lm}},

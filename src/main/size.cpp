@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -139,8 +139,6 @@ static R_size_t objectsize(SEXP s)
 	isVec = TRUE;
 	break;
     case S4SXP:
-	/* Has TAG and ATRIB but no CAR nor CDR */
-	cnt += objectsize(TAG(s));
 	break;
     default:
 	UNIMPLEMENTED_TYPE("object.size", s);
@@ -149,7 +147,7 @@ static R_size_t objectsize(SEXP s)
        we need to take into account the rounding up that goes on
        in the node classes. */
     if(isVec) {
-	cnt += sizeof(SEXPREC);
+	cnt += sizeof(RObject);
 	if (vcnt > 16) cnt += 8*vcnt;
 	else if (vcnt > 8) cnt += 128;
 	else if (vcnt > 6) cnt += 64;
@@ -157,7 +155,7 @@ static R_size_t objectsize(SEXP s)
 	else if (vcnt > 2) cnt += 32;
 	else if (vcnt > 1) cnt += 16;
 	else if (vcnt > 0) cnt += 8;
-    } else cnt += sizeof(SEXPREC);
+    } else cnt += sizeof(RObject);
     /* add in attributes: these are fake for CHARXPs */
     if(TYPEOF(s) != CHARSXP) cnt += objectsize(ATTRIB(s));
     return(cnt);

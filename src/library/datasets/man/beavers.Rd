@@ -48,9 +48,9 @@ beaver2
   \emph{Case Studies in Biometry.}
   New York: John Wiley and Sons.
 }
+%% consider converting times to POSIXct (using 'yday' ?)
 \examples{
 require(graphics)
-%% consider converting times to POSIXct (using 'yday' ?)
 (yl <- range(beaver1$temp, beaver2$temp))
 
 beaver.plot <- function(bdat, ...) {
@@ -59,7 +59,7 @@ beaver.plot <- function(bdat, ...) {
     # Hours since start of day:
     hours <- time \%/\% 100 + 24*(day - day[1]) + (time \%\% 100)/60
     plot (hours, temp, type = "l", ...,
-	  main = paste(nam, "body temperature"))
+          main = paste(nam, "body temperature"))
     abline(h = 37.5, col = "gray", lty = 2)
     is.act <- activ == 1
     points(hours[is.act], temp[is.act], col = 2, cex = .8)

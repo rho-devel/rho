@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,7 +39,11 @@
  * @todo Include valgrind instrumentation (conditionally compiled).
  */
 
+
 #include "CXXR/CellHeap.hpp"
+
+#include <cstdlib>
+#include <iostream>
 
 #ifndef __APPLE__
 #define HAVE_POSIX_MEMALIGN
@@ -47,11 +51,7 @@
 
 #ifdef HAVE_POSIX_MEMALIGN
 #define _XOPEN_SOURCE 600
-
-#include <cstdlib>
 #endif
-
-#include <iostream>
 
 using namespace std;
 using namespace CXXR;

@@ -19,7 +19,7 @@
 file_test <-
 function(op, x, y)
 {
-    ## Provide shell-style '-f', '-d', '-nt' and '-ot' tests.
+    ## Provide shell-style '-f', '-d', '-x', '-nt' and '-ot' tests. 
     ## Note that file.exists() only tests existence ('test -e' on some
     ## systems), and that our '-f' tests for existence and not being a
     ## directory (the GNU variant tests for being a regular file).
@@ -33,6 +33,7 @@ function(op, x, y)
            "-ot" = (!is.na(mt.x <- file.info(x)$mtime)
                     & !is.na(mt.y <- file.info(y)$mtime)
                     & (mt.x < mt.y)),
+           "-x" = (file.access(x, 1L) == 0L),
            stop(gettextf("test '%s' is not available", op),
                 domain = NA))
 }

@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -27,31 +27,32 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = RNG.c complex.c gram.c inlined.c regex.c
+SOURCES_C = complex.c gram.c gramRd.c inlined.c unzip.c
 
 SOURCES_CXX = \
+	ArgMatcher.cpp \
 	BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CachedString.cpp CellPool.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
-	Environment.cpp Expression.cpp ExpressionVector.cpp \
+	Environment.cpp Evaluator.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
-        IntVector.cpp \
+        inspect.cpp IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
         PairList.cpp Parentage.cpp Promise.cpp Provenance.cpp \
 	ProvenanceSet.cpp ProvenanceTracker.cpp \
-        RAllocStack.cpp RObject.cpp RawVector.cpp Rdynload.cpp RealVector.cpp \
-        Renviron.cpp \
-        S4Object.cpp SEXP_downcast.cpp StdFrame.cpp String.cpp \
-	StringVector.cpp Symbol.cpp \
+        RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
+        RealVector.cpp Renviron.cpp \
+        S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
+        String.cpp StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \
-	apply.cpp apse.cpp arithmetic.cpp array.cpp attrib.cpp \
+	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
 	character.cpp coerce.cpp colors.cpp connections.cpp context.cpp \
 	cov.cpp cum.cpp \
@@ -59,23 +60,23 @@ SOURCES_CXX = \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
 	engine.cpp envir.cpp errors.cpp eval.cpp \
 	format.cpp fourier.cpp \
-	gevents.cpp gram-ex.cpp graphics.cpp \
+	gevents.cpp gram-ex.cpp graphics.cpp grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
 	par.cpp paste.cpp pcre.cpp platform.cpp \
 	plot.cpp plot3d.cpp plotmath.cpp \
-	print.cpp printarray.cpp printvector.cpp printutils.cpp provenance.cpp \
-	qsort.cpp	random.cpp registration.cpp relop.cpp rlocale.cpp \
+	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
+	provenance.cpp \
+	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \
         source.cpp split.cpp sprintf.cpp startup.cpp subassign.cpp \
         subscript.cpp subset.cpp summary.cpp sysutils.cpp \
 	unique.cpp util.cpp \
 	version.cpp vfonts.cpp
 
-SOURCES_F = \
-	xxxpr.f
+SOURCES_F =  xxxpr.f
 
 ## If the substitutes are needed, the corresponding objects are put by
 ## configure in @LIBOBJS@ @ALLOCA@
@@ -92,8 +93,8 @@ SOURCES = $(SOURCES_C) $(SOURCES_CXX) $(SOURCES_F)
 OBJECTS = $(SOURCES_C:.c=.o) $(SOURCES_CXX:.cpp=.o) $(SOURCES_F:.f=.o) \
           @LIBOBJS@ @ALLOCA@
 HEADERS = \
-	RBufferUtils.h Rregex.h Rstrptime.h \
-	arithmetic.h apse.h \
+	RBufferUtils.h Rstrptime.h \
+	arithmetic.h \
 	basedecl.h \
 	par-common.c \
 	qsort-body.c \
@@ -107,15 +108,18 @@ DISTFILES = Makefile.in Makefile.win \
 	$(SOURCES_CXX) \
 	$(EXTRA_SOURCES_CXX) \
 	$(SOURCES_F) \
-	gram.y
+	gram.y \
+	gramRd.y
 
 ZLIB_CPPFLAGS = @BUILD_ZLIB_TRUE@ -I$(top_srcdir)/src/extra/zlib
 BZLIB_CPPFLAGS = @BUILD_BZLIB_TRUE@ -I$(top_srcdir)/src/extra/bzip2
 PCRE_CPPFLAGS = @BUILD_PCRE_TRUE@ -I$(top_srcdir)/src/extra/pcre
+TRE_CPPFLAGS = -I$(top_srcdir)/src/extra
 XDR_CPPFLAGS = @BUILD_XDR_TRUE@ -I$(top_srcdir)/src/extra/xdr
+XZ_CPPFLAGS = @BUILD_XZ_TRUE@  -I$(top_srcdir)/src/extra/xz/api
 
 ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(BZLIB_CPPFLAGS) $(PCRE_CPPFLAGS) \
-  $(XDR_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
+  $(TRE_CPPFLAGS) $(XDR_CPPFLAGS) $(XZ_CPPFLAGS) $(R_XTRA_CPPFLAGS) $(CPPFLAGS) $(DEFS)
 @WANT_R_SHLIB_TRUE@ALL_CFLAGS = $(ALL_CFLAGS_LO)
 @WANT_R_SHLIB_TRUE@ALL_FFLAGS = $(ALL_FFLAGS_LO)
 
@@ -124,11 +128,14 @@ ALL_CPPFLAGS = $(ZLIB_CPPFLAGS) $(BZLIB_CPPFLAGS) $(PCRE_CPPFLAGS) \
 R_ZLIBS = @BUILD_ZLIB_TRUE@ ../extra/zlib/libz.a
 R_BZLIBS = @BUILD_BZLIB_TRUE@ ../extra/bzip2/libbz2.a
 R_PCRE = @BUILD_PCRE_TRUE@ ../extra/pcre/libpcre.a
+R_TRE = ../extra/tre/libtre.a
 R_XDR = @BUILD_XDR_TRUE@ ../extra/xdr/libxdr.a
+R_XZ = @BUILD_XZ_TRUE@  ../extra/xz/liblzma.a
 R_LIBINTL = @BUILD_LIBINTL_TRUE@ ../extra/intl/libintl.a
 
 MAIN_LIBS = ../unix/libunix.a ../appl/libappl.a ../nmath/libnmath.a
-EXTRA_STATIC_LIBS = $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_XDR)$(R_LIBINTL)
+EXTRA_STATIC_LIBS = \
+  $(R_ZLIBS) $(R_BZLIBS) $(R_PCRE) $(R_TRE) $(R_XDR) $(R_XZ) $(R_LIBINTL)
 STATIC_LIBS = $(MAIN_LIBS) $(EXTRA_STATIC_LIBS)
 
 EXTRA_LIBS = $(BLAS_LIBS) $(FLIBS) $(R_XTRA_LIBS) @LIBINTL@ $(READLINE_LIBS) $(LIBS)
@@ -138,13 +145,13 @@ R_bin_OBJECTS = Rmain.o VectorBase.o
 @WANT_R_SHLIB_FALSE@R_bin_LDADD = libR.a $(EXTRA_LIBS)
 ## Linked against -lRblas becasue -lR is and otherwise ld complains.
 @WANT_R_SHLIB_TRUE@R_bin_LDADD = -L../../lib@R_ARCH@ -lR @BLAS_SHLIB_TRUE@-lRblas
-R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a
+R_bin_DEPENDENCIES =@WANT_R_SHLIB_FALSE@ libR.a @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 libR_la = libR$(DYLIB_EXT)
 ## have to force in Rembedded.o
 libR_la_OBJECTS = $(OBJECTS) ../unix/Rembedded.o
-libR_la_LIBADD = $(STATIC_LIBS) $(EXTRA_LIBS)
-libR_la_DEPENDENCIES = $(STATIC_LIBS)
+libR_la_LIBADD = $(STATIC_LIBS) $(EXTRA_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
+libR_la_DEPENDENCIES = $(STATIC_LIBS) @WANT_R_SHLIB_TRUE@ @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
 
 ## The next is needed on darwin only at present
 LIBR_LDFLAGS = @LIBR_LDFLAGS@
@@ -167,7 +174,7 @@ Makedeps: Makefile $(DEPENDS)
 ## This target has been changed to ensure that R.bin and libR get
 ## installed in the build tree if necessary, even if the corresponding 
 ## objects are not re-made.
-## Note that dependencies in the test Makefiles depend on these objects,
+## Note that dependencies in the test Makefiles used to depend on these objects,
 ## so copy-if-change is used.
 R: Makefile
 	@$(MAKE) Makedeps
@@ -180,7 +187,7 @@ R: Makefile
 ../include/config.h ../include/Rversion.h:
 	(cd $(@D); $(MAKE) $(@F))
 
-$(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES) @USE_EXPORTFILES_TRUE@ $(top_builddir)/etc/R.exp
+$(R_binary): $(R_bin_OBJECTS) $(R_bin_DEPENDENCIES)
 	$(LINK.cpp) $(MAIN_LDFLAGS) -o $@ $(R_bin_OBJECTS) $(R_bin_LDADD)
 
 libR.a: $(OBJECTS) $(STATIC_LIBS)
@@ -204,7 +211,9 @@ $(top_builddir)/etc/R.exp: $(OBJECTS) $(MAIN_LIBS)
 $(MAIN_LIBS):
 	(cd $(@D); $(MAKE) $(@F))
 
-../extra/bzip2/libbz2.a ../extra/pcre/libpcre.a ../extra/xdr/libxdr.a ../extra/zlib/libz.a ../extra/intl/libintl.a:
+../extra/bzip2/libbz2.a ../extra/pcre/libpcre.a ../extra/pcre/libtre.a\
+  ../extra/xdr/libxdr.a ../extra/zlib/libz.a ../extra/xv/liblzma.a \
+  ../extra/intl/libintl.a:
 	(cd $(@D); $(MAKE))
 
 
@@ -224,11 +233,15 @@ $(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
 	@$(ECHO) "re-making gram.c"
 	$(YACC) $(YFLAGS) $(srcdir)/gram.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c
+$(srcdir)/gramRd.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
+	@$(ECHO) "re-making gramRd.c"
+	$(YACC) $(YFLAGS) $(srcdir)/gramRd.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.c	
 
 install: installdirs
 	@$(MAKE) install-bin
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
-	@WANT_R_STATIC_TRUE@ @$(MAKE) install-static
+@WANT_R_STATIC_TRUE@	@$(MAKE) install-static
 installdirs:
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexecbindir2)"
 	@$(MKINSTALLDIRS) "$(DESTDIR)$(Rexeclibdir)"
@@ -241,7 +254,7 @@ install-static: installdirs
 install-strip: installdirs
 	@${INSTALL_PROGRAM} -s $(R_binary) "$(DESTDIR)$(Rexecbindir2)/R"
 	@if test -f $(libR_la); then $(MAKE) install-lib; fi
-	@WANT_R_STATIC_TRUE@ @$(MAKE) install-static
+@WANT_R_STATIC_TRUE@	@$(MAKE) install-static
 	@if test -n "$(STRIP_LIBS)"; then \
 	  if test -f $(libR_la); then $(STRIP_LIBS) "$(DESTDIR)$(Rexeclibdir)/$(libR_la)"; fi; \
 	fi
@@ -264,7 +277,7 @@ distclean: clean
 maintainer-clean: distclean
 	@$(ECHO) "This command is intended for maintainers to use; it"
 	@$(ECHO) "deletes files that may need special rules to rebuild"
-	@-rm -f $(srcdir)/gram.c
+	@-rm -f $(srcdir)/gram.c $(srcdir)/gramRd.c
 
 tags: TAGS
 TAGS: $(SOURCES) $(EXTRA_SOURCES_CXX) $(HEADERS)

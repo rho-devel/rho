@@ -1,6 +1,6 @@
 % File src/library/base/man/print.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{print}
@@ -13,9 +13,12 @@ print(x, \dots)
 
 \method{print}{table}(x, digits = getOption("digits"), quote = FALSE,
       na.print = "", zero.print = "0", justify = "none", \dots)
+
+\method{print}{function}(x, useSource = TRUE, \dots)
 }
 \alias{print}
 \alias{print.factor}
+\alias{print.function}
 \alias{print.htest}
 \alias{print.listof}
 \alias{print.simple.list}
@@ -23,8 +26,7 @@ print(x, \dots)
 \description{
   \code{print} prints its argument and returns it \emph{invisibly} (via
   \code{\link{invisible}(x)}).  It is a generic function which means that
-  new printing methods can be easily added for new
-  \code{\link[base]{class}}es.
+  new printing methods can be easily added for new \code{\link{class}}es.
 }
 \arguments{
   \item{x}{an object used to select a method.}
@@ -45,6 +47,9 @@ print(x, \dots)
     printed; for sparse tables, using \code{"."} can produce stronger results.}
   \item{justify}{character indicating if strings should left- or
     right-justified or left alone, passed to \code{\link{format}}.}
+  \item{useSource}{logical indicating if a \code{"source"} attribute
+    should be used for printing when present, e.g., if
+    \code{\link{options}(keep.source=TRUE)} has been in use.}
 }
 \details{
   The default method, \code{\link{print.default}} has its own help page.
@@ -63,7 +68,7 @@ print(x, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S.}
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   The default method \code{\link{print.default}}, and help for the
@@ -76,8 +81,7 @@ print(x, \dots)
 require(stats)
 
 ts(1:20)#-- print is the "Default function" --> print.ts(.) is called
-rr <- for(i in 1:3) print(1:i)
-rr
+for(i in 1:3) print(1:i)
 
 ## Printing of factors
 attenu$station ## 117 levels -> 'max.levels' depending on width

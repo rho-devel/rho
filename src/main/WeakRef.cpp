@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,10 +43,12 @@
 #include <iostream>
 
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
+#include "CXXR/errors.h"
 #include "RCNTXT.h"
 
 using namespace std;
@@ -62,7 +64,7 @@ namespace {
     const unsigned int FINALIZE_ON_EXIT_MASK = 2;
 }
 
-WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
+WeakRef::WeakRef(RObject* key, RObject* value, FunctionBase* R_finalizer,
 		 bool finalize_on_exit)
     : m_key(key), m_value(value), m_Rfinalizer(R_finalizer),
       m_self(expose(this)), m_Cfinalizer(0),
@@ -71,6 +73,13 @@ WeakRef::WeakRef(RObject* key, RObject* value, RObject* R_finalizer,
 {
     if (!m_key)
 	tombstone();
+    else switch (m_key->sexptype()) {
+    case ENVSXP:
+    case EXTPTRSXP:
+	break;
+    default:
+	Rf_error(_("can only weakly reference/finalize reference objects"));
+    }
     ++s_count;
 }
 
@@ -158,8 +167,21 @@ void WeakRef::detachReferents()
     RObject::detachReferents();
 }
 
-// WeakRef::finalize() is in memory.cpp (for the time being, until
-// eval() is declared in a CXXR header).
+void WeakRef::finalize()
+{
+    R_CFinalizer_t Cfin = m_Cfinalizer;
+    GCStackRoot<> key(m_key);
+    GCStackRoot<FunctionBase> Rfin(m_Rfinalizer);
+    // Do this now to ensure that finalizer is run only once, even if
+    // an error occurs:
+    tombstone();
+    if (Cfin) Cfin(key);
+    else if (Rfin) {
+	GCStackRoot<PairList> tail(expose(new PairList(key)));
+	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
+	Evaluator::evaluate(e, Environment::global());
+    }
+}
 
 void WeakRef::markThru()
 {
@@ -167,7 +189,7 @@ void WeakRef::markThru()
     GCNode::Marker marker;
     WRList newlive;
     // Step 2-3 of algorithm.  Mark the value and R finalizer if the
-    // key is marked, or in a generation not being collected.
+    // key is marked.
     {
 	bool newmarks;
 	do {
@@ -180,7 +202,7 @@ void WeakRef::markThru()
 		    RObject* value = wr->value();
 		    if (value && value->conductVisitor(&marker))
 			newmarks = true;
-		    RObject* Rfinalizer = wr->m_Rfinalizer;
+		    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 		    if (Rfinalizer && Rfinalizer->conductVisitor(&marker))
 			newmarks = true;
 		    wr->transfer(&s_live, &newlive);
@@ -193,15 +215,20 @@ void WeakRef::markThru()
 	WRList::iterator lit = s_live.begin();
 	while (lit != s_live.end()) {
 	    WeakRef* wr = *lit++;
-	    RObject* Rfinalizer = wr->m_Rfinalizer;
-	    if (Rfinalizer) Rfinalizer->conductVisitor(&marker);
+	    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
+	    if (Rfinalizer)
+		Rfinalizer->conductVisitor(&marker);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
+		wr->conductVisitor(&marker);
 		wr->m_key->conductVisitor(&marker);
 		wr->m_ready_to_finalize = true;
 		wr->transfer(&s_live, &s_f10n_pending);
 	    }
-	    else
+	    else {
 		wr->tombstone();
+		// Expose to reference-counting collection:
+		wr->m_self = 0;
+	    }
 	}
     }
     // Step 5 of algorithm.  Mark all live references with reachable keys.
@@ -249,7 +276,7 @@ bool WeakRef::runFinalizers()
 	// insure that any errors that might occur do not spill into
 	// the call that triggered the collection:
 	Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
-			0, GlobalEnvironment, R_BaseEnv, 0, 0);
+			0, Environment::global(), Environment::base(), 0, 0);
 	RCNTXT* saveToplevelContext = R_ToplevelContext;
 	GCStackRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = GCStackRootBase::ppsSize();
@@ -268,6 +295,8 @@ bool WeakRef::runFinalizers()
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &thiscontext << endl;
+	// Expose WeakRef to reference-counting collection:
+	wr->m_self = 0;
 	Rf_endcontext(&thiscontext);
 	R_ToplevelContext = saveToplevelContext;
 	GCStackRootBase::ppsRestoreSize(savestack);
@@ -301,6 +330,22 @@ WeakRef::WRList* WeakRef::wrList() const
 
 // ***** C interface *****
 
+SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
+{
+    FunctionBase* finf = 0;
+    if (fin) {
+	finf = dynamic_cast<FunctionBase*>(fin);
+	if (!finf)
+	    Rf_error(_("finalizer must be a function or NULL"));
+    } 
+    return GCNode::expose(new WeakRef(key, val, finf, onexit));
+}
+
+SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
+{
+    return GCNode::expose(new WeakRef(key, val, fin, onexit));
+}
+
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)
 {
     R_MakeWeakRef(s, 0, fun, onexit);
@@ -326,5 +371,21 @@ void R_RunExitFinalizers()
     WeakRef::runExitFinalizers();
 }
 
-// Other C interface functions are still in memory.cpp for the time
-// being.
+SEXP R_WeakRefKey(SEXP w)
+{
+    if (w->sexptype() != WEAKREFSXP)
+	Rf_error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
+    return wr->key();
+}
+
+SEXP R_WeakRefValue(SEXP w)
+{
+    if (w->sexptype() != WEAKREFSXP)
+	Rf_error(_("not a weak reference"));
+    WeakRef* wr = static_cast<WeakRef*>(w);
+    SEXP v = wr->value();
+    if (v && NAMED(v) != 2)
+	SET_NAMED(v, 2);
+    return v;
+}

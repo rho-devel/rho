@@ -7,11 +7,9 @@
 \alias{stepfun}
 \alias{is.stepfun}
 \alias{as.stepfun}
-%\alias{as.stepfun.default}
 \alias{print.stepfun}
 \alias{summary.stepfun}
 \alias{knots}
-%\alias{knots.stepfun}
 \title{Step Function Class}
 \usage{
 stepfun(x, y, f = as.numeric(right), ties = "ordered",
@@ -67,7 +65,7 @@ as.stepfun(x, \dots)
 }
 \value{
   A function of class \code{"stepfun"}, say \code{fn}.
-%
+
   There are methods available for summarizing (\code{"summary(.)"}),
   representing (\code{"print(.)"}) and plotting  (\code{"plot(.)"}, see
   \code{\link{plot.stepfun}}) \code{"stepfun"} objects.
@@ -93,7 +91,7 @@ as.stepfun(x, \dots)
   \code{\link{approxfun}} and \code{\link{splinefun}}.
 }
 \examples{
-y0 <- c(1,2,4,3)
+y0 <- c(1.,2.,4.,3.)
 sfun0  <- stepfun(1:3, y0, f = 0)
 sfun.2 <- stepfun(1:3, y0, f = .2)
 sfun1  <- stepfun(1:3, y0, f = 1)

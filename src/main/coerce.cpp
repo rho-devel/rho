@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -18,6 +18,7 @@
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-2007  Robert Gentleman, Ross Ihaka and the
  *			     R Development Core Team
+ *  Copyright (C) 2003-2009 The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,7 +35,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file
+/** @file coerce.cpp
  *
  * Coercions from one R type to another, including various 'is' and
  * 'as' functions.  Also 'quote'.
@@ -45,6 +46,8 @@
 #endif
 
 #include <Defn.h> /*-- Maybe modularize into own Coerce.h ..*/
+#define R_MSG_mode	_("invalid 'mode' argument")
+#define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
 #include <Print.h>
 
@@ -143,7 +146,7 @@ IntegerFromReal(double x, int *warn)
 	*warn |= WARN_NA;
 	return NA_INTEGER;
     }
-    return int(x);
+    return CXXRCONSTRUCT(int, x);
 }
 
 int attribute_hidden
@@ -157,7 +160,7 @@ IntegerFromComplex(Rcomplex x, int *warn)
     }
     if (x.i != 0)
 	*warn |= WARN_IMAG;
-    return int(x.r);
+    return CXXRCONSTRUCT(int, x.r);
 }
 
 
@@ -178,7 +181,7 @@ IntegerFromString(SEXP x, int *warn)
 		return INT_MIN;
 	    }
 	    else
-		return int(xdouble);
+		return CXXRCONSTRUCT(int, xdouble);
 	}
 	else *warn |= WARN_NA;
     }
@@ -315,12 +318,36 @@ SEXP attribute_hidden StringFromInteger(int x, int *warn)
     else return mkChar(EncodeInteger(x, w));
 }
 
+static const char* dropTrailing0(char *s, char cdec)
+{
+    /* Note that  's'  is modified */
+    char *p = s;
+    for (p = s; *p; p++) {
+	if(*p == cdec) {
+	    char *replace = p++;
+	    while ('0' <= *p  &&  *p <= '9')
+		if(*(p++) != '0')
+		    replace = p;
+	    if(replace != p)
+		while((*(replace++) = *(p++)))
+		    ;
+	    break;
+	}
+    }
+    return s;
+}
+
 SEXP attribute_hidden StringFromReal(double x, int *warn)
 {
     int w, d, e;
     formatReal(&x, 1, &w, &d, &e, 0);
     if (ISNA(x)) return NA_STRING;
-    else return mkChar(EncodeReal(x, w, d, e, OutDec));
+    else
+	/* Note that we recast EncodeReal()'s value to possibly modify it
+	 * destructively; this is harmless here (in a sequential
+	 * environment), as mkChar() creates a copy */
+	return mkChar(dropTrailing0(const_cast<char *>(EncodeReal(x, w, d, e, OutDec)),
+				     OutDec));
 }
 
 SEXP attribute_hidden StringFromComplex(Rcomplex x, int *warn)
@@ -328,7 +355,7 @@ SEXP attribute_hidden StringFromComplex(Rcomplex x, int *warn)
     int wr, dr, er, wi, di, ei;
     formatComplex(&x, 1, &wr, &dr, &er, &wi, &di, &ei, 0);
     if (ISNA(x.r) || ISNA(x.i)) return NA_STRING;
-    else
+    else /* EncodeComplex has its own anti-trailing-0 care :*/
 	return mkChar(EncodeComplex(x, wr, dr, er, wi, di, ei, OutDec));
 }
 
@@ -397,7 +424,7 @@ static SEXP coerceToSymbol(SEXP v)
     SEXP ans = R_NilValue;
     int warn = 0;
     if (length(v) <= 0)
-	error(_("invalid data of mode \"%s\" (too short)"),
+	error(_("invalid data of mode '%s' (too short)"),
 	      type2char(TYPEOF(v)));
     PROTECT(v);
     switch(TYPEOF(v)) {
@@ -434,9 +461,9 @@ static SEXP coerceToLogical(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = allocVector(LGLSXP, n = length(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -475,9 +502,9 @@ static SEXP coerceToInteger(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = allocVector(INTSXP, n = LENGTH(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -516,9 +543,9 @@ static SEXP coerceToReal(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = allocVector(REALSXP, n = LENGTH(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -557,9 +584,9 @@ static SEXP coerceToComplex(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = allocVector(CPLXSXP, n = LENGTH(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -599,9 +626,9 @@ static SEXP coerceToRaw(SEXP v)
 
     PROTECT(ans = allocVector(RAWSXP, n = LENGTH(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -670,9 +697,9 @@ static SEXP coerceToString(SEXP v)
     int i, n, savedigits, warn = 0;
     PROTECT(ans = allocVector(STRSXP, n = LENGTH(v)));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     cDUPLICATE_ATTRIB(ans, v);
@@ -719,9 +746,9 @@ static SEXP coerceToExpression(SEXP v)
 	n = LENGTH(v);
 	PROTECT(ans = allocVector(EXPRSXP, n));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
 	switch (TYPEOF(v)) {
@@ -768,9 +795,9 @@ static SEXP coerceToVectorList(SEXP v)
     n = length(v);
     PROTECT(ans = allocVector(VECSXP, n));
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(v)){
+    if (RTRACE(v)){
        memtrace_report(v,ans);
-       SET_TRACE(ans,1);
+       SET_RTRACE(ans,1);
     }
 #endif
     switch (TYPEOF(v)) {
@@ -889,7 +916,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
+		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
     }
     else if (type == VECSXP) {
@@ -970,9 +997,9 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 	n = length(v);
 	PROTECT(rval = allocVector(type, n));
 #ifdef R_MEMORY_PROFILING
-	if (TRACE(v)){
+	if (RTRACE(v)){
 	   memtrace_report(v, rval);
-	   SET_TRACE(rval,1);
+	   SET_RTRACE(rval,1);
 	}
 #endif
 	for (i = 0; i < n;  i++) {
@@ -994,7 +1021,7 @@ static SEXP coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	    else
 		SET_STRING_ELT(rval, i,
-			       STRING_ELT(deparse1line(elt, FALSE), 0));
+			       STRING_ELT(deparse1line(elt, CXXRFALSE), 0));
 	}
     }
     else if (type == LISTSXP) {
@@ -1064,6 +1091,15 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 
     if (TYPEOF(v) == type)
 	return v;
+    /* code to allow classes to extend ENVSXP, SYMSXP, etc */
+    if(IS_S4_OBJECT(v) && TYPEOF(v) == S4SXP) {
+        SEXP vv = R_getS4DataSlot(v, ANYSXP);
+	if(vv == R_NilValue)
+	  error(_("no method for coercing this S4 class to a vector"));
+	else if(TYPEOF(vv) == type)
+	  return vv;
+	v = vv;
+    }
 
     switch (TYPEOF(v)) {
 #ifdef NOTYET
@@ -1109,7 +1145,7 @@ SEXP coerceVector(SEXP v, SEXPTYPE type)
 	    if (isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(ans, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), FALSE), 0));
+		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
 	UNPROTECT(1);
 	break;
@@ -1174,7 +1210,7 @@ SEXP CreateTag(SEXP x)
 	&& length(STRING_ELT(x, 0)) >= 1)
 	x = install(translateChar(STRING_ELT(x, 0)));
     else
-	x = install(CHAR(STRING_ELT(deparse1(x, TRUE, SIMPLEDEPARSE), 0)));
+	x = install(CHAR(STRING_ELT(deparse1(x, CXXRTRUE, SIMPLEDEPARSE), 0)));
     return x;
 }
 
@@ -1253,14 +1289,36 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
-/* A historical anomaly: as.character is primitive, the other ops are not */
+SEXP asCharacterFactor(SEXP x)
+{
+    SEXP ans;
+
+    if( !inherits(x, "factor") )
+        error(_("attempting to coerce non-factor"));
+
+    int i, n = LENGTH(x);
+    SEXP labels = getAttrib(x, install("levels"));
+    PROTECT(ans = allocVector(STRSXP, n));
+    for(i = 0; i < n; i++) {
+      int ii = INTEGER(x)[i];
+      SET_STRING_ELT(ans, i,
+		   (ii == NA_INTEGER) ? NA_STRING
+		   : STRING_ELT(labels, ii - 1));
+    }
+    UNPROTECT(1);
+    return ans;
+}
+
+
+/* the "ascharacter" name is a historical anomaly: as.character used to be the
+ * only primitive;  now, all these ops are : */
 SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, x;
 
     SEXPTYPE type = STRSXP;
     int op0 = PRIMVAL(op);
-    CXXRconst char *name = NULL /* -Wall */;
+    CXXRCONST char *name = NULL /* -Wall */;
 
     switch(op0) {
 	case 0:
@@ -1312,6 +1370,7 @@ SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     else
 	type = str2type(CHAR(STRING_ELT(CADR(args), 0))); /* ASCII */
 
+
     if(TYPEOF(x) == type) {
 	switch(type) {
 	case LGLSXP:
@@ -1327,6 +1386,13 @@ SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
 	default:
 	    ;
 	}
+    }
+
+    if(IS_S4_OBJECT(x) && TYPEOF(x) == S4SXP) {
+        SEXP v = R_getS4DataSlot(x, ANYSXP);
+	if(v == R_NilValue)
+	  error(_("no method for coercing this S4 class to a vector"));
+	x = v;
     }
 
     switch(type) {/* only those are valid : */
@@ -1396,7 +1462,6 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    SET_TAG(pargs, R_NilValue);
 	pargs = CDR(pargs);
     }
-    CheckFormals(args);
     PROTECT(body = VECTOR_ELT(arglist, n-1));
     /* the main (only?) thing to rule out is body being
        a function already. If we test here then
@@ -1486,18 +1551,20 @@ int asLogical(SEXP x)
 	case LGLSXP:
 	    return LOGICAL(x)[0];
 	case INTSXP:
-	    return Rf_LogicalFromInteger(INTEGER(x)[0], &warn);
+	    return LogicalFromInteger(INTEGER(x)[0], &warn);
 	case REALSXP:
-	    return Rf_LogicalFromReal(REAL(x)[0], &warn);
+	    return LogicalFromReal(REAL(x)[0], &warn);
 	case CPLXSXP:
-	    return Rf_LogicalFromComplex(COMPLEX(x)[0], &warn);
+	    return LogicalFromComplex(COMPLEX(x)[0], &warn);
 	case STRSXP:
-	    return Rf_LogicalFromString(STRING_ELT(x, 0), &warn);
+	    return LogicalFromString(STRING_ELT(x, 0), &warn);
+	case RAWSXP:
+	    return LogicalFromInteger(int(RAW(x)[0]), &warn);
 	default:
 	    UNIMPLEMENTED_TYPE("asLogical", x);
 	}
     } else if(TYPEOF(x) == CHARSXP) {
-	    return Rf_LogicalFromString(x, &warn);
+	    return LogicalFromString(x, &warn);
     }
     return NA_LOGICAL;
 }
@@ -1509,27 +1576,27 @@ int asInteger(SEXP x)
     if (isVectorAtomic(x) && LENGTH(x) >= 1) {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
-	    return Rf_IntegerFromLogical(LOGICAL(x)[0], &warn);
+	    return IntegerFromLogical(LOGICAL(x)[0], &warn);
 	case INTSXP:
 	    return INTEGER(x)[0];
 	case REALSXP:
-	    res = Rf_IntegerFromReal(REAL(x)[0], &warn);
-	    Rf_CoercionWarning(warn);
+	    res = IntegerFromReal(REAL(x)[0], &warn);
+	    CoercionWarning(warn);
 	    return res;
 	case CPLXSXP:
-	    res = Rf_IntegerFromComplex(COMPLEX(x)[0], &warn);
-	    Rf_CoercionWarning(warn);
+	    res = IntegerFromComplex(COMPLEX(x)[0], &warn);
+	    CoercionWarning(warn);
 	    return res;
 	case STRSXP:
-	    res = Rf_IntegerFromString(STRING_ELT(x, 0), &warn);
-	    Rf_CoercionWarning(warn);
+	    res = IntegerFromString(STRING_ELT(x, 0), &warn);
+	    CoercionWarning(warn);
 	    return res;
 	default:
 	    UNIMPLEMENTED_TYPE("asInteger", x);
 	}
     } else if(TYPEOF(x) == CHARSXP) {
-	res = Rf_IntegerFromString(x, &warn);
-	Rf_CoercionWarning(warn);
+	res = IntegerFromString(x, &warn);
+	CoercionWarning(warn);
 	return res;
     }
     return NA_INTEGER;
@@ -1543,29 +1610,29 @@ double asReal(SEXP x)
     if (isVectorAtomic(x) && LENGTH(x) >= 1) {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
-	    res = Rf_RealFromLogical(LOGICAL(x)[0], &warn);
-	    Rf_CoercionWarning(warn);
+	    res = RealFromLogical(LOGICAL(x)[0], &warn);
+	    CoercionWarning(warn);
 	    return res;
 	case INTSXP:
-	    res = Rf_RealFromInteger(INTEGER(x)[0], &warn);
-	    Rf_CoercionWarning(warn);
+	    res = RealFromInteger(INTEGER(x)[0], &warn);
+	    CoercionWarning(warn);
 	    return res;
 	case REALSXP:
 	    return REAL(x)[0];
 	case CPLXSXP:
-	    res = Rf_RealFromComplex(COMPLEX(x)[0], &warn);
-	    Rf_CoercionWarning(warn);
+	    res =RealFromComplex(COMPLEX(x)[0], &warn);
+	    CoercionWarning(warn);
 	    return res;
 	case STRSXP:
-	    res = Rf_RealFromString(STRING_ELT(x, 0), &warn);
-	    Rf_CoercionWarning(warn);
+	    res = RealFromString(STRING_ELT(x, 0), &warn);
+	    CoercionWarning(warn);
 	    return res;
 	default:
 	    UNIMPLEMENTED_TYPE("asReal", x);
 	}
     } else if(TYPEOF(x) == CHARSXP) {
-	res = Rf_RealFromString(x, &warn);
-	Rf_CoercionWarning(warn);
+	res = RealFromString(x, &warn);
+CoercionWarning(warn);
 	return res;
     }
     return NA_REAL;
@@ -1576,26 +1643,36 @@ Rcomplex asComplex(SEXP x)
     int warn = 0;
     Rcomplex z;
 
-    z.r = NA_REAL;
-    z.i = NA_REAL;
     if (isVectorAtomic(x) && LENGTH(x) >= 1) {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
-	    return Rf_ComplexFromLogical(LOGICAL(x)[0], &warn);
+	    z = ComplexFromLogical(LOGICAL(x)[0], &warn);
+	    CoercionWarning(warn);
+	    return z;
 	case INTSXP:
-	    return Rf_ComplexFromInteger(INTEGER(x)[0], &warn);
+	    z = ComplexFromInteger(INTEGER(x)[0], &warn);
+	    CoercionWarning(warn);
+	    return z;
 	case REALSXP:
-	    return Rf_ComplexFromReal(REAL(x)[0], &warn);
+	    z = ComplexFromReal(REAL(x)[0], &warn);
+	    CoercionWarning(warn);
+	    return z;
 	case CPLXSXP:
 	    return COMPLEX(x)[0];
 	case STRSXP:
-	    return Rf_ComplexFromString(STRING_ELT(x, 0), &warn);
+	    z = ComplexFromString(STRING_ELT(x, 0), &warn);
+	    CoercionWarning(warn);
+	    return z;
 	default:
 	    UNIMPLEMENTED_TYPE("asComplex", x);
 	}
     } else if(TYPEOF(x) == CHARSXP) {
-	return Rf_ComplexFromString(x, &warn);
+	z = ComplexFromString(x, &warn);
+	CoercionWarning(warn);
+	return z;
     }
+    z.r = NA_REAL;
+    z.i = NA_REAL;
     return z;
 }
 
@@ -1619,7 +1696,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
        evaluating arguments in DispatchOrEval */
     if(PRIMVAL(op) >= 100 && PRIMVAL(op) < 200 &&
        isObject(CAR(args))) {
-	/* This used CHAR(PRINTNAME(CAR(call))), but that is not 
+	/* This used CHAR(PRINTNAME(CAR(call))), but that is not
 	   necessarily correct, e.g. when called from lapply() */
 	const char *nm;
 	switch(PRIMVAL(op)) {
@@ -2133,7 +2210,7 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
        better error message.
      */
     if (!isString(rfun) || length(rfun) != 1)
-	errorcall_return(call, R_MSG_A1_char);
+	errorcall_return(call, _("first argument must be a character string"));
     PROTECT(rfun = install(translateChar(STRING_ELT(rfun, 0))));
     PROTECT(evargs = duplicate(CDR(args)));
     for (rest = evargs; rest != R_NilValue; rest = CDR(rest))
@@ -2163,7 +2240,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'what' must be a character string or a function"));
 
     if (!isNull(args) && !isNewList(args))
-	error(R_MSG_A2_list);
+	error(_("'args' must be a list"));
 
     if (!isEnvironment(envir))
 	error(_("'envir' must be an environment"));
@@ -2339,7 +2416,7 @@ SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 typedef struct {
-    CXXRconst char *s;
+    CXXRCONST char *s;
     SEXPTYPE sexp;
     Rboolean canChange;
 } classType;
@@ -2369,7 +2446,7 @@ static int class2type(const char *s)
        classes; e.g., "language" is a type but many classes correspond to objects of
        this type.
     */
-    int i; CXXRconst char *si;
+    int i; CXXRCONST char *si;
     for(i = 0; ; i++) {
 	si = classTable[i].s;
 	if(!si)
@@ -2380,6 +2457,18 @@ static int class2type(const char *s)
     /* cannot get here return -1; */
 }
 
+static SEXP do_unsetS4(SEXP obj, SEXP newClass) {
+  if(isNull(newClass))  { /* NULL class is only valid for S3 objects */
+    warning(_("Setting class(x) to NULL;   result will no longer be an S4 object"));
+  }
+  else if(length(newClass) > 1)
+    warning(_("Setting class(x) to multiple strings (\"%s\", \"%s\", ...); result will no longer be an S4 object"), translateChar(STRING_ELT(newClass, 0)), translateChar(STRING_ELT(newClass, 1)));
+  else
+    warning(_("Setting class(x) to \"%s\" sets attribute to NULL;   result will no longer be an S4 object"), CHAR(asChar(newClass)));
+  UNSET_S4_OBJECT(obj);
+  return obj;
+}
+
 /* set the class to value, and return the modified object.  This is
    NOT a primitive assignment operator , because there is no code in R
    that changes type in place. */
@@ -2388,6 +2477,8 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     int nProtect = 0;
     if(isNull(value)) {
 	setAttrib(obj, R_ClassSymbol, value);
+	if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	  do_unsetS4(obj, value);
 	return obj;
     }
     if(TYPEOF(value) != STRSXP) {
@@ -2396,25 +2487,30 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	PROTECT(value = coerceVector(duplicate(value), STRSXP));
 	nProtect++;
     }
-    if(length(value) > 1)
+    if(length(value) > 1) {
 	setAttrib(obj, R_ClassSymbol, value);
+	if(IS_S4_OBJECT(obj)) /*  multiple strings only valid for S3 objects */
+	  do_unsetS4(obj, value);
+    }
     else if(length(value) == 0) {
 	UNPROTECT(nProtect); nProtect = 0;
 	error(_("invalid replacement object to be a class string"));
     }
     else {
 	const char *valueString, *classString; int whichType;
-	SEXP cur_class; int valueType;
+	SEXP cur_class; SEXPTYPE valueType;
 	valueString = CHAR(asChar(value)); /* ASCII */
 	whichType = class2type(valueString);
-	valueType = (whichType == -1) ? -1 : classTable[whichType].sexp;
+	valueType = (whichType == -1) ? CXXRCONSTRUCT(SEXPTYPE, -1) : classTable[whichType].sexp;
 	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
 	classString = CHAR(asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */
-	if(int(valueType) != -1) {
+	if(valueType != -1) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      do_unsetS4(obj, value);
 	    if(classTable[whichType].canChange) {
-		PROTECT(obj = ascommon(call, obj, SEXPTYPE(valueType)));
+		PROTECT(obj = ascommon(call, obj, valueType));
 		nProtect++;
 	    }
 	    else if(valueType != TYPEOF(obj))
@@ -2424,6 +2520,8 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	}
 	else if(!strcmp("numeric", valueString)) {
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      do_unsetS4(obj, value);
 	    switch(TYPEOF(obj)) {
 	    case INTSXP: case REALSXP: break;
 	    default: PROTECT(obj = coerceVector(obj, REALSXP));
@@ -2437,11 +2535,15 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 		error(_("invalid to set the class to matrix unless the dimension attribute is of length 2 (was %d)"),
 		 length(getAttrib(obj, R_DimSymbol)));
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj))
+	      do_unsetS4(obj, value);
 	}
 	else if(!strcmp("array", valueString)) {
 	    if(length(getAttrib(obj, R_DimSymbol))<= 0)
 		error(_("cannot set class to \"array\" unless the dimension attribute has length > 0"));
 	    setAttrib(obj, R_ClassSymbol, R_NilValue);
+	    if(IS_S4_OBJECT(obj)) /* NULL class is only valid for S3 objects */
+	      UNSET_S4_OBJECT(obj);
 	}
 	else { /* set the class but don't do the coercion; that's
 		  supposed to be done by an as() method */
@@ -2487,4 +2589,26 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
     DUPLICATE_ATTRIB(ans, obj);
     UNPROTECT(1);
     return ans;
+}
+
+#include "CXXR/ArgMatcher.hpp"
+
+const Symbol* ArgMatcher::coerceTag(const RObject* tag)
+{
+    const char* symname = 0;
+    if (tag->sexptype() == STRSXP) {
+	const StringVector* strv = static_cast<const StringVector*>(tag);
+	if (strv->size() >= 1) {
+	    const String* strv0 = (*strv)[0];
+	    if (strv0 && strv0->size() >= 1)
+		symname = Rf_translateChar(const_cast<String*>(strv0));
+	}
+    }
+    if (!symname) {
+	StringVector* strv
+	    = static_cast<StringVector*>(Rf_deparse1(const_cast<RObject*>(tag),
+						     TRUE, SIMPLEDEPARSE));
+	symname = (*strv)[0]->c_str();
+    }
+    return Symbol::obtain(symname);
 }

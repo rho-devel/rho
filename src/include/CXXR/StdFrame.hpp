@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,7 +55,7 @@ namespace CXXR {
 	std::tr1::unordered_map<const Symbol*, Binding,
 				std::tr1::hash<const Symbol*>,
 				std::equal_to<const Symbol*>,
-				CXXR::Allocator<std::pair<const Symbol*,
+				CXXR::Allocator<std::pair<const Symbol* const,
 							  Binding> >
 	                        > map;
     public:
@@ -82,6 +82,7 @@ namespace CXXR {
 	void clear();
 	bool erase(const Symbol* symbol);
 	void lockBindings();
+	size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;

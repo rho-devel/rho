@@ -1,6 +1,6 @@
 % File src/library/base/man/path.expand.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{path.expand}
@@ -18,17 +18,20 @@ path.expand(path)
 }
 #ifdef unix
 \details{
-  On \emph{some} Unix versions, a leading \code{~user} will expand to
+  On \emph{some} Unix builds of \R, a leading \code{~user} will expand to
   the home directory of \code{user}, but not on Unix versions without
   \code{readline} installed, nor if \R is invoked with
   \option{--no-readline}.
+
+  In an interactive session \code{capabilities("cledit")} will report if
+  \code{readline} is available.
 }
 #endif
 #ifdef windows
 \details{
-  The definition of \sQuote{home} is in the \file{rw-FAQ} Q2.14: it is
-  taken from the \env{R\_USER} environment variable when
-  \code{path.expand} is first called.
+  The definition of the \sQuote{home} directory is in the \file{rw-FAQ}
+  Q2.14: it is taken from the \env{R_USER} environment variable when
+  \code{path.expand} is first called in a session.
 }
 #endif
 \seealso{

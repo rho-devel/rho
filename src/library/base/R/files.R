@@ -19,12 +19,15 @@ R.home <- function(component="home")
     rh <- .Internal(R.home())
     switch(component,
            "home" = rh,
-           "share"= if(nzchar(p <- as.vector(Sys.getenv("R_SHARE_DIR")))) p
+           "share" = if(nzchar(p <- as.vector(Sys.getenv("R_SHARE_DIR")))) p
            else file.path(rh, component),
-	   "doc"=if(nzchar(p <- as.vector(Sys.getenv("R_DOC_DIR")))) p
+	   "doc" = if(nzchar(p <- as.vector(Sys.getenv("R_DOC_DIR")))) p
+           else file.path(rh, component),
+           "include" = if(nzchar(p <- as.vector(Sys.getenv("R_INCLUDE_DIR")))) p
            else file.path(rh, component),
            file.path(rh, component))
 }
+
 file.show <-
     function (..., header = rep("", nfiles), title = "R Information",
               delete.file = FALSE, pager = getOption("pager"), encoding = "")
@@ -33,7 +36,10 @@ file.show <-
     nfiles <- length(files)
     if(nfiles == 0)
         return(invisible(NULL))
-    if(!is.na(encoding) && encoding != "" && capabilities("iconv")) {
+    ## avoid re-encoding files to the current encoding.
+    if(l10n_info()[["UTF-8"]] && encoding == "UTF-8") encoding <- ""
+    if(l10n_info()[["Latin-1"]] && encoding == "latin1") encoding <- ""
+    if(!is.na(encoding) && encoding != "") {
         for(i in seq_along(files)) {
             f <- files[i]
             tf <- tempfile()
@@ -81,14 +87,21 @@ file.create <- function(..., showWarnings =  TRUE)
 
 file.choose <- function(new=FALSE) .Internal(file.choose(new))
 
-file.copy <- function(from, to, overwrite=FALSE)
+file.copy <- function(from, to, overwrite = recursive, recursive = FALSE)
 {
     if (!(nf <- length(from))) stop("no files to copy from")
     if (!(nt <- length(to)))   stop("no files to copy to")
     ## we don't use file_test as that is in utils.
-    if (nt == 1 && file.exists(to) && file.info(to)$isdir)
-        to <- file.path(to, basename(from))
-    else if (nf > nt) stop("more 'from' files than 'to' files")
+    if (nt == 1 && file.exists(to) && file.info(to)$isdir) {
+        ## on Windows we need \ for compiled code
+        if(.Platform$OS.type == "windows") {
+            from <- gsub("/", "\\", from, fixed = TRUE)
+            to <- gsub("/", "\\", to, fixed = TRUE)
+        }
+        return(.Internal(file.copy(from, to, overwrite, recursive)))
+        # to <- file.path(to, basename(from))
+    } else if (nf > nt) stop("more 'from' files than 'to' files")
+    else if (recursive) warning("'recursive' will be ignored")
     if(nt > nf) from <- rep(from, length.out = nt)
     okay <- file.exists(from)
     if (!overwrite) okay[file.exists(to)] <- FALSE
@@ -166,11 +179,11 @@ print.octmode <- function(x, ...)
 as.octmode <- function(x)
 {
     if(inherits(x, "octmode")) return(x)
-    if(length(x) != 1) stop("'x' must have length 1")
+    if(length(x) != 1L) stop("'x' must have length 1")
     if(is.double(x) && x == as.integer(x)) x <- as.integer(x)
     if(is.integer(x)) return(structure(x, class="octmode"))
     if(is.character(x)) {
-        xx <- strsplit(x, "")[[1]]
+        xx <- strsplit(x, "")[[1L]]
         if(!all(xx %in% 0:7)) stop("invalid digits")
         z <- as.numeric(xx) * 8^(rev(seq_along(xx)-1))
         return(structure(sum(z), class="octmode"))
@@ -223,23 +236,23 @@ function(x)
     if(is.integer(x)) return(structure(x, class = "hexmode"))
     if(is.character(x)) {
         xx <- strsplit(tolower(x), "")[[1L]]
-        pos <- match(xx, c(0 : 9, letters[1 : 6]))
+        pos <- match(xx, c(0L:9L, letters[1L:6L]))
         if(any(is.na(pos))) stop("invalid digits")
         z <- (pos - 1L) * 16 ^ (rev(seq_along(xx) - 1))
         return(structure(as.integer(sum(z)), class = "hexmode"))
     }
     stop("'x' cannot be coerced to hexmode")
 }
-        
+
 system.file <-
 function(..., package = "base", lib.loc = NULL)
 {
     if(nargs() == 0)
         return(file.path(.Library, "base"))
-    if(length(package) != 1)
+    if(length(package) != 1L)
         stop("'package' must be of length 1")
     packagePath <- .find.package(package, lib.loc, quiet = TRUE)
-    if(length(packagePath) == 0)
+    if(length(packagePath) == 0L)
         return("")
     FILES <- file.path(packagePath, ...)
     present <- file.exists(FILES)
@@ -267,7 +280,7 @@ path.expand <- function(path)
     .Internal(path.expand(path))
 
 Sys.glob <- function(paths, dirmark = FALSE)
-    .Internal(Sys.glob(paths, dirmark))
+    .Internal(Sys.glob(path.expand(paths), dirmark))
 
 unlink <- function(x, recursive = FALSE)
     .Internal(unlink(as.character(x), recursive))
@@ -277,3 +290,6 @@ Sys.chmod <- function(paths, mode = "0777")
 
 Sys.umask <- function(mode = "0000")
     .Internal(Sys.umask(as.octmode(mode)))
+
+Sys.readlink <- function(paths)
+    .Internal(Sys.readlink(paths))

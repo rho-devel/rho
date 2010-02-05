@@ -25,6 +25,9 @@ qr.default <- function(x, tol = 1e-07, LAPACK = FALSE, ...)
     x <- as.matrix(x)
     if(is.complex(x))
         return(structure(.Call("La_zgeqp3", x, PACKAGE = "base"), class="qr"))
+    ## otherwise :
+    if(!is.double(x))
+	storage.mode(x) <- "double"
     if(LAPACK) {
         res <- .Call("La_dgeqp3", x, PACKAGE = "base")
         if(!is.null(cn <- colnames(x)))
@@ -36,17 +39,15 @@ qr.default <- function(x, tol = 1e-07, LAPACK = FALSE, ...)
 
     p <- ncol(x) # guaranteed to be integer
     n <- nrow(x)
-    if(!is.double(x))
-	storage.mode(x) <- "double"
     res <- .Fortran("dqrdc2",
 	     qr=x,
 	     n,
 	     n,
 	     p,
 	     as.double(tol),
-	     rank=integer(1),
+	     rank=integer(1L),
 	     qraux = double(p),
-	     pivot = as.integer(1:p),
+	     pivot = as.integer(1L:p),
 	     double(2*p),
 	     PACKAGE="base")[c(1,6,7,8)]# c("qr", "rank", "qraux", "pivot")
     if(!is.null(cn <- colnames(x)))
@@ -65,11 +66,13 @@ qr.coef <- function(qr, y)
     im <- is.matrix(y)
     if (!im) y <- as.matrix(y)
     ny <- ncol(y)
-    if (p == 0) return( if (im) matrix(0,p,ny) else numeric(0) )
+    if (p == 0L) return( if (im) matrix(0, p, ny) else numeric(0L) )
+    ix <- if ( p > n ) c(seq_len(n), rep(NA, p - n)) else seq_len(p)
     if(is.complex(qr$qr)) {
 	if(!is.complex(y)) y[] <- as.complex(y)
 	coef <- matrix(NA_complex_, nrow = p, ncol = ny)
-	coef[qr$pivot,] <- .Call("qr_coef_cmplx", qr, y, PACKAGE = "base")[1:p,]
+	coef[qr$pivot,] <-
+            .Call("qr_coef_cmplx", qr, y, PACKAGE = "base")[ix, ]
 	return(if(im) coef else c(coef))
     }
     ## else {not complex} :
@@ -78,10 +81,10 @@ qr.coef <- function(qr, y)
         if(!is.double(y)) storage.mode(y) <- "double"
 	coef <- matrix(NA_real_, nrow = p, ncol = ny)
 	coef[qr$pivot,] <-
-            .Call("qr_coef_real", qr, y, PACKAGE = "base")[seq_len(p)]
+            .Call("qr_coef_real", qr, y, PACKAGE = "base")[ix,]
 	return(if(im) coef else c(coef))
     }
-    if (k == 0) return( if (im) matrix(NA, p, ny) else rep.int(NA, p))
+    if (k == 0L) return( if (im) matrix(NA, p, ny) else rep.int(NA, p))
 
     storage.mode(y) <- "double"
     if( nrow(y) != n )
@@ -93,12 +96,12 @@ qr.coef <- function(qr, y)
 		  y,
 		  ny,
 		  coef=matrix(0, nrow=k,ncol=ny),
-		  info=integer(1),
+		  info=integer(1L),
 		  NAOK = TRUE, PACKAGE="base")[c("coef","info")]
-    if(z$info != 0) stop("exact singularity in 'qr.coef'")
+    if(z$info) stop("exact singularity in 'qr.coef'")
     if(k < p) {
 	coef <- matrix(NA_real_, nrow=p, ncol=ny)
-	coef[qr$pivot[1:k],] <- z$coef
+	coef[qr$pivot[1L:k],] <- z$coef
     }
     else coef <- z$coef
 
@@ -228,10 +231,10 @@ qr.Q <- function (qr, complete = FALSE,
     dqr <- dim(qr$qr)
     cmplx <- mode(qr$qr) == "complex"
     D <-
-	if (complete) diag(Dvec, dqr[1])
+	if (complete) diag(Dvec, dqr[1L])
 	else {
 	    ncols <- min(dqr)
-	    diag(Dvec[1:ncols], nrow = dqr[1], ncol = ncols)
+	    diag(Dvec[1L:ncols], nrow = dqr[1L], ncol = ncols)
 	}
     qr.qy(qr, D)
 }
@@ -255,12 +258,12 @@ qr.X <- function (qr, complete = FALSE,
     if(pivoted && ncol < length(qr$pivot))
         stop("need larger value of 'ncol' as pivoting occurred")
     cmplx <- mode(R) == "complex"
-    p <- dim(R)[2]
+    p <- dim(R)[2L]
     if (ncol < p)
-	R <- R[, 1:ncol, drop = FALSE]
+	R <- R[, 1L:ncol, drop = FALSE]
     else if (ncol > p) {
 	tmp <- diag(if (!cmplx) 1 else 1 + 0i, nrow(R), ncol)
-	tmp[, 1:p] <- R
+	tmp[, 1L:p] <- R
 	R <- tmp
     }
     res <- qr.qy(qr, R)

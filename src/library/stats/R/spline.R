@@ -42,17 +42,17 @@ spline <-
 	    y <- as.vector(tapply(y,x,ties))# as.v: drop dim & dimn.
 	    x <- sort(ux)
 	    nx <- length(x)
-	    rm(ux)
 	} else {
 	    o <- order(x)
 	    x <- x[o]
 	    y <- y[o]
 	}
+        rm(ux)
     }
     if(nx == 0) stop("zero non-NA points")
-    if(method == 1 && y[1] != y[nx]) { # periodic
+    if(method == 1 && y[1L] != y[nx]) { # periodic
         warning("spline: first and last y values differ - using y[1] for both")
-        y[nx] <- y[1]
+        y[nx] <- y[1L]
     }
     z <- .C("spline_coef",
 	    method=as.integer(method),

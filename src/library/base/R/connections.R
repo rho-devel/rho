@@ -18,7 +18,7 @@ stdin <- function() .Internal(stdin())
 stdout <- function() .Internal(stdout())
 stderr <- function() .Internal(stderr())
 
-readLines <- function(con = stdin(), n = -1, ok = TRUE, warn = TRUE,
+readLines <- function(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
                       encoding = "unknown")
 {
     if(is.character(con)) {
@@ -29,13 +29,13 @@ readLines <- function(con = stdin(), n = -1, ok = TRUE, warn = TRUE,
 }
 
 
-writeLines <- function(text, con = stdout(), sep = "\n")
+writeLines <- function(text, con = stdout(), sep = "\n", useBytes = FALSE)
 {
     if(is.character(con)) {
         con <- file(con, "w")
         on.exit(close(con))
     }
-    invisible(.Internal(writeLines(text, con, sep)))
+    invisible(.Internal(writeLines(text, con, sep, useBytes)))
 }
 
 open <- function(con, ...)
@@ -48,7 +48,7 @@ open.connection <- function(con, open = "r", blocking = TRUE, ...)
 
 isOpen <- function(con, rw = "")
 {
-    rw <- pmatch(rw, c("read", "write"), 0)
+    rw <- pmatch(rw, c("read", "write"), 0L)
     .Internal(isOpen(con, rw))
 }
 
@@ -92,10 +92,15 @@ unz <- function(description, filename, open = "",
                 encoding = getOption("encoding"))
     .Internal(unz(paste(description, filename, sep=":"), open, encoding))
 
-bzfile <- function(description, open = "", encoding = getOption("encoding"))
-    .Internal(bzfile(description, open, encoding))
+bzfile <- function(description, open = "", encoding = getOption("encoding"),
+                   compression = 9)
+    .Internal(bzfile(description, open, encoding, compression))
 
-socketConnection <- function(host= "localhost", port, server = FALSE,
+xzfile <- function(description, open = "", encoding = getOption("encoding"),
+                   compression = 6)
+    .Internal(xzfile(description, open, encoding, compression))
+
+socketConnection <- function(host = "localhost", port, server = FALSE,
                              blocking = FALSE, open = "a+",
                              encoding = getOption("encoding"))
     .Internal(socketConnection(host, port, server, blocking, open, encoding))
@@ -106,9 +111,13 @@ rawConnection <- function(object, open = "r") {
 
 rawConnectionValue <- function(con) .Internal(rawConnectionValue(con))
 
-textConnection <- function(object, open = "r", local = FALSE) {
+textConnection <- function(object, open = "r", local = FALSE,
+                           encoding = c("", "bytes", "UTF-8"))
+{
     env <- if (local) parent.frame() else .GlobalEnv
-    .Internal(textConnection(deparse(substitute(object)), object, open, env))
+    type <- match(match.arg(encoding), c("", "bytes", "UTF-8"))
+    .Internal(textConnection(deparse(substitute(object)), object, open,
+                             env, type))
 }
 
 textConnectionValue <- function(con) .Internal(textConnectionValue(con))
@@ -119,7 +128,7 @@ seek <- function(con, ...)
 seek.connection <- function(con, where = NA, origin = "start", rw = "", ...)
 {
     origin <- pmatch(origin, c("start", "current", "end"))
-    rw <- pmatch(rw, c("read", "write"), 0)
+    rw <- pmatch(rw, c("read", "write"), 0L)
     if(is.na(origin))
         stop("'origin' must be one of 'start', 'current' or 'end'")
     .Internal(seek(con, as.double(where), origin, rw))
@@ -152,13 +161,13 @@ summary.connection <- function(object, ...)
 showConnections <- function(all = FALSE)
 {
     set <- getAllConnections()
-    if(!all) set <- set[set > 2]
-    ans <- matrix("", length(set), 7)
+    if(!all) set <- set[set > 2L]
+    ans <- matrix("", length(set), 7L)
     for(i in seq_along(set)) ans[i, ] <- unlist(summary.connection(set[i]))
     rownames(ans) <- set
     colnames(ans) <- c("description", "class", "mode", "text", "isopen",
                        "can read", "can write")
-    if(!all) ans[ans[, 5] == "opened", , drop = FALSE]
+    if(!all) ans[ans[, 5L] == "opened", , drop = FALSE]
     else ans[, , drop = FALSE]
 }
 
@@ -171,19 +180,19 @@ closeAllConnections <- function()
 {
     # first re-divert any diversion of stderr.
     i <- sink.number(type = "message")
-    if(i > 0) sink(stderr(), type = "message")
+    if(i > 0L) sink(stderr(), type = "message")
     # now unwind the sink diversion stack.
     n <- sink.number()
-    if(n > 0) for(i in 1:n) sink()
+    if(n > 0L) for(i in seq_len(n)) sink()
     # get all the open connections.
     set <- getAllConnections()
-    set <- set[set > 2]
+    set <- set[set > 2L]
     # and close all user connections.
     for(i in seq_along(set)) close(getConnection(set[i]))
     invisible()
 }
 
-readBin <- function(con, what, n = 1, size = NA_integer_, signed = TRUE,
+readBin <- function(con, what, n = 1L, size = NA_integer_, signed = TRUE,
                     endian = .Platform$endian)
 {
     if(is.character(con)) {
@@ -191,15 +200,17 @@ readBin <- function(con, what, n = 1, size = NA_integer_, signed = TRUE,
         on.exit(close(con))
     }
     swap <- endian != .Platform$endian
-    if(!is.character(what) || length(what) != 1
-    	|| !(what %in% c("numeric", "double", "integer", "int", "logical",
-                         "complex", "character", "raw")))
-        what <- typeof(what)
+    if(!is.character(what) || is.na(what) ||
+       length(what) != 1L || ## hence length(what) == 1:
+       !any(what == c("numeric", "double", "integer", "int", "logical",
+	    "complex", "character", "raw")))
+	what <- typeof(what)
     .Internal(readBin(con, what, n, size, signed, swap))
 }
 
 writeBin <-
-    function(object, con, size = NA_integer_, endian = .Platform$endian)
+    function(object, con, size = NA_integer_, endian = .Platform$endian,
+             useBytes = FALSE)
 {
     swap <- endian != .Platform$endian
     if(!is.vector(object) || mode(object) == "list")
@@ -208,7 +219,7 @@ writeBin <-
         con <- file(con, "wb")
         on.exit(close(con))
     }
-    .Internal(writeBin(object, con, size, swap))
+    .Internal(writeBin(object, con, size, swap, useBytes))
 }
 
 readChar <- function(con, nchars, useBytes = FALSE)
@@ -221,7 +232,7 @@ readChar <- function(con, nchars, useBytes = FALSE)
 }
 
 writeChar <- function(object, con, nchars = nchar(object, type="chars"),
-                      eos = "")
+                      eos = "", useBytes = FALSE)
 {
     if(!is.character(object))
         stop("can only write character objects")
@@ -229,7 +240,7 @@ writeChar <- function(object, con, nchars = nchar(object, type="chars"),
         con <- file(con, "wb")
         on.exit(close(con))
     }
-    .Internal(writeChar(object, con, as.integer(nchars), eos))
+    .Internal(writeChar(object, con, as.integer(nchars), eos, useBytes))
 }
 
 gzcon <- function(con, level = 6, allowNonCompressed = TRUE)
@@ -243,4 +254,25 @@ socketSelect <- function(socklist, write = FALSE, timeout = NULL) {
     if (length(write) < length(socklist))
         write <- rep(write, length.out = length(socklist))
     .Internal(sockSelect(socklist, write, timeout))
+}
+
+memCompress <-
+    function(from, type = c("gzip", "bzip2", "xz", "none"))
+{
+    if(is.character(from))
+        from <- charToRaw(paste(from, collapse = "\n"))
+    else if(!is.raw(from)) stop("'from' must be raw or character")
+    type <- match(match.arg(type), c("none", "gzip", "bzip2", "xz"))
+    .Internal(memCompress(from, type))
+}
+
+memDecompress <-
+    function(from,
+             type = c("unknown", "gzip", "bzip2", "xz", "none"),
+             asChar = FALSE)
+{
+    type <- match(match.arg(type),
+                  c("none", "gzip", "bzip2", "xz", "unknown"))
+    ans <- .Internal(memDecompress(from, type))
+    if(asChar) rawToChar(ans) else ans
 }

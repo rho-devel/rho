@@ -71,14 +71,14 @@ TukeyHSD(x, which, ordered = FALSE, conf.level = 0.95, \dots)
 
   Yandell, B. S. (1997)
   \emph{Practical Data Analysis for Designed Experiments}.
-  Chapman \& Hall.
+  Chapman & Hall.
 }
 \author{
   Douglas Bates
 }
 \seealso{
   \code{\link{aov}}, \code{\link{qtukey}}, \code{\link{model.tables}},
-  \code{\link[multcomp]{simint}}
+  \code{\link[multcomp]{glht}} in package \pkg{multcomp}.
 }
 \examples{
 require(graphics)

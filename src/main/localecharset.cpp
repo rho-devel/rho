@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -74,8 +74,8 @@
 
 /* name_value struct */
 typedef struct {
-    CXXRconst char *name;
-    CXXRconst char *value;
+    CXXRCONST char *name;
+    CXXRCONST char *value;
 } name_value;
 
 
@@ -523,7 +523,7 @@ static const name_value known[] = {
     {"sjis", "SHIFT_JIS"},
     {"euccn", "GB2312"},
     {"big5-hkscs", "BIG5-HKSCS"},
-#if __APPLE__
+#ifdef __APPLE__
     /* known additional Apple encodings (see locale -a) up to Mac OS X 10.5,
        unlike other systems they correspond directly */
     {"iso8859-1", "ISO8859-1"},
@@ -545,7 +545,8 @@ static const name_value known[] = {
 static const int known_count = (sizeof(known)/sizeof(name_value));
 
 
-static CXXRconst char* name_value_search(const char *name, const name_value table[],
+#ifndef __APPLE__
+static CXXRCONST char* name_value_search(const char *name, const name_value table[],
 			       const int table_count)
 {
     int min, mid, max;
@@ -594,9 +595,9 @@ static CXXRconst char* name_value_search(const char *name, const name_value tabl
     }
     return (NULL);
 }
+#endif
 
-
-CXXRconst char *locale2charset(const char *locale)
+CXXRCONST char *locale2charset(const char *locale)
 {
     static char charset[128];
 
@@ -604,7 +605,9 @@ CXXRconst char *locale2charset(const char *locale)
     char enc[128], *p;
     int i;
     int  cp;
-    CXXRconst char *value;
+#ifndef __APPLE__
+    CXXRCONST char *value;
+#endif
 
     if ((locale == NULL) || (0 == strcmp(locale, "NULL")))
 	locale = setlocale(LC_CTYPE,NULL);
@@ -620,7 +623,7 @@ CXXRconst char *locale2charset(const char *locale)
      */
     memset(la_loc, 0, sizeof(la_loc));
     memset(enc, 0, sizeof(enc));
-    p = strrchr(locale, '.');
+    p = const_cast<char*>(strrchr(locale, '.'));
     if(p) {
 	strncpy(enc, p+1, sizeof(enc)-1);
 	strncpy(la_loc, locale, sizeof(la_loc)-1);
@@ -712,7 +715,7 @@ CXXRconst char *locale2charset(const char *locale)
 
     }
 
-#if __APPLE__
+#ifdef __APPLE__
     /* on Mac OS X *all* real locales w/o encoding part are UTF-8 locales
        (C and POSIX are virtual and taken care of previously) */
     return "UTF-8";

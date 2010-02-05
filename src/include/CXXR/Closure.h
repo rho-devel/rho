@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,6 +45,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
@@ -71,8 +72,8 @@ namespace CXXR {
 	 * @param env pointer to the environment in which the Closure
 	 *          is to be evaluated.
 	 */
-	Closure(const PairList* formal_args, const RObject* body,
-		Environment* env = GlobalEnvironment);
+	Closure(const PairList* formal_args, RObject* body,
+		Environment* env = Environment::global());
 
 	/** @brief Copy constructor.
 	 *
@@ -80,7 +81,7 @@ namespace CXXR {
 	 */
 	Closure(const Closure& pattern)
 	    : FunctionBase(pattern), m_debug(false),
-	      m_formals(pattern.m_formals), m_body(pattern.m_body),
+	      m_matcher(pattern.m_matcher), m_body(pattern.m_body),
 	      m_environment(pattern.m_environment)
 	{}
 
@@ -118,7 +119,7 @@ namespace CXXR {
 	 */
 	const PairList* formalArgs() const
 	{
-	    return m_formals;
+	    return m_matcher->formalArgs();
 	}
 
 	/** @brief Set debugging status.
@@ -151,6 +152,10 @@ namespace CXXR {
 	    return "closure";
 	}
 
+	// Virtual function of FunctionBase:
+	RObject* apply(const Expression* call,
+		       const PairList* args, Environment* env);
+
 	// Virtual functions of RObject:
         Closure* clone() const;
 	const char* typeName() const;
@@ -162,8 +167,8 @@ namespace CXXR {
 	void detachReferents();
     private:
 	bool m_debug;
-	GCEdge<const PairList> m_formals;
-	GCEdge<const RObject> m_body;
+	GCEdge<const ArgMatcher> m_matcher;
+	GCEdge<> m_body;
 	GCEdge<Environment> m_environment;
 
 	// Declared private to ensure that Environment objects are
@@ -173,6 +178,10 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
+
+	// Called by apply() to handle debugging:
+	void debug(Environment* newenv, const Expression* call,
+		   const PairList* args, Environment* argsenv);
     };
 }  // namespace CXXR
 
@@ -194,7 +203,7 @@ extern "C" {
      *
      * @return pointer to the created closure object.
      */
-    SEXP Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho);
+    SEXP Rf_mkCLOSXP(SEXP formal_args, SEXP body, SEXP env);
 
     /** @brief Access the body of a CXXR::Closure.
      *
@@ -230,28 +239,6 @@ extern "C" {
     }
 #endif
 
-    /** @brief Query debugging status.
-     *
-     * @param x Pointer to a CXXR::Closure object.
-     *
-     * @return \c true if debugging is set, i.e. evaluations of the
-     *         function should run under the browser.
-     *
-     * @note In CXXR, DEBUG() is applicable only to closures; use
-     * ENV_DEBUG() to query the debugging (single-stepping) state
-     * for environments.
-     */
-#ifndef __cplusplus
-    Rboolean DEBUG(SEXP x);
-#else
-    inline Rboolean DEBUG(SEXP x)
-    {
-	using namespace CXXR;
-	const Closure& clos = *SEXP_downcast<const Closure*>(x);
-	return Rboolean(clos.debugging());
-    }
-#endif
-
     /** @brief Access formal arguments of a CXXR::Closure.
      *
      * @param x Pointer to a CXXR::Closure object (checked).
@@ -266,6 +253,37 @@ extern "C" {
 	using namespace CXXR;
 	const Closure& clos = *SEXP_downcast<Closure*>(x);
 	return const_cast<PairList*>(clos.formalArgs());
+    }
+#endif
+
+    /** @brief Query debugging status.
+     *
+     * @param x Pointer to a CXXR::Closure object.
+     *
+     * @return \c true if debugging is set, i.e. evaluations of the
+     *         function should run under the browser.
+     *
+     * @note In CXXR, RDEBUG() is applicable only to closures; use
+     * ENV_DEBUG() to query the debugging (single-stepping) state
+     * for environments.
+     */
+#ifndef __cplusplus
+    Rboolean RDEBUG(SEXP x);
+#else
+    inline Rboolean RDEBUG(SEXP x)
+    {
+	using namespace CXXR;
+	const Closure& clos = *SEXP_downcast<const Closure*>(x);
+	return Rboolean(clos.debugging());
+    }
+#endif
+
+#ifndef __cplusplus
+    int RSTEP(SEXP x);
+#else
+    inline int RSTEP(SEXP x)
+    {
+	return 0;
     }
 #endif
 
@@ -296,18 +314,26 @@ extern "C" {
      *
      * @param v The new debugging state.
      *
-     * @note In CXXR, SET_DEBUG() is applicable only to closures; use
+     * @note In CXXR, SET_RDEBUG() is applicable only to closures; use
      * SET_ENV_DEBUG() to set the debugging (single-stepping) state
      * for environments.
      */
 #ifndef __cplusplus
-    void SET_DEBUG(SEXP x, Rboolean v);
+    void SET_RDEBUG(SEXP x, Rboolean v);
 #else
-    inline void SET_DEBUG(SEXP x, Rboolean v)
+    inline void SET_RDEBUG(SEXP x, Rboolean v)
     {
 	using namespace CXXR;
 	Closure& clos = *SEXP_downcast<Closure*>(x);
 	clos.setDebugging(v);
+    }
+#endif
+
+#ifndef __cplusplus
+    void SET_RSTEP(SEXP x, int v);
+#else
+    inline void SET_RSTEP(SEXP x, int v)
+    {
     }
 #endif
 

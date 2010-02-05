@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -97,7 +97,7 @@ PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
 {
     PairList* ans = 0;
     while (sz--)
-	ans = cons(0, ans);
+	ans = construct(0, ans);
     return ans;
 }
 
@@ -130,7 +130,16 @@ SEXP Rf_allocList(unsigned int n)
 
 SEXP Rf_cons(SEXP cr, SEXP tl)
 {
-    return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
+    return PairList::construct(cr, SEXP_downcast<PairList*>(tl));
+}
+
+Rboolean IS_ACTIVE_BINDING(SEXP b)
+{
+    const ConsCell* cc = SEXP_downcast<ConsCell*>(b);
+    if (cc->sexptype() != LISTSXP)
+	return FALSE;
+    const PairList* pl = static_cast<const PairList*>(cc);
+    return Rboolean(pl->m_active_binding);
 }
 
 SEXP SETCDR(SEXP x, SEXP y)

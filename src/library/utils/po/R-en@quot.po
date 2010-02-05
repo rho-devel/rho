@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-10-06 07:30\n"
-"PO-Revision-Date: 2008-10-06 07:30\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
+"PO-Revision-Date: 2009-12-10 19:18\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -60,15 +60,6 @@ msgstr "no Sweave file with name ‘%s’ found"
 
 msgid "%d Sweave files for basename '%s' found:"
 msgstr "%d Sweave files for basename ‘%s’ found:"
-
-msgid "Found invalid multi-byte character data."
-msgstr "Found invalid multi-byte character data."
-
-msgid "Cannot re-encode because 'iconv' is not available."
-msgstr "Cannot re-encode because ‘iconv’ is not available."
-
-msgid "Try running R in a single-byte locale."
-msgstr "Try running R in a single-byte locale."
 
 msgid "more than one syntax specification found, using the first one"
 msgstr "more than one syntax specification found, using the first one"
@@ -109,6 +100,19 @@ msgstr "elements of ‘what’ after the first will be ignored"
 
 msgid "%d occurrences in %s"
 msgstr "%d occurrences in %s"
+
+msgid "Invalid 'filter' argument."
+msgstr "Invalid ‘filter’ argument."
+
+msgid "Could not find aspell or ispell executable."
+msgstr "Could not find aspell or ispell executable."
+
+msgid ""
+"Running aspell failed with diagnostics:\n"
+"%s"
+msgstr ""
+"Running aspell failed with diagnostics:\n"
+"%s"
 
 msgid ""
 "Use <code> %s </code> \n"
@@ -269,11 +273,14 @@ msgstr "no help file found for ‘%s’"
 msgid "more than one help file found: using package '%s'"
 msgstr "more than one help file found: using package ‘%s’"
 
-msgid "'%s' has a help file but no examples file"
-msgstr "‘%s’ has a help file but no examples file"
+msgid "'%s' has a help file but no examples"
+msgstr "‘%s’ has a help file but no examples"
 
 msgid "test '%s' is not available"
 msgstr "test ‘%s’ is not available"
+
+msgid "Line number missing"
+msgstr "Line number missing"
 
 msgid "'fix' requires a name"
 msgstr "‘fix’ requires a name"
@@ -292,6 +299,15 @@ msgstr "‘form’ must be a two-sided formula with one term on each side"
 
 msgid "'topic' should be a name, length-one character vector or reserved word"
 msgstr "‘topic’ should be a name, length-one character vector or reserved word"
+
+msgid "offline = TRUE is deprecated: use help_type =\"postscript\""
+msgstr "offline = TRUE is deprecated: use help_type =“postscript”"
+
+msgid "chmhelp = TRUE is no longer supported: using help_type =\"text\""
+msgstr "chmhelp = TRUE is no longer supported: using help_type =“text”"
+
+msgid "htmhelp = TRUE is deprecated: use help_type =\"html\""
+msgstr "htmhelp = TRUE is deprecated: use help_type =“html”"
 
 msgid "No documentation for '%s' in specified packages and libraries:"
 msgstr "No documentation for ‘%s’ in specified packages and libraries:"
@@ -321,25 +337,8 @@ msgstr "Choose one"
 msgid "Using the first match ..."
 msgstr "Using the first match ..."
 
-msgid ""
-"No HTML help for '%s' is available:\n"
-"corresponding file is missing"
-msgstr ""
-"No HTML help for ‘%s’ is available:\n"
-"corresponding file is missing"
-
-msgid "Compiled HTML is not installed"
-msgstr "Compiled HTML is not installed"
-
-msgid "CHM file could not be displayed"
-msgstr "CHM file could not be displayed"
-
-msgid ""
-"No CHM help for '%s' in package '%s' is available:\n"
-"the CHM file for the package is missing"
-msgstr ""
-"No CHM help for ‘%s’ in package ‘%s’ is available:\n"
-"the CHM file for the package is missing"
+msgid "HTML help is unavailable"
+msgstr "HTML help is unavailable"
 
 msgid "R Help on '%s'"
 msgstr "R Help on ‘%s’"
@@ -350,9 +349,6 @@ msgid ""
 msgstr ""
 "No text help for ‘%s’ is available:\n"
 "corresponding file is missing"
-
-msgid "problems running R CMD Rdconv"
-msgstr "problems running R CMD Rdconv"
 
 msgid ""
 "No offline help for '%s' is available:\n"
@@ -373,11 +369,17 @@ msgstr "do not know what to search"
 msgid "argument 'help.db' is deprecated"
 msgstr "argument ‘help.db’ is deprecated"
 
-msgid "Rebuilding the data base ..."
-msgstr "Rebuilding the data base ..."
+msgid "Rebuilding the help.search() database"
+msgstr "Rebuilding the help.search() database"
+
+msgid "..."
+msgstr "..."
 
 msgid "Packages {.readRDS() sequentially}:"
 msgstr "Packages {.readRDS() sequentially}:"
+
+msgid "."
+msgstr "."
 
 msgid "could not find package '%s'"
 msgstr "could not find package ‘%s’"
@@ -400,10 +402,12 @@ msgstr "removing all entries with invalid multi-byte character data"
 msgid "saving the database ..."
 msgstr "saving the database ..."
 
-msgid ""
-"no information in the data base for package '%s': need 'rebuild = TRUE'?"
+msgid "... database rebuilt"
+msgstr "... database rebuilt"
+
+msgid "no information in the database for package '%s': need 'rebuild = TRUE'?"
 msgstr ""
-"no information in the data base for package '%s': need 'rebuild = TRUE'?"
+"no information in the database for package '%s': need 'rebuild = TRUE'?"
 
 msgid "incorrect 'agrep' specification"
 msgstr "incorrect ‘agrep’ specification"
@@ -432,6 +436,9 @@ msgstr "menu() cannot be used non-interactively"
 
 msgid "Enter an item from the menu, or 0 to exit"
 msgstr "Enter an item from the menu, or 0 to exit"
+
+msgid "invalid query"
+msgstr "invalid query"
 
 msgid "'%s' is a formal generic function; S3 methods will not likely be found"
 msgstr "‘%s’ is a formal generic function; S3 methods will not likely be found"
@@ -526,8 +533,11 @@ msgstr "Further steps are described in '%s'."
 msgid "unable to access index for repository %s"
 msgstr "unable to access index for repository %s"
 
-msgid "invalid 'oldPkgs'; must be as result from old.packages()"
-msgstr "invalid 'oldPkgs'; must be as result from old.packages()"
+msgid "Invalid 'filters' argument."
+msgstr "Invalid ‘filters’ argument."
+
+msgid "invalid 'oldPkgs'; must be a result from old.packages()"
+msgstr "invalid 'oldPkgs'; must be a result from old.packages()"
 
 msgid "illformed 'instPkgs' matrix"
 msgstr "illformed ‘instPkgs’ matrix"
@@ -535,11 +545,8 @@ msgstr "illformed ‘instPkgs’ matrix"
 msgid "no installed packages for (invalid?) 'lib.loc=%s'"
 msgstr "no installed packages for (invalid?) ‘lib.loc=%s’"
 
-msgid "bundle '%s' is incompletely installed"
-msgstr "bundle ‘%s’ is incompletely installed"
-
-msgid "bundle '%s' has extra contents %s"
-msgstr "bundle ‘%s’ has extra contents %s"
+msgid "read.dcf() error on file '%s'"
+msgstr "read.dcf() error on file ‘%s’"
 
 msgid "'priority' must be character or NULL"
 msgstr "‘priority’ must be character or NULL"
@@ -574,8 +581,10 @@ msgstr "cannot set repositories non-interactively"
 msgid "--- Please select repositories for use in this session ---"
 msgstr "--- Please select repositories for use in this session ---"
 
-msgid "Enter one or more numbers separated by spaces"
-msgstr "Enter one or more numbers separated by spaces"
+msgid ""
+"Enter one or more numbers separated by spaces, or an empty line to cancel"
+msgstr ""
+"Enter one or more numbers separated by spaces, or an empty line to cancel"
 
 msgid "'%s' must be supplied"
 msgstr "‘%s’ must be supplied"
@@ -585,6 +594,13 @@ msgstr "every package depends on at least one other"
 
 msgid "packages %s are mutually dependent"
 msgstr "packages %s are mutually dependent"
+
+msgid ""
+"Do not know which element of 'lib' to install dependencies into\n"
+"skipping dependencies"
+msgstr ""
+"Do not know which element of ‘lib’ to install dependencies into\n"
+"skipping dependencies"
 
 msgid "no packages were specified"
 msgstr "no packages were specified"
@@ -610,6 +626,9 @@ msgstr "unable to install packages"
 msgid "unable to create"
 msgstr "unable to create"
 
+msgid "inferring 'repos = NULL' from the file name"
+msgstr "inferring ‘repos = NULL’ from the file name"
+
 msgid "cannot install MacOS X binary packages on Windows"
 msgstr "cannot install MacOS X binary packages on Windows"
 
@@ -633,11 +652,11 @@ msgid "unable to create temporary directory '%s'"
 msgstr "unable to create temporary directory ‘%s’"
 
 msgid ""
-"Do not know which element of 'lib' to install dependencies into\n"
-"skipping dependencies"
+"installation of one of more packages failed,\n"
+"  probably %s"
 msgstr ""
-"Do not know which element of ‘lib’ to install dependencies into\n"
-"skipping dependencies"
+"installation of one of more packages failed,\n"
+"  probably %s"
 
 msgid ""
 "The downloaded packages are in\n"
@@ -791,6 +810,12 @@ msgstr "cannot coerce ‘x’ to roman"
 msgid "Invalid roman numeral(s): %s"
 msgstr "Invalid roman numeral(s): %s"
 
+msgid "length mismatch: bug in code!"
+msgstr "length mismatch: bug in code!"
+
+msgid "Processing file"
+msgstr "Processing file"
+
 msgid "no valid packages were specified"
 msgstr "no valid packages were specified"
 
@@ -824,11 +849,50 @@ msgstr "‘object’ does not have valid levels()"
 msgid "'str.default': 'le' is NA"
 msgstr "'str.default': ‘le’ is NA"
 
+msgid "'digits' and 'digits.d' are both specified and the latter is not used"
+msgstr "‘digits’ and ‘digits.d’ are both specified and the latter is not used"
+
+msgid "no lines found in %s"
+msgstr "no lines found in %s"
+
 msgid "profile does not contain memory information"
 msgstr "profile does not contain memory information"
 
 msgid "no events were recorded"
 msgstr "no events were recorded"
+
+msgid "'compressed' must be logical or character"
+msgstr "‘compressed’ must be logical or character"
+
+msgid "untar: using cmd ="
+msgstr "untar: using cmd ="
+
+msgid "invalid octal digit"
+msgstr "invalid octal digit"
+
+msgid "'tarfile' must be a character string or a connection"
+msgstr "‘tarfile’ must be a character string or a connection"
+
+msgid "incomplete block on file"
+msgstr "incomplete block on file"
+
+msgid "checksum error for entry '%s'"
+msgstr "checksum error for entry ‘%s’"
+
+msgid "unsupported entry type"
+msgstr "unsupported entry type"
+
+msgid "file '%s' not found"
+msgstr "file ‘%s’ not found"
+
+msgid "file path is too long"
+msgstr "file path is too long"
+
+msgid "storing paths of more than 100 bytes is not portable:"
+msgstr "storing paths of more than 100 bytes is not portable:"
+
+msgid "linked path is too long"
+msgstr "linked path is too long"
 
 msgid ""
 "vignette '%s' found more than once,\n"
@@ -845,6 +909,9 @@ msgstr "vignette ‘%s’ has no PDF"
 
 msgid "select.list() cannot be used non-interactively"
 msgstr "select.list() cannot be used non-interactively"
+
+msgid "'title' must be NULL or a length-1 character vector"
+msgstr "‘title’ must be NULL or a length-1 character vector"
 
 msgid "Enter zero or more numbers separated by space"
 msgstr "Enter zero or more numbers separated by space"
@@ -885,21 +952,23 @@ msgstr "no download method found"
 msgid "download had nonzero exit status"
 msgstr "download had nonzero exit status"
 
-msgid "Using non-linked HTML file: hyperlinks may be incorrect"
-msgstr "Using non-linked HTML file: hyperlinks may be incorrect"
+msgid "running '%s' failed"
+msgstr "running ‘%s’ failed"
 
-msgid "options(\"browser\") not set"
-msgstr "options(“browser”) not set"
+msgid "'%s' produced no output file: sent to printer?"
+msgstr "‘%s’ produced no output file: sent to printer?"
+
+msgid "creation of '%s' failed"
+msgstr "creation of ‘%s’ failed"
+
+msgid "Saving help page to"
+msgstr "Saving help page to"
 
 msgid "invalid browser name, check options(\"browser\")."
 msgstr "invalid browser name, check options(“browser”)."
 
-msgid ""
-"Changing the default browser (as specified by the 'browser' option) to the "
-"given browser so that it gets used for all future help requests."
-msgstr ""
-"Changing the default browser (as specified by the ‘browser’ option) to the "
-"given browser so that it gets used for all future help requests."
+msgid "help.start() requires the HTTP server to be running"
+msgstr "help.start() requires the HTTP server to be running"
 
 msgid ""
 "If '%s' is already running, it is *not* restarted, and you must switch to "
@@ -917,35 +986,14 @@ msgstr "‘url’ must be a non-empty character string"
 msgid "'browser' must be a non-empty character string"
 msgstr "‘browser’ must be a non-empty character string"
 
-msgid "Making links in per-session dir ..."
-msgstr "Making links in per-session dir ..."
-
-msgid "cannot create HTML package index"
-msgstr "cannot create HTML package index"
-
-msgid "cannot create HTML search index"
-msgstr "cannot create HTML search index"
+msgid "Making packages.html"
+msgstr "Making packages.html"
 
 msgid "Updating HTML index of packages in '.Library'"
 msgstr "Updating HTML index of packages in ‘.Library’"
 
-msgid "'memory.size()' is Windows-specific"
-msgstr "‘memory.size()’ is Windows-specific"
-
-msgid "'memory.limit()' is Windows-specific"
-msgstr "‘memory.limit()’ is Windows-specific"
-
-msgid "unable to find the HTML help"
-msgstr "unable to find the HTML help"
-
-msgid "updating HTML package listing"
-msgstr "updating HTML package listing"
-
-msgid "fixing URLs in non-standard libraries"
-msgstr "fixing URLs in non-standard libraries"
-
-msgid "If nothing happens, you should open '%s' yourself"
-msgstr "If nothing happens, you should open ‘%s’ yourself"
+msgid "'tar' returned non-zero exit code %d"
+msgstr "‘tar’ returned non-zero exit code %d"
 
 msgid "package '%s' successfully unpacked and MD5 sums checked"
 msgstr "package ‘%s’ successfully unpacked and MD5 sums checked"
@@ -956,11 +1004,27 @@ msgstr "malformed bundle DESCRIPTION file, no Contains field"
 msgid "bundle '%s' successfully unpacked and MD5 sums checked"
 msgstr "bundle ‘%s’ successfully unpacked and MD5 sums checked"
 
-msgid "failed to create '%s'"
-msgstr "failed to create ‘%s’"
-
 msgid "unable to move temporary installation '%s' to '%s'"
 msgstr "unable to move temporary installation ‘%s’ to ‘%s’"
+
+msgid "cannot remove prior installation of package"
+msgstr "cannot remove prior installation of package"
+
+msgid "'memory.size()' is Windows-specific"
+msgstr "‘memory.size()’ is Windows-specific"
+
+msgid "'memory.limit()' is Windows-specific"
+msgstr "‘memory.limit()’ is Windows-specific"
+
+msgid ""
+"If nothing happens, you should open\n"
+"'%s' yourself"
+msgstr ""
+"If nothing happens, you should open\n"
+"‘%s’ yourself"
+
+msgid "failed to create '%s'"
+msgstr "failed to create ‘%s’"
 
 msgid "cannot remove prior installation of package '%s'"
 msgstr "cannot remove prior installation of package ‘%s’"
@@ -971,8 +1035,8 @@ msgstr "zipfile ‘%s’ not found"
 msgid "updating HTML package descriptions"
 msgstr "updating HTML package descriptions"
 
-msgid "cannot update '%s'"
-msgstr "cannot update ‘%s’"
+msgid "cannot update HTML package index"
+msgstr "cannot update HTML package index"
 
 msgid "winDialog() cannot be used non-interactively"
 msgstr "winDialog() cannot be used non-interactively"
@@ -983,15 +1047,6 @@ msgstr "winDialogString() cannot be used non-interactively"
 msgid "'pb' is not from class \"winProgressBar\""
 msgstr "‘pb’ is not from class “winProgressBar”"
 
-msgid "this function is intended to work with the Aqua GUI"
-msgstr "this function is intended to work with the Aqua GUI"
-
-msgid "'tar' returned non-zero exit code %d"
-msgstr "‘tar’ returned non-zero exit code %d"
-
-msgid "cannot remove prior installation of package"
-msgstr "cannot remove prior installation of package"
-
 msgid "class discarded from column %s"
 msgid_plural "classes discarded from columns %s"
 msgstr[0] "class discarded from column %s"
@@ -1001,11 +1056,6 @@ msgid "object '%s' not found"
 msgid_plural "objects '%s' not found"
 msgstr[0] "object ‘%s’ not found"
 msgstr[1] "objects ‘%s’ not found"
-
-msgid "'lib' element '%s'  is not a writable directory"
-msgid_plural "'lib' elements '%s' are not writable directories"
-msgstr[0] "‘lib’ element ‘%s’  is not a writable directory"
-msgstr[1] "‘lib’ elements ‘%s’ are not writable directories"
 
 msgid "package %s is not available"
 msgid_plural "packages %s are not available"
@@ -1021,6 +1071,11 @@ msgid "also installing the dependency %s"
 msgid_plural "also installing the dependencies %s"
 msgstr[0] "also installing the dependency %s"
 msgstr[1] "also installing the dependencies %s"
+
+msgid "'lib' element '%s'  is not a writable directory"
+msgid_plural "'lib' elements '%s' are not writable directories"
+msgstr[0] "‘lib’ element ‘%s’  is not a writable directory"
+msgstr[1] "‘lib’ elements ‘%s’ are not writable directories"
 
 msgid "package '%s' is in use and will not be installed"
 msgid_plural "packages '%s' are in use and will not be installed"

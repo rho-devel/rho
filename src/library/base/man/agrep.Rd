@@ -1,6 +1,6 @@
 % File src/library/base/man/agrep.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{agrep}
@@ -36,25 +36,22 @@ agrep(pattern, x, ignore.case = FALSE, value = FALSE,
       \item{\code{insertions}:}{maximum number/fraction of insertions}
       \item{\code{deletions}:}{maximum number/fraction of deletions}
       \item{\code{substitutions}:}{maximum number/fraction of
-	substitutions}
+        substitutions}
     }
     If \code{all} is missing, it is set to 10\%, the other components
     default to \code{all}.  The component names can be abbreviated.
   }
   \item{useBytes}{logical. in a multibyte locale, should the comparison
-    be character-by-chracter (the default) or byte-by-byte.}
+    be character-by-character (the default) or byte-by-byte.}
 }
 \details{
   The Levenshtein edit distance is used as measure of approximateness:
   it is the total number of insertions, deletions and substitutions
   required to transform one string into another.
 
-  The function is a simple interface to the \code{apse} library
-  developed by Jarkko Hietaniemi (also used in the Perl String::Approx
-  module), modified to work with multibyte character sets.  To save
-  space it only supports the first 65536 characters of UTF-8 (where all
-  the characters for human languages lie).  Note that it can be quite
-  slow in UTF-8, and \code{useBytes = TRUE} will be much faster.
+  As from \R 2.10.0 this uses \code{tre} by Ville Laurikari
+  (\url{http://http://laurikari.net/tre/}), which supports MBCS
+  character matching much better than the previous version.
 }
 \value{
   Either a vector giving the indices of the elements that yielded a
@@ -62,7 +59,7 @@ agrep(pattern, x, ignore.case = FALSE, value = FALSE,
   coercion, preserving names but no other attributes).
 }
 \author{
-  Original version by David Meyer, based on C code by Jarkko Hietaniemi.
+  Original version by David Meyer. Current version by Brian Ripley.
 }
 \seealso{
   \code{\link{grep}}

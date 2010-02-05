@@ -36,12 +36,6 @@ recover()
   you do decide to quit interactive debugging, call
   \code{\link{dump.frames}} directly while browsing in any frame (see
   the examples).
-%
-% seems no longer needed (tested 2.4.1)
-%   \emph{WARNING}: The special \code{Q} command to go directly from the
-%   browser to the prompt level of the evaluator currently interacts with
-%   \code{recover} to effectively turn off the error option for the next
-%   error (on subsequent errors, \code{recover} will be called normally).
 }
 \value{
   Nothing useful is returned.  However, you \emph{can} invoke
@@ -52,7 +46,7 @@ recover()
 
 \section{Compatibility Note}{
   The \R \code{recover} function can be used in the same way as the
-  S-Plus function of the same name; therefore, the error option shown is
+  S function of the same name; therefore, the error option shown is
   a compatible way to specify the error action.  However, the actual
   functions are essentially unrelated and interact quite differently
   with the user.  The navigating commands \code{up} and \code{down} do

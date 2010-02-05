@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -44,6 +44,7 @@
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
+#include "CXXR/Symbol.h"
 
 namespace CXXR {
     class Environment;
@@ -77,14 +78,37 @@ namespace CXXR {
 	 */
 	class Binding {
 	public:
+	    /** @brief How the binding arrived at its current setting.
+	     */
+	    enum Origin {
+		EXPLICIT = 0, /**< The Binding was specified
+			       * explicitly, e.g. by supplying an
+			       * actual argument to a function, or by
+			       * direct assignment into the relevant
+			       * Environment.
+			       */
+		MISSING,      /**< The Binding corresponds to a formal
+			       * argument of a function, for which no
+			       * actual value was supplied, and which
+			       * has no default value.  This is the
+			       * default for newly created Binding
+			       * objects.
+			       */
+		DEFAULTED     /**< The Binding represents the default
+			       * value of the formal argument of a
+			       * function call, no actual argument
+			       * having been supplied.
+			       */
+	    };
+
 	    /** @brief Default constructor
 	     *
 	     * initialize() must be called before the Binding object
 	     * can be used.
 	     */
 	    Binding()
-		: m_frame(0), m_symbol(0), m_provenance(0), m_value(0), m_missing(0),
-		  m_active(false), m_locked(false)
+		: m_frame(0), m_symbol(0), m_provenance(0), m_value(Symbol::missingArgument()),
+		  m_origin(MISSING), m_active(false), m_locked(false)
 	    {}
 
 	    /** @brief Represent this Binding as a PairList element.
@@ -118,8 +142,35 @@ namespace CXXR {
 	     *
 	     * @param new_value Pointer (possibly null) to the new
 	     *          value.  See function description.
+	     *
+	     * @param origin Origin of the newly-assigned value.
 	     */
-	    void assign(RObject* new_value);
+	    void assign(RObject* new_value, Origin origin = EXPLICIT);
+
+	    /** @brief Look up bound value, forcing Promises if
+	     * necessary.
+	     *
+	     * If the value of this Binding is anything other than a
+	     * Promise, this function returns a pointer to that bound
+	     * value.  However, if the value is a Promise, the
+	     * function forces the Promise if necessary, and returns a
+	     * pointer to the value of the Promise.
+	     *
+	     * @return The first element of the returned pair is a
+	     * pointer - possibly null - to the bound value, or the
+	     * Promise value if the bound value is a Promise.  The
+	     * second element is true iff the function call resulted
+	     * in the forcing of a Promise.
+	     *
+	     * @note If this Binding's frame has a read monitor set,
+	     * the function will call it only in the event that a
+	     * Promise is forced (and in that event the evaluation of
+	     * the Promise may trigger other read and write monitors).
+	     *
+	     * @note It is conceivable that forcing a Promise will
+	     * result in the destruction of this Binding object.
+	     */
+	    std::pair<RObject*, bool> forcedValue();
 
 	    /** @brief Get pointer to Frame.
 	     *
@@ -212,18 +263,13 @@ namespace CXXR {
 		return m_locked;
 	    }
 
-	    /** @brief Binding's missing status.
+	    /** @brief Origin of this Binding.
 	     *
-	     * @return the 'missing' status of this Binding.  0 means
-	     * 'not missing'.
-	     *
-	     * @todo Document the other possible return values, and
-	     * clarify the relationship of this field to
-	     * <tt>R_MissingArg</tt>.
+	     * @return the Origin of this Binding.
 	     */
-	    short int missing() const
+	    Origin origin() const
 	    {
-		return m_missing;
+		return m_origin;
 	    }
 
 	    /** @brief Get raw value bound to the Symbol.
@@ -238,6 +284,7 @@ namespace CXXR {
 	     */
 	    RObject* rawValue() const
 	    {
+		m_frame->monitorRead(*this);
 		return m_value;
 	    }
 
@@ -256,8 +303,11 @@ namespace CXXR {
 	     *
 	     * @param function The function used to implement the
 	     *          active binding.
+	     *
+	     * @param origin Origin now to be associated with this Binding.
 	     */
-	    void setFunction(FunctionBase* function);
+	    void setFunction(FunctionBase* function,
+			     Origin origin = EXPLICIT);
 
 	    /** @brief Lock/unlock this Binding.
 	     *
@@ -268,16 +318,6 @@ namespace CXXR {
 		m_locked = on;
 	    }
 
-	    /** @brief Set the 'missing' status of this Binding.
-	     *
-	     * Raises an error if the Binding is locked.
-	     *
-	     * @param missingval The required 'missing' status.  Refer
-	     *          to the documentation of missing() for the
-	     *          possible values.
-	     */
-	    void setMissing(short int missingval);
-
 	    /** @brief Define the object to which this Binding's
 	     *         Symbol is bound.
 	     *
@@ -286,8 +326,10 @@ namespace CXXR {
 	     * @param new_value Pointer (possibly null) to the RObject
 	     *          to which this Binding's Symbol is now to be
 	     *          bound.
+	     *
+	     * @param origin Origin of the newly assigned value.
 	     */
-	    void setValue(RObject* new_value);
+	    void setValue(RObject* new_value, Origin origin = EXPLICIT);
 
 	    /** @brief Bound symbol.
 	     *
@@ -323,7 +365,7 @@ namespace CXXR {
 	    GCEdge<const Symbol> m_symbol;
 			GCEdge<const Provenance> m_provenance;
 	    GCEdge<> m_value;
-	    short int m_missing;
+	    Origin m_origin;
 	    bool m_active;
 	    bool m_locked;
 	};
@@ -351,7 +393,7 @@ namespace CXXR {
 	 */
 	virtual PairList* asPairList() const = 0;
 
-	/** @briefing Access binding of an already-defined Symbol.
+	/** @brief Access binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to the Binding of a
 	 * Symbol.  In this variant the pointer is non-const, and
@@ -365,7 +407,7 @@ namespace CXXR {
 	 */
 	virtual Binding* binding(const Symbol* symbol) = 0;
 
-	/** @briefing Access const binding of an already-defined Symbol.
+	/** @brief Access const binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to a PairList element
 	 * representing the binding of a symbol.  In this variant the
@@ -465,6 +507,12 @@ namespace CXXR {
 	 * It is permitted to apply this function to a locked Frame.
 	 */
 	virtual void lockBindings() = 0;
+
+	/** @brief Number of Bindings in this Frame.
+	 *
+	 * @return The number of Bindings currently in this Frame.
+	 */
+	virtual size_t numBindings() const = 0;
 
 	/** @brief Get or create a Binding for a Symbol.
 	 *

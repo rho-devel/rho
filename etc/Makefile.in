@@ -82,8 +82,13 @@ clean:
 	@if test "$(BUILDDIR_IS_SRCDIR)" = no ; then \
 	  rm -f $(INSTFILES) ; \
 	fi
+## do it this way to cope with subarchitectures
 distclean: clean
 	-@test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
+	@if test -n "$(R_ARCH)"; then \
+	  rm -rf .$(R_ARCH) ; \
+	fi
+
 maintainer-clean: distclean
 
 distdir: $(DISTFILES)

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -89,7 +89,7 @@ SEXP R_getRegisteredRoutines(SEXP);
 SEXP R_isMethodsDispatchOn(SEXP);
 SEXP R_traceOnOff(SEXP);
 SEXP R_isS4Object(SEXP);
-SEXP R_setS4Object(SEXP, SEXP);
+    SEXP R_setS4Object(SEXP, SEXP, SEXP);
 SEXP R_do_new_object(SEXP);
 
 SEXP Rrowsum_matrix(SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -121,6 +121,8 @@ SEXP R_lazyLoadDBinsertValue(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP R_lazyLoadDBflush(SEXP);
 
 SEXP R_get_primname(SEXP op) ;
+
+SEXP R_setFileTime(SEXP name, SEXP time);
 
 #ifdef BYTECODE
 SEXP R_getbcprofcounts(void);

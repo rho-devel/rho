@@ -71,8 +71,8 @@ x \%/\% y
 \details{
   The binary arithmetic operators are generic functions: methods can be
   written for them individually or via the
-  \code{\link[base:groupGeneric]{Ops}} group generic function.  (See
-  \code{\link[base:groupGeneric]{Ops}} for how dispatch is computed.)
+  \code{\link[=S3groupGeneric]{Ops}} group generic function.  (See
+  \code{\link[=S3groupGeneric]{Ops}} for how dispatch is computed.)
 
   If applied to arrays the result will be an array if this is sensible
   (for example it will not if the recycling rule has been invoked).
@@ -107,7 +107,7 @@ x \%/\% y
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{sqrt}} for miscellaneous and \code{\link{Special}} for special

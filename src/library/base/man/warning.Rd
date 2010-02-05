@@ -63,10 +63,13 @@ suppressWarnings(expr)
   \code{suppressWarnings} evaluates its expression in a context that
   ignores all warnings.
 }
+\value{
+  The warning message as \code{\link{character}} string, invisibly.
+}
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{stop}} for fatal errors,

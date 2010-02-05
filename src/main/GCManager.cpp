@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -56,7 +56,6 @@ size_t GCManager::s_threshold;
 size_t GCManager::s_min_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
-bool GCManager::s_tortured = false;
 ostream* GCManager::s_os = 0;
 
 void (*GCManager::s_pre_gc)() = 0;
@@ -82,32 +81,12 @@ namespace {
 #endif /* DEBUG_GC */
 }
 
-void GCManager::adjustThreshold(size_t bytes_needed)
-{
-    s_threshold = max(s_min_threshold,
-		      2*(MemoryBank::bytesAllocated() + bytes_needed));
-}
-
-void GCManager::cue(size_t bytes_wanted)
-{
-    GCNode::gclite();
-    if (MemoryBank::bytesAllocated() + bytes_wanted >= s_threshold)
-	gc(bytes_wanted);
-}
-
-void GCManager::enableGC(size_t initial_threshold)
-{
-    s_min_threshold = s_threshold = initial_threshold;
-    gc_count = 0;
-    MemoryBank::setGCCuer(cue);
-}
-
-void GCManager::gc(size_t bytes_wanted)
+void GCManager::gc()
 {
     static bool running_finalizers = false;
     // Prevent recursion:
     if (running_finalizers) return;
-    gcController(bytes_wanted);
+    gcController();
     /* Run any eligible finalizers.  The return result of
        RunFinalizers is TRUE if any finalizers are actually run.
        There is a small chance that running finalizers here may
@@ -118,42 +97,35 @@ void GCManager::gc(size_t bytes_wanted)
     running_finalizers = false;
 }
 
-void GCManager::gcController(size_t bytes_wanted)
+void GCManager::gcController()
 {
-    gc_count++;
+    ++gc_count;
 
     s_max_bytes = max(s_max_bytes, MemoryBank::bytesAllocated());
     s_max_nodes = max(s_max_nodes, GCNode::numNodes());
 
-    /*BEGIN_SUSPEND_INTERRUPTS { */
     if (s_pre_gc) (*s_pre_gc)();
     GCNode::gc();
-    adjustThreshold(bytes_wanted);
+    s_threshold = max(size_t(0.9*s_threshold),
+		      max(s_min_threshold, 2*MemoryBank::bytesAllocated()));
     if (s_post_gc) (*s_post_gc)();
-    /* } END_SUSPEND_INTERRUPTS;*/
+}
 
-    /*
-    if (s_os) {
-	*s_os << "Garbage collection " << gc_count
-	      << " = " << s_gen_gc_counts[0];
-	for (unsigned int i = 0; i < s_num_old_generations; ++i)
-	    *s_os << "+" << s_gen_gc_counts[i + 1];
-	*s_os << " (level " << gens_collected << ") ... ";
-	DEBUG_GC_SUMMARY(gens_collected == num_old_generations);
-	double bytes = MemoryBank::bytesAllocated();
-	double bfrac = (100.0 * bytes) / s_threshold;
-	double mbytes = 0.1*ceil(10.0*bytes/1048576.0);  // 2^20
-	*s_os << '\n' << fixed << setprecision(1)
-	      << mbytes << " Mbytes used ("
-	      << int(bfrac + 0.5) << "%)\n";
-    }
-    */
+void GCManager::initialize()
+{
+    setGCThreshold(numeric_limits<size_t>::max());
+    gc_count = 0;
 }
 
 void GCManager::resetMaxTallies()
 {
     s_max_bytes = MemoryBank::bytesAllocated();
     s_max_nodes = GCNode::numNodes();
+}
+
+void GCManager::setGCThreshold(size_t initial_threshold)
+{
+    s_min_threshold = s_threshold = initial_threshold;
 }
 
 ostream* GCManager::setReporting(ostream* os)

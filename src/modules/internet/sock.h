@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -78,6 +78,10 @@ int R_SockConnect(int port, char *host);
 int R_SockClose(int sockp);
 int R_SockRead(int sockp, void *buf, int maxlen, int blocking);
 int R_SockWrite(int sockp, const void *buf, int len);
+
+/* from Rhttpd.c */
+int in_R_HTTPDCreate(const char *ip, int port);
+void in_R_HTTPDStop(void);
 
 #ifdef __cplusplus
 } // extern "C"

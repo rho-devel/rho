@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -62,9 +62,9 @@ namespace CXXR {
 	/** @brief Blank string.
 	 * @return <tt>const</tt> pointer to the string "".
 	 */
-	static const CachedString* blank()
+	static CachedString* blank()
 	{
-	    return *s_blank;
+	    return s_blank;
 	}
 
 	/** @brief Get a pointer to a CachedString object.
@@ -85,8 +85,8 @@ namespace CXXR {
 	 * created) representing the specified text in the specified
 	 * encoding.
 	 */
-	static const CachedString* obtain(const std::string& str,
-					  cetype_t encoding = CE_NATIVE);
+	static CachedString* obtain(const std::string& str,
+				    cetype_t encoding = CE_NATIVE);
 
 	/** @brief The name by which this type is known in R.
 	 *
@@ -95,6 +95,15 @@ namespace CXXR {
 	static const char* staticTypeName()
 	{
 	    return "char (cached)";
+	}
+
+	/** @brief Access encapsulated std::string.
+	 *
+	 * @return Reference to the encapsulated std::string.
+	 */
+	const std::string& stdstring() const
+	{
+	    return m_key_val_pr->first.first;
 	}
 
 	// Virtual function of String:
@@ -132,7 +141,7 @@ namespace CXXR {
 	map::value_type* m_key_val_pr;
 
 	static map* s_cache;
-	static GCRoot<const CachedString>* s_blank;
+	static CachedString* s_blank;
 
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
@@ -164,8 +173,7 @@ namespace CXXR {
 	    return s_cache;
 	}
 
-	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();
@@ -215,8 +223,7 @@ extern "C" {
 #else
     inline SEXP Rf_mkChar(const char * str)
     {
-	return
-	    const_cast<CXXR::CachedString*>(CXXR::CachedString::obtain(str));
+	return CXXR::CachedString::obtain(str);
     }
 #endif
     
@@ -240,8 +247,7 @@ extern "C" {
 #else
     inline SEXP Rf_mkCharCE(const char * str, cetype_t encoding)
     {
-	using namespace CXXR;
-	return const_cast<CachedString*>(CachedString::obtain(str, encoding));
+	return CXXR::CachedString::obtain(str, encoding);
     }
 #endif
 

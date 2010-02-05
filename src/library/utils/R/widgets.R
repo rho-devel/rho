@@ -17,12 +17,14 @@
 select.list <- function(list, preselect=NULL, multiple=FALSE, title=NULL)
 {
     if(!interactive()) stop("select.list() cannot be used non-interactively")
+    if(!is.null(title) && (!is.character(title) || length(title) != 1))
+        stop("'title' must be NULL or a length-1 character vector")
     if(.Platform$OS.type == "windows" | .Platform$GUI == "AQUA")
         return(.Internal(select.list(list, preselect, multiple, title)))
     ## simple text-based alternatives.
     if(!multiple) {
         res <- menu(list, , title)
-        if(res < 1 || res > length(list)) return("")
+        if(res < 1L || res > length(list)) return("")
         else return(list[res])
     } else {
         nc <- length(list)
@@ -31,22 +33,23 @@ select.list <- function(list, preselect=NULL, multiple=FALSE, title=NULL)
         else list %in% preselect
         op <- paste(format(seq_len(nc)), ": ",
                     ifelse(def, "+", " "), " ", list, sep="")
-        if(nc > 10) {
+        if(nc > 10L) {
             fop <- format(op)
-            nw <- nchar(fop[1], "w") + 2
+            nw <- nchar(fop[1L], "w") + 2
             ncol <- getOption("width") %/% nw
-            if(ncol > 1)
+            if(ncol > 1L)
                 op <- paste(fop, c(rep("  ", ncol - 1), "\n"),
                             sep ="", collapse="")
             cat("", op, sep="\n")
         } else cat("", op, "", sep="\n")
 	cat(gettext("Enter zero or more numbers separated by space\n"))
 	repeat {
-            res <- try(scan("", what=0, quiet=TRUE, nlines=1), silent=TRUE)
-	    if(!inherits(res, "try-error")) break
+            res <- tryCatch(scan("", what=0, quiet=TRUE, nlines=1),
+                            error = identity)
+	    if(!inherits(res, "error")) break
 	    cat(gettext("Invalid input, please try again\n"))
 	}
-        if(!length(res) || (length(res) == 1 && !res[1])) return(character(0))
+        if(!length(res) || (length(res) == 1L && !res[1L])) return(character(0L))
         res <- sort(res[1 <= res && res <= nc])
         return(list[res])
     }

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -165,13 +165,8 @@ static void printStringVector(const StringVector* sv, int n, int quote,
 	if (i > 0 && width + w + R_print.gap > R_print.width) {
 	    DO_newline;
 	}
-#ifdef BUGGY
-	Rprintf("%*s%s", R_print.gap, "",
-		EncodeString(str, w, quote, Rprt_adj_left));
-#else
 	Rprintf("%*s%s", R_print.gap, "",
 		EncodeString(str, w, quote, Rprt_adj(R_print.right)));
-#endif
 	width += w + R_print.gap;
     }
     Rprintf("\n");

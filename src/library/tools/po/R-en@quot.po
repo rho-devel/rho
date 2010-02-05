@@ -22,10 +22,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-08 14:13\n"
-"PO-Revision-Date: 2008-09-08 14:13\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
+"PO-Revision-Date: 2009-12-10 19:18\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
@@ -66,8 +66,8 @@ msgstr "Undocumented %s:"
 msgid "directory '%s' does not contain R code"
 msgstr "directory ‘%s’ does not contain R code"
 
-msgid "directory '%s' does not contain Rd sources"
-msgstr "directory ‘%s’ does not contain Rd sources"
+msgid "directory '%s' does not contain Rd objects"
+msgstr "directory ‘%s’ does not contain Rd objects"
 
 msgid ""
 "Functions/methods with usage in documentation object '%s' but not in code:"
@@ -113,17 +113,17 @@ msgstr "Slots for class ‘%s’"
 msgid "name"
 msgstr "name"
 
-msgid "code"
-msgstr "code"
-
-msgid "docs"
-msgstr "docs"
-
 msgid "Data codoc mismatches from documentation object '%s':"
 msgstr "Data codoc mismatches from documentation object '%s':"
 
 msgid "Variables in data frame '%s'"
 msgstr "Variables in data frame ‘%s’"
+
+msgid "code"
+msgstr "code"
+
+msgid "docs"
+msgstr "docs"
 
 msgid "Undocumented arguments in documentation object '%s'"
 msgstr "Undocumented arguments in documentation object ‘%s’"
@@ -189,6 +189,9 @@ msgstr "package name ‘%s’ seems invalid; using directory name ‘%s’ inste
 msgid "Packages required but not available:"
 msgstr "Packages required but not available:"
 
+msgid "Packages required and available but unsuitable version:"
+msgstr "Packages required and available but unsuitable version:"
+
 msgid "Former standard packages required but now defunct:"
 msgstr "Former standard packages required but now defunct:"
 
@@ -204,79 +207,6 @@ msgstr ""
 
 msgid "Namespace dependencies not required:"
 msgstr "Namespace dependencies not required:"
-
-msgid "Package Rd sources were installed without preserving Rd file names."
-msgstr "Package Rd sources were installed without preserving Rd file names."
-
-msgid "Please reinstall using a current version of R."
-msgstr "Please reinstall using a current version of R."
-
-msgid "Rd files with syntax errors:"
-msgstr "Rd files with syntax errors:"
-
-msgid "Rd files with likely Rd problems:"
-msgstr "Rd files with likely Rd problems:"
-
-msgid "Unaccounted top-level text in file '%s':"
-msgstr "Unaccounted top-level text in file '%s':"
-
-msgid "Following section '%s'"
-msgstr "Following section ‘%s’"
-
-msgid "Rd files with unknown encoding:"
-msgstr "Rd files with unknown encoding:"
-
-msgid "Rd files with invalid non-ASCII metadata:"
-msgstr "Rd files with invalid non-ASCII metadata:"
-
-msgid "Rd files with non-ASCII section titles:"
-msgstr "Rd files with non-ASCII section titles:"
-
-msgid "Rd files with missing or empty '\\name':"
-msgstr "Rd files with missing or empty '\\name':"
-
-msgid "Rd files with missing or empty '\\title':"
-msgstr "Rd files with missing or empty '\\title':"
-
-msgid "Rd files without '%s':"
-msgstr "Rd files without '%s':"
-
-msgid "These entries are required in an Rd file."
-msgstr "These entries are required in an Rd file."
-
-msgid "Rd files with duplicate '%s':"
-msgstr "Rd files with duplicate '%s':"
-
-msgid "These entries must be unique in an Rd file."
-msgstr "These entries must be unique in an Rd file."
-
-msgid "Rd files with unknown sections:"
-msgstr "Rd files with unknown sections:"
-
-msgid "Rd files with non-standard keywords:"
-msgstr "Rd files with non-standard keywords:"
-
-msgid ""
-"Each '\\keyword' entry should specify one of the standard keywords (as "
-"listed in file 'KEYWORDS' in the R documentation directory)."
-msgstr ""
-"Each ‘\\keyword’ entry should specify one of the standard keywords (as "
-"listed in file ‘KEYWORDS’ in the R documentation directory)."
-
-msgid "Rd files with duplicated alias '%s':"
-msgstr "Rd files with duplicated alias '%s':"
-
-msgid "Rd files with empty sections:"
-msgstr "Rd files with empty sections:"
-
-msgid "Found invalid multi-byte character data."
-msgstr "Found invalid multi-byte character data."
-
-msgid "Cannot re-encode because iconv is not available."
-msgstr "Cannot re-encode because iconv is not available."
-
-msgid "Try running R in a single-byte locale."
-msgstr "Try running R in a single-byte locale."
 
 msgid "Malformed package name"
 msgstr "Malformed package name"
@@ -372,11 +302,14 @@ msgstr "Unknown encoding with non-ASCII data"
 msgid "Non-standard license specification:"
 msgstr "Non-standard license specification:"
 
+msgid "Standardizable: %s"
+msgstr "Standardizable: %s"
+
+msgid "Standardized license specification:"
+msgstr "Standardized license specification:"
+
 msgid "Invalid license file pointers: %s"
 msgstr "Invalid license file pointers: %s"
-
-msgid "Verifiable as open source: %s"
-msgstr "Verifiable as open source: %s"
 
 msgid "Non-portable flags in variable '%s':"
 msgstr "Non-portable flags in variable '%s':"
@@ -384,8 +317,24 @@ msgstr "Non-portable flags in variable '%s':"
 msgid "package must be loaded"
 msgstr "package must be loaded"
 
+msgid "Obsolete package(s) %s in Rd xrefs"
+msgstr "Obsolete package(s) %s in Rd xrefs"
+
+msgid "Package(s) unavailable to check Rd xrefs: %s"
+msgstr "Package(s) unavailable to check Rd xrefs: %s"
+
+msgid "Unknown package(s) %s in Rd xrefs"
+msgstr "Unknown package(s) %s in Rd xrefs"
+
 msgid "Missing link(s) in documentation object '%s':"
 msgstr "Missing link(s) in documentation object '%s':"
+
+msgid ""
+"See the information in section 'Cross-references' of the 'Writing R "
+"Extensions' manual."
+msgstr ""
+"See the information in section ‘Cross-references’ of the ‘Writing R "
+"Extensions’ manual."
 
 msgid "found %s"
 msgstr "found %s"
@@ -398,6 +347,12 @@ msgstr "‘::’ or ‘:::’ imports not declared from:"
 
 msgid "'library' or 'require' calls not declared from:"
 msgstr "‘library’ or ‘require’ calls not declared from:"
+
+msgid "Rd files with duplicated name '%s':"
+msgstr "Rd files with duplicated name '%s':"
+
+msgid "Rd files with duplicated alias '%s':"
+msgstr "Rd files with duplicated alias '%s':"
 
 msgid "Generics g in env ="
 msgstr "Generics g in env ="
@@ -426,12 +381,6 @@ msgstr "Generics without methods in"
 msgid ":"
 msgstr ":"
 
-msgid "argument 'lines' must be a character vector"
-msgstr "argument ‘lines’ must be a character vector"
-
-msgid "encoding '%s' is not portable"
-msgstr "encoding ‘%s’ is not portable"
-
 msgid "argument 'file' must be a character string or connection"
 msgstr "argument ‘file’ must be a character string or connection"
 
@@ -454,47 +403,23 @@ msgstr "Rd files must have a non-empty \\title."
 msgid "argument 'outFile' must be a character string or connection"
 msgstr "argument ‘outFile’ must be a character string or connection"
 
-msgid "directory '%s' does not contain Rd objects"
-msgstr "directory ‘%s’ does not contain Rd objects"
-
-msgid "unterminated section '%s'"
-msgstr "unterminated section ‘%s’"
-
-msgid "incomplete section 'section{%s}'"
-msgstr "incomplete section ‘section{%s}’"
-
-msgid "unterminated section 'section{%s}'"
-msgstr "unterminated section ‘section{%s}’"
-
-msgid "argument 'txt' must be a character string"
-msgstr "argument ‘txt’ must be a character string"
-
-msgid "unmatched \\item name in '\\item{%s'"
-msgstr "unmatched \\item name in ‘\\item{%s’"
-
-msgid "no \\item description for item '%s'"
-msgstr "no \\item description for item ‘%s’"
-
-msgid "unmatched \\item description for item '%s'"
-msgstr "unmatched \\item description for item ‘%s’"
-
-msgid "unclosed \\link"
-msgstr "unclosed \\link"
-
-msgid "unclosed \\%s"
-msgstr "unclosed \\%s"
-
-msgid "Rd syntax errors found"
-msgstr "Rd syntax errors found"
-
-msgid "Syntax error in documentation object '%s':"
-msgstr "Syntax error in documentation object '%s':"
+msgid "you must specify 'dir' or 'files'"
+msgstr "you must specify ‘dir’ or ‘files’"
 
 msgid "cannot deal with Rd objects with missing/empty names"
 msgstr "cannot deal with Rd objects with missing/empty names"
 
 msgid "missing/empty \\name field in Rd file(s)"
 msgstr "missing/empty \\name field in Rd file(s)"
+
+msgid "No help on %s found in RdDB %s"
+msgstr "No help on %s found in RdDB %s"
+
+msgid "more than one \\examples section, using the first"
+msgstr "more than one \\examples section, using the first"
+
+msgid "invalid value for '%s' : %s"
+msgstr "invalid value for ‘%s’ : %s"
 
 msgid "unable to create temp directory"
 msgstr "unable to create temp directory"
@@ -600,17 +525,194 @@ msgstr "ERROR: this R is version %s, bundle ‘%s’ requires R %s %s"
 msgid "ERROR: this R is version %s, required is R %s %s"
 msgstr "ERROR: this R is version %s, required is R %s %s"
 
+msgid "No files in this directory"
+msgstr "No files in this directory"
+
+msgid "No results found"
+msgstr "No results found"
+
+msgid "No help found for topic %s in any package."
+msgstr "No help found for topic %s in any package."
+
+msgid "Help on topic '%s' was found in the following packages:"
+msgstr "Help on topic ‘%s’ was found in the following packages:"
+
+msgid "No package index found for package %s"
+msgstr "No package index found for package %s"
+
+msgid "No package named %s could be found"
+msgstr "No package named %s could be found"
+
+msgid "No help found for package %s"
+msgstr "No help found for package %s"
+
+msgid "Link %s in package %s could not be located"
+msgstr "Link %s in package %s could not be located"
+
+msgid "Unable to locate help document %s in package %s"
+msgstr "Unable to locate help document %s in package %s"
+
+msgid "No docs found for package %s"
+msgstr "No docs found for package %s"
+
+msgid "Only help files, %s and files under %s in a package can be viewed"
+msgstr "Only help files, %s and files under %s in a package can be viewed"
+
+msgid "DESCRIPTION"
+msgstr "DESCRIPTION"
+
+msgid "doc/"
+msgstr "doc/"
+
+msgid "unsupported URL %s"
+msgstr "unsupported URL %s"
+
+msgid "URL %s was not found"
+msgstr "URL %s was not found"
+
+msgid "httpd server disabled by R_DISABLE_HTTPD"
+msgstr "httpd server disabled by R_DISABLE_HTTPD"
+
+msgid "server already running"
+msgstr "server already running"
+
+msgid "server could not be started on an earlier attempt"
+msgstr "server could not be started on an earlier attempt"
+
+msgid "no running server to stop"
+msgstr "no running server to stop"
+
+msgid "starting httpd help server ..."
+msgstr "starting httpd help server ..."
+
+msgid "done"
+msgstr "done"
+
+msgid "failed to start the httpd server"
+msgstr "failed to start the httpd server"
+
 msgid "cannot read index information in file '%s'"
 msgstr "cannot read index information in file ‘%s’"
+
+msgid "ERROR:"
+msgstr "ERROR:"
+
+msgid "packaged installation of"
+msgstr "packaged installation of"
+
+msgid "as"
+msgstr "as"
+
+msgid ""
+"'cleanup' exists but is not executable -- see the 'R Installation and "
+"Adminstration Manual'"
+msgstr ""
+"‘cleanup’ exists but is not executable -- see the ‘R Installation and "
+"Adminstration Manual’"
+
+msgid ""
+"R include directory is empty -- perhaps need to install R-devel.rpm or "
+"similar"
+msgstr ""
+"R include directory is empty -- perhaps need to install R-devel.rpm or "
+"similar"
+
+msgid "running src/Makefile.win ..."
+msgstr "running src/Makefile.win ..."
+
+msgid "making DLL ..."
+msgstr "making DLL ..."
+
+msgid "... done"
+msgstr "... done"
+
+msgid "no source files found"
+msgstr "no source files found"
+
+msgid "empty 'data' directory"
+msgstr "empty ‘data’ directory"
+
+msgid "'--auto-zip' is for Windows only"
+msgstr "‘--auto-zip’ is for Windows only"
+
+msgid "-l option without value"
+msgstr "-l option without value"
+
+msgid "Warning: unknown option"
+msgstr "Warning: unknown option"
+
+msgid "cannot create temporary directory"
+msgstr "cannot create temporary directory"
+
+msgid "invalid package"
+msgstr "invalid package"
+
+msgid "--pkglock applies only to a single bundle/package"
+msgstr "--pkglock applies only to a single bundle/package"
+
+msgid "ERROR: no packages specified"
+msgstr "ERROR: no packages specified"
+
+msgid "ERROR: cannot cd to directory"
+msgstr "ERROR: cannot cd to directory"
+
+msgid "ERROR: no permission to install to directory"
+msgstr "ERROR: no permission to install to directory"
+
+msgid "ERROR: failed to lock directory"
+msgstr "ERROR: failed to lock directory"
+
+msgid ""
+"for modifying\n"
+"Try removing"
+msgstr ""
+"for modifying\n"
+"Try removing"
+
+msgid "ERROR: failed to create lock directory"
+msgstr "ERROR: failed to create lock directory"
+
+msgid "building a fake installation is disallowed"
+msgstr "building a fake installation is disallowed"
+
+msgid "--no-help overrides"
+msgstr "--no-help overrides"
+
+msgid "--"
+msgstr "--"
+
+msgid "-o option without value"
+msgstr "-o option without value"
+
+msgid "Converting Rd files to LaTeX ..."
+msgstr "Converting Rd files to LaTeX ..."
+
+msgid "finding HTML links ..."
+msgstr "finding HTML links ..."
+
+msgid "finding level-2 HTML links ..."
+msgstr "finding level-2 HTML links ..."
+
+msgid "-t option without value"
+msgstr "-t option without value"
+
+msgid "exactly one Rd file must be specified"
+msgstr "exactly one Rd file must be specified"
+
+msgid "no 'type' specified"
+msgstr "no ‘type’ specified"
+
+msgid "'type' must be one of 'txt', 'html', 'latex' or 'example'"
+msgstr "‘type’ must be one of 'txt', 'html', ‘latex’ or ‘example’"
+
+msgid "Bundle package:"
+msgstr "Bundle package:"
 
 msgid "there is no package called '%s'"
 msgstr "there is no package called ‘%s’"
 
 msgid "name space must not be loaded."
 msgstr "name space must not be loaded."
-
-msgid "package '%s' has no .rda file"
-msgstr "package ‘%s’ has no .rda file"
 
 msgid "package seems to be using lazy loading for data already"
 msgstr "package seems to be using lazy loading for data already"
@@ -633,6 +735,13 @@ msgstr "package contains no R code"
 msgid "package seems to be using lazy loading already"
 msgstr "package seems to be using lazy loading already"
 
+msgid ""
+"Cannot process chunk/lines:\n"
+"%s"
+msgstr ""
+"Cannot process chunk/lines:\n"
+"%s"
+
 msgid "cannot update HTML package index"
 msgstr "cannot update HTML package index"
 
@@ -641,6 +750,9 @@ msgstr "‘DESCRIPTION’ has ‘Encoding’ field and re-encoding is not possib
 
 msgid "cannot create HTML package index"
 msgstr "cannot create HTML package index"
+
+msgid "found encoding"
+msgstr "found encoding"
 
 msgid "argument 'pkg' must be of length 1"
 msgstr "argument ‘pkg’ must be of length 1"
@@ -663,14 +775,104 @@ msgstr "‘file’ must be a character string or connection"
 msgid "unimplemented encoding"
 msgstr "unimplemented encoding"
 
+msgid "file"
+msgstr "file"
+
+msgid "cannot be opened"
+msgstr "cannot be opened"
+
+msgid "testing '%s' failed"
+msgstr "testing ‘%s’ failed"
+
+msgid "Collecting examples for package"
+msgstr "Collecting examples for package"
+
+msgid "Running examples in package"
+msgstr "Running examples in package"
+
+msgid "Comparing"
+msgstr "Comparing"
+
+msgid "to"
+msgstr "to"
+
+msgid "..."
+msgstr "..."
+
+msgid "OK"
+msgstr "OK"
+
+msgid "no examples found"
+msgstr "no examples found"
+
+msgid "Running specific tests for package"
+msgstr "Running specific tests for package"
+
+msgid "Running"
+msgstr "Running"
+
+msgid "Running vignettes for package"
+msgstr "Running vignettes for package"
+
+msgid "creation of"
+msgstr "creation of"
+
+msgid "failed"
+msgstr "failed"
+
+msgid "no parsed files found"
+msgstr "no parsed files found"
+
+msgid "creating"
+msgstr "creating"
+
+msgid "running code in"
+msgstr "running code in"
+
+msgid "FAILED"
+msgstr "FAILED"
+
+msgid "comparing"
+msgstr "comparing"
+
+msgid "running strict specific tests"
+msgstr "running strict specific tests"
+
+msgid "running sloppy specific tests"
+msgstr "running sloppy specific tests"
+
+msgid "running regression tests"
+msgstr "running regression tests"
+
+msgid "comparing 'reg-plot.ps' to 'reg-plot.ps.save' ..."
+msgstr "comparing ‘reg-plot.ps’ to ‘reg-plot.ps.save’ ..."
+
+msgid "running tests of plotting Latin-1"
+msgstr "running tests of plotting Latin-1"
+
+msgid "expect failure or some differences if not in a Latin or UTF-8 locale"
+msgstr "expect failure or some differences if not in a Latin or UTF-8 locale"
+
+msgid "comparing 'reg-plot-latin1.ps' to 'reg-plot-latin1.ps.save' ..."
+msgstr "comparing ‘reg-plot-latin1.ps’ to ‘reg-plot-latin1.ps.save’ ..."
+
+msgid "running tests of consistency of as/is.*"
+msgstr "running tests of consistency of as/is.*"
+
+msgid "running tests of random deviate generation -- fails occasionally"
+msgstr "running tests of random deviate generation -- fails occasionally"
+
+msgid "running tests of primitives"
+msgstr "running tests of primitives"
+
+msgid "running regexp regression tests"
+msgstr "running regexp regression tests"
+
+msgid "running tests to possibly trigger segfaults"
+msgstr "running tests to possibly trigger segfaults"
+
 msgid "test '%s' is not available"
 msgstr "test ‘%s’ is not available"
-
-msgid "no or more than one match"
-msgstr "no or more than one match"
-
-msgid "'iconv' is required"
-msgstr "‘iconv’ is required"
 
 msgid "argument 'x' must be a character vector"
 msgstr "argument ‘x’ must be a character vector"
@@ -711,9 +913,6 @@ msgstr "Call sequence:"
 msgid "Processing packages:"
 msgstr "Processing packages:"
 
-msgid "done"
-msgstr "done"
-
 msgid "parsing '%s'"
 msgstr "parsing ‘%s’"
 
@@ -732,3 +931,8 @@ msgid_plural ""
 "Found possibly global 'T' or 'F' in the following Rd example files:"
 msgstr[0] "Found possibly global ‘T’ or ‘F’ in the following Rd example file:"
 msgstr[1] "Found possibly global ‘T’ or ‘F’ in the following Rd example files:"
+
+msgid "Found .Internal call in the following function:"
+msgid_plural "Found .Internal calls in the following functions:"
+msgstr[0] "Found .Internal call in the following function:"
+msgstr[1] "Found .Internal calls in the following functions:"

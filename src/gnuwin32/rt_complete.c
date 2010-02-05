@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -43,7 +43,11 @@
 #include <string.h>
 #include <stdlib.h> /* for getenv */
 
-extern char *alloca(size_t);
+#ifdef __GNUC__
+# undef alloca
+# define alloca(x) __builtin_alloca((x))
+#endif
+
 #ifndef min
 /* in stdlib.h in Win64 headers */
 # define min(a, b) (a < b ? a : b)

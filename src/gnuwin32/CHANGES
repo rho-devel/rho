@@ -1,4 +1,4 @@
-			Dear Emacs, please make this -*-Text-*- mode!
+﻿
 	**************************************************
 	*	 Windows-specific changes to R		 *
 	*	 See the file NEWS for changes that	 *
@@ -8,9 +8,308 @@
 
 	**************************************************
 	*						 *
+	*	       2.10 SERIES NEWS			 *
+	*						 *
+	**************************************************
+
+
+		CHANGES IN R VERSION 2.10.0 patched
+
+
+BUG FIXES
+
+    o	The installer did not properly record help type choices in
+	R_HOME/etc/Rprofile.site.
+
+    o	Rcmd INSTALL once again uses --no-restore, for consistency with
+	the Unix version and R 2.9.2.
+	
+    o	The HTML package index was not constructed properly when the
+	library path was specified with backslashes.  (Patch submitted
+	by Gabor Grothendieck.)
+    	
+
+
+    		CHANGES IN R VERSION 2.10.0
+
+
+NEW FEATURES
+
+    o	windows() now has a parameter fillOddEven (default TRUE),
+	which controls the mode used for polygon fills of self-
+	intersecting shapes.
+	
+    o 	The functions arrangeWindows() and getWindowsHandles() have
+    	been added to give more programmatic control to the appearance
+    	of windows in an R session.
+    	
+    o	A Windows menu has been added to the SDI version of the R GUI,
+	and the corresponding menu in the MDI version has been
+	expanded slightly.
+
+    o	The libpng library has been updated to version 1.2.40.
+
+    o	The remaining Perl scripts build, check, Rprof, Sd2Rd in
+	R_HOME/bin now have extension .pl.
+
+    o	Rcmd (or R CMD) can now run .sh (shell) and .pl (Perl) scripts
+	anywhere on the path (as well as .bat and .exe files as before).
+
+
+PACKAGE INSTALLATION
+
+    o	Rcmd SHLIB (which is used by Rcmd INSTALL) now calls 'make'
+	without a target, rather than target 'all'.  This is now the
+	same as on Unix, and was announced in the NEWS for 2.9.0.
+
+    o	Help files are no longer zipped: rendering as text, HTML, latex
+	or examples is now done when needed.
+
+	Options --use-zip and --use-zip-help in R CMD INSTALL are no
+	longer available and --auto-zip only zips data (or not).
+
+	Help in packages installed under 2.9.x may not work correctly,
+	and a warning is given when such a package is attached by
+	library().  Re-installation of all packages is strongly
+	recommended (use update.packages(checkBuilt = TRUE)).
+
+	Binary packages are installed without CHM help if they contain
+	it (as those intended for 2.9.x may).
+
+    o	It is possible to install source packages without Rtools
+	provided they have no compiled code and no configure.win or
+	cleanup.win script.
+
+
+INSTALLATION
+
+    o	Support for memory profiling is enabled in a standard build
+	(this can be changed by editing config.h).
+
+    o	CHM help is no longer supported.
+
+    o	The help default for the standard installer is HTML help rather
+	than CHM help.
+
+    o	The categories in the installers have been simplified.  Now the
+	files to support installation of source packages are always
+	installed (they are now only 0.7Mb), and there are no longer
+	categories 'chtml', 'html/help', 'latex' and 'Rd'.
+
+
+BUG FIXES
+
+    o	'Rcmd open' now works as documented: previously
+	'Rcmd open.exe' was required.
+
+    o	cat(x, file=) in Rgui tried to interpret UTF-8-encoded strings
+	for the console rather than converting them to the native encoding.
+
+
+
+	**************************************************
+	*						 *
+	*	       2.9 SERIES NEWS			 *
+	*						 *
+	**************************************************
+
+
+		CHANGES IN R VERSION 2.9.2 patched
+
+
+BUG FIXES
+
+    o	If a nonstandard font were specified in Rconsole, the GUI
+    	preferences dialog would crash R.
+    	
+
+
+		CHANGES IN R VERSION 2.9.2
+
+
+NEW FEATURES
+
+    o	The --internet2 command line option sets a flag internally;
+	that flag is now visible and controllable from R using the
+	setInternet2() function.
+
+    o	file.access() proved unreliable on some network-mounted file
+	systems (probably a Samba issue), so it has been replaced in R
+	CMD INSTALL by a directory creation test.  (Reported by Simon
+	Urbanek and Ruth Ripley.)
+
+    o 	Sys.glob() attempts to handle UNC paths starting with \\ (which
+	according to the globbing rules is escaped \), thanks to a patch
+	from Tony Plate.
+	
+	
+BUG FIXES
+
+    o	Topics marked as "internal" in help files were not visible
+    	from CHM help.
+
+    o	The bmp(), jpeg(), png() and tiff() devices were not scaling
+	'pointsize' correctly with the resolution, for grid-based
+	plots (e.g. those from lattice) only.
+
+	These devices were scaling 'width' by res=1 if units="mm".
+
+
+
+		CHANGES IN R VERSION 2.9.1
+
+
+BUG FIXES
+
+    o	memory.limit(size) gave a spurious error message.
+    
+    o	file.choose() and the save console dialog did not set the
+	file filters properly.
+
+    o	Rcmd INSTALL --build in 2.9.0 did not make _bundles_ in the
+	format install.packages() expected.
+
+    o	Calling setWinProgressBar() on a closed bar gives an error
+	message, rather than crashing R.  (PR#13709)
+
+    o	sprintf("%a") works better in some cases thanks to a patch to
+	trio from Ei-ji Nakama.
+
+    o	Scrolling controls (e.g. from View() and edit()) did not handle
+	large line counts well.
+
+    o	capabilities("tiff") was incorrectly being reported as FALSE
+	(due to an error in the Windows-specific config.h file).
+
+    
+
+    		CHANGES IN R VERSION 2.9.0
+
+
+NEW FEATURES
+
+    o	memory.size() and memory.limit() now return rounded values.
+    
+    o	The Rgui preferences dialog now allows more flexible colour
+    	settings, and shows a sample of what will be displayed.
+
+    o	The file selection items on Rgui's File menu now work in
+	Unicode and so allow filenames not in the current encoding to
+	be selected.
+
+    o	file.choose() and choose.files() now work with Unicode file
+	names, so are able to select filenames not in the current
+	encoding.  (Note that we do not expect to handle directory
+	paths not in the current encoding and they will not be
+	retained as the current search directory.)
+
+    o	The script editor is now able to open files with names which are
+	not in the current encoding: however the title displayed will
+	replace invalid bytes by '?'.
+
+    o	file() and pipe() now open non-ASCII pathnames as Unicode:
+	this helps if R is running in a character set different from that
+	used by Windows.
+
+    o	help(topic, offline=TRUE) now creates a file called <topic>.tex,
+	rather than Rdoc.tex.
+
+    o	The trio library has been updated to version 1.13.
+
+    o	New function msgWindow() to allow a windows() device or the
+	Rgui console to be minimized, maximize or restored and (not
+	the console) hidden, and to have recording turned on or off.
+
+    o	Rcmd SHLIB now uses the same code as on a Unix-alike, and so
+	has some extra options.
+
+    o	iconv() is now done by a version of Yukihiro Nakadaira's
+	win_iconv rather than by libiconv.  This version is based on
+	Windows' codepages and is not quite as comprehensive as
+	libiconv: it is however much smaller and easier to maintain.
+	The implementation here is 100% compatible: you can drop in
+	libiconv's iconv.dll as a replacement if you need it, from
+	http://www.stats.ox.ac.uk/pub/Rtools/Riconv.dll.
+
+	To avoid name conflicts with Gtk+, it has been renamed to
+	Riconv.dll.
+
+    o	Completions in Rgui when selected from a list are now coloured
+	as user input rather than R output (wish of PR#13562).
+
+    o	Omegahat is no longer offered as a repository for binary
+	packages, as the latest versions it had were for R 2.7.x.
+
+
+INSTALLATION
+
+    o	The installer now checks for Windows 2000 or later.
+
+    o	There is a new component, 'Test files', which if selected will
+	install the package-specific tests and some generic tests.
+	Functions testInstalledPackages() and testInstalledBasic() in
+	package 'tools'can be used to test these.
+
+    o	Support for cross-building has been withdrawn.
+
+
+UTILITIES
+
+    o	RSetReg's name for the version-specific Registry entry in
+	development versions of R now matches that of the R installer.
+
+
+PACKAGE INSTALLATION
+
+    o	The way packages are installed has been overhauled to be much
+	closer to the Unix version: for example Rcmd SHLIB is used to
+	build DLLs (unless there is a src/Makefile.win).  This means
+	that various private variables and files that some packages
+	used are no longer available, notably DPKG (the documented
+	variable was and is R_PACKAGE_DIR) and MkRules (use
+	etc/Makeconf).
+
+    o	Rcmd INSTALL now supports the same option names as the
+	Unix-alike version: use 'Rcmd INSTALL --help' for details.
+	In particular, --docs is replaced by --no-docs, --no-text,
+	--no-html, --no-latex, --no-example and --no-chm.
+
+    o	Since iconv.dll has been renamed, packages wanting to link
+	against it need to use -lRiconv (or, hetter, use the entry
+	points in R_exts/Riconv.h).
+
+
+CUSTOMIZATION
+
+    o	The name of the producer can be changed in installer/Makefile
+	and front-ends/RSetReg.c.
+
+
+
+
+	**************************************************
+	*						 *
 	*	       2.8 SERIES NEWS			 *
 	*						 *
 	**************************************************
+
+
+		CHANGES IN R VERSION 2.8.1 patched
+
+
+BUG FIXES
+
+    o	getwd() could segfault (PR#13424).
+
+    o	dir() does a better job when dir is of rhe form "d:", the
+	currrent directory is not the root on that drive, and either
+	'full' or 'recursive' is true.
+
+    o	Sys.setenv() since R 2.7.0 was limited to 1023 characters for
+	the name+value, and silently truncated the value otherwise.
+	It should now work up to the Windows limit (which is
+	version-dependent).
+
 
 
 		CHANGES IN R VERSION 2.8.1
@@ -1531,7 +1830,7 @@ UNCATEGORIZED
     o	Overwrite mode in the console now works for MBCS charsets.
 	(Patch contributed by Haruki Koyanagi.)
 
-    o	Input from the Rgui console was changing the letter 255 ( in Latin-2)
+    o	Input from the Rgui console was changing the letter 255 (ÿ in Latin-2)
 	in the character set to letter 1.
 
     o	R CMD REMOVE in 2.2.0 removed the package(s) but failed to remake the
@@ -1894,3 +2193,7 @@ BUG FIXES
 	*	distribution.					*
 	*							*
 	*********************************************************
+
+%%% Local Variables:
+%%% mode: text
+%%% End:

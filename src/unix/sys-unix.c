@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -65,6 +65,8 @@
 /* on MacOS X it seems sys/resource.h needs sys/time.h first */
 # include <sys/resource.h>
 #endif
+
+#include <errno.h>
 
 extern Rboolean LoadInitFile;
 
@@ -281,11 +283,15 @@ SEXP attribute_hidden do_system(SEXP call, SEXP op, SEXP args, SEXP rho)
 #ifdef HAVE_POPEN
 	FILE *fp;
 	char *x = "r", buf[INTERN_BUFSIZE];
+	const char *cmd;
 	int i, j;
 	SEXP tchar, rval;
 
 	PROTECT(tlist);
-	fp = R_popen(translateChar(STRING_ELT(CAR(args), 0)), x);
+	cmd = translateChar(STRING_ELT(CAR(args), 0));
+	if(!(fp = R_popen(cmd, x)))
+	    error(_("cannot popen '%s', probable reason '%s'"),
+		  cmd, strerror(errno));
 	for (i = 0; fgets(buf, INTERN_BUFSIZE, fp); i++) {
 	    read = strlen(buf);
 	    if(read >= INTERN_BUFSIZE - 1)
@@ -408,7 +414,7 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 #include <pmmintrin.h>
 #endif
 
-/* used in package gnomeGUI */
+/* exported for Rembedded.h */
 void fpu_setup(Rboolean start)
 {
     if (start) {

@@ -5,14 +5,14 @@
 
 \name{influence.measures}
 \title{Regression Deletion Diagnostics}
-%
+
 \concept{studentized residuals}
 \concept{standardized residuals}
 \concept{Cook's distances}
 \concept{Covariance ratios}
 \concept{DFBETAs}
 \concept{DFFITs}
-%
+
 \alias{influence.measures}
 \alias{print.infl}
 \alias{summary.infl}
@@ -45,7 +45,7 @@ rstandard(model, \dots)
 
 rstudent(model, \dots)
 \method{rstudent}{lm}(model, infl = lm.influence(model, do.coef = FALSE),
-	 res = infl$wt.res, \dots)
+         res = infl$wt.res, \dots)
 \method{rstudent}{glm}(model, infl = influence(model, do.coef = FALSE), \dots)
 
 dffits(model, infl = , res = )
@@ -201,6 +201,6 @@ summary(lmI <- glm(cbind(yi, mi -yi) ~ xi, family = binomial))
 signif(cooks.distance(lmI), 3)# ~= Ci in Table 3, p.184
 (imI <- influence.measures(lmI))
 stopifnot(all.equal(imI$infmat[,"cook.d"],
-	  cooks.distance(lmI)))
+          cooks.distance(lmI)))
 }
 \keyword{regression}

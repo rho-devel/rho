@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996 Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2008 The R Development Core Team
+ *  Copyright (C) 1997-2009 The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -150,7 +150,7 @@ using namespace CXXR;
 
 #ifdef HAVE_DYNAMIC_LOADING
 
-#ifdef CACHE_DLL_SYM
+#ifdef CACHE_DLL_SYM  /* NOT USED */
 /* keep a record of symbols that have been found */
 R_CPFun CPFun[100];
 int nCPFun = 0;
@@ -164,7 +164,7 @@ static int CountDLL = 0;
 
 static DllInfo LoadedDLL[MAX_NUM_DLLS];
 
-static int addDLL(char *dpath, CXXRconst char *name, HINSTANCE handle);
+static int addDLL(char *dpath, CXXRCONST char *name, HINSTANCE handle);
 static SEXP Rf_MakeDLLInfo(DllInfo *info);
 
 static SEXP createRSymbolObject(SEXP sname, DL_FUNC f,
@@ -203,14 +203,6 @@ DllInfo *R_getEmbeddingDllInfo()
     }
     return dll;
 }
-
-#ifdef UNUSED
-DllInfo *
-getBaseDllInfo()
-{
-    return(&LoadedDLL[0]);
-}
-#endif
 
 Rboolean R_useDynamicSymbols(DllInfo *info, Rboolean value)
 {
@@ -635,7 +627,7 @@ static DllInfo *R_RegisterDLL(HINSTANCE handle, const char *path)
 }
 
 static int
-addDLL(char *dpath, CXXRconst char *DLLname, HINSTANCE handle)
+addDLL(char *dpath, CXXRCONST char *DLLname, HINSTANCE handle)
 {
     int ans = CountDLL;
     char *name = static_cast<char *>( malloc(strlen(DLLname)+1));
@@ -655,9 +647,11 @@ addDLL(char *dpath, CXXRconst char *DLLname, HINSTANCE handle)
     LoadedDLL[CountDLL].numCSymbols = 0;
     LoadedDLL[CountDLL].numCallSymbols = 0;
     LoadedDLL[CountDLL].numFortranSymbols = 0;
+    LoadedDLL[CountDLL].numExternalSymbols = 0;
     LoadedDLL[CountDLL].CSymbols = NULL;
     LoadedDLL[CountDLL].CallSymbols = NULL;
     LoadedDLL[CountDLL].FortranSymbols = NULL;
+    LoadedDLL[CountDLL].ExternalSymbols = NULL;
     CountDLL++;
 
     return(ans);
@@ -788,7 +782,7 @@ DL_FUNC attribute_hidden
 R_dlsym(DllInfo *info, char const *name,
 	R_RegisteredNativeSymbol *symbol)
 {
-    char buf[MAXIDSIZE+1];
+    char* buf = new char[Symbol::maxLength()+1];
     DL_FUNC f;
 
     f = R_getDLLRegisteredSymbol(info, name, symbol);
@@ -798,9 +792,9 @@ R_dlsym(DllInfo *info, char const *name,
     if(info->useDynamicLookup == FALSE) return(NULL);
 
 #ifdef HAVE_NO_SYMBOL_UNDERSCORE
-    snprintf(buf, MAXIDSIZE+1, "%s", name);
+    snprintf(buf, Symbol::maxLength()+1, "%s", name);
 #else
-    snprintf(buf, MAXIDSIZE+1,"_%s", name);
+    snprintf(buf, Symbol::maxLength()+1,"_%s", name);
 #endif
 
 #ifdef HAVE_F77_UNDERSCORE
@@ -823,6 +817,7 @@ R_dlsym(DllInfo *info, char const *name,
     }
 #endif
 
+    delete buf;
     return f;
 }
 
@@ -1120,7 +1115,7 @@ R_getSymbolInfo(SEXP sname, SEXP spackage, SEXP withRegistrationInfo)
 
     if(f)
 	sym = createRSymbolObject(sname, f, &symbol,
-				  Rboolean(LOGICAL(withRegistrationInfo)[0]));
+				  CXXRCONSTRUCT(Rboolean, LOGICAL(withRegistrationInfo)[0]));
 
     return(sym);
 }
@@ -1178,7 +1173,7 @@ createRSymbolObject(SEXP sname, DL_FUNC f, R_RegisteredNativeSymbol *symbol,
 	   the number of arguments and the classname.
 	*/
 	int nargs = -1;
-	CXXRconst char *className = "";
+	CXXRCONST char *className = "";
 	switch(symbol->type) {
 	case R_C_SYM:
 	    nargs = symbol->symbol.c->numArgs;

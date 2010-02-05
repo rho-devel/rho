@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -85,11 +85,14 @@ namespace CXXR {
 	    {}
 
 	    /** @brief Comparison operation.
-	     * @param l const reference to a string.
-	     * @param r const reference to a string.
+	     *
+	     * @param l non-null pointer to a String.
+	     *
+	     * @param r non-null pointer to a String.
+	     *
 	     * @return true iff \a l < \a r in the defined ordering.
 	     */
-	    bool operator()(const String& l, const String& r) const;
+	    bool operator()(const String* l, const String* r) const;
 	private:
 	    bool m_na_last;
 	};
@@ -143,7 +146,10 @@ namespace CXXR {
 	 * @note The current hashing algorithm (taken from CR) does
 	 * not deal satisfactorily with strings containing embedded
 	 * null characters: the hashing processes characters only up
-	 * to the first null.
+	 * to the first null.  This function is mainly provided for
+	 * backward compatibility with CR: CXXR's own hash tables are
+	 * based on the value of the <em>pointer</em> to a
+	 * CachedString.
 	 */
 	int hash() const;
 
@@ -168,7 +174,7 @@ namespace CXXR {
 	 * @return <tt>const</tt> pointer to the string representing
 	 *         'not available'.
 	 */
-	static const String* NA()
+	static String* NA()
 	{
 	    return s_na;
 	}
@@ -196,18 +202,6 @@ namespace CXXR {
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
 	 *          in this context (checked).
-	 *
-	 * @param c_string Pointer to a representation of the string
-	 *          as a C-style string (but possibly with embedded
-	 *          null characters), with \a sz plus one bytes, the
-	 *          last byte being a null byte.  (Because of the
-	 *          possibility of embedded nulls the size of the
-	 *          string is not checked.)  This string
-	 *          representation must remain in existence for the
-	 *          lifetime of the String object.  If a null pointer
-	 *          is supplied here, a string pointer must be
-	 *          supplied later in the construction of the derived
-	 *          class object by calling setCString().
 	 */
 	String(size_t sz, cetype_t encoding);
 
@@ -221,7 +215,7 @@ namespace CXXR {
 	    m_hash = -1;
 	}
     private:
-	static GCRoot<const String> s_na;
+	static GCRoot<String> s_na;
 
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;
@@ -286,8 +280,10 @@ extern "C" {
     }
 #endif
 
-    /**
-     * @param x Pointer to a CXXR::String.
+    /** @brief Is a CXXR::String UTF8?
+     *
+     * @param x Pointer to a CXXR::String (checked).
+     *
      * @return true iff \a x is marked as having UTF8 encoding.
      */
 #ifndef __cplusplus
@@ -301,8 +297,15 @@ extern "C" {
     }
 #endif
 
-    /* Hashing Functions */
-
+    /** @brief Hash value of CXXR::String.
+     *
+     * The hash value is obtained using String::hash().  See the
+     * caveats in the description of that function.
+     *
+     * @param x Pointer to a CXXR::String (checked).
+     *
+     * @return The string's hash value.
+     */
 #ifndef __cplusplus
     int HASHVALUE(SEXP x);
 #else

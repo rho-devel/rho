@@ -14,7 +14,6 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 DISTFILES = README \
 	Makefile.in \
 	GETCONFIG GETDISTNAME GETMAKEVAL GETVERSION \
-	Rdnewer.pl \
 	config.guess \
 	config.rpath \
 	config.sub \
@@ -24,15 +23,12 @@ DISTFILES = README \
 	help2man.pl \
 	install-info.pl \
 	install-sh \
-	keywords2html.pl \
 	ldAIX4 \
 	link-recommended \
-	linkcheck.pl \
 	ltmain.sh \
 	mdate-sh \
 	missing \
 	move-if-change \
-	pkg2tex.pl \
 	rsync-recommended \
 	updatefat
 

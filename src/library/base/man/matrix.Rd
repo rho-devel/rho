@@ -71,11 +71,14 @@ is.matrix(x)
 
   When coercing a vector, it produces a one-column matrix, and
   promotes the names (if any) of the vector to the rownames of the matrix.
+  
+  \code{is.matrix} is a \link{primitive} function so any argument name is
+  ignored.    
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{data.matrix}}, which attempts to convert to a numeric matrix.

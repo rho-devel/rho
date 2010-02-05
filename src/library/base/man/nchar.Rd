@@ -47,6 +47,8 @@ nzchar(x)
   \code{\link{as.character}} is performed on \code{x} (so there is no
   method dispatch).  If you want to operate on non-vector objects
   passing them through \code{\link{deparse}} first will be required.
+  
+  \code{nzchar} is \link{primitive} and so will ignore any argument name.
 }
 \value{
   For \code{nchar}, an integer vector giving the sizes of each element,
@@ -69,7 +71,7 @@ nzchar(x)
   \code{\link{encodeString}} to find the characters used to print the
   string.
 #ifdef windows
-  This is particularly important on Windows when \code{\\uxxxx}
+  This is particularly important on Windows when \samp{\\uxxxx}
   sequences have been used to enter Unicode characters not representable
   in the current encoding.  Thus \code{nchar("\\u2642")} is \code{1},
   and it is printed in \code{Rgui} as one character, but it will be
@@ -79,13 +81,13 @@ nzchar(x)
 #ifdef unix
   Where character strings have been marked as UTF-8, the number of
   characters and widths will be computed in UTF-8, even though printing
-  may use escapes such as \code{<U+2642>} in a non-UTF-8 locale.
+  may use escapes such as \samp{<U+2642>} in a non-UTF-8 locale.
 #endif
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{strwidth}} giving width of strings for plotting;

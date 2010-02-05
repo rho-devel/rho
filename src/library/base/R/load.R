@@ -19,14 +19,13 @@ load <-
 {
     if (is.character(file)) {
         ## files are allowed to be of an earlier format
-        ## As zlib is available just open with gzfile, whether file
-        ## is compressed or not; zlib works either way.
+        ## gzfile can open gzip, bzip2, xz and uncompressed files.
         con <- gzfile(file)
         on.exit(close(con))
         magic <- readChar(con, 5L, useBytes = TRUE)
-        if (regexpr("RD[AX]2\n", magic) == -1L) {
+        if (!grepl("RD[AX]2\n", magic)) {
             ## a check while we still know the args
-            if(regexpr("RD[ABX][12]\r", magic) == 1L)
+            if(grepl("RD[ABX][12]\r", magic))
                 stop("input has been corrupted, with LF replaced by CR")
             ## Not a version 2 magic number, so try the old way.
             warning(gettextf("file '%s' has magic number '%s'\n   Use of save versions prior to 2 is deprecated",
@@ -41,10 +40,11 @@ load <-
     .Internal(loadFromConn2(con, envir))
 }
 
-save <- function(..., list = character(0),
+save <- function(..., list = character(0L),
                  file = stop("'file' must be specified"),
                  ascii = FALSE, version = NULL, envir = parent.frame(),
-                 compress = !ascii, eval.promises = TRUE, precheck = TRUE)
+                 compress = !ascii, compression_level,
+                 eval.promises = TRUE, precheck = TRUE)
 {
     opts <- getOption("save.defaults")
     if (missing(compress) && ! is.null(opts$compress))
@@ -55,7 +55,7 @@ save <- function(..., list = character(0),
     if (!is.null(version) && version < 2)
         warning("Use of save versions prior to 2 is deprecated")
 
-    names <- as.character( substitute( list(...)))[-1]
+    names <- as.character( substitute( list(...)))[-1L]
     list<- c(list, names)
     if (! is.null(version) && version == 1)
         invisible(.Internal(save(list, file, ascii, version, envir,
@@ -77,8 +77,19 @@ save <- function(..., list = character(0),
         }
         if (is.character(file)) {
             if (file == "") stop("'file' must be non-empty string")
-            if (compress) con <- gzfile(file, "wb")
-            else con <- file(file, "wb")
+            con <- if (identical(compress, "bzip2")) {
+                if (!missing(compression_level))
+                    bzfile(file, "wb", compress = compression_level)
+                else bzfile(file, "wb")
+            } else if (identical(compress, "xz")) {
+                if (!missing(compression_level))
+                    xzfile(file, "wb", compress = compression_level)
+                else xzfile(file, "wb", compress = 9)
+            } else if (identical(compress, "gzip") || compress) {
+                if (!missing(compression_level))
+                    gzfile(file, "wb", compress = compression_level)
+                else gzfile(file, "wb")
+            } else file(file, "wb")
             on.exit(close(con))
         }
         else if (inherits(file, "connection"))
@@ -154,7 +165,7 @@ findPackageEnv <- function(info)
     if(info %in% search()) return(as.environment(info))
     message(gettextf("Attempting to load the environment '%s'", info),
             domain = NA)
-    pkg <- substr(info, 9, 1000)
+    pkg <- substr(info, 9L, 1000L)
     if(require(pkg, character.only=TRUE, quietly = TRUE))
         return(as.environment(info))
     message("not found: using .GlobalEnv instead")

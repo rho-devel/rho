@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -49,10 +49,37 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    class Expression;
+    class Environment;
+
     /** @brief Base class for function types.
      */
     class FunctionBase : public RObject {
     public:
+	/** @brief Apply the function.
+	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
+	 * @param args List of arguments with which the function is to
+	 *          be invoked.
+	 *
+	 * @param env Pointer to the Environment in which the function
+	 *          is to be evaluated.
+	 *
+	 * @return The result of applying the function.
+	 */
+	virtual RObject* apply(const Expression* call, const PairList* args,
+			       Environment* env) = 0;
+
+	/** @brief Enable/disable function tracing.
+	 *
+	 * @param on True iff function tracing is to be enabled.
+	 */
+	static void enableTracing(bool on)
+	{
+	    s_tracing_enabled = on;
+	}
+
 	/** @brief Is an RObject a FunctionBase?
 	 *
 	 * @param obj Pointer to RObject to be tested.  This may be a
@@ -68,6 +95,19 @@ namespace CXXR {
 	    if (!obj) return false;
 	    SEXPTYPE st = obj->sexptype();
 	    return st == CLOSXP || st == BUILTINSXP || st == SPECIALSXP;
+	}
+
+	/** @brief Produce a tracing report if appropriate.
+	 *
+	 * A tracing report is generated if this function is set to be
+	 * traced and tracing in general is enabled.
+	 *
+	 * @param call The call to this function to be reported.
+	 */
+	void maybeTrace(const Expression* call) const
+	{
+	    if (traced() && tracingEnabled())
+		reportCall(call);
 	}
 
 	/** @brief The name by which this type is known in R.
@@ -86,7 +126,7 @@ namespace CXXR {
 	 */
 	void setTracing(bool on)
 	{
-	    m_tracing = on;
+	    m_traced = on;
 	}
 
 	/** @brief Is this function being traced?
@@ -94,16 +134,25 @@ namespace CXXR {
 	 * @return true if this function object is currently being
 	 * traced.
 	 */
-	bool tracing() const
+	bool traced() const
 	{
-	    return m_tracing;
+	    return m_traced;
+	}
+
+	/** @brief If function tracing currently enabled?
+	 *
+	 * @return true iff function tracing is currently enabled.
+	 */
+	static bool tracingEnabled()
+	{
+	    return s_tracing_enabled;
 	}
     protected:
 	/**
 	 * @param stype Required type of the FunctionBase.
 	 */
 	explicit FunctionBase(SEXPTYPE stype)
-	    : RObject(stype), m_tracing(false)
+	    : RObject(stype), m_traced(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -111,19 +160,22 @@ namespace CXXR {
 	 * @param pattern FunctionBase to be copied.
 	 */
 	FunctionBase(const FunctionBase& pattern)
-	    : RObject(pattern), m_tracing(false)
+	    : RObject(pattern), m_traced(false)
 	{}
 
 	virtual ~FunctionBase() {}
     private:
-	bool m_tracing;
+	static bool s_tracing_enabled;
+	bool m_traced;
+
+	static void reportCall(const Expression* call);
     };
 }  // namespace CXXR
 
 extern "C" {
 #endif /* __cplusplus */
 
-    /** @brief Get object tracing status.
+    /** @brief Get function tracing status.
      *
      * @param x Pointer to a CXXR::FunctionBase (checked), or a null
      *          pointer.
@@ -132,21 +184,29 @@ extern "C" {
      * null pointer.
      */
 #ifndef __cplusplus
-    int TRACE(SEXP x);
+    int RTRACE(SEXP x);
 #else
-    inline int TRACE(SEXP x)
+    inline int RTRACE(SEXP x)
     {
 	using namespace CXXR;
 	if (!x) return 0;
 	const FunctionBase& f = *SEXP_downcast<const FunctionBase*>(x);
-	return f.tracing();
+	return f.traced();
     }
 #endif
 
+    /** @brief Set function tracing status.
+     *
+     * @param x Pointer to a CXXR::FunctionBase (checked), or a null
+     * pointer.
+     *
+     * @param v The desired tracing status: non-zero if tracing is
+     * required.
+     */
 #ifndef __cplusplus
-    void SET_TRACE(SEXP x, int v);
+    void SET_RTRACE(SEXP x, int v);
 #else
-    inline void SET_TRACE(SEXP x, int v)
+    inline void SET_RTRACE(SEXP x, int v)
     {
 	using namespace CXXR;
 	FunctionBase* f = SEXP_downcast<FunctionBase*>(x);

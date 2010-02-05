@@ -1,6 +1,6 @@
 % File src/library/base/man/lapply.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{lapply}
@@ -75,7 +75,7 @@ replicate(n, expr, simplify = TRUE)
   \code{n} for \code{replicate}).  If simplification occurs, the output
   type is determined from the highest type of the return values in the
   hierarchy NULL < raw < logical < integer < real < complex < character
-  < list < expression, after coercion of pairlists tolists.
+  < list < expression, after coercion of pairlists to lists.
 }
 \note{
   \code{sapply(*, simplify = FALSE, USE.NAMES = FALSE)} is
@@ -101,7 +101,7 @@ replicate(n, expr, simplify = TRUE)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{apply}}, \code{\link{tapply}},
@@ -125,11 +125,11 @@ sapply(i39, fivenum)
 hist(replicate(100, mean(rexp(10))))
 
 ## use of replicate() with parameters:
-% taken from PR#8472
 foo <- function(x=1, y=2) c(x,y)
 # does not work: bar <- function(n, ...) replicate(n, foo(...))
 bar <- function(n, x) replicate(n, foo(x=x))
 bar(5, x=3)
 }
+% taken from PR#8472
 \keyword{iteration}
 \keyword{list}

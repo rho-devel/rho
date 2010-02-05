@@ -1,6 +1,6 @@
 % File src/library/grid/man/grid.get.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{grid.get}
@@ -15,14 +15,14 @@
 grid.get(gPath, strict = FALSE, grep = FALSE, global = FALSE,
          allDevices = FALSE)
 
-grid.gget <- function(..., grep = TRUE, global = TRUE)
+grid.gget(\dots, grep = TRUE, global = TRUE)
 
 getGrob(gTree, gPath, strict = FALSE, grep = FALSE, global = FALSE) 
 }
 \arguments{
   \item{gTree}{A gTree object.}
   \item{gPath}{ A gPath object. For \code{grid.get} this
-    specifyies a grob on the display list.  For \code{getGrob} this
+    specifies a grob on the display list.  For \code{getGrob} this
     specifies a descendant of the specified gTree. }
   \item{strict}{ A boolean indicating whether the gPath must be
     matched exactly. }
@@ -41,6 +41,7 @@ getGrob(gTree, gPath, strict = FALSE, grep = FALSE, global = FALSE)
     be searched for matches, or just the current device.
     NOT YET IMPLEMENTED.
   }
+  \item{\dots}{ Arguments that are passed to \code{grid.get}. }
 }
 \details{
   \code{grid.gget} (\code{g} for global) is just a convenience wrapper for

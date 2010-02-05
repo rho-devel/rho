@@ -20,15 +20,15 @@ interaction <- function(..., drop = FALSE, sep = ".", lex.order = FALSE)
 {
     args <- list(...)
     narg <- length(args)
-    if (narg == 1 && is.list(args[[1]])) {
-	args <- args[[1]]
+    if (narg == 1L && is.list(args[[1L]])) {
+	args <- args[[1L]]
 	narg <- length(args)
     }
-    for(i in narg:1) {
+    for(i in narg:1L) {
         f <- args[[i]]
 	if (!is.factor(f)) f <- factor(f)
 	l <- levels(f)
-        if1 <- as.integer(f) - 1
+        if1 <- as.integer(f) - 1L
         if(i != narg) {
             if(lex.order) {
                 ll <- length(lvs)
@@ -40,11 +40,19 @@ interaction <- function(..., drop = FALSE, sep = ".", lex.order = FALSE)
                 lvs <- ## as.vector(outer(l, lvs, paste, sep=sep))
                     paste(rep(l, length(lvs)), rep(lvs, each = length(l)), sep=sep)
             }
+	    if(anyDuplicated(lvs)) { ## fix them up
+		ulvs <- unique(lvs)
+		while((i <- anyDuplicated(flv <- match(lvs, ulvs)))) {
+		    lvs <- lvs[-i]
+		    ans[ans+1L == i] <- match(flv[i], flv[1:(i-1)]) - 1L
+		}
+		lvs <- ulvs
+	    }
         } else {
             ans <- if1
             lvs <- l
         }
     }
-    ans <- structure(as.integer(ans+1), levels=lvs, class = "factor")
+    ans <- structure(as.integer(ans+1L), levels=lvs, class = "factor")
     ans[ , drop=drop]
 }

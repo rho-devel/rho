@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -279,7 +279,7 @@ int selectDevice(int devNum)
 	R_CurrentDevice = devNum;
 
 	/* maintain .Device */
-	gsetVar(install(".Device"),
+	gsetVar(R_DeviceSymbol,
 		elt(getSymbolValue(".Devices"), devNum),
 		R_BaseEnv);
 
@@ -321,7 +321,7 @@ void removeDevice(int devNum, Rboolean findNext)
 	    if (devNum == R_CurrentDevice) {
 		R_CurrentDevice = nextDevice(R_CurrentDevice);
 		/* maintain .Device */
-		gsetVar(install(".Device"),
+		gsetVar(R_DeviceSymbol,
 			elt(getSymbolValue(".Devices"), R_CurrentDevice),
 			R_BaseEnv);
 
@@ -524,7 +524,7 @@ void GEaddDevice(pGEDevDesc gdd)
 /* conveniende wrapper */
 void GEaddDevice2(pGEDevDesc gdd, const char *name)
 {
-    gsetVar(install(".Device"), mkString(name), R_BaseEnv);
+    gsetVar(R_DeviceSymbol, mkString(name), R_BaseEnv);
     GEaddDevice(gdd);
     GEinitDisplayList(gdd);
 }
@@ -572,7 +572,7 @@ void attribute_hidden InitGraphics(void)
 
     /* init .Device and .Devices */
     PROTECT(s = mkString("null device"));
-    gsetVar(install(".Device"), s, R_BaseEnv);
+    gsetVar(R_DeviceSymbol, s, R_BaseEnv);
     PROTECT(t = mkString("null device"));
     gsetVar(install(".Devices"), CONS(t, R_NilValue), R_BaseEnv);
     UNPROTECT(2);
@@ -607,7 +607,7 @@ SEXP do_devAskNewPage(SEXP call, SEXP op, SEXP args, SEXP env)
 	ask = asLogical(CAR(args));
 	if (ask == NA_LOGICAL)
 	    error(_("invalid '%s' argument"), "ask");
-	gdd->ask = Rboolean(ask);
+	gdd->ask = CXXRCONSTRUCT(Rboolean, ask);
 	R_Visible = FALSE;
     } else R_Visible = TRUE;
 

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -42,7 +42,7 @@
 				   samin() */
 #include <R_ext/Applic.h>	/* setulb() */
 
-static SEXP getListElement(SEXP list, CXXRconst char *str)
+static SEXP getListElement(SEXP list, CXXRCONST char *str)
 {
     SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
     int i;

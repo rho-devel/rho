@@ -33,7 +33,7 @@ tk_select.list <-
         tkpack(lab, side="top")
     }
     onOK <- function() {
-        res <- 1+as.integer(tkcurselection(box))
+        res <- 1L + as.integer(tkcurselection(box))
         ans.select_list <<- list[res]
         tkgrab.release(dlg)
         tkdestroy(dlg)
@@ -48,11 +48,11 @@ tk_select.list <-
     Cancel <- ttkbutton(buttons, text = gettext("Cancel"), command = onCancel)
     tkpack(OK, Cancel, side="left", fill="x", padx="2m")
 
-    scht <- as.numeric(tclvalue(tkwinfo("screenheight", dlg))) - 200
+    scht <- as.numeric(tclvalue(tkwinfo("screenheight", dlg))) - 200L
     ## allow for win furniture and buttons, and for e.g. KDE panel
     ht <- min(length(list), scht %/% 20) # a guess of font height
     box <- tklistbox(dlg, height = ht,
-                     listvariable = lvar, bg = "white",
+                     listvariable = lvar, bg = "white", setgrid = 1,
                      selectmode = ifelse(multiple, "multiple", "single"))
     tmp <- tcl("font", "metrics", tkcget(box, font=NULL))
     ## fudge factor here seems to be 1 on Windows, 3 on X11.
@@ -63,7 +63,7 @@ tk_select.list <-
         scr <- if(have_ttk) ttkscrollbar(dlg, command = function(...) tkyview(box, ...))
         else tkscrollbar(dlg, repeatinterval=5, command = function(...) tkyview(box, ...))
         box <- tklistbox(dlg, height = ht, width = 0,
-                         listvariable = lvar, bg = "white",
+                         listvariable = lvar, bg = "white", setgrid = 1,
                          selectmode = ifelse(multiple, "multiple", "single"),
                          yscrollcommand = function(...)tkset(scr,...))
         tkpack(box, side="left", fill="both", expand=TRUE)
@@ -75,14 +75,16 @@ tk_select.list <-
         tkpack(box, side="left", fill="both")
     }
     preselect <- match(preselect, list)
-    ans.select_list <- character(0) # avoid name conflicts
-    for(i in preselect[preselect > 0])
-        tkselection.set(box, i - 1) # 0-based
+    ans.select_list <- character() # avoid name conflicts
+    for(i in preselect[preselect > 0L])
+        tkselection.set(box, i - 1L) # 0-based
 
     tkbind(dlg, "<Destroy>", onCancel)
+    tkbind(dlg, "<Double-ButtonPress-1>", onOK)
     tkfocus(box)
     tclServiceMode(oldmode)
     tkwait.window(dlg)
+    Sys.sleep(0.1) # allow time for window to be removed.
     if(!multiple && !length(ans.select_list)) ans.select_list <- ""
     ans.select_list
 }
@@ -165,4 +167,55 @@ close.tkProgressBar <- function(con, ...)
 {
     con$kill()
     invisible(NULL)
+}
+
+tk_choose.files <-
+    function(default = '', caption = 'Select files', multi = TRUE,
+             filters = NULL, index = 1)
+{
+    args <- list("tk_getOpenFile", title = caption, multiple = multi)
+    if(nzchar(default)) args <- c(args, initialdir = dirname(default),
+                                   initialfile = basename(default))
+    if(!is.null(filters)) {
+        if(!is.character(filters) || length(dim(filters)) != 2 || ncol(filters) != 2)
+            stop("'filters' must be a 2-column character matrix")
+        f <- filters
+        f[] <- paste("{", filters, "}", sep="")
+        ff <- apply(f, 1, paste, collapse = " ")
+        fff <- paste("{", ff, "}", sep="")
+        args <- c(args, filetypes = paste(fff, collapse = " "))
+    }
+    res <- tclvalue(do.call(tcl, args))
+    if(nzchar(res))
+        if(multi) {
+            ## Filenames with spaces will be surrounded by { }
+            ans <- character()
+            pat <- "([^{])*\\{([^}]*)\\}(.*)"
+            while(grepl(pat, res)) {
+                ans <- c(ans, sub(pat, "\\2", res))
+                res <- sub(pat, "\\1\\3", res)
+            }
+            ans <- c(ans, strsplit(res, " ", fixed = TRUE)[[1]])
+            ans[nzchar(ans)]
+        } else res
+    else character()
+}
+
+
+tk_choose.dir <- function(default = '', caption = 'Select directory')
+{
+    res <- tclvalue(tcl("tk_chooseDirectory", initialdir = default, title = caption))
+    if(nzchar(res)) res else NA_character_
+}
+
+tk_messageBox <-
+    function(type = c("ok", "okcancel", "yesno", "yesnocancel",
+                      "retrycancel", "aburtretrycancel"),
+             message, caption = "", default = "", ...)
+{
+    type <- match.arg(type)
+    args <- list("tk_messageBox", type=type, message=message,
+                 title=caption, ...)
+    if(nzchar(default)) args <- c(args, default=default)
+    tclvalue(do.call("tcl", args))
 }

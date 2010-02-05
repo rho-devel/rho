@@ -40,6 +40,8 @@ as.call(x)
   The first element of the list becomes the function part of the call,
   so should be a function or the name of one (as a symbol; a quoted
   string will not do).  
+  
+  All three are \link{primitive} functions.
 }
 \seealso{
   \code{\link{do.call}} for calling a function by name and argument
@@ -53,7 +55,7 @@ as.call(x)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 is.call(call) #-> FALSE: Functions are NOT calls

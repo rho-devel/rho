@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -104,6 +104,9 @@ extern "C" {
 
 /* In CXXR, Rf_length() is not inlined, and is back in dstruct.cpp. */
 R_len_t Rf_length(SEXP s);
+/* TODO: a  Length(.) {say} which is  length() + dispatch (S3 + S4) if needed
+         for one approach, see do_seq_along() in ../main/seq.c
+*/
 
 /* from list.c */
 /* Return a dotted pair with the given CAR and CDR. */
@@ -439,6 +442,21 @@ INLINE_FUN Rboolean Rf_isNumeric(SEXP s)
     }
 }
 
+/** Is an object "Numeric" or  complex */
+INLINE_FUN Rboolean isNumber(SEXP s)
+{
+    switch(TYPEOF(s)) {
+    case INTSXP:
+	if (inherits(s,"factor")) return FALSE;
+    case LGLSXP:
+    case REALSXP:
+    case CPLXSXP:
+	return TRUE;
+    default:
+	return FALSE;
+    }
+}
+
 /* As from R 2.4.0 we check that the value is allowed. */
 INLINE_FUN SEXP Rf_ScalarLogical(int x)
 {
@@ -512,8 +530,36 @@ INLINE_FUN Rboolean Rf_isVectorizable(SEXP s)
 }
 
 
+/**
+ * Create a named vector of type TYP
+ *
+ * @example const char *nms[] = {"xi", "yi", "zi", ""};
+ *          mkNamed(VECSXP, nms);  =~= R  list(xi=, yi=, zi=)
+ *
+ * @param TYP a vector SEXP type (e.g. REALSXP)
+ * @param names names of list elements with null string appended
+ *
+ * @return (pointer to a) named vector of type TYP
+ */
+INLINE_FUN SEXP mkNamed(SEXPTYPE TYP, const char **names)
+{
+    SEXP ans, nms;
+    int i, n;
+
+    for (n = 0; strlen(names[n]) > 0; n++) {}
+    ans = PROTECT(allocVector(TYP, n));
+    nms = PROTECT(allocVector(STRSXP, n));
+    for (i = 0; i < n; i++)
+	SET_STRING_ELT(nms, i, mkChar(names[i]));
+    setAttrib(ans, R_NamesSymbol, nms);
+    UNPROTECT(2);
+    return ans;
+}
+
+
 /* from gram.y */
 
+/* short cut for  ScalarString(mkChar(s)) : */
 INLINE_FUN SEXP Rf_mkString(const char *s)
 {
     SEXP t;

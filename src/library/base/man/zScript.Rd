@@ -1,13 +1,13 @@
 % File src/library/base/man/zScript.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{.Script}
 \title{Scripting Language Interface}
 \alias{.Script}
 \description{
-  Run a script through its interpreter with given arguments.
+  Internal interface to run a script through its interpreter.
 }
 \usage{
 .Script(interpreter, script, args, \dots)
@@ -19,20 +19,17 @@
     script, which must be located in the \file{\code{interpreter}}
     subdirectory of
 #ifdef unix
-    \file{\var{R\_SHARE\_DIR}} (normally \file{\var{\link[base:Rhome]{R\_HOME}}/share}).}
+    \file{\var{R_SHARE_DIR}} (normally \file{\var{\link{R_HOME}}/share}).
 #endif
 #ifdef windows
-    \file{\var{\link[base:Rhome]{R\_HOME}}/share}.}
+    \file{\var{\link{R_HOME}}/share}.
 #endif
+  }
   \item{args}{a character string giving the arguments to pass to the
     script.}
   \item{\dots}{further arguments to be passed to \code{\link{system}}
     when invoking the interpreter on the script.}
 }
 \note{This function is for R internal use only.}
-\examples{
-## not useful on Windows, where the help is zipped.
-.Script("perl", "massage-Examples.pl",
-        paste("tools", system.file("R-ex", package = "tools")))
-}
 \keyword{interface}
+\keyword{internal}

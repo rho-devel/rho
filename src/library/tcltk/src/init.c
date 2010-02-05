@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -60,6 +60,7 @@ static const R_ExternalMethodDef ExternEntries[] = {
     {"RTcl_ObjAsCharVector", (DL_FUNC) &RTcl_ObjAsCharVector, 1},
     {"RTcl_ObjAsDoubleVector", (DL_FUNC) &RTcl_ObjAsDoubleVector, 1},
     {"RTcl_ObjAsIntVector", (DL_FUNC) &RTcl_ObjAsIntVector, 1},
+    {"RTcl_ObjAsRawVector", (DL_FUNC) &RTcl_ObjAsRawVector, 1},
     {"RTcl_ObjFromCharVector", (DL_FUNC) &RTcl_ObjFromCharVector, 2},
     {"RTcl_ObjFromDoubleVector", (DL_FUNC) &RTcl_ObjFromDoubleVector, 2},
     {"RTcl_ObjFromIntVector", (DL_FUNC) &RTcl_ObjFromIntVector, 2},

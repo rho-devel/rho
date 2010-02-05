@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,6 +40,13 @@
 
 #include "CXXR/Closure.h"
 
+#include "RCNTXT.h"
+#include "CXXR/ArgMatcher.hpp"
+#include "CXXR/Evaluator.h"
+#include "CXXR/Expression.h"
+#include "CXXR/GCStackRoot.h"
+#include "CXXR/JMPException.hpp"
+
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -47,24 +54,87 @@ using namespace CXXR;
 namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*BODYp)(SEXP x) = BODY;
-	Rboolean (*DEBUGp)(SEXP x) = DEBUG;
 	SEXP (*CLOENVp)(SEXP x) = CLOENV;
 	SEXP (*FORMALSp)(SEXP x) = FORMALS;
+	Rboolean (*RDEBUGp)(SEXP x) = RDEBUG;
+	int (*RSTEPp)(SEXP x) = RSTEP;
 	void (*SET_CLOENVp)(SEXP x, SEXP v) = SET_CLOENV;
-	void (*SET_DEBUGp)(SEXP x, Rboolean v) = SET_DEBUG;
+	void (*SET_RDEBUGp)(SEXP x, Rboolean v) = SET_RDEBUG;
+	void (*SET_RSTEPp)(SEXP x, int v) = SET_RSTEP;
     }
 }
 
-// Closure primary constructor is in dstruct.cpp (for the time being).
+Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
+    : FunctionBase(CLOSXP), m_debug(false),
+      m_matcher(expose(new ArgMatcher(formal_args))),
+      m_body(body), m_environment(env)
+{
+}
+
+RObject* Closure::apply(const Expression* call, const PairList* args,
+			Environment* env)
+{
+    GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
+    // +5 to allow some capacity for local variables:
+    GCStackRoot<Environment>
+	newenv(expose(new Environment(environment(),
+				      m_matcher->numFormals() + 5)));
+    // Set up environment:
+    {
+	RCNTXT cntxt;
+	Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+			environment(), env, const_cast<PairList*>(args), this);
+	m_matcher->match(newenv, prepared_args);
+	Rf_endcontext(&cntxt);
+    }
+    // Perform evaluation:
+    GCStackRoot<> ans;
+    {
+	RCNTXT cntxt;
+	if (R_GlobalContext->callflag == CTXT_GENERIC)
+	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+			    newenv, R_GlobalContext->sysparent, prepared_args,
+			    this);
+	else
+	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+			    newenv, env, prepared_args, this);
+	newenv->setSingleStepping(m_debug);
+	if (m_debug)
+	    debug(newenv, call, prepared_args, env);
+	bool redo;
+	do {
+	    redo = false;
+	    try {
+		ans = Evaluator::evaluate(m_body, newenv);
+	    }
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (R_ReturnedValue == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    R_ReturnedValue = 0;  /* remove restart token */
+		    redo = true;
+		}
+		else ans = R_ReturnedValue;
+	    }
+	} while (redo);
+	Rf_endcontext(&cntxt);
+    }
+    return ans;
+}
 
 Closure* Closure::clone() const
 {
     return expose(new Closure(*this));
 }
 
+// Implementation of Closure::debug() is in eval.cpp (for the time
+// being).
+
 void Closure::detachReferents()
 {
-    m_formals.detach();
+    m_matcher.detach();
     m_body.detach();
     m_environment.detach();
     RObject::detachReferents();
@@ -77,11 +147,14 @@ const char* Closure::typeName() const
 
 void Closure::visitReferents(const_visitor* v) const
 {
-    const GCNode* formals = m_formals;
+    const ArgMatcher* matcher = m_matcher;
     const GCNode* body = m_body;
     const GCNode* environment = m_environment;
     RObject::visitReferents(v);
-    if (formals) formals->conductVisitor(v);
-    if (body) body->conductVisitor(v);
-    if (environment) environment->conductVisitor(v);
+    if (matcher)
+	matcher->conductVisitor(v);
+    if (body)
+	body->conductVisitor(v);
+    if (environment)
+	environment->conductVisitor(v);
 }

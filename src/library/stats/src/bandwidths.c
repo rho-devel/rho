@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -73,8 +73,10 @@ band_bcv_bin(int *n, int *nb, double *d, int *x, double *h, double *u)
 }
 
 
+/* u := SDh(x, h, n, d) : */
 void
-band_phi4_bin(int *n, int *nb, double *d, int *x, double *h, double *u)
+band_phi4_bin(int *n, int *nb/* = length(x) */,
+	      double *d, int *x, double *h, double *u)
 {
     int   i, nn = *n, nbin = *nb;
     double delta, sum, term;
@@ -91,6 +93,7 @@ band_phi4_bin(int *n, int *nb, double *d, int *x, double *h, double *u)
     *u = sum / (nn * (nn - 1) * pow(*h, 5.0) * sqrt(2 * PI));
 }
 
+/* u := TDh(x, h, n, d) : */
 void
 band_phi6_bin(int *n, int *nb, double *d, int *x, double *h, double *u)
 {

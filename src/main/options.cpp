@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,9 +41,9 @@
 #include "Defn.h"
 #include "Print.h"
 
-/* The global var. R_Expressions is in Defn.h */
-#define R_MIN_EXPRESSIONS_OPT	25
-#define R_MAX_EXPRESSIONS_OPT	500000
+#include "CXXR/Evaluator.h"
+
+using namespace CXXR;
 
 /* Interface to the (polymorphous!)  options(...)  command.
  *
@@ -158,7 +158,7 @@ Rboolean Rf_GetOptionDeviceAsk(void)
 	warning(_("invalid value for \"device.ask.default\", using FALSE"));
 	return FALSE;
     }
-    return Rboolean(ask != 0);
+    return CXXRCONSTRUCT(Rboolean, ask != 0);
 }
 
 
@@ -248,7 +248,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     SET_TAG(v, install("expressions"));
-    SETCAR(v, ScalarInteger(R_Expressions));
+    SETCAR(v, ScalarInteger(Evaluator::depthLimit()));
     v = CDR(v);
 
     SET_TAG(v, install("width"));
@@ -409,17 +409,14 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    else if (streql(CHAR(namei), "expressions")) {
 		k = asInteger(argi);
-		if (k < R_MIN_EXPRESSIONS_OPT || k > R_MAX_EXPRESSIONS_OPT)
-		    error(_("'expressions' parameter invalid, allowed %d...%d"),
-			  R_MIN_EXPRESSIONS_OPT, R_MAX_EXPRESSIONS_OPT);
-		R_Expressions = R_Expressions_keep = k;
+		Evaluator::setDepthLimit(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
 	    }
 	    else if (streql(CHAR(namei), "keep.source")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_KeepSource = Rboolean(k);
+		R_KeepSource = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "editor") && isString(argi)) {
@@ -494,7 +491,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		/* Should be quicker than checking options(echo)
 		   every time R prompts for input:
 		   */
-		R_Slave = Rboolean(!k);
+		R_Slave = CXXRCONSTRUCT(Rboolean, !k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "OutDec")) {
@@ -515,7 +512,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_WarnEscapes = Rboolean(k);
+		R_WarnEscapes = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "rl_word_breaks")) {
@@ -530,35 +527,35 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_dollar = Rboolean(k);
+		R_warn_partial_match_dollar = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "warnPartialMatchArgs")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_args = Rboolean(k);
+		ArgMatcher::enableWarnOnPartialMatch(k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "warnPartialMatchAttr")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_warn_partial_match_attr = Rboolean(k);
+		R_warn_partial_match_attr = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showWarnCalls")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_ShowWarnCalls = Rboolean(k);
+		R_ShowWarnCalls = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showErrorCalls")) {
 		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		k = asLogical(argi);
-		R_ShowErrorCalls = Rboolean(k);
+		R_ShowErrorCalls = CXXRCONSTRUCT(Rboolean, k);
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "showNCalls")) {
@@ -579,7 +576,7 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	else { /* querying arg */
 	    const char *tag;
 	    if (!isString(argi) || LENGTH(argi) <= 0)
-		error(R_MSG_IA);
+		error(_("invalid argument"));
 	    tag = CHAR(STRING_ELT(argi, 0));
 	    if (streql(tag, "par.ask.default")) {
 		error(_("\"par.ask.default\" has been replaced by \"device.ask.default\""));

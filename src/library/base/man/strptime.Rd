@@ -1,6 +1,6 @@
 % File src/library/base/man/strptime.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{strptime}
@@ -23,7 +23,7 @@
 
 \method{as.character}{POSIXt}(x, \dots)
 
-strftime(x, format="", usetz = FALSE, \dots)
+strftime(x, format="", tz = "", usetz = FALSE, \dots)
 strptime(x, format, tz = "")
 
 ISOdatetime(year, month, day, hour, min, sec, tz = "")
@@ -57,7 +57,7 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
   string is processed as far as necessary for the format specified: any
   trailing characters are ignored.
 
-  \code{strftime} is an alias for \code{format.POSIXlt}, and
+  \code{strftime} is a wrapper for \code{format.POSIXlt}, and it and
   \code{format.POSIXct} first converts to class \code{"POSIXlt"} by
   calling \code{\link{as.POSIXlt}}.  Note that only that conversion
   depends on the time zone.
@@ -97,7 +97,7 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
     \item{\code{\%m}}{Month as decimal number (01--12).}
     \item{\code{\%M}}{Minute as decimal number (00--59).}
     \item{\code{\%p}}{AM/PM indicator in the locale.  Used in
-      conjuction with \code{\%I} and \bold{not} with \code{\%H}.  An
+      conjunction with \code{\%I} and \bold{not} with \code{\%H}.  An
       empty string in some locales.}
     \item{\code{\%S}}{Second as decimal number (00--61), allowing for
       up to two leap-seconds (but POSIX-compliant OSes will ignore leap
@@ -113,12 +113,13 @@ ISOdate(year, month, day, hour = 12, min = 0, sec = 0, tz = "GMT")
     \item{\code{\%x}}{Date, locale-specific.}
     \item{\code{\%X}}{Time, locale-specific.}
     \item{\code{\%y}}{Year without century (00--99). If you use this on
-      % switching at 2068, 1969 is as given currently by POSIX,
-      % but the standard does say the recommendation may change in future.
-      % In May 2008 glibc, Solaris 10 and Mac OS 10.5.2 did this, and
-      % hence so does the emulation code used on Windows.
-      input, which century you get is system-specific.  So don't!  Often
-      values up to 68 (or 69) are prefixed by 20 and 69 (or 70) to 99 by 19.}
+      input, which century you get is system-specific.  So don't!  Most often
+      values 00 to 68 are prefixed by 20 and 69 to 99 by 19 -- that is
+      the behaviour specified by the 2001 POSIX standard, but it does
+      also say \sQuote{it is expected that in a future version of IEEE
+	Std 1003.1-2001 the default century inferred from a 2-digit year will
+	change}. 
+    }
     \item{\code{\%Y}}{Year with century.}
 #ifdef unix
     \item{\code{\%z}}{(output only.) Offset from Greenwich, so

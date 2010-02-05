@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -66,13 +66,14 @@ Rboolean
 PSDeviceDriver(pDevDesc, const char*, const char*, const char*,
 	       const char **, const char*, const char*, const char*,
 	       double, double, Rboolean, double, Rboolean, Rboolean,
-	       Rboolean, const char*, const char*, SEXP, const char*);
+	       Rboolean, const char*, const char*, SEXP, const char*, int,
+	       Rboolean);
 
 Rboolean
 PDFDeviceDriver(pDevDesc, const char *, const char *, const char *,
 		const char **, const char *, const char *, const char *,
 		double, double, double, int, int, const char*, SEXP, 
-		int, int, const char *, int);
+		int, int, const char *, int, int, Rboolean);
 
 #ifdef WIN32
 SEXP devga(SEXP);

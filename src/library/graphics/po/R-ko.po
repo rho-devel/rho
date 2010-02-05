@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
 "PO-Revision-Date: 2005-05-25 15:04+0900\n"
 "Last-Translator: Korean <uiami@hanmail.com>\n"
 "Language-Team: Korean <translation-team-ko@lists.sourceforge.net>\n"
@@ -23,6 +23,9 @@ msgstr ""
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr ""
 
+msgid "one of 'x1' and 'y1' must be given"
+msgstr ""
+
 msgid "'x' must be a 2-d contingency table"
 msgstr "'x'는 2-d 전분할표가 아니면 되지 않습니다"
 
@@ -35,6 +38,7 @@ msgstr "'x'가 적어도 하나의 항목은 positive가 아니면 되지 않습
 msgid "incorrect 'col': must be length 2"
 msgstr "'col'이 잘못되었습니다: 2의 길이 이어야만 합니다"
 
+#, fuzzy
 msgid "'side' must be in {1:4}"
 msgstr "'side'는 범위{1,2,3,4}에서 없으면 되지 않습니다"
 
@@ -44,6 +48,7 @@ msgstr "무효인 'axp' 입니다"
 msgid "invalid 'log'"
 msgstr "무효인 'log' 입니다"
 
+#, fuzzy
 msgid "invalid positive 'axp[3]'"
 msgstr "무효인 정의 'axp[3]' 입니다"
 
@@ -247,7 +252,11 @@ msgstr "'text.width'는 비부(>=0)의 수치가 아니면 되지 않습니다"
 msgid "horizontal specification overrides: Number of columns :="
 msgstr "수표 방향의 지정은 무효로 되어있습니다: 열의 수 :="
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr ""
+
+#, fuzzy
+msgid "not using pch[2..] since pch[1L] has multiple chars"
 msgstr "pch[1]이 많은 문자를 포함하기 때문에 pch[2..]를 사용하지 않습니다"
 
 msgid "must specify at least one of 'x' and 'y'"
@@ -339,6 +348,9 @@ msgstr "'figs'는 벡터 또는 4열의 행렬이 아니면 되지 않습니다"
 
 msgid "'figs' must specify at least one screen"
 msgstr "'figs'는 적어도 하나의 screen을 지정하지 않으면 되지 않습니다"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr ""
 
 msgid "a 2-way table has to be specified"
 msgstr ""

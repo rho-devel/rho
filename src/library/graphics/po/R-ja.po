@@ -2,16 +2,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.3.0 \n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
-"PO-Revision-Date: 2008-04-04 14:56+0900 \n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
+"PO-Revision-Date: 2009-10-07 19:20+0900 \n"
 "Last-Translator: takahashi <takahashi.kohske@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
 "MIME-Version: 1.0 \n"
 "Content-Type: text/plain; charset=UTF-8 \n"
 "Content-Transfer-Encoding: 8bit \n"
-"Report- Msgid-Bugs-To: bugs@r-project.org \n"
 "Plural-Forms: nplurals=1; plural=0; \n"
-"X-Generator: Pootle 0.10.1 \n"
+"X-Generator: Pootle 1.1.0 \n"
+"Report- Msgid-Bugs-To: bugs@r-project.org \n"
 
 msgid "'a' is overridden by 'reg'"
 msgstr " 'a' は 'reg\" により無効にされます "
@@ -24,6 +24,9 @@ msgstr " 回帰係数 "
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr " 'a' と 'b' は 'reg\" により無効にされます "
+
+msgid "one of 'x1' and 'y1' must be given"
+msgstr " 'x1'と'y1'のどちらかは必要です "
 
 msgid "'x' must be a 2-d contingency table"
 msgstr " 'x' は二元分割表でなければなりません "
@@ -38,7 +41,7 @@ msgid "incorrect 'col': must be length 2"
 msgstr " 誤った 'col'：長さは2でなければなりません "
 
 msgid "'side' must be in {1:4}"
-msgstr " 'side' は範囲 {1,2,3,4} になければなりません "
+msgstr " 'side' は範囲 {1:4} 中になければなりません "
 
 msgid "invalid 'axp'"
 msgstr " 無効な 'axp' です "
@@ -249,7 +252,10 @@ msgstr " 'text.width' は非負の数値でなければなりません "
 msgid "horizontal specification overrides: Number of columns :="
 msgstr " 水平方向の指定は無効とされました: 列の数 := "
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr " 'merge = TRUE' はいかなる線分も描かれないときは効果がありません "
+
+msgid "not using pch[2..] since pch[1L] has multiple chars"
 msgstr " pch[1] が複数の文字を含むため、pch[2..] を使用しません "
 
 msgid "must specify at least one of 'x' and 'y'"
@@ -341,6 +347,9 @@ msgstr " 'figs' はベクトルか 4 列の行列でなければなりません 
 
 msgid "'figs' must specify at least one screen"
 msgstr " 'figs' は少なくとも一つのスクリーンを指定しなければなりません "
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr " 'nrpoints'は0以上の数値のスカラーでなければなりません "
 
 msgid "a 2-way table has to be specified"
 msgstr " 二元分類表を指定しなければなりません "

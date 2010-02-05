@@ -5,6 +5,8 @@ The files are as follows.
 
   config.guess
   config.sub
+	From http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD etc
+
   install-sh
   mdate-sh
   missing
@@ -23,10 +25,6 @@ The files are as follows.
   GETVERSION
 	create API 'Rversion.h' from 'VERSION' and 'SVN-REVISION'.
   
-  Rdnewer.pl
-	determine whether any Rd file in an Rd tree is newer than a
-	given file.
-  
   copy-if-change
 	copy a file if changed; otherwise, do nothing.
 
@@ -44,9 +42,6 @@ The files are as follows.
   install-info.pl
 	create or update entry in Info directory.  Taken from the Debian
 	GNU/Linux stable distribution.
-
-  keywords2html.pl
-	convert 'KEYWORDS.db' to HTML.
 	
   ldAIX4
 	writes an export file, assembling the exported symbols by
@@ -61,16 +56,10 @@ The files are as follows.
 
   ltmain.sh
 	provide generalized library-building support services.  Taken
-	from Libtool 1.5; older versions taken from the Libtool CVS
-	(:pserver:anoncvs@subversions.gnu.org:/cvsroot/libtool, module
-	'libtool').
+	from Libtool 2.2.6a.
 
   move-if-change
 	move a file if changed; otherwise, remove.
-
-  pkg2tex.pl
-	create a single 'PKGNAME-pkg.tex' file from the package docs in
-	LaTeX format.
 
   rsync-recommended
 	obtain sources for the recommended packages using rsync, and then

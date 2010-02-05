@@ -1,5 +1,7 @@
 # Low-level tests for the CXXR classes.
 
+uname = $(shell uname)
+
 top_builddir = ../..
 
 top_srcdir = ../..
@@ -20,17 +22,100 @@ ifdef valgrind
 valgrind_flags = -DVALGRIND_LEVEL=2
 endif
 
-sources_cxx = Allocatortest.cpp CellPooltest.cpp GCManagertest.cpp \
-              HeterogeneousListtest.cpp MemoryBanktest.cpp RObject_sizer.cpp \
-              splice_test.cpp
+sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
+              GCManagertest.cpp HeterogeneousListtest.cpp MemoryBanktest.cpp \
+              RObject_sizer.cpp splice_test.cpp
 
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test
+        HeterogeneousListtest splice_test ArgMatchertest0 ArgMatchertest1 \
+	ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 ArgMatchertest5 \
+        ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
 
 check : $(tests:=.ts)
 
+ArgMatchertest.o : ArgMatchertest.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
+
+ifeq ($(uname),Darwin)
+ArgMatchertest : ArgMatchertest.o ../../lib/libR.dylib
+	ln -sf ../../lib/libR.dylib ../../lib/libRblas.dylib .
+	$(LINK.cc) -o $@ $< -L../../lib -lR -lRblas -lreadline \
+	           $(MAIN_LDFLAGS)
+else
+ArgMatchertest : ArgMatchertest.o #../../src/main/libR.a
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+                   -lR -lRblas -lreadline -ldl $(MAIN_LDFLAGS)
+endif
+
+# OK match:
+ArgMatchertest0.ts : ArgMatchertest formals_ok.txt supplied_ok.txt \
+                     prior_bindings.txt
+	./$< formals_ok.txt supplied_ok.txt prior_bindings.txt \
+	     > ArgMatchertest0.out 2>&1
+	diff ArgMatchertest0.save ArgMatchertest0.out
+	rm ArgMatchertest0.out
+	touch $@
+ 
+# Unnamed formal argument:
+ArgMatchertest1.ts : ArgMatchertest formals_unnamed.txt
+	-./$< formals_unnamed.txt /dev/null > ArgMatchertest1.out 2>&1
+	diff ArgMatchertest1.save ArgMatchertest1.out
+	rm ArgMatchertest1.out
+	touch $@
+ 
+# ... appears twice:
+ArgMatchertest2.ts : ArgMatchertest formals_dotstwice.txt
+	-./$< formals_dotstwice.txt /dev/null > ArgMatchertest2.out 2>&1
+	diff ArgMatchertest2.save ArgMatchertest2.out
+	rm ArgMatchertest2.out
+	touch $@
+ 
+# Duplicated formal name:
+ArgMatchertest3.ts : ArgMatchertest formals_dupnames.txt
+	-./$< formals_dupnames.txt /dev/null > ArgMatchertest3.out 2>&1
+	diff ArgMatchertest3.save ArgMatchertest3.out
+	rm ArgMatchertest3.out
+	touch $@
+ 
+# Formal arg partially matched by >1 supplied args:
+ArgMatchertest4.ts : ArgMatchertest formals_ok.txt supplied_pm2supp.txt
+	-./$< formals_ok.txt supplied_pm2supp.txt > ArgMatchertest4.out 2>&1
+	diff ArgMatchertest4.save ArgMatchertest4.out
+	rm ArgMatchertest4.out
+	touch $@
+ 
+# Supplied arg partially matches >1 formal args:
+ArgMatchertest5.ts : ArgMatchertest formals_ok.txt supplied_pm2form.txt
+	-./$< formals_ok.txt supplied_pm2form.txt > ArgMatchertest5.out 2>&1
+	diff ArgMatchertest5.save ArgMatchertest5.out
+	rm ArgMatchertest5.out
+	touch $@
+ 
+# Surplus supplied args:
+ArgMatchertest6.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt
+	-./$< formals_nodots.txt supplied_surplus.txt > ArgMatchertest6.out 2>&1
+	diff ArgMatchertest6.save ArgMatchertest6.out
+	rm ArgMatchertest6.out
+	touch $@
+ 
+# ... with default:
+ArgMatchertest7.ts : ArgMatchertest formals_dotsdflt.txt
+	-./$< formals_dotsdflt.txt /dev/null > ArgMatchertest7.out 2>&1
+	diff ArgMatchertest7.save ArgMatchertest7.out
+	rm ArgMatchertest7.out
+	touch $@
+ 
+# Non-null match to '...', plus attempted partial match to formal following ... :
+ArgMatchertest8.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt \
+                     prior_bindings.txt
+	./$< formals_ok.txt supplied_surplus.txt prior_bindings.txt \
+             > ArgMatchertest8.out 2>&1
+	diff ArgMatchertest8.save ArgMatchertest8.out
+	rm ArgMatchertest8.out
+	touch $@
+ 
 Allocatortest.o : Allocatortest.cpp
 	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
 

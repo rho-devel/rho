@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -129,6 +129,28 @@ namespace CXXR {
 	 * This leaves the List empty.
 	 */
 	void freeLinks();
+    protected:
+	/** @brief Get link preceding a specified link.
+	 *
+	 * @param link Pointer to the link whose predecessor is desired.
+	 *
+	 * @return Pointer to the predecessor of \a link.
+	 */
+	static Link* predecessor(Link* link)
+	{
+	    return link->m_prev;
+	}
+
+	/** @brief Get link following a specified link.
+	 *
+	 * @param link Pointer to the link whose successor is desired.
+	 *
+	 * @return Pointer to the successor of \a link.
+	 */
+	static Link* successor(Link* link)
+	{
+	    return link->m_next;
+	}
     private:
 	template <class Node> friend class HeterogeneousList;
 
@@ -141,16 +163,6 @@ namespace CXXR {
 	{
 	    fore->m_next = aft;
 	    aft->m_prev = fore;
-	}
-
-	static Link* predecessor(Link* link)
-	{
-	    return link->m_prev;
-	}
-
-	static Link* successor(Link* link)
-	{
-	    return link->m_next;
 	}
 
 	// Move 'mover' from its current list location to just before 'pos':

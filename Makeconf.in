@@ -24,7 +24,7 @@ CXXFLAGS += @CXXFLAGS@
 CPICFLAGS = @CPICFLAGS@
 CPPFLAGS += @CPPFLAGS@
 DEFS = @DEFS@ @R_DEFS@
-DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)"
+DISTDIR_TAR_EXCLUDE = --exclude=.svn --exclude=Makefile --exclude="*.o" --exclude="*$(SHLIB_EXT)" --exclude="*~"
 DVIPS = @DVIPS@
 DYLIB_EXT = @DYLIB_EXT@
 DYLIB_LD = @DYLIB_LD@
@@ -63,10 +63,11 @@ MAIN_CFLAGS = @MAIN_CFLAGS@
 MAIN_CXXFLAGS =
 MAIN_FFLAGS = @MAIN_FFLAGS@
 MAIN_LD = @MAIN_LD@
-MAIN_LDFLAGS = @MAIN_LDFLAGS@ -lboost_regex
+MAIN_LDFLAGS = @MAIN_LDFLAGS@ -lboost_regex @WANT_R_SHLIB_FALSE@ @USE_EXPORTFILES_TRUE@ -Wl,-bE:$(top_builddir)/etc/R.exp
 MAIN_LINK = $(MAIN_LD) $(MAIN_LDFLAGS) $(LDFLAGS)
 MAKEINDEX = @MAKEINDEX@
-MKINSTALLDIRS = $(SHELL) $(top_srcdir)/src/scripts/mkinstalldirs
+## need this for bootstrapping
+MKINSTALLDIRS = @R_SHELL@ $(top_srcdir)/src/scripts/mkinstalldirs.in
 PERL = @PERL@
 OBJC = @OBJC@
 OBJCFLAGS = @OBJCFLAGS@
@@ -75,7 +76,6 @@ R_FRAMEWORK_DIR = $(prefix)/R.framework
 R_GZIPCMD = @R_GZIPCMD@
 ## needed for AIX only
 @USE_EXPORTFILES_TRUE@ R_HOME = $(top_builddir)
-R_MODULES = @R_MODULES@
 R_OSTYPE = @R_OSTYPE@
 R_PKGS = $(R_PKGS_BASE) @USE_RECOMMENDED_PACKAGES_TRUE@ $(R_PKGS_RECOMMENDED)
 R_PLATFORM = @R_PLATFORM@
@@ -86,7 +86,7 @@ R_XTRA_LIBS = @R_XTRA_LIBS@
 RANLIB = @RANLIB@
 READLINE_LIBS = @READLINE_LIBS@
 SED = @SED@
-SHELL = @SHELL@
+SHELL = @R_SHELL@
 SHLIB_EXT = @SHLIB_EXT@
 SHLIB_CFLAGS = @SHLIB_CFLAGS@
 SHLIB_FFLAGS = @SHLIB_FFLAGS@
@@ -96,6 +96,7 @@ SHLIB_LINK = $(SHLIB_LD) $(SHLIB_LDFLAGS) $(LDFLAGS)
 STRIP_LIBS = @striplib@
 STRIP_STATIC_LIBS = @stripstaticlib@
 TAR = @TAR@
+USE_NLS = @USE_NLS@
 X_CFLAGS = @X_CFLAGS@
 X_LIBS = @X_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@

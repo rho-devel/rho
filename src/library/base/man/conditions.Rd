@@ -200,8 +200,8 @@ restartFormals(r)
   error handling.  Calling handlers are based on Common Lisp and
   Dylan.  Restarts are based on the Common Lisp restart mechanism.}
 
-\seealso{\code{stop} and \code{warning} signal conditions, and
-  \code{try} is essentially a simplified version of \code{tryCatch}.
+\seealso{\code{\link{stop}} and \code{\link{warning}} signal conditions,
+  and \code{\link{try}} is essentially a simplified version of \code{tryCatch}.
 }
 
 \examples{

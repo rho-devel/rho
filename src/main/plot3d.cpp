@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -728,11 +728,11 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		s = start;
 		ns = 0;
 		/* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-		while (s && ns < int(max_contour_segments)) {
+		while (s && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		    ns++;
 		    s = s->next;
 		}
-		if(ns == int(max_contour_segments))
+		if(ns == CXXRCONSTRUCT(int, max_contour_segments))
 		    warning(_("contour(): circular/long seglist -- bug.report()!"));
 
 		/* countour midpoint : use for labelling sometime (not yet!) */
@@ -751,7 +751,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		REAL(xsxp)[0] = s->x0;
 		REAL(ysxp)[0] = s->y0;
 		ns = 1;
-		while (s->next && ns < int(max_contour_segments)) {
+		while (s->next && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		    s = s->next;
 		    REAL(xsxp)[ns] = s->x0;
 		    REAL(ysxp)[ns++] = s->y0;
@@ -798,7 +798,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 SEXP GEcontourLines(double *x, int nx, double *y, int ny,
 		    double *z, double *levels, int nl)
 {
-    unsigned int vmax;
+    void *vmax;
     int i, nlines, len;
     double atom, zmin, zmax;
     SEGP* segmentDB;
@@ -938,7 +938,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 {
 /* draw a contour for one given contour level 'zc' */
 
-    unsigned int vmax;
+    void *vmax;
 
     double xend, yend;
     int i, ii, j, jj, ns, ns2, dir;
@@ -1020,11 +1020,11 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    s = start;
 	    ns = 0;
 	    /* max_contour_segments: prevent inf.loop (shouldn't be needed) */
-	    while (s && ns < int(max_contour_segments)) {
+	    while (s && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		ns++;
 		s = s->next;
 	    }
-	    if(ns == int(max_contour_segments))
+	    if(ns == CXXRCONSTRUCT(int, max_contour_segments))
 		warning(_("contour(): circular/long seglist -- bug.report()!"));
 
 	    /* countour midpoint : use for labelling sometime (not yet!) */
@@ -1038,7 +1038,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    ns = 0;
 	    xxx[ns] = s->x0;
 	    yyy[ns++] = s->y0;
-	    while (s->next && ns < int(max_contour_segments)) {
+	    while (s->next && ns < CXXRCONSTRUCT(int, max_contour_segments)) {
 		s = s->next;
 		xxx[ns] = s->x0;
 		yyy[ns++] = s->y0;
@@ -1364,7 +1364,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
     rcolor colsave;
     double cexsave;
     double atom, zmin, zmax;
-    unsigned int vmax, vmax0;
+    void *vmax, *vmax0;
     char familysave[201];
     int method;
     Rboolean drawLabels;
@@ -1504,7 +1504,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
 
     ltysave = gpptr(dd)->lty;
     colsave = gpptr(dd)->col;
-    lwdsave = int(Rf_gpptr(dd)->lwd);
+    lwdsave = CXXRCONSTRUCT(int, gpptr(dd)->lwd);
     cexsave = gpptr(dd)->cex;
     labelList = PROTECT(R_NilValue);
 
@@ -1983,9 +1983,9 @@ static void DrawFacets(double *z, double *x, double *y, int nx, int ny,
 	if (nv > 2) {
 	    newcol = col[icol];
 	    if (DoLighting) {
-		r = static_cast<unsigned int>(shade * R_RED(newcol));
-		g = static_cast<unsigned int>(shade * R_GREEN(newcol));
-		b = static_cast<unsigned int>(shade * R_BLUE(newcol));
+		r = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_RED(newcol));
+		g = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_GREEN(newcol));
+		b = CXXRCONSTRUCT(static_cast<unsigned int>, shade * R_BLUE(newcol));
 		newcol = R_RGB(r, g, b);
 	    }
 	    GPolygon(nv, xx, yy, USER, newcol, border, dd);
@@ -1993,23 +1993,6 @@ static void DrawFacets(double *z, double *x, double *y, int nx, int ny,
     }
 }
 
-
-#ifdef NOT_used_currently/*-- out 'def'  (-Wall) --*/
-static void CheckRange(double *x, int n, double min, double max)
-{
-    double xmin, xmax;
-    int i;
-    xmin =  DBL_MAX;
-    xmax = -DBL_MAX;
-    for (i = 0; i < n; i++)
-	if (R_FINITE(x[i])) {
-	    if (x[i] < xmin) xmin = x[i];
-	    if (x[i] > xmax) xmax = x[i];
-	}
-    if (xmin < min || xmax > max)
-	errorcall(gcall, _("coordinates outsize specified range"));
-}
-#endif
 
 static void PerspWindow(double *xlim, double *ylim, double *zlim, pGEDevDesc dd)
 {

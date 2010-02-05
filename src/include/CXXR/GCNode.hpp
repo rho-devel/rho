@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -66,37 +66,31 @@ namespace CXXR {
      * other objects derived from GCNode, these should be encapsulated
      * within an object of the templated class GCEdge, and the class
      * should reimplement the methods detachReferents() and visitReferents()
-     * appropriately.</li>
+     * appropriately.  (This does not necessarily apply to pointers
+     * where other logic ensures that the pointer does not outlive the
+     * thing pointed to.)</li>
      * </ol>
      *
      * \par Infant immunity:
-     * While a GCNode or an object of a class derived from GCNode is
-     * under construction, it is effectively immune from the garbage
-     * collector: the garbage collector regards it as 'reachable', and
-     * so leaves it and any nodes reachable \e via it in place.  This
-     * greatly simplifies the coding of the constructors.
-     *
-     * \par
-     * A node's infant immunity continues until it is explicitly
-     * exposed to the garbage collection by calling the member
-     * function expose() (in one of its two forms).  It is the
+     * Mark-sweep garbage collection is disabled while any GCNode or
+     * object of a class derived from GCNode is under construction.
+     * This greatly simplifies the coding of the constructors.  Such
+     * an object is considered to be under construction from the
+     * moment the constructor is invoked until the node is exposed by
+     * calling the member function expose() (in one of its two forms),
+     * or until the node is deleted, whichever is sooner.  It is the
      * responsibility of any code that creates an object of a class
-     * derived from GCNode to ensure that, under normal operation, the
-     * object is in due course exposed to the garbage collector,
-     * e.g. before a pointer to the node is returned as the value of a
-     * function.  In particular, a node must be exposed before it is
-     * designated as the target of a GCEdge or a GCRoot, or protected
-     * with PROTECT() or REPROTECT(): if the preprocessor variable
-     * CHECK_EXPOSURE is defined, runtime checks for this are inserted
-     * into the code.
+     * derived from GCNode to ensure that the object is exposed as
+     * soon as possible, e.g. before a pointer to the node is returned
+     * as the value of a function.  In particular, a node must be
+     * exposed before it is designated as the target of a GCEdge, a
+     * GCStackRoot or a GCRoot, or protected with PROTECT() or
+     * REPROTECT(): if the preprocessor variable CHECK_EXPOSURE is
+     * defined, runtime checks for this are inserted into the code.
      *
      * The simplest way of ensuring timely exposure is always to wrap
      * the \c new call in a call to expose():
      * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
-     *
-     * If exceptions occur, the static member function
-     * slaughterInfants() can be used to delete \e all the nodes
-     * currently enjoying infant immunity.
      *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
@@ -134,15 +128,46 @@ namespace CXXR {
 	    virtual bool operator()(const GCNode* node) = 0;
 	};
 
+	/** @brief Not for general use.
+	 *
+	 * All garbage collection will be inhibited while any object
+	 * of this type exists.
+	 *
+	 * @deprecated This class is provided for use in implementing
+	 * functions (such as SET_ATTRIB()) in the Rinternals.h
+	 * interface which would not give rise to any memory
+	 * allocations as implemented in CR but may do so as
+	 * implemented in CXXR.  Its use for other purposes is
+	 * deprecated: use instead more selective protection against
+	 * garbage collection such as that provided by class
+	 * GCStackRoot<T>.
+	 *
+	 * @note GC inhibition is implemented as an object type to
+	 * facilitate reinstatement of garbage collection when an
+	 * exception is thrown.
+	 */
+	struct GCInhibitor {
+	    GCInhibitor()
+	    {
+		++GCNode::s_inhibitor_count;
+	    }
+
+	    ~GCInhibitor()
+	    {
+		--GCNode::s_inhibitor_count;
+	    }
+	};
+
 	GCNode()
             :
 #ifdef GCID
 	    m_id(++s_last_id),
 #endif
-	    m_bits(s_mark), m_refcount(0)
+	    m_bits(s_mark | UNDER_CONSTRUCTION), m_refcount(0)
 	{
-	    s_infants->splice_back(this);
+	    s_live->splice_back(this);
 	    ++s_num_nodes;
+	    ++s_under_construction;
 #ifdef GCID
 	    watch();
 #endif
@@ -151,40 +176,16 @@ namespace CXXR {
 	/** @brief Allocate memory.
          *
 	 * Allocates memory for a new object of a class derived from
-	 * GCNode, and fills the memory with zero bytes.
+	 * GCNode.
 	 *
 	 * @param bytes Number of bytes of memory required.
 	 *
 	 * @return Pointer to the allocated memory block.
 	 *
-	 * @par Why zero out the memory?
-	 * Suppose that <tt>Foo</tt> and \c Bar are classes derived
-	 * from GCNode, and that a \c Foo object in effect 'contains'
-	 * a <tt>Bar</tt>.  Consider the following implementation of
-	 * <tt>Foo</tt>'s constructor:
-	 * <pre>
-	 * Foo()
-	 *      : m_edge(new Bar)
-	 * {}
-	 * </pre>
-	 * But now consider what would happen if the call <tt>new
-	 * Bar</tt> resulted in a garbage collection.  Then the
-	 * visitReferents() function of the object under construction
-	 * may be called before the field <tt>m_edge</tt> has been
-	 * initialized.  Were <tt>operator new</tt> not to zero out
-	 * the memory for the \c Foo object, then \c m_edge would at
-	 * this point contain junk, so when visitReferents() tries to
-	 * explore <tt>m_edge</tt>, this would result in undefined
-	 * behaviour, probably a program crash.  (This bug would
-	 * remain latent until a garbage collection happened at
-	 * precisely this point.)  With prezeroing by <tt>operator
-	 * new</tt> however, visitReferents() will not attempt to
-	 * explore <tt>m_edge</tt>, because it will regard it as a
-	 * null edge.  (This assumes that a null pointer is
-	 * represented by a zero bit pattern.  In the unlikely event
-	 * that CXXR needs to be ported to a platform for which this
-	 * is not true, an extra test in GCEdge<T>::conductVisitor()
-	 * will be necessary.
+	 * @note This function will often carry out garbage collection
+	 * of some kind before allocating memory.  However, no
+	 * mark-sweep collection will be performed if another GCNode
+	 * object is currently under construction.
 	 */
 	static void* operator new(size_t bytes);
 
@@ -236,38 +237,50 @@ namespace CXXR {
 	    return true;
 	}
 
-	/** @brief Exposes node to the garbage collector.
+	/** @brief Record that construction of a node is complete.
 	 *
-	 * Exposes this node to garbage collection by terminating its
-	 * infant immunity.
+	 * See the description of the templated form of expose.
 	 */
 	void expose() const
 	{
-	    if (!(m_bits & EXPOSED)) {
-		m_bits |= EXPOSED;
-		s_exposed->splice_back(this);
-	    }
+	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
+	    m_bits &= ~UNDER_CONSTRUCTION;
 	}
 
-	/** @brief Is node exposed to garbage collection?
+	/** @brief Record that construction of a node is complete.
 	 *
-	 * @return true iff this node is exposed to the garbage
-	 * collector.
-	 */
-	bool exposed() const
-	{
-	    return (m_bits & EXPOSED);
-	}
-
-	/** @brief Exposes node to the garbage collector.
+	 * In normal operation (i.e. unless the object's constructor
+	 * throws an exception), this function - or its non-templated
+	 * form - should be called for each object derived from
+	 * GCNode, and this should be done as soon as possible after
+	 * construction of the object is complete.  In particular, a
+	 * node must be exposed before it is designated as the target
+	 * of a GCEdge, a GCStackRoot or a GCRoot, or protected with
+	 * PROTECT() or REPROTECT(): if the preprocessor variable
+	 * CHECK_EXPOSURE is defined, runtime checks for this are
+	 * inserted into the code.
+	 *
+	 * The simplest way of ensuring timely exposure is always to wrap
+	 * the \c new call in a call to expose():
+	 * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+	 *
+	 * It is permissible (but pointless) for a node to be exposed
+	 * more than once.
 	 *
 	 * @param T GCNode or any class derived from it, possibly
 	 *          qualified by const.
 	 *
-	 * @param node Pointer to the node to be exposed to garbage
-	 *          collection by terminating its infant immunity.
+	 * @param node Pointer to the node whose construction has been
+	 *          completed.
 	 *
 	 * @return the pointer \a node itself.
+	 *
+	 * @note The name of this function reflects an earlier design
+	 * in which GCNode objects were individually exposed to
+	 * mark-sweep garbage collection once their construction was
+	 * complete.  In the current design, mark-sweep garbage
+	 * collection is inhibited entirely whilst any GCNode object
+	 * is under construction.
 	 */
 	template <class T>
 	static T* expose(T* node)
@@ -287,9 +300,8 @@ namespace CXXR {
 	 * causes the reference counts of other nodes to fall to zero,
 	 * those nodes are also deleted, and so on recursively.
 	 *
-	 * @note Infant nodes are not deleted by this function,
-	 * because their reference counts should never have risen
-	 * above zero.
+	 * @note This function does not delete nodes whose reference
+	 * counts have never have risen above zero.
 	 */
 	static void gclite();
 
@@ -333,15 +345,6 @@ namespace CXXR {
 	 */
 	static size_t numNodes() {return s_num_nodes;}
 
-	/** @brief Delete all nodes with infant immunity.
-	 *
-	 * This function is typically called during error recovery,
-	 * and deletes all nodes in Generation 0.
-	 *
-	 * @return The number of nodes deleted.
-	 */
-	static size_t slaughterInfants();
-
 	/** @brief Conduct a visitor to the nodes referred to by this
 	 * one.
 	 *
@@ -373,6 +376,7 @@ namespace CXXR {
 #ifdef GCID
 	    watch();
 #endif
+	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
 	    --s_num_nodes;
 	}
 
@@ -391,16 +395,17 @@ namespace CXXR {
 	 *
 	 * @note If this method is reimplemented in a derived class,
 	 * the reimplemented version must remember to invoke
-	 * visitReferents() for the immediate base class of the
+	 * detachReferents() for the immediate base class of the
 	 * derived class, to ensure that \e all referents of the
 	 * object get detached.
 	 */
 	virtual void detachReferents()  {}
 
     private:
-	friend class WeakRef;
+	friend class GCInhibitor;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
+	friend class WeakRef;
 
 	/** Visitor class used to mark nodes.
 	 *
@@ -418,18 +423,14 @@ namespace CXXR {
 	};
 
 	typedef HeterogeneousList<GCNode> List;
-		
-	static List* s_infants;  // List of nodes not yet exposed to
-		       // the garbage collector.
-	static List* s_exposed;  // List of nodes exposed to the
-		       // garbage collector, other than 'moribund'
+
+	static List* s_live;  // List of nodes other than 'moribund'
 		       // nodes.
 	static List* s_moribund;  // List of nodes whose reference
 		       // count has fallen to zero (but may
 		       // subsequently have increased again).
 	static List* s_reachable;  // During the mark phase of garbage
-		       // collection, if a node within the generations
-		       // being collected is found to be reachable
+		       // collection, if a node is found to be reachable
 		       // from the roots, it is moved to this list.
 		       // Between garbage collections, this list
 		       // should be empty.
@@ -437,7 +438,12 @@ namespace CXXR {
 			       // node is considered marked if its
 			       // MARK field matches the corresponding
 			       // bits of s_mark.
-	static size_t s_num_nodes;
+	static unsigned int s_num_nodes;  // Number of nodes in existence
+	static unsigned int s_under_construction;  // Number of nodes
+	                      // currently under construction
+	                      // (i.e. not yet exposed).
+	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
+	                      // objects in existence.
 #ifdef GCID
 	// If GCID is defined, each GCNode is given an identity
 	// number.  The numbers are not unique: they wrap around
@@ -446,13 +452,14 @@ namespace CXXR {
 	static unsigned int s_last_id;
 
 	// Using a debugger, the following can be set to non-null values
-	// to monitor operations on particular nodes:
-	static const GCNode* s_watch_node;
+	// to monitor operations on nodes at a particular address, or
+	// a node with a particular id:
+	static const GCNode* s_watch_addr;
 	static unsigned int s_watch_id;
 #endif
 
 	// Masks applicable to the m_bits field:
-	enum {EXPOSED = 1, MORIBUND = 2, MARK = 4};
+	enum {UNDER_CONSTRUCTION = 1, MORIBUND = 2, MARK = 4};
 
 #ifdef GCID
 	unsigned int m_id;
@@ -538,11 +545,6 @@ namespace CXXR {
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();
-
-	// Conduct visitor to all nodes currently enjoying infant
-	// immunity.
-	static void visitInfants(const_visitor* v);
-
 #ifdef GCID
 	// Used to monitor a particular node (or nodes at a particular
 	// address) using a debugger.

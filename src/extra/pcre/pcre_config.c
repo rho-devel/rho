@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -22,7 +22,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2008 University of Cambridge
+           Copyright (c) 1997-2009 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -120,11 +120,11 @@ switch (what)
   break;
 
   case PCRE_CONFIG_MATCH_LIMIT:
-  *((unsigned int *)where) = MATCH_LIMIT;
+  *((unsigned long int *)where) = MATCH_LIMIT;
   break;
 
   case PCRE_CONFIG_MATCH_LIMIT_RECURSION:
-  *((unsigned int *)where) = MATCH_LIMIT_RECURSION;
+  *((unsigned long int *)where) = MATCH_LIMIT_RECURSION;
   break;
 
   case PCRE_CONFIG_STACKRECURSE:

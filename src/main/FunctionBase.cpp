@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,6 +41,9 @@
 
 #include "CXXR/FunctionBase.h"
 
+#include "R_ext/Print.h"
+#include "Rinternals.h"  // For Rf_PrintValue
+
 using namespace std;
 using namespace CXXR;
 
@@ -48,7 +51,15 @@ using namespace CXXR;
 // from C:
 namespace CXXR {
     namespace ForceNonInline {
-	void (*SET_TRACEptr)(SEXP x, int v) = SET_TRACE;
-	int (*TRACEptr)(SEXP x) = TRACE;
+	int (*RTRACEptr)(SEXP x) = RTRACE;
+	void (*SET_RTRACEptr)(SEXP x, int v) = SET_RTRACE;
     }
+}
+
+bool FunctionBase::s_tracing_enabled = true;
+
+void FunctionBase::reportCall(const Expression* call)
+{
+    Rprintf("trace: ");
+    Rf_PrintValue(const_cast<Expression*>(call));
 }

@@ -14,7 +14,7 @@
   \code{summary} is a generic function used to produce result summaries
   of the results of various model fitting functions.  The function
   invokes particular \code{\link{methods}} which depend on the
-  \code{\link[base]{class}} of the first argument.
+  \code{\link{class}} of the first argument.
 }
 \usage{
 summary(object, \dots)
@@ -58,7 +58,7 @@ summary(object, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 summary(attenu, digits = 4) #-> summary.data.frame(...), default precision

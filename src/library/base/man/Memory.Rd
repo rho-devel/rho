@@ -51,10 +51,10 @@ mem.limits(nsize = NA, vsize = NA)
 #endif
 
   To understand the options, one needs to know that CXXR allocates
-  most of its memory via an internal heap implemented by class
-  CXXR::Heap (which in turn gets its memory using C++'s \code{::operator
-  new}).  The amount of memory allocated via this heap is used to
-  decide when to carry out garbage collections.
+  most of its memory via an internal mechansim implemented by class
+  CXXR::MemoryBank (which in turn gets its memory using C++'s
+  \code{::operator new}).  The amount of memory allocated via
+  MemoryBank is used to decide when to carry out garbage collections.
 
   The \option{--*-nsize} and \option{--max-*} options are ignored in
   CXXR.  The \option{--min-vsize} options is described below.  All
@@ -76,18 +76,12 @@ mem.limits(nsize = NA, vsize = NA)
   CXXR. (If this is called with the default values, it reports the
   current settings.)  
 
-  You can find out the current memory consumption (the heap allocation
-  and number of nodes) by typing \code{\link{gc}()} at the
-  \R prompt.  Note that following \code{\link{gcinfo}(TRUE)}, automatic
-  garbage collection always prints memory use statistics.
+  You can find out the current memory consumption (the MemoryBank
+  allocation and number of nodes) by typing \code{\link{gc}()} at the
+  \R prompt.
 
-  The command-line option \option{--max-ppsize} controls the maximum
-  size of the pointer protection stack.  This defaults to 50000, but can
-  be increased to allow deep recursion or large and complicated
-  calculations to be done. \emph{Note} that parts of the garbage
-  collection process goes through the full reserved pointer protection
-  stack and hence becomes slower when the size is increased.  Currently
-  the maximum value accepted is 500000.
+  In CR, the command-line option \option{--max-ppsize} controls the maximum
+  size of the pointer protection stack, but it has no effect in CXXR.
 }
 
 \value{

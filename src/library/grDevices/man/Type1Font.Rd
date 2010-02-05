@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/Type1Font.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Type1Font}
@@ -28,13 +28,8 @@ CIDFont(family, cmap, cmapEncoding, pdfresource = "")
     to the afm (Adobe Font Metric) files for the font.}
   \item{cmap}{the name of a CMap file for a CID-keyed font.}
   \item{encoding}{for \code{Type1Font}, the name of an encoding file.
-    Defaults to \code{"default"}, which maps on this platform to
-#ifdef unix
-"ISOLatin1.enc".
-#endif
-#ifdef windows
-"WinAnsi.enc".
-#endif
+    Defaults to \code{"default"}, which maps on Unix-alikes to
+    \code{"ISOLatin1.enc"} and on Windows to \code{"WinAnsi.enc"}.
     Otherwise, a file name in the \file{enc} directory of the
     \pkg{grDevices} package, which is used if the path does not contain a
     path separator.  An extension \code{".enc"} can be omitted.}
@@ -49,7 +44,7 @@ CIDFont(family, cmap, cmapEncoding, pdfresource = "")
 \details{
   For \code{Type1Fonts}, if four \file{.afm} files are supplied the
   fifth is taken to be \code{"Symbol.afm"}.  Relative paths are taken
-  relative to the directory \file{\var{\link[base:Rhome]{R\_HOME}}/library/grDevices/afm}.
+  relative to the directory \file{\var{\link{R_HOME}}/library/grDevices/afm}.
   The fifth (symbol) font must be in \code{AdobeSym} encoding.
   However, the glyphs in the first four fonts are referenced by name
   and any encoding given within the \file{.afm} files is not used.

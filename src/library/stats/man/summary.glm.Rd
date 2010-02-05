@@ -5,9 +5,7 @@
 
 \name{summary.glm}
 \alias{summary.glm}
-%\alias{summary.glm.null}
 \alias{print.summary.glm}
-%\alias{print.summary.glm.null}
 \title{Summarizing Generalized Linear Model Fits}
 \usage{
 \method{summary}{glm}(object, dispersion = NULL, correlation = FALSE,
@@ -104,7 +102,7 @@
   \code{\link{glm}}, \code{\link{summary}}.
 }
 \examples{
-## --- Continuing the Example from  '?glm':%\code{\link{glm}}:
+## --- Continuing the Example from  '?glm':
 \dontshow{utils::example("glm", echo = FALSE)}
 summary(glm.D93)
 }

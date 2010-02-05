@@ -16,7 +16,7 @@ predict (object, \dots)
 \description{
   \code{predict} is a generic function for predictions from the results of
   various model fitting functions.  The function invokes particular
-  \emph{methods} which depend on the \code{\link[base]{class}} of
+  \emph{methods} which depend on the \code{\link{class}} of
   the first argument.
 }
 \details{
@@ -58,7 +58,7 @@ predict (object, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 require(utils)

@@ -5,17 +5,6 @@
 
 \name{nls}
 \alias{nls}
-%\alias{anova.nls}
-%\alias{anovalist.nls}
-%\alias{coef.nls}
-%\alias{deviance.nls}
-%\alias{df.residual.nls}
-%\alias{fitted.nls}
-%\alias{logLik.nls}
-%\alias{print.nls}
-%\alias{residuals.nls}
-%\alias{vcov.nls}
-%\alias{weights.nls}
 \title{Nonlinear Least Squares}
 \description{
   Determine the nonlinear (weighted) least-squares estimates of the
@@ -147,7 +136,7 @@ nls(formula, data, start, control, algorithm,
   Bates, D. M. and Chambers, J. M. (1992)
   \emph{Nonlinear models.}
   Chapter 10 of \emph{Statistical Models in S}
-  eds J. M. Chambers and T. J. Hastie, Wadsworth \& Brooks/Cole.
+  eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 
   \url{http://www.netlib.org/port/} for the Port library
   documentation.

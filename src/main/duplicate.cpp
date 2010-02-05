@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -73,11 +73,11 @@ SEXP duplicate(SEXP s){
     SEXP t = RObject::clone(s);
     if (!t) return s;
 #ifdef R_MEMORY_PROFILING
-    if (TRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
+    if R(TRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
 		      TYPEOF(s) == ENVSXP)){
 	    memtrace_report(s,t);
-	    SET_TRACE(t,1);
+	    SET_RTRACE(t,1);
     }
 #endif
     return t;

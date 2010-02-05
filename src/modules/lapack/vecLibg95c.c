@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -22,16 +22,16 @@
 
 void F77_FUNC_(rcblas_cdotu_sub,)(const int *N, const void *X, const int *incX,
                        const void *Y, const int *incY, void *dotu) 
-{ cblas_cdotu_sub(*N, X, *incX, Y, *incY, dotu); };
+{ cblas_cdotu_sub(*N, X, *incX, Y, *incY, dotu); }
 
 void F77_FUNC_(rcblas_cdotc_sub,)(const int *N, const void *X, const int *incX,
                        const void *Y, const int *incY, void *dotc)
-{ cblas_cdotc_sub(*N, X, *incX, Y, *incY, dotc); };
+{ cblas_cdotc_sub(*N, X, *incX, Y, *incY, dotc); }
 
 void F77_FUNC_(rcblas_zdotu_sub,)(const int *N, const void *X, const int *incX,
                        const void *Y, const int *incY, void *dotu)
-{ cblas_zdotu_sub(*N, X, *incX, Y, *incY, dotu); };
+{ cblas_zdotu_sub(*N, X, *incX, Y, *incY, dotu); }
 
 void F77_FUNC_(rcblas_zdotc_sub,)(const int *N, const void *X, const int *incX,
                        const void *Y, const int *incY, void *dotc)
-{ cblas_zdotc_sub(*N, X, *incX, Y, *incY, dotc); };
+{ cblas_zdotc_sub(*N, X, *incX, Y, *incY, dotc); }

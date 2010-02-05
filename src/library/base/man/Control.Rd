@@ -1,6 +1,6 @@
 % File src/library/base/man/Control.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Control}
@@ -37,7 +37,8 @@ next
   }
   \item{var}{A syntactical name for a variable.}
   \item{seq}{An expression evaluating to a vector (including a list and
-    an \link{expression}) or to a \link{pairlist} or \code{NULL}.}
+    an \link{expression}) or to a \link{pairlist} or \code{NULL}.  A
+    factor value will be coerced to a character vector.}
   \item{expr, cons.expr, alt.expr}{
     An \emph{expression} in a formal sense.  This is either a
     simple expression or a so called \emph{compound expression}, usually
@@ -59,31 +60,31 @@ next
   For that reason, one (somewhat extreme) attitude of defensive programming
   is to always use braces, e.g., for \code{if} clauses.
 
-  The index \code{seq} in a \code{for} loop is evaluated at the start of
-  the loop; changing it subsequently does not affect the loop.  The
-  variable \code{var} has the same type as \code{seq}, and is read-only:
-  assigning to it does not alter \code{seq}.  If \code{seq} is a factor
-  (which is not strictly allowed) then its internal codes are used: the
-  effect is that of \code{\link{as.integer}} not
-  \code{\link{as.vector}}.
+  The \code{seq} in a \code{for} loop is evaluated at the start of
+  the loop; changing it subsequently does not affect the loop. If
+  \code{seq} has length zero the body of the loop is skipped. Otherwise the
+  variable \code{var} is assigned in turn the value of each element of
+  \code{seq}. You can assign to \code{var} within the body of the loop,
+  but this will not affect the next iteration. When the loop terminates,
+  \code{var} remains as a variable containing its latest value.
+
 }
 \value{
   \code{if} returns the value of the expression evaluated, or
   \code{NULL} if none was (which may happen if there is no \code{else}).
 
-  \code{for}, \code{while} and \code{repeat} return the value of the
-  last expression evaluated (or \code{NULL} if none was), invisibly.
+  \code{for}, \code{while} and \code{repeat} return \code{NULL} invisibly.
   \code{for} sets \code{var} to the last used element of \code{seq},
   or to \code{NULL} if it was of length zero.
 
-  \code{break} and \code{next} have value \code{NULL}, although it would
-  be strange to look for a return value.
+  \code{break} and \code{next} do not return a value as they transfer
+  control within the loop.
 }
 
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{Syntax}} for the basic \R syntax and operators,
@@ -96,6 +97,8 @@ for(n in c(2,5,10,20,50)) {
    x <- stats::rnorm(n)
    cat(n,":", sum(x^2),"\n")
 }
+f = factor(sample(letters[1:5], 10, replace=TRUE))
+for( i in unique(f) ) print(i)
 }
 \keyword{programming}
 \keyword{iteration}

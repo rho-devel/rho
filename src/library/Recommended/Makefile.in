@@ -6,7 +6,7 @@
 #CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
 #CXXR Licence.
 #CXXR 
-#CXXR CXXR is Copyright (C) 2008 Andrew R. Runnalls, subject to such other
+#CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
 #CXXR copyrights and copyright restrictions as may be stated below.
 #CXXR 
 #CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -26,7 +26,7 @@ subdir = src/library/Recommended
 include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
-DISTFILES = Makefile.in .cvsignore
+DISTFILES = Makefile.in Makefile.win .cvsignore
 R = R_LIBS= $(top_builddir)/bin/R
 
 ## foo.ts is the timestamp for package foo;
@@ -36,8 +36,7 @@ R = R_LIBS= $(top_builddir)/bin/R
 ## For developers: A shell script, tools/rsync-recommended, updates
 ## packages from the CRAN master directory. 
 
-OBJECTS = $(R_PKGS_RECOMMENDED_SOURCES:=.ts)
-OBJECTS_SRC = $(R_PKGS_RECOMMENDED_SOURCES:=.tgz)
+OBJECTS = $(R_PKGS_RECOMMENDED:=.ts)
 
 CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
@@ -56,7 +55,7 @@ stamp-recommended: $(OBJECTS)
 	@touch $@
 
 ## need to allow parallel installs
-INSTALL_OPTS=--no-lock
+INSTALL_OPTS=--no-lock --install-tests
 
 .tgz.ts:
 	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
@@ -78,6 +77,29 @@ install-strip: install
 
 uninstall:
 
+install-tests:
+	@(tmp=$${TMPDIR-/tmp}/R$$$$; mkdir $${tmp}; \
+	 cd "$(top_srcdir)"; abs_top_srcdir=`pwd`; \
+	 abs_MKINSTALLDIRS=`echo "$(MKINSTALLDIRS)" | sed "s:$(top_srcdir):$${abs_top_srcdir}:"` ; \
+	 cd $${tmp}; \
+	 for pkg in $(R_PKGS_RECOMMENDED); do \
+	   gzip -dc "$(abs_top_srcdir)/src/library/Recommended/$${pkg}.tgz" | $(TAR) xf - ; \
+	 done ; \
+	 for pkg in $(R_PKGS_RECOMMENDED); do \
+	  if test -d $${pkg}/tests; then \
+	    $${abs_MKINSTALLDIRS} "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \
+	    for f in $${pkg}/tests/*; do \
+	      $(INSTALL_DATA) $${f} "$(DESTDIR)$(rhome)/library/$${pkg}/tests"; \
+	    done; \
+	  fi; \
+	 done)
+
+uninstall-tests:
+	@for pkg in $(R_PKGS_RECOMMENDED); do \
+	 rm -rf "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \
+	done
+
+
 mostlyclean: clean
 clean:
 	-@test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
@@ -97,6 +119,7 @@ distdir: $(DISTFILES)
 	done
 
 
-## Hardcoded dependencies (see 'share/make/vars.mk')
-mgcv.ts: nlme.ts VR.ts
+## Hardcoded dependencies (see '../../../share/make/vars.mk')
+mgcv.ts: nlme.ts MASS.ts Matrix.ts
 nlme.ts: lattice.ts
+class.ts: MASS.ts

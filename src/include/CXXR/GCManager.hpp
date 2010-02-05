@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -64,46 +64,25 @@ namespace CXXR {
      */
     class GCManager {
     public:
-	/** @brief Adjust the garbage collection threshold.
+	/** @brief Initiate a mark-sweep garbage collection.
 	 *
-	 *  Adjust the garbage collection threshold in the light of
-	 *  current allocations, and the space demand currently being
-	 *  addressed.
-	 *
-	 * @param bytes_needed If specified, the number of bytes
-	 *          currently being sought by CXXR::MemoryBank.
+	 * It is currently an error to initiate a mark-sweep garbage
+	 * collection while a GCNode object is under construction.
 	 */
-	static void adjustThreshold(size_t bytes_needed = 0);
+	static void gc();
 
-	/** @brief Initiate a garbage collection.
+	/** @brief Enable mark-sweep garbage collection.
 	 *
-	 * Note that enableGC() must have been called before this
-	 * method is used.
-	 *
-	 * @param bytes_wanted An indication of the number of bytes
-	 *          wanted in the event that prompted garbage
-	 *          collection.  If in doubt, set it to 0.
-	 */
-	static void gc(size_t bytes_wanted);
-
-	/** @brief Enable garbage collection.
-	 *
-	 * No automatic garbage collection of GCNode objects will take
-	 * place until this method has been called; nor may a
-	 * collection may be initiated 'manually' by calling gc().
-	 * The effect of calling enableGC() more than once during a
-	 * single program run is undefined.
+	 * No automatic mark-sweep garbage collection of GCNode
+	 * objects will take place until this method has been called.
 	 *
 	 * @param initial_threshold  Initial value for the collection
 	 *          threshold.  The threshold will never be made less
-	 *          than this value during the run.
+	 *          than this value during the run (or until the
+	 *          threshold is changed by a subsequent call to
+	 *          setGCThreshold() ).
 	 */
-	static void enableGC(size_t initial_threshold);
-
-	/**
-	 * @return true iff garbage collection torture is enabled.
-	 */
-	static bool isTortured() {return s_tortured;}
+	static void setGCThreshold(size_t initial_threshold);
 
 	/** @brief Maximum number of bytes used.
 	 *
@@ -133,10 +112,6 @@ namespace CXXR {
 	static void resetMaxTallies();
 
 	/** @brief Set/unset monitors on garbage collection.
-	 *
-	 * No garbage collection of GCNode objects will take place
-	 * until this method has been called.  The effect of calling
-	 * it more than once during a single program run is undefined.
 	 *
 	 * @param pre_gc If not a null pointer, this function will be
 	 *          called just before garbage collection begins,
@@ -171,8 +146,11 @@ namespace CXXR {
 	 * system, a garbage collection is carried out.
 	 *
 	 * @param on The required torturing status.
+	 *
+	 * @note GC torture is no longer implemented in CXXR, so this
+	 * function is a no-op.
 	 */
-	static void torture(bool on) {s_tortured = on;}
+	static void torture(bool on) {}
 
 	/** @brief Current GC threshold level.
 	 *
@@ -184,15 +162,14 @@ namespace CXXR {
 	 */
 	static size_t triggerLevel() {return s_threshold;}
     private:
+	friend class GCNode;
+
 	static size_t s_threshold;
 	static size_t s_min_threshold;
 
 	static size_t s_max_bytes;
 	static size_t s_max_nodes;
 
-	static bool s_tortured;  // If this is true, every cue from
-				 // CXXR::MemoryBank leads to a garbage
-				 // collection.
 	static std::ostream* s_os;  // Pointer to output stream for GC
 				    // reporting, or NULL.
 
@@ -203,16 +180,16 @@ namespace CXXR {
 	// Clean up static data associated with garbage collection.
 	static void cleanup() {}
 
-	// Callback for CXXR::MemoryBank to cue a garbage collection:
-	static void cue(size_t bytes_wanted);
-
 	// Callbacks e.g. for timing:
 	static void (*s_pre_gc)();
 	static void (*s_post_gc)();
 
 	// Detailed control of the garbage collection is carried out
 	// here.
-	static void gcController(size_t bytes_wanted);
+	static void gcController();
+
+	// Initialize static data associated with garbage collection.
+	static void initialize();
     };
 }  // namespace CXXR
 

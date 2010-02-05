@@ -1,9 +1,9 @@
 % File src/library/base/man/userhooks.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
-\name{UserHooks}
+\name{userhooks}
 \alias{getHook}
 \alias{setHook}
 \alias{packageEvent}
@@ -23,10 +23,7 @@ packageEvent(pkgname,
 }
 \arguments{
   \item{hookName}{character string: the hook name}
-  \item{pkgname}{character string: the package/name space name.
-    If versioned install has been used, \code{pkgname} should be
-    the unversioned name of the package (but any version information
-    will be stripped).}
+  \item{pkgname}{character string: the package/name space name.}
   \item{event}{character string: an event for the package}
   \item{value}{A function, or for \code{action="replace"}, \code{NULL}.}
   \item{action}{The action to be taken.  The names can be abbreviated.}

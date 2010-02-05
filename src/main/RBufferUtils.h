@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 /* used in bind.c character.c deparse.c, printutils.c, saveload.c
-   scan.c seq.c sysutils.c */
+   scan.c seq.c sprintf.c sysutils.c */
 
 typedef struct {
  char *data;
@@ -49,7 +49,7 @@ typedef struct {
  size_t defaultSize;
 } R_StringBuffer;
 
-/* code in deparse.c */
+/* code in ./memory.c : */
 /* Note that R_StringBuffer *buf needs to be initialized before call */
 void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf);
 void R_FreeStringBuffer(R_StringBuffer *buf);

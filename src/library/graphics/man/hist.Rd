@@ -79,7 +79,7 @@ hist(x, \dots)
 \description{
   The generic function \code{hist} computes a histogram of the given
   data values.  If \code{plot=TRUE}, the resulting object of
-  \code{\link[base]{class} "histogram"} is plotted by
+  \link{class} \code{"histogram"} is plotted by
   \code{\link{plot.histogram}}, before it is returned.
 }
 \details{
@@ -136,7 +136,7 @@ hist(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 
   Venables, W. N. and Ripley. B. D. (2002)
   \emph{Modern Applied Statistics with S}.  Springer.

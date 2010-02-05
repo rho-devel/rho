@@ -18,12 +18,10 @@
     \item \code{\link{pdf}} Write PDF graphics commands to a file
     \item \code{\link{pictex}} Writes LaTeX/PicTeX graphics commands to a
     file
-#ifdef windows
     \item \code{\link{png}} PNG bitmap device
     \item \code{\link{jpeg}} JPEG bitmap device
     \item \code{\link{bmp}} BMP bitmap device
     \item \code{\link{tiff}} TIFF bitmap device
-#endif
     \item \code{\link{xfig}} Device for XFIG graphics file format
     \item \code{\link{bitmap}} bitmap pseudo-device via
     \code{GhostScript} (if available).
@@ -33,17 +31,14 @@
   them (they exist but will return with a warning on other systems):
   \itemize{
     \item \code{\link{X11}} The graphics device for the X11 Window system
-    \item \code{\link{bmp}} Windows bitmap device
-    \item \code{\link{jpeg}} JPEG bitmap device
-    \item \code{\link{png}} PNG bitmap device
-    \item \code{\link{tiff}} TIFF bitmap device
     \item \code{\link{cairo_pdf}}, \code{cairo_ps} PDF and PostScript
     devices based on cairo graphics.
 
     \item \code{\link{quartz}} The graphics device for the Mac OS X
     native Quartz 2d graphics system.  (This is only functional on Mac
-    OS X, but unlike \R < 2.7.0 can be used from the command line and
-    not just from the GUI console.)
+    OS X where it can be used from the \code{R.app} GUI and from the
+    command line: but it will display on the local screen even for a
+    remote session.)
   }
 #endif
 }
@@ -52,7 +47,7 @@
   a device to be opened.  Which device is given by
   \code{\link{options}("device")} which is initially set as the most
   appropriate for each platform: a screen device for most interactive use and
-  \code{\link{pdf}} (or the setting of \env{R\_DEFAULT\_DEVICE})
+  \code{\link{pdf}} (or the setting of \env{R_DEFAULT_DEVICE})
   otherwise.  The exception is interactive use under Unix if no screen
   device is known to be available, when \code{pdf()}is used.
 }

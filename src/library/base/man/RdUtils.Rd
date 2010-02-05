@@ -1,12 +1,12 @@
 % File src/library/base/man/RdUtils.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{RdUtils}
 \alias{Rdconv}
-\alias{Rd2txt}
 \alias{Rd2dvi}
+\alias{Rd2pdf}
 \alias{Sd2Rd}
 \title{Utilities for Processing Rd Files}
 \description{
@@ -15,10 +15,9 @@
   in other formats to Rd format.
 }
 \usage{
-
 \special{R CMD Rdconv [options] file}
 \special{R CMD Rd2dvi [options] files}
-\special{R CMD Rd2txt [options] file}
+\special{R CMD Rd2pdf [options] files}
 \special{R CMD Sd2Rd [options] file}
 }
 \arguments{
@@ -30,37 +29,32 @@
     obtaining information about usage and version of the utility.}
 }
 \details{
-  \code{Rdconv} converts Rd format to other formats.  Currently,
-  plain text, HTML, LaTeX, S version 3 (Sd), and S version 4 (.sgml)
-  formats are supported.  It can also extract the examples for
-  run-time testing.
+  \command{R CMD Rdconv} converts Rd format to plain text, HTML or LaTeX
+  formats: it can also extract the examples.
 
-  \code{Rd2dvi} and \code{Rd2txt} are user-level programs
-  for producing DVI/PDF output or pretty text output from Rd sources.
-  \code{Rd2dvi} will make use of environment variables
+  \command{R CMD Rd2dvi} is the user-level program for producing DVI/PDF output
+  from Rd sources.  It will make use of the environment variables
 #ifdef unix
-  \env{R\_PAPERSIZE} (set by \code{R CMD}, with a default set when \R was
-  installed) and \env{xdvi} (the DVI previewer, default \code{xdvi}),
+  \env{R_PAPERSIZE} (set by \command{R CMD}, with a default set when \R
+  was installed) and \env{xdvi} (the DVI previewer, default
+  \command{xdvi}),
 #endif
 #ifdef windows
-  \env{R\_PAPERSIZE} (default \code{a4}, ) and \env{xdvi} (the DVI
-  previewer, default \code{open} (use file associations) as from \R 2.8.0),
+  \env{R_PAPERSIZE} (default \code{a4}, also \code{legal} and
+  \code{executive}) and \env{xdvi} (the DVI previewer, default
+  \command{open} (use file associations)),
 #endif
-  and \env{R\_PDFVIEWER} (the PDF previwer).  (Valid values for
-  \env{R\_PAPERSIZE} are \code{a4}, \code{letter}, \code{legal} and
-  \code{executive}.)
+  and \env{R_PDFVIEWER} (the PDF previewer).  (Valid values for
+  \env{R_PAPERSIZE} are \code{a4}, \code{letter}, \code{legal} and
+  \code{executive}.)  \command{Rd2pdf} is shorthand for \command{Rd2dvi
+  --pdf}.
 
-  \code{Sd2Rd} converts S (version 3 or 4) documentation formats to Rd
-  format.
+  \command{R CMD Sd2Rd} converts S (version 3 or 4) documentation formats to Rd
+  format: it is no longer much used and the results may need
+  hand-tuning.  (It requires Perl.)
 
-  Use
-  \code{R CMD foo --help}
-  to obtain usage information on utility \code{foo}.
-}
-\note{
-  Conversion to S version 3/4 formats is rough: there are some
-  \file{.Rd} constructs for which there is no natural analogue.
-  They are intended as a starting point for hand-tuning.
+  Use \command{R CMD \var{foo} --help} to obtain usage information on utility
+  \code{\var{foo}}.
 }
 \seealso{
   The chapter \dQuote{Processing Rd format} in the \dQuote{Writing \R

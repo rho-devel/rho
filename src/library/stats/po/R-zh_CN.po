@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.2.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-26 08:39\n"
+"POT-Creation-Date: 2009-10-08 08:29\n"
 "PO-Revision-Date: 2005-04-08 08:37+0000\n"
 "Last-Translator: 陈斐 <FeiChen@FairIsaac.com>\n"
 "Language-Team: Chinese\n"
@@ -25,8 +25,8 @@ msgstr "'acf'的长度必需是一或二"
 msgid "object not interpretable as a factor"
 msgstr "不能把对象解释成因子"
 
-msgid "cannot fit models without level ('alpha' must not be 0)."
-msgstr "无法拟合没有层次的模型('alpha'不能为0) 。"
+msgid "cannot fit models without level ('alpha' must not be 0 or FALSE)."
+msgstr "无法拟合没有层次的模型('alpha'不能为0或FALSE) 。"
 
 msgid "'alpha', 'beta' and 'gamma' must be within the unit interval."
 msgstr "'alpha', 'beta'和'gamma'必需在单位区间内。"
@@ -137,6 +137,9 @@ msgstr ""
 "FUN的长度, %d,\n"
 "与边缘的长度, %d不相符"
 
+msgid "no rows to aggregate"
+msgstr "没有可用来聚合的行"
+
 msgid "'by' must be a list"
 msgstr "'by'必需是串列"
 
@@ -196,6 +199,9 @@ msgstr "没有'formula'或有错"
 
 msgid "grouping factor must have exactly 2 levels"
 msgstr "分组因子只能有两层"
+
+msgid "weights are not supported in a multistratum aov() fit"
+msgstr "不支持加权多层aov()拟合"
 
 msgid "Error() model is singular"
 msgstr "Error()模型奇异"
@@ -359,8 +365,8 @@ msgstr "样本太稀疏，找不到alph2"
 msgid "no solution in the specified range of bandwidths"
 msgstr "在设定的頻寬值域内找不到解答"
 
-msgid "increasing bw.SJ() search interval (%d)"
-msgstr "增加bw.SJ()的搜索间隔(%d)"
+msgid "increasing bw.SJ() search interval (%d) to [%.4g,%.4g]"
+msgstr "增加bw.SJ()的搜索间隔(%d) 至[%.4g,%.4g]"
 
 msgid "minimum occurred at one end of the range"
 msgstr "最小值存在于值域的边界上"
@@ -501,6 +507,9 @@ msgstr "奇异对比矩阵"
 
 msgid "numeric contrasts or contrast name expected"
 msgstr "需要数值对比或对比的名字"
+
+msgid "contr*(.., sparse=TRUE) needs package \"Matrix\" correctly installed"
+msgstr "contr*(.., sparse=TRUE) 需要正确安装的\"Matrix\"程序包"
 
 msgid "not enough degrees of freedom to define contrasts"
 msgstr "设定对比的自由度不够"
@@ -758,6 +767,9 @@ msgstr "Poisson分布族里没有\"%s\"这一鏈結函数；可以用的鏈結�
 msgid "negative values not allowed for the Poisson family"
 msgstr "Poisson分布族不能用负数"
 
+msgid "ignoring prior weights"
+msgstr "先验重量略过不用"
+
 msgid ""
 "link \"%s\" not available for quasipoisson family; available links are %s"
 msgstr "quasipoisson分布族里没有\"%s\"这一鏈結函数；可以用的鏈結是%s"
@@ -790,6 +802,9 @@ msgid ""
 "or a 2 column matrix where col 1 is no. successes and col 2 is no. failures"
 msgstr "或是有两个列的矩阵，第一列是成功的计数，第二列是失败的计数"
 
+msgid "cannot simulate from non-integer prior.weights"
+msgstr "无法用非整数的prior.weights进行模拟"
+
 msgid ""
 "link \"%s\" not available for quasibinomial family; available links are %s"
 msgstr "quasibinomial分布族里没有\"%s\"这一鏈結函数；可以用的鏈結是%s"
@@ -803,12 +818,22 @@ msgstr "gamma分布族里没有\"%s\"这一鏈結函数；可以用的鏈結是%
 msgid "non-positive values not allowed for the gamma family"
 msgstr "gamma分布族不允许有负值"
 
+#, fuzzy
+msgid "using weights as shape parameters"
+msgstr "用重量作为形状参数"
+
 msgid ""
 "link \"%s\" not available for inverse.gaussian family; available links are %s"
 msgstr "inverse.gaussian分布族里没有\"%s\"这一鏈結函数；可以用的鏈結%s"
 
 msgid "positive values only allowed for the inverse.gaussian family"
 msgstr "inverse.gaussian分布族只允许正值"
+
+msgid "Need CRAN package 'SuppDists' for 'inverse.gaussian' family"
+msgstr "'inverse.gaussian'分布族需要CRAN程序包'SuppDists'"
+
+msgid "using weights as inverse variances"
+msgstr "用重量作逆方差"
 
 msgid ""
 "'variance' \"%s\" is invalid: possible values are \"mu(1-mu)\", \"mu\", "
@@ -931,8 +956,11 @@ msgstr "没有'col.vars'值或它设定得不对"
 msgid "'family' not recognized"
 msgstr "'family'设定得不对"
 
-msgid "invalid 'method':"
-msgstr "'method'有错:"
+msgid "invalid 'method': %s"
+msgstr "'method'有错: %s"
+
+msgid "invalid 'method'"
+msgstr "'method'不对"
 
 msgid "'weights' must be a numeric vector"
 msgstr "'weights'必需是数值矢量"
@@ -1213,6 +1241,12 @@ msgstr "'lm'对象不对: 不包含'terms'或'qr'组件"
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr "对象的残差自由度表明这不是\"lm\" 拟合"
 
+msgid "family '"
+msgstr "族'"
+
+msgid "' not implemented"
+msgstr "'还没有实现"
+
 msgid "ANOVA F-tests on an essentially perfect fit are unreliable"
 msgstr "对几乎是完全拟合进行ANOVA F-检验的结果不会可靠"
 
@@ -1398,6 +1432,9 @@ msgstr "'cterms'变元必需同模型对象里的项相配"
 msgid "Design is unbalanced - use se.contrast() for se's"
 msgstr "设计不平衡 - 用se.contrast()算标准误"
 
+msgid "design is unbalanced so cannot proceed"
+msgstr "设计不平衡，因此运算无法继续"
+
 msgid ""
 "Standard error information not returned as design is unbalanced. \n"
 "Standard errors can be obtained through 'se.contrast'."
@@ -1440,6 +1477,9 @@ msgstr "'data'必需是数据框, 不能是矩阵或陣列"
 
 msgid "'newdata' had %d rows but variable(s) found have %d rows"
 msgstr "'newdata'有%d行但变量里有%d行"
+
+msgid "character variable '%s' changed to a factor"
+msgstr "字符变量'%s'被转成因子"
 
 msgid "variable '%s' is not a factor"
 msgstr "变量'%s'不是因子"
@@ -1516,8 +1556,8 @@ msgstr "不能有逻辑值的`hessian'变元。请参考说明书。' "
 msgid "'params' has wrong length"
 msgstr "'params'的长度不对"
 
-msgid "'varying' must be in 1:length(pars)"
-msgstr "'varying'必需在1:length(pars) 之间"
+msgid "'varying' must be in seq_along(pars)"
+msgstr "'varying'必需在seq_along(pars) 中"
 
 msgid "'varying' has wrong length"
 msgstr "'varying'长度不对"
@@ -1631,14 +1671,14 @@ msgstr "'x'和'n'的长度必需相等"
 msgid "too few groups"
 msgstr "组数不够"
 
+msgid "Not plotting observations with leverage one:"
+msgstr "不对杠杆效果为一的点绘图"
+
 msgid "use only with \"lm\" objects"
 msgstr "只对\"lm\"对象适用"
 
 msgid "'which' must be in 1:6"
 msgstr "'which'必需在1:6之间"
-
-msgid "Not plotting observations with leverage one:"
-msgstr "不对杠杆效果为一的点绘图"
 
 msgid "'id.n' must be in {1,..,%d}"
 msgstr "'id.n'必需在{1,..,%d}中"
@@ -1648,6 +1688,24 @@ msgstr "所有的帽值(杠杆率) 都是"
 
 msgid "and there are no factor predictors; no plot no. 5"
 msgstr "没有因子预测变无，因此没有第五幅画表"
+
+msgid "'x' and 'T' have incompatible length"
+msgstr "'x'和'T'的长度不相容"
+
+msgid "'x' must be finite, nonnegative, and integer"
+msgstr "'x'必需是有限的非负整数"
+
+msgid "'T' must be nonnegative"
+msgstr "'T'必需为非负数"
+
+msgid "not enough data"
+msgstr "数据不够"
+
+msgid "The case k > 2 is unimplemented"
+msgstr "还没有实现k > 2情况"
+
+msgid "'r' must be a single positive number"
+msgstr "'r'必需是单独正数"
 
 msgid ""
 "exactly one of 'n', 'delta', 'sd', 'power', and 'sig.level' must be NULL"
@@ -1734,9 +1792,6 @@ msgstr "'proj'还没有为\"mlm\"拟合实现"
 msgid "'proj' is not implemented for multiple responses"
 msgstr "'proj'还没有为多反应实现"
 
-msgid "not enough data"
-msgstr "数据不够"
-
 msgid "elements of 'n' must be positive"
 msgstr "'n'的单元必需都是正的"
 
@@ -1788,8 +1843,8 @@ msgstr "'relevel'只适用于因子"
 msgid "'ref' must be an existing level"
 msgstr "'ref'必需是存在的层次"
 
-msgid "ref = %d must be in 1:%d"
-msgstr "ref = %d必需在1:%d里"
+msgid "ref = %d must be in 1L:%d"
+msgstr "ref = %d必需在1L:%d里"
 
 msgid "Failed to guess time-varying variables from their names"
 msgstr "没有能够从它们的名字里来猜测时变变元"
@@ -1939,6 +1994,9 @@ msgstr "spline: 第一个和最后一个y的值不相等-两个用y[1]"
 
 msgid "'spline' requires n >= 1"
 msgstr "'spline'需要n大于等于一"
+
+msgid "spline: first and last y values differ - using y[1L] for both"
+msgstr "spline: 第一个和最后一个y的值不相等-因此都用y[1L] 来算"
 
 msgid "'deriv' must be between 0 and 3"
 msgstr "'deriv'必需在零和三之间"
@@ -2155,6 +2213,12 @@ msgstr "有零时无法計算精確的置信区间"
 msgid "must supply either 'formula' or 'data'"
 msgstr "至少要提供'formula'和'data'中间的一个"
 
+msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
+msgstr "xtabs(*, sparse=TRUE) 只适用于双向表"
+
+msgid "xtabs(*, sparse=TRUE) needs package \"Matrix\" correctly installed"
+msgstr "xtabs(*, sparse=TRUE) 需要正确安装的\"Matrix\"程序包"
+
 msgid "too few distinct input values to fit an asymptotic regression model"
 msgstr "无法拟合渐近迴歸模型，因为相互不同的输入值太少"
 
@@ -2278,4 +2342,3 @@ msgstr[0] "参数%s没有在模型公式里出现过"
 #~ msgstr ""
 #~ "quasibinomial分布族里没有\"%s\"这一鏈結函数；可以用的鏈結是\"logit\", \", "
 #~ "\"\"probit\"和\"cloglog\""
-

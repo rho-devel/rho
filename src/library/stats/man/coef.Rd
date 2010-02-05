@@ -11,11 +11,6 @@ coefficients(object, \dots)
 }
 \alias{coef}
 \alias{coefficients}
-%\alias{coef.default}
-%\alias{coef.lm}
-%\alias{coef.glm}
-%\alias{coef.aov}
-%\alias{coef.listof}
 \arguments{
   \item{object}{an object for which the extraction of model coefficients is
     meaningful.}
@@ -44,7 +39,7 @@ coefficients(object, \dots)
 \references{
   Chambers, J. M. and Hastie, T. J. (1992)
   \emph{Statistical Models in S}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 x <- 1:5; coef(lm(c(1:3,7,6) ~ x))

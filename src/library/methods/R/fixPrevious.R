@@ -30,7 +30,7 @@ fixPre1.8 <- function(names, where = topenv(parent.frame())) {
             warning(gettextf("object \"%s\" not found", what), domain = NA)
             next
         }
-        objWhere <- objWhere[[1]]
+        objWhere <- objWhere[[1L]]
         obj <- get(what, objWhere)
         ## don't fix up basic datatypes with no explicit class
         if(is.null(attr(obj, "class")))
@@ -40,7 +40,7 @@ fixPre1.8 <- function(names, where = topenv(parent.frame())) {
             if(isClass(Class, where = where)) {
                 ClassDef <- getClass(Class, where = where)
                 ok <- !(isVirtualClass(ClassDef) ||
-                        is(trySilent(validObject(obj)), "try-error"))
+			!isTRUE(validObject(obj, test=TRUE)))
                 if(ok) {
                     class(obj) <- ClassDef@className
                     assign(what, obj, objWhere)

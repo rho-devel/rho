@@ -1,9 +1,9 @@
 % File src/library/grDevices/man/dev.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
-\name{dev.xxx}
+\name{dev}
 \alias{dev.cur}
 \alias{dev.list}
 \alias{dev.next}
@@ -50,8 +50,9 @@ graphics.off()
   \code{dev.off} shuts down the specified (by default the current)
   device.  If the current device is shut down and any other devices are
   open, the next open device is made current.  It is an error to
-  attempt to shut down device 1.
-  \code{graphics.off()} shuts down all open graphics devices.
+  attempt to shut down device 1.  \code{graphics.off()} shuts down all
+  open graphics devices.  Normal termination of a session runs the
+  internal equivalent of \code{graphics.off()}.
 
   \code{dev.set} makes the specified device the active device.  If there
   is no device with that number, it is equivalent to \code{dev.next}.

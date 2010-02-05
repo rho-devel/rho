@@ -17,7 +17,8 @@ installed.packages(lib.loc = NULL, priority = NULL,
 \arguments{
   \item{lib.loc}{
     character vector describing the location of \R library trees to
-    search through.
+    search through, or \code{NULL} for all known trees
+    (see \code{\link{.libPaths}}).
   }
   \item{priority}{
     character vector or \code{NULL} (default).  If non-null, used to
@@ -37,9 +38,7 @@ installed.packages(lib.loc = NULL, priority = NULL,
   package found along \code{lib.loc} and returns a matrix of package
   names, library paths and version numbers.
 
-  \strong{Note:} this works with package names, not bundle names, and
-  for versioned installs with the name under which the package is
-  installed, in the style \code{mypkg_1.3-7}.
+  \strong{Note:} this works with package names, not bundle names.
 
   The information found is cached (by library) for the \R session and
   specified \code{fields} argument, and updated only if the top-level
@@ -50,9 +49,13 @@ installed.packages(lib.loc = NULL, priority = NULL,
 }
 \value{
   A matrix with one row per package, row names the package names and
-  column names \code{"Package"}, \code{"LibPath"}, \code{"Version"},
-  \code{"Priority"}, \code{"Bundle"}, \code{"Contains"},
-  \code{"Depends"}, \code{"Suggests"}, \code{"Imports"} and
+  column names
+  \code{"Package"}, \code{"LibPath"},
+  \code{"Version"}, \code{"Priority"},
+  \code{"Bundle"}, \code{"Contains"},
+  \code{"Depends"}, \code{"Imports"}, \code{"LinkingTo"},
+  \code{"Suggests"}, \code{"Enhances"},
+  \code{"OS_type"}, \code{"License"} and
   \code{"Built"} (the \R version the package was built under).
   Additional columns can be specified using the \code{fields}
   argument.

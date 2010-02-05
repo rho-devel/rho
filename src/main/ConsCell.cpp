@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -82,6 +82,16 @@ void ConsCell::detachReferents()
     m_tag.detach();
     m_tail.detach();
     RObject::detachReferents();
+}
+
+size_t ConsCell::listLength(const ConsCell* start)
+{
+    size_t ans = 0;
+    while (start) {
+	++ans;
+	start = start->tail();
+    }
+    return ans;
 }
 
 void ConsCell::visitReferents(const_visitor* v) const

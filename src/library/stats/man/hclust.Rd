@@ -103,7 +103,7 @@ plclust(tree, hang = 0.1, unit = FALSE, level = FALSE, hmin = 0,
   (see \code{\link{identify.hclust}}) methods and the
   \code{\link{rect.hclust}()} function for \code{hclust} objects.
   The \code{plclust()} function is basically the same as the plot method,
-  \code{plot.hclust}, primarily for back compatibility with S-plus. Its
+  \code{plot.hclust}, primarily for back compatibility with S-PLUS. Its
   extra arguments are not yet implemented.
 }
 \details{
@@ -158,7 +158,7 @@ plclust(tree, hang = 0.1, unit = FALSE, level = FALSE, hmin = 0,
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole. (S version.)
+  Wadsworth & Brooks/Cole. (S version.)
 
   Everitt, B. (1974).
   \emph{Cluster Analysis}.

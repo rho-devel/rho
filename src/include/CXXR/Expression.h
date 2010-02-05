@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -60,11 +60,14 @@ namespace CXXR {
 	/**
 	 * @param cr Pointer to the 'car' of the element to be
 	 *           constructed.
+	 *
 	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
 	 *           to be constructed.
+	 *
 	 * @param tg Pointer to the 'tag' of the element to be constructed.
 	 */
-	explicit Expression(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
+	explicit Expression(RObject* cr = 0, PairList* tl = 0,
+			    const RObject* tg = 0)
 	    : ConsCell(LANGSXP, cr, tl, tg)
 	{}
 
@@ -87,6 +90,7 @@ namespace CXXR {
 
 	// Virtual functions of RObject:
 	Expression* clone() const;
+	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
 	// Declared private to ensure that Expression objects are
@@ -139,7 +143,7 @@ extern "C" {
 
     /** @brief Designate the Expression currently being evaluated.
      *
-     * @param Pointer to the Expression now to be evaluated.  (Not
+     * @param e Pointer to the Expression now to be evaluated.  (Not
      * currently checked in any way.)
      */
     void Rf_setCurrentExpression(SEXP e);

@@ -1,6 +1,6 @@
 % File src/library/stats/man/addmargins.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{addmargins}
@@ -25,7 +25,7 @@
 }
 
 \usage{
-  addmargins(A, margin = 1:length(dim(A)), FUN = sum, quiet = FALSE)
+  addmargins(A, margin = seq_along(dim(A)), FUN = sum, quiet = FALSE)
 }
 
 \arguments{
@@ -57,7 +57,7 @@
   printed.
 }
 \author{
-  Bendix Carstensen, Steno Diabetes Center \& Department of
+  Bendix Carstensen, Steno Diabetes Center & Department of
   Biostatistics, University of Copenhagen,
   \url{http://www.biostat.ku.dk/~bxc}, autumn 2003.
   Margin naming enhanced by Duncan Murdoch.

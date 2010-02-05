@@ -6,8 +6,6 @@
 \name{isoreg}
 \title{Isotonic / Monotone Regression}
 \alias{isoreg}
-%\alias{fitted.isoreg}
-%\alias{residuals.isoreg}
 \concept{monotonic regression}
 \description{
   Compute the isotonic (monotonely increasing nonparametric) least
@@ -84,7 +82,7 @@ y <- exp(x)
 x. <- round(x) # ties!
 plot(m <- isoreg(x., y))
 stopifnot(all.equal(with(m, yf[iKnots]),
-		    as.vector(tapply(y, x., mean))))
+                    as.vector(tapply(y, x., mean))))
 }
 \keyword{regression}
 \keyword{smooth}

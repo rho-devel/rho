@@ -21,7 +21,7 @@
     \item{Unemployed:}{number of unemployed.}
     \item{Armed.Forces:}{number of people in the armed forces.}
     \item{Population:}{\sQuote{noninstitutionalized} population
-      \eqn{\ge} 14 years of age.}
+      \eqn{\ge}{>=} 14 years of age.}
     \item{Year:}{the year (time).}
     \item{Employed:}{number of people employed.}
   }
@@ -39,7 +39,7 @@
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \examples{
 require(stats); require(graphics)

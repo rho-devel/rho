@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -40,6 +40,10 @@
 
 #include "CXXR/Promise.h"
 
+#include "RCNTXT.h"
+#include "localization.h"
+#include "R_ext/Error.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
 
 using namespace CXXR;
@@ -60,6 +64,39 @@ void Promise::detachReferents()
     m_valgen.detach();
     m_environment.detach();
     RObject::detachReferents();
+}
+
+RObject* Promise::evaluate(Environment* /*env*/)
+{
+    if (m_value == Symbol::unboundValue()) {
+	// Force promise:
+	RPRSTACK prstack;
+	if (evaluationInterrupted()) {
+	    Rf_warning(_("restarting interrupted promise evaluation"));
+	    markEvaluationInterrupted(false);
+	}
+	else if (underEvaluation())
+	    Rf_error(_("promise already under evaluation: "
+		       "recursive default argument reference "
+		       "or earlier problems?"));
+	/* Mark the promise as under evaluation and push it on a stack
+	   that can be used to unmark pending promises if a jump out
+	   of the evaluation occurs. */
+        markUnderEvaluation(true);
+	prstack.promise = this;
+	prstack.next = R_PendingPromises;
+	R_PendingPromises = &prstack;
+	RObject* val = Evaluator::evaluate(m_valgen, environment());
+
+	/* Pop the stack, unmark the promise and set its value field.
+	   Also set the environment to R_NilValue to allow GC to
+	   reclaim the promise environment; this is also useful for
+	   fancy games with delayedAssign() */
+	R_PendingPromises = prstack.next;
+	markUnderEvaluation(false);
+	setValue(val);
+    }
+    return value();
 }
 
 void Promise::setValue(RObject* val)
@@ -91,7 +128,7 @@ SEXP Rf_mkPROMISE(SEXP expr, SEXP rho)
 {
     GCStackRoot<> exprt(expr);
     GCStackRoot<Environment> rhort(SEXP_downcast<Environment*>(rho));
-    return GCNode::expose(new Promise(exprt, *rhort));
+    return GCNode::expose(new Promise(exprt, rhort));
 }
 
 void SET_PRVALUE(SEXP x, SEXP v)

@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{read.table}
@@ -24,7 +24,7 @@ read.table(file, header = FALSE, sep = "", quote = "\"'",
            comment.char = "#",
            allowEscapes = FALSE, flush = FALSE,
            stringsAsFactors = default.stringsAsFactors(),
-           encoding = "unknown")
+           fileEncoding = "", encoding = "unknown")
 
 read.csv(file, header = TRUE, sep = ",", quote="\"", dec=".",
          fill = TRUE, comment.char="", \dots)
@@ -44,7 +44,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     not contain an \emph{absolute} path, the file name is
     \emph{relative} to the current working directory,
     \code{\link{getwd}()}. Tilde-expansion is performed where supported.
-
+    As from \R 2.10.0 this can be a compressed file (see \code{\link{file}}).
+    
     Alternatively, \code{file} can be a readable text-mode
     \code{\link{connection}} (which will be opened for reading if
     necessary, and if so \code{\link{close}}d (and hence destroyed) at
@@ -55,10 +56,6 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     cleared before return.)
 
     \code{file} can also be a complete URL.
-
-    To read a data file not in the current encoding (for example a
-    Latin-1 file in a UTF-8 locale or conversely) use a
-    \code{\link{file}} connection setting the \code{encoding} argument.
   }
 
   \item{header}{a logical value indicating whether the file contains the
@@ -164,7 +161,7 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     turn off the interpretation of comments altogether.}
 
   \item{allowEscapes}{logical.  Should C-style escapes such as
-    \code{\n} be processed or read verbatim (the default)?   Note that if
+    \samp{\\n} be processed or read verbatim (the default)?   Note that if
     not within quotes these could be interpreted as a delimiter (but not
     as a comment character).  For more details see \code{\link{scan}}.}
 
@@ -175,11 +172,17 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   \item{stringsAsFactors}{logical: should character vectors be converted
     to factors?  Note that this is overridden bu \code{as.is} and
     \code{colClasses}, both of which allow finer control.}
-
+  
+  \item{fileEncoding}{character string: if non-empty declares the
+    encoding used on a file (not a connection) so the character data can
+    be re-encoded.  See \code{\link{file}}.
+  }
+  
   \item{encoding}{encoding to be assumed for input strings.  It is
     used to mark character strings as known to be in
-    Latin-1 or UTF-8: it is not used to re-encode the input.  For an
-    example of how to do so, see the examples under \code{\link{file}}.
+    Latin-1 or UTF-8: it is not used to re-encode the input, but allows
+    \R to handle encoded strings in their native encoding (if one of
+    those two).  See \sQuote{Value}.
   }
 
   \item{\dots}{Further arguments to be passed to \code{read.table}.}
@@ -190,8 +193,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   Empty input is an error unless \code{col.names} is specified, when a
   0-row data frame is returned: similarly giving just a header line if
-  \code{header = TRUE} results in a 0-row data frame.  Note that
-  in either case tthe columns will logical unless \code{colClasses} was
+  \code{header = TRUE} results in a 0-row data frame.  Note that in
+  either case the columns will be logical unless \code{colClasses} was
   supplied.
 
   Character strings in the result (including factor levels) will have a
@@ -262,13 +265,6 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   especially those with many columns: it is designed to read
   \emph{data frames} which may have columns of very different classes.
   Use \code{\link{scan}} instead.
-%
-%   Prior to version 1.9.0, underscores were not valid in variable names,
-%   and code that relies on them being converted to dots will no longer
-%   work. The simplest workaround is to use
-%    \code{names(d) <- gsub("_", ".", names(d))},
-%   or, avoiding the (small) risk of creating duplicate names,
-%    \code{names(d) <- make.names(gsub("_", ".", names(d)), unique=TRUE)}.
 }
 
 \seealso{
@@ -282,12 +278,15 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   \code{\link{count.fields}} can be useful to determine problems with
   reading files which result in reports of incorrect record lengths.
+  
+  \url{http://tools.ietf.org/html/rfc4180} for the IANA definition of
+  CSV files (which requires comma as separator and CRLF line endings).
 }
 \references{
   Chambers, J. M. (1992)
   \emph{Data for models.}
   Chapter 3 of \emph{Statistical Models in S}
-  eds J. M. Chambers and T. J. Hastie, Wadsworth \& Brooks/Cole.
+  eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
 }
 \keyword{file}
 \keyword{connection}

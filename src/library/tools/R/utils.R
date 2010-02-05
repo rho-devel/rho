@@ -38,7 +38,8 @@ function(x)
     }
     else {
         setwd(dirname(epath))
-        file.path(getwd(), basename(epath))
+        ## getwd() can be "/" or "d:/"
+        file.path(sub("/$", "", getwd()), basename(epath))
     }
 }
 
@@ -49,7 +50,7 @@ function(x)
 {
     ## Return the file paths without extensions.
     ## (Only purely alphanumeric extensions are recognized.)
-    sub("([^.]+)\\.[[:alpha:]]+$", "\\1", x)
+    sub("([^.]+)\\.[[:alnum:]]+$", "\\1", x)
 }
 
 ### ** file_test
@@ -57,7 +58,7 @@ function(x)
 file_test <-
 function(op, x, y)
 {
-    ## Provide shell-style '-f', '-d', '-nt' and '-ot' tests.
+    ## Provide shell-style '-f', '-d', '-x', '-nt' and '-ot' tests.
     ## Note that file.exists() only tests existence ('test -e' on some
     ## systems), and that our '-f' tests for existence and not being a
     ## directory (the GNU variant tests for being a regular file).
@@ -71,6 +72,7 @@ function(op, x, y)
            "-ot" = (!is.na(mt.x <- file.info(x)$mtime)
                     & !is.na(mt.y <- file.info(y)$mtime)
                     & (mt.x < mt.y)),
+           "-x" = (file.access(x, 1L) == 0L),
            stop(gettextf("test '%s' is not available", op),
                 domain = NA))
 }
@@ -82,7 +84,7 @@ function(dir, exts, all.files = FALSE, full.names = TRUE)
 {
     ## Return the paths or names of the files in @code{dir} with
     ## extension in @code{exts}.
-    ## Might be in a zipped dir on Windows
+    ## Might be in a zipped dir on Windows.
     if(file.exists(file.path(dir, "filelist")) &&
        any(file.exists(file.path(dir, c("Rdata.zip", "Rex.zip", "Rhelp.zip")))))
     {
@@ -115,6 +117,7 @@ function(dir, type, all.files = FALSE, full.names = TRUE,
     ## When listing R code and documentation files, files in OS-specific
     ## subdirectories are included (if present) according to the value
     ## of @code{OS_subdirs}.
+
     exts <- .make_file_exts(type)
     files <-
         list_files_with_exts(dir, exts, all.files = all.files,
@@ -144,33 +147,11 @@ function(dir, type, all.files = FALSE, full.names = TRUE,
     files
 }
 
-### ** extract_Rd_file
-
-extract_Rd_file <-
-function(file, topic)
-{
-    ## extract an Rd file from the man dir.
-    if(is.character(file)) {
-        file <- if(length(grep("\\.gz$", file))) gzfile(file, "r")
-        else file(file, "r")
-        on.exit(close(file))
-    }
-    valid_lines <- lines <- readLines(file, warn = FALSE)
-    valid_lines[is.na(nchar(lines, "c", TRUE))] <- ""
-    patt <- paste("^% --- Source file:.*/", topic, ".Rd ---$", sep="")
-    if(length(top <- grep(patt, valid_lines)) != 1L)
-        stop("no or more than one match")
-    eofs <- grep("^\\\\eof$", valid_lines)
-    end <- min(eofs[eofs > top]) - 1
-    lines[top:end]
-}
-
 ### ** showNonASCII
 
 showNonASCII <-
 function(x)
 {
-    if(!capabilities("iconv")) stop("'iconv' is required")
     ## All that is needed here is an 8-bit encoding that includes ASCII.
     ## The only one we guarantee to exist is 'latin1'.
     ## The default sub=NA is faster.
@@ -210,10 +191,11 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
 {
     ## Run texi2dvi on a latex file, or emulate it.
 
-    if(is.null(texi2dvi)) texi2dvi <- Sys.which("texi2dvi")
+    if(is.null(texi2dvi) || !nzchar(texi2dvi))
+        texi2dvi <- Sys.which("texi2dvi")
 
     envSep <- .Platform$path.sep
-    Rtexmf <- file.path(R.home(), "share", "texmf")
+    Rtexmf <- file.path(R.home("share"), "texmf")
     ## "" forces use of default paths.
     texinputs <- paste(c(texinputs, Rtexmf, ""), collapse = envSep)
     ## not clear if this is needed, but works
@@ -244,7 +226,7 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         opt_quiet <- if(quiet) "--quiet" else ""
         opt_extra <- ""
         out <- .shell_with_capture(paste(shQuote(texi2dvi), "--help"))
-        if(length(grep("--no-line-error", out$stdout) > 0L))
+        if(length(grep("--no-line-error", out$stdout)))
             opt_extra <- "--no-line-error"
         ## (Maybe change eventually: the current heuristics for finding
         ## error messages in log files should work for both regular and
@@ -328,7 +310,7 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         ## and set the path to R's style files.
         ## -I works in MiKTeX >= 2.4, at least
         ver <- system(paste(shQuote(texi2dvi), "--version"), intern = TRUE)
-        if(length(grep("MiKTeX", ver[1]))) {
+        if(length(grep("MiKTeX", ver[1L]))) {
             paths <- paste ("-I", shQuote(texinputs))
             extra <- paste(extra, paste(paths, collapse = " "))
         }
@@ -372,7 +354,7 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
         ## Do not have texi2dvi
         ## Needed at least on Windows except for MiKTeX
         ## Note that this does not do anything about running quietly,
-        ## nor cleaning, but it probably not used much anymore.
+        ## nor cleaning, but is probably not used much anymore.
 
         texfile <- shQuote(file)
         base <- file_path_sans_ext(file)
@@ -392,7 +374,7 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
             stop(gettextf("unable to run %s on '%s'", latex, file), domain = NA)
         nmiss <- length(grep("^LaTeX Warning:.*Citation.*undefined",
                              readLines(paste(base, ".log", sep = ""))))
-        for(iter in 1:10) { ## safety check
+        for(iter in 1L:10L) { ## safety check
             ## This might fail as the citations have been included in the Rnw
             if(nmiss) system(paste(shQuote(bibtex), shQuote(base)))
             nmiss_prev <- nmiss
@@ -411,12 +393,24 @@ function(file, pdf = FALSE, clean = FALSE, quiet = TRUE,
     }
 }
 
+### * Internal utility variables.
+
+### ** .BioC_version_associated_with_R_version
+
+.BioC_version_associated_with_R_version <-
+    numeric_version("2.5")
+## (Could also use something programmatically mapping (R) 2.10.x to
+## (BioC) 2.5, 2.9.x to 2.4, ..., 2.1.x to 1.6, but what if R 3.0.0
+## comes out?)
+
 ### * Internal utility functions.
 
 ### ** %w/o%
 
 ## x without y, as in the examples of ?match.
-`%w/o%` <- function(x, y) { x[!x %in% y] }
+`%w/o%` <-
+function(x, y)
+    x[!x %in% y]
 
 ### ** .OStype
 
@@ -427,27 +421,26 @@ function()
     if(nzchar(OS)) OS else .Platform$OS.type
 }
 
-### ** .capture_output_from_print
+### .R_top_srcdir
 
-## <NOTE>
-## Should no longer be needed now that we have .eval_with_capture().
-## 
-## .capture_output_from_print <-
-## function(x, ...)
-## {
-##     ## Better to provide a simple variant of utils::capture.output()
-##     ## ourselves (so that bootstrapping R only needs base and tools).
-##     out <- NULL # Prevent codetools warning about "no visible binding
-##                 # for global variable out".  Maybe there will eventually
-##                 # be a better design for output text connections ...
-##     file <- textConnection("out", "w", local = TRUE)
-##     sink(file)
-##     on.exit({ sink(); close(file) })
-##     print(x, ...)
-##     out
-## }
-##
-## </NOTE>
+## Find the root directory of the source tree used for building this
+## version of R (corresponding to Unix configure @top_srcdir@).
+## Seems this is not recorded anywhere, but we can find our way ...
+
+.R_top_srcdir_from_Rd <-
+function() {
+    filebase <-
+        file_path_sans_ext(system.file("help", "tools.rdb",
+                                       package = "tools"))
+    path <- attr(fetchRdDB(filebase, "QC"), "Rdfile")
+    ## We could use 5 dirname() calls, but perhaps more easily:
+    substring(path, 1L, nchar(path) - 28L)
+}
+
+## Unfortunately,
+##   .R_top_srcdir <- .R_top_srcdir_from_Rd()
+## does not work because when tools is installed there are no Rd pages
+## yet ...
 
 ### ** .eval_with_capture
 
@@ -471,8 +464,8 @@ function(expr, type = NULL)
         capture_message <- !capture_output
     }
 
-    outcon <- file(open = "w+")
-    msgcon <- file(open = "w+")
+    outcon <- file(open = "w+", encoding = "UTF-8")
+    msgcon <- file(open = "w+", encoding = "UTF-8")
     if(capture_output) {
         sink(outcon, type = "output")
         on.exit(sink(type = "output"))
@@ -482,11 +475,11 @@ function(expr, type = NULL)
         on.exit(sink(type = "message"), add = capture_output)
     }
     on.exit({ close(outcon) ; close(msgcon) }, add = TRUE)
-    
+
     value <- eval(expr)
     list(value = value,
-         output = readLines(outcon, warn = FALSE), 
-         message = readLines(msgcon, warn = FALSE))
+         output = readLines(outcon, encoding = "UTF-8", warn = FALSE),
+         message = readLines(msgcon, encoding = "UTF-8", warn = FALSE))
 }
 
 
@@ -520,6 +513,9 @@ function(con)
     ## Get BibTeX error info, using non-header lines until the first
     ## warning or summary, hoping for the best ...
     lines <- readLines(con, warn = FALSE)
+    if(any(ind <- is.na(nchar(lines, allowNA = TRUE))))
+        lines[ind] <- iconv(lines[ind], "", "", sub = "byte")
+
     ## How can we find out for sure that there were errors?  Try
     ## guessing ... and peeking at tex-buf.el from AUCTeX.
     really_has_errors <-
@@ -543,6 +539,9 @@ function(con, n = 4L)
     ## Get (La)TeX lines with error plus n (default 4) lines of trailing
     ## context.
     lines <- readLines(con, warn = FALSE)
+    if(any(ind <- is.na(nchar(lines, allowNA = TRUE))))
+        lines[ind] <- iconv(lines[ind], "", "", sub = "byte")
+
     ## Try matching both the regular error indicator ('!') as well as
     ## the file line error indicator ('file:line:').
     pos <- grep("^(!|.*:[0123456789]+:)", lines)
@@ -558,7 +557,7 @@ function(con, n = 4L)
 function(db)
 {
     if("Contains" %in% names(db))
-        unlist(strsplit(db["Contains"], " +"))
+        unlist(strsplit(db["Contains"], "[[:space:]]+"))
     else
         character()
 }
@@ -655,7 +654,8 @@ function(dir, installed = FALSE)
 ### ** .get_requires_from_package_db
 
 .get_requires_from_package_db <-
-function(db, category = c("Depends", "Imports", "Suggests", "Enhances"))
+function(db,
+         category = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
 {
     category <- match.arg(category)
     if(category %in% names(db)) {
@@ -668,6 +668,19 @@ function(db, category = c("Depends", "Imports", "Suggests", "Enhances"))
     else
         requires <- character()
     requires
+}
+
+### ** .get_requires_with_version_from_package_db
+
+.get_requires_with_version_from_package_db <-
+function(db,
+         category = c("Depends", "Imports", "LinkingTo", "Suggests", "Enhances"))
+{
+    category <- match.arg(category)
+    if(category %in% names(db)) {
+        res <- .split_dependencies(db[category])
+        if(category == "Depends") res[names(res) != "R"] else res
+    } else list()
 }
 
 ### ** .get_S3_generics_as_seen_from_package
@@ -766,7 +779,7 @@ function()
 
 ### ** .get_standard_package_names
 
-## we cannot assume that file.path(R.home(), "share", "make", "vars.mk")
+## we cannot assume that file.path(R.home("share"), "make", "vars.mk")
 ## is installed, as it is not on Windows
 .get_standard_package_names <-
 local({
@@ -778,12 +791,36 @@ local({
     eval(substitute(function() {out}, list(out=out)), envir=NULL)
 })
 
+### ** .get_standard_repository_URLs
+
+.get_standard_repository_URLs <-
+function() {
+    repos <- Sys.getenv("_R_CHECK_XREFS_REPOSITORIES_", "")
+    repos <- if(nzchar(repos)) {
+        .expand_BioC_repository_URLs(strsplit(repos, " +")[[1L]])
+    } else {
+        p <- file.path(Sys.getenv("HOME"), ".R", "repositories")
+        if(file_test("-f", p)) {
+            a <- .read_repositories(p)
+            a[c("CRAN", "Omegahat", "BioCsoft", "BioCann", "BioCexp"),
+              "URL"]
+        } else {
+            a <- .read_repositories(file.path(R.home("etc"),
+                                              "repositories"))
+            c("http://cran.r-project.org", a[3:6, "URL"])
+        }
+    }
+    repos
+}
+
 ### ** .get_standard_repository_db_fields
 
 .get_standard_repository_db_fields <-
 function()
-    c("Package", "Version", "Priority", "Bundle",
-      "Contains", "Depends", "Imports", "Suggests", "OS_type")
+    c("Package", "Version", "Priority",
+      "Bundle", "Contains",
+      "Depends", "Imports", "LinkingTo", "Suggests", "Enhances",
+      "OS_type", "License")
 
 ### ** .is_ASCII
 
@@ -886,9 +923,12 @@ function(fname, envir, mustMatch = TRUE)
 function(package, lib.loc)
 {
     ## Load (reload if already loaded) @code{package} from
-    ## @code{lib.loc}, capturing all output and messages.  Don't do
-    ## anything for base, and don't attempt reloading methods, as this
-    ## does not work (most likely a bug).
+    ## @code{lib.loc}, capturing all output and messages.
+    ## Don't do anything for base.
+    ## Earlier versions did not attempt reloading methods as this used
+    ## to cause trouble, but this now (2009-03-19) seems ok.
+    ## Otoh, it seems that unloading tcltk is a bad idea ...
+    ## Also, do not unload ourselves (but shouldn't we be "in use"?).
     ##
     ## All QC functions use this for loading packages because R CMD
     ## check interprets all output as indicating a problem.
@@ -896,8 +936,8 @@ function(package, lib.loc)
         .try_quietly({
             pos <- match(paste("package", package, sep = ":"), search())
             if(!is.na(pos)) {
-                if(package == "methods") return()
-                detach(pos = pos, unload = TRUE)
+                detach(pos = pos,
+                       unload = ! package %in% c("tcltk", "tools"))
             }
             library(package, lib.loc = lib.loc, character.only = TRUE,
                     verbose = FALSE)
@@ -916,7 +956,12 @@ function(type = c("code", "data", "demo", "docs", "vignette"))
            ## Keep in sync with the order given in base's data.Rd.
            data = c("R", "r",
                     "RData", "rdata", "rda",
-                    "tab", "txt", "TXT", "csv", "CSV"),
+                    "tab", "txt", "TXT",
+                    "tab.gz", "txt.gz",
+                    "tab.bz2", "txt.bz2",
+                    "tab.xz", "txt.xz",
+                    "csv", "CSV",
+                    "csv.gz", "csv,bz2", "csv.xz"),
            demo = c("R", "r"),
            docs = c("Rd", "rd", "Rd.gz", "rd.gz"),
            vignette = c(outer(c("R", "r", "S", "s"), c("nw", "tex"),
@@ -1102,16 +1147,43 @@ function(dfile)
     ## vector.
     ## </NOTE>
     if(!file_test("-f", dfile))
-        stop(gettextf("file '%s' does not exist", dfile),
-             domain = NA)
+        stop(gettextf("file '%s' does not exist", dfile), domain = NA)
     out <- tryCatch(read.dcf(dfile)[1L, ],
                     error = function(e)
                     stop(gettextf("file '%s' is not in valid DCF format",
                                   dfile),
                          domain = NA, call. = FALSE))
-    if(!is.na(encoding <- out["Encoding"]))
-        Encoding(out) <- encoding
+    if(!is.na(encoding <- out["Encoding"])) {
+        ## could convert everything to UTF-8
+        if (encoding %in% c("latin1", "UTF-8"))
+            Encoding(out) <- encoding
+        else out <- iconv(out, encoding, "", sub = "byte")
+    }
     out
+}
+
+### ** .read_repositories
+
+.read_repositories <-
+function(file)
+{
+    db <- utils::read.delim(file, header = TRUE, comment.char = "#",
+                            colClasses =
+                            c(rep.int("character", 3L),
+                              rep.int("logical", 4L)))
+    db[, "URL"] <- .expand_BioC_repository_URLs(db[, "URL"])
+    db
+}
+
+.expand_BioC_repository_URLs <-
+function(x) {
+    x <- sub("%bm",
+             as.character(getOption("BioC_mirror",
+                                    "http://www.bioconductor.org")),
+             x, fixed = TRUE)
+    sub("%v",
+        as.character(.BioC_version_associated_with_R_version),
+        x, fixed = TRUE)
 }
 
 ### ** .shell_with_capture
@@ -1127,8 +1199,8 @@ function(command, input = NULL)
     outfile <- tempfile("xshell")
     errfile <- tempfile("xshell")
     on.exit(unlink(c(outfile, errfile)))
-    status <-if(.Platform$OS.type == "windows")
-        shell(sprintf("'%s' > %s 2> %s", command, outfile, errfile),
+    status <- if(.Platform$OS.type == "windows")
+        shell(sprintf("%s > %s 2> %s", command, outfile, errfile),
               input = input, shell = "cmd.exe")
     else system(sprintf("%s > %s 2> %s", command, outfile, errfile),
                 input = input)
@@ -1168,10 +1240,10 @@ function(file, envir, enc = NA)
 ### .source_assignments_in_code_dir
 
 .source_assignments_in_code_dir <-
-function(dir, env, meta = character())
+function(dir, envir, meta = character())
 {
     ## Combine all code files in @code{dir}, read and parse expressions,
-    ## and successively evaluate the top-level assignments in @code{env}.
+    ## and successively evaluate the top-level assignments in @code{envir}.
     con <- tempfile("Rcode")
     on.exit(unlink(con))
     if(!file.create(con))
@@ -1187,7 +1259,7 @@ function(dir, env, meta = character())
         list_files_with_type(dir, "code")
     if(!all(.file_append_ensuring_LFs(con, files)))
         stop("unable to write code files")
-    tryCatch(.source_assignments(con, env, enc = meta["Encoding"]),
+    tryCatch(.source_assignments(con, envir, enc = meta["Encoding"]),
              error =
              function(e)
              stop("cannot source package code\n",
@@ -1204,7 +1276,9 @@ function(x)
     ## return a named list of list (name, [op, version])
     if(!length(x)) return(list())
     x <- unlist(strsplit(x, ","))
-    x <- unique(sub("^[[:space:]]*(.*)[[:space:]]*$", "\\1" , x))
+    ## some have had space before ,
+    x <- sub('[[:space:]]+$', '', x)
+    x <- unique(sub("^[[:space:]]*(.*)", "\\1" , x))
     names(x) <- sub("^([[:alnum:].]+).*$", "\\1" , x)
     lapply(x, .split_op_version)
 }
@@ -1216,6 +1290,7 @@ function(x)
 {
     ## given a single piece of dependency
     ## return a list of components (name, [op, version])
+    ## NB this relies on trailing space having been removed
     pat <- "^([^\\([:space:]]+)[[:space:]]*\\(([^\\)]+)\\).*"
     x1 <- sub(pat, "\\1", x)
     x2 <- sub(pat, "\\2", x)
@@ -1223,7 +1298,7 @@ function(x)
         pat <- "[[:space:]]*([[<>=!]+)[[:space:]]+(.*)"
         list(name = x1, op = sub(pat, "\\1", x2),
              version = package_version(sub(pat, "\\2", x2)))
-    } else list(name=x1)
+    } else list(name = x1)
 }
 
 ### ** .strip_whitespace

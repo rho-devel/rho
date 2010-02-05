@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.3.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,6 +21,9 @@ msgid "regression coefficients"
 msgstr ""
 
 msgid "'a' and 'b' are overridden by 'coef'"
+msgstr ""
+
+msgid "one of 'x1' and 'y1' must be given"
 msgstr ""
 
 msgid "'x' must be a 2-d contingency table"
@@ -236,7 +239,10 @@ msgstr ""
 msgid "horizontal specification overrides: Number of columns :="
 msgstr ""
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr ""
+
+msgid "not using pch[2..] since pch[1L] has multiple chars"
 msgstr ""
 
 msgid "must specify at least one of 'x' and 'y'"
@@ -327,6 +333,9 @@ msgid "'figs' must be a vector or a matrix with 4 columns"
 msgstr ""
 
 msgid "'figs' must specify at least one screen"
+msgstr ""
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
 msgstr ""
 
 msgid "a 2-way table has to be specified"

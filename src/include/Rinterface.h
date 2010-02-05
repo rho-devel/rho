@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -107,7 +107,17 @@ extern uintptr_t R_CStackStart;	/* Initial stack address */
 /* formerly in src/unix/devUI.h */
 
 #ifdef R_INTERFACE_PTRS
+
+/* In CXXR, Rinternals.h must not itself be wrapped in extern "C": */
+#ifdef __cplusplus
+}
+#endif
+
 #include <Rinternals.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef __SYSTEM__
 # define extern

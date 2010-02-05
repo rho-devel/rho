@@ -69,7 +69,7 @@ fligner.test(x, \dots)
   \item{data.name}{a character string giving the names of the data.}
 }
 \references{
-  William J. Conover & Mark E. Johnson & Myrle M. Johnson (1981).
+  William J. Conover, Mark E. Johnson and Myrle M. Johnson (1981).
   A comparative study of tests for homogeneity of variances, with
   applications to the outer continental shelf bidding data.
   \emph{Technometrics} \bold{23}, 351--361.
@@ -80,10 +80,11 @@ fligner.test(x, \dots)
   \code{\link{var.test}} and \code{\link{bartlett.test}} for parametric
   tests for the homogeneity of variances.
 }
+
+% FIXME: could use something more interesting here
 \examples{
 require(graphics)
 
-% FIXME: could use something more interesting here
 plot(count ~ spray, data = InsectSprays)
 fligner.test(InsectSprays$count, InsectSprays$spray)
 fligner.test(count ~ spray, data = InsectSprays)

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -85,7 +85,7 @@ static char rhome[] = R_HOME;
 # include "rterm.c"
 #endif
 
-#define RSVERSION "$Rev: 46084 $"
+#define RSVERSION "$Rev: 49838 $"
 
 #ifdef HAVE_EXECV
 static int verbose = 0;
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 	    i0 = i;
 	    continue;
 	}
-	if(strncmp(argv[i], "--", 2)) break;
+	if(strncmp(argv[i], "--", 2) != 0) break;
 	if(strcmp(argv[i], "--verbose") == 0) {
 	    verbose = 1;
 	    i0 = i;
@@ -211,7 +211,11 @@ int main(int argc, char *argv[])
     }
 
     if(!e_mode) {
-	if(strlen(argv[++i0]) > PATH_MAX) {
+      if(++i0 >= argc) {
+        fprintf(stderr, "file name is missing\n");
+        exit(1);
+      }
+      if(strlen(argv[i0]) > PATH_MAX) {
 	    fprintf(stderr, "file name is too long\n");
 	    exit(1);
 	}

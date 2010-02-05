@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -35,23 +35,31 @@
  */
 
 /** @file Defn.h
+ *
  * @brief A ragbag.
  *
- * As CXXR development proceeds, the type definitions, function
- * prototypes etc. defined in this header file will be progressively
- * factored out into individual class-related header files, which will
- * be <tt>\#include</tt>d back into this 'master' header file.  CXXR
- * code should use the class-related header files directly, as required,
- * rather than <tt>\#include</tt>ing this file, which is retained for
- * backwards compatibility only.
+ * As CXXR development proceeds, the type definitions, many function
+ * prototypes etc. defined in this header file will disappear, because
+ * the relevant functionality will have been absorbed into the CXXR
+ * core, and declared within the appropriate header file in the
+ * <tt>src/include/CXXR</tt> directory.
+ *
+ * In a few cases, a declaration within this file is repeated in a
+ * header file under <tt>src/include/CXXR</tt>; this is because source
+ * files within the CXXR core never <tt>\#include</tt>s
+ * <tt>Defn.h</tt> itself (nor <tt>Rinternals.h</tt>.  In such a case
+ * the relevant CXXR header file is <tt>\#include</tt>d back into
+ * <tt>Defn.h</tt>, so that the compiler can detect any inconsistency
+ * between the two declarations.
  */
 
 #ifndef DEFN_H_
 #define DEFN_H_
 
 #include "RCNTXT.h"
-#include "localization.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/Evaluator.h"
+#include "CXXR/errors.h"
 
 /* seems unused */
 #define COUNTING
@@ -104,21 +112,21 @@ Rcomplex Rf_ComplexFromReal(double, int*);
 #endif
 
 #define CALLED_FROM_DEFN_H 1
-#include <Rinternals.h>		/*-> Arith.h, Complex.h, Error.h, Memory.h
-				  PrtUtil.h, Utils.h */
+#include <Rinternals.h>		/*-> Arith.h, Boolean.h, Complex.h, Error.h,
+				  Memory.h, PrtUtil.h, Utils.h */
 #undef CALLED_FROM_DEFN_H
 extern0 SEXP	R_CommentSymbol;    /* "comment" */
 extern0 SEXP	R_DotEnvSymbol;     /* ".Environment" */
 extern0 SEXP	R_ExactSymbol;	    /* "exact" */
-extern0 SEXP	R_LastvalueSymbol;  /* ".Last.value" */
-extern0 SEXP	R_NaRmSymbol;	    /* "na.rm" */
 extern0 SEXP	R_RecursiveSymbol;  /* "recursive" */
-extern0 SEXP	R_SourceSymbol;     /* "source" */
 extern0 SEXP	R_SrcfileSymbol;    /* "srcfile" */
 extern0 SEXP	R_SrcrefSymbol;     /* "srcref" */
 extern0 SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
 
+
+#define HASHASH_MASK 1
+/**** HASHASH uses the first bit -- see HASHAS_MASK defined below */
 
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */
@@ -324,106 +332,6 @@ extern int putenv(char *string);
 # define _R_HAVE_TIMING_ 1
 #endif
 
-#define HSIZE	   4119	/* The size of the hash table for symbols */
-#define MAXIDSIZE   256	/* Largest symbol size, in bytes excluding terminator */
-
-/* The type of the do_xxxx functions. */
-/* These are the built-in R functions. */
-typedef SEXP (*CCODE)(SEXP, SEXP, SEXP, SEXP);
-
-/* Information for Deparsing Expressions */
-typedef enum {
-    PP_INVALID  =  0,
-    PP_ASSIGN   =  1,
-    PP_ASSIGN2  =  2,
-    PP_BINARY   =  3,
-    PP_BINARY2  =  4,
-    PP_BREAK    =  5,
-    PP_CURLY    =  6,
-    PP_FOR      =  7,
-    PP_FUNCALL  =  8,
-    PP_FUNCTION =  9,
-    PP_IF 	= 10,
-    PP_NEXT 	= 11,
-    PP_PAREN    = 12,
-    PP_RETURN   = 13,
-    PP_SUBASS   = 14,
-    PP_SUBSET   = 15,
-    PP_WHILE 	= 16,
-    PP_UNARY 	= 17,
-    PP_DOLLAR 	= 18,
-    PP_FOREIGN 	= 19,
-    PP_REPEAT 	= 20
-} PPkind;
-
-typedef enum {
-    PREC_FN	 = 0,
-    PREC_LEFT    = 1,
-    PREC_EQ	 = 2,
-    PREC_RIGHT	 = 3,
-    PREC_TILDE	 = 4,
-    PREC_OR	 = 5,
-    PREC_AND	 = 6,
-    PREC_NOT	 = 7,
-    PREC_COMPARE = 8,
-    PREC_SUM	 = 9,
-    PREC_PROD	 = 10,
-    PREC_PERCENT = 11,
-    PREC_COLON	 = 12,
-    PREC_SIGN	 = 13,
-    PREC_POWER	 = 14,
-    PREC_DOLLAR  = 15,
-    PREC_NS	 = 16,
-    PREC_SUBSET	 = 17
-} PPprec;
-
-typedef struct {
-	PPkind kind; 	 /* deparse kind */
-	PPprec precedence; /* operator precedence */
-	unsigned int rightassoc;  /* right associative? */
-} PPinfo;
-
-/* The type definitions for the table of built-in functions. */
-/* This table can be found in ../main/names.c */
-typedef struct {
-    const char   *name;    /* print name */
-    CCODE  cfun;     /* c-code address */
-    int	   code;     /* offset within c-code */
-    int	   eval;     /* evaluate args? */
-    int	   arity;    /* function arity */
-    PPinfo gram;     /* pretty-print info */
-} FUNTAB;
-
-/* Defined and initialized in names.cpp (not main.cpp) :*/
-extern FUNTAB	R_FunTab[];	    /* Built in functions */
-
-#ifdef __cplusplus
-inline CCODE PRIMFUN(SEXP x) {return R_FunTab[PRIMOFFSET(x)].cfun;}
-inline const char* PRIMNAME(SEXP x) {return R_FunTab[PRIMOFFSET(x)].name;}
-inline int PRIMVAL(SEXP x) {return R_FunTab[PRIMOFFSET(x)].code;}
-inline int PRIMARITY(SEXP x) {return R_FunTab[PRIMOFFSET(x)].arity;}
-inline PPinfo PPINFO(SEXP x) {return R_FunTab[PRIMOFFSET(x)].gram;}
-
-inline int PRIMINTERNAL(SEXP x)
-{
-    return ((R_FunTab[PRIMOFFSET(x)].eval)%100)/10;
-}
-
-inline int PRIMPRINT(SEXP x)
-{
-    return ((R_FunTab[PRIMOFFSET(x)].eval)/100)%10;
-}
-
-#else  /* it's not C++, so: */
-#define PRIMFUN(x)	(R_FunTab[PRIMOFFSET(x)].cfun)
-#define PRIMNAME(x)	(R_FunTab[PRIMOFFSET(x)].name)
-#define PRIMVAL(x)	(R_FunTab[PRIMOFFSET(x)].code)
-#define PRIMARITY(x)	(R_FunTab[PRIMOFFSET(x)].arity)
-#define PPINFO(x)	(R_FunTab[PRIMOFFSET(x)].gram)
-#define PRIMPRINT(x)	(((R_FunTab[PRIMOFFSET(x)].eval)/100)%10)
-#define PRIMINTERNAL(x)	(((R_FunTab[PRIMOFFSET(x)].eval)%100)/10)
-#endif
-
 #ifdef __cplusplus
 /* There is much more in Rinternals.h, including function versions
  * of the Promise and Hasking groups.
@@ -543,12 +451,8 @@ LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
 LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
 #endif
 extern0 Rboolean R_Visible;	    /* Value visibility flag */
-LibExtern int	R_EvalDepth	INI_as(0);	/* Evaluation recursion depth */
-extern0 int	R_BrowseLevel	INI_as(0);	/* how deep the browser is */
 extern0 int	R_BrowseLines	INI_as(0);	/* lines/per call in browser */
 
-extern0 int	R_Expressions	INI_as(5000);	/* options(expressions) */
-extern0 int	R_Expressions_keep INI_as(5000);	/* options(expressions) */
 extern0 Rboolean R_KeepSource	INI_as(FALSE);	/* options(keep.source) */
 extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
 extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
@@ -574,16 +478,15 @@ extern0 char   *Sys_TempDir	INI_as(NULL);	/* Name of per-session dir
 extern0 char	R_StdinEnc[31]  INI_as("");	/* Encoding assumed for stdin */
 
 /* Objects Used In Parsing  */
-#ifdef __cplusplus
-extern CXXR::GCRoot<> R_CommentSxp;	    /* Comments accumulate here */
-#endif
-extern0 int	R_ParseError	INI_as(0); /* Line where parse error occured */
+extern0 int	R_ParseError	INI_as(0); /* Line where parse error occurred */
+extern0 int	R_ParseErrorCol;    /* Column of start of token where parse error occurred */
 extern0 SEXP	R_ParseErrorFile;   /* Source file where parse error was seen */
 #define PARSE_ERROR_SIZE 256	    /* Parse error messages saved here */
 extern0 char	R_ParseErrorMsg[PARSE_ERROR_SIZE] INI_as("");
 #define PARSE_CONTEXT_SIZE 256	    /* Recent parse context kept in a circular buffer */
 extern0 char	R_ParseContext[PARSE_CONTEXT_SIZE] INI_as("");
 extern0 int	R_ParseContextLast INI_as(0); /* last character in context buffer */
+extern0 int	R_ParseContextLine; /* Line in file of the above */
 
 /* Image Dump/Restore */
 extern int	R_DirtyImage	INI_as(0);	/* Current image dirty */
@@ -604,12 +507,12 @@ extern0 int	R_ShowErrorMessages INI_as(1);	/* show error messages? */
 extern CXXR::GCRoot<> R_HandlerStack;	/* Condition handler stack */
 extern CXXR::GCRoot<> R_RestartStack;	/* Stack of available restarts */
 #endif
-extern0 Rboolean R_warn_partial_match_args   INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
 extern0 Rboolean R_ShowWarnCalls INI_as(FALSE);
 extern0 Rboolean R_ShowErrorCalls INI_as(FALSE);
 extern0 int R_NShowCalls INI_as(50);
+extern0 SEXP	R_Srcref;
 
 LibExtern Rboolean utf8locale  INI_as(FALSE);  /* is this a UTF-8 locale? */
 LibExtern Rboolean mbcslocale  INI_as(FALSE);  /* is this a MBCS locale? */
@@ -697,8 +600,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 # define allocCharsxp		Rf_allocCharsxp
 # define begincontext		Rf_begincontext
-# define check_stack_balance	Rf_check_stack_balance
-# define CheckFormals		Rf_CheckFormals
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
 # define ComplexFromInteger	Rf_ComplexFromInteger
@@ -796,13 +697,13 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define Seql			Rf_Seql
 # define Scollate		Rf_Scollate
 # define sortVector		Rf_sortVector
+# define SrcrefPrompt		Rf_SrcrefPrompt
 # define ssort			Rf_ssort
 # define StringFromComplex	Rf_StringFromComplex
 # define StringFromInteger	Rf_StringFromInteger
 # define StringFromLogical	Rf_StringFromLogical
 # define StringFromReal		Rf_StringFromReal
 # define strIsASCII		Rf_strIsASCII
-# define StrToInternal		Rf_StrToInternal
 # define substituteList		Rf_substituteList
 # define tsConform		Rf_tsConform
 # define tspgets		Rf_tspgets
@@ -813,6 +714,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define ucstoutf8		Rf_ucstoutf8
 # define utf8toucs		Rf_utf8toucs
 # define utf8towcs		Rf_utf8towcs
+# define vectorIndex		Rf_vectorIndex
 # define vectorSubscript	Rf_vectorSubscript
 # define warningcall		Rf_warningcall
 # define WarningMessage		Rf_WarningMessage
@@ -888,9 +790,7 @@ SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
 void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
 #endif
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
-void CheckFormals(SEXP);
 void R_check_locale(void);
-void check_stack_balance(SEXP op, unsigned int save);
 void CleanEd(void);
 void copyListMatrix(SEXP, SEXP, Rboolean);
 void copyMostAttribNoTs(SEXP, SEXP);
@@ -903,6 +803,9 @@ SEXP deparse1s(SEXP call);
 int DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
+SEXP duplicated3(SEXP, SEXP, Rboolean);
+int any_duplicated(SEXP, Rboolean);
+int any_duplicated3(SEXP, SEXP, Rboolean);
 #ifdef __cplusplus
 SEXP dynamicfindVar(SEXP, RCNTXT*);
 void endcontext(RCNTXT*);
@@ -962,7 +865,6 @@ SEXP matchPar(const char *, SEXP*);
 void memtrace_report(void *, void *);
 SEXP mkCLOSXP(SEXP, SEXP, SEXP);
 SEXP mkFalse(void);
-SEXP mkPRIMSXP (int, int);
 SEXP mkPROMISE(SEXP, SEXP);
 SEXP mkQUOTE(SEXP);
 SEXP mkTrue(void);
@@ -1004,10 +906,10 @@ void R_Suicide(const char *);
 void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
 void sortVector(SEXP, Rboolean);
+void SrcrefPrompt(const char *, SEXP);
 #ifdef __cplusplus
 void ssort(CXXR::StringVector*,int);
 #endif
-int StrToInternal(const char *);
 SEXP substituteList(SEXP, SEXP);
 #ifdef __cplusplus
 SEXP R_syscall(int,RCNTXT*);
@@ -1024,6 +926,7 @@ void unmarkPhase(void);
 #endif
 SEXP R_LookupMethod(SEXP, SEXP, SEXP, SEXP);
 int usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
+SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP);
 SEXP Rf_vectorSubscript(int, SEXP, int*, SEXP (*)(SEXP,SEXP),
                         SEXP (*)(SEXP, int), SEXP, SEXP);
 
@@ -1050,9 +953,6 @@ void R_restore_globals(RCNTXT *);
 /* ../main/devices.c, used in memory.c, gnuwin32/extra.c */
 #define R_MaxDevices 64
 
-/* ../main/identical.c : */
-Rboolean compute_identical(SEXP x, SEXP y);
-
 /* ../../main/printutils.c : */
 typedef enum {
     Rprt_adj_left = 0,
@@ -1077,16 +977,14 @@ SEXP R_subset3_dflt(SEXP, SEXP, SEXP);
 /* main/subassign.c */
 SEXP R_subassign3_dflt(SEXP, SEXP, SEXP, SEXP);
 
-#ifdef SUPPORT_MBCS /* implies we have this header */
 #include <wchar.h>
-#endif
 
 /* main/util.c */
 void UNIMPLEMENTED_TYPE(const char *s, SEXP x);
 void UNIMPLEMENTED_TYPEt(const char *s, SEXPTYPE t);
 Rboolean Rf_strIsASCII(const char *str);
 int utf8clen(char c);
-#ifdef SUPPORT_MBCS
+
 typedef unsigned short ucs2_t;
 size_t mbcsToUcs2(const char *in, ucs2_t *out, int nout, int enc);
 /* size_t mbcsMblen(char *in);
@@ -1101,20 +999,16 @@ size_t wcstoutf8(char *s, const wchar_t *wc, size_t n);
 
 #define mbs_init(x) memset(x, 0, sizeof(mbstate_t))
 size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps);
-/* void mbcsToLatin1(const char *in, char *out); */
 Rboolean mbcsValid(const char *str);
 char *Rf_strchr(const char *s, int c);
 char *Rf_strrchr(const char *s, int c);
-#else
-#define Rf_strchr(s, c) strchr(s, c)
-#define Rf_strrchr(s, c) strrchr(s, c)
-#endif
+
 #ifdef Win32
 void R_fixslash(char *s);
 void R_fixbackslash(char *s);
 wchar_t *filenameToWchar(const SEXP fn, const Rboolean expand);
-#endif
-#if defined(Win32) && defined(SUPPORT_UTF8_WIN32)
+
+#if defined(SUPPORT_UTF8_WIN32)
 #define mbrtowc(a,b,c,d) Rmbrtowc(a,b)
 #define wcrtomb(a,b,c) Rwcrtomb(a,b)
 #define mbstowcs(a,b,c) Rmbstowcs(a,b,c)
@@ -1123,6 +1017,7 @@ size_t Rmbrtowc(wchar_t *wc, const char *s);
 size_t Rwcrtomb(char *s, const wchar_t wc);
 size_t Rmbstowcs(wchar_t *wc, const char *s, size_t n);
 size_t Rwcstombs(char *s, const wchar_t *wc, size_t n);
+#endif
 #endif
 
 FILE *RC_fopen(const SEXP fn, const char *mode, const Rboolean expand);
@@ -1138,6 +1033,24 @@ void set_rl_word_breaks(const char *str);
 
 /* From localecharset.c */
 extern const char *locale2charset(const char *);
+
+/* Localization */
+
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#ifdef Win32
+#define _(String) libintl_gettext (String)
+#undef gettext /* needed for graphapp */
+#else
+#define _(String) gettext (String)
+#endif
+#define gettext_noop(String) String
+#define N_(String) gettext_noop (String)
+#else /* not NLS */
+#define _(String) (String)
+#define N_(String) String
+#define ngettext(String, StringP, N) (N > 1 ? StringP: String)
+#endif
 
 
 /* Macros for suspending interrupts: also in GraphicsDevice.h */
@@ -1179,6 +1092,10 @@ extern char *alloca(size_t);
 Rboolean R_access_X11(void); /* from src/unix/X11.c */
 SEXP R_execMethod(SEXP op, SEXP rho);
 double R_getClockIncrement();
+SEXP do_gpregexpr(SEXP pat, SEXP vec, int igcase_opt, int useBytes);
+SEXP do_pgsub(SEXP pat, SEXP rep, SEXP vec,
+	      int global, int igcase_opt, int useBytes);
+const wchar_t *wtransChar(SEXP x);
 
 #ifdef __cplusplus
 }  /* extern "C" */

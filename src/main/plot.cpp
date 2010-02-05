@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -17,9 +17,9 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
+ *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
  *			      R Development Core Team
- *  Copyright (C) 2002--2004  The R Foundation
+ *  Copyright (C) 2002--2009  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ static R_INLINE double fmax2(double x, double y)
 /*
  * Extract specified par from list of inline pars
  */
-static SEXP getInlinePar(SEXP s, CXXRconst char *name)
+static SEXP getInlinePar(SEXP s, CXXRCONST char *name)
 {
     SEXP result = R_NilValue;
     int found = 0;
@@ -113,7 +113,7 @@ static SEXP FixupPch(SEXP pch, int dflt)
     else if (isReal(pch)) {
 	for (i = 0; i < n; i++)
 	    INTEGER(ans)[i] = R_FINITE(REAL(pch)[i]) ?
-		int(REAL(pch)[i]) : NA_INTEGER;
+		CXXRCONSTRUCT(int, REAL(pch)[i]) : NA_INTEGER;
     }
     else if (isString(pch)) {
 	for (i = 0; i < n; i++) {
@@ -208,7 +208,7 @@ static SEXP FixupFont(SEXP font, int dflt)
     else if (isReal(font)) {
 	ans = allocVector(INTSXP, n);
 	for (i = 0; i < n; i++) {
-	    k = int(REAL(font)[i]);
+	    k = CXXRCONSTRUCT(int, REAL(font)[i]);
 #ifndef Win32
 	    if (k < 1 || k > 5) k = NA_INTEGER;
 #else
@@ -675,8 +675,8 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
  *	when none has been specified (= default).
  *
  *	axp[0:2] = (x1, x2, nInt), where x1..x2 are the extreme tick marks
- *		   {unless in log case, where nint \in {1,2,3 ; -1,-2,....}
- *		    and the `nint' argument is used.}
+ *		   {unless in log case, where nInt \in {1,2,3 ; -1,-2,....}
+ *		    and the `nint' argument is used *instead*.}
 
  *	The resulting REAL vector must have length >= 1, ideally >= 2
  */
@@ -684,7 +684,7 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     double umin, umax, dn, rng, small;
     int i, n, ne;
     if (!logflag || axp[2] < 0) { /* --- linear axis --- Only use axp[] arg. */
-	n = int(fabs(axp[2]) + 0.25);/* >= 0 */
+	n = CXXRCONSTRUCT(int, fabs(axp[2]) + 0.25);/* >= 0 */
 	dn = imax2(1, n);
 	rng = axp[1] - axp[0];
 	small = fabs(rng)/(100.*dn);
@@ -698,14 +698,14 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
     else { /* ------ log axis ----- */
 	Rboolean reversed = FALSE;
 
-	n = int(axp[2] + 0.5);
+	n = CXXRCONSTRUCT(int, (axp[2] + 0.5));
 	/* {xy}axp[2] for 'log': GLpretty() [./graphics.c] sets
 	   n < 0: very small scale ==> linear axis, above, or
 	   n = 1,2,3.  see switch() below */
 	umin = usr[0];
 	umax = usr[1];
 	if (umin > umax) {
-	    reversed = Rboolean(axp[0] > axp[1]);
+	    reversed = CXXRCONSTRUCT(Rboolean, (axp[0] > axp[1]));
 	    if (reversed) {
 		/* have *reversed* log axis -- whereas
 		 * the switch(n) { .. } below assumes *increasing* values
@@ -733,8 +733,12 @@ SEXP CreateAtVector(double *axp, double *usr, int nint, Rboolean logflag)
 	 */
 	switch(n) {
 	case 1: /* large range:	1	 * 10^k */
-	    i = int(floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
+	    i = CXXRCONSTRUCT(int, floor(log10(axp[1])) - ceil(log10(axp[0])) + 0.25);
 	    ne = i / nint + 1;
+#ifdef DEBUG_axis
+	    REprintf("CreateAtVector [log-axis(), case 1]: (nint, ne) = (%d,%d)\n",
+		     nint, ne);
+#endif
 	    if (ne < 1)
 		error("log - axis(), 'at' creation, _LARGE_ range: "
 		      "ne = %d <= 0 !!\n"
@@ -967,7 +971,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     /* This indicates whether or not ticks and the axis line */
     /* should be plotted: TRUE => show, FALSE => don't show. */
 
-    doticks = Rboolean(asLogical(CAR(args)));
+    doticks = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     doticks = (doticks == NA_LOGICAL) ? TRUE : Rboolean( doticks);
     args = CDR(args);
 
@@ -1079,7 +1083,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!R_FINITE(line)) {
 	/* Except that here mgp values are not relative to themselves */
 	line = gpptr(dd)->mgp[2];
-	lineoff = int(line);
+	lineoff = CXXRCONSTRUCT(int, line);
     }
     if (!R_FINITE(pos)) pos = NA_REAL; else lineoff = 0;
 
@@ -1127,7 +1131,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
     if (n > 0 && ntmp == 0)
 	error(_("no locations are finite"));
     n = ntmp;
-    
+
     /* Ok, all systems are "GO".  Let's get to it. */
 
     /* At this point we know the value of "xaxt" and "yaxt",
@@ -1157,7 +1161,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
         /* First set the clipping limits */
         getxlimits(limits, dd);
         /* Now override par("xpd") and force clipping to device region. */
-        gpptr(dd)->xpd = 2;        
+        gpptr(dd)->xpd = 2;
 	GetAxisLimits(limits[0], limits[1], &low, &high);
 	axis_low  = GConvertX(fmin2(high, fmax2(low, REAL(at)[0])), USER, NFC, dd);
 	axis_high = GConvertX(fmin2(high, fmax2(low, REAL(at)[n-1])), USER, NFC, dd);
@@ -1165,7 +1169,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base = GConvertY(0.0, GUnit(outer), NFC, dd)
+		axis_base = GConvertY(0.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    - GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1187,7 +1191,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertY(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertY(1.0, GUnit(outer), NFC, dd)
+		axis_base =  GConvertY(1.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    + GConvertYUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1222,7 +1226,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	/* Tickmark labels. */
 	gpptr(dd)->col = gpptr(dd)->colaxis;
-	gap = GStrWidth("m", cetype_t(-1), NFC, dd);	/* FIXUP x/y distance */
+	gap = GStrWidth("m", CXXRCONSTRUCT(cetype_t, -1), NFC, dd);	/* FIXUP x/y distance */
 	tlast = -1.0;
 	if (!R_FINITE(hadj)) {
 	    if (gpptr(dd)->las == 2 || gpptr(dd)->las == 3) {
@@ -1275,7 +1279,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 			label = STRING_ELT(lab, ind[i]);
 			if(label != NA_STRING) {
 			    const char *ss = CHAR(label);
-			    labw = GStrWidth(ss, cetype_t(0), NFC, dd);
+			    labw = GStrWidth(ss, CXXRCONSTRUCT(cetype_t, 0), NFC, dd);
 			    tnew = temp - 0.5 * labw;
 			    /* Check room for perpendicular labels. */
 			    if (gpptr(dd)->las == 2 ||
@@ -1298,7 +1302,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
         /* First set the clipping limits */
         getylimits(limits, dd);
         /* Now override par("xpd") and force clipping to device region. */
-        gpptr(dd)->xpd = 2;      
+        gpptr(dd)->xpd = 2;
 	GetAxisLimits(limits[0], limits[1], &low, &high);
 	axis_low = GConvertY(fmin2(high, fmax2(low, REAL(at)[0])), USER, NFC, dd);
 	axis_high = GConvertY(fmin2(high, fmax2(low, REAL(at)[n-1])), USER, NFC, dd);
@@ -1306,7 +1310,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(0.0, GUnit(outer), NFC, dd)
+		axis_base =  GConvertX(0.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    - GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1327,7 +1331,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (R_FINITE(pos))
 		axis_base = GConvertX(pos, USER, NFC, dd);
 	    else
-		axis_base =  GConvertX(1.0, GUnit(outer), NFC, dd)
+		axis_base =  GConvertX(1.0, CXXRCONSTRUCT(GUnit, outer), NFC, dd)
 		    + GConvertXUnits(line, LINES, NFC, dd);
 	    if (R_FINITE(gpptr(dd)->tck)) {
 		double len, xu, yu;
@@ -1458,7 +1462,7 @@ SEXP attribute_hidden do_plot_xy(SEXP call, SEXP op, SEXP args, SEXP env)
     double *x, *y, xold, yold, xx, yy, thiscex, thislwd;
     int i, n, npch, ncex, ncol, nbg, nlwd, type=0, start=0, thispch;
     rcolor thiscol, thisbg;
-    unsigned int vmax = 0 /* -Wall */;
+    void *vmax = NULL /* -Wall */;
 
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
@@ -2485,8 +2489,8 @@ SEXP attribute_hidden do_mtext(SEXP call, SEXP op, SEXP args, SEXP env)
     fontsave = gpptr(dd)->font;
     colsave = gpptr(dd)->col;
 
-    /* override par("xpd") and force clipping to figure region */
-    /* NOTE: don't override to _reduce_ clipping region */
+    /* override par("xpd") and force clipping to figure region
+       NOTE: don't override to _reduce_ clipping region */
     if (gpptr(dd)->xpd < 1)
 	gpptr(dd)->xpd = 1;
 
@@ -2601,8 +2605,8 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
     GSavePars(dd);
     ProcessInlinePars(args, dd, call);
 
-    /* override par("xpd") and force clipping to figure region */
-    /* NOTE: don't override to _reduce_ clipping region */
+    /* override par("xpd") and force clipping to figure region
+       NOTE: don't override to _reduce_ clipping region */
     if (gpptr(dd)->xpd < 1)
 	gpptr(dd)->xpd = 1;
     if (outer)
@@ -2654,7 +2658,7 @@ SEXP attribute_hidden do_title(SEXP call, SEXP op, SEXP args, SEXP env)
 	  for (i = 0; i < n; i++) {
 		string = STRING_ELT(Main, i);
 		if(string != NA_STRING)
-		    GText(hpos, offset - i, GUnit(where), CHAR(string), getCharCE(string),
+		    GText(hpos, offset - i, CXXRCONSTRUCT(GUnit, where), CHAR(string), getCharCE(string),
 			  adj, adjy, 0.0, dd);
 	  }
 	}
@@ -2828,7 +2832,7 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 
     nlines = 0;
 
-    if (a != R_NilValue) {
+    if (a != R_NilValue) {  /* case where a ans b are supplied */
 	if (b == R_NilValue) {
 	    if (LENGTH(a) != 2)
 		error(_("invalid a=, b= specification"));
@@ -2848,13 +2852,14 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 	else
 	    gpptr(dd)->lty = dpptr(dd)->lty;
 	GMode(1, dd);
+
 	/* FIXME?
 	 * Seems like the logic here is just draw from xmin to xmax
 	 * and you're guaranteed to draw at least from ymin to ymax
 	 * This MAY cause a problem at some stage when the line being
 	 * drawn is VERY steep -- and the problem is worse now that
 	 * abline will potentially draw to the extents of the device
-	 * (when xpd=NA).  NOTE that R's internal clipping protects the
+	 * (when xpd = NA).  NOTE that R's internal clipping protects the
 	 * device drivers from stupidly large numbers, BUT there is
 	 * still a risk that we could produce a number which is too
 	 * big for the computer's brain.
@@ -2863,44 +2868,49 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 	 * The problem is worse -- you could get NaN, which at least the
 	 * X11 device coerces to -2^31 <TSL>
 	 */
-	getxlimits(x, dd);
+	getxlimits(x, dd);/* -> (x[0], x[1]) */
 	if (R_FINITE(gpptr(dd)->lwd)) {
-	    if (LOGICAL(untf)[0] == 1 && (gpptr(dd)->xlog || gpptr(dd)->ylog)) {
-		double xx[101], yy[101];
-		double xstep = (x[1] - x[0])/100;
-		for (i = 0; i < 100; i++) {
-		    xx[i] = x[0] + i*xstep;
-		    yy[i] = aa + xx[i] * bb;
+	    Rboolean xlog = gpptr(dd)->xlog, ylog = gpptr(dd)->ylog;
+	    if (LOGICAL(untf)[0] && (xlog || ylog)) {
+#define NS 100
+		/* Plot curve, linear on original scales */
+		double xx[NS+1], yy[NS+1];
+		if(xlog) {
+		    /* x_i should be equidistant in log-scale, i.e., equi-ratio */
+		    double x_f = x[1] / DBL_MAX;
+		    xx[0] = x[0] = fmax2(x[0], 1.01 *x_f); /* > 0 */
+		    x_f = pow(x[1]/x[0], 1./NS);
+		    for (i = 1; i < NS; i++)
+			xx[i] = xx[i-1] * x_f;
+		} else {
+		    double xstep = (x[1] - x[0])/NS;
+		    for (i = 0; i < NS; i++)
+			xx[i] = x[0] + i*xstep;
 		}
-		xx[100] = x[1];
-		yy[100] = aa + x[1] * bb;
+		xx[NS] = x[1];
+		for (i = 0; i <= NS; i++)
+		    yy[i] = aa + xx[i] * bb;
 
 		/* now get rid of -ve values */
-		lstart=0;lstop=100;
-		if (gpptr(dd)->xlog){
-			for(;xx[lstart]<=0 && lstart<101;lstart++);
-			for(;xx[lstop]<=0 && lstop>0;lstop--);
+		lstart = 0;lstop = NS;
+		if (xlog) {
+		    for(; xx[lstart] <= 0 && lstart < NS+1; lstart++);
+		    for(; xx[lstop] <= 0 && lstop > 0; lstop--);
 		}
-		if (gpptr(dd)->ylog){
-			for(;yy[lstart]<=0 && lstart<101;lstart++);
-			for(;yy[lstop]<=0 && lstop>0;lstop--);
+		if (ylog) {
+		    for(; yy[lstart] <= 0 && lstart < NS+1; lstart++);
+		    for(; yy[lstop] <= 0 && lstop > 0; lstop--);
 		}
-
 
 		GPolyline(lstop-lstart+1, xx+lstart, yy+lstart, USER, dd);
-	    }
-	    else {
-		double x0, x1;
+#undef NS
+	    } else { /* non-log plots, possibly with log scales */
+		y[0] = aa + (xlog ? log10(x[0]) : x[0]) * bb;
+		y[1] = aa + (xlog ? log10(x[1]) : x[1]) * bb;
 
-		x0 = ( gpptr(dd)->xlog ) ?	log10(x[0]) : x[0];
-		x1 = ( gpptr(dd)->xlog ) ?	log10(x[1]) : x[1];
-
-		y[0] = aa + x0 * bb;
-		y[1] = aa + x1 * bb;
-
-		if ( gpptr(dd)->ylog ){
-		    y[0] = pow(10.,y[0]);
-		    y[1] = pow(10.,y[1]);
+		if (ylog) {
+		    y[0] = pow(10., y[0]);
+		    y[1] = pow(10., y[1]);
 		}
 
 		GLine(x[0], y[0], x[1], y[1], USER, dd);
@@ -2909,7 +2919,7 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 	GMode(0, dd);
 	nlines++;
     }
-    if (h != R_NilValue) {
+    if (h != R_NilValue) { /* horizontal liee */
 	GMode(1, dd);
 	for (i = 0; i < LENGTH(h); i++) {
 	    gpptr(dd)->col = INTEGER(col)[nlines % ncol];
@@ -2929,7 +2939,7 @@ SEXP attribute_hidden do_abline(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	GMode(0, dd);
     }
-    if (v != R_NilValue) {
+    if (v != R_NilValue) { /* vertical line */
 	GMode(1, dd);
 	for (i = 0; i < LENGTH(v); i++) {
 	    gpptr(dd)->col = INTEGER(col)[nlines % ncol];
@@ -3503,8 +3513,8 @@ SEXP attribute_hidden do_dend(SEXP call, SEXP op, SEXP args, SEXP env)
     dnd_offset = GConvertYUnits(GStrWidth("m", CE_ANY, INCHES, dd), INCHES,
 				USER, dd);
 
-    /* override par("xpd") and force clipping to figure region */
-    /* NOTE: don't override to _reduce_ clipping region */
+    /* override par("xpd") and force clipping to figure region
+       NOTE: don't override to _reduce_ clipping region */
     if (gpptr(dd)->xpd < 1)
 	gpptr(dd)->xpd = 1;
 
@@ -3528,7 +3538,7 @@ SEXP attribute_hidden do_dendwindow(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, imax, n;
     double pin, *ll, tmp, yval, *y, ymin, ymax, yrange, m;
     SEXP originalArgs, merge, height, llabels, str;
-    unsigned int vmax;
+    void *vmax;
     pGEDevDesc dd;
 
     dd = GEcurrentDevice();
@@ -3664,7 +3674,7 @@ static Rboolean SymbolRange(double *x, int n, double *xmax, double *xmin)
 	    if (*xmax < x[i]) *xmax = x[i];
 	    if (*xmin > x[i]) *xmin = x[i];
 	}
-    return Rboolean(*xmax >= *xmin && *xmin >= 0);
+    return CXXRCONSTRUCT(Rboolean, (*xmax >= *xmin && *xmin >= 0));
 }
 
 static void CheckSymbolPar(SEXP call, SEXP p, int *nr, int *nc)
@@ -3699,7 +3709,7 @@ SEXP attribute_hidden do_symbols(SEXP call, SEXP op, SEXP args, SEXP env)
     double pmax, pmin, inches, rx, ry;
     double xx, yy, p0, p1, p2, p3, p4;
     double *pp, *xp, *yp;
-    unsigned int vmax;
+    void *vmax;
 
     SEXP originalArgs = args;
     pGEDevDesc dd = GEcurrentDevice();
@@ -3975,7 +3985,7 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean open, repEnds, draw;
     double *xx;
     double *yy;
-    unsigned int vmaxsave;
+    void *vmaxsave;
     R_GE_gcontext gc;
 
     SEXP originalArgs = args;
@@ -3989,9 +3999,9 @@ SEXP attribute_hidden do_xspline(SEXP call, SEXP op, SEXP args, SEXP env)
     sy = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
     nx = LENGTH(sx);
     ss = SETCAR(args, coerceVector(CAR(args), REALSXP));  args = CDR(args);
-    open = Rboolean(asLogical(CAR(args))); args = CDR(args);
-    repEnds = Rboolean(asLogical(CAR(args))); args = CDR(args);
-    draw = Rboolean(asLogical(CAR(args))); args = CDR(args);
+    open = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    repEnds = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
+    draw = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args))); args = CDR(args);
 
     PROTECT(col = FixupCol(CAR(args), R_TRANWHITE));	args = CDR(args);
     ncol = LENGTH(col);
@@ -4092,6 +4102,8 @@ SEXP attribute_hidden do_clip(SEXP call, SEXP op, SEXP args, SEXP env)
     GConvert(&x1, &y1, USER, DEVICE, dd);
     GConvert(&x2, &y2, USER, DEVICE, dd);
     GESetClip(x1, y1, x2, y2, dd);
+    /* avoid GClip resetting this */
+    gpptr(dd)->oldxpd = gpptr(dd)->xpd;
 
     /* NOTE: only record operation if no "error"  */
     if (GRecording(call, dd))
@@ -4122,9 +4134,9 @@ SEXP attribute_hidden do_convertXY(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = duplicate(x));
     rx = REAL(ans);
     if (PRIMVAL(op) == 1)
-	for (i = 0; i < n; i++) rx[i] = GConvertY(rx[i], GUnit(from), GUnit(to), gdd);
+	for (i = 0; i < n; i++) rx[i] = GConvertY(rx[i], CXXRCONSTRUCT(GUnit, from), CXXRCONSTRUCT(GUnit, to), gdd);
     else
-	for (i = 0; i < n; i++) rx[i] = GConvertX(rx[i], GUnit(from), GUnit(to), gdd);
+	for (i = 0; i < n; i++) rx[i] = GConvertX(rx[i], CXXRCONSTRUCT(GUnit, from), CXXRCONSTRUCT(GUnit, to), gdd);
     UNPROTECT(1);
 
     return ans;

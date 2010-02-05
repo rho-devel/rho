@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -39,6 +39,7 @@
 
 #include "CXXR/GCStackRoot.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -51,6 +52,8 @@ using namespace CXXR;
 // interface:
 namespace CXXR {
     namespace ForceNonInline {
+	SEXP (*protectp)(SEXP) = Rf_protect;
+        void (*unprotectp)(int) = Rf_unprotect;
 	void (*unprotect_ptrp)(RObject*) = Rf_unprotect_ptr;
 	void (*ProtectWithIndexp)(SEXP, PROTECT_INDEX *) = R_ProtectWithIndex;
 	void (*Reprotectp)(SEXP, PROTECT_INDEX) = R_Reprotect;
@@ -90,7 +93,20 @@ void GCStackRootBase::ppsRestoreSize(size_t new_size)
 	    node->makeMoribund();
 	s_pps->pop_back();
     }
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " ppsRestoreSize" << endl;
+#endif
 }
+
+#ifdef DEBUG_PPS
+size_t GCStackRootBase::ppsSize()
+{
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " ppsSize" << endl;
+    return s_pps->size();
+}
+#endif
 
 #ifndef NDEBUG
 unsigned int GCStackRootBase::protect(RObject* node)
@@ -100,6 +116,10 @@ unsigned int GCStackRootBase::protect(RObject* node)
     if (node)
 	node->incRefCount();
     s_pps->push_back(std::make_pair(node, R_GlobalContext));
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " protect at index " << index << endl;
+#endif
     return index;
 }
 #endif
@@ -107,8 +127,10 @@ unsigned int GCStackRootBase::protect(RObject* node)
 void GCStackRootBase::reprotect(RObject* node, unsigned int index)
 {
     GCNode::maybeCheckExposed(node);
+#ifndef NDEBUG
     if (index >= s_pps->size())
 	throw out_of_range("GCStackRootBase::reprotect: index out of range.");
+#endif
     if (node)
 	node->incRefCount();
 #ifdef NDEBUG
@@ -125,6 +147,10 @@ void GCStackRootBase::reprotect(RObject* node, unsigned int index)
 	pr.first->makeMoribund();
     pr.first = node;
 #endif
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " reprotect at index " << index << endl;
+#endif
 }
 
 void GCStackRootBase::seq_error()
@@ -136,10 +162,12 @@ void GCStackRootBase::seq_error()
 
 void GCStackRootBase::unprotect(unsigned int count)
 {
+#ifndef NDEBUG
     size_t sz = s_pps->size();
     if (count > sz)
 	throw out_of_range("GCStackRootBase::unprotect: count greater"
 			   " than current stack size.");
+#endif
     for (unsigned int i = 0; i < count; ++i) {
 #ifdef NDEBUG
 	RObject* node = s_pps->back();
@@ -154,6 +182,10 @@ void GCStackRootBase::unprotect(unsigned int count)
 	    node->makeMoribund();
 	s_pps->pop_back();
     }
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " unprotect " << count << endl;
+#endif
 }
 
 void GCStackRootBase::unprotectPtr(RObject* node)
@@ -173,6 +205,10 @@ void GCStackRootBase::unprotectPtr(RObject* node)
 			       " pointer not found.");
     // See Josuttis p.267 for the need for -- :
     s_pps->erase(--(rit.base()));
+#ifdef DEBUG_PPS
+    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+	 << " unprotectPtr " << node << endl;
+#endif
 }
 
 void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
@@ -209,15 +245,4 @@ void Rf_ppsRestoreSize(size_t new_size)
 size_t Rf_ppsSize()
 {
     return GCStackRootBase::ppsSize();
-}
-
-SEXP Rf_protect(SEXP node)
-{
-    GCStackRootBase::protect(node);
-    return node;
-}
-
-void Rf_unprotect(int count)
-{
-    GCStackRootBase::unprotect(count);
 }

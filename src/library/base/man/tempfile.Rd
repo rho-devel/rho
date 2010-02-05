@@ -1,6 +1,6 @@
 % File src/library/base/man/tempfile.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{tempfile}
@@ -50,7 +50,7 @@ tempdir()
   if none succeeds \file{/tmp} is used.
 #endif
 #ifdef windows
-  if none succeeds the value of \env{R\_USER} (see
+  if none succeeds the value of \env{R_USER} (see
   \code{\link{Rconsole}}) is used.  If the path to the directory
   contains a space in any of the components, the path returned will use
   the shortnames version of the path.
@@ -59,7 +59,7 @@ tempdir()
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{\code{\link{unlink}} for deleting files.}
 \examples{

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -57,6 +57,7 @@ void filter2(double *x, int *n, double *filter, int *nfilt, double *out);
 void R_pp_sum (double *u, int *n, int *l, double *sum);
 void HoltWinters (double *x, int *xl, double *alpha, double *beta,
 		  double *gamma, int *start_time, int *seasonal, int *period,
+		  int *dotrend, int *doseasonal,
 		  double *a, double *b, double *s, double *SSE, double *level, 
 		  double *trend, double *season);
 

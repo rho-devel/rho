@@ -19,21 +19,15 @@ Monitored allocation of 289 bytes
 Blocks allocated: 10
 Bytes allocated: 4613
 Allocating #10 with size 274
-GC cued for 274
 Allocating #11 with size 1019
-GC cued for 1019
 Deallocating #6
 Deallocating #4
 Allocating #12 with size 774
-GC cued for 774
 Allocating #13 with size 79
-GC cued for 79
 Deallocating #5
 Deallocating #10
 Allocating #14 with size 122
-GC cued for 122
 Allocating #15 with size 35
-GC cued for 35
 Deallocating #3
 Deallocating #15
 Blocks allocated: 10

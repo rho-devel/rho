@@ -3,14 +3,14 @@
 #
 # Copyright (C) 2008 The R Foundation
 # This file is distributed under the same license as the R package.
-# Alexey Shipunov <dactylorhiza at gmail> 2008
+# Alexey Shipunov <dactylorhiza at gmail> 2009
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
-"PO-Revision-Date: 2008-10-06 16:47-0500\n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
+"PO-Revision-Date: 2009-10-15 02:17-0500\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
@@ -32,6 +32,9 @@ msgstr "коэффициенты регресии"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "'a' и 'b' отвергнуты в пользу 'coef'"
+
+msgid "one of 'x1' and 'y1' must be given"
+msgstr "надо указать одно из 'x1' или 'y1'"
 
 msgid "'x' must be a 2-d contingency table"
 msgstr "'x' должна быть a двумерной таблицей сопряженности"
@@ -250,8 +253,11 @@ msgstr "'text.width' должен быть числовым и >= 0"
 msgid "horizontal specification overrides: Number of columns :="
 msgstr "горизонтальное указание превышено: Число колонок :="
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
-msgstr "не используется pch[2..], поскольку pch[1] имеет много символов"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr "'merge = TRUE' не дает результата, покуда не нарисованы сегменты линии"
+
+msgid "not using pch[2..] since pch[1L] has multiple chars"
+msgstr "не используется pch[2..], поскольку pch[1L] имеет много символов"
 
 msgid "must specify at least one of 'x' and 'y'"
 msgstr "надо указать по крайней мере один из 'x' и 'y'"
@@ -342,6 +348,9 @@ msgstr "'figs' должен быть вектором или матрицей с 4 колонками"
 
 msgid "'figs' must specify at least one screen"
 msgstr "'figs' должен определять по меньшей мере один экран"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr "'nrpoints' должен быть неотрицательным числовым скаляром."
 
 msgid "a 2-way table has to be specified"
 msgstr "надо указать двумерную таблицу"

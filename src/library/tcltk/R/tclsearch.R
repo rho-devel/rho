@@ -21,7 +21,7 @@ addTclPath <- function(path = ".")
     if(.Platform$OS.type == "windows")
         path <- gsub("\\\\", "/", path)
     a <- tclvalue(tcl("set", "auto_path"))
-    paths <- strsplit(a, " ", fixed=TRUE)[[1]]
+    paths <- strsplit(a, " ", fixed=TRUE)[[1L]]
     if (! path %in% paths)
         tcl("lappend", "auto_path", path)
     invisible(paths)
@@ -29,8 +29,8 @@ addTclPath <- function(path = ".")
 
 tclRequire <- function(package, warn = TRUE)
 {
-    a <- try(tcl("package", "require", package), silent=TRUE)
-    if (inherits(a, "try-error")){
+    a <- tryCatch(tcl("package", "require", package), error = identity)
+    if (inherits(a, "error")) {
         if (warn)
             warning(gettextf("Tcl package '%s' not found", package),
                     domain = NA)

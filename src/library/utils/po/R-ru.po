@@ -3,14 +3,15 @@
 #
 # Copyright (C) 2008 The R Foundation
 # This file is distributed under the same license as the R package.
-# Alexey Shipunov <dactylorhiza at gmail> 2008
+# Copyright (C) 2009 Alexey Shipunov <dactylorhiza at gmail>
+# Copyright (C) 2009 Anton Korobeynikov <asl at math dot spbu dot ru>
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-10-06 07:30\n"
-"PO-Revision-Date: 2008-10-06 17:04-0500\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
+"PO-Revision-Date: 2009-10-15 02:50-0500\n"
 "Last-Translator: Alexey Shipunov <dactylorhiza at gmail>\n"
 "Language-Team: Russian\n"
 "MIME-Version: 1.0\n"
@@ -38,25 +39,16 @@ msgid "A search query has been submitted to"
 msgstr "Поисковый запрос должен быть послан в"
 
 msgid "The results page should open in your browser shortly"
-msgstr "Страница с результатами должна скоро открыться в броузере"
+msgstr "Страница с результатами должна скоро открыться в браузере"
 
 msgid "reference to unknown chunk '%s'"
-msgstr "ссылка на неизвестный кусок '%s'"
+msgstr "ссылка на неизвестный фрагмент '%s'"
 
 msgid "no Sweave file with name '%s' found"
 msgstr "Sweave-файл с именем '%s' не найден"
 
 msgid "%d Sweave files for basename '%s' found:"
 msgstr "%d Sweave-файлов с базовым именем '%s' найдено:"
-
-msgid "Found invalid multi-byte character data."
-msgstr "Найдены неправильные многобайтные текстовые данные."
-
-msgid "Cannot re-encode because 'iconv' is not available."
-msgstr "Не могу перекодировать, потому что 'iconv' недоступен."
-
-msgid "Try running R in a single-byte locale."
-msgstr "Попробуйте запустить R на однобайтной локали."
 
 msgid "more than one syntax specification found, using the first one"
 msgstr "найдено более одного указания на синтаксис, использую первое"
@@ -97,6 +89,19 @@ msgstr "элементы 'what' после первого будут пропущены"
 
 msgid "%d occurrences in %s"
 msgstr "%d вхождений в %s"
+
+msgid "Invalid 'filter' argument."
+msgstr "Неправильный аргумент 'filter'"
+
+msgid "Could not find aspell or ispell executable."
+msgstr "Не могу найти исполняемого файла aspell или ispell."
+
+msgid ""
+"Running aspell failed with diagnostics:\n"
+"%s"
+msgstr ""
+"Запуск aspell не удался с причиной:\n"
+"%s"
 
 msgid ""
 "Use <code> %s </code> \n"
@@ -142,7 +147,7 @@ msgid "'FUN' must be a function or NULL"
 msgstr "'FUN' должен быть функцией или NULL"
 
 msgid "Can't handle S4 methods yet"
-msgstr "Покуда не могу работать с методами S4"
+msgstr "Пока не могу работать с методами S4"
 
 msgid "'package' must be a character string or NULL"
 msgstr "'package' должен быть текстовой строкой или NULL"
@@ -163,7 +168,7 @@ msgid "data set '%s' not found"
 msgstr "данные '%s' не найдены"
 
 msgid "kind '%s' not yet implemented"
-msgstr "'%s' еще не разработан"
+msgstr "'%s' еще не реализован"
 
 msgid "wrong number of table row entries"
 msgstr "неправильное количество записей строк таблицы"
@@ -206,20 +211,20 @@ msgstr "Введите номер окружения или 0 для выхода"
 
 msgid "recover called non-interactively; frames dumped, use debugger() to view"
 msgstr ""
-"восстановление вызвано неинтерактивно; рамки сброшены, используйте debugger"
+"восстановление вызвано неинтерактивно; кадры сброшены, используйте debugger"
 "(), чтобы их просмотреть"
 
 msgid "No suitable frames for recover()"
-msgstr "Нет подходящих рамок для recover()"
+msgstr "Нет подходящих кадров для recover()"
 
 msgid "No demo found for topic '%s'"
-msgstr "Для топика '%s' не найден демо"
+msgstr "Для темы '%s' не найден демо"
 
 msgid ""
 "Demo for topic '%s' found more than once,\n"
 "using the one found in '%s'"
 msgstr ""
-"Для топика '%s' найдено более одного демо,\n"
+"Для темы '%s' найдено более одного демо,\n"
 "использую тот, который найден в '%s'"
 
 msgid "invalid 'data' argument"
@@ -258,20 +263,23 @@ msgstr "в '%s' не найдено файла помощи"
 msgid "more than one help file found: using package '%s'"
 msgstr "найдено более одного файла помощи: использую пакет '%s'"
 
-msgid "'%s' has a help file but no examples file"
-msgstr "у '%s' есть файл помощи, но нет файла примеров"
+msgid "'%s' has a help file but no examples"
+msgstr "у '%s' есть файл помощи, но нет примеров"
 
 msgid "test '%s' is not available"
 msgstr "тест '%s' недоступен"
+
+msgid "Line number missing"
+msgstr "Пропущен номер строки"
 
 msgid "'fix' requires a name"
 msgstr "для 'fix' нужно имя"
 
 msgid "too many list items (at most up to number 26)"
-msgstr "слишком много пунктов в списке (самое большее 26)"
+msgstr "слишком много элементов в списке (самое большее 26)"
 
 msgid "too many list items (at most up to number 3899)"
-msgstr "слишком много пунктов в списке (самое большее 3899)"
+msgstr "слишком много элементов в списке (самое большее 3899)"
 
 msgid "'form' must be a two-sided formula"
 msgstr "'form' должен быть двусторонней формулой"
@@ -284,6 +292,18 @@ msgid "'topic' should be a name, length-one character vector or reserved word"
 msgstr ""
 "'topic' должен быть именем, текстовой строкой единичной длины или "
 "зарезервированным словом"
+
+msgid "offline = TRUE is deprecated: use help_type =\"postscript\""
+msgstr ""
+"offline = TRUE не приветствуется: используйте help_type =\"postscript\""
+
+#, fuzzy
+msgid "chmhelp = TRUE is no longer supported: using help_type =\"text\""
+msgstr ""
+"chmhelp = TRUE больше не поддерживается: используйте help_type =\"text\""
+
+msgid "htmhelp = TRUE is deprecated: use help_type =\"html\""
+msgstr "htmhelp = TRUE не приветствуется: используйте help_type =\"html\""
 
 msgid "No documentation for '%s' in specified packages and libraries:"
 msgstr "В указанных пакетах и библиотеках нет документации для '%s':"
@@ -313,25 +333,8 @@ msgstr "Выберите один"
 msgid "Using the first match ..."
 msgstr "Использую первое совпадение..."
 
-msgid ""
-"No HTML help for '%s' is available:\n"
-"corresponding file is missing"
-msgstr ""
-"Для '%s' HTML-справка недоступна:\n"
-"отсутствует соответствующий файл"
-
-msgid "Compiled HTML is not installed"
-msgstr "Скомпилированные HTML не инсталлированы"
-
-msgid "CHM file could not be displayed"
-msgstr "CHM-файл нельзя отобразить"
-
-msgid ""
-"No CHM help for '%s' in package '%s' is available:\n"
-"the CHM file for the package is missing"
-msgstr ""
-"CHM-помощь по '%s' из пакета '%s' недоступна:\n"
-"CHM-файл пакета не найден"
+msgid "HTML help is unavailable"
+msgstr "Помощь HTML недоступна"
 
 msgid "R Help on '%s'"
 msgstr "Помощь R по '%s'"
@@ -342,9 +345,6 @@ msgid ""
 msgstr ""
 "Недоступна текстовая помощь по '%s':\n"
 "нет соответствующего файла"
-
-msgid "problems running R CMD Rdconv"
-msgstr "проблемы с запуском R CMD Rdconv"
 
 msgid ""
 "No offline help for '%s' is available:\n"
@@ -363,13 +363,19 @@ msgid "do not know what to search"
 msgstr "непонятно, что искать"
 
 msgid "argument 'help.db' is deprecated"
-msgstr "аргумент 'help.db' не рекомендуется"
+msgstr "аргумент 'help.db' устарел"
 
-msgid "Rebuilding the data base ..."
-msgstr "Перестройка базы данных..."
+msgid "Rebuilding the help.search() database"
+msgstr "Перестройка базы данных help.search() "
+
+msgid "..."
+msgstr "..."
 
 msgid "Packages {.readRDS() sequentially}:"
 msgstr "Пакеты {.readRDS() последовательно}:"
+
+msgid "."
+msgstr "."
 
 msgid "could not find package '%s'"
 msgstr "не могу найти пакет '%s'"
@@ -392,8 +398,10 @@ msgstr "удаляю все вхождения с неправильными многобайтными данными"
 msgid "saving the database ..."
 msgstr "Сохраняю базу данных..."
 
-msgid ""
-"no information in the data base for package '%s': need 'rebuild = TRUE'?"
+msgid "... database rebuilt"
+msgstr "... база данных перестроена"
+
+msgid "no information in the database for package '%s': need 'rebuild = TRUE'?"
 msgstr "в базе данных нет информации о пакете '%s': надо 'rebuild = TRUE'?"
 
 msgid "incorrect 'agrep' specification"
@@ -422,6 +430,9 @@ msgstr "menu() нельзя использовать неинтерактивно"
 
 msgid "Enter an item from the menu, or 0 to exit"
 msgstr "Введите пункт из меню или 0 для выхода"
+
+msgid "invalid query"
+msgstr "неправильный запрос"
 
 msgid "'%s' is a formal generic function; S3 methods will not likely be found"
 msgstr ""
@@ -517,20 +528,20 @@ msgstr "Дальнейшее указано в '%s'."
 msgid "unable to access index for repository %s"
 msgstr "недоступен индекс для хранилища %s"
 
-msgid "invalid 'oldPkgs'; must be as result from old.packages()"
-msgstr ""
+msgid "Invalid 'filters' argument."
+msgstr "Неправильные аргументы 'filter'"
+
+msgid "invalid 'oldPkgs'; must be a result from old.packages()"
+msgstr "неверное значение 'oldPkgs'; должен быть результатом old.packages()"
 
 msgid "illformed 'instPkgs' matrix"
-msgstr ""
+msgstr "Неверная матрица 'instPkgs'"
 
 msgid "no installed packages for (invalid?) 'lib.loc=%s'"
 msgstr "нет установленных пакетов для (неправильного?) 'lib.loc=%s'"
 
-msgid "bundle '%s' is incompletely installed"
-msgstr "связка пакетов '%s' установлена не полностью"
-
-msgid "bundle '%s' has extra contents %s"
-msgstr "связка пакетов '%s' имеет дополнительное содержание %s"
+msgid "read.dcf() error on file '%s'"
+msgstr "Ошибка read.dcf() на файле '%s'"
 
 msgid "'priority' must be character or NULL"
 msgstr "'priority' должен быть текстом или NULL"
@@ -566,8 +577,11 @@ msgstr "не могу установить хранилища неинтерактивно"
 msgid "--- Please select repositories for use in this session ---"
 msgstr "--- Пожалуйста, выберите хранилища для использования в этой сессии ---"
 
-msgid "Enter one or more numbers separated by spaces"
-msgstr "Введите одну или более цифр, разделенных пробелами"
+msgid ""
+"Enter one or more numbers separated by spaces, or an empty line to cancel"
+msgstr ""
+"Введите одну или более цифр, разделенных пробелами, или пустую строку для "
+"отмены"
 
 msgid "'%s' must be supplied"
 msgstr "надо указать '%s'"
@@ -577,6 +591,13 @@ msgstr "каждый пакет зависит по меньшей мере от одного другого"
 
 msgid "packages %s are mutually dependent"
 msgstr "пакеты %s обоюдозависимы"
+
+msgid ""
+"Do not know which element of 'lib' to install dependencies into\n"
+"skipping dependencies"
+msgstr ""
+"Не знаю, в какой элемент 'lib' устанавливать зависимости\n"
+"пропускаю зависимости"
 
 msgid "no packages were specified"
 msgstr "не указаны пакеты"
@@ -602,6 +623,9 @@ msgstr "не могу установить пакеты"
 msgid "unable to create"
 msgstr "не удалось создать"
 
+msgid "inferring 'repos = NULL' from the file name"
+msgstr "выставляю 'repos = NULL' на основе имени файла"
+
 msgid "cannot install MacOS X binary packages on Windows"
 msgstr "не могу установить бинарные пакеты MacOS X под Windows"
 
@@ -625,11 +649,11 @@ msgid "unable to create temporary directory '%s'"
 msgstr "не могу создать временную папку '%s'"
 
 msgid ""
-"Do not know which element of 'lib' to install dependencies into\n"
-"skipping dependencies"
+"installation of one of more packages failed,\n"
+"  probably %s"
 msgstr ""
-"Не знаю, в какой элемент 'lib' устанавливать зависимости\n"
-"пропускаю зависимости"
+"установка одного (или более) пакетов завершилась с ошибкой,\n"
+"  возможно %s"
 
 msgid ""
 "The downloaded packages are in\n"
@@ -787,6 +811,12 @@ msgstr "не могу перевести 'x' в римскую"
 msgid "Invalid roman numeral(s): %s"
 msgstr "Неправильные римские номер(а): %s"
 
+msgid "length mismatch: bug in code!"
+msgstr "несовпадение длин: ошибка в коде!"
+
+msgid "Processing file"
+msgstr "Обрабатываю файл"
+
 msgid "no valid packages were specified"
 msgstr "правильные пакеты не указаны"
 
@@ -820,11 +850,51 @@ msgstr "'object' не имеет правильных levels()"
 msgid "'str.default': 'le' is NA"
 msgstr "'str.default': 'le' -- это NA"
 
+msgid "'digits' and 'digits.d' are both specified and the latter is not used"
+msgstr "определены и 'digits', и 'digits.d', последняя не используется"
+
+#, fuzzy
+msgid "no lines found in %s"
+msgstr "в '%s' не найдено файла помощи"
+
 msgid "profile does not contain memory information"
 msgstr "профиль не содержит информации о памяти"
 
 msgid "no events were recorded"
 msgstr "события не записаны"
+
+msgid "'compressed' must be logical or character"
+msgstr "'compressed' должен быть логическим или текстовым вектором"
+
+msgid "untar: using cmd ="
+msgstr "untar: использую cmd ="
+
+msgid "invalid octal digit"
+msgstr "неправильное восьмеричное число"
+
+msgid "'tarfile' must be a character string or a connection"
+msgstr "'tarfile' должен быть текстовой строкой или соединением"
+
+msgid "incomplete block on file"
+msgstr "незавершенный блок в файле"
+
+msgid "checksum error for entry '%s'"
+msgstr "ошибка контрольной суммы для записи '%s'"
+
+msgid "unsupported entry type"
+msgstr "неподдерживаемый тип записи"
+
+msgid "file '%s' not found"
+msgstr "файл '%s' не найден"
+
+msgid "file path is too long"
+msgstr "путь к файлу слишком длинный"
+
+msgid "storing paths of more than 100 bytes is not portable:"
+msgstr ""
+
+msgid "linked path is too long"
+msgstr "путь ссылки слишком длинный"
 
 msgid ""
 "vignette '%s' found more than once,\n"
@@ -841,6 +911,10 @@ msgstr "у миниатюры '%s' нет PDF"
 
 msgid "select.list() cannot be used non-interactively"
 msgstr "select.list() нельзя использовать неинтерактивно"
+
+#, fuzzy
+msgid "'title' must be NULL or a length-1 character vector"
+msgstr "'code_files' должны быть текстовым вектором"
 
 msgid "Enter zero or more numbers separated by space"
 msgstr "Введите ни одного или больше чисел, разделенных пробелом"
@@ -881,22 +955,23 @@ msgstr "не найдено метода скачивания"
 msgid "download had nonzero exit status"
 msgstr "у скачивания ненулевой статус выхода"
 
-msgid "Using non-linked HTML file: hyperlinks may be incorrect"
-msgstr ""
-"Использую нелинкованный HTML-файл: гиперссылки могут быть неправильными"
+msgid "running '%s' failed"
+msgstr "запуск '%s' не удался"
 
-msgid "options(\"browser\") not set"
-msgstr "options(\"browser\") не установлены"
+msgid "'%s' produced no output file: sent to printer?"
+msgstr "'%s' не дал выходного файла: послать на принтер?"
+
+msgid "creation of '%s' failed"
+msgstr "создание '%s' не удалось"
+
+msgid "Saving help page to"
+msgstr "Сохраняю страницу помощи в"
 
 msgid "invalid browser name, check options(\"browser\")."
 msgstr "неправильное имя броузера, проверьте options(\"browser\")."
 
-msgid ""
-"Changing the default browser (as specified by the 'browser' option) to the "
-"given browser so that it gets used for all future help requests."
-msgstr ""
-"Изменяю броузер по умолчанию (который указан в опции 'browser') на заданный "
-"броузер, что отразится на всех следующих запросах помощи."
+msgid "help.start() requires the HTTP server to be running"
+msgstr "help.start() требует запуска сервера HTTP"
 
 msgid ""
 "If '%s' is already running, it is *not* restarted, and you must switch to "
@@ -914,35 +989,14 @@ msgstr "'url' должен быть непустой текстовой строкой"
 msgid "'browser' must be a non-empty character string"
 msgstr "'browser' должен быть непустой текстовой строкой"
 
-msgid "Making links in per-session dir ..."
-msgstr "Делаю ссылки в папке сессии..."
-
-msgid "cannot create HTML package index"
-msgstr "не могу создать HTML-индекс пакетов"
-
-msgid "cannot create HTML search index"
-msgstr "не могу создать HTML-индекс для поиска"
+msgid "Making packages.html"
+msgstr "Делаю packages.html"
 
 msgid "Updating HTML index of packages in '.Library'"
 msgstr "Обновляю HTML-список пакетов в '.Library'"
 
-msgid "'memory.size()' is Windows-specific"
-msgstr "'memory.size()' -- Windows-специфичный"
-
-msgid "'memory.limit()' is Windows-specific"
-msgstr "'memory.limit()' -- Windows-специфичный"
-
-msgid "unable to find the HTML help"
-msgstr "не могу найти HTML-помощь"
-
-msgid "updating HTML package listing"
-msgstr "обновляю HTML-список пакетов"
-
-msgid "fixing URLs in non-standard libraries"
-msgstr "исправляю URL'ы в нестандартных библиотеках"
-
-msgid "If nothing happens, you should open '%s' yourself"
-msgstr "Если ничего не произойдет, надо самому открыть '%s'"
+msgid "'tar' returned non-zero exit code %d"
+msgstr "'tar' вернул ненулевой код выхода %d"
 
 msgid "package '%s' successfully unpacked and MD5 sums checked"
 msgstr "пакет '%s' успешно распакован, MD5-суммы проверены"
@@ -953,11 +1007,27 @@ msgstr "у связки пакетов -- неправильный файл DESCRIPTION, без поля 'Contains'"
 msgid "bundle '%s' successfully unpacked and MD5 sums checked"
 msgstr "связка пакетов '%s' успешно распакована, MD5-суммы проверены"
 
-msgid "failed to create '%s'"
-msgstr "не удалось создать '%s'"
-
 msgid "unable to move temporary installation '%s' to '%s'"
 msgstr "не могу перенести временную установку из '%s' в '%s'"
+
+msgid "cannot remove prior installation of package"
+msgstr "не могу удалить прежнюю установку пакета"
+
+msgid "'memory.size()' is Windows-specific"
+msgstr "'memory.size()' -- Windows-специфичный"
+
+msgid "'memory.limit()' is Windows-specific"
+msgstr "'memory.limit()' -- Windows-специфичный"
+
+msgid ""
+"If nothing happens, you should open\n"
+"'%s' yourself"
+msgstr ""
+"Если ничего не произойдет, надо открыть\n"
+"'%s' самостоятельно"
+
+msgid "failed to create '%s'"
+msgstr "не удалось создать '%s'"
 
 msgid "cannot remove prior installation of package '%s'"
 msgstr "не могу удалить прежнюю установку пакета '%s'"
@@ -968,8 +1038,8 @@ msgstr "zip-файл '%s' не найден"
 msgid "updating HTML package descriptions"
 msgstr "обновляю HTML-описания пакетов"
 
-msgid "cannot update '%s'"
-msgstr "не могу обновить '%s'"
+msgid "cannot update HTML package index"
+msgstr "не могу обновить HTML-индекс пакетов"
 
 msgid "winDialog() cannot be used non-interactively"
 msgstr "winDialog() нельзя использовать неинтерактивно"
@@ -979,15 +1049,6 @@ msgstr "winDialogString() нельзя использовать неинтерактивно"
 
 msgid "'pb' is not from class \"winProgressBar\""
 msgstr "'pb' не из класса \"winProgressBar\""
-
-msgid "this function is intended to work with the Aqua GUI"
-msgstr "эта функция предназначена для работы с Aqua GUI"
-
-msgid "'tar' returned non-zero exit code %d"
-msgstr "'tar' вернул ненулевой код выхода %d"
-
-msgid "cannot remove prior installation of package"
-msgstr "не могу удалить прежнюю установку пакета"
 
 msgid "class discarded from column %s"
 msgid_plural "classes discarded from columns %s"
@@ -1000,12 +1061,6 @@ msgid_plural "objects '%s' not found"
 msgstr[0] "объект '%s' не найден"
 msgstr[1] "объекты '%s' не найдены"
 msgstr[2] "объекты '%s' не найдены"
-
-msgid "'lib' element '%s'  is not a writable directory"
-msgid_plural "'lib' elements '%s' are not writable directories"
-msgstr[0] "элемент '%s' из 'lib' -- папка не для записи"
-msgstr[1] "элемент '%s' из 'lib' -- папки не для записи"
-msgstr[2] "элемент '%s' из 'lib' -- папки не для записи"
 
 msgid "package %s is not available"
 msgid_plural "packages %s are not available"
@@ -1025,11 +1080,99 @@ msgstr[0] "устанавливаю также зависимость"
 msgstr[1] "устанавливаю также зависимости"
 msgstr[2] "устанавливаю также зависимости"
 
+msgid "'lib' element '%s'  is not a writable directory"
+msgid_plural "'lib' elements '%s' are not writable directories"
+msgstr[0] "элемент '%s' из 'lib' -- папка не для записи"
+msgstr[1] "элемент '%s' из 'lib' -- папки не для записи"
+msgstr[2] "элемент '%s' из 'lib' -- папки не для записи"
+
 msgid "package '%s' is in use and will not be installed"
 msgid_plural "packages '%s' are in use and will not be installed"
 msgstr[0] "пакет '%s' сейчас используется и не будет установлен"
 msgstr[1] "пакеты '%s' сейчас используются и не будут установлены"
 msgstr[2] "пакеты '%s' сейчас используются и не будут установлены"
+
+#~ msgid "Using non-linked HTML file: hyperlinks may be incorrect"
+#~ msgstr ""
+#~ "Использую нелинкованный HTML-файл: гиперссылки могут быть неправильными"
+
+#~ msgid "options(\"browser\") not set"
+#~ msgstr "options(\"browser\") не установлены"
+
+#~ msgid ""
+#~ "No HTML help for '%s' is available:\n"
+#~ "corresponding file is missing"
+#~ msgstr ""
+#~ "Для '%s' HTML-справка недоступна:\n"
+#~ "отсутствует соответствующий файл"
+
+#~ msgid "Compiled HTML is not installed"
+#~ msgstr "Скомпилированные HTML не инсталлированы"
+
+#~ msgid "CHM file could not be displayed"
+#~ msgstr "CHM-файл нельзя отобразить"
+
+#~ msgid ""
+#~ "No CHM help for '%s' in package '%s' is available:\n"
+#~ "the CHM file for the package is missing"
+#~ msgstr ""
+#~ "CHM-помощь по '%s' из пакета '%s' недоступна:\n"
+#~ "CHM-файл пакета не найден"
+
+#~ msgid "problems running R CMD Rdconv"
+#~ msgstr "проблемы с запуском R CMD Rdconv"
+
+#~ msgid "'latexcmd' is empty"
+#~ msgstr "опция 'latexcmd' пуста"
+
+#~ msgid "'dvipscmd' is empty"
+#~ msgstr "опция 'dvipscmd' пуста"
+
+#~ msgid ""
+#~ "Changing the default browser (as specified by the 'browser' option) to "
+#~ "the given browser so that it gets used for all future help requests."
+#~ msgstr ""
+#~ "Изменяю броузер по умолчанию (который указан в опции 'browser') на "
+#~ "заданный броузер, что отразится на всех следующих запросах помощи."
+
+#~ msgid "Making links in per-session dir ..."
+#~ msgstr "Делаю ссылки в папке сессии..."
+
+#~ msgid "cannot create HTML package index"
+#~ msgstr "не могу создать HTML-индекс пакетов"
+
+#~ msgid "cannot create HTML search index"
+#~ msgstr "не могу создать HTML-индекс для поиска"
+
+#~ msgid "unable to find the HTML help"
+#~ msgstr "не могу найти HTML-помощь"
+
+#~ msgid "updating HTML package listing"
+#~ msgstr "обновляю HTML-список пакетов"
+
+#~ msgid "fixing URLs in non-standard libraries"
+#~ msgstr "исправляю URL'ы в нестандартных библиотеках"
+
+#~ msgid "cannot update '%s'"
+#~ msgstr "не могу обновить '%s'"
+
+#~ msgid "Found invalid multi-byte character data."
+#~ msgstr "Найдены неправильные многобайтные текстовые данные."
+
+#~ msgid "Cannot re-encode because 'iconv' is not available."
+#~ msgstr "Не могу перекодировать, потому что 'iconv' недоступен."
+
+#~ msgid "Try running R in a single-byte locale."
+#~ msgstr "Попробуйте запустить R на однобайтной локали."
+
+#~ msgid "bundle '%s' is incompletely installed"
+#~ msgstr "связка пакетов '%s' установлена не полностью"
+
+#~ msgid "bundle '%s' has extra contents %s"
+#~ msgstr "связка пакетов '%s' имеет дополнительное содержание %s"
+
+#~ msgid "this function is intended to work with the Aqua GUI"
+#~ msgstr "эта функция предназначена для работы с Aqua GUI"
 
 #~ msgid "Maintainer:"
 #~ msgstr "Поддержка:"
@@ -1069,9 +1212,6 @@ msgstr[2] "пакеты '%s' сейчас используются и не будут установлены"
 #~ msgstr ""
 #~ "Необязательно: другие стандартные ключевые слова, по одному на строку, из "
 #~ "файла KEYWORDS в папке с документацией по R"
-
-#~ msgid "cannot update HTML package index"
-#~ msgstr "не могу обновить HTML-индекс пакетов"
 
 #~ msgid "cannot update HTML search index"
 #~ msgstr "не могу обновить HTML-индекс поиска"

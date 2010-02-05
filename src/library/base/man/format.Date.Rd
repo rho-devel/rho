@@ -1,6 +1,6 @@
 % File src/library/base/man/format.Date.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{format.Date}
@@ -22,7 +22,7 @@
   class \code{"Date"} representing calendar dates.
 }
 \usage{
-as.Date(x, \ldots)
+as.Date(x, \dots)
 \method{as.Date}{character}(x, format = "", \dots)
 \method{as.Date}{numeric}(x, origin, \dots)
 
@@ -32,8 +32,9 @@ as.Date(x, \ldots)
 }
 \arguments{
   \item{x}{An object to be converted.}
-  \item{format}{A character string.  The default is
-    \code{"\%Y-\%m-\%d"}.  For details see \code{\link{strftime}}.}
+  \item{format}{A character string.  If not specified, it will try
+    \code{"\%Y-\%m-\%d"} then \code{"\%Y/\%m/\%d"} on the first
+    non-\code{NA} element, and give an error if neither works.}
   \item{origin}{a Date object, or something which can be coerced by
     \code{as.Date(origin, \dots)} to such an object.}
   \item{\dots}{Further arguments to be passed from or to other methods,
@@ -54,8 +55,7 @@ as.Date(x, \ldots)
   \code{"\link{POSIXct}"}.  (The last are converted to days by
   ignoring the time after midnight in the
   representation of the time in UTC.)  Also objects of class
-  \code{"date"} (from package \pkg{\link[date:as.date]{date}} or
-  \pkg{\link[survival:as.date]{survival}}) and
+  \code{"date"} (from package \pkg{\link[date:as.date]{date}}) and
   \code{"dates"} (from package \pkg{\link[chron]{chron}}).  Character
   strings are processed as far as necessary for the format specified: any
   trailing characters are ignored.

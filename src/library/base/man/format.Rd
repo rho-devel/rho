@@ -16,11 +16,11 @@
 \usage{
 format(x, \dots)
 
-\method{format}{default}(x, trim = FALSE, digits = NULL, nsmall = 0,
+\method{format}{default}(x, trim = FALSE, digits = NULL, nsmall = 0L,
        justify = c("left", "right", "centre", "none"),
        width = NULL, na.encode = TRUE, scientific = NA,
-       big.mark = "",   big.interval = 3,
-     small.mark = "", small.interval = 5,
+       big.mark = "",   big.interval = 3L,
+     small.mark = "", small.interval = 5L,
    decimal.mark = ".", zero.print = NULL, drop0trailing = FALSE, \dots)
 
 \method{format}{data.frame}(x, \dots, justify = "none")
@@ -57,7 +57,7 @@ format(x, \dots)
   % because Mr Gorjanc won't read, PR#12318
   \item{scientific}{Either a logical specifying whether
     elements of a real or complex vector should be encoded in scientific
-    format, or an integer penalty (see \code{\link{options}("scipen")}.
+    format, or an integer penalty (see \code{\link{options}("scipen")}).
     Missing values correspond to the current default penalty.}
   \item{\dots}{further arguments passed to or from other methods.}
 
@@ -128,7 +128,7 @@ format(x, \dots)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 
 \seealso{

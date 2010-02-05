@@ -34,6 +34,8 @@ c(\dots, recursive=FALSE)
   \code{as.vector} is a more intuitive way to do this, but also drops
   names.  Note too that methods other than the default are not required
   to do this (and they will almost certainly preserve a class attribute).
+  
+  This is a \link{primitive} function.
 }
 \value{
   \code{NULL} or an expression or a vector of an appropriate mode.
@@ -46,7 +48,7 @@ c(\dots, recursive=FALSE)
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{unlist}} and \code{\link{as.vector}} to produce

@@ -5,6 +5,15 @@ options(stringsAsFactors=TRUE)
 ## .Machine
 (Meps <- .Machine$double.eps)# and use it in this file
 
+assertError <- function(expr)
+    stopifnot(inherits(try(expr, silent = TRUE), "try-error"))
+assertWarning <- function(expr)
+    stopifnot(inherits(tryCatch(expr, warning = function(w)w), "warning"))
+assertWarning_atleast <- function(expr) {
+    r <- tryCatch(expr, warning = function(w)w, error = function(e)e)
+    stopifnot(inherits(r, "warning") || inherits(r, "error"))
+}
+
 ## regression test for PR#376
 aggregate(ts(1:20), nfreq=1/3)
 ## Comments: moved from aggregate.Rd
@@ -975,10 +984,10 @@ plot(ts(matrix(runif(10), ncol = 2)), type = "p")
 
 
 ## in 1.3.0 readLines(ok=FALSE) failed.
-cat(file="foo", 1:10, sep="\n")
-x <- try(readLines("foo", 100, ok=FALSE))
-unlink("foo")
-stopifnot(length(class(x)) == 1 &&class(x) == "try-error")
+cat(file="foo.txt", 1:10, sep="\n")
+x <- try(readLines("foo.txt", 100, ok=FALSE))
+unlink("foo.txt")
+stopifnot(length(class(x)) == 1 && class(x) == "try-error")
 
 
 ## PR 1047 [<-data.frame failure, BDR 2001-08-10
@@ -2216,7 +2225,7 @@ bar()
 
 ## string NAs shouldn't have any internal structure.(PR#3078)
 a <- c("NA", NA, "BANANA")
-na <- as.character(NA)
+na <- NA_character_
 a1 <- substr(a,1,1)
 stopifnot(is.na(a1)==is.na(a))
 a2 <- substring(a,1,1)
@@ -2248,9 +2257,13 @@ stopifnot(is.na(a7) == is.na(a))
 a8 <- a; substr(a8, 1, 2) <- na
 stopifnot(all(is.na(a8)))
 stopifnot(identical(a, toupper(tolower(a))))
-a9<-strsplit(a, "NA")
-stopifnot(identical(a9, list("",na,c("BA",""))))
-a10<-strsplit(a, na)
+a9 <- strsplit(a, "NA")
+stopifnot(identical(a9, list("", na ,c("BA",""))))
+a9 <- strsplit(a, "NA", fixed = TRUE)
+stopifnot(identical(a9, list("", na ,c("BA",""))))
+a9 <- strsplit(a, "NA", perl = TRUE)
+stopifnot(identical(a9, list("", na ,c("BA",""))))
+a10 <- strsplit(a, na)
 stopifnot(identical(a10, as.list(a)))
 ## but nchar doesn't fit this pattern
 stopifnot(all(!is.na(nchar(a))))
@@ -2448,7 +2461,6 @@ options(op)# reset to previous
 ## Didn't work before 1.8.0
 
 
-library(stats)
 ## cmdscale
 ## failed in versions <= 1.4.0 :
 cm1 <- cmdscale(eurodist, k=1, add=TRUE, x.ret = TRUE)
@@ -2495,7 +2507,6 @@ try(smooth.spline(y18, spar = 50)) #>> error : spar 'way too large'
 ## end of moved from smooth.spline.Rd
 
 
-library(ts)
 ## arima{0}
 (fit <- arima(lh, c(1,0,0)))
 tsdiag(fit)
@@ -3259,9 +3270,9 @@ unlink(tf)
 
 ## seq() should be more consistent in returning "integer"
 stopifnot(typeof(seq(length=0)) == "integer",
-          identical(seq(length=0), seq(along=0[0])),
+          identical(seq(length=0), seq(along.with=0[0])),
           identical(seq(length=3), 1:3),
-          identical(seq(length=3), seq(along=1:3)))
+          identical(seq(length=3), seq(along.with=1:3)))
 
 
 ## labels.lm was broken (PR#7417)
@@ -3458,12 +3469,13 @@ stopifnot(identical(paste('v_', x, sep=""), sub('^','v_', x)))
 (x <- gsub("\\b", "|", "The quick brown fox", perl = TRUE))
 stopifnot(identical(x, "|The| |quick| |brown| |fox|"))
 ## checked against sed: 2.0.1 infinite-looped.
-(x <- gsub("\\b", "|", "The quick brown fox"))
+## NB, the help page warns you not to do this one except in perl
+(x <- gsub("\\b", "|", "The quick brown fox", perl = TRUE))
 stopifnot(identical(x, "|The| |quick| |brown| |fox|"))
 ## 2.0.1 gave wrong answer
-## Another boundary case,
-(x <- gsub("\\b", "|", " The quick "))
-stopifnot(identical(x, " |The| |quick| "))
+## Another boundary case, same warning
+## (x <- gsub("\\b", "|", " The quick "))
+## stopifnot(identical(x, " |The| |quick| "))
 (x <- gsub("\\b", "|", " The quick ", perl = TRUE))
 stopifnot(identical(x, " |The| |quick| "))
 ## and some from a comment in the GNU sed code
@@ -5135,8 +5147,17 @@ stopifnot(1 == grep("setClass",
 ## Part 2: -- build, install, load and "inspect" the package:
 if(.Platform$OS.type == "unix") {
     ## <FIXME> need build.package()
-    Rcmd <- paste(file.path(R.home("bin"), "R"), "CMD")
-    system(paste(Rcmd, "build", "myTst"))
+    dir.exists <- function(x)
+        is.character(x) && file.exists(x) && file.info(path.expand(x))$isdir
+    build.pkg <- function(dir) {
+	stopifnot(dir.exists(dir))
+	Rcmd <- paste(file.path(R.home("bin"), "R"), "CMD")
+	## return name of tar file built
+	r <- tail(system(paste(Rcmd, "build", dir), intern = TRUE), 3)
+	sub(".*'", "", sub("'$", "",
+			   grep("building.*tar\\.gz", r, value=TRUE)))
+    }
+    build.pkg("myTst")
     # clean up any previous attempt (which might have left a 00LOCK)
     system("rm -rf myLib")
     dir.create("myLib")
@@ -5145,8 +5166,24 @@ if(.Platform$OS.type == "unix") {
     stopifnot(require("myTst",lib = "myLib"))
     sm <- getMethods(show, where= as.environment("package:myTst"))
     stopifnot(names(sm@methods) == "foo")
-    unlink("myLib", recursive=TRUE)
     unlink("myTst_*")
+
+    ## More building & installing packages
+    op <- options(warn=2) # There should be *NO* warnings here!
+    p.lis <- c("pkgA", "pkgB", "exS4noNS", "exNSS4")
+    for(p. in p.lis) {
+	cat("building package", p., "...\n")
+	r <- build.pkg(file.path(Sys.getenv("SRCDIR"), "Pkgs", p.))
+	cat("installing package", p., "using file", r, "...\n")
+	## we could install the tar file ... (see build.pkg()'s definition)
+	install.packages(r, lib = "myLib", repos=NULL, type = "source")
+	stopifnot(require(p.,lib = "myLib", character.only=TRUE))
+	detach(pos = match(p., sub("^package:","", search())))
+    }
+    ## TODO: not just print, but check the "list":
+    print(installed.packages(lib.loc = "myLib", priority = "NA"))
+    options(op)
+    unlink("myLib", recursive=TRUE)
 }
 unlink("myTst", recursive=TRUE)
 
@@ -5380,13 +5417,17 @@ write.dcf(list(Description = 'what a fat goat .haha'),
           file = zz, indent=1, width=10)
 stopifnot(substring(foo[-1], 1,1) == " ", length(foo) == 4,
           foo[4] == "  .haha")
+close(zz)
 ## was " .haha" (not according to DCF standard)
 
 
-## Pdf() with CIDfonts active
+## Pdf() with CIDfonts active -- they need MBCS to be supported
 pdf(family="Japan1") # << for CIDfonts, pd->fonts is NULL
-plot(1,1,pch="", axes=FALSE)
-text(1,1,"F.1", family="Helvetica"); dev.off()
+try({
+    plot(1,1,pch="", axes=FALSE)
+    text(1,1,"F.1", family="Helvetica")
+})
+dev.off()
 ## text() seg.faulted up to 2.7.2 (and early 2.8.0-alpha)
 
 ## PS mixing CIDfonts and Type1 - reverse case
@@ -5421,3 +5462,426 @@ cut(d, "weeks")
 
 
 ### end of tests added for 2.8.x
+
+
+## (Deliberate) overshot in seq(from, to, by) because of fuzz
+stopifnot(seq(0, 1, 0.00025+5e-16) <= 1, seq.int(0, 1, 0.00025+5e-16) <= 1)
+stopifnot(rev(seq(0, 1, 0.00025+5e-16))[1] == 1,
+          rev(seq.int(0, 1, 0.00025+5e-16))[1] == 1)
+# overshot by about 2e-12 in 2.8.x
+
+
+## str() with an "invalid object"
+ob <- structure(1, class = "test") # this is fine
+is.object(ob)# TRUE
+ob <- 1 + ob # << this is "broken"
+is.object(ob)# FALSE - hmm..
+identical(ob, unclass(ob)) # TRUE !
+stopifnot(grep("num 2", capture.output(str(ob))) == 1)
+## str(ob) lead to infinite recursion in R <= 2.8.0
+
+
+## getPackageName()  for "package:foo":
+require('methods')
+library(tools)
+oo <- options(warn=2)
+detach("package:tools", unload=TRUE); options(oo)
+## gave warning (-> Error) about creating package name
+
+
+## row.names(data.frame(matrixWithDimnames)) (PR#13230)
+rn0 <- c("","Row 2","Row 3")
+A <- matrix(1:6, nrow=3, ncol=2, dimnames=list(rn0, paste("Col",1:2)))
+rn <- row.names(data.frame(A))
+stopifnot(identical(rn, rn0))
+# was 1:3 in R 2.8.0, whereas
+rn0 <- c("Row 1","","Row 3")
+A <- matrix(1:6, nrow=3, ncol=2, dimnames=list(rn0, paste("Col",1:2)))
+rn <- row.names(data.frame(A))
+stopifnot(identical(rn, rn0))
+## used the names.
+
+
+## rounding error in windowing a time series (PR#13272)
+x <- ts(1:290, start=c(1984,10), freq=12)
+window(x, start=c(2008,9), end=c(2008,9), extend=FALSE)
+window(x, start=c(2008,9), end=c(2008,9), extend=TRUE)
+## second failed in 2.8.0
+
+
+## deparse(nlines=) should shrink the result (PR#13299)
+stopifnot(length(deparse(quote(foo(1,2,3)), width.cutoff = 20, nlines=7)) ==1)
+## was 7.
+
+
+## legend did not reset xpd correctly (PR#12756)
+par(xpd = FALSE)
+plot(1)
+legend("top", legend="Tops", xpd=NA, inset=-0.1)
+stopifnot(identical(par("xpd"), FALSE))
+## left xpd as NA
+
+
+## lines.formula with 'subset' and no 'data' needed a tweak
+## (R-help, John Field, 20008-11-14)
+x <- 1:5
+y <- c(1,3,NA,2,5)
+plot(y ~ x, type="n")
+lines(y ~ x, subset = !is.na(y), col="red")
+## error in 2.8.0
+
+
+## prettyNum(*, drop0trailing) erronously dropped 0 in '1e10':
+cn <- c("1.107", "2.3120", "3.14e+0", "4.2305400", "120.0",
+        "5.31e-01", "6.3333e-20", "8.1e100", "9.9e+00", "10.1e-0")
+d <- cn != (pcn <- prettyNum(cn, drop0trailing=TRUE))
+stopifnot(identical(pcn[d],
+		    c("2.312", "3.14", "4.23054","120","9.9","10.1")),
+	  identical("-3", prettyNum("-3.0",drop0trailing=TRUE)) )
+## first failed, e.g. for 8.1e100
+
+
+## (R-help, 2008-12-01)
+transform(mtcars, t1=3, t2=4)
+## failed in 2.8.0 since extra columns were passed as a list.
+
+
+## deparsing transform failed
+parse(text = deparse(transform))
+## failed in 2.8.0
+
+
+## crashed on some systems (PR#13361)
+matrix(1:4, nrow=2, dimnames=list())
+##
+
+
+## col(as.factor=TRUE) failed
+col(matrix(0, 5, 5), as.factor=TRUE)
+## failed in 2.8.0
+
+
+## qt failure in R-devel in early Dec 2008
+stopifnot(!is.nan(qt(0.1, 0.1)))
+##
+
+
+## formals<- gave wrong result for list body
+f <- f0 <- function(x) list(pi)
+formals(f) <- formals(f)
+stopifnot(identical(body(f), body(f)))
+## had body 'pi' < 2.8.1
+
+
+## body<- failed on a function with no arguments.
+f <- function() {pi}
+body(f) <- 2
+f
+## Failed < 2.8.1
+
+
+## body<- with value a list
+f <- function(x) NULL
+body(f) <- list(pi)
+stopifnot(is.list(body(f))) # was 'pi'
+body(f) <- b0 <- list(a=1, b=2)
+stopifnot(identical(body(f), b0)) # 'a' became an argument
+f <- function(x) NULL
+body(f) <- list(1, 2, 3) # was error
+## pre-2.9.0 behaviour was erratic.
+
+
+## PR#13305
+qr.solve(cbind(as.complex(1:11), as.complex(1)),
+         as.complex(2*(20:30)))
+## failed in 2.8.1
+
+
+## PR#13433: is ....\nEOF an empty last line?
+aa <- "field1\tfield2\n 1\ta\n 2\tb"
+zz <- textConnection(aa)
+res <- read.table(zz, blank.lines.skip = FALSE)
+close(zz)
+stopifnot(nrow(res) == 3)
+## was 4 in 2.8.1
+
+
+## segfault from cbind() reported by Hadley Wickham
+## https://stat.ethz.ch/pipermail/r-devel/2009-January/051853.html
+e <- environment()
+a <- matrix(list(e), ncol = 1, nrow = 2)
+b <- matrix(ncol = 0, nrow = 2) # zero-length
+cbind(a, b)
+cbind(a, b)
+## crashed in 2.9.0
+
+
+## besselI(x, -n) == besselI(x, +n)  when n is an integer
+set.seed(7) ; x <- rlnorm(216) ; nu <- c(1,44,111)
+## precision lost warnings {may be gone in the future}:
+suppressWarnings(r <- outer(x, c(-nu, nu), besselI))
+stopifnot(identical(r[,1:3], r[,4:6]))
+## suffered from sin(n * pi) imprecision in R <= 2.8.1
+
+
+## Large sanples in mood.test
+## https://stat.ethz.ch/pipermail/r-help/2009-March/190479.html
+set.seed(123)
+x <- rnorm(50, 10, 5)
+y <- rnorm(50, 2 ,5)
+(z <- mood.test(x, y))
+stopifnot(!is.na(z$p.value))
+## gave warning and incorrect result in 2.8.x
+
+
+## heatmap without dendrogram (PR#13512)
+X <- matrix(rnorm(200),20,10)
+XX <- crossprod(X)
+heatmap(XX, Rowv =  NA, revC = TRUE)
+heatmap(XX, Rowv = NA, symm = TRUE)
+## both failed in 2.8.1
+
+
+## sprintf with 0-length args
+stopifnot(identical(sprintf("%d", integer(0L)), character(0L)))
+stopifnot(identical(sprintf(character(0L), pi), character(0L)))
+## new feature in 2.9.0
+
+
+## C-level asLogical(x) or c(<raw>, <number>) did not work
+r <- as.raw(1)
+stopifnot(if(r) TRUE)
+for (type in c("null", "logical", "integer", "real", "complex",
+               "character", "list", "expression"))
+    c(r, r, get(sprintf('as.%s', type))(1))
+## failed  before 2.9.0
+
+
+### Non-unique levels in factor should be forbidden from R 2.10.0 on
+c1 <- c("a.b","a"); c2 <- c("c","b.c")
+fi <- interaction(c1, c2)
+stopifnot(length(lf <- levels(fi)) == 3, lf[1] == "a.b.c",
+	  identical(as.integer(fi), rep.int(1L, 2)))
+## interaction() failed to produce unique levels before 2.9.1
+
+levs <- c("A","A")
+## warnings for now {errors in the future}
+local({ oo <- options(warn=2); on.exit(options(oo))
+	assertError(gl(2,3, labels = levs))
+	assertError(factor(levs, levels=levs))
+	assertError(factor(1:2,	 labels=levs))
+    })
+## failed in R < 2.10.0
+L <- c("no", "yes")
+x <- (5:1)/10; lx <- paste("0.", 1:5, sep="")
+y <- pi + (-9:9)*2^-53
+z <- c(1:2,2:1) ; names(z) <- nz <- letters[seq_along(z)]
+of <- ordered(4:1)
+stopifnot(identical(factor(c(2, 1:2), labels = L),
+		    structure(c(2L, 1:2), .Label = L, class="factor")),
+	  identical(factor(x),
+		    structure(5:1, .Label = lx, class="factor")),
+	  length(levels(factor(y))) == 1, length(unique(y)) == 5,
+	  identical(factor(z),
+		    structure(z, .Names = nz, .Label = c("1","2"),
+			      class="factor")),
+	  identical(of, factor(of)))
+## partly failed in R <= 2.9.0, partly in R-devel(2.10.0)
+
+
+## "misuses" of sprintf()
+assertError(sprintf("%S%"))
+assertError(sprintf("%n %g", 1))
+## seg.faulted in R <= 2.9.0
+
+
+## sprintf(., e)  where length(as.character(e)) < length(e):
+e <- tryCatch(stop(), error=identity)
+stopifnot(identical(sprintf("%s", e),
+		    sprintf("%s", as.character(e))))
+## seg.faulted in R <= 2.9.0
+e <- tryCatch(sprintf("%q %d",1), error=function(e)e)
+e2 <- tryCatch(sprintf("%s", quote(list())), error=function(e)e)
+e3 <- tryCatch(sprintf("%s", quote(blabla)), error=function(e)e)
+stopifnot(inherits(e, "error"), inherits(e2, "error"),inherits(e3, "error"),
+	  grep("invalid", c(msg	 <- conditionMessage(e),
+			    msg2 <- conditionMessage(e2),
+			    msg3 <- conditionMessage(e3))) == 1:3,
+	  1 == c(grep("%q", msg), grep("language", msg2), grep("symbol", msg3))
+          )
+## less helpful error messages previously
+
+
+## bw.SJ on extreme example
+ep <- 1e-3
+stopifnot(all.equal(bw.SJ(c(1:99, 1e6), tol=ep), 0.725, tol=ep))
+## bw.SJ(x) failed for R <= 2.9.0 (in two ways!), when x had extreme outlier
+
+
+## anyDuplicated() with 'incomp' ...
+oo <- options(warn=2) # no warnings allowed
+stopifnot(identical(0L, anyDuplicated(c(1,NA,3,NA,5), incomp=NA)),
+	  identical(5L, anyDuplicated(c(1,NA,3,NA,3), incomp=NA)),
+	  identical(4L, anyDuplicated(c(1,NA,3,NA,3), incomp= 3)),
+	  identical(0L, anyDuplicated(c(1,NA,3,NA,3), incomp=c(3,NA))))
+options(oo)
+## missing UNPROTECT and partly wrong in development versions of R
+
+
+## test of 'stringsAsFactors' argument to expand.grid()
+z <- expand.grid(letters[1:3], letters[1:4], stringsAsFactors = TRUE)
+stopifnot(sapply(z, class) == "factor")
+z <- expand.grid(letters[1:3], letters[1:4], stringsAsFactors = FALSE)
+stopifnot(sapply(z, class) == "character")
+## did not work in 2.9.0, fixed in 2.9.1 patched
+
+
+## print.srcref should not fail; a bad encoding should fail; neither should
+## leave an open connection
+nopen <- nrow(showConnections())
+tmp <- tempfile()
+cat( c( "1", "a+b", "2"), file=tmp, sep="\n")
+p <- parse(tmp)
+print(p)
+con <- try(file(tmp, open="r", encoding="unknown"))
+unlink(tmp)
+stopifnot(inherits(con, "try-error") && nopen == nrow(showConnections()))
+##
+
+
+## PR#13574
+x <- 1:11; y <- c(6:1, 7, 11:8)
+stopifnot(all.equal(cor.test(x, y, method="spearman", alternative="greater")$p.value, cor.test(x, -y, method="spearman", alternative="less")$p.value))
+## marginally different < 2.9.0 patched
+
+
+## median should work on POSIXt objects (it did in 2.8.0)
+median(rep(Sys.time(), 2))
+## failed in 2.8.1, 2.9.0
+
+
+## repeated NA in dim() (PR#13729)
+L0 <- logical(0)
+try(dim(L0) <- c(1,NA,NA))
+stopifnot(is.null(dim(L0)))
+L1 <- logical(1)
+try(dim(L1) <- c(-1,-1))
+stopifnot(is.null(dim(L)))
+## dim was set in 2.9.0
+
+
+## as.character(<numeric>)
+nx <- 0.3 + 2e-16 * -2:2
+stopifnot(identical("0.3", unique(as.character(nx))),
+          identical("0.3+0.3i", unique(as.character(nx*(1+1i)))))
+## the first gave ("0.300000000000000" "0.3") in R < 2.10.0
+
+
+## aov evaluated a test in the wrong place ((PR#13733)
+DF <- data.frame(y = c(rnorm(10), rnorm(10, mean=3), rnorm(10, mean=6)),
+                 x = factor(rep(c("A", "B", "C"), c(10, 10, 10))),
+                 sub = factor(rep(1:10, 3)))
+## In 2.9.0, the following line raised an error because "x" cannot be found
+junk <- summary(aov(y ~ x + Error(sub/x), data=DF, subset=(x!="C")))
+## safety check added in 2.9.0 evaluated the call.
+
+
+## for(var in seq) .. when seq is modified  "inside" :
+x <- c(1,2); s <- 0; for (i in x) { x[i+1] <- i + 42.5; s <- s + i }
+stopifnot(s == 3)
+## s was  44.5  in R <= 2.9.0
+
+
+## ":" at the boundary
+M <- .Machine$integer.max
+s <- (M-2):(M+.1)
+stopifnot(is.integer(s), s-M == -2:0)
+## was "double" in R <= 2.9.1
+
+
+## too many columns model.matrix()
+dd <- as.data.frame(sapply(1:40, function(i) gl(2, 100)))
+(f <- as.formula(paste("~ - 1 + ", paste(names(dd), collapse = ":"), sep = "")))
+e <- tryCatch(X <- model.matrix(f, data = dd), error=function(e)e)
+stopifnot(inherits(e, "error"))
+## seg.faulted in R <= 2.9.1
+
+
+## seq_along( <obj> )
+x <- structure(list(a = 1, value = 1:7), class = "FOO")
+length.FOO <- function(x) length(x$value)
+stopifnot(identical(seq_len(length(x)),
+		    seq_along(x)))
+## used C-internal non-dispatching length() in R <= 2.9.1
+
+
+## factor(NULL)
+stopifnot(identical(factor(), factor(NULL)))
+## gave an error from R ~1.3.0 to 2.9.1
+
+
+## methods() gave two wrong warnings in some cases:
+op <- options(warn = 2)# no warning, please!
+m1 <- methods(na.omit) ## should give (no warning):
+##
+setClass("bla")
+setMethod("na.omit", "bla", function(object, ...) "na.omit(<bla>)")
+(m2 <- methods(na.omit)) ## should give (no warning):
+stopifnot(identical(m1, m2))
+options(op)
+## gave two warnings, when an S3 generic had turned into an S4 one
+
+
+## raw vector assignment with NA index
+x <- charToRaw("abc")
+y <- charToRaw("bbb")
+x[c(1, NA, 3)] <- x[2]
+stopifnot(identical(x, y))
+## used to segfault
+
+
+## Logic operations with complex
+stopifnot(TRUE & -3i, FALSE | 0+1i,
+	  TRUE && 1i, 0+0i || 1+0i)
+## was error-caught explicitly in spite of contrary documentation
+
+
+## Tests of save/load with different types of compression
+x <- xx <- 1:1000
+test1 <- function(ascii, compress)
+{
+    tf <- tempfile()
+    save(x, ascii = ascii, compress = compress, file = tf)
+    load(tf)
+    stopifnot(identical(x, xx))
+    unlink(tf)
+}
+for(compress in c(FALSE, TRUE))
+    for(ascii in c(TRUE, FALSE)) test1(ascii, compress)
+for(compress in c("bzip2", "xz"))
+    for(ascii in c(TRUE, FALSE)) test1(ascii, compress)
+
+
+## tests of read.table with different types of compressed input
+mor <- system.file("data/morley.tab", package="datasets")
+ll <- readLines(mor)
+tf <- tempfile()
+## gzip copression
+writeLines(ll, con <- gzfile(tf)); close(con)
+file.info(tf)$size
+stopifnot(identical(read.table(tf), morley))
+## bzip2 copression
+writeLines(ll, con <- bzfile(tf)); close(con)
+file.info(tf)$size
+stopifnot(identical(read.table(tf), morley))
+## xz copression
+writeLines(ll, con <- xzfile(tf, compression = -9)); close(con)
+file.info(tf)$size
+stopifnot(identical(read.table(tf), morley))
+unlink(tf)
+
+
+## weighted.mean with NAs (PR#14032)
+x <- c(101, 102, NA)
+stopifnot(all.equal(mean(x, na.rm = TRUE), weighted.mean(x, na.rm = TRUE)))
+## divided by 3 in 2.10.0 (only)

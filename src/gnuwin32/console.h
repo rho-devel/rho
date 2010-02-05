@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,7 +45,7 @@ typedef window editor;
 void
 setconsoleoptions(const char *fnname,int fnsty, int fnpoints,
 		  int rows, int cols, int consx, int consy,
-		  rgb nfg, rgb nufg, rgb nbg, rgb high,
+		  rgb *nguiColors,
 		  int pgr, int pgc, int multiplewindows, int widthonresize,
 		  int bufbytes, int buflines, int buffered);
 pager newpager(const char *title, const char *filename, int enc,

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -55,17 +55,16 @@ namespace CXXR {
 tr1::hash<std::string> CachedString::Hasher::s_string_hasher;
 
 CachedString::map* CachedString::s_cache = 0;
-GCRoot<const CachedString>* CachedString::s_blank = 0;
+CachedString* CachedString::s_blank;
 SEXP R_BlankString = 0;
 
-const CachedString* CachedString::obtain(const std::string& str,
-					 cetype_t encoding)
+CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
 {
     // This will be checked again when we actually construct the
     // CachedString, but we precheck now so that we don't create an
     // invalid cache key:
     if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
-        error("unknown encoding: %d", encoding);
+        Rf_error("unknown encoding: %d", encoding);
     pair<map::iterator, bool> pr
 	= cache()->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;
@@ -86,18 +85,14 @@ const char* CachedString::c_str() const
     return m_key_val_pr->first.first.c_str();
 }
 
-void CachedString::cleanup()
-{
-    R_BlankString = 0;
-    delete s_blank;
-    // Don't delete s_cache: there will still be CachedStrings in existence.
-}
-
 void CachedString::initialize()
 {
+    // We don't delete s_cache in cleanup() because there will still
+    // be CachedStrings in existence on exit.
     s_cache = new map;
-    s_blank = new GCRoot<const CachedString>(CachedString::obtain(""));
-    R_BlankString = const_cast<CachedString*>(CachedString::blank());
+    static GCRoot<CachedString> blank(CachedString::obtain(""));
+    s_blank = blank.get();
+    R_BlankString = s_blank;
 }
     
 const char* CachedString::typeName() const

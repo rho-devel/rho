@@ -20,8 +20,11 @@ is.object(x)
 \arguments{
   \item{x}{object to be tested.}
 }
+\note{
+  This is a \link{primitive} function.
+}
 \seealso{
-  \code{\link[base]{class}}, and \code{\link{methods}}.
+  \code{\link{class}}, and \code{\link{methods}}.
 
   \code{\link{isS4}}.
 }

@@ -1,6 +1,6 @@
 % File src/library/base/man/Random-user.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Random.user}
@@ -27,19 +27,19 @@
   is called.
 
   If only these functions are supplied, no information about the
-  generator's state is recorded in \code{.Random.seed}. Optionally,
+  generator's state is recorded in \code{.Random.seed}.  Optionally,
   functions \code{user_unif_nseed} and \code{user_unif_seedloc} can be
   supplied which are called with no arguments and should return pointers
-  to the number of seeds and to an integer array of seeds.  Calls to
-  \code{GetRNGstate} and \code{PutRNGstate} will then copy this array to
-  and from \code{.Random.seed}.
+  to the number of seeds and to an integer (specifically, \samp{Int32})
+  array of seeds.  Calls to \code{GetRNGstate} and \code{PutRNGstate}
+  will then copy this array to and from \code{.Random.seed}.
 
   A user-specified normal RNG is specified by a single entry point
   \code{user_norm_rand}, which takes no arguments and returns a
   \emph{pointer to} a double.
 }
 \section{Warning}{As with all compiled code, mis-specifying these
-  functions can crash \R.  Do include the \file{R\_ext/Random.h}
+  functions can crash \R.  Do include the \file{R_ext/Random.h}
   header file for type checking.
 }
 \examples{\dontrun{

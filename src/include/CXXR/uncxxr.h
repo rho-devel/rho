@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -33,12 +33,28 @@
 #ifndef UNCXXR_H
 #define UNCXXR_H
 
+/* uncxxr.pl deletes 'CXXRBUILTINFUNCTION::'
+ */
+#define CXXRBUILTINFUNCTION BuiltInFunction
+
 /* Where CXXR inserts additional const declarations into source files
  * inherited from CR, try to use this macro so that the change can be
  * reversed by the uncxxr.pl script, which deletes any occurrence of
- * CXXRconst.
+ * CXXRCONST.
  */
-#define CXXRconst const
+#define CXXRCONST const
+
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRCONSTRUCT(type, expr) type(expr)
+
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRCCAST(type, expr) const_cast<type>(expr)
+
+/* uncxxr.pl replaces this by 'expr': */
+#define CXXRSCAST(type, expr) static_cast<type>(expr)
+
+/* uncxxr.pl replaces this by '0': */
+#define CXXRFALSE FALSE
 
 /* uncxxr.pl deletes the characters CXXRNOCAST so as to leave a
  * C-style cast to type t.  CXXR uses this macro in files inherited from
@@ -47,10 +63,10 @@
  */
 #define CXXRNOCAST(t)
 
-/* uncxxr.pl replaces this by 'attribute_hidden'. */
-#define CXXRnot_hidden
+/* uncxxr.pl replaces this by '1': */
+#define CXXRTRUE TRUE
 
 /* uncxxr.pl deletes this. */
-#define CXXRunsigned unsigned
+#define CXXRUNSIGNED unsigned
 
 #endif /* UNCXXR_H */

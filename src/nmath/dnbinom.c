@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -88,6 +88,7 @@ double dnbinom_mu(double x, double size, double mu, int give_log)
     if(x == 0)/* be accurate, both for n << mu, and n >> mu :*/
 	return R_D_exp(size * (size < mu ? log(size/(size+mu)) : log1p(- mu/(size+mu))));
     if(x < 1e-10 * size) { /* don't use dbinom_raw() but MM's formula: */
+	/* FIXME --- 1e-8 shows problem; rather use algdiv() from ./toms708.c */
 	return R_D_exp(x * log(size*mu / (size+mu)) - mu - lgamma(x+1) +
 		       log1p(x*(x-1)/(2*size)));
     }

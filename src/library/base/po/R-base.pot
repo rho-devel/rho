@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.3.0\n"
+"Project-Id-Version: R 2.10.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-08 14:13\n"
+"POT-Creation-Date: 2009-12-10 19:18\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -197,6 +197,9 @@ msgstr ""
 msgid "supplied timeout must be NULL or a non-negative number"
 msgstr ""
 
+msgid "'from' must be raw or character"
+msgstr ""
+
 msgid "'x' must be numeric"
 msgstr ""
 
@@ -221,7 +224,7 @@ msgstr ""
 msgid "invalid 'dimnames' given for data frame"
 msgstr ""
 
-msgid "cannot coerce class \"%s\" into a data.frame"
+msgid "cannot coerce class %s into a data.frame"
 msgstr ""
 
 msgid "invalid 'row.names', length %d for a data frame with %d rows"
@@ -263,10 +266,19 @@ msgstr ""
 msgid "row names were found from a short variable and have been discarded"
 msgstr ""
 
+msgid "named arguments other than 'drop' are discouraged"
+msgstr ""
+
 msgid "drop argument will be ignored"
 msgstr ""
 
 msgid "undefined columns selected"
+msgstr ""
+
+msgid "named arguments other than 'exact' are discouraged"
+msgstr ""
+
+msgid "named arguments are discouraged"
 msgstr ""
 
 msgid "rhs is the wrong length for indexing by a logical matrix"
@@ -503,7 +515,10 @@ msgstr ""
 msgid "determinant not currently defined for complex matrices"
 msgstr ""
 
-msgid "first argument is array, but not matrix."
+msgid "'nrow' or 'ncol' cannot be specified when 'x' is a matrix"
+msgstr ""
+
+msgid "'x' is an array, but not 1D."
 msgstr ""
 
 msgid "only matrix diagonals can be replaced"
@@ -545,9 +560,6 @@ msgstr ""
 msgid "non-square matrix in 'eigen'"
 msgstr ""
 
-msgid "numeric or complex values required in 'eigen'"
-msgstr ""
-
 msgid "'ch' returned code %d in 'eigen'"
 msgstr ""
 
@@ -587,6 +599,9 @@ msgstr ""
 msgid "more 'from' files than 'to' files"
 msgstr ""
 
+msgid "'recursive' will be ignored"
+msgstr ""
+
 msgid "file can not be copied both 'from' and 'to'"
 msgstr ""
 
@@ -620,7 +635,10 @@ msgstr ""
 msgid "'vec' must be sorted non-decreasingly"
 msgstr ""
 
-msgid "'mode' must be \"double\" (\"real\") or \"integer\""
+msgid "using the first element of 'value' of type expression"
+msgstr ""
+
+msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
 msgstr ""
 
 msgid "coercing argument to \"character\" for format=\"s\""
@@ -674,6 +692,9 @@ msgstr ""
 msgid "'max.distance' components must be non-negative"
 msgstr ""
 
+msgid "norm '%s' currently always uses exact = FALSE"
+msgstr ""
+
 msgid "triangular matrix should be square"
 msgstr ""
 
@@ -687,6 +708,15 @@ msgid "package '%s' was built before R 2.0.0: please re-install it"
 msgstr ""
 
 msgid "package '%s' was built under R version %s"
+msgstr ""
+
+msgid "package '%s' was built under R version %s and help will not work correctly\nPlease re-install it"
+msgstr ""
+
+msgid "package '%s' was built under R version %s and help may not work correctly"
+msgstr ""
+
+msgid "package '%s' claims to be built under R version %s but is missing some help files and needs to be re-installed"
 msgstr ""
 
 msgid "package '%s' was built for %s"
@@ -719,28 +749,13 @@ msgstr ""
 msgid "invalid package name"
 msgstr ""
 
-msgid "package '%s' has been merged into '%s'"
-msgstr ""
-
-msgid "package 'lqs' has been moved back to package 'MASS'"
-msgstr ""
-
-msgid "package 'MASS' has now been loaded"
-msgstr ""
-
-msgid "package 'MASS' seems to be missing from this R installation"
-msgstr ""
-
-msgid "there is no package called '%s', version %s"
-msgstr ""
-
 msgid "there is no package called '%s'"
 msgstr ""
 
 msgid "no library trees found in 'lib.loc'"
 msgstr ""
 
-msgid "'%s' is not a valid package -- installed < 2.0.0?"
+msgid "'%s' is not a valid installed package"
 msgstr ""
 
 msgid "'%s' not found on search path, using pos = 2"
@@ -944,7 +959,7 @@ msgstr ""
 msgid "Tracing functions requires the methods package, but unable to load methods namespace"
 msgstr ""
 
-msgid "Expected a single logical value for the S4 object state"
+msgid "Expected a single logical value for the S4 state flag"
 msgstr ""
 
 msgid "invalid to change the storage mode of a factor"
@@ -998,7 +1013,10 @@ msgstr ""
 msgid "package '%s' does not have a name space"
 msgstr ""
 
-msgid "in '%s' classes for export not defined: %s"
+msgid "exportClassPattern specified in NAMESPACE but no matching classes in package '%s'"
+msgstr ""
+
+msgid "in package '%s' classes for export not defined: %s"
 msgstr ""
 
 msgid "in '%s' methods for export not found: %s"
@@ -1022,10 +1040,7 @@ msgstr ""
 msgid "not loading a name space"
 msgstr ""
 
-msgid "name space '%s' is loaded"
-msgstr ""
-
-msgid "%s failed in unloadNamespace(%s)"
+msgid "%s failed in unloadNamespace(\"%s\"), details:\n  call: %s\n  message: %s"
 msgstr ""
 
 msgid "name space '%s' is still used by: %s"
@@ -1310,9 +1325,6 @@ msgstr ""
 msgid "incorrect values of 'indent' and 'width'"
 msgstr ""
 
-msgid "argument to 'svd' must be numeric"
-msgstr ""
-
 msgid "'nv' must be 0 or ncol(x)"
 msgstr ""
 
@@ -1413,6 +1425,33 @@ msgid "'%s' could not be run"
 msgstr ""
 
 msgid "'%s' execution failed with error code %d"
+msgstr ""
+
+msgid "-l option without value"
+msgstr ""
+
+msgid "ERROR: no packages specified"
+msgstr ""
+
+msgid "Removing from library"
+msgstr ""
+
+msgid "ERROR: cannot cd to directory"
+msgstr ""
+
+msgid "ERROR: no permission to remove from directory"
+msgstr ""
+
+msgid "T used instead of TRUE"
+msgstr ""
+
+msgid "F used instead of FALSE"
+msgstr ""
+
+msgid "items"
+msgstr ""
+
+msgid "have been removed from the search path"
 msgstr ""
 
 msgid "cannot find name space environment"

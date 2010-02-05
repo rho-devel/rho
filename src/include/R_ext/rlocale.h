@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -51,7 +51,6 @@ extern "C" {
 
 extern const char *locale2charset(const char *);
 
-#ifdef SUPPORT_MBCS
 /*
  * Windows CJK
  * In Unicode, there is not a rule about character width. 
@@ -125,7 +124,6 @@ extern int      Ri18n_iswctype(wint_t, wctype_t);
 #define iswctype(__x,__y) Ri18n_iswctype(__x,__y)
 #endif
 
-#endif /* SUPPORT_MBCS */
 #ifdef  __cplusplus
 }
 #endif

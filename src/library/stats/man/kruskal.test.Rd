@@ -63,7 +63,7 @@ kruskal.test(x, \dots)
   \item{data.name}{a character string giving the names of the data.}
 }
 \references{
-  Myles Hollander & Douglas A. Wolfe (1973),
+  Myles Hollander and Douglas A. Wolfe (1973),
   \emph{Nonparametric Statistical Methods.}
   New York: John Wiley & Sons.
   Pages 115--120.
@@ -74,13 +74,17 @@ kruskal.test(x, \dots)
   \code{\link{lm}} together with \code{\link{anova}} for performing
   one-way location analysis under normality assumptions; with Student's
   t test (\code{\link{t.test}}) as the special case for two samples.
+  
+  \code{\link[coin:LocationTests]{wilcox_test}} in package \pkg{coin}
+  for exact, asymptotic and Monte Carlo \emph{conditional} p-values,
+  including in the presence of ties.
 }
 \examples{
 ## Hollander & Wolfe (1973), 116.
 ## Mucociliary efficiency from the rate of removal of dust in normal
 ##  subjects, subjects with obstructive airway disease, and subjects
 ##  with asbestosis.
-x <- c(2.9, 3.0, 2.5, 2.6, 3.2)	# normal subjects
+x <- c(2.9, 3.0, 2.5, 2.6, 3.2) # normal subjects
 y <- c(3.8, 2.7, 4.0, 2.4)      # with obstructive airway disease
 z <- c(2.8, 3.4, 3.7, 2.2, 2.0) # with asbestosis
 kruskal.test(list(x, y, z))

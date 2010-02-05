@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/unix/png.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{png}
@@ -26,7 +26,7 @@ jpeg(filename = "Rplot\%03d.jpeg",
 png(filename = "Rplot\%03d.png",
     width = 480, height = 480, units = "px",
     pointsize = 12, bg = "white",  res = NA, \dots,
-    type = c("cairo", "Xlib", "cairo1", "quartz"), antialias)
+    type = c("cairo", "Xlib", "quartz"), antialias)
 
 tiff(filename = "Rplot\%03d.tiff",
      width = 480, height = 480, units = "px", pointsize = 12,
@@ -60,14 +60,15 @@ tiff(filename = "Rplot\%03d.tiff",
   \item{\dots}{for \code{type = "Xlib"} only, additional arguments to
     the underlying \code{\link{X11}} device, such as \code{gamma} and
     \code{fonts}.}
-  \item{type}{character string, one of \code{"Xlib"} (the only type
-    prior to \R 2.7.0) or \code{"quartz"} (some Mac OS X builds)
-    or \code{"cairo"} or \code{"cairo1"}.  The latter two will only be
+  
+  \item{type}{character string, one of \code{"Xlib"} or \code{"quartz"}
+    (some Mac OS X builds) or \code{"cairo"}.  The latter will only be
     available if the system was compiled with support for cairo --
     otherwise \code{"Xlib"} will be used.  The default is set by
-    \code{\link{getOption}("bitmapType")} -- the \sQuote{out of the
-      box} default is \code{"quartz"} or \code{"cairo"} where available,
+    \code{\link{getOption}("bitmapType")} -- the \sQuote{out of the box}
+    default is \code{"quartz"} or \code{"cairo"} where available,
     otherwise \code{"Xlib"}.}
+  
   \item{antialias}{for \code{type = "cairo"}, giving the type of
     anti-aliasing (if any) to be used.  See \code{\link{X11}}.  The
     default is set by \code{\link{X11.options}}.}
@@ -81,7 +82,7 @@ tiff(filename = "Rplot\%03d.tiff",
   format on Windows.  TIFF is a meta-format: the default format written
   by \code{tiff} is lossless and stores RGB (and alpha where
   appropriate) values uncompressed---such files are widely accepted,
-  which is their main virtue over PNG.   
+  which is their main virtue over PNG.
 
   \code{png} supports transparent backgrounds: use \code{bg =
   "transparent"}.  Not all PNG viewers render files with transparency
@@ -98,11 +99,11 @@ tiff(filename = "Rplot\%03d.tiff",
   \R can be compiled without support for each of these devices: this
   will be reported if you attempt to use them on a system where they are
   not supported.  For \code{type = "Xlib"} they may not be usable unless
-  the X11 display is available to the owner of the \R process.  
+  the X11 display is available to the owner of the \R process.
   \code{type = "cairo"} requires cairo 1.2 or later.  \code{type =
   "quartz"} uses the \code{\link{quartz}} device and so is only
-  available where that is (on some Mac OS X) builds.  It is at present
-  experimental.
+  available where that is (on some Mac OS X builds: see
+  \code{\link{capabilities}("aqua")}).
 
   By default no resolution is recorded in the file.  Viewers will often
   assume a nominal resolution of 72dpi when none is recorded.  As
@@ -116,12 +117,6 @@ tiff(filename = "Rplot\%03d.tiff",
   \code{png} will use a palette if there are less than 256 colours on
   the page, and record a 24-bit RGB file otherwise (or a 32-bit RGBA
   file if \code{type = "cairo"} and non-opaque colours are used).
-
-  \code{png(type = "cairo1")} uses cairo directly to output the file --
-  the resolution is not recorded and the PNG format used is chosen by
-  cairo (and undocumented -- it is currently 32-bit RGBA, that is with
-  an alpha channel whether used or not).  It is included for use on
-  platforms with cairo 1.0 (where \code{type = "cairo"} is not available).
 }
 
 \value{
@@ -131,7 +126,7 @@ tiff(filename = "Rplot\%03d.tiff",
 \section{Warnings}{
   Note that by default the \code{width} and \code{height} are in pixels
   not inches.  A warning will be issued if both are less than 20.
-  
+
   If you plot more than one page on one of these devices and do not
   include something like \code{\%d} for the sequence number in
   \code{file}, the file will contain the last page plotted.
@@ -180,7 +175,7 @@ tiff(filename = "Rplot\%03d.tiff",
 
 \examples{
 ## these examples will work only if the devices are available
-## and either cairo or an X11 display is available.
+## and cairo or an X11 display or a Mac OS X display is available.
 
 ## copy current plot to a (large) PNG file
 \dontrun{dev.print(png, file="myplot.png", width=1024, height=768)}

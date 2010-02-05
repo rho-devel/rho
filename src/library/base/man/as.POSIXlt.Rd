@@ -54,10 +54,10 @@ as.POSIXlt(x, tz = "", \dots)
   classes used to represent date/times (calendar dates plus time to the
   nearest second).  They can convert a wide variety of objects,
   including objects of the other class and of classes \code{"Date"},
-  \code{"date"} (from package \pkg{\link[date:as.date]{date}} or
-  \pkg{\link[survival:as.date]{survival}}), \code{"chron"} and
-  \code{"dates"} (from package \pkg{\link[chron]{chron}}) to these
-  classes.  Dates without times are treated as being at midnight UTC.
+  \code{"date"} (from package \pkg{\link[date:as.date]{date}}),
+  \code{"chron"} and \code{"dates"} (from package
+  \pkg{\link[chron]{chron}}) to these classes.  Dates without times are
+  treated as being at midnight UTC.
 
   They can also convert character strings of the formats
   \code{"2001-02-03"} and \code{"2001/02/03"} optionally followed by
@@ -66,7 +66,8 @@ as.POSIXlt(x, tz = "", \dots)
   but can be converted via a format specification by
   \code{\link{strptime}}.)  Fractional seconds are allowed.
   Alternatively, \code{format} can be specified for character vectors or
-  factors.
+  factors: if it is not specified and no standard format works for the
+  first non-\code{NA} input an error is thrown.
 
   Logical \code{NA}s can be converted to either of the classes, but no
   other logical vectors can be.
@@ -114,7 +115,7 @@ as.POSIXct(z, origin="1960-01-01", tz="GMT")      # in UTC
 as.POSIXct(z, origin=ISOdatetime(1960,1,1,0,0,0)) # local
 ISOdatetime(1960,1,1,0,0,0) + z                   # local
 
-## SPSS dates (R-help 2006-02-17)
+## SPSS dates (R-help 2006-02-16)
 z <- c(10485849600, 10477641600, 10561104000, 10562745600)
 as.Date(as.POSIXct(z, origin="1582-10-14", tz="GMT"))
 
@@ -129,7 +130,7 @@ as.POSIXlt(Sys.time(), "Australia/Darwin")
 #ifdef windows
 
 cols <- c("code", "coordinates", "TZ", "comments")
-tmp <- read.delim(file.path(R.home(), "share", "zoneinfo", "zone.tab"),
+tmp <- read.delim(file.path(R.home("share"), "zoneinfo", "zone.tab"),
                   header = FALSE, comment.char="#", col.names = cols)
 if(interactive()) View(tmp)
 #endif

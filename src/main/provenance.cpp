@@ -51,7 +51,7 @@
 using namespace std;
 using namespace CXXR;
 
-SEXP CXXRnot_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	int n;
 	if ((n=length(args))!=1)
@@ -98,7 +98,7 @@ SEXP CXXRnot_hidden do_castestfun(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return rc;
 }
 
-SEXP CXXRnot_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	int n;
 	if ((n=length(args))!=1)
@@ -115,7 +115,7 @@ SEXP CXXRnot_hidden do_hasProvenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	return v;
 }
 
-SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	const int nfields=5;
 	int n;
@@ -162,7 +162,7 @@ SEXP CXXRnot_hidden do_provenance (SEXP call, SEXP op, SEXP args, SEXP rho)
 	return list;
 }
 
-SEXP CXXRnot_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	int n;
 	if ((n=length(args))!=1)
@@ -177,7 +177,7 @@ SEXP CXXRnot_hidden do_provCommand (SEXP call, SEXP op, SEXP args, SEXP rho)
 	return bdg->getProvenance()->getCommand();
 }
 
-SEXP CXXRnot_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	int n;
 	if ((n=length(args))!=1)

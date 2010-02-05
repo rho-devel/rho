@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.2.1\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-09-26 08:39\n"
-"PO-Revision-Date: 2008-09-30 21:11+0100\n"
+"POT-Creation-Date: 2009-10-08 08:29\n"
+"PO-Revision-Date: 2009-10-10 14:50+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
 "MIME-Version: 1.0\n"
@@ -25,8 +25,8 @@ msgstr "'acf' doit être de longueur deux ou plus"
 msgid "object not interpretable as a factor"
 msgstr "objet non interprétable comme un facteur"
 
-msgid "cannot fit models without level ('alpha' must not be 0)."
-msgstr "ajustement du modèle impossible sans un niveau ('alpha' ne doit pas être nul)."
+msgid "cannot fit models without level ('alpha' must not be 0 or FALSE)."
+msgstr "ajustement du modèle impossible sans un niveau ('alpha' ne doit pas être nul ou 'FALSE')."
 
 msgid "'alpha', 'beta' and 'gamma' must be within the unit interval."
 msgstr "'alpha', 'beta' et 'gamma' doivent être dans l'intervalle [0,1]"
@@ -137,6 +137,9 @@ msgstr ""
 "la longueur de FUN, %d,\n"
 " ne correspond pas à la longueur des marges, %d"
 
+msgid "no rows to aggregate"
+msgstr "pas de lignes à aggréger"
+
 msgid "'by' must be a list"
 msgstr "'by' doit être une liste"
 
@@ -196,6 +199,9 @@ msgstr "'formula' manquante ou incorrecte"
 
 msgid "grouping factor must have exactly 2 levels"
 msgstr "le facteur de regroupement doit avoir exactement 2 niveaux"
+
+msgid "weights are not supported in a multistratum aov() fit"
+msgstr "les pondérations ne sont pas supportées dans des ajustements aov() à plusieurs strates"
 
 msgid "Error() model is singular"
 msgstr "le modèle Error() est singulier"
@@ -359,8 +365,8 @@ msgstr "l'échantillon est trop clairsemé pour estimer alph2"
 msgid "no solution in the specified range of bandwidths"
 msgstr "pas de solution dans l'intervalle de largeur de fenêtre"
 
-msgid "increasing bw.SJ() search interval (%d)"
-msgstr "augmentation de l'intervalle de recherche bw.SJ() (%d)"
+msgid "increasing bw.SJ() search interval (%d) to [%.4g,%.4g]"
+msgstr "augmentation de l'intervalle de recherche bw.SJ() à [%.4g,%.4g]"
 
 msgid "minimum occurred at one end of the range"
 msgstr "le minimum se trouve à une des extrémités de l'intervalle"
@@ -499,6 +505,9 @@ msgstr "matrice de contrastes singulière"
 
 msgid "numeric contrasts or contrast name expected"
 msgstr "contrastes numérique ou nom de contraste attendu"
+
+msgid "contr*(.., sparse=TRUE) needs package \"Matrix\" correctly installed"
+msgstr "contr*(..., sparse=TRUE) nécessite un package \"Matrix\" installé correctement"
 
 msgid "not enough degrees of freedom to define contrasts"
 msgstr "nombre de degrés de liberté insuffisant pour définir des contrastes"
@@ -756,6 +765,9 @@ msgstr "le lien \"%s\" n'est pas disponible pour la famille 'poisson' ; les lien
 msgid "negative values not allowed for the Poisson family"
 msgstr "les valeurs négatives sont interdites pour la famille poisson"
 
+msgid "ignoring prior weights"
+msgstr "les pondération initiales sont ignorées"
+
 msgid "link \"%s\" not available for quasipoisson family; available links are %s"
 msgstr "le lien \"%s\" n'est pas disponible pour la famille 'quasipoisson' ; les liens possibles sont %s"
 
@@ -786,6 +798,9 @@ msgstr "pour la famille binomial, 'y' doit être un vecteur de 0 et de 1"
 msgid "or a 2 column matrix where col 1 is no. successes and col 2 is no. failures"
 msgstr "ou une matrice à 2 colonnes où la col 1 est le nombre de succès et la col 2 le nombre d'échecs"
 
+msgid "cannot simulate from non-integer prior.weights"
+msgstr "impossible de réaliser des simulations à l'aide de prior.weights non entiers"
+
 msgid "link \"%s\" not available for quasibinomial family; available links are %s"
 msgstr "le lien \"%s\" n'est pas disponible pour la famille 'quasibinomial' ; les liens possibles sont %s"
 
@@ -798,11 +813,20 @@ msgstr "le lien \"%s\" n'est pas disponible pour la famille 'gamma' ; les liens 
 msgid "non-positive values not allowed for the gamma family"
 msgstr "les valeurs inférieurs ou égales à zéro ne sont pas autorisées pour la famille gamma"
 
+msgid "using weights as shape parameters"
+msgstr "utilisation des pondérations comme paramètres de forme"
+
 msgid "link \"%s\" not available for inverse.gaussian family; available links are %s"
 msgstr "le lien \"%s\" n'est pas disponible pour la famille 'inverse.gaussian' ; les liens possibles sont %s"
 
 msgid "positive values only allowed for the inverse.gaussian family"
 msgstr "seules les valeurs positives sont autorisées pour la famille inverse.gaussian"
+
+msgid "Need CRAN package 'SuppDists' for 'inverse.gaussian' family"
+msgstr "le package 'SuppDists' de CRAN est nécessaire pour la famille 'inverse.gaussian'"
+
+msgid "using weights as inverse variances"
+msgstr "utilisation des pondérations comme variances inverses"
 
 msgid "'variance' \"%s\" is invalid: possible values are \"mu(1-mu)\", \"mu\", \"mu^2\", \"mu^3\" and \"constant\""
 msgstr "'variance' \"%s\" est incorrecte : les valeurs possibles sont \"mu(1-mu)\", \"mu\", \"mu^2\", \"mu^3\" et \"constant\""
@@ -921,8 +945,11 @@ msgstr "'col.vars' manquant ou incorrect"
 msgid "'family' not recognized"
 msgstr "'family' non reconnu"
 
-msgid "invalid 'method':"
-msgstr "'method' incorrect"
+msgid "invalid 'method': %s"
+msgstr "'method' incorrecte : %s"
+
+msgid "invalid 'method'"
+msgstr "'method' incorrecte"
 
 msgid "'weights' must be a numeric vector"
 msgstr "'weights' doit être un vecteur numérique"
@@ -1201,6 +1228,12 @@ msgstr "object 'lm' incorrect : pas de composantes 'terms' ni 'qr'"
 msgid "residual degrees of freedom in object suggest this is not an \"lm\" fit"
 msgstr "les degrés de liberté résiduels de l'objet suggère que ce n'est pas un ajustement \"lm\""
 
+msgid "family '"
+msgstr "famille '"
+
+msgid "' not implemented"
+msgstr "' non implémenté"
+
 msgid "ANOVA F-tests on an essentially perfect fit are unreliable"
 msgstr "les tests F d'ANOVA sur un ajustement pratiquement parfait ne sont pas fiables"
 
@@ -1381,6 +1414,9 @@ msgstr "l'argument 'cterms' doit correspondre aux termes de l'objet modèle"
 msgid "Design is unbalanced - use se.contrast() for se's"
 msgstr "Le plan n'est pas équilibré - utilisez se.contrast() pour les erreur-types"
 
+msgid "design is unbalanced so cannot proceed"
+msgstr "Le plan n'est pas balancé et ne peut être utilisé"
+
 msgid ""
 "Standard error information not returned as design is unbalanced. \n"
 "Standard errors can be obtained through 'se.contrast'."
@@ -1423,6 +1459,9 @@ msgstr "'data' doit être un tableau de données et non pas une matrice ou un tabl
 
 msgid "'newdata' had %d rows but variable(s) found have %d rows"
 msgstr "'newdata' avait %d lignes mais les variables trouvées ont %d lignes"
+
+msgid "character variable '%s' changed to a factor"
+msgstr "la variable chaîne de caractères '%s' est convertie en facteur"
 
 msgid "variable '%s' is not a factor"
 msgstr "la variable '%s' n'est pas un facteur"
@@ -1499,8 +1538,8 @@ msgstr "argument `hessian' logique non autorisé. Voyez la documentation."
 msgid "'params' has wrong length"
 msgstr "'params' n'a pas la bonne longueur"
 
-msgid "'varying' must be in 1:length(pars)"
-msgstr "'varying' doit appartenir à 1:length(pars)"
+msgid "'varying' must be in seq_along(pars)"
+msgstr "'varying' doit appartenir à seq_along(pars)"
 
 msgid "'varying' has wrong length"
 msgstr "'varying' n'a pas la bonne longueur"
@@ -1613,14 +1652,14 @@ msgstr "'x' et 'n' doivent avoir la même longueur"
 msgid "too few groups"
 msgstr "trop peu de groupes"
 
+msgid "Not plotting observations with leverage one:"
+msgstr "Les observations ayant un 'leverage = 0' ne sont pas représentées sur le graphique"
+
 msgid "use only with \"lm\" objects"
 msgstr "à utiliser seulement pour des objets \"lm\""
 
 msgid "'which' must be in 1:6"
 msgstr "'which' doit être 1:6"
-
-msgid "Not plotting observations with leverage one:"
-msgstr "Les observations ayant un 'leverage = 0' ne sont pas représentées sur le graphique"
 
 msgid "'id.n' must be in {1,..,%d}"
 msgstr "'id.n' doit appartenir à {1,..,%d}"
@@ -1630,6 +1669,24 @@ msgstr "les 'hat values' (leverages) sont toutes ="
 
 msgid "and there are no factor predictors; no plot no. 5"
 msgstr "et il n'y a aucune variable dépendante facteur ; aucun graphe no. 5"
+
+msgid "'x' and 'T' have incompatible length"
+msgstr "'x' et 'T' n'ont pas la même longueur"
+
+msgid "'x' must be finite, nonnegative, and integer"
+msgstr "'x' doit être un entier positif, fini ou nul"
+
+msgid "'T' must be nonnegative"
+msgstr "'T' doit être positif ou nul"
+
+msgid "not enough data"
+msgstr "pas assez de données"
+
+msgid "The case k > 2 is unimplemented"
+msgstr "le cas k > 2 n'est pas encore implémenté"
+
+msgid "'r' must be a single positive number"
+msgstr "'r' doit être un nombre positif"
 
 msgid "exactly one of 'n', 'delta', 'sd', 'power', and 'sig.level' must be NULL"
 msgstr "un et un seul parmi 'n', 'delta', 'sd', 'power', et 'sig.level' doit être NULL"
@@ -1709,9 +1766,6 @@ msgstr "'proj' n'est pas implémenté pour les ajustements \"mlm\""
 msgid "'proj' is not implemented for multiple responses"
 msgstr "'proj' n'est pas implémenté pour les réponses multiples"
 
-msgid "not enough data"
-msgstr "pas assez de données"
-
 msgid "elements of 'n' must be positive"
 msgstr "les éléments de 'n' doivent être positifs"
 
@@ -1763,8 +1817,8 @@ msgstr "'relevel' n'est utilisable que pour des facteurs"
 msgid "'ref' must be an existing level"
 msgstr "'ref' doit être un niveau existant"
 
-msgid "ref = %d must be in 1:%d"
-msgstr "ref = %d doit appartenir à 1:%d"
+msgid "ref = %d must be in 1L:%d"
+msgstr "ref = %d doit appartenir à 1L:%d"
 
 msgid "Failed to guess time-varying variables from their names"
 msgstr "Impossible de déterminer les variables dépendant du temps depuis leurs noms"
@@ -1912,6 +1966,9 @@ msgstr "spline : la première et la dernière valeurs de y diffèrent - y[1] utilis
 
 msgid "'spline' requires n >= 1"
 msgstr "'spline' nécessite n >= 1"
+
+msgid "spline: first and last y values differ - using y[1L] for both"
+msgstr "spline : la première et la dernière valeurs de y diffèrent - y[1L] utilisé pour les deux"
 
 msgid "'deriv' must be between 0 and 3"
 msgstr "'deriv' doit être compris entre 0 et 3"
@@ -2125,6 +2182,12 @@ msgstr "impossible de calculer un intervalle de confiance exact avec des zéros"
 
 msgid "must supply either 'formula' or 'data'"
 msgstr "il faut fournir soit 'formula', soit 'data'"
+
+msgid "xtabs(*, sparse=TRUE) applies only to two-way tables"
+msgstr "xtabs(*, sparse=TRUE) est seulement applicable sur des tables de contingence à deux entrées"
+
+msgid "xtabs(*, sparse=TRUE) needs package \"Matrix\" correctly installed"
+msgstr "xtabs(*, sparse=TRUE) nécessite un package \"Matrix\" correctemnt installé"
 
 msgid "too few distinct input values to fit an asymptotic regression model"
 msgstr "le nombre de valeurs distinctes en entrée est trop faible pour ajuster un modèle de régression asymptotique"

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -38,7 +38,6 @@
 #define F77_FUNC(name,NAME) name ## _
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
-/* should be name # __ for GCC3 */
 #define F77_FUNC_(name,NAME) name ## _
 
 /* Define if F77 and FC dummy `main' functions are identical. */
@@ -48,7 +47,7 @@
 #define HAVE_ACCESS 1
 
 /* Define to 1 if you have the `acosh' function. */
-/* #define HAVE_ACOSH 1 */
+#define HAVE_ACOSH 1
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #define HAVE_ALLOCA 1
@@ -57,8 +56,8 @@
    */
 /* #undef HAVE_ALLOCA_H */
 
-/* Define if you have the Aqua headers and libraries, and want the Aqua GUI to
-   be built. */
+/* Define if you have the Aqua headers and libraries, and want the Aqua GUI
+   components and quartz() device to be built. */
 /* #undef HAVE_AQUA */
 
 /* Define to 1 if you have the `argz_count' function. */
@@ -77,19 +76,22 @@
 /* #undef HAVE_ARPA_INET_H */
 
 /* Define to 1 if you have the `asinh' function. */
-/* #define HAVE_ASINH 1 */
+#define HAVE_ASINH 1
 
 /* Define to 1 if you have the `asprintf' function. */
 /* #undef HAVE_ASPRINTF */
 
 /* Define to 1 if you have the `atanh' function. */
-/* #define HAVE_ATANH 1 */
+#define HAVE_ATANH 1
 
 /* Define if you have BSD networking headers and libraries. */
 /* #undef HAVE_BSD_NETWORKING */
 
 /* Define to 1 if the compiler understands __builtin_expect. */
 #define HAVE_BUILTIN_EXPECT 1
+
+/* Define to 1 if you have the <bzlib.h> header file. */
+/* #undef HAVE_BZLIB_H */
 
 /* Define this if you have support for C99 complex types. */
 #define HAVE_C99_COMPLEX 1
@@ -126,7 +128,7 @@
 
 /* Define to 1 if you have the declaration of `acosh', and to 0 if you don't.
    */
-#define HAVE_DECL_ACOSH 0
+#define HAVE_DECL_ACOSH 1
 
 /* Define to 1 if you have the declaration of `alloca', and to 0 if you don't.
    */
@@ -134,11 +136,11 @@
 
 /* Define to 1 if you have the declaration of `asinh', and to 0 if you don't.
    */
-#define HAVE_DECL_ASINH 0
+#define HAVE_DECL_ASINH 1
 
 /* Define to 1 if you have the declaration of `atanh', and to 0 if you don't.
    */
-#define HAVE_DECL_ATANH 0
+#define HAVE_DECL_ATANH 1
 
 /* Define to 1 if you have the declaration of `feof_unlocked', and to 0 if you
    don't. */
@@ -232,11 +234,10 @@
 #define HAVE_EXECV 1
 
 /* Define to 1 if you have the `expm1' function. */
-/* #define HAVE_EXPM1 1 */
+#define HAVE_EXPM1 1
 
 /* Define if your Fortran compiler appends an extra_underscore to external
    names containing an underscore. */
-/* needs to be set for GCC3 */
 /* #undef HAVE_F77_EXTRA_UNDERSCORE */
 
 /* Define if your Fortran compiler appends an underscore to external names. */
@@ -389,6 +390,9 @@
 /* Define to 1 if you have the `dl' library (-ldl). */
 /* #undef HAVE_LIBDL */
 
+/* Define to 1 if you have the `icucore' library (-licucore). */
+/* #undef HAVE_LIBICUCORE */
+
 /* Define to 1 if you have the `m' library (-lm). */
 #define HAVE_LIBM 1
 
@@ -504,10 +508,10 @@
 #define HAVE_POSIX_SETJMP 1
 
 /* Define if the <pthread.h> defines PTHREAD_MUTEX_RECURSIVE. */
-#define HAVE_PTHREAD_MUTEX_RECURSIVE 1
+/* #undef HAVE_PTHREAD_MUTEX_RECURSIVE */
 
 /* Define if the POSIX multithreading library has read/write locks. */
-#define HAVE_PTHREAD_RWLOCK 1
+/* #undef HAVE_PTHREAD_RWLOCK */
 
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
@@ -661,7 +665,7 @@
 #define HAVE_TCLTK 1
 
 /* Define this if libtiff is available. */
-/* #undef HAVE_TIFF */
+#define HAVE_TIFF 1
 
 /* Define to 1 if you have the <tiffio.h> header file. */
 /* #undef HAVE_TIFFIO_H */
@@ -791,9 +795,6 @@
 /* Define as const if the declaration of iconv() needs const. */
 #define ICONV_CONST const
 
-/* Define if `iconv' accepts "UTF-8", "latin1" and "UCS-*". */
-#define ICONV_LATIN1 1
-
 /* Define if you have IEEE 754 floating point arithmetic. */
 #define IEEE_754 1
 
@@ -863,7 +864,7 @@
 #define R_INLINE inline
 
 /* Define this to enable memory profiling. */
-/* #undef R_MEMORY_PROFILING */
+#define R_MEMORY_PROFILING 1
 
 /* Define this to be the name of the OS of your system. */
 #define R_OS "mingw32"
@@ -923,12 +924,6 @@
 /* Define if you provide support for the libxml ftp/http functions. */
 #define SUPPORT_LIBXML 1
 
-/* Define this to enable support for MBCS locales. */
-#define SUPPORT_MBCS 1
-
-/* Define this to enable support for UTF-8 locales. */
-#define SUPPORT_UTF8 1
-
 /* Define to enable provoking compile errors on write barrier violation. */
 /* #undef TESTING_WRITE_BARRIER */
 
@@ -938,6 +933,12 @@
 /* Define if your rint() is broken on your system. Apparently needed on HPUX.
    */
 /* #undef USE_BUILTIN_RINT */
+
+/* Define to use ICU for collation. */
+/* #undef USE_ICU */
+
+/* Define to use Apple's ICU. */
+/* #undef USE_ICU_APPLE */
 
 /* Define if the POSIX multithreading library can be used. */
 /* #undef USE_POSIX_THREADS */

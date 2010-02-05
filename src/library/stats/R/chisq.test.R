@@ -28,7 +28,10 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
     if (!is.matrix(x) && !is.null(y)) {
 	if (length(x) != length(y))
 	    stop("'x' and 'y' must have the same length")
-	DNAME <- c(DNAME, deparse(substitute(y)))
+        DNAME2 <- deparse(substitute(y))
+        ## omit names on dims if too long (and 1 line might already too long)
+        xname <- if(length(DNAME) > 1L || nchar(DNAME, "w") > 30) "" else DNAME
+        yname <- if(length(DNAME2) > 1L || nchar(DNAME2, "w") > 30) "" else DNAME2
 	OK <- complete.cases(x, y)
 	x <- factor(x[OK])
 	y <- factor(y[OK])
@@ -37,8 +40,11 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	## Could also call table() with 'deparse.level = 2', but we need
 	## to deparse ourselves for DNAME anyway ...
 	x <- table(x, y)
-	names(dimnames(x)) <- DNAME
-	DNAME <- paste(DNAME, collapse = " and ")
+	names(dimnames(x)) <- c(xname, yname)
+        ## unclear what to do here: might abbreviating be preferable?
+	DNAME <- paste(paste(DNAME, collapse = "\n"),
+                       "and",
+                       paste(DNAME2, collapse = "\n"))
     }
 
     if (any(x < 0) || any(is.na(x)))
@@ -113,9 +119,9 @@ chisq.test <- function(x, y = NULL, correct = TRUE,
 	if(simulate.p.value) {
 	    setMETH()
 	    nx <- length(x)
-	    sm <- matrix(sample(1:nx,B*n,TRUE,prob=p),nrow=n)
-	    ss <- apply(sm, 2, function(x,E,k) {
-		sum((table(factor(x, levels=1:k)) - E)^2 / E)
+	    sm <- matrix(sample.int(nx, B*n, TRUE, prob = p),nrow = n)
+	    ss <- apply(sm, 2L, function(x,E,k) {
+		sum((table(factor(x, levels=1L:k)) - E)^2 / E)
 	    }, E = E, k = nx)
 	    PARAMETER <- NA
 	    PVAL <- (1 + sum(ss >= almost.1 * STATISTIC))/(B + 1)

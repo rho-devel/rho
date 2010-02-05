@@ -544,8 +544,9 @@ predict(fit, newdata=data[1:2, ])
 
 ## Chong Gu 2002-Feb-8: `.' not expanded in drop1
 lab <- dimnames(HairEyeColor)
-HairEye <- cbind(expand.grid(Hair=lab$Hair, Eye=lab$Eye, Sex=lab$Sex),
-                 Fr=as.vector(HairEyeColor))
+HairEye <- cbind(expand.grid(Hair=lab$Hair, Eye=lab$Eye, Sex=lab$Sex,
+			     stringsAsFactors = TRUE),
+		 Fr = as.vector(HairEyeColor))
 HairEye.fit <- glm(Fr ~ . ^2, poisson, HairEye)
 drop1(HairEye.fit)
 ## broken around 1.2.1 it seems.
@@ -2161,7 +2162,7 @@ pmax(x, y, na.rm=TRUE)
 stopifnot(identical(pmax(x, y, na.rm=TRUE), pmax(y, x, na.rm=TRUE)))
 
 # tests of classed quantities
-x <- .leap.seconds; y <- rev(x)
+x <- .leap.seconds[1:23]; y <- rev(x)
 x[2] <- y[2] <- x[3] <- y[4] <- NA
 format(pmin(x, y), tz="GMT")  # TZ names differ by platform
 class(pmin(x, y))
@@ -2288,3 +2289,128 @@ try(aggregate(z, by=z[1], FUN=sum))
 ## failed in unlist in 2.8.0, now gives explicit message.
 aggregate(data.frame(a=1:10)[F], list(rep(1:2, each=5)), sum)
 ## used to fail obscurely.
+
+
+## subsetting data frames with duplicate rows
+z <- data.frame(a=1, a=2, b=3, check.names=FALSE)
+z[] # OK
+z[1, ]
+## had row names a, a.1, b in 2.8.0.
+
+
+## incorrect warning due to lack of fuzz.
+TS <-  ts(co2[1:192], freq=24)
+tmp2 <- window(TS, start(TS), end(TS))
+## warned in 2.8.0
+
+## failed to add tag
+Call <- call("foo", 1)
+Call[["bar"]] <- 2
+Call
+## unnamed call in 2.8.1
+
+
+## .Call on symbol objects (not strings)
+## https://stat.ethz.ch/pipermail/r-devel/2008-December/051669.html
+try(.Call("R_GD_nullDevice", NULL))
+sym <- getDLLRegisteredRoutines("grDevices")$.Call[["R_GD_nullDevice"]]
+try(.Call(sym, NULL))
+try(.Call(sym$address, NULL))
+## wrong error in 2.8.1
+sym <- getDLLRegisteredRoutines("stats")$.C$prho
+try(.C(sym, NULL))
+try(.C(sym$address, NULL))
+## were OK
+
+options(keep.source = TRUE)
+## $<- on pairlists failed to duplicate (from Felix Andrews,
+## https://stat.ethz.ch/pipermail/r-devel/2009-January/051698.html)
+foo <- function(given = NULL) {
+    callObj <- quote(callFunc())
+    if(!is.null(given)) callObj$given <- given
+    if (is.null(given)) callObj$default <- TRUE
+    callObj
+}
+
+foo()
+foo(given = TRUE)
+foo("blah blah")
+foo(given = TRUE)
+foo()
+## altered foo() in 2.8.1.
+
+## Using  '#' flag in  sprintf():
+forms <- c("%#7.5g","%#5.f", "%#7x", "%#5d", "%#9.0e")
+nums <- list(-3.145, -31,   0xabc,  -123L, 123456)
+rbind(mapply(sprintf, forms,               nums),
+      mapply(sprintf, sub("#", '', forms), nums))
+## gave an error in pre-release versions of 2.9.0
+
+## (auto)printing of functions {with / without source attribute},
+## including primitives
+sink(con <- textConnection("of", "w")) ; c ; sink(NULL); close(con)
+of2 <- capture.output(print(c))
+stopifnot(identical(of2, of),
+          identical(of2, "function (..., recursive = FALSE)  .Primitive(\"c\")"))
+## ^^ would have failed up to R 2.9.x
+foo
+print(foo, useSource = FALSE)
+attr(foo, "source") <- NULL
+foo
+(f <- structure(function(){}, note = "just a note",
+                yada = function() "not the same"))
+print(f, useSource = FALSE) # must print attributes
+print.function <- function(x, ...) { str(x,...); invisible(x) }
+print.function
+f
+rm(print.function)
+## auto-printing and printing differed up to R 2.9.x
+
+printCoefmat(cbind(0,1))
+## would print NaN up to R 2.9.0
+
+
+## continuity correction for Kendall's tau.  Improves this example.
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "kendall",
+         exact = TRUE)
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "kendall",
+         exact = FALSE)
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "kendall",
+         exact = FALSE, continuity = TRUE)
+# and a little for Spearman's
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "spearman",
+         exact = TRUE)
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "spearman",
+         exact = FALSE)
+cor.test(c(1, 2, 3, 4, 5), c(8, 6, 7, 5, 3), method = "spearman",
+         exact = FALSE, continuity = TRUE)
+## Kendall case is wish of PR#13691
+
+
+## corrupt data frame, PR#13724
+foo <- matrix(1:12, nrow = 3)
+bar <- as.data.frame(foo)
+val <- integer(0)
+try(bar$NewCol <- val)
+# similar, not in the report
+try(bar[["NewCol"]] <- val)
+# [ ] is tricker, so just check the result is reasonable and prints
+bar["NewCol"] <- val
+bar[, "NewCol2"] <- val
+bar[FALSE, "NewCol3"] <- val
+bar
+## Succeeded but gave corrupt result in 2.9.0
+
+
+## Printing NA_complex_
+m22 <- matrix(list(NA_complex_, 3, "A string", NA_complex_), 2,2)
+print(m22)
+print(m22, na.print="<missing value>")
+## used uninitialized variable in C, noticably Windows, for R <= 2.9.0
+
+
+## non-standard variable names in update etc
+## never guaranteed to work, requested by Sundar Dorai-Raj in
+## https://stat.ethz.ch/pipermail/r-devel/2009-July/054184.html
+update(`a: b` ~ x, ~ . + y)
+## 2.9.1 dropped backticks

@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,52 +45,6 @@
 
 using namespace CXXR;
 
-/*  append - append second to the tail of first    */
-/*           This operation is non-destructive     */
-/*           i.e. first and second are duplicated  */
-
-#ifdef UNUSED
-SEXP Rf_append(SEXP first, SEXP second)
-{
-    SEXP e;
-
-    PROTECT(second);
-    first = duplicate(first);
-    UNPROTECT(1);
-    PROTECT(first);
-    second = duplicate(second);
-    UNPROTECT(1);
-    for (e = first; CDR(e) != R_NilValue; e = CDR(e));
-    SETCDR(e, second);
-    return first;
-}
-#endif
-
-
-/* This is called by function() {}, where an invalid
-   body should be impossible. When called from
-   other places (eg do_asfunction) they
-   should do this checking in advance */
-
-/*  mkCLOSXP - return a closure with formals f,  */
-/*             body b, and environment rho       */
-
-Closure::Closure(const PairList* formal_args, const RObject* body,
-		 Environment* env)
-    : FunctionBase(CLOSXP), m_debug(false), m_formals(formal_args),
-      m_body(body), m_environment(env)
-{
-    RObject* bod = const_cast<RObject*>(body);
-    if (!isList(bod) && !isLanguage(bod) && !isSymbol(bod)
-	&& !isExpression(bod) && !isVector(bod)
-#ifdef BYTECODE
-	&& !isByteCode(bod)
-#endif
-	)
-	Rf_error(_("invalid body argument for \"function\"\n"
-		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
-}
-   
 R_len_t Rf_length(SEXP s)
 {
     int i;
@@ -123,11 +77,27 @@ R_len_t Rf_length(SEXP s)
     }
 }
 
+/* This is called by function() {}, where an invalid
+   body should be impossible. When called from
+   other places (eg do_asfunction) they
+   should do this checking in advance */
+
+/*  mkCLOSXP - return a closure with formals f,  */
+/*             body b, and environment rho       */
+
 SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 {
     GCStackRoot<PairList> formrt(SEXP_downcast<PairList*>(formals));
     GCStackRoot<> bodyrt(body);
     GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
-			      : GlobalEnvironment);
+				   : Environment::global());
+    if (!isList(body) && !isLanguage(body) && !isSymbol(body)
+	&& !isExpression(body) && !isVector(body)
+#ifdef BYTECODE
+	&& !isByteCode(body)
+#endif
+	)
+	Rf_error(_("invalid body argument for \"function\"\n"
+		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
     return GCNode::expose(new Closure(formrt, bodyrt, envrt));
 }

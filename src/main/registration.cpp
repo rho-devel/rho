@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2008	The R Development Core Team.
+ *  Copyright (C) 2002-2009	The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@ static R_NativePrimitiveArgType fft_work_t[] = {REALSXP, REALSXP, };
 static R_NativePrimitiveArgType fdhess_t[] = {};
 #endif
 
-#define CDEF(name)  {#name, reinterpret_cast<DL_FUNC>(&name), sizeof(name ## _t)/sizeof(name ## _t[0]), name ##_t}
+#define CDEF(name)  {#name, reinterpret_cast<DL_FUNC>( &name), sizeof(name ## _t)/sizeof(name ## _t[0]), name ##_t}
 
 static R_CMethodDef cMethods [] = {
     CDEF(bakslv),
@@ -149,7 +149,7 @@ static R_CMethodDef cMethods [] = {
 #if 0
     CDEF(str_signif),
 #else
-    {"str_signif", reinterpret_cast<DL_FUNC>(&str_signif), 8, NULL},
+    {"str_signif", reinterpret_cast<DL_FUNC>( &str_signif), 8, NULL},
 #endif
     CDEF(R_tabulate),
 
@@ -174,7 +174,7 @@ static R_CMethodDef cMethods [] = {
 };
 
 
-#define CALLDEF(name, n)  {#name, reinterpret_cast<DL_FUNC>(&name), n}
+#define CALLDEF(name, n)  {#name, reinterpret_cast<DL_FUNC>( &name), n}
 
 
 static R_CallMethodDef callMethods [] = {
@@ -229,7 +229,7 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_isMethodsDispatchOn, 1),
     CALLDEF(R_traceOnOff, 1),
     CALLDEF(R_isS4Object, 1),
-    CALLDEF(R_setS4Object, 2),
+    CALLDEF(R_setS4Object, 3),
     CALLDEF(R_do_new_object, 1),
     CALLDEF(R_get_primname, 1),
 
@@ -239,6 +239,7 @@ static R_CallMethodDef callMethods [] = {
     CALLDEF(R_serializeb, 3),
     CALLDEF(R_serialize, 4),
     CALLDEF(R_unserialize, 2),
+    CALLDEF(R_setFileTime, 2),
 
     /* lazy loading support */
     CALLDEF(R_getVarsFromFrame, 3),
@@ -259,7 +260,7 @@ static R_CallMethodDef callMethods [] = {
 };
 
 
-#define EXTDEF(name, n)  {#name, reinterpret_cast<DL_FUNC>(&name), n}
+#define EXTDEF(name, n)  {#name, reinterpret_cast<DL_FUNC>( &name), n}
 
 static R_ExternalMethodDef externalMethods [] = {
     EXTDEF(call_dqags, 7),
@@ -268,7 +269,7 @@ static R_ExternalMethodDef externalMethods [] = {
 };
 
 
-#define FDEF(name)  {#name, reinterpret_cast<DL_FUNC>(&F77_SYMBOL(name)), -1, NULL}
+#define FDEF(name)  {#name, reinterpret_cast<DL_FUNC>( &F77_SYMBOL(name)), -1, NULL}
 static R_FortranMethodDef fortranMethods[] = {
     FDEF(ch2inv),
     FDEF(chol),

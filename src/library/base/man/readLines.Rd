@@ -1,6 +1,6 @@
 % File src/library/base/man/readLines.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2008 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{readLines}
@@ -10,14 +10,14 @@
   Read some or all text lines from a connection.
 }
 \usage{
-readLines(con = stdin(), n = -1, ok = TRUE, warn = TRUE,
+readLines(con = stdin(), n = -1L, ok = TRUE, warn = TRUE,
           encoding = "unknown")
 }
 \arguments{
   \item{con}{a connection object or a character string.}
   \item{n}{integer.  The (maximal) number of lines to
     read.  Negative values indicate that one should read up to the end of
-    the connection.}
+    input on the connection.}
   \item{ok}{logical.  Is it OK to reach the end of the connection before
     \code{n > 0} lines are read?  If not, an error will be generated.}
   \item{warn}{logical.  Warn if a text file is missing a final EOL.}
@@ -35,7 +35,8 @@ readLines(con = stdin(), n = -1, ok = TRUE, warn = TRUE,
 \details{
   If the \code{con} is a character string, the function calls
   \code{\link{file}} to obtain a file connection which is opened for
-  the duration of the function call.
+  the duration of the function call.  As from \R 2.10.0 this can be a
+  compressed file.
 
   If the connection is open it is read from its current position.  If it
   is not open, it is opened in \code{"rt"} mode for the duration of

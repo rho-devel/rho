@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -45,6 +45,9 @@
 
 void R_approx(double *, double *, int *, double *, int *,
 	      int *, double *, double *, double *);
+void R_approxfun(double *, double *, int *, double *, int *,
+	      int *, double *, double *, double *);
+void R_approxtest(double *, double *, int *, int *, double *);
 void band_ucv_bin(int *, int *, double *, int *, double *, double *);
 void band_bcv_bin(int *, int *, double *, int *, double *, double *);
 void band_phi4_bin(int *, int *, double *, int *, double *, double *);

@@ -1,6 +1,6 @@
 % File src/library/base/man/levels.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{levels}
@@ -28,7 +28,7 @@ levels(x) <- value
 }
 \details{
   Both the extractor and replacement forms are generic and new methods
-  can be written for them. The most important method for the replacment
+  can be written for them. The most important method for the replacement
   function is that for \code{\link{factor}}s.
   
   For the factor replacement method, a \code{NA} in \code{value}
@@ -38,11 +38,14 @@ levels(x) <- value
   Note that for a factor, replacing the levels via
   \code{levels(x) <- value} is not the same as (and is preferred to)
   \code{attr(x, "levels") <- value}.
+
+  The replacement function is \link{primitive}, so argument names are
+  ignored (but this might not be true of its methods).
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth \& Brooks/Cole.
+  Wadsworth & Brooks/Cole.
 }
 \seealso{
   \code{\link{nlevels}}, \code{\link{relevel}}, \code{\link{reorder}}.

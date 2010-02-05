@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -112,80 +112,7 @@ static void DEBUG_ADJUST_HEAP_PRINT(double node_occup, double vect_occup)
 
 /* Finalization and Weak References */
 
-/* The design of this mechanism is very close to the one described in
-   "Stretching the storage manager: weak pointers and stable names in
-   Haskell" by Peyton Jones, Marlow, and Elliott (at
-   www.research.microsoft.com/Users/simonpj/papers/weak.ps.gz). --LT */
-
-static void checkKey(SEXP key)
-{
-    switch (TYPEOF(key)) {
-    case NILSXP:
-    case ENVSXP:
-    case EXTPTRSXP:
-	break;
-    default: error(_("can only weakly reference/finalize reference objects"));
-    }
-}
-
-SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
-{
-    checkKey(key);
-    switch (TYPEOF(fin)) {
-    case NILSXP:
-    case CLOSXP:
-    case BUILTINSXP:
-    case SPECIALSXP:
-	break;
-    default: error(_("finalizer must be a function or NULL"));
-    }
-    return GCNode::expose(new WeakRef(key, val, fin, onexit));
-}
-
-SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
-{
-    checkKey(key);
-    return GCNode::expose(new WeakRef(key, val, fin, onexit));
-}
-
-SEXP R_WeakRefKey(SEXP w)
-{
-    if (w->sexptype() != WEAKREFSXP)
-	error(_("not a weak reference"));
-    WeakRef* wr = static_cast<WeakRef*>(w);
-    return wr->key();
-}
-
-SEXP R_WeakRefValue(SEXP w)
-{
-    if (w->sexptype() != WEAKREFSXP)
-	error(_("not a weak reference"));
-    WeakRef* wr = static_cast<WeakRef*>(w);
-    SEXP v = wr->value();
-    if (v && NAMED(v) != 2)
-	SET_NAMED(v, 2);
-    return v;
-}
-
-void WeakRef::finalize()
-{
-    R_CFinalizer_t Cfin = m_Cfinalizer;
-    GCStackRoot<> key(m_key);
-    GCStackRoot<> Rfin(m_Rfinalizer);
-    // Do this now to ensure that finalizer is run only once, even if
-    // an error occurs:
-    tombstone();
-    if (Cfin) Cfin(key);
-    else if (Rfin) {
-	GCStackRoot<PairList> tail(expose(new PairList(key)));
-	GCStackRoot<Expression> e(expose(new Expression(Rfin, tail)));
-	eval(e, GlobalEnvironment);
-    }
-}
-
-/* R interface function */
-
-SEXP CXXRnot_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int onexit;
 
@@ -223,7 +150,7 @@ unsigned int GCNode::protectCstructs()
     return protect_count;
 }
 
-SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i;
     SEXP old = ScalarLogical(!gc_inhibit_torture);
@@ -235,7 +162,7 @@ SEXP CXXRnot_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
     return old;
 }
 
-SEXP CXXRnot_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os = GCManager::setReporting(0);
@@ -249,7 +176,7 @@ SEXP CXXRnot_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* reports memory use to profiler in eval.c */
 
-void CXXRnot_hidden get_current_mem(unsigned long *smallvsize,
+void attribute_hidden get_current_mem(unsigned long *smallvsize,
 				    unsigned long *largevsize,
 				    unsigned long *nodes)
 {
@@ -260,13 +187,13 @@ void CXXRnot_hidden get_current_mem(unsigned long *smallvsize,
     return;
 }
 
-SEXP CXXRnot_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     ostream* report_os
 	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
     bool reset_max = asLogical(CADR(args));
-    GCManager::gc(0);
+    GCManager::gc();
     GCManager::setReporting(report_os);
     /*- now return the [used , gc trigger size] for cells and heap */
     GCStackRoot<> value(allocVector(REALSXP, 6));
@@ -348,7 +275,7 @@ void InitMemory()
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
 #endif
     GCManager::setReporting(R_Verbose ? &cerr : 0);
-    GCManager::enableGC(R_VSize);
+    GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
     R_BCNodeStackBase = static_cast<SEXP *>( malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
@@ -402,9 +329,6 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     return GCNode::expose(ans);
 }
 
-/* All vector objects  must be a multiple of sizeof(ALIGN) */
-/* bytes so that alignment is preserved for all objects */
-
 /* Allocate a vector object (and also list-like objects).
 */
 
@@ -423,8 +347,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	s = new RawVector(length);
 	break;
     case CHARSXP:
-	warning("use of allocVector(CHARSXP ...) is deprecated\n");
-	s = new UncachedString(length);
+	error("use of allocVector(CHARSXP ...) is defunct\n");
 	break;
     case LGLSXP:
 	s = new LogicalVector(length);
@@ -469,13 +392,13 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 
 void R_gc(void)
 {
-    GCManager::gc(0);
+    GCManager::gc();
 }
 
 
 #define R_MAX(a,b) (a) < (b) ? (b) : (a)
 
-SEXP CXXRnot_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans;
     checkArity(op, args);
@@ -486,7 +409,7 @@ SEXP CXXRnot_hidden do_memlimits(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-SEXP CXXRnot_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, nms;
     PROTECT(ans = allocVector(INTSXP, 24));
@@ -556,12 +479,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
 }
 
 
-#define USE_TYPE_CHECKING
-
-#if defined(USE_TYPE_CHECKING_STRICT) && !defined(USE_TYPE_CHECKING)
-# define USE_TYPE_CHECKING
-#endif
-
 
 /* The following functions are replacements for the accessor macros.
    They are used by code that does not have direct access to the
@@ -590,7 +507,7 @@ void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
 
 #ifndef R_MEMORY_PROFILING
 
-SEXP CXXRnot_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     error(_("memory profiling is not available on this system"));
     return R_NilValue; /* not reached */
@@ -656,7 +573,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' argument"), "filename");
     append_mode = asLogical(CADR(args));
     filename = STRING_ELT(CAR(args), 0);
-    threshold = R_size_t(REAL(CADDR(args))[0]);
+    threshold = CXXRCONSTRUCT(R_size_t, REAL(CADDR(args))[0]);
     if (strlen(CHAR(filename)))
 	R_InitMemReporting(filename, append_mode, threshold);
     else
@@ -670,7 +587,7 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #include "RBufferUtils.h"
 
-CXXRnot_hidden
+attribute_hidden
 void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
 {
     size_t blen1, bsize = buf->defaultSize;
@@ -702,7 +619,7 @@ void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
     return buf->data;
 }
 
-void CXXRnot_hidden
+void attribute_hidden
 R_FreeStringBuffer(R_StringBuffer *buf)
 {
     if (buf->data != NULL) {
@@ -712,7 +629,7 @@ R_FreeStringBuffer(R_StringBuffer *buf)
     }
 }
 
-void CXXRnot_hidden
+void attribute_hidden
 R_FreeStringBufferL(R_StringBuffer *buf)
 {
     if (buf->bufsize > buf->defaultSize) {
@@ -725,17 +642,6 @@ R_FreeStringBufferL(R_StringBuffer *buf)
 /* ======== These need direct access to gp field for efficiency ======== */
 
 /* FIXME: consider inlining here */
-#ifdef Win32
-int Seql(SEXP a, SEXP b)
-{
-    if (a == b) return 1;
-    if (LENGTH(a) != LENGTH(b)) return 0;
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
-	 return 0;
-    return !strcmp(translateCharUTF8(a), translateCharUTF8(b));
-}
-
-#else
 
 /* this has NA_STRING = NA_STRING */
 int Seql(SEXP a, SEXP b)
@@ -745,11 +651,12 @@ int Seql(SEXP a, SEXP b)
       non-ASCII strings). Note that one of the strings could be marked
       as unknown. */
     if (a == b) return 1;
-    if (LENGTH(a) != LENGTH(b)) return 0;
     /* Leave this to compiler to optimize */
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
-	return 0;
+    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b)) {
+	CachedString* csa = static_cast<CachedString*>(a);
+	CachedString* csb = static_cast<CachedString*>(b);
+	if (csa->encoding() == csb->encoding())
+	    return 0;
+    }
     return !strcmp(translateChar(a), translateChar(b));
 }
-
-#endif

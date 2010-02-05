@@ -18,7 +18,13 @@ showMethods(f = character(), where = topenv(parent.frame()),
 }
 \arguments{
   \item{f}{one or more function names.  If omitted, all functions
-    will be shown that match the other arguments.}
+    will be shown that match the other arguments.
+    
+    The argument can also be an expression that evaluates to a single
+    generic function, in which
+    case argument \code{fdef} is ignored.  Providing an expression for
+    the function allows examination of hidden or anonymous functions;
+    see the example for \code{isDiagonal()}.}
   \item{where}{Where to find the generic function, if not supplied as an
     argument. When \code{f} is missing, or length 0, this also
     determines which generic functions to examine.  If \code{where} is
@@ -100,15 +106,16 @@ require(graphics)
 ## print (without definitions) the methods that involve class "track":
 showMethods("plot", classes = "track")
 \dontrun{
-Function "plot":
-x = ANY, y = track
-x = track, y = missing
-x = track, y = ANY
+# Function "plot":
+# x = ANY, y = track
+# x = track, y = missing
+# x = track, y = ANY
 
-require("Matrix")# a CRAN package with much S4 functionality
+require("Matrix")
 showMethods("\%*\%")# many!
     methods(class = "Matrix")# nothing
 showMethods(class = "Matrix")# everything
+showMethods(Matrix:::isDiagonal) # a non-exported generic
 }%end{dontrun}
 
 %% FIXME: This should be an example of showing methods from a loaded,

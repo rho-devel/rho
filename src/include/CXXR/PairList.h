@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -72,6 +72,14 @@ extern "C" {
 
 #endif  /* __cplusplus */
 
+    /** @brief Is a Binding locked?
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     *
+     * @return true iff this Binding is locked.
+     */
 #ifndef __cplusplus
     Rboolean BINDING_IS_LOCKED(SEXP b);
 #else
@@ -173,17 +181,25 @@ extern "C" {
     }
 #endif
 
-#ifndef __cplusplus
+    /** @brief Is a Binding active?
+     *
+     * @param b Pointer to a ConsCell object (checked). If \a b points
+     *          to any type of ConsCell other than a PairList, the
+     *          function returns FALSE.  Otherwise \a b should point
+     *          to a PairList object representing a Frame::Binding
+     *          (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     *
+     * @return true iff this is an active Binding.
+     */
     Rboolean IS_ACTIVE_BINDING(SEXP b);
-#else
-    inline Rboolean IS_ACTIVE_BINDING(SEXP b)
-    {
-	using namespace CXXR;
-	const PairList* pl = SEXP_downcast<PairList*>(b);
-	return Rboolean(pl->m_active_binding);
-    }
-#endif
 
+    /** @brief Lock the binding represented by a PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void LOCK_BINDING(SEXP b);
 #else
@@ -194,6 +210,13 @@ extern "C" {
 	pl->m_binding_locked = true;}
 #endif
 
+    /** @brief Designate as active the binding represented by a
+     * PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void SET_ACTIVE_BINDING_BIT(SEXP b);
 #else
@@ -258,6 +281,12 @@ extern "C" {
      */
     SEXP SETCAD4R(SEXP x, SEXP y);
 
+    /** @brief Unlock the binding represented by a PairList object.
+     *
+     * @param b Pointer to a PairList object (checked) representing a
+     *          Frame::Binding (e.g. because it was produced using
+     *          Frame::asPairList() ).
+     */
 #ifndef __cplusplus
     void UNLOCK_BINDING(SEXP b);
 #else

@@ -20,9 +20,9 @@ is.R()
   S-PLUS 8.0, your code must either define \code{is.R} or use it as
 
   \code{if (exists("is.R") && is.function(is.R) && is.R()) \{}\cr
-  \code{    }\emph{\#\# R-specific code}\cr
+  \code{    }\emph{## R-specific code}\cr
   \code{\} else \{}\cr
-  \code{    }\emph{\#\# S-version of code}\cr
+  \code{    }\emph{## S-version of code}\cr
   \code{\}}
 }
 \value{

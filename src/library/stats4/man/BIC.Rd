@@ -25,7 +25,7 @@ BIC(object, \dots)
 \arguments{
   \item{object}{An object of a suitable class for the BIC to be
     calculated - usually a \code{"logLik"} object or an object for which
-    a \code{\link[stats4:logLik-methods]{logLik}} method exists.
+    a \code{\link[=logLik-methods]{logLik}} method exists.
   }
   \item{\dots}{Some methods for this generic function may take
     additional, optional arguments.  At present none do.}
@@ -35,10 +35,8 @@ BIC(object, \dots)
 }
 \references{
   Schwarz, G. (1978) "Estimating the Dimension of a Model",
-  \emph{Annals of Statistics}, \bold{6}, 461-464.
+  \emph{Annals of Statistics}, \bold{6}, 461--464.
 }
-%\author{}
-%\note{}
 \seealso{\code{\link{logLik-methods}}, \code{\link{AIC-methods}}}
 \examples{
 lm1 <- lm(Fertility ~ . , data = swiss)

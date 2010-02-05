@@ -1,23 +1,18 @@
 % File src/library/stats/man/logLik.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{logLik}
 \alias{logLik}
 \alias{print.logLik}
 \alias{str.logLik}
-% \alias{as.data.frame.logLik}
 \alias{logLik.lm}
 \title{Extract Log-Likelihood}
 \usage{
 logLik(object, \dots)
 
 \method{logLik}{lm}(object, REML = FALSE, \dots)
-%
-%\method{as.data.frame}{logLik}(x, row.names = NULL, optional = FALSE)
-%notyet print(logLik(*), ...)
-%notyet   str(logLik(*), ...)
 }
 \arguments{
  \item{object}{any object from which a log-likelihood value, or a
@@ -27,21 +22,18 @@ logLik(object, \dots)
   \item{REML}{an optional logical value.  If \code{TRUE} the restricted
     log-likelihood is returned, else, if \code{FALSE}, the
     log-likelihood is returned.  Defaults to \code{FALSE}.}
-% \item{x}{an object of class \code{logLik}.}
-% \item{row.names, optional}{arguments to the \code{\link{as.data.frame}}
-%   method; see its documentation.}
 }
 \description{
   This function is generic; method functions can be written to handle
   specific classes of objects.  Classes which already have methods for
   this function include: \code{glm}, \code{lm}, \code{nls}, \code{Arima}
   and \code{gls}, \code{lme} and others in package \pkg{nlme}.
+}
 %   \code{corStruct}, \code{lmList}, \code{lmeStruct}, \code{reStruct}, and
 %   \code{varFunc}.
-}
 \details{
   For a \code{"glm"} fit the \code{\link{family}} does not have to specify
-  how to calculate the log-likelihood, so this is based on the
+  how to calculate the log-likelihood, so this is based on using the
   family's \code{aic()} function to compute the AIC.  For the
   \code{\link{gaussian}}, \code{\link{Gamma}} and
   \code{\link{inverse.gaussian}} families it assumed that the dispersion
@@ -49,9 +41,9 @@ logLik(object, \dots)
   value, and for all other families it is assumed that the dispersion is
   known.
 
-  Note that this procedure is not completely accurate for the gamma and
-  inverse gaussian families, as the estimate of dispersion used is not
-  the MLE.
+  Note that this procedure does not give the maximized likelihood for
+  \code{"glm"} fits from the Gamma and inverse gaussian families, as the
+  estimate of dispersion used is not the MLE.
 
   For \code{"lm"} fits it is assumed that the scale has been estimated
   (by maximum likelihood or REML), and all the constants in the
@@ -67,7 +59,7 @@ logLik(object, \dots)
   documentation.
 }
 \seealso{
-  \code{\link[nlme]{logLik.gls}}, \code{\link[nlme]{logLik.lme}}, in
+  \code{\link[nlme:logLik.lme]{logLik.gls}}, \code{\link[nlme]{logLik.lme}}, in
   package \pkg{nlme}, etc.
 }
 \references{
@@ -89,11 +81,9 @@ utils::str(logLik(lmx))
 logLik(fm1)
 logLik(fm1, REML = TRUE)
 
-res <- try(utils::data(Orthodont, package="nlme"))
-if(!inherits(res, "try-error")) {
-  fm1 <- lm(distance ~ Sex * age, Orthodont)
-  print(logLik(fm1))
-  print(logLik(fm1, REML = TRUE))
-}
+utils::data(Orthodont, package="nlme")
+fm1 <- lm(distance ~ Sex * age, Orthodont)
+logLik(fm1)
+logLik(fm1, REML = TRUE)
 }
 \keyword{models}

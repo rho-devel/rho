@@ -20,10 +20,10 @@ my $castscope = "\\s*[~!+&\*-]*(?:$cs(?:->$cs)*|\\[[^\\]]*\\]|$brack2)*";
 #print $castscope;
 
 my $constype1 = "ARITHOP_TYPE|apse_bool_t|apse_size_t|char|double|float";
-my $constype2 = "HINSTANCE|iconv_t|int|intptr_t|_lli_t|long";
+my $constype2 = "HINSTANCE|iconv_t|int|Int32|intptr_t|_lli_t|long|N01type";
 my $constype3 = "R_size_t|R_varloc_t|Rboolean|Rbyte|Rconnection|RELOP_TYPE";
-my $constype4 = "Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|time_t";
-my $constype5 = "uInt|uIntuintptr_t|uintptr_t|uLong|wchar_t|wint_t|z_off_t";
+my $constype4 = "RNGtype|Rprt_adj|Rrawconn|SEXPTYPE|short|size_t|time_t";
+my $constype5 = "uInt|uint64_t|uIntuintptr_t|uintptr_t|uLong|wchar_t|wint_t|z_off_t";
 my $constype = "(?:$constype1|$constype2|$constype3|$constype4|$constype5)";
 
 while (<>) {
@@ -38,23 +38,32 @@ while (<>) {
   # Reinstate C++ reserved words used as identifiers:
   s/connclass/class/g;
   s/connprivate/private/g;
+  s/devnum/this/g;
+  s/ffalse/false/g;
   s/funstr/this/g;
-  # s/newbuf([^_\w\.])/new$1/g;  # newbuf is used itself in saveload.c
+  s/newbuff/new/g;
   s/newconn/new/g;
-  s/newd/new/g;
+  s/newd\b/new/g;
+  s/newi\b/new/g;
   s/newplot/new/g;
-  s/newv/new/g;
+  s/newv\b/new/g;
   s/thisconn/this/g;
+  s/thispath/this/g;
   s/thiss/this/g;
 
   # Other changes:
   s/cDUPLICATE_ATTRIB/DUPLICATE_ATTRIB/g;
   s/\(char\*\)R_AllocStringBuffer/R_AllocStringBuffer/g;
   s/CXXR_alloc/R_alloc/g;
-  s/CXXRconst\s*//g;
+  s/CXXRBUILTINFUNCTION:://g;
+  s/CXXRCONSTRUCT\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRCONST\s*//g;
+  s/CXXRCCAST\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRSCAST\([^,]+, *((?:[^()]|$brack2)+)\)/$1/g;
+  s/CXXRFALSE/0/g;
   s/CXXRNOCAST//g;
-  s/CXXRnot_hidden/attribute_hidden/g;
-  s/CXXRunsigned\s*//g;
+  s/CXXRTRUE/1/g;
+  s/CXXRUNSIGNED\s*//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   print;
 }

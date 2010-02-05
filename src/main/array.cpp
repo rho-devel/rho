@@ -6,7 +6,7 @@
  *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
  *CXXR Licence.
  *CXXR 
- *CXXR CXXR is Copyright (C) 2008-9 Andrew R. Runnalls, subject to such other
+ *CXXR CXXR is Copyright (C) 2008-10 Andrew R. Runnalls, subject to such other
  *CXXR copyrights and copyright restrictions as may be stated below.
  *CXXR 
  *CXXR CXXR is not part of the R project, and bugs and other issues should
@@ -122,9 +122,9 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ans = allocMatrix(TYPEOF(vals), nr, nc));
     if(lendat) {
 	if (isVector(vals))
-	    copyMatrix(ans, vals, Rboolean(byrow));
+	    copyMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
 	else
-	    copyListMatrix(ans, vals, Rboolean(byrow));
+	    copyListMatrix(ans, vals, CXXRCONSTRUCT(Rboolean, byrow));
     } else if (isVector(vals)) { /* fill with NAs */
 	int i, j;
 	switch(TYPEOF(vals)) {
@@ -168,7 +168,7 @@ SEXP attribute_hidden do_matrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    ;
 	}
     }
-    if(!isNull(dimnames)&& length(dimnames) > 0) 
+    if(!isNull(dimnames)&& length(dimnames) > 0)
 	ans = dimnamesgets(ans, dimnames);
     UNPROTECT(1);
     return ans;
@@ -307,6 +307,15 @@ SEXP DropDims(SEXP x)
 	setAttrib(x, R_DimNamesSymbol, R_NilValue);
 	setAttrib(x, R_DimSymbol, R_NilValue);
 	setAttrib(x, R_NamesSymbol, newnames);
+	/* FIXME: the following is desirable, but pointless as long as
+	   subset.c & others have a contrary version that leaves the
+	   S4 class in, incorrectly, in the case of vectors.  JMC
+	   3/3/09 */
+/* 	if(IS_S4_OBJECT(x)) {/\* no longer valid subclass of array or
+ 	matrix *\/ */
+/* 	    setAttrib(x, R_ClassSymbol, R_NilValue); */
+/* 	    UNSET_S4_OBJECT(x); */
+/* 	} */
 	UNPROTECT(1);
     } else {
 	/* We have a lower dimensional array. */
@@ -423,7 +432,7 @@ SEXP attribute_hidden do_rowscols(SEXP call, SEXP op, SEXP args, SEXP rho)
 static void matprod(double *x, int nrx, int ncx,
 		    double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     int i,  j, k;
     double one = 1.0, zero = 0.0;
     LDOUBLE sum;
@@ -457,7 +466,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 		     Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
 #ifdef HAVE_FORTRAN_DOUBLE_COMPLEX
-    CXXRconst char *transa = "N", *transb = "N";
+    CXXRCONST char *transa = "N", *transb = "N";
     int i;
     Rcomplex one, zero;
 
@@ -500,7 +509,7 @@ static void cmatprod(Rcomplex *x, int nrx, int ncx,
 
 static void symcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRconst char *trans = "T", *uplo = "U";
+    CXXRCONST char *trans = "T", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -516,7 +525,7 @@ static void symcrossprod(double *x, int nr, int nc, double *z)
 static void crossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &ncx, &ncy, &nrx, &one,
@@ -530,7 +539,7 @@ static void crossprod(double *x, int nrx, int ncx,
 static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 		       Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRconst char *transa = "T", *transb = "N";
+    CXXRCONST char *transa = "T", *transb = "N";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -545,7 +554,7 @@ static void ccrossprod(Rcomplex *x, int nrx, int ncx,
 
 static void symtcrossprod(double *x, int nr, int nc, double *z)
 {
-    CXXRconst char *trans = "N", *uplo = "U";
+    CXXRCONST char *trans = "N", *uplo = "U";
     double one = 1.0, zero = 0.0;
     int i, j;
     if (nr > 0 && nc > 0) {
@@ -561,7 +570,7 @@ static void symtcrossprod(double *x, int nr, int nc, double *z)
 static void tcrossprod(double *x, int nrx, int ncx,
 		      double *y, int nry, int ncy, double *z)
 {
-    CXXRconst char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     double one = 1.0, zero = 0.0;
     if (nrx > 0 && ncx > 0 && nry > 0 && ncy > 0) {
 	F77_CALL(dgemm)(transa, transb, &nrx, &nry, &ncx, &one,
@@ -575,7 +584,7 @@ static void tcrossprod(double *x, int nrx, int ncx,
 static void tccrossprod(Rcomplex *x, int nrx, int ncx,
 			Rcomplex *y, int nry, int ncy, Rcomplex *z)
 {
-    CXXRconst char *transa = "N", *transb = "T";
+    CXXRCONST char *transa = "N", *transb = "T";
     Rcomplex one, zero;
 
     one.r = 1.0; one.i = zero.r = zero.i = 0.0;
@@ -597,7 +606,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x = CAR(args), y = CADR(args), xdims, ydims, ans;
     Rboolean sym;
 
-    if(PRIMVAL(op) == 0 &&
+    if(PRIMVAL(op) == 0 && /* %*% is primitive, the others are .Internal() */
        (IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
        && R_has_methods(op)) {
 	SEXP s, value;
@@ -610,7 +619,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     sym = isNull(y);
     if (sym && (PRIMVAL(op) > 0)) y = x;
     if ( !(isNumeric(x) || isComplex(x)) || !(isNumeric(y) || isComplex(y)) )
-	errorcall(call, _("requires numeric matrix/vector arguments"));
+	errorcall(call, _("requires numeric/complex matrix/vector arguments"));
 
     xdims = getAttrib(x, R_DimSymbol);
     ydims = getAttrib(y, R_DimSymbol);
@@ -637,17 +646,23 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (PRIMVAL(op) == 0) {
 	    if (LENGTH(x) == nry) {	/* x as row vector */
 		nrx = 1;
-		ncx = LENGTH(x);
+		ncx = nry; /* == LENGTH(x) */
 	    }
 	    else if (nry == 1) {	/* x as col vector */
 		nrx = LENGTH(x);
 		ncx = 1;
 	    }
 	}
-	else { /* crossprod */
+	else if (PRIMVAL(op) == 1) { /* crossprod() */
 	    if (LENGTH(x) == nry) {	/* x is a col vector */
-		nrx = LENGTH(x);
+		nrx = nry; /* == LENGTH(x) */
 		ncx = 1;
+	    }
+	}
+	else { /* tcrossprod */
+	    if (LENGTH(x) == ncy) {	/* x as row vector */
+		nrx = 1;
+		ncx = ncy; /* == LENGTH(x) */
 	    }
 	}
     }
@@ -658,7 +673,7 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 	ncy = 0;
 	if (PRIMVAL(op) == 0) {
 	    if (LENGTH(y) == ncx) {	/* y as col vector */
-		nry = LENGTH(y);
+		nry = ncx; /* == LENGTH(y) */
 		ncy = 1;
 	    }
 	    else if (ncx == 1) {	/* y as row vector */
@@ -666,9 +681,9 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ncy = LENGTH(y);
 	    }
 	}
-	else {
+	else { /* (t)crossprod */
 	    if (LENGTH(y) == nrx) {	/* y is a col vector */
-		nry = LENGTH(y);
+		nry = nrx; /* == LENGTH(y) */
 		ncy = 1;
 	    }
 	}
@@ -1172,13 +1187,13 @@ SEXP attribute_hidden do_colsum(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args); args = CDR(args);
     n = asInteger(CAR(args)); args = CDR(args);
     p = asInteger(CAR(args)); args = CDR(args);
-    NaRm = Rboolean(asLogical(CAR(args)));
+    NaRm = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
     if (n == NA_INTEGER || n < 0)
 	error(_("invalid '%s' argument"), "n");
     if (p == NA_INTEGER || p < 0)
 	error(_("invalid '%s' argument"), "p");
     if (NaRm == NA_LOGICAL) error(_("invalid '%s' argument"), "na.rm");
-    keepNA = Rboolean(!NaRm);
+    keepNA = CXXRCONSTRUCT(Rboolean, !NaRm);
 
     OP = PRIMVAL(op);
     switch (type = TYPEOF(x)) {

@@ -1,6 +1,6 @@
 % File src/library/base/man/regex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{regex}
@@ -11,7 +11,7 @@
 \title{Regular Expressions as used in R}
 \description{
   This help page documents the regular expression patterns supported by
-  \code{\link{grep}} and related functions \code{regexpr},
+  \code{\link{grep}} and related functions \code{grepl}, \code{regexpr},
   \code{gregexpr}, \code{sub} and \code{gsub}, as well as by
   \code{\link{strsplit}}.
 }
@@ -19,310 +19,330 @@
   A \sQuote{regular expression} is a pattern that describes a set of
   strings.  Three types of regular expressions are used in \R,
   \emph{extended} regular expressions, used by
-  \code{grep(extended = TRUE)} (its default), \emph{basic} regular
-  expressions, as used by \code{grep(extended = FALSE)}, and
-  \emph{Perl-like} regular expressions used by \code{grep(perl = TRUE)}.
+  \code{extended = TRUE} (the default), \emph{basic} regular
+  expressions, as used by \code{extended = FALSE}, and
+  \emph{Perl-like} regular expressions used by \code{perl = TRUE}.
+  There is a also \code{fixed = TRUE} which can be considered to use a
+  \emph{literal} regular expression.
 
   Other functions which use regular expressions (often via the use of
   \code{grep}) include \code{apropos}, \code{browseEnv},
-  \code{help.search}, \code{list.files}, \code{ls} and \code{strsplit}.
-  These will all use \emph{extended} regular expressions, unless
-  \code{strsplit} is called with argument \code{extended = FALSE} or
-  \code{perl = TRUE}.
+  \code{help.search}, \code{list.files} and \code{ls}.
+  These will all use \emph{extended} regular expressions.
 
   Patterns are described here as they would be printed by \code{cat}:
-  \emph{do remember that backslashes need to be doubled when entering \R
-    character strings}, e.g. from the keyboard.
+  (\emph{do remember that backslashes need to be doubled when entering \R
+    character strings}, e.g. from the keyboard).
 }
 \section{Extended Regular Expressions}{
-  This section covers the regular expressions allowed if \code{extended
-  = TRUE} in \code{grep}, \code{regexpr}, \code{gregexpr}, \code{sub},
-  \code{gsub} and \code{strsplit}.  They use the \code{glibc 2.7}
-  implementation of the POSIX 1003.2 standard.
+  This section covers the regular expressions allowed in the default
+  mode of \code{grep}, \code{regexpr}, \code{gregexpr}, \code{sub},
+  \code{gsub} and \code{strsplit}.  They use an implementation of the
+  POSIX 1003.2 standard: that allows some scope for interpretation and
+  the interpretations here are those used as from \R 2.10.0.
 
   Regular expressions are constructed analogously to arithmetic
-  expressions, by using various operators to combine smaller expressions.
+  expressions, by using various operators to combine smaller
+  expressions. The whole expression matches zero or more characters
+  (read \sQuote{character} as \sQuote{byte} if \code{useBytes = TRUE}).
 
   The fundamental building blocks are the regular expressions that match
   a single character.  Most characters, including all letters and
   digits, are regular expressions that match themselves.  Any
   metacharacter with special meaning may be quoted by preceding it with
-  a backslash.  (Escaping other characters with a backslash is
-  undefined in POSIX but gives the character in the \R implementation.)
-  The metacharacters in EREs are \code{. \\ | ( ) [ \{ ^ $ * + ?}, but
-  note that whether these have a special meaning depends on the context.
+  a backslash.  The metacharacters in EREs are \samp{. \\
+  | ( ) [ \{ ^ $ * + ?}, but note that whether these have a special
+  meaning depends on the context.
+
+  Escaping non-metacharacters with a backslash is
+  implementation-dependent.  The current implementation interprets
+  \samp{\\a} as \samp{BEL}, \samp{\\e} as \samp{ESC}, \samp{\\f} as
+  \samp{FF}, \samp{\\n} as \samp{LF}, \samp{\\r} as \samp{CR} and
+  \samp{\\t} as \samp{TAB}.  (Note that these will be interpreted by
+  \R's parser in literal character strings.)
 
   A \emph{character class} is a list of characters enclosed between
-  \code{[} and \code{]} which matches any single character in that list;
-  unless the first character of the list is the caret \code{^}, when it
+  \samp{[} and \samp{]} which matches any single character in that list;
+  unless the first character of the list is the caret \samp{^}, when it
   matches any character \emph{not} in the list.  For example, the
-  regular expression \code{[0123456789]} matches any single digit, and
-  \code{[^abc]} matches anything except the characters \code{a},
-  \code{b} or \code{c}.  A range of characters may be specified by
+  regular expression \samp{[0123456789]} matches any single digit, and
+  \samp{[^abc]} matches anything except the characters \samp{a},
+  \samp{b} or \samp{c}.  A range of characters may be specified by
   giving the first and last characters, separated by a hyphen.  (Because
-  their interpretation is so locale-dependent, they are best avoided.)
-
-  The precise way character ranges are interpreted depends on the values
-  of \code{perl} and \code{ignore.case}.  For basic and extended regular
-  expressions the collation order is taken from the OS's
-  implementation of the setting of the locale category
-  \code{LC_COLLATE}, so \code{[W-Z]} may include \code{x} and if it
-  does may or may not include \code{w}.  (In most English locales the
-  collation order is \code{wWxXyYzZ}.)  For caseless matching the
-  characters in a range are interpreted as if in lower case, so in an
-  English locale \code{[W-z]} matches \code{WXYZwxyz}.  The only
-  portable way to specify all ASCII letters is to list them all as
-  character class,
-  \code{[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]}.
-
-  For Perl regexps, the ranges are interpreted in the numerical order of
-  the characters, either as bytes in a single-byte locale or as Unicode
-  points in a UTF-8 locale.  So in either case \code{[A-Za-z]} specifies
-  the set of ASCII letters.
+  their interpretation is locale- and implementation-dependent, they are
+  best avoided.)  The only portable way to specify all ASCII letters is
+  to list them all as the character class
+  \samp{[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]}.  (The
+  current implementation uses numerical order of the encoding: prior to
+  \R 2.10.0 locale-specific collation was used, and might be again.)
 
   Certain named classes of characters are predefined.  Their
   interpretation depends on the \emph{locale} (see \link{locales}); the
   interpretation below is that of the POSIX locale.
 
   \describe{
-    \item{\code{[:alnum:]}}{Alphanumeric characters: \code{[:alpha:]}
-      and \code{[:digit:]}.}
+    \item{\samp{[:alnum:]}}{Alphanumeric characters: \samp{[:alpha:]}
+      and \samp{[:digit:]}.}
 
-    \item{\code{[:alpha:]}}{Alphabetic characters: \code{[:lower:]} and
-      \code{[:upper:]}.}
+    \item{\samp{[:alpha:]}}{Alphabetic characters: \samp{[:lower:]} and
+      \samp{[:upper:]}.}
 
-    \item{\code{[:blank:]}}{Blank characters: space and tab.}
+    \item{\samp{[:blank:]}}{Blank characters: space and tab. (This is an
+      extension to the POSIX standard.)}
 
-    \item{\code{[:cntrl:]}}{
+    \item{\samp{[:cntrl:]}}{
       Control characters.  In ASCII, these characters have octal codes
       000 through 037, and 177 (\code{DEL}).  In another character set,
       these are the equivalent characters, if any.}
 
-    \item{\code{[:digit:]}}{Digits: \code{0 1 2 3 4 5 6 7 8 9}.}
+    \item{\samp{[:digit:]}}{Digits: \samp{0 1 2 3 4 5 6 7 8 9}.}
 
-    \item{\code{[:graph:]}}{Graphical characters: \code{[:alnum:]} and
-      \code{[:punct:]}.}
+    \item{\samp{[:graph:]}}{Graphical characters: \samp{[:alnum:]} and
+      \samp{[:punct:]}.}
 
-    \item{\code{[:lower:]}}{Lower-case letters in the current locale.}
+    \item{\samp{[:lower:]}}{Lower-case letters in the current locale.}
 
-    \item{\code{[:print:]}}{
-      Printable characters: \code{[:alnum:]}, \code{[:punct:]} and space.}
+    \item{\samp{[:print:]}}{
+      Printable characters: \samp{[:alnum:]}, \samp{[:punct:]} and space.}
 
-    \item{\code{[:punct:]}}{Punctuation characters:
-      \code{! " # $ \% & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` \{ | \} ~}.}
+    \item{\samp{[:punct:]}}{Punctuation characters:
+      \samp{! " # $ \% & ' ( ) * + , - . / : ; < = > ? @ [ \\ ] ^ _ ` \{ | \} ~}.}
 %'"`  keep Emacs Rd mode happy
 
-    \item{\code{[:space:]}}{
+    \item{\samp{[:space:]}}{
       Space characters: tab, newline, vertical tab, form feed, carriage
       return, and space.}
 
-    \item{\code{[:upper:]}}{Upper-case letters in the current locale.}
+    \item{\samp{[:upper:]}}{Upper-case letters in the current locale.}
 
-    \item{\code{[:xdigit:]}}{Hexadecimal digits:
-      \code{0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f}.}
+    \item{\samp{[:xdigit:]}}{Hexadecimal digits:
+      \samp{0 1 2 3 4 5 6 7 8 9 A B C D E F a b c d e f}.}
   }
 
-  For example, \code{[[:alnum:]]} means \code{[0-9A-Za-z]}, except the
-  latter depends upon the locale and the character encoding, whereas
-  the former is independent of locale and character set.  (Note that the
+  For example, \samp{[[:alnum:]]} means \samp{[0-9A-Za-z]}, except the
+  latter depends upon the locale and the character encoding, whereas the
+  former is independent of locale and character set.  (Note that the
   brackets in these class names are part of the symbolic names, and must
   be included in addition to the brackets delimiting the bracket list.)
-  Most metacharacters lose their special meaning inside lists.  To
-  include a literal \code{]}, place it first in the list.  Similarly, to
-  include a literal \code{^}, place it anywhere but first.  Finally, to
-  include a literal \code{-}, place it first or last (or, for
-  \code{perl = TRUE} only, precede it by a backslash.).  (Only these and
-  \code{\\} remain special inside character classes.)
+  Most metacharacters lose their special meaning inside a character
+  class.  To include a literal \samp{]}, place it first in the list.
+  Similarly, to include a literal \samp{^}, place it anywhere but first.
+  Finally, to include a literal \samp{-}, place it first or last (or,
+  for \code{perl = TRUE} only, precede it by a backslash.).  (Only
+  \samp{^ - \\ ]} are special inside character classes.)
 
-  The period \code{.} matches any single character.  The symbol
-  \code{\\w} is documented to be synonym for \code{[[:alnum:]]} and
-  \code{\\W} is its negation.  However, \code{\\w} also
-  matches underscore in the GNU grep code used in \R.
+  The period \samp{.} matches any single character.  The symbol
+  \samp{\\w} matches a \sQuote{word} character (a synonym for
+  \samp{[[:alnum:]_]}) and \samp{\\W} is its negation.  Symbols
+  \samp{\\d}, \samp{\\s}, \samp{\\D} and \samp{\\S} denote the digit and
+  space classes and their negations.
 
-  The caret \code{^} and the dollar sign \code{$} are metacharacters
+  The caret \samp{^} and the dollar sign \samp{$} are metacharacters
   that respectively match the empty string at the beginning and end of a
-  line.  The symbols \code{\\<} and \code{\\>} respectively match the
-  empty string at the beginning and end of a word.  The symbol \code{\\b}
-  matches the empty string at either edge of a word, and \code{\\B} matches
-  the empty string provided it is not at an edge of a word.
+  line.  The symbols \samp{\\<} and \samp{\\>} match the empty string at
+  the beginning and end of a word.  The symbol \samp{\\b} matches the
+  empty string at either edge of a word, and \samp{\\B} matches the
+  empty string provided it is not at an edge of a word.  (The
+  interpretation of \sQuote{word} depends on the locale and
+  implementation.)
 
   A regular expression may be followed by one of several repetition
   quantifiers:
   \describe{
-    \item{\code{?}}{The preceding item is optional and will be matched
+    \item{\samp{?}}{The preceding item is optional and will be matched
       at most once.}
 
-    \item{\code{*}}{The preceding item will be matched zero or more
+    \item{\samp{*}}{The preceding item will be matched zero or more
       times.}
 
-    \item{\code{+}}{The preceding item will be matched one or more
+    \item{\samp{+}}{The preceding item will be matched one or more
       times.}
 
-    \item{\code{{n}}}{The preceding item is matched exactly \code{n}
+    \item{\samp{{n}}}{The preceding item is matched exactly \code{n}
       times.}
 
-    \item{\code{{n,}}}{The preceding item is matched \code{n} or more
+    \item{\samp{{n,}}}{The preceding item is matched \code{n} or more
       times.}
 
-    \item{\code{{n,m}}}{The preceding item is matched at least \code{n}
+    \item{\samp{{n,m}}}{The preceding item is matched at least \code{n}
       times, but not more than \code{m} times.}
   }
-  Repetition is greedy, so the maximal possible number of repeats is used.
+  By default repetition is greedy, so the maximal possible number of
+  repeats is used.  This can be changed to \sQuote{minimal} by appending
+  \code{?} to the quantifier.  (There are further quantifiers that allow
+  approximate matching: see the TRE documentation.)
 
-  Two regular expressions may be concatenated; the resulting regular
-  expression matches any string formed by concatenating two substrings
-  that respectively match the concatenated subexpressions.
+  Regular expressions may be concatenated; the resulting regular
+  expression matches any string formed by concatenating the substrings
+  that match the concatenated subexpressions.
 
-  Two regular expressions may be joined by the infix operator \code{|};
+  Two regular expressions may be joined by the infix operator \samp{|};
   the resulting regular expression matches any string matching either
-  subexpression.   For example, \code{abba|cde} matches either the
+  subexpression.   For example, \samp{abba|cde} matches either the
   string \code{abba} or the string \code{cde}.  Note that alternation
-  does not work inside character classes, where \code{|} has its literal
+  does not work inside character classes, where \samp{|} has its literal
   meaning.
 
   Repetition takes precedence over concatenation, which in turn takes
   precedence over alternation.  A whole subexpression may be enclosed in
   parentheses to override these precedence rules.
 
-  The backreference \code{\\N}, where N is a single digit, matches the
-  substring previously matched by the Nth parenthesized subexpression of
-  the regular expression.
+  The backreference \samp{\\N}, where \samp{N = 1 ... 9}, matches
+  the substring previously matched by the Nth parenthesized
+  subexpression of the regular expression.  (This is an
+  extension for extended regular expressions: POSIX defines them only
+  for basic ones.)
 }
 \section{Basic Regular Expressions}{
-  This section covers the regular expressions allowed if \code{extended
-  = FALSE} in \code{grep}, \code{regexpr}, \code{gregexpr}, \code{sub},
-  \code{gsub} and \code{strsplit}.
+  Basic regular expressions are used if \code{extended = FALSE} is
+  specified.  These are regarded as obsolete and were deprecated in \R
+  2.10.0; you should not rely on their conformance to the quirks
+  described in POSIX standard.
 
-  In basic regular expressions the metacharacters \code{?}, \code{+},
-  \code{\{}, \code{|}, \code{(}, and \code{)} lose their special meaning;
-  instead use the backslashed versions \code{\\?}, \code{\\+},
-  \code{\\ \{}, \code{\\|}, \code{\\(}, and \code{\\)}.  Thus the
-  metacharacters are \code{. \\ [ ^ $ *}.
+  In basic regular expressions the metacharacters \samp{?}, \samp{+},
+  \samp{\{}, \samp{|}, \samp{(}, and \samp{)} lose their special meaning;
+  instead use the backslashed versions \samp{\\?}, \samp{\\+},
+  \samp{\\ \{}, \samp{\\|}, \samp{\\(}, and \samp{\\)}.  Thus the
+  metacharacters are \samp{. \\ [ ^ $ *}, and \samp{^ $} only have a
+  special meaning at the beginning/end of an expression or parenthesized
+  subexpression.
+
+  Instead, either use \code{fixed = TRUE} to remove all metacharacters
+  or use extended regular expressions with appropriate escapes for
+  metacharacters.
 }
 \section{Perl Regular Expressions}{
   The \code{perl = TRUE} argument to \code{grep}, \code{regexpr},
   \code{gregexpr}, \code{sub}, \code{gsub} and \code{strsplit} switches
-  to the PCRE library that \sQuote{implements regular expression pattern
-  matching using the same syntax and semantics as Perl 5.6 or later,
-  with just a few differences}.  It adds some features from Perl 5.10.
+  to the PCRE library that implements regular expression pattern
+  matching using the same syntax and semantics as Perl 5.10,
+  with just a few differences.
 
   For complete details please consult the man pages for PCRE, especially
-  \code{man pcrepattern} and \code{man pcreapi}), on your system or from
+  \command{man pcrepattern} and \command{man pcreapi}), on your system or from
   the sources at \url{http://www.pcre.org}. If PCRE support was compiled
-  from the sources within \R, the PCRE version is 7.7 as described here
-  (version \eqn{\ge}{>=} 7.6 is required if \R is configured to use the
-  system's PCRE library).
+  from the sources within \R, the PCRE version is 8.0 as described here.
 
-  Perl regular expressions are computed byte-by-byte rather than
-  character-by-character except in UTF-8 locales.  Since the only
-  non-UTF-8 multibyte locales in common use are those for CJK languages,
-  they should be used with care in non-UTF-8 CJK locales.
+  Perl regular expressions can be computed byte-by-byte or
+  (UTF-8) character-by-character: the latter is used in all multibyte
+  locales and if any of the inputs are marked as UTF-8 (see
+  \code{\link{Encoding}}).
 
   All the regular expressions described for extended regular expressions
-  are accepted except \code{\\<} and \code{\\>}: in Perl all backslashed
+  are accepted except \samp{\\<} and \samp{\\>}: in Perl all backslashed
   metacharacters are alphanumeric and backslashed symbols always are
-  interpreted as a literal character. \code{\{} is not special if it would
-  be the start of an invalid interval specification.  There can be more than
-  9 backreferences.  In a UTF-8 locale the named character classes only
-  match ASCII characters: see \code{\\p} below for an alternative.
+  interpreted as a literal character. \samp{\{} is not special if it
+  would be the start of an invalid interval specification.  There can be
+  more than 9 backreferences (but the replacement in \code{\link{sub}}
+  can only refer to the first 9).
 
-  The construct \code{(?...)} is used for Perl extensions in a variety
-  of ways depending on what immediately follows the \code{?}.
+  Character ranges are interpreted in the numerical order of
+  the characters, either as bytes in a single-byte locale or as Unicode
+  points in UTF-8 mode.  So in either case \samp{[A-Za-z]} specifies
+  the set of ASCII letters.
+
+  In UTF-8 mode the named character classes only match ASCII characters:
+  see \samp{\\p} below for an alternative.
+
+  The construct \samp{(?...)} is used for Perl extensions in a variety
+  of ways depending on what immediately follows the \samp{?}.
 
   Perl-like matching can work in several modes, set by the options
-  \code{(?i)} (caseless, equivalent to Perl's \code{/i}), \code{(?m)}
-  (multiline, equivalent to Perl's \code{/m}), \code{(?s)} (single line,
+  \samp{(?i)} (caseless, equivalent to Perl's \samp{/i}), \samp{(?m)}
+  (multiline, equivalent to Perl's \samp{/m}), \samp{(?s)} (single line,
   so a dot matches all characters, even new lines: equivalent to Perl's
-  \code{/s}) and \code{(?x)} (extended, whitespace data characters are
+  \samp{/s}) and \samp{(?x)} (extended, whitespace data characters are
   ignored unless escaped and comments are allowed: equivalent to Perl's
-  \code{/x}).  These can be concatenated, so for example, \code{(?im)}
+  \samp{/x}).  These can be concatenated, so for example, \samp{(?im)}
   sets caseless multiline matching.  It is also possible to unset these
   options by preceding the letter with a hyphen, and to combine setting
-  and unsetting such as \code{(?im-sx)}.  These settings can be applied
+  and unsetting such as \samp{(?im-sx)}.  These settings can be applied
   within patterns, and then apply to the remainder of the pattern.
-  Additional options not in Perl include \code{(?U)} to set
-  \sQuote{ungreedy} mode (so matching is minimal unless \code{?} is used,
-  when it is greedy).  Initially none of these options are set.
+  Additional options not in Perl include \samp{(?U)} to set
+  \sQuote{ungreedy} mode (so matching is minimal unless \samp{?} is used
+  as part of the repetition quantifier, when it is greedy).  Initially
+  none of these options are set.
 
   If you want to remove the special meaning from a sequence of
-  characters, you can do so by putting them between \code{\\Q} and
-  \code{\\E}. This is different from Perl in that \code{$} and \code{@} are
-  handled as literals in \code{\\Q...\\E} sequences in PCRE, whereas in
-  Perl, \code{$} and \code{@} cause variable interpolation.
+  characters, you can do so by putting them between \samp{\\Q} and
+  \samp{\\E}. This is different from Perl in that \samp{$} and \samp{@} are
+  handled as literals in \samp{\\Q...\\E} sequences in PCRE, whereas in
+  Perl, \samp{$} and \samp{@} cause variable interpolation.
 
-  The escape sequences \code{\\d}, \code{\\s} and \code{\\w} represent any
-  decimal digit, space character and \sQuote{word} character
-  (letter, digit or underscore in the current locale, except that in a
-  UTF-8 locale only ASCII letters are considered) respectively, and
-  their upper-case versions represent their negation.  Unlike POSIX and
-  earlier versions of Perl and PCRE, vertical tab is not regarded as a
-  whitespace character.
+  The escape sequences \samp{\\d}, \samp{\\s} and \samp{\\w} represent
+  any decimal digit, space character and \sQuote{word} character
+  (letter, digit or underscore in the current locale: in UTF-8 mode only
+  ASCII letters and digits are considered) respectively, and their
+  upper-case versions represent their negation.  Unlike POSIX, vertical
+  tab is not regarded as a space character.  Sequences \samp{\\h},
+  \samp{\\v}, \samp{\\H} and \samp{\\V} match horizontal and vertical
+  space or the negation.  (In UTF-8 mode, these do match non-ASCII
+  Unicode points.)
 
-  Escape sequence \code{\\a} is \code{BEL}, \code{\\e} is \code{ESC},
-  \code{\\f} is \code{FF}, \code{\\n} is \code{LF}, \code{\\r} is
-  \code{CR} and \code{\\t} is \code{TAB}.  In addition \code{\\cx} is
-  \code{cntrl-x} for any \code{x}, \code{\\ddd} is the octal character
-  \code{ddd} (for up to three digits unless interpretable as a
-  backreference, as \code{\\1} to \code{\\7} always are), and
-  \code{\\xhh} specifies a character in hex.  In a UTF-8 locale,
-  \code{\\x\{h...\}} specifies a Unicode point by one or more hex
-  digits.
+  There are additional escape sequences: \samp{\\cx} is
+  \samp{cntrl-x} for any \samp{x}, \samp{\\ddd} is the
+  octal character (for up to three digits unless
+  interpretable as a backreference, as \samp{\\1} to \samp{\\7} always
+  are), and \samp{\\xhh} specifies a character by two hex digits.
+  In a UTF-8 locale, \samp{\\x\{h...\}} specifies a Unicode point
+  by one or more hex digits.  (Note that some of these will be
+  interpreted by \R's parser in literal character strings.)
 
-  Outside a character class, \code{\\b} matches a word boundary,
-  \code{\\B} is its negation, \code{\\A} matches at start of a subject (even
-  in multiline mode, unlike \code{^}), \code{\\Z} matches at end of a
-  subject or before newline at end, \code{\\z} matches at end of a
-  subject. and \code{\\G} matches at first matching position in a
-  subject (which is subtly different from Perl's end of the previous
-  match).  \code{\\C} matches a single byte. including a newline.
-  In a UTF-8 locale, \code{\\R} matches any Unicode newline character
-  (not just CR), and \code{\\X} matches any number of Unicode characters
-  that form an extended Unicode sequence.
+  Outside a character class, \samp{\\A} matches at the start of a
+  subject (even in multiline mode, unlike \samp{^}), \samp{\\Z} matches
+  at the end of a subject or before a newline at the end, \samp{\\z}
+  matches only at end of a subject. and \samp{\\G} matches at first
+  matching position in a subject (which is subtly different from Perl's
+  end of the previous match).  \samp{\\C} matches a single
+  byte. including a newline, but its use is warned against.  In UTF-8
+  mode, \samp{\\R} matches any Unicode newline character (not just CR),
+  and \samp{\\X} matches any number of Unicode characters that form an
+  extended Unicode sequence.
 
-  In a UTF-8 locale, some Unicode properties are supported via
-  \code{\\p\{\var{xx}\}} and \code{\\P\{\var{xx}\}} which match
-  characters with and without property \code{\var{xx}} respectively.
+  In UTF-8 mode, some Unicode properties are supported via
+  \samp{\\p\{xx\}} and \samp{\\P\{xx\}} which match
+  characters with and without property \samp{xx} respectively.
   For a list of supported properties see the PCRE documentation, but for
-  example \code{Lu} is \sQuote{upper case letter} and \code{Sc} is
+  example \samp{Lu} is \sQuote{upper case letter} and \samp{Sc} is
   \sQuote{currency symbol}.
 
-  The same repetition quantifiers as extended POSIX are supported.
-  However, if a quantifier is followed by \code{?}, the match is
-  \sQuote{ungreedy}, that is as short as possible rather than as long as
-  possible (unless the meanings are reversed by the \code{(?U)} option.)
-
-  The sequence \code{(?#} marks the start of a comment which continues
+  The sequence \samp{(?#} marks the start of a comment which continues
   up to the next closing parenthesis.  Nested parentheses are not
   permitted.  The characters that make up a comment play no part at all in
   the pattern matching.
 
-  If the extended option is set, an unescaped \code{#} character outside
+  If the extended option is set, an unescaped \samp{#} character outside
   a character class introduces a comment that continues up to the next
   newline character in the pattern.
 
-  The pattern \code{(?:...)} groups characters just as parentheses do
+  The pattern \samp{(?:...)} groups characters just as parentheses do
   but does not make a backreference.
 
-  Patterns \code{(?=...)} and \code{(?!...)} are zero-width positive and
+  Patterns \samp{(?=...)} and \samp{(?!...)} are zero-width positive and
   negative lookahead \emph{assertions}: they match if an attempt to
   match the \code{\dots} forward from the current position would succeed
   (or not), but use up no characters in the string being processed.
-  Patterns \code{(?<=...)} and \code{(?<!...)} are the lookbehind
-  equivalents: they do not allow repetition quantifiers nor \code{\\C}
+  Patterns \samp{(?<=...)} and \samp{(?<!...)} are the lookbehind
+  equivalents: they do not allow repetition quantifiers nor \samp{\\C}
   in \code{\dots}.
 
   Named subpatterns, atomic grouping, possessive qualifiers and conditional
   and recursive patterns are not covered here.
 }
 \author{
-  This help page is based on the documentation of GNU grep 2.4.2 and the
-  \code{pcrepattern} man page from PCRE 7.4.
+  This help page is based on the documentation of GNU grep 2.4.2, the
+  TRE documentation and the POSIX standard,  and the \code{pcrepattern}
+  man page from PCRE 8.0.
 }
 \seealso{
   \code{\link{grep}}, \code{\link{apropos}}, \code{\link{browseEnv}},
   \code{\link{glob2rx}}, \code{\link{help.search}}, \code{\link{list.files}},
   \code{\link{ls}} and \code{\link{strsplit}}.
 
+  The TRE documentation at
+  \url{http://laurikari.net/tre/documentation/regex-syntax/}).
+
+  The POSIX 1003.2 standard at
   \url{http://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap09.html}
 
   The \code{pcrepattern} can be found as part of

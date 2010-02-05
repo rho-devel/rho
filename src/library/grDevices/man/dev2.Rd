@@ -57,7 +57,7 @@ dev.control(displaylist = c("inhibit", "enable"))
 
   \code{dev.control} allows the user to control the recording of
   graphics operations in a device.  If \code{displaylist} is \code{"inhibit"}
-  (\code{"enable")} then recording is turned off (on). It is only safe
+  (\code{"enable"}) then recording is turned off (on). It is only safe
   to change this at the beginning of a plot (just before or just after a
   new page).  Initially recording is on for screen devices, and off for
   print devices.
@@ -119,13 +119,8 @@ dev.control(displaylist = c("inhibit", "enable"))
   \code{postscript}) it sets the width and height in the same way as
   \code{dev.copy2eps}.  This will not be appropriate unless the device
   specifies dimensions in inches, in particular not for
-#ifdef unix
-  \code{png} and \code{jpeg}.
-#endif
-#ifdef windows
-  \code{png}, \code{jpeg} and \code{bmp} unless \code{units="inches"}
-  is specified.
-#endif
+  \code{png}, \code{jpeg}, \code{tiff} and \code{bmp} unless
+  \code{units="inches"} is specified.
 }
 \note{
   Most devices (including all screen devices) have a display list

@@ -1,6 +1,6 @@
 % File src/library/utils/man/bug.report.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2009 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{bug.report}
@@ -15,7 +15,7 @@ bug.report(subject = "",
 }
 \arguments{
   \item{subject}{Subject of the email. Please do not use single quotes
-    (\code{'}) in the subject! File separate bug reports for multiple bugs}
+    (\samp{'}) in the subject! File separate bug reports for multiple bugs}
   \item{ccaddress}{Optional email address for copies (default is current
     user).  Use \code{ccaddress = FALSE} for no copies.}
   \item{method}{Submission method, one of \code{"mailx"},
@@ -147,7 +147,9 @@ bug.report(subject = "",
   Bug reports on \strong{contributed packages} should be sent to the
   package maintainer rather than to r-bugs.
 }
-\seealso{R FAQ, also \code{\link{sessionInfo}()} from which you may add
+\seealso{\code{\link{help.request}} which you possibly should try
+  \emph{before} \code{bug.report}.
+  The R FAQ, also \code{\link{sessionInfo}()} from which you may add
   to the bug report.}
 \author{This help page is adapted from the Emacs manual and the R FAQ}
 \keyword{utilities}

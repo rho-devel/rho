@@ -1,14 +1,14 @@
 # German translation of 
 # src/library/graphics/po/R-graphics.pot
-# Copyright (C) 2005-2008 The R Foundation
+# Copyright (C) 2005-2009 The R Foundation
 # This file is distributed under the same license as the R package.
-# Detlef Steuer <steuer@hsu-hh.de>, 2007-2008.
+# Detlef Steuer <steuer@hsu-hh.de>, 2007-2009.
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.8.0\n"
+"Project-Id-Version: R 2.10.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2008-02-08 14:26\n"
-"PO-Revision-Date: 2008-09-18 16:28+0200\n"
+"POT-Creation-Date: 2009-10-05 14:06\n"
+"PO-Revision-Date: 2009-10-07 14:25+0200\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R-Core <R-core@r-project.org>\n"
 "MIME-Version: 1.0\n"
@@ -27,6 +27,9 @@ msgstr "Regressionskoeffizienten"
 
 msgid "'a' and 'b' are overridden by 'coef'"
 msgstr "'a' und 'b' werden überschrieben durch 'coef'"
+
+msgid "one of 'x1' and 'y1' must be given"
+msgstr ""
 
 msgid "'x' must be a 2-d contingency table"
 msgstr "'x' muss eine 2-D Kontingenztafel sein"
@@ -252,8 +255,12 @@ msgstr "'text.width' muss nummerisch >= 0 sein"
 msgid "horizontal specification overrides: Number of columns :="
 msgstr "horizontale Spezifikation überschreibt Anzahl der Spalten ;="
 
-msgid "not using pch[2..] since pch[1] has multiple chars"
-msgstr "nutze pch[2..] nicht, da pch[1] mehrere Zeichen enthält"
+msgid "'merge = TRUE' has no effect when no line segments are drawn"
+msgstr ""
+"'merge = TRUE' hat keine Effekt, wenn keine Liniensegmente gezeichnent werden"
+
+msgid "not using pch[2..] since pch[1L] has multiple chars"
+msgstr "nutze pch[2..] nicht, da pch[1L] mehrere Zeichen enthält"
 
 msgid "must specify at least one of 'x' and 'y'"
 msgstr "entweder 'x' oder 'y' muss mindestens angegeben werden"
@@ -265,7 +272,8 @@ msgid "'x' and 'y' must have only 1 or the same number of columns"
 msgstr "'x' und 'y' müssen entweder 1 oder die selbe Spaltenanzahl haben"
 
 msgid "default 'pch' is smaller than number of columns and hence recycled"
-msgstr "Standard 'pch' ist kürzer als Anzahl der Spalten und wird deshalb recycelt"
+msgstr ""
+"Standard 'pch' ist kürzer als Anzahl der Spalten und wird deshalb recycelt"
 
 msgid "missing values in contingency table"
 msgstr "fehlende Werte in Kontingenztabelle"
@@ -344,6 +352,9 @@ msgstr "'figs' muss ein Vektor oder eine Matrix mit 4 Spalten sein"
 
 msgid "'figs' must specify at least one screen"
 msgstr "'figs' muss zumindet einen Screen angeben"
+
+msgid "'nrpoints' should be numeric scalar with value >= 0."
+msgstr "'nrpoints' sollte ein numerischer Skalar >= 0 sein."
 
 msgid "a 2-way table has to be specified"
 msgstr "eine 2-Wege-Tafel muss angegeben werden"

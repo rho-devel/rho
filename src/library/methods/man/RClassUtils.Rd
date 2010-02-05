@@ -1,7 +1,7 @@
 % File src/library/methods/man/RClassUtils.Rd
 % Part of the R package, http://www.R-project.org
 % Copyright 1995-2007 R Core Development Team
-% Copyright 2008      The R Foundation
+% Copyright 2008-2009 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{RClassUtils}
@@ -16,7 +16,6 @@
 \alias{subclassesMetaName}
 \alias{extendsMetaName}
 \alias{classPrototypeDef-class}
-\alias{trySilent}
 %%
 \alias{testVirtual}
 \alias{makePrototypeFromClassDef}
@@ -51,6 +50,7 @@
 \alias{.InitBasicClasses}
 \alias{.InitMethodsListClass}
 \alias{.setCoerceGeneric}
+\alias{conditionalExtension-class}
 
 \title{Utilities for Managing Class Definitions}
 \description{
@@ -86,8 +86,6 @@ reconcilePropertiesAndPrototype(name, properties, prototype,
        superClasses, where)
 
 tryNew(Class, where)
-
-trySilent(expr)
 
 empty.dump()
 
