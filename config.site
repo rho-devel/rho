@@ -55,7 +55,7 @@
 ## and '-g' in all other cases except icc (for which see R-admin.html).
 # 2007/12/07 arr: this is obviously not the right place to specify
 # -fexceptions, but I don't know what is!
-CFLAGS="-fexceptions -g -O1"
+CFLAGS="-fexceptions -g -O2"
 
 ## Defines for C compilation.
 ## Use this to specify defines to be used in the compilation of R,
