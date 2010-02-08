@@ -134,15 +134,21 @@ Environment::findBinding(const Symbol* symbol)
 
 void Environment::flushFromCache(const Symbol* sym)
 {
-    if (!sym)
-	s_cache->clear();
-    else 
+    if (sym)
 	s_cache->erase(sym);
+    else {
+	// Clear the cache, but retain the current number of buckets:
+	size_t buckets = s_cache->bucket_count();
+	s_cache->clear();
+	s_cache->rehash(buckets);
+    }
 }
 
 void Environment::initialize()
 {
-    s_cache = new Cache;
+    // 509 is largest prime <= 512.  This will have capacity for 254
+    // Symbols at load factor 0.5.
+    s_cache = new Cache(509);
     s_cache->max_load_factor(0.5);
     static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
     R_EmptyEnv = empty_env.get();
