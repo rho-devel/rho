@@ -637,6 +637,41 @@ namespace CXXR {
      */
     void frameReadPairList(Frame* frame, PairList* bindings);
 
+    /** @brief Does a Symbol correspond to a missing argument?
+     *
+     * Within a Frame \a frame, a Symbol \a sym is considered to
+     * correspond to a missing argument if any of the following
+     * criteria is satisfied:
+     *
+     * <ol>
+     * <li>\a sym is itself Symbol::missingArgument()
+     * (R_MissingArg).</li>
+     *
+     * <li>The binding of \a sym within \a frame is flagged as having
+     * origin Frame::Binding::MISSING.</li>
+     *
+     * <li>\a sym is bound to Symbol::missingArgument().</li>
+     *
+     * <li>\a sym is bound to a unforced Promise, and forcing the
+     * Promise would consist in evaluating a Symbol which - by a
+     * recursive application of these criteria - is missing with
+     * respect to the Frame of the Environment of the Promise.</li>
+     *
+     * <ol>
+     *
+     * Note that unless Criterion 1 applies, \a sym is not considered
+     * missing if it is not bound at all within \a frame, or if it has
+     * an active binding.
+     *
+     * @param sym Non-null pointer to the Symbol whose missing status
+     *          is to be determined.
+     *
+     * @param frame Non-null pointer to the Frame with respect to
+     *          which missingness is to be determined.
+     *
+     * @return true iff \a sym is missing with respect to \a frame.
+     */
+    bool isMissingArgument(const Symbol* sym, Frame* frame);
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a

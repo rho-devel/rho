@@ -160,4 +160,54 @@ namespace CXXR {
 	    bdg->fromPairList(pl);
 	}
     }
+
+    bool isMissingArgument(const Symbol* sym, Frame* frame)
+    {
+	RObject* rawval;
+	if (sym->isDotDotSymbol()) {
+	    unsigned int ddv = sym->dotDotIndex();
+	    Frame::Binding* bdg = frame->binding(CXXR::DotsSymbol);
+	    if (!bdg)
+		return false;  // This is what CR does.  Is it really right?
+	    ConsCell* cc = SEXP_downcast<ConsCell*>(bdg->rawValue());
+	    while (cc && ddv > 1) {
+		cc = cc->tail();
+		--ddv;
+	    }
+	    if (!cc)
+		return true;
+	    rawval = cc->car();
+	} else {
+	    // Not a ..n symbol:
+	    if (sym == Symbol::missingArgument())
+		return true;
+	    Frame::Binding* bdg = frame->binding(sym);
+	    if (!bdg)
+		return false;
+	    rawval = bdg->rawValue();
+	    if (bdg->origin() == Frame::Binding::MISSING
+		|| rawval == Symbol::missingArgument())
+		return  true;
+	    if (bdg->isActive())
+		return false;
+	}
+	if (rawval && rawval->sexptype() == PROMSXP) {
+	    Promise* prom = static_cast<Promise*>(rawval);
+	    const RObject* valgen = prom->valueGenerator();
+	    if (prom->value() == Symbol::unboundValue()
+		&& valgen && valgen->sexptype() == SYMSXP) {
+		if (prom->underEvaluation())
+		    return true;
+		else {
+		    const Symbol* promsym = static_cast<const Symbol*>(valgen);
+		    prom->markUnderEvaluation(true);
+		    bool ans = isMissingArgument(promsym,
+						 prom->environment()->frame());
+		    prom->markUnderEvaluation(false);
+		    return ans;
+		}
+	    }
+	}
+	return false;
+    }
 }

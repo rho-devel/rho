@@ -55,7 +55,6 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
 	Rf_errorcall(0, _("evaluation nested too deeply: "
 			  "infinite recursion / options(expressions=)?"));
     }
-    R_CheckStack();
     if (--s_countdown == 0) {
 	R_CheckUserInterrupt();
 	s_countdown = s_countdown_start;
@@ -106,7 +105,9 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 	} else {
 	    RObject* outcar = Symbol::missingArgument();
 	    if (incar != Symbol::missingArgument()
-		&& !(Rf_isSymbol(incar) && R_isMissing(incar, env)))
+		&& !(Rf_isSymbol(incar)
+		     && isMissingArgument(static_cast<Symbol*>(incar),
+					  env->frame())))
 		outcar = evaluate(incar, env);
 	    else if (first_missing_arg == 0)
 		first_missing_arg = arg_number;

@@ -1033,68 +1033,11 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 int attribute_hidden
 R_isMissing(SEXP symbol, SEXP rho)
 {
-    int ddv=0;
-    SEXP s;
-
-    GCStackRoot<> vl;  // Binding defined in PairList form
-
-    if (symbol == R_MissingArg) /* Yes, this can happen */
-	return 1;
-
-    /* check for infinite recursion */
-    R_CheckStack();
-
-    if (DDVAL(symbol)) {
-	s = R_DotsSymbol;
-	ddv = ddVal(symbol);
-    }
-    else
-	s = symbol;
-
-    if (rho == R_BaseEnv || rho == R_BaseNamespace)
-	return 0;  /* is this really the right thing to do? LT */
-
-    Frame::Binding* bdg = findVarLocInFrame(rho, s, NULL);
-    vl = (bdg ? bdg->asPairList() : 0);
-    if (vl != R_NilValue) {
-	if (DDVAL(symbol)) {
-	    if (length(CAR(vl)) < ddv || CAR(vl) == R_MissingArg)
-		return 1;
-	    /* defineVar(symbol, value, R_GlobalEnv); */
-	    else
-		vl = nthcdr(CAR(vl), ddv-1);
-	}
-	if (MISSING(vl) == 1 || CAR(vl) == R_MissingArg)
-	    return 1;
-	if (IS_ACTIVE_BINDING(vl))
-	    return 0;
-	if (TYPEOF(CAR(vl)) == PROMSXP &&
-	    PRVALUE(CAR(vl)) == R_UnboundValue &&
-	    TYPEOF(PREXPR(CAR(vl))) == SYMSXP) {
-	    Promise* prom = static_cast<Promise*>(CAR(vl));
-	    /* This code uses the PRSEEN bit to detect cycles.  If a
-	       cycle occurs then a missing argument was encountered,
-	       so the return value is TRUE.  It would be a little
-	       safer to use the promise stack to ensure unsetting of
-	       the bits in the event of a longjump, but doing so would
-	       require distinguishing between evaluating promises and
-	       checking for missingness.  Because of the test above
-	       for an active binding a longjmp should only happen if
-	       the stack check fails.  LT */
-	    if (prom->underEvaluation())
-		return 1;
-	    else {
-		int val;
-		prom->markUnderEvaluation(true);
-		val = R_isMissing(PREXPR(CAR(vl)), PRENV(CAR(vl)));
-		prom->markUnderEvaluation(false);
-		return val;
-	    }
-	}
-	else
-	    return 0;
-    }
-    return 0;
+    if (!rho)
+	return 0;
+    Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    return isMissingArgument(sym, env->frame());
 }
 
 /* this is primitive */
