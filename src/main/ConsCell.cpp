@@ -96,16 +96,12 @@ size_t ConsCell::listLength(const ConsCell* start)
 
 void ConsCell::visitReferents(const_visitor* v) const
 {
-    const ConsCell* p = this;
-    do {
-	const GCNode* car = p->m_car;
-	const GCNode* tag = p->m_tag;
-	const ConsCell* tail = p->m_tail;
-	p->RObject::visitReferents(v);
-	if (car) car->conductVisitor(v);
-	if (tag) tag->conductVisitor(v);
-	p = tail;
-    } while (p && (*v)(p));
+    RObject::visitReferents(v);
+    const GCNode* tag = m_tag;
+    const GCNode* tail = m_tail;
+    if (m_car) m_car->conductVisitor(v);
+    if (tag) tag->conductVisitor(v);
+    if (tail) tail->conductVisitor(v);
 }
 
 namespace {

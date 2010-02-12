@@ -46,6 +46,17 @@
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
 
+/** @def GC_FIND_LOOPS
+ *
+ * If the preprocessor variable GC_FIND_LOOPS is defined, extra code
+ * is inserted which, during a mark-sweep garbage collection, writes
+ * to the standard output information about any cycles encountered in
+ * the GCNode-GCEdge graph.
+ */
+#ifdef DOXYGEN
+#define GC_FIND_LOOPS
+#endif
+
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
      *
@@ -122,8 +133,10 @@ namespace CXXR {
 	     *
 	     * @param node Node to be visited.
 	     *
-	     * @return true if the visitor wishes to visit the
-	     * children of this node, otherwise false.
+	     * @return The meaning of the return value depends on the
+	     * particular type of const_visitor object, but typically
+	     * a return value of true signifies that substantive work
+	     * was done during the visit.
 	     */
 	    virtual bool operator()(const GCNode* node) = 0;
 	};
@@ -221,21 +234,24 @@ namespace CXXR {
 	 */
 	static bool check();
 
-	/** @brief Present this node, and maybe its children, to a
-	 * visitor.
+	/** @brief Present this node to a visitor.
 	 *
-	 * Present this node to a visitor and, if the visitor so
-	 * requests, conduct the visitor to the children of this node.
+	 * The visitor may decide (within its operator() method) to
+	 * propagate its visit to the children of this node.
 	 * 
 	 * @param v Pointer to the visitor object.
 	 *
-	 * @return the result of applying the visitor to \e this node.
+	 * @return The meaning of the return value depends on the
+	 * particular type of const_visitor object, but typically a
+	 * return value of true signifies that substantive work was
+	 * done during the visit.
+	 *
+	 * @note This function is really syntactic sugar, and could be
+	 * eliminated.
 	 */
 	bool conductVisitor(const_visitor* v) const
 	{
-	    if (!(*v)(this)) return false;
-	    visitReferents(v);
-	    return true;
+	    return (*v)(this);
 	}
 
 	/** @brief Record that construction of a node is complete.
@@ -419,8 +435,13 @@ namespace CXXR {
 	    Marker()
 	    {}
 	    
-	    // Virtual function of const_visitor:
+	    // Virtual function of const_visitor.  A return value of
+	    // true signifies that at least one node was newly marked.
 	    bool operator()(const GCNode* node);
+#ifdef GC_FIND_LOOPS
+	private:
+	    std::vector<const GCNode*> m_ariadne;
+#endif
 	};
 
 	typedef HeterogeneousList<GCNode> List;
