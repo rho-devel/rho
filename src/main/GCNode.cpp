@@ -208,7 +208,7 @@ void GCNode::initialize()
     // s_watch_addr) to the required value.  Also set a breakpoint as
     // indicated within the watch() function below.
 #endif
-    GCRootBase::initialize();
+    GCRootBase::initialize();  // BREAKPOINT A
     GCStackRootBase::initialize();
     GCManager::initialize();
 }
@@ -292,7 +292,7 @@ void GCNode::watch() const
     if ((s_watch_id && m_id == s_watch_id)
 	|| (s_watch_addr && this == s_watch_addr))
 	// This is just somewhere to put a breakpoint:
-	m_bits = m_bits;
+	m_bits = m_bits;  // BREAKPOINT B
 }
 #endif
 
