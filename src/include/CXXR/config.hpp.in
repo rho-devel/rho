@@ -81,6 +81,7 @@
 #ifdef DOXYGEN
 #define CHECK_EXPOSURE
 #endif
+#define CHECK_EXPOSURE
 
 /** @def FILL55
  *
