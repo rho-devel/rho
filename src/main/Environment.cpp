@@ -42,6 +42,7 @@
 #include "CXXR/Environment.h"
 
 #include <cstdlib>
+#include <typeinfo>
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/FunctionBase.h"
@@ -79,6 +80,19 @@ SEXP R_EmptyEnv;
 SEXP R_BaseEnv;
 SEXP R_GlobalEnv;
 SEXP R_BaseNamespace;
+
+// The implementation assumes that any loops in the node graph will
+// include at least one Environment.
+void Environment::LeakMonitor::operator()(const GCNode* node)
+{
+    if (typeid(*node) == typeid(Environment)) {
+	const Environment* env = static_cast<const Environment*>(node);
+	if (env->m_leaked)
+	    return;
+	env->m_leaked = true;
+    }
+    node->visitReferents(this);
+}
 
 void Environment::cleanup()
 {
@@ -174,6 +188,15 @@ void Environment::makeCached()
     if (!m_cached && m_frame)
 	m_frame->incCacheCount();
     m_cached = true;
+}
+
+void Environment::maybeDetachFrame()
+{
+    if (!m_leaked) {
+	if (m_cached && m_frame)
+	    m_frame->decCacheCount();
+	m_frame = 0;
+    }
 }
 
 unsigned int Environment::packGPBits() const

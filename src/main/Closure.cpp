@@ -121,6 +121,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	} while (redo);
 	Rf_endcontext(&cntxt);
     }
+    Environment::monitorLeaks(ans);
+    newenv->maybeDetachFrame();
     return ans;
 }
 

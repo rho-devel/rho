@@ -78,7 +78,7 @@ namespace CXXR {
 	explicit Environment(Environment* enclosing)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame)), m_single_stepping(false),
-	      m_locked(false), m_cached(false)
+	      m_locked(false), m_cached(false), m_leaked(false)
 	{}
 
 	/**
@@ -95,7 +95,8 @@ namespace CXXR {
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_single_stepping(false), m_locked(false), m_cached(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false)
 	{}
 
 	/** @brief Constructor with specified Frame.
@@ -111,7 +112,8 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false), m_locked(false), m_cached(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false)
 	{}
 
 	/** @brief Base environment.
@@ -209,6 +211,40 @@ namespace CXXR {
 	    return s_global;
 	}
 
+	/** @brief Disconnect the Environment from its Frame, if safe.
+	 *
+	 * Just before the application of a Closure returns, this
+	 * function is called on the local Environment of the Closure.
+	 * If it appears that the Environment will no longer be
+	 * reachable after the Closure returns (i.e., the Environment
+	 * is not 'leaked'), it detaches the Environment from its
+	 * Frame.  This breaks possible loops in the GCNode/GCEdge
+	 * graph, thus enabling the Environment to be
+	 * garbage-collected immediately.
+	 */
+	void maybeDetachFrame();
+
+	/** @brief Look for Environment objects that may have
+	 *  'leaked'.
+	 *
+	 * This function determines if any Environment objects are
+	 * reachable from \a node, and if so marks them as 'leaked'.
+	 * It is called in respect of any objects that are 'exported'
+	 * from a Closure call, for example the return value of the
+	 * call, and the objects of any non-local assignments within
+	 * the call.
+	 *
+	 * @param node Pointer (possibly null) to the object to be
+	 * scrutinised.
+	 */
+	static void monitorLeaks(const GCNode* node)
+	{
+	    if (node) {
+		LeakMonitor monitor;
+		monitor(node);
+	    }
+	}
+
 	/** @brief Replace the enclosing environment.
 	 *
 	 * @param new_enclos Pointer to the environment now to be
@@ -292,6 +328,14 @@ namespace CXXR {
 	friend class SchwarzCounter<Environment>;
 	friend class Frame;
 
+	struct LeakMonitor : public GCNode::const_visitor {
+	    LeakMonitor()
+	    {}
+
+	    // Virtual function of const_visitor:
+	    void operator()(const GCNode* node);
+	};
+
 	// The class maintains a cache of Symbol Bindings found along
 	// the search path:
 
@@ -318,6 +362,11 @@ namespace CXXR {
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
+	// For local environments, m_leaked is set to true to signify
+	// that the environment may continue to be reachable after the
+	// return of the Closure call that created it.  It has no
+	// particular meaning for non-local environments.
+	mutable bool m_leaked;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

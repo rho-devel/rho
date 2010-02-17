@@ -531,6 +531,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	Rprintf("exiting from: ");
 	PrintValueRec(call, rho);
     }
+    Environment::monitorLeaks(tmp);
+    newrho->maybeDetachFrame();
     return (tmp);
 }
 
@@ -1282,6 +1284,9 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     saverhs = rhs = eval(CADR(args), rho);
 
+    if (PRIMVAL(op) == 2)
+	Environment::monitorLeaks(rhs);
+
     /*  FIXME: We need to ensure that this works for hashed
 	environments.  This code only works for unhashed ones.  the
 	syntax error here is a deliberate marker so I don't forget that
@@ -1424,6 +1429,7 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
     case 2:						/* <<- */
 	if (isSymbol(CAR(args))) {
 	    s = eval(CADR(args), rho);
+	    Environment::monitorLeaks(s);
 	    if (NAMED(s))
 		s = duplicate(s);
 	    PROTECT(s);
