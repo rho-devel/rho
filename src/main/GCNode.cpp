@@ -258,7 +258,7 @@ void GCNode::sweep()
 	GCNode::Marker marker;
 	while (!s_live->empty()) {
 	    GCNode* node = s_live->front();
-	    node->conductVisitor(&marker);
+	    marker(node);
 	}
 	s_live->splice_back(s_reachable);
 	swap(reachable, s_reachable);
