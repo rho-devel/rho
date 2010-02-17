@@ -203,7 +203,8 @@ void Symbol::visitReferents(const_visitor* v) const
 {
     const GCNode* name = m_name;
     RObject::visitReferents(v);
-    if (name) name->conductVisitor(v);
+    if (name)
+	(*v)(name);
 }
 
 // Predefined Symbols:

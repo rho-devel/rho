@@ -79,7 +79,8 @@ void GCRootBase::visitRoots(GCNode::const_visitor* v)
     List::iterator end = s_roots->end();
     for (List::iterator it = s_roots->begin(); it != end; ++it) {
 	const GCNode* n = *it;
-	if (n) n->conductVisitor(v);
+	if (n)
+	    (*v)(n);
     }
 }
 

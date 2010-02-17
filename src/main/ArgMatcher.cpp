@@ -263,5 +263,5 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 void ArgMatcher::visitReferents(const_visitor* v) const
 {
     if (m_formals)
-	m_formals->conductVisitor(v);
+	(*v)(m_formals);
 }

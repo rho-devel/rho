@@ -129,16 +129,16 @@ namespace CXXR {
 	struct const_visitor {
 	    virtual ~const_visitor() {}
 
-	    /** @brief Perform visit
+	    /** @brief Perform visit.
+	     *
+	     *
+	     * In the light of what the visitor discovers, it may
+	     * elect also to visit the referents of \a node, by
+	     * calling visitReferents().
 	     *
 	     * @param node Node to be visited.
-	     *
-	     * @return The meaning of the return value depends on the
-	     * particular type of const_visitor object, but typically
-	     * a return value of true signifies that substantive work
-	     * was done during the visit.
 	     */
-	    virtual bool operator()(const GCNode* node) = 0;
+	    virtual void operator()(const GCNode* node) = 0;
 	};
 
 	/** @brief Not for general use.
@@ -233,26 +233,6 @@ namespace CXXR {
 	 * facilitate use with \c assert.
 	 */
 	static bool check();
-
-	/** @brief Present this node to a visitor.
-	 *
-	 * The visitor may decide (within its operator() method) to
-	 * propagate its visit to the children of this node.
-	 * 
-	 * @param v Pointer to the visitor object.
-	 *
-	 * @return The meaning of the return value depends on the
-	 * particular type of const_visitor object, but typically a
-	 * return value of true signifies that substantive work was
-	 * done during the visit.
-	 *
-	 * @note This function is really syntactic sugar, and could be
-	 * eliminated.
-	 */
-	bool conductVisitor(const_visitor* v) const
-	{
-	    return (*v)(this);
-	}
 
 	/** @brief Record that construction of a node is complete.
 	 *
@@ -374,7 +354,7 @@ namespace CXXR {
 	 * the reimplemented version must remember to invoke
 	 * visitReferents() for the immediate base class of the
 	 * derived class, to ensure that \e all referents of the
-	 * object get visited.  It is recommended that implementations
+	 * object get visited.  It is suggested that implementations
 	 * set up stack-based pointers to all the referents of a node
 	 * before visiting any of them; in that case, if the
 	 * (recursive) visiting pushes the node out of the processor
@@ -433,13 +413,19 @@ namespace CXXR {
 	class Marker : public const_visitor {
 	public:
 	    Marker()
+		: m_marks_applied(0)
 	    {}
-	    
-	    // Virtual function of const_visitor.  A return value of
-	    // true signifies that at least one node was newly marked.
-	    bool operator()(const GCNode* node);
-#ifdef GC_FIND_LOOPS
+
+	    unsigned int marksApplied() const
+	    {
+		return m_marks_applied;
+	    }
+
+	    // Virtual function of const_visitor:
+	    void operator()(const GCNode* node);
 	private:
+	    unsigned int m_marks_applied;
+#ifdef GC_FIND_LOOPS
 	    std::vector<const GCNode*> m_ariadne;
 #endif
 	};

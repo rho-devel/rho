@@ -1432,11 +1432,16 @@ namespace {
 	const GCNode* env = m_environment;
 	const GCNode* result = m_result;
 	RObject::visitReferents(v);
-	if (cl) cl->conductVisitor(v);
-	if (parenv) parenv->conductVisitor(v);
-	if (handler) handler->conductVisitor(v);
-	if (env) env->conductVisitor(v);
-	if (result) result->conductVisitor(v);
+	if (cl)
+	    (*v)(cl);
+	if (parenv)
+	    (*v)(parenv);
+	if (handler)
+	    (*v)(handler);
+	if (env)
+	    (*v)(env);
+	if (result)
+	    (*v)(result);
     }
 }
 

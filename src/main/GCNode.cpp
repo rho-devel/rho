@@ -296,7 +296,7 @@ void GCNode::watch() const
 }
 #endif
 
-bool GCNode::Marker::operator()(const GCNode* node)
+void GCNode::Marker::operator()(const GCNode* node)
 {
     if (node->isMarked()) {
 #ifdef GC_FIND_LOOPS
@@ -314,17 +314,17 @@ bool GCNode::Marker::operator()(const GCNode* node)
 	    cout << " GCFL" << endl;
 	}
 #endif 
-	return false;
+	return;
     }
 #ifdef GC_FIND_LOOPS
     m_ariadne.push_back(node);
 #endif
     // Update mark:
     node->m_bits = s_mark;
+    ++m_marks_applied;
     s_reachable->splice_back(node);
     node->visitReferents(this);
 #ifdef GC_FIND_LOOPS
     m_ariadne.pop_back();
 #endif
-    return true;
 }

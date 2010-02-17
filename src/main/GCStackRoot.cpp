@@ -215,7 +215,8 @@ void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
 {
     GCStackRootBase* root = s_roots;
     while (root) {
-	if (root->m_target) root->m_target->conductVisitor(v);
+	if (root->m_target)
+	    (*v)(root->m_target);
 	root = root->m_next;
     }
 #ifdef NDEBUG
@@ -223,14 +224,16 @@ void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
     for (vector<RObject*>::iterator it = s_pps->begin();
 	 it != ppsend; ++it) {
 	RObject* n = *it;
-	if (n) n->conductVisitor(v);
+	if (n)
+	    (*v)(n);
     }
 #else
     vector<pair<RObject*, RCNTXT*> >::iterator ppsend = s_pps->end();
     for (vector<pair<RObject*, RCNTXT*> >::iterator it = s_pps->begin();
 	 it != ppsend; ++it) {
 	RObject* n = (*it).first;
-	if (n) n->conductVisitor(v);
+	if (n)
+	    (*v)(n);
     }
 #endif
 }

@@ -238,8 +238,10 @@ void Environment::visitReferents(const_visitor* v) const
     const GCNode* enc = m_enclosing;
     const GCNode* frame = m_frame;
     RObject::visitReferents(v);
-    if (enc) enc->conductVisitor(v);
-    if (frame) frame->conductVisitor(v);
+    if (enc)
+	(*v)(enc);
+    if (frame)
+	(*v)(frame);
 }
 
 // ***** Free-standing functions *****

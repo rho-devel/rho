@@ -200,7 +200,7 @@ namespace CXXR {
 	     it != end; ++it) {
 	    T* node = *it;
 	    if (node)
-		node->conductVisitor(v);
+		(*v)(node);
 	}
     }
 }  // namespace CXXR

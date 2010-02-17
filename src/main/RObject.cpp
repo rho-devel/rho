@@ -200,7 +200,8 @@ void RObject::unpackGPBits(unsigned int gpbits)
 
 void RObject::visitReferents(const_visitor* v) const
 {
-    if (m_attrib) m_attrib->conductVisitor(v);
+    if (m_attrib)
+	(*v)(m_attrib);
 }
 
 // ***** C interface *****

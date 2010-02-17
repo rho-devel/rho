@@ -139,8 +139,10 @@ void Frame::Binding::visitReferents(const_visitor* v) const
 {
     // We assume the visitor has just come from m_frame, so we don't
     // visit that.
-    if (m_symbol) m_symbol->conductVisitor(v);
-    if (m_value) m_value->conductVisitor(v);
+    if (m_symbol)
+	(*v)(m_symbol);
+    if (m_value)
+	(*v)(m_value);
 }
 
 void Frame::flush(const Symbol* sym)

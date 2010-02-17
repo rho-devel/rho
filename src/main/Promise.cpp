@@ -117,9 +117,12 @@ void Promise::visitReferents(const_visitor* v) const
     const GCNode* valgen = m_valgen;
     const GCNode* env = m_environment;
     RObject::visitReferents(v);
-    if (value) value->conductVisitor(v);
-    if (valgen) valgen->conductVisitor(v);
-    if (env) env->conductVisitor(v);
+    if (value)
+	(*v)(value);
+    if (valgen)
+	(*v)(valgen);
+    if (env)
+	(*v)(env);
 }
 
 // ***** C interface *****

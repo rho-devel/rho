@@ -73,8 +73,10 @@ void ExternalPointer::visitReferents(const_visitor* v) const
     const GCNode* protege = m_protege;
     const GCNode* tag = m_tag;
     RObject::visitReferents(v);
-    if (protege) protege->conductVisitor(v);
-    if (tag) tag->conductVisitor(v);
+    if (protege)
+	(*v)(protege);
+    if (tag)
+	(*v)(tag);
 }
 
 SEXP R_MakeExternalPtr(void *p, SEXP tag, SEXP prot)

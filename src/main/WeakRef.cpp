@@ -186,41 +186,42 @@ void WeakRef::finalize()
 void WeakRef::markThru()
 {
     WeakRef::check();
-    GCNode::Marker marker;
     WRList newlive;
     // Step 2-3 of algorithm.  Mark the value and R finalizer if the
     // key is marked.
     {
-	bool newmarks;
+	unsigned int marks_applied;
 	do {
-	    newmarks = false;
+	    GCNode::Marker marker;
 	    WRList::iterator lit = s_live.begin();
 	    while (lit != s_live.end()) {
 		WeakRef* wr = *lit++;
 		RObject* key = wr->key();
 		if (key->isMarked()) {
 		    RObject* value = wr->value();
-		    if (value && value->conductVisitor(&marker))
-			newmarks = true;
+		    if (value)
+			marker(value);
 		    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
-		    if (Rfinalizer && Rfinalizer->conductVisitor(&marker))
-			newmarks = true;
+		    if (Rfinalizer)
+			marker(Rfinalizer);
 		    wr->transfer(&s_live, &newlive);
 		}
 	    }
-	} while (newmarks);
+	    marks_applied = marker.marksApplied();
+	} while (marks_applied > 0);
     }
     // Step 4 of algorithm.  Process references with unmarked keys.
     {
+	GCNode::Marker marker;
 	WRList::iterator lit = s_live.begin();
 	while (lit != s_live.end()) {
 	    WeakRef* wr = *lit++;
 	    FunctionBase* Rfinalizer = wr->m_Rfinalizer;
 	    if (Rfinalizer)
-		Rfinalizer->conductVisitor(&marker);
+		marker(Rfinalizer);
 	    if (Rfinalizer || wr->m_Cfinalizer) {
-		wr->conductVisitor(&marker);
-		wr->m_key->conductVisitor(&marker);
+		marker(wr);
+		marker(wr->m_key);
 		wr->m_ready_to_finalize = true;
 		wr->transfer(&s_live, &s_f10n_pending);
 	    }
@@ -233,11 +234,12 @@ void WeakRef::markThru()
     }
     // Step 5 of algorithm.  Mark all live references with reachable keys.
     {
+	GCNode::Marker marker;
 	s_live.splice(s_live.end(), newlive);
 	for (WRList::iterator lit = s_live.begin();
 	     lit != s_live.end(); ++lit) {
 	    WeakRef* wr = *lit;
-	    wr->conductVisitor(&marker);
+	    marker(wr);
 	}
     }
 }

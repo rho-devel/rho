@@ -152,9 +152,9 @@ void Closure::visitReferents(const_visitor* v) const
     const GCNode* environment = m_environment;
     RObject::visitReferents(v);
     if (matcher)
-	matcher->conductVisitor(v);
+	(*v)(matcher);
     if (body)
-	body->conductVisitor(v);
+	(*v)(body);
     if (environment)
-	environment->conductVisitor(v);
+	(*v)(environment);
 }
