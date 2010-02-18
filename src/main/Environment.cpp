@@ -99,6 +99,13 @@ void Environment::cleanup()
     delete s_cache;
 }
 
+void Environment::detachFrame()
+{
+    if (m_cached && m_frame)
+	m_frame->decCacheCount();
+    m_frame = 0;
+}
+
 void Environment::detachReferents()
 {
     m_enclosing.detach();
@@ -188,15 +195,6 @@ void Environment::makeCached()
     if (!m_cached && m_frame)
 	m_frame->incCacheCount();
     m_cached = true;
-}
-
-void Environment::maybeDetachFrame()
-{
-    if (!m_leaked) {
-	if (m_cached && m_frame)
-	    m_frame->decCacheCount();
-	m_frame = 0;
-    }
 }
 
 unsigned int Environment::packGPBits() const

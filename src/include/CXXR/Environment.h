@@ -48,6 +48,22 @@
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
 
+/** @def DETACH_LOCAL_FRAMES
+ *
+ * If the preprocessor variable DETACH_LOCAL_FRAMES is defined, then
+ * code is inserted which keeps track of whether the local Environment
+ * of a Closure application may continue to be reachable after the
+ * Closure application returns.  If not, then just before the Closure
+ * application returns, the Environment is detached from its Frame.
+ * This breaks possible loops in the GCNode/GCEdge graph, thus enable
+ * the Environment to be garbage-collected immediately.
+ *
+ * Unfortunately, enabling this extra code slows CXXR down very
+ * slightly; however, it may prove beneficial in the future when
+ * combined with provenance tracking.
+ */
+#define DETACH_LOCAL_FRAMES
+
 namespace CXXR {
     class FunctionBase;
 
@@ -221,8 +237,18 @@ namespace CXXR {
 	 * Frame.  This breaks possible loops in the GCNode/GCEdge
 	 * graph, thus enabling the Environment to be
 	 * garbage-collected immediately.
+	 *
+	 * @note This function is an inlined no-op unless the
+	 * preprocessor variable DETACH_LOCAL_FRAMES is defined in
+	 * Environment.h.
 	 */
-	void maybeDetachFrame();
+	void maybeDetachFrame()
+	{
+#ifdef DETACH_LOCAL_FRAMES
+	    if (!m_leaked)
+		detachFrame();
+#endif
+	}
 
 	/** @brief Look for Environment objects that may have
 	 *  'leaked'.
@@ -236,13 +262,19 @@ namespace CXXR {
 	 *
 	 * @param node Pointer (possibly null) to the object to be
 	 * scrutinised.
+	 *
+	 * @note This function is an inlined no-op unless the
+	 * preprocessor variable DETACH_LOCAL_FRAMES is defined in
+	 * Environment.h.
 	 */
 	static void monitorLeaks(const GCNode* node)
 	{
+#ifdef DETACH_LOCAL_FRAMES
 	    if (node) {
 		LeakMonitor monitor;
 		monitor(node);
 	    }
+#endif
 	}
 
 	/** @brief Replace the enclosing environment.
@@ -382,6 +414,8 @@ namespace CXXR {
 	}
 
 	static void cleanup();
+
+	void detachFrame();
 
 	// Remove any mapping of 'sym' from the cache.  If called with
 	// a null pointer, clear the cache entirely.
