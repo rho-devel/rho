@@ -324,7 +324,6 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP colmodes, tnames, tvec, tvec2, work2;
     SEXPTYPE type;
     int i, j, cnt, len, nprotect;
-    RCNTXT cntxt;
     char clab[25];
     CXXRCONST char *title = "R Data Editor";
     destruct DE1;
@@ -398,18 +397,21 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, "invalid device");
 
     /* set up a context which will close the window if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &closewin_cend;
-    cntxt.cenddata = (void *) DE;
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+		     R_NilValue, R_NilValue);
+	cntxt.cend = &closewin_cend;
+	cntxt.cenddata = (void *) DE;
 
-    highlightrect(DE);
+	highlightrect(DE);
 
-    cell_cursor_init(DE);
+	cell_cursor_init(DE);
 
-    eventloop(DE);
+	eventloop(DE);
 
-    endcontext(&cntxt);
+	endcontext(&cntxt);
+    }
     closewin(DE);
     if(nView == 0) {
 	if(fdView >= 0) { /* might be open after viewers, but unlikely */

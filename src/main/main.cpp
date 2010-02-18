@@ -1349,7 +1349,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     RCNTXT *saveToplevelContext;
     RCNTXT *saveGlobalContext;
-    RCNTXT thiscontext, returncontext, *cptr;
+    RCNTXT *cptr;
     unsigned int savestack;
     int browselevel, tmp;
     SEXP topExp, argList;
@@ -1395,50 +1395,55 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* statements which a user might type at the */
     /* browser prompt.  The (optional) second one */
     /* acts as a target for error returns. */
-
-    begincontext(&returncontext, CTXT_BROWSER, call, rho,
-		 R_BaseEnv, argList, R_NilValue);
-    //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &returncontext << endl;
-    try {
-	begincontext(&thiscontext, CTXT_RESTART, R_NilValue, rho,
-		     R_BaseEnv, R_NilValue, R_NilValue);
-	bool redo;
-	do {
-	    redo = false;
-	    //	    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //		 << &thiscontext << endl;
-	    try {
-		R_GlobalContext = &thiscontext;
-		R_InsertRestartHandlers(&thiscontext, TRUE);
-		R_ReplConsole(rho, savestack, browselevel+1);
-	    }
-	    catch (JMPException& e) {
-		//		cout << __FILE__":" << __LINE__
-		//		     << " Seeking " << e.context
-		//		     << "; in " << &thiscontext << endl;
-		if (e.context != &thiscontext)
-		    throw;
-		SET_RESTART_BIT_ON(thiscontext.callflag);
-		R_ReturnedValue = R_NilValue;
-		R_Visible = FALSE;
-		redo = true;
-	    }
-	    //	    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //		 << &thiscontext << endl;
-	} while (redo);
-	endcontext(&thiscontext);
+    {
+	RCNTXT returncontext;
+	begincontext(&returncontext, CTXT_BROWSER, call, rho,
+		     R_BaseEnv, argList, R_NilValue);
+	//    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	 << &returncontext << endl;
+	try {
+	    RCNTXT thiscontext;
+	    begincontext(&thiscontext, CTXT_RESTART, R_NilValue, rho,
+			 R_BaseEnv, R_NilValue, R_NilValue);
+	    bool redo;
+	    do {
+		redo = false;
+		//	    cout << __FILE__":" << __LINE__
+                //               << " Entering try/catch for "
+		//		 << &thiscontext << endl;
+		try {
+		    R_GlobalContext = &thiscontext;
+		    R_InsertRestartHandlers(&thiscontext, TRUE);
+		    R_ReplConsole(rho, savestack, browselevel+1);
+		}
+		catch (JMPException& e) {
+		    //		cout << __FILE__":" << __LINE__
+		    //		     << " Seeking " << e.context
+		    //		     << "; in " << &thiscontext << endl;
+		    if (e.context != &thiscontext)
+			throw;
+		    SET_RESTART_BIT_ON(thiscontext.callflag);
+		    R_ReturnedValue = R_NilValue;
+		    R_Visible = FALSE;
+		    redo = true;
+		}
+		//	    cout << __FILE__":" << __LINE__
+                //               << " Exiting try/catch for "
+		//		 << &thiscontext << endl;
+	    } while (redo);
+	    endcontext(&thiscontext);
+	}
+	catch (JMPException& e) {
+	    //	cout << __FILE__":" << __LINE__
+	    //	     << " Seeking " << e.context
+	    //	     << "; in " << &returncontext << endl;
+	    if (e.context != &returncontext)
+		throw;
+	}
+	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	 << &returncontext << endl;
+	endcontext(&returncontext);
     }
-    catch (JMPException& e) {
-	//	cout << __FILE__":" << __LINE__
-	//	     << " Seeking " << e.context
-	//	     << "; in " << &returncontext << endl;
-	if (e.context != &returncontext)
-	    throw;
-    }
-    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &returncontext << endl;
-    endcontext(&returncontext);
 
     /* Reset the interpreter state. */
 

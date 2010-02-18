@@ -712,7 +712,6 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 {
-    RCNTXT thiscontext;
     RCNTXT * volatile saveToplevelContext;
     volatile SEXP topExp;
     Rboolean result;
@@ -721,26 +720,29 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
     PROTECT(topExp = R_CurrentExpr);
     saveToplevelContext = R_ToplevelContext;
 
-    begincontext(&thiscontext, CTXT_TOPLEVEL, R_NilValue, R_GlobalEnv,
-		 R_BaseEnv, R_NilValue, R_NilValue);
-    // cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-    //	 << &thiscontext << endl;
-    try {
-	R_GlobalContext = R_ToplevelContext = &thiscontext;
-	fun(data);
-	result = TRUE;
+    {
+	RCNTXT thiscontext;
+	begincontext(&thiscontext, CTXT_TOPLEVEL, R_NilValue, R_GlobalEnv,
+		     R_BaseEnv, R_NilValue, R_NilValue);
+	// cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	//	 << &thiscontext << endl;
+	try {
+	    R_GlobalContext = R_ToplevelContext = &thiscontext;
+	    fun(data);
+	    result = TRUE;
+	}
+	catch (JMPException& e) {
+	    // cout << __FILE__":" << __LINE__
+	    //	<< " Seeking  " << e.context
+	    //      << "; in " << &thiscontext << endl;
+	    if (e.context != &thiscontext)
+		throw;
+	    result = FALSE;
+	}
+	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	//	 << &thiscontext << endl;
+	endcontext(&thiscontext);
     }
-    catch (JMPException& e) {
-	// cout << __FILE__":" << __LINE__
-	//	<< " Seeking  " << e.context
-	//      << "; in " << &thiscontext << endl;
-	if (e.context != &thiscontext)
-	    throw;
-	result = FALSE;
-    }
-    //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-    //	 << &thiscontext << endl;
-    endcontext(&thiscontext);
 
     R_ToplevelContext = saveToplevelContext;
     R_CurrentExpr = topExp;

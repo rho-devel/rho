@@ -376,7 +376,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     Environment* newrho;
     SEXP f, a;
     GCStackRoot<> tmp;
-    RCNTXT cntxt;
 
     /* formals = list of formal parameters */
     /* actuals = values to be bound to formals */
@@ -387,145 +386,150 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     savedrho = CLOENV(op);
 
     /*  Set up a context with the call in it so error has access to it */
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
 
-    begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
+	/*  Build a list which matches the actual (unevaluated) arguments
+	    to the formal paramters.  Build a new environment which
+	    contains the matched pairs.  Ideally this environment sould be
+	    hashed.  */
 
-    /*  Build a list which matches the actual (unevaluated) arguments
-	to the formal paramters.  Build a new environment which
-	contains the matched pairs.  Ideally this environment sould be
-	hashed.  */
+	PROTECT(actuals = matchArgs(formals, arglist, call));
+	PROTECT(newrho = static_cast<Environment*>(NewEnvironment(formals, actuals, savedrho)));
 
-    PROTECT(actuals = matchArgs(formals, arglist, call));
-    PROTECT(newrho = static_cast<Environment*>(NewEnvironment(formals, actuals, savedrho)));
+	/*  Use the default code for unbound formals.  FIXME: It looks like
+	    this code should preceed the building of the environment so that
+	    this will also go into the hash table.  */
 
-    /*  Use the default code for unbound formals.  FIXME: It looks like
-	this code should preceed the building of the environment so that
-	this will also go into the hash table.  */
+	/* This piece of code is destructively modifying the actuals list,
+	   which is now also the list of bindings in the frame of newrho.
+	   This is one place where internal structure of environment
+	   bindings leaks out of envir.c.  It should be rewritten
+	   eventually so as not to break encapsulation of the internal
+	   environment layout.  We can live with it for now since it only
+	   happens immediately after the environment creation.  LT */
 
-    /* This piece of code is destructively modifying the actuals list,
-       which is now also the list of bindings in the frame of newrho.
-       This is one place where internal structure of environment
-       bindings leaks out of envir.c.  It should be rewritten
-       eventually so as not to break encapsulation of the internal
-       environment layout.  We can live with it for now since it only
-       happens immediately after the environment creation.  LT */
+	// The above rewriting is in progress for CXXR.
 
-    // The above rewriting is in progress for CXXR.
-
-    f = formals;
-    a = actuals;
-    while (f != R_NilValue) {
-	if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
-	    const Symbol* symbol = static_cast<Symbol*>(TAG(a));
-	    Frame::Binding* bdg = newrho->frame()->binding(symbol);
-	    bdg->setValue(mkPROMISE(CAR(f), newrho),
-			  Frame::Binding::DEFAULTED);
+	f = formals;
+	a = actuals;
+	while (f != R_NilValue) {
+	    if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
+		const Symbol* symbol = static_cast<Symbol*>(TAG(a));
+		Frame::Binding* bdg = newrho->frame()->binding(symbol);
+		bdg->setValue(mkPROMISE(CAR(f), newrho),
+			      Frame::Binding::DEFAULTED);
+	    }
+	    f = CDR(f);
+	    a = CDR(a);
 	}
-	f = CDR(f);
-	a = CDR(a);
-    }
 
-    /*  Fix up any extras that were supplied by usemethod. */
+	/*  Fix up any extras that were supplied by usemethod. */
 
-    // 2009-02-11: The test '&& suppliedenv != R_BaseEnv' is added in
-    // CXXR.  CR at this point appears to rely on the fact that in CR,
-    // the FRAME of the base environment will be empty, which is no
-    // longer true in CXXR.  Possibly the base namespace ought also to
-    // be excluded at this point.  ARR.
-    if (suppliedenv != R_NilValue && suppliedenv != R_BaseEnv) {
-	for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
-	    for (a = actuals; a != R_NilValue; a = CDR(a))
-		if (TAG(a) == TAG(tmp))
-		    break;
-	    if (a == R_NilValue)
-		/* Use defineVar instead of earlier version that added
-		   bindings manually */
-		defineVar(TAG(tmp), CAR(tmp), newrho);
+	// 2009-02-11: The test '&& suppliedenv != R_BaseEnv' is added in
+	// CXXR.  CR at this point appears to rely on the fact that in CR,
+	// the FRAME of the base environment will be empty, which is no
+	// longer true in CXXR.  Possibly the base namespace ought also to
+	// be excluded at this point.  ARR.
+	if (suppliedenv != R_NilValue && suppliedenv != R_BaseEnv) {
+	    for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
+		for (a = actuals; a != R_NilValue; a = CDR(a))
+		    if (TAG(a) == TAG(tmp))
+			break;
+		if (a == R_NilValue)
+		    /* Use defineVar instead of earlier version that added
+		       bindings manually */
+		    defineVar(TAG(tmp), CAR(tmp), newrho);
+	    }
 	}
+
+	/*  Terminate the previous context and start a new one with the
+	    correct environment. */
+
+	endcontext(&cntxt);
     }
-
-    /*  Terminate the previous context and start a new one with the
-	correct environment. */
-
-    endcontext(&cntxt);
 
     /*  If we have a generic function we need to use the sysparent of
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
+    {
+	RCNTXT cntxt;
+	if( R_GlobalContext->callflag == CTXT_GENERIC )
+	    begincontext(&cntxt, CTXT_RETURN, call,
+			 newrho, R_GlobalContext->sysparent, arglist, op);
+	else
+	    begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
 
-    if( R_GlobalContext->callflag == CTXT_GENERIC )
-	begincontext(&cntxt, CTXT_RETURN, call,
-		     newrho, R_GlobalContext->sysparent, arglist, op);
-    else
-	begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+	/* The default return value is NULL.  FIXME: Is this really needed
+	   or do we always get a sensible value returned?  */
 
-    /* The default return value is NULL.  FIXME: Is this really needed
-       or do we always get a sensible value returned?  */
+	tmp = R_NilValue;
 
-    tmp = R_NilValue;
+	/* Debugging */
 
-    /* Debugging */
+	SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
+	if( RSTEP(op) ) SET_RSTEP(op, 0);
+	if (ENV_DEBUG(newrho)) {
+	    int old_bl = R_BrowseLines,
+		blines = asInteger(GetOption(install("deparse.max.lines"),
+					     R_BaseEnv));
+	    Rprintf("debugging in: ");
+	    if(blines != NA_INTEGER && blines > 0)
+		R_BrowseLines = blines;
+	    PrintValueRec(call,rho);
+	    R_BrowseLines = old_bl;
 
-    SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
-    if( RSTEP(op) ) SET_RSTEP(op, 0);
-    if (ENV_DEBUG(newrho)) {
-	int old_bl = R_BrowseLines,
-	    blines = asInteger(GetOption(install("deparse.max.lines"),
-					 R_BaseEnv));
-	Rprintf("debugging in: ");
-	if(blines != NA_INTEGER && blines > 0)
-	    R_BrowseLines = blines;
-	PrintValueRec(call,rho);
-	R_BrowseLines = old_bl;
-
-	/* Is the body a bare symbol (PR#6804) */
-	if (!isSymbol(body) & !isVectorAtomic(body)){
+	    /* Is the body a bare symbol (PR#6804) */
+	    if (!isSymbol(body) & !isVectorAtomic(body)){
 		/* Find out if the body is function with only one statement. */
 		if (isSymbol(CAR(body)))
-			tmp = findFun(CAR(body), rho);
+		    tmp = findFun(CAR(body), rho);
 		else
-			tmp = eval(CAR(body), rho);
+		    tmp = eval(CAR(body), rho);
 		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
 		   && !strcmp( PRIMNAME(tmp), "for")
 		   && !strcmp( PRIMNAME(tmp), "{")
 		   && !strcmp( PRIMNAME(tmp), "repeat")
 		   && !strcmp( PRIMNAME(tmp), "while")
-			)
-			goto regdb;
-	}
-	SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
-	PrintValue(body);
-	do_browser(call, op, R_NilValue, newrho);
-    }
-
- regdb:
-
-    /*  Set a longjmp target which will catch any explicit returns
-	from the function body.  */
-    bool redo;
-    do {
-	redo = false;
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    tmp = eval(body, newrho);
-	}
-	catch (JMPException& e) {
-	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-	    if (e.context != &cntxt)
-		throw;
-	    if (R_ReturnedValue == R_RestartToken) {
-		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		R_ReturnedValue = R_NilValue;  /* remove restart token */
-		redo = true;
+		   )
+		    goto regdb;
 	    }
-	    else tmp = R_ReturnedValue;
+	    SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
+	    PrintValue(body);
+	    do_browser(call, op, R_NilValue, newrho);
 	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-    } while (redo);
-    UNPROTECT(2);
-    endcontext(&cntxt);
+
+    regdb:
+
+	/*  Set a longjmp target which will catch any explicit returns
+	    from the function body.  */
+	bool redo;
+	do {
+	    redo = false;
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		tmp = eval(body, newrho);
+	    }
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context
+		//      << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (R_ReturnedValue == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    R_ReturnedValue = R_NilValue;  /* remove restart token */
+		    redo = true;
+		}
+		else tmp = R_ReturnedValue;
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	} while (redo);
+	UNPROTECT(2);
+	endcontext(&cntxt);
+    }
 
     if (RDEBUG(op)) {
 	Rprintf("exiting from: ");
@@ -572,68 +576,71 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 {
     SEXP body;
     GCStackRoot<> tmp;
-    RCNTXT cntxt;
 
     body = BODY(op);
 
-    begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
 
-    /* The default return value is NULL.  FIXME: Is this really needed
-       or do we always get a sensible value returned?  */
+	/* The default return value is NULL.  FIXME: Is this really needed
+	   or do we always get a sensible value returned?  */
 
-    tmp = R_NilValue;
+	tmp = R_NilValue;
 
-    /* Debugging */
+	/* Debugging */
 
-    SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
-    if( RSTEP(op) ) SET_RSTEP(op, 0);
-    if (RDEBUG(op)) {
-	Rprintf("debugging in: ");
-	PrintValueRec(call,rho);
-	/* Find out if the body is function with only one statement. */
-	if (isSymbol(CAR(body)))
-	    tmp = findFun(CAR(body), rho);
-	else
-	    tmp = eval(CAR(body), rho);
-	if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
-	   && !strcmp( PRIMNAME(tmp), "for")
-	   && !strcmp( PRIMNAME(tmp), "{")
-	   && !strcmp( PRIMNAME(tmp), "repeat")
-	   && !strcmp( PRIMNAME(tmp), "while")
-	   )
-	    goto regdb;
-	SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
-	PrintValue(body);
-	do_browser(call, op, R_NilValue, newrho);
-    }
-
- regdb:
-
-    /*  Set a longjmp target which will catch any explicit returns
-	from the function body.  */
-    bool redo;
-    do {
-	redo = false;
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    tmp = eval(body, newrho);
+	SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
+	if( RSTEP(op) ) SET_RSTEP(op, 0);
+	if (RDEBUG(op)) {
+	    Rprintf("debugging in: ");
+	    PrintValueRec(call,rho);
+	    /* Find out if the body is function with only one statement. */
+	    if (isSymbol(CAR(body)))
+		tmp = findFun(CAR(body), rho);
+	    else
+		tmp = eval(CAR(body), rho);
+	    if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+	       && !strcmp( PRIMNAME(tmp), "for")
+	       && !strcmp( PRIMNAME(tmp), "{")
+	       && !strcmp( PRIMNAME(tmp), "repeat")
+	       && !strcmp( PRIMNAME(tmp), "while")
+	       )
+		goto regdb;
+	    SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
+	    PrintValue(body);
+	    do_browser(call, op, R_NilValue, newrho);
 	}
-	catch (JMPException& e) {
-	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-	    if (e.context != &cntxt)
-		throw;
-	    if (R_ReturnedValue == R_RestartToken) {
-		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		R_ReturnedValue = R_NilValue;  /* remove restart token */
-		redo = true;
+
+    regdb:
+
+	/*  Set a longjmp target which will catch any explicit returns
+	    from the function body.  */
+	bool redo;
+	do {
+	    redo = false;
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		tmp = eval(body, newrho);
 	    }
-	    else tmp = R_ReturnedValue;
-	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-    } while (redo);
-    endcontext(&cntxt);
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context
+		//      << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (R_ReturnedValue == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    R_ReturnedValue = R_NilValue;  /* remove restart token */
+		    redo = true;
+		}
+		else tmp = R_ReturnedValue;
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	} while (redo);
+	endcontext(&cntxt);
+    }
 
     if (RDEBUG(op)) {
 	Rprintf("exiting from: ");
@@ -885,7 +892,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP sym, body;
     volatile SEXP val;
     GCStackRoot<> ans, v;
-    RCNTXT cntxt;
 
     sym = CAR(args);
     val = CADR(args);
@@ -927,73 +933,76 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     /***** nm may not be needed anymore now that NAMED(val) is at
 	   least 1.  LT */
     nm = NAMED(val);
-    begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		 R_NilValue);
-    for (i = 0; i < n; i++) {
-	try {
-	    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-	    switch (TYPEOF(val)) {
-	    case LGLSXP:
-		v = allocVector(TYPEOF(val), 1);
-		LOGICAL(v)[0] = LOGICAL(val)[i];
-		setVar(sym, v, rho);
-		break;
-	    case INTSXP:
-		v = allocVector(TYPEOF(val), 1);
-		INTEGER(v)[0] = INTEGER(val)[i];
-		setVar(sym, v, rho);
-		break;
-	    case REALSXP:
-		v = allocVector(TYPEOF(val), 1);
-		REAL(v)[0] = REAL(val)[i];
-		setVar(sym, v, rho);
-		break;
-	    case CPLXSXP:
-		v = allocVector(TYPEOF(val), 1);
-		COMPLEX(v)[0] = COMPLEX(val)[i];
-		setVar(sym, v, rho);
-		break;
-	    case STRSXP:
-		v = allocVector(TYPEOF(val), 1);
-		SET_STRING_ELT(v, 0, STRING_ELT(val, i));
-		setVar(sym, v, rho);
-		break;
-	    case RAWSXP:
-		v = allocVector(TYPEOF(val), 1);
-		RAW(v)[0] = RAW(val)[i];
-		setVar(sym, v, rho);
-		break;
-	    case EXPRSXP:
-		/* make sure loop variable is a copy if needed */
-		if(nm > 0) SET_NAMED(XVECTOR_ELT(val, i), 2);
-		setVar(sym, XVECTOR_ELT(val, i), rho);
-		break;
-	    case VECSXP:
-		/* make sure loop variable is a copy if needed */
-		if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
-		setVar(sym, VECTOR_ELT(val, i), rho);
-		break;
-	    case LISTSXP:
-		/* make sure loop variable is a copy if needed */
-		if(nm > 0) SET_NAMED(CAR(val), 2);
-		setVar(sym, CAR(val), rho);
-		val = CDR(val);
-		break;
-	    default:
-		errorcall(call, _("invalid for() loop sequence"));
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+		     R_NilValue);
+	for (i = 0; i < n; i++) {
+	    try {
+		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+		switch (TYPEOF(val)) {
+		case LGLSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    LOGICAL(v)[0] = LOGICAL(val)[i];
+		    setVar(sym, v, rho);
+		    break;
+		case INTSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    INTEGER(v)[0] = INTEGER(val)[i];
+		    setVar(sym, v, rho);
+		    break;
+		case REALSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    REAL(v)[0] = REAL(val)[i];
+		    setVar(sym, v, rho);
+		    break;
+		case CPLXSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    COMPLEX(v)[0] = COMPLEX(val)[i];
+		    setVar(sym, v, rho);
+		    break;
+		case STRSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    SET_STRING_ELT(v, 0, STRING_ELT(val, i));
+		    setVar(sym, v, rho);
+		    break;
+		case RAWSXP:
+		    v = allocVector(TYPEOF(val), 1);
+		    RAW(v)[0] = RAW(val)[i];
+		    setVar(sym, v, rho);
+		    break;
+		case EXPRSXP:
+		    /* make sure loop variable is a copy if needed */
+		    if(nm > 0) SET_NAMED(XVECTOR_ELT(val, i), 2);
+		    setVar(sym, XVECTOR_ELT(val, i), rho);
+		    break;
+		case VECSXP:
+		    /* make sure loop variable is a copy if needed */
+		    if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
+		    setVar(sym, VECTOR_ELT(val, i), rho);
+		    break;
+		case LISTSXP:
+		    /* make sure loop variable is a copy if needed */
+		    if(nm > 0) SET_NAMED(CAR(val), 2);
+		    setVar(sym, CAR(val), rho);
+		    val = CDR(val);
+		    break;
+		default:
+		    errorcall(call, _("invalid for() loop sequence"));
+		}
+		ans = eval(body, rho);
 	    }
-	    ans = eval(body, rho);
+	    catch (JMPException& e) {
+		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		if (e.mask == CTXT_BREAK)
+		    break;
+		// Otherwise assume it's CTXT_NEXT
+	    }
 	}
-	catch (JMPException& e) {
-	    //		cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-	    if (e.context != &cntxt)
-		throw;
-	    if (e.mask == CTXT_BREAK)
-		break;
-	    // Otherwise assume it's CTXT_NEXT
-	}
+	endcontext(&cntxt);
     }
-    endcontext(&cntxt);
     UNPROTECT(3);
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
@@ -1006,7 +1015,6 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile int bgn;
     GCStackRoot<> t;
     volatile SEXP body;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
@@ -1014,29 +1022,32 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CADR(args);
     bgn = BodyHasBraces(body);
 
-    begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		 R_NilValue);
-    bool redo;
-    do {
-	redo = false;
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    while (asLogicalNoNA(eval(CAR(args), rho), call)) {
-		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		eval(body, rho);
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+		     R_NilValue);
+	bool redo;
+	do {
+	    redo = false;
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		while (asLogicalNoNA(eval(CAR(args), rho), call)) {
+		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+		    eval(body, rho);
+		}
 	    }
-	}
-	catch (JMPException& e) {
-	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-	    if (e.context != &cntxt)
-		throw;
-	    redo = (e.mask != CTXT_BREAK);
-	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-    } while (redo);
-    endcontext(&cntxt);
+	    catch (JMPException& e) {
+		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		redo = (e.mask != CTXT_BREAK);
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	} while (redo);
+	endcontext(&cntxt);
+    }
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
 }
@@ -1048,7 +1059,6 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile int bgn;
     GCStackRoot<> t;
     volatile SEXP body;
-    RCNTXT cntxt;
 
     checkArity(op, args);
 
@@ -1056,29 +1066,32 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CAR(args);
     bgn = BodyHasBraces(body);
 
-    begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		 R_NilValue);
-    bool redo;
-    do {
-	redo = false;
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    for (;;) {
-		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		eval(body, rho);
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+		     R_NilValue);
+	bool redo;
+	do {
+	    redo = false;
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		for (;;) {
+		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+		    eval(body, rho);
+		}
 	    }
-	}
-	catch (JMPException& e) {
-	    //	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-	    if (e.context != &cntxt)
-		throw;
-	    redo = (e.mask != CTXT_BREAK);
-	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-    } while (redo);
-    endcontext(&cntxt);
+	    catch (JMPException& e) {
+		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
+		if (e.context != &cntxt)
+		    throw;
+		redo = (e.mask != CTXT_BREAK);
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	} while (redo);
+	endcontext(&cntxt);
+    }
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
 }
@@ -1274,7 +1287,6 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> saverhs;
     R_varloc_t tmploc;
     char buf[32];
-    RCNTXT cntxt;
 
     expr = CAR(args);
 
@@ -1310,51 +1322,54 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Now set up a context to remove it when we are done, even in the
      * case of an error.  This all helps error() provide a better call.
      */
-    begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    cntxt.cend = &tmp_cleanup;
-    cntxt.cenddata = rho;
+    {
+	RCNTXT cntxt;
+	begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
+		     R_NilValue, R_NilValue);
+	cntxt.cend = &tmp_cleanup;
+	cntxt.cenddata = rho;
 
-    /*  Do a partial evaluation down through the LHS. */
-    lhs = evalseq(CADR(expr), rho,
-		  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc);
+	/*  Do a partial evaluation down through the LHS. */
+	lhs = evalseq(CADR(expr), rho,
+		      PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc);
 
-    PROTECT(lhs);
-    PROTECT(rhs); /* To get the loop right ... */
+	PROTECT(lhs);
+	PROTECT(rhs); /* To get the loop right ... */
 
-    while (isLanguage(CADR(expr))) {
+	while (isLanguage(CADR(expr))) {
+	    if (TYPEOF(CAR(expr)) != SYMSXP)
+		error(_("invalid function in complex assignment"));
+	    if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
+		error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
+	    sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
+	    tmp = install(buf);
+	    R_SetVarLocValue(tmploc, CAR(lhs));
+	    UNPROTECT(1);
+	    PROTECT(tmp2 = mkPROMISE(rhs, rho));
+	    SET_PRVALUE(tmp2, rhs);
+	    PROTECT(rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr),
+				      tmp2));
+	    rhs = eval(rhs, rho);
+	    UNPROTECT(2);
+	    PROTECT(rhs);
+	    lhs = CDR(lhs);
+	    expr = CADR(expr);
+	}
 	if (TYPEOF(CAR(expr)) != SYMSXP)
 	    error(_("invalid function in complex assignment"));
 	if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
 	    error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
 	sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
-	tmp = install(buf);
 	R_SetVarLocValue(tmploc, CAR(lhs));
-	UNPROTECT(1);
-	PROTECT(tmp2 = mkPROMISE(rhs, rho));
-	SET_PRVALUE(tmp2, rhs);
-	PROTECT(rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr),
-				  tmp2));
-	rhs = eval(rhs, rho);
-	UNPROTECT(2);
-	PROTECT(rhs);
-	lhs = CDR(lhs);
-	expr = CADR(expr);
+	PROTECT(tmp = mkPROMISE(CADR(args), rho));
+	SET_PRVALUE(tmp, rhs);
+	PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
+				  install(buf), R_GetVarLocSymbol(tmploc),
+				  CDDR(expr), tmp));
+	expr = eval(expr, rho);
+	UNPROTECT(4);
+	endcontext(&cntxt); /* which does not run the remove */
     }
-    if (TYPEOF(CAR(expr)) != SYMSXP)
-	error(_("invalid function in complex assignment"));
-    if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
-	error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
-    sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
-    R_SetVarLocValue(tmploc, CAR(lhs));
-    PROTECT(tmp = mkPROMISE(CADR(args), rho));
-    SET_PRVALUE(tmp, rhs);
-    PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
-			      install(buf), R_GetVarLocSymbol(tmploc),
-			      CDDR(expr), tmp));
-    expr = eval(expr, rho);
-    UNPROTECT(4);
-    endcontext(&cntxt); /* which does not run the remove */
     unbindVar(R_TmpvalSymbol, rho);
 #ifdef CONSERVATIVE_COPYING /* not default */
     return duplicate(saverhs);
@@ -1593,7 +1608,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     volatile SEXP expr, env, tmp;
 
     int frame;
-    RCNTXT cntxt;
 
     checkArity(op, args);
     expr = CAR(args);
@@ -1640,24 +1654,27 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (isLanguage(expr) || isSymbol(expr) || isByteCode(expr)) { */
     if (TYPEOF(expr) == LANGSXP || TYPEOF(expr) == SYMSXP || isByteCode(expr)) {
 	PROTECT(expr);
-	begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    expr = eval(expr, env);
-	}
-	catch (JMPException& e) {
-	    if (e.context != &cntxt)
-		throw;
-	    expr = R_ReturnedValue;
-	    if (expr == R_RestartToken) {
-		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		error(_("restarts not supported in 'eval'"));
+	{
+	    RCNTXT cntxt;
+	    begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		expr = eval(expr, env);
 	    }
+	    catch (JMPException& e) {
+		if (e.context != &cntxt)
+		    throw;
+		expr = R_ReturnedValue;
+		if (expr == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    error(_("restarts not supported in 'eval'"));
+		}
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	    endcontext(&cntxt);
 	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-	endcontext(&cntxt);
 	UNPROTECT(1);
     }
     else if (TYPEOF(expr) == EXPRSXP) {
@@ -1665,25 +1682,28 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(expr);
 	n = LENGTH(expr);
 	tmp = R_NilValue;
-	begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
-	try {
-	    for (i = 0 ; i < n ; i++)
-		tmp = eval(XVECTOR_ELT(expr, i), env);
-	}
-	catch (JMPException& e) {
-	    if (e.context != &cntxt)
-		throw;
-	    tmp = R_ReturnedValue;
-	    if (tmp == R_RestartToken) {
-		cntxt.callflag = CTXT_RETURN;  /* turn restart off */
-		error(_("restarts not supported in 'eval'"));
+	{
+	    RCNTXT cntxt;
+	    begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
+	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
+	    //	     << &cntxt << endl;
+	    try {
+		for (i = 0 ; i < n ; i++)
+		    tmp = eval(XVECTOR_ELT(expr, i), env);
 	    }
+	    catch (JMPException& e) {
+		if (e.context != &cntxt)
+		    throw;
+		tmp = R_ReturnedValue;
+		if (tmp == R_RestartToken) {
+		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    error(_("restarts not supported in 'eval'"));
+		}
+	    }
+	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
+	    //	     << &cntxt << endl;
+	    endcontext(&cntxt);
 	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
-	endcontext(&cntxt);
 	UNPROTECT(1);
 	expr = tmp;
     }
@@ -1866,7 +1886,6 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    pt = NULL;
 
 	if (pt == NULL || strcmp(pt,".default")) {
-	    RCNTXT cntxt;
 	    SEXP pargs, rho1;
 	    PROTECT(pargs = promiseArgs(args, rho)); nprotect++;
 	    /* The context set up here is needed because of the way
@@ -1886,6 +1905,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       new environment rho1 is created and used.  LT */
 	    PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho)); nprotect++;
 	    SET_PRVALUE(CAR(pargs), x);
+	    RCNTXT cntxt;
 	    begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, op);
 	    if(usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans))
 	    {
@@ -2639,7 +2659,6 @@ namespace {
 
 static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
 {
-  RCNTXT cntxt;
   SEXP pargs, rho1;
   int dispatched = FALSE;
 
@@ -2647,10 +2666,13 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   /* See comment at first usemethod() call in this file. LT */
   PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
-  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
-  if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
-    dispatched = TRUE;
-  endcontext(&cntxt);
+  {
+      RCNTXT cntxt;
+      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+      if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
+	  dispatched = TRUE;
+      endcontext(&cntxt);
+  }
   UNPROTECT(2);
   return dispatched;
 }
@@ -3344,7 +3366,6 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP symbol = VECTOR_ELT(constants, GETOP());
 	SEXP x = R_BCNodeStackTop[-1];
 	if (isObject(x)) {
-	  RCNTXT cntxt;
 	  SEXP pargs, str, rho1;
 	  PROTECT(pargs = promiseArgs(CDR(call), rho));
 	  /* See comment at first usemethod() call in this file. LT */
@@ -3352,10 +3373,13 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  SET_PRVALUE(CAR(pargs), x);
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
-	  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
-	  if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
-	    dispatched = TRUE;
-	  endcontext(&cntxt);
+	  {
+	      RCNTXT cntxt;
+	      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
+		  dispatched = TRUE;
+	      endcontext(&cntxt);
+	  }
 	  UNPROTECT(2);
 	}
 	if (dispatched)
@@ -3372,7 +3396,6 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP x = R_BCNodeStackTop[-1];
 	value = R_BCNodeStackTop[-2];
 	if (isObject(x)) {
-	  RCNTXT cntxt;
 	  SEXP pargs, str, rho1;
 	  PROTECT(pargs = promiseArgs(CDR(call), rho));
 	  /* See comment at first usemethod() call in this file. LT */
@@ -3381,10 +3404,13 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
 	  SET_PRVALUE(CADDR(pargs), value);
-	  begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
-	  if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
-	    dispatched = TRUE;
-	  endcontext(&cntxt);
+	  {
+	      RCNTXT cntxt;
+	      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
+		  dispatched = TRUE;
+	      endcontext(&cntxt);
+	  }
 	  UNPROTECT(2);
 	}
 	R_BCNodeStackTop--;

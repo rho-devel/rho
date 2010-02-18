@@ -2128,24 +2128,26 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
     else type = R_pstream_xdr_format; /**** binary or ascii if no XDR? */
 
     if (icon == R_NilValue) {
-	RCNTXT cntxt;
 	struct membuf_st mbs;
 	SEXP val;
 
 	/* set up a context which will free the buffer if there is an error */
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &free_mem_buffer;
-	cntxt.cenddata = &mbs;
+	{
+	    RCNTXT cntxt;
+	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+			 R_NilValue, R_NilValue);
+	    cntxt.cend = &free_mem_buffer;
+	    cntxt.cenddata = &mbs;
 
-	InitMemOutPStream(&out, &mbs, type, 0, hook, fun);
-	R_Serialize(object, &out);
+	    InitMemOutPStream(&out, &mbs, type, 0, hook, fun);
+	    R_Serialize(object, &out);
 
-	val =  CloseMemOutPStream(&out);
+	    val =  CloseMemOutPStream(&out);
 
-	/* end the context after anything that could raise an error but before
-	   calling OutTerm so it doesn't get called twice */
-	endcontext(&cntxt);
+	    /* end the context after anything that could raise an error but before
+	       calling OutTerm so it doesn't get called twice */
+	    endcontext(&cntxt);
+	}
 
 	return val;
     }
