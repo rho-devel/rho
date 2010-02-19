@@ -51,6 +51,7 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
+#include "CXXR/Context.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/JMPException.hpp"
@@ -519,10 +520,10 @@ static FILE *R_MemReportingOutfile;
 static void R_OutputStackTrace(FILE *file)
 {
     int newline = 0;
-    RCNTXT *cptr;
+    Context *cptr;
 
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
+	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    if (!newline) newline = 1;

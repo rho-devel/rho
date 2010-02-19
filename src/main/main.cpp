@@ -67,6 +67,7 @@
 # include <locale.h>
 #endif
 
+#include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 
@@ -113,14 +114,14 @@ LibExport double R_NegInf;	/* IEEE -Inf */
 LibExport double R_NaReal;	/* NA_REAL: IEEE */
 LibExport int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 
-// Data declared LibExtern in RCNTXT.h :
+// Data declared LibExtern in CXXR/Context.hpp :
 
 // Note that in CXXR, the top-level context itself must be located on
 // the stack, so it's declared in mainloop(), which then initialises
 // R_Toplevel to point to it.
-LibExport RCNTXT* R_Toplevel;     /* The ultimate toplevel environment */
-LibExport RCNTXT* R_ToplevelContext;  /* The toplevel environment */
-LibExport RCNTXT* R_GlobalContext;    /* The global environment */
+LibExport Context* R_Toplevel;     /* The ultimate toplevel environment */
+LibExport Context* R_ToplevelContext;  /* The toplevel environment */
+LibExport Context* R_GlobalContext;    /* The global environment */
 
 // Data declared LibExtern in Rinternals.h :
 
@@ -941,7 +942,7 @@ void setup_Rmainloop(void)
     /* which occur during error handling */
 
     R_Toplevel->nextcontext = NULL;
-    R_Toplevel->callflag = CTXT_TOPLEVEL;
+    R_Toplevel->callflag = Context::TOPLEVEL;
     R_Toplevel->cstacktop = 0;
     R_Toplevel->promargs = R_NilValue;
     R_Toplevel->callfun = R_NilValue;
@@ -1198,7 +1199,7 @@ void run_Rmainloop(void)
 
 void mainloop(void)
 {
-    RCNTXT top_level_context;
+    Context top_level_context;
     R_Toplevel = &top_level_context;
     setup_Rmainloop();
     run_Rmainloop();
@@ -1209,11 +1210,11 @@ void mainloop(void)
 
 static void printwhere(void)
 {
-  RCNTXT *cptr;
+  Context *cptr;
   int lct = 1;
 
   for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-    if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN)) &&
+    if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN)) &&
 	(TYPEOF(cptr->call) == LANGSXP)) {
 	Rprintf("where %d", lct++);
 	SrcrefPrompt("", cptr->srcref);
@@ -1347,9 +1348,9 @@ static SEXP matchargs(SEXP args)
 
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *saveToplevelContext;
-    RCNTXT *saveGlobalContext;
-    RCNTXT *cptr;
+    Context *saveToplevelContext;
+    Context *saveGlobalContext;
+    Context *cptr;
     unsigned int savestack;
     int browselevel, tmp;
     SEXP topExp, argList;
@@ -1366,7 +1367,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */
 
-    browselevel = countContexts(CTXT_BROWSER, 1);
+    browselevel = countContexts(Context::BROWSER, 1);
     savestack = GCStackRootBase::ppsSize();
     PROTECT(topExp = R_CurrentExpr);
     saveToplevelContext = R_ToplevelContext;
@@ -1374,7 +1375,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (!ENV_DEBUG(rho)) {
 	cptr = R_GlobalContext;
-	while ( !(cptr->callflag & CTXT_FUNCTION) && cptr->callflag )
+	while ( !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
 	    cptr = cptr->nextcontext;
 	Rprintf("Called from: ");
 	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
@@ -1396,14 +1397,14 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* browser prompt.  The (optional) second one */
     /* acts as a target for error returns. */
     {
-	RCNTXT returncontext;
-	begincontext(&returncontext, CTXT_BROWSER, call, rho,
+	Context returncontext;
+	begincontext(&returncontext, Context::BROWSER, call, rho,
 		     R_BaseEnv, argList, R_NilValue);
 	//    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	 << &returncontext << endl;
 	try {
-	    RCNTXT thiscontext;
-	    begincontext(&thiscontext, CTXT_RESTART, R_NilValue, rho,
+	    Context thiscontext;
+	    begincontext(&thiscontext, Context::RESTART, R_NilValue, rho,
 			 R_BaseEnv, R_NilValue, R_NilValue);
 	    bool redo;
 	    do {
@@ -1495,7 +1496,7 @@ SEXP attribute_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
     int status, runLast;
 
     /* if there are any browser contexts active don't quit */
-    if(countContexts(CTXT_BROWSER, 1)) {
+    if(countContexts(Context::BROWSER, 1)) {
 	warning(_("cannot quit from browser"));
 	return R_NilValue;
     }

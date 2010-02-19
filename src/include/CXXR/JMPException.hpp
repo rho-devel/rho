@@ -39,9 +39,9 @@
 #ifndef JMPEXCEPTION_HPP
 #define JMPEXCEPTION_HPP 1
 
-class RCNTXT;
-
 namespace CXXR {
+    class Context;
+
     /** @brief Exception class to replace setjmp/longjmp.
      *
      * This class is intended as far as possible as a drop-in
@@ -54,7 +54,7 @@ namespace CXXR {
      * line with conventional C++ exception handling idioms.
      */
     struct JMPException {
-	RCNTXT* context;
+	Context* context;
 	int mask;
 
 	/**
@@ -63,7 +63,7 @@ namespace CXXR {
 	 *          other contexts should rethrow the exception.)
 	 * @param the_mask Context mask, or zero.
 	 */
-	JMPException(RCNTXT* the_context, int the_mask = 0)
+	JMPException(Context* the_context, int the_mask = 0)
 	    : context(the_context), mask(the_mask)
 	{}
     };

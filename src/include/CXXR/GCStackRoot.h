@@ -54,9 +54,8 @@
 #include <vector>
 #include "CXXR/GCNode.hpp"
 
-class RCNTXT;
-
 namespace CXXR {
+    class Context;
     class RObject;
 
     /** @brief Untemplated base class for GCStackRoot.
@@ -136,7 +135,7 @@ namespace CXXR {
 	 * Change the node that a particular cell in the C pointer
 	 * protection stack protects.  As a consistency check, it is
 	 * required that the reprotect takes place within the same
-	 * ::RCNTXT as the corresponding protect.  (CR does not apply this
+	 * Context as the corresponding protect.  (CR does not apply this
 	 * check.)
 	 *
 	 * @param node Pointer to the node now to be protected from
@@ -155,7 +154,7 @@ namespace CXXR {
 	 *
 	 * Pop cells from the C pointer protection stack.  As a
 	 * consistency check, it is required that the unprotect takes
-	 * place within the same ::RCNTXT as the corresponding protect.
+	 * place within the same Context as the corresponding protect.
 	 * (CR does not apply this check.)
 	 *
 	 * @param count Number of cells to be popped.  Must not be
@@ -253,7 +252,7 @@ namespace CXXR {
 #ifdef NDEBUG
 	static std::vector<RObject*>* s_pps;
 #else
-	static std::vector<std::pair<RObject*, RCNTXT*> >* s_pps;
+	static std::vector<std::pair<RObject*, Context*> >* s_pps;
 #endif
 
 	static GCStackRootBase* s_roots;
@@ -432,7 +431,7 @@ extern "C" {
      *
      * Change the node that a particular cell in the C pointer
      * protection stack protects.  As a consistency check, it is
-     * required that the reprotect takes place within the same RCNTXT
+     * required that the reprotect takes place within the same Context
      * as the original protect.  (CR does not apply this check.)
      *
      * @param node Pointer to the node now to be protected from
@@ -498,7 +497,7 @@ extern "C" {
     /** @brief Pop cells from the C pointer protection stack.
      *
      * As a consistency check, it is required that the unprotect takes
-     * place within the same RCNTXT as the corresponding protect.  (CR
+     * place within the same Context as the corresponding protect.  (CR
      * does not apply this check.)
      *
      * @param count Number of cells to be popped.  Must not be

@@ -43,6 +43,7 @@
 #include <Defn.h>
 
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/Context.hpp"
 
 using namespace CXXR;
 
@@ -474,10 +475,10 @@ SEXP nthcdr(SEXP s, int n)
 
 SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *cptr;
+    Context *cptr;
     int nargs = NA_INTEGER;
     for (cptr = R_GlobalContext; cptr != NULL; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & CTXT_FUNCTION) && cptr->cloenv == rho) {
+	if ((cptr->callflag & Context::FUNCTION) && cptr->cloenv == rho) {
 	    nargs = length(cptr->promargs);
 	    break;
 	}

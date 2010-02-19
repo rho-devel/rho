@@ -43,6 +43,7 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
+#include "CXXR/Context.hpp"
 
 using namespace CXXR;
 
@@ -139,7 +140,7 @@ SEXP attribute_hidden do_makelazy(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *ctxt;
+    Context *ctxt;
     SEXP code, add, oldcode, tmp;
     int addit = 0;
 
@@ -167,9 +168,9 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
        first closure call context with an environment matching the
        expression evaluation environment. */
     while (ctxt != R_ToplevelContext &&
-	   !((ctxt->callflag & CTXT_FUNCTION) && ctxt->cloenv == rho) )
+	   !((ctxt->callflag & Context::FUNCTION) && ctxt->cloenv == rho) )
 	ctxt = ctxt->nextcontext;
-    if (ctxt->callflag & CTXT_FUNCTION)
+    if (ctxt->callflag & Context::FUNCTION)
     {
 	if (addit && (oldcode = ctxt->conexit) != R_NilValue ) {
 	    if ( CAR(oldcode) != R_BraceSymbol )
@@ -535,8 +536,8 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* set up a context which will close the connection if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &cat_cleanup;
 	cntxt.cenddata = &ci;

@@ -2224,7 +2224,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP c, fun, names, envir;
     int i, n;
-    /* RCNTXT *cptr; */
+    /* Context *cptr; */
 
     checkArity(op, args);
 
@@ -2271,7 +2271,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     /*
     cptr = R_GlobalContext;
     while (cptr->nextcontext != NULL) {
-	if (cptr->callflag & CTXT_FUNCTION ) {
+	if (cptr->callflag & Context::FUNCTION ) {
 		if(cptr->cloenv == rho)
 		   break;
 	}

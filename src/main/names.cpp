@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include "CXXR/CachedString.h"
+#include "CXXR/Context.hpp"
 #include "CXXR/GCStackRoot.h"
 
 #include <Defn.h>
@@ -113,8 +114,8 @@ void BuiltInFunction::initialize()
 {"while",	do_while,	0,	100,	-1,	{PP_WHILE,   PREC_FN,	  0}},
 {"for",		do_for,		0,	100,	-1,	{PP_FOR,     PREC_FN,	  0}},
 {"repeat",	do_repeat,	0,	100,	-1,	{PP_REPEAT,  PREC_FN,	  0}},
-{"break",	do_break, CTXT_BREAK,	0,	-1,	{PP_BREAK,   PREC_FN,	  0}},
-{"next",	do_break, CTXT_NEXT,	0,	-1,	{PP_NEXT,    PREC_FN,	  0}},
+{"break",	do_break, Context::BREAK,	0,	-1,	{PP_BREAK,   PREC_FN,	  0}},
+{"next",	do_break, Context::NEXT,	0,	-1,	{PP_NEXT,    PREC_FN,	  0}},
 {"return",	do_return,	0,	0,	-1,	{PP_RETURN,  PREC_FN,	  0}},
 {"stop",	do_stop,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
 {"warning",	do_warning,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},

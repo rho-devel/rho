@@ -111,6 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
+#include "CXXR/Context.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -573,11 +574,11 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 
 */
 
-SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
+SEXP dynamicfindVar(SEXP symbol, Context *cptr)
 {
     SEXP vl;
     while (cptr != R_ToplevelContext) {
-	if (cptr->callflag & CTXT_FUNCTION) {
+	if (cptr->callflag & Context::FUNCTION) {
 	    vl = findVarInFrame3(cptr->cloenv, symbol, TRUE);
 	    if (vl != R_UnboundValue) return vl;
 	}
@@ -1584,7 +1585,7 @@ SEXP attribute_hidden do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP pos2env(int pos, SEXP call)
 {
     SEXP env;
-    RCNTXT *cptr;
+    Context *cptr;
 
     if (pos == NA_INTEGER || pos < -1 || pos == 0) {
 	errorcall(call, _("invalid '%s' argument"), "pos");
@@ -1593,10 +1594,10 @@ static SEXP pos2env(int pos, SEXP call)
     else if (pos == -1) {
 	/* make sure the context is a funcall */
 	cptr = R_GlobalContext;
-	while( !(cptr->callflag & CTXT_FUNCTION) && cptr->nextcontext
+	while( !(cptr->callflag & Context::FUNCTION) && cptr->nextcontext
 	       != NULL )
 	    cptr = cptr->nextcontext;
-	if( !(cptr->callflag & CTXT_FUNCTION) )
+	if( !(cptr->callflag & Context::FUNCTION) )
 	    errorcall(call, _("no enclosing environment"));
 
 	env = cptr->sysparent;

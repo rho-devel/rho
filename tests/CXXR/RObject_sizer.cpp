@@ -18,7 +18,6 @@
  */
 
 #include <iostream>
-#include "RCNTXT.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/RealVector.h"

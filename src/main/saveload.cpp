@@ -48,6 +48,7 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -1141,8 +1142,8 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
     m->OutInit(fp, d);
     /* set up a context which will call OutTerm if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &newdatasave_cleanup;
 	cntxt.cenddata = &cinfo;
@@ -1364,8 +1365,8 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 
     /* set up a context which will call InTerm if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &newdataload_cleanup;
 	cntxt.cenddata = &cinfo;
@@ -2024,8 +2025,8 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* set up a context which will close the file if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &saveload_cleanup;
 	cntxt.cenddata = fp;
@@ -2143,8 +2144,8 @@ SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* set up a context which will close the file if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &saveload_cleanup;
 	cntxt.cenddata = fp;
@@ -2428,8 +2429,8 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* set up a context which will close the connection 
 	   if there is an error */
 	if (wasopen) {
-	    RCNTXT cntxt;
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	    Context cntxt;
+	    begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 			 R_NilValue, R_NilValue);
 	    cntxt.cend = &load_con_cleanup;
 	    cntxt.cenddata = con;

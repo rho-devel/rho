@@ -40,7 +40,7 @@
 
 #include "CXXR/Closure.h"
 
-#include "RCNTXT.h"
+#include "CXXR/Context.hpp"
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
@@ -81,8 +81,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 				      m_matcher->numFormals() + 5)));
     // Set up environment:
     {
-	RCNTXT cntxt;
-	Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+	Context cntxt;
+	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
 			environment(), env, const_cast<PairList*>(args), this);
 	m_matcher->match(newenv, prepared_args);
 	Rf_endcontext(&cntxt);
@@ -90,13 +90,13 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     // Perform evaluation:
     GCStackRoot<> ans;
     {
-	RCNTXT cntxt;
-	if (R_GlobalContext->callflag == CTXT_GENERIC)
-	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+	Context cntxt;
+	if (R_GlobalContext->callflag == Context::GENERIC)
+	    Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
 			    newenv, R_GlobalContext->sysparent, prepared_args,
 			    this);
 	else
-	    Rf_begincontext(&cntxt, CTXT_RETURN, const_cast<Expression*>(call),
+	    Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
 			    newenv, env, prepared_args, this);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)
@@ -112,7 +112,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 		if (e.context != &cntxt)
 		    throw;
 		if (R_ReturnedValue == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    R_ReturnedValue = 0;  /* remove restart token */
 		    redo = true;
 		}

@@ -56,7 +56,6 @@
 #ifndef DEFN_H_
 #define DEFN_H_
 
-#include "RCNTXT.h"
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/errors.h"
@@ -444,12 +443,6 @@ extern0 SEXP	R_FreeSEXP;	    /* Cons cell free list */
 LibExtern int	R_Is_Running;	    /* for Windows memory manager */
 
 /* Evaluation Environment */
-extern0 SEXP	R_ReturnedValue;    /* Slot for return-ing values */
-#ifdef __cplusplus
-LibExtern RCNTXT* R_Toplevel;	    /* The ultimate toplevel environment */
-LibExtern RCNTXT* R_ToplevelContext;  /* The toplevel environment */
-LibExtern RCNTXT* R_GlobalContext;    /* The global environment */
-#endif
 extern0 Rboolean R_Visible;	    /* Value visibility flag */
 extern0 int	R_BrowseLines	INI_as(0);	/* lines/per call in browser */
 
@@ -786,9 +779,6 @@ SEXP Rf_EnsureString(SEXP);
 
 SEXP Rf_allocCharsxp(R_len_t);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
-#ifdef __cplusplus
-void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
-#endif
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
 void R_check_locale(void);
 void CleanEd(void);
@@ -806,20 +796,12 @@ SEXP duplicated(SEXP, Rboolean);
 SEXP duplicated3(SEXP, SEXP, Rboolean);
 int any_duplicated(SEXP, Rboolean);
 int any_duplicated3(SEXP, SEXP, Rboolean);
-#ifdef __cplusplus
-SEXP dynamicfindVar(SEXP, RCNTXT*);
-void endcontext(RCNTXT*);
-#endif
 int envlength(SEXP);
 SEXP evalList(SEXP, SEXP, SEXP);
 SEXP evalListKeepMissing(SEXP, SEXP);
 int factorsConform(SEXP, SEXP);
-void findcontext(int, SEXP, SEXP);
 SEXP findVar1(SEXP, SEXP, SEXPTYPE, int);
 void FrameClassFix(SEXP);
-#ifdef __cplusplus
-int framedepth(RCNTXT*);
-#endif
 SEXP frameSubscript(int, SEXP, SEXP);
 int get1index(SEXP, SEXP, int, int, int, SEXP);
 SEXP getVar(SEXP, SEXP);
@@ -842,16 +824,9 @@ void InitStringHash(void);
 void Init_R_Variables(SEXP);
 void InitTempDir(void);
 void initStack(void);
-#ifdef __cplusplus
-void R_InsertRestartHandlers(RCNTXT *, Rboolean);
-#endif
 void internalTypeCheck(SEXP, SEXP, SEXPTYPE);
 Rboolean isMethodsDispatchOn(void);
 int isValidName(const char *);
-#ifdef __cplusplus
-void R_JumpToContext(RCNTXT *, int, SEXP);
-void jump_to_toplevel(void);
-#endif
 void KillAllDevices(void);
 SEXP levelsgets(SEXP, SEXP);
 void mainloop(void);
@@ -911,12 +886,6 @@ void SrcrefPrompt(const char *, SEXP);
 void ssort(CXXR::StringVector*,int);
 #endif
 SEXP substituteList(SEXP, SEXP);
-#ifdef __cplusplus
-SEXP R_syscall(int,RCNTXT*);
-int R_sysparent(int,RCNTXT*);
-SEXP R_sysframe(int,RCNTXT*);
-SEXP R_sysfunction(int,RCNTXT*);
-#endif
 Rboolean tsConform(SEXP,SEXP);
 SEXP tspgets(SEXP, SEXP);
 SEXP type2symbol(SEXPTYPE);
@@ -944,11 +913,6 @@ R_size_t R_GetMaxNSize(void);
 void R_SetMaxNSize(R_size_t);
 R_size_t R_Decode2Long(char *p, int *ierr);
 void R_SetPPSize(R_size_t);
-
-#ifdef __cplusplus
-void R_run_onexits(RCNTXT *);
-void R_restore_globals(RCNTXT *);
-#endif
 
 /* ../main/devices.c, used in memory.c, gnuwin32/extra.c */
 #define R_MaxDevices 64

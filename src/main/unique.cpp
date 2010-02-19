@@ -42,6 +42,7 @@
 
 #include <Defn.h>
 #include <basedecl.h>
+#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 
 using namespace CXXR;
@@ -1082,7 +1083,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
-    RCNTXT *cptr;
+    Context *cptr;
     int expdots;
 
     checkArity(op,args);
@@ -1103,7 +1104,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* matchcall was called from. */
 	cptr = R_GlobalContext;
 	while (cptr != NULL) {
-	    if (cptr->callflag & CTXT_FUNCTION && cptr->cloenv == sysp)
+	    if (cptr->callflag & Context::FUNCTION && cptr->cloenv == sysp)
 		break;
 	    cptr = cptr->nextcontext;
 	}

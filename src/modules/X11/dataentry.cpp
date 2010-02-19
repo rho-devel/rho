@@ -56,7 +56,7 @@
 #include <stdlib.h>
 #include <Rinternals.h>
 #include <R_ext/Parse.h>  /* parsing is used in handling escape codes */
-
+#include "CXXR/Context.hpp"
 
 #ifndef _Xconst
 #define _Xconst const
@@ -152,7 +152,7 @@ static void find_coords(DEstruct, int, int, int*, int*);
 static int  findcell(DEstruct);
 static char *GetCharP(DEEvent*);
 static KeySym GetKey(DEEvent*);
-static void handlechar(DEstruct, char *);
+static void handlechar(DEstruct, CXXRCONST char *);
 static void highlightrect(DEstruct);
 static Rboolean initwin(DEstruct, const char *);
 static void jumppage(DEstruct, DE_DIRECTION);
@@ -398,8 +398,8 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* set up a context which will close the window if there is an error */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	CXXR::Context cntxt;
+	begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &closewin_cend;
 	cntxt.cenddata = (void *) DE;
@@ -483,7 +483,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP stitle;
     SEXPTYPE type;
     int i, nprotect;
-    RCNTXT cntxt;
+    CXXR::Context cntxt;
     DEstruct DE = (DEstruct) malloc(sizeof(destruct));
 
     nView++;
@@ -535,7 +535,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, "invalid device");
 
     /* set up a context which will close the window if there is an error */
-    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+    begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		 R_NilValue, R_NilValue);
     cntxt.cend = &dv_closewin_cend;
     cntxt.cenddata = (void *) DE;
@@ -1284,7 +1284,7 @@ static void clearrect(DEstruct DE)
 
 /* <FIXME> This is not correct for stateful MBCSs, but that's hard to
    do as we get a char at a time */
-static void handlechar(DEstruct DE, char *text)
+static void handlechar(DEstruct DE, CXXRCONST char *text)
 {
     int c = text[0], j;
     wchar_t wcs[BOOSTED_BUF_SIZE];
@@ -1329,7 +1329,7 @@ static void handlechar(DEstruct DE, char *text)
     }
 
     if (currentexp == 1) {	/* we are parsing a number */
-	char *mbs = text;
+	CXXRCONST char *mbs = text;
 	int i, cnt = mbsrtowcs(wcs, (const char **)&mbs, strlen(text)+1, NULL);
 
 	for(i = 0; i < cnt; i++) {
@@ -1359,7 +1359,7 @@ static void handlechar(DEstruct DE, char *text)
 	}
     }
     if (currentexp == 3) {
-	char *mbs = text;
+	CXXRCONST char *mbs = text;
 	int i, cnt = mbsrtowcs(wcs, (const char **)&mbs, strlen(text)+1, NULL);
 	for(i = 0; i < cnt; i++) {
 	    if (iswspace(wcs[i])) goto donehc;
@@ -1652,7 +1652,7 @@ static int doMouseDown(DEstruct DE, DEEvent * event)
 static void doSpreadKey(DEstruct DE, int key, DEEvent * event)
 {
     KeySym iokey;
-    char *text = "";
+    CXXRCONST char *text = "";
 
     iokey = GetKey(event);
     if(DE->isEditor) text = GetCharP(event);

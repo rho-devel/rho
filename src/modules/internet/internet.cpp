@@ -266,7 +266,7 @@ typedef struct {
     window wprog;
     progressbar pb;
     label l_url;
-    RCNTXT cntxt;
+    Context cntxt;
     int pc;
 } winprogressbar;
 
@@ -412,7 +412,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		setprogressbar(pbar.pb, 0);
 		settext(pbar.wprog, "Download progress");
 		show(pbar.wprog);
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;
@@ -516,7 +516,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		show(pbar.wprog);
 
 		/* set up a context which will close progressbar on error. */
-		begincontext(&(pbar.cntxt), CTXT_CCODE, R_NilValue, R_NilValue,
+		begincontext(&(pbar.cntxt), Context::CCODE, R_NilValue, R_NilValue,
 			     R_NilValue, R_NilValue, R_NilValue);
 		pbar.cntxt.cend = &doneprogressbar;
 		pbar.cntxt.cenddata = &pbar;

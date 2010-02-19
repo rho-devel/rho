@@ -45,11 +45,12 @@
 #include "Defn.h"
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
+#include "CXXR/Context.hpp"
 #include "CXXR/GCStackRoot.h"
 
 using namespace CXXR;
 
-static SEXP GetObject(RCNTXT *cptr)
+static SEXP GetObject(Context *cptr)
 {
     SEXP s, sysp, b, formals, funcall, tag;
     sysp = R_GlobalContext->sysparent;
@@ -255,12 +256,12 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     SEXP op, formals, newrho, newcall, match_obj = 0;
     char buf[512];
     int i, j, nclass, matched, S4toS3, nprotect;
-    RCNTXT *cptr;
+    Context *cptr;
 
     /* Get the context which UseMethod was called from. */
 
     cptr = R_GlobalContext;
-    if ( !(cptr->callflag & CTXT_FUNCTION) || cptr->cloenv != rho)
+    if ( !(cptr->callflag & Context::FUNCTION) || cptr->cloenv != rho)
 	error(_("'UseMethod' used in an inappropriate fashion"));
 
     /* Create a new environment without any */
@@ -355,9 +356,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    }
 	    t = newcall;
 	    SETCAR(t, method);
-	    R_GlobalContext->callflag = CTXT_GENERIC;
+	    R_GlobalContext->callflag = Context::GENERIC;
 	    *ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	    R_GlobalContext->callflag = CTXT_RETURN;
+	    R_GlobalContext->callflag = Context::RETURN;
 	    UNPROTECT(nprotect);
 	    return 1;
 	}
@@ -379,14 +380,14 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	defineVar(install(".GenericDefEnv"), defrho, newrho);
 	t = newcall;
 	SETCAR(t, method);
-	R_GlobalContext->callflag = CTXT_GENERIC;
+	R_GlobalContext->callflag = Context::GENERIC;
 	*ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	R_GlobalContext->callflag = CTXT_RETURN;
+	R_GlobalContext->callflag = Context::RETURN;
 	UNPROTECT(5);
 	return 1;
     }
     UNPROTECT(5);
-    cptr->callflag = CTXT_RETURN;
+    cptr->callflag = Context::RETURN;
     return 0;
 }
 
@@ -399,7 +400,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP ans, generic = R_NilValue /* -Wall */, obj, val;
     SEXP callenv, defenv;
     int nargs;
-    RCNTXT *cptr;
+    Context *cptr;
 
     nargs = length(args);
 
@@ -410,7 +411,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
        callenv = environment from which the generic was called
        defenv = environment where the generic was defined */
     cptr = R_GlobalContext;
-    if ( !(cptr->callflag & CTXT_FUNCTION) || cptr->cloenv != env)
+    if ( !(cptr->callflag & Context::FUNCTION) || cptr->cloenv != env)
 	errorcall(call, _("'UseMethod' used in an inappropriate fashion"));
     callenv = cptr->sysparent;
     if (nargs)
@@ -450,7 +451,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     else {
 	cptr = R_GlobalContext;
 	while (cptr != NULL) {
-	    if ( (cptr->callflag & CTXT_FUNCTION) && cptr->cloenv == env)
+	    if ( (cptr->callflag & Context::FUNCTION) && cptr->cloenv == env)
 		break;
 	    cptr = cptr->nextcontext;
 	}
@@ -470,7 +471,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		  env, callenv, defenv, &ans) == 1) {
 	UNPROTECT(1); /* obj */
 	PROTECT(ans);
-	findcontext(CTXT_RETURN, env, ans); /* does not return */
+	findcontext(Context::RETURN, env, ans); /* does not return */
 	UNPROTECT(1);
     }
     else {
@@ -535,17 +536,17 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP sysp, m, formals, actuals, tmp, newcall;
     SEXP a, group, basename;
     SEXP callenv, defenv;
-    RCNTXT *cptr;
+    Context *cptr;
     int i, j, cftmp;
 
     cptr = R_GlobalContext;
     cftmp = cptr->callflag;
-    cptr->callflag = CTXT_GENERIC;
+    cptr->callflag = Context::GENERIC;
 
     /* get the env NextMethod was called from */
     sysp = R_GlobalContext->sysparent;
     while (cptr != NULL) {
-	if (cptr->callflag & CTXT_FUNCTION && cptr->cloenv == sysp) break;
+	if (cptr->callflag & Context::FUNCTION && cptr->cloenv == sysp) break;
 	cptr = cptr->nextcontext;
     }
     if (cptr == NULL)
@@ -994,7 +995,7 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
     /* dispatch the non-generic definition of `name'.  Used to trap
        calls to standardGeneric during the loading of the methods package */
     SEXP e, value, rho, fun, symbol, dot_Generic;
-    RCNTXT *cptr;
+    Context *cptr;
     /* find a non-generic function */
     symbol = install(translateChar(asChar(name)));
     dot_Generic = install(".Generic");
@@ -1020,7 +1021,7 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
     cptr = R_GlobalContext;
     /* check this is the right context */
     while (cptr != R_ToplevelContext) {
-	if (cptr->callflag & CTXT_FUNCTION )
+	if (cptr->callflag & Context::FUNCTION )
 	    if (cptr->cloenv == env)
 		break;
 	cptr = cptr->nextcontext;
@@ -1226,7 +1227,7 @@ static SEXP get_this_generic(SEXP args)
 {
     SEXP value = R_NilValue; static SEXP gen_name;
     int i, n;
-    RCNTXT *cptr;
+    Context *cptr;
     const char *fname;
 
     /* a second argument to the call, if any, is taken as the function */

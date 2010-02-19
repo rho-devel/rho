@@ -43,7 +43,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
-#include "RCNTXT.h"
+#include "CXXR/Context.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -65,7 +65,7 @@ GCStackRootBase* GCStackRootBase::s_roots = 0;
 #ifdef NDEBUG
 vector<RObject*>* GCStackRootBase::s_pps;
 #else
-vector<pair<RObject*, RCNTXT*> >* GCStackRootBase::s_pps;
+vector<pair<RObject*, Context*> >* GCStackRootBase::s_pps;
 #endif
 
 void GCStackRootBase::initialize()
@@ -73,7 +73,7 @@ void GCStackRootBase::initialize()
 #ifdef NDEBUG
     s_pps = new vector<RObject*>;
 #else
-    s_pps = new vector<pair<RObject*, RCNTXT*> >;
+    s_pps = new vector<pair<RObject*, Context*> >;
 #endif
 }
 
@@ -86,7 +86,7 @@ void GCStackRootBase::ppsRestoreSize(size_t new_size)
 #ifdef NDEBUG
 	RObject* node = s_pps->back();
 #else
-	const pair<RObject*, RCNTXT*>& pr = s_pps->back();
+	const pair<RObject*, Context*>& pr = s_pps->back();
 	RObject* node = pr.first;
 #endif
 	if (node && node->decRefCount() == 0)
@@ -139,7 +139,7 @@ void GCStackRootBase::reprotect(RObject* node, unsigned int index)
 	entry->makeMoribund();
     (*s_pps)[index] = node;
 #else
-    pair<RObject*, RCNTXT*>& pr = (*s_pps)[index];
+    pair<RObject*, Context*>& pr = (*s_pps)[index];
     if (pr.second != R_GlobalContext)
 	throw logic_error("GCStackRootBase::reprotect: not in same context"
 			  " as the corresponding call of protect().");
@@ -172,7 +172,7 @@ void GCStackRootBase::unprotect(unsigned int count)
 #ifdef NDEBUG
 	RObject* node = s_pps->back();
 #else
-	const pair<RObject*, RCNTXT*>& pr = s_pps->back();
+	const pair<RObject*, Context*>& pr = s_pps->back();
 	RObject* node = pr.first;
 	if (pr.second != R_GlobalContext)
 	    throw logic_error("GCStackRootBase::unprotect: not in same context"
@@ -196,7 +196,7 @@ void GCStackRootBase::unprotectPtr(RObject* node)
     vector<RObject*>::reverse_iterator rit
 	= find(s_pps->rbegin(), s_pps->rend(), node);
 #else
-    vector<pair<RObject*, RCNTXT*> >::reverse_iterator rit = s_pps->rbegin();
+    vector<pair<RObject*, Context*> >::reverse_iterator rit = s_pps->rbegin();
     while (rit != s_pps->rend() && (*rit).first != node)
 	++rit;
 #endif
@@ -228,8 +228,8 @@ void GCStackRootBase::visitRoots(GCNode::const_visitor* v)
 	    (*v)(n);
     }
 #else
-    vector<pair<RObject*, RCNTXT*> >::iterator ppsend = s_pps->end();
-    for (vector<pair<RObject*, RCNTXT*> >::iterator it = s_pps->begin();
+    vector<pair<RObject*, Context*> >::iterator ppsend = s_pps->end();
+    for (vector<pair<RObject*, Context*> >::iterator it = s_pps->begin();
 	 it != ppsend; ++it) {
 	RObject* n = (*it).first;
 	if (n)

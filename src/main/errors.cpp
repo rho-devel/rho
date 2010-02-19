@@ -63,6 +63,7 @@ extern void R_ProcessEvents(void);
 #include <R_ext/eventloop.h> /* for R_PolledEvents */
 #endif
 
+#include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 
@@ -121,10 +122,10 @@ void R_CheckStack(void)
 	/* We do need some stack space to process error recovery,
 	   so temporarily raise the limit.
 	 */
-	RCNTXT cntxt;
+	Context cntxt;
 	unsigned int stacklimit = R_CStackLimit;
 	R_CStackLimit += CXXRCONSTRUCT(uintptr_t, 0.05*R_CStackLimit);
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &reset_stack_limit;
 	cntxt.cenddata = &stacklimit;
@@ -229,7 +230,7 @@ RETSIGTYPE attribute_hidden onsigusr1(int dummy)
     try_jump_to_restart(); */
 
     /* Run all onexit/cend code on the stack (without stopping at
-       intervening CTXT_TOPLEVEL's.  Since intervening CTXT_TOPLEVEL's
+       intervening Context::TOPLEVEL's.  Since intervening Context::TOPLEVEL's
        get used by what are conceptually concurrent computations, this
        is a bit like telling all active threads to terminate and clean
        up on the way out. */
@@ -281,7 +282,7 @@ static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
 void warning(const char *format, ...)
 {
     char buf[BUFSIZE], *p;
-    RCNTXT *c = R_GlobalContext;
+    Context *c = R_GlobalContext;
 
     va_list(ap);
     va_start(ap, format);
@@ -291,7 +292,7 @@ void warning(const char *format, ...)
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
     if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
-    if (c && (c->callflag & CTXT_BUILTIN)) c = c->nextcontext;
+    if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
     warningcall(c ? c->call : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
@@ -329,7 +330,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
     SEXP names, s;
     const char *dcall;
     char buf[BUFSIZE];
-    RCNTXT *cptr;
+    Context *cptr;
 
     if (inWarning)
 	return;
@@ -339,7 +340,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	if( !isLanguage(s) &&  ! isExpression(s) )
 	    error(_("invalid option \"warning.expression\""));
 	cptr = R_GlobalContext;
-	while ( !(cptr->callflag & CTXT_FUNCTION) && cptr->callflag )
+	while ( !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
 	    cptr = cptr->nextcontext;
 	eval(s, cptr->cloenv);
 	return;
@@ -357,8 +358,8 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 
     /* set up a context which will restore inWarning if there is an exit */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &reset_inWarning;
 
@@ -479,8 +480,8 @@ void PrintWarnings(void)
     /* set up a context which will restore inPrintWarnings if there is
        an exit */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &cleanup_PrintWarnings;
 
@@ -606,8 +607,8 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 
     /* set up a context to restore inError value on exit */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &restore_inError;
 	cntxt.cenddata = &oldInError;
@@ -723,15 +724,15 @@ SEXP attribute_hidden do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 void error(const char *format, ...)
 {
     char buf[BUFSIZE];
-    RCNTXT *c = R_GlobalContext;
+    Context *c = R_GlobalContext;
 
     va_list(ap);
     va_start(ap, format);
     Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
     va_end(ap);
     /* This can be called before R_GlobalContext is defined, so... */
-    /* If profiling is on, this can be a CTXT_BUILTIN */
-    if (c && (c->callflag & CTXT_BUILTIN)) c = c->nextcontext;
+    /* If profiling is on, this can be a Context::BUILTIN */
+    if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
     errorcall(c ? c->call : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
@@ -769,8 +770,8 @@ static void jump_to_top_ex(Rboolean traceback,
 
     /* set up a context to restore inError value on exit */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &restore_inError;
 	cntxt.cenddata = &oldInError;
@@ -912,12 +913,12 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!isString(string)) errorcall(call, _("invalid '%s' value"), "string");
 
     if(isNull(CAR(args))) {
-	RCNTXT *cptr;
+	Context *cptr;
 	SEXP rho = R_BaseEnv;
 	for (cptr = R_GlobalContext->nextcontext;
-	     cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
+	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
-	    if (cptr->callflag & CTXT_FUNCTION) {
+	    if (cptr->callflag & Context::FUNCTION) {
 		/* stop() etc have internal call to .makeMessage */
 		cfn = CHAR(STRING_ELT(deparse1s(CAR(cptr->call)), 0));
 		if(streql(cfn, "stop") || streql(cfn, "warning")
@@ -1016,12 +1017,12 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #ifdef ENABLE_NLS
     if(isNull(sdom)) {
-	RCNTXT *cptr;
+	Context *cptr;
 	SEXP rho = R_BaseEnv;
 	for (cptr = R_GlobalContext->nextcontext;
-	     cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
+	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
-	    if (cptr->callflag & CTXT_FUNCTION) {
+	    if (cptr->callflag & Context::FUNCTION) {
 		rho = cptr->cloenv;
 		break;
 	    }
@@ -1083,11 +1084,11 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static SEXP findCall(void)
 {
-    RCNTXT *cptr;
+    Context *cptr;
     for (cptr = R_GlobalContext->nextcontext;
-	 cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
+	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	 cptr = cptr->nextcontext)
-	if (cptr->callflag & CTXT_FUNCTION)
+	if (cptr->callflag & Context::FUNCTION)
 	    return cptr->call;
     return R_NilValue;
 }
@@ -1250,29 +1251,29 @@ void R_SetErrorHook(void (*hook)(SEXP, char *))
 void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart)
 {
     int mask;
-    RCNTXT *c;
+    Context *c;
 
-    mask = CTXT_BROWSER | CTXT_FUNCTION;
+    mask = Context::BROWSER | Context::FUNCTION;
 
     for (c = R_GlobalContext; c; c = c->nextcontext) {
 	if (c->callflag & mask && c->cloenv == env)
 	    findcontext(mask, env, val);
 	else if (restart && IS_RESTART_BIT_SET(c->callflag))
-	    findcontext(CTXT_RESTART, c->cloenv, R_RestartToken);
-	else if (c->callflag == CTXT_TOPLEVEL)
+	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
+	else if (c->callflag == Context::TOPLEVEL)
 	    error(_("No function to return from, jumping to top level"));
     }
 }
 
 void R_JumpToToplevel(Rboolean restart)
 {
-    RCNTXT *c;
+    Context *c;
 
     /* Find the target for the jump */
     for (c = R_GlobalContext; c != NULL; c = c->nextcontext) {
 	if (restart && IS_RESTART_BIT_SET(c->callflag))
-	    findcontext(CTXT_RESTART, c->cloenv, R_RestartToken);
-	else if (c->callflag == CTXT_TOPLEVEL)
+	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
+	else if (c->callflag == Context::TOPLEVEL)
 	    break;
     }
     if (c != R_ToplevelContext)
@@ -1284,8 +1285,8 @@ void R_JumpToToplevel(Rboolean restart)
     R_ToplevelContext = R_GlobalContext = c;
     R_restore_globals(R_GlobalContext);
     //    cout << __FILE__":" << __LINE__ << " About to throw JMPException("
-    //	 << c << ", " << CTXT_TOPLEVEL << ")\n" << flush;
-    throw JMPException(c, CTXT_TOPLEVEL);
+    //	 << c << ", " << Context::TOPLEVEL << ")\n" << flush;
+    throw JMPException(c, Context::TOPLEVEL);
 }
 
 void R_SetErrmessage(const char *s)
@@ -1305,13 +1306,13 @@ void R_PrintDeferredWarnings(void)
 SEXP R_GetTraceback(int skip)
 {
     int nback = 0, ns;
-    RCNTXT *c;
+    Context *c;
     SEXP s, t;
 
     for (c = R_GlobalContext, ns = skip;
-	 c != NULL && c->callflag != CTXT_TOPLEVEL;
+	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
-	if (c->callflag & (CTXT_FUNCTION | CTXT_BUILTIN) ) {
+	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (ns > 0)
 		ns--;
 	    else
@@ -1321,9 +1322,9 @@ SEXP R_GetTraceback(int skip)
     PROTECT(s = allocList(nback));
     t = s;
     for (c = R_GlobalContext ;
-	 c != NULL && c->callflag != CTXT_TOPLEVEL;
+	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
-	if (c->callflag & (CTXT_FUNCTION | CTXT_BUILTIN) ) {
+	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (skip > 0)
 		skip--;
 	    else {
@@ -1340,16 +1341,16 @@ SEXP R_GetTraceback(int skip)
 static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 {
     static char buf[560];
-    RCNTXT *c;
+    Context *c;
     int nl, ncalls = 0;
     Rboolean too_many = FALSE;
     const char *top = "" /* -Wall */;
 
     buf[0] = '\0';
     for (c = R_GlobalContext;
-	 c != NULL && c->callflag != CTXT_TOPLEVEL;
+	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
-	if (c->callflag & (CTXT_FUNCTION | CTXT_BUILTIN) ) {
+	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (skip > 0)
 		skip--;
 	    else {
@@ -1589,7 +1590,7 @@ static void gotoExitingHandler(SEXP cond, SEXP call, SEXP entry)
     SET_VECTOR_ELT(result, 0, cond);
     SET_VECTOR_ELT(result, 1, call);
     SET_VECTOR_ELT(result, 2, ENTRY_HANDLER(entry));
-    findcontext(CTXT_FUNCTION, rho, result);
+    findcontext(Context::FUNCTION, rho, result);
 }
 
 static void vsignalError(SEXP call, const char *format, va_list ap)
@@ -1737,7 +1738,7 @@ static void signalInterrupt(void)
 }
 
 void attribute_hidden
-R_InsertRestartHandlers(RCNTXT *cptr, Rboolean browser)
+R_InsertRestartHandlers(Context *cptr, Rboolean browser)
 {
     SEXP klass, rho, entry, name;
 
@@ -1857,10 +1858,10 @@ static void invokeRestart(SEXP r, SEXP arglist)
 	    if (exit == RESTART_EXIT(CAR(R_RestartStack))) {
 		R_RestartStack = CDR(R_RestartStack);
 		if (TYPEOF(exit) == EXTPTRSXP) {
-		    RCNTXT *c = static_cast<RCNTXT *>( R_ExternalPtrAddr(exit));
-		    R_JumpToContext(c, CTXT_RESTART, R_RestartToken);
+		    Context *c = static_cast<Context *>( R_ExternalPtrAddr(exit));
+		    R_JumpToContext(c, Context::RESTART, R_RestartToken);
 		}
-		else findcontext(CTXT_FUNCTION, exit, arglist);
+		else findcontext(Context::FUNCTION, exit, arglist);
 	    }
 	error(_("restart not on stack"));
     }
@@ -1878,7 +1879,7 @@ SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
     if (R_GlobalContext == R_ToplevelContext ||
-	! (R_GlobalContext->callflag & CTXT_FUNCTION))
+	! (R_GlobalContext->callflag & Context::FUNCTION))
 	errorcall(call, _("not in a try context"));
     SET_RESTART_BIT_ON(R_GlobalContext->callflag);
     R_InsertRestartHandlers(R_GlobalContext, FALSE);

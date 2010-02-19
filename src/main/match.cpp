@@ -60,6 +60,7 @@
 
 #include "Defn.h"
 #include "CXXR/ArgMatcher.hpp"
+#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 
 using namespace CXXR;

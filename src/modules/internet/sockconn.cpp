@@ -49,6 +49,7 @@
 #include <R_ext/R-ftp-http.h>
 #include "sock.h"
 #include <errno.h>
+#include "CXXR/Context.hpp"
 
 static void listencleanup(void *data)
 {
@@ -74,10 +75,10 @@ static Rboolean sock_open(Rconnection con)
 	    return FALSE;
 	}
 	{
-	    RCNTXT cntxt;
+	    CXXR::Context cntxt;
 
 	    /* set up a context which will close socket on jump. */
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv,
+	    begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv,
 			 R_BaseEnv, R_NilValue, R_NilValue);
 	    cntxt.cend = &listencleanup;
 	    cntxt.cenddata = &sock1;

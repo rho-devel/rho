@@ -57,6 +57,7 @@
 #include <Fileio.h>
 #include <Rconnections.h>
 #include <errno.h>
+#include "CXXR/Context.hpp"
 
 using namespace CXXR;
 
@@ -938,8 +939,8 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* set up a context which will close the connection if there is
        an error or user interrupt */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &scan_cleanup;
 	cntxt.cenddata = &data;
@@ -1767,8 +1768,8 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
     wi.wasopen = wasopen;
     wi.buf = &strBuf;
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &wt_cleanup;
 	cntxt.cenddata = &wi;

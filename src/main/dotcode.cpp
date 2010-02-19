@@ -55,6 +55,7 @@
 
 #include <R_ext/RConverters.h>
 #include <R_ext/Riconv.h>
+#include "CXXR/Context.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
@@ -1567,7 +1568,7 @@ static SEXP
 Rf_getCallingDLL(void)
 {
     SEXP e, ans;
-    RCNTXT *cptr;
+    Context *cptr;
     SEXP rho = R_NilValue;
     Rboolean found = FALSE;
 
@@ -1575,9 +1576,9 @@ Rf_getCallingDLL(void)
        Testing shows this is the right caller, despite the .C/.Call ...
      */
     for (cptr = R_GlobalContext;
-	 cptr != NULL && cptr->callflag != CTXT_TOPLEVEL;
+	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	 cptr = cptr->nextcontext)
-	    if (cptr->callflag & CTXT_FUNCTION) {
+	    if (cptr->callflag & Context::FUNCTION) {
 		/* PrintValue(cptr->call); */
 		rho = cptr->cloenv;
 		break;

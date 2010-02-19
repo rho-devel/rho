@@ -49,7 +49,7 @@
 #include "CXXR/JMPException.hpp"
 #include "CXXR/WeakRef.h"
 #include "CXXR/errors.h"
-#include "RCNTXT.h"
+#include "CXXR/Context.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -273,15 +273,15 @@ bool WeakRef::runFinalizers()
     WRList::iterator lit = s_f10n_pending.begin();
     while (lit != s_f10n_pending.end()) {
 	WeakRef* wr = *lit++;
-	RCNTXT* saveToplevelContext = R_ToplevelContext;
+	Context* saveToplevelContext = R_ToplevelContext;
 	GCStackRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = GCStackRootBase::ppsSize();
 	{
-	    RCNTXT thiscontext;
+	    Context thiscontext;
 	    // A top level context is established for the finalizer to
 	    // insure that any errors that might occur do not spill into
 	    // the call that triggered the collection:
-	    Rf_begincontext(&thiscontext, CTXT_TOPLEVEL,
+	    Rf_begincontext(&thiscontext, Context::TOPLEVEL,
 			    0, Environment::global(), Environment::base(), 0, 0);
 	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	    //	     << &thiscontext << endl;

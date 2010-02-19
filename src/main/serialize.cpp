@@ -48,6 +48,7 @@
 #include <R_ext/RS.h>           /* for CallocCharBuf, Free */
 #include <errno.h>
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -2133,8 +2134,8 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
 
 	/* set up a context which will free the buffer if there is an error */
 	{
-	    RCNTXT cntxt;
-	    begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
+	    Context cntxt;
+	    begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 			 R_NilValue, R_NilValue);
 	    cntxt.cend = &free_mem_buffer;
 	    cntxt.cenddata = &mbs;

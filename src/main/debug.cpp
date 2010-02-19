@@ -188,10 +188,10 @@ void attribute_hidden memtrace_report(void* old, void *_new) {
 #else
 static void memtrace_stack_dump(void)
 {
-    RCNTXT *cptr;
+    Context *cptr;
 
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
+	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    Rprintf("%s ",

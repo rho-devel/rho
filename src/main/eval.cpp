@@ -55,6 +55,7 @@
 #include "basedecl.h"
 
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
@@ -137,7 +138,7 @@ HANDLE ProfileEvent;
 
 static void doprof(void)
 {
-    RCNTXT *cptr;
+    Context *cptr;
     char buf[1100];
     unsigned long bigv, smallv, nodes;
     int len;
@@ -153,7 +154,7 @@ static void doprof(void)
 	    reset_duplicate_counter();
     }
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
+	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    if(strlen(buf) < 1000) {
@@ -181,7 +182,7 @@ static void __cdecl ProfileThread(void *pwait)
 #else /* not Win32 */
 static void doprof(int sig)
 {
-    RCNTXT *cptr;
+    Context *cptr;
     int newline = 0;
     unsigned long bigv, smallv, nodes;
     if (R_Mem_Profiling){
@@ -192,7 +193,7 @@ static void doprof(int sig)
 	    reset_duplicate_counter();
     }
     for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (CTXT_FUNCTION | CTXT_BUILTIN))
+	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    if (!newline) newline = 1;
@@ -387,8 +388,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /*  Set up a context with the call in it so error has access to it */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_RETURN, call, savedrho, rho, arglist, op);
+	Context cntxt;
+	begincontext(&cntxt, Context::RETURN, call, savedrho, rho, arglist, op);
 
 	/*  Build a list which matches the actual (unevaluated) arguments
 	    to the formal paramters.  Build a new environment which
@@ -454,12 +455,12 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
     {
-	RCNTXT cntxt;
-	if( R_GlobalContext->callflag == CTXT_GENERIC )
-	    begincontext(&cntxt, CTXT_RETURN, call,
+	Context cntxt;
+	if( R_GlobalContext->callflag == Context::GENERIC )
+	    begincontext(&cntxt, Context::RETURN, call,
 			 newrho, R_GlobalContext->sysparent, arglist, op);
 	else
-	    begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+	    begincontext(&cntxt, Context::RETURN, call, newrho, rho, arglist, op);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -518,7 +519,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 		if (e.context != &cntxt)
 		    throw;
 		if (R_ReturnedValue == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    R_ReturnedValue = R_NilValue;  /* remove restart token */
 		    redo = true;
 		}
@@ -580,8 +581,8 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     body = BODY(op);
 
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_RETURN, call, newrho, rho, arglist, op);
+	Context cntxt;
+	begincontext(&cntxt, Context::RETURN, call, newrho, rho, arglist, op);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -630,7 +631,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 		if (e.context != &cntxt)
 		    throw;
 		if (R_ReturnedValue == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    R_ReturnedValue = R_NilValue;  /* remove restart token */
 		    redo = true;
 		}
@@ -662,7 +663,7 @@ static SEXP R_dot_target = NULL;
 SEXP R_execMethod(SEXP op, SEXP rho)
 {
     SEXP call, arglist, callerenv, newrho, next, val;
-    RCNTXT *cptr;
+    Context *cptr;
 
     if (R_dot_Generic == NULL) {
 	R_dot_Generic = install(".Generic");
@@ -725,9 +726,9 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     defineVar(R_dot_Methods, findVar(R_dot_Methods, rho), newrho);
 
     /* Find the calling context.  Should be R_GlobalContext unless
-       profiling has inserted a CTXT_BUILTIN frame. */
+       profiling has inserted a Context::BUILTIN frame. */
     cptr = R_GlobalContext;
-    if (cptr->callflag & CTXT_BUILTIN)
+    if (cptr->callflag & Context::BUILTIN)
 	cptr = cptr->nextcontext;
 
     /* The calling environment should either be the environment of the
@@ -934,8 +935,8 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   least 1.  LT */
     nm = NAMED(val);
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+	Context cntxt;
+	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		     R_NilValue);
 	for (i = 0; i < n; i++) {
 	    try {
@@ -996,9 +997,9 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
 		if (e.context != &cntxt)
 		    throw;
-		if (e.mask == CTXT_BREAK)
+		if (e.mask == Context::BREAK)
 		    break;
-		// Otherwise assume it's CTXT_NEXT
+		// Otherwise assume it's Context::NEXT
 	    }
 	}
 	endcontext(&cntxt);
@@ -1023,8 +1024,8 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+	Context cntxt;
+	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		     R_NilValue);
 	bool redo;
 	do {
@@ -1041,7 +1042,7 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
 		if (e.context != &cntxt)
 		    throw;
-		redo = (e.mask != CTXT_BREAK);
+		redo = (e.mask != Context::BREAK);
 	    }
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
@@ -1067,8 +1068,8 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+	Context cntxt;
+	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		     R_NilValue);
 	bool redo;
 	do {
@@ -1085,7 +1086,7 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
 		if (e.context != &cntxt)
 		    throw;
-		redo = (e.mask != CTXT_BREAK);
+		redo = (e.mask != Context::BREAK);
 	    }
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
@@ -1193,7 +1194,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     UNPROTECT(1);
 
-    findcontext(CTXT_BROWSER | CTXT_FUNCTION, rho, v);
+    findcontext(Context::BROWSER | Context::FUNCTION, rho, v);
 
     return R_NilValue; /*NOTREACHED*/
 }
@@ -1323,8 +1324,8 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
      * case of an error.  This all helps error() provide a better call.
      */
     {
-	RCNTXT cntxt;
-	begincontext(&cntxt, CTXT_CCODE, call, R_BaseEnv, R_BaseEnv,
+	Context cntxt;
+	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
 	cntxt.cend = &tmp_cleanup;
 	cntxt.cenddata = rho;
@@ -1655,8 +1656,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(expr) == LANGSXP || TYPEOF(expr) == SYMSXP || isByteCode(expr)) {
 	PROTECT(expr);
 	{
-	    RCNTXT cntxt;
-	    begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
+	    Context cntxt;
+	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
 	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	    //	     << &cntxt << endl;
 	    try {
@@ -1667,7 +1668,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    throw;
 		expr = R_ReturnedValue;
 		if (expr == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    error(_("restarts not supported in 'eval'"));
 		}
 	    }
@@ -1683,8 +1684,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	n = LENGTH(expr);
 	tmp = R_NilValue;
 	{
-	    RCNTXT cntxt;
-	    begincontext(&cntxt, CTXT_RETURN, call, env, rho, args, op);
+	    Context cntxt;
+	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
 	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	    //	     << &cntxt << endl;
 	    try {
@@ -1696,7 +1697,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    throw;
 		tmp = R_ReturnedValue;
 		if (tmp == R_RestartToken) {
-		    cntxt.callflag = CTXT_RETURN;  /* turn restart off */
+		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    error(_("restarts not supported in 'eval'"));
 		}
 	    }
@@ -1747,12 +1748,12 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    RCNTXT *cptr;
+    Context *cptr;
     SEXP s, ans ;
     cptr = R_GlobalContext;
     /* get the args supplied */
     while (cptr != NULL) {
-	if (cptr->callflag == CTXT_RETURN && cptr->cloenv == rho)
+	if (cptr->callflag == Context::RETURN && cptr->cloenv == rho)
 	    break;
 	cptr = cptr->nextcontext;
     }
@@ -1760,7 +1761,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* get the env recall was called from */
     s = R_GlobalContext->sysparent;
     while (cptr != NULL) {
-	if (cptr->callflag == CTXT_RETURN && cptr->cloenv == s)
+	if (cptr->callflag == Context::RETURN && cptr->cloenv == s)
 	    break;
 	cptr = cptr->nextcontext;
     }
@@ -1905,8 +1906,8 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       new environment rho1 is created and used.  LT */
 	    PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho)); nprotect++;
 	    SET_PRVALUE(CAR(pargs), x);
-	    RCNTXT cntxt;
-	    begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, op);
+	    Context cntxt;
+	    begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, op);
 	    if(usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans))
 	    {
 		endcontext(&cntxt);
@@ -2667,8 +2668,8 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
   {
-      RCNTXT cntxt;
-      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+      Context cntxt;
+      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
       if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
       endcontext(&cntxt);
@@ -2738,8 +2739,8 @@ static int opcode_counts[OPCOUNT];
 
 static void loopWithContect(volatile SEXP code, volatile SEXP rho)
 {
-    RCNTXT cntxt;
-    begincontext(&cntxt, CTXT_LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
+    Context cntxt;
+    begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
 		 R_NilValue);
     bool redo;
     do {
@@ -2752,7 +2753,7 @@ static void loopWithContect(volatile SEXP code, volatile SEXP rho)
 	catch (JMPException& e) {
 	    if (e.context != &cntxt)
 		throw;
-	    redo = (e.mask != CTXT_BREAK);
+	    redo = (e.mask != Context::BREAK);
 	}
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &cntxt << endl;
@@ -2952,8 +2953,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    NEXT();
 	}
     OP(ENDLOOPCNTXT, 0): value = R_NilValue; goto done;
-    OP(DOLOOPNEXT, 0): findcontext(CTXT_NEXT, rho, R_NilValue);
-    OP(DOLOOPBREAK, 0): findcontext(CTXT_BREAK, rho, R_NilValue);
+    OP(DOLOOPNEXT, 0): findcontext(Context::NEXT, rho, R_NilValue);
+    OP(DOLOOPBREAK, 0): findcontext(Context::BREAK, rho, R_NilValue);
     OP(STARTFOR, 2):
       {
 	SEXP seq = R_BCNodeStackTop[-1];
@@ -3374,8 +3375,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
 	  {
-	      RCNTXT cntxt;
-	      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      Context cntxt;
+	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
 	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	      endcontext(&cntxt);
@@ -3405,8 +3406,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  SET_PRVALUE(CADR(pargs), str);
 	  SET_PRVALUE(CADDR(pargs), value);
 	  {
-	      RCNTXT cntxt;
-	      begincontext(&cntxt, CTXT_RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      Context cntxt;
+	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
 	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	      endcontext(&cntxt);
