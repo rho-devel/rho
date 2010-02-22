@@ -313,12 +313,6 @@ static SEXP ssNewVector(SEXPTYPE type, int vlen)
     return (tvec);
 }
 
-static void closewin_cend(void *data)
-{
-    DEstruct DE = (DEstruct) data;
-    closewin(DE);
-}
-
 SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP colmodes, tnames, tvec, tvec2, work2;
@@ -401,14 +395,21 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
 	CXXR::Context cntxt;
 	begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &closewin_cend;
-	cntxt.cenddata = (void *) DE;
+	// cntxt.cend = &closewin_cend;
+	// cntxt.cenddata = (void *) DE;
 
+	try {
 	highlightrect(DE);
 
 	cell_cursor_init(DE);
 
 	eventloop(DE);
+	}
+	catch (...) {
+	    closewin(DE);
+	    UNPROTECT(nprotect);
+	    throw;
+	}
 
 	endcontext(&cntxt);
     }
@@ -466,16 +467,6 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     setAttrib(work2, R_NamesSymbol, DE->names);
     UNPROTECT(nprotect);
     return work2;
-}
-
-static void dv_closewin_cend(void *data)
-{
-    DEstruct DE = (DEstruct) data;
-    R_ReleaseObject(DE->lens);
-    R_ReleaseObject(DE->work);
-    closewin(DE);
-    free(DE);
-    nView--;
 }
 
 SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -537,23 +528,34 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* set up a context which will close the window if there is an error */
     begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		 R_NilValue, R_NilValue);
-    cntxt.cend = &dv_closewin_cend;
-    cntxt.cenddata = (void *) DE;
+    // cntxt.cend = &dv_closewin_cend;
+    // cntxt.cenddata = (void *) DE;
 
-    highlightrect(DE);
+    try {
+	highlightrect(DE);
 
-    cell_cursor_init(DE);
+	cell_cursor_init(DE);
 
-    if(fdView < 0) {
-	fdView = ConnectionNumber(iodisplay);
-	addInputHandler(R_InputHandlers, fdView,
-			R_ProcessX11Events, XActivity);
+	if(fdView < 0) {
+	    fdView = ConnectionNumber(iodisplay);
+	    addInputHandler(R_InputHandlers, fdView,
+			    R_ProcessX11Events, XActivity);
+	}
+
+	drawwindow(DE);
+
+	R_PreserveObject(DE->work); /* also preserves names */
+	R_PreserveObject(DE->lens);
     }
-
-    drawwindow(DE);
-
-    R_PreserveObject(DE->work); /* also preserves names */
-    R_PreserveObject(DE->lens);
+    catch (...) {
+	R_ReleaseObject(DE->lens);
+	R_ReleaseObject(DE->work);
+	closewin(DE);
+	free(DE);
+	nView--;
+	UNPROTECT(nprotect);
+	throw;
+    }
     UNPROTECT(nprotect);
     return R_NilValue;
 }

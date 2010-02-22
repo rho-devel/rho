@@ -51,12 +51,6 @@
 #include <errno.h>
 #include "CXXR/Context.hpp"
 
-static void listencleanup(void *data)
-{
-    int *psock = CXXRSCAST(int*, data);
-    R_SockClose(*psock);
-}
-
 static Rboolean sock_open(Rconnection con)
 {
     Rsockconn thisconn = (Rsockconn)con->connprivate;
@@ -80,9 +74,15 @@ static Rboolean sock_open(Rconnection con)
 	    /* set up a context which will close socket on jump. */
 	    begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv,
 			 R_BaseEnv, R_NilValue, R_NilValue);
-	    cntxt.cend = &listencleanup;
-	    cntxt.cenddata = &sock1;
+	    // cntxt.cend = &listencleanup;
+	    // cntxt.cenddata = &sock1;
+	    try {
 	    sock = R_SockListen(sock1, buf, 256);
+	    }
+	    catch (...) {
+		R_SockClose(sock1);
+		throw;
+	    }
 	    endcontext(&cntxt);
 	}
 	if(sock < 0) {
