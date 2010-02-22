@@ -149,13 +149,6 @@ void attribute_hidden R_run_onexits(Context *cptr)
 	if (c == NULL)
 	    error(_("bad target context--should NEVER happen;\n\
 please bug.report() [R_run_onexits]"));
-	if (c->cend != NULL) {
-	    void (*cend)(void *) = c->cend;
-	    c->cend = NULL; /* prevent recursion */
-	    R_HandlerStack = c->handlerstack;
-	    R_RestartStack = c->restartstack;
-	    cend(c->cenddata);
-	}
 	if (c->cloenv != R_NilValue && c->conexit != R_NilValue) {
 	    SEXP s = c->conexit;
 	    c->conexit = R_NilValue; /* prevent recursion */
@@ -257,7 +250,6 @@ void begincontext(Context * cptr, Context::Type flags,
     cptr->cloenv = env;
     cptr->sysparent = sysp;
     cptr->conexit = R_NilValue;
-    cptr->cend = NULL;
     cptr->promargs = promargs;
     cptr->callfun = callfun;
     cptr->vmax = vmaxget();

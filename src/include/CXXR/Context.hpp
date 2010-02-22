@@ -28,8 +28,8 @@
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *  along with this program; if not, a copy is available at
+ *  http://www.r-project.org/Licenses/
  */
 
 /** @file Context.hpp
@@ -87,8 +87,6 @@ namespace CXXR {
 	GCStackRoot<> call;          // The call that effected this context
 	GCStackRoot<> cloenv;	     // The environment
 	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
-	void (*cend)(void *);	     // C "on.exit" thunk
-	void *cenddata;		     // data for C "on.exit" thunk
 	void *vmax;	             // size of R_alloc stack
 	int intsusp;                 // interrupts are suspended
 	GCStackRoot<> handlerstack;  // condition handler stack
