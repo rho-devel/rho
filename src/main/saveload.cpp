@@ -172,18 +172,6 @@ typedef struct {
  void	(*InTerm)(FILE*, SaveLoadData *d);
 } InputRoutines;
 
-typedef struct {
-  FILE *fp;
-  OutputRoutines *methods;
-  SaveLoadData *data;
-} OutputCtxtData;
-
-typedef struct {
-  FILE *fp;
-  InputRoutines *methods;
-  SaveLoadData *data;
-} InputCtxtData;
-
 
 static SEXP DataLoad(FILE*, int startup, InputRoutines *m, int version, SaveLoadData *d);
 
@@ -1119,22 +1107,14 @@ static void NewWriteItem (SEXP s, SEXP sym_list, SEXP env_list, FILE *fp, Output
  *  symbols or environments are encountered, references to them are
  *  made instead of writing them out totally.  */
 
-static void newdatasave_cleanup(void *data)
-{
-    OutputCtxtData *cinfo = static_cast<OutputCtxtData*>(data);
-    FILE *fp = cinfo->fp;
-    cinfo->methods->OutTerm(fp, cinfo->data);
-}
-
 static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
 {
-    SEXP sym_table, env_table, iterator;
+    GCStackRoot<> sym_table, env_table;
+    SEXP iterator;
     int sym_count, env_count;
-    OutputCtxtData cinfo;
-    cinfo.fp = fp; cinfo.methods = m;  cinfo.data = d;
 
-    PROTECT(sym_table = MakeHashTable());
-    PROTECT(env_table = MakeHashTable());
+    sym_table = MakeHashTable();
+    env_table = MakeHashTable();
     NewMakeLists(s, sym_table, env_table);
     FixHashEntries(sym_table);
     FixHashEntries(env_table);
@@ -1145,27 +1125,33 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &newdatasave_cleanup;
-	cntxt.cenddata = &cinfo;
+	// cntxt.cend = &newdatasave_cleanup;
+	// cntxt.cenddata = &cinfo;
 
-	m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
-	m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
-	for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
-	     sym_count--;
-	     iterator = CDR(iterator)) {
-	    R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
-	    m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
-	    m->OutNewline(fp, d);
+	try {
+	    m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
+	    m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
+	    for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
+		 sym_count--;
+		 iterator = CDR(iterator)) {
+		R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
+		m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
+		m->OutNewline(fp, d);
+	    }
+	    for (iterator = HASH_TABLE_KEYS_LIST(env_table);
+		 env_count--;
+		 iterator = CDR(iterator)) {
+		R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
+		NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
+		NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
+		NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
+	    }
+	    NewWriteItem(s, sym_table, env_table, fp, m, d);
 	}
-	for (iterator = HASH_TABLE_KEYS_LIST(env_table);
-	     env_count--;
-	     iterator = CDR(iterator)) {
-	    R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
-	    NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
-	    NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
-	    NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
+	catch (...) {
+	    m->OutTerm(fp, d);
+	    throw;
 	}
-	NewWriteItem(s, sym_table, env_table, fp, m, d);
 
 	/* end the context after anything that could raise an error but before
 	   calling OutTerm so it doesn't get called twice */
@@ -1173,7 +1159,6 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
     }
 
     m->OutTerm(fp, d);
-    UNPROTECT(2);
 }
 
 #define InVec(fp, obj, accessor, infunc, length, d)			\
@@ -1347,19 +1332,11 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     return s;
 }
 
-static void newdataload_cleanup(void *data)
-{
-    InputCtxtData *cinfo = static_cast<InputCtxtData*>(data);
-    FILE *fp = static_cast<FILE *>( data);
-    cinfo->methods->InTerm(fp, cinfo->data);
-}
-
 static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 {
     int sym_count, env_count, count;
-    SEXP sym_table, env_table, obj;
-    InputCtxtData cinfo;
-    cinfo.fp = fp; cinfo.methods = m; cinfo.data = d;
+    GCStackRoot<> sym_table, env_table;
+    SEXP obj;
 
     m->InInit(fp, d);
 
@@ -1368,45 +1345,51 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &newdataload_cleanup;
-	cntxt.cenddata = &cinfo;
+	// cntxt.cend = &newdataload_cleanup;
+	// cntxt.cenddata = &cinfo;
 
-	/* Read the table sizes */
-	sym_count = m->InInteger(fp, d);
-	env_count = m->InInteger(fp, d);
+	try {
+	    /* Read the table sizes */
+	    sym_count = m->InInteger(fp, d);
+	    env_count = m->InInteger(fp, d);
 
-	/* Allocate the symbol and environment tables */
-	PROTECT(sym_table = allocVector(VECSXP, sym_count));
-	PROTECT(env_table = allocVector(VECSXP, env_count));
+	    /* Allocate the symbol and environment tables */
+	    sym_table = allocVector(VECSXP, sym_count);
+	    env_table = allocVector(VECSXP, env_count);
 
-	/* Read back and install symbols */
-	for (count = 0; count < sym_count; ++count) {
-	    SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
-	}
-	/* Allocate the environments */
-	for (count = 0; count < env_count; ++count)
-	    SET_VECTOR_ELT(env_table, count, new Environment(0));
+	    /* Read back and install symbols */
+	    for (count = 0; count < sym_count; ++count) {
+		SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
+	    }
+	    /* Allocate the environments */
+	    for (count = 0; count < env_count; ++count)
+		SET_VECTOR_ELT(env_table, count, new Environment(0));
 
-	/* Now fill them in  */
-	for (count = 0; count < env_count; ++count) {
-	    Environment* env
-		= static_cast<Environment*>(VECTOR_ELT(env_table, count));
-	    Environment* enc
-		= SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
-							  fp, m, d));
-	    env->setEnclosingEnvironment(enc);
-	    PairList* bindings
-		= SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
-						       fp, m, d));
-	    frameReadPairList(env->frame(), bindings);
-	    // Throw away the hash table:
-	    NewReadItem(sym_table, env_table, fp, m, d);
+	    /* Now fill them in  */
+	    for (count = 0; count < env_count; ++count) {
+		Environment* env
+		    = static_cast<Environment*>(VECTOR_ELT(env_table, count));
+		Environment* enc
+		    = SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
+							      fp, m, d));
+		env->setEnclosingEnvironment(enc);
+		PairList* bindings
+		    = SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
+							   fp, m, d));
+		frameReadPairList(env->frame(), bindings);
+		// Throw away the hash table:
+		NewReadItem(sym_table, env_table, fp, m, d);
 	
-	    env->expose();
-	}
+		env->expose();
+	    }
 
-	/* Read the actual object back */
-	obj =  NewReadItem(sym_table, env_table, fp, m, d);
+	    /* Read the actual object back */
+	    obj =  NewReadItem(sym_table, env_table, fp, m, d);
+	}
+	catch (...) {
+	    m->InTerm(fp, d);
+	    throw;
+	}
 
 	/* end the context after anything that could raise an error but before
 	   calling InTerm so it doesn't get called twice */
@@ -1415,7 +1398,6 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 
     /* Wrap up */
     m->InTerm(fp, d);
-    UNPROTECT(2);
     return obj;
 }
 
@@ -1980,12 +1962,6 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
     }
 }
 
-static void saveload_cleanup(void *data)
-{
-    FILE *fp = static_cast<FILE *>( data);
-    fclose(fp);
-}
-
 /* Only used for version 1 saves */
 SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -2028,29 +2004,35 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &saveload_cleanup;
-	cntxt.cenddata = fp;
+	// cntxt.cend = &saveload_cleanup;
+	// cntxt.cenddata = fp;
 
-	len = length(CAR(args));
-	PROTECT(s = allocList(len));
+	try {
+	    len = length(CAR(args));
+	    PROTECT(s = allocList(len));
 
-	t = s;
-	for (j = 0; j < len; j++, t = CDR(t)) {
-	    SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
-	    tmp = findVar(TAG(t), source);
-	    if (tmp == R_UnboundValue)
-		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
-	    if(ep && TYPEOF(tmp) == PROMSXP) {
-		PROTECT(tmp);
-		tmp = eval(tmp, source);
-		UNPROTECT(1);
+	    t = s;
+	    for (j = 0; j < len; j++, t = CDR(t)) {
+		SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
+		tmp = findVar(TAG(t), source);
+		if (tmp == R_UnboundValue)
+		    error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+		if(ep && TYPEOF(tmp) == PROMSXP) {
+		    PROTECT(tmp);
+		    tmp = eval(tmp, source);
+		    UNPROTECT(1);
+		}
+		SETCAR(t, tmp);
 	    }
-	    SETCAR(t, tmp);
+
+	    R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
+
+	    UNPROTECT(1);
 	}
-
-	R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
-
-	UNPROTECT(1);
+	catch (...) {
+	    fclose(fp);
+	    throw;
+	}
 	/* end the context after anything that could raise an error but before
 	   closing the file so it doesn't get done twice */
 	endcontext(&cntxt);
@@ -2118,7 +2100,8 @@ static SEXP R_LoadSavedData(FILE *fp, SEXP aenv)
 /* This is only used for version 1 or earlier formats */
 SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP fname, aenv, val;
+    SEXP fname, aenv;
+    GCStackRoot<> val;
     FILE *fp;
 
     checkArity(op, args);
@@ -2147,17 +2130,21 @@ SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &saveload_cleanup;
-	cntxt.cenddata = fp;
+	// cntxt.cend = &saveload_cleanup;
+	// cntxt.cenddata = fp;
 
-	PROTECT(val = R_LoadSavedData(fp, aenv));
-
+	try {
+	    val = R_LoadSavedData(fp, aenv);
+	}
+	catch (...) {
+	    fclose(fp);
+	    throw;
+	}
 	/* end the context after anything that could raise an error but before
 	   closing the file so it doesn't get done twice */
 	endcontext(&cntxt);
     }
     fclose(fp);
-    UNPROTECT(1);
     return val;
 }
 
@@ -2377,19 +2364,14 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* Read and checks the magic number, open the connection if needed */
 
-static void load_con_cleanup(void *data)
-{
-    Rconnection con = CXXRSCAST(Rconnection, data);
-    con->close(con);
-}
-
 SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* loadFromConn2(conn, environment) */
 
     struct R_inpstream_st in;
     Rconnection con;
-    SEXP aenv, res = R_NilValue;
+    SEXP aenv;
+    GCStackRoot<> res(0);
     unsigned char buf[6];
     int count;
     Rboolean wasopen;
@@ -2432,21 +2414,26 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Context cntxt;
 	    begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 			 R_NilValue, R_NilValue);
-	    cntxt.cend = &load_con_cleanup;
-	    cntxt.cenddata = con;
-	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
-	    GCStackRoot<> unser(R_Unserialize(&in));
-	    PROTECT(res = RestoreToEnv(unser, aenv));
+	    // cntxt.cend = &load_con_cleanup;
+	    // cntxt.cenddata = con;
+	    try {
+		R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
+		GCStackRoot<> unser(R_Unserialize(&in));
+		res = RestoreToEnv(unser, aenv);
+	    }
+	    catch (...) {
+		con->close(con);
+		throw;
+	    }
 	    endcontext(&cntxt);
 	} else {
 	    /* FIXME: this is odd: we did not open that connection, so
 	       why should we be closing it? */
 	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
 	    GCStackRoot<> unser(R_Unserialize(&in));
-	    PROTECT(res = RestoreToEnv(unser, aenv));
+	    res = RestoreToEnv(unser, aenv);
 	    con->close(con);
 	}
-	UNPROTECT(1);
     } else
 	error(_("the input does not start with a magic number compatible with loading from a connection"));
     return res;

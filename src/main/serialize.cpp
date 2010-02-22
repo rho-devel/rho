@@ -2092,9 +2092,8 @@ static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
 		     OutCharMem, OutBytesMem, phook, pdata);
 }
 
-static void free_mem_buffer(void *data)
+static void free_mem_buffer(membuf_t mb)
 {
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, data);
     if (mb->buf != NULL) {
 	unsigned char *buf = mb->buf;
 	mb->buf = NULL;
@@ -2137,13 +2136,19 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
 	    Context cntxt;
 	    begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 			 R_NilValue, R_NilValue);
-	    cntxt.cend = &free_mem_buffer;
-	    cntxt.cenddata = &mbs;
+	    // cntxt.cend = &free_mem_buffer;
+	    // cntxt.cenddata = &mbs;
 
-	    InitMemOutPStream(&out, &mbs, type, 0, hook, fun);
-	    R_Serialize(object, &out);
+	    try {
+		InitMemOutPStream(&out, &mbs, type, 0, hook, fun);
+		R_Serialize(object, &out);
 
-	    val =  CloseMemOutPStream(&out);
+		val =  CloseMemOutPStream(&out);
+	    }
+	    catch (...) {
+		free_mem_buffer(&mbs);
+		throw;
+	    }
 
 	    /* end the context after anything that could raise an error but before
 	       calling OutTerm so it doesn't get called twice */

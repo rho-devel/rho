@@ -1276,12 +1276,6 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 
 static const char * const asym[] = {":=", "<-", "<<-", "="};
 
-static void tmp_cleanup(void *data)
-{
-    unbindVar(R_TmpvalSymbol, static_cast<SEXP>( data));
-}
-
-
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP expr, lhs, rhs, tmp, tmp2;
@@ -1327,48 +1321,54 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &tmp_cleanup;
-	cntxt.cenddata = rho;
+	// cntxt.cend = &tmp_cleanup;
+	// cntxt.cenddata = rho;
 
-	/*  Do a partial evaluation down through the LHS. */
-	lhs = evalseq(CADR(expr), rho,
-		      PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc);
+	try {
+	    /*  Do a partial evaluation down through the LHS. */
+	    lhs = evalseq(CADR(expr), rho,
+			  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc);
 
-	PROTECT(lhs);
-	PROTECT(rhs); /* To get the loop right ... */
+	    PROTECT(lhs);
+	    PROTECT(rhs); /* To get the loop right ... */
 
-	while (isLanguage(CADR(expr))) {
+	    while (isLanguage(CADR(expr))) {
+		if (TYPEOF(CAR(expr)) != SYMSXP)
+		    error(_("invalid function in complex assignment"));
+		if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
+		    error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
+		sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
+		tmp = install(buf);
+		R_SetVarLocValue(tmploc, CAR(lhs));
+		UNPROTECT(1);
+		PROTECT(tmp2 = mkPROMISE(rhs, rho));
+		SET_PRVALUE(tmp2, rhs);
+		PROTECT(rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr),
+					  tmp2));
+		rhs = eval(rhs, rho);
+		UNPROTECT(2);
+		PROTECT(rhs);
+		lhs = CDR(lhs);
+		expr = CADR(expr);
+	    }
 	    if (TYPEOF(CAR(expr)) != SYMSXP)
 		error(_("invalid function in complex assignment"));
 	    if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
 		error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
 	    sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
-	    tmp = install(buf);
 	    R_SetVarLocValue(tmploc, CAR(lhs));
-	    UNPROTECT(1);
-	    PROTECT(tmp2 = mkPROMISE(rhs, rho));
-	    SET_PRVALUE(tmp2, rhs);
-	    PROTECT(rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr),
-				      tmp2));
-	    rhs = eval(rhs, rho);
-	    UNPROTECT(2);
-	    PROTECT(rhs);
-	    lhs = CDR(lhs);
-	    expr = CADR(expr);
+	    PROTECT(tmp = mkPROMISE(CADR(args), rho));
+	    SET_PRVALUE(tmp, rhs);
+	    PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
+				      install(buf), R_GetVarLocSymbol(tmploc),
+				      CDDR(expr), tmp));
+	    expr = eval(expr, rho);
+	    UNPROTECT(4);
 	}
-	if (TYPEOF(CAR(expr)) != SYMSXP)
-	    error(_("invalid function in complex assignment"));
-	if(strlen(CHAR(PRINTNAME(CAR(expr)))) + 3 > 32)
-	    error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
-	sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
-	R_SetVarLocValue(tmploc, CAR(lhs));
-	PROTECT(tmp = mkPROMISE(CADR(args), rho));
-	SET_PRVALUE(tmp, rhs);
-	PROTECT(expr = assignCall(install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
-				  install(buf), R_GetVarLocSymbol(tmploc),
-				  CDDR(expr), tmp));
-	expr = eval(expr, rho);
-	UNPROTECT(4);
+	catch (...) {
+	    unbindVar(R_TmpvalSymbol, rho);
+	    throw;
+	}
 	endcontext(&cntxt); /* which does not run the remove */
     }
     unbindVar(R_TmpvalSymbol, rho);

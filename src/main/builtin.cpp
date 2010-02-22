@@ -447,9 +447,8 @@ typedef struct cat_info {
     Rconnection con;
 } cat_info;
 
-static void cat_cleanup(void *data)
+static void cat_cleanup(cat_info* pci)
 {
-    cat_info *pci = static_cast<cat_info *>( data);
     Rconnection con = pci->con;
     Rboolean wasopen = pci->wasopen;
     int changedcon = pci->changedcon;
@@ -539,86 +538,91 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &cat_cleanup;
-	cntxt.cenddata = &ci;
-
-	nobjs = length(objs);
-	width = 0;
-	ntot = 0;
-	nlines = 0;
-	for (iobj = 0; iobj < nobjs; iobj++) {
-	    s = VECTOR_ELT(objs, iobj);
-	    if (iobj != 0 && !isNull(s))
-		cat_printsep(sepr, 0);
-	    n = length(s);
-	    if (n > 0) {
-		if (labs != R_NilValue && (iobj == 0)
-		    && (asInteger(fill) > 0)) {
-		    Rprintf("%s ", trChar(STRING_ELT(labs, nlines % lablen)));
-		    /* FIXME -- Rstrlen allows for embedded nuls, double-width chars */
-		    width += Rstrlen(STRING_ELT(labs, nlines % lablen), 0) + 1;
-		    nlines++;
-		}
-		if (isString(s))
-		    p = trChar(STRING_ELT(s, 0));
-		else if (isSymbol(s)) /* length 1 */
-		    p = CHAR(PRINTNAME(s));
-		else if (isVectorAtomic(s)) {
-		    /* Not a string, as that is covered above.
-		       Thus the maximum size is about 60.
-		       The copy is needed as cat_newline might reuse the buffer.
-		       Use strncpy is in case these assumptions change.
-		    */
-		    p = EncodeElement(s, 0, 0, OutDec);
-		    strncpy(buf, p, 512); buf[511] = '\0';
-		    p = buf;
-		}
+	// cntxt.cend = &cat_cleanup;
+	// cntxt.cenddata = &ci;
+	try {
+	    nobjs = length(objs);
+	    width = 0;
+	    ntot = 0;
+	    nlines = 0;
+	    for (iobj = 0; iobj < nobjs; iobj++) {
+		s = VECTOR_ELT(objs, iobj);
+		if (iobj != 0 && !isNull(s))
+		    cat_printsep(sepr, 0);
+		n = length(s);
+		if (n > 0) {
+		    if (labs != R_NilValue && (iobj == 0)
+			&& (asInteger(fill) > 0)) {
+			Rprintf("%s ", trChar(STRING_ELT(labs, nlines % lablen)));
+			/* FIXME -- Rstrlen allows for embedded nuls, double-width chars */
+			width += Rstrlen(STRING_ELT(labs, nlines % lablen), 0) + 1;
+			nlines++;
+		    }
+		    if (isString(s))
+			p = trChar(STRING_ELT(s, 0));
+		    else if (isSymbol(s)) /* length 1 */
+			p = CHAR(PRINTNAME(s));
+		    else if (isVectorAtomic(s)) {
+			/* Not a string, as that is covered above.
+			   Thus the maximum size is about 60.
+			   The copy is needed as cat_newline might reuse the buffer.
+			   Use strncpy is in case these assumptions change.
+			*/
+			p = EncodeElement(s, 0, 0, OutDec);
+			strncpy(buf, p, 512); buf[511] = '\0';
+			p = buf;
+		    }
 #ifdef fixed_cat
-		else if (isVectorList(s)) {
-		    /* FIXME:	 call EncodeElement() for every element of  s.
+		    else if (isVectorList(s)) {
+			/* FIXME:	 call EncodeElement() for every element of  s.
 
-		    Real Problem: `s' can be large;
-		    should do line breaking etc.. (buf is of limited size)
-		    */
-		}
+			Real Problem: `s' can be large;
+			should do line breaking etc.. (buf is of limited size)
+			*/
+		    }
 #endif
-		else
-		    errorcall(call,
-			      _("argument %d (type '%s') cannot be handled by 'cat'"),
-			      1+iobj, type2char(TYPEOF(s)));
-		/* FIXME : cat(...) should handle ANYTHING */
-		w = strlen(p);
-		cat_sepwidth(sepr, &sepw, ntot);
-		if ((iobj > 0) && (width + w + sepw > pwidth)) {
-		    cat_newline(labs, &width, lablen, nlines);
-		    nlines++;
-		}
-		for (i = 0; i < n; i++, ntot++) {
-		    Rprintf("%s", p);
-		    width += w + sepw;
-		    if (i < (n - 1)) {
-			cat_printsep(sepr, ntot);
-			if (isString(s))
-			    p = trChar(STRING_ELT(s, i+1));
-			else {
-			    p = EncodeElement(s, i+1, 0, OutDec);
-			    strncpy(buf, p, 512); buf[511] = '\0';
-			    p = buf;
-			}
-			w = strlen(p);
-			cat_sepwidth(sepr, &sepw, ntot);
-			/* This is inconsistent with the version above.
-			   As from R 2.3.0, fill <= 0 is ignored. */
-			if ((width + w + sepw > pwidth) && pwidth) {
-			    cat_newline(labs, &width, lablen, nlines);
-			    nlines++;
+		    else
+			errorcall(call,
+				  _("argument %d (type '%s') cannot be handled by 'cat'"),
+				  1+iobj, type2char(TYPEOF(s)));
+		    /* FIXME : cat(...) should handle ANYTHING */
+		    w = strlen(p);
+		    cat_sepwidth(sepr, &sepw, ntot);
+		    if ((iobj > 0) && (width + w + sepw > pwidth)) {
+			cat_newline(labs, &width, lablen, nlines);
+			nlines++;
+		    }
+		    for (i = 0; i < n; i++, ntot++) {
+			Rprintf("%s", p);
+			width += w + sepw;
+			if (i < (n - 1)) {
+			    cat_printsep(sepr, ntot);
+			    if (isString(s))
+				p = trChar(STRING_ELT(s, i+1));
+			    else {
+				p = EncodeElement(s, i+1, 0, OutDec);
+				strncpy(buf, p, 512); buf[511] = '\0';
+				p = buf;
+			    }
+			    w = strlen(p);
+			    cat_sepwidth(sepr, &sepw, ntot);
+			    /* This is inconsistent with the version above.
+			       As from R 2.3.0, fill <= 0 is ignored. */
+			    if ((width + w + sepw > pwidth) && pwidth) {
+				cat_newline(labs, &width, lablen, nlines);
+				nlines++;
+			    }
 			}
 		    }
 		}
 	    }
+	    if ((pwidth != INT_MAX) || nlsep)
+		Rprintf("\n");
 	}
-	if ((pwidth != INT_MAX) || nlsep)
-	    Rprintf("\n");
+	catch (...) {
+	    cat_cleanup(&ci);
+	    throw;
+	}
 
 	/* end the context after anything that could raise an error but before
 	   doing the cleanup so the cleanup doesn't get done twice */

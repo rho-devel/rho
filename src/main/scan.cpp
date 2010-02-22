@@ -315,14 +315,6 @@ static int scanchar(Rboolean inQuote, LocalData *d)
     return next;
 }
 
-/* utility to close connections after interrupts */
-static void scan_cleanup(void *data)
-{
-    LocalData *ld = CXXRCONSTRUCT(static_cast<LocalData*>, data);
-    if(!ld->ttyflag && !ld->wasopen) ld->con->close(ld->con);
-    if (ld->quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, ld->quoteset));
-}
-
 #include "RBufferUtils.h"
 
 /*XX  Can we pass this routine an R_StringBuffer? appears so.
@@ -942,26 +934,33 @@ SEXP attribute_hidden do_scan(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &scan_cleanup;
-	cntxt.cenddata = &data;
+	// cntxt.cend = &scan_cleanup;
+	// cntxt.cenddata = &data;
 
-	switch (TYPEOF(what)) {
-	case LGLSXP:
-	case INTSXP:
-	case REALSXP:
-	case CPLXSXP:
-	case STRSXP:
-	case RAWSXP:
-	    ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
-			     blskip, &data);
-	    break;
+	try {
+	    switch (TYPEOF(what)) {
+	    case LGLSXP:
+	    case INTSXP:
+	    case REALSXP:
+	    case CPLXSXP:
+	    case STRSXP:
+	    case RAWSXP:
+		ans = scanVector(TYPEOF(what), nmax, nlines, flush, stripwhite,
+				 blskip, &data);
+		break;
 
-	case VECSXP:
-	    ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
-			    blskip, multiline, &data);
-	    break;
-	default:
-	    error(_("invalid '%s' argument"), "what");
+	    case VECSXP:
+		ans = scanFrame(what, nmax, nlines, flush, fill, stripwhite,
+				blskip, multiline, &data);
+		break;
+	    default:
+		error(_("invalid '%s' argument"), "what");
+	    }
+	}
+	catch (...) {
+	    if(!data.ttyflag && !data.wasopen) data.con->close(data.con);
+	    if (data.quoteset[0]) free(CXXRCONSTRUCT(const_cast<char*>, data.quoteset));
+	    throw;
 	}
 	endcontext(&cntxt);
     }
@@ -1694,9 +1693,8 @@ typedef struct wt_info {
 } wt_info;
 
 /* utility to cleanup e.g. after interrpts */
-static void wt_cleanup(void *data)
+static void wt_cleanup(wt_info *ld)
 {
-    wt_info *ld = CXXRCONSTRUCT(static_cast<wt_info*>, data);
     if(!ld->wasopen) ld->con->close(ld->con);
     R_FreeStringBuffer(ld->buf);
     R_print.digits = ld->savedigits;
@@ -1771,83 +1769,89 @@ SEXP attribute_hidden do_writetable(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context cntxt;
 	begincontext(&cntxt, Context::CCODE, call, R_BaseEnv, R_BaseEnv,
 		     R_NilValue, R_NilValue);
-	cntxt.cend = &wt_cleanup;
-	cntxt.cenddata = &wi;
+	// cntxt.cend = &wt_cleanup;
+	// cntxt.cenddata = &wi;
 
-	if(isVectorList(x)) { /* A data frame */
+	try {
+	    if(isVectorList(x)) { /* A data frame */
 
-	    /* handle factors internally, check integrity */
-	    levels = static_cast<SEXP *>( CXXR_alloc(nc, sizeof(SEXP)));
-	    for(j = 0; j < nc; j++) {
-		xj = VECTOR_ELT(x, j);
-		if(LENGTH(xj) != nr)
-		    error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
-		if(inherits(xj, "factor")) {
-		    levels[j] = getAttrib(xj, R_LevelsSymbol);
-		} else levels[j] = R_NilValue;
-	    }
-
-	    for(i = 0; i < nr; i++) {
-		if(i % 1000 == 999) R_CheckUserInterrupt();
-		if(!isNull(rnames))
-		    Rconn_printf(con, "%s%s",
-				 EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
-						&strBuf, cdec), csep);
+		/* handle factors internally, check integrity */
+		levels = static_cast<SEXP *>( CXXR_alloc(nc, sizeof(SEXP)));
 		for(j = 0; j < nc; j++) {
 		    xj = VECTOR_ELT(x, j);
-		    if(j > 0) Rconn_printf(con, "%s", csep);
-		    if(isna(xj, i)) tmp = cna;
-		    else {
-			if(!isNull(levels[j])) {
-			    /* We cannot assume factors have integer levels */
-			    if(TYPEOF(xj) == INTSXP)
-				tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
-						     quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+		    if(LENGTH(xj) != nr)
+			error(_("corrupt data frame -- length of column %d does not not match nrows"), j+1);
+		    if(inherits(xj, "factor")) {
+			levels[j] = getAttrib(xj, R_LevelsSymbol);
+		    } else levels[j] = R_NilValue;
+		}
+
+		for(i = 0; i < nr; i++) {
+		    if(i % 1000 == 999) R_CheckUserInterrupt();
+		    if(!isNull(rnames))
+			Rconn_printf(con, "%s%s",
+				     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
+						    &strBuf, cdec), csep);
+		    for(j = 0; j < nc; j++) {
+			xj = VECTOR_ELT(x, j);
+			if(j > 0) Rconn_printf(con, "%s", csep);
+			if(isna(xj, i)) tmp = cna;
+			else {
+			    if(!isNull(levels[j])) {
+				/* We cannot assume factors have integer levels */
+				if(TYPEOF(xj) == INTSXP)
+				    tmp = EncodeElement2(levels[j], INTEGER(xj)[i] - 1,
+							 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+							 &strBuf, cdec);
+				else if(TYPEOF(xj) == REALSXP)
+				    tmp = EncodeElement2(levels[j], CXXRCONSTRUCT(int, REAL(xj)[i] - 1),
+							 quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+							 &strBuf, cdec);
+				else
+				    error("column %s claims to be a factor but does not have numeric codes", j+1);
+			    } else {
+				tmp = EncodeElement2(xj, i, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
 						     &strBuf, cdec);
-			    else if(TYPEOF(xj) == REALSXP)
-				tmp = EncodeElement2(levels[j], CXXRCONSTRUCT(int, REAL(xj)[i] - 1),
-						     quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-						     &strBuf, cdec);
-			    else
-				error("column %s claims to be a factor but does not have numeric codes", j+1);
-			} else {
-			    tmp = EncodeElement2(xj, i, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-						 &strBuf, cdec);
+			    }
+			    /* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
 			}
-			/* if(cdec) change_dec(tmp, cdec, TYPEOF(xj)); */
+			Rconn_printf(con, "%s", tmp);
 		    }
-		    Rconn_printf(con, "%s", tmp);
+		    Rconn_printf(con, "%s", ceol);
 		}
-		Rconn_printf(con, "%s", ceol);
-	    }
 
-	} else { /* A matrix */
+	    } else { /* A matrix */
 
-	    if(!isVectorAtomic(x))
-		UNIMPLEMENTED_TYPE("write.table, matrix method", x);
-	    /* quick integrity check */
-	    if(LENGTH(x) != nr * nc)
-		error(_("corrupt matrix -- dims not not match length"));
+		if(!isVectorAtomic(x))
+		    UNIMPLEMENTED_TYPE("write.table, matrix method", x);
+		/* quick integrity check */
+		if(LENGTH(x) != nr * nc)
+		    error(_("corrupt matrix -- dims not not match length"));
 
-	    for(i = 0; i < nr; i++) {
-		if(i % 1000 == 999) R_CheckUserInterrupt();
-		if(!isNull(rnames))
-		    Rconn_printf(con, "%s%s",
-				 EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
-						&strBuf, cdec), csep);
-		for(j = 0; j < nc; j++) {
-		    if(j > 0) Rconn_printf(con, "%s", csep);
-		    if(isna(x, i + j*nr)) tmp = cna;
-		    else {
-			tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
-					     &strBuf, cdec);
-			/* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+		for(i = 0; i < nr; i++) {
+		    if(i % 1000 == 999) R_CheckUserInterrupt();
+		    if(!isNull(rnames))
+			Rconn_printf(con, "%s%s",
+				     EncodeElement2(rnames, i, quote_rn, CXXRCONSTRUCT(Rboolean, qmethod),
+						    &strBuf, cdec), csep);
+		    for(j = 0; j < nc; j++) {
+			if(j > 0) Rconn_printf(con, "%s", csep);
+			if(isna(x, i + j*nr)) tmp = cna;
+			else {
+			    tmp = EncodeElement2(x, i + j*nr, quote_col[j], CXXRCONSTRUCT(Rboolean, qmethod),
+						 &strBuf, cdec);
+			    /* if(cdec) change_dec(tmp, cdec, TYPEOF(x)); */
+			}
+			Rconn_printf(con, "%s", tmp);
 		    }
-		    Rconn_printf(con, "%s", tmp);
+		    Rconn_printf(con, "%s", ceol);
 		}
-		Rconn_printf(con, "%s", ceol);
-	    }
 
+	    }
+	}
+	catch (...) {
+	    wt_cleanup(&wi);
+	    throw;
 	}
 	endcontext(&cntxt);
     }
