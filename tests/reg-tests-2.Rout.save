@@ -1,8 +1,10 @@
 
-R version 2.10.0 Under development (unstable) (2009-08-05 r49069)
+This is CXXR 0.27-2.10.1, based on:
+R version 2.10.1 (2009-12-14)
 Copyright (C) 2009 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 
+CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -15,6 +17,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+CXXR is not part of the R project, so please do not report bugs
+via r-bugs or the R website; instead refer to the CXXR website.
 > ## Regression tests for which the printed output is the issue
 > ### _and_ must work (no Recommended packages, please)
 > 
@@ -4310,10 +4314,10 @@ Levels: a a " test b
 [1] a        <NA>     b        a " test
 Levels: a a " test b <NA>
 > print(factor(x), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b"
 > print(factor(x, exclude=""), quote=TRUE)
-[1] "a"         NA          "b"         "a \" test"
+[1] "a"        NA         "b"        "a \" test"
 Levels: "a" "a \" test" "b" NA
 > ## last two printed levels differently from values in 2.0.1
 > 
@@ -4726,10 +4730,10 @@ out-of-range values treated as 0 in coercion to raw
 [1] 2 2
 > # but not allowed
 > try(df2[df2 == 2] <- 1:2)
-Error in x[[v]][thisvar] <- if (N > 1L) value[n + seq_len(nv)] else value : 
+Error in `[<-.data.frame`(`*tmp*`, df2 == 2, value = 1:2) : 
   NAs are not allowed in subscripted assignments
 > try(m2[m2 == 2] <- 1:2)
-Error in m2[m2 == 2] <- 1:2 : 
+Error in try(m2[m2 == 2] <- 1:2) : 
   NAs are not allowed in subscripted assignments
 > ##
 > 
@@ -6018,7 +6022,7 @@ $`NA`
 > attr(x, NA_character_)
 NULL
 > try(attr(x, NA_character_) <- 5)
-Error in attr(x, NA_character_) <- 5 : 
+Error in try(attr(x, NA_character_) <- 5) : 
   'name' must be non-null character string
 > ## prior to 2.5.0 NA was treated as "NA"
 > 

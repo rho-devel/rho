@@ -69,7 +69,6 @@ namespace CXXR {
 	    BREAK    = 2,
 	    LOOP     = 3,	// break OR next target
 	    FUNCTION = 4,
-	    CCODE    = 8,
 	    RETURN   = 12,
 	    BROWSER  = 16,
 	    GENERIC  = 20,

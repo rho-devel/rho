@@ -56,7 +56,6 @@
 #include <stdlib.h>
 #include <Rinternals.h>
 #include <R_ext/Parse.h>  /* parsing is used in handling escape codes */
-#include "CXXR/Context.hpp"
 
 #ifndef _Xconst
 #define _Xconst const
@@ -390,29 +389,20 @@ SEXP in_RX11_dataentry(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (initwin(DE, title))
 	errorcall(call, "invalid device");
 
-    /* set up a context which will close the window if there is an error */
-    {
-	CXXR::Context cntxt;
-	begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &closewin_cend;
-	// cntxt.cenddata = (void *) DE;
-
-	try {
+    /* use try-catch to close the window if there is an error */
+    try {
 	highlightrect(DE);
 
 	cell_cursor_init(DE);
 
 	eventloop(DE);
-	}
-	catch (...) {
-	    closewin(DE);
-	    UNPROTECT(nprotect);
-	    throw;
-	}
-
-	endcontext(&cntxt);
     }
+    catch (...) {
+	closewin(DE);
+	UNPROTECT(nprotect);
+	throw;
+    }
+
     closewin(DE);
     if(nView == 0) {
 	if(fdView >= 0) { /* might be open after viewers, but unlikely */
@@ -474,7 +464,6 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP stitle;
     SEXPTYPE type;
     int i, nprotect;
-    CXXR::Context cntxt;
     DEstruct DE = (DEstruct) malloc(sizeof(destruct));
 
     nView++;
@@ -525,12 +514,7 @@ SEXP in_R_X11_dataviewer(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (initwin(DE, CHAR(STRING_ELT(stitle, 0))))
 	errorcall(call, "invalid device");
 
-    /* set up a context which will close the window if there is an error */
-    begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		 R_NilValue, R_NilValue);
-    // cntxt.cend = &dv_closewin_cend;
-    // cntxt.cenddata = (void *) DE;
-
+    /* use try-catch to close the window if there is an error */
     try {
 	highlightrect(DE);
 

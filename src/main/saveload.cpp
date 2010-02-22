@@ -48,7 +48,6 @@
 #include <R_ext/RS.h>
 #include <errno.h>
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/WeakRef.h"
 
@@ -1120,42 +1119,31 @@ static void NewDataSave (SEXP s, FILE *fp, OutputRoutines *m, SaveLoadData *d)
     FixHashEntries(env_table);
 
     m->OutInit(fp, d);
-    /* set up a context which will call OutTerm if there is an error */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &newdatasave_cleanup;
-	// cntxt.cenddata = &cinfo;
 
-	try {
-	    m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
-	    m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
-	    for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
-		 sym_count--;
-		 iterator = CDR(iterator)) {
-		R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
-		m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
-		m->OutNewline(fp, d);
-	    }
-	    for (iterator = HASH_TABLE_KEYS_LIST(env_table);
-		 env_count--;
-		 iterator = CDR(iterator)) {
-		R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
-		NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
-		NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
-		NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
-	    }
-	    NewWriteItem(s, sym_table, env_table, fp, m, d);
+    /* use try-catch to call OutTerm if there is an error */
+    try {
+	m->OutInteger(fp, sym_count = HASH_TABLE_COUNT(sym_table), d); m->OutSpace(fp, 1, d);
+	m->OutInteger(fp, env_count = HASH_TABLE_COUNT(env_table), d); m->OutNewline(fp, d);
+	for (iterator = HASH_TABLE_KEYS_LIST(sym_table);
+	     sym_count--;
+	     iterator = CDR(iterator)) {
+	    R_assert(TYPEOF(CAR(iterator)) == SYMSXP);
+	    m->OutString(fp, CHAR(PRINTNAME(CAR(iterator))), d);
+	    m->OutNewline(fp, d);
 	}
-	catch (...) {
-	    m->OutTerm(fp, d);
-	    throw;
+	for (iterator = HASH_TABLE_KEYS_LIST(env_table);
+	     env_count--;
+	     iterator = CDR(iterator)) {
+	    R_assert(TYPEOF(CAR(iterator)) == ENVSXP);
+	    NewWriteItem(ENCLOS(CAR(iterator)), sym_table, env_table, fp, m, d);
+	    NewWriteItem(FRAME(CAR(iterator)), sym_table, env_table, fp, m, d);
+	    NewWriteItem(TAG(CAR(iterator)), sym_table, env_table, fp, m, d);
 	}
-
-	/* end the context after anything that could raise an error but before
-	   calling OutTerm so it doesn't get called twice */
-	endcontext(&cntxt);
+	NewWriteItem(s, sym_table, env_table, fp, m, d);
+    }
+    catch (...) {
+	m->OutTerm(fp, d);
+	throw;
     }
 
     m->OutTerm(fp, d);
@@ -1340,60 +1328,48 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 
     m->InInit(fp, d);
 
-    /* set up a context which will call InTerm if there is an error */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &newdataload_cleanup;
-	// cntxt.cenddata = &cinfo;
+    /* Use try-catch to call InTerm if there is an error */
+    try {
+	/* Read the table sizes */
+	sym_count = m->InInteger(fp, d);
+	env_count = m->InInteger(fp, d);
 
-	try {
-	    /* Read the table sizes */
-	    sym_count = m->InInteger(fp, d);
-	    env_count = m->InInteger(fp, d);
+	/* Allocate the symbol and environment tables */
+	sym_table = allocVector(VECSXP, sym_count);
+	env_table = allocVector(VECSXP, env_count);
 
-	    /* Allocate the symbol and environment tables */
-	    sym_table = allocVector(VECSXP, sym_count);
-	    env_table = allocVector(VECSXP, env_count);
+	/* Read back and install symbols */
+	for (count = 0; count < sym_count; ++count) {
+	    SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
+	}
+	/* Allocate the environments */
+	for (count = 0; count < env_count; ++count)
+	    SET_VECTOR_ELT(env_table, count, new Environment(0));
 
-	    /* Read back and install symbols */
-	    for (count = 0; count < sym_count; ++count) {
-		SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
-	    }
-	    /* Allocate the environments */
-	    for (count = 0; count < env_count; ++count)
-		SET_VECTOR_ELT(env_table, count, new Environment(0));
-
-	    /* Now fill them in  */
-	    for (count = 0; count < env_count; ++count) {
-		Environment* env
-		    = static_cast<Environment*>(VECTOR_ELT(env_table, count));
-		Environment* enc
-		    = SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
-							      fp, m, d));
-		env->setEnclosingEnvironment(enc);
-		PairList* bindings
-		    = SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
-							   fp, m, d));
-		frameReadPairList(env->frame(), bindings);
-		// Throw away the hash table:
-		NewReadItem(sym_table, env_table, fp, m, d);
+	/* Now fill them in  */
+	for (count = 0; count < env_count; ++count) {
+	    Environment* env
+		= static_cast<Environment*>(VECTOR_ELT(env_table, count));
+	    Environment* enc
+		= SEXP_downcast<Environment*>(NewReadItem(sym_table, env_table,
+							  fp, m, d));
+	    env->setEnclosingEnvironment(enc);
+	    PairList* bindings
+		= SEXP_downcast<PairList*>(NewReadItem(sym_table, env_table,
+						       fp, m, d));
+	    frameReadPairList(env->frame(), bindings);
+	    // Throw away the hash table:
+	    NewReadItem(sym_table, env_table, fp, m, d);
 	
-		env->expose();
-	    }
-
-	    /* Read the actual object back */
-	    obj =  NewReadItem(sym_table, env_table, fp, m, d);
-	}
-	catch (...) {
-	    m->InTerm(fp, d);
-	    throw;
+	    env->expose();
 	}
 
-	/* end the context after anything that could raise an error but before
-	   calling InTerm so it doesn't get called twice */
-	endcontext(&cntxt);
+	/* Read the actual object back */
+	obj =  NewReadItem(sym_table, env_table, fp, m, d);
+    }
+    catch (...) {
+	m->InTerm(fp, d);
+	throw;
     }
 
     /* Wrap up */
@@ -1967,7 +1943,7 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* save(list, file, ascii, version, environment) */
 
-    SEXP s, t, source, tmp;
+    SEXP t, source;
     int len, j, version, ep;
     FILE *fp;
 
@@ -1999,44 +1975,29 @@ SEXP attribute_hidden do_save(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("cannot open file '%s': %s"), cfile, strerror(errno));
     }
 
-    /* set up a context which will close the file if there is an error */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &saveload_cleanup;
-	// cntxt.cenddata = fp;
+    /* Use try-catch to close the file if there is an error */
+    try {
+	len = length(CAR(args));
+	GCStackRoot<> s(allocList(len));
 
-	try {
-	    len = length(CAR(args));
-	    PROTECT(s = allocList(len));
-
-	    t = s;
-	    for (j = 0; j < len; j++, t = CDR(t)) {
-		SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
-		tmp = findVar(TAG(t), source);
-		if (tmp == R_UnboundValue)
-		    error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
-		if(ep && TYPEOF(tmp) == PROMSXP) {
-		    PROTECT(tmp);
-		    tmp = eval(tmp, source);
-		    UNPROTECT(1);
-		}
-		SETCAR(t, tmp);
-	    }
-
-	    R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
-
-	    UNPROTECT(1);
+	t = s;
+	for (j = 0; j < len; j++, t = CDR(t)) {
+	    SET_TAG(t, install(CHAR(STRING_ELT(CAR(args), j))));
+	    GCStackRoot<> tmp(findVar(TAG(t), source));
+	    if (tmp == R_UnboundValue)
+		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+	    if(ep && TYPEOF(tmp) == PROMSXP)
+		tmp = eval(tmp, source);
+	    SETCAR(t, tmp);
 	}
-	catch (...) {
-	    fclose(fp);
-	    throw;
-	}
-	/* end the context after anything that could raise an error but before
-	   closing the file so it doesn't get done twice */
-	endcontext(&cntxt);
+
+	R_SaveToFileV(s, fp, INTEGER(CADDR(args))[0], version);
     }
+    catch (...) {
+	fclose(fp);
+	throw;
+    }
+
     fclose(fp);
     return R_NilValue;
 }
@@ -2125,25 +2086,15 @@ SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!fp)
 	error(_("unable to open file"));
 
-    /* set up a context which will close the file if there is an error */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &saveload_cleanup;
-	// cntxt.cenddata = fp;
-
-	try {
-	    val = R_LoadSavedData(fp, aenv);
-	}
-	catch (...) {
-	    fclose(fp);
-	    throw;
-	}
-	/* end the context after anything that could raise an error but before
-	   closing the file so it doesn't get done twice */
-	endcontext(&cntxt);
+    /* Use try-catch to close the file if there is an error */
+    try {
+	val = R_LoadSavedData(fp, aenv);
     }
+    catch (...) {
+	fclose(fp);
+	throw;
+    }
+
     fclose(fp);
     return val;
 }
@@ -2408,14 +2359,9 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
 	strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
 	strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
-	/* set up a context which will close the connection 
+	/* use try-catch to close the connection 
 	   if there is an error */
 	if (wasopen) {
-	    Context cntxt;
-	    begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-			 R_NilValue, R_NilValue);
-	    // cntxt.cend = &load_con_cleanup;
-	    // cntxt.cenddata = con;
 	    try {
 		R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
 		GCStackRoot<> unser(R_Unserialize(&in));
@@ -2425,7 +2371,6 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 		con->close(con);
 		throw;
 	    }
-	    endcontext(&cntxt);
 	} else {
 	    /* FIXME: this is odd: we did not open that connection, so
 	       why should we be closing it? */

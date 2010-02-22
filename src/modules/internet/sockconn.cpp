@@ -49,7 +49,6 @@
 #include <R_ext/R-ftp-http.h>
 #include "sock.h"
 #include <errno.h>
-#include "CXXR/Context.hpp"
 
 static Rboolean sock_open(Rconnection con)
 {
@@ -68,23 +67,15 @@ static Rboolean sock_open(Rconnection con)
 	    warning("port %d cannot be opened", thisconn->port);
 	    return FALSE;
 	}
-	{
-	    CXXR::Context cntxt;
-
-	    /* set up a context which will close socket on jump. */
-	    begincontext(&cntxt, CXXR::Context::CCODE, R_NilValue, R_BaseEnv,
-			 R_BaseEnv, R_NilValue, R_NilValue);
-	    // cntxt.cend = &listencleanup;
-	    // cntxt.cenddata = &sock1;
-	    try {
+	/* use try-catch to close socket on jump. */
+	try {
 	    sock = R_SockListen(sock1, buf, 256);
-	    }
-	    catch (...) {
-		R_SockClose(sock1);
-		throw;
-	    }
-	    endcontext(&cntxt);
 	}
+	catch (...) {
+	    R_SockClose(sock1);
+	    throw;
+	}
+
 	if(sock < 0) {
 	    warning("problem in listening on this socket");
 	    R_SockClose(sock1);

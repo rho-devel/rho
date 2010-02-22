@@ -76,7 +76,6 @@
  *	Context::LOOP	target for either "break" or "next"
  *	Context::RETURN	target for "return" (i.e. a closure)
  *	Context::BROWSER	target for "return" to exit from browser
- *	Context::CCODE	other functions that need clean up if an error occurs
  *	Context::RESTART	a function call to restart was made inside the
  *			closure.
  *

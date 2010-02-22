@@ -116,13 +116,8 @@ void R_CheckStack(void)
 	/* We do need some stack space to process error recovery,
 	   so temporarily raise the limit.
 	 */
-	Context cntxt;
 	unsigned int stacklimit = R_CStackLimit;
 	R_CStackLimit += CXXRCONSTRUCT(uintptr_t, 0.05*R_CStackLimit);
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &reset_stack_limit;
-	// cntxt.cenddata = &stacklimit;
 
 	try {
 	    errorcall(R_NilValue, "C stack usage is too close to the limit");
@@ -351,75 +346,67 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
     if( w < 0 || inWarning || inError) /* ignore if w<0 or already in here*/
 	return;
 
-    /* set up a context which will restore inWarning if there is an exit */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &reset_inWarning;
+    inWarning = 1;
 
-	inWarning = 1;
-
-	try {
-	    if(w >= 2) { /* make it an error */
-		Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
-		if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
-		    strcat(buf, " [... truncated]");
-		inWarning = 0; /* PR#1570 */
-		errorcall(call, _("(converted from warning) %s"), buf);
-	    }
-	    else if(w == 1) {	/* print as they happen */
-		CXXRCONST char *tr;
-		if( call != R_NilValue ) {
-		    dcall = CHAR(STRING_ELT(deparse1s(call), 0));
-		} else dcall = "";
-		Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
-		if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
-		    strcat(buf, " [... truncated]");
-		if(dcall[0] == '\0')
-		    REprintf(_("Warning: %s\n"), buf);
-		else if(mbcslocale &&
-			18 + wd(dcall) + wd(buf) <= LONGWARN)
-		    REprintf(_("Warning in %s : %s\n"), dcall, buf);
-		else if(18+strlen(dcall)+strlen(buf) <= LONGWARN)
-		    REprintf(_("Warning in %s : %s\n"), dcall, buf);
-		else
-		    REprintf(_("Warning in %s :\n  %s\n"), dcall, buf);
-		if(R_ShowWarnCalls && call != R_NilValue) {
-		    tr = R_ConciseTraceback(call, 0);
-		    if (strlen(tr)) REprintf("Calls: %s\n", tr);
-		}
-	    }
-	    else if(w == 0) {	/* collect them */
-		CXXRCONST char *tr; int nc;
-		if(!R_CollectWarnings)
-		    setupwarnings();
-		if( R_CollectWarnings > 49 ) {
-		    endcontext(&cntxt);
-		    return;
-		}
-		SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
-		Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
-		if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
-		    strcat(buf, " [... truncated]");
-		if(R_ShowWarnCalls && call != R_NilValue) {
-		    tr =  R_ConciseTraceback(call, 0); nc = strlen(tr);
-		    if (nc && nc + strlen(buf) + 8 < BUFSIZE) {
-			strcat(buf, "\nCalls: ");
-			strcat(buf, tr);
-		    }
-		}
-		names = CAR(ATTRIB(R_Warnings));
-		SET_STRING_ELT(names, R_CollectWarnings++, mkChar(buf));
-	    }
-	    /* else:  w <= -1 */
+    /* use try-catch to restore inWarning if there is an exit */
+    try {
+	if(w >= 2) { /* make it an error */
+	    Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
+	    if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
+		strcat(buf, " [... truncated]");
+	    inWarning = 0; /* PR#1570 */
+	    errorcall(call, _("(converted from warning) %s"), buf);
 	}
-	catch (...) {
-	    inWarning = 0;
-	    throw;
+	else if(w == 1) {	/* print as they happen */
+	    CXXRCONST char *tr;
+	    if( call != R_NilValue ) {
+		dcall = CHAR(STRING_ELT(deparse1s(call), 0));
+	    } else dcall = "";
+	    Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
+	    if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
+		strcat(buf, " [... truncated]");
+	    if(dcall[0] == '\0')
+		REprintf(_("Warning: %s\n"), buf);
+	    else if(mbcslocale &&
+		    18 + wd(dcall) + wd(buf) <= LONGWARN)
+		REprintf(_("Warning in %s : %s\n"), dcall, buf);
+	    else if(18+strlen(dcall)+strlen(buf) <= LONGWARN)
+		REprintf(_("Warning in %s : %s\n"), dcall, buf);
+	    else
+		REprintf(_("Warning in %s :\n  %s\n"), dcall, buf);
+	    if(R_ShowWarnCalls && call != R_NilValue) {
+		tr = R_ConciseTraceback(call, 0);
+		if (strlen(tr)) REprintf("Calls: %s\n", tr);
+	    }
 	}
-	endcontext(&cntxt);
+	else if(w == 0) {	/* collect them */
+	    CXXRCONST char *tr; int nc;
+	    if(!R_CollectWarnings)
+		setupwarnings();
+	    if( R_CollectWarnings > 49 ) {
+		return;
+	    }
+	    SET_VECTOR_ELT(R_Warnings, R_CollectWarnings, call);
+	    Rvsnprintf(buf, min(BUFSIZE, R_WarnLength+1), format, ap);
+	    if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
+		strcat(buf, " [... truncated]");
+	    if(R_ShowWarnCalls && call != R_NilValue) {
+		tr =  R_ConciseTraceback(call, 0); nc = strlen(tr);
+		if (nc && nc + strlen(buf) + 8 < BUFSIZE) {
+		    strcat(buf, "\nCalls: ");
+		    strcat(buf, tr);
+		}
+	    }
+	    names = CAR(ATTRIB(R_Warnings));
+	    SET_STRING_ELT(names, R_CollectWarnings++, mkChar(buf));
+	}
+	/* else:  w <= -1 */
     }
+    catch (...) {
+	inWarning = 0;
+	throw;
+    }
+
     inWarning = 0;
 }
 
@@ -468,25 +455,46 @@ void PrintWarnings(void)
 	return;
     }
 
-    /* set up a context which will restore inPrintWarnings if there is
-       an exit */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &cleanup_PrintWarnings;
+    inPrintWarnings = 1;
 
-	inPrintWarnings = 1;
-	try {
-	    header = ngettext("Warning message:\n", "Warning messages:\n", R_CollectWarnings);
-	    if( R_CollectWarnings == 1 ) {
-		REprintf("%s", header);
-		names = CAR(ATTRIB(R_Warnings));
-		if( VECTOR_ELT(R_Warnings, 0) == R_NilValue )
-		    REprintf("%s \n", CHAR(STRING_ELT(names, 0)));
+    /* use try-catch to restore inPrintWarnings if there is
+       an exit */
+    try {
+	header = ngettext("Warning message:\n", "Warning messages:\n", R_CollectWarnings);
+	if( R_CollectWarnings == 1 ) {
+	    REprintf("%s", header);
+	    names = CAR(ATTRIB(R_Warnings));
+	    if( VECTOR_ELT(R_Warnings, 0) == R_NilValue )
+		REprintf("%s \n", CHAR(STRING_ELT(names, 0)));
+	    else {
+		const char *dcall, *sep = " ", *msg = CHAR(STRING_ELT(names, 0));
+		dcall = CHAR(STRING_ELT(deparse1s(VECTOR_ELT(R_Warnings, 0)), 0));
+		if (mbcslocale) {
+		    int msgline1;
+		    char *p = const_cast<char*>(strchr(msg, '\n'));
+		    if (p) {
+			*p = '\0';
+			msgline1 = wd(msg);
+			*p = '\n';
+		    } else msgline1 = wd(msg);
+		    if (6 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
+		} else {
+		    int msgline1 = strlen(msg);
+		    CXXRCONST char *p = strchr(msg, '\n');
+		    if (p) msgline1 = int(p - msg);
+		    if (6+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
+		}
+		REprintf("In %s :%s%s\n", dcall, sep, msg);
+	    }
+	} else if( R_CollectWarnings <= 10 ) {
+	    REprintf("%s", header);
+	    names = CAR(ATTRIB(R_Warnings));
+	    for(i = 0; i < R_CollectWarnings; i++) {
+		if( VECTOR_ELT(R_Warnings, i) == R_NilValue )
+		    REprintf("%d: %s \n", i+1, CHAR(STRING_ELT(names, i)));
 		else {
-		    const char *dcall, *sep = " ", *msg = CHAR(STRING_ELT(names, 0));
-		    dcall = CHAR(STRING_ELT(deparse1s(VECTOR_ELT(R_Warnings, 0)), 0));
+		    const char *dcall, *sep = " ", *msg = CHAR(STRING_ELT(names, i));
+		    dcall = CHAR(STRING_ELT(deparse1s(VECTOR_ELT(R_Warnings, i)), 0));
 		    if (mbcslocale) {
 			int msgline1;
 			char *p = const_cast<char*>(strchr(msg, '\n'));
@@ -495,72 +503,43 @@ void PrintWarnings(void)
 			    msgline1 = wd(msg);
 			    *p = '\n';
 			} else msgline1 = wd(msg);
-			if (6 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
+			if (10 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		    } else {
 			int msgline1 = strlen(msg);
 			CXXRCONST char *p = strchr(msg, '\n');
 			if (p) msgline1 = int(p - msg);
-			if (6+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
+			if (10+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
 		    }
-		    REprintf("In %s :%s%s\n", dcall, sep, msg);
+		    REprintf("%d: In %s :%s%s\n", i+1, dcall, sep, msg);
 		}
-	    } else if( R_CollectWarnings <= 10 ) {
-		REprintf("%s", header);
-		names = CAR(ATTRIB(R_Warnings));
-		for(i = 0; i < R_CollectWarnings; i++) {
-		    if( VECTOR_ELT(R_Warnings, i) == R_NilValue )
-			REprintf("%d: %s \n", i+1, CHAR(STRING_ELT(names, i)));
-		    else {
-			const char *dcall, *sep = " ", *msg = CHAR(STRING_ELT(names, i));
-			dcall = CHAR(STRING_ELT(deparse1s(VECTOR_ELT(R_Warnings, i)), 0));
-			if (mbcslocale) {
-			    int msgline1;
-			    char *p = const_cast<char*>(strchr(msg, '\n'));
-			    if (p) {
-				*p = '\0';
-				msgline1 = wd(msg);
-				*p = '\n';
-			    } else msgline1 = wd(msg);
-			    if (10 + wd(dcall) + msgline1 > LONGWARN) sep = "\n  ";
-			} else {
-			    int msgline1 = strlen(msg);
-			    CXXRCONST char *p = strchr(msg, '\n');
-			    if (p) msgline1 = int(p - msg);
-			    if (10+strlen(dcall) + msgline1 > LONGWARN) sep = "\n  ";
-			}
-			REprintf("%d: In %s :%s%s\n", i+1, dcall, sep, msg);
-		    }
-		}
-	    } else {
-		if (R_CollectWarnings < 50)
-		    REprintf(_("There were %d warnings (use warnings() to see them)\n"),
-			     R_CollectWarnings);
-		else
-		    REprintf(_("There were 50 or more warnings (use warnings() to see the first 50)\n"));
 	    }
-	    /* now truncate and install last.warning */
-	    PROTECT(s = allocVector(VECSXP, R_CollectWarnings));
-	    PROTECT(t = allocVector(STRSXP, R_CollectWarnings));
-	    names = CAR(ATTRIB(R_Warnings));
-	    for(i = 0; i < R_CollectWarnings; i++) {
-		SET_VECTOR_ELT(s, i, VECTOR_ELT(R_Warnings, i));
-		SET_STRING_ELT(t, i, STRING_ELT(names, i));
-	    }
-	    setAttrib(s, R_NamesSymbol, t);
-	    SET_SYMVALUE(install("last.warning"), s);
-	    UNPROTECT(2);
+	} else {
+	    if (R_CollectWarnings < 50)
+		REprintf(_("There were %d warnings (use warnings() to see them)\n"),
+			 R_CollectWarnings);
+	    else
+		REprintf(_("There were 50 or more warnings (use warnings() to see the first 50)\n"));
 	}
-	catch (...) {
-	    if (R_CollectWarnings) {
-		R_CollectWarnings = 0;
-		R_Warnings = R_NilValue;
-		REprintf(_("Lost warning messages\n"));
-	    }
-	    inPrintWarnings = 0;
-	    throw;
+	/* now truncate and install last.warning */
+	PROTECT(s = allocVector(VECSXP, R_CollectWarnings));
+	PROTECT(t = allocVector(STRSXP, R_CollectWarnings));
+	names = CAR(ATTRIB(R_Warnings));
+	for(i = 0; i < R_CollectWarnings; i++) {
+	    SET_VECTOR_ELT(s, i, VECTOR_ELT(R_Warnings, i));
+	    SET_STRING_ELT(t, i, STRING_ELT(names, i));
 	}
-
-	endcontext(&cntxt);
+	setAttrib(s, R_NamesSymbol, t);
+	SET_SYMVALUE(install("last.warning"), s);
+	UNPROTECT(2);
+    }
+    catch (...) {
+	if (R_CollectWarnings) {
+	    R_CollectWarnings = 0;
+	    R_Warnings = R_NilValue;
+	    REprintf(_("Lost warning messages\n"));
+	}
+	inPrintWarnings = 0;
+	throw;
     }
 
     inPrintWarnings = 0;
@@ -600,82 +579,74 @@ static void verrorcall_dflt(SEXP call, const char *format, va_list ap)
 	jump_to_top_ex(FALSE, FALSE, FALSE, FALSE, FALSE);
     }
 
-    /* set up a context to restore inError value on exit */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &restore_inError;
-	// cntxt.cenddata = &oldInError;
-	oldInError = inError;
-	inError = 1;
+    oldInError = inError;
+    inError = 1;
 
-	try {
-	    if(call != R_NilValue) {
-		char tmp[BUFSIZE];
-		CXXRCONST char *head = _("Error in "), *mid = " : ", *tail = "\n  ";
-		int len = strlen(head) + strlen(mid) + strlen(tail);
+    /* use try-catch to restore inError value on exit */
+    try {
+	if(call != R_NilValue) {
+	    char tmp[BUFSIZE];
+	    CXXRCONST char *head = _("Error in "), *mid = " : ", *tail = "\n  ";
+	    int len = strlen(head) + strlen(mid) + strlen(tail);
 
-		Rvsnprintf(tmp, min(BUFSIZE, R_WarnLength) - strlen(head), format, ap);
-		dcall = CHAR(STRING_ELT(deparse1s(call), 0));
-		if (len + strlen(dcall) + strlen(tmp) < BUFSIZE) {
-		    sprintf(errbuf, "%s%s%s", head, dcall, mid);
-		    if (mbcslocale) {
-			int msgline1;
-			char *p = strchr(tmp, '\n');
-			if (p) {
-			    *p = '\0';
-			    msgline1 = wd(tmp);
-			    *p = '\n';
-			} else msgline1 = wd(tmp);
-			if (14 + wd(dcall) + wd(tmp) > LONGWARN) strcat(errbuf, tail);
-		    } else {
-			int msgline1 = strlen(tmp);
-			char *p = strchr(tmp, '\n');
-			if (p) msgline1 = int(p - tmp);
-			if (14 + strlen(dcall) + msgline1 > LONGWARN)
-			    strcat(errbuf, tail);
-		    }
-		    strcat(errbuf, tmp);
+	    Rvsnprintf(tmp, min(BUFSIZE, R_WarnLength) - strlen(head), format, ap);
+	    dcall = CHAR(STRING_ELT(deparse1s(call), 0));
+	    if (len + strlen(dcall) + strlen(tmp) < BUFSIZE) {
+		sprintf(errbuf, "%s%s%s", head, dcall, mid);
+		if (mbcslocale) {
+		    int msgline1;
+		    char *p = strchr(tmp, '\n');
+		    if (p) {
+			*p = '\0';
+			msgline1 = wd(tmp);
+			*p = '\n';
+		    } else msgline1 = wd(tmp);
+		    if (14 + wd(dcall) + wd(tmp) > LONGWARN) strcat(errbuf, tail);
 		} else {
-		    sprintf(errbuf, _("Error: "));
-		    strcat(errbuf, tmp);
+		    int msgline1 = strlen(tmp);
+		    char *p = strchr(tmp, '\n');
+		    if (p) msgline1 = int(p - tmp);
+		    if (14 + strlen(dcall) + msgline1 > LONGWARN)
+			strcat(errbuf, tail);
 		}
-	    }
-	    else {
+		strcat(errbuf, tmp);
+	    } else {
 		sprintf(errbuf, _("Error: "));
-		p = errbuf + strlen(errbuf);
-		Rvsnprintf(p, min(BUFSIZE, R_WarnLength) - strlen(errbuf), format, ap);
+		strcat(errbuf, tmp);
 	    }
-
-	    p = errbuf + strlen(errbuf) - 1;
-	    if(*p != '\n') strcat(errbuf, "\n");
-
-	    if(R_ShowErrorCalls && call != R_NilValue) {  /* assume we want to avoid deparse */
-		tr = R_ConciseTraceback(call, 0); nc = strlen(tr);
-		if (nc && nc + strlen(errbuf) + 8 < BUFSIZE) {
-		    strcat(errbuf, "Calls: ");
-		    strcat(errbuf, tr);
-		    strcat(errbuf, "\n");
-		}
-	    }
-	    if (R_ShowErrorMessages) REprintf("%s", errbuf);
-
-	    if( R_ShowErrorMessages && R_CollectWarnings ) {
-		REprintf(_("In addition: "));
-		PrintWarnings();
-	    }
-
-	    jump_to_top_ex(TRUE, TRUE, TRUE, TRUE, FALSE);
 	}
-	catch (...) {
-	    inError = oldInError;
-	    Evaluator::enableExtraDepth(false);
-	    throw;
+	else {
+	    sprintf(errbuf, _("Error: "));
+	    p = errbuf + strlen(errbuf);
+	    Rvsnprintf(p, min(BUFSIZE, R_WarnLength) - strlen(errbuf), format, ap);
 	}
-	/* not reached */
-	endcontext(&cntxt);
+
+	p = errbuf + strlen(errbuf) - 1;
+	if(*p != '\n') strcat(errbuf, "\n");
+
+	if(R_ShowErrorCalls && call != R_NilValue) {  /* assume we want to avoid deparse */
+	    tr = R_ConciseTraceback(call, 0); nc = strlen(tr);
+	    if (nc && nc + strlen(errbuf) + 8 < BUFSIZE) {
+		strcat(errbuf, "Calls: ");
+		strcat(errbuf, tr);
+		strcat(errbuf, "\n");
+	    }
+	}
+	if (R_ShowErrorMessages) REprintf("%s", errbuf);
+
+	if( R_ShowErrorMessages && R_CollectWarnings ) {
+	    REprintf(_("In addition: "));
+	    PrintWarnings();
+	}
+
+	jump_to_top_ex(TRUE, TRUE, TRUE, TRUE, FALSE);
     }
+    catch (...) {
+	inError = oldInError;
+	Evaluator::enableExtraDepth(false);
+	throw;
+    }
+
     inError = oldInError;
 }
 
@@ -734,6 +705,9 @@ void error(const char *format, ...)
     /* This can be called before R_GlobalContext is defined, so... */
     /* If profiling is on, this can be a Context::BUILTIN */
     if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
+    // CXXR addition:
+    while (c && !c->call)
+	c = c->nextcontext;
     errorcall(c ? c->call : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
@@ -769,129 +743,118 @@ static void jump_to_top_ex(Rboolean traceback,
     SEXP s;
     int haveHandler, oldInError;
 
-    /* set up a context to restore inError value on exit */
-    {
-	Context cntxt;
-	begincontext(&cntxt, Context::CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	// cntxt.cend = &restore_inError;
-	// cntxt.cenddata = &oldInError;
+    oldInError = inError;
+    haveHandler = FALSE;
 
-	oldInError = inError;
+    /* use try-catch to restore inError value on exit */
+    try {
+	if (tryUserHandler && inError < 3) {
+	    if (! inError)
+		inError = 1;
 
-	haveHandler = FALSE;
-
-	try {
-	    if (tryUserHandler && inError < 3) {
-		if (! inError)
-		    inError = 1;
-
-		/*now see if options("error") is set */
-		s = GetOption(install("error"), R_BaseEnv);
-		haveHandler = ( s != R_NilValue );
-		if (haveHandler) {
-		    if( !isLanguage(s) &&  ! isExpression(s) )  /* shouldn't happen */
-			REprintf(_("invalid option \"error\"\n"));
-		    else {
-			inError = 3;
-			if (isLanguage(s))
-			    eval(s, R_GlobalEnv);
-			else /* expression */
-			    {
-				int i, n = LENGTH(s);
-				for (i = 0 ; i < n ; i++)
-				    eval(XVECTOR_ELT(s, i), R_GlobalEnv);
-			    }
-			inError = oldInError;
-		    }
-		}
-		inError = oldInError;
-	    }
-
-	    /* print warnings if there are any left to be printed */
-	    if( processWarnings && R_CollectWarnings )
-		PrintWarnings();
-
-	    /* reset some stuff--not sure (all) this belongs here */
-	    if (resetConsole) {
-		R_ResetConsole();
-		R_FlushConsole();
-		R_ClearerrConsole();
-		R_ParseError = 0;
-		R_ParseErrorFile = NULL;
-		R_ParseErrorMsg[0] = '\0';
-	    }
-
-	    /*
-	     * Reset graphics state
-	     */
-	    GEonExit();
-
-	    /* WARNING: If oldInError > 0 ABSOLUTELY NO ALLOCATION can be
-	       triggered after this point except whatever happens in writing
-	       the traceback and R_run_onexits.  The error could be an out of
-	       memory error and any allocation could result in an
-	       infinite-loop condition. All you can do is reset things and
-	       exit.  */
-
-	    /* jump to a browser/try if one is on the stack */
-	    if (! ignoreRestartContexts)
-		try_jump_to_restart();
-	    /* at this point, i.e. if we have not exited in
-	       try_jump_to_restart, we are heading for R_ToplevelContext */
-
-	    /* only run traceback if we are not going to bail out of a
-	       non-interactive session */
-	    if (R_Interactive || haveHandler) {
-		/* write traceback if requested, unless we're already doing it
-		   or there is an inconsistency between inError and oldInError
-		   (which should not happen) */
-		if (traceback && inError < 2 && inError == oldInError) {
-		    inError = 2;
-		    PROTECT(s = R_GetTraceback(0));
-		    SET_SYMVALUE(install(".Traceback"), s);
-		    /* should have been defineVar
-		       setVar(install(".Traceback"), s, R_GlobalEnv); */
-		    UNPROTECT(1);
+	    /*now see if options("error") is set */
+	    s = GetOption(install("error"), R_BaseEnv);
+	    haveHandler = ( s != R_NilValue );
+	    if (haveHandler) {
+		if( !isLanguage(s) &&  ! isExpression(s) )  /* shouldn't happen */
+		    REprintf(_("invalid option \"error\"\n"));
+		else {
+		    inError = 3;
+		    if (isLanguage(s))
+			eval(s, R_GlobalEnv);
+		    else /* expression */
+			{
+			    int i, n = LENGTH(s);
+			    for (i = 0 ; i < n ; i++)
+				eval(XVECTOR_ELT(s, i), R_GlobalEnv);
+			}
 		    inError = oldInError;
 		}
 	    }
-
-	    /* Run onexit/cend code for all contexts down to but not including
-	       the jump target.  This may cause recursive calls to
-	       jump_to_top_ex, but the possible number of such recursive
-	       calls is limited since each exit function is removed before it
-	       is executed.  In addition, all but the first should have
-	       inError > 0.  This is not a great design because we could run
-	       out of other resources that are on the stack (like C stack for
-	       example).  The right thing to do is arrange to execute exit
-	       code *after* the LONGJMP, but that requires a more extensive
-	       redesign of the non-local transfer of control mechanism.
-	       LT. */
-	    R_run_onexits(R_ToplevelContext);
-
-	    if ( !R_Interactive && !haveHandler ) {
-		REprintf(_("Execution halted\n"));
-		R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
-	    }
-
-	    R_GlobalContext = R_ToplevelContext;
-	    R_restore_globals(R_GlobalContext);
-	    // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
-	    //	 <<  R_ToplevelContext << ", 0)\n" << flush;
-	    throw JMPException(R_ToplevelContext);
-	}
-	catch (...) {
 	    inError = oldInError;
-	    Evaluator::enableExtraDepth(false);
-	    throw;
 	}
-	/* not reached
-        endcontext(&cntxt);
-	*/
+
+	/* print warnings if there are any left to be printed */
+	if( processWarnings && R_CollectWarnings )
+	    PrintWarnings();
+
+	/* reset some stuff--not sure (all) this belongs here */
+	if (resetConsole) {
+	    R_ResetConsole();
+	    R_FlushConsole();
+	    R_ClearerrConsole();
+	    R_ParseError = 0;
+	    R_ParseErrorFile = NULL;
+	    R_ParseErrorMsg[0] = '\0';
+	}
+
+	/*
+	 * Reset graphics state
+	 */
+	GEonExit();
+
+	/* WARNING: If oldInError > 0 ABSOLUTELY NO ALLOCATION can be
+	   triggered after this point except whatever happens in writing
+	   the traceback and R_run_onexits.  The error could be an out of
+	   memory error and any allocation could result in an
+	   infinite-loop condition. All you can do is reset things and
+	   exit.  */
+
+	/* jump to a browser/try if one is on the stack */
+	if (! ignoreRestartContexts)
+	    try_jump_to_restart();
+	/* at this point, i.e. if we have not exited in
+	   try_jump_to_restart, we are heading for R_ToplevelContext */
+
+	/* only run traceback if we are not going to bail out of a
+	   non-interactive session */
+	if (R_Interactive || haveHandler) {
+	    /* write traceback if requested, unless we're already doing it
+	       or there is an inconsistency between inError and oldInError
+	       (which should not happen) */
+	    if (traceback && inError < 2 && inError == oldInError) {
+		inError = 2;
+		PROTECT(s = R_GetTraceback(0));
+		SET_SYMVALUE(install(".Traceback"), s);
+		/* should have been defineVar
+		   setVar(install(".Traceback"), s, R_GlobalEnv); */
+		UNPROTECT(1);
+		inError = oldInError;
+	    }
+	}
+
+	/* Run onexit/cend code for all contexts down to but not including
+	   the jump target.  This may cause recursive calls to
+	   jump_to_top_ex, but the possible number of such recursive
+	   calls is limited since each exit function is removed before it
+	   is executed.  In addition, all but the first should have
+	   inError > 0.  This is not a great design because we could run
+	   out of other resources that are on the stack (like C stack for
+	   example).  The right thing to do is arrange to execute exit
+	   code *after* the LONGJMP, but that requires a more extensive
+	   redesign of the non-local transfer of control mechanism.
+	   LT. */
+	R_run_onexits(R_ToplevelContext);
+
+	if ( !R_Interactive && !haveHandler ) {
+	    REprintf(_("Execution halted\n"));
+	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
+	}
+
+	R_GlobalContext = R_ToplevelContext;
+	R_restore_globals(R_GlobalContext);
+	// cout << __FILE__":" << __LINE__ << " About to throw JMPException("
+	//	 <<  R_ToplevelContext << ", 0)\n" << flush;
+	throw JMPException(R_ToplevelContext);
     }
+    catch (...) {
+	inError = oldInError;
+	Evaluator::enableExtraDepth(false);
+	throw;
+    }
+
     /* not reached
-    inError = oldInError;
+       inError = oldInError;
     */
 }
 
