@@ -452,7 +452,6 @@ extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
 extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
 extern0 Rboolean R_WarnEscapes  INI_as(TRUE);   /* Warn on unrecognized escapes */
-extern0 struct RPRSTACK *R_PendingPromises INI_as(NULL); /* Pending promise stack */
 
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/

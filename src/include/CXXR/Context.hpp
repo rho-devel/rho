@@ -90,7 +90,6 @@ namespace CXXR {
 	int intsusp;                 // interrupts are suspended
 	GCStackRoot<> handlerstack;  // condition handler stack
 	GCStackRoot<> restartstack;  // stack of available restarts
-	struct RPRSTACK *prstack;    // stack of pending promises
 	GCStackRoot<> srcref;	     // The source line in effect
 #ifdef BYTECODE
 	SEXP *nodestack;

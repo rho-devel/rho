@@ -184,14 +184,6 @@ void attribute_hidden R_restore_globals(Context *cptr)
     R_interrupts_suspended = Rboolean(cptr->intsusp);
     R_HandlerStack = cptr->handlerstack;
     R_RestartStack = cptr->restartstack;
-    while (R_PendingPromises != cptr->prstack) {
-	/* The following allows forcePromise in
-	   eval.c to signal a warning when asked to evaluate a promise
-	   whose evaluation has been interrupted by a jump. */
-	Promise* prom = SEXP_downcast<Promise*>(R_PendingPromises->promise);
-	prom->markEvaluationInterrupted(true);
-	R_PendingPromises = R_PendingPromises->next;
-    }
     /* Need to reset nesting depth in case we are jumping after
        handling a stack overflow. */
     Evaluator::enableExtraDepth(false);
@@ -255,7 +247,6 @@ void begincontext(Context * cptr, Context::Type flags,
     cptr->intsusp = R_interrupts_suspended;
     cptr->handlerstack = R_HandlerStack;
     cptr->restartstack = R_RestartStack;
-    cptr->prstack = R_PendingPromises;
 #ifdef BYTECODE
     cptr->nodestack = R_BCNodeStackTop;
 # ifdef BC_INT_STACK

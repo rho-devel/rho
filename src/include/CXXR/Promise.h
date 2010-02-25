@@ -49,17 +49,6 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
 
-// Stack entry and stack top for pending promises, to be moved inside
-// the Promise class in due course:
-extern "C" {
-    typedef struct RPRSTACK {
-	SEXP promise;
-	struct RPRSTACK *next;
-    } RPRSTACK;
-
-    extern RPRSTACK* R_PendingPromises;
-}
-
 namespace CXXR {
     /** @brief Placeholder for function argument.
      *
@@ -78,7 +67,7 @@ namespace CXXR {
 	 */
 	Promise(RObject* valgen, Environment* env)
 	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
-	      m_valgen(valgen), m_environment(env), m_seen(false),
+	      m_valgen(valgen), m_environment(env), m_under_evaluation(false),
 	      m_interrupted(false)
 	{}
 
@@ -91,16 +80,6 @@ namespace CXXR {
 	Environment* environment() const
 	{
 	    return m_environment;
-	}
-
-	/** @brief Has evaluation been interrupted by a jump?
-	 *
-	 * @return true iff evaluation of this Promise has been
-	 * interrupted by a jump (JMPException).
-	 */
-	bool evaluationInterrupted() const
-	{
-	    return m_interrupted;
 	}
 
 	/** @brief Force the Promise.
@@ -126,30 +105,6 @@ namespace CXXR {
 	 */
 	bool isMissingSymbol() const;
 
-	/** @brief Indicate whether evaluation has been interrupted.
-	 *
-	 * @param on true to indicate that evaluation of this promise
-	 *           has been interrupted by a JMPException.
-	 *
-	 * @note To be removed from public interface in due course.
-	 */
-	void markEvaluationInterrupted(bool on)
-	{
-	    m_interrupted = on;
-	}
-
-	/** @brief Indicate whether this promise is under evaluation.
-	 *
-	 * @param on true to indicate that this promise is currently
-	 *           under evaluation; otherwise false.
-	 *
-	 * @note To be removed from public interface in due course.
-	 */
-	void markUnderEvaluation(bool on)
-	{
-	    m_seen = on;
-	}
-
 	/** @brief Set value of the Promise.
 	 *
 	 * Once the value is set to something other than
@@ -158,7 +113,7 @@ namespace CXXR {
 	 *
 	 * @param val Value to be associated with the Promise.
 	 *
-	 * @todo Should be private (or removed entirely), but current
+	 * @todo Should be private (or removed entirely), but currently
 	 * still used in saveload.cpp.
 	 */
 	void setValue(RObject* val);
@@ -170,15 +125,6 @@ namespace CXXR {
 	static const char* staticTypeName()
 	{
 	    return "promise";
-	}
-
-	/** @brief Is this promise currently under evaluation?
-	 *
-	 * @return true iff this promise is currently under evaluation.
-	 */
-	bool underEvaluation() const
-	{
-	    return m_seen;
 	}
 
 	/** @brief Access the value of a Promise.
@@ -214,8 +160,8 @@ namespace CXXR {
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
-	mutable bool m_seen;
-	bool m_interrupted;
+	mutable bool m_under_evaluation;
+	mutable bool m_interrupted;
 
 	// Declared private to ensure that Environment objects are
 	// created only using 'new':

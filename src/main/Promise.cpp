@@ -70,31 +70,24 @@ RObject* Promise::evaluate(Environment* /*env*/)
 {
     if (m_value == Symbol::unboundValue()) {
 	// Force promise:
-	RPRSTACK prstack;
-	if (evaluationInterrupted()) {
+	if (m_interrupted) {
 	    Rf_warning(_("restarting interrupted promise evaluation"));
-	    markEvaluationInterrupted(false);
+	    m_interrupted = false;
 	}
-	else if (underEvaluation())
+	else if (m_under_evaluation)
 	    Rf_error(_("promise already under evaluation: "
 		       "recursive default argument reference "
 		       "or earlier problems?"));
-	/* Mark the promise as under evaluation and push it on a stack
-	   that can be used to unmark pending promises if a jump out
-	   of the evaluation occurs. */
-        markUnderEvaluation(true);
-	prstack.promise = this;
-	prstack.next = R_PendingPromises;
-	R_PendingPromises = &prstack;
-	RObject* val = Evaluator::evaluate(m_valgen, environment());
-
-	/* Pop the stack, unmark the promise and set its value field.
-	   Also set the environment to R_NilValue to allow GC to
-	   reclaim the promise environment; this is also useful for
-	   fancy games with delayedAssign() */
-	R_PendingPromises = prstack.next;
-	markUnderEvaluation(false);
-	setValue(val);
+	m_under_evaluation = true;
+	try {
+	    RObject* val = Evaluator::evaluate(m_valgen, environment());
+	    setValue(val);
+	}
+	catch (...) {
+	    m_interrupted = true;
+	    throw;
+	}
+	m_under_evaluation = false;
     }
     return value();
 }
@@ -111,19 +104,19 @@ bool Promise::isMissingSymbol() const
 	// According to Luke Tierney's comment to R_isMissing() in CR,
 	// if a cycle is found then a missing argument has been
 	// encountered, so the return value is true.
-	if (m_seen)
+	if (m_under_evaluation)
 	    return true;
 	try {
 	    const Symbol* promsym
 		= static_cast<const Symbol*>(valueGenerator());
-	    m_seen = true;
+	    m_under_evaluation = true;
 	    ans = isMissingArgument(promsym, environment()->frame());
 	}
 	catch (...) {
-	    m_seen = false;
+	    m_under_evaluation = false;
 	    throw;
 	}
-	m_seen = false;
+	m_under_evaluation = false;
     }
     return ans;
 }

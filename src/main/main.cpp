@@ -172,7 +172,6 @@ attribute_hidden Rboolean R_KeepSource	= FALSE;	/* options(keep.source) */
 attribute_hidden int	R_WarnLength	= 1000;	/* Error/warning max length */
 attribute_hidden int	R_CStackDir	= 1;	/* C stack direction */
 attribute_hidden Rboolean R_WarnEscapes  = TRUE;   /* Warn on unrecognized escapes */
-attribute_hidden struct RPRSTACK *R_PendingPromises = NULL; /* Pending promise stack */
 attribute_hidden Rboolean R_Quiet	= FALSE;	/* Be as quiet as possible */
 attribute_hidden Rboolean R_Verbose	= FALSE;	/* Be verbose */
 attribute_hidden int	R_ErrorCon	= 2;	/* Error connection */
@@ -960,7 +959,6 @@ void setup_Rmainloop(void)
     R_Toplevel->intsusp = FALSE;
     R_Toplevel->handlerstack = R_HandlerStack;
     R_Toplevel->restartstack = R_RestartStack;
-    R_Toplevel->prstack = 0;
     R_GlobalContext = R_ToplevelContext = R_Toplevel;
 
     R_Warnings = R_NilValue;
