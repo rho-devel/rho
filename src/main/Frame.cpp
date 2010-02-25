@@ -195,20 +195,7 @@ namespace CXXR {
 	}
 	if (rawval && rawval->sexptype() == PROMSXP) {
 	    Promise* prom = static_cast<Promise*>(rawval);
-	    const RObject* valgen = prom->valueGenerator();
-	    if (prom->value() == Symbol::unboundValue()
-		&& valgen && valgen->sexptype() == SYMSXP) {
-		if (prom->underEvaluation())
-		    return true;
-		else {
-		    const Symbol* promsym = static_cast<const Symbol*>(valgen);
-		    prom->markUnderEvaluation(true);
-		    bool ans = isMissingArgument(promsym,
-						 prom->environment()->frame());
-		    prom->markUnderEvaluation(false);
-		    return ans;
-		}
-	    }
+	    return prom->isMissingSymbol();
 	}
 	return false;
     }

@@ -99,6 +99,35 @@ RObject* Promise::evaluate(Environment* /*env*/)
     return value();
 }
 
+bool Promise::isMissingSymbol() const
+{
+    bool ans = false;
+    /* This is wrong but I'm not clear why - arr
+    if (m_value == Symbol::missingArgument())
+     	return true;
+    */
+    if (m_value == Symbol::unboundValue()
+	&& m_valgen && m_valgen->sexptype() == SYMSXP) {
+	// According to Luke Tierney's comment to R_isMissing() in CR,
+	// if a cycle is found then a missing argument has been
+	// encountered, so the return value is true.
+	if (m_seen)
+	    return true;
+	try {
+	    const Symbol* promsym
+		= static_cast<const Symbol*>(valueGenerator());
+	    m_seen = true;
+	    ans = isMissingArgument(promsym, environment()->frame());
+	}
+	catch (...) {
+	    m_seen = false;
+	    throw;
+	}
+	m_seen = false;
+    }
+    return ans;
+}
+
 void Promise::setValue(RObject* val)
 {
     m_value = val;

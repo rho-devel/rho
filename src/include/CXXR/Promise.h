@@ -116,6 +116,16 @@ namespace CXXR {
 	    return evaluate(0);
 	}
 
+	/** @brief Not for general use.
+	 *
+	 * This function is used by ::isMissingArgument().  It
+	 * implements some logic from CR's R_isMissing() which I don't
+	 * fully understand.
+	 *
+	 * @return true iff ... well, read the code!
+	 */
+	bool isMissingSymbol() const;
+
 	/** @brief Indicate whether evaluation has been interrupted.
 	 *
 	 * @param on true to indicate that evaluation of this promise
@@ -204,7 +214,7 @@ namespace CXXR {
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
-	bool m_seen;
+	mutable bool m_seen;
 	bool m_interrupted;
 
 	// Declared private to ensure that Environment objects are
