@@ -44,6 +44,7 @@
 #include <Graphics.h>
 #include <Colors.h> /* for isNAcol */
 #include <Print.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

@@ -33,15 +33,15 @@ CXXR_HS = \
   BuiltInFunction.h CachedString.h Closure.h ComplexVector.h ConsCell.h \
   DotInternal.h \
   Environment.h Expression.h ExpressionVector.h ExternalPointer.h \
-  FunctionBase.h GCRoot.h GCStackRoot.h IntVector.h \
-  ListVector.h LogicalVector.h PairList.h Promise.h \
+  FunctionBase.h GCRoot.h IntVector.h \
+  ListVector.h LogicalVector.h PairList.h Promise.h ProtectStack.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
   S4Object.h String.h StringVector.h Symbol.h \
   UncachedString.h VectorBase.h WeakRef.h uncxxr.h
 
 CXXR_HPPS = \
   Allocator.hpp ArgMatcher.hpp CellPool.hpp \
-  DumbVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp \
+  DumbVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCStackRoot.hpp \
   HandleVector.hpp HeterogeneousList.hpp MemoryBank.hpp \
   SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp config.hpp
 

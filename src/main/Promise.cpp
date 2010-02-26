@@ -44,7 +44,7 @@
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

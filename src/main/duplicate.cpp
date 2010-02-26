@@ -42,6 +42,7 @@
 #include "Defn.h"
 
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

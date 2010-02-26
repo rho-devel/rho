@@ -49,6 +49,7 @@
 #include <errno.h>
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;

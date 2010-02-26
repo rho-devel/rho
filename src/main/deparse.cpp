@@ -119,6 +119,7 @@
 
 #include "RBufferUtils.h"
 #include "CXXR/BuiltInFunction.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

@@ -111,6 +111,7 @@
 #include <Rmath.h>
 #include <Rdynpriv.h>
 #include <basedecl.h>
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;

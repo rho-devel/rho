@@ -43,7 +43,8 @@
 #include "CXXR/Context.hpp"
 #include "CXXR/DotInternal.h"
 #include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/ProtectStack.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
@@ -65,7 +66,7 @@ BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 				Environment* env)
 {
-    size_t pps_size = GCStackRootBase::ppsSize();
+    size_t pps_size = ProtectStack::size();
     size_t ralloc_size = RAllocStack::size();
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
@@ -89,9 +90,9 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    if (pps_size != GCStackRootBase::ppsSize())
+    if (pps_size != ProtectStack::size())
 	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
-		 name(), pps_size, GCStackRootBase::ppsSize());
+		 name(), pps_size, ProtectStack::size());
     RAllocStack::restoreSize(ralloc_size);
     return ans;
 }

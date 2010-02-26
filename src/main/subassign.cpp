@@ -102,6 +102,7 @@
 
 #include "Defn.h"
 #include <R_ext/RS.h> /* for test of S4 objects */
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

@@ -46,6 +46,7 @@
 #include <Rmath.h>		/* for rxxx functions */
 #include "basedecl.h"
 #include <errno.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

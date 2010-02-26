@@ -45,7 +45,7 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol.h"
 
 using namespace std;

@@ -46,6 +46,7 @@
 #define imax2(x, y) ((x < y) ? y : x)
 
 #include "RBufferUtils.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

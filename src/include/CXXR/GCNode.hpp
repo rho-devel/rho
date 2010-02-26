@@ -402,6 +402,7 @@ namespace CXXR {
 	friend class GCInhibitor;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
+	friend class ProtectStack;
 	friend class WeakRef;
 
 	/** Visitor class used to mark nodes.

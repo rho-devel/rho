@@ -82,6 +82,7 @@
 #include "Fileio.h"
 #include "Rconnections.h"
 #include <S.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

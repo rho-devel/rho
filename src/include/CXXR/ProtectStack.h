@@ -32,20 +32,19 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file GCStackRoot.h
+/** @file ProtectStack.h
  *
- * @brief Templated class CXXR::GCStackRoot and its untemplated base class
- * CXXR::GCStackRootBase.
+ * @brief Class CXXR::ProtectStack and associated C interface.
  *
- * CXXR::GCStackRootBase also encapsulates the functionality of the CR
- * pointer protection stack.
+ * CXXR::ProtectStack encapsulates the functionality of the CR pointer
+ * protection stack.
  *
  * See the paragraph 'Caller Protects' in the description of class
  * CXXR::GCStackRoot for recommended coding policy.
  */
 
-#ifndef GCSTACKROOT_H
-#define GCSTACKROOT_H 1
+#ifndef PROTECTSTACK_H
+#define PROTECTSTACK_H 1
 
 #include "CXXR/RObject.h"
 
@@ -55,24 +54,11 @@
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
-    class Context;
-    class RObject;
-
-    /** @brief Untemplated base class for GCStackRoot.
+    /** @brief Class implementing CR's 'pointer protection stack'.
      *
-     * The preferred method for C++ code to protect a GCNode
-     * from the garbage collector is to use the templated class
-     * GCStackRoot, of which this is the untemplated base class, or
-     * class GCRoot.
-     *
-     * However, GCStackRoot is not usable by C code, which should continue
-     * to use ::PROTECT(), ::UNPROTECT() etc. as in CR.
-     * However, these functions have been reimplemented to manipulate
-     * a C pointer protection stack (as we shall call it, despite the
-     * fact that it's implemented in C++) encapsulated as a static
-     * member within GCStackRootBase.
+     * All members of this class are static.
      */
-    class GCStackRootBase {
+    class ProtectStack {
     public:
 	/** @brief Restore PPS to a previous size.
 	 *
@@ -87,7 +73,7 @@ namespace CXXR {
 	 * public, and be accessible only by a class encapsulating R
 	 * contexts.
 	 */
-	static void ppsRestoreSize(size_t new_size);
+	static void restoreSize(size_t new_size);
 
 	/** @brief Current size of PPS.
 	 *
@@ -98,9 +84,9 @@ namespace CXXR {
 	 * future.
 	 */
 #ifdef DEBUG_PPS
-	static size_t ppsSize();
+	static size_t size();
 #else
-	static size_t ppsSize()
+	static size_t size()
 	{
 	    return s_pps->size();
 	}
@@ -116,9 +102,6 @@ namespace CXXR {
 	 * @return Index of the stack cell thus created, for
 	 *          subsequent use with reprotect().
 	 */
-#ifndef NDEBUG
-	static unsigned int protect(RObject* node);
-#else
 	static unsigned int protect(RObject* node)
 	{
 	    GCNode::maybeCheckExposed(node);
@@ -128,7 +111,6 @@ namespace CXXR {
 	    s_pps->push_back(node);
 	    return index;
 	}
-#endif
 
 	/** @brief Change the target of a pointer on the PPS.
 	 *
@@ -175,90 +157,22 @@ namespace CXXR {
 	 */
 	static void unprotectPtr(RObject* node);
 
-	/** @brief Conduct a const visitor to all 'root' GCNode objects.
+	/** @brief Conduct a const visitor to protected objects.
 	 *
-	 * Conduct a GCNode::const_visitor object to each root GCNode
-	 * and each node on the C pointer protection stack.
+	 * Conduct a GCNode::const_visitor object to each node on the
+	 * pointer protection stack.
 	 *
 	 * @param v Pointer to the const_visitor object.
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
-    protected:
-	GCStackRootBase(const GCNode* node)
-	    : m_next(s_roots), m_target(node)
-	{
-	    s_roots = this;
-	    GCNode::maybeCheckExposed(node);
-	    if (m_target)
-		m_target->incRefCount();
-	}
-
-	GCStackRootBase(const GCStackRootBase& source)
-	    : m_next(s_roots), m_target(source.m_target)
-	{
-	    s_roots = this;
-	    if (m_target)
-		m_target->incRefCount();
-	}
-
-	~GCStackRootBase()
-	{
-#ifndef NDEBUG
-	    if (this != s_roots)
-		seq_error();
-#endif
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
-	    s_roots = m_next;
-	}
-
-	GCStackRootBase& operator=(const GCStackRootBase& source)
-	{
-	    if (source.m_target)
-		source.m_target->incRefCount();
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
-	    m_target = source.m_target;
-	    return *this;
-	}
-
-	/** @brief Change the node protected by this GCStackRootBase.
-	 *
-	 * @param node Pointer to the node now to be protected, or a
-	 * null pointer.
-	 */
-	void redirect(const GCNode* node)
-	{
-	    GCNode::maybeCheckExposed(node);
-	    if (node)
-		node->incRefCount();
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
-	    m_target = node;
-	}
-
-	/** @brief Access the encapsulated pointer.
-	 *
-	 * @return the GCNode pointer encapsulated by this object.
-	 */
-	const GCNode* ptr() const
-	{
-	    return m_target;
-	}
     private:
 	friend class GCNode;
 
 	// Ye olde pointer protection stack:
-#ifdef NDEBUG
 	static std::vector<RObject*>* s_pps;
-#else
-	static std::vector<std::pair<RObject*, Context*> >* s_pps;
-#endif
 
-	static GCStackRootBase* s_roots;
-
-	GCStackRootBase* m_next;
-	const GCNode* m_target;
+	// Not implemented:
+	ProtectStack();
 
 	// Clean up static data at end of run (called by
 	// GCNode::SchwarzCtr destructor:
@@ -270,134 +184,8 @@ namespace CXXR {
 	// Initialize static data (called by GCNode::SchwarzCtr
 	// constructor):
 	static void initialize();
-
-	// Report out-of-sequence destructor call and abort program.
-	// (We can't use an exception here because it's called from a
-	// destructor.)
-	static void seq_error();
     };
-
-    /** @brief Smart pointer to protect a GCNode from garbage
-     * collection.
-     *
-     * This class encapsulates a pointer to an object of a type
-     * derived from GCNode.  For as long as the GCStackRoot object
-     * exists, the GCNode that it points to will not be garbage
-     * collected.
-     *
-     * GCStackRoot objects are intended to be allocated on the
-     * processor stack: specifically, the class implementation
-     * requires that GCStackRoot objects are destroyed in the reverse
-     * order of creation, and the destructor checks this.
-     *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCStackRoot using the
-     *          type GCStackRoot<const String>.
-     *
-     * \par Caller protects:
-     * Suppose some code calls a function (or class method) that takes
-     * a pointer or reference to a class derived from GCNode as an
-     * argument, and/or returns a pointer to a class derived from
-     * GCNode as its return value.  In CXXR, the preferred coding
-     * approach is that the \e calling \e code should take
-     * responsibility for protecting the arguments from the garbage
-     * collector before calling the function, and likewise take
-     * responsibility for protecting the returned value.  This is
-     * because the calling code is in a better position to decide
-     * whether any additional steps are necessary to achieve this, and
-     * what they should be.  (The calling code may also need to protect
-     * other objects: objects that are neither arguments to or values
-     * returned from the called function, but which would otherwise be
-     * vulnerable if the called function gave rise to a garbage
-     * collection.)
-     */
-    template <class T = RObject>
-    class GCStackRoot : public GCStackRootBase {
-    public:
-	/**
-	 * @param node Pointer the node to be pointed to, and
-	 *          protected from the garbage collector, or a null
-	 *          pointer.
-	 */
-    explicit GCStackRoot(T* node = 0)
-    : GCStackRootBase(node) {}
-
-	/** @brief Copy constructor.
-	 *
-	 * The constructed GCStackRoot will protect the same GCNode as
-	 * source.  (There is probably no reason to use this
-	 * constructor.)
-	 */
-	GCStackRoot(const GCStackRoot& source) : GCStackRootBase(source) {}
-
-	/**
-	 * This will cause this GCStackRoot to protect the same GCNode as
-	 * is protected by source.  (There is probably no reason to
-	 * use this method.)
-	 */
-	GCStackRoot& operator=(const GCStackRoot& source)
-	{
-	    GCStackRootBase::operator=(source);
-	    return *this;
-	}
-
-	/**
-	 * This will cause this GCStackRoot to point to and protect node,
-	 * instead of the node (if any) it currently points to and
-	 * protects.
-	 *
-	 * @param node Pointer to the GCNode that is now to be pointed
-	 *          to and protected from the garbage collector.
-	 */
-	GCStackRoot& operator=(T* node)
-	{
-	    GCStackRootBase::redirect(node);
-	    return *this;
-	}
-
-	/** @brief Access member via encapsulated pointer.
-	 *
-	 * @return the pointer currently encapsulated by the node.
-	 */
-	T* operator->() const
-	{
-	    return get();
-	}
-
-	/** @brief Dereference the encapsulated pointer.
-	 *
-	 * @return a reference to the object pointed to by the
-	 * encapsulated pointer.  The effect is undefined if this
-	 * object encapsulates a null pointer.
-	 */
-	T& operator*() const
-	{
-	    return *get();
-	}
-
-	/** @brief Implicit conversion to encapsulated pointer type.
-	 *
-	 * @return the pointer currently encapsulated by the node.
-	 * The pointer is of type \a T* const to prevent its use as
-	 * an lvalue, the effect of which would probably not be what
-	 * the programmer wanted.
-	 */
-	operator T*() const
-	{
-	    return get();
-	}
-
-	/** @brief Access the encapsulated pointer.
-	 *
-	 * @return the pointer currently encapsulated by the node.
-	 */
-	T* get() const
-	{
-	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
-	}
-    };
-}
+}  // namespace CXXR
 
 extern "C" {
 #endif /* __cplusplus */
@@ -423,7 +211,7 @@ extern "C" {
 #else
     inline void R_ProtectWithIndex(SEXP node, PROTECT_INDEX *iptr)
     {
-	*iptr = CXXR::GCStackRootBase::protect(node);
+	*iptr = CXXR::ProtectStack::protect(node);
     }
 #endif
 
@@ -449,7 +237,7 @@ extern "C" {
 #else
     inline void R_Reprotect(SEXP node, PROTECT_INDEX index)
     {
-	CXXR::GCStackRootBase::reprotect(node, index);
+	CXXR::ProtectStack::reprotect(node, index);
     }
 #endif
 
@@ -463,8 +251,8 @@ extern "C" {
      *          size.
      *
      * @deprecated This is an interface for C code to call
-     * CXXR::GCStackRootBase::ppsRestoreSize(), which may cease to be
-     * public in future.
+     * CXXR::ProtectStack::restoreSize(), which may cease to be public
+     * in future.
      */
     void Rf_ppsRestoreSize(size_t new_size);
     
@@ -473,7 +261,7 @@ extern "C" {
      * @return the current size of the C pointer protection stack.
      *
      * @deprecated This is an interface for C code to call
-     * CXXR::GCStackRootBase::ppsSize(), which may cease to be public in
+     * CXXR::ProtectStack::size(), which may cease to be public in
      * future.
      */
     size_t Rf_ppsSize();
@@ -489,7 +277,7 @@ extern "C" {
 #else
     inline SEXP Rf_protect(SEXP node)
     {
-	CXXR::GCStackRootBase::protect(node);
+	CXXR::ProtectStack::protect(node);
 	return node;
     }
 #endif
@@ -509,7 +297,7 @@ extern "C" {
 #else
     inline void Rf_unprotect(int count)
     {
-	CXXR::GCStackRootBase::unprotect(count);
+	CXXR::ProtectStack::unprotect(count);
     }
 #endif	
 
@@ -529,7 +317,7 @@ extern "C" {
 #else
     inline void Rf_unprotect_ptr(SEXP node)
     {
-	CXXR::GCStackRootBase::unprotectPtr(node);
+	CXXR::ProtectStack::unprotectPtr(node);
     }
 #endif
 
@@ -537,4 +325,4 @@ extern "C" {
 }  /* extern "C" */
 #endif
 
-#endif  // GCSTACKROOT_H
+#endif  // PROTECTSTACK_H

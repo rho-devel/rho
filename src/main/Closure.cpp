@@ -44,7 +44,7 @@
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/JMPException.hpp"
 
 using namespace CXXR;

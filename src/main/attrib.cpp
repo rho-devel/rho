@@ -42,6 +42,7 @@
 #include <Defn.h>
 #include <Rmath.h>
 #include <basedecl.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

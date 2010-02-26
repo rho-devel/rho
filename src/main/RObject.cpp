@@ -45,7 +45,7 @@
 #include <iostream>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 

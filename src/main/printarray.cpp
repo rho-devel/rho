@@ -52,6 +52,7 @@
 #include "Print.h"
 
 #include <stdlib.h> /* for div() */
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

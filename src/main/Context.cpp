@@ -21,6 +21,7 @@
 
 #include "CXXR/Context.hpp"
 
+#include "CXXR/ProtectStack.h"
 #include "CXXR/RAllocStack.h"
 
 using namespace std;
@@ -31,7 +32,7 @@ GCRoot<> R_RestartStack;
 RObject* R_Srcref;
 
 Context::Context()
-    : nextcontext(R_GlobalContext), cstacktop(GCStackRootBase::ppsSize()),
+    : nextcontext(R_GlobalContext), cstacktop(ProtectStack::size()),
       evaldepth(Evaluator::depth()),vmax(vmaxget()),
       intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
       restartstack(R_RestartStack), srcref(R_Srcref)
@@ -61,7 +62,7 @@ void Context::end()
 	catch (...) {}
 	R_Visible = savevis;
     }
-    GCStackRootBase::ppsRestoreSize(cstacktop);
+    ProtectStack::restoreSize(cstacktop);
     Evaluator::setDepth(evaldepth);
     vmaxset(vmax);
     R_interrupts_suspended = intsusp;

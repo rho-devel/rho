@@ -45,8 +45,9 @@
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
 #include "CXXR/errors.h"
 #include "CXXR/Context.hpp"
@@ -275,7 +276,7 @@ bool WeakRef::runFinalizers()
 	WeakRef* wr = *lit++;
 	Context* saveToplevelContext = R_ToplevelContext;
 	GCStackRoot<> topExp(R_CurrentExpr);
-	unsigned int savestack = GCStackRootBase::ppsSize();
+	unsigned int savestack = ProtectStack::size();
 	{
 	    Context thiscontext;
 	    // A top level context is established for the finalizer to
@@ -303,7 +304,7 @@ bool WeakRef::runFinalizers()
 	    Rf_endcontext(&thiscontext);
 	}
 	R_ToplevelContext = saveToplevelContext;
-	GCStackRootBase::ppsRestoreSize(savestack);
+	ProtectStack::restoreSize(savestack);
 	R_CurrentExpr = topExp;
     }
     return finalizer_run;

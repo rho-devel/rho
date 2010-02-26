@@ -42,7 +42,7 @@
 #include <iostream>
 #include "CXXR/CachedString.h"
 #include "CXXR/Context.hpp"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 #include <Defn.h>
 #include <Print.h>

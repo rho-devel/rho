@@ -228,9 +228,9 @@ static void R_ReplFile(FILE *fp, SEXP rho)
     size_t savestack;
     
     R_InitSrcRefState(&ParseState);
-    savestack = GCStackRootBase::ppsSize();
+    savestack = ProtectStack::size();
     for(;;) {
-	GCStackRootBase::ppsRestoreSize(savestack);
+	ProtectStack::restoreSize(savestack);
 	R_CurrentExpr = R_Parse1File(fp, 1, &status, &ParseState);
 	switch (status) {
 	case PARSE_NULL:
@@ -372,7 +372,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, int browselevel, R_ReplSt
 	    if(c == ';' || c == '\n') break;
     }
 
-    GCStackRootBase::ppsRestoreSize(savestack);
+    ProtectStack::restoreSize(savestack);
     R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &state->status, NULL);
     
     switch(state->status) {
@@ -489,7 +489,7 @@ int R_ReplDLLdo1(void)
 	R_IoBufferPutc(c, &R_ConsoleIob);
 	if(c == ';' || c == '\n') break;
     }
-    GCStackRootBase::ppsRestoreSize(0);
+    ProtectStack::restoreSize(0);
     R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &status, NULL);
 
     switch(status) {
@@ -1350,7 +1350,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* so that it can be restored on exit. */
 
     browselevel = countContexts(Context::BROWSER, 1);
-    savestack = GCStackRootBase::ppsSize();
+    savestack = ProtectStack::size();
     saveToplevelContext = R_ToplevelContext;
     saveGlobalContext = R_GlobalContext;
 
@@ -1429,7 +1429,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* Reset the interpreter state. */
 
-    GCStackRootBase::ppsRestoreSize(savestack);
+    ProtectStack::restoreSize(savestack);
     R_CurrentExpr = topExp;
     R_ToplevelContext = saveToplevelContext;
     R_GlobalContext = saveGlobalContext;

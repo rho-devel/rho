@@ -41,7 +41,7 @@
 #define CONTEXT_HPP 1
 
 #include "CXXR/Evaluator.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
 
 extern "C" {

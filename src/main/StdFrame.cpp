@@ -55,7 +55,7 @@
 #include <cmath>
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 #include "CXXR/Symbol.h"
 

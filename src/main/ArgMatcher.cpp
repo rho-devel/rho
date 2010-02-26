@@ -23,7 +23,7 @@
 
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Promise.h"
 #include "CXXR/errors.h"

@@ -40,7 +40,7 @@
 #include "CXXR/ExternalPointer.h"
 
 #include "localization.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

@@ -62,6 +62,7 @@
 #include <Rmath.h>
 #include <Graphics.h>		/* "GPar" structure + COMMENTS */
 #include "basedecl.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

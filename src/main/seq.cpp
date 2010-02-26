@@ -46,6 +46,7 @@
 #include <Rmath.h>
 
 #include "RBufferUtils.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

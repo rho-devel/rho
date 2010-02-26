@@ -74,6 +74,8 @@ extern "C" {
 
 #include <errno.h>
 
+#include "CXXR/GCStackRoot.hpp"
+
 using namespace CXXR;
 
 #ifdef HAVE_MATHERR

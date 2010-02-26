@@ -42,7 +42,7 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

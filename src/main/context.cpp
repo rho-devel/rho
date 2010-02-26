@@ -178,7 +178,7 @@ please bug.report() [R_run_onexits]"));
 
 void attribute_hidden R_restore_globals(Context *cptr)
 {
-    GCStackRootBase::ppsRestoreSize(cptr->cstacktop);
+    ProtectStack::restoreSize(cptr->cstacktop);
     Evaluator::setDepth(cptr->evaldepth);
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);

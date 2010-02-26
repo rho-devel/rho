@@ -49,6 +49,7 @@
 
 #include <Rmath.h>
 #include <R_ext/GraphicsEngine.h>
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
 

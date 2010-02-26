@@ -56,6 +56,7 @@
 
 #include <stdexcept>
 #include "Defn.h"
+#include "CXXR/GCStackRoot.hpp"
 
 using namespace std;
 using namespace CXXR;

@@ -46,7 +46,8 @@
 #include <limits>
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
 
 #ifdef GC_FIND_LOOPS
@@ -147,7 +148,7 @@ bool GCNode::check()
 void GCNode::cleanup()
 {
     GCManager::cleanup();
-    GCStackRootBase::cleanup();
+    ProtectStack::cleanup();
     GCRootBase::cleanup();
 }
 
@@ -190,7 +191,7 @@ void GCNode::gclite()
 	    s_live->splice_back(node);
 	}
     }
-    GCStackRootBase::unprotect(protect_count);
+    ProtectStack::unprotect(protect_count);
 }
 
 void GCNode::initialize()
@@ -209,7 +210,7 @@ void GCNode::initialize()
     // indicated within the watch() function below.
 #endif
     GCRootBase::initialize();  // BREAKPOINT A
-    GCStackRootBase::initialize();
+    ProtectStack::initialize();
     GCManager::initialize();
 }
 
@@ -234,9 +235,10 @@ void GCNode::mark()
     s_mark ^= MARK;
     GCNode::Marker marker;
     GCRootBase::visitRoots(&marker);
-    unsigned int protect_count = protectCstructs();
     GCStackRootBase::visitRoots(&marker);
-    GCStackRootBase::unprotect(protect_count);
+    unsigned int protect_count = protectCstructs();
+    ProtectStack::visitRoots(&marker);
+    ProtectStack::unprotect(protect_count);
     WeakRef::markThru();
 }
 

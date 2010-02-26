@@ -43,7 +43,7 @@
 #include "R_ext/Error.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
 
 using namespace std;

@@ -36,7 +36,7 @@
 #undef match
 
 #include "CXXR/CachedString.h"
-#include "CXXR/GCStackRoot.h"
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
 
