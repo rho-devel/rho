@@ -59,6 +59,34 @@ extern "C" {
      */
     extern Rboolean R_Visible;
 
+    /** @brief Are any user interrupts currently pending?
+     *
+     * If user interrupts are attempted while user interrupts are
+     * suspended, this is set non-zero.  The interrupt is then
+     * services when the period of suspension ends.
+     */
+    extern int R_interrupts_pending;
+
+    /** @brief Are interrupts currently suspended?
+     */
+    extern Rboolean R_interrupts_suspended;
+
+#define BYTECODE
+
+#ifdef BYTECODE
+#define R_BCNODESTACKSIZE 10000
+    extern SEXP* R_BCNodeStackBase;
+    extern SEXP* R_BCNodeStackTop;
+    extern SEXP* R_BCNodeStackEnd;
+#ifdef BC_INT_STACK
+#define R_BCINTSTACKSIZE 10000
+    typedef union { void *p; int i; } IStackval;
+    extern IStackval* R_BCIntStackBase;
+    extern IStackval* R_BCIntStackTop;
+    extern IStackval* R_BCIntStackEnd;
+#endif
+#endif
+
     /** @brief Is a Symbol missing within an Environment?
      *
      * @param symbol Pointer to the Symbol whose missing status is

@@ -533,15 +533,6 @@ extern double elapsedLimitValue		INI_as(-1.0);
 
 void resetTimeLimits(void);
 
-#ifdef BYTECODE
-#define R_BCNODESTACKSIZE 10000
-extern0 SEXP *R_BCNodeStackBase, *R_BCNodeStackTop, *R_BCNodeStackEnd;
-# ifdef BC_INT_STACK
-#define R_BCINTSTACKSIZE 10000
-extern0 IStackval *R_BCIntStackBase, *R_BCIntStackTop, *R_BCIntStackEnd;
-# endif
-#endif
-
 /* Pointer  type and utilities for dispatch in the methods package */
 typedef SEXP (*R_stdGen_ptr_t)(SEXP, SEXP, SEXP); /* typedef */
 R_stdGen_ptr_t R_get_standardGeneric_ptr(void); /* get method */

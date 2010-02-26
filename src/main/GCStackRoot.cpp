@@ -167,6 +167,9 @@ void GCStackRootBase::unprotect(unsigned int count)
     if (count > sz)
 	throw out_of_range("GCStackRootBase::unprotect: count greater"
 			   " than current stack size.");
+    if (R_GlobalContext && sz - count < R_GlobalContext->cstacktop)
+	throw logic_error("GGCStackRootBase::unprotect: too many unprotects"
+			  " in this context.");
 #endif
     for (unsigned int i = 0; i < count; ++i) {
 #ifdef NDEBUG
@@ -203,6 +206,11 @@ void GCStackRootBase::unprotectPtr(RObject* node)
     if (rit == s_pps->rend())
 	throw invalid_argument("GCStackRootBase::unprotectPtr:"
 			       " pointer not found.");
+#ifndef NDEBUG
+    if (R_GlobalContext && s_pps->size() == R_GlobalContext->cstacktop)
+	throw logic_error("GCStackRootBase::unprotect: too many unprotects"
+			  " in this context.");
+#endif
     // See Josuttis p.267 for the need for -- :
     s_pps->erase(--(rit.base()));
 #ifdef DEBUG_PPS

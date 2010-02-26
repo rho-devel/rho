@@ -373,8 +373,9 @@ void SrcrefPrompt(const char * prefix, SEXP srcref)
 
 SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 {
-    SEXP body, formals, actuals, savedrho;
-    Environment* newrho;
+    SEXP body, formals, savedrho;
+    GCStackRoot<> actuals;
+    GCStackRoot<Environment> newrho;
     SEXP f, a;
     GCStackRoot<> tmp;
 
@@ -396,8 +397,9 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	    contains the matched pairs.  Ideally this environment sould be
 	    hashed.  */
 
-	PROTECT(actuals = matchArgs(formals, arglist, call));
-	PROTECT(newrho = static_cast<Environment*>(NewEnvironment(formals, actuals, savedrho)));
+	actuals = matchArgs(formals, arglist, call);
+	newrho = static_cast<Environment*>(NewEnvironment(formals, actuals,
+							  savedrho));
 
 	/*  Use the default code for unbound formals.  FIXME: It looks like
 	    this code should preceed the building of the environment so that
@@ -455,12 +457,12 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
     {
+	// The Context constructor will change R_GlobalContext:
+	SEXP syspar = rho;
+	if (R_GlobalContext->callflag == Context::GENERIC)
+	    syspar = R_GlobalContext->sysparent;
 	Context cntxt;
-	if( R_GlobalContext->callflag == Context::GENERIC )
-	    begincontext(&cntxt, Context::RETURN, call,
-			 newrho, R_GlobalContext->sysparent, arglist, op);
-	else
-	    begincontext(&cntxt, Context::RETURN, call, newrho, rho, arglist, op);
+	begincontext(&cntxt, Context::RETURN, call, newrho, syspar, arglist, op);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -528,7 +530,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
 	} while (redo);
-	UNPROTECT(2);
 	endcontext(&cntxt);
     }
 

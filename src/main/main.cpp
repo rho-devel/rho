@@ -129,8 +129,6 @@ LibExport SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 
 // Data declared LibExtern in Defn.h :
 
-LibExport Rboolean R_interrupts_suspended = FALSE;
-LibExport int R_interrupts_pending = 0;
 LibExport char *R_Home;		    /* Root of the R tree */
 LibExport int	R_Is_Running;	    /* for Windows memory manager */
 LibExport Rboolean R_Interactive = TRUE;  /* TRUE during interactive use*/
@@ -188,25 +186,13 @@ attribute_hidden int	R_ParseContextLine; /* Line in file of the above */
 attribute_hidden int	R_CollectWarnings = 0;	/* the number of warnings */
 GCRoot<>	R_Warnings;	    /* the warnings and their calls */
 attribute_hidden int	R_ShowErrorMessages = 1;     /* show error messages? */
-GCRoot<>	R_HandlerStack;	/* Condition handler stack */
-GCRoot<>	R_RestartStack;	/* Stack of available restarts */
 attribute_hidden Rboolean R_warn_partial_match_dollar = FALSE;
 attribute_hidden Rboolean R_warn_partial_match_attr = FALSE;
 attribute_hidden Rboolean R_ShowWarnCalls = FALSE;
 attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
-attribute_hidden SEXP R_Srcref;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
 attribute_hidden char OutDec	= '.';  /* decimal point used for output */
-
-#ifdef BYTECODE
-#define R_BCNODESTACKSIZE 10000
-attribute_hidden SEXP *R_BCNodeStackBase, *R_BCNodeStackTop, *R_BCNodeStackEnd;
-# ifdef BC_INT_STACK
-#define R_BCINTSTACKSIZE 10000
-attribute_hidden IStackval *R_BCIntStackBase, *R_BCIntStackTop, *R_BCIntStackEnd;
-# endif
-#endif
 
 attribute_hidden int R_dec_min_exponent		= -308;
 attribute_hidden unsigned int max_contour_segments = 25000;
@@ -946,7 +932,7 @@ void setup_Rmainloop(void)
     R_Toplevel->promargs = R_NilValue;
     R_Toplevel->callfun = R_NilValue;
     R_Toplevel->call = R_NilValue;
-    R_Toplevel->cloenv = R_BaseEnv;
+    R_Toplevel->cloenv = Environment::base();
     R_Toplevel->sysparent = R_BaseEnv;
     R_Toplevel->conexit = R_NilValue;
     R_Toplevel->vmax = 0;
@@ -1350,14 +1336,13 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     Context *cptr;
     unsigned int savestack;
     int browselevel, tmp;
-    SEXP topExp, argList;
+    GCStackRoot<> topExp(R_CurrentExpr);
 
     /* argument matching */
-    PROTECT(argList = matchargs(args)); 
+    GCStackRoot<> argList(matchargs(args)); 
 
     /* return if the expr is not TRUE */
     if( !asLogical(CADDR(argList)) ) {
-        UNPROTECT(1);
         return R_NilValue;
     }
 
@@ -1366,7 +1351,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     browselevel = countContexts(Context::BROWSER, 1);
     savestack = GCStackRootBase::ppsSize();
-    PROTECT(topExp = R_CurrentExpr);
     saveToplevelContext = R_ToplevelContext;
     saveGlobalContext = R_GlobalContext;
 
@@ -1445,15 +1429,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* Reset the interpreter state. */
 
-    R_CurrentExpr = topExp;
-    // FIXME: The CR code contains the following UNPROTECT, which
-    // should be redundant but innocuous.  Unfortunately in CXXR
-    // something as yet undiagnosed may already have popped one too
-    // many PPS entries.
-    //
-    // UNPROTECT(1);
     GCStackRootBase::ppsRestoreSize(savestack);
-    UNPROTECT(1);
     R_CurrentExpr = topExp;
     R_ToplevelContext = saveToplevelContext;
     R_GlobalContext = saveGlobalContext;

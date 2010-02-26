@@ -40,19 +40,22 @@
 #ifndef CONTEXT_HPP
 #define CONTEXT_HPP 1
 
+#include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/Promise.h"
 
-#define BYTECODE
+extern "C" {
+    // Parked here pending the creation of an ErrorHandling class:
+    extern CXXR::GCRoot<> R_HandlerStack;  // Condition handler stack
+    extern CXXR::GCRoot<> R_RestartStack;  // Stack of available restarts
 
-#ifdef BYTECODE
-# ifdef BC_INT_STACK
-    typedef union { void *p; int i; } IStackval;
-# endif
-#endif
+    // Parked here temporarily:
+    extern CXXR::RObject* R_Srcref;
+}
 
 namespace CXXR {
-    struct Context {
+    class Context {
+    public:
 	/* The Various Context Types.
 	 *
 	* In general the type is a bitwise OR of the values below.
@@ -76,6 +79,14 @@ namespace CXXR {
 	    BUILTIN  = 64  // used in profiling
 	};
 
+	Context();
+
+	/** @brief The future destructor.
+	 *
+	 * Restores values saved by the constructor.
+	 */
+	void end();
+
 	Context *nextcontext;        // The next context up the chain
 	Type callflag;		     // The context "type"
 	unsigned int cstacktop;	     // Top of the pointer protection stack
@@ -84,18 +95,18 @@ namespace CXXR {
 	GCStackRoot<> callfun;       // The closure called
 	GCStackRoot<> sysparent;     // environment the closure was called from
 	GCStackRoot<> call;          // The call that effected this context
-	GCStackRoot<> cloenv;	     // The environment
+	GCStackRoot<Environment> cloenv;  // The environment
 	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
 	void *vmax;	             // size of R_alloc stack
-	int intsusp;                 // interrupts are suspended
+	Rboolean intsusp;            // interrupts are suspended
 	GCStackRoot<> handlerstack;  // condition handler stack
 	GCStackRoot<> restartstack;  // stack of available restarts
 	GCStackRoot<> srcref;	     // The source line in effect
 #ifdef BYTECODE
 	SEXP *nodestack;
-# ifdef BC_INT_STACK
+#ifdef BC_INT_STACK
 	IStackval *intstack;
-# endif
+#endif
 #endif
     };
 }  // namespace CXXR

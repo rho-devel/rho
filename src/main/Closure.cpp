@@ -90,14 +90,13 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     // Perform evaluation:
     GCStackRoot<> ans;
     {
-	Context cntxt;
+	// The Context constructor will change R_GlobalContext:
+	RObject* syspar = env;
 	if (R_GlobalContext->callflag == Context::GENERIC)
-	    Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
-			    newenv, R_GlobalContext->sysparent, prepared_args,
-			    this);
-	else
-	    Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
-			    newenv, env, prepared_args, this);
+	    syspar = R_GlobalContext->sysparent;
+	Context cntxt;
+	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
+			newenv, syspar, prepared_args, this);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)
 	    debug(newenv, call, prepared_args, env);

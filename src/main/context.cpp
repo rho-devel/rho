@@ -233,28 +233,12 @@ void begincontext(Context * cptr, Context::Type flags,
 		  SEXP syscall, SEXP env, SEXP sysp,
 		  SEXP promargs, SEXP callfun)
 {
-    cptr->nextcontext = R_GlobalContext;
-    cptr->cstacktop = GCStackRootBase::ppsSize();
-    cptr->evaldepth = Evaluator::depth();
     cptr->callflag = flags;
     cptr->call = syscall;
-    cptr->cloenv = env;
+    cptr->cloenv = SEXP_downcast<Environment*>(env);
     cptr->sysparent = sysp;
-    cptr->conexit = R_NilValue;
     cptr->promargs = promargs;
     cptr->callfun = callfun;
-    cptr->vmax = vmaxget();
-    cptr->intsusp = R_interrupts_suspended;
-    cptr->handlerstack = R_HandlerStack;
-    cptr->restartstack = R_RestartStack;
-#ifdef BYTECODE
-    cptr->nodestack = R_BCNodeStackTop;
-# ifdef BC_INT_STACK
-    cptr->intstack = R_BCIntStackTop;
-# endif
-#endif
-    cptr->srcref = R_Srcref;
-    R_GlobalContext = cptr;
 }
 
 
@@ -262,18 +246,7 @@ void begincontext(Context * cptr, Context::Type flags,
 
 void endcontext(Context * cptr)
 {
-    R_HandlerStack = cptr->handlerstack;
-    R_RestartStack = cptr->restartstack;
-    if (cptr->cloenv != R_NilValue && cptr->conexit != R_NilValue ) {
-	SEXP s = cptr->conexit;
-	Rboolean savevis = R_Visible;
-	cptr->conexit = R_NilValue; /* prevent recursion */
-	PROTECT(s);
-	eval(s, cptr->cloenv);
-	UNPROTECT(1);
-	R_Visible = savevis;
-    }
-    R_GlobalContext = cptr->nextcontext;
+    cptr->end();
 }
 
 
