@@ -41,8 +41,8 @@
  *  used for error returns to top-level.
  *
  *	context[k] -> context[k-1] -> ... -> context[0]
- *	^				     ^
- *	R_GlobalContext			     R_ToplevelContext
+ *	^
+ *	R_GlobalContext
  *
  *  Contexts are allocated on the stack as the evaluator invokes itself
  *  recursively.  The memory is reclaimed naturally on return through
@@ -51,7 +51,6 @@
  *  A context contains the following information (and more):
  *
  *	nextcontext	the next level context
- *	cjmpbuf		longjump information for non-local return
  *	cstacktop	the current level of the pointer protection stack
  *	callflag	the context "type"
  *	call		the call (name of function, or expression to
@@ -62,9 +61,6 @@
  *	sysparent	the environment the closure was called from
  *	conexit		code for on.exit calls, to be executed in cloenv
  *			at exit from the closure (normal or abnormal).
- *	cend		a pointer to function which executes if there is
- *			non-local return (i.e. an error)
- *	cenddata	a void pointer to data for cend to use
  *	vmax		the current setting of the R_alloc stack
  *	srcref		the srcref at the time of the call
  *
@@ -245,7 +241,7 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(R_ToplevelContext->call,
+	errorcall(R_GlobalContext->call,
 		  _("only positive values of 'n' are allowed"));
     while (cptr->nextcontext != NULL && n > 1) {
 	if (cptr->callflag & Context::FUNCTION )
@@ -359,14 +355,14 @@ SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if( !isLogical(CAR(args)) || LENGTH(CAR(args))!= 1 )
 	return(R_NilValue);
-    for(cptr = R_GlobalContext->nextcontext; cptr!= R_ToplevelContext;
+    for(cptr = R_GlobalContext->nextcontext; cptr;
 	    cptr = cptr->nextcontext) {
 	if (cptr->callflag & Context::FUNCTION) {
 	    SET_RESTART_BIT_ON(cptr->callflag);
 	    break;
 	}
     }
-    if( cptr == R_ToplevelContext )
+    if( cptr)
 	error(_("no function to restart"));
     return(R_NilValue);
 }
@@ -380,7 +376,7 @@ int countContexts(int ctxttype, int browser) {
     Context *cptr;
 
     cptr = R_GlobalContext;
-    while( cptr != R_ToplevelContext) {
+    while( cptr ) {
         if( cptr->callflag == ctxttype ) 
             n++;
         else if( browser ) {
@@ -408,7 +404,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     /* first find the closest  browser context */
     cptr = R_GlobalContext;
-    while (cptr != R_ToplevelContext) {
+    while (cptr) {
         if (cptr->callflag == Context::BROWSER) {
                 break;
         }
@@ -426,7 +422,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
         /* note we want n>1, as we have already      */
         /* rewound to the first context              */
         if( n > 1 ) {
-           while (cptr != R_ToplevelContext && n > 0 ) {
+           while (cptr && n > 0 ) {
                if (cptr->callflag == Context::BROWSER) {
                    n--;
                    break;
@@ -443,7 +439,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
             rval = CADR(cptr->promargs);
         break;
     case 3: /* turn on debugging n levels up */
-        while ( (cptr != R_ToplevelContext) && n > 0 ) {
+        while ( cptr && n > 0 ) {
             if (cptr->callflag & Context::FUNCTION) 
                   n--;
             cptr = cptr->nextcontext;
@@ -473,7 +469,7 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* first find the context that sys.xxx needs to be evaluated in */
     cptr = R_GlobalContext;
     t = cptr->sysparent;
-    while (cptr != R_ToplevelContext) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION )
 	    if (cptr->cloenv == t)
 		break;
@@ -577,13 +573,10 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 {
-    Context * volatile saveToplevelContext;
     volatile SEXP topExp;
     Rboolean result;
 
-
     PROTECT(topExp = R_CurrentExpr);
-    saveToplevelContext = R_ToplevelContext;
 
     {
 	Context thiscontext;
@@ -592,7 +585,6 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	// cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	 << &thiscontext << endl;
 	try {
-	    R_GlobalContext = R_ToplevelContext = &thiscontext;
 	    fun(data);
 	    result = TRUE;
 	}
@@ -613,7 +605,6 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	//	 << &thiscontext << endl;
     }
 
-    R_ToplevelContext = saveToplevelContext;
     R_CurrentExpr = topExp;
     UNPROTECT(1);
 

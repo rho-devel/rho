@@ -798,7 +798,7 @@ static void jump_to_top_ex(Rboolean traceback,
 	if (! ignoreRestartContexts)
 	    try_jump_to_restart();
 	/* at this point, i.e. if we have not exited in
-	   try_jump_to_restart, we are heading for R_ToplevelContext */
+	   try_jump_to_restart, we are heading for top level */
 
 	/* only run traceback if we are not going to bail out of a
 	   non-interactive session */
@@ -822,8 +822,6 @@ static void jump_to_top_ex(Rboolean traceback,
 	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
 	}
 
-	// cout << __FILE__":" << __LINE__ << " About to throw JMPException("
-	//	 <<  R_ToplevelContext << ", 0)\n" << flush;
 	throw CommandTerminated();
     }
     catch (...) {
@@ -1226,12 +1224,7 @@ void R_JumpToToplevel(Rboolean restart)
 	else if (c->callflag == Context::TOPLEVEL)
 	    break;
     }
-    if (c != R_ToplevelContext)
-	warning(_("top level inconsistency?"));
 
-    R_ToplevelContext = R_GlobalContext = c;
-    //    cout << __FILE__":" << __LINE__ << " About to throw JMPException("
-    //	 << c << ", " << Context::TOPLEVEL << ")\n" << flush;
     throw CommandTerminated();
 }
 
@@ -1824,8 +1817,7 @@ SEXP attribute_hidden do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    if (R_GlobalContext == R_ToplevelContext ||
-	! (R_GlobalContext->callflag & Context::FUNCTION))
+    if (! (R_GlobalContext->callflag & Context::FUNCTION))
 	errorcall(call, _("not in a try context"));
     SET_RESTART_BIT_ON(R_GlobalContext->callflag);
     R_InsertRestartHandlers(R_GlobalContext, FALSE);

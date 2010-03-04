@@ -275,7 +275,6 @@ bool WeakRef::runFinalizers()
     WRList::iterator lit = s_f10n_pending.begin();
     while (lit != s_f10n_pending.end()) {
 	WeakRef* wr = *lit++;
-	Context* saveToplevelContext = R_ToplevelContext;
 	GCStackRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = ProtectStack::size();
 	{
@@ -288,7 +287,6 @@ bool WeakRef::runFinalizers()
 	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	    //	     << &thiscontext << endl;
 	    try {
-		R_GlobalContext = R_ToplevelContext = &thiscontext;
 		wr->finalize();
 	    }
 	    catch (CommandTerminated) {
@@ -307,7 +305,6 @@ bool WeakRef::runFinalizers()
 	    // Expose WeakRef to reference-counting collection:
 	    wr->m_self = 0;
 	}
-	R_ToplevelContext = saveToplevelContext;
 	ProtectStack::restoreSize(savestack);
 	R_CurrentExpr = topExp;
     }

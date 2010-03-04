@@ -577,7 +577,7 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 SEXP dynamicfindVar(SEXP symbol, Context *cptr)
 {
     SEXP vl;
-    while (cptr != R_ToplevelContext) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION) {
 	    vl = findVarInFrame3(cptr->cloenv, symbol, TRUE);
 	    if (vl != R_UnboundValue) return vl;

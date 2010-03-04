@@ -114,7 +114,6 @@ extern CXXR::GCRoot<> R_ReturnedValue;
 #define SET_RESTART_BIT_OFF(flags) (flags = Context::Type(flags & ~Context::RESTART))
 
 extern CXXR::Context* R_Toplevel;         /* The ultimate toplevel environment */
-extern CXXR::Context* R_ToplevelContext;  /* The toplevel environment */
 extern CXXR::Context* R_GlobalContext;    /* The global environment */
 
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
