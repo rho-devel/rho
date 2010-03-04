@@ -124,6 +124,7 @@
 
 #include "Defn.h"
 
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
@@ -595,7 +596,12 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	    fun(data);
 	    result = TRUE;
 	}
+	catch (CommandTerminated) {
+	    result = FALSE;
+	}
 	catch (JMPException& e) {
+	    cerr << "CXXR internal error: unexpected JMPException\n";
+	    abort();
 	    // cout << __FILE__":" << __LINE__
 	    //	<< " Seeking  " << e.context
 	    //      << "; in " << &thiscontext << endl;

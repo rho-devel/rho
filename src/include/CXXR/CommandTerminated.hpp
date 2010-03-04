@@ -33,40 +33,22 @@
  */
 
 /** @file JMPException.hpp
+ *
  * @brief Class CXXR::JMPException.
  */
 
-#ifndef JMPEXCEPTION_HPP
-#define JMPEXCEPTION_HPP 1
+#ifndef COMMANDTERMINATED_HPP
+#define COMMANDTERMINATED_HPP 1
 
 namespace CXXR {
-    class Context;
-
-    /** @brief Exception class to replace setjmp/longjmp.
+    /** @brief Exception thrown when a command is terminated prematurely.
      *
-     * This class is intended as far as possible as a drop-in
-     * replacement for the use of setjmp/longjmp within R.  The
-     * replacement is necessary to ensure that the destructors of
-     * automatic variables are invoked as the stack is unwound.
-     *
-     * @note This class is an interim measure: in due course it would
-     * be desirable to replace it and RCNTXT with something more in
-     * line with conventional C++ exception handling idioms.
+     * An exception of this class is thrown when evaluation of an R
+     * command (i.e. a top-level function evaluation) will not be
+     * completed, for example because of an error or a user interrupt.
      */
-    struct JMPException {
-	Context* context;
-	int mask;
-
-	/**
-	 * @param the_context Pointer to the context within which the
-	 *          exception is to be caught.  (catch blocks within
-	 *          other contexts should rethrow the exception.)
-	 * @param the_mask Context mask, or zero.
-	 */
-	JMPException(Context* the_context, int the_mask = 0)
-	    : context(the_context), mask(the_mask)
-	{}
+    struct CommandTerminated {
     };
 }
 
-#endif  // JMPEXCEPTION_HPP
+#endif  // COMMANDTERMINATED_HPP

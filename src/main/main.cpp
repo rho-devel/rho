@@ -67,6 +67,7 @@
 # include <locale.h>
 #endif
 
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
@@ -797,7 +798,11 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 	    R_GlobalContext = R_ToplevelContext = R_Toplevel;
 	    R_ReplFile(fp, env);
 	}
+	catch (CommandTerminated) {
+	}
 	catch (JMPException& e) {
+	    cerr << "CXXR internal error: unexpected JMPException\n";
+	    abort();
 	    //	    cout << __FILE__":" << __LINE__
 	    //		 << " Seeking " << e.context
 	    //		 << "; in " << R_Toplevel << endl;
@@ -972,7 +977,13 @@ void setup_Rmainloop(void)
 	if (R_SignalHandlers) init_signal_handlers();
 	R_ReplFile(fp, baseEnv);
     }
+    catch (CommandTerminated) {
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
+	if (R_SignalHandlers) init_signal_handlers();
+    }
     catch (JMPException& e) {
+	cerr << "CXXR internal error: unexpected JMPException\n";
+	abort();
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
 	//	     << "; in " << R_Toplevel << endl;
@@ -1018,7 +1029,12 @@ void setup_Rmainloop(void)
 	}
 	UNPROTECT(1);
     }
+    catch (CommandTerminated) {
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
+    }
     catch (JMPException& e) {
+	cerr << "CXXR internal error: unexpected JMPException\n";
+	abort();
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
 	//	     << "; in " << R_Toplevel << endl;
@@ -1057,7 +1073,12 @@ void setup_Rmainloop(void)
     try {
 	R_InitialData();
     }
+    catch (CommandTerminated) {
+	R_Suicide(_("unable to restore saved data in .RData\n"));
+    }
     catch (JMPException& e) {
+	cerr << "CXXR internal error: unexpected JMPException\n";
+	abort();
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
 	//	     << "; in " << R_Toplevel << endl;
@@ -1086,7 +1107,12 @@ void setup_Rmainloop(void)
 	}
 	UNPROTECT(1);
     }
+    catch (CommandTerminated) {
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
+    }
     catch (JMPException& e) {
+	cerr << "CXXR internal error: unexpected JMPException\n";
+	abort();
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
 	//	     << "; in " << R_Toplevel << endl;
@@ -1114,7 +1140,12 @@ void setup_Rmainloop(void)
 	}
 	UNPROTECT(1);
     }
+    catch (CommandTerminated) {
+	R_GlobalContext = R_ToplevelContext = R_Toplevel;
+    }
     catch (JMPException& e) {
+	cerr << "CXXR internal error: unexpected JMPException\n";
+	abort();
 	//	cout << __FILE__":" << __LINE__
 	//	     << " Seeking " << e.context
 	//	     << "; in " << R_Toplevel << endl;
@@ -1162,7 +1193,12 @@ void run_Rmainloop(void)
 	    R_GlobalContext = R_ToplevelContext = R_Toplevel;
 	    R_ReplConsole(R_GlobalEnv, 0, 0);
 	}
+	catch (CommandTerminated) {
+	    redo = true;
+	}
 	catch (JMPException& e) {
+	    cerr << "CXXR internal error: unexpected JMPException\n";
+	    abort();
 	    //	    cout << __FILE__":" << __LINE__
 	    //		 << " Seeking " << e.context
 	    //		 << "; in " << R_Toplevel << endl;

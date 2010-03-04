@@ -42,6 +42,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
@@ -290,7 +291,11 @@ bool WeakRef::runFinalizers()
 		R_GlobalContext = R_ToplevelContext = &thiscontext;
 		wr->finalize();
 	    }
+	    catch (CommandTerminated) {
+	    }
 	    catch (JMPException& e) {
+		cerr << "CXXR internal error: unexpected JMPException\n";
+		abort();
 		//	    cout << __FILE__":" << __LINE__
 		//		 << " Seeking " << e.context
 		//		 << "; in " << &thiscontext << endl;

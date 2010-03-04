@@ -63,6 +63,7 @@ extern void R_ProcessEvents(void);
 #include <R_ext/eventloop.h> /* for R_PolledEvents */
 #endif
 
+#include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
@@ -823,7 +824,7 @@ static void jump_to_top_ex(Rboolean traceback,
 
 	// cout << __FILE__":" << __LINE__ << " About to throw JMPException("
 	//	 <<  R_ToplevelContext << ", 0)\n" << flush;
-	throw JMPException(R_ToplevelContext);
+	throw CommandTerminated();
     }
     catch (...) {
 	inError = oldInError;
@@ -1231,7 +1232,7 @@ void R_JumpToToplevel(Rboolean restart)
     R_ToplevelContext = R_GlobalContext = c;
     //    cout << __FILE__":" << __LINE__ << " About to throw JMPException("
     //	 << c << ", " << Context::TOPLEVEL << ")\n" << flush;
-    throw JMPException(c, Context::TOPLEVEL);
+    throw CommandTerminated();
 }
 
 void R_SetErrmessage(const char *s)
