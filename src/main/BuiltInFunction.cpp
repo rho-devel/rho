@@ -83,7 +83,6 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 			    const_cast<Expression*>(call), Environment::base(),
 			    Environment::base(), 0, 0);
 	    ans = invoke(call, evaluated_args, env);
-	    Rf_endcontext(&cntxt);
 	} else {
 	    ans = invoke(call, evaluated_args, env);
 	}

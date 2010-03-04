@@ -1225,14 +1225,6 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	}
 	if (!strcmp(expr, "Q")) {
 
-	    /* Run onexit/cend code for everything above the target.
-	       The browser context is still on the stack, so any error
-	       will drop us back to the current browser.  Not clear
-	       this is a good thing.  Also not clear this should still
-	       be here now that jump_to_toplevel is used for the
-	       jump. */
-	    R_run_onexits(R_ToplevelContext);
-
 	    /* this is really dynamic state that should be managed as such */
 	    SET_ENV_DEBUG(rho, CXXRFALSE); /*PR#1721*/
 
@@ -1412,7 +1404,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
                 //               << " Exiting try/catch for "
 		//		 << &thiscontext << endl;
 	    } while (redo);
-	    endcontext(&thiscontext);
 	}
 	catch (JMPException& e) {
 	    //	cout << __FILE__":" << __LINE__
@@ -1423,7 +1414,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	 << &returncontext << endl;
-	endcontext(&returncontext);
     }
 
     /* Reset the interpreter state. */

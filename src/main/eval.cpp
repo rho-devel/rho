@@ -449,8 +449,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
 	/*  Terminate the previous context and start a new one with the
 	    correct environment. */
-
-	endcontext(&cntxt);
     }
 
     /*  If we have a generic function we need to use the sysparent of
@@ -530,7 +528,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
 	} while (redo);
-	endcontext(&cntxt);
     }
 
     if (RDEBUG(op)) {
@@ -641,7 +638,6 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
 	} while (redo);
-	endcontext(&cntxt);
     }
 
     if (RDEBUG(op)) {
@@ -1003,7 +999,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		// Otherwise assume it's Context::NEXT
 	    }
 	}
-	endcontext(&cntxt);
     }
     UNPROTECT(3);
     SET_ENV_DEBUG(rho, dbg);
@@ -1048,7 +1043,6 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
 	} while (redo);
-	endcontext(&cntxt);
     }
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
@@ -1092,7 +1086,6 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
 	} while (redo);
-	endcontext(&cntxt);
     }
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
@@ -1658,7 +1651,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
-	    endcontext(&cntxt);
 	}
 	UNPROTECT(1);
     }
@@ -1687,7 +1679,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	    //	     << &cntxt << endl;
-	    endcontext(&cntxt);
 	}
 	UNPROTECT(1);
 	expr = tmp;
@@ -1895,7 +1886,6 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		Context cntxt;
 		begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, op);
 		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
-		endcontext(&cntxt);
 	    }
 	    if (um) {
 		UNPROTECT(nprotect);
@@ -2658,7 +2648,6 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
       begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
       if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
-      endcontext(&cntxt);
   }
   UNPROTECT(2);
   return dispatched;
@@ -2744,7 +2733,6 @@ static void loopWithContect(volatile SEXP code, volatile SEXP rho)
 	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	     << &cntxt << endl;
     } while (redo);
-    endcontext(&cntxt);
 }
 
 static void checkVectorSubscript(SEXP vec, int k)
@@ -3365,7 +3353,6 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
 	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
-	      endcontext(&cntxt);
 	  }
 	  UNPROTECT(2);
 	}
@@ -3396,7 +3383,6 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
 	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
-	      endcontext(&cntxt);
 	  }
 	  UNPROTECT(2);
 	}

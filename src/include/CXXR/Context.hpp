@@ -120,7 +120,6 @@ extern CXXR::Context* R_GlobalContext;    /* The global environment */
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
 		     SEXP, SEXP);
 SEXP Rf_dynamicfindVar(SEXP, CXXR::Context*);
-void Rf_endcontext(CXXR::Context*);
 void Rf_findcontext(int, SEXP, SEXP);
 int Rf_framedepth(CXXR::Context*);
 void R_InsertRestartHandlers(CXXR::Context *, Rboolean);
@@ -129,8 +128,6 @@ SEXP R_syscall(int,CXXR::Context*);
 int R_sysparent(int,CXXR::Context*);
 SEXP R_sysframe(int,CXXR::Context*);
 SEXP R_sysfunction(int,CXXR::Context*);
-void R_run_onexits(CXXR::Context *);
-void R_restore_globals(CXXR::Context *);
 
 extern "C" {
     void Rf_jump_to_toplevel(void);

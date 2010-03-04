@@ -92,10 +92,7 @@
  *			  sysp, SEXP promargs, SEXP callfun)
  *
  *  which sets up the context pointed to by cptr in the appropriate way.
- *  When the context goes "out-of-scope" a call to
- *
- *	void endcontext(Context *cptr)
- *
+ *  When the context goes "out-of-scope" the destructor
  *  restores the previous context (i.e. it adjusts the R_GlobalContext
  *  pointer).
  *
@@ -134,88 +131,11 @@
 using namespace std;
 using namespace CXXR;
 
-/* R_run_onexits - runs the conexit/cend code for all contexts from
-   R_GlobalContext down to but not including the argument context.
-   This routine does not stop at a Context::TOPLEVEL--the code that
-   determines the argument is responsible for making sure
-   Context::TOPLEVEL's are not crossed unless appropriate. */
-
-void attribute_hidden R_run_onexits(Context *cptr)
-{
-    /*
-    Context *c;
-
-    for (c = R_GlobalContext; c != cptr; c = c->nextcontext) {
-	if (c == NULL)
-	    error(_("bad target context--should NEVER happen;\n\
-please bug.report() [R_run_onexits]"));
-	if (c->cloenv != R_NilValue && c->conexit != R_NilValue) {
-	    SEXP s = c->conexit;
-	    c->conexit = R_NilValue; // prevent recursion
-	    R_HandlerStack = c->handlerstack;
-	    R_RestartStack = c->restartstack;
-	    PROTECT(s);
-	    Evaluator::enableExtraDepth(true);
-	    R_CheckStack();
-	    eval(s, c->cloenv);
-	    UNPROTECT(1);
-	}
-    }
-    */
-}
-
-
-/* R_restore_globals - restore global variables from a target context
-   before a LONGJMP.  The target context itself is not restored here
-   since this is done slightly differently in jumpfun below, in
-   errors.c:jump_now, and in main.c:ParseBrowser.  Eventually these
-   three should be unified so there is only one place where a LONGJMP
-   occurs. */
-
-void attribute_hidden R_restore_globals(Context *cptr)
-{
-    /*
-    ProtectStack::restoreSize(cptr->cstacktop);
-    Evaluator::setDepth(cptr->evaldepth);
-    vmaxset(cptr->vmax);
-    R_interrupts_suspended = Rboolean(cptr->intsusp);
-    R_HandlerStack = cptr->handlerstack;
-    R_RestartStack = cptr->restartstack;
-    Evaluator::enableExtraDepth(false);
-#ifdef BYTECODE
-    R_BCNodeStackTop = cptr->nodestack;
-# ifdef BC_INT_STACK
-    R_BCIntStackTop = cptr->intstack;
-# endif
-#endif
-    R_Srcref = cptr->srcref;
-    */
-}
-
-
 /* jumpfun - jump to the named context */
 
 static void jumpfun(Context * cptr, int mask, SEXP val)
 {
-    Rboolean savevis = R_Visible;
-
-    /* run onexit/cend code for all contexts down to but not including
-       the jump target */
-    PROTECT(val);
-    R_run_onexits(cptr);
-    UNPROTECT(1);
-    R_Visible = savevis;
-
     R_ReturnedValue = val;
-    R_GlobalContext = cptr; /* this used to be set to
-			       cptr->nextcontext for non-toplevel
-			       jumps (with the context set back at the
-			       SETJMP for restarts).  Changing this to
-			       always using cptr as the new global
-			       context should simplify some code and
-			       perhaps allow loops to be handled with
-			       fewer SETJMP's.  LT */
-    R_restore_globals(R_GlobalContext);
     // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
     //	 << cptr << ", " << mask << ")\n" << flush;
     throw JMPException(cptr, mask);
@@ -224,7 +144,7 @@ static void jumpfun(Context * cptr, int mask, SEXP val)
 
 /* begincontext - begin an execution context */
 
-/* begincontext and endcontext are used in dataentry.c and modules */
+/* begincontext is used in dataentry.c and modules */
 void begincontext(Context * cptr, Context::Type flags,
 		  SEXP syscall, SEXP env, SEXP sysp,
 		  SEXP promargs, SEXP callfun)
@@ -235,16 +155,6 @@ void begincontext(Context * cptr, Context::Type flags,
     cptr->sysparent = sysp;
     cptr->promargs = promargs;
     cptr->callfun = callfun;
-}
-
-
-/* endcontext - end an execution context */
-
-void endcontext(Context * cptr)
-{
-    /*
-    cptr->end();
-    */
 }
 
 
@@ -695,7 +605,6 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	}
 	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
 	//	 << &thiscontext << endl;
-	endcontext(&thiscontext);
     }
 
     R_ToplevelContext = saveToplevelContext;

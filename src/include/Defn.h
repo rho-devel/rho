@@ -603,7 +603,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define EncodeRaw              Rf_EncodeRaw
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
-# define endcontext		Rf_endcontext
 # define envlength		Rf_envlength
 # define ErrorMessage		Rf_ErrorMessage
 # define evalList		Rf_evalList

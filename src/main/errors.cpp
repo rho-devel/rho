@@ -224,13 +224,6 @@ RETSIGTYPE attribute_hidden onsigusr1(int dummy)
        want this?  No, as from R 2.4.0
     try_jump_to_restart(); */
 
-    /* Run all onexit/cend code on the stack (without stopping at
-       intervening Context::TOPLEVEL's.  Since intervening Context::TOPLEVEL's
-       get used by what are conceptually concurrent computations, this
-       is a bit like telling all active threads to terminate and clean
-       up on the way out. */
-    R_run_onexits(NULL);
-
     R_CleanUp(SA_SAVE, 2, 1); /* quit, save,  .Last, status=2 */
 }
 
@@ -823,26 +816,11 @@ static void jump_to_top_ex(Rboolean traceback,
 	    }
 	}
 
-	/* Run onexit/cend code for all contexts down to but not including
-	   the jump target.  This may cause recursive calls to
-	   jump_to_top_ex, but the possible number of such recursive
-	   calls is limited since each exit function is removed before it
-	   is executed.  In addition, all but the first should have
-	   inError > 0.  This is not a great design because we could run
-	   out of other resources that are on the stack (like C stack for
-	   example).  The right thing to do is arrange to execute exit
-	   code *after* the LONGJMP, but that requires a more extensive
-	   redesign of the non-local transfer of control mechanism.
-	   LT. */
-	R_run_onexits(R_ToplevelContext);
-
 	if ( !R_Interactive && !haveHandler ) {
 	    REprintf(_("Execution halted\n"));
 	    R_CleanUp(SA_NOSAVE, 1, 0); /* quit, no save, no .Last, status=1 */
 	}
 
-	R_GlobalContext = R_ToplevelContext;
-	R_restore_globals(R_GlobalContext);
 	// cout << __FILE__":" << __LINE__ << " About to throw JMPException("
 	//	 <<  R_ToplevelContext << ", 0)\n" << flush;
 	throw JMPException(R_ToplevelContext);
@@ -1250,11 +1228,7 @@ void R_JumpToToplevel(Rboolean restart)
     if (c != R_ToplevelContext)
 	warning(_("top level inconsistency?"));
 
-    /* Run onexit/cend code for everything above the target. */
-    R_run_onexits(c);
-
     R_ToplevelContext = R_GlobalContext = c;
-    R_restore_globals(R_GlobalContext);
     //    cout << __FILE__":" << __LINE__ << " About to throw JMPException("
     //	 << c << ", " << Context::TOPLEVEL << ")\n" << flush;
     throw JMPException(c, Context::TOPLEVEL);

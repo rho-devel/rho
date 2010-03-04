@@ -301,7 +301,6 @@ bool WeakRef::runFinalizers()
 	    //	     << &thiscontext << endl;
 	    // Expose WeakRef to reference-counting collection:
 	    wr->m_self = 0;
-	    Rf_endcontext(&thiscontext);
 	}
 	R_ToplevelContext = saveToplevelContext;
 	ProtectStack::restoreSize(savestack);

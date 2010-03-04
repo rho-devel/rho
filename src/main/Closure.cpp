@@ -85,7 +85,6 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
 			environment(), env, const_cast<PairList*>(args), this);
 	m_matcher->match(newenv, prepared_args);
-	Rf_endcontext(&cntxt);
     }
     // Perform evaluation:
     GCStackRoot<> ans;
@@ -118,7 +117,6 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 		else ans = R_ReturnedValue;
 	    }
 	} while (redo);
-	Rf_endcontext(&cntxt);
     }
     Environment::monitorLeaks(ans);
     newenv->maybeDetachFrame();
