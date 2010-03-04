@@ -142,6 +142,19 @@ namespace CXXR {
 
 	/** @brief (Not for general use.)
 	 *
+	 * @param on If true, and extra depth is not already enabled,
+	 *          an increase is applied to the permissible depth of
+	 *          nested evaluations to allow error reporting to be
+	 *          carried out.  If false, any such extra depth
+	 *          currently in force is removed.
+	 */
+	static void enableExtraDepth(bool on)
+	{
+	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
+	}
+
+	/** @brief (Not for general use.)
+	 *
 	 * This function is for use by the profiling code in eval.cpp
 	 * to record whether profiling is currently enabled.
 	 *
@@ -178,19 +191,6 @@ namespace CXXR {
 	 * @return Pointer to the result of evaluation.
 	 */
 	static RObject* evaluate(RObject* object, Environment* env);
-
-	/** @brief (Not for general use.)
-	 *
-	 * @param on If true, and extra depth is not already enabled,
-	 *          an increase is applied to the permissible depth of
-	 *          nested evaluations to allow error reporting to be
-	 *          carried out.  If false, any such extra depth
-	 *          currently in force is removed.
-	 */
-	static void enableExtraDepth(bool on)
-	{
-	    s_depth_threshold = s_depth_limit + (on ? 500 : 0);
-	}
 
 	/** @brief Map RObject::evaluate() over a PairList.
 	 *

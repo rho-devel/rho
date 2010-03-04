@@ -1890,15 +1890,17 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       new environment rho1 is created and used.  LT */
 	    PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho)); nprotect++;
 	    SET_PRVALUE(CAR(pargs), x);
-	    Context cntxt;
-	    begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, op);
-	    if(usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans))
+	    int um;
 	    {
+		Context cntxt;
+		begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, op);
+		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
 		endcontext(&cntxt);
+	    }
+	    if (um) {
 		UNPROTECT(nprotect);
 		return 1;
 	    }
-	    endcontext(&cntxt);
 	}
     }
     if(!argsevald) {

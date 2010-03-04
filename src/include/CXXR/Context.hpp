@@ -81,11 +81,7 @@ namespace CXXR {
 
 	Context();
 
-	/** @brief The future destructor.
-	 *
-	 * Restores values saved by the constructor.
-	 */
-	void end();
+	~Context();
 
 	Context *nextcontext;        // The next context up the chain
 	Type callflag;		     // The context "type"
@@ -111,7 +107,7 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-extern SEXP R_ReturnedValue;
+extern CXXR::GCRoot<> R_ReturnedValue;
 
 #define IS_RESTART_BIT_SET(flags) ((flags) & Context::RESTART)
 #define SET_RESTART_BIT_ON(flags) (flags = Context::Type(flags | Context::RESTART))

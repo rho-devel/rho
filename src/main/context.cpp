@@ -142,6 +142,7 @@ using namespace CXXR;
 
 void attribute_hidden R_run_onexits(Context *cptr)
 {
+    /*
     Context *c;
 
     for (c = R_GlobalContext; c != cptr; c = c->nextcontext) {
@@ -150,22 +151,17 @@ void attribute_hidden R_run_onexits(Context *cptr)
 please bug.report() [R_run_onexits]"));
 	if (c->cloenv != R_NilValue && c->conexit != R_NilValue) {
 	    SEXP s = c->conexit;
-	    c->conexit = R_NilValue; /* prevent recursion */
+	    c->conexit = R_NilValue; // prevent recursion
 	    R_HandlerStack = c->handlerstack;
 	    R_RestartStack = c->restartstack;
 	    PROTECT(s);
-	    /* Since these are run before any jumps rather than after
-	       jumping to the context where the exit handler was set
-	       we need to make sure there is enough room on the
-	       evaluation stack in case the jump is from handling a
-	       stack overflow. To be safe it is good to also call
-	       R_CheckStack. LT */
 	    Evaluator::enableExtraDepth(true);
 	    R_CheckStack();
 	    eval(s, c->cloenv);
 	    UNPROTECT(1);
 	}
     }
+    */
 }
 
 
@@ -178,14 +174,13 @@ please bug.report() [R_run_onexits]"));
 
 void attribute_hidden R_restore_globals(Context *cptr)
 {
+    /*
     ProtectStack::restoreSize(cptr->cstacktop);
     Evaluator::setDepth(cptr->evaldepth);
     vmaxset(cptr->vmax);
     R_interrupts_suspended = Rboolean(cptr->intsusp);
     R_HandlerStack = cptr->handlerstack;
     R_RestartStack = cptr->restartstack;
-    /* Need to reset nesting depth in case we are jumping after
-       handling a stack overflow. */
     Evaluator::enableExtraDepth(false);
 #ifdef BYTECODE
     R_BCNodeStackTop = cptr->nodestack;
@@ -194,6 +189,7 @@ void attribute_hidden R_restore_globals(Context *cptr)
 # endif
 #endif
     R_Srcref = cptr->srcref;
+    */
 }
 
 
@@ -246,7 +242,9 @@ void begincontext(Context * cptr, Context::Type flags,
 
 void endcontext(Context * cptr)
 {
+    /*
     cptr->end();
+    */
 }
 
 
