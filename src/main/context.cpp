@@ -243,6 +243,9 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     if(n <= 0)
 	errorcall(R_GlobalContext->call,
 		  _("only positive values of 'n' are allowed"));
+    // CXXR addition:
+    if (!cptr)
+	return 0;
     while (cptr->nextcontext != NULL && n > 1) {
 	if (cptr->callflag & Context::FUNCTION )
 	    n--;
@@ -272,7 +275,7 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
 int attribute_hidden framedepth(Context *cptr)
 {
     int nframe = 0;
-    while (cptr->nextcontext != NULL) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION )
 	    nframe++;
 	cptr = cptr->nextcontext;
@@ -285,7 +288,7 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
     /* negative n counts back from the current frame */
     /* positive n counts up from the globalEnv */
     SEXP result;
-    
+
     if (n > 0)
 	n = framedepth(cptr) - n;
     else
@@ -293,7 +296,7 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
     if(n < 0)
 	errorcall(R_GlobalContext->call,
 		  _("not that many frames on the stack"));
-    while (cptr->nextcontext != NULL) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION ) {
 	    if (n == 0) {
 	    	PROTECT(result = duplicate(cptr->call));
@@ -305,13 +308,6 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
 		n--;
 	}
 	cptr = cptr->nextcontext;
-    }
-    if (n == 0 && cptr->nextcontext == NULL) {
-	PROTECT(result = duplicate(cptr->call));
-	if (cptr->srcref && !isNull(cptr->srcref))
-	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->srcref));
-	UNPROTECT(1);
-	return result;
     }
     errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
@@ -326,7 +322,7 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
     if (n < 0)
 	errorcall(R_GlobalContext->call,
 		  _("not that many frames on the stack"));
-    while (cptr->nextcontext != NULL) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION ) {
 	    if (n == 0)
 		return duplicate(cptr->callfun);  /***** do we need to DUP? */
@@ -335,8 +331,6 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
 	}
 	cptr = cptr->nextcontext;
     }
-    if (n == 0 && cptr->nextcontext == NULL)
-	return duplicate(cptr->callfun);  /***** do we need to DUP? */
     errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
@@ -412,7 +406,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     /* error if not a browser context */
 
-    if( !(cptr->callflag == Context::BROWSER) )
+    if( !cptr )
         error(_("no browser context to query"));
 
     switch (PRIMVAL(op)) {
