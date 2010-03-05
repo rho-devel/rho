@@ -123,19 +123,17 @@ extern CXXR::GCRoot<> R_ReturnedValue;
 #define SET_RESTART_BIT_ON(flags) (flags = Context::Type(flags | Context::RESTART))
 #define SET_RESTART_BIT_OFF(flags) (flags = Context::Type(flags & ~Context::RESTART))
 
-extern CXXR::Context* R_Toplevel;         /* The ultimate toplevel environment */
-
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
 		     SEXP, SEXP);
 SEXP Rf_dynamicfindVar(SEXP, CXXR::Context*);
 void Rf_findcontext(int, SEXP, SEXP);
 int Rf_framedepth(CXXR::Context*);
-void R_InsertRestartHandlers(CXXR::Context *, Rboolean);
-void R_JumpToContext(CXXR::Context *, int, SEXP);
-SEXP R_syscall(int,CXXR::Context*);
-int R_sysparent(int,CXXR::Context*);
-SEXP R_sysframe(int,CXXR::Context*);
-SEXP R_sysfunction(int,CXXR::Context*);
+void R_InsertRestartHandlers(CXXR::Context*, Rboolean);
+void R_JumpToContext(CXXR::Context*, int, SEXP);
+SEXP R_syscall(int, CXXR::Context*);
+int R_sysparent(int, CXXR::Context*);
+SEXP R_sysframe(int, CXXR::Context*);
+SEXP R_sysfunction(int, CXXR::Context*);
 
 extern "C" {
     void Rf_jump_to_toplevel(void);

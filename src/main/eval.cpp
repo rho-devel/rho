@@ -455,10 +455,13 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
     {
-	// The Context constructor will change the innermost Context:
 	SEXP syspar = rho;
-	if (Context::innermost()->callflag == Context::GENERIC)
-	    syspar = Context::innermost()->sysparent;
+	// Change syspar if in Context::GENERIC:
+	{
+	    Context* innerctxt = Context::innermost();
+	    if (innerctxt && innerctxt->callflag == Context::GENERIC)
+		syspar = innerctxt->sysparent;
+	}
 	Context cntxt;
 	begincontext(&cntxt, Context::RETURN, call, newrho, syspar, arglist, op);
 
