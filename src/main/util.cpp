@@ -477,7 +477,7 @@ SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Context *cptr;
     int nargs = NA_INTEGER;
-    for (cptr = R_GlobalContext; cptr != NULL; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr != NULL; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & Context::FUNCTION) && cptr->cloenv == rho) {
 	    nargs = length(cptr->promargs);
 	    break;

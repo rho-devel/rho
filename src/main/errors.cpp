@@ -271,7 +271,7 @@ static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
 void warning(const char *format, ...)
 {
     char buf[BUFSIZE], *p;
-    Context *c = R_GlobalContext;
+    Context *c = Context::innermost();
 
     va_list(ap);
     va_start(ap, format);
@@ -323,7 +323,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
     if( s != R_NilValue ) {
 	if( !isLanguage(s) &&  ! isExpression(s) )
 	    error(_("invalid option \"warning.expression\""));
-	cptr = R_GlobalContext;
+	cptr = Context::innermost();
 	while ( !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
 	    cptr = cptr->nextcontext;
 	eval(s, cptr->cloenv);
@@ -690,13 +690,13 @@ SEXP attribute_hidden do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 void error(const char *format, ...)
 {
     char buf[BUFSIZE];
-    Context *c = R_GlobalContext;
+    Context *c = Context::innermost();
 
     va_list(ap);
     va_start(ap, format);
     Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
     va_end(ap);
-    /* This can be called before R_GlobalContext is defined, so... */
+    /* This can be called before any Context exists, so... */
     /* If profiling is on, this can be a Context::BUILTIN */
     if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
     // CXXR addition:
@@ -863,7 +863,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isNull(CAR(args))) {
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = R_GlobalContext->nextcontext;
+	for (cptr = Context::innermost()->nextcontext;
 	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::FUNCTION) {
@@ -967,7 +967,7 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isNull(sdom)) {
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = R_GlobalContext->nextcontext;
+	for (cptr = Context::innermost()->nextcontext;
 	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::FUNCTION) {
@@ -1033,7 +1033,7 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP findCall(void)
 {
     Context *cptr;
-    for (cptr = R_GlobalContext->nextcontext;
+    for (cptr = Context::innermost()->nextcontext;
 	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	 cptr = cptr->nextcontext)
 	if (cptr->callflag & Context::FUNCTION)
@@ -1203,7 +1203,7 @@ void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart)
 
     mask = Context::BROWSER | Context::FUNCTION;
 
-    for (c = R_GlobalContext; c; c = c->nextcontext) {
+    for (c = Context::innermost(); c; c = c->nextcontext) {
 	if (c->callflag & mask && c->cloenv == env)
 	    findcontext(mask, env, val);
 	else if (restart && IS_RESTART_BIT_SET(c->callflag))
@@ -1218,7 +1218,7 @@ void R_JumpToToplevel(Rboolean restart)
     Context *c;
 
     /* Find the target for the jump */
-    for (c = R_GlobalContext; c != NULL; c = c->nextcontext) {
+    for (c = Context::innermost(); c != NULL; c = c->nextcontext) {
 	if (restart && IS_RESTART_BIT_SET(c->callflag))
 	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
 	else if (c->callflag == Context::TOPLEVEL)
@@ -1248,7 +1248,7 @@ SEXP R_GetTraceback(int skip)
     Context *c;
     SEXP s, t;
 
-    for (c = R_GlobalContext, ns = skip;
+    for (c = Context::innermost(), ns = skip;
 	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
@@ -1260,7 +1260,7 @@ SEXP R_GetTraceback(int skip)
 
     PROTECT(s = allocList(nback));
     t = s;
-    for (c = R_GlobalContext ;
+    for (c = Context::innermost() ;
 	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
@@ -1286,7 +1286,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
     const char *top = "" /* -Wall */;
 
     buf[0] = '\0';
-    for (c = R_GlobalContext;
+    for (c = Context::innermost();
 	 c != NULL && c->callflag != Context::TOPLEVEL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
@@ -1817,10 +1817,10 @@ SEXP attribute_hidden do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    if (! (R_GlobalContext->callflag & Context::FUNCTION))
+    if (! (Context::innermost()->callflag & Context::FUNCTION))
 	errorcall(call, _("not in a try context"));
-    SET_RESTART_BIT_ON(R_GlobalContext->callflag);
-    R_InsertRestartHandlers(R_GlobalContext, FALSE);
+    SET_RESTART_BIT_ON(Context::innermost()->callflag);
+    R_InsertRestartHandlers(Context::innermost(), FALSE);
     return R_NilValue;
 }
 

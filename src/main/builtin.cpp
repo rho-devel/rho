@@ -162,7 +162,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
     default:
 	errorcall_return(call, _("invalid number of arguments"));
     }
-    ctxt = R_GlobalContext;
+    ctxt = Context::innermost();
     /* Search for the context to which the on.exit action is to be
        attached. Lexical scoping is implemented by searching for the
        first closure call context with an environment matching the
@@ -275,7 +275,7 @@ SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
-	return R_GlobalContext->sysparent;
+	return Context::innermost()->sysparent;
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 

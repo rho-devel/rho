@@ -190,7 +190,7 @@ static void memtrace_stack_dump(void)
 {
     Context *cptr;
 
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);

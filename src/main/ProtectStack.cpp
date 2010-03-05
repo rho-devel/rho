@@ -78,7 +78,7 @@ void ProtectStack::restoreSize(size_t new_size)
 	s_pps->pop_back();
     }
 #ifdef DEBUG_PPS
-    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+    cout << "In " << Context::innermost() << " -> " << s_pps->size()
 	 << " restoreSize" << endl;
 #endif
 }
@@ -86,7 +86,7 @@ void ProtectStack::restoreSize(size_t new_size)
 #ifdef DEBUG_PPS
 size_t ProtectStack::ppsSize()
 {
-    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+    cout << "In " << Context::innermost() << " -> " << s_pps->size()
 	 << " size" << endl;
     return s_pps->size();
 }
@@ -106,7 +106,7 @@ void ProtectStack::reprotect(RObject* node, unsigned int index)
 	entry->makeMoribund();
     (*s_pps)[index] = node;
 #ifdef DEBUG_PPS
-    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+    cout << "In " << Context::innermost() << " -> " << s_pps->size()
 	 << " reprotect at index " << index << endl;
 #endif
 }
@@ -118,7 +118,7 @@ void ProtectStack::unprotect(unsigned int count)
     if (count > sz)
 	throw out_of_range("ProtectStack::unprotect: count greater"
 			   " than current stack size.");
-    if (R_GlobalContext && sz - count < R_GlobalContext->cstacktop)
+    if (Context::innermost() && sz - count < Context::innermost()->cstacktop)
 	throw logic_error("GProtectStack::unprotect: too many unprotects"
 			  " in this context.");
 #endif
@@ -129,7 +129,7 @@ void ProtectStack::unprotect(unsigned int count)
 	s_pps->pop_back();
     }
 #ifdef DEBUG_PPS
-    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+    cout << "In " << Context::innermost() << " -> " << s_pps->size()
 	 << " unprotect " << count << endl;
 #endif
 }
@@ -144,14 +144,14 @@ void ProtectStack::unprotectPtr(RObject* node)
 	throw invalid_argument("ProtectStack::unprotectPtr:"
 			       " pointer not found.");
 #ifndef NDEBUG
-    if (R_GlobalContext && s_pps->size() == R_GlobalContext->cstacktop)
+    if (Context::innermost() && s_pps->size() == Context::innermost()->cstacktop)
 	throw logic_error("ProtectStack::unprotect: too many unprotects"
 			  " in this context.");
 #endif
     // See Josuttis p.267 for the need for -- :
     s_pps->erase(--(rit.base()));
 #ifdef DEBUG_PPS
-    cout << "In " << R_GlobalContext << " -> " << s_pps->size()
+    cout << "In " << Context::innermost() << " -> " << s_pps->size()
 	 << " unprotectPtr " << node << endl;
 #endif
 }

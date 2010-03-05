@@ -33,7 +33,7 @@ RObject* R_Srcref;
 GCRoot<> R_ReturnedValue;
 
 Context::Context()
-    : nextcontext(R_GlobalContext), cstacktop(ProtectStack::size()),
+    : nextcontext(Context::innermost()), cstacktop(ProtectStack::size()),
       evaldepth(Evaluator::depth()),vmax(vmaxget()),
       intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
       restartstack(R_RestartStack), srcref(R_Srcref)
@@ -44,7 +44,7 @@ Context::Context()
     intstack = R_BCIntStackTop;
 #endif
 #endif
-    R_GlobalContext = this;
+    Evaluator::current()->m_innermost_context = this;
 }
 
 Context::~Context()
@@ -77,6 +77,6 @@ Context::~Context()
 # endif
 #endif
     R_Srcref = srcref;
-    R_GlobalContext = nextcontext;
+    Evaluator::current()->m_innermost_context = nextcontext;
 }
     

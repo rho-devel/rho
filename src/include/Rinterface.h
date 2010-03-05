@@ -77,9 +77,6 @@ extern char *R_Home;		    /* Root of the R tree */
 void jump_to_toplevel(void);
 void mainloop(void);
 void onintr(void);
-#ifndef DEFN_H_
-extern void* R_GlobalContext;    /* Need opaque pointer type for export */
-#endif
 
 void process_site_Renviron(void);
 void process_system_Renviron(void);

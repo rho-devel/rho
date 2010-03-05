@@ -227,6 +227,7 @@ namespace {
 }
 
 int main(int argc, char* argv[]) {
+    Evaluator evalr;
     if (argc < 3 || argc > 4)
 	usage(argv[0]);
     // Set up error reporting:

@@ -107,15 +107,64 @@ extern "C" {
 } // extern "C"
 
 namespace CXXR {
+    class Context;
     class RObject;
     class Environment;
 
-    /** @brief Housekeeping services for R expression evaluation.
+    /** @brief Framework for R command evaluation.
      * 
-     * All members of this class are static.
+     * An object of this class provides a framework within which
+     * evaluation of R commands (i.e. top-level R expressions) takes
+     * place, and provides various housekeeping services to control
+     * and support that evaluation.  Evaluator objects conceptually
+     * form a stack, so they must be destroyed in the reverse order of
+     * creation: it is therefore recommended that they always be
+     * declared on the processor stack, i.e. as C++ automatic
+     * variables.  The Evaluator at the top of the stack is the \e
+     * current Evaluator.
+     *
+     * If an error occurs during R expression evaluation, the
+     * resulting exception is caught within the scope of the current
+     * Evaluator; the relevant code will then typically request
+     * another R command (if interactive), or terminate the scope of
+     * the current Evaluator, thus popping it off the Evaluator stack
+     * and return control to code within the scope of the next
+     * Evaluator down.
+     * 
+     * Each Evaluator object contains a nested sequence of zero or
+     * more Contexts.  A newly created Context is added to the
+     * sequence belonging to the current Evaluator.  It is therefore
+     * an error to declare a Context object outside the scope of any
+     * Evaluator object.
+     *
+     * @note Evaluator objects fulfil many of the roles of TOPLEVEL
+     * contexts within CR.  Note that in CXXR, each Evaluator has its
+     * own singly-linked list of Context objects (starting with the
+     * innermost); there is no overall list of Context objects
+     * spanning different Evaluator objects.
      */
     class Evaluator {
     public:
+	Evaluator()
+	    : m_next(s_current), m_innermost_context(0)
+	{
+	    s_current = this;
+	}
+
+	~Evaluator()
+	{
+	    s_current = m_next;
+	}
+
+	/** @brief The current Evaluator.
+	 *
+	 * @return Pointer to the current (innermost) Evaluator.
+	 */
+	static Evaluator* current()
+	{
+	    return s_current;
+	}
+
 	/** @brief (Not for general use.)
 	 *
 	 * Used in context.cpp to save the evaluation depth
@@ -191,6 +240,16 @@ namespace CXXR {
 	 * @return Pointer to the result of evaluation.
 	 */
 	static RObject* evaluate(RObject* object, Environment* env);
+
+	/** @brief Innermost Context belonging to this Evaluator.
+	 *
+	 * @return Pointer to the innermost Context belonging to this
+	 * Evaluator.
+	 */
+	Context* innermostContext() const
+	{
+	    return m_innermost_context;
+	}
 
 	/** @brief Map RObject::evaluate() over a PairList.
 	 *
@@ -278,6 +337,8 @@ namespace CXXR {
 	 */
 	static void setDepthLimit(int depth);
    private:
+	friend class Context;
+
 	static unsigned int s_depth;  // Current depth of expression evaluation 
 	static unsigned int s_depth_threshold;  // An error will be
 			      // reported if s_depth exceeds this
@@ -294,7 +355,12 @@ namespace CXXR {
 			      // check is made for user interrupts.
 	static unsigned int s_countdown_start;  // Value from which
 			      // s_countdown starts counting down
+	static Evaluator* s_current;  // The current (innermost) Evaluator
 	static bool s_profiling;  // True iff profiling enabled
+
+	Evaluator* m_next;  // Next Evaluator down the stack
+	Context* m_innermost_context;  // Innermost Context belonging
+		   // to this Evaluator 
     };
 
     /** @brief Shorthand for Evaluator::evaluate().

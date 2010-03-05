@@ -83,6 +83,16 @@ namespace CXXR {
 
 	~Context();
 
+	/** @brief The innermost Context.
+	 *
+	 * @return Pointer to the innermost Context belonging to the
+	 * current Evaluator.
+	 */
+	static Context* innermost()
+	{
+	    return Evaluator::current()->innermostContext();
+	}
+
 	Context *nextcontext;        // The next context up the chain
 	Type callflag;		     // The context "type"
 	unsigned int cstacktop;	     // Top of the pointer protection stack
@@ -114,7 +124,6 @@ extern CXXR::GCRoot<> R_ReturnedValue;
 #define SET_RESTART_BIT_OFF(flags) (flags = Context::Type(flags & ~Context::RESTART))
 
 extern CXXR::Context* R_Toplevel;         /* The ultimate toplevel environment */
-extern CXXR::Context* R_GlobalContext;    /* The global environment */
 
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
 		     SEXP, SEXP);

@@ -153,7 +153,7 @@ static void doprof(void)
 	    }
 	    reset_duplicate_counter();
     }
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
@@ -192,7 +192,7 @@ static void doprof(int sig)
 		     nodes, get_duplicate_counter());
 	    reset_duplicate_counter();
     }
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
@@ -455,10 +455,10 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
     {
-	// The Context constructor will change R_GlobalContext:
+	// The Context constructor will change the innermost Context:
 	SEXP syspar = rho;
-	if (R_GlobalContext->callflag == Context::GENERIC)
-	    syspar = R_GlobalContext->sysparent;
+	if (Context::innermost()->callflag == Context::GENERIC)
+	    syspar = Context::innermost()->sysparent;
 	Context cntxt;
 	begincontext(&cntxt, Context::RETURN, call, newrho, syspar, arglist, op);
 
@@ -722,9 +722,9 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     defineVar(R_dot_Generic, findVar(R_dot_Generic, rho), newrho);
     defineVar(R_dot_Methods, findVar(R_dot_Methods, rho), newrho);
 
-    /* Find the calling context.  Should be R_GlobalContext unless
+    /* Find the calling context.  Should be the innermost Context unless
        profiling has inserted a Context::BUILTIN frame. */
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     if (cptr->callflag & Context::BUILTIN)
 	cptr = cptr->nextcontext;
 
@@ -1621,7 +1621,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	frame = asInteger(env);
 	if (frame == NA_INTEGER)
 	    error(_("invalid '%s' argument"), "envir");
-	PROTECT(env = R_sysframe(frame, R_GlobalContext));
+	PROTECT(env = R_sysframe(frame, Context::innermost()));
 	break;
     default:
 	error(_("invalid '%s' argument"), "envir");
@@ -1725,7 +1725,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Context *cptr;
     SEXP s, ans ;
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     /* get the args supplied */
     while (cptr != NULL) {
 	if (cptr->callflag == Context::RETURN && cptr->cloenv == rho)
@@ -1734,7 +1734,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = cptr->promargs;
     /* get the env recall was called from */
-    s = R_GlobalContext->sysparent;
+    s = Context::innermost()->sysparent;
     while (cptr != NULL) {
 	if (cptr->callflag == Context::RETURN && cptr->cloenv == s)
 	    break;

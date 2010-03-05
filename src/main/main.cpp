@@ -121,7 +121,6 @@ LibExport int	 R_NaInt;	/* NA_INTEGER:= INT_MIN currently */
 // the stack, so it's declared in mainloop(), which then initialises
 // R_Toplevel to point to it.
 LibExport Context* R_Toplevel;     /* The ultimate toplevel environment */
-LibExport Context* R_GlobalContext;    /* The global environment */
 
 // Data declared LibExtern in Rinternals.h :
 
@@ -463,7 +462,6 @@ static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 void R_ReplDLLinit(void)
 {
     R_IoBufferInit(&R_ConsoleIob);
-    R_GlobalContext = R_Toplevel;
     R_IoBufferWriteReset(&R_ConsoleIob);
     prompt_type = 1;
     DLLbuf[0] = DLLbuf[CONSOLE_BUFFER_SIZE] = '\0';
@@ -791,10 +789,10 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 {
     FILE * volatile fp = fparg; /* is this needed? */
     if (fp != NULL) {
+	Evaluator evalr;
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << R_Toplevel << endl;
 	try {
-	    R_GlobalContext = R_Toplevel;
 	    R_ReplFile(fp, env);
 	}
 	catch (CommandTerminated) {
@@ -948,7 +946,6 @@ void setup_Rmainloop(void)
     R_Toplevel->intsusp = FALSE;
     R_Toplevel->handlerstack = R_HandlerStack;
     R_Toplevel->restartstack = R_RestartStack;
-    R_GlobalContext = R_Toplevel;
 
     R_Warnings = R_NilValue;
 
@@ -969,7 +966,6 @@ void setup_Rmainloop(void)
     if (fp == NULL)
 	R_Suicide(_("unable to open the base package\n"));
 
-    R_GlobalContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
     //	 << R_Toplevel << endl;
     try {
@@ -977,7 +973,6 @@ void setup_Rmainloop(void)
 	R_ReplFile(fp, baseEnv);
     }
     catch (CommandTerminated) {
-	R_GlobalContext = R_Toplevel;
 	if (R_SignalHandlers) init_signal_handlers();
     }
     catch (JMPException& e) {
@@ -988,7 +983,6 @@ void setup_Rmainloop(void)
 	//	     << "; in " << R_Toplevel << endl;
 	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_Toplevel;
 	if (R_SignalHandlers) init_signal_handlers();
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
@@ -1014,7 +1008,6 @@ void setup_Rmainloop(void)
     R_unLockBinding(install(".Library.site"), R_BaseEnv);
 
     /* require(methods) if it is in the default packages */
-    R_GlobalContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
     //	 << R_Toplevel << endl;
     try {
@@ -1029,7 +1022,6 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
-	R_GlobalContext = R_Toplevel;
     }
     catch (JMPException& e) {
 	cerr << "CXXR internal error: unexpected JMPException\n";
@@ -1039,7 +1031,6 @@ void setup_Rmainloop(void)
 	//	     << "; in " << R_Toplevel << endl;
 	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
     //	 << R_Toplevel << endl;
@@ -1066,7 +1057,6 @@ void setup_Rmainloop(void)
        we look in any documents which might have been double clicked on
        or dropped on the application.
     */
-    R_GlobalContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
     //	 << R_Toplevel << endl;
     try {
@@ -1092,7 +1082,6 @@ void setup_Rmainloop(void)
        At this point we try to invoke the .First Function.
        If there is an error we continue. */
 
-    R_GlobalContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
     //	 << R_Toplevel << endl;
     try {
@@ -1107,7 +1096,6 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
-	R_GlobalContext = R_Toplevel;
     }
     catch (JMPException& e) {
 	cerr << "CXXR internal error: unexpected JMPException\n";
@@ -1117,7 +1105,6 @@ void setup_Rmainloop(void)
 	//	     << "; in " << R_Toplevel << endl;
 	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
     //	 << R_Toplevel << endl;
@@ -1125,7 +1112,6 @@ void setup_Rmainloop(void)
     /* Try to invoke the .First.sys function, which loads the default packages.
        If there is an error we continue. */
 
-    R_GlobalContext = R_Toplevel;
     //    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
     //	 << R_Toplevel << endl;
     try {
@@ -1140,7 +1126,6 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
-	R_GlobalContext = R_Toplevel;
     }
     catch (JMPException& e) {
 	cerr << "CXXR internal error: unexpected JMPException\n";
@@ -1150,7 +1135,6 @@ void setup_Rmainloop(void)
 	//	     << "; in " << R_Toplevel << endl;
 	if (e.context != R_Toplevel)
 	    throw;
-	R_GlobalContext = R_Toplevel;
     }
     //    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
     //	 << R_Toplevel << endl;
@@ -1189,7 +1173,6 @@ void run_Rmainloop(void)
 	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
 	//	     << R_Toplevel << endl;
 	try {
-	    R_GlobalContext = R_Toplevel;
 	    R_ReplConsole(R_GlobalEnv, 0, 0);
 	}
 	catch (CommandTerminated) {
@@ -1216,6 +1199,7 @@ void run_Rmainloop(void)
 
 void mainloop(void)
 {
+    Evaluator evalr;
     Context top_level_context;
     R_Toplevel = &top_level_context;
     setup_Rmainloop();
@@ -1230,7 +1214,7 @@ static void printwhere(void)
   Context *cptr;
   int lct = 1;
 
-  for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
+  for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
     if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN)) &&
 	(TYPEOF(cptr->call) == LANGSXP)) {
 	Rprintf("where %d", lct++);
@@ -1357,7 +1341,6 @@ static SEXP matchargs(SEXP args)
 
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Context *saveGlobalContext;
     Context *cptr;
     unsigned int savestack;
     int browselevel, tmp;
@@ -1376,10 +1359,9 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     browselevel = countContexts(Context::BROWSER, 1);
     savestack = ProtectStack::size();
-    saveGlobalContext = R_GlobalContext;
 
     if (!ENV_DEBUG(rho)) {
-	cptr = R_GlobalContext;
+	cptr = Context::innermost();
 	while ( cptr && !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
 	    cptr = cptr->nextcontext;
 	Rprintf("Called from: ");
@@ -1418,7 +1400,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
                 //               << " Entering try/catch for "
 		//		 << &thiscontext << endl;
 		try {
-		    R_GlobalContext = &thiscontext;
 		    R_InsertRestartHandlers(&thiscontext, TRUE);
 		    R_ReplConsole(rho, savestack, browselevel+1);
 		}
@@ -1453,7 +1434,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     ProtectStack::restoreSize(savestack);
     R_CurrentExpr = topExp;
-    R_GlobalContext = saveGlobalContext;
     return R_ReturnedValue;
 }
 
@@ -1464,7 +1444,7 @@ void R_dot_Last(void)
     /* Run the .Last function. */
     /* Errors here should kick us back into the repl. */
 
-    R_GlobalContext = R_Toplevel;
+    Evaluator evalr;
     PROTECT(cmd = install(".Last"));
     R_CurrentExpr = findVar(cmd, R_GlobalEnv);
     if (R_CurrentExpr != R_UnboundValue && TYPEOF(R_CurrentExpr) == CLOSXP) {

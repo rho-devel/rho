@@ -40,13 +40,9 @@
  *  constructs like "next", "break" and "return" will work.  It is also
  *  used for error returns to top-level.
  *
- *	context[k] -> context[k-1] -> ... -> context[0]
- *	^
- *	R_GlobalContext
- *
  *  Contexts are allocated on the stack as the evaluator invokes itself
  *  recursively.  The memory is reclaimed naturally on return through
- *  the recursions (the R_GlobalContext pointer needs adjustment).
+ *  the recursions.
  *
  *  A context contains the following information (and more):
  *
@@ -89,8 +85,7 @@
  *
  *  which sets up the context pointed to by cptr in the appropriate way.
  *  When the context goes "out-of-scope" the destructor
- *  restores the previous context (i.e. it adjusts the R_GlobalContext
- *  pointer).
+ *  restores the previous context.
  *
  *  The non-local jump to a given context takes place in a call to
  *
@@ -160,9 +155,9 @@ void begincontext(Context * cptr, Context::Type flags,
 void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 {
     Context *cptr;
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     if (mask & Context::LOOP) {		/* break/next */
-	for (cptr = R_GlobalContext;
+	for (cptr = Context::innermost();
 	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::LOOP && cptr->cloenv == env )
@@ -170,7 +165,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 	error(_("no loop to break from, jumping to top level"));
     }
     else {				/* return; or browser */
-	for (cptr = R_GlobalContext;
+	for (cptr = Context::innermost();
 	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	     cptr = cptr->nextcontext)
 	    if ((cptr->callflag & mask) && cptr->cloenv == env)
@@ -182,7 +177,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 void attribute_hidden R_JumpToContext(Context *target, int mask, SEXP val)
 {
     Context *cptr;
-    for (cptr = R_GlobalContext;
+    for (cptr = Context::innermost();
 	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	 cptr = cptr->nextcontext)
 	if (cptr == target)
@@ -208,7 +203,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 	n = -n;
 
     if(n < 0)
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("not that many frames on the stack"));
 
     while (cptr->nextcontext != NULL) {
@@ -224,7 +219,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
     if(n == 0 && cptr->nextcontext == NULL)
 	return R_GlobalEnv;
     else
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("not that many frames on the stack"));
     return R_NilValue;	   /* just for -Wall */
 }
@@ -241,7 +236,7 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("only positive values of 'n' are allowed"));
     // CXXR addition:
     if (!cptr)
@@ -294,7 +289,7 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("not that many frames on the stack"));
     while (cptr) {
 	if (cptr->callflag & Context::FUNCTION ) {
@@ -309,7 +304,7 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
 	}
 	cptr = cptr->nextcontext;
     }
-    errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
+    errorcall(Context::innermost()->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
@@ -320,7 +315,7 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
     else
 	n = - n;
     if (n < 0)
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("not that many frames on the stack"));
     while (cptr) {
 	if (cptr->callflag & Context::FUNCTION ) {
@@ -331,7 +326,7 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
 	}
 	cptr = cptr->nextcontext;
     }
-    errorcall(R_GlobalContext->call, _("not that many frames on the stack"));
+    errorcall(Context::innermost()->call, _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
@@ -349,7 +344,7 @@ SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if( !isLogical(CAR(args)) || LENGTH(CAR(args))!= 1 )
 	return(R_NilValue);
-    for(cptr = R_GlobalContext->nextcontext; cptr;
+    for(cptr = Context::innermost()->nextcontext; cptr;
 	    cptr = cptr->nextcontext) {
 	if (cptr->callflag & Context::FUNCTION) {
 	    SET_RESTART_BIT_ON(cptr->callflag);
@@ -369,7 +364,7 @@ int countContexts(int ctxttype, int browser) {
     int n=0;
     Context *cptr;
 
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     while( cptr ) {
         if( cptr->callflag == ctxttype ) 
             n++;
@@ -397,7 +392,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(n < 1 ) error(_("number of contexts must be positive"));
 
     /* first find the closest  browser context */
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     while (cptr) {
         if (cptr->callflag == Context::BROWSER) {
                 break;
@@ -461,7 +456,7 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
     /* first find the context that sys.xxx needs to be evaluated in */
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     t = cptr->sysparent;
     while (cptr) {
 	if (cptr->callflag & Context::FUNCTION )
@@ -509,8 +504,8 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(1);
 	return rval;
     case 7: /* sys.on.exit */
-	if( R_GlobalContext->nextcontext != NULL)
-	    return R_GlobalContext->nextcontext->conexit;
+	if( Context::innermost()->nextcontext != NULL)
+	    return Context::innermost()->nextcontext->conexit;
 	else
 	    return R_NilValue;
     case 8: /* sys.parents */
@@ -542,7 +537,7 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(n == NA_INTEGER || n < 1 )
 	error(_("invalid '%s' value"), "n");
 
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     t = cptr->sysparent;
     while (cptr->nextcontext != NULL){
 	if (cptr->callflag & Context::FUNCTION ) {

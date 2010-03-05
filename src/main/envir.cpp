@@ -835,7 +835,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(CADR(args)) == REALSXP || TYPEOF(CADR(args)) == INTSXP) {
 	where = asInteger(CADR(args));
-	genv = R_sysframe(where, R_GlobalContext);
+	genv = R_sysframe(where, Context::innermost());
     }
     else if (TYPEOF(CADR(args)) == NILSXP) {
 	error(_("use of NULL environment is defunct"));
@@ -1593,7 +1593,7 @@ static SEXP pos2env(int pos, SEXP call)
     }
     else if (pos == -1) {
 	/* make sure the context is a funcall */
-	cptr = R_GlobalContext;
+	cptr = Context::innermost();
 	while( !(cptr->callflag & Context::FUNCTION) && cptr->nextcontext
 	       != NULL )
 	    cptr = cptr->nextcontext;

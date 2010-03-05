@@ -1097,12 +1097,12 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "call");
 
     /* Get the function definition */
-    sysp = R_GlobalContext->sysparent;
+    sysp = Context::innermost()->sysparent;
 
     if (TYPEOF(CAR(args)) == NILSXP) {
 	/* Get the env that the function containing */
 	/* matchcall was called from. */
-	cptr = R_GlobalContext;
+	cptr = Context::innermost();
 	while (cptr != NULL) {
 	    if (cptr->callflag & Context::FUNCTION && cptr->cloenv == sysp)
 		break;

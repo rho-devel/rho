@@ -338,7 +338,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     SEXP s;
 
     if (length < 0 )
-	errorcall(R_GlobalContext->call,
+	errorcall(Context::innermost()->call,
 		  _("negative length vectors are not allowed"));
     /* number of vector cells to allocate */
     switch (type) {
@@ -522,7 +522,7 @@ static void R_OutputStackTrace(FILE *file)
     int newline = 0;
     Context *cptr;
 
-    for (cptr = R_GlobalContext; cptr; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
 	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);

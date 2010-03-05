@@ -50,6 +50,7 @@ unsigned int Evaluator::s_depth_threshold = 5000;
 unsigned int Evaluator::s_depth_limit = 5000;
 unsigned int Evaluator::s_countdown = 1000;
 unsigned int Evaluator::s_countdown_start = 1000;
+Evaluator* Evaluator::s_current = 0;
 bool Evaluator::s_profiling = false;
 
 namespace {

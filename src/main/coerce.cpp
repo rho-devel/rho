@@ -2270,7 +2270,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     call = eval(call, envir);
 
     /*
-    cptr = R_GlobalContext;
+    cptr = Context::innermost();
     while (cptr->nextcontext != NULL) {
 	if (cptr->callflag & Context::FUNCTION ) {
 		if(cptr->cloenv == rho)

@@ -1575,7 +1575,7 @@ Rf_getCallingDLL(void)
     /* First find the environment of the caller.
        Testing shows this is the right caller, despite the .C/.Call ...
      */
-    for (cptr = R_GlobalContext;
+    for (cptr = Context::innermost();
 	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
 	 cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::FUNCTION) {
