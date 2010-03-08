@@ -206,7 +206,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 	errorcall(Context::innermost()->call,
 		  _("not that many frames on the stack"));
 
-    while (cptr->nextcontext != NULL) {
+    while (cptr) {
 	if (cptr->callflag & Context::FUNCTION ) {
 	    if (n == 0) {  /* we need to detach the enclosing env */
 		return cptr->cloenv;
@@ -216,7 +216,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 	}
 	cptr = cptr->nextcontext;
     }
-    if(n == 0 && cptr->nextcontext == NULL)
+    if(n == 0)
 	return R_GlobalEnv;
     else
 	errorcall(Context::innermost()->call,
@@ -238,17 +238,17 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     if(n <= 0)
 	errorcall(Context::innermost()->call,
 		  _("only positive values of 'n' are allowed"));
-    // CXXR addition:
-    if (!cptr)
-	return 0;
-    while (cptr->nextcontext != NULL && n > 1) {
+    while (cptr && n > 1) {
 	if (cptr->callflag & Context::FUNCTION )
 	    n--;
 	cptr = cptr->nextcontext;
     }
     /* make sure we're looking at a return context */
-    while (cptr->nextcontext != NULL && !(cptr->callflag & Context::FUNCTION) )
+    while (cptr && !(cptr->callflag & Context::FUNCTION) )
 	cptr = cptr->nextcontext;
+    if (!cptr)
+	return 0;
+    // Foll. 3 lines probably soon redundant in CXXR:
     s = cptr->sysparent;
     if(s == R_GlobalEnv)
 	return 0;
@@ -539,7 +539,7 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     cptr = Context::innermost();
     t = cptr->sysparent;
-    while (cptr->nextcontext != NULL){
+    while (cptr){
 	if (cptr->callflag & Context::FUNCTION ) {
 	    if (cptr->cloenv == t)
 	    {

@@ -411,7 +411,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
        callenv = environment from which the generic was called
        defenv = environment where the generic was defined */
     cptr = Context::innermost();
-    if ( !(cptr->callflag & Context::FUNCTION) || cptr->cloenv != env)
+    if ( !cptr || !(cptr->callflag & Context::FUNCTION) || cptr->cloenv != env)
 	errorcall(call, _("'UseMethod' used in an inappropriate fashion"));
     callenv = cptr->sysparent;
     if (nargs)

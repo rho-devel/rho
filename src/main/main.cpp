@@ -1105,9 +1105,6 @@ void run_Rmainloop(void)
 void mainloop(void)
 {
     Evaluator evalr;
-    // Keep this for the mo:
-    Context top_level_context;
-    top_level_context.callflag = Context::TOPLEVEL;
     setup_Rmainloop();
     run_Rmainloop();
 }

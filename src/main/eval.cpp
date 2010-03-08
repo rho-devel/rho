@@ -1816,8 +1816,8 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    }
 	    else {
 		dots = FALSE;
-	    x = eval(CAR(args), rho);
-	    break;
+		x = eval(CAR(args), rho);
+		break;
 	    }
 	}
 	PROTECT(x); nprotect++;

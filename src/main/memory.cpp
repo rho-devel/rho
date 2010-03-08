@@ -337,9 +337,11 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
     SEXP s;
 
-    if (length < 0 )
-	errorcall(Context::innermost()->call,
+    if (length < 0 ) {
+	Context* ctxt = Context::innermost();
+	errorcall(ctxt ? ctxt->call : static_cast<RObject*>(0),
 		  _("negative length vectors are not allowed"));
+    }
     /* number of vector cells to allocate */
     switch (type) {
     case NILSXP:
