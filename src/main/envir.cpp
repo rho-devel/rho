@@ -365,9 +365,14 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
 	error(_("use of NULL environment is defunct"));
 
     Environment* env = SEXP_downcast<Environment*>(rho);
-    const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
+    Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Frame::Binding* bdg = env->frame()->binding(sym);
-    return (bdg ? bdg->value() : R_UnboundValue);
+    if (bdg)
+	return bdg->value();
+    // Reproduce the CR behaviour:
+    if (sym == Symbol::missingArgument() || sym == Symbol::restartToken())
+	return sym;
+    return R_UnboundValue;
 }
 
 SEXP findVarInFrame(SEXP rho, SEXP symbol)

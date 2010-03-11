@@ -118,7 +118,11 @@ RObject* Symbol::evaluate(Environment* env)
 	val = Rf_ddfindVar(this, env);
     else {
 	Frame::Binding* bdg = env->findBinding(this).second;
-	val = (bdg ? bdg->value() : unboundValue());
+	if (bdg)
+	    val = bdg->value();
+	else if (this == missingArgument() || this == restartToken())
+	    val = this;  // This reproduces CR behaviour
+	else val = unboundValue();
     }
     if (!val)
 	return 0;
