@@ -62,7 +62,6 @@
  *
  *  Context types can be one of:
  *
- *	Context::TOPLEVEL	The toplevel context
  *	Context::BREAK	target for "break"
  *	Context::NEXT	target for "next"
  *	Context::LOOP	target for either "break" or "next"
@@ -158,7 +157,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
     cptr = Context::innermost();
     if (mask & Context::LOOP) {		/* break/next */
 	for (cptr = Context::innermost();
-	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	     cptr != NULL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::LOOP && cptr->cloenv == env )
 		jumpfun(cptr, mask, val);
@@ -166,7 +165,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
     }
     else {				/* return; or browser */
 	for (cptr = Context::innermost();
-	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	     cptr != NULL;
 	     cptr = cptr->nextcontext)
 	    if ((cptr->callflag & mask) && cptr->cloenv == env)
 		jumpfun(cptr, mask, val);
@@ -178,7 +177,7 @@ void attribute_hidden R_JumpToContext(Context *target, int mask, SEXP val)
 {
     Context *cptr;
     for (cptr = Context::innermost();
-	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	 cptr != NULL;
 	 cptr = cptr->nextcontext)
 	if (cptr == target)
 	    jumpfun(cptr, mask, val);
@@ -554,8 +553,8 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_GlobalEnv;
 }
 
-/* R_ToplevelExec - call fun(data) within a top level context to
-   insure that this functin cannot be left by a LONGJMP.  R errors in
+/* R_ToplevelExec - call fun(data) within an Evaluator and
+   insure that this function cannot be left by an exception.  R errors in
    the call to fun will result in a jump to top level. The return
    value is TRUE if fun returns normally, FALSE if it results in a
    jump to top level. */
@@ -568,11 +567,7 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
     PROTECT(topExp = R_CurrentExpr);
 
     {
-	Context thiscontext;
-	begincontext(&thiscontext, Context::TOPLEVEL, R_NilValue, R_GlobalEnv,
-		     R_BaseEnv, R_NilValue, R_NilValue);
-	// cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	 << &thiscontext << endl;
+	Evaluator evalr;
 	try {
 	    fun(data);
 	    result = TRUE;
@@ -583,15 +578,7 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	catch (JMPException& e) {
 	    cerr << "CXXR internal error: unexpected JMPException\n";
 	    abort();
-	    // cout << __FILE__":" << __LINE__
-	    //	<< " Seeking  " << e.context
-	    //      << "; in " << &thiscontext << endl;
-	    if (e.context != &thiscontext)
-		throw;
-	    result = FALSE;
 	}
-	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	 << &thiscontext << endl;
     }
 
     R_CurrentExpr = topExp;

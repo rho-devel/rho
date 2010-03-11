@@ -724,9 +724,6 @@ static void try_jump_to_restart(void)
     }
 }
 
-/* Unwind the call stack in an orderly fashion */
-/* calling the code installed by on.exit along the way */
-/* and finally longjmping to the innermost TOPLEVEL context */
 
 static void jump_to_top_ex(Rboolean traceback,
 			   Rboolean tryUserHandler,
@@ -864,7 +861,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
 	for (cptr = Context::innermost()->nextcontext;
-	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	     cptr != NULL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::FUNCTION) {
 		/* stop() etc have internal call to .makeMessage */
@@ -968,7 +965,7 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
 	for (cptr = Context::innermost()->nextcontext;
-	     cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	     cptr != NULL;
 	     cptr = cptr->nextcontext)
 	    if (cptr->callflag & Context::FUNCTION) {
 		rho = cptr->cloenv;
@@ -1034,7 +1031,7 @@ static SEXP findCall(void)
 {
     Context *cptr;
     for (cptr = Context::innermost()->nextcontext;
-	 cptr != NULL && cptr->callflag != Context::TOPLEVEL;
+	 cptr != NULL;
 	 cptr = cptr->nextcontext)
 	if (cptr->callflag & Context::FUNCTION)
 	    return cptr->call;
@@ -1208,9 +1205,8 @@ void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart)
 	    findcontext(mask, env, val);
 	else if (restart && IS_RESTART_BIT_SET(c->callflag))
 	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
-	else if (c->callflag == Context::TOPLEVEL)
-	    error(_("No function to return from, jumping to top level"));
     }
+    error(_("No function to return from, jumping to top level"));
 }
 
 void R_JumpToToplevel(Rboolean restart)
@@ -1221,8 +1217,6 @@ void R_JumpToToplevel(Rboolean restart)
     for (c = Context::innermost(); c != NULL; c = c->nextcontext) {
 	if (restart && IS_RESTART_BIT_SET(c->callflag))
 	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
-	else if (c->callflag == Context::TOPLEVEL)
-	    break;
     }
 
     throw CommandTerminated();
@@ -1249,7 +1243,7 @@ SEXP R_GetTraceback(int skip)
     SEXP s, t;
 
     for (c = Context::innermost(), ns = skip;
-	 c != NULL && c->callflag != Context::TOPLEVEL;
+	 c != NULL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (ns > 0)
@@ -1261,7 +1255,7 @@ SEXP R_GetTraceback(int skip)
     PROTECT(s = allocList(nback));
     t = s;
     for (c = Context::innermost() ;
-	 c != NULL && c->callflag != Context::TOPLEVEL;
+	 c != NULL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (skip > 0)
@@ -1287,7 +1281,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 
     buf[0] = '\0';
     for (c = Context::innermost();
-	 c != NULL && c->callflag != Context::TOPLEVEL;
+	 c != NULL;
 	 c = c->nextcontext)
 	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
 	    if (skip > 0)

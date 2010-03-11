@@ -67,7 +67,6 @@ namespace CXXR {
 	* NEWTYPE & FUNCTION > 0
 	*/
 	enum Type {
-	    TOPLEVEL = 0,
 	    NEXT     = 1,
 	    BREAK    = 2,
 	    LOOP     = 3,	// break OR next target

@@ -138,10 +138,11 @@ namespace CXXR {
      * Evaluator object.
      *
      * @note Evaluator objects fulfil many of the roles of TOPLEVEL
-     * contexts within CR.  Note that in CXXR, each Evaluator has its
-     * own singly-linked list of Context objects (starting with the
-     * innermost); there is no overall list of Context objects
-     * spanning different Evaluator objects.
+     * contexts within CR (which do not exist within CXXR).  Note that
+     * in CXXR, each Evaluator has its own singly-linked list of
+     * Context objects (starting with the innermost); there is no
+     * overall list of Context objects spanning different Evaluator
+     * objects.
      */
     class Evaluator {
     public:

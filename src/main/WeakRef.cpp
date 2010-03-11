@@ -36,7 +36,7 @@
 
 /** @file WeakRef.cpp
  *
- * Class WeakRef
+ * Class WeakRef.
  */
 
 #include <cstdlib>
@@ -51,7 +51,6 @@
 #include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
 #include "CXXR/errors.h"
-#include "CXXR/Context.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -278,14 +277,10 @@ bool WeakRef::runFinalizers()
 	GCStackRoot<> topExp(R_CurrentExpr);
 	unsigned int savestack = ProtectStack::size();
 	{
-	    Context thiscontext;
-	    // A top level context is established for the finalizer to
+	    // An Evaluator is declared for the finalizer to
 	    // insure that any errors that might occur do not spill into
 	    // the call that triggered the collection:
-	    Rf_begincontext(&thiscontext, Context::TOPLEVEL,
-			    0, Environment::global(), Environment::base(), 0, 0);
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &thiscontext << endl;
+	    Evaluator evalr;
 	    try {
 		wr->finalize();
 	    }
@@ -294,14 +289,7 @@ bool WeakRef::runFinalizers()
 	    catch (JMPException& e) {
 		cerr << "CXXR internal error: unexpected JMPException\n";
 		abort();
-		//	    cout << __FILE__":" << __LINE__
-		//		 << " Seeking " << e.context
-		//		 << "; in " << &thiscontext << endl;
-		if (e.context != &thiscontext)
-		    throw;
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &thiscontext << endl;
 	    // Expose WeakRef to reference-counting collection:
 	    wr->m_self = 0;
 	}
