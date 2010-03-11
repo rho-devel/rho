@@ -32,23 +32,39 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file CommandTerminated.hpp
+/** @file LoopException.hpp
  *
- * @brief Exception class CXXR::CommandTerminated.
+ * @brief Class CXXR::LoopException.
  */
 
-#ifndef COMMANDTERMINATED_HPP
-#define COMMANDTERMINATED_HPP 1
+#ifndef LOOPEXCEPTION_HPP
+#define LOOPEXCEPTION_HPP 1
 
 namespace CXXR {
-    /** @brief Exception thrown when a command is terminated prematurely.
-     *
-     * An exception of this class is thrown when evaluation of an R
-     * command (i.e. a top-level function evaluation) will not be
-     * completed, for example because of an error or a user interrupt.
+    /** @brief Exception thrown by R commands 'break' and 'next'.
      */
-    struct CommandTerminated {
+    class LoopException {
+    public:
+	/** @brief Constructor
+	 *
+	 * @param next_iteration true for 'next'; false for 'break'.
+	 */
+	LoopException(bool next_iteration)
+	    : m_next(next_iteration)
+	{}
+
+	/** @brief Continue with next iteration of the loop (if any)?
+	 *
+	 * @return true if this LoopException arose from the R 'next'
+	 * command; false if it arose from 'break'.
+	 */
+	bool next() const
+	{
+	    return m_next;
+	}
+    private:
+	bool m_next;
     };
 }
 
-#endif  // COMMANDTERMINATED_HPP
+#endif  // LOOPEXCEPTION_HPP

@@ -59,6 +59,7 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/LoopException.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -935,9 +936,7 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   least 1.  LT */
     nm = NAMED(val);
     {
-	Context cntxt;
-	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		     R_NilValue);
+	Evaluator::LoopScope loopscope;
 	for (i = 0; i < n; i++) {
 	    try {
 		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
@@ -993,13 +992,9 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		}
 		ans = eval(body, rho);
 	    }
-	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
-		    throw;
-		if (e.mask == Context::BREAK)
+	    catch (LoopException lx) {
+		if (!lx.next())
 		    break;
-		// Otherwise assume it's Context::NEXT
 	    }
 	}
     }
@@ -1023,28 +1018,19 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	Context cntxt;
-	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		     R_NilValue);
+	Evaluator::LoopScope loopscope;
 	bool redo;
 	do {
 	    redo = false;
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		while (asLogicalNoNA(eval(CAR(args), rho), call)) {
 		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 		    eval(body, rho);
 		}
 	    }
-	    catch (JMPException& e) {
-		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
-		    throw;
-		redo = (e.mask != Context::BREAK);
+	    catch (LoopException lx) {
+		redo = lx.next();
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	} while (redo);
     }
     SET_ENV_DEBUG(rho, dbg);
@@ -1066,28 +1052,19 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	Context cntxt;
-	begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		     R_NilValue);
+	Evaluator::LoopScope loopscope;
 	bool redo;
 	do {
 	    redo = false;
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		for (;;) {
 		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
 		    eval(body, rho);
 		}
 	    }
-	    catch (JMPException& e) {
-		//	    cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
-		    throw;
-		redo = (e.mask != Context::BREAK);
+	    catch (LoopException lx) {
+		redo = lx.next();
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	} while (redo);
     }
     SET_ENV_DEBUG(rho, dbg);
@@ -1097,7 +1074,9 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    findcontext(PRIMVAL(op), rho, R_NilValue);
+    if (!Evaluator::inLoop())
+	Rf_error(_("no loop to break from, jumping to top level"));
+    throw LoopException(PRIMVAL(op) == 1);
     return R_NilValue;
 }
 
@@ -2717,24 +2696,16 @@ static int opcode_counts[OPCOUNT];
 
 static void loopWithContect(volatile SEXP code, volatile SEXP rho)
 {
-    Context cntxt;
-    begincontext(&cntxt, Context::LOOP, R_NilValue, rho, R_BaseEnv, R_NilValue,
-		 R_NilValue);
+    Evaluator::LoopScope loopscope;
     bool redo;
     do {
 	redo = false;
-	//	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	     << &cntxt << endl;
 	try {
 	    bcEval(code, rho);
 	}
-	catch (JMPException& e) {
-	    if (e.context != &cntxt)
-		throw;
-	    redo = (e.mask != Context::BREAK);
+	catch (LoopException lx) {
+	    redo = lx.next();
 	}
-	//	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	     << &cntxt << endl;
     } while (redo);
 }
 
@@ -2930,8 +2901,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    NEXT();
 	}
     OP(ENDLOOPCNTXT, 0): value = R_NilValue; goto done;
-    OP(DOLOOPNEXT, 0): findcontext(Context::NEXT, rho, R_NilValue);
-    OP(DOLOOPBREAK, 0): findcontext(Context::BREAK, rho, R_NilValue);
+	OP(DOLOOPNEXT, 0): throw LoopException(true);
+	    OP(DOLOOPBREAK, 0): throw LoopException(false);
     OP(STARTFOR, 2):
       {
 	SEXP seq = R_BCNodeStackTop[-1];

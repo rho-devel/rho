@@ -62,9 +62,6 @@
  *
  *  Context types can be one of:
  *
- *	Context::BREAK	target for "break"
- *	Context::NEXT	target for "next"
- *	Context::LOOP	target for either "break" or "next"
  *	Context::RETURN	target for "return" (i.e. a closure)
  *	Context::BROWSER	target for "return" to exit from browser
  *	Context::RESTART	a function call to restart was made inside the
@@ -155,22 +152,12 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 {
     Context *cptr;
     cptr = Context::innermost();
-    if (mask & Context::LOOP) {		/* break/next */
-	for (cptr = Context::innermost();
-	     cptr != NULL;
-	     cptr = cptr->nextcontext)
-	    if (cptr->callflag & Context::LOOP && cptr->cloenv == env )
-		jumpfun(cptr, mask, val);
-	error(_("no loop to break from, jumping to top level"));
-    }
-    else {				/* return; or browser */
-	for (cptr = Context::innermost();
-	     cptr != NULL;
-	     cptr = cptr->nextcontext)
-	    if ((cptr->callflag & mask) && cptr->cloenv == env)
-		jumpfun(cptr, mask, val);
-	error(_("no function to return from, jumping to top level"));
-    }
+    for (cptr = Context::innermost();
+	 cptr != NULL;
+	 cptr = cptr->nextcontext)
+	if ((cptr->callflag & mask) && cptr->cloenv == env)
+	    jumpfun(cptr, mask, val);
+    error(_("no function to return from, jumping to top level"));
 }
 
 void attribute_hidden R_JumpToContext(Context *target, int mask, SEXP val)

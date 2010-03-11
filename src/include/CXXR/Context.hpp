@@ -59,7 +59,6 @@ namespace CXXR {
 	/* The Various Context Types.
 	 *
 	* In general the type is a bitwise OR of the values below.
-	* Note that LOOP is already the or of NEXT and BREAK.
 	* Only functions should have the third bit turned on;
 	* this allows us to move up the context stack easily
 	* with either RETURN's or GENERIC's or RESTART's.
@@ -67,9 +66,6 @@ namespace CXXR {
 	* NEWTYPE & FUNCTION > 0
 	*/
 	enum Type {
-	    NEXT     = 1,
-	    BREAK    = 2,
-	    LOOP     = 3,	// break OR next target
 	    FUNCTION = 4,
 	    RETURN   = 12,
 	    BROWSER  = 16,

@@ -127,7 +127,7 @@ namespace CXXR {
      * resulting exception is caught within the scope of the current
      * Evaluator; the relevant code will then typically request
      * another R command (if interactive), or terminate the scope of
-     * the current Evaluator, thus popping it off the Evaluator stack
+     * the current Evaluator, thus popping it off the Evaluator stack,
      * and return control to code within the scope of the next
      * Evaluator down.
      * 
@@ -146,8 +146,32 @@ namespace CXXR {
      */
     class Evaluator {
     public:
+	/** @brief Object authorising R 'break' and 'next' commands.
+	 *
+	 * LoopScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables) within the scope of an
+	 * Evaluator object.  Each Evaluator object keeps track of the
+	 * number of LoopScope objects belonging to it, i.e. declared
+	 * while it was the current Evaluator, and still in
+	 * existence.  The R commands 'break' and 'next' are legal
+	 * only when the current Evaluator contains at least one
+	 * LoopScope; this can be determined by calling
+	 * Evaluator::inLoop().
+	 */
+	struct LoopScope {
+	    LoopScope()
+	    {
+		++Evaluator::s_current->m_loops;
+	    }
+
+	    ~LoopScope()
+	    {
+		--Evaluator::s_current->m_loops;
+	    }
+	};
+
 	Evaluator()
-	    : m_next(s_current), m_innermost_context(0)
+	    : m_next(s_current), m_innermost_context(0), m_loops(0)
 	{
 	    s_current = this;
 	}
@@ -241,6 +265,16 @@ namespace CXXR {
 	 * @return Pointer to the result of evaluation.
 	 */
 	static RObject* evaluate(RObject* object, Environment* env);
+
+	/** @brief Is R 'break' or 'next' currently legal?
+	 *
+	 * @return true iff there is currently at least one LoopScope
+	 * object in existence belonging to the current Evaluator.
+	 */
+	static bool inLoop()
+	{
+	    return s_current->m_loops > 0;
+	}
 
 	/** @brief Innermost Context belonging to this Evaluator.
 	 *
@@ -339,6 +373,7 @@ namespace CXXR {
 	static void setDepthLimit(int depth);
    private:
 	friend class Context;
+	friend class LoopScope;
 
 	static unsigned int s_depth;  // Current depth of expression evaluation 
 	static unsigned int s_depth_threshold;  // An error will be
@@ -361,7 +396,9 @@ namespace CXXR {
 
 	Evaluator* m_next;  // Next Evaluator down the stack
 	Context* m_innermost_context;  // Innermost Context belonging
-		   // to this Evaluator 
+		   // to this Evaluator
+	unsigned int m_loops;  // Number of LoopScope objects
+		       // currently belonging to this Evaluator.
     };
 
     /** @brief Shorthand for Evaluator::evaluate().
