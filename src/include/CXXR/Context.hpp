@@ -112,8 +112,6 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-extern CXXR::GCRoot<> R_ReturnedValue;
-
 #define IS_RESTART_BIT_SET(flags) ((flags) & Context::RESTART)
 #define SET_RESTART_BIT_ON(flags) (flags = Context::Type(flags | Context::RESTART))
 #define SET_RESTART_BIT_OFF(flags) (flags = Context::Type(flags & ~Context::RESTART))

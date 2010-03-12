@@ -1279,8 +1279,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	R_BrowseLines = 0;
     }
 
-    R_ReturnedValue = R_NilValue;
-
     /* Here we establish two contexts.  The first */
     /* of these provides a target for return */
     /* statements which a user might type at the */
@@ -1305,7 +1303,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    if (e.context() != &thiscontext)
 			throw;
 		    SET_RESTART_BIT_ON(thiscontext.callflag);
-		    R_ReturnedValue = R_NilValue;
 		    R_Visible = FALSE;
 		    redo = true;
 		}
@@ -1321,7 +1318,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     ProtectStack::restoreSize(savestack);
     R_CurrentExpr = topExp;
-    return R_ReturnedValue;
+    return 0;
 }
 
 void R_dot_Last(void)

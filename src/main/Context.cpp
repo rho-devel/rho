@@ -30,7 +30,6 @@ using namespace CXXR;
 GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 RObject* R_Srcref;
-GCRoot<> R_ReturnedValue;
 
 Context::Context()
     : nextcontext(Context::innermost()), cstacktop(ProtectStack::size()),
@@ -53,7 +52,6 @@ Context::~Context()
     R_RestartStack = restartstack;
     if (cloenv && conexit) {
 	GCStackRoot<> onx(conexit);
-	GCStackRoot<> returnval(R_ReturnedValue);
 	Rboolean savevis = R_Visible;
 	// Prevent recursion:
 	conexit = 0;
@@ -64,7 +62,6 @@ Context::~Context()
 	// Don't allow exceptions to escape:
 	catch (...) {}
 	R_Visible = savevis;
-	R_ReturnedValue = returnval;
     }
     ProtectStack::restoreSize(cstacktop);
     Evaluator::setDepth(evaldepth);
