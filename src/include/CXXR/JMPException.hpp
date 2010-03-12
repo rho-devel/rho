@@ -39,6 +39,8 @@
 #ifndef JMPEXCEPTION_HPP
 #define JMPEXCEPTION_HPP 1
 
+#include "CXXR/GCRoot.h"
+
 namespace CXXR {
     class Context;
 
@@ -53,19 +55,43 @@ namespace CXXR {
      * be desirable to replace it and RCNTXT with something more in
      * line with conventional C++ exception handling idioms.
      */
-    struct JMPException {
-	Context* context;
-	int mask;
-
-	/**
-	 * @param the_context Pointer to the context within which the
+    class JMPException {
+    public:
+	/** @brief Constructor.
+	 *
+	 * @param the_context Pointer to the Context within which the
 	 *          exception is to be caught.  (catch blocks within
 	 *          other contexts should rethrow the exception.)
-	 * @param the_mask Context mask, or zero.
+	 *
+	 * @param the_value Pointer, possibly null, to the RObject to
+	 *          be conveyed back to the target Context.
 	 */
-	JMPException(Context* the_context, int the_mask = 0)
-	    : context(the_context), mask(the_mask)
+	JMPException(Context* the_context, RObject* the_value)
+	    : m_context(the_context), m_value(the_value)
 	{}
+
+	/** @brief Target Context of this JMPException.
+	 *
+	 * @return pointer to the Context within which this
+	 * JMPException should be caught.
+	 */
+	Context* context() const
+	{
+	    return m_context;
+	}
+
+	/** @brief Payload of this JMPException.
+	 *
+	 * @return Pointer, possibly null, to the RObject conveyed to
+	 * the target Context by this JMPException.
+	 */
+	RObject* value() const
+	{
+	    return m_value;
+	}
+    private:
+	Context* m_context;
+	GCRoot<> m_value;
     };
 }
 

@@ -1290,8 +1290,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context returncontext;
 	begincontext(&returncontext, Context::BROWSER, call, rho,
 		     R_BaseEnv, argList, R_NilValue);
-	//    cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	//	 << &returncontext << endl;
 	try {
 	    Context thiscontext;
 	    begincontext(&thiscontext, Context::RESTART, R_NilValue, rho,
@@ -1299,38 +1297,24 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    bool redo;
 	    do {
 		redo = false;
-		//	    cout << __FILE__":" << __LINE__
-                //               << " Entering try/catch for "
-		//		 << &thiscontext << endl;
 		try {
 		    R_InsertRestartHandlers(&thiscontext, TRUE);
 		    R_ReplConsole(rho, savestack, browselevel+1);
 		}
 		catch (JMPException& e) {
-		    //		cout << __FILE__":" << __LINE__
-		    //		     << " Seeking " << e.context
-		    //		     << "; in " << &thiscontext << endl;
-		    if (e.context != &thiscontext)
+		    if (e.context() != &thiscontext)
 			throw;
 		    SET_RESTART_BIT_ON(thiscontext.callflag);
 		    R_ReturnedValue = R_NilValue;
 		    R_Visible = FALSE;
 		    redo = true;
 		}
-		//	    cout << __FILE__":" << __LINE__
-                //               << " Exiting try/catch for "
-		//		 << &thiscontext << endl;
 	    } while (redo);
 	}
 	catch (JMPException& e) {
-	    //	cout << __FILE__":" << __LINE__
-	    //	     << " Seeking " << e.context
-	    //	     << "; in " << &returncontext << endl;
-	    if (e.context != &returncontext)
+	    if (e.context() != &returncontext)
 		throw;
 	}
-	//    cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	//	 << &returncontext << endl;
     }
 
     /* Reset the interpreter state. */

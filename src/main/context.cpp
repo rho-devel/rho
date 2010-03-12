@@ -119,17 +119,6 @@
 using namespace std;
 using namespace CXXR;
 
-/* jumpfun - jump to the named context */
-
-static void jumpfun(Context * cptr, int mask, SEXP val)
-{
-    R_ReturnedValue = val;
-    // cout << __FILE__":" << __LINE__ << " About to throw JMPException("
-    //	 << cptr << ", " << mask << ")\n" << flush;
-    throw JMPException(cptr, mask);
-}
-
-
 /* begincontext - begin an execution context */
 
 /* begincontext is used in dataentry.c and modules */
@@ -156,7 +145,7 @@ void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
 	 cptr != NULL;
 	 cptr = cptr->nextcontext)
 	if ((cptr->callflag & mask) && cptr->cloenv == env)
-	    jumpfun(cptr, mask, val);
+	    throw JMPException(cptr, val);
     error(_("no function to return from, jumping to top level"));
 }
 
@@ -167,7 +156,7 @@ void attribute_hidden R_JumpToContext(Context *target, int mask, SEXP val)
 	 cptr != NULL;
 	 cptr = cptr->nextcontext)
 	if (cptr == target)
-	    jumpfun(cptr, mask, val);
+	    throw JMPException(cptr, val);
     error(_("target context is not on the stack"));
 }
 
@@ -337,7 +326,7 @@ SEXP attribute_hidden do_restart(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    break;
 	}
     }
-    if( cptr)
+    if(!cptr)
 	error(_("no function to restart"));
     return(R_NilValue);
 }

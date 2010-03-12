@@ -110,14 +110,14 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	    }
 	    catch (JMPException& e) {
 		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
+		if (e.context() != &cntxt)
 		    throw;
-		if (R_ReturnedValue == R_RestartToken) {
+		ans = e.value();
+		if (ans == R_RestartToken) {
 		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    R_ReturnedValue = 0;  /* remove restart token */
+		    ans = 0;  /* remove restart token */
 		    redo = true;
 		}
-		else ans = R_ReturnedValue;
 	    }
 	} while (redo);
     }

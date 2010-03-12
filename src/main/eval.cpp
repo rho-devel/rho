@@ -512,25 +512,19 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	bool redo;
 	do {
 	    redo = false;
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		tmp = eval(body, newrho);
 	    }
 	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context
-		//      << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
+		if (e.context() != &cntxt)
 		    throw;
-		if (R_ReturnedValue == R_RestartToken) {
+		tmp = e.value();
+		if (tmp == R_RestartToken) {
 		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    R_ReturnedValue = R_NilValue;  /* remove restart token */
+		    tmp = R_NilValue;  /* remove restart token */
 		    redo = true;
 		}
-		else tmp = R_ReturnedValue;
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	} while (redo);
     }
 
@@ -622,25 +616,19 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	bool redo;
 	do {
 	    redo = false;
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		tmp = eval(body, newrho);
 	    }
 	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context
-		//      << "; in " << &cntxt << endl;
-		if (e.context != &cntxt)
+		if (e.context() != &cntxt)
 		    throw;
-		if (R_ReturnedValue == R_RestartToken) {
+		tmp = e.value();
+		if (tmp == R_RestartToken) {
 		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    R_ReturnedValue = R_NilValue;  /* remove restart token */
+		    tmp = R_NilValue;  /* remove restart token */
 		    redo = true;
 		}
-		else tmp = R_ReturnedValue;
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	} while (redo);
     }
 
@@ -1617,22 +1605,18 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	{
 	    Context cntxt;
 	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		expr = eval(expr, env);
 	    }
 	    catch (JMPException& e) {
-		if (e.context != &cntxt)
+		if (e.context() != &cntxt)
 		    throw;
-		expr = R_ReturnedValue;
+		expr = e.value();
 		if (expr == R_RestartToken) {
 		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    error(_("restarts not supported in 'eval'"));
 		}
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	}
 	UNPROTECT(1);
     }
@@ -1644,23 +1628,19 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	{
 	    Context cntxt;
 	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
-	    //	cout << __FILE__":" << __LINE__ << " Entering try/catch for "
-	    //	     << &cntxt << endl;
 	    try {
 		for (i = 0 ; i < n ; i++)
 		    tmp = eval(XVECTOR_ELT(expr, i), env);
 	    }
 	    catch (JMPException& e) {
-		if (e.context != &cntxt)
+		if (e.context() != &cntxt)
 		    throw;
-		tmp = R_ReturnedValue;
+		tmp = e.value();
 		if (tmp == R_RestartToken) {
 		    cntxt.callflag = Context::RETURN;  /* turn restart off */
 		    error(_("restarts not supported in 'eval'"));
 		}
 	    }
-	    //	cout << __FILE__":" << __LINE__ << " Exiting try/catch for "
-	    //	     << &cntxt << endl;
 	}
 	UNPROTECT(1);
 	expr = tmp;
