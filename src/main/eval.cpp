@@ -924,7 +924,8 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   least 1.  LT */
     nm = NAMED(val);
     {
-	Evaluator::LoopScope loopscope;
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	Environment::LoopScope loopscope(env);
 	for (i = 0; i < n; i++) {
 	    try {
 		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
@@ -980,7 +981,9 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		}
 		ans = eval(body, rho);
 	    }
-	    catch (LoopException lx) {
+	    catch (LoopException& lx) {
+		if (lx.environment() != env)
+		    throw;
 		if (!lx.next())
 		    break;
 	    }
@@ -1006,7 +1009,8 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	Evaluator::LoopScope loopscope;
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	Environment::LoopScope loopscope(env);
 	bool redo;
 	do {
 	    redo = false;
@@ -1016,7 +1020,9 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    eval(body, rho);
 		}
 	    }
-	    catch (LoopException lx) {
+	    catch (LoopException& lx) {
+		if (lx.environment() != env)
+		    throw;
 		redo = lx.next();
 	    }
 	} while (redo);
@@ -1040,7 +1046,8 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     bgn = BodyHasBraces(body);
 
     {
-	Evaluator::LoopScope loopscope;
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	Environment::LoopScope loopscope(env);
 	bool redo;
 	do {
 	    redo = false;
@@ -1050,7 +1057,9 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    eval(body, rho);
 		}
 	    }
-	    catch (LoopException lx) {
+	    catch (LoopException& lx) {
+		if (lx.environment() != env)
+		    throw;
 		redo = lx.next();
 	    }
 	} while (redo);
@@ -1062,9 +1071,10 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    if (!Evaluator::inLoop())
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    if (!env->loopActive())
 	Rf_error(_("no loop to break from, jumping to top level"));
-    throw LoopException(PRIMVAL(op) == 1);
+    throw LoopException(env, PRIMVAL(op) == 1);
     return R_NilValue;
 }
 
@@ -2676,14 +2686,17 @@ static int opcode_counts[OPCOUNT];
 
 static void loopWithContect(volatile SEXP code, volatile SEXP rho)
 {
-    Evaluator::LoopScope loopscope;
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment::LoopScope loopscope(env);
     bool redo;
     do {
 	redo = false;
 	try {
 	    bcEval(code, rho);
 	}
-	catch (LoopException lx) {
+	catch (LoopException& lx) {
+	    if (lx.environment() != env)
+		throw;
 	    redo = lx.next();
 	}
     } while (redo);
@@ -2881,8 +2894,16 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    NEXT();
 	}
     OP(ENDLOOPCNTXT, 0): value = R_NilValue; goto done;
-	OP(DOLOOPNEXT, 0): throw LoopException(true);
-	    OP(DOLOOPBREAK, 0): throw LoopException(false);
+    OP(DOLOOPNEXT, 0):
+	{
+	    Environment* env = SEXP_downcast<Environment*>(rho);
+	    throw LoopException(env, true);
+	}
+    OP(DOLOOPBREAK, 0):
+	{
+	    Environment* env = SEXP_downcast<Environment*>(rho);
+	    throw LoopException(env, false);
+	}
     OP(STARTFOR, 2):
       {
 	SEXP seq = R_BCNodeStackTop[-1];

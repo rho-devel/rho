@@ -47,11 +47,19 @@ namespace CXXR {
     public:
 	/** @brief Constructor
 	 *
+	 * @param env Evaluation environment in which 'break' or
+	 *          'next' occurred.
+	 *
 	 * @param next_iteration true for 'next'; false for 'break'.
 	 */
-	LoopException(bool next_iteration)
-	    : m_next(next_iteration)
+	LoopException(Environment* env, bool next_iteration)
+	    : m_environment(env), m_next(next_iteration)
 	{}
+
+	Environment* environment() const
+	{
+	    return m_environment;
+	}
 
 	/** @brief Continue with next iteration of the loop (if any)?
 	 *
@@ -63,6 +71,7 @@ namespace CXXR {
 	    return m_next;
 	}
     private:
+	GCRoot<Environment> m_environment;
 	bool m_next;
     };
 }

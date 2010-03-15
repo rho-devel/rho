@@ -45,6 +45,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/GCStackRoot.hpp"
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
 
@@ -88,13 +89,40 @@ namespace CXXR {
      */
     class Environment : public RObject {
     public:
+	/** @brief Object authorising R 'break' and 'next' commands.
+	 *
+	 * LoopScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Each Environment object
+	 * keeps track of the number of LoopScope objects associated
+	 * with it.  The R commands 'break' and 'next' are legal only
+	 * when the evaluation Environment has at least one LoopScope
+	 * in existence; this can be determined by calling
+	 * Environment::loopActive().
+	 */
+	class LoopScope {
+	public:
+	    LoopScope(Environment* env)
+		: m_environment(env)
+	    {
+		++env->m_loops_active;
+	    }
+
+	    ~LoopScope()
+	    {
+		--m_environment->m_loops_active;
+	    }
+	private:
+	    GCStackRoot<Environment> m_environment;
+	};
+
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
 	explicit Environment(Environment* enclosing)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame)), m_single_stepping(false),
-	      m_locked(false), m_cached(false), m_leaked(false)
+	      m_frame(expose(new StdFrame)), m_loops_active(0),
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false)
 	{}
 
 	/**
@@ -111,8 +139,8 @@ namespace CXXR {
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
-	      m_leaked(false)
+	      m_loops_active(0), m_single_stepping(false), m_locked(false),
+	      m_cached(false), m_leaked(false)
 	{}
 
 	/** @brief Constructor with specified Frame.
@@ -128,8 +156,8 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
-	      m_leaked(false)
+	      m_loops_active(0), m_single_stepping(false), m_locked(false),
+	      m_cached(false), m_leaked(false)
 	{}
 
 	/** @brief Base environment.
@@ -225,6 +253,16 @@ namespace CXXR {
 	static Environment* global()
 	{
 	    return s_global;
+	}
+
+	/** @brief Is R 'break' or 'next' currently legal?
+	 *
+	 * @return true iff there is currently at least one LoopScope
+	 * object in existence associated with this Environment.
+	 */
+	bool loopActive() const
+	{
+	    return m_loops_active > 0;
 	}
 
 	/** @brief Disconnect the Environment from its Frame, if safe.
@@ -391,6 +429,7 @@ namespace CXXR {
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
+	unsigned short int m_loops_active;
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
