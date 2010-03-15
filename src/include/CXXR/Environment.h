@@ -101,6 +101,11 @@ namespace CXXR {
 	 */
 	class LoopScope {
 	public:
+	    /** @brief Constructor.
+	     *
+	     * @param Pointer to the Environment with which this
+	     * LoopScope is to be associated.
+	     */
 	    LoopScope(Environment* env)
 		: m_environment(env)
 	    {
@@ -115,14 +120,47 @@ namespace CXXR {
 	    GCStackRoot<Environment> m_environment;
 	};
 
+	/** @brief Object authorising R 'return' command.
+	 *
+	 * ReturnScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Each Environment object
+	 * keeps track of the number of ReturnScope objects associated
+	 * with it.  The R command 'return' is legal only when the
+	 * evaluation Environment has at least one ReturnScope in
+	 * existence; this can be determined by calling
+	 * Environment::canReturn().  More generally, a transfer of
+	 * control to a specified Environment using ReturnException
+	 * will succeed only if canReturn() is true.
+	 */
+	class ReturnScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param Pointer to the Environment with which this
+	     * ReturnScope is to be associated.
+	     */
+	    ReturnScope(Environment* env)
+		: m_environment(env)
+	    {
+		++env->m_return_scopes;
+	    }
+
+	    ~ReturnScope()
+	    {
+		--m_environment->m_return_scopes;
+	    }
+	private:
+	    GCStackRoot<Environment> m_environment;
+	};
+
 	/**
 	 * @param enclosing Pointer to the enclosing environment.
 	 */
 	explicit Environment(Environment* enclosing)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame)), m_loops_active(0),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
-	      m_leaked(false)
+	      m_return_scopes(0), m_single_stepping(false), m_locked(false),
+	      m_cached(false), m_leaked(false)
 	{}
 
 	/**
@@ -139,8 +177,8 @@ namespace CXXR {
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_loops_active(0), m_single_stepping(false), m_locked(false),
-	      m_cached(false), m_leaked(false)
+	      m_loops_active(0), m_return_scopes(0), m_single_stepping(false),
+	      m_locked(false), m_cached(false), m_leaked(false)
 	{}
 
 	/** @brief Constructor with specified Frame.
@@ -156,8 +194,8 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_loops_active(0), m_single_stepping(false), m_locked(false),
-	      m_cached(false), m_leaked(false)
+	      m_loops_active(0), m_return_scopes(0), m_single_stepping(false),
+	      m_locked(false), m_cached(false), m_leaked(false)
 	{}
 
 	/** @brief Base environment.
@@ -176,6 +214,18 @@ namespace CXXR {
 	static Environment* baseNamespace()
 	{
 	    return s_base_namespace;
+	}
+
+	/** @brief Is R 'return' currently legal?
+	 *
+	 * @return true iff there is currently at least one ReturnScope
+	 * object in existence associated with this Environment, so
+	 * that a transfer of control using ReturnException will
+	 * succeed.
+	 */
+	bool canReturn() const
+	{
+	    return m_return_scopes > 0;
 	}
 
 	/** @brief Access the enclosing Environment.
@@ -430,6 +480,7 @@ namespace CXXR {
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
 	unsigned short int m_loops_active;
+	unsigned short int m_return_scopes;
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;

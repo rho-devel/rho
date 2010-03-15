@@ -99,6 +99,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	Context cntxt;
 	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
 			newenv, syspar, prepared_args, this);
+	Environment::ReturnScope returnscope(newenv);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)
 	    debug(newenv, call, prepared_args, env);

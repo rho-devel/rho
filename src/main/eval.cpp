@@ -506,9 +506,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	}
 
     regdb:
-
-	/*  Set a longjmp target which will catch any explicit returns
-	    from the function body.  */
+	Environment::ReturnScope returnscope(newrho);
 	bool redo;
 	do {
 	    redo = false;
@@ -610,9 +608,8 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	}
 
     regdb:
-
-	/*  Set a longjmp target which will catch any explicit returns
-	    from the function body.  */
+	Environment* envir = SEXP_downcast<Environment*>(newrho);
+	Environment::ReturnScope returnscope(envir);
 	bool redo;
 	do {
 	    redo = false;
@@ -1615,6 +1612,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	{
 	    Context cntxt;
 	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
+	    Environment* envir = SEXP_downcast<Environment*>(env);
+	    Environment::ReturnScope returnscope(envir);
 	    try {
 		expr = eval(expr, env);
 	    }
@@ -1638,6 +1637,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	{
 	    Context cntxt;
 	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
+	    Environment* envir = SEXP_downcast<Environment*>(env);
+	    Environment::ReturnScope returnscope(envir);
 	    try {
 		for (i = 0 ; i < n ; i++)
 		    tmp = eval(XVECTOR_ELT(expr, i), env);

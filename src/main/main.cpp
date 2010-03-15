@@ -1288,6 +1288,8 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Context returncontext;
 	begincontext(&returncontext, Context::BROWSER, call, rho,
 		     R_BaseEnv, argList, R_NilValue);
+	Environment* envir = SEXP_downcast<Environment*>(rho);
+	Environment::ReturnScope returnscope(envir);
 	try {
 	    Context thiscontext;
 	    begincontext(&thiscontext, Context::RESTART, R_NilValue, rho,
