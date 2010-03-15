@@ -47,6 +47,7 @@
 #include "basedecl.h"
 #include "CXXR/Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ReturnException.hpp"
 
 using namespace CXXR;
 
@@ -470,9 +471,10 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if (usemethod(translateChar(STRING_ELT(generic, 0)), obj, call, CDR(args),
 		  env, callenv, defenv, &ans) == 1) {
 	UNPROTECT(1); /* obj */
-	PROTECT(ans);
-	findcontext(Context::RETURN, env, ans); /* does not return */
-	UNPROTECT(1);
+	Environment* envir = SEXP_downcast<Environment*>(env);
+	if (!envir->canReturn())
+	    Rf_error(_("no function to return from, jumping to top level"));
+	throw ReturnException(envir, ans);
     }
     else {
 	SEXP klass;

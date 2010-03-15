@@ -60,6 +60,7 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
 #include "CXXR/LoopException.hpp"
+#include "CXXR/ReturnException.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -513,6 +514,11 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	    try {
 		tmp = eval(body, newrho);
 	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != newrho)
+		    throw;
+		tmp = rx.value();
+	    }
 	    catch (JMPException& e) {
 		if (e.context() != &cntxt)
 		    throw;
@@ -615,6 +621,11 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	    redo = false;
 	    try {
 		tmp = eval(body, newrho);
+	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != envir)
+		    throw;
+		tmp = rx.value();
 	    }
 	    catch (JMPException& e) {
 		if (e.context() != &cntxt)
@@ -1165,7 +1176,10 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     UNPROTECT(1);
 
-    findcontext(Context::BROWSER | Context::FUNCTION, rho, v);
+    Environment* envir = SEXP_downcast<Environment*>(rho);
+    if (!envir->canReturn())
+	Rf_error(_("no function to return from, jumping to top level"));
+    throw ReturnException(envir, v);
 
     return R_NilValue; /*NOTREACHED*/
 }
@@ -1617,6 +1631,11 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    try {
 		expr = eval(expr, env);
 	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != envir)
+		    throw;
+		tmp = rx.value();
+	    }
 	    catch (JMPException& e) {
 		if (e.context() != &cntxt)
 		    throw;
@@ -1642,6 +1661,11 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    try {
 		for (i = 0 ; i < n ; i++)
 		    tmp = eval(XVECTOR_ELT(expr, i), env);
+	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != envir)
+		    throw;
+		tmp = rx.value();
 	    }
 	    catch (JMPException& e) {
 		if (e.context() != &cntxt)

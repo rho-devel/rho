@@ -46,6 +46,7 @@
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ReturnException.hpp"
 
 using namespace CXXR;
 
@@ -108,6 +109,11 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	    redo = false;
 	    try {
 		ans = Evaluator::evaluate(m_body, newenv);
+	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != newenv)
+		    throw;
+		ans = rx.value();
 	    }
 	    catch (JMPException& e) {
 		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;

@@ -71,6 +71,7 @@
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ReturnException.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -1248,6 +1249,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     unsigned int savestack;
     int browselevel, tmp;
     GCStackRoot<> topExp(R_CurrentExpr);
+    RObject* ans = 0;
 
     /* argument matching */
     GCStackRoot<> argList(matchargs(args)); 
@@ -1310,6 +1312,11 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		}
 	    } while (redo);
 	}
+	catch (ReturnException& rx) {
+	    if (rx.environment() != envir)
+		throw;
+	    ans = rx.value();
+	}
 	catch (JMPException& e) {
 	    if (e.context() != &returncontext)
 		throw;
@@ -1320,7 +1327,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     ProtectStack::restoreSize(savestack);
     R_CurrentExpr = topExp;
-    return 0;
+    return ans;
 }
 
 void R_dot_Last(void)

@@ -67,6 +67,7 @@ extern void R_ProcessEvents(void);
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
 #include "CXXR/JMPException.hpp"
+#include "CXXR/ReturnException.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -1200,11 +1201,14 @@ void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart)
 
     mask = Context::BROWSER | Context::FUNCTION;
 
-    for (c = Context::innermost(); c; c = c->nextcontext) {
-	if (c->callflag & mask && c->cloenv == env)
-	    findcontext(mask, env, val);
-	else if (restart && IS_RESTART_BIT_SET(c->callflag))
-	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
+    Environment* envir = SEXP_downcast<Environment*>(env);
+    if (envir->canReturn())
+	throw ReturnException(envir, val);
+    if (restart) {
+	for (c = Context::innermost(); c; c = c->nextcontext) {
+	    if (IS_RESTART_BIT_SET(c->callflag))
+		findcontext(Context::RESTART, c->cloenv, R_RestartToken);
+	}
     }
     error(_("No function to return from, jumping to top level"));
 }
@@ -1523,7 +1527,10 @@ static void gotoExitingHandler(SEXP cond, SEXP call, SEXP entry)
     SET_VECTOR_ELT(result, 0, cond);
     SET_VECTOR_ELT(result, 1, call);
     SET_VECTOR_ELT(result, 2, ENTRY_HANDLER(entry));
-    findcontext(Context::FUNCTION, rho, result);
+    Environment* envir = SEXP_downcast<Environment*>(rho);
+    if (!envir->canReturn())
+	Rf_error(_("no function to return from, jumping to top level"));
+    throw ReturnException(envir, result);
 }
 
 static void vsignalError(SEXP call, const char *format, va_list ap)
@@ -1793,8 +1800,13 @@ static void invokeRestart(SEXP r, SEXP arglist)
 		if (TYPEOF(exit) == EXTPTRSXP) {
 		    Context *c = static_cast<Context *>( R_ExternalPtrAddr(exit));
 		    R_JumpToContext(c, Context::RESTART, R_RestartToken);
+		} else {
+		    Environment* envir = SEXP_downcast<Environment*>(exit);
+		    if (!envir->canReturn())
+			Rf_error(_("no function to return from,"
+				   " jumping to top level"));
+		    throw ReturnException(envir, arglist);
 		}
-		else findcontext(Context::FUNCTION, exit, arglist);
 	    }
 	error(_("restart not on stack"));
     }
