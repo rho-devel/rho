@@ -508,28 +508,21 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     regdb:
 	Environment::ReturnScope returnscope(newrho);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
+	try {
+	    tmp = eval(body, newrho);
+	}
+	catch (ReturnException& rx) {
+	    if (rx.environment() != newrho)
+		throw;
+	    tmp = rx.value();
+	}
+	catch (JMPException& e) {
+	    if (e.context() != &cntxt)
+		throw;
+	    tmp = e.value();
+	    if (tmp == R_RestartToken)
 		tmp = eval(body, newrho);
-	    }
-	    catch (ReturnException& rx) {
-		if (rx.environment() != newrho)
-		    throw;
-		tmp = rx.value();
-	    }
-	    catch (JMPException& e) {
-		if (e.context() != &cntxt)
-		    throw;
-		tmp = e.value();
-		if (tmp == R_RestartToken) {
-		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    tmp = R_NilValue;  /* remove restart token */
-		    redo = true;
-		}
-	    }
-	} while (redo);
+	}
     }
 
     if (RDEBUG(op)) {
@@ -616,28 +609,21 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     regdb:
 	Environment* envir = SEXP_downcast<Environment*>(newrho);
 	Environment::ReturnScope returnscope(envir);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
+	try {
+	    tmp = eval(body, newrho);
+	}
+	catch (ReturnException& rx) {
+	    if (rx.environment() != envir)
+		throw;
+	    tmp = rx.value();
+	}
+	catch (JMPException& e) {
+	    if (e.context() != &cntxt)
+		throw;
+	    tmp = e.value();
+	    if (tmp == R_RestartToken)
 		tmp = eval(body, newrho);
-	    }
-	    catch (ReturnException& rx) {
-		if (rx.environment() != envir)
-		    throw;
-		tmp = rx.value();
-	    }
-	    catch (JMPException& e) {
-		if (e.context() != &cntxt)
-		    throw;
-		tmp = e.value();
-		if (tmp == R_RestartToken) {
-		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    tmp = R_NilValue;  /* remove restart token */
-		    redo = true;
-		}
-	    }
-	} while (redo);
+	}
     }
 
     if (RDEBUG(op)) {

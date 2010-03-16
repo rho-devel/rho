@@ -104,29 +104,21 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)
 	    debug(newenv, call, prepared_args, env);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
+	try {
+	    ans = Evaluator::evaluate(m_body, newenv);
+	}
+	catch (ReturnException& rx) {
+	    if (rx.environment() != newenv)
+		throw;
+	    ans = rx.value();
+	}
+	catch (JMPException& e) {
+	    if (e.context() != &cntxt)
+		throw;
+	    ans = e.value();
+	    if (ans == R_RestartToken)
 		ans = Evaluator::evaluate(m_body, newenv);
-	    }
-	    catch (ReturnException& rx) {
-		if (rx.environment() != newenv)
-		    throw;
-		ans = rx.value();
-	    }
-	    catch (JMPException& e) {
-		// cout << __LINE__ << " Seeking " << e.context << "; in " << &cntxt << endl;
-		if (e.context() != &cntxt)
-		    throw;
-		ans = e.value();
-		if (ans == R_RestartToken) {
-		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    ans = 0;  /* remove restart token */
-		    redo = true;
-		}
-	    }
-	} while (redo);
+	}
     }
     Environment::monitorLeaks(ans);
     newenv->maybeDetachFrame();

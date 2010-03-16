@@ -933,6 +933,7 @@ void setup_Rmainloop(void)
 	R_ReplFile(fp, baseEnv);
     }
     catch (CommandTerminated) {
+	// The foll. reproduces CR behaviour, but is probably unnecessary:
 	if (R_SignalHandlers)
 	    init_signal_handlers();
     }
@@ -1096,9 +1097,6 @@ void run_Rmainloop(void)
 	    cerr << "CXXR internal error: unexpected JMPException\n";
 	    abort();
 	}
-	//	catch (...) {
-	//	    cout << "Non-JMPException caught" << endl;
-	//	}
     } while (redo);
     end_Rmainloop(); /* must go here */
 }
