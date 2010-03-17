@@ -64,15 +64,10 @@
  *
  *	Context::RETURN	target for "return" (i.e. a closure)
  *	Context::BROWSER	target for "return" to exit from browser
- *	Context::RESTART	a function call to restart was made inside the
- *			closure.
- *
+  *
  *	Code (such as the sys.xxx) that looks for Context::RETURN must also
- *	look for a Context::RESTART and Context::GENERIC.
- *	The mechanism used by restart is to change
- *	the context type; error/errorcall then looks for a RESTART and does
- *	a long jump there if it finds one.
- *
+ *	look for Context::GENERIC.
+*
  *  A context is created with a call to
  *
  *	void begincontext(Context *cptr, int flags,

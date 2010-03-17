@@ -70,7 +70,6 @@ namespace CXXR {
 	    RETURN   = 12,
 	    BROWSER  = 16,
 	    GENERIC  = 20,
-	    RESTART  = 32,
 	    BUILTIN  = 64  // used in profiling
 	};
 
@@ -111,10 +110,6 @@ namespace CXXR {
 #endif
     };
 }  // namespace CXXR
-
-#define IS_RESTART_BIT_SET(flags) ((flags) & Context::RESTART)
-#define SET_RESTART_BIT_ON(flags) (flags = Context::Type(flags | Context::RESTART))
-#define SET_RESTART_BIT_OFF(flags) (flags = Context::Type(flags & ~Context::RESTART))
 
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
 		     SEXP, SEXP);

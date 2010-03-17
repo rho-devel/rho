@@ -1250,40 +1250,29 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	R_BrowseLines = 0;
     }
 
-    /* Here we establish two contexts.  The first */
-    /* of these provides a target for return */
-    /* statements which a user might type at the */
-    /* browser prompt.  The (optional) second one */
-    /* acts as a target for error returns. */
     {
 	Context returncontext;
 	begincontext(&returncontext, Context::BROWSER, call, rho,
 		     R_BaseEnv, argList, R_NilValue);
 	Environment* envir = SEXP_downcast<Environment*>(rho);
 	Environment::ReturnScope returnscope(envir);
-	try {
-	    Context thiscontext;
-	    begincontext(&thiscontext, Context::RESTART, R_NilValue, rho,
-			 R_BaseEnv, R_NilValue, R_NilValue);
-	    bool redo;
-	    do {
-		redo = false;
-		try {
-		    R_InsertRestartHandlers(&thiscontext, TRUE);
-		    R_ReplConsole(rho, savestack, browselevel+1);
-		}
-		catch (CommandTerminated) {
-		    SET_RESTART_BIT_ON(thiscontext.callflag);
-		    R_Visible = FALSE;
-		    redo = true;
-		}
-	    } while (redo);
-	}
-	catch (ReturnException& rx) {
-	    if (rx.environment() != envir)
-		throw;
-	    ans = rx.value();
-	}
+	bool redo;
+	do {
+	    redo = false;
+	    try {
+		R_InsertRestartHandlers(&returncontext, TRUE);
+		R_ReplConsole(rho, savestack, browselevel+1);
+	    }
+	    catch (ReturnException& rx) {
+		if (rx.environment() != envir)
+		    throw;
+		ans = rx.value();
+	    }
+	    catch (CommandTerminated) {
+		R_Visible = FALSE;
+		redo = true;
+	    }
+	} while (redo);
     }
 
     /* Reset the interpreter state. */

@@ -1647,13 +1647,8 @@ R_InsertRestartHandlers(Context *cptr, Rboolean browser)
 {
     SEXP klass, rho, entry, name;
 
-    if ((cptr->handlerstack != R_HandlerStack ||
-	 cptr->handlerstack != R_HandlerStack)) {
-	if (IS_RESTART_BIT_SET(cptr->callflag))
-	    return;
-	else
-	    error(_("handler or restart stack mismatch in old restart"));
-    }
+    if (cptr->handlerstack != R_HandlerStack)
+	error(_("handler or restart stack mismatch in old restart"));
 
     /**** need more here to keep recursive errors in browser? */
     rho = cptr->cloenv;
