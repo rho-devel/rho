@@ -1176,12 +1176,10 @@ void WarningMessage(SEXP call, R_WARNING which_warn, ...)
    warning mechanisms.  They are not in the header files for now, but
    the following snippet can serve as a header file: */
 
-void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart);
 void R_PrintDeferredWarnings(void);
 void R_SetErrmessage(const char *s);
 void R_SetErrorHook(void (*hook)(SEXP, char *));
 void R_SetWarningHook(void (*hook)(SEXP, char *));
-void R_JumpToToplevel(Rboolean restart);
 
 
 void R_SetWarningHook(void (*hook)(SEXP, char *))
@@ -1192,38 +1190,6 @@ void R_SetWarningHook(void (*hook)(SEXP, char *))
 void R_SetErrorHook(void (*hook)(SEXP, char *))
 {
     R_ErrorHook = hook;
-}
-
-void R_ReturnOrRestart(SEXP val, SEXP env, Rboolean restart)
-{
-    int mask;
-    Context *c;
-
-    mask = Context::BROWSER | Context::FUNCTION;
-
-    Environment* envir = SEXP_downcast<Environment*>(env);
-    if (envir->canReturn())
-	throw ReturnException(envir, val);
-    if (restart) {
-	for (c = Context::innermost(); c; c = c->nextcontext) {
-	    if (IS_RESTART_BIT_SET(c->callflag))
-		findcontext(Context::RESTART, c->cloenv, R_RestartToken);
-	}
-    }
-    error(_("No function to return from, jumping to top level"));
-}
-
-void R_JumpToToplevel(Rboolean restart)
-{
-    Context *c;
-
-    /* Find the target for the jump */
-    for (c = Context::innermost(); c != NULL; c = c->nextcontext) {
-	if (restart && IS_RESTART_BIT_SET(c->callflag))
-	    findcontext(Context::RESTART, c->cloenv, R_RestartToken);
-    }
-
-    throw CommandTerminated();
 }
 
 void R_SetErrmessage(const char *s)
@@ -1818,16 +1784,6 @@ SEXP attribute_hidden do_invokeRestart(SEXP call, SEXP op, SEXP args, SEXP rho)
     CHECK_RESTART(CAR(args));
     invokeRestart(CAR(args), CADR(args));
     return R_NilValue; /* not reached */
-}
-
-SEXP attribute_hidden do_addTryHandlers(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    checkArity(op, args);
-    if (! (Context::innermost()->callflag & Context::FUNCTION))
-	errorcall(call, _("not in a try context"));
-    SET_RESTART_BIT_ON(Context::innermost()->callflag);
-    R_InsertRestartHandlers(Context::innermost(), FALSE);
-    return R_NilValue;
 }
 
 SEXP attribute_hidden do_seterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
