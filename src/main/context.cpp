@@ -63,7 +63,6 @@
  *  Context types can be one of:
  *
  *	Context::RETURN	target for "return" (i.e. a closure)
- *	Context::BROWSER	target for "return" to exit from browser
   *
  *	Code (such as the sys.xxx) that looks for Context::RETURN must also
  *	look for Context::GENERIC.
@@ -106,6 +105,7 @@
 
 #include "Defn.h"
 
+#include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
@@ -301,63 +301,47 @@ int countContexts(int ctxttype, int browser) {
 
 SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP rval=R_NilValue;
-    Context *cptr;
     int n;
 
     checkArity(op, args);
     n = asInteger(CAR(args));
     if(n < 1 ) error(_("number of contexts must be positive"));
 
-    /* first find the closest  browser context */
-    cptr = Context::innermost();
-    while (cptr) {
-        if (cptr->callflag == Context::BROWSER) {
-                break;
-        }
-        cptr = cptr->nextcontext;
-    }
-    /* error if not a browser context */
-
-    if( !cptr )
-        error(_("no browser context to query"));
-
     switch (PRIMVAL(op)) {
     case 1: /* text */
+	if (n > int(Browser::numberActive())) {
+	    if (n == 1)
+		Rf_error(_("no browser context to query"));
+	    else Rf_error(_("not that many calls to browser are active"));
+	}
+	return Browser::text(n - 1);
+	break;
     case 2: /* condition */
-        /* first rewind to the right place if needed */
-        /* note we want n>1, as we have already      */
-        /* rewound to the first context              */
-        if( n > 1 ) {
-           while (cptr && n > 0 ) {
-               if (cptr->callflag == Context::BROWSER) {
-                   n--;
-                   break;
-               }
-               cptr = cptr->nextcontext;
-           }
-        }
-        if( !(cptr->callflag == Context::BROWSER) )
-           error(_("not that many calls to browser are active"));
-
-        if( PRIMVAL(op) == 1 )
-            rval = CAR(cptr->promargs);
-        else
-            rval = CADR(cptr->promargs);
-        break;
+	if (n > int(Browser::numberActive())) {
+	    if (n == 1)
+		Rf_error(_("no browser context to query"));
+	    else Rf_error(_("not that many calls to browser are active"));
+	}
+	return Browser::condition(n - 1);
+	break;
     case 3: /* turn on debugging n levels up */
-        while ( cptr && n > 0 ) {
-            if (cptr->callflag & Context::FUNCTION) 
-                  n--;
-            cptr = cptr->nextcontext;
-        } 
-        if( !(cptr->callflag & Context::FUNCTION) )
-           error(_("not that many functions on the call stack"));
-        else
-           SET_RDEBUG(cptr->cloenv, CXXRTRUE);
+	{
+	    if (Browser::numberActive() == 0)
+		Rf_error(_("no browser context to query"));
+	    Context* cptr = Browser::context(0);
+	    while (cptr && (n > 1 || !(cptr->callflag & Context::FUNCTION))) {
+		if (cptr->callflag & Context::FUNCTION) 
+		    n--;
+		cptr = cptr->nextcontext;
+	    }
+	    if (!cptr)
+		error(_("not that many functions on the call stack"));
+	    else
+		SET_RDEBUG(cptr->cloenv, TRUE);
+	}
         break;
     }
-    return(rval);
+    return 0;
 }
 
 /* An implementation of S's frame access functions. They usually count */

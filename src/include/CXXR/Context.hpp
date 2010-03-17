@@ -61,14 +61,13 @@ namespace CXXR {
 	* In general the type is a bitwise OR of the values below.
 	* Only functions should have the third bit turned on;
 	* this allows us to move up the context stack easily
-	* with either RETURN's or GENERIC's or RESTART's.
+	* with either RETURN's or GENERIC's.
 	* If you add a new context type for functions make sure
 	* NEWTYPE & FUNCTION > 0
 	*/
 	enum Type {
 	    FUNCTION = 4,
 	    RETURN   = 12,
-	    BROWSER  = 16,
 	    GENERIC  = 20,
 	    BUILTIN  = 64  // used in profiling
 	};

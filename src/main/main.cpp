@@ -67,6 +67,7 @@
 # include <locale.h>
 #endif
 
+#include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
@@ -335,11 +336,12 @@ typedef struct {
  point, i.e. the end of the first line or after the first ;.
  */
 int
-Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, int browselevel, R_ReplState *state)
+Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 {
     int c, browsevalue;
     SEXP value;
     Rboolean wasDisplayed = FALSE;
+    unsigned int browselevel = Browser::numberActive();
 
     if(!*state->bufp) {
 	    R_Busy(0);
@@ -431,7 +433,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, int browselevel, R_ReplSt
     return(0);
 }
 
-static void R_ReplConsole(SEXP rho, int savestack, int browselevel)
+static void R_ReplConsole(SEXP rho, int savestack)
 {
     int status;
     R_ReplState state = { PARSE_NULL, 1, 0, "", NULL};
@@ -444,7 +446,7 @@ static void R_ReplConsole(SEXP rho, int savestack, int browselevel)
     if(R_Verbose)
 	REprintf(" >R_ReplConsole(): before \"for(;;)\" {main.c}\n");
     for(;;) {
-	status = Rf_ReplIteration(rho, savestack, browselevel, &state);
+	status = Rf_ReplIteration(rho, savestack, &state);
 	if(status < 0)
 	  return;
     }
@@ -1063,7 +1065,7 @@ void run_Rmainloop(void)
     do {
 	redo = false;
 	try {
-	    R_ReplConsole(R_GlobalEnv, 0, 0);
+	    R_ReplConsole(R_GlobalEnv, 0);
 	}
 	catch (CommandTerminated) {
 	    redo = true;
@@ -1214,9 +1216,7 @@ static SEXP matchargs(SEXP args)
 
 SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Context *cptr;
     unsigned int savestack;
-    int browselevel, tmp;
     GCStackRoot<> topExp(R_CurrentExpr);
     RObject* ans = 0;
 
@@ -1228,14 +1228,16 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
         return R_NilValue;
     }
 
+    Browser browser(CAR(argList), CADR(argList));
+
     /* Save the evaluator state information */
     /* so that it can be restored on exit. */
 
-    browselevel = countContexts(Context::BROWSER, 1);
     savestack = ProtectStack::size();
 
     if (!ENV_DEBUG(rho)) {
-	cptr = Context::innermost();
+	Context* cptr = Context::innermost();
+	int tmp;
 	while ( cptr && !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
 	    cptr = cptr->nextcontext;
 	Rprintf("Called from: ");
@@ -1251,17 +1253,14 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     {
-	Context returncontext;
-	begincontext(&returncontext, Context::BROWSER, call, rho,
-		     R_BaseEnv, argList, R_NilValue);
 	Environment* envir = SEXP_downcast<Environment*>(rho);
 	Environment::ReturnScope returnscope(envir);
 	bool redo;
 	do {
 	    redo = false;
 	    try {
-		R_InsertRestartHandlers(&returncontext, TRUE);
-		R_ReplConsole(rho, savestack, browselevel+1);
+		R_InsertRestartHandlers(Context::innermost(), TRUE);
+		R_ReplConsole(rho, savestack);
 	    }
 	    catch (ReturnException& rx) {
 		if (rx.environment() != envir)
@@ -1315,7 +1314,7 @@ SEXP attribute_hidden do_quit(SEXP call, SEXP op, SEXP args, SEXP rho)
     int status, runLast;
 
     /* if there are any browser contexts active don't quit */
-    if(countContexts(Context::BROWSER, 1)) {
+    if(Browser::numberActive() > 0) {
 	warning(_("cannot quit from browser"));
 	return R_NilValue;
     }
