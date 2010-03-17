@@ -65,9 +65,6 @@ Symbol::map* Symbol::s_table = 0;
 Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
 
-Symbol* Symbol::s_restart_token;
-SEXP R_RestartToken;
-
 Symbol* Symbol::s_unbound_value;
 SEXP R_UnboundValue;
 
@@ -120,7 +117,7 @@ RObject* Symbol::evaluate(Environment* env)
 	Frame::Binding* bdg = env->findBinding(this).second;
 	if (bdg)
 	    val = bdg->value();
-	else if (this == missingArgument() || this == restartToken())
+	else if (this == missingArgument())
 	    val = this;  // This reproduces CR behaviour
 	else val = unboundValue();
     }
@@ -151,9 +148,6 @@ void Symbol::initialize()
     static GCRoot<Symbol> missing_arg(expose(new Symbol));
     s_missing_arg = missing_arg.get();
     R_MissingArg = s_missing_arg;
-    static GCRoot<Symbol> restart_token(expose(new Symbol));
-    s_restart_token = restart_token.get();
-    R_RestartToken = s_restart_token;
     static GCRoot<Symbol> unbound_value(expose(new Symbol));
     s_unbound_value = unbound_value.get();
     R_UnboundValue = s_unbound_value;

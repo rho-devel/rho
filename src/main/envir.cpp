@@ -370,7 +370,7 @@ SEXP findVarInFrame3(SEXP rho, SEXP symbol, Rboolean /*doGet*/)
     if (bdg)
 	return bdg->value();
     // Reproduce the CR behaviour:
-    if (sym == Symbol::missingArgument() || sym == Symbol::restartToken())
+    if (sym == Symbol::missingArgument())
 	return sym;
     return R_UnboundValue;
 }

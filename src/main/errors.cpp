@@ -1513,7 +1513,7 @@ static void vsignalError(SEXP call, const char *format, va_list ap)
 	/*	Rvsnprintf(buf, BUFSIZE - 1, format, ap);*/
 	buf[BUFSIZE - 1] = 0;
 	if (IS_CALLING_ENTRY(entry)) {
-	    if (ENTRY_HANDLER(entry) == R_RestartToken)
+	    if (!ENTRY_HANDLER(entry))
 		return; /* go to default error handling; do not reset stack */
 	    else {
 		SEXP hooksym, hcall, qcall;
@@ -1573,7 +1573,7 @@ SEXP attribute_hidden do_signalCondition(SEXP call, SEXP op, SEXP args, SEXP rho
 	R_HandlerStack = CDR(list);
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
-	    if (h == R_RestartToken) {
+	    if (!h) {
 		const char *msgstr = NULL;
 		if (TYPEOF(msg) == STRSXP && LENGTH(msg) > 0)
 		    msgstr = translateChar(STRING_ELT(msg, 0));
@@ -1658,7 +1658,7 @@ R_InsertRestartHandlers(Context *cptr, Rboolean browser)
     /**** need more here to keep recursive errors in browser? */
     rho = cptr->cloenv;
     PROTECT(klass = mkChar("error"));
-    entry = mkHandlerEntry(klass, rho, R_RestartToken, rho, R_NilValue, TRUE);
+    entry = mkHandlerEntry(klass, rho, 0, rho, R_NilValue, TRUE);
     R_HandlerStack = CONS(entry, R_HandlerStack);
     UNPROTECT(1);
     PROTECT(name = mkString(browser ? "browser" : "tryRestart"));

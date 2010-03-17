@@ -214,15 +214,6 @@ namespace CXXR {
 	 */
 	static Symbol* obtainDotDotSymbol(unsigned int n);
 
-	/** @brief Restart token.
-	 *
-	 * @return a pointer to the 'restart token' pseudo-object.
-	 */
-	static Symbol* restartToken()
-	{
-	    return s_restart_token;
-	}
-
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return The name by which this type is known in R.
@@ -257,7 +248,6 @@ namespace CXXR {
 	static const size_t s_max_length = 256;
 	static map* s_table;
 	static Symbol* s_missing_arg;
-	static Symbol* s_restart_token;
 	static Symbol* s_unbound_value;
 
 	GCEdge<const CachedString> m_name;

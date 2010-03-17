@@ -263,8 +263,6 @@ LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
 
 LibExtern SEXP	R_UnboundValue;	    /* Unbound marker */
 LibExtern SEXP	R_MissingArg;	    /* Missing argument marker */
-extern
-SEXP	R_RestartToken;     /* Marker for restarted function calls */
 
 /* Symbol Table Shortcuts */
 LibExtern SEXP	R_Bracket2Symbol;   /* "[[" */
