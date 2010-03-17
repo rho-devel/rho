@@ -45,7 +45,6 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/JMPException.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace CXXR;
@@ -111,13 +110,6 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	    if (rx.environment() != newenv)
 		throw;
 	    ans = rx.value();
-	}
-	catch (JMPException& e) {
-	    if (e.context() != &cntxt)
-		throw;
-	    ans = e.value();
-	    if (ans == R_RestartToken)
-		ans = Evaluator::evaluate(m_body, newenv);
 	}
     }
     Environment::monitorLeaks(ans);

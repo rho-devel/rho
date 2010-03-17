@@ -54,7 +54,6 @@
 #include "CXXR/Context.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
-#include "CXXR/JMPException.hpp"
 
 using namespace std;
 using namespace CXXR;

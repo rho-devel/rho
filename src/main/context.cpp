@@ -114,7 +114,6 @@
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
-#include "CXXR/JMPException.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -132,32 +131,6 @@ void begincontext(Context * cptr, Context::Type flags,
     cptr->sysparent = sysp;
     cptr->promargs = promargs;
     cptr->callfun = callfun;
-}
-
-
-/* findcontext - find the correct context */
-
-void attribute_hidden findcontext(int mask, SEXP env, SEXP val)
-{
-    Context *cptr;
-    cptr = Context::innermost();
-    for (cptr = Context::innermost();
-	 cptr != NULL;
-	 cptr = cptr->nextcontext)
-	if ((cptr->callflag & mask) && cptr->cloenv == env)
-	    throw JMPException(cptr, val);
-    error(_("no function to return from, jumping to top level"));
-}
-
-void attribute_hidden R_JumpToContext(Context *target, int mask, SEXP val)
-{
-    Context *cptr;
-    for (cptr = Context::innermost();
-	 cptr != NULL;
-	 cptr = cptr->nextcontext)
-	if (cptr == target)
-	    throw JMPException(cptr, val);
-    error(_("target context is not on the stack"));
 }
 
 
@@ -525,10 +498,6 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 	}
 	catch (CommandTerminated) {
 	    result = FALSE;
-	}
-	catch (JMPException& e) {
-	    cerr << "CXXR internal error: unexpected JMPException\n";
-	    abort();
 	}
     }
 

@@ -70,7 +70,6 @@
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
-#include "CXXR/JMPException.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;
@@ -790,10 +789,6 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 	}
 	catch (CommandTerminated) {
 	}
-	catch (JMPException& e) {
-	    cerr << "CXXR internal error: unexpected JMPException\n";
-	    abort();
-	}
 	fclose(fp);
     }
 }
@@ -937,10 +932,6 @@ void setup_Rmainloop(void)
 	if (R_SignalHandlers)
 	    init_signal_handlers();
     }
-    catch (JMPException& e) {
-	cerr << "CXXR internal error: unexpected JMPException\n";
-	abort();
-    }
     fclose(fp);
 
     /* This is where we source the system-wide, the site's and the
@@ -975,10 +966,6 @@ void setup_Rmainloop(void)
     }
     catch (CommandTerminated) {
     }
-    catch (JMPException& e) {
-	cerr << "CXXR internal error: unexpected JMPException\n";
-	abort();
-    }
 
     if (strcmp(R_GUIType, "Tk") == 0) {
 	char buf[256];
@@ -1008,10 +995,6 @@ void setup_Rmainloop(void)
     catch (CommandTerminated) {
 	R_Suicide(_("unable to restore saved data in .RData\n"));
     }
-    catch (JMPException& e) {
-	cerr << "CXXR internal error: unexpected JMPException\n";
-	abort();
-    }
 
     /* Initial Loading is done.
        At this point we try to invoke the .First Function.
@@ -1030,10 +1013,6 @@ void setup_Rmainloop(void)
     }
     catch (CommandTerminated) {
     }
-    catch (JMPException& e) {
-	cerr << "CXXR internal error: unexpected JMPException\n";
-	abort();
-    }
 
     /* Try to invoke the .First.sys function, which loads the default packages.
        If there is an error we continue. */
@@ -1050,10 +1029,6 @@ void setup_Rmainloop(void)
 	UNPROTECT(1);
     }
     catch (CommandTerminated) {
-    }
-    catch (JMPException& e) {
-	cerr << "CXXR internal error: unexpected JMPException\n";
-	abort();
     }
 
     {
@@ -1092,10 +1067,6 @@ void run_Rmainloop(void)
 	}
 	catch (CommandTerminated) {
 	    redo = true;
-	}
-	catch (JMPException& e) {
-	    cerr << "CXXR internal error: unexpected JMPException\n";
-	    abort();
 	}
     } while (redo);
     end_Rmainloop(); /* must go here */
@@ -1301,9 +1272,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    R_InsertRestartHandlers(&thiscontext, TRUE);
 		    R_ReplConsole(rho, savestack, browselevel+1);
 		}
-		catch (JMPException& e) {
-		    if (e.context() != &thiscontext)
-			throw;
+		catch (CommandTerminated) {
 		    SET_RESTART_BIT_ON(thiscontext.callflag);
 		    R_Visible = FALSE;
 		    redo = true;
@@ -1314,10 +1283,6 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (rx.environment() != envir)
 		throw;
 	    ans = rx.value();
-	}
-	catch (JMPException& e) {
-	    if (e.context() != &returncontext)
-		throw;
 	}
     }
 

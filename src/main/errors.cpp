@@ -66,7 +66,6 @@ extern void R_ProcessEvents(void);
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/Evaluator.h"
-#include "CXXR/JMPException.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;
@@ -1763,10 +1762,9 @@ static void invokeRestart(SEXP r, SEXP arglist)
 	     R_RestartStack = CDR(R_RestartStack))
 	    if (exit == RESTART_EXIT(CAR(R_RestartStack))) {
 		R_RestartStack = CDR(R_RestartStack);
-		if (TYPEOF(exit) == EXTPTRSXP) {
-		    Context *c = static_cast<Context *>( R_ExternalPtrAddr(exit));
-		    R_JumpToContext(c, Context::RESTART, R_RestartToken);
-		} else {
+		if (TYPEOF(exit) == EXTPTRSXP)
+		    throw CommandTerminated();
+		else {
 		    Environment* envir = SEXP_downcast<Environment*>(exit);
 		    if (!envir->canReturn())
 			Rf_error(_("no function to return from,"

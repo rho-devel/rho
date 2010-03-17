@@ -119,10 +119,8 @@ namespace CXXR {
 void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
 		     SEXP, SEXP);
 SEXP Rf_dynamicfindVar(SEXP, CXXR::Context*);
-void Rf_findcontext(int, SEXP, SEXP);
 int Rf_framedepth(CXXR::Context*);
 void R_InsertRestartHandlers(CXXR::Context*, Rboolean);
-void R_JumpToContext(CXXR::Context*, int, SEXP);
 SEXP R_syscall(int, CXXR::Context*);
 int R_sysparent(int, CXXR::Context*);
 SEXP R_sysframe(int, CXXR::Context*);

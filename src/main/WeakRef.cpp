@@ -47,7 +47,6 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/JMPException.hpp"
 #include "CXXR/ProtectStack.h"
 #include "CXXR/WeakRef.h"
 #include "CXXR/errors.h"
@@ -285,10 +284,6 @@ bool WeakRef::runFinalizers()
 		wr->finalize();
 	    }
 	    catch (CommandTerminated) {
-	    }
-	    catch (JMPException& e) {
-		cerr << "CXXR internal error: unexpected JMPException\n";
-		abort();
 	    }
 	    // Expose WeakRef to reference-counting collection:
 	    wr->m_self = 0;

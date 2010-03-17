@@ -58,7 +58,6 @@
 #include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Evaluator.h"
-#include "CXXR/JMPException.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/ReturnException.hpp"
 
@@ -516,13 +515,6 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 		throw;
 	    tmp = rx.value();
 	}
-	catch (JMPException& e) {
-	    if (e.context() != &cntxt)
-		throw;
-	    tmp = e.value();
-	    if (tmp == R_RestartToken)
-		tmp = eval(body, newrho);
-	}
     }
 
     if (RDEBUG(op)) {
@@ -616,13 +608,6 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	    if (rx.environment() != envir)
 		throw;
 	    tmp = rx.value();
-	}
-	catch (JMPException& e) {
-	    if (e.context() != &cntxt)
-		throw;
-	    tmp = e.value();
-	    if (tmp == R_RestartToken)
-		tmp = eval(body, newrho);
 	}
     }
 
@@ -1622,15 +1607,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    throw;
 		tmp = rx.value();
 	    }
-	    catch (JMPException& e) {
-		if (e.context() != &cntxt)
-		    throw;
-		expr = e.value();
-		if (expr == R_RestartToken) {
-		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    error(_("restarts not supported in 'eval'"));
-		}
-	    }
 	}
 	UNPROTECT(1);
     }
@@ -1652,15 +1628,6 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 		if (rx.environment() != envir)
 		    throw;
 		tmp = rx.value();
-	    }
-	    catch (JMPException& e) {
-		if (e.context() != &cntxt)
-		    throw;
-		tmp = e.value();
-		if (tmp == R_RestartToken) {
-		    cntxt.callflag = Context::RETURN;  /* turn restart off */
-		    error(_("restarts not supported in 'eval'"));
-		}
 	    }
 	}
 	UNPROTECT(1);
