@@ -85,48 +85,46 @@ namespace CXXR {
 
 	/** @brief Condition argument associated with a Browser.
 	 *
-	 * @param i Index of the Browser whose condition is required.
-	 *          0 signifies the innermost (deepest) browser level:
-	 *          note that this numbering convention is different
-	 *          from that used by the R browserCondition function,
-	 *          which starts counting from 1.
-	 *
-	 * @return The 'condition' argument associated with Browser \a i.
+	 * @return The 'condition' argument associated with this Browser.
 	 */
-	static RObject* condition(unsigned int i)
+	RObject* condition() const
 	{
-	    return s_browsers.at(i)->m_condition;
+	    return m_condition;
 	}
 
-	/** @brief Context within which a Browser was declared.
+	/** @brief Context within which Browser was declared.
 	 *
-	 * @param i Index of the Browser whose Context is required.
-	 *          0 signifies the innermost (deepest) browser level.
-	 *
-	 * @return Pointer to the Context in which Browser \a i was
+	 * @return Pointer to the Context in which this Browser was
 	 * declared.
 	 *
 	 * @note This function is used to reproduce the rather strange
 	 * behaviour of the R function browserSetDebug in CR.
 	 */
-	static Context* context(unsigned int i)
+	Context* context() const
 	{
-	    return s_browsers.at(i)->m_context;
+	    return m_context;
 	}
 
-	/** @brief Text argument associated with a Browser.
+	/** @brief Browser at specified level of nesting.
 	 *
-	 * @param i Index of the Browser whose text is required.  0
-	 *          signifies the innermost (deepest) browser level:
-	 *          note that this numbering convention is different
-	 *          from that used by the R browserText function,
-	 *          which starts counting from 1.
+	 * @param i Index of the Browser required.  0 signifies the
+	 *          outermost (first invoked) browser level.  Must be
+	 *          less than numberActive().
 	 *
-	 * @return The 'text' argument associated with Browser \a i.
+	 * @return Pointer to the Browser at level \a i.
 	 */
-	static RObject* text(unsigned int i)
+	static Browser* fromOutermost(unsigned int i)
 	{
-	    return s_browsers.at(i)->m_text;
+	    return s_browsers.at(i);
+	}
+
+	/** @brief Text argument associated with Browser.
+	 *
+	 * @return The 'text' argument associated with this Browser.
+	 */
+	RObject* text() const
+	{
+	    return m_text;
 	}
     private:
 	static std::vector<Browser*> s_browsers;

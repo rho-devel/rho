@@ -309,26 +309,25 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     switch (PRIMVAL(op)) {
     case 1: /* text */
-	if (n > int(Browser::numberActive())) {
-	    if (n == 1)
-		Rf_error(_("no browser context to query"));
-	    else Rf_error(_("not that many calls to browser are active"));
-	}
-	return Browser::text(n - 1);
-	break;
     case 2: /* condition */
-	if (n > int(Browser::numberActive())) {
-	    if (n == 1)
-		Rf_error(_("no browser context to query"));
-	    else Rf_error(_("not that many calls to browser are active"));
+	{
+	    if (n > int(Browser::numberActive())) {
+		if (n == 1)
+		    Rf_error(_("no browser context to query"));
+		else Rf_error(_("not that many calls to browser are active"));
+	    }
+	    Browser* browser
+		= Browser::fromOutermost(Browser::numberActive() - n);
+	    return PRIMVAL(op) == 1 ? browser->text() : browser->condition();
 	}
-	return Browser::condition(n - 1);
 	break;
     case 3: /* turn on debugging n levels up */
 	{
 	    if (Browser::numberActive() == 0)
 		Rf_error(_("no browser context to query"));
-	    Context* cptr = Browser::context(0);
+	    Browser* browser
+		= Browser::fromOutermost(Browser::numberActive() - 1);
+	    Context* cptr = browser->context();
 	    while (cptr && (n > 1 || !(cptr->callflag & Context::FUNCTION))) {
 		if (cptr->callflag & Context::FUNCTION) 
 		    n--;
