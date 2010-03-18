@@ -70,13 +70,22 @@ namespace CXXR {
 	enum Type {
 	    FUNCTION = 4,
 	    RETURN   = 12,
-	    GENERIC  = 20,
 	    BUILTIN  = 64  // used in profiling
 	};
 
 	Context();
 
 	~Context();
+
+	/** @brief Is this a generic function invocation?
+	 *
+	 * @return true iff this has been flagged as a generic
+	 * function invocation.
+	 */
+	bool isGeneric() const
+	{
+	    return m_generic;
+	}
 
 	/** @brief The innermost Context.
 	 *
@@ -86,6 +95,18 @@ namespace CXXR {
 	static Context* innermost()
 	{
 	    return Evaluator::current()->innermostContext();
+	}
+
+	/** @brief Set status as generic function invocation.
+	 *
+	 * @param on true if this Context is to be designated as a
+	 *           generic function invocation; false if this
+	 *           designation is to be removed.  The generic status
+	 *           is false by default.
+	 */
+	void setGeneric(bool on)
+	{
+	    m_generic = on;
 	}
 
 	Context *nextcontext;        // The next context up the chain
@@ -110,6 +131,7 @@ namespace CXXR {
     private:
 	ProtectStack::Scope m_protectstack_scope;
 	RAllocStack::Scope m_rallocstack_scope;
+	bool m_generic;
     };
 }  // namespace CXXR
 

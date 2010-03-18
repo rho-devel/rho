@@ -31,7 +31,7 @@ RObject* R_Srcref;
 Context::Context()
     : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
       intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
-      restartstack(R_RestartStack), srcref(R_Srcref)
+      restartstack(R_RestartStack), srcref(R_Srcref), m_generic(false)
 {
 #ifdef BYTECODE
     nodestack = R_BCNodeStackTop;

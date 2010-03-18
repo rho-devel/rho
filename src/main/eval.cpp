@@ -457,10 +457,9 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	is a straight substitution of the generic.  */
     {
 	SEXP syspar = rho;
-	// Change syspar if in Context::GENERIC:
 	{
 	    Context* innerctxt = Context::innermost();
-	    if (innerctxt && innerctxt->callflag == Context::GENERIC)
+	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->sysparent;
 	}
 	Context cntxt;

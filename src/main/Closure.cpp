@@ -90,10 +90,10 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     GCStackRoot<> ans;
     {
 	RObject* syspar = env;
-	// Change syspar if in Context::GENERIC:
+	// Change syspar if generic:
 	{
 	    Context* innerctxt = Context::innermost();
-	    if (innerctxt && innerctxt->callflag == Context::GENERIC)
+	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->sysparent;
 	}
 	Context cntxt;

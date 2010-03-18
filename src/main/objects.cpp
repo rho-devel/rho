@@ -357,9 +357,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    }
 	    t = newcall;
 	    SETCAR(t, method);
-	    Context::innermost()->callflag = Context::GENERIC;
+	    Context::innermost()->setGeneric(true);
 	    *ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	    Context::innermost()->callflag = Context::RETURN;
+	    Context::innermost()->setGeneric(false);
 	    UNPROTECT(nprotect);
 	    return 1;
 	}
@@ -381,14 +381,14 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	defineVar(install(".GenericDefEnv"), defrho, newrho);
 	t = newcall;
 	SETCAR(t, method);
-	Context::innermost()->callflag = Context::GENERIC;
+	Context::innermost()->setGeneric(true);
 	*ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	Context::innermost()->callflag = Context::RETURN;
+	Context::innermost()->setGeneric(false);
 	UNPROTECT(5);
 	return 1;
     }
     UNPROTECT(5);
-    cptr->callflag = Context::RETURN;
+    cptr->setGeneric(false);
     return 0;
 }
 
@@ -543,7 +543,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     cptr = Context::innermost();
     cftmp = cptr->callflag;
-    cptr->callflag = Context::GENERIC;
+    cptr->setGeneric(true);
 
     /* get the env NextMethod was called from */
     sysp = Context::innermost()->sysparent;
