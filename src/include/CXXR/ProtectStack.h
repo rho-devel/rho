@@ -109,34 +109,6 @@ namespace CXXR {
 	    size_t m_saved_size;
 	};
 
-	/** @brief Restore PPS to a previous size.
-	 *
-	 * Restore the C pointer protection stack to a previous size by
-	 * popping elements off the top.
-	 *
-	 * @param new_size The size to which the stack is to be
-	 *          restored.  Must not be greater than the current
-	 *          size.
-	 *
-	 * @note In future this method will probably cease to be
-	 * available, since the use of the ProtectStack::Scope class
-	 * is preferable.
-	 */
-	static void restoreSize(size_t new_size);
-
-	/** @brief Current size of PPS.
-	 *
-	 * @return the current size of the C pointer protection stack.
-	 *
-	 * @note This method is intended for use in conjunction with
-	 * ppsRestoreSize(), and like it may cease to be public in
-	 * future.
-	 */
-	static size_t size()
-	{
-	    return s_pps->size();
-	}
-
 	/** @brief Push a node pointer onto the PPS.
 	 *
 	 * Push a node pointer onto the C pointer protection stack.
@@ -176,6 +148,33 @@ namespace CXXR {
 	 *          stack (checked).
 	 */
 	static void reprotect(RObject* node, unsigned int index);
+
+	/** @brief Restore PPS to a previous size.
+	 *
+	 * Restore the C pointer protection stack to a previous size by
+	 * popping elements off the top.
+	 *
+	 * @param new_size The size to which the stack is to be
+	 *          restored.  Must not be greater than the current
+	 *          size.
+	 *
+	 * @note In future this method will probably cease to be
+	 * available, since the use of the ProtectStack::Scope class
+	 * is preferable.
+	 */
+	static void restoreSize(size_t new_size);
+
+	/** @brief Current size of PPS.
+	 *
+	 * @return the current size of the C pointer protection stack.
+	 *
+	 * @note This method is intended for use in conjunction with
+	 * restoreSize(), and may cease to be public in future.
+	 */
+	static size_t size()
+	{
+	    return s_pps->size();
+	}
 
 	/** @brief Pop pointers from the PPS.
 	 *

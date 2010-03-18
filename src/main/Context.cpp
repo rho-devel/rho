@@ -21,9 +21,6 @@
 
 #include "CXXR/Context.hpp"
 
-#include "CXXR/ProtectStack.h"
-#include "CXXR/RAllocStack.h"
-
 using namespace std;
 using namespace CXXR;
 
@@ -33,9 +30,8 @@ RObject* R_Srcref;
 
 Context::Context()
     : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
-      vmax(vmaxget()), intsusp(R_interrupts_suspended),
-      handlerstack(R_HandlerStack), restartstack(R_RestartStack),
-      srcref(R_Srcref)
+      intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
+      restartstack(R_RestartStack), srcref(R_Srcref)
 {
 #ifdef BYTECODE
     nodestack = R_BCNodeStackTop;
@@ -64,7 +60,6 @@ Context::~Context()
 	R_Visible = savevis;
     }
     Evaluator::setDepth(evaldepth);
-    vmaxset(vmax);
     R_interrupts_suspended = intsusp;
 #ifdef BYTECODE
     R_BCNodeStackTop = nodestack;

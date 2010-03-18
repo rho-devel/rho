@@ -44,6 +44,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
 #include "CXXR/ProtectStack.h"
+#include "CXXR/RAllocStack.h"
 
 extern "C" {
     // Parked here pending the creation of an ErrorHandling class:
@@ -96,7 +97,6 @@ namespace CXXR {
 	GCStackRoot<> call;          // The call that effected this context
 	GCStackRoot<Environment> cloenv;  // The environment
 	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
-	void *vmax;	             // size of R_alloc stack
 	Rboolean intsusp;            // interrupts are suspended
 	GCStackRoot<> handlerstack;  // condition handler stack
 	GCStackRoot<> restartstack;  // stack of available restarts
@@ -109,6 +109,7 @@ namespace CXXR {
 #endif
     private:
 	ProtectStack::Scope m_protectstack_scope;
+	RAllocStack::Scope m_rallocstack_scope;
     };
 }  // namespace CXXR
 

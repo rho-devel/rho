@@ -59,6 +59,9 @@ namespace CXXR {
 }
 
 RAllocStack::Stack RAllocStack::s_stack;
+#ifndef NDEBUG
+RAllocStack::Scope* RAllocStack::s_innermost_scope = 0;
+#endif
 
 void* RAllocStack::allocate(size_t sz)
 {
@@ -77,6 +80,16 @@ void RAllocStack::restoreSize(size_t new_size)
     if (new_size > s_stack.size())
 	throw out_of_range("RAllocStack::restoreSize: requested size"
 			   " greater than current size.");
+#ifndef NDEBUG
+    if (s_innermost_scope && new_size < s_innermost_scope->startSize())
+	throw out_of_range("RAllocStack::restoreSize: requested size"
+			   " too small for current scope.");
+#endif
+    trim(new_size);
+}
+
+void RAllocStack::trim(size_t new_size)
+{
     while (s_stack.size() > new_size) {
 	Pair& top = s_stack.top();
 	MemoryBank::deallocate(top.second, top.first);
