@@ -60,6 +60,9 @@ namespace CXXR {
 }
 
 vector<RObject*>* ProtectStack::s_pps;
+#ifndef NDEBUG
+ProtectStack::Scope* ProtectStack::s_innermost_scope = 0;
+#endif
 
 void ProtectStack::initialize()
 {
@@ -71,26 +74,8 @@ void ProtectStack::restoreSize(size_t new_size)
     if (new_size > s_pps->size())
 	throw out_of_range("ProtectStack::ppsRestoreSize: requested size"
 			   " greater than current size.");
-    while (s_pps->size() > new_size) {
-	RObject* node = s_pps->back();
-	if (node && node->decRefCount() == 0)
-	    node->makeMoribund();
-	s_pps->pop_back();
-    }
-#ifdef DEBUG_PPS
-    cout << "In " << Context::innermost() << " -> " << s_pps->size()
-	 << " restoreSize" << endl;
-#endif
+    trim(new_size);
 }
-
-#ifdef DEBUG_PPS
-size_t ProtectStack::ppsSize()
-{
-    cout << "In " << Context::innermost() << " -> " << s_pps->size()
-	 << " size" << endl;
-    return s_pps->size();
-}
-#endif
 
 void ProtectStack::reprotect(RObject* node, unsigned int index)
 {
@@ -105,10 +90,16 @@ void ProtectStack::reprotect(RObject* node, unsigned int index)
     if (entry && entry->decRefCount() == 0)
 	entry->makeMoribund();
     (*s_pps)[index] = node;
-#ifdef DEBUG_PPS
-    cout << "In " << Context::innermost() << " -> " << s_pps->size()
-	 << " reprotect at index " << index << endl;
-#endif
+}
+
+void ProtectStack::trim(size_t new_size)
+{
+    while (s_pps->size() > new_size) {
+	RObject* node = s_pps->back();
+	if (node && node->decRefCount() == 0)
+	    node->makeMoribund();
+	s_pps->pop_back();
+    }
 }
 
 void ProtectStack::unprotect(unsigned int count)
@@ -118,9 +109,9 @@ void ProtectStack::unprotect(unsigned int count)
     if (count > sz)
 	throw out_of_range("ProtectStack::unprotect: count greater"
 			   " than current stack size.");
-    if (Context::innermost() && sz - count < Context::innermost()->cstacktop)
-	throw logic_error("GProtectStack::unprotect: too many unprotects"
-			  " in this context.");
+    if (s_innermost_scope && sz - count < s_innermost_scope->startSize())
+	throw logic_error("ProtectStack::unprotect: too many unprotects"
+			  " in this scope.");
 #endif
     for (unsigned int i = 0; i < count; ++i) {
 	RObject* node = s_pps->back();
@@ -128,10 +119,6 @@ void ProtectStack::unprotect(unsigned int count)
 	    node->makeMoribund();
 	s_pps->pop_back();
     }
-#ifdef DEBUG_PPS
-    cout << "In " << Context::innermost() << " -> " << s_pps->size()
-	 << " unprotect " << count << endl;
-#endif
 }
 
 void ProtectStack::unprotectPtr(RObject* node)
@@ -144,16 +131,12 @@ void ProtectStack::unprotectPtr(RObject* node)
 	throw invalid_argument("ProtectStack::unprotectPtr:"
 			       " pointer not found.");
 #ifndef NDEBUG
-    if (Context::innermost() && s_pps->size() == Context::innermost()->cstacktop)
+    if (s_innermost_scope && s_pps->size() == s_innermost_scope->startSize())
 	throw logic_error("ProtectStack::unprotect: too many unprotects"
-			  " in this context.");
+			  " in this scope.");
 #endif
     // See Josuttis p.267 for the need for -- :
     s_pps->erase(--(rit.base()));
-#ifdef DEBUG_PPS
-    cout << "In " << Context::innermost() << " -> " << s_pps->size()
-	 << " unprotectPtr " << node << endl;
-#endif
 }
 
 void ProtectStack::visitRoots(GCNode::const_visitor* v)

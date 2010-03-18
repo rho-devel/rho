@@ -32,10 +32,10 @@ GCRoot<> R_RestartStack;
 RObject* R_Srcref;
 
 Context::Context()
-    : nextcontext(Context::innermost()), cstacktop(ProtectStack::size()),
-      evaldepth(Evaluator::depth()),vmax(vmaxget()),
-      intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
-      restartstack(R_RestartStack), srcref(R_Srcref)
+    : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
+      vmax(vmaxget()), intsusp(R_interrupts_suspended),
+      handlerstack(R_HandlerStack), restartstack(R_RestartStack),
+      srcref(R_Srcref)
 {
 #ifdef BYTECODE
     nodestack = R_BCNodeStackTop;
@@ -63,7 +63,6 @@ Context::~Context()
 	catch (...) {}
 	R_Visible = savevis;
     }
-    ProtectStack::restoreSize(cstacktop);
     Evaluator::setDepth(evaldepth);
     vmaxset(vmax);
     R_interrupts_suspended = intsusp;

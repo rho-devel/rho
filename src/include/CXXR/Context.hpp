@@ -43,6 +43,7 @@
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
+#include "CXXR/ProtectStack.h"
 
 extern "C" {
     // Parked here pending the creation of an ErrorHandling class:
@@ -88,7 +89,6 @@ namespace CXXR {
 
 	Context *nextcontext;        // The next context up the chain
 	Type callflag;		     // The context "type"
-	unsigned int cstacktop;	     // Top of the pointer protection stack
 	int evaldepth;	             // evaluation depth at inception
 	GCStackRoot<> promargs;      // Promises supplied to closure
 	GCStackRoot<> callfun;       // The closure called
@@ -107,6 +107,8 @@ namespace CXXR {
 	IStackval *intstack;
 #endif
 #endif
+    private:
+	ProtectStack::Scope m_protectstack_scope;
     };
 }  // namespace CXXR
 

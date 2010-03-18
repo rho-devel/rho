@@ -60,6 +60,55 @@ namespace CXXR {
      */
     class ProtectStack {
     public:
+	/** @brief Object constraining lifetime of ProtectStack entries.
+	 *
+	 * Scope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  Any entry pushed onto
+	 * the ProtectStack during the lifetime of a Scope object will
+	 * be automatically popped off when that lifetime comes to an
+	 * end, i.e. when the Scope object itself goes out of scope.
+	 */
+	class Scope {
+	public:
+	    Scope()
+#ifndef NDEBUG
+		: m_next_scope(ProtectStack::s_innermost_scope),
+		  m_saved_size(ProtectStack::size())
+#else
+		: m_saved_size(ProtectStack::size())
+#endif
+	    {
+#ifndef NDEBUG
+		ProtectStack::s_innermost_scope = this;
+#endif
+	    }
+
+	    ~Scope()
+	    {
+		if (ProtectStack::size() != m_saved_size)
+		    ProtectStack::trim(m_saved_size);
+#ifndef NDEBUG
+		ProtectStack::s_innermost_scope = m_next_scope;
+#endif
+	    }
+
+	    /** @brief ProtectStack size at construction.
+	     *
+	     * @return The size of the ProtectStack at the time this
+	     * Scope object was constructed.  The ProtectStack will be
+	     * restored to this size by the Scope destructor.
+	     */
+	    size_t startSize() const
+	    {
+		return m_saved_size;
+	    }
+	private:
+#ifndef NDEBUG
+	    Scope* m_next_scope;
+#endif
+	    size_t m_saved_size;
+	};
+
 	/** @brief Restore PPS to a previous size.
 	 *
 	 * Restore the C pointer protection stack to a previous size by
@@ -70,8 +119,8 @@ namespace CXXR {
 	 *          size.
 	 *
 	 * @note In future this method will probably cease to be
-	 * public, and be accessible only by a class encapsulating R
-	 * contexts.
+	 * available, since the use of the ProtectStack::Scope class
+	 * is preferable.
 	 */
 	static void restoreSize(size_t new_size);
 
@@ -83,14 +132,10 @@ namespace CXXR {
 	 * ppsRestoreSize(), and like it may cease to be public in
 	 * future.
 	 */
-#ifdef DEBUG_PPS
-	static size_t size();
-#else
 	static size_t size()
 	{
 	    return s_pps->size();
 	}
-#endif
 
 	/** @brief Push a node pointer onto the PPS.
 	 *
@@ -168,8 +213,10 @@ namespace CXXR {
     private:
 	friend class GCNode;
 
-	// Ye olde pointer protection stack:
 	static std::vector<RObject*>* s_pps;
+#ifndef NDEBUG
+	static Scope* s_innermost_scope;
+#endif
 
 	// Not implemented:
 	ProtectStack();
@@ -184,6 +231,10 @@ namespace CXXR {
 	// Initialize static data (called by GCNode::SchwarzCtr
 	// constructor):
 	static void initialize();
+
+	// Pop entries off the stack to reduce its size to new_size,
+	// which must be no greater than the current size.
+	static void trim(size_t new_size);
     };
 }  // namespace CXXR
 
@@ -251,8 +302,9 @@ extern "C" {
      *          size.
      *
      * @deprecated This is an interface for C code to call
-     * CXXR::ProtectStack::restoreSize(), which may cease to be public
-     * in future.
+     * CXXR::ProtectStack::restoreSize(), which may cease to be available
+     * in future.  In C++, use of the ProtectStack::Scope class is
+     * preferable.
      */
     void Rf_ppsRestoreSize(size_t new_size);
     
