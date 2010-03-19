@@ -32,68 +32,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
- *
- *
- *  Contexts:
- *
- *  A linked-list of execution contexts is kept so that control-flow
- *  constructs like "next", "break" and "return" will work.  It is also
- *  used for error returns to top-level.
- *
- *  Contexts are allocated on the stack as the evaluator invokes itself
- *  recursively.  The memory is reclaimed naturally on return through
- *  the recursions.
- *
- *  A context contains the following information (and more):
- *
- *	nextcontext	the next level context
- *	cstacktop	the current level of the pointer protection stack
- *	callflag	the context "type"
- *	call		the call (name of function, or expression to
- *			get the function) that effected this
- *			context if a closure, otherwise often NULL.
- *	callfun		the function, if this was a closure.
- *	cloenv		for closures, the environment of the closure.
- *	sysparent	the environment the closure was called from
- *	conexit		code for on.exit calls, to be executed in cloenv
- *			at exit from the closure (normal or abnormal).
- *	vmax		the current setting of the R_alloc stack
- *	srcref		the srcref at the time of the call
- *
- *  Context types can be one of:
- *
- *	Context::RETURN	target for "return" (i.e. a closure)
-  *
- *	Code (such as the sys.xxx) that looks for Context::RETURN must also
- *	look for Context::GENERIC.
-*
- *  A context is created with a call to
- *
- *	void begincontext(Context *cptr, int flags,
- *			  SEXP syscall, SEXP env, SEXP
- *			  sysp, SEXP promargs, SEXP callfun)
- *
- *  which sets up the context pointed to by cptr in the appropriate way.
- *  When the context goes "out-of-scope" the destructor
- *  restores the previous context.
- *
- *  The non-local jump to a given context takes place in a call to
- *
- *	void findcontext(int mask, SEXP env, SEXP val)
- *
- *  This causes "val" to be stuffed into a globally accessable place and
- *  then a search to take place back through the context list for an
- *  appropriate context.  The kind of context sort is determined by the
- *  value of "mask".  The value of mask should be the logical OR of all
- *  the context types desired.
- *
- *  The value of "mask" is returned as the value of the setjump call at
- *  the level longjumped to.  This is used to distinguish between break
- *  and next actions.
- *
- *  Contexts can be used as a wrapper around functions that create windows
- *  or open files. These can then be shut/closed gracefully if an error
- *  occurs.
  */
 
 // For debugging:
@@ -112,22 +50,6 @@
 
 using namespace std;
 using namespace CXXR;
-
-/* begincontext - begin an execution context */
-
-/* begincontext is used in dataentry.c and modules */
-void begincontext(Context * cptr, Context::Type flags,
-		  SEXP syscall, SEXP env, SEXP sysp,
-		  SEXP promargs, SEXP callfun)
-{
-    cptr->callflag = flags;
-    cptr->call = syscall;
-    cptr->cloenv = SEXP_downcast<Environment*>(env);
-    cptr->sysparent = sysp;
-    cptr->promargs = promargs;
-    cptr->callfun = callfun;
-}
-
 
 /* R_sysframe - look back up the context stack until the */
 /* nth closure context and return that cloenv. */

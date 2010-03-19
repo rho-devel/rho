@@ -28,10 +28,14 @@ GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 RObject* R_Srcref;
 
-Context::Context()
+Context::Context(RObject* the_call, RObject* call_env, RObject* closure,
+		 Environment* working_env, RObject* promise_args)
     : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
-      intsusp(R_interrupts_suspended), handlerstack(R_HandlerStack),
-      restartstack(R_RestartStack), srcref(R_Srcref), m_generic(false)
+      callflag(working_env ? RETURN : BUILTIN), srcref(R_Srcref),
+      call(the_call), sysparent(call_env), intsusp(R_interrupts_suspended),
+      handlerstack(R_HandlerStack), restartstack(R_RestartStack),
+      callfun(closure), cloenv(working_env), promargs(promise_args), 
+      m_generic(false)
 {
 #ifdef BYTECODE
     nodestack = R_BCNodeStackTop;
@@ -44,8 +48,14 @@ Context::Context()
 
 Context::~Context()
 {
-    R_HandlerStack = handlerstack;
+#ifdef BYTECODE
+    R_BCNodeStackTop = nodestack;
+# ifdef BC_INT_STACK
+    R_BCIntStackTop = intstack;
+# endif
+#endif
     R_RestartStack = restartstack;
+    R_HandlerStack = handlerstack;
     if (cloenv && conexit) {
 	GCStackRoot<> onx(conexit);
 	Rboolean savevis = R_Visible;
@@ -59,15 +69,9 @@ Context::~Context()
 	catch (...) {}
 	R_Visible = savevis;
     }
-    Evaluator::setDepth(evaldepth);
     R_interrupts_suspended = intsusp;
-#ifdef BYTECODE
-    R_BCNodeStackTop = nodestack;
-# ifdef BC_INT_STACK
-    R_BCIntStackTop = intstack;
-# endif
-#endif
     R_Srcref = srcref;
+    Evaluator::setDepth(evaldepth);
     Evaluator::current()->m_innermost_context = nextcontext;
 }
     

@@ -81,9 +81,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 				      m_matcher->numFormals() + 5)));
     // Set up environment:
     {
-	Context cntxt;
-	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
-			environment(), env, const_cast<PairList*>(args), this);
+	Context cntxt(const_cast<Expression*>(call),
+		      env, this, environment(), const_cast<PairList*>(args));
 	m_matcher->match(newenv, prepared_args);
     }
     // Perform evaluation:
@@ -96,9 +95,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->sysparent;
 	}
-	Context cntxt;
-	Rf_begincontext(&cntxt, Context::RETURN, const_cast<Expression*>(call),
-			newenv, syspar, prepared_args, this);
+	Context cntxt(const_cast<Expression*>(call),
+		      syspar, this, newenv, prepared_args);
 	Environment::ReturnScope returnscope(newenv);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)

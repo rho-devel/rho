@@ -390,8 +390,8 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /*  Set up a context with the call in it so error has access to it */
     {
-	Context cntxt;
-	begincontext(&cntxt, Context::RETURN, call, savedrho, rho, arglist, op);
+	Environment* working_env = SEXP_downcast<Environment*>(savedrho);
+	Context cntxt(call, rho, op, working_env, arglist);
 
 	/*  Build a list which matches the actual (unevaluated) arguments
 	    to the formal paramters.  Build a new environment which
@@ -462,8 +462,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->sysparent;
 	}
-	Context cntxt;
-	begincontext(&cntxt, Context::RETURN, call, newrho, syspar, arglist, op);
+	Context cntxt(call, syspar, op, newrho, arglist);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -565,8 +564,8 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     body = BODY(op);
 
     {
-	Context cntxt;
-	begincontext(&cntxt, Context::RETURN, call, newrho, rho, arglist, op);
+	Environment* working_env = SEXP_downcast<Environment*>(newrho);
+	Context cntxt(call, rho, op, working_env, arglist);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -1594,9 +1593,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(expr) == LANGSXP || TYPEOF(expr) == SYMSXP || isByteCode(expr)) {
 	PROTECT(expr);
 	{
-	    Context cntxt;
-	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
 	    Environment* envir = SEXP_downcast<Environment*>(env);
+	    Context cntxt(call, rho, op, envir, args);
 	    Environment::ReturnScope returnscope(envir);
 	    try {
 		expr = eval(expr, env);
@@ -1615,9 +1613,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	n = LENGTH(expr);
 	tmp = R_NilValue;
 	{
-	    Context cntxt;
-	    begincontext(&cntxt, Context::RETURN, call, env, rho, args, op);
 	    Environment* envir = SEXP_downcast<Environment*>(env);
+	    Context cntxt(call, rho, op, envir, args);
 	    Environment::ReturnScope returnscope(envir);
 	    try {
 		for (i = 0 ; i < n ; i++)
@@ -1832,8 +1829,8 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    SET_PRVALUE(CAR(pargs), x);
 	    int um;
 	    {
-		Context cntxt;
-		begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, op);
+		Environment* working_env = SEXP_downcast<Environment*>(rho1);
+		Context cntxt(call, rho, op, working_env, pargs);
 		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
 	    }
 	    if (um) {
@@ -2593,8 +2590,8 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
   {
-      Context cntxt;
-      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+      Environment* working_env = SEXP_downcast<Environment*>(rho1);
+      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
       if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
   }
@@ -3301,8 +3298,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
 	  {
-	      Context cntxt;
-	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
+	      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
 	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
@@ -3331,8 +3328,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  SET_PRVALUE(CADR(pargs), str);
 	  SET_PRVALUE(CADDR(pargs), value);
 	  {
-	      Context cntxt;
-	      begincontext(&cntxt, Context::RETURN, call, rho1, rho, pargs, R_NilValue);/**** FIXME: put in op */
+	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
+	      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
 	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }

@@ -73,7 +73,8 @@ namespace CXXR {
 	    BUILTIN  = 64  // used in profiling
 	};
 
-	Context();
+	Context(RObject* the_call, RObject* call_env, RObject* closure,
+		Environment* working_env, RObject* promise_args);
 
 	~Context();
 
@@ -109,34 +110,34 @@ namespace CXXR {
 	    m_generic = on;
 	}
 
+    private:
+	ProtectStack::Scope m_protectstack_scope;
+	RAllocStack::Scope m_rallocstack_scope;
+    public:
 	Context *nextcontext;        // The next context up the chain
-	Type callflag;		     // The context "type"
 	int evaldepth;	             // evaluation depth at inception
-	GCStackRoot<> promargs;      // Promises supplied to closure
-	GCStackRoot<> callfun;       // The closure called
-	GCStackRoot<> sysparent;     // environment the closure was called from
+	Type callflag;		     // The context "type"
+	GCStackRoot<> srcref;	     // The source line in effect
 	GCStackRoot<> call;          // The call that effected this context
-	GCStackRoot<Environment> cloenv;  // The environment
-	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
+	GCStackRoot<> sysparent;     // environment the closure was called from
 	Rboolean intsusp;            // interrupts are suspended
 	GCStackRoot<> handlerstack;  // condition handler stack
 	GCStackRoot<> restartstack;  // stack of available restarts
-	GCStackRoot<> srcref;	     // The source line in effect
 #ifdef BYTECODE
 	SEXP *nodestack;
 #ifdef BC_INT_STACK
 	IStackval *intstack;
 #endif
 #endif
+	GCStackRoot<> callfun;       // The closure called
+	GCStackRoot<Environment> cloenv;  // The environment
+	GCStackRoot<> promargs;      // Promises supplied to closure
+	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
     private:
-	ProtectStack::Scope m_protectstack_scope;
-	RAllocStack::Scope m_rallocstack_scope;
 	bool m_generic;
     };
 }  // namespace CXXR
 
-void Rf_begincontext(CXXR::Context*, CXXR::Context::Type, SEXP, SEXP, SEXP,
-		     SEXP, SEXP);
 SEXP Rf_dynamicfindVar(SEXP, CXXR::Context*);
 int Rf_framedepth(CXXR::Context*);
 void R_InsertRestartHandlers(CXXR::Context*, Rboolean);
