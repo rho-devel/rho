@@ -28,13 +28,14 @@ GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 RObject* R_Srcref;
 
-Context::Context(RObject* the_call, RObject* call_env, RObject* closure,
-		 Environment* working_env, RObject* promise_args)
+Context::Context(Expression* the_call, Environment* call_env,
+		 FunctionBase* function, Environment* working_env,
+		 PairList* promise_args)
     : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
       callflag(working_env ? RETURN : BUILTIN), srcref(R_Srcref),
       call(the_call), sysparent(call_env), intsusp(R_interrupts_suspended),
       handlerstack(R_HandlerStack), restartstack(R_RestartStack),
-      callfun(closure), cloenv(working_env), promargs(promise_args), 
+      callfun(function), cloenv(working_env), promargs(promise_args), 
       m_generic(false)
 {
 #ifdef BYTECODE

@@ -56,7 +56,7 @@
  * of a Closure application may continue to be reachable after the
  * Closure application returns.  If not, then just before the Closure
  * application returns, the Environment is detached from its Frame.
- * This breaks possible loops in the GCNode/GCEdge graph, thus enable
+ * This breaks possible loops in the GCNode/GCEdge graph, thus enabling
  * the Environment to be garbage-collected immediately.
  *
  * Unfortunately, enabling this extra code slows CXXR down very
@@ -107,17 +107,18 @@ namespace CXXR {
 	     * LoopScope is to be associated.
 	     */
 	    LoopScope(Environment* env)
-		: m_environment(env)
+		: m_environment(env), m_prev_state(env->m_in_loop)
 	    {
-		++env->m_loops_active;
+		env->m_in_loop = true;
 	    }
 
 	    ~LoopScope()
 	    {
-		--m_environment->m_loops_active;
+		m_environment->m_in_loop = m_prev_state;
 	    }
 	private:
 	    GCStackRoot<Environment> m_environment;
+	    bool m_prev_state;
 	};
 
 	/** @brief Object authorising R 'return' command.
@@ -140,17 +141,18 @@ namespace CXXR {
 	     * ReturnScope is to be associated.
 	     */
 	    ReturnScope(Environment* env)
-		: m_environment(env)
+		: m_environment(env), m_prev_state(env->m_can_return)
 	    {
-		++env->m_return_scopes;
+		env->m_can_return = true;
 	    }
 
 	    ~ReturnScope()
 	    {
-		--m_environment->m_return_scopes;
+		m_environment->m_can_return = m_prev_state;
 	    }
 	private:
 	    GCStackRoot<Environment> m_environment;
+	    bool m_prev_state;
 	};
 
 	/**
@@ -158,9 +160,9 @@ namespace CXXR {
 	 */
 	explicit Environment(Environment* enclosing)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame)), m_loops_active(0),
-	      m_return_scopes(0), m_single_stepping(false), m_locked(false),
-	      m_cached(false), m_leaked(false)
+	      m_frame(expose(new StdFrame)), m_single_stepping(false),
+	      m_locked(false), m_cached(false), m_leaked(false),
+	      m_in_loop(false), m_can_return(false)
 	{}
 
 	/**
@@ -177,8 +179,8 @@ namespace CXXR {
 	Environment(Environment* enclosing, size_t initial_capacity)
 	    : RObject(ENVSXP), m_enclosing(enclosing),
 	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_loops_active(0), m_return_scopes(0), m_single_stepping(false),
-	      m_locked(false), m_cached(false), m_leaked(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
 	/** @brief Constructor with specified Frame.
@@ -194,8 +196,8 @@ namespace CXXR {
 	 */
 	Environment(Environment* enclosing, Frame* frame)
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
-	      m_loops_active(0), m_return_scopes(0), m_single_stepping(false),
-	      m_locked(false), m_cached(false), m_leaked(false)
+	      m_single_stepping(false), m_locked(false), m_cached(false),
+	      m_leaked(false), m_in_loop(false), m_can_return(false)
 	{}
 
 	/** @brief Base environment.
@@ -225,7 +227,7 @@ namespace CXXR {
 	 */
 	bool canReturn() const
 	{
-	    return m_return_scopes > 0;
+	    return m_can_return;
 	}
 
 	/** @brief Access the enclosing Environment.
@@ -312,7 +314,7 @@ namespace CXXR {
 	 */
 	bool loopActive() const
 	{
-	    return m_loops_active > 0;
+	    return m_in_loop;
 	}
 
 	/** @brief Disconnect the Environment from its Frame, if safe.
@@ -479,8 +481,6 @@ namespace CXXR {
 
 	GCEdge<Environment> m_enclosing;
 	GCEdge<Frame> m_frame;
-	unsigned short int m_loops_active;
-	unsigned short int m_return_scopes;
 	bool m_single_stepping;
 	bool m_locked;
 	bool m_cached;
@@ -489,6 +489,8 @@ namespace CXXR {
 	// return of the Closure call that created it.  It has no
 	// particular meaning for non-local environments.
 	mutable bool m_leaked;
+	bool m_in_loop;
+	bool m_can_return;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:

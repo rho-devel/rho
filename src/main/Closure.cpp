@@ -88,7 +88,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     // Perform evaluation:
     GCStackRoot<> ans;
     {
-	RObject* syspar = env;
+	Environment* syspar = env;
 	// Change syspar if generic:
 	{
 	    Context* innerctxt = Context::innermost();

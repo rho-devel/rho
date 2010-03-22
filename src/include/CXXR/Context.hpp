@@ -40,6 +40,7 @@
 #ifndef CONTEXT_HPP
 #define CONTEXT_HPP 1
 
+#include "CXXR/Closure.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Promise.h"
@@ -73,8 +74,9 @@ namespace CXXR {
 	    BUILTIN  = 64  // used in profiling
 	};
 
-	Context(RObject* the_call, RObject* call_env, RObject* closure,
-		Environment* working_env, RObject* promise_args);
+	Context(Expression* the_call, Environment* call_env,
+		FunctionBase* function, Environment* working_env,
+		PairList* promise_args);
 
 	~Context();
 
@@ -114,25 +116,25 @@ namespace CXXR {
 	ProtectStack::Scope m_protectstack_scope;
 	RAllocStack::Scope m_rallocstack_scope;
     public:
-	Context *nextcontext;        // The next context up the chain
-	int evaldepth;	             // evaluation depth at inception
-	Type callflag;		     // The context "type"
-	GCStackRoot<> srcref;	     // The source line in effect
-	GCStackRoot<> call;          // The call that effected this context
-	GCStackRoot<> sysparent;     // environment the closure was called from
-	Rboolean intsusp;            // interrupts are suspended
-	GCStackRoot<> handlerstack;  // condition handler stack
-	GCStackRoot<> restartstack;  // stack of available restarts
+	Context *nextcontext;
+	int evaldepth;
+	Type callflag;
+	GCStackRoot<> srcref;
+	GCStackRoot<Expression> call;
+	GCStackRoot<Environment> sysparent;
+	Rboolean intsusp;
+	GCStackRoot<> handlerstack;
+	GCStackRoot<> restartstack;
 #ifdef BYTECODE
 	SEXP *nodestack;
 #ifdef BC_INT_STACK
 	IStackval *intstack;
 #endif
 #endif
-	GCStackRoot<> callfun;       // The closure called
-	GCStackRoot<Environment> cloenv;  // The environment
-	GCStackRoot<> promargs;      // Promises supplied to closure
-	GCStackRoot<> conexit;	     // Interpreted "on.exit" code
+	GCStackRoot<FunctionBase> callfun;
+	GCStackRoot<Environment> cloenv;
+	GCStackRoot<PairList> promargs;
+	GCStackRoot<> conexit;
     private:
 	bool m_generic;
     };

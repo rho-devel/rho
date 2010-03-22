@@ -390,8 +390,12 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 
     /*  Set up a context with the call in it so error has access to it */
     {
+        Expression* callx = SEXP_downcast<Expression*>(call);
+	Environment* call_env = SEXP_downcast<Environment*>(rho);
+	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(savedrho);
-	Context cntxt(call, rho, op, working_env, arglist);
+	PairList* promargs = SEXP_downcast<PairList*>(arglist);
+	Context cntxt(callx, call_env, func, working_env, promargs);
 
 	/*  Build a list which matches the actual (unevaluated) arguments
 	    to the formal paramters.  Build a new environment which
@@ -456,13 +460,16 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	the generic as the sysparent of the method because the method
 	is a straight substitution of the generic.  */
     {
-	SEXP syspar = rho;
+        Environment* syspar = SEXP_downcast<Environment*>(rho);
 	{
 	    Context* innerctxt = Context::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->sysparent;
 	}
-	Context cntxt(call, syspar, op, newrho, arglist);
+	Expression* callx = SEXP_downcast<Expression*>(call);
+	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	PairList* promargs = SEXP_downcast<PairList*>(arglist);
+	Context cntxt(callx, syspar, func, newrho, promargs);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -564,8 +571,12 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     body = BODY(op);
 
     {
+        Expression* callx = SEXP_downcast<Expression*>(call);
+	Environment* call_env = SEXP_downcast<Environment*>(rho);
+	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(newrho);
-	Context cntxt(call, rho, op, working_env, arglist);
+	PairList* promargs = SEXP_downcast<PairList*>(arglist);
+	Context cntxt(callx, call_env, func, working_env, promargs);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -1593,14 +1604,18 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(expr) == LANGSXP || TYPEOF(expr) == SYMSXP || isByteCode(expr)) {
 	PROTECT(expr);
 	{
-	    Environment* envir = SEXP_downcast<Environment*>(env);
-	    Context cntxt(call, rho, op, envir, args);
-	    Environment::ReturnScope returnscope(envir);
+	    Expression* callx = SEXP_downcast<Expression*>(call);
+	    Environment* call_env = SEXP_downcast<Environment*>(rho);
+	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	    Environment* working_env = SEXP_downcast<Environment*>(env);
+	    PairList* promargs = SEXP_downcast<PairList*>(args);
+	    Context cntxt(callx, call_env, func, working_env, promargs);
+	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		expr = eval(expr, env);
 	    }
 	    catch (ReturnException& rx) {
-		if (rx.environment() != envir)
+		if (rx.environment() != working_env)
 		    throw;
 		tmp = rx.value();
 	    }
@@ -1613,15 +1628,19 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	n = LENGTH(expr);
 	tmp = R_NilValue;
 	{
-	    Environment* envir = SEXP_downcast<Environment*>(env);
-	    Context cntxt(call, rho, op, envir, args);
-	    Environment::ReturnScope returnscope(envir);
+	    Expression* callx = SEXP_downcast<Expression*>(call);
+	    Environment* call_env = SEXP_downcast<Environment*>(rho);
+	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	    Environment* working_env = SEXP_downcast<Environment*>(env);
+	    PairList* promargs = SEXP_downcast<PairList*>(args);
+	    Context cntxt(callx, call_env, func, working_env, promargs);
+	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		for (i = 0 ; i < n ; i++)
 		    tmp = eval(XVECTOR_ELT(expr, i), env);
 	    }
 	    catch (ReturnException& rx) {
-		if (rx.environment() != envir)
+		if (rx.environment() != working_env)
 		    throw;
 		tmp = rx.value();
 	    }
@@ -1829,8 +1848,12 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    SET_PRVALUE(CAR(pargs), x);
 	    int um;
 	    {
+	        Expression* callx = SEXP_downcast<Expression*>(call);
+	        Environment* call_env = SEXP_downcast<Environment*>(rho);
+	        FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 		Environment* working_env = SEXP_downcast<Environment*>(rho1);
-		Context cntxt(call, rho, op, working_env, pargs);
+		PairList* promargs = SEXP_downcast<PairList*>(pargs);
+		Context cntxt(callx, call_env, func, working_env, promargs);
 		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
 	    }
 	    if (um) {
@@ -2590,8 +2613,12 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
   {
+      Expression* callx = SEXP_downcast<Expression*>(call);
+      Environment* call_env = SEXP_downcast<Environment*>(rho);
       Environment* working_env = SEXP_downcast<Environment*>(rho1);
-      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
+      PairList* promargs = SEXP_downcast<PairList*>(pargs);
+      // FIXME: put in op:
+      Context cntxt(callx, call_env, 0, working_env, promargs);
       if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
   }
@@ -3298,8 +3325,12 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  str = ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
 	  {
+	      Expression* callx = SEXP_downcast<Expression*>(call);
+	      Environment* call_env = SEXP_downcast<Environment*>(rho);
 	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
-	      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
+	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
+	      // FIXME: put in op:
+	      Context cntxt(callx, call_env, 0, working_env, promargs);
 	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
@@ -3328,8 +3359,12 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  SET_PRVALUE(CADR(pargs), str);
 	  SET_PRVALUE(CADDR(pargs), value);
 	  {
+	      Expression* callx = SEXP_downcast<Expression*>(call);
+	      Environment* call_env = SEXP_downcast<Environment*>(rho);
 	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
-	      Context cntxt(call, rho, 0, working_env, pargs); /**** FIXME: put in op */
+	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
+	      // FIXME: put in op:
+	      Context cntxt(callx, call_env, 0, working_env, promargs);
 	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
