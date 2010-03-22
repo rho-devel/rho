@@ -154,7 +154,7 @@ static void doprof(void)
 	    }
 	    reset_duplicate_counter();
     }
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
 	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
 	    && TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
@@ -193,10 +193,9 @@ static void doprof(int sig)
 		     nodes, get_duplicate_counter());
 	    reset_duplicate_counter();
     }
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call);
+    for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
+	if (TYPEOF(cptr->call()) == LANGSXP) {
+	    SEXP fun = CAR(cptr->call());
 	    if (!newline) newline = 1;
 	    fprintf(R_ProfileOutfile, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
@@ -464,7 +463,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	{
 	    Context* innerctxt = Context::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
-		syspar = innerctxt->sysparent;
+		syspar = innerctxt->callEnvironment();
 	}
 	Expression* callx = SEXP_downcast<Expression*>(call);
 	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
@@ -705,18 +704,18 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     /* Find the calling context.  Should be the innermost Context unless
        profiling has inserted a Context::BUILTIN frame. */
     cptr = Context::innermost();
-    if (cptr->callflag & Context::BUILTIN)
-	cptr = cptr->nextcontext;
+    if (!cptr->workingEnvironment())
+	cptr = cptr->nextOut();
 
     /* The calling environment should either be the environment of the
        generic, rho, or the environment of the caller of the generic,
        the current sysparent. */
-    callerenv = cptr->sysparent; /* or rho? */
+    callerenv = cptr->callEnvironment(); /* or rho? */
 
     /* get the rest of the stuff we need from the current context,
        execute the method, and return the result */
-    call = cptr->call;
-    arglist = cptr->promargs;
+    call = cptr->call();
+    arglist = cptr->promiseArgs();
     val = R_execClosure(call, op, arglist, callerenv, newrho);
     UNPROTECT(1);
     return val;
@@ -1693,17 +1692,17 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     cptr = Context::innermost();
     /* get the args supplied */
     while (cptr != NULL) {
-	if (cptr->callflag == Context::RETURN && cptr->cloenv == rho)
+	if (cptr->workingEnvironment() && cptr->workingEnvironment() == rho)
 	    break;
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
-    args = cptr->promargs;
+    args = cptr->promiseArgs();
     /* get the env recall was called from */
-    s = Context::innermost()->sysparent;
+    s = Context::innermost()->callEnvironment();
     while (cptr != NULL) {
-	if (cptr->callflag == Context::RETURN && cptr->cloenv == s)
+	if (cptr->workingEnvironment() && cptr->workingEnvironment() == s)
 	    break;
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     if (cptr == NULL)
 	error(_("'Recall' called from outside a closure"));
@@ -1712,13 +1711,13 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
        otherwise search for it by name or evaluate the expression
        originally used to get it.
     */
-    if (cptr->callfun != R_NilValue)
-	PROTECT(s = cptr->callfun);
-    else if( TYPEOF(CAR(cptr->call)) == SYMSXP)
-	PROTECT(s = findFun(CAR(cptr->call), cptr->sysparent));
+    if (cptr->function() != R_NilValue)
+	PROTECT(s = cptr->function());
+    else if( TYPEOF(CAR(cptr->call())) == SYMSXP)
+	PROTECT(s = findFun(CAR(cptr->call()), cptr->callEnvironment()));
     else
-	PROTECT(s = eval(CAR(cptr->call), cptr->sysparent));
-    ans = applyClosure(cptr->call, s, args, cptr->sysparent, R_BaseEnv);
+	PROTECT(s = eval(CAR(cptr->call()), cptr->callEnvironment()));
+    ans = applyClosure(cptr->call(), s, args, cptr->callEnvironment(), R_BaseEnv);
     UNPROTECT(1);
     return ans;
 }

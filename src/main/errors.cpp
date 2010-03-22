@@ -281,8 +281,8 @@ void warning(const char *format, ...)
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
     if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
-    if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
-    warningcall(c ? c->call : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    if (c && !c->workingEnvironment()) c = c->nextOut();
+    warningcall(c ? c->call() : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
 /* temporary hook to allow experimenting with alternate warning mechanisms */
@@ -324,9 +324,9 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
 	if( !isLanguage(s) &&  ! isExpression(s) )
 	    error(_("invalid option \"warning.expression\""));
 	cptr = Context::innermost();
-	while ( !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
-	    cptr = cptr->nextcontext;
-	eval(s, cptr->cloenv);
+	while ( cptr && !cptr->workingEnvironment())
+	    cptr = cptr->nextOut();
+	eval(s, cptr->workingEnvironment());
 	return;
     }
 
@@ -698,11 +698,11 @@ void error(const char *format, ...)
     va_end(ap);
     /* This can be called before any Context exists, so... */
     /* If profiling is on, this can be a Context::BUILTIN */
-    if (c && (c->callflag & Context::BUILTIN)) c = c->nextcontext;
+    if (c && !c->workingEnvironment()) c = c->nextOut();
     // CXXR addition:
-    while (c && !c->call)
-	c = c->nextcontext;
-    errorcall(c ? c->call : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    while (c && !c->call())
+	c = c->nextOut();
+    errorcall(c ? c->call() : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
 static void try_jump_to_restart(void)
@@ -860,15 +860,15 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isNull(CAR(args))) {
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = Context::innermost()->nextcontext;
+	for (cptr = Context::innermost()->nextOut();
 	     cptr != NULL;
-	     cptr = cptr->nextcontext)
-	    if (cptr->callflag & Context::FUNCTION) {
+	     cptr = cptr->nextOut())
+	    if (cptr->workingEnvironment()) {
 		/* stop() etc have internal call to .makeMessage */
-		cfn = CHAR(STRING_ELT(deparse1s(CAR(cptr->call)), 0));
+		cfn = CHAR(STRING_ELT(deparse1s(CAR(cptr->call())), 0));
 		if(streql(cfn, "stop") || streql(cfn, "warning")
 		   || streql(cfn, "message")) continue;
-		rho = cptr->cloenv;
+		rho = cptr->workingEnvironment();
 	    }
 	while(rho != R_EmptyEnv) {
 	    if (rho == R_GlobalEnv) break;
@@ -964,11 +964,11 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(isNull(sdom)) {
 	Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = Context::innermost()->nextcontext;
+	for (cptr = Context::innermost()->nextOut();
 	     cptr != NULL;
-	     cptr = cptr->nextcontext)
-	    if (cptr->callflag & Context::FUNCTION) {
-		rho = cptr->cloenv;
+	     cptr = cptr->nextOut())
+	    if (cptr->workingEnvironment()) {
+		rho = cptr->workingEnvironment();
 		break;
 	    }
 	while(rho != R_EmptyEnv) {
@@ -1030,11 +1030,11 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP findCall(void)
 {
     Context *cptr;
-    for (cptr = Context::innermost()->nextcontext;
+    for (cptr = Context::innermost()->nextOut();
 	 cptr != NULL;
-	 cptr = cptr->nextcontext)
-	if (cptr->callflag & Context::FUNCTION)
-	    return cptr->call;
+	 cptr = cptr->nextOut())
+	if (cptr->workingEnvironment())
+	    return cptr->call();
     return R_NilValue;
 }
 
@@ -1213,28 +1213,24 @@ SEXP R_GetTraceback(int skip)
 
     for (c = Context::innermost(), ns = skip;
 	 c != NULL;
-	 c = c->nextcontext)
-	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
-	    if (ns > 0)
-		ns--;
-	    else
-		nback++;
-	}
+	 c = c->nextOut())
+	if (ns > 0)
+	    ns--;
+	else
+	    nback++;
 
     PROTECT(s = allocList(nback));
     t = s;
     for (c = Context::innermost() ;
 	 c != NULL;
-	 c = c->nextcontext)
-	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
-	    if (skip > 0)
-		skip--;
-	    else {
-		SETCAR(t, deparse1(c->call, CXXRFALSE, DEFAULTDEPARSE));
-		if (c->srcref && !isNull(c->srcref)) 
-		    setAttrib(CAR(t), R_SrcrefSymbol, duplicate(c->srcref));
-		t = CDR(t);
-	    }
+	 c = c->nextOut())
+	if (skip > 0)
+	    skip--;
+	else {
+	    SETCAR(t, deparse1(c->call(), CXXRFALSE, DEFAULTDEPARSE));
+	    if (c->sourceLocation() && !isNull(c->sourceLocation())) 
+		setAttrib(CAR(t), R_SrcrefSymbol, duplicate(c->sourceLocation()));
+	    t = CDR(t);
 	}
     UNPROTECT(1);
     return s;
@@ -1251,36 +1247,34 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
     buf[0] = '\0';
     for (c = Context::innermost();
 	 c != NULL;
-	 c = c->nextcontext)
-	if (c->callflag & (Context::FUNCTION | Context::BUILTIN) ) {
-	    if (skip > 0)
-		skip--;
-	    else {
-		SEXP fun = CAR(c->call);
-		const char *funstr = (TYPEOF(fun) == SYMSXP) ?
-		    CHAR(PRINTNAME(fun)) : "<Anonymous>";
-		if(streql(funstr, "stop") ||
-		   streql(funstr, "warning") ||
-		   streql(funstr, "suppressWarnings") ||
-		   streql(funstr, ".signalSimpleWarning")) {
-		    buf[0] =  '\0'; ncalls = 0; too_many = FALSE;
-		} else {
-		    ncalls++;
-		    if(too_many) {
-			top = funstr;
-		    } else if(CXXRCONSTRUCT(int, strlen(buf)) > R_NShowCalls) {
-			memmove(buf+4, buf, strlen(buf)+1);
-			memcpy(buf, "... ", 4);
-			too_many = TRUE;
-			top = funstr;
-		    } else if(strlen(buf)) {
-			nl = strlen(funstr);
-			memmove(buf+nl+4, buf, strlen(buf)+1);
-			memcpy(buf, funstr, strlen(funstr));
-			memcpy(buf+nl, " -> ", 4);
-		    } else
-			memcpy(buf, funstr, strlen(funstr)+1);
-		}
+	 c = c->nextOut())
+	if (skip > 0)
+	    skip--;
+	else {
+	    SEXP fun = CAR(c->call());
+	    const char *funstr = (TYPEOF(fun) == SYMSXP) ?
+		CHAR(PRINTNAME(fun)) : "<Anonymous>";
+	    if(streql(funstr, "stop") ||
+	       streql(funstr, "warning") ||
+	       streql(funstr, "suppressWarnings") ||
+	       streql(funstr, ".signalSimpleWarning")) {
+		buf[0] =  '\0'; ncalls = 0; too_many = FALSE;
+	    } else {
+		ncalls++;
+		if(too_many) {
+		    top = funstr;
+		} else if(CXXRCONSTRUCT(int, strlen(buf)) > R_NShowCalls) {
+		    memmove(buf+4, buf, strlen(buf)+1);
+		    memcpy(buf, "... ", 4);
+		    too_many = TRUE;
+		    top = funstr;
+		} else if(strlen(buf)) {
+		    nl = strlen(funstr);
+		    memmove(buf+nl+4, buf, strlen(buf)+1);
+		    memcpy(buf, funstr, strlen(funstr));
+		    memcpy(buf+nl, " -> ", 4);
+		} else
+		    memcpy(buf, funstr, strlen(funstr)+1);
 	    }
 	}
     if(too_many && (nl = strlen(top)) < 50) {
@@ -1647,11 +1641,11 @@ R_InsertRestartHandlers(Context *cptr, Rboolean browser)
 {
     SEXP klass, rho, entry, name;
 
-    if (cptr->handlerstack != R_HandlerStack)
+    if (cptr->handlerStack() != R_HandlerStack)
 	error(_("handler or restart stack mismatch in old restart"));
 
     /**** need more here to keep recursive errors in browser? */
-    rho = cptr->cloenv;
+    rho = cptr->workingEnvironment();
     PROTECT(klass = mkChar("error"));
     entry = mkHandlerEntry(klass, rho, 0, rho, R_NilValue, TRUE);
     R_HandlerStack = CONS(entry, R_HandlerStack);

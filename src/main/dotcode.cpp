@@ -1577,12 +1577,12 @@ Rf_getCallingDLL(void)
      */
     for (cptr = Context::innermost();
 	 cptr != NULL;
-	 cptr = cptr->nextcontext)
-	    if (cptr->callflag & Context::FUNCTION) {
-		/* PrintValue(cptr->call); */
-		rho = cptr->cloenv;
-		break;
-	    }
+	 cptr = cptr->nextOut())
+	if (cptr->workingEnvironment()) {
+	    /* PrintValue(cptr->call); */
+	    rho = cptr->workingEnvironment();
+	    break;
+	}
     /* Then search up until we hit a namespace or globalenv.
        The idea is that we will not find a namespace unless the caller
        was defined in one. */

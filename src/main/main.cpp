@@ -1089,12 +1089,11 @@ static void printwhere(void)
   Context *cptr;
   int lct = 1;
 
-  for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
-    if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN)) &&
-	(TYPEOF(cptr->call) == LANGSXP)) {
+  for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
+    if (TYPEOF(cptr->call()) == LANGSXP) {
 	Rprintf("where %d", lct++);
-	SrcrefPrompt("", cptr->srcref);
-	PrintValue(cptr->call);
+	SrcrefPrompt("", cptr->sourceLocation());
+	PrintValue(cptr->call());
     }
   }
   Rprintf("\n");
@@ -1238,14 +1237,14 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!ENV_DEBUG(rho)) {
 	Context* cptr = Context::innermost();
 	int tmp;
-	while ( cptr && !(cptr->callflag & Context::FUNCTION) && cptr->callflag )
-	    cptr = cptr->nextcontext;
+	while ( cptr && !cptr->workingEnvironment())
+	    cptr = cptr->nextOut();
 	Rprintf("Called from: ");
 	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
 //	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
 	if(tmp != R_NaInt && tmp > 0) R_BrowseLines = tmp;
         if( cptr )
-	    PrintValueRec(cptr->call,rho);
+	    PrintValueRec(cptr->call(),rho);
         else
             Rprintf("top level \n");
 

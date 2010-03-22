@@ -1097,23 +1097,23 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "call");
 
     /* Get the function definition */
-    sysp = Context::innermost()->sysparent;
+    sysp = Context::innermost()->callEnvironment();
 
     if (TYPEOF(CAR(args)) == NILSXP) {
 	/* Get the env that the function containing */
 	/* matchcall was called from. */
 	cptr = Context::innermost();
 	while (cptr != NULL) {
-	    if (cptr->callflag & Context::FUNCTION && cptr->cloenv == sysp)
+	    if (cptr->workingEnvironment() && cptr->workingEnvironment() == sysp)
 		break;
-	    cptr = cptr->nextcontext;
+	    cptr = cptr->nextOut();
 	}
 	if ( cptr == NULL ) {
 	    sysp = R_GlobalEnv;
 	    errorcall(R_NilValue,
 		      "match.call() was called from outside a function");
 	} else
-	    sysp = cptr->sysparent;
+	    sysp = cptr->callEnvironment();
 	if (cptr != NULL)
 	    /* Changed to use the function from which match.call was
 	       called as recorded in the context.  This change is
@@ -1140,7 +1140,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	       context only if the call was not supplied explicitly.
 	       The documentation should also be changed to be
 	       consistent with this behavior.  LT */
-	    PROTECT(b = duplicate(cptr->callfun));
+	    PROTECT(b = duplicate(cptr->function()));
 	else if ( TYPEOF(CAR(funcall)) == SYMSXP )
 	    PROTECT(b = findFun(CAR(funcall), sysp));
 	else

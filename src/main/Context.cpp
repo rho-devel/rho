@@ -31,17 +31,18 @@ RObject* R_Srcref;
 Context::Context(Expression* the_call, Environment* call_env,
 		 FunctionBase* function, Environment* working_env,
 		 PairList* promise_args)
-    : nextcontext(Context::innermost()), evaldepth(Evaluator::depth()),
-      callflag(working_env ? RETURN : BUILTIN), srcref(R_Srcref),
-      call(the_call), sysparent(call_env), intsusp(R_interrupts_suspended),
-      handlerstack(R_HandlerStack), restartstack(R_RestartStack),
-      callfun(function), cloenv(working_env), promargs(promise_args), 
-      m_generic(false)
+    : m_next_out(Context::innermost()), m_eval_depth(Evaluator::depth()),
+      m_type(working_env ? RETURN : BUILTIN), m_srcref(R_Srcref),
+      m_call(the_call), m_call_env(call_env),
+      m_interrupts_suspended(R_interrupts_suspended),
+      m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
+      m_function(function), m_working_env(working_env),
+      m_promise_args(promise_args), m_generic(false)
 {
 #ifdef BYTECODE
-    nodestack = R_BCNodeStackTop;
+    m_nodestack = R_BCNodeStackTop;
 #ifdef BC_INT_STACK
-    intstack = R_BCIntStackTop;
+    m_intstack = R_BCIntStackTop;
 #endif
 #endif
     Evaluator::current()->m_innermost_context = this;
@@ -50,29 +51,29 @@ Context::Context(Expression* the_call, Environment* call_env,
 Context::~Context()
 {
 #ifdef BYTECODE
-    R_BCNodeStackTop = nodestack;
+    R_BCNodeStackTop = m_nodestack;
 # ifdef BC_INT_STACK
-    R_BCIntStackTop = intstack;
+    R_BCIntStackTop = m_intstack;
 # endif
 #endif
-    R_RestartStack = restartstack;
-    R_HandlerStack = handlerstack;
-    if (cloenv && conexit) {
-	GCStackRoot<> onx(conexit);
+    R_RestartStack = m_restartstack;
+    R_HandlerStack = m_handlerstack;
+    if (m_working_env && m_onexit) {
+	GCStackRoot<> onx(m_onexit);
 	Rboolean savevis = R_Visible;
 	// Prevent recursion:
-	conexit = 0;
+	m_onexit = 0;
 	Evaluator::enableExtraDepth(true);
 	try {
-	    Evaluator::evaluate(onx, cloenv);
+	    Evaluator::evaluate(onx, m_working_env);
 	}
 	// Don't allow exceptions to escape:
 	catch (...) {}
 	R_Visible = savevis;
     }
-    R_interrupts_suspended = intsusp;
-    R_Srcref = srcref;
-    Evaluator::setDepth(evaldepth);
-    Evaluator::current()->m_innermost_context = nextcontext;
+    R_interrupts_suspended = m_interrupts_suspended;
+    R_Srcref = m_srcref;
+    Evaluator::setDepth(m_eval_depth);
+    Evaluator::current()->m_innermost_context = m_next_out;
 }
     

@@ -93,7 +93,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	{
 	    Context* innerctxt = Context::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
-		syspar = innerctxt->sysparent;
+		syspar = innerctxt->callEnvironment();
 	}
 	Context cntxt(const_cast<Expression*>(call),
 		      syspar, this, newenv, prepared_args);

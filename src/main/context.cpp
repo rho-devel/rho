@@ -68,23 +68,23 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 	n = -n;
 
     if(n < 0)
-	errorcall(Context::innermost()->call,
+	errorcall(Context::innermost()->call(),
 		  _("not that many frames on the stack"));
 
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION ) {
+	if (cptr->workingEnvironment() ) {
 	    if (n == 0) {  /* we need to detach the enclosing env */
-		return cptr->cloenv;
+		return cptr->workingEnvironment();
 	    }
 	    else
 		n--;
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     if(n == 0)
 	return R_GlobalEnv;
     else
-	errorcall(Context::innermost()->call,
+	errorcall(Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     return R_NilValue;	   /* just for -Wall */
 }
@@ -101,30 +101,30 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(Context::innermost()->call,
+	errorcall(Context::innermost()->call(),
 		  _("only positive values of 'n' are allowed"));
     while (cptr && n > 1) {
-	if (cptr->callflag & Context::FUNCTION )
+	if (cptr->workingEnvironment() )
 	    n--;
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     /* make sure we're looking at a return context */
-    while (cptr && !(cptr->callflag & Context::FUNCTION) )
-	cptr = cptr->nextcontext;
+    while (cptr && !cptr->workingEnvironment() )
+	cptr = cptr->nextOut();
     if (!cptr)
 	return 0;
     // Foll. 3 lines probably soon redundant in CXXR:
-    s = cptr->sysparent;
+    s = cptr->callEnvironment();
     if(s == R_GlobalEnv)
 	return 0;
     j = 0;
     while (cptr != NULL ) {
-	if (cptr->callflag & Context::FUNCTION) {
+	if (cptr->workingEnvironment()) {
 	    j++;
-	    if( cptr->cloenv == s )
+	    if( cptr->workingEnvironment() == s )
 		n=j;
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     n = j - n + 1;
     if (n < 0)
@@ -136,9 +136,9 @@ int attribute_hidden framedepth(Context *cptr)
 {
     int nframe = 0;
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION )
+	if (cptr->workingEnvironment() )
 	    nframe++;
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     return nframe;
 }
@@ -154,22 +154,22 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(Context::innermost()->call,
+	errorcall(Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION ) {
+	if (cptr->workingEnvironment() ) {
 	    if (n == 0) {
-	    	PROTECT(result = duplicate(cptr->call));
-	    	if (cptr->srcref && !isNull(cptr->srcref))
-	    	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->srcref));
+	    	PROTECT(result = duplicate(cptr->call()));
+	    	if (cptr->sourceLocation())
+	    	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->sourceLocation()));
 	    	UNPROTECT(1);
 	    	return result;
 	    } else
 		n--;
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
-    errorcall(Context::innermost()->call, _("not that many frames on the stack"));
+    errorcall(Context::innermost()->call(), _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
@@ -180,18 +180,18 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
     else
 	n = - n;
     if (n < 0)
-	errorcall(Context::innermost()->call,
+	errorcall(Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION ) {
+	if (cptr->workingEnvironment() ) {
 	    if (n == 0)
-		return duplicate(cptr->callfun);  /***** do we need to DUP? */
+		return duplicate(cptr->function());  /***** do we need to DUP? */
 	    else
 		n--;
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
-    errorcall(Context::innermost()->call, _("not that many frames on the stack"));
+    errorcall(Context::innermost()->call(), _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
@@ -206,13 +206,13 @@ int countContexts(int ctxttype, int browser) {
 
     cptr = Context::innermost();
     while( cptr ) {
-        if( cptr->callflag == ctxttype ) 
+        if( cptr->type() == ctxttype ) 
             n++;
         else if( browser ) {
-           if(cptr->callflag & Context::FUNCTION && ENV_DEBUG(cptr->cloenv) )
+	    if(cptr->workingEnvironment() && ENV_DEBUG(cptr->workingEnvironment()) )
               n++;
         }
-        cptr = cptr->nextcontext;
+        cptr = cptr->nextOut();
     }
     return n;
 }
@@ -250,15 +250,15 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    Browser* browser
 		= Browser::fromOutermost(Browser::numberActive() - 1);
 	    Context* cptr = browser->context();
-	    while (cptr && (n > 1 || !(cptr->callflag & Context::FUNCTION))) {
-		if (cptr->callflag & Context::FUNCTION) 
+	    while (cptr && (n > 1 || !cptr->workingEnvironment())) {
+		if (cptr->workingEnvironment()) 
 		    n--;
-		cptr = cptr->nextcontext;
+		cptr = cptr->nextOut();
 	    }
 	    if (!cptr)
 		error(_("not that many functions on the call stack"));
 	    else
-		SET_RDEBUG(cptr->cloenv, TRUE);
+		SET_RDEBUG(cptr->workingEnvironment(), TRUE);
 	}
         break;
     }
@@ -280,12 +280,12 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     /* first find the context that sys.xxx needs to be evaluated in */
     cptr = Context::innermost();
-    t = cptr->sysparent;
+    t = cptr->callEnvironment();
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION )
-	    if (cptr->cloenv == t)
+	if (cptr->workingEnvironment() )
+	    if (cptr->workingEnvironment() == t)
 		break;
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
 
     if (length(args) == 1) n = asInteger(CAR(args));
@@ -327,8 +327,8 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(1);
 	return rval;
     case 7: /* sys.on.exit */
-	if( Context::innermost()->nextcontext != NULL)
-	    return Context::innermost()->nextcontext->conexit;
+	if( Context::innermost()->nextOut() != NULL)
+	    return Context::innermost()->nextOut()->onExit();
 	else
 	    return R_NilValue;
     case 8: /* sys.parents */
@@ -361,18 +361,18 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("invalid '%s' value"), "n");
 
     cptr = Context::innermost();
-    t = cptr->sysparent;
+    t = cptr->callEnvironment();
     while (cptr){
-	if (cptr->callflag & Context::FUNCTION ) {
-	    if (cptr->cloenv == t)
+	if (cptr->workingEnvironment() ) {
+	    if (cptr->workingEnvironment() == t)
 	    {
 		if (n == 1)
-		    return cptr->sysparent;
+		    return cptr->callEnvironment();
 		n--;
-		t = cptr->sysparent;
+		t = cptr->callEnvironment();
 	    }
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     return R_GlobalEnv;
 }

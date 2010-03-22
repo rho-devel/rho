@@ -583,11 +583,11 @@ SEXP dynamicfindVar(SEXP symbol, Context *cptr)
 {
     SEXP vl;
     while (cptr) {
-	if (cptr->callflag & Context::FUNCTION) {
-	    vl = findVarInFrame3(cptr->cloenv, symbol, TRUE);
+	if (cptr->workingEnvironment()) {
+	    vl = findVarInFrame3(cptr->workingEnvironment(), symbol, TRUE);
 	    if (vl != R_UnboundValue) return vl;
 	}
-	cptr = cptr->nextcontext;
+	cptr = cptr->nextOut();
     }
     return R_UnboundValue;
 }
@@ -1599,13 +1599,13 @@ static SEXP pos2env(int pos, SEXP call)
     else if (pos == -1) {
 	/* make sure the context is a funcall */
 	cptr = Context::innermost();
-	while( !(cptr->callflag & Context::FUNCTION) && cptr->nextcontext
+	while( !cptr->workingEnvironment() && cptr->nextOut()
 	       != NULL )
-	    cptr = cptr->nextcontext;
-	if( !(cptr->callflag & Context::FUNCTION) )
+	    cptr = cptr->nextOut();
+	if( !cptr->workingEnvironment() )
 	    errorcall(call, _("no enclosing environment"));
 
-	env = cptr->sysparent;
+	env = cptr->callEnvironment();
 	if (R_GlobalEnv != R_NilValue && env == R_NilValue)
 	    errorcall(call, _("invalid '%s' argument"), "pos");
     }

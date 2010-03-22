@@ -168,11 +168,11 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
        first closure call context with an environment matching the
        expression evaluation environment. */
     while (ctxt &&
-	   !((ctxt->callflag & Context::FUNCTION) && ctxt->cloenv == rho) )
-	ctxt = ctxt->nextcontext;
+	   !(ctxt->workingEnvironment() && ctxt->workingEnvironment() == rho))
+	ctxt = ctxt->nextOut();
     if (ctxt)
     {
-	if (addit && (oldcode = ctxt->conexit) != R_NilValue ) {
+	if (addit && (oldcode = ctxt->onExit()) != R_NilValue ) {
 	    if ( CAR(oldcode) != R_BraceSymbol )
 	    {
 		GCStackRoot<PairList> tl(PairList::makeList(2));
@@ -180,19 +180,19 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 		SETCAR(tmp, R_BraceSymbol);
 		SETCADR(tmp, oldcode);
 		SETCADDR(tmp, code);
-		ctxt->conexit = tmp;
+		ctxt->setOnExit(tmp);
 		UNPROTECT(1);
 	    }
 	    else
 	    {
 		PROTECT(tmp=allocList(1));
 		SETCAR(tmp, code);
-		ctxt->conexit = listAppend(duplicate(oldcode),tmp);
+		ctxt->setOnExit(listAppend(duplicate(oldcode),tmp));
 		UNPROTECT(1);
 	    }
 	}
 	else
-	    ctxt->conexit = code;
+	    ctxt->setOnExit(code);
     }
     return R_NilValue;
 }
@@ -275,7 +275,7 @@ SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
-	return Context::innermost()->sysparent;
+	return Context::innermost()->callEnvironment();
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 

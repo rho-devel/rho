@@ -74,11 +74,68 @@ namespace CXXR {
 	    BUILTIN  = 64  // used in profiling
 	};
 
+	/** @brief Constructor
+	 *
+	 * @param the_call Pointer to the call with which this Context
+	 *          is associated.
+	 *
+	 * @param call_env Pointer to the Environment in which \a
+	 *          the_call is to be evaluated.
+	 *
+	 * @param function Pointer, possibly null, to the function
+	 *          (normally a Closure) being applied.
+	 *
+	 * @param working_env Pointer to the working environment of
+	 *          the Closure, i.e. the environment in which
+	 *          assignments create bindings, and in which default
+	 *          values of parameters are evaluated.  If this
+	 *          pointer is null, it signifies that this is a
+	 *          BUILTIN Context, and in that case \a function and
+	 *          \a promise_args should also be null.
+	 *
+	 * @param promise_args Pointer, possibly null, to the list of
+	 *          arguments to the call, each wrapped in a Promise.
+	 */
 	Context(Expression* the_call, Environment* call_env,
 		FunctionBase* function, Environment* working_env,
 		PairList* promise_args);
 
 	~Context();
+
+	/** @brief The call of the Context.
+	 *
+	 * @return Pointer to the call with which the Context is
+	 * associated.
+	 */
+	Expression* call() const
+	{
+	    return m_call;
+	}
+
+	/** @brief The call Environment.
+	 *
+	 * @return Pointer to the Environment in which the Context's
+	 * call is to be evaluated.
+	 */
+	Environment* callEnvironment() const
+	{
+	    return m_call_env;
+	}
+
+	/** @brief Function being applied.
+	 *
+	 * @return Pointer, possibly null, to the function being
+	 * applied in this Context.
+	 */
+	FunctionBase* function() const
+	{
+	    return m_function;
+	}
+
+	RObject* handlerStack() const
+	{
+	    return m_handlerstack;
+	}
 
 	/** @brief Is this a generic function invocation?
 	 *
@@ -100,6 +157,38 @@ namespace CXXR {
 	    return Evaluator::current()->innermostContext();
 	}
 
+	/** @brief Next Context out.
+	 *
+	 * @return pointer to the Context object most narrowly
+	 * enclosing this Context, or a null pointer if this is the
+	 * outermost Context of the current Evaluator.
+	 */
+	Context* nextOut() const
+	{
+	    return m_next_out;
+	}
+
+	/** @brief on.exit code.
+	 *
+	 * @return Pointer, possibly null, to an RObject to be
+	 * evaluated on exit from the Context, whether by normal exit
+	 * or by propagation of a C++ exception.
+	 */
+	RObject* onExit() const
+	{
+	    return m_onexit;
+	}
+
+	/** @brief Call arguments wrapped in Promises.
+	 *
+	 * @return pointer, possibly null, to the list of arguments to
+	 * the call, each wrapped in a Promise.
+	 */
+	PairList* promiseArgs() const
+	{
+	    return m_promise_args;
+	}
+
 	/** @brief Set status as generic function invocation.
 	 *
 	 * @param on true if this Context is to be designated as a
@@ -112,30 +201,70 @@ namespace CXXR {
 	    m_generic = on;
 	}
 
+	/** @brief Designate an on.exit object.
+	 *
+	 * @param onexit Pointer, possibly null, to an RObject to be
+	 *          evaluated on exit from the Context, whether by
+	 *          normal exit or by propagation of a C++ exception.
+	 */
+	void setOnExit(RObject* onexit)
+	{
+	    m_onexit = onexit;
+	}
+
+	/** @brief Source location associated with this Context.
+	 *
+	 * @return Pointer, possibly null, to the source location
+	 * associated with this Context.
+	 */
+	RObject* sourceLocation() const
+	{
+	    return m_srcref;
+	}
+
+	/** @brief Type of the Context.
+	 *
+	 * @return the Type of this Context.
+	 */
+	Type type() const
+	{
+	    return m_type;
+	}
+
+	/** @brief Working environment of the Context's Closure.
+	 *
+	 * @return Pointer to the working environment of this
+	 * Context's Closure, i.e. the environment in which
+	 * assignments create bindings, and in which default values of
+	 * parameters are evaluated.  If this is a BUILTIN Context,
+	 * this pointer is null.
+	 */
+	Environment* workingEnvironment() const
+	{
+	    return m_working_env;
+	}
     private:
 	ProtectStack::Scope m_protectstack_scope;
 	RAllocStack::Scope m_rallocstack_scope;
-    public:
-	Context *nextcontext;
-	int evaldepth;
-	Type callflag;
-	GCStackRoot<> srcref;
-	GCStackRoot<Expression> call;
-	GCStackRoot<Environment> sysparent;
-	Rboolean intsusp;
-	GCStackRoot<> handlerstack;
-	GCStackRoot<> restartstack;
+	Context *m_next_out;
+	unsigned int m_eval_depth;
+	Type m_type;
+	GCStackRoot<> m_srcref;
+	GCStackRoot<Expression> m_call;
+	GCStackRoot<Environment> m_call_env;
+	Rboolean m_interrupts_suspended;
+	GCStackRoot<> m_handlerstack;
+	GCStackRoot<> m_restartstack;
 #ifdef BYTECODE
-	SEXP *nodestack;
+	SEXP *m_nodestack;
 #ifdef BC_INT_STACK
-	IStackval *intstack;
+	IStackval *m_intstack;
 #endif
 #endif
-	GCStackRoot<FunctionBase> callfun;
-	GCStackRoot<Environment> cloenv;
-	GCStackRoot<PairList> promargs;
-	GCStackRoot<> conexit;
-    private:
+	GCStackRoot<FunctionBase> m_function;
+	GCStackRoot<Environment> m_working_env;
+	GCStackRoot<PairList> m_promise_args;
+	GCStackRoot<> m_onexit;
 	bool m_generic;
     };
 }  // namespace CXXR
