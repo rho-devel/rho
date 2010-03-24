@@ -579,7 +579,7 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 
 */
 
-SEXP dynamicfindVar(SEXP symbol, Context *cptr)
+SEXP dynamicfindVar(SEXP symbol, Evaluator::Context *cptr)
 {
     SEXP vl;
     while (cptr) {
@@ -840,7 +840,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(CADR(args)) == REALSXP || TYPEOF(CADR(args)) == INTSXP) {
 	where = asInteger(CADR(args));
-	genv = R_sysframe(where, Context::innermost());
+	genv = R_sysframe(where, Evaluator::Context::innermost());
     }
     else if (TYPEOF(CADR(args)) == NILSXP) {
 	error(_("use of NULL environment is defunct"));
@@ -1590,7 +1590,7 @@ SEXP attribute_hidden do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP pos2env(int pos, SEXP call)
 {
     SEXP env;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     if (pos == NA_INTEGER || pos < -1 || pos == 0) {
 	errorcall(call, _("invalid '%s' argument"), "pos");
@@ -1598,7 +1598,7 @@ static SEXP pos2env(int pos, SEXP call)
     }
     else if (pos == -1) {
 	/* make sure the context is a funcall */
-	cptr = Context::innermost();
+	cptr = Evaluator::Context::innermost();
 	while( !cptr->workingEnvironment() && cptr->nextOut()
 	       != NULL )
 	    cptr = cptr->nextOut();

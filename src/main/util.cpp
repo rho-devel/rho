@@ -475,9 +475,9 @@ SEXP nthcdr(SEXP s, int n)
 
 SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Context *cptr;
+    Evaluator::Context *cptr;
     int nargs = NA_INTEGER;
-    for (cptr = Context::innermost(); cptr != NULL; cptr = cptr->nextOut()) {
+    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
 	if (cptr->workingEnvironment() && cptr->workingEnvironment() == rho) {
 	    nargs = length(cptr->promiseArgs());
 	    break;

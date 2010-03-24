@@ -81,8 +81,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 				      m_matcher->numFormals() + 5)));
     // Set up environment:
     {
-	Context cntxt(const_cast<Expression*>(call),
-		      env, this, environment(), const_cast<PairList*>(args));
+	Evaluator::Context cntxt(const_cast<Expression*>(call), env, this,
+				 environment(), const_cast<PairList*>(args));
 	m_matcher->match(newenv, prepared_args);
     }
     // Perform evaluation:
@@ -91,12 +91,12 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	Environment* syspar = env;
 	// Change syspar if generic:
 	{
-	    Context* innerctxt = Context::innermost();
+	    Evaluator::Context* innerctxt = Evaluator::Context::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->callEnvironment();
 	}
-	Context cntxt(const_cast<Expression*>(call),
-		      syspar, this, newenv, prepared_args);
+	Evaluator::Context cntxt(const_cast<Expression*>(call),
+				 syspar, this, newenv, prepared_args);
 	Environment::ReturnScope returnscope(newenv);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)

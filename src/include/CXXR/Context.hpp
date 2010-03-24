@@ -34,7 +34,7 @@
 
 /** @file Context.hpp
  *
- * @brief Class CXXR::Context.
+ * @brief Class CXXR::Evaluator::Context.
  */
 
 #ifndef CONTEXT_HPP
@@ -57,23 +57,8 @@ extern "C" {
 }
 
 namespace CXXR {
-    class Context {
+    class Evaluator::Context {
     public:
-	/* The Various Context Types.
-	 *
-	* In general the type is a bitwise OR of the values below.
-	* Only functions should have the third bit turned on;
-	* this allows us to move up the context stack easily
-	* with either RETURN's or GENERIC's.
-	* If you add a new context type for functions make sure
-	* NEWTYPE & FUNCTION > 0
-	*/
-	enum Type {
-	    FUNCTION = 4,
-	    RETURN   = 12,
-	    BUILTIN  = 64  // used in profiling
-	};
-
 	/** @brief Constructor
 	 *
 	 * @param the_call Pointer to the call with which this Context
@@ -137,16 +122,6 @@ namespace CXXR {
 	    return m_handlerstack;
 	}
 
-	/** @brief Is this a generic function invocation?
-	 *
-	 * @return true iff this has been flagged as a generic
-	 * function invocation.
-	 */
-	bool isGeneric() const
-	{
-	    return m_generic;
-	}
-
 	/** @brief The innermost Context.
 	 *
 	 * @return Pointer to the innermost Context belonging to the
@@ -155,6 +130,16 @@ namespace CXXR {
 	static Context* innermost()
 	{
 	    return Evaluator::current()->innermostContext();
+	}
+
+	/** @brief Is this a generic function invocation?
+	 *
+	 * @return true iff this has been flagged as a generic
+	 * function invocation.
+	 */
+	bool isGeneric() const
+	{
+	    return m_generic;
 	}
 
 	/** @brief Next Context out.
@@ -222,15 +207,6 @@ namespace CXXR {
 	    return m_srcref;
 	}
 
-	/** @brief Type of the Context.
-	 *
-	 * @return the Type of this Context.
-	 */
-	Type type() const
-	{
-	    return m_type;
-	}
-
 	/** @brief Working environment of the Context's Closure.
 	 *
 	 * @return Pointer to the working environment of this
@@ -248,7 +224,6 @@ namespace CXXR {
 	RAllocStack::Scope m_rallocstack_scope;
 	Context *m_next_out;
 	unsigned int m_eval_depth;
-	Type m_type;
 	GCStackRoot<> m_srcref;
 	GCStackRoot<Expression> m_call;
 	GCStackRoot<Environment> m_call_env;
@@ -269,13 +244,13 @@ namespace CXXR {
     };
 }  // namespace CXXR
 
-SEXP Rf_dynamicfindVar(SEXP, CXXR::Context*);
-int Rf_framedepth(CXXR::Context*);
-void R_InsertRestartHandlers(CXXR::Context*, Rboolean);
-SEXP R_syscall(int, CXXR::Context*);
-int R_sysparent(int, CXXR::Context*);
-SEXP R_sysframe(int, CXXR::Context*);
-SEXP R_sysfunction(int, CXXR::Context*);
+SEXP Rf_dynamicfindVar(SEXP, CXXR::Evaluator::Context*);
+int Rf_framedepth(CXXR::Evaluator::Context*);
+void R_InsertRestartHandlers(CXXR::Evaluator::Context*, Rboolean);
+SEXP R_syscall(int, CXXR::Evaluator::Context*);
+int R_sysparent(int, CXXR::Evaluator::Context*);
+SEXP R_sysframe(int, CXXR::Evaluator::Context*);
+SEXP R_sysfunction(int, CXXR::Evaluator::Context*);
 
 extern "C" {
     void Rf_jump_to_toplevel(void);

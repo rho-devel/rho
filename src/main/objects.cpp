@@ -51,10 +51,10 @@
 
 using namespace CXXR;
 
-static SEXP GetObject(Context *cptr)
+static SEXP GetObject(Evaluator::Context *cptr)
 {
     SEXP s, sysp, b, formals, funcall, tag;
-    sysp = Context::innermost()->callEnvironment();
+    sysp = Evaluator::Context::innermost()->callEnvironment();
 
     PROTECT(funcall = R_syscall(0, cptr));
 
@@ -257,11 +257,11 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     SEXP op, formals, newrho, newcall, match_obj = 0;
     char buf[512];
     int i, j, nclass, matched, S4toS3, nprotect;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     /* Get the context which UseMethod was called from. */
 
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     if ( !cptr->workingEnvironment() || cptr->workingEnvironment() != rho)
 	error(_("'UseMethod' used in an inappropriate fashion"));
 
@@ -357,9 +357,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    }
 	    t = newcall;
 	    SETCAR(t, method);
-	    Context::innermost()->setGeneric(true);
+	    Evaluator::Context::innermost()->setGeneric(true);
 	    *ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	    Context::innermost()->setGeneric(false);
+	    Evaluator::Context::innermost()->setGeneric(false);
 	    UNPROTECT(nprotect);
 	    return 1;
 	}
@@ -381,9 +381,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	defineVar(install(".GenericDefEnv"), defrho, newrho);
 	t = newcall;
 	SETCAR(t, method);
-	Context::innermost()->setGeneric(true);
+	Evaluator::Context::innermost()->setGeneric(true);
 	*ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	Context::innermost()->setGeneric(false);
+	Evaluator::Context::innermost()->setGeneric(false);
 	UNPROTECT(5);
 	return 1;
     }
@@ -401,7 +401,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP ans, generic = R_NilValue /* -Wall */, obj, val;
     SEXP callenv, defenv;
     int nargs;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     nargs = length(args);
 
@@ -411,7 +411,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* get environments needed for dispatching.
        callenv = environment from which the generic was called
        defenv = environment where the generic was defined */
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     if ( !cptr || !cptr->workingEnvironment() || cptr->workingEnvironment() != env)
 	errorcall(call, _("'UseMethod' used in an inappropriate fashion"));
     callenv = cptr->callEnvironment();
@@ -450,7 +450,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if (nargs >= 2)
 	PROTECT(obj = eval(CADR(args), env));
     else {
-	cptr = Context::innermost();
+	cptr = Evaluator::Context::innermost();
 	while (cptr != NULL) {
 	    if ( cptr->workingEnvironment() && cptr->workingEnvironment() == env)
 		break;
@@ -538,15 +538,14 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP sysp, m, formals, actuals, tmp, newcall;
     SEXP a, group, basename;
     SEXP callenv, defenv;
-    Context *cptr;
-    int i, j, cftmp;
+    Evaluator::Context *cptr;
+    int i, j;
 
-    cptr = Context::innermost();
-    cftmp = cptr->type();
+    cptr = Evaluator::Context::innermost();
     cptr->setGeneric(true);
 
     /* get the env NextMethod was called from */
-    sysp = Context::innermost()->callEnvironment();
+    sysp = Evaluator::Context::innermost()->callEnvironment();
     while (cptr != NULL) {
 	if (cptr->workingEnvironment() && cptr->workingEnvironment() == sysp) break;
 	cptr = cptr->nextOut();
@@ -564,13 +563,13 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        check to be on the safe side.  If the variables are not in the
        environment (the method was called outside a method dispatch)
        then chose reasonable defaults. */
-    callenv = findVarInFrame3(Context::innermost()->callEnvironment(),
+    callenv = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			      install(".GenericCallEnv"), TRUE);
     if (TYPEOF(callenv) == PROMSXP)
 	callenv = eval(callenv, R_BaseEnv);
     else if (callenv == R_UnboundValue)
 	    callenv = env;
-    defenv = findVarInFrame3(Context::innermost()->callEnvironment(),
+    defenv = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			     install(".GenericDefEnv"), TRUE);
     if (TYPEOF(defenv) == PROMSXP) defenv = eval(defenv, R_BaseEnv);
     else if (defenv == R_UnboundValue) defenv = R_GlobalEnv;
@@ -666,7 +665,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       the second argument to NextMethod is another option but
       isn't currently used).
     */
-    klass = findVarInFrame3(Context::innermost()->callEnvironment(),
+    klass = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			    install(".Class"), TRUE);
 
     if (klass == R_UnboundValue) {
@@ -676,7 +675,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* the generic comes from either the sysparent or it's named */
-    generic = findVarInFrame3(Context::innermost()->callEnvironment(),
+    generic = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			      install(".Generic"), TRUE);
     if (generic == R_UnboundValue)
 	generic = eval(CAR(args), env);
@@ -692,7 +691,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* determine whether we are in a Group dispatch */
 
-    group = findVarInFrame3(Context::innermost()->callEnvironment(),
+    group = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			    install(".Group"), TRUE);
     if (group == R_UnboundValue) PROTECT(group = mkString(""));
     else PROTECT(group);
@@ -712,7 +711,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        If t is R_UnboundValue then we called the current method directly
     */
 
-    method = findVarInFrame3(Context::innermost()->callEnvironment(),
+    method = findVarInFrame3(Evaluator::Context::innermost()->callEnvironment(),
 			     install(".Method"), TRUE);
     if( method != R_UnboundValue) {
 	const char *ss;
@@ -997,7 +996,7 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
     /* dispatch the non-generic definition of `name'.  Used to trap
        calls to standardGeneric during the loading of the methods package */
     SEXP e, value, rho, fun, symbol, dot_Generic;
-    Context *cptr;
+    Evaluator::Context *cptr;
     /* find a non-generic function */
     symbol = install(translateChar(asChar(name)));
     dot_Generic = install(".Generic");
@@ -1020,7 +1019,7 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
     if(fun == R_UnboundValue)
 	error(_("unable to find a non-generic version of function \"%s\""),
 	      translateChar(asChar(name)));
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     /* check this is the right context */
     while (cptr) {
 	if (cptr->workingEnvironment() )
@@ -1229,7 +1228,7 @@ static SEXP get_this_generic(SEXP args)
 {
     SEXP value = R_NilValue; static SEXP gen_name;
     int i, n;
-    Context *cptr;
+    Evaluator::Context *cptr;
     const char *fname;
 
     /* a second argument to the call, if any, is taken as the function */
@@ -1240,7 +1239,7 @@ static SEXP get_this_generic(SEXP args)
     PROTECT(args);
     if(!gen_name)
 	gen_name = install("generic");
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     fname = translateChar(asChar(CAR(args)));
     n = framedepth(cptr);
     /* check for a matching "generic" slot */

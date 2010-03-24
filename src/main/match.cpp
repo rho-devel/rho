@@ -410,7 +410,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
                     SET_TAG(last, tagB);
                 }
             }
-	    errorcall(Context::innermost()->call(),
+	    errorcall(Evaluator::Context::innermost()->call(),
 		      _("unused argument(s) %s"),
 		      CHAR(STRING_ELT(deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
                       /* '+ 4' is to remove 'list' from 'list(badTag1,...)' */

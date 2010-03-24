@@ -57,7 +57,6 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
-#include "CXXR/Evaluator.h"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/ReturnException.hpp"
 
@@ -139,7 +138,7 @@ HANDLE ProfileEvent;
 
 static void doprof(void)
 {
-    Context *cptr;
+    Evaluator::Context *cptr;
     char buf[1100];
     unsigned long bigv, smallv, nodes;
     int len;
@@ -154,9 +153,8 @@ static void doprof(void)
 	    }
 	    reset_duplicate_counter();
     }
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
-	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
+    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
+	if (TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    if(strlen(buf) < 1000) {
 		strcat(buf, TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
@@ -183,7 +181,7 @@ static void __cdecl ProfileThread(void *pwait)
 #else /* not Win32 */
 static void doprof(int sig)
 {
-    Context *cptr;
+    Evaluator::Context *cptr;
     int newline = 0;
     unsigned long bigv, smallv, nodes;
     if (R_Mem_Profiling){
@@ -193,7 +191,7 @@ static void doprof(int sig)
 		     nodes, get_duplicate_counter());
 	    reset_duplicate_counter();
     }
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
+    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
 	if (TYPEOF(cptr->call()) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call());
 	    if (!newline) newline = 1;
@@ -394,7 +392,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(savedrho);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	Context cntxt(callx, call_env, func, working_env, promargs);
+	Evaluator::Context cntxt(callx, call_env, func, working_env, promargs);
 
 	/*  Build a list which matches the actual (unevaluated) arguments
 	    to the formal paramters.  Build a new environment which
@@ -461,14 +459,14 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     {
         Environment* syspar = SEXP_downcast<Environment*>(rho);
 	{
-	    Context* innerctxt = Context::innermost();
+	    Evaluator::Context* innerctxt = Evaluator::Context::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->callEnvironment();
 	}
 	Expression* callx = SEXP_downcast<Expression*>(call);
 	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	Context cntxt(callx, syspar, func, newrho, promargs);
+	Evaluator::Context cntxt(callx, syspar, func, newrho, promargs);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -575,7 +573,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(newrho);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	Context cntxt(callx, call_env, func, working_env, promargs);
+	Evaluator::Context cntxt(callx, call_env, func, working_env, promargs);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -639,7 +637,7 @@ static SEXP R_dot_target = NULL;
 SEXP R_execMethod(SEXP op, SEXP rho)
 {
     SEXP call, arglist, callerenv, newrho, next, val;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     if (R_dot_Generic == NULL) {
 	R_dot_Generic = install(".Generic");
@@ -703,7 +701,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     /* Find the calling context.  Should be the innermost Context unless
        profiling has inserted a Context::BUILTIN frame. */
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     if (!cptr->workingEnvironment())
 	cptr = cptr->nextOut();
 
@@ -1591,7 +1589,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	frame = asInteger(env);
 	if (frame == NA_INTEGER)
 	    error(_("invalid '%s' argument"), "envir");
-	PROTECT(env = R_sysframe(frame, Context::innermost()));
+	PROTECT(env = R_sysframe(frame, Evaluator::Context::innermost()));
 	break;
     default:
 	error(_("invalid '%s' argument"), "envir");
@@ -1608,7 +1606,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	    Environment* working_env = SEXP_downcast<Environment*>(env);
 	    PairList* promargs = SEXP_downcast<PairList*>(args);
-	    Context cntxt(callx, call_env, func, working_env, promargs);
+	    Evaluator::Context cntxt(callx, call_env, func,
+				     working_env, promargs);
 	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		expr = eval(expr, env);
@@ -1632,7 +1631,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 	    Environment* working_env = SEXP_downcast<Environment*>(env);
 	    PairList* promargs = SEXP_downcast<PairList*>(args);
-	    Context cntxt(callx, call_env, func, working_env, promargs);
+	    Evaluator::Context cntxt(callx, call_env, func,
+				     working_env, promargs);
 	    Environment::ReturnScope returnscope(working_env);
 	    try {
 		for (i = 0 ; i < n ; i++)
@@ -1687,9 +1687,9 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Context *cptr;
+    Evaluator::Context *cptr;
     SEXP s, ans ;
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     /* get the args supplied */
     while (cptr != NULL) {
 	if (cptr->workingEnvironment() && cptr->workingEnvironment() == rho)
@@ -1698,7 +1698,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = cptr->promiseArgs();
     /* get the env recall was called from */
-    s = Context::innermost()->callEnvironment();
+    s = Evaluator::Context::innermost()->callEnvironment();
     while (cptr != NULL) {
 	if (cptr->workingEnvironment() && cptr->workingEnvironment() == s)
 	    break;
@@ -1852,7 +1852,8 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	        FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
 		Environment* working_env = SEXP_downcast<Environment*>(rho1);
 		PairList* promargs = SEXP_downcast<PairList*>(pargs);
-		Context cntxt(callx, call_env, func, working_env, promargs);
+		Evaluator::Context cntxt(callx, call_env,
+					 func, working_env, promargs);
 		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
 	    }
 	    if (um) {
@@ -2617,7 +2618,7 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
       Environment* working_env = SEXP_downcast<Environment*>(rho1);
       PairList* promargs = SEXP_downcast<PairList*>(pargs);
       // FIXME: put in op:
-      Context cntxt(callx, call_env, 0, working_env, promargs);
+      Evaluator::Context cntxt(callx, call_env, 0, working_env, promargs);
       if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
   }
@@ -3329,7 +3330,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
 	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
 	      // FIXME: put in op:
-	      Context cntxt(callx, call_env, 0, working_env, promargs);
+	      Evaluator::Context cntxt(callx, call_env, 0,
+				       working_env, promargs);
 	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
@@ -3363,7 +3365,8 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      Environment* working_env = SEXP_downcast<Environment*>(rho1);
 	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
 	      // FIXME: put in op:
-	      Context cntxt(callx, call_env, 0, working_env, promargs);
+	      Evaluator::Context cntxt(callx, call_env, 0,
+				       working_env, promargs);
 	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }

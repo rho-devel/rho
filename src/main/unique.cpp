@@ -1083,7 +1083,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
-    Context *cptr;
+    Evaluator::Context *cptr;
     int expdots;
 
     checkArity(op,args);
@@ -1097,12 +1097,12 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "call");
 
     /* Get the function definition */
-    sysp = Context::innermost()->callEnvironment();
+    sysp = Evaluator::Context::innermost()->callEnvironment();
 
     if (TYPEOF(CAR(args)) == NILSXP) {
 	/* Get the env that the function containing */
 	/* matchcall was called from. */
-	cptr = Context::innermost();
+	cptr = Evaluator::Context::innermost();
 	while (cptr != NULL) {
 	    if (cptr->workingEnvironment() && cptr->workingEnvironment() == sysp)
 		break;

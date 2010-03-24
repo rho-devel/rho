@@ -64,7 +64,7 @@ namespace CXXR {
 	 */
 	Browser(RObject* the_text, RObject* the_condition)
 	    : m_text(the_text), m_condition(the_condition),
-	      m_context(Context::innermost())
+	      m_context(Evaluator::Context::innermost())
 	{
 	    s_browsers.push_back(this);
 	}
@@ -100,7 +100,7 @@ namespace CXXR {
 	 * @note This function is used to reproduce the rather strange
 	 * behaviour of the R function browserSetDebug in CR.
 	 */
-	Context* context() const
+	Evaluator::Context* context() const
 	{
 	    return m_context;
 	}
@@ -130,7 +130,7 @@ namespace CXXR {
 	static std::vector<Browser*> s_browsers;
 	GCStackRoot<> m_text;
 	GCStackRoot<> m_condition;
-	Context* m_context;
+	Evaluator::Context* m_context;
     };
 }
 

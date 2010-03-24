@@ -78,7 +78,8 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 	    missingArgumentError(this, args, pr.first);
 	GCStackRoot<const PairList> evaluated_args(pr.second);
 	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
-	    Context cntxt(const_cast<Expression*>(call), env, 0, 0, 0);
+	    Evaluator::Context cntxt(const_cast<Expression*>(call),
+				     env, 0, 0, 0);
 	    ans = invoke(call, evaluated_args, env);
 	} else {
 	    ans = invoke(call, evaluated_args, env);

@@ -65,7 +65,6 @@ extern void R_ProcessEvents(void);
 
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
-#include "CXXR/Evaluator.h"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;
@@ -271,7 +270,7 @@ static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
 void warning(const char *format, ...)
 {
     char buf[BUFSIZE], *p;
-    Context *c = Context::innermost();
+    Evaluator::Context *c = Evaluator::Context::innermost();
 
     va_list(ap);
     va_start(ap, format);
@@ -314,7 +313,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
     SEXP names, s;
     const char *dcall;
     char buf[BUFSIZE];
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     if (inWarning)
 	return;
@@ -323,7 +322,7 @@ static void vwarningcall_dflt(SEXP call, const char *format, va_list ap)
     if( s != R_NilValue ) {
 	if( !isLanguage(s) &&  ! isExpression(s) )
 	    error(_("invalid option \"warning.expression\""));
-	cptr = Context::innermost();
+	cptr = Evaluator::Context::innermost();
 	while ( cptr && !cptr->workingEnvironment())
 	    cptr = cptr->nextOut();
 	eval(s, cptr->workingEnvironment());
@@ -690,7 +689,7 @@ SEXP attribute_hidden do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 void error(const char *format, ...)
 {
     char buf[BUFSIZE];
-    Context *c = Context::innermost();
+    Evaluator::Context *c = Evaluator::Context::innermost();
 
     va_list(ap);
     va_start(ap, format);
@@ -858,9 +857,9 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!isString(string)) errorcall(call, _("invalid '%s' value"), "string");
 
     if(isNull(CAR(args))) {
-	Context *cptr;
+	Evaluator::Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = Context::innermost()->nextOut();
+	for (cptr = Evaluator::Context::innermost()->nextOut();
 	     cptr != NULL;
 	     cptr = cptr->nextOut())
 	    if (cptr->workingEnvironment()) {
@@ -962,9 +961,9 @@ SEXP attribute_hidden do_ngettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #ifdef ENABLE_NLS
     if(isNull(sdom)) {
-	Context *cptr;
+	Evaluator::Context *cptr;
 	SEXP rho = R_BaseEnv;
-	for (cptr = Context::innermost()->nextOut();
+	for (cptr = Evaluator::Context::innermost()->nextOut();
 	     cptr != NULL;
 	     cptr = cptr->nextOut())
 	    if (cptr->workingEnvironment()) {
@@ -1029,8 +1028,8 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static SEXP findCall(void)
 {
-    Context *cptr;
-    for (cptr = Context::innermost()->nextOut();
+    Evaluator::Context *cptr;
+    for (cptr = Evaluator::Context::innermost()->nextOut();
 	 cptr != NULL;
 	 cptr = cptr->nextOut())
 	if (cptr->workingEnvironment())
@@ -1208,10 +1207,10 @@ void R_PrintDeferredWarnings(void)
 SEXP R_GetTraceback(int skip)
 {
     int nback = 0, ns;
-    Context *c;
+    Evaluator::Context *c;
     SEXP s, t;
 
-    for (c = Context::innermost(), ns = skip;
+    for (c = Evaluator::Context::innermost(), ns = skip;
 	 c != NULL;
 	 c = c->nextOut())
 	if (ns > 0)
@@ -1221,7 +1220,7 @@ SEXP R_GetTraceback(int skip)
 
     PROTECT(s = allocList(nback));
     t = s;
-    for (c = Context::innermost() ;
+    for (c = Evaluator::Context::innermost() ;
 	 c != NULL;
 	 c = c->nextOut())
 	if (skip > 0)
@@ -1239,13 +1238,13 @@ SEXP R_GetTraceback(int skip)
 static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 {
     static char buf[560];
-    Context *c;
+    Evaluator::Context *c;
     int nl, ncalls = 0;
     Rboolean too_many = FALSE;
     const char *top = "" /* -Wall */;
 
     buf[0] = '\0';
-    for (c = Context::innermost();
+    for (c = Evaluator::Context::innermost();
 	 c != NULL;
 	 c = c->nextOut())
 	if (skip > 0)
@@ -1637,7 +1636,7 @@ static void signalInterrupt(void)
 }
 
 void attribute_hidden
-R_InsertRestartHandlers(Context *cptr, Rboolean browser)
+R_InsertRestartHandlers(Evaluator::Context *cptr, Rboolean browser)
 {
     SEXP klass, rho, entry, name;
 

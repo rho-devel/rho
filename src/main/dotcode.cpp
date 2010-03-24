@@ -1568,14 +1568,14 @@ static SEXP
 Rf_getCallingDLL(void)
 {
     SEXP e, ans;
-    Context *cptr;
+    Evaluator::Context *cptr;
     SEXP rho = R_NilValue;
     Rboolean found = FALSE;
 
     /* First find the environment of the caller.
        Testing shows this is the right caller, despite the .C/.Call ...
      */
-    for (cptr = Context::innermost();
+    for (cptr = Evaluator::Context::innermost();
 	 cptr != NULL;
 	 cptr = cptr->nextOut())
 	if (cptr->workingEnvironment()) {

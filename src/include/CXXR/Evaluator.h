@@ -107,7 +107,6 @@ extern "C" {
 } // extern "C"
 
 namespace CXXR {
-    class Context;
     class RObject;
     class Environment;
 
@@ -146,6 +145,8 @@ namespace CXXR {
      */
     class Evaluator {
     public:
+	class Context;
+
 	Evaluator()
 	    : m_next(s_current), m_innermost_context(0)
 	{
@@ -338,8 +339,7 @@ namespace CXXR {
 	 */
 	static void setDepthLimit(int depth);
    private:
-	friend class Context;
-	friend class LoopScope;
+	friend class Context;  // Unnecessary in C++ 0x
 
 	static unsigned int s_depth;  // Current depth of expression evaluation 
 	static unsigned int s_depth_threshold;  // An error will be

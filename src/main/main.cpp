@@ -70,7 +70,6 @@
 #include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
-#include "CXXR/Evaluator.h"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;
@@ -1086,10 +1085,10 @@ void mainloop(void)
 
 static void printwhere(void)
 {
-  Context *cptr;
+  Evaluator::Context *cptr;
   int lct = 1;
 
-  for (cptr = Context::innermost(); cptr; cptr = cptr->nextOut()) {
+  for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
     if (TYPEOF(cptr->call()) == LANGSXP) {
 	Rprintf("where %d", lct++);
 	SrcrefPrompt("", cptr->sourceLocation());
@@ -1235,7 +1234,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     savestack = ProtectStack::size();
 
     if (!ENV_DEBUG(rho)) {
-	Context* cptr = Context::innermost();
+	Evaluator::Context* cptr = Evaluator::Context::innermost();
 	int tmp;
 	while ( cptr && !cptr->workingEnvironment())
 	    cptr = cptr->nextOut();
@@ -1258,7 +1257,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	do {
 	    redo = false;
 	    try {
-		R_InsertRestartHandlers(Context::innermost(), TRUE);
+		R_InsertRestartHandlers(Evaluator::Context::innermost(), TRUE);
 		R_ReplConsole(rho, savestack);
 	    }
 	    catch (ReturnException& rx) {

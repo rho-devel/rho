@@ -28,12 +28,11 @@ GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 RObject* R_Srcref;
 
-Context::Context(Expression* the_call, Environment* call_env,
-		 FunctionBase* function, Environment* working_env,
-		 PairList* promise_args)
-    : m_next_out(Context::innermost()), m_eval_depth(Evaluator::depth()),
-      m_type(working_env ? RETURN : BUILTIN), m_srcref(R_Srcref),
-      m_call(the_call), m_call_env(call_env),
+Evaluator::Context::Context(Expression* the_call, Environment* call_env,
+			    FunctionBase* function, Environment* working_env,
+			    PairList* promise_args)
+    : m_next_out(innermost()), m_eval_depth(Evaluator::depth()),
+      m_srcref(R_Srcref), m_call(the_call), m_call_env(call_env),
       m_interrupts_suspended(R_interrupts_suspended),
       m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),
       m_function(function), m_working_env(working_env),
@@ -48,7 +47,7 @@ Context::Context(Expression* the_call, Environment* call_env,
     Evaluator::current()->m_innermost_context = this;
 }
 
-Context::~Context()
+Evaluator::Context::~Context()
 {
 #ifdef BYTECODE
     R_BCNodeStackTop = m_nodestack;

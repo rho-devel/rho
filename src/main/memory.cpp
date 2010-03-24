@@ -337,7 +337,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     SEXP s;
 
     if (length < 0 ) {
-	Context* ctxt = Context::innermost();
+	Evaluator::Context* ctxt = Evaluator::Context::innermost();
 	errorcall(ctxt ? ctxt->call() : static_cast<RObject*>(0),
 		  _("negative length vectors are not allowed"));
     }
@@ -521,11 +521,10 @@ static FILE *R_MemReportingOutfile;
 static void R_OutputStackTrace(FILE *file)
 {
     int newline = 0;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
+    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
+	if (TYPEOF(cptr->call) == LANGSXP) {
 	    SEXP fun = CAR(cptr->call);
 	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",

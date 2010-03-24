@@ -46,7 +46,6 @@
 #include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/Context.hpp"
-#include "CXXR/Evaluator.h"
 
 using namespace std;
 using namespace CXXR;
@@ -57,7 +56,7 @@ using namespace CXXR;
 /* negative n counts back from the current frame */
 /* positive n counts up from the globalEnv */
 
-SEXP attribute_hidden R_sysframe(int n, Context *cptr)
+SEXP attribute_hidden R_sysframe(int n, Evaluator::Context *cptr)
 {
     if (n == 0)
 	return(R_GlobalEnv);
@@ -68,7 +67,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 	n = -n;
 
     if(n < 0)
-	errorcall(Context::innermost()->call(),
+	errorcall(Evaluator::Context::innermost()->call(),
 		  _("not that many frames on the stack"));
 
     while (cptr) {
@@ -84,7 +83,7 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
     if(n == 0)
 	return R_GlobalEnv;
     else
-	errorcall(Context::innermost()->call(),
+	errorcall(Evaluator::Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     return R_NilValue;	   /* just for -Wall */
 }
@@ -96,12 +95,12 @@ SEXP attribute_hidden R_sysframe(int n, Context *cptr)
 /* It would be much simpler if sysparent just returned cptr->sysparent */
 /* but then we wouldn't be compatible with S. */
 
-int attribute_hidden R_sysparent(int n, Context *cptr)
+int attribute_hidden R_sysparent(int n, Evaluator::Context *cptr)
 {
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(Context::innermost()->call(),
+	errorcall(Evaluator::Context::innermost()->call(),
 		  _("only positive values of 'n' are allowed"));
     while (cptr && n > 1) {
 	if (cptr->workingEnvironment() )
@@ -132,7 +131,7 @@ int attribute_hidden R_sysparent(int n, Context *cptr)
     return n;
 }
 
-int attribute_hidden framedepth(Context *cptr)
+int attribute_hidden framedepth(Evaluator::Context *cptr)
 {
     int nframe = 0;
     while (cptr) {
@@ -143,7 +142,7 @@ int attribute_hidden framedepth(Context *cptr)
     return nframe;
 }
 
-SEXP attribute_hidden R_syscall(int n, Context *cptr)
+SEXP attribute_hidden R_syscall(int n, Evaluator::Context *cptr)
 {
     /* negative n counts back from the current frame */
     /* positive n counts up from the globalEnv */
@@ -154,7 +153,7 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(Context::innermost()->call(),
+	errorcall(Evaluator::Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
 	if (cptr->workingEnvironment() ) {
@@ -169,18 +168,19 @@ SEXP attribute_hidden R_syscall(int n, Context *cptr)
 	}
 	cptr = cptr->nextOut();
     }
-    errorcall(Context::innermost()->call(), _("not that many frames on the stack"));
+    errorcall(Evaluator::Context::innermost()->call(),
+	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
-SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
+SEXP attribute_hidden R_sysfunction(int n, Evaluator::Context *cptr)
 {
     if (n > 0)
 	n = framedepth(cptr) - n;
     else
 	n = - n;
     if (n < 0)
-	errorcall(Context::innermost()->call(),
+	errorcall(Evaluator::Context::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
 	if (cptr->workingEnvironment() ) {
@@ -191,33 +191,12 @@ SEXP attribute_hidden R_sysfunction(int n, Context *cptr)
 	}
 	cptr = cptr->nextOut();
     }
-    errorcall(Context::innermost()->call(), _("not that many frames on the stack"));
+    errorcall(Evaluator::Context::innermost()->call(),
+	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
 
-/* count how many contexts of the specified type are present on the stack */
-/* browser contexts are a bit special because they are transient and for  */
-/* any closure context with the debug bit set one will be created; so we  */
-/* need to count those as well                                            */
-int countContexts(int ctxttype, int browser) {
-    int n=0;
-    Context *cptr;
-
-    cptr = Context::innermost();
-    while( cptr ) {
-        if( cptr->type() == ctxttype ) 
-            n++;
-        else if( browser ) {
-	    if(cptr->workingEnvironment() && ENV_DEBUG(cptr->workingEnvironment()) )
-              n++;
-        }
-        cptr = cptr->nextOut();
-    }
-    return n;
-}
-  
-   
 /* functions to support looking up information about the browser */
 /* contexts that are in the evaluation stack */
 
@@ -249,7 +228,7 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_error(_("no browser context to query"));
 	    Browser* browser
 		= Browser::fromOutermost(Browser::numberActive() - 1);
-	    Context* cptr = browser->context();
+	    Evaluator::Context* cptr = browser->context();
 	    while (cptr && (n > 1 || !cptr->workingEnvironment())) {
 		if (cptr->workingEnvironment()) 
 		    n--;
@@ -275,11 +254,11 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     checkArity(op, args);
     /* first find the context that sys.xxx needs to be evaluated in */
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     t = cptr->callEnvironment();
     while (cptr) {
 	if (cptr->workingEnvironment() )
@@ -327,8 +306,8 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(1);
 	return rval;
     case 7: /* sys.on.exit */
-	if( Context::innermost()->nextOut() != NULL)
-	    return Context::innermost()->nextOut()->onExit();
+	if( Evaluator::Context::innermost()->nextOut() != NULL)
+	    return Evaluator::Context::innermost()->nextOut()->onExit();
 	else
 	    return R_NilValue;
     case 8: /* sys.parents */
@@ -351,7 +330,7 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int n;
     SEXP t;
-    Context *cptr;
+    Evaluator::Context *cptr;
 
     checkArity(op, args);
     t = CAR(args);
@@ -360,7 +339,7 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(n == NA_INTEGER || n < 1 )
 	error(_("invalid '%s' value"), "n");
 
-    cptr = Context::innermost();
+    cptr = Evaluator::Context::innermost();
     t = cptr->callEnvironment();
     while (cptr){
 	if (cptr->workingEnvironment() ) {
