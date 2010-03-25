@@ -57,6 +57,63 @@ extern "C" {
 }
 
 namespace CXXR {
+    /** @brief Housekeeping information for FunctionBase::apply().
+     *
+     * Evaluator::Context objects must be declared on the processor
+     * stack (i.e. as C++ automatic variables).
+     * 
+     * This class performs two functions:
+     * <ol>
+     *
+     * <li>The primary function is to maintain an 'Ariadne's thread',
+     * recording information about the stack of R function calls
+     * currently active.  This is to support error reporting,
+     * traceback, and the 'sys' R functions.  Calls to built-in
+     * functions, other than 'foreign' functions and various other
+     * special cases, are not recorded unless R profiling is
+     * enabled.</li>
+     *
+     * <li>A secondary function is to save and restore information
+     * about the evaluation state.  Certain aspects of the state of
+     * the current Evaluator are saved by the constructor of a Context
+     * object; the state is then restored by the object's destructor.
+     * Since Context objects are allocated on the processor stack,
+     * this means that the evaluation state will automatically be
+     * restored both under the normal flow of control and when the
+     * stack is unwound during the propagation of a C++ exception.
+     * (Beware however that some of the save/restore functionality
+     * that CR's RCNTXT offers is handled separately in CXXR via
+     * classes such as Browser; this trend of moving save/restore
+     * functionality out of the Evaluator::Context class is likely to
+     * continue.  Moreover, in cases where save/restore functions
+     * continue to be effected by Evaluator::Context, this is in some
+     * cases achieved by incorporating within a Context object an
+     * object with more specific save/restore role, such as a
+     * ProtectStack::Scope object.</li>
+     *
+     * <ol>
+     *
+     * Evaluator::Context objects are of two kinds according to
+     * whether or not the \c working_env argument to the constructor
+     * is a null pointer.  If \c working_env is null, then the Context
+     * contains information relating to an application of a
+     * BuiltInFunction, and in that case the \c function and \c
+     * promise_args constructor arguments should also be null; this
+     * corresponds to CR's BUILTIN context type.  If \c working_env is
+     * non-null, then the Context typically contains information about
+     * an application of a Closure; some other cases, such as
+     * generically-despatched BuiltInFunction calls and calls to
+     * do_eval(), are handled in the same way as Closure applications.
+     * This corresponds roughly to CR's FUNCTION context type.
+     *
+     * @note It is likely that in future refactorisation this class
+     * will be divided into two: (i) a base class containing information
+     * applicable to any call of FunctionBase::apply(), and with
+     * little or no save/restore functionality, and (ii) a derived
+     * class containing extra information relating to Closure
+     * applications and kindred, and with additional save/restore
+     * functions.
+     */
     class Evaluator::Context {
     public:
 	/** @brief Constructor
@@ -74,9 +131,9 @@ namespace CXXR {
 	 *          the Closure, i.e. the environment in which
 	 *          assignments create bindings, and in which default
 	 *          values of parameters are evaluated.  If this
-	 *          pointer is null, it signifies that this is a
-	 *          BUILTIN Context, and in that case \a function and
-	 *          \a promise_args should also be null.
+	 *          pointer is null, it signifies that this Context
+	 *          relates to a built-in function, and in that case
+	 *          \a function and \a promise_args should also be null.
 	 *
 	 * @param promise_args Pointer, possibly null, to the list of
 	 *          arguments to the call, each wrapped in a Promise.
