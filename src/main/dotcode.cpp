@@ -55,7 +55,7 @@
 
 #include <R_ext/RConverters.h>
 #include <R_ext/Riconv.h>
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))

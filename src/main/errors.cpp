@@ -64,7 +64,7 @@ extern void R_ProcessEvents(void);
 #endif
 
 #include "CXXR/CommandTerminated.hpp"
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;

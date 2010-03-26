@@ -14,12 +14,12 @@
  *CXXR to the CXXR website.
  *CXXR */
 
-/** @file Context.cpp
+/** @file Evaluator_Context.cpp
  *
- * Implementation of class CXXR::Context.
+ * Implementation of class CXXR::Evaluator::Context.
  */
 
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 
 using namespace std;
 using namespace CXXR;

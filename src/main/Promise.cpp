@@ -40,10 +40,9 @@
 
 #include "CXXR/Promise.h"
 
-#include "CXXR/Context.hpp"
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Evaluator.h"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;

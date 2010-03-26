@@ -40,9 +40,8 @@
 
 #include "CXXR/BuiltInFunction.h"
 
-#include "CXXR/Context.hpp"
 #include "CXXR/DotInternal.h"
-#include "CXXR/Evaluator.h"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/ProtectStack.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"

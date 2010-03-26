@@ -40,7 +40,7 @@
 #ifndef BROWSER_HPP
 #define BROWSER_HPP 1
 
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RObject.h"
 

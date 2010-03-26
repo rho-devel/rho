@@ -40,9 +40,8 @@
 
 #include "CXXR/Closure.h"
 
-#include "CXXR/Context.hpp"
 #include "CXXR/ArgMatcher.hpp"
-#include "CXXR/Evaluator.h"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnException.hpp"

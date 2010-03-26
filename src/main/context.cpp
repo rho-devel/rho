@@ -45,7 +45,6 @@
 
 #include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
-#include "CXXR/Context.hpp"
 
 using namespace std;
 using namespace CXXR;

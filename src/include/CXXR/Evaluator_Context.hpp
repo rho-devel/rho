@@ -32,7 +32,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file Context.hpp
+/** @file Evaluator_Context.hpp
  *
  * @brief Class CXXR::Evaluator::Context.
  */

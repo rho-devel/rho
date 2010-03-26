@@ -55,8 +55,8 @@
 #include "basedecl.h"
 
 #include "CXXR/ByteCode.hpp"
-#include "CXXR/Context.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/ReturnException.hpp"
 

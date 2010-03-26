@@ -43,7 +43,7 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 
 using namespace CXXR;
 

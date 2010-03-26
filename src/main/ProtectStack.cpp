@@ -42,7 +42,7 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 
 using namespace std;
 using namespace CXXR;

@@ -69,7 +69,6 @@
 
 #include "CXXR/Browser.hpp"
 #include "CXXR/CommandTerminated.hpp"
-#include "CXXR/Context.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;

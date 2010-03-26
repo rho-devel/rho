@@ -51,7 +51,7 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 

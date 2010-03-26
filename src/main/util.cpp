@@ -43,7 +43,7 @@
 #include <Defn.h>
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 
 using namespace CXXR;
 

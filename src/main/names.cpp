@@ -41,7 +41,7 @@
 
 #include <iostream>
 #include "CXXR/CachedString.h"
-#include "CXXR/Context.hpp"
+#include "CXXR/Evaluator_Context.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
 #include <Defn.h>
