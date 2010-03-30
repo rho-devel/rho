@@ -41,6 +41,9 @@ internet_la = internet$(SHLIB_EXT)
 internet_la_LIBADD = $(LIBR) @DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 ALL_CFLAGS = $(ALL_CFLAGS_LO) @C_VISIBILITY@
+# 2010-03-30, with g++ (SUSE Linux) 4.4.1 [gcc-4_4-branch revision 150839],
+# including -fvisibility-hidden among the flags caused an obscure bug.
+ALL_CXXFLAGS = $(ALL_CXXFLAGS_LO) # @C_VISIBILITY@
 
 all: Makefile Makedeps R
 
