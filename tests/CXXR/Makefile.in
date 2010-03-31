@@ -36,7 +36,7 @@ depends = $(sources_cxx:.cpp=.d)
 tests = CellPooltest MemoryBanktest Allocatortest \
         HeterogeneousListtest splice_test ArgMatchertest0 ArgMatchertest1 \
 	ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 ArgMatchertest5 \
-        ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
+        ArgMatchertest6 ArgMatchertest7 ArgMatchertest8 miscR
 
 check : $(tests:=.ts)
 
@@ -223,6 +223,12 @@ MemoryBanktest.ts : MemoryBanktest MemoryBanktest.save
 	rm MemoryBanktest.out
 	touch $@
 
+miscR.ts : ../../bin/exec/R misc.R misc.save
+	../../bin/R --vanilla --quiet < misc.R > misc.Rout 2>&1
+	diff misc.save misc.Rout
+	rm misc.Rout
+	touch $@
+ 
 RObject_sizer_objs = RObject_sizer.o CellHeap.o GCNode.o GCRoot.o \
                      MemoryBank.o
 
