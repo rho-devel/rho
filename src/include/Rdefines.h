@@ -36,10 +36,6 @@
 #ifndef R_DEFINES_H
 #define R_DEFINES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #if !defined(R_R_H) && !defined(R_S_H)
 /* user forgot to include R.h or S.h */
 # include <R_ext/Memory.h>
@@ -47,6 +43,10 @@ extern "C" {
 #endif
 
 #include <Rinternals.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  *  Much is from John Chambers' "Programming With Data".

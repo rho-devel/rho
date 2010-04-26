@@ -201,9 +201,9 @@ extern "C" {
 #else
     inline int IS_CACHED(SEXP x)
     {
-	using namespace CXXR;
-	const String* str = SEXP_downcast<const String*>(x);
-	return (dynamic_cast<const CachedString*>(str) != 0);
+	// Use explicit namespace qualification to avoid ambiguities:
+	const CXXR::String* str = CXXR::SEXP_downcast<const CXXR::String*>(x);
+	return (dynamic_cast<const CXXR::CachedString*>(str) != 0);
     }
 #endif
 

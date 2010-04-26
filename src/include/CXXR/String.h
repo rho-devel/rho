@@ -258,8 +258,8 @@ extern "C" {
 #else
     inline int ENC_KNOWN(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	cetype_t enc = str.encoding();
 	return enc == CE_LATIN1 || enc == CE_UTF8;
     }
@@ -274,8 +274,8 @@ extern "C" {
 #else
     inline Rboolean IS_LATIN1(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	return Rboolean(str.encoding() == CE_LATIN1);
     }
 #endif
@@ -291,8 +291,8 @@ extern "C" {
 #else
     inline Rboolean IS_UTF8(SEXP x)
     {
-	using namespace CXXR;
-	const String& str = *SEXP_downcast<const String*>(x);
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
 	return Rboolean(str.encoding() == CE_UTF8);
     }
 #endif
