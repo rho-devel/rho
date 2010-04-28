@@ -1413,7 +1413,7 @@ SEXP attribute_hidden do_axis(SEXP call, SEXP op, SEXP args, SEXP env)
 		/* Clip tick labels to user coordinates. */
 		if (y > low && y < high) {
 		    if (isExpression(lab)) {
-			GMMathText(VECTOR_ELT(lab, ind[i]), side,
+			GMMathText(XVECTOR_ELT(lab, ind[i]), side,
 				   axis_lab, 0, y, gpptr(dd)->las,
 				   padjval, dd);
 		    }
