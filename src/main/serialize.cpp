@@ -968,10 +968,14 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 		WriteItem(STRING_ELT(s, i), ref_table, stream);
 	    break;
 	case VECSXP:
-	case EXPRSXP:
 	    OutInteger(stream, LENGTH(s));
 	    for (i = 0; i < LENGTH(s); i++)
 		WriteItem(VECTOR_ELT(s, i), ref_table, stream);
+	    break;
+	case EXPRSXP:
+	    OutInteger(stream, LENGTH(s));
+	    for (i = 0; i < LENGTH(s); i++)
+		WriteItem(XVECTOR_ELT(s, i), ref_table, stream);
 	    break;
 	case BCODESXP:
 #ifdef BYTECODE
@@ -1485,11 +1489,16 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		SET_STRING_ELT(s, count, ReadItem(ref_table, stream));
 	    break;
 	case VECSXP:
-	case EXPRSXP:
 	    length = InInteger(stream);
 	    PROTECT(s = allocVector(SEXPTYPE(type), length));
 	    for (count = 0; count < length; ++count)
 		SET_VECTOR_ELT(s, count, ReadItem(ref_table, stream));
+	    break;
+	case EXPRSXP:
+	    length = InInteger(stream);
+	    PROTECT(s = allocVector(SEXPTYPE(type), length));
+	    for (count = 0; count < length; ++count)
+		SET_XVECTOR_ELT(s, count, ReadItem(ref_table, stream));
 	    break;
 	case BCODESXP:
 #ifdef BYTECODE
