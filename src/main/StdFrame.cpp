@@ -38,18 +38,6 @@
  * @brief Implementation of class CXXR:StdFrame.
  */
 
-// A StdFrame is implemented using two data structures.  First
-// there is a PairList, each of whose elements represents a binding,
-// and so maps a symbol (held as the tag) to a value (held as the
-// 'car'), and also contains information about locking, active binding
-// etc.  Secondly there is an unordered_map (i.e. hash table) which
-// maps symbols to elements of the PairList.  Operations on the
-// PairList are always done via the unordered_map.  When a symbol is
-// erased from the enviroment, the continuity of the PairList will be
-// broken, and in this event the PairList is marked as stale.  The
-// private function refreshFrameList() is invoked when necessary to
-// restring the PairList by iterating over the hash table.
-
 #include "CXXR/StdFrame.hpp"
 
 #include <cmath>
