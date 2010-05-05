@@ -636,13 +636,17 @@ namespace CXXR {
 		bdg = pr.second;
 	    }
 	    if (bdg) {
-		// We assume that forcing a Binding's value
-		// will not alter the Binding:
-		RObject* val = bdg->forcedValue().first;
+		pair<RObject*, bool> fpr = bdg->forcedValue();
+		RObject* val = fpr.first;
 		found = pred(val);
 		if (found) {
-		    // Invoke read monitor (if any);
-		    bdg->rawValue();
+		    // Invoke read monitor (if any) only if
+		    // forcedValue() did not force a Promise.  (If a
+		    // Promise was forced, the read monitor will have
+		    // been invoked anyway, and 'bdg' may now be
+		    // junk.)
+		    if (!fpr.second)
+			bdg->rawValue();
 		    ans = make_pair(env, val);
 		}
 		env = env->enclosingEnvironment();
