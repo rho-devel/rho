@@ -804,7 +804,9 @@ void InitGlobalEnv(void);
 Rboolean R_current_trace_state(void);
 Rboolean R_has_methods(SEXP);
 void R_InitialData(void);
-SEXP R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+#ifdef __cplusplus
+std::pair<bool, SEXP> R_possible_dispatch(SEXP, SEXP, SEXP, SEXP, Rboolean);
+#endif
 void InitGraphics(void);
 void InitMemory(void);
 void InitNames(void);

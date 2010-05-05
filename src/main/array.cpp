@@ -609,11 +609,12 @@ SEXP attribute_hidden do_matprod(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(PRIMVAL(op) == 0 && /* %*% is primitive, the others are .Internal() */
        (IS_S4_OBJECT(x) || IS_S4_OBJECT(y))
        && R_has_methods(op)) {
-	SEXP s, value;
+	SEXP s;
 	/* Remove argument names to ensure positional matching */
 	for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	value = R_possible_dispatch(call, op, args, rho, FALSE);
-	if(value) return value;
+	std::pair<bool, SEXP> pr
+	    = R_possible_dispatch(call, op, args, rho, FALSE);
+	if (pr.first) return pr.second;
     }
 
     sym = isNull(y);

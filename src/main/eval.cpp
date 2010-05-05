@@ -1788,7 +1788,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	char *pt;
 	/* Try for formal method. */
 	if(IS_S4_OBJECT(x) && R_has_methods(op)) {
-	    SEXP value, argValue;
+	    SEXP argValue;
 	    /* create a promise to pass down to applyClosure  */
 	    if(!argsevald) {
 		argValue = promiseArgs(args, rho);
@@ -1796,9 +1796,10 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    } else argValue = args;
 	    PROTECT(argValue); nprotect++;
 	    /* This means S4 dispatch */
-	    value = R_possible_dispatch(call, op, argValue, rho, TRUE);
-	    if(value) {
-		*ans = value;
+	    std::pair<bool, SEXP> pr
+		= R_possible_dispatch(call, op, argValue, rho, TRUE);
+	    if (pr.first) {
+		*ans = pr.second;
 		UNPROTECT(nprotect);
 		return 1;
 	    }
@@ -1948,10 +1949,13 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
 	    for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
-	if(R_has_methods(op) &&
-	   (value = R_possible_dispatch(call, op, args, rho, FALSE))) {
-	       *ans = value;
-	       return 1;
+	if(R_has_methods(op)) {
+	    std::pair<bool, SEXP> pr
+		= R_possible_dispatch(call, op, args, rho, FALSE);
+	    if (pr.first) {
+		*ans = pr.second;
+		return 1;
+	    }
 	}
 	/* else go on to look for S3 methods */
     }

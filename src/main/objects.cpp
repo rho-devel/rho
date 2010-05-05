@@ -49,6 +49,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnException.hpp"
 
+using namespace std;
 using namespace CXXR;
 
 static SEXP GetObject(Evaluator::Context *cptr)
@@ -1301,7 +1302,7 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
    promises, but not from the other two: there all the arguments have
    already been evaluated.
  */
-SEXP attribute_hidden
+pair<bool, SEXP> attribute_hidden
 R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
@@ -1313,7 +1314,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	error(_("invalid primitive operation given for dispatch"));
     current = prim_methods[offset];
     if(current == NO_METHODS || current == SUPPRESSED)
-	return(NULL);
+	return pair<bool, SEXP>(false, 0);
     /* check that the methods for this function have been set */
     if(current == NEEDS_RESET) {
 	/* get the methods and store them in the in-core primitive
@@ -1331,7 +1332,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
        && quick_method_check_ptr) {
 	value = (*quick_method_check_ptr)(args, mlist, op);
 	if(isPrimitive(value))
-	    return(NULL);
+	    return pair<bool, SEXP>(false, 0);
 	if(isFunction(value)) {
 	    /* found a method, call it with promised args */
 	    if(!promisedArgs) {
@@ -1341,9 +1342,9 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    SET_PRVALUE(CAR(b), CAR(a));
 		value =  applyClosure(call, value, s, rho, R_BaseEnv);
 		UNPROTECT(1);
-		return value;
 	    } else
-		return applyClosure(call, value, args, rho, R_BaseEnv);
+		value = applyClosure(call, value, args, rho, R_BaseEnv);
+	    return make_pair(true, value);
 	}
 	/* else, need to perform full method search */
     }
@@ -1363,10 +1364,10 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     } else
 	value = applyClosure(call, fundef, args, rho, R_BaseEnv);
     prim_methods[offset] = current;
-    if(value == deferred_default_object)
-	return NULL;
+    if (value == deferred_default_object)
+	return pair<bool, SEXP>(false, 0);
     else
-	return value;
+	return make_pair(true, value);
 }
 
 SEXP R_do_MAKE_CLASS(const char *what)
