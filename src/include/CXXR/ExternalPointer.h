@@ -181,16 +181,16 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
+	// Declared protected to ensure that ExternalPointer objects are
+	// allocated only using 'new':
+	~ExternalPointer() {}
+
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
 	void* m_ptr;
 	GCEdge<> m_tag;
 	GCEdge<> m_protege;
-
-	// Declared private to ensure that ExternalPointer objects are
-	// allocated only using 'new':
-	~ExternalPointer() {}
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:

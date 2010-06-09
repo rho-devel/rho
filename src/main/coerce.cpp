@@ -1079,7 +1079,7 @@ static SEXP coerceSymbol(SEXP v, SEXPTYPE type)
     SEXP rval = R_NilValue;
     if (type == EXPRSXP) {
 	PROTECT(rval = allocVector(type, 1));
-	SET_VECTOR_ELT(rval, 0, v);
+	SET_XVECTOR_ELT(rval, 0, v);
 	UNPROTECT(1);
     }
     return rval;

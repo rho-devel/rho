@@ -27,12 +27,10 @@ include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-## Partially included by the API (1) headers in .., but not part of the
-## API per se. 
 CXXR_HS = \
   BuiltInFunction.h CachedString.h Closure.h ComplexVector.h ConsCell.h \
   DotInternal.h \
-  Environment.h Expression.h ExpressionVector.h ExternalPointer.h \
+  Environment.h Evaluator.h Expression.h ExpressionVector.h ExternalPointer.h \
   FunctionBase.h GCRoot.h IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h ProtectStack.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
