@@ -63,7 +63,7 @@
  * slightly; however, it may prove beneficial in the future when
  * combined with provenance tracking.
  */
-#define DETACH_LOCAL_FRAMES
+//#define DETACH_LOCAL_FRAMES
 
 namespace CXXR {
     class FunctionBase;
