@@ -39,7 +39,8 @@ CXXR_HS = \
 
 CXXR_HPPS = \
   Allocator.hpp ArgMatcher.hpp CellPool.hpp \
-  DumbVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCStackRoot.hpp \
+  DumbVector.hpp Evaluator_Context.hpp Frame.hpp \
+  GCEdge.hpp GCNode.hpp GCStackRoot.hpp \
   HandleVector.hpp HeterogeneousList.hpp MemoryBank.hpp \
   SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp config.hpp
 

@@ -79,11 +79,6 @@ RObject::RObject(const RObject& pattern)
       m_attrib(pattern.m_attrib)
 {}
 
-PairList* RObject::attributes()
-{
-    return m_attrib;
-}
-
 const PairList* RObject::attributes() const
 {
     return m_attrib;
@@ -110,14 +105,7 @@ void RObject::frozenError()
     Rf_error(_("attempt to modify frozen object"));
 }
 
-RObject* RObject::getAttribute(const Symbol* name)
-{
-    for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == name) return node->car();
-    return 0;
-}
-
-const RObject* RObject::getAttribute(const Symbol* name) const
+RObject* RObject::getAttribute(const Symbol* name) const
 {
     for (PairList* node = m_attrib; node; node = node->tail())
 	if (node->tag() == name) return node->car();
@@ -208,7 +196,8 @@ void RObject::visitReferents(const_visitor* v) const
 
 SEXP ATTRIB(SEXP x)
 {
-    return x ? x->attributes() : 0;
+    GCNode::GCInhibitor inhibitor;
+    return x ? const_cast<PairList*>(x->attributes()) : 0;
 }
 
 void SET_ATTRIB(SEXP x, SEXP v)

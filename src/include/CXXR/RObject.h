@@ -339,21 +339,15 @@ namespace CXXR {
 	 *
 	 * @return Pointer to the attributes of this object.
 	 *
-	 * @deprecated This method allows clients to modify the
-	 * attribute list directly, and thus bypass attribute
-	 * consistency checks.
+	 * @note Callers should beware that derived classes may
+	 * override this function with one that gives rise to garbage
+	 * collection.
 	 */
-	PairList* attributes();
-
-	/** @brief Get object attributes (const variant).
-	 *
-	 * @return const pointer to the attributes of this object.
-	 */
-	const PairList* attributes() const;
+	virtual const PairList* attributes() const;
 
 	/** @brief Remove all attributes.
 	 */
-	void clearAttributes();
+	virtual void clearAttributes();
 
 	/** @brief Return pointer to a copy of this object.
 	 *
@@ -419,26 +413,24 @@ namespace CXXR {
 	 *
 	 * @return pointer to the value of the attribute with \a name,
 	 * or a null pointer if there is no such attribute.
-	 */
-	RObject* getAttribute(const Symbol* name);
-
-	/** @brief Get the value a particular attribute (const variant).
 	 *
-	 * @param name Pointer to a \c Symbol giving the name of the
-	 *          sought attribute.
-	 *
-	 * @return const pointer to the value of the attribute with \a
-	 * name, or a null pointer if there is no such attribute.
+	 * @note Implementers of derived classes should ensure that
+	 * any function overriding this <em>will not</em> give rise to
+	 * garbage collection.
 	 */
-	const RObject* getAttribute(const Symbol* name) const;
+	virtual RObject* getAttribute(const Symbol* name) const;
 
 	/** @brief Has this object any attributes?
 	 *
 	 * @return true iff this object has any attributes.
+	 *
+	 * @note Implementers of derived classes should ensure that
+	 * any function overriding this <em>will not</em> give rise to
+	 * garbage collection.
 	 */
-	bool hasAttributes() const
+	virtual bool hasAttributes() const
 	{
-	    return attributes() != 0;
+	    return RObject::attributes() != 0;
 	}
 
 	/** @brief Has this object the class attribute?
@@ -488,7 +480,7 @@ namespace CXXR {
 	 *          assume ownership of \a value, which should
 	 *          therefore not be subsequently altered externally.
 	 */
-	void setAttribute(const Symbol* name, RObject* value);
+	virtual void setAttribute(const Symbol* name, RObject* value);
 
 	/** @brief Replace the attributes of an object.
 	 *
