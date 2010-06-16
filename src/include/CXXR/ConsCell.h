@@ -363,9 +363,16 @@ namespace CXXR {
 	static PairList* construct(RObject* cr, PairList* tl=0,
 				   const RObject* tag = 0)
 	{
-	    PairList* ans = new (s_cons_pad) PairList(cr, tl, tag);
-	    s_cons_pad = GCNode::operator new(sizeof(PairList));
-	    return expose(ans);
+	    // We call MemoryBank::allocate() directly here, rather
+	    // than GCNode::operator new(), to avoid giving rise to
+	    // any garbage collection, and thus avoiding (a) the need
+	    // to protect the arguments from GC, and (b) the
+	    // possibility of reentrant calls to this function (from
+	    // object destructors).  However, calling code should not
+	    // rely on the fact that no GC will occur, because the
+	    // implementation may change in the future.
+	    void* pad = MemoryBank::allocate(sizeof(PairList));
+	    return expose(new (pad) PairList(cr, tl, tag));
 	}
 
 	/** @brief Create a PairList of a specified length.
@@ -394,9 +401,6 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
     private:
-	// Pointer to a preallocated block of memory used by cons():
-	static void* s_cons_pad;
-
 	// Tailless copy constructor.  Copies the node without copying
 	// its tail.  Used in implementing the copy constructor
 	// proper.  The second parameter is simply to provide a

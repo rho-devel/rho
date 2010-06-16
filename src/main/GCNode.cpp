@@ -73,7 +73,7 @@ unsigned int GCNode::s_watch_id = 0;
 void* GCNode::operator new(size_t bytes)
 {
 #ifndef RARE_GC
-    if (!s_moribund->empty() && s_inhibitor_count == 0)
+    if (!s_moribund->empty())
 	gclite();
 #endif
     if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
@@ -154,13 +154,17 @@ void GCNode::cleanup()
 
 void GCNode::gc()
 {
+    // Note that recursion prevention is applied in GCManager::gc(),
+    // not here.
+
     // cout << "GCNode::gc()\n";
     // GCNode::check();
     // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
 
-    if (s_under_construction != 0) {
+    if (s_under_construction + s_inhibitor_count != 0) {
 	cerr << "GCNode::gc() : mark-sweep GC must not be used"
-	    " while a GCNode is under construction.\n";
+	    " while a GCNode is under construction, or while garbage"
+	    " collection is inhibited.\n";
 	abort();
     }
     mark();
@@ -173,11 +177,9 @@ void GCNode::gc()
 
 void GCNode::gclite()
 {
-    /*
-      static long k = 0;
-      if (++k%1000 == 0)
-      check();
-    */
+    if (s_inhibitor_count != 0)
+	return;
+    GCInhibitor inhibitor;
     unsigned int protect_count = protectCstructs();
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:

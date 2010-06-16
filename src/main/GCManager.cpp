@@ -83,18 +83,14 @@ namespace {
 
 void GCManager::gc()
 {
-    static bool running_finalizers = false;
     // Prevent recursion:
-    if (running_finalizers) return;
+    static bool in_progress = false;
+    if (in_progress)
+	return;
+    in_progress = true;
     gcController();
-    /* Run any eligible finalizers.  The return result of
-       RunFinalizers is TRUE if any finalizers are actually run.
-       There is a small chance that running finalizers here may
-       chew up enough memory to make another immediate collection
-       necessary.  If so, we do another collection. */
-    running_finalizers = true;
     WeakRef::runFinalizers();
-    running_finalizers = false;
+    in_progress = false;
 }
 
 void GCManager::gcController()

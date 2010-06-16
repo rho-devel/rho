@@ -150,10 +150,11 @@ namespace CXXR {
 	 * functions (such as SET_ATTRIB()) in the Rinternals.h
 	 * interface which would not give rise to any memory
 	 * allocations as implemented in CR but may do so as
-	 * implemented in CXXR.  Its use for other purposes is
-	 * deprecated: use instead more selective protection against
-	 * garbage collection such as that provided by class
-	 * GCStackRoot<T>.
+	 * implemented in CXXR.  It is also used within the GCNode
+	 * class to handle reentrant calls to gclite() and gc().  Its
+	 * use for other purposes is deprecated: use instead more
+	 * selective protection against garbage collection such as
+	 * that provided by class GCStackRoot<T>.
 	 *
 	 * @note GC inhibition is implemented as an object type to
 	 * facilitate reinstatement of garbage collection when an
@@ -168,6 +169,15 @@ namespace CXXR {
 	    ~GCInhibitor()
 	    {
 		--GCNode::s_inhibitor_count;
+	    }
+
+	    /** @brief Is inhibition currently in effect?
+	     *
+	     * @return true iff garbage collection is currently inhibited.
+	     */
+	    static bool active()
+	    {
+		return s_inhibitor_count != 0;
 	    }
 	};
 

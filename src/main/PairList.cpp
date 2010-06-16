@@ -65,8 +65,6 @@ namespace CXXR {
    }
 }
 
-void* PairList::s_cons_pad = GCNode::operator new(sizeof(PairList));
-
 namespace {
     // Used in {,un}packGPBits():
     const unsigned int BINDING_LOCK_MASK = 1<<14;

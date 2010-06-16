@@ -50,17 +50,14 @@
 namespace CXXR {
     /** @brief Class for managing garbage collection.
      * 
-     * This class only has static members.  When CXXR::MemoryBank indicates
-     * that it is on the point of requesting additional memory from
-     * the operating system, the class decides whether to initiate a
-     * garbage collection.
-     *
-     * In the current implementation of GCManager, when cued by CXXR
-     * as above, a garbage collection will be carried out if the
-     * number of bytes currently allocated via CXXR::MemoryBank, plus
-     * the number of bytes now required, is at least as great as a
-     * threshold value.  This threshold value varies during the run,
-     * subject to a minimum value specified in the enableGC() method.
+     * This class only has static members.  A mark-sweep garbage
+     * collection can be initiated explicitly by calling
+     * GCManager::gc().  Also, GCNode::operator new() will
+     * automatically initiate a mark-sweep GC if the number of bytes
+     * allocated via CXXR::MemoryBank exceeds a threshold level
+     * supplied by GCManager::triggerLevel() This threshold value
+     * varies during the run, subject to a minimum value specified in
+     * the enableGC() method.
      */
     class GCManager {
     public:
