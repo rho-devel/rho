@@ -1014,10 +1014,10 @@ SEXP dimgets(SEXP vec, SEXP val)
 
 SEXP attribute_hidden do_attributes(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP attrs, names, namesattr, value;
+    SEXP names, namesattr, value;
     int nvalues;
     namesattr = R_NilValue;
-    attrs = ATTRIB(CAR(args));
+    GCStackRoot<> attrs(ATTRIB(CAR(args)));
     nvalues = length(attrs);
     if (isList(CAR(args))) {
 	namesattr = getAttrib(CAR(args), R_NamesSymbol);
