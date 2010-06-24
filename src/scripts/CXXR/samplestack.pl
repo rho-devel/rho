@@ -5,6 +5,8 @@ use Expect;
 
 my $exp;
 
+my $syscall = "__kernel_vsyscall";
+
 my @symbols = ("CXXR::BuiltInFunction::apply",
                "CXXR::Closure::apply",
                "CXXR::Evaluator::evaluate",
@@ -13,9 +15,9 @@ my @symbols = ("CXXR::BuiltInFunction::apply",
                "CXXR::GCNode::gclite",
                "CXXR::Promise::evaluate",
                "CXXR::Symbol::evaluate",
+               "R_gc_internal",
                "Rf_applyClosure",
                "Rf_eval",
-               "__kernel_vsyscall",
                "do_\\w*",
                "main",
                "run_Rmainloop",
@@ -37,9 +39,20 @@ sub gdbcmd {
     await_gdb_prompt;
 }
 	
-@ARGV > 0 or die "Usage: samplestack.pl command args\n";
+@ARGV > 1 or die "Usage: samplestack.pl sample_interval command args\n";
+my $sampleinterval = $ARGV[0];
+$sampleinterval > 0 or die "Sample interval must be positive\n";
+shift;
+my @fullcmd = @ARGV;
 my $cmd = $ARGV[0];
 shift;
+
+system("date");
+print "Working directory: ";
+system("pwd"); 
+printf "Command: %s\n", join(" ", @fullcmd);
+print "Sampling interval = ${sampleinterval} secs\n\n";
+
 $exp = Expect->spawn($cmd, "-d", "gdb") or die "Cannot spawn $cmd\n";
 #$exp->debug(2);
 $exp->log_stdout(0);
@@ -51,21 +64,39 @@ gdbcmd(sprintf("run %s\n", join(" ", @ARGV)));
 gdbcmd("del 1\n");
 while (1) {
     $exp->send("c\n");  # Don't wait for prompt!
-    select undef, undef, undef, 0.01;
+    select undef, undef, undef, $sampleinterval;
     gdbcmd("\cC");
     if ($exp->before() =~ /^Program exited/m) {
         last;
     }
-    gdbcmd("bt\n");
     ++$samples;
-    $exp->before() =~ /$symrx/m;
-    $symhits{$1} += 1;
+    # Don't bother with backtrace if we're in a system call:
+    if ($exp->before() =~ /$syscall/m) {
+        $symhits{$syscall} += 1;
+    } else {
+        gdbcmd("bt\n");
+        $exp->before() =~ /$symrx/m;
+        $symhits{$1} += 1;
+	if ($1 eq "") {
+            print "Peculiar stack at sample #${samples}:\n";
+	    print $exp->before();
+	    print "\n";
+	}
+    }
 }
 $exp->send("quit\n");
-print "\n";
+
 print "Total samples = ${samples}\n\n";
 
 my @sortedkeys = sort { $symhits{$b} <=> $symhits{$a} } keys %symhits;
+my $syshits = $symhits{$syscall};
 foreach (@sortedkeys) {
-    printf "%5d %s\n", $symhits{$_}, $_;
+    my $hits = $symhits{$_};
+    printf "%5d ", $hits;
+    if ($_ ne $syscall) {
+        printf "(%3d%%u)", ($hits*100.0/($samples - $syshits))+0.5;
+    } else {
+        print "       ";
+    }
+    print " $_\n";
 }
