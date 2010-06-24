@@ -59,6 +59,8 @@ $exp->log_stdout(0);
 await_gdb_prompt;
 gdbcmd("set height 0\n");
 gdbcmd("set width 0\n");
+# The foll. seemed to confuse gdb during the run:
+#gdbcmd("set print address off\n");
 gdbcmd("b main\n");
 gdbcmd(sprintf("run %s\n", join(" ", @ARGV)));
 gdbcmd("del 1\n");
@@ -71,25 +73,32 @@ while (1) {
     }
     ++$samples;
     # Don't bother with backtrace if we're in a system call:
-    if ($exp->before() =~ /$syscall/m) {
+    if ($exp->before() =~ /$syscall/mo) {
         $symhits{$syscall} += 1;
     } else {
         gdbcmd("bt\n");
-        $exp->before() =~ /$symrx/m;
+        $exp->before() =~ /$symrx/mo;
         $symhits{$1} += 1;
 	if ($1 eq "") {
             print "Peculiar stack at sample #${samples}:\n";
 	    print $exp->before();
 	    print "\n";
 	}
+#        if ($1 eq "do_return") {
+#            print "do_return stack:\n";
+#            print $exp->before();
+#	    print "\n";
+#        }
     }
 }
 $exp->send("quit\n");
 
-print "Total samples = ${samples}\n\n";
+print "Total samples = ${samples}\n";
+
+my $syshits = $symhits{$syscall};
+printf "Samples in user time = %d\n\n", $samples - $syshits;
 
 my @sortedkeys = sort { $symhits{$b} <=> $symhits{$a} } keys %symhits;
-my $syshits = $symhits{$syscall};
 foreach (@sortedkeys) {
     my $hits = $symhits{$_};
     printf "%5d ", $hits;
