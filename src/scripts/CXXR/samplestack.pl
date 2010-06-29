@@ -8,17 +8,15 @@ my $exp;
 my $syscall = "__kernel_vsyscall";
 
 my @symbols = ("CXXR::BuiltInFunction::apply",
+               "CXXR::BuiltInFunction::invoke",
                "CXXR::Closure::apply",
-               "CXXR::Evaluator::evaluate",
-               "CXXR::Expression::evaluate",
                "CXXR::GCManager::gc",
                "CXXR::GCNode::gclite",
-               "CXXR::Promise::evaluate",
-               "CXXR::Symbol::evaluate",
                "R_gc_internal",
                "Rf_applyClosure",
-               "Rf_eval",
+               "Rf_eval\\w*",
                "do_\\w*",
+               "[\\w:]*evaluate\\b",
                "main",
                "run_Rmainloop",
                "setup_Rmainloop");
