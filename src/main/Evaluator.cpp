@@ -90,11 +90,10 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
 pair<unsigned int, PairList*>
 Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 {
-    // Outlist has a dummy element at the front, to simplify coding:
-    GCStackRoot<PairList> outlist(GCNode::expose(new PairList));
+    GCStackRoot<PairList> outlist;
     unsigned int first_missing_arg = 0;
     unsigned int arg_number = 1;
-    PairList* lastout = outlist;
+    PairList* lastout = 0;
     while (inlist) {
 	RObject* incar = inlist->car();
 	if (incar == DotsSymbol) {
@@ -109,9 +108,14 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 		    RObject* outcar = Symbol::missingArgument();
 		    if (dotcar != Symbol::missingArgument())
 			outcar = evaluate(dotcar, env);
-		    lastout->setTail(PairList::construct(outcar, 0,
-							 dotlist->tag()));
-		    lastout = lastout->tail();
+		    PairList* cell
+			= PairList::construct(outcar, 0, dotlist->tag());
+		    if (!lastout)
+			outlist = lastout = cell;
+		    else {
+			lastout->setTail(cell);
+			lastout = lastout->tail();
+		    }
 		    dotlist = dotlist->tail();
 		}
 	    } else if (h != Symbol::missingArgument())
@@ -125,13 +129,18 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 		outcar = evaluate(incar, env);
 	    else if (first_missing_arg == 0)
 		first_missing_arg = arg_number;
-	    lastout->setTail(PairList::construct(outcar, 0, inlist->tag()));
-	    lastout = lastout->tail();
+	    PairList* cell = PairList::construct(outcar, 0, inlist->tag());
+	    if (!lastout)
+		outlist = lastout = cell;
+	    else {
+		lastout->setTail(cell);
+		lastout = lastout->tail();
+	    }
 	}
 	inlist = inlist->tail();
 	++arg_number;
     }
-    return make_pair(first_missing_arg, outlist->tail());
+    return make_pair(first_missing_arg, outlist);
 }
 		
 void Evaluator::setDepthLimit(int depth)
