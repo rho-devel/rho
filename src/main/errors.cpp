@@ -1623,7 +1623,7 @@ static void signalInterrupt(void)
 	PROTECT(cond = getInterruptCondition());
 	if (IS_CALLING_ENTRY(entry)) {
 	    SEXP h = ENTRY_HANDLER(entry);
-	    SEXP hcall = LCONS(h, LCONS(cond, R_NilValue));
+	    SEXP hcall = LCONS(h, CONS(cond, R_NilValue));
 	    PROTECT(hcall);
 	    eval(hcall, R_GlobalEnv);
 	    UNPROTECT(1);

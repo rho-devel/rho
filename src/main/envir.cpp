@@ -920,7 +920,7 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
     if (rval == R_UnboundValue) {
 	if( isFunction(ifnotfound) ) {
 	    PROTECT(var = mkString(name));
-	    PROTECT(R_fcall = LCONS(ifnotfound, LCONS(var, R_NilValue)));
+	    PROTECT(R_fcall = LCONS(ifnotfound, CONS(var, R_NilValue)));
 	    rval = eval(R_fcall, enclos);
 	    UNPROTECT(2);
 	} else
@@ -1919,7 +1919,7 @@ SEXP R_FindPackageEnv(SEXP info)
 {
     SEXP expr, val;
     PROTECT(info);
-    PROTECT(expr = LCONS(install("findPackageEnv"), LCONS(info, R_NilValue)));
+    PROTECT(expr = LCONS(install("findPackageEnv"), CONS(info, R_NilValue)));
     val = eval(expr, R_GlobalEnv);
     UNPROTECT(2);
     return val;
