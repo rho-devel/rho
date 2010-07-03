@@ -10,11 +10,18 @@ my $syscall = "__kernel_vsyscall";
 my @symbols = ("CXXR::BuiltInFunction::apply",
                "CXXR::BuiltInFunction::invoke",
                "CXXR::Closure::apply",
+               "CXXR::Environment::findBinding",
                "CXXR::GCManager::gc",
                "CXXR::GCNode::gclite",
+               "CXXR::findFunction",
+	       "R_findVar\\w*",
                "R_gc_internal",
                "Rf_applyClosure",
                "Rf_eval\\w*",
+               "Rf_findFun",
+	       "Rf_findVar\\w*",
+	       "_Unwind_Resume",
+	       "__cxa_throw",
                "do_\\w*",
                "[\\w:]*evaluate\\b",
                "main",
@@ -76,16 +83,17 @@ while (1) {
     } else {
         gdbcmd("bt\n");
         $exp->before() =~ /$symrx/mo;
-        $symhits{$1} += 1;
+        $symhits{$&} += 1;
 	if ($1 eq "") {
             print "Peculiar stack at sample #${samples}:\n";
 	    print $exp->before();
 	    print "\n";
 	}
 #        if ($1 eq "do_return") {
-#            print "do_return stack:\n";
-#            print $exp->before();
-#	    print "\n";
+#	    my $pre = "$`$&";
+#	    my $post = $';
+#	    $post =~ /.*?$/m;
+#            print "do_return stack:\n$pre$&\n\n";
 #        }
     }
 }
