@@ -70,6 +70,8 @@ $exp = Expect->spawn($cmd, "-d", "gdb") or die "Cannot spawn $cmd\n";
 #$exp->debug(2);
 $exp->log_stdout(0);
 await_gdb_prompt;
+my $gdbpid = $exp->pid();
+print "gdb PID = $gdbpid\n";
 gdbcmd("set height 0\n");
 gdbcmd("set width 0\n");
 # The foll. seemed to confuse gdb during the run:
@@ -77,10 +79,15 @@ gdbcmd("set width 0\n");
 gdbcmd("b main\n");
 gdbcmd(sprintf("run %s\n", join(" ", @ARGV)));
 gdbcmd("del 1\n");
+`ps --no-headers --ppid=$gdbpid` =~ /^\s*(\d+).*R$/ or die "Cannot get R PID";
+my $Rpid = $1;
+print "R PID = $Rpid\n\n";
+
 while (1) {
     $exp->send("c\n");  # Don't wait for prompt!
     select undef, undef, undef, $sampleinterval;
-    gdbcmd("\cC");
+    kill 'INT', $Rpid;
+    await_gdb_prompt;
     if ($exp->before() =~ /^Program exited/m) {
         last;
     }
@@ -97,9 +104,9 @@ while (1) {
 	    print "\n--------------------\n";
 	    die;
 	}
-        $exp->before() =~ /$symrx/mo;
-        $symhits{$&} += 1;
-	if ($1 eq "") {
+        if ($exp->before() =~ /$symrx/mo) {
+            $symhits{$&} += 1;
+	} else {
             print "Peculiar stack at sample #${samples}:\n";
 	    print $exp->before();
 	    print "\n";
