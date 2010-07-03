@@ -21,6 +21,7 @@ my @symbols = ("CXXR::BuiltInFunction::apply",
                "Rf_findFun",
 	       "Rf_findVar\\w*",
 	       "_Unwind_Resume",
+	       "__cxa_rethrow",
 	       "__cxa_throw",
                "do_\\w*",
                "[\\w:]*evaluate\\b",
@@ -36,7 +37,14 @@ my %symhits;
 my $samples = 0;
 
 sub await_gdb_prompt {
-    my $i = $exp->expect(5, "-re", "^\\(gdb\\)");
+    if (!defined($exp->expect(5, "-re", "^\\(gdb\\)"))) {
+        print "Error awaiting gdb prompt: ";
+	print $exp->error();
+	print "\n--------------------\n";
+	print $exp->before();
+        print "\n--------------------\n";
+	die "Aborting";
+    }
 }
 
 sub gdbcmd {
@@ -77,11 +85,18 @@ while (1) {
         last;
     }
     ++$samples;
+    print STDERR "\r$samples ";
     # Don't bother with backtrace if we're in a system call:
     if ($exp->before() =~ /$syscall/mo) {
         $symhits{$syscall} += 1;
     } else {
         gdbcmd("bt\n");
+	if ($exp->before() !~ /^ bt\r?\n/) {
+	    print "Unexpected response to bt:\n--------------------\n";
+	    print $exp->before();
+	    print "\n--------------------\n";
+	    die;
+	}
         $exp->before() =~ /$symrx/mo;
         $symhits{$&} += 1;
 	if ($1 eq "") {
