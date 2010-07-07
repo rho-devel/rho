@@ -222,9 +222,8 @@ void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
 
 PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 {
-    // args has a dummy element at the front, to simplify coding:
-    GCStackRoot<PairList> args(GCNode::expose(new PairList));
-    PairList* last = args;
+    GCStackRoot<PairList> args;
+    PairList* last = 0;
     while (raw_args) {
 	RObject* rawvalue = raw_args->car();
 	if (rawvalue == DotsSymbol) {
@@ -238,8 +237,13 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 			Promise* prom
 			    = GCNode::expose(new Promise(dotlist->car(), env));
 			const Symbol* tag = tagSymbol(dotlist->tag());
-			last->setTail(PairList::construct(prom, 0, tag));
-			last = last->tail();
+			PairList* cell = PairList::construct(prom, 0, tag);
+			if (!last)
+			    args = last = cell;
+			else {
+			    last->setTail(cell);
+			    last = last->tail();
+			}
 			dotlist = dotlist->tail();
 		    }
 		} else if (dval != Symbol::missingArgument())
@@ -250,12 +254,17 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 	    RObject* value = Symbol::missingArgument();
 	    if (rawvalue != Symbol::missingArgument())
 		value = GCNode::expose(new Promise(rawvalue, env));
-	    last->setTail(PairList::construct(value, 0, tag));
-	    last = last->tail();
+	    PairList* cell = PairList::construct(value, 0, tag);
+	    if (!last)
+		args = last = cell;
+	    else {
+		last->setTail(cell);
+		last = last->tail();
+	    }
 	}
 	raw_args = raw_args->tail();
     }
-    return args->tail();
+    return args;
 }
 
 // Implementation of ArgMatcher::unusedArgsError() is in match.cpp

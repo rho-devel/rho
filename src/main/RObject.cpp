@@ -144,7 +144,7 @@ void RObject::setAttribute(const Symbol* name, RObject* value)
 	else m_attrib = node->tail();
     } else if (value) {  
 	// Create new node:
-	PairList* newnode = expose(new PairList(value, 0, name));
+	PairList* newnode = PairList::construct(value, 0, name);
 	if (prev) prev->setTail(newnode);
 	else { // No preexisting attributes at all:
 	    m_attrib = newnode;

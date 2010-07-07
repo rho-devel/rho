@@ -1216,8 +1216,7 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 	else {/* now we are down to the target symbol */
 	  nval = eval(expr, ENCLOS(rho));
 	}
-	GCStackRoot<PairList> pl(GCNode::expose(new PairList(expr)));
-	return GCNode::expose(new PairList(nval, pl));
+	return PairList::construct(nval, PairList::construct(expr));
     }
     else if (isLanguage(expr)) {
 	PROTECT(expr);
