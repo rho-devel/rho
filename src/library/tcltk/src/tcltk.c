@@ -120,14 +120,14 @@ static int R_call(ClientData clientData,
     alist = R_NilValue;
     for (i = argc - 1 ; i > 1 ; i--){
 	PROTECT(alist);
-	alist = LCONS(mkString(argv[i]), alist);
+	alist = CONS(mkString(argv[i]), alist);
 	UNPROTECT(1);
     }
 
     sscanf(argv[1], "%p", &fun);
 
     expr = LCONS( (SEXP)fun, alist);
-    expr = LCONS(install("try"), LCONS(expr, R_NilValue));
+    expr = LCONS(install("try"), CONS(expr, R_NilValue));
 
     ans = eval(expr, R_GlobalEnv);
 
@@ -149,7 +149,7 @@ static int R_call_lang(ClientData clientData,
     sscanf(argv[1], "%p", &expr);
     sscanf(argv[2], "%p", &env);
 
-    expr = LCONS(install("try"), LCONS(expr, R_NilValue));
+    expr = LCONS(install("try"), CONS(expr, R_NilValue));
 
     ans = eval((SEXP)expr, (SEXP)env);
 
