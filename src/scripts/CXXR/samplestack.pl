@@ -15,14 +15,19 @@ my @symbols = ("CXXR::BuiltInFunction::apply",
                "CXXR::GCNode::gclite",
                "CXXR::findFunction",
 	       "R_findVar\\w*",
+	       "R_JumpToContext",
                "R_gc_internal",
+	       "R_restore_globals",
+	       "R_run_onexits",
                "Rf_applyClosure",
                "Rf_eval\\w*",
+	       "Rf_findcontext",
                "Rf_findFun",
 	       "Rf_findVar\\w*",
-	       "_Unwind_Resume",
+	       "_Unwind_\\w*",
 	       "__cxa_rethrow",
 	       "__cxa_throw",
+	       $syscall,
                "do_\\w*",
                "[\\w:]*evaluate\\b",
                "main",
@@ -31,6 +36,8 @@ my @symbols = ("CXXR::BuiltInFunction::apply",
 
 my $symrx = join("|", @symbols);
 $symrx = "\\b(${symrx})\\b";
+
+my $errorsrx = "^Initial frame selected|^Cannot access memory";
 
 my %symhits;
 
@@ -72,14 +79,15 @@ $exp->log_stdout(0);
 await_gdb_prompt;
 my $gdbpid = $exp->pid();
 print "gdb PID = $gdbpid\n";
+gdbcmd("set debug-file-directory /usr/lib/debug\n");
 gdbcmd("set height 0\n");
 gdbcmd("set width 0\n");
-# The foll. seemed to confuse gdb during the run:
 #gdbcmd("set print address off\n");
 gdbcmd("b main\n");
 gdbcmd(sprintf("run %s\n", join(" ", @ARGV)));
 gdbcmd("del 1\n");
-`ps --no-headers --ppid=$gdbpid` =~ /^\s*(\d+).*R$/ or die "Cannot get R PID";
+`ps --no-headers --ppid=$gdbpid` =~ /^\s*(\d+).*R$/
+  or die "Cannot get R PID: check command line";
 my $Rpid = $1;
 print "R PID = $Rpid\n\n";
 
@@ -91,25 +99,30 @@ while (1) {
     if ($exp->before() =~ /^Program exited/m) {
         last;
     }
+    if ($exp->before() !~ /SIGINT/) {
+	printf "Sample #%d failed:\n--------------------\n", $samples + 1;
+	print $exp->before();
+	print "\n--------------------\nWrapping up.\n";
+	last;
+    }
     ++$samples;
     print STDERR "\r$samples ";
     # Don't bother with backtrace if we're in a system call:
-    if ($exp->before() =~ /$syscall/mo) {
-        $symhits{$syscall} += 1;
+    if ($exp->before() =~ /$syscall|$symrx/mo) {
+        $symhits{$&} += 1;
     } else {
-        gdbcmd("bt\n");
-	if ($exp->before() !~ /^ bt\r?\n/) {
-	    print "Unexpected response to bt:\n--------------------\n";
-	    print $exp->before();
-	    print "\n--------------------\n";
-	    die;
-	}
-        if ($exp->before() =~ /$symrx/mo) {
-            $symhits{$&} += 1;
-	} else {
+        do {
+	    gdbcmd("up\n");
+	} until ($exp->before() =~ /$errorsrx|$symrx/mo);
+	if ($exp->before() =~ /$errorsrx/mo) {
             print "Peculiar stack at sample #${samples}:\n";
+	    gdbcmd("bt\n");
 	    print $exp->before();
 	    print "\n";
+	    gdbcmd("f 0\n");
+	    $symhits{""} += 1;
+	} else {
+            $symhits{$&} += 1;
 	}
 #        if ($1 eq "do_return") {
 #	    my $pre = "$`$&";
