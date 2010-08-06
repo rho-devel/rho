@@ -72,10 +72,8 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     if (sexptype() == SPECIALSXP)
 	ans = invoke(call, args, env);
     else {
-	pair<unsigned int, PairList*> pr = Evaluator::mapEvaluate(args, env);
-	if (pr.first != 0)
-	    missingArgumentError(this, args, pr.first);
-	GCStackRoot<const PairList> evaluated_args(pr.second);
+	GCStackRoot<const PairList>
+	    evaluated_args(Evaluator::mapEvaluate(args, env, call));
 	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
 	    Evaluator::Context cntxt(const_cast<Expression*>(call),
 				     env, 0, 0, 0);
@@ -119,9 +117,6 @@ int BuiltInFunction::indexInTable(const char* name)
 }
 
 // BuiltInFunction::initialize() is in names.cpp
-
-// BuiltInFunction::missingArgumentError() is in eval.cpp (for the
-// time being).
 
 const char* BuiltInFunction::typeName() const
 {

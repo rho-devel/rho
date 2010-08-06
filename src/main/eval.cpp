@@ -1528,22 +1528,6 @@ SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
     return CDR(ans);
 }
 
-void BuiltInFunction::missingArgumentError(const BuiltInFunction* func,
-					   const PairList* args,
-					   unsigned int index)
-{
-    GCRoot<> line(STRING_ELT(deparse1line(const_cast<PairList*>(args), FALSE),
-			     0));
-    if (!func)
-	Rf_error(_("element %d is empty;\n   the part of the args "
-		   "list of a builtin being evaluated was:\n   %s"),
-		   index, R_CHAR(line)+4);
-    else Rf_error(_("element %d is empty;\n   the part of the args "
-		    "list of '%s' being evaluated was:\n   %s"),
-		  index, func->name(), R_CHAR(line)+4);
-}
-
-
 /* "eval" and "eval.with.vis" : Evaluate the first argument */
 /* in the environment specified by the second argument. */
 

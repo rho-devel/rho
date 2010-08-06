@@ -23,6 +23,7 @@
 
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
+#include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/Symbol.h"
 #include "CXXR/errors.h"
@@ -87,11 +88,10 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
     return ans;
 }
 
-pair<unsigned int, PairList*>
-Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
+PairList* Evaluator::mapEvaluate(const PairList* inlist,
+				 Environment* env, const Expression* call)
 {
     GCStackRoot<PairList> outlist;
-    unsigned int first_missing_arg = 0;
     unsigned int arg_number = 1;
     PairList* lastout = 0;
     while (inlist) {
@@ -122,13 +122,16 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 		Rf_error(_("'...' used in an incorrect context"));
 	} else {
 	    RObject* outcar = Symbol::missingArgument();
-	    if (incar != Symbol::missingArgument()
-		&& !(Rf_isSymbol(incar)
-		     && isMissingArgument(static_cast<Symbol*>(incar),
-					  env->frame())))
-		outcar = evaluate(incar, env);
-	    else if (first_missing_arg == 0)
-		first_missing_arg = arg_number;
+	    if (incar == Symbol::missingArgument())
+		Rf_errorcall(const_cast<Expression*>(call),
+			     _("argument %d is empty"), arg_number);
+	    if (Rf_isSymbol(incar)) {
+		Symbol* sym = static_cast<Symbol*>(incar);
+		if (isMissingArgument(sym, env->frame()))
+		    Rf_errorcall(const_cast<Expression*>(call),
+				 _("'%s' is missing"), sym->name()->c_str());
+	    }
+	    outcar = evaluate(incar, env);
 	    PairList* cell = PairList::construct(outcar, 0, inlist->tag());
 	    if (!lastout)
 		outlist = lastout = cell;
@@ -140,7 +143,7 @@ Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 	inlist = inlist->tail();
 	++arg_number;
     }
-    return make_pair(first_missing_arg, outlist);
+    return outlist;
 }
 		
 void Evaluator::setDepthLimit(int depth)

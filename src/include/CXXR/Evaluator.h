@@ -109,6 +109,7 @@ extern "C" {
 namespace CXXR {
     class RObject;
     class Environment;
+    class Expression;
 
     /** @brief Framework for R command evaluation.
      * 
@@ -273,9 +274,7 @@ namespace CXXR {
 	 *
 	 * If any element of \a inlist is missing (i.e. it is
 	 * Symbol::missingArgument(), or is a Symbol missing within \a
-	 * env), then the corresponding element of the output list is
-	 * set to Symbol::missingArgument(), and the presence of a
-	 * missing value is reported in the return value.
+	 * env), then an error is raised.
 	 *
 	 * @param inlist The PairList to be mapped through
 	 *          RObject::evaluate().
@@ -283,19 +282,19 @@ namespace CXXR {
 	 * @param env The Environment in which evaluations are to take
 	 *          place.
 	 *
-	 * @return The second element of the pair is the output list.
-	 * The first element is the index, counting from one, of the
-	 * first position in \a inlist in which a missing value was
-	 * encountered, or zero if \a inlist contained no missing
-	 * values.
+	 * @param call The call expression, used in error reporting.
+	 *
+	 * @return The output list.
 	 *
 	 * @note This function is intended within CXXR to supersede
 	 * CR's evalList() and evalListKeepMissing().  However, note
 	 * that these CR functions coerce the tags in the output list
 	 * to be Symbol objects, whereas this function does not.
+	 *
+	 * @todo Try to get rid of the \a call argument.
 	 */
-	static std::pair<unsigned int, PairList*>
-	mapEvaluate(const PairList* inlist, Environment* env);
+	static PairList* mapEvaluate(const PairList* inlist,
+				     Environment* env, const Expression* call);
 
 	/** @brief Is profiling currently enabled?
 	 *
