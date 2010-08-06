@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-9  R Development Core Team
+ *  Copyright (C) 2001-9  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -280,6 +280,7 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
     }
 }
 
+
 /**
  * [N]ot [E]qual  (x, y)   <==>   x  "!="  y
  *  where the NA/NaN and "-0." / "+0." cases treatment depend on 'str'.
@@ -297,7 +298,7 @@ R_compute_identical(SEXP x, SEXP y, Rboolean num_eq,
  *
  * @return FALSE or TRUE indicating if x or y differ
  */
-static Rboolean neWithNaN(double x,  double y, ne_strictness_type str)
+static Rboolean neWithNaN(double x, double y, ne_strictness_type str)
 {
     switch (str) {
     case single_NA__num_eq:

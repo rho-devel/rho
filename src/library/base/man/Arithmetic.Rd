@@ -90,6 +90,13 @@ x \%/\% y
   For real arguments, \code{\%\%} can be subject to catastrophic loss of
   accuracy if \code{x} is much larger than \code{y}, and a warning is
   given if this is detected.
+
+  \code{\%\%} and \code{x \%/\% y} can be used for non-integer \code{y},
+  e.g. \code{1 \%/\% 0.2}, but the results are subject to rounding error
+  and so may be platform-dependent.  Because the IEC 60059
+  representation of \code{0.2} is a binary fraction slightly larger than
+  \code{0.2}, the answer to \code{1 \%/\% 0.2} should be \code{4} but
+  most platforms give \code{5}.
 }
 \section{S4 methods}{
   These operators are members of the S4 \code{\link{Arith}} group generic,
@@ -102,7 +109,7 @@ x \%/\% y
   undocumented for many years.  It appears as an index entry in Becker
   \emph{et al} (1988), pointing to the help for \code{Deprecated} but
   is not actually mentioned on that page.  Even though it has been
-  deprecated in S for 20 years, it is still accepted.
+  deprecated in S for 20 years, it was still accepted in 2008.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)

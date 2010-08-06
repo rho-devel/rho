@@ -53,7 +53,7 @@
 #include <time.h>
 #include "graphapp/ga.h"
 #ifndef _WIN32_WINNT
-# define _WIN32_WINNT 0x0500 /* for GetLongPathName */
+# define _WIN32_WINNT 0x0502 /* for GetLongPathName, KEY_WOW64_64KEY */
 #endif
 #include <windows.h>
 #include "rui.h"
@@ -93,8 +93,10 @@ SEXP do_winver(SEXP call, SEXP op, SEXP args, SEXP env)
 		    (int) osvi.dwMajorVersion, (int) osvi.dwMinorVersion,
 		    LOWORD(osvi.dwBuildNumber));
 	} else if(osvi.dwMajorVersion == 6) {
-	    if(osvi.wProductType == VER_NT_WORKSTATION) desc = "Vista";
-	    else desc = "Server 2008";
+	    if(osvi.wProductType == VER_NT_WORKSTATION) {
+		if(osvi.dwMinorVersion == 0) desc = "Vista";
+		else desc = "7";
+	    } else desc = "Server 2008";
 	} else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0)
 	    desc = "2000";
 	else if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1)
@@ -484,12 +486,18 @@ SEXP do_setwinprogressbar(SEXP call, SEXP op, SEXP args, SEXP env)
 	    pbar->val = val;
 	}
 	if (!isNull(title)) {
-	    SEXP ctxt = STRING_ELT(title, 0);
+	    SEXP ctxt;
+	    if(!isString(title) || length(title) < 1)
+		errorcall(call, "invalid '%s' argument", "title");
+	    ctxt = STRING_ELT(title, 0);
 	    if (ctxt != NA_STRING)
 		settext(pbar->wprog, translateChar(ctxt));
 	}
 	if(pbar->lab && !isNull(label)) {
-	    SEXP clab = STRING_ELT(label, 0);
+	    SEXP clab;
+	    if(!isString(label) || length(label) < 1)
+		errorcall(call, "invalid '%s' argument", "label");
+	    clab = STRING_ELT(label, 0);
 	    if (clab != NA_STRING)
 		settext(pbar->lab, translateChar(clab));
 	}
@@ -548,7 +556,6 @@ SEXP do_loadhistory(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_NilValue;
 }
 
-extern wchar_t *wtransChar(SEXP x);
 
 SEXP do_addhistory(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -582,6 +589,7 @@ SEXP do_loadRconsole(SEXP call, SEXP op, SEXP args, SEXP env)
 	errorcall(call, _("invalid '%s' argument"), "file");
     getActive(&gui);  /* Will get defaults if there's no active console */
     if (loadRconsole(&gui, translateChar(STRING_ELT(sfile, 0)))) applyGUI(&gui);
+    if (strlen(gui.warning)) warning(gui.warning);
     return R_NilValue;
 }
 
@@ -610,9 +618,11 @@ SEXP do_sysinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PGNSI pGNSI;
 	SYSTEM_INFO si;
 	if(osvi.dwMajorVersion == 6) {
-	    if(osvi.wProductType == VER_NT_WORKSTATION)
-		strcpy(ver, "Vista");
-	    else
+	    if(osvi.wProductType == VER_NT_WORKSTATION) {
+		if(osvi.dwMinorVersion == 0)
+		    strcpy(ver, "Vista");
+		else strcpy(ver, "7");
+	    } else
 		strcpy(ver, "Server 2008");
 	}
 	if(osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0)
@@ -699,7 +709,7 @@ struct mallinfo {
     MALLINFO_FIELD_TYPE fordblks; /* total free space */
     MALLINFO_FIELD_TYPE keepcost; /* top-most, releasable (via malloc_trim) space */
 };
-extern unsigned int R_max_memory;
+extern R_size_t R_max_memory;
 
 struct mallinfo mallinfo(void);
 #endif
@@ -718,8 +728,10 @@ SEXP do_memsize(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (!R_FINITE(mem))
 	    errorcall(call, _("incorrect argument"));
 #ifdef LEA_MALLOC
+#ifndef WIN64
 	if(mem >= 4096)
 	    errorcall(call, _("don't be silly!: your machine has a 4Gb address limit"));
+#endif
 	newmax = mem * 1048576.0;
 	if (newmax < R_max_memory)
 	    warningcall(call, _("cannot decrease memory limit: ignored"));
@@ -831,15 +843,15 @@ RECT *RgetMDIsize(void); /* in rui.c */
 
 SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP list, preselect, ans = R_NilValue;
+    SEXP choices, preselect, ans = R_NilValue;
     const char **clist;
     int i, j = -1, n, mw = 0, multiple, nsel = 0;
     int xmax, ymax, ylist, fht, h0;
     Rboolean haveTitle;
 
     checkArity(op, args);
-    list = CAR(args);
-    if(!isString(list)) error(_("invalid '%s' argument"), "list");
+    choices = CAR(args);
+    if(!isString(choices)) error(_("invalid '%s' argument"), "choices");
     preselect = CADR(args);
     if(!isNull(preselect) && !isString(preselect))
 	error(_("invalid '%s' argument"), "preselect");
@@ -849,10 +861,10 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!multiple && isString(preselect) && LENGTH(preselect) != 1)
 	error(_("invalid '%s' argument"), "preselect");
 
-    n = LENGTH(list);
+    n = LENGTH(choices);
     clist = (const char **) R_alloc(n + 1, sizeof(char *));
     for(i = 0; i < n; i++) {
-	clist[i] = translateChar(STRING_ELT(list, i));
+	clist[i] = translateChar(STRING_ELT(choices, i));
 	mw = max(mw, gstrwidth(NULL, SystemFont, clist[i]));
     }
     clist[n] = NULL;
@@ -916,12 +928,12 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 int Rwin_rename(const char *from, const char *to)
 {
-    return (MoveFileEx(from, to, MOVEFILE_REPLACE_EXISTING) == 0);
+    return (MoveFileEx(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) == 0);
 }
 
 int Rwin_wrename(const wchar_t *from, const wchar_t *to)
 {
-    return (MoveFileExW(from, to, MOVEFILE_REPLACE_EXISTING) == 0);
+    return (MoveFileExW(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) == 0);
 }
 
 SEXP do_getClipboardFormats(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1072,7 +1084,8 @@ SEXP do_writeClipboard(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(raw)
 		for(i = 0; i < n; i++) *s++ = RAW(text)[i];
 	    else if (format == CF_UNICODETEXT) {
-		wchar_t *wp, *ws = (wchar_t *) s;
+		const wchar_t *wp;
+		wchar_t *ws = (wchar_t *) s;
 		for(i = 0; i < n; i++) {
 		    wp = wtransChar(STRING_ELT(text, i));
 		    while(*wp) *ws++ = *wp++;
@@ -1871,15 +1884,20 @@ static SEXP readRegistryKey1(HKEY hkey, const wchar_t *name)
     return ans;
 }
 
-static SEXP readRegistryKey(HKEY hkey, int depth)
+static SEXP readRegistryKey(HKEY hkey, int depth, int view)
 {
     int i, k = 0, size0, *indx;
     SEXP ans, nm, ans0, nm0, tmp, sind;
     DWORD res, nsubkeys, maxsubkeylen, nval, maxvalnamlen, size;
     wchar_t *name;
     HKEY sub;
+    REGSAM acc = KEY_READ;
 
     if (depth <= 0) return mkString("<subkey>");
+
+    if(view == 2) acc |= KEY_WOW64_32KEY;
+    else if(view == 3) acc |= KEY_WOW64_64KEY;
+
     res = RegQueryInfoKey(hkey, NULL, NULL, NULL,
 			  &nsubkeys, &maxsubkeylen, NULL, &nval,
 			  &maxvalnamlen, NULL, NULL, NULL);
@@ -1928,9 +1946,9 @@ static SEXP readRegistryKey(HKEY hkey, int depth)
 	    res = RegEnumKeyExW(hkey, i, (LPWSTR) name, &size,
 				NULL, NULL, NULL, NULL);
 	    if (res != ERROR_SUCCESS) break;
-	    res = RegOpenKeyExW(hkey, (LPWSTR) name, 0, KEY_READ, &sub);
+	    res = RegOpenKeyExW(hkey, (LPWSTR) name, 0, acc, &sub);
 	    if (res != ERROR_SUCCESS) break;
-	    SET_VECTOR_ELT(ans0, i, readRegistryKey(sub, depth-1));
+	    SET_VECTOR_ELT(ans0, i, readRegistryKey(sub, depth-1, view));
 	    SET_STRING_ELT(nm0, i, mkCharUcs(name));
 	    RegCloseKey(sub);
 	}
@@ -1956,7 +1974,8 @@ SEXP do_readRegistry(SEXP call, SEXP op, SEXP args, SEXP env)
     HKEY hive, hkey;
     LONG res;
     const wchar_t *key;
-    int maxdepth;
+    int maxdepth, view;
+    REGSAM acc = KEY_READ;
 
     checkArity(op, args);
     if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
@@ -1968,12 +1987,20 @@ SEXP do_readRegistry(SEXP call, SEXP op, SEXP args, SEXP env)
     if(maxdepth == NA_INTEGER || maxdepth < 1)
 	error(_("invalid '%s' value"),  "maxdepth");
     hive = find_hive(CHAR(STRING_ELT(CADR(args), 0)));
-    res = RegOpenKeyExW(hive, key, 0, KEY_READ, &hkey);
+    view = asInteger(CADDDR(args));
+    /* Or KEY_READ with KEY_WOW64_64KEY or KEY_WOW64_32KEY to
+       explicitly access the 64- or 32- bit registry view.  See
+       http://msdn.microsoft.com/en-us/library/aa384129(VS.85).aspx
+    */
+    if(view == 2) acc |= KEY_WOW64_32KEY;
+    else if(view == 3) acc |= KEY_WOW64_64KEY;
+
+    res = RegOpenKeyExW(hive, key, 0, acc, &hkey);
     if (res == ERROR_FILE_NOT_FOUND)
 	error(_("Registry key '%ls' not found"), key);
     if (res != ERROR_SUCCESS)
 	error("RegOpenKeyEx error code %d: '%s'", (int) res, formatError(res));
-    ans = readRegistryKey(hkey, maxdepth);
+    ans = readRegistryKey(hkey, maxdepth, view);
     RegCloseKey(hkey);
     return ans;
 }

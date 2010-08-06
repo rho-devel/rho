@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2008   Robert Gentleman, Ross Ihaka
- *                            and the R Development Core Team
+ *  Copyright (C) 1997-2010   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -69,7 +68,7 @@
 # include <sys/stat.h>
 #endif
 
-#if HAVE_AQUA
+#ifdef HAVE_AQUA
 extern int (*ptr_CocoaSystem)(char*);
 extern	Rboolean useaqua;
 #endif
@@ -219,8 +218,10 @@ char *R_HomeDir(void)
 }
 
 
+/* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_interactive(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+    checkArity(op, args);
     return ScalarLogical( (R_Interactive) ? 1 : 0 );
 }
 
@@ -319,7 +320,6 @@ int R_system(const char *command)
 /* _wenviron is declared in stdlib.h */
 # define WIN32_LEAN_AND_MEAN 1
 # include <windows.h> /* _wgetenv etc */
-const wchar_t *wtransChar(SEXP x);
 #endif
 
 SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -620,7 +620,8 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 		R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 		goto top_of_loop;
-	    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ && sub) {
+	    } else if(res == CXXRCONSTRUCT(size_t, -1) && sub && 
+		      (errno == EILSEQ || errno == EINVAL)) {
 		/* it seems this gets thrown for non-convertible input too */
 		if(strcmp(sub, "byte") == 0) {
 		    if(outb < 5) {
@@ -664,7 +665,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 cetype_t getCharCE(SEXP x)
 {
     if(TYPEOF(x) != CHARSXP)
-	error(_("'%s' must be called on a CHARSXP"), "getEncChar");
+	error(_("'%s' must be called on a CHARSXP"), "getCharCE");
     if(IS_UTF8(x)) return CE_UTF8;
     else if(IS_LATIN1(x)) return CE_LATIN1;
     else return CE_NATIVE;
@@ -774,7 +775,7 @@ next_char:
     if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
 	if(outb < 13) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -853,7 +854,7 @@ next_char:
     if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -886,11 +887,10 @@ static const char TO_WCHAR[] = "UCS-4LE";
 static void *latin1_wobj = NULL, *utf8_wobj=NULL;
 
 /* Translate from current encoding to wchar_t = UCS-2/4
-   NB: this is not general.
-
-   Not in a general header, as wchar_t is not needed except where used.
+   NB: that wchar_t is UCS-4 is an assumption, but not easy to avoid.
 */
-attribute_hidden /* but not hidden on Windows */
+
+attribute_hidden /* but not hidden on Windows, where it was used in tcltk.c */
 const wchar_t *wtransChar(SEXP x)
 {
     void * obj;
@@ -947,7 +947,7 @@ next_char:
     if(CXXRCONSTRUCT(int, res) == -1 && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(CXXRCONSTRUCT(int, res) == -1 && errno == EILSEQ) {
+    } else if(CXXRCONSTRUCT(int, res) == -1 && (errno == EILSEQ || errno == EINVAL)) {
 	if(outb < 5) {
 	    R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	    goto top_of_loop;
@@ -1051,7 +1051,7 @@ next_char:
     if(res == CXXRCONSTRUCT(size_t, -1) && errno == E2BIG) {
 	R_AllocStringBuffer(2*cbuff.bufsize, &cbuff);
 	goto top_of_loop;
-    } else if(res == CXXRCONSTRUCT(size_t, -1) && errno == EILSEQ) {
+    } else if(res == CXXRCONSTRUCT(size_t, -1) && (errno == EILSEQ || errno == EINVAL)) {
 	switch(subst) {
 	case 1: /* substitute hex */
 	    if(outb < 5) {
@@ -1389,6 +1389,8 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
     if(!done)
 	error(_("cannot find unused tempfile name"));
     res = static_cast<char *>( malloc((strlen(tm)+1) * sizeof(char)));
+    if(!res)
+	error(_("allocation failed in R_tmpnam"));
     strcpy(res, tm);
     return res;
 }
@@ -1397,6 +1399,8 @@ SEXP attribute_hidden do_proctime(SEXP call, SEXP op, SEXP args, SEXP env)
 #ifdef _R_HAVE_TIMING_
 {
     SEXP ans, nm;
+
+    checkArity(op, args);
     PROTECT(ans = allocVector(REALSXP, 5));
     PROTECT(nm = allocVector(STRSXP, 5));
     R_getProcTime(REAL(ans));

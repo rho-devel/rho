@@ -653,11 +653,12 @@ int Seql(SEXP a, SEXP b)
       as unknown. */
     if (a == b) return 1;
     /* Leave this to compiler to optimize */
-    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b)) {
-	CachedString* csa = static_cast<CachedString*>(a);
-	CachedString* csb = static_cast<CachedString*>(b);
-	if (csa->encoding() == csb->encoding())
-	    return 0;
+    if (IS_CACHED(a) && IS_CACHED(b) && ENC_KNOWN(a) == ENC_KNOWN(b))
+	return 0;
+    else {
+	const void* vmax = vmaxget();
+    	int result = !strcmp(translateCharUTF8(a), translateCharUTF8(b));
+    	vmaxset(vmax); /* discard any memory used by translateCharUTF8 */
+    	return result;
     }
-    return !strcmp(translateChar(a), translateChar(b));
 }

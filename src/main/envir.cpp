@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2008 the R Development Core Group.
+ *  Copyright (C) 1999-2008  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -644,6 +644,7 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
     bdg->assign(value);
 }
 
+
 /*----------------------------------------------------------------------
 
     setVar
@@ -1046,7 +1047,7 @@ R_isMissing(SEXP symbol, SEXP rho)
     return isMissingArgument(sym, env->frame());
 }
 
-/* this is primitive */
+/* this is primitive and a SPECIALSXP */
 SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int ddv=0;
@@ -1056,6 +1057,7 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     GCStackRoot<> t;  // Binding defined in PairList form
 
     checkArity(op, args);
+    check1arg(args, call, "x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
 	s = sym = install(translateChar(STRING_ELT(CAR(args), 0)));
@@ -1245,7 +1247,7 @@ SEXP attribute_hidden do_detach(SEXP call, SEXP op, SEXP args, SEXP env)
 	s = tenv->enclosingEnvironment();
 	tenv->skipEnclosing();
     }
-    return FRAME(s);
+    return s;
 }
 
 
@@ -1381,7 +1383,7 @@ SEXP attribute_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     all = asLogical(CADR(args));
     if (all == NA_LOGICAL) all = 0;
 
-    return R_lsInternal(env, Rboolean(all));
+    return R_lsInternal(env, CXXRCONSTRUCT(Rboolean, all));
 }
 
 SEXP R_lsInternal(SEXP env, Rboolean all)
@@ -1416,8 +1418,7 @@ SEXP attribute_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    (xdata = R_getS4DataSlot(env, ENVSXP)) != R_NilValue)
 	    env = xdata;
 	else
-	    
-	error(_("argument must be an environment"));
+	    error(_("argument must be an environment"));
     }
 
     GCStackRoot<> framelist(FRAME(env));
@@ -1446,6 +1447,7 @@ SEXP attribute_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
  * results in a list.
  * Equivalent to lapply(as.list(env, all.names=all.names), FUN, ...)
  */
+/* This is a special .Internal */
 SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP env, ans, R_fcall, FUN, tmp, tmp2, ind;
@@ -1620,10 +1622,13 @@ static SEXP pos2env(int pos, SEXP call)
 }
 
 /* this is primitive */
-SEXP do_pos2env(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_pos2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP env, pos;
     int i, npos;
+    checkArity(op, args);
+    check1arg(args, call, "x");
+
     PROTECT(pos = coerceVector(CAR(args), INTSXP));
     npos = length(pos);
     if (npos <= 0)
@@ -1660,6 +1665,7 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP arg = CAR(args);
     checkArity(op, args);
+    check1arg(args, call, "object");
     if(isEnvironment(arg))
 	return arg;
     switch(TYPEOF(arg)) {
@@ -1718,7 +1724,7 @@ SEXP do_lockEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
     Rboolean bindings;
     checkArity(op, args);
     frame = CAR(args);
-    bindings = Rboolean(asLogical(CADR(args)));
+    bindings = CXXRCONSTRUCT(Rboolean, asLogical(CADR(args)));
     R_LockEnvironment(frame, bindings);
     return R_NilValue;
 }

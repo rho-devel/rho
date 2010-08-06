@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -410,6 +409,7 @@ Rboolean StringFalse(const char *name)
     return FALSE;
 }
 
+/* used in bind.c and options.c */
 SEXP attribute_hidden EnsureString(SEXP s)
 {
     switch(TYPEOF(s)) {
@@ -458,6 +458,19 @@ void Rf_checkArityCall(SEXP op, SEXP args, SEXP call)
     func->checkNumArgs(arglist, callx);
 }
 
+void attribute_hidden Rf_check1arg(SEXP arg, SEXP call, const char *formal)
+{
+    SEXP tag = TAG(arg);
+    const char *supplied;
+    int ns;
+    if (tag == R_NilValue) return;
+    supplied = CHAR(PRINTNAME(tag)); ns = strlen(supplied);
+    if (ns > CXXRCONSTRUCT(int, strlen(formal)) || strncmp(supplied, formal, ns))
+	errorcall(call, _("supplied argument name '%s' does not match '%s'"),
+		  supplied, formal);
+}
+
+
 SEXP nthcdr(SEXP s, int n)
 {
     if (isList(s) || isLanguage(s) || isFrame(s) || TYPEOF(s) == DOTSXP ) {
@@ -473,6 +486,7 @@ SEXP nthcdr(SEXP s, int n)
 }
 
 
+/* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Evaluator::Context *cptr;
@@ -613,6 +627,7 @@ SEXP attribute_hidden do_merge(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
     /* 2. allocate and store result components */
+
     PROTECT(ans = mkNamed(VECSXP, nms));
     ansx = allocVector(INTSXP, nans);    SET_VECTOR_ELT(ans, 0, ansx);
     ansy = allocVector(INTSXP, nans);    SET_VECTOR_ELT(ans, 1, ansy);
@@ -1078,7 +1093,7 @@ utf8toucs(wchar_t *wc, const char *s)
     }
 }
 
-size_t 
+size_t
 utf8towcs(wchar_t *wc, const char *s, size_t n)
 {
     int m, res = 0;
@@ -1190,6 +1205,15 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 Rboolean mbcsValid(const char *str)
 {
     return  CXXRCONSTRUCT(Rboolean, (int(mbstowcs(NULL, str, 0)) >= 0));
+}
+
+extern "C" {
+    extern int _pcre_valid_utf8(const char *string, int length);
+}
+
+Rboolean utf8Valid(const char *str)
+{
+    return  CXXRCONSTRUCT(Rboolean, (_pcre_valid_utf8(str, strlen(str)) < 0));
 }
 
 
@@ -1521,6 +1545,41 @@ double R_atof(const char *str)
 }
 } // extern "C"
 
+/* enc2native and enc2utf8, but they are the same in a UTF-8 locale */
+/* primitive */
+SEXP do_enc2(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    SEXP ans, el;
+    int i;
+    Rboolean duped = FALSE;
+
+    checkArity(op, args);
+    check1arg(args, call, "x");
+
+    if (!isString(CAR(args)))
+	errorcall(call, "argumemt is not a character vector");
+    ans = CAR(args);
+    for (i = 0; i < LENGTH(ans); i++) {
+	el = STRING_ELT(ans, i);
+	if(PRIMVAL(op) && !known_to_be_utf8) { /* enc2utf8 */
+	    if(!IS_UTF8(el) && !strIsASCII(CHAR(el))) {
+		if (!duped) { PROTECT(ans = duplicate(ans)); duped = TRUE; }
+		SET_STRING_ELT(ans, i, 
+			       mkCharCE(translateCharUTF8(el), CE_UTF8));
+	    }
+	} else { /* enc2native */
+	    if((known_to_be_latin1 && IS_UTF8(el)) ||
+	       (known_to_be_utf8 && IS_LATIN1(el)) ||
+	       ENC_KNOWN(el)) {
+		if (!duped) { PROTECT(ans = duplicate(ans)); duped = TRUE; }
+		SET_STRING_ELT(ans, i, mkChar(translateChar(el)));
+	    }
+	}
+    }
+    if(duped) UNPROTECT(1);
+    return ans;
+}
+
 #ifdef USE_ICU
 # ifdef HAVE_LOCALE_H
 #  include <locale.h>
@@ -1528,73 +1587,73 @@ double R_atof(const char *str)
 #ifdef USE_ICU_APPLE
 /* Mac OS X is missing the headers */
 extern "C" {
-  typedef int UErrorCode; /* really an enum these days */
-  struct UCollator;
-  typedef struct UCollator UCollator;
+    typedef int UErrorCode; /* really an enum these days */
+    struct UCollator;
+    typedef struct UCollator UCollator;
 
-  typedef enum {
-    UCOL_EQUAL    = 0,
-    UCOL_GREATER    = 1,
-    UCOL_LESS    = -1
-  } UCollationResult ;
+    typedef enum {
+	UCOL_EQUAL    = 0,
+	UCOL_GREATER    = 1,
+	UCOL_LESS    = -1
+    } UCollationResult ;
 
-  typedef enum {
-    UCOL_DEFAULT = -1,
-    UCOL_PRIMARY = 0,
-    UCOL_SECONDARY = 1,
-    UCOL_TERTIARY = 2,
-    UCOL_DEFAULT_STRENGTH = UCOL_TERTIARY,
-    UCOL_CE_STRENGTH_LIMIT,
-    UCOL_QUATERNARY=3,
-    UCOL_IDENTICAL=15,
-    UCOL_STRENGTH_LIMIT,
-    UCOL_OFF = 16,
-    UCOL_ON = 17,
-    UCOL_SHIFTED = 20,
-    UCOL_NON_IGNORABLE = 21,
-    UCOL_LOWER_FIRST = 24,
-    UCOL_UPPER_FIRST = 25,
-    UCOL_ATTRIBUTE_VALUE_COUNT
-  } UColAttributeValue;
+    typedef enum {
+	UCOL_DEFAULT = -1,
+	UCOL_PRIMARY = 0,
+	UCOL_SECONDARY = 1,
+	UCOL_TERTIARY = 2,
+	UCOL_DEFAULT_STRENGTH = UCOL_TERTIARY,
+	UCOL_CE_STRENGTH_LIMIT,
+	UCOL_QUATERNARY=3,
+	UCOL_IDENTICAL=15,
+	UCOL_STRENGTH_LIMIT,
+	UCOL_OFF = 16,
+	UCOL_ON = 17,
+	UCOL_SHIFTED = 20,
+	UCOL_NON_IGNORABLE = 21,
+	UCOL_LOWER_FIRST = 24,
+	UCOL_UPPER_FIRST = 25,
+	UCOL_ATTRIBUTE_VALUE_COUNT
+    } UColAttributeValue;
 
-  typedef UColAttributeValue UCollationStrength;
+    typedef UColAttributeValue UCollationStrength;
 
-  typedef enum {
-    UCOL_FRENCH_COLLATION, 
-    UCOL_ALTERNATE_HANDLING, 
-    UCOL_CASE_FIRST, 
-    UCOL_CASE_LEVEL,
-    UCOL_NORMALIZATION_MODE, 
-    UCOL_DECOMPOSITION_MODE = UCOL_NORMALIZATION_MODE,
-    UCOL_STRENGTH,
-    UCOL_HIRAGANA_QUATERNARY_MODE,
-    UCOL_NUMERIC_COLLATION, 
-    UCOL_ATTRIBUTE_COUNT
-  } UColAttribute;
+    typedef enum {
+	UCOL_FRENCH_COLLATION, 
+	UCOL_ALTERNATE_HANDLING, 
+	UCOL_CASE_FIRST, 
+	UCOL_CASE_LEVEL,
+	UCOL_NORMALIZATION_MODE, 
+	UCOL_DECOMPOSITION_MODE = UCOL_NORMALIZATION_MODE,
+	UCOL_STRENGTH,
+	UCOL_HIRAGANA_QUATERNARY_MODE,
+	UCOL_NUMERIC_COLLATION, 
+	UCOL_ATTRIBUTE_COUNT
+    } UColAttribute;
 
-  /* UCharIterator struct has to be defined sice we use its instances as
-     local variables, but we don't acutally use any of its members. */
-  typedef struct UCharIterator {
-    const void *context;
-    int32_t length, start, index, limit, reservedField;
-    void *fns[16]; /* we overshoot here (there is just 10 fns in ICU 3.6),
-		      but we have to make sure that enough stack space
-		      is allocated when used as a local var in future
-		      versions */
-  } UCharIterator;
+    /* UCharIterator struct has to be defined sice we use its instances as
+       local variables, but we don't acutally use any of its members. */
+    typedef struct UCharIterator {
+	const void *context;
+	int32_t length, start, index, limit, reservedField;
+	void *fns[16]; /* we overshoot here (there is just 10 fns in ICU 3.6),
+			  but we have to make sure that enough stack space
+			  is allocated when used as a local var in future
+			  versions */
+    } UCharIterator;
 
-  UCollator* ucol_open(const char *loc, UErrorCode *status);
-  void ucol_close(UCollator *coll);
-  void ucol_setAttribute(UCollator *coll, UColAttribute attr, 
-			 UColAttributeValue value, UErrorCode *status);
-  void ucol_setStrength(UCollator *coll, UCollationStrength strength);
-  UCollationResult ucol_strcollIter(const UCollator *coll,
-				    UCharIterator *sIter,
-				    UCharIterator *tIter,
-				    UErrorCode *status);
-  void uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length);
+    UCollator* ucol_open(const char *loc, UErrorCode *status);
+    void ucol_close(UCollator *coll);
+    void ucol_setAttribute(UCollator *coll, UColAttribute attr, 
+			   UColAttributeValue value, UErrorCode *status);
+    void ucol_setStrength(UCollator *coll, UCollationStrength strength);
+    UCollationResult ucol_strcollIter(const UCollator *coll,
+				      UCharIterator *sIter,
+				      UCharIterator *tIter,
+				      UErrorCode *status);
+    void uiter_setUTF8(UCharIterator *iter, const char *s, int32_t length);
 
-  void uloc_setDefault(const char* localeID, UErrorCode* status);
+    void uloc_setDefault(const char* localeID, UErrorCode* status);
 }  // extern "C"
 
 #define U_ZERO_ERROR 0
@@ -1615,6 +1674,7 @@ void attribute_hidden resetICUcollator(void)
     if (collator) ucol_close(collator);
     collator = NULL;
 }
+
 static const struct {
     const char * const str;
     int val;
@@ -1640,13 +1700,13 @@ static const struct {
     { "hiragana_quaternary", UCOL_HIRAGANA_QUATERNARY_MODE },
     { NULL,  0 }
 };
-    
+
 
 SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x;
     UErrorCode  status = U_ZERO_ERROR;
-    
+
     for (; args != R_NilValue; args = CDR(args)) {
 	SEXP tag = TAG(args);
 	if (!tag)
@@ -1681,7 +1741,7 @@ SEXP attribute_hidden do_ICUset(SEXP call, SEXP op, SEXP args, SEXP rho)
 		ucol_setStrength(collator, CXXRCONSTRUCT(UCollationStrength, val));
 	    } else if (collator && at >= 0 && val >= 0) {
 		ucol_setAttribute(collator, CXXRCONSTRUCT(UColAttribute, at), CXXRCONSTRUCT(UColAttributeValue, val), &status);
-		if (U_FAILURE(status)) 
+		if (U_FAILURE(status))
 		    error("failed to set ICU collator attribute");
 	    }
 	}
@@ -1710,10 +1770,10 @@ int Scollate(SEXP a, SEXP b)
     }
     if (collator == NULL)
 	return strcoll(translateChar(a), translateChar(b));
-    
+
     uiter_setUTF8(&aIter, as, len1);
     uiter_setUTF8(&bIter, bs, len2);
-    result = ucol_strcollIter(collator, &aIter, &bIter, &status);   
+    result = ucol_strcollIter(collator, &aIter, &bIter, &status);
     if (U_FAILURE(status)) error("could not collate");
     return result;
 }

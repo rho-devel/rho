@@ -22,7 +22,7 @@
 and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
-           Copyright (c) 1997-2009 University of Cambridge
+           Copyright (c) 1997-2010 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -69,10 +69,11 @@ supporting internal functions that are not used by other modules. */
 #include "pcre_internal.h"
 
 
-/* When DEBUG is defined, we need the pcre_printint() function, which is also
-used by pcretest. DEBUG is not defined when building a production library. */
+/* When PCRE_DEBUG is defined, we need the pcre_printint() function, which is
+also used by pcretest. PCRE_DEBUG is not defined when building a production
+library. */
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 #include "pcre_printint.src"
 #endif
 
@@ -106,6 +107,11 @@ end. Each entry in this list occupies LINK_SIZE bytes, so even when LINK_SIZE
 is 4 there is plenty of room. */
 
 #define COMPILE_WORK_SIZE (4096)
+
+/* The overrun tests check for a slightly smaller size so that they detect the
+overrun before it actually does run off the end of the data block. */
+
+#define WORK_SIZE_CHECK (COMPILE_WORK_SIZE - 100)
 
 
 /* Table for handling escaped characters in the range '0'-'z'. Positive returns
@@ -278,7 +284,11 @@ the number of relocations needed when a shared library is loaded dynamically,
 it is now one long string. We cannot use a table of offsets, because the
 lengths of inserts such as XSTRING(MAX_NAME_SIZE) are not known. Instead, we
 simply count through to the one we want - this isn't a performance issue
-because these strings are used only when there is a compilation error. */
+because these strings are used only when there is a compilation error.
+
+Each substring ends with \0 to insert a null character. This includes the final
+substring, so that the whole string ends with \0\0, which can be detected when
+counting through. */
 
 static const char error_texts[] =
   "no error\0"
@@ -359,8 +369,7 @@ static const char error_texts[] =
   "digit expected after (?+\0"
   "] is an invalid data character in JavaScript compatibility mode\0"
   /* 65 */
-  "different names for subpatterns of the same number are not allowed";
-
+  "different names for subpatterns of the same number are not allowed\0";
 
 /* Table to identify digits and hex digits. This is used when compiling
 patterns. Note that the tables in chartables are dependent on the locale, and
@@ -518,7 +527,11 @@ static const char *
 find_error_text(int n)
 {
 const char *s = error_texts;
-for (; n > 0; n--) while (*s++ != 0) {};
+for (; n > 0; n--)
+  {
+  while (*s++ != 0) {};
+  if (*s == 0) return "Error text not found (please report)";
+  }
 return s;
 }
 
@@ -1458,6 +1471,7 @@ for (;;)
     case OP_CALLOUT:
     case OP_SOD:
     case OP_SOM:
+    case OP_SET_SOM:
     case OP_EOD:
     case OP_EODN:
     case OP_CIRC:
@@ -1792,12 +1806,14 @@ Arguments:
   code        points to start of search
   endcode     points to where to stop
   utf8        TRUE if in UTF8 mode
+  cd          contains pointers to tables etc.
 
 Returns:      TRUE if what is matched could be empty
 */
 
 static BOOL
-could_be_empty_branch(const uschar *code, const uschar *endcode, BOOL utf8)
+could_be_empty_branch(const uschar *code, const uschar *endcode, BOOL utf8,
+  compile_data *cd)
 {
 register int c;
 for (code = first_significant_code(code + _pcre_OP_lengths[*code], NULL, 0, TRUE);
@@ -1828,6 +1844,28 @@ for (code = first_significant_code(code + _pcre_OP_lengths[*code], NULL, 0, TRUE
     continue;
     }
 
+  /* For a recursion/subroutine call, if its end has been reached, which
+  implies a subroutine call, we can scan it. */
+
+  if (c == OP_RECURSE)
+    {
+    BOOL empty_branch = FALSE;
+    const uschar *scode = cd->start_code + GET(code, 1);
+    if (GET(scode, 1) == 0) return TRUE;    /* Unclosed */
+    do
+      {
+      if (could_be_empty_branch(scode, endcode, utf8, cd))
+        {
+        empty_branch = TRUE;
+        break;
+        }
+      scode += GET(scode, 1);
+      }
+    while (*scode == OP_ALT);
+    if (!empty_branch) return FALSE;  /* All branches are non-empty */
+    continue;
+    }
+
   /* For other groups, scan the branches. */
 
   if (c == OP_BRA || c == OP_CBRA || c == OP_ONCE || c == OP_COND)
@@ -1846,7 +1884,7 @@ for (code = first_significant_code(code + _pcre_OP_lengths[*code], NULL, 0, TRUE
       empty_branch = FALSE;
       do
         {
-        if (!empty_branch && could_be_empty_branch(code, endcode, utf8))
+        if (!empty_branch && could_be_empty_branch(code, endcode, utf8, cd))
           empty_branch = TRUE;
         code += GET(code, 1);
         }
@@ -1980,6 +2018,11 @@ for (code = first_significant_code(code + _pcre_OP_lengths[*code], NULL, 0, TRUE
     if (utf8 && code[3] >= 0xc0) code += _pcre_utf8_table4[code[3] & 0x3f];
     break;
 #endif
+
+    /* None of the remaining opcodes are required to match a character. */
+
+    default:
+    break;
     }
   }
 
@@ -2002,17 +2045,19 @@ Arguments:
   endcode     points to where to stop (current RECURSE item)
   bcptr       points to the chain of current (unclosed) branch starts
   utf8        TRUE if in UTF-8 mode
+  cd          pointers to tables etc
 
 Returns:      TRUE if what is matched could be empty
 */
 
 static BOOL
 could_be_empty(const uschar *code, const uschar *endcode, branch_chain *bcptr,
-  BOOL utf8)
+  BOOL utf8, compile_data *cd)
 {
-while (bcptr != NULL && bcptr->current >= code)
+while (bcptr != NULL && bcptr->current_branch >= code)
   {
-  if (!could_be_empty_branch(bcptr->current, endcode, utf8)) return FALSE;
+  if (!could_be_empty_branch(bcptr->current_branch, endcode, utf8, cd))
+    return FALSE;
   bcptr = bcptr->outer;
   }
 return TRUE;
@@ -2674,7 +2719,7 @@ BOOL utf8 = FALSE;
 uschar *utf8_char = NULL;
 #endif
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 if (lengthptr != NULL) DPRINTF((">> start branch\n"));
 #endif
 
@@ -2733,10 +2778,10 @@ for (;; ptr++)
 
   if (lengthptr != NULL)
     {
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
     if (code > cd->hwm) cd->hwm = code;                 /* High water info */
 #endif
-    if (code > cd->start_workspace + COMPILE_WORK_SIZE) /* Check for overrun */
+    if (code > cd->start_workspace + WORK_SIZE_CHECK)   /* Check for overrun */
       {
       *errorcodeptr = ERR52;
       goto FAILED;
@@ -2785,7 +2830,7 @@ for (;; ptr++)
   /* In the real compile phase, just check the workspace used by the forward
   reference list. */
 
-  else if (cd->hwm > cd->start_workspace + COMPILE_WORK_SIZE)
+  else if (cd->hwm > cd->start_workspace + WORK_SIZE_CHECK)
     {
     *errorcodeptr = ERR52;
     goto FAILED;
@@ -4229,13 +4274,15 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
           {
           /* In the pre-compile phase, we don't actually do the replication. We
           just adjust the length as if we had. Do some paranoid checks for
-          potential integer overflow. */
+          potential integer overflow. The INT64_OR_DOUBLE type is a 64-bit
+          integer type when available, otherwise double. */
 
           if (lengthptr != NULL)
             {
             int delta = (repeat_min - 1)*length_prevgroup;
-            if ((double)(repeat_min - 1)*(double)length_prevgroup >
-                                                            (double)INT_MAX ||
+            if ((INT64_OR_DOUBLE)(repeat_min - 1)*
+                  (INT64_OR_DOUBLE)length_prevgroup >
+                    (INT64_OR_DOUBLE)INT_MAX ||
                 OFLOW_MAX - *lengthptr < delta)
               {
               *errorcodeptr = ERR20;
@@ -4281,15 +4328,16 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
         just adjust the length as if we had. For each repetition we must add 1
         to the length for BRAZERO and for all but the last repetition we must
         add 2 + 2*LINKSIZE to allow for the nesting that occurs. Do some
-        paranoid checks to avoid integer overflow. */
+        paranoid checks to avoid integer overflow. The INT64_OR_DOUBLE type is
+        a 64-bit integer type when available, otherwise double. */
 
         if (lengthptr != NULL && repeat_max > 0)
           {
           int delta = repeat_max * (length_prevgroup + 1 + 2 + 2*LINK_SIZE) -
                       2 - 2*LINK_SIZE;   /* Last one doesn't nest */
-          if ((double)repeat_max *
-                (double)(length_prevgroup + 1 + 2 + 2*LINK_SIZE)
-                  > (double)INT_MAX ||
+          if ((INT64_OR_DOUBLE)repeat_max *
+                (INT64_OR_DOUBLE)(length_prevgroup + 1 + 2 + 2*LINK_SIZE)
+                  > (INT64_OR_DOUBLE)INT_MAX ||
               OFLOW_MAX - *lengthptr < delta)
             {
             *errorcodeptr = ERR20;
@@ -4366,7 +4414,7 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
           uschar *scode = bracode;
           do
             {
-            if (could_be_empty_branch(scode, ketcode, utf8))
+            if (could_be_empty_branch(scode, ketcode, utf8, cd))
               {
               *bracode += OP_SBRA - OP_BRA;
               break;
@@ -4441,7 +4489,12 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
         case OP_NOTQUERY: *tempcode = OP_NOTPOSQUERY; break;
         case OP_NOTUPTO:  *tempcode = OP_NOTPOSUPTO; break;
 
+        /* Because we are moving code along, we must ensure that any
+        pending recursive references are updated. */
+
         default:
+        *code = OP_END;
+        adjust_recurse(tempcode, 1 + LINK_SIZE, utf8, cd, save_hwm);
         memmove(tempcode + 1+LINK_SIZE, tempcode, len);
         code += 1 + LINK_SIZE;
         len += 1 + LINK_SIZE;
@@ -5160,6 +5213,11 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
                 *errorcodeptr = ERR15;
                 goto FAILED;
                 }
+
+              /* Fudge the value of "called" so that when it is inserted as an
+              offset below, what it actually inserted is the reference number
+              of the group. */
+
               called = cd->start_code + recno;
               PUTINC(cd->hwm, 0, code + 2 + LINK_SIZE - cd->start_code);
               }
@@ -5169,7 +5227,7 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
             recursion that could loop for ever, and diagnose that case. */
 
             else if (GET(called, 1) == 0 &&
-                     could_be_empty(called, code, bcptr, utf8))
+                     could_be_empty(called, code, bcptr, utf8, cd))
               {
               *errorcodeptr = ERR40;
               goto FAILED;
@@ -5264,7 +5322,7 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
             {
             cd->external_options = newoptions;
             }
-         else
+          else
             {
             if ((options & PCRE_IMS) != (newoptions & PCRE_IMS))
               {
@@ -5601,6 +5659,7 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
 
       if (-c >= ESC_REF)
         {
+        open_capitem *oc;
         recno = -c - ESC_REF;
 
         HANDLE_REFERENCE:    /* Come here from named backref handling */
@@ -5610,6 +5669,19 @@ we set the flag only if there is a literal "\r" or "\n" in the class. */
         PUT2INC(code, 0, recno);
         cd->backref_map |= (recno < 32)? (1 << recno) : 1;
         if (recno > cd->top_backref) cd->top_backref = recno;
+
+        /* Check to see if this back reference is recursive, that it, it
+        is inside the group that it references. A flag is set so that the
+        group can be made atomic. */
+
+        for (oc = cd->open_caps; oc != NULL; oc = oc->next)
+          {
+          if (oc->number == recno)
+            {
+            oc->flag = TRUE;
+            break;
+            }
+          }
         }
 
       /* So are Unicode property matches, if supported. */
@@ -5799,10 +5871,11 @@ int branchfirstbyte, branchreqbyte;
 int length;
 int orig_bracount;
 int max_bracount;
+int old_external_options = cd->external_options;
 branch_chain bc;
 
 bc.outer = bcptr;
-bc.current = code;
+bc.current_branch = code;
 
 firstbyte = reqbyte = REQ_UNSET;
 
@@ -5821,13 +5894,15 @@ them global. It tests the value of length for (2 + 2*LINK_SIZE) in the
 pre-compile phase to find out whether anything has yet been compiled or not. */
 
 /* If this is a capturing subpattern, add to the chain of open capturing items
-so that we can detect them if (*ACCEPT) is encountered. */
+so that we can detect them if (*ACCEPT) is encountered. This is also used to
+detect groups that contain recursive back references to themselves. */
 
 if (*code == OP_CBRA)
   {
   capnumber = GET2(code, 1 + LINK_SIZE);
   capitem.number = capnumber;
   capitem.next = cd->open_caps;
+  capitem.flag = FALSE;
   cd->open_caps = &capitem;
   }
 
@@ -5874,6 +5949,15 @@ for (;;)
     *ptrptr = ptr;
     return FALSE;
     }
+
+  /* If the external options have changed during this branch, it means that we
+  are at the top level, and a leading option setting has been encountered. We
+  need to re-set the original option values to take account of this so that,
+  during the pre-compile phase, we know to allow for a re-set at the start of
+  subsequent branches. */
+
+  if (old_external_options != cd->external_options)
+    oldims = cd->external_options & PCRE_IMS;
 
   /* Keep the highest bracket count in case (?| was used and some branch
   has fewer than the rest. */
@@ -5975,17 +6059,34 @@ for (;;)
       while (branch_length > 0);
       }
 
-    /* If it was a capturing subpattern, remove it from the chain. */
-
-    if (capnumber > 0) cd->open_caps = cd->open_caps->next;
-
     /* Fill in the ket */
 
     *code = OP_KET;
     PUT(code, 1, code - start_bracket);
     code += 1 + LINK_SIZE;
 
-    /* Resetting option if needed */
+    /* If it was a capturing subpattern, check to see if it contained any
+    recursive back references. If so, we must wrap it in atomic brackets.
+    In any event, remove the block from the chain. */
+
+    if (capnumber > 0)
+      {
+      if (cd->open_caps->flag)
+        {
+        memmove(start_bracket + 1 + LINK_SIZE, start_bracket,
+          code - start_bracket);
+        *start_bracket = OP_ONCE;
+        code += 1 + LINK_SIZE;
+        PUT(start_bracket, 1, code - start_bracket);
+        *code = OP_KET;
+        PUT(code, 1, code - start_bracket);
+        code += 1 + LINK_SIZE;
+        length += 2 + 2*LINK_SIZE;
+        }
+      cd->open_caps = cd->open_caps->next;
+      }
+
+    /* Reset options if needed. */
 
     if ((options & PCRE_IMS) != oldims && *ptr == CHAR_RIGHT_PARENTHESIS)
       {
@@ -6034,7 +6135,7 @@ for (;;)
     {
     *code = OP_ALT;
     PUT(code, 1, code - last_branch);
-    bc.current = last_branch = code;
+    bc.current_branch = last_branch = code;
     code += 1 + LINK_SIZE;
     }
 
@@ -6450,7 +6551,7 @@ while (ptr[skipatstart] == CHAR_LEFT_PARENTHESIS &&
 
 #ifdef SUPPORT_UTF8
 if (utf8 && (options & PCRE_NO_UTF8_CHECK) == 0 &&
-     (*erroroffset = _pcre_valid_utf8((uschar *)pattern, -1)) >= 0)
+     (*erroroffset = _pcre_valid_utf8((USPTR)pattern, -1)) >= 0)
   {
   errorcode = ERR44;
   goto PCRE_EARLY_ERROR_RETURN2;
@@ -6647,7 +6748,7 @@ if debugging, leave the test till after things are printed out. */
 
 *code++ = OP_END;
 
-#ifndef DEBUG
+#ifndef PCRE_DEBUG
 if (code - codestart > length) errorcode = ERR23;
 #endif
 
@@ -6771,8 +6872,7 @@ if (reqbyte >= 0 &&
 /* Print out the compiled data if debugging is enabled. This is never the
 case when building a production library. */
 
-#ifdef DEBUG
-
+#ifdef PCRE_DEBUG
 printf("Length = %d top_bracket = %d top_backref = %d\n",
   length, re->top_bracket, re->top_backref);
 
@@ -6809,7 +6909,7 @@ if (code - codestart > length)
   if (errorcodeptr != NULL) *errorcodeptr = ERR23;
   return NULL;
   }
-#endif   /* DEBUG */
+#endif   /* PCRE_DEBUG */
 
 return (pcre *)re;
 }

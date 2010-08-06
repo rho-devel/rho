@@ -64,8 +64,7 @@ SOURCES_CXX = \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
 	names.cpp objects.cpp optim.cpp optimize.cpp options.cpp \
-	par.cpp paste.cpp pcre.cpp platform.cpp \
-	plot.cpp plot3d.cpp plotmath.cpp \
+	par.cpp paste.cpp platform.cpp plot.cpp plot3d.cpp plotmath.cpp \
 	print.cpp printarray.cpp printvector.cpp printutils.cpp qsort.cpp \
 	random.cpp raw.cpp registration.cpp relop.cpp rlocale.cpp \
 	saveload.cpp scan.cpp seq.cpp serialize.cpp size.cpp sort.cpp \

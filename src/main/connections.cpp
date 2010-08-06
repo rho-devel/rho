@@ -298,7 +298,7 @@ int dummy_vfprintf(Rconnection con, const char *format, va_list ap)
     char buf[BUFSIZE], *b = buf;
     int res;
 #ifdef HAVE_VA_COPY
-    void *vmax = vmaxget();
+    const void *vmax = vmaxget();
     int usedRalloc = FALSE, usedVasprintf = FALSE;
     va_list aq;
 
@@ -515,6 +515,25 @@ void init_con(Rconnection newconn, const char *description, int enc,
 #ifdef Win32
 size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
 #endif
+
+typedef struct fileconn {
+    FILE *fp;
+#if defined(HAVE_OFF_T) && defined(HAVE_FSEEKO)
+    off_t rpos, wpos;
+#else
+#ifdef Win32
+    off64_t rpos, wpos;
+#else
+    long rpos, wpos;
+#endif
+#endif
+    Rboolean last_was_write;
+    Rboolean raw;
+#ifdef Win32
+    Rboolean anon_file;
+    char name[PATH_MAX+1];
+#endif
+} *Rfileconn;
 
 static Rboolean file_open(Rconnection con)
 {
@@ -749,7 +768,8 @@ static size_t file_write(const void *ptr, size_t size, size_t nitems,
     return fwrite(ptr, size, nitems, fp);
 }
 
-static Rconnection newfile(const char *description, int enc, const char *mode)
+static Rconnection newfile(const char *description, int enc, const char *mode,
+			   int raw)
 {
     Rconnection newconn;
     newconn = static_cast<Rconnection>( malloc(sizeof(struct Rconn)));
@@ -776,12 +796,13 @@ static Rconnection newfile(const char *description, int enc, const char *mode)
     newconn->fflush = &file_fflush;
     newconn->read = &file_read;
     newconn->write = &file_write;
-    newconn->canseek = TRUE;
+    newconn->canseek = CXXRCONSTRUCT(Rboolean, (raw == 0));
     newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct fileconn));
     if(!newconn->connprivate) {
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of file connection failed"));
     }
+    static_cast<Rfileconn>(newconn->connprivate)->raw = CXXRCONSTRUCT(Rboolean, raw);
     return newconn;
 }
 
@@ -1178,18 +1199,19 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
 
 typedef struct gzfileconn {
     void *fp;
-    int cp;
+    int compress;
 } *Rgzfileconn;
 
 static Rboolean gzfile_open(Rconnection con)
 {
     gzFile fp;
-    char mode[6], *p;
+    char mode[6];
+    Rgzfileconn gzcon = CXXRSCAST(Rgzfileconn, con->connprivate);
 
     strcpy(mode, con->mode);
-    /* Must open as binary */
-    if((p = strchr(mode, 't'))) *p = 'b';
-
+    /* Must open as binary, only "r" and "w" are supported */
+    if(strchr(con->mode, 'w')) sprintf(mode, "wb%1d", gzcon->compress);
+    else strcpy(mode, "rb");
     fp = gzopen(R_ExpandFileName(con->description), mode);
     if(!fp) {
 	warning(_("cannot open compressed file '%s', probable reason '%s'"),
@@ -1200,8 +1222,7 @@ static Rboolean gzfile_open(Rconnection con)
     con->isopen = TRUE;
     con->canwrite = CXXRCONSTRUCT(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
     con->canread = CXXRCONSTRUCT(Rboolean, !con->canwrite);
-    if(strlen(con->mode) >= 2 && con->mode[1] == 'b') con->text = FALSE;
-    else con->text = TRUE;
+    con->text = strchr(con->mode, 'b') ? FALSE : TRUE;
     set_iconv(con);
     con->save = -1000;
     return TRUE;
@@ -1218,9 +1239,12 @@ static int gzfile_fgetc_internal(Rconnection con)
     gzFile fp = (static_cast<Rgzfileconn>((con->connprivate)))->fp;
     int c;
 
-    /* Looks like eof is signalled one char early */
-    /* -- sometimes! gzgetc may still return EOF */
+    /* Looks like eof is signalled one char early
+     -- sometimes! gzgetc may still return EOF
     if(gzeof(fp)) return R_EOF;
+    
+    Removed for zlib 1.2.4
+    */
     c = gzgetc(fp);
     return (c == EOF) ? R_EOF : c;
 }
@@ -1292,12 +1316,7 @@ static Rconnection newgzfile(const char *description, const char *mode,
 	free(newconn->connclass); free(newconn);
 	error(_("allocation of gzfile connection failed"));
     }
-    init_con(newconn, description, CE_NATIVE, "");
-    strncpy(newconn->mode, mode, 1);
-    if(strlen(mode) > 1 && mode[1] == 't')
-	sprintf(newconn->mode+1, "t%1d", compress);
-    else
-	sprintf(newconn->mode+1, "b%1d", compress);
+    init_con(newconn, description, CE_NATIVE, mode);
 
     newconn->canseek = TRUE;
     newconn->open = &gzfile_open;
@@ -1314,6 +1333,7 @@ static Rconnection newgzfile(const char *description, const char *mode,
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of gzfile connection failed"));
     }
+    static_cast<Rgzfileconn>(newconn->connprivate)->compress = compress;
     return newconn;
 }
 
@@ -1365,8 +1385,7 @@ static Rboolean bzfile_open(Rconnection con)
     bz->fp = fp;
     bz->bfp = bfp;
     con->isopen = TRUE;
-    if(strlen(con->mode) >= 2 && con->mode[1] == 't') con->text = TRUE;
-    else con->text = FALSE;
+    con->text = strchr(con->mode, 'b') ? FALSE : TRUE;
     set_iconv(con);
     con->save = -1000;
     return TRUE;
@@ -1519,8 +1538,7 @@ static Rboolean xzfile_open(Rconnection con)
 	}
     }
     con->isopen = TRUE;
-    if(strlen(con->mode) >= 2 && con->mode[1] == 't') con->text = TRUE;
-    else con->text = FALSE;
+    con->text = strchr(con->mode, 'b') ? FALSE : TRUE;
     set_iconv(con);
     con->save = -1000;
     return TRUE;
@@ -1541,7 +1559,7 @@ static void xzfile_close(Rconnection con)
 	    nout = BUFSIZE - strm->avail_out;
 	    res = fwrite(buf, 1, nout, xz->fp);
 	    if (res != nout) error("fwrite error");
-	    if (ret != LZMA_OK) break; 
+	    if (ret != LZMA_OK) break;
 	}
     }
     lzma_end(&(xz->stream));
@@ -1638,7 +1656,7 @@ static size_t xzfile_write(const void *ptr, size_t size, size_t nitems,
     }
 }
 
-static Rconnection 
+static Rconnection
 newxzfile(const char *description, const char *mode, int type, int compress)
 {
     Rconnection newconn;
@@ -1736,13 +1754,13 @@ SEXP attribute_hidden do_gzfile(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     switch(type) {
     case 0:
-	con = newgzfile(file, strlen(open) ? open : "r", compress);
+	con = newgzfile(file, strlen(open) ? open : "rb", compress);
 	break;
     case 1:
-	con = newbzfile(file, strlen(open) ? open : "r", compress);
+	con = newbzfile(file, strlen(open) ? open : "rb", compress);
 	break;
     case 2:
-	con = newxzfile(file, strlen(open) ? open : "r", subtype, compress);
+	con = newxzfile(file, strlen(open) ? open : "rb", subtype, compress);
 	break;
     }
     ncon = NextConnection();
@@ -2174,7 +2192,7 @@ SEXP attribute_hidden do_stderr(SEXP call, SEXP op, SEXP args, SEXP env)
 typedef struct rawconn {
     SEXP data; /* all the data, stored as a raw vector */
     /* replace nbytes by TRUELENGTH in due course? */
-    size_t pos, nbytes; /* current pos and number of bytes 
+    size_t pos, nbytes; /* current pos and number of bytes
 			   (same pos for read and write) */
 } *Rrawconn;
 
@@ -2414,7 +2432,9 @@ static void text_init(Rconnection con, SEXP text, int type)
     Rtextconn thisconn = CXXRSCAST(Rtextconn, con->connprivate);
 
     for(i = 0; i < nlines; i++)
-	nchars += strlen(translateChar(STRING_ELT(text, i))) + 1;
+	nchars += strlen(type == 1 ? translateChar(STRING_ELT(text, i))
+			 : ((type == 3) ?translateCharUTF8(STRING_ELT(text, i))
+			    : CHAR(STRING_ELT(text, i))) ) + 1;    
     thisconn->data = static_cast<char *>( malloc(nchars+1));
     if(!thisconn->data) {
 	free(thisconn); free(con->description); free(con->connclass); free(con);
@@ -2550,7 +2570,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
 {
     Routtextconn thisconn = CXXRSCAST(Routtextconn, con->connprivate);
     char buf[BUFSIZE], *b = buf, *p, *q;
-    void *vmax = vmaxget();
+    const void *vmax = vmaxget();
     int res = 0, usedRalloc = FALSE, buffree,
 	already = strlen(thisconn->lastline);
     SEXP tmp;
@@ -3386,10 +3406,9 @@ static void swapb(void *result, int size)
 
 static SEXP readOneString(Rconnection con)
 {
-    char *buf, *p, *newbuff;
-    int ibfs = 500, pos, m;
+    char buf[10001], *p;
+    int pos, m;
 
-    buf = static_cast<char *>( R_alloc(ibfs, sizeof(char)));
     for(pos = 0; pos < 10000; pos++) {
 	p = buf + pos;
 	m = con->read(p, sizeof(char), 1, con);
@@ -3399,12 +3418,6 @@ static SEXP readOneString(Rconnection con)
 	    return R_NilValue;
 	}
 	if(*p == '\0') break;
-	if(pos >= ibfs - 1) {
-	    newbuff = static_cast<char *>( R_alloc(2*ibfs, sizeof(char)));
-	    memcpy(newbuff, buf, pos+1);
-	    buf = newbuff;
-	    ibfs *= 2;
-	}
     }
     if(pos == 10000)
 	warning(_("null terminator not found: breaking string at 10000 bytes"));
@@ -3601,7 +3614,7 @@ SEXP attribute_hidden do_readbin(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if(swap && size > 1)
 		for(i = 0; i < m; i++) swapb(static_cast<char *>(p)+i*size, size);
 	} else {
-	    char * buf = R_alloc(1, size);
+	    char buf[size];
 	    int s;
 	    if(mode == 1) {
 		for(i = 0, m = 0; i < n; i++) {
@@ -3797,7 +3810,7 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	default:
 	    UNIMPLEMENTED_TYPE("writeBin", object);
 	}
-	buf = CXXRCONSTRUCT(static_cast<char*>, R_chk_calloc(len, size)); /* R_alloc(len, size); */
+	buf = CXXRCONSTRUCT(static_cast<char*>, R_chk_calloc(len, size));
 	switch(TYPEOF(object)) {
 	case LGLSXP:
 	case INTSXP:
@@ -3919,12 +3932,15 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 static SEXP
 readFixedString(Rconnection con, int len, int useBytes)
 {
+    SEXP ans;
     char *buf;
     int  pos, m;
+    const void *vmax = vmaxget();
 
     if(utf8locale && !useBytes) {
 	int i, clen;
 	char *p, *q;
+
 	p = buf = static_cast<char *>( R_alloc(MB_CUR_MAX*len+1, sizeof(char)));
 	memset(buf, 0, MB_CUR_MAX*len+1);
 	for(i = 0; i < len; i++) {
@@ -3951,7 +3967,9 @@ readFixedString(Rconnection con, int len, int useBytes)
     }
     /* String may contain nuls which we now (R >= 2.8.0) assume to be
        padding and ignore silently */
-    return mkChar(buf);
+    ans = mkChar(buf);
+    vmaxset(vmax);
+    return ans;
 }
 
 static SEXP
@@ -3959,6 +3977,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 {
     char *buf;
     SEXP res;
+    const void *vmax = vmaxget();
 
     if(*np + len > nbytes) {
 	len = nbytes - *np;
@@ -3969,6 +3988,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 	int i, clen, iread = *np;
 	char *p;
 	Rbyte *q;
+
 	p = buf = static_cast<char *>( R_alloc(MB_CUR_MAX*len+1, sizeof(char)));
 	for(i = 0; i < len; i++, p+=clen, iread += clen) {
 	    if (iread >= nbytes) break;
@@ -3981,7 +4001,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 	clen = iread - (*np);
 	*np = iread;
 	*p = '\0';
-	return mkCharLenCE(buf, clen, CE_NATIVE);
+	res = mkCharLenCE(buf, clen, CE_NATIVE);
     } else {
 	/* no terminator */
 	buf = CXXRCONSTRUCT(static_cast<char*>, R_chk_calloc(len + 1, 1));
@@ -3990,6 +4010,7 @@ rawFixedString(Rbyte *bytes, int len, int nbytes, int *np, int useBytes)
 	res = mkCharLenCE(buf, len, CE_NATIVE);
 	Free(buf);
     }
+    vmaxset(vmax);
     return res;
 }
 
@@ -4538,7 +4559,7 @@ SEXP attribute_hidden do_sumconnection(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 
 
-/* op = 0: url(description, open, blocking, encoding) 
+/* op = 0: url(description, open, blocking, encoding)
    op = 1: file(description, open, blocking, encoding)
 */
 SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -4546,7 +4567,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP scmd, sopen, ans, connclass, enc;
     CXXRCONST char *class2 = "url";
     const char *url, *open;
-    int ncon, block;
+    int ncon, block, raw = 0;
     cetype_t ienc = CE_NATIVE;
     Rconnection con = NULL;
 #ifdef HAVE_INTERNET
@@ -4591,6 +4612,11 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
     if(!isString(enc) || length(enc) != 1 ||
        strlen(CHAR(STRING_ELT(enc, 0))) > 100) /* ASCII */
 	error(_("invalid '%s' argument"), "encoding");
+    if(PRIMVAL(op)) {
+	raw = asLogical(CAD4R(args));
+	if(raw == NA_LOGICAL)
+	    error(_("invalid '%s' argument"), "raw");
+    }
 
     ncon = NextConnection();
     if(strncmp(url, "file://", 7) == 0) {
@@ -4600,7 +4626,7 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 	   whereas on Unix it is file:///path/to */
 	if (strlen(url) > 9 && url[7] == '/' && url[9] == ':') nh = 8;
 #endif
-	con = newfile(url + nh, ienc, strlen(open) ? open : "r");
+	con = newfile(url + nh, ienc, strlen(open) ? open : "r", raw);
 	class2 = "file";
 #ifdef HAVE_INTERNET
     } else if (strncmp(url, "http://", 7) == 0 ||
@@ -4629,14 +4655,15 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 		)
 		con = newclp(url, strlen(open) ? open : CXXRCONSTRUCT(const_cast<char*>, "r"));
 	    else {
-		if (!strlen(open) || streql(open, "r") || streql(open, "rt")) {
+		if (!raw &&
+		    (!strlen(open) || streql(open, "r") || streql(open, "rt"))) {
 		    /* check if this is a compressed file */
 		    FILE *fp = fopen(R_ExpandFileName(url), "rb");
 		    char buf[7];
 		    int res, ztype = -1, subtype = 0, compress = 0;
 		    if (fp) {
-			memset(buf, 0, 7); 
-			res = fread(buf, 5, 1, fp); 
+			memset(buf, 0, 7);
+			res = fread(buf, 5, 1, fp);
 			fclose(fp);
 			if(res == 1) {
 			    if(buf[0] == '\x1f' && buf[1] == '\x8b') ztype = 0;
@@ -4651,20 +4678,20 @@ SEXP attribute_hidden do_url(SEXP call, SEXP op, SEXP args, SEXP env)
 		    }
 		    switch(ztype) {
 		    case -1:
-			con = newfile(url, ienc, strlen(open) ? open : "r");
+			con = newfile(url, ienc, strlen(open) ? open : "r", raw);
 			break;
 		    case 0:
-			con = newgzfile(url, strlen(open) ? open : "r", compress);
+			con = newgzfile(url, strlen(open) ? open : "rt", compress);
 			break;
 		    case 1:
-			con = newbzfile(url, strlen(open) ? open : "r", compress);
+			con = newbzfile(url, strlen(open) ? open : "rt", compress);
 			break;
 		    case 2:
-			con = newxzfile(url, strlen(open) ? open : "r", subtype, compress);
+			con = newxzfile(url, strlen(open) ? open : "rt", subtype, compress);
 			break;
 		    }
 		} else
-		    con = newfile(url, ienc, strlen(open) ? open : "r");
+		    con = newfile(url, ienc, strlen(open) ? open : "r", raw);
 	    }
 	    class2 = "file";
 	} else {
@@ -5018,6 +5045,9 @@ SEXP attribute_hidden do_gzcon(SEXP call, SEXP op, SEXP args, SEXP rho)
        (strcmp(m, "r") == 0 || strcmp(m, "w") == 0))
 	warning(_("using a text-mode 'file' connection may not work correctly"));
 
+    else if(strcmp(incon->connclass, "textConnection") == 0 && strcmp(m, "w") == 0)
+	error(_("cannot create a gzcon connection from a writable textConnection; maybe use rawConnection"));
+
     newconn = static_cast<Rconnection>( malloc(sizeof(struct Rconn)));
     if(!newconn) error(_("allocation of 'gzcon' connection failed"));
     newconn->connclass = static_cast<char *>( malloc(strlen("gzcon") + 1));
@@ -5325,7 +5355,7 @@ SEXP R_decompress3(SEXP in)
 	strm.avail_out = outlen;
 	ret = lzma_code(&strm, LZMA_RUN);
 	if (ret != LZMA_OK && (strm.avail_in > 0))
-	    error("internal error %d in R_decompress3 %d", 
+	    error("internal error %d in R_decompress3 %d",
 		  ret, strm.avail_in);
 	lzma_end(&strm);
     } else if (type == '2') {
@@ -5346,7 +5376,7 @@ SEXP R_decompress3(SEXP in)
     return ans;
 }
 
-SEXP attribute_hidden 
+SEXP attribute_hidden
 do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, from;
@@ -5354,7 +5384,7 @@ do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
     ans = from = CAR(args);
-    if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character"); 
+    if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
     type = asInteger(CADR(args));
     switch(type) {
     case 1: break; /* none */
@@ -5375,7 +5405,7 @@ do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	char *buf;
 	unsigned int inlen = LENGTH(from), outlen = 1.01*inlen + 600;
 	buf = R_alloc(outlen, sizeof(char));
-	res = BZ2_bzBuffToBuffCompress(buf, &outlen, reinterpret_cast<char *>(RAW(from)), 
+	res = BZ2_bzBuffToBuffCompress(buf, &outlen, reinterpret_cast<char *>(RAW(from)),
 				       inlen, 9, 0, 0);
 	if(res != BZ_OK) error("internal error %d in memCompress", res);
 	ans = allocVector(RAWSXP, outlen);
@@ -5401,7 +5431,7 @@ do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	ret = lzma_stream_encoder(&strm, filters, LZMA_CHECK_CRC32);
 	if (ret != LZMA_OK) error("internal error %d in memCompress", ret);
 
-	outlen = 1.01 * inlen + 600; /* FIXME */
+	outlen = 1.01 * inlen + 600; /* FIXME, copied from bzip2 */
 	buf = reinterpret_cast<unsigned char *>( R_alloc(outlen, sizeof(unsigned char)));
 	strm.next_in = RAW(from);
 	strm.avail_in = inlen;
@@ -5417,7 +5447,7 @@ do_memCompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	memcpy(RAW(ans), buf, outlen);
 	break;
     }
-    default: 
+    default:
 	break;
     }
 
@@ -5432,7 +5462,7 @@ do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
 
     checkArity(op, args);
     ans = from = CAR(args);
-    if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character"); 
+    if(TYPEOF(from) != RAWSXP) error("'from' must be raw or character");
     type = asInteger(CADR(args));
     if (type == 5) {/* type = 5 is "unknown" */
 	char *p = reinterpret_cast<char *>( RAW(from));
@@ -5448,7 +5478,7 @@ do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	    type = 1;
 	}
     }
-	
+
     switch(type) {
     case 1: break; /* none */
     case 2: /* gzip */
@@ -5491,25 +5521,45 @@ do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	unsigned int inlen = LENGTH(from), outlen = 3*inlen;
 	lzma_stream strm = LZMA_STREAM_INIT;
 	lzma_ret ret;
-	/* probably at most 80Mb is required, but 512Mb seems OK as a limit */
-	if (subtype == 1)
-	    ret = lzma_alone_decoder(&strm, 536870912);
-	else
-	    ret = lzma_stream_decoder(&strm, 536870912, LZMA_CONCATENATED);
-	if (ret != LZMA_OK)
-	    error(_("cannot initialize lzma decoder, error %d"), ret);
 	while(1) {
+	    /* Initialize lzma_stream in each iteration. */
+	    /* probably at most 80Mb is required, but 512Mb seems OK as a limit */
+	    if (subtype == 1)
+		ret = lzma_alone_decoder(&strm, 536870912);
+	    else
+		ret = lzma_stream_decoder(&strm, 536870912, LZMA_CONCATENATED);
+	    if (ret != LZMA_OK)
+		error(_("cannot initialize lzma decoder, error %d"), ret);
+
 	    buf = reinterpret_cast<unsigned char *>( R_alloc(outlen, sizeof(unsigned char)));
 	    strm.avail_in = inlen;
 	    strm.avail_out = outlen;
 	    strm.next_in = CXXRNOCAST(unsigned char *) RAW(from);
 	    strm.next_out = buf;
+
 	    ret = lzma_code(&strm, LZMA_FINISH);
-	    if (ret == LZMA_BUF_ERROR) { outlen *= 2; continue; }
-	    if (ret != LZMA_OK && (strm.avail_in > 0))
-		error("internal error %d in memDecompress(%d) at %d", 
-		ret, type, strm.avail_in);
-	    break;
+	    /* Did lzma_code() leave some input? */
+	    if (strm.avail_in > 0) {
+		/* Decompression failed, free lzma_stream. */
+		lzma_end(&strm);
+		/* Because it ran out of output buffer? 
+		 *
+		 * This used to only check if LZMA_BUF_ERROR was
+		 * returned, but apparently XZ will also signal an out
+		 * of buffer condition by returning LZMA_OK and
+		 * leaving avail_in > 0 (i.e. not all input was
+		 * consumed).
+		 */
+		if (ret == LZMA_BUF_ERROR || ret == LZMA_OK) {
+		    outlen *= 2;
+		    continue;
+		} else {
+		    error("internal error %d in memDecompress(%d) at %d",
+			  ret, type, strm.avail_in);
+		}
+	    } else {
+		break;
+	    }
 	}
 	outlen = strm.total_out;
 	lzma_end(&strm);
@@ -5517,7 +5567,7 @@ do_memDecompress(SEXP call, SEXP op, SEXP args, SEXP env)
 	memcpy(RAW(ans), buf, outlen);
 	break;
     }
-    default: 
+    default:
 	break;
     }
     return ans;

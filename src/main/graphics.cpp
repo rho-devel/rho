@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *			      R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1935,10 +1934,10 @@ void GScale(double min, double max, int axis, pGEDevDesc dd)
 	    temp = fmin2(min_o, 1.01* DBL_MIN); /* allow smaller non 0 */
 	    min = log10(temp);
 	}
-	if((tmp2 = pow(10., max)) == R_PosInf) { /* or  > .95*DBL_MAX */
+	if(max >= 308.25) { /* overflows */
 	    tmp2 = fmax2(max_o, .99 * DBL_MAX);
 	    max = log10(tmp2);
-	}
+	} else tmp2 = pow(10., max);
     }
     if(is_xaxis) {
 	if (log) {
@@ -2799,7 +2798,7 @@ void GPolygon(int n, double *x, double *y, GUnit coords,
     int i;
     double *xx;
     double *yy;
-    void *vmaxsave = vmaxget();
+    const void *vmaxsave = vmaxget();
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
 
     if (gpptr(dd)->lty == LTY_BLANK)
@@ -2838,7 +2837,7 @@ void GPolyline(int n, double *x, double *y, GUnit coords, pGEDevDesc dd)
     int i;
     double *xx;
     double *yy;
-    void *vmaxsave = vmaxget();
+    const void *vmaxsave = vmaxget();
     R_GE_gcontext gc; gcontextFromGP(&gc, dd);
 
     /*
@@ -2920,6 +2919,22 @@ void GRect(double x0, double y0, double x1, double y1, GUnit coords,
     gc.col = fg;
     gc.fill = bg;
     GERect(x0, y0, x1, y1, &gc, dd);
+}
+
+void GRaster(unsigned int* image, int w, int h, 
+             double x0, double y0, double x1, double y1, 
+             double angle, Rboolean interpolate, 
+             pGEDevDesc dd)
+{
+    R_GE_gcontext gc; gcontextFromGP(&gc, dd);
+
+    /*
+     * Ensure that the base clipping region is set on the device
+     */
+    GClip(dd);
+
+    GERaster(image, w, h, x0, y0, x1, y1, angle, interpolate, 
+             &gc, dd);
 }
 
 /* Compute string width. */

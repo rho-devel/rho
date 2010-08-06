@@ -39,6 +39,7 @@
 
 #include <cstring>
 #include "CXXR/UncachedString.h"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -82,6 +83,16 @@ const char* UncachedString::typeName() const
 
 SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
 {
+    switch(encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_SYMBOL:
+    case CE_ANY:
+	break;
+    default:
+	Rf_error(_("unknown encoding: %d"), encoding);
+    }
     string str(text, length);
     return GCNode::expose(new UncachedString(str, encoding));
 }

@@ -18,7 +18,7 @@
 
 latex_canonical_encoding  <- function(encoding)
 {
-    if (encoding == "") encoding <- localeToCharset()[1]
+    if (encoding == "") encoding <- utils::localeToCharset()[1L]
     encoding <- tolower(encoding)
     encoding <- sub("iso_8859-([0-9]+)", "iso-8859-\\1", encoding)
     encoding <- sub("iso8859-([0-9]+)", "iso-8859-\\1", encoding)
@@ -42,7 +42,8 @@ latex_canonical_encoding  <- function(encoding)
 
 ## 'encoding' is passed to parse_Rd, as the input encoding
 Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
-		     outputEncoding = "ASCII", ...)
+		     outputEncoding = "ASCII", ...,
+                     writeEncoding = TRUE)
 {
     encode_warn <- FALSE
     WriteLines <-
@@ -89,81 +90,81 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
       "\\arguments"="ldescription",
       "\\examples"="ExampleCode")
 
-    inCodeBlock <- FALSE ## used to indicate to vtexify where we are
+    inCodeBlock <- FALSE ## used to indicate to texify where we are
     inCode <- FALSE
     inEqn <- FALSE
     inPre <- FALSE
+    sectionLevel <- 0
 
+    startByte <- function(x) {
+    	srcref <- attr(x, "srcref")
+    	if (is.null(srcref)) NA
+    	else srcref[2L]
+    }
+    
     addParaBreaks <- function(x, tag) {
-        start <- attr(x, "srcref")[2L]
+        start <- startByte(x)
         if (isBlankLineRd(x)) "\n"
-	else if (start == 1) psub("^\\s+", "", x)
+	else if (identical(start, 1L)) psub("^\\s+", "", x)
         else x
     }
 
-    texify <- function(x) {
+    texify <- function(x, code = inCodeBlock) {
         if(inEqn) return(x)
-        # Need to be careful to handle backslash, so do it in three steps.
-        # First, mark all the ones in the original text, but don't add
-        # any other special chars
-        x <- fsub("\\", "\\bsl", x)
-        # Second, escape other things, introducing more backslashes
-        x <- psub("([&$%_#])", "\\\\\\1", x)
-        ## pretty has braces in text.
-        x <- fsub("{", "\\{", x)
-        x <- fsub("}", "\\}", x)
-        x <- fsub("^", "\\textasciicircum{}", x)
-        x <- fsub("~", "\\textasciitilde{}", x)
-        # Third, add the terminal braces to the backslash
-        x <- fsub("\\bsl", "\\bsl{}", x)
+        if (!code) {
+	    # Need to be careful to handle backslash, so do it in three steps.
+	    # First, mark all the ones in the original text, but don't add
+	    # any other special chars
+	    x <- fsub("\\", "\\bsl", x)
+	    # Second, escape other things, introducing more backslashes
+	    x <- psub("([&$%_#])", "\\\\\\1", x)
+	    ## pretty has braces in text.
+	    x <- fsub("{", "\\{", x)
+	    x <- fsub("}", "\\}", x)
+	    x <- fsub("^", "\\textasciicircum{}", x)
+	    x <- fsub("~", "\\textasciitilde{}", x)
+	    # Third, add the terminal braces to the backslash
+	    x <- fsub("\\bsl", "\\bsl{}", x)
+	} else {
+	    x <- psub("\\\\[l]{0,1}dots", "...", as.character(x))
+	    ## unescape (should not be escaped: but see kappa.Rd)
+	    x <- psub("\\\\([$^&~_#])", "\\1", x)
+	    ## inCodeBlock/inPre is in alltt, where only \ { } have their usual meaning
+	    if (inCodeBlock) {
+		## We do want to escape { }, but unmatched braces had
+		## to be escaped in earlier versions (e.g. Paren.Rd, body.tex).
+		## So fix up for now
+		x <- fsub1('"\\{"', '"{"', x)
+	    } else if (inPre) {
+		BSL = '@BSL@';
+		BSL2 = '@BSLBSL@';
+		#x <- fsub("\\dots", "...", x)
+		## escape any odd \, e.g. \n
+		x <- fsub("\\\\", BSL, x) # change even ones
+		x <- fsub("\\", BSL2, x)  # odd ones
+		x <- fsub(BSL, "\\\\", x) # change back
+		x <- psub("(?<!\\\\)\\{", "\\\\{", x)
+		x <- psub("(?<!\\\\)}", "\\\\}", x)
+		x <- fsub(BSL2, "\\bsl{}", x)
+		x <- psub("\\\\\\\\var\\\\\\{([^\\\\]*)\\\\}", "\\\\var{\\1}", x)
+	    } else {
+		## cat(sprintf("\ntexify in: '%s'\n", x))
+		BSL = '@BSL@';
+		x <- fsub("\\", BSL, x)
+		x <- psub("(?<!\\\\)\\{", "\\\\{", x)
+		x <- psub("(?<!\\\\)}", "\\\\}", x)
+		x <- psub("(?<!\\\\)([&$%_#])", "\\\\\\1", x)
+		x <- fsub("^", "\\textasciicircum{}", x)
+		x <- fsub("~", "\\textasciitilde{}", x)
+		x <- fsub(BSL, "\\bsl{}", x)
+		## avoid conversion to guillemets
+		x <- fsub("<<", "<{}<", x)
+		x <- fsub(">>", ">{}>", x)
+		x <- fsub(",,", ",{},", x) # ,, is a ligature in the ae font.
+		## cat(sprintf("\ntexify out: '%s'\n", x))
+	    }
+	}
         x
-    }
-
-    ## version for RCODE and VERB
-    ## inCodeBlock/inPre is in alltt, where only \ { } have their usual meaning
-    vtexify <- function(x, code = TRUE) {
-        if(inEqn) return(x)
-        ## cat(sprintf("vtexify: '%s'\n", x))
-        x <- psub("\\\\[l]{0,1}dots", "...", as.character(x))
-        ## unescape (should not be escaped: but see kappa.Rd)
-        x <- psub("\\\\([$^&~_#])", "\\1", x)
-        if (inCodeBlock) {
-            ## We do want to escape { }, but unmatched braces had
-            ## to be escaped in earlier versions (e.g. Paren.Rd, body.tex).
-            ## So fix up for now
-            x <- fsub1('"\\{"', '"{"', x)
-        } else if (inPre) {
-            BSL = '@BSL@';
-            BSL2 = '@BSLBSL@';
-            #x <- fsub("\\dots", "...", x)
-            ## escape any odd \, e.g. \n
-            x <- fsub("\\\\", BSL, x) # change even ones
-            x <- fsub("\\", BSL2, x)  # odd ones
-            x <- fsub(BSL, "\\\\", x) # change back
-            x <- psub("(?<!\\\\)\\{", "\\\\{", x)
-            x <- psub("(?<!\\\\)}", "\\\\}", x)
-            x <- fsub(BSL2, "\\bsl{}", x)
-            x <- psub("\\\\\\\\var\\\\\\{([^\\\\]*)\\\\}", "\\\\var{\\1}", x)
-        } else {
-            ## cat(sprintf("\nvtexify in: '%s'\n", x))
-            BSL = '@BSL@';
-            x <- fsub("\\", BSL, x)
-            x <- psub("(?<!\\\\)\\{", "\\\\{", x)
-            x <- psub("(?<!\\\\)}", "\\\\}", x)
-            x <- psub("(?<!\\\\)([&$%_#])", "\\\\\\1", x)
-            x <- fsub("^", "\\textasciicircum{}", x)
-            x <- fsub("~", "\\textasciitilde{}", x)
-            x <- fsub(BSL, "\\bsl{}", x)
-            ## avoid conversion to guillemets
-            x <- fsub("<<", "<{}<", x)
-            x <- fsub(">>", ">{}>", x)
-            x <- fsub(",,", ",{},", x) # ,, is a ligature in the ae font.
-            ## used to preserve \var: needed in code only, or not at all
-            if(FALSE) # was code
-                x <- psub("\\\\bsl{}var\\\\{([^}]+)\\\\}", "\\\\var{\\1}", x)
-            ## cat(sprintf("\nvtexify out: '%s'\n", x))
-        }
-	x
     }
 
     # The quotes were Rd.sty macros, but Latex limitations (e.g. nesting \preformatted within)
@@ -177,9 +178,9 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
     	wrapper <- wrappers[[tag]]
     	if (is.null(wrapper))
     	    wrapper <- c(paste(tag, "{", sep=""), "}")
-    	of1(wrapper[1])
+    	of1(wrapper[1L])
     	writeContent(block, tag)
-    	of1(wrapper[2])
+    	of1(wrapper[2L])
     }
 
     writeURL <- function(block, tag) {
@@ -318,7 +319,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
     writeAlias <- function(block, tag) {
         alias <- as.character(block)
         aa <- "\\aliasA{"
-        ## some versions of hyperref have trouble indexing these
+        ## some versions of hyperref (from 6.79d) have trouble indexing these
         ## |, || in base, |.bit, %||% in ggplot2 ...
         if(grepl("|", alias, fixed = TRUE)) aa <- "\\aliasB{"
         if(is.na(currentAlias)) currentAlias <<- name
@@ -335,13 +336,14 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
     writeBlock <- function(block, tag, blocktag) {
 	switch(tag,
                UNKNOWN =,
-               VERB = of1(vtexify(block, FALSE)),
-               RCODE = of1(vtexify(block, TRUE)),
+               VERB = of1(texify(block, TRUE)),
+               RCODE = of1(texify(block, TRUE)),
                TEXT = of1(addParaBreaks(texify(block), blocktag)),
                COMMENT = {},
                LIST = writeContent(block, tag),
-               "\\describe"= { # Avoid the Rd.sty \describe, \Enumerate and \Itemize:
-               		       # They don't support verbatim arguments, which we might need.
+               ## Avoid Rd.sty's \describe, \Enumerate and \Itemize:
+               ## They don't support verbatim arguments, which we might need.
+               "\\describe"= {
                    of1("\\begin{description}\n")
                    writeContent(block, tag)
                    of1("\n\\end{description}\n")
@@ -411,10 +413,13 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
                "\\R" = of0(tag, "{}"),
                "\\donttest" = writeContent(block, tag),
                "\\dontrun"= writeDR(block, tag),
-               "\\enc" = { # some people put more things in \enc than a word.
-                   writeContent(block[[1L]], tag)
-                   ##txt <- as.character(block[[1L]])
-                   ##of1(txt)
+               "\\enc" = {
+                   ## some people put more things in \enc than a word,
+                   ## but Rd2txt does not cover that case ....
+                   if (outputEncoding == "ASCII")
+                       writeContent(block[[2L]], tag)
+                   else
+                       writeContent(block[[1L]], tag)
                } ,
                "\\eqn" =,
                "\\deqn" = {
@@ -437,6 +442,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
                    writeContent(block[[1L]], tag)
                },
                "\\tabular" = writeTabular(block),
+               "\\subsection" = writeSection(block, tag),
                "\\if" =,
                "\\ifelse" =
 		    if (testRdConditional("latex", block, Rdfile))
@@ -453,7 +459,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
         ## FIXME does no check of correct format
     	format <- table[[1L]]
     	content <- table[[2L]]
-    	if (length(format) != 1 || RdTags(format) != "TEXT")
+    	if (length(format) != 1L || RdTags(format) != "TEXT")
     	    stopRd(table, Rdfile, "\\tabular format must be simple text")
         tags <- RdTags(content)
         of0('\n\\Tabular{', format, '}{')
@@ -523,7 +529,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
                        } else {
                            if (class == "default")
                                of1('## Default S3 method:\n')
-                           else if (grepl("<-\\s*value", blocks[[i+1]][[1L]])) {
+                           else if (grepl("<-\\s*value", blocks[[i+1L]][[1L]])) {
                                of1("## S3 replacement method for class '")
                                writeContent(block[[2L]], tag)
                                of1("':\n")
@@ -598,17 +604,20 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
     writeSection <- function(section, tag) {
         if (tag %in% c("\\encoding", "\\concept"))
             return()
+        save <- sectionLevel
+        sectionLevel <<- sectionLevel + 1
         if (tag == "\\alias")
             writeAlias(section, tag)
         else if (tag == "\\keyword") {
             key <- trim(section)
             of0("\\keyword{", latex_escape_name(key), "}{", ltxname, "}\n")
-        } else if (tag == "\\section") {
-            of0("%\n\\begin{Section}{")
+        } else if (tag == "\\section" || tag == "\\subsection") {
+            macro <- c("Section", "SubSection", "SubSubSection")[min(sectionLevel, 3)]
+    	    of0("%\n\\begin{", macro, "}{")
             writeContent(section[[1L]], tag)
             of1("}")
     	    writeSectionInner(section[[2L]], tag)
-            of1("\\end{Section}\n")
+            of0("\\end{", macro, "}\n")
     	} else {
             title <- envTitles[tag]
             of0("%\n\\begin{", title, "}")
@@ -623,6 +632,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
             if(!is.na(extra)) of0("\\end{", extra, "}\n")
             of0("\\end{", title, "}\n")
         }
+        sectionLevel <<- save
     }
 
     Rd <- prepare_Rd(Rd, defines=defines, stages=stages, ...)
@@ -630,7 +640,6 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
     sections <- RdTags(Rd)
 
     enc <- which(sections == "\\encoding")
-    if (length(enc)) outputEncoding <- as.character(Rd[[enc[1L]]][[1L]])
 
     if (is.character(out)) {
         if(out == "") {
@@ -646,7 +655,7 @@ Rd2latex <- function(Rd, out="", defines=.Platform$OS.type, stages="render",
 
    if (outputEncoding != "ASCII") {
         latexEncoding <- latex_canonical_encoding(outputEncoding)
-        of0("\\inputencoding{", latexEncoding, "}\n")
+        if(writeEncoding) of0("\\inputencoding{", latexEncoding, "}\n")
     } else latexEncoding <- NA
 
     ## we know this has been ordered by prepare2_Rd, but

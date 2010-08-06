@@ -137,8 +137,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -636,14 +635,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   177,   177,   178,   179,   182,   185,   188,   189,   191,
-     192,   193,   194,   195,   196,   197,   198,   199,   200,   201,
-     202,   204,   205,   207,   208,   209,   210,   211,   212,   213,
-     214,   216,   217,   218,   219,   220,   221,   222,   223,   224,
-     225,   226,   227,   228,   229,   230,   232,   234,   235,   244,
-     246,   248,   252,   253,   255,   257,   261,   262,   264,   267,
-     269,   271,   273,   275,   277,   279,   281,   283,   285,   286,
-     287,   288,   289,   291
+       0,   176,   176,   177,   178,   181,   184,   187,   188,   190,
+     191,   192,   193,   194,   195,   196,   197,   198,   199,   200,
+     201,   203,   204,   206,   207,   208,   209,   210,   211,   212,
+     213,   215,   216,   217,   218,   219,   220,   221,   222,   223,
+     224,   225,   226,   227,   228,   229,   231,   233,   234,   243,
+     245,   247,   251,   252,   254,   256,   260,   261,   263,   266,
+     268,   270,   272,   274,   276,   278,   280,   282,   284,   285,
+     286,   287,   288,   290
 };
 #endif
 
@@ -2801,14 +2800,20 @@ static int prevbytes[PUSHBACK_BUFSIZE];
 
 static int xxgetc(void)
 {
-    int c;
+    int c, oldpos;
     
     if(npush) c = pushback[--npush]; else  c = ptr_getc();
 
+    oldpos = prevpos;
     prevpos = (prevpos + 1) % PUSHBACK_BUFSIZE;
-    prevcols[prevpos] = xxcolno;
     prevbytes[prevpos] = xxbyteno;
     prevlines[prevpos] = xxlineno;    
+    /* We only advance the column for the 1st byte in UTF-8, so handle later bytes specially */
+    if (0x80 <= (unsigned char)c && (unsigned char)c <= 0xBF) {
+    	xxcolno--;   
+    	prevcols[prevpos] = prevcols[oldpos];
+    } else 
+    	prevcols[prevpos] = xxcolno;
     
     if (c == EOF) return R_EOF;
     
@@ -2823,9 +2828,6 @@ static int xxgetc(void)
         xxcolno++;
     	xxbyteno++;
     }
-    /* only advance column for 1st byte in UTF-8 */
-    if (0x80 <= (unsigned char)c && (unsigned char)c <= 0xBF)
-    	xxcolno--;
 
     if (c == '\t') xxcolno = ((xxcolno + 6) & ~7) + 1;
     
@@ -3077,6 +3079,7 @@ static keywords[] = {
     { "\\S3method",LATEXMACRO2 },
     { "\\S4method",LATEXMACRO2 },
     { "\\tabular", LATEXMACRO2 },
+    { "\\subsection", LATEXMACRO2 },
     
     /* This macro takes three LaTeX-like arguments. */
     
@@ -3094,7 +3097,7 @@ static keywords[] = {
     { "\\donttest",RCODEMACRO },
     { "\\testonly",RCODEMACRO },
     
-    /* This macro take one optional bracketed option and one R-like argument */
+    /* This macro takes one optional bracketed option and one R-like argument */
     
     { "\\Sexpr",   SEXPR },
     

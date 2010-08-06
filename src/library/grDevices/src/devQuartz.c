@@ -131,6 +131,7 @@ typedef struct QuartzSpecific_s {
     void         (*state)(QuartzDesc_t dev,  void *userInfo,  int state);
     void*        (*par)(QuartzDesc_t dev, void *userInfo, int set, const char *key, void *value);
     void         (*sync)(QuartzDesc_t dev, void *userInfo);
+    void*        (*cap)(QuartzDesc_t dev, void*userInfo);
 } QuartzDesc;
 
 /* coordinates:
@@ -363,6 +364,11 @@ static void     RQuartz_Clip(double, double, double, double, pDevDesc);
 static double   RQuartz_StrWidth(const char*, const pGEcontext, pDevDesc);
 static void     RQuartz_Text(double, double, const char*, double, double, const pGEcontext, pDevDesc);
 static void     RQuartz_Rect(double, double, double, double, const pGEcontext, pDevDesc);
+static void     RQuartz_Raster(unsigned int *raster, int w, int h,
+                       double x, double y, double width, double height,
+                       double rot, Rboolean interpolate,
+                       const pGEcontext gc, pDevDesc dd);
+static SEXP     RQuartz_Cap(pDevDesc dd);
 static void     RQuartz_Circle(double, double, double, const pGEcontext, pDevDesc);
 static void     RQuartz_Line(double, double, double, double, const pGEcontext, pDevDesc);
 static void     RQuartz_Polyline(int, double*, double*, const pGEcontext, pDevDesc);
@@ -394,6 +400,8 @@ void* QuartzDevice_Create(void *_dev, QuartzBackend_t *def)
     dev->strWidth     = RQuartz_StrWidth;
     dev->text         = RQuartz_Text;
     dev->rect         = RQuartz_Rect;
+    dev->raster       = RQuartz_Raster;
+    dev->cap          = RQuartz_Cap;
     dev->circle       = RQuartz_Circle;
     dev->line         = RQuartz_Line;
     dev->polyline     = RQuartz_Polyline;
@@ -429,6 +437,7 @@ void* QuartzDevice_Create(void *_dev, QuartzBackend_t *def)
     qd->newPage    = def->newPage;
     qd->state      = def->state;
     qd->sync       = def->sync;
+    qd->cap        = def->cap;
     qd->scalex     = def->scalex;
     qd->scaley     = def->scaley;
     qd->tscale     = 1.0;
@@ -801,10 +810,17 @@ static void RQuartz_NewPage(CTXDESC)
             CGRect bounds = CGRectMake(0, 0,
 				       QuartzDevice_GetScaledWidth(xd) * 72.0,
 				       QuartzDevice_GetScaledHeight(xd) * 72.0);
+	    /* reset the clipping region by restoring the base GC.
+	       If there is no GC on the stack then the clipping region was never set. */
+	    if (xd->gstate > 0) {
+		CGContextRestoreGState(ctx);
+		CGContextSaveGState(ctx);
+		/* no need to modify gstate since we don't modify the stack */
+	    }
 	    /* The logic is to paint the canvas then gc->fill.
 	       (The canvas colour is set to 0 on non-screen devices.)
 	     */
-	    if (R_ALPHA(xd->canvas) >0 && !R_OPAQUE(gc->fill)) {
+	    if (R_ALPHA(xd->canvas) > 0 && !R_OPAQUE(gc->fill)) {
 		/* Paint the canvas colour. */
 		int savefill = gc->fill;
 		CGContextClearRect(ctx, bounds);
@@ -852,6 +868,7 @@ static CFStringRef text2unichar(CTXDESC, const char *text, UniChar **buffer, int
     *buffer = (UniChar*) CFStringGetCharactersPtr(str);
     if (*buffer == NULL) {
         CFIndex length = CFStringGetLength(str);
+	/* FIXME: check allocation */
         *buffer = malloc(length * sizeof(UniChar));
         CFStringGetCharacters(str, CFRangeMake(0, length), *buffer);
         *free = 1;
@@ -874,6 +891,7 @@ static double RQuartz_StrWidth(const char *text, CTXDESC)
         CFStringRef str = text2unichar(gc, dd, text, &buffer, &Free);
 	if (!str) return 0.0; /* invalid text contents */
         len = CFStringGetLength(str);
+	/* FIXME: check allocations */
         glyphs = malloc(sizeof(CGGlyph) * len);
         advances = malloc(sizeof(int) * len);
         CGFontGetGlyphsForUnichars(font, buffer, glyphs,len);
@@ -910,6 +928,7 @@ static void RQuartz_Text(double x, double y, const char *text, double rot, doubl
     CFStringRef str = text2unichar(gc, dd, text, &buffer, &Free);
     if (!str) return; /* invalid text contents */
     len = CFStringGetLength(str);
+    /* FIXME: check allocations */
     glyphs = malloc(sizeof(CGGlyph) * len);
     CGFontGetGlyphsForUnichars(font, buffer, glyphs, len);
     int      *advances = malloc(sizeof(int) * len);
@@ -963,6 +982,88 @@ static void RQuartz_Rect(double x0, double y0, double x1, double y1, CTXDESC)
     CGContextBeginPath(ctx);
     CGContextAddRect(ctx, CGRectMake(x0, y0, x1 - x0, y1 - y0));
     CGContextDrawPath(ctx, kCGPathFillStroke);
+}
+
+/* pre-10.5 doesn't have kCGColorSpaceGenericRGB so fall back to kCGColorSpaceGenericRGB */
+#if MAC_OS_X_VERSION_10_4 >= MAC_OS_X_VERSION_MAX_ALLOWED
+#define kCGColorSpaceSRGB kCGColorSpaceGenericRGB
+#endif
+
+static void RQuartz_Raster(unsigned int *raster, int w, int h,
+                           double x, double y, 
+                           double width, double height,
+                           double rot, 
+                           Rboolean interpolate,
+                           const pGEcontext gc, pDevDesc dd)
+{
+    DRAWSPEC;
+    if (!ctx) NOCTX;
+    CGDataProviderRef dp;
+    CGColorSpaceRef cs;
+    CGImageRef img;
+    
+    /* Create a "data provider" containing the raster data */
+    dp = CGDataProviderCreateWithData(NULL, (void *) raster, 4*w*h, NULL);
+
+    cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+
+ /* Create a quartz image from the data provider */
+    img = CGImageCreate(w, h, 
+                        8,   /* bits per channel */
+                        32,  /* bits per pixel */
+                        4*w, /* bytes per row */
+                        cs,  /* color space */
+			/* R uses AGBR which is so unusual (inverted RGBA) that it corresponds to endinness inverse(!) to the host with alpha last (=RGBA).  */
+#ifdef __BIG_ENDIAN__
+                        kCGImageAlphaLast | kCGBitmapByteOrder32Little,
+#else
+                        kCGImageAlphaLast | kCGBitmapByteOrder32Big,
+#endif
+                        dp,  /* data provider */
+                        NULL,/* decode array */
+                        1,   /* interpolate (interpolation type below) */
+                        kCGRenderingIntentDefault);
+
+    if (height < 0) {
+        y = y + height;
+        height = -height;
+    }
+
+    CGContextSaveGState(ctx);
+    /* Translate by height of image */
+    CGContextTranslateCTM(ctx, 0.0, height);
+    /* Flip vertical */
+    CGContextScaleCTM(ctx, 1.0, -1.0);
+    /* Translate to position */
+    CGContextTranslateCTM(ctx, x, -y);
+    /* Rotate */
+    CGContextRotateCTM(ctx, rot*M_PI/180.0);
+    /* Determine interpolation method */
+    if (interpolate) {
+        CGContextSetInterpolationQuality(ctx, kCGInterpolationDefault);
+    } else {
+        CGContextSetInterpolationQuality(ctx, kCGInterpolationNone);
+    }
+    /* Draw the quartz image */
+    CGContextDrawImage(ctx, CGRectMake(0, 0, width, height), img);
+    CGContextRestoreGState(ctx);
+
+    /* Tidy up */
+    CGColorSpaceRelease(cs);
+    CGDataProviderRelease(dp);
+    CGImageRelease(img);
+}
+
+static SEXP RQuartz_Cap(pDevDesc dd)
+{
+    SEXP raster = R_NilValue;
+    DRAWSPEC;
+    if (!ctx) NOCTXR(raster);
+
+    if (xd->cap) 
+        raster = (SEXP) xd->cap(xd, xd->userInfo);
+
+    return raster;
 }
 
 static void RQuartz_Circle(double x, double y, double r, CTXDESC)
@@ -1129,7 +1230,7 @@ QuartzDesc_t Quartz_C(QuartzParameters_t *par, quartz_create_fn_t q_create, int 
 	return NULL;
     }
     {
-        char    *vmax = vmaxget();
+        const void *vmax = vmaxget();
 	QuartzDesc_t qd = NULL;
 	R_GE_checkVersionOrDie(R_GE_version);
         R_CheckDeviceAvailable();
@@ -1173,7 +1274,7 @@ SEXP Quartz(SEXP args)
     const char *type, *mtype = 0, *file = 0, *family, *title;
     QuartzDesc_t qd = NULL;
 
-    char    *vmax = vmaxget();
+    const void *vmax = vmaxget();
     /* Get function arguments */
     args = CDR(args); /* Skip the call */
     if (TYPEOF(CAR(args)) != STRSXP || LENGTH(CAR(args)) < 1)

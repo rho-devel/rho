@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  file dounzip.c
- *  first part Copyright (C) 2002-9  the R Development Core Team
+ *  first part Copyright (C) 2002-9  The R Development Core Team
  *  second part Copyright (C) 1998-2005 Gilles Vollant
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -329,6 +329,10 @@ SEXP attribute_hidden do_unzip(SEXP call, SEXP op, SEXP args, SEXP env)
 
 #include <Rconnections.h>
 
+typedef struct unzconn {
+    void *uf;
+} *Runzconn;
+
 static Rboolean unz_open(Rconnection con)
 {
     unzFile uf;
@@ -452,7 +456,7 @@ R_newunz(const char *description, const char *const mode)
     newconn->fflush = &null_fflush;
     newconn->read = &unz_read;
     newconn->write = &null_write;
-    newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct fileconn));
+    newconn->connprivate = CXXRNOCAST(void *) malloc(sizeof(struct unzconn));
     if(!newconn->connprivate) {
 	free(newconn->description); free(newconn->connclass); free(newconn);
 	error(_("allocation of unz connection failed"));

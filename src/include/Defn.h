@@ -212,6 +212,7 @@ typedef long R_long_t;
   typedef unsigned long R_size_t;
 # define R_SIZE_T_MAX ULONG_MAX
 #endif
+#define R_SIZE_T_DEFINED 1
 
 /* These are optional C99 types */
 #if !defined(HAVE_INTPTR_T) && !defined(intptr_t)
@@ -451,7 +452,7 @@ extern0 int	R_WarnLength	INI_as(1000);	/* Error/warning max length */
 extern uintptr_t R_CStackLimit	INI_as((uintptr_t)-1);	/* C stack limit */
 extern uintptr_t R_CStackStart	INI_as((uintptr_t)-1);	/* Initial stack address */
 extern0 int	R_CStackDir	INI_as(1);	/* C stack direction */
-extern0 Rboolean R_WarnEscapes  INI_as(TRUE);   /* Warn on unrecognized escapes */
+
 
 /* File Input/Output */
 LibExtern Rboolean R_Interactive INI_as(TRUE);	/* TRUE during interactive use*/
@@ -583,6 +584,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 
 # define allocCharsxp		Rf_allocCharsxp
 # define begincontext		Rf_begincontext
+# define check1arg		Rf_check1arg
 # define CleanEd		Rf_CleanEd
 # define CoercionWarning       	Rf_CoercionWarning
 # define ComplexFromInteger	Rf_ComplexFromInteger
@@ -599,6 +601,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define deparse1s		Rf_deparse1s
 # define DispatchGroup		Rf_DispatchGroup
 # define DispatchOrEval		Rf_DispatchOrEval
+# define DispatchAnyOrEval      Rf_DispatchAnyOrEval
 # define dynamicfindVar		Rf_dynamicfindVar
 # define EncodeRaw              Rf_EncodeRaw
 # define EncodeString           Rf_EncodeString
@@ -686,6 +689,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define StringFromLogical	Rf_StringFromLogical
 # define StringFromReal		Rf_StringFromReal
 # define strIsASCII		Rf_strIsASCII
+# define strmat2intmat		Rf_strmat2intmat
 # define substituteList		Rf_substituteList
 # define tsConform		Rf_tsConform
 # define tspgets		Rf_tspgets
@@ -701,6 +705,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define warningcall		Rf_warningcall
 # define WarningMessage		Rf_WarningMessage
 # define wcstoutf8		Rf_wcstoutf8
+# define wtransChar		Rf_wtransChar
 # define yychar			Rf_yychar
 # define yylval			Rf_yylval
 # define yynerrs		Rf_yynerrs
@@ -768,17 +773,19 @@ SEXP Rf_EnsureString(SEXP);
 
 SEXP Rf_allocCharsxp(R_len_t);
 SEXP Rf_append(SEXP, SEXP); /* apparently unused now */
+void check1arg(SEXP, SEXP, const char *);
 void Rf_checkArityCall(SEXP, SEXP, SEXP);
 void R_check_locale(void);
 void CleanEd(void);
 void copyListMatrix(SEXP, SEXP, Rboolean);
 void copyMostAttribNoTs(SEXP, SEXP);
-void CustomPrintValue(SEXP,SEXP);
+void CustomPrintValue(SEXP, SEXP);
 void DataFrameClass(SEXP);
 SEXP ddfindVar(SEXP, SEXP);
 SEXP deparse1(SEXP,Rboolean,int);
 SEXP deparse1line(SEXP,Rboolean);
 SEXP deparse1s(SEXP call);
+int DispatchAnyOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
@@ -786,7 +793,7 @@ SEXP duplicated3(SEXP, SEXP, Rboolean);
 int any_duplicated(SEXP, Rboolean);
 int any_duplicated3(SEXP, SEXP, Rboolean);
 int envlength(SEXP);
-SEXP evalList(SEXP, SEXP, SEXP);
+SEXP evalList(SEXP, SEXP, SEXP, int);
 SEXP evalListKeepMissing(SEXP, SEXP);
 int factorsConform(SEXP, SEXP);
 SEXP findVar1(SEXP, SEXP, SEXPTYPE, int);
@@ -876,6 +883,7 @@ void SrcrefPrompt(const char *, SEXP);
 #ifdef __cplusplus
 void ssort(CXXR::StringVector*,int);
 #endif
+SEXP strmat2intmat(SEXP, SEXP, SEXP);
 SEXP substituteList(SEXP, SEXP);
 Rboolean tsConform(SEXP,SEXP);
 SEXP tspgets(SEXP, SEXP);
@@ -952,9 +960,12 @@ size_t ucstoutf8(char *s, const unsigned int wc);
 size_t mbtoucs(unsigned int *wc, const char *s, size_t n);
 size_t wcstoutf8(char *s, const wchar_t *wc, size_t n);
 
+const wchar_t *wtransChar(SEXP x); /* from sysutils.c */
+
 #define mbs_init(x) memset(x, 0, sizeof(mbstate_t))
 size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps);
 Rboolean mbcsValid(const char *str);
+Rboolean utf8Valid(const char *str);
 char *Rf_strchr(const char *s, int c);
 char *Rf_strrchr(const char *s, int c);
 

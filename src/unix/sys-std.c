@@ -701,6 +701,12 @@ static void initialize_rlcompletion(void)
     /* Tell the completer that we want a crack first. */
     rl_attempted_completion_function = R_custom_completion;
 
+    /* Disable sorting of possible completions; only readline >= 6 */
+#if RL_READLINE_VERSION >= 0x0600
+    /* if (rl_readline_version >= 0x0600) */
+    rl_sort_completion_matches = 0;
+#endif
+
     /* token boundaries.  Includes *,+ etc, but not $,@ because those
        are easier to handle at the R level if the whole thing is
        available.  However, this breaks filename completion if partial
@@ -756,7 +762,7 @@ R_custom_completion(const char *text, int start, int end)
 	endCall = PROTECT(lang2(RComp_assignEndSym,ScalarInteger(end)));
 
     /* Don't want spaces appended at the end.  Need to do this
-       everytime because readline (>5) resets it to space. */
+       everytime, as readline>=6 resets it to ' ' */
     rl_completion_append_character = '\0';
 
     eval(linebufferCall, rcompgen_rho);
@@ -802,6 +808,7 @@ static char *R_completion_generator(const char *text, int state)
 	ncomp = length(completions);
 	if (ncomp > 0) {
 	    compstrings = (char **) malloc(ncomp * sizeof(char*));
+	    if (!compstrings)  return (char *)NULL;
 	    for (i = 0; i < ncomp; i++)
 		compstrings[i] = strdup(translateChar(STRING_ELT(completions, i)));
 	}
@@ -1022,6 +1029,10 @@ void R_CleanTempDir(void)
     char buf[1024];
 
     if((Sys_TempDir)) {
+#if defined(sun) || defined(__sun)
+	/* On Solaris the working directory must be outside this one */
+	chdir(R_HomeDir());
+#endif
 	snprintf(buf, 1024, "rm -rf %s", Sys_TempDir);
 	buf[1023] = '\0';
 	R_system(buf);

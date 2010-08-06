@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Pulic License as published by
@@ -103,12 +102,15 @@ static R_StringBuffer cbuff = {NULL, 0, MAXELTSIZE};
 /* Functions to perform analogues of the standard C string library. */
 /* Most are vectorized */
 
+/* primitive */
 SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, ans;
     int i, len;
 
     checkArity(op, args);
+    check1arg(args, call, "x");
+
     PROTECT(x = coerceVector(CAR(args), STRSXP));
     if (!isString(x))
 	error(_("'%s' requires a character vector"), "nzchar()");
@@ -129,6 +131,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
     int nc;
     const char *xi;
     wchar_t *wc;
+    const void *vmax;
 
     checkArity(op, args);
     PROTECT(x = coerceVector(CAR(args), STRSXP));
@@ -145,6 +148,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
     if (allowNA == NA_LOGICAL) allowNA = 0;
 
     PROTECT(s = allocVector(INTSXP, len));
+    vmax = vmaxget();
     for (i = 0; i < len; i++) {
 	SEXP sxi = STRING_ELT(x, i);
 	if (sxi == NA_STRING) {
@@ -157,7 +161,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 	    if (IS_UTF8(sxi)) { /* assume this is valid */
 		const char *p = CHAR(sxi);
 		nc = 0;
-		for( ; *p; p +=utf8clen(*p)) nc++;
+		for( ; *p; p += utf8clen(*p)) nc++;
 		INTEGER(s)[i] = nc;
 	    } else if (mbcslocale) {
 		nc = mbstowcs(NULL, translateChar(sxi), 0);
@@ -171,9 +175,9 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		const char *p = CHAR(sxi);
 		wchar_t wc1;
 		nc = 0;
-		for( ; *p; p +=utf8clen(*p)) {
+		for( ; *p; p += utf8clen(*p)) {
 		    utf8toucs(&wc1, p);
-		    nc +=Ri18n_wcwidth(wc1);
+		    nc += Ri18n_wcwidth(wc1);
 		}
 		INTEGER(s)[i] = nc;
 	    } else if (mbcslocale) {
@@ -193,6 +197,7 @@ SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 		INTEGER(s)[i] = strlen(translateChar(sxi));
 	} else
 	    error(_("invalid '%s' argument"), "type");
+	vmaxset(vmax);
     }
     R_FreeStringBufferL(&cbuff);
     if ((d = getAttrib(x, R_NamesSymbol)) != R_NilValue)
@@ -331,6 +336,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
     cetype_t ienc, venc;
     const char *ss, *v_ss;
     char *buf;
+    const void *vmax;
 
     checkArity(op, args);
     x = CAR(args);
@@ -350,7 +356,8 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	v = LENGTH(value);
 	if (!isString(value) || v == 0) error(_("invalid value"));
-
+	
+	vmax = vmaxget();
 	for (i = 0; i < len; i++) {
 	    el = STRING_ELT(x, i);
 	    v_el = STRING_ELT(value, i % v);
@@ -388,6 +395,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 		substrset(buf, v_ss, ienc2, start, stop);
 		SET_STRING_ELT(s, i, mkCharCE(buf, ienc2));
 	    }
+	    vmaxset(vmax);
 	}
 	R_FreeStringBufferL(&cbuff);
     }
@@ -537,6 +545,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, len, minlen, uclass;
     bool warn = false;
     const char *s;
+    const void *vmax;
 
     checkArity(op,args);
     x = CAR(args);
@@ -548,6 +557,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(ans = allocVector(STRSXP, len));
     minlen = asInteger(CADR(args));
     uclass = asLogical(CADDR(args));
+    vmax = vmaxget();
     for (i = 0 ; i < len ; i++) {
 	if (STRING_ELT(x, i) == NA_STRING)
 	    SET_STRING_ELT(ans, i, NA_STRING);
@@ -557,6 +567,7 @@ SEXP attribute_hidden do_abbrev(SEXP call, SEXP op, SEXP args, SEXP env)
 	    R_AllocStringBuffer(strlen(s), &cbuff);
 	    SET_STRING_ELT(ans, i, stripchars(s, minlen));
 	}
+	vmaxset(vmax);
     }
     if (warn) warning(_("abbreviate used with non-ASCII chars"));
     DUPLICATE_ATTRIB(ans, x);
@@ -573,6 +584,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     char *p, *tmp = NULL, *cbuf;
     const char *This;
     Rboolean need_prefix;
+    const void *vmax;
 
     checkArity(op ,args);
     arg = CAR(args);
@@ -583,6 +595,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
     if (allow_ == NA_LOGICAL)
 	error(_("invalid '%s' value"), "allow_");
     PROTECT(ans = allocVector(STRSXP, n));
+    vmax = vmaxget();
     for (i = 0 ; i < n ; i++) {
 	This = translateChar(STRING_ELT(arg, i));
 	l = strlen(This);
@@ -658,6 +671,7 @@ SEXP attribute_hidden do_makenames(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Free(cbuf);
 	}
 	Free(tmp);
+	vmaxset(vmax);
     }
     UNPROTECT(1);
     return ans;
@@ -672,6 +686,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP el;
     cetype_t ienc;
     Rboolean use_UTF8 = FALSE;
+    const void *vmax;
 
     checkArity(op, args);
     ul = PRIMVAL(op); /* 0 = tolower, 1 = toupper */
@@ -695,6 +710,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 	wchar_t * wc;
 	char * cbuf;
 
+	vmax = vmaxget();
 	/* the translated string need not be the same length in bytes */
 	for (i = 0; i < n; i++) {
 	    el = STRING_ELT(x, i);
@@ -734,10 +750,12 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		    error(_("invalid multibyte string %d"), i+1);
 		}
 	    }
+	    vmaxset(vmax);
 	}
 	R_FreeStringBufferL(&cbuff);
     } else {
 	char *xi;
+	vmax = vmaxget();
 	for (i = 0; i < n; i++) {
 	    if (STRING_ELT(x, i) == NA_STRING)
 		SET_STRING_ELT(y, i, NA_STRING);
@@ -749,6 +767,7 @@ SEXP attribute_hidden do_tolower(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(y, i, markKnown(xi, STRING_ELT(x, i)));
 		Free(xi);
 	    }
+	    vmaxset(vmax);
 	}
     }
     DUPLICATE_ATTRIB(y, x);
@@ -1007,6 +1026,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP el;
     cetype_t ienc;
     Rboolean use_UTF8 = FALSE;
+    const void *vmax;
 
     checkArity(op, args);
     old = CAR(args); args = CDR(args);
@@ -1123,6 +1143,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 	COMPRESS(xtable, &xtable_cnt, xtable_t, xtable_comp);
 
 	PROTECT(y = allocVector(STRSXP, n));
+	vmax = vmaxget();
 	for (i = 0; i < n; i++) {
 	    el = STRING_ELT(x,i);
 	    if (el == NA_STRING)
@@ -1161,6 +1182,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		Free(cbuf);
 	    }
+	    vmaxset(vmax);
 	}
 	R_FreeStringBufferL(&cbuff);
     } else {
@@ -1204,6 +1226,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	n = LENGTH(x);
 	PROTECT(y = allocVector(STRSXP, n));
+	vmax = vmaxget();
 	for (i = 0; i < n; i++) {
 	    if (STRING_ELT(x,i) == NA_STRING)
 		SET_STRING_ELT(y, i, NA_STRING);
@@ -1217,6 +1240,7 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
 		Free(cbuf);
 	    }
 	}
+	vmaxset(vmax);
     }
 
     DUPLICATE_ATTRIB(y, x);
@@ -1225,18 +1249,17 @@ SEXP attribute_hidden do_chartr(SEXP call, SEXP op, SEXP args, SEXP env)
     return(y);
 }
 
-
 SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, width;
     int i, len, nw, w, nc;
     const char *This;
     char *buf;
-
     const char *p; char *q;
     int w0, wsum, k, nb;
     wchar_t wc;
     mbstate_t mb_st;
+    const void *vmax;
 
     checkArity(op, args);
     /* as.character happens at R level now */
@@ -1252,6 +1275,7 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 	   INTEGER(width)[i] < 0)
 	    error(_("invalid '%s' argument"), "width");
     PROTECT(s = allocVector(STRSXP, len));
+    vmax = vmaxget();
     for (i = 0; i < len; i++) {
 	if (STRING_ELT(x, i) == NA_STRING) {
 	    SET_STRING_ELT(s, i, STRING_ELT(x, i));
@@ -1274,6 +1298,7 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	*q = '\0';
 	SET_STRING_ELT(s, i, markKnown(buf, STRING_ELT(x, i)));
+	vmaxset(vmax);
     }
     if (len > 0) R_FreeStringBufferL(&cbuff);
     DUPLICATE_ATTRIB(s, x);
@@ -1281,3 +1306,40 @@ SEXP attribute_hidden do_strtrim(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(2);
     return s;
 }
+
+static int strtoi(SEXP s, int base)
+{
+    long res;
+    char *endp;
+
+    if(s == NA_STRING) return(NA_INTEGER);
+    res = strtol(CHAR(s), &endp, base); /* ASCII */
+    if(*endp != '\0') res = NA_INTEGER;
+    if(res > INT_MAX || res < INT_MIN) res = NA_INTEGER;
+    return(res);
+}
+
+SEXP attribute_hidden do_strtoi(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    SEXP ans, x, b;
+    int i, n, base;
+
+    checkArity(op, args);
+
+    x = CAR(args); args = CDR(args);
+    b = CAR(args);
+    
+    if(!isInteger(b) || (length(b) < 1))
+	error(_("invalid '%s' argument"), "base");
+    base = INTEGER(b)[0];
+    if((base != 0) && ((base < 2) || (base > 36)))
+	error(_("invalid '%s' argument"), "base");
+
+    PROTECT(ans = allocVector(INTSXP, n = LENGTH(x)));
+    for(i = 0; i < n; i++)
+	INTEGER(ans)[i] = strtoi(STRING_ELT(x, i), base);
+    UNPROTECT(1);
+    
+    return ans;
+}
+

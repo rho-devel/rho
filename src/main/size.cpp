@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000, 2001, 2004-6  the R Development Core Team
+ *  Copyright (C) 2000, 2001, 2004-6  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -166,5 +166,5 @@ static R_size_t objectsize(SEXP s)
 SEXP attribute_hidden do_objectsize(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    return ScalarReal( double(objectsize(CAR(args))) );
+    return ScalarReal( double( objectsize(CAR(args))) );
 }

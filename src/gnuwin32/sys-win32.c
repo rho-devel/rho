@@ -56,7 +56,7 @@ extern UImode  CharacterMode;
 
 FILE *R_OpenInitFile(void)
 {
-    char  buf[256], *p = getenv("R_PROFILE_USER");
+    char  buf[PATH_MAX], *p = getenv("R_PROFILE_USER");
     FILE *fp;
 
     fp = NULL;
@@ -65,7 +65,7 @@ FILE *R_OpenInitFile(void)
 	    return R_fopen(R_ExpandFileName(p), "r");
 	if ((fp = R_fopen(".Rprofile", "r")))
 	    return fp;
-	sprintf(buf, "%s/.Rprofile", getenv("R_USER"));
+	snprintf(buf, PATH_MAX, "%s/.Rprofile", getenv("R_USER"));
 	if ((fp = R_fopen(buf, "r")))
 	    return fp;
     }

@@ -263,7 +263,6 @@ END:
    * 		    - optionally *iterate* Newton
    */
     x = 0.5*scale*ch;
-
     if(max_it_Newton) {
 	/* always use log scale */
 	if (!log_p) {

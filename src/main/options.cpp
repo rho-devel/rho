@@ -272,7 +272,7 @@ void attribute_hidden InitOptions(void)
     v = CDR(v);
 
     p = getenv("R_KEEP_PKG_SOURCE");
-    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? TRUE : FALSE;
+    R_KeepSource = (p && (strcmp(p, "yes") == 0)) ? CXXRTRUE : CXXRFALSE;
 
     SET_TAG(v, install("keep.source")); /* overridden in common.R */
     SETCAR(v, ScalarLogical(R_KeepSource));
@@ -380,12 +380,12 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 	switch (TYPEOF(args)) {
 	case LISTSXP:
 	    argi = CAR(args);
-	    namei = EnsureString(TAG(args));
+	    namei = EnsureString(TAG(args)); /* gives "" for no tag */
 	    args = CDR(args);
 	    break;
 	case VECSXP:
 	    argi = VECTOR_ELT(args, i);
-	    namei = EnsureString(STRING_ELT(argnames, i));
+	    namei = STRING_ELT(argnames, i);
 	    break;
 	default: /* already checked, but be safe here */
 	    UNIMPLEMENTED_TYPE("options", args);
@@ -507,13 +507,6 @@ SEXP attribute_hidden do_options(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    error(_("invalid value for '%s'"), CHAR(namei));
 		max_contour_segments = k;
 		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarInteger(k)));
-	    }
-	    else if (streql(CHAR(namei), "warnEscapes")) {
-		if (TYPEOF(argi) != LGLSXP || LENGTH(argi) != 1)
-		    error(_("invalid value for '%s'"), CHAR(namei));
-		k = asLogical(argi);
-		R_WarnEscapes = CXXRCONSTRUCT(Rboolean, k);
-		SET_VECTOR_ELT(value, i, SetOption(tag, ScalarLogical(k)));
 	    }
 	    else if (streql(CHAR(namei), "rl_word_breaks")) {
 		if (TYPEOF(argi) != STRSXP || LENGTH(argi) != 1)

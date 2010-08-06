@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2008   R Development Core Team
+ *  Copyright (C) 1998-2009   The R Development Core Team
  *  Copyright (C) 2004        The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 
 #include <Defn.h> /* => Utils.h with the protos from here */
 #include <Rmath.h>
+#include <R_ext/RS.h>  /* for Calloc/Free */
 
 // 'using namespace std' causes ambiguity of 'greater'
 using namespace CXXR;
@@ -340,9 +341,10 @@ SEXP attribute_hidden do_sort(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("raw vectors cannot be sorted"));
     /* we need consistent behaviour here, including dropping attibutes,
        so as from 2.3.0 we always duplicate. */
-    ans = duplicate(CAR(args));
+    PROTECT(ans = duplicate(CAR(args)));
     ans->clearAttributes();  /* this is never called with names */
     sortVector(ans, decreasing);
+    UNPROTECT(1);
     return(ans);
 }
 
@@ -792,7 +794,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 
     if(isNull(rho)) {
 	/* First sort NAs to one end */
-	isna = static_cast<int *>( malloc(n * sizeof(int)));
+	isna = Calloc(n, int);
 	switch (TYPEOF(key)) {
 	case LGLSXP:
 	case INTSXP:
@@ -891,7 +893,7 @@ orderVector1(int *indx, int n, SEXP key, Rboolean nalast, Rboolean decreasing,
 #undef less
 	}
     }
-    if(isna) free(isna);
+    if(isna) Free(isna);
 }
 
 /* FUNCTION order(...) */
@@ -1051,4 +1053,22 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     UNPROTECT(1);
     return ans;
+}
+
+SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP fn, prargs, ans;
+
+    checkArity(op, args);
+    check1arg(args, call, "x");
+
+    if(DispatchOrEval(call, op, "xtfrm", args, rho, &ans, 0, 1)) return ans;
+    /* otherwise dispatch the default method */
+    PROTECT(fn = findFun(install("xtfrm.default"), rho));
+    PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
+    SET_PRVALUE(CAR(prargs), CAR(args));
+    ans = applyClosure(call, fn, prargs, rho, R_NilValue);
+    UNPROTECT(2);
+    return ans;
+    
 }

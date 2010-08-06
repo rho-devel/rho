@@ -1,6 +1,6 @@
 % File src/library/base/man/Memory.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Memory}
@@ -31,12 +31,8 @@ mem.limits(nsize = NA, vsize = NA)
   much less need to set memory options than prior to \R 1.2.0, and most
   users will never need to set these.  They are provided both as a way
   to control the overall memory usage (which can also be done
-#ifdef unix
-  by operating-system facilities such as \code{limit} on Unix),
-#endif
-#ifdef windows
+  by operating-system facilities such as \code{limit} on Unix and by
   using the command-line option \option{--max-mem-size} on Windows),
-#endif
   and since setting larger values of the minima will make \R slightly
   more efficient on large tasks.
 
@@ -51,7 +47,7 @@ mem.limits(nsize = NA, vsize = NA)
 #endif
 
   To understand the options, one needs to know that CXXR allocates
-  most of its memory via an internal mechansim implemented by class
+  most of its memory via an internal mechanism implemented by class
   CXXR::MemoryBank (which in turn gets its memory using C++'s
   \code{::operator new}).  The amount of memory allocated via
   MemoryBank is used to decide when to carry out garbage collections.

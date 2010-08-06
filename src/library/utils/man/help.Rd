@@ -1,6 +1,6 @@
 % File src/library/utils/man/help.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{help}
@@ -13,10 +13,7 @@
 help(topic, package = NULL, lib.loc = NULL,
      verbose = getOption("verbose"),
      try.all.packages = getOption("help.try.all.packages"),
-     help_type = getOption("help_type"),
-     chmhelp = getOption("chmhelp"),
-     htmlhelp = getOption("htmlhelp"),
-     offline = FALSE)
+     help_type = getOption("help_type"))
 }
 \arguments{
   \item{topic}{usually, a \link{name} or character string specifying the
@@ -44,10 +41,6 @@ help(topic, package = NULL, lib.loc = NULL,
    Possible values are \code{"text"}, \code{"html"},
    \code{"postscript"}, \code{"ps"} and \code{"pdf"}.  Case is ignored,
    and partial matching is allowed.}
-
-  \item{chmhelp}{a deprecated way to specify \code{help_type = "text"}.}
-  \item{htmlhelp}{a deprecated way to specify \code{help_type = "html"}.}
-  \item{offline}{a deprecated way to specify \code{help_type = "postscript"}.}
 }
 \details{
   The following types of help are available:
@@ -70,16 +63,10 @@ help(topic, package = NULL, lib.loc = NULL,
   GUI, which uses HTML help displayed in its own browser window.
 #endif
 #ifdef windows
-  The defaults for the type of help are selected when \R is installed --
+  The default for the type of help is selected when \R is installed --
   the \sQuote{factory-fresh} default is HTML help.
 #endif
 
-  With packages installed under \R{} 2.10.0 or later help pages are
-  generated when needed from parsed Rd files.  Packages installed under
-  earlier versions of \R do not have parsed Rd files, but do (by
-  default) have prebuilt text, html and latex help pages, and these are
-  used if parsed Rd files are not available.
-  
   The rendering of text help will use directional quotes in suitable
   locales (UTF-8 and single-byte Windows locales): sometimes the fonts
   used do not support these quotes so this can be turned off by setting
@@ -110,9 +97,11 @@ help(topic, package = NULL, lib.loc = NULL,
 \section{Offline help}{
   Typeset documentation is produced by running the LaTeX version of the
   help page through \command{latex} and \command{dvips} or, if
-  \code{help_type = "PDF"}, \command{pdflatex}.  This will either
-  produce a PostScript or PDF file or (depending on the configuration of
-  \command{dvips}) send a PostScript file to a printer.
+  \code{help_type = "PDF"}, \command{pdflatex}.  This will produce
+  either a PostScript or PDF file and possibly (depending on the
+  configuration of \command{dvips}) send a PostScript file to a printer.
+  You can set \code{\link{options}("dvipscmd")} to customize how
+  \command{dvips}) is called.
 
   The appearance of the output can be customized through a file
   \file{Rhelp.cfg} somewhere in your LaTeX search path: this will be
@@ -141,7 +130,9 @@ help(topic, package = NULL, lib.loc = NULL,
   specified, then all the packages in the known library trees are
   searched for help on \code{topic} and a list of (any) packages where
   help may be found is displayed (with hyperlinks for \code{help_type =
-  "html"}).  \strong{NB:} searching all packages can be slow.
+  "html"}).  \strong{NB:} searching all packages can be slow, especially
+  the first time (caching of files by the OS can expedite subsequent
+  searches dramatically).
 }
 
 \references{

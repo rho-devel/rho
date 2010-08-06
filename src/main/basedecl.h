@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2002-2008	The R Development Core Team.
+ *  Copyright (C) 2002-2010	The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,6 +55,7 @@ SEXP call_dqags(SEXP);
 SEXP La_svd(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP La_rs(SEXP, SEXP);
 SEXP La_rg(SEXP, SEXP);
+SEXP La_dlange(SEXP, SEXP);
 SEXP La_dgecon(SEXP, SEXP);
 SEXP La_dtrcon(SEXP, SEXP);
 SEXP La_zgecon(SEXP, SEXP);

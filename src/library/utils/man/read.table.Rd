@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{read.table}
@@ -120,13 +120,13 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     the columns.  Recycled as necessary, or if the character vector is
     named, unspecified values are taken to be \code{NA}.
 
-    Possible values are \code{NA} (when \code{\link{type.convert}} is
-    used), \code{"NULL"} (when the column is skipped), one of the atomic
-    vector classes (logical, integer, numeric, complex, character, raw),
-    or \code{"factor"}, \code{"Date"} or \code{"POSIXct"}.  Otherwise
-    there needs to be an \code{as} method (from package \pkg{methods})
-    for conversion from \code{"character"} to the specified formal
-    class.
+    Possible values are \code{NA} (the default, when
+    \code{\link{type.convert}} is used), \code{"NULL"} (when the column
+    is skipped), one of the atomic vector classes (logical, integer,
+    numeric, complex, character, raw), or \code{"factor"}, \code{"Date"}
+    or \code{"POSIXct"}.  Otherwise there needs to be an \code{as}
+    method (from package \pkg{methods}) for conversion from
+    \code{"character"} to the specified formal class.
 
     Note that \code{colClasses} is specified per column (not per
     variable) and so includes the column of row names (if any).
@@ -170,19 +170,19 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     This allows putting comments after the last field.}
 
   \item{stringsAsFactors}{logical: should character vectors be converted
-    to factors?  Note that this is overridden bu \code{as.is} and
+    to factors?  Note that this is overridden by \code{as.is} and
     \code{colClasses}, both of which allow finer control.}
   
   \item{fileEncoding}{character string: if non-empty declares the
     encoding used on a file (not a connection) so the character data can
-    be re-encoded.  See \code{\link{file}}.
+    be re-encoded.  See \code{\link{file}} and \sQuote{Note}.
   }
   
   \item{encoding}{encoding to be assumed for input strings.  It is
     used to mark character strings as known to be in
-    Latin-1 or UTF-8: it is not used to re-encode the input, but allows
-    \R to handle encoded strings in their native encoding (if one of
-    those two).  See \sQuote{Value}.
+    Latin-1 or UTF-8 (see \code{\link{Encoding}}): it is not used to
+    re-encode the input, but allows \R to handle encoded strings in
+    their native encoding (if one of those two).  See \sQuote{Value}.
   }
 
   \item{\dots}{Further arguments to be passed to \code{read.table}.}
@@ -203,6 +203,13 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 }
 \details{
   This function is the principal means of reading tabular data into \R.
+
+  Unless \code{colClasses} is specified, all columns are read as
+  character columns and then converted using \code{\link{type.convert}}
+  to logical, integer, numeric, complex or (depending on \code{as.is})
+  factor as appropriate.  Quotes are (by default) interpreted in all
+  fields, so a column of values like \code{"42"} will result in an
+  integer column.
 
   A field or line is \sQuote{blank} if it contains nothing (except
   whitespace if no separator is specified) before a comment character or
@@ -239,11 +246,6 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   Quoted fields with embedded newlines are supported except after a
   comment character.
-
-  Note that unless \code{colClasses} is specified, all columns are read
-  as character columns and then converted.  This means that quotes are
-  interpreted in all fields and that a column of values like \code{"42"}
-  will result in an integer column.
 }
 \note{
   The columns referred to in \code{as.is} and \code{colClasses} include
@@ -265,6 +267,15 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   especially those with many columns: it is designed to read
   \emph{data frames} which may have columns of very different classes.
   Use \code{\link{scan}} instead.
+
+  Because this function uses \code{\link{pushBack}} it can only handle
+  character strings which can be represented in the current locale.  So
+  although \code{fileEncoding} can be used to specify the encoding of
+  the input file (or a connection can be specified which re-encodes),
+  the implied re-encoding must be possible.  This is not a problem in
+  UTF-8 locales, but it can be on Windows---other tools such as
+  \code{\link{readLines}} and \code{\link{scan}} be used to avoid this
+  limitation.
 }
 
 \seealso{

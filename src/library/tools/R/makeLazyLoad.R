@@ -81,7 +81,8 @@ list_data_in_pkg <- function(package, lib.loc = NULL, dataDir = NULL)
             names(ans) <- nms
         } else {
             files <- list_files_with_type(dataDir, "data")
-            files <- unique(basename(file_path_sans_ext(files)))
+            ## omit compression extensions
+            files <- unique(basename(file_path_sans_ext(files, TRUE)))
             ans <- vector("list", length(files))
             dataEnv <- new.env(hash=TRUE)
             names(ans) <- files
@@ -120,7 +121,8 @@ data2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
             dataEnv <- new.env(hash=TRUE)
             tmpEnv <- new.env()
             f0 <- files <- list_files_with_type(dataDir, "data")
-            files <- unique(basename(file_path_sans_ext(files)))
+            ## omit compression extensions
+            files <- unique(basename(file_path_sans_ext(files, TRUE)))
             dlist <- vector("list", length(files))
             names(dlist) <- files
             loaded <- character(0L)
@@ -134,12 +136,13 @@ data2LazyLoadDB <- function(package, lib.loc = NULL, compress = TRUE)
                 dlist[[f]] <- tmp
                 loaded <- c(loaded, tmp)
             }
-            dup<- duplicated(loaded)
+            dup <- duplicated(loaded)
             if(any(dup))
-                warning(gettextf("object(s) %s are created by more than one data call",
-                                 paste(sQuote(loaded[dup]),
-                                       collapse=", ")),
-                        domain = NA)
+                warning(sprintf(ngettext(sum(dup),
+                                         "object %s is created by more than one data call",
+                                         "objects %s are created by more than one data call"),
+                                paste(sQuote(loaded[dup]), collapse=", ")),
+                        call. = FALSE, domain = NA)
 
             if(length(loaded)) {
                 dbbase <- file.path(dataDir, "Rdata")

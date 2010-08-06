@@ -62,12 +62,16 @@ SEXP attribute_hidden do_split(SEXP call, SEXP op, SEXP args, SEXP env)
     if (nfac > 0 && (nobs % nfac) != 0)
 	warning(_("data length is not a multiple of split variable"));
     nm = getAttrib(x, R_NamesSymbol);
-    have_names = Rboolean(nm != R_NilValue);
+    have_names = CXXRCONSTRUCT(Rboolean, nm != R_NilValue);
     PROTECT(counts = allocVector(INTSXP, nlevs));
     for (i = 0; i < nlevs; i++) INTEGER(counts)[i] = 0;
     for (i = 0; i < nobs; i++) {
 	j = INTEGER(f)[i % nfac];
-	if (j != NA_INTEGER) INTEGER(counts)[j - 1]++;
+	if (j != NA_INTEGER) {
+	    /* protect against malformed factors */
+	    if (j > nlevs || j < 1) error(_("factor has bad level"));
+	    INTEGER(counts)[j - 1]++;
+	}
     }
     /* Allocate a generic vector to hold the results. */
     /* The i-th element will hold the split-out data */

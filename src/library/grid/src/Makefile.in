@@ -41,6 +41,9 @@ PKG_CFLAGS=$(C_VISIBILITY)
 
 SHLIB = $(pkg)@SHLIB_EXT@
 
+%.bakc : %.cpp ../../../scripts/CXXR/uncxxr.pl
+	../../../scripts/CXXR/uncxxr.pl $< > $@
+
 all: Makefile Makedeps
 	@$(MAKE) Makedeps
 	@$(MAKE) shlib

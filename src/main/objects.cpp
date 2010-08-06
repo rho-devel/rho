@@ -393,21 +393,29 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     return 0;
 }
 
-/* Note: "do_usemethod" is not the only entry point to */
-/* "usemethod". Things like [ and [[ call usemethod directly, */
-/* hence do_usemethod should just be an interface to usemethod. */
+/* Note: "do_usemethod" is not the only entry point to
+   "usemethod". Things like [ and [[ call usemethod directly,
+   hence do_usemethod should just be an interface to usemethod.
+ */
 
+/* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ans, generic = R_NilValue /* -Wall */, obj, val;
     SEXP callenv, defenv;
-    int nargs;
+    SEXP ap, argList;
     Evaluator::Context *cptr;
 
-    nargs = length(args);
-
-    if (nargs < 0)
-	errorcall(call, _("corrupt internals!"));
+    PROTECT(ap = list2(R_NilValue, R_NilValue));
+    SET_TAG(ap,  install("generic"));
+    SET_TAG(CDR(ap), install("object"));
+    PROTECT(argList =  matchArgs(ap, args, call));
+    if (CAR(argList) == R_MissingArg)
+	errorcall(call, _("there must be a 'generic' argument"));	
+    else 
+	PROTECT(generic = eval(CAR(argList), env));
+    if(!isString(generic) || length(generic) != 1)
+	errorcall(call, _("'generic' argument must be a character string"));
 
     /* get environments needed for dispatching.
        callenv = environment from which the generic was called
@@ -416,12 +424,6 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if ( !cptr || !cptr->workingEnvironment() || cptr->workingEnvironment() != env)
 	errorcall(call, _("'UseMethod' used in an inappropriate fashion"));
     callenv = cptr->callEnvironment();
-    if (nargs)
-	PROTECT(generic = eval(CAR(args), env));
-    else
-	errorcall(call, _("there must be a first argument"));
-    if(!isString(generic) || length(generic) != 1)
-	errorcall(call, _("first argument must be a character string"));
     /* We need to find the generic to find out where it is defined.
        This is set up to avoid getting caught by things like
 
@@ -438,18 +440,9 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		   ENCLOS(env), FUNSXP, TRUE); /* That has evaluated promises */
     if(TYPEOF(val) == CLOSXP) defenv = CLOENV(val);
     else defenv = R_BaseNamespace;
-/*
-    if(defenv !=  ENCLOS(env)) {
-	printf("*** problem ***\n");
-	PrintValue(generic);
-	PrintValue(ENCLOS(env));
-    }
-*/
 
-    if (nargs > 2)  /* R-lang says there should be a warning */
-	warningcall(call, _("arguments after the first two are ignored"));
-    if (nargs >= 2)
-	PROTECT(obj = eval(CADR(args), env));
+    if (CADR(argList) != R_MissingArg)
+	PROTECT(obj = eval(CADR(argList), env));
     else {
 	cptr = Evaluator::Context::innermost();
 	while (cptr != NULL) {
@@ -459,8 +452,6 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	if (cptr == NULL)
 	    errorcall(call, _("'UseMethod' called from outside a closure"));
-	/* if (generic == R_MissingArg)
-	   PROTECT(generic = mkString(CHAR(PRINTNAME(CAR(cptr->call()))))); */
 	PROTECT(obj = GetObject(cptr));
     }
 
@@ -471,7 +462,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (usemethod(translateChar(STRING_ELT(generic, 0)), obj, call, CDR(args),
 		  env, callenv, defenv, &ans) == 1) {
-	UNPROTECT(1); /* obj */
+	UNPROTECT(3); /* obj, ap, argList */
 	Environment* envir = SEXP_downcast<Environment*>(env);
 	if (!envir->canReturn())
 	    Rf_error(_("no function to return from, jumping to top level"));
@@ -496,9 +487,9 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	errorcall(call, _("no applicable method for '%s' applied to an object of class \"%s\""),
 		  translateChar(STRING_ELT(generic, 0)), cl);
-	UNPROTECT(1); /* NOT Used */
     }
-    return R_NilValue; /* NOT Used */
+    /* Not reached */
+    return R_NilValue;
 }
 
 /*
@@ -531,6 +522,7 @@ static SEXP fixcall(SEXP call, SEXP args)
 /* the second the object and any remaining are matched with the */
 /* formals of the chosen method. */
 
+/* This is a special .Internal */
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     char buf[512], b[512], bb[512];
@@ -836,9 +828,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     return(ans);
 }
 
+/* primitive */
 SEXP attribute_hidden do_unclass(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
+    check1arg(args, call, "x");
+
     switch(TYPEOF(CAR(args))) {
     case ENVSXP:
 	errorcall(call, _("cannot unclass an environment"));
@@ -877,7 +872,7 @@ static SEXP do_S4inherits(SEXP obj, SEXP what, SEXP which) {
 
 SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP x, what, which, rval = R_NilValue /* -Wall */;
+    SEXP x, what, which;
     int i, j, nwhat, isvec, nclass;
 
     checkArity(op, args);
@@ -904,6 +899,7 @@ SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 	warning(_("use 'is()' instead of 'inherits()' on S4 objects"));
 #endif
 
+    GCStackRoot<> rval;
     if(isvec)
 	rval = allocVector(INTSXP, nwhat);
 
@@ -1044,6 +1040,10 @@ static SEXP get_this_generic(SEXP args);
 SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
+
+    checkArity(op, args);
+    check1arg(args, call, "f");
+
     if(!ptr) {
 	warningcall(call,
 		    _("standardGeneric called without methods dispatch enabled (will be ignored)"));
@@ -1069,6 +1069,7 @@ SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env
 }
 
 static int maxMethodsOffset = 0, curMaxOffset;
+static Rboolean allowPrimitiveMethods = TRUE;
 typedef enum {NO_METHODS, NEEDS_RESET, HAS_METHODS, SUPPRESSED} prim_methods_t;
 
 static prim_methods_t *prim_methods;
@@ -1084,6 +1085,21 @@ SEXP R_set_prim_method(SEXP fname, SEXP op, SEXP code_vec, SEXP fundef,
     if(!isValidString(code_vec))
 	error(_("argument 'code' must be a character string"));
     code_string = translateChar(asChar(code_vec));
+    /* with a NULL op, turns all primitive matching off or on (used to avoid possible infinite
+     recursion in methods computations*/
+    if(op == R_NilValue) {
+	SEXP value;
+	value = allowPrimitiveMethods ? mkTrue() : mkFalse();
+	switch(code_string[0]) {
+	case 'c': case 'C':/* clear */
+	    allowPrimitiveMethods = FALSE; break;
+	case 's': case 'S': /* set */
+	    allowPrimitiveMethods = TRUE; break;
+	default: /* just report the current state */
+	    break;
+	}
+	return value;
+    }
     do_set_prim_method(op, code_string, fundef, mlist);
     return(fname);
 }
@@ -1209,17 +1225,21 @@ SEXP do_set_prim_method(SEXP op, const char *code_string, SEXP fundef,
 
 static SEXP get_primitive_methods(SEXP op, SEXP rho)
 {
-    SEXP f, e;
+    SEXP f, e, val;
     int nprotect = 0;
     f = PROTECT(allocVector(STRSXP, 1));  nprotect++;
     SET_STRING_ELT(f, 0, mkChar(PRIMNAME(op)));
     PROTECT(e = allocVector(LANGSXP, 2)); nprotect++;
-    SETCAR(e, install("getMethods"));
-    SETCAR(CDR(e), f);
-    e = eval(e, rho);
+    SETCAR(e, install("getGeneric"));
+    val = CDR(e); SETCAR(val, f);
+    val = eval(e, rho);
+    /* a rough sanity check that this looks like a generic function */
+    if(TYPEOF(val) != CLOSXP || !IS_S4_OBJECT(val))
+	error(_("object returned as generic function \"%s\" doesn't appear to be one"), PRIMNAME(op));
     UNPROTECT(nprotect);
-    return e;
+    return CLOENV(val);
 }
+
 
 /* get the generic function, defined to be the function definition for
 the call to standardGeneric(), or for primitives, passed as the second
@@ -1269,6 +1289,8 @@ Rboolean R_has_methods(SEXP op)
 	return(FALSE);
     if(!op || TYPEOF(op) == CLOSXP) /* except for primitives, just test for the package */
 	return(TRUE);
+    if(!allowPrimitiveMethods) /* all primitives turned off by a call to R_set_prim */
+	return FALSE;
     offset = PRIMOFFSET(op);
     if(offset > curMaxOffset || prim_methods[offset] == NO_METHODS
        || prim_methods[offset] == SUPPRESSED)

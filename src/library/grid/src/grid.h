@@ -44,9 +44,13 @@
 #include <Rinternals.h>
 #ifdef ENABLE_NLS
 #include <libintl.h>
+#ifndef __cplusplus
 #define _(String) dgettext ("grid", String)
+#endif
 #else
+#ifndef __cplusplus
 #define _(String) (String)
+#endif
 #endif
 
 #ifdef __cplusplus
@@ -308,6 +312,9 @@ SEXP L_polygon(SEXP x, SEXP y, SEXP index);
 SEXP L_xspline(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep, SEXP index);
 SEXP L_circle(SEXP x, SEXP y, SEXP r);
 SEXP L_rect(SEXP x, SEXP y, SEXP w, SEXP h, SEXP hjust, SEXP vjust); 
+SEXP L_raster(SEXP raster, SEXP x, SEXP y, SEXP w, SEXP h, 
+              SEXP hjust, SEXP vjust, SEXP interpolate);
+SEXP L_cap();
 SEXP L_text(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust, 
 	    SEXP rot, SEXP checkOverlap);
 SEXP L_points(SEXP x, SEXP y, SEXP pch, SEXP size);
@@ -618,6 +625,8 @@ SEXP L_rectBounds(SEXP x, SEXP y, SEXP w, SEXP h, SEXP hjust, SEXP vjust,
 SEXP L_textBounds(SEXP label, SEXP x, SEXP y, 
 		  SEXP hjust, SEXP vjust, SEXP rot, SEXP theta);
 SEXP L_xsplineBounds(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep,
+		     SEXP index, SEXP theta);
+SEXP L_xsplinePoints(SEXP x, SEXP y, SEXP s, SEXP o, SEXP a, SEXP rep,
 		     SEXP index, SEXP theta);
 
 /* From unit.c */
