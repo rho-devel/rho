@@ -68,9 +68,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @param x Pointer to a CXXR::RawVector (i.e. a RAWSXP).
- *          An error is generated if \a x is not pointer to a
+ * @param x Pointer to a CXXR::RawVector (i.e. a RAWSXP).  An error is
+ *          generated if \a x is not a non-null pointer to a
  *          CXXR::RawVector .
+ *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
@@ -78,7 +79,8 @@ Rbyte *RAW(SEXP x);
 #else
 inline Rbyte *RAW(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::RawVector*>(x))[0];
+    using namespace CXXR;
+    return &(*SEXP_downcast<RawVector*>(x, false))[0];
 }
 #endif
 

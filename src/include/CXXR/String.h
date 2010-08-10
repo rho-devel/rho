@@ -235,7 +235,8 @@ extern "C" {
     extern SEXP R_BlankString;
 
     /**
-     * @param x \c const pointer to a CXXR::String .
+     * @param x \c non-null pointer to a CXXR::String .
+     *
      * @return \c const pointer to character 0 of \a x .
      */
 #ifndef __cplusplus
@@ -243,7 +244,8 @@ extern "C" {
 #else
     inline const char *R_CHAR(SEXP x)
     {
-	return CXXR::SEXP_downcast<CXXR::String*>(x)->c_str();
+	using namespace CXXR;
+	return SEXP_downcast<String*>(x, false)->c_str();
     }
 #endif
 

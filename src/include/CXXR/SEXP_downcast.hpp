@@ -43,13 +43,6 @@
 namespace CXXR {
     void SEXP_downcast_error(const char* given, const char* wanted);
 
-#ifdef UNCHECKED_SEXP_DOWNCAST
-    template <typename PtrOut, typename PtrIn>
-    inline PtrOut SEXP_downcast(PtrIn s)
-    {
-	return static_cast<PtrOut>(s);
-    }
-#else
     /** Down cast within the RObject class tree.
      *
      * @param PtrOut Cast the pointer to type \a PtrOut, where \a
@@ -63,14 +56,33 @@ namespace CXXR {
      *
      * @param s The pointer to be cast.
      *
+     * @param allow_null true iff \a s is permitted to be a null pointer.
+     *
      * @return The cast pointer.
      */
+#ifdef UNCHECKED_SEXP_DOWNCAST
     template <typename PtrOut, typename PtrIn>
-    PtrOut SEXP_downcast(PtrIn s)
+    inline PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
     {
-	if (!s) return 0;
-	PtrOut ans = dynamic_cast<PtrOut>(s);
-	if (!ans) SEXP_downcast_error(s->typeName(), ans->staticTypeName());
+	if (!s && !allow_null) {
+	    PtrOut exemplar;
+	    SEXP_downcast_error("NULL", exemplar->staticTypeName());
+	}
+	return static_cast<PtrOut>(s);
+    }
+#else
+    template <typename PtrOut, typename PtrIn>
+    PtrOut SEXP_downcast(PtrIn s, bool allow_null = true)
+    {
+	PtrOut ans;
+	if (!s) {
+	    if (allow_null)
+		return 0;
+	    else SEXP_downcast_error("NULL", ans->staticTypeName());
+	}
+	ans = dynamic_cast<PtrOut>(s);
+	if (!ans)
+	    SEXP_downcast_error(s->typeName(), ans->staticTypeName());
 	return ans;
     }
 #endif

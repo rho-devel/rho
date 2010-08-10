@@ -145,16 +145,23 @@ extern "C" {
 /** @brief Set element of CXXR::ExpressionVector.
  * 
  * @param x Pointer to a CXXR::ExpressionVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to CXXR::RObject representing the new value.
+ *
+ * @param v Pointer, possibly null, to CXXR::RObject representing the
+ *          new value.
+ *
  * @return The new value \a v.
  */
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::ExpressionVector.
- * @param x Pointer to a CXXR::ExpressionVector .
+ *
+ * @param x Non-null pointer to a CXXR::ExpressionVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
+ *
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
@@ -163,7 +170,7 @@ SEXP XVECTOR_ELT(SEXP x, int i);
 inline SEXP XVECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
     return (*ev)[i];
 }
 #endif

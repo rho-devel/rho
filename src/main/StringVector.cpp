@@ -79,7 +79,7 @@ void CXXR::strdump(ostream& os, const StringVector& sv, size_t margin)
 
 void SET_STRING_ELT(SEXP x, int i, SEXP v)
 {
-    StringVector* sv = SEXP_downcast<StringVector*>(x);
-    String* s = SEXP_downcast<String*>(v);
+    StringVector* sv = SEXP_downcast<StringVector*>(x, false);
+    String* s = SEXP_downcast<String*>(v, false);
     (*sv)[i] = s;
 }

@@ -80,7 +80,7 @@ ListVector* ListVector::clone() const
 
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v)
 {
-    ListVector* lv = SEXP_downcast<ListVector*>(x);
+    ListVector* lv = SEXP_downcast<ListVector*>(x, false);
     (*lv)[i] = v;
     return v;
 }

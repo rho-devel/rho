@@ -121,17 +121,23 @@ extern "C" {
 
 /** @brief Set element of CXXR::StringVector.
  * 
- * @param x Pointer to a CXXR::StringVector .
+ * @param x Non-null pointer to a CXXR::StringVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to CXXR::RObject representing the new value.
+ *
+ * @param v Non-null pointer to CXXR::String representing the new value.
  */
 void SET_STRING_ELT(SEXP x, int i, SEXP v);
 
 /**
  * @brief Examine element of a CXXR::StringVector.
- * @param x Pointer to a CXXR::StringVector.  An error is raised if \a x
- *          is not a pointer to a StringVector.
- * @param i Index of the required element.  There is no bounds checking.
+ *
+ * @param x Non-null pointer to a CXXR::StringVector.  An error is
+ *          raised if \a x is not a pointer to a CXXR::StringVector.
+ *
+ * @param i Index of the required element.  There is no bounds
+ *          checking.
+ *
  * @return Pointer to extracted \a i 'th element.
  */
 #ifndef __cplusplus
@@ -139,7 +145,8 @@ SEXP STRING_ELT(SEXP x, int i);
 #else
 inline SEXP STRING_ELT(SEXP x, int i)
 {
-    return (*CXXR::SEXP_downcast<CXXR::StringVector*>(x))[i];
+    using namespace CXXR;
+    return (*SEXP_downcast<StringVector*>(x, false))[i];
 }
 #endif
 

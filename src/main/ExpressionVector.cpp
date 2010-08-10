@@ -76,7 +76,7 @@ ExpressionVector* ExpressionVector::clone() const
 
 SEXP SET_XVECTOR_ELT(SEXP x, int i, SEXP v)
 {
-    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x);
+    ExpressionVector* ev = SEXP_downcast<ExpressionVector*>(x, false);
     (*ev)[i] = v;
     return v;
 }

@@ -81,8 +81,9 @@ extern "C" {
 
 /**
  * @param x Pointer to a CXXR::ComplexVector (i.e. an R complex vector).
- *          An error is generated if \a x is not pointer to a
+ *          An error is generated if \a x is not a non-null pointer to a
  *          CXXR::ComplexVector .
+ *
  * @return Pointer to element 0 of \a x .
  */
 #ifndef __cplusplus
@@ -90,7 +91,8 @@ Rcomplex *COMPLEX(SEXP x);
 #else
 inline Rcomplex *COMPLEX(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::ComplexVector*>(x))[0];
+    using namespace CXXR;
+    return &(*SEXP_downcast<ComplexVector*>(x, false))[0];
 }
 #endif
 

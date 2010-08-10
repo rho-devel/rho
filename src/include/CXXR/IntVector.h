@@ -67,9 +67,10 @@ extern "C" {
 
 /**
  * @param x Pointer to an \c IntVector or a \c LogicalVector (i.e. an
- *          R integer or logical vector).
- *          An error is generated if \a x is not pointer to an \c
- *          IntVector or a \c LogicalVector .
+ *          R integer or logical vector).  An error is generated if \a
+ *          x is not a non-null pointer to an \c IntVector or a \c
+ *          LogicalVector .
+ *
  * @return Pointer to element 0 of \a x .
  */
 int *INTEGER(SEXP x);

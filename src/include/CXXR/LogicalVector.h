@@ -90,7 +90,7 @@ int* LOGICAL(SEXP x);
 inline int* LOGICAL(SEXP x)
 {
     using namespace CXXR;
-    return &(*SEXP_downcast<LogicalVector*>(x))[0];
+    return &(*SEXP_downcast<LogicalVector*>(x, false))[0];
 }
 #endif
 

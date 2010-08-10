@@ -53,5 +53,5 @@ int *INTEGER(SEXP x)
 	return &(*lvec)[0];
     }
 #endif
-    return &(*CXXR::SEXP_downcast<IntVector*>(x))[0];
+    return &(*SEXP_downcast<IntVector*>(x, false))[0];
 }

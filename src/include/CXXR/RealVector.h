@@ -89,7 +89,8 @@ double *REAL(SEXP x);
 #else
 inline double *REAL(SEXP x)
 {
-    return &(*CXXR::SEXP_downcast<CXXR::RealVector*>(x))[0];
+    using namespace CXXR;
+    return &(*SEXP_downcast<RealVector*>(x, false))[0];
 }
 #endif
 

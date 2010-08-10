@@ -111,17 +111,25 @@ namespace CXXR {
 extern "C" {
 #endif /* __cplusplus */
 
-/** @brief Set element of ListVector.
- * @param x Pointer to a \c ListVector .
+/** @brief Set element of CXXR::ListVector.
+ *
+ * @param x Pointer to a CXXR::ListVector.
+ *
  * @param i Index of the required element.  There is no bounds checking.
- * @param v Pointer to \c RObject representing the new value.
+ *
+ * @param v Pointer, possibly null, to CXXR::RObject representing the
+ *          new value.
+ *
  * @return The new value \a v.
  */
 SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
 
-/** @brief Examine element of ListVector.
- * @param x Pointer to a \c ListVector .
+/** @brief Examine element of CXXR::ListVector.
+ *
+ * @param x Non-null pointer to a CXXR::ListVector .
+ *
  * @param i Index of the required element.  There is no bounds checking.
+ *
  * @return The value of the \a i 'th element.
  */
 #ifndef __cplusplus
@@ -130,7 +138,7 @@ SEXP VECTOR_ELT(SEXP x, int i);
 inline SEXP VECTOR_ELT(SEXP x, int i)
 {
     using namespace CXXR;
-    ListVector* lv = SEXP_downcast<ListVector*>(x);
+    ListVector* lv = SEXP_downcast<ListVector*>(x, false);
     return (*lv)[i];
 }
 #endif
