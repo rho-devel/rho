@@ -1201,20 +1201,30 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Environment::ReturnScope returnscope(envir);
 	bool redo;
 	do {
+	    GCStackRoot<> saved_handler_stack(R_HandlerStack);
 	    redo = false;
 	    try {
-		R_InsertRestartHandlers(Evaluator::Context::innermost(), TRUE);
+		Evaluator::Context* cptr = Evaluator::Context::innermost();
+		// CXXR doesn't have a top-level context.  The
+		// following test stops an error if browser() is
+		// invoked at top level, but this workaround needs to
+		// be reviewed when arr understands restarts better!
+		if (cptr)
+		    R_InsertRestartHandlers(cptr, TRUE);
 		R_ReplConsole(rho, savestack);
 	    }
 	    catch (ReturnException& rx) {
-		if (rx.environment() != envir)
+		if (rx.environment() != envir) {
+		    R_HandlerStack = saved_handler_stack;
 		    throw;
+		}
 		ans = rx.value();
 	    }
 	    catch (CommandTerminated) {
 		R_Visible = FALSE;
 		redo = true;
 	    }
+	    R_HandlerStack = saved_handler_stack;
 	} while (redo);
     }
 
