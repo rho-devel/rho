@@ -368,15 +368,12 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 
     PROTECT(topExp = R_CurrentExpr);
 
-    {
-	Evaluator evalr;
-	try {
-	    fun(data);
-	    result = TRUE;
-	}
-	catch (CommandTerminated) {
-	    result = FALSE;
-	}
+    try {
+	fun(data);
+	result = TRUE;
+    }
+    catch (CommandTerminated) {
+	result = FALSE;
     }
 
     R_CurrentExpr = topExp;
