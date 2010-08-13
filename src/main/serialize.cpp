@@ -854,7 +854,8 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    OutInteger(stream, ENVSXP);
 	    OutInteger(stream, R_EnvironmentIsLocked(s) ? 1 : 0);
 	    WriteItem(ENCLOS(s), ref_table, stream);
-	    WriteItem(FRAME(s), ref_table, stream);
+	    GCStackRoot<> frame_pairlist(FRAME(s));
+	    WriteItem(frame_pairlist, ref_table, stream);
 	    WriteItem(0, ref_table, stream);  // No hashtab field in CXXR
 	    WriteItem(ATTRIB(s), ref_table, stream);
 	}
