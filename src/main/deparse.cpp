@@ -256,6 +256,8 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     }
     if(nlines > 0 && localData.linenumber < nlines)
 	svec = lengthgets(svec, localData.linenumber);
+    UNPROTECT(1);
+    PROTECT(svec);
     R_print.digits = savedigits;
     if ((opts & WARNINCOMPLETE) && localData.isS4)
 	warning(_("deparse of an S4 object will not be source()able"));
