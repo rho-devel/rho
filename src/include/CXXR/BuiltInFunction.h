@@ -232,7 +232,15 @@ namespace CXXR {
 	    return s_function_table[m_offset].gram.precedence;
 	}
 
-	// Used to implement PRIMPRINT.  Get rid of it soon.
+	/** @brief (Not for general use.)
+	 *
+	 * This function is used to implement PRIMPRINT, and is likely
+	 * to be removed in future refactorisation.
+	 *
+	 * @return Code for handling \c R_Visible within the function,
+	 *         as documented in names.cpp for the eval field of
+	 *         the function table.
+	 */
 	int printHandling() const
 	{
 	    return m_result_printing_mode;

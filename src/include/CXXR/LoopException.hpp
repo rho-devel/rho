@@ -56,6 +56,11 @@ namespace CXXR {
 	    : m_environment(env), m_next(next_iteration)
 	{}
 
+	/** @brief Evaluation environment.
+	 *
+	 * @return Pointer to the evaluation environment in which
+	 *         'break' or 'next' occurred.
+	 */
 	Environment* environment() const
 	{
 	    return m_environment;

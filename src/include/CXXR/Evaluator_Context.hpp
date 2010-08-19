@@ -174,6 +174,13 @@ namespace CXXR {
 	    return m_function;
 	}
 
+	/** @brief (Not for general use.)
+	 *
+	 * This function will be removed in future refactorization.
+	 *
+	 * @return Pointer to the handler stack associated with this
+	 * Context.
+	 */
 	RObject* handlerStack() const
 	{
 	    return m_handlerstack;
