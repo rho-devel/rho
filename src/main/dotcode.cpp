@@ -55,7 +55,7 @@
 
 #include <R_ext/RConverters.h>
 #include <R_ext/Riconv.h>
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/ClosureContext.hpp"
 
 #ifndef max
 #define max(a, b) ((a > b)?(a):(b))
@@ -1553,21 +1553,18 @@ static SEXP
 Rf_getCallingDLL(void)
 {
     SEXP e, ans;
-    Evaluator::Context *cptr;
     SEXP rho = R_NilValue;
     Rboolean found = FALSE;
 
     /* First find the environment of the caller.
        Testing shows this is the right caller, despite the .C/.Call ...
      */
-    for (cptr = Evaluator::Context::innermost();
-	 cptr != NULL;
-	 cptr = cptr->nextOut())
-	if (cptr->workingEnvironment()) {
-	    /* PrintValue(cptr->call); */
+    {
+	ClosureContext* cptr = ClosureContext::innermost();
+	if (cptr)
 	    rho = cptr->workingEnvironment();
-	    break;
-	}
+    }
+
     /* Then search up until we hit a namespace or globalenv.
        The idea is that we will not find a namespace unless the caller
        was defined in one. */

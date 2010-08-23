@@ -41,7 +41,7 @@
 #include "CXXR/Closure.h"
 
 #include "CXXR/ArgMatcher.hpp"
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/ClosureContext.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnException.hpp"
@@ -80,8 +80,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 				      m_matcher->numFormals() + 5)));
     // Set up environment:
     {
-	Evaluator::Context cntxt(const_cast<Expression*>(call), env, this,
-				 environment(), const_cast<PairList*>(args));
+        ClosureContext cntxt(const_cast<Expression*>(call), env, this,
+			     environment(), const_cast<PairList*>(args));
 	m_matcher->match(newenv, prepared_args);
     }
     // Perform evaluation:
@@ -90,12 +90,12 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	Environment* syspar = env;
 	// Change syspar if generic:
 	{
-	    Evaluator::Context* innerctxt = Evaluator::Context::innermost();
-	    if (innerctxt && innerctxt->isGeneric())
-		syspar = innerctxt->callEnvironment();
+	    FunctionContext* innerfctxt = FunctionContext::innermost();
+	    if (innerfctxt && innerfctxt->isGeneric())
+		syspar = innerfctxt->callEnvironment();
 	}
-	Evaluator::Context cntxt(const_cast<Expression*>(call),
-				 syspar, this, newenv, prepared_args);
+	ClosureContext cntxt(const_cast<Expression*>(call),
+			     syspar, this, newenv, prepared_args);
 	Environment::ReturnScope returnscope(newenv);
 	newenv->setSingleStepping(m_debug);
 	if (m_debug)

@@ -111,7 +111,7 @@
 #include <iostream>
 #include "Defn.h"
 #include <R_ext/Callbacks.h>
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/ClosureContext.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -579,15 +579,13 @@ SEXP ddfindVar(SEXP symbol, SEXP rho)
 
 */
 
-SEXP dynamicfindVar(SEXP symbol, Evaluator::Context *cptr)
+SEXP dynamicfindVar(SEXP symbol, ClosureContext *cptr)
 {
     SEXP vl;
     while (cptr) {
-	if (cptr->workingEnvironment()) {
-	    vl = findVarInFrame3(cptr->workingEnvironment(), symbol, TRUE);
-	    if (vl != R_UnboundValue) return vl;
-	}
-	cptr = cptr->nextOut();
+	vl = findVarInFrame3(cptr->workingEnvironment(), symbol, TRUE);
+	if (vl != R_UnboundValue) return vl;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
     return R_UnboundValue;
 }
@@ -841,7 +839,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(CADR(args)) == REALSXP || TYPEOF(CADR(args)) == INTSXP) {
 	where = asInteger(CADR(args));
-	genv = R_sysframe(where, Evaluator::Context::innermost());
+	genv = R_sysframe(where, ClosureContext::innermost());
     }
     else if (TYPEOF(CADR(args)) == NILSXP) {
 	error(_("use of NULL environment is defunct"));
@@ -1592,7 +1590,7 @@ SEXP attribute_hidden do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP pos2env(int pos, SEXP call)
 {
     SEXP env;
-    Evaluator::Context *cptr;
+    ClosureContext *cptr;
 
     if (pos == NA_INTEGER || pos < -1 || pos == 0) {
 	errorcall(call, _("invalid '%s' argument"), "pos");
@@ -1600,11 +1598,8 @@ static SEXP pos2env(int pos, SEXP call)
     }
     else if (pos == -1) {
 	/* make sure the context is a funcall */
-	cptr = Evaluator::Context::innermost();
-	while( !cptr->workingEnvironment() && cptr->nextOut()
-	       != NULL )
-	    cptr = cptr->nextOut();
-	if( !cptr->workingEnvironment() )
+	cptr = ClosureContext::innermost();
+	if( !cptr )
 	    errorcall(call, _("no enclosing environment"));
 
 	env = cptr->callEnvironment();

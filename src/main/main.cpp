@@ -68,6 +68,7 @@
 #endif
 
 #include "CXXR/Browser.hpp"
+#include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/ReturnException.hpp"
 
@@ -1092,10 +1093,12 @@ void mainloop(void)
 
 static void printwhere(void)
 {
-  Evaluator::Context *cptr;
+  FunctionContext *cptr;
   int lct = 1;
 
-  for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
+  for (cptr = FunctionContext::innermost();
+       cptr;
+       cptr = FunctionContext::innermost(cptr->nextOut())) {
     if (TYPEOF(cptr->call()) == LANGSXP) {
 	Rprintf("where %d", lct++);
 	SrcrefPrompt("", cptr->sourceLocation());
@@ -1180,10 +1183,8 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
     savestack = ProtectStack::size();
 
     if (!ENV_DEBUG(rho)) {
-	Evaluator::Context* cptr = Evaluator::Context::innermost();
+	ClosureContext* cptr = ClosureContext::innermost();
 	int tmp;
-	while ( cptr && !cptr->workingEnvironment())
-	    cptr = cptr->nextOut();
 	Rprintf("Called from: ");
 	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
 //	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
@@ -1204,7 +1205,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    GCStackRoot<> saved_handler_stack(R_HandlerStack);
 	    redo = false;
 	    try {
-		Evaluator::Context* cptr = Evaluator::Context::innermost();
+		ClosureContext* cptr = ClosureContext::innermost();
 		// CXXR doesn't have a top-level context.  The
 		// following test stops an error if browser() is
 		// invoked at top level, but this workaround needs to

@@ -51,7 +51,7 @@
 #endif
 
 #include <R_ext/RS.h> /* for S4 allocation */
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/FunctionContext.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 
@@ -337,7 +337,7 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
     SEXP s;
 
     if (length < 0 ) {
-	Evaluator::Context* ctxt = Evaluator::Context::innermost();
+	FunctionContext* ctxt = FunctionContext::innermost();
 	errorcall(ctxt ? ctxt->call() : static_cast<RObject*>(0),
 		  _("negative length vectors are not allowed"));
     }

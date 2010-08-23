@@ -44,6 +44,7 @@
 #include "Defn.h"
 
 #include "CXXR/Browser.hpp"
+#include "CXXR/ClosureContext.hpp"
 #include "CXXR/CommandTerminated.hpp"
 
 using namespace std;
@@ -55,7 +56,7 @@ using namespace CXXR;
 /* negative n counts back from the current frame */
 /* positive n counts up from the globalEnv */
 
-SEXP attribute_hidden R_sysframe(int n, Evaluator::Context *cptr)
+SEXP attribute_hidden R_sysframe(int n, ClosureContext *cptr)
 {
     if (n == 0)
 	return(R_GlobalEnv);
@@ -66,23 +67,21 @@ SEXP attribute_hidden R_sysframe(int n, Evaluator::Context *cptr)
 	n = -n;
 
     if(n < 0)
-	errorcall(Evaluator::Context::innermost()->call(),
+	errorcall(FunctionContext::innermost()->call(),
 		  _("not that many frames on the stack"));
 
     while (cptr) {
-	if (cptr->workingEnvironment() ) {
-	    if (n == 0) {  /* we need to detach the enclosing env */
-		return cptr->workingEnvironment();
-	    }
-	    else
-		n--;
+	if (n == 0) {  /* we need to detach the enclosing env */
+	    return cptr->workingEnvironment();
 	}
-	cptr = cptr->nextOut();
+	else
+	    n--;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
     if(n == 0)
 	return R_GlobalEnv;
     else
-	errorcall(Evaluator::Context::innermost()->call(),
+	errorcall(FunctionContext::innermost()->call(),
 		  _("not that many frames on the stack"));
     return R_NilValue;	   /* just for -Wall */
 }
@@ -94,21 +93,17 @@ SEXP attribute_hidden R_sysframe(int n, Evaluator::Context *cptr)
 /* It would be much simpler if sysparent just returned cptr->sysparent */
 /* but then we wouldn't be compatible with S. */
 
-int attribute_hidden R_sysparent(int n, Evaluator::Context *cptr)
+int attribute_hidden R_sysparent(int n, ClosureContext *cptr)
 {
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(Evaluator::Context::innermost()->call(),
+	errorcall(FunctionContext::innermost()->call(),
 		  _("only positive values of 'n' are allowed"));
     while (cptr && n > 1) {
-	if (cptr->workingEnvironment() )
 	    n--;
-	cptr = cptr->nextOut();
+	    cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    /* make sure we're looking at a return context */
-    while (cptr && !cptr->workingEnvironment() )
-	cptr = cptr->nextOut();
     if (!cptr)
 	return 0;
     // Foll. 3 lines probably soon redundant in CXXR:
@@ -117,12 +112,10 @@ int attribute_hidden R_sysparent(int n, Evaluator::Context *cptr)
 	return 0;
     j = 0;
     while (cptr != NULL ) {
-	if (cptr->workingEnvironment()) {
-	    j++;
-	    if( cptr->workingEnvironment() == s )
-		n=j;
-	}
-	cptr = cptr->nextOut();
+	j++;
+	if (cptr->workingEnvironment() == s)
+	    n=j;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
     n = j - n + 1;
     if (n < 0)
@@ -130,18 +123,17 @@ int attribute_hidden R_sysparent(int n, Evaluator::Context *cptr)
     return n;
 }
 
-int attribute_hidden framedepth(Evaluator::Context *cptr)
+int attribute_hidden framedepth(ClosureContext* cptr)
 {
     int nframe = 0;
     while (cptr) {
-	if (cptr->workingEnvironment() )
-	    nframe++;
-	cptr = cptr->nextOut();
+	nframe++;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
     return nframe;
 }
 
-SEXP attribute_hidden R_syscall(int n, Evaluator::Context *cptr)
+SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
 {
     /* negative n counts back from the current frame */
     /* positive n counts up from the globalEnv */
@@ -152,45 +144,44 @@ SEXP attribute_hidden R_syscall(int n, Evaluator::Context *cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(Evaluator::Context::innermost()->call(),
+	errorcall(FunctionContext::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
-	if (cptr->workingEnvironment() ) {
-	    if (n == 0) {
-	    	PROTECT(result = duplicate(cptr->call()));
-	    	if (cptr->sourceLocation())
-	    	    setAttrib(result, R_SrcrefSymbol, duplicate(cptr->sourceLocation()));
-	    	UNPROTECT(1);
-	    	return result;
-	    } else
-		n--;
-	}
-	cptr = cptr->nextOut();
+	if (n == 0) {
+	    PROTECT(result = duplicate(cptr->call()));
+	    if (cptr->sourceLocation())
+		setAttrib(result, R_SrcrefSymbol,
+			  duplicate(cptr->sourceLocation()));
+	    UNPROTECT(1);
+	    return result;
+	} else
+	    n--;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    errorcall(Evaluator::Context::innermost()->call(),
+    errorcall(FunctionContext::innermost()->call(),
 	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
 
-SEXP attribute_hidden R_sysfunction(int n, Evaluator::Context *cptr)
+SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
 {
     if (n > 0)
 	n = framedepth(cptr) - n;
     else
 	n = - n;
     if (n < 0)
-	errorcall(Evaluator::Context::innermost()->call(),
+	errorcall(FunctionContext::innermost()->call(),
 		  _("not that many frames on the stack"));
     while (cptr) {
-	if (cptr->workingEnvironment() ) {
-	    if (n == 0)
-		return duplicate(cptr->function());  /***** do we need to DUP? */
-	    else
-		n--;
+	if (n == 0) {
+	    FunctionBase* f = cptr->function();
+	    return duplicate(f);  /***** do we need to DUP? */
 	}
-	cptr = cptr->nextOut();
+	else
+	    n--;
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    errorcall(Evaluator::Context::innermost()->call(),
+    errorcall(FunctionContext::innermost()->call(),
 	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
@@ -227,16 +218,16 @@ SEXP attribute_hidden do_sysbrowser(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_error(_("no browser context to query"));
 	    Browser* browser
 		= Browser::fromOutermost(Browser::numberActive() - 1);
-	    Evaluator::Context* cptr = browser->context();
-	    while (cptr && (n > 1 || !cptr->workingEnvironment())) {
-		if (cptr->workingEnvironment()) 
-		    n--;
-		cptr = cptr->nextOut();
+	    ClosureContext* cptr = ClosureContext::innermost(browser->context());
+	    while (cptr && n > 1) {
+		n--;
+		cptr = ClosureContext::innermost(cptr->nextOut());
 	    }
 	    if (!cptr)
 		error(_("not that many functions on the call stack"));
-	    else
+	    else {
 		SET_RDEBUG(cptr->workingEnvironment(), TRUE);
+	    }
 	}
         break;
     }
@@ -253,18 +244,15 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int i, n  = -1, nframe;
     SEXP rval, t;
-    Evaluator::Context *cptr;
+    ClosureContext *cptr;
 
     checkArity(op, args);
     /* first find the context that sys.xxx needs to be evaluated in */
-    cptr = Evaluator::Context::innermost();
-    t = cptr->callEnvironment();
-    while (cptr) {
-	if (cptr->workingEnvironment() )
-	    if (cptr->workingEnvironment() == t)
-		break;
-	cptr = cptr->nextOut();
-    }
+    FunctionContext* fcptr = FunctionContext::innermost();
+    t = fcptr->callEnvironment();
+    cptr = ClosureContext::innermost(fcptr);
+    while (cptr && cptr->workingEnvironment() != t)
+	cptr = ClosureContext::innermost(cptr->nextOut());
 
     if (length(args) == 1) n = asInteger(CAR(args));
 
@@ -305,10 +293,15 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 	UNPROTECT(1);
 	return rval;
     case 7: /* sys.on.exit */
-	if( Evaluator::Context::innermost()->nextOut() != NULL)
-	    return Evaluator::Context::innermost()->nextOut()->onExit();
-	else
+	{
+	    ClosureContext* ctxt = ClosureContext::innermost();
+	    if (ctxt->nextOut()) {
+		Evaluator::Context* nxt = ctxt->nextOut();
+		if (nxt->type() == Evaluator::Context::CLOSURE)
+		    return static_cast<ClosureContext*>(nxt)->onExit();
+	    }
 	    return R_NilValue;
+	}
     case 8: /* sys.parents */
 	nframe = framedepth(cptr);
 	rval = allocVector(INTSXP, nframe);
@@ -329,7 +322,7 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int n;
     SEXP t;
-    Evaluator::Context *cptr;
+    ClosureContext *cptr;
 
     checkArity(op, args);
     t = CAR(args);
@@ -338,19 +331,18 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(n == NA_INTEGER || n < 1 )
 	error(_("invalid '%s' value"), "n");
 
-    cptr = Evaluator::Context::innermost();
-    t = cptr->callEnvironment();
+    FunctionContext* fcptr = FunctionContext::innermost();
+    t = fcptr->callEnvironment();
+    cptr = ClosureContext::innermost(fcptr);
     while (cptr){
-	if (cptr->workingEnvironment() ) {
-	    if (cptr->workingEnvironment() == t)
+	if (cptr->workingEnvironment() == t)
 	    {
 		if (n == 1)
 		    return cptr->callEnvironment();
 		n--;
 		t = cptr->callEnvironment();
 	    }
-	}
-	cptr = cptr->nextOut();
+	cptr = ClosureContext::innermost(cptr->nextOut());
     }
     return R_GlobalEnv;
 }

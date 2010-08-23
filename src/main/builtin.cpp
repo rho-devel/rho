@@ -43,7 +43,7 @@
 #include <Print.h>
 #include <Fileio.h>
 #include <Rconnections.h>
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/ClosureContext.hpp"
 
 using namespace CXXR;
 
@@ -141,7 +141,7 @@ SEXP attribute_hidden do_makelazy(SEXP call, SEXP op, SEXP args, SEXP rho)
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Evaluator::Context *ctxt;
+    ClosureContext *ctxt;
     SEXP code, oldcode, tmp, ap, argList;
     int addit = 0;
 
@@ -157,14 +157,13 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    errorcall(call, _("invalid '%s' argument"), "add");
     }
 
-    ctxt = Evaluator::Context::innermost();
+    ctxt = ClosureContext::innermost();
     /* Search for the context to which the on.exit action is to be
        attached. Lexical scoping is implemented by searching for the
        first closure call context with an environment matching the
        expression evaluation environment. */
-    while (ctxt &&
-	   !(ctxt->workingEnvironment() && ctxt->workingEnvironment() == rho))
-	ctxt = ctxt->nextOut();
+    while (ctxt && ctxt->workingEnvironment() != rho)
+	ctxt = ClosureContext::innermost(ctxt->nextOut());
     if (ctxt)
     {
 	if (addit && (oldcode = ctxt->onExit()) != R_NilValue ) {
@@ -271,7 +270,7 @@ SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
-	return Evaluator::Context::innermost()->callEnvironment();
+	return FunctionContext::innermost()->callEnvironment();
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 

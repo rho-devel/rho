@@ -41,7 +41,7 @@
 #include "CXXR/BuiltInFunction.h"
 
 #include "CXXR/DotInternal.h"
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/FunctionContext.hpp"
 #include "CXXR/ProtectStack.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
@@ -75,8 +75,7 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 	GCStackRoot<const PairList>
 	    evaluated_args(Evaluator::mapEvaluate(args, env, call));
 	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
-	    Evaluator::Context cntxt(const_cast<Expression*>(call),
-				     env, 0, 0, 0);
+	    FunctionContext cntxt(const_cast<Expression*>(call), env, 0);
 	    ans = invoke(call, evaluated_args, env);
 	} else {
 	    ans = invoke(call, evaluated_args, env);

@@ -41,8 +41,8 @@
 
 #include <Defn.h>
 #include <basedecl.h>
+#include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
-#include "CXXR/Evaluator_Context.hpp"
 
 using namespace CXXR;
 
@@ -1094,7 +1094,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP formals, actuals, rlist;
     SEXP funcall, f, b, rval, sysp, t1, t2, tail;
-    Evaluator::Context *cptr;
+    ClosureContext *cptr;
     int expdots;
 
     checkArity(op,args);
@@ -1108,17 +1108,14 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	error(_("invalid '%s' argument"), "call");
 
     /* Get the function definition */
-    sysp = Evaluator::Context::innermost()->callEnvironment();
+    sysp = FunctionContext::innermost()->callEnvironment();
 
     if (TYPEOF(CAR(args)) == NILSXP) {
 	/* Get the env that the function containing */
 	/* matchcall was called from. */
-	cptr = Evaluator::Context::innermost();
-	while (cptr != NULL) {
-	    if (cptr->workingEnvironment() && cptr->workingEnvironment() == sysp)
-		break;
-	    cptr = cptr->nextOut();
-	}
+	cptr = ClosureContext::innermost();
+	while (cptr && cptr->workingEnvironment() != sysp)
+	    cptr = ClosureContext::innermost(cptr->nextOut());
 	if ( cptr == NULL ) {
 	    sysp = R_GlobalEnv;
 	    errorcall(R_NilValue,

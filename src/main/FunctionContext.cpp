@@ -14,29 +14,36 @@
  *CXXR to the CXXR website.
  *CXXR */
 
-/** @file Evaluator_Context.cpp
+/** @file FunctionContext.cpp
  *
- * Implementation of class CXXR::Evaluator::Context.
- *
- * @note The long name Evaluator_Context.cpp is used rather than
- * Context.cpp because the latter would differ only in case from the
- * filename of context.cpp derived from CR's context.c.
+ * Implementation of class FunctionContext.
  */
 
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/FunctionContext.hpp"
+
+#include "CXXR/Environment.h"
 
 using namespace std;
 using namespace CXXR;
 
-Evaluator::Context::Context()
-    : m_next_out(innermost()), m_eval_depth(Evaluator::depth())
+RObject* R_Srcref;
+
+FunctionContext::FunctionContext(Expression* the_call, Environment* call_env,
+			         FunctionBase* function)
+    : m_srcref(R_Srcref), m_call(the_call), m_call_env(call_env),
+      m_function(function), m_generic(false)
 {
-    Evaluator::current()->m_innermost_context = this;
+    setType(FUNCTION);
 }
 
-Evaluator::Context::~Context()
+FunctionContext::~FunctionContext()
 {
-    Evaluator::setDepth(m_eval_depth);
-    Evaluator::current()->m_innermost_context = m_next_out;
+    R_Srcref = m_srcref;
 }
     
+FunctionContext* FunctionContext::innermost(Evaluator::Context* start)
+{
+    while (start && start->type() < FUNCTION)
+	start = start->nextOut();
+    return static_cast<FunctionContext*>(start);
+}

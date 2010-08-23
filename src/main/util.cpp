@@ -42,7 +42,7 @@
 #include <Defn.h>
 
 #include "CXXR/BuiltInFunction.h"
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/ClosureContext.hpp"
 
 using namespace CXXR;
 
@@ -489,14 +489,12 @@ SEXP nthcdr(SEXP s, int n)
 /* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    Evaluator::Context *cptr;
+    ClosureContext *cptr = ClosureContext::innermost();
     int nargs = NA_INTEGER;
-    for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
-	if (cptr->workingEnvironment() && cptr->workingEnvironment() == rho) {
-	    nargs = length(cptr->promiseArgs());
-	    break;
-	}
-    }
+    while (cptr && cptr->workingEnvironment() != rho)
+	cptr = ClosureContext::innermost(cptr->nextOut());
+    if (cptr)
+	nargs = length(cptr->promiseArgs());
     return ScalarInteger(nargs);
 }
 
