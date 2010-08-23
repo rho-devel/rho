@@ -541,7 +541,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     char buf[512], b[512], bb[512];
     const char *sb, *sg, *sk;
     SEXP ans, s, t, klass, method, matchedarg, generic, nextfun;
-    SEXP sysp, m, formals, actuals, tmp, newcall;
+    Environment* sysp;
+    SEXP m, formals, actuals, tmp, newcall;
     SEXP a, group, basename;
     SEXP callenv, defenv;
     ClosureContext *cptr;
@@ -568,13 +569,13 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        check to be on the safe side.  If the variables are not in the
        environment (the method was called outside a method dispatch)
        then chose reasonable defaults. */
-    callenv = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    callenv = findVarInFrame3(sysp,
 			      install(".GenericCallEnv"), TRUE);
     if (TYPEOF(callenv) == PROMSXP)
 	callenv = eval(callenv, R_BaseEnv);
     else if (callenv == R_UnboundValue)
 	    callenv = env;
-    defenv = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    defenv = findVarInFrame3(sysp,
 			     install(".GenericDefEnv"), TRUE);
     if (TYPEOF(defenv) == PROMSXP) defenv = eval(defenv, R_BaseEnv);
     else if (defenv == R_UnboundValue) defenv = R_GlobalEnv;
@@ -670,7 +671,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       the second argument to NextMethod is another option but
       isn't currently used).
     */
-    klass = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    klass = findVarInFrame3(sysp,
 			    install(".Class"), TRUE);
 
     if (klass == R_UnboundValue) {
@@ -680,7 +681,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* the generic comes from either the sysparent or it's named */
-    generic = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    generic = findVarInFrame3(sysp,
 			      install(".Generic"), TRUE);
     if (generic == R_UnboundValue)
 	generic = eval(CAR(args), env);
@@ -696,7 +697,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* determine whether we are in a Group dispatch */
 
-    group = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    group = findVarInFrame3(sysp,
 			    install(".Group"), TRUE);
     if (group == R_UnboundValue) PROTECT(group = mkString(""));
     else PROTECT(group);
@@ -716,7 +717,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        If t is R_UnboundValue then we called the current method directly
     */
 
-    method = findVarInFrame3(FunctionContext::innermost()->callEnvironment(),
+    method = findVarInFrame3(sysp,
 			     install(".Method"), TRUE);
     if( method != R_UnboundValue) {
 	const char *ss;

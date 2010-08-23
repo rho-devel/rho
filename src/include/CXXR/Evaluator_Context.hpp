@@ -100,9 +100,7 @@ namespace CXXR {
 	    CLOSURE   /**< Context corresponding to a Closure. */
 	};
 
-	Context();
-
-	virtual ~Context();
+	~Context();
 
 	/** @brief The innermost Context.
 	 *
@@ -134,6 +132,8 @@ namespace CXXR {
 	    return m_type;
 	}
     protected:
+	Context();
+
 	/** @brief Set the type of the Context.
 	 *
 	 * @param the_type The desired Type of the Context.
