@@ -92,17 +92,6 @@ namespace CXXR {
 	    return m_handlerstack;
 	}
 
-	/** @brief The innermost ClosureContext.
-	 *
-	 * @return Pointer to the innermost ClosureContext belonging to the
-	 * current Evaluator, or a null pointer if there is no such
-	 * context.
-	 */
-	static ClosureContext* innermost()
-	{
-	    return innermost(Evaluator::Context::innermost());
-	}
-
 	/** @brief Search outwards for a ClosureContext.
 	 *
 	 * This function works outwards from the Evaluator::Context \a
@@ -115,7 +104,8 @@ namespace CXXR {
 	 * @return Pointer to the innermost ClosureContext found, or
 	 * a null pointer if no such context was found.
 	 */
-	static ClosureContext* innermost(Evaluator::Context* start);
+	static ClosureContext* innermost(Evaluator::Context* start
+					 = Evaluator::Context::innermost());
 
 	/** @brief on.exit code.
 	 *

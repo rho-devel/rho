@@ -110,17 +110,6 @@ namespace CXXR {
 	    return m_function;
 	}
 
-	/** @brief The innermost FunctionContext.
-	 *
-	 * @return Pointer to the innermost FunctionContext belonging to the
-	 * current Evaluator, or a null pointer if there is no such
-	 * context.
-	 */
-	static FunctionContext* innermost()
-	{
-	    return innermost(Evaluator::Context::innermost());
-	}
-
 	/** @brief Search outwards for a FunctionContext.
 	 *
 	 * This function works outwards from the Evaluator::Context \a
@@ -133,7 +122,8 @@ namespace CXXR {
 	 * @return Pointer to the innermost FunctionContext found, or
 	 * a null pointer if no such context was found.
 	 */
-	static FunctionContext* innermost(Evaluator::Context* start);
+	static FunctionContext* innermost(Evaluator::Context* start
+					  = Evaluator::Context::innermost());
 
 	/** @brief Is this a generic function invocation?
 	 *

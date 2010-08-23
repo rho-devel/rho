@@ -391,7 +391,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     {
         Expression* callx = SEXP_downcast<Expression*>(call);
 	Environment* call_env = SEXP_downcast<Environment*>(rho);
-	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	Closure* func = SEXP_downcast<Closure*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(savedrho);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
 	ClosureContext cntxt(callx, call_env, func, working_env, promargs);
@@ -466,7 +466,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
 		syspar = innerctxt->callEnvironment();
 	}
 	Expression* callx = SEXP_downcast<Expression*>(call);
-	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	Closure* func = SEXP_downcast<Closure*>(op);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
 	ClosureContext cntxt(callx, syspar, func, newrho, promargs);
 
@@ -572,7 +572,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     {
         Expression* callx = SEXP_downcast<Expression*>(call);
 	Environment* call_env = SEXP_downcast<Environment*>(rho);
-	FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+	Closure* func = SEXP_downcast<Closure*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(newrho);
 	PairList* promargs = SEXP_downcast<PairList*>(arglist);
 	ClosureContext cntxt(callx, call_env, func, working_env, promargs);
