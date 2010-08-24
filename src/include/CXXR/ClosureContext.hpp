@@ -52,7 +52,20 @@ extern "C" {
 }
 
 namespace CXXR {
-    /** @brief Context recording the invocation of a Closure.
+    /** @brief Context typically recording the call of a Closure.
+     *
+     * The normal use of a ClosureContext is to record the application
+     * of a Closure.
+     *
+     * However, ClosureContext objects are also created by do_eval(),
+     * DispatchOrEval() and tryDispatch() (all in eval.cpp), and in
+     * such cases the \a function parameter to the constructor may be
+     * null, or point to a BuiltInFunction rather than a Closure, and
+     * the arguments listed by the \a promise_args parameter may not
+     * actually be wrapped in Promise objects.
+     *
+     * @todo Regularize aberrant (i.e. non-Closure-related) uses of
+     * ClosureContext.
      */
     class ClosureContext : public FunctionContext {
     public:
@@ -64,7 +77,8 @@ namespace CXXR {
 	 * @param call_env Pointer to the Environment in which \a
 	 *          the_call is to be evaluated.
 	 *
-	 * @param function Pointer to the Closure being applied.
+	 * @param function Pointer to the FunctionBase being applied.
+	 *          Normally this will be a Closure.
 	 *
 	 * @param working_env Pointer to the working environment of
 	 *          the Closure, i.e. the environment in which
