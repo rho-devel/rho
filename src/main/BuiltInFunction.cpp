@@ -74,12 +74,8 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     else {
 	GCStackRoot<const PairList>
 	    evaluated_args(Evaluator::mapEvaluate(args, env, call));
-	if (Evaluator::profiling() || kind() == PP_FOREIGN) {
-	    FunctionContext cntxt(const_cast<Expression*>(call), env, 0);
-	    ans = invoke(call, evaluated_args, env);
-	} else {
-	    ans = invoke(call, evaluated_args, env);
-	}
+	FunctionContext cntxt(const_cast<Expression*>(call), env, 0);
+	ans = invoke(call, evaluated_args, env);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);

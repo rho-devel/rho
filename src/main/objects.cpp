@@ -55,7 +55,7 @@ using namespace CXXR;
 static SEXP GetObject(ClosureContext *cptr)
 {
     SEXP s, sysp, b, formals, funcall, tag;
-    sysp = FunctionContext::innermost()->callEnvironment();
+    sysp = ClosureContext::innermost()->callEnvironment();
 
     PROTECT(funcall = R_syscall(0, cptr));
 
@@ -365,9 +365,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    }
 	    t = newcall;
 	    SETCAR(t, method);
-	    FunctionContext::innermost()->setGeneric(true);
+	    ClosureContext::innermost()->setGeneric(true);
 	    *ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	    FunctionContext::innermost()->setGeneric(false);
+	    ClosureContext::innermost()->setGeneric(false);
 	    UNPROTECT(nprotect);
 	    return 1;
 	}
@@ -389,9 +389,9 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	defineVar(install(".GenericDefEnv"), defrho, newrho);
 	t = newcall;
 	SETCAR(t, method);
-	FunctionContext::innermost()->setGeneric(true);
+	ClosureContext::innermost()->setGeneric(true);
 	*ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	FunctionContext::innermost()->setGeneric(false);
+	ClosureContext::innermost()->setGeneric(false);
 	UNPROTECT(5);
 	return 1;
     }
@@ -548,12 +548,11 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     ClosureContext *cptr;
     int i, j;
 
-    FunctionContext* fcptr = FunctionContext::innermost();
-    fcptr->setGeneric(true);
+    cptr = ClosureContext::innermost();
+    cptr->setGeneric(true);
 
     /* get the env NextMethod was called from */
-    sysp = fcptr->callEnvironment();
-    cptr = ClosureContext::innermost(fcptr);
+    sysp = cptr->callEnvironment();
     while (cptr && cptr->workingEnvironment() != sysp)
 	cptr = ClosureContext::innermost(cptr->nextOut());
     if (cptr == NULL)

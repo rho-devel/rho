@@ -248,9 +248,8 @@ SEXP attribute_hidden do_sys(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     checkArity(op, args);
     /* first find the context that sys.xxx needs to be evaluated in */
-    FunctionContext* fcptr = FunctionContext::innermost();
-    t = fcptr->callEnvironment();
-    cptr = ClosureContext::innermost(fcptr);
+    cptr = ClosureContext::innermost();
+    t = cptr->callEnvironment();
     while (cptr && cptr->workingEnvironment() != t)
 	cptr = ClosureContext::innermost(cptr->nextOut());
 
@@ -331,9 +330,8 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(n == NA_INTEGER || n < 1 )
 	error(_("invalid '%s' value"), "n");
 
-    FunctionContext* fcptr = FunctionContext::innermost();
-    t = fcptr->callEnvironment();
-    cptr = ClosureContext::innermost(fcptr);
+    cptr = ClosureContext::innermost();
+    t = cptr->callEnvironment();
     while (cptr){
 	if (cptr->workingEnvironment() == t)
 	    {

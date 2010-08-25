@@ -90,9 +90,9 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	Environment* syspar = env;
 	// Change syspar if generic:
 	{
-	    FunctionContext* innerfctxt = FunctionContext::innermost();
-	    if (innerfctxt && innerfctxt->isGeneric())
-		syspar = innerfctxt->callEnvironment();
+	    ClosureContext* innercctxt = ClosureContext::innermost();
+	    if (innercctxt && innercctxt->isGeneric())
+		syspar = innercctxt->callEnvironment();
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),
 			     syspar, this, newenv, prepared_args);

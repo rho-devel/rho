@@ -461,7 +461,7 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     {
         Environment* syspar = SEXP_downcast<Environment*>(rho);
 	{
-	    FunctionContext* innerctxt = FunctionContext::innermost();
+	    ClosureContext* innerctxt = ClosureContext::innermost();
 	    if (innerctxt && innerctxt->isGeneric())
 		syspar = innerctxt->callEnvironment();
 	}
@@ -1686,7 +1686,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     args = cptr->promiseArgs();
     /* get the env recall was called from */
-    s = FunctionContext::innermost()->callEnvironment();
+    s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }

@@ -1018,7 +1018,7 @@ SEXP attribute_hidden do_bindtextdomain(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP findCall(void)
 {
     ClosureContext *cptr
-	= ClosureContext::innermost(Evaluator::Context::innermost()->nextOut());
+	= ClosureContext::innermost(ClosureContext::innermost()->nextOut());
     return (cptr ? cptr->call() : 0);
 }
 

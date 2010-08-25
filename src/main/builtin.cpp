@@ -270,7 +270,7 @@ SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (TYPEOF(CAR(args)) == CLOSXP)
 	return CLOENV(CAR(args));
     else if (CAR(args) == R_NilValue)
-	return FunctionContext::innermost()->callEnvironment();
+	return ClosureContext::innermost()->callEnvironment();
     else return getAttrib(CAR(args), R_DotEnvSymbol);
 }
 
