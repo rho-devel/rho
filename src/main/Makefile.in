@@ -45,7 +45,7 @@ SOURCES_CXX = \
 	MemoryBank.cpp \
         PairList.cpp Promise.cpp ProtectStack.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
-        RealVector.cpp Renviron.cpp \
+        RealVector.cpp Renviron.cpp ReturnBailout.cpp \
         S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \

@@ -34,81 +34,57 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file S4Object.h
+/** @file Bailout.hpp
  *
- * @brief Class CXXR::S4Object and associated C interface.
- *
- * (S4Object implements S4SXP.)
+ * @brief Class CXXR::Bailout.
  */
 
-#ifndef S4OBJECT_H
-#define S4OBJECT_H
+#ifndef BAILOUT_HPP
+#define BAILOUT_HPP
 
 #include "CXXR/RObject.h"
-
-#ifdef __cplusplus
 
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    /** @brief S4 object.
+    /** @brief Class used to implement indirect flow of control in R.
      *
-     * This class is used to implement S4 classes that do not extend
-     * objects of another R type, and corresponds to the ::SEXPTYPE
-     * S4SXP.
+     * Classes derived from this abstract base class are used in
+     * implementing R functions such as 'return' and 'break' that
+     * result in an indirect flow of control, with the intention that
+     * in the most common cases the overhead of throwing and
+     * propagating a C++ exception can be avoided.
      *
-     * @note The 'R Internals' document says that S4SXP objects have a
-     * tag field.  This is not currently implemented in CXXR.
+     * An R function such as 'return' is implemented so that it
+     * creates an object of a class inheriting from Bailout.  The
+     * basic idea is that this object is then passed as a return value
+     * up the chain from called function to caller, until it reaches
+     * the intended destination of the indirect flow of control.
+     *
+     * However, this passing up the call chain happens only if the
+     * caller has indicated, by wrapping its call in a BailoutContext,
+     * that it is able to propagate the Bailout object correctly.  If
+     * that is not the case, then the called function will invoke the
+     * throwException() method of the Bailout object, which - as the
+     * name suggests - will complete the indirect flow of control by
+     * throwing a C++ exception.
      */
-    class S4Object : public RObject {
+    class Bailout : public RObject {
     public:
 	/** @brief Default constructor.
 	 */
-	S4Object()
-	    : RObject(S4SXP)
+	Bailout()
+	    : RObject(BAILSXP)
 	{}
 
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern S4Object to be copied.
+	/** @brief Throw the corresponding C++ exception.
 	 */
-	S4Object(const S4Object& pattern)
-	    : RObject(pattern)
-	{}
-
-	/** @brief The name by which this type is known in R.
-	 *
-	 * @return the name by which this type is known in R.
-	 */
-	static const char* staticTypeName()
-	{
-	    return "S4";
-	}
-
-	// Virtual functions of RObject:
-	S4Object* clone() const;
-	const char* typeName() const;
+	virtual void throwException() = 0;
     private:
-	// Declared private to ensure that S4Objects are allocated
-	// only using 'new':
-	~S4Object() {}
-
-	// Not implemented.  Declared to prevent compiler-generated version:
-        S4Object& operator=(const S4Object&);
+	// Not implemented.  Declared to prevent compiler-generated versions:
+	Bailout(const Bailout&);
+        Bailout& operator=(const Bailout&);
     };
 } // namespace CXXR
 
-extern "C" {
-#endif  /* __cplusplus */
-
-    /** @brief Create an S4 object.
-     *
-     * @return Pointer to the created object.
-     */
-    SEXP Rf_allocS4Object();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* S4OBJECT_H */
+#endif // BAILOUT_HPP

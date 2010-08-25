@@ -60,10 +60,10 @@ namespace CXXR {
      * <li>The primary function is to maintain an 'Ariadne's thread',
      * recording information about the stack of R function calls
      * currently active.  This is to support error reporting,
-     * traceback, and the 'sys' R functions.  Calls to built-in
-     * functions, other than 'foreign' functions and various other
-     * special cases, are not recorded unless R profiling is
-     * enabled.</li>
+     * traceback, and the 'sys' R functions.  As in CR, calls to
+     * 'special' BuiltInFunction objects (SPECIALSXP) are not
+     * recorded; however, unlike CR, calls to other BuiltInFunction
+     * objects (BUILTINSXP) are always recorded.</li>
      *
      * <li>Derived classes may also carry out a secondary function,
      * namely to save and restore information about the evaluation
@@ -96,8 +96,9 @@ namespace CXXR {
 	 * \c dynamic_cast .
 	 */
 	enum Type {
-	    FUNCTION, /**< Context corresponding to a BuiltInFunction. */
-	    CLOSURE   /**< Context corresponding to a Closure. */
+	    BAILOUT = 0, /**< Context understanding Bailout objects. */
+	    FUNCTION,    /**< Context corresponding to a BuiltInFunction. */
+	    CLOSURE      /**< Context corresponding to a Closure. */
 	};
 
 	~Context();

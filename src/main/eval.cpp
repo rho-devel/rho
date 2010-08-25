@@ -58,6 +58,7 @@
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/LoopException.hpp"
+#include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 
 using namespace std;
@@ -1114,7 +1115,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP v;
+    GCStackRoot<> v;
 
     if (args == R_NilValue) /* zero arguments provided */
 	v = R_NilValue;
@@ -1128,9 +1129,11 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* envir = SEXP_downcast<Environment*>(rho);
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
-    throw ReturnException(envir, v);
-
-    return R_NilValue; /*NOTREACHED*/
+    GCStackRoot<ReturnBailout> rbo(GCNode::expose(new ReturnBailout(envir, v)));
+    Evaluator::Context* ctxt = Evaluator::Context::innermost();
+    if (!ctxt || ctxt->type() != Evaluator::Context::BAILOUT)
+	rbo->throwException();
+    return rbo;
 }
 
 

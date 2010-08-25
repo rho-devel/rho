@@ -57,10 +57,9 @@ namespace CXXR {
      * object that is not also a ClosureContext records the invocation
      * of a BuiltInFunction.
      *
-     * Note that calls to built-in functions, other than 'foreign'
-     * functions and various other special cases, are not recorded
-     * unless R profiling is enabled.
-     *
+     * Note that as in CR, calls to 'special' BuiltInFunction objects
+     * (SPECIALSXP) are not recorded; however, unlike CR, calls to
+     * other BuiltInFunction objects (BUILTINSXP) are always recorded.
      */
     class FunctionContext : public Evaluator::Context {
     public:

@@ -144,6 +144,10 @@ extern "C" {
 	CXXSXP      = 43,   /**< object types specific to CXXR.*/
 	                    /* (43 = ASCII +) */
 
+	BAILSXP     = 44,   /**< Object used to implement indirect flow of
+			     *   control in R without using a C++ exception.
+			     */
+
 	FUNSXP	    = 99    /**< Closure or Builtin.  No CXXR::RObject has
 			       this type. */
     } SEXPTYPE;
