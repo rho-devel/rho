@@ -51,6 +51,7 @@ void ReturnBailout::detachReferents() {
 }
 
 void ReturnBailout::throwException() {
+    R_Visible = Rboolean(m_print_result);
     throw ReturnException(m_environment, m_value);
 }
 

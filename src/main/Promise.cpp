@@ -42,8 +42,9 @@
 
 #include "localization.h"
 #include "R_ext/Error.h"
-#include "CXXR/Evaluator_Context.hpp"
+#include "CXXR/Bailout.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/PlainContext.hpp"
 
 using namespace CXXR;
 
@@ -79,6 +80,7 @@ RObject* Promise::evaluate(Environment* /*env*/)
 		       "or earlier problems?"));
 	m_under_evaluation = true;
 	try {
+	    PlainContext cntxt;
 	    RObject* val = Evaluator::evaluate(m_valgen, environment());
 	    setValue(val);
 	}

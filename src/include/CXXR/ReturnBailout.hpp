@@ -41,6 +41,7 @@
 #define RETURNBAILOUT_HPP 1
 
 #include "CXXR/Bailout.hpp"
+#include "CXXR/Evaluator.h"
 
 namespace CXXR {
     class Environment;
@@ -64,7 +65,8 @@ namespace CXXR {
 	 *          be conveyed back to the return destination.
 	 */
 	ReturnBailout(Environment* the_environment, RObject* the_value)
-	    : m_environment(the_environment), m_value(the_value)
+	    : m_environment(the_environment), m_value(the_value),
+	      m_print_result(R_Visible)
 	{}
 
 	/** @brief Target Environment of this ReturnBailout.
@@ -75,6 +77,16 @@ namespace CXXR {
 	Environment* environment() const
 	{
 	    return m_environment;
+	}
+
+	/** @brief Should result be printed?
+	 *
+	 * @return true iff the return value should be printed if it
+	 * ends up as the result of a top-level command.
+	 */
+	bool printResult() const
+	{
+	    return m_print_result;
 	}
 
 	/** @brief Payload of this ReturnBailout.
@@ -98,6 +110,7 @@ namespace CXXR {
     private:
 	GCEdge<Environment> m_environment;
 	GCEdge<> m_value;
+	bool m_print_result;
 
 	// Declared private to ensure that ReturnBailout objects are
 	// allocated only using 'new':

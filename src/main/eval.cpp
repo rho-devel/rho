@@ -54,6 +54,7 @@
 #include "arithmetic.h"
 #include "basedecl.h"
 
+#include "CXXR/BailoutContext.hpp"
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
@@ -841,7 +842,21 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
         R_Visible = FALSE; /* case of no 'else' so return invisible NULL */
         return Stmt;
     }
-    return (eval(Stmt, rho));
+
+    {
+	RObject* ans;
+	{
+	    BailoutContext bcntxt;
+	    ans = eval(Stmt, rho);
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    Evaluator::Context* callctxt
+		= Evaluator::Context::innermost()->nextOut();
+	    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
+		static_cast<Bailout*>(ans)->throwException();
+	}
+	return ans;
+    }
 }
 
 namespace {
@@ -866,8 +881,8 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     int nm;
     volatile int i, n, bgn;
     SEXP sym, body;
-    volatile SEXP val;
-    GCStackRoot<> ans, v;
+    GCStackRoot<> ans, v, val;
+    GCStackRoot<> argsrt(args), rhort(rho);
 
     sym = CAR(args);
     val = CADR(args);
@@ -875,19 +890,15 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if ( !isSymbol(sym) ) errorcall(call, _("non-symbol loop variable"));
 
-    PROTECT(args);
-    PROTECT(rho);
-    PROTECT(val = eval(val, rho));
+    val = eval(val, rho);
     defineVar(sym, R_NilValue, rho);
 
     /* deal with the case where we are iterating over a factor
        we need to coerce to character - then iterate */
 
     if( inherits(val, "factor") ) {
-        PROTECT(ans = asCharacterFactor(val));
+        ans = asCharacterFactor(val);
 	val = ans;
-	UNPROTECT(2);  /* ans and val from above */
-        PROTECT(val);
     }
 
     if (isList(val) || isNull(val)) {
@@ -965,7 +976,19 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		default:
 		    errorcall(call, _("invalid for() loop sequence"));
 		}
-		ans = eval(body, rho);
+		{
+		    BailoutContext bcntxt;
+		    ans = eval(body, rho);
+		}
+		if (ans && ans->sexptype() == BAILSXP) {
+		    SET_ENV_DEBUG(rho, dbg);
+		    Evaluator::Context* callctxt
+			= Evaluator::Context::innermost()->nextOut();
+		    if (!callctxt
+			|| callctxt->type() != Evaluator::Context::BAILOUT)
+			static_cast<Bailout*>(ans.get())->throwException();
+		    return ans;
+		}
 	    }
 	    catch (LoopException& lx) {
 		if (lx.environment() != env)
@@ -975,7 +998,6 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    }
 	}
     }
-    UNPROTECT(3);
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
 }
@@ -1002,8 +1024,21 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    redo = false;
 	    try {
 		while (asLogicalNoNA(eval(CAR(args), rho), call)) {
+		    RObject* ans;
 		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		    eval(body, rho);
+		    {
+			BailoutContext bcntxt;
+			ans = eval(body, rho);
+		    }
+		    if (ans && ans->sexptype() == BAILSXP) {
+			SET_ENV_DEBUG(rho, dbg);
+			Evaluator::Context* callctxt
+			    = Evaluator::Context::innermost()->nextOut();
+			if (!callctxt
+			    || callctxt->type() != Evaluator::Context::BAILOUT)
+			    static_cast<Bailout*>(ans)->throwException();
+			return ans;
+		    }
 		}
 	    }
 	    catch (LoopException& lx) {
@@ -1039,8 +1074,21 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    redo = false;
 	    try {
 		for (;;) {
+		    RObject* ans;
 		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		    eval(body, rho);
+		    {
+			BailoutContext bcntxt;
+			ans = eval(body, rho);
+		    }
+		    if (ans && ans->sexptype() == BAILSXP) {
+			SET_ENV_DEBUG(rho, dbg);
+			Evaluator::Context* callctxt
+			    = Evaluator::Context::innermost()->nextOut();
+			if (!callctxt
+			    || callctxt->type() != Evaluator::Context::BAILOUT)
+			    static_cast<Bailout*>(ans)->throwException();
+			return ans;
+		    }
 		}
 	    }
 	    catch (LoopException& lx) {
@@ -1086,16 +1134,15 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP s = R_NilValue;
     if (args != R_NilValue) {
-    	SEXP srcrefs = getSrcrefs(call, args);
+    	GCStackRoot<> srcrefs(getSrcrefs(call, args));
     	int i = 1;
     	R_Srcref = R_NilValue;
 	while (args != R_NilValue) {
 	    if (srcrefs != R_NilValue) {
-	    	PROTECT(R_Srcref = VECTOR_ELT(srcrefs, i++));
+	    	R_Srcref = VECTOR_ELT(srcrefs, i++);
 	    	if (  TYPEOF(R_Srcref) != INTSXP
 	    	    || length(R_Srcref) != 6) {
 	    	    srcrefs = R_Srcref = R_NilValue;
-	    	    UNPROTECT(1);
 	    	}
 	    }
 	    if (ENV_DEBUG(rho)) {
@@ -1103,8 +1150,18 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 		PrintValue(CAR(args));
 		do_browser(call, op, R_NilValue, rho);
 	    }
-	    s = eval(CAR(args), rho);
-	    if (srcrefs != R_NilValue) UNPROTECT(1);
+	    {
+		BailoutContext bcntxt;
+		s = eval(CAR(args), rho);
+	    }
+	    if (s && s->sexptype() == BAILSXP) {
+		Evaluator::Context* callctxt
+		    = Evaluator::Context::innermost()->nextOut();
+		if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
+		    static_cast<Bailout*>(s)->throwException();
+		R_Srcref = 0;
+		return s;
+	    }
 	    args = CDR(args);
 	}
 	R_Srcref = R_NilValue;
@@ -1130,8 +1187,8 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
     GCStackRoot<ReturnBailout> rbo(GCNode::expose(new ReturnBailout(envir, v)));
-    Evaluator::Context* ctxt = Evaluator::Context::innermost();
-    if (!ctxt || ctxt->type() != Evaluator::Context::BAILOUT)
+    Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
+    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	rbo->throwException();
     return rbo;
 }

@@ -40,12 +40,16 @@
 
 #include "CXXR/Closure.h"
 
+#include <cstdlib>
 #include "CXXR/ArgMatcher.hpp"
+#include "CXXR/BailoutContext.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 
+using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -101,7 +105,19 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	if (m_debug)
 	    debug(newenv, call, prepared_args, env);
 	try {
-	    ans = Evaluator::evaluate(m_body, newenv);
+	    {
+		BailoutContext boctxt;
+		ans = Evaluator::evaluate(m_body, newenv);
+	    }
+	    if (ans && ans->sexptype() == BAILSXP) {
+		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans.get());
+		if (!rbo)
+		    static_cast<Bailout*>(ans.get())->throwException();
+		if (rbo->environment() != newenv)
+		    abort();
+		R_Visible = Rboolean(rbo->printResult());
+		ans = rbo->value();
+	    }
 	}
 	catch (ReturnException& rx) {
 	    if (rx.environment() != newenv)
