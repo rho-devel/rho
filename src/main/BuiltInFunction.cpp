@@ -42,6 +42,7 @@
 
 #include "CXXR/DotInternal.h"
 #include "CXXR/FunctionContext.hpp"
+#include "CXXR/PlainContext.hpp"
 #include "CXXR/ProtectStack.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/RAllocStack.h"
@@ -69,12 +70,13 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     size_t ralloc_size = RAllocStack::size();
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<> ans;
-    if (sexptype() == SPECIALSXP)
+    if (sexptype() == SPECIALSXP) {
+	PlainContext cntxt;
 	ans = invoke(call, args, env);
-    else {
+    } else {
 	GCStackRoot<const PairList>
 	    evaluated_args(Evaluator::mapEvaluate(args, env, call));
-	FunctionContext cntxt(const_cast<Expression*>(call), env, 0);
+	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
 	ans = invoke(call, evaluated_args, env);
     }
     if (m_result_printing_mode != SOFT_ON)

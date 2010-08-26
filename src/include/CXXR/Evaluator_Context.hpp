@@ -97,6 +97,7 @@ namespace CXXR {
 	 */
 	enum Type {
 	    BAILOUT = 0, /**< Context understanding Bailout objects. */
+	    PLAIN,       /**< Lightweight Context neutraliseing BailoutContext. */
 	    FUNCTION,    /**< Context corresponding to a BuiltInFunction. */
 	    CLOSURE      /**< Context corresponding to a Closure. */
 	};
