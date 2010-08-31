@@ -1003,15 +1003,21 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		}
 		if (ans && ans->sexptype() == BAILSXP) {
 		    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans.get());
-		    if (lbo)
-			lbo->throwException();
-		    SET_ENV_DEBUG(rho, dbg);
-		    Evaluator::Context* callctxt
-			= Evaluator::Context::innermost()->nextOut();
-		    if (!callctxt
-			|| callctxt->type() != Evaluator::Context::BAILOUT)
-			static_cast<Bailout*>(ans.get())->throwException();
-		    return ans;
+		    if (lbo) {
+			if (lbo->environment() != rho)
+			    abort();
+			if (lbo->next())
+			    continue;
+			else break;
+		    } else {  // This must be a ReturnBailout:
+			SET_ENV_DEBUG(rho, dbg);
+			Evaluator::Context* callctxt
+			    = Evaluator::Context::innermost()->nextOut();
+			if (!callctxt
+			    || callctxt->type() != Evaluator::Context::BAILOUT)
+			    static_cast<Bailout*>(ans.get())->throwException();
+			return ans;
+		    }
 		}
 	    }
 	    catch (LoopException& lx) {
@@ -1115,15 +1121,21 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    }
 		    if (ans && ans->sexptype() == BAILSXP) {
 			LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
-			if (lbo)
-			    lbo->throwException();
-			SET_ENV_DEBUG(rho, dbg);
-			Evaluator::Context* callctxt
-			    = Evaluator::Context::innermost()->nextOut();
-			if (!callctxt
-			    || callctxt->type() != Evaluator::Context::BAILOUT)
-			    static_cast<Bailout*>(ans)->throwException();
-			return ans;
+			if (lbo) {
+			    if (lbo->environment() != rho)
+				abort();
+			    if (lbo->next())
+				continue;
+			    else break;
+			} else {  // This must be a ReturnBailout:
+			    SET_ENV_DEBUG(rho, dbg);
+			    Evaluator::Context* callctxt
+				= Evaluator::Context::innermost()->nextOut();
+			    if (!callctxt
+				|| callctxt->type() != Evaluator::Context::BAILOUT)
+				static_cast<Bailout*>(ans)->throwException();
+			    return ans;
+			}
 		    }
 		}
 	    }
