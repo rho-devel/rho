@@ -58,6 +58,7 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
@@ -1001,6 +1002,9 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
 		    ans = eval(body, rho);
 		}
 		if (ans && ans->sexptype() == BAILSXP) {
+		    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans.get());
+		    if (lbo)
+			lbo->throwException();
 		    SET_ENV_DEBUG(rho, dbg);
 		    Evaluator::Context* callctxt
 			= Evaluator::Context::innermost()->nextOut();
@@ -1051,13 +1055,22 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
 			ans = eval(body, rho);
 		    }
 		    if (ans && ans->sexptype() == BAILSXP) {
-			SET_ENV_DEBUG(rho, dbg);
-			Evaluator::Context* callctxt
-			    = Evaluator::Context::innermost()->nextOut();
-			if (!callctxt
-			    || callctxt->type() != Evaluator::Context::BAILOUT)
-			    static_cast<Bailout*>(ans)->throwException();
-			return ans;
+			LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
+			if (lbo) {
+			    if (lbo->environment() != rho)
+				abort();
+			    if (lbo->next())
+				continue;
+			    else break;
+			} else {  // This must be a ReturnBailout:
+			    SET_ENV_DEBUG(rho, dbg);
+			    Evaluator::Context* callctxt
+				= Evaluator::Context::innermost()->nextOut();
+			    if (!callctxt
+				|| callctxt->type() != Evaluator::Context::BAILOUT)
+				static_cast<Bailout*>(ans)->throwException();
+			    return ans;
+			}
 		    }
 		}
 	    }
@@ -1101,6 +1114,9 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
 			ans = eval(body, rho);
 		    }
 		    if (ans && ans->sexptype() == BAILSXP) {
+			LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
+			if (lbo)
+			    lbo->throwException();
 			SET_ENV_DEBUG(rho, dbg);
 			Evaluator::Context* callctxt
 			    = Evaluator::Context::innermost()->nextOut();
@@ -1128,8 +1144,11 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     if (!env->loopActive())
 	Rf_error(_("no loop to break from, jumping to top level"));
-    throw LoopException(env, PRIMVAL(op) == 1);
-    return R_NilValue;
+    LoopBailout* lbo = GCNode::expose(new LoopBailout(env, PRIMVAL(op) == 1));
+    Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
+    if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
+	lbo->throwException();
+    return lbo;
 }
 
 

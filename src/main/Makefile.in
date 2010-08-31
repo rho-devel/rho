@@ -41,7 +41,7 @@ SOURCES_CXX = \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
         inspect.cpp IntVector.cpp \
-	ListVector.cpp LogicalVector.cpp \
+	ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
         PairList.cpp Promise.cpp ProtectStack.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
