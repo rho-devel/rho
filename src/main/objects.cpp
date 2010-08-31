@@ -47,7 +47,7 @@
 #include "basedecl.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/ReturnException.hpp"
+#include "CXXR/ReturnBailout.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -408,19 +408,21 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans, generic = R_NilValue /* -Wall */, obj, val;
+    SEXP ans;
+    GCStackRoot<> generic, obj;
+    SEXP val;
     SEXP callenv, defenv;
-    SEXP ap, argList;
+    GCStackRoot<> ap, argList;
     ClosureContext *cptr = 0;
 
-    PROTECT(ap = list2(R_NilValue, R_NilValue));
+    ap = list2(R_NilValue, R_NilValue);
     SET_TAG(ap,  install("generic"));
     SET_TAG(CDR(ap), install("object"));
-    PROTECT(argList =  matchArgs(ap, args, call));
+    argList =  matchArgs(ap, args, call);
     if (CAR(argList) == R_MissingArg)
 	errorcall(call, _("there must be a 'generic' argument"));	
     else 
-	PROTECT(generic = eval(CAR(argList), env));
+	generic = eval(CAR(argList), env);
     if(!isString(generic) || length(generic) != 1)
 	errorcall(call, _("'generic' argument must be a character string"));
 
@@ -458,14 +460,14 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     else defenv = R_BaseNamespace;
 
     if (CADR(argList) != R_MissingArg)
-	PROTECT(obj = eval(CADR(argList), env));
+	obj = eval(CADR(argList), env);
     else {
 	cptr = ClosureContext::innermost();
 	while (cptr && cptr->workingEnvironment() != env)
 	    cptr = ClosureContext::innermost(cptr->nextOut());
 	if (cptr == NULL)
 	    errorcall(call, _("'UseMethod' called from outside a closure"));
-	PROTECT(obj = GetObject(cptr));
+	obj = GetObject(cptr);
     }
 
     if (TYPEOF(generic) != STRSXP ||
@@ -475,17 +477,21 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (usemethod(translateChar(STRING_ELT(generic, 0)), obj, call, CDR(args),
 		  env, callenv, defenv, &ans) == 1) {
-	UNPROTECT(3); /* obj, ap, argList */
+	GCStackRoot<> ansrt(ans);
 	Environment* envir = SEXP_downcast<Environment*>(env);
 	if (!envir->canReturn())
 	    Rf_error(_("no function to return from, jumping to top level"));
-	throw ReturnException(envir, ans);
+	ReturnBailout* rbo = GCNode::expose(new ReturnBailout(envir, ans));
+	Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
+	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
+	    rbo->throwException();
+	return rbo;
     }
     else {
-	SEXP klass;
+	GCStackRoot<> klass;
 	int nclass;
 	char cl[1000];
-	PROTECT(klass = R_data_class2(obj));
+	klass = R_data_class2(obj);
 	nclass = length(klass);
 	if (nclass == 1) 
 	    strcpy(cl, translateChar(STRING_ELT(klass, 0)));

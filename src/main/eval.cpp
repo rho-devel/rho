@@ -1225,7 +1225,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* envir = SEXP_downcast<Environment*>(rho);
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
-    ReturnBailout* rbo(GCNode::expose(new ReturnBailout(envir, v)));
+    ReturnBailout* rbo = GCNode::expose(new ReturnBailout(envir, v));
     Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
     if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	rbo->throwException();
