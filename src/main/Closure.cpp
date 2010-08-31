@@ -111,9 +111,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	    }
 	    if (ans && ans->sexptype() == BAILSXP) {
 		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans.get());
-		if (!rbo)
-		    static_cast<Bailout*>(ans.get())->throwException();
-		if (rbo->environment() != newenv)
+		if (!rbo || rbo->environment() != newenv)
 		    abort();
 		R_Visible = Rboolean(rbo->printResult());
 		ans = rbo->value();

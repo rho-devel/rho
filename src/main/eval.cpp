@@ -514,7 +514,17 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     regdb:
 	Environment::ReturnScope returnscope(newrho);
 	try {
-	    tmp = eval(body, newrho);
+	    {
+		BailoutContext boctxt;
+		tmp = Evaluator::evaluate(body, newrho);
+	    }
+	    if (tmp && tmp->sexptype() == BAILSXP) {
+		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(tmp.get());
+		if (!rbo || rbo->environment() != newrho)
+		    abort();
+		R_Visible = Rboolean(rbo->printResult());
+		tmp = rbo->value();
+	    }
 	}
 	catch (ReturnException& rx) {
 	    if (rx.environment() != newrho)
@@ -612,7 +622,17 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	Environment* envir = SEXP_downcast<Environment*>(newrho);
 	Environment::ReturnScope returnscope(envir);
 	try {
-	    tmp = eval(body, newrho);
+	    {
+		BailoutContext boctxt;
+		tmp = Evaluator::evaluate(body, envir);
+	    }
+	    if (tmp && tmp->sexptype() == BAILSXP) {
+		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(tmp.get());
+		if (!rbo || rbo->environment() != envir)
+		    abort();
+		R_Visible = Rboolean(rbo->printResult());
+		tmp = rbo->value();
+	    }
 	}
 	catch (ReturnException& rx) {
 	    if (rx.environment() != envir)
