@@ -941,90 +941,88 @@ SEXP attribute_hidden do_for(SEXP call, SEXP op, SEXP args, SEXP rho)
     /***** nm may not be needed anymore now that NAMED(val) is at
 	   least 1.  LT */
     nm = NAMED(val);
-    {
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	Environment::LoopScope loopscope(env);
-	for (i = 0; i < n; i++) {
-	    try {
-		DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		switch (TYPEOF(val)) {
-		case LGLSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    LOGICAL(v)[0] = LOGICAL(val)[i];
-		    setVar(sym, v, rho);
-		    break;
-		case INTSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    INTEGER(v)[0] = INTEGER(val)[i];
-		    setVar(sym, v, rho);
-		    break;
-		case REALSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    REAL(v)[0] = REAL(val)[i];
-		    setVar(sym, v, rho);
-		    break;
-		case CPLXSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    COMPLEX(v)[0] = COMPLEX(val)[i];
-		    setVar(sym, v, rho);
-		    break;
-		case STRSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    SET_STRING_ELT(v, 0, STRING_ELT(val, i));
-		    setVar(sym, v, rho);
-		    break;
-		case RAWSXP:
-		    v = allocVector(TYPEOF(val), 1);
-		    RAW(v)[0] = RAW(val)[i];
-		    setVar(sym, v, rho);
-		    break;
-		case EXPRSXP:
-		    /* make sure loop variable is a copy if needed */
-		    if(nm > 0) SET_NAMED(XVECTOR_ELT(val, i), 2);
-		    setVar(sym, XVECTOR_ELT(val, i), rho);
-		    break;
-		case VECSXP:
-		    /* make sure loop variable is a copy if needed */
-		    if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
-		    setVar(sym, VECTOR_ELT(val, i), rho);
-		    break;
-		case LISTSXP:
-		    /* make sure loop variable is a copy if needed */
-		    if(nm > 0) SET_NAMED(CAR(val), 2);
-		    setVar(sym, CAR(val), rho);
-		    val = CDR(val);
-		    break;
-		default:
-		    errorcall(call, _("invalid for() loop sequence"));
-		}
-		{
-		    BailoutContext bcntxt;
-		    ans = eval(body, rho);
-		}
-		if (ans && ans->sexptype() == BAILSXP) {
-		    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans.get());
-		    if (lbo) {
-			if (lbo->environment() != rho)
-			    abort();
-			if (lbo->next())
-			    continue;
-			else break;
-		    } else {  // This must be a ReturnBailout:
-			SET_ENV_DEBUG(rho, dbg);
-			Evaluator::Context* callctxt
-			    = Evaluator::Context::innermost()->nextOut();
-			if (!callctxt
-			    || callctxt->type() != Evaluator::Context::BAILOUT)
-			    static_cast<Bailout*>(ans.get())->throwException();
-			return ans;
-		    }
-		}
-	    }
-	    catch (LoopException& lx) {
-		if (lx.environment() != env)
-		    throw;
-		if (!lx.next())
-		    break;
+
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment::LoopScope loopscope(env);
+    for (i = 0; i < n; i++) {
+	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+	switch (TYPEOF(val)) {
+	case LGLSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    LOGICAL(v)[0] = LOGICAL(val)[i];
+	    setVar(sym, v, rho);
+	    break;
+	case INTSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    INTEGER(v)[0] = INTEGER(val)[i];
+	    setVar(sym, v, rho);
+	    break;
+	case REALSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    REAL(v)[0] = REAL(val)[i];
+	    setVar(sym, v, rho);
+	    break;
+	case CPLXSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    COMPLEX(v)[0] = COMPLEX(val)[i];
+	    setVar(sym, v, rho);
+	    break;
+	case STRSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    SET_STRING_ELT(v, 0, STRING_ELT(val, i));
+	    setVar(sym, v, rho);
+	    break;
+	case RAWSXP:
+	    v = allocVector(TYPEOF(val), 1);
+	    RAW(v)[0] = RAW(val)[i];
+	    setVar(sym, v, rho);
+	    break;
+	case EXPRSXP:
+	    /* make sure loop variable is a copy if needed */
+	    if(nm > 0) SET_NAMED(XVECTOR_ELT(val, i), 2);
+	    setVar(sym, XVECTOR_ELT(val, i), rho);
+	    break;
+	case VECSXP:
+	    /* make sure loop variable is a copy if needed */
+	    if(nm > 0) SET_NAMED(VECTOR_ELT(val, i), 2);
+	    setVar(sym, VECTOR_ELT(val, i), rho);
+	    break;
+	case LISTSXP:
+	    /* make sure loop variable is a copy if needed */
+	    if(nm > 0) SET_NAMED(CAR(val), 2);
+	    setVar(sym, CAR(val), rho);
+	    val = CDR(val);
+	    break;
+	default:
+	    errorcall(call, _("invalid for() loop sequence"));
+	}
+	try {
+	    BailoutContext bcntxt;
+	    ans = eval(body, rho);
+	}
+	catch (LoopException& lx) {
+	    if (lx.environment() != env)
+		throw;
+	    if (lx.next())
+		continue;
+	    else break;
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans.get());
+	    if (lbo) {
+		if (lbo->environment() != rho)
+		    abort();
+		if (lbo->next())
+		    continue;
+		else break;
+	    } else {  // This must be a ReturnBailout:
+		SET_ENV_DEBUG(rho, dbg);
+		Evaluator::Context* callctxt
+		    = Evaluator::Context::innermost()->nextOut();
+		if (!callctxt
+		    || callctxt->type() != Evaluator::Context::BAILOUT)
+		    static_cast<Bailout*>(ans.get())->throwException();
+		return ans;
 	    }
 	}
     }
@@ -1046,46 +1044,41 @@ SEXP attribute_hidden do_while(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CADR(args);
     bgn = BodyHasBraces(body);
 
-    {
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	Environment::LoopScope loopscope(env);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
-		while (asLogicalNoNA(eval(CAR(args), rho), call)) {
-		    RObject* ans;
-		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		    {
-			BailoutContext bcntxt;
-			ans = eval(body, rho);
-		    }
-		    if (ans && ans->sexptype() == BAILSXP) {
-			LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
-			if (lbo) {
-			    if (lbo->environment() != rho)
-				abort();
-			    if (lbo->next())
-				continue;
-			    else break;
-			} else {  // This must be a ReturnBailout:
-			    SET_ENV_DEBUG(rho, dbg);
-			    Evaluator::Context* callctxt
-				= Evaluator::Context::innermost()->nextOut();
-			    if (!callctxt
-				|| callctxt->type() != Evaluator::Context::BAILOUT)
-				static_cast<Bailout*>(ans)->throwException();
-			    return ans;
-			}
-		    }
-		}
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment::LoopScope loopscope(env);
+
+    while (asLogicalNoNA(eval(CAR(args), rho), call)) {
+	RObject* ans;
+	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+	try {
+	    BailoutContext bcntxt;
+	    ans = eval(body, rho);
+	}
+	catch (LoopException& lx) {
+	    if (lx.environment() != env)
+		throw;
+	    if (lx.next())
+		continue;
+	    else break;
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
+	    if (lbo) {
+		if (lbo->environment() != rho)
+		    abort();
+		if (lbo->next())
+		    continue;
+		else break;
+	    } else {  // This must be a ReturnBailout:
+		SET_ENV_DEBUG(rho, dbg);
+		Evaluator::Context* callctxt
+		    = Evaluator::Context::innermost()->nextOut();
+		if (!callctxt
+		    || callctxt->type() != Evaluator::Context::BAILOUT)
+		    static_cast<Bailout*>(ans)->throwException();
+		return ans;
 	    }
-	    catch (LoopException& lx) {
-		if (lx.environment() != env)
-		    throw;
-		redo = lx.next();
-	    }
-	} while (redo);
+	}
     }
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
@@ -1105,47 +1098,42 @@ SEXP attribute_hidden do_repeat(SEXP call, SEXP op, SEXP args, SEXP rho)
     body = CAR(args);
     bgn = BodyHasBraces(body);
 
-    {
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	Environment::LoopScope loopscope(env);
-	bool redo;
-	do {
-	    redo = false;
-	    try {
-		for (;;) {
-		    RObject* ans;
-		    DO_LOOP_RDEBUG(call, op, args, rho, bgn);
-		    {
-			BailoutContext bcntxt;
-			ans = eval(body, rho);
-		    }
-		    if (ans && ans->sexptype() == BAILSXP) {
-			LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
-			if (lbo) {
-			    if (lbo->environment() != rho)
-				abort();
-			    if (lbo->next())
-				continue;
-			    else break;
-			} else {  // This must be a ReturnBailout:
-			    SET_ENV_DEBUG(rho, dbg);
-			    Evaluator::Context* callctxt
-				= Evaluator::Context::innermost()->nextOut();
-			    if (!callctxt
-				|| callctxt->type() != Evaluator::Context::BAILOUT)
-				static_cast<Bailout*>(ans)->throwException();
-			    return ans;
-			}
-		    }
-		}
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    Environment::LoopScope loopscope(env);
+    for (;;) {
+	RObject* ans;
+	DO_LOOP_RDEBUG(call, op, args, rho, bgn);
+	try {
+	    BailoutContext bcntxt;
+	    ans = eval(body, rho);
+	}
+	catch (LoopException& lx) {
+	    if (lx.environment() != env)
+		throw;
+	    if (lx.next())
+		continue;
+	    else break;
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    LoopBailout* lbo = dynamic_cast<LoopBailout*>(ans);
+	    if (lbo) {
+		if (lbo->environment() != rho)
+		    abort();
+		if (lbo->next())
+		    continue;
+		else break;
+	    } else {  // This must be a ReturnBailout:
+		SET_ENV_DEBUG(rho, dbg);
+		Evaluator::Context* callctxt
+		    = Evaluator::Context::innermost()->nextOut();
+		if (!callctxt
+		    || callctxt->type() != Evaluator::Context::BAILOUT)
+		    static_cast<Bailout*>(ans)->throwException();
+		return ans;
 	    }
-	    catch (LoopException& lx) {
-		if (lx.environment() != env)
-		    throw;
-		redo = lx.next();
-	    }
-	} while (redo);
+	}
     }
+
     SET_ENV_DEBUG(rho, dbg);
     return R_NilValue;
 }
@@ -1237,7 +1225,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* envir = SEXP_downcast<Environment*>(rho);
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
-    GCStackRoot<ReturnBailout> rbo(GCNode::expose(new ReturnBailout(envir, v)));
+    ReturnBailout* rbo(GCNode::expose(new ReturnBailout(envir, v)));
     Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
     if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	rbo->throwException();
