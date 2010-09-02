@@ -200,6 +200,20 @@ namespace CXXR {
 	 */
 	static PairList* prepareArgs(const PairList* raw_args, Environment* env);
 
+	/** @brief Copy a frame but strip formal argument bindings.
+	 *
+	 * This function is used in creating the working environment
+	 * of an S3 method from the working environment of its
+	 * generic.
+	 *
+	 * @param input_frame Non-null pointer to the Frame to be copied.
+	 *
+	 * @return A Frame which is a clone of \a input_frame, except
+	 * that any bindings of the formal arguments of this
+	 * ArgMatcher are removed.
+	 */
+	Frame* stripFormals(const Frame* input_frame) const;
+
 	/** @brief Convert tag of supplied argument to a Symbol.
 	 *
 	 * If \a tag is a null pointer or already points to a Symbol,

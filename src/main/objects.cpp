@@ -268,39 +268,49 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    Rf_error(_("'UseMethod' used in an inappropriate fashion"));
     }
 
-    // Create a new environment without any of the formals to the
-    // generic in it:
-    GCStackRoot<> newrho(GCNode::expose(new Environment(0)));
-    RObject* op = CAR(cptr->call());
-    switch (TYPEOF(op)) {
+    // Prepare the functor:
+    RObject* op = cptr->call()->car();
+    switch (op->sexptype()) {
     case SYMSXP:
 	op = findFun(op, cptr->callEnvironment());
 	break;
     case LANGSXP:
-	op = eval(op, cptr->callEnvironment());
+	op = evaluate(op, cptr->callEnvironment());
 	break;
     case CLOSXP:
     case BUILTINSXP:
     case SPECIALSXP:
 	break;
     default:
-	error(_("Invalid generic function in 'usemethod'"));
+	Rf_error(_("Invalid generic function in 'usemethod'"));
     }
 
+    // Create a new environment without any of the formals to the
+    // generic in it:
+    GCStackRoot<> newrho;
     RObject* match_obj = 0;
-    if (TYPEOF(op) == CLOSXP) {
-	RObject* formals = FORMALS(op);
-	for (RObject* s = FRAME(cptr->workingEnvironment());
-	     s != R_NilValue; s = CDR(s)) {
-	    bool matched = false;
-	    for (RObject* t = formals; t != R_NilValue; t = CDR(t))
-		if (TAG(t) == TAG(s)) {
-		    matched = true;
-		    if(t == formals)
-			match_obj = CAR(s); /* remember 1st arg */
-		}
-	    if (!matched)
-		defineVar(TAG(s), CAR(s), newrho);
+    if (op->sexptype() != CLOSXP)
+	newrho = GCNode::expose(new Environment(0));
+    else {
+	Closure* clos = static_cast<Closure*>(op);
+	const Environment* generic_wk_env = cptr->workingEnvironment();
+	// Look for definition of first formal argument of the generic:
+	{
+	    const PairList* formal_list = clos->formalArgs();
+	    if (formal_list) {
+		const Symbol* first_formal
+		    = static_cast<const Symbol*>(formal_list->tag());
+		const Frame::Binding* bdg
+		    = generic_wk_env->frame()->binding(first_formal);
+		if (bdg)
+		    match_obj = bdg->value();
+	    }
+	}
+	// Create newrho:
+	{
+	    const Frame* frame = generic_wk_env->frame();
+	    GCStackRoot<Frame> stripped_frame(clos->stripFormals(frame));
+	    newrho = GCNode::expose(new Environment(0, stripped_frame));
 	}
     }
 
@@ -339,22 +349,21 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    defineVar(install(".GenericCallEnv"), callrho, newrho);
 	    defineVar(install(".GenericDefEnv"), defrho, newrho);
 	    if(S4toS3 && i > 0 && isBasicClass(ss)) {
-	      SEXP S3Part; 
-	      S3Part = R_getS4DataSlot(obj, S4SXP);
-	      if(S3Part == R_NilValue && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
-		S3Part = R_getS4DataSlot(obj, ANYSXP);
-	      // At this point S3Part is the S3 class object or an
-	      // object of an abnormal type, or NULL.
-	      if(S3Part != R_NilValue) {  // use S3Part as inherited object
-		  obj = S3Part;
-		  if(!match_obj) // use the first arg, for "[",e.g.
-		    match_obj = CAR(matchedarg);
-		  if(NAMED(obj)) SET_NAMED(obj, 2);
-		  if(TYPEOF(match_obj) == PROMSXP)
-		      SET_PRVALUE(match_obj, obj); // must have been eval'd
-		  else // not possible ?
-		    defineVar(TAG(FORMALS(sxp)), obj, newrho);
-	      } // else, use the S4 object
+		SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
+		if(S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
+		    S3Part = R_getS4DataSlot(obj, ANYSXP);
+		// At this point S3Part is the S3 class object or an
+		// object of an abnormal type, or NULL.
+		if(S3Part != R_NilValue) {  // use S3Part as inherited object
+		    obj = S3Part;
+		    if(!match_obj) // use the first arg, for "[",e.g.
+			match_obj = CAR(matchedarg);
+		    if(NAMED(obj)) SET_NAMED(obj, 2);
+		    if(TYPEOF(match_obj) == PROMSXP)
+			SET_PRVALUE(match_obj, obj); // must have been eval'd
+		    else // not possible ?
+			defineVar(TAG(FORMALS(sxp)), obj, newrho);
+		} // else, use the S4 object
 	    }
 	    GCStackRoot<> tnc(newcall);
 	    SETCAR(tnc, method);
@@ -365,6 +374,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	}
     }
 
+    // No class method found, so use default method:
     {
 	char buf[512];
 	if(strlen(generic) + strlen("default") + 2 > 512)

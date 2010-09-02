@@ -95,6 +95,11 @@ void StdFrame::clear()
     m_map.clear();
 }
 
+StdFrame* StdFrame::clone() const
+{
+    return expose(new StdFrame(*this));
+}
+
 void StdFrame::detachReferents()
 {
     m_map.clear();

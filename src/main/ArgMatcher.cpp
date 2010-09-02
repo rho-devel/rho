@@ -267,6 +267,17 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
     return args;
 }
 
+Frame* ArgMatcher::stripFormals(const Frame* input_frame) const
+{
+    Frame* ans = input_frame->clone();
+    const PairList* fcell = m_formals;
+    while (fcell) {
+	ans->erase(static_cast<const Symbol*>(fcell->tag()));
+	fcell = fcell->tail();
+    }
+    return ans;
+}
+
 // Implementation of ArgMatcher::unusedArgsError() is in match.cpp
 
 void ArgMatcher::visitReferents(const_visitor* v) const

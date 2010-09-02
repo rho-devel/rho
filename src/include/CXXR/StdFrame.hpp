@@ -80,6 +80,7 @@ namespace CXXR {
 	Binding* binding(const Symbol* symbol);
 	const Binding* binding(const Symbol* symbol) const;
 	void clear();
+	StdFrame* clone() const;
 	bool erase(const Symbol* symbol);
 	void lockBindings();
 	size_t numBindings() const;
@@ -101,8 +102,7 @@ namespace CXXR {
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	StdFrame(const Frame&);
-	StdFrame& operator=(const Frame&);
+	StdFrame& operator=(const StdFrame&);
     };
 }  // namespace CXXR
 

@@ -346,6 +346,20 @@ namespace CXXR {
 	      m_locked(false)
 	{}
 
+	/** @brief Copy constructor.
+	 *
+	 * The copy will define the same mapping from Symbols to R
+	 * objects as \a source; neither the R objects, nor of course
+	 * the Symbols, are copied as part of the cloning.
+	 *
+	 * The copy will be locked if \a source is locked.  However,
+	 * the copy will not have a read or write monitor.
+	 */
+	Frame(const Frame& source)
+	    : m_read_monitor(0), m_write_monitor(0), m_cache_count(0),
+	      m_locked(source.m_locked)
+	{}
+
 	/** @brief Get contents as a PairList.
 	 *
 	 * Access the contents of this Frame expressed as a PairList,
@@ -396,6 +410,25 @@ namespace CXXR {
 	 * Raises an error if the Frame is locked.
 	 */
 	virtual void clear() = 0;
+
+	/** @brief Return pointer to a copy of this Frame.
+	 *
+	 * This function creates a copy of this Frame, and returns a
+	 * pointer to that copy.  The copy will define the same
+	 * mapping from Symbols to R objects as this Frame; neither
+	 * the R objects, nor of course the Symbols, are copied as
+	 * part of the cloning.
+	 *
+	 * The created copy will be locked if this Frame is locked.
+	 * However, it will not have a read or write monitor.
+	 *
+	 * @return a pointer to a clone of this Frame.
+	 *
+	 * @note Derived classes should exploit the covariant return
+	 * type facility to return a pointer to the type of object
+	 * being cloned.
+	 */
+	virtual Frame* clone() const = 0;
 
 	/** @brief Remove the Binding (if any) of a Symbol.
 	 *
@@ -588,7 +621,6 @@ namespace CXXR {
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
-	Frame(const Frame&);
 	Frame& operator=(const Frame&);
 
 	// Monitoring functions:
