@@ -254,14 +254,9 @@ int isBasicClass(const char *ss) {
 int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	      SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
 {
-    SEXP klass, method, sxp, t, s, matchedarg;
-    SEXP op, formals, newrho, newcall, match_obj = 0;
-    char buf[512];
-    int i, j, nclass, matched, S4toS3, nprotect;
     ClosureContext *cptr = 0;
 
-    /* Get the context which UseMethod was called from. */
-
+    // Get the context which UseMethod was called from.
     {
 	FunctionContext* fcptr = FunctionContext::innermost();
 	if (fcptr && fcptr->type() == Evaluator::Context::CLOSURE) {
@@ -273,129 +268,128 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    Rf_error(_("'UseMethod' used in an inappropriate fashion"));
     }
 
-    /* Create a new environment without any */
-    /* of the formals to the generic in it. */
-
-    PROTECT(newrho = GCNode::expose(new Environment(0)));
-    op = CAR(cptr->call());
+    // Create a new environment without any of the formals to the
+    // generic in it:
+    GCStackRoot<> newrho(GCNode::expose(new Environment(0)));
+    RObject* op = CAR(cptr->call());
     switch (TYPEOF(op)) {
     case SYMSXP:
-	PROTECT(op = findFun(op, cptr->callEnvironment()));
+	op = findFun(op, cptr->callEnvironment());
 	break;
     case LANGSXP:
-	PROTECT(op = eval(op, cptr->callEnvironment()));
+	op = eval(op, cptr->callEnvironment());
 	break;
     case CLOSXP:
     case BUILTINSXP:
     case SPECIALSXP:
-	PROTECT(op);
 	break;
     default:
 	error(_("Invalid generic function in 'usemethod'"));
     }
 
-    nprotect = 5;
+    RObject* match_obj = 0;
     if (TYPEOF(op) == CLOSXP) {
-	formals = FORMALS(op);
-	for (s = FRAME(cptr->workingEnvironment()); s != R_NilValue; s = CDR(s)) {
-	    matched = 0;
-	    for (t = formals; t != R_NilValue; t = CDR(t))
+	RObject* formals = FORMALS(op);
+	for (RObject* s = FRAME(cptr->workingEnvironment());
+	     s != R_NilValue; s = CDR(s)) {
+	    bool matched = false;
+	    for (RObject* t = formals; t != R_NilValue; t = CDR(t))
 		if (TAG(t) == TAG(s)) {
-		    matched = 1;
-		    if(t == formals) match_obj = CAR(s); /* remember 1st arg */
+		    matched = true;
+		    if(t == formals)
+			match_obj = CAR(s); /* remember 1st arg */
 		}
-
-	    if (!matched) defineVar(TAG(s), CAR(s), newrho);
+	    if (!matched)
+		defineVar(TAG(s), CAR(s), newrho);
 	}
     }
 
-    PROTECT(matchedarg = cptr->promiseArgs());
-    PROTECT(newcall = duplicate(cptr->call()));
+    GCStackRoot<> matchedarg(cptr->promiseArgs());
+    GCStackRoot<> newcall(duplicate(cptr->call()));
+    GCStackRoot<> klass(R_data_class2(obj));
+    int S4toS3 = IS_S4_OBJECT(obj);
 
-    PROTECT(klass = R_data_class2(obj));
-    S4toS3 = IS_S4_OBJECT(obj);
-
-    nclass = length(klass);
-    for (i = 0; i < nclass; i++) {
+    int nclass = length(klass);
+    for (int i = 0; i < nclass; i++) {
+	char buf[512];
 	SEXP se = STRING_ELT(klass, i);
 	const char *ss = translateChar(se);
 	if(strlen(generic) + strlen(ss) + 2 > 512)
 	    error(_("class name too long in '%s'"), generic);
 	sprintf(buf, "%s.%s", generic, ss);
-	method = install(buf);
-	sxp = R_LookupMethod(method, rho, callrho, defrho);
+	RObject* method = install(buf);
+	RObject* sxp = R_LookupMethod(method, rho, callrho, defrho);
 	if (isFunction(sxp)) {
             if( op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
                 SET_RSTEP(sxp, 1);
 	    GCStackRoot<> genstr(mkString(generic));
 	    defineVar(install(".Generic"), genstr, newrho);
 	    if (i > 0) {
+		int j;
 	        int ii;
-		PROTECT(t = allocVector(STRSXP, nclass - i));
-		for(j = 0, ii = i; j < length(t); j++, ii++)
-		      SET_STRING_ELT(t, j, STRING_ELT(klass, ii));
-		setAttrib(t, install("previous"), klass);
-		defineVar(install(".Class"), t, newrho);
-		UNPROTECT(1);
+		GCStackRoot<> tc(allocVector(STRSXP, nclass - i));
+		for(j = 0, ii = i; j < length(tc); j++, ii++)
+		      SET_STRING_ELT(tc, j, STRING_ELT(klass, ii));
+		setAttrib(tc, install("previous"), klass);
+		defineVar(install(".Class"), tc, newrho);
 	    } else
 		defineVar(install(".Class"), klass, newrho);
-	    PROTECT(t = mkString(buf));
-	    defineVar(install(".Method"), t, newrho);
-	    UNPROTECT(1);
+	    GCStackRoot<> tm(mkString(buf));
+	    defineVar(install(".Method"), tm, newrho);
 	    defineVar(install(".GenericCallEnv"), callrho, newrho);
 	    defineVar(install(".GenericDefEnv"), defrho, newrho);
 	    if(S4toS3 && i > 0 && isBasicClass(ss)) {
 	      SEXP S3Part; 
 	      S3Part = R_getS4DataSlot(obj, S4SXP);
-	      if(S3Part == R_NilValue && TYPEOF(obj) == S4SXP) /* could be type, e.g. "environment" */
+	      if(S3Part == R_NilValue && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
 		S3Part = R_getS4DataSlot(obj, ANYSXP);
-	      PROTECT(S3Part); nprotect++;
-	      /* At this point S3Part is the S3 class object or
-	       an object of an abnormal type, or NULL */
-	      if(S3Part != R_NilValue) {  /* use S3Part as inherited object */
+	      // At this point S3Part is the S3 class object or an
+	      // object of an abnormal type, or NULL.
+	      if(S3Part != R_NilValue) {  // use S3Part as inherited object
 		  obj = S3Part;
-		  if(!match_obj) /* use the first arg, for "[",e.g. */
+		  if(!match_obj) // use the first arg, for "[",e.g.
 		    match_obj = CAR(matchedarg);
 		  if(NAMED(obj)) SET_NAMED(obj, 2);
 		  if(TYPEOF(match_obj) == PROMSXP)
-		    SET_PRVALUE(match_obj, obj); /* must have been eval'd */
-		  else /* not possible ?*/
+		      SET_PRVALUE(match_obj, obj); // must have been eval'd
+		  else // not possible ?
 		    defineVar(TAG(FORMALS(sxp)), obj, newrho);
-	      } /* else, use the S4 object */
+	      } // else, use the S4 object
 	    }
-	    t = newcall;
-	    SETCAR(t, method);
+	    GCStackRoot<> tnc(newcall);
+	    SETCAR(tnc, method);
 	    ClosureContext::innermost()->setGeneric(true);
-	    *ans = applyMethod(t, sxp, matchedarg, rho, newrho);
+	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
 	    ClosureContext::innermost()->setGeneric(false);
-	    UNPROTECT(nprotect);
 	    return 1;
 	}
     }
-    if(strlen(generic) + strlen("default") + 2 > 512)
-	error(_("class name too long in '%s'"), generic);
-    sprintf(buf, "%s.default", generic);
-    method = install(buf);
-    sxp = R_LookupMethod(method, rho, callrho, defrho);
-    if (isFunction(sxp)) {
-        if( op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
-            SET_RSTEP(sxp, 1);
-	defineVar(install(".Generic"), mkString(generic), newrho);
-	defineVar(install(".Class"), R_NilValue, newrho);
-	PROTECT(t = mkString(buf));
-	defineVar(install(".Method"), t, newrho);
-	UNPROTECT(1);
-	defineVar(install(".GenericCallEnv"), callrho, newrho);
-	defineVar(install(".GenericDefEnv"), defrho, newrho);
-	t = newcall;
-	SETCAR(t, method);
-	ClosureContext::innermost()->setGeneric(true);
-	*ans = applyMethod(t, sxp, matchedarg, rho, newrho);
-	ClosureContext::innermost()->setGeneric(false);
-	UNPROTECT(5);
-	return 1;
+
+    {
+	char buf[512];
+	if(strlen(generic) + strlen("default") + 2 > 512)
+	    error(_("class name too long in '%s'"), generic);
+	sprintf(buf, "%s.default", generic);
+	RObject* method = install(buf);
+	RObject* sxp = R_LookupMethod(method, rho, callrho, defrho);
+	if (isFunction(sxp)) {
+	    if( op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
+		SET_RSTEP(sxp, 1);
+	    defineVar(install(".Generic"), mkString(generic), newrho);
+	    defineVar(install(".Class"), R_NilValue, newrho);
+	    GCStackRoot<> tm(mkString(buf));
+	    defineVar(install(".Method"), tm, newrho);
+	    defineVar(install(".GenericCallEnv"), callrho, newrho);
+	    defineVar(install(".GenericDefEnv"), defrho, newrho);
+	    GCStackRoot<> tnc(newcall);
+	    SETCAR(tnc, method);
+	    ClosureContext::innermost()->setGeneric(true);
+	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
+	    ClosureContext::innermost()->setGeneric(false);
+	    return 1;
+	}
     }
-    UNPROTECT(5);
+
     cptr->setGeneric(false);
     return 0;
 }
