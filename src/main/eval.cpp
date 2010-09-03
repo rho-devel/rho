@@ -543,33 +543,68 @@ SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
     return (tmp);
 }
 
-void Closure::debug(Environment* newenv, const Expression* call,
-		    const PairList* args, Environment* argsenv)
+Closure::DebugScope::DebugScope(const ClosureContext& context,
+				Environment* argsenv)
+    : m_context(context), m_argsenv(argsenv)
 {
-    Rprintf("debugging in: ");
-    Rf_PrintValueRec(const_cast<Expression*>(call), argsenv);
-    /* Is the body a bare symbol (PR#6804) */
-    if (!isSymbol(m_body) & !isVectorAtomic(m_body)){
-	/* Find out if the body is function with only one statement. */
-	RObject* tmp;
-	if (isSymbol(CAR(m_body)))
-	    tmp = findFun(CAR(m_body), argsenv);
-	else
-	    tmp = eval(CAR(m_body), argsenv);
-	if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
-	   && !strcmp( PRIMNAME(tmp), "for")
-	   && !strcmp( PRIMNAME(tmp), "{")
-	   && !strcmp( PRIMNAME(tmp), "repeat")
-	   && !strcmp( PRIMNAME(tmp), "while")
-	   )
-	    return;
+    Closure* closure = static_cast<Closure*>(m_context.function());
+    if (closure->debugging()) {
+	Expression* call = m_context.call();
+	Environment* working_env = m_context.workingEnvironment();
+	working_env->setSingleStepping(true);
+	Rprintf("debugging in: ");
+	// Print call:
+	{
+	    int old_bl = R_BrowseLines;
+	    int blines = asInteger(GetOption(install("deparse.max.lines"),
+					     R_BaseEnv));
+	    if(blines != NA_INTEGER && blines > 0)
+		R_BrowseLines = blines;
+	    Rf_PrintValueRec(call, argsenv);
+	    R_BrowseLines = old_bl;
+	}
+	RObject* body = closure->m_body;
+	/* Is the body a bare symbol (PR#6804) */
+	if (!isSymbol(body) & !isVectorAtomic(body)){
+	    /* Find out if the body is function with only one statement. */
+	    RObject* tmp;
+	    if (isSymbol(CAR(body)))
+		tmp = findFun(CAR(body), argsenv);
+	    else
+		tmp = eval(CAR(body), argsenv);
+	    if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
+	       && !strcmp( PRIMNAME(tmp), "for")
+	       && !strcmp( PRIMNAME(tmp), "{")
+	       && !strcmp( PRIMNAME(tmp), "repeat")
+	       && !strcmp( PRIMNAME(tmp), "while")
+	       )
+		return;
+	}
+	Rprintf("debug: ");
+	Rf_PrintValue(body);
+	do_browser(call, closure, m_context.promiseArgs(), working_env);
     }
-    Rprintf("debug: ");
-    Rf_PrintValue(m_body);
-    do_browser(const_cast<Expression*>(call), this,
-	       const_cast<PairList*>(args), newenv);
 }
 
+Closure::DebugScope::~DebugScope()
+{
+    Closure* closure = static_cast<Closure*>(m_context.function());
+    if (closure->debugging()) {
+	try {
+	    Rprintf("exiting from: ");
+	    int old_bl = R_BrowseLines;
+	    int blines
+		= asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
+	    if(blines != NA_INTEGER && blines > 0)
+		R_BrowseLines = blines;
+	    Rf_PrintValueRec(m_context.call(),
+			     const_cast<Environment*>(m_argsenv));
+	    R_BrowseLines = old_bl;
+	}
+	// Don't allow exceptions to escape destructor:
+	catch (...) {}
+    }
+}   
 
 /* **** FIXME: This code is factored out of applyClosure.  If we keep
    **** it we should change applyClosure to run through this routine

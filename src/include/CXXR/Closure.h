@@ -50,6 +50,8 @@
 #include "CXXR/PairList.h"
 
 namespace CXXR {
+    class ClosureContext;
+
     /** @brief Class representing a functional programming closure.
      *
      * A closure associates a function definition (the body) with a
@@ -183,6 +185,36 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	/** @brief Patrol entry and exit if debugging.
+	 *
+	 * DebugScope objects must be declared on the processor stack
+	 * (i.e. as C++ automatic variables).  A DebugScope object
+	 * relates to a particular Closure object.  If debugging is
+	 * enabled for that Closure, then the DebugScope constructor
+	 * will announce that the Closure function has been entered,
+	 * enable single stepping for the working environment, and
+	 * initiate the browser, and the DebugScope destructor will
+	 * announce that the function is exiting.  If debugging is not
+	 * enabled for the Closure, then the constructor and
+	 * destructor do nothing.
+	 */
+	class DebugScope {
+	public:
+	    /** @brief Constructor.
+	     *
+	     * @param context The Context of this Closure invocation.
+	     *
+	     * @param argsenv Environment with which the actual
+	     *          arguments are to be evaluated.
+	     */
+	    DebugScope(const ClosureContext& context, Environment* argsenv);
+
+	    ~DebugScope();
+	private:
+	    const ClosureContext& m_context;
+	    Environment* m_argsenv;
+	};
+
 	bool m_debug;
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
@@ -195,10 +227,6 @@ namespace CXXR {
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
 	Closure& operator=(const Closure&);
-
-	// Called by apply() to handle debugging:
-	void debug(Environment* newenv, const Expression* call,
-		   const PairList* args, Environment* argsenv);
     };
 }  // namespace CXXR
 

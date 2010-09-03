@@ -101,9 +101,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 	ClosureContext cntxt(const_cast<Expression*>(call),
 			     syspar, this, newenv, prepared_args);
 	Environment::ReturnScope returnscope(newenv);
-	newenv->setSingleStepping(m_debug);
-	if (m_debug)
-	    debug(newenv, call, prepared_args, env);
+	Closure::DebugScope debugscope(cntxt, env); 
 	try {
 	    {
 		BailoutContext boctxt;
@@ -133,8 +131,8 @@ Closure* Closure::clone() const
     return expose(new Closure(*this));
 }
 
-// Implementation of Closure::debug() is in eval.cpp (for the time
-// being).
+// Implementation of class Closure::DebugScope is in eval.cpp (for the
+// time being).
 
 void Closure::detachReferents()
 {
