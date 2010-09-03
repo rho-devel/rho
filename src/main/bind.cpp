@@ -1109,7 +1109,11 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if (method != R_NilValue) {
 	PROTECT(method);
-	args = applyClosure(call, method, args, env, R_BaseEnv);
+	Closure* closure = SEXP_downcast<Closure*>(method);
+	Expression* callx = SEXP_downcast<Expression*>(call);
+	PairList* arglist = SEXP_downcast<PairList*>(args);
+	Environment* callenv = SEXP_downcast<Environment*>(env);
+	args = closure->apply(callx, arglist, callenv);
 	UNPROTECT(2);
 	return args;
     }

@@ -1809,7 +1809,7 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 /* This is a special .Internal */
-SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
 {
     ClosureContext *cptr;
     SEXP s, ans ;
@@ -1818,7 +1818,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    args = cptr->promiseArgs();
+    PairList* args = cptr->promiseArgs();
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1837,7 +1837,8 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(s = findFun(CAR(cptr->call()), cptr->callEnvironment()));
     else
 	PROTECT(s = eval(CAR(cptr->call()), cptr->callEnvironment()));
-    ans = applyClosure(cptr->call(), s, args, cptr->callEnvironment(), R_BaseEnv);
+    Closure* closure = SEXP_downcast<Closure*>(s);
+    ans = closure->apply(cptr->call(), args, cptr->callEnvironment());
     UNPROTECT(1);
     return ans;
 }
@@ -3359,9 +3360,14 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  value = PRIMFUN(fun) (call, fun, CDR(call), rho);
 	  if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	  break;
-	case CLOSXP:
-	  value = applyClosure(call, fun, args, rho, R_BaseEnv);
-	  break;
+	case CLOSXP: {
+	    Closure* closure = SEXP_downcast<Closure*>(fun);
+	    Expression* callx = SEXP_downcast<Expression*>(call);
+	    PairList* arglist = SEXP_downcast<PairList*>(args);
+	    Environment* callenv = SEXP_downcast<Environment*>(rho);
+	    value = closure->apply(callx, arglist, callenv);
+	    break;
+	}
 	default: error(_("bad function"));
 	}
 	R_BCNodeStackTop -= 2;

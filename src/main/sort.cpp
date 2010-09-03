@@ -1067,7 +1067,11 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(fn = findFun(install("xtfrm.default"), rho));
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     SET_PRVALUE(CAR(prargs), CAR(args));
-    ans = applyClosure(call, fn, prargs, rho, R_NilValue);
+    Closure* closure = SEXP_downcast<Closure*>(fn);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    PairList* arglist = SEXP_downcast<PairList*>(prargs);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+    ans = closure->apply(callx, arglist, callenv);
     UNPROTECT(2);
     return ans;
     

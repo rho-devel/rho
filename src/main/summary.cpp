@@ -756,7 +756,11 @@ SEXP attribute_hidden do_range(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(prargs = promiseArgs(args, R_GlobalEnv));
     for (a = args, b = prargs; a != R_NilValue; a = CDR(a), b = CDR(b))
 	SET_PRVALUE(CAR(b), CAR(a));
-    ans = applyClosure(call, op, prargs, env, R_BaseEnv);
+    Closure* closure = SEXP_downcast<Closure*>(op);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    PairList* arglist = SEXP_downcast<PairList*>(prargs);
+    Environment* callenv = SEXP_downcast<Environment*>(env);
+    ans = closure->apply(callx, arglist, callenv);
     UNPROTECT(3);
     return(ans);
 }
