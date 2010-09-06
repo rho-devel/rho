@@ -102,8 +102,6 @@
 
 #include "CXXR/PStream.hpp"
 
-using namespace CXXR;
-
 extern "C" {
 #endif
 
@@ -527,13 +525,13 @@ struct R_inpstream_st {
 
 
 void R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
-		     PStream::Format type,
+		     CXXR::PStream::Format type,
 		     int (*inchar)(R_inpstream_t),
 		     void (*inbytes)(R_inpstream_t, void *, int),
 		     SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 
 void R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
-			 PStream::Format type,
+			 CXXR::PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 /*void R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 			  PStream::Format type, int version,
@@ -548,7 +546,7 @@ typedef struct Rconn  *Rconnection;
 #define HAVE_RCONNECTION_TYPEDEF
 #endif
 void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
-			 PStream::Format type,
+			 CXXR::PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 #endif
 
