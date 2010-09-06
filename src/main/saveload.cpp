@@ -49,6 +49,7 @@
 #include <errno.h>
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/PStream.hpp"
 #include "CXXR/WeakRef.h"
 
 using namespace CXXR;
@@ -1902,19 +1903,18 @@ void attribute_hidden R_SaveToFileV(SEXP obj, FILE *fp, int ascii, int version)
 	}
     }
     else {
-	struct R_outpstream_st out;
-	R_pstream_format_t type;
+	PStream::Format type;
 	int magic;
 	if (ascii) {
 	    magic = R_MAGIC_ASCII_V2;
-	    type = R_pstream_ascii_format;
+	    type = PStream::ASCII;
 	}
 	else {
 	    magic = R_MAGIC_XDR_V2;
-	    type = R_pstream_xdr_format;
+	    type = PStream::XDR;
 	}
+	PStreamOutFile out(type, version, fp);
 	R_WriteMagic(fp, magic);
-	R_InitFileOutPStream(&out, fp, type, version, NULL, NULL);
 	R_Serialize(obj, &out);
     }
 }
@@ -1929,7 +1929,6 @@ void attribute_hidden R_SaveToFile(SEXP obj, FILE *fp, int ascii)
 #define return_and_free(X) {r = X; R_FreeStringBuffer(&data.buffer); return r;}
 SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
 {
-    struct R_inpstream_st in;
     int magic;
     SaveLoadData data = {{NULL, 0, MAXELTSIZE}};
     SEXP r;
@@ -1953,14 +1952,20 @@ SEXP attribute_hidden R_LoadFromFile(FILE *fp, int startup)
     case R_MAGIC_XDR_V1:
 	return_and_free(NewXdrLoad(fp, &data));
     case R_MAGIC_ASCII_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_ascii_format, NULL, NULL);
-	return_and_free(R_Unserialize(&in));
+    	{
+		PStreamInFile in(PStream::ASCII, fp, NULL, NULL);
+		return_and_free(R_Unserialize(&in));
+	}
     case R_MAGIC_BINARY_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_binary_format, NULL, NULL);
-	return_and_free(R_Unserialize(&in));
+    	{
+		PStreamInFile in(PStream::BINARY, fp, NULL, NULL);
+		return_and_free(R_Unserialize(&in));
+	}
     case R_MAGIC_XDR_V2:
-	R_InitFileInPStream(&in, fp, R_pstream_xdr_format, NULL, NULL);
-	return_and_free(R_Unserialize(&in));
+	{
+		PStreamInFile in(PStream::XDR, fp, NULL, NULL);
+		return_and_free(R_Unserialize(&in));
+	}
     default:
 	R_FreeStringBuffer(&data.buffer);
 	switch (magic) {
@@ -2276,8 +2281,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean ascii, wasopen;
     int len, j, version, ep;
     Rconnection con;
-    struct R_outpstream_st out;
-    R_pstream_format_t type;
+    PStream::Format type;
     CXXRCONST char *magic;
 
     checkArity(op, args);
@@ -2322,13 +2326,13 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (ascii) {
 	magic = "RDA2\n";
-	type = R_pstream_ascii_format;
+	type = PStream::ASCII;
     }
     else {
 	if (con->text)
 	    error(_("cannot save XDR format to a text-mode connection"));
 	magic = "RDX2\n";
-	type = R_pstream_xdr_format;
+	type = PStream::XDR;
     }
 
     if (con->text)
@@ -2339,7 +2343,7 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	    error(_("error writing to connection"));
     }
 
-    R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
+    PStreamOutConn out(type, version, con);
 
     len = length(list);
     PROTECT(s = allocList(len));
@@ -2378,7 +2382,6 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* loadFromConn2(conn, environment) */
 
-    struct R_inpstream_st in;
     Rconnection con;
     SEXP aenv, res = R_NilValue;
     unsigned char buf[6];
@@ -2428,7 +2431,7 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	    cntxt.cend = &load_con_cleanup;
 	    cntxt.cenddata = con;
 	}
-	R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
+	PStreamInConn in(PStream::ANY, con, NULL, NULL);
 	GCStackRoot<> unser(R_Unserialize(&in));
 	PROTECT(res = RestoreToEnv(unser, aenv));
 	if (wasopen) {

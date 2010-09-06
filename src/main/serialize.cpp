@@ -49,6 +49,7 @@
 #include <errno.h>
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/PStream.hpp"
 #include "CXXR/WeakRef.h"
 
 
@@ -179,12 +180,12 @@ using namespace CXXR;
  * Forward Declarations
  */
 
-static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table);
-static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream);
-static SEXP ReadItem(SEXP ref_table, R_inpstream_t stream);
+static void OutStringVec(PStreamOut* stream, SEXP s, SEXP ref_table);
+static void WriteItem (SEXP s, SEXP ref_table, PStreamOut* stream);
+static SEXP ReadItem(SEXP ref_table, PStreamIn* stream);
 #ifdef BYTECODE
-static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream);
-static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream);
+static void WriteBC(SEXP s, SEXP ref_table, PStreamOut* stream);
+static SEXP ReadBC(SEXP ref_table, PStreamIn* stream);
 #endif
 
 /*
@@ -209,137 +210,6 @@ static const int R_DefaultSerializeVersion = 2;
 /* The line below requires an ANSI C preprocessor (stringify operator) */
 #define R_assert(e) ((e) ? (void) 0 : error("assertion '%s' failed: file '%s', line %d\n", #e, __FILE__, __LINE__))
 #endif /* NDEBUG */
-
-/* Rsnprintf: like snprintf, but guaranteed to null-terminate. */
-static int Rsnprintf(char *buf, int size, const char *format, ...)
-{
-    int val;
-    va_list(ap);
-    va_start(ap, format);
-    val = vsnprintf(buf, size, format, ap);
-    buf[size-1] = '\0';
-    va_end(ap);
-    return val;
-}
-
-
-/*
- * Basic Output Routines
- */
-
-static void OutInteger(R_outpstream_t stream, int i)
-{
-    char buf[128];
-    switch (stream->type) {
-    case R_pstream_ascii_format:
-	if (i == NA_INTEGER)
-	    Rsnprintf(buf, sizeof(buf), "NA\n");
-	else
-	    Rsnprintf(buf, sizeof(buf), "%d\n", i);
-	stream->OutBytes(stream, buf, strlen(buf));
-	break;
-    case R_pstream_binary_format:
-	stream->OutBytes(stream, &i, sizeof(int));
-	break;
-    case R_pstream_xdr_format:
-	R_XDREncodeInteger(i, buf);
-	stream->OutBytes(stream, buf, R_XDR_INTEGER_SIZE);
-	break;
-    default:
-	error(_("unknown or inappropriate output format"));
-    }
-}
-
-static void OutReal(R_outpstream_t stream, double d)
-{
-    char buf[128];
-    switch (stream->type) {
-    case R_pstream_ascii_format:
-	if (! R_FINITE(d)) {
-	    if (ISNAN(d))
-		Rsnprintf(buf, sizeof(buf), "NA\n");
-	    else if (d < 0)
-		Rsnprintf(buf, sizeof(buf), "-Inf\n");
-	    else
-		Rsnprintf(buf, sizeof(buf), "Inf\n");
-	}
-	else
-	    /* 16: full precision; 17 gives 999, 000 &c */
-	    Rsnprintf(buf, sizeof(buf), "%.16g\n", d);
-	stream->OutBytes(stream, buf, strlen(buf));
-	break;
-    case R_pstream_binary_format:
-	stream->OutBytes(stream, &d, sizeof(double));
-	break;
-    case R_pstream_xdr_format:
-	R_XDREncodeDouble(d, buf);
-	stream->OutBytes(stream, buf, R_XDR_DOUBLE_SIZE);
-	break;
-    default:
-	error(_("unknown or inappropriate output format"));
-    }
-}
-
-static void OutComplex(R_outpstream_t stream, Rcomplex c)
-{
-    OutReal(stream, c.r);
-    OutReal(stream, c.i);
-}
-
-static void OutByte(R_outpstream_t stream, Rbyte i)
-{
-    char buf[128];
-    switch (stream->type) {
-    case R_pstream_ascii_format:
-	Rsnprintf(buf, sizeof(buf), "%02x\n", i);
-	stream->OutBytes(stream, buf, strlen(buf));
-	break;
-    case R_pstream_binary_format:
-    case R_pstream_xdr_format:
-	stream->OutBytes(stream, &i, 1);
-	break;
-    default:
-	error(_("unknown or inappropriate output format"));
-    }
-}
-
-static void OutString(R_outpstream_t stream, const char *s, int length)
-{
-    if (stream->type == R_pstream_ascii_format) {
-	int i;
-	char buf[128];
-	for (i = 0; i < length; i++) {
-	    switch(s[i]) {
-	    case '\n': sprintf(buf, "\\n");  break;
-	    case '\t': sprintf(buf, "\\t");  break;
-	    case '\v': sprintf(buf, "\\v");  break;
-	    case '\b': sprintf(buf, "\\b");  break;
-	    case '\r': sprintf(buf, "\\r");  break;
-	    case '\f': sprintf(buf, "\\f");  break;
-	    case '\a': sprintf(buf, "\\a");  break;
-	    case '\\': sprintf(buf, "\\\\"); break;
-	    case '\?': sprintf(buf, "\\?");  break;
-	    case '\'': sprintf(buf, "\\'");  break;
-	    case '\"': sprintf(buf, "\\\""); break;
-	    default  :
-		/* cannot print char in octal mode -> cast to unsigned
-		   char first */
-		/* actually, since s is signed char and '\?' == 127
-		   is handled above, s[i] > 126 can't happen, but
-		   I'm superstitious...  -pd */
-		if (s[i] <= 32 || s[i] > 126)
-		    sprintf(buf, "\\%03o", static_cast<unsigned char>( s[i]));
-		else
-		    sprintf(buf, "%c", s[i]);
-	    }
-	    stream->OutBytes(stream, buf, strlen(buf));
-	}
-	stream->OutChar(stream, '\n');
-    }
-    else
-	stream->OutBytes(stream, CXXRNOCAST(void *)s, length); /* FIXME: is this case right? */
-}
-
 
 /*
  * Basic Input Routines
@@ -370,7 +240,7 @@ static int InInteger(R_inpstream_t stream)
     int i;
 
     switch (stream->type) {
-    case R_pstream_ascii_format:
+    case PStream::ASCII:
 	InWord(stream, word, sizeof(word));
 	sscanf(word, "%s", buf);
 	if (strcmp(buf, "NA") == 0)
@@ -378,10 +248,10 @@ static int InInteger(R_inpstream_t stream)
 	else
 	    sscanf(buf, "%d", &i);
 	return i;
-    case R_pstream_binary_format:
+    case PStream::BINARY:
 	stream->InBytes(stream, &i, sizeof(int));
 	return i;
-    case R_pstream_xdr_format:
+    case PStream::XDR:
 	stream->InBytes(stream, buf, R_XDR_INTEGER_SIZE);
 	return R_XDRDecodeInteger(buf);
     default:
@@ -396,7 +266,7 @@ static double InReal(R_inpstream_t stream)
     double d;
 
     switch (stream->type) {
-    case R_pstream_ascii_format:
+    case PStream::ASCII:
 	InWord(stream, word, sizeof(word));
 	sscanf(word, "%s", buf);
 	if (strcmp(buf, "NA") == 0)
@@ -408,10 +278,10 @@ static double InReal(R_inpstream_t stream)
 	else
 	    sscanf(buf, "%lg", &d);
 	return d;
-    case R_pstream_binary_format:
+    case PStream::BINARY:
 	stream->InBytes(stream, &d, sizeof(double));
 	return d;
-    case R_pstream_xdr_format:
+    case PStream::XDR:
 	stream->InBytes(stream, buf, R_XDR_DOUBLE_SIZE);
 	return R_XDRDecodeDouble(buf);
     default:
@@ -419,13 +289,13 @@ static double InReal(R_inpstream_t stream)
     }
 }
 
-static Rcomplex InComplex(R_inpstream_t stream)
+/*static Rcomplex InComplex(R_inpstream_t stream)
 {
     Rcomplex c;
     c.r = InReal(stream);
     c.i = InReal(stream);
     return c;
-}
+}*/
 
 /* These utilities for reading characters with an unget option are
    defined so the code in InString can match the code in
@@ -459,9 +329,9 @@ static void UngetChar(R_instring_stream_t s, int c)
 }
 
 
-static void InString(R_inpstream_t stream, char *buf, int length)
+/*static void InString(R_inpstream_t stream, char *buf, int length)
 {
-    if (stream->type == R_pstream_ascii_format) {
+    if (stream->type == PStream::ASCII) {
 	if (length > 0) {
 	    int c, d, i, j;
 	    struct R_instring_stream_st iss;
@@ -483,7 +353,7 @@ static void InString(R_inpstream_t stream, char *buf, int length)
 		    case '\\': buf[i] = '\\'; break;
 		    case '?' : buf[i] = '\?'; break;
 		    case '\'': buf[i] = '\''; break;
-		    case '\"': buf[i] = '\"'; break; /* closing " for emacs */
+		    case '\"': buf[i] = '\"'; break; // closing " for emacs
 		    case '0': case '1': case '2': case '3':
 		    case '4': case '5': case '6': case '7':
 			d = 0; j = 0;
@@ -504,7 +374,7 @@ static void InString(R_inpstream_t stream, char *buf, int length)
     }
     else
 	stream->InBytes(stream, buf, length);
-}
+}*/
 
 
 /*
@@ -514,31 +384,15 @@ static void InString(R_inpstream_t stream, char *buf, int length)
  * binary, or X for xdr.
  */
 
-static void OutFormat(R_outpstream_t stream)
-{
-    if (stream->type == R_pstream_binary_format) {
-	warning(_("binary format is deprecated; using xdr instead"));
-	stream->type = R_pstream_xdr_format;
-    }
-    switch (stream->type) {
-    case R_pstream_ascii_format:  stream->OutBytes(stream, "A\n", 2); break;
-    case R_pstream_binary_format: stream->OutBytes(stream, "B\n", 2); break;
-    case R_pstream_xdr_format:    stream->OutBytes(stream, "X\n", 2); break;
-    case R_pstream_any_format:
-	error(_("must specify ascii, binary, or xdr format"));
-    default: error(_("unknown output format"));
-    }
-}
-
 static void InFormat(R_inpstream_t stream)
 {
     char buf[2];
-    R_pstream_format_t type;
+    PStream::Format type;
     stream->InBytes(stream, buf, 2);
     switch (buf[0]) {
-    case 'A': type = R_pstream_ascii_format; break;
-    case 'B': type = R_pstream_binary_format; break;
-    case 'X': type = R_pstream_xdr_format; break;
+    case 'A': type = PStream::ASCII; break;
+    case 'B': type = PStream::BINARY; break;
+    case 'X': type = PStream::XDR; break;
     case '\n':
 	/* GROSS HACK: ASCII unserialize may leave a trailing newline
 	   in the stream.  If the stream contains a second
@@ -551,15 +405,15 @@ static void InFormat(R_inpstream_t stream)
 	   don't think more than one is possible, but I'm not sure.
 	   LT */
 	if (buf[1] == 'A') {
-	    type = R_pstream_ascii_format;
+	    type = PStream::ASCII;
 	    stream->InBytes(stream, buf, 1);
 	    break;
 	}
     default:
-	type = R_pstream_any_format;  /* keep compiler happy */
+	type = PStream::ANY;  /* keep compiler happy */
 	error(_("unknown input format"));
     }
-    if (stream->type == R_pstream_any_format)
+    if (stream->type == PStream::ANY)
 	stream->type = type;
     else if (type != stream->type)
 	error(_("input format does not match specified format"));
@@ -701,15 +555,6 @@ static void UnpackFlags(int flags, int *ptype, int *plevs,
 #define UNPACK_REF_INDEX(i) ((i) >> 8)
 #define MAX_PACKED_INDEX (INT_MAX >> 8)
 
-static void OutRefIndex(R_outpstream_t stream, int i)
-{
-    if (i > MAX_PACKED_INDEX) {
-	OutInteger(stream, REFSXP);
-	OutInteger(stream, i);
-    }
-    else OutInteger(stream, PACK_REF_INDEX(i));
-}
-
 static int InRefIndex(R_inpstream_t stream, int flags)
 {
     int i = UNPACK_REF_INDEX(flags);
@@ -727,7 +572,7 @@ static int InRefIndex(R_inpstream_t stream, int flags)
  * customized handling of reference objects.
  */
 
-static SEXP GetPersistentName(R_outpstream_t stream, SEXP s)
+static SEXP GetPersistentName(PStreamOut* stream, SEXP s)
 {
     if (stream->OutPersistHookFunc != NULL) {
 	switch (TYPEOF(s)) {
@@ -750,7 +595,7 @@ static SEXP GetPersistentName(R_outpstream_t stream, SEXP s)
 	return R_NilValue;
 }
 
-static SEXP PersistentRestore(R_inpstream_t stream, SEXP s)
+static SEXP PersistentRestore(PStreamIn* stream, SEXP s)
 {
     if (stream->InPersistHookFunc == NULL)
 	error(_("no restore method available"));
@@ -774,7 +619,7 @@ static int SaveSpecialHook(SEXP item)
     return 0;
 }
 
-static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
+static void OutStringVec(PStreamOut* stream, SEXP s, SEXP ref_table)
 {
     int i, len;
     SEXP names;
@@ -788,8 +633,8 @@ static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
 #endif
 
     len = LENGTH(s);
-    OutInteger(stream, 0); /* place holder to allow names if we want to */
-    OutInteger(stream, len);
+    stream->OutInteger(0); /* place holder to allow names if we want to */
+    stream->OutInteger(len);
     for (i = 0; i < len; i++)
 	WriteItem(STRING_ELT(s, i), ref_table, stream);
 }
@@ -799,7 +644,7 @@ static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
 	do {								\
 		int cnt;						\
 		for (cnt = 0; cnt < LENGTH(obj); ++cnt)		\
-			outfunc(fp, accessor(obj, cnt));		\
+			fp->outfunc(accessor(obj, cnt));		\
 	} while (0)
 
 #define LOGICAL_ELT(x,__i__)	LOGICAL(x)[__i__]
@@ -808,7 +653,7 @@ static void OutStringVec(R_outpstream_t stream, SEXP s, SEXP ref_table)
 #define COMPLEX_ELT(x,__i__)	COMPLEX(x)[__i__]
 #define RAW_ELT(x,__i__)	RAW(x)[__i__]
 
-static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
+static void WriteItem (SEXP s, SEXP ref_table, PStreamOut* stream)
 {
     int i;
     SEXP t;
@@ -819,18 +664,18 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	R_assert(TYPEOF(t) == STRSXP && LENGTH(t) > 0);
 	PROTECT(t);
 	HashAdd(s, ref_table);
-	OutInteger(stream, PERSISTSXP);
+	stream->OutInteger(PERSISTSXP);
 	OutStringVec(stream, t, ref_table);
 	UNPROTECT(1);
     }
     else if ((i = SaveSpecialHook(s)) != 0)
-	OutInteger(stream, i);
+	stream->OutInteger(i);
     else if ((i = HashGet(s, ref_table)) != 0)
-	OutRefIndex(stream, i);
+	stream->OutRefIndex(i);
     else if (TYPEOF(s) == SYMSXP) {
 	/* Note : NILSXP can't occur here */
 	HashAdd(s, ref_table);
-	OutInteger(stream, SYMSXP);
+	stream->OutInteger(SYMSXP);
 	WriteItem(PRINTNAME(s), ref_table, stream);
     }
     else if (TYPEOF(s) == ENVSXP) {
@@ -839,19 +684,19 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    SEXP name = R_PackageEnvName(s);
 	    warning(_("'%s' may not be available when loading"),
 		    CHAR(STRING_ELT(name, 0)));
-	    OutInteger(stream, PACKAGESXP);
+	    stream->OutInteger(PACKAGESXP);
 	    OutStringVec(stream, name, ref_table);
 	}
 	else if (R_IsNamespaceEnv(s)) {
 #ifdef WARN_ABOUT_NAME_SPACES_MAYBE_NOT_AVAILABLE
 	    warning(_("namespaces may not be available when loading"));
 #endif
-	    OutInteger(stream, NAMESPACESXP);
+	    stream->OutInteger(NAMESPACESXP);
 	    OutStringVec(stream, R_NamespaceEnvSpec(s), ref_table);
 	}
 	else {
-	    OutInteger(stream, ENVSXP);
-	    OutInteger(stream, R_EnvironmentIsLocked(s) ? 1 : 0);
+	    stream->OutInteger(ENVSXP);
+	    stream->OutInteger(R_EnvironmentIsLocked(s) ? 1 : 0);
 	    WriteItem(ENCLOS(s), ref_table, stream);
 	    WriteItem(FRAME(s), ref_table, stream);
 	    WriteItem(0, ref_table, stream);  // No hashtab field in CXXR
@@ -884,7 +729,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 #endif
 	flags = PackFlags(TYPEOF(s), LEVELS(s), OBJECT(s),
 			  hasattr, hastag);
-	OutInteger(stream, flags);
+	stream->OutInteger(flags);
 	switch (TYPEOF(s)) {
 	case LISTSXP:
 	case LANGSXP:
@@ -937,38 +782,38 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	case SPECIALSXP:
 	case BUILTINSXP:
 	    /* Builtin functions */
-	    OutInteger(stream, strlen(PRIMNAME(s)));
-	    OutString(stream, PRIMNAME(s), strlen(PRIMNAME(s)));
+	    stream->OutInteger(strlen(PRIMNAME(s)));
+	    stream->OutString(PRIMNAME(s), strlen(PRIMNAME(s)));
 	    break;
 	case CHARSXP:
 	    if (s == NA_STRING)
-		OutInteger(stream, -1);
+		stream->OutInteger(-1);
 	    else {
-		OutInteger(stream, LENGTH(s));
-		OutString(stream, CHAR(s), LENGTH(s));
+		stream->OutInteger(LENGTH(s));
+		stream->OutString(CHAR(s), LENGTH(s));
 	    }
 	    break;
 	case LGLSXP:
 	case INTSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    OutVec(stream, s, INTEGER_ELT, OutInteger);
 	    break;
 	case REALSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    OutVec(stream, s, REAL_ELT, OutReal);
 	    break;
 	case CPLXSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    OutVec(stream, s, COMPLEX_ELT, OutComplex);
 	    break;
 	case STRSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    for (i = 0; i < LENGTH(s); i++)
 		WriteItem(STRING_ELT(s, i), ref_table, stream);
 	    break;
 	case VECSXP:
 	case EXPRSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    for (i = 0; i < LENGTH(s); i++)
 		WriteItem(VECTOR_ELT(s, i), ref_table, stream);
 	    break;
@@ -980,7 +825,7 @@ static void WriteItem (SEXP s, SEXP ref_table, R_outpstream_t stream)
 	    error(_("this version of R cannot write byte code objects"));
 #endif
 	case RAWSXP:
-	    OutInteger(stream, LENGTH(s));
+	    stream->OutInteger(LENGTH(s));
 	    OutVec(stream, s, RAW_ELT, OutByte);
 	    break;
 	case S4SXP:
@@ -1065,7 +910,7 @@ static SEXP findrep(SEXP x, SEXP reps)
 }
 
 static void WriteBCLang(SEXP s, SEXP ref_table, SEXP reps,
-			R_outpstream_t stream)
+			PStreamOut* stream)
 {
     int type = TYPEOF(s);
     if (type == LANGSXP || type == LISTSXP) {
@@ -1079,30 +924,30 @@ static void WriteBCLang(SEXP s, SEXP ref_table, SEXP reps,
 		int i = INTEGER(CAR(reps))[0]++;
 		SET_TAG(r, allocVector(INTSXP, 1));
 		INTEGER(TAG(r))[0] = i;
-		OutInteger(stream, BCREPDEF);
-		OutInteger(stream, i);
+		stream->OutInteger(BCREPDEF);
+		stream->OutInteger(i);
 	    }
 	    else {
 		/* we've seen it before, so just put out the index */
-		OutInteger(stream, BCREPREF);
-		OutInteger(stream, INTEGER(TAG(r))[0]);
+		stream->OutInteger(BCREPREF);
+		stream->OutInteger(INTEGER(TAG(r))[0]);
 		output = FALSE;
 	    }
 	}
 	if (output) {
-	    OutInteger(stream, type);
+	    stream->OutInteger(type);
 	    WriteItem(TAG(s), ref_table, stream);
 	    WriteBCLang(CAR(s), ref_table, reps, stream);
 	    WriteBCLang(CDR(s), ref_table, reps, stream);
 	}
     }
     else {
-	OutInteger(stream, 0); /* pad */
+	stream->OutInteger(0); /* pad */
 	WriteItem(s, ref_table, stream);
     }
 }
 
-static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
+static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, PStreamOut* stream)
 {
     int i, n;
     SEXP code, consts;
@@ -1110,13 +955,13 @@ static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
     WriteItem(code, ref_table, stream);
     consts = BCODE_CONSTS(s);
     n = LENGTH(consts);
-    OutInteger(stream, n);
+    stream->OutInteger(n);
     for (i = 0; i < n; i++) {
 	SEXP c = VECTOR_ELT(consts, i);
 	int type = TYPEOF(c);
 	switch (type) {
 	case BCODESXP:
-	    OutInteger(stream, type);
+	    stream->OutInteger(type);
 	    WriteBC1(c, ref_table, reps, stream);
 	    break;
 	case LANGSXP:
@@ -1124,18 +969,18 @@ static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
 	    WriteBCLang(c, ref_table, reps, stream);
 	    break;
 	default:
-	    OutInteger(stream, type);
+	    stream->OutInteger(type);
 	    WriteItem(c, ref_table, stream);
 	}
     }
     UNPROTECT(1);
 }
 
-static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream)
+static void WriteBC(SEXP s, SEXP ref_table, PStreamOut* stream)
 {
     SEXP reps = ScanForCircles(s);
     PROTECT(reps = CONS(R_NilValue, reps));
-    OutInteger(stream, length(reps));
+    stream->OutInteger(length(reps));
     SETCAR(reps, allocVector(INTSXP, 1));
     INTEGER(CAR(reps))[0] = 0;
     WriteBC1(s, ref_table, reps, stream);
@@ -1143,18 +988,18 @@ static void WriteBC(SEXP s, SEXP ref_table, R_outpstream_t stream)
 }
 #endif
 
-void R_Serialize(SEXP s, R_outpstream_t stream)
+void R_Serialize(SEXP s, PStreamOut* stream)
 {
     SEXP ref_table;
-    int version = stream->version;
+    int version = stream->version();
 
-    OutFormat(stream);
+    stream->OutFormat();
 
     switch(version) {
     case 2:
-	OutInteger(stream, version);
-	OutInteger(stream, R_VERSION);
-	OutInteger(stream, R_Version(2,3,0));
+	stream->OutInteger(version);
+	stream->OutInteger(R_VERSION);
+	stream->OutInteger(R_Version(2,3,0));
 	break;
     default: error(_("version %d not supported"), version);
     }
@@ -1209,13 +1054,13 @@ static void AddReadRef(SEXP table, SEXP value)
     SET_VECTOR_ELT(data, count - 1, value);
 }
 
-static SEXP InStringVec(R_inpstream_t stream, SEXP ref_table)
+static SEXP InStringVec(PStreamIn* stream, SEXP ref_table)
 {
     SEXP s;
     int i, len;
-    if (InInteger(stream) != 0)
+    if (stream->InInteger() != 0)
 	error(_("names in persistent strings are not supported yet"));
-    len = InInteger(stream);
+    len = stream->InInteger();
     PROTECT(s = allocVector(STRSXP, len));
     for (i = 0; i < len; i++)
 	SET_STRING_ELT(s, i, ReadItem(ref_table, stream));
@@ -1226,8 +1071,8 @@ static SEXP InStringVec(R_inpstream_t stream, SEXP ref_table)
 #define InVec(fp, obj, accessor, infunc, length)			\
 	do {								\
 		int cnt;						\
-		for (cnt = 0; cnt < length; ++cnt)		\
-			accessor(obj, cnt, infunc(fp));		\
+		for (cnt = 0; cnt < length; ++cnt)			\
+			accessor(obj, cnt, fp->infunc());		\
 	} while (0)
 
 
@@ -1238,7 +1083,7 @@ static SEXP InStringVec(R_inpstream_t stream, SEXP ref_table)
 #define SET_COMPLEX_ELT(x,__i__,v)	(COMPLEX_ELT(x,__i__)=(v))
 #define SET_RAW_ELT(x,__i__,v)		(RAW_ELT(x,__i__)=(v))
 
-static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
+static SEXP ReadItem (SEXP ref_table, PStreamIn* stream)
 {
     int type;
     SEXP s;
@@ -1247,7 +1092,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 
     R_assert(TYPEOF(ref_table) == LISTSXP && TYPEOF(CAR(ref_table)) == VECSXP);
 
-    flags = InInteger(stream);
+    flags = stream->InInteger();
     UnpackFlags(flags, &type, &levs, &objf, &hasattr, &hastag);
 
     switch(type) {
@@ -1260,7 +1105,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
     case BASENAMESPACE_SXP:
 	return R_BaseNamespace;
     case REFSXP:
-	return GetReadRef(ref_table, InRefIndex(stream, flags));
+	return GetReadRef(ref_table, stream->InRefIndex(flags));
     case PERSISTSXP:
 	PROTECT(s = InStringVec(stream, ref_table));
 	s = PersistentRestore(stream, s);
@@ -1286,14 +1131,14 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1);
 	return s;
     case CHARSXP:
-	length = InInteger(stream);
+	length = stream->InInteger();
 	if (length == -1)
 	    return NA_STRING;
 	else {
 	    GCStackRoot<> str;
 	    cetype_t enc = String::GPBits2Encoding(levs);
 	    cbuf = CallocCharBuf(length);
-	    InString(stream, cbuf, length);
+	    stream->InString(cbuf, length);
 	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    if (length > int(strlen(cbuf))) {
 		std::string sstr(cbuf, length);
@@ -1309,7 +1154,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	}
     case ENVSXP:
 	{
-	    int locked = InInteger(stream);
+	    int locked = stream->InInteger();
 
 	    GCStackRoot<Environment> env(GCNode::expose(new Environment(0)));
 
@@ -1451,41 +1296,41 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case SPECIALSXP:
 	case BUILTINSXP:
 	    /* These are all short strings */
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    cbuf = CXXRCONSTRUCT(static_cast<char*>, alloca(length+1));
-	    InString(stream, cbuf, length);
+	    stream->InString(cbuf, length);
 	    cbuf[length] = '\0';
 	    PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
 	    break;
 	case LGLSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(LGLSXP, length));
 	    InVec(stream, s, SET_LOGICAL_ELT, InInteger, length);
 	    break;
 	case INTSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(INTSXP, length));
 	    InVec(stream, s, SET_INTEGER_ELT, InInteger, length);
 	    break;
 	case REALSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(REALSXP, length));
 	    InVec(stream, s, SET_REAL_ELT, InReal, length);
 	    break;
 	case CPLXSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(CPLXSXP, length));
 	    InVec(stream, s, SET_COMPLEX_ELT, InComplex, length);
 	    break;
 	case STRSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(STRSXP, length));
 	    for (count = 0; count < length; ++count)
 		SET_STRING_ELT(s, count, ReadItem(ref_table, stream));
 	    break;
 	case VECSXP:
 	case EXPRSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(SEXPTYPE(type), length));
 	    for (count = 0; count < length; ++count)
 		SET_VECTOR_ELT(s, count, ReadItem(ref_table, stream));
@@ -1502,9 +1347,9 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	case GENERICREFSXP:
 	    error(_("this version of R cannot read generic function references"));
 	case RAWSXP:
-	    length = InInteger(stream);
+	    length = stream->InInteger();
 	    PROTECT(s = allocVector(RAWSXP, length));
-	    stream->InBytes(stream, RAW(s), length);
+	    stream->InBytes(RAW(s), length);
 	    break;
 	case S4SXP:
 	    PROTECT(s = allocS4Object());
@@ -1525,14 +1370,14 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 }
 
 #ifdef BYTECODE
-static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream);
+static SEXP ReadBC1(SEXP ref_table, SEXP reps, PStreamIn* stream);
 
 static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
-		       R_inpstream_t stream)
+		       PStreamIn* stream)
 {
     switch (type) {
     case BCREPREF:
-	return VECTOR_ELT(reps, InInteger(stream));
+	return VECTOR_ELT(reps, stream->InInteger());
     case BCREPDEF:
     case LANGSXP:
     case LISTSXP:
@@ -1540,16 +1385,16 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
 	    SEXP ans;
 	    int pos = -1;
 	    if (type == BCREPDEF) {
-		pos = InInteger(stream);
-		type = InInteger(stream);
+		pos = stream->InInteger();
+		type = stream->InInteger();
 	    }
 	    PROTECT(ans = allocSExp(CXXRCONSTRUCT(SEXPTYPE, type)));
 	    if (pos >= 0)
 		SET_VECTOR_ELT(reps, pos, ans);
 	    SET_TAG(ans, ReadItem(ref_table, stream));
-	    SETCAR(ans, ReadBCLang(InInteger(stream), ref_table, reps,
+	    SETCAR(ans, ReadBCLang(stream->InInteger(), ref_table, reps,
 				   stream));
-	    SETCDR(ans, ReadBCLang(InInteger(stream), ref_table, reps,
+	    SETCDR(ans, ReadBCLang(stream->InInteger(), ref_table, reps,
 				   stream));
 	    UNPROTECT(1);
 	    return ans;
@@ -1558,14 +1403,14 @@ static SEXP ReadBCLang(int type, SEXP ref_table, SEXP reps,
     }
 }
 
-static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
+static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, PStreamIn* stream)
 {
     SEXP ans, c;
     int i, n;
-    n = InInteger(stream);
+    n = stream->InInteger();
     PROTECT(ans = allocVector(VECSXP, n));
     for (i = 0; i < n; i++) {
-	int type = InInteger(stream);
+	int type = stream->InInteger();
 	switch (type) {
 	case BCODESXP:
 	    c = ReadBC1(ref_table, reps, stream);
@@ -1586,7 +1431,7 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
     return ans;
 }
 
-static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
+static SEXP ReadBC1(SEXP ref_table, SEXP reps, PStreamIn* stream)
 {
     SEXP s;
     PROTECT(s = GCNode::expose(new ByteCode));
@@ -1598,10 +1443,10 @@ static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
     return s;
 }
 
-static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream)
+static SEXP ReadBC(SEXP ref_table, PStreamIn* stream)
 {
     SEXP reps, ans;
-    PROTECT(reps = allocVector(VECSXP, InInteger(stream)));
+    PROTECT(reps = allocVector(VECSXP, stream->InInteger()));
     ans = ReadBC1(ref_table, reps, stream);
     UNPROTECT(1);
     return ans;
@@ -1615,18 +1460,18 @@ static void DecodeVersion(int packed, int *v, int *p, int *s)
     *s = packed;
 }
 
-SEXP R_Unserialize(R_inpstream_t stream)
+SEXP R_Unserialize(PStreamIn* stream)
 {
     int version;
     int writer_version, release_version;
     SEXP obj, ref_table;
 
-    InFormat(stream);
+    stream->InFormat();
 
     /* Read the version numbers */
-    version = InInteger(stream);
-    writer_version = InInteger(stream);
-    release_version = InInteger(stream);
+    version = stream->InInteger();
+    writer_version = stream->InInteger();
+    release_version = stream->InInteger();
     switch (version) {
     case 2: break;
     default:
@@ -1659,7 +1504,7 @@ SEXP R_Unserialize(R_inpstream_t stream)
 
 void
 R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
-		     R_pstream_format_t type,
+		     PStream::Format type,
 		     int (*inchar)(R_inpstream_t),
 		     void (*inbytes)(R_inpstream_t, void *, int),
 		     SEXP (*phook)(SEXP, SEXP), SEXP pdata)
@@ -1672,45 +1517,14 @@ R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
     stream->InPersistHookData = pdata;
 }
 
-void
-R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
-		      R_pstream_format_t type, int version,
-		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, CXXRCONST void *, int),
-		      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
-{
-    stream->data = data;
-    stream->type = type;
-    stream->version = version != 0 ? version : R_DefaultSerializeVersion;
-    stream->OutChar = outchar;
-    stream->OutBytes = outbytes;
-    stream->OutPersistHookFunc = phook;
-    stream->OutPersistHookData = pdata;
-}
-
-
 /*
  * Persistent File Streams
  */
 
-static void OutCharFile(R_outpstream_t stream, int c)
-{
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
-    fputc(c, fp);
-}
-
-
-static int InCharFile(R_inpstream_t stream)
+/*static int InCharFile(R_inpstream_t stream)
 {
     FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
     return fgetc(fp);
-}
-
-static void OutBytesFile(R_outpstream_t stream, CXXRCONST void *buf, int length)
-{
-    FILE *fp = CXXRCONSTRUCT(static_cast<FILE*>, stream->data);
-    size_t out = fwrite(buf, 1, length, fp);
-    if (CXXRCONSTRUCT(int, out) != length) error(_("write failed"));
 }
 
 static void InBytesFile(R_inpstream_t stream, void *buf, int length)
@@ -1721,22 +1535,13 @@ static void InBytesFile(R_inpstream_t stream, void *buf, int length)
 }
 
 void
-R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
-			  R_pstream_format_t type, int version,
-			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
-{
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type, version,
-		     OutCharFile, OutBytesFile, phook, pdata);
-}
-
-void
 R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
-			 R_pstream_format_t type,
+			 PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) fp, type,
 		    InCharFile, InBytesFile, phook, pdata);
-}
+}*/
 
 
 /*
@@ -1745,20 +1550,12 @@ R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
 
 #include <Rconnections.h>
 
-static void CheckInConn(Rconnection con)
+/*static void CheckInConn(Rconnection con)
 {
     if (! con->isopen)
 	error(_("connection is not open"));
     if (! con->canread || con->read == NULL)
 	error(_("cannot read from this connection"));
-}
-
-static void CheckOutConn(Rconnection con)
-{
-    if (! con->isopen)
-	error(_("connection is not open"));
-    if (! con->canwrite || con->write == NULL)
-	error(_("cannot write to this connection"));
 }
 
 static void InBytesConn(R_inpstream_t stream, void *buf, int length)
@@ -1772,7 +1569,7 @@ static void InBytesConn(R_inpstream_t stream, void *buf, int length)
 	    p[i] = Rconn_fgetc(con);
     }
     else {
-	if (stream->type == R_pstream_ascii_format) {
+	if (stream->type == PStream::ASCII) {
 	    char linebuf[4];
 	    unsigned char *p = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
 	    int i, ncread;
@@ -1806,61 +1603,20 @@ static int InCharConn(R_inpstream_t stream)
     }
 }
 
-static void OutBytesConn(R_outpstream_t stream, CXXRCONST void *buf, int length)
-{
-    Rconnection con = static_cast<Rconnection>( stream->data);
-    CheckOutConn(con);
-    if (con->text) {
-	int i;
-	CXXRCONST char *p = CXXRCONSTRUCT(static_cast<const char*>, buf);
-	for (i = 0; i < length; i++)
-	    Rconn_printf(con, "%c", p[i]);
-    }
-    else {
-	if (length != CXXRCONSTRUCT(int, con->write(buf, 1, length, con)))
-	    error(_("error writing to connection"));
-    }
-}
-
-static void OutCharConn(R_outpstream_t stream, int c)
-{
-    Rconnection con = static_cast<Rconnection>( stream->data);
-    CheckOutConn(con);
-    if (con->text)
-	Rconn_printf(con, "%c", c);
-    else {
-	char buf[1];
-	buf[0] = char( c);
-	if (1 != con->write(buf, 1, 1, con))
-	    error(_("error writing to connection"));
-    }
-}
-
-void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
-			  R_pstream_format_t type, int version,
-			  SEXP (*phook)(SEXP, SEXP), SEXP pdata)
-{
-    CheckOutConn(con);
-    if (con->text && type != R_pstream_ascii_format)
-	error(_("only ascii format can be written to text mode connections"));
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type, version,
-		     OutCharConn, OutBytesConn, phook, pdata);
-}
-
 void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
-			 R_pstream_format_t type,
+			 PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata)
 {
     CheckInConn(con);
     if (con->text) {
-	if (type == R_pstream_any_format)
-	    type = R_pstream_ascii_format;
-	else if (type != R_pstream_ascii_format)
+	if (type == PStream::ANY)
+	    type = PStream::ASCII;
+	else if (type != PStream::ASCII)
 	    error(_("only ascii format can be read from text mode connections"));
     }
     R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) con, type,
 		    InCharConn, InBytesConn, phook, pdata);
-}
+}*/
 
 /* ought to quote the argument, but it should only be an ENVSXP or STRSXP */
 static SEXP CallHook(SEXP x, SEXP fun)
@@ -1881,8 +1637,7 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     Rboolean ascii;
     int version;
     Rconnection con;
-    struct R_outpstream_st out;
-    R_pstream_format_t type;
+    PStream::Format type;
     SEXP (*hook)(SEXP, SEXP);
 
     checkArity(op, args);
@@ -1893,8 +1648,8 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     if (TYPEOF(CADDR(args)) != LGLSXP)
 	error(_("'ascii' must be logical"));
     ascii = CXXRCONSTRUCT(Rboolean, INTEGER(CADDR(args))[0]);
-    if (ascii) type = R_pstream_ascii_format;
-    else type = R_pstream_xdr_format;
+    if (ascii) type = PStream::ASCII;
+    else type = PStream::XDR;
 
     if (CADDDR(args) == R_NilValue)
 	version = R_DefaultSerializeVersion;
@@ -1908,7 +1663,9 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
     fun = CAR(nthcdr(args,4));
     hook = fun != R_NilValue ? CallHook : NULL;
 
-    R_InitConnOutPStream(&out, con, type, version, hook, fun);
+
+    PStreamOutConn out(type, version, con, hook, fun);
+
     R_Serialize(object, &out);
     return R_NilValue;
 }
@@ -1916,8 +1673,6 @@ do_serializeToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     /* unserializeFromConn(conn, hook) */
-
-    struct R_inpstream_st in;
     Rconnection con;
     SEXP fun;
     SEXP (*hook)(SEXP, SEXP);
@@ -1929,7 +1684,7 @@ SEXP attribute_hidden do_unserializeFromConn(SEXP call, SEXP op, SEXP args, SEXP
     fun = CADR(args);
     hook = fun != R_NilValue ? CallHook : NULL;
 
-    R_InitConnInPStream(&in, con, R_pstream_any_format, hook, fun);
+    PStreamInConn in(PStream::ANY, con, hook, fun);
     return R_Unserialize(&in);
 }
 
@@ -1951,58 +1706,18 @@ typedef struct bconbuf_st {
     unsigned char buf[BCONBUFSIZ];
 } *bconbuf_t;
 
-static void flush_bcon_buffer(bconbuf_t bb)
-{
-    if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, bb->buf, bb->count)) != bb->count)
-	error(_("error writing to connection"));
-    bb->count = 0;
-}
-
-static void OutCharBB(R_outpstream_t stream, int c)
-{
-    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
-    if (bb->count >= BCONBUFSIZ)
-	flush_bcon_buffer(bb);
-    bb->buf[bb->count++] = c;
-}
-
-static void OutBytesBB(R_outpstream_t stream, CXXRCONST void *buf, int length)
-{
-    bconbuf_t bb = CXXRCONSTRUCT(static_cast<bconbuf_st*>, stream->data);
-    if (bb->count + length > BCONBUFSIZ)
-	flush_bcon_buffer(bb);
-    if (length <= BCONBUFSIZ) {
-	memcpy(bb->buf + bb->count, buf, length);
-	bb->count += length;
-    }
-    else if (CXXRCONSTRUCT(int, R_WriteConnection(bb->con, buf, length)) != length)
-	error(_("error writing to connection"));
-}
-
-static void InitBConOutPStream(R_outpstream_t stream, bconbuf_t bb,
-			       Rconnection con,
-			       R_pstream_format_t type, int version,
-			       SEXP (*phook)(SEXP, SEXP), SEXP pdata)
-{
-    bb->count = 0;
-    bb->con = con;
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) bb, type, version,
-		     OutCharBB, OutBytesBB, phook, pdata);
-}
 
 /* only for use by serialize(), with binary write to a socket connection */
 SEXP attribute_hidden R_serializeb(SEXP object, SEXP icon, SEXP fun)
 {
-    struct R_outpstream_st out;
     SEXP (*hook)(SEXP, SEXP);
-    struct bconbuf_st bbs;
     Rconnection con = getConnection(asInteger(icon));
 
     hook = fun != R_NilValue ? CallHook : NULL;
 
-    InitBConOutPStream(&out, &bbs, con, R_pstream_xdr_format, 0, hook, fun);
+    PStreamOutBB out(PStream::XDR, 0, con, hook, fun);
     R_Serialize(object, &out);
-    flush_bcon_buffer(&bbs);
+    out.flush_bcon_buffer();
     return R_NilValue;
 }
 
@@ -2017,42 +1732,7 @@ typedef struct membuf_st {
     unsigned char *buf;
 } *membuf_t;
 
-static void resize_buffer(membuf_t mb, R_size_t needed)
-{
-    /* This used to allocate double 'needed', but that was problematic for
-       large buffers */
-    R_size_t newsize = needed;
-    /* we need to store the result in a RAWSXP */
-    if(needed > INT_MAX)
-	error(_("serialization is too large to store in a raw vector"));
-    if(needed < INT_MAX - MAXELTSIZE) needed += MAXELTSIZE;
-    mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, realloc(mb->buf, newsize));
-    if (mb->buf == NULL)
-	error(_("cannot allocate buffer"));
-    mb->size = newsize;
-}
-
-static void OutCharMem(R_outpstream_t stream, int c)
-{
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
-    if (mb->count >= mb->size)
-	resize_buffer(mb, mb->count + 1);
-    mb->buf[mb->count++] = c;
-}
-
-static void OutBytesMem(R_outpstream_t stream, CXXRCONST void *buf, int length)
-{
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
-    R_size_t needed = mb->count + R_size_t( length);
-    /* There is a potential overflow here on 32-bit systems */
-    if(double( mb->count) + length > double( INT_MAX))
-	error(_("serialization is too large to store in a raw vector"));
-    if (needed > mb->size) resize_buffer(mb, needed);
-    memcpy(mb->buf + mb->count, buf, length);
-    mb->count = needed;
-}
-
-static int InCharMem(R_inpstream_t stream)
+/*static int InCharMem(R_inpstream_t stream)
 {
     membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
     if (mb->count >= mb->size)
@@ -2076,82 +1756,32 @@ static void InitMemInPStream(R_inpstream_t stream, membuf_t mb,
     mb->count = 0;
     mb->size = length;
     mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, buf);
-    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, R_pstream_any_format,
+    R_InitInPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, PStream::ANY,
 		    InCharMem, InBytesMem, phook, pdata);
-}
-
-static void InitMemOutPStream(R_outpstream_t stream, membuf_t mb,
-			      R_pstream_format_t type, int version,
-			      SEXP (*phook)(SEXP, SEXP), SEXP pdata)
-{
-    mb->count = 0;
-    mb->size = 0;
-    mb->buf = NULL;
-    R_InitOutPStream(stream, CXXRNOCAST(R_pstream_data_t) mb, type, version,
-		     OutCharMem, OutBytesMem, phook, pdata);
-}
-
-static void free_mem_buffer(void *data)
-{
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, data);
-    if (mb->buf != NULL) {
-	unsigned char *buf = mb->buf;
-	mb->buf = NULL;
-	free(buf);
-    }
-}
-
-static SEXP CloseMemOutPStream(R_outpstream_t stream)
-{
-    SEXP val;
-    membuf_t mb = CXXRCONSTRUCT(static_cast<membuf_st*>, stream->data);
-    /* duplicate check, for future proofing */
-    if(mb->count > INT_MAX)
-	error(_("serialization is too large to store in a raw vector"));
-    PROTECT(val = allocVector(RAWSXP, mb->count));
-    memcpy(RAW(val), mb->buf, mb->count);
-    free_mem_buffer(mb);
-    UNPROTECT(1);
-    return val;
-}
+}*/
 
 SEXP attribute_hidden
 R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
 {
-    struct R_outpstream_st out;
-    R_pstream_format_t type;
+    PStream::Format type;
     SEXP (*hook)(SEXP, SEXP);
 
     hook = fun != R_NilValue ? CallHook : NULL;
 
-    if (asLogical(ascii)) type = R_pstream_ascii_format;
-    else type = R_pstream_xdr_format; /**** binary or ascii if no XDR? */
+    if (asLogical(ascii)) type = PStream::ASCII;
+    else type = PStream::XDR; /**** binary or ascii if no XDR? */
 
     if (icon == R_NilValue) {
 	RCNTXT cntxt;
-	struct membuf_st mbs;
-	SEXP val;
-
-	/* set up a context which will free the buffer if there is an error */
-	begincontext(&cntxt, CTXT_CCODE, R_NilValue, R_BaseEnv, R_BaseEnv,
-		     R_NilValue, R_NilValue);
-	cntxt.cend = &free_mem_buffer;
-	cntxt.cenddata = &mbs;
-
-	InitMemOutPStream(&out, &mbs, type, 0, hook, fun);
+	PStreamOutMem out(type, 0, hook, fun);
+	
 	R_Serialize(object, &out);
 
-	val =  CloseMemOutPStream(&out);
-
-	/* end the context after anything that could raise an error but before
-	   calling OutTerm so it doesn't get called twice */
-	endcontext(&cntxt);
-
-	return val;
+	return out.Close();
     }
     else {
 	Rconnection con = getConnection(asInteger(icon));
-	R_InitConnOutPStream(&out, con, type, 0, hook, fun);
+	PStreamOutConn out(type, 0, con, hook, fun);
 	R_Serialize(object, &out);
 	return R_NilValue;
     }
@@ -2160,7 +1790,6 @@ R_serialize(SEXP object, SEXP icon, SEXP ascii, SEXP fun)
 
 SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
 {
-    struct R_inpstream_st in;
     SEXP (*hook)(SEXP, SEXP);
 
     hook = fun != R_NilValue ? CallHook : NULL;
@@ -2170,14 +1799,15 @@ SEXP attribute_hidden R_unserialize(SEXP icon, SEXP fun)
 	error("character vectors are no longer accepted by unserialize()");
 	return R_NilValue; /* -Wall */
     } else if (TYPEOF(icon) == RAWSXP) {
-	struct membuf_st mbs;
 	void *data = RAW(icon);
 	int length = LENGTH(icon);
-	InitMemInPStream(&in, &mbs, data,  length, hook, fun);
+	PStreamInMem in(data, length, hook, fun);
+
+	//InitMemInPStream(&in, &mbs, data,  length, hook, fun);
 	return R_Unserialize(&in);
     } else {
 	Rconnection con = getConnection(asInteger(icon));
-	R_InitConnInPStream(&in, con, R_pstream_any_format, hook, fun);
+	PStreamInConn in(PStream::ANY, con, hook, fun);
 	return R_Unserialize(&in);
     }
 }

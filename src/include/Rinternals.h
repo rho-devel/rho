@@ -99,6 +99,11 @@
 #include "CXXR/WeakRef.h"
 
 #ifdef __cplusplus
+
+#include "CXXR/PStream.hpp"
+
+using namespace CXXR;
+
 extern "C" {
 #endif
 
@@ -479,6 +484,8 @@ void Rf_errorcall(SEXP, const char *, ...);
 void Rf_warningcall(SEXP, const char *, ...);
 void Rf_warningcall_immediate(SEXP, const char *, ...);
 
+#ifdef __cplusplus
+
 /* Save/Load Interface */
 #define R_XDR_DOUBLE_SIZE 8
 #define R_XDR_INTEGER_SIZE 4
@@ -490,14 +497,14 @@ int R_XDRDecodeInteger(void *buf);
 
 typedef void *R_pstream_data_t;
 
-typedef enum {
+/*typedef enum {
     R_pstream_any_format,
     R_pstream_ascii_format,
     R_pstream_binary_format,
     R_pstream_xdr_format
-} R_pstream_format_t;
+} R_pstream_format_t;*/
 
-typedef struct R_outpstream_st *R_outpstream_t;
+/*typedef struct R_outpstream_st *R_outpstream_t;
 struct R_outpstream_st {
     R_pstream_data_t data;
     R_pstream_format_t type;
@@ -506,35 +513,31 @@ struct R_outpstream_st {
     void (*OutBytes)(R_outpstream_t, const void *, int);
     SEXP (*OutPersistHookFunc)(SEXP, SEXP);
     SEXP OutPersistHookData;
-};
+};*/
 
 typedef struct R_inpstream_st *R_inpstream_t;
 struct R_inpstream_st {
     R_pstream_data_t data;
-    R_pstream_format_t type;
+    CXXR::PStream::Format type;
     int (*InChar)(R_inpstream_t);
     void (*InBytes)(R_inpstream_t, void *, int);
     SEXP (*InPersistHookFunc)(SEXP, SEXP);
     SEXP InPersistHookData;
 };
 
+
 void R_InitInPStream(R_inpstream_t stream, R_pstream_data_t data,
-		     R_pstream_format_t type,
+		     PStream::Format type,
 		     int (*inchar)(R_inpstream_t),
 		     void (*inbytes)(R_inpstream_t, void *, int),
 		     SEXP (*phook)(SEXP, SEXP), SEXP pdata);
-void R_InitOutPStream(R_outpstream_t stream, R_pstream_data_t data,
-		      R_pstream_format_t type, int version,
-		      void (*outchar)(R_outpstream_t, int),
-		      void (*outbytes)(R_outpstream_t, const void *, int),
-		      SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 
 void R_InitFileInPStream(R_inpstream_t stream, FILE *fp,
-			 R_pstream_format_t type,
+			 PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata);
-void R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
-			  R_pstream_format_t type, int version,
-			  SEXP (*phook)(SEXP, SEXP), SEXP pdata);
+/*void R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
+			  PStream::Format type, int version,
+			  SEXP (*phook)(SEXP, SEXP), SEXP pdata);*/
 
 #ifdef NEED_CONNECTION_PSTREAMS
 /* The connection interface is not yet available to packages.  To
@@ -544,16 +547,15 @@ void R_InitFileOutPStream(R_outpstream_t stream, FILE *fp,
 typedef struct Rconn  *Rconnection;
 #define HAVE_RCONNECTION_TYPEDEF
 #endif
-void R_InitConnOutPStream(R_outpstream_t stream, Rconnection con,
-			  R_pstream_format_t type, int version,
-			  SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 void R_InitConnInPStream(R_inpstream_t stream,  Rconnection con,
-			 R_pstream_format_t type,
+			 PStream::Format type,
 			 SEXP (*phook)(SEXP, SEXP), SEXP pdata);
 #endif
 
-void R_Serialize(SEXP s, R_outpstream_t ops);
-SEXP R_Unserialize(R_inpstream_t ips);
+void R_Serialize(SEXP s, CXXR::PStreamOut* ops);
+SEXP R_Unserialize(CXXR::PStreamIn* ips);
+
+#endif // __cplusplus
 
 /* slot management (in attrib.c) */
 SEXP R_do_slot(SEXP obj, SEXP name);

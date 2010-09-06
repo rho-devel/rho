@@ -43,6 +43,7 @@ SOURCES_CXX = \
         inspect.cpp IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp \
 	MemoryBank.cpp \
+	PStream.cpp \
         PairList.cpp Parentage.cpp Promise.cpp Provenance.cpp \
 	ProvenanceSet.cpp ProvenanceTracker.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
