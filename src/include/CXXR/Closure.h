@@ -154,21 +154,19 @@ namespace CXXR {
 	    return "closure";
 	}
 
-	/** @brief Copy a frame but strip formal argument bindings.
+	/** @brief Strip formal argument bindings from a Frame.
 	 *
-	 * This function is used in creating the working environment
-	 * of an S3 method from the working environment of its
-	 * generic.
+	 * This function removes from \a input_frame any bindings of
+	 * the formal arguments of this Closure.  It is used in
+	 * creating the working environment of an S3 method from the
+	 * working environment of its generic.
 	 *
-	 * @param input_frame Non-null pointer to the Frame to be copied.
-	 *
-	 * @return A Frame which is a clone of \a input_frame, except
-	 * that any bindings of the formal arguments of this
-	 * Closure are removed.
+	 * @param input_frame Non-null pointer to the Frame from which
+	 *          bindings are to be stripped.
 	 */
-	Frame* stripFormals(const Frame* input_frame) const
+	void stripFormals(Frame* input_frame) const
 	{
-	    return m_matcher->stripFormals(input_frame);
+	    m_matcher->stripFormals(input_frame);
 	}
 
 	// Virtual function of FunctionBase:

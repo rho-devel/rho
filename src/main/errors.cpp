@@ -859,8 +859,8 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(streql(cfn, "stop") || streql(cfn, "warning")
 	       || streql(cfn, "message")) continue;
 	    rho = cptr->workingEnvironment();
-	    // The following is not present in CR, but is presumably intended:
-	    break;
+	    // You might think a break was intended at this point, but
+	    // Brian Ripley assures us not: PR14367.
 	}
 	while(rho != R_EmptyEnv) {
 	    if (rho == R_GlobalEnv) break;

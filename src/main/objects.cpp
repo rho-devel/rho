@@ -309,7 +309,8 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	// Create newrho:
 	{
 	    const Frame* frame = generic_wk_env->frame();
-	    GCStackRoot<Frame> stripped_frame(clos->stripFormals(frame));
+	    GCStackRoot<Frame> stripped_frame(frame->clone());
+	    clos->stripFormals(stripped_frame);
 	    newrho = GCNode::expose(new Environment(0, stripped_frame));
 	}
     }
