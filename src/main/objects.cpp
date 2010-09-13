@@ -1346,26 +1346,27 @@ pair<bool, SEXP> attribute_hidden
 R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
-    SEXP fundef, value, mlist=R_NilValue, s, a, b;
-    int offset;
-    prim_methods_t current;
-    offset = PRIMOFFSET(op);
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    GCStackRoot<PairList> arglist(SEXP_downcast<PairList*>(args));
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+    SEXP value;
+    GCStackRoot<> mlist;
+    int offset = PRIMOFFSET(op);
     if(offset < 0 || offset > curMaxOffset)
 	error(_("invalid primitive operation given for dispatch"));
-    current = prim_methods[offset];
+    prim_methods_t current = prim_methods[offset];
     if(current == NO_METHODS || current == SUPPRESSED)
 	return pair<bool, SEXP>(false, 0);
-    /* check that the methods for this function have been set */
+    // check that the methods for this function have been set
     if(current == NEEDS_RESET) {
-	/* get the methods and store them in the in-core primitive
-	   method table.	The entries will be preserved via
-	   R_preserveobject, so later we can just grab mlist from
-	   prim_mlist */
+	// get the methods and store them in the in-core primitive
+	// method table.	The entries will be preserved via
+	// R_preserveobject, so later we can just grab mlist from
+	// prim_mlist 
 	do_set_prim_method(op, "suppressed", R_NilValue, mlist);
-	PROTECT(mlist = get_primitive_methods(op, rho));
+	mlist = get_primitive_methods(op, rho);
 	do_set_prim_method(op, "set", R_NilValue, mlist);
-	current = prim_methods[offset]; /* as revised by do_set_prim_method */
-	UNPROTECT(1);
+	current = prim_methods[offset]; // as revised by do_set_prim_method
     }
     mlist = prim_mlist[offset];
     if(mlist && !isNull(mlist)
@@ -1374,35 +1375,47 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(isPrimitive(value))
 	    return pair<bool, SEXP>(false, 0);
 	if(isFunction(value)) {
-	    /* found a method, call it with promised args */
+	    Closure* func = static_cast<Closure*>(value);
+	    // found a method, call it with promised args
 	    if(!promisedArgs) {
-		PROTECT(s = promiseArgs(CDR(call), rho));
-		if (length(s) != length(args)) error(_("dispatch error"));
-		for (a = args, b = s; a != R_NilValue; a = CDR(a), b = CDR(b))
-		    SET_PRVALUE(CAR(b), CAR(a));
-		value =  applyClosure(call, value, s, rho, R_BaseEnv);
-		UNPROTECT(1);
-	    } else
-		value = applyClosure(call, value, args, rho, R_BaseEnv);
+		PairList* pargs
+		    = ArgMatcher::prepareArgs(callx->tail(), callenv);
+		PairList *a, *b;
+		for (a = arglist, b = pargs;
+		     a != 0 && b != 0;
+		     a = a->tail(), b = b->tail())
+		    SET_PRVALUE(b->car(), a->car());
+		// Check for unequal list lengths:
+		if (a != 0 || b != 0)
+		    error(_("dispatch error"));
+		arglist = pargs;
+	    }
+	    value = func->apply(callx, arglist, callenv);
 	    return make_pair(true, value);
 	}
-	/* else, need to perform full method search */
+	// else, need to perform full method search
     }
-    fundef = prim_generics[offset];
+    RObject* fundef = prim_generics[offset];
     if(!fundef || TYPEOF(fundef) != CLOSXP)
-	error(_("primitive function \"%s\" has been set for methods but no generic function supplied"),
+	error(_("primitive function \"%s\" has been set for methods"
+		" but no generic function supplied"),
 	      PRIMNAME(op));
-    /* To do:  arrange for the setting to be restored in case of an
-       error in method search */
+    Closure* func = static_cast<Closure*>(fundef);
+    // To do:  arrange for the setting to be restored in case of an
+    // error in method search
     if(!promisedArgs) {
-	PROTECT(s = promiseArgs(CDR(call), rho));
-	if (length(s) != length(args)) error(_("dispatch error"));
-	for (a = args, b = s; a != R_NilValue; a = CDR(a), b = CDR(b))
-	    SET_PRVALUE(CAR(b), CAR(a));
-	value = applyClosure(call, fundef, s, rho, R_BaseEnv);
-	UNPROTECT(1);
-    } else
-	value = applyClosure(call, fundef, args, rho, R_BaseEnv);
+	PairList* pargs = ArgMatcher::prepareArgs(callx->tail(), callenv);
+	PairList *a, *b;
+	for (a = arglist, b = pargs;
+	     a != 0 && b != 0;
+	     a = a->tail(), b = b->tail())
+	    SET_PRVALUE(b->car(), a->car());
+	// Check for unequal list lengths:
+	if (a != 0 || b != 0)
+	    error(_("dispatch error"));
+	arglist = pargs;
+    }
+    value = func->apply(callx, arglist, callenv);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return pair<bool, SEXP>(false, 0);
