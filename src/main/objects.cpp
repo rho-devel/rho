@@ -1391,7 +1391,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    error(_("dispatch error"));
 		arglist = pargs;
 	    }
-	    value = func->apply(callx, arglist, callenv);
+	    value = func->invoke(callx, arglist, callenv);
 	    return make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1416,7 +1416,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    error(_("dispatch error"));
 	arglist = pargs;
     }
-    value = func->apply(callx, arglist, callenv);
+    value = func->invoke(callx, arglist, callenv);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return pair<bool, SEXP>(false, 0);

@@ -1113,7 +1113,7 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 	Expression* callx = SEXP_downcast<Expression*>(call);
 	PairList* arglist = SEXP_downcast<PairList*>(args);
 	Environment* callenv = SEXP_downcast<Environment*>(env);
-	args = closure->apply(callx, arglist, callenv);
+	args = closure->invoke(callx, arglist, callenv);
 	UNPROTECT(2);
 	return args;
     }

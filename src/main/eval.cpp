@@ -1840,7 +1840,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     else
 	PROTECT(s = eval(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
     Closure* closure = SEXP_downcast<Closure*>(s);
-    ans = closure->apply(cptr->call(), args, cptr->callEnvironment());
+    ans = closure->invoke(cptr->call(), args, cptr->callEnvironment());
     UNPROTECT(1);
     return ans;
 }
@@ -3367,7 +3367,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    Expression* callx = SEXP_downcast<Expression*>(call);
 	    PairList* arglist = SEXP_downcast<PairList*>(args);
 	    Environment* callenv = SEXP_downcast<Environment*>(rho);
-	    value = closure->apply(callx, arglist, callenv);
+	    value = closure->invoke(callx, arglist, callenv);
 	    break;
 	}
 	default: error(_("bad function"));
