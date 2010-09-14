@@ -1099,11 +1099,11 @@ static void printwhere(void)
   for (cptr = FunctionContext::innermost();
        cptr;
        cptr = FunctionContext::innermost(cptr->nextOut())) {
-    if (TYPEOF(cptr->call()) == LANGSXP) {
-	Rprintf("where %d", lct++);
-	SrcrefPrompt("", cptr->sourceLocation());
-	PrintValue(cptr->call());
-    }
+      if (TYPEOF(CXXRCCAST(Expression*, cptr->call())) == LANGSXP) {
+	  Rprintf("where %d", lct++);
+	  SrcrefPrompt("", cptr->sourceLocation());
+	  PrintValue(CXXRCCAST(Expression*, cptr->call()));
+      }
   }
   Rprintf("\n");
 }
@@ -1190,7 +1190,7 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 //	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
 	if(tmp != R_NaInt && tmp > 0) R_BrowseLines = tmp;
         if( cptr )
-	    PrintValueRec(cptr->call(),rho);
+	    PrintValueRec(CXXRCCAST(Expression*, cptr->call()),rho);
         else
             Rprintf("top level \n");
 

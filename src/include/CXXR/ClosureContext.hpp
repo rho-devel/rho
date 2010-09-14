@@ -88,9 +88,9 @@ namespace CXXR {
 	 * @param promise_args Pointer, possibly null, to the list of
 	 *          arguments to the call, each wrapped in a Promise.
 	 */
-	ClosureContext(Expression* the_call, Environment* call_env,
-		       FunctionBase* function, Environment* working_env,
-		       PairList* promise_args);
+	ClosureContext(const Expression* the_call, Environment* call_env,
+		       const FunctionBase* function, Environment* working_env,
+		       const PairList* promise_args);
 
 	~ClosureContext();
 
@@ -137,7 +137,7 @@ namespace CXXR {
 	 * @return pointer, possibly null, to the list of arguments to
 	 * the call, each wrapped in a Promise.
 	 */
-	PairList* promiseArgs() const
+	const PairList* promiseArgs() const
 	{
 	    return m_promise_args;
 	}
@@ -177,7 +177,7 @@ namespace CXXR {
 #endif
 #endif
 	GCStackRoot<Environment> m_working_env;
-	GCStackRoot<PairList> m_promise_args;
+	GCStackRoot<const PairList> m_promise_args;
 	GCStackRoot<> m_onexit;
     };
 }  // namespace CXXR

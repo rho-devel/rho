@@ -71,7 +71,7 @@ static SEXP GetObject(ClosureContext *cptr)
     if (tag != R_NilValue && tag != R_DotsSymbol) {
 	s = R_NilValue;
 	/** exact matches **/
-	for (b = cptr->promiseArgs() ; b != R_NilValue ; b = CDR(b))
+	for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
 	    if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), CXXRTRUE)) {
 		if (s != R_NilValue)
 		    error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
@@ -81,7 +81,7 @@ static SEXP GetObject(ClosureContext *cptr)
 
 	if (s == R_NilValue)
 	    /** partial matches **/
-	    for (b = cptr->promiseArgs() ; b != R_NilValue ; b = CDR(b))
+	    for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
 		if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), CXXRFALSE)) {
 		    if ( s != R_NilValue)
 			error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
@@ -90,20 +90,20 @@ static SEXP GetObject(ClosureContext *cptr)
 		}
 	if (s == R_NilValue)
 	    /** first untagged argument **/
-	    for (b = cptr->promiseArgs() ; b != R_NilValue ; b = CDR(b))
+	    for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
 		if (TAG(b) == R_NilValue )
 		{
 		    s = CAR(b);
 		    break;
 		}
 	if (s == R_NilValue)
-	    s = CAR(cptr->promiseArgs());
+	    s = CAR(CXXRCCAST(PairList*, cptr->promiseArgs()));
 /*
 	    error("failed to match argument for dispatch");
 */
     }
     else
-	s = CAR(cptr->promiseArgs());
+	s = CAR(CXXRCCAST(PairList*, cptr->promiseArgs()));
 
     UNPROTECT(2);
     if (TYPEOF(s) == PROMSXP) {
@@ -315,8 +315,8 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	}
     }
 
-    GCStackRoot<> matchedarg(cptr->promiseArgs());
-    GCStackRoot<> newcall(duplicate(cptr->call()));
+    GCStackRoot<> matchedarg(CXXRCCAST(PairList*, cptr->promiseArgs()));
+    GCStackRoot<> newcall(cptr->call()->clone());
     GCStackRoot<> klass(R_data_class2(obj));
     int S4toS3 = IS_S4_OBJECT(obj);
 
@@ -569,10 +569,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if (cptr == NULL)
 	error(_("'NextMethod' called from outside a function"));
 
-    PROTECT(newcall = duplicate(cptr->call()));
+    PROTECT(newcall = cptr->call()->clone());
 
     /* eg get("print.ts")(1) */
-    if (TYPEOF(CAR(cptr->call())) == LANGSXP)
+    if (TYPEOF(CAR(CXXRCCAST(Expression*, cptr->call()))) == LANGSXP)
        error(_("'NextMethod' called from an anonymous function"));
 
     /* Find dispatching environments. Promises shouldn't occur, but
@@ -591,7 +591,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     else if (defenv == R_UnboundValue) defenv = R_GlobalEnv;
 
     /* set up the arglist */
-    s = R_LookupMethod(CAR(cptr->call()), env, callenv, defenv);
+    s = R_LookupMethod(CAR(CXXRCCAST(Expression*, cptr->call())), env, callenv, defenv);
     if (TYPEOF(s) == SYMSXP && s == R_UnboundValue)
 	error(_("no calling generic was found: was a method called directly?"));
     if (TYPEOF(s) != CLOSXP){ /* R_LookupMethod looked for a function */
@@ -602,7 +602,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
     formals = FORMALS(s);
-    PROTECT(actuals = matchArgs(formals, cptr->promiseArgs(), call));
+    PROTECT(actuals = matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
 
     i = 0;
     for(s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
@@ -633,8 +633,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
-    PROTECT(matchedarg = allocList(length(cptr->promiseArgs())));
-    for (t = matchedarg, s = cptr->promiseArgs(); t != R_NilValue;
+    PROTECT(matchedarg = allocList(length(CXXRCCAST(PairList*, cptr->promiseArgs()))));
+    for (t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
 	 s = CDR(s), t = CDR(t)) {
 	SETCAR(t, CAR(s));
 	SET_TAG(t, TAG(s));
@@ -752,10 +752,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     else {
-	if(strlen(CHAR(PRINTNAME(CAR(cptr->call())))) >= 512)
+	if(strlen(CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call()))))) >= 512)
 	   error(_("call name too long in '%s'"),
-		 CHAR(PRINTNAME(CAR(cptr->call()))));
-	sprintf(b, "%s", CHAR(PRINTNAME(CAR(cptr->call()))));
+		 CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
+	sprintf(b, "%s", CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
     }
 
     sb = translateChar(STRING_ELT(basename, 0));

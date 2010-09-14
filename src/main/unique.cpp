@@ -1148,7 +1148,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 	       context only if the call was not supplied explicitly.
 	       The documentation should also be changed to be
 	       consistent with this behavior.  LT */
-	    PROTECT(b = duplicate(cptr->function()));
+	    PROTECT(b = cptr->function()->clone());
 	else if ( TYPEOF(CAR(funcall)) == SYMSXP )
 	    PROTECT(b = findFun(CAR(funcall), sysp));
 	else

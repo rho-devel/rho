@@ -494,7 +494,7 @@ SEXP attribute_hidden do_nargs(SEXP call, SEXP op, SEXP args, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho)
 	cptr = ClosureContext::innermost(cptr->nextOut());
     if (cptr)
-	nargs = length(cptr->promiseArgs());
+	nargs = length(CXXRCCAST(PairList*, cptr->promiseArgs()));
     return ScalarInteger(nargs);
 }
 

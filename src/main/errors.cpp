@@ -280,7 +280,7 @@ void warning(const char *format, ...)
     if(strlen(buf) > 0 && *p == '\n') *p = '\0';
     if(R_WarnLength < BUFSIZE - 20 && CXXRCONSTRUCT(int, strlen(buf)) == R_WarnLength)
 	strcat(buf, " [... truncated]");
-    warningcall(c ? c->call() : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    warningcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
 /* temporary hook to allow experimenting with alternate warning mechanisms */
@@ -692,7 +692,7 @@ void error(const char *format, ...)
     va_start(ap, format);
     Rvsnprintf(buf, min(BUFSIZE, R_WarnLength), format, ap);
     va_end(ap);
-    errorcall(c ? c->call() : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
+    errorcall(c ? CXXRCCAST(Expression*, c->call()) : CXXRSCAST(RObject*, R_NilValue), "%s", buf);
 }
 
 static void try_jump_to_restart(void)
@@ -855,7 +855,7 @@ SEXP attribute_hidden do_gettext(SEXP call, SEXP op, SEXP args, SEXP rho)
 	     cptr != NULL;
 	     cptr = ClosureContext::innermost(cptr->nextOut())) {
 	    /* stop() etc have internal call to .makeMessage */
-	    cfn = CHAR(STRING_ELT(deparse1s(CAR(cptr->call())), 0));
+	    cfn = CHAR(STRING_ELT(deparse1s(CAR(CXXRCCAST(Expression*, cptr->call()))), 0));
 	    if(streql(cfn, "stop") || streql(cfn, "warning")
 	       || streql(cfn, "message")) continue;
 	    rho = cptr->workingEnvironment();
@@ -1019,7 +1019,7 @@ static SEXP findCall(void)
 {
     ClosureContext *cptr
 	= ClosureContext::innermost(ClosureContext::innermost()->nextOut());
-    return (cptr ? cptr->call() : 0);
+    return (cptr ? CXXRCCAST(Expression*, cptr->call()) : 0);
 }
 
 SEXP attribute_hidden do_stop(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -1211,7 +1211,7 @@ SEXP R_GetTraceback(int skip)
 	if (skip > 0)
 	    skip--;
 	else {
-	    SETCAR(t, deparse1(c->call(), CXXRFALSE, DEFAULTDEPARSE));
+	    SETCAR(t, deparse1(CXXRCCAST(Expression*, c->call()), CXXRFALSE, DEFAULTDEPARSE));
 	    if (c->sourceLocation() && !isNull(c->sourceLocation())) 
 		setAttrib(CAR(t), R_SrcrefSymbol, duplicate(c->sourceLocation()));
 	    t = CDR(t);
@@ -1235,7 +1235,7 @@ static CXXRCONST char * R_ConciseTraceback(SEXP call, int skip)
 	if (skip > 0)
 	    skip--;
 	else {
-	    SEXP fun = CAR(c->call());
+	    SEXP fun = CAR(CXXRCCAST(Expression*, c->call()));
 	    const char *funstr = (TYPEOF(fun) == SYMSXP) ?
 		CHAR(PRINTNAME(fun)) : "<Anonymous>";
 	    if(streql(funstr, "stop") ||

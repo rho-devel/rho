@@ -29,9 +29,10 @@ using namespace CXXR;
 GCRoot<> R_HandlerStack;
 GCRoot<> R_RestartStack;
 
-ClosureContext::ClosureContext(Expression* the_call, Environment* call_env,
-			       FunctionBase* function, Environment* working_env,
-			       PairList* promise_args)
+ClosureContext::ClosureContext(const Expression* the_call, Environment* call_env,
+			       const FunctionBase* function,
+			       Environment* working_env,
+			       const PairList* promise_args)
     : FunctionContext(the_call, call_env, function),
       m_interrupts_suspended(R_interrupts_suspended),
       m_handlerstack(R_HandlerStack), m_restartstack(R_RestartStack),

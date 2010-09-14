@@ -67,7 +67,7 @@ SEXP attribute_hidden R_sysframe(int n, ClosureContext *cptr)
 	n = -n;
 
     if(n < 0)
-	errorcall(FunctionContext::innermost()->call(),
+	errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 		  _("not that many frames on the stack"));
 
     while (cptr) {
@@ -81,7 +81,7 @@ SEXP attribute_hidden R_sysframe(int n, ClosureContext *cptr)
     if(n == 0)
 	return R_GlobalEnv;
     else
-	errorcall(FunctionContext::innermost()->call(),
+	errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 		  _("not that many frames on the stack"));
     return R_NilValue;	   /* just for -Wall */
 }
@@ -98,7 +98,7 @@ int attribute_hidden R_sysparent(int n, ClosureContext *cptr)
     int j;
     SEXP s;
     if(n <= 0)
-	errorcall(FunctionContext::innermost()->call(),
+	errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 		  _("only positive values of 'n' are allowed"));
     while (cptr && n > 1) {
 	    n--;
@@ -144,11 +144,11 @@ SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
     else
 	n = - n;
     if(n < 0)
-	errorcall(FunctionContext::innermost()->call(),
+	errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 		  _("not that many frames on the stack"));
     while (cptr) {
 	if (n == 0) {
-	    PROTECT(result = duplicate(cptr->call()));
+	    PROTECT(result = cptr->call()->clone());
 	    if (cptr->sourceLocation())
 		setAttrib(result, R_SrcrefSymbol,
 			  duplicate(cptr->sourceLocation()));
@@ -158,7 +158,7 @@ SEXP attribute_hidden R_syscall(int n, ClosureContext* cptr)
 	    n--;
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    errorcall(FunctionContext::innermost()->call(),
+    errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }
@@ -170,18 +170,16 @@ SEXP attribute_hidden R_sysfunction(int n, ClosureContext* cptr)
     else
 	n = - n;
     if (n < 0)
-	errorcall(FunctionContext::innermost()->call(),
+	errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 		  _("not that many frames on the stack"));
     while (cptr) {
-	if (n == 0) {
-	    FunctionBase* f = cptr->function();
-	    return duplicate(f);  /***** do we need to DUP? */
-	}
+	if (n == 0)
+	    return cptr->function()->clone();  /***** do we need to DUP? */
 	else
 	    n--;
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    errorcall(FunctionContext::innermost()->call(),
+    errorcall(CXXRCCAST(Expression*, FunctionContext::innermost()->call()),
 	      _("not that many frames on the stack"));
     return R_NilValue;	/* just for -Wall */
 }

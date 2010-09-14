@@ -124,6 +124,26 @@ namespace CXXR {
 	    return m_matcher->formalArgs();
 	}
 
+	/** @brief Invoke the function.
+	 *
+	 * This differs from apply() only in that any required
+	 * wrapping of the function arguments in Promise objects is
+	 * assumed to have been carried out before invoke() is called,
+	 * whereas apply() carries out this wrapping itself.
+	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
+	 * @param args List of arguments with which the function is to
+	 *          be invoked.
+	 *
+	 * @param env Pointer to the Environment in which the function
+	 *          is to be evaluated.
+	 *
+	 * @return The result of applying the function.
+	 */
+	RObject* invoke(const Expression* call,
+			const PairList* args, Environment* env);
+
 	/** @brief Set debugging status.
 	 *
 	 * @param on The required new debugging status (true =

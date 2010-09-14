@@ -78,6 +78,28 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 			Environment* env)
 {
     GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
+    return invoke(call, prepared_args, env);
+}
+
+Closure* Closure::clone() const
+{
+    return expose(new Closure(*this));
+}
+
+// Implementation of class Closure::DebugScope is in eval.cpp (for the
+// time being).
+
+void Closure::detachReferents()
+{
+    m_matcher.detach();
+    m_body.detach();
+    m_environment.detach();
+    RObject::detachReferents();
+}
+
+RObject* Closure::invoke(const Expression* call, const PairList* args,
+			 Environment* env)
+{
     // +5 to allow some capacity for local variables:
     GCStackRoot<Environment>
 	newenv(expose(new Environment(environment(),
@@ -85,8 +107,8 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     // Set up environment:
     {
         ClosureContext cntxt(const_cast<Expression*>(call), env, this,
-			     environment(), const_cast<PairList*>(args));
-	m_matcher->match(newenv, prepared_args);
+			     environment(), args);
+	m_matcher->match(newenv, args);
     }
     // Perform evaluation:
     GCStackRoot<> ans;
@@ -99,7 +121,7 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
 		syspar = innercctxt->callEnvironment();
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),
-			     syspar, this, newenv, prepared_args);
+			     syspar, this, newenv, args);
 	Environment::ReturnScope returnscope(newenv);
 	Closure::DebugScope debugscope(cntxt, env); 
 	try {
@@ -124,22 +146,6 @@ RObject* Closure::apply(const Expression* call, const PairList* args,
     Environment::monitorLeaks(ans);
     newenv->maybeDetachFrame();
     return ans;
-}
-
-Closure* Closure::clone() const
-{
-    return expose(new Closure(*this));
-}
-
-// Implementation of class Closure::DebugScope is in eval.cpp (for the
-// time being).
-
-void Closure::detachReferents()
-{
-    m_matcher.detach();
-    m_body.detach();
-    m_environment.detach();
-    RObject::detachReferents();
 }
 
 const char* Closure::typeName() const

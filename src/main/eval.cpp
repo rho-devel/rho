@@ -197,8 +197,8 @@ static void doprof(int sig)
     for (cptr = FunctionContext::innermost();
 	 cptr;
 	 cptr = FunctionContext::innermost(cptr->nextOut())) {
-	if (TYPEOF(cptr->call()) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call());
+	if (TYPEOF(CXXRCCAST(Expression*, cptr->call())) == LANGSXP) {
+	    SEXP fun = CAR(CXXRCCAST(Expression*, cptr->call()));
 	    if (!newline) newline = 1;
 	    fprintf(R_ProfileOutfile, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :
@@ -547,9 +547,9 @@ Closure::DebugScope::DebugScope(const ClosureContext& context,
 				Environment* argsenv)
     : m_context(context), m_argsenv(argsenv)
 {
-    Closure* closure = static_cast<Closure*>(m_context.function());
+    const Closure* closure = static_cast<const Closure*>(m_context.function());
     if (closure->debugging()) {
-	Expression* call = m_context.call();
+	const Expression* call = m_context.call();
 	Environment* working_env = m_context.workingEnvironment();
 	working_env->setSingleStepping(true);
 	Rprintf("debugging in: ");
@@ -560,7 +560,7 @@ Closure::DebugScope::DebugScope(const ClosureContext& context,
 					     R_BaseEnv));
 	    if(blines != NA_INTEGER && blines > 0)
 		R_BrowseLines = blines;
-	    Rf_PrintValueRec(call, argsenv);
+	    Rf_PrintValueRec(const_cast<Expression*>(call), argsenv);
 	    R_BrowseLines = old_bl;
 	}
 	RObject* body = closure->m_body;
@@ -582,13 +582,15 @@ Closure::DebugScope::DebugScope(const ClosureContext& context,
 	}
 	Rprintf("debug: ");
 	Rf_PrintValue(body);
-	do_browser(call, closure, m_context.promiseArgs(), working_env);
+	do_browser(const_cast<Expression*>(call), const_cast<Closure*>(closure),
+		   const_cast<PairList*>(m_context.promiseArgs()),
+		   working_env);
     }
 }
 
 Closure::DebugScope::~DebugScope()
 {
-    Closure* closure = static_cast<Closure*>(m_context.function());
+    const Closure* closure = static_cast<const Closure*>(m_context.function());
     if (closure->debugging()) {
 	try {
 	    Rprintf("exiting from: ");
@@ -597,7 +599,7 @@ Closure::DebugScope::~DebugScope()
 		= asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
 	    if(blines != NA_INTEGER && blines > 0)
 		R_BrowseLines = blines;
-	    Rf_PrintValueRec(m_context.call(),
+	    Rf_PrintValueRec(const_cast<Expression*>(m_context.call()),
 			     const_cast<Environment*>(m_argsenv));
 	    R_BrowseLines = old_bl;
 	}
@@ -770,8 +772,8 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     /* get the rest of the stuff we need from the current context,
        execute the method, and return the result */
-    call = cptr->call();
-    arglist = cptr->promiseArgs();
+    call = CXXRCCAST(Expression*, cptr->call());
+    arglist = CXXRCCAST(PairList*, cptr->promiseArgs());
     val = R_execClosure(call, op, arglist, callerenv, newrho);
     UNPROTECT(1);
     return val;
@@ -1818,7 +1820,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    PairList* args = cptr->promiseArgs();
+    const PairList* args = cptr->promiseArgs();
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1832,11 +1834,11 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
        originally used to get it.
     */
     if (cptr->function() != R_NilValue)
-	PROTECT(s = cptr->function());
-    else if( TYPEOF(CAR(cptr->call())) == SYMSXP)
-	PROTECT(s = findFun(CAR(cptr->call()), cptr->callEnvironment()));
+	PROTECT(s = CXXRCCAST(FunctionBase*, cptr->function()));
+    else if( TYPEOF(CAR(CXXRCCAST(Expression*, cptr->call()))) == SYMSXP)
+	PROTECT(s = findFun(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
     else
-	PROTECT(s = eval(CAR(cptr->call()), cptr->callEnvironment()));
+	PROTECT(s = eval(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
     Closure* closure = SEXP_downcast<Closure*>(s);
     ans = closure->apply(cptr->call(), args, cptr->callEnvironment());
     UNPROTECT(1);

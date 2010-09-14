@@ -74,8 +74,8 @@ namespace CXXR {
 	 * @param function Pointer, possibly null, to the function
 	 *          being applied.
 	 */
-	FunctionContext(Expression* the_call, Environment* call_env,
-			FunctionBase* function);
+	FunctionContext(const Expression* the_call, Environment* call_env,
+			const FunctionBase* function);
 
 	~FunctionContext();
 
@@ -84,7 +84,7 @@ namespace CXXR {
 	 * @return Pointer to the call with which the Context is
 	 * associated.
 	 */
-	Expression* call() const
+	const Expression* call() const
 	{
 	    return m_call;
 	}
@@ -104,7 +104,7 @@ namespace CXXR {
 	 * @return Pointer, possibly null, to the function being
 	 * applied in this Context.
 	 */
-	FunctionBase* function() const
+	const FunctionBase* function() const
 	{
 	    return m_function;
 	}
@@ -158,9 +158,9 @@ namespace CXXR {
 
     private:
 	GCStackRoot<> m_srcref;
-	GCStackRoot<Expression> m_call;
+	GCStackRoot<const Expression> m_call;
 	GCStackRoot<Environment> m_call_env;
-	GCStackRoot<FunctionBase> m_function;
+	GCStackRoot<const FunctionBase> m_function;
 	bool m_generic;
     };
 }  // namespace CXXR
