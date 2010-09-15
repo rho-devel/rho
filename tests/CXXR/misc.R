@@ -14,3 +14,9 @@ quint <- function(arg) {
 quint(0)
 quint(2)
 try(quint(break))
+
+# Missing ...
+
+missdots <- function(...) missing(...)
+missdots()
+missdots(2)

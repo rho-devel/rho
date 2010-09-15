@@ -18,3 +18,11 @@
 > try(quint(break))
 Error in quint(break) : no loop to break from, jumping to top level
 > 
+> # Missing ...
+> 
+> missdots <- function(...) missing(...)
+> missdots()
+[1] TRUE
+> missdots(2)
+[1] FALSE
+> 

@@ -70,9 +70,7 @@ void ArgMatcher::detachReferents()
 void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 {
     Frame::Binding* bdg = frame->obtainBinding(DotsSymbol);
-    if (supplied_list->empty())
-	bdg->setValue(0, Frame::Binding::EXPLICIT);
-    else {
+    if (!supplied_list->empty()) {
 	SuppliedList::iterator first = supplied_list->begin();
 	DottedArgs* dotted_args
 	    = expose(new DottedArgs((*first).value, 0, (*first).tag));
