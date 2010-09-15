@@ -126,10 +126,10 @@ namespace CXXR {
 
 	/** @brief Invoke the function.
 	 *
-	 * This differs from apply() only in that any required
-	 * wrapping of the function arguments in Promise objects is
-	 * assumed to have been carried out before invoke() is called,
-	 * whereas apply() carries out this wrapping itself.
+	 * This differs from apply() in that it is assumed that any
+	 * required wrapping of the function arguments in Promise
+	 * objects will have been carried out before invoke() is
+	 * called, whereas apply() carries out this wrapping itself.
 	 *
 	 * @param call Pointer to the Expression calling the function.
 	 *
@@ -139,10 +139,17 @@ namespace CXXR {
 	 * @param env Pointer to the Environment in which the function
 	 *          is to be evaluated.
 	 *
+	 * @param method_bindings This pointer will be non-null if and
+	 *          only if this invocation represents a method call,
+	 *          in which case it points to a Frame containing
+	 *          Bindings that should be added to the working
+	 *          environment, for example bindings of the Symbols
+	 *          \c .Generic and \c .Class.
+	 *
 	 * @return The result of applying the function.
 	 */
-	RObject* invoke(const Expression* call,
-			const PairList* args, Environment* env);
+	RObject* invoke(const Expression* call, const PairList* args,
+			Environment* env, const Frame* method_bindings = 0);
 
 	/** @brief Set debugging status.
 	 *

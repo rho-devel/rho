@@ -98,13 +98,13 @@ void Closure::detachReferents()
 }
 
 RObject* Closure::invoke(const Expression* call, const PairList* args,
-			 Environment* env)
+			 Environment* env, const Frame* method_bindings)
 {
     // +5 to allow some capacity for local variables:
     GCStackRoot<Environment>
 	newenv(expose(new Environment(environment(),
 				      m_matcher->numFormals() + 5)));
-    // Set up environment:
+    // Perform argument matching:
     {
         ClosureContext cntxt(const_cast<Expression*>(call), env, this,
 			     environment(), args);
@@ -114,11 +114,12 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
     GCStackRoot<> ans;
     {
 	Environment* syspar = env;
-	// Change syspar if generic:
-	{
-	    ClosureContext* innercctxt = ClosureContext::innermost();
-	    if (innercctxt && innercctxt->isGeneric())
-		syspar = innercctxt->callEnvironment();
+	// If this is a method call, change syspar
+	// and merge in supplementary bindings:
+	if (method_bindings) {
+	    method_bindings->softMergeInto(newenv->frame());
+	    FunctionContext* fctxt = FunctionContext::innermost();
+	    syspar = (fctxt ? fctxt->callEnvironment() : Environment::global());
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),
 			     syspar, this, newenv, args);

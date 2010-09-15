@@ -147,6 +147,18 @@ size_t StdFrame::size() const
     return m_map.size();
 }
 
+void StdFrame::softMergeInto(Frame* target) const
+{
+    for (map::const_iterator it = m_map.begin(); it != m_map.end(); ++it) {
+	const Symbol* symbol = (*it).first;
+	if (!target->binding(symbol)) {
+	    const Binding& mybdg = (*it).second;
+	    Binding* yourbdg = target->obtainBinding(symbol);
+	    yourbdg->setValue(mybdg.value(), mybdg.origin());
+	}
+    }
+}
+
 vector<const Symbol*> StdFrame::symbols(bool include_dotsymbols) const
 {
     vector<const Symbol*> ans;

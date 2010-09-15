@@ -124,28 +124,6 @@ namespace CXXR {
 	static FunctionContext* innermost(Evaluator::Context* start
 					  = Evaluator::Context::innermost());
 
-	/** @brief Is this a generic function invocation?
-	 *
-	 * @return true iff this has been flagged as a generic
-	 * function invocation.
-	 */
-	bool isGeneric() const
-	{
-	    return m_generic;
-	}
-
-	/** @brief Set status as generic function invocation.
-	 *
-	 * @param on true if this Context is to be designated as a
-	 *           generic function invocation; false if this
-	 *           designation is to be removed.  The generic status
-	 *           is false by default.
-	 */
-	void setGeneric(bool on)
-	{
-	    m_generic = on;
-	}
-
 	/** @brief Source location associated with this Context.
 	 *
 	 * @return Pointer, possibly null, to the source location
@@ -161,7 +139,6 @@ namespace CXXR {
 	GCStackRoot<const Expression> m_call;
 	GCStackRoot<Environment> m_call_env;
 	GCStackRoot<const FunctionBase> m_function;
-	bool m_generic;
     };
 }  // namespace CXXR
 

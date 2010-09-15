@@ -86,6 +86,7 @@ namespace CXXR {
 	size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
 	size_t size() const;
+	void softMergeInto(Frame* target) const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 
 	// Virtual function of GCNode:

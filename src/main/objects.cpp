@@ -117,18 +117,20 @@ static SEXP GetObject(ClosureContext *cptr)
 
 static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
 {
-    SEXP ans;
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    SEXP ans = 0;
     if (TYPEOF(op) == SPECIALSXP || TYPEOF(op) == BUILTINSXP) {
 	BuiltInFunction* func = static_cast<BuiltInFunction*>(op);
-	Expression* callx = SEXP_downcast<Expression*>(call);
 	GCStackRoot<PairList> argslist(SEXP_downcast<PairList*>(args));
 	Environment* env = SEXP_downcast<Environment*>(newrho);
 	ans = func->apply(callx, argslist, env);
     } else if (TYPEOF(op) == CLOSXP) {
-	ans = applyClosure(call, op, args, rho, newrho);
+	Closure* func = SEXP_downcast<Closure*>(op);
+	PairList* arglist = SEXP_downcast<PairList*>(args);
+	Environment* callenv = SEXP_downcast<Environment*>(rho);
+	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
+	ans = func->invoke(callx, arglist, callenv, supp_env->frame());
     }
-    else
-	ans = R_NilValue;  /* for -Wall */
     return ans;
 }
 
@@ -368,9 +370,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    }
 	    GCStackRoot<> tnc(newcall);
 	    SETCAR(tnc, method);
-	    ClosureContext::innermost()->setGeneric(true);
 	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
-	    ClosureContext::innermost()->setGeneric(false);
 	    return 1;
 	}
     }
@@ -394,14 +394,11 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	    defineVar(install(".GenericDefEnv"), defrho, newrho);
 	    GCStackRoot<> tnc(newcall);
 	    SETCAR(tnc, method);
-	    ClosureContext::innermost()->setGeneric(true);
 	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
-	    ClosureContext::innermost()->setGeneric(false);
 	    return 1;
 	}
     }
 
-    cptr->setGeneric(false);
     return 0;
 }
 
@@ -560,7 +557,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     int i, j;
 
     cptr = ClosureContext::innermost();
-    cptr->setGeneric(true);
 
     /* get the env NextMethod was called from */
     sysp = cptr->callEnvironment();

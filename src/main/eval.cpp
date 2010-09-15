@@ -369,180 +369,6 @@ void SrcrefPrompt(const char * prefix, SEXP srcref)
     Rprintf("%s: ", prefix);
 }
 
-/* Apply SEXP op of type CLOSXP to actuals */
-// In CXXR, applyClosure() currently exists alongside
-// Closure::apply(), with neither calling the other.  The resulting
-// code duplication will be rectified in due course.
-
-SEXP applyClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho, SEXP suppliedenv)
-{
-    SEXP body, formals, savedrho;
-    GCStackRoot<> actuals;
-    GCStackRoot<Environment> newrho;
-    SEXP f, a;
-    GCStackRoot<> tmp;
-
-    /* formals = list of formal parameters */
-    /* actuals = values to be bound to formals */
-    /* arglist = the tagged list of arguments */
-
-    formals = FORMALS(op);
-    body = BODY(op);
-    savedrho = CLOENV(op);
-
-    /*  Set up a context with the call in it so error has access to it */
-    {
-        Expression* callx = SEXP_downcast<Expression*>(call);
-	Environment* call_env = SEXP_downcast<Environment*>(rho);
-	Closure* func = SEXP_downcast<Closure*>(op);
-	Environment* working_env = SEXP_downcast<Environment*>(savedrho);
-	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	ClosureContext cntxt(callx, call_env, func, working_env, promargs);
-
-	/*  Build a list which matches the actual (unevaluated) arguments
-	    to the formal paramters.  Build a new environment which
-	    contains the matched pairs.  Ideally this environment sould be
-	    hashed.  */
-
-	actuals = matchArgs(formals, arglist, call);
-	newrho = static_cast<Environment*>(NewEnvironment(formals, actuals,
-							  savedrho));
-
-	/*  Use the default code for unbound formals.  FIXME: It looks like
-	    this code should preceed the building of the environment so that
-	    this will also go into the hash table.  */
-
-	/* This piece of code is destructively modifying the actuals list,
-	   which is now also the list of bindings in the frame of newrho.
-	   This is one place where internal structure of environment
-	   bindings leaks out of envir.c.  It should be rewritten
-	   eventually so as not to break encapsulation of the internal
-	   environment layout.  We can live with it for now since it only
-	   happens immediately after the environment creation.  LT */
-
-	// The above rewriting is in progress for CXXR.
-
-	f = formals;
-	a = actuals;
-	while (f != R_NilValue) {
-	    if (CAR(a) == R_MissingArg && CAR(f) != R_MissingArg) {
-		const Symbol* symbol = static_cast<Symbol*>(TAG(a));
-		Frame::Binding* bdg = newrho->frame()->binding(symbol);
-		bdg->setValue(mkPROMISE(CAR(f), newrho),
-			      Frame::Binding::DEFAULTED);
-	    }
-	    f = CDR(f);
-	    a = CDR(a);
-	}
-
-	/*  Fix up any extras that were supplied by usemethod. */
-
-	// 2009-02-11: The test '&& suppliedenv != R_BaseEnv' is added in
-	// CXXR.  CR at this point appears to rely on the fact that in CR,
-	// the FRAME of the base environment will be empty, which is no
-	// longer true in CXXR.  Possibly the base namespace ought also to
-	// be excluded at this point.  ARR.
-	if (suppliedenv != R_NilValue && suppliedenv != R_BaseEnv) {
-	    for (tmp = FRAME(suppliedenv); tmp != R_NilValue; tmp = CDR(tmp)) {
-		for (a = actuals; a != R_NilValue; a = CDR(a))
-		    if (TAG(a) == TAG(tmp))
-			break;
-		if (a == R_NilValue)
-		    /* Use defineVar instead of earlier version that added
-		       bindings manually */
-		    defineVar(TAG(tmp), CAR(tmp), newrho);
-	    }
-	}
-
-	/*  Terminate the previous context and start a new one with the
-	    correct environment. */
-    }
-
-    /*  If we have a generic function we need to use the sysparent of
-	the generic as the sysparent of the method because the method
-	is a straight substitution of the generic.  */
-    {
-        Environment* syspar = SEXP_downcast<Environment*>(rho);
-	{
-	    ClosureContext* innerctxt = ClosureContext::innermost();
-	    if (innerctxt && innerctxt->isGeneric())
-		syspar = innerctxt->callEnvironment();
-	}
-	Expression* callx = SEXP_downcast<Expression*>(call);
-	Closure* func = SEXP_downcast<Closure*>(op);
-	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	ClosureContext cntxt(callx, syspar, func, newrho, promargs);
-
-	/* The default return value is NULL.  FIXME: Is this really needed
-	   or do we always get a sensible value returned?  */
-
-	tmp = R_NilValue;
-
-	/* Debugging */
-
-	SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
-	if( RSTEP(op) ) SET_RSTEP(op, 0);
-	if (ENV_DEBUG(newrho)) {
-	    int old_bl = R_BrowseLines,
-		blines = asInteger(GetOption(install("deparse.max.lines"),
-					     R_BaseEnv));
-	    Rprintf("debugging in: ");
-	    if(blines != NA_INTEGER && blines > 0)
-		R_BrowseLines = blines;
-	    PrintValueRec(call,rho);
-	    R_BrowseLines = old_bl;
-
-	    /* Is the body a bare symbol (PR#6804) */
-	    if (!isSymbol(body) & !isVectorAtomic(body)){
-		/* Find out if the body is function with only one statement. */
-		if (isSymbol(CAR(body)))
-		    tmp = findFun(CAR(body), rho);
-		else
-		    tmp = eval(CAR(body), rho);
-		if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
-		   && !strcmp( PRIMNAME(tmp), "for")
-		   && !strcmp( PRIMNAME(tmp), "{")
-		   && !strcmp( PRIMNAME(tmp), "repeat")
-		   && !strcmp( PRIMNAME(tmp), "while")
-		   )
-		    goto regdb;
-	    }
-	    SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
-	    PrintValue(body);
-	    do_browser(call, op, R_NilValue, newrho);
-	}
-
-    regdb:
-	Environment::ReturnScope returnscope(newrho);
-	try {
-	    {
-		BailoutContext boctxt;
-		tmp = Evaluator::evaluate(body, newrho);
-	    }
-	    if (tmp && tmp->sexptype() == BAILSXP) {
-		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(tmp.get());
-		if (!rbo || rbo->environment() != newrho)
-		    abort();
-		R_Visible = Rboolean(rbo->printResult());
-		tmp = rbo->value();
-	    }
-	}
-	catch (ReturnException& rx) {
-	    if (rx.environment() != newrho)
-		throw;
-	    tmp = rx.value();
-	}
-    }
-
-    if (RDEBUG(op)) {
-	Rprintf("exiting from: ");
-	PrintValueRec(call, rho);
-    }
-    Environment::monitorLeaks(tmp);
-    newrho->maybeDetachFrame();
-    return (tmp);
-}
-
 Closure::DebugScope::DebugScope(const ClosureContext& context,
 				Environment* argsenv)
     : m_context(context), m_argsenv(argsenv)
@@ -2279,8 +2105,15 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	/* ensure positional matching for operators */
 	if(isOps) SET_TAG(m, R_NilValue);
     }
-
-    *ans = applyClosure(t, lsxp, s, rho, newrho);
+    // Invoke method:
+    {
+	Closure* func = SEXP_downcast<Closure*>(lsxp);
+	Expression* callx = SEXP_downcast<Expression*>(t);
+	PairList* arglist = SEXP_downcast<PairList*>(s);
+	Environment* callenv = SEXP_downcast<Environment*>(rho);
+	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
+	*ans = func->invoke(callx, arglist, callenv, supp_env->frame());
+    }
     UNPROTECT(5);
     return 1;
 }

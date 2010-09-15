@@ -578,6 +578,19 @@ namespace CXXR {
 	 */
 	virtual size_t size() const = 0;
 
+	/** @brief Merge this Frame's Bindings into another Frame.
+	 *
+	 * This function copies each Binding in this Frame into \a
+	 * target, unless \a target already contains a Binding for the
+	 * Symbol concerned.
+	 *
+	 * @param target Non-null pointer to the Frame into which
+	 *          Bindings are to be merged.  An error is raised if
+	 *          a new Binding needs to be created and \a target is
+	 *          locked.
+	 */
+	virtual void softMergeInto(Frame* target) const = 0;
+
 	/** @brief Symbols bound by this Frame.
 	 *
 	 * @param include_dotsymbols If false, any Symbol whose name

@@ -32,7 +32,7 @@ FunctionContext::FunctionContext(const Expression* the_call,
 				 Environment* call_env,
 			         const FunctionBase* function)
     : m_srcref(R_Srcref), m_call(the_call), m_call_env(call_env),
-      m_function(function), m_generic(false)
+      m_function(function)
 {
     setType(FUNCTION);
 }
