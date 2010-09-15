@@ -32,7 +32,7 @@ white : weiss
 
 Match result:
 
-EXPLICIT  ... : NULL
+MISSING   ... : Symbol::missingArgument()
 EXPLICIT  black : noir
 EXPLICIT  blue : bleu
 EXPLICIT  brown : brun

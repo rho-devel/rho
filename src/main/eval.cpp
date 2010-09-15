@@ -437,8 +437,8 @@ Closure::DebugScope::~DebugScope()
 /* **** FIXME: This code is factored out of applyClosure.  If we keep
    **** it we should change applyClosure to run through this routine
    **** to avoid code drift. */
-static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
-			  SEXP newrho)
+static SEXP R_execClosure(const Expression* call, SEXP op, const PairList* promargs,
+			  SEXP rho, SEXP newrho)
 {
     SEXP body;
     GCStackRoot<> tmp;
@@ -446,12 +446,10 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
     body = BODY(op);
 
     {
-        Expression* callx = SEXP_downcast<Expression*>(call);
 	Environment* call_env = SEXP_downcast<Environment*>(rho);
 	Closure* func = SEXP_downcast<Closure*>(op);
 	Environment* working_env = SEXP_downcast<Environment*>(newrho);
-	PairList* promargs = SEXP_downcast<PairList*>(arglist);
-	ClosureContext cntxt(callx, call_env, func, working_env, promargs);
+	ClosureContext cntxt(call, call_env, func, working_env, promargs);
 
 	/* The default return value is NULL.  FIXME: Is this really needed
 	   or do we always get a sensible value returned?  */
@@ -464,7 +462,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 	if( RSTEP(op) ) SET_RSTEP(op, 0);
 	if (RDEBUG(op)) {
 	    Rprintf("debugging in: ");
-	    PrintValueRec(call,rho);
+	    PrintValueRec(CXXRCCAST(Expression*, call),rho);
 	    /* Find out if the body is function with only one statement. */
 	    if (isSymbol(CAR(body)))
 		tmp = findFun(CAR(body), rho);
@@ -479,7 +477,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 		goto regdb;
 	    SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
 	    PrintValue(body);
-	    do_browser(call, op, R_NilValue, newrho);
+	    do_browser(CXXRCCAST(Expression*, call), op, R_NilValue, newrho);
 	}
 
     regdb:
@@ -507,7 +505,7 @@ static SEXP R_execClosure(SEXP call, SEXP op, SEXP arglist, SEXP rho,
 
     if (RDEBUG(op)) {
 	Rprintf("exiting from: ");
-	PrintValueRec(call, rho);
+	PrintValueRec(CXXRCCAST(Expression*, call), rho);
     }
     return (tmp);
 }
@@ -524,8 +522,8 @@ static SEXP R_dot_target = NULL;
 /* called from methods_list_dispatch.c */
 SEXP R_execMethod(SEXP op, SEXP rho)
 {
-    SEXP call, arglist, callerenv, newrho, next, val;
-    ClosureContext *cptr;
+    Closure* func = SEXP_downcast<Closure*>(op);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
 
     if (R_dot_Generic == NULL) {
 	R_dot_Generic = install(".Generic");
@@ -535,48 +533,46 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 	R_dot_target = install(".target");
     }
 
-    /* create a new environment frame enclosed by the lexical
-       environment of the method */
-    PROTECT(newrho = Rf_NewEnvironment(R_NilValue, R_NilValue, CLOENV(op)));
+    // create a new environment frame enclosed by the lexical
+    // environment of the method
+    GCStackRoot<Environment> newrho(GCNode::expose(new Environment(func->environment())));
 
-    /* copy the bindings for the formal environment from the top frame
-       of the internal environment of the generic call to the new
-       frame.  need to make sure missingness information is preserved
-       and the environments for any default expression promises are
-       set to the new environment.  should move this to envir.c where
-       it can be done more efficiently. */
-    for (next = FORMALS(op); next != R_NilValue; next = CDR(next)) {
-	SEXP symbol =  TAG(next);
-	R_varloc_t loc;
-	int missing;
-	loc = R_findVarLocInFrame(rho,symbol);
-	if(loc == NULL)
-	    error(_("could not find symbol \"%s\" in environment of the generic function"),
-		  CHAR(PRINTNAME(symbol)));
-	missing = R_GetVarLocMISSING(loc);
-	val = R_GetVarLocValue(loc);
-	Environment* newenv = static_cast<Environment*>(newrho);
-	const Symbol* sym = static_cast<Symbol*>(symbol);
-	Frame::Binding* bdg = newenv->frame()->obtainBinding(sym);
-	if (missing) {
-	    if (TYPEOF(val) == PROMSXP && PRENV(val) == rho) {
-		SEXP deflt;
-		/* find the symbol in the method, copy its expression
-		 * to the promise */
-		for(deflt = FORMALS(op); deflt != R_NilValue; deflt = CDR(deflt)) {
-		    if(TAG(deflt) == symbol)
-			break;
+    // copy the bindings for the formal environment from the top frame
+    // of the internal environment of the generic call to the new
+    // frame.  need to make sure missingness information is preserved
+    // and the environments for any default expression promises are
+    // set to the new environment.  should move this to envir.c where
+    // it can be done more efficiently.
+    for (const PairList* next = func->formalArgs(); next; next = next->tail()) {
+	const Symbol* symbol = static_cast<const Symbol*>(next->tag());
+	Frame::Binding* oldbdg = callenv->frame()->binding(symbol);
+	if(!oldbdg)
+	    Rf_error(_("could not find symbol \"%s\" "
+		       "in environment of the generic function"),
+		     symbol->name()->c_str());
+	Frame::Binding::Origin origin = oldbdg->origin();
+	RObject* val = oldbdg->value();
+	Frame::Binding* newbdg = newrho->frame()->obtainBinding(symbol);
+	if (origin != Frame::Binding::EXPLICIT) {
+	    if (val && val->sexptype() == PROMSXP) {
+		const Promise* promise = static_cast<Promise*>(val);
+		if (promise->environment() == callenv) {
+		    /* find the symbol in the method, copy its expression
+		     * to the promise */
+		    const PairList* deflt = func->formalArgs();
+		    while (deflt && deflt->tag() != symbol)
+			deflt = deflt->tail();
+		    if (!deflt)
+			Rf_error(_("symbol \"%s\" not in environment of method"),
+				 symbol->name()->c_str());
+		    val = GCNode::expose(new Promise(deflt->car(), newrho));
 		}
-		if(deflt == R_NilValue)
-		    error(_("symbol \"%s\" not in environment of method"),
-			  CHAR(PRINTNAME(symbol)));
-		val = mkPROMISE(CAR(deflt), newrho);
 	    }
 	}
-	bdg->setValue(val, Frame::Binding::Origin(missing));
+	newbdg->setValue(val, origin);
     }
 
-    /* copy the bindings of the spacial dispatch variables in the top
+    /* copy the bindings of the special dispatch variables in the top
        frame of the generic call to the new frame */
     defineVar(R_dot_defined, findVarInFrame(rho, R_dot_defined), newrho);
     defineVar(R_dot_Method, findVarInFrame(rho, R_dot_Method), newrho);
@@ -587,22 +583,17 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     defineVar(R_dot_Generic, findVar(R_dot_Generic, rho), newrho);
     defineVar(R_dot_Methods, findVar(R_dot_Methods, rho), newrho);
 
-    /* Find the calling context.  Should be the innermost Context unless
-       profiling has inserted a Context::BUILTIN frame. */
-    cptr = ClosureContext::innermost();
+    /* Find the calling context. */
+    ClosureContext* cptr = ClosureContext::innermost();
 
     /* The calling environment should either be the environment of the
        generic, rho, or the environment of the caller of the generic,
        the current sysparent. */
-    callerenv = cptr->callEnvironment(); /* or rho? */
+    SEXP callerenv = cptr->callEnvironment(); /* or rho? */
 
     /* get the rest of the stuff we need from the current context,
        execute the method, and return the result */
-    call = CXXRCCAST(Expression*, cptr->call());
-    arglist = CXXRCCAST(PairList*, cptr->promiseArgs());
-    val = R_execClosure(call, op, arglist, callerenv, newrho);
-    UNPROTECT(1);
-    return val;
+    return R_execClosure(cptr->call(), op, cptr->promiseArgs(), callerenv, newrho);
 }
 
 static SEXP EnsureLocal(SEXP symbol, SEXP rho)
