@@ -409,82 +409,6 @@ void Closure::DebugScope::endDebugging() const
     catch (...) {}
 }   
 
-/* **** FIXME: This code is factored out of applyClosure.  If we keep
-   **** it we should change applyClosure to run through this routine
-   **** to avoid code drift. */
-static SEXP R_execClosure(const Expression* call, SEXP op, const PairList* promargs,
-			  SEXP rho, SEXP newrho)
-{
-    SEXP body;
-    GCStackRoot<> tmp;
-
-    body = BODY(op);
-
-    {
-	Environment* call_env = SEXP_downcast<Environment*>(rho);
-	Closure* func = SEXP_downcast<Closure*>(op);
-	Environment* working_env = SEXP_downcast<Environment*>(newrho);
-	ClosureContext cntxt(call, call_env, func, working_env, promargs);
-
-	/* The default return value is NULL.  FIXME: Is this really needed
-	   or do we always get a sensible value returned?  */
-
-	tmp = R_NilValue;
-
-	/* Debugging */
-
-	SET_ENV_DEBUG(newrho, CXXRCONSTRUCT(Rboolean, RDEBUG(op) || RSTEP(op)));
-	if( RSTEP(op) ) SET_RSTEP(op, 0);
-	if (RDEBUG(op)) {
-	    Rprintf("debugging in: ");
-	    PrintValueRec(CXXRCCAST(Expression*, call),rho);
-	    /* Find out if the body is function with only one statement. */
-	    if (isSymbol(CAR(body)))
-		tmp = findFun(CAR(body), rho);
-	    else
-		tmp = eval(CAR(body), rho);
-	    if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
-	       && !strcmp( PRIMNAME(tmp), "for")
-	       && !strcmp( PRIMNAME(tmp), "{")
-	       && !strcmp( PRIMNAME(tmp), "repeat")
-	       && !strcmp( PRIMNAME(tmp), "while")
-	       )
-		goto regdb;
-	    SrcrefPrompt("debug", getAttrib(body, R_SrcrefSymbol));
-	    PrintValue(body);
-	    do_browser(CXXRCCAST(Expression*, call), op, R_NilValue, newrho);
-	}
-
-    regdb:
-	Environment* envir = SEXP_downcast<Environment*>(newrho);
-	Environment::ReturnScope returnscope(envir);
-	try {
-	    {
-		BailoutContext boctxt;
-		tmp = Evaluator::evaluate(body, envir);
-	    }
-	    if (tmp && tmp->sexptype() == BAILSXP) {
-		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(tmp.get());
-		if (!rbo || rbo->environment() != envir)
-		    abort();
-		R_Visible = Rboolean(rbo->printResult());
-		tmp = rbo->value();
-	    }
-	}
-	catch (ReturnException& rx) {
-	    if (rx.environment() != envir)
-		throw;
-	    tmp = rx.value();
-	}
-    }
-
-    if (RDEBUG(op)) {
-	Rprintf("exiting from: ");
-	PrintValueRec(CXXRCCAST(Expression*, call), rho);
-    }
-    return (tmp);
-}
-
 /* **** FIXME: Temporary code to execute S4 methods in a way that
    **** preserves lexical scope. */
 
@@ -565,11 +489,18 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     /* The calling environment should either be the environment of the
        generic, rho, or the environment of the caller of the generic,
        the current sysparent. */
-    SEXP callerenv = cptr->callEnvironment(); /* or rho? */
+    Environment* callerenv = cptr->callEnvironment(); /* or rho? */
 
-    /* get the rest of the stuff we need from the current context,
-       execute the method, and return the result */
-    return R_execClosure(cptr->call(), op, cptr->promiseArgs(), callerenv, newrho);
+    // Set up context and perform evaluation.  Note that ans needs to
+    // be protected in case the destructor of ClosureContext executes
+    // an on.exit function.
+    GCStackRoot<> ans;
+    {
+	ClosureContext ctxt(cptr->call(), callerenv, func,
+			    newrho, cptr->promiseArgs());
+	ans = func->execute(newrho);
+    }
+    return ans;
 }
 
 static SEXP EnsureLocal(SEXP symbol, SEXP rho)
