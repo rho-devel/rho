@@ -124,7 +124,7 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
 	ClosureContext cntxt(const_cast<Expression*>(call),
 			     syspar, this, newenv, args);
 	Environment::ReturnScope returnscope(newenv);
-	Closure::DebugScope debugscope(cntxt, env); 
+	Closure::DebugScope debugscope(this); 
 	try {
 	    {
 		BailoutContext boctxt;

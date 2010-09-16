@@ -369,69 +369,44 @@ void SrcrefPrompt(const char * prefix, SEXP srcref)
     Rprintf("%s: ", prefix);
 }
 
-Closure::DebugScope::DebugScope(const ClosureContext& context,
-				Environment* argsenv)
-    : m_context(context), m_argsenv(argsenv)
+void Closure::DebugScope::startDebugging() const
 {
-    const Closure* closure = static_cast<const Closure*>(m_context.function());
-    if (closure->debugging()) {
-	const Expression* call = m_context.call();
-	Environment* working_env = m_context.workingEnvironment();
-	working_env->setSingleStepping(true);
-	Rprintf("debugging in: ");
-	// Print call:
-	{
-	    int old_bl = R_BrowseLines;
-	    int blines = asInteger(GetOption(install("deparse.max.lines"),
-					     R_BaseEnv));
-	    if(blines != NA_INTEGER && blines > 0)
-		R_BrowseLines = blines;
-	    Rf_PrintValueRec(const_cast<Expression*>(call), argsenv);
-	    R_BrowseLines = old_bl;
-	}
-	RObject* body = closure->m_body;
-	/* Is the body a bare symbol (PR#6804) */
-	if (!isSymbol(body) & !isVectorAtomic(body)){
-	    /* Find out if the body is function with only one statement. */
-	    RObject* tmp;
-	    if (isSymbol(CAR(body)))
-		tmp = findFun(CAR(body), argsenv);
-	    else
-		tmp = eval(CAR(body), argsenv);
-	    if((TYPEOF(tmp) == BUILTINSXP || TYPEOF(tmp) == SPECIALSXP)
-	       && !strcmp( PRIMNAME(tmp), "for")
-	       && !strcmp( PRIMNAME(tmp), "{")
-	       && !strcmp( PRIMNAME(tmp), "repeat")
-	       && !strcmp( PRIMNAME(tmp), "while")
-	       )
-		return;
-	}
-	Rprintf("debug: ");
-	Rf_PrintValue(body);
-	do_browser(const_cast<Expression*>(call), const_cast<Closure*>(closure),
-		   const_cast<PairList*>(m_context.promiseArgs()),
-		   working_env);
+    const ClosureContext* ctxt = ClosureContext::innermost();
+    const Expression* call = ctxt->call();
+    Environment* working_env = ctxt->workingEnvironment();
+    working_env->setSingleStepping(true);
+    Rprintf("debugging in: ");
+    // Print call:
+    {
+	int old_bl = R_BrowseLines;
+	int blines = asInteger(GetOption(install("deparse.max.lines"),
+					 R_BaseEnv));
+	if(blines != NA_INTEGER && blines > 0)
+	    R_BrowseLines = blines;
+	Rf_PrintValueRec(const_cast<Expression*>(call), 0);
+	R_BrowseLines = old_bl;
     }
+    Rprintf("debug: ");
+    Rf_PrintValue(m_closure->m_body);
+    do_browser(const_cast<Expression*>(call), const_cast<Closure*>(m_closure),
+	       const_cast<PairList*>(ctxt->promiseArgs()), working_env);
 }
 
-Closure::DebugScope::~DebugScope()
+void Closure::DebugScope::endDebugging() const
 {
-    const Closure* closure = static_cast<const Closure*>(m_context.function());
-    if (closure->debugging()) {
-	try {
-	    Rprintf("exiting from: ");
-	    int old_bl = R_BrowseLines;
-	    int blines
-		= asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
-	    if(blines != NA_INTEGER && blines > 0)
-		R_BrowseLines = blines;
-	    Rf_PrintValueRec(const_cast<Expression*>(m_context.call()),
-			     const_cast<Environment*>(m_argsenv));
-	    R_BrowseLines = old_bl;
-	}
-	// Don't allow exceptions to escape destructor:
-	catch (...) {}
+    const ClosureContext* ctxt = ClosureContext::innermost();
+    try {
+	Rprintf("exiting from: ");
+	int old_bl = R_BrowseLines;
+	int blines
+	    = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
+	if(blines != NA_INTEGER && blines > 0)
+	    R_BrowseLines = blines;
+	Rf_PrintValueRec(const_cast<Expression*>(ctxt->call()), 0);
+	R_BrowseLines = old_bl;
     }
+    // Don't allow exceptions to escape destructor:
+    catch (...) {}
 }   
 
 /* **** FIXME: This code is factored out of applyClosure.  If we keep
@@ -535,7 +510,8 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Environment> newrho(GCNode::expose(new Environment(func->environment())));
+    GCStackRoot<Environment>
+	newrho(GCNode::expose(new Environment(func->environment())));
 
     // copy the bindings for the formal environment from the top frame
     // of the internal environment of the generic call to the new
@@ -552,7 +528,6 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		     symbol->name()->c_str());
 	Frame::Binding::Origin origin = oldbdg->origin();
 	RObject* val = oldbdg->value();
-	Frame::Binding* newbdg = newrho->frame()->obtainBinding(symbol);
 	if (origin != Frame::Binding::EXPLICIT) {
 	    if (val && val->sexptype() == PROMSXP) {
 		const Promise* promise = static_cast<Promise*>(val);
@@ -569,6 +544,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 		}
 	    }
 	}
+	Frame::Binding* newbdg = newrho->frame()->obtainBinding(symbol);
 	newbdg->setValue(val, origin);
     }
 

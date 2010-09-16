@@ -227,17 +227,30 @@ namespace CXXR {
 	public:
 	    /** @brief Constructor.
 	     *
-	     * @param context The Context of this Closure invocation.
+	     * @param closure Non-null pointer to the Closure being
+	     *          executed.
 	     *
-	     * @param argsenv Environment with which the actual
-	     *          arguments are to be evaluated.
+	     * @note If debugging is enabled for \a closure, the class
+	     * uses the innermost ClosureContext to obtain any further
+	     * information it requires.
 	     */
-	    DebugScope(const ClosureContext& context, Environment* argsenv);
+	    DebugScope(const Closure* closure)
+		: m_closure(closure)
+	    {
+		if (m_closure->debugging())
+		    startDebugging();
+	    }
 
-	    ~DebugScope();
+	    ~DebugScope()
+	    {
+		if (m_closure->debugging())
+		    endDebugging();
+	    }
 	private:
-	    const ClosureContext& m_context;
-	    Environment* m_argsenv;
+	    const Closure* m_closure;
+
+	    void startDebugging() const;
+	    void endDebugging() const;
 	};
 
 	bool m_debug;
