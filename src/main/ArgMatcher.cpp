@@ -265,6 +265,41 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
     return args;
 }
 
+void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
+					 Environment* toenv) const
+{
+    const Frame* fromf = fromenv->frame();
+    Frame* tof = toenv->frame();
+    const PairList* fcell = m_formals;
+    while (fcell) {
+	const Symbol* symbol = static_cast<const Symbol*>(fcell->tag());
+	const Frame::Binding* oldbdg = fromf->binding(symbol);
+	if (!oldbdg)
+	    Rf_error(_("could not find symbol \"%s\" "
+		       "in environment of the generic function"),
+		     symbol->name()->c_str());
+	Frame::Binding::Origin origin = oldbdg->origin();
+	RObject* val = oldbdg->value();
+	if (origin == Frame::Binding::DEFAULTED) {
+	    if (val && val->sexptype() == PROMSXP) {
+		const Promise* promise = static_cast<Promise*>(val);
+		if (promise->environment() == fromenv) {
+		    const PairList* deflt = m_formals;
+		    while (deflt && deflt->tag() != symbol)
+			deflt = deflt->tail();
+		    if (!deflt)
+			Rf_error(_("symbol \"%s\" not in environment of method"),
+				 symbol->name()->c_str());
+		    val = GCNode::expose(new Promise(deflt->car(), toenv));
+		}
+	    }
+	}
+	Frame::Binding* newbdg = tof->obtainBinding(symbol);
+	newbdg->setValue(val, origin);
+	fcell = fcell->tail();
+    }
+}
+	
 void ArgMatcher::stripFormals(Frame* input_frame) const
 {
     const PairList* fcell = m_formals;

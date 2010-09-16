@@ -134,15 +134,6 @@ namespace CXXR {
 	 */
 	RObject* execute(Environment* env) const;
 
-	/** @brief Access the formal argument list of the Closure.
-	 *
-	 * @return Pointer to the formal argument list of the Closure.
-	 */
-	const PairList* formalArgs() const
-	{
-	    return m_matcher->formalArgs();
-	}
-
 	/** @brief Invoke the function.
 	 *
 	 * This differs from apply() in that it is assumed that any
@@ -170,6 +161,15 @@ namespace CXXR {
 	RObject* invoke(const Expression* call, const PairList* args,
 			Environment* env,
 			const Frame* method_bindings = 0) const;
+
+	/** @brief Access the ArgMatcher of this Closure.
+	 *
+	 * @return const pointer to this Closure's ArgMatcher object.
+	 */
+	const ArgMatcher* matcher() const
+	{
+	    return m_matcher;
+	}
 
 	/** @brief Set debugging status.
 	 *
@@ -354,8 +354,8 @@ extern "C" {
     inline SEXP FORMALS(SEXP x)
     {
 	using namespace CXXR;
-	const Closure& clos = *SEXP_downcast<Closure*>(x);
-	return const_cast<PairList*>(clos.formalArgs());
+	const Closure* clos = SEXP_downcast<Closure*>(x);
+	return const_cast<PairList*>(clos->matcher()->formalArgs());
     }
 #endif
 

@@ -200,6 +200,40 @@ namespace CXXR {
 	 */
 	static PairList* prepareArgs(const PairList* raw_args, Environment* env);
 
+	/** @brief Copy formal bindings from one Environment to another.
+	 *
+	 * This function is used in dispatching S4 methods.  In the
+	 * function, \a fromenv points to an Environment which must
+	 * contain a Binding for every formal argument of this
+	 * ArgMatcher.  The function creates a copy of each of these
+	 * Bindings in another Environment, pointed to by \a toenv.
+	 * Each copied Binding preserves both the value and origin of
+	 * the original Binding.
+	 *
+	 * If, within \a fromenv, a formal argument hs origin
+	 * DEFAULTED and is bound to an (as yet unforced) Promise to
+	 * be evaluated within \a fromenv (as will arise when the
+	 * Binding represents a default argument supplied by the
+	 * corresponding generic), then when this Binding is copied to \a toenv,
+	 * its value is replaced by the corresponding default
+	 * Binding supplied by this ArgMatcher.  (This will be Promise
+	 * to be evaluated within \a toenv.)
+	 *
+	 * @param fromenv non-null pointer to an Environment which
+	 *          must contain a Binding for every formal argument
+	 *          of this ArgMatcher.
+	 *
+	 * @param toenv non-null pointer to another (unlocked)
+	 *          Environment.
+	 *
+	 * @note If, prior to the call, \a toenv already contains one
+	 * of more Bindings of the formal arguments of this
+	 * ArgMatcher, then these Bindings are replaced by those
+	 * propagated from \a fromenv.
+	 */
+	void propagateFormalBindings(const Environment* fromenv,
+				     Environment* toenv) const;
+
 	/** @brief Strip formal argument bindings from a Frame.
 	 *
 	 * This function removes from \a input_frame any bindings of

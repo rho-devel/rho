@@ -298,7 +298,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	const Environment* generic_wk_env = cptr->workingEnvironment();
 	// Look for definition of first formal argument of the generic:
 	{
-	    const PairList* formal_list = clos->formalArgs();
+	    const PairList* formal_list = clos->matcher()->formalArgs();
 	    if (formal_list) {
 		const Symbol* first_formal
 		    = static_cast<const Symbol*>(formal_list->tag());

@@ -437,40 +437,10 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     GCStackRoot<Environment>
 	newrho(GCNode::expose(new Environment(func->environment())));
 
-    // copy the bindings for the formal environment from the top frame
-    // of the internal environment of the generic call to the new
-    // frame.  need to make sure missingness information is preserved
-    // and the environments for any default expression promises are
-    // set to the new environment.  should move this to envir.c where
-    // it can be done more efficiently.
-    for (const PairList* next = func->formalArgs(); next; next = next->tail()) {
-	const Symbol* symbol = static_cast<const Symbol*>(next->tag());
-	Frame::Binding* oldbdg = callenv->frame()->binding(symbol);
-	if(!oldbdg)
-	    Rf_error(_("could not find symbol \"%s\" "
-		       "in environment of the generic function"),
-		     symbol->name()->c_str());
-	Frame::Binding::Origin origin = oldbdg->origin();
-	RObject* val = oldbdg->value();
-	if (origin != Frame::Binding::EXPLICIT) {
-	    if (val && val->sexptype() == PROMSXP) {
-		const Promise* promise = static_cast<Promise*>(val);
-		if (promise->environment() == callenv) {
-		    /* find the symbol in the method, copy its expression
-		     * to the promise */
-		    const PairList* deflt = func->formalArgs();
-		    while (deflt && deflt->tag() != symbol)
-			deflt = deflt->tail();
-		    if (!deflt)
-			Rf_error(_("symbol \"%s\" not in environment of method"),
-				 symbol->name()->c_str());
-		    val = GCNode::expose(new Promise(deflt->car(), newrho));
-		}
-	    }
-	}
-	Frame::Binding* newbdg = newrho->frame()->obtainBinding(symbol);
-	newbdg->setValue(val, origin);
-    }
+    // Propagate bindings of the formal arguments of the generic to
+    // newrho, but replace defaulted arguments with those appropriate
+    // to the method:
+    func->matcher()->propagateFormalBindings(callenv, newrho);
 
     /* copy the bindings of the special dispatch variables in the top
        frame of the generic call to the new frame */
