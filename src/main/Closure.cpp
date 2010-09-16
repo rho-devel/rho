@@ -75,7 +75,7 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 }
 
 RObject* Closure::apply(const Expression* call, const PairList* args,
-			Environment* env)
+			Environment* env) const
 {
     GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
     return invoke(call, prepared_args, env);
@@ -97,8 +97,36 @@ void Closure::detachReferents()
     RObject::detachReferents();
 }
 
+RObject* Closure::execute(Environment* env) const
+{
+    RObject* ans;
+    Environment::ReturnScope returnscope(env);
+    Closure::DebugScope debugscope(this); 
+    try {
+	{
+	    BailoutContext boctxt;
+	    ans = Evaluator::evaluate(m_body, env);
+	}
+	if (ans && ans->sexptype() == BAILSXP) {
+	    ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans);
+	    if (!rbo || rbo->environment() != env)
+		abort();
+	    R_Visible = Rboolean(rbo->printResult());
+	    ans = rbo->value();
+	}
+    }
+    catch (ReturnException& rx) {
+	if (rx.environment() != env)
+	    throw;
+	ans = rx.value();
+    }
+    Environment::monitorLeaks(ans);
+    env->maybeDetachFrame();
+    return ans;
+}
+
 RObject* Closure::invoke(const Expression* call, const PairList* args,
-			 Environment* env, const Frame* method_bindings)
+			 Environment* env, const Frame* method_bindings) const
 {
     // +5 to allow some capacity for local variables:
     GCStackRoot<Environment>
@@ -110,7 +138,10 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
 			     environment(), args);
 	m_matcher->match(newenv, args);
     }
-    // Perform evaluation:
+
+    // Set up context and perform evaluation.  Note that ans needs to
+    // be protected in case the destructor of ClosureContext executes
+    // an on.exit function.
     GCStackRoot<> ans;
     {
 	Environment* syspar = env;
@@ -123,29 +154,8 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),
 			     syspar, this, newenv, args);
-	Environment::ReturnScope returnscope(newenv);
-	Closure::DebugScope debugscope(this); 
-	try {
-	    {
-		BailoutContext boctxt;
-		ans = Evaluator::evaluate(m_body, newenv);
-	    }
-	    if (ans && ans->sexptype() == BAILSXP) {
-		ReturnBailout* rbo = dynamic_cast<ReturnBailout*>(ans.get());
-		if (!rbo || rbo->environment() != newenv)
-		    abort();
-		R_Visible = Rboolean(rbo->printResult());
-		ans = rbo->value();
-	    }
-	}
-	catch (ReturnException& rx) {
-	    if (rx.environment() != newenv)
-		throw;
-	    ans = rx.value();
-	}
+	ans = execute(newenv);
     }
-    Environment::monitorLeaks(ans);
-    newenv->maybeDetachFrame();
     return ans;
 }
 

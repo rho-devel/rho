@@ -294,7 +294,7 @@ namespace CXXR {
 
 	// Virtual function of FunctionBase:
 	RObject* apply(const Expression* call,
-		       const PairList* args, Environment* env);
+		       const PairList* args, Environment* env) const;
     private:
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -335,9 +335,10 @@ namespace CXXR {
 
 	// Invoke the encapsulated function:
 	RObject* invoke(const Expression* call, const PairList* args,
-			Environment* env)
+			Environment* env) const
 	{
-	    return m_function(const_cast<Expression*>(call), this,
+	    return m_function(const_cast<Expression*>(call),
+			      const_cast<BuiltInFunction*>(this),
 			      const_cast<PairList*>(args), env);
 	}
 

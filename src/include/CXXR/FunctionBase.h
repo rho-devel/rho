@@ -69,7 +69,7 @@ namespace CXXR {
 	 * @return The result of applying the function.
 	 */
 	virtual RObject* apply(const Expression* call, const PairList* args,
-			       Environment* env) = 0;
+			       Environment* env) const = 0;
 
 	/** @brief Enable/disable function tracing.
 	 *

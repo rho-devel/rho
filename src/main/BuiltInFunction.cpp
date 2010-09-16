@@ -64,7 +64,7 @@ namespace CXXR {
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
 RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
-				Environment* env)
+				Environment* env) const
 {
     size_t pps_size = ProtectStack::size();
     size_t ralloc_size = RAllocStack::size();

@@ -115,6 +115,25 @@ namespace CXXR {
 	    return m_environment;
 	}
 
+	/** @brief Evaluate the Closure's body in a given environment.
+	 *
+	 * This function evaluates the Closure's body with \a env as
+	 * the working environment, handling debugging if currently
+	 * enabled for this Closure.
+	 *
+	 * @param env Non-null pointer to the working environment in
+	 *          which evaluation of the body is to be carried out.
+	 *
+	 * @return the result of evaluation.
+	 *
+	 * @note This is a low-level function that is called by
+	 * invoke() but may also be called directly.  The function
+	 * does not carry out argument matching, nor does it create a
+	 * ClosureContext: both these operations must be handled by
+	 * the calling code.
+	 */
+	RObject* execute(Environment* env) const;
+
 	/** @brief Access the formal argument list of the Closure.
 	 *
 	 * @return Pointer to the formal argument list of the Closure.
@@ -149,7 +168,8 @@ namespace CXXR {
 	 * @return The result of applying the function.
 	 */
 	RObject* invoke(const Expression* call, const PairList* args,
-			Environment* env, const Frame* method_bindings = 0);
+			Environment* env,
+			const Frame* method_bindings = 0) const;
 
 	/** @brief Set debugging status.
 	 *
@@ -198,7 +218,7 @@ namespace CXXR {
 
 	// Virtual function of FunctionBase:
 	RObject* apply(const Expression* call,
-		       const PairList* args, Environment* env);
+		       const PairList* args, Environment* env) const;
 
 	// Virtual functions of RObject:
         Closure* clone() const;
