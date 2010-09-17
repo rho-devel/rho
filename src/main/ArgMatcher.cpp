@@ -269,7 +269,6 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 					 Environment* toenv) const
 {
     const Frame* fromf = fromenv->frame();
-    Frame* tof = toenv->frame();
     for (FormalVector::const_iterator it = m_formal_data.begin();
 	 it != m_formal_data.end(); ++it) {
 	const FormalData& fdata = *it;
@@ -279,25 +278,16 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 	    Rf_error(_("could not find symbol \"%s\" "
 		       "in environment of the generic function"),
 		     symbol->name()->c_str());
-	Frame::Binding::Origin origin = frombdg->origin();
 	RObject* val = frombdg->value();
 	// Discard generic's defaults:
-	if (origin == Frame::Binding::DEFAULTED
-	    && val && val->sexptype() == PROMSXP
-	    && static_cast<Promise*>(val)->environment() == fromenv)
-	    origin = Frame::Binding::MISSING;
-	if (origin == Frame::Binding::MISSING) {
-	    // Apply method's default (if any):
-	    makeBinding(toenv, fdata, Symbol::missingArgument());
-	} else {
-	    Frame::Binding* tobdg = tof->obtainBinding(symbol);
-	    tobdg->setValue(val, origin);
-	}
+	if (frombdg->origin() != Frame::Binding::EXPLICIT)
+	    val = Symbol::missingArgument();
+	makeBinding(toenv, fdata, val);
     }
     // m_formal_data excludes '...', so:
     if (m_has_dots) {
 	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
-	Frame::Binding* tobdg = tof->obtainBinding(DotsSymbol);
+	Frame::Binding* tobdg = toenv->frame()->obtainBinding(DotsSymbol);
 	tobdg->setValue(frombdg->value(), frombdg->origin());
     }
 }

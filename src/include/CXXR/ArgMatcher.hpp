@@ -213,16 +213,11 @@ namespace CXXR {
 	 * will become the working environment of the method).
 	 *
 	 * The function works through the Bindings in \a fromenv in
-	 * turn.  Normally it will simply create a copy of the Binding
-	 * in \a toenv, preserving both the value and Origin of
-	 * the original Binding.
+	 * turn.  If a Binding has Origin EXPLICIT the function will
+	 * simply create a copy of the Binding in \a toenv.
 	 *
-	 * However, if a Binding has Origin DEFAULTED and is bound to
-	 * an (as yet unforced) Promise to be evaluated within \a
-	 * fromenv (as will arise when the Binding represents a
-	 * default argument supplied by the corresponding generic),
-	 * then the default value is not used, and the Binding is
-	 * treated as if it had Origin MISSING, as described next.
+	 * If a Binding has Origin DEFAULTED, it is treated as if it had
+	 * Origin MISSING, as described next.
 	 *
 	 * If a Binding has Origin MISSING, then it is handled in the
 	 * same way as a missing argument in ordinary argument

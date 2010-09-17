@@ -412,30 +412,18 @@ void Closure::DebugScope::endDebugging() const
 /* **** FIXME: Temporary code to execute S4 methods in a way that
    **** preserves lexical scope. */
 
-static SEXP R_dot_Generic = NULL;
-static SEXP R_dot_Method = NULL;
-static SEXP R_dot_Methods = NULL;
-static SEXP R_dot_defined = NULL;
-static SEXP R_dot_target = NULL;
-
 /* called from methods_list_dispatch.c */
 SEXP R_execMethod(SEXP op, SEXP rho)
 {
     Closure* func = SEXP_downcast<Closure*>(op);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
-
-    if (R_dot_Generic == NULL) {
-	R_dot_Generic = install(".Generic");
-	R_dot_Method = install(".Method");
-	R_dot_Methods = install(".Methods");
-	R_dot_defined = install(".defined");
-	R_dot_target = install(".target");
-    }
+    const Frame* fromf = callenv->frame();
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
     GCStackRoot<Environment>
 	newrho(GCNode::expose(new Environment(func->environment())));
+    Frame* tof = newrho->frame();
 
     // Propagate bindings of the formal arguments of the generic to
     // newrho, but replace defaulted arguments with those appropriate
@@ -444,14 +432,28 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     /* copy the bindings of the special dispatch variables in the top
        frame of the generic call to the new frame */
-    defineVar(R_dot_defined, findVarInFrame(rho, R_dot_defined), newrho);
-    defineVar(R_dot_Method, findVarInFrame(rho, R_dot_Method), newrho);
-    defineVar(R_dot_target, findVarInFrame(rho, R_dot_target), newrho);
+    {
+	static const Symbol* syms[]
+	    = {DotdefinedSymbol, DotMethodSymbol, DottargetSymbol, 0};
+	for (const Symbol** symp = syms; *symp; ++symp) {
+	    const Frame::Binding* frombdg = fromf->binding(*symp);
+	    Frame::Binding* tobdg = tof->obtainBinding(*symp);
+	    tobdg->setValue(frombdg->value());
+	}
+    }
 
     /* copy the bindings for .Generic and .Methods.  We know (I think)
        that they are in the second frame, so we could use that. */
-    defineVar(R_dot_Generic, findVar(R_dot_Generic, rho), newrho);
-    defineVar(R_dot_Methods, findVar(R_dot_Methods, rho), newrho);
+    {
+	static const Symbol* syms[]
+	    = {DotGenericSymbol, DotMethodsSymbol, 0};
+	for (const Symbol** symp = syms; *symp; ++symp) {
+	    const Frame::Binding* frombdg
+		= callenv->findBinding(*symp).second;
+	    Frame::Binding* tobdg = tof->obtainBinding(*symp);
+	    tobdg->setValue(frombdg->value());
+	}
+    }
 
     /* Find the calling context. */
     ClosureContext* cptr = ClosureContext::innermost();

@@ -216,7 +216,14 @@ namespace CXXR {
     Symbol* const DimNamesSymbol = Symbol::obtain("dimnames");
     Symbol* const DimSymbol = Symbol::obtain("dim");
     Symbol* const DollarSymbol = Symbol::obtain("$");
+    Symbol* const DotClassSymbol = Symbol::obtain(".Class");
+    Symbol* const DotGenericSymbol = Symbol::obtain(".Generic");
+    Symbol* const DotGroupSymbol = Symbol::obtain(".Group");
+    Symbol* const DotMethodSymbol = Symbol::obtain(".Method");
+    Symbol* const DotMethodsSymbol = Symbol::obtain(".Methods");
+    Symbol* const DotdefinedSymbol = Symbol::obtain(".defined");
     Symbol* const DotsSymbol = Symbol::obtain("...");
+    Symbol* const DottargetSymbol = Symbol::obtain(".target");
     Symbol* const DropSymbol = Symbol::obtain("drop");
     Symbol* const ExactSymbol = Symbol::obtain("exact");
     Symbol* const LastvalueSymbol = Symbol::obtain(".Last.value");

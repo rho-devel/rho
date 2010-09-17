@@ -267,10 +267,10 @@ namespace CXXR {
 	 *          sought.
 	 *
 	 * @return The first element of the pair is a pointer to the
-	 * sought Binding, or a null pointer if no Binding was found.
-	 * The second element of the pair is a pointer to the
 	 * Environment in whose frame the Binding was found, or a null
-	 * pointer if no Binding was found.
+	 * pointer if no Binding was found.  The second element of the
+	 * pair is a pointer to the sought Binding, or a null pointer
+	 * if no Binding was found.
 	 */
 	std::pair<const Environment*, const Frame::Binding*>
 	findBinding(const Symbol* symbol) const
