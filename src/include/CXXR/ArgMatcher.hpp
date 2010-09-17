@@ -61,6 +61,9 @@ namespace CXXR {
      * facilities to match the formal arguments to a list of supplied
      * arguments and place the resulting bindings within a specified
      * Frame.
+     *
+     * The class also provides other services relating to the formal
+     * arguments and their default values.
      */
     class ArgMatcher : public GCNode {
     public:
@@ -202,22 +205,33 @@ namespace CXXR {
 
 	/** @brief Copy formal bindings from one Environment to another.
 	 *
-	 * This function is used in dispatching S4 methods.  In the
+	 * This function is used in dispatching S4 methods to create
+	 * the working environment for the method.  In the
 	 * function, \a fromenv points to an Environment which must
 	 * contain a Binding for every formal argument of this
-	 * ArgMatcher.  The function creates a copy of each of these
-	 * Bindings in another Environment, pointed to by \a toenv.
-	 * Each copied Binding preserves both the value and origin of
+	 * ArgMatcher.  \a toenv points to another Environment (which
+	 * will become the working environment of the method).
+	 *
+	 * The function works through the Bindings in \a fromenv in
+	 * turn.  Normally it will simply create a copy of the Binding
+	 * in \a toenv, preserving both the value and Origin of
 	 * the original Binding.
 	 *
-	 * If, within \a fromenv, a formal argument hs origin
-	 * DEFAULTED and is bound to an (as yet unforced) Promise to
-	 * be evaluated within \a fromenv (as will arise when the
-	 * Binding represents a default argument supplied by the
-	 * corresponding generic), then when this Binding is copied to \a toenv,
-	 * its value is replaced by the corresponding default
-	 * Binding supplied by this ArgMatcher.  (This will be Promise
-	 * to be evaluated within \a toenv.)
+	 * However, if a Binding has Origin DEFAULTED and is bound to
+	 * an (as yet unforced) Promise to be evaluated within \a
+	 * fromenv (as will arise when the Binding represents a
+	 * default argument supplied by the corresponding generic),
+	 * then the default value is not used, and the Binding is
+	 * treated as if it had Origin MISSING, as described next.
+	 *
+	 * If a Binding has Origin MISSING, then it is handled in the
+	 * same way as a missing argument in ordinary argument
+	 * matching.  That is to say, if this ArgMatcher provides a
+	 * default for the formal argument in question, that default
+	 * is used in created a Binding in \a toenv.  (The value of
+	 * this Binding will be a Promise to be evaluated in \a
+	 * toenv.)  Otherwise the Binding created in \a toenv will
+	 * have Origin MISSING and value Symbol::missingArgument().
 	 *
 	 * @param fromenv non-null pointer to an Environment which
 	 *          must contain a Binding for every formal argument
@@ -228,8 +242,8 @@ namespace CXXR {
 	 *
 	 * @note If, prior to the call, \a toenv already contains one
 	 * of more Bindings of the formal arguments of this
-	 * ArgMatcher, then these Bindings are replaced by those
-	 * propagated from \a fromenv.
+	 * ArgMatcher, it is at present undefined whether or not these
+	 * Bindings are replaced by those propagated from \a fromenv.
 	 */
 	void propagateFormalBindings(const Environment* fromenv,
 				     Environment* toenv) const;
@@ -333,7 +347,7 @@ namespace CXXR {
 	};
 
 	// Data relating to supplied arguments that have not yet been
-	// matched.  Empty except during the operation of match().
+	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
@@ -352,8 +366,8 @@ namespace CXXR {
 	// in fdata, setting its Origin and applying default value
 	// appropriately.  Default values are wrapped in Promises
 	// keyed to target_env.
-	void makeBinding(Environment* target_env, const FormalData& fdata,
-			 RObject* supplied_value) const;
+	static void makeBinding(Environment* target_env, const FormalData& fdata,
+				RObject* supplied_value);
 
 	// Raise an error because there are unused supplied arguments,
 	// as indicated in supplied_list.

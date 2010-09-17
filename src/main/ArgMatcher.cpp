@@ -94,7 +94,7 @@ bool ArgMatcher::isPrefix(const CachedString* shorter,
 }
 
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
-			     RObject* supplied_value) const
+			     RObject* supplied_value)
 {
     RObject* value = supplied_value;
     Frame::Binding::Origin origin = Frame::Binding::EXPLICIT;
@@ -270,36 +270,38 @@ void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 {
     const Frame* fromf = fromenv->frame();
     Frame* tof = toenv->frame();
-    const PairList* fcell = m_formals;
-    while (fcell) {
-	const Symbol* symbol = static_cast<const Symbol*>(fcell->tag());
-	const Frame::Binding* oldbdg = fromf->binding(symbol);
-	if (!oldbdg)
+    for (FormalVector::const_iterator it = m_formal_data.begin();
+	 it != m_formal_data.end(); ++it) {
+	const FormalData& fdata = *it;
+	const Symbol* symbol = fdata.symbol;
+	const Frame::Binding* frombdg = fromf->binding(symbol);
+	if (!frombdg)
 	    Rf_error(_("could not find symbol \"%s\" "
 		       "in environment of the generic function"),
 		     symbol->name()->c_str());
-	Frame::Binding::Origin origin = oldbdg->origin();
-	RObject* val = oldbdg->value();
-	if (origin == Frame::Binding::DEFAULTED) {
-	    if (val && val->sexptype() == PROMSXP) {
-		const Promise* promise = static_cast<Promise*>(val);
-		if (promise->environment() == fromenv) {
-		    const PairList* deflt = m_formals;
-		    while (deflt && deflt->tag() != symbol)
-			deflt = deflt->tail();
-		    if (!deflt)
-			Rf_error(_("symbol \"%s\" not in environment of method"),
-				 symbol->name()->c_str());
-		    val = GCNode::expose(new Promise(deflt->car(), toenv));
-		}
-	    }
+	Frame::Binding::Origin origin = frombdg->origin();
+	RObject* val = frombdg->value();
+	// Discard generic's defaults:
+	if (origin == Frame::Binding::DEFAULTED
+	    && val && val->sexptype() == PROMSXP
+	    && static_cast<Promise*>(val)->environment() == fromenv)
+	    origin = Frame::Binding::MISSING;
+	if (origin == Frame::Binding::MISSING) {
+	    // Apply method's default (if any):
+	    makeBinding(toenv, fdata, Symbol::missingArgument());
+	} else {
+	    Frame::Binding* tobdg = tof->obtainBinding(symbol);
+	    tobdg->setValue(val, origin);
 	}
-	Frame::Binding* newbdg = tof->obtainBinding(symbol);
-	newbdg->setValue(val, origin);
-	fcell = fcell->tail();
+    }
+    // m_formal_data excludes '...', so:
+    if (m_has_dots) {
+	const Frame::Binding* frombdg = fromf->binding(DotsSymbol);
+	Frame::Binding* tobdg = tof->obtainBinding(DotsSymbol);
+	tobdg->setValue(frombdg->value(), frombdg->origin());
     }
 }
-	
+	    
 void ArgMatcher::stripFormals(Frame* input_frame) const
 {
     const PairList* fcell = m_formals;
