@@ -326,8 +326,6 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     GCStackRoot<StringVector>
 	klass(SEXP_downcast<StringVector*>(R_data_class2(obj)));
-    bool S4toS3 = obj && obj->isS4Object();
-
     size_t nclass = klass->size();
     for (unsigned int i = 0; i < nclass; i++) {
 	const RObject* se = (*klass)[i];
@@ -336,46 +334,47 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	Symbol* method = Symbol::obtain(method_name);
 	RObject* sxp = R_LookupMethod(method, rho, callrho, defrho);
 	if (isFunction(sxp)) {
-            if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
-                SET_RSTEP(sxp, 1);
-	    GCStackRoot<StringVector> genstr(GCNode::expose(new StringVector(generic)));
-	    newframe->bind(DotGenericSymbol, genstr);
-	    if (i > 0) {
+	    if (i == 0)
+		newframe->bind(DotClassSymbol, klass);
+	    else {  // i > 0
 		GCStackRoot<StringVector>
 		    tc(GCNode::expose(new StringVector(nclass - i)));
 		for (unsigned int j = 0; j < tc->size(); ++j)
 		    (*tc)[j] = (*klass)[j + i];
 		tc->setAttribute(PreviousSymbol, klass);
 		newframe->bind(DotClassSymbol, tc);
-	    } else
-		newframe->bind(DotClassSymbol, klass);
-	    GCStackRoot<StringVector>
-		tm(GCNode::expose(new StringVector(method_name)));
-	    newframe->bind(DotMethodSymbol, tm);
+		if (obj && obj->isS4Object() && isBasicClass(ss.c_str())) {
+		    SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
+		    if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
+			S3Part = R_getS4DataSlot(obj, ANYSXP);
+		    // At this point S3Part is the S3 class object or an
+		    // object of an abnormal type, or NULL.
+		    if (S3Part) {  // use S3Part as inherited object
+			obj = S3Part;
+			if (!match_obj) // use the first arg, for "[",e.g.
+			    match_obj = matchedarg->car();
+			if (NAMED(obj))
+			    SET_NAMED(obj, 2);
+			if (match_obj->sexptype() == PROMSXP)
+			    static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
+			else {
+			    // not possible ?
+			    Closure* clos = SEXP_downcast<Closure*>(sxp);
+			    const Symbol* sym
+				= static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
+			    newframe->bind(sym, obj);
+			}
+		    } // else, use the S4 object
+		}
+	    }
+            if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
+                SET_RSTEP(sxp, 1);
+	    newframe->bind(DotGenericSymbol,
+			   GCNode::expose(new StringVector(generic)));
+	    newframe->bind(DotMethodSymbol,
+			   GCNode::expose(new StringVector(method_name)));
 	    newframe->bind(DotGenericCallEnvSymbol, callrho);
 	    newframe->bind(DotGenericDefEnvSymbol, defrho);
-	    if (S4toS3 && i > 0 && isBasicClass(ss.c_str())) {
-		SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
-		if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
-		    S3Part = R_getS4DataSlot(obj, ANYSXP);
-		// At this point S3Part is the S3 class object or an
-		// object of an abnormal type, or NULL.
-		if (S3Part) {  // use S3Part as inherited object
-		    obj = S3Part;
-		    if (!match_obj) // use the first arg, for "[",e.g.
-			match_obj = matchedarg->car();
-		    if (NAMED(obj)) SET_NAMED(obj, 2);
-		    if (match_obj->sexptype() == PROMSXP)
-			static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
-		    else {
-			// not possible ?
-			Closure* clos = SEXP_downcast<Closure*>(sxp);
-			const Symbol* sym
-			    = static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
-			newframe->bind(sym, obj);
-		    }
-		} // else, use the S4 object
-	    }
 	    newcall->setCar(method);
 	    GCStackRoot<Environment> newrho(GCNode::expose(new Environment(0, newframe)));
 	    *ans = applyMethod(newcall, sxp, const_cast<PairList*>(matchedarg.get()),
@@ -392,12 +391,11 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 	if (isFunction(sxp)) {
 	    if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
 		SET_RSTEP(sxp, 1);
-	    GCStackRoot<StringVector> genstr(GCNode::expose(new StringVector(generic)));
-	    newframe->bind(DotGenericSymbol, genstr);
 	    newframe->bind(DotClassSymbol, 0);
-	    GCStackRoot<StringVector>
-		tm(GCNode::expose(new StringVector(method_name)));
-	    newframe->bind(DotMethodSymbol, tm);
+	    newframe->bind(DotGenericSymbol,
+			   GCNode::expose(new StringVector(generic)));
+	    newframe->bind(DotMethodSymbol,
+			   GCNode::expose(new StringVector(method_name)));
 	    newframe->bind(DotGenericCallEnvSymbol, callrho);
 	    newframe->bind(DotGenericDefEnvSymbol, defrho);
 	    newcall->setCar(method);
