@@ -546,47 +546,36 @@ static SEXP fixcall(SEXP call, SEXP args)
 /* This is a special .Internal */
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    char buf[512], b[512], bb[512];
-    const char *sb, *sg, *sk;
-    SEXP ans, s, t, klass, method, matchedarg, generic, nextfun;
-    Environment* sysp;
-    SEXP m, formals, actuals, tmp, newcall;
-    SEXP a, group, basename;
-    SEXP callenv, defenv;
-    ClosureContext *cptr;
-    int i, j;
-
-    cptr = ClosureContext::innermost();
+    ClosureContext* cptr = ClosureContext::innermost();
 
     /* get the env NextMethod was called from */
-    sysp = cptr->callEnvironment();
+    Environment* sysp = cptr->callEnvironment();
     while (cptr && cptr->workingEnvironment() != sysp)
 	cptr = ClosureContext::innermost(cptr->nextOut());
     if (cptr == NULL)
 	error(_("'NextMethod' called from outside a function"));
 
-    PROTECT(newcall = cptr->call()->clone());
+    GCStackRoot<> newcall(cptr->call()->clone());
 
     /* eg get("print.ts")(1) */
     if (TYPEOF(CAR(CXXRCCAST(Expression*, cptr->call()))) == LANGSXP)
-       error(_("'NextMethod' called from an anonymous function"));
+	error(_("'NextMethod' called from an anonymous function"));
 
     /* Find dispatching environments. Promises shouldn't occur, but
        check to be on the safe side.  If the variables are not in the
        environment (the method was called outside a method dispatch)
        then chose reasonable defaults. */
-    callenv = findVarInFrame3(sysp,
-			      install(".GenericCallEnv"), TRUE);
+    SEXP callenv = findVarInFrame3(sysp, install(".GenericCallEnv"), TRUE);
     if (TYPEOF(callenv) == PROMSXP)
 	callenv = eval(callenv, R_BaseEnv);
     else if (callenv == R_UnboundValue)
-	    callenv = env;
-    defenv = findVarInFrame3(sysp,
-			     install(".GenericDefEnv"), TRUE);
+	callenv = env;
+    SEXP defenv = findVarInFrame3(sysp, install(".GenericDefEnv"), TRUE);
     if (TYPEOF(defenv) == PROMSXP) defenv = eval(defenv, R_BaseEnv);
     else if (defenv == R_UnboundValue) defenv = R_GlobalEnv;
 
     /* set up the arglist */
+    SEXP s; // *****
     s = R_LookupMethod(CAR(CXXRCCAST(Expression*, cptr->call())), env, callenv, defenv);
     if (TYPEOF(s) == SYMSXP && s == R_UnboundValue)
 	error(_("no calling generic was found: was a method called directly?"));
@@ -597,16 +586,19 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
-    formals = FORMALS(s);
-    PROTECT(actuals = matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
+    SEXP formals = FORMALS(s);
+    GCStackRoot<> actuals(matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
 
-    i = 0;
+    int i = 0;
+    GCStackRoot<> t;  // *****
     for(s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
 	SET_TAG(t, TAG(s));
 	if(TAG(t) == R_DotsSymbol) i = length(CAR(t));
     }
+    GCStackRoot<> m;  // *****
+    SEXP a;  // *****
     if(i) {   /* we need to expand out the dots */
-	PROTECT(t = allocList(i+length(actuals)-1));
+	t = allocList(i+length(actuals)-1);
 	for(s = actuals, m = t; s != R_NilValue; s = CDR(s)) {
 	    if(TYPEOF(CAR(s)) == DOTSXP) {
 		for(i = 1, a = CAR(s); a != R_NilValue;
@@ -620,16 +612,14 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		m = CDR(m);
 	    }
 	}
-	UNPROTECT(1);
 	actuals = t;
     }
-    PROTECT(actuals);
 
 
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
-    PROTECT(matchedarg = allocList(length(CXXRCCAST(PairList*, cptr->promiseArgs()))));
+    GCStackRoot<> matchedarg(allocList(length(CXXRCCAST(PairList*, cptr->promiseArgs()))));
     for (t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
 	 s = CDR(s), t = CDR(t)) {
 	SETCAR(t, CAR(s));
@@ -639,12 +629,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (m = actuals; m != R_NilValue; m = CDR(m))
 	    if (CAR(m) == CAR(t))  {
 		if (CAR(m) == R_MissingArg) {
-		    tmp = findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
+		    SEXP tmp = findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
 		    if (tmp == R_MissingArg) break;
 		}
 		SETCAR(t, mkPROMISE(TAG(m), cptr->workingEnvironment()));
 		break;
-	   }
+	    }
     }
     /*
       Now see if there were any other arguments passed in
@@ -659,12 +649,11 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	if (t != R_NilValue && t != R_MissingArg) {
 	    // Convert t to a PairList:
 	    {
-		GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t));
+		GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t.get()));
 		t = ConsCell::convert<PairList>(cc);
 	    }
 	    s = matchmethargs(matchedarg, t);
-	    UNPROTECT(1);
-	    PROTECT(matchedarg = s);
+	    matchedarg = s;
 	    newcall = fixcall(newcall, matchedarg);
 	}
     }
@@ -677,8 +666,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       the second argument to NextMethod is another option but
       isn't currently used).
     */
-    klass = findVarInFrame3(sysp,
-			    install(".Class"), TRUE);
+    GCStackRoot<> klass(findVarInFrame3(sysp, install(".Class"), TRUE));
 
     if (klass == R_UnboundValue) {
 	s = GetObject(cptr);
@@ -687,13 +675,11 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* the generic comes from either the sysparent or it's named */
-    generic = findVarInFrame3(sysp,
-			      install(".Generic"), TRUE);
+    GCStackRoot<> generic(findVarInFrame3(sysp, install(".Generic"), TRUE));
     if (generic == R_UnboundValue)
 	generic = eval(CAR(args), env);
     if( generic == R_NilValue )
 	error(_("generic function not specified"));
-    PROTECT(generic);
 
     if (!isString(generic) || length(generic) > 1)
 	error(_("invalid generic argument to NextMethod"));
@@ -703,28 +689,28 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* determine whether we are in a Group dispatch */
 
-    group = findVarInFrame3(sysp,
-			    install(".Group"), TRUE);
-    if (group == R_UnboundValue) PROTECT(group = mkString(""));
-    else PROTECT(group);
+    GCStackRoot<> group(findVarInFrame3(sysp, install(".Group"), TRUE));
+    if (group == R_UnboundValue)
+	group = mkString("");
 
     if (!isString(group) || length(group) > 1)
 	error(_("invalid 'group' argument found in NextMethod"));
 
     /* determine the root: either the group or the generic will be it */
 
+    SEXP basename;
     if (CHAR(STRING_ELT(group, 0))[0] == '\0') basename = generic;
     else basename = group;
 
-    nextfun = R_NilValue;
+    SEXP nextfun = R_NilValue;
 
     /*
-       Find the method currently being invoked and jump over the current call
-       If t is R_UnboundValue then we called the current method directly
+      Find the method currently being invoked and jump over the current call
+      If t is R_UnboundValue then we called the current method directly
     */
 
-    method = findVarInFrame3(sysp,
-			     install(".Method"), TRUE);
+    GCStackRoot<> method(findVarInFrame3(sysp, install(".Method"), TRUE));
+    char b[512]; // *****
     if( method != R_UnboundValue) {
 	const char *ss;
 	if( !isString(method) )
@@ -738,23 +724,27 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 	/* for binary operators check that the second argument's method
 	   is the same or absent */
-	for(j = i; j < length(method); j++){
+	for(int j = i; j < length(method); j++){
+	    char bb[512];
 	    const char *ss = translateChar(STRING_ELT(method, j));
 	    if(strlen(ss) >= 512)
 		error(_("method name too long in '%s'"), ss);
-	  sprintf(bb, "%s", ss);
-	  if (strlen(bb) && strcmp(b,bb))
-	      warning(_("Incompatible methods ignored"));
+	    sprintf(bb, "%s", ss);
+	    if (strlen(bb) && strcmp(b,bb))
+		warning(_("Incompatible methods ignored"));
 	}
     }
     else {
 	if(strlen(CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call()))))) >= 512)
-	   error(_("call name too long in '%s'"),
-		 CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
+	    error(_("call name too long in '%s'"),
+		  CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
 	sprintf(b, "%s", CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
     }
 
-    sb = translateChar(STRING_ELT(basename, 0));
+    const char* sb = translateChar(STRING_ELT(basename, 0));
+    char buf[512]; // *****
+    const char* sk;
+    int j;  // *****
     for (j = 0; j < length(klass); j++) {
 	sk = translateChar(STRING_ELT(klass, j));
 	if(strlen(sb) + strlen(sk) + 2 > 512)
@@ -764,14 +754,14 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     if (!strcmp(buf, b)) /* we found a match and start from there */
-      j++;
+	j++;
     else
-      j = 0;  /*no match so start with the first element of .Class */
+	j = 0;  /*no match so start with the first element of .Class */
 
     /* we need the value of i on exit from the for loop to figure out
-	   how many classes to drop. */
+       how many classes to drop. */
 
-    sg = translateChar(STRING_ELT(generic, 0));
+    const char* sg = translateChar(STRING_ELT(generic, 0));
     for (i = j ; i < length(klass); i++) {
 	sk = translateChar(STRING_ELT(klass, i));
 	if(strlen(sg) + strlen(sk) + 2 > 512)
@@ -797,7 +787,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* If there is no default method, try the generic itself,
 	   provided it is primitive or a wrapper for a .Internal
 	   function of the same name.
-	 */
+	*/
 	if (!isFunction(nextfun)) {
 	    t = install(sg);
 	    nextfun = findVar(t, env);
@@ -813,24 +803,24 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    }
 	}
     }
-    PROTECT(s = allocVector(STRSXP, length(klass) - i));
-    PROTECT(klass = duplicate(klass));
-    PROTECT(m = GCNode::expose(new Environment(0)));
-    for (j = 0; j < length(s); j++)
-	SET_STRING_ELT(s, j, duplicate(STRING_ELT(klass, i++)));
+    GCStackRoot<> sv(allocVector(STRSXP, length(klass) - i));
+    klass = duplicate(klass);
+    m = GCNode::expose(new Environment(0));
+    for (j = 0; j < length(sv); j++)
+	SET_STRING_ELT(sv, j, duplicate(STRING_ELT(klass, i++)));
     setAttrib(s, install("previous"), klass);
-    defineVar(install(".Class"), s, m);
+    defineVar(install(".Class"), sv, m);
     /* It is possible that if a method was called directly that
-	'method' is unset */
+       'method' is unset */
     if (method != R_UnboundValue) {
 	/* for Ops we need `method' to be a vector */
-	PROTECT(method = duplicate(method));
+	method = duplicate(method);
 	for(j = 0; j < length(method); j++) {
 	    if (strlen(CHAR(STRING_ELT(method,j))))
 		SET_STRING_ELT(method, j,  mkChar(buf));
 	}
     } else
-	PROTECT(method = mkString(buf));
+	method = mkString(buf);
     defineVar(install(".Method"), method, m);
     defineVar(install(".GenericCallEnv"), callenv, m);
     defineVar(install(".GenericDefEnv"), defenv, m);
@@ -842,9 +832,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     defineVar(install(".Group"), group, m);
 
     SETCAR(newcall, method);
-    ans = applyMethod(newcall, nextfun, matchedarg, env, m);
-    UNPROTECT(10);
-    return(ans);
+    return applyMethod(newcall, nextfun, matchedarg, env, m);
 }
 
 /* primitive */
