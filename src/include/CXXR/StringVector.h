@@ -85,6 +85,24 @@ namespace CXXR {
 	    : HandleVector<String, STRSXP>(pattern)
 	{}
 
+	/** @brief Create a StringVector containing a single string.
+	 *
+	 * This constructor constructs a StringVector containing a
+	 * single elements, and initializes that element to represent
+	 * a specified string and encoding.
+	 *
+	 * @param str The required text of the single vector element.
+	 *
+	 * @param encoding The required encoding of the single vector
+	 *          element.  Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are
+	 *          permitted in this context (checked).
+	 */
+	explicit StringVector(const std::string& str,
+			      cetype_t encoding = CE_NATIVE)
+	    : HandleVector<String, STRSXP>(1,
+					   CachedString::obtain(str, encoding))
+	{}
+
 	// Virtual function of RObject:
 	StringVector* clone() const;
     private:

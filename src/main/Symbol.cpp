@@ -218,6 +218,8 @@ namespace CXXR {
     Symbol* const DollarSymbol = Symbol::obtain("$");
     Symbol* const DotClassSymbol = Symbol::obtain(".Class");
     Symbol* const DotGenericSymbol = Symbol::obtain(".Generic");
+    Symbol* const DotGenericCallEnvSymbol = Symbol::obtain(".GenericCallEnv");
+    Symbol* const DotGenericDefEnvSymbol = Symbol::obtain(".GenericDefEnv");
     Symbol* const DotGroupSymbol = Symbol::obtain(".Group");
     Symbol* const DotMethodSymbol = Symbol::obtain(".Method");
     Symbol* const DotMethodsSymbol = Symbol::obtain(".Methods");
@@ -233,6 +235,7 @@ namespace CXXR {
     Symbol* const NamesSymbol = Symbol::obtain("names");
     Symbol* const NaRmSymbol = Symbol::obtain("na.rm");
     Symbol* const PackageSymbol = Symbol::obtain("package");
+    Symbol* const PreviousSymbol = Symbol::obtain("previous");
     Symbol* const QuoteSymbol = Symbol::obtain("quote");
     Symbol* const RowNamesSymbol = Symbol::obtain("row.names");
     Symbol* const SeedsSymbol = Symbol::obtain(".Random.seed");

@@ -377,6 +377,27 @@ namespace CXXR {
 	 */
 	virtual PairList* asPairList() const = 0;
 
+	/** @brief Bind a Symbol to a specified value.
+	 *
+	 * @param symbol Non-null pointer to the Symbol to be bound or
+	 *          rebound.
+	 *
+	 * @param value Pointer, possibly null, to the RObject to
+	 *          which \a symbol is now to be bound.  Any previous
+	 *          binding of \a symbol is overwritten.
+	 *
+	 * @param origin Origin of the newly bound value.
+	 *
+	 * @return Pointer to the resulting Binding.
+	 */
+	Binding* bind(const Symbol* symbol, RObject* value,
+		      Frame::Binding::Origin origin = Frame::Binding::EXPLICIT)
+	{
+	    Binding* bdg = obtainBinding(symbol);
+	    bdg->setValue(value, origin);
+	    return bdg;
+	}
+
 	/** @brief Access binding of an already-defined Symbol.
 	 *
 	 * This function provides a pointer to the Binding of a

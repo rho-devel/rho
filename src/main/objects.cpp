@@ -271,29 +271,36 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
     }
 
     // Prepare the functor:
-    RObject* op = cptr->call()->car();
-    switch (op->sexptype()) {
-    case SYMSXP:
-	op = findFun(op, cptr->callEnvironment());
-	break;
-    case LANGSXP:
-	op = evaluate(op, cptr->callEnvironment());
-	break;
-    case CLOSXP:
-    case BUILTINSXP:
-    case SPECIALSXP:
-	break;
-    default:
-	Rf_error(_("Invalid generic function in 'usemethod'"));
+    FunctionBase* op;
+    {
+	RObject* opcar = cptr->call()->car();
+	if (opcar->sexptype() == LANGSXP)
+	    opcar = opcar->evaluate(cptr->callEnvironment());
+	switch (opcar->sexptype()) {
+	case SYMSXP: {
+	    const Symbol* symbol = static_cast<Symbol*>(opcar);
+	    pair<Environment*, FunctionBase*> pr
+		= findFunction(symbol, cptr->callEnvironment());
+	    if (!pr.first)
+		Rf_error(_("could not find function '%s'"),
+			 symbol->name()->c_str());
+	    op = pr.second;
+	    break;
+	}
+	case CLOSXP:
+	case BUILTINSXP:
+	case SPECIALSXP:
+	    break;
+	default:
+	    Rf_error(_("Invalid generic function in 'usemethod'"));
+	}
     }
 
-    // Create a new environment without any of the formals to the
+    // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<> newrho;
+    GCStackRoot<Frame> newframe(GCNode::expose(new StdFrame));
     RObject* match_obj = 0;
-    if (op->sexptype() != CLOSXP)
-	newrho = GCNode::expose(new Environment(0));
-    else {
+    if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
 	// Look for definition of first formal argument of the generic:
@@ -308,93 +315,96 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 		    match_obj = bdg->value();
 	    }
 	}
-	// Create newrho:
+	// Create newframe:
 	{
-	    const Frame* frame = generic_wk_env->frame();
-	    GCStackRoot<Frame> stripped_frame(frame->clone());
-	    clos->stripFormals(stripped_frame);
-	    newrho = GCNode::expose(new Environment(0, stripped_frame));
+	    newframe = generic_wk_env->frame()->clone();
+	    clos->stripFormals(newframe);
 	}
     }
 
-    GCStackRoot<> matchedarg(CXXRCCAST(PairList*, cptr->promiseArgs()));
-    GCStackRoot<> newcall(cptr->call()->clone());
-    GCStackRoot<> klass(R_data_class2(obj));
-    int S4toS3 = IS_S4_OBJECT(obj);
+    GCStackRoot<const PairList> matchedarg(cptr->promiseArgs());
+    GCStackRoot<Expression> newcall(cptr->call()->clone());
+    GCStackRoot<StringVector>
+	klass(SEXP_downcast<StringVector*>(R_data_class2(obj)));
+    bool S4toS3 = obj && obj->isS4Object();
 
-    int nclass = length(klass);
-    for (int i = 0; i < nclass; i++) {
-	char buf[512];
-	SEXP se = STRING_ELT(klass, i);
-	const char *ss = translateChar(se);
-	if(strlen(generic) + strlen(ss) + 2 > 512)
-	    error(_("class name too long in '%s'"), generic);
-	sprintf(buf, "%s.%s", generic, ss);
-	RObject* method = install(buf);
+    size_t nclass = klass->size();
+    for (unsigned int i = 0; i < nclass; i++) {
+	const RObject* se = (*klass)[i];
+	string ss(translateChar(const_cast<RObject*>(se)));
+	string method_name = string(generic) + "." + ss;
+	Symbol* method = Symbol::obtain(method_name);
 	RObject* sxp = R_LookupMethod(method, rho, callrho, defrho);
 	if (isFunction(sxp)) {
-            if( op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
+            if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
                 SET_RSTEP(sxp, 1);
-	    GCStackRoot<> genstr(mkString(generic));
-	    defineVar(install(".Generic"), genstr, newrho);
+	    GCStackRoot<StringVector> genstr(GCNode::expose(new StringVector(generic)));
+	    newframe->bind(DotGenericSymbol, genstr);
 	    if (i > 0) {
-		int j;
-	        int ii;
-		GCStackRoot<> tc(allocVector(STRSXP, nclass - i));
-		for(j = 0, ii = i; j < length(tc); j++, ii++)
-		      SET_STRING_ELT(tc, j, STRING_ELT(klass, ii));
-		setAttrib(tc, install("previous"), klass);
-		defineVar(install(".Class"), tc, newrho);
+		GCStackRoot<StringVector>
+		    tc(GCNode::expose(new StringVector(nclass - i)));
+		for (unsigned int j = 0; j < tc->size(); ++j)
+		    (*tc)[j] = (*klass)[j + i];
+		tc->setAttribute(PreviousSymbol, klass);
+		newframe->bind(DotClassSymbol, tc);
 	    } else
-		defineVar(install(".Class"), klass, newrho);
-	    GCStackRoot<> tm(mkString(buf));
-	    defineVar(install(".Method"), tm, newrho);
-	    defineVar(install(".GenericCallEnv"), callrho, newrho);
-	    defineVar(install(".GenericDefEnv"), defrho, newrho);
-	    if(S4toS3 && i > 0 && isBasicClass(ss)) {
+		newframe->bind(DotClassSymbol, klass);
+	    GCStackRoot<StringVector>
+		tm(GCNode::expose(new StringVector(method_name)));
+	    newframe->bind(DotMethodSymbol, tm);
+	    newframe->bind(DotGenericCallEnvSymbol, callrho);
+	    newframe->bind(DotGenericDefEnvSymbol, defrho);
+	    if (S4toS3 && i > 0 && isBasicClass(ss.c_str())) {
 		SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
-		if(S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
+		if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
 		    S3Part = R_getS4DataSlot(obj, ANYSXP);
 		// At this point S3Part is the S3 class object or an
 		// object of an abnormal type, or NULL.
-		if(S3Part != R_NilValue) {  // use S3Part as inherited object
+		if (S3Part) {  // use S3Part as inherited object
 		    obj = S3Part;
-		    if(!match_obj) // use the first arg, for "[",e.g.
-			match_obj = CAR(matchedarg);
-		    if(NAMED(obj)) SET_NAMED(obj, 2);
-		    if(TYPEOF(match_obj) == PROMSXP)
-			SET_PRVALUE(match_obj, obj); // must have been eval'd
-		    else // not possible ?
-			defineVar(TAG(FORMALS(sxp)), obj, newrho);
+		    if (!match_obj) // use the first arg, for "[",e.g.
+			match_obj = matchedarg->car();
+		    if (NAMED(obj)) SET_NAMED(obj, 2);
+		    if (match_obj->sexptype() == PROMSXP)
+			static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
+		    else {
+			// not possible ?
+			Closure* clos = SEXP_downcast<Closure*>(sxp);
+			const Symbol* sym
+			    = static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
+			newframe->bind(sym, obj);
+		    }
 		} // else, use the S4 object
 	    }
-	    GCStackRoot<> tnc(newcall);
-	    SETCAR(tnc, method);
-	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
+	    newcall->setCar(method);
+	    GCStackRoot<Environment> newrho(GCNode::expose(new Environment(0, newframe)));
+	    *ans = applyMethod(newcall, sxp, const_cast<PairList*>(matchedarg.get()),
+			       rho, newrho);
 	    return 1;
 	}
     }
 
     // No class method found, so use default method:
     {
-	char buf[512];
-	if(strlen(generic) + strlen("default") + 2 > 512)
-	    error(_("class name too long in '%s'"), generic);
-	sprintf(buf, "%s.default", generic);
-	RObject* method = install(buf);
+	string method_name = string(generic) + ".default";
+	Symbol* method = Symbol::obtain(method_name);
 	RObject* sxp = R_LookupMethod(method, rho, callrho, defrho);
 	if (isFunction(sxp)) {
-	    if( op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
+	    if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
 		SET_RSTEP(sxp, 1);
-	    defineVar(install(".Generic"), mkString(generic), newrho);
-	    defineVar(install(".Class"), R_NilValue, newrho);
-	    GCStackRoot<> tm(mkString(buf));
-	    defineVar(install(".Method"), tm, newrho);
-	    defineVar(install(".GenericCallEnv"), callrho, newrho);
-	    defineVar(install(".GenericDefEnv"), defrho, newrho);
-	    GCStackRoot<> tnc(newcall);
-	    SETCAR(tnc, method);
-	    *ans = applyMethod(tnc, sxp, matchedarg, rho, newrho);
+	    GCStackRoot<StringVector> genstr(GCNode::expose(new StringVector(generic)));
+	    newframe->bind(DotGenericSymbol, genstr);
+	    newframe->bind(DotClassSymbol, 0);
+	    GCStackRoot<StringVector>
+		tm(GCNode::expose(new StringVector(method_name)));
+	    newframe->bind(DotMethodSymbol, tm);
+	    newframe->bind(DotGenericCallEnvSymbol, callrho);
+	    newframe->bind(DotGenericDefEnvSymbol, defrho);
+	    newcall->setCar(method);
+	    GCStackRoot<Environment> newrho(GCNode::expose(new Environment(0, newframe)));
+	    *ans = applyMethod(newcall, sxp,
+			       const_cast<PairList*>(matchedarg.get()),
+			       rho, newrho);
 	    return 1;
 	}
     }
