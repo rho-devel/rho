@@ -88,7 +88,20 @@ namespace CXXR {
 	/** @brief Create a StringVector containing a single string.
 	 *
 	 * This constructor constructs a StringVector containing a
-	 * single elements, and initializes that element to represent
+	 * single element, and initializes that element to point to a
+	 * specified CachedString.
+	 *
+	 * @param string Pointer to the CachedString to be represented
+	 *          by the single vector element.
+	 */
+	explicit StringVector(CachedString* string)
+	    : HandleVector<String, STRSXP>(1, string)
+	{}
+
+	/** @brief Create a StringVector containing a single std::string.
+	 *
+	 * This constructor constructs a StringVector containing a
+	 * single element, and initializes that element to represent
 	 * a specified string and encoding.
 	 *
 	 * @param str The required text of the single vector element.
