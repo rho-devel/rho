@@ -333,7 +333,11 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 		for (unsigned int j = 0; j < dotclass->size(); ++j)
 		    (*dotclass)[j] = (*klass)[j + i];
 		dotclass->setAttribute(PreviousSymbol, klass);
-		newframe->bind(DotClassSymbol, dotclass);
+		// In CR, the following very obscure code disappeared
+		// some time after 2.11.1, so it can be expected to
+		// disappear from CXXR in due course.  At that time
+		// the declaration of newframe can be moved to a later
+		// point in the function.
 		if (obj && obj->isS4Object() && isBasicClass(ss.c_str())) {
 		    SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
 		    if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
@@ -399,27 +403,22 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP args,
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans;
-    GCStackRoot<> generic, obj;
-    SEXP val;
-    SEXP callenv, defenv;
-    GCStackRoot<> ap, argList;
-    ClosureContext *cptr = 0;
+    // Determine argList:
+    GCStackRoot<> argList;
+    {
+	GCStackRoot<> ap(list2(R_NilValue, R_NilValue));
+	SET_TAG(ap,  install("generic"));
+	SET_TAG(CDR(ap), install("object"));
+	argList =  matchArgs(ap, args, call);
+    }
 
-    ap = list2(R_NilValue, R_NilValue);
-    SET_TAG(ap,  install("generic"));
-    SET_TAG(CDR(ap), install("object"));
-    argList =  matchArgs(ap, args, call);
     if (CAR(argList) == R_MissingArg)
 	errorcall(call, _("there must be a 'generic' argument"));	
-    else 
-	generic = eval(CAR(argList), env);
+    GCStackRoot<> generic(eval(CAR(argList), env));
     if(!isString(generic) || length(generic) != 1)
 	errorcall(call, _("'generic' argument must be a character string"));
 
-    /* get environments needed for dispatching.
-       callenv = environment from which the generic was called
-       defenv = environment where the generic was defined */
+    ClosureContext *cptr = 0;
     {
 	FunctionContext* fcptr = FunctionContext::innermost();
 	if (fcptr && fcptr->type() == Evaluator::Context::CLOSURE) {
@@ -432,7 +431,11 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 			 _("'UseMethod' used in an inappropriate fashion"));
     }
 
-    callenv = cptr->callEnvironment();
+    /* get environments needed for dispatching.
+       callenv = environment from which the generic was called
+       defenv = environment where the generic was defined */
+    SEXP callenv = cptr->callEnvironment();
+    SEXP defenv;
     /* We need to find the generic to find out where it is defined.
        This is set up to avoid getting caught by things like
 
@@ -445,58 +448,52 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	The generic need not be a closure (Henrik Bengtsson writes
 	UseMethod("$"), although only functions are documented.)
     */
-    val = findVar1(install(translateChar(STRING_ELT(generic, 0))),
+    SEXP val
+	= findVar1(install(translateChar(STRING_ELT(generic, 0))),
 		   ENCLOS(env), FUNSXP, TRUE); /* That has evaluated promises */
     if(TYPEOF(val) == CLOSXP) defenv = CLOENV(val);
     else defenv = R_BaseNamespace;
 
+    GCStackRoot<> obj;
     if (CADR(argList) != R_MissingArg)
 	obj = eval(CADR(argList), env);
-    else {
-	cptr = ClosureContext::innermost();
-	while (cptr && cptr->workingEnvironment() != env)
-	    cptr = ClosureContext::innermost(cptr->nextOut());
-	if (cptr == NULL)
-	    errorcall(call, _("'UseMethod' called from outside a closure"));
+    else
 	obj = GetObject(cptr);
-    }
 
     if (TYPEOF(generic) != STRSXP ||
 	LENGTH(generic) < 1 ||
 	CHAR(STRING_ELT(generic, 0))[0] == '\0')
 	errorcall(call, _("first argument must be a generic name"));
 
+    SEXP ans;
     if (usemethod(translateChar(STRING_ELT(generic, 0)), obj, call, CDR(args),
 		  env, callenv, defenv, &ans) == 1) {
-	GCStackRoot<> ansrt(ans);
 	Environment* envir = SEXP_downcast<Environment*>(env);
+	GCStackRoot<> ansrt(ans);
 	if (!envir->canReturn())
 	    Rf_error(_("no function to return from, jumping to top level"));
 	ReturnBailout* rbo = GCNode::expose(new ReturnBailout(envir, ans));
-	Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
+	Evaluator::Context* callctxt
+	    = Evaluator::Context::innermost()->nextOut();
 	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	    rbo->throwException();
 	return rbo;
     }
     else {
-	GCStackRoot<> klass;
-	int nclass;
-	char cl[1000];
-	klass = R_data_class2(obj);
-	nclass = length(klass);
+	string cl;
+	GCStackRoot<> klass(R_data_class2(obj));
+	int nclass = length(klass);
 	if (nclass == 1) 
-	    strcpy(cl, translateChar(STRING_ELT(klass, 0)));
+	    cl = translateChar(STRING_ELT(klass, 0));
 	else {
-	    int i;
-	    strcpy(cl, "c('");
-	    for (i = 0; i < nclass; i++) {
-		if (i > 0) strcat(cl, "', '");
-		strcat(cl, translateChar(STRING_ELT(klass, i)));
-	    }
-	    strcat(cl, "')");
+	    cl = string("c('") + translateChar(STRING_ELT(klass, 0));
+	    for (int i = 1; i < nclass; ++i)
+		cl += string("', '") + translateChar(STRING_ELT(klass, i));
+	    cl += "')";
 	}
-	errorcall(call, _("no applicable method for '%s' applied to an object of class \"%s\""),
-		  translateChar(STRING_ELT(generic, 0)), cl);
+	errorcall(call, _("no applicable method for '%s'"
+			  " applied to an object of class '%s'"),
+		  translateChar(STRING_ELT(generic, 0)), cl.c_str());
     }
     /* Not reached */
     return R_NilValue;
