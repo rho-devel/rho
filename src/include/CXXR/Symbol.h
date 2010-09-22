@@ -337,6 +337,7 @@ namespace CXXR {
     extern Symbol* const PreviousSymbol;   	  // "previous"
     extern Symbol* const QuoteSymbol;      	  // "quote"
     extern Symbol* const RowNamesSymbol;   	  // "row.names"
+    extern Symbol* const S3MethodsTableSymbol;    // ".__S3MethodsTable__."
     extern Symbol* const SeedsSymbol;	   	  // ".Random.seed"
     extern Symbol* const LastvalueSymbol;  	  // ".Last.value"
     extern Symbol* const TspSymbol;	   	  // "tsp"

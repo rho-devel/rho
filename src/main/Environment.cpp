@@ -298,4 +298,34 @@ namespace CXXR {
 	    = findTestedValue(symbol, env, functest, inherits);
 	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
     }
+
+    std::pair<FunctionBase*, bool>
+    findS3Method(const Symbol* symbol, Environment* call_env,
+		 Environment* table_env)
+    {
+	pair<Environment*, FunctionBase*> pr = findFunction(symbol, call_env);
+	if (pr.first)
+	    return make_pair(pr.second, true);
+	Environment* table = 0;
+	// Look for S3 methods table:
+	{
+	    Frame::Binding* tblbdg
+		= table_env->frame()->binding(S3MethodsTableSymbol);
+	    if (tblbdg) {
+		RObject* tblbdgval = tblbdg->forcedValue().first;
+		if (tblbdgval && tblbdgval->sexptype() == ENVSXP)
+		    table = static_cast<Environment*>(tblbdgval);
+	    }
+	}
+	// Look up method in table:
+	if (table) {
+	    Frame::Binding* symbdg = table->frame()->binding(symbol);
+	    if (symbdg) {
+		RObject* symbdgval = symbdg->forcedValue().first;
+		// Assume that the result is a FunctionBase:
+		return make_pair(static_cast<FunctionBase*>(symbdgval), false);
+	    }
+	}
+	return pair<FunctionBase*, bool>(0, false);
+    }
 }

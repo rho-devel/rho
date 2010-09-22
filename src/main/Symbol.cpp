@@ -238,6 +238,7 @@ namespace CXXR {
     Symbol* const PreviousSymbol = Symbol::obtain("previous");
     Symbol* const QuoteSymbol = Symbol::obtain("quote");
     Symbol* const RowNamesSymbol = Symbol::obtain("row.names");
+    Symbol* const S3MethodsTableSymbol = Symbol::obtain(".__S3MethodsTable__.");
     Symbol* const SeedsSymbol = Symbol::obtain(".Random.seed");
     Symbol* const SourceSymbol = Symbol::obtain("source");
     Symbol* const TspSymbol = Symbol::obtain("tsp");

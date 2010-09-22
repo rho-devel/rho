@@ -532,24 +532,24 @@ namespace CXXR {
      * whether the Binding's value is a FunctionBase.
      *
      * If a Binding of \a symbol to a Promise is encountered, the
-     * Promise is forced (within the Binding's environment) before
-     * testing whether the value of the Promise is a FunctionBase.  In
-     * this case, if the predicate is satisfied, the result of
-     * evaluating the Promise is part of the returned value.
+     * Promise is forced before testing whether the value of the
+     * Promise is a FunctionBase.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
      *
      * If, in the course of searching for a suitable Binding, a
-     * Binding of \a symbol to R_MissingArg is encountered, an error
-     * is raised.
+     * Binding of \a symbol to Symbol::missingArgument()
+     * (R_MissingArg) is encountered, an error is raised.
      *
      * Read/write monitors are invoked in the following circumstances:
      * (i) If a Promise is forced, any read monitor for the relevant
      * Binding is called before forcing it, and any write monitor for
      * the symbol's Binding is called immediately afterwards.  (ii) If
-     * this function succeeds in finding a Binding to a FunctionBas,
+     * this function succeeds in finding a Binding to a FunctionBase,
      * then any read monitor for that Binding is called.
      *
-     * @param symbol Pointer to the Symbol for which a Binding is
-     *          sought.
+     * @param symbol Non-null pointer to the Symbol for which a
+     *          Binding is sought.
      *
      * @param env Pointer to the Environment in which the search for a
      *          Binding is to start.  Must not be null.
@@ -560,16 +560,80 @@ namespace CXXR {
      *          Binding to a FunctionBase is found, or the chain of
      *          enclosing environments is exhausted.
      *
-     * @return If a Binding to a FunctionBase was found, the
-     * first element of of the pair is a pointer to the Environment in
-     * which it was found, and the second element is the value of the
-     * Binding, except that if the value was a Promise, the second
-     * element is the result of evaluating the Promise.  If no Binding
-     * satisfying the predicate was found, both elements of the pair
-     * are null pointers.
+     * @return If a Binding to a FunctionBase was found, the first
+     * element of the pair is a pointer to the Environment in which it
+     * was found, and the second element is the value of the Binding,
+     * except that if the value was a Promise, the second element is
+     * the result of evaluating the Promise.  If no Binding to a
+     * FunctionBase was found, both elements of the pair are null
+     * pointers.
      */
     std::pair<Environment*, FunctionBase*>
     findFunction(const Symbol* symbol, Environment* env, bool inherits = true);
+
+    /** @brief Search for an S3 method.
+     *
+     * This function is a variation of findFunction() used in
+     * searching for a definition of an S3 method bound to \a symbol.
+     *
+     * The search is first carried out in \a call_env and its
+     * enclosing environments, as in findFunction().
+     *
+     * If this fails to find a binding of \a symbol to a FunctionBase,
+     * the search then determines whether the Frame of \a table_env
+     * defines an S3 methods table, that is to say, whether it
+     * contains a Binding of the symbol <tt>.__S3MethodsTable__.</tt>
+     * to an Environment.  If so, a Binding of \a symbol is sought in
+     * the Frame of that Environment (i.e. the Environment bound to
+     * <tt>.__S3MethodsTable__.</tt>).  If the value of the Binding is
+     * a Promise, the Promise is forced and the result of evaluating
+     * the Promise is used as part of the returned value.
+     *
+     * If, in the course of searching for a suitable Binding, a
+     * Binding of \a symbol to Symbol::missingArgument()
+     * (R_MissingArg) is encountered, an error is raised.
+     *
+     * Read/write monitors are invoked in the following circumstances:
+     * (i) If a Promise is forced, any read monitor for the relevant
+     * Binding is called before forcing it, and any write monitor for
+     * the symbol's Binding is called immediately afterwards.  (ii) If
+     * this function succeeds in finding a Binding to a FunctionBase,
+     * then any read monitor for that Binding is called.
+     *
+     * @param symbol Non-null pointer to the Symbol for which a
+     *          Binding is sought.  In practice the name of the Symbol
+     *          will be of an articulated form such as
+     *          <tt>print.lm</tt> or <tt>summary.default</tt>;
+     *          however, the function neither checks nor relies on
+     *          this.
+     *
+     * @param call_env Non-null pointer to the Environment in which
+     *          the search for a Binding is first carried out.  In
+     *          practice this will be the call Environment of the S3
+     *          generic.
+     *
+     * @param table_env Non-null pointer to the Environment in whose
+     *          Frame an S3 methods table (i.e. an Environment bound to
+     *          <tt>.__S3MethodsTable__.</tt>) is sought, if no method
+     *          was found in \a call_env.
+     *
+     * @return If a Binding to a FunctionBase was found, the first
+     * element of the pair is the value of the Binding (except that if
+     * the value was a Promise, the first element is the result of
+     * evaluating the Promise) and the second element of the pair is
+     * \c true if the Binding was found by searching in \a call_env,
+     * and \c false if it was found in the S3 methods table.  If no
+     * Binding to a FunctionBase was found, the first element of the
+     * pair will be null and the second element <tt>false</tt>.
+     *
+     * @note An S3 methods table is currently sought only within the
+     * Frame of \a table_env itself; the search does not proceed to
+     * enclosing Environments.  This follows CR, but it perhaps unduly
+     * restrictive.
+     */
+    std::pair<FunctionBase*, bool>
+    findS3Method(const Symbol* symbol, Environment* call_env,
+		 Environment* table_env);
 
     /** @brief Search for a Binding whose value satisfies a predicate.
      *
@@ -577,10 +641,10 @@ namespace CXXR {
      * whether the Binding's value satisfies a predicate \a pred.
      *
      * If a Binding of \a symbol to a Promise is encountered, the
-     * Promise is forced (within the Binding's environment) before
-     * applying the predicate to the result of evaluating the Promise.
-     * In this case, if the predicate is satisfied, the result of
-     * evaluating the Promise is part of the returned value.
+     * Promise is forced before applying the predicate to the result
+     * of evaluating the Promise.  In this case, if the predicate is
+     * satisfied, the result of evaluating the Promise is part of the
+     * returned value.
      *
      * Read/write monitors are invoked in the following circumstances:
      * (i) If a Promise is forced, any read monitor for the relevant

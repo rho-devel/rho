@@ -190,8 +190,6 @@ void R_warn_S3_for_S4(SEXP method) {
 
 SEXP R_LookupMethod(SEXP method, SEXP rho, SEXP callrho, SEXP defrho)
 {
-    SEXP val;
-
     if (TYPEOF(callrho) == NILSXP) {
 	error(_("use of NULL environment is defunct"));
 	callrho = R_BaseEnv;
@@ -207,23 +205,11 @@ SEXP R_LookupMethod(SEXP method, SEXP rho, SEXP callrho, SEXP defrho)
     if (defrho == R_BaseEnv)
 	defrho = R_BaseNamespace;
 
-    /* This evaluates promises */
-    val = findVar1(method, callrho, FUNSXP, TRUE);
-    if (isFunction(val))
-	return val;
-    else {
-	/* We assume here that no one registered a non-function */
-	SEXP table = findVarInFrame3(defrho,
-				     install(".__S3MethodsTable__."),
-				     TRUE);
-	if (TYPEOF(table) == PROMSXP) table = eval(table, R_BaseEnv);
-	if (TYPEOF(table) == ENVSXP) {
-	    val = findVarInFrame3(table, method, TRUE);
-	    if (TYPEOF(val) == PROMSXP) val = eval(val, rho);
-	    if (val != R_UnboundValue) return val;
-	}
-	return R_UnboundValue;
-    }
+    Symbol* sym = SEXP_downcast<Symbol*>(method);
+    pair<FunctionBase*, bool>
+	pr = findS3Method(sym, static_cast<Environment*>(callrho),
+			  static_cast<Environment*>(defrho));
+    return (pr.first ? pr.first : R_UnboundValue);
 }
 
 #ifdef UNUSED
