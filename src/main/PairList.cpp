@@ -95,7 +95,7 @@ PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
 {
     PairList* ans = 0;
     while (sz--)
-	ans = construct(0, ans);
+	ans = cons(0, ans);
     return ans;
 }
 
@@ -128,7 +128,7 @@ SEXP Rf_allocList(unsigned int n)
 
 SEXP Rf_cons(SEXP cr, SEXP tl)
 {
-    return PairList::construct(cr, SEXP_downcast<PairList*>(tl));
+    return PairList::cons(cr, SEXP_downcast<PairList*>(tl));
 }
 
 Rboolean IS_ACTIVE_BINDING(SEXP b)

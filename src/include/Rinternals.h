@@ -158,8 +158,8 @@ SEXP SET_VECTOR_ELT(SEXP x, int i, SEXP v);
 
 /* List Access Functions */
 /* These also work for ... objects */
-#define CONS(a, b)	cons((a), (b))		/* data lists */
-#define LCONS(a, b)	lcons((a), (b))		/* language lists */
+#define CONS(a, b)	Rf_cons((a), (b))	/* data lists */
+#define LCONS(a, b)	Rf_lcons((a), (b))	/* language lists */
 SEXP (TAG)(SEXP e);
 SEXP (CAR)(SEXP e);
 SEXP (CDR)(SEXP e);

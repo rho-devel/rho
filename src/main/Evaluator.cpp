@@ -108,8 +108,7 @@ PairList* Evaluator::mapEvaluate(const PairList* inlist,
 		    RObject* outcar = Symbol::missingArgument();
 		    if (dotcar != Symbol::missingArgument())
 			outcar = evaluate(dotcar, env);
-		    PairList* cell
-			= PairList::construct(outcar, 0, dotlist->tag());
+		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
 		    if (!lastout)
 			outlist = lastout = cell;
 		    else {
@@ -132,7 +131,7 @@ PairList* Evaluator::mapEvaluate(const PairList* inlist,
 				 _("'%s' is missing"), sym->name()->c_str());
 	    }
 	    outcar = evaluate(incar, env);
-	    PairList* cell = PairList::construct(outcar, 0, inlist->tag());
+	    PairList* cell = PairList::cons(outcar, 0, inlist->tag());
 	    if (!lastout)
 		outlist = lastout = cell;
 	    else {

@@ -447,7 +447,7 @@ INLINE_FUN Rboolean isNumber(SEXP s)
 {
     switch(TYPEOF(s)) {
     case INTSXP:
-	if (inherits(s,"factor")) return FALSE;
+	if (Rf_inherits(s,"factor")) return FALSE;
     case LGLSXP:
     case REALSXP:
     case CPLXSXP:
@@ -547,11 +547,11 @@ INLINE_FUN SEXP mkNamed(SEXPTYPE TYP, const char **names)
     int i, n;
 
     for (n = 0; strlen(names[n]) > 0; n++) {}
-    ans = PROTECT(allocVector(TYP, n));
-    nms = PROTECT(allocVector(STRSXP, n));
+    ans = PROTECT(Rf_allocVector(TYP, n));
+    nms = PROTECT(Rf_allocVector(STRSXP, n));
     for (i = 0; i < n; i++)
-	SET_STRING_ELT(nms, i, mkChar(names[i]));
-    setAttrib(ans, R_NamesSymbol, nms);
+	SET_STRING_ELT(nms, i, Rf_mkChar(names[i]));
+    Rf_setAttrib(ans, R_NamesSymbol, nms);
     UNPROTECT(2);
     return ans;
 }

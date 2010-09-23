@@ -84,7 +84,7 @@ void ConsCell::detachReferents()
     RObject::detachReferents();
 }
 
-size_t ConsCell::listLength(const ConsCell* start)
+size_t ConsCell::length(const ConsCell* start)
 {
     size_t ans = 0;
     while (start) {

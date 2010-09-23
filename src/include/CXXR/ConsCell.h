@@ -132,12 +132,8 @@ namespace CXXR {
 	 * @return zero if \a start is a null pointer, otherwise the
 	 * number of elements in the list starting at the ConsCell
 	 * pointed to by \a start.
-	 *
-	 * @note This would have been called length(), except that in
-	 * code inherited from CR that would be apt to be
-	 * macro-expanded to Rf_length().
 	 */
-	static size_t listLength(const ConsCell* start);
+	static size_t length(const ConsCell* start);
 
 	/** @brief Set the 'car' value.
 	 *
@@ -355,13 +351,9 @@ namespace CXXR {
 	 * @param tag Pointer to the tag of the element to be constructed.
 	 *
 	 * @return Pointer to newly created PairList element.
-	 *
-	 * @note This function was previously called PairList::cons(),
-	 * but in code inherited from CR the preprocessor was apt to
-	 * macro-expand this to Rf_cons.
 	 */
-	static PairList* construct(RObject* cr, PairList* tl=0,
-				   const RObject* tag = 0)
+	static PairList* cons(RObject* cr, PairList* tl=0,
+			      const RObject* tag = 0)
 	{
 	    // We call MemoryBank::allocate() directly here, rather
 	    // than GCNode::operator new(), to avoid giving rise to

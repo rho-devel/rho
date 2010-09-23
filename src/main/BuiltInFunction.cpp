@@ -92,7 +92,7 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
 				   const Expression* call) const
 {
     if (arity() >= 0) {
-	size_t nargs = ConsCell::listLength(args);
+	size_t nargs = ConsCell::length(args);
 	if (int(nargs) != arity()) {
 	    if (viaDotInternal())
 		Rf_error(_("%d arguments passed to .Internal(%s)"

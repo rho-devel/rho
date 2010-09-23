@@ -79,7 +79,7 @@ void ArgMatcher::handleDots(Frame* frame, SuppliedList* supplied_list)
 	GCStackRoot<PairList> tail;
 	for (SuppliedList::const_reverse_iterator rit = supplied_list->rbegin();
 	     rit != supplied_list->rend(); ++rit)
-	    tail = PairList::construct((*rit).value, tail, (*rit).tag);
+	    tail = PairList::cons((*rit).value, tail, (*rit).tag);
 	dotted_args->setTail(tail);
 	supplied_list->clear();
     }
@@ -235,7 +235,7 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 			Promise* prom
 			    = GCNode::expose(new Promise(dotlist->car(), env));
 			const Symbol* tag = tagSymbol(dotlist->tag());
-			PairList* cell = PairList::construct(prom, 0, tag);
+			PairList* cell = PairList::cons(prom, 0, tag);
 			if (!last)
 			    args = last = cell;
 			else {
@@ -252,7 +252,7 @@ PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 	    RObject* value = Symbol::missingArgument();
 	    if (rawvalue != Symbol::missingArgument())
 		value = GCNode::expose(new Promise(rawvalue, env));
-	    PairList* cell = PairList::construct(value, 0, tag);
+	    PairList* cell = PairList::cons(value, 0, tag);
 	    if (!last)
 		args = last = cell;
 	    else {
