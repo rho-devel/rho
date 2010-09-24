@@ -72,16 +72,25 @@ namespace CXXR {
      *
      * An Environment has an associated Frame, which defines a mapping
      * from (pointers to) CXXR::Symbol objects to (pointers to)
-     * arbitrary objects of classes derived from RObject.  Each
-     * Environment (except for the standard empty environment) has an
-     * 'enclosing environment', and the Environment class provides
-     * facilities for searching for a binding for a Symbol first in
-     * the Environment's own Frame, and then successively in enclosing
-     * frames.
+     * arbitrary objects of classes derived from RObject.  An
+     * Environment will normally have an 'enclosing environment', and
+     * the Environment class provides facilities for searching for a
+     * binding for a Symbol first in the Environment's own Frame, and
+     * then successively in the Frames of enclosing Environments.
+     *
+     * @note CR accords a special status to the empty environment,
+     * R_EmptyEnv, which is an Environment whose Frame contains no
+     * Bindings, and which has no enclosing Environment.  In CR the
+     * search for a Symbol Binding terminates when it reaches the
+     * empty environment, without looking inside it.  In CXXR,
+     * although R_EmptyEnv still exists (at least for the time being),
+     * it is not handled specially.  If the search for a Symbol
+     * reaches the empty environment, CXXR will look for the Symbol
+     * inside it - unsuccessfully of course - and the search then
+     * terminates because there is no enclosing Environment.
      *
      * @note This class does not in itself enforce the requirement
-     * that working up the enclosing relationship will always lead to
-     * the empty environment.
+     * that the enclosing relationship must be acyclic.
      *
      * @todo For provenance-tracking, there ought to be some way of
      * monitoring the event that the program \e fails to find a

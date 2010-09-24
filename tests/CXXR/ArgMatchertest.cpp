@@ -17,6 +17,8 @@
 /** @file Test of class ArgMatcher.
  */
 
+#define R_NO_REMAP
+
 #include "CXXR/ArgMatcher.hpp"
 
 #define R_INTERFACE_PTRS
@@ -97,8 +99,7 @@ namespace {
 		const RObject* tag = 0;
 		if (!namestr.empty())
 		    tag = Symbol::obtain(namestr.c_str());
-		ans = PairList::construct(value, ans,
-					  const_cast<RObject*>(tag));
+		ans = PairList::cons(value, ans, const_cast<RObject*>(tag));
 	    }
 	    return ans;
 	}

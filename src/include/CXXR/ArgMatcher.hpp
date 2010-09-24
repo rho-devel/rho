@@ -107,6 +107,44 @@ namespace CXXR {
 	    return m_has_dots;
 	}
 
+	/** @brief Create ArgMatcher with specified formal argument names.
+	 *
+	 * This function creates an ArgMatcher object to match a
+	 * sequence of formal arguments whose names are given by
+	 * Symbols supplied as arguments to the function.  The
+	 * function makes no provision for default values to be
+	 * supplied for the formals.
+	 *
+	 * If any parameter to the function is a null, this signifies
+	 * that there are not that many formal arguments, and all
+	 * subsequent parameters must also be null.
+	 *
+	 * @param fml1 Pointer to the Symbol representing the first
+	 *          formal argument.  (It can be null, but this would
+	 *          probably make the created ArgMatcher pointless.)
+	 *
+	 * @param fml2 Pointer to the Symbol representing the second
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml3 Pointer to the Symbol representing the third
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml4 Pointer to the Symbol representing the fourth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml5 Pointer to the Symbol representing the fifth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @param fml6 Pointer to the Symbol representing the sixth
+	 *          formal argument, or a null pointer.
+	 *
+	 * @return Pointer to a newly create ArgMatcher object to
+	 * match the specified formals.
+	 */
+	static ArgMatcher* make(Symbol* fml1, Symbol* fml2 = 0,
+				Symbol* fml3 = 0, Symbol* fml4 = 0,
+				Symbol* fml5 = 0, Symbol* fml6 = 0);
+
 	/** @brief Match formal and supplied arguments.
 	 *
 	 * Argument matching is carried out as described in Sec. 4.3.2

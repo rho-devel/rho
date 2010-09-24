@@ -93,6 +93,25 @@ bool ArgMatcher::isPrefix(const CachedString* shorter,
     return longstr.compare(0, shortstr.size(), shortstr) == 0;
 }
 
+ArgMatcher* ArgMatcher::make(Symbol* fml1, Symbol* fml2, Symbol* fml3,
+			     Symbol* fml4, Symbol* fml5, Symbol* fml6)
+{
+    GCStackRoot<PairList> formals;
+    if (fml6)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml6);
+    if (fml5)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml5);
+    if (fml4)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml4);
+    if (fml3)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml3);
+    if (fml2)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml2);
+    if (fml1)
+	formals = PairList::cons(Symbol::missingArgument(), formals, fml1);
+    return expose(new ArgMatcher(formals));
+}
+
 void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 			     RObject* supplied_value)
 {
