@@ -54,67 +54,56 @@
 using namespace std;
 using namespace CXXR;
 
-static SEXP GetObject(ClosureContext *cptr)
+static RObject* GetObject(ClosureContext *cptr)
 {
-    SEXP s, sysp, b, formals, funcall, tag;
-    sysp = ClosureContext::innermost()->callEnvironment();
+    Environment* callenv = cptr->callEnvironment();
 
-    PROTECT(funcall = R_syscall(0, cptr));
-
-    if ( TYPEOF(CAR(funcall)) == SYMSXP )
-	PROTECT(b = Rf_findFun(CAR(funcall), sysp));
-    else
-	PROTECT(b = Rf_eval(CAR(funcall), sysp));
-    /**** use R_sysfunction here instead */
-    if (TYPEOF(b) != CLOSXP) Rf_error(_("generic 'function' is not a function"));
-    formals = FORMALS(b);
-
-    tag = TAG(formals);
-    if (tag != R_NilValue && tag != R_DotsSymbol) {
-	s = R_NilValue;
-	/** exact matches **/
-	for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
-	    if (TAG(b) != R_NilValue && Rf_pmatch(tag, TAG(b), CXXRTRUE)) {
-		if (s != R_NilValue)
-		    Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
-		else
-		    s = CAR(b);
-	    }
-
-	if (s == R_NilValue)
-	    /** partial matches **/
-	    for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
-		if (TAG(b) != R_NilValue && Rf_pmatch(tag, TAG(b), CXXRFALSE)) {
-		    if ( s != R_NilValue)
-			Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
-		    else
-			s = CAR(b);
-		}
-	if (s == R_NilValue)
-	    /** first untagged argument **/
-	    for (b = CXXRCCAST(PairList*, cptr->promiseArgs()) ; b != R_NilValue ; b = CDR(b))
-		if (TAG(b) == R_NilValue )
-		{
-		    s = CAR(b);
-		    break;
-		}
-	if (s == R_NilValue)
-	    s = CAR(CXXRCCAST(PairList*, cptr->promiseArgs()));
-/*
-	    Rf_error("failed to match argument for dispatch");
-*/
-    }
-    else
-	s = CAR(CXXRCCAST(PairList*, cptr->promiseArgs()));
-
-    UNPROTECT(2);
-    if (TYPEOF(s) == PROMSXP) {
-	if (PRVALUE(s) == R_UnboundValue)
-	    s = Rf_eval(s, R_BaseEnv);
+    // Determine the generic closure:
+    const Closure* closure;
+    {
+	const Expression* funcall(cptr->call());
+	RObject* op(funcall->car());
+	RObject* func;
+	if (op->sexptype() == SYMSXP)
+	    func = findFunction(static_cast<Symbol*>(op), callenv).second;
 	else
-	    s = PRVALUE(s);
+	    func = op->evaluate(callenv);
+	if (func->sexptype() != CLOSXP)
+	    Rf_error(_("generic 'function' is not a function"));
+	closure = static_cast<Closure*>(func);
     }
-    return(s);
+
+    // Get name of first formal argument:
+    const Symbol* formal1;
+    {
+	const PairList* formals = closure->matcher()->formalArgs();
+	formal1 = static_cast<const Symbol*>(formals->tag());
+    }
+
+    if (formal1 && formal1 != DotsSymbol) {
+	// Get value of first formal argument:
+	Frame::Binding* bdg
+	    = cptr->workingEnvironment()->frame()->binding(formal1);
+	if (bdg->origin() != Frame::Binding::MISSING)
+	    return bdg->forcedValue().first;
+    }
+
+    // If we reach this point, either there was no first formal
+    // argument, or it was "..." or was unbound.  In that case we use
+    // the first *actual* argument as the object.  (This behaviour
+    // follows CR, but does not appear to be documented in the R
+    // language definition.)
+    {
+	const PairList* pargs = cptr->promiseArgs();
+	if (!pargs)
+	    Rf_error(_("generic function must have at least one argument"));
+	RObject* ans = pargs->car();
+	if (ans->sexptype() == PROMSXP) {
+	    Promise* promise = static_cast<Promise*>(ans);
+	    ans = promise->force();
+	}
+	return ans;
+    }
 }
 
 static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)

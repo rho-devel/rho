@@ -84,11 +84,16 @@ namespace CXXR {
 
 	/** @brief Force the Promise.
 	 *
-	 * i.e. evaluate the Promise within its environment.
-	 * Following this, the environment pointer is set null, thus
-	 * possibly allowing the Environment to be garbage-collected.
+	 * i.e. evaluate the value generator of the Promise within the
+	 * Environment of the Promise.  Following this, the
+	 * environment pointer is set null, thus possibly allowing the
+	 * Environment to be garbage-collected.
 	 *
-	 * @return The result of evaluating the promise.
+	 * If this function is used on a Promise that has already been
+	 * forced, it simply returns the previously computed value.
+	 *
+	 * @return The value of the Promise, i.e. the result of
+	 * evaluating the value generator.
 	 */
 	RObject* force()
 	{
