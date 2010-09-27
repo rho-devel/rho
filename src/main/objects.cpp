@@ -612,54 +612,53 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        the actuals, expanding any ... that occurs */
     SEXP formals = FORMALS(genclos);
     GCStackRoot<> actuals(matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
-
-    int i = 0;
-    SEXP s;  // *****
-    GCStackRoot<> t;  // *****
-    for(s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
-	SET_TAG(t, TAG(s));
-	if(TAG(t) == R_DotsSymbol) i = length(CAR(t));
-    }
-    GCStackRoot<> m;  // *****
-    SEXP a;  // *****
-    if(i) {   /* we need to expand out the dots */
-	t = Rf_allocList(i+length(actuals)-1);
-	for(s = actuals, m = t; s != R_NilValue; s = CDR(s)) {
-	    if(TYPEOF(CAR(s)) == DOTSXP) {
-		for(i = 1, a = CAR(s); a != R_NilValue;
-		    a = CDR(a), i++, m = CDR(m)) {
-		    SET_TAG(m, Symbol::obtainDotDotSymbol(i));
-		    SETCAR(m, CAR(a));
-		}
-	    } else {
-		SET_TAG(m, TAG(s));
-		SETCAR(m, CAR(s));
-		m = CDR(m);
-	    }
+    {
+	int i = 0;
+	for(SEXP s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
+	    SET_TAG(t, TAG(s));
+	    if(TAG(t) == R_DotsSymbol) i = length(CAR(t));
 	}
-	actuals = t;
+	if(i) {   /* we need to expand out the dots */
+	    GCStackRoot<> t(Rf_allocList(i+length(actuals)-1));
+	    for(SEXP s = actuals, m = t; s != R_NilValue; s = CDR(s)) {
+		if(TYPEOF(CAR(s)) == DOTSXP) {
+		    SEXP a;  // *****
+		    for(i = 1, a = CAR(s); a != R_NilValue;
+			a = CDR(a), i++, m = CDR(m)) {
+			SET_TAG(m, Symbol::obtainDotDotSymbol(i));
+			SETCAR(m, CAR(a));
+		    }
+		} else {
+		    SET_TAG(m, TAG(s));
+		    SETCAR(m, CAR(s));
+		    m = CDR(m);
+		}
+	    }
+	    actuals = t;
+	}
     }
-
 
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
     GCStackRoot<> matchedarg(Rf_allocList(length(CXXRCCAST(PairList*, cptr->promiseArgs()))));
-    for (t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
-	 s = CDR(s), t = CDR(t)) {
-	SETCAR(t, CAR(s));
-	SET_TAG(t, TAG(s));
-    }
-    for (t = matchedarg; t != R_NilValue; t = CDR(t)) {
-	for (m = actuals; m != R_NilValue; m = CDR(m))
-	    if (CAR(m) == CAR(t))  {
-		if (CAR(m) == R_MissingArg) {
-		    SEXP tmp = Rf_findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
-		    if (tmp == R_MissingArg) break;
+    {
+	for (SEXP t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
+	     s = CDR(s), t = CDR(t)) {
+	    SETCAR(t, CAR(s));
+	    SET_TAG(t, TAG(s));
+	}
+	for (SEXP t = matchedarg; t != R_NilValue; t = CDR(t)) {
+	    for (SEXP m = actuals; m != R_NilValue; m = CDR(m))
+		if (CAR(m) == CAR(t))  {
+		    if (CAR(m) == R_MissingArg) {
+			SEXP tmp = Rf_findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
+			if (tmp == R_MissingArg) break;
+		    }
+		    SETCAR(t, mkPROMISE(TAG(m), cptr->workingEnvironment()));
+		    break;
 		}
-		SETCAR(t, mkPROMISE(TAG(m), cptr->workingEnvironment()));
-		break;
-	    }
+	}
     }
 
     GCStackRoot<> newcall(cptr->call()->clone());
@@ -671,22 +670,25 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       White Book
     */
 
-    s = CADDR(args); /* this is ... and we need to see if it's bound */
-    if (s == R_DotsSymbol) {
-	t = Rf_findVarInFrame3(env, s, TRUE);
-	if (t != R_NilValue && t != R_MissingArg) {
-	    // Convert t to a PairList:
-	    {
-		GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t.get()));
-		t = ConsCell::convert<PairList>(cc);
+    SEXP s;  // *****
+    {
+	s = CADDR(args); /* this is ... and we need to see if it's bound */
+	if (s == R_DotsSymbol) {
+	    GCStackRoot<> t(Rf_findVarInFrame3(env, s, TRUE));
+	    if (t != R_NilValue && t != R_MissingArg) {
+		// Convert t to a PairList:
+		{
+		    GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t.get()));
+		    t = ConsCell::convert<PairList>(cc);
+		}
+		s = matchmethargs(matchedarg, t);
+		matchedarg = s;
+		newcall = fixcall(newcall, matchedarg);
 	    }
-	    s = matchmethargs(matchedarg, t);
-	    matchedarg = s;
-	    newcall = fixcall(newcall, matchedarg);
 	}
+	else
+	    Rf_error(_("wrong argument ..."));
     }
-    else
-	Rf_error(_("wrong argument ..."));
 
     /*
       .Class is used to determine the next method; if it doesn't
@@ -743,6 +745,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	const char *ss;
 	if( !Rf_isString(method) )
 	    Rf_error(_("wrong value for .Method"));
+	int i;
 	for(i = 0; i < length(method); i++) {
 	    ss = Rf_translateChar(STRING_ELT(method, i));
 	    if(strlen(ss) >= 512)
@@ -790,6 +793,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
        how many classes to drop. */
 
     const char* sg = Rf_translateChar(STRING_ELT(generic, 0));
+    int i;  // *****
     for (i = j ; i < length(klass); i++) {
 	sk = Rf_translateChar(STRING_ELT(klass, i));
 	if(strlen(sg) + strlen(sk) + 2 > 512)
@@ -817,6 +821,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	   function of the same name.
 	*/
 	if (!Rf_isFunction(nextfun)) {
+	    GCStackRoot<> t;  // *****
 	    t = Rf_install(sg);
 	    nextfun = Rf_findVar(t, env);
 	    if (TYPEOF(nextfun) == PROMSXP)
@@ -833,6 +838,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     GCStackRoot<> sv(Rf_allocVector(STRSXP, length(klass) - i));
     klass = Rf_duplicate(klass);
+    GCStackRoot<> m;  // *****
     m = GCNode::expose(new Environment(0));
     for (j = 0; j < length(sv); j++)
 	SET_STRING_ELT(sv, j, Rf_duplicate(STRING_ELT(klass, i++)));
