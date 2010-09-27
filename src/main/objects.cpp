@@ -540,50 +540,81 @@ static SEXP fixcall(SEXP call, SEXP args)
 /* This is a special .Internal */
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    Environment* callenv = SEXP_downcast<Environment*>(env);
+
+    // Determine the ClosureContext from which NextMethod was called,
+    // and the Environment of that call.  (The ClosureContext will
+    // will be two out because NextMethod is an internal function.)
     ClosureContext* cptr = ClosureContext::innermost();
-
-    /* get the env NextMethod was called from */
-    Environment* sysp = cptr->callEnvironment();
-    while (cptr && cptr->workingEnvironment() != sysp)
-	cptr = ClosureContext::innermost(cptr->nextOut());
-    if (cptr == NULL)
-	Rf_error(_("'NextMethod' called from outside a function"));
-
-    GCStackRoot<> newcall(cptr->call()->clone());
-
-    /* eg get("print.ts")(1) */
-    if (TYPEOF(CAR(CXXRCCAST(Expression*, cptr->call()))) == LANGSXP)
-	Rf_error(_("'NextMethod' called from an anonymous function"));
-
-    /* Find dispatching environments. Promises shouldn't occur, but
-       check to be on the safe side.  If the variables are not in the
-       environment (the method was called outside a method dispatch)
-       then chose reasonable defaults. */
-    SEXP callenv = Rf_findVarInFrame3(sysp, Rf_install(".GenericCallEnv"), TRUE);
-    if (TYPEOF(callenv) == PROMSXP)
-	callenv = Rf_eval(callenv, R_BaseEnv);
-    else if (callenv == R_UnboundValue)
-	callenv = env;
-    SEXP defenv = Rf_findVarInFrame3(sysp, Rf_install(".GenericDefEnv"), TRUE);
-    if (TYPEOF(defenv) == PROMSXP) defenv = Rf_eval(defenv, R_BaseEnv);
-    else if (defenv == R_UnboundValue) defenv = R_GlobalEnv;
-
-    /* set up the arglist */
-    SEXP s; // *****
-    s = R_LookupMethod(CAR(CXXRCCAST(Expression*, cptr->call())), env, callenv, defenv);
-    if (TYPEOF(s) == SYMSXP && s == R_UnboundValue)
-	Rf_error(_("no calling generic was found: was a method called directly?"));
-    if (TYPEOF(s) != CLOSXP){ /* R_LookupMethod looked for a function */
-	Rf_errorcall(R_NilValue,
-		  _("'function' is not a function, but of type %d"),
-		  TYPEOF(s));
+    Environment* nmcallenv = cptr->callEnvironment();
+    {
+	while (cptr && cptr->workingEnvironment() != nmcallenv)
+	    cptr = ClosureContext::innermost(cptr->nextOut());
+	if (cptr == NULL)
+	    Rf_error(_("'NextMethod' called from outside a function"));
     }
+
+    // Find generic name (symbol):
+    Symbol* gensym;
+    {
+	RObject* callcar = cptr->call()->car();
+	if (callcar->sexptype() == LANGSXP)
+	    Rf_error(_("'NextMethod' called from an anonymous function"));
+	gensym = SEXP_downcast<Symbol*>(callcar);
+    }
+	
+    // Find dispatching environments. Promises shouldn't occur, but
+    // check to be on the safe side.  If the variables are not in the
+    // environment (the method was called outside a method dispatch)
+    // then chose reasonable defaults.
+
+    // Environment in which the generic was called:
+    Environment* gencallenv = callenv;
+    {
+	Frame::Binding* bdg
+	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
+	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
+	    RObject* val = bdg->value();
+	    if (val->sexptype() == PROMSXP)
+		val = static_cast<Promise*>(val)->force();
+	    gencallenv = SEXP_downcast<Environment*>(val);
+	}
+    }
+
+    // Environment in which the generic was defined:
+    Environment* gendefenv = Environment::global();
+    {
+	Frame::Binding* bdg
+	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
+	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
+	    RObject* val = bdg->value();
+	    if (val->sexptype() == PROMSXP)
+		val = static_cast<Promise*>(val)->force();
+	    gendefenv = SEXP_downcast<Environment*>(val);
+	}
+    }
+
+    // Find the generic closure:
+    Closure* genclos;
+    {
+	FunctionBase* func
+	    = findS3Method(gensym, gencallenv, gendefenv).first;
+	if (!func)
+	    Rf_error(_("no calling generic was found:"
+		       " was a method called directly?"));
+	if (func->sexptype() != CLOSXP)
+	    Rf_errorcall(0, _("'function' is not a function, but of type %d"),
+			 func->sexptype());
+	genclos = static_cast<Closure*>(func);
+    }
+
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
-    SEXP formals = FORMALS(s);
+    SEXP formals = FORMALS(genclos);
     GCStackRoot<> actuals(matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
 
     int i = 0;
+    SEXP s;  // *****
     GCStackRoot<> t;  // *****
     for(s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
 	SET_TAG(t, TAG(s));
@@ -630,6 +661,9 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		break;
 	    }
     }
+
+    GCStackRoot<> newcall(cptr->call()->clone());
+
     /*
       Now see if there were any other arguments passed in
       Currently we seem to only allow named args to change
@@ -660,7 +694,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       the second argument to NextMethod is another option but
       isn't currently used).
     */
-    GCStackRoot<> klass(Rf_findVarInFrame3(sysp, Rf_install(".Class"), TRUE));
+    GCStackRoot<> klass(Rf_findVarInFrame3(nmcallenv, Rf_install(".Class"), TRUE));
 
     if (klass == R_UnboundValue) {
 	s = GetObject(cptr);
@@ -669,7 +703,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* the generic comes from either the sysparent or it's named */
-    GCStackRoot<> generic(Rf_findVarInFrame3(sysp, Rf_install(".Generic"), TRUE));
+    GCStackRoot<> generic(Rf_findVarInFrame3(nmcallenv, Rf_install(".Generic"), TRUE));
     if (generic == R_UnboundValue)
 	generic = Rf_eval(CAR(args), env);
     if( generic == R_NilValue )
@@ -683,7 +717,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* determine whether we are in a Group dispatch */
 
-    GCStackRoot<> group(Rf_findVarInFrame3(sysp, Rf_install(".Group"), TRUE));
+    GCStackRoot<> group(Rf_findVarInFrame3(nmcallenv, Rf_install(".Group"), TRUE));
     if (group == R_UnboundValue)
 	group = Rf_mkString("");
 
@@ -703,7 +737,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       If t is R_UnboundValue then we called the current method directly
     */
 
-    GCStackRoot<> method(Rf_findVarInFrame3(sysp, Rf_install(".Method"), TRUE));
+    GCStackRoot<> method(Rf_findVarInFrame3(nmcallenv, Rf_install(".Method"), TRUE));
     char b[512]; // *****
     if( method != R_UnboundValue) {
 	const char *ss;
@@ -761,14 +795,14 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(strlen(sg) + strlen(sk) + 2 > 512)
 	    Rf_error(_("class name too long in '%s'"), sg);
 	sprintf(buf, "%s.%s", sg, sk);
-	nextfun = R_LookupMethod(Rf_install(buf), env, callenv, defenv);
+	nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
 	if (Rf_isFunction(nextfun)) break;
 	if (group != R_UnboundValue) {
 	    /* if not Generic.foo, look for Group.foo */
 	    if(strlen(sb) + strlen(sk) + 2 > 512)
 		Rf_error(_("class name too long in '%s'"), sb);
 	    sprintf(buf, "%s.%s", sb, sk);
-	    nextfun = R_LookupMethod(Rf_install(buf), env, callenv, defenv);
+	    nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
 	    if(Rf_isFunction(nextfun))
 		break;
 	}
@@ -777,7 +811,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if (!Rf_isFunction(nextfun)) {
 	sprintf(buf, "%s.default", sg);
-	nextfun = R_LookupMethod(Rf_install(buf), env, callenv, defenv);
+	nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
 	/* If there is no default method, try the generic itself,
 	   provided it is primitive or a wrapper for a .Internal
 	   function of the same name.
@@ -816,8 +850,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     } else
 	method = Rf_mkString(buf);
     Rf_defineVar(Rf_install(".Method"), method, m);
-    Rf_defineVar(Rf_install(".GenericCallEnv"), callenv, m);
-    Rf_defineVar(Rf_install(".GenericDefEnv"), defenv, m);
+    Rf_defineVar(Rf_install(".GenericCallEnv"), gencallenv, m);
+    Rf_defineVar(Rf_install(".GenericDefEnv"), gendefenv, m);
 
     method = Rf_install(buf);
 
