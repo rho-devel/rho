@@ -653,7 +653,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    GCStackRoot<> newcall(cptr->call()->clone());
+    GCStackRoot<Expression> newcall(cptr->call()->clone());
 
     /*
       Now see if there were any other arguments passed in
@@ -674,7 +674,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		}
 		s = matchmethargs(matchedarg, t);
 		matchedarg = s;
-		newcall = fixcall(newcall, matchedarg);
+		newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
 	    }
 	}
 	else
@@ -782,77 +782,77 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we need the value of i on exit from the for loop to figure out
        how many classes to drop. */
 
-    SEXP nextfun = R_NilValue;
+    FunctionBase* nextfun = 0;
     string sg = Rf_translateChar((*generic)[0]);
-    int i;  // *****
-    for (i = j ; i < length(klass); i++) {
-	sk = Rf_translateChar(STRING_ELT(klass, i));
+    unsigned int i;
+    for (i = j; !nextfun && i < klass->size(); ++i) {
+	sk = Rf_translateChar((*klass)[i]);
 	buf = sg + "." + sk;
-	nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
-	if (Rf_isFunction(nextfun)) break;
-	if (group != R_UnboundValue) {
-	    /* if not Generic.foo, look for Group.foo */
+	GCStackRoot<Symbol> bufsym(Symbol::obtain(buf));
+	nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
+	if (!nextfun && group) {
+	    // if not Generic.foo, look for Group.foo
 	    buf = sb + "." + sk;
-	    nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
-	    if(Rf_isFunction(nextfun))
-		break;
+	    bufsym = Symbol::obtain(buf);
+	    nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
 	}
-	if (Rf_isFunction(nextfun))
-	    break;
     }
-    if (!Rf_isFunction(nextfun)) {
+    if (!nextfun) {
 	buf = sg + ".default";
-	nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
-	/* If there is no default method, try the generic itself,
-	   provided it is primitive or a wrapper for a .Internal
-	   function of the same name.
-	*/
-	if (!Rf_isFunction(nextfun)) {
-	    GCStackRoot<> t;  // *****
-	    t = Rf_install(sg.c_str());
-	    nextfun = Rf_findVar(t, env);
-	    if (TYPEOF(nextfun) == PROMSXP)
-		nextfun = Rf_eval(nextfun, env);
-	    if (!Rf_isFunction(nextfun))
+	GCStackRoot<Symbol> bufsym(Symbol::obtain(buf));
+	nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
+	// If there is no default method, try the generic itself,
+	// provided it is primitive or a wrapper for a .Internal
+	// function of the same name.
+	if (!nextfun) {
+	    GCStackRoot<Symbol> sgsym(Symbol::obtain(sg));
+	    Frame::Binding* bdg = callenv->findBinding(sgsym).second;
+	    if (!bdg)
 		Rf_error(_("no method to invoke"));
-	    if (TYPEOF(nextfun) == CLOSXP) {
-		if (INTERNAL(t) != R_NilValue)
-		    nextfun = INTERNAL(t);
-		else
-		    Rf_error(_("no method to invoke"));
+	    RObject* nfval = forceIfPromise(bdg->value());
+	    if (!nfval)
+		Rf_error(_("no method to invoke"));
+	    nextfun = dynamic_cast<FunctionBase*>(nfval);
+	    if (nextfun && nextfun->sexptype() == CLOSXP)
+		nextfun = DotInternalTable::get(sgsym);
+	    if (!nextfun)
+		Rf_error(_("no method to invoke"));
+	}
+    }
+
+    // Create the working environment and apply the method:
+    {
+	GCStackRoot<Environment> m(GCNode::expose(new Environment(0)));
+	if (klass) {
+	    GCStackRoot<StringVector>
+		sv(GCNode::expose(new StringVector(klass->size() - i)));
+	    klass = klass->clone();
+	    for (unsigned int j = 0; j < sv->size(); ++j)
+		(*sv)[j] = (*klass)[i++];
+	    sv->setAttribute(PreviousSymbol, klass);
+	    m->frame()->bind(DotClassSymbol, sv);
+	}
+	// It is possible that if a method was called directly that
+	// 'method' is unset.
+	if (!method)
+	    method = GCNode::expose(new StringVector(buf));
+	else {
+	    method = method->clone();
+	    // For Ops we need `method' to be a vector
+	    for (unsigned int j = 0; j < method->size(); ++j) {
+		if (!(*method)[j])
+		    (*method)[j] = CachedString::obtain(buf);
 	    }
 	}
+	m->frame()->bind(DotMethodSymbol, method);
+	m->frame()->bind(DotGenericCallEnvSymbol, gencallenv);
+	m->frame()->bind(DotGenericDefEnvSymbol, gendefenv);
+	m->frame()->bind(DotGenericSymbol, generic);
+	m->frame()->bind(DotGroupSymbol, group);
+	GCStackRoot<Symbol> methodsym(Symbol::obtain(buf));
+	newcall->setCar(methodsym);
+	return applyMethod(newcall, nextfun, matchedarg, env, m);
     }
-    GCStackRoot<> sv(Rf_allocVector(STRSXP, length(klass) - i));
-    klass = (klass ? klass->clone() : 0);
-    GCStackRoot<> m;  // *****
-    m = GCNode::expose(new Environment(0));
-    for (j = 0; j < length(sv); j++)
-	SET_STRING_ELT(sv, j, Rf_duplicate(STRING_ELT(klass, i++)));
-    Rf_setAttrib(sv, Rf_install("previous"), klass);
-    Rf_defineVar(Rf_install(".Class"), sv, m);
-    /* It is possible that if a method was called directly that
-       'method' is unset */
-    if (method) {
-	/* for Ops we need `method' to be a vector */
-	method = method->clone();
-	for(j = 0; j < length(method); j++) {
-	    if (strlen(CHAR(STRING_ELT(method,j))))
-		SET_STRING_ELT(method, j,  Rf_mkChar(buf.c_str()));
-	}
-    } else
-	method = GCNode::expose(new StringVector(buf));
-    Rf_defineVar(Rf_install(".Method"), method, m);
-    Rf_defineVar(Rf_install(".GenericCallEnv"), gencallenv, m);
-    Rf_defineVar(Rf_install(".GenericDefEnv"), gendefenv, m);
-
-    Rf_defineVar(Rf_install(".Generic"), generic, m);
-
-    Rf_defineVar(Rf_install(".Group"), group, m);
-
-    GCStackRoot<Symbol> methodsym(Symbol::obtain(buf));
-    SETCAR(newcall, methodsym);
-    return applyMethod(newcall, nextfun, matchedarg, env, m);
 }
 
 /* primitive */
