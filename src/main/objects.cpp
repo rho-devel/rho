@@ -737,80 +737,63 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if ((*basename)[0] == CachedString::blank())
 	basename = generic;
 
-    SEXP nextfun = R_NilValue;
-
     /*
       Find the method currently being invoked and jump over the current call
       If t is R_UnboundValue then we called the current method directly
     */
-
-    GCStackRoot<> method(Rf_findVarInFrame3(nmcallenv, Rf_install(".Method"), TRUE));
-    char b[512]; // *****
-    if( method != R_UnboundValue) {
-	if( !Rf_isString(method) )
-	    Rf_error(_("wrong value for .Method"));
-	int i;
-	for(i = 0; i < length(method); i++) {
-	    const char* ss = Rf_translateChar(STRING_ELT(method, i));
-	    if(strlen(ss) >= 512)
-		Rf_error(_("method name too long in '%s'"), ss);
-	    sprintf(b, "%s", ss);
-	    if(strlen(b)) break;
-	}
-	/* for binary operators check that the second argument's method
-	   is the same or absent */
-	for(int j = i; j < length(method); j++){
-	    char bb[512];
-	    const char *ss = Rf_translateChar(STRING_ELT(method, j));
-	    if(strlen(ss) >= 512)
-		Rf_error(_("method name too long in '%s'"), ss);
-	    sprintf(bb, "%s", ss);
-	    if (strlen(bb) && strcmp(b,bb))
-		Rf_warning(_("Incompatible methods ignored"));
+    GCStackRoot<StringVector> method;
+    string b;
+    {
+	Frame::Binding* bdg = nmcallenv->frame()->binding(DotMethodSymbol);
+	if (!bdg) {
+	    Symbol* callsym = SEXP_downcast<Symbol*>(cptr->call()->car());
+	    b = callsym->name()->stdstring();
+	} else {
+	    RObject* methval = bdg->value();
+	    if (!methval || methval->sexptype() != STRSXP)
+		Rf_error(_("wrong value for .Method"));
+	    method = static_cast<StringVector*>(methval);
+	    unsigned int i;
+	    for (i = 0; b.empty() && i < method->size(); ++i)
+		b = Rf_translateChar((*method)[i]);
+	    // for binary operators check that the second argument's
+	    // method is the same or absent:
+	    for (unsigned int j = i; j < method->size(); ++j) {
+		string bb = Rf_translateChar((*method)[j]);
+		if (!bb.empty() && bb != b)
+		    Rf_warning(_("Incompatible methods ignored"));
+	    }
 	}
     }
-    else {
-	if(strlen(CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call()))))) >= 512)
-	    Rf_error(_("call name too long in '%s'"),
-		  CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
-	sprintf(b, "%s", CHAR(PRINTNAME(CAR(CXXRCCAST(Expression*, cptr->call())))));
-    }
 
-    const char* sb = Rf_translateChar(STRING_ELT(basename, 0));
-    char buf[512]; // *****
-    const char* sk;
-    int j;  // *****
-    for (j = 0; j < length(klass); j++) {
-	sk = Rf_translateChar(STRING_ELT(klass, j));
-	if(strlen(sb) + strlen(sk) + 2 > 512)
-	    Rf_error(_("class name too long in '%s'"), sb);
-	sprintf(buf, "%s.%s", sb, sk);
-	if (!strcmp(buf, b)) break;
+    string sb = Rf_translateChar((*basename)[0]);
+    string buf; // *****
+    string sk;
+    unsigned int j;
+    for (j = 0; buf != b && j < klass->size(); ++j) {
+	sk = Rf_translateChar((*klass)[j]);
+	buf = sb + "." + sk;
     }
-
-    if (!strcmp(buf, b)) /* we found a match and start from there */
-	j++;
-    else
-	j = 0;  /*no match so start with the first element of .Class */
+    // If a match was found, j will now be pointing to the next
+    // element (if any).
+    if (buf != b)
+	j = 0;  // no match so start with the first element of .Class
 
     /* we need the value of i on exit from the for loop to figure out
        how many classes to drop. */
 
-    const char* sg = Rf_translateChar(STRING_ELT(generic, 0));
+    SEXP nextfun = R_NilValue;
+    string sg = Rf_translateChar((*generic)[0]);
     int i;  // *****
     for (i = j ; i < length(klass); i++) {
 	sk = Rf_translateChar(STRING_ELT(klass, i));
-	if(strlen(sg) + strlen(sk) + 2 > 512)
-	    Rf_error(_("class name too long in '%s'"), sg);
-	sprintf(buf, "%s.%s", sg, sk);
-	nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
+	buf = sg + "." + sk;
+	nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
 	if (Rf_isFunction(nextfun)) break;
 	if (group != R_UnboundValue) {
 	    /* if not Generic.foo, look for Group.foo */
-	    if(strlen(sb) + strlen(sk) + 2 > 512)
-		Rf_error(_("class name too long in '%s'"), sb);
-	    sprintf(buf, "%s.%s", sb, sk);
-	    nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
+	    buf = sb + "." + sk;
+	    nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
 	    if(Rf_isFunction(nextfun))
 		break;
 	}
@@ -818,15 +801,15 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    break;
     }
     if (!Rf_isFunction(nextfun)) {
-	sprintf(buf, "%s.default", sg);
-	nextfun = R_LookupMethod(Rf_install(buf), env, gencallenv, gendefenv);
+	buf = sg + ".default";
+	nextfun = R_LookupMethod(Rf_install(buf.c_str()), env, gencallenv, gendefenv);
 	/* If there is no default method, try the generic itself,
 	   provided it is primitive or a wrapper for a .Internal
 	   function of the same name.
 	*/
 	if (!Rf_isFunction(nextfun)) {
 	    GCStackRoot<> t;  // *****
-	    t = Rf_install(sg);
+	    t = Rf_install(sg.c_str());
 	    nextfun = Rf_findVar(t, env);
 	    if (TYPEOF(nextfun) == PROMSXP)
 		nextfun = Rf_eval(nextfun, env);
@@ -850,26 +833,25 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     Rf_defineVar(Rf_install(".Class"), sv, m);
     /* It is possible that if a method was called directly that
        'method' is unset */
-    if (method != R_UnboundValue) {
+    if (method) {
 	/* for Ops we need `method' to be a vector */
-	method = Rf_duplicate(method);
+	method = method->clone();
 	for(j = 0; j < length(method); j++) {
 	    if (strlen(CHAR(STRING_ELT(method,j))))
-		SET_STRING_ELT(method, j,  Rf_mkChar(buf));
+		SET_STRING_ELT(method, j,  Rf_mkChar(buf.c_str()));
 	}
     } else
-	method = Rf_mkString(buf);
+	method = GCNode::expose(new StringVector(buf));
     Rf_defineVar(Rf_install(".Method"), method, m);
     Rf_defineVar(Rf_install(".GenericCallEnv"), gencallenv, m);
     Rf_defineVar(Rf_install(".GenericDefEnv"), gendefenv, m);
-
-    method = Rf_install(buf);
 
     Rf_defineVar(Rf_install(".Generic"), generic, m);
 
     Rf_defineVar(Rf_install(".Group"), group, m);
 
-    SETCAR(newcall, method);
+    GCStackRoot<Symbol> methodsym(Symbol::obtain(buf));
+    SETCAR(newcall, methodsym);
     return applyMethod(newcall, nextfun, matchedarg, env, m);
 }
 
