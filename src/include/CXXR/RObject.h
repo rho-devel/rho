@@ -155,6 +155,10 @@ extern "C" {
 #ifdef __cplusplus
 }  // extern "C"
 
+/** @brief Namespace for the CXXR project.
+ *
+ * CXXR is a project to refactorize the R interpreter into C++.
+ */
 namespace CXXR {
     class Environment;
     class PairList;
@@ -391,9 +395,6 @@ namespace CXXR {
 	 *
 	 * @return Pointer to a clone of \a pattern, or a null pointer
 	 * if \a pattern cannot be cloned or is itself a null pointer.
-	 * On return, the clone will not normally have yet been
-	 * exposed to the garbage collector; consequently, the calling
-	 * code should arrange for this to happen.
 	 */
 	template <class T>
 	static T* clone(const T* pattern)

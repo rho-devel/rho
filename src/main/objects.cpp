@@ -535,6 +535,7 @@ static SEXP fixcall(SEXP call, SEXP args)
 /* This is a special .Internal */
 SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 {
+    const PairList* callargs = SEXP_downcast<const PairList*>(args);
     Environment* callenv = SEXP_downcast<Environment*>(env);
 
     // Determine the ClosureContext from which NextMethod was called,
@@ -661,9 +662,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       White Book
     */
 
-    SEXP s;  // *****
     {
-	s = CADDR(args); /* this is ... and we need to see if it's bound */
+	SEXP s = CADDR(args); /* this is ... and we need to see if it's bound */
 	if (s == R_DotsSymbol) {
 	    GCStackRoot<> t(Rf_findVarInFrame3(env, s, TRUE));
 	    if (t != R_NilValue && t != R_MissingArg) {
@@ -687,41 +687,55 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
       the second argument to NextMethod is another option but
       isn't currently used).
     */
-    GCStackRoot<> klass(Rf_findVarInFrame3(nmcallenv, Rf_install(".Class"), TRUE));
-
-    if (klass == R_UnboundValue) {
-	s = GetObject(cptr);
-	if (!Rf_isObject(s)) Rf_error(_("object not specified"));
-	klass = Rf_getAttrib(s, R_ClassSymbol);
+    GCStackRoot<StringVector> klass;
+    {
+	Frame::Binding* bdg = nmcallenv->frame()->binding(DotClassSymbol);
+	RObject* klassval;
+	if (bdg)
+	    klassval = bdg->value();
+	else {
+	    RObject* s = GetObject(cptr);
+	    if (!s || !s->hasClass())
+		Rf_error(_("object not specified"));
+	    klassval = s->getAttribute(ClassSymbol);
+	}
+	klass = SEXP_downcast<StringVector*>(klassval);
     }
 
     /* the generic comes from either the sysparent or it's named */
-    GCStackRoot<> generic(Rf_findVarInFrame3(nmcallenv, Rf_install(".Generic"), TRUE));
-    if (generic == R_UnboundValue)
-	generic = Rf_eval(CAR(args), env);
-    if( generic == R_NilValue )
-	Rf_error(_("generic function not specified"));
-
-    if (!Rf_isString(generic) || length(generic) > 1)
-	Rf_error(_("invalid generic argument to NextMethod"));
-
-    if (CHAR(STRING_ELT(generic, 0))[0] == '\0')
-	Rf_error(_("generic function not specified"));
+    GCStackRoot<StringVector> generic;
+    {
+	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
+	RObject* genval = (bdg ? bdg->value() : callargs->car()->evaluate(callenv));
+	if (!genval)
+	    Rf_error(_("generic function not specified"));
+	if (genval->sexptype() == STRSXP)
+	    generic = static_cast<StringVector*>(genval);
+	if (!generic || generic->size() != 1)
+	    Rf_error(_("invalid generic argument to NextMethod"));
+	if ((*generic)[0] == CachedString::blank())
+	    Rf_error(_("generic function not specified"));
+    }
 
     /* determine whether we are in a Group dispatch */
-
-    GCStackRoot<> group(Rf_findVarInFrame3(nmcallenv, Rf_install(".Group"), TRUE));
-    if (group == R_UnboundValue)
-	group = Rf_mkString("");
-
-    if (!Rf_isString(group) || length(group) > 1)
-	Rf_error(_("invalid 'group' argument found in NextMethod"));
+    GCStackRoot<StringVector> group;
+    {
+	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
+	if (!bdg)
+	    group = GCNode::expose(new StringVector(CachedString::blank()));
+	else {
+	    RObject* grpval = bdg->value();
+	    if (grpval->sexptype() == STRSXP)
+		group = static_cast<StringVector*>(grpval);
+	    if (!group || group->size() != 1)
+		Rf_error(_("invalid 'group' argument found in NextMethod"));
+	}
+    }
 
     /* determine the root: either the group or the generic will be it */
-
-    SEXP basename;
-    if (CHAR(STRING_ELT(group, 0))[0] == '\0') basename = generic;
-    else basename = group;
+    StringVector* basename = group;
+    if ((*basename)[0] == CachedString::blank())
+	basename = generic;
 
     SEXP nextfun = R_NilValue;
 
@@ -733,12 +747,11 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     GCStackRoot<> method(Rf_findVarInFrame3(nmcallenv, Rf_install(".Method"), TRUE));
     char b[512]; // *****
     if( method != R_UnboundValue) {
-	const char *ss;
 	if( !Rf_isString(method) )
 	    Rf_error(_("wrong value for .Method"));
 	int i;
 	for(i = 0; i < length(method); i++) {
-	    ss = Rf_translateChar(STRING_ELT(method, i));
+	    const char* ss = Rf_translateChar(STRING_ELT(method, i));
 	    if(strlen(ss) >= 512)
 		Rf_error(_("method name too long in '%s'"), ss);
 	    sprintf(b, "%s", ss);
@@ -828,12 +841,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     GCStackRoot<> sv(Rf_allocVector(STRSXP, length(klass) - i));
-    klass = Rf_duplicate(klass);
+    klass = (klass ? klass->clone() : 0);
     GCStackRoot<> m;  // *****
     m = GCNode::expose(new Environment(0));
     for (j = 0; j < length(sv); j++)
 	SET_STRING_ELT(sv, j, Rf_duplicate(STRING_ELT(klass, i++)));
-    Rf_setAttrib(s, Rf_install("previous"), klass);
+    Rf_setAttrib(sv, Rf_install("previous"), klass);
     Rf_defineVar(Rf_install(".Class"), sv, m);
     /* It is possible that if a method was called directly that
        'method' is unset */
