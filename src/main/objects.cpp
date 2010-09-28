@@ -97,12 +97,7 @@ static RObject* GetObject(ClosureContext *cptr)
 	const PairList* pargs = cptr->promiseArgs();
 	if (!pargs)
 	    Rf_error(_("generic function must have at least one argument"));
-	RObject* ans = pargs->car();
-	if (ans->sexptype() == PROMSXP) {
-	    Promise* promise = static_cast<Promise*>(ans);
-	    ans = promise->force();
-	}
-	return ans;
+	return forceIfPromise(pargs->car());
     }
 }
 
@@ -574,9 +569,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericCallEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->value();
-	    if (val->sexptype() == PROMSXP)
-		val = static_cast<Promise*>(val)->force();
+	    RObject* val = forceIfPromise(bdg->value());
 	    gencallenv = SEXP_downcast<Environment*>(val);
 	}
     }
@@ -587,9 +580,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	Frame::Binding* bdg
 	    = nmcallenv->frame()->binding(DotGenericDefEnvSymbol);
 	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-	    RObject* val = bdg->value();
-	    if (val->sexptype() == PROMSXP)
-		val = static_cast<Promise*>(val)->force();
+	    RObject* val = forceIfPromise(bdg->value());
 	    gendefenv = SEXP_downcast<Environment*>(val);
 	}
     }

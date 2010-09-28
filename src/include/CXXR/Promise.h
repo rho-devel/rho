@@ -50,11 +50,29 @@
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
-    /** @brief Placeholder for function argument.
+    /** @brief Mechanism for deferred evaluation.
      *
      * This class is used to handle function arguments within R's lazy
-     * evaluation scheme.  (I'll document it better when I understand
-     * it better!)
+     * evaluation scheme.  A Promise object encapsulates a pointer to
+     * an arbitrary RObject (typically a Symbol or an Expression), and
+     * a pointer to an Environment.  When the Promise is first
+     * evaluated, the RObject is evaluated within the Environment, and
+     * the result of evaluation returned as the value of the Promise.
+     *
+     * After the first evaluation, the result of evaluation is cached
+     * within the Promise object, and the Environment pointer is set
+     * null (thus possibly allowing the Environment to be
+     * garbage-collected).  Subsequent evaluations of the Promise
+     * object simply return the cached value.
+     *
+     * @note When a Promise is evaluated \e via a call to evaluate()
+     * (the virtual function defined in class RObject), the \a env
+     * parameter to evaluate() is ignored: evaluation uses only the
+     * Environment encapsulated within the Promise object.  When an
+     * RObject is known to be a Promise, it is suggested that
+     * evaluation be carried out using the function Promise::force(),
+     * which lacks the redundant parameter and is consequently clearer
+     * to readers of the code.
      */
     class Promise : public RObject {
     public:
@@ -152,7 +170,6 @@ namespace CXXR {
 	    return m_valgen;
 	}
 
-	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
 
@@ -177,6 +194,21 @@ namespace CXXR {
 	Promise(const Promise&);
 	Promise& operator=(const Promise&);
     };
+
+    /** @brief Use forced value if RObject is a Promise.
+     *
+     * @param object Pointer, possibly null, to an RObject.
+     *
+     * @return If \a object points to a Promise, the Promise is forced
+     * and the value of the Promise returned.  Otherwise \a object
+     * itself is returned.
+     */
+    inline RObject* forceIfPromise(RObject* object)
+    {
+	if (object && object->sexptype() == PROMSXP)
+	    object = static_cast<Promise*>(object)->force();
+	return object;
+    }
 }  // namespace CXXR
 
 extern "C" {
