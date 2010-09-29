@@ -702,7 +702,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     string genericname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
-	RObject* genval = (bdg ? bdg->value() : callargs->car()->evaluate(callenv));
+	RObject* genval
+	    = (bdg ? bdg->value() : callargs->car()->evaluate(callenv));
 	if (!genval)
 	    Rf_error(_("generic function not specified"));
 	if (genval->sexptype() == STRSXP)
@@ -714,34 +715,22 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Rf_error(_("generic function not specified"));
     }
 
-    /* determine whether we are in a Group dispatch */
+    // Determine whether we are in a Group dispatch.
     GCStackRoot<StringVector> dotgroup;
+    string groupname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
-	if (!bdg)
-	    dotgroup = GCNode::expose(new StringVector(CachedString::blank()));
-	else {
+	if (bdg) {
 	    RObject* grpval = bdg->value();
 	    if (grpval->sexptype() == STRSXP)
 		dotgroup = static_cast<StringVector*>(grpval);
 	    if (!dotgroup || dotgroup->size() != 1)
-		Rf_error(_("invalid 'group' argument found in NextMethod"));
+		Rf_error(_("invalid .Group found in NextMethod"));
+	    groupname = Rf_translateChar((*dotgroup)[0]);
 	}
     }
 
-    /* determine the root: either the group or the generic will be it */
-    string basename;
-    {
-	StringVector* basesv = dotgroup;
-	if ((*basesv)[0] == CachedString::blank())
-	    basesv = dotgeneric;
-	basename = Rf_translateChar((*basesv)[0]);
-    }
-
-    /*
-      Find the method currently being invoked and jump over the current call
-      If t is R_UnboundValue then we called the current method directly
-    */
+    // Find the method currently being invoked:
     GCStackRoot<StringVector> dotmethod;
     string currentmethodname;
     {
@@ -767,39 +756,54 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    string methodname;
+    // Locate the class suffix of the current method within the klass vector:
     string suffix;
-    unsigned int j;
-    for (j = 0; methodname != currentmethodname && j < klass->size(); ++j) {
-	suffix = Rf_translateChar((*klass)[j]);
-	methodname = basename + "." + suffix;
+    unsigned int nextidxstart;  // Index within the klass vector at
+				// which the search for the next
+				// method should start.
+    {
+	string basename = (dotgroup ? groupname : genericname);
+	bool found = false;
+	for (nextidxstart = 0;
+	     !found && nextidxstart < klass->size();
+	     ++nextidxstart) {
+	    suffix = Rf_translateChar((*klass)[nextidxstart]);
+	    found = (basename + "." + suffix == currentmethodname);
+	}
+	// If a match was found, nextidxstart will now be pointing to the next
+	// element (if any).  If there's no match start with the first
+	// element.
+	if (!found)
+	    nextidxstart = 0;
     }
-    // If a match was found, j will now be pointing to the next
-    // element (if any).
-    if (methodname != currentmethodname)
-	j = 0;  // no match so start with the first element of .Class
 
     /* we need the value of i on exit from the for loop to figure out
        how many classes to drop. */
 
     FunctionBase* nextfun = 0;
-    unsigned int i;
-    for (i = j; !nextfun && i < klass->size(); ++i) {
-	suffix = Rf_translateChar((*klass)[i]);
-	methodname = genericname + "." + suffix;
-	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
-	nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
+    string nextmethodname;
+    unsigned int nextidx;  // Index within the klass vector at which
+			   // the next method was found.  Set to
+			   // klass->size() if no class-specific
+			   // method was found.
+    for (nextidx = nextidxstart;
+	 !nextfun && nextidx < klass->size();
+	 ++nextidx) {
+	suffix = Rf_translateChar((*klass)[nextidx]);
+	nextmethodname = genericname + "." + suffix;
+	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
 	if (!nextfun && dotgroup) {
 	    // if not Generic.foo, look for Group.foo
-	    methodname = basename + "." + suffix;
-	    method_sym = Symbol::obtain(methodname);
-	    nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
+	    nextmethodname = groupname + "." + suffix;
+	    nextmethodsym = Symbol::obtain(nextmethodname);
+	    nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
 	}
     }
     if (!nextfun) {
-	methodname = genericname + ".default";
-	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
-	nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
+	nextmethodname = genericname + ".default";
+	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
 	// If there is no default method, try the generic itself,
 	// provided it is primitive or a wrapper for a .Internal
 	// function of the same name.
@@ -823,33 +827,35 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     {
 	GCStackRoot<Frame> method_bindings(GCNode::expose(new StdFrame(6)));
 	if (klass) {
+	    size_t sz = klass->size() - nextidx;
 	    GCStackRoot<StringVector>
-		newdotclass(GCNode::expose(new StringVector(klass->size() - i)));
+		newdotclass(GCNode::expose(new StringVector(sz)));
 	    klass = klass->clone();
-	    for (unsigned int j = 0; j < newdotclass->size(); ++j)
-		(*newdotclass)[j] = (*klass)[i++];
+	    for (unsigned int j = 0; j < sz; ++j)
+		(*newdotclass)[j] = (*klass)[nextidx++];
 	    newdotclass->setAttribute(PreviousSymbol, klass);
 	    method_bindings->bind(DotClassSymbol, newdotclass);
 	}
 	// It is possible that if a method was called directly that
 	// 'method' is unset.
 	if (!dotmethod)
-	    dotmethod = GCNode::expose(new StringVector(methodname));
+	    dotmethod = GCNode::expose(new StringVector(nextmethodname));
 	else {
 	    dotmethod = dotmethod->clone();
 	    // For Ops we need `method' to be a vector
 	    for (unsigned int j = 0; j < dotmethod->size(); ++j) {
 		if (!(*dotmethod)[j])
-		    (*dotmethod)[j] = CachedString::obtain(methodname);
+		    (*dotmethod)[j] = CachedString::obtain(nextmethodname);
 	    }
 	}
 	method_bindings->bind(DotMethodSymbol, dotmethod);
 	method_bindings->bind(DotGenericCallEnvSymbol, gencallenv);
 	method_bindings->bind(DotGenericDefEnvSymbol, gendefenv);
 	method_bindings->bind(DotGenericSymbol, dotgeneric);
-	method_bindings->bind(DotGroupSymbol, dotgroup);
-	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
-	newcall->setCar(method_sym);
+	if (dotgroup)
+	    method_bindings->bind(DotGroupSymbol, dotgroup);
+	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	newcall->setCar(nextmethodsym);
 	return applyMethod(newcall, nextfun, matchedarg,
 			   callenv, method_bindings);
     }
