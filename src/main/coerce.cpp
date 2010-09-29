@@ -1511,7 +1511,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(0 == (n = length(args)))
 		errorcall(call, _("invalid length 0 argument"));
 	    names = getAttrib(args, R_NamesSymbol);
-	    GCStackRoot<PairList> tl(PairList::makeList(n - 1));
+	    GCStackRoot<PairList> tl(PairList::make(n - 1));
 	    PROTECT(ap = ans = GCNode::expose(new Expression(0, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, VECTOR_ELT(args, i));
@@ -1527,7 +1527,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(0 == (n = length(args)))
 		errorcall(call, _("invalid length 0 argument"));
 	    names = getAttrib(args, R_NamesSymbol);
-	    GCStackRoot<PairList> tl(PairList::makeList(n - 1));
+	    GCStackRoot<PairList> tl(PairList::make(n - 1));
 	    PROTECT(ap = ans = GCNode::expose(new Expression(0, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, XVECTOR_ELT(args, i));
@@ -2277,7 +2277,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     n = length(args);
     names = getAttrib(args, R_NamesSymbol);
 
-    GCStackRoot<PairList> tl(PairList::makeList(n));
+    GCStackRoot<PairList> tl(PairList::make(n));
     PROTECT(c = call = GCNode::expose(new Expression(0, tl)));
     if( isString(fun) )
 	SETCAR(c, install(translateChar(STRING_ELT(fun, 0))));

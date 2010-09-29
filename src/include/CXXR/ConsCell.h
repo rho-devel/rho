@@ -125,16 +125,6 @@ namespace CXXR {
 	    return expose(ans);
 	}
 
-	/** @brief Number of elements in list.
-	 *
-	 * @param start Pointer to a ConsCell, possibly null.
-	 *
-	 * @return zero if \a start is a null pointer, otherwise the
-	 * number of elements in the list starting at the ConsCell
-	 * pointed to by \a start.
-	 */
-	static size_t length(const ConsCell* start);
-
 	/** @brief Set the 'car' value.
 	 *
 	 * @param cr Pointer to the new car object (or a null
@@ -287,6 +277,16 @@ namespace CXXR {
      */
     void ccdump(std::ostream& os, const ConsCell& cc, size_t margin = 0);
 
+    /** @brief Number of elements in list.
+     *
+     * @param start Pointer to a ConsCell, possibly null.
+     *
+     * @return zero if \a start is a null pointer, otherwise the
+     * number of elements in the list starting at the ConsCell
+     * pointed to by \a start.
+     */
+    size_t listLength(const ConsCell* start);
+
     /** @brief <tt>cc ? cc->tail() : 0</tt>
      *
      * @param cc Pointer to the ConsCell whose tail pointer is
@@ -376,7 +376,7 @@ namespace CXXR {
 	 * @param sz Number of elements required in the list.  If
 	 *           zero, the function returns a null pointer.
 	 */
-	static PairList* makeList(size_t sz) throw (std::bad_alloc);
+	static PairList* make(size_t sz) throw (std::bad_alloc);
 
 	/** @brief The name by which this type is known in R.
 	 *

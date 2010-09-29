@@ -447,7 +447,7 @@ static SEXP D(SEXP expr, SEXP var)
 	    UNPROTECT(4);
 	}
 	else if (CAR(expr) == SqrtSymbol) {
-	    GCStackRoot<PairList> tl(PairList::makeList(2));
+	    GCStackRoot<PairList> tl(PairList::make(2));
 	    PROTECT(expr1 = GCNode::expose(new Expression(0, tl)));
 	    SETCAR(expr1, PowerSymbol);
 	    SETCADR(expr1, CADR(expr));

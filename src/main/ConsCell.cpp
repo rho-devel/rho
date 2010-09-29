@@ -84,16 +84,6 @@ void ConsCell::detachReferents()
     RObject::detachReferents();
 }
 
-size_t ConsCell::length(const ConsCell* start)
-{
-    size_t ans = 0;
-    while (start) {
-	++ans;
-	start = start->tail();
-    }
-    return ans;
-}
-
 void ConsCell::visitReferents(const_visitor* v) const
 {
     const GCNode* car = m_car;
@@ -152,6 +142,16 @@ void CXXR::ccdump(ostream& os, const ConsCell& cc, size_t margin)
 	    }
 	}
     }
+}
+
+size_t CXXR::listLength(const ConsCell* start)
+{
+    size_t ans = 0;
+    while (start) {
+	++ans;
+	start = start->tail();
+    }
+    return ans;
 }
 
 // ***** C interface functions *****

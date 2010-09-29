@@ -920,7 +920,7 @@ static void printAttributes(SEXP s, SEXP env, Rboolean useSlots)
 		Rprt_adj right = CXXRCONSTRUCT(Rprt_adj, R_print.right);
 
 		{
-		    GCStackRoot<PairList> tl(PairList::makeList(2));
+		    GCStackRoot<PairList> tl(PairList::make(2));
 		    PROTECT(t = s = GCNode::expose(new Expression(0, tl)));
 		}
 		SETCAR(t, install("print")); t = CDR(t);

@@ -374,8 +374,9 @@ SEXP allocVector(SEXPTYPE type, R_len_t length)
 	break;
     case LANGSXP:
 	{
-	    if(length == 0) return 0;
-	    GCStackRoot<PairList> tl(PairList::makeList(length - 1));
+	    if (length == 0)
+		return 0;
+	    GCStackRoot<PairList> tl(PairList::make(length - 1));
 	    s = new Expression(0, tl);
 	    break;
 	}

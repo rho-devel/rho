@@ -101,21 +101,18 @@ static RObject* GetObject(ClosureContext *cptr)
     }
 }
 
-static SEXP applyMethod(SEXP call, SEXP op, SEXP args, SEXP rho, SEXP newrho)
+static RObject* applyMethod(const Expression* call, const FunctionBase* func,
+			    const PairList* args, Environment* env,
+			    Frame* method_bindings)
 {
-    Expression* callx = SEXP_downcast<Expression*>(call);
-    SEXP ans = 0;
-    if (TYPEOF(op) == SPECIALSXP || TYPEOF(op) == BUILTINSXP) {
-	BuiltInFunction* func = static_cast<BuiltInFunction*>(op);
-	GCStackRoot<PairList> argslist(SEXP_downcast<PairList*>(args));
-	Environment* env = SEXP_downcast<Environment*>(newrho);
-	ans = func->apply(callx, argslist, env);
-    } else if (TYPEOF(op) == CLOSXP) {
-	Closure* func = SEXP_downcast<Closure*>(op);
-	PairList* arglist = SEXP_downcast<PairList*>(args);
-	Environment* callenv = SEXP_downcast<Environment*>(rho);
-	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
-	ans = func->invoke(callx, arglist, callenv, supp_env->frame());
+    RObject* ans;
+    if (func->sexptype() == CLOSXP) {
+	const Closure* clos = static_cast<const Closure*>(func);
+	ans = clos->invoke(call, args, env, method_bindings);
+    } else {
+	GCStackRoot<Environment>
+	    newenv(GCNode::expose(new Environment(0, method_bindings)));
+	ans = func->apply(call, args, newenv);
     }
     return ans;
 }
@@ -228,6 +225,7 @@ int Rf_isBasicClass(const char *ss) {
 int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	      SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
 {
+    Environment* env = SEXP_downcast<Environment*>(rho);
     Environment* callenv = SEXP_downcast<Environment*>(callrho);
     Environment* defenv = SEXP_downcast<Environment*>(defrho);
 
@@ -373,11 +371,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(method_symbol);
-    GCStackRoot<Environment>
-	newrho(GCNode::expose(new Environment(0, newframe)));
-    *ans = applyMethod(newcall, method,
-		       const_cast<PairList*>(matchedarg.get()),
-		       rho, newrho);
+    *ans = applyMethod(newcall, method, matchedarg, env, newframe);
     return 1;
 }
 
@@ -633,7 +627,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
-    GCStackRoot<> matchedarg(Rf_allocList(length(CXXRCCAST(PairList*, cptr->promiseArgs()))));
+    GCStackRoot<PairList>
+	matchedarg(PairList::make(listLength(cptr->promiseArgs())));
     {
 	for (SEXP t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
 	     s = CDR(s), t = CDR(t)) {
@@ -673,7 +668,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		    t = ConsCell::convert<PairList>(cc);
 		}
 		s = matchmethargs(matchedarg, t);
-		matchedarg = s;
+		matchedarg = static_cast<PairList*>(s);
 		newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
 	    }
 	}
@@ -703,110 +698,114 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     /* the generic comes from either the sysparent or it's named */
-    GCStackRoot<StringVector> generic;
+    GCStackRoot<StringVector> dotgeneric;
+    string genericname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
 	RObject* genval = (bdg ? bdg->value() : callargs->car()->evaluate(callenv));
 	if (!genval)
 	    Rf_error(_("generic function not specified"));
 	if (genval->sexptype() == STRSXP)
-	    generic = static_cast<StringVector*>(genval);
-	if (!generic || generic->size() != 1)
+	    dotgeneric = static_cast<StringVector*>(genval);
+	if (!dotgeneric || dotgeneric->size() != 1)
 	    Rf_error(_("invalid generic argument to NextMethod"));
-	if ((*generic)[0] == CachedString::blank())
+	genericname = Rf_translateChar((*dotgeneric)[0]);
+	if (genericname.empty())
 	    Rf_error(_("generic function not specified"));
     }
 
     /* determine whether we are in a Group dispatch */
-    GCStackRoot<StringVector> group;
+    GCStackRoot<StringVector> dotgroup;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
 	if (!bdg)
-	    group = GCNode::expose(new StringVector(CachedString::blank()));
+	    dotgroup = GCNode::expose(new StringVector(CachedString::blank()));
 	else {
 	    RObject* grpval = bdg->value();
 	    if (grpval->sexptype() == STRSXP)
-		group = static_cast<StringVector*>(grpval);
-	    if (!group || group->size() != 1)
+		dotgroup = static_cast<StringVector*>(grpval);
+	    if (!dotgroup || dotgroup->size() != 1)
 		Rf_error(_("invalid 'group' argument found in NextMethod"));
 	}
     }
 
     /* determine the root: either the group or the generic will be it */
-    StringVector* basename = group;
-    if ((*basename)[0] == CachedString::blank())
-	basename = generic;
+    string basename;
+    {
+	StringVector* basesv = dotgroup;
+	if ((*basesv)[0] == CachedString::blank())
+	    basesv = dotgeneric;
+	basename = Rf_translateChar((*basesv)[0]);
+    }
 
     /*
       Find the method currently being invoked and jump over the current call
       If t is R_UnboundValue then we called the current method directly
     */
-    GCStackRoot<StringVector> method;
-    string b;
+    GCStackRoot<StringVector> dotmethod;
+    string currentmethodname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotMethodSymbol);
 	if (!bdg) {
-	    Symbol* callsym = SEXP_downcast<Symbol*>(cptr->call()->car());
-	    b = callsym->name()->stdstring();
+	    Symbol* opsym = SEXP_downcast<Symbol*>(cptr->call()->car());
+	    currentmethodname = opsym->name()->stdstring();
 	} else {
 	    RObject* methval = bdg->value();
 	    if (!methval || methval->sexptype() != STRSXP)
 		Rf_error(_("wrong value for .Method"));
-	    method = static_cast<StringVector*>(methval);
+	    dotmethod = static_cast<StringVector*>(methval);
 	    unsigned int i;
-	    for (i = 0; b.empty() && i < method->size(); ++i)
-		b = Rf_translateChar((*method)[i]);
+	    for (i = 0; currentmethodname.empty() && i < dotmethod->size(); ++i)
+		currentmethodname = Rf_translateChar((*dotmethod)[i]);
 	    // for binary operators check that the second argument's
 	    // method is the same or absent:
-	    for (unsigned int j = i; j < method->size(); ++j) {
-		string bb = Rf_translateChar((*method)[j]);
-		if (!bb.empty() && bb != b)
+	    for (unsigned int j = i; j < dotmethod->size(); ++j) {
+		string bb = Rf_translateChar((*dotmethod)[j]);
+		if (!bb.empty() && bb != currentmethodname)
 		    Rf_warning(_("Incompatible methods ignored"));
 	    }
 	}
     }
 
-    string sb = Rf_translateChar((*basename)[0]);
-    string buf; // *****
-    string sk;
+    string methodname;
+    string suffix;
     unsigned int j;
-    for (j = 0; buf != b && j < klass->size(); ++j) {
-	sk = Rf_translateChar((*klass)[j]);
-	buf = sb + "." + sk;
+    for (j = 0; methodname != currentmethodname && j < klass->size(); ++j) {
+	suffix = Rf_translateChar((*klass)[j]);
+	methodname = basename + "." + suffix;
     }
     // If a match was found, j will now be pointing to the next
     // element (if any).
-    if (buf != b)
+    if (methodname != currentmethodname)
 	j = 0;  // no match so start with the first element of .Class
 
     /* we need the value of i on exit from the for loop to figure out
        how many classes to drop. */
 
     FunctionBase* nextfun = 0;
-    string sg = Rf_translateChar((*generic)[0]);
     unsigned int i;
     for (i = j; !nextfun && i < klass->size(); ++i) {
-	sk = Rf_translateChar((*klass)[i]);
-	buf = sg + "." + sk;
-	GCStackRoot<Symbol> bufsym(Symbol::obtain(buf));
-	nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
-	if (!nextfun && group) {
+	suffix = Rf_translateChar((*klass)[i]);
+	methodname = genericname + "." + suffix;
+	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
+	nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
+	if (!nextfun && dotgroup) {
 	    // if not Generic.foo, look for Group.foo
-	    buf = sb + "." + sk;
-	    bufsym = Symbol::obtain(buf);
-	    nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
+	    methodname = basename + "." + suffix;
+	    method_sym = Symbol::obtain(methodname);
+	    nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
 	}
     }
     if (!nextfun) {
-	buf = sg + ".default";
-	GCStackRoot<Symbol> bufsym(Symbol::obtain(buf));
-	nextfun = findS3Method(bufsym, gencallenv, gendefenv).first;
+	methodname = genericname + ".default";
+	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
+	nextfun = findS3Method(method_sym, gencallenv, gendefenv).first;
 	// If there is no default method, try the generic itself,
 	// provided it is primitive or a wrapper for a .Internal
 	// function of the same name.
 	if (!nextfun) {
-	    GCStackRoot<Symbol> sgsym(Symbol::obtain(sg));
-	    Frame::Binding* bdg = callenv->findBinding(sgsym).second;
+	    GCStackRoot<Symbol> genericsym(Symbol::obtain(genericname));
+	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
 	    RObject* nfval = forceIfPromise(bdg->value());
@@ -814,7 +813,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		Rf_error(_("no method to invoke"));
 	    nextfun = dynamic_cast<FunctionBase*>(nfval);
 	    if (nextfun && nextfun->sexptype() == CLOSXP)
-		nextfun = DotInternalTable::get(sgsym);
+		nextfun = DotInternalTable::get(genericsym);
 	    if (!nextfun)
 		Rf_error(_("no method to invoke"));
 	}
@@ -822,36 +821,37 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Create the working environment and apply the method:
     {
-	GCStackRoot<Environment> m(GCNode::expose(new Environment(0)));
+	GCStackRoot<Frame> method_bindings(GCNode::expose(new StdFrame(6)));
 	if (klass) {
 	    GCStackRoot<StringVector>
-		sv(GCNode::expose(new StringVector(klass->size() - i)));
+		newdotclass(GCNode::expose(new StringVector(klass->size() - i)));
 	    klass = klass->clone();
-	    for (unsigned int j = 0; j < sv->size(); ++j)
-		(*sv)[j] = (*klass)[i++];
-	    sv->setAttribute(PreviousSymbol, klass);
-	    m->frame()->bind(DotClassSymbol, sv);
+	    for (unsigned int j = 0; j < newdotclass->size(); ++j)
+		(*newdotclass)[j] = (*klass)[i++];
+	    newdotclass->setAttribute(PreviousSymbol, klass);
+	    method_bindings->bind(DotClassSymbol, newdotclass);
 	}
 	// It is possible that if a method was called directly that
 	// 'method' is unset.
-	if (!method)
-	    method = GCNode::expose(new StringVector(buf));
+	if (!dotmethod)
+	    dotmethod = GCNode::expose(new StringVector(methodname));
 	else {
-	    method = method->clone();
+	    dotmethod = dotmethod->clone();
 	    // For Ops we need `method' to be a vector
-	    for (unsigned int j = 0; j < method->size(); ++j) {
-		if (!(*method)[j])
-		    (*method)[j] = CachedString::obtain(buf);
+	    for (unsigned int j = 0; j < dotmethod->size(); ++j) {
+		if (!(*dotmethod)[j])
+		    (*dotmethod)[j] = CachedString::obtain(methodname);
 	    }
 	}
-	m->frame()->bind(DotMethodSymbol, method);
-	m->frame()->bind(DotGenericCallEnvSymbol, gencallenv);
-	m->frame()->bind(DotGenericDefEnvSymbol, gendefenv);
-	m->frame()->bind(DotGenericSymbol, generic);
-	m->frame()->bind(DotGroupSymbol, group);
-	GCStackRoot<Symbol> methodsym(Symbol::obtain(buf));
-	newcall->setCar(methodsym);
-	return applyMethod(newcall, nextfun, matchedarg, env, m);
+	method_bindings->bind(DotMethodSymbol, dotmethod);
+	method_bindings->bind(DotGenericCallEnvSymbol, gencallenv);
+	method_bindings->bind(DotGenericDefEnvSymbol, gendefenv);
+	method_bindings->bind(DotGenericSymbol, dotgeneric);
+	method_bindings->bind(DotGroupSymbol, dotgroup);
+	GCStackRoot<Symbol> method_sym(Symbol::obtain(methodname));
+	newcall->setCar(method_sym);
+	return applyMethod(newcall, nextfun, matchedarg,
+			   callenv, method_bindings);
     }
 }
 

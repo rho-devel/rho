@@ -514,7 +514,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(args);
     PROTECT(rhs);
     PROTECT(val);
-    GCStackRoot<PairList> tl(PairList::makeList(length(args) + 2));
+    GCStackRoot<PairList> tl(PairList::make(length(args) + 2));
     ptmp = tmp = GCNode::expose(new Expression(0, tl));
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);

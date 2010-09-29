@@ -91,7 +91,7 @@ PairList* PairList::clone() const
     return expose(new PairList(*this));
 }
 
-PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
+PairList* PairList::make(size_t sz) throw (std::bad_alloc)
 {
     PairList* ans = 0;
     while (sz--)
@@ -102,8 +102,10 @@ PairList* PairList::makeList(size_t sz) throw (std::bad_alloc)
 unsigned int PairList::packGPBits() const
 {
     unsigned int ans = ConsCell::packGPBits();
-    if (m_binding_locked) ans |= BINDING_LOCK_MASK;
-    if (m_active_binding) ans |= ACTIVE_BINDING_MASK;
+    if (m_binding_locked)
+	ans |= BINDING_LOCK_MASK;
+    if (m_active_binding)
+	ans |= ACTIVE_BINDING_MASK;
     return ans;
 }
 
@@ -123,7 +125,7 @@ void PairList::unpackGPBits(unsigned int gpbits)
 
 SEXP Rf_allocList(unsigned int n)
 {
-    return PairList::makeList(n);
+    return PairList::make(n);
 }
 
 SEXP Rf_cons(SEXP cr, SEXP tl)
