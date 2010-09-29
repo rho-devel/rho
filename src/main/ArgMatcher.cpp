@@ -237,6 +237,36 @@ void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
 	unusedArgsError(supplied_list);
 }
 
+PairList* ArgMatcher::merge(PairList* newargs, PairList* oldargs)
+{
+    PairList* pn = newargs;
+    while (pn) {
+	PairList* nextn = pn->tail();
+	const RObject* ntag = pn->tag();
+	if (ntag) {
+	    while (oldargs && oldargs->tag() == ntag)
+		oldargs = oldargs->tail();
+	    PairList* po = oldargs;
+	    while (po) {
+		PairList* nexto = po->tail();
+		if (nexto && nexto->tag() == ntag) {
+		    po->setTail(nexto->tail());
+		    // We assume there are no duplicated non-null tags
+		    // in oldargs, so stop looking further:
+		    nexto = 0;
+		}
+		po = nexto;
+	    }
+	}
+	if (!nextn) {
+	    pn->setTail(oldargs);
+	    return newargs;
+	}
+	pn = nextn;
+    }
+    return oldargs;  // We get here only if newargs was empty.
+}
+	    
 PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
 {
     GCStackRoot<PairList> args;

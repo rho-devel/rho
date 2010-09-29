@@ -48,6 +48,7 @@
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
 #include "CXXR/ClosureContext.hpp"
+#include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnBailout.hpp"
 
@@ -117,32 +118,6 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
     return ans;
 }
 
-
-/* "newintoold" -  a destructive matching of arguments; */
-/* newargs comes first; any element of oldargs with */
-/* a name that matches a named newarg is deleted; the */
-/* two resulting lists are appended and returned. */
-/* S claims to do this (white book) but doesn't seem to. */
-
-static SEXP newintoold(SEXP _new, SEXP old)
-{
-    if (_new == R_NilValue) return R_NilValue;
-    SETCDR(_new, newintoold(CDR(_new),old));
-    while (old != R_NilValue) {
-	if (TAG(old) != R_NilValue && TAG(old) == TAG(_new)) {
-	    SETCAR(old, CAR(_new));
-	    return CDR(_new);
-	}
-	old = CDR(old);
-    }
-    return _new;
-}
-
-static SEXP matchmethargs(SEXP oldargs, SEXP newargs)
-{
-    newargs = newintoold(newargs, oldargs);
-    return Rf_listAppend(oldargs, newargs);
-}
 
 #ifdef S3_for_S4_warn /* not currently used */
 static SEXP s_check_S3_for_S4 = 0;
@@ -648,34 +623,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    GCStackRoot<Expression> newcall(cptr->call()->clone());
-
-    /*
-      Now see if there were any other arguments passed in
-      Currently we seem to only allow named args to change
-      or to be added, this is at variance with p. 470 of the
-      White Book
-    */
-
-    {
-	SEXP s = CADDR(args); /* this is ... and we need to see if it's bound */
-	if (s == R_DotsSymbol) {
-	    GCStackRoot<> t(Rf_findVarInFrame3(env, s, TRUE));
-	    if (t != R_NilValue && t != R_MissingArg) {
-		// Convert t to a PairList:
-		{
-		    GCStackRoot<ConsCell> cc(SEXP_downcast<ConsCell*>(t.get()));
-		    t = ConsCell::convert<PairList>(cc);
-		}
-		s = matchmethargs(matchedarg, t);
-		matchedarg = static_cast<PairList*>(s);
-		newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
-	    }
-	}
-	else
-	    Rf_error(_("wrong argument ..."));
-    }
-
     /*
       .Class is used to determine the next method; if it doesn't
       exist the first argument to the current method is used
@@ -823,9 +770,32 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    // Create the working environment and apply the method:
+    GCStackRoot<Expression> newcall(cptr->call()->clone());
     {
-	GCStackRoot<Frame> method_bindings(GCNode::expose(new StdFrame(6)));
+	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	newcall->setCar(nextmethodsym);
+    }
+
+    /*
+      Now see if there were any other arguments passed in
+      Currently we seem to only allow named args to change
+      or to be added, this is at variance with p. 470 of the
+      White Book
+    */
+    {
+	Frame::Binding* bdg = callenv->frame()->binding(DotsSymbol);
+	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
+	    GCStackRoot<DottedArgs>
+		dots(SEXP_downcast<DottedArgs*>(bdg->value()));
+	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
+	    matchedarg = ArgMatcher::merge(newargs, matchedarg);
+	    newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
+	}
+    }
+
+    // Set up special method bindings:
+    GCStackRoot<Frame> method_bindings(GCNode::expose(new StdFrame(6)));
+    {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;
 	    GCStackRoot<StringVector>
@@ -854,11 +824,9 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	method_bindings->bind(DotGenericSymbol, dotgeneric);
 	if (dotgroup)
 	    method_bindings->bind(DotGroupSymbol, dotgroup);
-	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
-	newcall->setCar(nextmethodsym);
-	return applyMethod(newcall, nextfun, matchedarg,
-			   callenv, method_bindings);
     }
+
+    return applyMethod(newcall, nextfun, matchedarg, callenv, method_bindings);
 }
 
 /* primitive */

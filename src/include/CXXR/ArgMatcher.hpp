@@ -189,6 +189,31 @@ namespace CXXR {
 	 */
 	void match(Environment* target_env, const PairList* supplied) const;
 
+	/** @brief Combine argument lists.
+	 *
+	 * This function is used in implementing NextMethod.
+	 * Basically it returns the concatenation of \a newargs and \a
+	 * oldargs.  However, if any element of \a oldargs has the
+	 * same non-null tag as an element of \a newargs, that element
+	 * of \a oldargs is discarded in the result.
+	 *
+	 * @param newargs Pointer, possibly null, to a PairList.  Any
+	 *          elements with non-null tags must have distinct tag
+	 *          addresses.  The list will be modified by the
+	 *          function.
+	 *
+	 * @param oldargs Pointer, possibly null, to a PairList.  Any
+	 *          elements with non-null tags must have distinct tag
+	 *          addresses.  The list will be modified by the
+	 *          function.
+	 *
+	 * @return The result of concatenating \a newargs before \a
+	 * oldargs as described above, i.e. with tagged elements
+	 * within \a newargs causing any correspondingly tagged
+	 * elements within \a oldargs to be discarded.
+	 */
+	static PairList* merge(PairList* newargs, PairList* oldargs);
+
 	/** @brief Number of formal arguments.
 	 *
 	 * @return the number of formal arguments. '<tt>...</tt>' is
