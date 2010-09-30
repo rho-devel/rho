@@ -1603,32 +1603,34 @@ attribute_hidden
 int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		   SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
-/* DispatchOrEval is called very frequently, most often in cases where
-   no dispatching is needed and the Rf_isObject or the string-based
-   pre-test fail.  To avoid degrading performance it is therefore
-   necessary to avoid creating promises in these cases.  The pre-test
-   does require that we look at the first argument, so that needs to
-   be evaluated.  The complicating factor is that the first argument
-   might come in with a "..." and that there might be other arguments
-   in the "..." as well.  LT */
+    GCStackRoot<> arglist(args);
 
-    SEXP x = R_NilValue;
-    int dots = FALSE, nprotect = 0;;
+    // DispatchOrEval is called very frequently, most often in cases
+    // where no dispatching is needed and the Rf_isObject or the
+    // string-based pre-test fail.  To avoid degrading performance it
+    // is therefore necessary to avoid creating promises in these
+    // cases.  The pre-test does require that we look at the first
+    // argument, so that needs to be evaluated.  The complicating
+    // factor is that the first argument might come in with a "..."
+    // and that there might be other arguments in the "..." as well.  LT 
 
-    if( argsevald )
-	{PROTECT(x = CAR(args)); nprotect++;}
+    GCStackRoot<> x;
+    bool dots = false;
+
+    if (argsevald)
+	x = CAR(arglist);
     else {
 	/* Find the object to dispatch on, dropping any leading
 	   ... arguments with missing or empty values.  If there are no
 	   arguments, R_NilValue is used. */
-	for (; args != R_NilValue; args = CDR(args)) {
-	    if (CAR(args) == R_DotsSymbol) {
+	for (; arglist; arglist = CDR(arglist)) {
+	    if (CAR(arglist) == R_DotsSymbol) {
 		SEXP h = Rf_findVar(R_DotsSymbol, rho);
 		if (TYPEOF(h) == DOTSXP) {
 		    /* just a consistency check */
 		    if (TYPEOF(CAR(h)) != PROMSXP)
 			Rf_error(_("value in '...' is not a promise"));
-		    dots = TRUE;
+		    dots = true;
 		    x = Rf_eval(CAR(h), rho);
 		break;
 		}
@@ -1636,31 +1638,27 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		    Rf_error(_("'...' used in an incorrect context"));
 	    }
 	    else {
-		dots = FALSE;
-		x = Rf_eval(CAR(args), rho);
+		dots = false;
+		x = Rf_eval(CAR(arglist), rho);
 		break;
 	    }
 	}
-	PROTECT(x); nprotect++;
     }
 	/* try to dispatch on the object */
     if( Rf_isObject(x) ) {
-	char *pt;
 	/* Try for formal method. */
 	if(IS_S4_OBJECT(x) && R_has_methods(op)) {
-	    SEXP argValue;
+	    GCStackRoot<> argValue;
 	    /* create a promise to pass down to applyClosure  */
 	    if(!argsevald) {
-		argValue = promiseArgs(args, rho);
+		argValue = promiseArgs(arglist, rho);
 		SET_PRVALUE(CAR(argValue), x);
-	    } else argValue = args;
-	    PROTECT(argValue); nprotect++;
+	    } else argValue = arglist;
 	    /* This means S4 dispatch */
 	    std::pair<bool, SEXP> pr
 		= R_possible_dispatch(call, op, argValue, rho, TRUE);
 	    if (pr.first) {
 		*ans = pr.second;
-		UNPROTECT(nprotect);
 		return 1;
 	    }
 	    else {
@@ -1675,20 +1673,20 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		    argValue = evalArgs(argValue, rho, dropmissing, call, 0);
 		else {
 		    argValue = CONS(x, evalArgs(CDR(argValue), rho, dropmissing, call, 1));
-		    SET_TAG(argValue, Rf_CreateTag(TAG(args)));
+		    SET_TAG(argValue, Rf_CreateTag(TAG(arglist)));
 		}
-		PROTECT(args = argValue); nprotect++;
+		arglist = argValue;
 		argsevald = 1;
 	    }
 	}
+	char *pt;
 	if (TYPEOF(CAR(call)) == SYMSXP)
 	    pt = Rf_strrchr(CHAR(PRINTNAME(CAR(call))), '.');
 	else
 	    pt = NULL;
 
 	if (pt == NULL || strcmp(pt,".default")) {
-	    SEXP pargs, rho1;
-	    PROTECT(pargs = promiseArgs(args, rho)); nprotect++;
+	    GCStackRoot<> pargs(promiseArgs(arglist, rho));
 	    /* The context set up here is needed because of the way
 	       usemethod() is written.  DispatchGroup() repeats some
 	       internal usemethod() code and avoids the need for a
@@ -1704,23 +1702,22 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho)); nprotect++;
+	    GCStackRoot<> rho1(NewEnvironment(R_NilValue, R_NilValue, rho));
 	    SET_PRVALUE(CAR(pargs), x);
 	    int um;
 	    {
 	        Expression* callx = SEXP_downcast<Expression*>(call);
 	        Environment* call_env = SEXP_downcast<Environment*>(rho);
 	        FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
-		Environment* working_env = SEXP_downcast<Environment*>(rho1);
-		PairList* promargs = SEXP_downcast<PairList*>(pargs);
+		Environment* working_env
+		    = SEXP_downcast<Environment*>(rho1.get());
+		PairList* promargs = SEXP_downcast<PairList*>(pargs.get());
 		ClosureContext cntxt(callx, call_env, func,
 				     working_env, promargs);
 		um = usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, ans);
 	    }
-	    if (um) {
-		UNPROTECT(nprotect);
+	    if (um)
 		return 1;
-	    }
 	}
     }
     if(!argsevald) {
@@ -1728,15 +1725,15 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    /* The first call argument was ... and may contain more than the
 	       object, so it needs to be evaluated here.  The object should be
 	       in a promise, so evaluating it again should be no problem. */
-	    *ans = evalArgs(args, rho, dropmissing, call, 0);
+	    *ans = evalArgs(arglist, rho, dropmissing, call, 0);
 	else {
-	    PROTECT(*ans = CONS(x, evalArgs(CDR(args), rho, dropmissing, call, 1)));
-	    SET_TAG(*ans, Rf_CreateTag(TAG(args)));
-	    UNPROTECT(1);
+	    GCStackRoot<> ansval(CONS(x, evalArgs(CDR(arglist), rho,
+						  dropmissing, call, 1)));
+	    SET_TAG(ansval, Rf_CreateTag(TAG(arglist)));
+	    *ans = ansval;
 	}
     }
-    else *ans = args;
-    UNPROTECT(nprotect);
+    else *ans = arglist;
     return 0;
 }
 
