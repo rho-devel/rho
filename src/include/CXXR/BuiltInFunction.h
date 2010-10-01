@@ -136,14 +136,7 @@ namespace CXXR {
 	 * @todo This constructor ought really to be private, but is
 	 * currently used by deserialization code.
 	 */
-	BuiltInFunction(unsigned int offset)
-	    : FunctionBase(s_function_table[offset].flags%10
-			   ? BUILTINSXP : SPECIALSXP),
-	      m_offset(offset), m_function(s_function_table[offset].cfun)
-	{
-	    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
-	    m_result_printing_mode = ResultPrintingMode(pmdigit);
-	}
+	BuiltInFunction(unsigned int offset);
 
 	/** @brief 'Arity' of the function.
 	 *
@@ -325,6 +318,9 @@ namespace CXXR {
 	unsigned int m_offset;
 	CCODE m_function;
 	ResultPrintingMode m_result_printing_mode;
+	bool m_transparent;  // if true, do not create a
+			     // FunctionContext when this function is
+			     // applied.
 
 	static void cleanup()
 	{}

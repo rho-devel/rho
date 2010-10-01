@@ -40,6 +40,7 @@
 
 #include "CXXR/BuiltInFunction.h"
 
+#include "Internal.h"
 #include "CXXR/DotInternal.h"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/PlainContext.hpp"
@@ -63,21 +64,41 @@ namespace CXXR {
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
+BuiltInFunction::BuiltInFunction(unsigned int offset)
+    : FunctionBase(s_function_table[offset].flags%10
+		   ? BUILTINSXP : SPECIALSXP),
+      m_offset(offset), m_function(s_function_table[offset].cfun)
+{
+    unsigned int pmdigit = (s_function_table[offset].flags/100)%10;
+    m_result_printing_mode = ResultPrintingMode(pmdigit);
+    m_transparent = (viaDotInternal()
+		     || m_function == do_begin
+		     || m_function == do_break
+		     || m_function == do_for
+		     || m_function == do_if
+		     || m_function == do_internal
+		     || m_function == do_paren
+		     || m_function == do_repeat
+		     || m_function == do_return
+		     || m_function == do_while);
+}
+
 RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 				Environment* env) const
 {
     size_t pps_size = ProtectStack::size();
     size_t ralloc_size = RAllocStack::size();
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+    GCStackRoot<const PairList>
+	callargs(sexptype() == SPECIALSXP ? args
+		 : Evaluator::mapEvaluate(args, env, call));
     GCStackRoot<> ans;
-    if (sexptype() == SPECIALSXP) {
+    if (m_transparent) {
 	PlainContext cntxt;
-	ans = invoke(call, args, env);
+	ans = invoke(call, callargs, env);
     } else {
-	GCStackRoot<const PairList>
-	    evaluated_args(Evaluator::mapEvaluate(args, env, call));
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	ans = invoke(call, evaluated_args, env);
+	ans = invoke(call, callargs, env);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);

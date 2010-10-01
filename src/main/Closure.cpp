@@ -145,11 +145,13 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
     GCStackRoot<> ans;
     {
 	Environment* syspar = env;
-	// If this is a method call, change syspar
-	// and merge in supplementary bindings:
+	// If this is a method call, change syspar and merge in
+	// supplementary bindings:
 	if (method_bindings) {
 	    method_bindings->softMergeInto(newenv->frame());
 	    FunctionContext* fctxt = FunctionContext::innermost();
+	    while (fctxt && fctxt->function()->sexptype() == SPECIALSXP)
+		fctxt = FunctionContext::innermost(fctxt->nextOut());
 	    syspar = (fctxt ? fctxt->callEnvironment() : Environment::global());
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),

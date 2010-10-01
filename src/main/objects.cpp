@@ -204,19 +204,10 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     Environment* callenv = SEXP_downcast<Environment*>(callrho);
     Environment* defenv = SEXP_downcast<Environment*>(defrho);
 
-    ClosureContext *cptr = 0;
-
-    // Get the context which UseMethod was called from.
-    {
-	FunctionContext* fcptr = FunctionContext::innermost();
-	if (fcptr && fcptr->type() == Evaluator::Context::CLOSURE) {
-	    cptr = static_cast<ClosureContext*>(fcptr);
-	    if (cptr->workingEnvironment() != rho)
-		cptr = 0;
-	}
-	if (!cptr)
-	    Rf_error(_("'UseMethod' used in an inappropriate fashion"));
-    }
+    // Get the ClosureContext which UseMethod was called from.
+    ClosureContext* cptr = ClosureContext::innermost();
+    if (!cptr || cptr->workingEnvironment() != rho)
+	Rf_error(_("'UseMethod' used in an inappropriate fashion"));
 
     // Determine the functor:
     FunctionBase* op;
@@ -361,18 +352,9 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     Environment* argsenv = SEXP_downcast<Environment*>(env);
 
     // Find and check ClosureContext:
-    ClosureContext *cptr = 0;
-    {
-	FunctionContext* fcptr = FunctionContext::innermost();
-	if (fcptr && fcptr->type() == Evaluator::Context::CLOSURE) {
-	    cptr = static_cast<ClosureContext*>(fcptr);
-	    if (cptr->workingEnvironment() != argsenv)
-		cptr = 0;
-	}
-	if (!cptr)
-	    Rf_errorcall(call,
-			 _("'UseMethod' used in an inappropriate fashion"));
-    }
+    ClosureContext* cptr = ClosureContext::innermost();
+    if (!cptr || cptr->workingEnvironment() != argsenv)
+	Rf_error(_("'UseMethod' used in an inappropriate fashion"));
 
     StringVector* generic = 0;
     GCStackRoot<> obj;
