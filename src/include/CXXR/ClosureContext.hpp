@@ -42,8 +42,6 @@
 
 #include "CXXR/FunctionBase.h"
 #include "CXXR/FunctionContext.hpp"
-#include "CXXR/ProtectStack.h"
-#include "CXXR/RAllocStack.h"
 
 extern "C" {
     // Parked here pending the creation of an ErrorHandling class:
@@ -165,8 +163,6 @@ namespace CXXR {
 	    return m_working_env;
 	}
     private:
-	ProtectStack::Scope m_protectstack_scope;
-	RAllocStack::Scope m_rallocstack_scope;
 	Rboolean m_interrupts_suspended;
 	GCStackRoot<> m_handlerstack;
 	GCStackRoot<> m_restartstack;

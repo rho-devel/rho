@@ -108,8 +108,11 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
 				Environment* env) const
 {
+    RAllocStack::Scope ras_scope;
+    ProtectStack::Scope ps_scope;
+#ifndef NDEBUG
     size_t pps_size = ProtectStack::size();
-    size_t ralloc_size = RAllocStack::size();
+#endif
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<const PairList>
 	callargs(sexptype() == SPECIALSXP ? args
@@ -124,10 +127,11 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
+#ifndef NDEBUG
     if (pps_size != ProtectStack::size())
 	REprintf("Warning: stack imbalance in '%s', %d then %d\n",
 		 name(), pps_size, ProtectStack::size());
-    RAllocStack::restoreSize(ralloc_size);
+#endif
     return ans;
 }
 
