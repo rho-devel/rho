@@ -270,7 +270,7 @@ static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
 void warning(const char *format, ...)
 {
     char buf[BUFSIZE], *p;
-    ClosureContext *c = ClosureContext::innermost();
+    FunctionContext *c = FunctionContext::innermost();
 
     va_list(ap);
     va_start(ap, format);
@@ -686,7 +686,7 @@ SEXP attribute_hidden do_geterrmessage(SEXP call, SEXP op, SEXP args, SEXP env)
 void error(const char *format, ...)
 {
     char buf[BUFSIZE];
-    ClosureContext *c = ClosureContext::innermost();
+    FunctionContext *c = FunctionContext::innermost();
 
     va_list(ap);
     va_start(ap, format);

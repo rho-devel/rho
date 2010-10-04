@@ -282,19 +282,13 @@ namespace CXXR {
 	 * @param env The Environment in which evaluations are to take
 	 *          place.
 	 *
-	 * @param call The call expression, used in error reporting.
-	 *
 	 * @return The output list.
 	 *
 	 * @note This function is intended within CXXR to supersede
-	 * CR's evalList() and evalListKeepMissing().  However, note
-	 * that these CR functions coerce the tags in the output list
-	 * to be Symbol objects, whereas this function does not.
-	 *
-	 * @todo Try to get rid of the \a call argument.
+	 * CR's evalList() and evalListKeepMissing().
 	 */
 	static PairList* mapEvaluate(const PairList* inlist,
-				     Environment* env, const Expression* call);
+				     Environment* env);
 
 	/** @brief Is profiling currently enabled?
 	 *

@@ -88,8 +88,7 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
     return ans;
 }
 
-PairList* Evaluator::mapEvaluate(const PairList* inlist,
-				 Environment* env, const Expression* call)
+PairList* Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
 {
     GCStackRoot<PairList> outlist;
     unsigned int arg_number = 1;
@@ -122,13 +121,11 @@ PairList* Evaluator::mapEvaluate(const PairList* inlist,
 	} else {
 	    RObject* outcar = Symbol::missingArgument();
 	    if (incar == Symbol::missingArgument())
-		Rf_errorcall(const_cast<Expression*>(call),
-			     _("argument %d is empty"), arg_number);
+		Rf_error(_("argument %d is empty"), arg_number);
 	    if (Rf_isSymbol(incar)) {
 		Symbol* sym = static_cast<Symbol*>(incar);
 		if (isMissingArgument(sym, env->frame()))
-		    Rf_errorcall(const_cast<Expression*>(call),
-				 _("'%s' is missing"), sym->name()->c_str());
+		    Rf_error(_("'%s' is missing"), sym->name()->c_str());
 	    }
 	    outcar = evaluate(incar, env);
 	    PairList* cell = PairList::cons(outcar, 0, inlist->tag());

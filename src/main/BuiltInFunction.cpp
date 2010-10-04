@@ -64,6 +64,27 @@ namespace CXXR {
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
 
+// BuiltInFunction::apply() creates a FunctionContext only if
+// m_transparent is false.  This affects the location at which
+// Rf_error() reports an error as having occurred, and also determines
+// whether a function is reported within traceback().
+//
+// Since functions called via .Internal are not visible to the R user,
+// it seems clear that such functions should be 'transparent'.  One
+// approach would be to leave it at that, so that errors within
+// internal functions would be attributed to the surrounding call of
+// .Internal.  However, CXXR (currently at least) goes further than
+// this, with a view to attributing an error arising within an
+// internal function to the documented R function which it implements.
+// To this end do_internal itself and various 'syntactical' functions
+// such as do_begin are also flagged as transparent.
+//
+// The flip side of this is that if an error really does occur within
+// one of the 'syntactical' functions (rather than within some inner
+// but transparent scope), it may be desirable to report the error
+// using Rf_errorcall() rather than Rf_error(), so that it can
+// specifically be attributed to the 'syntactical' function.
+
 BuiltInFunction::BuiltInFunction(unsigned int offset)
     : FunctionBase(s_function_table[offset].flags%10
 		   ? BUILTINSXP : SPECIALSXP),
@@ -80,6 +101,7 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_paren
 		     || m_function == do_repeat
 		     || m_function == do_return
+		     || m_function == do_set
 		     || m_function == do_while);
 }
 
@@ -91,7 +113,7 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
     GCStackRoot<const PairList>
 	callargs(sexptype() == SPECIALSXP ? args
-		 : Evaluator::mapEvaluate(args, env, call));
+		 : Evaluator::mapEvaluate(args, env));
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;

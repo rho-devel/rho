@@ -878,7 +878,7 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     Environment* env = SEXP_downcast<Environment*>(rho);
     if (!env->loopActive())
-	Rf_error(_("no loop to break from, jumping to top level"));
+	Rf_error(_("no loop to break from"));
     LoopBailout* lbo = GCNode::expose(new LoopBailout(env, PRIMVAL(op) == 1));
     Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
     if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
@@ -1207,7 +1207,7 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	else if (Rf_isLanguage(CAR(args)))
 	    return applydefine(call, op, args, rho);
-	else Rf_error(_("invalid assignment left-hand side"));
+	else Rf_errorcall(call, _("invalid assignment left-hand side"));
 
     default:
 	UNIMPLEMENTED("do_set");
