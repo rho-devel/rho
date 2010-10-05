@@ -41,6 +41,7 @@
 #include "CXXR/Closure.h"
 
 #include <cstdlib>
+#include "CXXR/ArgList.hpp"
 #include "CXXR/ArgMatcher.hpp"
 #include "CXXR/BailoutContext.hpp"
 #include "CXXR/ClosureContext.hpp"
@@ -77,8 +78,9 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 RObject* Closure::apply(const Expression* call, const PairList* args,
 			Environment* env) const
 {
-    GCStackRoot<PairList> prepared_args(ArgMatcher::prepareArgs(args, env));
-    return invoke(call, prepared_args, env);
+    ArgList arglist(args, false);
+    arglist.wrapInPromises(env);
+    return invoke(call, arglist.list(), env);
 }
 
 Closure* Closure::clone() const

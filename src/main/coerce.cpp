@@ -2633,9 +2633,9 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;
 }
 
-#include "CXXR/ArgMatcher.hpp"
+#include "CXXR/ArgList.hpp"
 
-const Symbol* ArgMatcher::coerceTag(const RObject* tag)
+const Symbol* ArgList::coerceTag(const RObject* tag)
 {
     const char* symname = 0;
     if (tag->sexptype() == STRSXP) {

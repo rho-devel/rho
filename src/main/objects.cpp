@@ -47,6 +47,7 @@
 #include "Defn.h"
 #include <R_ext/RS.h> /* for Calloc, Realloc and for S4 object bit */
 #include "basedecl.h"
+#include "CXXR/ArgList.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
@@ -1339,8 +1340,9 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
 	    if(!promisedArgs) {
-		PairList* pargs
-		    = ArgMatcher::prepareArgs(callx->tail(), callenv);
+		ArgList al(callx->tail(), false);
+		al.wrapInPromises(callenv);
+		PairList* pargs = const_cast<PairList*>(al.list());
 		PairList *a, *b;
 		for (a = arglist, b = pargs;
 		     a != 0 && b != 0;
@@ -1365,7 +1367,9 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
     if(!promisedArgs) {
-	PairList* pargs = ArgMatcher::prepareArgs(callx->tail(), callenv);
+	ArgList al(callx->tail(), false);
+	al.wrapInPromises(callenv);
+	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
 	for (a = arglist, b = pargs;
 	     a != 0 && b != 0;

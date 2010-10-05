@@ -58,8 +58,6 @@ ArgMatcher::ArgMatcher(const PairList* formals)
     }
 }
 
-// Implementation of ArgMatcher::coerceTag() is in coerce.cpp
-
 void ArgMatcher::detachReferents()
 {
     m_formals.detach();
@@ -267,53 +265,6 @@ PairList* ArgMatcher::merge(PairList* newargs, PairList* oldargs)
     return oldargs;  // We get here only if newargs was empty.
 }
 	    
-PairList* ArgMatcher::prepareArgs(const PairList* raw_args, Environment* env)
-{
-    GCStackRoot<PairList> args;
-    PairList* last = 0;
-    while (raw_args) {
-	RObject* rawvalue = raw_args->car();
-	if (rawvalue == DotsSymbol) {
-	    pair<Environment*, Frame::Binding*> pr
-		= env->findBinding(DotsSymbol);
-	    if (pr.first) {
-		RObject* dval = pr.second->value();
-		if (!dval || dval->sexptype() == DOTSXP) {
-		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
-		    while (dotlist) {
-			Promise* prom
-			    = GCNode::expose(new Promise(dotlist->car(), env));
-			const Symbol* tag = tagSymbol(dotlist->tag());
-			PairList* cell = PairList::cons(prom, 0, tag);
-			if (!last)
-			    args = last = cell;
-			else {
-			    last->setTail(cell);
-			    last = last->tail();
-			}
-			dotlist = dotlist->tail();
-		    }
-		} else if (dval != Symbol::missingArgument())
-		    Rf_error(_("'...' used in an incorrect context"));
-	    }
-	} else {
-	    const Symbol* tag = tagSymbol(raw_args->tag());
-	    RObject* value = Symbol::missingArgument();
-	    if (rawvalue != Symbol::missingArgument())
-		value = GCNode::expose(new Promise(rawvalue, env));
-	    PairList* cell = PairList::cons(value, 0, tag);
-	    if (!last)
-		args = last = cell;
-	    else {
-		last->setTail(cell);
-		last = last->tail();
-	    }
-	}
-	raw_args = raw_args->tail();
-    }
-    return args;
-}
-
 void ArgMatcher::propagateFormalBindings(const Environment* fromenv,
 					 Environment* toenv) const
 {

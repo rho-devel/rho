@@ -224,48 +224,6 @@ namespace CXXR {
 	    return m_formal_data.size() + m_has_dots;
 	}
 
-	/** @brief Prepare argument list for matching.
-	 *
-	 * This function takes the argument list \a raw_args, converts
-	 * into a form suitable for argument matching by
-	 * ArgMatcher::match(), and returns the resulting list.
-	 * Basically, any argument whose value is not
-	 * Symbol::missingArgument() is wrapped in a Promise to be
-	 * evaluated in \a env.
-	 *
-	 * If any argument in \a raw_args has the value
-	 * CXXR::DotsSymbol, the action depends on what this Symbol is
-	 * bound to within \a env (and its enclosing environments).
-	 * If it is unbound, or bound to a null pointer or to
-	 * Symbol::missingArgument(), then this element of \a raw_args
-	 * is ignored: nothing corresponding to it is added to the
-	 * output list.  If it is bound to a DottedArgs list, then the
-	 * elements of that list are added to the output list as
-	 * arguments in their own right, with each argument value
-	 * being wrapped in a Promise to be evaluated in \a env.  Any
-	 * other binding of DotsSymbol is an error.
-	 *
-	 * Any tags in \a raw_args or in a DottedArgs list are carried
-	 * across to the corresponding element of the output list, but
-	 * coerced using tagSymbol() into a form suitable for
-	 * argument matching.
-	 *
-	 * @param raw_args Pointer (possibly null) to the argument
-	 *          list to be prepared for matching.
-	 *
-	 * @param env Pointer to the Environment to which Promises in
-	 *          the output list are to be keyed.
-	 *
-	 * @return the list of prepared arguments.
-	 *
-	 * @note It would be desirable to avoid producing a new
-	 * PairList, and to absorb this functionality directly into
-	 * the match() function.  But at present the output list in
-	 * recorded in the context set up by Closure::apply(), and
-	 * used for other purposes.
-	 */
-	static PairList* prepareArgs(const PairList* raw_args, Environment* env);
-
 	/** @brief Copy formal bindings from one Environment to another.
 	 *
 	 * This function is used in dispatching S4 methods to create
@@ -317,36 +275,6 @@ namespace CXXR {
 	 *          bindings are to be stripped.
 	 */
 	void stripFormals(Frame* input_frame) const;
-
-	/** @brief Convert tag of supplied argument to a Symbol.
-	 *
-	 * If \a tag is a null pointer or already points to a Symbol,
-	 * then \a tag itself is returned.
-	 *
-	 * If \a tag points to a StringVector with at least one
-	 * element, and the first element is a String of length at
-	 * least one, then the function returns a pointer to a Symbol
-	 * with that first element, translated in the current locale,
-	 * as its name.
-	 *
-	 * In all other cases the function returns a Symbol whose name
-	 * is obtained by an abbreviated SIMPLEDEPARSE of \a tag.
-	 *
-	 * @param tag Pointer (possibly null) to the tag to be
-	 *          processed.
-	 *
-	 * @return pointer to the representation of \a tag as a
-	 * Symbol.
-	 *
-	 * @todo This function probably ought to be fussier about what
-	 * it accepts as input.
-	 */
-	inline static const Symbol* tagSymbol(const RObject* tag)
-	{
-	    return ((!tag || tag->sexptype() == SYMSXP)
-		    ? static_cast<const Symbol*>(tag)
-		    : coerceTag(tag));
-	}
 
 	/** @brief Give warning if tag partially matched?
 	 *
@@ -407,9 +335,6 @@ namespace CXXR {
 	// Data relating to supplied arguments that have not yet been
 	// matched.
 	typedef std::list<SuppliedData, Allocator<SuppliedData> > SuppliedList;
-
-	// Coerce a tag that is not already a Symbol into Symbol form:
-	static const Symbol* coerceTag(const RObject* tag);
 
 	// Turn remaining arguments, if any, into a DottedArgs object
 	// bound to '...'.  Leave supplied_list empty.

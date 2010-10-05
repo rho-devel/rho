@@ -56,6 +56,7 @@
 #include "arithmetic.h"
 #include "basedecl.h"
 
+#include "CXXR/ArgList.hpp"
 #include "CXXR/BailoutContext.hpp"
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/ClosureContext.hpp"
@@ -1664,7 +1665,9 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    GCStackRoot<PairList> argValue(arglist);
 	    // create a promise to pass down to applyClosure
 	    if (!argsevald) {
-		argValue = ArgMatcher::prepareArgs(arglist, callenv);
+		ArgList al(arglist, false);
+		al.wrapInPromises(callenv);
+		argValue = const_cast<PairList*>(al.list());
 		SET_PRVALUE(CAR(argValue), x);
 	    } else argValue = arglist;
 	    /* This means S4 dispatch */
@@ -3714,6 +3717,7 @@ SEXP R_stopbcprof() { return R_NilValue; }
 
 SEXP attribute_hidden promiseArgs(SEXP el, SEXP rho)
 {
-    return ArgMatcher::prepareArgs(SEXP_downcast<PairList*>(el),
-				   SEXP_downcast<Environment*>(rho));
+    ArgList arglist(SEXP_downcast<PairList*>(el), false);
+    arglist.wrapInPromises(SEXP_downcast<Environment*>(rho));
+    return const_cast<PairList*>(arglist.list());
 }
