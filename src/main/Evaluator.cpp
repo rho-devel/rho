@@ -88,60 +88,6 @@ RObject* Evaluator::evaluate(RObject* object, Environment* env)
     return ans;
 }
 
-PairList* Evaluator::mapEvaluate(const PairList* inlist, Environment* env)
-{
-    GCStackRoot<PairList> outlist;
-    unsigned int arg_number = 1;
-    PairList* lastout = 0;
-    while (inlist) {
-	RObject* incar = inlist->car();
-	if (incar == DotsSymbol) {
-	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
-	    if (!bdg)
-		Rf_error(_("'...' used but not bound"));
-	    RObject* h = bdg->value();
-	    if (!h || h->sexptype() == DOTSXP) {
-		ConsCell* dotlist = static_cast<DottedArgs*>(h);
-		while (dotlist) {
-		    RObject* dotcar = dotlist->car();
-		    RObject* outcar = Symbol::missingArgument();
-		    if (dotcar != Symbol::missingArgument())
-			outcar = evaluate(dotcar, env);
-		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
-		    if (!lastout)
-			outlist = lastout = cell;
-		    else {
-			lastout->setTail(cell);
-			lastout = lastout->tail();
-		    }
-		    dotlist = dotlist->tail();
-		}
-	    } else if (h != Symbol::missingArgument())
-		Rf_error(_("'...' used in an incorrect context"));
-	} else {
-	    RObject* outcar = Symbol::missingArgument();
-	    if (incar == Symbol::missingArgument())
-		Rf_error(_("argument %d is empty"), arg_number);
-	    if (Rf_isSymbol(incar)) {
-		Symbol* sym = static_cast<Symbol*>(incar);
-		if (isMissingArgument(sym, env->frame()))
-		    Rf_error(_("'%s' is missing"), sym->name()->c_str());
-	    }
-	    outcar = evaluate(incar, env);
-	    PairList* cell = PairList::cons(outcar, 0, inlist->tag());
-	    if (!lastout)
-		outlist = lastout = cell;
-	    else {
-		lastout->setTail(cell);
-		lastout = lastout->tail();
-	    }
-	}
-	inlist = inlist->tail();
-	++arg_number;
-    }
-    return outlist;
-}
-		
 void Evaluator::setDepthLimit(int depth)
 {
     if (depth < R_MIN_EXPRESSIONS_OPT || depth > R_MAX_EXPRESSIONS_OPT)

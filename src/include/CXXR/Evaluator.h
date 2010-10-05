@@ -254,42 +254,6 @@ namespace CXXR {
 	    return m_innermost_context;
 	}
 
-	/** @brief Map RObject::evaluate() over a PairList.
-	 *
-	 * Except as regards the ... handling described next, this
-	 * function produces an output list of the same length as \a
-	 * inlist, and whose tags are the same as the tags of \a
-	 * inlist, but whose elements ('car' values) are the result of
-	 * evaluating the corresponding elements of \a inlist within
-	 * \a env.
-	 *
-	 * If an element of the list is R_DotsSymbol, its binding
-	 * within \a env is examined.  If it is bound to NULL or to
-	 * Symbol::missingArgument() (R_MissingArg), this element of
-	 * \a inlist is skipped.  If it is bound to a DottedArgs list,
-	 * then this element of \a inlist is replaced by the one or
-	 * more elements resulting from evaluating the elements of the
-	 * DottedArgs list, and carrying across the corresponding
-	 * tags.
-	 *
-	 * If any element of \a inlist is missing (i.e. it is
-	 * Symbol::missingArgument(), or is a Symbol missing within \a
-	 * env), then an error is raised.
-	 *
-	 * @param inlist The PairList to be mapped through
-	 *          RObject::evaluate().
-	 *
-	 * @param env The Environment in which evaluations are to take
-	 *          place.
-	 *
-	 * @return The output list.
-	 *
-	 * @note This function is intended within CXXR to supersede
-	 * CR's evalList() and evalListKeepMissing().
-	 */
-	static PairList* mapEvaluate(const PairList* inlist,
-				     Environment* env);
-
 	/** @brief Is profiling currently enabled?
 	 *
 	 * @return true iff profiling is currently in progress.

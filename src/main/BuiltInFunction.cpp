@@ -41,6 +41,7 @@
 #include "CXXR/BuiltInFunction.h"
 
 #include "Internal.h"
+#include "CXXR/ArgList.hpp"
 #include "CXXR/DotInternal.h"
 #include "CXXR/FunctionContext.hpp"
 #include "CXXR/PlainContext.hpp"
@@ -114,16 +115,16 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     size_t pps_size = ProtectStack::size();
 #endif
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    GCStackRoot<const PairList>
-	callargs(sexptype() == SPECIALSXP ? args
-		 : Evaluator::mapEvaluate(args, env));
+    ArgList arglist(args, false);
+    if (sexptype() == BUILTINSXP)
+	arglist.evaluate(env);
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
-	ans = invoke(call, callargs, env);
+	ans = invoke(call, arglist.list(), env);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	ans = invoke(call, callargs, env);
+	ans = invoke(call, arglist.list(), env);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);

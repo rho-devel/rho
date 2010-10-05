@@ -24,6 +24,7 @@
 #include <set>
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/Promise.h"
 #include "CXXR/errors.h"
 
@@ -31,6 +32,62 @@ using namespace std;
 using namespace CXXR;
 
 // Implementation of ArgList::coerceTag() is in coerce.cpp
+
+void ArgList::evaluate(Environment* env, bool allow_missing)
+{
+    if (m_evaluated)
+	return;
+    GCStackRoot<PairList> outlist(PairList::cons(0));  // Dummy first element
+    PairList* lastout = outlist;
+    unsigned int arg_number = 1;
+    for (const PairList* inp = m_list; inp; inp = inp->tail()) {
+	RObject* incar = inp->car();
+	if (incar == DotsSymbol) {
+	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
+	    if (!bdg)
+		Rf_error(_("'...' used but not bound"));
+	    RObject* h = bdg->value();
+	    if (!h || h->sexptype() == DOTSXP) {
+		ConsCell* dotlist = static_cast<DottedArgs*>(h);
+		while (dotlist) {
+		    RObject* dotcar = dotlist->car();
+		    RObject* outcar = Symbol::missingArgument();
+		    if (dotcar != Symbol::missingArgument())
+			outcar = Evaluator::evaluate(dotcar, env);
+		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
+		    lastout->setTail(cell);
+		    lastout = lastout->tail();
+		    dotlist = dotlist->tail();
+		}
+	    } else if (h != Symbol::missingArgument())
+		Rf_error(_("'...' used in an incorrect context"));
+	} else {
+	    const RObject* tag = inp->tag();
+	    PairList* cell = 0;
+	    if (incar && incar->sexptype() == SYMSXP) {
+		Symbol* sym = static_cast<Symbol*>(incar);
+		if (sym == Symbol::missingArgument()) {
+		    if (allow_missing)
+			cell = PairList::cons(Symbol::missingArgument(), 0, tag);
+		    else Rf_error(_("argument %d is empty"), arg_number);
+		} else if (isMissingArgument(sym, env->frame())) {
+		    if (allow_missing)
+			cell = PairList::cons(Symbol::missingArgument(), 0, tag);
+		    else Rf_error(_("'%s' is missing"), sym->name()->c_str());
+		}
+	    }
+	    if (!cell) {
+		RObject* outcar = Evaluator::evaluate(incar, env);
+		cell = PairList::cons(outcar, 0, inp->tag());
+	    }
+	    lastout->setTail(cell);
+	    lastout = lastout->tail();
+	}
+	++arg_number;
+    }
+    m_list = outlist->tail();
+    m_evaluated = true;
+}
 
 void ArgList::merge(const ConsCell* extraargs)
 {

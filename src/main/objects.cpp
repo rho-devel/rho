@@ -771,7 +771,9 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    GCStackRoot<DottedArgs>
 		dots(SEXP_downcast<DottedArgs*>(bdg->value()));
 	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
-	    matchedarg = ArgMatcher::merge(newargs, matchedarg);
+	    ArgList al(matchedarg, false);
+	    al.merge(newargs);
+	    matchedarg = const_cast<PairList*>(al.list());
 	    newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
 	}
     }

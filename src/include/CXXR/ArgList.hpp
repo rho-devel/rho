@@ -71,6 +71,61 @@ namespace CXXR {
 	    : m_list(args), m_evaluated(evaluated), m_wrapped(false)
 	{}
 
+	/** @brief Evaluate the arguments in the ArgList.
+	 *
+	 * This function is a no-op if the ArgList has already been
+	 * evaluated.
+	 *
+	 * Except as regards the handling of ... and missing values
+	 * described next, this function replaces the argument list
+	 * with a list of the same length as the current list, and
+	 * whose tags are the same as those of the current list, but
+	 * whose elements ('car' values) are the result of evaluating
+	 * the corresponding elements of the current list within \a
+	 * env.
+	 *
+	 * If an element of the list has value R_DotsSymbol, the
+	 * binding of this Symbol within \a env is examined.  If it is
+	 * bound to NULL or to Symbol::missingArgument()
+	 * (R_MissingArg), this element of the current list is
+	 * discarded.  If it is bound to a DottedArgs list, then this
+	 * element of the current list is replaced by the one or more
+	 * elements resulting from evaluating the elements of the
+	 * DottedArgs list, and carrying across the corresponding
+	 * tags.  If the DottedArgs list contains any elements with
+	 * value Symbol::missingArgument(), these are carried through
+	 * unchanged into the resulting list, irrespective of the
+	 * setting of \a allow_missing.  Any other binding of
+	 * R_DotsSymbol within \a env is an error.
+	 *
+	 * If any element of the current list has the value
+	 * Symbol::missingArgument(), then this element of the list is
+	 * carried through unchanged into the resulting list, unless
+	 * \a allow_missing is false, in which case an error is
+	 * raised.
+	 *
+	 * If any element of the current list has as value a Symbol
+	 * missing within \a env, then this is converted in the
+	 * resulting list into an element with the same tag but whose
+	 * value is Symbol::missingArgument().  This applies unless \a
+	 * allow_missing is false, in which case an error is raised.
+	 *
+	 * @param env The Environment in which evaluations are to take
+	 *          place.
+	 *
+	 * @param allow_missing This affects the handling of any
+	 *          elements of the current list whose value is either
+	 *          Symbol::missingArgument() or a Symbol which is
+	 *          missing within \a env.  If \a allow_missing is
+	 *          true, such elements are carried through unchanged
+	 *          into the resulting list; otherwise, such elements
+	 *          cause an error to be raised.
+	 *
+	 * @note This function is intended within CXXR to supersede
+	 * CR's evalList() and evalListKeepMissing().
+	 */
+	void evaluate(Environment* env, bool allow_missing = false);
+
 	/** @brief Access the argument list as a PairList.
 	 *
 	 * @return pointer, possibly null, to the list of arguments in
