@@ -1289,51 +1289,9 @@ SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP call, int n)
 /* used in evalArgs, arithmetic.c, seq.c */
 SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
 {
-    SEXP ans, h, tail;
-
-    PROTECT(ans = tail = CONS(R_NilValue, R_NilValue));
-
-    while (el != R_NilValue) {
-
-	/* If we have a ... symbol, we look to see what it is bound to.
-	 * If its binding is Null (i.e. zero length)
-	 *	we just ignore it and return the cdr with all its expressions evaluated;
-	 * if it is bound to a ... list of promises,
-	 *	we force all the promises and then splice
-	 *	the list of resulting values into the return value.
-	 * Anything else bound to a ... symbol is an error
-	*/
-	if (CAR(el) == R_DotsSymbol) {
-	    h = Rf_findVar(CAR(el), rho);
-	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
-		while (h != R_NilValue) {
-		    if (CAR(h) == R_MissingArg)
-			SETCDR(tail, CONS(R_MissingArg, R_NilValue));
-		    else
-			SETCDR(tail, CONS(Rf_eval(CAR(h), rho), R_NilValue));
-		    tail = CDR(tail);
-		    COPY_TAG(tail, h);
-		    h = CDR(h);
-		}
-	    }
-	    else if(h != R_MissingArg)
-		Rf_error(_("'...' used in an incorrect context"));
-	}
-	else if (CAR(el) == R_MissingArg ||
-                 (Rf_isSymbol(CAR(el)) && R_isMissing(CAR(el), rho))) {
-	    SETCDR(tail, CONS(R_MissingArg, R_NilValue));
-	    tail = CDR(tail);
-	    COPY_TAG(tail, el);
-	}
-	else {
-	    SETCDR(tail, CONS(Rf_eval(CAR(el), rho), R_NilValue));
-	    tail = CDR(tail);
-	    COPY_TAG(tail, el);
-	}
-	el = CDR(el);
-    }
-    UNPROTECT(1);
-    return CDR(ans);
+    ArgList arglist(SEXP_downcast<PairList*>(el), false);
+    arglist.evaluate(SEXP_downcast<Environment*>(rho), true);
+    return const_cast<PairList*>(arglist.list());
 }
 
 static SEXP VectorToPairListNamed(SEXP x)
