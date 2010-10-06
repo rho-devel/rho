@@ -60,16 +60,22 @@ namespace CXXR {
 	/** @brief Constructor.
 	 *
 	 * @param args Pointer, possibly null, to a PairList of
-	 *          arguments supplied in a call of a FunctionBase.
-	 *          The calling code must not modify \a args after
-	 *          calling this constructor.
+	 *          unevaluated arguments supplied in a call of a
+	 *          FunctionBase.  The calling code must not modify \a
+	 *          args after calling this constructor.
 	 *
-	 * @param evaluated true iff the arguments in \a args have
-	 *          already been evaluated.
+	 * @param promise_wrapped true iff the arguments in \a args have
+	 *          already been wrapped in Promise objects in the
+	 *          manner of wrapInPromises().
+	 *
+	 * @note It is the intention in due course to carry out all
+	 * manipulations of argument lists within the ArgList class,
+	 * and when that happens the \a promise_wrapped argument will
+	 * be abolished.
 	 */
-	ArgList(const PairList* args, bool evaluated)
+	ArgList(const PairList* args, bool promise_wrapped)
 	    : m_list(PairList::cons(0, const_cast<PairList*>(args))),
-	      m_evaluated(evaluated), m_wrapped(false)
+	      m_evaluated(false), m_wrapped(promise_wrapped)
 	{}
 
 	/** @brief Evaluate the arguments in the ArgList.
@@ -127,6 +133,16 @@ namespace CXXR {
 	 */
 	void evaluate(Environment* env, bool allow_missing = false);
 
+	/** @brief Has this ArgList been evaluated?
+	 *
+	 * @return true iff this ArgList has been evaluated (by
+	 * calling evaluate()).
+	 */
+	bool evaluated() const
+	{
+	    return m_evaluated;
+	}
+
 	/** @brief Access the argument list as a PairList.
 	 *
 	 * @return pointer, possibly null, to the list of arguments in
@@ -146,13 +162,24 @@ namespace CXXR {
 	 * newargs, that element of the current ArgList is discarded
 	 * in the result.
 	 *
+	 * It is an error to call this function if the ArgList has
+	 * already been evaluated.
+	 *
 	 * @param extraargs Pointer, possibly null, to a list whose
-	 *          elements represent unevaluated argument values.
-	 *          It is an error to call this function if the
-	 *          ArgList has already been evaluated or wrapped in
-	 *          Promises.
+	 *          elements represent Promise-wrapped argument values.
 	 */
 	void merge(const ConsCell* extraargs);
+
+	/** @brief Are these arguments wrapped in Promise objects?
+	 *
+	 * @return true iff the arguments in the list have been
+	 *           wrapped in Promise objects in the manner effected
+	 *           by wrapInPromises().
+	 */
+	bool promiseWrapped() const
+	{
+	    return m_wrapped;
+	}
 
 	/** @brief Convert tag of supplied argument to a Symbol.
 	 *

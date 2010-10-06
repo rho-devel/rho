@@ -49,6 +49,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -130,6 +131,10 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Expression* call,
 			 const Frame* method_bindings) const
 {
+#ifndef NDEBUG
+    if (!arglist->promiseWrapped())
+	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
+#endif
     // +5 to allow some capacity for local variables:
     GCStackRoot<Environment>
 	newenv(expose(new Environment(environment(),

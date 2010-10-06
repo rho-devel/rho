@@ -338,7 +338,7 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(method_symbol);
-    ArgList arglist(matchedarg, false);
+    ArgList arglist(matchedarg, true);
     *ans = applyMethod(newcall, method, &arglist, env, newframe);
     return 1;
 }
@@ -607,7 +607,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    ArgList newarglist(matchedarg, false);  // ***** FIXME *****
+    ArgList newarglist(matchedarg, true);
 
     /*
       .Class is used to determine the next method; if it doesn't
@@ -1358,7 +1358,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rf_error(_("dispatch error"));
 		argspl = pargs;
 	    }
-	    ArgList al2(argspl, false);
+	    ArgList al2(argspl, true);
 	    value = func->invoke(callenv, &al2, callx);
 	    return make_pair(true, value);
 	}
@@ -1386,7 +1386,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Rf_error(_("dispatch error"));
 	argspl = pargs;
     }
-    ArgList al3(argspl, false);
+    ArgList al3(argspl, true);
     value = func->invoke(callenv, &al3, callx);
     prim_methods[offset] = current;
     if (value == deferred_default_object)

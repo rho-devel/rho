@@ -144,9 +144,9 @@ namespace CXXR {
 	 * @param env Non-null pointer to the Environment in which the
 	 *          function is to be evaluated.
 	 *
-	 * @param arglist Non-null pointer to the ArgList containing
-	 *          the arguments with which the function is to be
-	 *          invoked.
+	 * @param arglist Non-null pointer to the promise-wrapped
+	 *          ArgList containing the arguments with which the
+	 *          function is to be invoked.
 	 *
 	 * @param call Pointer to the Expression calling the function.
 	 *

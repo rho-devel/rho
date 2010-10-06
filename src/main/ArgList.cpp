@@ -91,8 +91,8 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 
 void ArgList::merge(const ConsCell* extraargs)
 {
-    if (m_evaluated || m_wrapped)
-	Rf_error("Internal error in ArgList::merge()");
+    if (m_evaluated)
+	Rf_error("Internal error: evaluated ArgList in ArgList::merge()");
     GCStackRoot<const PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -115,6 +115,8 @@ void ArgList::merge(const ConsCell* extraargs)
 	    
 void ArgList::wrapInPromises(Environment* env)
 {
+    if (m_wrapped)
+	Rf_error("Internal error: ArgList already promise-wrapped");
     GCStackRoot<PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;

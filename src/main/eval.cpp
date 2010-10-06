@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    ArgList arglist(cptr->promiseArgs(), false);  // ***** FIXME *****
+    ArgList arglist(cptr->promiseArgs(), true);
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1951,7 +1951,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
 	Expression* callx = SEXP_downcast<Expression*>(t);
-	ArgList arglist(SEXP_downcast<PairList*>(s), false);
+	ArgList arglist(SEXP_downcast<PairList*>(s), true);
 	Environment* callenv = SEXP_downcast<Environment*>(rho);
 	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
 	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
@@ -3040,7 +3040,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	case CLOSXP: {
 	    Closure* closure = SEXP_downcast<Closure*>(fun);
 	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), false);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), true);
 	    Environment* callenv = SEXP_downcast<Environment*>(rho);
 	    value = closure->invoke(callenv, &arglist, callx);
 	    break;
