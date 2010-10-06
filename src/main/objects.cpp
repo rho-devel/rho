@@ -132,7 +132,7 @@ void R_warn_S3_for_S4(SEXP method) {
 }
 #endif
 
-/*  usemethod  -  calling functions need to evaluate the object
+/*  Rf_usemethod  -  calling functions need to evaluate the object
  *  (== 2nd argument).	They also need to ensure that the
  *  argument list is set up in the correct manner.
  *
@@ -198,8 +198,8 @@ int Rf_isBasicClass(const char *ss) {
     
     
 // Note the fourth argument is not used.
-int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
-	      SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
+int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
+		 SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
 {
     Environment* env = SEXP_downcast<Environment*>(rho);
     Environment* callenv = SEXP_downcast<Environment*>(callrho);
@@ -338,14 +338,14 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(method_symbol);
-    ArgList arglist(matchedarg, true);
+    ArgList arglist(matchedarg, false, true);
     *ans = applyMethod(newcall, method, &arglist, env, newframe);
     return 1;
 }
 
 /* Note: "do_usemethod" is not the only entry point to
-   "usemethod". Things like [ and [[ call usemethod directly,
-   hence do_usemethod should just be an interface to usemethod.
+   "Rf_usemethod". Things like [ and [[ call Rf_usemethod directly,
+   hence do_usemethod should just be an interface to Rf_usemethod.
  */
 
 /* This is a primitive SPECIALSXP */
@@ -369,7 +369,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    matcher(ArgMatcher::make(genericsym, objectsym));
 	GCStackRoot<Environment>
 	    matchenv(GCNode::expose(new Environment(0, 2)));
-	ArgList arglist(SEXP_downcast<PairList*>(args), false);
+	ArgList arglist(SEXP_downcast<PairList*>(args), false, false);
 	matcher->match(matchenv, &arglist);
 
 	// "generic":
@@ -423,8 +423,8 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Try invoking method:
     SEXP ans;
-    if (usemethod(Rf_translateChar((*generic)[0]), obj, call, 0,
-		  env, callenv, defenv, &ans) != 1) {
+    if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, 0,
+		     env, callenv, defenv, &ans) != 1) {
 	// Failed, so prepare error message:
 	string cl;
 	GCStackRoot<StringVector>
@@ -556,7 +556,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
     SEXP formals = FORMALS(genclos);
-    GCStackRoot<> actuals(matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
+    GCStackRoot<> actuals(Rf_matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
     {
 	int i = 0;
 	for(SEXP s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
@@ -601,13 +601,13 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 			SEXP tmp = Rf_findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
 			if (tmp == R_MissingArg) break;
 		    }
-		    SETCAR(t, mkPROMISE(TAG(m), cptr->workingEnvironment()));
+		    SETCAR(t, Rf_mkPROMISE(TAG(m), cptr->workingEnvironment()));
 		    break;
 		}
 	}
     }
 
-    ArgList newarglist(matchedarg, true);
+    ArgList newarglist(matchedarg, false, true);
 
     /*
       .Class is used to determine the next method; if it doesn't
@@ -821,7 +821,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_unclass(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
     switch(TYPEOF(CAR(args))) {
     case ENVSXP:
@@ -901,13 +901,13 @@ SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 		if(isvec)
 		   INTEGER(rval)[j] = i+1;
 		else
-		    return mkTrue();
+		    return Rf_mkTrue();
 		break;
 	    }
 	}
     }
     if(!isvec)
-	return mkFalse();
+	return Rf_mkFalse();
     return rval;
 }
 
@@ -1027,7 +1027,7 @@ SEXP attribute_hidden do_standardGeneric(SEXP call, SEXP op, SEXP args, SEXP env
     SEXP arg, value, fdef; R_stdGen_ptr_t ptr = R_get_standardGeneric_ptr();
 
     checkArity(op, args);
-    check1arg(args, call, "f");
+    Rf_check1arg(args, call, "f");
 
     if(!ptr) {
 	Rf_warningcall(call,
@@ -1074,7 +1074,7 @@ SEXP R_set_prim_method(SEXP fname, SEXP op, SEXP code_vec, SEXP fundef,
      recursion in methods computations*/
     if(op == R_NilValue) {
 	SEXP value;
-	value = allowPrimitiveMethods ? mkTrue() : mkFalse();
+	value = allowPrimitiveMethods ? Rf_mkTrue() : Rf_mkFalse();
 	switch(code_string[0]) {
 	case 'c': case 'C':/* clear */
 	    allowPrimitiveMethods = FALSE; break;
@@ -1247,7 +1247,7 @@ static SEXP get_this_generic(SEXP args)
 	gen_name = Rf_install("generic");
     cptr = ClosureContext::innermost();
     fname = Rf_translateChar(Rf_asChar(CAR(args)));
-    n = framedepth(cptr);
+    n = Rf_framedepth(cptr);
     /* check for a matching "generic" slot */
     for(i=0;  i<n; i++) {
 	SEXP rval = R_sysfunction(i, cptr);
@@ -1304,7 +1304,7 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
    the methods be set up to return a special object rather than trying
    to evaluate the default (which would get us into a loop). */
 
-/* called from DispatchOrEval, DispatchGroup, do_matprod
+/* called from DispatchOrEval, Rf_DispatchGroup, do_matprod
    When called from the first the arguments have been enclosed in
    promises, but not from the other two: there all the arguments have
    already been evaluated.
@@ -1345,7 +1345,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
 	    if(!promisedArgs) {
-		ArgList al(callx->tail(), false);
+		ArgList al(callx->tail(), false, false);
 		al.wrapInPromises(callenv);
 		PairList* pargs = const_cast<PairList*>(al.list());
 		PairList *a, *b;
@@ -1358,7 +1358,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rf_error(_("dispatch error"));
 		argspl = pargs;
 	    }
-	    ArgList al2(argspl, true);
+	    ArgList al2(argspl, false, true);
 	    value = func->invoke(callenv, &al2, callx);
 	    return make_pair(true, value);
 	}
@@ -1373,7 +1373,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
     if(!promisedArgs) {
-	ArgList al(callx->tail(), false);
+	ArgList al(callx->tail(), false, false);
 	al.wrapInPromises(callenv);
 	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
@@ -1386,7 +1386,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Rf_error(_("dispatch error"));
 	argspl = pargs;
     }
-    ArgList al3(argspl, true);
+    ArgList al3(argspl, false, true);
     value = func->invoke(callenv, &al3, callx);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
@@ -1469,8 +1469,8 @@ Rboolean attribute_hidden R_seemsOldStyleS4Object(SEXP object)
 
 SEXP R_isS4Object(SEXP object)
 {
-    /* wanted: return isS4(object) ? mkTrue() : mkFalse(); */
-    return IS_S4_OBJECT(object) ? mkTrue() : mkFalse(); ;
+    /* wanted: return isS4(object) ? Rf_mkTrue() : Rf_mkFalse(); */
+    return IS_S4_OBJECT(object) ? Rf_mkTrue() : Rf_mkFalse(); ;
 }
 
 SEXP R_setS4Object(SEXP object, SEXP onOff, SEXP do_complete)

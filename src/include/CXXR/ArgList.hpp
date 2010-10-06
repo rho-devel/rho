@@ -64,6 +64,9 @@ namespace CXXR {
 	 *          FunctionBase.  The calling code must not modify \a
 	 *          args after calling this constructor.
 	 *
+	 * @param evaluated true iff the arguments in \a args have
+	 *          already been evaluated.
+	 *
 	 * @param promise_wrapped true iff the arguments in \a args have
 	 *          already been wrapped in Promise objects in the
 	 *          manner of wrapInPromises().
@@ -73,9 +76,9 @@ namespace CXXR {
 	 * and when that happens the \a promise_wrapped argument will
 	 * be abolished.
 	 */
-	ArgList(const PairList* args, bool promise_wrapped)
+	ArgList(const PairList* args, bool evaluated, bool promise_wrapped)
 	    : m_list(PairList::cons(0, const_cast<PairList*>(args))),
-	      m_evaluated(false), m_wrapped(promise_wrapped)
+	      m_evaluated(evaluated), m_wrapped(promise_wrapped)
 	{}
 
 	/** @brief Evaluate the arguments in the ArgList.
@@ -118,7 +121,9 @@ namespace CXXR {
 	 * allow_missing is false, in which case an error is raised.
 	 *
 	 * @param env The Environment in which evaluations are to take
-	 *          place.
+	 *          place.  If firstArg() has previously been called
+	 *          for this ArgList, then \a env must be identical to
+	 *          the \a env argument of that firstArg() call.
 	 *
 	 * @param allow_missing This affects the handling of any
 	 *          elements of the current list whose value is either
@@ -142,6 +147,40 @@ namespace CXXR {
 	{
 	    return m_evaluated;
 	}
+
+	/** @brief Get the first argument.
+	 *
+	 * This function accesses the value of the first argument in
+	 * the ArgList, evaluating it in \a env if the ArgList has not
+	 * already been evaluated.
+	 *
+	 * However, if the first argument is DotsSymbol (...), the
+	 * binding of this Symbol within \a env is examined.  If it is
+	 * bound to a DottedArgs list, the return value is the value
+	 * of the first element is this DottedArgs list, evaluated if
+	 * necessary.
+	 *
+	 * In seeking the first argument of the ArgList, the function
+	 * ignores any initial elements of the ArgList whose value is
+	 * DotsSymbol (...) if the binding of this Symbol within \a
+	 * env is NULL or Symbol::missingArgument().  Any other binding of
+	 * DotsSymbol is an error; it is also an error is a DotsSymbol
+	 * argument is encountered but DotsSymbol is unbound within \a
+	 * env.
+	 *
+	 * If evaluation of the first argument takes place, the class
+	 * records this fact, and takes steps to ensure that it is not
+	 * subsequently reevaluated.
+	 *
+	 * @param env Pointer to the Environment in which the first
+	 *          argument is to be evaluated.  If the ArgList has
+	 *          already been evaluated, this pointer can be null.
+	 *
+	 * @return The result of evaluating the first argument.  A
+	 * null pointer is returned if, following the procedure
+	 * described above, no first argument was found.
+	 */
+	RObject* firstArg(Environment* env);
 
 	/** @brief Access the argument list as a PairList.
 	 *
@@ -253,6 +292,11 @@ namespace CXXR {
 				// constructor casts const away when
 				// it initialises this data member.
 	bool m_evaluated, m_wrapped;
+
+	// Not implemented.  Declared private to suppress
+	// compiler-generated versions:
+	ArgList(const ArgList&);
+	ArgList& operator=(const ArgList&);
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
 	static const Symbol* coerceTag(const RObject* tag);

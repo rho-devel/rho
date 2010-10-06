@@ -134,14 +134,14 @@ LogicalFromString(SEXP x, int *warn)
 }
 
 int attribute_hidden
-IntegerFromLogical(int x, int *warn)
+Rf_IntegerFromLogical(int x, int *warn)
 {
     return (x == NA_LOGICAL) ?
 	NA_INTEGER : x;
 }
 
 int attribute_hidden
-IntegerFromReal(double x, int *warn)
+Rf_IntegerFromReal(double x, int *warn)
 {
     if (ISNAN(x))
 	return NA_INTEGER;
@@ -153,7 +153,7 @@ IntegerFromReal(double x, int *warn)
 }
 
 int attribute_hidden
-IntegerFromComplex(Rcomplex x, int *warn)
+Rf_IntegerFromComplex(Rcomplex x, int *warn)
 {
     if (ISNAN(x.r) || ISNAN(x.i))
 	return NA_INTEGER;
@@ -168,7 +168,7 @@ IntegerFromComplex(Rcomplex x, int *warn)
 
 
 int attribute_hidden
-IntegerFromString(SEXP x, int *warn)
+Rf_IntegerFromString(SEXP x, int *warn)
 {
     double xdouble;
     char *endp;
@@ -305,7 +305,7 @@ ComplexFromString(SEXP x, int *warn)
     return z;
 }
 
-SEXP attribute_hidden StringFromLogical(int x, int *warn)
+SEXP attribute_hidden Rf_StringFromLogical(int x, int *warn)
 {
     int w;
     formatLogical(&x, 1, &w);
@@ -313,7 +313,7 @@ SEXP attribute_hidden StringFromLogical(int x, int *warn)
     else return Rf_mkChar(EncodeLogical(x, w));
 }
 
-SEXP attribute_hidden StringFromInteger(int x, int *warn)
+SEXP attribute_hidden Rf_StringFromInteger(int x, int *warn)
 {
     int w;
     formatInteger(&x, 1, &w);
@@ -340,7 +340,7 @@ static const char* dropTrailing0(char *s, char cdec)
     return s;
 }
 
-SEXP attribute_hidden StringFromReal(double x, int *warn)
+SEXP attribute_hidden Rf_StringFromReal(double x, int *warn)
 {
     int w, d, e;
     formatReal(&x, 1, &w, &d, &e, 0);
@@ -355,7 +355,7 @@ SEXP attribute_hidden StringFromReal(double x, int *warn)
     }
 }
 
-SEXP attribute_hidden StringFromComplex(Rcomplex x, int *warn)
+SEXP attribute_hidden Rf_StringFromComplex(Rcomplex x, int *warn)
 {
     int wr, dr, er, wi, di, ei;
     formatComplex(&x, 1, &wr, &dr, &er, &wi, &di, &ei, 0);
@@ -434,16 +434,16 @@ static SEXP coerceToSymbol(SEXP v)
     PROTECT(v);
     switch(TYPEOF(v)) {
     case LGLSXP:
-	ans = StringFromLogical(LOGICAL(v)[0], &warn);
+	ans = Rf_StringFromLogical(LOGICAL(v)[0], &warn);
 	break;
     case INTSXP:
-	ans = StringFromInteger(INTEGER(v)[0], &warn);
+	ans = Rf_StringFromInteger(INTEGER(v)[0], &warn);
 	break;
     case REALSXP:
-	ans = StringFromReal(REAL(v)[0], &warn);
+	ans = Rf_StringFromReal(REAL(v)[0], &warn);
 	break;
     case CPLXSXP:
-	ans = StringFromComplex(COMPLEX(v)[0], &warn);
+	ans = Rf_StringFromComplex(COMPLEX(v)[0], &warn);
 	break;
     case STRSXP:
 	ans = STRING_ELT(v, 0);
@@ -516,19 +516,19 @@ static SEXP coerceToInteger(SEXP v)
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = IntegerFromLogical(LOGICAL(v)[i], &warn);
+	    INTEGER(ans)[i] = Rf_IntegerFromLogical(LOGICAL(v)[i], &warn);
 	    break;
     case REALSXP:
 	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = IntegerFromReal(REAL(v)[i], &warn);
+	    INTEGER(ans)[i] = Rf_IntegerFromReal(REAL(v)[i], &warn);
 	break;
     case CPLXSXP:
 	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = IntegerFromComplex(COMPLEX(v)[i], &warn);
+	    INTEGER(ans)[i] = Rf_IntegerFromComplex(COMPLEX(v)[i], &warn);
 	break;
     case STRSXP:
 	for (i = 0; i < n; i++)
-	    INTEGER(ans)[i] = IntegerFromString(STRING_ELT(v, i), &warn);
+	    INTEGER(ans)[i] = Rf_IntegerFromString(STRING_ELT(v, i), &warn);
 	break;
     case RAWSXP:
 	for (i = 0; i < n; i++)
@@ -640,7 +640,7 @@ static SEXP coerceToRaw(SEXP v)
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++) {
-	    tmp = IntegerFromLogical(LOGICAL(v)[i], &warn);
+	    tmp = Rf_IntegerFromLogical(LOGICAL(v)[i], &warn);
 	    if(tmp == NA_INTEGER) {
 		tmp = 0;
 		warn |= WARN_RAW;
@@ -660,7 +660,7 @@ static SEXP coerceToRaw(SEXP v)
 	break;
     case REALSXP:
 	for (i = 0; i < n; i++) {
-	    tmp = IntegerFromReal(REAL(v)[i], &warn);
+	    tmp = Rf_IntegerFromReal(REAL(v)[i], &warn);
 	    if(tmp == NA_INTEGER || tmp < 0 || tmp > 255) {
 		tmp = 0;
 		warn |= WARN_RAW;
@@ -670,7 +670,7 @@ static SEXP coerceToRaw(SEXP v)
 	break;
     case CPLXSXP:
 	for (i = 0; i < n; i++) {
-	    tmp = IntegerFromComplex(COMPLEX(v)[i], &warn);
+	    tmp = Rf_IntegerFromComplex(COMPLEX(v)[i], &warn);
 	    if(tmp == NA_INTEGER || tmp < 0 || tmp > 255) {
 		tmp = 0;
 		warn |= WARN_RAW;
@@ -680,7 +680,7 @@ static SEXP coerceToRaw(SEXP v)
 	break;
     case STRSXP:
 	for (i = 0; i < n; i++) {
-	    tmp = IntegerFromString(STRING_ELT(v, i), &warn);
+	    tmp = Rf_IntegerFromString(STRING_ELT(v, i), &warn);
 	    if(tmp == NA_INTEGER || tmp < 0 || tmp > 255) {
 		tmp = 0;
 		warn |= WARN_RAW;
@@ -711,24 +711,24 @@ static SEXP coerceToString(SEXP v)
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
-	    SET_STRING_ELT(ans, i, StringFromLogical(LOGICAL(v)[i], &warn));
+	    SET_STRING_ELT(ans, i, Rf_StringFromLogical(LOGICAL(v)[i], &warn));
 	break;
     case INTSXP:
 	for (i = 0; i < n; i++)
-	    SET_STRING_ELT(ans, i, StringFromInteger(INTEGER(v)[i], &warn));
+	    SET_STRING_ELT(ans, i, Rf_StringFromInteger(INTEGER(v)[i], &warn));
 	break;
     case REALSXP:
-	PrintDefaults(R_NilValue);
+	Rf_PrintDefaults(R_NilValue);
 	savedigits = R_print.digits; R_print.digits = DBL_DIG;/* MAX precision */
 	for (i = 0; i < n; i++)
-	    SET_STRING_ELT(ans, i, StringFromReal(REAL(v)[i], &warn));
+	    SET_STRING_ELT(ans, i, Rf_StringFromReal(REAL(v)[i], &warn));
 	R_print.digits = savedigits;
 	break;
     case CPLXSXP:
-	PrintDefaults(R_NilValue);
+	Rf_PrintDefaults(R_NilValue);
 	savedigits = R_print.digits; R_print.digits = DBL_DIG;/* MAX precision */
 	for (i = 0; i < n; i++)
-	    SET_STRING_ELT(ans, i, StringFromComplex(COMPLEX(v)[i], &warn));
+	    SET_STRING_ELT(ans, i, Rf_StringFromComplex(COMPLEX(v)[i], &warn));
 	R_print.digits = savedigits;
 	break;
     case RAWSXP:
@@ -921,7 +921,7 @@ static SEXP coercePairList(SEXP v, SEXPTYPE type)
 	    if (Rf_isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(rval, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(rval, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
+		SET_STRING_ELT(rval, i, STRING_ELT(Rf_deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
     }
     else if (type == VECSXP) {
@@ -1026,7 +1026,7 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
 #endif
 	    else
 		SET_STRING_ELT(rval, i,
-			       STRING_ELT(deparse1line(elt, CXXRFALSE), 0));
+			       STRING_ELT(Rf_deparse1line(elt, CXXRFALSE), 0));
 	}
     }
     else if (type == LISTSXP) {
@@ -1157,7 +1157,7 @@ SEXP Rf_coerceVector(SEXP v, SEXPTYPE type)
 	    if (Rf_isString(CAR(vp)) && length(CAR(vp)) == 1)
 		SET_STRING_ELT(ans, i, STRING_ELT(CAR(vp), 0));
 	    else
-		SET_STRING_ELT(ans, i, STRING_ELT(deparse1line(CAR(vp), CXXRFALSE), 0));
+		SET_STRING_ELT(ans, i, STRING_ELT(Rf_deparse1line(CAR(vp), CXXRFALSE), 0));
 	}
 	UNPROTECT(1);
 	break;
@@ -1222,7 +1222,7 @@ SEXP Rf_CreateTag(SEXP x)
 	&& length(STRING_ELT(x, 0)) >= 1)
 	x = Rf_install(Rf_translateChar(STRING_ELT(x, 0)));
     else
-	x = Rf_install(CHAR(STRING_ELT(deparse1(x, CXXRTRUE, SIMPLEDEPARSE), 0)));
+	x = Rf_install(CHAR(STRING_ELT(Rf_deparse1(x, CXXRTRUE, SIMPLEDEPARSE), 0)));
     return x;
 }
 
@@ -1235,7 +1235,7 @@ static SEXP asFunction(SEXP x)
     else PROTECT(x);
 
     if (Rf_isNull(x) || !Rf_isList(x)) {
-	f = mkCLOSXP(0, x, R_GlobalEnv);
+	f = Rf_mkCLOSXP(0, x, R_GlobalEnv);
     }
     else {
 	n = length(x);
@@ -1253,7 +1253,7 @@ static SEXP asFunction(SEXP x)
 	    pf = CDR(pf);
 	    x = CDR(x);
 	}
-	f = mkCLOSXP(formals, CAR(x), R_GlobalEnv);
+	f = Rf_mkCLOSXP(formals, CAR(x), R_GlobalEnv);
     }
     UNPROTECT(1);
     return f;
@@ -1332,7 +1332,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
     int op0 = PRIMVAL(op);
     CXXRCONST char *name = NULL /* -Wall */;
 
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
     switch(op0) {
 	case 0:
 	    name = "as.character"; break;
@@ -1347,7 +1347,7 @@ SEXP attribute_hidden do_ascharacter(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 5:
 	    name = "as.raw"; type = RAWSXP; break;
     }
-    if (DispatchOrEval(call, op, name, args, rho, &ans, 0, 1))
+    if (Rf_DispatchOrEval(call, op, name, args, rho, &ans, 0, 1))
 	return(ans);
 
     /* Method dispatch has failed, we now just */
@@ -1367,7 +1367,7 @@ SEXP attribute_hidden do_asvector(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP x, ans;
     SEXPTYPE type;
 
-    if (DispatchOrEval(call, op, "as.vector", args, rho, &ans, 0, 1))
+    if (Rf_DispatchOrEval(call, op, "as.vector", args, rho, &ans, 0, 1))
 	return(ans);
 
     /* Method dispatch has failed, we now just */
@@ -1478,7 +1478,7 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(body = VECTOR_ELT(arglist, n-1));
     /* the main (only?) thing to rule out is body being
        a function already. If we test here then
-       mkCLOSXP can continue to overreact when its
+       Rf_mkCLOSXP can continue to overreact when its
        test fails (PR#1880, 7535, 7702) */
     if(Rf_isList(body) || Rf_isLanguage(body) || Rf_isSymbol(body)
        || Rf_isExpression(body) || Rf_isVector(body)
@@ -1486,7 +1486,7 @@ SEXP attribute_hidden do_asfunction(SEXP call, SEXP op, SEXP args, SEXP rho)
        || isByteCode(body)
 #endif
        )
-	    args =  mkCLOSXP(args, body, envir);
+	    args =  Rf_mkCLOSXP(args, body, envir);
     else
 	    Rf_errorcall(call, _("invalid body for function"));
     UNPROTECT(2);
@@ -1501,7 +1501,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
     args = CAR(args);
     switch (TYPEOF(args)) {
@@ -1593,26 +1593,26 @@ int Rf_asInteger(SEXP x)
     if (Rf_isVectorAtomic(x) && LENGTH(x) >= 1) {
 	switch (TYPEOF(x)) {
 	case LGLSXP:
-	    return IntegerFromLogical(LOGICAL(x)[0], &warn);
+	    return Rf_IntegerFromLogical(LOGICAL(x)[0], &warn);
 	case INTSXP:
 	    return INTEGER(x)[0];
 	case REALSXP:
-	    res = IntegerFromReal(REAL(x)[0], &warn);
+	    res = Rf_IntegerFromReal(REAL(x)[0], &warn);
 	    CoercionWarning(warn);
 	    return res;
 	case CPLXSXP:
-	    res = IntegerFromComplex(COMPLEX(x)[0], &warn);
+	    res = Rf_IntegerFromComplex(COMPLEX(x)[0], &warn);
 	    CoercionWarning(warn);
 	    return res;
 	case STRSXP:
-	    res = IntegerFromString(STRING_ELT(x, 0), &warn);
+	    res = Rf_IntegerFromString(STRING_ELT(x, 0), &warn);
 	    CoercionWarning(warn);
 	    return res;
 	default:
 	    UNIMPLEMENTED_TYPE("asInteger", x);
 	}
     } else if(TYPEOF(x) == CHARSXP) {
-	res = IntegerFromString(x, &warn);
+	res = Rf_IntegerFromString(x, &warn);
 	CoercionWarning(warn);
 	return res;
     }
@@ -1708,10 +1708,10 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
     /* These are all builtins, so we do not need to worry about
-       evaluating arguments in DispatchOrEval */
+       evaluating arguments in Rf_DispatchOrEval */
     if(PRIMVAL(op) >= 100 && PRIMVAL(op) < 200 &&
        Rf_isObject(CAR(args))) {
 	/* This used CHAR(PRINTNAME(CAR(call))), but that is not
@@ -1723,7 +1723,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 102: nm = "is.array"; break;
 	default: nm = ""; /* -Wall */
 	}
-	if(DispatchOrEval(call, op, nm, args, rho, &ans, 0, 1))
+	if(Rf_DispatchOrEval(call, op, nm, args, rho, &ans, 0, 1))
 	    return(ans);
     }
 
@@ -1930,9 +1930,9 @@ SEXP attribute_hidden do_isna(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
-    if (DispatchOrEval(call, op, "is.na", args, rho, &ans, 1, 1))
+    if (Rf_DispatchOrEval(call, op, "is.na", args, rho, &ans, 1, 1))
 	return(ans);
     PROTECT(args = ans);
 #ifdef stringent_is
@@ -2043,9 +2043,9 @@ SEXP attribute_hidden do_isnan(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
-    if (DispatchOrEval(call, op, "is.nan", args, rho, &ans, 1, 1))
+    if (Rf_DispatchOrEval(call, op, "is.nan", args, rho, &ans, 1, 1))
 	return(ans);
 
     PROTECT(args = ans);
@@ -2120,9 +2120,9 @@ SEXP attribute_hidden do_isfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
-    if (DispatchOrEval(call, op, "is.finite", args, rho, &ans, 0, 1))
+    if (Rf_DispatchOrEval(call, op, "is.finite", args, rho, &ans, 0, 1))
 	return(ans);
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
@@ -2175,9 +2175,9 @@ SEXP attribute_hidden do_isinfinite(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, n;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
-    if (DispatchOrEval(call, op, "is.infinite", args, rho, &ans, 0, 1))
+    if (Rf_DispatchOrEval(call, op, "is.infinite", args, rho, &ans, 0, 1))
 	return(ans);
 #ifdef stringent_is
     if (!Rf_isList(CAR(args)) && !Rf_isVector(CAR(args)))
@@ -2235,7 +2235,7 @@ SEXP attribute_hidden do_call(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP rest, evargs, rfun;
 
     if (length(args) < 1) Rf_errorcall(call, _("'name' is missing"));
-    check1arg(args, call, "name");
+    Rf_check1arg(args, call, "name");
     PROTECT(rfun = Rf_eval(CAR(args), rho));
     /* zero-length string check used to be here but Rf_install gives
        better error message.
@@ -2293,8 +2293,8 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SETCAR(c, mkPROMISE(VECTOR_ELT(args, i), rho));
 	SET_PRVALUE(CAR(c), VECTOR_ELT(args, i)); */
 #endif
-	if (ItemName(names, i) != R_NilValue)
-	    SET_TAG(c, Rf_install(Rf_translateChar(ItemName(names, i))));
+	if (Rf_ItemName(names, i) != R_NilValue)
+	    SET_TAG(c, Rf_install(Rf_translateChar(Rf_ItemName(names, i))));
 	c = CDR(c);
     }
     call = Rf_eval(call, envir);
@@ -2423,7 +2423,7 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     PROTECT(ap = Rf_list2(R_NilValue, R_NilValue));
     SET_TAG(ap,  Rf_install("expr"));
     SET_TAG(CDR(ap), Rf_install("env"));
-    PROTECT(argList = matchArgs(ap, args, call));
+    PROTECT(argList = Rf_matchArgs(ap, args, call));
 
     /* set up the environment for substitution */
     if (CADR(argList) == R_MissingArg)
@@ -2433,9 +2433,9 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (env == R_GlobalEnv)	/* For historical reasons, don't substitute in R_GlobalEnv */
 	env = R_NilValue;
     else if (TYPEOF(env) == VECSXP)
-	env = NewEnvironment(R_NilValue, Rf_VectorToPairList(env), R_BaseEnv);
+	env = Rf_NewEnvironment(R_NilValue, Rf_VectorToPairList(env), R_BaseEnv);
     else if (TYPEOF(env) == LISTSXP)
-	env = NewEnvironment(R_NilValue, Rf_duplicate(env), R_BaseEnv);
+	env = Rf_NewEnvironment(R_NilValue, Rf_duplicate(env), R_BaseEnv);
     if (env != R_NilValue && TYPEOF(env) != ENVSXP)
 	Rf_errorcall(call, _("invalid environment specified"));
 
@@ -2450,7 +2450,7 @@ SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_quote(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    check1arg(args, call, "expr");
+    Rf_check1arg(args, call, "expr");
     return(CAR(args));
 }
 
@@ -2596,7 +2596,7 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 SEXP attribute_hidden R_do_set_class(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
     return R_set_class(CAR(args), CADR(args), call);
 }
@@ -2609,7 +2609,7 @@ SEXP attribute_hidden do_storage_mode(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXPTYPE type;
 
     checkArity(op, args);
-    check1arg(args, call, "x");
+    Rf_check1arg(args, call, "x");
 
     obj = CAR(args);
 

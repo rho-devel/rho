@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
 	matcher(GCNode::expose(new ArgMatcher(formals)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
-    GCStackRoot<PairList> supplied(getArgs(argv[2]));
+    ArgList supplied(getArgs(argv[2]), false, false);
     // Set up frame and prior bindings (if any):
     Frame* frame = fenv->frame();
     if (argc == 4) {
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]) {
 	}
     }
     // Perform match and show result:
-    matcher->match(fenv, supplied);
+    matcher->match(fenv, &supplied);
     cout << "\nMatch result:\n\n";
     showFrame(frame);
     return 0;

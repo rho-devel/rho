@@ -72,7 +72,7 @@ Rboolean Rf_NonNullStringMatch(SEXP s, SEXP t)
 {
     /* "" or NA string matches nothing */
     if (s == NA_STRING || t == NA_STRING) return FALSE;
-    if (CHAR(s)[0] && CHAR(t)[0] && Seql(s, t))
+    if (CHAR(s)[0] && CHAR(t)[0] && Rf_Seql(s, t))
 	return TRUE;
     else
 	return FALSE;
@@ -207,7 +207,7 @@ SEXP attribute_hidden matchArg(SEXP tag, SEXP * list)
 /* Returns the first exactly matching tag found. */
 /* Pattern is a symbol. */
 
-SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
+SEXP attribute_hidden Rf_matchArgExact(SEXP tag, SEXP * list)
 {
       return matchPar_int(CHAR(PRINTNAME(tag)), list, TRUE);
 }
@@ -220,7 +220,7 @@ SEXP attribute_hidden matchArgExact(SEXP tag, SEXP * list)
 /* MULTIPLE_MATCHES was added by RI in Jan 2005 but never activated:
    code in R-2-8-branch */
 
-SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
+SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
 {
     int i, seendots, arg_i = 0;
     SEXP f, a, b, dots, actuals;
@@ -232,8 +232,8 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
     }
     /* We use fargused instead of ARGUSED/SET_ARGUSED on elements of
        formals to avoid modification of the formals SEXPs.  A gc can
-       cause matchArgs to be called from finalizer code, resulting in
-       another matchArgs call with the same formals.  In R-2.10.x, this
+       cause Rf_matchArgs to be called from finalizer code, resulting in
+       another Rf_matchArgs call with the same formals.  In R-2.10.x, this
        corrupted the ARGUSED data of the formals and resulted in an
        incorrect "formal argument 'foo' matched by multiple actual
        arguments" error.
@@ -301,7 +301,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
 			    Rf_error(_("formal argument \"%s\" matched by multiple actual arguments"),
 				  CHAR(PRINTNAME(TAG(f))));
 			if (ArgMatcher::warnOnPartialMatch()) {
-			    warningcall(call,
+			    Rf_warningcall(call,
 					_("partial argument match of '%s' to '%s'"),
 					CHAR(PRINTNAME(TAG(b))),
 					CHAR(PRINTNAME(TAG(f))) );
@@ -412,7 +412,7 @@ SEXP attribute_hidden matchArgs(SEXP formals, SEXP supplied, SEXP call)
                 }
             }
 	    Rf_error(_("unused argument(s) %s"),
-		     CHAR(STRING_ELT(deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
+		     CHAR(STRING_ELT(Rf_deparse1line(unusedForError, CXXRFALSE), 0)) + 4);
                       /* '+ 4' is to remove 'list' from 'list(badTag1,...)' */
 	}
     }

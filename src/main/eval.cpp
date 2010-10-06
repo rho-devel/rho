@@ -353,7 +353,7 @@ SEXP Rf_eval(SEXP e, SEXP rho)
 }
 
 attribute_hidden
-void SrcrefPrompt(const char * prefix, SEXP srcref)
+void Rf_SrcrefPrompt(const char * prefix, SEXP srcref)
 {
     /* If we have a valid srcref, use it */
     if (srcref && srcref != R_NilValue) {
@@ -590,7 +590,7 @@ SEXP attribute_hidden do_if(SEXP call, SEXP op, SEXP args, SEXP rho)
            vis = 1;
     } 
     if( ENV_DEBUG(rho) ) {
-	SrcrefPrompt("debug", R_Srcref);
+	Rf_SrcrefPrompt("debug", R_Srcref);
         Rf_PrintValue(Stmt);
         do_browser(call, op, R_NilValue, rho);
     } 
@@ -625,7 +625,7 @@ namespace {
     inline void DO_LOOP_RDEBUG(SEXP call, SEXP op, SEXP args, SEXP rho, int bgn)
     {
 	if (bgn && ENV_DEBUG(rho)) {
-	    SrcrefPrompt("debug", R_Srcref);
+	    Rf_SrcrefPrompt("debug", R_Srcref);
 	    Rf_PrintValue(CAR(args));
 	    do_browser(call, op, 0, rho);
 	}
@@ -921,7 +921,7 @@ SEXP attribute_hidden do_begin(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    	}
 	    }
 	    if (ENV_DEBUG(rho)) {
-	    	SrcrefPrompt("debug", R_Srcref);
+	    	Rf_SrcrefPrompt("debug", R_Srcref);
 		Rf_PrintValue(CAR(args));
 		do_browser(call, op, R_NilValue, rho);
 	    }
@@ -982,7 +982,7 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP formals = CAR(args);
     if (formals && formals->sexptype() != LISTSXP)
 	Rf_error(_("invalid formal argument list for 'function'"));
-    rval = mkCLOSXP(formals, CADR(args), rho);
+    rval = Rf_mkCLOSXP(formals, CADR(args), rho);
     Rf_setAttrib(rval, R_SourceSymbol, CADDR(args));
     return rval;
 }
@@ -1097,7 +1097,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
 	    tmp = Rf_install(buf);
 	    R_SetVarLocValue(tmploc, CAR(lhs));
-	    tmp2 = mkPROMISE(rhs, rho);
+	    tmp2 = Rf_mkPROMISE(rhs, rho);
 	    SET_PRVALUE(tmp2, rhs);
 	    rhs = replaceCall(tmp, R_GetVarLocSymbol(tmploc), CDDR(expr), tmp2);
 	    rhs = Rf_eval(rhs, rho);
@@ -1110,7 +1110,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    Rf_error(_("overlong name in '%s'"), CHAR(PRINTNAME(CAR(expr))));
 	sprintf(buf, "%s<-", CHAR(PRINTNAME(CAR(expr))));
 	R_SetVarLocValue(tmploc, CAR(lhs));
-	tmp = mkPROMISE(CADR(args), rho);
+	tmp = Rf_mkPROMISE(CADR(args), rho);
 	SET_PRVALUE(tmp, rhs);
         expr = assignCall(Rf_install(asym[PRIMVAL(op)]), CADR(lhs),  // CXXR change
 			  Rf_install(buf), R_GetVarLocSymbol(tmploc),
@@ -1118,11 +1118,11 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	expr = Rf_eval(expr, rho);
     }
     catch (...) {
-	unbindVar(R_TmpvalSymbol, rho);
+	Rf_unbindVar(R_TmpvalSymbol, rho);
 	throw;
     }
 
-    unbindVar(R_TmpvalSymbol, rho);
+    Rf_unbindVar(R_TmpvalSymbol, rho);
 #ifdef CONSERVATIVE_COPYING /* not default */
     return Rf_duplicate(saverhs);
 #else
@@ -1287,9 +1287,9 @@ SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP call, int n)
 /* A slight variation of evaluating each expression in "el" in "rho". */
 
 /* used in evalArgs, arithmetic.c, seq.c */
-SEXP attribute_hidden evalListKeepMissing(SEXP el, SEXP rho)
+SEXP attribute_hidden Rf_evalListKeepMissing(SEXP el, SEXP rho)
 {
-    ArgList arglist(SEXP_downcast<PairList*>(el), false);
+    ArgList arglist(SEXP_downcast<PairList*>(el), false, false);
     arglist.evaluate(SEXP_downcast<Environment*>(rho), true);
     return const_cast<PairList*>(arglist.list());
 }
@@ -1354,7 +1354,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	break;
     case LISTSXP:
 	/* This usage requires all the pairlist to be named */
-	env = NewEnvironment(R_NilValue, Rf_duplicate(CADR(args)), encl);
+	env = Rf_NewEnvironment(R_NilValue, Rf_duplicate(CADR(args)), encl);
 	PROTECT(env);
 	break;
     case VECSXP:
@@ -1362,7 +1362,7 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
 	x = VectorToPairListNamed(CADR(args));
 	for (xptr = x ; xptr != R_NilValue ; xptr = CDR(xptr))
 	    SET_NAMED(CAR(xptr) , 2);
-	env = NewEnvironment(R_NilValue, x, encl);
+	env = Rf_NewEnvironment(R_NilValue, x, encl);
 	PROTECT(env);
 	break;
     case INTSXP:
@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    ArgList arglist(cptr->promiseArgs(), true);
+    ArgList arglist(cptr->promiseArgs(), false, true);
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1506,11 +1506,11 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
 static SEXP evalArgs(SEXP el, SEXP rho, int dropmissing, SEXP call, int n)
 {
     if(dropmissing) return evalList(el, rho, call, n);
-    else return evalListKeepMissing(el, rho);
+    else return Rf_evalListKeepMissing(el, rho);
 }
 
 
-/* A version of DispatchOrEval that checks for possible S4 methods for
+/* A version of Rf_DispatchOrEval that checks for possible S4 methods for
  * any argument, not just the first.  Used in the code for `[` in
  * do_subset.  Differs in that all arguments are evaluated
  * immediately, rather than after the call to R_possible_dispatch.
@@ -1540,16 +1540,16 @@ int DispatchAnyOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		else break;
 	    }
 	}
-	 /* else, use the regular DispatchOrEval, but now with evaluated args */
-	dispatch = DispatchOrEval(call, op, generic, argValue, rho, ans, dropmissing, argsevald);
+	 /* else, use the regular Rf_DispatchOrEval, but now with evaluated args */
+	dispatch = Rf_DispatchOrEval(call, op, generic, argValue, rho, ans, dropmissing, argsevald);
 	UNPROTECT(nprotect);
 	return dispatch;
     }
-    return DispatchOrEval(call, op, generic, args, rho, ans, dropmissing, argsevald);
+    return Rf_DispatchOrEval(call, op, generic, args, rho, ans, dropmissing, argsevald);
 }
 
 
-/* DispatchOrEval is used in internal functions which dispatch to
+/* Rf_DispatchOrEval is used in internal functions which dispatch to
  * object methods (e.g. "[" or "[[").  The code either builds promises
  * and dispatches to the appropriate method, or it evaluates the
  * (unevaluated) arguments it comes in with and returns them so that
@@ -1559,8 +1559,8 @@ int DispatchAnyOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
  * at large in the world.
  */
 attribute_hidden
-int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
-		   SEXP rho, SEXP *ans, int dropmissing, int argsevald)
+int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
+		      SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
     GCStackRoot<PairList> arglist(SEXP_downcast<PairList*>(args));
     Environment* callenv = SEXP_downcast<Environment*>(rho);
@@ -1570,7 +1570,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	return 0;
     }
 
-    // DispatchOrEval is called very frequently, most often in cases
+    // Rf_DispatchOrEval is called very frequently, most often in cases
     // where no dispatching is needed and the Rf_isObject or the
     // string-based pre-test fail.  To avoid degrading performance it
     // is therefore necessary to avoid creating promises in these
@@ -1623,7 +1623,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    GCStackRoot<PairList> argValue(arglist);
 	    // create a promise to pass down to applyClosure
 	    if (!argsevald) {
-		ArgList al(arglist, false);
+		ArgList al(arglist, false, false);
 		al.wrapInPromises(callenv);
 		argValue = const_cast<PairList*>(al.list());
 		SET_PRVALUE(CAR(argValue), x);
@@ -1640,7 +1640,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		   the same semantics as if the arguments were not
 		   evaluated, in special cases (e.g., arg values that are
 		   LANGSXP).
-		   The use of the promiseArgs is supposed to prevent
+		   The use of the Rf_promiseArgs is supposed to prevent
 		   multiple evaluation after the call to possible_dispatch.
 		*/
 		if (dots)
@@ -1660,12 +1660,12 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    pt = NULL;
 
 	if (pt == NULL || strcmp(pt,".default")) {
-	    GCStackRoot<> pargs(promiseArgs(arglist, callenv));
+	    GCStackRoot<> pargs(Rf_promiseArgs(arglist, callenv));
 	    /* The context set up here is needed because of the way
-	       usemethod() is written.  DispatchGroup() repeats some
-	       internal usemethod() code and avoids the need for a
-	       context; perhaps the usemethod() code should be
-	       refactored so the contexts around the usemethod() calls
+	       Rf_usemethod() is written.  Rf_DispatchGroup() repeats some
+	       internal Rf_usemethod() code and avoids the need for a
+	       context; perhaps the Rf_usemethod() code should be
+	       refactored so the contexts around the Rf_usemethod() calls
 	       in this file can be removed.
 
 	       Using rho for current and calling environment can be
@@ -1674,9 +1674,9 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       since the context is established without a SETJMP using
 	       an R-accessible environment allows a segfault to be
 	       triggered (by something very obscure, but still).
-	       Hence here and in the other usemethod() uses below a
+	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<> rho1(NewEnvironment(R_NilValue, R_NilValue, callenv));
+	    GCStackRoot<> rho1(Rf_NewEnvironment(R_NilValue, R_NilValue, callenv));
 	    SET_PRVALUE(CAR(pargs), x);
 	    int um;
 	    {
@@ -1687,7 +1687,7 @@ int DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		PairList* promargs = SEXP_downcast<PairList*>(pargs.get());
 		ClosureContext cntxt(callx, callenv, func,
 				     working_env, promargs);
-		um = usemethod(generic, x, call, pargs, rho1, callenv, R_BaseEnv, ans);
+		um = Rf_usemethod(generic, x, call, pargs, rho1, callenv, R_BaseEnv, ans);
 	    }
 	    if (um)
 		return 1;
@@ -1749,7 +1749,7 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
 }
 
 attribute_hidden
-int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
+int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		  SEXP *ans)
 {
     int i, j, nargs, lwhich, rwhich, set;
@@ -1939,7 +1939,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* out to a closure we need to wrap them in promises so that */
     /* they get duplicated and things like missing/substitute work. */
 
-    PROTECT(s = promiseArgs(CDR(call), rho));
+    PROTECT(s = Rf_promiseArgs(CDR(call), rho));
     if (length(s) != length(args))
 	Rf_error(_("dispatch error in group dispatch"));
     for (m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
@@ -1951,7 +1951,7 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
 	Expression* callx = SEXP_downcast<Expression*>(t);
-	ArgList arglist(SEXP_downcast<PairList*>(s), true);
+	ArgList arglist(SEXP_downcast<PairList*>(s), false, true);
 	Environment* callenv = SEXP_downcast<Environment*>(rho);
 	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
 	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
@@ -2024,10 +2024,10 @@ void R_initialize_bcode(void)
   FakeCall1 = CONS(R_NilValue, FakeCall0);
   FakeCall2 = CONS(R_NilValue, FakeCall1);
   R_PreserveObject(FakeCall2);
-  R_TrueValue = mkTrue();
+  R_TrueValue = Rf_mkTrue();
   SET_NAMED(R_TrueValue, 2);
   R_PreserveObject(R_TrueValue);
-  R_FalseValue = mkFalse();
+  R_FalseValue = Rf_mkFalse();
   SET_NAMED(R_FalseValue, 2);
   R_PreserveObject(R_FalseValue);
 #ifdef THREADED_CODE
@@ -2189,7 +2189,7 @@ static SEXP cmp_relop(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y)
 	SEXP args, ans;
 	args = CONS(x, CONS(y, R_NilValue));
 	PROTECT(args);
-	if (DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
+	if (Rf_DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
 	    UNPROTECT(1);
 	    return ans;
 	}
@@ -2204,7 +2204,7 @@ static SEXP cmp_arith1(SEXP call, SEXP op, SEXP x)
     SEXP args, ans;
     args = CONS(x, R_NilValue);
     PROTECT(args);
-    if (DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
+    if (Rf_DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
       UNPROTECT(1);
       return ans;
     }
@@ -2224,7 +2224,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y)
 	SEXP args, ans;
 	args = CONS(x, CONS(y, R_NilValue));
 	PROTECT(args);
-	if (DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
+	if (Rf_DispatchGroup("Ops", call, op, args, R_GlobalEnv, &ans)) {
 	    UNPROTECT(1);
 	    return ans;
 	}
@@ -2406,7 +2406,7 @@ typedef int BCODE;
 
 #define DO_GETVAR(dd) do { \
   SEXP symbol = VECTOR_ELT(constants, GETOP()); \
-  value = (dd) ? ddfindVar(symbol, rho) : Rf_findVar(symbol, rho); \
+  value = (dd) ? Rf_ddfindVar(symbol, rho) : Rf_findVar(symbol, rho); \
   R_Visible = TRUE; \
   if (value == R_UnboundValue) \
     Rf_error(_("object '%s' not found"), CHAR(PRINTNAME(symbol))); \
@@ -2450,9 +2450,9 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
   SEXP pargs, rho1;
   int dispatched = FALSE;
 
-  PROTECT(pargs = promiseArgs(CDR(call), rho));
-  /* See comment at first usemethod() call in this file. LT */
-  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
+  PROTECT(pargs = Rf_promiseArgs(CDR(call), rho));
+  /* See comment at first Rf_usemethod() call in this file. LT */
+  PROTECT(rho1 = Rf_NewEnvironment(R_NilValue, R_NilValue, rho));
   SET_PRVALUE(CAR(pargs), x);
   {
       Expression* callx = SEXP_downcast<Expression*>(call);
@@ -2461,7 +2461,7 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
       PairList* promargs = SEXP_downcast<PairList*>(pargs);
       // FIXME: put in op:
       ClosureContext cntxt(callx, call_env, 0, working_env, promargs);
-      if (usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
+      if (Rf_usemethod(generic, x, call, pargs, rho1, rho, R_BaseEnv, pv))
 	  dispatched = TRUE;
   }
   UNPROTECT(2);
@@ -2507,7 +2507,7 @@ static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEX
 } while(0)
 #define DO_ISTYPE(type) do { \
   R_BCNodeStackTop[-1] = TYPEOF(R_BCNodeStackTop[-1]) == type ? \
-			 mkTrue() : mkFalse(); \
+			 Rf_mkTrue() : Rf_mkFalse(); \
   NEXT(); \
 } while (0)
 #define isNumericOnly(x) (Rf_isNumeric(x) && ! Rf_isLogical(x))
@@ -2975,7 +2975,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	  if (ftype == BUILTINSXP)
 	    value = bcEval(code, rho);
 	  else
-	    value = mkPROMISE(code, rho);
+	    value = Rf_mkPROMISE(code, rho);
 	  PUSHCALLARG(value);
 	}
 	NEXT();
@@ -3002,7 +3002,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    for (; h != R_NilValue; h = CDR(h)) {
 	      SEXP val, cell;
 	      if (ftype == BUILTINSXP) val = Rf_eval(CAR(h), rho);
-	      else val = mkPROMISE(CAR(h), rho);
+	      else val = Rf_mkPROMISE(CAR(h), rho);
 	      cell = CONS(val, R_NilValue);
 	      PUSHCALLARG_CELL(cell);
 	      if (TAG(h) != R_NilValue) SET_TAG(cell, Rf_CreateTag(TAG(h)));
@@ -3040,7 +3040,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	case CLOSXP: {
 	    Closure* closure = SEXP_downcast<Closure*>(fun);
 	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), true);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), false, true);
 	    Environment* callenv = SEXP_downcast<Environment*>(rho);
 	    value = closure->invoke(callenv, &arglist, callx);
 	    break;
@@ -3099,7 +3099,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP fb = VECTOR_ELT(constants, GETOP());
 	SEXP forms = VECTOR_ELT(fb, 0);
 	SEXP body = VECTOR_ELT(fb, 1);
-	value = mkCLOSXP(forms, body, rho);
+	value = Rf_mkCLOSXP(forms, body, rho);
 	BCNPUSH(value);
 	NEXT();
       }
@@ -3142,7 +3142,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	case 1: SET_NAMED(value, 2); break;
 	}
 	Rf_defineVar(symbol, value, rho);
-	unbindVar(valsym, rho);
+	Rf_unbindVar(valsym, rho);
 	/* original right-hand side value is now on top of stack again */
 	NEXT();
       }
@@ -3165,9 +3165,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	SEXP x = R_BCNodeStackTop[-1];
 	if (Rf_isObject(x)) {
 	  SEXP pargs, str, rho1;
-	  PROTECT(pargs = promiseArgs(CDR(call), rho));
-	  /* See comment at first usemethod() call in this file. LT */
-	  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
+	  PROTECT(pargs = Rf_promiseArgs(CDR(call), rho));
+	  /* See comment at first Rf_usemethod() call in this file. LT */
+	  PROTECT(rho1 = Rf_NewEnvironment(R_NilValue, R_NilValue, rho));
 	  SET_PRVALUE(CAR(pargs), x);
 	  str = Rf_ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
@@ -3178,7 +3178,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
 	      // FIXME: put in op:
 	      ClosureContext cntxt(callx, call_env, 0, working_env, promargs);
-	      if (usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
+	      if (Rf_usemethod("$", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
 	  UNPROTECT(2);
@@ -3198,9 +3198,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	value = R_BCNodeStackTop[-2];
 	if (Rf_isObject(x)) {
 	  SEXP pargs, str, rho1;
-	  PROTECT(pargs = promiseArgs(CDR(call), rho));
-	  /* See comment at first usemethod() call in this file. LT */
-	  PROTECT(rho1 = NewEnvironment(R_NilValue, R_NilValue, rho));
+	  PROTECT(pargs = Rf_promiseArgs(CDR(call), rho));
+	  /* See comment at first Rf_usemethod() call in this file. LT */
+	  PROTECT(rho1 = Rf_NewEnvironment(R_NilValue, R_NilValue, rho));
 	  SET_PRVALUE(CAR(pargs), x);
 	  str = Rf_ScalarString(PRINTNAME(symbol));
 	  SET_PRVALUE(CADR(pargs), str);
@@ -3212,7 +3212,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      PairList* promargs = SEXP_downcast<PairList*>(pargs);
 	      // FIXME: put in op:
 	      ClosureContext cntxt(callx, call_env, 0, working_env, promargs);
-	      if (usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
+	      if (Rf_usemethod("$<-", x, call, pargs, rho1, rho, R_BaseEnv, &value))
 		  dispatched = TRUE;
 	  }
 	  UNPROTECT(2);
@@ -3401,7 +3401,7 @@ SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!Rf_isEnvironment(env))
 	Rf_errorcall(call, _("invalid environment"));
 
-    return mkCLOSXP(forms, body, env);
+    return Rf_mkCLOSXP(forms, body, env);
 }
 
 SEXP attribute_hidden do_is_builtin_internal(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -3673,9 +3673,9 @@ SEXP R_stopbcprof() { return R_NilValue; }
 /* form below because it is does not cause growth of the pointer */
 /* protection stack, and because it is a little more efficient. */
 
-SEXP attribute_hidden promiseArgs(SEXP el, SEXP rho)
+SEXP attribute_hidden Rf_promiseArgs(SEXP el, SEXP rho)
 {
-    ArgList arglist(SEXP_downcast<PairList*>(el), false);
+    ArgList arglist(SEXP_downcast<PairList*>(el), false, false);
     arglist.wrapInPromises(SEXP_downcast<Environment*>(rho));
     return const_cast<PairList*>(arglist.list());
 }
