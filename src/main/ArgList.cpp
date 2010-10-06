@@ -36,11 +36,12 @@ using namespace CXXR;
 void ArgList::evaluate(Environment* env, bool allow_missing)
 {
     if (m_evaluated)
-	return;
-    GCStackRoot<PairList> outlist(PairList::cons(0));  // Dummy first element
-    PairList* lastout = outlist;
+	Rf_error("ArgList already evaluated");
+    GCStackRoot<const PairList> oldargs(m_list->tail());
+    m_list->setTail(0);
+    PairList* lastout = m_list;
     unsigned int arg_number = 1;
-    for (const PairList* inp = m_list; inp; inp = inp->tail()) {
+    for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* incar = inp->car();
 	if (incar == DotsSymbol) {
 	    Frame::Binding* bdg = env->findBinding(CXXR::DotsSymbol).second;
@@ -85,40 +86,39 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	}
 	++arg_number;
     }
-    m_list = outlist->tail();
     m_evaluated = true;
 }
 
 void ArgList::merge(const ConsCell* extraargs)
 {
     if (m_evaluated || m_wrapped)
-	Rf_error(_("Internal error in ArgList::merge()"));
-    GCStackRoot<const PairList> oldargs(m_list);
-    GCStackRoot<PairList> newargs(PairList::cons(0));  // dummy first element
-    PairList* outp = newargs;
-    set<const RObject*> ntags;  // Tags within dotargs
+	Rf_error("Internal error in ArgList::merge()");
+    GCStackRoot<const PairList> oldargs(m_list->tail());
+    m_list->setTail(0);
+    PairList* lastout = m_list;
+    set<const RObject*> ntags;  // Tags within extraargs
     for (const ConsCell* inp = extraargs; inp; inp = inp->tail()) {
 	const RObject* tag = inp->tag();
 	if (tag)
 	    ntags.insert(tag);
-	outp->setTail(PairList::cons(inp->car(), 0, tag));
-	outp = outp->tail();
+	lastout->setTail(PairList::cons(inp->car(), 0, tag));
+	lastout = lastout->tail();
     }
     for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	const RObject* tag = inp->tag();
 	if (!tag || ntags.count(tag) == 0) {
-	    outp->setTail(PairList::cons(inp->car(), 0, tag));
-	    outp = outp->tail();
+	    lastout->setTail(PairList::cons(inp->car(), 0, tag));
+	    lastout = lastout->tail();
 	}
     }
-    m_list = newargs->tail();
 }
 	    
 void ArgList::wrapInPromises(Environment* env)
 {
-    GCStackRoot<PairList> newargs(PairList::cons(0));  // dummy first element
-    PairList* last = newargs;
-    for (const PairList* inp = m_list; inp; inp = inp->tail()) {
+    GCStackRoot<PairList> oldargs(m_list->tail());
+    m_list->setTail(0);
+    PairList* lastout = m_list;
+    for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
 	RObject* rawvalue = inp->car();
 	if (rawvalue == DotsSymbol) {
 	    pair<Environment*, Frame::Binding*> pr
@@ -131,8 +131,8 @@ void ArgList::wrapInPromises(Environment* env)
 			Promise* prom
 			    = GCNode::expose(new Promise(dotlist->car(), env));
 			const Symbol* tag = tag2Symbol(dotlist->tag());
-			last->setTail(PairList::cons(prom, 0, tag));
-			last = last->tail();
+			lastout->setTail(PairList::cons(prom, 0, tag));
+			lastout = lastout->tail();
 			dotlist = dotlist->tail();
 		    }
 		} else if (dval != Symbol::missingArgument())
@@ -143,10 +143,9 @@ void ArgList::wrapInPromises(Environment* env)
 	    RObject* value = Symbol::missingArgument();
 	    if (rawvalue != Symbol::missingArgument())
 		value = GCNode::expose(new Promise(rawvalue, env));
-	    last->setTail(PairList::cons(value, 0, tag));
-	    last = last->tail();
+	    lastout->setTail(PairList::cons(value, 0, tag));
+	    lastout = lastout->tail();
 	}
     }
-    m_list = newargs->tail();
     m_wrapped = true;
 }

@@ -68,7 +68,8 @@ namespace CXXR {
 	 *          already been evaluated.
 	 */
 	ArgList(const PairList* args, bool evaluated)
-	    : m_list(args), m_evaluated(evaluated), m_wrapped(false)
+	    : m_list(PairList::cons(0, const_cast<PairList*>(args))),
+	      m_evaluated(evaluated), m_wrapped(false)
 	{}
 
 	/** @brief Evaluate the arguments in the ArgList.
@@ -133,7 +134,7 @@ namespace CXXR {
 	 */
 	const PairList* list() const
 	{
-	    return m_list;
+	    return m_list->tail();
 	}
 
 	/** @brief Merge in new argument values..
@@ -216,7 +217,14 @@ namespace CXXR {
 	 */
 	void wrapInPromises(Environment* env);
     private:
-	GCStackRoot<const PairList> m_list;
+	GCStackRoot<PairList> m_list;  // The current argument list,
+				// preceded by a dummy element to
+				// simplify coding.  The class code
+				// should never modify the PairList
+				// supplied as an argument to the
+				// constructor, even though the
+				// constructor casts const away when
+				// it initialises this data member.
 	bool m_evaluated, m_wrapped;
 
 	// Coerce a tag that is not already a Symbol into Symbol form:
