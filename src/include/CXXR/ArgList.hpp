@@ -57,6 +57,20 @@ namespace CXXR {
      */
     class ArgList {
     public:
+	/** @brief Way (if any) in which ArgList has been processed.
+	 */
+	enum Status {
+	    RAW,       /**< Unprocessed. */
+	    PROMISED,  /**< Argument values are wrapped in Promise
+			* objects, and non-null tags have been coerced
+			* to Symbols.  This is the form expected by
+			* ArgMatcher::match().
+			*/
+	    EVALUATED  /**< Argument values have been evaluated, and
+			* ... arguments expanded.
+			*/
+	};
+
 	/** @brief Constructor.
 	 *
 	 * @param args Pointer, possibly null, to a PairList of
@@ -64,27 +78,16 @@ namespace CXXR {
 	 *          FunctionBase.  The calling code must not modify \a
 	 *          args after calling this constructor.
 	 *
-	 * @param evaluated true iff the arguments in \a args have
-	 *          already been evaluated.
-	 *
-	 * @param promise_wrapped true iff the arguments in \a args have
-	 *          already been wrapped in Promise objects in the
-	 *          manner of wrapInPromises().
-	 *
-	 * @note It is the intention in due course to carry out all
-	 * manipulations of argument lists within the ArgList class,
-	 * and when that happens the \a promise_wrapped argument will
-	 * be abolished.
+	 * @param status The Status of the argument list provided by
+	 *          \a args.  No check is made that the \a args list
+	 *          is actually consistent with the value of \a status.
 	 */
-	ArgList(const PairList* args, bool evaluated, bool promise_wrapped)
+	ArgList(const PairList* args, Status status)
 	    : m_list(PairList::cons(0, const_cast<PairList*>(args))),
-	      m_evaluated(evaluated), m_wrapped(promise_wrapped)
+	      m_status(status)
 	{}
 
 	/** @brief Evaluate the arguments in the ArgList.
-	 *
-	 * This function is a no-op if the ArgList has already been
-	 * evaluated.
 	 *
 	 * Except as regards the handling of ... and missing values
 	 * described next, this function replaces the argument list
@@ -120,6 +123,10 @@ namespace CXXR {
 	 * value is Symbol::missingArgument().  This applies unless \a
 	 * allow_missing is false, in which case an error is raised.
 	 *
+	 * After the call, the ArgList will have Status EVALUATED; it
+	 * is an error to call this function if the ArgList already
+	 * has Status EVALUATED.
+	 *
 	 * @param env The Environment in which evaluations are to take
 	 *          place.  If firstArg() has previously been called
 	 *          for this ArgList, then \a env must be identical to
@@ -137,16 +144,6 @@ namespace CXXR {
 	 * CR's evalList() and evalListKeepMissing().
 	 */
 	void evaluate(Environment* env, bool allow_missing = false);
-
-	/** @brief Has this ArgList been evaluated?
-	 *
-	 * @return true iff this ArgList has been evaluated (by
-	 * calling evaluate()).
-	 */
-	bool evaluated() const
-	{
-	    return m_evaluated;
-	}
 
 	/** @brief Get the first argument.
 	 *
@@ -201,23 +198,21 @@ namespace CXXR {
 	 * newargs, that element of the current ArgList is discarded
 	 * in the result.
 	 *
-	 * It is an error to call this function if the ArgList has
-	 * already been evaluated.
+	 * It is an error to call this function unless the ArgList has
+	 * PROMISED status.
 	 *
 	 * @param extraargs Pointer, possibly null, to a list whose
 	 *          elements represent Promise-wrapped argument values.
 	 */
 	void merge(const ConsCell* extraargs);
 
-	/** @brief Are these arguments wrapped in Promise objects?
+	/** @brief How has this ArgList been processed?
 	 *
-	 * @return true iff the arguments in the list have been
-	 *           wrapped in Promise objects in the manner effected
-	 *           by wrapInPromises().
+	 * @return The current Status of the Arglist.
 	 */
-	bool promiseWrapped() const
+	Status status() const
 	{
-	    return m_wrapped;
+	    return m_status;
 	}
 
 	/** @brief Convert tag of supplied argument to a Symbol.
@@ -253,6 +248,10 @@ namespace CXXR {
 	/** @brief Wrap elements of the argument list in Promise
 	 * objects.
 	 *
+	 * It is an error to call this function unless the ArgList has
+	 * Status RAW.  After the call the ArgList will have Status
+	 * PROMISED.
+	 *
 	 * Basically, this function wraps any argument in the ArgList
 	 * whose value is not Symbol::missingArgument() is wrapped in
 	 * a Promise to be evaluated in \a env.
@@ -273,7 +272,10 @@ namespace CXXR {
 	 * argument matching.
 	 *
 	 * @param env Pointer to the Environment to which Promises in
-	 *          the output list are to be keyed.
+	 *          the output list are to be keyed.  If firstArg()
+	 *          has previously been called for this ArgList, then
+	 *          \a env must be identical to the \a env argument of
+	 *          that firstArg() call.
 	 *
 	 * @note It would be desirable to avoid producing a new
 	 * PairList, and to absorb this functionality directly into
@@ -291,7 +293,7 @@ namespace CXXR {
 				// constructor, even though the
 				// constructor casts const away when
 				// it initialises this data member.
-	bool m_evaluated, m_wrapped;
+	Status m_status;
 
 	// Not implemented.  Declared private to suppress
 	// compiler-generated versions:

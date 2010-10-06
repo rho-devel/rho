@@ -35,8 +35,8 @@ using namespace CXXR;
 
 void ArgList::evaluate(Environment* env, bool allow_missing)
 {
-    if (m_evaluated)
-	Rf_error("ArgList already evaluated");
+    if (m_status == EVALUATED)
+	Rf_error("Internal error: ArgList already evaluated");
     GCStackRoot<const PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -86,13 +86,13 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	}
 	++arg_number;
     }
-    m_evaluated = true;
+    m_status = EVALUATED;
 }
 
 void ArgList::merge(const ConsCell* extraargs)
 {
-    if (m_evaluated)
-	Rf_error("Internal error: evaluated ArgList in ArgList::merge()");
+    if (m_status != PROMISED)
+	Rf_error("Internal error: ArgList::merge() requires PROMISED ArgList");
     GCStackRoot<const PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -115,8 +115,9 @@ void ArgList::merge(const ConsCell* extraargs)
 	    
 void ArgList::wrapInPromises(Environment* env)
 {
-    if (m_wrapped)
-	Rf_error("Internal error: ArgList already promise-wrapped");
+    if (m_status != RAW)
+	Rf_error("Internal error:"
+		 " ArgList::wrapInPromises() requires RAW ArgList");
     GCStackRoot<PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -149,5 +150,5 @@ void ArgList::wrapInPromises(Environment* env)
 	    lastout = lastout->tail();
 	}
     }
-    m_wrapped = true;
+    m_status = PROMISED;
 }

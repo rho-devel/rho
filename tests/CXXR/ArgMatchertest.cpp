@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
 	matcher(GCNode::expose(new ArgMatcher(formals)));
     // Process supplied arguments:
     cout << "\nSupplied arguments:\n\n";
-    ArgList supplied(getArgs(argv[2]), false, false);
+    ArgList supplied(getArgs(argv[2]), ArgList::RAW);
     // Set up frame and prior bindings (if any):
     Frame* frame = fenv->frame();
     if (argc == 4) {

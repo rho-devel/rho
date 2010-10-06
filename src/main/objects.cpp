@@ -338,7 +338,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(method_symbol);
-    ArgList arglist(matchedarg, false, true);
+    ArgList arglist(matchedarg, ArgList::PROMISED);
     *ans = applyMethod(newcall, method, &arglist, env, newframe);
     return 1;
 }
@@ -369,7 +369,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    matcher(ArgMatcher::make(genericsym, objectsym));
 	GCStackRoot<Environment>
 	    matchenv(GCNode::expose(new Environment(0, 2)));
-	ArgList arglist(SEXP_downcast<PairList*>(args), false, false);
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
 	matcher->match(matchenv, &arglist);
 
 	// "generic":
@@ -607,7 +607,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
-    ArgList newarglist(matchedarg, false, true);
+    ArgList newarglist(matchedarg, ArgList::PROMISED);
 
     /*
       .Class is used to determine the next method; if it doesn't
@@ -1345,7 +1345,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
 	    if(!promisedArgs) {
-		ArgList al(callx->tail(), false, false);
+		ArgList al(callx->tail(), ArgList::RAW);
 		al.wrapInPromises(callenv);
 		PairList* pargs = const_cast<PairList*>(al.list());
 		PairList *a, *b;
@@ -1358,7 +1358,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rf_error(_("dispatch error"));
 		argspl = pargs;
 	    }
-	    ArgList al2(argspl, false, true);
+	    ArgList al2(argspl, ArgList::PROMISED);
 	    value = func->invoke(callenv, &al2, callx);
 	    return make_pair(true, value);
 	}
@@ -1373,7 +1373,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     // To do:  arrange for the setting to be restored in case of an
     // error in method search
     if(!promisedArgs) {
-	ArgList al(callx->tail(), false, false);
+	ArgList al(callx->tail(), ArgList::RAW);
 	al.wrapInPromises(callenv);
 	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
@@ -1386,7 +1386,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    Rf_error(_("dispatch error"));
 	argspl = pargs;
     }
-    ArgList al3(argspl, false, true);
+    ArgList al3(argspl, ArgList::PROMISED);
     value = func->invoke(callenv, &al3, callx);
     prim_methods[offset] = current;
     if (value == deferred_default_object)

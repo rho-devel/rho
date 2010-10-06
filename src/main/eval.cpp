@@ -1289,7 +1289,7 @@ SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP call, int n)
 /* used in evalArgs, arithmetic.c, seq.c */
 SEXP attribute_hidden Rf_evalListKeepMissing(SEXP el, SEXP rho)
 {
-    ArgList arglist(SEXP_downcast<PairList*>(el), false, false);
+    ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
     arglist.evaluate(SEXP_downcast<Environment*>(rho), true);
     return const_cast<PairList*>(arglist.list());
 }
@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    ArgList arglist(cptr->promiseArgs(), false, true);
+    ArgList arglist(cptr->promiseArgs(), ArgList::PROMISED);
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1623,7 +1623,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	    GCStackRoot<PairList> argValue(arglist);
 	    // create a promise to pass down to applyClosure
 	    if (!argsevald) {
-		ArgList al(arglist, false, false);
+		ArgList al(arglist, ArgList::RAW);
 		al.wrapInPromises(callenv);
 		argValue = const_cast<PairList*>(al.list());
 		SET_PRVALUE(CAR(argValue), x);
@@ -1951,7 +1951,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
 	Expression* callx = SEXP_downcast<Expression*>(t);
-	ArgList arglist(SEXP_downcast<PairList*>(s), false, true);
+	ArgList arglist(SEXP_downcast<PairList*>(s), ArgList::PROMISED);
 	Environment* callenv = SEXP_downcast<Environment*>(rho);
 	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
 	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
@@ -3040,7 +3040,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	case CLOSXP: {
 	    Closure* closure = SEXP_downcast<Closure*>(fun);
 	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), false, true);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
 	    Environment* callenv = SEXP_downcast<Environment*>(rho);
 	    value = closure->invoke(callenv, &arglist, callx);
 	    break;
@@ -3675,7 +3675,7 @@ SEXP R_stopbcprof() { return R_NilValue; }
 
 SEXP attribute_hidden Rf_promiseArgs(SEXP el, SEXP rho)
 {
-    ArgList arglist(SEXP_downcast<PairList*>(el), false, false);
+    ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
     arglist.wrapInPromises(SEXP_downcast<Environment*>(rho));
     return const_cast<PairList*>(arglist.list());
 }

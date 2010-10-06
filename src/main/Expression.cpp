@@ -85,7 +85,7 @@ RObject* Expression::evaluate(Environment* env)
 	func = static_cast<FunctionBase*>(val);
     }
     func->maybeTrace(this);
-    ArgList arglist(tail(), false, false);
+    ArgList arglist(tail(), ArgList::RAW);
     return func->apply(&arglist, env, this);
 }
 

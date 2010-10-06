@@ -132,7 +132,7 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
 			 const Frame* method_bindings) const
 {
 #ifndef NDEBUG
-    if (!arglist->promiseWrapped())
+    if (arglist->status() != ArgList::PROMISED)
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
 #endif
     // +5 to allow some capacity for local variables:
