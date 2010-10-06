@@ -75,12 +75,11 @@ Closure::Closure(const PairList* formal_args, RObject* body, Environment* env)
 {
 }
 
-RObject* Closure::apply(const Expression* call, const PairList* args,
-			Environment* env) const
+RObject* Closure::apply(ArgList* arglist, Environment* env,
+			const Expression* call) const
 {
-    ArgList arglist(args, false);
-    arglist.wrapInPromises(env);
-    return invoke(call, arglist.list(), env);
+    arglist->wrapInPromises(env);
+    return invoke(env, arglist, call);
 }
 
 Closure* Closure::clone() const
@@ -127,8 +126,9 @@ RObject* Closure::execute(Environment* env) const
     return ans;
 }
 
-RObject* Closure::invoke(const Expression* call, const PairList* args,
-			 Environment* env, const Frame* method_bindings) const
+RObject* Closure::invoke(Environment* env, const ArgList* arglist,
+			 const Expression* call,
+			 const Frame* method_bindings) const
 {
     // +5 to allow some capacity for local variables:
     GCStackRoot<Environment>
@@ -137,8 +137,8 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
     // Perform argument matching:
     {
         ClosureContext cntxt(const_cast<Expression*>(call), env, this,
-			     environment(), args);
-	m_matcher->match(newenv, args);
+			     environment(), arglist->list());
+	m_matcher->match(newenv, arglist);
     }
 
     // Set up context and perform evaluation.  Note that ans needs to
@@ -157,7 +157,7 @@ RObject* Closure::invoke(const Expression* call, const PairList* args,
 	    syspar = (fctxt ? fctxt->callEnvironment() : Environment::global());
 	}
 	ClosureContext cntxt(const_cast<Expression*>(call),
-			     syspar, this, newenv, args);
+			     syspar, this, newenv, arglist->list());
 	ans = execute(newenv);
     }
     return ans;

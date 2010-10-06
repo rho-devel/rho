@@ -47,6 +47,7 @@
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
+    class ArgList;
     class Environment;
     class Frame;
     class PairList;
@@ -172,21 +173,17 @@ namespace CXXR {
 	 * will have origin MISSING.</li>
 	 * </ol>
 	 *
-	 * @param target_env Pointer to the Environment in whose Frame
-	 *          bindings will be inserted as a result of the
-	 *          argument matching process.  Any default arguments
-	 *          used will be wrapped in Promise objects keyed to
-	 *          this Environment.
+	 * @param target_env Non-null pointer to the Environment in
+	 *          whose Frame bindings will be inserted as a result
+	 *          of the argument matching process.  Any default
+	 *          arguments used will be wrapped in Promise objects
+	 *          keyed to this Environment.
 	 *
-	 * @param supplied PairList, possibly empty, of supplied
-	 *          arguments.  It is not required for the elements of
-	 *          the list to have tags, but if an element does have
-	 *          a tag, the tag must be a Symbol.  (The function
-	 *          does not check this, so strange bugs may ensue if
-	 *          this precondition is not fulfilled.)  Typically
-	 *          this list will be the output of prepareArgs().
+	 * @param supplied Non-null pointer to the ArgList containing
+	 *          the supplied arguments, which must have had
+	 *          ArgList::wrapInPromises() applied.
 	 */
-	void match(Environment* target_env, const PairList* supplied) const;
+	void match(Environment* target_env, const ArgList* supplied) const;
 
 	/** @brief Number of formal arguments.
 	 *

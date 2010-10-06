@@ -1111,9 +1111,9 @@ SEXP attribute_hidden do_bind(SEXP call, SEXP op, SEXP args, SEXP env)
 	PROTECT(method);
 	Closure* closure = SEXP_downcast<Closure*>(method);
 	Expression* callx = SEXP_downcast<Expression*>(call);
-	PairList* arglist = SEXP_downcast<PairList*>(args);
+	ArgList arglist(SEXP_downcast<PairList*>(args), false);
 	Environment* callenv = SEXP_downcast<Environment*>(env);
-	args = closure->invoke(callx, arglist, callenv);
+	args = closure->invoke(callenv, &arglist, callx);
 	UNPROTECT(2);
 	return args;
     }

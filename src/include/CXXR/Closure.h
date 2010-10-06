@@ -141,13 +141,14 @@ namespace CXXR {
 	 * objects will have been carried out before invoke() is
 	 * called, whereas apply() carries out this wrapping itself.
 	 *
+	 * @param env Non-null pointer to the Environment in which the
+	 *          function is to be evaluated.
+	 *
+	 * @param arglist Non-null pointer to the ArgList containing
+	 *          the arguments with which the function is to be
+	 *          invoked.
+	 *
 	 * @param call Pointer to the Expression calling the function.
-	 *
-	 * @param args List of arguments with which the function is to
-	 *          be invoked.
-	 *
-	 * @param env Pointer to the Environment in which the function
-	 *          is to be evaluated.
 	 *
 	 * @param method_bindings This pointer will be non-null if and
 	 *          only if this invocation represents a method call,
@@ -158,8 +159,8 @@ namespace CXXR {
 	 *
 	 * @return The result of applying the function.
 	 */
-	RObject* invoke(const Expression* call, const PairList* args,
-			Environment* env,
+	RObject* invoke(Environment* env, const ArgList* arglist,
+			const Expression* call,
 			const Frame* method_bindings = 0) const;
 
 	/** @brief Access the ArgMatcher of this Closure.
@@ -217,8 +218,8 @@ namespace CXXR {
 	}
 
 	// Virtual function of FunctionBase:
-	RObject* apply(const Expression* call,
-		       const PairList* args, Environment* env) const;
+	RObject* apply(ArgList* arglist, Environment* env,
+		       const Expression* call) const;
 
 	// Virtual functions of RObject:
         Closure* clone() const;

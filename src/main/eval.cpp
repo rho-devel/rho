@@ -1477,7 +1477,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     while (cptr && cptr->workingEnvironment() != rho) {
 	cptr = ClosureContext::innermost(cptr->nextOut());
     }
-    const PairList* args = cptr->promiseArgs();
+    ArgList arglist(cptr->promiseArgs(), false);  // ***** FIXME *****
     /* get the env recall was called from */
     s = ClosureContext::innermost()->callEnvironment();
     while (cptr && cptr->workingEnvironment() != s) {
@@ -1497,7 +1497,7 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     else
 	PROTECT(s = Rf_eval(CAR(CXXRCCAST(Expression*, cptr->call())), cptr->callEnvironment()));
     Closure* closure = SEXP_downcast<Closure*>(s);
-    ans = closure->invoke(cptr->call(), args, cptr->callEnvironment());
+    ans = closure->invoke(cptr->callEnvironment(), &arglist, cptr->call());
     UNPROTECT(1);
     return ans;
 }
@@ -1951,10 +1951,10 @@ int DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
 	Expression* callx = SEXP_downcast<Expression*>(t);
-	PairList* arglist = SEXP_downcast<PairList*>(s);
+	ArgList arglist(SEXP_downcast<PairList*>(s), false);
 	Environment* callenv = SEXP_downcast<Environment*>(rho);
 	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
-	*ans = func->invoke(callx, arglist, callenv, supp_env->frame());
+	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
     }
     UNPROTECT(5);
     return 1;
@@ -3040,9 +3040,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	case CLOSXP: {
 	    Closure* closure = SEXP_downcast<Closure*>(fun);
 	    Expression* callx = SEXP_downcast<Expression*>(call);
-	    PairList* arglist = SEXP_downcast<PairList*>(args);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), false);
 	    Environment* callenv = SEXP_downcast<Environment*>(rho);
-	    value = closure->invoke(callx, arglist, callenv);
+	    value = closure->invoke(callenv, &arglist, callx);
 	    break;
 	}
 	default: Rf_error(_("bad function"));

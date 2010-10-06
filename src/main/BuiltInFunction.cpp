@@ -106,8 +106,8 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_while);
 }
 
-RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
-				Environment* env) const
+RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
+				const Expression* call) const
 {
     RAllocStack::Scope ras_scope;
     ProtectStack::Scope ps_scope;
@@ -115,16 +115,15 @@ RObject* BuiltInFunction::apply(const Expression* call, const PairList* args,
     size_t pps_size = ProtectStack::size();
 #endif
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    ArgList arglist(args, false);
     if (sexptype() == BUILTINSXP)
-	arglist.evaluate(env);
+	arglist->evaluate(env);
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
-	ans = invoke(call, arglist.list(), env);
+	ans = invoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	ans = invoke(call, arglist.list(), env);
+	ans = invoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)
 	Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);

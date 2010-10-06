@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
 
@@ -286,8 +287,8 @@ namespace CXXR {
 	const char* typeName() const;
 
 	// Virtual function of FunctionBase:
-	RObject* apply(const Expression* call,
-		       const PairList* args, Environment* env) const;
+	RObject* apply(ArgList* arglist, Environment* env,
+		       const Expression* call) const;
     private:
 	// 'Pretty-print' information:
 	struct PPinfo {
@@ -330,12 +331,12 @@ namespace CXXR {
 	static void initialize();
 
 	// Invoke the encapsulated function:
-	RObject* invoke(const Expression* call, const PairList* args,
-			Environment* env) const
+	RObject* invoke(Environment* env, const ArgList* arglist, 
+			const Expression* call) const
 	{
 	    return m_function(const_cast<Expression*>(call),
 			      const_cast<BuiltInFunction*>(this),
-			      const_cast<PairList*>(args), env);
+			      const_cast<PairList*>(arglist->list()), env);
 	}
 
 	/** @brief Raise error because of missing argument.

@@ -49,6 +49,7 @@
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
+    class ArgList;
     class Expression;
     class Environment;
 
@@ -58,18 +59,19 @@ namespace CXXR {
     public:
 	/** @brief Apply the function.
 	 *
-	 * @param call Pointer to the Expression calling the function.
-	 *
-	 * @param args List of arguments with which the function is to
-	 *          be invoked.
+	 * @param arglist Non-null pointer to the ArgList containing
+	 *          the list of arguments with which the function is
+	 *          to be invoked.
 	 *
 	 * @param env Pointer to the Environment in which the function
 	 *          is to be evaluated.
 	 *
+	 * @param call Pointer to the Expression calling the function.
+	 *
 	 * @return The result of applying the function.
 	 */
-	virtual RObject* apply(const Expression* call, const PairList* args,
-			       Environment* env) const = 0;
+	virtual RObject* apply(ArgList* arglist, Environment* env,
+			       const Expression* call) const = 0;
 
 	/** @brief Enable/disable function tracing.
 	 *

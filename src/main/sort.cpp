@@ -1069,9 +1069,9 @@ SEXP attribute_hidden do_xtfrm(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_PRVALUE(CAR(prargs), CAR(args));
     Closure* closure = SEXP_downcast<Closure*>(fn);
     Expression* callx = SEXP_downcast<Expression*>(call);
-    PairList* arglist = SEXP_downcast<PairList*>(prargs);
+    ArgList arglist(SEXP_downcast<PairList*>(prargs), false);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
-    ans = closure->invoke(callx, arglist, callenv);
+    ans = closure->invoke(callenv, &arglist, callx);
     UNPROTECT(2);
     return ans;
     

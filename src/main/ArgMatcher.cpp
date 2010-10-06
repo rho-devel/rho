@@ -21,6 +21,7 @@
 
 #include "CXXR/ArgMatcher.hpp"
 
+#include "CXXR/ArgList.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/GCStackRoot.hpp"
@@ -127,7 +128,7 @@ void ArgMatcher::makeBinding(Environment* target_env, const FormalData& fdata,
 	bdg->setValue(value, origin);
 }
     
-void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
+void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 {
     Frame* frame = target_env->frame();
     vector<MatchStatus, Allocator<MatchStatus> >
@@ -136,7 +137,7 @@ void ArgMatcher::match(Environment* target_env, const PairList* supplied) const
     // Exact matches by tag:
     {
 	unsigned int sindex = 0;
-	for (const PairList* s = supplied; s; s = s->tail()) {
+	for (const PairList* s = supplied->list(); s; s = s->tail()) {
 	    ++sindex;
 	    GCStackRoot<const Symbol>
 		tag(static_cast<const Symbol*>(s->tag()));

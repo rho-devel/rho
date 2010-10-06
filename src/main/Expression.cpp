@@ -42,6 +42,7 @@
 #include <iostream>
 #include "R_ext/Error.h"
 #include "localization.h"
+#include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
 #include "CXXR/FunctionBase.h"
@@ -84,7 +85,8 @@ RObject* Expression::evaluate(Environment* env)
 	func = static_cast<FunctionBase*>(val);
     }
     func->maybeTrace(this);
-    return func->apply(this, tail(), env);
+    ArgList arglist(tail(), false);
+    return func->apply(&arglist, env, this);
 }
 
 const char* Expression::typeName() const

@@ -104,17 +104,17 @@ static RObject* GetObject(ClosureContext *cptr)
 }
 
 static RObject* applyMethod(const Expression* call, const FunctionBase* func,
-			    const PairList* args, Environment* env,
+			    ArgList* arglist, Environment* env,
 			    Frame* method_bindings)
 {
     RObject* ans;
     if (func->sexptype() == CLOSXP) {
 	const Closure* clos = static_cast<const Closure*>(func);
-	ans = clos->invoke(call, args, env, method_bindings);
+	ans = clos->invoke(env, arglist, call, method_bindings);
     } else {
 	GCStackRoot<Environment>
 	    newenv(GCNode::expose(new Environment(0, method_bindings)));
-	ans = func->apply(call, args, newenv);
+	ans = func->apply(arglist, newenv, call);
     }
     return ans;
 }
@@ -338,7 +338,8 @@ int usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     newcall->setCar(method_symbol);
-    *ans = applyMethod(newcall, method, matchedarg, env, newframe);
+    ArgList arglist(matchedarg, false);
+    *ans = applyMethod(newcall, method, &arglist, env, newframe);
     return 1;
 }
 
@@ -368,8 +369,8 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    matcher(ArgMatcher::make(genericsym, objectsym));
 	GCStackRoot<Environment>
 	    matchenv(GCNode::expose(new Environment(0, 2)));
-	const PairList* arglist = SEXP_downcast<PairList*>(args);
-	matcher->match(matchenv, arglist);
+	ArgList arglist(SEXP_downcast<PairList*>(args), false);
+	matcher->match(matchenv, &arglist);
 
 	// "generic":
 	{
@@ -606,6 +607,8 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
 
+    ArgList newarglist(matchedarg, false);  // ***** FIXME *****
+
     /*
       .Class is used to determine the next method; if it doesn't
       exist the first argument to the current method is used
@@ -771,10 +774,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    GCStackRoot<DottedArgs>
 		dots(SEXP_downcast<DottedArgs*>(bdg->value()));
 	    GCStackRoot<PairList> newargs(ConsCell::convert<PairList>(dots));
-	    ArgList al(matchedarg, false);
-	    al.merge(newargs);
-	    matchedarg = const_cast<PairList*>(al.list());
-	    newcall = static_cast<Expression*>(fixcall(newcall, matchedarg));
+	    newarglist.merge(newargs);
+	    newcall
+		= static_cast<Expression*>(fixcall(newcall,
+						   const_cast<PairList*>(newarglist.list())));
 	}
     }
 
@@ -811,7 +814,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    method_bindings->bind(DotGroupSymbol, dotgroup);
     }
 
-    return applyMethod(newcall, nextfun, matchedarg, callenv, method_bindings);
+    return applyMethod(newcall, nextfun, &newarglist, callenv, method_bindings);
 }
 
 /* primitive */
@@ -1311,7 +1314,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
     Expression* callx = SEXP_downcast<Expression*>(call);
-    GCStackRoot<PairList> arglist(SEXP_downcast<PairList*>(args));
+    GCStackRoot<PairList> argspl(SEXP_downcast<PairList*>(args));
     Environment* callenv = SEXP_downcast<Environment*>(rho);
     SEXP value;
     GCStackRoot<> mlist;
@@ -1346,16 +1349,17 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		al.wrapInPromises(callenv);
 		PairList* pargs = const_cast<PairList*>(al.list());
 		PairList *a, *b;
-		for (a = arglist, b = pargs;
+		for (a = argspl, b = pargs;
 		     a != 0 && b != 0;
 		     a = a->tail(), b = b->tail())
 		    SET_PRVALUE(b->car(), a->car());
 		// Check for unequal list lengths:
 		if (a != 0 || b != 0)
 		    Rf_error(_("dispatch error"));
-		arglist = pargs;
+		argspl = pargs;
 	    }
-	    value = func->invoke(callx, arglist, callenv);
+	    ArgList al2(argspl, false);
+	    value = func->invoke(callenv, &al2, callx);
 	    return make_pair(true, value);
 	}
 	// else, need to perform full method search
@@ -1373,16 +1377,17 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	al.wrapInPromises(callenv);
 	PairList* pargs = const_cast<PairList*>(al.list());
 	PairList *a, *b;
-	for (a = arglist, b = pargs;
+	for (a = argspl, b = pargs;
 	     a != 0 && b != 0;
 	     a = a->tail(), b = b->tail())
 	    SET_PRVALUE(b->car(), a->car());
 	// Check for unequal list lengths:
 	if (a != 0 || b != 0)
 	    Rf_error(_("dispatch error"));
-	arglist = pargs;
+	argspl = pargs;
     }
-    value = func->invoke(callx, arglist, callenv);
+    ArgList al3(argspl, false);
+    value = func->invoke(callenv, &al3, callx);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
 	return pair<bool, SEXP>(false, 0);

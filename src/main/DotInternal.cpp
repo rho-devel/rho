@@ -82,11 +82,12 @@ void SET_INTERNAL(SEXP x, SEXP v)
 
 SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
-    PairList* arglist = SEXP_downcast<PairList*>(args);
     Expression* callx = SEXP_downcast<Expression*>(call);
-    opfun->checkNumArgs(arglist, callx);
-    Expression* innercall = dynamic_cast<Expression*>(arglist->car());
+    BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
+    PairList* argspl = SEXP_downcast<PairList*>(args);
+    Environment* envir = SEXP_downcast<Environment*>(env);
+    opfun->checkNumArgs(argspl, callx);
+    Expression* innercall = dynamic_cast<Expression*>(argspl->car());
     if (!innercall)
 	Rf_errorcall(call, _("invalid .Internal() argument"));
     Symbol* funsym = dynamic_cast<Symbol*>(innercall->car());
@@ -96,6 +97,6 @@ SEXP do_internal(SEXP call, SEXP op, SEXP args, SEXP env)
     if (!func)
 	Rf_errorcall(call, _("no internal function \"%s\""),
 		     funsym->name()->c_str());
-    Environment* envir = SEXP_downcast<Environment*>(env);
-    return func->apply(innercall, innercall->tail(), envir);
+    ArgList al(innercall->tail(), false);
+    return func->apply(&al, envir, innercall);
 }
