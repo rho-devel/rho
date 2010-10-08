@@ -1562,13 +1562,11 @@ attribute_hidden
 int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 		      SEXP rho, SEXP *ans, int dropmissing, int argsevald)
 {
-    GCStackRoot<PairList> arglist(SEXP_downcast<PairList*>(args));
+    Expression* callx = SEXP_downcast<Expression*>(call);
+    FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
+    ArgList arglist(SEXP_downcast<PairList*>(args),
+		    (argsevald ? ArgList::EVALUATED : ArgList::RAW));
     Environment* callenv = SEXP_downcast<Environment*>(rho);
-
-    if (!arglist) {
-	*ans = 0;
-	return 0;
-    }
 
     // Rf_DispatchOrEval is called very frequently, most often in cases
     // where no dispatching is needed and the Rf_isObject or the
@@ -1580,87 +1578,36 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
     // and that there might be other arguments in the "..." as well.
     // LT
 
-    GCStackRoot<> x;
-    bool dots = false;
-
-    if (argsevald)
-	x = arglist->car();
-    else {
-	// Find the object to dispatch on, dropping any leading
-	// ... arguments with missing or empty values.  If there are
-	// no arguments, R_NilValue is used.
-	bool found = false;
-	while (!found && arglist) {
-	    RObject* arg1 = arglist->car();
-	    if (arg1 != R_DotsSymbol) {
-		x = (arg1 ? arg1->evaluate(callenv) : 0);
-		found = true;
-	    } else {
-		Frame::Binding* bdg = callenv->findBinding(DotsSymbol).second;
-		if (bdg && bdg->origin() != Frame::Binding::MISSING) {
-		    RObject* h = bdg->value();
-		    if (h) {
-			if (h->sexptype() != DOTSXP)
-			    Rf_error(_("'...' used in an incorrect context"));
-			RObject* dots1 = static_cast<DottedArgs*>(h)->car();
-			if (dots1->sexptype() != PROMSXP)
-			    Rf_error(_("value in '...' is not a promise"));
-			dots = true;
-			x = dots1->evaluate(callenv);
-			found = true;
-		    }
-		}
-	    }
-	    if (!found)
-		arglist = arglist->tail();  // Drop aberrant ...
-	}
-    }
+    GCStackRoot<> x(arglist.firstArg(callenv).second);
 
     // try to dispatch on the object
     if (x && x->hasClass()) {
 	// Try for formal method.
-	if (x->isS4Object() && R_has_methods(op)) {
-	    GCStackRoot<PairList> argValue(arglist);
+	if (x->isS4Object() && R_has_methods(func)) {
 	    // create a promise to pass down to applyClosure
-	    if (!argsevald) {
-		ArgList al(arglist, ArgList::RAW);
-		al.wrapInPromises(callenv);
-		argValue = const_cast<PairList*>(al.list());
-		SET_PRVALUE(CAR(argValue), x);
-	    } else argValue = arglist;
+	    if (arglist.status() == ArgList::RAW)
+		arglist.wrapInPromises(callenv);
 	    /* This means S4 dispatch */
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(call, op, argValue, callenv, TRUE);
+		= R_possible_dispatch(callx, func,
+				      const_cast<PairList*>(arglist.list()),
+				      callenv, TRUE);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
 	    }
-	    else {
-		/* go on, with the evaluated args.  Not guaranteed to have
-		   the same semantics as if the arguments were not
-		   evaluated, in special cases (e.g., arg values that are
-		   LANGSXP).
-		   The use of the Rf_promiseArgs is supposed to prevent
-		   multiple evaluation after the call to possible_dispatch.
-		*/
-		if (dots)
-		    argValue = static_cast<PairList*>(evalArgs(argValue, callenv, dropmissing, call, 0));
-		else {
-		    argValue = static_cast<PairList*>(CONS(x, evalArgs(CDR(argValue), callenv, dropmissing, call, 1)));
-		    SET_TAG(argValue, Rf_CreateTag(TAG(arglist)));
-		}
-		arglist = argValue;
-		argsevald = 1;
+	}
+	char* suffix = 0;
+	{
+	    RObject* callcar = callx->car();
+	    if (callcar->sexptype() == SYMSXP) {
+		Symbol* sym = static_cast<Symbol*>(callcar);
+		suffix = Rf_strrchr(sym->name()->c_str(), '.');
 	    }
 	}
-	char *pt;
-	if (TYPEOF(CAR(call)) == SYMSXP)
-	    pt = Rf_strrchr(CHAR(PRINTNAME(CAR(call))), '.');
-	else
-	    pt = NULL;
-
-	if (pt == NULL || strcmp(pt,".default")) {
-	    GCStackRoot<> pargs(Rf_promiseArgs(arglist, callenv));
+	if (!suffix || strcmp(suffix, ".default")) {
+	    if (arglist.status() == ArgList::RAW)
+		arglist.wrapInPromises(callenv);
 	    /* The context set up here is needed because of the way
 	       Rf_usemethod() is written.  Rf_DispatchGroup() repeats some
 	       internal Rf_usemethod() code and avoids the need for a
@@ -1676,37 +1623,20 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<> rho1(Rf_NewEnvironment(R_NilValue, R_NilValue, callenv));
-	    SET_PRVALUE(CAR(pargs), x);
-	    int um;
-	    {
-	        Expression* callx = SEXP_downcast<Expression*>(call);
-	        FunctionBase* func = SEXP_downcast<FunctionBase*>(op);
-		Environment* working_env
-		    = SEXP_downcast<Environment*>(rho1.get());
-		PairList* promargs = SEXP_downcast<PairList*>(pargs.get());
-		ClosureContext cntxt(callx, callenv, func,
-				     working_env, promargs);
-		um = Rf_usemethod(generic, x, call, pargs, rho1, callenv, R_BaseEnv, ans);
-	    }
+	    Environment* working_env
+		= GCNode::expose(new Environment(callenv, 5));
+	    ClosureContext cntxt(callx, callenv, func,
+				 working_env, arglist.list());
+	    int um = Rf_usemethod(generic, x, call,
+				  const_cast<PairList*>(arglist.list()),
+				  working_env, callenv, R_BaseEnv, ans);
 	    if (um)
 		return 1;
 	}
     }
-    if(!argsevald) {
-	if (dots)
-	    /* The first call argument was ... and may contain more than the
-	       object, so it needs to be evaluated here.  The object should be
-	       in a promise, so evaluating it again should be no problem. */
-	    *ans = evalArgs(arglist, callenv, dropmissing, call, 0);
-	else {
-	    GCStackRoot<> ansval(CONS(x, evalArgs(CDR(arglist), callenv,
-						  dropmissing, call, 1)));
-	    SET_TAG(ansval, Rf_CreateTag(TAG(arglist)));
-	    *ans = ansval;
-	}
-    }
-    else *ans = arglist;
+    if (arglist.status() != ArgList::EVALUATED)
+	arglist.evaluate(callenv, !dropmissing);
+    *ans = const_cast<PairList*>(arglist.list());
     return 0;
 }
 
