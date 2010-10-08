@@ -39,12 +39,16 @@
  * @brief Provenance-related R functions
  */
 
+#include <fstream>
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include <Defn.h>
 #include <set>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 #include "CXXR/Provenance.hpp"
 #include "CXXR/Parentage.hpp"
 
@@ -222,5 +226,41 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	delete provs;
 	delete ancestors;
+	return R_NilValue;
+}
+
+
+SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+//	errorcall(call,_("Mostly unimplemented"));
+	std::ofstream ofs("bserialize.out");
+	
+	int n;
+	if ((n=length(args))!=1)
+		errorcall(call,_("%d arguments passed to 'bserialize' which requires 1"),n);
+
+	Environment* env=static_cast<Environment*>(rho);
+	
+	if (TYPEOF(CAR(args))==SYMSXP) {
+		Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
+		const Frame::Binding* bdg=findBinding(sym,env).second;
+		if (bdg) {
+			boost::archive::text_oarchive oa(ofs);
+			oa << *bdg;
+		}
+	}
+
+	return R_NilValue;
+}
+
+SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+	std::ifstream ifs("bserialize.out");
+	boost::archive::text_iarchive ia(ifs);
+
+	Frame::Binding bdg;
+
+	ia >> bdg;
+
 	return R_NilValue;
 }

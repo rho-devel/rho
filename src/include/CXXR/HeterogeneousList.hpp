@@ -44,6 +44,7 @@
 #define HETEROGENEOUSLIST_HPP
 
 #include <iterator>
+#include <boost/serialization/access.hpp>
 
 namespace CXXR {
     template <class Node> class HeterogeneousList;
@@ -92,6 +93,12 @@ namespace CXXR {
 	private:
 	    Link* m_prev;
 	    Link* m_next;
+
+	    friend class boost::serialization::access;
+	    template <class Archive>
+	    void serialize(Archive & ar, const unsigned int version) {
+	    	printf("Serialize HeterogeneousList::Link\n");
+	    }
 	};
 
 	/** @brief Create an empty list.

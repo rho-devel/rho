@@ -6,6 +6,9 @@
 #include <sys/time.h>
 #include <ctime>
 #include <set>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
@@ -29,6 +32,7 @@ namespace CXXR {
 		};
 		typedef std::set<Provenance*,Provenance::CompTime> Set;
 
+		Provenance(); // sort of for boost::serialization
 		Provenance(Expression*,Symbol*,Parentage*);
 		~Provenance();
 
@@ -45,6 +49,7 @@ namespace CXXR {
 		Set* pedigree();
 		void visitReferents(const_visitor*) const;
 	private:
+		friend class boost::serialization::access;
 		struct timeval m_timestamp;
 		unsigned int m_parentpos;
 		Set* m_children;
@@ -56,8 +61,16 @@ namespace CXXR {
 		void announceDeath();
 		void deregisterChild(Provenance*);
 		void registerChild(Provenance*);
+		template <class Archive>
+		void serialize(Archive & ar, const unsigned int version) {
+			ar & boost::serialization::base_object<GCNode>(*this);
+			printf("Serialize Provenance\n");
+			ar & m_parentpos;
+		}
 	};
 } // Namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::Provenance)
 
 #endif
 #endif

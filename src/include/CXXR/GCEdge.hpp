@@ -40,6 +40,8 @@
 #ifndef GCEDGE_HPP
 #define GCEDGE_HPP 1
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -105,6 +107,13 @@ namespace CXXR {
 	    std::swap(m_target, tmp.m_target);
 	}
     private:
+        friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		printf("Serialize GCEdgeBase\n");
+		ar & const_cast<GCNode* &>(m_target);
+	}
+
 	const GCNode* m_target;
 
 	static void abortIfNotExposed(const GCNode* target);
@@ -186,7 +195,14 @@ namespace CXXR {
 	{
 	    return static_cast<T*>(const_cast<GCNode*>(target()));
 	}
+    private:
+        friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & boost::serialization::base_object<GCEdgeBase>(*this);
+		printf("Serialize GCEdge\n");
+	}
     };
-}
+} // Namespace CXXR
 
 #endif  // GCEDGE_HPP

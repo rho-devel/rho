@@ -7,6 +7,8 @@
 using namespace std;
 using namespace CXXR;
 
+Provenance::Provenance() { }
+
 Provenance::Provenance(Expression* exp, Symbol* sym, Parentage* par) {
 	m_expression=(exp)?exp->clone():NULL;
 	m_symbol=sym;

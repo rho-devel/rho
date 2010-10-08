@@ -976,6 +976,10 @@ void BuiltInFunction::initialize()
 {"provenance", do_provenance, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
 {"pedigree", do_pedigree, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
 
+/* and my serialization function */
+{"bserialize", do_bserialize, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"bdeserialize", do_bdeserialize, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+
 {"readDCF",	do_readDCF,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 
 {"getNumRtoCConverters", do_getNumRtoCConverters, 0, 11, 0,{PP_FUNCALL, PREC_FN,0}},

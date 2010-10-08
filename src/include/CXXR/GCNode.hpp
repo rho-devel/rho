@@ -41,6 +41,8 @@
 #ifndef GCNODE_HPP
 #define GCNODE_HPP
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
 #include "CXXR/Allocator.hpp"
 #include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
@@ -402,6 +404,7 @@ namespace CXXR {
 	virtual void detachReferents()  {}
 
     private:
+   	friend class boost::serialization::access;
 	friend class GCInhibitor;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
@@ -472,10 +475,6 @@ namespace CXXR {
 	GCNode(const GCNode&);
 	GCNode& operator=(const GCNode&);
 
-	// Not implemented.  Declared private to prevent clients
-	// allocating arrays of GCNode.
-	static void* operator new[](size_t);
-
 	// Abort program if 'node' is not exposed to GC.
 	static void abortIfNotExposed(const GCNode* node);
 
@@ -541,6 +540,14 @@ namespace CXXR {
 	// This function is used to provide temporary protection using
 	// PROTECT().  It returns the number of items thus protected.
 	static unsigned int protectCstructs();
+
+	/** @brief Vestigial implementation
+	 */
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) { 
+		ar & boost::serialization::base_object<HeterogeneousListBase::Link>(*this);
+		printf("Serialize GCNode\n");
+	}
 
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */

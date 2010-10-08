@@ -41,6 +41,7 @@
 #ifndef RFRAME_HPP
 #define RFRAME_HPP
 
+#include <boost/serialization/access.hpp>
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
@@ -361,9 +362,18 @@ namespace CXXR {
 	     */
 	    void visitReferents(const_visitor* v) const;
 	private:
+	    friend class boost::serialization::access;
+	    template<class Archive>
+	    void serialize(Archive & ar, const unsigned int version) {
+	    	ar & m_active;
+		ar & m_locked;
+		ar & m_provenance;
+		printf("Serialize Frame::Binding\n");
+	    }
+
 	    Frame* m_frame;
 	    GCEdge<const Symbol> m_symbol;
-			GCEdge<const Provenance> m_provenance;
+	    GCEdge<const Provenance> m_provenance;
 	    GCEdge<> m_value;
 	    Origin m_origin;
 	    bool m_active;
@@ -657,7 +667,6 @@ namespace CXXR {
      *          fields of the corresponding PairList element.
      */
     void frameReadPairList(Frame* frame, PairList* bindings);
-
 }  // namespace CXXR
 
 // This definition is visible only in C++; C code sees instead a
