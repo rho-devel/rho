@@ -1692,13 +1692,17 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	(CDR(args) == R_NilValue || ! Rf_isObject(CADR(args))))
 	return 0;
 
-    Rboolean isOps = CXXRCONSTRUCT(Rboolean, strcmp(group, "Ops") == 0);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+
+    bool isOps = (strcmp(group, "Ops") == 0);
 
     /* try for formal method */
-    Rboolean useS4 = TRUE;
-    if(length(args) == 1 && !IS_S4_OBJECT(CAR(args))) useS4 = FALSE;
+    bool useS4 = true;
+    if(length(args) == 1 && !IS_S4_OBJECT(CAR(args)))
+	useS4 = false;
     if(length(args) == 2 &&
-       !IS_S4_OBJECT(CAR(args)) && !IS_S4_OBJECT(CADR(args))) useS4 = FALSE;
+       !IS_S4_OBJECT(CAR(args)) && !IS_S4_OBJECT(CADR(args)))
+	useS4 = false;
     if(useS4) {
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
@@ -1706,7 +1710,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		SET_TAG(s, R_NilValue);
 	if(R_has_methods(op)) {
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(call, op, args, rho, FALSE);
+		= R_possible_dispatch(call, op, args, callenv, FALSE);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
@@ -1756,7 +1760,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	SEXP lgrtmp = 0;
 	findmethod(lclass, group, generic, &lsxp, &lgrtmp, &lmeth, &lwhich,
-		   lbuf, rho);
+		   lbuf, callenv);
 	lgr = lgrtmp;
     }
     if(Rf_isFunction(lsxp) && IS_S4_OBJECT(CAR(args)) && lwhich > 0
@@ -1779,7 +1783,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     if( nargs == 2 ) {
 	SEXP rgrtmp = 0;
 	findmethod(rclass, group, generic, &rsxp, &rgrtmp, &rmeth,
-		   &rwhich, rbuf, rho);
+		   &rwhich, rbuf, callenv);
 	rgr = rgrtmp;
     }
 
@@ -1827,7 +1831,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<> newrho(GCNode::expose(new Environment(0)));
+    GCStackRoot<Frame> supp_frame(GCNode::expose(new StdFrame));
     {
 	GCStackRoot<> m(Rf_allocVector(STRSXP,nargs));
 	SEXP s = args;
@@ -1849,30 +1853,30 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		SET_STRING_ELT(m, i, R_BlankString);
 	    s = CDR(s);
 	}
-	Rf_defineVar(Rf_install(".Method"), m, newrho);
+	supp_frame->bind(DotMethodSymbol, m);
     }
 
     {
 	GCStackRoot<> t(Rf_mkString(generic));
-	Rf_defineVar(Rf_install(".Generic"), t, newrho);
+	supp_frame->bind(DotGenericSymbol, t);
     }
-    Rf_defineVar(Rf_install(".Group"), lgr, newrho);
+    supp_frame->bind(DotGroupSymbol, lgr);
     {
 	int set = length(lclass) - lwhich;
 	GCStackRoot<> t(Rf_allocVector(STRSXP, set));
 	for(int j = 0 ; j < set ; j++ )
 	    SET_STRING_ELT(t, j, Rf_duplicate(STRING_ELT(lclass, lwhich++)));
-	Rf_defineVar(Rf_install(".Class"), t, newrho);
+	supp_frame->bind(DotClassSymbol, t);
     }
-    Rf_defineVar(Rf_install(".GenericCallEnv"), rho, newrho);
-    Rf_defineVar(Rf_install(".GenericDefEnv"), R_BaseEnv, newrho);
+    supp_frame->bind(DotGenericCallEnvSymbol, callenv);
+    supp_frame->bind(DotGenericDefEnvSymbol, Environment::base());
 
     /* the arguments have been evaluated; since we are passing them */
     /* out to a closure we need to wrap them in promises so that */
     /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<> t(LCONS(lmeth, CDR(call)));
-	GCStackRoot<> s(Rf_promiseArgs(CDR(call), rho));
+	GCStackRoot<> s(Rf_promiseArgs(CDR(call), callenv));
 	if (length(s) != length(args))
 	    Rf_error(_("dispatch error in group dispatch"));
 	for (SEXP m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
@@ -1884,9 +1888,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
 	Expression* callx = SEXP_downcast<Expression*>(t.get());
 	ArgList arglist(SEXP_downcast<PairList*>(s.get()), ArgList::PROMISED);
-	Environment* callenv = SEXP_downcast<Environment*>(rho);
-	Environment* supp_env = SEXP_downcast<Environment*>(newrho.get());
-	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
+	*ans = func->invoke(callenv, &arglist, callx, supp_frame);
     }
     return 1;
 }
