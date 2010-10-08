@@ -173,11 +173,13 @@ namespace CXXR {
 	 *          argument is to be evaluated.  If the ArgList has
 	 *          already been evaluated, this pointer can be null.
 	 *
-	 * @return The result of evaluating the first argument.  A
-	 * null pointer is returned if, following the procedure
-	 * described above, no first argument was found.
+	 * @return If, following the procedure described above, no
+	 * first argument was found, then the first element of the
+	 * pair is false and the second element null.  Otherwise, the
+	 * first element is true and the second element is a pointer
+	 * to the value of the first argument.
 	 */
-	RObject* firstArg(Environment* env);
+	std::pair<bool, RObject*> firstArg(Environment* env);
 
 	/** @brief Access the argument list as a PairList.
 	 *
@@ -293,6 +295,15 @@ namespace CXXR {
 				// constructor, even though the
 				// constructor casts const away when
 				// it initialises this data member.
+	GCStackRoot<> m_first_arg;  // If the first argument needed to
+			// be evaluated in a call to firstArg(), this
+			// is a pointer to the resulting value, and
+			// m_first_arg_env points to the Environment
+			// in which evaluation took place.  Both
+			// pointers are reset to null once the first
+			// argument has been processed in a subsequent
+			// call to evaluate() or wrapInPromises().
+	GCStackRoot<Environment> m_first_arg_env;
 	Status m_status;
 
 	// Not implemented.  Declared private to suppress

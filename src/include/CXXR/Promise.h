@@ -81,10 +81,12 @@ namespace CXXR {
 	 *          the value of the Promise.  Can be null.
 	 *
 	 * @param env pointer to the Environment in which \a valgen is
-	 *          to be evaluated.
+	 *          to be evaluated.  If this pointer is null, the
+	 *          value of the Promise is immediately set to be \a
+	 *          valgen itself.
 	 */
 	Promise(RObject* valgen, Environment* env)
-	    : RObject(PROMSXP), m_value(Symbol::unboundValue()),
+	    : RObject(PROMSXP), m_value(env ? Symbol::unboundValue() : valgen),
 	      m_valgen(valgen), m_environment(env), m_under_evaluation(false),
 	      m_interrupted(false)
 	{}

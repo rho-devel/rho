@@ -37,6 +37,9 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 {
     if (m_status == EVALUATED)
 	Rf_error("Internal error: ArgList already evaluated");
+    if (m_first_arg_env && env != m_first_arg_env)
+	Rf_error("Internal error: first arg of ArgList"
+		 " previously evaluated in different environment");
     GCStackRoot<const PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -53,7 +56,11 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 		while (dotlist) {
 		    RObject* dotcar = dotlist->car();
 		    RObject* outcar = Symbol::missingArgument();
-		    if (dotcar != Symbol::missingArgument())
+		    if (m_first_arg_env) {
+			outcar = m_first_arg;
+			m_first_arg = 0;
+			m_first_arg_env = 0;
+		    } else if (dotcar != Symbol::missingArgument())
 			outcar = Evaluator::evaluate(dotcar, env);
 		    PairList* cell = PairList::cons(outcar, 0, dotlist->tag());
 		    lastout->setTail(cell);
@@ -65,7 +72,11 @@ void ArgList::evaluate(Environment* env, bool allow_missing)
 	} else {
 	    const RObject* tag = inp->tag();
 	    PairList* cell = 0;
-	    if (incar && incar->sexptype() == SYMSXP) {
+	    if (m_first_arg_env) {
+		cell = PairList::cons(m_first_arg, 0, tag);
+		m_first_arg = 0;
+		m_first_arg_env = 0;
+	    } else if (incar && incar->sexptype() == SYMSXP) {
 		Symbol* sym = static_cast<Symbol*>(incar);
 		if (sym == Symbol::missingArgument()) {
 		    if (allow_missing)
@@ -112,12 +123,51 @@ void ArgList::merge(const ConsCell* extraargs)
 	}
     }
 }
-	    
+
+pair<bool, RObject*> ArgList::firstArg(Environment* env)
+{
+    const PairList* elt = list();
+    if (!elt)
+	return pair<bool, RObject*>(false, 0);
+    if (m_status == EVALUATED)
+	return make_pair(true, elt->car());
+    while (elt) {
+	RObject* arg1 = elt->car();
+	if (!arg1)
+	    return pair<bool, RObject*>(true, 0);
+	if (arg1 != DotsSymbol) {
+	    m_first_arg = arg1->evaluate(env);
+	    m_first_arg_env = env;
+	    return make_pair(true, m_first_arg);
+	}
+	// If we get here it must be DotSymbol.
+	Frame::Binding* bdg = env->findBinding(DotsSymbol).second;
+	if (bdg && bdg->origin() != Frame::Binding::MISSING) {
+	    RObject* val = bdg->value();
+	    if (val) {
+		if (val->sexptype() != DOTSXP)
+		    Rf_error(_("'...' used in an incorrect context"));
+		RObject* dots1 = static_cast<DottedArgs*>(val)->car();
+		if (dots1->sexptype() != PROMSXP)
+		    Rf_error(_("value in '...' is not a promise"));
+		m_first_arg = dots1->evaluate(env);
+		m_first_arg_env = env;
+		return make_pair(true, m_first_arg);
+	    }
+	}
+	elt = elt->tail();  // elt was unbound or missing DotsSymbol
+    }
+    return pair<bool, RObject*>(false, 0);
+}
+
 void ArgList::wrapInPromises(Environment* env)
 {
     if (m_status != RAW)
 	Rf_error("Internal error:"
 		 " ArgList::wrapInPromises() requires RAW ArgList");
+    if (m_first_arg_env && env != m_first_arg_env)
+	Rf_error("Internal error: first arg of ArgList"
+		 " previously evaluated in different environment");
     GCStackRoot<PairList> oldargs(m_list->tail());
     m_list->setTail(0);
     PairList* lastout = m_list;
@@ -131,8 +181,15 @@ void ArgList::wrapInPromises(Environment* env)
 		if (!dval || dval->sexptype() == DOTSXP) {
 		    ConsCell* dotlist = static_cast<ConsCell*>(dval);
 		    while (dotlist) {
-			Promise* prom
-			    = GCNode::expose(new Promise(dotlist->car(), env));
+			Promise* prom;
+			if (!m_first_arg_env)
+			    prom = new Promise(dotlist->car(), env);
+			else {
+			    prom = new Promise(m_first_arg, 0);
+			    m_first_arg = 0;
+			    m_first_arg_env = 0;
+			}
+			prom->expose();
 			const Symbol* tag = tag2Symbol(dotlist->tag());
 			lastout->setTail(PairList::cons(prom, 0, tag));
 			lastout = lastout->tail();
@@ -144,7 +201,11 @@ void ArgList::wrapInPromises(Environment* env)
 	} else {
 	    const Symbol* tag = tag2Symbol(inp->tag());
 	    RObject* value = Symbol::missingArgument();
-	    if (rawvalue != Symbol::missingArgument())
+	    if (m_first_arg_env) {
+		value = GCNode::expose(new Promise(m_first_arg, 0));
+		m_first_arg = 0;
+		m_first_arg_env = 0;
+	    } else if (rawvalue != Symbol::missingArgument())
 		value = GCNode::expose(new Promise(rawvalue, env));
 	    lastout->setTail(PairList::cons(value, 0, tag));
 	    lastout = lastout->tail();
