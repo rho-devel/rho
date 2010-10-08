@@ -1680,15 +1680,8 @@ static void findmethod(SEXP Class, const char *group, const char *generic,
 
 attribute_hidden
 int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
-		  SEXP *ans)
+		     SEXP *ans)
 {
-    int i, j, nargs, lwhich, rwhich, set;
-    GCStackRoot<> lclass;
-    SEXP s, t, m, lmeth, lsxp, lgr, newrho;
-    SEXP rclass, rmeth, rgr, rsxp, value;
-    char lbuf[512], rbuf[512], generic[128], *pt;
-    Rboolean useS4 = TRUE, isOps = FALSE;
-
     /* pre-test to avoid string computations when there is nothing to
        dispatch on because either there is only one argument and it
        isn't an object or there are two or more arguments but neither
@@ -1699,16 +1692,18 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	(CDR(args) == R_NilValue || ! Rf_isObject(CADR(args))))
 	return 0;
 
-    isOps = CXXRCONSTRUCT(Rboolean, strcmp(group, "Ops") == 0);
+    Rboolean isOps = CXXRCONSTRUCT(Rboolean, strcmp(group, "Ops") == 0);
 
     /* try for formal method */
+    Rboolean useS4 = TRUE;
     if(length(args) == 1 && !IS_S4_OBJECT(CAR(args))) useS4 = FALSE;
     if(length(args) == 2 &&
        !IS_S4_OBJECT(CAR(args)) && !IS_S4_OBJECT(CADR(args))) useS4 = FALSE;
     if(useS4) {
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
-	    for(s = args; s != R_NilValue; s = CDR(s)) SET_TAG(s, R_NilValue);
+	    for(SEXP s = args; s != R_NilValue; s = CDR(s))
+		SET_TAG(s, R_NilValue);
 	if(R_has_methods(op)) {
 	    std::pair<bool, SEXP> pr
 		= R_possible_dispatch(call, op, args, rho, FALSE);
@@ -1721,21 +1716,19 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     /* check whether we are processing the default method */
+    char lbuf[512];
     if ( Rf_isSymbol(CAR(call)) ) {
 	if(strlen(CHAR(PRINTNAME(CAR(call)))) >= 512)
 	   Rf_error(_("call name too long in '%s'"), CHAR(PRINTNAME(CAR(call))));
 	sprintf(lbuf, "%s", CHAR(PRINTNAME(CAR(call))) );
-	pt = strtok(lbuf, ".");
+	char* pt = strtok(lbuf, ".");
 	pt = strtok(NULL, ".");
 
 	if( pt != NULL && !strcmp(pt, "default") )
 	    return 0;
     }
 
-    if(isOps)
-	nargs = length(args);
-    else
-	nargs = 1;
+    int nargs = (isOps ? length(args) : 1);
 
     if( nargs == 1 && !Rf_isObject(CAR(args)) )
 	return 0;
@@ -1745,54 +1738,63 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     if(strlen(PRIMNAME(op)) >= 128)
 	Rf_error(_("generic name too long in '%s'"), PRIMNAME(op));
+    char generic[128];
     sprintf(generic, "%s", PRIMNAME(op) );
 
-    lclass = IS_S4_OBJECT(CAR(args)) ? R_data_class2(CAR(args))
-      : Rf_getAttrib(CAR(args), R_ClassSymbol);
+    GCStackRoot<> lclass(IS_S4_OBJECT(CAR(args)) ? R_data_class2(CAR(args))
+			 : Rf_getAttrib(CAR(args), R_ClassSymbol));
 
+    SEXP rclass = 0;
     if( nargs == 2 )
-	rclass = IS_S4_OBJECT(CADR(args)) ? R_data_class2(CADR(args))
-      : Rf_getAttrib(CADR(args), R_ClassSymbol);
-    else
-	rclass = R_NilValue;
+	rclass = (IS_S4_OBJECT(CADR(args)) ? R_data_class2(CADR(args))
+		  : Rf_getAttrib(CADR(args), R_ClassSymbol));
 
-    lsxp = R_NilValue; lgr = R_NilValue; lmeth = R_NilValue;
-    rsxp = R_NilValue; rgr = R_NilValue; rmeth = R_NilValue;
-
-    findmethod(lclass, group, generic, &lsxp, &lgr, &lmeth, &lwhich,
-	       lbuf, rho);
-    PROTECT(lgr);
+    SEXP lsxp = 0;
+    GCStackRoot<> lgr;
+    SEXP lmeth = 0;
+    int lwhich;
+    {
+	SEXP lgrtmp = 0;
+	findmethod(lclass, group, generic, &lsxp, &lgrtmp, &lmeth, &lwhich,
+		   lbuf, rho);
+	lgr = lgrtmp;
+    }
     if(Rf_isFunction(lsxp) && IS_S4_OBJECT(CAR(args)) && lwhich > 0
        && Rf_isBasicClass(Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
-        value = CAR(args);
-	if(NAMED(value)) SET_NAMED(value, 2);
+        SEXP value = CAR(args);
+	if(NAMED(value))
+	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
 	if(value != R_NilValue) /* use the S3Part as the inherited object */
 	    SETCAR(args, value);
     }
 
-    if( nargs == 2 )
-	findmethod(rclass, group, generic, &rsxp, &rgr, &rmeth,
+    SEXP rsxp = 0;
+    GCStackRoot<> rgr;
+    SEXP rmeth = 0;
+    int rwhich = 0;
+    char rbuf[512];
+    if( nargs == 2 ) {
+	SEXP rgrtmp = 0;
+	findmethod(rclass, group, generic, &rsxp, &rgrtmp, &rmeth,
 		   &rwhich, rbuf, rho);
-    else
-	rwhich = 0;
+	rgr = rgrtmp;
+    }
 
     if(Rf_isFunction(rsxp) && IS_S4_OBJECT(CADR(args)) && rwhich > 0
        && Rf_isBasicClass(Rf_translateChar(STRING_ELT(rclass, rwhich)))) {
-        value = CADR(args);
-	if(NAMED(value)) SET_NAMED(value, 2);
+        SEXP value = CADR(args);
+	if(NAMED(value))
+	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP);
-	if(value != R_NilValue) SETCADR(args, value);
+	if(value != R_NilValue)
+	    SETCADR(args, value);
     }
 
-    PROTECT(rgr);
-
-    if( !Rf_isFunction(lsxp) && !Rf_isFunction(rsxp) ) {
-	UNPROTECT(2);
+    if( !Rf_isFunction(lsxp) && !Rf_isFunction(rsxp) )
 	return 0; /* no generic or group method so use default*/
-    }
 
     if( lsxp != rsxp ) {
 	if ( Rf_isFunction(lsxp) && Rf_isFunction(rsxp) ) {
@@ -1809,7 +1811,6 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	    else {
 		Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
 			lname, rname, generic);
-		UNPROTECT(2);
 		return 0;
 	    }
 	}
@@ -1826,67 +1827,67 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    PROTECT(GCNode::expose(newrho = new Environment(0)));
-    PROTECT(m = Rf_allocVector(STRSXP,nargs));
-    s = args;
-    for (i = 0 ; i < nargs ; i++) {
-	t = IS_S4_OBJECT(CAR(s)) ? R_data_class2(CAR(s))
-	  : Rf_getAttrib(CAR(s), R_ClassSymbol);
-	set = 0;
-	if (Rf_isString(t)) {
-	    for (j = 0 ; j < length(t) ; j++) {
-		if (!strcmp(Rf_translateChar(STRING_ELT(t, j)),
-			    Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
-		    SET_STRING_ELT(m, i, Rf_mkChar(lbuf));
-		    set = 1;
-		    break;
+    GCStackRoot<> newrho(GCNode::expose(new Environment(0)));
+    {
+	GCStackRoot<> m(Rf_allocVector(STRSXP,nargs));
+	SEXP s = args;
+	for (int i = 0 ; i < nargs ; i++) {
+	    SEXP t = (IS_S4_OBJECT(CAR(s)) ? R_data_class2(CAR(s))
+		      : Rf_getAttrib(CAR(s), R_ClassSymbol));
+	    int set = 0;
+	    if (Rf_isString(t)) {
+		for (int j = 0 ; j < length(t) ; j++) {
+		    if (!strcmp(Rf_translateChar(STRING_ELT(t, j)),
+				Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
+			SET_STRING_ELT(m, i, Rf_mkChar(lbuf));
+			set = 1;
+			break;
+		    }
 		}
 	    }
+	    if( !set )
+		SET_STRING_ELT(m, i, R_BlankString);
+	    s = CDR(s);
 	}
-	if( !set )
-	    SET_STRING_ELT(m, i, R_BlankString);
-	s = CDR(s);
+	Rf_defineVar(Rf_install(".Method"), m, newrho);
     }
 
-    Rf_defineVar(Rf_install(".Method"), m, newrho);
-    UNPROTECT(1);
-    PROTECT(t = Rf_mkString(generic));
-    Rf_defineVar(Rf_install(".Generic"), t, newrho);
-    UNPROTECT(1);
+    {
+	GCStackRoot<> t(Rf_mkString(generic));
+	Rf_defineVar(Rf_install(".Generic"), t, newrho);
+    }
     Rf_defineVar(Rf_install(".Group"), lgr, newrho);
-    set = length(lclass) - lwhich;
-    PROTECT(t = Rf_allocVector(STRSXP, set));
-    for(j = 0 ; j < set ; j++ )
-	SET_STRING_ELT(t, j, Rf_duplicate(STRING_ELT(lclass, lwhich++)));
-    Rf_defineVar(Rf_install(".Class"), t, newrho);
-    UNPROTECT(1);
+    {
+	int set = length(lclass) - lwhich;
+	GCStackRoot<> t(Rf_allocVector(STRSXP, set));
+	for(int j = 0 ; j < set ; j++ )
+	    SET_STRING_ELT(t, j, Rf_duplicate(STRING_ELT(lclass, lwhich++)));
+	Rf_defineVar(Rf_install(".Class"), t, newrho);
+    }
     Rf_defineVar(Rf_install(".GenericCallEnv"), rho, newrho);
     Rf_defineVar(Rf_install(".GenericDefEnv"), R_BaseEnv, newrho);
-
-    PROTECT(t = LCONS(lmeth, CDR(call)));
 
     /* the arguments have been evaluated; since we are passing them */
     /* out to a closure we need to wrap them in promises so that */
     /* they get duplicated and things like missing/substitute work. */
-
-    PROTECT(s = Rf_promiseArgs(CDR(call), rho));
-    if (length(s) != length(args))
-	Rf_error(_("dispatch error in group dispatch"));
-    for (m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
-	SET_PRVALUE(CAR(m), CAR(args));
-	/* ensure positional matching for operators */
-	if(isOps) SET_TAG(m, R_NilValue);
-    }
-    // Invoke method:
     {
+	GCStackRoot<> t(LCONS(lmeth, CDR(call)));
+	GCStackRoot<> s(Rf_promiseArgs(CDR(call), rho));
+	if (length(s) != length(args))
+	    Rf_error(_("dispatch error in group dispatch"));
+	for (SEXP m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
+	    SET_PRVALUE(CAR(m), CAR(args));
+	    /* ensure positional matching for operators */
+	    if(isOps) SET_TAG(m, R_NilValue);
+	}
+    // Invoke method:
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
-	Expression* callx = SEXP_downcast<Expression*>(t);
-	ArgList arglist(SEXP_downcast<PairList*>(s), ArgList::PROMISED);
+	Expression* callx = SEXP_downcast<Expression*>(t.get());
+	ArgList arglist(SEXP_downcast<PairList*>(s.get()), ArgList::PROMISED);
 	Environment* callenv = SEXP_downcast<Environment*>(rho);
-	Environment* supp_env = SEXP_downcast<Environment*>(newrho);
+	Environment* supp_env = SEXP_downcast<Environment*>(newrho.get());
 	*ans = func->invoke(callenv, &arglist, callx, supp_env->frame());
     }
-    UNPROTECT(5);
     return 1;
 }
 
