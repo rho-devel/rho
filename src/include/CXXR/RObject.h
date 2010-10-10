@@ -46,6 +46,9 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/uncxxr.h"
@@ -600,6 +603,7 @@ namespace CXXR {
 	    m_attrib.detach();
 	}
     private:
+	friend class boost::serialization::access;
 	const SEXPTYPE m_type;
     public:
 	// To be private in future:
@@ -611,6 +615,22 @@ namespace CXXR {
 	Handle<PairList> m_attrib;
 
 	static void frozenError();
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<GCNode>(*this);	
+	    printf("Serialize RObject\n");
+	    ar & const_cast<SEXPTYPE &>(m_type);
+	    unsigned int named=m_named;
+	    bool has_class=m_has_class;
+	    bool S4_object=m_S4_object;
+	    bool frozen=m_frozen;
+	    ar & named;
+	    ar & has_class;
+	    ar & S4_object;
+	    m_named=named; m_has_class=has_class;
+	    m_S4_object=S4_object; m_frozen=frozen;
+	    //ar & m_attrib;
+	}
     };
 
     template <class T>

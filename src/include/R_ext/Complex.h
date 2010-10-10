@@ -38,16 +38,36 @@
 #define R_COMPLEX_H
 
 #ifdef  __cplusplus
+#include <cstdio>
+#include <boost/serialization/access.hpp>
+
+typedef struct {
+	double r;
+	double i;
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version) {
+		printf("Serialize RComplex");
+		ar & r;
+		ar & i;
+	}
+} Rcomplex;
+
 extern "C" {
 #endif
+
+
+#ifndef  __cplusplus
 
 typedef struct {
 	double r;
 	double i;
 } Rcomplex;
 
-#ifdef  __cplusplus
-}
+#endif /* ifndef __cplusplus */
+
+#ifdef __cplusplus
+} // extern C
 #endif
 
 #endif /* R_COMPLEX_H */

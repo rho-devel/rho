@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/export.hpp>
 #include "CXXR/DumbVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -61,6 +62,8 @@ namespace CXXR {
      */
     typedef CXXR::DumbVector<int, INTSXP> IntVector;
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::IntVector)
 
 extern "C" {
 #endif /* __cplusplus */

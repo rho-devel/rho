@@ -46,6 +46,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
 #include "CXXR/SEXP_downcast.hpp"
 
 typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
@@ -71,6 +73,11 @@ namespace CXXR {
 	    : RObject(pattern), m_truelength(pattern.m_truelength),
 	      m_size(pattern.m_size)
 	{}
+
+	/** @default constructor for boost::serialization
+	 *
+	 */
+	VectorBase() { }
 
 	/** @brief Alter the size (number of elements) in the vector.
 	 *
@@ -103,7 +110,17 @@ namespace CXXR {
     protected:
 	~VectorBase() {}
     private:
+	friend class boost::serialization::access;
+
 	size_t m_size;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    printf("Serialize VectorBase\n");
+	    ar & m_truelength;
+	    ar & m_size;
+	}
     };
 }  // namespace CXXR
 

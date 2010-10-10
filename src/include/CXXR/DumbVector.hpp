@@ -41,6 +41,8 @@
 #define DUMBVECTOR_HPP 1
 
 #include <cstring>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCRoot.h"
@@ -86,6 +88,11 @@ namespace CXXR {
 	{
 	    if (sz > 1) allocData(sz, true);
 	}
+
+	/** @brief Default constructor
+	 * Mainly for boost::serialization
+	 */
+	DumbVector() { }
 
 	/** @brief Copy constructor.
 	 *
@@ -138,6 +145,7 @@ namespace CXXR {
 		MemoryBank::deallocate(m_data, size()*sizeof(T));
 	}
     private:
+	friend class boost::serialization::access;
 	T* m_data;  // pointer to the vector's data block.
 
 	// If there is only one element, it is stored here, internally
@@ -153,6 +161,20 @@ namespace CXXR {
 	// If there is more than one element, this function is used to
 	// allocate the required memory block from CXXR::MemoryBank :
 	void allocData(size_t sz, bool initialize = false);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<VectorBase>(*this);
+	    printf("Serialize DumbVector\n");
+	    if (size()>1) { // Not a singleton vector
+		if (!m_data) // allocate if deserializing
+	    	    allocData(size());
+		for (unsigned int i=0;i<size();i++)
+		    ar & m_data[i];
+	    } else
+		m_data=&m_singleton;
+	    ar & m_singleton;
+	}
     };
 
     template <typename T, SEXPTYPE ST>
