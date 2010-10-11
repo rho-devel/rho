@@ -335,7 +335,15 @@ namespace CXXR {
 		return *this;
 	    }
 	private:
+	    friend class boost::serialization::access;
+
 	    static T* cloneOrSelf(T*);
+
+	    template<class Archive>
+	    void serialize(Archive & ar, const unsigned int version) {
+		ar & boost::serialization::base_object<GCEdge<T> >(*this);
+		printf("Serialize Handle\n");
+	    }
 	};
 		
 	/** @brief Get object attributes.
@@ -627,9 +635,9 @@ namespace CXXR {
 	    ar & named;
 	    ar & has_class;
 	    ar & S4_object;
+	    ar & m_attrib;
 	    m_named=named; m_has_class=has_class;
 	    m_S4_object=S4_object; m_frozen=frozen;
-	    //ar & m_attrib;
 	}
     };
 

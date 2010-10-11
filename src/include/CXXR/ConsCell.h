@@ -54,6 +54,9 @@
 #ifdef __cplusplus
 
 #include <stdexcept>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -93,6 +96,10 @@ namespace CXXR {
      */
     class ConsCell : public RObject {
     public:
+	/**
+	 * @brief for boost serialization
+	 */
+	ConsCell() { } 
 	/**
 	 * @return a const pointer to the 'car' of this ConsCell
 	 * element.
@@ -249,6 +256,7 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
 	friend class PairList;
 
 	Handle<> m_car;
@@ -261,6 +269,16 @@ namespace CXXR {
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    printf("Serialize ConsCell\n");
+	    ar & m_car;
+	    ar & m_tail;
+	    ar & m_tag;
+	    ar & m_missing;
+	}
     public:
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
@@ -394,6 +412,7 @@ namespace CXXR {
 	const char* typeName() const;
 	void unpackGPBits(unsigned int gpbits);
     private:
+        friend class boost::serialization::access;
 	// Pointer to a preallocated block of memory used by cons():
 	static void* s_cons_pad;
 
@@ -414,6 +433,15 @@ namespace CXXR {
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:
 	PairList& operator=(const PairList&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<ConsCell>(*this);
+	    printf("Serialize PairList\n");
+	    ar & m_argused;
+	    ar & m_active_binding;
+	    ar & m_binding_locked;
+	}
     public:
 	// 'Scratchpad' field used in handling argument lists,
 	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
@@ -460,6 +488,8 @@ namespace CXXR {
 	return m_tail;
     }
 } // namespace CXXR
+BOOST_CLASS_EXPORT(CXXR::ConsCell)
+BOOST_CLASS_EXPORT(CXXR::PairList)
 
 extern "C" {
 
