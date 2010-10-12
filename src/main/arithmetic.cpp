@@ -1424,7 +1424,7 @@ SEXP attribute_hidden do_log1arg(SEXP call, SEXP op, SEXP args, SEXP env)
     if(PRIMVAL(op) == 2)  tmp = ScalarReal(2.0);
 
     PROTECT(call2 = lang3(install("log"), CAR(args), tmp));
-    PROTECT(args2 = lang2(CAR(args), tmp));
+    PROTECT(args2 = list2(CAR(args), tmp));
     if (! DispatchGroup("Math", call2, op, args2, env, &res)) {
 	if (isComplex(CAR(args)))
 	    res = complex_math2(call2, op, args2, env);

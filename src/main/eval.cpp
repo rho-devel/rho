@@ -1682,35 +1682,39 @@ attribute_hidden
 int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		     SEXP *ans)
 {
+    BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
+    PairList* callargs = SEXP_downcast<PairList*>(args);
+    Environment* callenv = SEXP_downcast<Environment*>(rho);
+
+    if (!callargs)
+	return 0;
+    size_t numargs = listLength(callargs);
+    RObject* arg1val = callargs->car();
+    RObject* arg2val = (numargs > 1 ? callargs->tail()->car() : 0);
+    
     /* pre-test to avoid string computations when there is nothing to
        dispatch on because either there is only one argument and it
        isn't an object or there are two or more arguments but neither
        of the first two is an object -- both of these cases would be
        rejected by the code following the string examination code
        below */
-    if (args != R_NilValue && ! Rf_isObject(CAR(args)) &&
-	(CDR(args) == R_NilValue || ! Rf_isObject(CADR(args))))
+    if (!((arg1val && arg1val->hasClass())
+	  || (arg2val && arg2val->hasClass())))
 	return 0;
-
-    Environment* callenv = SEXP_downcast<Environment*>(rho);
 
     bool isOps = (strcmp(group, "Ops") == 0);
 
     /* try for formal method */
-    bool useS4 = true;
-    if(length(args) == 1 && !IS_S4_OBJECT(CAR(args)))
-	useS4 = false;
-    if(length(args) == 2 &&
-       !IS_S4_OBJECT(CAR(args)) && !IS_S4_OBJECT(CADR(args)))
-	useS4 = false;
-    if(useS4) {
+    bool useS4 = ((arg1val && arg1val->isS4Object())
+		  || (arg2val && arg2val->isS4Object()));
+    if (useS4) {
 	/* Remove argument names to ensure positional matching */
 	if(isOps)
-	    for(SEXP s = args; s != R_NilValue; s = CDR(s))
-		SET_TAG(s, R_NilValue);
-	if(R_has_methods(op)) {
+	    for (PairList* s = callargs; s; s = s->tail())
+		s->setTag(0);
+	if(R_has_methods(opfun)) {
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(call, op, args, callenv, FALSE);
+		= R_possible_dispatch(call, opfun, callargs, callenv, FALSE);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
@@ -1721,37 +1725,37 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* check whether we are processing the default method */
     char lbuf[512];
-    if ( Rf_isSymbol(CAR(call)) ) {
-	if(strlen(CHAR(PRINTNAME(CAR(call)))) >= 512)
-	   Rf_error(_("call name too long in '%s'"), CHAR(PRINTNAME(CAR(call))));
-	sprintf(lbuf, "%s", CHAR(PRINTNAME(CAR(call))) );
-	char* pt = strtok(lbuf, ".");
-	pt = strtok(NULL, ".");
-
-	if( pt != NULL && !strcmp(pt, "default") )
-	    return 0;
+    {
+	RObject* callcar = CAR(call);
+	if (callcar->sexptype() == SYMSXP) {
+	    const char* callname
+		= static_cast<Symbol*>(callcar)->name()->c_str();
+	    if (strlen(callname) >= 512)
+		Rf_error(_("call name too long in '%s'"), callname);
+	    sprintf(lbuf, "%s", callname);
+	    char* pt = strtok(lbuf, ".");
+	    pt = strtok(NULL, ".");
+	    if (pt && !strcmp(pt, "default"))
+		return 0;
+	}
     }
 
-    int nargs = (isOps ? length(args) : 1);
+    int nargs = (isOps ? numargs : 1);
 
-    if( nargs == 1 && !Rf_isObject(CAR(args)) )
-	return 0;
-
-    if(!Rf_isObject(CAR(args)) && !Rf_isObject(CADR(args)))
-	return 0;
-
-    if(strlen(PRIMNAME(op)) >= 128)
-	Rf_error(_("generic name too long in '%s'"), PRIMNAME(op));
+    if(strlen(opfun->name()) >= 128)
+	Rf_error(_("generic name too long in '%s'"), opfun->name());
     char generic[128];
-    sprintf(generic, "%s", PRIMNAME(op) );
+    sprintf(generic, "%s", opfun->name() );
 
-    GCStackRoot<> lclass(IS_S4_OBJECT(CAR(args)) ? R_data_class2(CAR(args))
-			 : Rf_getAttrib(CAR(args), R_ClassSymbol));
-
+    GCStackRoot<> lclass;
+    if (arg1val)
+	lclass = (arg1val->isS4Object() ? R_data_class2(arg1val)
+		  : Rf_getAttrib(arg1val, R_ClassSymbol));
+		  
     SEXP rclass = 0;
     if( nargs == 2 )
-	rclass = (IS_S4_OBJECT(CADR(args)) ? R_data_class2(CADR(args))
-		  : Rf_getAttrib(CADR(args), R_ClassSymbol));
+	rclass = (IS_S4_OBJECT(arg2val) ? R_data_class2(arg2val)
+		  : Rf_getAttrib(arg2val, R_ClassSymbol));
 
     SEXP lsxp = 0;
     GCStackRoot<> lgr;
@@ -1763,16 +1767,18 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		   lbuf, callenv);
 	lgr = lgrtmp;
     }
-    if(Rf_isFunction(lsxp) && IS_S4_OBJECT(CAR(args)) && lwhich > 0
+    if(Rf_isFunction(lsxp) && IS_S4_OBJECT(arg1val) && lwhich > 0
        && Rf_isBasicClass(Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
-        SEXP value = CAR(args);
+        SEXP value = arg1val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
-	if(value != R_NilValue) /* use the S3Part as the inherited object */
+	if(value != R_NilValue) { /* use the S3Part as the inherited object */
 	    SETCAR(args, value);
+	    arg1val = value;
+	}
     }
 
     SEXP rsxp = 0;
@@ -1787,14 +1793,16 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	rgr = rgrtmp;
     }
 
-    if(Rf_isFunction(rsxp) && IS_S4_OBJECT(CADR(args)) && rwhich > 0
+    if(Rf_isFunction(rsxp) && IS_S4_OBJECT(arg2val) && rwhich > 0
        && Rf_isBasicClass(Rf_translateChar(STRING_ELT(rclass, rwhich)))) {
-        SEXP value = CADR(args);
+        SEXP value = arg2val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP);
-	if(value != R_NilValue)
+	if(value != R_NilValue) {
 	    SETCADR(args, value);
+	    arg2val = value;
+	}
     }
 
     if( !Rf_isFunction(lsxp) && !Rf_isFunction(rsxp) )
@@ -1834,24 +1842,24 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     GCStackRoot<Frame> supp_frame(GCNode::expose(new StdFrame));
     {
 	GCStackRoot<> m(Rf_allocVector(STRSXP,nargs));
-	SEXP s = args;
+	PairList* s = callargs;
 	for (int i = 0 ; i < nargs ; i++) {
 	    SEXP t = (IS_S4_OBJECT(CAR(s)) ? R_data_class2(CAR(s))
 		      : Rf_getAttrib(CAR(s), R_ClassSymbol));
-	    int set = 0;
+	    bool set = false;
 	    if (Rf_isString(t)) {
 		for (int j = 0 ; j < length(t) ; j++) {
 		    if (!strcmp(Rf_translateChar(STRING_ELT(t, j)),
 				Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
 			SET_STRING_ELT(m, i, Rf_mkChar(lbuf));
-			set = 1;
+			set = true;
 			break;
 		    }
 		}
 	    }
 	    if( !set )
 		SET_STRING_ELT(m, i, R_BlankString);
-	    s = CDR(s);
+	    s = s->tail();
 	}
 	supp_frame->bind(DotMethodSymbol, m);
     }
