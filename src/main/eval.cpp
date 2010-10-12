@@ -1684,6 +1684,7 @@ attribute_hidden
 int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		     SEXP *ans)
 {
+    Expression* callx = SEXP_downcast<Expression*>(call);
     BuiltInFunction* opfun = SEXP_downcast<BuiltInFunction*>(op);
     PairList* callargs = SEXP_downcast<PairList*>(args);
     Environment* callenv = SEXP_downcast<Environment*>(rho);
@@ -1716,7 +1717,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		s->setTag(0);
 	if(R_has_methods(opfun)) {
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(call, opfun, callargs, callenv, FALSE);
+		= R_possible_dispatch(callx, opfun, callargs, callenv, FALSE);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
@@ -1727,7 +1728,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* check whether we are processing the default method */
     {
-	RObject* callcar = CAR(call);
+	RObject* callcar = callx->car();
 	if (callcar->sexptype() == SYMSXP) {
 	    string callname
 		= static_cast<Symbol*>(callcar)->name()->stdstring();
@@ -1738,24 +1739,16 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    int nargs = (isOps ? numargs : 1);
+    unsigned int nargs = (isOps ? numargs : 1);
     string generic(opfun->name());
 
     GCStackRoot<StringVector> lclass;
     if (arg1val) {
 	RObject* lcl = (arg1val->isS4Object() ? R_data_class2(arg1val)
-			: Rf_getAttrib(arg1val, R_ClassSymbol));
+			: Rf_getAttrib(arg1val, ClassSymbol));
 	lclass = SEXP_downcast<StringVector*>(lcl);
     }
 		  
-    StringVector* rclass = 0;
-    // It is not sufficient just to test arg2val here:
-    if (nargs == 2 && arg2val) {
-	RObject* rcl = (arg2val->isS4Object() ? R_data_class2(arg2val)
-			: Rf_getAttrib(arg2val, R_ClassSymbol));
-	rclass = SEXP_downcast<StringVector*>(rcl);
-    }
-
     FunctionBase* lsxp = 0;
     GCStackRoot<StringVector> lgr;
     Symbol* lmeth = 0;
@@ -1767,18 +1760,26 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		   &lbuf, callenv);
 	lgr = lgrtmp;
     }
-    if(lsxp && IS_S4_OBJECT(arg1val) && lwhich > 0
-       && Rf_isBasicClass(Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
+    if(lsxp && arg1val->isS4Object() && lwhich > 0
+       && Rf_isBasicClass(Rf_translateChar((*lclass)[lwhich]))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
-        SEXP value = arg1val;
+        RObject* value = arg1val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
-	if(value != R_NilValue) { /* use the S3Part as the inherited object */
-	    SETCAR(args, value);
+	if(value) { /* use the S3Part as the inherited object */
+	    callargs->setCar(value);
 	    arg1val = value;
 	}
+    }
+
+    StringVector* rclass = 0;
+    // It is not sufficient just to test arg2val here:
+    if (nargs == 2 && arg2val) {
+	RObject* rcl = (arg2val->isS4Object() ? R_data_class2(arg2val)
+			: Rf_getAttrib(arg2val, ClassSymbol));
+	rclass = SEXP_downcast<StringVector*>(rcl);
     }
 
     FunctionBase* rsxp = 0;
@@ -1794,13 +1795,13 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     if (rsxp && IS_S4_OBJECT(arg2val) && rwhich > 0
-       && Rf_isBasicClass(Rf_translateChar(STRING_ELT(rclass, rwhich)))) {
-        SEXP value = arg2val;
+	&& Rf_isBasicClass(Rf_translateChar((*rclass)[rwhich]))) {
+        RObject* value = arg2val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP);
-	if(value != R_NilValue) {
-	    SETCADR(args, value);
+	if(value) {
+	    callargs->tail()->setCar(value);
 	    arg2val = value;
 	}
     }
@@ -1811,18 +1812,18 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     if (lsxp != rsxp) {
 	if (lsxp && rsxp) {
 	    /* special-case some methods involving difftime */
-	    const char *lname = CHAR(PRINTNAME(lmeth)),
-		*rname = CHAR(PRINTNAME(rmeth));
-	    if( streql(rname, "Ops.difftime") && 
-		(streql(lname, "+.POSIXt") || streql(lname, "-.POSIXt") ||
-		 streql(lname, "+.Date") || streql(lname, "-.Date")) )
-		rsxp = R_NilValue;
-	    else if (streql(lname, "Ops.difftime") && 
-		     (streql(rname, "+.POSIXt") || streql(rname, "+.Date")) )
-		lsxp = R_NilValue;
+	    string lname = lmeth->name()->stdstring();
+	    string rname = rmeth->name()->stdstring();
+	    if (rname == "Ops.difftime"
+		&& (lname == "+.POSIXt" || lname == "-.POSIXt"
+		    || lname == "+.Date" || lname == "-.Date"))
+		rsxp = 0;
+	    else if (lname == "Ops.difftime"
+		     && (rname == "+.POSIXt" || rname == "+.Date"))
+		lsxp = 0;
 	    else {
 		Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
-			   lname, rname, generic.c_str());
+			   lname.c_str(), rname.c_str(), generic.c_str());
 		return 0;
 	    }
 	}
@@ -1840,66 +1841,79 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* we either have a group method or a class method */
 
     GCStackRoot<Frame> supp_frame(GCNode::expose(new StdFrame));
+    // Set up special method bindings:
     {
-	GCStackRoot<> m(Rf_allocVector(STRSXP,nargs));
-	PairList* s = callargs;
-	for (int i = 0 ; i < nargs ; i++) {
-	    SEXP t = (IS_S4_OBJECT(CAR(s)) ? R_data_class2(CAR(s))
-		      : Rf_getAttrib(CAR(s), R_ClassSymbol));
-	    bool set = false;
-	    if (Rf_isString(t)) {
-		for (int j = 0 ; j < length(t) ; j++) {
-		    if (!strcmp(Rf_translateChar(STRING_ELT(t, j)),
-				Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
-			SET_STRING_ELT(m, i, CachedString::obtain(lbuf));
-			set = true;
-			break;
+	// .Method:
+	{
+	    GCStackRoot<StringVector>
+		dotmethod(GCNode::expose(new StringVector(nargs)));
+	    PairList* s = callargs;
+	    for (unsigned int i = 0 ; i < nargs ; ++i) {
+		RObject* argval = s->car();
+		RObject* t = (argval->isS4Object() ? R_data_class2(argval)
+			      : Rf_getAttrib(argval, ClassSymbol));
+		bool set = false;
+		if (t && t->sexptype() == STRSXP) {
+		    StringVector* clsv = static_cast<StringVector*>(t);
+		    for (unsigned int j = 0; j < clsv->size(); ++j) {
+			if (!strcmp(Rf_translateChar((*clsv)[j]),
+				    Rf_translateChar((*lclass)[lwhich]))) {
+			    (*dotmethod)[i] = CachedString::obtain(lbuf);
+			    set = true;
+			    break;
+			}
 		    }
 		}
+		if (!set)
+		    (*dotmethod)[i] = CachedString::blank();
+		s = s->tail();
 	    }
-	    if( !set )
-		SET_STRING_ELT(m, i, R_BlankString);
-	    s = s->tail();
+	    supp_frame->bind(DotMethodSymbol, dotmethod);
 	}
-	supp_frame->bind(DotMethodSymbol, m);
+	// .Generic:
+	{
+	    GCStackRoot<StringVector>
+		t(GCNode::expose(new StringVector(generic)));
+	    supp_frame->bind(DotGenericSymbol, t);
+	}
+	// .Group:
+	if (lgr)
+	    supp_frame->bind(DotGroupSymbol, lgr);
+	// .Class:
+	{
+	    size_t sz = lclass->size() - lwhich;
+	    GCStackRoot<StringVector>
+		dotclass(GCNode::expose(new StringVector(sz)));
+	    unsigned int i = lwhich;
+	    for (unsigned int j = 0; j < sz; ++j)
+		(*dotclass)[j] = (*lclass)[i++];
+	    supp_frame->bind(DotClassSymbol, dotclass);
+	}
+	// .GenericCallEnv:
+	supp_frame->bind(DotGenericCallEnvSymbol, callenv);
+	// .GenericDefEnv:
+	supp_frame->bind(DotGenericDefEnvSymbol, Environment::base());
     }
-
-    {
-	GCStackRoot<StringVector> t(GCNode::expose(new StringVector(generic)));
-	supp_frame->bind(DotGenericSymbol, t);
-    }
-
-    if (lgr)
-	supp_frame->bind(DotGroupSymbol, lgr);
-
-    {
-	int set = length(lclass) - lwhich;
-	GCStackRoot<> t(Rf_allocVector(STRSXP, set));
-	for(int j = 0 ; j < set ; j++ )
-	    SET_STRING_ELT(t, j, Rf_duplicate(STRING_ELT(lclass, lwhich++)));
-	supp_frame->bind(DotClassSymbol, t);
-    }
-    supp_frame->bind(DotGenericCallEnvSymbol, callenv);
-    supp_frame->bind(DotGenericDefEnvSymbol, Environment::base());
 
     /* the arguments have been evaluated; since we are passing them */
     /* out to a closure we need to wrap them in promises so that */
     /* they get duplicated and things like missing/substitute work. */
     {
-	GCStackRoot<> t(LCONS(lmeth, CDR(call)));
-	GCStackRoot<> s(Rf_promiseArgs(CDR(call), callenv));
+	GCStackRoot<Expression>
+	    newcall(GCNode::expose(new Expression(lmeth, callx->tail())));
+	GCStackRoot<> s(Rf_promiseArgs(callx->tail(), callenv));
 	if (length(s) != length(args))
 	    Rf_error(_("dispatch error in group dispatch"));
 	for (SEXP m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
 	    SET_PRVALUE(CAR(m), CAR(args));
 	    /* ensure positional matching for operators */
-	    if(isOps) SET_TAG(m, R_NilValue);
+	    if (isOps)
+		SET_TAG(m, R_NilValue);
 	}
-    // Invoke method:
+	// Invoke method:
 	Closure* func = SEXP_downcast<Closure*>(lsxp);
-	Expression* callx = SEXP_downcast<Expression*>(t.get());
 	ArgList arglist(SEXP_downcast<PairList*>(s.get()), ArgList::PROMISED);
-	*ans = func->invoke(callenv, &arglist, callx, supp_frame);
+	*ans = func->invoke(callenv, &arglist, newcall, supp_frame);
     }
     return 1;
 }
