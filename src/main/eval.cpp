@@ -1642,9 +1642,9 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 
 
 /* gr needs to be protected on return from this function */
-static void findmethod(const StringVector* Class, const char *group,
-		       const char *generic, SEXP *sxp,  SEXP *gr, SEXP *meth,
-		       int *which, char *buf, Environment* rho)
+static void findmethod(const StringVector* Class, string group,
+		       string generic, SEXP *sxp,  SEXP *gr, SEXP *meth,
+		       int *which, string* buf, Environment* rho)
 {
     unsigned int whichclass;
 
@@ -1657,22 +1657,18 @@ static void findmethod(const StringVector* Class, const char *group,
     for (whichclass = 0 ; whichclass < len ; whichclass++) {
 	const char *ss
 	    = Rf_translateChar(const_cast<String*>((*Class)[whichclass]));
-	if(strlen(generic) + strlen(ss) + 2 > 512)
-	    Rf_error(_("class name too long in '%s'"), generic);
-	sprintf(buf, "%s.%s", generic, ss);
-	*meth = Rf_install(buf);
+	*buf = generic + "." + ss;
+	*meth = Symbol::obtain(*buf);
 	*sxp = R_LookupMethod(*meth, rho, rho, R_BaseEnv);
 	if (Rf_isFunction(*sxp)) {
 	    *gr = Rf_mkString("");
 	    break;
 	}
-	if(strlen(group) + strlen(ss) + 2 > 512)
-	    Rf_error(_("class name too long in '%s'"), group);
-	sprintf(buf, "%s.%s", group, ss);
-	*meth = Rf_install(buf);
+	*buf = group + "." + ss;
+	*meth = Symbol::obtain(*buf);
 	*sxp = R_LookupMethod(*meth, rho, rho, R_BaseEnv);
 	if (Rf_isFunction(*sxp)) {
-	    *gr = Rf_mkString(group);
+	    *gr = GCNode::expose(new StringVector(group));
 	    break;
 	}
     }
@@ -1725,28 +1721,20 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     /* check whether we are processing the default method */
-    char lbuf[512];
     {
 	RObject* callcar = CAR(call);
 	if (callcar->sexptype() == SYMSXP) {
-	    const char* callname
-		= static_cast<Symbol*>(callcar)->name()->c_str();
-	    if (strlen(callname) >= 512)
-		Rf_error(_("call name too long in '%s'"), callname);
-	    sprintf(lbuf, "%s", callname);
-	    char* pt = strtok(lbuf, ".");
-	    pt = strtok(NULL, ".");
-	    if (pt && !strcmp(pt, "default"))
+	    string callname
+		= static_cast<Symbol*>(callcar)->name()->stdstring();
+	    string::size_type index = callname.find_last_of(".");
+	    if (index != string::npos
+		&& callname.substr(index) == ".default")
 		return 0;
 	}
     }
 
     int nargs = (isOps ? numargs : 1);
-
-    if(strlen(opfun->name()) >= 128)
-	Rf_error(_("generic name too long in '%s'"), opfun->name());
-    char generic[128];
-    sprintf(generic, "%s", opfun->name() );
+    string generic(opfun->name());
 
     GCStackRoot<StringVector> lclass;
     if (arg1val) {
@@ -1766,10 +1754,11 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     GCStackRoot<> lgr;
     SEXP lmeth = 0;
     int lwhich;
+    string lbuf;
     if (lclass) {
 	SEXP lgrtmp = 0;
 	findmethod(lclass, group, generic, &lsxp, &lgrtmp, &lmeth, &lwhich,
-		   lbuf, callenv);
+		   &lbuf, callenv);
 	lgr = lgrtmp;
     }
     if(Rf_isFunction(lsxp) && IS_S4_OBJECT(arg1val) && lwhich > 0
@@ -1790,11 +1779,11 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     GCStackRoot<> rgr;
     SEXP rmeth = 0;
     int rwhich = 0;
-    char rbuf[512];
+    string rbuf;
     if (rclass) {
 	SEXP rgrtmp = 0;
 	findmethod(rclass, group, generic, &rsxp, &rgrtmp, &rmeth,
-		   &rwhich, rbuf, callenv);
+		   &rwhich, &rbuf, callenv);
 	rgr = rgrtmp;
     }
 
@@ -1827,7 +1816,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		lsxp = R_NilValue;
 	    else {
 		Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
-			lname, rname, generic);
+			   lname, rname, generic.c_str());
 		return 0;
 	    }
 	}
@@ -1838,7 +1827,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	    lgr = rgr;
 	    lclass = rclass;
 	    lwhich = rwhich;
-	    strcpy(lbuf, rbuf);
+	    lbuf = rbuf;
 	}
     }
 
@@ -1856,7 +1845,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		for (int j = 0 ; j < length(t) ; j++) {
 		    if (!strcmp(Rf_translateChar(STRING_ELT(t, j)),
 				Rf_translateChar(STRING_ELT(lclass, lwhich)))) {
-			SET_STRING_ELT(m, i, Rf_mkChar(lbuf));
+			SET_STRING_ELT(m, i, CachedString::obtain(lbuf));
 			set = true;
 			break;
 		    }
@@ -1870,7 +1859,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     }
 
     {
-	GCStackRoot<> t(Rf_mkString(generic));
+	GCStackRoot<StringVector> t(GCNode::expose(new StringVector(generic)));
 	supp_frame->bind(DotGenericSymbol, t);
     }
     supp_frame->bind(DotGroupSymbol, lgr);
