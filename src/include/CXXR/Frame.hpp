@@ -369,6 +369,7 @@ namespace CXXR {
 	    	ar & m_active;
 		ar & m_locked;
 		ar & m_provenance;
+		ar & m_symbol;
 		ar & m_value;
 	    }
 
