@@ -1642,20 +1642,21 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 
 
 /* gr needs to be protected on return from this function */
-static void findmethod(SEXP Class, const char *group, const char *generic,
-		       SEXP *sxp,  SEXP *gr, SEXP *meth, int *which,
-		       char *buf, SEXP rho)
+static void findmethod(const StringVector* Class, const char *group,
+		       const char *generic, SEXP *sxp,  SEXP *gr, SEXP *meth,
+		       int *which, char *buf, Environment* rho)
 {
-    int len, whichclass;
+    unsigned int whichclass;
 
-    len = length(Class);
+    size_t len = Class->size();
 
     /* Need to interleave looking for group and generic methods
        e.g. if class(x) is c("foo", "bar") then x > 3 should invoke
        "Ops.foo" rather than ">.bar"
     */
     for (whichclass = 0 ; whichclass < len ; whichclass++) {
-	const char *ss = Rf_translateChar(STRING_ELT(Class, whichclass));
+	const char *ss
+	    = Rf_translateChar(const_cast<String*>((*Class)[whichclass]));
 	if(strlen(generic) + strlen(ss) + 2 > 512)
 	    Rf_error(_("class name too long in '%s'"), generic);
 	sprintf(buf, "%s.%s", generic, ss);
@@ -1747,21 +1748,25 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     char generic[128];
     sprintf(generic, "%s", opfun->name() );
 
-    GCStackRoot<> lclass;
-    if (arg1val)
-	lclass = (arg1val->isS4Object() ? R_data_class2(arg1val)
-		  : Rf_getAttrib(arg1val, R_ClassSymbol));
+    GCStackRoot<StringVector> lclass;
+    if (arg1val) {
+	RObject* lcl = (arg1val->isS4Object() ? R_data_class2(arg1val)
+			: Rf_getAttrib(arg1val, R_ClassSymbol));
+	lclass = SEXP_downcast<StringVector*>(lcl);
+    }
 		  
-    SEXP rclass = 0;
-    if( nargs == 2 )
-	rclass = (IS_S4_OBJECT(arg2val) ? R_data_class2(arg2val)
-		  : Rf_getAttrib(arg2val, R_ClassSymbol));
+    StringVector* rclass = 0;
+    if( nargs == 2 ) {
+	RObject* rcl = (IS_S4_OBJECT(arg2val) ? R_data_class2(arg2val)
+			: Rf_getAttrib(arg2val, R_ClassSymbol));
+	rclass = SEXP_downcast<StringVector*>(rcl);
+    }
 
     SEXP lsxp = 0;
     GCStackRoot<> lgr;
     SEXP lmeth = 0;
     int lwhich;
-    {
+    if (lclass) {
 	SEXP lgrtmp = 0;
 	findmethod(lclass, group, generic, &lsxp, &lgrtmp, &lmeth, &lwhich,
 		   lbuf, callenv);
@@ -1786,7 +1791,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     SEXP rmeth = 0;
     int rwhich = 0;
     char rbuf[512];
-    if( nargs == 2 ) {
+    if (rclass) {
 	SEXP rgrtmp = 0;
 	findmethod(rclass, group, generic, &rsxp, &rgrtmp, &rmeth,
 		   &rwhich, rbuf, callenv);
