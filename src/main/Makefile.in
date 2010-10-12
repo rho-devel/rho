@@ -50,6 +50,7 @@ SOURCES_CXX = \
         RealVector.cpp Renviron.cpp \
         S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Symbol.cpp \
+	Symbol_serialization.cpp \
 	UncachedString.cpp \
         VectorBase.cpp \
         WeakRef.cpp \

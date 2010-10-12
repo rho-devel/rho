@@ -38,6 +38,7 @@
  */
 
 #include "CXXR/GCEdge.hpp"
+#include "CXXR/Symbol.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -50,4 +51,16 @@ void GCEdgeBase::detach()
     if (m_target && m_target->decRefCount() == 0)
 	m_target->makeMoribund();
     m_target = 0;
+}
+
+GCEdgeBase::EdgeSerializationType GCEdgeBase::serializationType() const {
+    if (!m_target) return OTHER;
+
+    if (typeid(*m_target)==typeid(Symbol))
+	return SYMBOL;
+
+    if (typeid(*m_target)==typeid(CachedString))
+	return CACHEDSTRING;
+
+    return OTHER;
 }

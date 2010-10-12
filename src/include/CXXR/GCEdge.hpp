@@ -40,8 +40,11 @@
 #ifndef GCEDGE_HPP
 #define GCEDGE_HPP 1
 
+#include <typeinfo>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/serialization/split_member.hpp>
+#include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -51,9 +54,17 @@ namespace CXXR {
      */
     class GCEdgeBase {
     public:
+	/** Used for representing the type of target
+	 */
+	enum EdgeSerializationType {OTHER=0, SYMBOL, CACHEDSTRING};
+
 	/** @brief Null the encapsulated pointer.
 	 */
 	void detach();
+
+	/** @brief return the EdgeSerializationType for this edge
+	 */
+	EdgeSerializationType serializationType() const;
     protected:
 	GCEdgeBase()
 	    : m_target(0)
@@ -97,10 +108,10 @@ namespace CXXR {
 	}
     protected:
 	/** @brief Redirect the GCEdge to point at a (possibly) different node.
--        *
+        *
         * @param newtarget Pointer to the object to which reference is now
--        *           to be made.
--        */
+        *           to be made.
+        */
 	void retarget(const GCNode* newtarget)
 	{
 	    GCEdgeBase tmp(newtarget);
@@ -108,15 +119,51 @@ namespace CXXR {
 	}
     private:
         friend class boost::serialization::access;
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    printf("Deserialize GCEdgeBase\n");
+	    EdgeSerializationType type;
+	    ar >> type;
+	    switch(type) {
+	    case SYMBOL:
+		retarget(loadSymbol<Archive>(ar));
+		break;
+	    case CACHEDSTRING:
+		break;
+	    case OTHER:
+ 		ar >> const_cast<GCNode* &>(m_target);
+		break;
+	    }
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    printf("Serialize GCEdgeBase\n");
+	    EdgeSerializationType type=serializationType();
+	    ar << type;
+	    switch(type) {
+	    case SYMBOL:
+		saveSymbol<Archive>(ar, m_target);
+		break;
+	    case CACHEDSTRING:
+		break;
+	    case OTHER:
+		ar << const_cast<GCNode* &>(m_target);
+		break;
+	    }
+	}
+
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		printf("Serialize GCEdgeBase\n");
-		ar & const_cast<GCNode* &>(m_target);
+	    boost::serialization::split_member(ar, *this, version);
 	}
+
 
 	const GCNode* m_target;
 
 	static void abortIfNotExposed(const GCNode* target);
+
     };
 
     /** @brief Directed edge in the graph whose nodes are GCNode objects.
