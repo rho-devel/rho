@@ -1640,46 +1640,64 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
     return 0;
 }
 
+// Stuff used in implementing Rf_DispatchGroup():
+namespace {
+    struct MethodInfo {
+	GCStackRoot<StringVector> classes;  // Pointer to a vector of
+	  // class names, or a null pointer.  If null, subsequent
+	  // fields are not meaningful.
+	FunctionBase* function;  // Pointer to the method found, or
+	  // null if no method was found.  If null, subsequent fields
+	  // are not meaningful.
+	Symbol* symbol;  // Pointer to the Symbol naming the method found.
+	size_t index;  // Location within the classes vector to which
+	  // 'function' corresponds. 
+	bool group;  // True iff 'function' is a group method.
 
-/* gr needs to be protected on return from this function */
-static void findmethod(const StringVector* Class, string group,
-		       string generic, FunctionBase** sxp, StringVector** gr,
-		       Symbol** meth, int *which, string* buf,
-		       Environment* rho)
-{
-    unsigned int whichclass;
+	MethodInfo()
+	    : classes(0), function(0), symbol(0), group(false)
+	{}
+    };
 
-    size_t len = Class->size();
+    void findmethod(MethodInfo* info, RObject* object, string group,
+		    string generic, Environment* rho)
+    {
+	if (!object)
+	    return;
+	RObject* cl = (object->isS4Object() ? R_data_class2(object)
+		       : Rf_getAttrib(object, ClassSymbol));
+	if (!cl || cl->sexptype() != STRSXP)
+	    return;
+	info->classes = static_cast<StringVector*>(cl);
 
-    /* Need to interleave looking for group and generic methods
-       e.g. if class(x) is c("foo", "bar") then x > 3 should invoke
-       "Ops.foo" rather than ">.bar"
-    */
-    for (whichclass = 0 ; whichclass < len ; whichclass++) {
-	const char *ss
-	    = Rf_translateChar(const_cast<String*>((*Class)[whichclass]));
-	// Try for generic method:
-	{
-	    *buf = generic + "." + ss;
-	    *meth = Symbol::obtain(*buf);
-	    *sxp = findS3Method(*meth, rho, Environment::base()).first;
-	    if (*sxp)
-		break;
-	}
-	// Try for group method:
-	{
-	    *buf = group + "." + ss;
-	    *meth = Symbol::obtain(*buf);
-	    *sxp = findS3Method(*meth, rho, Environment::base()).first;
-	    if (*sxp) {
-		*gr = GCNode::expose(new StringVector(group));
-		break;
+	// Need to interleave looking for group and generic methods,
+	// e.g. if class(x) is c("foo", "bar") then x > 3 should invoke
+	// "Ops.foo" rather than ">.bar":
+	size_t len = info->classes->size();
+	for (info->index = 0; info->index < len; ++info->index) {
+	    const char *ss = Rf_translateChar((*info->classes)[info->index]);
+	    // Try for generic method:
+	    {
+		info->symbol = Symbol::obtain(generic + "." + ss);
+		info->function
+		    = findS3Method(info->symbol, rho, Environment::base()).first;
+		if (info->function)
+		    return;
+	    }
+	    // Try for group method:
+	    {
+		info->symbol = Symbol::obtain(group + "." + ss);
+		info->function
+		    = findS3Method(info->symbol, rho, Environment::base()).first;
+		if (info->function) {
+		    info->group = true;
+		    return;
+		}
 	    }
 	}
     }
-    *which = whichclass;
 }
-
+	
 attribute_hidden
 int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		     SEXP *ans)
@@ -1742,26 +1760,10 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     unsigned int nargs = (isOps ? numargs : 1);
     string generic(opfun->name());
 
-    GCStackRoot<StringVector> lclass;
-    if (arg1val) {
-	RObject* lcl = (arg1val->isS4Object() ? R_data_class2(arg1val)
-			: Rf_getAttrib(arg1val, ClassSymbol));
-	lclass = SEXP_downcast<StringVector*>(lcl);
-    }
-		  
-    FunctionBase* lsxp = 0;
-    GCStackRoot<StringVector> lgr;
-    Symbol* lmeth = 0;
-    int lwhich;
-    string lbuf;
-    if (lclass) {
-	StringVector* lgrtmp = 0;
-	findmethod(lclass, group, generic, &lsxp, &lgrtmp, &lmeth, &lwhich,
-		   &lbuf, callenv);
-	lgr = lgrtmp;
-    }
-    if(lsxp && arg1val->isS4Object() && lwhich > 0
-       && Rf_isBasicClass(Rf_translateChar((*lclass)[lwhich]))) {
+    MethodInfo l;
+    findmethod(&l, arg1val, group, generic, callenv);
+    if(l.function && arg1val->isS4Object() && l.index > 0
+       && Rf_isBasicClass(Rf_translateChar((*l.classes)[l.index]))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
         RObject* value = arg1val;
@@ -1774,28 +1776,11 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    StringVector* rclass = 0;
-    // It is not sufficient just to test arg2val here:
-    if (nargs == 2 && arg2val) {
-	RObject* rcl = (arg2val->isS4Object() ? R_data_class2(arg2val)
-			: Rf_getAttrib(arg2val, ClassSymbol));
-	rclass = SEXP_downcast<StringVector*>(rcl);
-    }
-
-    FunctionBase* rsxp = 0;
-    GCStackRoot<StringVector> rgr;
-    Symbol* rmeth = 0;
-    int rwhich = 0;
-    string rbuf;
-    if (rclass) {
-	StringVector* rgrtmp = 0;
-	findmethod(rclass, group, generic, &rsxp, &rgrtmp, &rmeth,
-		   &rwhich, &rbuf, callenv);
-	rgr = rgrtmp;
-    }
-
-    if (rsxp && IS_S4_OBJECT(arg2val) && rwhich > 0
-	&& Rf_isBasicClass(Rf_translateChar((*rclass)[rwhich]))) {
+    MethodInfo r;
+    if (nargs == 2)
+	findmethod(&r, arg2val, group, generic, callenv);
+    if (r.function && arg2val->isS4Object() && r.index > 0
+	&& Rf_isBasicClass(Rf_translateChar((*r.classes)[r.index]))) {
         RObject* value = arg2val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
@@ -1806,36 +1791,30 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    if (!lsxp && !rsxp)
+    if (!l.function && !r.function)
 	return 0; /* no generic or group method so use default*/
 
-    if (lsxp != rsxp) {
-	if (lsxp && rsxp) {
+    if (l.function != r.function) {
+	if (l.function && r.function) {
 	    /* special-case some methods involving difftime */
-	    string lname = lmeth->name()->stdstring();
-	    string rname = rmeth->name()->stdstring();
+	    string lname = l.symbol->name()->stdstring();
+	    string rname = r.symbol->name()->stdstring();
 	    if (rname == "Ops.difftime"
 		&& (lname == "+.POSIXt" || lname == "-.POSIXt"
 		    || lname == "+.Date" || lname == "-.Date"))
-		rsxp = 0;
+		r.function = 0;
 	    else if (lname == "Ops.difftime"
 		     && (rname == "+.POSIXt" || rname == "+.Date"))
-		lsxp = 0;
+		l.function = 0;
 	    else {
 		Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
 			   lname.c_str(), rname.c_str(), generic.c_str());
 		return 0;
 	    }
 	}
-	/* if the right hand side is the one */
-	if (!lsxp) { /* copy over the righthand stuff */
-	    lsxp = rsxp;
-	    lmeth = rmeth;
-	    lgr = rgr;
-	    lclass = rclass;
-	    lwhich = rwhich;
-	    lbuf = rbuf;
-	}
+	// If the right hand side is the one, copy over the righthand info:
+	if (!l.function)
+	    l = r;
     }
 
     /* we either have a group method or a class method */
@@ -1857,8 +1836,9 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		    StringVector* clsv = static_cast<StringVector*>(t);
 		    for (unsigned int j = 0; j < clsv->size(); ++j) {
 			if (!strcmp(Rf_translateChar((*clsv)[j]),
-				    Rf_translateChar((*lclass)[lwhich]))) {
-			    (*dotmethod)[i] = CachedString::obtain(lbuf);
+				    Rf_translateChar((*l.classes)[l.index]))) {
+			    (*dotmethod)[i]
+				= const_cast<CachedString*>(l.symbol->name());
 			    set = true;
 			    break;
 			}
@@ -1877,16 +1857,17 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	    supp_frame->bind(DotGenericSymbol, t);
 	}
 	// .Group:
-	if (lgr)
-	    supp_frame->bind(DotGroupSymbol, lgr);
+	if (l.group)
+	    supp_frame->bind(DotGroupSymbol,
+			     GCNode::expose(new StringVector(group)));
 	// .Class:
 	{
-	    size_t sz = lclass->size() - lwhich;
+	    size_t sz = l.classes->size() - l.index;
 	    GCStackRoot<StringVector>
 		dotclass(GCNode::expose(new StringVector(sz)));
-	    unsigned int i = lwhich;
+	    unsigned int i = l.index;
 	    for (unsigned int j = 0; j < sz; ++j)
-		(*dotclass)[j] = (*lclass)[i++];
+		(*dotclass)[j] = (*l.classes)[i++];
 	    supp_frame->bind(DotClassSymbol, dotclass);
 	}
 	// .GenericCallEnv:
@@ -1900,7 +1881,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
-	    newcall(GCNode::expose(new Expression(lmeth, callx->tail())));
+	    newcall(GCNode::expose(new Expression(l.symbol, callx->tail())));
 	GCStackRoot<> s(Rf_promiseArgs(callx->tail(), callenv));
 	if (length(s) != length(args))
 	    Rf_error(_("dispatch error in group dispatch"));
@@ -1911,7 +1892,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 		SET_TAG(m, R_NilValue);
 	}
 	// Invoke method:
-	Closure* func = SEXP_downcast<Closure*>(lsxp);
+	Closure* func = SEXP_downcast<Closure*>(l.function);
 	ArgList arglist(SEXP_downcast<PairList*>(s.get()), ArgList::PROMISED);
 	*ans = func->invoke(callenv, &arglist, newcall, supp_frame);
     }
