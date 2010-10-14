@@ -65,6 +65,7 @@
 #include "CXXR/LoopException.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
+#include "CXXR/S3Launcher.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -1572,7 +1573,8 @@ namespace {
 	    {
 		info->symbol = Symbol::obtain(generic + "." + ss);
 		info->function
-		    = findS3Method(info->symbol, rho, Environment::base()).first;
+		    = S3Launcher::findMethod(info->symbol, rho,
+					     Environment::base()).first;
 		if (info->function)
 		    return;
 	    }
@@ -1580,7 +1582,8 @@ namespace {
 	    {
 		info->symbol = Symbol::obtain(group + "." + ss);
 		info->function
-		    = findS3Method(info->symbol, rho, Environment::base()).first;
+		    = S3Launcher::findMethod(info->symbol, rho,
+					     Environment::base()).first;
 		if (info->function) {
 		    info->group = true;
 		    return;

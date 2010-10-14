@@ -52,6 +52,7 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnBailout.hpp"
+#include "CXXR/S3Launcher.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -166,8 +167,8 @@ SEXP R_LookupMethod(SEXP method, SEXP rho, SEXP callrho, SEXP defrho)
 
     Symbol* sym = SEXP_downcast<Symbol*>(method);
     pair<FunctionBase*, bool>
-	pr = findS3Method(sym, static_cast<Environment*>(callrho),
-			  static_cast<Environment*>(defrho));
+	pr = S3Launcher::findMethod(sym, static_cast<Environment*>(callrho),
+				    static_cast<Environment*>(defrho));
     return (pr.first ? pr.first : R_UnboundValue);
 }
 
@@ -278,7 +279,8 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	    const RObject* se = (*klass)[i];
 	    string ss(Rf_translateChar(const_cast<RObject*>(se)));
 	    method_symbol = Symbol::obtain(string(generic) + "." + ss);
-	    method = findS3Method(method_symbol, callenv, defenv).first;
+	    method = S3Launcher::findMethod(method_symbol,
+					    callenv, defenv).first;
 	    if (method && i > 0) {
 		dotclass = CXXR_NEW(StringVector(nclass - i));
 		for (unsigned int j = 0; j < dotclass->size(); ++j)
@@ -319,7 +321,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     if (!method) {
 	// Look for default method:
 	method_symbol = Symbol::obtain(string(generic) + ".default");
-	method = findS3Method(method_symbol, callenv, defenv).first;
+	method = S3Launcher::findMethod(method_symbol, callenv, defenv).first;
     }
 
     if (!method)
@@ -543,7 +545,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     Closure* genclos;
     {
 	FunctionBase* func
-	    = findS3Method(gensym, gencallenv, gendefenv).first;
+	    = S3Launcher::findMethod(gensym, gencallenv, gendefenv).first;
 	if (!func)
 	    Rf_error(_("no calling generic was found:"
 		       " was a method called directly?"));
@@ -722,18 +724,21 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	suffix = Rf_translateChar((*klass)[nextidx]);
 	nextmethodname = genericname + "." + suffix;
 	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
-	nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
+	nextfun = S3Launcher::findMethod(nextmethodsym,
+					 gencallenv, gendefenv).first;
 	if (!nextfun && dotgroup) {
 	    // if not Generic.foo, look for Group.foo
 	    nextmethodname = groupname + "." + suffix;
 	    nextmethodsym = Symbol::obtain(nextmethodname);
-	    nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
+	    nextfun = S3Launcher::findMethod(nextmethodsym,
+					     gencallenv, gendefenv).first;
 	}
     }
     if (!nextfun) {
 	nextmethodname = genericname + ".default";
 	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
-	nextfun = findS3Method(nextmethodsym, gencallenv, gendefenv).first;
+	nextfun = S3Launcher::findMethod(nextmethodsym,
+					 gencallenv, gendefenv).first;
 	// If there is no default method, try the generic itself,
 	// provided it is primitive or a wrapper for a .Internal
 	// function of the same name.
