@@ -991,11 +991,11 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
     if (type == VECSXP)
 	if (v->sexptype() == EXPRSXP) {
 	    ExpressionVector* ev = static_cast<ExpressionVector*>(v);
-	    return GCNode::expose(new ListVector(*ev));
+	    return CXXR_NEW(ListVector(*ev));
 	}
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
 	GCStackRoot<ListVector> lv(static_cast<ListVector*>(v));
-	return GCNode::expose(new ExpressionVector(*lv));
+	return CXXR_NEW(ExpressionVector(*lv));
     }
 
     if (type == STRSXP) {
@@ -1514,7 +1514,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = GCNode::expose(new Expression(0, tl)));
+	    PROTECT(ap = ans = CXXR_NEW(Expression(0, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, VECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -1530,7 +1530,7 @@ SEXP attribute_hidden do_ascall(SEXP call, SEXP op, SEXP args, SEXP rho)
 		Rf_errorcall(call, _("invalid length 0 argument"));
 	    names = Rf_getAttrib(args, R_NamesSymbol);
 	    GCStackRoot<PairList> tl(PairList::make(n - 1));
-	    PROTECT(ap = ans = GCNode::expose(new Expression(0, tl)));
+	    PROTECT(ap = ans = CXXR_NEW(Expression(0, tl)));
 	    for (i = 0; i < n; i++) {
 		SETCAR(ap, XVECTOR_ELT(args, i));
 		if (names != R_NilValue && !Rf_StringBlank(STRING_ELT(names, i)))
@@ -2280,7 +2280,7 @@ SEXP attribute_hidden do_docall(SEXP call, SEXP op, SEXP args, SEXP rho)
     names = Rf_getAttrib(args, R_NamesSymbol);
 
     GCStackRoot<PairList> tl(PairList::make(n));
-    PROTECT(c = call = GCNode::expose(new Expression(0, tl)));
+    PROTECT(c = call = CXXR_NEW(Expression(0, tl)));
     if( Rf_isString(fun) )
 	SETCAR(c, Rf_install(Rf_translateChar(STRING_ELT(fun, 0))));
     else

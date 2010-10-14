@@ -56,5 +56,5 @@ const char* S4Object::typeName() const
 
 SEXP Rf_allocS4Object()
 {
-    return GCNode::expose(new S4Object());
+    return CXXR_NEW(S4Object());
 }

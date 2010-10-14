@@ -171,20 +171,20 @@ void Environment::initialize()
     // Symbols at load factor 0.5.
     s_cache = new Cache(509);
     s_cache->max_load_factor(0.5);
-    static GCRoot<Environment> empty_env(GCNode::expose(new Environment(0)));
+    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0)));
     R_EmptyEnv = empty_env.get();
     static GCRoot<Environment>
-	base_env(GCNode::expose(new Environment(empty_env)));
+	base_env(CXXR_NEW(Environment(empty_env)));
     s_base = base_env.get();
     s_base->makeCached();
     R_BaseEnv = s_base;
     static GCRoot<Environment>
-	global_env(GCNode::expose(new Environment(s_base)));
+	global_env(CXXR_NEW(Environment(s_base)));
     s_global = global_env.get();
     s_global->makeCached();
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
-	base_namespace(GCNode::expose(new Environment(s_global,
+	base_namespace(CXXR_NEW(Environment(s_global,
 						      s_base->frame())));
     s_base_namespace = base_namespace.get();
     R_BaseNamespace = s_base_namespace;

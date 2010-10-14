@@ -521,17 +521,17 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
     /* ATTRIB(s) = */ m->InInteger(fp, d);
     switch (type) {
     case LISTSXP:
-	s = GCNode::expose(new PairList);
+	s = CXXR_NEW(PairList);
 	break;
     case LANGSXP:
-	s = GCNode::expose(new Expression);
+	s = CXXR_NEW(Expression);
 	break;
     case CLOSXP:
     case PROMSXP:
     case ENVSXP:
 	Rf_error("Loading pre-version-1 serialization not (yet) supported in CXXR");
 	// All this code needs fixing in CXXR!
-	// s = GCNode::expose(new RObject(type));
+	// s = CXXR_NEW(RObject(type));
 	/* skip over CAR, CDR, and TAG */
 	/* CAR(s) = */ m->InInteger(fp, d);
 	/* CDR(s) = */ m->InInteger(fp, d);
@@ -542,11 +542,11 @@ static void RemakeNextSEXP(FILE *fp, NodeInfo *node, int version, InputRoutines 
 	/* skip over length and name fields */
 	/* length = */ m->InInteger(fp, d);
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d))));
+	s = CXXR_NEW(BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d))));
 	break;
     case CHARSXP:
 	len = m->InInteger(fp, d);
-	s = GCNode::expose(new UncachedString(len)); /* This is not longer correct */
+	s = CXXR_NEW(UncachedString(len)); /* This is not longer correct */
 	R_AllocStringBuffer(len, &(d->buffer));
 	/* skip over the string */
 	/* string = */ m->InString(fp, d);
@@ -1244,14 +1244,14 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 	PROTECT(s = pos ? VECTOR_ELT(env_table, pos - 1) : R_NilValue);
 	break;
     case LISTSXP:
-	PROTECT(s = GCNode::expose(new PairList));
+	PROTECT(s = CXXR_NEW(PairList));
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case LANGSXP:
-	PROTECT(s = GCNode::expose(new Expression));
+	PROTECT(s = CXXR_NEW(Expression));
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1273,20 +1273,20 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
 							    fp, m, d)));
 	    GCStackRoot<> val(NewReadItem(sym_table, env_table, fp, m, d));
 	    GCStackRoot<> valgen(NewReadItem(sym_table, env_table, fp, m, d));
-	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));
+	    GCStackRoot<Promise> prom(CXXR_NEW(Promise(valgen, env)));
 	    prom->setValue(val);
 	    PROTECT(s = prom);
 	}
 	break;
     case DOTSXP:
-	PROTECT(s = GCNode::expose(new DottedArgs));
+	PROTECT(s = CXXR_NEW(DottedArgs));
 	SET_TAG(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCAR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	SETCDR(s, NewReadItem(sym_table, env_table, fp, m, d));
 	/*UNPROTECT(1);*/
 	break;
     case EXTPTRSXP:
-	PROTECT(s = GCNode::expose(new ExternalPointer));
+	PROTECT(s = CXXR_NEW(ExternalPointer));
 	R_SetExternalPtrAddr(s, NULL);
 	R_SetExternalPtrProtected(s, NewReadItem(sym_table, env_table, fp, m, d));
 	R_SetExternalPtrTag(s, NewReadItem(sym_table, env_table, fp, m, d));
@@ -1298,7 +1298,7 @@ static SEXP NewReadItem (SEXP sym_table, SEXP env_table, FILE *fp,
     case SPECIALSXP:
     case BUILTINSXP:
 	R_AllocStringBuffer(MAXELTSIZE - 1, &(d->buffer));
-	PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d)))));
+	PROTECT(s = CXXR_NEW(BuiltInFunction(BuiltInFunction::indexInTable(m->InString(fp, d)))));
 	break;
     case CHARSXP:
     case LGLSXP:

@@ -113,7 +113,7 @@ static RObject* applyMethod(const Expression* call, const FunctionBase* func,
 	ans = clos->invoke(env, arglist, call, method_bindings);
     } else {
 	GCStackRoot<Environment>
-	    newenv(GCNode::expose(new Environment(0, method_bindings)));
+	    newenv(CXXR_NEW(Environment(0, method_bindings)));
 	ans = func->apply(arglist, newenv, call);
     }
     return ans;
@@ -239,7 +239,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(GCNode::expose(new StdFrame));
+    GCStackRoot<Frame> newframe(CXXR_NEW(StdFrame));
     RObject* match_obj = 0;
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
@@ -280,7 +280,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	    method_symbol = Symbol::obtain(string(generic) + "." + ss);
 	    method = findS3Method(method_symbol, callenv, defenv).first;
 	    if (method && i > 0) {
-		dotclass = GCNode::expose(new StringVector(nclass - i));
+		dotclass = CXXR_NEW(StringVector(nclass - i));
 		for (unsigned int j = 0; j < dotclass->size(); ++j)
 		    (*dotclass)[j] = (*klass)[j + i];
 		dotclass->setAttribute(PreviousSymbol, klass);
@@ -329,11 +329,11 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	SET_RSTEP(method, 1);
     newframe->bind(DotClassSymbol, dotclass);
     newframe->bind(DotGenericSymbol,
-		   GCNode::expose(new StringVector(generic)));
+		   CXXR_NEW(StringVector(generic)));
     CachedString* method_name
 	= const_cast<CachedString*>(method_symbol->name());
     newframe->bind(DotMethodSymbol,
-		   GCNode::expose(new StringVector(method_name)));
+		   CXXR_NEW(StringVector(method_name)));
     newframe->bind(DotGenericCallEnvSymbol, callrho);
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
@@ -368,7 +368,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	static GCRoot<ArgMatcher>
 	    matcher(ArgMatcher::make(genericsym, objectsym));
 	GCStackRoot<Environment>
-	    matchenv(GCNode::expose(new Environment(0, 2)));
+	    matchenv(CXXR_NEW(Environment(0, 2)));
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
 	matcher->match(matchenv, &arglist);
 
@@ -446,7 +446,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     // Prepare return value:
     {
 	GCStackRoot<> ansrt(ans);
-	ReturnBailout* rbo = GCNode::expose(new ReturnBailout(argsenv, ans));
+	ReturnBailout* rbo = CXXR_NEW(ReturnBailout(argsenv, ans));
 	Evaluator::Context* callctxt
 	    = Evaluator::Context::innermost()->nextOut();
 	if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
@@ -710,9 +710,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    nextidxstart = 0;
     }
 
-    /* we need the value of i on exit from the for loop to figure out
-       how many classes to drop. */
-
     FunctionBase* nextfun = 0;
     string nextmethodname;
     unsigned int nextidx;  // Index within the klass vector at which
@@ -782,12 +779,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(GCNode::expose(new StdFrame(6)));
+    GCStackRoot<Frame> method_bindings(CXXR_NEW(StdFrame(6)));
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;
 	    GCStackRoot<StringVector>
-		newdotclass(GCNode::expose(new StringVector(sz)));
+		newdotclass(CXXR_NEW(StringVector(sz)));
 	    klass = klass->clone();
 	    for (unsigned int j = 0; j < sz; ++j)
 		(*newdotclass)[j] = (*klass)[nextidx++];
@@ -797,7 +794,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	// It is possible that if a method was called directly that
 	// 'method' is unset.
 	if (!dotmethod)
-	    dotmethod = GCNode::expose(new StringVector(nextmethodname));
+	    dotmethod = CXXR_NEW(StringVector(nextmethodname));
 	else {
 	    dotmethod = dotmethod->clone();
 	    // For Ops we need `method' to be a vector

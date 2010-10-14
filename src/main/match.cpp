@@ -369,7 +369,7 @@ SEXP attribute_hidden Rf_matchArgs(SEXP formals, SEXP supplied, SEXP call)
 
 	if (i) {
 	    GCStackRoot<PairList> tl(PairList::make(i - 1));
-	    a = GCNode::expose(new DottedArgs(0, tl));
+	    a = CXXR_NEW(DottedArgs(0, tl));
 	    f=a;
 	    for(b=supplied;b!=R_NilValue;b=CDR(b))
 		if(!ARGUSED(b)) {

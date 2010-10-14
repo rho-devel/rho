@@ -1055,7 +1055,7 @@ SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
     int index = BuiltInFunction::indexInTable(namestr);
     if (index < 0)
 	 errorcall(call, _("no such primitive function"));
-    return GCNode::expose(new BuiltInFunction(index));
+    return CXXR_NEW(BuiltInFunction(index));
 }
 
 /* initialize the symbol table */

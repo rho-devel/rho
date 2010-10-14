@@ -1724,7 +1724,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	PROTECT(contr1 = allocVector(VECSXP, nVar));
 	PROTECT(contr2 = allocVector(VECSXP, nVar));
 	GCStackRoot<PairList> tl(PairList::make(2));
-	PROTECT(expr = GCNode::expose(new Expression(0, tl)));
+	PROTECT(expr = CXXR_NEW(Expression(0, tl)));
 	SETCAR(expr, install("contrasts"));
 	SETCADDR(expr, allocVector(LGLSXP, 1));
     }

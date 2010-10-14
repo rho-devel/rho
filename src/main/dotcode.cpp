@@ -2405,7 +2405,7 @@ void call_R(char *func, long nargs, void **arguments, char **modes,
     if (nres < 0)
 	error(_("invalid return value count in call_R"));
     GCStackRoot<PairList> tl(PairList::make(nargs));
-    PROTECT(pcall = call = GCNode::expose(new Expression(0, tl)));
+    PROTECT(pcall = call = CXXR_NEW(Expression(0, tl)));
     SETCAR(pcall, reinterpret_cast<SEXP>(func));
     s = R_NilValue;		/* -Wall */
     for (i = 0 ; i < nargs ; i++) {

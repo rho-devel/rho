@@ -747,8 +747,8 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (NAMED(CAR(args)) == 2)
 	SETCAR(args, duplicate(CAR(args)));
     if (CADR(args) != R_NilValue) {
-	GCStackRoot<PairList> tl(GCNode::expose(new PairList));
-        PROTECT(call = GCNode::expose(new Expression(0, tl)));
+	GCStackRoot<PairList> tl(CXXR_NEW(PairList));
+        PROTECT(call = CXXR_NEW(Expression(0, tl)));
 	SETCAR(call, install("as.character"));
 	SETCADR(call, CADR(args));
 	SETCADR(args, eval(call, env));

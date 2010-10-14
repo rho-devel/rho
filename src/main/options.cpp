@@ -112,7 +112,7 @@ static SEXP makeErrorCall(SEXP fun)
 {
     using namespace CXXR;
     SEXP call;
-    PROTECT(call = GCNode::expose(new Expression));
+    PROTECT(call = CXXR_NEW(Expression));
     SETCAR(call, fun);
     UNPROTECT(1);
     return call;

@@ -1238,7 +1238,7 @@ SEXP attribute_hidden do_matchcall(SEXP call, SEXP op, SEXP args, SEXP env)
 
     rlist = StripUnmatched(rlist);
 
-    PROTECT(rval = GCNode::expose(new CXXR::Expression));
+    PROTECT(rval = CXXR_NEW(CXXR::Expression));
     SETCAR(rval, duplicate(CAR(funcall)));
     SETCDR(rval, rlist);
     UNPROTECT(4);

@@ -1303,7 +1303,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    if (length > int(strlen(cbuf))) {
 		std::string sstr(cbuf, length);
-		str = GCNode::expose(new UncachedString(sstr, enc));
+		str = CXXR_NEW(UncachedString(sstr, enc));
 		str->unpackGPBits(levs);
 		SET_ATTRIB(str, attributes);
 	    } else {
@@ -1317,7 +1317,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	{
 	    int locked = InInteger(stream);
 
-	    GCStackRoot<Environment> env(GCNode::expose(new Environment(0)));
+	    GCStackRoot<Environment> env(CXXR_NEW(Environment(0)));
 
 	    /* MUST register before filling in */
 	    AddReadRef(ref_table, env);
@@ -1360,7 +1360,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   is worth to write the code to handle this now, but if it
 	   becomes necessary we can do it without needing to change
 	   the save format. */
-	PROTECT(s = GCNode::expose(new PairList));
+	PROTECT(s = CXXR_NEW(PairList));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1369,7 +1369,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case LANGSXP:
-	PROTECT(s = GCNode::expose(new Expression));
+	PROTECT(s = CXXR_NEW(Expression));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1383,7 +1383,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	UNPROTECT(1); /* s */
 	return s;
     case DOTSXP:
-	PROTECT(s = GCNode::expose(new DottedArgs));
+	PROTECT(s = CXXR_NEW(DottedArgs));
 	SETLEVELS(s, levs);
 	SET_ATTRIB(s, hasattr ? ReadItem(ref_table, stream) : R_NilValue);
 	SET_TAG(s, hastag ? ReadItem(ref_table, stream) : R_NilValue);
@@ -1412,7 +1412,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 		formals(SEXP_downcast<PairList*>(ReadItem(ref_table, stream)));
 	    GCStackRoot<> body(ReadItem(ref_table, stream));
 	    GCStackRoot<Closure>
-		clos(GCNode::expose(new Closure(formals, body, env)));
+		clos(CXXR_NEW(Closure(formals, body, env)));
 	    SETLEVELS(clos, levs);
 	    SET_ATTRIB(clos, attr);
 	    return clos;
@@ -1432,7 +1432,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    if (!env) env = Environment::base();
 	    GCStackRoot<> val(ReadItem(ref_table, stream));
 	    GCStackRoot<> valgen(ReadItem(ref_table, stream));
-	    GCStackRoot<Promise> prom(GCNode::expose(new Promise(valgen, env)));
+	    GCStackRoot<Promise> prom(CXXR_NEW(Promise(valgen, env)));
 	    SETLEVELS(prom, levs);
 	    SET_ATTRIB(prom, attr);
 	    return prom;
@@ -1443,7 +1443,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	   newly allocated value PROTECTed */
 	switch (type) {
 	case EXTPTRSXP:
-	    PROTECT(s = GCNode::expose(new ExternalPointer));
+	    PROTECT(s = CXXR_NEW(ExternalPointer));
 	    AddReadRef(ref_table, s);
 	    R_SetExternalPtrAddr(s, NULL);
 	    R_SetExternalPtrProtected(s, ReadItem(ref_table, stream));
@@ -1461,7 +1461,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    cbuf = CXXRCONSTRUCT(static_cast<char*>, alloca(length+1));
 	    InString(stream, cbuf, length);
 	    cbuf[length] = '\0';
-	    PROTECT(s = GCNode::expose(new BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
+	    PROTECT(s = CXXR_NEW(BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
 	    break;
 	case LGLSXP:
 	    length = InInteger(stream);
@@ -1600,7 +1600,7 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
     SEXP s;
-    PROTECT(s = GCNode::expose(new ByteCode));
+    PROTECT(s = CXXR_NEW(ByteCode));
     SETCAR(s, ReadItem(ref_table, stream)); /* code */
     SETCAR(s, R_bcEncode(CAR(s)));
     SETCDR(s, ReadBCConsts(ref_table, reps, stream)); /* consts */

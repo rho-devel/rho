@@ -105,7 +105,7 @@ SEXP Rf_lcons(SEXP cr, SEXP tl)
 {
     GCStackRoot<> crr(cr);
     GCStackRoot<PairList> tlr(SEXP_downcast<PairList*>(tl));
-    return GCNode::expose(new Expression(crr, tlr));
+    return CXXR_NEW(Expression(crr, tlr));
 }
 
 void Rf_setCurrentExpression(SEXP e)

@@ -763,7 +763,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    size_t len = LENGTH(ax);
 	    if (len > 0) {
 		GCStackRoot<PairList> tl(PairList::make(len - 1));
-		ans = GCNode::expose(new Expression(0, tl));
+		ans = CXXR_NEW(Expression(0, tl));
 	    }
 	    PROTECT(ans);
 	}

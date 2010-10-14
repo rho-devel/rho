@@ -1886,7 +1886,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    break;
 		}
 		else if (CDR(t) == R_NilValue && val != R_NilValue) {
-		    SETCDR(t, GCNode::expose(new CXXR::PairList));
+		    SETCDR(t, CXXR_NEW(CXXR::PairList));
 		    SET_TAG(CDR(t), nlist);
 		    SETCADR(t, val);
 		    break;

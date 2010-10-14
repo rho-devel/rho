@@ -94,5 +94,5 @@ SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
 	Rf_error(_("unknown encoding: %d"), encoding);
     }
     string str(text, length);
-    return GCNode::expose(new UncachedString(str, encoding));
+    return CXXR_NEW(UncachedString(str, encoding));
 }

@@ -100,5 +100,5 @@ SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
 	)
 	Rf_error(_("invalid body argument for \"function\"\n"
 		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
-    return GCNode::expose(new Closure(formrt, bodyrt, envrt));
+    return CXXR_NEW(Closure(formrt, bodyrt, envrt));
 }

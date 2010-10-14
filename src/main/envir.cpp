@@ -213,7 +213,7 @@ int CXXR::String::hash() const
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     Environment* enc = SEXP_downcast<Environment*>(enclos);
-    return GCNode::expose(new Environment(enc, asInteger(size)));
+    return CXXR_NEW(Environment(enc, asInteger(size)));
 }
 
 /*----------------------------------------------------------------------
@@ -1178,13 +1178,13 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (x = CAR(args); x != R_NilValue; x = CDR(x))
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
-	newenv = GCNode::expose(new Environment(0));
+	newenv = CXXR_NEW(Environment(0));
 	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
     } else if (isEnvironment(CAR(args))) {
 	SEXP p, loadenv = CAR(args);
 
-	newenv = GCNode::expose(new Environment(0));
+	newenv = CXXR_NEW(Environment(0));
 	GCStackRoot<> framelist(FRAME(loadenv));
 	for(p = framelist; p != R_NilValue; p = CDR(p))
 	    defineVar(TAG(p), duplicate(CAR(p)), newenv);
@@ -1391,7 +1391,7 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
     const Environment* envir = static_cast<Environment*>(env);
     vector<const Symbol*> syms = envir->frame()->symbols(all);
     size_t sz = syms.size();
-    GCStackRoot<StringVector> ans(GCNode::expose(new StringVector(sz)));
+    GCStackRoot<StringVector> ans(CXXR_NEW(StringVector(sz)));
     for (unsigned int i = 0; i < sz; ++i)
 	(*ans)[i] = const_cast<CachedString*>(syms[i]->name());
     sortVector(ans, FALSE);

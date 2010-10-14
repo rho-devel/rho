@@ -425,7 +425,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
     // create a new environment frame enclosed by the lexical
     // environment of the method
     GCStackRoot<Environment>
-	newrho(GCNode::expose(new Environment(func->environment())));
+	newrho(CXXR_NEW(Environment(func->environment())));
     Frame* tof = newrho->frame();
 
     // Propagate bindings of the formal arguments of the generic to
@@ -516,7 +516,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
     PROTECT(rhs);
     PROTECT(val);
     GCStackRoot<PairList> tl(PairList::make(length(args) + 2));
-    ptmp = tmp = GCNode::expose(new Expression(0, tl));
+    ptmp = tmp = CXXR_NEW(Expression(0, tl));
     UNPROTECT(4);
     SETCAR(ptmp, fun); ptmp = CDR(ptmp);
     SETCAR(ptmp, val); ptmp = CDR(ptmp);
@@ -880,7 +880,7 @@ SEXP attribute_hidden do_break(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* env = SEXP_downcast<Environment*>(rho);
     if (!env->loopActive())
 	Rf_error(_("no loop to break from"));
-    LoopBailout* lbo = GCNode::expose(new LoopBailout(env, PRIMVAL(op) == 1));
+    LoopBailout* lbo = CXXR_NEW(LoopBailout(env, PRIMVAL(op) == 1));
     Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
     if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	lbo->throwException();
@@ -961,7 +961,7 @@ SEXP attribute_hidden do_return(SEXP call, SEXP op, SEXP args, SEXP rho)
     Environment* envir = SEXP_downcast<Environment*>(rho);
     if (!envir->canReturn())
 	Rf_error(_("no function to return from, jumping to top level"));
-    ReturnBailout* rbo = GCNode::expose(new ReturnBailout(envir, v));
+    ReturnBailout* rbo = CXXR_NEW(ReturnBailout(envir, v));
     Evaluator::Context* callctxt = Evaluator::Context::innermost()->nextOut();
     if (!callctxt || callctxt->type() != Evaluator::Context::BAILOUT)
 	rbo->throwException();
@@ -1516,7 +1516,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
 	    Environment* working_env
-		= GCNode::expose(new Environment(callenv, 5));
+		= CXXR_NEW(Environment(callenv, 5));
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
 	    int um = Rf_usemethod(generic, x, call,
@@ -1713,13 +1713,13 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(GCNode::expose(new StdFrame));
+    GCStackRoot<Frame> supp_frame(CXXR_NEW(StdFrame));
     // Set up special method bindings:
     {
 	// .Method:
 	{
 	    GCStackRoot<StringVector>
-		dotmethod(GCNode::expose(new StringVector(nargs)));
+		dotmethod(CXXR_NEW(StringVector(nargs)));
 	    PairList* s = callargs;
 	    for (unsigned int i = 0 ; i < nargs ; ++i) {
 		RObject* argval = s->car();
@@ -1747,18 +1747,18 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	// .Generic:
 	{
 	    GCStackRoot<StringVector>
-		t(GCNode::expose(new StringVector(generic)));
+		t(CXXR_NEW(StringVector(generic)));
 	    supp_frame->bind(DotGenericSymbol, t);
 	}
 	// .Group:
 	if (l.group)
 	    supp_frame->bind(DotGroupSymbol,
-			     GCNode::expose(new StringVector(group)));
+			     CXXR_NEW(StringVector(group)));
 	// .Class:
 	{
 	    size_t sz = l.classes->size() - l.index;
 	    GCStackRoot<StringVector>
-		dotclass(GCNode::expose(new StringVector(sz)));
+		dotclass(CXXR_NEW(StringVector(sz)));
 	    unsigned int i = l.index;
 	    for (unsigned int j = 0; j < sz; ++j)
 		(*dotclass)[j] = (*l.classes)[i++];
@@ -1775,7 +1775,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
-	    newcall(GCNode::expose(new Expression(l.symbol, callx->tail())));
+	    newcall(CXXR_NEW(Expression(l.symbol, callx->tail())));
 	ArgList arglist(callargs, ArgList::EVALUATED);
 	arglist.wrapInPromises(0);
 	// Ensure positional matching for operators:
@@ -3206,7 +3206,7 @@ SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     consts = CADR(args);
     GCStackRoot<> enc(R_bcEncode(bytes));
     GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(consts));
-    return GCNode::expose(new ByteCode(enc, pl));
+    return CXXR_NEW(ByteCode(enc, pl));
 }
 
 SEXP attribute_hidden do_bcclose(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -3489,9 +3489,6 @@ SEXP R_startbcprof() { return R_NilValue; }
 SEXP R_stopbcprof() { return R_NilValue; }
 #endif
 #endif
-
-// Suppress Rf_match expansion:
-#undef match
 
 #include "CXXR/ArgMatcher.hpp"
 

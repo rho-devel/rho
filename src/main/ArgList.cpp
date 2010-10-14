@@ -221,11 +221,11 @@ void ArgList::wrapInPromises(Environment* env)
 	    const Symbol* tag = tag2Symbol(inp->tag());
 	    RObject* value = Symbol::missingArgument();
 	    if (m_first_arg_env) {
-		value = GCNode::expose(new Promise(m_first_arg, 0));
+		value = CXXR_NEW(Promise(m_first_arg, 0));
 		m_first_arg = 0;
 		m_first_arg_env = 0;
 	    } else if (rawvalue != Symbol::missingArgument())
-		value = GCNode::expose(new Promise(rawvalue, env));
+		value = CXXR_NEW(Promise(rawvalue, env));
 	    lastout->setTail(PairList::cons(value, 0, tag));
 	    lastout = lastout->tail();
 	}

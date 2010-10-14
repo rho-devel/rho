@@ -57,6 +57,15 @@
 #define GC_FIND_LOOPS
 #endif
 
+/** @brief Syntactic sugar for creating CXXR::GCNode objects.
+ *
+ * The argument of this macro must be a constructor expression for an
+ * object of a class derived from CXXR::GCNode.  The macro expansion
+ * returns a pointer to a new object created by that constructor
+ * expression.
+ */
+#define CXXR_NEW(T) GCNode::expose(new T)
+
 namespace CXXR {
     /** @brief Base class for objects managed by the garbage collector.
      *
@@ -101,7 +110,9 @@ namespace CXXR {
      *
      * The simplest way of ensuring timely exposure is always to wrap
      * the \c new call in a call to expose():
-     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+     * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.  This
+     * can be further simplified using the CXXR_NEW macro to
+     * CXXR_NEW(FooNode).
      *
      * @note Because this base class is used purely for housekeeping
      * by the garbage collector, and does not contribute to the
@@ -267,9 +278,11 @@ namespace CXXR {
 	 * CHECK_EXPOSURE is defined, runtime checks for this are
 	 * inserted into the code.
 	 *
-	 * The simplest way of ensuring timely exposure is always to wrap
-	 * the \c new call in a call to expose():
+	 * The simplest way of ensuring timely exposure is always to
+	 * wrap the \c new call in a call to expose():
 	 * e.g. <tt>GCNode::expose(new FooNode(<i>args</i>)</tt>.
+	 * This can be further simplified using the CXXR_NEW macro to
+	 * CXXR_NEW(FooNode).
 	 *
 	 * It is permissible (but pointless) for a node to be exposed
 	 * more than once.
