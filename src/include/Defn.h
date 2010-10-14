@@ -602,14 +602,12 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define deparse1s		Rf_deparse1s
 # define DispatchGroup		Rf_DispatchGroup
 # define DispatchOrEval		Rf_DispatchOrEval
-# define DispatchAnyOrEval      Rf_DispatchAnyOrEval
 # define dynamicfindVar		Rf_dynamicfindVar
 # define EncodeRaw              Rf_EncodeRaw
 # define EncodeString           Rf_EncodeString
 # define EnsureString 		Rf_EnsureString
 # define envlength		Rf_envlength
 # define ErrorMessage		Rf_ErrorMessage
-# define evalList		Rf_evalList
 # define evalListKeepMissing	Rf_evalListKeepMissing
 # define factorsConform		Rf_factorsConform
 # define findcontext		Rf_findcontext
@@ -787,7 +785,6 @@ SEXP Rf_ddfindVar(SEXP, SEXP);
 SEXP Rf_deparse1(SEXP,Rboolean,int);
 SEXP Rf_deparse1line(SEXP,Rboolean);
 SEXP Rf_deparse1s(SEXP call);
-int Rf_DispatchAnyOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int Rf_DispatchOrEval(SEXP, SEXP, const char *, SEXP, SEXP, SEXP*, int, int);
 int Rf_DispatchGroup(const char *, SEXP,SEXP,SEXP,SEXP,SEXP*);
 SEXP duplicated(SEXP, Rboolean);
@@ -795,7 +792,6 @@ SEXP duplicated3(SEXP, SEXP, Rboolean);
 int any_duplicated(SEXP, Rboolean);
 int any_duplicated3(SEXP, SEXP, Rboolean);
 int Rf_envlength(SEXP);
-SEXP Rf_evalList(SEXP, SEXP, SEXP, int);
 SEXP Rf_evalListKeepMissing(SEXP, SEXP);
 int Rf_factorsConform(SEXP, SEXP);
 SEXP Rf_findVar1(SEXP, SEXP, SEXPTYPE, int);

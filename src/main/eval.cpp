@@ -1224,69 +1224,7 @@ SEXP attribute_hidden do_set(SEXP call, SEXP op, SEXP args, SEXP rho)
    and because it is a little more efficient.
 */
 
-#define COPY_TAG(to, from) do { \
-  SEXP __tag__ = TAG(from); \
-  if (__tag__ != R_NilValue) SET_TAG(to, __tag__); \
-} while (0)
-
-/* Used in Rf_eval and applyMethod (object.c) for builtin primitives,
-   do_internal (names.c) for builtin .Internals
-   and in evalArgs.
-
-   'n' is the number of arguments already evaluated and hence not
-   passed to evalArgs and hence to here.
- */
-SEXP attribute_hidden evalList(SEXP el, SEXP rho, SEXP call, int n)
-{
-    SEXP ans, h, tail;
-
-    PROTECT(ans = tail = CONS(R_NilValue, R_NilValue));
-
-    while (el != R_NilValue) {
-	n++;
-
-	if (CAR(el) == R_DotsSymbol) {
-	    /* If we have a ... symbol, we look to see what it is bound to.
-	     * If its binding is Null (i.e. zero length)
-	     *	we just ignore it and return the cdr with all its expressions evaluated;
-	     * if it is bound to a ... list of promises,
-	     *	we force all the promises and then splice
-	     *	the list of resulting values into the return value.
-	     * Anything else bound to a ... symbol is an error
-	     */
-	    h = Rf_findVar(CAR(el), rho);
-	    if (TYPEOF(h) == DOTSXP || h == R_NilValue) {
-		while (h != R_NilValue) {
-		    SETCDR(tail, CONS(Rf_eval(CAR(h), rho), R_NilValue));
-		    tail = CDR(tail);
-		    COPY_TAG(tail, h);
-		    h = CDR(h);
-		}
-	    }
-	    else if (h != R_MissingArg)
-		Rf_error(_("'...' used in an incorrect context"));
-	} else if (CAR(el) == R_MissingArg) {
-	    /* It was an empty element: most likely get here from evalArgs
-	       which may have been called on part of the args. */
-	    Rf_errorcall(call, _("argument %d is empty"), n);
-	} else if (Rf_isSymbol(CAR(el)) && R_isMissing(CAR(el), rho)) {
-	    /* It was missing */
-	    Rf_errorcall(call, _("'%s' is missing"), CHAR(PRINTNAME(CAR(el)))); 
-	} else {
-	    SETCDR(tail, CONS(Rf_eval(CAR(el), rho), R_NilValue));
-	    tail = CDR(tail);
-	    COPY_TAG(tail, el);
-	}
-	el = CDR(el);
-    }
-    UNPROTECT(1);
-    return CDR(ans);
-} /* evalList() */
-
-
-/* A slight variation of evaluating each expression in "el" in "rho". */
-
-/* used in evalArgs, arithmetic.c, seq.c */
+/* used in arithmetic.c, seq.c */
 SEXP attribute_hidden Rf_evalListKeepMissing(SEXP el, SEXP rho)
 {
     ArgList arglist(SEXP_downcast<PairList*>(el), ArgList::RAW);
@@ -1500,52 +1438,6 @@ SEXP attribute_hidden do_recall(SEXP call, SEXP op, SEXP, SEXP rho)
     ans = closure->invoke(cptr->callEnvironment(), &arglist, cptr->call());
     UNPROTECT(1);
     return ans;
-}
-
-
-static SEXP evalArgs(SEXP el, SEXP rho, int dropmissing, SEXP call, int n)
-{
-    if(dropmissing) return evalList(el, rho, call, n);
-    else return Rf_evalListKeepMissing(el, rho);
-}
-
-
-/* A version of Rf_DispatchOrEval that checks for possible S4 methods for
- * any argument, not just the first.  Used in the code for `[` in
- * do_subset.  Differs in that all arguments are evaluated
- * immediately, rather than after the call to R_possible_dispatch.
- */
-attribute_hidden
-int DispatchAnyOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
-		      SEXP rho, SEXP *ans, int dropmissing, int argsevald)
-{
-    if(R_has_methods(op)) {
-        SEXP argValue, el; 
-	/* Rboolean hasS4 = FALSE; */ 
-	int nprotect = 0, dispatch;
-	if(!argsevald) {
-            PROTECT(argValue = evalArgs(args, rho, dropmissing, call, 0));
-	    nprotect++;
-	    argsevald = TRUE;
-	}
-	else argValue = args;
-	for(el = argValue; el != R_NilValue; el = CDR(el)) {
-	    if(IS_S4_OBJECT(CAR(el))) {
-	        pair<bool, RObject*> pr = R_possible_dispatch(call, op, argValue, rho, TRUE);
-	        if(pr.first) {
-		    *ans = pr.second;
-		    UNPROTECT(nprotect);
-		    return 1;
-	        }
-		else break;
-	    }
-	}
-	 /* else, use the regular Rf_DispatchOrEval, but now with evaluated args */
-	dispatch = Rf_DispatchOrEval(call, op, generic, argValue, rho, ans, dropmissing, argsevald);
-	UNPROTECT(nprotect);
-	return dispatch;
-    }
-    return Rf_DispatchOrEval(call, op, generic, args, rho, ans, dropmissing, argsevald);
 }
 
 
