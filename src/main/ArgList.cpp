@@ -160,12 +160,31 @@ pair<bool, RObject*> ArgList::firstArg(Environment* env)
     return pair<bool, RObject*>(false, 0);
 }
 
+void ArgList::stripTags()
+{
+    if (list() == m_orig_list) {
+	// Mustn't modify the list supplied to the constructor:
+	GCStackRoot<PairList> oldargs(m_list->tail());
+	m_list->setTail(0);
+	PairList* lastout = m_list;
+	for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
+	    lastout->setTail(PairList::cons(inp->car(), 0));
+	    lastout = lastout->tail();
+	}
+    } else {
+	for (PairList* p = m_list->tail(); p; p = p->tail())
+	    p->setTag(0);
+    }
+}
+	    
 void ArgList::wrapInPromises(Environment* env)
 {
-    if (m_status != RAW)
+    if (m_status == PROMISED)
 	Rf_error("Internal error:"
-		 " ArgList::wrapInPromises() requires RAW ArgList");
-    if (m_first_arg_env && env != m_first_arg_env)
+		 " ArgList already wrapped in Promises");
+    if (m_status == EVALUATED)
+	env = 0;
+    else if (m_first_arg_env && env != m_first_arg_env)
 	Rf_error("Internal error: first arg of ArgList"
 		 " previously evaluated in different environment");
     GCStackRoot<PairList> oldargs(m_list->tail());

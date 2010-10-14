@@ -1729,13 +1729,15 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     bool useS4 = ((arg1val && arg1val->isS4Object())
 		  || (arg2val && arg2val->isS4Object()));
     if (useS4) {
+	ArgList arglist(callargs, ArgList::EVALUATED);
 	/* Remove argument names to ensure positional matching */
-	if(isOps)
-	    for (PairList* s = callargs; s; s = s->tail())
-		s->setTag(0);
-	if(R_has_methods(opfun)) {
+	if (isOps)
+	    arglist.stripTags();
+	if (R_has_methods(opfun)) {
 	    std::pair<bool, SEXP> pr
-		= R_possible_dispatch(callx, opfun, callargs, callenv, FALSE);
+		= R_possible_dispatch(callx, opfun,
+				      const_cast<PairList*>(arglist.list()),
+				      callenv, FALSE);
 	    if (pr.first) {
 		*ans = pr.second;
 		return 1;
@@ -1762,15 +1764,15 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     MethodInfo l;
     findmethod(&l, arg1val, group, generic, callenv);
-    if(l.function && arg1val->isS4Object() && l.index > 0
-       && Rf_isBasicClass(Rf_translateChar((*l.classes)[l.index]))) {
+    if (l.function && arg1val->isS4Object() && l.index > 0
+	&& Rf_isBasicClass(Rf_translateChar((*l.classes)[l.index]))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
         RObject* value = arg1val;
-	if(NAMED(value))
+	if (NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP); /* the .S3Class obj. or NULL*/
-	if(value) { /* use the S3Part as the inherited object */
+	if (value) { /* use the S3Part as the inherited object */
 	    callargs->setCar(value);
 	    arg1val = value;
 	}
@@ -1785,7 +1787,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
 	value = R_getS4DataSlot(value, S4SXP);
-	if(value) {
+	if (value) {
 	    callargs->tail()->setCar(value);
 	    arg2val = value;
 	}
@@ -1882,18 +1884,12 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     {
 	GCStackRoot<Expression>
 	    newcall(GCNode::expose(new Expression(l.symbol, callx->tail())));
-	GCStackRoot<> s(Rf_promiseArgs(callx->tail(), callenv));
-	if (length(s) != length(args))
-	    Rf_error(_("dispatch error in group dispatch"));
-	for (SEXP m = s ; m != R_NilValue ; m = CDR(m), args = CDR(args) ) {
-	    SET_PRVALUE(CAR(m), CAR(args));
-	    /* ensure positional matching for operators */
-	    if (isOps)
-		SET_TAG(m, R_NilValue);
-	}
-	// Invoke method:
+	ArgList arglist(callargs, ArgList::EVALUATED);
+	arglist.wrapInPromises(0);
+	// Ensure positional matching for operators:
+	if (isOps)
+	    arglist.stripTags();
 	Closure* func = SEXP_downcast<Closure*>(l.function);
-	ArgList arglist(SEXP_downcast<PairList*>(s.get()), ArgList::PROMISED);
 	*ans = func->invoke(callenv, &arglist, newcall, supp_frame);
     }
     return 1;

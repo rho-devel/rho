@@ -83,7 +83,8 @@ namespace CXXR {
 	 *          is actually consistent with the value of \a status.
 	 */
 	ArgList(const PairList* args, Status status)
-	    : m_list(PairList::cons(0, const_cast<PairList*>(args))),
+	    : m_orig_list(args),
+	      m_list(PairList::cons(0, const_cast<PairList*>(args))),
 	      m_status(status)
 	{}
 
@@ -217,6 +218,14 @@ namespace CXXR {
 	    return m_status;
 	}
 
+	/** @brief Remove argument names.
+	 *
+	 * This function removes any tags from the ArgList.  This will
+	 * force any subsequent argument matching to be based on
+	 * argument position alone.
+	 */
+	void stripTags();
+
 	/** @brief Convert tag of supplied argument to a Symbol.
 	 *
 	 * If \a tag is a null pointer or already points to a Symbol,
@@ -256,7 +265,10 @@ namespace CXXR {
 	 *
 	 * Basically, this function wraps any argument in the ArgList
 	 * whose value is not Symbol::missingArgument() is wrapped in
-	 * a Promise to be evaluated in \a env.
+	 * a Promise to be evaluated in \a env.  However, if the
+	 * ArgList currently has Status EVALUATED, the \a env
+	 * parameter is ignored, and the function simply wraps the
+	 * argument values in pre-forced Promise objects.
 	 *
 	 * If any argument has the value CXXR::DotsSymbol, the action
 	 * depends on what this Symbol is bound to within \a env (and
@@ -273,10 +285,16 @@ namespace CXXR {
 	 * coerced using tag2Symbol() into a form suitable for
 	 * argument matching.
 	 *
+	 * After the call, the ArgList will have Status PROMISED; it
+	 * is an error to call this function if the ArgList already
+	 * has Status PROMISED.
+	 *
 	 * @param env Pointer to the Environment to which Promises in
-	 *          the output list are to be keyed.  If firstArg()
-	 *          has previously been called for this ArgList, then
-	 *          \a env must be identical to the \a env argument of
+	 *          the output list are to be keyed.  As noted above,
+	 *          this parameter is ignored if the ArgList has
+	 *          Status EVALUATED.  Otherwise, if firstArg() has
+	 *          previously been called for this ArgList, then \a
+	 *          env must be identical to the \a env argument of
 	 *          that firstArg() call.
 	 *
 	 * @note It would be desirable to avoid producing a new
@@ -287,22 +305,21 @@ namespace CXXR {
 	 */
 	void wrapInPromises(Environment* env);
     private:
+	const PairList* const m_orig_list;  // Pointer to the argument
+	  // list supplied to the constructor. 
 	GCStackRoot<PairList> m_list;  // The current argument list,
-				// preceded by a dummy element to
-				// simplify coding.  The class code
-				// should never modify the PairList
-				// supplied as an argument to the
-				// constructor, even though the
-				// constructor casts const away when
-				// it initialises this data member.
+	  // preceded by a dummy element to simplify coding.  The
+	  // class code should never modify the PairList supplied as
+	  // an argument to the constructor, even though the
+	  // constructor casts const away when it initialises this
+	  // data member.
 	GCStackRoot<> m_first_arg;  // If the first argument needed to
-			// be evaluated in a call to firstArg(), this
-			// is a pointer to the resulting value, and
-			// m_first_arg_env points to the Environment
-			// in which evaluation took place.  Both
-			// pointers are reset to null once the first
-			// argument has been processed in a subsequent
-			// call to evaluate() or wrapInPromises().
+	  // be evaluated in a call to firstArg(), this is a pointer
+	  // to the resulting value, and m_first_arg_env points to the
+	  // Environment in which evaluation took place.  Both
+	  // pointers are reset to null once the first argument has
+	  // been processed in a subsequent call to evaluate() or
+	  // wrapInPromises(). 
 	GCStackRoot<Environment> m_first_arg_env;
 	Status m_status;
 
