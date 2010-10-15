@@ -27,8 +27,13 @@
 using namespace std;
 using namespace CXXR;
 
+// Implementation of S3Launcher::create() is in objects.cpp
+
 void S3Launcher::detachReferents()
 {
+    m_classes.detach();
+    m_function.detach();
+    m_symbol.detach();
 }
 
 std::pair<FunctionBase*, bool>
@@ -63,4 +68,10 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 
 void S3Launcher::visitReferents(const_visitor* v) const
 {
+    if (m_classes)
+	(*v)(m_classes);
+    if (m_function)
+	(*v)(m_function);
+    if (m_symbol)
+	(*v)(m_symbol);
 }

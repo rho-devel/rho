@@ -41,6 +41,8 @@
 
 #include "CXXR/GCNode.hpp"
 
+#include "CXXR/StringVector.h"
+
 namespace CXXR {
     class Environment;
     class FunctionBase;
@@ -50,6 +52,11 @@ namespace CXXR {
      */
     class S3Launcher : public GCNode {
     public:
+	static S3Launcher*
+	create(RObject* object, std::string generic, std::string group,
+	       Environment* call_env, Environment* table_env,
+	       bool allow_default);
+
 	/** @brief Search for an S3 method.
 	 *
 	 * This function searches for a definition of an S3 method
@@ -118,13 +125,34 @@ namespace CXXR {
 	findMethod(const Symbol* symbol, Environment* call_env,
 		   Environment* table_env);
 
+	bool usingClass() const
+	{
+	    return m_index < m_classes->size();
+	}
+
+	// Data members, to be private in due course:
+	GCEdge<StringVector> m_classes;  // Pointer to a vector of
+	  // class names, or a null pointer.  If null, subsequent
+	  // fields are not meaningful.
+	GCEdge<FunctionBase> m_function;  // Pointer to the method found, or
+	  // null if no method was found.  If null, subsequent fields
+	  // are not meaningful.
+	GCEdge<Symbol> m_symbol;  // Pointer to the Symbol naming the
+	  // method found.  
+	size_t m_index;  // Location within the classes vector to which
+	  // 'function' corresponds, or one past the end if using a
+	  // default method.
+	bool m_using_group;  // True iff 'function' is a group method.
+	
 	// Virtual function of GCNode:
 	void visitReferents(const_visitor* v) const;
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
-	S3Launcher();
+	S3Launcher()
+	    : m_using_group(false)
+	{}
     };
 }
 

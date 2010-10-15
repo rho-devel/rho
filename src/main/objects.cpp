@@ -266,82 +266,62 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 
     GCStackRoot<const PairList> matchedarg(cptr->promiseArgs());
     GCStackRoot<StringVector> dotclass;  // value for .Class
-    Symbol* method_symbol = 0;
-    FunctionBase* method = 0;
-
-    // Seek non-default method:
-    {
-	GCStackRoot<StringVector>
-	    klass(SEXP_downcast<StringVector*>(R_data_class2(obj)));
-	dotclass = klass;
-	size_t nclass = klass->size();
-	for (unsigned int i = 0; !method && i < nclass; ++i) {
-	    const RObject* se = (*klass)[i];
-	    string ss(Rf_translateChar(const_cast<RObject*>(se)));
-	    method_symbol = Symbol::obtain(string(generic) + "." + ss);
-	    method = S3Launcher::findMethod(method_symbol,
-					    callenv, defenv).first;
-	    if (method && i > 0) {
-		dotclass = CXXR_NEW(StringVector(nclass - i));
-		for (unsigned int j = 0; j < dotclass->size(); ++j)
-		    (*dotclass)[j] = (*klass)[j + i];
-		dotclass->setAttribute(PreviousSymbol, klass);
-		// In CR, the following very obscure code disappeared
-		// some time after 2.11.1, so it can be expected to
-		// disappear from CXXR in due course.  At that time
-		// the declaration of newframe can be moved to a later
-		// point in the function.
-		if (obj && obj->isS4Object() && Rf_isBasicClass(ss.c_str())) {
-		    SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
-		    if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
-			S3Part = R_getS4DataSlot(obj, ANYSXP);
-		    // At this point S3Part is the S3 class object or an
-		    // object of an abnormal type, or NULL.
-		    if (S3Part) {  // use S3Part as inherited object
-			obj = S3Part;
-			if (!match_obj) // use the first arg, for "[",e.g.
-			    match_obj = matchedarg->car();
-			if (NAMED(obj))
-			    SET_NAMED(obj, 2);
-			if (match_obj->sexptype() == PROMSXP)
-			    static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
-			else {
-			    // not possible ?
-			    Closure* clos = SEXP_downcast<Closure*>(method);
-			    const Symbol* sym
-				= static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
-			    newframe->bind(sym, obj);
-			}
-		    } // else, use the S4 object
+    GCStackRoot<S3Launcher>
+	m(S3Launcher::create(obj, generic, "", callenv, defenv, true));
+    if (!m)
+	return 0;
+    if (m->m_index == 0)
+	dotclass = m->m_classes;
+    else {
+	dotclass = CXXR_NEW(StringVector(m->m_classes->size() - m->m_index));
+	for (unsigned int j = 0; j < dotclass->size(); ++j)
+	    (*dotclass)[j] = (*m->m_classes)[j + m->m_index];
+	dotclass->setAttribute(PreviousSymbol, m->m_classes);
+	// In CR, the following very obscure code disappeared some
+	// time after 2.11.1, so it can be expected to disappear from
+	// CXXR in due course.  At that time the declaration of
+	// newframe can be moved to a later point in the function.
+	if (obj && obj->isS4Object() && m->usingClass() && m->m_index > 0
+	    && Rf_isBasicClass(Rf_translateChar((*m->m_classes)[m->m_index]))) {
+	    SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
+	    if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
+		S3Part = R_getS4DataSlot(obj, ANYSXP);
+	    // At this point S3Part is the S3 class object or an
+	    // object of an abnormal type, or NULL.
+	    if (S3Part) {  // use S3Part as inherited object
+		obj = S3Part;
+		if (!match_obj) // use the first arg, for "[",e.g.
+		    match_obj = matchedarg->car();
+		if (NAMED(obj))
+		    SET_NAMED(obj, 2);
+		if (match_obj->sexptype() == PROMSXP)
+		    static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
+		else {
+		    // not possible ?
+		    Closure* clos = SEXP_downcast<Closure*>(m->m_function.get());
+		    const Symbol* sym
+			= static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
+		    newframe->bind(sym, obj);
 		}
-	    }
+	    } // else, use the S4 object
 	}
     }
 
-    if (!method) {
-	// Look for default method:
-	method_symbol = Symbol::obtain(string(generic) + ".default");
-	method = S3Launcher::findMethod(method_symbol, callenv, defenv).first;
-    }
-
-    if (!method)
-	return 0;
-
     if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
-	SET_RSTEP(method, 1);
+	SET_RSTEP(m->m_function, 1);
     newframe->bind(DotClassSymbol, dotclass);
     newframe->bind(DotGenericSymbol,
 		   CXXR_NEW(StringVector(generic)));
     CachedString* method_name
-	= const_cast<CachedString*>(method_symbol->name());
+	= const_cast<CachedString*>(m->m_symbol->name());
     newframe->bind(DotMethodSymbol,
 		   CXXR_NEW(StringVector(method_name)));
     newframe->bind(DotGenericCallEnvSymbol, callrho);
     newframe->bind(DotGenericDefEnvSymbol, defrho);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
-    newcall->setCar(method_symbol);
+    newcall->setCar(m->m_symbol);
     ArgList arglist(matchedarg, ArgList::PROMISED);
-    *ans = applyMethod(newcall, method, &arglist, env, newframe);
+    *ans = applyMethod(newcall, m->m_function, &arglist, env, newframe);
     return 1;
 }
 
@@ -1525,4 +1505,45 @@ SEXP Rf_asS4(SEXP s, Rboolean flag, int complete)
 	UNSET_S4_OBJECT(s);
     }
     return s;
+}
+
+S3Launcher*
+S3Launcher::create(RObject* object, std::string generic, std::string group,
+		   Environment* call_env, Environment* table_env,
+		   bool allow_default)
+{
+    GCStackRoot<S3Launcher> ans(CXXR_NEW(S3Launcher));
+    ans->m_classes = static_cast<StringVector*>(R_data_class2(object));
+
+    // Look for pukka method.  Need to interleave looking for generic
+    // and group methods, e.g. if class(x) is c("foo", "bar") then
+    // x > 3 should invoke "Ops.foo" rather than ">.bar".
+    {
+	size_t len = ans->m_classes->size();
+	for (ans->m_index = 0; ans->m_index < len; ++ans->m_index) {
+	    const char *ss = Rf_translateChar((*ans->m_classes)[ans->m_index]);
+	    ans->m_symbol = Symbol::obtain(generic + "." + ss);
+	    ans->m_function = findMethod(ans->m_symbol, call_env, table_env).first;
+	    if (ans->m_function)
+		break;  // Mustn't increment m_index if found
+	    if (!group.empty()) {
+		// Try for group method:
+		ans->m_symbol = Symbol::obtain(group + "." + ss);
+		ans->m_function
+		    = findMethod(ans->m_symbol, call_env, table_env).first;
+		if (ans->m_function) {
+		    ans->m_using_group = true;
+		    break;  // Mustn't increment m_index if found
+		}
+	    }
+	}
+    }
+    if (!ans->m_function && allow_default) {
+	// Look for default method:
+	ans->m_symbol = Symbol::obtain(generic + ".default");
+	ans->m_function = findMethod(ans->m_symbol, call_env, table_env).first;
+    }
+    if (!ans->m_function)
+	return 0;
+    return ans;
 }
