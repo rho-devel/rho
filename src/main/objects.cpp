@@ -265,63 +265,47 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     }
 
     GCStackRoot<const PairList> matchedarg(cptr->promiseArgs());
-    GCStackRoot<StringVector> dotclass;  // value for .Class
     GCStackRoot<S3Launcher>
 	m(S3Launcher::create(obj, generic, "", callenv, defenv, true));
     if (!m)
 	return 0;
-    if (m->m_index == 0)
-	dotclass = m->m_classes;
-    else {
-	dotclass = CXXR_NEW(StringVector(m->m_classes->size() - m->m_index));
-	for (unsigned int j = 0; j < dotclass->size(); ++j)
-	    (*dotclass)[j] = (*m->m_classes)[j + m->m_index];
-	dotclass->setAttribute(PreviousSymbol, m->m_classes);
-	// In CR, the following very obscure code disappeared some
-	// time after 2.11.1, so it can be expected to disappear from
-	// CXXR in due course.  At that time the declaration of
-	// newframe can be moved to a later point in the function.
-	if (obj && obj->isS4Object() && m->usingClass() && m->m_index > 0
-	    && Rf_isBasicClass(Rf_translateChar((*m->m_classes)[m->m_index]))) {
-	    SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
-	    if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
-		S3Part = R_getS4DataSlot(obj, ANYSXP);
-	    // At this point S3Part is the S3 class object or an
-	    // object of an abnormal type, or NULL.
-	    if (S3Part) {  // use S3Part as inherited object
-		obj = S3Part;
-		if (!match_obj) // use the first arg, for "[",e.g.
-		    match_obj = matchedarg->car();
-		if (NAMED(obj))
-		    SET_NAMED(obj, 2);
-		if (match_obj->sexptype() == PROMSXP)
-		    static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
-		else {
-		    // not possible ?
-		    Closure* clos = SEXP_downcast<Closure*>(m->m_function.get());
-		    const Symbol* sym
-			= static_cast<const Symbol*>(clos->matcher()->formalArgs()->tag());
-		    newframe->bind(sym, obj);
-		}
-	    } // else, use the S4 object
-	}
+    // In CR, the following very obscure code disappeared some
+    // time after 2.11.1, so it can be expected to disappear from
+    // CXXR in due course.  At that time the declaration of
+    // newframe can be moved to a later point in the function.
+    if (obj && obj->isS4Object() && m->usingClass()
+	&& m->locInClasses() > 0
+	&& Rf_isBasicClass(Rf_translateChar(m->className()))) {
+	SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
+	if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
+	    S3Part = R_getS4DataSlot(obj, ANYSXP);
+	// At this point S3Part is the S3 class object or an
+	// object of an abnormal type, or NULL.
+	if (S3Part) {  // use S3Part as inherited object
+	    obj = S3Part;
+	    if (!match_obj) // use the first arg, for "[",e.g.
+		match_obj = matchedarg->car();
+	    if (NAMED(obj))
+		SET_NAMED(obj, 2);
+	    if (match_obj->sexptype() == PROMSXP)
+		static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
+	    else {
+		// not possible ?
+		Closure* clos = SEXP_downcast<Closure*>(m->function());
+		const RObject* formal1 = clos->matcher()->formalArgs()->tag();
+		const Symbol* sym = static_cast<const Symbol*>(formal1);
+		newframe->bind(sym, obj);
+	    }
+	} // else, use the S4 object
     }
 
     if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
-	SET_RSTEP(m->m_function, 1);
-    newframe->bind(DotClassSymbol, dotclass);
-    newframe->bind(DotGenericSymbol,
-		   CXXR_NEW(StringVector(generic)));
-    CachedString* method_name
-	= const_cast<CachedString*>(m->m_symbol->name());
-    newframe->bind(DotMethodSymbol,
-		   CXXR_NEW(StringVector(method_name)));
-    newframe->bind(DotGenericCallEnvSymbol, callrho);
-    newframe->bind(DotGenericDefEnvSymbol, defrho);
+	SET_RSTEP(m->function(), 1);
+    m->addMethodBindings(newframe);
     GCStackRoot<Expression> newcall(cptr->call()->clone());
-    newcall->setCar(m->m_symbol);
+    newcall->setCar(m->symbol());
     ArgList arglist(matchedarg, ArgList::PROMISED);
-    *ans = applyMethod(newcall, m->m_function, &arglist, env, newframe);
+    *ans = applyMethod(newcall, m->function(), &arglist, env, newframe);
     return 1;
 }
 
@@ -1512,7 +1496,8 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 		   Environment* call_env, Environment* table_env,
 		   bool allow_default)
 {
-    GCStackRoot<S3Launcher> ans(CXXR_NEW(S3Launcher));
+    GCStackRoot<S3Launcher>
+	ans(CXXR_NEW(S3Launcher(generic, group, call_env, table_env)));
     ans->m_classes = static_cast<StringVector*>(R_data_class2(object));
 
     // Look for pukka method.  Need to interleave looking for generic
@@ -1523,7 +1508,8 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 	for (ans->m_index = 0; ans->m_index < len; ++ans->m_index) {
 	    const char *ss = Rf_translateChar((*ans->m_classes)[ans->m_index]);
 	    ans->m_symbol = Symbol::obtain(generic + "." + ss);
-	    ans->m_function = findMethod(ans->m_symbol, call_env, table_env).first;
+	    ans->m_function
+		= findMethod(ans->m_symbol, call_env, table_env).first;
 	    if (ans->m_function)
 		break;  // Mustn't increment m_index if found
 	    if (!group.empty()) {

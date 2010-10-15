@@ -27,10 +27,43 @@
 using namespace std;
 using namespace CXXR;
 
+void S3Launcher::addMethodBindings(Frame* frame) const
+{
+    // .Class:
+    if (m_index == 0)
+	frame->bind(DotClassSymbol, m_classes);
+    else {
+	GCStackRoot<StringVector>
+	    dotclass(CXXR_NEW(StringVector(m_classes->size() - m_index)));
+	for (unsigned int j = 0; j < dotclass->size(); ++j)
+	    (*dotclass)[j] = (*m_classes)[j + m_index];
+	dotclass->setAttribute(PreviousSymbol, m_classes);
+	frame->bind(DotClassSymbol, dotclass);
+    }
+
+    // .Method:
+    {
+	CachedString* method_name
+	    = const_cast<CachedString*>(m_symbol->name());
+	frame->bind(DotMethodSymbol, CXXR_NEW(StringVector(method_name)));
+    }
+
+    // .Group:
+    if (m_using_group)
+	frame->bind(DotGroupSymbol, CXXR_NEW(StringVector(m_group)));
+
+    // Others:
+    frame->bind(DotGenericSymbol, CXXR_NEW(StringVector(m_generic)));
+    frame->bind(DotGenericCallEnvSymbol, m_call_env);
+    frame->bind(DotGenericDefEnvSymbol, m_table_env);
+}	
+
 // Implementation of S3Launcher::create() is in objects.cpp
 
 void S3Launcher::detachReferents()
 {
+    m_call_env.detach();
+    m_table_env.detach();
     m_classes.detach();
     m_function.detach();
     m_symbol.detach();
@@ -68,6 +101,10 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
 
 void S3Launcher::visitReferents(const_visitor* v) const
 {
+    if (m_call_env)
+	(*v)(m_call_env);
+    if (m_table_env)
+	(*v)(m_table_env);
     if (m_classes)
 	(*v)(m_classes);
     if (m_function)

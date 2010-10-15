@@ -45,13 +45,96 @@
 
 namespace CXXR {
     class Environment;
+    class Frame;
     class FunctionBase;
     class Symbol;
 
-    /** @brief Class used to prepare a call to an S3 method.
+    /** @brief Class to select and call to S3 methods.
+     *
+     * This class provides facilities for selecting an S3 method to
+     * call according to the object to be dispatched on, and for
+     * setting up the call to the S3 method.
      */
     class S3Launcher : public GCNode {
     public:
+	/** @brief Add the special S3 method bindings to a Frame.
+	 *
+	 * This function adds to \a frame the special bindings of
+	 * <tt>.Class</tt>, <tt>.Generic</tt>,
+	 * <tt>.GenericCallEnv</tt>, <tt>.GenericDefEnv</tt>,
+	 * <tt>.Method</tt> and where appropriate <tt>.Group</tt>
+	 * needed for an S3 method call.
+	 *
+	 * Beware that the resulting binding of <tt>.Method</tt> will
+	 * not be appropriate for methods of the <tt>Ops</tt> group.
+	 *
+	 * @param frame Non-null pointer to the Frame to which
+	 *          Bindings are to be added.
+	 */
+	void addMethodBindings(Frame* frame) const;
+
+	/** @brief Vector of classes.
+	 *
+	 * @return Pointer to the vector of classes associated with
+	 * the dispatch object.
+	 */
+	const StringVector* classes() const
+	{
+	    return m_classes;
+	}
+
+	/** @brief Name of method's class
+	 *
+	 * @return pointer to the name of the class to which this
+	 * method corresponds, or a null pointer if no class-specific
+	 * method was found.
+	 */
+	String* className() const
+	{
+	    if (!usingClass())
+		return 0;
+	    return (*m_classes)[m_index];
+	}
+
+	/** @brief Attempt to create an S3Launcher object.
+	 *
+	 * @param object Pointer, possibly null, to the object to be
+	 *          dispatched on.  The search for a method will work
+	 *          in turn through this object's vector of classes
+	 *          until a method is found.  (This vector will be
+	 *          empty if \a object is null.)
+	 *
+	 * @param generic Name of the generic function for which a
+	 *          method is sought.
+	 *
+	 * @param group Name of the function group for which a method
+	 *          is sought.  Within each <tt>class</tt> in the
+	 *          classes vector, the function first looks for a
+	 *          function called <em>generic</em><tt>.class</tt>
+	 *          and then, if there is none, for a function called
+	 *          <em>group</em><tt>.class</tt>, before moving on if
+	 *          necessary to the next element of the classes
+	 *          vector.  \a group may be an empty string, in which
+	 *          case group methods are not considered.
+	 *
+	 * @param call_env Non-null pointer to the Environment in which
+	 *          the search for a Binding is first carried out.  In
+	 *          practice this will be the call Environment of the S3
+	 *          generic.
+	 *
+	 * @param table_env Non-null pointer to the Environment in whose
+	 *          Frame an S3 methods table (i.e. an Environment bound to
+	 *          <tt>.__S3MethodsTable__.</tt>) is sought, if no method
+	 *          was found in \a call_env.
+	 *
+	 * @param allow_default true iff the function should look for
+	 *          a function called
+	 *          <em>generic</em><tt>.default</tt> if no
+	 *          class-specific method was found.
+	 *
+	 * @return A null pointer if no suitable S3 method was found,
+	 * or a pointer to an S3Launcher object for the method found.
+	 */
 	static S3Launcher*
 	create(RObject* object, std::string generic, std::string group,
 	       Environment* call_env, Environment* table_env,
@@ -125,12 +208,57 @@ namespace CXXR {
 	findMethod(const Symbol* symbol, Environment* call_env,
 		   Environment* table_env);
 
+	/** @brief Function implementing the method.
+	 *
+	 * @return Pointer to the function implementing the method
+	 * found.
+	 */
+	FunctionBase* function() const
+	{
+	    return m_function;
+	}
+
+	/** @brief Class for which method was found.
+	 *
+	 * @return the location (counting from zero) within the
+	 * classes() vector to which this S3 method corresponds.
+	 */
+	size_t locInClasses() const
+	{
+	    return m_index;
+	}
+
+	/** @brief Method name as Symbol.
+	 *
+	 * @return pointer to the Symbol containing the name of the
+	 * method found.
+	 */
+	Symbol* symbol() const
+	{
+	    return m_symbol;
+	}
+
+	/** @brief Was a class-specific method found?
+	 *
+	 * @return true iff the method found corresponds to a specific
+	 * class (whose name will be given by className() ) rather
+	 * than being a default method.
+	 */
 	bool usingClass() const
 	{
 	    return m_index < m_classes->size();
 	}
 
-	// Data members, to be private in due course:
+	// Virtual function of GCNode:
+	void visitReferents(const_visitor* v) const;
+    protected:
+	// Virtual function of GCNode:
+	void detachReferents();
+    private:
+	std::string m_generic;
+	std::string m_group;
+	GCEdge<Environment> m_call_env;
+	GCEdge<Environment> m_table_env;
 	GCEdge<StringVector> m_classes;  // Pointer to a vector of
 	  // class names, or a null pointer.  If null, subsequent
 	  // fields are not meaningful.
@@ -143,15 +271,11 @@ namespace CXXR {
 	  // 'function' corresponds, or one past the end if using a
 	  // default method.
 	bool m_using_group;  // True iff 'function' is a group method.
-	
-	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
-    protected:
-	// Virtual function of GCNode:
-	void detachReferents();
-    private:
-	S3Launcher()
-	    : m_using_group(false)
+
+	S3Launcher(const std::string& generic, const std::string& group,
+		   Environment* call_env, Environment* table_env)
+	    : m_generic(generic), m_group(group), m_call_env(call_env),
+	      m_table_env(table_env), m_using_group(false)
 	{}
     };
 }
