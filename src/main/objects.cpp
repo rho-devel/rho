@@ -519,57 +519,76 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	genclos = static_cast<Closure*>(func);
     }
 
+    // FIXME: the process of constructing matchedarg that follows is thoroughly nasty - arr.
+
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
-    SEXP formals = FORMALS(genclos);
-    GCStackRoot<> actuals(Rf_matchArgs(formals, CXXRCCAST(PairList*, cptr->promiseArgs()), call));
+    const PairList* formals = genclos->matcher()->formalArgs();
+    GCStackRoot<PairList>
+	actuals(static_cast<PairList*>(Rf_matchArgs(CXXRCCAST(PairList*, formals),
+						    CXXRCCAST(PairList*, cptr->promiseArgs()),
+						    call)));
     {
-	int i = 0;
-	for(SEXP s = formals, t = actuals; s != R_NilValue; s = CDR(s), t = CDR(t)) {
-	    SET_TAG(t, TAG(s));
-	    if(TAG(t) == R_DotsSymbol) i = length(CAR(t));
+	bool dots = false;
+	{
+	    const PairList* s;
+	    PairList* t;
+	    for (s = formals, t = actuals; s; s = s->tail(), t = t->tail()) {
+		t->setTag(s->tag());
+		if (t->tag() == DotsSymbol)
+		    dots = true;
+	    }
 	}
-	if(i) {   /* we need to expand out the dots */
-	    GCStackRoot<> t(Rf_allocList(i+length(actuals)-1));
-	    for(SEXP s = actuals, m = t; s != R_NilValue; s = CDR(s)) {
-		if(TYPEOF(CAR(s)) == DOTSXP) {
-		    SEXP a;  // *****
-		    for(i = 1, a = CAR(s); a != R_NilValue;
-			a = CDR(a), i++, m = CDR(m)) {
-			SET_TAG(m, Symbol::obtainDotDotSymbol(i));
-			SETCAR(m, CAR(a));
+	if (dots) {   /* we need to expand out the dots */
+	    GCStackRoot<PairList> t(PairList::cons(0));  // dummy first element
+	    for (PairList *s = actuals, *m = t; s; s = s->tail()) {
+		RObject* scar = s->car();
+		if (scar && scar->sexptype() == DOTSXP) {
+		    int i = 1;
+		    for (ConsCell* a = static_cast<ConsCell*>(scar); a; a = a->tail()) {
+			m->setTail(PairList::cons(a->car(), 0, Symbol::obtainDotDotSymbol(i)));
+			m = m->tail();
+			++i;
 		    }
 		} else {
-		    SET_TAG(m, TAG(s));
-		    SETCAR(m, CAR(s));
-		    m = CDR(m);
+		    m->setTail(PairList::cons(s->car(), 0, s->tag()));
+		    m = m->tail();
 		}
 	    }
-	    actuals = t;
+	    actuals = t->tail();
 	}
     }
 
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
-    GCStackRoot<PairList>
-	matchedarg(PairList::make(listLength(cptr->promiseArgs())));
+    GCStackRoot<PairList> matchedarg(PairList::cons(0));  // Dummy first element initially
     {
-	for (SEXP t = matchedarg, s = CXXRCCAST(PairList*, cptr->promiseArgs()); t != R_NilValue;
-	     s = CDR(s), t = CDR(t)) {
-	    SETCAR(t, CAR(s));
-	    SET_TAG(t, TAG(s));
+	// Duplicate cptr->promiseArgs():
+	{
+	    PairList* t = matchedarg;
+	    for (const PairList* s = cptr->promiseArgs(); s; s = s->tail()) {
+		t->setTail(PairList::cons(s->car(), 0, s->tag()));
+		t = t->tail();
+	    }
+	    matchedarg = matchedarg->tail();  // Discard dummy element
 	}
-	for (SEXP t = matchedarg; t != R_NilValue; t = CDR(t)) {
-	    for (SEXP m = actuals; m != R_NilValue; m = CDR(m))
-		if (CAR(m) == CAR(t))  {
-		    if (CAR(m) == R_MissingArg) {
-			SEXP tmp = Rf_findVarInFrame3(cptr->workingEnvironment(), TAG(m), TRUE);
-			if (tmp == R_MissingArg) break;
+
+	for (PairList* t = matchedarg; t; t = t->tail()) {
+	    for (const PairList* m = actuals; m; m = m->tail()) {
+		if (m->car() == t->car()) {
+		    const Symbol* sym = static_cast<const Symbol*>(m->tag());
+		    if (m->car() == Symbol::missingArgument()) {
+			Frame::Binding* bdg
+			    = cptr->workingEnvironment()->frame()->binding(sym);
+			if (bdg && bdg->origin() == Frame::Binding::MISSING)
+			    break;
 		    }
-		    SETCAR(t, Rf_mkPROMISE(TAG(m), cptr->workingEnvironment()));
+		    t->setCar(CXXR_NEW(Promise(const_cast<Symbol*>(sym),
+					       cptr->workingEnvironment())));
 		    break;
 		}
+	    }
 	}
     }
 

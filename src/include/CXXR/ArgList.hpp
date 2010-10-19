@@ -259,16 +259,12 @@ namespace CXXR {
 	/** @brief Wrap elements of the argument list in Promise
 	 * objects.
 	 *
-	 * It is an error to call this function unless the ArgList has
-	 * Status RAW.  After the call the ArgList will have Status
-	 * PROMISED.
-	 *
 	 * Basically, this function wraps any argument in the ArgList
-	 * whose value is not Symbol::missingArgument() is wrapped in
-	 * a Promise to be evaluated in \a env.  However, if the
-	 * ArgList currently has Status EVALUATED, the \a env
-	 * parameter is ignored, and the function simply wraps the
-	 * argument values in pre-forced Promise objects.
+	 * whose value is not Symbol::missingArgument() in a Promise
+	 * to be evaluated in \a env.  However, if the ArgList
+	 * currently has Status EVALUATED, the \a env parameter is
+	 * ignored, and the function simply wraps the argument values
+	 * in pre-forced Promise objects.
 	 *
 	 * If any argument has the value CXXR::DotsSymbol, the action
 	 * depends on what this Symbol is bound to within \a env (and
