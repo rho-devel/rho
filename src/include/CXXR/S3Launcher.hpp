@@ -122,10 +122,11 @@ namespace CXXR {
 	 *          practice this will be the call Environment of the S3
 	 *          generic.
 	 *
-	 * @param table_env Non-null pointer to the Environment in whose
-	 *          Frame an S3 methods table (i.e. an Environment bound to
-	 *          <tt>.__S3MethodsTable__.</tt>) is sought, if no method
-	 *          was found in \a call_env.
+	 * @param table_env Pointer, possibly null, to the Environment
+	 *          in whose Frame an S3 methods table (i.e. an
+	 *          Environment bound to<tt>.__S3MethodsTable__.</tt>)
+	 *          is sought, if no method was found in \a call_env.
+	 *          If \a table_env is null, no S3 methods table is sought.
 	 *
 	 * @param allow_default true iff the function should look for
 	 *          a function called
@@ -149,13 +150,13 @@ namespace CXXR {
 	 * enclosing environments, as in findFunction().
 	 *
 	 * If this fails to find a binding of \a symbol to a
-	 * FunctionBase, the search then determines whether the Frame
-	 * of \a table_env defines an S3 methods table, that is to
-	 * say, whether it contains a Binding of the symbol
-	 * <tt>.__S3MethodsTable__.</tt> to an Environment.  If so, a
-	 * Binding of \a symbol is sought in the Frame of that
-	 * Environment (i.e. the Environment bound to
-	 * <tt>.__S3MethodsTable__.</tt>).  If the value of the
+	 * FunctionBase, and \a table_env is not null, the search then
+	 * determines whether the Frame of \a table_env defines an S3
+	 * methods table, that is to say, whether it contains a
+	 * Binding of the symbol <tt>.__S3MethodsTable__.</tt> to an
+	 * Environment.  If so, a Binding of \a symbol is sought in
+	 * the Frame of that Environment (i.e. the Environment bound
+	 * to <tt>.__S3MethodsTable__.</tt>).  If the value of the
 	 * Binding is a Promise, the Promise is forced and the result
 	 * of evaluating the Promise is used as part of the returned
 	 * value.
@@ -184,10 +185,11 @@ namespace CXXR {
 	 *          practice this will be the call Environment of the S3
 	 *          generic.
 	 *
-	 * @param table_env Non-null pointer to the Environment in whose
-	 *          Frame an S3 methods table (i.e. an Environment bound to
-	 *          <tt>.__S3MethodsTable__.</tt>) is sought, if no method
-	 *          was found in \a call_env.
+	 * @param table_env Pointer, possibly null, to the Environment
+	 *          in whose Frame an S3 methods table (i.e. an
+	 *          Environment bound to<tt>.__S3MethodsTable__.</tt>)
+	 *          is sought, if no method was found in \a call_env.
+	 *          If \a table_env is null, no S3 methods table is sought.
 	 *
 	 * @return If a Binding to a FunctionBase was found, the first
 	 * element of the pair is the value of the Binding (except

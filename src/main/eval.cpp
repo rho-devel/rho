@@ -384,7 +384,7 @@ void Closure::DebugScope::startDebugging() const
     {
 	int old_bl = R_BrowseLines;
 	int blines = Rf_asInteger(Rf_GetOption(Rf_install("deparse.max.lines"),
-					 R_BaseEnv));
+					       R_BaseEnv));
 	if(blines != NA_INTEGER && blines > 0)
 	    R_BrowseLines = blines;
 	Rf_PrintValueRec(const_cast<Expression*>(call), 0);
@@ -403,7 +403,8 @@ void Closure::DebugScope::endDebugging() const
 	Rprintf("exiting from: ");
 	int old_bl = R_BrowseLines;
 	int blines
-	    = Rf_asInteger(Rf_GetOption(Rf_install("deparse.max.lines"), R_BaseEnv));
+	    = Rf_asInteger(Rf_GetOption(Rf_install("deparse.max.lines"),
+					R_BaseEnv));
 	if(blines != NA_INTEGER && blines > 0)
 	    R_BrowseLines = blines;
 	Rf_PrintValueRec(const_cast<Expression*>(ctxt->call()), 0);
@@ -1533,65 +1534,6 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
     return 0;
 }
 
-// Stuff used in implementing Rf_DispatchGroup():
-namespace {
-    struct MethodInfo {
-	GCStackRoot<StringVector> classes;  // Pointer to a vector of
-	  // class names, or a null pointer.  If null, subsequent
-	  // fields are not meaningful.
-	FunctionBase* function;  // Pointer to the method found, or
-	  // null if no method was found.  If null, subsequent fields
-	  // are not meaningful.
-	Symbol* symbol;  // Pointer to the Symbol naming the method found.
-	size_t index;  // Location within the classes vector to which
-	  // 'function' corresponds. 
-	bool group;  // True iff 'function' is a group method.
-
-	MethodInfo()
-	    : classes(0), function(0), symbol(0), group(false)
-	{}
-    };
-
-    void findmethod(MethodInfo* info, RObject* object, string group,
-		    string generic, Environment* rho)
-    {
-	if (!object)
-	    return;
-	RObject* cl = (object->isS4Object() ? R_data_class2(object)
-		       : Rf_getAttrib(object, ClassSymbol));
-	if (!cl || cl->sexptype() != STRSXP)
-	    return;
-	info->classes = static_cast<StringVector*>(cl);
-
-	// Need to interleave looking for group and generic methods,
-	// e.g. if class(x) is c("foo", "bar") then x > 3 should invoke
-	// "Ops.foo" rather than ">.bar":
-	size_t len = info->classes->size();
-	for (info->index = 0; info->index < len; ++info->index) {
-	    const char *ss = Rf_translateChar((*info->classes)[info->index]);
-	    // Try for generic method:
-	    {
-		info->symbol = Symbol::obtain(generic + "." + ss);
-		info->function
-		    = S3Launcher::findMethod(info->symbol, rho,
-					     Environment::base()).first;
-		if (info->function)
-		    return;
-	    }
-	    // Try for group method:
-	    {
-		info->symbol = Symbol::obtain(group + "." + ss);
-		info->function
-		    = S3Launcher::findMethod(info->symbol, rho,
-					     Environment::base()).first;
-		if (info->function) {
-		    info->group = true;
-		    return;
-		}
-	    }
-	}
-    }
-}
 	
 attribute_hidden
 int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
@@ -1657,10 +1599,11 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     unsigned int nargs = (isOps ? numargs : 1);
     string generic(opfun->name());
 
-    MethodInfo l;
-    findmethod(&l, arg1val, group, generic, callenv);
-    if (l.function && arg1val->isS4Object() && l.index > 0
-	&& Rf_isBasicClass(Rf_translateChar((*l.classes)[l.index]))) {
+    GCStackRoot<S3Launcher>
+	l(S3Launcher::create(arg1val, generic, group,
+			     callenv, Environment::base(), false));
+    if (l && arg1val->isS4Object() && l->locInClasses() > 0
+	&& Rf_isBasicClass(Rf_translateChar(l->className()))) {
 	/* This and the similar test below implement the strategy
 	 for S3 methods selected for S4 objects.  See ?Methods */
         RObject* value = arg1val;
@@ -1673,11 +1616,12 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    MethodInfo r;
+    GCStackRoot<S3Launcher> r;
     if (nargs == 2)
-	findmethod(&r, arg2val, group, generic, callenv);
-    if (r.function && arg2val->isS4Object() && r.index > 0
-	&& Rf_isBasicClass(Rf_translateChar((*r.classes)[r.index]))) {
+	r = S3Launcher::create(arg2val, generic, group,
+			       callenv, Environment::base(), false);
+    if (r && arg2val->isS4Object() && r->locInClasses() > 0
+	&& Rf_isBasicClass(Rf_translateChar(r->className()))) {
         RObject* value = arg2val;
 	if(NAMED(value))
 	    SET_NAMED(value, 2);
@@ -1688,89 +1632,45 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 	}
     }
 
-    if (!l.function && !r.function)
-	return 0; /* no generic or group method so use default*/
+    if (!l && !r)
+	return 0; /* no generic or group method so use default*/ 
 
-    if (l.function != r.function) {
-	if (l.function && r.function) {
-	    /* special-case some methods involving difftime */
-	    string lname = l.symbol->name()->stdstring();
-	    string rname = r.symbol->name()->stdstring();
-	    if (rname == "Ops.difftime"
-		&& (lname == "+.POSIXt" || lname == "-.POSIXt"
-		    || lname == "+.Date" || lname == "-.Date"))
-		r.function = 0;
-	    else if (lname == "Ops.difftime"
-		     && (rname == "+.POSIXt" || rname == "+.Date"))
-		l.function = 0;
-	    else {
-		Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
-			   lname.c_str(), rname.c_str(), generic.c_str());
-		return 0;
-	    }
+    if (l && r && l->function() != r->function()) {
+	/* special-case some methods involving difftime */
+	string lname = l->symbol()->name()->stdstring();
+	string rname = r->symbol()->name()->stdstring();
+	if (rname == "Ops.difftime"
+	    && (lname == "+.POSIXt" || lname == "-.POSIXt"
+		|| lname == "+.Date" || lname == "-.Date"))
+	    r = 0;
+	else if (lname == "Ops.difftime"
+		 && (rname == "+.POSIXt" || rname == "+.Date"))
+	    l = 0;
+	else {
+	    Rf_warning(_("Incompatible methods (\"%s\", \"%s\") for \"%s\""),
+		       lname.c_str(), rname.c_str(), generic.c_str());
+	    return 0;
 	}
-	// If the right hand side is the one, copy over the righthand info:
-	if (!l.function)
-	    l = r;
     }
+
+    S3Launcher* m = (l ? l : r);  // m is the method that will be applied.
 
     /* we either have a group method or a class method */
 
     GCStackRoot<Frame> supp_frame(CXXR_NEW(StdFrame));
     // Set up special method bindings:
-    {
-	// .Method:
-	{
-	    GCStackRoot<StringVector>
-		dotmethod(CXXR_NEW(StringVector(nargs)));
-	    PairList* s = callargs;
-	    for (unsigned int i = 0 ; i < nargs ; ++i) {
-		RObject* argval = s->car();
-		RObject* t = (argval->isS4Object() ? R_data_class2(argval)
-			      : Rf_getAttrib(argval, ClassSymbol));
-		bool set = false;
-		if (t && t->sexptype() == STRSXP) {
-		    StringVector* clsv = static_cast<StringVector*>(t);
-		    for (unsigned int j = 0; j < clsv->size(); ++j) {
-			if (!strcmp(Rf_translateChar((*clsv)[j]),
-				    Rf_translateChar((*l.classes)[l.index]))) {
-			    (*dotmethod)[i]
-				= const_cast<CachedString*>(l.symbol->name());
-			    set = true;
-			    break;
-			}
-		    }
-		}
-		if (!set)
-		    (*dotmethod)[i] = CachedString::blank();
-		s = s->tail();
-	    }
-	    supp_frame->bind(DotMethodSymbol, dotmethod);
-	}
-	// .Generic:
-	{
-	    GCStackRoot<StringVector>
-		t(CXXR_NEW(StringVector(generic)));
-	    supp_frame->bind(DotGenericSymbol, t);
-	}
-	// .Group:
-	if (l.group)
-	    supp_frame->bind(DotGroupSymbol,
-			     CXXR_NEW(StringVector(group)));
-	// .Class:
-	{
-	    size_t sz = l.classes->size() - l.index;
-	    GCStackRoot<StringVector>
-		dotclass(CXXR_NEW(StringVector(sz)));
-	    unsigned int i = l.index;
-	    for (unsigned int j = 0; j < sz; ++j)
-		(*dotclass)[j] = (*l.classes)[i++];
-	    supp_frame->bind(DotClassSymbol, dotclass);
-	}
-	// .GenericCallEnv:
-	supp_frame->bind(DotGenericCallEnvSymbol, callenv);
-	// .GenericDefEnv:
-	supp_frame->bind(DotGenericDefEnvSymbol, Environment::base());
+    m->addMethodBindings(supp_frame);
+
+    if (isOps) {
+	// Rebind .Method:
+	GCStackRoot<StringVector> dotmethod(CXXR_NEW(StringVector(2)));
+	(*dotmethod)[0] = (l 
+			   ? const_cast<CachedString*>(l->symbol()->name())
+			   : CachedString::blank());
+	(*dotmethod)[1] = (r
+			   ? const_cast<CachedString*>(r->symbol()->name())
+			   : CachedString::blank());
+	supp_frame->bind(DotMethodSymbol, dotmethod);
     }
 
     /* the arguments have been evaluated; since we are passing them */
@@ -1778,13 +1678,13 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
     /* they get duplicated and things like missing/substitute work. */
     {
 	GCStackRoot<Expression>
-	    newcall(CXXR_NEW(Expression(l.symbol, callx->tail())));
+	    newcall(CXXR_NEW(Expression(m->symbol(), callx->tail())));
 	ArgList arglist(callargs, ArgList::EVALUATED);
 	arglist.wrapInPromises(0);
 	// Ensure positional matching for operators:
 	if (isOps)
 	    arglist.stripTags();
-	Closure* func = SEXP_downcast<Closure*>(l.function);
+	Closure* func = SEXP_downcast<Closure*>(m->function());
 	*ans = func->invoke(callenv, &arglist, newcall, supp_frame);
     }
     return 1;

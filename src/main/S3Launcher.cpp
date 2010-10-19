@@ -76,6 +76,8 @@ S3Launcher::findMethod(const Symbol* symbol, Environment* call_env,
     pair<Environment*, FunctionBase*> pr = findFunction(symbol, call_env);
     if (pr.first)
 	return make_pair(pr.second, true);
+    if (!table_env)
+	return pair<FunctionBase*, bool>(0, false);
     Environment* table = 0;
     // Look for S3 methods table:
     {
