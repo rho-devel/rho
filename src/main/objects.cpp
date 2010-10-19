@@ -519,16 +519,22 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	genclos = static_cast<Closure*>(func);
     }
 
-    // FIXME: the process of constructing matchedarg that follows is thoroughly nasty - arr.
+    // FIXME: the process of computing matchedarg that follows is
+    // thoroughly nasty - arr.
 
     /* get formals and actuals; attach the names of the formals to
        the actuals, expanding any ... that occurs */
     const PairList* formals = genclos->matcher()->formalArgs();
-    GCStackRoot<PairList>
-	actuals(static_cast<PairList*>(Rf_matchArgs(CXXRCCAST(PairList*, formals),
-						    CXXRCCAST(PairList*, cptr->promiseArgs()),
-						    call)));
+    GCStackRoot<PairList> actuals;
     {
+	{
+	    RObject* ac
+		= Rf_matchArgs(const_cast<PairList*>(formals),
+			       const_cast<PairList*>(cptr->promiseArgs()),
+			       call);
+	    actuals = static_cast<PairList*>(ac);
+	}
+
 	bool dots = false;
 	{
 	    const PairList* s;
@@ -545,8 +551,10 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 		RObject* scar = s->car();
 		if (scar && scar->sexptype() == DOTSXP) {
 		    int i = 1;
-		    for (ConsCell* a = static_cast<ConsCell*>(scar); a; a = a->tail()) {
-			m->setTail(PairList::cons(a->car(), 0, Symbol::obtainDotDotSymbol(i)));
+		    for (ConsCell* a = static_cast<ConsCell*>(scar);
+			 a; a = a->tail()) {
+			Symbol* ddsym = Symbol::obtainDotDotSymbol(i);
+			m->setTail(PairList::cons(a->car(), 0, ddsym));
 			m = m->tail();
 			++i;
 		    }
@@ -562,10 +570,11 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     /* we can't duplicate because it would force the promises */
     /* so we do our own duplication of the promargs */
 
-    GCStackRoot<PairList> matchedarg(PairList::cons(0));  // Dummy first element initially
+    GCStackRoot<PairList> matchedarg;
     {
 	// Duplicate cptr->promiseArgs():
 	{
+	    matchedarg = PairList::cons(0);  // Dummy first element
 	    PairList* t = matchedarg;
 	    for (const PairList* s = cptr->promiseArgs(); s; s = s->tail()) {
 		t->setTail(PairList::cons(s->car(), 0, s->tag()));
