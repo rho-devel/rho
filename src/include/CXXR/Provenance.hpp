@@ -65,8 +65,9 @@ namespace CXXR {
 		void serialize(Archive & ar, const unsigned int version) {
 			ar & boost::serialization::base_object<GCNode>(*this);
 			printf("Serialize Provenance\n");
-			ar & m_symbol;
+			ar & m_expression;
 			ar & m_parentpos;
+			ar & m_symbol;
 		}
 	};
 } // Namespace CXXR

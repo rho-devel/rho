@@ -43,6 +43,7 @@
 #include <cstring>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/serialization/split_member.hpp>
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/GCRoot.h"
@@ -163,17 +164,33 @@ namespace CXXR {
 	void allocData(size_t sz, bool initialize = false);
 
 	template<class Archive>
-	void serialize(Archive & ar, const unsigned int version) {
-	    ar & boost::serialization::base_object<VectorBase>(*this);
-	    printf("Serialize DumbVector\n");
+	void load(Archive & ar, const unsigned int version) {
+	    ar >> boost::serialization::base_object<VectorBase>(*this);
+	    printf("Deserialize DumbVector\n");
 	    if (size()>1) { // Not a singleton vector
-		if (!m_data) // allocate if deserializing
-	    	    allocData(size());
+		allocData(size());
 		for (unsigned int i=0;i<size();i++)
-		    ar & m_data[i];
-	    } else
+		    ar >> m_data[i];
+	    } else {
+		ar >> m_singleton;
 		m_data=&m_singleton;
-	    ar & m_singleton;
+	    }
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<VectorBase>(*this);
+	    printf("Serialize DumbVector\n");
+	    if (size()>1) // Not a singleton vector
+		for (unsigned int i=0;i<size();i++)
+		    ar << m_data[i];
+	    else
+	        ar << m_singleton;
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
 	}
     };
 

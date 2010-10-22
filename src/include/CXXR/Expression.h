@@ -45,6 +45,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+
 namespace CXXR {
     /** @brief Singly linked list representing an R expression.
      *
@@ -93,6 +95,7 @@ namespace CXXR {
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
+	friend class boost::serialization::access;
 	// Declared private to ensure that Expression objects are
 	// allocated only using 'new':
 	~Expression() {}
@@ -100,8 +103,15 @@ namespace CXXR {
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated versions:
 	Expression& operator=(const Expression&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<ConsCell>(*this);
+	}
     };
 } // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::Expression)
 
     /** @brief Pointer to expression currently being evaluated.
      */

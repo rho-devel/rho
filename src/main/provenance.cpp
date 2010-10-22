@@ -255,6 +255,8 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
+	GCNode::GCInhibitor inhibitor;
+
 	std::ifstream ifs("bserialize.out");
 	boost::archive::text_iarchive ia(ifs);
 
