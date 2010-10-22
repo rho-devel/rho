@@ -2,11 +2,11 @@
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
-    const char* decomposeSymbol(Symbol* sym) {
+    const char* decomposeSymbol(const Symbol* sym) {
 	return sym->name()->c_str();
     }
 
-    GCNode* composeSymbol(std::string& str) {
+    GCNode* composeSymbol(const std::string& str) {
 	return Symbol::obtain(str);
     }
 }

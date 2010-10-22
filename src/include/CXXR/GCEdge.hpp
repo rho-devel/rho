@@ -127,7 +127,7 @@ namespace CXXR {
 	    ar >> type;
 	    switch(type) {
 	    case SYMBOL:
-		retarget(loadSymbol<Archive>(ar));
+		retarget(loadSymbol(ar));
 		break;
 	    case CACHEDSTRING:
 		break;
@@ -144,7 +144,7 @@ namespace CXXR {
 	    ar << type;
 	    switch(type) {
 	    case SYMBOL:
-		saveSymbol<Archive>(ar, m_target);
+		saveSymbol(ar, m_target);
 		break;
 	    case CACHEDSTRING:
 		break;

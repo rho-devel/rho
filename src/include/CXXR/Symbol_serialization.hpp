@@ -8,12 +8,12 @@ namespace CXXR {
     class RObject;
     class Symbol;
     // Forward declarations, defined in .cpp
-    GCNode* composeSymbol(std::string&);
-    const char* decomposeSymbol(Symbol*);
+    GCNode* composeSymbol(const std::string&);
+    const char* decomposeSymbol(const Symbol*);
 
     template<class Archive>
     void saveSymbol(Archive & ar, const GCNode* pcs) {
-	std::string sym(decomposeSymbol(const_cast<Symbol*>(static_cast<const Symbol*>(pcs))));
+	std::string sym(decomposeSymbol(static_cast<const Symbol*>(pcs)));
 	ar << sym;
     }
 
