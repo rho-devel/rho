@@ -32,7 +32,8 @@ SOURCES_C = complex.c gram.c gramRd.c inlined.c unzip.c
 SOURCES_CXX = \
 	ArgMatcher.cpp \
 	BuiltInFunction.cpp ByteCode.cpp \
-	CConverters.cpp CachedString.cpp CellPool.cpp \
+	CConverters.cpp CachedString.cpp CachedString_serialization.cpp \
+	CellPool.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
 	Environment.cpp Evaluator.cpp Expression.cpp ExpressionVector.cpp \

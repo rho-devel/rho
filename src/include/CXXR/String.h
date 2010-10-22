@@ -42,15 +42,8 @@
 #define CXXR_STRING_H
 
 #include "CXXR/GCRoot.h"
+#include "CXXR/StringEncodingType.h"
 #include "CXXR/VectorBase.h"
-
-typedef enum {
-    CE_NATIVE = 0,
-    CE_UTF8   = 1,
-    CE_LATIN1 = 2,
-    CE_SYMBOL = 5,
-    CE_ANY    =99
-} cetype_t;
 
 #ifdef __cplusplus
 

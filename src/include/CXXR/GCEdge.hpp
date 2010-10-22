@@ -44,6 +44,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/split_member.hpp>
+#include "CXXR/CachedString_serialization.hpp"
 #include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
 
@@ -130,6 +131,7 @@ namespace CXXR {
 		retarget(loadSymbol(ar));
 		break;
 	    case CACHEDSTRING:
+		retarget(loadCachedString(ar));
 		break;
 	    case OTHER:
  		ar >> const_cast<GCNode* &>(m_target);
@@ -147,6 +149,7 @@ namespace CXXR {
 		saveSymbol(ar, m_target);
 		break;
 	    case CACHEDSTRING:
+		saveCachedString(ar, m_target);
 		break;
 	    case OTHER:
 		ar << const_cast<GCNode* &>(m_target);
