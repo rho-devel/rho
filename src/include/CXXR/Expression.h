@@ -107,6 +107,7 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    ar & boost::serialization::base_object<ConsCell>(*this);
+	    printf("Serialize Expression\n");
 	}
     };
 } // namespace CXXR

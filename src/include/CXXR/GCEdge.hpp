@@ -137,6 +137,9 @@ namespace CXXR {
  		ar >> const_cast<GCNode* &>(m_target);
 		break;
 	    }
+	    // Expose if necessary
+	    if (m_target && !m_target->exposed())
+		GCNode::expose(m_target);
 	}
 
 	template<class Archive>

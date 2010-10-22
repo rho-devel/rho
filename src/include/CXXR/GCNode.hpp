@@ -249,6 +249,15 @@ namespace CXXR {
 	    m_bits &= ~UNDER_CONSTRUCTION;
 	}
 
+	/** @brief Determine whether a node has been exposed
+	 *
+	 * @ Return true iff a node is exposed to GC
+	 */
+	bool exposed() const
+	{
+	    return !(m_bits & UNDER_CONSTRUCTION);
+	}
+
 	/** @brief Record that construction of a node is complete.
 	 *
 	 * In normal operation (i.e. unless the object's constructor
