@@ -38,7 +38,7 @@ CXXR_HS = \
   UncachedString.h VectorBase.h WeakRef.h uncxxr.h
 
 CXXR_HPPS = \
-  Allocator.hpp ArgMatcher.hpp CellPool.hpp \
+  Allocator.hpp ArgList.hpp ArgMatcher.hpp CellPool.hpp \
   DumbVector.hpp Evaluator_Context.hpp Frame.hpp \
   GCEdge.hpp GCNode.hpp GCStackRoot.hpp \
   HandleVector.hpp HeterogeneousList.hpp MemoryBank.hpp \
