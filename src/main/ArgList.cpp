@@ -21,7 +21,7 @@
 
 #include "CXXR/ArgList.hpp"
 
-#include <set>
+#include <list>
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Evaluator.h"
@@ -104,23 +104,33 @@ void ArgList::merge(const ConsCell* extraargs)
 {
     if (m_status != PROMISED)
 	Rf_error("Internal error: ArgList::merge() requires PROMISED ArgList");
-    GCStackRoot<const PairList> oldargs(m_list->tail());
-    m_list->setTail(0);
-    PairList* lastout = m_list;
-    set<const RObject*> ntags;  // Tags within extraargs
-    for (const ConsCell* inp = extraargs; inp; inp = inp->tail()) {
-	const RObject* tag = inp->tag();
-	if (tag)
-	    ntags.insert(tag);
-	lastout->setTail(PairList::cons(inp->car(), 0, tag));
-	lastout = lastout->tail();
-    }
-    for (const PairList* inp = oldargs; inp; inp = inp->tail()) {
-	const RObject* tag = inp->tag();
-	if (!tag || ntags.count(tag) == 0) {
-	    lastout->setTail(PairList::cons(inp->car(), 0, tag));
-	    lastout = lastout->tail();
+    // Convert extraargs into a doubly linked list:
+    typedef std::list<pair<const RObject*, RObject*> > Xargs;
+    Xargs xargs;
+    for (const ConsCell* cc = extraargs; cc; cc = cc->tail())
+	xargs.push_back(make_pair(cc->tag(), cc->car()));
+    // Duplicate the original list if necessary:
+    if (list() == m_orig_list)
+	m_list->setTail(m_orig_list->clone());
+    // Apply overriding arg values supplied in extraargs:
+    PairList* last = m_list;
+    for (PairList* pl = m_list->tail(); pl; pl = pl->tail()) {
+	last = pl;
+	const RObject* tag = pl->tag();
+	if (tag) {
+	    Xargs::iterator it = xargs.begin();
+	    while (it != xargs.end() && (*it).first != tag)
+		++it;
+	    if (it != xargs.end()) {
+		pl->setCar((*it).second);
+		xargs.erase(it);
+	    }
 	}
+    }
+    // Append remaining extraargs:
+    for (Xargs::const_iterator it = xargs.begin(); it != xargs.end(); ++it) {
+	last->setTail(PairList::cons((*it).second, 0, (*it).first));
+	last = last->tail();
     }
 }
 

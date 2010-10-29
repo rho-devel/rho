@@ -194,18 +194,27 @@ namespace CXXR {
 
 	/** @brief Merge in new argument values..
 	 *
-	 * This function is used in implementing NextMethod.
-	 * Basically it prepends the arguments in \a newargs to the
-	 * current ArgList.  However, if any existing element of the
-	 * ArgList has the same non-null tag as an element of \a
-	 * newargs, that element of the current ArgList is discarded
-	 * in the result.
+	 * This function is used in implementing NextMethod.  If any
+	 * element of the ArgList has the same non-null tag as an
+	 * element of \a extraargs, then the value (car) of that
+	 * element of the ArgList is replaced by the value of the
+	 * corresponding element of \a extraargs.
+	 *
+	 * Any elements of \a extraargs that do not override existing
+	 * arguments as described in the previous paragraph are
+	 * appended in order to the ArgList.
 	 *
 	 * It is an error to call this function unless the ArgList has
 	 * PROMISED status.
 	 *
 	 * @param extraargs Pointer, possibly null, to a list whose
-	 *          elements represent Promise-wrapped argument values.
+	 *          elements represent Promise-wrapped argument
+	 *          values.
+	 *
+	 * @note This behavior conforms to the R manpage for
+	 * NextMethod.  However, the White Book says that unnamed
+	 * arguments in \a extraargs should be \e prepended to the
+	 * ArgList.
 	 */
 	void merge(const ConsCell* extraargs);
 
