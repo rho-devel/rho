@@ -274,7 +274,7 @@ namespace CXXR {
 	Symbol(const Symbol&);
 	Symbol& operator=(const Symbol&);
 
-	static void cleanup() {}
+	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();

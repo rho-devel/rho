@@ -58,6 +58,26 @@ CachedString::map* CachedString::s_cache = 0;
 CachedString* CachedString::s_blank;
 SEXP R_BlankString = 0;
 
+CachedString::~CachedString()
+{
+    // During program exit, s_cache may already have been deleted:
+    if (s_cache) {
+	// Must copy the key, because some implementations may,
+	// having deleted the cache entry pointed to by
+	// m_key_val_pr, continue looking for other entries with
+	// the given key.
+	key k = m_key_val_pr->first;
+	s_cache->erase(k);
+    }
+}
+
+void CachedString::cleanup()
+{
+    // Deleting s_cache avoids valgrind 'possibly lost' reports on exit:
+    delete s_cache;
+    s_cache = 0;
+}
+
 CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
 {
     // This will be checked again when we actually construct the
@@ -66,14 +86,14 @@ CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
     if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
         Rf_error("unknown encoding: %d", encoding);
     pair<map::iterator, bool> pr
-	= cache()->insert(map::value_type(key(str, encoding), 0));
+	= s_cache->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;
     if (pr.second) {
 	try {
 	    map::value_type& val = *it;
 	    val.second = expose(new CachedString(&val));
 	} catch (...) {
-	    cache()->erase(it);
+	    s_cache->erase(it);
 	    throw;
 	}
     }
@@ -87,8 +107,6 @@ const char* CachedString::c_str() const
 
 void CachedString::initialize()
 {
-    // We don't delete s_cache in cleanup() because there will still
-    // be CachedStrings in existence on exit.
     s_cache = new map;
     static GCRoot<CachedString> blank(CachedString::obtain(""));
     s_blank = blank.get();

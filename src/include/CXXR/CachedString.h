@@ -157,23 +157,9 @@ namespace CXXR {
 
 	// Declared private to ensure that CachedString objects are
 	// allocated only using 'new'.
-	~CachedString()
-	{
-	    // Must copy the key, because some implementations may,
-	    // having deleted the cache entry pointed to by
-	    // m_key_val_pr, continue looking for other entries with
-	    // the given key.
-	    key k = m_key_val_pr->first;
-	    cache()->erase(k);
-	}
+	~CachedString();
 
-	// Return pointer to the cache:
-	static map* cache()
-	{
-	    return s_cache;
-	}
-
-	static void cleanup() {}
+	static void cleanup();
 
 	// Initialize the static data members:
 	static void initialize();

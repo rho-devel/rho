@@ -789,15 +789,14 @@ DL_FUNC attribute_hidden
 R_dlsym(DllInfo *info, char const *name,
 	R_RegisteredNativeSymbol *symbol)
 {
-    char* buf = new char[Symbol::maxLength()+1];
     DL_FUNC f;
 
     f = R_getDLLRegisteredSymbol(info, name, symbol);
     if(f) return(f);
 
-
     if(info->useDynamicLookup == FALSE) return(NULL);
 
+    char* buf = new char[Symbol::maxLength()+1];
 #ifdef HAVE_NO_SYMBOL_UNDERSCORE
     snprintf(buf, Symbol::maxLength()+1, "%s", name);
 #else
@@ -824,7 +823,7 @@ R_dlsym(DllInfo *info, char const *name,
     }
 #endif
 
-    delete buf;
+    delete [] buf;
     return f;
 }
 

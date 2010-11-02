@@ -94,10 +94,20 @@ Symbol::Symbol(const CachedString* the_name)
 }
 
 // Because Symbols are permanently preserved against garbage
-// collection (see class description) this is never actually invoked.
+// collection (see class description) this is never actually invoked,
+// except possibly during program exit, by which time s_table will
+// have been deleted.
 Symbol::~Symbol()
 {
-    if (m_name) s_table->erase(m_name);
+    if (s_table)
+	s_table->erase(m_name);
+}
+
+void Symbol::cleanup()
+{
+    // Deleting s_table avoids valgrind 'possibly lost' reports on exit:
+    delete s_table;
+    s_table = 0;
 }
 
 void Symbol::detachReferents()
@@ -142,8 +152,6 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
-    // We don't delete s_table in the cleanup() function, because
-    // there will still be Symbol objects in existence on exit.
     s_table = new map;
     static GCRoot<Symbol> missing_arg(expose(new Symbol));
     s_missing_arg = missing_arg.get();
