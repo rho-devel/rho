@@ -45,7 +45,16 @@
 using namespace std;
 using namespace CXXR;
 
-//template <> unsigned int SchwarzCounter<MemoryBank>::s_count = 0;
+// If NO_CELLPOOLS is defined, all memory blocks are allocated
+// directly via ::operator new.  This enables valgrind's memcheck tool
+// to do a more thorough job.  (Previously we tried instrumenting
+// class CellPool with Valgrind client requests, but the result was
+// intolerably slow running.)
+#ifdef NO_CELLPOOLS
+const size_t MemoryBank::s_max_cell_size = 0;
+#else
+const size_t MemoryBank::s_max_cell_size = 128;
+#endif
 
 size_t MemoryBank::s_blocks_allocated = 0;
 size_t MemoryBank::s_bytes_allocated = 0;
@@ -82,30 +91,13 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 #ifdef R_MEMORY_PROFILING
     if (s_monitor && bytes >= s_monitor_threshold) s_monitor(bytes);
 #endif
-#if VALGRIND_LEVEL >= 3
-    size_t blockbytes = bytes + 1;  // trailing redzone
-#else
-    size_t blockbytes = bytes;
-#endif
     void* p;
-    if (blockbytes > s_max_cell_size)
-	p = ::operator new(blockbytes);
+    if (bytes > s_max_cell_size)
+	p = ::operator new(bytes);
     else {
-	Pool* pool = s_pools[s_pooltab[blockbytes]];
+	Pool* pool = s_pools[s_pooltab[bytes]];
 	p = pool->allocate();
-#if VALGRIND_LEVEL >= 2
-	// Fence off supernumerary bytes:
-	size_t surplus = pool->cellSize() - blockbytes;
-	if (surplus > 0) {
-	    char* tail = static_cast<char*>(p) + blockbytes;
-	    VALGRIND_MAKE_MEM_NOACCESS(tail, surplus);
-	}
-#endif
     }
-#if VALGRIND_LEVEL >= 3
-    char* c = static_cast<char*>(p);
-    VALGRIND_MAKE_MEM_NOACCESS(c + bytes, 1);
-#endif
     ++s_blocks_allocated;
     s_bytes_allocated += bytes;
     return p;

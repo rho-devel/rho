@@ -118,7 +118,7 @@ Rboolean (Rf_isString)(SEXP s);
 Rboolean (Rf_isObject)(SEXP s);
 
 /* Accessor functions.  Many are declared using () to avoid the macro
-   definitions in the USE_RINTERNALS section.
+   definitions in the USE_RINTERNALS section (phased out in CXXR).
    The function STRING_ELT is used as an argument to arrayAssign even
    if the macro version is in use.
 */

@@ -85,10 +85,6 @@ namespace CXXR {
 	 * deallocated.  Actual utilisation of memory in the main heap
 	 * may be greater than this, possibly by as much as a factor
 	 * of 2.
-	 *
-	 * @note If redzoning is operation (<tt>VALGRIND_LEVEL >=
-	 * 3</tt>), the value returned does not include the size of the
-	 * redzones.
 	 */
 	static size_t bytesAllocated() {return s_bytes_allocated;}
 
@@ -116,17 +112,10 @@ namespace CXXR {
 	    // This helps to diagnose premature GC:
 	    memset(p, 0x55, bytes);
 #endif
-#if VALGRIND_LEVEL >= 3
-	    size_t blockbytes = bytes + 1;  // trailing redzone
-	    char* c = static_cast<char*>(p);
-	    VALGRIND_MAKE_MEM_UNDEFINED(c + bytes, 1);
-#else
-	    size_t blockbytes = bytes;
-#endif
 	    // Assumes sizeof(double) == 8:
-	    if (blockbytes > s_max_cell_size)
+	    if (bytes > s_max_cell_size)
 		::operator delete(p);
-	    else s_pools[s_pooltab[blockbytes]]->deallocate(p);
+	    else s_pools[s_pooltab[bytes]]->deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
@@ -155,7 +144,7 @@ namespace CXXR {
     private:
 	typedef CellPool Pool;
 	static const size_t s_num_pools = 10;
-	static const size_t s_max_cell_size = 128;
+	static const size_t s_max_cell_size;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
 	static Pool* s_pools[];

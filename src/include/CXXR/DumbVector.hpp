@@ -67,10 +67,8 @@ namespace CXXR {
 	DumbVector(size_t sz)
 	    : VectorBase(ST, sz), m_data(&m_singleton)
 	{
-	    if (sz > 1) allocData(sz);
-#if VALGRIND_LEVEL >= 1
-	    else VALGRIND_MAKE_MEM_UNDEFINED(&m_singleton, sizeof(T));
-#endif
+	    if (sz > 1)
+		allocData(sz);
 	}
 
 	/** @brief Create a vector, and fill with a specified initial
@@ -179,10 +177,6 @@ namespace CXXR {
 	    for (unsigned int i = 0; i < sz; ++i)
 		m_data[i] = m_singleton;
 	}
-#if VALGRIND_LEVEL == 1
-	// For VALGRIND_LEVEL > 1 this will already have been done:
-	else VALGRIND_MAKE_MEM_UNDEFINED(m_data, bytes);
-#endif
     }
 
     template <typename T, SEXPTYPE ST>

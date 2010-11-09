@@ -44,7 +44,6 @@
 #include <new>
 #include <vector>
 
-#include "Rvalgrind.h"
 #include "CXXR/config.hpp"
 
 namespace CXXR {
@@ -92,11 +91,7 @@ namespace CXXR {
 	      m_last_free_cell(0),
 #endif
 	      m_cells_allocated(0)
-	{
-#if VALGRIND_LEVEL >= 2
-	    VALGRIND_CREATE_MEMPOOL(this, 0, 0);
-#endif
-	}
+	{}
 
 	/** Destructor
 	 *
@@ -125,9 +120,6 @@ namespace CXXR {
 		m_last_free_cell = 0;
 #endif
 	    ++m_cells_allocated;
-#if VALGRIND_LEVEL >= 2
-	    VALGRIND_MEMPOOL_ALLOC(this, c, cellSize());
-#endif
 	    return c;
 	}
 
@@ -164,10 +156,6 @@ namespace CXXR {
 	    if (!p) return;
 #ifdef DEBUG_RELEASE_MEM
 	    checkAllocatedCell(p);
-#endif
-#if VALGRIND_LEVEL >= 2
-	    VALGRIND_MEMPOOL_FREE(this, p);
-	    VALGRIND_MAKE_MEM_UNDEFINED(p, sizeof(Cell));
 #endif
 	    Cell* c = static_cast<Cell*>(p);
 #ifdef CELLFIFO
@@ -208,9 +196,6 @@ namespace CXXR {
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 	    ++m_cells_allocated;
-#if VALGRIND_LEVEL >= 2
-	    VALGRIND_MEMPOOL_ALLOC(this, c, cellSize());
-#endif
 	    return c;
 	}
 

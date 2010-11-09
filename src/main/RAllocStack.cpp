@@ -42,7 +42,6 @@
 #include <cstring>
 #include <stdexcept>
 #include "R_ext/Error.h"
-#include "Rvalgrind.h"
 #include "localization.h"
 #include "CXXR/MemoryBank.hpp"
 
@@ -67,12 +66,7 @@ void* RAllocStack::allocate(size_t sz)
 {
     Pair pr(sz, MemoryBank::allocate(sz));
     s_stack.push(pr);
-    void* ans = s_stack.top().second;
-#if VALGRIND_LEVEL == 1
-    // If VALGRIND_LEVEL > 1 this will be done by CXXR::MemoryBank.
-    VALGRIND_MAKE_MEM_UNDEFINED(ans, sz);
-#endif
-    return ans;
+    return s_stack.top().second;
 }
 
 void RAllocStack::restoreSize(size_t new_size)

@@ -39,10 +39,6 @@
  * Memory management, garbage collection, and memory profiling.
  */
 
-#define USE_RINTERNALS
-
-#include "Rvalgrind.h"
-
 // For debugging:
 #include <iostream>
 
