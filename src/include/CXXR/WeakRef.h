@@ -208,9 +208,9 @@ namespace CXXR {
 	void detachReferents();
     private:
 	typedef std::list<WeakRef*, Allocator<WeakRef*> > WRList;
-	static WRList s_live;
-	static WRList s_f10n_pending;  // Finalization pending
-	static WRList s_tombstone;
+	static WRList* s_live;
+	static WRList* s_f10n_pending;  // Finalization pending
+	static WRList* s_tombstone;
 
 	static int s_count;  // Count of references in existence (for
 			     // debugging)
@@ -225,7 +225,13 @@ namespace CXXR {
 	bool m_ready_to_finalize;
 	bool m_finalize_on_exit;
 
+	// Clean up static data members:
+	static void cleanup();
+
 	void finalize();
+
+	// Initialize the static data members:
+	static void initialize();
 
 	/** Mark nodes reachable via weak references.
 	 *
@@ -255,8 +261,13 @@ namespace CXXR {
 	WRList* wrList() const;
 
 	friend class GCNode;
+	friend class SchwarzCounter<WeakRef>;
     };
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::WeakRef> weakref_schwarz_ctr;
+}
 
 #endif /* __cplusplus */
 

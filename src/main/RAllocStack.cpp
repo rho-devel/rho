@@ -57,7 +57,7 @@ namespace CXXR {
     }
 }
 
-RAllocStack::Stack RAllocStack::s_stack;
+RAllocStack::Stack* RAllocStack::s_stack;
 #ifndef NDEBUG
 RAllocStack::Scope* RAllocStack::s_innermost_scope = 0;
 #endif
@@ -65,13 +65,24 @@ RAllocStack::Scope* RAllocStack::s_innermost_scope = 0;
 void* RAllocStack::allocate(size_t sz)
 {
     Pair pr(sz, MemoryBank::allocate(sz));
-    s_stack.push(pr);
-    return s_stack.top().second;
+    s_stack->push(pr);
+    return s_stack->top().second;
+}
+
+void RAllocStack::cleanup()
+{
+    trim(0);
+    delete s_stack;
+}
+
+void RAllocStack::initialize()
+{
+    s_stack = new Stack;
 }
 
 void RAllocStack::restoreSize(size_t new_size)
 {
-    if (new_size > s_stack.size())
+    if (new_size > s_stack->size())
 	throw out_of_range("RAllocStack::restoreSize: requested size"
 			   " greater than current size.");
 #ifndef NDEBUG
@@ -84,10 +95,10 @@ void RAllocStack::restoreSize(size_t new_size)
 
 void RAllocStack::trim(size_t new_size)
 {
-    while (s_stack.size() > new_size) {
-	Pair& top = s_stack.top();
+    while (s_stack->size() > new_size) {
+	Pair& top = s_stack->top();
 	MemoryBank::deallocate(top.second, top.first);
-	s_stack.pop();
+	s_stack->pop();
     }
 }
 

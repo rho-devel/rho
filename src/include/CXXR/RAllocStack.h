@@ -46,6 +46,7 @@
 
 #include <stack>
 #include <vector>
+#include "SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief Class for implementing R_alloc() and kindred functions.
@@ -138,12 +139,12 @@ namespace CXXR {
 	 */
 	static size_t size()
 	{
-	    return s_stack.size();
+	    return s_stack->size();
 	}
     private:
 	typedef std::pair<size_t, void*> Pair;
 	typedef std::stack<Pair, std::vector<Pair> > Stack;
-	static Stack s_stack;
+	static Stack* s_stack;
 #ifndef NDEBUG
 	static Scope* s_innermost_scope;
 #endif
@@ -152,11 +153,23 @@ namespace CXXR {
 	// a constructor.
 	RAllocStack();
 
+	// Clean up static data members:
+	static void cleanup();
+
+	// Initialize the static data members:
+	static void initialize();
+
 	// Pop entries off the stack to reduce its size to new_size,
 	// which must be no greater than the current size.
 	static void trim(size_t new_size);
+
+	friend class SchwarzCounter<RAllocStack>;
     };
 }  // namespace CXXR
+
+namespace {
+    CXXR::SchwarzCounter<CXXR::RAllocStack> rallocstack_schwarz_ctr;
+}
 
 extern "C" {
 #endif /* __cplusplus */

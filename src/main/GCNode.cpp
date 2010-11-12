@@ -150,6 +150,7 @@ void GCNode::cleanup()
     GCManager::cleanup();
     ProtectStack::cleanup();
     GCRootBase::cleanup();
+    sweep();
 }
 
 void GCNode::gc()
