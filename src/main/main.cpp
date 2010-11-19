@@ -301,7 +301,7 @@ char *R_PromptString(int browselevel, int type)
 */
 
 
-/**
+/*
   (local) Structure for maintaining and exchanging the state between
   Rf_ReplConsole and its worker routine Rf_ReplIteration which is the
   implementation of the body of the REPL.
