@@ -81,8 +81,8 @@ namespace CXXR {
 	    
 	~GCEdgeBase()
 	{
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
+	    if (m_target)
+		m_target->decRefCount();
 	}
 
 	/** @brief Get target of this edge.

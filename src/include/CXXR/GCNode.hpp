@@ -457,25 +457,31 @@ namespace CXXR {
 	typedef HeterogeneousList<GCNode> List;
 
 	static List* s_live;  // List of nodes other than 'moribund'
-		       // nodes.
-	static List* s_moribund;  // List of nodes whose reference
-		       // count has fallen to zero (but may
-		       // subsequently have increased again).
+	  // nodes.
+	static std::vector<const GCNode*>* s_moribund;  // Vector of
+	  // pointers to nodes whose reference count has fallen to
+	  // zero (but may subsequently have increased again).
+	static std::vector<const GCNode*>* s_morituri;  // The purpose
+	  // of gclite() is to go through the list of moribund nodes,
+	  // deleting any whose reference count is still zero, and
+	  // removing the moribund status of the others.  However,
+	  // deleting nodes may well give rise to new moribund nodes.
+	  // If gclite() iterated of s_moribund, these new moribund
+	  // nodes could invalidate the iterator.  So instead,
+	  // gclite() first swaps the moribund nodes onto s_morituri
+	  // and iterates over that.
 	static List* s_reachable;  // During the mark phase of garbage
-		       // collection, if a node is found to be reachable
-		       // from the roots, it is moved to this list.
-		       // Between garbage collections, this list
-		       // should be empty.
+	  // collection, if a node is found to be reachable from the
+	  // roots, it is moved to this list. Between garbage
+	  // collections, this list should be empty.
 	static unsigned char s_mark;  // During garbage collection, a
-			       // node is considered marked if its
-			       // MARK field matches the corresponding
-			       // bits of s_mark.
+	  // node is considered marked if its MARK field matches the
+	  // corresponding bits of s_mark.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 	static unsigned int s_under_construction;  // Number of nodes
-	                      // currently under construction
-	                      // (i.e. not yet exposed).
+	  // currently under construction (i.e. not yet exposed).
 	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	                      // objects in existence.
+	  // objects in existence.
 #ifdef GCID
 	// If GCID is defined, each GCNode is given an identity
 	// number.  The numbers are not unique: they wrap around
@@ -491,13 +497,18 @@ namespace CXXR {
 #endif
 
 	// Masks applicable to the m_bits field:
-	enum {UNDER_CONSTRUCTION = 1, MORIBUND = 2, MARK = 4};
+	enum {UNDER_CONSTRUCTION = 1, MARK = 4};
 
 #ifdef GCID
 	unsigned int m_id;
 #endif
 	mutable unsigned char m_bits;
-	mutable unsigned char m_refcount;
+	mutable unsigned char m_refcount;  // This is twice the
+	  // reference count, plus 1 if the node is marked as moribund
+	  // (i.e. is on the s_moribund or s_morituri lists).  The
+	  // most-significant bit is sticky: once set it stays set,
+	  // after which the node can only be garbage-collected by
+	  // mark-sweep.
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
@@ -514,35 +525,27 @@ namespace CXXR {
 	// Clean up static data at end of run:
 	static void cleanup();
 
-	// Decrement the reference count (unless it is at its maximum
-	// value), and return the resulting count:
-	unsigned char decRefCount() const
+	// Decrement the reference count (subject to the stickiness of
+	// its MSB).  If as a result the reference count falls to
+	// zero, mark the node as moribund.
+	void decRefCount() const
 	{
-	    // The following code is intended to be equivalent to:
-	    //
-	    // if (m_refcount != 255) --m_refcount;
-	    //
-	    // but without using a branch.
-	    unsigned short rc = m_refcount;
-	    ++rc;
-	    rc += (rc >> 8) - 2;
+	    unsigned char rc = (m_refcount - 2) | (m_refcount & 0x80);
+	    if (rc == 0) {
+#ifdef GCID
+		watch();
+#endif
+		rc = 1;
+		s_moribund->push_back(this);
+	    }
 	    m_refcount = rc;
-	    return m_refcount;
 	}
 
-	// Increment the reference count, unless it is already at its
-	// maximum value.
+	// Increment the reference count.  Overflow is handled by the
+	// stickiness of the MSB.
 	void incRefCount() const
 	{
-	    // The following code is intended to be equivalent to:
-	    //
-	    // if (m_refcount != 255) ++m_refcount;
-	    //
-	    // but without using a branch.
-	    unsigned short rc = m_refcount;
-	    ++rc;
-	    rc -= (rc >> 8);
-	    m_refcount = rc;
+	    m_refcount = (m_refcount + 2) | (m_refcount & 0x80);
 	}
 
 	/** @brief Initialize static members.
@@ -557,12 +560,6 @@ namespace CXXR {
 	static void initialize();
 
 	bool isMarked() const {return (m_bits & MARK) == s_mark;}
-
-	// Designate a node (whose reference count has fallen to zero)
-	// as 'moribund'.  Such a node will be deleted by the next
-	// call to gclite(), unless by that time its reference count
-	// is non-zero once more, in which case it will be 'resurrected'.
-	void makeMoribund() const;
 
 	/** @brief Carry out the mark phase of garbage collection.
 	 */

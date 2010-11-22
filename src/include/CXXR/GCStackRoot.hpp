@@ -94,8 +94,8 @@ namespace CXXR {
 	    if (this != s_roots)
 		seq_error();
 #endif
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
+	    if (m_target)
+		m_target->decRefCount();
 	    s_roots = m_next;
 	}
 
@@ -103,8 +103,8 @@ namespace CXXR {
 	{
 	    if (source.m_target)
 		source.m_target->incRefCount();
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
+	    if (m_target)
+		m_target->decRefCount();
 	    m_target = source.m_target;
 	    return *this;
 	}
@@ -119,8 +119,8 @@ namespace CXXR {
 	    GCNode::maybeCheckExposed(node);
 	    if (node)
 		node->incRefCount();
-	    if (m_target && m_target->decRefCount() == 0)
-		m_target->makeMoribund();
+	    if (m_target)
+		m_target->decRefCount();
 	    m_target = node;
 	}
 

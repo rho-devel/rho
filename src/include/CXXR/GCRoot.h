@@ -81,8 +81,8 @@ namespace CXXR {
 	~GCRootBase()
 	{
 	    const GCNode* node = *m_it;
-	    if (node && node->decRefCount() == 0)
-		node->makeMoribund();
+	    if (node)
+		node->decRefCount();
 	    s_roots->erase(m_it);
 	}
 
@@ -92,8 +92,8 @@ namespace CXXR {
 	    if (newnode)
 		newnode->incRefCount();
 	    const GCNode* oldnode = *m_it;
-	    if (oldnode && oldnode->decRefCount() == 0)
-		oldnode->makeMoribund();
+	    if (oldnode)
+		oldnode->decRefCount();
 	    *m_it = newnode;
 	    return *this;
 	}
@@ -109,8 +109,8 @@ namespace CXXR {
 	    if (node)
 		node->incRefCount();
 	    const GCNode* oldnode = *m_it;
-	    if (oldnode && oldnode->decRefCount() == 0)
-		oldnode->makeMoribund();
+	    if (oldnode)
+		oldnode->decRefCount();
 	    *m_it = node;
 	}
 
