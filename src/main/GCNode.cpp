@@ -197,10 +197,11 @@ void GCNode::gclite()
 	for (vector<const GCNode*>::reverse_iterator it = s_morituri->rbegin();
 	     it != s_morituri->rend(); ++it) {
 	    const GCNode* node = *it;
-	    if (node->m_refcount == 0)
+	    unsigned char rc = node->m_refcount & ~1;  // Clear moribund bit
+	    if (rc == 0)
 		delete node;
 	    else
-		node->m_refcount &= ~1;  // Clear moribund bit
+		node->m_refcount = rc;
 	}
 	// The following should *not* release the vector's memory,
 	// according to the standard:
