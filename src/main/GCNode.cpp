@@ -59,7 +59,6 @@ using namespace CXXR;
 
 GCNode::List* GCNode::s_live;
 vector<const GCNode*>* GCNode::s_moribund;
-vector<const GCNode*>* GCNode::s_morituri;
 GCNode::List* GCNode::s_reachable;
 unsigned char GCNode::s_mark = 0;
 unsigned int GCNode::s_num_nodes = 0;
@@ -127,20 +126,6 @@ bool GCNode::check()
 	    }
 	}
     }
-    // Check s_morituri list:
-    if (!s_morituri->empty()) {
-	cerr << "Warning: s_morituri list not empty.\n";
-	vector<const GCNode*>::const_iterator end = s_morituri->end();
-	for (vector<const GCNode*>::const_iterator it = s_morituri->begin();
-	     it != end; ++it) {
-	    const GCNode* node = *it;
-	    if (!(node->m_refcount & 1)) {
-		cerr << "GCNode::check() : "
-		    "Node on s_morituri list without moribund bit set.\n";
-		abort();
-	    }
-	}
-    }
     // Check total number of nodes:
     if (numnodes != s_num_nodes) {
 	cerr << "GCNode::check() :"
@@ -192,20 +177,12 @@ void GCNode::gclite()
     GCInhibitor inhibitor;
     unsigned int protect_count = protectCstructs();
     while (!s_moribund->empty()) {
-	swap(s_moribund, s_morituri);
 	// Last in, first out, for cache efficiency:
-	for (vector<const GCNode*>::reverse_iterator it = s_morituri->rbegin();
-	     it != s_morituri->rend(); ++it) {
-	    const GCNode* node = *it;
-	    unsigned char rc = node->m_refcount & ~1;  // Clear moribund bit
-	    if (rc == 0)
-		delete node;
-	    else
-		node->m_refcount = rc;
-	}
-	// The following should *not* release the vector's memory,
-	// according to the standard:
-	s_morituri->clear();
+	const GCNode* node = s_moribund->back();
+	s_moribund->pop_back();
+	node->m_refcount &= ~1;  // Clear moribund bit
+	if (node->m_refcount == 0)
+	    delete node;
     }
     ProtectStack::unprotect(protect_count);
 }
@@ -214,7 +191,6 @@ void GCNode::initialize()
 {
     s_live = new List;
     s_moribund = new vector<const GCNode*>;
-    s_morituri = new vector<const GCNode*>;
     s_reachable = new List;
 #ifdef GCID
     s_last_id = 0;

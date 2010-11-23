@@ -456,20 +456,12 @@ namespace CXXR {
 
 	typedef HeterogeneousList<GCNode> List;
 
-	static List* s_live;  // List of nodes other than 'moribund'
-	  // nodes.
+	static List* s_live;  // Except during mark-sweep garbage
+	  // collection, all existing nodes are threaded on this
+	  // list.
 	static std::vector<const GCNode*>* s_moribund;  // Vector of
 	  // pointers to nodes whose reference count has fallen to
 	  // zero (but may subsequently have increased again).
-	static std::vector<const GCNode*>* s_morituri;  // The purpose
-	  // of gclite() is to go through the list of moribund nodes,
-	  // deleting any whose reference count is still zero, and
-	  // removing the moribund status of the others.  However,
-	  // deleting nodes may well give rise to new moribund nodes.
-	  // If gclite() iterated of s_moribund, these new moribund
-	  // nodes could invalidate the iterator.  So instead,
-	  // gclite() first swaps the moribund nodes onto s_morituri
-	  // and iterates over that.
 	static List* s_reachable;  // During the mark phase of garbage
 	  // collection, if a node is found to be reachable from the
 	  // roots, it is moved to this list. Between garbage
