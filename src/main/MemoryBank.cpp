@@ -117,6 +117,12 @@ void MemoryBank::cleanup()
 	delete s_pools[i];
 }
 
+void MemoryBank::defragment()
+{
+    for (unsigned int i = 0; i < s_num_pools; ++i)
+	s_pools[i]->defragment();
+}    
+
 // The following leave some space at the end of each 4096-byte page,
 // in case posix_memalign needs to put some housekeeping information
 // for the next page there.

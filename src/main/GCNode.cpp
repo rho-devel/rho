@@ -164,6 +164,7 @@ void GCNode::gc()
     }
     mark();
     sweep();
+    // MemoryBank::defragment();
 
     // cout << "Finishing garbage collection\n";
     // GCNode::check();

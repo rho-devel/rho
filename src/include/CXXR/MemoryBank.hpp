@@ -55,8 +55,8 @@ namespace CXXR {
      * (though some of these may be overwritten by data used for free
      * list management).  This can be useful to show up premature
      * deallocation of memory block, especially if used in conjunction
-     * with the CELLFIFO preprocessor variable documented in class
-     * CellPool.
+     * with the CELLFIFO preprocessor variable documented in
+     * config.hpp .
      */
     class MemoryBank {
     public:
@@ -119,6 +119,14 @@ namespace CXXR {
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
+
+	/** @brief Reorganise lists of free cells.
+	 *
+	 * This is done with a view to increasing the probability that
+	 * successive allocations will lie within the same cache line
+	 * or (less importantly nowadays) memory page.
+	 */
+	static void defragment();
 
 #ifdef R_MEMORY_PROFILING
 	/** Set a callback to monitor allocations exceeding a threshold size.
