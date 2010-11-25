@@ -25,10 +25,10 @@
 using namespace std;
 using namespace CXXR;
 
-RCNTXT* R_GlobalContext;
-
 int main() {
     cout << "sizeof(bool): " << sizeof(bool)
+	 << "\nsizeof(HeterogeneousListBase::Link): "
+	 << sizeof(HeterogeneousListBase::Link)
 	 << "\nsizeof(GCNode): " << sizeof(GCNode)
 	 << "\nsizeof(RObject): " << sizeof(RObject)
          << "\nsizeof(PairList): " << sizeof(PairList)

@@ -229,11 +229,9 @@ miscR.ts : ../../bin/exec/R misc.R misc.save
 	rm misc.Rout
 	touch $@
  
-RObject_sizer_objs = RObject_sizer.o CellHeap.o GCNode.o GCRoot.o \
-                     MemoryBank.o
-
-RObject_sizer : $(RObject_sizer_objs)
-	$(LINK.cc) -o $@ $(RObject_sizer_objs)
+RObject_sizer : RObject_sizer.o #../../src/main/libR.a
+	$(LINK.cc) -o $@ $< -L../../lib -L../../src/main -Wl,-rpath,../../lib \
+                   -lR -ldl $(MAIN_LDFLAGS) $(EXTRA_LIBS)
 
 splice_test : splice_test.o
 	$(LINK.cc) -o $@ $<
