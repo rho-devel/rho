@@ -519,7 +519,7 @@ namespace CXXR {
 	 *
 	 * @return ::SEXPTYPE of this object.
 	 */
-	SEXPTYPE sexptype() const {return m_type;}
+	SEXPTYPE sexptype() const {return SEXPTYPE(m_type);}
 
 	/** @brief Name within R of this type of object.
 	 *
@@ -597,7 +597,7 @@ namespace CXXR {
 	    m_attrib.detach();
 	}
     private:
-	const SEXPTYPE m_type;
+	const unsigned char m_type;
     public:
 	// To be private in future:
 	unsigned int m_named  : 2;
