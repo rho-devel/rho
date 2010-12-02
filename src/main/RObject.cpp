@@ -73,10 +73,14 @@ namespace {
     const unsigned int S4_OBJECT_MASK = 1<<4;
 }
 
+const unsigned char RObject::s_sexptype_mask;
+const unsigned char RObject::s_S4_mask;
+const unsigned char RObject::s_class_mask;
+
 RObject::RObject(const RObject& pattern)
-    : m_type(pattern.m_type), m_named(0), m_has_class(pattern.m_has_class),
-      m_S4_object(pattern.m_S4_object), m_frozen(false),
-      m_attrib(pattern.m_attrib)
+    : m_type(pattern.m_type), m_named(0), m_missing(pattern.m_missing),
+      m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
+      m_binding_locked(pattern.m_binding_locked), m_attrib(pattern.m_attrib)
 {}
 
 const PairList* RObject::attributes() const
@@ -87,9 +91,8 @@ const PairList* RObject::attributes() const
 void RObject::clearAttributes()
 {
     if (m_attrib) {
-	errorIfFrozen();
 	m_attrib = 0;
-	m_has_class = false;
+	m_type &= ~s_class_mask;
     }
 }
 
@@ -100,22 +103,19 @@ RObject* RObject::evaluate(Environment* env)
     return this;
 }
 
-void RObject::frozenError()
-{
-    Rf_error(_("attempt to modify frozen object"));
-}
-
 RObject* RObject::getAttribute(const Symbol* name) const
 {
     for (PairList* node = m_attrib; node; node = node->tail())
-	if (node->tag() == name) return node->car();
+	if (node->tag() == name)
+	    return node->car();
     return 0;
 }
 
 unsigned int RObject::packGPBits() const
 {
     unsigned int ans = 0;
-    if (isS4Object()) ans |= S4_OBJECT_MASK;
+    if (isS4Object())
+	ans |= S4_OBJECT_MASK;
     return ans;
 }
 
@@ -123,12 +123,14 @@ unsigned int RObject::packGPBits() const
 // though it would be easier to add them at the beginning.
 void RObject::setAttribute(const Symbol* name, RObject* value)
 {
-    errorIfFrozen();
     if (!name)
 	Rf_error(_("attempt to set an attribute on NULL"));
-    // Update m_has_class if necessary:
-    if (name == R_ClassSymbol)
-	m_has_class = (value != 0);
+    // Update 'has class' bit if necessary:
+    if (name == R_ClassSymbol) {
+	if (value == 0)
+	    m_type &= ~s_class_mask;
+	else m_type |= s_class_mask;
+    }
     // Find attribute:
     PairList* prev = 0;
     PairList* node = m_attrib;
@@ -167,11 +169,12 @@ void RObject::setAttributes(const PairList* new_attributes)
 
 void RObject::setS4Object(bool on)
 {
-    errorIfFrozen();
     // Check suppressed (temporarily I hope) during upgrade to R 2.8.1:
     // if (!on && sexptype() == S4SXP)
     //      Rf_error("S4 object (S4SXP) cannot cease to be an S4 object.");
-    m_S4_object = on;
+    if (on)
+	m_type |= s_S4_mask;
+    else m_type &= ~s_S4_mask;
 }
 
 const char* RObject::typeName() const
@@ -181,9 +184,8 @@ const char* RObject::typeName() const
 
 void RObject::unpackGPBits(unsigned int gpbits)
 {
-    errorIfFrozen();
     // Be careful with precedence!
-    m_S4_object = ((gpbits & S4_OBJECT_MASK) != 0);
+    setS4Object((gpbits & S4_OBJECT_MASK) != 0);
 }
 
 void RObject::visitReferents(const_visitor* v) const

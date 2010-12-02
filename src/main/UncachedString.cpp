@@ -50,15 +50,13 @@ namespace CXXR {
     }
 }
 
-UncachedString::UncachedString(const std::string& str, cetype_t encoding,
-			       bool frozen)
+UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
       m_data(m_short_string)
 {
     size_t sz = str.size();
     allocData(sz);
     memcpy(m_data, str.data(), sz);
-    if (frozen) freeze();
 }
 
 void UncachedString::allocData(size_t sz)

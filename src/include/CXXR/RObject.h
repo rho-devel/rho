@@ -256,10 +256,9 @@ namespace CXXR {
      * follows (b).</li>
      *
      * <li>Since Symbol objects may well need to be evaluated,
-     * Symbol::obtain() returns a non-const pointer, but the Symbol
-     * object is nevertheless immutable because the Symbol object is
-     * frozen. Similarly, CachedString::obtain() returns a non-const
-     * pointer to a frozen CachedString object.</li>
+     * Symbol::obtain() returns a non-const pointer; similarly,
+     * CachedString::obtain() returns a non-const pointer to a
+     * CachedString object.</li>
      * </ol>
      *
      * @todo Incorporate further attribute consistency checks within
@@ -444,7 +443,7 @@ namespace CXXR {
 	 */
 	bool hasClass() const
 	{
-	    return m_has_class;
+	    return m_type < 0;
 	}
 
 	/** @brief Is this an S4 object?
@@ -453,7 +452,7 @@ namespace CXXR {
 	 */
 	bool isS4Object() const
 	{
-	    return m_S4_object;
+	    return (m_type & s_S4_mask);
 	}
 
 	/** @brief Reproduce the \c gp bits field used in CR.
@@ -519,7 +518,10 @@ namespace CXXR {
 	 *
 	 * @return ::SEXPTYPE of this object.
 	 */
-	SEXPTYPE sexptype() const {return SEXPTYPE(m_type);}
+	SEXPTYPE sexptype() const
+	{
+	    return SEXPTYPE(m_type & s_sexptype_mask);
+	}
 
 	/** @brief Name within R of this type of object.
 	 *
@@ -552,8 +554,8 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype), m_named(0), m_has_class(false),
-	      m_S4_object(stype == S4SXP), m_frozen(false)
+	    : m_type(stype & s_sexptype_mask), m_named(0), m_missing(0),
+	      m_argused(0), m_active_binding(false), m_binding_locked(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -564,50 +566,53 @@ namespace CXXR {
 
 	virtual ~RObject() {}
 
-	/** @brief Raise error if object is frozen.
-	 *
-	 * Code inherited from a CR is apt to hand out non-const
-	 * pointers to objects that ought really to be immutable:
-	 * \c R_UnboundValue for example.  CXXR counters this by
-	 * 'freezing' such objects.  Non-const methods of the affected
-	 * classes should call this function, thus preventing such
-	 * objects being altered.
-	 */
-	void errorIfFrozen()
-	{
-	    if (m_frozen) frozenError();
-	}
-
-	/** @brief Prevent alterations to the object.
-	 *
-	 * Code inherited from a CR is apt to hand out non-const
-	 * pointers to objects that ought really to be immutable:
-	 * \c R_UnboundValue for example.  CXXR counters this by
-	 * 'freezing' such objects, and applying run-time checks.  See
-	 * errorIfFrozen().
-	 */
-	void freeze()
-	{
-	    m_frozen = true;
-	}
-
 	// Virtual function of GCNode:
 	void detachReferents()
 	{
 	    m_attrib.detach();
 	}
     private:
-	const unsigned char m_type;
+	static const unsigned char s_sexptype_mask = 0x3f;
+	static const unsigned char s_S4_mask = 0x40;
+	static const unsigned char s_class_mask = 0x80;
+	signed char m_type;  // The least-significant six bits hold
+	  // the SEXPTYPE.  The sign bit is set if the object has a
+	  // class attribute.  Bit 6 is set to denote an S4 object.
     public:
 	// To be private in future:
-	unsigned int m_named  : 2;
-    private:
-	bool m_has_class      : 1;
-	bool m_S4_object      : 1;
-	bool m_frozen         : 1;
-	Handle<PairList> m_attrib;
+	unsigned m_named       : 2;
 
-	static void frozenError();
+	// The following field is used only in connection with objects
+	// inheriting from class ConsCell (and fairly rarely then), so
+	// it would more logically be placed in that class (and
+	// formerly was within CXXR).  It is placed here so that the
+	// ubiquitous PairList objects can be squeezed into 32 bytes
+	// (on 32-bit architecture), for improved cache efficiency.
+	// This field is obsolescent in any case, and should be got
+	// rid of entirely in due course:
+
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	unsigned m_missing     : 2;
+	
+	// Similarly the following three obsolescent fields squeezed
+	// in here are used only in connection with objects of class
+	// PairList (and only rarely then), so they would more
+	// logically be placed in that class (and formerly were within
+	// CXXR).
+	
+	// 'Scratchpad' field used in handling argument lists,
+	// formerly hosted in the 'gp' field of sxpinfo_struct.
+	unsigned m_argused    : 2;
+
+	// Used when the contents of an Environment are represented as
+	// a PairList, for example during serialization and
+	// deserialization, and formerly hosted in the gp field of
+	// sxpinfo_struct.
+	bool m_active_binding : 1;
+	bool m_binding_locked : 1;
+    private:
+	Handle<PairList> m_attrib;
     };
 
     template <class T>

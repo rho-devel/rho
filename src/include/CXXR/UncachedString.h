@@ -87,13 +87,9 @@ namespace CXXR {
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
 	 *          in this context (checked).
-	 *
-	 * @param frozen true iff the string must not be altered after
-	 *          creation.
 	 */
 	explicit UncachedString(const std::string& str,
-				cetype_t encoding = CE_NATIVE,
-				bool frozen = false);
+				cetype_t encoding = CE_NATIVE);
 
 	/** @brief Provide read-write access to the string.
 	 *
@@ -104,7 +100,6 @@ namespace CXXR {
 	 */
 	char* ptr()
 	{
-	    errorIfFrozen();
 	    invalidateHash();
 	    return m_data;
 	}

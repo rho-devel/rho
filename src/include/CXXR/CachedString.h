@@ -146,9 +146,7 @@ namespace CXXR {
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
 	      m_key_val_pr(key_val_pr)
-	{
-	    freeze();
-	}
+	{}
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:

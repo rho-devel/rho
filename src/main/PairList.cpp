@@ -72,9 +72,7 @@ namespace {
 }
 
 PairList::PairList(const PairList& pattern)
-    : ConsCell(pattern, 0), m_argused(0),
-      m_active_binding(pattern.m_active_binding),
-      m_binding_locked(pattern.m_binding_locked)
+    : ConsCell(pattern, 0)
 {
     // Clone the tail:
     PairList* c = this;

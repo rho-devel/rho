@@ -18,6 +18,7 @@
  */
 
 #include <iostream>
+#include "CXXR/Environment.h"
 #include "CXXR/IntVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/RealVector.h"
@@ -31,9 +32,13 @@ int main() {
 	 << sizeof(HeterogeneousListBase::Link)
 	 << "\nsizeof(GCNode): " << sizeof(GCNode)
 	 << "\nsizeof(RObject): " << sizeof(RObject)
+	 << "\nsizeof(ConsCell): " << sizeof(ConsCell)
          << "\nsizeof(PairList): " << sizeof(PairList)
+	 << "\nsizeof(VectorBase): " << sizeof(VectorBase)
 	 << "\nsizeof(IntVector): " << sizeof(IntVector)
-	 << "\nsizeof(RealVector): " << sizeof(RealVector) << '\n';
+	 << "\nsizeof(RealVector): " << sizeof(RealVector)
+	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
+	 << "\nsizeof(Environment): " << sizeof(Environment) << '\n';
     return 0;
 }
 

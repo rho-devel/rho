@@ -247,11 +247,6 @@ namespace CXXR {
 
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
-    public:
-	// 'Scratchpad' field used in handling argument lists,
-	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
-	// would be good to remove this from the class altogether.
-	unsigned char m_missing;
     };
 
     /** @brief <tt>cc ? cc->car() : 0</tt>
@@ -326,8 +321,7 @@ namespace CXXR {
 	 */
 	explicit PairList(RObject* cr = 0, PairList* tl = 0,
 			  const RObject* tg = 0)
-	    : ConsCell(LISTSXP, cr, tl, tg), m_argused(0),
-	      m_active_binding(false), m_binding_locked(false)
+	    : ConsCell(LISTSXP, cr, tl, tg)
 	{}
 
 	/** @brief Copy constructor.
@@ -398,9 +392,7 @@ namespace CXXR {
 	// proper.  The second parameter is simply to provide a
 	// distinct signature, and its value is ignored.
 	PairList(const PairList& pattern, int)
-	    : ConsCell(pattern, 0), m_argused(0),
-	    m_active_binding(pattern.m_active_binding),
-	    m_binding_locked(pattern.m_binding_locked)
+	    : ConsCell(pattern, 0)
 	{}
 
 	// Declared private to ensure that PairList objects are
@@ -410,35 +402,23 @@ namespace CXXR {
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:
 	PairList& operator=(const PairList&);
-    public:
-	// 'Scratchpad' field used in handling argument lists,
-	// formerly hosted in the 'gp' field of sxpinfo_struct.  It
-	// would be good to remove this from the class altogether.
-	unsigned char m_argused;
-
-	// Used when the contents of an Environment are represented as
-	// a PairList, for example during serialization and
-	// deserialization, and formerly hosted in the gp field of
-	// sxpinfo_struct.
-	bool m_active_binding;
-	bool m_binding_locked;
     };
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
 			      PairList* tl, const RObject* tg)
-	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg), m_missing(0)
+	: RObject(st), m_car(cr), m_tail(tl), m_tag(tg)
     {
 	// checkST(st);
     }
 
     inline ConsCell::ConsCell(const ConsCell& pattern)
 	: RObject(pattern), m_car(pattern.m_car),
-	  m_tail(clone(pattern.tail())), m_tag(pattern.tag()), m_missing(0)
+	  m_tail(clone(pattern.tail())), m_tag(pattern.tag())
     {}
     
     inline ConsCell::ConsCell(const ConsCell& pattern, int)
 	: RObject(pattern), m_car(pattern.m_car), m_tail(0),
-	  m_tag(pattern.tag()), m_missing(0)
+	  m_tag(pattern.tag())
     {}
     
     inline void ConsCell::setTail(PairList* tl)
