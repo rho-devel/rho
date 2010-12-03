@@ -623,6 +623,7 @@ namespace CXXR {
 	Handle<PairList> m_attrib;
 
 	static void frozenError();
+
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    ar & boost::serialization::base_object<GCNode>(*this);	

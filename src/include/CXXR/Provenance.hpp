@@ -9,6 +9,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include <boost/serialization/split_member.hpp>
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
@@ -62,12 +63,27 @@ namespace CXXR {
 		void deregisterChild(Provenance*);
 		void registerChild(Provenance*);
 		template <class Archive>
-		void serialize(Archive & ar, const unsigned int version) {
-			ar & boost::serialization::base_object<GCNode>(*this);
+		void load(Archive & ar, const unsigned int version) {
+			ar >> boost::serialization::base_object<GCNode>(*this);
+			printf("Deserialize Provenance\n");
+			ar >> m_expression;
+			ar >> m_parentpos;
+			ar >> m_symbol;
+			m_children=NULL;
+			m_parentage=NULL;
+		}
+		
+		template <class Archive>
+		void save(Archive & ar, const unsigned int version) const {
+			ar << boost::serialization::base_object<GCNode>(*this);
 			printf("Serialize Provenance\n");
-			ar & m_expression;
-			ar & m_parentpos;
-			ar & m_symbol;
+			ar << m_expression;
+			ar << m_parentpos;
+			ar << m_symbol;
+		}
+		template <class Archive>
+		void serialize(Archive & ar, const unsigned int version) {
+			boost::serialization::split_member(ar, *this, version);
 		}
 	};
 } // Namespace CXXR
