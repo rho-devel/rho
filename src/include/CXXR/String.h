@@ -47,6 +47,8 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -184,6 +186,7 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	unsigned int packGPBits() const;
     protected:
+	String() { } // vestigial implementation for boost::serialization
 	/** @brief Create a string. 
 	 *
 	 * @param sz Number of <tt>char</tt>s in the string.  Zero is
@@ -208,6 +211,15 @@ namespace CXXR {
 	    m_hash = -1;
 	}
     private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    boost::serialization::base_object<VectorBase>(*this);
+	    printf("Serialize String\n");
+	    ar & m_encoding;
+	}
+
 	static GCRoot<String> s_na;
 
 	mutable int m_hash;  // negative signifies invalid

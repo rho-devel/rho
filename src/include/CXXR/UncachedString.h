@@ -46,6 +46,9 @@
 #ifdef __cplusplus
 
 #include <string>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/split_member.hpp>
 
 namespace CXXR {
     /** @brief String object not held in a cache.
@@ -62,6 +65,8 @@ namespace CXXR {
      */
     class UncachedString : public String {
     public:
+	UncachedString( ) { } // Vestigial for boost::serialization
+
 	/** @brief Create an UncachedString object, leaving its contents
 	 *         uninitialized.
 	 *
@@ -81,7 +86,7 @@ namespace CXXR {
 	/** @brief Create an UncachedString object from a std::string.
 	 *
 	 * @param str The std::string whose text is to be copied into
-	 *          the constructed UncachedString.  (Embedded null
+	           the constructed UncachedString.  (Embedded null
 	 *          characters are permissible.)
 	 *
 	 * @param encoding The encoding of the required CachedString.
@@ -124,6 +129,8 @@ namespace CXXR {
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
+	friend class boost::serialization::access;
+
 	// Max. strlen stored internally:
 	static const size_t s_short_strlen = 7;
 
@@ -153,8 +160,37 @@ namespace CXXR {
 	// Initialise m_data, if necessary by allocating a data block
 	// from MemoryBank:
 	void allocData(size_t sz);
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    ar >> boost::serialization::base_object<String>(*this);
+	    printf("Deserialize UncachedString\n");
+	    std::string str;
+	    ar >> m_databytes;
+	    ar >> str;
+	    
+	    m_data=m_short_string; // next few lines taken from constructor
+	    size_t sz = str.size(); 
+	    allocData(sz);
+	    memcpy(m_data, str.data(), sz);
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<String>(*this);
+	    printf("Serialize UncachedString\n");
+	    std::string str(m_data);
+	    ar << m_databytes;
+	    ar << str;
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);	    
+	}
     };
 }  // namespace CXXR
+BOOST_CLASS_EXPORT(CXXR::UncachedString)
 
 extern "C" {
 

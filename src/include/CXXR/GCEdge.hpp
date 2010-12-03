@@ -40,6 +40,7 @@
 #ifndef GCEDGE_HPP
 #define GCEDGE_HPP 1
 
+#include <iostream>
 #include <typeinfo>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
@@ -144,7 +145,10 @@ namespace CXXR {
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const {
-	    printf("Serialize GCEdgeBase\n");
+	    printf("Serialize GCEdgeBase \n");
+	    // debugging unregistered class
+	    if (m_target) 
+		std::cout << typeid(*m_target).name() << std::endl;
 	    EdgeSerializationType type=serializationType();
 	    ar << type;
 	    switch(type) {
