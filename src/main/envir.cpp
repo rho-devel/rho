@@ -1351,7 +1351,7 @@ static int BuiltinSize(int all, int intern)
     int count = 0;
     for (Symbol::const_iterator it = Symbol::begin();
 	 it != Symbol::end(); ++it) {
-	const Symbol* sym = (*it).second;
+	const Symbol* sym = *it;
 	if (BuiltinTest(sym, all, intern))
 	    ++count;
     }
@@ -1364,7 +1364,7 @@ BuiltinNames(int all, int intern, SEXP names, int *indx)
     StringVector* sv = SEXP_downcast<StringVector*>(names);
     for (Symbol::const_iterator it = Symbol::begin();
 	 it != Symbol::end(); ++it) {
-	const Symbol* sym = (*it).second;
+	const Symbol* sym = *it;
 	if (BuiltinTest(sym, all, intern))
 	    (*sv)[(*indx)++] = const_cast<CachedString*>(sym->name());
     }

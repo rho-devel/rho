@@ -89,36 +89,48 @@ namespace CXXR {
      * objects, once created, are permanently preserved against
      * garbage collection.  There is no inherent reason for this in
      * CXXR, but some packages may rely on it.
-     *
-     * @todo It would be desirable if Symbol objects were frozen by
-     * the constructor.  But this is not feasible at present because,
-     * for example, the methods package attempts to set a class
-     * attribute on the Symbol "<UNDEFINED>".
      */
     class Symbol : public RObject {
     private:
-	// A table is used to ensure that, for standard symbols,
-	// there is at most one Symbol object with a particular name.
-	typedef
-	std::tr1::unordered_map<const CachedString*, GCRoot<Symbol>,
-				std::tr1::hash<const CachedString*>,
-				std::equal_to<const CachedString*>,
-				CXXR::Allocator<std::pair<const CachedString* const,
-							  GCRoot<Symbol> > >
-	                        > map;
+	typedef std::vector<GCRoot<Symbol> > Table;
     public:
-	// It is assumed that this dereferences to
-	// const std::pair<const CachedString*, Symbol*>.
-	typedef map::const_iterator const_iterator;
+	/** @brief const_iterator for iterating over all standard Symbols.
+	 *
+	 * This is currently only a rudimentary implementation of a
+	 * forward iterator.  It is used in BuiltInSize() and
+	 * BuiltInNames().
+	 */
+	class const_iterator {
+	public:
+	    const_iterator(Table::const_iterator tblit)
+		: m_tblit(tblit)
+	    {}
+
+	    const Symbol* operator*() {
+		return *m_tblit;
+	    }
+
+	    const_iterator& operator++() {
+		++m_tblit;
+		return *this;
+	    }
+
+	    bool operator!=(const_iterator other) const
+	    {
+		return (m_tblit != other.m_tblit);
+	    }
+	private:
+	    Table::const_iterator m_tblit;
+	};
 
 	static const_iterator begin()
 	{
-	    return s_table->begin();
+	    return const_iterator(s_table->begin());
 	}
 
 	static const_iterator end()
 	{
-	    return s_table->end();
+	    return const_iterator(s_table->end());
 	}
 
 	/** @brief Index of a double-dot symbol.
@@ -180,14 +192,15 @@ namespace CXXR {
 	 * will be created, and a pointer to it returned.  Otherwise a
 	 * pointer to the existing Symbol will be returned.
 	 *
-	 * @param name The name of the required Symbol.  At present no
-	 *          check is made that the supplied string is a valid
-	 *          symbol name.
+	 * @param name The name of the required Symbol.
 	 *
 	 * @return Pointer to a Symbol (preexisting or newly
 	 * created) with the required name.
 	 */
-	static Symbol* obtain(const CachedString* name);
+	static Symbol* obtain(const CachedString* name)
+	{
+	    return (name->m_symbol ? name->m_symbol : make(name));
+	}
 
 	/** @brief Get a pointer to a regular Symbol object.
 	 *
@@ -246,7 +259,9 @@ namespace CXXR {
 	void detachReferents();
     private:
 	static const size_t s_max_length = 256;
-	static map* s_table;
+	static Table* s_table;  // Vector of
+	  // pointers to all Symbol objects in existence, used to
+	  // protect them against garbage collection.
 	static Symbol* s_missing_arg;
 	static Symbol* s_unbound_value;
 
@@ -267,7 +282,8 @@ namespace CXXR {
 
 	// Declared private to ensure that Symbol objects are
 	// allocated only using 'new':
-	~Symbol();
+	~Symbol()
+	{}
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -278,6 +294,13 @@ namespace CXXR {
 
 	// Initialize the static data members:
 	static void initialize();
+
+	// Precondition: there is not already a Symbol identified by
+	// 'name'.
+	//
+	// Creates a new Symbol identified by 'name', enters it into
+	// the table of standard Symbols, and returns a pointer to it.
+	static Symbol* make(const CachedString* name);
 
 	friend class SchwarzCounter<Symbol>;
     };

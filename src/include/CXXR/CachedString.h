@@ -138,14 +138,16 @@ namespace CXXR {
 							  CachedString*> >
 	                        > map;
 
-	map::value_type* m_key_val_pr;
-
 	static map* s_cache;
 	static CachedString* s_blank;
 
+	map::value_type* m_key_val_pr;
+	mutable Symbol* m_symbol;  // Pointer to the Symbol object identified
+	  // by this CachedString, or a null pointer if none.
+
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
-	      m_key_val_pr(key_val_pr)
+	    m_key_val_pr(key_val_pr), m_symbol(0)
 	{}
 
 	// Not implemented.  Declared to prevent
@@ -163,6 +165,7 @@ namespace CXXR {
 	static void initialize();
 
 	friend class SchwarzCounter<CachedString>;
+	friend class Symbol;
     };
 }  // namespace CXXR
 

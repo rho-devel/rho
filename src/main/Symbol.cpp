@@ -60,7 +60,7 @@ namespace CXXR {
     }
 }
 
-Symbol::map* Symbol::s_table = 0;
+Symbol::Table* Symbol::s_table = 0;
 
 Symbol* Symbol::s_missing_arg;
 SEXP R_MissingArg;
@@ -80,6 +80,12 @@ namespace {
 Symbol::Symbol(const CachedString* the_name)
     : RObject(SYMSXP), m_name(the_name), m_dd_index(0)
 {
+    if (m_name) {
+	if (m_name->size() == 0)
+	    Rf_error(_("attempt to use zero-length variable name"));
+	if (m_name->size() > maxLength())
+	    Rf_error(_("variable names are limited to %d bytes"), maxLength());
+    }
     // If this is a ..n symbol, extract the value of n.
     // boost::regex_match (libboost_regex1_36_0-1.36.0-9.5) doesn't
     // seem comfortable with empty strings, hence the size check.
@@ -91,16 +97,6 @@ Symbol::Symbol(const CachedString* the_name)
 	    iss >> m_dd_index;
 	}
     }
-}
-
-// Because Symbols are permanently preserved against garbage
-// collection (see class description) this is never actually invoked,
-// except possibly during program exit, by which time s_table will
-// have been deleted.
-Symbol::~Symbol()
-{
-    if (s_table)
-	s_table->erase(m_name);
 }
 
 void Symbol::cleanup()
@@ -152,7 +148,7 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
-    s_table = new map;
+    s_table = new Table;
     static GCRoot<Symbol> missing_arg(expose(new Symbol));
     s_missing_arg = missing_arg.get();
     R_MissingArg = s_missing_arg;
@@ -163,25 +159,12 @@ void Symbol::initialize()
     dd_regex = &dd_rx;
 }
 
-Symbol* Symbol::obtain(const CachedString* name)
+Symbol* Symbol::make(const CachedString* name)
 {
-    if (name->size() == 0)
-	Rf_error(_("attempt to use zero-length variable name"));
-    if (name->size() > maxLength())
-	Rf_error(_("variable names are limited to %d bytes"), maxLength());
-    pair<map::iterator, bool> pr
-	= s_table->insert(map::value_type(name, GCRoot<Symbol>(0)));
-    map::iterator it = pr.first;
-    map::value_type& val = *it;
-    if (pr.second) {
-	try {
-	    val.second = expose(new Symbol(name));
-	} catch (...) {
-	    s_table->erase(it);
-	    throw;
-	}
-    }
-    return val.second;
+    Symbol* ans = CXXR_NEW(Symbol(name));
+    s_table->push_back(GCRoot<Symbol>(ans));
+    name->m_symbol = ans;
+    return ans;
 }
 
 Symbol* Symbol::obtain(const std::string& name)
