@@ -73,6 +73,7 @@ extern "C" {
 #include "arithmetic.h"
 
 #include <errno.h>
+#include <math.h>
 
 #include "CXXR/GCStackRoot.hpp"
 
@@ -170,13 +171,12 @@ Rboolean R_IsNaN(double x)
 
 
 /* Mainly for use in packages */
-Rboolean R_finite(double x)
-{
-#ifdef HAVE_WORKING_ISFINITE
-    return CXXRCONSTRUCT(Rboolean, isfinite(x));
-#else
-    return CXXRCONSTRUCT(Rboolean, !isnan(x) && (x != R_PosInf) && (x != R_NegInf));
-#endif
+
+// Force a non-inline embodiment of R_finite():
+namespace CXXR {
+    namespace ForceNonInline{
+	Rboolean (*R_finitep)(double) = R_finite;
+    }
 }
 
 

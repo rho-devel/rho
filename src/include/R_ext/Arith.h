@@ -109,6 +109,12 @@ Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 #endif
     }
 
+    /* This anticipates C++ 0x. */
+    inline Rboolean R_finite(double x)
+    {
+	return Rboolean(std::isfinite(x) != 0);
+    }
+
 #  define ISNAN(x)     R_isnancpp(x)
 #else
 #  define ISNAN(x)     ((Rboolean)(isnan(x)!=0))
@@ -119,6 +125,7 @@ Rboolean R_finite(double);		/* True if none of NA, NaN, +/-Inf */
 /* isfinite is defined in <math.h> according to C99 */
 # define R_FINITE(x)    isfinite(x)
 #else
+
 # define R_FINITE(x)    R_finite(x)
 #endif
 
