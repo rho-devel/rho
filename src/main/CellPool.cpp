@@ -39,6 +39,7 @@
 
 #include "CXXR/CellPool.hpp"
 
+#include <features.h>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
@@ -141,8 +142,16 @@ void CellPool::defragment()
 void CellPool::seekMemory() throw (std::bad_alloc)
 {
     if (!m_free_cells) {
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+	void* memblock;
+	// We assume the memory page size is some multiple of 4096 bytes:
+	if (0 != posix_memalign(&memblock, 4096, m_superblocksize))
+	    throw bad_alloc();
+	char* superblock = static_cast<char*>(memblock);
+#else
 	char* superblock
 	    = static_cast<char*>(::operator new(m_superblocksize));
+#endif
 	m_superblocks.push_back(superblock);
 	// Initialise cells:
 	{
