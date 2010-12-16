@@ -459,9 +459,14 @@ namespace CXXR {
 	static List* s_live;  // Except during mark-sweep garbage
 	  // collection, all existing nodes are threaded on this
 	  // list.
-	static std::vector<const GCNode*>* s_moribund;  // Vector of
-	  // pointers to nodes whose reference count has fallen to
-	  // zero (but may subsequently have increased again).
+	static std::vector<const GCNode*>* s_decref;  // Vector of
+	  // pointers to nodes whose reference count is to be
+	  // decremented.
+	static std::vector<const GCNode*>* s_morituri;  // s_decref is
+	  // swapped here before gclite() begins its work, and in
+	  // particular before any nodes are deleted.  This is because
+	  // node deletion may lead to new entries being added to
+	  // s_decref.
 	static List* s_reachable;  // During the mark phase of garbage
 	  // collection, if a node is found to be reachable from the
 	  // roots, it is moved to this list. Between garbage
@@ -496,11 +501,10 @@ namespace CXXR {
 #endif
 	mutable unsigned char m_bits;
 	mutable unsigned char m_refcount;  // This is twice the
-	  // reference count, plus 1 if the node is marked as moribund
-	  // (i.e. is on the s_moribund or s_morituri lists).  The
-	  // most-significant bit is sticky: once set it stays set,
-	  // after which the node can only be garbage-collected by
-	  // mark-sweep.
+	  // reference count, the least significant bit being reserved
+	  // for future use.  The most-significant bit is sticky: once
+	  // set it stays set,  after which the node can only be
+	  // garbage-collected by mark-sweep.
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
@@ -517,20 +521,16 @@ namespace CXXR {
 	// Clean up static data at end of run:
 	static void cleanup();
 
-	// Decrement the reference count (subject to the stickiness of
-	// its MSB).  If as a result the reference count falls to
-	// zero, mark the node as moribund.
+	// Record the fact that the reference count of this node is to
+	// be decremented.  This is accomplished simply by pushing a
+	// pointer to this node onto the s_decref list, the actual
+	// decrementing being done later by gclite().
 	void decRefCount() const
 	{
-	    unsigned char rc = (m_refcount - 2) | (m_refcount & 0x80);
-	    if (rc == 0) {
 #ifdef GCID
-		watch();
+	    watch();
 #endif
-		rc = 1;
-		s_moribund->push_back(this);
-	    }
-	    m_refcount = rc;
+	    s_decref->push_back(this);
 	}
 
 	// Increment the reference count.  Overflow is handled by the
