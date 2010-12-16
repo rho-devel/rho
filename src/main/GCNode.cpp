@@ -141,10 +141,10 @@ bool GCNode::check()
 
 void GCNode::cleanup()
 {
+    sweep();
     GCManager::cleanup();
     ProtectStack::cleanup();
     GCRootBase::cleanup();
-    sweep();
 }
 
 void GCNode::gc()
