@@ -66,7 +66,8 @@ ProtectStack::Scope* ProtectStack::s_innermost_scope = 0;
 
 void ProtectStack::initialize()
 {
-    s_pps = new vector<RObject*>;
+    static vector<RObject*> pps;
+    s_pps = &pps;
 }
 
 void ProtectStack::restoreSize(size_t new_size)
