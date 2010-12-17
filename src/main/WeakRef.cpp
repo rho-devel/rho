@@ -162,11 +162,8 @@ bool WeakRef::check()
 
 void WeakRef::cleanup()
 {
-    delete s_tombstone;
     s_tombstone = 0;
-    delete s_f10n_pending;
     s_f10n_pending = 0;
-    delete s_live;
     s_live = 0;
 }
 
@@ -197,9 +194,10 @@ void WeakRef::finalize()
 
 void WeakRef::initialize()
 {
-    s_live = new WRList;
-    s_f10n_pending = new WRList;
-    s_tombstone = new WRList;
+    static WRList live, f10n_pending, tombstone;
+    s_live = &live;
+    s_f10n_pending = &f10n_pending;
+    s_tombstone = &tombstone;
 }
 
 void WeakRef::markThru()

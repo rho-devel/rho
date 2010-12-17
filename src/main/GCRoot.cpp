@@ -64,14 +64,10 @@ GCRootBase::GCRootBase(const GCNode* node)
 	node->incRefCount();
 }
 
-void GCRootBase::cleanup()
-{
-    delete s_roots;
-}
-
 void GCRootBase::initialize()
 {
-    s_roots = new List;
+    static List roots;
+    s_roots = &roots;
 }
 
 void GCRootBase::visitRoots(GCNode::const_visitor* v)

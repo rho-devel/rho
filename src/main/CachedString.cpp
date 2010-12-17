@@ -73,8 +73,8 @@ CachedString::~CachedString()
 
 void CachedString::cleanup()
 {
-    // Deleting s_cache avoids valgrind 'possibly lost' reports on exit:
-    delete s_cache;
+    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
+    s_cache->clear();
     s_cache = 0;
 }
 
@@ -107,7 +107,8 @@ const char* CachedString::c_str() const
 
 void CachedString::initialize()
 {
-    s_cache = new map;
+    static map the_map;
+    s_cache = &the_map;
     static GCRoot<CachedString> blank(CachedString::obtain(""));
     s_blank = blank.get();
     R_BlankString = s_blank;

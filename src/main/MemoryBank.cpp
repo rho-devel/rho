@@ -89,14 +89,6 @@ void MemoryBank::check()
 	s_pools[i]->check();
 }
 
-// Deleting heap objects on program exit is not strictly necessary,
-// but doing so makes bugs more conspicuous when using valgrind.
-void MemoryBank::cleanup()
-{
-    for (unsigned int i = 0; i < s_num_pools; ++i)
-	delete s_pools[i];
-}
-
 void MemoryBank::defragment()
 {
     for (unsigned int i = 0; i < s_num_pools; ++i)
@@ -134,16 +126,18 @@ void MemoryBank::initialize()
     // The following leave some space at the end of each 4096-byte
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
-    s_pools[0] = new Pool(1, 496);
-    s_pools[1] = new Pool(2, 248);
-    s_pools[2] = new Pool(3, 165);
-    s_pools[3] = new Pool(4, 124);
-    s_pools[4] = new Pool(5, 99);
-    s_pools[5] = new Pool(6, 83);
-    s_pools[6] = new Pool(8, 62);
-    s_pools[7] = new Pool(10, 49);
-    s_pools[8] = new Pool(12, 41);
-    s_pools[9] = new Pool(16, 31);
+    static Pool p0(1, 496), p1(2, 248), p2(3, 165), p3(4, 124), p4(5, 99),
+	p5(6, 83), p6(8, 62), p7(10, 49), p8(12, 41), p9(16, 31);
+    s_pools[0] = &p0;
+    s_pools[1] = &p1;
+    s_pools[2] = &p2;
+    s_pools[3] = &p3;
+    s_pools[4] = &p4;
+    s_pools[5] = &p5;
+    s_pools[6] = &p6;
+    s_pools[7] = &p7;
+    s_pools[8] = &p8;
+    s_pools[9] = &p9;
     for (unsigned int i = 0; i <= s_max_cell_size; ++i)
 	s_pooltab[i] = s_pools[pool_indices[i]];
 #endif

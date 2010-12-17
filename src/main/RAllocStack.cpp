@@ -72,12 +72,12 @@ void* RAllocStack::allocate(size_t sz)
 void RAllocStack::cleanup()
 {
     trim(0);
-    delete s_stack;
 }
 
 void RAllocStack::initialize()
 {
-    s_stack = new Stack;
+    static Stack stack;
+    s_stack = &stack;
 }
 
 void RAllocStack::restoreSize(size_t new_size)

@@ -137,7 +137,7 @@ namespace CXXR {
 
 	// Clean up static data at end of run (called by
 	// GCNode::SchwarzCtr destructor:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize static data (called by GCNode::SchwarzCtr
 	// constructor):

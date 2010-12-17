@@ -167,7 +167,7 @@ namespace CXXR {
 	MemoryBank();
 
 	// Free memory used by the static data members:
-	static void cleanup();
+	static void cleanup() {}
 
 	// Initialize the static data members:
 	static void initialize();

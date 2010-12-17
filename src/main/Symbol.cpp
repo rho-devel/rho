@@ -101,9 +101,8 @@ Symbol::Symbol(const CachedString* the_name)
 
 void Symbol::cleanup()
 {
-    // Deleting s_table avoids valgrind 'possibly lost' reports on exit:
-    delete s_table;
-    s_table = 0;
+    // Clearing s_table avoids valgrind 'possibly lost' reports on exit:
+    s_table->clear();
 }
 
 void Symbol::detachReferents()
@@ -148,7 +147,8 @@ RObject* Symbol::evaluate(Environment* env)
 
 void Symbol::initialize()
 {
-    s_table = new Table;
+    static Table table;
+    s_table = &table;
     static GCRoot<Symbol> missing_arg(expose(new Symbol));
     s_missing_arg = missing_arg.get();
     R_MissingArg = s_missing_arg;

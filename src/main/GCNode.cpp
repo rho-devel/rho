@@ -213,10 +213,12 @@ void GCNode::gclite()
 
 void GCNode::initialize()
 {
-    s_live = new List;
-    s_decref = new vector<const GCNode*>;
-    s_morituri = new vector<const GCNode*>;
-    s_reachable = new List;
+    static List live, reachable;
+    s_live = &live;
+    s_reachable = &reachable;
+    static vector<const GCNode*> decref, morituri;
+    s_decref = &decref;
+    s_morituri = &morituri;
 #ifdef GCID
     s_last_id = 0;
     s_watch_addr = 0;
