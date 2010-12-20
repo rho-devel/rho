@@ -519,24 +519,29 @@ namespace CXXR {
 	// Decrement the reference count (subject to the stickiness of
 	// its MSB).  If as a result the reference count falls to
 	// zero, mark the node as moribund.
-	void decRefCount() const
+	static void decRefCount(const GCNode* node)
 	{
-	    unsigned char rc = (m_refcount - 2) | (m_refcount & 0x80);
-	    if (rc == 0) {
+	    if (node) {
+		unsigned char rc
+		    = (node->m_refcount - 2) | (node->m_refcount & 0x80);
+		if (rc == 0) {
 #ifdef GCID
-		watch();
+		    node->watch();
 #endif
-		rc = 1;
-		s_moribund->push_back(this);
+		    rc = 1;
+		    s_moribund->push_back(node);
+		}
+		node->m_refcount = rc;
 	    }
-	    m_refcount = rc;
 	}
 
 	// Increment the reference count.  Overflow is handled by the
 	// stickiness of the MSB.
-	void incRefCount() const
+	static void incRefCount(const GCNode* node)
 	{
-	    m_refcount = (m_refcount + 2) | (m_refcount & 0x80);
+	    if (node)
+		node->m_refcount
+		    = (node->m_refcount + 2) | (node->m_refcount & 0x80);
 	}
 
 	/** @brief Initialize static members.

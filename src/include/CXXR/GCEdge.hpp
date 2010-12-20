@@ -66,23 +66,18 @@ namespace CXXR {
 	    : m_target(target)
 	{
 	    GCNode::maybeCheckExposed(m_target);
-	    if (m_target) {
-		m_target->incRefCount();
-	    }
+	    GCNode::incRefCount(m_target);
 	}
 
 	GCEdgeBase(const GCEdgeBase& source)
 	    : m_target(source.m_target)
 	{
-	    if (m_target) {
-		m_target->incRefCount();
-	    }
+	    GCNode::incRefCount(m_target);
 	}
 	    
 	~GCEdgeBase()
 	{
-	    if (m_target)
-		m_target->decRefCount();
+	    GCNode::decRefCount(m_target);
 	}
 
 	/** @brief Get target of this edge.

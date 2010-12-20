@@ -76,16 +76,14 @@ namespace CXXR {
 	{
 	    s_roots = this;
 	    GCNode::maybeCheckExposed(node);
-	    if (m_target)
-		m_target->incRefCount();
+	    GCNode::incRefCount(m_target);
 	}
 
 	GCStackRootBase(const GCStackRootBase& source)
 	    : m_next(s_roots), m_target(source.m_target)
 	{
 	    s_roots = this;
-	    if (m_target)
-		m_target->incRefCount();
+	    GCNode::incRefCount(m_target);
 	}
 
 	~GCStackRootBase()
@@ -94,17 +92,14 @@ namespace CXXR {
 	    if (this != s_roots)
 		seq_error();
 #endif
-	    if (m_target)
-		m_target->decRefCount();
+	    GCNode::decRefCount(m_target);
 	    s_roots = m_next;
 	}
 
 	GCStackRootBase& operator=(const GCStackRootBase& source)
 	{
-	    if (source.m_target)
-		source.m_target->incRefCount();
-	    if (m_target)
-		m_target->decRefCount();
+	    GCNode::incRefCount(source.m_target);
+	    GCNode::decRefCount(m_target);
 	    m_target = source.m_target;
 	    return *this;
 	}
@@ -117,10 +112,8 @@ namespace CXXR {
 	void redirect(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
-	    if (node)
-		node->incRefCount();
-	    if (m_target)
-		m_target->decRefCount();
+	    GCNode::incRefCount(node);
+	    GCNode::decRefCount(m_target);
 	    m_target = node;
 	}
 

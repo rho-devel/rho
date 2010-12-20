@@ -123,8 +123,7 @@ namespace CXXR {
 	{
 	    GCNode::maybeCheckExposed(node);
 	    unsigned int index = s_pps->size();
-	    if (node)
-		node->incRefCount();
+	    GCNode::incRefCount(node);
 	    s_pps->push_back(node);
 	    return index;
 	}

@@ -85,11 +85,9 @@ void ProtectStack::reprotect(RObject* node, unsigned int index)
     if (index >= s_pps->size())
 	throw out_of_range("ProtectStack::reprotect: index out of range.");
 #endif
-    if (node)
-	node->incRefCount();
+    GCNode::incRefCount(node);
     RObject* entry = (*s_pps)[index];
-    if (entry)
-	entry->decRefCount();
+    GCNode::decRefCount(entry);
     (*s_pps)[index] = node;
 }
 
@@ -97,8 +95,7 @@ void ProtectStack::trim(size_t new_size)
 {
     while (s_pps->size() > new_size) {
 	RObject* node = s_pps->back();
-	if (node)
-	    node->decRefCount();
+	GCNode::decRefCount(node);
 	s_pps->pop_back();
     }
 }
@@ -116,16 +113,14 @@ void ProtectStack::unprotect(unsigned int count)
 #endif
     for (unsigned int i = 0; i < count; ++i) {
 	RObject* node = s_pps->back();
-	if (node)
-	    node->decRefCount();
+	GCNode::decRefCount(node);
 	s_pps->pop_back();
     }
 }
 
 void ProtectStack::unprotectPtr(RObject* node)
 {
-    if (node)
-	node->decRefCount();
+    GCNode::decRefCount(node);
     vector<RObject*>::reverse_iterator rit
 	= find(s_pps->rbegin(), s_pps->rend(), node);
     if (rit == s_pps->rend())
