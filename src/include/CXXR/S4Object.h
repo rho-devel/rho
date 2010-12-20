@@ -66,7 +66,9 @@ namespace CXXR {
 	 */
 	S4Object()
 	    : RObject(S4SXP)
-	{}
+	{
+	    setS4Object(true);
+	}
 
 	/** @brief Copy constructor.
 	 *

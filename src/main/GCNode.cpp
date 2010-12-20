@@ -58,8 +58,7 @@ using namespace std;
 using namespace CXXR;
 
 GCNode::List* GCNode::s_live;
-vector<const GCNode*>* GCNode::s_decref;
-vector<const GCNode*>* GCNode::s_morituri;
+vector<const GCNode*>* GCNode::s_moribund;
 GCNode::List* GCNode::s_reachable;
 unsigned char GCNode::s_mark = 0;
 unsigned int GCNode::s_num_nodes = 0;
@@ -74,7 +73,7 @@ unsigned int GCNode::s_watch_id = 0;
 void* GCNode::operator new(size_t bytes)
 {
 #ifndef RARE_GC
-    if (!s_decref->empty())
+    if (!s_moribund->empty())
 	gclite();
 #endif
     if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
@@ -114,15 +113,15 @@ bool GCNode::check()
 		++virgins;
 	}
     }
-    // Check s_decref list:
+    // Check moribund list:
     {
-	vector<const GCNode*>::const_iterator end = s_decref->end();
-	for (vector<const GCNode*>::const_iterator it = s_decref->begin();
+	vector<const GCNode*>::const_iterator end = s_moribund->end();
+	for (vector<const GCNode*>::const_iterator it = s_moribund->begin();
 	     it != end; ++it) {
 	    const GCNode* node = *it;
-	    if (node->m_refcount == 0) {
+	    if (!(node->m_refcount & 1)) {
 		cerr << "GCNode::check() : "
-		    "Node with zero refcount on s_decref list.\n";
+		    "Node on moribund list without moribund bit set.\n";
 		abort();
 	    }
 	}
@@ -178,35 +177,13 @@ void GCNode::gclite()
 	return;
     GCInhibitor inhibitor;
     unsigned int protect_count = protectCstructs();
-    while (!s_decref->empty()) {
-	swap(s_decref, s_morituri);
-	vector<const GCNode*>::iterator dit = s_morituri->begin();
-	// Decrement the reference counts (if not already done under
-	// GCID), and assemble at the start of s_morituri pointers to
-	// the nodes to be deleted.
-	{
-	    vector<const GCNode*>::const_iterator stop = s_morituri->end();
-	    for (vector<const GCNode*>::const_iterator it = dit;
-		 it != stop; ++it) {
-		const GCNode* node = *it;
-		unsigned char rc = node->m_refcount;
-		// Decrement the refcount:
-		rc = (rc - 2) | (rc & 0x80);
-		if (rc != 0)
-		    node->m_refcount = rc;
-		else
-		    *dit++ = node;
-	    }
-	}
-	// Now zap the nodes whose reference count has fallen to zero:
-	{
-	    vector<const GCNode*>::const_reverse_iterator rstop
-		= s_morituri->rend();
-	    for (vector<const GCNode*>::const_reverse_iterator rit(dit);
-		 rit != rstop; ++rit)
-		delete *rit;
-	}
-	s_morituri->clear();
+    while (!s_moribund->empty()) {
+	// Last in, first out, for cache efficiency:
+	const GCNode* node = s_moribund->back();
+	s_moribund->pop_back();
+	node->m_refcount &= ~1;  // Clear moribund bit
+	if (node->m_refcount == 0)
+	    delete node;
     }
     ProtectStack::unprotect(protect_count);
 }
@@ -216,9 +193,8 @@ void GCNode::initialize()
     static List live, reachable;
     s_live = &live;
     s_reachable = &reachable;
-    static vector<const GCNode*> decref, morituri;
-    s_decref = &decref;
-    s_morituri = &morituri;
+    static vector<const GCNode*> moribund;
+    s_moribund = &moribund;
 #ifdef GCID
     s_last_id = 0;
     s_watch_addr = 0;
