@@ -41,6 +41,9 @@
 #include "CXXR/RObject.h"
 
 namespace CXXR {
+#ifdef __GNUC__
+    __attribute__((noreturn))
+#endif
     void SEXP_downcast_error(const char* given, const char* wanted);
 
     /** Down cast within the RObject class tree.

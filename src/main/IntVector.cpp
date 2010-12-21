@@ -44,14 +44,10 @@
 using namespace std;
 using namespace CXXR;
 
-int *INTEGER(SEXP x)
-{
-#ifndef USE_TYPE_CHECKING_STRICT
-    // Quicker than dynamic_cast:
-    if (x->sexptype() == LGLSXP) {
-	LogicalVector* lvec = static_cast<LogicalVector*>(x);
-	return &(*lvec)[0];
+// Force the creation of non-inline embodiments of functions callable
+// from C:
+namespace CXXR {
+    namespace ForceNonInline {
+	int* (*INTEGERp)(SEXP) = INTEGER;
     }
-#endif
-    return &(*SEXP_downcast<IntVector*>(x, false))[0];
 }

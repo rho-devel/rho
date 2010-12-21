@@ -49,6 +49,10 @@
 #include "CXXR/DumbVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
+#ifndef USE_TYPE_CHECKING_STRICT
+#include "CXXR/LogicalVector.h"
+#endif
+
 namespace CXXR {
     // Template specialization:
     template <>
@@ -73,7 +77,22 @@ extern "C" {
  *
  * @return Pointer to element 0 of \a x .
  */
+#ifndef __cplusplus
 int *INTEGER(SEXP x);
+#else
+inline int* INTEGER(SEXP x)
+{
+    using namespace CXXR;
+#ifndef USE_TYPE_CHECKING_STRICT
+    // Quicker than dynamic_cast:
+    if (x && x->sexptype() == LGLSXP) {
+	LogicalVector* lvec = static_cast<LogicalVector*>(x);
+	return &(*lvec)[0];
+    }
+#endif
+    return &(*SEXP_downcast<IntVector*>(x, false))[0];
+}
+#endif
 
 #ifdef __cplusplus
 }
