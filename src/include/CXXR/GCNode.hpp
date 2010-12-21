@@ -524,14 +524,9 @@ namespace CXXR {
 	    if (node) {
 		unsigned char rc
 		    = (node->m_refcount - 2) | (node->m_refcount & 0x80);
-		if (rc == 0) {
-#ifdef GCID
-		    node->watch();
-#endif
-		    rc = 1;
-		    s_moribund->push_back(node);
-		}
-		node->m_refcount = rc;
+		if (rc == 0)
+		    node->makeMoribund();
+		else node->m_refcount = rc;
 	    }
 	}
 
@@ -556,6 +551,10 @@ namespace CXXR {
 	static void initialize();
 
 	bool isMarked() const {return (m_bits & MARK) == s_mark;}
+
+	// Mark this node as moribund:
+	__attribute__((fastcall))
+	void makeMoribund() const;
 
 	/** @brief Carry out the mark phase of garbage collection.
 	 */

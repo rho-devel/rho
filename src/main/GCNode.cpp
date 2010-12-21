@@ -210,6 +210,15 @@ void GCNode::initialize()
     GCManager::initialize();
 }
 
+void GCNode::makeMoribund() const
+{
+#ifdef GCID
+    watch();
+#endif
+    m_refcount = 1;
+    s_moribund->push_back(this);
+}
+    
 void GCNode::mark()
 {
     // In the first mark-sweep collection, the marking of a node is
