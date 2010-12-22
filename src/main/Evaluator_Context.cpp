@@ -27,16 +27,3 @@
 
 using namespace std;
 using namespace CXXR;
-
-Evaluator::Context::Context()
-    : m_next_out(innermost()), m_eval_depth(Evaluator::depth())
-{
-    Evaluator::current()->m_innermost_context = this;
-}
-
-Evaluator::Context::~Context()
-{
-    Evaluator::setDepth(m_eval_depth);
-    Evaluator::current()->m_innermost_context = m_next_out;
-}
-    

@@ -45,6 +45,7 @@
 #include "boost/regex.hpp"
 #include "R_ext/Error.h"
 #include "CXXR/Environment.h"
+#include "CXXR/Evaluator.h"
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/CachedString.h"
 

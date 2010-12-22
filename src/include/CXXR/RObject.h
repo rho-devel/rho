@@ -809,17 +809,6 @@ extern "C" {
      */
     void Rf_copyMostAttrib(SEXP inp, SEXP ans);
 
-    /** @brief Evaluate an object in a specified Environment.
-     *
-     * @param e Pointer (possibly null) to the object to be evaluated.
-     *
-     * @param rho Pointer to an Environment (checked unless \a e is null).
-     *
-     * @return Pointer to the result of evaluating \a e in \a rho, or
-     * a null pointer if \a e is null.
-     */
-    SEXP Rf_eval(SEXP e, SEXP rho);
- 
     /** @brief Access a named attribute.
      *
      * @param vec Pointer to the CXXR::RObject whose attributes are to be

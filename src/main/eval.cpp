@@ -343,16 +343,6 @@ static SEXP forcePromise(SEXP e)
     return prom->force();
 }
 
-/* Return value of "e" evaluated in "rho". */
-
-SEXP Rf_eval(SEXP e, SEXP rho)
-{
-    Environment* env = 0;
-    if (e)
-	env = SEXP_downcast<Environment*>(rho);	
-    return evaluate(e, env);
-}
-
 attribute_hidden
 void Rf_SrcrefPrompt(const char * prefix, SEXP srcref)
 {

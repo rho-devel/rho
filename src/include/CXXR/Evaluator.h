@@ -41,6 +41,7 @@
 #define EVALUATOR_H
 
 #include "R_ext/Boolean.h"
+#include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
 #ifdef __cplusplus
@@ -108,7 +109,6 @@ extern "C" {
 
 namespace CXXR {
     class RObject;
-    class Environment;
     class Expression;
 
     /** @brief Framework for R command evaluation.
@@ -339,6 +339,34 @@ namespace CXXR {
 	return Evaluator::evaluate(object, env);
     }
 }
+
+extern "C" {
 #endif /* __cplusplus */
+
+    /** @brief Evaluate an object in a specified Environment.
+     *
+     * @param e Pointer (possibly null) to the object to be evaluated.
+     *
+     * @param rho Pointer to an Environment (checked unless \a e is null).
+     *
+     * @return Pointer to the result of evaluating \a e in \a rho, or
+     * a null pointer if \a e is null.
+     */
+#ifndef __cplusplus
+    SEXP Rf_eval(SEXP e, SEXP rho);
+#else
+    inline SEXP Rf_eval(SEXP e, SEXP rho)
+    {
+	using namespace CXXR;
+	Environment* env = 0;
+	if (e)
+	    env = SEXP_downcast<Environment*>(rho);	
+	return evaluate(e, env);
+    }
+#endif
+ 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* EVALUATOR_H */

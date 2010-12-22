@@ -102,7 +102,11 @@ namespace CXXR {
 	    CLOSURE      /**< Context corresponding to a Closure. */
 	};
 
-	~Context();
+	~Context()
+	{
+	    Evaluator::setDepth(m_eval_depth);
+	    Evaluator::current()->m_innermost_context = m_next_out;
+	}
 
 	/** @brief The innermost Context.
 	 *
@@ -134,7 +138,11 @@ namespace CXXR {
 	    return m_type;
 	}
     protected:
-	Context();
+	Context()
+	    : m_next_out(innermost()), m_eval_depth(Evaluator::depth())
+	{
+	    Evaluator::current()->m_innermost_context = this;
+	}
 
 	/** @brief Set the type of the Context.
 	 *
