@@ -240,7 +240,7 @@ namespace CXXR {
 	     */
 	    Origin origin() const
 	    {
-		return m_origin;
+		return Origin(m_origin);
 	    }
 
 	    /** @brief Get raw value bound to the Symbol.
@@ -334,7 +334,7 @@ namespace CXXR {
 	    Frame* m_frame;
 	    GCEdge<const Symbol> m_symbol;
 	    GCEdge<> m_value;
-	    Origin m_origin;
+	    unsigned char m_origin;
 	    bool m_active;
 	    bool m_locked;
 	};
