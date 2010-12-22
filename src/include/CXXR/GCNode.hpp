@@ -553,7 +553,9 @@ namespace CXXR {
 	bool isMarked() const {return (m_bits & MARK) == s_mark;}
 
 	// Mark this node as moribund:
+#ifdef __GNUC__
 	__attribute__((fastcall))
+#endif
 	void makeMoribund() const;
 
 	/** @brief Carry out the mark phase of garbage collection.

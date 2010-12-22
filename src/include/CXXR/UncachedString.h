@@ -76,6 +76,7 @@ namespace CXXR {
 	    : String(sz, encoding), m_databytes(sz + 1), m_data(m_short_string)
 	{
 	    allocData(sz);
+	    setCString(m_data);
 	}
 
 	/** @brief Create an UncachedString object from a std::string.
@@ -112,9 +113,6 @@ namespace CXXR {
 	{
 	    return "char (uncached)";
 	}
-
-	// Virtual function of String:
-	const char* c_str() const;
 
 	// Virtual function of RObject:
 	const char* typeName() const;

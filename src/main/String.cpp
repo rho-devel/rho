@@ -62,7 +62,7 @@ SEXP R_NaString = String::NA();
 // enforce initialization order.
 
 String::String(size_t sz, cetype_t encoding)
-    : VectorBase(CHARSXP, sz), m_hash(-1)
+    : VectorBase(CHARSXP, sz), m_c_str(0), m_hash(-1)
 {
     switch(encoding) {
     case CE_NATIVE:

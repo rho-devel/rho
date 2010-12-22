@@ -98,9 +98,12 @@ namespace CXXR {
 	};
 
 	/** @brief Read-only character access.
+	 *
 	 * @param index Index of required character (counting from
 	 *          zero).  No bounds checking is applied.
+	 *
 	 * @return the specified character.
+	 *
 	 * @note For CXXR internal use only.
 	 */
 	char operator[](unsigned int index) const
@@ -113,7 +116,10 @@ namespace CXXR {
 	 * @return Pointer to the encapsulated C-style (null
 	 * terminated) string.
 	 */
-	virtual const char* c_str() const = 0;
+	const char* c_str() const
+	{
+	    return m_c_str;
+	}
 
 	/** @brief Character encoding.
 	 *
@@ -214,9 +220,15 @@ namespace CXXR {
 	{
 	    m_hash = -1;
 	}
+
+	void setCString(const char* c_string)
+	{
+	    m_c_str = c_string;
+	}
     private:
 	static GCRoot<String> s_na;
 
+	const char* m_c_str;
 	mutable int m_hash;  // negative signifies invalid
 	cetype_t m_encoding;
 

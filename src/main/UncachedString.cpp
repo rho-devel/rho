@@ -57,6 +57,7 @@ UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     size_t sz = str.size();
     allocData(sz);
     memcpy(m_data, str.data(), sz);
+    setCString(m_data);
 }
 
 void UncachedString::allocData(size_t sz)
@@ -65,11 +66,6 @@ void UncachedString::allocData(size_t sz)
 	m_data = static_cast<char*>(MemoryBank::allocate(m_databytes));
     // Insert trailing null byte:
     m_data[sz] = 0;
-}
-
-const char* UncachedString::c_str() const
-{
-    return m_data;
 }
 
 const char* UncachedString::typeName() const

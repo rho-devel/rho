@@ -38,6 +38,8 @@ int main() {
 	 << "\nsizeof(IntVector): " << sizeof(IntVector)
 	 << "\nsizeof(RealVector): " << sizeof(RealVector)
 	 << "\nsizeof(Frame::Binding): " << sizeof(Frame::Binding)
+	 << "\nsizeof(Frame): " << sizeof(Frame)
+	 << "\nsizeof(StdFrame): " << sizeof(StdFrame)
 	 << "\nsizeof(Environment): " << sizeof(Environment) << '\n';
     return 0;
 }

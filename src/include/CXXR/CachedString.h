@@ -106,9 +106,6 @@ namespace CXXR {
 	    return m_key_val_pr->first.first;
 	}
 
-	// Virtual function of String:
-	const char* c_str() const;
-
 	// Virtual function of RObject:
 	const char* typeName() const;
     private:
@@ -148,7 +145,9 @@ namespace CXXR {
 	explicit CachedString(map::value_type* key_val_pr)
 	    : String(key_val_pr->first.first.size(), key_val_pr->first.second),
 	    m_key_val_pr(key_val_pr), m_symbol(0)
-	{}
+	{
+	    setCString(key_val_pr->first.first.c_str());
+	}
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated versions:
