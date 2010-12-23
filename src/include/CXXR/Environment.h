@@ -263,6 +263,9 @@ namespace CXXR {
 	 * Environment in whose frame the Binding was found, or a null
 	 * pointer if no Binding was found.
 	 */
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 	std::pair<Environment*, Frame::Binding*>
 	findBinding(const Symbol* symbol);
 

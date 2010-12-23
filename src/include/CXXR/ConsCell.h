@@ -397,7 +397,10 @@ namespace CXXR {
 
 	// Declared private to ensure that PairList objects are
 	// allocated only using 'new':
-	~PairList() {}
+#ifdef __GNUG__
+	__attribute__((hot))
+#endif
+	~PairList();
 
 	// Not implemented yet.  Declared to prevent
 	// compiler-generated version:

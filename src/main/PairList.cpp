@@ -83,7 +83,11 @@ PairList::PairList(const PairList& pattern)
 	pl = pl->m_tail;
     }
 }
-    
+
+// Non-inlined so it can get put in .text.hot :
+PairList::~PairList()
+{}
+
 PairList* PairList::clone() const
 {
     return expose(new PairList(*this));

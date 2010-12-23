@@ -77,7 +77,12 @@ namespace CXXR {
 
 	// Virtual functions of Frame (qv):
 	PairList* asPairList() const;
+
+#ifdef __GNUG__
+	__attribute__((hot,fastcall))
+#endif
 	Binding* binding(const Symbol* symbol);
+
 	const Binding* binding(const Symbol* symbol) const;
 	void clear();
 	StdFrame* clone() const;

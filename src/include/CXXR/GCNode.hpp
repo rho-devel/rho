@@ -222,6 +222,9 @@ namespace CXXR {
 	 * object is currently under construction, or if at least one
 	 * GCInhibitor object is in existence.
 	 */
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 	static void* operator new(size_t bytes);
 
 	/** @brief Placement new for GCNode.
@@ -554,7 +557,7 @@ namespace CXXR {
 
 	// Mark this node as moribund:
 #ifdef __GNUC__
-	__attribute__((fastcall))
+	__attribute__((hot,fastcall))
 #endif
 	void makeMoribund() const;
 

@@ -410,6 +410,9 @@ namespace CXXR {
 	 * @return A pointer to the required binding, or a null
 	 * pointer if it was not found.
 	 */
+#ifdef __GNUG__
+	__attribute__((fastcall))
+#endif
 	virtual Binding* binding(const Symbol* symbol) = 0;
 
 	/** @brief Access const binding of an already-defined Symbol.
