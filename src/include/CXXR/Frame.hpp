@@ -342,8 +342,8 @@ namespace CXXR {
 	typedef void (*monitor)(const Binding&);
 
 	Frame()
-	    : m_read_monitor(0), m_write_monitor(0), m_cache_count(0),
-	      m_locked(false)
+	    : m_cache_count(0), m_locked(false),
+	      m_read_monitored(false), m_write_monitored(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -356,8 +356,8 @@ namespace CXXR {
 	 * the copy will not have a read or write monitor.
 	 */
 	Frame(const Frame& source)
-	    : m_read_monitor(0), m_write_monitor(0), m_cache_count(0),
-	      m_locked(source.m_locked)
+	    : m_cache_count(0), m_locked(source.m_locked),
+	      m_read_monitored(false), m_write_monitored(false)
 	{}
 
 	/** @brief Get contents as a PairList.
@@ -554,10 +554,10 @@ namespace CXXR {
 	 * considered to be part of the state of a Frame object, and
 	 * hence this function is const.
 	 */
-	monitor setReadMonitor(monitor new_monitor) const
+	static monitor setReadMonitor(monitor new_monitor)
 	{
-	    monitor old = m_read_monitor;
-	    m_read_monitor = new_monitor;
+	    monitor old = s_read_monitor;
+	    s_read_monitor = new_monitor;
 	    return old;
 	}
 
@@ -588,10 +588,10 @@ namespace CXXR {
 	 * considered to be part of the state of a Frame object, and
 	 * hence this function is const.
 	 */
-	monitor setWriteMonitor(monitor new_monitor) const
+	static monitor setWriteMonitor(monitor new_monitor)
 	{
-	    monitor old = m_write_monitor;
-	    m_write_monitor = new_monitor;
+	    monitor old = s_write_monitor;
+	    s_write_monitor = new_monitor;
 	    return old;
 	}
 
@@ -649,12 +649,14 @@ namespace CXXR {
     private:
 	friend class Environment;
 
-	mutable monitor m_read_monitor;
-	mutable monitor m_write_monitor;
+	static monitor s_read_monitor, s_write_monitor;
+
 	unsigned char m_cache_count;  // Number of cached Environments
 			// of which this is the Frame.  Normally
 			// either 0 or 1.
-	bool m_locked;
+	bool m_locked                  : 1;
+	mutable bool m_read_monitored  : 1;
+	mutable bool m_write_monitored : 1;
 
 	// Not (yet) implemented.  Declared to prevent
 	// compiler-generated versions:
@@ -678,12 +680,14 @@ namespace CXXR {
 
 	void monitorRead(const Binding& bdg) const
 	{
-	    if (m_read_monitor) m_read_monitor(bdg);
+	    if (m_read_monitored)
+		s_read_monitor(bdg);
 	}
 
 	void monitorWrite(const Binding& bdg) const
 	{
-	    if (m_write_monitor) m_write_monitor(bdg);
+	    if (m_write_monitored)
+		s_write_monitor(bdg);
 	}
     };
 

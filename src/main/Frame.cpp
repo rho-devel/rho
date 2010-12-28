@@ -49,6 +49,8 @@
 using namespace std;
 using namespace CXXR;
 
+Frame::monitor Frame::s_read_monitor = 0;
+Frame::monitor Frame::s_write_monitor = 0;
 
 // ***** Class Frame::Binding *****
 
