@@ -64,7 +64,21 @@ size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
 
 MemoryBank::Pool* MemoryBank::s_pools[s_num_pools];
-MemoryBank::Pool* MemoryBank::s_pooltab[s_max_cell_size + 1];
+
+// Note that the C++ standard requires that an operator new returns a
+// valid pointer even when 0 bytes are requested.  The entry at
+// s_pooltab[0] ensures this.  This table assumes sizeof(double) == 8.
+const unsigned char MemoryBank::s_pooltab[]
+= {0, 0,                    // 8
+   1,                       // 16
+   2,                       // 24
+   3,                       // 32
+   4,                       // 40
+   5,                       // 48
+   6, 6,                    // 64
+   7, 7, 7, 7,              // 96
+   8, 8, 8, 8,              // 128
+   9, 9, 9, 9, 9, 9, 9, 9}; // 192
 
 void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 {
@@ -75,7 +89,7 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     if (bytes > s_max_cell_size)
 	p = ::operator new(bytes);
     else {
-	Pool* pool = s_pooltab[bytes];
+	Pool* pool = s_pools[s_pooltab[(bytes + 7) >> 3]];
 	p = pool->allocate();
     }
     ++s_blocks_allocated;
@@ -95,31 +109,6 @@ void MemoryBank::defragment()
 	s_pools[i]->defragment();
 }    
 
-namespace {
-    // pool_indices[n] holds the index of the pool that will be used
-    // for allocating n bytes.  Note that the C++ standard requires
-    // that an operator new returns a valid pointer even when 0 bytes
-    // are requested.  The entry at pool_indices[0] ensures this.
-    // This table assumes sizeof(double) == 8.
-    const unsigned int pool_indices[]
-    = {0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
-       1, 1, 1, 1, 1, 1, 1, 1, // 16
-       2, 2, 2, 2, 2, 2, 2, 2, // 24
-       3, 3, 3, 3, 3, 3, 3, 3, // 32
-       4, 4, 4, 4, 4, 4, 4, 4, // 40
-       5, 5, 5, 5, 5, 5, 5, 5, // 48
-       6, 6, 6, 6, 6, 6, 6, 6,
-       6, 6, 6, 6, 6, 6, 6, 6, // 64
-       7, 7, 7, 7, 7, 7, 7, 7,
-       7, 7, 7, 7, 7, 7, 7, 7, // 80
-       8, 8, 8, 8, 8, 8, 8, 8,
-       8, 8, 8, 8, 8, 8, 8, 8, // 96
-       9, 9, 9, 9, 9, 9, 9, 9,
-       9, 9, 9, 9, 9, 9, 9, 9,
-       9, 9, 9, 9, 9, 9, 9, 9,
-       9, 9, 9, 9, 9, 9, 9, 9}; // 128
-}
-
 void MemoryBank::initialize()
 {
 #ifndef NO_CELLPOOLS
@@ -127,7 +116,7 @@ void MemoryBank::initialize()
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
     static Pool p0(1, 496), p1(2, 248), p2(3, 165), p3(4, 124), p4(5, 99),
-	p5(6, 83), p6(8, 62), p7(10, 49), p8(12, 41), p9(16, 31);
+	p5(6, 83), p6(8, 62), p7(12, 41), p8(16, 31), p9(24, 21);
     s_pools[0] = &p0;
     s_pools[1] = &p1;
     s_pools[2] = &p2;
@@ -138,8 +127,6 @@ void MemoryBank::initialize()
     s_pools[7] = &p7;
     s_pools[8] = &p8;
     s_pools[9] = &p9;
-    for (unsigned int i = 0; i <= s_max_cell_size; ++i)
-	s_pooltab[i] = s_pools[pool_indices[i]];
 #endif
 }
 
