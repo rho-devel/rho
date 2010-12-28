@@ -32,11 +32,13 @@ using namespace CXXR;
 namespace {
     double* dptrs[16];
 
-    CellPool pool(1, 5);
+    CellPool pool;
 }
 
 int main() {
-    for (int i = 0; i < 16; ++i) dptrs[i] = 0;
+    pool.initialize(1, 5);
+    for (int i = 0; i < 16; ++i)
+	dptrs[i] = 0;
     pool.check();
     cout << "Cell size: " << pool.cellSize()
 	 << "\nSuperblock size: " << pool.superblockSize() << endl;

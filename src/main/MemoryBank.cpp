@@ -63,7 +63,7 @@ void (*MemoryBank::s_monitor)(size_t) = 0;
 size_t MemoryBank::s_monitor_threshold = numeric_limits<size_t>::max();
 #endif
 
-MemoryBank::Pool* MemoryBank::s_pools[s_num_pools];
+MemoryBank::Pool* MemoryBank::s_pools;
 
 // Note that the C++ standard requires that an operator new returns a
 // valid pointer even when 0 bytes are requested.  The entry at
@@ -89,8 +89,8 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
     if (bytes > s_max_cell_size)
 	p = ::operator new(bytes);
     else {
-	Pool* pool = s_pools[s_pooltab[(bytes + 7) >> 3]];
-	p = pool->allocate();
+	Pool& pool = s_pools[s_pooltab[(bytes + 7) >> 3]];
+	p = pool.allocate();
     }
     ++s_blocks_allocated;
     s_bytes_allocated += bytes;
@@ -100,13 +100,13 @@ void* MemoryBank::allocate(size_t bytes) throw (std::bad_alloc)
 void MemoryBank::check()
 {
     for (unsigned int i = 0; i < s_num_pools; ++i)
-	s_pools[i]->check();
+	s_pools[i].check();
 }
 
 void MemoryBank::defragment()
 {
     for (unsigned int i = 0; i < s_num_pools; ++i)
-	s_pools[i]->defragment();
+	s_pools[i].defragment();
 }    
 
 void MemoryBank::initialize()
@@ -115,18 +115,18 @@ void MemoryBank::initialize()
     // The following leave some space at the end of each 4096-byte
     // page, in case posix_memalign needs to put some housekeeping
     // information for the next page there.
-    static Pool p0(1, 496), p1(2, 248), p2(3, 165), p3(4, 124), p4(5, 99),
-	p5(6, 83), p6(8, 62), p7(12, 41), p8(16, 31), p9(24, 21);
-    s_pools[0] = &p0;
-    s_pools[1] = &p1;
-    s_pools[2] = &p2;
-    s_pools[3] = &p3;
-    s_pools[4] = &p4;
-    s_pools[5] = &p5;
-    s_pools[6] = &p6;
-    s_pools[7] = &p7;
-    s_pools[8] = &p8;
-    s_pools[9] = &p9;
+    static Pool pools[s_num_pools];
+    pools[0].initialize(1, 511);
+    pools[1].initialize(2, 255);
+    pools[2].initialize(3, 170);
+    pools[3].initialize(4, 127);
+    pools[4].initialize(5, 102);
+    pools[5].initialize(6, 85);
+    pools[6].initialize(8, 63);
+    pools[7].initialize(12, 42);
+    pools[8].initialize(16, 31);
+    pools[9].initialize(24, 21);
+    s_pools = pools;
 #endif
 }
 

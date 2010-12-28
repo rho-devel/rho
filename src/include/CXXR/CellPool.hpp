@@ -69,28 +69,17 @@ namespace CXXR {
      */
     class CellPool {
     public:
-	/**
-	 * @param dbls_per_cell (must be >= 1). Size of cells,
-	 *         expressed as a multiple of sizeof(double).  For
-	 *         example, if you require cells large enough to
-	 *         contain one double, put dbls_per_cell as 1.  (NB:
-	 *         cells can contain anything, not just doubles; we
-	 *         work in doubles because these are likely to have
-	 *         the most stringent address alignment requirements.)
+	/** @brief Constructor.
 	 *
-	 * @param cells_per_superblock (must be >= 1).  Memory for cells is
-	 *         obtained from the main heap in 'superblocks'
-	 *         sufficient to contain this many cells.
+	 * Note that CellPool objects must be initialized by calling
+	 * initialize() before being used.
 	 */
-	CellPool(size_t dbls_per_cell, size_t cells_per_superblock)
-	    : m_cellsize(dbls_per_cell*sizeof(double)),
-	      m_cells_per_superblock(cells_per_superblock),
-	      m_superblocksize(m_cellsize*cells_per_superblock),
-	      m_free_cells(0),
+	CellPool()
+	    : m_free_cells(0),
 #ifdef CELLFIFO
 	      m_last_free_cell(0),
 #endif
-	      m_cells_allocated(0)
+	      m_cells_allocated(0), m_admin(0)
 	{}
 
 	/** Destructor
@@ -112,7 +101,8 @@ namespace CXXR {
 	 */
 	void* allocate() throw (std::bad_alloc)
 	{
-	    if (!m_free_cells) seekMemory();
+	    if (!m_free_cells)
+		m_free_cells = m_admin->seekMemory();
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 #ifdef CELLFIFO
@@ -127,13 +117,19 @@ namespace CXXR {
 	 * @return the size of each cell in bytes (well, strictly as a
 	 * multiple of sizeof(char)).
 	 */         
-	size_t cellSize() const  {return m_cellsize;}
+	size_t cellSize() const
+	{
+	    return m_admin->m_cellsize;
+	}
 
 	/**
 	 * @return the number of cells currently allocated from this
 	 * pool.
 	 */
-	unsigned int cellsAllocated() const {return m_cells_allocated;}
+	unsigned int cellsAllocated() const
+	{
+	    return m_cells_allocated;
+	}
 
 	/** @brief Integrity check.
 	 *
@@ -199,11 +195,33 @@ namespace CXXR {
 	    return c;
 	}
 
+	/** @brief Initialize the CellPool.
+	 *
+	 * This function must be called exactly once for each
+	 * CellPool, before any allocation is made from it.
+	 *
+	 * @param dbls_per_cell (must be >= 1). Size of cells,
+	 *         expressed as a multiple of sizeof(double).  For
+	 *         example, if you require cells large enough to
+	 *         contain one double, put dbls_per_cell as 1.  (NB:
+	 *         cells can contain anything, not just doubles; we
+	 *         work in doubles because these are likely to have
+	 *         the most stringent address alignment requirements.)
+	 *
+	 * @param cells_per_superblock (must be >= 1).  Memory for cells is
+	 *         obtained from the main heap in 'superblocks'
+	 *         sufficient to contain this many cells.
+	 */
+	void initialize(size_t dbls_per_cell, size_t cells_per_superblock);
+
 	/**
 	 * @return The size in bytes of the superblocks from which
 	 *         cells are allocated.
 	 */
-	size_t superblockSize() const {return m_superblocksize;}
+	size_t superblockSize() const
+	{
+	    return m_admin->m_superblocksize;
+	}
     private:
 	struct Cell {
 	    Cell* m_next;
@@ -211,15 +229,38 @@ namespace CXXR {
 	    Cell(Cell* next = 0) : m_next(next) {}
 	};
 
-	const size_t m_cellsize;
-	const size_t m_cells_per_superblock;
-	const size_t m_superblocksize;
-	std::vector<void*> m_superblocks;
+	// We put data fields that are used relatively rarely in a
+	// separate data structure stored on the heap, so that
+	// frequently used fields can be squeezed into as few cache
+	// lines as possible.
+	struct Admin {
+	    const size_t m_cellsize;
+	    const size_t m_cells_per_superblock;
+	    const size_t m_superblocksize;
+	    std::vector<void*> m_superblocks;
+
+	    Admin(size_t dbls_per_cell, size_t cells_per_superblock)
+		: m_cellsize(dbls_per_cell*sizeof(double)),
+		  m_cells_per_superblock(cells_per_superblock),
+		  m_superblocksize(m_cellsize*cells_per_superblock)
+	    {}
+
+	    size_t cellsAvailable() const
+	    {
+		return m_cells_per_superblock*m_superblocks.size();
+	    }
+
+	    // Allocates a new superblock and returns a pointer to the
+	    // first free cell in it.
+	    Cell* seekMemory() throw (std::bad_alloc);
+	};
+
 	Cell* m_free_cells;
 #ifdef CELLFIFO
 	Cell* m_last_free_cell;
 #endif
 	unsigned int m_cells_allocated;
+	Admin* m_admin;
 
 	// Checks that p is either null or points to a cell belonging
 	// to this pool; aborts if not.
@@ -228,8 +269,6 @@ namespace CXXR {
 	// Calls checkCell, and further checks that the cell is not on
 	// the free list:
 	void checkAllocatedCell(const void* p) const;
-
-	void seekMemory() throw (std::bad_alloc);
     };
 }
 

@@ -118,7 +118,7 @@ namespace CXXR {
 	    // Assumes sizeof(double) == 8:
 	    if (bytes > s_max_cell_size)
 		::operator delete(p);
-	    else s_pools[s_pooltab[(bytes + 7) >> 3]]->deallocate(p);
+	    else s_pools[s_pooltab[(bytes + 7) >> 3]].deallocate(p);
 	    --s_blocks_allocated;
 	    s_bytes_allocated -= bytes;
 	}
@@ -158,7 +158,7 @@ namespace CXXR {
 	static const size_t s_max_cell_size;
 	static size_t s_blocks_allocated;
 	static size_t s_bytes_allocated;
-	static Pool* s_pools[];
+	static Pool* s_pools;
 	static const unsigned char s_pooltab[];
 #ifdef R_MEMORY_PROFILING
 	static void (*s_monitor)(size_t);

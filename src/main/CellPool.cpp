@@ -49,9 +49,14 @@ using namespace CXXR;
 
 CellPool::~CellPool()
 {
-    for (vector<void*>::iterator it = m_superblocks.begin();
-	 it != m_superblocks.end(); ++it)
+    for (vector<void*>::iterator it = m_admin->m_superblocks.begin();
+	 it != m_admin->m_superblocks.end(); ++it)
+#if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
+	free(*it);
+#else
 	::operator delete(*it);
+#endif
+    delete m_admin;
 }
 
 bool CellPool::check() const
@@ -61,8 +66,7 @@ bool CellPool::check() const
 	checkCell(c);
 	++free_cells;
     }
-    if (m_cells_allocated + free_cells
-	!= m_cells_per_superblock*m_superblocks.size()) {
+    if (m_cells_allocated + free_cells != m_admin->cellsAvailable()) {
 	cerr << "CellPool::check(): internal inconsistency\n";
 	abort();
     }
@@ -88,12 +92,13 @@ void CellPool::checkCell(const void* p) const
     if (!p) return;
     const char* pc = static_cast<const char*>(p);
     bool found = false;
-    for (vector<void*>::const_iterator it = m_superblocks.begin();
-	 !found && it != m_superblocks.end(); ++it) {
+    for (vector<void*>::const_iterator it = m_admin->m_superblocks.begin();
+	 !found && it != m_admin->m_superblocks.end(); ++it) {
 	ptrdiff_t offset = pc - static_cast<const char*>(*it);
-	if (offset >= 0 && offset < static_cast<long>(m_superblocksize)) {
+	if (offset >= 0
+	    && offset < static_cast<long>(m_admin->m_superblocksize)) {
 	    found = true;
-	    if (offset%m_cellsize != 0) {
+	    if (offset%m_admin->m_cellsize != 0) {
 		cerr << "CellPool::checkCell : designated block"
 		        " is misaligned\n";
 		abort();
@@ -109,8 +114,7 @@ void CellPool::checkCell(const void* p) const
 
 void CellPool::defragment()
 {
-    size_t num_free_cells
-	= m_superblocks.size()*m_cells_per_superblock - m_cells_allocated;
+    size_t num_free_cells = m_admin->cellsAvailable() - m_cells_allocated;
     vector<Cell*> vf(num_free_cells);
     // Assemble vector of pointers to free cells:
     {
@@ -139,32 +143,35 @@ void CellPool::defragment()
     // check();
 }
 
-void CellPool::seekMemory() throw (std::bad_alloc)
+void CellPool::initialize(size_t dbls_per_cell, size_t cells_per_superblock)
 {
-    if (!m_free_cells) {
+    m_admin = new Admin(dbls_per_cell, cells_per_superblock);
+}
+
+CellPool::Cell* CellPool::Admin::seekMemory() throw (std::bad_alloc)
+{
 #if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
-	void* memblock;
-	// We assume the memory page size is some multiple of 4096 bytes:
-	if (0 != posix_memalign(&memblock, 4096, m_superblocksize))
-	    throw bad_alloc();
-	char* superblock = static_cast<char*>(memblock);
+    void* memblock;
+    // We assume the memory page size is some multiple of 4096 bytes:
+    if (0 != posix_memalign(&memblock, 4096, m_superblocksize))
+	throw bad_alloc();
+    char* superblock = static_cast<char*>(memblock);
 #else
-	char* superblock
-	    = static_cast<char*>(::operator new(m_superblocksize));
+    char* superblock
+	= static_cast<char*>(::operator new(m_superblocksize));
 #endif
-	m_superblocks.push_back(superblock);
-	// Initialise cells:
-	{
-	    int offset = m_superblocksize - m_cellsize;
+    m_superblocks.push_back(superblock);
+    // Initialise cells:
+    {
+	int offset = m_superblocksize - m_cellsize;
 #ifdef CELLFIFO
-	    m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
+	m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
 #endif
-	    Cell* next = 0;
-	    while (offset >= 0) {
-		next = new (superblock + offset) Cell(next);
-		offset -= m_cellsize;
-	    }
-	    m_free_cells = next;
+	Cell* next = 0;
+	while (offset >= 0) {
+	    next = new (superblock + offset) Cell(next);
+	    offset -= m_cellsize;
 	}
+	return next;
     }
 }
