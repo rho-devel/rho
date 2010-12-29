@@ -49,6 +49,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
+#include "CXXR/VectorFrame.hpp"
 #include "CXXR/errors.h"
 
 using namespace std;
@@ -135,10 +136,9 @@ RObject* Closure::invoke(Environment* env, const ArgList* arglist,
     if (arglist->status() != ArgList::PROMISED)
 	Rf_error("Internal error: unwrapped arguments to Closure::invoke");
 #endif
-    // +5 to allow some capacity for local variables:
+    GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
     GCStackRoot<Environment>
-	newenv(expose(new Environment(environment(),
-				      m_matcher->numFormals() + 5)));
+	newenv(CXXR_NEW(Environment(environment(), newframe)));
     // Perform argument matching:
     {
         ClosureContext cntxt(const_cast<Expression*>(call), env, this,

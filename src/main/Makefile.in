@@ -49,7 +49,7 @@ SOURCES_CXX = \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Symbol.cpp \
 	UncachedString.cpp \
-        VectorBase.cpp \
+        VectorFrame.cpp VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
