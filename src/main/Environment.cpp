@@ -46,7 +46,9 @@
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
+#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -171,21 +173,23 @@ void Environment::initialize()
     // Symbols at load factor 0.5.
     s_cache = new Cache(509);
     s_cache->max_load_factor(0.5);
-    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0)));
+    GCStackRoot<Frame> empty_frame(CXXR_NEW(VectorFrame));
+    static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
     R_EmptyEnv = empty_env.get();
+    GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));
     static GCRoot<Environment>
-	base_env(CXXR_NEW(Environment(empty_env)));
+	base_env(CXXR_NEW(Environment(empty_env, base_frame)));
     s_base = base_env.get();
     s_base->makeCached();
     R_BaseEnv = s_base;
+    GCStackRoot<Frame> global_frame(CXXR_NEW(StdFrame));
     static GCRoot<Environment>
-	global_env(CXXR_NEW(Environment(s_base)));
+	global_env(CXXR_NEW(Environment(s_base, global_frame)));
     s_global = global_env.get();
     s_global->makeCached();
     R_GlobalEnv = s_global;
     static GCRoot<Environment>
-	base_namespace(CXXR_NEW(Environment(s_global,
-						      s_base->frame())));
+	base_namespace(CXXR_NEW(Environment(s_global, s_base->frame())));
     s_base_namespace = base_namespace.get();
     R_BaseNamespace = s_base_namespace;
 }

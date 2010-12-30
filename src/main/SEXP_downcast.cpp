@@ -39,12 +39,15 @@
 
 #include "CXXR/SEXP_downcast.hpp"
 
+#include <cstdlib>
 #include "localization.h"
 #include "R_ext/Error.h"
 
+using namespace std;
 using namespace CXXR;
 
 void CXXR::SEXP_downcast_error(const char* given, const char* wanted)
 {
     Rf_error(_("'%s' supplied where '%s' expected."), given, wanted);
+    abort();  // To avoid warning about noreturn function returning
 }

@@ -335,8 +335,9 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	static GCRoot<Symbol> objectsym(Symbol::obtain("object"));
 	static GCRoot<ArgMatcher>
 	    matcher(ArgMatcher::make(genericsym, objectsym));
+	GCStackRoot<Frame> matchframe(CXXR_NEW(VectorFrame));
 	GCStackRoot<Environment>
-	    matchenv(CXXR_NEW(Environment(0, 2)));
+	    matchenv(CXXR_NEW(Environment(0, matchframe)));
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
 	matcher->match(matchenv, &arglist);
 

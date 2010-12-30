@@ -41,6 +41,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
+#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -235,7 +236,8 @@ int main(int argc, char* argv[]) {
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     Rf_InitOptions();
     // Set up Environments:
-    GCStackRoot<Environment> fenvrt(GCNode::expose(new Environment(0)));
+    GCStackRoot<Frame> ff(CXXR_NEW(VectorFrame));
+    GCStackRoot<Environment> fenvrt(CXXR_NEW(Environment(0, ff)));
     fenv = fenvrt;
     // Process formals:
     cout << "Formal arguments:\n\n";

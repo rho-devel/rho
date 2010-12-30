@@ -45,8 +45,8 @@
 
 #ifdef __cplusplus
 
+#include "CXXR/Frame.hpp"
 #include "CXXR/GCStackRoot.hpp"
-#include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
 
 /** @def DETACH_LOCAL_FRAMES
@@ -164,39 +164,7 @@ namespace CXXR {
 	    bool m_prev_state;
 	};
 
-	/**
-	 * @param enclosing Pointer to the enclosing environment.
-	 */
-	explicit Environment(Environment* enclosing)
-	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame)), m_single_stepping(false),
-	      m_locked(false), m_cached(false), m_leaked(false),
-	      m_in_loop(false), m_can_return(false)
-	{}
-
-	/**
-	 * @param enclosing Pointer to the enclosing environment.
-	 *
-	 * @param initial_capacity A hint to the implementation that
-	 *          the Frame of the constructed Environment should be
-	 *          configured to have capacity for at least \a
-	 *          initial_capacity Bindings.  This does not impose an
-	 *          upper limit on the capacity of the Frame,
-	 *          but some reconfiguration (and consequent time
-	 *          penalty) may occur if it is exceeded.
-	 */
-	Environment(Environment* enclosing, size_t initial_capacity)
-	    : RObject(ENVSXP), m_enclosing(enclosing),
-	      m_frame(expose(new StdFrame(initial_capacity))),
-	      m_single_stepping(false), m_locked(false), m_cached(false),
-	      m_leaked(false), m_in_loop(false), m_can_return(false)
-	{}
-
-	/** @brief Constructor with specified Frame.
-	 *
-	 * This constructor is used, for example, in constructing the
-	 * base namespace, which shares the Frame of the base
-	 * environment.
+	/** @brief Constructor.
 	 *
 	 * @param enclosing Pointer to the enclosing environment.
 	 *

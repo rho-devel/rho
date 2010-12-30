@@ -417,8 +417,9 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
+    GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
     GCStackRoot<Environment>
-	newrho(CXXR_NEW(Environment(func->environment())));
+	newrho(CXXR_NEW(Environment(func->environment(), newframe)));
     Frame* tof = newrho->frame();
 
     // Propagate bindings of the formal arguments of the generic to
@@ -1508,8 +1509,8 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    Environment* working_env
-		= CXXR_NEW(Environment(callenv, 5));
+	    GCStackRoot<Frame> frame(CXXR_NEW(VectorFrame));
+	    Environment* working_env = CXXR_NEW(Environment(callenv, frame));
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
 	    int um = Rf_usemethod(generic, x, call,

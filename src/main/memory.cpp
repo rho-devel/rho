@@ -320,9 +320,9 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
     GCStackRoot<PairList> namevalr(SEXP_downcast<PairList*>(valuelist));
     GCStackRoot<Environment> rhor(SEXP_downcast<Environment*>(rho));
     // +5 to leave some room for local variables:
-    Environment* ans = new Environment(rhor, Rf_length(namevalr) + 5);
-    frameReadPairList(ans->frame(), namevalr);
-    return GCNode::expose(ans);
+    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(Rf_length(namevalr) + 5)));
+    frameReadPairList(frame, namevalr);
+    return CXXR_NEW(Environment(rhor, frame));
 }
 
 /* Allocate a vector object (and also list-like objects).

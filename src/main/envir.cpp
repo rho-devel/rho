@@ -207,13 +207,13 @@ int CXXR::String::hash() const
 
   R_NewHashedEnv
 
-  Returns a new StdEnvironment.
 */
 
 SEXP R_NewHashedEnv(SEXP enclos, SEXP size)
 {
     Environment* enc = SEXP_downcast<Environment*>(enclos);
-    return CXXR_NEW(Environment(enc, asInteger(size)));
+    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame(asInteger(size))));
+    return CXXR_NEW(Environment(enc, frame));
 }
 
 /*----------------------------------------------------------------------
@@ -1178,13 +1178,15 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 	for (x = CAR(args); x != R_NilValue; x = CDR(x))
 	    if (TAG(x) == R_NilValue)
 		error(_("all elements of a list must be named"));
-	newenv = CXXR_NEW(Environment(0));
+	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+	newenv = CXXR_NEW(Environment(0, frame));
 	GCStackRoot<PairList> dupcar(static_cast<PairList*>(duplicate(CAR(args))));
 	frameReadPairList(newenv->frame(), dupcar);
     } else if (isEnvironment(CAR(args))) {
 	SEXP p, loadenv = CAR(args);
 
-	newenv = CXXR_NEW(Environment(0));
+	GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+	newenv = CXXR_NEW(Environment(0, frame));
 	GCStackRoot<> framelist(FRAME(loadenv));
 	for(p = framelist; p != R_NilValue; p = CDR(p))
 	    defineVar(TAG(p), duplicate(CAR(p)), newenv);

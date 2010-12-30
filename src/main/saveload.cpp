@@ -1344,8 +1344,10 @@ static SEXP NewDataLoad (FILE *fp, InputRoutines *m, SaveLoadData *d)
 	    SET_VECTOR_ELT(sym_table, count, install(m->InString(fp, d)));
 	}
 	/* Allocate the environments */
-	for (count = 0; count < env_count; ++count)
-	    SET_VECTOR_ELT(env_table, count, new Environment(0));
+	for (count = 0; count < env_count; ++count) {
+	    GCStackRoot<Frame> frame(CXXR_NEW(StdFrame));
+	    SET_VECTOR_ELT(env_table, count, new Environment(0, frame));
+	}
 
 	/* Now fill them in  */
 	for (count = 0; count < env_count; ++count) {
