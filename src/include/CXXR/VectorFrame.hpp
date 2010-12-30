@@ -59,8 +59,6 @@ namespace CXXR {
 	typedef
 	std::vector<Binding, CXXR::Allocator<Binding> > Vector;
     public:
-	VectorFrame();
-
 	// Virtual functions of Frame (qv):
 	PairList* asPairList() const;
 

@@ -50,11 +50,6 @@
 using namespace std;
 using namespace CXXR;
 
-VectorFrame::VectorFrame()
-{
-    m_vector.reserve(12);
-}
-
 PairList* VectorFrame::asPairList() const
 {
     GCStackRoot<PairList> ans(0);
@@ -138,6 +133,9 @@ Frame::Binding* VectorFrame::obtainBinding(const Symbol* symbol)
 	return &(*it);
     if (isLocked())
 	Rf_error(_("cannot add bindings to a locked frame"));
+    if (m_vector.empty())
+	// 192 bytes (3 cache lines) on 32-bit architecture:
+	m_vector.reserve(12);
     m_vector.push_back(Binding());
     Binding* bdg = &m_vector.back();
     bdg->initialize(this, symbol);

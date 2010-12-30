@@ -53,7 +53,7 @@ using namespace CXXR;
 #ifdef NO_CELLPOOLS
 const size_t MemoryBank::s_max_cell_size = 0;
 #else
-const size_t MemoryBank::s_max_cell_size = 128;
+const size_t MemoryBank::s_max_cell_size = 192;
 #endif
 
 size_t MemoryBank::s_blocks_allocated = 0;
