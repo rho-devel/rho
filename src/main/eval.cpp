@@ -66,6 +66,7 @@
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/S3Launcher.hpp"
+#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -1647,7 +1648,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(CXXR_NEW(StdFrame));
+    GCStackRoot<Frame> supp_frame(CXXR_NEW(VectorFrame));
     // Set up special method bindings:
     m->addMethodBindings(supp_frame);
 

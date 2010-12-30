@@ -53,6 +53,7 @@
 #include "CXXR/GCStackRoot.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/S3Launcher.hpp"
+#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -235,12 +236,13 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	    break;
 	default:
 	    Rf_error(_("Invalid generic function in 'usemethod'"));
+	    op = 0;  // avoid compiler warning
 	}
     }
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(CXXR_NEW(StdFrame));
+    GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
     RObject* match_obj = 0;
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
@@ -776,7 +778,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(CXXR_NEW(StdFrame(6)));
+    GCStackRoot<Frame> method_bindings(CXXR_NEW(VectorFrame));
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;
