@@ -79,7 +79,7 @@ namespace CXXR {
 #ifdef CELLFIFO
 	      m_last_free_cell(0),
 #endif
-	      m_cells_allocated(0), m_admin(0)
+	      m_admin(0)
 	{}
 
 	/** Destructor
@@ -109,11 +109,11 @@ namespace CXXR {
 	    if (!m_free_cells)
 		m_last_free_cell = 0;
 #endif
-	    ++m_cells_allocated;
 	    return c;
 	}
 
-	/**
+	/** @brief Size of cells.
+	 *
 	 * @return the size of each cell in bytes (well, strictly as a
 	 * multiple of sizeof(char)).
 	 */         
@@ -122,13 +122,14 @@ namespace CXXR {
 	    return m_admin->m_cellsize;
 	}
 
-	/**
+	/** @brief Number of cells allocated from this CellPool.
+	 *
 	 * @return the number of cells currently allocated from this
 	 * pool.
 	 */
 	unsigned int cellsAllocated() const
 	{
-	    return m_cells_allocated;
+	    return m_admin->cellsExisting() - cellsFree();
 	}
 
 	/** @brief Integrity check.
@@ -166,7 +167,6 @@ namespace CXXR {
 	    c->m_next = m_free_cells;
 	    m_free_cells = c;
 #endif
-	    --m_cells_allocated;
 	}
 
 	/** @brief Reorganise list of free cells within the CellPool.
@@ -176,24 +176,6 @@ namespace CXXR {
 	 * or (less importantly nowadays) memory page.
 	 */
 	void defragment();
-
-	/** @brief Allocate a cell 'from stock'.
-	 *
-	 * Allocate a cell from the pool, provided it can be allocated
-	 * 'from stock'.  Can be useful when called from other inlined
-	 * functions in that it doesn't throw any exceptions.
-	 *
-	 * @return a pointer to the allocated cell, or 0 if the cell
-	 * cannot be allocated from the current memory superblocks.
-	 */
-	void* easyAllocate() throw ()
-	{
-	    if (!m_free_cells) return 0;
-	    Cell* c = m_free_cells;
-	    m_free_cells = c->m_next;
-	    ++m_cells_allocated;
-	    return c;
-	}
 
 	/** @brief Initialize the CellPool.
 	 *
@@ -230,9 +212,9 @@ namespace CXXR {
 	};
 
 	// We put data fields that are used relatively rarely in a
-	// separate data structure stored on the heap, so that
-	// frequently used fields can be squeezed into as few cache
-	// lines as possible.
+	// separate data structure stored on the heap, so that an
+	// array of CellPool objects, as used in MemoryBank, can be as
+	// compact as possible.
 	struct Admin {
 	    const size_t m_cellsize;
 	    const size_t m_cells_per_superblock;
@@ -245,7 +227,7 @@ namespace CXXR {
 		  m_superblocksize(m_cellsize*cells_per_superblock)
 	    {}
 
-	    size_t cellsAvailable() const
+	    size_t cellsExisting() const
 	    {
 		return m_cells_per_superblock*m_superblocks.size();
 	    }
@@ -259,8 +241,10 @@ namespace CXXR {
 #ifdef CELLFIFO
 	Cell* m_last_free_cell;
 #endif
-	unsigned int m_cells_allocated;
 	Admin* m_admin;
+
+	// Number of cells on the free list:
+	unsigned int cellsFree() const;
 
 	// Checks that p is either null or points to a cell belonging
 	// to this pool; aborts if not.

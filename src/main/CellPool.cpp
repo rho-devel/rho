@@ -59,6 +59,14 @@ CellPool::~CellPool()
     delete m_admin;
 }
 
+unsigned int CellPool::cellsFree() const
+{
+    unsigned int ans = 0;
+    for (const Cell* c = m_free_cells; c; c = c->m_next)
+	++ans;
+    return ans;
+}
+
 bool CellPool::check() const
 {
     unsigned int free_cells = 0;
@@ -66,7 +74,7 @@ bool CellPool::check() const
 	checkCell(c);
 	++free_cells;
     }
-    if (m_cells_allocated + free_cells != m_admin->cellsAvailable()) {
+    if (free_cells > m_admin->cellsExisting()) {
 	cerr << "CellPool::check(): internal inconsistency\n";
 	abort();
     }
@@ -114,8 +122,7 @@ void CellPool::checkCell(const void* p) const
 
 void CellPool::defragment()
 {
-    size_t num_free_cells = m_admin->cellsAvailable() - m_cells_allocated;
-    vector<Cell*> vf(num_free_cells);
+    vector<Cell*> vf(cellsFree());
     // Assemble vector of pointers to free cells:
     {
 	Cell* c = m_free_cells;
