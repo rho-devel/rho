@@ -332,7 +332,7 @@ namespace CXXR {
 	    void visitReferents(const_visitor* v) const;
 	private:
 	    Frame* m_frame;
-	    GCEdge<const Symbol> m_symbol;
+	    const Symbol* m_symbol;
 	    GCEdge<> m_value;
 	    unsigned char m_origin;
 	    bool m_active;

@@ -331,8 +331,8 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Analyse and check 'args':
     {
-	static GCRoot<Symbol> genericsym(Symbol::obtain("generic"));
-	static GCRoot<Symbol> objectsym(Symbol::obtain("object"));
+	static Symbol* genericsym(Symbol::obtain("generic"));
+	static Symbol* objectsym(Symbol::obtain("object"));
 	static GCRoot<ArgMatcher>
 	    matcher(ArgMatcher::make(genericsym, objectsym));
 	GCStackRoot<Frame> matchframe(CXXR_NEW(VectorFrame));
@@ -718,7 +718,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	 ++nextidx) {
 	suffix = Rf_translateChar((*klass)[nextidx]);
 	nextmethodname = genericname + "." + suffix;
-	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	Symbol* nextmethodsym(Symbol::obtain(nextmethodname));
 	nextfun = S3Launcher::findMethod(nextmethodsym,
 					 gencallenv, gendefenv).first;
 	if (!nextfun && dotgroup) {
@@ -731,14 +731,14 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if (!nextfun) {
 	nextmethodname = genericname + ".default";
-	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	Symbol* nextmethodsym(Symbol::obtain(nextmethodname));
 	nextfun = S3Launcher::findMethod(nextmethodsym,
 					 gencallenv, gendefenv).first;
 	// If there is no default method, try the generic itself,
 	// provided it is primitive or a wrapper for a .Internal
 	// function of the same name.
 	if (!nextfun) {
-	    GCStackRoot<Symbol> genericsym(Symbol::obtain(genericname));
+	    Symbol* genericsym(Symbol::obtain(genericname));
 	    Frame::Binding* bdg = callenv->findBinding(genericsym).second;
 	    if (!bdg)
 		Rf_error(_("no method to invoke"));
@@ -755,7 +755,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     GCStackRoot<Expression> newcall(cptr->call()->clone());
     {
-	GCStackRoot<Symbol> nextmethodsym(Symbol::obtain(nextmethodname));
+	Symbol* nextmethodsym(Symbol::obtain(nextmethodname));
 	newcall->setCar(nextmethodsym);
     }
 

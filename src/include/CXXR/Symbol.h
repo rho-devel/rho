@@ -88,7 +88,9 @@ namespace CXXR {
      * @note Following the practice with CR's symbol table, Symbol
      * objects, once created, are permanently preserved against
      * garbage collection.  There is no inherent reason for this in
-     * CXXR, but some packages may rely on it.
+     * CXXR, but some packages may rely on it.  Consequently there is
+     * no need to use smart pointers such as GCStackRoot<Symbol> or
+     * GCEdge<Symbol>: plain pointers will do fine.
      */
     class Symbol : public RObject {
     private:
@@ -260,8 +262,9 @@ namespace CXXR {
     private:
 	static const size_t s_max_length = 256;
 	static Table* s_table;  // Vector of
-	  // pointers to all Symbol objects in existence, used to
-	  // protect them against garbage collection.
+	  // pointers to all Symbol objects in existence, other than
+	  // special Symbols, used to protect them against garbage
+	  // collection.
 	static Symbol* s_missing_arg;
 	static Symbol* s_unbound_value;
 

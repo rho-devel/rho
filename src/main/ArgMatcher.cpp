@@ -139,8 +139,7 @@ void ArgMatcher::match(Environment* target_env, const ArgList* supplied) const
 	unsigned int sindex = 0;
 	for (const PairList* s = supplied->list(); s; s = s->tail()) {
 	    ++sindex;
-	    GCStackRoot<const Symbol>
-		tag(static_cast<const Symbol*>(s->tag()));
+	    const Symbol* tag = static_cast<const Symbol*>(s->tag());
 	    const CachedString* name = (tag ? tag->name() : 0);
 	    RObject* value = s->car();
 	    FormalMap::const_iterator fmit 

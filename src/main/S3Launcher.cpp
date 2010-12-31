@@ -66,7 +66,6 @@ void S3Launcher::detachReferents()
     m_table_env.detach();
     m_classes.detach();
     m_function.detach();
-    m_symbol.detach();
 }
 
 std::pair<FunctionBase*, bool>
@@ -111,6 +110,4 @@ void S3Launcher::visitReferents(const_visitor* v) const
 	(*v)(m_classes);
     if (m_function)
 	(*v)(m_function);
-    if (m_symbol)
-	(*v)(m_symbol);
 }

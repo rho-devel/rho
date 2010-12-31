@@ -267,8 +267,7 @@ namespace CXXR {
 	GCEdge<FunctionBase> m_function;  // Pointer to the method found, or
 	  // null if no method was found.  If null, subsequent fields
 	  // are not meaningful.
-	GCEdge<Symbol> m_symbol;  // Pointer to the Symbol naming the
-	  // method found.  
+	Symbol* m_symbol;  // Pointer to the Symbol naming the method found.  
 	size_t m_index;  // Location within the classes vector to which
 	  // 'function' corresponds, or one past the end if using a
 	  // default method.
