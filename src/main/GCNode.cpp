@@ -70,6 +70,11 @@ const GCNode* GCNode::s_watch_addr = 0;
 unsigned int GCNode::s_watch_id = 0;
 #endif
 
+// Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
+// exceptions" error if the attributes aren't repeated here.
+#ifdef __GNUC__
+	__attribute__((hot,fastcall))
+#endif
 void* GCNode::operator new(size_t bytes)
 {
 #ifndef RARE_GC
