@@ -9,7 +9,6 @@ Allocating list item #7
 Allocating list item #8
 Allocating list item #9
 Blocks allocated: 11
-Bytes allocated: 184
 Deallocating list item #0
 Deallocating list item #5
 Allocating list item #10
@@ -23,7 +22,6 @@ Deallocating list item #2
 Allocating list item #14
 Allocating list item #15
 Blocks allocated: 11
-Bytes allocated: 184
 Deallocating list item #10
 Deallocating list item #1
 Deallocating list item #12

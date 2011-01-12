@@ -39,7 +39,10 @@
 
 #include "CXXR/CellPool.hpp"
 
+#ifndef __APPLE__
 #include <features.h>
+#endif
+
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>

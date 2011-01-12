@@ -122,7 +122,7 @@ ArgMatchertest8.ts : ArgMatchertest formals_ok.txt supplied_surplus.txt \
 	touch $@
  
 Allocatortest.o : Allocatortest.cpp
-	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -DR_MEMORY_PROFILING -c -o $@ $<
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(valgrind_flags) -c -o $@ $<
 
 Allocatortest_objs = Allocatortest.o MemoryBank.o CellPool.o
 
