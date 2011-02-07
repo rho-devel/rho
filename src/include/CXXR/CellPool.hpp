@@ -102,7 +102,7 @@ namespace CXXR {
 	void* allocate() throw (std::bad_alloc)
 	{
 	    if (!m_free_cells)
-		m_free_cells = m_admin->seekMemory();
+		m_free_cells = seekMemory();
 	    Cell* c = m_free_cells;
 	    m_free_cells = c->m_next;
 #ifdef CELLFIFO
@@ -231,10 +231,6 @@ namespace CXXR {
 	    {
 		return m_cells_per_superblock*m_superblocks.size();
 	    }
-
-	    // Allocates a new superblock and returns a pointer to the
-	    // first free cell in it.
-	    Cell* seekMemory() throw (std::bad_alloc);
 	};
 
 	Cell* m_free_cells;
@@ -253,6 +249,10 @@ namespace CXXR {
 	// Calls checkCell, and further checks that the cell is not on
 	// the free list:
 	void checkAllocatedCell(const void* p) const;
+
+	// Allocates a new superblock and returns a pointer to the
+	// first free cell in it.
+	Cell* seekMemory() throw (std::bad_alloc);
     };
 }
 

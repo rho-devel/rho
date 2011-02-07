@@ -158,29 +158,29 @@ void CellPool::initialize(size_t dbls_per_cell, size_t cells_per_superblock)
     m_admin = new Admin(dbls_per_cell, cells_per_superblock);
 }
 
-CellPool::Cell* CellPool::Admin::seekMemory() throw (std::bad_alloc)
+CellPool::Cell* CellPool::seekMemory() throw (std::bad_alloc)
 {
 #if _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
     void* memblock;
     // We assume the memory page size is some multiple of 4096 bytes:
-    if (0 != posix_memalign(&memblock, 4096, m_superblocksize))
+    if (0 != posix_memalign(&memblock, 4096, m_admin->m_superblocksize))
 	throw bad_alloc();
     char* superblock = static_cast<char*>(memblock);
 #else
     char* superblock
-	= static_cast<char*>(::operator new(m_superblocksize));
+	= static_cast<char*>(::operator new(m_admin->m_superblocksize));
 #endif
-    m_superblocks.push_back(superblock);
+    m_admin->m_superblocks.push_back(superblock);
     // Initialise cells:
     {
-	int offset = m_superblocksize - m_cellsize;
+	int offset = m_admin->m_superblocksize - m_admin->m_cellsize;
 #ifdef CELLFIFO
 	m_last_free_cell = reinterpret_cast<Cell*>(superblock + offset);
 #endif
 	Cell* next = 0;
 	while (offset >= 0) {
 	    next = new (superblock + offset) Cell(next);
-	    offset -= m_cellsize;
+	    offset -= m_admin->m_cellsize;
 	}
 	return next;
     }
