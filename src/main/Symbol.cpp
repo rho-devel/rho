@@ -240,6 +240,7 @@ namespace CXXR {
     Symbol* const UseNamesSymbol = Symbol::obtain("use.names");
     Symbol* const SrcfileSymbol = Symbol::obtain("srcfile");
     Symbol* const SrcrefSymbol = Symbol::obtain("srcref");
+    Symbol* const WholeSrcrefSymbol = Symbol::obtain("wholeSrcref");
 }
 
 // ***** C interface *****
@@ -273,6 +274,7 @@ SEXP R_ExactSymbol = CXXR::ExactSymbol;
 SEXP R_RecursiveSymbol = CXXR::RecursiveSymbol;
 SEXP R_SrcfileSymbol = CXXR::SrcfileSymbol;
 SEXP R_SrcrefSymbol = CXXR::SrcrefSymbol;
+SEXP R_WholeSrcrefSymbol = CXXR::WholeSrcrefSymbol;
 SEXP R_TmpvalSymbol = CXXR::TmpvalSymbol;
 SEXP R_UseNamesSymbol = CXXR::UseNamesSymbol;
 

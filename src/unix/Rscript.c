@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2006-9  The R Development Core Team
+ *  Copyright (C) 2006-10  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,11 +55,18 @@ R --slave --no-restore --vanilla --file=foo [script_args]
 # include <config.h>
 #endif
 
+#ifdef WIN32
+#include <psignal.h>
+/* on some systems needs to be included before <sys/types.h> */
+#endif
+
 #include <stdio.h>
 #include <limits.h> /* for PATH_MAX */
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h> /* for execv */
+
+#include <Rversion.h>
 
 
 /* Maximal length of an entire file name */
@@ -88,8 +95,6 @@ static char rhome[] = R_HOME;
 # define FOR_Rscript
 # include "rterm.c"
 #endif
-
-#define RSVERSION "$Rev: 51072 $"
 
 #ifdef HAVE_EXECV
 static int verbose = 0;
@@ -164,10 +169,13 @@ int main(int argc, char *argv[])
 	    exit(0);
 	}
 	if(strcmp(argv[1], "--version") == 0) {
-	    char buf[20];
-	    strcpy(buf, RSVERSION+6);
-	    buf[strlen(buf) - 2] = '\0';
-	    fprintf(stderr, "R scripting front-end version %s\n", buf);
+	    if(strlen(R_STATUS) == 0)
+		fprintf(stderr, "R scripting front-end version %s.%s (%s-%s-%s)\n", 
+			R_MAJOR, R_MINOR, R_YEAR, R_MONTH, R_DAY);
+	    else 
+		fprintf(stderr, "R scripting front-end version %s.%s %s (%s-%s-%s r%s)\n", 
+			R_MAJOR, R_MINOR, R_STATUS, R_YEAR, R_MONTH, R_DAY,
+			R_SVN_REVISION);
 	    exit(0);
 	}
     }

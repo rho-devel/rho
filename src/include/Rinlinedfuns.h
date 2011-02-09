@@ -175,6 +175,14 @@ INLINE_FUN SEXP Rf_list4(SEXP s, SEXP t, SEXP u, SEXP v)
     return s;
 }
 
+INLINE_FUN SEXP Rf_list5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
+{
+    PROTECT(s);
+    s = CONS(s, Rf_list4(t, u, v, w));
+    UNPROTECT(1);
+    return s;
+}
+
 
 /* Destructive list append : See also ``append'' */
 
@@ -225,6 +233,22 @@ INLINE_FUN SEXP Rf_lang4(SEXP s, SEXP t, SEXP u, SEXP v)
     return s;
 }
 
+INLINE_FUN SEXP Rf_lang5(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w)
+{
+    PROTECT(s);
+    s = LCONS(s, Rf_list4(t, u, v, w));
+    UNPROTECT(1);
+    return s;
+}
+
+INLINE_FUN SEXP Rf_lang6(SEXP s, SEXP t, SEXP u, SEXP v, SEXP w, SEXP x)
+{
+    PROTECT(s);
+    s = LCONS(s, Rf_list5(t, u, v, w, x));
+    UNPROTECT(1);
+    return s;
+}
+
 /* from util.c */
 
 /* Check to see if the arrays "x" and "y" have the identical extents */
@@ -243,6 +267,9 @@ INLINE_FUN Rboolean Rf_conformable(SEXP x, SEXP y)
     return TRUE;
 }
 
+/* NOTE: R's inherits() is based on inherits3() in ../main/objects.c
+ * Here, use char / CHAR() instead of the slower more general translateChar()
+ */
 INLINE_FUN Rboolean Rf_inherits(SEXP s, const char *name)
 {
     SEXP klass;
@@ -443,7 +470,7 @@ INLINE_FUN Rboolean Rf_isNumeric(SEXP s)
 }
 
 /** Is an object "Numeric" or  complex */
-INLINE_FUN Rboolean isNumber(SEXP s)
+INLINE_FUN Rboolean Rf_isNumber(SEXP s)
 {
     switch(TYPEOF(s)) {
     case INTSXP:

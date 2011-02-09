@@ -2748,6 +2748,73 @@ SEXP L_rectBounds(SEXP x, SEXP y, SEXP w, SEXP h, SEXP hjust, SEXP vjust,
     return gridRect(x, y, w, h, hjust, vjust, REAL(theta)[0], FALSE);
 }
 
+/* FIXME: need to add L_pathBounds ? */
+
+SEXP L_path(SEXP x, SEXP y, SEXP index, SEXP rule)
+{
+    int i, j, k, npoly, *nper, ntot;
+    double *xx, *yy;
+    const void *vmax;
+    double vpWidthCM, vpHeightCM;
+    double rotationAngle;
+    LViewportContext vpc;
+    R_GE_gcontext gc;
+    LTransform transform;
+    SEXP currentvp, currentgp;
+    /* Get the current device 
+     */
+    pGEDevDesc dd = getDevice();
+    currentvp = gridStateElement(dd, GSS_VP);
+    currentgp = gridStateElement(dd, GSS_GPAR);
+    getViewportTransform(currentvp, dd, 
+			 &vpWidthCM, &vpHeightCM, 
+			 transform, &rotationAngle);
+    getViewportContext(currentvp, &vpc);
+    GEMode(1, dd);
+    vmax = vmaxget();
+    /* 
+     * Number of polygons 
+     */
+    npoly = LENGTH(index);
+    /* 
+     * Total number of points and 
+     * Number of points per polygon
+     */ 
+    ntot = 0;
+    nper = reinterpret_cast<int *>( R_alloc(npoly, sizeof(int)));
+    for (i=0; i < npoly; i++) {
+        nper[i] = LENGTH(VECTOR_ELT(index, i));
+        ntot = ntot + nper[i];
+    }
+    xx = reinterpret_cast<double *>( R_alloc(ntot, sizeof(double)));
+    yy = reinterpret_cast<double *>( R_alloc(ntot, sizeof(double)));
+    k = 0;
+    for (i=0; i < npoly; i++) {
+        SEXP indices = VECTOR_ELT(index, i);
+        for (j=0; j < nper[i]; j++) {            
+	    transformLocn(x, y, INTEGER(indices)[j] - 1, vpc, &gc,
+			  vpWidthCM, vpHeightCM,
+			  dd,
+			  transform,
+			  &(xx[k]), &(yy[k]));
+	    /* The graphics engine only takes device coordinates
+	     */
+	    xx[k] = toDeviceX(xx[k], GE_INCHES, dd);
+	    yy[k] = toDeviceY(yy[k], GE_INCHES, dd);
+            /* NO NA values allowed in 'x' or 'y'
+             */
+            if (!R_FINITE(xx[k]) || !R_FINITE(yy[k]))
+                error(_("non-finite x or y in graphics path"));
+            k++;
+        }
+    }
+    gcontextFromgpar(currentgp, 0, &gc, dd);
+    GEPath(xx, yy, npoly, nper, CXXRCONSTRUCT(Rboolean, INTEGER(rule)[0]), &gc, dd);
+    vmaxset(vmax);
+    GEMode(0, dd);
+    return R_NilValue;
+}
+
 /* FIXME: need to add L_rasterBounds */
 
 /* FIXME:  Add more checks on correct inputs,
@@ -2778,9 +2845,15 @@ SEXP L_raster(SEXP raster, SEXP x, SEXP y, SEXP w, SEXP h,
     /* Convert the raster matrix to R internal colours */
     n = LENGTH(raster);
     vmax = vmaxget();
-    image = reinterpret_cast<unsigned int*>( R_alloc(n, sizeof(unsigned int)));
-    for (i=0; i<n; i++) {
-        image[i] = RGBpar3(raster, i, R_TRANWHITE);
+    /* raster is rather inefficient so allow a native representation as
+       an integer array which requires no conversion */
+    if (inherits(raster, "nativeRaster") && isInteger(raster)) {
+	image = reinterpret_cast<unsigned int*>( INTEGER(raster));
+    } else {
+	image = reinterpret_cast<unsigned int*>( R_alloc(n, sizeof(unsigned int)));
+	for (i=0; i<n; i++) {
+	    image[i] = RGBpar3(raster, i, R_TRANWHITE);
+        }
     }
     dim = getAttrib(raster, R_DimSymbol);
     maxn = unitLength(x); 
@@ -3031,7 +3104,7 @@ static SEXP gridText(SEXP label, SEXP x, SEXP y, SEXP hjust, SEXP vjust,
 		    gcontextFromgpar(currentgp, i, &gc, dd);
 		    if (isExpression(txt))
 			GEMathText(xx[i], yy[i],
-				   VECTOR_ELT(txt, i % LENGTH(txt)),
+				   XVECTOR_ELT(txt, i % LENGTH(txt)),
 				   REAL(hjust)[i % LENGTH(hjust)], 
 				   REAL(vjust)[i % LENGTH(vjust)], 
 				   numeric(rot, i % LENGTH(rot)) + 

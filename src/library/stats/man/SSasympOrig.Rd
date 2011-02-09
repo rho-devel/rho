@@ -32,15 +32,16 @@ SSasympOrig(input, Asym, lrc)
 \author{\enc{José}{Jose} Pinheiro and Douglas Bates}
 \seealso{\code{\link{nls}}, \code{\link{selfStart}}
 }
-\examples{
+\examples{\donttest{
 Lob.329 <- Loblolly[ Loblolly$Seed == "329", ]
-SSasympOrig( Lob.329$age, 100, -3.2 )  # response only
+SSasympOrig(Lob.329$age, 100, -3.2)  # response only
 Asym <- 100; lrc <- -3.2
-SSasympOrig( Lob.329$age, Asym, lrc ) # response and gradient
+SSasympOrig(Lob.329$age, Asym, lrc) # response and gradient
 getInitial(height ~ SSasympOrig(age, Asym, lrc), data = Lob.329)
 ## Initial values are in fact the converged values
-fm1 <- nls(height ~ SSasympOrig( age, Asym, lrc), data = Lob.329)
+fm1 <- nls(height ~ SSasympOrig(age, Asym, lrc), data = Lob.329)
 summary(fm1)
+}
 \dontshow{
 require(graphics)
 

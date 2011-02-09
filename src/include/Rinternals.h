@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2009   The R Development Core Team.
+ *  Copyright (C) 1999-2010   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -56,22 +56,22 @@
 #ifndef R_INTERNALS_H_
 #define R_INTERNALS_H_
 
+#ifdef __cplusplus
+# include <cstdio>
+# ifdef __SUNPRO_CC
+using std::FILE;
+# endif
+# include <climits>
+#else
+# include <stdio.h>
+# include <limits.h> /* for INT_MAX */
+#endif
+
 #include <R_ext/Arith.h>
 #include <R_ext/Error.h>
 #include <R_ext/Memory.h>
 #include <R_ext/PrtUtil.h>
 #include <R_ext/Utils.h>
-
-#include <stdio.h> /* for FILE */
-/*
-#include <errno.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <limits.h>
-#include <float.h>
-#include <ctype.h>
-*/
 
 #include <R_ext/libextern.h>
 
@@ -363,6 +363,7 @@ Rboolean Rf_isUnsorted(SEXP, Rboolean);
 SEXP Rf_lengthgets(SEXP, R_len_t);
 SEXP R_lsInternal(SEXP, Rboolean);
 SEXP Rf_match(SEXP, SEXP, int);
+SEXP Rf_matchE(SEXP, SEXP, int, SEXP);
 SEXP Rf_namesgets(SEXP, SEXP);
 SEXP Rf_mkChar(const char *);
 SEXP Rf_mkCharLen(const char *, int);
@@ -391,6 +392,7 @@ void Rf_unprotect_ptr(SEXP);
 void R_ProtectWithIndex(SEXP, PROTECT_INDEX *);
 void R_Reprotect(SEXP, PROTECT_INDEX);
 SEXP R_tryEval(SEXP, SEXP, int *);
+SEXP R_tryEvalSilent(SEXP, SEXP, int *);
 
 Rboolean Rf_isS4(SEXP);
 SEXP Rf_asS4(SEXP, Rboolean, int);
@@ -672,6 +674,8 @@ int R_system(const char *);
 #define lang2			Rf_lang2
 #define lang3			Rf_lang3
 #define lang4			Rf_lang4
+#define lang5			Rf_lang5
+#define lang6			Rf_lang6
 #define lastElt			Rf_lastElt
 #define lcons			Rf_lcons
 
@@ -689,8 +693,10 @@ int R_system(const char *);
 #define list2			Rf_list2
 #define list3			Rf_list3
 #define list4			Rf_list4
+#define list5			Rf_list5
 #define listAppend		Rf_listAppend
 #define match			Rf_match
+#define matchE			Rf_matchE
 #define mkChar			Rf_mkChar
 #define mkCharCE		Rf_mkCharCE
 #define mkCharLen		Rf_mkCharLen
@@ -772,6 +778,8 @@ SEXP	 Rf_lang1(SEXP);
 SEXP	 Rf_lang2(SEXP, SEXP);
 SEXP	 Rf_lang3(SEXP, SEXP, SEXP);
 SEXP	 Rf_lang4(SEXP, SEXP, SEXP, SEXP);
+SEXP	 Rf_lang5(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP	 Rf_lang6(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_lastElt(SEXP);
 SEXP	 Rf_lcons(SEXP, SEXP);
 R_len_t  Rf_length(SEXP);
@@ -779,8 +787,9 @@ SEXP	 Rf_list1(SEXP);
 SEXP	 Rf_list2(SEXP, SEXP);
 SEXP	 Rf_list3(SEXP, SEXP, SEXP);
 SEXP	 Rf_list4(SEXP, SEXP, SEXP, SEXP);
+SEXP	 Rf_list5(SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP	 Rf_listAppend(SEXP, SEXP);
-SEXP	 Rf_mkNamed(int, const char **);
+SEXP	 Rf_mkNamed(SEXPTYPE, const char **);
 SEXP	 Rf_mkString(const char *);
 int	 Rf_nlevels(SEXP);
 SEXP	 Rf_ScalarComplex(Rcomplex);

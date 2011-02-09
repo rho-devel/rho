@@ -197,8 +197,8 @@ int Rf_isBasicClass(const char *ss) {
       return FALSE; /* too screwed up to do conversions */
     return Rf_findVarInFrame3(s_S3table, Rf_install(ss), FALSE) != R_UnboundValue;
 }
-    
-    
+
+
 // Note the fourth argument is not used.
 int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 		 SEXP rho, SEXP callrho, SEXP defrho, SEXP *ans)
@@ -243,27 +243,11 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
     // Create a new frame without any of the formals to the
     // generic in it:
     GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
-    RObject* match_obj = 0;
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
-	// Look for definition of first formal argument of the generic:
-	{
-	    const PairList* formal_list = clos->matcher()->formalArgs();
-	    if (formal_list) {
-		const Symbol* first_formal
-		    = static_cast<const Symbol*>(formal_list->tag());
-		const Frame::Binding* bdg
-		    = generic_wk_env->frame()->binding(first_formal);
-		if (bdg)
-		    match_obj = bdg->value();
-	    }
-	}
-	// Prepare newframe:
-	{
-	    newframe = generic_wk_env->frame()->clone();
-	    clos->stripFormals(newframe);
-	}
+	newframe = generic_wk_env->frame()->clone();
+	clos->stripFormals(newframe);
     }
 
     GCStackRoot<const PairList> matchedarg(cptr->promiseArgs());
@@ -271,36 +255,6 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	m(S3Launcher::create(obj, generic, "", callenv, defenv, true));
     if (!m)
 	return 0;
-    // In CR, the following very obscure code disappeared some
-    // time after 2.11.1, so it can be expected to disappear from
-    // CXXR in due course.  At that time the declaration of
-    // newframe can be moved to a later point in the function.
-    if (obj && obj->isS4Object() && m->usingClass()
-	&& m->locInClasses() > 0
-	&& Rf_isBasicClass(Rf_translateChar(m->className()))) {
-	SEXP S3Part = R_getS4DataSlot(obj, S4SXP);
-	if (S3Part && TYPEOF(obj) == S4SXP) // could be type, e.g. "environment"
-	    S3Part = R_getS4DataSlot(obj, ANYSXP);
-	// At this point S3Part is the S3 class object or an
-	// object of an abnormal type, or NULL.
-	if (S3Part) {  // use S3Part as inherited object
-	    obj = S3Part;
-	    if (!match_obj) // use the first arg, for "[",e.g.
-		match_obj = matchedarg->car();
-	    if (NAMED(obj))
-		SET_NAMED(obj, 2);
-	    if (match_obj->sexptype() == PROMSXP)
-		static_cast<Promise*>(match_obj)->setValue(obj); // must have been eval'd
-	    else {
-		// not possible ?
-		Closure* clos = SEXP_downcast<Closure*>(m->function());
-		const RObject* formal1 = clos->matcher()->formalArgs()->tag();
-		const Symbol* sym = static_cast<const Symbol*>(formal1);
-		newframe->bind(sym, obj);
-	    }
-	} // else, use the S4 object
-    }
-
     if (op->sexptype() == CLOSXP && (RDEBUG(op) || RSTEP(op)) )
 	SET_RSTEP(m->function(), 1);
     m->addMethodBindings(newframe);
@@ -314,7 +268,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 /* Note: "do_usemethod" is not the only entry point to
    "Rf_usemethod". Things like [ and [[ call Rf_usemethod directly,
    hence do_usemethod should just be an interface to Rf_usemethod.
- */
+*/
 
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
@@ -399,7 +353,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	GCStackRoot<StringVector>
 	    klass(static_cast<StringVector*>(R_data_class2(obj)));
 	int nclass = klass->size();
-	if (nclass == 1) 
+	if (nclass == 1)
 	    cl = Rf_translateChar((*klass)[0]);
 	else {
 	    cl = string("c('") + Rf_translateChar((*klass)[0]);
@@ -472,15 +426,6 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    Rf_error(_("'NextMethod' called from outside a function"));
     }
 
-    // Find generic name (symbol):
-    Symbol* gensym;
-    {
-	RObject* callcar = cptr->call()->car();
-	if (callcar->sexptype() == LANGSXP)
-	    Rf_error(_("'NextMethod' called from an anonymous function"));
-	gensym = SEXP_downcast<Symbol*>(callcar);
-    }
-	
     // Find dispatching environments. Promises shouldn't occur, but
     // check to be on the safe side.  If the variables are not in the
     // environment (the method was called outside a method dispatch)
@@ -511,15 +456,24 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     // Find the generic closure:
     Closure* genclos;
     {
-	FunctionBase* func
-	    = S3Launcher::findMethod(gensym, gencallenv, gendefenv).first;
-	if (!func)
-	    Rf_error(_("no calling generic was found:"
-		       " was a method called directly?"));
-	if (func->sexptype() != CLOSXP)
-	    Rf_errorcall(0, _("'function' is not a function, but of type %d"),
-			 func->sexptype());
-	genclos = static_cast<Closure*>(func);
+	RObject* callcar = cptr->call()->car();
+	if (callcar->sexptype() == LANGSXP)
+	    Rf_error(_("'NextMethod' called from an anonymous function"));
+	else if (callcar->sexptype() == CLOSXP)
+	    // e.g., in do.call(function(x) NextMethod('foo'),list())
+	    genclos = static_cast<Closure*>(callcar);
+	else {
+	    Symbol* gensym = SEXP_downcast<Symbol*>(callcar);
+	    FunctionBase* func
+		= S3Launcher::findMethod(gensym, gencallenv, gendefenv).first;
+	    if (!func)
+		Rf_error(_("no calling generic was found:"
+			   " was a method called directly?"));
+	    if (func->sexptype() != CLOSXP)
+		Rf_errorcall(0, _("'function' is not a function,"
+				  " but of type %d"), func->sexptype());
+	    genclos = static_cast<Closure*>(func);
+	}
     }
 
     // FIXME: the process of computing matchedarg that follows is
@@ -837,52 +791,40 @@ SEXP attribute_hidden do_unclass(SEXP call, SEXP op, SEXP args, SEXP env)
     return CAR(args);
 }
 
-static SEXP s_S4inherits;
-static SEXP do_S4inherits(SEXP obj, SEXP what, SEXP which) {
-    SEXP e, val;
-    if(!s_S4inherits)
-      s_S4inherits = Rf_install(".S4inherits");
-    PROTECT(e = Rf_allocVector(LANGSXP, 4));
-    SETCAR(e, s_S4inherits);
-    val = CDR(e);
-    SETCAR(val, obj);
-    val = CDR(val);
-    SETCAR(val, what);
-    val = CDR(val);
-    SETCAR(val, which);
-    val = Rf_eval(e, R_MethodsNamespace);
-    UNPROTECT(1);
-    return val;
-}
 
 
-SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
+/* NOTE: Fast  inherits(x, what)    in ../include/Rinlinedfuns.h
+ * ----        ----------------- */
+/** C API for  R  inherits(x, what, which)
+ *
+ * @param x any R object
+ * @param what character vector
+ * @param which logical: "want vector result" ?
+ *
+ * @return if which is false, logical TRUE or FALSE
+ *	   if which is true, integer vector of length(what) ..
+ */
+SEXP inherits3(SEXP x, SEXP what, SEXP which)
 {
-    SEXP x, what, which;
-    int i, j, nwhat, isvec, nclass;
-
-    checkArity(op, args);
-
-    x = CAR(args);
+    GCStackRoot<> klass;
     if(IS_S4_OBJECT(x))
-      return do_S4inherits(x, CADR(args), CADDR(args));
-    GCStackRoot<> klass(R_data_class(x, FALSE));
-    nclass = length(klass);
+	klass = R_data_class2(x);
+    else
+	klass = R_data_class(x, FALSE);
+    int nclass = length(klass);
 
-    what = CADR(args);
     if(!Rf_isString(what))
 	Rf_error(_("'what' must be a character vector"));
-    nwhat = length(what);
+    int j, nwhat = length(what);
 
-    which = CADDR(args);
     if( !Rf_isLogical(which) || (length(which) != 1) )
 	Rf_error(_("'which' must be a length 1 logical vector"));
-    isvec = Rf_asLogical(which);
+    int isvec = Rf_asLogical(which);
 
 #ifdef _be_too_picky_
     if(IS_S4_OBJECT(x) && nwhat == 1 && !isvec &&
-       !Rf_isNull(R_getClassDef(Rf_translateChar(STRING_ELT(what, 0)))))
-	Rf_warning(_("use 'is()' instead of 'inherits()' on S4 objects"));
+       !isNull(R_getClassDef(translateChar(STRING_ELT(what, 0)))))
+	warning(_("use 'is()' instead of 'inherits()' on S4 objects"));
 #endif
 
     GCStackRoot<> rval;
@@ -890,22 +832,33 @@ SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 	rval = Rf_allocVector(INTSXP, nwhat);
 
     for(j = 0; j < nwhat; j++) {
-	const char *ss = Rf_translateChar(STRING_ELT(what, j));
+	const char *ss = Rf_translateChar(STRING_ELT(what, j)); int i;
+	if(isvec)
+	    INTEGER(rval)[j] = 0;
 	for(i = 0; i < nclass; i++) {
-	    if(isvec)
-		INTEGER(rval)[j] = 0;
 	    if(!strcmp(Rf_translateChar(STRING_ELT(klass, i)), ss)) {
 		if(isvec)
-		   INTEGER(rval)[j] = i+1;
-		else
+		    INTEGER(rval)[j] = i+1;
+		else {
 		    return Rf_mkTrue();
+		}
 		break;
 	    }
 	}
     }
-    if(!isvec)
+    if(!isvec) {
 	return Rf_mkFalse();
+    }
     return rval;
+}
+
+SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    checkArity(op, args);
+
+    return inherits3(/* x = */ CAR(args),
+		     /* what = */ CADR(args),
+		     /* which = */ CADDR(args));
 }
 
 
@@ -1490,7 +1443,7 @@ SEXP R_get_primname(SEXP object)
     return f;
 }
 
-Rboolean isS4(SEXP s)
+Rboolean Rf_isS4(SEXP s)
 {
     return IS_S4_OBJECT(s);
 }
@@ -1541,8 +1494,18 @@ S3Launcher::create(RObject* object, std::string generic, std::string group,
 	    ans->m_symbol = Symbol::obtain(generic + "." + ss);
 	    ans->m_function
 		= findMethod(ans->m_symbol, call_env, table_env).first;
-	    if (ans->m_function)
+	    if (ans->m_function) {
+		// Kludge because sort.list is not a method:
+		static const Symbol* sort_list = Symbol::obtain("sort.list");
+		if (ans->m_function->sexptype() == CLOSXP
+		    && ans->m_symbol == sort_list) {
+		    const Closure* closure
+			= static_cast<Closure*>(ans->m_function.get());
+		    if (closure->environment() == Environment::baseNamespace())
+			continue;
+		}
 		break;  // Mustn't increment m_index if found
+	    }
 	    if (!group.empty()) {
 		// Try for group method:
 		ans->m_symbol = Symbol::obtain(group + "." + ss);

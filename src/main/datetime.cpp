@@ -78,6 +78,10 @@ extern time_t mktime (struct tm*);
 #include <stdlib.h> /* for setenv or putenv */
 #include <Defn.h>
 
+#include <vector>
+
+using namespace std;
+
 /* The glibc in RH8.0 was broken and assumed that dates before
    1970-01-01 do not exist.  So does Windows, but its code was replaced
    in R 2.7.0.  As from 1.6.2, test the actual mktime code and cache
@@ -252,10 +256,10 @@ static double mktime00 (struct tm *tm)
     /* safety check for unbounded loops */
     if (year0 > 3000) {
 	excess = int(year0/2000) - 1;
-	year0 = int(year0 - excess * 2000);
+	year0 -= excess * 2000;
     } else if (year0 < 0) {
 	excess = -1 - int(-year0/2000);
-	year0 = int(year0 - excess * 2000);
+	year0 -= excess * 2000;
     }
 
     for(i = 0; i < tm->tm_mon; i++) day += days_in_month[i];
@@ -405,6 +409,10 @@ static struct tm * localtime0(const double *tp, const int local, struct tm *ltm)
 
     if(d < 2147483647.0 && d > (have_broken_mktime() ? 0. : -2147483647.0)) {
 	t = time_t( d);
+	/* if d is negative and non-integer then t will be off by one day
+	   since we really need floor(). But floor() is slow, so we just
+	   fix t instead as needed. */
+	if (d < 0.0 && double( t) != d) t--;
 #ifndef HAVE_POSIX_LEAPSECONDS
 	if (n_leapseconds < 0) set_n_leapseconds();
 	for(y = 0; y < n_leapseconds; y++) if(t > leapseconds[y] + y - 1) t++;
@@ -514,14 +522,11 @@ SEXP attribute_hidden do_systime(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
-#ifdef WIN64
+#ifdef Win32
 extern void tzset(void);
-/* tzname is in the headers as an import */
+/* tzname is in the headers as an import on MinGW-w64 */
 #define tzname Rtzname
 extern char *Rtzname[2];
-#elif defined Win32
-extern void tzset(void);
-extern char *tzname[2];
 #elif defined(__CYGWIN__)
 extern __declspec(dllimport) char *tzname[2];
 #else
@@ -621,8 +626,12 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p); /* make a copy */
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -649,8 +658,8 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     if (isgmt) {
 	PROTECT(tzone = mkString(tz));
@@ -661,7 +670,7 @@ SEXP attribute_hidden do_asPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	SET_STRING_ELT(tzone, 2, mkChar(tzname[1]));
     }
     setAttrib(ans, install("tzone"), tzone);
-    UNPROTECT(5);
+    UNPROTECT(6);
 
     if(settz) reset_tz(oldtz);
     return ans;
@@ -688,8 +697,12 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p);
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -739,17 +752,17 @@ SEXP attribute_hidden do_asPOSIXct(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if(settz) reset_tz(oldtz);
 
-    UNPROTECT(2);
+    UNPROTECT(3);
     return ans;
 }
 
 SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP x, sformat, ans, tz;
-    int i, n = 0, m, N, nlen[9], UseTZ;
-    int buf2size = 128;
-    char buff[300], *buf2 = CXXRSCAST(char*, alloca(buf2size));
-    const char *p;
+    int i, n = 0, m, N, nlen[9], UseTZ, settz = 0;
+    char buff[300];
+    char oldtz[20] = "";
+    const char *p, *tz1;
     struct tm tm;
 
     checkArity(op, args);
@@ -763,6 +776,17 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     if(UseTZ == NA_LOGICAL)
 	error(_("invalid '%s' argument"), "usetz");
     tz = getAttrib(x, install("tzone"));
+
+    if (!isNull(tz) && strlen(tz1 = CHAR(STRING_ELT(tz, 0)))) {
+	/* If the format includes %Z or %z 
+	   we need to try to set TZ accordingly */
+	int needTZ = 0;
+	for(i = 0; i < m; i++) {
+	    const char *p = CHAR(STRING_ELT(sformat, i));
+	    if (strstr(p, "%Z") || strstr(p, "%z")) {needTZ = 1; break;}
+	}
+	if(needTZ) settz = set_tz(tz1, oldtz);
+    }
 
     /* workaround for glibc/FreeBSD/MacOS X bugs in strftime: they have
        non-POSIX/C99 time zone components
@@ -799,10 +823,8 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	    else {
 		const char *q = CHAR(STRING_ELT(sformat, i%m));
 		int n = strlen(q) + 50;
-		if (n > buf2size) {
-		    buf2size *= 2;
-		    buf2 = CXXRSCAST(char*, alloca(buf2size));
-		}
+		vector<char> buf2v(n);
+		char* buf2 = &buf2v[0];
 #ifdef Win32
 		/* We want to override Windows' TZ names */
 		p = strstr(q, "%Z");
@@ -813,7 +835,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    strcat(buf2, p+2);
 		} else
 #endif		    
-		    strcpy(buf2,  q);
+		    strcpy(buf2, q);
 
 		p = strstr(q, "%OS");
 		if(p) {
@@ -856,6 +878,7 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
     }
     UNPROTECT(2);
+    if(settz) reset_tz(oldtz);
     return ans;
 }
 
@@ -920,8 +943,12 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 	/* do a direct look up here as this does not otherwise
 	   work on Windows */
 	char *p = getenv("TZ");
-	if(p) tz = p;
+	if(p) {
+	    stz = mkString(p);
+	    tz = CHAR(STRING_ELT(stz, 0));
+	}
     }
+    PROTECT(stz); /* it might be new */
     if(strcmp(tz, "GMT") == 0  || strcmp(tz, "UTC") == 0) isgmt = 1;
     if(!isgmt && strlen(tz) > 0) settz = set_tz(tz, oldtz);
 
@@ -982,8 +1009,8 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
 
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     if (isgmt) {
 	PROTECT(tzone = mkString(tz));
@@ -999,7 +1026,7 @@ SEXP attribute_hidden do_strptime(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     if(settz) reset_tz(oldtz);
 
-    UNPROTECT(3);
+    UNPROTECT(4);
     return ans;
 }
 
@@ -1024,7 +1051,7 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 
     for(i = 0; i < n; i++) {
 	if(R_FINITE(REAL(x)[i])) {
-	    day = int( REAL(x)[i]);
+	    day = int( floor(REAL(x)[i]));
 	    tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 	    /* weekday: 1970-01-01 was a Thursday */
 	    if ((tm.tm_wday = ((4 + day) % 7)) < 0) tm.tm_wday += 7;
@@ -1054,8 +1081,8 @@ SEXP attribute_hidden do_D2POSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     setAttrib(ans, R_NamesSymbol, ansnames);
     PROTECT(klass = allocVector(STRSXP, 2));
-    SET_STRING_ELT(klass, 0, mkChar("POSIXt"));
-    SET_STRING_ELT(klass, 1, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 0, mkChar("POSIXlt"));
+    SET_STRING_ELT(klass, 1, mkChar("POSIXt"));
     classgets(ans, klass);
     setAttrib(ans, install("tzone"), mkString("UTC"));
     UNPROTECT(4);

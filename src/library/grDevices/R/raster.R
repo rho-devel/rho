@@ -60,9 +60,74 @@ as.raster.array <- function(x, max=1, ...) {
     r
 }
 
-print.raster <- function(x, ...) {
+# Conversion to (character) matrix
+as.matrix.raster <- function(x, ...) {
     dim <- dim(x)
-    print(matrix(x, nrow=dim[1], ncol=dim[2], byrow=TRUE))
+    m <- matrix(x, nrow=dim[1], ncol=dim[2], byrow=TRUE)
+    m
 }
 
+# FIXME:
+# It would be useful to have conversion to array (rgb[a])
+# so that people could play with numeric machinations
+# with raster images
+
+print.raster <- function(x, ...) {
+    print(as.matrix(x))
+}
+
+# Subsetting methods
+# Non-standard because raster is ROW-wise
+# Try to piggy-back on existing methods as much as possible
+# IGNORE 'drop'
+"[.raster" <- function(x, i, j, ...) {
+    m <- as.matrix(x)
+    if (missing(i) && missing(j))
+        stop('No valid indices')
+    if (missing(i)) {
+        subset <- m[1:nrow(m), j, drop=FALSE]        
+    } else if (missing(j)) {
+        if (is.matrix(i)) {
+            subset <- m[i, drop=FALSE]
+        } else {
+            subset <- m[i, 1:ncol(m), drop=FALSE]
+        }
+    } else {
+        subset <- m[i, j, drop=FALSE]
+    }
+    as.raster(subset)
+}
+
+"[<-.raster" <- function(x, i, j, value) {
+    m <- as.matrix(x)
+    if (missing(i) && missing(j))
+        stop('No valid indices')
+    if (missing(i)) {
+        m[1:nrow(m), j] <- value
+    } else if (missing(j)) {
+        if (is.matrix(i)) {
+            m[i] <- value
+        } else {
+            m[i, 1:ncol(m)] <- value
+        }
+    } else {
+        m[i, j] <- value
+    }
+    as.raster(m)
+}
+
+Ops.raster <- function(e1, e2) {
+    if (.Generic %in% c("==", "!=")) {
+        # Allows comparison of rasters with each other
+        # or with colour names
+        if (is.raster(e1))
+            e1 <- as.matrix(e1)
+        if (is.raster(e2))
+            e2 <- as.matrix(e2)        
+        # The result is a logical MATRIX
+        get(.Generic)(e1, e2)
+    } else {
+        stop("Operator not meaningful for raster objects")
+    }
+}
 

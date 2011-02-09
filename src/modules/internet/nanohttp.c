@@ -70,6 +70,7 @@
 #define _(String) (String)
 #endif
 
+extern void R_ProcessEvents(void);
 #if !defined(Unix) || defined(HAVE_BSD_NETWORKING)
 
 #ifdef Win32
@@ -79,7 +80,6 @@
 #define EINPROGRESS             WSAEINPROGRESS
 #define EALREADY                WSAEALREADY
 #define _WINSOCKAPI_
-extern void R_ProcessEvents(void);
 extern void R_FlushConsole(void);
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)
 #endif
@@ -647,11 +647,9 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 
 	while(1) {
 	    int maxfd = 0, howmany;
+	    R_ProcessEvents();
 #ifdef Unix
-	    InputHandler *what;
-
 	    if(R_wait_usec > 0) {
-		R_PolledEvents();
 		tv.tv_sec = 0;
 		tv.tv_usec = R_wait_usec;
 	    } else {
@@ -661,7 +659,6 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 #elif defined(Win32)
 	    tv.tv_sec = 0;
 	    tv.tv_usec = 2e5;
-	    R_ProcessEvents();
 #else
 	    tv.tv_sec = timeout;
 	    tv.tv_usec = 0;
@@ -693,6 +690,7 @@ RxmlNanoHTTPRecv(RxmlNanoHTTPCtxtPtr ctxt)
 #ifdef Unix
 	    if(!FD_ISSET(ctxt->fd, &rfd) || howmany > 1) {
 		/* was one of the extras */
+		InputHandler *what;
 		what = getSelectedHandler(R_InputHandlers, &rfd);
 		if(what != NULL) what->handler((void*) NULL);
 		continue;
@@ -1008,11 +1006,9 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 
     while(1) {
 	int maxfd = 0;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = R_wait_usec;
 	} else {
@@ -1022,7 +1018,6 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
@@ -1069,6 +1064,7 @@ RxmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 	    } else return(s);
 #ifdef Unix
 	} else { /* some other handler needed */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;

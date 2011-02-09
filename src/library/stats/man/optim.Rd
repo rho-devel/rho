@@ -238,7 +238,7 @@ optim(par, fn, gr = NULL, \dots,
   \code{\link{constrOptim}} for constrained optimization.
 }
 
-\examples{
+\examples{\donttest{
 require(graphics)
 
 fr <- function(x) {   ## Rosenbrock Banana function
@@ -255,6 +255,7 @@ grr <- function(x) { ## Gradient of 'fr'
 optim(c(-1.2,1), fr)
 optim(c(-1.2,1), fr, grr, method = "BFGS")
 optim(c(-1.2,1), fr, NULL, method = "BFGS", hessian = TRUE)
+## These do not converge in the default number of steps
 optim(c(-1.2,1), fr, grr, method = "CG")
 optim(c(-1.2,1), fr, grr, method = "CG", control=list(type=2))
 optim(c(-1.2,1), fr, grr, method = "L-BFGS-B")
@@ -322,6 +323,6 @@ plot(x, y, type="n", asp=1, xlab="", ylab="",
 arrows(tspres[s,1], -tspres[s,2], tspres[s+1,1], -tspres[s+1,2],
        angle=10, col="red")
 text(x, y, labels(eurodist), cex=0.8)
-}
+}}
 \keyword{nonlinear}
 \keyword{optimize}

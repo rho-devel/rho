@@ -149,7 +149,7 @@ SEXP attribute_hidden do_onexit(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_TAG(ap,  install("expr"));
     SET_TAG(CDR(ap), install("add"));
     PROTECT(argList =  matchArgs(ap, args, call));
-    if (CAR(argList) == R_MissingArg) code = R_NilValue; 
+    if (CAR(argList) == R_MissingArg) code = R_NilValue;
     else code = CAR(argList);
     if (CADR(argList) != R_MissingArg) {
 	addit = asLogical(eval(CADR(args), rho));
@@ -264,6 +264,10 @@ SEXP attribute_hidden do_bodyCode(SEXP call, SEXP op, SEXP args, SEXP rho)
     else return R_NilValue;
 }
 
+/* get environment from a subclass if possible; else return NULL */
+#define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : arg)
+
+
 SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
@@ -276,7 +280,8 @@ SEXP attribute_hidden do_envir(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP env, s = CAR(args);
+    SEXP env;
+    GCStackRoot<> s(CAR(args));
 
     checkArity(op, args);
     check1arg(args, call, "x");
@@ -284,17 +289,27 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
     env = CADR(args);
 
     if (TYPEOF(CAR(args)) == CLOSXP
-	&& (isEnvironment(env) || isNull(env))) {
+	&& (isEnvironment(env) || 
+	    isEnvironment(env = simple_as_environment(env)) ||
+	    isNull(env))) {
 	if (isNull(env))
 	    error(_("use of NULL environment is defunct"));
-	if(NAMED(s) > 1) {
-	    /* partial duplicate */
-	    s = mkCLOSXP(FORMALS(CAR(args)), BODY(CAR(args)), env);
-	} else {
-	    SET_CLOENV(s, env);
+	if(NAMED(s) > 1)
+	    /* this copies but does not duplicate args or code */
+	    s = duplicate(s);
+#ifdef BYTECODE
+	if (TYPEOF(BODY(s)) == BCODESXP) {
+	    /* switch to interpreted version if compiled */
+	    Closure* clos = static_cast<Closure*>(s.get());
+	    s = CXXR_NEW(Closure(clos->matcher()->formalArgs(),
+				 R_ClosureExpr(clos),
+				 clos->environment()));
 	}
+#endif
+	SET_CLOENV(s, env);
     }
-    else if (isNull(env) || isEnvironment(env))
+    else if (isNull(env) || isEnvironment(env) ||
+	isEnvironment(env = simple_as_environment(env)))
 	setAttrib(s, R_DotEnvSymbol, env);
     else
 	error(_("replacement object is not an environment"));
@@ -302,6 +317,10 @@ SEXP attribute_hidden do_envirgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
+/** do_newenv() :  .Internal(new.env(hash, parent, size))
+ *
+ * @return a newly created environment()
+ */
 SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP enclos, size, ans;
@@ -316,7 +335,8 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	enclos = R_BaseEnv;
     } else
-    if( !isEnvironment(enclos) )
+    if( !isEnvironment(enclos)   &&
+	!isEnvironment((enclos = simple_as_environment(enclos))))
 	error(_("'enclos' must be an environment"));
 
     if( hash ) {
@@ -329,18 +349,19 @@ SEXP attribute_hidden do_newenv(SEXP call, SEXP op, SEXP args, SEXP rho)
     } else
 	ans = NewEnvironment(R_NilValue, R_NilValue, enclos);
     return ans;
-
 }
 
 SEXP attribute_hidden do_parentenv(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
+    SEXP arg = CAR(args);
 
-    if( !isEnvironment(CAR(args)) )
+    if( !isEnvironment(arg)  &&
+	!isEnvironment((arg = simple_as_environment(arg))))
 	error( _("argument is not an environment"));
-    if( CAR(args) == R_EmptyEnv )
+    if( arg == R_EmptyEnv )
 	error(_("the empty environment has no parent"));
-    return( ENCLOS(CAR(args)) );
+    return( ENCLOS(arg) );
 }
 
 SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -353,7 +374,8 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	env = R_BaseEnv;
     } else
-    if( !isEnvironment(env) )
+    if( !isEnvironment(env) &&
+	!isEnvironment((env = simple_as_environment(env))))
 	error(_("argument is not an environment"));
     if( env == R_EmptyEnv )
 	error(_("can not set parent of the empty environment"));
@@ -362,13 +384,14 @@ SEXP attribute_hidden do_parentenvgets(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("use of NULL environment is defunct"));
 	parent = R_BaseEnv;
     } else
-    if( !isEnvironment(parent) )
+    if( !isEnvironment(parent) &&
+	!isEnvironment((parent = simple_as_environment(parent))))
 	error(_("'parent' is not an environment"));
 
     Environment* parenv = static_cast<Environment*>(parent);
     static_cast<Environment*>(env)->setEnclosingEnvironment(parenv);
 
-    return( env );
+    return( CAR(args) );
 }
 
 SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -376,7 +399,8 @@ SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
     SEXP env = CAR(args), ans=mkString(""), res;
 
     checkArity(op, args);
-    if (TYPEOF(env) == ENVSXP) {
+    if (TYPEOF(env) == ENVSXP ||
+	TYPEOF((env = simple_as_environment(env))) == ENVSXP) {
 	if (env == R_GlobalEnv) ans = mkString("R_GlobalEnv");
 	else if (env == R_BaseEnv) ans = mkString("base");
 	else if (env == R_EmptyEnv) ans = mkString("R_EmptyEnv");
@@ -882,16 +906,42 @@ static SEXP expandDots(SEXP el, SEXP rho)
     return CDR(ans);
 }
 
+/* This function is used in do_switch to record the default value and
+   to detect multiple defaults, which will not be allowed as of 2.13.x */
+   
+static Rboolean dfltReported;
+   
+static SEXP setDflt(SEXP arg, SEXP dflt) 
+{
+    if (dflt) {
+    	SEXP dflt1, dflt2;
+    	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
+    	if (dfltReported) 
+    	    warning(_("additional switch default: '%s'"), CHAR(STRING_ELT(dflt2, 0)));
+    	else {
+    	    PROTECT(dflt1 = deparse1line(dflt, TRUE));
+    	    warning(_("duplicate switch defaults: '%s' and '%s'"), CHAR(STRING_ELT(dflt1, 0)),
+    	                                                           CHAR(STRING_ELT(dflt2, 0)));
+    	    UNPROTECT(1);
+    	}
+    	UNPROTECT(1); 
+    	dfltReported = TRUE;
+    	return(dflt);
+    } else
+        return(CAR(arg));
+}
 
 /* For switch, evaluate the first arg, if it is a character then try
- to match the name with the remaining args, and evaluate the match, if
- there is no match then evaluate the first unnamed arg (apart from the
- first arg).  If the value of the first arg is not a character string
+ to match the name with the remaining args, and evaluate the match. If
+ the value is missing then take the next non-missing arg as the value.
+ Then things like switch(as.character(answer), yes=, YES=1, no=, NO=2,
+ 3) will work.  But if there is no 'next', return NULL. One arg beyond
+ the first is allowed to be unnamed; it becomes the default value if
+ there is no match.
+ 
+ If the value of the first arg is not a character string
  then coerce it to an integer k and choose the kth argument from those
- that remain provided 1 < k < nargs.  For character matching, if
- the value is missing then take the next non-missing arg as the
- value. Then things like switch(as.character(answer), yes=, YES=1,
- no=, NO=2, 3) will work.  But it there is no 'next', return NULL.
+ that remain provided 1 < k < nargs.  
 
  Changed in 2.11.0 to be primitive, so the wrapper does not partially
  match to EXPR, and to return NULL invisibly if it is an error
@@ -901,10 +951,11 @@ static SEXP expandDots(SEXP el, SEXP rho)
   And (see names.c) X=2, so it defaults to a visible value.
 */
 
+
 SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     int argval, nargs = length(args);
-    SEXP x, y, w, ans;
+    SEXP x, y, z, w, ans, dflt = NULL;
 
     if (nargs < 1) errorcall(call, _("'EXPR' is missing"));
     check1arg(args, call, "EXPR");
@@ -916,27 +967,41 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   there may be a ... argument */
 	PROTECT(w = expandDots(CDR(args), rho));
 	if (isString(x)) {
-	    for (y = w; y != R_NilValue; y = CDR(y))
-		if (TAG(y) != R_NilValue && 
-		    pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE /* exact */)) {
-		    /* Find the next non-missing argument.
-		       (If there is none, return NULL.) */
-		    while (CAR(y) == R_MissingArg && y != R_NilValue) y = CDR(y);
-		    if (y == R_NilValue) {
-			R_Visible = FALSE; 
+	    dfltReported = FALSE;
+	    for (y = w; y != R_NilValue; y = CDR(y)) {
+		if (TAG(y) != R_NilValue) {
+		    if (pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE /* exact */)) {
+			/* Find the next non-missing argument.
+			   (If there is none, return NULL.) */
+			while (CAR(y) == R_MissingArg) {
+			    y = CDR(y);
+			    if (y == R_NilValue) break;
+			    if (TAG(y) == R_NilValue) dflt = setDflt(y, dflt);
+			}
+			if (y == R_NilValue) {
+			    R_Visible = FALSE;
+			    UNPROTECT(2);
+			    return R_NilValue;
+			}
+			/* Check for multiple defaults following y.  This loop
+			   is not necessary to determine the value of the
+			   switch(), but it should be fast and will detect
+			   typos. */
+			for (z = CDR(y); z != R_NilValue; z = CDR(z)) 
+			    if (TAG(z) == R_NilValue) dflt = setDflt(z, dflt);
+			    
+			ans =  eval(CAR(y), rho);
 			UNPROTECT(2);
-			return R_NilValue;
+			return ans;
 		    }
-		    ans =  eval(CAR(y), rho);
-		    UNPROTECT(2);
-		    return ans;
-		}
-	    for (y = w; y != R_NilValue; y = CDR(y))
-		if (TAG(y) == R_NilValue) {
-		    ans =  eval(CAR(y), rho);
-		    UNPROTECT(2);
-		    return ans;
-		}   
+		} else
+		    dflt = setDflt(y, dflt);
+	    }
+ 	    if (dflt) {
+		ans =  eval(dflt, rho);
+		UNPROTECT(2);
+		return ans;
+	    }
 	    /* fall through to error */
 	} else { /* Treat as numeric */
 	    argval = asInteger(x);

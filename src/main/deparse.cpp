@@ -106,6 +106,7 @@
 #endif
 
 #include <Defn.h>
+#include <float.h> /* for DBL_DIG */
 #include <Print.h>
 #include <Fileio.h>
 
@@ -257,7 +258,7 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     if(nlines > 0 && localData.linenumber < nlines)
 	svec = lengthgets(svec, localData.linenumber);
     UNPROTECT(1);
-    PROTECT(svec);
+    PROTECT(svec); /* protect from warning() allocating, PR#14356 */
     R_print.digits = savedigits;
     if ((opts & WARNINCOMPLETE) && localData.isS4)
 	warning(_("deparse of an S4 object will not be source()able"));

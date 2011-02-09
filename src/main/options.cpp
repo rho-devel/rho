@@ -110,7 +110,6 @@ static SEXP FindTaggedItem(SEXP lst, SEXP tag)
 
 static SEXP makeErrorCall(SEXP fun)
 {
-    using namespace CXXR;
     SEXP call;
     PROTECT(call = CXXR_NEW(Expression));
     SETCAR(call, fun);
@@ -282,7 +281,7 @@ void attribute_hidden InitOptions(void)
     SETCAR(v, ScalarLogical(R_KeepSource));
     v = CDR(v);
 
-    SET_TAG(v, install("warnings.length"));
+    SET_TAG(v, install("warning.length"));
     SETCAR(v, ScalarInteger(1000));
     v = CDR(v);
 

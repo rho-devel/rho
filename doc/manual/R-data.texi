@@ -90,12 +90,12 @@ principal authors of the packages mentioned are
 @quotation
 @multitable {foreign  xxxx} {A longggggggggggggggggggggggggggggggggg description}
 @item @pkg{CORBA} @tab Duncan Temple Lang
-@item @pkg{DBI} David A. James
-@item @pkg{dataframes2xls} Guido van Steen
+@item @pkg{DBI} @tab David A. James
+@item @pkg{dataframes2xls} @tab Guido van Steen
 @item @pkg{foreign} @tab Thomas Lumley, Saikat DebRoy, Douglas Bates, Duncan Murdoch and Roger Bivand
 @item @pkg{gdata} @tab Gregory R. Warnes
 @item @pkg{hdf5} @tab Marcus Daniels
-@item @pkg{ncdf} @tab David Pierce
+@item @pkg{ncdf}, @pkg{ncdf4} @tab David Pierce
 @item @pkg{rJava} @tab Simon Urbanek
 @item @pkg{RMySQL} @tab David James and Saikat DebRoy
 @item @pkg{RNetCDF} @tab Pavel Michna
@@ -107,8 +107,8 @@ principal authors of the packages mentioned are
 @item @pkg{RSPython} @tab Duncan Temple Lang
 @item @pkg{RSQLite} @tab David A, James
 @item @pkg{SJava} @tab John Chambers and Duncan Temple Lang
-@item @pkg{WriteXLS} @tab Hans-Peter Suter
-@item @pkg{xlsReadWrite} @tab Marc Schwartz
+@item @pkg{WriteXLS} @tab Marc Schwartz
+@item @pkg{xlsReadWrite} @tab Hans-Peter Suter
 @item @pkg{XML} @tab Duncan Temple Lang
 @end multitable
 @end quotation
@@ -138,13 +138,13 @@ better than @R{} at this, and part of the thrust of this manual is to
 suggest that rather than duplicating functionality in @R{} we can make
 another system do the work!  (For example Therneau & Grambsch (2000)
 comment that they prefer to do data manipulation in SAS and then use
-@pkg{survival} in @Sl{} for the analysis.)  Several recent packages
-allow functionality developed in languages such as @code{Java},
-@code{perl} and @code{python} to be directly integrated with @R{} code,
-making the use of facilities in these languages even more
-appropriate.  (See the @pkg{SJava}, @pkg{RSPerl} and @pkg{RSPython}
-packages from the Omegahat project, @uref{http://www.omegahat.org}, and
-the @pkg{rJava} package from @acronym{CRAN}.)
+@pkg{survival} in @Sl{} for the analysis.)  Several packages allow
+functionality developed in languages such as @code{Java}, @code{perl}
+and @code{python} to be directly integrated with @R{} code, making the
+use of facilities in these languages even more appropriate.  (See the
+@pkg{SJava}, @pkg{RSPerl} and @pkg{RSPython} packages from the Omegahat
+project, @uref{http://www.omegahat.org}, and the @pkg{rJava} package
+from @acronym{CRAN}.)
 
 
 @cindex Unix tools
@@ -155,12 +155,8 @@ tradition of small re-usable tools, and it can be rewarding to use tools
 such as @code{awk} and @code{perl} to manipulate data before import or
 after export.  The case study in Becker, Chambers & Wilks (1988, Chapter
 9) is an example of this, where Unix tools were used to check and
-manipulate the data before input to @Sl{}.  @R{} itself takes that
-approach, using @code{perl} to manipulate its databases of help files
-rather than @R{} itself, and the function @code{read.fwf} used a call to
-a @code{perl} script until it was decided not to require @code{perl} at
-run-time.  The traditional Unix tools are now much more widely
-available, including on Windows.
+manipulate the data before input to @Sl{}. The traditional Unix tools
+are now much more widely available, including on Windows.
 
 @menu
 * Imports::                     
@@ -266,7 +262,7 @@ is specified.  Excel is one such system.
 @findex write.csv2
 
 A common field separator to use in the file is a comma, as that is
-unlikely to appear in any of the fields, in English-speaking countries.
+unlikely to appear in any of the fields in English-speaking countries.
 Such files are known as CSV (comma separated values) files, and wrapper
 function @code{write.csv} provides appropriate defaults.  In some locales
 the comma is used as the decimal point (set this in @code{write.table}
@@ -307,6 +303,29 @@ a
 
 @noindent
 The second is the form of escape commonly used by spreadsheets.
+
+@item @strong{Encodings}
+@cindex Encodings
+
+Text files do not contain metadata on their encodings, so for non-ASCII
+data the file needs to be targetted to the application intended to read
+it.  All of these functions can write to a @emph{connection} which
+allows an encoding to be specified for the file, and as from @R{} 2.13.0
+@code{write.table} has a @code{fileEncoding} argument to make this
+easier.
+
+The hard part is to know what file encoding to use.  For use on Windows,
+it is best to use what Windows calls `Unicode'@footnote{Even then,
+Windows applications may expect a Byte Order Mark which the
+implementation of @code{iconv} used by @R{} may or may not add depending
+on the platform.}, that is @code{"UTF-16LE"}.  Using UTF-8 is a good way
+to make portable files that will not easily be confused with any other
+encoding, but even Mac OS X applications (where UTF-8 is the system
+encoding) may not recognize them, and Windows applications are most
+unlikely to.  Apparently Excel:mac 2004/8 expects @code{.csv} files in
+@code{"macroman"} encoding (the encoding used in much earlier versions
+of Mac OS).
+
 @end enumerate
 
 @findex write.matrix
@@ -404,11 +423,11 @@ in the correct encoding.  This is mainly an issue for reading Latin-1
 files in a UTF-8 locale, which can be done by something like
 
 @example
-read.table(file("file.dat", encoding="latin1"))
+read.table("file.dat", fileEncoding="latin1")
 @end example
 
 @noindent
-Note that this will work in any locale which can represent Latin-1 names.
+Note that this will work in any locale which can represent Latin-1 strings.
 
 
 @item @strong{Header line}
@@ -795,10 +814,10 @@ Another way to do this is to use the function
 ...
 @end example
 
-The @code{reshape} has a more complicated syntax than @code{stack} but
-can be used for data where the `long' form has more than the one column
-in this example. With @code{direction="wide"}, @code{reshape} can also
-perform the opposite transformation.
+The @code{reshape} function has a more complicated syntax than
+@code{stack} but can be used for data where the `long' form has more
+than the one column in this example. With @code{direction="wide"},
+@code{reshape} can also perform the opposite transformation.
 
 @node Flat contingency tables,  , Re-shaping data, Spreadsheet-like data
 @section Flat contingency tables
@@ -936,8 +955,8 @@ export the data in an ordinary @acronym{SPSS} format.
 @cindex Stata
 @findex read.dta
 @findex write.dta
-Stata @file{.dta} files are a binary file format. Files from versions 5,
-6, 7/SE and 8 of Stata can be read and written by functions
+Stata @file{.dta} files are a binary file format. Files from versions 5
+up to at least 11 of Stata can be read and written by functions
 @code{read.dta} and @code{write.dta}.  Stata variables with value labels
 are optionally converted to (and from) @R{} factor.
 
@@ -1204,13 +1223,13 @@ PostgreSQL.
 
 
 @menu
-* DBI / RMySQL::                
+* DBI::                         
 * RODBC::                       
 @end menu
 
 
-@node DBI / RMySQL, RODBC, R interface packages, R interface packages
-@subsection Packages DBI and  RMySQL
+@node DBI, RODBC, R interface packages, R interface packages
+@subsection Packages using DBI
 @cindex MySQL database system
 
 Package @pkg{RMySQL} on @acronym{CRAN} provides an interface to the
@@ -1234,7 +1253,7 @@ object, and then a call to @code{dbConnect} opens a database connection
 which can subsequently be closed by a call to the generic function
 @code{dbDisconnect}.  Use @code{dbDriver("Oracle")},
 @code{dbdDriver("PostgreSQL")} or @code{dbDriver("SQLite")} with those
-DBMSs and packages @pkg{ROracle}, @pkg{PostgreSQL} or @pkg{RSQLite}
+DBMSs and packages @pkg{ROracle}, @pkg{RPostgreSQL} or @pkg{RSQLite}
 respectively.
 
 @findex dbSendQuery
@@ -1298,7 +1317,7 @@ Arkansas          8.8     190       50 19.5
 > dbDisconnect(con)
 @end smallexample
 
-@node RODBC,  , DBI / RMySQL, R interface packages
+@node RODBC,  , DBI, R interface packages
 @subsection Package RODBC
 @cindex ODBC
 @cindex Open Database Connectivity
@@ -1329,15 +1348,16 @@ Windows provides drivers not just for DBMSs but also for Excel
 (@file{.xls}) spreadsheets, DBase (@file{.dbf}) files and even text
 files.  (The named applications do @emph{not} need to be
 installed. Which file formats are supported depends on the the versions
-of the drivers.)  There are versions for Excel 2007 and Access 2007 (go
+of the drivers.)  There are versions for Excel and Access 2007/2010 (go
 to @uref{http://download.microsoft.com}, and search for `Office ODBC',
 which will lead to @file{AccessDatabaseEngine.exe}), the `2007 Office
-System Driver'.
+System Driver' (the latter has a version for 64-bit Windows, and that
+will also read earlier versions).
 
 On Mac OS X the Actual Technologies
 (@url{http://www.actualtechnologies.com/product_access.php}) drivers
-provide ODBC interfaces to Access databases (including Access 2007) and
-to Excel spreadsheets.
+provide ODBC interfaces to Access databases (including Access 2007/2010)
+and to Excel spreadsheets (not including Excel 2007/2010).
 
 @findex odbcConnect
 @findex odbcDriverConnect
@@ -1594,10 +1614,10 @@ handle binary files.
 @findex netCDF
 @cindex network Common Data Form
 
-Packages @pkg{hdf5}, @pkg{RNetCDF} and @pkg{ncdf} on @acronym{CRAN}
-provide interfaces to @acronym{NASA}'s HDF5 (Hierarchical Data Format,
-see @uref{http://hdf.ncsa.uiuc.edu/HDF5/}) and to UCAR's netCDF data
-files (network Common Data Form, see
+Packages @pkg{hdf5}, @pkg{RNetCDF}, @pkg{ncdf} and @pkg{ncdf4} on
+@acronym{CRAN} provide interfaces to @acronym{NASA}'s HDF5 (Hierarchical
+Data Format, see @uref{http://hdf.ncsa.uiuc.edu/HDF5/}) and to UCAR's
+netCDF data files (network Common Data Form, see
 @uref{http://www.unidata.ucar.edu/packages/netcdf/}).
 
 Both of these are systems to store scientific data in array-oriented
@@ -1606,6 +1626,13 @@ allows @emph{groups} of arrays, and the @R{} interface maps lists
 to HDF5 groups, and can write numeric and character vectors and
 matrices.
 
+NetCDF's version 4 format (confusingly, implemented in netCDF 4.1.1 and
+later, but not in 4.0.1) includes the use of various HDF5 formats.  This
+is handled by package @pkg{ncdf4} whereas @pkg{RNetCDF} and @pkg{ncdf}
+handle version 3 files.
+
+The availability of software to support these formats is somewhat
+limited by platform, especially on Windows.
 
 @node dBase files (DBF),  , Binary data formats, Binary files
 @section dBase files (DBF)
@@ -2112,9 +2139,7 @@ project at @uref{http://www.omegahat.org/RSCORBA/}.
 The most common R data import/export question seems to be `how do I read
 an Excel spreadsheet'.  This chapter collects together advice and
 options given earlier.  Note that most of the advice is for pre-Excel
-2007 spreadsheets: currently the only one of these methods that reads
-the @file{.xlsx} format is that @emph{via} @pkg{RODBC}, but see also the
-Omegahat package @pkg{RExcelXML}.
+2007 spreadsheets and not the later the @file{.xlsx} format.
 
 @findex read.csv
 @findex read.delim
@@ -2146,26 +2171,29 @@ and may be confused by other contents of the file.
 
 @findex odbcConnectExcel
 @findex odbcConnectExcel2007
-Windows users can use @code{odbcConnectExcel} in package @pkg{RODBC}.
-This can select rows and columns from any of the sheets in an Excel
-spreadsheet file (at least from Excel 97--2003, depending on your ODBC
-drivers: by calling @code{odbcConnect} directly versions back to Excel
-3.0 can be read).  The version @code{odbcConnectExcel2007} will read the
-Excel 2007 formats as well as earlier ones (provided the drivers are
-installed: @pxref{RODBC}).  Mac users can also use @pkg{RODBC} if they
-have a suitable driver (e.g.@: that from Actual Technologies).
+Windows users (of 32-bit @R{}) can use @code{odbcConnectExcel} in
+package @pkg{RODBC}.  This can select rows and columns from any of the
+sheets in an Excel spreadsheet file (at least from Excel 97--2003,
+depending on your ODBC drivers: by calling @code{odbcConnect} directly
+versions back to Excel 3.0 can be read).  The version
+@code{odbcConnectExcel2007} will read the Excel 2007 formats as well as
+earlier ones (provided the drivers are installed, including with 64-bit
+Windows @R{}: @pxref{RODBC}).  Mac users can also use @pkg{RODBC} if
+they have a suitable driver (e.g.@: that from Actual Technologies).
 
 @findex read.xls
 @code{Perl} users have contributed a module
 @code{OLE::SpreadSheet::ParseExcel} and a program @code{xls2csv.pl} to
 convert Excel 95--2003 spreadsheets to CSV files.  Package @pkg{gdata}
-provides a basic wrapper in its @code{read.xls} function.
+provides a basic wrapper in its @code{read.xls} function.  With suitable
+@code{Perl} modules installed this function can also read Excel 2007
+spreadsheets.
 
 @findex xlsReadWrite
-Windows-only package @pkg{xlsReadWrite} from
-@uref{http://treetron.googlepages.com/} and CRAN has a function
-@code{read.xls} to read @file{.xls} files (based on a third-party
-non-Open Source Delphi component).
+32-bit Windows package @pkg{xlsReadWrite} from
+@uref{http://www.swissr.org/} and CRAN has a function @code{read.xls} to
+read @file{.xls} files (based on a third-party non-Open-Source Delphi
+component).
 
 @findex dataframes2xls
 @findex WriteXLS
@@ -2173,6 +2201,12 @@ Packages @pkg{dataframes2xls} and @pkg{WriteXLS} each contain a function
 to @emph{write} one or more data frames to an @file{.xls} file, using
 Python and Perl respectively.  Another version of @code{write.xls} in
 available in package @pkg{xlsReadWrite}.
+
+@findex xlsx
+@findex RExcelXML
+Two packages which can read and and manipulate Excel 2007/10
+spreadsheets but not earlier formats are @pkg{xlsx} (which requires
+Java) and the Omegahat package @pkg{RExcelXML}.
 
 
 @node References, Function and variable index, Reading Excel spreadsheets, Top

@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-8   The R Development Core Team.
+ *  Copyright (C) 2000-10   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -358,6 +358,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 
 	out = R_fopen(R_ExpandFileName(file), mode);
 	if(!out) {
+	    fclose(in);
 	    error(_("cannot open destfile '%s', reason '%s'"),
 		  file, strerror(errno));
 	}
@@ -447,7 +448,6 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    }
 	    in_R_HTTPClose(ctxt);
-	    fclose(out);
 	    if(!quiet) {
 #ifndef Win32
 		REprintf("\n");
@@ -471,6 +471,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 		warning(_("downloaded length %d != reported length %d"),
 			nbytes, total);
 	}
+	fclose(out);
 	R_Busy(0);
 	if (status == 1) error(_("cannot open URL '%s'"), url);
 
@@ -552,7 +553,6 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 #endif
 	    }
 	    in_R_FTPClose(ctxt);
-	    fclose(out);
 	    if(!quiet) {
 #ifndef Win32
 		REprintf("\n");
@@ -577,6 +577,7 @@ static SEXP in_do_download(SEXP call, SEXP op, SEXP args, SEXP env)
 			nbytes, total);
 	}
 	R_Busy(0);
+	fclose(out);
 	if (status == 1) error(_("cannot open URL '%s'"), url);
 #endif
 

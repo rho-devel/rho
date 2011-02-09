@@ -48,6 +48,7 @@
 #endif
 
 #include <Defn.h> /*-- Maybe modularize into own Coerce.h ..*/
+#include <float.h> /* for DBL_DIG */
 #define R_MSG_mode	_("invalid 'mode' argument")
 #define R_MSG_list_vec	_("applies only to lists and vectors")
 #include <Rmath.h>
@@ -1301,6 +1302,7 @@ static SEXP ascommon(SEXP call, SEXP u, SEXPTYPE type)
     return u;/* -Wall */
 }
 
+/* used in attrib.c, eval.c and unique.c */
 SEXP Rf_asCharacterFactor(SEXP x)
 {
     SEXP ans;
@@ -1728,6 +1730,7 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     PROTECT(ans = Rf_allocVector(LGLSXP, 1));
+
     switch (PRIMVAL(op)) {
     case NILSXP:	/* is.null */
 	LOGICAL(ans)[0] = Rf_isNull(CAR(args));
@@ -1749,10 +1752,20 @@ SEXP attribute_hidden do_is(SEXP call, SEXP op, SEXP args, SEXP rho)
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == STRSXP);
 	break;
     case SYMSXP:	/* is.symbol === is.name */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP);
+	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(CAR(args), SYMSXP);
+	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == SYMSXP);
+	}
+	else
+	    LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == SYMSXP);
 	break;
     case ENVSXP:	/* is.environment */
-	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == ENVSXP);
+	if(IS_S4_OBJECT(CAR(args)) && (TYPEOF(CAR(args)) == S4SXP)) {
+	    SEXP dot_xData = R_getS4DataSlot(CAR(args), ENVSXP);
+	    LOGICAL(ans)[0] = (TYPEOF(dot_xData) == ENVSXP);
+	}
+	else
+	    LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == ENVSXP);
 	break;
     case VECSXP:	/* is.list */
 	LOGICAL(ans)[0] = (TYPEOF(CAR(args)) == VECSXP ||
@@ -2413,6 +2426,7 @@ SEXP attribute_hidden Rf_substituteList(SEXP el, SEXP rho)
     if(res != R_NilValue) UNPROTECT(1);
     return res;
 }
+
 
 /* This is a primitive SPECIALSXP */
 SEXP attribute_hidden do_substitute(SEXP call, SEXP op, SEXP args, SEXP rho)

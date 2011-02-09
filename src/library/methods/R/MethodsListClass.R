@@ -155,9 +155,10 @@
             value
         }
     if(!isGeneric("initialize", envir)) {
+        ## save the default method
+        assign(".initialize", initialize, envir)
         setGeneric("initialize",  .initGeneric, where = envir, useAsDefault = TRUE, simpleInheritanceOnly = TRUE)
     }
-    .InitTraceFunctions(envir)
     setMethod("initialize", "signature",
               function(.Object, functionDef, ...) {
                   if(nargs() < 2)
@@ -169,7 +170,7 @@
                   else
                       .MakeSignature(.Object, functionDef, list(...))
               }, where = envir)
-    setMethod("initialize", "environment",
+    setMethod("initialize", "environment", # only for new("environment",...); see .InitSpecialTypesAndClasses for subclasses
               function(.Object, ...) {
                   value <- new.env()
                   args <- list(...)
@@ -183,7 +184,7 @@
         .MlistDeprecated()
         callNextMethod()
     }, where = envir)
-              
+
     ## make sure body(m) <- .... leaves a method as a method
     setGeneric("body<-", where = envir)
     setMethod("body<-", "MethodDefinition", function (fun, envir, value) {
@@ -193,6 +194,8 @@
         fun
     }, where = envir)
     ## a show method for lists of generic functions, etc; see metaNameUndo
+    if(!isGeneric("show", envir))
+        setGeneric("show", where = envir, simpleInheritanceOnly = TRUE)
     setMethod("show", "ObjectsWithPackage",
               function(object) {
                   pkg <- object@package
@@ -253,16 +256,17 @@
 .InitStructureMethods <- function(where) {
     ## these methods need to be cached (for the sake of the primitive
     ## functions in the group) if a class is loaded that extends
-    ## one of the classes structure, vector, or array.
+    ## one of the classes in `needed` (other classes than "structure" now
+    ## also require generics for some primitives).
     if(!exists(".NeedPrimitiveMethods", where))
       needed <- list()
     else
       needed <- get(".NeedPrimitiveMethods", where)
     needed <- c(needed, list(structure = "Ops", vector = "Ops",
-          array = "Ops", nonStructure = "Ops",
-          .environment = "$<-", .environment = "[[<-"),
+          array = "Ops", nonStructure = "Ops"),
           array = "[", structure = "[", nonStructure = "[",
-          structure = "Math", nonStructure = "Math"
+          structure = "Math", nonStructure = "Math",
+          refClass = "$"
                 )
     assign(".NeedPrimitiveMethods", needed, where)
     setMethod("Ops", c("structure", "vector"), where = where,

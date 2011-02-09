@@ -203,7 +203,7 @@ void textRect(double x, double y, SEXP text, int i,
     LTransform tempTransform, transform;
     double w, h;
     if (isExpression(text)) {
-	SEXP expr = VECTOR_ELT(text, i % LENGTH(text));
+	SEXP expr = XVECTOR_ELT(text, i % LENGTH(text));
 	w = fromDeviceWidth(GEExpressionWidth(expr, gc, dd),
 			    GE_INCHES, dd);
 	h = fromDeviceHeight(GEExpressionHeight(expr, gc, dd),

@@ -45,7 +45,7 @@
 #endif
 
 #include <Defn.h>
-
+#include <ctype.h> /* for tolower */
 #include <string.h>
 #include <errno.h>
 
@@ -494,17 +494,23 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
     for (i = 0; i < n; i++) RAW(s)[i] = rawptr[i];
     break;
     case LGLSXP:
-	/* FIXME: should this not force 0, 1, NA_LOGICAL? */
+	s = allocVector(stype, n);
+	iptr = static_cast<int*>(p);
+	for(i = 0 ; i < n ; i++) {
+	    int tmp =  iptr[i];
+	    LOGICAL(s)[i] = (tmp == NA_INTEGER || tmp == 0) ? tmp : 1;
+	}
+	break;
     case INTSXP:
 	s = allocVector(stype, n);
 	iptr = static_cast<int*>(p);
-	for(i=0 ; i<n ; i++) INTEGER(s)[i] = iptr[i];
+	for(i = 0 ; i < n ; i++) INTEGER(s)[i] = iptr[i];
 	break;
     case REALSXP:
 	s = allocVector(REALSXP, n);
 	if(type == SINGLESXP || asLogical(getAttrib(arg, CSingSymbol)) == 1) {
 	    sptr = static_cast<float*>( p);
-	    for(i=0 ; i<n ; i++) REAL(s)[i] = double( sptr[i]);
+	    for(i = 0 ; i < n ; i++) REAL(s)[i] = double( sptr[i]);
 	} else {
 	    rptr = static_cast<double*>( p);
 	    for(i = 0 ; i < n ; i++) REAL(s)[i] = rptr[i];

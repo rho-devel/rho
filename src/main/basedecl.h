@@ -134,6 +134,10 @@ SEXP R_stopbcprof(void);
 SEXP Rg_contourDef(void);
 SEXP Rg_readonlypars(void);
 
+SEXP bitwiseAnd(SEXP, SEXP);
+SEXP bitwiseOr(SEXP, SEXP);
+SEXP bitwiseXor(SEXP, SEXP);
+
 #ifdef __cplusplus
 }
 #endif

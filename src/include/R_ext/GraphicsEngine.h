@@ -38,6 +38,8 @@
 #ifndef R_GRAPHICSENGINE_H_
 #define R_GRAPHICSENGINE_H_
 
+#include "CXXR/String.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -66,9 +68,12 @@ extern "C" {
  *             NewDevDesc to GEDevDesc.
  *             Add 'ask' to GEDevDesc.
  * Version 6:  Add dev_Raster() and dev_Cap()
+ * Version 7:  Change graphics event handling, adding eventEnv and eventHelper() 
+ *	       to DevDesc.
+ * Version 8:  Add dev_Path()
  */
 
-#define R_GE_version 6
+#define R_GE_version 8
 
 int R_GE_getVersion(void);
 
@@ -198,10 +203,17 @@ typedef struct {
 } R_GE_gcontext;
 
 typedef R_GE_gcontext* pGEcontext;
-    
 
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+    
 #include <R_ext/GraphicsDevice.h> /* needed for DevDesc */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+    
 typedef struct _GEDevDesc GEDevDesc;
 
 typedef SEXP (* GEcallback)(GEevent, GEDevDesc *, SEXP);
@@ -412,6 +424,10 @@ void GECircle(double x, double y, double radius,
 	      const pGEcontext gc, pGEDevDesc dd);
 void GERect(double x0, double y0, double x1, double y1,
 	    const pGEcontext gc, pGEDevDesc dd);
+void GEPath(double *x, double *y, 
+            int npoly, int *nper,
+            Rboolean winding,
+            const pGEcontext gc, pGEDevDesc dd);
 void GERaster(unsigned int *raster, int w, int h,
               double x, double y, double width, double height,
               double angle, Rboolean interpolate,

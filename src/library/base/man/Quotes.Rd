@@ -1,6 +1,6 @@
 % File src/library/base/man/Quotes.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Quotes}
@@ -19,7 +19,7 @@
 \details{
   Three types of quotes are part of the syntax of \R: single and double
   quotation marks and the backtick (or back quote, \samp{`}).  In
-  addition, backslash is used for escaping the following character
+  addition, backslash is used to escape the following character
   inside character constants.
 }
 \section{Character constants}{
@@ -31,7 +31,7 @@
 
   Backslash is used to start an escape sequence inside character
   constants.  Escaping a character not in the following table is an
-  error (since \R 2.11.0; earlier versions accepted them with a
+  error (since \R 2.11.0; earlier versions accepted such escapes with a
   warning).
   
   Single quotes need to be escaped by backslash in single-quoted
@@ -57,12 +57,11 @@
   \samp{\\U\{nnnnnnnn\}}.  All except the Unicode escape sequences are
   also supported when reading character strings by \code{\link{scan}}
   and \code{\link{read.table}} if \code{allowEscapes = TRUE}.  Unicode
-  esapes can be used to enter Unicode characters not in the current
-  locale (which will be stored internally in UTF-8).
+  escapes can be used to enter Unicode characters not in the current
+  locale's charset (when the string will be stored internally in UTF-8).
 
-  It is not advisable to use both octal/hex and Unicode escapes in a
-  single string: the results can be unintended and this will be
-  disallowed in future versions of \R.
+  The parser does not allow the use of both octal/hex and Unicode
+  escapes in a single string.
 
   These forms will also be used by \code{\link{print.default}}
   when outputting non-printable characters (including backslash).

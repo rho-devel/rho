@@ -1,5 +1,6 @@
 
 This is CXXR 0.30-2.11.1, based on:
+R version 2.12.0 Under development (unstable) (2010-04-14 r51722)
 R version 2.11.1 (2010-05-31)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
@@ -2017,6 +2018,7 @@ IS: [1] TRUE
 [1] TRUE
 > res <- try(as.environment( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.environment(res))
+[1] TRUE
 > res <- try(as.expression( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.expression(res))
 [1] TRUE
@@ -2110,6 +2112,7 @@ IS: [1] TRUE
 > if(!inherits(res, 'try-error'))
 +    report({if(is.environment(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
+[1] TRUE
 > res <- try(as.expression( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.expression(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -2240,6 +2243,7 @@ IS: [1] TRUE
 [1] TRUE
 > f <- try(as.environment( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.environment( f )))
+[1] TRUE
 > f <- try(as.expression( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.expression( f )))
 [1] TRUE
@@ -2336,6 +2340,7 @@ IS: [1] TRUE
 [1] TRUE
 > res <- try(as.environment( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.environment(res))
+[1] TRUE
 > res <- try(as.expression( x ), silent = TRUE)
 > if(!inherits(res, 'try-error')) report(is.expression(res))
 [1] TRUE
@@ -2429,6 +2434,7 @@ IS: [1] TRUE
 > if(!inherits(res, 'try-error'))
 +    report({if(is.environment(x)) { cat('IS: ');all.equal(x, res, tol=0)
 +    } else   !isall.equal(x, res)})
+[1] TRUE
 > res <- try(as.expression( x ), silent = TRUE)
 > if(!inherits(res, 'try-error'))
 +    report({if(is.expression(x)) { cat('IS: ');all.equal(x, res, tol=0)
@@ -2561,6 +2567,7 @@ Error: x is not TRUE
 [1] TRUE
 > f <- try(as.environment( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.environment( f )))
+[1] TRUE
 > f <- try(as.expression( x ), silent = TRUE)
 >   if(!inherits(f, 'try-error')) report(identical(f, as.expression( f )))
 [1] TRUE

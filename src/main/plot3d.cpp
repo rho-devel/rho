@@ -40,6 +40,7 @@
 #endif
 
 #include <Defn.h>
+#include <float.h>  /* for DBL_MAX */
 #include <Rmath.h>
 #include <Graphics.h>
 #include <Colors.h> /* for isNAcol */
@@ -1212,12 +1213,11 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 			      .5, .5, 0, dd);
 		    }
 		    else {
-			for (iii = 0; iii < indx; iii++)
-			    GLine(xxx[iii], yyy[iii],
-				  xxx[iii+1], yyy[iii+1], USER, dd);
-			for (iii = indx+range; iii < ns - 1; iii++)
-			    GLine(xxx[iii], yyy[iii],
-				  xxx[iii+1], yyy[iii+1], USER, dd);
+			if (indx > 0)
+		            GPolyline(indx+1, xxx, yyy, USER, dd);
+			if (ns-1-indx-range > 0)
+			    GPolyline(ns-indx-range, xxx+indx+range, yyy+indx+range,
+			          USER, dd);
 
 			if (gotLabel) {
 			    /* find which plot edge we are closest to */
@@ -1814,7 +1814,7 @@ SEXP attribute_hidden do_image(SEXP call, SEXP op, SEXP args, SEXP env)
     x = REAL(sx);
     y = REAL(sy);
     z = INTEGER(sz);
-    c = reinterpret_cast<unsigned int*>(INTEGER(sc));
+    c = reinterpret_cast<unsigned*>(INTEGER(sc));
 
     /* Check of grid coordinates now done in C code */
 
@@ -2198,7 +2198,7 @@ static void PerspAxis(double *x, double *y, double *z,
 		      int axis, int axisType, int nTicks, int tickType,
 		      const char *label, cetype_t enc, pGEDevDesc dd)
 {
-    Vector3d u1, u2, u3, v1, v2, v3;
+    Vector3d u1={0.,0.,0.,0.}, u2={0.,0.,0.,0.}, u3={0.,0.,0.,0.}, v1, v2, v3;
     double tickLength = .03; /* proportion of axis length */
     double min, max, d_frac;
     double *range = NULL; /* -Wall */

@@ -29,6 +29,8 @@ function(package, dir, lib.loc = NULL,
 
     workdir <- match.arg(workdir)
     wd <- getwd()
+    if (is.null(wd))
+        stop("current working directory cannot be ascertained")
     if(workdir == "tmp") {
         tmpd <- tempfile("Sweave")
         if(!dir.create(tmpd))
@@ -49,6 +51,7 @@ function(package, dir, lib.loc = NULL,
     result <- list(tangle = list(), weave = list(),
                    source = list(), latex = list())
 
+    startdir <- getwd()
     for(f in vigns$docs) {
         if(tangle)
             .eval_with_capture(tryCatch(utils::Stangle(f, quiet = TRUE),
@@ -60,17 +63,23 @@ function(package, dir, lib.loc = NULL,
                                         error = function(e)
                                         result$weave[[f]] <<-
                                         conditionMessage(e)))
+        setwd(startdir) # in case a vignette changes the working dir
     }
 
     if(tangle) {
         ## Tangling can create several source files if splitting is on.
-        sources <- list_files_with_exts(getwd(), c("r", "s", "R", "S"))
+        cwd <- getwd()
+        if (is.null(cwd))
+            stop("current working directory cannot be ascertained")
+        sources <- list_files_with_exts(cwd, c("r", "s", "R", "S"))
         sources <- sources[file_test("-nt", sources, ".check.timestamp")]
-        for(f in sources)
+        for(f in sources) {
             .eval_with_capture(tryCatch(source(f),
                                         error = function(e)
                                         result$source[[f]] <<-
                                         conditionMessage(e)))
+            setwd(startdir)
+        }
     }
     if(weave && latex) {
         if(!("makefile" %in% tolower(list.files(vigns$dir)))) {
@@ -178,6 +187,8 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
     if(is.null(vigns)) return(invisible())
 
     wd <- getwd()
+    if (is.null(wd))
+        stop("current working directory cannot be ascertained")
     on.exit(setwd(wd))
     setwd(vigns$dir)
 
@@ -187,6 +198,7 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
     file.create(".build.timestamp")
 
     pdfs <- character()
+    startdir <- getwd()
     for(f in vigns$docs) {
         f <- basename(f)
         bf <- file_path_sans_ext(f)
@@ -199,6 +211,7 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
                                    f, conditionMessage(e)),
                           domain = NA, call. = FALSE)
                  })
+        setwd(startdir)
         if(!have.makefile)
             texi2dvi(file = bft, pdf = TRUE, clean = FALSE, quiet = quiet)
     }
@@ -218,7 +231,7 @@ function(package, dir, lib.loc = NULL, quiet = TRUE, clean = TRUE)
         file.remove(f %w/o% c(".", "..", pdfs, origfiles))
     }
 
-    file.remove(".build.timestamp")
+    if(file.exists(".build.timestamp")) file.remove(".build.timestamp")
     ## Might have been in origfiles ...
 
     invisible(NULL)

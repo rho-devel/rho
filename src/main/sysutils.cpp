@@ -45,6 +45,9 @@
 #include <R_ext/Riconv.h>
 #include <Rinterface.h>
 #include <errno.h>
+#include <vector>
+
+using namespace std;
 
 /*
   See ../unix/system.txt for a description of some of these functions.
@@ -69,7 +72,7 @@
 #endif
 
 #ifdef HAVE_AQUA
-extern int (*ptr_CocoaSystem)(char*);
+int (*ptr_CocoaSystem)(char*);
 extern	Rboolean useaqua;
 #endif
 
@@ -217,7 +220,6 @@ char *R_HomeDir(void)
     return getenv("R_HOME");
 }
 
-
 /* This is a primitive (with no arguments) */
 SEXP attribute_hidden do_interactive(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -264,7 +266,6 @@ SEXP attribute_hidden do_tempfile(SEXP call, SEXP op, SEXP args, SEXP env)
     return (ans);
 }
 
-#ifdef HAVE_POPEN
 FILE *R_popen(const char *command, const char *type)
 {
     FILE *fp;
@@ -281,11 +282,14 @@ FILE *R_popen(const char *command, const char *type)
 #endif
     return fp;
 }
-#endif /* HAVE_POPEN */
+
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
 
 int R_system(const char *command)
 {
-    int val;
+    int res;
 #ifdef __APPLE_CC__
     /* Luke recommends this to fix PR#1140 */
     sigset_t ss;
@@ -297,16 +301,23 @@ int R_system(const char *command)
     if(useaqua) {
 	/* FIXME, is Cocoa's interface not const char*? */
 	cmdcpy = acopy_string(command);
-	val = ptr_CocoaSystem(cmdcpy);
+	res = ptr_CocoaSystem(cmdcpy);
     }
     else
 #endif
-    val = system(command);
+    res = system(command);
     sigprocmask(SIG_UNBLOCK, &ss, NULL);
 #else
-    val = system(command);
+    res = system(command);
 #endif
-    return val;
+#ifdef HAVE_SYS_WAIT_H
+    if (WIFEXITED(res)) res = WEXITSTATUS(res);
+    else res = 0;
+#else
+    /* assume that this is shifted if a multiple of 256 */
+    if ((res % 256) == 0) res = res/256;
+#endif
+    return res;
 }
 
 #if defined(__APPLE__)
@@ -338,13 +349,13 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
     i = LENGTH(CAR(args));
     if (i == 0) {
 #ifdef Win32
-	char *buf;
 	int n = 0, N;
 	wchar_t **w;
 	for (i = 0, w = _wenviron; *w != NULL; i++, w++)
 	    n = max(n, wcslen(*w));
-	N = 3*n+1; buf = alloca(N);
-	R_CheckStack();
+	N = 3*n+1;
+	vector<char> bufv(N);
+	char* buf = &bufv[0];
 	PROTECT(ans = allocVector(STRSXP, i));
 	for (i = 0, w = _wenviron; *w != NULL; i++, w++) {
 	    wcstoutf8(buf, *w, N); buf[N-1] = '\0';
@@ -367,8 +378,8 @@ SEXP attribute_hidden do_getenv(SEXP call, SEXP op, SEXP args, SEXP env)
 		SET_STRING_ELT(ans, j, STRING_ELT(CADR(args), 0));
 	    else {
 		int n = wcslen(w), N = 3*n+1; /* UCS-2 maps to <=3 UTF-8 */
-		char *buf = alloca(N);
-		R_CheckStack();
+		vector<char> bufv(N);
+		char* buf = &bufv[0];
 		wcstoutf8(buf, w, N); buf[N-1] = '\0'; /* safety */
 		SET_STRING_ELT(ans, j, mkCharCE(buf, CE_UTF8));
 	    }
@@ -479,8 +490,8 @@ SEXP attribute_hidden do_unsetenv(SEXP call, SEXP op, SEXP args, SEXP env)
 # ifdef Win32
     for (i = 0; i < n; i++) {
 	const wchar_t *w = wtransChar(STRING_ELT(vars, i));
-	wchar_t *buf = (wchar_t *) alloca(2*wcslen(w));
-	R_CheckStack();
+	vector<wchar_t> bufv(2*wcslen(w));
+	wchar_t* buf = &bufv[0];
 	wcscpy(buf, w);
 	wcscat(buf, L"=");
 	_wputenv(buf);
@@ -675,13 +686,14 @@ cetype_t getCharCE(SEXP x)
 void * Riconv_open (const char* tocode, const char* fromcode)
 {
 #if defined Win32 || __APPLE__
-    const char *cp = "UTF-8";
 # ifdef Win32
+    const char *cp = "ASCII";
 #  ifndef SUPPORT_UTF8_WIN32 /* Always, at present */
     char to[20] = "";
     if (localeCP > 0) {snprintf(to, 20, "CP%d", localeCP); cp = to;}
 #  endif
 # else /* __APPLE__ */
+    const char *cp = "UTF-8";
     if (latin1locale) cp = "ISO-8859-1";
     else if (!utf8locale) cp = locale2charset(NULL);
 # endif
@@ -1115,7 +1127,8 @@ static const char UNICODE[] = "UCS-4LE";
 /* used in gram.c and devX11.c */
 size_t ucstomb(char *s, const unsigned int wc)
 {
-    char     buf[MB_CUR_MAX+1];
+    vector<char> bufv(MB_CUR_MAX+1);
+    char* buf = &bufv[0];
     void    *cd = NULL ;
     unsigned int  wcs[2];
     const char *inbuf = reinterpret_cast<const char *>( wcs);
@@ -1289,6 +1302,10 @@ static int isDir(CXXRCONST char *path)
 
 #if !HAVE_DECL_MKDTEMP
 extern char * mkdtemp (char *template);
+#endif
+
+#ifdef Win32
+# include <ctype.h>
 #endif
 
 void attribute_hidden InitTempDir()

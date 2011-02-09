@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2001-8  R Development Core Team
+ *  Copyright (C) 2001-10  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
 # define RK "R32"
 #endif
 
-extern char *getRHOMElong(void); /* in ../rhome.c */
+extern char *getRHOMElong(int m); /* in ../rhome.c */
 
 int main (int argc, char **argv)
 {
@@ -63,7 +63,7 @@ int main (int argc, char **argv)
     
     if(personal) hk = HKEY_CURRENT_USER;
 
-    /* Needs to match JRins.pl */
+    /* Needs to match JRins */
     if(strncmp(R_STATUS, "Under ", 6) == 0)
 	snprintf(version, 40, "%s.%s Pre-release", R_MAJOR, R_MINOR);
     else
@@ -130,7 +130,7 @@ int main (int argc, char **argv)
 	}
     } else {
 	printf("registering R %s ... ", version);
-    	RHome = getRHOMElong();
+    	RHome = getRHOMElong(3);
 
 	snprintf(keyname, 60, "Software\\%s\\R", PRODUCER);
 	if ((rc = RegOpenKeyEx(hk, keyname, 0, KEY_ALL_ACCESS, &hkey))

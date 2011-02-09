@@ -50,14 +50,17 @@ void attribute_hidden PrintGreeting(void)
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.32-2.11.1, based on:\n");
+    Rprintf("This is CXXR 0.33-2.12.1, based on:\n");
     PrintVersionString(buf);
     Rprintf("%s", buf);
     Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
 	    R_YEAR);
 
-    Rprintf("ISBN 3-900051-07-0\n\n");
-    Rprintf(_("CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like\n"));
+    Rprintf("ISBN 3-900051-07-0\n");
+    Rprintf("Platform: %s", R_PLATFORM);
+    if(strlen(R_ARCH)) Rprintf("/%s", R_ARCH);
+    Rprintf(" (%d-bit)\n\n", 8*sizeof(void *));
+    Rprintf(_("CXXR Copyright (C) 2008-11 Andrew Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));

@@ -56,6 +56,7 @@
 #endif
 
 #include <Defn.h>
+#include <float.h> /* for DBL_EPSILON */
 #include <Rcomplex.h>
 #include <Rmath.h>
 #include <Print.h>

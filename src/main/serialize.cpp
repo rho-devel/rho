@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  The R Development Core Team
+ *  Copyright (C) 1997--2010  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,6 +47,7 @@
 #include <Rversion.h>
 #include <R_ext/RS.h>           /* for CallocCharBuf, Free */
 #include <errno.h>
+#include <vector>
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
@@ -57,6 +58,7 @@
    R_decompress1 */
 #include "basedecl.h"
 
+using namespace std;
 using namespace CXXR;
 
 /* From time to time changes in R, such as the addition of a new SXP,
@@ -1249,7 +1251,6 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
     int type;
     SEXP s;
     int flags, levs, objf, hasattr, hastag, length, count;
-    char *cbuf;
 
     R_assert(TYPEOF(ref_table) == LISTSXP && TYPEOF(CAR(ref_table)) == VECSXP);
 
@@ -1298,7 +1299,7 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	else {
 	    GCStackRoot<> str;
 	    cetype_t enc = String::GPBits2Encoding(levs);
-	    cbuf = CallocCharBuf(length);
+	    char* cbuf = CallocCharBuf(length);
 	    InString(stream, cbuf, length);
 	    GCStackRoot<> attributes(hasattr ? ReadItem(ref_table, stream) : 0);
 	    if (length > int(strlen(cbuf))) {
@@ -1457,12 +1458,15 @@ static SEXP ReadItem (SEXP ref_table, R_inpstream_t stream)
 	    break;
 	case SPECIALSXP:
 	case BUILTINSXP:
-	    /* These are all short strings */
-	    length = InInteger(stream);
-	    cbuf = CXXRCONSTRUCT(static_cast<char*>, alloca(length+1));
-	    InString(stream, cbuf, length);
-	    cbuf[length] = '\0';
-	    PROTECT(s = CXXR_NEW(BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
+	    {
+		/* These are all short strings */
+		length = InInteger(stream);
+		vector<char> cbufv(length+1);
+		char* cbuf = &cbufv[0];
+		InString(stream, cbuf, length);
+		cbuf[length] = '\0';
+		PROTECT(s = CXXR_NEW(BuiltInFunction(BuiltInFunction::indexInTable(cbuf))));
+	    }
 	    break;
 	case LGLSXP:
 	    length = InInteger(stream);
@@ -2029,19 +2033,25 @@ typedef struct membuf_st {
     unsigned char *buf;
 } *membuf_t;
 
+
+#define INCR MAXELTSIZE
 static void resize_buffer(membuf_t mb, R_size_t needed)
 {
     /* This used to allocate double 'needed', but that was problematic for
        large buffers */
-    R_size_t newsize = needed;
-    /* we need to store the result in a RAWSXP */
+    /* we need to store the result in a RAWSXP so limited to INT_MAX */
     if(needed > INT_MAX)
 	error(_("serialization is too large to store in a raw vector"));
-    if(needed < INT_MAX - MAXELTSIZE) needed += MAXELTSIZE;
-    mb->buf = CXXRCONSTRUCT(static_cast<unsigned char*>, realloc(mb->buf, newsize));
+    if(needed < 10000000) /* ca 10MB */
+	needed = (1+2*needed/INCR) * INCR;
+    if(needed < 1000000000) /* ca 1GB */
+	needed = (1+1.2*needed/INCR) * INCR;
+    else if(needed < INT_MAX - INCR) 
+	needed = (1+needed/INCR) * INCR;
+    mb->buf = CXXRSCAST(unsigned char*, realloc(mb->buf, needed));
     if (mb->buf == NULL)
 	error(_("cannot allocate buffer"));
-    mb->size = newsize;
+    mb->size = needed;
 }
 
 static void OutCharMem(R_outpstream_t stream, int c)

@@ -64,7 +64,9 @@ INSTALL_OPTS=--no-lock --data-compress=xz --install-tests
 ## RG says that with FreeBSD Make calling INSTALL does not work without
 ## explicitly passing down MAKE ('unrecognized option -w ...').  But
 ## what is really going on?
-	@MAKE="$(MAKE)" $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
+##
+## Also, avoid any copies installed in user/site libraries
+	@MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
 ## </FIXME>
 	@cat $@.out; rm $@.out
 	@touch $@
@@ -88,9 +90,7 @@ install-tests:
 	 for pkg in $(R_PKGS_RECOMMENDED); do \
 	  if test -d $${pkg}/tests; then \
 	    $${abs_MKINSTALLDIRS} "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \
-	    for f in $${pkg}/tests/*; do \
-	      $(INSTALL_DATA) $${f} "$(DESTDIR)$(rhome)/library/$${pkg}/tests"; \
-	    done; \
+	    cp -r $${pkg}/tests/* "$(DESTDIR)$(rhome)/library/$${pkg}/tests"; \
 	  fi; \
 	 done)
 

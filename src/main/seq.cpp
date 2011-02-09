@@ -43,6 +43,7 @@
 #endif
 
 #include <Defn.h>
+#include <float.h>  /* for DBL_EPSILON */
 #include <Rmath.h>
 
 #include "RBufferUtils.h"
@@ -484,11 +485,11 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     int i, nargs = length(args), lf, lout = NA_INTEGER;
     Rboolean One = CXXRCONSTRUCT(Rboolean, nargs == 1);
 
-    if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 0))
+    if (DispatchOrEval(call, op, "seq", args, rho, &ans, 0, 1))
 	return(ans);
 
-    /* This is a primitive and we have not dispatched to a method
-       so we manage the argument matching ourselves.  We pretend this is
+    /* This is a primitive and we manage argument matching ourselves.
+       We pretend this is
        seq(from, to, by, length.out, along.with, ...)
     */
     PROTECT(ap = CONS(R_NilValue,
@@ -503,12 +504,6 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
     SET_TAG(tmp, install("along.with")); tmp = CDR(tmp);
     SET_TAG(tmp, R_DotsSymbol);
     PROTECT(args = matchArgs(ap, args, call));
-
-    /* Manage 'along.with' prior to evaluation */
-    ap = CDDR(CDDR(args));
-    if(CAR(ap) != R_MissingArg)
-	SETCAR(ap, ScalarInteger(length(eval(CAR(ap), rho))));
-    PROTECT(args = evalListKeepMissing(args, rho));
 
     from = CAR(args); args = CDR(args);
     to = CAR(args); args = CDR(args);
@@ -527,7 +522,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	goto done;
     }
     if(along != R_MissingArg) {
-	lout = INTEGER(along)[0];
+	lout = LENGTH(along);
 	if(One) {
 	    ans = lout ? seq_colon(1.0, double(lout), call) : allocVector(INTSXP, 0);
 	    goto done;
@@ -660,7 +655,7 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, _("too many arguments"));
 
 done:
-    UNPROTECT(3);
+    UNPROTECT(2);
     return ans;
 }
 

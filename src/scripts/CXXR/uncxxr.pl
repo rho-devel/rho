@@ -36,6 +36,7 @@ while (<>) {
   s/\b($constype)(\s*)\(/\($1\)$2\(/g;
 
   # Reinstate C++ reserved words used as identifiers:
+  s/class_str/class/g;
   s/connclass/class/g;
   s/connprivate/private/g;
   s/devnum/this/g;
@@ -64,6 +65,7 @@ while (<>) {
   s/CXXRNOCAST//g;
   s/CXXRTRUE/1/g;
   s/CXXRUNSIGNED\s*//g;
+  s/Rf_//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   print;
 }

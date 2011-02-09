@@ -47,6 +47,7 @@
 #include <Fileio.h>
 #include <R_ext/RS.h>
 #include <errno.h>
+#include <ctype.h>		/* for isspace */
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"

@@ -223,6 +223,9 @@ function (clName, filename = NULL, type = "class",
 	     "}"),
 	     keywords = .keywords)
 
+    if(is(clDef, "refClassRepresentation"))
+        Rdtxt <- refClassPrompt(clDef, Rdtxt, nmeths, nslots, .meths.head)
+
     if(is.na(filename)) return(Rdtxt)
 
     cat(unlist(Rdtxt), file = filename, sep = "\n")
@@ -245,6 +248,86 @@ function (clName, filename = NULL, type = "class",
     else "" # what, indeed?
 }
 
+refClassPrompt <- function(clDef, Rdtxt, nmeths, nslots, .meths.head) {
+    ## exclude some sections that are usually irrelevant
+    sections <- names(Rdtxt)
+    envRefX <- paste("{",extends("envRefClass"), "}", sep="")
+    exclude <- grep("Objects from the Class", sections)
+    if(nmeths < 1)
+        exclude <- c(exclude, grep("Methods", sections))
+    else
+        .meths.head <- "\\section{Class-Based Methods}{"
+    if(nslots < 2) # just the data slot, usually
+        exclude <- c(exclude, grep("Slots", sections))
+    Rdtxt <- Rdtxt[-exclude]
+    extdsthead <- "section{Extends}" # has to be there
+    extds <- Rdtxt[[extdsthead]]
+    drop <- rep(FALSE, length(extds))
+    for(class in envRefX) #drop the envRefClass & its superclasses
+        drop <- drop | grepl(class, extds, fixed = TRUE)
+    extds <- extds[!drop]
+    extds <- append(extds, "\nAll reference classes extend and inherit methods from \\code{\"\\linkS4class{envRefClass}\"}.\n", length(extds)-1)
+    Rdtxt[[extdsthead]] <- extds
+    paste0 <- function(...) paste(..., sep = "")
+    fieldClasses <- refClassFields(clDef)
+    nfields <- length(fieldClasses)
+    .fields <- if (nfields > 0) {
+	fieldnames <- names(fieldClasses)
+	.fields.head <- c("\\section{Fields}{", "  \\describe{")
+	.fields.body <-	paste0("    \\item{\\code{", fieldnames,
+                               "}:}", "{Object of class \\code{",
+                               fieldClasses, "} ~~ }")
+	.fields.tail <- c("  }","}")
+	c(.fields.head,  .fields.body,	.fields.tail)
+    } else character()
+    methodDefs <- as.list(clDef@refMethods)
+    nmethods <- length(methodDefs)
+    if(nmethods > 0) {
+        thisClassDefs <- match(sapply(methodDefs, function(x) x@refClassName), clDef@className, 0) > 0
+        otherMethods <- methodDefs[!thisClassDefs]
+        methodDefs <- methodDefs[thisClassDefs]
+        .methods <-
+            c(.meths.head, .refMethodDescription(methodDefs, fieldnames, otherMethods), "}")
+    }
+    else
+        .methods <- character()
+    c(Rdtxt,
+      list("section{Fields}" = .fields,
+           "section{ClassMethods}" = .methods)
+      )
+}
+
+.refMethodDescription <- function(methodDefs, fieldnames, otherMethods) {
+    paste0 <- function(...) paste(..., sep = "")
+    methodnames <- names(methodDefs)
+    methodargs <- sapply(methodDefs, function(x)paste("(", paste(formalArgs(x), collapse=", "), ")", sep=""))
+    if(length(methodnames) > 0) {
+        .methods.head <- "  \\describe{"
+        .methods.body <-
+            paste0("    \\item{\\code{",
+                   methodnames, methodargs,
+                   "}:}", "{ ~~ }")
+        .methods <- c(.methods.head,  .methods.body, "  }")
+    }
+    else
+        .methods <- character()
+    methodclasses <- sapply(otherMethods,
+              function(x) if(is(x, "refMethodDef")) x@refClassName else "<unknown>")
+    ## don't report the standard methods from envRefClass
+    superclass <- methodclasses != "envRefClass"
+    otherMethods <- otherMethods[superclass]
+    methodclasses <- methodclasses[superclass]
+    if(length(otherMethods)) {
+        methodnames <- names(otherMethods)
+        methodnames <- gsub("[#].*","", methodnames)
+        .methods <- c(.methods,
+                      "\nThe following methods are inherited (from the corresponding class):",
+                      paste0(methodnames, ' ("', methodclasses,
+                             '")', collapse = ", ")
+                      )
+    }
+    .methods
+}
 
 .makeCallString <- function (def, name = substitute(def), args = formalArgs(def))
 {

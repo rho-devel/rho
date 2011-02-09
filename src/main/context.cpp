@@ -344,10 +344,12 @@ SEXP attribute_hidden do_parentframe(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
 {
-    volatile SEXP topExp;
+    volatile SEXP topExp, oldHStack;
     Rboolean result;
 
     PROTECT(topExp = R_CurrentExpr);
+    PROTECT(oldHStack = R_HandlerStack);
+    R_HandlerStack = R_NilValue;
 
     try {
 	fun(data);
@@ -358,7 +360,8 @@ Rboolean R_ToplevelExec(void (*fun)(void *), void *data)
     }
 
     R_CurrentExpr = topExp;
-    UNPROTECT(1);
+    R_HandlerStack = oldHStack;
+    UNPROTECT(2);
 
     return result;
 }
@@ -416,4 +419,20 @@ R_tryEval(SEXP e, SEXP env, int *ErrorOccurred)
 	data.val = NULL;
 
     return(data.val);
+}
+
+/* Temporary hack to suppress error message printing around a
+   R_tryEval call for use in methods_list_dispatch.c; should be
+   replaced once we have a way of establishing error handlers from C
+   code (probably would want a calling handler if we want to allow
+   user-defined calling handlers to enter a debugger, for
+   example). LT */
+SEXP R_tryEvalSilent(SEXP e, SEXP env, int *ErrorOccurred)
+{
+    SEXP val;
+    Rboolean oldshow = CXXRCONSTRUCT(Rboolean, R_ShowErrorMessages);
+    R_ShowErrorMessages = FALSE;
+    val = R_tryEval(e, env, ErrorOccurred);
+    R_ShowErrorMessages = oldshow;
+    return val;
 }

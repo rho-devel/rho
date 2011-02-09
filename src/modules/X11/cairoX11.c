@@ -1,7 +1,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2008  R Development Core Team
+ *  Copyright (C) 1997--2010  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -275,18 +275,48 @@ static void Cairo_Polygon(int n, double *x, double *y,
     }
 }
 
-static void Cairo_Raster(unsigned int *raster, int w, int h,
-                         double x, double y, 
-                         double width, double height,
-                         double rot, 
-                         Rboolean interpolate,
-                         const pGEcontext gc, pDevDesc dd)
+static void Cairo_Path(double *x, double *y,
+                       int npoly, int *nper,
+                       Rboolean winding,
+                       const pGEcontext gc, pDevDesc dd)
 {
-    const void *vmax = vmaxget();
+    int i, j, n;
+    pX11Desc xd = (pX11Desc) dd->deviceSpecific;
+
+    cairo_new_path(xd->cc);
+    n = 0;
+    for (i=0; i < npoly; i++) {
+        cairo_move_to(xd->cc, x[n], y[n]);
+        n++;
+        for(j=1; j < nper[i]; j++) {
+            cairo_line_to(xd->cc, x[n], y[n]);
+            n++;
+        }
+        cairo_close_path(xd->cc);
+    }
+
+    if (R_ALPHA(gc->fill) > 0) {
+	cairo_set_antialias(xd->cc, CAIRO_ANTIALIAS_NONE);
+        if (winding) 
+            cairo_set_fill_rule(xd->cc, CAIRO_FILL_RULE_WINDING);
+        else 
+            cairo_set_fill_rule(xd->cc, CAIRO_FILL_RULE_EVEN_ODD);
+	CairoColor(gc->fill, xd);
+	cairo_fill_preserve(xd->cc);
+	cairo_set_antialias(xd->cc, xd->antialias);
+    }
+    if (R_ALPHA(gc->col) > 0 && gc->lty != -1) {
+	CairoColor(gc->col, xd);
+	CairoLineType(gc, xd);
+	cairo_stroke(xd->cc);
+    }
+}
+
+static cairo_surface_t* createImageSurface(unsigned int *raster, int w, int h)
+{
     int i;
     cairo_surface_t *image;
     unsigned char *imageData;
-    pX11Desc xd = (pX11Desc) dd->deviceSpecific;
 
     imageData = (unsigned char *) R_alloc(4*w*h, sizeof(unsigned char));
     /* The R ABGR needs to be converted to a Cairo ARGB 
@@ -309,28 +339,73 @@ static void Cairo_Raster(unsigned int *raster, int w, int h,
                                                 CAIRO_FORMAT_ARGB32,
                                                 w, h, 
                                                 4*w);
+    return(image);
+}
+
+static void Cairo_Raster(unsigned int *raster, int w, int h,
+                         double x, double y, 
+                         double width, double height,
+                         double rot, 
+                         Rboolean interpolate,
+                         const pGEcontext gc, pDevDesc dd)
+{
+    int imageWidth, imageHeight;
+    const void *vmax = vmaxget();
+    cairo_surface_t *image;
+    pX11Desc xd = (pX11Desc) dd->deviceSpecific;
 
     cairo_save(xd->cc);
 
+    /* If we are going to use the graphics engine for interpolation
+     * the image used for the Cairo surface is going to be a
+     * different size
+     */
+    if (interpolate && CAIRO_VERSION_MAJOR < 2 && CAIRO_VERSION_MINOR < 6) {
+        imageWidth = (int) (width + .5);
+        imageHeight = abs((int) (height + .5));
+    } else {    
+        imageWidth = w;
+        imageHeight = h;
+    }
+
     cairo_translate(xd->cc, x, y);
     cairo_rotate(xd->cc, -rot*M_PI/180);
-    cairo_scale(xd->cc, width/w, height/h);
+    cairo_scale(xd->cc, width/imageWidth, height/imageHeight);
     /* Flip vertical first */
-    cairo_translate(xd->cc, 0, h/2.0);
+    cairo_translate(xd->cc, 0, imageHeight/2.0);
     cairo_scale(xd->cc, 1, -1);
-    cairo_translate(xd->cc, 0, -h/2.0);
+    cairo_translate(xd->cc, 0, -imageHeight/2.0);
 
-    cairo_set_source_surface(xd->cc, image, 0, 0);
-
-    /* Use nearest-neighbour filter so that a scaled up image
-     * is "blocky";  alternative is some sort of linear
-     * interpolation, which gives nasty edge-effects
-     */
-    if (!interpolate) {
+    if (interpolate) {
+        if (CAIRO_VERSION_MAJOR < 2 && CAIRO_VERSION_MINOR < 6) {
+            /* CAIRO_EXTEND_PAD not supported for image sources 
+             * so use graphics engine for interpolation 
+             */
+            unsigned int *rasterImage;
+            rasterImage = (unsigned int *) R_alloc(imageWidth * imageHeight,
+                                                   sizeof(unsigned int));
+            R_GE_rasterInterpolate(raster, w, h, 
+                                   rasterImage, imageWidth, imageHeight);
+            image = createImageSurface(rasterImage, imageWidth, imageHeight);
+            cairo_set_source_surface(xd->cc, image, 0, 0);
+        } else {
+            image = createImageSurface(raster, w, h);
+            cairo_set_source_surface(xd->cc, image, 0, 0);
+            cairo_pattern_set_filter(cairo_get_source(xd->cc), 
+                                     CAIRO_FILTER_BILINEAR);
+            cairo_pattern_set_extend(cairo_get_source(xd->cc), 
+                                     CAIRO_EXTEND_PAD);
+        }
+    } else {
+        image = createImageSurface(raster, w, h);
+        cairo_set_source_surface(xd->cc, image, 0, 0);
         cairo_pattern_set_filter(cairo_get_source(xd->cc), 
                                  CAIRO_FILTER_NEAREST);
     }
 
+    cairo_new_path(xd->cc);
+    cairo_rectangle(xd->cc, 0, 0, imageWidth, imageHeight);
+    cairo_clip(xd->cc);
     cairo_paint(xd->cc); 
 
     cairo_restore(xd->cc);
@@ -394,7 +469,7 @@ static PangoFontDescription *PG_getFont(const pGEcontext gc, double fs)
 {
     PangoFontDescription *fontdesc;
     gint face = gc->fontface;
-    double size = gc->cex * gc->ps * fs;
+    double size = gc->cex * gc->ps * fs, ssize = PANGO_SCALE * size;
 
     if (face < 1 || face > 5) face = 1;
 
@@ -412,7 +487,9 @@ static PangoFontDescription *PG_getFont(const pGEcontext gc, double fs)
 	if(face == 3 || face == 4)
 	    pango_font_description_set_style(fontdesc, PANGO_STYLE_OBLIQUE);
     }
-    pango_font_description_set_size(fontdesc, PANGO_SCALE * size);
+    /* seems a ssize < 1 gums up pango, PR#14369 */
+    if (ssize < 1) ssize = 1.0;
+    pango_font_description_set_size(fontdesc, ssize);
 
     return fontdesc;
 }
@@ -636,6 +713,8 @@ static cairo_font_face_t *FC_getFont(const char *family, int style)
 		    FcFontSetDestroy (fs);
 #ifdef __APPLE__ /* FreeType is broken on OS X in that face index is often wrong (unfortunately
 		    even for Helvetica!) - we try to find the best match through enumeration */
+		    /* And italic and bold are swapped */
+		    if (style == 2) style = 1; else if (style == 1) style = 2;
 		    if (face->num_faces > 1 && (face->style_flags & 3) != style) {
 			FT_Face alt_face;
 			int i = 0;

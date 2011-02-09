@@ -41,7 +41,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <Defn.h>
+#include <ctype.h> /* for toupper */
 
 #include "Lapack.h"
 
@@ -1116,6 +1118,7 @@ static SEXP modqr_qy_real(SEXP Q, SEXP Bin, SEXP trans)
     return B;
 }
 
+/* TODO : add  a *complex* version, using  LAPACK ZGETRF() */
 static SEXP moddet_ge_real(SEXP Ain, SEXP logarithm)
 {
     int i, n, *Adims, info, *jpvt, sign, useLog;

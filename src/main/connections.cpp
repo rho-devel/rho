@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-9   The R Development Core Team.
+ *  Copyright (C) 2000-10   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -216,20 +216,21 @@ void set_iconv(Rconnection con)
     if(con->canread) {
 	size_t onb = 50;
 	char *ob = con->oconvbuff;
-#ifndef Win32
-	con->UTF8out = FALSE;  /* No point in converting to UTF-8
-				  unless in a UTF-8 locale */
-#endif
-	tmp = Riconv_open(con->UTF8out ? "UTF-8" : "", con->encname);
+	/* UTF8out is set in readLines() and scan()
+	   Was Windows-only until 2.12.0, but we now require iconv.
+	 */
+	Rboolean useUTF8 = CXXRCONSTRUCT(Rboolean, !utf8locale && con->UTF8out);
+	tmp = Riconv_open(useUTF8 ? "UTF-8" : "", con->encname);
 	if(tmp != reinterpret_cast<void *>(-1)) con->inconv = tmp;
-	else set_iconv_error(con, con->encname, con->UTF8out ? "UTF-8" : "");
+	else set_iconv_error(con, con->encname, useUTF8 ? "UTF-8" : "");
 	con->EOF_signalled = FALSE;
 	/* initialize state, and prepare any initial bytes */
 	Riconv(tmp, NULL, NULL, &ob, &onb);
 	con->navail = 50-onb; con->inavail = 0;
 	/* libiconv can handle BOM marks on Windows Unicode files, but
 	   glibc's iconv cannot. Aargh ... */
-	if(streql(con->encname, "UCS-2LE")) con->inavail = -2;
+	if(streql(con->encname, "UCS-2LE") || 
+	   streql(con->encname, "UTF-16LE")) con->inavail = -2;
     }
     if(con->canwrite) {
 	size_t onb = 25;
@@ -555,7 +556,7 @@ static Rboolean file_open(Rconnection con)
 #ifdef Win32
 	if(con->enc == CE_UTF8) {
 	    int n = strlen(name);
-	    wchar_t *wname = (wchar_t *) alloca(2 * (n+1)), wmode[10];
+	    wchar_t wname[2 * (n+1)], wmode[10];
 	    R_CheckStack();
 	    Rf_utf8towcs(wname, name, n+1);
 	    mbstowcs(wmode, con->mode, 10);
@@ -819,9 +820,7 @@ static Rconnection newfile(const char *description, int enc, const char *mode,
 # include <sys/stat.h>
 #endif
 
-#ifdef HAVE_ERRNO_H
 # include <errno.h>
-#endif
 
 typedef struct fifoconn {
     int fd;
@@ -1032,7 +1031,6 @@ SEXP attribute_hidden do_fifo(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* ------------------- pipe connections --------------------- */
 
-#ifdef HAVE_POPEN
 static Rboolean pipe_open(Rconnection con)
 {
     FILE *fp;
@@ -1049,7 +1047,7 @@ static Rboolean pipe_open(Rconnection con)
 #ifdef Win32
     if(con->enc == CE_UTF8) {
 	int n = strlen(con->description);
-	wchar_t *wname = (wchar_t *) alloca(2 * (n+1)), wmode[10];
+	wchar_t wname[2 * (n+1)], wmode[10];
 	R_CheckStack();
 	Rf_utf8towcs(wname, con->description, n+1);
 	mbstowcs(wmode, con->mode, 10);
@@ -1112,7 +1110,6 @@ newpipe(const char *description, int ienc, const char *mode)
     }
     return newconn;
 }
-#endif
 
 #ifdef Win32
 extern Rconnection
@@ -1121,7 +1118,6 @@ newWpipe(const char *description, int enc, const char *mode);
 
 SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-#ifdef HAVE_POPEN
     SEXP scmd, sopen, ans, connclass, enc;
     const char *file, *open;
     int ncon;
@@ -1189,13 +1185,9 @@ SEXP attribute_hidden do_pipe(SEXP call, SEXP op, SEXP args, SEXP env)
     UNPROTECT(2);
 
     return ans;
-#else
-    error(_("pipe connections are not available on this system"));
-    return R_NilValue;		/* -Wall */
-#endif
 }
 
-/* ------------------- [bg]zipped file connections --------------------- */
+/* ------------------- [bgx]zipped file connections --------------------- */
 
 typedef struct gzfileconn {
     void *fp;
@@ -1209,8 +1201,9 @@ static Rboolean gzfile_open(Rconnection con)
     Rgzfileconn gzcon = CXXRSCAST(Rgzfileconn, con->connprivate);
 
     strcpy(mode, con->mode);
-    /* Must open as binary, only "r" and "w" are supported */
+    /* Must open as binary */
     if(strchr(con->mode, 'w')) sprintf(mode, "wb%1d", gzcon->compress);
+    else if (con->mode[0] == 'a') sprintf(mode, "ab%1d", gzcon->compress);
     else strcpy(mode, "rb");
     fp = gzopen(R_ExpandFileName(con->description), mode);
     if(!fp) {
@@ -1352,6 +1345,8 @@ static Rboolean bzfile_open(Rconnection con)
     int bzerror;
     char mode[] = "rb";
 
+    if (con->mode[0] == 'a')
+	warning(_("append mode may not do what you expect"));
     con->canwrite = CXXRCONSTRUCT(Rboolean, (con->mode[0] == 'w' || con->mode[0] == 'a'));
     con->canread = CXXRCONSTRUCT(Rboolean, !con->canwrite);
     /* regardless of the R view of the file, the file must be opened in
@@ -2183,6 +2178,19 @@ SEXP attribute_hidden do_stderr(SEXP call, SEXP op, SEXP args, SEXP env)
     classgets(ans, connclass);
     UNPROTECT(2);
     return ans;
+}
+
+/* isatty is in unistd.h, or io.h on Windows */
+#ifdef Win32
+# include <io.h>
+#endif
+SEXP attribute_hidden do_isatty(SEXP call, SEXP op, SEXP args, SEXP env)
+{
+    int con;
+    /* FIXME: is this correct for consoles? */
+    checkArity(op, args);
+    con = asInteger(CAR(args));
+    return ScalarLogical(con == NA_LOGICAL ? FALSE : isatty(con) );
 }
 
 /* ------------------- raw connections --------------------- */
@@ -3717,6 +3725,13 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
     if(len == 0) {
 	if(isRaw) return allocVector(RAWSXP, 0); else return R_NilValue;
     }
+    /* RAW vectors are limited to 2^31 - 1 bytes */
+    if(static_cast<double>(len) *size > INT_MAX) {
+	if(isRaw)
+	    error(_("only 2^31-1 bytes can be written to a raw vector"));
+	else
+	    error(_("only 2^31-1 bytes can be written in a single readBin() call"));
+    }
 
     if(!wasopen) {
 	/* Documented behaviour */
@@ -3910,7 +3925,7 @@ SEXP attribute_hidden do_writebin(SEXP call, SEXP op, SEXP args, SEXP env)
 	}
 
 	/* write it now */
-	if(isRaw) {
+	if(isRaw) { /* We checked size*len < 2^31-1 above */
 	    PROTECT(ans = allocVector(RAWSXP, size*len));
 	    memcpy(RAW(ans), buf, size*len);
 	} else {
@@ -4428,8 +4443,8 @@ SEXP attribute_hidden do_sink(SEXP call, SEXP op, SEXP args, SEXP rho)
 	switch_or_tee_stdout(icon, closeOnExit, tee);
     } else {
 	if(icon < 0) {
-	    R_ErrorCon = 2;
 	    R_ReleaseObject(CXXRCONSTRUCT(static_cast<SEXP>, getConnection(R_ErrorCon)->ex_ptr));
+	    R_ErrorCon = 2;
 	} else {
 	    getConnection(icon); /* check validity */
 	    R_ErrorCon = icon;

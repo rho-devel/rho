@@ -41,9 +41,11 @@
 
 #include <Defn.h>
 
+#include <vector>
 #include "CXXR/BuiltInFunction.h"
 #include "CXXR/ClosureContext.hpp"
 
+using namespace std;
 using namespace CXXR;
 
 #undef COMPILING_R
@@ -684,8 +686,8 @@ SEXP static intern_getwd(void)
 	    UNPROTECT(1);
 	}
     }
-#elif defined(HAVE_GETCWD)
-    char *res = getcwd(buf, PATH_MAX);
+#else
+    char *res = getcwd(buf, PATH_MAX); /* can return NULL */
     if(res) rval = mkString(buf);
 #endif
     return(rval);
@@ -726,9 +728,7 @@ SEXP attribute_hidden do_setwd(SEXP call, SEXP op, SEXP args, SEXP rho)
     {
 	const char *path
 	    = R_ExpandFileName(translateChar(STRING_ELT(s, 0)));
-# ifdef HAVE_CHDIR
     if(chdir(path) < 0)
-# endif
 	error(_("cannot change working directory"));
     }
 #endif
@@ -1176,7 +1176,8 @@ size_t Mbrtowc(wchar_t *wc, const char *s, size_t n, mbstate_t *ps)
 	/* This gets called from the menu setup in RGui */
 	if (!R_Is_Running) return -1;
 	/* let's try to print out a readable version */
-	char *err = CXXRCONSTRUCT(static_cast<char*>, alloca(4*strlen(s) + 1)), *q;
+	vector<char> errv(4*strlen(s) + 1);
+	char *err = &errv[0], *q;
 	const char *p;
 	R_CheckStack();
 	for(p = s, q = err; *p; ) {
@@ -1790,9 +1791,9 @@ void attribute_hidden resetICUcollator(void) {}
 
 static int Rstrcoll(const char *s1, const char *s2)
 {
-    wchar_t *w1, *w2;
-    w1 = (wchar_t *) alloca((strlen(s1)+1)*sizeof(wchar_t));
-    w2 = (wchar_t *) alloca((strlen(s2)+1)*sizeof(wchar_t));
+    vector<wchar_t> v1(strlen(s1)+1), v2(strlen(s2)+1);
+    wchar_t* w1 = &v1[0];
+    wchar_t* w2 = &v2[0];
     R_CheckStack();
     utf8towcs(w1, s1, strlen(s1));
     utf8towcs(w2, s2, strlen(s2));

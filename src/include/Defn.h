@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2008  The R Development Core Team.
+ *  Copyright (C) 1998--2010  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -119,6 +119,7 @@ extern0 SEXP	R_DotEnvSymbol;     /* ".Environment" */
 extern0 SEXP	R_ExactSymbol;	    /* "exact" */
 extern0 SEXP	R_RecursiveSymbol;  /* "recursive" */
 extern0 SEXP	R_SrcfileSymbol;    /* "srcfile" */
+extern0 SEXP	R_WholeSrcrefSymbol;   /* "wholeSrcref" */
 extern0 SEXP	R_SrcrefSymbol;     /* "srcref" */
 extern0 SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
@@ -127,6 +128,7 @@ extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
 #define HASHASH_MASK 1
 /**** HASHASH uses the first bit -- see HASHAS_MASK defined below */
 
+int IS_CACHED(SEXP x);
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */
 /*#define USE_ATTRIB_FIELD_FOR_CHARSXP_CACHE_CHAINS */
@@ -148,9 +150,7 @@ SEXP (SET_CXTAIL)(SEXP x, SEXP y);
 extern "C" {
 #endif
 
-#if defined(Win32) || defined(HAVE_AQUA)
 extern void R_ProcessEvents(void);
-#endif
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -183,15 +183,12 @@ extern void R_ProcessEvents(void);
 
 /*  Heap and Pointer Protection Stack Sizes.  */
 
-/* These are for future protection: will need to be different on Win64 */
-typedef unsigned long R_ulong_t;
-typedef long R_long_t;
-
+/* These are all required by C99 */
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
-/* According to POSIX inttypes.h should include stdint.h, but let's be
-   sure. */
+/* According to POSIX inttypes.h should include stdint.h,
+   but let's be sure. */
 #ifdef HAVE_STDINT_H
 # include <stdint.h>
 #endif
@@ -199,27 +196,15 @@ typedef long R_long_t;
 # include <limits.h>
 #endif
 
-/* NB: will need a 64-bit type, ULONG64 or size_t, for Win64 */
 #if defined HAVE_DECL_SIZE_MAX && HAVE_DECL_SIZE_MAX
   typedef size_t R_size_t;
-/* final precaution in case we don't have the right headers */
-# ifdef SIZE_MAX
-#  define R_SIZE_T_MAX SIZE_MAX
-# else
-#  define R_SIZE_T_MAX ULONG_MAX
-# endif
+#ifdef __cplusplus
+# define R_SIZE_T_MAX std::numeric_limits<size_t>::max() 
 #else
-  typedef unsigned long R_size_t;
-# define R_SIZE_T_MAX ULONG_MAX
-#endif
-#define R_SIZE_T_DEFINED 1
-
-/* These are optional C99 types */
-#if !defined(HAVE_INTPTR_T) && !defined(intptr_t)
- typedef long intptr_t;
-#endif
-#if !defined(HAVE_UINTPTR_T) && !defined(uintptr_t)
- typedef unsigned long uintptr_t;
+# define R_SIZE_T_MAX SIZE_MAX
+#endif /* __cplusplus */
+#else
+# error SIZE_MAX is required for C99
 #endif
 
 
@@ -244,8 +229,6 @@ typedef long R_long_t;
 
 /* some commonly needed headers */
 #include <math.h>
-#include <float.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -428,7 +411,6 @@ typedef enum {
 # define INI_as(v)
 #define extern0 extern attribute_hidden
 
-/* extern int	errno; already have errno.h ! */
 extern int	gc_inhibit_torture INI_as(1);
 
 LibExtern Rboolean R_interrupts_suspended INI_as(FALSE);

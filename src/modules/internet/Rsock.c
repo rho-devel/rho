@@ -42,8 +42,8 @@
 #include <config.h>
 #endif
 
-#ifdef Win32
 extern void R_ProcessEvents(void);
+#ifdef Win32
 #define R_SelectEx(n,rfd,wrd,efd,tv,ih) select(n,rfd,wrd,efd,tv)
 #endif
 
@@ -224,11 +224,9 @@ static int R_SocketWait(int sockfd, int write)
 
     while(1) {
 	int maxfd = 0, howmany;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = R_wait_usec;
 	} else {
@@ -238,7 +236,6 @@ static int R_SocketWait(int sockfd, int write)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
@@ -270,9 +267,9 @@ static int R_SocketWait(int sockfd, int write)
 
 #ifdef Unix
 	if((!write && !FD_ISSET(sockfd, &rfd)) ||
-	   (write && !FD_ISSET(sockfd, &wfd)) ||
-	   howmany > 1) {
+	   (write && !FD_ISSET(sockfd, &wfd)) || howmany > 1) {
 	    /* was one of the extras */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;
@@ -296,16 +293,14 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 
     while(1) {
 	int maxfd = 0, howmany, i;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
 	    int delta;
 	    if (mytimeout < 0 || R_wait_usec / 1e-6 < mytimeout - used)
 		delta = R_wait_usec;
 	    else
 		delta = 1e6 * (mytimeout - used);
-	    R_PolledEvents();
 	    tv.tv_sec = 0;
 	    tv.tv_usec = delta;
 	} else if (mytimeout >= 0) {
@@ -318,7 +313,6 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	if (mytimeout >= 0) {
 	    tv.tv_sec = mytimeout - used;
@@ -371,6 +365,7 @@ int R_SocketWaitMultiple(int nsock, int *insockfd, int *ready, int *write,
 #ifdef Unix
 	if(howmany > nready) {
 	    /* one of the extras is ready */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;
@@ -452,9 +447,8 @@ int R_SockConnect(int port, char *host)
 
     while(1) {
 	int maxfd = 0;
+	R_ProcessEvents();
 #ifdef Unix
-	InputHandler *what;
-
 	if(R_wait_usec > 0) {
 	    R_PolledEvents();
 	    tv.tv_sec = 0;
@@ -466,7 +460,6 @@ int R_SockConnect(int port, char *host)
 #elif defined(Win32)
 	tv.tv_sec = 0;
 	tv.tv_usec = 2e5;
-	R_ProcessEvents();
 #else
 	tv.tv_sec = timeout;
 	tv.tv_usec = 0;
@@ -510,6 +503,7 @@ int R_SockConnect(int port, char *host)
 	    } else return(s);
 #ifdef Unix
 	} else { /* some other handler needed */
+	    InputHandler *what;
 	    what = getSelectedHandler(R_InputHandlers, &rfd);
 	    if(what != NULL) what->handler((void*) NULL);
 	    continue;

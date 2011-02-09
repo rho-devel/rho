@@ -133,7 +133,7 @@ function(contriburl = contrib.url(getOption("repos"), type), method,
 }
 
 available_packages_filters_default <-
-    c("R_version", "OS_type", "duplicates")
+    c("R_version", "OS_type", "subarch", "duplicates")
 
 available_packages_filters_db <- new.env()
 
@@ -176,6 +176,23 @@ function(db)
     ## Ignore packages that do not fit our OS.
     OS_type <- db[, "OS_type"]
     db[is.na(OS_type) | (OS_type == .Platform$OS.type), , drop = FALSE]
+}
+
+available_packages_filters_db$subarch <-
+function(db)
+{
+    ## Ignore packages that do not fit our sub-architecture.
+    ## Applies only to Mac and Windows binary repositories.
+    current <- .Platform$r_arch
+    if(!nzchar(current)) return(db)
+    archs <- db[, "Archs"]
+    if(all(is.na(archs))) return(db)
+    OK <- unlist(lapply(archs, function(x) {
+        if(is.na(x)) return(TRUE)
+        this <- strsplit(x, "[[:space:]]*,[[:space:]]*")[[1L]]
+        current %in% this
+    }))
+    db[OK, , drop = FALSE]
 }
 
 available_packages_filters_db$duplicates <-
@@ -423,6 +440,7 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
 .readPkgDesc <- function(lib, fields, pkgs = list.files(lib))
 {
     ## to be used in installed.packages() and similar
+    ## FIXME: this is vulnerable to installs going on in parallel
     ret <- matrix(NA_character_, length(pkgs), 2L+length(fields))
     for(i in seq_along(pkgs)) {
         pkgpath <- file.path(lib, pkgs[i])
@@ -430,12 +448,12 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
         pkgpath <- file.path(pkgpath, "DESCRIPTION")
         if(file.access(pkgpath, 4L)) next
         desc <- tryCatch(read.dcf(pkgpath, fields = fields), error = identity)
-        if(inherits(desc, "error")) {
+        if(inherits(desc, "error") || NROW(desc) < 1L) {
             warning(gettextf("read.dcf() error on file '%s'", pkgpath),
-                    domain=NA, call.=FALSE)
+                    domain = NA, call. = FALSE)
             next
         }
-        desc <- desc[1,]
+        desc <- desc[1L,]
         Rver <- strsplit(strsplit(desc["Built"], ";")[[1L]][1L],
                          "[ \t]+")[[1L]][2L]
         desc["Built"] <- Rver
@@ -446,7 +464,7 @@ new.packages <- function(lib.loc = NULL, repos = getOption("repos"),
 
 installed.packages <-
     function(lib.loc = NULL, priority = NULL, noCache = FALSE,
-             fields = NULL)
+             fields = NULL, subarch = .Platform$r_arch)
 {
     if(is.null(lib.loc))
         lib.loc <- .libPaths()
@@ -458,7 +476,7 @@ installed.packages <-
     }
 
     fields <- .instPkgFields(fields)
-    retval <- matrix("", 0L, 2L + length(fields))
+    retval <- matrix(character(0), 0L, 2L + length(fields))
     for(lib in lib.loc) {
 	dest <- file.path(tempdir(),
 			  paste("libloc_", URLencode(lib, TRUE),
@@ -478,20 +496,26 @@ installed.packages <-
 	}
     }
 
-    .fixupPkgMat(retval, fields, priority)
+    .fixupPkgMat(retval, fields, priority, subarch)
 }
 
-.fixupPkgMat <- function(mat, fields, priority) {
+.fixupPkgMat <- function(mat, fields, priority, subarch=NULL)
+{
     ## to be used in installed.packages() and similar
     colnames(mat) <- c("Package", "LibPath", fields)
-    if(length(mat) && !is.null(priority)) {
+    if (length(mat) && !is.null(priority)) {
 	keep <- !is.na(pmatch(mat[,"Priority"], priority,
 			      duplicates.ok = TRUE))
-	mat <- mat[keep, , drop=FALSE]
+	mat <- mat[keep, , drop = FALSE]
     }
-    if (length(mat)) {
-	rownames(mat) <- mat[, "Package"]
+    if (length(mat) && !is.null(subarch) && nzchar(subarch)) {
+        archs <- strsplit(mat[, "Archs"], ", ", fixed = TRUE)
+        keep <- unlist(lapply(archs,
+                              function(x) is.na(x[1L]) || subarch %in% x))
+	mat <- mat[keep, , drop = FALSE]
     }
+    if (length(mat)) mat <- mat[, colnames(mat) != "Archs", drop = FALSE]
+    if (length(mat)) rownames(mat) <- mat[, "Package"]
     mat
 }
 
@@ -511,8 +535,8 @@ remove.packages <- function(pkgs, lib)
 
     if(missing(lib) || is.null(lib)) {
         lib <- .libPaths()[1L]
-        warning(gettextf("argument 'lib' is missing: using %s", lib),
-                immediate. = TRUE, domain = NA)
+	message(gettextf("Removing package(s) from %s\n(as %s is unspecified)",
+			 sQuote(lib), sQuote("lib")), domain = NA)
     }
 
     paths <- .find.package(pkgs, lib)

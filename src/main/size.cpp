@@ -120,13 +120,20 @@ static R_size_t objectsize(SEXP s)
 	/* we don't know about these */
 	break;
     case VECSXP:
-    case EXPRSXP:
-    case WEAKREFSXP:
 	/* Generic Vector Objects */
 	vcnt = PTR2VEC(length(s));
 	for (i = 0; i < length(s); i++)
 	    cnt += objectsize(VECTOR_ELT(s, i));
 	isVec = TRUE;
+	break;
+    case EXPRSXP:
+	vcnt = PTR2VEC(length(s));
+	for (i = 0; i < length(s); i++)
+	    cnt += objectsize(XVECTOR_ELT(s, i));
+	isVec = TRUE;
+	break;
+    case WEAKREFSXP:
+	// Not properly addressed in CXXR:
 	break;
     case BCODESXP:
 	break;

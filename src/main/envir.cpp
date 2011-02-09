@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2008  The R Development Core Team.
+ *  Copyright (C) 1999-2010  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -694,6 +694,9 @@ void gsetVar(SEXP symbol, SEXP value, SEXP rho)
     bdg->assign(value);
 }
 
+/* get environment from a subclass if possible; else return NULL */
+#define simple_as_environment(arg) (IS_S4_OBJECT(arg) && (TYPEOF(arg) == S4SXP) ? R_getS4DataSlot(arg, ENVSXP) : R_NilValue)
+
 
 
 /*----------------------------------------------------------------------
@@ -718,7 +721,8 @@ SEXP attribute_hidden do_assign(SEXP call, SEXP op, SEXP args, SEXP rho)
     aenv = CADDR(args);
     if (TYPEOF(aenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(aenv) != ENVSXP)
+    if (TYPEOF(aenv) != ENVSXP &&
+	TYPEOF((aenv = simple_as_environment(aenv))) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
     ginherits = asLogical(CADDDR(args));
     if (ginherits == NA_LOGICAL)
@@ -729,6 +733,63 @@ SEXP attribute_hidden do_assign(SEXP call, SEXP op, SEXP args, SEXP rho)
 	defineVar(name, val, aenv);
     UNPROTECT(1);
     return val;
+}
+
+
+/**
+ * do_list2env : .Internal(list2env(x, envir, parent, hash, size))
+ *
+ * 2 cases: 1) envir = NULL -->  create new environment from list
+ *             elements, using parent, assuming part of new.env() functionality.
+ *
+ *          2) envir = environment --> assign x entries to names(x) in
+ *             *existing* envir
+ * @return a newly created environment() or envir {with new content}
+ */
+SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    SEXP x, xnms, envir;
+    int n;
+    checkArity(op, args);
+
+    if (TYPEOF(CAR(args)) != VECSXP)
+	error(_("first argument must be a named list"));
+    x = CAR(args); args = CDR(args);
+    n = LENGTH(x);
+    xnms = getAttrib(x, R_NamesSymbol);
+    if (TYPEOF(xnms) != STRSXP || LENGTH(xnms) != n)
+	error(_("names(x) must be a character vector of the same length as x"));
+    envir = CAR(args);  args = CDR(args);
+    if (TYPEOF(envir) == NILSXP) {
+	/* "copied" from do_newenv()  [ ./builtin.c ] */
+	SEXP enclos = CAR(args);
+	int hash = asInteger(CADR(args));
+	if( !isEnvironment(enclos) )
+	    error(_("'%s' must be an environment"), "parent");
+	if (hash) {
+	    SEXP size;
+	    PROTECT(size = coerceVector(CADDR(args), INTSXP));
+	    if (INTEGER(size)[0] == NA_INTEGER)
+		INTEGER(size)[0] = 0; /* so it will use the internal default */
+	    envir = R_NewHashedEnv(enclos, size);
+	    UNPROTECT(1);
+	} else
+	    envir = NewEnvironment(R_NilValue, R_NilValue, enclos);
+
+    } else { /* assign into existing environment */
+	if (TYPEOF(envir) != ENVSXP)
+	    error(_("invalid '%s' argument: must be NULL or environment"), 
+		  "envir");
+    }
+
+    PROTECT(envir);
+    for(int i = 0; i < n ; i++) {
+	SEXP name = install(translateChar(STRING_ELT(xnms, i)));
+	defineVar(name, VECTOR_ELT(x, i), envir);
+    }
+    UNPROTECT(1);
+
+    return envir;
 }
 
 
@@ -780,7 +841,8 @@ SEXP attribute_hidden do_remove(SEXP call, SEXP op, SEXP args, SEXP rho)
     envarg = CAR(args);
     if (TYPEOF(envarg) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(envarg) != ENVSXP)
+    if (TYPEOF(envarg) != ENVSXP &&
+	TYPEOF((envarg = simple_as_environment(envarg))) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
     args = CDR(args);
 
@@ -847,7 +909,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else if (TYPEOF(CADR(args)) == ENVSXP)
 	genv = CADR(args);
-    else {
+    else if(TYPEOF((genv = simple_as_environment(CADR(args)))) != ENVSXP) {
 	error(_("invalid '%s' argument"), "envir");
 	genv = R_NilValue;  /* -Wall */
     }
@@ -932,7 +994,13 @@ static SEXP gfind(const char *name, SEXP env, SEXPTYPE mode,
     return rval;
 }
 
-/* get multiple values from an environment */
+
+/** mget(): get multiple values from an environment
+ *
+ * .Internal(mget(x, envir, mode, ifnotfound, inherits))
+ *
+ * @return  a list of the same length as x, a character vector (of names).
+ */
 SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans, env, x, mode, ifnotfound, ifnfnd;
@@ -1386,9 +1454,12 @@ SEXP attribute_hidden do_ls(SEXP call, SEXP op, SEXP args, SEXP rho)
     return R_lsInternal(env, CXXRCONSTRUCT(Rboolean, all));
 }
 
+/* takes a *list* of environments and a boolean indicating whether to get all
+   names */
 SEXP R_lsInternal(SEXP env, Rboolean all)
 {
-    if (!isEnvironment(env))
+    if (!isEnvironment(env) &&
+	!isEnvironment(env = simple_as_environment(env)))
 	error(_("invalid '%s' argument"), "envir");
     const Environment* envir = static_cast<Environment*>(env);
     vector<const Symbol*> syms = envir->frame()->symbols(all);
@@ -1423,7 +1494,7 @@ SEXP attribute_hidden do_env2list(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     GCStackRoot<> framelist(FRAME(env));
 
-    all = asLogical(CADR(args));
+    all = asLogical(CADR(args)); /* all.names = TRUE/FALSE */
     if (all == NA_LOGICAL) all = 0;
 
     k = FrameSize(framelist, all);
@@ -1660,11 +1731,14 @@ static SEXP matchEnvir(SEXP call, const char *what)
 SEXP attribute_hidden
 do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP arg = CAR(args);
+    SEXP arg = CAR(args), ans;
     checkArity(op, args);
     check1arg(args, call, "object");
     if(isEnvironment(arg))
 	return arg;
+    if(isObject(arg) &&
+       DispatchOrEval(call, op, "as.environment", args, rho, &ans, 0, 1))
+	return ans;
     switch(TYPEOF(arg)) {
     case STRSXP:
 	return matchEnvir(call, translateChar(asChar(arg)));
@@ -1675,11 +1749,18 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,_("using 'as.environment(NULL)' is defunct"));
 	return R_BaseEnv;	/* -Wall */
     case S4SXP: {
+	/* dispatch was tried above already */
         SEXP dot_xData = R_getS4DataSlot(arg, ENVSXP);
-        if(arg == R_NilValue)
+	if(!isEnvironment(dot_xData))
 	    errorcall(call, _("S4 object does not extend class \"environment\""));
 	else
 	    return(dot_xData);
+    }
+    case VECSXP: {
+	/* implement as.environment.list() {isObject(.) is false for a list} */
+	return(eval(lang4(install("list2env"), arg,
+			  /*envir = */R_NilValue, /* parent = */R_EmptyEnv),
+		    rho));
     }
     default:
 	errorcall(call, _("invalid object for 'as.environment'"));
@@ -1689,6 +1770,8 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 void R_LockEnvironment(SEXP env, Rboolean bindings)
 {
+    if(IS_S4_OBJECT(env) && (TYPEOF(env) == S4SXP))
+	env = R_getS4DataSlot(env, ANYSXP); /* better be an ENVSXP */
     if (env == R_BaseEnv || env == R_BaseNamespace) {
 	if (bindings) {
 	    Environment::base()->frame()->lockBindings();
@@ -1710,7 +1793,8 @@ Rboolean R_EnvironmentIsLocked(SEXP env)
 {
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     return Rboolean(static_cast<Environment*>(env)->frame()->isLocked());
 }
@@ -1738,7 +1822,8 @@ void R_LockBinding(SEXP sym, SEXP env)
 	error(_("not a symbol"));
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
     Environment* envir = static_cast<Environment*>(env);
@@ -1754,7 +1839,8 @@ void R_unLockBinding(SEXP sym, SEXP env)
 	error(_("not a symbol"));
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
     Environment* envir = static_cast<Environment*>(env);
@@ -1772,7 +1858,8 @@ void R_MakeActiveBinding(SEXP sym, SEXP fun, SEXP env)
 	error(_("not a function"));
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     Environment* envir = static_cast<Environment*>(env);
     const Symbol* symbol = static_cast<Symbol*>(sym);
@@ -1787,7 +1874,8 @@ Rboolean R_BindingIsLocked(SEXP sym, SEXP env)
 	error(_("not a symbol"));
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     const Symbol* symbol = static_cast<Symbol*>(sym);
     Environment* envir = static_cast<Environment*>(env);
@@ -1803,7 +1891,8 @@ Rboolean R_BindingIsActive(SEXP sym, SEXP env)
 	error(_("not a symbol"));
     if (TYPEOF(env) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(env) != ENVSXP)
+    if (TYPEOF(env) != ENVSXP &&
+	TYPEOF((env = simple_as_environment(env))) != ENVSXP)
 	error(_("not an environment"));
     Frame::Binding* binding = findVarLocInFrame(env, sym, NULL);
     if (!binding)
@@ -2050,7 +2139,7 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
        to another environment, possibly with different names.
        Promises are not forced and active bindings are preserved. */
     SEXP impenv, impnames, expenv, expnames;
-    SEXP impsym, expsym, env, val;
+    SEXP impsym, expsym, val;
     int i, n;
 
     GCStackRoot<> binding;  // represented in PairList form.
@@ -2064,11 +2153,13 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(impenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(impenv) != ENVSXP)
+    if (TYPEOF(impenv) != ENVSXP && 
+	TYPEOF((impenv = simple_as_environment(impenv))) != ENVSXP)
 	error(_("bad import environment argument"));
     if (TYPEOF(expenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-    if (TYPEOF(expenv) != ENVSXP)
+    if (TYPEOF(expenv) != ENVSXP &&
+	TYPEOF((expenv = simple_as_environment(expenv))) != ENVSXP)
 	error(_("bad export environment argument"));
     if (TYPEOF(impnames) != STRSXP || TYPEOF(expnames) != STRSXP)
 	error(_("invalid '%s' argument"), "names");
@@ -2081,7 +2172,8 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 	expsym = install(translateChar(STRING_ELT(expnames, i)));
 
 	/* find the binding--may be a CONS cell or a symbol */
-	for (env = expenv, binding = R_NilValue;
+	SEXP binding = R_NilValue;
+	for (SEXP env = expenv;
 	     env != R_EmptyEnv && binding == R_NilValue;
 	     env = ENCLOS(env)) {
 	    Frame::Binding* bdg = findVarLocInFrame(env, expsym, NULL);

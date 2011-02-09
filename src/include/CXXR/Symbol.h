@@ -373,6 +373,7 @@ namespace CXXR {
     extern Symbol* const RecursiveSymbol;  	  // "recursive"
     extern Symbol* const SrcfileSymbol;    	  // "srcfile"
     extern Symbol* const SrcrefSymbol;     	  // "srcref"
+    extern Symbol* const WholeSrcrefSymbol;       // "wholeSrcref"
     extern Symbol* const TmpvalSymbol;     	  // "*tmp*"
     extern Symbol* const UseNamesSymbol;   	  // "use.names"
 }  // namespace CXXR

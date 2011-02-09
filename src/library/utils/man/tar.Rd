@@ -1,6 +1,6 @@
 % File src/library/utils/man/tar.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 2009 R Core Development Team
+% Copyright 2009-10 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{tar}
@@ -25,13 +25,15 @@ tar(tarfile, files = NULL,
   \item{files}{A character vector of filepaths to be archived:
     the default is to archive all files under the current directory.}
   
-  \item{compression}{logical or character.  The type of compression to
-    be used.  Can be abbreviated.}
+  \item{compression}{character string giving the type of compression to
+    be used (default none).  Can be abbreviated.}
 
   \item{compression_level}{integer: the level of compression.  Only used
     for the internal method.}
 
-  \item{tar}{character string: the path to the command to be used.}
+  \item{tar}{character string: the path to the command to be used.  If
+    the command itself contains spaces it needs to be quoted -- but
+    \code{tar} can also contain flags separated from the command by spaces.}
 }
 
 \details{

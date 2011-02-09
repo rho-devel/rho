@@ -56,6 +56,9 @@ qr.default <- function(x, tol = 1e-07, LAPACK = FALSE, ...)
     res
 }
 
+## + qr.lm  method defined in ../../stats/R/lm.R
+
+
 qr.coef <- function(qr, y)
 {
     if( !is.qr(qr) )
@@ -267,7 +270,10 @@ qr.X <- function (qr, complete = FALSE,
 	R <- tmp
     }
     res <- qr.qy(qr, R)
-    if(pivoted) # res may have more columns than length(qr$pivot)
+    cn <- colnames(res)
+    if(pivoted) {# res may have more columns than length(qr$pivot)
 	res[, qr$pivot] <- res[, ip]
+        if(!is.null(cn)) colnames(res)[qr$pivot] <- cn[ip]
+    }
     res
 }

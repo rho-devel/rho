@@ -23,10 +23,13 @@ ECHO = echo
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
-F77 = @F77@
-F77_VISIBILITY = @F77_VISIBILITY@
+## NB, set FC before F77 as on Solaris make, setting FC sets F77
 FC = @FC@
 FCFLAGS = @FCFLAGS@
+## additional libs needed when linking with $(FC), e.g. on Solaris
+FCLIBS = @FCLIBS@
+F77 = @F77@
+F77_VISIBILITY = @F77_VISIBILITY@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 FCPICFLAGS = @FCPICFLAGS@
@@ -100,7 +103,7 @@ ALL_FFLAGS = $(R_XTRA_FFLAGS) $(PKG_FFLAGS) $(FPICFLAGS) $(SHLIB_FFLAGS) $(FFLAG
 ALL_LIBS = $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)@DYLIB_UNDEFINED_ALLOWED_FALSE@ $(LIBINTL)
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .cpp .C .d .f .f90 .f95 .m .mm .M .o
+.SUFFIXES: .c .cc .cpp .d .f .f90 .f95 .m .mm .M .o
 
 @r_cc_rules_frag@
 @r_cxx_rules_frag@

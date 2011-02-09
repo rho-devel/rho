@@ -71,6 +71,7 @@ strsplit grep [g]sub [g]regexpr
 
 #include <Defn.h>
 #include <R_ext/RS.h>  /* for Calloc/Free */
+#include <ctype.h>
 #include <wchar.h>
 #include <wctype.h>    /* for wctrans_t */
 
@@ -344,8 +345,12 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    }
 		    bufp = laststart;
 		}
-		if (*bufp)
-		    SET_STRING_ELT(t, ntok, markKnown(bufp, STRING_ELT(x, i)));
+		if (*bufp) {
+		    if (use_UTF8)
+		        SET_STRING_ELT(t, ntok, mkCharCE(bufp, CE_UTF8));
+		    else
+		    	SET_STRING_ELT(t, ntok, markKnown(bufp, STRING_ELT(x, i)));
+		}
 		vmaxset(vmax2);
 	    }
 	} else if (perl_opt) {
@@ -444,8 +449,12 @@ SEXP attribute_hidden do_strsplit(SEXP call, SEXP op, SEXP args, SEXP env)
 		    else
 			SET_STRING_ELT(t, j, markKnown(pt, STRING_ELT(x, i)));
 		}
-		if (*bufp)
-		    SET_STRING_ELT(t, ntok, markKnown(bufp, STRING_ELT(x, i)));
+		if (*bufp) {
+		    if (use_UTF8)
+		        SET_STRING_ELT(t, ntok, mkCharCE(bufp, CE_UTF8));
+		    else
+		    	SET_STRING_ELT(t, ntok, markKnown(bufp, STRING_ELT(x, i)));
+		}
 		vmaxset(vmax2);
 	    }
 	    pcre_free(re_pe);
@@ -1250,7 +1259,8 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 		Free(cbuf);
 	    }
 	} else if (perl_opt) {
-	   int maxrep, ovector[30], eflag;
+	   int ncap, maxrep, ovector[30], eflag;
+	   memset(ovector, 0, 30*sizeof(int)); /* zero for unknown patterns */
 	   ns = strlen(s);
 	   /* worst possible scenario is to put a copy of the
 	      replacement after every character, unless there are
@@ -1264,8 +1274,9 @@ SEXP attribute_hidden do_gsub(SEXP call, SEXP op, SEXP args, SEXP env)
 	   } else nns = ns + maxrep + 1000;
 	   u = cbuf = Calloc(nns, char);
 	   offset = 0; nmatch = 0; eflag = 0; last_end = -1;
-	   while (pcre_exec(re_pcre, re_pe, s, ns, offset, eflag,
-			    ovector, 30) >= 0) {
+	   /* ncap is one more than the number of capturing patterns */
+	   while ((ncap = pcre_exec(re_pcre, re_pe, s, ns, offset, eflag,
+				   ovector, 30)) >= 0) {
 	       /* printf("%s, %d, %d %d\n", s, offset,
 		  ovector[0], ovector[1]); */
 	       nmatch++;

@@ -59,6 +59,8 @@ extern "C" {
 #include <strings.h>  /* for strncasecmp */
 #endif
 
+#include <ctype.h> /* for isspace */
+
 #define match_char(ch1, ch2) if (ch1 != ch2) return NULL
 
 /* we guarantee to have strncasecmp in R */
