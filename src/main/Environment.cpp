@@ -42,6 +42,7 @@
 #include "CXXR/Environment.h"
 
 #include <cstdlib>
+#include <iostream>
 #include <typeinfo>
 #include "R_ext/Error.h"
 #include "localization.h"
@@ -301,5 +302,26 @@ namespace CXXR {
 	pair<Environment*, RObject*> pr
 	    = findTestedValue(symbol, env, functest, inherits);
 	return make_pair(pr.first, static_cast<FunctionBase*>(pr.second));
+    }
+}
+
+// Utility intended to be called from a debugger.  Prints out the
+// names of the Symbols in an Environment, together with the addresses
+// the Symbols are bound to.
+namespace CXXR {
+    void LS(SEXP s) {
+	const Environment* env = SEXP_downcast<Environment*>(s);
+	const Frame* frame = env->frame();
+	vector<const Symbol*> syms = frame->symbols(true);
+	for (vector<const Symbol*>::const_iterator it = syms.begin();
+	     it != syms.end(); ++it) {
+	    const Symbol* sym = *it;
+	    const RObject* val = frame->binding(sym)->rawValue();
+	    cout << '\"' << sym->name()->stdstring()
+		 << "\" (\'CXXR::RObject\'*)" << val;
+	    if (val)
+		cout << " [" << typeid(*val).name() << ']';
+	    cout << '\n';
+	}
     }
 }

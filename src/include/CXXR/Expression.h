@@ -110,18 +110,6 @@ namespace CXXR {
 extern "C" {
 #endif
 
-    /** @brief Deparse an Expression.
-     *
-     * This function is added in CXXR, mainly to facilitate debugging:
-     * from within gdb, <tt>p R_CHAR(DEPARSE(e))</tt> is useful.
-     *
-     * @param e Pointer to a CXXR::Expression (checked) to be deparsed.
-     *
-     * @return pointer to CXXR::String representing the deparsed
-     * expression.
-     */
-    SEXP DEPARSE(SEXP e);
-
     /** @brief Expression currently being evaluated.
      *
      * @return Pointer to the Expression currently being evaluated.

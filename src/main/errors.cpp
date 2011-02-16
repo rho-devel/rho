@@ -1187,13 +1187,21 @@ SEXP R_GetTraceback(int skip)
     return s;
 }
 
-void TRACEBACK()
-{
-    GCStackRoot<PairList> tb(static_cast<PairList*>(R_GetTraceback(0)));
-    while (tb) {
-	StringVector* sv = static_cast<StringVector*>(tb->car());
-	cout << R_CHAR((*sv)[0]) << '\n';
-	tb = tb->tail();
+// Utility intended to be called from a debugger.  Prints out the
+// hierarchy of R function calls, as recorded by FunctionContexts.
+namespace CXXR {
+    void TRACEBACK()
+    {
+	GCNode::GCInhibitor gci;
+	GCStackRoot<PairList> tb(static_cast<PairList*>(R_GetTraceback(0)));
+	while (tb) {
+	    StringVector* sv = static_cast<StringVector*>(tb->car());
+	    for (unsigned int i = 0; i < sv->size(); ++i) {
+		cout << (i == 0 ? "* " : "  ");
+		cout << (*sv)[i]->c_str() << '\n';
+	    }
+	    tb = tb->tail();
+	}
     }
 }
 

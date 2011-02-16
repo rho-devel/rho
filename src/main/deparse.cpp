@@ -200,12 +200,18 @@ SEXP deparse1(SEXP call, Rboolean abbrev, int opts)
 			      opts, -1);
 }
 
-SEXP DEPARSE(SEXP s)
-{
-    GCStackRoot<Expression> e(SEXP_downcast<Expression*>(s));
-    GCStackRoot<StringVector>
-	sv(static_cast<StringVector*>(deparse1(e, FALSE, DEFAULTDEPARSE)));
-    return (*sv)[0];
+// Utility intended to be called from a debugger.  Prints out the
+// deparse of an RObject.
+namespace CXXR {
+    void DEPARSE(SEXP s)
+    {
+	GCNode::GCInhibitor gci;
+	GCStackRoot<> srt(s);
+	GCStackRoot<StringVector>
+	    sv(static_cast<StringVector*>(deparse1(s, FALSE, DEFAULTDEPARSE)));
+	for (unsigned int i = 0; i < sv->size(); ++i)
+	    cout << (*sv)[i]->c_str() << '\n';
+    }
 }
 	
 static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
