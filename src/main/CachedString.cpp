@@ -38,8 +38,7 @@
  */
 
 #include "CXXR/CachedString.h"
-
-#include "R_ext/Error.h"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
@@ -49,6 +48,7 @@ namespace CXXR {
 	int (*IS_CACHEDp)(SEXP) = IS_CACHED;
 	SEXP (*mkCharp)(const char*) = Rf_mkChar;
 	SEXP (*mkCharCEp)(const char*, cetype_t) = Rf_mkCharCE;
+	SEXP (*Rf_mkCharLenp)(const char*, int) = Rf_mkCharLen;
     }
 }
 
@@ -112,4 +112,22 @@ void CachedString::initialize()
 const char* CachedString::typeName() const
 {
     return CachedString::staticTypeName();
+}
+
+// ***** C interface *****
+
+SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
+{
+    switch(encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_SYMBOL:
+    case CE_ANY:
+	break;
+    default:
+	Rf_error(_("unknown encoding: %d"), encoding);
+    }
+    string str(text, length);
+    return CachedString::obtain(str, encoding);
 }

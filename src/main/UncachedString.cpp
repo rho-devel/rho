@@ -37,18 +37,10 @@
  * Implementation of class CXXR::UncachedString and related functions.
  */
 
-#include <cstring>
 #include "CXXR/UncachedString.h"
-#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
-
-namespace CXXR {
-    namespace ForceNonInline {
-	SEXP (*Rf_mkCharLenp)(const char*, int) = Rf_mkCharLen;
-    }
-}
 
 UncachedString::UncachedString(const std::string& str, cetype_t encoding)
     : String(str.size(), encoding), m_databytes(str.size() + 1),
@@ -71,22 +63,4 @@ void UncachedString::allocData(size_t sz)
 const char* UncachedString::typeName() const
 {
     return UncachedString::staticTypeName();
-}
-
-// ***** C interface *****
-
-SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
-{
-    switch(encoding) {
-    case CE_NATIVE:
-    case CE_UTF8:
-    case CE_LATIN1:
-    case CE_SYMBOL:
-    case CE_ANY:
-	break;
-    default:
-	Rf_error(_("unknown encoding: %d"), encoding);
-    }
-    string str(text, length);
-    return CXXR_NEW(UncachedString(str, encoding));
 }

@@ -417,11 +417,25 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     }
     PROTECT(xnew = allocVector(TYPEOF(x), ii));
     ii = 0;
-    for (i = 0; i < len; i++) {
-	if (INTEGER(include)[i] == 1) {
-	    SET_VECTOR_ELT(xnew, ii, VECTOR_ELT(x, i));
-	    ii++;
+    switch (TYPEOF(x)) {
+    case VECSXP:
+	for (i = 0; i < len; i++) {
+	    if (INTEGER(include)[i] == 1) {
+		SET_VECTOR_ELT(xnew, ii, VECTOR_ELT(x, i));
+		ii++;
+	    }
 	}
+	break;
+    case EXPRSXP:
+	for (i = 0; i < len; i++) {
+	    if (INTEGER(include)[i] == 1) {
+		SET_XVECTOR_ELT(xnew, ii, XVECTOR_ELT(x, i));
+		ii++;
+	    }
+	}
+	break;
+    default:
+	Rf_error(_("Internal error: unexpected type in DeleteListElements"));
     }
     xnames = getAttrib(x, R_NamesSymbol);
     if (xnames != R_NilValue) {
@@ -1442,9 +1456,21 @@ static SEXP DeleteOneVectorListItem(SEXP x, int which)
     if (0 <= which && which < n) {
 	PROTECT(y = allocVector(TYPEOF(x), n - 1));
 	k = 0;
-	for (i = 0 ; i < n; i++)
-	    if(i != which)
-		SET_VECTOR_ELT(y, k++, VECTOR_ELT(x, i));
+	switch (TYPEOF(x)) {
+	case VECSXP:
+	    for (i = 0 ; i < n; i++)
+		if(i != which)
+		    SET_VECTOR_ELT(y, k++, VECTOR_ELT(x, i));
+	    break;
+	case EXPRSXP:
+	    for (i = 0 ; i < n; i++)
+		if(i != which)
+		    SET_XVECTOR_ELT(y, k++, XVECTOR_ELT(x, i));
+	    break;
+	default:
+	    Rf_error(_("Internal error:"
+		       " unexpected type in DeleteOneVectorListItem"));
+	}
 	xnames = getAttrib(x, R_NamesSymbol);
 	if (xnames != R_NilValue) {
 	    PROTECT(ynames = allocVector(STRSXP, n - 1));
@@ -1683,6 +1709,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1914:  /* vector     <- real       */
 	case 1915:  /* vector     <- complex    */
 	case 1916:  /* vector     <- character  */
+	case 1919:      /* vector     <- vector     */
 	case 1920:  /* vector     <- expression */
 #ifdef BYTECODE
 	case 1921:  /* vector     <- bytecode   */
@@ -1693,9 +1720,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1925:  /* vector     <- S4 */
 	case 1903: case 1907: case 1908: case 1999: /* functions */
 
-	    /* drop through: vectors and expressions are treated the same */
+	    if( NAMED(y) ) y = duplicate(y);
+	    SET_VECTOR_ELT(x, offset, y);
+	    break;
 
-	case 2001:	/* expression <- symbol	    */
 	case 2002:	/* expression <- pairlist   */
 	case 2006:	/* expression <- language   */
 	case 2010:	/* expression <- logical    */
@@ -1705,11 +1733,10 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 2016:	/* expression <- character  */
 	case 2024:  /* expression     <- raw */
 	case 2025:  /* expression     <- S4 */
-	case 1919:      /* vector     <- vector     */
 	case 2020:	/* expression <- expression */
 
 	    if( NAMED(y) ) y = duplicate(y);
-	    SET_VECTOR_ELT(x, offset, y);
+	    SET_XVECTOR_ELT(x, offset, y);
 	    break;
 
 	case 2424:      /* raw <- raw */
@@ -1942,7 +1969,9 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		    PROTECT(ansnames = allocVector(STRSXP, nx - 1));
 		    for (i = 0, ii = 0; i < nx; i++)
 			if (i != imatch) {
-			    SET_VECTOR_ELT(ans, ii, VECTOR_ELT(x, i));
+			    if (type == EXPRSXP)
+				SET_XVECTOR_ELT(ans, ii, XVECTOR_ELT(x, i));
+			    else SET_VECTOR_ELT(ans, ii, VECTOR_ELT(x, i));
 			    SET_STRING_ELT(ansnames, ii, STRING_ELT(names, i));
 			    ii++;
 			}
