@@ -105,7 +105,7 @@ namespace CXXR {
 	/** @brief Convert a ConsCell to a (possibly) different
 	 * ConsCell type.
 	 *
-	 * @param T A (non-abstract) class derived from ConsCell.
+	 * @tparam T A (non-abstract) class derived from ConsCell.
 	 *
 	 * @param cc Pointer to a ConsCell (possibly null).  The
 	 *          effect of the method on \a cc is undefined;

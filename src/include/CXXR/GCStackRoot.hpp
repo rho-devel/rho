@@ -152,10 +152,10 @@ namespace CXXR {
      * requires that GCStackRoot objects are destroyed in the reverse
      * order of creation, and the destructor checks this.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCStackRoot using the
-     *          type GCStackRoot<const String>.
+     * @tparam T GCNode or a type publicly derived from GCNode.  This
+     *           may be qualified by const, so for example a const
+     *           String* may be encapsulated in a GCStackRoot using the
+     *           type GCStackRoot<const String>.
      *
      * \par Caller protects:
      * Suppose some code calls a function (or class method) that takes

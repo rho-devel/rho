@@ -118,10 +118,10 @@ namespace CXXR {
      * object, rather than by containing a pointer or reference
      * directly.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCEdge using the type
-     *          GCEdge<const String>.
+     * @tparam T GCNode or a type publicly derived from GCNode.  This
+     *           may be qualified by const, so for example a const
+     *           String* may be encapsulated in a GCEdge using the type
+     *           GCEdge<const String>.
      */
     template <class T = RObject>
     class GCEdge : public GCEdgeBase {

@@ -57,10 +57,11 @@ namespace CXXR {
      * the vector will copy the objects pointed to, provided that they
      * are clonable.
      *
-     * @param T This should be RObject or a type (publicly) derived
-     * from RObject.  The vector elements will be of type \c Handle<T>.
+     * @tparam T This should be RObject or a type (publicly) derived
+     *           from RObject.  The vector elements will be of type \c
+     *           Handle<T>.
      *
-     * @param ST The required ::SEXPTYPE of the vector.
+     * @tparam ST The required ::SEXPTYPE of the vector.
      */
     template <typename T, SEXPTYPE ST>
     class HandleVector : public VectorBase {

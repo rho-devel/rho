@@ -159,10 +159,10 @@ namespace CXXR {
      * <tt>Environment::s_base</tt> is declared and initialised in
      * Environment.cpp for a preferable approach.
      *
-     * @param T GCNode or a type publicly derived from GCNode.  This
-     *          may be qualified by const, so for example a const
-     *          String* may be encapsulated in a GCRoot using the type
-     *          GCRoot<const String>.
+     * @tparam T GCNode or a type publicly derived from GCNode.  This
+     *           may be qualified by const, so for example a const
+     *           String* may be encapsulated in a GCRoot using the type
+     *           GCRoot<const String>.
      */
     template <class T = RObject>
     class GCRoot : public GCRootBase {

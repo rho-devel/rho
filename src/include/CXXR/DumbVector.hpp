@@ -50,11 +50,13 @@ namespace CXXR {
     /** @brief Vector of 'plain old data'.
      *
      * This is a templated class to represent an R data vector.
-     * @param T The type of the elements of the vector.  This should
-     *          be either (i) a C++ built-in data type, or (ii) a
-     *          class type with a trivial destructor, and a copy
-     *          constructor implemented by bitwise copy.
-     * @param ST The required ::SEXPTYPE of the vector.
+     *
+     * @tparam T The type of the elements of the vector.  This should
+     *           be either (i) a C++ built-in data type, or (ii) a
+     *           class type with a trivial destructor, and a copy
+     *           constructor implemented by bitwise copy.
+     *
+     * @tparam ST The required ::SEXPTYPE of the vector.
      */
     template <typename T, SEXPTYPE ST>
     class DumbVector : public VectorBase {

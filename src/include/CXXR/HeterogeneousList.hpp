@@ -190,8 +190,8 @@ namespace CXXR {
     /** @brief Doubly-linked list of objects derived from a class \a
      *  Node.
      *
-     * @param Node Base class for object on the list.  \a Node must
-     *          itself be derived from HeterogeneousListBase::Link.
+     * @tparam Node Base class for object on the list.  \a Node must
+     *           itself be derived from HeterogeneousListBase::Link.
      */
     template <class Node>
     class HeterogeneousList : public HeterogeneousListBase {

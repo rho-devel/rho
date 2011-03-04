@@ -48,11 +48,11 @@ namespace CXXR {
 
     /** Down cast within the RObject class tree.
      *
-     * @param PtrOut Cast the pointer to type \a PtrOut, where \a
+     * @tparam PtrOut Cast the pointer to type \a PtrOut, where \a
      *          PtrOut is a pointer or const pointer to RObject or a
      *          class derived from RObject.
      *
-     * @param PtrIn Cast the pointer from type \a PtrIn, where \a
+     * @tparam PtrIn Cast the pointer from type \a PtrIn, where \a
      *          PtrIn is a pointer or const pointer to RObject or a
      *          class derived from RObject.  This type is usually
      *          inferred from the supplied parameter \a s.

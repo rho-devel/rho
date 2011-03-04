@@ -57,11 +57,11 @@ namespace CXXR {
      * SchwarzCounter object is destroyed is class \a T itself cleaned
      * up.
      *
-     * @param T class whose initialization and clean-up are to be
-     *          controlled by the Schwarz counter.  This class must
-     *          defined static methods <tt>initialize()</tt> and
-     *          <tt>cleanup()</tt>, capable of being invoked with no
-     *          parameters.
+     * @tparam T class whose initialization and clean-up are to be
+     *           controlled by the Schwarz counter.  This class must
+     *           defined static methods <tt>initialize()</tt> and
+     *           <tt>cleanup()</tt>, capable of being invoked with no
+     *           parameters.
      */
     template <class T> class SchwarzCounter {
     public:

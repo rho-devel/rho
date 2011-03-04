@@ -112,8 +112,8 @@ namespace CXXR {
 	public:
 	    /** @brief Constructor.
 	     *
-	     * @param Pointer to the Environment with which this
-	     * LoopScope is to be associated.
+	     * @param env Pointer to the Environment with which this
+	     *          LoopScope is to be associated.
 	     */
 	    LoopScope(Environment* env)
 		: m_environment(env), m_prev_state(env->m_in_loop)
@@ -146,8 +146,8 @@ namespace CXXR {
 	public:
 	    /** @brief Constructor.
 	     *
-	     * @param Pointer to the Environment with which this
-	     * ReturnScope is to be associated.
+	     * @param env Pointer to the Environment with which this
+	     *          ReturnScope is to be associated.
 	     */
 	    ReturnScope(Environment* env)
 		: m_environment(env), m_prev_state(env->m_can_return)
@@ -569,9 +569,9 @@ namespace CXXR {
      * this function succeeds in finding a Binding satisfying the
      * predicate, then any read monitor for that Binding is called.
      *
-     * @param UnaryPredicate A type of function or function object
-     *          capable of accepting const RObject* and returning
-     *          bool.
+     * @tparam UnaryPredicate A type of function or function object
+     *           capable of accepting const RObject* and returning
+     *           bool.
      *
      * @param symbol Pointer to the Symbol for which a Binding is
      *          sought.

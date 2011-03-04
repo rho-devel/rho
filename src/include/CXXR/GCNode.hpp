@@ -290,8 +290,8 @@ namespace CXXR {
 	 * It is permissible (but pointless) for a node to be exposed
 	 * more than once.
 	 *
-	 * @param T GCNode or any class derived from it, possibly
-	 *          qualified by const.
+	 * @tparam T GCNode or any class derived from it, possibly
+	 *           qualified by const.
 	 *
 	 * @param node Pointer to the node whose construction has been
 	 *          completed.

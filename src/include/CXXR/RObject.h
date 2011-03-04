@@ -279,7 +279,7 @@ namespace CXXR {
 	 * will point to a clone of \a x ; if not, then the copy will
 	 * point to \a x itself.
 	 *
-	 * @param T RObject or a class publicly derived from RObject.
+	 * @tparam T RObject or a class publicly derived from RObject.
 	 */
 	template <class T = RObject>
 	class Handle : public GCEdge<T> {
@@ -387,7 +387,7 @@ namespace CXXR {
 
 	/** @brief Return a pointer to a copy of an object.
 	 *
-	 * @param T RObject or a type derived from RObject.
+	 * @tparam T RObject or a type derived from RObject.
 	 *
 	 * @param pattern Either a null pointer or a pointer to the
 	 *          object to be cloned.
