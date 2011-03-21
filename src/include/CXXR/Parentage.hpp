@@ -3,14 +3,18 @@
 
 #ifdef __cplusplus
 
+#include <vector>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/vector.hpp>
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/GCStackRoot.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/RObject.h"
-#include "CXXR/Provenance.hpp"
 
 namespace CXXR {
+	class Provenance;
 	class Parentage : public std::vector<GCEdge<Provenance> > {
 	public:
 
@@ -33,6 +37,40 @@ namespace CXXR {
 	void pushProvenance(Provenance*);
 	
 	private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    printf("Deserialize Parentage\n");
+	    unsigned int sz;
+	    ar >> sz;
+	    for (unsigned int i=0;i<sz;i++) {
+		Provenance *p;
+		ar >> p;
+		GCNode::expose(p);
+		pushProvenance(p);
+		printf("Pushed parent %d\n", i);
+	    }
+	    printf("Done Deseiralize Parentage\n");
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    printf("Serialize Parentage\n");
+	    unsigned int sz=size();
+	    ar << sz;
+	    for (unsigned int i=0;i<sz;i++) {
+		Provenance *p=at(i);
+		ar << p;
+		printf("Saved parent %d\n", i);
+	    }
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    boost::serialization::split_member(ar, *this, version);
+	}
+
 	unsigned long p_refcount;
 	};
 }

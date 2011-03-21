@@ -255,14 +255,17 @@ SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-	GCNode::GCInhibitor inhibitor;
-
 	std::ifstream ifs("bserialize.out");
 	boost::archive::text_iarchive ia(ifs);
 
 	Frame::Binding bdg;
 
 	ia >> bdg;
+	Environment* env=static_cast<Environment*>(rho);
+	Frame::Binding* cbdg=env->frame()->obtainBinding(bdg.symbol());
 
+	cbdg->setProvenance(const_cast<Provenance*>(bdg.getProvenance()));
+	cbdg->setValue(bdg.rawValue(), bdg.origin(), TRUE);
+	
 	return R_NilValue;
 }

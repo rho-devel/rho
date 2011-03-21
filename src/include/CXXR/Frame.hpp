@@ -285,7 +285,7 @@ namespace CXXR {
 	     */
 	    RObject* rawValue() const
 	    {
-		m_frame->monitorRead(*this);
+	    	if (m_frame) m_frame->monitorRead(*this);
 		return m_value;
 	    }
 
@@ -329,8 +329,11 @@ namespace CXXR {
 	     *          bound.
 	     *
 	     * @param origin Origin of the newly assigned value.
+	     *
+	     * @param quiet Don't trigger monitor
 	     */
-	    void setValue(RObject* new_value, Origin origin = EXPLICIT);
+	    void setValue(RObject* new_value, Origin origin = EXPLICIT,
+	                  bool quiet = FALSE);
 
 	    /** @brief Bound symbol.
 	     *
@@ -366,8 +369,10 @@ namespace CXXR {
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
 	    	printf("Serialize Frame::Binding\n");
+		// We don't yet serialize Frame m_frame
 	    	ar & m_active;
 		ar & m_locked;
+		ar & m_origin;
 		ar & m_provenance;
 		ar & m_symbol;
 		ar & m_value;

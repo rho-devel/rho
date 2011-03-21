@@ -14,12 +14,12 @@
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/GCStackRoot.h"
+#include "CXXR/Parentage.hpp"
 #include "CXXR/RObject.h"
 #include "CXXR/StringVector.h"
 #include "CXXR/Symbol.h"
 
 namespace CXXR {
-	class Parentage;
 
 	class Provenance : public GCNode {
 	public:
@@ -69,8 +69,12 @@ namespace CXXR {
 			ar >> m_expression;
 			ar >> m_parentpos;
 			ar >> m_symbol;
-			m_children=NULL;
+			//ar >> m_parentage;
 			m_parentage=NULL;
+			m_children=new Set();
+
+			//m_parentage->incRefCount();
+			//announceBirth();
 		}
 		
 		template <class Archive>
@@ -80,6 +84,7 @@ namespace CXXR {
 			ar << m_expression;
 			ar << m_parentpos;
 			ar << m_symbol;
+			//ar << m_parentage;
 		}
 		template <class Archive>
 		void serialize(Archive & ar, const unsigned int version) {

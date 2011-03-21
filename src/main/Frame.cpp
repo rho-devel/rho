@@ -120,7 +120,7 @@ void Frame::Binding::setFunction(FunctionBase* function, Origin origin)
     m_frame->monitorWrite(*this);
 }
 
-void Frame::Binding::setValue(RObject* new_value, Origin origin)
+void Frame::Binding::setValue(RObject* new_value, Origin origin, bool quiet)
 {
     if (isLocked())
 	Rf_error(_("cannot change value of locked binding for '%s'"),
@@ -130,7 +130,8 @@ void Frame::Binding::setValue(RObject* new_value, Origin origin)
 		 "setFunction()");
     m_value = new_value;
     m_origin = origin;
-    m_frame->monitorWrite(*this);
+    if (!quiet)
+	m_frame->monitorWrite(*this);
 }
 
 // Frame::Binding::value() is defined in envir.cpp (for the time being).

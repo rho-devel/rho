@@ -1,4 +1,5 @@
 #include "CXXR/Parentage.hpp"
+#include "CXXR/Provenance.hpp"
 
 using namespace std;
 using namespace CXXR;

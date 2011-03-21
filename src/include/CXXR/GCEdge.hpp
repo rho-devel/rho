@@ -136,11 +136,12 @@ namespace CXXR {
 		break;
 	    case OTHER:
  		ar >> const_cast<GCNode* &>(m_target);
+		if (m_target) {
+		    GCNode::expose(m_target);
+		    m_target->incRefCount();
+		}
 		break;
 	    }
-	    // Expose if necessary
-	    if (m_target && !m_target->exposed())
-		GCNode::expose(m_target);
 	}
 
 	template<class Archive>
