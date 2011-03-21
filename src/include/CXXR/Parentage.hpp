@@ -51,7 +51,7 @@ namespace CXXR {
 		pushProvenance(p);
 		printf("Pushed parent %d\n", i);
 	    }
-	    printf("Done Deseiralize Parentage\n");
+	    printf("Done Deserialize Parentage\n");
 	}
 
 	template<class Archive>

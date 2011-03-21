@@ -66,25 +66,28 @@ namespace CXXR {
 		void load(Archive & ar, const unsigned int version) {
 			ar >> boost::serialization::base_object<GCNode>(*this);
 			printf("Deserialize Provenance\n");
+			ar >> m_timestamp.tv_sec;
+			ar >> m_timestamp.tv_usec;
 			ar >> m_expression;
 			ar >> m_parentpos;
 			ar >> m_symbol;
-			//ar >> m_parentage;
-			m_parentage=NULL;
+			ar >> m_parentage;
 			m_children=new Set();
 
-			//m_parentage->incRefCount();
-			//announceBirth();
+			m_parentage->incRefCount();
+			announceBirth();
 		}
 		
 		template <class Archive>
 		void save(Archive & ar, const unsigned int version) const {
 			ar << boost::serialization::base_object<GCNode>(*this);
 			printf("Serialize Provenance\n");
+			ar << m_timestamp.tv_sec;
+			ar << m_timestamp.tv_usec;
 			ar << m_expression;
 			ar << m_parentpos;
 			ar << m_symbol;
-			//ar << m_parentage;
+			ar << m_parentage;
 		}
 		template <class Archive>
 		void serialize(Archive & ar, const unsigned int version) {
