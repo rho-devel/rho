@@ -225,7 +225,7 @@ static void setupwarnings(void)
 }
 
 /* Rvsnprintf: like vsnprintf, but guaranteed to null-terminate. */
-static int Rvsnprintf(char *buf, size_t size, const char  *format, va_list ap)
+static int Rvsnprintf(char *buf, std::size_t size, const char  *format, va_list ap)
 {
     int val;
     val = vsnprintf(buf, size, format, ap);

@@ -996,7 +996,7 @@ static R_INLINE int xtable_key_comp(const void *a, const void *b)
 
 #define BSEARCH(_rc,_key,_base,_nmemb,_TYPE,_comp)             \
 {                                                              \
-    size_t l, u, idx;                                          \
+    std::size_t l, u, idx;                                          \
     _TYPE *p;                                                  \
     int comp;                                                  \
     l = 0;                                                     \

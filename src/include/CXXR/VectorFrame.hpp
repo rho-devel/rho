@@ -72,9 +72,9 @@ namespace CXXR {
 	VectorFrame* clone() const;
 	bool erase(const Symbol* symbol);
 	void lockBindings();
-	size_t numBindings() const;
+	std::size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
-	size_t size() const;
+	std::size_t size() const;
 	void softMergeInto(Frame* target) const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 

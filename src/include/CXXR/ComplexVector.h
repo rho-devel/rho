@@ -47,20 +47,32 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/DumbVector.hpp"
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<Rcomplex> {
+	    const Rcomplex& operator()() const
+	    {
+		static Rcomplex na(NA_REAL, NA_REAL);
+		return na;
+	    }
+	};
+    }
+
     template <>
-    inline const char* DumbVector<Rcomplex, CPLXSXP>::staticTypeName()
+    inline const char* FixedVector<Rcomplex, CPLXSXP>::staticTypeName()
     {
 	return "complex";
     }
 
     /** @brief Vector of complex numbers.
      */
-    typedef CXXR::DumbVector<Rcomplex, CPLXSXP> ComplexVector;
+    typedef CXXR::FixedVector<Rcomplex, CPLXSXP> ComplexVector;
 }  // namespace CXXR
 
 extern "C" {

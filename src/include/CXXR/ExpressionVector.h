@@ -52,15 +52,13 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/HandleVector.hpp"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    class ListVector;
-
     // Template specialization:
     template <>
-    inline const char* HandleVector<RObject, EXPRSXP>::staticTypeName()
+    inline const char* FixedVector<RHandle<>, EXPRSXP>::staticTypeName()
     {
 	return "expression";
     }
@@ -74,56 +72,7 @@ namespace CXXR {
      * @todo Replace the encapsulated pointer type RObject* with something
      * stricter (but is needs to embrace Symbol as well as Expression).
      */
-    class ExpressionVector : public HandleVector<RObject, EXPRSXP> {
-    public:
-	/** @brief Create an ExpressionVector.
-	 *
-	 * @param sz Number of elements required.  Zero is permissible.
-	 */
-	explicit ExpressionVector(size_t sz)
-	    : HandleVector<RObject, EXPRSXP>(sz)
-	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * Copy the ExpressionVector, using the RObject::Handle
-	 * copying semantics.
-	 *
-	 * @param pattern ExpressionVector to be copied.
-	 */
-	ExpressionVector(const ExpressionVector& pattern)
-	    : HandleVector<RObject, EXPRSXP>(pattern)
-	{}
-
-	/** @brief Create an ExpressionVector from a ListVector.
-	 *
-	 * @param lv The ListVector to be copied.  The
-	 *          ExpressionVector created will comprise exactly
-	 *          the same sequence of pointers to RObject as \a
-	 *          lv.  (Logically this parameter would have type
-	 *          <tt>const ListVector&</tt>, but that creates
-	 *          implementational difficulties out of proportion to
-	 *          the niche role of this constructor.)
-	 *
-	 * @note The objects pointed to by \a lv are never themselves
-	 * copied in creating the ExpressionVector.  This is rather at
-	 * variance with the general semantics of HandleVector, and
-	 * perhaps ought to be changed.
-	 *
-	 * @note Q: Of all the possible coercions to ExpressionVector,
-	 * why have a constructor to implement this one?  A: Because
-	 * in all other cases, existing code in coerce.cpp needed at
-	 * most trivial modification.
-	 */
-	explicit ExpressionVector(ListVector& lv);
-
-	// Virtual function of RObject:
-	ExpressionVector* clone() const;
-    private:
-	// Declare private to ensure that ExpressionVector objects are
-	// allocated only using 'new':
-	~ExpressionVector() {}
-    };
+    typedef FixedVector<RHandle<>, EXPRSXP> ExpressionVector;
 }  // namespace CXXR
 
 extern "C" {

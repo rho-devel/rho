@@ -46,7 +46,8 @@
 
 #include <stack>
 #include <vector>
-#include "SchwarzCounter.hpp"
+#include "CXXR/config.hpp"
+#include "CXXR/SchwarzCounter.hpp"
 
 namespace CXXR {
     /** @brief Class for implementing R_alloc() and kindred functions.

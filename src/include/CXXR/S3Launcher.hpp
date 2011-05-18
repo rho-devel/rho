@@ -225,7 +225,7 @@ namespace CXXR {
 	 * @return the location (counting from zero) within the
 	 * classes() vector to which this S3 method corresponds.
 	 */
-	size_t locInClasses() const
+	std::size_t locInClasses() const
 	{
 	    return m_index;
 	}
@@ -268,7 +268,7 @@ namespace CXXR {
 	  // null if no method was found.  If null, subsequent fields
 	  // are not meaningful.
 	Symbol* m_symbol;  // Pointer to the Symbol naming the method found.  
-	size_t m_index;  // Location within the classes vector to which
+	std::size_t m_index;  // Location within the classes vector to which
 	  // 'function' corresponds, or one past the end if using a
 	  // default method.
 	bool m_using_group;  // True iff 'function' is a group method.

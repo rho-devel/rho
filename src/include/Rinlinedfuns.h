@@ -369,24 +369,6 @@ INLINE_FUN Rboolean Rf_isVectorAtomic(SEXP s)
     }
 }
 
-INLINE_FUN Rboolean Rf_isVector(SEXP s)/* === Rf_isVectorList() or Rf_isVectorAtomic() */
-{
-    switch(TYPEOF(s)) {
-    case LGLSXP:
-    case INTSXP:
-    case REALSXP:
-    case CPLXSXP:
-    case STRSXP:
-    case RAWSXP:
-
-    case VECSXP:
-    case EXPRSXP:
-	return TRUE;
-    default:
-	return FALSE;
-    }
-}
-
 INLINE_FUN Rboolean Rf_isFrame(SEXP s)
 {
     SEXP klass;

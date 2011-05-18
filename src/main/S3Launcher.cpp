@@ -45,15 +45,15 @@ void S3Launcher::addMethodBindings(Frame* frame) const
     {
 	CachedString* method_name
 	    = const_cast<CachedString*>(m_symbol->name());
-	frame->bind(DotMethodSymbol, CXXR_NEW(StringVector(method_name)));
+	frame->bind(DotMethodSymbol, CXXR_NEW(StringVector(1, method_name)));
     }
 
     // .Group:
     if (m_using_group)
-	frame->bind(DotGroupSymbol, CXXR_NEW(StringVector(m_group)));
+	frame->bind(DotGroupSymbol, asStringVector(m_group));
 
     // Others:
-    frame->bind(DotGenericSymbol, CXXR_NEW(StringVector(m_generic)));
+    frame->bind(DotGenericSymbol, asStringVector(m_generic));
     frame->bind(DotGenericCallEnvSymbol, m_call_env);
     frame->bind(DotGenericDefEnvSymbol, m_table_env);
 }	

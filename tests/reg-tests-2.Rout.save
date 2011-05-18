@@ -1,12 +1,11 @@
 
-This is CXXR 0.30-2.11.1, based on:
-R version 2.12.0 Under development (unstable) (2010-08-22 r52792)
-R version 2.11.1 (2010-05-31)
+This is CXXR 0.33-2.12.1, based on:
+R version 2.12.1 (2010-12-16)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-apple-darwin10.4.0 (64-bit)
+Platform: i686-pc-linux-gnu (32-bit)
 
-CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
+CXXR Copyright (C) 2008-11 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
@@ -4733,10 +4732,10 @@ In as.raw(list(a = 1234)) :
 > # but not allowed
 > try(df2[df2 == 2] <- 1:2)
 Error in `[<-`(`*tmp*`, thisvar, value = 1:2) : 
-  NAs are not allowed in subscripted assignments
+  NAs subscripts are not allowed in this context
 > try(m2[m2 == 2] <- 1:2)
 Error in `[<-`(`*tmp*`, m2 == 2, value = 1:2) : 
-  NAs are not allowed in subscripted assignments
+  NAs subscripts are not allowed in this context
 > ##
 > 
 > 

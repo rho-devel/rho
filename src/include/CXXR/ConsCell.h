@@ -93,6 +93,86 @@ namespace CXXR {
      */
     class ConsCell : public RObject {
     public:
+	class iterator
+	    : public std::iterator<std::forward_iterator_tag, ConsCell> {
+	public:
+	    explicit iterator(ConsCell* cc = 0)
+		: m_cc(cc)
+	    {}
+
+	    ConsCell& operator*() const
+	    {
+		return *m_cc;
+	    }
+
+	    ConsCell* operator->() const
+	    {
+		return m_cc;
+	    }
+
+	    ConsCell& operator++()
+	    {
+		advance();
+		return *m_cc;
+	    }
+
+	    ConsCell& operator++(int)
+	    {
+		ConsCell& ans = *m_cc;
+		advance();
+		return ans;
+	    }
+	private:
+	    ConsCell* m_cc;
+
+	    void advance();
+	};
+
+	class const_iterator
+	    : public std::iterator<std::forward_iterator_tag, const ConsCell> {
+	public:
+	    explicit const_iterator(const ConsCell* cc = 0)
+		: m_cc(cc)
+	    {}
+
+	    const ConsCell& operator*() const
+	    {
+		return *m_cc;
+	    }
+
+	    const ConsCell* operator->() const
+	    {
+		return m_cc;
+	    }
+
+	    const ConsCell& operator++()
+	    {
+		advance();
+		return *m_cc;
+	    }
+
+	    const ConsCell& operator++(int)
+	    {
+		const ConsCell& ans = *m_cc;
+		advance();
+		return ans;
+	    }
+	private:
+	    const ConsCell* m_cc;
+
+	    void advance();
+	};
+
+	iterator begin()
+	{
+	    return iterator(this);
+	}
+
+	const_iterator begin() const
+	{
+	    return const_iterator(this);
+	}
+
 	/**
 	 * @return a const pointer to the 'car' of this ConsCell
 	 * element.
@@ -116,13 +196,26 @@ namespace CXXR {
 	 * if \a cc is null.  If \a cc is already of the desired type,
 	 * the method simply returns \a cc.
 	 */
-	template <class T> static T* convert(ConsCell* cc)
+	template <class T>
+	static T* convert(ConsCell* cc)
 	{
-	    if (!cc) return 0;
-	    if (T* ccc = dynamic_cast<T*>(cc)) return ccc;
+	    if (!cc)
+		return 0;
+	    if (T* ccc = dynamic_cast<T*>(cc))
+		return ccc;
 	    T* ans = new T(cc->car(), cc->tail(), cc->tag());
 	    ans->setAttributes(cc->attributes());
 	    return expose(ans);
+	}
+
+	iterator end()
+	{
+	    return iterator();
+	}
+
+	const_iterator end() const
+	{
+	    return const_iterator();
 	}
 
 	/** @brief Set the 'car' value.
@@ -237,7 +330,7 @@ namespace CXXR {
     private:
 	friend class PairList;
 
-	Handle<> m_car;
+	RHandle<> m_car;
 	GCEdge<PairList> m_tail;
 	GCEdge<const RObject> m_tag;
 
@@ -248,6 +341,28 @@ namespace CXXR {
 	// Check that st is a legal SEXPTYPE for a ConsCell:
 	static void checkST(SEXPTYPE st);
     };
+
+    inline bool operator==(ConsCell::iterator l, ConsCell::iterator r)
+    {
+	return &(*l) == &(*r);
+    }
+
+    inline bool operator!=(ConsCell::iterator l, ConsCell::iterator r)
+    {
+	return !(l == r);
+    }
+
+    inline bool operator==(ConsCell::const_iterator l,
+			   ConsCell::const_iterator r)
+    {
+	return &(*l) == &(*r);
+    }
+
+    inline bool operator!=(ConsCell::const_iterator l,
+			   ConsCell::const_iterator r)
+    {
+	return !(l == r);
+    }
 
     /** @brief <tt>cc ? cc->car() : 0</tt>
      *
@@ -280,7 +395,10 @@ namespace CXXR {
      * number of elements in the list starting at the ConsCell
      * pointed to by \a start.
      */
-    size_t listLength(const ConsCell* start);
+    inline size_t listLength(const ConsCell* start)
+    {
+	return (start ? std::distance(start->begin(), start->end()) : 0);
+    }
 
     /** @brief <tt>cc ? cc->tail() : 0</tt>
      *
@@ -406,6 +524,16 @@ namespace CXXR {
 	// compiler-generated version:
 	PairList& operator=(const PairList&);
     };
+
+    inline void ConsCell::iterator::advance()
+    {
+	m_cc = m_cc->tail();
+    }
+
+    inline void ConsCell::const_iterator::advance()
+    {
+	m_cc = m_cc->tail();
+    }
 
     inline ConsCell::ConsCell(SEXPTYPE st, RObject* cr,
 			      PairList* tl, const RObject* tg)

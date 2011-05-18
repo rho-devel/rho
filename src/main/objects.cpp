@@ -55,7 +55,6 @@
 #include "CXXR/S3Launcher.hpp"
 #include "CXXR/VectorFrame.hpp"
 
-using namespace std;
 using namespace CXXR;
 
 static RObject* GetObject(ClosureContext *cptr)
@@ -167,7 +166,7 @@ SEXP R_LookupMethod(SEXP method, SEXP rho, SEXP callrho, SEXP defrho)
 	defrho = R_BaseNamespace;
 
     Symbol* sym = SEXP_downcast<Symbol*>(method);
-    pair<FunctionBase*, bool>
+    std::pair<FunctionBase*, bool>
 	pr = S3Launcher::findMethod(sym, static_cast<Environment*>(callrho),
 				    static_cast<Environment*>(defrho));
     return (pr.first ? pr.first : R_UnboundValue);
@@ -221,7 +220,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 	switch (opcar->sexptype()) {
 	case SYMSXP: {
 	    const Symbol* symbol = static_cast<Symbol*>(opcar);
-	    pair<Environment*, FunctionBase*> pr
+	    std::pair<Environment*, FunctionBase*> pr
 		= findFunction(symbol, cptr->callEnvironment());
 	    if (!pr.first)
 		Rf_error(_("could not find function '%s'"),
@@ -336,7 +335,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     */
     Environment* defenv = Environment::baseNamespace();
     {
-	string generic_name = Rf_translateChar((*generic)[0]);
+	std::string generic_name = Rf_translateChar((*generic)[0]);
 	FunctionBase* func
 	    = findFunction(Symbol::obtain(generic_name),
 			   argsenv->enclosingEnvironment()).second;
@@ -349,16 +348,16 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
     if (Rf_usemethod(Rf_translateChar((*generic)[0]), obj, call, 0,
 		     env, callenv, defenv, &ans) != 1) {
 	// Failed, so prepare error message:
-	string cl;
+	std::string cl;
 	GCStackRoot<StringVector>
 	    klass(static_cast<StringVector*>(R_data_class2(obj)));
 	int nclass = klass->size();
 	if (nclass == 1)
 	    cl = Rf_translateChar((*klass)[0]);
 	else {
-	    cl = string("c('") + Rf_translateChar((*klass)[0]);
+	    cl = std::string("c('") + Rf_translateChar((*klass)[0]);
 	    for (int i = 1; i < nclass; ++i)
-		cl += string("', '") + Rf_translateChar((*klass)[i]);
+		cl += std::string("', '") + Rf_translateChar((*klass)[i]);
 	    cl += "')";
 	}
 	Rf_errorcall(call, _("no applicable method for '%s'"
@@ -583,7 +582,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     /* the generic comes from either the sysparent or it's named */
     GCStackRoot<StringVector> dotgeneric;
-    string genericname;
+    std::string genericname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGenericSymbol);
 	RObject* genval
@@ -601,7 +600,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Determine whether we are in a Group dispatch.
     GCStackRoot<StringVector> dotgroup;
-    string groupname;
+    std::string groupname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotGroupSymbol);
 	if (bdg) {
@@ -616,7 +615,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 
     // Find the method currently being invoked:
     GCStackRoot<StringVector> dotmethod;
-    string currentmethodname;
+    std::string currentmethodname;
     {
 	Frame::Binding* bdg = nmcallenv->frame()->binding(DotMethodSymbol);
 	if (!bdg) {
@@ -633,7 +632,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	    // for binary operators check that the second argument's
 	    // method is the same or absent:
 	    for (unsigned int j = i; j < dotmethod->size(); ++j) {
-		string bb = Rf_translateChar((*dotmethod)[j]);
+		std::string bb = Rf_translateChar((*dotmethod)[j]);
 		if (!bb.empty() && bb != currentmethodname)
 		    Rf_warning(_("Incompatible methods ignored"));
 	    }
@@ -641,12 +640,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Locate the class suffix of the current method within the klass vector:
-    string suffix;
+    std::string suffix;
     unsigned int nextidxstart;  // Index within the klass vector at
 				// which the search for the next
 				// method should start.
     {
-	string basename = (dotgroup ? groupname : genericname);
+	std::string basename = (dotgroup ? groupname : genericname);
 	bool found = false;
 	for (nextidxstart = 0;
 	     !found && nextidxstart < klass->size();
@@ -662,7 +661,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     FunctionBase* nextfun = 0;
-    string nextmethodname;
+    std::string nextmethodname;
     unsigned int nextidx;  // Index within the klass vector at which
 			   // the next method was found.  Set to
 			   // klass->size() if no class-specific
@@ -748,7 +747,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	// It is possible that if a method was called directly that
 	// 'method' is unset.
 	if (!dotmethod)
-	    dotmethod = CXXR_NEW(StringVector(nextmethodname));
+	    dotmethod = asStringVector(nextmethodname);
 	else {
 	    dotmethod = dotmethod->clone();
 	    // For Ops we need `method' to be a vector
@@ -1259,7 +1258,7 @@ void R_set_quick_method_check(R_stdGen_ptr_t value)
    promises, but not from the other two: there all the arguments have
    already been evaluated.
  */
-pair<bool, SEXP> attribute_hidden
+std::pair<bool, SEXP> attribute_hidden
 R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 		    Rboolean promisedArgs)
 {
@@ -1273,7 +1272,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	Rf_error(_("invalid primitive operation given for dispatch"));
     prim_methods_t current = prim_methods[offset];
     if(current == NO_METHODS || current == SUPPRESSED)
-	return pair<bool, SEXP>(false, 0);
+	return std::pair<bool, SEXP>(false, 0);
     // check that the methods for this function have been set
     if(current == NEEDS_RESET) {
 	// get the methods and store them in the in-core primitive
@@ -1290,7 +1289,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
        && quick_method_check_ptr) {
 	value = (*quick_method_check_ptr)(args, mlist, op);
 	if(Rf_isPrimitive(value))
-	    return pair<bool, SEXP>(false, 0);
+	    return std::pair<bool, SEXP>(false, 0);
 	if(Rf_isFunction(value)) {
 	    Closure* func = static_cast<Closure*>(value);
 	    // found a method, call it with promised args
@@ -1310,7 +1309,7 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
 	    }
 	    ArgList al2(argspl, ArgList::PROMISED);
 	    value = func->invoke(callenv, &al2, callx);
-	    return make_pair(true, value);
+	    return std::make_pair(true, value);
 	}
 	// else, need to perform full method search
     }
@@ -1340,9 +1339,9 @@ R_possible_dispatch(SEXP call, SEXP op, SEXP args, SEXP rho,
     value = func->invoke(callenv, &al3, callx);
     prim_methods[offset] = current;
     if (value == deferred_default_object)
-	return pair<bool, SEXP>(false, 0);
+	return std::pair<bool, SEXP>(false, 0);
     else
-	return make_pair(true, value);
+	return std::make_pair(true, value);
 }
 
 SEXP R_do_MAKE_CLASS(const char *what)

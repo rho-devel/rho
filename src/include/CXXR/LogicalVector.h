@@ -46,20 +46,21 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/DumbVector.hpp"
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
     // Template specialization:
     template <>
-    inline const char* DumbVector<int, LGLSXP>::staticTypeName()
+    inline const char* FixedVector<int, LGLSXP>::staticTypeName()
     {
 	return "logical";
     }
 
     /** @brief Vector of truth values.
      */
-    typedef CXXR::DumbVector<int, LGLSXP> LogicalVector;
+    typedef CXXR::FixedVector<int, LGLSXP> LogicalVector;
 }  // namespace CXXR
 
 extern "C" {

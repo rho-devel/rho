@@ -39,7 +39,6 @@
 
 #include "CXXR/RealVector.h"
 
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable

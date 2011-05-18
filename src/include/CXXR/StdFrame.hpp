@@ -68,7 +68,7 @@ namespace CXXR {
 	 *          but some reconfiguration (and consequent time
 	 *          penalty) may occur if it is exceeded.
 	 */
-	explicit StdFrame(size_t initial_capacity = 15);
+	explicit StdFrame(std::size_t initial_capacity = 15);
 	// Why 15?  Because if the implementation uses a prime number
 	// hash table sizing policy, this will result in the
 	// allocation of a hash table array comprising 31 buckets.  On
@@ -88,9 +88,9 @@ namespace CXXR {
 	StdFrame* clone() const;
 	bool erase(const Symbol* symbol);
 	void lockBindings();
-	size_t numBindings() const;
+	std::size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
-	size_t size() const;
+	std::size_t size() const;
 	void softMergeInto(Frame* target) const;
 	std::vector<const Symbol*> symbols(bool include_dotsymbols) const;
 

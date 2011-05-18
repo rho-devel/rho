@@ -51,13 +51,12 @@
 #include "CXXR/GCManager.hpp"
 #include "CXXR/MemoryBank.hpp"
 
-using namespace std;
-using namespace CXXR;
-
 #include <Defn.h>
 #include <R_ext/GraphicsEngine.h> /* GEDevDesc, GEgetDevice */
 #include <R_ext/Rdynload.h>
 #include "Rdynpriv.h"
+
+using namespace CXXR;
 
 #if defined(Win32) && defined(LEA_MALLOC)
 /*#include <stddef.h> */
@@ -161,10 +160,10 @@ SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_gcinfo(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    ostream* report_os = GCManager::setReporting(0);
+    std::ostream* report_os = GCManager::setReporting(0);
     bool want_reporting = asLogical(CAR(args));
     if (want_reporting != NA_LOGICAL)
-	GCManager::setReporting(want_reporting ? &cerr : 0);
+	GCManager::setReporting(want_reporting ? &std::cerr : 0);
     else
 	GCManager::setReporting(report_os);
     return ScalarLogical(report_os != 0);
@@ -186,8 +185,8 @@ void attribute_hidden get_current_mem(unsigned long *smallvsize,
 SEXP attribute_hidden do_gc(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     checkArity(op, args);
-    ostream* report_os
-	= GCManager::setReporting(asLogical(CAR(args)) ? &cerr : 0);
+    std::ostream* report_os
+	= GCManager::setReporting(asLogical(CAR(args)) ? &std::cerr : 0);
     bool reset_max = asLogical(CADR(args));
     GCManager::gc();
     GCManager::setReporting(report_os);
@@ -270,7 +269,7 @@ void InitMemory()
 #ifdef _R_HAVE_TIMING_
     GCManager::setMonitors(gc_start_timing, gc_end_timing);
 #endif
-    GCManager::setReporting(R_Verbose ? &cerr : 0);
+    GCManager::setReporting(R_Verbose ? &std::cerr : 0);
     GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
@@ -426,7 +425,7 @@ SEXP attribute_hidden do_memoryprofile(SEXP call, SEXP op, SEXP args, SEXP env)
 /* S-like wrappers for calloc, realloc and free that check for error
    conditions */
 
-void *R_chk_calloc(size_t nelem, size_t elsize)
+void *R_chk_calloc(std::size_t nelem, std::size_t elsize)
 {
     void *p;
 #ifndef HAVE_WORKING_CALLOC
@@ -439,7 +438,7 @@ void *R_chk_calloc(size_t nelem, size_t elsize)
     return(p);
 }
 
-void *R_chk_realloc(void *ptr, size_t size)
+void *R_chk_realloc(void *ptr, std::size_t size)
 {
     void *p;
     /* Protect against broken realloc */
@@ -477,26 +476,6 @@ DL_FUNC R_ExternalPtrAddrFn(SEXP s)
     return tmp.fn;
 }
 
-
-
-/* The following functions are replacements for the accessor macros.
-   They are used by code that does not have direct access to the
-   internal representation of objects.  The assignment functions
-   implement the write barrier. */
-
-/* General Cons Cell Attributes */
-
-void DUPLICATE_ATTRIB(SEXP to, SEXP from) {
-    GCStackRoot<> attributes(duplicate(ATTRIB(from)));
-    SET_ATTRIB(to, attributes);
-    IS_S4_OBJECT(from) ?  SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);
-}
-
-
-/* R_FunTab accessors */
-/* Not used:
-void (SET_PRIMFUN)(SEXP x, CCODE f) { PRIMFUN(x) = f; }
-*/
 
 /*******************************************/
 /* Non-sampling memory use profiler
@@ -586,12 +565,12 @@ SEXP attribute_hidden do_Rprofmem(SEXP call, SEXP op, SEXP args, SEXP rho)
 #include "RBufferUtils.h"
 
 attribute_hidden
-void *R_AllocStringBuffer(size_t blen, R_StringBuffer *buf)
+void *R_AllocStringBuffer(std::size_t blen, R_StringBuffer *buf)
 {
-    size_t blen1, bsize = buf->defaultSize;
+    std::size_t blen1, bsize = buf->defaultSize;
 
     /* for backwards compatibility, probably no longer needed */
-    if(blen == size_t(-1)) {
+    if(blen == std::size_t(-1)) {
 	warning("R_AllocStringBuffer(-1) used: please report");
 	R_FreeStringBufferL(buf);
 	return NULL;

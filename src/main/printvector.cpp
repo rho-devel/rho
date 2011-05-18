@@ -161,7 +161,7 @@ static void printStringVector(const StringVector* sv, int n, int quote,
     w = accumulate(beg, beg + n, 0, (quote ? stringWidthQuote : stringWidth));
 
     for (i = 0; i < n; i++) {
-	String* str = const_cast<String*>((*sv)[i]);
+	String* str = const_cast<String*>((*sv)[i].get());
 	if (i > 0 && width + w + R_print.gap > R_print.width) {
 	    DO_newline;
 	}

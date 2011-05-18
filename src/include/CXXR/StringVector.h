@@ -50,87 +50,75 @@
 #ifdef __cplusplus
 
 #include <iostream>
-#include "CXXR/HandleVector.hpp"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<RHandle<String> > {
+	    const RHandle<String>& operator()() const
+	    {
+		static RHandle<String> na(String::NA());
+		return na;
+	    }
+	};
+
+	template <>
+	struct IsNA<RHandle<String> > {
+	    bool operator()(const RHandle<String>& t) const
+	    {
+		typedef RHandle<String> T;
+		return t == NA<T>();
+	    }
+	};
+    }
+
+    // Make the default handle for a String point to a blank string:
     template <>
-    inline const char* HandleVector<String, STRSXP>::staticTypeName()
+    inline RHandle<String>::RHandle()
+	: GCEdge<String>(CachedString::blank())
+    {}
+
+    template <>
+    inline const char* FixedVector<RHandle<String>, STRSXP>::staticTypeName()
     {
 	return "character";
     }
 
     /** @brief Vector of strings.
+     *
+     * Note that the <tt>StringVector(size_t)</tt> constructor will
+     * fill the constructed vector with blank strings rather than
+     * with NULL.
      */
-    class StringVector : public CXXR::HandleVector<String, STRSXP> {
-    public:
-	/** @brief Create a StringVector.
-	 *
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 */
-	explicit StringVector(size_t sz)
-	    : HandleVector<String, STRSXP>(sz, CachedString::blank())
-	{}
+    typedef FixedVector<RHandle<String>, STRSXP> StringVector;
 
-	/** @brief Copy constructor.
-	 *
-	 * Copy the StringVector, using the RObject::Handle copying
-	 * semantics.
-	 *
-	 * @param pattern StringVector to be copied.
-	 */
-	StringVector(const StringVector& pattern)
-	    : HandleVector<String, STRSXP>(pattern)
-	{}
-
-	/** @brief Create a StringVector containing a single string.
-	 *
-	 * This constructor constructs a StringVector containing a
-	 * single element, and initializes that element to point to a
-	 * specified CachedString.
-	 *
-	 * @param string Pointer to the CachedString to be represented
-	 *          by the single vector element.
-	 */
-	explicit StringVector(CachedString* string)
-	    : HandleVector<String, STRSXP>(1, string)
-	{}
-
-	/** @brief Create a StringVector containing a single std::string.
-	 *
-	 * This constructor constructs a StringVector containing a
-	 * single element, and initializes that element to represent
-	 * a specified string and encoding.
-	 *
-	 * @param str The required text of the single vector element.
-	 *
-	 * @param encoding The required encoding of the single vector
-	 *          element.  Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are
-	 *          permitted in this context (checked).
-	 */
-	explicit StringVector(const std::string& str,
-			      cetype_t encoding = CE_NATIVE)
-	    : HandleVector<String, STRSXP>(1,
-					   CachedString::obtain(str, encoding))
-	{}
-
-	// Virtual function of RObject:
-	StringVector* clone() const;
-    private:
-	/**
-	 * Declared private to ensure that StringVector objects are
-	 * allocated only using 'new'.
-	 */
-	~StringVector() {}
-    };
+    /** @brief Create a StringVector containing a single std::string.
+     *
+     * This constructor constructs a StringVector containing a single
+     * element, and initializes that element to represent a specified
+     * string and encoding.
+     *
+     * @param str The required text of the single vector element.
+     *
+     * @param encoding The required encoding of the single vector
+     *          element.  Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are
+     *          permitted in this context (checked).
+     */
+    inline StringVector* asStringVector(const std::string& str,
+					cetype_t encoding = CE_NATIVE)
+    {
+	return CXXR_NEW(StringVector(1, CachedString::obtain(str, encoding)));
+    }
 
     /** @brief (For debugging.)
      *
      * @note The name and interface of this function may well change.
      */
-    void strdump(std::ostream& os, const StringVector& sv, size_t margin = 0);
+    void strdump(std::ostream& os, const StringVector& sv,
+		 std::size_t margin = 0);
 }  // namespace CXXR
 
 extern "C" {

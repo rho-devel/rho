@@ -46,6 +46,7 @@
 #ifdef __cplusplus
 
 #include <list>
+#include <tr1/unordered_map>
 #include "CXXR/GCNode.hpp"
 
 namespace CXXR {
@@ -120,11 +121,6 @@ namespace CXXR {
 	friend class GCNode;
 
 	typedef std::list<const GCNode*, Allocator<const GCNode*> > List;
-
-	// There may be a case, at least in some C++ library
-	// implementations, for using a deque instead of a vector in
-	// the following, so that memory is released as the stack
-	// shrinks.
 	static List* s_roots;
 
 	List::iterator m_it;
@@ -249,6 +245,20 @@ namespace CXXR {
 	    return static_cast<T*>(const_cast<GCNode*>(ptr()));
 	}
     };
+}  // namespace CXXR
+
+// For hashing, simply hash the encapsulated pointer:
+namespace std {
+    namespace tr1 {
+	template <class T>
+	struct hash<CXXR::GCRoot<T> > {
+	    std::size_t operator()(const CXXR::GCRoot<T>& gcrt) const
+	    {
+		std::tr1::hash<T*> make_hash;
+		return make_hash(gcrt);
+	    }
+	};
+    }
 }
 
 extern "C" {

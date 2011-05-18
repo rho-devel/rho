@@ -237,6 +237,8 @@ TypeTable[] = {
     { "weakref",	WEAKREFSXP },
     { "raw",		RAWSXP },
     { "S4",		S4SXP },
+    { "CXXR_extended",  CXXSXP },
+    { "CXXR_bailout",   BAILSXP },
     /* aliases : */
     { "numeric",	REALSXP	   },
     { "name",		SYMSXP	   },

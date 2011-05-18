@@ -16,9 +16,6 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2006   The R Development Core Team.
- *  Andrew Runnalls (C) 2008
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,78 +32,60 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RawVector.h
- * @brief Class CXXR::RawVector and associated C interface.
- */
-
-#ifndef RAWVECTOR_H
-#define RAWVECTOR_H
-
-#include "CXXR/VectorBase.h"
-
-typedef unsigned char Rbyte;
-
-#ifdef __cplusplus
-
-#include "CXXR/FixedVector.hpp"
-#include "CXXR/SEXP_downcast.hpp"
-
-namespace CXXR {
-    // Template specializations:
-    namespace ElementTraits {
-	template <>
-	class NAFunc<Rbyte> {
-	public:
-	    const Rbyte& operator()() const
-	    {
-		return s_na;
-	    }
-	private:
-	    static Rbyte s_na;
-	};
-
-	template <>
-	struct IsNA<Rbyte> {
-	    bool operator()(const Rbyte&)
-	    {
-		return false;
-	    }
-	};
-    }
-
-    template <>
-    inline const char* FixedVector<Rbyte, RAWSXP>::staticTypeName()
-    {
-	return "raw";
-    }
-
-    /** @brief Vector of 'raw bytes'.
-     */
-    typedef CXXR::FixedVector<Rbyte, RAWSXP> RawVector;
-}  // namespace CXXR
-
-extern "C" {
-#endif /* __cplusplus */
-
-/**
- * @param x Pointer to a CXXR::RawVector (i.e. a RAWSXP).  An error is
- *          generated if \a x is not a non-null pointer to a
- *          CXXR::RawVector .
+/** @file BinaryFunction.cpp
  *
- * @return Pointer to element 0 of \a x .
+ * @brief Implementation of VectorOps::BinaryFunction and related functions.
  */
-#ifndef __cplusplus
-Rbyte *RAW(SEXP x);
-#else
-inline Rbyte *RAW(SEXP x)
+
+#include "CXXR/BinaryFunction.hpp"
+
+#include "CXXR/Symbol.h"
+
+using namespace CXXR;
+using namespace VectorOps;
+
+// Implementation of operandsConformable() is in logic.cpp (for the
+// time being).
+
+void GeneralBinaryAttributeCopier::apply(VectorBase* vout,
+					 const VectorBase* vl,
+					 const VectorBase* vr) const
 {
-    using namespace CXXR;
-    return &(*SEXP_downcast<RawVector*>(x, false))[0];
+    // Handle layout attributes:
+    {
+	RObject* dims = vl->getAttribute(DimSymbol);
+	RObject* dimnames = 0;
+	if (dims)
+	    dimnames = vl->getAttribute(DimNamesSymbol);
+	else
+	    dims = vr->getAttribute(DimSymbol);
+	if (!dimnames)
+	    dimnames = vr->getAttribute(DimNamesSymbol);
+	if (dims) {
+	    vout->setAttribute(DimSymbol, dims);
+	    if (dimnames)
+		vout->setAttribute(DimNamesSymbol, dimnames);
+	} else {
+	    // Neither operand is an array:
+	    if (vout->size() == vl->size())
+		vout->setAttribute(NamesSymbol, vl->getAttribute(NamesSymbol));
+	    else vout->setAttribute(NamesSymbol, vr->getAttribute(NamesSymbol));
+	}
+    }
+    // Handle attributes related to time series:
+    {
+	RObject* tsp = vl->getAttribute(TspSymbol);
+	RObject* klass = 0;
+	if (tsp)
+	    klass = vl->getAttribute(ClassSymbol);
+	if (!tsp) {
+	   tsp = vr->getAttribute(TspSymbol); 
+	   if (tsp)
+	       klass = vr->getAttribute(ClassSymbol);
+	}
+	if (tsp)
+	    vout->setAttribute(TspSymbol, tsp);
+	if (klass)
+	    vout->setAttribute(ClassSymbol, klass);
+    }
 }
-#endif
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* RAWVECTOR_H */

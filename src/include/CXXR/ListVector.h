@@ -48,64 +48,20 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/HandleVector.hpp"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
-    class ExpressionVector;
-
-    // Template specialization:
+    // Template specializations:
     template <>
-    inline const char* HandleVector<RObject, VECSXP>::staticTypeName()
+    inline const char* FixedVector<RHandle<>, VECSXP>::staticTypeName()
     {
 	return "list";
     }
 
-    /** @brief General vector of RObject::Handle<RObject>.
+    /** @brief General vector of RHandle<RObject>.
      */
-    class ListVector : public HandleVector<RObject, VECSXP> {
-    public:
-	/** @brief Create a ListVector.
-         *
-         * Each element will initially encapsulate a null pointer.
-	 * @param sz Number of elements required.  Zero is
-	 *          permissible.
-	 */
-	explicit ListVector(size_t sz)
-	    : HandleVector<RObject, VECSXP>(sz)
-	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * Copy the ListVector, using the RObject::Handle copying semantics.
-	 *
-	 * @param pattern ListVector to be copied.
-	 */
-	ListVector(const ListVector& pattern)
-	    : HandleVector<RObject, VECSXP>(pattern)
-	{}
-
-	/** @brief Construct from ExpressionVector.
-	 *
-	 * @param ev The ExpressionVector on which the constructed
-	 *          ListVector is to be modelled.  The ListVector
-	 *          created will encapsulate exactly the same sequence of
-	 *          pointers to RObject as \a ev.
-	 *
-	 * @note The objects pointed to by \a pattern are never
-	 * themselves copied in creating the ListVector.  This is
-	 * rather at variance with the general semantics of
-	 * HandleVector, and perhaps ought to be changed.
-	 */
-	explicit ListVector(ExpressionVector& ev);
-
-	// Virtual function of RObject:
-	ListVector* clone() const;
-    private:
-	// Declared private to ensure that ListVectors are
-	// allocated only using 'new'.
-	~ListVector() {}
-    };
+    typedef FixedVector<RHandle<>, VECSXP> ListVector;
 }  // namespace CXXR
 
 extern "C" {

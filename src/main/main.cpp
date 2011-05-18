@@ -72,7 +72,6 @@
 #include "CXXR/CommandTerminated.hpp"
 #include "CXXR/ReturnException.hpp"
 
-using namespace std;
 using namespace CXXR;
 
 #ifdef ENABLE_NLS
@@ -217,7 +216,7 @@ static void R_ReplFile(FILE *fp, SEXP rho)
     ParseStatus status;
     int count=0;
     SrcRefState ParseState;
-    size_t savestack;
+    std::size_t savestack;
     
     R_InitSrcRefState(&ParseState);
     savestack = ProtectStack::size();

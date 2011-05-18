@@ -1575,7 +1575,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     if (!callargs)
 	return 0;
-    size_t numargs = listLength(callargs);
+    std::size_t numargs = listLength(callargs);
     RObject* arg1val = callargs->car();
     RObject* arg2val = (numargs > 1 ? callargs->tail()->car() : 0);
     
@@ -3353,7 +3353,7 @@ SEXP attribute_hidden do_savefile(SEXP call, SEXP op, SEXP args, SEXP env)
 
 /* neither of these functions call R_ExpandFileName -- the caller
    should do that if it wants to */
-char *R_CompiledFileName(char *fname, char *buf, size_t bsize)
+char *R_CompiledFileName(char *fname, char *buf, std::size_t bsize)
 {
     char *basename, *ext;
 
@@ -3383,7 +3383,7 @@ char *R_CompiledFileName(char *fname, char *buf, size_t bsize)
     }
 }
 
-FILE *R_OpenCompiledFile(char *fname, char *buf, size_t bsize)
+FILE *R_OpenCompiledFile(char *fname, char *buf, std::size_t bsize)
 {
     char *cname = R_CompiledFileName(fname, buf, bsize);
 

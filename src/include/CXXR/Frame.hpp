@@ -513,7 +513,7 @@ namespace CXXR {
 	 *
 	 * @return The number of Bindings currently in this Frame.
 	 */
-	virtual size_t numBindings() const = 0;
+	virtual std::size_t numBindings() const = 0;
 
 	/** @brief Get or create a Binding for a Symbol.
 	 *
@@ -600,7 +600,7 @@ namespace CXXR {
 	 * @return the number of Symbols for which Bindings exist in
 	 * this Frame.
 	 */
-	virtual size_t size() const = 0;
+	virtual std::size_t size() const = 0;
 
 	/** @brief Merge this Frame's Bindings into another Frame.
 	 *

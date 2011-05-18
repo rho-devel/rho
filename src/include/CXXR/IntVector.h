@@ -46,7 +46,8 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/DumbVector.hpp"
+#include "R_ext/Arith.h"
+#include "CXXR/FixedVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 #ifndef USE_TYPE_CHECKING_STRICT
@@ -54,16 +55,27 @@
 #endif
 
 namespace CXXR {
-    // Template specialization:
+    // Template specializations:
+    namespace ElementTraits {
+	template <>
+	struct NAFunc<int> {
+	    const int& operator()() const
+	    {
+		static int na = NA_INTEGER;
+		return na;
+	    }
+	};
+    }
+
     template <>
-    inline const char* DumbVector<int, INTSXP>::staticTypeName()
+    inline const char* FixedVector<int, INTSXP>::staticTypeName()
     {
 	return "integer";
     }
 
-    /** @brief Vector of truth values.
+    /** @brief Vector of integer values.
      */
-    typedef CXXR::DumbVector<int, INTSXP> IntVector;
+    typedef FixedVector<int, INTSXP> IntVector;
 }  // namespace CXXR
 
 extern "C" {

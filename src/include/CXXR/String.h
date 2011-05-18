@@ -330,6 +330,17 @@ extern "C" {
     }
 #endif
 
+    /** @brief Convert contents of a String to UTF8.
+     *
+     * @param x Non-null pointer to a CXXR::String.
+     *
+     * @return The text of \a x rendered in UTF8 encoding.
+     *
+     * @note The result is held in memory allocated using R_alloc().
+     * The calling code must arrange for this memory to be released in
+     * due course.
+     */
+    const char* Rf_translateCharUTF8(SEXP x);
 #ifdef __cplusplus
 }  // extern "C"
 #endif

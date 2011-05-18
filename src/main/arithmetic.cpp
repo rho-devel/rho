@@ -75,9 +75,12 @@ extern "C" {
 #include <errno.h>
 #include <math.h>
 
+#include "CXXR/BinaryFunction.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/UnaryFunction.hpp"
 
 using namespace CXXR;
+using namespace VectorOps;
 
 #ifdef HAVE_MATHERR
 
@@ -218,6 +221,8 @@ static double myfloor(double x1, double x2)
 
 /* some systems get this wrong, possibly depend on what libs are loaded */
 static R_INLINE double R_log(double x) {
+    if (isnan(x))
+	return x;
     return x > 0 ? log(x) : x < 0 ? R_NaN : R_NegInf;
 }
 
@@ -314,6 +319,7 @@ static double logbase(double x, double base)
 }
 
 static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
+static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_binary(ARITHOP_TYPE, SEXP, SEXP, SEXP);
@@ -344,53 +350,54 @@ SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
     return ans;			/* never used; to keep -Wall happy */
 }
 
-#define COERCE_IF_NEEDED(v, tp, vpi) do { \
-    if (TYPEOF(v) != (tp)) { \
-	REPROTECT(v = coerceVector(v, (tp)), vpi); \
-    } \
-} while (0)
+namespace {
+    VectorBase* COERCE_IF_NEEDED(SEXP v, SEXPTYPE tp) {
+	if (v->sexptype() != tp)
+	    v = coerceVector(v, tp);
+	return static_cast<VectorBase*>(v);
+    }
 
-#define FIXUP_NULL_AND_CHECK_TYPES(v, vpi) do { \
-    switch (TYPEOF(v)) { \
-    case NILSXP: REPROTECT(v = allocVector(REALSXP,0), vpi); break; \
-    case CPLXSXP: case REALSXP: case INTSXP: case LGLSXP: break; \
-    default: errorcall(lcall, _("non-numeric argument to binary operator")); \
-    } \
-} while (0)
+    VectorBase* FIXUP_NULL_AND_CHECK_TYPES(SEXP v)
+    {
+	if (!v)
+	    return CXXR_NEW(RealVector(0));
+	switch (v->sexptype()) {
+	case CPLXSXP:
+	case REALSXP:
+	case INTSXP:
+	case LGLSXP:
+	    break;
+	default:
+	    Rf_error(_("non-numeric argument to binary operator"));
+	}
+	return static_cast<VectorBase*>(v);
+    }
+}
 
-SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
+SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 {
-    SEXP klass, dims, tsp, xnames, ynames, val;
-    int mismatch = 0, nx, ny, xarray, yarray, xts, yts, xS4 = 0, yS4 = 0;
-    int xattr, yattr;
     SEXP lcall = call;
-    PROTECT_INDEX xpi, ypi;
     ARITHOP_TYPE oper = ARITHOP_TYPE( PRIMVAL(op));
-    int nprotect = 2; /* x and y */
 
+    GCStackRoot<VectorBase> x(FIXUP_NULL_AND_CHECK_TYPES(xarg));
+    GCStackRoot<VectorBase> y(FIXUP_NULL_AND_CHECK_TYPES(yarg));
+    checkOperandsConformable(x, y);
 
-    PROTECT_WITH_INDEX(x, &xpi);
-    PROTECT_WITH_INDEX(y, &ypi);
-
-    FIXUP_NULL_AND_CHECK_TYPES(x, xpi);
-    FIXUP_NULL_AND_CHECK_TYPES(y, ypi);
-
-    nx = LENGTH(x);
+    int nx = LENGTH(x);
+    bool xattr = false;
+    bool xarray = false;
     if (ATTRIB(x) != R_NilValue) {
 	xattr = TRUE;
 	xarray = isArray(x);
-	xts = isTs(x);
-	xS4 = isS4(x);
     }
-    else xarray = xts = xattr = FALSE;
-    ny = LENGTH(y);
+
+    int ny = LENGTH(y);
+    bool yattr = false;
+    bool yarray = false;
     if (ATTRIB(y) != R_NilValue) {
 	yattr = TRUE;
 	yarray = isArray(y);
-	yts = isTs(y);
-	yS4 = isS4(y);
     }
-    else yarray = yts = yattr = FALSE;
 
     /* If either x or y is a matrix with length 1 and the other is a
        vector, we want to coerce the matrix to be a vector.
@@ -403,110 +410,62 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
      */
     if (xarray != yarray) {
 	if (xarray && nx==1 && ny!=1) {
-	    REPROTECT(x = duplicate(x), xpi);
+	    x = x->clone();
 	    setAttrib(x, R_DimSymbol, R_NilValue);
 	}
 	if (yarray && ny==1 && nx!=1) {
-	    REPROTECT(y = duplicate(y), ypi);
+	    y = y->clone();
 	    setAttrib(y, R_DimSymbol, R_NilValue);
 	}
     }
 
-    if (xarray || yarray) {
-	if (xarray && yarray) {
-	    if (!conformable(x, y))
-		errorcall(lcall, _("non-conformable arrays"));
-	    PROTECT(dims = getAttrib(x, R_DimSymbol));
-	}
-	else if (xarray) {
-	    PROTECT(dims = getAttrib(x, R_DimSymbol));
-	}
-	else {			/* (yarray) */
-	    PROTECT(dims = getAttrib(y, R_DimSymbol));
-	}
-	nprotect++;
-	if (xattr) {
-	    PROTECT(xnames = getAttrib(x, R_DimNamesSymbol));
-	    nprotect++;
-	}
-	else xnames = R_NilValue;
-	if (yattr) {
-	    PROTECT(ynames = getAttrib(y, R_DimNamesSymbol));
-	    nprotect++;
-	}
-	else ynames = R_NilValue;
-    }
-    else {
-	dims = R_NilValue;
-	if (xattr) {
-	    PROTECT(xnames = getAttrib(x, R_NamesSymbol));
-	    nprotect++;
-	}
-	else xnames = R_NilValue;
-	if (yattr) {
-	    PROTECT(ynames = getAttrib(y, R_NamesSymbol));
-	    nprotect++;
-	}
-	else ynames = R_NilValue;
-    }
-    if (nx == ny || nx == 1 || ny == 1) mismatch = 0;
+    bool mismatch;
+    if (nx == ny || nx == 1 || ny == 1) mismatch = false;
     else if (nx > 0 && ny > 0) {
-	if (nx > ny) mismatch = nx % ny;
-	else mismatch = ny % nx;
+	if (nx > ny) mismatch = (nx % ny != 0);
+	else mismatch = (ny % nx != 0);
     }
-
-    if (xts || yts) {
-	if (xts && yts) {
-	    if (!tsConform(x, y))
-		errorcall(lcall, _("non-conformable time-series"));
-	    PROTECT(tsp = getAttrib(x, R_TspSymbol));
-	    PROTECT(klass = getAttrib(x, R_ClassSymbol));
-	}
-	else if (xts) {
-	    if (nx < ny)
-		ErrorMessage(lcall, ERROR_TSVEC_MISMATCH);
-	    PROTECT(tsp = getAttrib(x, R_TspSymbol));
-	    PROTECT(klass = getAttrib(x, R_ClassSymbol));
-	}
-	else {			/* (yts) */
-	    if (ny < nx)
-		ErrorMessage(lcall, ERROR_TSVEC_MISMATCH);
-	    PROTECT(tsp = getAttrib(y, R_TspSymbol));
-	    PROTECT(klass = getAttrib(y, R_ClassSymbol));
-	}
-	nprotect += 2;
-    }
-    else klass = tsp = NULL; /* -Wall */
 
     if (mismatch)
 	warningcall(lcall,
 		    _("longer object length is not a multiple of shorter object length"));
 
+    GCStackRoot<> val;
     /* need to preserve object here, as *_binary copies class attributes */
     if (TYPEOF(x) == CPLXSXP || TYPEOF(y) == CPLXSXP) {
-	COERCE_IF_NEEDED(x, CPLXSXP, xpi);
-	COERCE_IF_NEEDED(y, CPLXSXP, ypi);
+	x = COERCE_IF_NEEDED(x, CPLXSXP);
+	y = COERCE_IF_NEEDED(y, CPLXSXP);
 	val = complex_binary(oper, x, y);
     }
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
 	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
 	     /* || TYPEOF(x) == LGLSXP || TYPEOF(y) == LGLSXP*/)) {
 	    /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
-	    COERCE_IF_NEEDED(x, REALSXP, xpi);
-	    COERCE_IF_NEEDED(y, REALSXP, ypi);
+	    x = COERCE_IF_NEEDED(x, REALSXP);
+	    y = COERCE_IF_NEEDED(y, REALSXP);
 	}
 	val = real_binary(oper, x, y);
     }
     else val = integer_binary(oper, x, y, lcall);
 
     /* quick return if there are no attributes */
-    if (! xattr && ! yattr) {
-	UNPROTECT(nprotect);
+    if (! xattr && ! yattr)
 	return val;
-    }
 
-    PROTECT(val);
-    nprotect++;
+    GCStackRoot<> dims, xnames, ynames;
+
+    if (xarray) {
+	dims = getAttrib(x, R_DimSymbol);
+	xnames = getAttrib(x, R_DimNamesSymbol);
+    }
+    if (yarray) {
+	dims = getAttrib(y, R_DimSymbol);
+	ynames = getAttrib(y, R_DimNamesSymbol);
+    } else if (!xarray) {
+	// Neither operand is an array:
+	xnames = getAttrib(x, R_NamesSymbol);
+	ynames = getAttrib(y, R_NamesSymbol);
+    }
 
     /* Don't set the dims if one argument is an array of size 0 and the
        other isn't of size zero, cos they're wrong */
@@ -528,15 +487,28 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 	    setAttrib(val, R_NamesSymbol, ynames);
     }
 
+    GCStackRoot<> klass, tsp;
+
+    bool yts = isTs(y);
+    if (yts) {
+	tsp = getAttrib(y, R_TspSymbol);
+	klass = getAttrib(y, R_ClassSymbol);
+    }
+
+    bool xts = isTs(x);
+    if (xts) {
+	tsp = getAttrib(x, R_TspSymbol);
+	klass = getAttrib(x, R_ClassSymbol);
+    }
+
     if (xts || yts) {		/* must set *after* dims! */
 	setAttrib(val, R_TspSymbol, tsp);
 	setAttrib(val, R_ClassSymbol, klass);
     }
 
-    if(xS4 || yS4) {   /* Only set the bit:  no method defined! */
+    if(isS4(x) || isS4(y)) {   /* Only set the bit:  no method defined! */
         val = asS4(val, TRUE, TRUE);
     }
-    UNPROTECT(nprotect);
     return val;
 }
 
@@ -545,6 +517,7 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     ARITHOP_TYPE operation = ARITHOP_TYPE( PRIMVAL(op));
     switch (TYPEOF(s1)) {
     case LGLSXP:
+	return logical_unary(operation, s1, call);
     case INTSXP:
 	return integer_unary(operation, s1, call);
     case REALSXP:
@@ -564,13 +537,30 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 	return s1;
     case MINUSOP:
 	{
-	    int n = LENGTH(s1);
-	    GCStackRoot<IntVector> ans(CXXR_NEW(IntVector(n)));
-	    for (int i = 0; i < n; i++) {
-		int x = INTEGER(s1)[i];
-		INTEGER(ans)[i] = (x == NA_INTEGER) ? NA_INTEGER : -x;
-	    }
-	    return ans;
+	    using namespace VectorOps;
+	    IntVector* iv = SEXP_downcast<IntVector*>(s1);
+	    return
+		UnaryFunction<CopyAllAttributes, std::negate<int> >()
+		.apply<IntVector>(iv);
+	}
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    return s1;			/* never used; to keep -Wall happy */
+}
+
+static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    switch (code) {
+    case PLUSOP:
+	return s1;
+    case MINUSOP:
+	{
+	    using namespace VectorOps;
+	    LogicalVector* lv = SEXP_downcast<LogicalVector*>(s1);
+	    return
+		makeUnaryFunction<CopyAllAttributes>(std::negate<int>())
+		.apply<IntVector>(lv);
 	}
     default:
 	errorcall(call, _("invalid unary operator"));
@@ -580,17 +570,16 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 
 static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 {
-    int i, n;
-    SEXP ans;
-
     switch (code) {
     case PLUSOP: return s1;
     case MINUSOP:
-	ans = duplicate(s1);
-	n = LENGTH(s1);
-	for (i = 0; i < n; i++)
-	    REAL(ans)[i] = -REAL(s1)[i];
-	return ans;
+	{
+	    using namespace VectorOps;
+	    RealVector* rv = SEXP_downcast<RealVector*>(s1);
+	    return
+		makeUnaryFunction<CopyAllAttributes>(std::negate<double>())
+		.apply<RealVector>(rv);
+	}
     default:
 	errorcall(lcall, _("invalid unary operator"));
     }
@@ -1068,45 +1057,48 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
 /* Mathematical Functions of One Argument */
 
+// FunctorWrapper for VectorOps::UnaryFunction.  Warns if function
+// application gives rise to any new NaNs.
+template <typename, typename, typename> class NaNWarner;
+
+template <>
+class NaNWarner<double, double, double (*)(double)> {
+public:
+    NaNWarner(double (*f)(double))
+	: m_f(f), m_any_NaN(false)
+    {}
+
+    double operator()(double in)
+    {
+	if (isNA(in))
+	    return NA<double>();
+	double ans = m_f(in);
+	if (isnan(ans) && !isnan(in))
+	    m_any_NaN = true;
+	return ans;
+    }
+
+    void warnings()
+    {
+	if (m_any_NaN)
+	    Rf_warning(R_MSG_NA);
+    }
+private:
+    double (*m_f)(double);
+    bool m_any_NaN;
+};
+
 static SEXP math1(SEXP sa, double (*f)(double), SEXP lcall)
 {
-    SEXP sy;
-    double *y, *a;
-    int i, n;
-    int naflag;
-
+    using namespace VectorOps;
     if (!isNumeric(sa))
 	errorcall(lcall, R_MSG_NONNUM_MATH);
-
-    n = length(sa);
     /* coercion can lose the object bit */
-    PROTECT(sa = coerceVector(sa, REALSXP));
-    PROTECT(sy = allocVector(REALSXP, n));
-#ifdef R_MEMORY_PROFILING
-    if (RTRACE(sa)){
-       memtrace_report(sa, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-    a = REAL(sa);
-    y = REAL(sy);
-    naflag = 0;
-    for (i = 0; i < n; i++) {
-	if (ISNAN(a[i]))
-	    y[i] = a[i];
-	else {
-	    y[i] = f(a[i]);
-	    if (ISNAN(y[i])) naflag = 1;
-	}
-    }
-    if(naflag)
-	warningcall(lcall, R_MSG_NA);
-
-    DUPLICATE_ATTRIB(sy, sa);
-    UNPROTECT(2);
-    return sy;
+    GCStackRoot<RealVector>
+	rv(static_cast<RealVector*>(coerceVector(sa, REALSXP)));
+    UnaryFunction<CopyAllAttributes, double (*)(double), NaNWarner> uf(f);
+    return uf.apply<RealVector>(rv.get());
 }
-
 
 SEXP attribute_hidden do_math1(SEXP call, SEXP op, SEXP args, SEXP env)
 {

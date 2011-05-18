@@ -46,8 +46,8 @@
 
 #ifdef __cplusplus
 
-#include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
+#include "CXXR/RHandle.hpp"
 #include "CXXR/uncxxr.h"
 
 extern "C" {
@@ -268,80 +268,16 @@ namespace CXXR {
      */
     class RObject : public GCNode {
     public:
-	/** @brief Smart pointer used to control the copying of RObjects.
+	/** @brief Class of function object that does nothing to an RObject.
 	 *
-	 * This class encapsulates a T* pointer, where T is derived
-	 * from RObject, and is used to manage the copying of
-	 * subobjects when an RObject is copied.  For most purposes,
-	 * it behaves essentially like a GCEdge<T>.  However, when a Handle
-	 * is copied, it checks whether the object, \a x say, that it
-	 * points to is clonable.  If it is, then the copied Handle
-	 * will point to a clone of \a x ; if not, then the copy will
-	 * point to \a x itself.
-	 *
-	 * @tparam T RObject or a class publicly derived from RObject.
+	 * This struct is typically used as a default template
+	 * parameter, for example in FixedVector.
 	 */
-	template <class T = RObject>
-	class Handle : public GCEdge<T> {
-	public:
-	    Handle()
+	struct DoNothing : std::unary_function<RObject*, void> {
+	    void operator()(RObject*)
 	    {}
-
-	    /** @brief Primary constructor.
-	     *
-	     * @param target Pointer to the object to which this
-	     *          GCEdge is to refer.
-	     *
-	     * @note Unless \a target is a null pointer, this
-	     * constructor should be called only as part of the
-	     * construction of the object derived from GCNode of which
-	     * this GCEdge forms a part.
-	     */
-	    explicit Handle(T* target)
-		: GCEdge<T>(target)
-	    {}
-
-	    /** @brief Copy constructor.
-	     *
-	     * @param pattern Handle to be copied.  Suppose \a pattern
-	     *          points to an object \a x .  If \a x is clonable
-	     *          object, i.e. an object of a class that
-	     *          non-trivially implements RObject::clone(),
-	     *          then the newly created Handle will point to a
-	     *          clone of \a x ; otherwise it will point to \a
-	     *          x itself.  If \a pattern encapsulates a null
-	     *          pointer, so will the created object.
-	     */
-	    Handle(const Handle<T>& pattern)
-		: GCEdge<T>(cloneOrSelf(pattern))
-	    {}
-
-	    /** @brief Assignment operator.
-	     *
-	     * Note that this does not attempt to clone \a source: it
-	     * merely changes this Handle to point to the same T
-	     * object (if any) as \a source.
-	     */
-	    Handle<T>& operator=(const Handle<T>& source)
-	    {
-		GCEdge<T>::operator=(source);
-		return *this;
-	    }
-
-	    /** @brief Assignment from pointer.
-	     *
-	     * Note that this does not attempt to clone \a newtarget: it
-	     * merely changes this Handle to point to \a newtarget.
-	     */
-	    Handle<T>& operator=(T* newtarget)
-	    {
-		GCEdge<T>::operator=(newtarget);
-		return *this;
-	    }
-	private:
-	    static T* cloneOrSelf(T*);
 	};
-		
+
 	/** @brief Get object attributes.
 	 *
 	 * @return Pointer to the attributes of this object.
@@ -400,6 +336,35 @@ namespace CXXR {
 	{
 	    return pattern ? static_cast<T*>(pattern->clone()) : 0;
 	}
+
+	/** @brief Copy an attribute from one RObject to another.
+	 *
+	 * @param name Non-null pointer to the Symbol naming the
+	 *          attribute to be copied.
+	 *
+	 * @param source Non-null pointer to the object from which
+	 *          the attribute are to be copied.  If \a source does
+	 *          not have an attribute named \a name , then the
+	 *          function has no effect.
+	 */
+	void copyAttribute(const Symbol* name, const RObject* source)
+	{
+	    RObject* att = source->getAttribute(name);
+	    if (att)
+		setAttribute(name, att);
+	}
+
+	/** @brief Copy attributes from one RObject to another.
+	 *
+	 * Any existing attributes of \a *this are discarded.
+	 *
+	 * @param source Non-null pointer to the object from which
+	 *          attributes are to be copied.
+	 *
+	 * @param copyS4 If true, the status of \a source as an S4
+	 *          object (or not) is also copied to \a *this .
+	 */
+	void copyAttributes(const RObject* source, bool copyS4);
 
 	/** @brief Evaluate object in a specified Environment.
 	 *
@@ -547,7 +512,12 @@ namespace CXXR {
 	 */
 	virtual void unpackGPBits(unsigned int gpbits);
 
-	// Virtual function of GCNode:
+	// Virtual functions of GCNode:
+	void detachReferents()
+	{
+	    m_attrib.detach();
+	}
+
 	void visitReferents(const_visitor* v) const;
     protected:
 	/**
@@ -565,12 +535,6 @@ namespace CXXR {
 	RObject(const RObject& pattern);
 
 	virtual ~RObject() {}
-
-	// Virtual function of GCNode:
-	void detachReferents()
-	{
-	    m_attrib.detach();
-	}
     private:
 	static const unsigned char s_sexptype_mask = 0x3f;
 	static const unsigned char s_S4_mask = 0x40;
@@ -612,15 +576,8 @@ namespace CXXR {
 	bool m_active_binding : 1;
 	bool m_binding_locked : 1;
     private:
-	Handle<PairList> m_attrib;
+	RHandle<PairList> m_attrib;
     };
-
-    template <class T>
-    T* RObject::Handle<T>::cloneOrSelf(T* pattern)
-    {
-        T* t = clone(pattern);
-	return (t ? t : pattern);
-    }
 }  // namespace CXXR
 
 /** @brief Pointer to an RObject.
@@ -654,6 +611,8 @@ extern "C" {
 
     /** @brief Replace the attributes of \a to by those of \a from.
      *
+     * The status of \a to as an S4 Object is also copied from \a from .
+     * 
      * @param to Pointer to CXXR::RObject.
      *
      * @param from Pointer to another CXXR::RObject.

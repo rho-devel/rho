@@ -992,11 +992,17 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
     if (type == VECSXP)
 	if (v->sexptype() == EXPRSXP) {
 	    ExpressionVector* ev = static_cast<ExpressionVector*>(v);
-	    return CXXR_NEW(ListVector(*ev));
+	    GCStackRoot<ListVector>
+		lv(CXXR_NEW(ListVector(ev->begin(), ev->end())));
+	    lv->copyAttribute(NamesSymbol, ev);
+	    return lv;
 	}
     if (type == EXPRSXP && TYPEOF(v) == VECSXP) {
-	GCStackRoot<ListVector> lv(static_cast<ListVector*>(v));
-	return CXXR_NEW(ExpressionVector(*lv));
+	ListVector* lv = static_cast<ListVector*>(v);
+	GCStackRoot<ExpressionVector>
+	    ev(CXXR_NEW(ExpressionVector(lv->begin(), lv->end())));
+	ev->copyAttribute(NamesSymbol, lv);
+	return ev;
     }
 
     if (type == STRSXP) {
@@ -2550,13 +2556,11 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
 	Rf_error(_("invalid replacement object to be a class string"));
     }
     else {
-	const char *valueString, *classString; int whichType;
-	SEXP cur_class; SEXPTYPE valueType;
+	const char *valueString; int whichType;
+	SEXPTYPE valueType;
 	valueString = CHAR(Rf_asChar(value)); /* ASCII */
 	whichType = class2type(valueString);
 	valueType = (whichType == -1) ? CXXRCONSTRUCT(SEXPTYPE, -1) : classTable[whichType].sexp;
-	PROTECT(cur_class = R_data_class(obj, FALSE)); nProtect++;
-	classString = CHAR(Rf_asChar(cur_class)); /* ASCII */
 	/*  assigning type as a class deletes an explicit class attribute. */
 	if(valueType != -1) {
 	    Rf_setAttrib(obj, R_ClassSymbol, R_NilValue);

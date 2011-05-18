@@ -39,10 +39,6 @@
 
 #include "CXXR/ExpressionVector.h"
 
-#include "CXXR/ListVector.h"
-#include "CXXR/Symbol.h"
-
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -52,24 +48,6 @@ namespace CXXR {
 	Rboolean (*isExpressionptr)(SEXP s) = Rf_isExpression;
 	SEXP (*XVECTOR_ELTp)(const SEXP x, int i) = XVECTOR_ELT;
     }
-}
-
-ExpressionVector::ExpressionVector(ListVector& lv)
-    : HandleVector<RObject, EXPRSXP>(lv.size())
-{
-    for (unsigned int i = 0; i < size(); ++i)
-	(*this)[i] = lv[i];
-    SEXP names = Rf_getAttrib(&lv, R_NamesSymbol);
-    if (names) {
-	// Rf_setAttrib protects its args, so we need to expose first:
-	expose();
-	Rf_setAttrib(this, R_NamesSymbol, names);
-    }
-}
-
-ExpressionVector* ExpressionVector::clone() const
-{
-    return expose(new ExpressionVector(*this));
 }
 
 // ***** C interface *****

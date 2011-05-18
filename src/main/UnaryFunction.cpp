@@ -16,11 +16,9 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 1998-2001   Robert Gentleman, Ross Ihaka 
- *                            and the R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
+ *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2.1 of the License, or
  *  (at your option) any later version.
  *
@@ -29,52 +27,34 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser General Public License for more details.
  *
- *  You should have received a copy of the GNU Lesser General Public License
+ *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, a copy is available at
  *  http://www.r-project.org/Licenses/
  */
 
-#ifndef R_COMPLEX_H
-#define R_COMPLEX_H
+/** @file UnaryFunction.cpp
+ *
+ * @brief Implementation of VectorOps::UnaryFunction and related functions.
+ */
 
-#ifndef  __cplusplus
+#include "CXXR/UnaryFunction.hpp"
 
-typedef struct {
-    double r;
-    double i;
-} Rcomplex;
+#include "CXXR/Symbol.h"
 
-#else
+using namespace CXXR;
+using namespace VectorOps;
 
-struct Rcomplex {
-    double r;
-    double i;
-
-    Rcomplex()
-    {}
-
-    Rcomplex(double rl, double im = 0.0)
-	: r(rl), i(im)
-    {}
-
-    Rcomplex& operator=(double rhs)
-    {
-	r = rhs;
-	i = 0;
-	return *this;
+void CopyLayoutAttributes::operator()(VectorBase* to,
+				      const VectorBase* from) const
+{
+    RObject* names = from->getAttribute(NamesSymbol);
+    if (names)
+	to->setAttribute(NamesSymbol, names);
+    RObject* dim = from->getAttribute(DimSymbol);
+    if (dim) {
+	to->setAttribute(DimSymbol, dim);
+	RObject* dimnames = from->getAttribute(DimNamesSymbol);
+	if (dimnames)
+	    to->setAttribute(DimNamesSymbol, dimnames);
     }
-};
-
-inline bool operator==(const Rcomplex& l, const Rcomplex& r)
-{
-    return (l.r == r.r) && (l.i == r.i);
 }
-
-inline bool operator!=(const Rcomplex& l, const Rcomplex& r)
-{
-    return !(l==r);
-}
-
-#endif // __cplusplus
-
-#endif /* R_COMPLEX_H */

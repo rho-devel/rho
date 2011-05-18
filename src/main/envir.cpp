@@ -113,7 +113,6 @@
 #include <R_ext/Callbacks.h>
 #include "CXXR/ClosureContext.hpp"
 
-using namespace std;
 using namespace CXXR;
 
 namespace {
@@ -417,7 +416,7 @@ SEXP findVar(SEXP symbol, SEXP rho)
 namespace {
     // Predicate used to test whether a Binding's value is of a
     // specified type.
-    class TypeTester : public unary_function<RObject*, bool> {
+    class TypeTester : public std::unary_function<RObject*, bool> {
     public:
 	TypeTester(SEXPTYPE type)
 	    : m_type(type)
@@ -448,7 +447,7 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
     TypeTester typetest(mode);
-    pair<bool, RObject*> pr = findTestedValue(sym, env, typetest, inherits);
+    std::pair<bool, RObject*> pr = findTestedValue(sym, env, typetest, inherits);
     return (pr.first ? pr.second : R_UnboundValue);
 }
 
@@ -459,7 +458,7 @@ findVar1(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits)
 namespace {
     // Predicate used to test whether a Binding's value is of a
     // specified mode.
-    class ModeTester : public unary_function<RObject*, bool> {
+    class ModeTester : public std::unary_function<RObject*, bool> {
     public:
 	ModeTester(SEXPTYPE mode);
 
@@ -509,7 +508,7 @@ findVar1mode(SEXP symbol, SEXP rho, SEXPTYPE mode, int inherits,
 	return bdg ? bdg->value() : R_UnboundValue;
     }
     ModeTester modetest(mode);
-    pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
+    std::pair<bool, RObject*> pr = findTestedValue(sym, env, modetest, inherits);
     return (pr.first ? pr.second : R_UnboundValue);
 }
 
@@ -610,7 +609,7 @@ SEXP findFun(SEXP symbol, SEXP rho)
 {
     const Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    pair<Environment*, FunctionBase*> pr = findFunction(sym, env);
+    std::pair<Environment*, FunctionBase*> pr = findFunction(sym, env);
     if (pr.first)
 	return pr.second;
     error(_("could not find function \"%s\""), sym->name()->c_str());
@@ -663,7 +662,7 @@ void setVar(SEXP symbol, SEXP value, SEXP rho)
 {
     Symbol* sym = SEXP_downcast<Symbol*>(symbol);
     Environment* env = SEXP_downcast<Environment*>(rho);
-    pair<Environment*, Frame::Binding*> pr = env->findBinding(sym);
+    std::pair<Environment*, Frame::Binding*> pr = env->findBinding(sym);
     Frame::Binding* bdg = pr.second;
     env = pr.first;
     if (!env) {
@@ -1462,8 +1461,8 @@ SEXP R_lsInternal(SEXP env, Rboolean all)
 	!isEnvironment(env = simple_as_environment(env)))
 	error(_("invalid '%s' argument"), "envir");
     const Environment* envir = static_cast<Environment*>(env);
-    vector<const Symbol*> syms = envir->frame()->symbols(all);
-    size_t sz = syms.size();
+    std::vector<const Symbol*> syms = envir->frame()->symbols(all);
+    std::size_t sz = syms.size();
     GCStackRoot<StringVector> ans(CXXR_NEW(StringVector(sz)));
     for (unsigned int i = 0; i < sz; ++i)
 	(*ans)[i] = const_cast<CachedString*>(syms[i]->name());

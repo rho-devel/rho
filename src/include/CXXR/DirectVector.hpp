@@ -32,73 +32,62 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file HandleVector.hpp
+/** @file DirectVector.hpp
  *
- * @brief Templated class CXXR::HandleVector.
+ * @brief Templated class CXXR::DirectVector.
  */
 
-#ifndef HANDLEVECTOR_HPP
-#define HANDLEVECTOR_HPP 1
+#ifndef DIRECTVECTOR_HPP
+#define DIRECTVECTOR_HPP 1
 
-#include <algorithm>
-
-#include "localization.h"
-#include "R_ext/Error.h"
 #include "CXXR/Allocator.hpp"
-#include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
 namespace CXXR {
-    /** @brief Vector of RObject::Handle smart pointers.
+    /** @brief Vector of objects directly incorporated in the vector.
      *
-     * This is a templated class to represent a vector whose elements
-     * are are smart pointers of type \c RObject::Handle<T>.  As
-     * explained in the documentation for \c RObject::Handle, copying
-     * the vector will copy the objects pointed to, provided that they
-     * are clonable.
+     * This is a templated class to represent an R data vector.
      *
-     * @tparam T This should be RObject or a type (publicly) derived
-     *           from RObject.  The vector elements will be of type \c
-     *           Handle<T>.
+     * @tparam T The type of the elements of the vector.  This may be
+     *           a built-in data type (i.e. not a pointer or
+     *           reference), or a class type with a default
+     *           constructor, a copy constructor and an assignment
+     *           operator.  The elements must not incorporate pointers
+     *           or references to GCNode objects.
      *
      * @tparam ST The required ::SEXPTYPE of the vector.
      */
     template <typename T, SEXPTYPE ST>
-    class HandleVector : public VectorBase {
+    class DirectVector : public VectorBase {
     private:
-	typedef std::vector<Handle<T>, Allocator<Handle<T> > > Vector;
+	typedef std::vector<T, Allocator<T> > Vector;
     public:
+	typedef T element_type;
 	typedef typename Vector::const_iterator const_iterator;
+
+	/** @brief Create a vector.
+         *
+	 * If \a T is a class type, elements will be initialized with
+	 * the default constructor.
+	 *
+	 * @param sz Number of elements required.  Zero is
+	 *          permissible.
+	 */
+	explicit DirectVector(size_t sz)
+	    : VectorBase(ST, sz), m_data(sz)
+	{}
 
 	/** @brief Create a vector.
          *
 	 * @param sz Number of elements required.  Zero is
 	 *          permissible.
 	 *
-	 * @param init Initial value for the destination of each
-	 *          \a T* in the HandleVector.
+	 * @param initializer Initial value to be assigned to each
+	 *          element.
 	 */
-	explicit HandleVector(size_t sz, T* init = 0)
-	    : VectorBase(ST, sz), m_data(sz, Handle<T>(init))
+	explicit DirectVector(size_t sz,  const T& initializer)
+	    : VectorBase(ST, sz), m_data(sz, initializer)
 	{}
-
-	/** @brief Copy constructor.
-	 *
-	 * @param pattern HandleVector to be copied.  Beware that if
-	 *          any of the elements of \a pattern are unclonable,
-	 *          they will be shared between \a pattern and the
-	 *          created object.  This is necessarily prejudicial
-	 *          to the constness of the \a pattern parameter.
-	 */
-	HandleVector(const HandleVector<T, ST>& pattern)
-	    : VectorBase(pattern), m_data(pattern.m_data.size())
-	{
-	    for (unsigned int i = 0; i < m_data.size(); ++i) {
-		// Use copy constructor to apply object copying logic:
-		Handle<T> handle(pattern.m_data[i]);
-		m_data[i] = handle;
-	    }
-	}
 
 	/** @brief Element access.
 	 *
@@ -107,7 +96,7 @@ namespace CXXR {
 	 *
 	 * @return the specified element.
 	 */
-        Handle<T>& operator[](unsigned int index)
+        T& operator[](unsigned int index)
 	{
 	    return m_data[index];
 	}
@@ -119,7 +108,7 @@ namespace CXXR {
 	 *
 	 * @return the specified element.
 	 */
-	const T* operator[](unsigned int index) const
+	const T& operator[](unsigned int index) const
 	{
 	    return m_data[index];
 	}
@@ -127,7 +116,7 @@ namespace CXXR {
 	/** @brief Iterator designating first element.
 	 *
 	 * @return An iterator designating the first element of the
-	 * HandleVector.  Returns end() if the vector is empty.
+	 * DirectVector.  Returns end() if the vector is empty.
 	 */
 	const_iterator begin() const
 	{
@@ -137,7 +126,7 @@ namespace CXXR {
 	/** @brief One-past-the-end iterator.
 	 *
 	 * @return An iterator designating a position 'one past the
-	 * end' of the HandleVector.
+	 * end' of the DirectVector.
 	 */
 	const_iterator end() const
 	{
@@ -149,61 +138,40 @@ namespace CXXR {
 	 * @return the name by which this type is known in R.
 	 *
 	 * @note This function is declared but not defined as part of
-	 * the HandleVector template.  It must be defined as a
+	 * the DirectVector template.  It must be defined as a
 	 * specialization for each instantiation of the template for
 	 * which it or typeName() is used.
 	 */
 	inline static const char* staticTypeName();
 
-	// Virtual function of RObject:
+	// Virtual functions of RObject:
+	DirectVector<T, ST>* clone() const;
 	const char* typeName() const;
-
-	// Virtual function of GCNode:
-	void visitReferents(const_visitor* v) const;
     protected:
 	/**
-	 * Declared protected to ensure that HandleVector objects are
+	 * Declared protected to ensure that DirectVector objects are
 	 * allocated only using 'new'.
 	 */
-	~HandleVector() {}
-
-	// Virtual function of GCNode:
-	void detachReferents();
+	~DirectVector() {}
     private:
 	Vector m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated version:
-	HandleVector& operator=(const HandleVector&);
-
-	friend class ElementProxy;
+	DirectVector& operator=(const DirectVector&);
     };
 
     template <typename T, SEXPTYPE ST>
-    const char* HandleVector<T, ST>::typeName() const
+    DirectVector<T, ST>* DirectVector<T, ST>::clone() const
     {
-	return HandleVector<T, ST>::staticTypeName();
+	return expose(new DirectVector<T, ST>(*this));
     }
 
     template <typename T, SEXPTYPE ST>
-    void HandleVector<T, ST>::detachReferents()
+    const char* DirectVector<T, ST>::typeName() const
     {
-	VectorBase::detachReferents();
-	m_data.clear();
-    }
-
-    template <typename T, SEXPTYPE ST>
-    void HandleVector<T, ST>::visitReferents(const_visitor* v) const
-    {
-	VectorBase::visitReferents(v);
-	typename Vector::const_iterator end = m_data.end();
-	for (typename Vector::const_iterator it = m_data.begin();
-	     it != end; ++it) {
-	    T* node = *it;
-	    if (node)
-		(*v)(node);
-	}
+	return DirectVector<T, ST>::staticTypeName();
     }
 }  // namespace CXXR
 
-#endif  // HANDLEVECTOR_HPP
+#endif  // DIRECTVECTOR_HPP

@@ -146,7 +146,8 @@ Rboolean IS_ACTIVE_BINDING(SEXP b)
 
 SEXP SETCDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell& cc = *SEXP_downcast<ConsCell*>(x);
     PairList* tl = SEXP_downcast<PairList*>(y);
     cc.setTail(tl);
@@ -155,52 +156,66 @@ SEXP SETCDR(SEXP x, SEXP y)
 
 SEXP SETCADR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCADDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCADDDR(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }
 
 SEXP SETCAD4R(SEXP x, SEXP y)
 {
-    if (!x) Rf_error(_("bad value"));
+    if (!x)
+	Rf_error(_("bad value"));
     ConsCell* cc = SEXP_downcast<ConsCell*>(x);
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc = cc->tail();
-    if (!cc) Rf_error(_("bad value"));
+    if (!cc)
+	Rf_error(_("bad value"));
     cc->setCar(y);
     return y;
 }

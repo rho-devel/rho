@@ -42,10 +42,6 @@
 
 #include "CXXR/ListVector.h"
 
-#include "CXXR/ExpressionVector.h"
-#include "CXXR/Symbol.h"
-
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -54,26 +50,6 @@ namespace CXXR {
     namespace ForceNonInline {
 	SEXP (*VECTOR_ELTp)(const SEXP x, int i) = VECTOR_ELT;
     }
-}
-
-ListVector::ListVector(ExpressionVector& ev)
-    : HandleVector<RObject, VECSXP>(ev.size())
-{
-    // The following results in unnecessary invocations of
-    // propagateAge() on the nodes pointed to.
-    for (unsigned int i = 0; i < size(); ++i)
-	(*this)[i] = ev[i];
-    SEXP names = Rf_getAttrib(&ev, R_NamesSymbol);
-    if (names) {
-	// Rf_setAttrib protects its args, so we need to expose first:
-	expose();
-	Rf_setAttrib(this, R_NamesSymbol, names);
-    }
-}
-
-ListVector* ListVector::clone() const
-{
-    return expose(new ListVector(*this));
 }
 
 // ***** C interface *****

@@ -39,7 +39,6 @@
 
 #include "CXXR/RawVector.h"
 
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable
@@ -49,3 +48,5 @@ namespace CXXR {
 	Rbyte* (*RAWp)(SEXP) = RAW;
     }
 }
+
+Rbyte ElementTraits::NAFunc<Rbyte>::s_na = 0;
