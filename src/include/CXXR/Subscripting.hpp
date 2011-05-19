@@ -703,8 +703,13 @@ namespace CXXR {
 	for (unsigned int i = 0; i < ni; ++i) {
 	    int index = (*indices)[i];
 	    if (!isNA(index)) {
+		// Be careful not to create a temporary RHandle.
+		Lval& lval = (*ans)[index - 1];
 		const Rval& rval = (*rhs)[i % rhs_size];
-		(*ans)[index - 1] = (isNA(rval) ? NA<Lval>() : Lval(rval));
+		if (isNA(rval))
+		    lval = NA<Lval>();
+		else
+		    lval = rval;
 	    }
 	}
 	processUseNames(ans, indices);
