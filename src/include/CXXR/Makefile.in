@@ -43,7 +43,7 @@ CXXR_HPPS = \
   FixedVector.hpp Frame.hpp GCEdge.hpp GCNode.hpp GCStackRoot.hpp \
   HeterogeneousList.hpp MemoryBank.hpp NAAugment.hpp RHandle.hpp \
   SEXP_downcast.hpp SchwarzCounter.hpp StdFrame.hpp Subscripting.hpp \
-  UnaryFunction.hpp VectorOps.hpp config.hpp
+  UnaryFunction.hpp config.hpp
 
 CXXR_HEADERS = $(CXXR_HS) $(CXXR_HPPS)
 
