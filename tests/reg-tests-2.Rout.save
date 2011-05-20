@@ -1,5 +1,5 @@
 
-This is CXXR 0.33-2.12.1, based on:
+This is CXXR 0.34-2.12.1, based on:
 R version 2.12.1 (2010-12-16)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
@@ -3206,7 +3206,9 @@ NULL
 [1] 1
 > dimnames(x) <- list(some=letters[1:5])
 > x[]
-[1] 1 2 3 4 5
+some
+a b c d e 
+1 2 3 4 5 
 > x[2:3]
 some
 b c 

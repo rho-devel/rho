@@ -436,39 +436,23 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
 
     /* This is the actual subsetting code. */
-    /* The separation of arrays and matrices is purely an optimization. */
 
     GCStackRoot<> ans;
-    if(nsubs < 2) {
-	SEXP dim = getAttrib(x, R_DimSymbol);
-	int ndim = length(dim);
-	ans = VectorSubset(ax, (nsubs == 1 ? CAR(subs) : R_MissingArg), call);
-	/* one-dimensional arrays went through here, and they should
-	   have their dimensions dropped only if the result has
-	   length one and drop == TRUE
-	*/
-	if(ndim == 1) {
-	    int len = length(ans);
-
-	    if(!drop || len > 1) {
-		GCStackRoot<> attr(allocVector(INTSXP, 1));
-		SEXP attrib = getAttrib(x, R_DimNamesSymbol);
-		INTEGER(attr)[0] = length(ans);
-		setAttrib(ans, R_DimSymbol, attr);
-		if(attrib) {
-		    /* reinstate dimnames, include names of dimnames */
-		    GCStackRoot<> nattrib(duplicate(attrib));
-		    SET_VECTOR_ELT(nattrib, 0,
-				   getAttrib(ans, R_NamesSymbol));
-		    setAttrib(ans, R_DimNamesSymbol, nattrib);
-		    setAttrib(ans, R_NamesSymbol, R_NilValue);
-		}
-	    }
-	}
-    } else {
-	if (nsubs != length(getAttrib(x, R_DimSymbol)))
-	    errorcall(call, _("incorrect number of dimensions"));
-	ans = ArraySubset(ax, subs, call, drop);
+    SEXP sub1 = CAR(subs);  // null if nsubs == 0
+    const IntVector* dims = static_cast<VectorBase*>(ax.get())->dimensions();
+    if (dims) {
+	int ndim = dims->size();
+	// Check for single matrix subscript:
+	if (nsubs == 1 && isMatrix(sub1)
+	    && isArray(ax) && ncols(sub1) == ndim)
+	    ans = VectorSubset(ax, sub1, call);
+	else if (ndim == nsubs)  // regular array subscripting, inc. 1-dim
+	    ans = ArraySubset(ax, subs, call, drop);
+    }
+    if (!ans) {
+	if (nsubs < 2) // vector subscripting
+	    ans = VectorSubset(ax, (nsubs == 1 ? sub1 : R_MissingArg), call);
+	else Rf_errorcall(call, _("incorrect number of dimensions"));
     }
 
     /* Note: we do not coerce back to pair-based lists. */
