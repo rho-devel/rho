@@ -182,9 +182,18 @@ namespace CXXR {
 	 */
 	template <typename T>
 	struct VisitReferents : std::unary_function<T, void> {
+	    /** @brief Constructor
+	     *
+	     * @param v Non-null pointer to the visitor object to be
+	     *          applied by the function object constructed.
+	     */
 	    VisitReferents(GCNode::const_visitor* v)
 	    {}
 
+	    /** @brief Apply the function.
+	     *
+	     * @param t Object to which the function is to be applied.
+	     */
 	    void operator()(const T& t) const
 	    {}
 	};
