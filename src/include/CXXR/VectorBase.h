@@ -44,6 +44,11 @@
 
 #include "CXXR/RObject.h"
 
+/* type for length of vectors etc */
+typedef int R_len_t; /* will be long later, LONG64 or ssize_t on Win64 */
+
+#define R_LEN_T_MAX INT_MAX
+
 #ifdef __cplusplus
 
 #include "CXXR/ElementTraits.hpp"
@@ -332,109 +337,109 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-/* Accessor functions */
+    /* Accessor functions */
 
-/* Vector Access Functions */
+    /* Vector Access Functions */
 
-/**
- * @param x Pointer to an CXXR::VectorBase .
- *
- * @return The length of \a x, or 0 if \a x is a null pointer.  (In 
- *         the case of certain hash tables, this means the 'capacity'
- *         of \a x , not all of which may be used.)
- */
+    /**
+     * @param x Pointer to an CXXR::VectorBase .
+     *
+     * @return The length of \a x, or 0 if \a x is a null pointer.  (In 
+     *         the case of certain hash tables, this means the 'capacity'
+     *         of \a x , not all of which may be used.)
+     */
 #ifndef __cplusplus
-int LENGTH(SEXP x);
+    int LENGTH(SEXP x);
 #else
-inline int LENGTH(SEXP x)
-{
-    using namespace CXXR;
-    if (!x) return 0;
-    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-    return vb.size();
-}
+    inline int LENGTH(SEXP x)
+    {
+	using namespace CXXR;
+	if (!x) return 0;
+	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+	return vb.size();
+    }
 #endif
 
-/**
- * @param x Pointer to a CXXR::VectorBase .
- *
- * @return The 'true length' of \a x.  According to the R Internals
- *         document for R 2.4.1, this is only used for certain hash
- *         tables, and signifies the number of used slots in the
- *         table.
- *
- * @deprecated May be withdrawn in the future.
- */
+    /**
+     * @param x Pointer to a CXXR::VectorBase .
+     *
+     * @return The 'true length' of \a x.  According to the R Internals
+     *         document for R 2.4.1, this is only used for certain hash
+     *         tables, and signifies the number of used slots in the
+     *         table.
+     *
+     * @deprecated May be withdrawn in the future.
+     */
 #ifndef __cplusplus
-int TRUELENGTH(SEXP x);
+    int TRUELENGTH(SEXP x);
 #else
-inline int TRUELENGTH(SEXP x)
-{
-    using namespace CXXR;
-    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-    return vb.m_truelength;
-}
+    inline int TRUELENGTH(SEXP x)
+    {
+	using namespace CXXR;
+	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+	return vb.m_truelength;
+    }
 #endif
 
-/**
- * Set length of vector.
- *
- * @param x Pointer to a CXXR::VectorBase .
- *
- * @param v The required new length, which must not be greater than
- *          the current length.
- *
- * @deprecated May be withdrawn in future.  Currently used in
- * library/stats/src/isoreg.c , and possibly in packages.
- */
-void SETLENGTH(SEXP x, int v);
+    /**
+     * Set length of vector.
+     *
+     * @param x Pointer to a CXXR::VectorBase .
+     *
+     * @param v The required new length, which must not be greater than
+     *          the current length.
+     *
+     * @deprecated May be withdrawn in future.  Currently used in
+     * library/stats/src/isoreg.c , and possibly in packages.
+     */
+    void SETLENGTH(SEXP x, int v);
 
-/**
- * Set 'true length' of vector.
- *
- * @param x Pointer to a CXXR::VectorBase .
- *
- * @param v The required new 'true length'.
- *
- * @deprecated May be withdrawn in the future.
- */
+    /**
+     * Set 'true length' of vector.
+     *
+     * @param x Pointer to a CXXR::VectorBase .
+     *
+     * @param v The required new 'true length'.
+     *
+     * @deprecated May be withdrawn in the future.
+     */
 #ifndef __cplusplus
-void SET_TRUELENGTH(SEXP x, int v);
+    void SET_TRUELENGTH(SEXP x, int v);
 #else
-inline void SET_TRUELENGTH(SEXP x, int v)
-{
-    using namespace CXXR;
-    VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
-    vb.m_truelength = v;
-}
+    inline void SET_TRUELENGTH(SEXP x, int v)
+    {
+	using namespace CXXR;
+	VectorBase& vb = *SEXP_downcast<VectorBase*>(x);
+	vb.m_truelength = v;
+    }
 #endif
 
-/**
- * @brief Create a vector object.
- *
- *  Allocate a vector object.  This ensures only validity of
- *  ::SEXPTYPE values representing lists (as the elements must be
- *  initialized).  Initializing of other vector types is done in
- *  do_makevector().
- *
- * @param stype The type of vector required.
- *
- * @param length The length of the vector to be created.
- *
- * @return Pointer to the created vector.
- */
-SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
+    /**
+     * @brief Create a vector object.
+     *
+     *  Allocate a vector object.  This ensures only validity of
+     *  ::SEXPTYPE values representing lists (as the elements must be
+     *  initialized).  Initializing of other vector types is done in
+     *  do_makevector().
+     *
+     * @param stype The type of vector required.
+     *
+     * @param length The length of the vector to be created.
+     *
+     * @return Pointer to the created vector.
+     */
+    SEXP Rf_allocVector(SEXPTYPE stype, R_len_t length);
 
-/** @brief Is an RObject a vector?
- *
- * Vector in this context embraces R matrices and arrays.
- *
- * @param s Pointer to the RObject to be tested.  The pointer may be
- *          null, in which case the function returns FALSE.
- *
- * @return TRUE iff \a s points to a vector object.
- */
-Rboolean Rf_isVector(SEXP s);
+    /** @brief Is an RObject a vector?
+     *
+     * Vector in this context embraces R matrices and arrays.
+     *
+     * @param s Pointer to the RObject to be tested.  The pointer may be
+     *          null, in which case the function returns FALSE.
+     *
+     * @return TRUE iff \a s points to a vector object.
+     */
+    Rboolean Rf_isVector(SEXP s);
 
 #ifdef __cplusplus
 }
