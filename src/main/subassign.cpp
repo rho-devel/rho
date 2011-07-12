@@ -568,43 +568,46 @@ static SEXP VectorAssign(SEXP call, SEXP xarg, SEXP sarg, SEXP yarg)
 }
 
 
-static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
+static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
 {
-    int i, j, ii, iy, jj, k=0, n, ny, which;
-    int **subs, *indx, *bound, *offset;
-    SEXP dims, tmp;
-    double ry;
+    int k=0;
     const void *vmax = vmaxget();
 
-    PROTECT(dims = getAttrib(x, R_DimSymbol));
+    GCStackRoot<> x(xarg);
+    GCStackRoot<> y(yarg);
+    GCStackRoot<> dims(getAttrib(x, R_DimSymbol));
     if (dims == R_NilValue || (k = LENGTH(dims)) != length(s))
 	error(_("incorrect number of subscripts"));
 
-    subs = static_cast<int**>(CXXR_alloc(k, sizeof(int*)));
-    indx = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
-    bound = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
-    offset = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    int** subs = static_cast<int**>(CXXR_alloc(k, sizeof(int*)));
+    int* indx = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    int* bound = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
+    int* offset = static_cast<int*>(CXXR_alloc(k, sizeof(int)));
 
-    ny = LENGTH(y);
+    int ny = LENGTH(y);
 
     /* Expand the list of subscripts. */
     /* s is protected, so no GC problems here */
 
-    tmp = s;
-    for (i = 0; i < k; i++) {
-	SETCAR(tmp, arraySubscript(i, CAR(tmp), dims, getAttrib,
-				   (STRING_ELT), x));
-	tmp = CDR(tmp);
+    {
+	SEXP tmp = s;
+	for (int i = 0; i < k; i++) {
+	    SETCAR(tmp, arraySubscript(i, CAR(tmp), dims, getAttrib,
+				       (STRING_ELT), x));
+	    tmp = CDR(tmp);
+	}
     }
 
-    n = 1;
-    tmp = s;
-    for (i = 0; i < k; i++) {
-	indx[i] = 0;
-	subs[i] = INTEGER(CAR(tmp));
-	bound[i] = LENGTH(CAR(tmp));
-	n *= bound[i];
-	tmp = CDR(tmp);
+    int n = 1;
+    {
+	SEXP tmp = s;
+	for (int i = 0; i < k; i++) {
+	    indx[i] = 0;
+	    subs[i] = INTEGER(CAR(tmp));
+	    bound[i] = LENGTH(CAR(tmp));
+	    n *= bound[i];
+	    tmp = CDR(tmp);
+	}
     }
 
     if (n > 0 && ny == 0)
@@ -613,28 +616,31 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	error(_("number of items to replace is not a multiple of replacement length"));
 
     if (ny > 1) { /* check for NAs in indices */
-	for (i = 0; i < k; i++)
-	    for (j = 0; j < bound[i]; j++)
+	for (int i = 0; i < k; i++)
+	    for (int j = 0; j < bound[i]; j++)
 		if (subs[i][j] == NA_INTEGER)
 		    error(_("NAs are not allowed in subscripted assignments"));
     }
 
     offset[0] = 1;
-    for (i = 1; i < k; i++)
+    for (int i = 1; i < k; i++)
 	offset[i] = offset[i - 1] * INTEGER(dims)[i - 1];
 
 
     /* Here we make sure that the LHS has been coerced into */
     /* a form which can accept elements from the RHS. */
 
-    which = SubassignTypeFix(&x, &y, 1, call);/* = 100 * TYPEOF(x) + TYPEOF(y);*/
-
-    if (n == 0) {
-	UNPROTECT(1);
-	return(x);
+    int which;
+    {
+	SEXP xtmp = x;
+	SEXP ytmp = y;
+	which = SubassignTypeFix(&xtmp, &ytmp, 1, call);/* = 100 * TYPEOF(x) + TYPEOF(y);*/
+	x = xtmp;
+	y = ytmp;
     }
 
-    PROTECT(x);
+    if (n == 0)
+	return(x);
 
     /* When array elements are being permuted the RHS */
     /* must be duplicated or the elements get trashed. */
@@ -642,18 +648,16 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* objects.  A full duplication is wasteful. */
 
     if (x == y)
-	PROTECT(y = duplicate(y));
-    else
-	PROTECT(y);
+	y = duplicate(y);
 
     /* Note that we are now committed.  Since we are mutating */
     /* existing objects any changes we make now are permanent. */
     /* Beware! */
 
-    for (i = 0; i < n; i++) {
-	ii = 0;
-	for (j = 0; j < k; j++) {
-	    jj = subs[j][indx[j]];
+    for (int i = 0; i < n; i++) {
+	int ii = 0;
+	for (int j = 0; j < k; j++) {
+	    int jj = subs[j][indx[j]];
 	    if (jj == NA_INTEGER) goto next_i;
 	    ii += (jj - 1) * offset[j];
 	}
@@ -671,11 +675,13 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	case 1410:	/* real	     <- logical	  */
 	case 1413:	/* real	     <- integer	  */
 
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER)
-		REAL(x)[ii] = NA_REAL;
-	    else
-		REAL(x)[ii] = iy;
+	    {
+		int iy = INTEGER(y)[i % ny];
+		if (iy == NA_INTEGER)
+		    REAL(x)[ii] = NA_REAL;
+		else
+		    REAL(x)[ii] = iy;
+	    }
 	    break;
 
 	/* case 1014:	   logical   <- real	  */
@@ -688,27 +694,31 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 	case 1510:	/* complex   <- logical	  */
 	case 1513:	/* complex   <- integer	  */
 
-	    iy = INTEGER(y)[i % ny];
-	    if (iy == NA_INTEGER) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = iy;
-		COMPLEX(x)[ii].i = 0.0;
+	    {
+		int iy = INTEGER(y)[i % ny];
+		if (iy == NA_INTEGER) {
+		    COMPLEX(x)[ii].r = NA_REAL;
+		    COMPLEX(x)[ii].i = NA_REAL;
+		}
+		else {
+		    COMPLEX(x)[ii].r = iy;
+		    COMPLEX(x)[ii].i = 0.0;
+		}
 	    }
 	    break;
 
 	case 1514:	/* complex   <- real	  */
 
-	    ry = REAL(y)[i % ny];
-	    if (ISNA(ry)) {
-		COMPLEX(x)[ii].r = NA_REAL;
-		COMPLEX(x)[ii].i = NA_REAL;
-	    }
-	    else {
-		COMPLEX(x)[ii].r = ry;
-		COMPLEX(x)[ii].i = 0.0;
+	    {
+		double ry = REAL(y)[i % ny];
+		if (ISNA(ry)) {
+		    COMPLEX(x)[ii].r = NA_REAL;
+		    COMPLEX(x)[ii].i = NA_REAL;
+		}
+		else {
+		    COMPLEX(x)[ii].r = ry;
+		    COMPLEX(x)[ii].i = 0.0;
+		}
 	    }
 	    break;
 
@@ -750,14 +760,13 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     next_i:
 	;
 	if (n > 1) {
-	    j = 0;
+	    int j = 0;
 	    while (++indx[j] >= bound[j]) {
 		indx[j] = 0;
 		j = (j + 1) % k;
 	    }
 	}
     }
-    UNPROTECT(3);
     vmaxset(vmax);
     return x;
 }
