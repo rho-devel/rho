@@ -197,7 +197,7 @@ namespace CXXR {
 #ifdef GCID
 	    m_id(++s_last_id),
 #endif
-	    m_bits(s_mark | UNDER_CONSTRUCTION), m_refcount(0)
+	    m_rcmmu(s_mark | 1)
 	{
 	    s_live->splice_back(this);
 	    ++s_num_nodes;
@@ -285,8 +285,8 @@ namespace CXXR {
 	 */
 	void expose() const
 	{
-	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
-	    m_bits &= ~UNDER_CONSTRUCTION;
+	    s_under_construction -= (m_rcmmu & 1);
+	    m_rcmmu &= ~1;
 	}
 
 	/** @brief Record that construction of a node is complete.
@@ -367,21 +367,6 @@ namespace CXXR {
 #endif
 	}
 
-	/** @brief Perform sanity checks on a GCNode.
-	 *
-	 * This function performs simple sanity checks on a GCNode,
-	 * and is typically used to detect premature garbage
-	 * collection.  In this regard, it is particularly effective
-	 * when MemoryBank.hpp is configured to fill freed blocks with
-	 * 0x55 bytes.  If the sanity check fails, the function aborts
-	 * the program.
-	 *
-	 * @param node Either a null pointer (in which case the check
-	 *          succeeds) or a pointer to the GCNode to be
-	 *          checked.
-	 */
-	static void nodeCheck(const GCNode* node);
-
 	/** @brief Number of GCNode objects in existence.
 	 *
 	 * @return the number of GCNode objects currently in
@@ -420,7 +405,7 @@ namespace CXXR {
 #ifdef GCID
 	    watch();
 #endif
-	    s_under_construction -= (m_bits & UNDER_CONSTRUCTION);
+	    s_under_construction -= (m_rcmmu & 1);
 	    --s_num_nodes;
 	}
     private:
@@ -468,9 +453,6 @@ namespace CXXR {
 	  // collection, if a node is found to be reachable from the
 	  // roots, it is moved to this list. Between garbage
 	  // collections, this list should be empty.
-	static unsigned char s_mark;  // During garbage collection, a
-	  // node is considered marked if its MARK field matches the
-	  // corresponding bits of s_mark.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
 	static unsigned int s_under_construction;  // Number of nodes
 	  // currently under construction (i.e. not yet exposed).
@@ -489,19 +471,30 @@ namespace CXXR {
 	static const GCNode* s_watch_addr;
 	static unsigned int s_watch_id;
 #endif
-
-	// Masks applicable to the m_bits field:
-	enum {UNDER_CONSTRUCTION = 1, MARK = 4};
-
+	// Bit patterns XORd into m_rcmmu to decrement or increment the
+	// reference count.  Patterns 0, 2, 4, ... are used to
+	// decrement; 1, 3, 5, .. to increment.
+	static const unsigned char s_decinc_refcount[];
+	static unsigned char s_mark;  // During garbage collection, a
+	  // node is considered marked if its s_mark_mask bit matches the
+	  // corresponding bit of s_mark.  (Only this bit will ever be
+	  // set in s_mark.)
 #ifdef GCID
 	unsigned int m_id;
 #endif
-	mutable unsigned char m_bits;
-	mutable unsigned char m_refcount;  // This is twice the
-	  // reference count, plus 1 if the node is marked as
-	  // moribund.  The most-significant bit is sticky: once set
-	  // it stays set, after which the node can only be
-	  // garbage-collected by mark-sweep.
+
+	static const unsigned char s_mark_mask = 0x80;
+	static const unsigned char s_moribund_mask = 0x40;
+	static const unsigned char s_refcount_mask = 0x3e;
+	mutable unsigned char m_rcmmu;
+	  // Refcount/moribund/marked/under-construction.  The least
+	  // significant bit is set to signify that the node is under
+	  // construction.  The reference count is held in the next 5
+	  // bits, and saturates at 31.  The 0x40 bit is set to
+	  // signify that the node is on the moribund list.  The most
+	  // significant bit is set to s_mark on construction; this
+	  // bit is then toggled in the mark phase of a mark-sweep
+	  // garbage collection to identify reachable nodes.
 
 	// Not implemented.  Declared to prevent compiler-generated
 	// versions:
@@ -524,11 +517,10 @@ namespace CXXR {
 	static void decRefCount(const GCNode* node)
 	{
 	    if (node) {
-		unsigned char rc
-		    = (node->m_refcount - 2) | (node->m_refcount & 0x80);
-		if (rc == 0)
+		unsigned char& rcmmu = node->m_rcmmu;
+		rcmmu ^= s_decinc_refcount[rcmmu & s_refcount_mask];
+		if ((rcmmu & (s_refcount_mask | s_moribund_mask)) == 0)
 		    node->makeMoribund();
-		else node->m_refcount = rc;
 	    }
 	}
 
@@ -536,9 +528,10 @@ namespace CXXR {
 	// stickiness of the MSB.
 	static void incRefCount(const GCNode* node)
 	{
-	    if (node)
-		node->m_refcount
-		    = (node->m_refcount + 2) | (node->m_refcount & 0x80);
+	    if (node) {
+		unsigned char& rcmmu = node->m_rcmmu;
+		rcmmu ^= s_decinc_refcount[(rcmmu & s_refcount_mask) + 1];
+	    }
 	}
 
 	/** @brief Initialize static members.
@@ -552,7 +545,10 @@ namespace CXXR {
 	 */
 	static void initialize();
 
-	bool isMarked() const {return (m_bits & MARK) == s_mark;}
+	bool isMarked() const
+	{
+	    return (m_rcmmu & s_mark_mask) == s_mark;
+	}
 
 	// Mark this node as moribund:
 #ifdef __GNUC__

@@ -60,7 +60,6 @@ using namespace CXXR;
 GCNode::List* GCNode::s_live;
 vector<const GCNode*>* GCNode::s_moribund;
 GCNode::List* GCNode::s_reachable;
-unsigned char GCNode::s_mark = 0;
 unsigned int GCNode::s_num_nodes = 0;
 unsigned int GCNode::s_under_construction = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
@@ -69,6 +68,12 @@ unsigned int GCNode::s_last_id = 0;
 const GCNode* GCNode::s_watch_addr = 0;
 unsigned int GCNode::s_watch_id = 0;
 #endif
+const unsigned char GCNode::s_decinc_refcount[]
+= {0,    2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
+   0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
+   0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
+   0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
+unsigned char GCNode::s_mark = 0;
 
 // Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
 // exceptions" error if the attributes aren't repeated here.
@@ -93,7 +98,7 @@ void* GCNode::operator new(size_t bytes)
 
 void GCNode::abortIfNotExposed(const GCNode* node)
 {
-    if (node && (node->m_bits & UNDER_CONSTRUCTION)) {
+    if (node && (node->m_rcmmu & 1)) {
 	cerr << "Internal error: GCNode not exposed to GC.\n";
 	abort();
     }
@@ -114,7 +119,7 @@ bool GCNode::check()
 	     it != end; ++it) {
 	    const GCNode* node = *it;
 	    ++numnodes;
-	    if (node->m_refcount == 0)
+	    if ((node->m_rcmmu & s_refcount_mask) == 0)
 		++virgins;
 	}
     }
@@ -124,7 +129,7 @@ bool GCNode::check()
 	for (vector<const GCNode*>::const_iterator it = s_moribund->begin();
 	     it != end; ++it) {
 	    const GCNode* node = *it;
-	    if (!(node->m_refcount & 1)) {
+	    if (!(node->m_rcmmu & s_moribund_mask)) {
 		cerr << "GCNode::check() : "
 		    "Node on moribund list without moribund bit set.\n";
 		abort();
@@ -186,9 +191,10 @@ void GCNode::gclite()
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
 	s_moribund->pop_back();
-	node->m_refcount &= ~1;  // Clear moribund bit
-	if (node->m_refcount == 0)
+	unsigned char& rcmmu = node->m_rcmmu;
+	if ((rcmmu & s_refcount_mask) == 0)
 	    delete node;
+	else rcmmu &= ~s_moribund_mask;  // Clear moribund bit
     }
     ProtectStack::unprotect(protect_count);
 }
@@ -220,7 +226,7 @@ void GCNode::makeMoribund() const
 #ifdef GCID
     watch();
 #endif
-    m_refcount = 1;
+    m_rcmmu |= s_moribund_mask;
     s_moribund->push_back(this);
 }
     
@@ -231,7 +237,7 @@ void GCNode::mark()
     // marking is indicated by the bit being clear, and so on in
     // alternation.  This avoids the need for the sweep phase to
     // iterate through the surviving nodes simply to remove marks.
-    s_mark ^= MARK;
+    s_mark ^= s_mark_mask;
     GCNode::Marker marker;
     GCRootBase::visitRoots(&marker);
     GCStackRootBase::visitRoots(&marker);
@@ -239,12 +245,6 @@ void GCNode::mark()
     ProtectStack::visitRoots(&marker);
     ProtectStack::unprotect(protect_count);
     WeakRef::markThru();
-}
-
-void GCNode::nodeCheck(const GCNode* node)
-{
-    if (node && (node->m_bits & ~(UNDER_CONSTRUCTION|MARK)))
-	abort();
 }
 
 // GCNode::protectCstructs() is in memory.cpp
@@ -294,7 +294,7 @@ void GCNode::watch() const
     if ((s_watch_id && m_id == s_watch_id)
 	|| (s_watch_addr && this == s_watch_addr))
 	// This is just somewhere to put a breakpoint:
-	m_bits = m_bits;  // BREAKPOINT B
+	m_rcmmu = m_rcmmu;  // BREAKPOINT B
 }
 #endif
 
@@ -322,7 +322,8 @@ void GCNode::Marker::operator()(const GCNode* node)
     m_ariadne.push_back(node);
 #endif
     // Update mark:
-    node->m_bits = s_mark;
+    node->m_rcmmu &= ~s_mark_mask;
+    node->m_rcmmu |= s_mark;
     ++m_marks_applied;
     s_reachable->splice_back(node);
     node->visitReferents(this);
