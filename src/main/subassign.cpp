@@ -665,13 +665,19 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
 	switch (which) {
 
 	case 1010:	/* logical   <- logical	  */
-	case 1310:	/* integer   <- logical	  */
 	/* case 1013:	   logical   <- integer	  */
+	/* case 1014:	   logical   <- real	  */
+	/* case 1015:	   logical   <- complex	  */
+	/* case 1016:	   logical   <- character */
+	case 1310:	/* integer   <- logical	  */
 	case 1313:	/* integer   <- integer	  */
 
 	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
 	    break;
 
+	/* case 1314:	   integer   <- real	  */
+	/* case 1315:	   integer   <- complex	  */
+	/* case 1316:	   integer   <- character */
 	case 1410:	/* real	     <- logical	  */
 	case 1413:	/* real	     <- integer	  */
 
@@ -684,13 +690,13 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
 	    }
 	    break;
 
-	/* case 1014:	   logical   <- real	  */
-	/* case 1314:	   integer   <- real	  */
 	case 1414:	/* real	     <- real	  */
 
 	    REAL(x)[ii] = REAL(y)[i % ny];
 	    break;
 
+	/* case 1415:	   real	     <- complex	  */
+	/* case 1416:	   real	     <- character */
 	case 1510:	/* complex   <- logical	  */
 	case 1513:	/* complex   <- integer	  */
 
@@ -722,23 +728,17 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
 	    }
 	    break;
 
-	/* case 1015:	   logical   <- complex	  */
-	/* case 1315:	   integer   <- complex	  */
-	/* case 1415:	   real	     <- complex	  */
 	case 1515:	/* complex   <- complex	  */
 
 	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
 	    break;
 
+	/* case 1516:	   complex   <- character */
 	case 1610:	/* character <- logical	  */
 	case 1613:	/* character <- integer	  */
 	case 1614:	/* character <- real	  */
 	case 1615:	/* character <- complex	  */
 	case 1616:	/* character <- character */
-	/* case 1016:	   logical   <- character */
-	/* case 1316:	   integer   <- character */
-	/* case 1416:	   real	     <- character */
-	/* case 1516:	   complex   <- character */
 
 	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
 	    break;

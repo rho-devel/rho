@@ -82,6 +82,138 @@ namespace CXXR {
      */
     class Subscripting {
     public:
+	/** @brief Assign to selected elements of an R matrix or array.
+	 *
+	 * @tparam VL A type inheriting from VectorBase.
+	 * 
+	 * @tparam VR A type inheriting from VectorBase.
+	 * 
+	 * @param v lhs Non-null pointer to a \a VL object, which is
+	 *            the object to whose elements assignment is to be
+	 *            made.  Where feasible, the return value will
+	 *            point to \a lhs itself, modified appropriately
+	 *            (which is why this parameter is not
+	 *            <tt>const</tt>); otherwise the return value will
+	 *            point to a modified copy of \a lhs.  (Copying
+	 *            will occur if \a lhs aliases \a rhs .)
+	 *
+	 * @param indices Pointer to a ListVector with as many
+	 *          elements as \a v has dimensions.  Each element of
+	 *          the ListVector is a pointer to a canonical index
+	 *          vector giving the index values (counting from 1)
+	 *          to be selected for the corresponding dimension.
+	 *          NA_INTEGER is a permissible index value, in which
+	 *          case the corresponding element of \a rhs is
+	 *          ignored.  Otherwise, all indices must be in range
+	 *          for the relevant dimension of \a v .
+	 *
+	 * @param rhs Non-null pointer to the vector from which values
+	 *          are to be taken.  Successive elements are assigned
+	 *          to the locations within the result defined by the
+	 *          canonical index vectors in \a indices .  If the
+	 *          number of elements selected by \a indices is
+	 *          greater than the size of \a rhs , the elements of
+	 *          \a rhs are repeated in rotation.  It is an error
+	 *          for \a rhs to have zero elements unless no
+	 *          elements at all are selected by \a indices .  A
+	 *          warning will be given if the number of elements
+	 *          selected by \a indices is not equal to or a
+	 *          multiple of the length of \a rhs .
+	 *
+	 * @result Pointer to the result of the assignment.  Its
+	 * attributes (including dimensions) will be identical to
+	 * those of \a lhs .
+	 */
+	template <class VL, class VR>
+	static VL* arraySubassign(VL* lhs, const ListVector* indices,
+				  const VR* rhs);
+
+	/** @brief Assign to selected elements of an R matrix or array.
+	 *
+	 * @tparam VL A type inheriting from VectorBase.
+	 * 
+	 * @tparam VR A type inheriting from VectorBase.
+	 * 
+	 * @param v lhs Non-null pointer to a \a VL object, which is
+	 *            the object to whose elements assignment is to be
+	 *            made.  Where feasible, the return value will
+	 *            point to \a lhs itself, modified appropriately
+	 *            (which is why this parameter is not
+	 *            <tt>const</tt>); otherwise the return value will
+	 *            point to a modified copy of \a lhs.  (Copying
+	 *            will occur if \a lhs aliases \a rhs .)
+	 *
+	 * @param subscripts Pointer, possibly null, to a list of
+	 *          objects inheriting from RObject , with the same
+	 *          number of elements as \a v has dimensions.  (\a
+	 *          subscripts can be null only if \a v has zero
+	 *          dimensions.)  The elements of the list represent
+	 *          the subscripting to be applied for successive
+	 *          dimensions of \a v .  An error will be raised if
+	 *          the type or contents of any element is
+	 *          inappropriate for subscripting from the dimension
+	 *          in question.
+	 *
+	 * @param rhs Non-null pointer to the vector from which values
+	 *          are to be taken.  Successive elements are assigned
+	 *          to the locations within the result defined by the
+	 *          canonical index vectors in \a indices .  If the
+	 *          number of elements selected by \a subscripts is
+	 *          greater than the size of \a rhs , the elements of
+	 *          \a rhs are repeated in rotation.  It is an error
+	 *          for \a rhs to have zero elements unless no
+	 *          elements at all are selected by \a subscripts .  A
+	 *          warning will be given if the number of elements
+	 *          selected by \a subscripts is not equal to or a
+	 *          multiple of the length of \a rhs .
+	 *
+	 * @result Pointer to the result of the assignment.  Its
+	 * attributes (including dimensions) will be identical to
+	 * those of \a lhs .
+	 */
+	template <class VL, class VR>
+	static VL* arraySubassign(VL* lhs, const PairList* subscripts,
+				  const VR* rhs)
+	{
+	    GCStackRoot<const ListVector>
+		indices(Subscripting::canonicalizeArraySubscripts(lhs,
+								  subscripts));
+	    return arraySubassign(lhs, indices, rhs);
+	}
+
+	/** @brief Extract a subset from an R matrix or array.
+	 *
+	 * This function differs from the next one in that the \a
+	 * indices parameter must contain canonical index vectors
+	 * rather than arbitrary subscripting objects.
+	 *
+	 * @tparam V A type inheriting from VectorBase.
+	 *
+	 * @param v Non-null pointer to a \a V object, which is an R
+	 *          matrix or array from which a subset (not
+	 *          necessarily a proper subset) is to be extracted.
+	 *
+	 * @param indices Pointer to a ListVector with as many
+	 *          elements as \a v has dimensions.  Each element of
+	 *          the ListVector is a pointer to a canonical index
+	 *          vector giving the index values (counting from 1)
+	 *          to be selected for the corresponding dimension.
+	 *          NA_INTEGER is a permissible index value, in which
+	 *          case any corresponding elements of the output
+	 *          array will have an NA value appropriate to type \a
+	 *          V .  Otherwise, all indices must be in range for
+	 *          the relevant dimension of \a v .
+	 *
+	 * @param drop true iff any dimensions of unit extent are to
+	 *          be removed from the result.
+	 * 
+	 * @return Pointer to a newly created object of type \a V ,
+	 * containing the designated subset of \a v .
+	 */
+	template <class V>
+	static V* arraySubset(const V* v, const ListVector* indices,
+			      bool drop);
+
 	/** @brief Extract a subset from an R matrix or array.
 	 *
 	 * @tparam V A type inheriting from VectorBase.
@@ -116,39 +248,6 @@ namespace CXXR {
 								  subscripts));
 	    return arraySubset(v, indices, drop);
 	}
-
-	/** @brief Extract a subset from an R matrix or array.
-	 *
-	 * This function differs from the previous one in that the \a
-	 * indices parameter must contain canonical index vectors
-	 * rather than arbitrary subscripting objects.
-	 *
-	 * @tparam V A type inheriting from VectorBase.
-	 *
-	 * @param v Non-null pointer to a \a V object, which is an R
-	 *          matrix or array from which a subset (not
-	 *          necessarily a proper subset) is to be extracted.
-	 *
-	 * @param indices Pointer to a ListVector with as many
-	 *          elements as \a v has dimensions.  Each element of
-	 *          the ListVector is a pointer to a canonical index
-	 *          vector giving the index values (counting from 1)
-	 *          to be selected for the corresponding dimension.
-	 *          NA_INTEGER is a permissible index value, in which
-	 *          case any corresponding elements of the output
-	 *          array will have an NA value appropriate to type \a
-	 *          V .  Otherwise, all indices must be in range for
-	 *          the relevant dimension of \a v .
-	 *
-	 * @param drop true iff any dimensions of unit extent are to
-	 *          be removed from the result.
-	 * 
-	 * @return Pointer to a newly created object of type \a V ,
-	 * containing the designated subset of \a v .
-	 */
-	template <class V>
-	static V* arraySubset(const V* v, const ListVector* indices,
-			      bool drop);
 
 	/** @brief Obtain canonical index vector from an IntVector.
 	 *
@@ -383,9 +482,11 @@ namespace CXXR {
 
 	/** @brief Assign to selected elements of an R vector object.
 	 *
-	 * @tparam V A type inheriting from VectorBase.
+	 * @tparam VL A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a V object, which is
+	 * @tparam VR A type inheriting from VectorBase.
+	 * 
+	 * @param v lhs Non-null pointer to a \a VL object, which is
 	 *            the object to whose elements assignment is to be
 	 *            made.  Where feasible, the return value will
 	 *            point to \a lhs itself, modified appropriately
@@ -431,9 +532,11 @@ namespace CXXR {
 
 	/** @brief Assign to selected elements of an R vector object.
 	 *
-	 * @tparam V A type inheriting from VectorBase.
+	 * @tparam VL A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a V object, which is
+	 * @tparam VR A type inheriting from VectorBase.
+	 * 
+	 * @param v lhs Non-null pointer to a \a VL object, which is
 	 *            the object to whose elements assignment is to be
 	 *            made.  Where feasible, the return value will
 	 *            point to \a lhs itself, modified appropriately
@@ -600,6 +703,70 @@ namespace CXXR {
 					const IntVector* indices);
     };  // class Subscripting
 
+    template <class VL, class VR>
+    VL* Subscripting::arraySubassign(VL* lhs, const ListVector* indices,
+				     const VR* rhs)
+    {
+	const IntVector* vdims = lhs->dimensions();
+	std::size_t ndims = vdims->size();
+	DimIndexerVector dimindexer(ndims);
+	std::size_t ni = createDimIndexers(&dimindexer, vdims, indices);
+	std::size_t rhs_size = rhs->size();
+	if (rhs_size > 1) {
+	    // TODO: Move NA-detection back into the canonicalisation
+	    // process.
+	    for (unsigned int i = 0; i < ni; ++i)
+		if (isNA((*indices)[i]))
+		    Rf_error(_("NAs subscripts are not allowed"
+			       " in this context"));
+	}
+	GCStackRoot<VL> ans(lhs);
+	// If necessary, make a copy to be sure we don't modify rhs.
+	// (FIXME: ideally this should be a shallow copy for
+	// HandleVectors.)
+	if (ans.get() == rhs)
+	    ans = CXXR_NEW(VL(*ans.get()));
+	// Dispose of 'no indices' case:
+	if (ni == 0)
+	    return ans;
+	if (rhs_size == 0)
+	    Rf_error(_("replacement has length zero"));
+	if (ni%rhs_size != 0)
+	    Rf_warning(_("number of items to replace is not"
+			 " a multiple of replacement length"));
+	// Copy elements across:
+	for (unsigned int irhs = 0; irhs < ni; ++irhs) {
+	    bool naindex = false;
+	    unsigned int iout = 0;
+	    for (unsigned int d = 0; d < ndims; ++d) {
+		const DimIndexer& di = dimindexer[d];
+		int index = (*di.indices)[di.indexnum];
+		if (isNA(index)) {
+		    naindex = true;
+		    break;
+		}
+		iout += (index - 1)*di.stride;
+	    }
+	    if (!naindex)
+		(*ans)[iout - 1] = (*rhs)[irhs % rhs_size];
+	    // Advance the index selection:
+	    {
+		unsigned int d = 0;
+		bool done;
+		do {
+		    done = true;
+		    DimIndexer& di = dimindexer[d];
+		    if (++di.indexnum >= di.nindices) {
+			di.indexnum = 0;
+			done = (++d >= ndims);
+		    }
+		} while (!done);
+	    }
+	}
+	return ans;
+    }
+
+
     template <class V>
     V* Subscripting::arraySubset(const V* v, const ListVector* indices,
 				 bool drop)
@@ -624,8 +791,6 @@ namespace CXXR {
 			naindex = true;
 			break;
 		    }
-		    if (index < 1 || index > (*vdims)[d])
-			Rf_error(_("subscript out of bounds"));
 		    iin += (index - 1)*di.stride;
 		}
 		(*result)[iout]
