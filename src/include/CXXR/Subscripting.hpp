@@ -102,10 +102,10 @@ namespace CXXR {
 	 *          the ListVector is a pointer to a canonical index
 	 *          vector giving the index values (counting from 1)
 	 *          to be selected for the corresponding dimension.
-	 *          NA_INTEGER is a permissible index value, in which
-	 *          case the corresponding element of \a rhs is
-	 *          ignored.  Otherwise, all indices must be in range
-	 *          for the relevant dimension of \a v .
+	 *          All indices must be in range for the relevant
+	 *          dimension of \a v .  NA_INTEGER is a permissible
+	 *          index value only if \a rhs has length one, in
+	 *          which case the index is ignored.
 	 *
 	 * @param rhs Non-null pointer to the vector from which values
 	 *          are to be taken.  Successive elements are assigned
@@ -717,10 +717,13 @@ namespace CXXR {
 	if (rhs_size > 1) {
 	    // TODO: Move NA-detection back into the canonicalisation
 	    // process.
-	    for (unsigned int i = 0; i < ni; ++i)
-		if (isNA((*indices)[i]))
-		    Rf_error(_("NAs subscripts are not allowed"
-			       " in this context"));
+	    for (unsigned int d = 0; d < ndims; ++d) {
+		DimIndexer& di = dimindexer[d];
+		for (unsigned int i = 0; i < di.nindices; ++i)
+		    if (isNA((*di.indices)[i]))
+			Rf_error(_("NAs subscripts are not allowed"
+				   " in this context"));
+	    }
 	}
 	GCStackRoot<VL> ans(lhs);
 	// If necessary, make a copy to be sure we don't modify rhs.
