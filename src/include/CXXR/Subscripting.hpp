@@ -707,6 +707,8 @@ namespace CXXR {
     VL* Subscripting::arraySubassign(VL* lhs, const ListVector* indices,
 				     const VR* rhs)
     {
+	typedef typename VL::value_type Lval;
+	typedef typename VR::value_type Rval;
 	const IntVector* vdims = lhs->dimensions();
 	std::size_t ndims = vdims->size();
 	DimIndexerVector dimindexer(ndims);
@@ -724,7 +726,8 @@ namespace CXXR {
 	// If necessary, make a copy to be sure we don't modify rhs.
 	// (FIXME: ideally this should be a shallow copy for
 	// HandleVectors.)
-	if (ans.get() == rhs)
+	const VectorBase* ansvb = static_cast<VectorBase*>(ans.get());
+	if (ansvb == rhs)
 	    ans = CXXR_NEW(VL(*ans.get()));
 	// Dispose of 'no indices' case:
 	if (ni == 0)
@@ -747,8 +750,15 @@ namespace CXXR {
 		}
 		iout += (index - 1)*di.stride;
 	    }
-	    if (!naindex)
-		(*ans)[iout - 1] = (*rhs)[irhs % rhs_size];
+	    if (!naindex) {
+		// Be careful not to create a temporary RHandle.
+		Lval& lval = (*ans)[iout];
+		const Rval& rval = (*rhs)[irhs % rhs_size];
+		if (isNA(rval))
+		    lval = NA<Lval>();
+		else
+		    lval = rval;
+	    }
 	    // Advance the index selection:
 	    {
 		unsigned int d = 0;

@@ -639,133 +639,91 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
 	y = ytmp;
     }
 
-    if (n == 0)
-	return(x);
+    const PairList* subscripts = SEXP_downcast<PairList*>(s);
+    switch (which) {
 
-    /* When array elements are being permuted the RHS */
-    /* must be duplicated or the elements get trashed. */
-    /* FIXME : this should be a shallow copy for list */
-    /* objects.  A full duplication is wasteful. */
-
-    if (x == y)
-	y = duplicate(y);
-
-    /* Note that we are now committed.  Since we are mutating */
-    /* existing objects any changes we make now are permanent. */
-    /* Beware! */
-
-    for (int i = 0; i < n; i++) {
-	int ii = 0;
-	for (int j = 0; j < k; j++) {
-	    int jj = subs[j][indx[j]];
-	    if (jj == NA_INTEGER) goto next_i;
-	    ii += (jj - 1) * offset[j];
-	}
-
-	switch (which) {
-
-	case 1010:	/* logical   <- logical	  */
+    case 1010:	/* logical   <- logical	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<LogicalVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<LogicalVector*>(y.get()));
+	break;
 	/* case 1013:	   logical   <- integer	  */
 	/* case 1014:	   logical   <- real	  */
 	/* case 1015:	   logical   <- complex	  */
 	/* case 1016:	   logical   <- character */
-	case 1310:	/* integer   <- logical	  */
-	case 1313:	/* integer   <- integer	  */
-
-	    INTEGER(x)[ii] = INTEGER(y)[i % ny];
-	    break;
-
+    case 1310:	/* integer   <- logical	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<IntVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<LogicalVector*>(y.get()));
+	break;
+    case 1313:	/* integer   <- integer	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<IntVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<IntVector*>(y.get()));
+	break;
 	/* case 1314:	   integer   <- real	  */
 	/* case 1315:	   integer   <- complex	  */
 	/* case 1316:	   integer   <- character */
-	case 1410:	/* real	     <- logical	  */
-	case 1413:	/* real	     <- integer	  */
-
-	    {
-		int iy = INTEGER(y)[i % ny];
-		if (iy == NA_INTEGER)
-		    REAL(x)[ii] = NA_REAL;
-		else
-		    REAL(x)[ii] = iy;
-	    }
-	    break;
-
-	case 1414:	/* real	     <- real	  */
-
-	    REAL(x)[ii] = REAL(y)[i % ny];
-	    break;
-
+    case 1410:	/* real	     <- logical	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<RealVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<LogicalVector*>(y.get()));
+	break;
+    case 1413:	/* real	     <- integer	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<RealVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<IntVector*>(y.get()));
+	break;
+    case 1414:	/* real	     <- real	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<RealVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<RealVector*>(y.get()));
+	break;
 	/* case 1415:	   real	     <- complex	  */
 	/* case 1416:	   real	     <- character */
-	case 1510:	/* complex   <- logical	  */
-	case 1513:	/* complex   <- integer	  */
-
-	    {
-		int iy = INTEGER(y)[i % ny];
-		if (iy == NA_INTEGER) {
-		    COMPLEX(x)[ii].r = NA_REAL;
-		    COMPLEX(x)[ii].i = NA_REAL;
-		}
-		else {
-		    COMPLEX(x)[ii].r = iy;
-		    COMPLEX(x)[ii].i = 0.0;
-		}
-	    }
-	    break;
-
-	case 1514:	/* complex   <- real	  */
-
-	    {
-		double ry = REAL(y)[i % ny];
-		if (ISNA(ry)) {
-		    COMPLEX(x)[ii].r = NA_REAL;
-		    COMPLEX(x)[ii].i = NA_REAL;
-		}
-		else {
-		    COMPLEX(x)[ii].r = ry;
-		    COMPLEX(x)[ii].i = 0.0;
-		}
-	    }
-	    break;
-
-	case 1515:	/* complex   <- complex	  */
-
-	    COMPLEX(x)[ii] = COMPLEX(y)[i % ny];
-	    break;
-
+    case 1510:	/* complex   <- logical	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<ComplexVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<LogicalVector*>(y.get()));
+	break;
+    case 1513:	/* complex   <- integer	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<ComplexVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<IntVector*>(y.get()));
+	break;
+    case 1514:	/* complex   <- real	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<ComplexVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<RealVector*>(y.get()));
+	break;
+    case 1515:	/* complex   <- complex	  */
+	x = Subscripting::arraySubassign(SEXP_downcast<ComplexVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<ComplexVector*>(y.get()));
+	break;
 	/* case 1516:	   complex   <- character */
-	case 1610:	/* character <- logical	  */
-	case 1613:	/* character <- integer	  */
-	case 1614:	/* character <- real	  */
-	case 1615:	/* character <- complex	  */
-	case 1616:	/* character <- character */
-
-	    SET_STRING_ELT(x, ii, STRING_ELT(y, i % ny));
-	    break;
-
-	case 1919: /* vector <- vector */
-
-	    SET_VECTOR_ELT(x, ii, VECTOR_ELT(y, i % ny));
-	    break;
-
-	case 2424: /* raw <- raw */
-
-	    RAW(x)[ii] = RAW(y)[i % ny];
-	    break;
-
-	default:
-	error(_("incompatible types (from %s to %s) in array subset assignment"),
-	          type2char(CXXRCONSTRUCT(SEXPTYPE, which%100)), type2char(CXXRCONSTRUCT(SEXPTYPE, which/100)));
-	}
-    next_i:
-	;
-	if (n > 1) {
-	    int j = 0;
-	    while (++indx[j] >= bound[j]) {
-		indx[j] = 0;
-		j = (j + 1) % k;
-	    }
-	}
+	/* case 1610:	   character <- logical	  */
+	/* case 1613:	   character <- integer	  */
+	/* case 1614:	   character <- real	  */
+	/* case 1615:	   character <- complex	  */
+    case 1616:	/* character <- character */
+	x = Subscripting::arraySubassign(SEXP_downcast<StringVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<StringVector*>(y.get()));
+	break;
+    case 1919: /* vector <- vector */
+	x = Subscripting::arraySubassign(SEXP_downcast<ListVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<ListVector*>(y.get()));
+	break;
+    case 2424: /* raw <- raw */
+	x = Subscripting::arraySubassign(SEXP_downcast<RawVector*>(x.get()),
+					 subscripts,
+					 SEXP_downcast<RawVector*>(y.get()));
+	break;
+    default:
+	Rf_error(_("incompatible types (from %s to %s) in array subset assignment"),
+		 type2char(SEXPTYPE(which%100)), type2char(SEXPTYPE(which/100)));
     }
     vmaxset(vmax);
     return x;
