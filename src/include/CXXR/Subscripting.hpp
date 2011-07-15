@@ -53,7 +53,9 @@ namespace CXXR {
      *
      * This class, all of whose members are static, encapsulates
      * services supporting subscripting of R vector objects, including
-     * R matrices and arrays.
+     * R matrices and arrays.  Foremost among its member functions are
+     * subset() and subassign(); the other member functions are
+     * auxiliary to these two.
      *
      * @par Canonical index vectors:
      * A canonical index vector is an IntVector in which each element
@@ -451,6 +453,51 @@ namespace CXXR {
 	 */
 	static bool dropDimensions(VectorBase* v);
 
+	/** @brief Assign to selected elements of an R vector object.
+	 *
+	 * @tparam VL A type inheriting from VectorBase.
+	 * 
+	 * @tparam VR A type inheriting from VectorBase.
+	 * 
+	 * @param lhs Non-null pointer to a \a VL object, which is
+	 *            the object to whose elements assignment is to be
+	 *            made.  Where feasible, the return value will
+	 *            point to \a lhs itself, modified appropriately
+	 *            (which is why this parameter is not
+	 *            <tt>const</tt>); otherwise the return value will
+	 *            point to a modified copy of \a lhs.  (Copying
+	 *            will occur for example if \a lhs aliases \a rhs .)
+	 *
+	 * @param subscripts Pointer, possibly null, to a list of
+	 *          objects inheriting from RObject .  If \a lhs is an R
+	 *          matrix or array, then it is permissible for the
+	 *          list to have as many elements as \a lhs has
+	 *          dimensions, and in that case array subassignment is
+	 *          applied, as described for method arraySubassign().
+	 *          If the foregoing condition does not apply, then
+	 *          the list must have either zero or one elements,
+	 *          and vector subassignment is applied, as described for
+	 *          method vectorSubassign().
+	 *
+	 * @param rhs Non-null pointer to the vector from which values
+	 *          are to be taken.  Successive elements are assigned
+	 *          to the locations within the result defined by the
+	 *          subscripts.  If the return vector is larger than
+	 *          \a rhs , the elements of \a rhs are repeated in
+	 *          rotation.  It is an error for \a rhs to have zero
+	 *          elements unless \a subscripts selects no locations
+	 *          at all.  A warning will be given if the number of
+	 *          locations to be assigned to is not equal to or a
+	 *          multiple of the length of \a rhs .
+	 *
+	 * @result Pointer to the result of the assignment.  Refer to
+	 * the descriptions of vectorSubassign() and arraySubassign()
+	 * for further details.
+	 */
+	template <class VL, class VR>
+	static VL* subassign(VL* lhs, const PairList* subscripts,
+			     const VR* rhs);
+
 	/** @brief Extract a subset from an R vector, matrix or array.
 	 *
 	 * @tparam V A type inheriting from VectorBase.
@@ -486,7 +533,7 @@ namespace CXXR {
 	 * 
 	 * @tparam VR A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a VL object, which is
+	 * @param lhs Non-null pointer to a \a VL object, which is
 	 *            the object to whose elements assignment is to be
 	 *            made.  Where feasible, the return value will
 	 *            point to \a lhs itself, modified appropriately
@@ -512,7 +559,8 @@ namespace CXXR {
 	 *          canonical index vector in \a indices_pr .  If the
 	 *          return vector is larger than \a rhs , the elements
 	 *          of \a rhs are repeated in rotation.  It is an
-	 *          error for \a rhs to have zero elements.  A warning
+	 *          error for \a rhs to have zero elements, unless \a
+	 *          subscripts selects no locations at all.  A warning
 	 *          will be given if the number of indices in the
 	 *          canonical index vector is not equal to or a
 	 *          multiple of the length of \a rhs .
@@ -570,7 +618,8 @@ namespace CXXR {
 	 *          subscripts.  If the return vector is larger than
 	 *          \a rhs , the elements of \a rhs are repeated in
 	 *          rotation.  It is an error for \a rhs to have zero
-	 *          elements.  A warning will be given if the number
+	 *          elements, unless \a subscripts selects no
+	 *          locations at all.  A warning will be given if the number
 	 *          of locations to be assigned to is not equal to or
 	 *          a multiple of the length of \a rhs .
 	 *
@@ -826,6 +875,20 @@ namespace CXXR {
 	}
 	setArrayAttributes(result, v, dimindexer, drop);
 	return result;
+    }
+
+    template <class VL, class VR>
+    VL* Subscripting::subassign(VL* lhs, const PairList* subscripts,
+				const VR* rhs)
+    {
+	unsigned int nsubs = listLength(subscripts);
+	if (nsubs > 1)
+	    return arraySubassign(lhs, subscripts, rhs);
+	const IntVector* dims = lhs->dimensions();
+	if (dims && dims->size() == nsubs)
+	    return arraySubassign(lhs, subscripts, rhs);
+	return vectorSubassign(lhs, (subscripts ? subscripts->car()
+				   : Symbol::missingArgument()), rhs);
     }
 
     template <class V>
