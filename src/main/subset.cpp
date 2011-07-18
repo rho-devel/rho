@@ -514,67 +514,61 @@ SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
     return do_subset2_dflt(call, op, ans, rho);
 }
 
-SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
+SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op,
+				      SEXP argsarg, SEXP rho)
 {
-    SEXP ans, dims, dimnames, indx, subs, x;
-    int i, ndims, nsubs, offset = 0;
-    int drop = 1, pok, exact = -1;
-    int named_x;
-
-    PROTECT(args);
+    GCStackRoot<> args(argsarg);
+    int drop = 1;
     ExtractDropArg(args, &drop);
     /* Is partial matching ok?  When the exact arg is NA, a warning is
        issued if partial matching occurs.
      */
-    exact = ExtractExactArg(args);
+    int exact = ExtractExactArg(args);
+    int pok;
     if (exact == -1)
 	pok = exact;
     else
 	pok = !exact;
 
-    x = CAR(args);
+    SEXP x = CAR(args);
 
     /* This code was intended for compatibility with S, */
     /* but in fact S does not do this.	Will anyone notice? */
-
-    if (x == R_NilValue) {
-	UNPROTECT(1);
-	return x;
-    }
+    if (!x)
+	return 0;
 
     /* Get the subscripting and dimensioning information */
     /* and check that any array subscripting is compatible. */
 
-    subs = CDR(args);
-    if(0 == (nsubs = length(subs)))
+    SEXP subs = CDR(args);
+    int nsubs = length(subs);
+    if (nsubs == 0)
 	errorcall(call, _("no index specified"));
-    dims = getAttrib(x, R_DimSymbol);
-    ndims = length(dims);
-    if(nsubs > 1 && nsubs != ndims)
+    SEXP dims = getAttrib(x, R_DimSymbol);
+    int ndims = length(dims);
+    if (nsubs > 1 && nsubs != ndims)
 	errorcall(call, _("incorrect number of subscripts"));
 
     /* code to allow classes to extend environment */
-    if(TYPEOF(x) == S4SXP) {
+    if (TYPEOF(x) == S4SXP) {
         x = R_getS4DataSlot(x, ANYSXP);
-	if(x == R_NilValue)
+	if (x == R_NilValue)
 	  errorcall(call, _("this S4 class is not subsettable"));
     }
 
     /* split out ENVSXP for now */
-    if( TYPEOF(x) == ENVSXP ) {
-      if( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
-	errorcall(call, _("wrong arguments for subsetting an environment"));
-      ans = findVarInFrame(x, install(translateChar(STRING_ELT(CAR(subs), 0))));
-      if( TYPEOF(ans) == PROMSXP ) {
-	    PROTECT(ans);
-	    ans = eval(ans, R_GlobalEnv);
-	    UNPROTECT(1);
-      } else {
-	    SET_NAMED(ans, 2);
-      }
+    if ( TYPEOF(x) == ENVSXP ) {
+      if ( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
+	  errorcall(call, _("wrong arguments for subsetting an environment"));
+      GCStackRoot<>
+	  ans(findVarInFrame(x,
+			     install(translateChar(STRING_ELT(CAR(subs),
+							      0)))));
+      if ( TYPEOF(ans) == PROMSXP )
+	  ans = eval(ans, R_GlobalEnv);
+      else SET_NAMED(ans, 2);
 
-      UNPROTECT(1);
-      if(ans == R_UnboundValue )
+      if (ans == R_UnboundValue )
 	  return(R_NilValue);
       return(ans);
     }
@@ -583,9 +577,10 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!(isVector(x) || isList(x) || isLanguage(x)))
 	errorcall(call, R_MSG_ob_nonsub, type2char(TYPEOF(x)));
 
-    named_x = NAMED(x);  /* x may change below; save this now.  See PR#13411 */
+    int named_x = NAMED(x);  /* x may change below; save this now.  See PR#13411 */
 
-    if(nsubs == 1) { /* vector indexing */
+    int offset = 0;
+    if (nsubs == 1) { /* vector indexing */
 	SEXP thesub = CAR(subs);
 	int len = length(thesub);
 
@@ -599,10 +594,8 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (offset < 0 && (isNewList(x) ||
 			       isExpression(x) ||
 			       isList(x) ||
-			       isLanguage(x))) {
-		UNPROTECT(1);
-		return R_NilValue;
-	    }
+			       isLanguage(x)))
+		return 0;
 	    else errorcall(call, R_MSG_subs_o_b);
 	}
     } else { /* matrix indexing */
@@ -613,10 +606,10 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	int ndn; /* Number of dimnames. Unlikely to be anything but
 		    0 or nsubs, but just in case... */
 
-	PROTECT(indx = allocVector(INTSXP, nsubs));
-	dimnames = getAttrib(x, R_DimNamesSymbol);
+	GCStackRoot<> indx(allocVector(INTSXP, nsubs));
+	SEXP dimnames = getAttrib(x, R_DimNamesSymbol);
 	ndn = length(dimnames);
-	for (i = 0; i < nsubs; i++) {
+	for (int i = 0; i < nsubs; i++) {
 	    INTEGER(indx)[i] =
 		get1index(CAR(subs), (i < ndn) ? VECTOR_ELT(dimnames, i) :
 			  R_NilValue,
@@ -627,27 +620,27 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall(call, R_MSG_subs_o_b);
 	}
 	offset = 0;
-	for (i = (nsubs - 1); i > 0; i--)
+	for (int i = (nsubs - 1); i > 0; i--)
 	    offset = (offset + INTEGER(indx)[i]) * INTEGER(dims)[i - 1];
 	offset += INTEGER(indx)[0];
-	UNPROTECT(1);
     }
 
-    if(isPairList(x)) {
-	ans = CAR(nthcdr(x, offset));
+    if (isPairList(x)) {
+	SEXP ans = CAR(nthcdr(x, offset));
 	if (named_x > NAMED(ans))
 	    SET_NAMED(ans, named_x);
-    } else if(isVectorList(x)) {
+	return ans;
+    } else if (isVectorList(x)) {
+	SEXP ans;
 	/* did unconditional duplication before 2.4.0 */
-	if (x->sexptype() == EXPRSXP) {
-	    ExpressionVector* ev = static_cast<ExpressionVector*>(x);
-	    ans = (*ev)[offset];
-	}
+	if (x->sexptype() == EXPRSXP)
+	    ans = XVECTOR_ELT(x, offset);
 	else ans = VECTOR_ELT(x, offset);
 	if (named_x > NAMED(ans))
 	    SET_NAMED(ans, named_x);
+	return ans;
     } else {
-	ans = allocVector(TYPEOF(x), 1);
+	SEXP ans = allocVector(TYPEOF(x), 1);
 	switch (TYPEOF(x)) {
 	case LGLSXP:
 	case INTSXP:
@@ -668,9 +661,8 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	default:
 	    UNIMPLEMENTED_TYPE("do_subset2", x);
 	}
+	return ans;
     }
-    UNPROTECT(1);
-    return ans;
 }
 
 
