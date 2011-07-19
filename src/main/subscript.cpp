@@ -62,6 +62,12 @@ using namespace CXXR;
 /* We might get a call with R_NilValue from subassignment code */
 #define ECALL(call, yy) if(call == R_NilValue) error(yy); else errorcall(call, yy);
 
+// Note by arr after analysing code: If x is a vector of length 2,
+// then x[[-1]] and x[[-2]] are legal, and mean the same as x[[2]] and
+// x[[1]] respectively.  Otherwise a negative index is illegal for [[,
+// as is a zero index.  The following function looks after this, as
+// well as rebasing indices off 0 rather than 1.
+
 static int integerOneIndex(int i, int len, SEXP call)
 {
     int indx = -1;
@@ -160,6 +166,12 @@ OneIndex(SEXP x, SEXP s, int len, int partial, SEXP *newname, int pos, SEXP call
     }
     return indx;
 }
+
+// Note by arr after analysing code: if the 'pos' argument is set to
+// -1, this signifies that this is not 'recursive' indexing, i.e. the index
+// is a vector of length 1. A non-negative value signifies that this
+// is recursive indexing, and gives the position (counting from 0)
+// within the index vector which should be used for this call.
 
 int attribute_hidden
 get1index(SEXP s, SEXP names, int len, int pok, int pos, SEXP call)

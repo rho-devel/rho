@@ -365,6 +365,10 @@ void CXXR::FixedVector<T, ST, Initr>::setSize(std::size_t new_size)
     T* newblock = singleton();  // Setting used only if new_size == 0
     if (new_size > 0)
 	newblock = allocData(new_size);
+    // The following is essential for e.g. RHandles, otherwise they
+    // may contain junk pointers.
+    if (ElementTraits::MustConstruct<T>::value)  // known at compile time
+	constructElements(newblock, newblock + copysz);
     T* p = std::copy(begin(), begin() + copysz, newblock);
     T* newblockend = newblock + new_size;
     for (; p != newblockend; ++p)
