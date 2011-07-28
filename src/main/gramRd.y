@@ -741,7 +741,7 @@ static int (*ptr_getc)(void);
 	if (npush >= pushsize - 1) {             \
 	    int *old = pushbase;              \
             pushsize *= 2;                    \
-	    pushbase = malloc(pushsize*sizeof(int));         \
+	    pushbase = CXXRSCAST(int*, malloc(pushsize*sizeof(int)));	\
 	    if(!pushbase) error(_("unable to allocate buffer for long macro at line %d"), xxlineno);\
 	    memmove(pushbase, old, npush*sizeof(int));        \
 	    if(old != pushback) free(old); }	    \
@@ -985,7 +985,7 @@ SEXP R_ParseRd(Rconnection con, ParseStatus *status, SEXP srcfile, Rboolean frag
 /* Section and R code headers */
 
 struct {
-    char *name;
+    const char *name;
     int token;
 }
 static keywords[] = {
@@ -1224,7 +1224,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i, translated = FALSE;
     	/* Edit the error message */    
-    	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+    	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -1286,7 +1286,7 @@ static void yyerror(const char *s)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
             nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = CXXRSCAST(char*, malloc(nstext));			\
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
@@ -1711,11 +1711,11 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     	error(_("invalid '%s' value"), "verbose");
     xxDebugTokens = asInteger(CAR(args));		args = CDR(args);
     xxBasename = CHAR(STRING_ELT(CAR(args), 0));	args = CDR(args);
-    fragment = asLogical(CAR(args));			args = CDR(args);
+    fragment = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));			args = CDR(args);
     wcall = asLogical(CAR(args));
     if (wcall == NA_LOGICAL)
     	error(_("invalid '%s' value"), "warningCalls");
-    wCalls = wcall;
+    wCalls = CXXRCONSTRUCT(Rboolean, wcall);
 
     if (ifile >= 3) {/* file != "" */
 	if(!wasopen) {
@@ -1772,7 +1772,7 @@ SEXP attribute_hidden do_deparseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     	/* any special char might be escaped */
     	if (*c == '{' || *c == '}' || *c == '%' || *c == '\\') outlen++;
     }
-    out = outbuf = R_chk_calloc(outlen+1, sizeof(char));
+    out = outbuf = CXXRSCAST(char*, R_chk_calloc(outlen+1, sizeof(char)));
     inRComment = FALSE;
     for (c = CHAR(e); *c; c++) {
     	escape = FALSE;
