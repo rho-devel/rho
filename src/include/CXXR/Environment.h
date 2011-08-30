@@ -238,7 +238,9 @@ namespace CXXR {
 	void serialize (Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("Environment");
 	    ar & boost::serialization::base_object<RObject>(*this);
+	    BSerializer::attrib("m_enclosing");
     	    ar & m_enclosing;
+	    BSerializer::attrib("m_frame");
 	    ar & m_frame;
 	    ar & m_single_stepping;
 	    ar & m_locked;

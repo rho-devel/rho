@@ -48,6 +48,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -89,14 +93,25 @@ namespace CXXR {
 	S4Object* clone() const;
 	const char* typeName() const;
     private:
+	friend class boost::serialization::access;
+
 	// Declared private to ensure that ExternalPointer objects are
 	// allocated only using 'new':
 	~S4Object() {}
 
 	// Not implemented.  Declared to prevent compiler-generated version:
         S4Object& operator=(const S4Object&);
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("S4Object");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	}
     };
 } // namespace CXXR
+
+// Export class as serializable with boost::serialization
+BOOST_CLASS_EXPORT(CXXR::S4Object)
 
 extern "C" {
 #endif  /* __cplusplus */

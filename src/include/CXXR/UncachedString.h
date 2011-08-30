@@ -66,8 +66,6 @@ namespace CXXR {
      */
     class UncachedString : public String {
     public:
-	UncachedString( ) { } // Vestigial for boost::serialization
-
 	/** @brief Create an UncachedString object, leaving its contents
 	 *         uninitialized.
 	 *
@@ -129,6 +127,9 @@ namespace CXXR {
 
 	// Virtual function of RObject:
 	const char* typeName() const;
+    protected:
+	// For boost::serialization
+	UncachedString() {}
     private:
 	friend class boost::serialization::access;
 
@@ -164,7 +165,7 @@ namespace CXXR {
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version) {
-	    ar >> boost::serialization::base_object<String>(*this);
+	    ar >> boost::serialization::base_object<CXXR::String>(*this);
 	    std::string str;
 	    ar >> m_databytes;
 	    ar >> str;
@@ -177,7 +178,7 @@ namespace CXXR {
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const {
-	    ar << boost::serialization::base_object<String>(*this);
+	    ar << boost::serialization::base_object<CXXR::String>(*this);
 	    std::string str(m_data);
 	    ar << m_databytes;
 	    ar << str;

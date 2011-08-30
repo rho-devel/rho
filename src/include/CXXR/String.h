@@ -217,7 +217,7 @@ namespace CXXR {
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("String");
-	    boost::serialization::base_object<VectorBase>(*this);
+	    ar & boost::serialization::base_object<VectorBase>(*this);
 	    ar & m_encoding;
 	}
 

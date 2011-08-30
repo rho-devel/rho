@@ -342,7 +342,7 @@ namespace CXXR {
 
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
-		BSerializer::Frame frame("RObject");
+		BSerializer::Frame frame("Handle");
 		ar & boost::serialization::base_object<GCEdge<T> >(*this);
 	    }
 	};
@@ -637,6 +637,7 @@ namespace CXXR {
 	    ar & named;
 	    ar & has_class;
 	    ar & S4_object;
+	    BSerializer::attrib("m_attrib");
 	    ar & m_attrib;
 	    m_named=named; m_has_class=has_class;
 	    m_S4_object=S4_object; m_frozen=frozen;

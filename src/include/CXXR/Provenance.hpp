@@ -70,9 +70,12 @@ namespace CXXR {
 			ar >> boost::serialization::base_object<GCNode>(*this);
 			ar >> m_timestamp.tv_sec;
 			ar >> m_timestamp.tv_usec;
+			BSerializer::attrib("m_expression");
 			ar >> m_expression;
 			ar >> m_parentpos;
+			BSerializer::attrib("m_symbol");
 			ar >> m_symbol;
+			BSerializer::attrib("m_parentage");
 			ar >> m_parentage;
 			m_children=new Set();
 
@@ -83,11 +86,15 @@ namespace CXXR {
 		template <class Archive>
 		void save(Archive & ar, const unsigned int version) const {
 			ar << boost::serialization::base_object<GCNode>(*this);
+
 			ar << m_timestamp.tv_sec;
 			ar << m_timestamp.tv_usec;
+			BSerializer::attrib("m_expression");
 			ar << m_expression;
 			ar << m_parentpos;
+			BSerializer::attrib("m_symbol");
 			ar << m_symbol;
+			BSerializer::attrib("m_parentage");
 			ar << m_parentage;
 		}
 		template <class Archive>

@@ -153,7 +153,7 @@ namespace CXXR {
 	void save(Archive & ar, const unsigned int version) const {
 	    // debugging unregistered class
 	    if (m_target) {
-	    	std::string tmp("target class type: ");
+	    	std::string tmp("Target class type: ");
 		tmp.append(typeid(*m_target).name());
 		BSerializer::debug(tmp);
 	    }

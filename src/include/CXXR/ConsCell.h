@@ -275,8 +275,11 @@ namespace CXXR {
 	void serialize(Archive & ar, const unsigned int version) {
 	    BSerializer::Frame frame("ConsCell");
 	    ar & boost::serialization::base_object<RObject>(*this);
+	    BSerializer::attrib("m_car");
 	    ar & m_car;
+	    BSerializer::attrib("m_tail");
 	    ar & m_tail;
+	    BSerializer::attrib("m_tag");
 	    ar & m_tag;
 	    ar & m_missing;
 	}

@@ -28,6 +28,7 @@ namespace CXXR {
 	    std::string s_class;
 	};
 	
+	static void attrib(const std::string&);
 	static void debug(const std::string&);
 	static bool debugging() { return s_debug_output; }
 	static void indent();

@@ -45,6 +45,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -184,6 +188,18 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
+	template <class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("ExternalPointer");
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    BSerializer::attrib("m_tag");
+	    ar & m_tag;
+	    BSerializer::attrib("m_tag");
+	    ar & m_protege;
+	}
+
 	void* m_ptr;
 	GCEdge<> m_tag;
 	GCEdge<> m_protege;
@@ -198,6 +214,9 @@ namespace CXXR {
 	ExternalPointer& operator=(const ExternalPointer&);
     };
 } // namespace CXXR
+
+// Export as serializable for boost::serialization
+BOOST_CLASS_EXPORT(CXXR::ExternalPointer)
 
 extern "C" {
 #endif  /* __cplusplus */

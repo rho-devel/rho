@@ -8,6 +8,13 @@ using namespace CXXR;
 bool BSerializer::s_debug_output;
 int BSerializer::s_level;
 
+void BSerializer::attrib(const std::string& a) {
+    if (!debugging()) return;
+
+    indent();
+    cout << "Attribute " << a << ":" << std::endl;
+}
+
 void BSerializer::debug(const std::string& op) {
     if (!debugging()) return;
 

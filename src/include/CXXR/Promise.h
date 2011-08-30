@@ -213,10 +213,15 @@ namespace CXXR {
 	    BSerializer::Frame frame("Promise");
 	    ar & boost::serialization::base_object<RObject>(*this);
 
+	    BSerializer::attrib("m_value");
 	    ar & m_value;
+	    BSerializer::attrib("m_valgen");
 	    ar & m_valgen;
+	    BSerializer::attrib("m_environment");
 	    ar & m_environment;
+	    BSerializer::attrib("m_seen");
 	    ar & m_seen;
+	    BSerializer::attrib("m_interrupted");
 	    ar & m_interrupted;
 	}
 

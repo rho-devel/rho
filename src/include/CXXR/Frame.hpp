@@ -371,12 +371,19 @@ namespace CXXR {
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
 		BSerializer::Frame frame("Frame::Binding");
+		BSerializer::attrib("m_frame");
 		ar & m_frame;
+		BSerializer::attrib("m_active");
 	    	ar & m_active;
+		BSerializer::attrib("m_locked");
 		ar & m_locked;
+		BSerializer::attrib("m_origin");
 		ar & m_origin;
+		BSerializer::attrib("m_provenance");
 		ar & m_provenance;
+		BSerializer::attrib("m_symbol");
 		ar & m_symbol;
+		BSerializer::attrib("m_value");
 		ar & m_value;
 	    }
 

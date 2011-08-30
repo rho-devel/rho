@@ -194,11 +194,14 @@ namespace CXXR {
 	void load(Archive & ar, const unsigned int version) {
 	    ar & boost::serialization::base_object<RObject>(*this);
 	    GCEdge<const PairList> fargs; // For deserialization
+	    BSerializer::attrib("formal_args");
 	    ar >> fargs;
 	    // Protect from GC
 	    GCStackRoot<const PairList> formal_args(fargs);
 	    m_matcher=expose(new ArgMatcher(formal_args));
+	    BSerializer::attrib("m_body");
 	    ar >> m_body;
+	    BSerializer::attrib("m_environment");
 	    ar >> m_environment;
 	}
 
@@ -206,8 +209,11 @@ namespace CXXR {
 	void save(Archive & ar, const unsigned int version) const {
 	    ar & boost::serialization::base_object<RObject>(*this);
 	    GCEdge<const PairList> formal_args(m_matcher->formalArgs());
+	    BSerializer::attrib("formal_args");
 	    ar << formal_args;
+	    BSerializer::attrib("m_body");
 	    ar << m_body;
+	    BSerializer::attrib("m_environment");
 	    ar << m_environment;
 	}
 
