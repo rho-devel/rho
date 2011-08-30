@@ -46,6 +46,7 @@
 #ifdef __cplusplus
 
 #include <boost/serialization/access.hpp>
+#include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
     /** @brief Singly linked list representing an R expression.
@@ -106,8 +107,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Expression");
 	    ar & boost::serialization::base_object<ConsCell>(*this);
-	    printf("Serialize Expression\n");
 	}
     };
 } // namespace CXXR

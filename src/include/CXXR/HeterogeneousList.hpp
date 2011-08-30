@@ -45,6 +45,7 @@
 
 #include <iterator>
 #include <boost/serialization/access.hpp>
+#include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
     template <class Node> class HeterogeneousList;
@@ -97,7 +98,7 @@ namespace CXXR {
 	    friend class boost::serialization::access;
 	    template <class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
-	    	printf("Serialize HeterogeneousList::Link\n");
+		BSerializer::Frame frame("HeterogeneousList::Link");
 	    }
 	};
 

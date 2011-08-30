@@ -977,8 +977,8 @@ void BuiltInFunction::initialize()
 {"pedigree", do_pedigree, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
 
 /* and my serialization function */
-{"bserialize", do_bserialize, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
-{"bdeserialize", do_bdeserialize, 0, 0, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"bserialize", do_bserialize, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
+{"bdeserialize", do_bdeserialize, 0, 100, 1, {PP_FUNCALL, PREC_FN, 0}},
 
 {"readDCF",	do_readDCF,	0,      11,     2,      {PP_FUNCALL, PREC_FN,	0}},
 

@@ -119,6 +119,18 @@ bool StdFrame::erase(const Symbol* symbol)
     return m_map.erase(symbol);
 }
 
+void StdFrame::import(const Frame* frame) {
+    const StdFrame* stdFrame = static_cast<const StdFrame*>(frame);
+    for (map::const_iterator it = stdFrame->m_map.begin(); it != stdFrame->m_map.end(); ++it) {
+	const Symbol* symbol=(*it).first;
+	const Binding* bdgSrc=&(*it).second;
+
+	Binding* bdgDest = obtainBinding(symbol);
+	bdgDest->setProvenance(const_cast<Provenance*>(bdgSrc->getProvenance()));
+	bdgDest->setValue(bdgSrc->rawValue(), bdgSrc->origin(), TRUE);
+    }
+}
+
 void StdFrame::lockBindings()
 {
     for (map::iterator it = m_map.begin(); it != m_map.end(); ++it)

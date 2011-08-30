@@ -48,6 +48,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/HandleVector.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -101,12 +105,25 @@ namespace CXXR {
 
 	// Virtual function of RObject:
 	ListVector* clone() const;
+    protected:
+    	// For boost::serialization
+	ListVector() {}
     private:
+	friend class boost::serialization::access;
+
 	// Declared private to ensure that ListVectors are
 	// allocated only using 'new'.
 	~ListVector() {}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("ListVector");
+	    ar & boost::serialization::base_object<HandleVector<RObject, VECSXP> >(*this);
+	}
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::ListVector)
 
 extern "C" {
 #endif /* __cplusplus */

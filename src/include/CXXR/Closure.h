@@ -45,7 +45,12 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/split_member.hpp>
 #include "CXXR/ArgMatcher.hpp"
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
@@ -166,6 +171,7 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+        friend class boost::serialization::access;
 	bool m_debug;
 	GCEdge<const ArgMatcher> m_matcher;
 	GCEdge<> m_body;
@@ -182,8 +188,45 @@ namespace CXXR {
 	// Called by apply() to handle debugging:
 	void debug(Environment* newenv, const Expression* call,
 		   const PairList* args, Environment* argsenv);
+
+	// Serialization
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    GCEdge<const PairList> fargs; // For deserialization
+	    ar >> fargs;
+	    // Protect from GC
+	    GCStackRoot<const PairList> formal_args(fargs);
+	    m_matcher=expose(new ArgMatcher(formal_args));
+	    ar >> m_body;
+	    ar >> m_environment;
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar & boost::serialization::base_object<RObject>(*this);
+	    GCEdge<const PairList> formal_args(m_matcher->formalArgs());
+	    ar << formal_args;
+	    ar << m_body;
+	    ar << m_environment;
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Closure");
+	    boost::serialization::split_member(ar, *this, version);
+	}
+
+	// Used by boost::serialization
+	// Initialises fields not serialized
+	Closure()
+	    : FunctionBase(CLOSXP), m_debug(false) {}
+	
+
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::Closure)
 
 extern "C" {
 #endif

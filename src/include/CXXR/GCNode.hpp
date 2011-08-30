@@ -44,6 +44,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include "CXXR/Allocator.hpp"
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/HeterogeneousList.hpp"
 #include "CXXR/MemoryBank.hpp"
 #include "CXXR/SchwarzCounter.hpp"
@@ -554,8 +555,8 @@ namespace CXXR {
 	 */
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) { 
-		ar & boost::serialization::base_object<HeterogeneousListBase::Link>(*this);
-		printf("Serialize GCNode\n");
+	    BSerializer::Frame frame("GCNode");
+	    ar & boost::serialization::base_object<HeterogeneousListBase::Link>(*this);
 	}
 
 	/** @brief Carry out the sweep phase of garbage collection.

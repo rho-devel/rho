@@ -42,6 +42,8 @@
 #define RFRAME_HPP
 
 #include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Provenance.hpp"
@@ -368,8 +370,8 @@ namespace CXXR {
 	    friend class boost::serialization::access;
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
-	    	printf("Serialize Frame::Binding\n");
-		// We don't yet serialize Frame m_frame
+		BSerializer::Frame frame("Frame::Binding");
+		ar & m_frame;
 	    	ar & m_active;
 		ar & m_locked;
 		ar & m_origin;
@@ -459,6 +461,13 @@ namespace CXXR {
 	 * mapping for \a symbol.
 	 */
 	virtual bool erase(const Symbol* symbol) = 0;
+
+	/** @brief Install Bindings from another Frame
+	 *
+	 * @param frame Source frame from which to 'copy' bindings
+	 */
+	virtual void import(const Frame* frame) = 0;
+
 
 	/** @brief Look up bound value, forcing Promises if necessary.
 	 *
@@ -633,6 +642,15 @@ namespace CXXR {
 	// only using 'new':
 	~Frame() {}
     private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Frame");
+	    ar & boost::serialization::base_object<GCNode>(*this);
+	    ar & m_locked;
+	}
+
 	bool m_locked;
 	mutable monitor m_read_monitor;
 	mutable monitor m_write_monitor;

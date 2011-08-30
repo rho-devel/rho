@@ -48,6 +48,7 @@
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 typedef CXXR::RObject VECTOR_SEXPREC, *VECSEXP;
@@ -116,8 +117,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("VectorBase");
 	    ar & boost::serialization::base_object<RObject>(*this);
-	    printf("Serialize VectorBase\n");
 	    ar & m_truelength;
 	    ar & m_size;
 	}

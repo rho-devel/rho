@@ -36,7 +36,7 @@ CXXR_HS = \
   FunctionBase.h GCRoot.h GCStackRoot.h IntVector.h \
   ListVector.h LogicalVector.h PairList.h Promise.h \
   RAllocStack.h RObject.h RawVector.h RealVector.h \
-  S4Object.h String.h StringVector.h Symbol.h \
+  S4Object.h String.h StringEncodingType.h StringVector.h Symbol.h \
   UncachedString.h VectorBase.h WeakRef.h uncxxr.h
 
 CXXR_HPPS = \

@@ -29,10 +29,11 @@ sources_cxx = ArgMatchertest.cpp Allocatortest.cpp CellPooltest.cpp \
 depends = $(sources_cxx:.cpp=.d)
 
 tests = CellPooltest CellHeaptest MemoryBanktest Allocatortest \
-        HeterogeneousListtest splice_test ArgMatchertest0 ArgMatchertest1 \
+	splice_test ArgMatchertest0 ArgMatchertest1 \
 	ArgMatchertest2 ArgMatchertest3 ArgMatchertest4 ArgMatchertest5 \
         ArgMatchertest6 ArgMatchertest7 ArgMatchertest8
 
+        #HeterogeneousListtest 
 check : $(tests:=.ts)
 
 ArgMatchertest.o : ArgMatchertest.cpp

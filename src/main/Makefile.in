@@ -31,12 +31,13 @@ SOURCES_C = complex.c gram.c gramRd.c inlined.c unzip.c
 
 SOURCES_CXX = \
 	ArgMatcher.cpp \
-	BuiltInFunction.cpp ByteCode.cpp \
+	BSerializer.cpp BuiltInFunction.cpp ByteCode.cpp \
 	CConverters.cpp CachedString.cpp CachedString_serialization.cpp \
 	CellPool.cpp \
 	Closure.cpp CommandLineArgs.cpp ComplexVector.cpp ConsCell.cpp \
 	DotInternal.cpp DottedArgs.cpp \
-	Environment.cpp Evaluator.cpp Expression.cpp ExpressionVector.cpp \
+	Environment.cpp Environment_serialization.cpp \
+	Evaluator.cpp Expression.cpp ExpressionVector.cpp \
         ExternalPointer.cpp \
         Frame.cpp FunctionBase.cpp \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \

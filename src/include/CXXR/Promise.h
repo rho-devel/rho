@@ -45,6 +45,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/Environment.h"
 #include "CXXR/Symbol.h"
@@ -200,7 +204,22 @@ namespace CXXR {
     protected:
 	// Virtual function of GCNode:
 	void detachReferents();
+	// For boost::serialization
+	Promise() {} 
     private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Promise");
+	    ar & boost::serialization::base_object<RObject>(*this);
+
+	    ar & m_value;
+	    ar & m_valgen;
+	    ar & m_environment;
+	    ar & m_seen;
+	    ar & m_interrupted;
+	}
+
 	GCEdge<> m_value;
 	GCEdge<RObject> m_valgen;
 	GCEdge<Environment> m_environment;
@@ -217,6 +236,8 @@ namespace CXXR {
 	Promise& operator=(const Promise&);
     };
 }  // namespace CXXR
+
+BOOST_CLASS_EXPORT(CXXR::Promise)
 
 extern "C" {
 #endif

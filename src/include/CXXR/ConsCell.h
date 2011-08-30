@@ -57,6 +57,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/SEXP_downcast.hpp"
 
@@ -272,8 +273,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("ConsCell");
 	    ar & boost::serialization::base_object<RObject>(*this);
-	    printf("Serialize ConsCell\n");
 	    ar & m_car;
 	    ar & m_tail;
 	    ar & m_tag;
@@ -436,8 +437,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("PairList");
 	    ar & boost::serialization::base_object<ConsCell>(*this);
-	    printf("Serialize PairList\n");
 	    ar & m_argused;
 	    ar & m_active_binding;
 	    ar & m_binding_locked;

@@ -46,6 +46,7 @@
 #include <boost/serialization/split_member.hpp>
 #include "localization.h"
 #include "R_ext/Error.h"
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
@@ -166,7 +167,6 @@ namespace CXXR {
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version) {
 	    ar >> boost::serialization::base_object<VectorBase>(*this);
-	    printf("Deserialize DumbVector\n");
 	    if (size()>1) { // Not a singleton vector
 		allocData(size());
 		for (unsigned int i=0;i<size();i++)
@@ -180,7 +180,6 @@ namespace CXXR {
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const {
 	    ar << boost::serialization::base_object<VectorBase>(*this);
-	    printf("Serialize DumbVector\n");
 	    if (size()>1) // Not a singleton vector
 		for (unsigned int i=0;i<size();i++)
 		    ar << m_data[i];
@@ -190,6 +189,7 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("DumbVector");
 	    boost::serialization::split_member(ar, *this, version);
 	}
     };

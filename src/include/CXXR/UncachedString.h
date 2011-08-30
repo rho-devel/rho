@@ -49,6 +49,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/split_member.hpp>
+#include "CXXR/BSerializer.hpp"
 
 namespace CXXR {
     /** @brief String object not held in a cache.
@@ -164,7 +165,6 @@ namespace CXXR {
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version) {
 	    ar >> boost::serialization::base_object<String>(*this);
-	    printf("Deserialize UncachedString\n");
 	    std::string str;
 	    ar >> m_databytes;
 	    ar >> str;
@@ -178,7 +178,6 @@ namespace CXXR {
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const {
 	    ar << boost::serialization::base_object<String>(*this);
-	    printf("Serialize UncachedString\n");
 	    std::string str(m_data);
 	    ar << m_databytes;
 	    ar << str;
@@ -186,6 +185,7 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("UncachedString");
 	    boost::serialization::split_member(ar, *this, version);	    
 	}
     };

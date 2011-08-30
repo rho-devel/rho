@@ -41,14 +41,15 @@
 #ifndef CXXR_STRING_H
 #define CXXR_STRING_H
 
-#include "CXXR/GCRoot.h"
 #include "CXXR/StringEncodingType.h"
+#include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
 #ifdef __cplusplus
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/SEXP_downcast.hpp"
 
 namespace CXXR {
@@ -215,8 +216,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("String");
 	    boost::serialization::base_object<VectorBase>(*this);
-	    printf("Serialize String\n");
 	    ar & m_encoding;
 	}
 

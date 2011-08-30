@@ -232,40 +232,40 @@ SEXP attribute_hidden do_pedigree (SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_bserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-//	errorcall(call,_("Mostly unimplemented"));
-	std::ofstream ofs("bserialize.out");
+    std::ofstream ofs("bserialize.out");
 	
-	int n;
-	if ((n=length(args))!=1)
-		errorcall(call,_("%d arguments passed to 'bserialize' which requires 1"),n);
+    const int n=length(args);
+    if (n>0)
+	errorcall(call,_("%d arguments passed to 'bserialize' which requires 0"),n);
 
-	Environment* env=static_cast<Environment*>(rho);
-	
-	if (TYPEOF(CAR(args))==SYMSXP) {
-		Symbol* sym=SEXP_downcast<Symbol*>(CAR(args));
-		const Frame::Binding* bdg=findBinding(sym,env).second;
-		if (bdg) {
-			boost::archive::text_oarchive oa(ofs);
-			oa << *bdg;
-		}
-	}
+    Environment* env=new Environment(0);
+    GCStackRoot<Environment> envProtect(GCNode::expose(env));
+    Frame* frame=env->frame();
 
-	return R_NilValue;
+    if (n==0) {
+	Frame *gEnvFrame=static_cast<Environment*>(R_GlobalEnv)->frame();
+	frame->import(gEnvFrame);
+    }
+
+
+    boost::archive::text_oarchive oa(ofs);
+    oa << env;
+
+    return R_NilValue;
 }
 
 SEXP attribute_hidden do_bdeserialize (SEXP call, SEXP op, SEXP args, SEXP rho)
 {
 	std::ifstream ifs("bserialize.out");
 	boost::archive::text_iarchive ia(ifs);
+	Environment* env;
+	ia >> env;
 
-	Frame::Binding bdg;
+	GCStackRoot<Environment> envProtect(GCNode::expose(env)); // Protect from GC
 
-	ia >> bdg;
-	Environment* env=static_cast<Environment*>(rho);
-	Frame::Binding* cbdg=env->frame()->obtainBinding(bdg.symbol());
+	Environment* envGlobal = static_cast<Environment*>(R_GlobalEnv);
+	Frame* frame = envGlobal->frame();
+	frame->import(env->frame());
 
-	cbdg->setProvenance(const_cast<Provenance*>(bdg.getProvenance()));
-	cbdg->setValue(bdg.rawValue(), bdg.origin(), TRUE);
-	
 	return R_NilValue;
 }

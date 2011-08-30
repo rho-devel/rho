@@ -45,7 +45,9 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/split_member.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/CachedString_serialization.hpp"
+#include "CXXR/Environment_serialization.hpp"
 #include "CXXR/Symbol_serialization.hpp"
 #include "CXXR/GCNode.hpp"
 
@@ -58,7 +60,8 @@ namespace CXXR {
     public:
 	/** Used for representing the type of target
 	 */
-	enum EdgeSerializationType {OTHER=0, SYMBOL, CACHEDSTRING};
+	enum EdgeSerializationType {OTHEREDGE=0, SYMBOLEDGE,
+	                            CACHEDSTRINGEDGE, ENVIRONMENTEDGE};
 
 	/** @brief Null the encapsulated pointer.
 	 */
@@ -124,17 +127,19 @@ namespace CXXR {
 
 	template<class Archive>
 	void load(Archive & ar, const unsigned int version) {
-	    printf("Deserialize GCEdgeBase\n");
 	    EdgeSerializationType type;
 	    ar >> type;
 	    switch(type) {
-	    case SYMBOL:
-		retarget(loadSymbol(ar));
-		break;
-	    case CACHEDSTRING:
+	    case CACHEDSTRINGEDGE:
 		retarget(loadCachedString(ar));
 		break;
-	    case OTHER:
+	    case ENVIRONMENTEDGE:
+		retarget(loadEnvironment(ar));
+		break;
+	    case SYMBOLEDGE:
+		retarget(loadSymbol(ar));
+		break;
+	    case OTHEREDGE:
  		ar >> const_cast<GCNode* &>(m_target);
 		if (m_target) {
 		    GCNode::expose(m_target);
@@ -146,20 +151,25 @@ namespace CXXR {
 
 	template<class Archive>
 	void save(Archive & ar, const unsigned int version) const {
-	    printf("Serialize GCEdgeBase \n");
 	    // debugging unregistered class
-	    if (m_target) 
-		std::cout << typeid(*m_target).name() << std::endl;
+	    if (m_target) {
+	    	std::string tmp("target class type: ");
+		tmp.append(typeid(*m_target).name());
+		BSerializer::debug(tmp);
+	    }
 	    EdgeSerializationType type=serializationType();
 	    ar << type;
 	    switch(type) {
-	    case SYMBOL:
-		saveSymbol(ar, m_target);
-		break;
-	    case CACHEDSTRING:
+	    case CACHEDSTRINGEDGE:
 		saveCachedString(ar, m_target);
 		break;
-	    case OTHER:
+	    case ENVIRONMENTEDGE:
+		saveEnvironment(ar, m_target);
+		break;
+	    case SYMBOLEDGE:
+		saveSymbol(ar, m_target);
+		break;
+	    case OTHEREDGE:
 		ar << const_cast<GCNode* &>(m_target);
 		break;
 	    }
@@ -167,6 +177,7 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("GCEdgeBase");
 	    boost::serialization::split_member(ar, *this, version);
 	}
 
@@ -257,8 +268,8 @@ namespace CXXR {
         friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
-		ar & boost::serialization::base_object<GCEdgeBase>(*this);
-		printf("Serialize GCEdge\n");
+	    BSerializer::Frame frame("GCEdge");
+	    ar & boost::serialization::base_object<GCEdgeBase>(*this);
 	}
     };
 } // Namespace CXXR

@@ -49,6 +49,7 @@
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
 #include "CXXR/uncxxr.h"
@@ -341,8 +342,8 @@ namespace CXXR {
 
 	    template<class Archive>
 	    void serialize(Archive & ar, const unsigned int version) {
+		BSerializer::Frame frame("RObject");
 		ar & boost::serialization::base_object<GCEdge<T> >(*this);
-		printf("Serialize Handle\n");
 	    }
 	};
 		
@@ -626,8 +627,8 @@ namespace CXXR {
 
 	template<class Archive>
 	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("RObject");
 	    ar & boost::serialization::base_object<GCNode>(*this);	
-	    printf("Serialize RObject\n");
 	    ar & const_cast<SEXPTYPE &>(m_type);
 	    unsigned int named=m_named;
 	    bool has_class=m_has_class;

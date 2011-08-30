@@ -41,10 +41,14 @@
 #define HANDLEVECTOR_HPP 1
 
 #include <algorithm>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/split_member.hpp>
 
 #include "localization.h"
 #include "R_ext/Error.h"
 #include "CXXR/Allocator.hpp"
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/VectorBase.h"
 
@@ -98,6 +102,11 @@ namespace CXXR {
 		m_data[i] = handle;
 	    }
 	}
+
+	/** @brief default constructor
+	 * Used by boost::serialization
+	 */
+	HandleVector() { }
 
 	/** @brief Element access.
 	 *
@@ -169,11 +178,30 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+    	friend class boost::serialization::access;
 	Vector m_data;
 
 	// Not implemented.  Declared to prevent
 	// compiler-generated version:
 	HandleVector& operator=(const HandleVector&);
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int version) {
+	    ar >> boost::serialization::base_object<VectorBase>(*this);
+	    ar >> m_data;
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<VectorBase>(*this);
+	    ar << m_data;
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("HandleVector");
+	    boost::serialization::split_member(ar, *this, version);
+	}
 
 	friend class ElementProxy;
     };

@@ -37,6 +37,7 @@
  * Implementation of class GCEdgeBase.
  */
 
+#include "CXXR/Environment.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/Symbol.h"
 
@@ -54,13 +55,16 @@ void GCEdgeBase::detach()
 }
 
 GCEdgeBase::EdgeSerializationType GCEdgeBase::serializationType() const {
-    if (!m_target) return OTHER;
+    if (!m_target) return OTHEREDGE;
 
     if (typeid(*m_target)==typeid(Symbol))
-	return SYMBOL;
+	return SYMBOLEDGE;
 
     if (typeid(*m_target)==typeid(CachedString))
-	return CACHEDSTRING;
+	return CACHEDSTRINGEDGE;
 
-    return OTHER;
+    if (typeid(*m_target)==typeid(Environment))
+	return ENVIRONMENTEDGE;
+
+    return OTHEREDGE;
 }

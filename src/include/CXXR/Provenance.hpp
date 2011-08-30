@@ -10,6 +10,7 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/split_member.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/Expression.h"
 #include "CXXR/GCEdge.hpp"
 #include "CXXR/GCNode.hpp"
@@ -51,6 +52,8 @@ namespace CXXR {
 		void visitReferents(const_visitor*) const;
 	private:
 		friend class boost::serialization::access;
+		// Do away with compiler-generated copy constructor
+		Provenance(const Provenance&);
 		struct timeval m_timestamp;
 		unsigned int m_parentpos;
 		Set* m_children;
@@ -65,7 +68,6 @@ namespace CXXR {
 		template <class Archive>
 		void load(Archive & ar, const unsigned int version) {
 			ar >> boost::serialization::base_object<GCNode>(*this);
-			printf("Deserialize Provenance\n");
 			ar >> m_timestamp.tv_sec;
 			ar >> m_timestamp.tv_usec;
 			ar >> m_expression;
@@ -81,7 +83,6 @@ namespace CXXR {
 		template <class Archive>
 		void save(Archive & ar, const unsigned int version) const {
 			ar << boost::serialization::base_object<GCNode>(*this);
-			printf("Serialize Provenance\n");
 			ar << m_timestamp.tv_sec;
 			ar << m_timestamp.tv_usec;
 			ar << m_expression;
@@ -91,6 +92,8 @@ namespace CXXR {
 		}
 		template <class Archive>
 		void serialize(Archive & ar, const unsigned int version) {
+			BSerializer::Frame frame("Provenance");
+		
 			boost::serialization::split_member(ar, *this, version);
 		}
 	};

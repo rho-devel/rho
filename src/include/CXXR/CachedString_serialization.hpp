@@ -3,6 +3,7 @@
 
 #include <string>
 #include <utility>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/StringEncodingType.h"
 
 namespace CXXR {
@@ -16,6 +17,7 @@ namespace CXXR {
 
     template<class Archive>
     void saveCachedString(Archive & ar, const GCNode* pcs) {
+	BSerializer::Frame frame("CachedString");
 	std::pair<std::string, cetype_t> pr
 	    =decomposeCachedString(static_cast<const CachedString*>(pcs));
 	ar << pr.first;
@@ -24,6 +26,7 @@ namespace CXXR {
 
     template<class Archive>
     GCNode* loadCachedString(Archive & ar) {
+	BSerializer::Frame frame("CachedString");
 	std::string str;
 	cetype_t encoding;
 	ar >> str;

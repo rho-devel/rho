@@ -45,6 +45,10 @@
 
 #ifdef __cplusplus
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
 
@@ -112,6 +116,10 @@ namespace CXXR {
 	    : RObject(ENVSXP), m_enclosing(enclosing), m_frame(frame),
 	      m_single_stepping(false)
 	{}
+
+	/** @brief Environment constructor for serialization
+	 */
+	Environment() { }
 
 	/** @brief Base environment.
 	 *
@@ -224,6 +232,18 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize (Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("Environment");
+	    ar & boost::serialization::base_object<RObject>(*this);
+    	    ar & m_enclosing;
+	    ar & m_frame;
+	    ar & m_single_stepping;
+	    ar & m_locked;
+	}
+
 	// Predefined environments.  R_EmptyEnvironment has no special
 	// significance in CXXR, and may be abolished, so is not
 	// included here:
@@ -415,6 +435,9 @@ namespace CXXR {
 	return pair<Environment*, RObject*>(0, 0);
     }
 }  // namespace CXXR
+
+// Export Environment as a boost::serialization-isable class
+BOOST_CLASS_EXPORT(CXXR::Environment)
 
 namespace {
     CXXR::SchwarzCounter<CXXR::Environment> env_schwartz_ctr;

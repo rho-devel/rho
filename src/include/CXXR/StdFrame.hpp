@@ -42,9 +42,16 @@
 #ifndef STDFRAME_HPP
 #define STDFRAME_HPP
 
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/split_member.hpp>
 #include <tr1/unordered_map>
 #include "CXXR/Allocator.hpp"
+#include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
+#include "CXXR/Symbol_serialization.hpp"
+#include "serialization/unordered_map.hpp"
 
 namespace CXXR {
     /** @brief General-purpose implementation of CXXR::Frame.
@@ -81,6 +88,7 @@ namespace CXXR {
 	const Binding* binding(const Symbol* symbol) const;
 	void clear();
 	bool erase(const Symbol* symbol);
+	void import(const Frame* frame);
 	void lockBindings();
 	size_t numBindings() const;
 	Binding* obtainBinding(const Symbol* symbol);
@@ -93,6 +101,43 @@ namespace CXXR {
 	// Virtual function of GCNode:
 	void detachReferents();
     private:
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void load(Archive & ar, const unsigned int verison) {
+	    ar >> boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings;
+	    ar >> numberOfBindings;
+	    for (size_t i=0; i<numberOfBindings; i++ ) {
+		const Symbol* symbol=static_cast<Symbol*>(loadSymbol(ar));
+		const Binding* binding;
+		ar >> binding;
+		m_map.insert(map::value_type(symbol, *binding));
+		delete binding;
+	    }
+	}
+	
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const {
+	    ar << boost::serialization::base_object<Frame>(*this);
+	    size_t numberOfBindings = size();
+	    ar << numberOfBindings;
+	    for (map::const_iterator it=m_map.begin();
+	         it!=m_map.end();
+		 ++it) {
+		const Symbol* symbol=(*it).first;
+		const Binding* binding=&(*it).second;
+		saveSymbol(ar, symbol);
+		ar << binding;
+	    }
+	}
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+	    BSerializer::Frame frame("StdFrame");
+	    boost::serialization::split_member(ar, *this, version);
+	}
+
 	map m_map;
 
 	// Declared private to ensure that StdFrame objects are
@@ -105,5 +150,8 @@ namespace CXXR {
 	StdFrame& operator=(const Frame&);
     };
 }  // namespace CXXR
+
+// Export class as serializable with boost::serialization
+BOOST_CLASS_EXPORT(CXXR::StdFrame)
 
 #endif // STDFRAME_HPP
