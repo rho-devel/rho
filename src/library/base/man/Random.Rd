@@ -1,6 +1,6 @@
 % File src/library/base/man/Random.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Random}
@@ -25,8 +25,7 @@
   \code{set.seed} is the recommended way to specify seeds.
 }
 \usage{
-.Random.seed <- c(rng.kind, n1, n2, \dots)
-save.seed <- .Random.seed
+\special{.Random.seed <- c(rng.kind, n1, n2, \dots)}
 
 RNGkind(kind = NULL, normal.kind = NULL)
 RNGversion(vstr)
@@ -115,7 +114,7 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
     }
 
     \item{\code{"user-supplied":}}{
-      Use a user-supplied generator. See \code{\link{Random.user}} for
+      Use a user-supplied generator.  See \code{\link{Random.user}} for
       details.
     }
   }
@@ -198,10 +197,10 @@ set.seed(seed, kind = NULL, normal.kind = NULL)
 
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
   \emph{The New S Language}.
-  Wadsworth & Brooks/Cole. (\code{set.seed}, storing in \code{.Random.seed}.)
+  Wadsworth & Brooks/Cole.  (\code{set.seed}, storing in \code{.Random.seed}.)
 
   Box, G. E. P. and Muller, M. E. (1958) A note on the generation of normal
-  random deviates. \emph{Annals of Mathematical Statistics} \bold{29},
+  random deviates.  \emph{Annals of Mathematical Statistics} \bold{29},
   610--611.
 
   De Matteis, A. and Pagnutti, S. (1993)

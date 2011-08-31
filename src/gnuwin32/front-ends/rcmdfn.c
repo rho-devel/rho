@@ -16,7 +16,7 @@
 
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2000-10  R Development Core Team
+ *  Copyright (C) 2000-11  R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
 
 extern char *getRHOME(int), *getRUser(void); /* in ../rhome.c */
 
-void R_Suicide(char *s) /* for use in ../rhome.o */
+void R_Suicide(char *s) /* for call from ../rhome.o */
 {
     fprintf(stderr, "FATAL ERROR:%s\n", s);
     exit(2);
@@ -79,7 +79,7 @@ static int isDir(char *path)
 
 void rcmdusage (char *RCMD)
 {
-    fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+    fprintf(stderr, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
 	    "where 'command' is one of:\n",
 	    "  INSTALL  Install add-on packages\n",
 	    "  REMOVE   Remove add-on packages\n",
@@ -93,7 +93,6 @@ void rcmdusage (char *RCMD)
 	    "  Rd2dvi   Convert Rd format to DVI\n",
 	    "  Rd2pdf   Convert Rd format to PDF\n",
 	    "  Rd2txt   Convert Rd format to pretty text\n",
-	    "  Sd2Rd    Convert S documentation to Rd format\n",
 	    "  Stangle  Extract S/R code from Sweave documentation\n",
 	    "  Sweave   Process Sweave documentation\n",
 	    "  config   Obtain configuration information about R\n"
@@ -123,7 +122,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 {
     /* tasks:
        find R_HOME, set as env variable (with / as separator)
-       set R_ARCH if not already set
+       set R_ARCH
        set PATH to include R_HOME\bin
        set TMPDIR if unset
        set HOME if unset
@@ -158,7 +157,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	/* need to cover Rcmd --help, R CMD --help and R --help,
 	   as well as -h versions.
 	 */
-	if(cmdarg == 2 || (cmdarg == 1 && !strcmp(RCMD, "Rcmd"))) {
+	if(cmdarg >= 2 || (cmdarg == 1 && !strcmp(RCMD, "Rcmd"))) {
 	    fprintf(stderr, "%s%s%s", "Usage: ", RCMD, " command args\n\n");
 	    rcmdusage(RCMD);
 	    return(0);
@@ -194,17 +193,19 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	return system(cmd);
     }
 
-    /* From here on down, this was called as Rcmd or R CMD
-       We follow Unix-alikes as from R 2.12.0 in setting environment
-       variables in Rcmd BATCH.
+    /* From here on down, this was called as Rcmd or R CMD */
 
-       NB: Rcmd_environ uses R_HOME.
-    */
     char RHOME[MAX_PATH];
     strcpy(RHOME, "R_HOME=");
     strcat(RHOME, RHome);
     for (p = RHOME; *p; p++) if (*p == '\\') *p = '/';
     putenv(RHOME);
+
+    /* We follow Unix-alikes as from R 2.12.0 in setting environment
+       variables in Rcmd BATCH.
+
+       NB: Rcmd_environ uses R_HOME.
+    */
     strcpy(env_path, RHome); strcat(env_path, "/etc/Rcmd_environ");
     process_Renviron(env_path);
 
@@ -289,6 +290,7 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	    else strcat(outfile, ".Rout");
 	}
 
+	/* Unix has --restore --save --no-readline */
 	snprintf(cmd, CMD_LEN, "%s/%s/Rterm.exe -f \"%s\" --restore --save",
 		 getRHOME(3), BINDIR, infile);
 	if(strlen(cmd) + strlen(cmd_extra) >= CMD_LEN) {
@@ -334,8 +336,9 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	/* ------- end of BATCH -------- */
     }
 
-    /* Now Rcmd <cmd> or R CMD <cmd>: some commands are handled internally,
-       some via batch/Perl files */
+    /* Now Rcmd <cmd> or R CMD <cmd>: most commands are nowadays
+     * handled internally on Windows
+     */
 
     /* Not sure that we still need these set -- they are Windows-only */
     char Rversion[25];
@@ -356,11 +359,9 @@ int rcmdfn (int cmdarg, int argc, char **argv)
     free(Path);
 
     char Rarch[30];
-    if (!getenv("R_ARCH")) {
-	strcpy(Rarch, "R_ARCH=/");
-	strcat(Rarch, R_ARCH);
-	putenv(Rarch);
-    }
+    strcpy(Rarch, "R_ARCH=/");
+    strcat(Rarch, R_ARCH);
+    putenv(Rarch);
 
     char Bindir[30];
     strcpy(Bindir, "BINDIR=");
@@ -395,13 +396,14 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 
 
     if (!strcmp(argv[cmdarg], "INSTALL")) {
+	/* Unix has --no-restore except for MM's undocumented --use-vanilla */
 	snprintf(cmd, CMD_LEN,
 		 "%s/%s/Rterm.exe -e tools:::.install_packages() R_DEFAULT_PACKAGES= LC_COLLATE=C --no-restore --slave --args ",
 		 getRHOME(3), BINDIR);
 	PROCESS_CMD("nextArg");
     } else if (!strcmp(argv[cmdarg], "REMOVE")) {
 	snprintf(cmd, CMD_LEN,
-		 "%s/%s/Rterm.exe -f \"%s/share/R/REMOVE.R\" R_DEFAULT_PACKAGES=NULL --slave --args",
+		 "%s/%s/Rterm.exe -f \"%s/share/R/REMOVE.R\" R_DEFAULT_PACKAGES=NULL --no-restore --slave --args",
 		 getRHOME(3), BINDIR, getRHOME(3));
 	for (i = cmdarg + 1; i < argc; i++){
 	    strcat(cmd, " ");
@@ -472,24 +474,22 @@ int rcmdfn (int cmdarg, int argc, char **argv)
 	PROCESS_CMD("nextArg");
     } else if (!strcmp(argv[cmdarg], "Sweave")) {
 	snprintf(cmd, CMD_LEN,
-		 "%s/%s/Rterm.exe --vanilla --slave -e \"utils:::.Sweave('%s')\"",
-		 getRHOME(3), BINDIR, argv[cmdarg + 1]);
-	return(system(cmd));
+		 "%s/%s/Rterm.exe --no-restore --slave -e utils:::.Sweave() --args ",
+		 getRHOME(3), BINDIR);
+	PROCESS_CMD("nextArg");
     } else if (!strcmp(argv[cmdarg], "Stangle")) {
 	snprintf(cmd, CMD_LEN,
-		 "%s/%s/Rterm.exe --vanilla --slave -e \"utils:::.Stangle('%s')\"",
-		 getRHOME(3), BINDIR, argv[cmdarg + 1]);
-	return(system(cmd));
+		 "%s/%s/Rterm.exe --vanilla --slave -e utils:::.Stangle() --args ",
+		 getRHOME(3), BINDIR);
+	PROCESS_CMD("nextArg");
     } else {
 	/* not one of those handled internally */
 	p = argv[cmdarg];
-	if (!strcmp(p, "config")) {
+	if (!strcmp(p, "config"))
 	    snprintf(cmd, CMD_LEN, "sh %s/bin/config.sh", RHome);
-	} else if (!strcmp(p, "Sd2Rd")) {
-	    snprintf(cmd, CMD_LEN, "perl %s/bin/Sd2Rd.pl", RHome);
-	} else if (!strcmp(p, "open")) {
+	else if (!strcmp(p, "open"))
 	    snprintf(cmd, CMD_LEN, "%s/%s/open.exe", RHome, BINDIR);
-	} else {
+	else {
 	    /* RHOME/BINDIR is first in the path, so looks there first */
 	    if (!strcmp(".sh", p + strlen(p) - 3)) strcpy(cmd, "sh ");
 	    else if (!strcmp(".pl", p + strlen(p) - 3)) strcpy(cmd, "perl ");

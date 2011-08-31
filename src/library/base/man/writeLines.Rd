@@ -1,6 +1,6 @@
 % File src/library/base/man/writeLines.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{writeLines}
@@ -14,8 +14,8 @@ writeLines(text, con = stdout(), sep = "\n", useBytes = FALSE)
 }
 \arguments{
   \item{text}{A character vector}
-  \item{con}{A connection object or a character string.}
-  \item{sep}{character. A string to be written to the connection after
+  \item{con}{A \link{connection} object or a character string.}
+  \item{sep}{character.  A string to be written to the connection after
     each line of text.}
   \item{useBytes}{logical.  See \sQuote{Details}.}
 }
@@ -39,9 +39,10 @@ writeLines(text, con = stdout(), sep = "\n", useBytes = FALSE)
   strings with marked encodings are converted to the current encoding
   before being passed to the connection (which might do further
   re-encoding).  \code{useBytes = TRUE} suppresses the re-encoding of
-  marked strings so they are passed byte-by-byte to the connection.:
+  marked strings so they are passed byte-by-byte to the connection:
   this can be useful when strings have already been re-encoded by
-  e.g. \code{\link{iconv}}.
+  e.g. \code{\link{iconv}}.  (It is invoked automatically for strings
+  with marked encoding \code{"bytes"}.)
 }
 \seealso{
   \code{\link{connections}}, \code{\link{writeChar}}, \code{\link{writeBin}},

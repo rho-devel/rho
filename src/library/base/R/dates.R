@@ -116,8 +116,9 @@ summary.Date <- function(object, digits = 12, ...)
     x
 }
 
-"+.Date" <- function(e1, e2)
+`+.Date` <- function(e1, e2)
 {
+    ## need to drop "units" attribute here
     coerceTimeUnit <- function(x)
         as.vector(round(switch(attr(x,"units"),
                                secs = x/86400, mins = x/1440, hours = x/24,
@@ -132,7 +133,7 @@ summary.Date <- function(object, digits = 12, ...)
     structure(unclass(e1) + unclass(e2), class = "Date")
 }
 
-"-.Date" <- function(e1, e2)
+`-.Date` <- function(e1, e2)
 {
     coerceTimeUnit <- function(x)
         as.vector(round(switch(attr(x,"units"),
@@ -174,7 +175,7 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[.Date" <- function(x, ..., drop = TRUE)
+`[.Date` <- function(x, ..., drop = TRUE)
 {
     cl <- oldClass(x)
     class(x) <- NULL
@@ -183,7 +184,7 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[[.Date" <- function(x, ..., drop = TRUE)
+`[[.Date` <- function(x, ..., drop = TRUE)
 {
     cl <- oldClass(x)
     class(x) <- NULL
@@ -192,12 +193,12 @@ Summary.Date <- function (..., na.rm)
     val
 }
 
-"[<-.Date" <- function(x, ..., value)
+`[<-.Date` <- function(x, ..., value)
 {
-    if(!as.logical(length(value))) return(x)
-    value <- as.Date(value)
+    if(!length(value)) return(x)
+    value <- unclass(as.Date(value))
     cl <- oldClass(x)
-    class(x) <- class(value) <- NULL
+    class(x) <- NULL
     x <- NextMethod(.Generic)
     class(x) <- cl
     x
@@ -261,24 +262,24 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
     } else if(!is.numeric(by)) stop("invalid mode for 'by'")
     if(is.na(by)) stop("'by' is NA")
 
-    if(valid <= 2L) {
+    if(valid <= 2L) { # days or weeks
         from <- unclass(as.Date(from))
         if(!is.null(length.out))
             res <- seq.int(from, by=by, length.out=length.out)
         else {
-            to <- unclass(as.Date(to))
+            to0 <- unclass(as.Date(to))
             ## defeat test in seq.default
-            res <- seq.int(0, to - from, by) + from
+            res <- seq.int(0, to0 - from, by) + from
         }
-        return(structure(res, class="Date"))
+        res <- structure(res, class="Date")
     } else {  # months or years or DSTdays
         r1 <- as.POSIXlt(from)
         if(valid == 4L) {
             if(missing(to)) { # years
                 yr <- seq.int(r1$year, by = by, length.out = length.out)
             } else {
-                to <- as.POSIXlt(to)
-                yr <- seq.int(r1$year, to$year, by)
+                to0 <- as.POSIXlt(to)
+                yr <- seq.int(r1$year, to0$year, by)
             }
             r1$year <- yr
             res <- as.Date(r1)
@@ -286,14 +287,19 @@ seq.Date <- function(from, to, by, length.out=NULL, along.with=NULL, ...)
             if(missing(to)) {
                 mon <- seq.int(r1$mon, by = by, length.out = length.out)
             } else {
-                to <- as.POSIXlt(to)
-                mon <- seq.int(r1$mon, 12*(to$year - r1$year) + to$mon, by)
+                to0 <- as.POSIXlt(to)
+                mon <- seq.int(r1$mon, 12*(to0$year - r1$year) + to0$mon, by)
             }
             r1$mon <- mon
             res <- as.Date(r1)
         }
-        return(res)
     }
+    ## can overshoot
+    if (!missing(to)) {
+        to <- as.Date(to)
+        res <- if (by > 0) res[res <= to] else res[res >= to]
+    }
+    res
 }
 
 ## *very* similar to cut.POSIXt [ ./datetime.R ] -- keep in sync!
@@ -322,34 +328,41 @@ cut.Date <-
 	    start$mday <- start$mday - start$wday
 	    if(start.on.monday)
 		start$mday <- start$mday + ifelse(start$wday > 0L, 1L, -6L)
+            start$isdst <- -1L
 	    incr <- 7L
 	}
 	if(valid == 3L) {		# months
 	    start$mday <- 1L
+            start$isdst <- -1L
 	    end <- as.POSIXlt(max(x, na.rm = TRUE))
 	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
 	    end <- as.POSIXlt(end + (31 * step * 86400))
 	    end$mday <- 1L
+            end$isdst <- -1L
 	    breaks <- as.Date(seq(start, end, breaks))
 	} else if(valid == 4L) {	# years
 	    start$mon <- 0L
 	    start$mday <- 1L
+            start$isdst <- -1L
 	    end <- as.POSIXlt(max(x, na.rm = TRUE))
 	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
 	    end <- as.POSIXlt(end + (366 * step * 86400))
 	    end$mon <- 0L
 	    end$mday <- 1L
+            end$isdst <- -1L
 	    breaks <- as.Date(seq(start, end, breaks))
 	} else if(valid == 5L) {	# quarters
 	    qtr <- rep(c(0L, 3L, 6L, 9L), each = 3L)
 	    start$mon <- qtr[start$mon + 1L]
 	    start$mday <- 1L
+            start$isdst <- -1L
 	    maxx <- max(x, na.rm = TRUE)
 	    end <- as.POSIXlt(maxx)
 	    step <- ifelse(length(by2) == 2L, as.integer(by2[1L]), 1L)
 	    end <- as.POSIXlt(end + (93 * step * 86400))
 	    end$mon <- qtr[end$mon + 1L]
 	    end$mday <- 1L
+            end$isdst <- -1L
 	    breaks <- as.Date(seq(start, end, paste(step * 3L, "months")))
 	    ## 93 days ahead could give an empty level, so
 	    lb <- length(breaks)
@@ -416,7 +429,7 @@ diff.Date <- function (x, lag = 1L, differences = 1L, ...)
     if (length(lag) > 1L || length(differences) > 1L || lag < 1L || differences < 1L)
         stop("'lag' and 'differences' must be integers >= 1")
     if (lag * differences >= xlen)
-        return(structure(numeric(0L), class="difftime", units="days"))
+        return(structure(numeric(), class="difftime", units="days"))
     r <- x
     i1 <- -seq_len(lag)
     if (ismat)

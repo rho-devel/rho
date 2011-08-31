@@ -1,6 +1,6 @@
 % File src/library/base/man/dump.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{dump}
@@ -17,10 +17,10 @@ dump(list, file = "dumpdata.R", append = FALSE,
   \R (or S) session.
 }
 \arguments{
-  \item{list}{character. The names of one or more \R objects to be dumped.}
+  \item{list}{character.  The names of one or more \R objects to be dumped.}
 
   \item{file}{either a character string naming a file or a
-    connection.  \code{""} indicates output to the console.}
+    \link{connection}.  \code{""} indicates output to the console.}
 
   \item{append}{if \code{TRUE} and \code{file} is a character string,
     output will be appended to \code{file}; otherwise, it will overwrite

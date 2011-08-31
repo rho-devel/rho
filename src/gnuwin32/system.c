@@ -66,7 +66,7 @@
 
 #include "win-nls.h"
 
-void R_CleanTempDir(void);		/* from extra.c */
+void R_CleanTempDir(void);		/* from platform.c */
 void editorcleanall(void);                  /* from editor.c */
 
 int Rwin_graphicsx = -25, Rwin_graphicsy = 0;
@@ -254,7 +254,7 @@ GuiReadConsole(const char *prompt, char *buf, int len, int addtohistory)
 {
     int res;
     const char *NormalPrompt =
-	CHAR(STRING_ELT(GetOption(install("prompt"), R_BaseEnv), 0));
+	CHAR(STRING_ELT(GetOption1(install("prompt")), 0));
 
     if(!R_is_running) {
 	R_is_running = 1;
@@ -491,9 +491,9 @@ void R_CleanUp(SA_TYPE saveact, int status, int runLast)
     R_RunExitFinalizers();
     editorcleanall();
     CleanEd();
-    R_CleanTempDir();
     KillAllDevices();
     AllDevicesKilled = TRUE;
+    R_CleanTempDir(); /* changes directory */
     if (R_Interactive && CharacterMode == RTerm)
 	SetConsoleTitle(oldtitle);
     if (R_CollectWarnings && saveact != SA_SUICIDE
@@ -710,6 +710,7 @@ void R_SetWin32(Rstart Rp)
     R_Home = Rp->rhome;
     if(strlen(R_Home) >= MAX_PATH) R_Suicide("Invalid R_HOME");
     sprintf(RHome, "R_HOME=%s", R_Home);
+    for (char *p = RHome; *p; p++) if (*p == '\\') *p = '/';
     putenv(RHome);
     strcpy(UserRHome, "R_USER=");
     strcat(UserRHome, Rp->home);

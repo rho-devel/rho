@@ -11,14 +11,14 @@ subdir = doc
 include $(top_builddir)/Makeconf
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
-INSTFILES = AUTHORS COPYING COPYING.LIB COPYRIGHTS CRAN_mirrors.csv \
+INSTFILES = AUTHORS COPYING COPYRIGHTS CRAN_mirrors.csv \
 	KEYWORDS KEYWORDS.db THANKS
 DISTFILES = Makefile.in Makefile.win $(INSTFILES) R.aux Rscript.1 NEWS.Rd
 ## NEWS.rds is also installed, but generated later.
 NON_SVN_INSTFILES = FAQ RESOURCES
 SUBDIRS = html manual
 
-HELP2MAN = $(PERL) $(top_srcdir)/tools/help2man.pl
+HELP2MAN = perl $(top_srcdir)/tools/help2man.pl
 
 R_EXE = $(top_builddir)/bin/R --vanilla --slave
 
@@ -43,7 +43,7 @@ R.1:
 	  $(top_builddir)/bin/R
 
 NEWS.rds: $(srcdir)/NEWS.Rd
-	@$(ECHO) ".saveRDS(tools:::prepare_Rd(tools::parse_Rd(\"$(srcdir)/NEWS.Rd\"), stages = 'install'), 'NEWS.rds')" | $(R_EXE)
+	@$(ECHO) "options(warn=1);saveRDS(tools:::prepare_Rd(tools::parse_Rd(\"$(srcdir)/NEWS.Rd\"), stages = 'install'), 'NEWS.rds')" | $(R_EXE)
 
 ../NEWS: NEWS.rds
 	@$(ECHO) "creating NEWS"
@@ -58,7 +58,7 @@ PDFLATEX = @PDFLATEX@
 ## (as reported by MM)
 ../NEWS.pdf: NEWS.rds
 	@if test -z "$(PDFLATEX)"; then \
-	  $(ECHO) "'pdflatex' is needed but missing on your system."; \
+	  $(ECHO) "'pdflatex' is needed to make NEWS.pdf but is missing on your system."; \
 	else \
 	 $(ECHO) "creating NEWS.pdf"; \
 	 $(ECHO) 'options(warn=1);tools:::Rd2pdf_NEWS_in_Rd("NEWS.rds", "../NEWS.pdf")' |  LC_COLLATE=C $(R_EXE); \

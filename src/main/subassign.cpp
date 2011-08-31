@@ -126,7 +126,7 @@ static SEXP EnlargeVector(SEXP x, R_len_t newlen)
 
     /* Enlarge the vector itself. */
     len = length(x);
-    if (LOGICAL(GetOption(install("check.bounds"), R_BaseEnv))[0])
+    if (LOGICAL(GetOption1(install("check.bounds")))[0])
 	warning(_("assignment outside vector/list limits (extending from %d to %d)"),
 		len, newlen);
     PROTECT(x);
@@ -659,13 +659,13 @@ static SEXP ArrayAssign(SEXP call, SEXP xarg, SEXP s, SEXP yarg)
     return 0;  // -Wall
 }
 
-static SEXP GetOneIndex(SEXP sub, int ind) 
+static SEXP GetOneIndex(SEXP sub, int ind)
 {
     if (ind < 0 || ind+1 > length(sub))
     	error("internal error: index %d from length %d", ind, length(sub));
     if (length(sub) > 1) {
     	switch (TYPEOF(sub)) {
-    	case INTSXP: 
+    	case INTSXP:
     	    sub = ScalarInteger(INTEGER(sub)[ind]);
     	    break;
     	case REALSXP:
@@ -676,7 +676,7 @@ static SEXP GetOneIndex(SEXP sub, int ind)
     	    break;
     	default:
     	    error(_("invalid subscript in list assign"));
-    	}    
+    	}
     }
     return sub;
 }
@@ -685,21 +685,19 @@ static SEXP GetOneIndex(SEXP sub, int ind)
 static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 {
     SEXP indx, xi, yi, sub = CAR(s);
-    int ii, n, nx, ny, stretch=1;
+    int ii, n, nx, stretch=1;
 
     if (length(s) > 1)
 	error(_("invalid number of subscripts to list assign"));
 
     PROTECT(sub = GetOneIndex(sub, ind));
     PROTECT(indx = makeSubscript(x, sub, &stretch, R_NilValue));
-    	
+
     n = length(indx);
     if (n > 1)
     	error(_("invalid subscript in list assign"));
 
-    ny = length(y);
     nx = length(x);
-
 
     if (stretch) {
 	SEXP t = CAR(s);
@@ -992,7 +990,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	xOrig = x; /* will be an S4 object */
         x = R_getS4DataSlot(x, ANYSXP);
 	if(TYPEOF(x) != ENVSXP)
-	  errorcall(call, _("[[<- defined for objects of type \"S4\" only for subclasses of environemnt"));
+	  errorcall(call, _("[[<- defined for objects of type \"S4\" only for subclasses of environment"));
     }
 
     /* ENVSXP special case first */
@@ -1016,7 +1014,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    recursed = TRUE;
 	}
     }
-    
+
     stretch = 0;
     if (isVector(x)) {
 	if (!isVectorList(x) && LENGTH(y) == 0)
@@ -1258,7 +1256,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else {
 	    xup = SimpleListAssign(call, xup, subs, x, len-2);
 	}
-	if (len == 2) 
+	if (len == 2)
 	    xtop = xup;
     }
     else xtop = x;
@@ -1308,7 +1306,7 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     return R_subassign3_dflt(call, CAR(ans), nlist, CADDR(ans));
 }
 
-/* used in methods_list_dispatch.c */
+/* used in "$<-" (above) and methods_list_dispatch.c */
 SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 {
     SEXP t;
@@ -1451,7 +1449,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 		SET_VECTOR_ELT(x, imatch, val);
 	    }
 	    else {
-		/* We are introducing a new element. */
+		/* We are introducing a new element (=> *no* duplication) */
 		/* Enlarge the list, add the new element */
 		/* and finally, adjust the attributes. */
 		SEXP ans, ansnames;

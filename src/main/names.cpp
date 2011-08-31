@@ -162,10 +162,12 @@ void BuiltInFunction::initialize()
 {".addRestart",do_addRestart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".getRestart",do_getRestart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {".invokeRestart",do_invokeRestart,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	  0}},
+//{".addTryHandlers",do_addTryHandlers,	0,	111,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"geterrmessage",do_geterrmessage, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"seterrmessage",do_seterrmessage, 0,	111,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"printDeferredWarnings",do_printDeferredWarnings, 0,	111,	0,	{PP_FUNCALL, PREC_FN,	  0}},
 {"interruptsSuspended",do_interruptsSuspended, 0,	11,	-1,	{PP_FUNCALL, PREC_FN,	  0}},
+//{"restart",	do_restart,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	  0}},
 {"as.function.default",do_asfunction,0,	11,	2,	{PP_FUNCTION,PREC_FN,	  0}},
 {"debug",	do_debug,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	  0}},
 {"undebug",	do_debug,	1,	111,	1,	{PP_FUNCALL, PREC_FN,	  0}},
@@ -218,7 +220,7 @@ void BuiltInFunction::initialize()
 
 {"length",	do_length,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"length<-",	do_lengthgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT,	1}},
-{"c",/* bind.c:*/do_c,		0,	0,	-1,	{PP_FUNCALL, PREC_FN,	0}},
+{"c",/* bind.c:*/do_c,		0,	1,	-1,	{PP_FUNCALL, PREC_FN,	0}},
 {"oldClass",	do_class,	0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"oldClass<-",	do_classgets,	0,	1,	2,	{PP_FUNCALL, PREC_LEFT, 1}},
 {"class",	R_do_data_class,0,	1,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -241,7 +243,7 @@ void BuiltInFunction::initialize()
 
 {"vector",	do_makevector,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"complex",	do_complex,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
-{"matrix",	do_matrix,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"matrix",	do_matrix,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 {"row",		do_rowscols,	1,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"col",		do_rowscols,	2,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"unlist",	do_unlist,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
@@ -255,7 +257,7 @@ void BuiltInFunction::initialize()
 {"mget",	do_mget,	1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"exists",	do_get,		0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"assign",	do_assign,	0,	111,	4,	{PP_FUNCALL, PREC_FN,	0}},
-{"list2env",	do_list2env,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"list2env",	do_list2env,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"remove",	do_remove,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"duplicated",	do_duplicated,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"unique",	do_duplicated,	1,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
@@ -534,6 +536,7 @@ void BuiltInFunction::initialize()
 {"make.names",	do_makenames,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"grep",	do_grep,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"grepl",	do_grep,	1,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
+{"grepRaw",	do_grepraw,	0,	11,	8,	{PP_FUNCALL, PREC_FN,	0}},
 {"sub",		do_gsub,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 {"gsub",	do_gsub,	1,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
 {"regexpr",	do_regexpr,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
@@ -712,6 +715,7 @@ void BuiltInFunction::initialize()
 {"gc",		do_gc,		0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"gcinfo",	do_gcinfo,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"gctorture",	do_gctorture,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"gctorture2",	do_gctorture2,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"memory.profile",do_memoryprofile, 0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"split",	do_split,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"is.loaded",	do_isloaded,	0,	11,	-1,	{PP_FOREIGN, PREC_FN,	0}},
@@ -772,7 +776,7 @@ void BuiltInFunction::initialize()
 {"Rprof",	do_Rprof,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"Rprofmem",	do_Rprofmem,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"tracemem",    do_tracemem,    0,      1,	1,      {PP_FUNCALL, PREC_FN,	0}},
-{"retracemem",  do_retracemem,  0,      201,    -1,     {PP_FUNCALL, PREC_FN,	0}},
+{"retracemem",  do_retracemem,  0,      201,     -1,      {PP_FUNCALL, PREC_FN,	0}},
 {"untracemem",  do_untracemem,  0,      101,	1,      {PP_FUNCALL, PREC_FN,	0}},
 {"object.size",	do_objectsize,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"inspect",	do_inspect,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -798,14 +802,16 @@ void BuiltInFunction::initialize()
 {"file.append",	do_fileappend,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"codeFiles.append",do_fileappend,1,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.symlink",do_filesymlink,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"file.copy",	do_filecopy,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
-{"list.files",	do_listfiles,	0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
+{"file.link",	do_filelink,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"file.copy",	do_filecopy,	0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"list.files",	do_listfiles,	0,	11,	7,	{PP_FUNCALL, PREC_FN,	0}},
+{"list.dirs",	do_listdirs,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.exists", do_fileexists,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.choose", do_filechoose,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.info",	do_fileinfo,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"file.access",	do_fileaccess,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
 {"dir.create",	do_dircreate,	0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
-{"tempfile",	do_tempfile,	0,	11,	2,	{PP_FUNCALL, PREC_FN,	0}},
+{"tempfile",	do_tempfile,	0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"tempdir",	do_tempdir,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"R.home",	do_Rhome,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"date",	do_date,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
@@ -817,8 +823,8 @@ void BuiltInFunction::initialize()
 {"basename",	do_basename,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"dirname",	do_dirname,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"dirchmod",	do_dirchmod,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"Sys.chmod",	do_syschmod,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
-{"Sys.umask",	do_sysumask,	0,	111,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"Sys.chmod",	do_syschmod,	0,	111,	3,	{PP_FUNCALL, PREC_FN,	0}},
+{"Sys.umask",	do_sysumask,	0,	211,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.readlink", do_readlink,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.info",	do_sysinfo,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.sleep",	do_syssleep,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
@@ -827,7 +833,7 @@ void BuiltInFunction::initialize()
 {"Sys.localeconv",do_localeconv,0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
 {"path.expand",	do_pathexpand,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.getpid",	do_sysgetpid,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
-{"normalizePath",do_normalizepath,0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
+{"normalizePath",do_normalizepath,0,	11,	3,	{PP_FUNCALL, PREC_FN,	0}},
 {"Sys.glob",	do_glob,	0,      11,	2,      {PP_FUNCALL, PREC_FN,   0}},
 {"unlink",	do_unlink,	0,	111,	2,	{PP_FUNCALL, PREC_FN,	0}},
 
@@ -858,7 +864,7 @@ void BuiltInFunction::initialize()
 {"rgb",		do_rgb,		0,	11,	6,	{PP_FUNCALL, PREC_FN,	0}},
 {"rgb256",	do_rgb,		1,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"rgb2hsv",	do_RGB2hsv,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
-{"hsv",		do_hsv,		0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
+{"hsv",		do_hsv,		0,	11,	4,	{PP_FUNCALL, PREC_FN,	0}},
 {"hcl",		do_hcl,		0,	11,	5,	{PP_FUNCALL, PREC_FN,	0}},
 {"gray",	do_gray,	0,	11,	1,	{PP_FUNCALL, PREC_FN,	0}},
 {"colors",	do_colors,	0,	11,	0,	{PP_FUNCALL, PREC_FN,	0}},
@@ -946,12 +952,19 @@ void BuiltInFunction::initialize()
 {"mkCode",     do_mkcode,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
 {"bcClose",    do_bcclose,      0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
 {"is.builtin.internal",    do_is_builtin_internal,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
-{"disassemble", do_disassemble,     0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"disassemble", do_disassemble, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 {"bcVersion", do_bcversion,     0,      11,     0,      {PP_FUNCALL, PREC_FN, 0}},
 {"load.from.file", do_loadfile, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 {"save.to.file", do_savefile,   0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
-{"putconst", do_putconst,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
+{"growconst", do_growconst,     0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"putconst", do_putconst,       0,      11,     3,      {PP_FUNCALL, PREC_FN, 0}},
+{"getconst", do_getconst,       0,      11,     2,      {PP_FUNCALL, PREC_FN, 0}},
+{"enableJIT",    do_enablejit,  0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"compilePKGS", do_compilepkgs, 0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 #endif
+
+{"setNumMathThreads", do_setnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
+{"setMaxNumMathThreads", do_setmaxnumthreads,      0,      11,     1,      {PP_FUNCALL, PREC_FN, 0}},
 
 /* Connections */
 {"stdin",	do_stdin,	0,      11,     0,      {PP_FUNCALL, PREC_FN,	0}},
@@ -1050,20 +1063,26 @@ void BuiltInFunction::initialize()
     
 }
 
-
+SEXP attribute_hidden R_Primitive(const char *primname)
+{
+    int index = BuiltInFunction::indexInTable(primname);
+    if (index < 0)
+	return 0;
+    return CXXR_NEW(BuiltInFunction(index));
+}
+    
 SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP name;
+    SEXP name, prim;
     checkArity(op, args);
     name = CAR(args);
     if (!isString(name) || length(name) < 1 ||
 	STRING_ELT(name, 0) == R_NilValue)
 	errorcall(call, _("string argument required"));
-    const char* namestr = CHAR(STRING_ELT(name, 0));
-    int index = BuiltInFunction::indexInTable(namestr);
-    if (index < 0)
-	 errorcall(call, _("no such primitive function"));
-    return CXXR_NEW(BuiltInFunction(index));
+    prim = R_Primitive(CHAR(STRING_ELT(name, 0)));
+    if (prim == R_NilValue)
+	errorcall(call, _("no such primitive function"));
+    return prim;
 }
 
 /* initialize the symbol table */

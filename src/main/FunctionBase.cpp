@@ -41,10 +41,10 @@
 
 #include "CXXR/FunctionBase.h"
 
+#include <cstdarg>
 #include "R_ext/Print.h"
 #include "Rinternals.h"  // For Rf_PrintValue
 
-using namespace std;
 using namespace CXXR;
 
 // Force the creation of non-inline embodiments of functions callable

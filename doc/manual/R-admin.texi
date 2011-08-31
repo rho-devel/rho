@@ -67,7 +67,7 @@ The current version of this document is @value{VERSION}.
 * Obtaining R::                 
 * Installing R under Unix-alikes::  
 * Installing R under Windows::  
-* Installing R under Mac OS X::  
+* Installing R under (Mac) OS X::  
 * Running R::                   
 * Add-on packages::             
 * Internationalization::        
@@ -109,7 +109,7 @@ tar -xf R-@var{x}.@var{y}.@var{z}.tar.gz
 @noindent
 on systems that have a suitable@footnote{e.g.@: @acronym{GNU} @command{tar}
 version 1.15 or later, or that from the @samp{libarchive} (as used on
-Mac OS 10.6) or `Heirloom Toolchest' distributions.} @command{tar}
+OS 10.6) or `Heirloom Toolchest' distributions.} @command{tar}
 installed.  On other systems you need to have the @command{gzip} program
 installed, when you can use
 
@@ -118,21 +118,21 @@ gzip -dc R-@var{x}.@var{y}.@var{z}.tar.gz | tar -xf -
 @end example
 
 The pathname of the directory into which the sources are unpacked should
-not contain spaces, as @command{make} (specifically @acronym{GNU}
-@command{make} 3.81) does not expect spaces.
+not contain spaces, as most @command{make} programs (and specifically
+@acronym{GNU} @command{make}) do not expect spaces.
 
 If you want the build to be usable by a group of users, set @code{umask}
 before unpacking so that the files will be readable by the target group
-(e.g.,@: @code{umask 022} to be usable by all users).  (Keep this
-setting of @code{umask} whilst building and installing.)
+(e.g.,@: @code{umask 022} to be usable by all users).  Keep this
+setting of @code{umask} whilst building and installing.
 
-If you use the GNU version of @command{tar} and do this as a root
+If you use a recent GNU version of @command{tar} and do this as a root
 account (which on Windows includes accounts with administrator
-privileges) you may seem many warnings about changing ownership.  In
+privileges) you may see many warnings about changing ownership.  In
 which case you can use
 
 @example
-tar -xf --no-same-owner R-@var{x}.@var{y}.@var{z}.tar.gz
+tar --no-same-owner -xf R-@var{x}.@var{y}.@var{z}.tar.gz
 @end example
 
 @noindent
@@ -151,12 +151,12 @@ A patched version of the current release, @samp{r-patched}, and the
 current development version, @samp{r-devel}, are available as daily
 tarballs and via access to the R Subversion repository.  (For the two
 weeks prior to the release of a minor (2.x.0) version, @samp{r-patched}
-will refer to beta/release candidates of the upcoming release, the
-patched version of the current release being available only via
+tarballs may refer to beta/release candidates of the upcoming release,
+the patched version of the current release being available via
 Subversion.)
 
 The tarballs are available from
-@uref{ftp://ftp.stat.math.ethz.ch/@/pub/@/Software/R/}.  Download either
+@uref{ftp://ftp.stat.math.ethz.ch/@/pub/@/Software/R/}.  Download
 @file{R-patched.tar.gz} or @file{R-devel.tar.gz} (or the @file{.tar.bz2}
 versions) and unpack as described in the previous section.  They are
 built in exactly the same way as distributions of R releases.
@@ -172,9 +172,10 @@ built in exactly the same way as distributions of R releases.
 Sources are also available via @uref{https://svn.R-project.org/R/}, the
 R Subversion repository.  If you have a Subversion client (see
 @uref{http://subversion.apache.org/}), you can check out and update the
-current @samp{r-devel} from @uref{https://svn.r-project.org/R/trunk/} and the
-current @samp{r-patched} from
-@samp{https://svn.r-project.org/R/branches/R-@var{x}-@var{y}-branch/}
+current @samp{r-devel} from
+@uref{https://svn.r-project.org/@/R/@/trunk/} and the current
+@samp{r-patched} from
+@samp{https://svn.r-project.org/@/R/@/branches/@/R-@var{x}-@var{y}-branch/}
 (where @var{x} and @var{y} are the major and minor number of the current
 released version of R).  E.g., use
 
@@ -183,8 +184,9 @@ svn checkout https://svn.r-project.org/R/trunk/ @var{path}
 @end example
 
 @noindent
-to check out @samp{r-devel} into directory @var{path}.  The alpha, beta
-and RC versions of an upcoming @var{x.y.0} release are available from
+to check out @samp{r-devel} into directory @var{path} (which will be
+created if necessary).  The alpha, beta and RC versions of an upcoming
+@var{x.y.0} release are available from
 @samp{https://svn.r-project.org/R/branches/R-@var{x}-@var{y}-branch/} in
 the four-week period prior to the release.
 
@@ -213,7 +215,7 @@ you have unpacked.  After downloading manually you need to execute
 @command{tools/link-recommended} from the top level of the sources to
 make the requisite links in @file{src/library/Recommended}.  A suitable
 incantation from the top level of the R sources using @command{wget}
-might be
+might be (for the correct value of @file{@var{dir}})
 
 @example
 wget -r -l1 --no-parent -A\*.gz -nd -P src/library/Recommended \
@@ -227,8 +229,8 @@ wget -r -l1 --no-parent -A\*.gz -nd -P src/library/Recommended \
 @chapter Installing R under Unix-alikes
 @cindex Installing under Unix-alikes
 
-@R{} will configure and build under a number of common Unix and
-Unix-alike platforms including @samp{@var{cpu}-*-linux-gnu} for the
+@R{} will configure and build under most common Unix and Unix-alike
+platforms including @samp{@var{cpu}-*-linux-gnu} for the
 @cputype{alpha}, @cputype{arm}, @cputype{hppa}, @cputype{ix86},
 @cputype{ia64}, @cputype{m68k}, @cputype{mips}, @cputype{mipsel},
 @cputype{powerpc}, @cputype{s390}, @cputype{sparc}, and @cputype{x86_64}
@@ -245,11 +247,11 @@ perhaps (it is tested less frequently on these platforms)
 @samp{i386-@/*-@/netbsd} and @samp{i386-@/*-@/openbsd}.
 
 @cindex Linux
-@cindex Mac OS X
+@cindex OS X
 In addition, binary distributions are available for some common Linux
-distributions and for Mac OS X.  See the @acronym{FAQ} for current
-details.  These are installed in platform-specific ways, so for the rest
-of this chapter we consider only building from the sources.
+distributions and for OS X (formerly Mac OS).  See the @acronym{FAQ} for
+current details.  These are installed in platform-specific ways, so for
+the rest of this chapter we consider only building from the sources.
 
 @menu
 * Simple compilation::          
@@ -259,6 +261,7 @@ of this chapter we consider only building from the sources.
 * Uninstallation::              
 * Sub-architectures::           
 * Testing a Unix-alike Installation::  
+* Byte-compiler::               
 @end menu
 
 @node Simple compilation, Help options, Installing R under Unix-alikes, Installing R under Unix-alikes
@@ -353,18 +356,18 @@ recommended when you work with a version of @R{} from Subversion.
 (You may need @acronym{GNU} @command{make} to allow this, and the
 pathname of the build directory should not contain spaces.)
 
-For those obtaining @R{} @emph{via} Subversion, one additional step is
-necessary:
-@cindex Vignettes
-@cindex Subversion
+@c For those obtaining @R{} @emph{via} Subversion, one additional step is
+@c necessary:
+@c @cindex Vignettes
+@c @cindex Subversion
 
-@example
-make vignettes
-@end example
+@c @example
+@c make vignettes
+@c @end example
 
-@noindent
-which makes the @pkg{grid} vignettes (which are contained in the
-tarballs): it make take several minutes.
+@c @noindent
+@c which makes the @pkg{grid} vignettes (which are contained in the
+@c tarballs): it make take several minutes.
 
 Now @code{rehash} if necessary, type @kbd{R}, and read the @R{} manuals
 and the @R{} @acronym{FAQ} (files @file{FAQ} or
@@ -375,11 +378,11 @@ has the version for the latest release of @R{}).
 @node Help options, Making the manuals, Simple compilation, Installing R under Unix-alikes
 @section Help options
 
-As from @R{} 2.10.0, by default @HTML{} help pages are created when
-needed rather than being built at install time.
+By default @HTML{} help pages are created when needed rather than being
+built at install time.
 
 If you need to disable the server and want HTML help, there is the
-option to continue to build @HTML{} pages when packages are installed
+option to build @HTML{} pages when packages are installed
 (including those installed with @R{}).  This is enabled by the
 @command{configure} option @option{--enable-prebuilt-html}.  Whether
 @command{R CMD INSTALL} (and hence @code{install.packages}) pre-builds
@@ -405,10 +408,10 @@ There is a set of manuals that can be built from the sources,
 
 @table @samp
 @item refman
-Printed versions of the help pages for the most-commonly-used base packages.
+Printed versions of the help pages for the base packages.
 @item fullrefman
 Printed versions of all the help pages for base and recommended packages
-(over 3000 pages).
+(over 3200 pages).
 @item R-FAQ
 R @acronym{FAQ}
 @item R-intro
@@ -444,12 +447,12 @@ such as @command{xdvi} and @command{dvips}.  The PDF versions can be
 viewed using any recent PDF viewer: they have hyperlinks that can be
 followed.  The info files are suitable for reading online with Emacs or
 the standalone @acronym{GNU} @command{info} program.  The DVI and PDF
-versions will be created using the papersize selected at configuration
+versions will be created using the paper size selected at configuration
 (default ISO a4): this can be overridden by setting @env{R_PAPERSIZE}
 @enindex R_PAPERSIZE
 on the @command{make} command line, or setting @env{R_PAPERSIZE} in the
 environment and using @command{make -e}.  (If re-making the manuals for
-a different papersize, you should first delete the file
+a different paper size, you should first delete the file
 @file{doc/manual/version.texi}.)
 
 There are some issues with making the reference manual, and in
@@ -460,10 +463,14 @@ Computer Modern fonts.  We have provided four alternatives:
 
 @table @code
 @item times
-(The default for PDF.) Using standard PostScript fonts.  This works
-well both for on-screen viewing and for printing.
-The one disadvantage is that the Usage and Examples sections may come
-out rather wide.
+(The default for PDF.) Using standard PostScript fonts.  This works well
+both for on-screen viewing and for printing.  One disadvantage is that
+the Usage and Examples sections may come out rather wide (and @R{}
+2.14.0 will have workarounds for this).
+
+Note that in most @LaTeX{} installations this will not actually use the
+standard fonts for PDF, but rather embed the URW clones NimbusRom,
+NimbusSans and (for Courier, if used) NimbusMon.
 
 @item lm
 Using the @emph{Latin Modern} fonts.  These are not often installed as
@@ -528,6 +535,8 @@ make install
 @end example
 
 @noindent
+A parallel make can be used (but run @command{make all} first).
+
 This will install to the following directories:
 
 @table @asis
@@ -563,8 +572,8 @@ make prefix=/path/to/here install
 @end example
 
 @noindent
-at least with @acronym{GNU} @command{make} (but not e.g.@: Solaris 8's
-@command{make}).
+at least with @acronym{GNU} @command{make} (and current Solaris and
+FreeBSD @command{make}, but not some older Unix makes).
 
 More precise control is available at configure time via options: see
 @command{configure --help} for details.  (However, most of the `Fine
@@ -596,7 +605,7 @@ If you want the @R{} home to be something other than
 @file{@var{libdir}/R}, use @option{rhome}: for example
 
 @example
-make install rhome=/usr/local/lib64/R-2.11.0
+make install rhome=/usr/local/lib64/R-2.13.0
 @end example
 
 @noindent
@@ -621,6 +630,11 @@ make install-strip
 will install stripped executables, and on platforms where this is
 supported, stripped libraries in directories @file{lib} and
 @file{modules} and in the standard packages.
+
+Note that installing @R{} into a directory which contains spaces is not
+supported, and at least some aspects (such as installing source
+packages) will not work.
+@c The main problem is the Makefile include in etc/Makeconf
 
 @cindex Manuals, installing
 
@@ -692,7 +706,7 @@ share all but the executables and dynamic objects.  Examples include
 builds under Solaris for different chips (in particular, 32- and 64-bit
 builds), 64- and 32- bit builds on @cputype{x86_64} Linux and different
 @acronym{CPU}s (e.g.@: @cputype{ppc}, @cputype{i386} and
-@cputype{x86_64}) under Mac OS >= 10.4.
+@cputype{x86_64}) under (Mac) OS X >= 10.4.
 
 @R{} supports the idea of architecture-specific builds, specified by
 adding @samp{r_arch=@var{name}} to the @command{configure} line.  Here
@@ -756,9 +770,10 @@ within the appropriate @file{bin} directory,
 @file{@var{R_HOME}/bin/i386} or @file{@var{R_HOME}/bin/x64}.  For
 backwards compatibility with @R{} < 2.12.0, there are executables
 @file{@var{R_HOME}/bin/R.exe} or @file{@var{R_HOME}/bin/Rscript.exe}:
-these will run an executable from one of the subdirectories, which being
+these will run an executable from one of the subdirectories, which one
+being taken first from the
 @enindex R_ARCH
-taken first from the @env{R_ARCH} environment variable, then from the
+@env{R_ARCH} environment variable, then from the
 @option{--arch} command-line option@footnote{with possible values
 @samp{i386}, @samp{x64}, @samp{32} and @samp{64}.} and finally from the
 installation default (which is 32-bit for a combined 32/64 bit @R{}
@@ -813,7 +828,7 @@ e.g.@: @file{/usr/lib64/R/bin}.  Normally all installed architectures
 will run on the platform so the architecture of @command{Rscript} does
 not matter.
 
-@node Testing a Unix-alike Installation,  , Sub-architectures, Installing R under Unix-alikes
+@node Testing a Unix-alike Installation, Byte-compiler, Sub-architectures, Installing R under Unix-alikes
 @section Testing an Installation
 
 Full testing is possible only if the test files have been installed with
@@ -885,13 +900,43 @@ try setting
 LANGUAGE=en LC_TIME=C
 @end example
 
-@node Installing R under Windows, Installing R under Mac OS X, Installing R under Unix-alikes, Top
+@node Byte-compiler,  , Testing a Unix-alike Installation, Installing R under Unix-alikes
+@section Byte-compiler
+
+@R{} 2.13.0 introduced a new `byte' compiler which compiles @R{} code to
+a `byte code' representation.  This is by default not used, but is
+available for experimentation.  To compile all the base and recommended
+packages, run
+
+@example
+make bytecode
+@end example
+
+@noindent
+in the top-level build directory.  This will build (or re-build)
+@R{} in the normal way, then compile the package code (which for the
+recommended packages entails a complete re-install of the package from
+the tarball).  To update @R{}, set the environment variables
+
+@example
+R_COMPILE_PKGS=1
+R_COMPILER_SUPPRESS_ALL=1
+@end example
+
+@noindent
+before re-running @command{make}.
+
+It is however recommended that experimentation is done in the R-devel
+version of @R{}, which has an updated version of the byte-compiler and
+more facilities to use it.
+
+@node Installing R under Windows, Installing R under (Mac) OS X, Installing R under Unix-alikes, Top
 @chapter Installing R under Windows
 @cindex Installing under Windows
 
 The @file{bin/windows} directory of a @acronym{CRAN} site contains
 binaries for a base distribution and a large number of add-on packages
-from @acronym{CRAN} to run on Windows 2000 or later on ix86
+from @acronym{CRAN} to run on Windows XP or later on ix86
 @acronym{CPU}s (including AMD64/Intel64@footnote{formerly known as
 EM64T.} chips and Windows x64).
 
@@ -914,13 +959,17 @@ Windows @acronym{FAQ}} for more details on the binary installer.
 
 @menu
 * Building from source::        
+* Byte-compiler on Windows::    
 * Testing a Windows Installation::  
 @end menu
 
-@node Building from source, Testing a Windows Installation, Installing R under Windows, Installing R under Windows
+@node Building from source, Byte-compiler on Windows, Installing R under Windows, Installing R under Windows
 @section Building from source
 
-@R{} can be built as either a 32-bit or 64-bit application on Windows.
+@R{} can be built as either a 32-bit or 64-bit application on Windows:
+to build the 64-bit application you need a 64-bit edition of Windows:
+such an OS can also be used to build 32-bit @R{}.
+
 The standard installer combines 32-bit and 64-bit builds into a single
 executable which can then be installed into the same location and share
 all the files except the @file{.exe} and @file{.dll} files and some
@@ -957,7 +1006,7 @@ will call this directory @file{@var{R_HOME}} below.
 
 For a 64-bit build you will need a 64-bit toolchain and the appropriate
 64-bit version of Tcl/Tk: both of these are contained in
-@file{Rtools212.exe}.
+@file{Rtools213.exe}.
 
 @node Getting the source files, Building the core files, Getting the tools, Building from source
 @subsection Getting the source files
@@ -982,7 +1031,7 @@ administrative privileges you may get a lot of messages which can be
 suppressed by
 
 @example
-tar -xf --no-same-owner R-@value{VERSIONno}.tar.gz
+tar --no-same-owner -xf R-@value{VERSIONno}.tar.gz
 @end example
 
 @noindent
@@ -1022,24 +1071,27 @@ and a 64-bit version.
 You need @code{libpng}, @code{jpeg} and @code{libtiff} sources
 (available, e.g., from @uref{http://www.libpng.org/},
 @uref{http://www.ijg.org} and
-@uref{ftp://ftp.remotesensing.org/@/pub/@/libtiff/}).  You will need
-files @file{libpng-1.2.18.tar.gz}, @file{jpegsrc.v6b.tar.gz},
-@file{tiff-3.8.0.tar.gz} or later.
+@uref{ftp://ftp.remotesensing.org/@/pub/@/libtiff/}).  The earliest
+versions that have been tested are @file{libpng-1.4.5.tar.gz},
+@file{jpegsrc.v8b.tar.gz}, @file{tiff-3.9.4.tar.gz} (including betas of
+@file{tiff-4.0.0}).  It is also possible to use @samp{libjpeg-turbo}
+from @uref{http://sourceforge.net/@/projects/@/libjpeg-turbo/@/files/}.
 
 Working in the directory @file{@var{R_HOME}/src/gnuwin32/bitmap},
 install the @code{libpng} and @code{jpeg} sources in sub-directories.
-The @code{jpeg} sub-directory for version 8a is named @file{jpeg-8b}; if
-you use a different version (e.g.@: @file{jpeg-6b}), copy file
-@file{src/gnuwin32/MkRules.dist} to @file{src/gnuwin32/MkRules.local}
-and edit the definition of @code{JPEGDIR}: the names of the
-@file{libpng} and @file{libtiff} directories can also be set there.
+The @code{jpeg} sub-directory for version 8c is named @file{jpeg-8c}; if
+you use a different version (e.g.@: @file{jpeg-7} or
+@file{libjpeg-turbo}), copy file @file{src/gnuwin32/MkRules.dist} to
+@file{src/gnuwin32/MkRules.local} and edit the definition of
+@code{JPEGDIR}: the names of the @file{libpng} and @file{libtiff}
+directories can also be set there.
 
 Example:
 
 @example
-> tar -zxf libpng-1.4.1.tar.gz
-> mv libpng-1.4.1 libpng
-> tar -zxf jpegsrc.v8a.tar.gz
+> tar -zxf libpng-1.4.5.tar.gz
+> mv libpng-1.4.5 libpng
+> tar -zxf jpegsrc.v8c.tar.gz
 > tar -zxf tiff-3.9.4.tar.gz
 > mv tiff-3.9.4/libtiff .
 > rm -rf tiff-3.9.4
@@ -1205,11 +1257,11 @@ will make all the pieces and the installers and put them in the
 building all the parts in the sequence:
 
 @example
-Rpwd.exe @r{(a utility needed in the build)}
 rbuild @r{(the executables, the @acronym{FAQ} docs etc.)}
 rpackage @r{(the base packages)}
 htmldocs @r{(the HTML documentation)}
 bitmapdll @r{(the bitmap support files)}
+cairodevices @r{(the cairo-based graphics devices)}
 recommended @r{(the recommended packages)}
 vignettes @r{(the vignettes in package @strong{grid}:}
 	  @r{ only needed if building from an svn checkout)}
@@ -1256,7 +1308,8 @@ installer please do check that license requirements are met -- note that
 the installer will state that the contents are distributed under GPL-2
 and this has a requirement for @emph{you} to supply the complete sources
 (including the R sources even if you started with a binary distribution
-of R, and also the sources of libraries which are included).
+of R, and also the sources of packages (including their external
+software) which are included).
 
 
 The defaults for the startup parameters may also be customized.  For example
@@ -1274,7 +1327,7 @@ The standard CRAN distribution of a 32/64-bit installer is made by first
 building 32-bit R (just
 
 @example
-make all recommended bitmapdll
+make 32-bit
 @end example
 
 @noindent
@@ -1308,7 +1361,7 @@ make msi
 @end example
 
 @noindent
-which will results in a file with a name like
+which will result in a file with a name like
 @file{@value{RWVERSION}-win32.msi}.  This can be double-clicked to be
 installed, but those who need it will know what to do with it (usually
 by running @command{msiexec /i} with additional options).  Properties
@@ -1319,10 +1372,10 @@ to the @samp{R} folder on the start menu) and @samp{STARTDIR} (the
 starting directory for @R{} shortcuts, defaulting to something like
 @file{c:\Users\name\Documents\R}).
 
-As from @R{} 2.12.1 the MSI installer can be built both from a 32-bit
-build of @R{} (@file{@value{RWVERSION}-win32.msi}) and from a 64-bit
-build of @R{} (@file{@value{RWVERSION}-win64.msi}, optionally including
-32-bit files by setting the macro @code{HOME32}, when the name is
+The MSI installer can be built both from a 32-bit build of @R{}
+(@file{@value{RWVERSION}-win32.msi}) and from a 64-bit build of @R{}
+(@file{@value{RWVERSION}-win64.msi}, optionally including 32-bit files
+by setting the macro @code{HOME32}, when the name is
 @file{@value{RWVERSION}-win.msi}).  Unlike the main installer, a 64-bit
 MSI installer can only be run on 64-bit Windows.
 
@@ -1340,7 +1393,7 @@ Support for cross-building was withdrawn at @R{} 2.9.0.
 To build a 64-bit version of R you need a 64-bit toolchain: the only one
 discussed here (@pxref{64-bit toolchain}) is based on the work of
 the MinGW-w64 project
-(@url{http://sourceforge.net/@/projects/@/mingw-w64/}, but commercial
+(@uref{http://sourceforge.net/@/projects/@/mingw-w64/}, but commercial
 compilers such as those from Intel and PGI could be used (and have been
 by @R{} redistributors).
 
@@ -1350,7 +1403,32 @@ of Yu Gong at a crucial step in porting R to MinGW-w64 is gratefully
 acknowledged, as well as help from Kai Tietz, the lead developer of the
 MinGW-w64 project.
 
-@node Testing a Windows Installation,  , Building from source, Installing R under Windows
+@node Byte-compiler on Windows, Testing a Windows Installation, Building from source, Installing R under Windows
+@section Byte-compiler
+
+@R{} 2.13.0 introduced a new `byte' compiler which compiles @R{} code to
+a `byte code' representation.  This is by default not used, but is
+available for experimentation.  To compile all the base and recommended
+packages, first build @R{} from the sources in the normal way, then run
+
+@example
+make bytecode
+@end example
+
+@noindent
+in the @file{src/gnuwin32} directory. To update @R{}, set the
+environment variables
+
+@example
+R_COMPILE_PKGS=1
+R_COMPILER_SUPPRESS_ALL=1
+@end example
+
+@noindent
+before re-running @command{make}.
+
+
+@node Testing a Windows Installation,  , Byte-compiler on Windows, Installing R under Windows
 @section Testing an Installation
 
 The Windows installer contains a set of test files used when building
@@ -1380,28 +1458,27 @@ their results in the @file{tests} folder of the @R{} home directory (as
 given by @code{R.home()}).
 
 
-@node Installing R under Mac OS X, Running R, Installing R under Windows, Top
-@chapter Installing R under Mac OS X
-@cindex Mac OS X
+@node Installing R under (Mac) OS X, Running R, Installing R under Windows, Top
+@chapter Installing R under (Mac) OS X
+@cindex OS X
 
 The @file{bin/macosx} directory of a @acronym{CRAN} site contains
-binaries for Mac OS X for a base distribution and a large number of
-add-on packages from @acronym{CRAN} to run on Mac OS X 10.5/6.
+binaries for OS X for a base distribution and a large number of
+add-on packages from @acronym{CRAN} to run on OS X 10.5/6/7.
 
 The simplest way is to use @file{R-@value{VERSIONno}.pkg}: just
 double-click on the icon.  Note that Tcl/Tk and the Fortran compiler
-need to be installed separately if needed (unlike for @R{} 2.9.x and
-earlier).
+need to be installed separately if needed.
 
 See the @uref{http://CRAN.R-project.org/@/bin/@/macosx/@/RMacOSX-FAQ.html, R
 for Mac OS X @acronym{FAQ}} for more details.
 
 @menu
-* Building from source on Mac OS X::  
+* Building from source on (Mac) OS X::  
 @end menu
 
-@node Building from source on Mac OS X,  , Installing R under Mac OS X, Installing R under Mac OS X
-@section Building from source on Mac OS X
+@node Building from source on (Mac) OS X,  , Installing R under (Mac) OS X, Installing R under (Mac) OS X
+@section Building from source on (Mac) OS X
 
 If you want to build this port from the sources, you should read the R for
 Mac OS X FAQ for full details.  You will need to collect and install
@@ -1418,11 +1495,11 @@ make
 
 @noindent
 and then sit back and wait.  The first two options are the default and
-use the BLAS and LAPACK built into Mac OS X.  This has pros and cons: it
+use the BLAS and LAPACK built into OS X.  This has pros and cons: it
 used to be faster (but has not been on some recent multicore hardware)
 but less accurate.
 
-The second line of options are also default on Mac OS X, but needed only
+The second line of options are also default on OS X, but needed only
 if you want to build @R{} for use with @code{R.app} Console, and imply
 @option{--enable-R-shlib} to build @R{} as a shared/dynamic library.
 These options configure @R{} to be built and installed as a framework
@@ -1445,10 +1522,10 @@ specify @option{--with-included-gettext} to avoid linking against a
 @file{/usr/local/lib}.
 
 Note that building the @file{R.app} GUI console is a separate project:
-see the Mac OS X FAQ for details.
+see the OS X FAQ for details.
 
 
-@node Running R, Add-on packages, Installing R under Mac OS X, Top
+@node Running R, Add-on packages, Installing R under (Mac) OS X, Top
 @chapter Running R
 
 How to start @R{} and what command-line options are available is discussed
@@ -1592,7 +1669,7 @@ library paths, separated by colons (semicolons on Windows).
 
 @menu
 * Windows packages::            
-* Mac OS X packages::           
+* OS X packages::               
 * Customizing package compilation::  
 * Multiple sub-architectures::  
 @end menu
@@ -1610,7 +1687,8 @@ more than one library, of course.
 
 If installing packages on a Unix-alike to be used by other users, ensure
 that the system @code{umask} is set to give sufficient permissions (see
-also @code{Sys.umask} in @R{}).
+also @code{Sys.umask} in @R{}).  (To a large extent this is unnecessary
+in recent versions of @R{}, which install packages as if @code{umask = 022}.)
 
 For most users it suffices to call
 @samp{install.packages(@var{pkgname})} or its GUI equivalent if the
@@ -1677,11 +1755,11 @@ amongst those repositories that the @R{} installation is aware of.
 Naive users sometimes forget that as well as installing a package, they
 have to use @code{library} to make its functionality available.
 
-@node Windows packages, Mac OS X packages, Installing packages, Installing packages
+@node Windows packages, OS X packages, Installing packages, Installing packages
 @subsection Windows
 
 What @code{install.packages} does by default is different on Unix-alikes
-(except Mac OS X) and Windows.  On Unix-alikes it consults the list of
+(except OS X) and Windows.  On Unix-alikes it consults the list of
 available @emph{source} packages on @acronym{CRAN} (or other
 repository/ies), downloads the latest version of the package sources,
 and installs them (via @code{R CMD INSTALL}).  On Windows it looks (by
@@ -1697,17 +1775,15 @@ interface to @code{install.packages}, @code{update.packages} and
 @code{library}.
 
 Windows binary packages for @R{} are nowadays distributed as a single
-binary containing either or both architectures (@R{} 2.11.x had separate
-repository areas for 32- and 64-bit binary packages).
-
+binary containing either or both architectures.
 
 A few of the binary packages need other software to be installed on your
 system: see for example
-@url{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.12/@/@@ReadMe}.
+@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.13/@/@@ReadMe}.
 For 64-bit builds, packages using Gtk+ (@pkg{Cairo}, @pkg{RGtk2},
 @pkg{cairoDevice} and those that depend on them) need the @file{bin}
 directory of a bundled distribution from
-@url{http://www.gtk.org/@/download-windows-64bit.html} in the path: note
+@uref{http://www.gtk.org/@/download-windows-64bit.html} in the path: note
 that this conflicts with the directory of DLLs needed for 32-bit Gtk+ so
 you need the correct one first in your path if using both.  One way to
 achieve this is to set the @env{PATH} environment variable in files
@@ -1715,9 +1791,10 @@ achieve this is to set the @env{PATH} environment variable in files
 @file{R_HOME/etc/x64/Renviron.site}.
 
 @command{R CMD INSTALL} works in Windows to install source packages if
-you have set up the tools needed (see @ref{The Windows toolset}).
-@command{R CMD INSTALL --help} will tell you the current options under
-Windows (which differ from those on a Unix-alike).
+you have set up the tools needed (see @ref{The Windows toolset}).  No
+additional tools are needed if the package does not contain compiled
+code, and @code{install.packages(type="source")} will work for such
+packages (and for those with compiled code if the tools are in the path).
 
 We have seen occasional permission problems after unpacking source
 packages on some Vista/Windows 7/Server 2008 systems: these have been
@@ -1747,31 +1824,25 @@ source of @file{tools:::.install_packages} for the list.} option
 32- and 64-bit installs.  (This can only be applied to a tarball, and
 will only succeed if both installs succeed.)
 
+If you have a package without compiled code and no Windows-specific
+help, you can zip up an installation on another OS and install from the
+that zip file on Windows.  However, such a package can be installed from
+the sources on Windows without any additional tools.
 
-Some notes on porting packages to 64-bit Windows can be found at
-@url{http://www.stats.ox.ac.uk/@/~ripley/@/Win64/@/W64porting.html}.
+@node OS X packages, Customizing package compilation, Windows packages, Installing packages
+@subsection OS X
 
-@node Mac OS X packages, Customizing package compilation, Windows packages, Installing packages
-@subsection Mac OS X
-
-On Mac OS X @code{install.packages} works as it does on other Unix-alike
+On OS X @code{install.packages} works as it does on other Unix-alike
 systems, but there are additional types @code{mac.binary*} (the default
 in the @acronym{CRAN} distribution) that can be passed to
 @code{install.packages} in order to download and install binary packages
-from a suitable repository, and is the default for @acronym{CRAN} builds
-of R.  These Macintosh binary package files have the extension
-@samp{tgz}.  The @R{} GUI provides for installation of either binary or
-source packages, from @acronym{CRAN} or local files.
+from a suitable repository, and type @code{mac.binary.leopard} is the
+default for @acronym{CRAN} builds of R.  These OS X binary package
+files have the extension @samp{tgz}.  The R.app GUI provides for
+installation of either binary or source packages, from @acronym{CRAN} or
+local files.
 
-Originally there was just package type @code{mac.binary}, and this was
-used for `universal' binaries, that is those designed to run on multiple
-CPU types (PowerPC and i386 at the time).  Later it became necessary to
-use different binary distributions for different versions of Mac OS X,
-and we now have @code{mac.binary.universal} (for Mac OS 10.4 aka
-`Tiger', last built for @R{} 2.10.1) and @code{mac.binary.leopard} (for
-Mac OS 10.5 and 10.6).
-
-@node Customizing package compilation, Multiple sub-architectures, Mac OS X packages, Installing packages
+@node Customizing package compilation, Multiple sub-architectures, OS X packages, Installing packages
 @subsection Customizing package compilation
 
 The R system and package-specific compilation flags can be overridden or
@@ -1802,18 +1873,17 @@ FFLAGS=-g -O
 FCFLAGS=-g -O
 @end example
 
-As from @R{} 2.12.0 there is also provision for a site-wide
-@file{Makevars.site} file under @file{@var{R_HOME}/etc} (in a
-sub-architecture-specific directory if appropriate).  This is read
-immediately after @file{Makeconf}.
+There is also provision for a site-wide @file{Makevars.site} file under
+@file{@var{R_HOME}/etc} (in a sub-architecture-specific directory if
+appropriate).  This is read immediately after @file{Makeconf}.
 
 @node Multiple sub-architectures,  , Customizing package compilation, Installing packages
 @subsection Multiple sub-architectures
 
 When installing packages from their sources, there are some extra
 considerations on installations which use sub-architectures.  These are
-commonly used on Mac OS X and (from @R{} 2.12.0) on Windows, but can in
-principle be used on other platforms.
+commonly used on (Mac) OS X and Windows, but can in principle be used on
+other platforms.
 
 When a source package is installed by a build of @R{} which supports
 multiple sub-architectures, the normal installation process installs the
@@ -1845,7 +1915,8 @@ R CMD INSTALL --libs-only @var{pkg}
 @noindent
 using the path to @command{R} or @command{R --arch} to select the
 additional sub-architecture.  On Windows there is also @command{R CMD
-INSTALL --merge-multiarch} to build and merge the two architectures.
+INSTALL --merge-multiarch} to build and merge the two architectures,
+starting with a source tarball.
 
 @node Updating packages, Removing packages, Installing packages, Add-on packages
 @section Updating packages
@@ -1914,33 +1985,24 @@ Utilities such as @code{install.packages} can be pointed at any
 own.  The `base' of a repository is a URL such as
 @uref{http://www.omegahat.org/R/}: this must be an URL scheme that
 @code{download.packages} supports (which also includes @samp{ftp://} and
-@samp{file://}).  Under that base URL there should be directory trees
-for one or more of the following types of package distributions:
+@samp{file://}, but not on most systems @samp{https://}).  Under that
+base URL there should be directory trees for one or more of the
+following types of package distributions:
 
 @itemize
 @item 
 @code{"source"}: located at @file{src/contrib} and containing
-@file{.tar.gz} files.  As from @R{} 2.10.0 other forms of compression
-can be used, e.g.@: @file{.tar.bz2} or @file{.tar.xz} files.
+@file{.tar.gz} files.  Other forms of compression can be used, e.g.@:
+@file{.tar.bz2} or @file{.tar.xz} files.
 
 @item 
 @code{"win.binary"}: located at @file{bin/windows/contrib/@var{x.y}} for
 @R{} versions @var{x.y.z} and containing @file{.zip} files for Windows.
 
 @item 
-@code{"win64.binary"}: located at @file{bin/windows64/contrib/@var{x.y}}
-for @R{} versions @var{x.y.z} and containing @file{.zip} files for
-64-bit Windows.  (This was used for @R{} 2.11.x, but is no longer the
-default for 64-bit Windows.)
-
-@item 
-@code{"mac.binary"}: located at
-@file{bin/macosx/universal/contrib/@var{x.y}} for @R{} versions @var{x.y.z}
-and containing @file{.tgz} files.  If the repository contains only
-packages for a specific architecture, the package distribution type
-can be set to @code{"mac.binary.xxx"} where @var{xxx} specifies the
-architecture, replacing @code{universal} by @var{xxx} in the path
-above.
+@code{"mac.binary.leopard"}: located at
+@file{bin/macosx/leopard/contrib/@var{x.y}} for @R{} versions @var{x.y.z}
+and containing @file{.tgz} files.
 @end itemize
 
 Each terminal directory must also contain a @file{PACKAGES} file.  This
@@ -1993,7 +2055,7 @@ where @option{--extra-arch} selects only those checks which depend on
 the installed code and not those which analyse the sources.  (If
 multiple sub-architectures fail only because they need different
 settings, e.g.@: environment variables, @option{--no-multiarch} may need
-to be added to the @code{INSTALL} lines.)  On Mac OS X and other
+to be added to the @code{INSTALL} lines.)  On (Mac) OS X and other
 Unix-alikes the architecture to run is selected by @option{--arch}: this
 can also be used on Windows with @file{@var{R_HOME}/bin/R.exe}, but it
 is more usual to select the path to the @command{Rcmd.exe} of the
@@ -2035,9 +2097,9 @@ specific country and language.
 
 Historically @R{} worked in the ISO Latin-1 8-bit character set and so
 covered English and most Western European languages (if not necessarily
-their currency symbols).  Since @R{} 2.1.0 it has supported (optionally
-before @R{} 2.10.0) multi-byte character sets such as UTF-8 and others
-used for Chinese, Japanese and Korean.
+their currency symbols).  Since @R{} 2.1.0 it has supported multi-byte
+character sets such as UTF-8 and others used for Chinese, Japanese and
+Korean.
 
 Current builds of @R{} support all the character sets that the
 underlying OS can handle.  These are interpreted according to the
@@ -2074,12 +2136,12 @@ locale needs to specify
 @item
 A human language.  These are generally specified by a lower-case
 two-character abbreviation following ISO 639 (see e.g.@:
-@url{http://en.wikipedia.org/@/wiki/@/ISO_639-1}).
+@uref{http://en.wikipedia.org/@/wiki/@/ISO_639-1}).
 
 @item
 A `territory', used mainly to specify the currency. These are generally
 specified by an upper-case two-character abbreviation following ISO 3166
-(see e.g.@: @url{http://@/en.wikipedia.org/@/wiki/@/ISO_3166}).  Sometimes
+(see e.g.@: @uref{http://@/en.wikipedia.org/@/wiki/@/ISO_3166}).  Sometimes
 the combination of language and territory is used to specify the
 encoding, for example to distinguish between traditional and simplified
 Chinese.
@@ -2091,7 +2153,11 @@ represent.
 
 @item
 Optionally, a modifier, for example to indicate that Austria is to be
-considered pre- or post-Euro.
+considered pre- or post-Euro.  The modifier is also used to indicate the
+script (@code{@@latin}, @code{@@cyrillic}, @code{@@iqtelif}) or language
+dialect (e.g.@: @code{saaho}, a dialect of Afar, and @code{bokmal} and
+@code{nynorsk}, dialects of Norwegian regarded by some OSes are separate
+languages, @code{no} and @code{nn}).
 @end itemize
 
 @R{} is principally concerned with the first (for translations) and
@@ -2103,20 +2169,21 @@ Chinese.
 @menu
 * Locales under Linux::         
 * Locales under Windows::       
-* Locales under Mac OS X::      
+* Locales under OS X::          
 @end menu
 
 @node Locales under Linux, Locales under Windows, Locales, Locales
 @subsection Locales under Linux
 
-Modern Linux uses the XPG locale specifications which have the form
-@samp{en_GB}, @samp{en_GB.utf8}, @samp{aa_ER.utf8@@saaho},
+Modern Linux uses the XPG@footnote{`X/Open Portability Guide', which has
+had several versions.} locale specifications which have the form
+@samp{en_GB}, @samp{en_GB.UTF-8}, @samp{aa_ER.UTF-8@@saaho},
 @samp{de_AT.iso885915@@euro}, the components being in the order listed
 above.  (See @command{man locale} and @command{locale -a} for more
-details.)  Similar schemes (but often in different cases) are used by
-most Unix-alikes: some use @samp{.UTF-8} rather than @samp{.utf8}.
+details.)  Similar schemes are used by most Unix-alikes: some (including
+some distributions of Linux) use @samp{.utf8} rather than @samp{.UTF-8}.
 
-@node Locales under Windows, Locales under Mac OS X, Locales under Linux, Locales
+@node Locales under Windows, Locales under OS X, Locales under Linux, Locales
 @subsection Locales under Windows
 
 Windows also uses locales, but specified in a rather less concise way.
@@ -2130,20 +2197,25 @@ Some care is needed with Windows' locale names.  For example,
 @code{chinese} is Traditional Chinese and not Simplified Chinese as used
 in most of the Chinese-speaking world.
 
-@node Locales under Mac OS X,  , Locales under Windows, Locales
-@subsection Locales under Mac OS X
+@node Locales under OS X,  , Locales under Windows, Locales
+@subsection Locales under OS X
 
-Mac OS X supports locales in its own particular way, but the R GUI tries
-to make this easier for users. See
+OS X supports locales in its own particular way, but the R GUI tries to
+make this easier for users. See
 @uref{http://developer.apple.com/@/documentation/@/MacOSX/@/Conceptual/@/BPInternational/}
 for how users can set their locales.  As with Windows, end users will
 generally only see lists of languages/territories.  Users of @R{} in a
 terminal may need to set the locale to something like @samp{en_GB.UTF-8}
-if it defaults to @samp{C}.
+if it defaults to @samp{C} (as it often does when logging it remotely
+and in batch jobs).
 
-Internally Mac OS X uses a form similar to Linux but without specifying
-the encoding (which is @code{UTF-8}).  It is based on ICU locales
-(@uref{http://userguide.icu-project.org/@/locale}) and not POSIX ones.
+Internally OS X uses a form similar to Linux.  It is based on ICU
+locales IDs (@uref{http://userguide.icu-project.org/@/locale}) and not
+XPG ones, but utilities such as @code{Sys.setlocale()} do now normally
+accept XPG forms.  So there are locales like @code{de_AT.ISO8859-15}
+(German in Austria in Latin-9, which covers the Euro): the main
+difference from other Unix-alikes is that where a character set is not
+specified it is assumed to be @code{UTF-8}.
 
 
 @node Localization of messages,  , Locales, Internationalization
@@ -2171,9 +2243,10 @@ It is usually possible to change the language once @R{} is running
 @emph{via} (not Windows) @code{Sys.setlocale("LC_MESSAGES",
 "new_locale")}, or by setting an environment variable such as
 @env{LANGUAGE}, @emph{provided}@footnote{If you try changing from French
-to Russian except in a UTF-8 locale, you will find messages change to
-English.} the language you are changing to can be output in the current
-character set.
+to Russian except in a UTF-8 locale, you will most likely find messages
+change to English.} the language you are changing to can be output in
+the current character set.  But this is OS-specific, and has been known
+to stop working on an OS upgrade.
 
 Messages are divided into @emph{domains}, and translations may be
 available for some or all messages in a domain.  @R{} makes use of the
@@ -2207,12 +2280,13 @@ to a generic German one (@samp{de}) for an Austrian user.  However, if a
 specific translation catalogue exists but does not contain a
 translation, the less specific catalogues are consulted.  For example,
 @R{} has catalogues for @samp{en_GB} that translate the Americanisms
-(e.g., @samp{gray}) in the standard messages into English.  Two other
-examples: there are catalogues for @samp{es}, which is Spanish as
-written in Spain and these will by default also be used in
-Spanish-speaking Latin American countries, and also for @samp{pt_BR},
-which are used for Brazilian locales but not for locales specifying
-Portugal.
+(e.g., @samp{gray}) in the standard messages into English.@footnote{the
+language written in England: some people living in the USA appropriate
+this name for their language.}  Two other examples: there are catalogues
+for @samp{es}, which is Spanish as written in Spain and these will by
+default also be used in Spanish-speaking Latin American countries, and
+also for @samp{pt_BR}, which are used for Brazilian locales but not for
+locales specifying Portugal.
 
 Translations in the right language but the wrong charset be made use of
 @enindex LANGUAGE
@@ -2236,16 +2310,16 @@ prepare and install translation catalogues.
 Many current @acronym{CPU}s have both 32- and 64-bit sets of
 instructions: this has long been true for UltraSparc and more recently
 for MIPS, PPC and @cputype{x86_64} (sometimes known as @cputype{amd64}
-and @cputype{Intel64}: all but a few low-power current @cputype{ix86}
-CPUs support this chipset).  Many OSes running on such @acronym{CPU}s
-offer the choice of building a 32-bit or a 64-bit version of R (and
-details are given below under specific OSes).  For most a 32-bit version
-is the default, but for some (e.g., @cputype{x86_64} Linux and Mac OS
-10.6) 64-bit is.
+and @cputype{Intel64} and earlier as @cputype{EM64T}: practically all
+current @cputype{ix86} CPUs support this set of instructions).  Most
+OSes running on such @acronym{CPU}s offer the choice of building a
+32-bit or a 64-bit version of R (and details are given below under
+specific OSes).  For most a 32-bit version is the default, but for some
+(e.g., @cputype{x86_64} Linux and (Mac) OS X >= 10.6) 64-bit is.
 
 All current versions of @R{} use 32-bit integers and
-@acronym{IEC}@tie{}60559@footnote{also known as @acronym{IEC}@tie{}559
-and @acronym{IEEE}@tie{}754} double-precision reals, and so compute to
+@acronym{IEC}@tie{}60559@footnote{also known as
+@acronym{IEEE}@tie{}754} double-precision reals, and so compute to
 the same precision@footnote{at least when storing quantities: the on-FPU
 precision is allowed to vary} and with the same limits on the sizes of
 numerical quantities.  The principal difference is in the size of the
@@ -2270,11 +2344,11 @@ issue with objects more than 10% of the size of the address space
 third (around 1Gb).
 
 @item
-32-bit OSes by default limit file sizes to 2GB (and this may also apply
-to 32-bit builds on 64-bit OSes).  This can often be worked around: and
-@command{configure} selects suitable defines if this is possible.  (We
-have also largely worked around that limit on 32-bit Windows.)  64-bit
-builds have much larger limits.
+Most 32-bit OSes by default limit file sizes to 2GB (and this may also
+apply to 32-bit builds on 64-bit OSes).  This can often be worked
+around: and @command{configure} selects suitable defines if this is
+possible.  (We have also largely worked around that limit on 32-bit
+Windows.)  64-bit builds have much larger limits.
 
 @item
 Because the pointers are larger, @R{}'s basic structures are larger.
@@ -2288,14 +2362,15 @@ However, `other things' may not be equal.  In the specific case of
 @cputype{x86_64} @emph{vs} @cputype{ix86}, the 64-bit CPU has features
 (such as SSE2 instructions) which are guaranteed to be present but are
 optional on the 32-bit CPU, and also has more general-purpose registers.
-This means that on chips like Intel Core 2 Duo the vanilla 64-bit
-version of @R{} is around 10% faster on both Linux and Mac OS X --- this
-can be reduced by tuning the compilation to the chip.
+This means that on chips like a desktop Intel Core 2 Duo the vanilla
+64-bit version of @R{} is around 10% faster on both Linux and OS X.
+(Laptop CPUs are relatively slower in 64-bit mode.)
 @end itemize
 
 So, for speed you may want to use a 32-bit build, but to handle large
 datasets (and perhaps large files) a 64-bit build.  You can often build
 both and install them in the same place: @xref{Sub-architectures}.
+(This is done in the OS X and Windows binary distributions.)
 
 Even on 64-bit builds of @R{} there are limits on the size of @R{}
 objects (see @code{help("Memory-limits")}, some of which stem from the
@@ -2303,8 +2378,9 @@ use of 32-bit integers (especially in FORTRAN code).  On all builds of
 @R{}, the maximum length (number of elements) of a vector is
 @math{2^{31}-1}, about 2 billion, and on 64-bit builds the size of a
 block of memory allocated is limited to @math{2^{34}-1} bytes (8GB).  It
-is anticipated these will be raised eventually but routine use of 8GB
-objects is (when this was written in 2005) several years off.
+is anticipated these will be raised eventually@footnote{this comment has
+been in the manual since 2005.} but the need for 8GB objects is (when
+this was written in 2011) exceptional.
 
 @node The standalone Rmath library, Essential and useful other programs under a Unix-alike, Choosing between 32- and 64-bit builds, Top
 @chapter The standalone Rmath library
@@ -2324,7 +2400,7 @@ Unix-alike if that is separate from the sources).
 @file{Rmath.h} contains @samp{R_VERSION_STRING}, which is a character
 string containing the current @R{} version, for example @code{"2.11.0"}.
 
-There is full access to @R{}'s handling of @code{NaN}s, @code{Inf} and
+There is full access to @R{}'s handling of @code{NaN}, @code{Inf} and
 @code{-Inf} via special versions of the macros and functions
 
 @example
@@ -2388,7 +2464,7 @@ If @R{} has not already be made in the directory tree,
 @command{configure} must be run as described in the main build
 instructions.
 
-Then
+Then (in @file{src/nmath/standalone})
 
 @example
 make
@@ -2563,22 +2639,21 @@ Unless you do not want to view graphs on-screen you need @samp{X11}
 installed, including its headers and client libraries.  (You also need
 @samp{X11} installed to use the @code{jpeg()}, @code{png()},
 @code{tiff()} and @code{bmp()} devices.)  For recent Fedora
-distributions it means (at least) @samp{libX11}, @samp{libX11-devel},
-@samp{libXt} and @samp{libXt-devel}.  On Debian we recommend the
-meta-package @samp{xorg-dev}.  If you really do not want these you will
-need to explicitly configure @R{} without X11, using
+distributions it means (at least) RPMs @samp{libX11},
+@samp{libX11-devel}, @samp{libXt} and @samp{libXt-devel}.  On Debian we
+recommend the meta-package @samp{xorg-dev}.  If you really do not want
+these you will need to explicitly configure @R{} without X11, using
 @option{--with-x=no}.
 
 The command-line editing (and command completion) depends on the
-@code{readline} library available from any @acronym{GNU} mirror: version
-4.2 or later is needed for all the features to be enabled.  Otherwise
-you will need to configure with @option{--with-readline=no} (or
-equivalent).
+@acronym{GNU} @code{readline} library: version 4.2 or later is needed
+for all the features to be enabled.  Otherwise you will need to
+configure with @option{--with-readline=no} (or equivalent).
 
 A suitably comprehensive @code{iconv} function is essential.  The @R{}
 usage requires @code{iconv} to be able to translate between
-@code{"latin1"} and @code{"UTF-8"}, to recognize @code{""} as the
-current encoding and @code{"ASCII"}, and to translate to and from the
+@code{"latin1"} and @code{"UTF-8"}, to recognize @code{""} (as the
+current encoding) and @code{"ASCII"}, and to translate to and from the
 Unicode wide-character formats @code{"UCS-[24][BL]E"} --- this is true
 for @code{glibc} but not of most commercial Unixes.  However, you can
 make use of @acronym{GNU} @code{libiconv} (possibly as a plug-in
@@ -2594,8 +2669,8 @@ types: this is checked at configuration.
 A @command{tar} program is needed to unpack the sources and packages
 (including the recommended packages).  A version@footnote{Such as
 @acronym{GNU} @command{tar} 1.15 or later, @command{bsdtar} (from
-@uref{http://code.google.com/@/p/libarchive/}, as used by Mac OS 10.6) or
-@command{tar} from the Heirloom Toolchest
+@uref{http://code.google.com/@/p/libarchive/}, as used by FreeBSD and OS
+10.6) or @command{tar} from the Heirloom Toolchest
 (@uref{http://heirloom.sourceforge.net/@/tools.html}).} that can
 automagically detect compressed archives is preferred for use with
 @code{untar()}: the configure script looks for @command{gtar} and
@@ -2624,15 +2699,15 @@ older @TeX{} distributions (TeXLive 2007 and MiKTeX 2.8) used with
 @pkg{texinfo} 4.13.
 
 @cindex Vignettes
-The DVI and PDF documentation and building vignettes needs @command{tex}
-and @command{latex}, or @command{pdftex} and @command{pdflatex}.  As
-from @R{} 2.11.0 we require @LaTeX{} version @code{2005/12/01} or later
-(for UTF-8 support).  Building PDF package manuals (including the @R{}
-reference manual) and vignettes is sensitive to the version of the
-@LaTeX{} package @pkg{hyperref} and we recommend that the @TeX{}
-distribution used is keep up-to-date.  A number of @LaTeX{} packages are
-required (including @pkg{url}) and others such as @pkg{hyperref} are
-desirable.
+The DVI and PDF documentation (including @file{doc/NEWS.pdf} and
+building vignettes needs @command{tex} and @command{latex}, or
+@command{pdftex} and @command{pdflatex}.  We require @LaTeX{} version
+@code{2005/12/01} or later (for UTF-8 support).  Building PDF package
+manuals (including the @R{} reference manual) and vignettes is sensitive
+to the version of the @LaTeX{} package @pkg{hyperref} and we recommend
+that the @TeX{} distribution used is keep up-to-date.  A number of
+@LaTeX{} packages are required (including @pkg{url.sty}, and
+@pkg{listings.sty}) and others such as @pkg{hyperref} are desirable.
 
 
 If you want to build from the R Subversion repository you need both
@@ -2651,11 +2726,11 @@ most likely needs @acronym{GNU} @code{gettext}: you do need this to work
 with new translations, but otherwise the version contained in the R
 sources will be used if no suitable external @code{gettext} is found.
 
-The `modern' version of the @code{X11}, @code{jpeg()}, @code{png()} and
-@code{tiff()} graphics devices uses the @code{cairo} and (optionally)
-@code{Pango} libraries.  Cairo version 1.2.0 or later is required.
-Pango needs to be at least version 1.10, and 1.12 is the earliest
-version we have tested.  (For Fedora users we believe the
+The `modern' version of the @code{X11()}, @code{jpeg()}, @code{png()}
+and @code{tiff()} graphics devices uses the @code{cairo} and
+(optionally) @code{Pango} libraries.  Cairo version 1.2.0 or later is
+required.  Pango needs to be at least version 1.10, and 1.12 is the
+earliest version we have tested.  (For Fedora users we believe the
 @code{pango-devel} RPM and its dependencies suffice.)  @R{} checks for
 @command{pkg-config}, and uses that to check first that the
 @samp{pangocairo} package is installed (and if not, @samp{cairo}) and if
@@ -2663,34 +2738,45 @@ additional flags are needed for the @samp{cairo-xlib} package, then if
 suitable code can be compiled.  These tests will fail if
 @command{pkg-config} is not installed, and are likely to fail if
 @code{cairo} was built statically (unusual).  Most systems with
-@code{Gtk+} 2.8 or later installed will have suitable libraries.  Mac OS
-X comes with none of these libraries, but @code{cairo} support (without
+@code{Gtk+} 2.8 or later installed will have suitable libraries.  OS X
+comes with none of these libraries, but @code{cairo} support (without
 @code{Pango}) has been added to the binary distribution:
 @code{pkg-config} is still needed and can be installed from the sources.
 
 For the best font experience with these devices you need suitable fonts
-installed: Linux users will want the @code{urw-fonts} package.  Another
-useful set of fonts is the `liberation' truetype fonts available at
+installed: Linux users will want the @code{urw-fonts} package.  On
+platforms which have it available, the @code{msttcorefonts}
+package@footnote{also known as @code{ttf-mscorefonts-installer} in the
+Debian/Ubuntu world: see also
+@uref{http://en.wikipedia.org/wiki/Core_fonts_for_the_Web}.}  provides
+TrueType versions of Monotype fonts such as Arial and Times New Roman.
+Another useful set of fonts is the `liberation' truetype fonts available
+at
 @uref{https://www.redhat.com/@/promo/@/fonts/},@footnote{@code{ttf-liberation}
 in Debian/Ubuntu.} which cover the Latin, Greek and Cyrillic alphabets
 plus a fair range of signs.  These share metrics with Arial, Times New
 Roman and Courier New, and contain fonts rather similar to the first two
-(@uref{http://en.wikipedia.org/@/wiki/@/Liberation_fonts}).
+(@uref{http://en.wikipedia.org/@/wiki/@/Liberation_fonts}).  Then there
+is the `Free UCS Outline Fonts' project
+(@uref{http://www.gnu.org/software/freefont/}) which are
+OpenType/TrueType fonts based on the URW fonts but with extended Unicode
+coverage.  See the @R{} help on @code{X11} on selecting such fonts.
 
 The bitmapped graphics devices @code{jpeg()}, @code{png()} and
 @code{tiff()} need the appropriate headers and libraries installed:
 @code{jpeg} (version 6b or later, or @code{libjpeg-turbo}) or
-@code{libpng} (version 1.2.3 or later, including 1.4.x) and @code{zlib}
-(version 1.1.3 or later) or @code{libtiff} (any recent version of 3.x.y
--- 3.8.2 and 3.9.[124] have been tested) respectively.
+@code{libpng} (version 1.2.7 or later, including 1.4.x and 1.5.x) and
+@code{zlib} or @code{libtiff} (any recent version of 3.x.y -- 3.8.2 and
+3.9.[124] have been tested) respectively.
 
 If you have them installed (including the appropriate headers and of
 suitable versions), @code{zlib}, @code{libbz2} and PCRE will be used if
-specified by @option{--with-system-zlib} (version 1.2.3 only: bugs have
-been found with 1.2.4 and 1.2.5), @option{--with-system-bzlib} or
-@option{--with-system-pcre}: otherwise versions in the @R{} sources will
-be compiled in.  As the latter suffice and are tested with @R{} you
-should not need to change this.
+specified by @option{--with-system-zlib} (version 1.2.3 or later, but
+beware that bugs have been found with 1.2.4 and 1.2.5, and these should
+not be used on 32-bit Linux systems with LFS),
+@option{--with-system-bzlib} or @option{--with-system-pcre}: otherwise
+versions in the @R{} sources will be compiled in.  As the latter suffice
+and are tested with @R{} you should not need to change this.
 
 @code{liblzma} from @code{xz-utils} version 4.999 or later (preferably
 5.0.0 or later) will be used if installed: the version in the @R{}
@@ -2703,25 +2789,16 @@ Debian meta-package @samp{xorg-dev}), but some distributions have split
 this into smaller parts, so for example recent versions of Fedora
 require the @samp{libXmu} and @samp{libXmu-devel} RPMs.
 
-Some systems (notably Mac OS X and at least some FreeBSD systems) have
+Some systems (notably OS X and at least some FreeBSD systems) have
 inadequate support for collation in multibyte locales.  It is possible
 to replace the OS's collation support by that from ICU (International
 Components for Unicode, @uref{http://site.icu-project.org/}), and this
 provides much more precise control over collation on all systems.  ICU
 is available as sources and as binary distributions for (at least) most
-Linux distributions, Solaris 9/10, AIX and Windows, usually as
-@code{libicu} or @code{icu4c}.  It will be used by default where
-available (including on Mac OS X >= 10.4): should a broken version of
-ICU be found this can be suppressed by @option{--without-ICU}.
-
-A few code developers may want Perl version 5.8.0 or later, available via
-@uref{http://www.perl.com/CPAN/}.  This is needed for the rarely used
-@command{R CMD Sd2Rd}: if required it should be in your @env{PATH} when
-@command{configure} is run.
-
-@c The Perl scripts left are
-@c src/scripts: Sd2Rd
-@c tools: help2man.pl install-info.pl
+Linux distributions, Solaris, FreeBSD and AIX, usually as @code{libicu}
+or @code{icu4c}.  It will be used by default where available (including
+on OS X >= 10.4): should a very old or broken version of ICU be found
+this can be suppressed by @option{--without-ICU}.
 
 The @code{bitmap} and @code{dev2bitmap} devices and also
 @code{embedFonts()} use ghostscript
@@ -2760,7 +2837,7 @@ the Tcl and Tk libraries and for finding the @file{tcl.h} and
 versions of Tcl/Tk installed, specifying the paths to the correct config
 files may be necessary to avoid confusion between them.
 
-Versions of Tcl/Tk up to 8.5.8 have been tested (including most versions
+Versions of Tcl/Tk up to 8.5.9 have been tested (including most versions
 of 8.4.x, but not recently).
 
 @node Java support,  , Tcl/Tk, Useful libraries and programs
@@ -2864,9 +2941,9 @@ must contain position-independent code), and that is not checked.
 Some enhanced @acronym{BLAS}es are compiler-system-specific
 (@code{sunperf} on Solaris@footnote{Using the Oracle Solaris Studio
 @command{cc} and @command{f95} compilers}, @code{libessl} on IBM,
-@code{vecLib} on Mac OS X).  The correct incantation for these is
-usually found @emph{via} @option{--with-blas} with no value on the
-appropriate platforms.
+@code{vecLib} on OS X).  The correct incantation for these is usually
+found @emph{via} @option{--with-blas} with no value on the appropriate
+platforms.
 
 Some of the external @acronym{BLAS}es are multi-threaded.  One issue is
 that @R{} profiling (which uses the @code{SIGPROF} signal) may cause
@@ -2982,6 +3059,9 @@ Once it is built and installed, it can be used by configuring @R{} with
 See @pxref{Shared BLAS} for an alternative (and in many ways preferable)
 way to use it.
 
+Our understanding is that this project is now frozen and so will not be
+updated for CPUs released since mid-2010.
+
 @node MKL, Shared BLAS, Goto BLAS, BLAS
 @subsubsection Intel MKL
 svn up
@@ -2995,14 +3075,14 @@ is backward compatible with version 9 (see below), and the pure layered
 model.  The layered model gives the user fine-grained control over four
 different library layers: interface, threading, computation, and
 run-time library support. Some examples of linking to MKL using this
-layered model are given below. These examples are for GCC compilers on
-@cputype{x86_64}.  The choice of interface layer is important on
+layered model are given below. (These examples are for GCC compilers on
+@cputype{x86_64}.)  The choice of interface layer is important on
 @cputype{x86_64} since the Intel Fortran compiler returns complex values
-differently from the @acronym{GNU} Fortran compiler. You must therefore
-use the interface layer that matches your compiler (@code{mkl_intel*} or
-@code{mkl_gf*}).
+in different registers from the @acronym{GNU} Fortran compiler. You must
+therefore use the interface layer that matches your compiler
+(@code{mkl_intel*} or @code{mkl_gf*}).
 
-R can be linked to a sequential version of MKL by
+R can be linked to a sequential version of MKL by something like
 
 @example
 MKL_LIB_PATH=/opt/intel/mkl/10.0.3.020/lib/em64t/
@@ -3025,11 +3105,11 @@ MKL="-L$@{MKL_LIB_PATH@} -lmkl_gf_lp64 -lmkl_gnu_thread \
 @end example
 
 @noindent
-The default number of threads will be chosen by the OpenMP* software,
+The default number of threads will be chosen by the OpenMP software,
 but can be controlled by setting @code{OMP_NUM_THREADS} or
 @code{MKL_NUM_THREADS}.
 
-Static MKL may be used with
+Static sequential MKL may be used with
 
 @example
 MKL="   -L$@{MKL_LIB_PATH@}                               \
@@ -3059,10 +3139,10 @@ Andy Liaw for the information.)
 @node Shared BLAS,  , MKL, BLAS
 @subsubsection Shared BLAS
 
-Note that the @acronym{BLAS} library will be used for many of the add-on
-packages as well as for @R{} itself.  This means that it is better to
-use a shared/dynamic @acronym{BLAS} library, as most of a static library
-will be compiled into the @R{} executable and each @acronym{BLAS}-using
+The @acronym{BLAS} library will be used for many of the add-on packages
+as well as for @R{} itself.  This means that it is better to use a
+shared/dynamic @acronym{BLAS} library, as most of a static library will
+be compiled into the @R{} executable and each @acronym{BLAS}-using
 package.
 
 @R{} offers the option of compiling the @acronym{BLAS} into a dynamic
@@ -3121,7 +3201,7 @@ run-time library path or @command{ld.so} cache).
 @cindex LAPACK library
 Provision is made for using an external LAPACK library, principally to
 cope with @acronym{BLAS} libraries which contain a copy of LAPACK (such
-as @code{sunperf} on Solaris, @code{vecLib} on Mac OS X and ACML on
+as @code{sunperf} on Solaris, @code{vecLib} on OS X and ACML on
 @cputype{ix86}/@cputype{x86_64} Linux).  However, the likely performance
 gains are thought to be small (and may be negative), and the default is
 not to search for a suitable LAPACK library, and this is definitely
@@ -3166,7 +3246,8 @@ platforms}.
 
 Please @strong{do} bear in mind that using @option{--with-lapack} is
 `definitely @strong{not} recommended': it is provided @strong{only}
-because it is necessary on some platforms.
+because it is necessary on some platforms.  Reporting problems where it
+is used unnecessarily will simply irritate the @R{} helpers.
 
 @node Caveats,  , LAPACK, Linear algebra
 @subsection Caveats
@@ -3258,8 +3339,7 @@ If you need to re-configure @R{} with different options you may need to run
 @section Internationalization support
 
 Translation of messages is supported via @acronym{GNU} @code{gettext}
-unless disabled by the configure option @option{--disable-nls} or the
-underlying OS has insufficiently standard C functions to support it.
+unless disabled by the configure option @option{--disable-nls}.
 The @code{configure} report will show @code{NLS} as one of the
 `Additional capabilities' if support has been compiled in, and running
 in an English locale (but not the @code{C} locale) will include
@@ -3290,10 +3370,9 @@ command line as
 If you are building in a directory different from the sources, there can
 be copies of @file{config.site} in the source and the build directories,
 and both will be read (in that order).  In addition, if there is a file
-@file{~/.R/config} (or failing that@footnote{@file{~/.Rconf} were
-supported (but undocumented) in versions of @R{} prior to 2.10.0.}
-@code{~/.Rconfig}), it is read between the @file{config.site} files in
-the source and the build directories.
+@file{~/.R/config} (or failing that) @code{~/.Rconfig}), it is read
+between the @file{config.site} files in the source and the build
+directories.
 
 There is also a general @command{autoconf} mechanism for
 @file{config.site} files, which are read before any of those mentioned
@@ -3302,11 +3381,11 @@ in the previous paragraph.  This looks first at a file specified by the
 environment variable @env{CONFIG_SITE}, and if not is set at files such
 as @file{/usr/local/share/config.site} and
 @file{/usr/local/etc/config.site} in the area (exemplified by
-@file{/usr/local} where @R{}) would be installed.
+@file{/usr/local}) where @R{} would be installed.
 
 These variables are @emph{precious}, implying that they do not have to
 be exported to the environment, are kept in the cache even if not
-specified on the command line and checked for consistency between two
+specified on the command line, checked for consistency between two
 configure runs (provided that caching is used), and are kept during
 automatic reconfiguration as if having been passed as command line
 arguments, even if no cache is used.
@@ -3336,7 +3415,7 @@ One common variable to change is @env{R_PAPERSIZE}, which defaults to
 
 This is used both when configuring @R{} to set the default, and when
 running @R{} to override the default.  It is also used to set the
-papersize when making DVI and PDF manuals.
+paper size when making DVI and PDF manuals.
 
 The configure default will most often be @samp{a4} if @env{R_PAPERSIZE}
 is unset.  (If the (Debian Linux) program @command{paperconf} is found
@@ -3374,15 +3453,15 @@ front end shell script which does the re-ordering).
 
 These flags can also be used to build a faster-running version of @R{}.
 On most platforms using @command{gcc}, having @samp{-O3} in
-@code{CFLAGS} produces worthwhile performance gains.  On systems using
-the @acronym{GNU} linker (especially those using @R{} as a shared
-library), it is likely that including @samp{-Wl,-O1} in @code{LDFLAGS}
-is worthwhile, and on recent systems
-@samp{'-Bdirect,--hash-style=both,-Wl,-O1'} is recommended at
-@uref{http://lwn.net/@/Articles/@/192624/}.  Tuning compilation to a
-specific @acronym{CPU} family (e.g.@: @samp{-mtune=native} for
-@command{gcc}) can give worthwhile performance gains, especially on
-older architectures such as @cputype{ix86}.
+@code{CFLAGS} and @code{FFLAGS} produces worthwhile performance gains
+with @command{gcc} and @command{gfortran}.  On systems using the
+@acronym{GNU} linker (especially those using @R{} as a shared library),
+it is likely that including @samp{-Wl,-O1} in @code{LDFLAGS} is
+worthwhile, and @samp{'-Bdirect,--hash-style=both,-Wl,-O1'} is
+recommended at @uref{http://lwn.net/@/Articles/@/192624/}.  Tuning
+compilation to a specific @acronym{CPU} family (e.g.@:
+@samp{-mtune=native} for @command{gcc}) can give worthwhile performance
+gains, especially on older architectures such as @cputype{ix86}.
 
 @node Making manuals,  , Compilation flags, Configuration variables
 @subsection Making manuals
@@ -3409,8 +3488,9 @@ path to a shell, e.g. @file{/usr/local/bin/bash}).
 
 To compile @R{}, you will most likely find it easiest to use
 @acronym{GNU} @command{make}, although the Sun @command{make} works on
-Solaris.  The native @command{make} has been reported to fail on SGI
-Irix 6.5 and Alpha/OSF1 (aka Tru64).
+Solaris, as does the native FreeBSD @command{make}.  The native
+@command{make} has been reported to fail on SGI Irix 6.5 and Alpha/OSF1
+(aka Tru64).
 
 To build in a separate directory you need a @command{make} that uses the
 @code{VPATH} variable, for example @acronym{GNU} @command{make}, or Sun
@@ -3426,9 +3506,6 @@ variable @code{MAKE} at configure time, for example
 @example
 ./configure MAKE=gmake
 @end example
-
-@c Note the comment in @ref{Installation} about using a parallel
-@c @command{make}.
 
 @node Using FORTRAN, Compile and load flags, Using make, Configuration on a Unix-alike
 @section Using FORTRAN
@@ -3492,7 +3569,7 @@ FORTRAN 77 compliance.
 For performance reasons@footnote{e.g., to use an optimized @acronym{BLAS} on
 Sun/Sparc} you may want to choose a FORTRAN 90/95 compiler.
 
-It is possible to use @command{f2c}, the FORTRAN-to-C converter
+It may be possible to use @command{f2c}, the FORTRAN-to-C converter
 (@uref{http://www.netlib.org/@/f2c}), via a script.  (An example script
 is given in @file{scripts/f77_f2c}: this can be customized by setting
 @enindex F2C
@@ -3500,10 +3577,11 @@ is given in @file{scripts/f77_f2c}: this can be customized by setting
 @enindex CC
 the environment variables @env{F2C}, @env{F2CLIBS}, @env{CC} and
 @enindex CPP
-@env{CPP}.)  You may need to ensure that the FORTRAN type @code{integer}
-is translated to the C type @code{int}.  Normally @file{f2c.h} contains
-@samp{typedef long int integer;}, which will work on a 32-bit platform
-but not on a 64-bit platform.  If your compiler is not @command{gcc} you
+@env{CPP}.)  You will need to ensure that the FORTRAN type
+@code{integer} is translated to the C type @code{int}.  Normally
+@file{f2c.h} contains @samp{typedef long int integer;}, which will work
+on a 32-bit platform but not on a 64-bit platform.  If your compiler is
+not @command{gcc} you
 @enindex FPICFLAGS
 will need to set @env{FPICFLAGS} appropriately.
 
@@ -3523,13 +3601,12 @@ in @code{example(eigen)} hanging or segfaulting under external @acronym{BLAS}s
 built under @command{g77}.  This should be detected by a
 @command{configure} test.
 
-The default @code{FFLAGS} chosen (by @command{autoconf}) for a
-@acronym{GNU} FORTRAN compiler is @samp{-g -O2}.  This seems not to be
-documented for @command{gfortran}, and has caused problems (segfaults
-and infinite loops) on @cputype{x86_64} Linux (and the optimizer will be
-shared with other platforms on that @acronym{CPU} type).  A maximum
-optimization of @samp{-O} is recommended there.
-
+The default @code{FFLAGS} and @code{FCFLAGS} chosen (by
+@command{autoconf}) for a @acronym{GNU} FORTRAN compiler is @samp{-g
+-O2}.  This has caused problems (segfaults and infinite loops) on
+@cputype{x86_64} Linux in the past, but seems fine with
+@command{gfortran 4.4.4} and later: for @code{gfortran 4.3.x} set
+@code{FFLAGS} and @code{FCFLAGS} to use at most @samp{-O}.
 
 @node Compile and load flags,  , Using FORTRAN, Configuration on a Unix-alike
 @section Compile and load flags
@@ -3649,13 +3726,13 @@ console and sometimes remotely from an X11 session running on a Windows
 machine, you may have to setup the fonts differently for the two usages.
 
 The `modern' version of the @samp{X11()} device is based on @samp{cairo}
-graphics and uses @samp{fontconfig} to pick and render fonts.  This is
-done on the server, and although there can be selection issues, they are
-more amenable than the issues with @samp{X11()} discussed in the rest of
-this section.
+graphics and (in most implementations) uses @samp{fontconfig} to pick and
+render fonts.  This is done on the server, and although there can be
+selection issues, they are more amenable than the issues with
+@samp{X11()} discussed in the rest of this section.
 
 When X11 was designed, most displays were around 75dpi, whereas today
-they are of the order of 100dpi or even higher.  If you find that X11()
+they are of the order of 100dpi or more.  If you find that X11()
 is reporting@footnote{for example, @code{X11 font at size 14 could not
 be loaded}.} missing font sizes, especially larger ones, it is likely
 that you are not using scalable fonts and have not installed the 100dpi
@@ -3664,7 +3741,7 @@ will likely have something like Fedora's
 @example
 xorg-x11-fonts-75dpi
 xorg-x11-fonts-100dpi
-xorg-x11-fonts-truetype
+xorg-x11-fonts-ISO8859-2-75dpi
 xorg-x11-fonts-Type1
 xorg-x11-fonts-cyrillic
 @end example
@@ -3694,8 +3771,8 @@ If you are using a single-byte encoding, for example ISO 8859-2 in
 Eastern Europe or KOI8-R in Russian, use @command{xlsfonts} to find an
 appropriate family of fonts in your encoding (the last field in the
 listing).  If you find none, it is likely that you need to install
-further font packages, such as @samp{xorg-x11-fonts-cyrillic} shown in
-the listing above.
+further font packages, such as @samp{xorg-x11-fonts-ISO8859-2-75dpi} and
+@samp{xorg-x11-fonts-cyrillic} shown in the listing above.
 
 Multi-byte encodings (most commonly UTF-8) are even more complicated.
 There are few fonts in @samp{iso10646-1}, the Unicode encoding, and they
@@ -3703,23 +3780,23 @@ only contain a subset of the available glyphs (and are often fixed-width
 designed for use in terminals).  In such locales @emph{fontsets} are
 used, made up of fonts encoded in other encodings.  If the locale you
 are using has an entry in the @samp{XLC_LOCALE} directory (typically
-@file{/usr/X11R6/lib/X11/locale}, it is likely that all you need to do
-is to pick a suitable font specification that has fonts in the encodings
+@file{/usr/share/X11/locale}, it is likely that all you need to do is to
+pick a suitable font specification that has fonts in the encodings
 specified there.  If not, you may have to get hold of a suitable locale
 entry for X11.  This may mean that, for example, Japanese text can be
-displayed when running in @samp{ja_JP.utf8} but not when running in
-@samp{en_GB.utf8} on the same machine (although on some systems many
-UTF-8 X11 locales are aliased to @samp{en_US.utf8} which covers several
+displayed when running in @samp{ja_JP.UTF-8} but not when running in
+@samp{en_GB.UTF-8} on the same machine (although on some systems many
+UTF-8 X11 locales are aliased to @samp{en_US.UTF-8} which covers several
 character sets, e.g.@: ISO 8859-1 (Western European), JISX0208 (Kanji),
 KSC5601 (Korean), GB2312 (Chinese Han) and JISX0201 (Kana)).
 
 On some systems scalable fonts are available covering a wide range of
-glyphs.  One source is TrueType fonts, and these can provide high
-coverage.  Another is Type 1 fonts: the URW set of Type 1 fonts provides
-standard typefaces such as Helvetica with a larger coverage of Unicode
-glyphs than the standard X11 bitmaps, including Cyrillic.  These are
-generally not part of the default install, and the X server may need to
-be configured to use them.  They might be under the X11 @file{fonts}
+glyphs.  One source is TrueType/OpenType fonts, and these can provide
+high coverage.  Another is Type 1 fonts: the URW set of Type 1 fonts
+provides standard typefaces such as Helvetica with a larger coverage of
+Unicode glyphs than the standard X11 bitmaps, including Cyrillic.  These
+are generally not part of the default install, and the X server may need
+to be configured to use them.  They might be under the X11 @file{fonts}
 directory or elsewhere, for example,
 
 @example
@@ -3753,12 +3830,23 @@ what is needed.
 It seems that @cputype{ix86} Linux accepts non-PIC code in shared
 libraries, but this is not necessarily so on other platforms, in
 particular on 64-bit @acronym{CPU}s such as @cputype{x86_64}.  So care
-can be needed with @acronym{BLAS} libraries and when building @R{} as a shared
-library to ensure that position-independent code is used in any static
-libraries (such as the Tcl/Tk libraries, @code{libpng}, @code{libjpeg}
-and @code{zlib}) which might be linked against.  Fortunately these are
-normally built as shared libraries with the exception of the ATLAS @acronym{BLAS}
-libraries.
+can be needed with @acronym{BLAS} libraries and when building @R{} as a
+shared library to ensure that position-independent code is used in any
+static libraries (such as the Tcl/Tk libraries, @code{libpng},
+@code{libjpeg} and @code{zlib}) which might be linked against.
+Fortunately these are normally built as shared libraries with the
+exception of the ATLAS @acronym{BLAS} libraries.
+
+The default optimization settings chosen for @code{CFLAGS} etc are
+conservative.  It is likely that using @option{-mtune} will result in
+significant performance improvements on recent CPUs (especially for
+@cputype{ix86}): one possibility is to add @option{-mtune=native} for
+the best possible performance on the machine on which @R{} is being
+installed: if the compilation is for a site-wide installation, it may
+still be desirable to use something like @option{-mtume=core2}.  It is
+also possible to increase the optimization levels to @option{-O3}:
+however for many versions of the compilers this has caused problems in
+at least one @acronym{CRAN} package.
 
 For platforms with both 64- and 32-bit support, it is likely that
 
@@ -3769,7 +3857,7 @@ LDFLAGS="-L/usr/local/lib64 -L/usr/local/lib"
 @noindent
 is appropriate since most (but not all) software installs its 64-bit
 libraries in @file{/usr/local/lib64}.  To build a 32-bit version of @R{}
-on @cputype{x86_64} with Fedora 8 we used
+on @cputype{x86_64} with Fedora 14 we used
 
 @example
 CC="gcc -m32"
@@ -3784,10 +3872,6 @@ LIBnn=lib
 64-bit versions of Linux are built with support for files > 2Gb, and
 32-bit versions will be if possible unless @option{--disable-largefile}
 is specified.
-
-There are known problems with several early versions of
-@command{gcc}@tie{}4, but @command{gcc}@tie{}4.1.0 and later have been
-tested extensively.
 
 To build a 64-bit version of @R{} on @cputype{ppc64} (also known as
 @cputype{powerpc64}) with @command{gcc}@tie{}4.1.1, Ei-ji Nakama used
@@ -3857,7 +3941,7 @@ Others have reported success with versions 10.x and 11.x.
 
 Brian Ripley tested the Sun Studio 12 compilers, since renamed to Oracle
 Solaris Studio,
-(@uref{http://developers.sun.com/sunstudio/index.jsp}) 
+(@uref{http://developers.sun.com/@/sunstudio/@/index.jsp}) 
 On
 @cputype{x86_64} Linux with
 
@@ -3886,10 +3970,7 @@ SAFE_FFLAGS="-O5 -libmil"
 @option{-fast}: see the warnings under Solaris. (The C++ options are
 also explained under Solaris.)
 
-The resulting build of @R{} was not quite as fast as that built with
-@command{gcc}@tie{}4.4.3 at @samp{-O3}.
-
-Others have found on at least some versions of @cputype{i386} Linux that
+Others have found on at least some versions of @cputype{ix86} Linux that
 the configure flag @option{--disable-largefile} was needed (since
 @file{glob.h} on that platform presumed @command{gcc} was being used).
 
@@ -3897,24 +3978,52 @@ the configure flag @option{--disable-largefile} was needed (since
 @section FreeBSD
 @cindex FreeBSD
 
-Rainer Hurling has reported success on @cputype{x86_64} FreeBSD 9.0 (and
-on earlier versions in the past).  Since Darwin (the base OS of Mac OS
-X) is based on FreeBSD we find testing on Darwin tends to pick up most
-potential problems on FreeBSD.
+Rainer Hurling has reported success on @cputype{amd64} FreeBSD 9.0 (and
+on earlier versions in the past), and Brian Ripley tested
+@cputype{amd64} FreeBSD 8.2.  Since Darwin (the base OS of (Mac) OS X) is
+based on FreeBSD we find testing on Darwin tends to pick up most
+potential problems on FreeBSD.  However, FreeBSD lacks adequate
+collation support for multi-byte locales (but a port of ICU is
+available), and does not yet implement C99 complex math functions (for
+which @R{}'s substitutes are used).
 
 The native BSD @command{make} suffices to build @R{} but a number of
 packages require @acronym{GNU} @command{make}, despite the
 recommendations of the ``Writing R Extensions'' manual.  (The BSD
 version is @command{bsdmake} on Darwin.)
 
-@node Mac OS X, Solaris, FreeBSD, Platform notes
-@section Mac OS X
-@cindex Mac OS X
+The simplest way to get the additional software needed to build @R{} is
+to install a pre-compiled version first, e.g.@: by
 
-You can build @R{} as a Unix application on Mac OS X using the Apple
-Developer Tools (`Xcode') and @command{gfortran}.  You will also need to
+@example
+pkg_add -r R
+@end example
+
+@noindent
+(on the system this was tested on, this installed Tcl, Tk, blas, lapack
+and @code{gcc-4.5.3} which includes @command{gfortran45}).  A listing of
+dependencies (not necessarily for current @R{}) can be found at
+@uref{http://www.freebsd.org/@/ports/@/lang.html}: you will however also
+need a @TeX{} system@footnote{TeXLive is recommended.} to build the
+manuals.
+
+Then @R{} itself can be built by something like
+
+@example
+./configure CC=gcc45 F77=gfortran45 CXX=g++45 FC=gfortran45
+@end example
+
+There are also FreeBSD packages for a small eclectic collection of
+@acronym{CRAN} packages.
+
+@node Mac OS X, Solaris, FreeBSD, Platform notes
+@section (Mac) OS X
+@cindex OS X
+
+You can build @R{} as a Unix application on OS X using the Apple
+Developer Tools (`Xcode') and @command{gfortran}.  You may also need to
 install an X sub-system or configure with @option{--without-x}.  The X
-window manager is part of the standard Mac OS X distribution since Mac
+window manager is part of the standard OS X distribution since
 OS X version 10.3 (Panther), but it is typically not pre-installed prior
 to 10.5 (Leopard).  You will also need @command{gfortran} and
 @code{libreadline} (or configure with @option{--without-readline}).
@@ -3922,15 +4031,6 @@ to 10.5 (Leopard).  You will also need @command{gfortran} and
 For more information on how to find these tools please read the
 @uref{http://CRAN.R-project.org/@/bin/@/macosx/@/RMacOSX-FAQ.html, R for Mac
 OS X @acronym{FAQ}}.
-
-@c If you use the X window manager and prefer @code{Terminal.app} to
-@c @code{xterm}, you should be aware that @R{}, like many Unix tools, uses
-@c @enindex DISPLAY
-@c the existence of a @env{DISPLAY} environment variable to determine
-@c whether an X system is running.  This affects the default graphics
-@c device for the command-line version of R and the behaviour of the
-@c @code{png} and @code{jpeg} devices.
-
 
 @cindex BLAS library
 @cindex LAPACK library
@@ -3954,15 +4054,15 @@ can be done (and is provided as an alternative in the binary
 distribution).
 
 @menu
-* 64-bit Leopard builds::       
+* 64-bit builds::               
 * Snow Leopard::                
 @end menu
 
-@node 64-bit Leopard builds, Snow Leopard, Mac OS X, Mac OS X
-@subsection 64-bit Leopard builds
+@node 64-bit builds, Snow Leopard, Mac OS X, Mac OS X
+@subsection 64-bit builds
 
 64-bit builds are supported on 10.5.x (Leopard) and later.  All that is
-needed is to select suitable compiler options, e.g.@: for recent Intel
+needed is to select suitable compiler options, e.g.@: for most Intel
 Macs
 
 @example
@@ -3978,13 +4078,13 @@ in @file{config.site} or on the @command{configure} command line.  (Or
 on Leopard specify @option{gcc-4.2} etc: those versions are the default
 on Snow Leopard.)
 
-@node Snow Leopard,  , 64-bit Leopard builds, Mac OS X
+@node Snow Leopard,  , 64-bit builds, Mac OS X
 @subsection Snow Leopard
 
 On Snow Leopard you will most likely to need to specify @option{-arch
 i386} for a 32-bit build and @option{-arch x86_64} for a 64-bit build:
 the Apple compilers default to 64-bit but the @command{gfortran}
-supplied on @url{http://r.research.att.com} defaults to 32-bit.
+supplied on @uref{http://r.research.att.com} defaults to 32-bit.
 
 Another quirk is that the X11 libraries are not in the default linking
 path, so something like @samp{LIBS=-L/usr/X11/lib} may be required (or
@@ -4024,38 +4124,37 @@ LIBS=-L/usr/X11/lib
 @cputype{x86}) using the (zero cost) Oracle Solaris Studio 12 compilers:
 there has been some success with
 @command{gcc}@tie{}4/@command{gfortran}, mainly on Sparc.  Sun packages
-for @R{} used to be available from @uref{http://www.sunfreeware.com/}
-for both architectures, but recently have often been several versions
-old.  (Recent Sun machines are AMD Opterons or Intel Xeons
-(@cputype{amd64}) rather than @cputype{x86}, but 32-bit @cputype{x86}
-executables are the default.)
+for @R{} are available from @uref{http://www.sunfreeware.com/} for both
+32-bit architectures, but recently have often been several versions
+old.@footnote{For example, 2.11.1 at the time of release of 2.13.0.}
+(Recent Sun machines are AMD Opterons or Intel Xeons (@cputype{amd64})
+rather than @cputype{x86}, but 32-bit @cputype{x86} executables are the
+default.)
 
-There are also reports of success on OpenSolaris (also known as Solaris
-Express Community Edition, and sometimes as Solaris 11) on
-@cputype{x86}.
+There were also reports of success on OpenSolaris (also known as Solaris
+Express Community Edition, and dropped in August 2010) on @cputype{x86}.
 
 The Solaris versions of several of the tools needed to build @R{}
 (e.g.@: @command{make}, @command{ar} and @command{ld}) are in
 @file{/usr/ccs/bin}, so if using those tools ensure this is in your
-path.  Also, a version of the preferred @acronym{GNU} @command{tar} is
-(if installed) in @file{/usr/sfw/bin}, as sometimes are tools like
-@command{makeinfo}.
-
-It is necessary to avoid the tools in @file{/usr/ucb}: in particular
-@file{/usr/ucb/tr} has caused @command{R CMD Rdiff} to malfunction.
-@command{configure} looks for a POSIX-compliant @command{tr}, e.g. in
+path.  A version of the preferred @acronym{GNU} @command{tar} is (if
+installed) in @file{/usr/sfw/bin}, as sometimes are tools like
+@command{makeinfo}.  It may be necessary to avoid the tools in
+@file{/usr/ucb}: in particular @file{/usr/ucb/tr} has caused problems in
+the past.  POSIX-compliant versions of some tools can be found in
 @file{/usr/xpg4/bin} and @file{/usr/xpg6/bin}.
 
 A large selection of Open Source software can be installed from
-@url{http://www.opencsw.org} (and also @url{http://www.blastwave.org})
+@uref{http://www.opencsw.org} (and also @uref{http://www.blastwave.org})
 via @command{pkg-get}, by default installed under @file{/opt/csw}.
 
 You will need @acronym{GNU} @code{libiconv} and @code{readline}: the
 Solaris version of @code{iconv} is not sufficiently powerful.
 
 The native @command{make} suffices to build @R{} but a small number of
-rogue packages require @acronym{GNU} @command{make} (many without
-declaring it as @samp{SystemRequirements} in the @file{DESCRIPTION} file).
+packages require @acronym{GNU} @command{make} (most without good reason
+and without declaring it as @samp{SystemRequirements} in the
+@file{DESCRIPTION} file).
 
 Some people have reported that the Solaris @code{libintl} needs to be
 avoided, for example by using @option{--disable-nls} or
@@ -4065,13 +4164,12 @@ When using the Oracle compilers@footnote{including @command{gcc} for
 Sparc from Oracle.} do @emph{not} specify @option{-fast}, as this
 disables @acronym{IEEE} arithmetic and @command{make check} will fail.
 
-For the Solaris Studio compilers a little juggling of paths was needed to
-ensure @acronym{GNU} @code{libiconv} is used rather than the Solaris
-@code{iconv}: at one time we used
+For the Solaris Studio compilers a little juggling of paths was needed
+to ensure @acronym{GNU} @code{libiconv} (in @file{/usr/local}) was used
+rather than the Solaris @code{iconv}:
 
 @example
 CC="cc -xc99"
-CPPFLAGS=-I/opt/csw/include
 CFLAGS="-O -xlibmieee"
 F77=f95
 FFLAGS=-O4
@@ -4079,32 +4177,55 @@ CXX="CC -library=stlport4"
 CXXFLAGS=-O
 FC=f95
 FCFLAGS=$FFLAGS
-FCLIBS=-lfai -lfsu
-LDFLAGS=-L/opt/csw/lib
+FCLIBS="-lfai -lfsu"
+R_LD_LIBRARY_PATH="/usr/local/lib:/opt/csw/gcc4/lib:/opt/csw/lib"
 @end example
 
 @noindent
-to ensure that the @code{libiconv} version of @file{iconv.h} was found,
-and later used self-compiled versions of @code{libiconv} and
-@code{readline} from @file{/usr/local} (replacing @file{/opt/csw} in the
-flags).  For a 64-bit target add @option{-m64} to the compiler macros
-and use something like @code{LDFLAGS=-L/opt/csw/lib/sparcv9} or
+For a 64-bit target add @option{-m64} to the compiler macros
+and use something like @code{LDFLAGS=-L/usr/local/lib/sparcv9} or
 @code{LDFLAGS=-L/usr/local/lib/amd64} as appropriate.
 
 With Solaris Studio 12.2 on Sparc, @code{FCLIBS} needs to be
 
 @example
-FCLIBS=-lfai -lfai2 -lfsu
+FCLIBS="-lfai -lfai2 -lfsu"
 @end example
+
+@noindent
 (and possibly other Fortran libraries, but this suffices for the
 packages currently on CRAN).
 
+Currently @cputype{amd64} and @cputype{sparcv9} builds work
+out-of-the-box with Sun Studio 12u1 but not Solaris Studio 12.2:
+@file{libRblas.so} and @file{lapack.so} are generated with code that
+causes relocation errors (which is being linked in from the Fortran
+libraries).  This means that building @R{} as a shared library may be
+impossible with Solaris Studio 12.2.  For a standard build the trick
+seems to be manually set @code{FLIBS}.  For example, on @cputype{amd64},
+set in @file{Makeconf}
+
+@example
+FLIBS_IN_SO = -R/opt/solstudio12.2/lib/amd64 \
+  /opt/solstudio12.2/lib/amd64/libfsu.so
+@end example
+
 @noindent
+and set @code{FLIBS} in @file{etc/Makeconf} to the same value.
+
+For 64-bit Sparc, use something like
+@example
+FLIBS = -R/opt/solstudio12.2/prod/lib/sparc/64 -lifai -lsunimath -lfai -lfai2 \
+ -lfsumai -lfprodai -lfminlai -lfmaxlai -lfminvai -lfmaxvai -lfui \
+ -lsunmath -lmtsk /opt/solstudio12.2/prod/lib/sparc/64/libfsu.so.1
+@end example
+
+@noindent
+in @file{Makeconf} and @file{etc/Makefconf}.
 
 By default the Solaris Studio compilers do not by default conform to the C99
 standard (appendix F 8.9) on the return values of functions such as
-@code{log}: use @option{-xlibmieee} to ensure this.  Also, errors have
-been reported on @cputype{amd64} if @option{-xc99} is omitted.
+@code{log}: use @option{-xlibmieee} to ensure this.
 
 You can target specific Sparc architectures for (slightly) higher
 performance: Oracle recommend
@@ -4116,7 +4237,8 @@ performance: Oracle recommend
 
 @noindent
 (in @code{CFLAGS} etc.) as a good compromise for recent Sparc chipsets.
-Using @code{-libmil} allows more system mathematical functions to be inlined.
+Using @code{-libmil} in @code{CFLAGS} allows more system mathematical
+functions to be inlined.
 
 On @cputype{x86} you will get marginally higher performance @emph{via}
 
@@ -4128,7 +4250,7 @@ SAFE_FFLAGS="-libmil -fstore -xtarget=native"
 @end example
 
 @noindent
-but the use of @code{-no-fstore} can be less numerically stable.
+but the use of @code{-nofstore} can be less numerically stable.
 
 The Solaris Studio compilers provide several implementations of the C++
 standard which select both the set of headers and a C++ runtime library.
@@ -4136,11 +4258,12 @@ These are selected by the @option{-library} flag, which as it is needed
 for both compiling and linking is best specified as part of the
 compiler.  The examples above use @samp{stlport4}, currently the most
 modern of the options: the default (but still needed to be specified as
-it is needed for linking) is @samp{Cstd} which dates from 1998: see
+it is needed for linking) is @samp{Cstd}: see
 @uref{http://developers.sun.com/@/solaris/@/articles/@/cmp_stlport_libCstd.html}.
 Note though that most external Solaris C++ libraries will have been
-built with @samp{Cstd} and so an @R{} package using such a package also
-needs to be.  Occasionally the library flag @option{-lCrun} is needed.
+built with @samp{Cstd} and so an @R{} package using such libraries also
+needs to be.  Occasionally the flag @option{-library=stlport4,Crun} is
+needed.
 
 Several CRAN packages using C++ need the more liberal interpretation
 given by adding
@@ -4163,9 +4286,9 @@ be selected as LAPACK @emph{via} (for Solaris Studio 12.2)
 
 @noindent
 This has often given test failures in the past, in several different
-places.  For @R{} 2.12.0, it fails in @file{tests/reg-tests-1b.R} in the
-BLAS test, and on some builds, including for @cputype{amd64}, it fails
-in @code{example(eigen)}.
+places.  For @R{} 2.13.0 it fails in @file{tests/reg-BLAS.R}, and on
+some builds, including for @cputype{amd64}, it fails in
+@code{example(eigen)}.
 
 
 @menu
@@ -4179,12 +4302,10 @@ If using @command{gcc}, ensure that the compiler was compiled for the
 version of Solaris in use.  (This can be ascertained from @command{gcc
 -v}.)  @command{gcc} makes modified versions of some header files, and
 several reports of problems were due to using @command{gcc} compiled on
-one version of Solaris on a later version.  A version of @command{gcc}
-optimized for Sparc (using technology from Sun's compilers) is available
-from
-Sun.@footnote{@uref{http://www.sun.com/download/index.jsp?@/cat=Application%20Development&tab=3&subcat=Development%20Tools}}
+one version of Solaris on a later version.
 
-Compilation for a 32-bit Sparc target with @command{gcc}@tie{}4.3.3 needed
+Compilation for a 32-bit Sparc target with @command{gcc}@tie{}4.3.3 (the
+most recent version on OpenCSW) needed
 
 @example
 CPPFLAGS=-I/opt/csw/include
@@ -4209,13 +4330,18 @@ be in the
 @env{LD_LIBRARY_PATH} during configuration.
 
 Tests with @command{gcc}@footnote{specifically @command{gcc}@tie{}4.3.3
-and @command{gcc}@tie{}3.4.6 from OpenCSW.} on @cputype{x86} and
-@cputype{amd64} have been less successful: @cputype{x86} builds have
-failed on tests using complex arithmetic@footnote{such as those of
-@code{fft}: these can often be resolved by turning off optimization},
-whereas on @cputype{amd64} the builds have failed to complete in several
-different ways, most recently with relocation errors for
+and @command{gcc}@tie{}3.4.6 from OpenCSW.} for @cputype{x86} and
+@cputype{amd64} have been less successful.
+
+@cputype{x86} builds have built successfully but failed or gave
+incorrect results on various tests unless built without any optimization
+in @code{CFLAGS}: the issue seems to be that @command{gcc} and the
+system libraries differ over the use of SSE registers.
+
+For @cputype{amd64} the builds have failed to complete in
+several different ways, most recently with relocation errors for
 @file{libRblas.so}.
+
 
 
 @node AIX, Cygwin, Solaris, Platform notes
@@ -4293,7 +4419,7 @@ Additional open source software (OSS) is packaged for AIX in @file{.rpm}
 files and available from both IBM's ``AIX Toolbox for Linux
 Applications''
 (@uref{http://www-03.ibm.com/@/systems/@/power/@/software/@/aix/@/linux/}) and
-@uref{http://www.@/oss4aix.org/download/}.  The latter website typically
+@uref{http://www.oss4aix.org/@/download/}.  The latter website typically
 offers more recent versions of the available OSS.  All tools needed and
 libraries downloaded from these repositories (e.g., GCC, Make,
 @code{libreadline}, etc.) are typically installed to
@@ -4317,7 +4443,7 @@ The recent WU testing was done using compilers from both the
 @acronym{GNU} Compiler Collection (version 4.2.4) which is available
 from one of the above OSS repositories, and the IBM C/C++ (XL C/C++
 10.01) as well as FORTRAN (XL Fortran 12.01) compilers
-(@url{http://www14.software.ibm.com/@/webapp/@/download/@/byproduct.jsp#X}).
+(@uref{http://www14.software.ibm.com/@/webapp/@/download/@/byproduct.jsp#X}).
 
 To compile for a 64-bit @cputype{powerpc} (Power6 @acronym{CPU}) target
 one can use
@@ -4370,11 +4496,17 @@ environment can be found in the ``R on AIX'' project on R-Forge
 
 The Cygwin emulation layer on Windows can be treated as a Unix-alike OS.
 This is unsupported, but experiments have been conducted and a few
-workarounds added for @R{} 2.6.0.
+workarounds added.  @R{} 2.13.0 requires C99 complex type support, which
+is available as from Cygwin 1.7.8 (March 2011).  However, the (new)
+implementation of @code{cacos} gives incorrect results, so
+@code{HAVE_CACOS} is undefined in @file{src/main/complex.c}.
 
-Only building as a shared library works,@footnote{Windows DLLs need to
-have all links resolved at build time and so cannot resolve against
-@file{R.bin}.} so use e.g@:
+Currently Cygwin 1.7.9-1 is unable to build @R{}: the support for
+dynamic loading of DLLs is broken.
+
+Only building as a shared library can possibly work,@footnote{Windows
+DLLs need to have all links resolved at build time and so cannot resolve
+against @file{R.bin}.} so use e.g@:
 
 @example
 ./configure --disable-nls --enable-R-shlib
@@ -4400,6 +4532,9 @@ TK_LIB_SPEC='-ltk84'
 The overhead of using shell scripts makes this noticeably slower than a
 native build of @R{} on Windows.
 
+Even with Cygwin 1.7.8, not all the tests passed: there were incorrect
+results from wide-character regular expressions code and from sourcing
+CR-delimited files.
 
 @node New platforms,  , Cygwin, Platform notes
 @section New platforms
@@ -4424,7 +4559,7 @@ directory.
 Beware of using high levels of optimization, at least initially.  On
 many compilers these reduce the degree of compliance to the
 @acronym{IEEE} model.  For example, using @option{-fast} on the Solaris
-Studio compilers causes @R{}'s @code{NaN} to be set incorrectly.
+Studio compilers has caused @R{}'s @code{NaN} to be set incorrectly.
 
 @strong{Shared Objects}: There seems to be very little agreement
 across platforms on what needs to be done to build shared objects.
@@ -4484,7 +4619,7 @@ the @R{} mailing lists unless you have followed all the prescriptions.}
 
 We have collected most of the necessary tools (unfortunately not all,
 due to license or size limitations) into an executable installer
-named@footnote{for @R{} 2.12.x.}  @file{Rtools212.exe}, available from
+named@footnote{for @R{} 2.13.x.}  @file{Rtools213.exe}, available from
 @uref{http://www.murdoch-sutherland.com/@/Rtools/}. You should download
 and run it, choosing the default ``Package authoring installation'' to
 build add-on packages, or the ``full installation'' if you intend to
@@ -4509,6 +4644,8 @@ installer will also need the following:
 @LaTeX{}
 @item
 The Inno Setup installer
+@item
+(optional) @code{qpdf}
 @end itemize
 
 @enindex PATH
@@ -4566,6 +4703,9 @@ of @samp{MiKTeX} almost suffices (the @pkg{grid} vignettes need
 allowed to (although that is not actually used).  The @file{Rtools*.exe}
 installer does @emph{not} include any version of @LaTeX{}.
 
+It is also possible to use the TeXLive distribution from
+@uref{http://www.tug.org/texlive/}.
+
 @enindex R_RD4DVI
 @enindex R_RD4PDF
 Please read @ref{Making the manuals} about how to make @file{refman.pdf}
@@ -4590,19 +4730,19 @@ location where Inno Setup was installed.
 
 This item is installed by the @file{Rtools*.exe} installer.
 
-@c INSTALL may use sh make zip
+@c INSTALL may use sh make zip (and tar if R_INSTALL_TAR is used)
 @c build uses make tar gzip
 @c Rdiff.sh USED to use diff echo grep sed tr
 @c Rd2dvi USED to use basename echo mkdir rm sed
 
-@c src/library/Recommended/Makefile.win uses basename and tar
-
+@c basename is used in src/library/Recommended/Makefile.win
 @c comm, sort, uniq are used in producing .def files
 @c cmp is used in src/include/Makefile.win, tools/{copy,move}-if-change
 @c cp is used as $(CP) in numerous Makefiles
 @c cut is used to make RVER
 @c date is used when building base and tools
 @c diff is used by tools::Rdiff and tests/Makefile.common
+@c du is used by R CMD check
 @c expr is used in tools/GETVERSION
 @c find is used in installer/Makefile
 @c expr is used in tools/GETCONFIG
@@ -4613,22 +4753,21 @@ This item is installed by the @file{Rtools*.exe} installer.
 @c sed is used in tools/GETVERSION, many Makefiles
 @c touch is used in Makefiles
 @c unzip is used in making R, e.g. for zoneinfo.zip
-@c wc is used in doc/manual/Makefile.win
-@c AFAICS [g]awk, egrep, head, rmdir, tail, tr are no longer used
+@c AFAICS [g]awk, egrep, grep, head, rmdir, tail, tr, wc are no longer used
 If you choose to install these yourself, you will need suitable versions
 of at least @code{basename}, @code{cat}, @code{cmp}, @code{comm},
-@code{cp}, @code{cut}, @code{date}, @code{diff}, @code{echo},
-@code{expr} @code{grep}, @code{gzip}, @code{ls}, @code{make},
-@code{makeinfo}, @code{mkdir}, @code{mv}, @code{rm}, @code{rsync},
-@code{sed}, @code{sh}, @code{sort}, @code{tar}, @code{texindex},
-@code{touch} and @code{uniq}; we use those from the Cygwin distribution
+@code{cp}, @code{cut}, @code{date}, @code{diff}, @code{du}, @code{echo},
+@code{expr}, @code{gzip}, @code{ls}, @code{make}, @code{makeinfo},
+@code{mkdir}, @code{mv}, @code{rm}, @code{rsync}, @code{sed}, @code{sh},
+@code{sort}, @code{tar}, @code{texindex}, @code{touch} and @code{uniq};
+we use those from the Cygwin distribution
 (@uref{http://www.cygwin.com/}) or compiled from the sources.  You will
 also need @code{zip} and @code{unzip} from the Info-ZIP project
 (@uref{http://www.info-zip.org/}).  All of these tools are in
 @file{Rtools*.exe}.
 
 @c So needed for end users:
-@c basename comm cp echo gzip make mkdir rm sh sort tar uniq zip
+@c basename comm cp diff echo gzip make mkdir rm sh sort tar uniq zip
 
 @strong{Beware}: `Native' ports of make are @strong{not} suitable
 (including that called `MinGW make' at the MinGW SourceForge site).
@@ -4663,15 +4802,15 @@ install 32/64-bit packages.
 @node 32-bit toolchain, 64-bit toolchain, The MinGW toolchain, The MinGW toolchain
 @subsection 32-bit toolchain
 
-Note that the recommended toolchain for @R{} 2.12.0 differs from that for
-earlier versions, and there are binary incompatibilities, especially
+Note that the recommended toolchain for @R{} >= 2.12.0 differs from that
+for earlier versions, and there are binary incompatibilities, especially
 where C++ code is involved.  So we recommend that all packages are built
 with the current toolchain.
 
 The 32-bit build for this version of @R{} is set up to use @command{gcc}
-@code{4.5.0}.  The toolchain included in @file{Rtools212.exe}, and was
+@code{4.5.0}.  The toolchain included in @file{Rtools213.exe}, and was
 collected from the files at
-@url{http://sourceforge.net/@/projects/@/mingw/@/files/}, specifically
+@uref{http://sourceforge.net/@/projects/@/mingw/@/files/}, specifically
 
 @example
 binutils-2.20.51-1-mingw32-bin.tar.lzma
@@ -4694,8 +4833,7 @@ subdirectory @file{dlls} so that @file{libgfortran} and @file{libstdc++}
 are linked statically.
 
 It is also possible to use the 32-bit toolchain from the
-@code{mingw-w64} project (which is currently using pre-releases of
-@command{gcc 4.5.2}) and options to use that are documented in file
+@code{mingw-w64} project and options to use that are documented in file
 @file{MkRules.dist}.
 
 @node 64-bit toolchain,  , 32-bit toolchain, The MinGW toolchain
@@ -4713,23 +4851,16 @@ under 32-bit Windows but produce code to run under 64-bit
 Windows.@footnote{As the @R{} build process itself runs @R{}, it has to
 be done under 64-bit Windows.  So does installation of source packages
 unless @option{--no-test-load} is used.}  This is based on files from
-@url{http://sourceforge.net/@/projects/@/mingw-w64/@/files/@/Toolchains%20targetting%20Win64/@/Automated%20Builds/}
+@uref{http://sourceforge.net/@/projects/@/mingw-w64/@/files/@/Toolchains%20targetting%20Win64/@/Automated%20Builds/}
 and has a name like @file{mingw-w64-1.0-bin_i686-mingw_20100917.zip},
 including a pre-release of @command{gcc 4.5.2}.  However, this has been
 patched to use static Fortran and C++ runtime libraries: a suitable
-toolchain is included in @file{Rtools212.exe}.
+toolchain is included in @file{Rtools213.exe}.
 
 @strong{NB:} 64-bit toolchains after late April 2010 at that site
-generate objects with symbols without a leading underscore.  Other
-toolchains (including that used for @R{} 2.11.x) may use leading
-underscores, in which case @code{SYMPAT64} in
-@file{src/gnuwin32/MkRules.dist} needs to be set (see the comments in
-that file).  If you are using a binary distribution of @R{}, check that
-the settings of @code{BINPREF} and @code{SYMPAT} in file
-@file{etc/x64/Makeconf} are appropriate to your toolchain (following the
-comments in the file).  The use or not of leading underscores affects
-linking to external static and import libraries but not linking directly
-to DLLs.
+generate objects with symbols without a leading underscore. Only such
+toolchains are supported (and not that used to build @R{} 2.11.1 on
+64-bit Windows).
 
 Other toolchains are available: for example under
 @uref{http://sourceforge.net/@/projects/@/mingw-w64/@/files/@/Toolchains%20targetting%20Win64/@/Personal%20Builds/}
@@ -4739,6 +4870,12 @@ when building external software.
 
 @node Useful additional programs,  , The MinGW toolchain, The Windows toolset
 @section Useful additional programs
+
+The process of making the installer will make use of @code{qpdf} to
+compact some of the package vignettes, if it is available.  MinGW
+binaries of @code{qpdf} are available from
+@uref{http://sourceforge.net/@/projects/@/qpdf/@/files/}.  Set the path
+to the @code{qpdf} installation in file @file{MkRules.local}.
 
 Developers of packages will find some of the `goodies' at
 @uref{http://www.stats.ox.ac.uk/@/pub/@/Rtools/@/goodies} useful.  

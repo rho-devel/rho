@@ -44,23 +44,22 @@ SEXP attribute_hidden
 do_mapply(SEXP f, SEXP varyingArgs, SEXP constantArgs, SEXP rho)
 {
 
-    int i, j, m,nc, *lengths, *counters, named, longest=0;
+    int i, j, m, *lengths, *counters, named, longest=0;
     SEXP vnames, fcall = R_NilValue,  mindex, nindex, tmp1, tmp2, ans;
 
     m = length(varyingArgs);
-    nc = length(constantArgs);
     vnames = PROTECT(getAttrib(varyingArgs, R_NamesSymbol));
 
     named = vnames!=R_NilValue;
 
-    lengths = static_cast<int *>(CXXR_alloc(m, sizeof(int)));
+    lengths = static_cast<int *>(  CXXR_alloc(m, sizeof(int)));
     for(i = 0; i < m; i++){
 	lengths[i] = length(VECTOR_ELT(varyingArgs,i));
 	if (lengths[i] > longest) longest=lengths[i];
     }
 
 
-    counters = static_cast<int *>(CXXR_alloc(m, sizeof(int)));
+    counters = static_cast<int *>( CXXR_alloc(m, sizeof(int)));
     for(i = 0; i < m; counters[i++]=0);
 
     mindex=PROTECT(allocVector(VECSXP, m));

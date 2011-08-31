@@ -5,21 +5,25 @@ The bulk of this code is copyright by members of or all of the R
 Development Core Team.
 
 See the file COPYING for the exact conditions under which you may
-redistribute it.  R as a whole is distributed under GPL version 2:
-most source files contain a copyright statement allow use of that file
-under GPL version 2 or later: the main exceptions are packages 'rpart'
-and 'survival' (GPL-2 only) and packages 'MASS', 'class', 'nnet' and
+redistribute it.  R as a whole is distributed under GPL version 2 or
+3: most source files contain a copyright statement allowing use of
+that file under GPL version 2 or later: the main exceptions are the
+included versions of packages 'MASS', 'class', 'nnet', 'rpart' and
 'spatial' (GPL-2 or GPL-3).
 
 The status of files used only in the Windows port is in file
 src/gnuwin32/COPYRIGHTS.win, which is appended to this file in binary
 Windows distributions.
 
+Note that all the code *is* copyright and may only be reproduced if
+the copyright notice (that in the file or this notice) is preserved.
+
 	---------------------------------------------------
 
-Some of the public header files are distributed under the more
-permissive terms of the file COPYING.LIB.  This applies only to the
-files
+Some (but not all) of the public header files are distributed under
+the more permissive terms of version 2.1 or later of the LGPL: see
+files R_HOME/share/licenses/LGPL-2.1 and R_HOME/share/licenses/LGPL-3.
+This applies only to the header files
 
 src/include/R.h
 src/include/Rdefines.h
@@ -28,6 +32,9 @@ src/include/Rinternals.h
 src/include/Rmath.h
 src/include/S.h
 src/include/R_ext/*.h
+
+Note that it does not apply to the header files such as Rembedded.h
+and Rinterface.h used for third-party front ends.
 
 From the announcement of the change (2001-Feb-05)
 
@@ -51,7 +58,6 @@ From the announcement of the change (2001-Feb-05)
 As from R 2.3.0 import libraries are no longer used under Windows, and
 as from R 2.4.0 fewer export files are used under AIX.
 
-
 Some contributed files are also covered by the Library General Public License.
 These include (see also below)
 
@@ -64,7 +70,8 @@ src/library/stats/src/PPsum.c
 
 
 Some of the code contains different copyright statements.  It is used
-here in accordance with the copyright conditions in that code.
+here in accordance with the copyright conditions in that code.  A
+not-necessarily-complete list of such files is:
 
 src/library/grDevices/inst/afm/*___.afm
 
@@ -101,7 +108,11 @@ in part
 	Copyright (C) 1997 R. Gentleman & R. Ihaka
 	Copyright (C) 1997, 1998 M. Maechler
 
-share/bibtex/bst/jss.bst
+shares/licenses/*
+
+	See the individual files.
+
+share/texmf/bibtex/bst/jss.bst
 
 	Copyright 1994-2005 Patrick W Daly
 
@@ -116,7 +127,7 @@ share/texmf/tex/latex/upquote.sty
 
 src/library/graphics/R/mosaicplot.R
 
-	Copyright (C) 1998 John W. Emerson
+	Original code copyright (C) 1998 John W. Emerson
 
 src/library/graphics/R/pairs.R
 
@@ -126,7 +137,19 @@ src/library/graphics/R/polygon.R
 
 	Copyright (C) 2001 by Kevin Buhr <buhr@stat.wisc.edu>
 
+src/library/splines/R/splineClasses.R
+
+	Copyright (C) 1998 Douglas M. Bates and William N. Venables.
+
+src/library/datasets/man/austres.Rd
+src/library/datasets/man/beavers.Rd
+src/library/datasets/man/lh.Rd
+src/library/datasets/man/rock.Rd
+src/library/datasets/man/UKLungDeaths.Rd
+src/library/datasets/man/USAccDeaths.Rd
 src/library/stats/R/bandwidths.R
+src/library/stats/R/cpgram.R
+src/library/stats/R/spectrum.R
 src/library/stats/src//bandwidths.c
 src/appl/maxcol.c
 
@@ -167,9 +190,15 @@ src/library/stats/R/zzModels.R
 
 	Copyright 1997,1999 Jose C. Pinheiro
 
+src/library/stats/R/runmed.R
 src/library/stats/src/Trunmed.c
 
 	In part Copyright (C) 1995 Berwin A. Turlach
+
+src/library/stats/src/loessc.c
+src/library/stats/src/loessf.f
+
+	In part Copyright (c) 1989, 1992 by AT&T
 
 src/library/tcltk/exec/{hierarchy,util*,widget}.tcl
 
@@ -267,8 +296,13 @@ src/extra/xdr/*
 
 src/extra/zlib/README, *.c, *.h
 
-  Taken from zlib-1.2.3 (C) 1995-2010 Jean-loup Gailly and Mark Adler
+  Taken from zlib-1.2.3 (C) 1995-2005 Jean-loup Gailly and Mark Adler
   See src/extra/zlib/README for the licence.
+
+src/main/connections.c
+
+  Contains code derived from the zlib 1.2.3 distribution
+  (C) 1995-2005 Jean-loup Gailly and Mark Adler
 
 
 src/main/dounzip.c, unzip.h

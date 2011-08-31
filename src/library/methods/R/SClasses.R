@@ -362,14 +362,9 @@ removeClass <-  function(Class, where = topenv(parent.frame())) {
 isClass <-
   ## Is this a formally defined class?
   function(Class, formal=TRUE, where = topenv(parent.frame()))
-{
     ## argument formal is for Splus compatibility & is ignored.  (All classes that
     ## are defined must have a class definition object.)
-    if(missing(where))
-        !is.null(getClassDef(Class))
-    else
-        !is.null(getClassDef(Class, where))
-}
+    !is.null(getClassDef(Class, where))
 
 ### TODO   s/Class/._class/  -- in order to allow 'Class' as regular slot name
 new <-
@@ -691,24 +686,28 @@ findClass <- function(Class, where = topenv(parent.frame()), unique = "") {
     }
     else
       pkgs <- pkg
-    if(length(where) != 1L) {
-            if(length(where) == 0L) {
-                if(is.null(classDef))
-                  classDef <- getClassDef(Class) # but won't likely succeed over previous
-                if(nzchar(unique)) {
-                    if(is(classDef, "classRepresentation"))
-                      stop(gettextf('Class "%s" is defined, with package "%s", but no corresponding metadata object was found (not exported?)',
-                                  Class, classDef@package), domain = NA)
-                    else
-                      stop(gettextf("no definition of \"%s\" to use for %s",
+    if(length(where) == 0L) {
+        if(is.null(classDef))
+            classDef <- getClassDef(Class) # but won't likely succeed over previous
+        if(nzchar(unique)) {
+            if(is(classDef, "classRepresentation"))
+                stop(gettextf('Class "%s" is defined, with package "%s", but no corresponding metadata object was found (not exported?)',
+                              Class, classDef@package), domain = NA)
+            else
+                stop(gettextf("no definition of \"%s\" to use for %s",
                               Class, unique), domain = NA)
-                }
-            }
-            else if(nzchar(unique)) {
+        }
+    }
+    else if(length(where) > 1L) {
+        pkgs <- sapply(where, getPackageName)
+        where <- where[!duplicated(pkgs)]
+        if(length(where) > 1L)
+            if(nzchar(unique)) {
+                pkgs <- base::unique(pkgs)
                 where <- where[1L]
                 ## problem: 'unique'x is text passed in, so do not translate
-                warning(gettextf("multiple definitions of class \"%s\" visible; using the definition\n   in package \"%s\" for %s",
-                                 Class, getPackageName(where[[1L]]), unique),
+                warning(gettextf("multiple definitions of class \"%s\" visible (%s); using the definition\n   in package \"%s\" for %s",
+                                 Class, paste(pkgs, collapse = ", "), pkgs[[1]], unique),
                         domain = NA)
             }
             ## else returns a list of >1 places, for the caller to sort out (e.g., .findOrCopyClass)

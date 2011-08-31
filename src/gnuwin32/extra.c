@@ -134,16 +134,19 @@ SEXP do_winver(SEXP call, SEXP op, SEXP args, SEXP env)
     return mkString(ver);
 }
 
-/* also used in rui.c */
+/* used in rui.c */
 void internal_shellexec(const char * file)
 {
     const char *home;
+    char home2[10000], *p;
     uintptr_t ret;
 
     home = getenv("R_HOME");
     if (home == NULL)
 	error(_("R_HOME not set"));
-    ret = (uintptr_t) ShellExecute(NULL, "open", file, NULL, home, SW_SHOW);
+    strncpy(home2, home, 10000);
+    for(p = home2; *p; p++) if(*p == '/') *p = '\\';
+    ret = (uintptr_t) ShellExecute(NULL, "open", file, NULL, home2, SW_SHOW);
     if(ret <= 32) { /* an error condition */
 	if(ret == ERROR_FILE_NOT_FOUND  || ret == ERROR_PATH_NOT_FOUND
 	   || ret == SE_ERR_FNF || ret == SE_ERR_PNF)
@@ -157,14 +160,23 @@ void internal_shellexec(const char * file)
     }
 }
 
-static void internal_shellexecW(const wchar_t * file)
+/* used by shell.exec() with rhome=FALSE.  2.13.0 and earlier were
+   like rhome=TRUE, but without fixing the path */
+static void internal_shellexecW(const wchar_t * file, Rboolean rhome)
 {
     const wchar_t *home;
+    wchar_t home2[10000], *p;
     uintptr_t ret;
-
-    home = _wgetenv(L"R_HOME");
-    if (home == NULL)
-	error(_("R_HOME not set"));
+    
+    if (rhome) {
+    	home = _wgetenv(L"R_HOME");
+    	if (home == NULL)
+	    error(_("R_HOME not set"));
+    	wcsncpy(home2, home, 10000);
+    	for(p = home2; *p; p++) if(*p == L'/') *p = L'\\';
+	home = home2;
+    } else home = NULL;
+    
     ret = (uintptr_t) ShellExecuteW(NULL, L"open", file, NULL, home, SW_SHOW);
     if(ret <= 32) { /* an error condition */
 	if(ret == ERROR_FILE_NOT_FOUND  || ret == ERROR_PATH_NOT_FOUND
@@ -187,7 +199,7 @@ SEXP do_shellexec(SEXP call, SEXP op, SEXP args, SEXP env)
     file = CAR(args);
     if (!isString(file) || length(file) != 1)
 	errorcall(call, _("invalid '%s' argument"), "file");
-    internal_shellexecW(filenameToWchar(STRING_ELT(file, 0), FALSE));
+    internal_shellexecW(filenameToWchar(STRING_ELT(file, 0), FALSE), FALSE);
     return R_NilValue;
 }
 
@@ -926,6 +938,7 @@ SEXP do_selectlist(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     cleanup();
     show(RConsole);
+    R_ProcessEvents();
     UNPROTECT(1);
     return ans;
 }
@@ -1125,57 +1138,101 @@ SEXP do_writeClipboard(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 const char *formatError(DWORD res);
 
+
+void R_UTF8fixslash(char *s); /* from main/util.c */
 SEXP do_normalizepath(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP ans, paths = CAR(args), el;
+    SEXP ans, paths = CAR(args), el, slash;
     int i, n = LENGTH(paths), res;
     char tmp[MAX_PATH], longpath[MAX_PATH], *tmp2;
     wchar_t wtmp[32768], wlongpath[32768], *wtmp2;
+    int mustWork, fslash = 0;
 
     checkArity(op, args);
     if(!isString(paths))
 	errorcall(call, _("'path' must be a character vector"));
 
+    slash = CADR(args);
+    if(!isString(slash) || LENGTH(slash) != 1)
+	errorcall(call, "'winslash' must be a character string");
+    const char *sl = CHAR(STRING_ELT(slash, 0));
+    if (strcmp(sl, "/") && strcmp(sl, "\\"))
+	errorcall(call, "'winslash' must be '/' or '\\\\'");
+    if (strcmp(sl, "/") == 0) fslash = 1;
+    
+    mustWork = asLogical(CADDR(args));
+
     PROTECT(ans = allocVector(STRSXP, n));
     for (i = 0; i < n; i++) {
-    	int warn=0;
+    	int warn = 0;
     	SEXP result;
 	el = STRING_ELT(paths, i);
+	result = el;
 	if(getCharCE(el) == CE_UTF8) {
 	    if ((res = GetFullPathNameW(filenameToWchar(el, FALSE), 32768, 
 					wtmp, &wtmp2)) && res <= 32768) {
 		if ((res = GetLongPathNameW(wtmp, wlongpath, 32768))
 		    && res <= 32768) {
 	    	    wcstoutf8(longpath, wlongpath, wcslen(wlongpath)+1);
+		    if(fslash) R_UTF8fixslash(longpath);
 	    	    result = mkCharCE(longpath, CE_UTF8);
+		} else if(mustWork == 1) {
+		    errorcall(call, "path[%d]=\"%s\": %s", i+1, 
+			      translateChar(el), 
+			      formatError(GetLastError()));	
 	    	} else {
 	    	    wcstoutf8(tmp, wtmp, wcslen(wtmp)+1);
+		    if(fslash) R_UTF8fixslash(tmp);
 	    	    result = mkCharCE(tmp, CE_UTF8);
 	    	    warn = 1;
 	    	}
+	    } else if(mustWork == 1) {
+		errorcall(call, "path[%d]=\"%s\": %s", i+1, 
+			  translateChar(el), 
+			  formatError(GetLastError()));	
 	    } else {
-	    	result = el;
+		if (fslash) {
+		    strcpy(tmp, translateCharUTF8(el));
+		    R_UTF8fixslash(tmp);
+	    	    result = mkCharCE(tmp, CE_UTF8);
+		}
 	    	warn = 1;
 	    }
-	    if (warn)
-	    	warningcall(call, "path[%d]=\"%ls\": %s", i+1, filenameToWchar(el,FALSE), 
-	    	          formatError(GetLastError()));
+	    if (warn && (mustWork == NA_LOGICAL))
+	    	warningcall(call, "path[%d]=\"%ls\": %s", i+1, 
+			    filenameToWchar(el,FALSE), 
+			    formatError(GetLastError()));
 	} else {
-	    if ((res = GetFullPathName(translateChar(el), MAX_PATH, tmp, &tmp2))
+	    if ((res = GetFullPathName(translateChar(el), MAX_PATH, tmp, &tmp2)) 
 		&& res <= MAX_PATH) {
 	    	if ((res = GetLongPathName(tmp, longpath, MAX_PATH))
-		    && res <= MAX_PATH)
+		    && res <= MAX_PATH) {
+		    if(fslash) R_fixslash(longpath);
 	    	    result = mkChar(longpath);
-	    	else {
+		} else if(mustWork == 1) {
+		    errorcall(call, "path[%d]=\"%s\": %s", i+1, 
+			      translateChar(el), 
+			      formatError(GetLastError()));	
+	    	} else {
+		    if(fslash) R_fixslash(tmp);
 	    	    result = mkChar(tmp);
 	    	    warn = 1;
 	    	}
+	    } else if(mustWork == 1) {
+		errorcall(call, "path[%d]=\"%s\": %s", i+1, 
+			  translateChar(el), 
+			  formatError(GetLastError()));	
 	    } else {
-	    	result = el;
+		if (fslash) {
+		    strcpy(tmp, translateChar(el));
+		    R_fixslash(tmp);
+		    result = mkChar(tmp);
+		}
 	    	warn = 1;
 	    }
-	    if (warn)
-		warningcall(call, "path[%d]=\"%s\": %s", i+1, translateChar(el), 
+	    if (warn && (mustWork == NA_LOGICAL))
+		warningcall(call, "path[%d]=\"%s\": %s", i+1, 
+			    translateChar(el), 
 			    formatError(GetLastError()));	
 	}
 	SET_STRING_ELT(ans, i, result);
@@ -1505,14 +1562,12 @@ static BOOL CALLBACK EnumWindowsProc(HWND handle, LPARAM param)
 
 SEXP do_getWindowHandles(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP which;
     PROTECT_WITH_INDEX(EnumResult = allocVector(VECSXP, 8), &EnumIndex);
     setAttrib(EnumResult, R_NamesSymbol, allocVector(STRSXP, 8));
     EnumCount = 0;
     const char * w;
 
     checkArity(op, args);
-    which = CAR(args);
     w = CHAR(STRING_ELT(CAR(args), 0));
     EnumMinimized = LOGICAL(CADR(args))[0];
 

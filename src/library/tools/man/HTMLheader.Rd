@@ -1,3 +1,8 @@
+% File src/library/tools/man/HTMLheader.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 2009-11 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{HTMLheader}
 \alias{HTMLheader}
 \title{
@@ -9,7 +14,9 @@ This function generates the standard HTML header used on R help pages.
 \usage{
 HTMLheader(title = "R", logo = TRUE, up = NULL,
            top = file.path(Rhome, "doc/html/index.html"), 
-           Rhome = "", headerTitle = paste("R:", title),
+           Rhome = "",
+           css = file.path(Rhome, "doc/html/R.css"),
+           headerTitle = paste("R:", title),
            outputEncoding = "UTF-8")
 }
 \arguments{
@@ -27,7 +34,10 @@ Which page (if any) to link to on the \dQuote{up} button.
 Which page (if any) to link to on the \dQuote{top} button.
 }
   \item{Rhome}{
-A relative path to the R home directory.  See the Details.
+A \bold{relative} path to the R home directory.  See the \sQuote{Details}.
+}
+  \item{css}{
+The relative URL for the Cascading Style Sheet.
 }
   \item{headerTitle}{
 The title used in the headers.

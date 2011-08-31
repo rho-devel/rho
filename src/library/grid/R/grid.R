@@ -343,7 +343,7 @@ inc.display.list <- function() {
   # 1-based index
   if (dl.index > (n - 1)) {
     temp <- display.list
-    display.list <- vector("list", n+100)
+    display.list <- vector("list", n + 100L)
     display.list[1L:n] <- temp
   }
   grid.Call("L_setDisplayList", display.list)
@@ -356,8 +356,8 @@ inc.display.list <- function() {
 grid.display.list <- function(on=TRUE) {
   grid.Call("L_setDLon", as.logical(on))
   if (on) {
-    grid.Call("L_setDisplayList", vector("list", 100))
-    grid.Call("L_setDLindex", as.integer(0L))
+    grid.Call("L_setDisplayList", vector("list", 100L))
+    grid.Call("L_setDLindex", 0L)
   }
   else
     grid.Call("L_setDisplayList", NULL)

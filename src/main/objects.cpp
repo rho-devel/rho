@@ -861,6 +861,59 @@ SEXP attribute_hidden do_inherits(SEXP call, SEXP op, SEXP args, SEXP env)
 }
 
 
+/**
+ * Return the 0-based index of an is() match in a vector of class-name
+ * strings terminated by an empty string.  Returns -1 for no match.
+ *
+ * @param x  an R object, about which we want is(x, .) information.
+ * @param valid vector of possible matches terminated by an empty string.
+ * @param rho  the environment in which the class definitions exist.
+ *
+ * @return index of match or -1 for no match
+ */
+int R_check_class_and_super(SEXP x, const char **valid, SEXP rho)
+{
+    int ans;
+    SEXP cl = Rf_getAttrib(x, R_ClassSymbol);
+    const char *class_str = CHAR(Rf_asChar(cl));
+    for (ans = 0; ; ans++) {
+	if (!strlen(valid[ans])) // empty string
+	    break;
+	if (!strcmp(class_str, valid[ans])) return ans;
+    }
+    /* if not found directly, now search the non-virtual super classes :*/
+    if(IS_S4_OBJECT(x)) {
+	/* now try the superclasses, i.e.,  try   is(x, "....") : */
+	SEXP classExts, superCl, _call;
+	static SEXP s_contains = NULL, s_selectSuperCl = NULL;
+	int i;
+	if(!s_contains) {
+	    s_contains      = Rf_install("contains");
+	    s_selectSuperCl = Rf_install(".selectSuperClasses");
+	}
+
+	PROTECT(classExts = R_do_slot(R_getClassDef(class_str), s_contains));
+	PROTECT(_call = Rf_lang3(s_selectSuperCl, classExts,
+			      /* dropVirtual = */ Rf_ScalarLogical(1)));
+	superCl = Rf_eval(_call, rho);
+	UNPROTECT(2);
+	PROTECT(superCl);
+	for(i=0; i < length(superCl); i++) {
+	    const char *s_class = CHAR(STRING_ELT(superCl, i));
+	    for (ans = 0; ; ans++) {
+		if (!strlen(valid[ans]))
+		    break;
+		if (!strcmp(s_class, valid[ans])) {
+		    UNPROTECT(1);
+		    return ans;
+		}
+	    }
+	}
+	UNPROTECT(1);
+    }
+    return -1;
+}
+
 /*
    ==============================================================
 
@@ -930,18 +983,17 @@ static SEXP dispatchNonGeneric(SEXP name, SEXP env, SEXP fdef)
 {
     /* dispatch the non-generic definition of `name'.  Used to trap
        calls to standardGeneric during the loading of the methods package */
-    SEXP e, value, rho, fun, symbol, dot_Generic;
+    SEXP e, value, rho, fun, symbol;
     ClosureContext *cptr;
     /* find a non-generic function */
     symbol = Rf_install(Rf_translateChar(Rf_asChar(name)));
-    dot_Generic = Rf_install(".Generic");
     for(rho = ENCLOS(env); rho != R_EmptyEnv;
 	rho = ENCLOS(rho)) {
 	fun = Rf_findVarInFrame3(rho, symbol, TRUE);
 	if(fun == R_UnboundValue) continue;
 	switch(TYPEOF(fun)) {
 	case CLOSXP:
-	    value = Rf_findVarInFrame3(CLOENV(fun), dot_Generic, TRUE);
+	    value = Rf_findVarInFrame3(CLOENV(fun), R_dot_Generic, TRUE);
 	    if(value == R_UnboundValue) break;
 	case BUILTINSXP:  case SPECIALSXP:
 	default:

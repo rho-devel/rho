@@ -1,3 +1,8 @@
+% File src/library/tools/man/bibstyle.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 2010-1 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{bibstyle}
 \alias{bibstyle}
 \title{
@@ -86,12 +91,13 @@ c(bibentry(bibtype = "manual",
     author = c(person(c("George", "E", "P"), "Box"),
                person(c("David",  "R"),      "Cox")),
     year = 1964,
-    title="An Analysis of Transformations",
-    journal="Journal of the Royal Statistical Society, Series B",
-    volume=26,
-    pages="211-252"))
-bibstyle("unsorted", sortKeys = function(refs) seq_along(refs), .init=TRUE)
-print(refs, .bibstyle="unsorted")    
+    title = "An Analysis of Transformations",
+    journal = "Journal of the Royal Statistical Society, Series B",
+    volume = 26,
+    pages = "211-252"))
+bibstyle("unsorted", sortKeys = function(refs) seq_along(refs),
+       .init = TRUE)
+print(refs, .bibstyle = "unsorted")    
 }
 \keyword{ utilties }
 \keyword{ documentation }

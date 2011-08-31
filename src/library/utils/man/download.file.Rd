@@ -1,6 +1,6 @@
 % File src/library/utils/man/download.file.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{download.file}
@@ -32,7 +32,7 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
   \item{quiet}{If \code{TRUE}, suppress status messages (if any), and
     the progress bar.}
 
-  \item{mode}{character.  The mode with which to write the file. Useful
+  \item{mode}{character.  The mode with which to write the file.  Useful
     values are \code{"w"}, \code{"wb"} (binary), \code{"a"} (append) and
     \code{"ab"}.  Only used for the \code{"internal"} method.
 #ifdef windows
@@ -69,7 +69,7 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
 
   The remaining details apply to method \code{"internal"} only.
 
-  Note that \samp{https://} connections are
+  Note that \samp{https://} URLs are
 #ifdef unix
   not supported.
 #endif
@@ -180,5 +180,8 @@ download.file(url, destfile, method, quiet = FALSE, mode = "w",
 
   \code{\link{url.show}}, \code{\link{available.packages}},
   \code{\link{download.packages}} for applications.
+
+  Contributed package \pkg{RCurl} provides more comprehensive facilities
+  to download from URLs.
 }
 \keyword{utilities}

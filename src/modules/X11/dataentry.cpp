@@ -17,8 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2008  Robert Gentleman, Ross Ihaka and the
- *                            R Development Core Team
+ *  Copyright (C) 1998--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -765,7 +764,7 @@ static void cell_cursor_init(DEstruct DE)
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
-		PrintDefaults(R_NilValue);
+		PrintDefaults();
 		if (TYPEOF(tmp) == REALSXP) {
 		    strncpy(buf, EncodeElement(tmp, i, 0, '.'),
 			    BOOSTED_BUF_SIZE-1);
@@ -810,7 +809,7 @@ static int get_col_width(DEstruct DE, int col)
 	/* don't use NA labels */
 	lab = STRING_ELT(DE->names, col - 1);
 	if(lab != NA_STRING) strp = CHAR(lab); else strp = "var12";
-	PrintDefaults(R_NilValue);
+	PrintDefaults();
 
 	w = textwidth(DE, strp, strlen(strp));
 	for (i = 0; i < INTEGER(DE->lens)[col - 1]; i++) {
@@ -908,7 +907,7 @@ static void drawrow(DEstruct DE, int whichrow)
 static void printelt(DEstruct DE, SEXP invec, int vrow, int ssrow, int sscol)
 {
     const char *strp;
-    PrintDefaults(R_NilValue);
+    PrintDefaults();
     if (TYPEOF(invec) == REALSXP) {
 	strp = EncodeElement(invec, vrow, 0, '.');
 	printstring(DE ,strp, strlen(strp), ssrow, sscol, 0);
@@ -1926,7 +1925,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
 	char opt_fontset_name[512];
 
 	/* options("X11fonts")[1] read font name */
-	SEXP opt = GetOption(install("X11fonts"), R_NilValue);
+	SEXP opt = GetOption1(install("X11fonts"));
 	if(isString(opt)) {
 	    const char *s = CHAR(STRING_ELT(opt, 0));
 	    sprintf(opt_fontset_name, s, "medium", "r", 12);
@@ -1953,7 +1952,7 @@ static Rboolean initwin(DEstruct DE, const char *title) /* TRUE = Error */
     /* find out how wide the input boxes should be and set up the
        window size defaults */
 
-    DE->nboxchars = asInteger(GetOption(install("de.cellwidth"), R_GlobalEnv));
+    DE->nboxchars = asInteger(GetOption1(install("de.cellwidth")));
     if (DE->nboxchars == NA_INTEGER || DE->nboxchars < 0) DE->nboxchars = 0;
 
     twidth = textwidth(DE, digits, strlen(digits));
@@ -2518,7 +2517,7 @@ static void copycell(DEstruct DE)
 	    tmp = VECTOR_ELT(DE->work, whichcol - 1);
 	    if (tmp != R_NilValue &&
 		(i = whichrow - 1) < LENGTH(tmp) ) {
-		PrintDefaults(R_NilValue);
+		PrintDefaults();
 		if (TYPEOF(tmp) == REALSXP) {
 			strncpy(copycontents, EncodeElement(tmp, i, 0, '.'),
 				BOOSTED_BUF_SIZE-1);

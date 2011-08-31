@@ -70,6 +70,7 @@ The current version of this document is @value{VERSION}.
 * .Internal vs .Primitive::     
 * Internationalization in the R sources::  
 * Package Structure::           
+* Files::                       
 * Graphics Devices::            
 * Tools::                       
 * R coding standards::          
@@ -367,7 +368,10 @@ need to know the charset to handle ASCII strings.  From @R{} 2.8.0 it is
 guaranteed that they will not be set for @code{CHARSXP}s created by @R{}
 itself.)  As from @R{} 2.8.0 bit 5 is used to indicate that a
 @code{CHARSXP} is hashed by its address, that is @code{NA_STRING} or in
-the @code{CHARSXP} cache: this is not serialized.
+the @code{CHARSXP} cache: this is not serialized.  As from @R{} 2.13.0,
+bit 1 is used to indicate if the @code{CHARSXP} should be treated as a
+set of bytes, not necessarily representing a character in any known
+encoding.
 
 @node The 'data', Allocation classes, Rest of header, SEXPs
 @subsection The `data'
@@ -1130,45 +1134,63 @@ For background papers see
 
 @cindex serialization
 Serialized versions of @R{} objects are used by @code{load}/@code{save}
-and also at a lower level by @code{.saveRDS}/@code{.readRDS} and
+and also at a slightly lower level by @code{saveRDS}/@code{readRDS} (and
+their earlier `internal' dot-name versions) and
 @code{serialize}/@code{unserialize}.  These differ in what they
 serialize to (a file, a connection, a raw vector) and whether they are
 intended to serialize a single object or a collection of objects
-(typically a workspace).  @code{save} writes a header indicating the
-format at the beginning of the file (a single LF-terminated line) which
-the lower-level versions do not.
+(typically the workspace).  @code{save} writes a header at the beginning
+of the file (a single LF-terminated line) which the lower-level versions
+do not.
+
+@code{save} and @code{saveRDS} allow various forms of compression, and
+@command{gzip} compression has been the default (except for ASCII saves)
+since @R{} 2.4.0.  Compression is applied to the whole file stream,
+including the headers, so serialized files can be uncompressed or
+re-compressed by external programs.  Since @R{} 2.10.0 both @code{load}
+and @code{readRDS} can read @command{gzip}, @command{bzip2} and
+@command{xz} forms of compression when reading from a file, and
+@command{gzip} compression when reading from a connection.
 
 @R{} has used the same serialization format since @R{} 1.4.0 in December
-2001.  Reading of earlier formats is still supported via @code{load},
-but they are not described here.  (Files of most of these formats can
-still be found in @file{data} directories of packages.) The current
-serialization format is called `version 2', and has been expanded in
-back-compatible ways since @R{} 1.4.0, for example to support additional
-@code{SEXPTYPE}s.
+2001.  Earlier formats are still supported via @code{load} and
+@code{save} but such formats are not described here.  (Files of some of
+these formats can still be found in @file{data} directories of
+packages.) The current serialization format is called `version 2', and
+has been expanded in back-compatible ways since @R{} 1.4.0, for example
+to support additional @code{SEXPTYPE}s.
 
-@code{save()} works by first creating a tagged pairlist of objects to be
-saved, and then saving that single object preceded by a single-line
-header (typically @code{RDX2\n} for a binary save).  @code{load()} reads
-the header line, unserializes a single object (a pairlist or a vector
-list) and assigns the elements of the list in the appropriate
-environment.
+@code{save} works by writing a single-line header (typically
+@code{RDX2\n} for a binary save: the only other current value is
+@code{RDA2\n} for @code{save(files=TRUE)}), then creating a tagged
+pairlist of the objects to be saved and serializing that single object.
+@code{load} reads the header line, unserializes a single object (a
+pairlist or a vector list) and assigns the elements of the object in the
+specified environment.  The header line serves two purposes in @R{}: it
+identifies the serialization format so @code{load} can switch to the
+appropriate reader code, and the linefeed allows the detection of files
+which have been subjected to a non-binary transfer which re-mapped line
+endings.  It can also be thought of as a `magic number' in the sense
+used by the @command{file} program (although @R{} save files are not yet
+by default known to that program).
 
 Serialization in @R{} needs to take into account that objects may
 contain references to environments, which then have enclosing
 environments and so on.  (Environments recognized as package or name
-space environments are saved by name.)  Further, there are `reference
-objects' which are not duplicated on copy and should remain
-shared on unserialization.  These are weak references, external pointers
-and environments other than those associated with packages, name spaces
-and the global environment.  These are handled via a hash table, and
+space environments are saved by name.)  There are `reference objects'
+which are not duplicated on copy and should remain shared on
+unserialization.  These are weak references, external pointers and
+environments other than those associated with packages, name spaces and
+the global environment.  These are handled via a hash table, and
 references after the first are written out as a reference marker indexed
 by the table entry.
 
-Serialization first writes a header indicating the format (normally
-@samp{X\n} for an XDR format binary save, but @samp{A\n}, ASCII, and
-@samp{B\n}, native word-order binary@footnote{there is no @R{}-level
-interface to this format}, can also occur) and the version number of the
-format and of two @R{} versions (as integers).  (Unserialization
+Version-2 serialization first writes a header indicating the format
+(normally @samp{X\n} for an XDR format binary save, but @samp{A\n},
+ASCII, and @samp{B\n}, native word-order binary@footnote{there is no
+@R{}-level interface to this format}, can also occur) and then three
+integers giving the version of the format and two @R{} versions (packed
+by the @code{R_Version} macro from @file{Rversion.h}).  (Unserialization
 interprets the two versions as the version of @R{} which wrote the file
 followed by the minimal version of @R{} needed to read the format.)
 Serialization then writes out the object recursively using function
@@ -1181,19 +1203,19 @@ pseudo-@code{SEXPTYPE}s cover @code{R_NilValue}, @code{R_EmptyEnv},
 
 For all @code{SEXPTYPE}s except @code{NILSXP}, @code{SYMSXP} and
 @code{ENVSXP} serialization starts with an integer with the
-@code{SEXPTYPE} in bits 0:7@footnote{only 0:4 will currently be used for
-@code{SEXPTYPE}s but values 241:255 are used for pseudo-@code{SEXPTYPE}s.}
-followed by the object bit, two bits indicating if there are any
-attributes and if there is a tag (for the pairlist types), an unused bit
-and then the @code{gp} field@footnote{Currently the only relevant bits
-are 0:1, 4, 14:15.} in bits 12:27.  Pairlist-like objects write their
-attributes (if any), tag (if any), CAR and then CDR (using tail
-recursion): other objects write their attributes after themselves.
-Atomic vector objects write their length followed by the data: generic
-vector-list objects write the length followed by a call to
-@code{WriteItem} for each element.  The code for @code{CHARSXP}s
-special-cases @code{NA_STRING} and writes it as length @code{-1} with no
-data.
+@code{SEXPTYPE} in bits 0:7@footnote{only bits 0:4 are currently used
+for @code{SEXPTYPE}s but values 241:255 are used for
+pseudo-@code{SEXPTYPE}s.} followed by the object bit, two bits
+indicating if there are any attributes and if there is a tag (for the
+pairlist types), an unused bit and then the @code{gp}
+field@footnote{Currently the only relevant bits are 0:1, 4, 14:15.} in
+bits 12:27.  Pairlist-like objects write their attributes (if any), tag
+(if any), CAR and then CDR (using tail recursion): other objects write
+their attributes after themselves.  Atomic vector objects write their
+length followed by the data: generic vector-list objects write their
+length followed by a call to @code{WriteItem} for each element.  The
+code for @code{CHARSXP}s special-cases @code{NA_STRING} and writes it as
+length @code{-1} with no data.
 
 Environments are treated in several ways: as we have seen, some are
 written as specific pseudo-@code{SEXPTYPE}s.  Package and name space
@@ -1269,10 +1291,9 @@ UTF-8-encoded string if it encounters a @samp{\uxxx} escape for a
 Unicode point that cannot be represented in the current charset.  (This
 needs MBCS support, and was only enabled@footnote{See define
 @code{USE_UTF8_IF_POSSIBLE} in file @file{src/main/gram.c}.} on
-Windows.)  This was taken further in @R{} 2.10.0, where it is enabled
-for all platforms with MBCS support, and a @samp{\uxxx} or
-@samp{\Uxxxxxxxx} escape ensures that the parsed string will be marked
-as UTF-8.
+Windows.)  From @R{} 2.10.0 it is enabled for all platforms with MBCS
+support, and a @samp{\uxxx} or @samp{\Uxxxxxxxx} escape ensures that the
+parsed string will be marked as UTF-8.
 
 Most of the character manipulation functions now preserve UTF-8
 encodings: there are some notes as to which at the top of file
@@ -1287,7 +1308,11 @@ be exactly that value: all others are equivalent to @samp{FALSE}.} and
 supplying functions @code{textUTF8} and @code{strWidthUTF8} that expect
 UTF-8-encoded inputs.  Normally the symbol font is encoded in Adobe
 Symbol encoding, but that can be re-encoded to UTF-8 by setting
-@code{wantSymbolUTF8} to @samp{TRUE}.
+@code{wantSymbolUTF8} to @samp{TRUE}.  The Windows' port of
+cairographics has a rather peculiar assumption: it wants the symbol font
+to be encoded in UTF-8 as if it were encoded in Latin-1 rather than
+Adobe Symbol: this is selected by @code{wantSymbolUTF8 = NA_LOGICAL} (as
+from @R{} 2.13.1).
 
 Windows has no UTF-8 locales, but rather expects to work with
 UCS-2@footnote{or UTF-16 if support for surrogates is enabled in the OS,
@@ -1702,7 +1727,7 @@ machines.  Thus the allocation is in units of 8 bytes, and is rounded
 up.  (Prior to @R{} 2.6.0 @code{CHARSXP}s were used, and so one byte was
 added prior to rounding up.  This had the effect of over-allocating
 areas for @code{double}s by one and thereby masked several subtle
-programming errors.)
+programming errors in package code.)
 
 The vectors allocated are protected via the setting of @code{R_VStack},
 as the garbage collector marks everything that can be reached from that
@@ -1936,7 +1961,7 @@ this makes lazy-loading unsuitable for really large objects: the
 unserialized length of an @R{} object can exceed 4GB.)
 
 The index or `map' file @file{@var{name}.rdx} is a compressed serialized
-@R{} object to be read by @code{.readRDS}.  It is a list with three
+@R{} object to be read by @code{readRDS}.  It is a list with three
 elements @code{variables}, @code{references} and @code{compressed}.  The
 first two are named lists of integer vectors of length 2 giving the
 offset and length of the serialized object in the @file{@var{name}.rdb}
@@ -2227,8 +2252,7 @@ evaluate their second argument, and @code{~}, @code{.Internal},
 arguments.
 
 @code{rep} and @code{seq.int} are special as they evaluate some of their
-arguments conditional on which are non-missing.  @code{c} is special to
-allow it to be used with language objects.
+arguments conditional on which are non-missing.
 
 @code{log}, @code{round} and @code{signif} are special to allow default
 values to be given to missing arguments.
@@ -2244,7 +2268,7 @@ calls to builtins.
 @node Special internals, Prototypes for primitives, Special primitives, .Internal vs .Primitive
 @section Special internals
 
-There are also special @code{.Internal} functions: @code{NextMethod}
+There are also special @code{.Internal} functions: @code{NextMethod},
 @code{Recall}, @code{withVisible}, @code{cbind}, @code{rbind} (to allow
 for the @code{deparse.level} argument), @code{eapply}, @code{lapply} and
 @code{vapply}.
@@ -2436,7 +2460,7 @@ This is handled separately: see
 
 See file @file{po/README} for how to update the message templates and catalogs.
 
-@node Package Structure, Graphics Devices, Internationalization in the R sources, Top
+@node Package Structure, Files, Internationalization in the R sources, Top
 @chapter Structure of an Installed Package
 
 @menu
@@ -2454,12 +2478,12 @@ installed differed in earlier versions.
 An installed package has a top-level file @file{DESCRIPTION}, a copy of
 the file of that name in the package sources with a @samp{Built} field
 appended, and file @file{INDEX}, usually describing the objects on which
-help is available, a file @file{NAMESPACE} is the package has a name
-space, files such as @file{CITATION}, @file{LICENCE} and @file{NEWS},
-and any other files copied in from @file{inst}.  It will have
-directories @file{Meta}, @file{help} and @file{html} (even if the
-package has no help), almost always has a directory @file{R} and often
-has a directory @file{libs} to contain compiled code.  Other
+help is available, a file @file{NAMESPACE} if the package has a name
+space, optional files such as @file{CITATION}, @file{LICENCE} and
+@file{NEWS}, and any other files copied in from @file{inst}.  It will
+have directories @file{Meta}, @file{help} and @file{html} (even if the
+package has no help pages), almost always has a directory @file{R} and
+often has a directory @file{libs} to contain compiled code.  Other
 directories with known meaning to @R{} are @file{data}, @file{demo},
 @file{doc} and @file{po}.
 
@@ -2472,24 +2496,23 @@ into the package's environment, then lazy-loads a database
 the contents of  @file{R/@var{pkgname}}: standard templates to load
 lazy-load databases are provided in @file{share/R/[ns]packloader.R}.
 
-How (and if) compiled code is loaded is down to the package's start-code
-such as @code{.First.lib} or @code{.onLoad}, although a @code{useDynlib}
-directive in a name space provides an alternative.
-Conventionally compiled code is loaded by a call to
-@code{library.dynam} and this looks in directory @file{libs} (and in an
-appropriate sub-directory if sub-architectures are in use) for a shared
-object (Unix-alike) or DLL (Windows).
+How (and if) compiled code is loaded is down to the package's startup
+code such as @code{.First.lib} or @code{.onLoad}, although a
+@code{useDynlib} directive in a name space provides an alternative.
+Conventionally compiled code is loaded by a call to @code{library.dynam}
+and this looks in directory @file{libs} (and in an appropriate
+sub-directory if sub-architectures are in use) for a shared object
+(Unix-alike) or DLL (Windows).
 
 Subdirectory @file{data} serves two purposes. In a package using
 lazy-loading of data, it contains a lazy-load database @file{Rdata},
 plus a file @file{Rdata.rds} which contain a named character vector used
-by @code{data} in the (unusual) event that it is used for such a
-package.  Otherwise it is copy of the @file{data} directory in the
+by @code{data()} in the (unusual) event that it is used for such a
+package.  Otherwise it is a copy of the @file{data} directory in the
 sources, with saved images re-compressed if @command{R CMD INSTALL
---resave-data} was used.  If @command{R CMD INSTALL --use-data-zip} was
-specified or selected @emph{via} @option{--auto-zip}, the contents of
-the directory are moved to a zip file @file{Rdata.zip} and a listing
-written in file @file{filelist}.
+--resave-data} was used.  Prior to @R{} 2.12.0 the contents of the
+directory could be moved to a zip file @file{Rdata.zip} and a listing
+written in file @file{filelist}: this was principally done on Windows.
 
 Subdirectory @file{demo} supports the @code{demo} function, and is
 copied from the sources.
@@ -2501,11 +2524,11 @@ catalogs.
 @section Metadata
 
 Directory @file{Meta} contains several files in @code{.rds} format, that
-is serialized @R{} objects.  All packages have @file{Rd.rds},
-@file{hsearch.rds}, @file{links.rds} and @file{package.rds}.  Packages
-with name spaces have a file @file{nsInfo.rds}, and those with data,
-demos or vignettes have @file{data.rds}, @file{demo.rds} or
-@file{vignette.rds} files.
+is serialized @R{} objects written by @code{saveRDS}.  All packages
+have files @file{Rd.rds}, @file{hsearch.rds}, @file{links.rds} and
+@file{package.rds}.  Packages with name spaces have a file
+@file{nsInfo.rds}, and those with data, demos or vignettes have
+@file{data.rds}, @file{demo.rds} or @file{vignette.rds} files.
 
 The structure of these files (and their existence and names) is private
 to @R{}, so the description here is for those trying to follow the @R{}
@@ -2513,7 +2536,7 @@ sources: there should be no reference to these files in non-base
 packages.
 
 File @file{package.rds} is a dump of information extracted from the
-@file{DESCRIPTION} file. It is a list of several components.  The first,
+@file{DESCRIPTION} file.  It is a list of several components.  The first,
 @samp{DESCRIPTION}, is a character vector, the @file{DESCRIPTION} file
 as read by @code{read.dcf}.  Further elements @samp{Depends},
 @samp{Suggests}, @samp{Imports}, @samp{Rdepends} and @samp{Rdepends2}
@@ -2570,7 +2593,7 @@ file name of the installed @R{} code, if present).
 @node Help,  , Metadata, Package Structure
 @section Help
 
-All installed packages, whether they had an @file{.Rd} files or not,
+All installed packages, whether they had any @file{.Rd} files or not,
 have @file{help} and @file{html} directories. The latter normally only
 contains the single file @file{00Index.html}, the package index which
 has hyperlinks to the help topics (if any).
@@ -2593,8 +2616,98 @@ File @file{aliases.rds} is the same information as @file{AnIndex} as a
 named character vector (names the topics, values the file basename), for
 faster access by @R{} >= 2.11.0.
 
+@node Files, Graphics Devices, Package Structure, Top
+@chapter Files
 
-@node Graphics Devices, Tools, Package Structure, Top
+@R{} provides may functions to work with files and directories: many of
+these have been added relatively recently to facilitate scripting in
+@R{} and in particular the replacement of Perl scripts by @R{} scripts
+in the management of @R{} itself.
+
+These functions are implemented by standard C/POSIX library calls,
+except on Windows.  That means that filenames must be encoded in the
+current locale as the OS provides no other means to access the file
+system: increasingly filenames are stored in UTF-8 and the OS will
+translate filenames to UTF-8 in other locales.  So using a UTF-8 locale
+gives transparent access to the whole file system.
+
+Windows is another story.  There the internal view of filenames is in
+UTF-16LE (so-called `Unicode'), and standard C library calls can only
+access files whose names can be expressed in the current codepage.  To
+circumvent that restriction, there is a parallel set of Windows-specific
+calls which take wide-character arguments for filepaths.  Much of the
+file-handling in @R{} has been moved over to using these functions, so
+filenames can be manipulated in @R{} as UTF-8 encoded character strings,
+converted to wide characters (which on Windows are UTF-16LE) and passed
+to the OS.  The utilities @code{RC_fopen} and @code{filenameToWchar}
+help this process.  Currently @code{file.copy} to a directory,
+@code{list.files}, @code{list.dirs} and @code{path.expand} work only
+with filepaths encoded in the current codepage.
+
+All these functions do tilde expansion, in the same way as
+@code{path.expand}, with the deliberate exception of @code{Sys.glob}.
+
+File names may be case sensitive or not: the latter is the norm on
+Windows and Mac OS X, the former on other Unix-alikes.  Note that this
+is a property of both the OS and the file system: it is often possible
+to map names to upper or lower case when mounting the file system.  This
+can affect the matching of patterns in @code{list.files} and
+@code{Sys.glob}.
+
+File names commonly contain spaces on Windows and Mac OS X but not
+elsewhere.  As file names are handled as character strings by @R{},
+spaces are not usually a concern unless file names are passed to other
+process, e.g.@: by a @code{system} call.
+
+Windows has another couple of peculiarities.  Whereas a POSIX file
+system has a single root directory (and other physical file systems are
+mounted onto logical directories under that root), Windows has separate
+roots for each physical or logical file system (`volume'), organized
+under @emph{drives} (with file paths starting @code{D:} for an ASCII
+letter, case-insensitively) and @emph{network shares} (with paths like
+@code{\netname\topdir\myfiles\a file}.  There is a current drive, and
+path names without a drive part are relative to the current drive.
+Further, each drive has a current directory, and relative paths are
+relative to that current directory, on a particular drive if one is
+specified.  So @file{D:dir\file} and @file{D:} are valid path
+specifications (the last being the current directory on drive
+@file{D:}).
+
+spaces
+case insensitivity
+
+globbing
+
+@c basename        Wchar   na
+@c dir.create      Wchar   ~
+@c dirname         Wchar   ~
+@c getwd
+@c file.access     Wchar   ~
+@c file.append     RC_fopen
+@c file.copy       no      ~ (+ file.append)
+@c file.create     RC_fopen
+@c file.edit       UTF-8   in R code
+@c file.exists     Wchar   ~
+@c file.info       Wchar   ~
+@c file.link       8-bit   ~
+@c file.remove     Wchar   ~
+@c file.rename     Wchar   ~
+@c file.show       UTF-8   in R code
+@c file.symlink    not     ~
+@c file_test
+@c list.dirs       no      ~
+@c list.files      no      ~
+@c normalizePath   Wchar   ~
+@c path.expand     no
+@c setwd           Wchar   ~
+@c Sys.chmod       Wchar   ~
+@c Sys.glob        Wchar   not
+@c Sys.readlink    not     ~
+@c Sys.umask
+@c unlink          Wchar   ~
+
+
+@node Graphics Devices, Tools, Files, Top
 @chapter Graphics
 
 @R{}'s graphics internals were revised for version 1.4.0 (and tidied up
@@ -2663,11 +2776,11 @@ as in the x units).} in the @samp{x} and @samp{y} directions.
 @c think of the engine as colors.c, devices.c, engine.c, plotmath.c, vfonts.c
 The next layer up is the graphics `engine' that is the main interface to
 the device (although the graphics subsystems do talk directly to
-devices).  This is responsible for clipping, converting the @code{pch}
-values @code{0...26} to sets of lines/circles, centring (and otherwise
-adjusting) text, rendering mathematical expressions (`plotmath') and
-mapping colour descriptions such as names to the internal
-representation.
+devices).  This is responsible for clipping lines, rectangles and
+polygons, converting the @code{pch} values @code{0...26} to sets of
+lines/circles, centring (and otherwise adjusting) text, rendering
+mathematical expressions (`plotmath') and mapping colour descriptions
+such as names to the internal representation.
 
 @c graphics.c looks at device dimensions, locator, metricinfo
 @c par.c looks at various device pars
@@ -3435,11 +3548,6 @@ Default: false.
 @item _R_CHECK_FORCE_SUGGESTS_
 If true, give an error if suggested packages are not available.
 Default: true.
-@item _R_CHECK_LATEX_VIGNETTES_
-If true (and @code{R_check_weave_vignettes} is also true),
-@command{latex} package vignettes in the process of checking them: this
-will show up @code{Sweave} source errors, including missing source
-files.  Default: true.
 @item _R_CHECK_RD_CONTENTS_
 If true, check @file{Rd} files for auto-generated content which needs editing,
 and missing argument documentation.
@@ -3458,19 +3566,20 @@ Default: false.
 Initial setting for @option{--check-subdirs}.
 Default: @samp{default} (which checks only tarballs, and checks in the
 @file{src} only if there is no @file{configure} file).
-@item _R_CHECK_USE_INSTALL_LOG_
-If true, record the output from installing a package as part of its
-check to a log file (@file{00install.out} by default), even when running
-interactively.
-Default: true.
-@item _R_CHECK_WEAVE_VIGNETTES_
-If true, weave package vignettes in the process of checking them.
-Default: true.
 @item _R_CHECK_USE_CODETOOLS_
 If true, make use of the @pkg{codetools} package, which provides a
 detailed analysis of visibility of objects (but may give false
 positives).
 Default: true.
+@item _R_CHECK_USE_INSTALL_LOG_
+If true, record the output from installing a package as part of its
+check to a log file (@file{00install.out} by default), even when running
+interactively.
+Default: true.
+@item _R_CHECK_VIGNETTES_NLINES_
+Maximum umber of lines to show of the bottom of the output when reporting
+errors in running vignettes.
+Default: 10.
 @item _R_CHECK_CODOC_S4_METHODS_
 Control whether @code{codoc()} testing is also performed on S4 methods.
 This was off by default in R versions prior to 2.10.0 as it gave false
@@ -3532,6 +3641,14 @@ Default: true.
 @item _R_CHECK_ASCII_DATA_
 If true, check data for non-ascii characters.
 Default: true.
+@item _R_CHECK_COMPACT_DATA_
+If true, check data for ascii and uncompressed saves.
+Default: true.
+@item _R_CHECK_COMPACT_DATA2_
+If true, check data for ascii and uncompressed saves, and also check if
+using @command{bzip2} or @code{xz} compression would be significantly
+better.  Implies @env{_R_CHECK_COMPACT_DATA_} is true.
+Default: false.
 @item _R_CHECK_SKIP_ARCH_
 Comma-separated list of architectures that will be omitted from
 checking in a multi-arch setup.
@@ -3539,11 +3656,26 @@ Default: none.
 @item _R_CHECK_SKIP_TESTS_ARCH_
 Comma-separated list of architectures that will be omitted from
 running tests in a multi-arch setup.
-Default:none.
+Default: none.
 @item _R_CHECK_SKIP_EXAMPLES_ARCH_
 Comma-separated list of architectures that will be omitted from
 running examples in a multi-arch setup.
-Default:none.
+Default: none.
+@item _R_CHECK_VC_DIRS_
+Should the unpacked package directory be checked for version-control
+directories (@file{CVS}, @file{.svn} @dots{})?
+Default: true for tarballs.
+@item _R_CHECK_PKG_SIZES_
+Should @command{du} be used to find the installed sizes of packages?
+@command{R CMD check} does check for the availability of @command{du}.
+but this option allows the check to be overruled if an unsuitable
+command is found (including one that does not respect the @option{-k}
+flag to report in units of 1Kb, or reports in a different format -- the
+GNU, Mac OS X and Solaris @command{du} commands have been tested).
+Default: true if @command{du} is found.
+@item _R_CHECK_DOC_SIZES_
+Should @command{qpdf} be used to find the installed sizes of PDFs?
+Default: true if @command{qpdf} is found.
 @end vtable
 
 @node R coding standards, Testing R code, Tools, Top

@@ -47,7 +47,7 @@ function(file, fields = NULL, all = FALSE)
             out <- as.data.frame(out, stringsAsFactors = FALSE)
         }
         else {
-            levs <- colSums(cnts > 1L) == 0
+            levs <- colSums(cnts > 1L) == 0L
             if(any(levs)) {
                 inds <- tf %in% levels(tf)[levs]
                 out[cbind(nums[inds], tf[inds])] <- vals[inds]
@@ -164,15 +164,15 @@ function(x, file = "", append = FALSE,
         else {
             ## Should be a list ...
             nmxj <- nmx[j]
-            i <- !sapply(xj, function(s) (length(s) == 1L) && is.na(s))
+            i <- !vapply(xj, function(s) (length(s) == 1L) && is.na(s), NA)
             out[i, j] <-
-                sapply(xj[i],
+		vapply(xj[i],
                        function(s) {
                            s <- formatDL(rep.int(nmxj, length(s)), s,
                                          style = "list", width = width,
                                          indent = indent)
                            paste(escape_paragraphs(s), collapse = "\n")
-                       })
+		       }, "")
         }
     }
     out <- t(out)

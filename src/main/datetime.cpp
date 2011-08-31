@@ -845,14 +845,16 @@ SEXP attribute_hidden do_formatPOSIXlt(SEXP call, SEXP op, SEXP args, SEXP env)
 		    *p2 = '\0';
 		    ns = *(p+3) - '0';
 		    if(ns < 0 || ns > 9) { /* not a digit */
-			ns = asInteger(GetOption(install("digits.secs"),
-						 R_BaseEnv));
+			ns = asInteger(GetOption1(install("digits.secs")));
 			if(ns == NA_INTEGER) ns = 0;
 			nused = 3;
 		    }
 		    if(ns > 6) ns = 6;
 		    if(ns > 0) {
-			sprintf(p2, "%0*.*f", ns+3, ns, secs);
+			/* truncate to avoid nuisances such as PR#14579 */
+			double s = secs, t = pow(10.0, double( ns));
+			s = (int( (s*t)))/t;
+			sprintf(p2, "%0*.*f", ns+3, ns, s);
 			strcat(buf2, p+nused);
 		    } else {
 			strcat(p2, "%S");

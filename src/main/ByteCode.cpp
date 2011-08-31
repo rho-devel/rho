@@ -38,11 +38,19 @@
  */
 
 #include "CXXR/ByteCode.hpp"
+#include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
 
-// ByteCode::evaluate() is defined in eval.cpp
+// ByteCode::evaluate() is defined in eval.cpp unless:
+#ifndef BYTECODE
+RObject* ByteCode::evaluate(Environment*)
+{
+    Rf_error(_("bytecode evaluation not enabled"));
+    return 0;
+}
+#endif
 
 const char* ByteCode::typeName() const
 {

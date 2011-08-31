@@ -49,6 +49,7 @@ namespace CXXR {
     namespace ForceNonInline {
 	int (*HASHVALUEp)(SEXP x) = HASHVALUE;
 	int (*ENC_KNOWNp)(const SEXP x) = ENC_KNOWN;
+	int (*IS_BYTESp)(const SEXP x) = IS_BYTES;
 	Rboolean (*IS_LATIN1p)(const SEXP x) = IS_LATIN1;
 	Rboolean (*IS_UTF8p)(const SEXP x) = IS_UTF8;
 	const char* (*R_CHARp)(SEXP x) = R_CHAR;
@@ -68,6 +69,7 @@ String::String(size_t sz, cetype_t encoding)
     case CE_NATIVE:
     case CE_UTF8:
     case CE_LATIN1:
+    case CE_BYTES:
 	m_encoding = encoding;
 	break;
     default:
@@ -82,6 +84,7 @@ String::String(size_t sz, cetype_t encoding)
 
 namespace {
     // Used in GPBits2Encoding() and packGPBits():
+    const unsigned int BYTES_MASK = 1<<1;
     const unsigned int LATIN1_MASK = 1<<2;
     const unsigned int UTF8_MASK = 1<<3;
 }
@@ -92,6 +95,8 @@ cetype_t String::GPBits2Encoding(unsigned int gpbits)
 	return CE_LATIN1;
     if ((gpbits & UTF8_MASK) != 0)
 	return CE_UTF8;
+    if ((gpbits & BYTES_MASK) != 0)
+	return CE_BYTES;
     return CE_NATIVE;
 }
 
@@ -104,6 +109,9 @@ unsigned int String::packGPBits() const
 	break;
     case CE_LATIN1:
 	ans |= LATIN1_MASK;
+	break;
+    case CE_BYTES:
+	ans |= BYTES_MASK;
 	break;
     default:
 	break;

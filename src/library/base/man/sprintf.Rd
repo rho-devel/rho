@@ -50,7 +50,7 @@ gettextf(fmt, \dots, domain = NULL)
     \item{\code{d, i, o, x, X}}{Integer value, \code{o} being octal,
       \code{x} and \code{X} being hexadecimal (using the same case for
       \code{a-f} as the code).  Numeric variables with exactly integer
-      values will be coerced to integer. Formats \code{d} and \code{i}
+      values will be coerced to integer.  Formats \code{d} and \code{i}
       can also be used for logical variables, which will be converted to
       \code{0}, \code{1} or \code{NA}.
     }
@@ -82,14 +82,14 @@ gettextf(fmt, \dots, domain = NULL)
       \code{\%a} uses lower-case for \code{x}, \code{p} and the hex
       values: format \code{\%A} uses upper-case.
 
-      This might not be supported on all platforms as it is a feature of C99.
+      This should be supported on all platforms as it is a feature of C99.
       The format is not uniquely defined: although it would be possible
       to make the leading \code{h} always zero or one, this is not
       always done.  Most systems will suppress trailing zeros, but a few
       do not.  On a well-written platform, for normal numbers there will
       be a leading one before the decimal point plus (by default) 13
-      hexadecimal digits, hence 53 bits.  (The treatment of denormalized
-      numbers is very platform-dependent.)
+      hexadecimal digits, hence 53 bits.  The treatment of denormalized
+      (aka \sQuote{subnormal}) numbers is very platform-dependent.
     }
     \item{\code{s}}{Character string.  Character \code{NA}s are
       converted to \code{"NA"}.

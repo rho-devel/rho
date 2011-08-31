@@ -1,74 +1,47 @@
 % File src/library/utils/man/bug.report.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{bug.report}
 \alias{bug.report}
 \title{Send a Bug Report}
 \usage{
-bug.report(subject = "",
-           ccaddress = Sys.getenv("USER"),
-           method = getOption("mailer"),
-           address = "r-bugs@r-project.org",
-           file = "R.bug.report",
-           package = NULL,
-           lib.loc = NULL)
+bug.report(subject = "",  address,
+           file = "R.bug.report", package = NULL, lib.loc = NULL,
+           \dots)
 }
 \arguments{
-  \item{subject}{Subject of the email. Please do not use single quotes
-    (\samp{'}) in the subject! File separate bug reports for multiple bugs}
-  \item{ccaddress}{Optional email address for copies (default is current
-    user).  Use \code{ccaddress = FALSE} for no copies.}
-  \item{method}{Submission method, one of \code{"mailx"},
-    \code{"gnudoit"}, \code{"none"}, or \code{"ess"}.}
-  \item{address}{Recipient's email address.}
-  \item{file}{File to use for setting up the email (or storing it when
-    method is \code{"none"} or sending mail fails).}
+  \item{subject}{Subject of the email.}
+  \item{address}{Recipient's email address, where applicable: for
+    package bug reports sent by email this defaults to the address of
+    the package maintainer (the first if more than one is listed).} 
+  \item{file}{filename to use (if needed) for setting up the email.}
   \item{package}{Optional character vector naming a single package which is 
     the subject of the bug report.}
   \item{lib.loc}{A character vector describing the location of \R
     library trees in which to search for the package, or \code{NULL}.
     The default value of \code{NULL} corresponds to all libraries
     currently known.}
+  \item{\dots}{additional named arguments such as \code{method} and
+    \code{ccaddress} to pass to \code{\link{create.post}}.}
 }
 \description{
-  Invokes an editor to write a bug report or opens a web page for
-  bug submission.  Some standard information on the
-  current version and configuration of \R are included automatically.
+  Invokes an editor or email program to write a bug report or opens a
+  web page for bug submission.  Some standard information on the current
+  version and configuration of \R are included automatically.
 }
 \details{
-  If \code{package} is \code{NULL}, invokes an editor to write a bug
-  report and optionally mail it to the automated r-bugs repository at
-  \email{r-bugs@r-project.org}.  
+  If \code{package} is \code{NULL} or a base package, this opens the R
+  bugs tracker at \url{http://bugs.r-project.org/}.
   
   If \code{package} is specified, it is assumed that the bug report is
   about that package, and parts of its \file{DESCRIPTION} file are
   added to the standard information.  If the package has a
   \code{BugReports} field in the \file{DESCRIPTION} file, that URL
   will be opened using \code{\link{browseURL}}, otherwise an email
-  directed to the package maintainer will be generated.
-
-  Currently direct submission of bug reports works only on Unix systems.
-  If the submission method is \code{"mailx"}, then the default editor is
-  used to write the bug report. Which editor is used can be controlled
-  using \code{\link{options}}, type \code{getOption("editor")} to see what
-  editor is currently defined. Please use the help pages of the
-  respective editor for details of usage. After saving the bug report
-  (in the temporary file opened) and exiting the editor
-  the report is mailed using a Unix command line mail utility such as
-  \code{mailx}.  A copy of the mail is sent to the current user.
-
-  If method is \code{"gnudoit"}, then an emacs mail buffer is opened
-  and used for sending the email.
-
-  If method is \code{"none"} or \code{NULL} (and in every case on
-  Windows systems), then only an editor is opened to help writing the
-  bug report.  The report can then be copied to your favorite email
-  program and be sent to the r-bugs list.
-
-  If method is \code{"ess"} the body of the mail is simply sent to
-  stdout.
+  directed to the package maintainer will be generated using
+  \code{\link{create.post}}.  
 }
 \value{Nothing useful.}
 \section{When is there a bug?}{
@@ -156,20 +129,24 @@ bug.report(subject = "",
   bug.  This ensures that the site profile and saved data files are not
   read.
 
-  A bug report can be generated using the
-  \code{bug.report()} function.  This automatically includes the version
-  information and sends the bug to the correct address.  Alternatively
-  the bug report can be emailed to \email{r-bugs@r-project.org} or
-  submitted to the Web page at \url{http://bugs.r-project.org}.
+  A bug report can be generated using the function \code{bug.report()}.
+  For reports on \R this will open the Web page at
+  \url{http://bugs.R-project.org/}: for a contributed package it will
+  open the package's bug tracker Web page or help you compose an email
+  to the maintainer.
 
-  Bug reports on \strong{contributed packages} should be sent to the
-  package maintainer rather than to r-bugs, by specifying the \code{package}
-  argument to \code{bug.report()}.
+  Bug reports on \strong{contributed packages} should not be sent to the
+  R bug tracker: rather make use of the \code{package} argument.
 }
-\seealso{\code{\link{help.request}} which you possibly should try
+\seealso{
+  \code{\link{help.request}} which you possibly should try
   \emph{before} \code{bug.report}.
+
+  \code{\link{create.post}}, which handles emailing reports.
+  
   The R FAQ, also \code{\link{sessionInfo}()} from which you may add
-  to the bug report.}
+  to the bug report.
+}
 \author{This help page is adapted from the Emacs manual and the R FAQ}
 \keyword{utilities}
 \keyword{error}

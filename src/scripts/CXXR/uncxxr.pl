@@ -67,5 +67,6 @@ while (<>) {
   s/CXXRUNSIGNED\s*//g;
   s/Rf_//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
+  s/std:://g;
   print;
 }

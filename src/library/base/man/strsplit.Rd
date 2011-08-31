@@ -1,6 +1,6 @@
 % File src/library/base/man/strsplit.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{strsplit}
@@ -28,16 +28,13 @@ strsplit(x, split, fixed = FALSE, perl = FALSE, useBytes = FALSE)
   }
   \item{fixed}{
     logical.  If \code{TRUE} match \code{split} exactly, otherwise
-    use regular expressions.  Has priority over \code{perl} and
-    \code{extended}.
+    use regular expressions.  Has priority over \code{perl}.
   }
-  \item{perl}{
-    logical.  Should perl-compatible regexps be used?
-    Has priority over \code{extended}.
-  }
+  \item{perl}{logical.  Should perl-compatible regexps be used?}
   \item{useBytes}{logical.  If \code{TRUE} the matching is done
     byte-by-byte rather than character-by-character, and inputs with
-    marked encodings are not converted.}
+    marked encodings are not converted.  This is forced (with a warning)
+    if any input is found which is marked as \code{"bytes"}.}
 }
 \details{
   Argument \code{split} will be coerced to character, so
@@ -46,16 +43,16 @@ strsplit(x, split, fixed = FALSE, perl = FALSE, useBytes = FALSE)
 
   Note that splitting into single characters can be done \emph{via}
   \code{split = character(0)} or \code{split = ""}; the two are
-  equivalent. The definition of \sQuote{character} here depends on the
+  equivalent.  The definition of \sQuote{character} here depends on the
   locale: in a single-byte locale it is a byte, and in a multi-byte
   locale it is the unit represented by a \sQuote{wide character} (almost
   always a Unicode point).
-  
+
   A missing value of \code{split} does not split the corresponding
   element(s) of \code{x} at all.
 
   The algorithm applied to each input string is
-  \preformatted{
+\preformatted{
     repeat \{
         if the string is empty
             break.
@@ -66,11 +63,11 @@ strsplit(x, split, fixed = FALSE, perl = FALSE, useBytes = FALSE)
             add the string to the output.
             break.
     \}
-  }
+}
   Note that this means that if there is a match at the beginning of a
   (non-empty) string, the first element of the output is \code{""}, but
   if there is a match at the end of the string, the output is the same
-  as with the match removed. 
+  as with the match removed.
 }
 \value{
   A list of the same length as \code{x}, the \code{i}-th element of which

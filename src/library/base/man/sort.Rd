@@ -1,6 +1,6 @@
 % File src/library/base/man/sort.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{sort}
@@ -35,7 +35,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
     \code{FALSE}, they are put first; if \code{NA}, they are removed.}
   \item{partial}{\code{NULL} or an integer vector of indices for
     partial sorting.}
-  \item{method}{character string specifying the algorithm used.}
+  \item{method}{character string specifying the algorithm used.  Not
+    available for partial sorting.}
   \item{index.return}{logical indicating if the ordering index vector should
     be returned as well; this is only available for a few cases, the default
     \code{na.last = NA} and full sorting of non-factors.}
@@ -59,8 +60,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   sorted array.  (This is included for efficiency, and many of the
   options are not available for partial sorting.  It is only
   substantially more efficient if \code{partial} has a handful of
-  elements, and a full sort is done if there are more than 10.)  Names
-  are discarded for partial sorting.
+  elements, and a full sort is done (a quick sort if possible) if there
+  are more than 10.)  Names are discarded for partial sorting.
 
   Complex values are sorted first by the real part, then the imaginary
   part.
@@ -79,7 +80,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   \code{partial} is \code{NULL}.  (For other types of \code{x} Shellsort
   is used, silently.)  It is normally somewhat faster than Shellsort
   (perhaps twice as fast on vectors of length a million) but has poor
-  performance in the rare worst case. (Peto's modification using a
+  performance in the rare worst case.  (Peto's modification using a
   pseudo-random midpoint is used to make the worst case rarer.)  This is
   not a stable sort, and ties may be reordered.
 }
@@ -97,7 +98,8 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   named \code{x} and \code{ix} containing the sorted numbers and the
   ordering index vector.  In the latter case, if \code{method ==
     "quick"} ties may be reversed in the ordering, unlike
-  \code{sort.list}, as quicksort is not stable.
+  \code{sort.list}, as quicksort is not stable.  NB: the index vector
+  refers to element numbers after \emph{after removal of \code{NA}s}. 
 
   All attributes are removed from the return value (see Becker \emph{et
     al}, 1988, p.146) except names, which are sorted.  (If
@@ -115,7 +117,7 @@ sort.int(x, partial = NULL, na.last = NA, decreasing = FALSE,
   A new upper bound for Shell sort.
   \emph{J. Algorithms} \bold{7}, 159--173.
 
-  Singleton, R. C. (1969) An efficient algorithm for sorting with
+  Singleton, R. C. (1969)  An efficient algorithm for sorting with
   minimal storage: Algorithm 347.
   \emph{Communications of the ACM} \bold{12}, 185--187.
 }
@@ -143,9 +145,9 @@ sort(c(10:3,2:12), method = "qu", index.return=TRUE) # is not
 ##        ^^^^^
 
 x <- c(1:3, 3:5, 10)
-is.unsorted(x)                #-> FALSE: is sorted
-is.unsorted(x, strictly=TRUE) #-> TRUE : is not (and cannot be) sorted strictly
-
+is.unsorted(x)                # FALSE: is sorted
+is.unsorted(x, strictly=TRUE) # TRUE : is not (and cannot be)
+                              # sorted strictly
 \dontrun{
 ## Small speed comparison simulation:
 N <- 2000

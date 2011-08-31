@@ -1,7 +1,8 @@
 
-R version 2.12.0 Under development (unstable) (2010-08-28 r52822)
-Copyright (C) 2010 The R Foundation for Statistical Computing
+R version 2.13.1 RC (2011-07-05 r56282)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -145,6 +146,29 @@ Hair    Brown Blue Hazel Green
  1000 1e+06     2 ; 500 1000 5000 10000 50000 1e+05 5e+05 1e+06 
  1000 1e+07     1 ; 1000 10000 1e+05 1e+06 1e+07 
 > par(op)
+> 
+> ## An example using axTicks() without reference to an existing plot
+> ## (copying R's internal procedures for setting axis ranges etc.),
+> ## standard logarithmic y axis labels
+> ylims <- c(0.2, 88)
+> get_axp <- function(x) 10^c(ceiling(x[1]), floor(x[2]))
+> ## mimic par("yaxs")=="i"
+> usr.i <- log10(ylims)
+> (aT.i <- axTicks(side=2, usr=usr.i,
++                  axp=c(get_axp(usr.i), n=3), log=TRUE))
+[1]  0.2  0.5  1.0  2.0  5.0 10.0 20.0 50.0
+> ## mimic (default) par("yaxs")=="r"
+> usr.r <- extendrange(r = log10(ylims), f = 0.04)
+> (aT.r <- axTicks(side=2, usr=usr.r,
++                  axp=c(get_axp(usr.r),3), log=TRUE))
+[1]   0.2   0.5   1.0   2.0   5.0  10.0  20.0  50.0 100.0
+> 
+> ## Prove that we got it right :
+> plot(0:1,ylims,log="y",yaxs="i")
+> stopifnot(all.equal(aT.i, axTicks(side=2)))
+> 
+> plot(0:1,ylims,log="y",yaxs="r")
+> stopifnot(all.equal(aT.r, axTicks(side=2)))
 > 
 > 
 > 
@@ -718,27 +742,29 @@ temperature no yes
 > 
 > ### ** Examples
 > 
-> plot(qnorm)
+> plot(qnorm) # default range c(0, 1) is appropriate here,
+>             # but end values are -/+Inf and so are omitted.
 > plot(qlogis, main = "The Inverse Logit : qlogis()")
-> abline(h=0, v=0:2/2, lty=3, col="gray")
+> abline(h = 0, v = 0:2/2, lty = 3, col = "gray")
 > 
 > curve(sin, -2*pi, 2*pi)
 > curve(tan, main = "curve(tan)  --> same x-scale as previous plot")
 > 
-> op <- par(mfrow=c(2,2))
-> curve(x^3-3*x, -2, 2)
-> curve(x^2-2, add = TRUE, col = "violet")
+> op <- par(mfrow = c(2, 2))
+> curve(x^3 - 3*x, -2, 2)
+> curve(x^2 - 2, add = TRUE, col = "violet")
 > 
-> ## simple and sophisticated, quite similar:
+> ## simple and advanced versions, quite similar:
 > plot(cos, -pi,  3*pi)
-> plot(cos, xlim = c(-pi,3*pi), n = 1001, col = "blue", add=TRUE)
+> curve(cos, xlim = c(-pi, 3*pi), n = 1001, col = "blue", add = TRUE)
 > 
 > chippy <- function(x) sin(cos(x)*exp(-x/2))
-> curve(chippy, -8, 7, n=2001)
+> curve(chippy, -8, 7, n = 2001)
 > plot (chippy, -8, -5)
 > 
-> for(ll in c("","x","y","xy"))
-+    curve(log(1+x), 1,100, log=ll, sub=paste("log= '",ll,"'",sep=""))
+> for(ll in c("", "x", "y", "xy"))
++    curve(log(1+x), 1, 100, log = ll,
++          sub = paste("log= '", ll, "'", sep = ""))
 > par(op)
 > 
 > 
@@ -1505,7 +1531,7 @@ List of 2
 > 
 > ### Name: par
 > ### Title: Set or Query Graphical Parameters
-> ### Aliases: par .Pars
+> ### Aliases: par .Pars 'graphical parameter' 'graphical parameters'
 > ### Keywords: iplot dplot environment
 > 
 > ### ** Examples
@@ -1676,8 +1702,8 @@ armed.forces
 > names(pie.sales) <- c("Blueberry", "Cherry",
 +     "Apple", "Boston Cream", "Other", "Vanilla Cream")
 > pie(pie.sales) # default colours
-> pie(pie.sales,
-+     col = c("purple", "violetred1", "green3", "cornsilk", "cyan", "white"))
+> pie(pie.sales, col = c("purple", "violetred1", "green3",
++                        "cornsilk", "cyan", "white"))
 > pie(pie.sales, col = gray(seq(0.4,1.0,length=6)))
 > pie(pie.sales, density = 10, angle = 15 + 10 * 1:6)
 > pie(pie.sales, clockwise=TRUE, main="pie(*, clockwise=TRUE)")
@@ -1803,7 +1829,7 @@ armed.forces
 > flush(stderr()); flush(stdout())
 > 
 > ### Name: plot.design
-> ### Title: Plot Univariate Effects of a 'Design' or Model
+> ### Title: Plot Univariate Effects of a Design or Model
 > ### Aliases: plot.design
 > ### Keywords: hplot
 > 
@@ -1874,16 +1900,22 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > 
 > ### Name: plot.formula
 > ### Title: Formula Notation for Scatterplots
-> ### Aliases: plot.formula lines.formula points.formula
-> ### Keywords: hplot
+> ### Aliases: plot.formula lines.formula points.formula text.formula
+> ### Keywords: hplot aplot
 > 
 > ### ** Examples
 > 
-> op <- par(mfrow=c(2,1))
-> plot(Ozone ~ Wind, data = airquality, pch=as.character(Month))
-> plot(Ozone ~ Wind, data = airquality, pch=as.character(Month),
+> op <- par(mfrow = c(2,1))
+> plot(Ozone ~ Wind, data = airquality, pch = as.character(Month))
+> plot(Ozone ~ Wind, data = airquality, pch = as.character(Month),
 +      subset = Month != 7)
 > par(op)
+> 
+> ## text.formula() can be very natural:
+> wb <- within(warpbreaks, {
++     time <- seq_along(breaks); W.T <- wool:tension })
+> plot(breaks ~ time, data = wb, type = "b")
+> text(breaks ~ time, data = wb, label = W.T, col = 1+as.integer(wool))
 > 
 > 
 > 
@@ -2136,38 +2168,38 @@ attr(,"class")
 > 
 > ### ** Examples
 > 
-> plotPath <- function(x, y, col="grey", rule="winding") {
+> plotPath <- function(x, y, col = "grey", rule = "winding") {
 +     plot.new()
-+     plot.window(range(x, na.rm=TRUE), range(y, na.rm=TRUE))
-+     polypath(x, y, col=col, rule=rule)
++     plot.window(range(x, na.rm = TRUE), range(y, na.rm = TRUE))
++     polypath(x, y, col = col, rule = rule)
 +     if (!is.na(col))
-+         mtext(paste("Rule:", rule), side=1, line=0)
++         mtext(paste("Rule:", rule), side = 1, line = 0)
 + }
 > 
 > plotRules <- function(x, y, title) {
 +     plotPath(x, y)
-+     plotPath(x, y, rule="evenodd")
-+     mtext(title, side=3, line=0)
-+     plotPath(x, y, col=NA)
++     plotPath(x, y, rule = "evenodd")
++     mtext(title, side = 3, line = 0)
++     plotPath(x, y, col = NA)
 + }
 > 
-> op <- par(mfrow=c(5, 3), mar=c(2, 1, 1, 1))
+> op <- par(mfrow = c(5, 3), mar = c(2, 1, 1, 1))
 > 
 > plotRules(c(.1, .1, .9, .9, NA, .2, .2, .8, .8),
 +           c(.1, .9, .9, .1, NA, .2, .8, .8, .2),
-+           title="Nested rectangles, both clockwise")
-> plotRules(x=c(.1, .1, .9, .9, NA, .2, .8, .8, .2),
-+           y=c(.1, .9, .9, .1, NA, .2, .2, .8, .8),
-+           title="Nested rectangles, outer clockwise, inner anti-clockwise")
-> plotRules(x=c(.1, .1, .4, .4, NA, .6, .9, .9, .6),
-+           y=c(.1, .4, .4, .1, NA, .6, .6, .9, .9),
-+           title="Disjoint rectangles")
-> plotRules(x=c(.1, .1, .6, .6, NA, .4, .4, .9, .9),
-+           y=c(.1, .6, .6, .1, NA, .4, .9, .9, .4),
-+           title="Overlapping rectangles, both clockwise")
-> plotRules(x=c(.1, .1, .6, .6, NA, .4, .9, .9, .4),
-+           y=c(.1, .6, .6, .1, NA, .4, .4, .9, .9),
-+           title="Overlapping rectangles, one clockwise, other anti-clockwise")
++           "Nested rectangles, both clockwise")
+> plotRules(c(.1, .1, .9, .9, NA, .2, .8, .8, .2),
++           c(.1, .9, .9, .1, NA, .2, .2, .8, .8),
++           "Nested rectangles, outer clockwise, inner anti-clockwise")
+> plotRules(c(.1, .1, .4, .4, NA, .6, .9, .9, .6),
++           c(.1, .4, .4, .1, NA, .6, .6, .9, .9),
++           "Disjoint rectangles")
+> plotRules(c(.1, .1, .6, .6, NA, .4, .4, .9, .9),
++           c(.1, .6, .6, .1, NA, .4, .9, .9, .4),
++           "Overlapping rectangles, both clockwise")
+> plotRules(c(.1, .1, .6, .6, NA, .4, .9, .9, .4),
++           c(.1, .6, .6, .1, NA, .4, .4, .9, .9),
++           "Overlapping rectangles, one clockwise, other anti-clockwise")
 > 
 > par(op)
 > 
@@ -2365,7 +2397,8 @@ Copyright M. P. Wand 1997-2009
 >   smoothScatter(x)
 > 
 >   ## a different color scheme:
->   Lab.palette <- colorRampPalette(c("blue", "orange", "red"), space = "Lab")
+>   Lab.palette <-
++       colorRampPalette(c("blue", "orange", "red"), space = "Lab")
 >   smoothScatter(x, colramp = Lab.palette)
 > 
 >   ## somewhat similar, using identical smoothing computations,
@@ -2376,7 +2409,8 @@ Copyright M. P. Wand 1997-2009
 >   par(mfrow=c(1,1))
 >   y <- matrix(rnorm(40000), ncol=4) + 3*rnorm(10000)
 >   y[, c(2,4)] <-  -y[, c(2,4)]
->   pairs(y, panel = function(...) smoothScatter(..., nrpoints=0, add=TRUE))
+>   pairs(y,
++         panel = function(...) smoothScatter(..., nrpoints=0, add=TRUE))
 > 
 >   par(oldpar)
 > 
@@ -2758,22 +2792,22 @@ List of 3
 > y <- sort(10*runif(10))
 > z <- runif(10)
 > z3 <- cbind(z, 2*runif(10), runif(10))
-> symbols(x, y, thermometers=cbind(.5, 1, z), inches=.5, fg = 1:10)
-> symbols(x, y, thermometers = z3, inches=FALSE)
+> symbols(x, y, thermometers = cbind(.5, 1, z), inches = .5, fg = 1:10)
+> symbols(x, y, thermometers = z3, inches = FALSE)
 > text(x,y, apply(format(round(z3, digits=2)), 1, paste, collapse = ","),
-+      adj = c(-.2,0), cex = .75, col = "purple", xpd=NA)
++      adj = c(-.2,0), cex = .75, col = "purple", xpd = NA)
 > 
 > ## Note that  example(trees)  shows more sensible plots!
 > N <- nrow(trees)
 > with(trees, {
 + ## Girth is diameter in inches
-+ symbols(Height, Volume, circles=Girth/24, inches=FALSE,
-+         main="Trees' Girth")# xlab and ylab automatically
++ symbols(Height, Volume, circles = Girth/24, inches = FALSE,
++         main = "Trees' Girth") # xlab and ylab automatically
 + ## Colours too:
-+ palette(rainbow(N, end = 0.9))
-+ symbols(Height, Volume, circles=Girth/16, inches=FALSE, bg = 1:N,
-+         fg="gray30", main="symbols(*, circles=Girth/16, bg = 1:N)")
-+ palette("default")
++ op <- palette(rainbow(N, end = 0.9))
++ symbols(Height, Volume, circles = Girth/16, inches = FALSE, bg = 1:N,
++         fg = "gray30", main = "symbols(*, circles = Girth/16, bg = 1:N)")
++ palette(op)
 + })
 > 
 > 
@@ -2923,7 +2957,7 @@ function (xy = 1, warn.log = TRUE)
 > ### * <FOOTER>
 > ###
 > cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  7.556 0.487 8.208 0 0 
+Time elapsed:  6.703 0.178 7.022 0 0 
 > grDevices::dev.off()
 null device 
           1 

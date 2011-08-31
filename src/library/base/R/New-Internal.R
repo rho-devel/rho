@@ -52,7 +52,7 @@ try <- function(expr, silent = FALSE) {
 }
 
 comment <- function(x).Internal(comment(x))
-"comment<-" <- function(x,value).Internal("comment<-"(x, value))
+`comment<-` <- function(x,value).Internal("comment<-"(x, value))
 
 logb <- function(x, base=exp(1)) if(missing(base)) log(x) else log(x, base)
 
@@ -61,7 +61,7 @@ atan2 <- function(y, x).Internal(atan2(y, x))
 beta <- function(a, b).Internal( beta(a, b))
 lbeta <- function(a, b).Internal(lbeta(a, b))
 
-psigamma <- function(x, deriv = 0) .Internal(psigamma(x, deriv))
+psigamma <- function(x, deriv = 0L) .Internal(psigamma(x, deriv))
 
 factorial <- function(x) gamma(x + 1)
 lfactorial <- function(x) lgamma(x + 1)
@@ -76,7 +76,7 @@ commandArgs <- function(trailingOnly = FALSE) {
     args <- .Internal(commandArgs())
     if(trailingOnly) {
         m <- match("--args", args, 0L)
-        if(m) args[-seq_len(m)] else character(0L)
+        if(m) args[-seq_len(m)] else character()
     } else args
 }
 
@@ -133,7 +133,7 @@ do.call <- function(what, args, quote = FALSE, envir = parent.frame())
 
 drop <- function(x).Internal(drop(x))
 
-format.info <- function(x, digits = NULL, nsmall = 0)
+format.info <- function(x, digits = NULL, nsmall = 0L)
     .Internal(format.info(x, digits, nsmall))
 
 gc <- function(verbose = getOption("verbose"),	reset=FALSE)
@@ -146,6 +146,8 @@ gc <- function(verbose = getOption("verbose"),	reset=FALSE)
 }
 gcinfo <- function(verbose) .Internal(gcinfo(verbose))
 gctorture <- function(on=TRUE) invisible(.Internal(gctorture(on)))
+gctorture2 <- function(step, wait = step, inhibit_release = FALSE)
+    .Internal(gctorture2(step, wait, inhibit_release))
 
 is.unsorted <- function(x, na.rm = FALSE, strictly = FALSE)
 {
@@ -222,7 +224,7 @@ data.class <- function(x) {
     }
 }
 
-encodeString <- function(x, width = 0, quote = "", na.encode = TRUE,
+encodeString <- function(x, width = 0L, quote = "", na.encode = TRUE,
                          justify = c("left", "right", "centre", "none"))
 {
     at <- attributes(x)

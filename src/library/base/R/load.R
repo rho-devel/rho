@@ -22,25 +22,28 @@ load <-
         ## gzfile can open gzip, bzip2, xz and uncompressed files.
         con <- gzfile(file)
         on.exit(close(con))
+        ## Since the connection is not open this opens it in binary mode
+        ## and closes it again.
         magic <- readChar(con, 5L, useBytes = TRUE)
         if (!grepl("RD[AX]2\n", magic)) {
-            ## a check while we still know the args
+            ## a check while we still know the call to load()
             if(grepl("RD[ABX][12]\r", magic))
                 stop("input has been corrupted, with LF replaced by CR")
-            ## Not a version 2 magic number, so try the old way.
+            ## Not a version 2 magic number, so try the pre-R-1.4.0 code
             warning(gettextf("file '%s' has magic number '%s'\n   Use of save versions prior to 2 is deprecated",
                              basename(file), gsub("[\n\r]*", "", magic)),
                     domain = NA, call. = FALSE)
             return(.Internal(load(file, envir)))
         }
     } else if (inherits(file, "connection")) {
-        con <- if(inherits(file, "gzfile")) file else gzcon(file)
+        con <- if(inherits(file, "gzfile") || inherits(file, "gzcon")) file
+               else gzcon(file)
     } else stop("bad 'file' argument")
 
     .Internal(loadFromConn2(con, envir))
 }
 
-save <- function(..., list = character(0L),
+save <- function(..., list = character(),
                  file = stop("'file' must be specified"),
                  ascii = FALSE, version = NULL, envir = parent.frame(),
                  compress = !ascii, compression_level,

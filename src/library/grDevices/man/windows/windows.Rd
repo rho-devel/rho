@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/windows/windows.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{windows}
@@ -13,11 +13,11 @@
 \alias{print.SavedPlots}
 \alias{[.SavedPlots}
 
-\title{Windows graphics devices}
+\title{Windows Graphics Devices}
 
 \description{
   A graphics device is opened.  For \code{windows}, \code{win.graph},
-  \code{x11} and \code{X11} this is a graphics window on the current
+  \code{x11} and \code{X11} this is a window on the current
   Windows display: the multiple names are for compatibility with other
   systems.  \code{win.metafile} prints to a file and \code{win.print} to
   the Windows print system.
@@ -59,9 +59,11 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
   \item{canvas}{color.  The color of the canvas which is visible
     when the background color is transparent.  Should be a solid color
     (and any alpha value will be ignored).  Default \code{"white"}.}
-  \item{gamma}{the gamma correction factor to assume for the display.
-    This value is used to ensure that the colors perceived are linearly
-    related to RGB values (see \code{\link{hsv}}).  Default \code{1}.}
+  \item{gamma}{gamma correction fudge factor.
+    Colours in R are sRGB;  if your monitor does not conform to
+    sRGB, you might be able to improve things by tweaking this
+    parameter to apply additional gamma correction to the RGB channels.
+    By default 1 (no additional gamma correction).}
   \item{xpos, ypos}{integer.  Position of the top left of the window, in
     pixels.  Negative values are taken from the opposite edge of the
     monitor.  Missing values (the default) mean take the default from the
@@ -77,12 +79,12 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
     Windows metafile, usually given extension \file{.emf} or
     \file{.wmf}.  Up to 511 characters are allowed. The page number is
     substituted if an integer format is included in the character
-    string: see \code{\link{postscript}} for further details, and
-    tilde-expansion (see \code{\link{path.expand}} is performed. (The
+    string (see \code{\link{postscript}} for further details) and
+    tilde-expansion (see \code{\link{path.expand}}) is performed. (The
     result must be less than 600 characters long.)  The default,
     \code{""}, means the clipboard.}
   \item{printer}{The name of a printer as known to Windows. The default
-    causes a dialog box to come for the user to choose a printer.}
+    causes a dialog box to come up for the user to choose a printer.}
   \item{restoreConsole}{logical:  see the \sQuote{Details} below.  Defaults to
     \code{FALSE} for screen devices.}
   \item{clickToConfirm}{logical: if true confirmation of a new frame
@@ -179,7 +181,10 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
 
   For \code{win.metafile} only one plot is allowed per file, and Windows
   seems to disallow reusing the file.  So the \emph{only} way to allow
-  multiple plots is to use a parametrized \code{filename} as in the example.
+  multiple plots is to use a parametrized \code{filename} as in the
+  example.  If the \code{filename} is omitted (or specified as
+  \code{""}), the output is copied to the clipboard when the device is
+  closed.
   
   The \code{restoreConsole} argument is a temporary fix for a problem
   in the current implementation of several Windows graphics devices,
@@ -188,7 +193,7 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
   device is opened.  
 
   There is support for semi-transparent colours of lines, fills and text
-  on the \code{windows()} device.  These work for saving (from the
+  on the screen devices.  These work for saving (from the
   \sQuote{File} menu) to PDF, PNG, BMP, JPEG and TIFF, but will be ignored if
   saving to Metafile and PostScript.
 }
@@ -205,14 +210,8 @@ win.print(width = 7, height = 7, pointsize = 12, printer = "",
     one pixel. 
     \item The minimum radius of a circle is 1 pixel.
     \item Colours are interpreted via the unprofiled colour mapping of
-    the graphics card -- this is likely to be close to sRGB.
+    the graphics card -- this is \emph{assumed} to conform to sRGB.
   }
-}
-\section{Gamma}{
-  PC displays map RGB numbers non-linearly to luminosities (and the
-  eye/brain system also perceives non-linearly).  For a typical PC
-  display, a value of \code{gamma} of around \code{2.2} will result in
-  the unit steps in the RGB values are being perceived as roughly equal.
 }
 
 \value{

@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2010  The R Development Core Team.
+ *  Copyright (C) 1999-2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -736,15 +736,8 @@ SEXP attribute_hidden do_assign(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
 /**
- * do_list2env : .Internal(list2env(x, envir, parent, hash, size))
- *
- * 2 cases: 1) envir = NULL -->  create new environment from list
- *             elements, using parent, assuming part of new.env() functionality.
- *
- *          2) envir = environment --> assign x entries to names(x) in
- *             *existing* envir
- * @return a newly created environment() or envir {with new content}
- */
+ * do_list2env : .Internal(list2env(x, envir))
+  */
 SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, xnms, envir;
@@ -753,40 +746,16 @@ SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     if (TYPEOF(CAR(args)) != VECSXP)
 	error(_("first argument must be a named list"));
-    x = CAR(args); args = CDR(args);
+    x = CAR(args);
     n = LENGTH(x);
     xnms = getAttrib(x, R_NamesSymbol);
     if (TYPEOF(xnms) != STRSXP || LENGTH(xnms) != n)
 	error(_("names(x) must be a character vector of the same length as x"));
-    envir = CAR(args);  args = CDR(args);
-    if (TYPEOF(envir) == NILSXP) {
-	/* "copied" from do_newenv()  [ ./builtin.c ] */
-	SEXP enclos = CAR(args);
-	int hash = asInteger(CADR(args));
-	if( !isEnvironment(enclos) )
-	    error(_("'%s' must be an environment"), "parent");
-	if (hash) {
-	    SEXP size;
-	    PROTECT(size = coerceVector(CADDR(args), INTSXP));
-	    if (INTEGER(size)[0] == NA_INTEGER)
-		INTEGER(size)[0] = 0; /* so it will use the internal default */
-	    envir = R_NewHashedEnv(enclos, size);
-	    UNPROTECT(1);
-	} else
-	    envir = NewEnvironment(R_NilValue, R_NilValue, enclos);
-
-    } else { /* assign into existing environment */
-	if (TYPEOF(envir) != ENVSXP)
-	    error(_("invalid '%s' argument: must be NULL or environment"), 
-		  "envir");
-    }
-
-    PROTECT(envir);
-    for(int i = 0; i < n ; i++) {
+    envir = CADR(args);
+    for(int i = 0; i < LENGTH(x) ; i++) {
 	SEXP name = install(translateChar(STRING_ELT(xnms, i)));
 	defineVar(name, VECTOR_ELT(x, i), envir);
     }
-    UNPROTECT(1);
 
     return envir;
 }
@@ -1749,7 +1718,7 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
 	return R_BaseEnv;	/* -Wall */
     case S4SXP: {
 	/* dispatch was tried above already */
-        SEXP dot_xData = R_getS4DataSlot(arg, ENVSXP);
+	SEXP dot_xData = R_getS4DataSlot(arg, ENVSXP);
 	if(!isEnvironment(dot_xData))
 	    errorcall(call, _("S4 object does not extend class \"environment\""));
 	else
@@ -1757,9 +1726,13 @@ do_as_environment(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     case VECSXP: {
 	/* implement as.environment.list() {isObject(.) is false for a list} */
-	return(eval(lang4(install("list2env"), arg,
-			  /*envir = */R_NilValue, /* parent = */R_EmptyEnv),
-		    rho));
+	SEXP call, val;
+	PROTECT(call = lang4(install("list2env"), arg,
+			     /* envir = */R_NilValue,
+			     /* parent = */R_EmptyEnv));
+	val = eval(call, rho);
+	UNPROTECT(1);
+	return val;
     }
     default:
 	errorcall(call, _("invalid object for 'as.environment'"));

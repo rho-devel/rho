@@ -3,7 +3,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,6 +30,11 @@
 #include <R_ext/RS.h>           /* for R_chk_* allocation */
 #include <ctype.h>
 #include <Rmath.h> /* for imax2(.),..*/
+
+/* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
+   so remap */
+
+#define yylloc yyllocR
 
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
@@ -988,6 +993,10 @@ struct {
     const char *name;
     int token;
 }
+
+/* When adding keywords here, make sure all the handlers 
+   are also modified:  checkRd, Rd2HTML, Rd2latex, Rd2txt, any other new ones... */
+   
 static keywords[] = {
     /* These sections contain Latex-like text */
     
@@ -1688,7 +1697,6 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     Rconnection con;
     Rboolean wasopen, fragment;
     int ifile, wcall;
-    const char *encoding;
     ParseStatus status;
 
 #if DEBUGMODE
@@ -1704,9 +1712,8 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     con = getConnection(ifile);
     wasopen = con->isopen;
     source = CAR(args);					args = CDR(args);
-    if(!isString(CAR(args)) || LENGTH(CAR(args)) != 1)
-	error(_("invalid '%s' value"), "encoding");
-    encoding = CHAR(STRING_ELT(CAR(args), 0)); /* ASCII */ args = CDR(args);
+    /* encoding is unused */
+    args = CDR(args);
     if(!isLogical(CAR(args)) || LENGTH(CAR(args)) != 1)
     	error(_("invalid '%s' value"), "verbose");
     xxDebugTokens = asInteger(CAR(args));		args = CDR(args);
@@ -1718,16 +1725,16 @@ SEXP attribute_hidden do_parseRd(SEXP call, SEXP op, SEXP args, SEXP env)
     wCalls = CXXRCONSTRUCT(Rboolean, wcall);
 
     if (ifile >= 3) {/* file != "" */
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    if(!con->canread) {
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseRd(con, &status, source, fragment);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
 		con->close(con);
-		error(_("cannot read from this connection"));
-	    }
-	} else if(!con->canread)
-	    error(_("cannot read from this connection"));
-	s = R_ParseRd(con, &status, source, fragment);
-	if(!wasopen) con->close(con);
+	    throw;
+	}
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else error(_("invalid Rd file"));

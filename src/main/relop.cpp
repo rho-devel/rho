@@ -296,7 +296,7 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 		LOGICAL(ans)[i] = 1;
 	    else {
 		errno = 0;
-		res = Scollate(STRING_ELT(s1, i % n1), STRING_ELT(s2, i % n2));
+		res = Scollate(c1, c2);
 		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
@@ -314,7 +314,7 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 		LOGICAL(ans)[i] = 1;
 	    else {
 		errno = 0;
-		res = Scollate(STRING_ELT(s1, i % n1), STRING_ELT(s2, i % n2));
+		res = Scollate(c1, c2);
 		if(errno)
 		    LOGICAL(ans)[i] = NA_LOGICAL;
 		else
@@ -324,6 +324,14 @@ static SEXP string_relop(RELOP_TYPE code, SEXP s1, SEXP s2)
 	break;
     }
     UNPROTECT(3);
+    return ans;
+}
+
+SEXP bitwiseNot(SEXP a)
+{
+    int  m = LENGTH(a);
+    SEXP ans = allocVector(INTSXP, m);
+    for(int i = 0; i < m; i++) INTEGER(ans)[i] =  ~INTEGER(a)[i];
     return ans;
 }
 

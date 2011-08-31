@@ -42,6 +42,11 @@
 #include "internal.h"
 extern unsigned int TopmostDialogs; /* from dialogs.c */
 #include <winbase.h>
+
+#ifndef W64
+WINGDIAPI BOOL WINAPI AlphaBlend(HDC,int,int,int,int,HDC,int,int,int,int,BLENDFUNCTION);
+#endif
+
 #include <wchar.h>
 #ifdef __GNUC__
 # define alloca(x) __builtin_alloca((x))
@@ -52,29 +57,6 @@ extern unsigned int TopmostDialogs; /* from dialogs.c */
 /* from extra.c */
 extern size_t Rf_utf8towcs(wchar_t *wc, const char *s, size_t n);
 
-/* Some of the ideas in haveAlpha are borrowed from Cairo */
-typedef BOOL
-(WINAPI *alpha_blend_t) (HDC, int, int, int, int, HDC, int, int, int, int,
-			 BLENDFUNCTION);
-
-static alpha_blend_t pAlphaBlend;
-
-static int haveAlpha(void)
-{
-    static int haveAlphaBlend = -1;
-
-    if(haveAlphaBlend < 0) {
-	/* AlphaBlend is in msimg32.dll.  */
-	HMODULE msimg32 = LoadLibrary("msimg32");
-	if (msimg32) {
-	    pAlphaBlend =
-		(alpha_blend_t) GetProcAddress(msimg32, "AlphaBlend");
-	    haveAlphaBlend = 1;
-	    /* printf("loaded AlphaBlend %p\n", (void *) AlphaBlend); */
-	} else haveAlphaBlend = 0;
-    }
-    return haveAlphaBlend;
-}
 
 static HDC GETHDC(drawing d)
 {
@@ -372,18 +354,29 @@ void gcopy(drawing d, drawing d2, rect r)
 
 void gcopyalpha(drawing d, drawing d2, rect r, int alpha) 
 {
-    if(alpha <= 0 || !haveAlpha()) return;
+    if(alpha <= 0) return;
     {
-	HDC dc = GETHDC(d), sdc = GETHDC(d2);
 	BLENDFUNCTION bl;
 	bl.BlendOp = AC_SRC_OVER;
 	bl.BlendFlags = 0;
 	bl.SourceConstantAlpha = alpha;
 	bl.AlphaFormat = 0;
-        pAlphaBlend(dc, r.x, r.y, r.width, r.height,
-                    sdc, r.x, r.y, r.width, r.height,
-                    bl);
+        AlphaBlend(GETHDC(d), r.x, r.y, r.width, r.height,
+		   GETHDC(d2), r.x, r.y, r.width, r.height, bl);
     }
+}
+
+void gcopyalpha2(drawing d, image src, rect r) 
+{
+    BLENDFUNCTION bl;
+    bl.BlendOp = AC_SRC_OVER;
+    bl.BlendFlags = 0;
+    bl.SourceConstantAlpha = 255; /* per-pixel alpha only */
+    bl.AlphaFormat = AC_SRC_ALPHA;
+    bitmap bm = imagetobitmap(src);
+    AlphaBlend(GETHDC(d), r.x, r.y, r.width, r.height,
+	       GETHDC(bm), 0, 0, r.width, r.height, bl);
+    del(bm);
 }
 
 void gdrawellipse(drawing d, int width, rgb border, rect r, int fast,
@@ -556,6 +549,7 @@ void gfillpolypolygon(drawing d, rgb fill, point *p, int npoly, int *nper)
 void gdrawimage(drawing d, image img, rect dr, rect sr)
 {
     HDC dc = GETHDC(d);
+    HDC bc;
     bitmap b;
     image i = img;
 
@@ -567,9 +561,20 @@ void gdrawimage(drawing d, image img, rect dr, rect sr)
     }
 
     b = imagetobitmap(i);
+    /* The next line assumes that the context returned is a NEW
+       context, but that should be ok because the object 'b'
+       has just been created in the line above, which means
+       that get_context() should create a new context. */
+    bc = get_context(b);
 
-    BitBlt(dc, dr.x, dr.y, dr.width, dr.height, 
-           get_context(b), sr.x, sr.y, SRCCOPY);
+    BitBlt(dc, dr.x, dr.y, dr.width, dr.height,
+           bc, sr.x, sr.y, SRCCOPY);
+
+    /* DO NOT rely on the del() mechanism to (eventually) clean up
+       the context 'bc' (via deletion_traversal() in objects.c).
+       That leads to running out of contexts (see MAX_CONTEXTS
+       in contexts.c).  Instead, explicitly dispose of the context here */
+    del_context(b);
 
     if (i != img)
 	del(i);
@@ -583,6 +588,7 @@ void gdrawimage(drawing d, image img, rect dr, rect sr)
 void gmaskimage(drawing d, image img, rect dr, rect sr, image mask)
 {
     HDC dc = GETHDC(d);
+    HDC bc, mbc, mbwc;
     bitmap b, mb, mbw;
     image i = img;
     image m = mask;
@@ -597,15 +603,23 @@ void gmaskimage(drawing d, image img, rect dr, rect sr, image mask)
 
     b = imagetobitmap(i);
     mb = imagetobitmap(m);
-
     mbw = newbitmap(dr.width, dr.height, 1);
-    BitBlt(get_context(mbw), sr.x, sr.y, sr.width, sr.height, 
-           get_context(mb), sr.x, sr.y, SRCCOPY);
-    
-    MaskBlt(dc, dr.x, dr.y, dr.width, dr.height, 
-            get_context(b), sr.x, sr.y, 
+
+    bc = get_context(b);
+    mbc = get_context(mb);
+    mbwc = get_context(mbw);
+
+    BitBlt(mbwc, sr.x, sr.y, sr.width, sr.height,
+           mbc, sr.x, sr.y, SRCCOPY);
+
+    MaskBlt(dc, dr.x, dr.y, dr.width, dr.height,
+            bc, sr.x, sr.y,
             (HBITMAP) mbw->handle, 0, 0,
             MAKEROP4(SRCCOPY, SRCAND));
+
+    del_context(b);
+    del_context(mb);
+    del_context(mbw);
 
     if (i != img)
 	del(i);

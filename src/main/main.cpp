@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2010   The R Development Core Team
+ *  Copyright (C) 1998-2011   The R Development Core Team
  *  Copyright (C) 2002-2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -131,6 +131,8 @@ LibExport int	R_RestoreHistory;   /* restore the history file? */
 LibExport Rboolean utf8locale = FALSE;  /* is this a UTF-8 locale? */
 LibExport Rboolean mbcslocale = FALSE;  /* is this a MBCS locale? */
 LibExport unsigned int localeCP = 1252; /* the locale's codepage */
+LibExport int R_num_math_threads = 1;
+LibExport int R_max_num_math_threads = 1;
 LibExport SEXP R_MethodsNamespace;
 LibExport AccuracyInfo R_AccuracyInfo;
 
@@ -184,6 +186,7 @@ attribute_hidden Rboolean R_ShowErrorCalls = FALSE;
 attribute_hidden int R_NShowCalls = 50;
 attribute_hidden   Rboolean latin1locale = FALSE; /* is this a Latin-1 locale? */
 attribute_hidden char OutDec	= '.';  /* decimal point used for output */
+attribute_hidden Rboolean R_DisableNLinBrowser = FALSE;
 
 attribute_hidden int R_dec_min_exponent		= -308;
 attribute_hidden unsigned int max_contour_segments = 25000;
@@ -350,11 +353,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     }
 #ifdef SHELL_ESCAPE /* not default */
     if (*state->bufp == '!') {
-#ifdef HAVE_SYSTEM
 	    R_system(&(state->buf[1]));
-#else
-	    REprintf(_("error: system commands are not supported in this version of R.\n"));
-#endif /* HAVE_SYSTEM */
 	    state->buf[0] = '\0';
 	    return(0);
     }
@@ -373,10 +372,11 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 
 	/* The intention here is to break on CR but not on other
 	   null statements: see PR#9063 */
-	if (browselevel && !strcmp(reinterpret_cast<char *>( state->buf), "\n")) return -1;
+	if (browselevel && !R_DisableNLinBrowser
+	    && !strcmp(reinterpret_cast<char *>( state->buf), "\n")) return -1;
 	R_IoBufferWriteReset(&R_ConsoleIob);
 	state->prompt_type = 1;
-	return(1);
+	return 1;
 
     case PARSE_OK:
 
@@ -384,10 +384,10 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
 	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status, NULL);
 	if (browselevel) {
 	    browsevalue = ParseBrowser(R_CurrentExpr, rho);
-	    if(browsevalue == 1) return(-1);
+	    if(browsevalue == 1) return -1;
 	    if(browsevalue == 2) {
 		R_IoBufferWriteReset(&R_ConsoleIob);
-		return(0);
+		return 0;
 	    }
 	}
 	R_Visible = FALSE;
@@ -861,6 +861,12 @@ void setup_Rmainloop(void)
 			 "Setting LC_MONETARY=%s failed\n", p);
 	} else setlocale(LC_MONETARY, Rlocale);
 	/* Windows does not have LC_MESSAGES */
+
+	/* We set R_ARCH here: Unix does it in the shell front-end */
+	char Rarch[30];
+	strcpy(Rarch, "R_ARCH=/");
+	strcat(Rarch, R_ARCH);
+	putenv(Rarch);
     }
 #else /* not Win32 */
     if(!setlocale(LC_CTYPE, ""))
@@ -923,6 +929,7 @@ void setup_Rmainloop(void)
 	   simultaneously */
 	seed = (int) GetTickCount() + getpid();
 #elif HAVE_TIME
+	/* C89, so should work */
 	seed = time(NULL);
 #else
 	/* unlikely, but use random contents */
@@ -942,7 +949,6 @@ void setup_Rmainloop(void)
     InitGraphics();
     R_Is_Running = 1;
     R_check_locale();
-    /* gc_inhibit_torture = 0; */
 
     R_Warnings = R_NilValue;
 
@@ -1080,6 +1086,11 @@ void setup_Rmainloop(void)
 	REprintf(_("During startup - "));
 	PrintWarnings();
     }
+
+#ifdef BYTECODE
+    /* trying to do this earlier seems to run into bootstrapping issues. */
+    R_init_jit_enabled();
+#endif
 }
 
 extern SA_TYPE SaveAction; /* from src/main/startup.c */

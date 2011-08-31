@@ -1,6 +1,6 @@
 % File src/library/base/man/grep.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{grep}
@@ -13,8 +13,9 @@
 \alias{gregexpr}
 \description{
   \code{grep}, \code{grepl}, \code{regexpr} and \code{gregexpr} search
-  for matches to argument \code{pattern} within a character vector: they
-  differ in the format of and amount of detail in the results.
+  for matches to argument \code{pattern} within each element of a
+  character vector: they differ in the format of and amount of detail in
+  the results.
 
   \code{sub} and \code{gsub} perform replacement of the first and all
   matches respectively.
@@ -23,8 +24,8 @@
 grep(pattern, x, ignore.case = FALSE, perl = FALSE, value = FALSE,
      fixed = FALSE, useBytes = FALSE, invert = FALSE)
 
-grepl(pattern, x, ignore.case = FALSE, perl = FALSE, fixed = FALSE,
-      useBytes = FALSE)
+grepl(pattern, x, ignore.case = FALSE, perl = FALSE,
+      fixed = FALSE, useBytes = FALSE)
 
 sub(pattern, replacement, x, ignore.case = FALSE, perl = FALSE,
     fixed = FALSE, useBytes = FALSE)
@@ -50,7 +51,7 @@ gregexpr(pattern, text, ignore.case = FALSE, perl = FALSE,
     object which can be coerced by \code{as.character} to a character vector.}
   \item{ignore.case}{if \code{FALSE}, the pattern matching is \emph{case
       sensitive} and if \code{TRUE}, case is ignored during matching.}
-  \item{perl}{logical. Should perl-compatible regexps be used?
+  \item{perl}{logical.  Should perl-compatible regexps be used?
     Has priority over \code{extended}.}
   \item{value}{if \code{FALSE}, a vector containing the (\code{integer})
     indices of the matches determined by \code{grep} is returned, and if
@@ -101,8 +102,10 @@ gregexpr(pattern, text, ignore.case = FALSE, perl = FALSE,
 
   The main effect of \code{useBytes} is to avoid errors/warnings about
   invalid inputs and spurious matches in multibyte locales, but for
-  \code{regexpr} it changes the interpretation of the output.  As from
-  \R 2.10.0 it inhibits the conversion of inputs with marked encodings.
+  \code{regexpr} it changes the interpretation of the output.
+  It inhibits the conversion of inputs with marked encodings, and is
+  forced (with a warning) if any input is found which is marked as
+  \code{"bytes"}.
   
   Caseless matching does not make much sense for bytes in a multibyte
   locale, and you should expect it only to work for ASCII characters if
@@ -137,6 +140,7 @@ gregexpr(pattern, text, ignore.case = FALSE, perl = FALSE,
   encoding).  If \code{useBytes = FALSE} a non-ASCII substituted result
   will often be in UTF-8 with a marked encoding (e.g. if there is a
   UTF-8 input, and in a multibyte locale unless \code{fixed = TRUE}).
+  Such strings can be re-encoded by \code{\link{enc2native}}.
 
   \code{regexpr} returns an integer vector of the same length as
   \code{text} giving the starting position of the first match or
@@ -180,7 +184,7 @@ gregexpr(pattern, text, ignore.case = FALSE, perl = FALSE,
 
 \source{
   The C code for POSIX-style regular expression matching has changed
-  over the years. As from \R 2.10.0 the TRE library of Ville Laurikari
+  over the years.  As from \R 2.10.0 the TRE library of Ville Laurikari
   (\url{http://laurikari.net/tre/}) is used.  From 2005 to \R 2.9.2,
   code based on \code{glibc} was used (and before that, code from GNU
   \command{grep}).  The POSIX standard does give some room for
@@ -205,14 +209,16 @@ gregexpr(pattern, text, ignore.case = FALSE, perl = FALSE,
   \code{\link{glob2rx}} to turn wildcard matches into regular expressions.
 
   \code{\link{agrep}} for approximate matching.
-
-  \code{\link{enc2native}} to re-encode the result of \code{sub}.
+  
+  \code{\link{charmatch}}, \code{\link{pmatch}} for partial matching,
+  \code{\link{match}} for matching to whole strings.
 
   \code{\link{tolower}}, \code{\link{toupper}} and \code{\link{chartr}}
   for character translations.
-  \code{\link{charmatch}}, \code{\link{pmatch}}, \code{\link{match}}.
-
+  
   \code{\link{apropos}} uses regexps and has more examples.
+
+  \code{\link{grepRaw}} for matching raw vectors.
 }
 \examples{
 grep("[a-z]", letters)

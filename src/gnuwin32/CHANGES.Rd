@@ -4,6 +4,173 @@
 \title{Windows-specific changes to R}
 \encoding{UTF-8}
 
+\section{CHANGES IN R VERSION 2.13.1}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \command{R CMD build} no longer attempts to preserve file
+      permissions on Windows, because Windows (unlike POSIX-compliant
+      OSes) stops read-only files being deleted in version-control
+      directories.
+      
+      \item \code{shell.exec()} now interprets files relative to the current
+      working directory (rather than \samp{R_HOME}).
+
+      \item \code{file.info()} now accepts \sQuote{file} names with
+      trailing directory separators, even though such names are invalid
+      on Windows.
+
+      \item The \code{windows()} family of devices now supports()
+      per-pixel alpha for raster images.
+    }
+  }
+  
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Launching the PDF manuals from the Rgui menus did not work
+      on some versions of Windows.
+      
+      \item The windows() screen device would sometimes fail to plot
+      (visibly) points with \code{pch="."}. \PR{14583}
+      
+      \item \code{system()} and related functions sometimes failed
+      when run in \file{Rgui}.
+
+      \item Saving to PDF from the menu of a \code{windows()} device
+      used defaults for \code{family}, \code{fg} and \code{bg} from
+      \code{ps.options()} rather than \code{pdf.options()} (but
+      the factory-fresh defaults were the same).
+      
+      \item Shutting down the \R session cleaned up the temporary
+      directory before closing all graphics devices.  On Windows this
+      necessitated changing the working directory, so some devices
+      (e.g. \code{tiff()}) could write files in the wrong directory if
+      closed during shutdown.  The order has been reversed.      
+    }
+  }
+}
+  
+\section{CHANGES IN R VERSION 2.13.0}{
+  \subsection{WINDOWS VERSION}{
+    \itemize{
+      \item Windows 2000 is no longer supported.  (It went end-of-life in
+      July 2010.)
+    }
+  }
+    
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item \code{win_iconv} has been updated: this version has a change
+      in the behaviour with BOMs on UTF-16 and UTF-32 files -- it
+      removes BOMs when reading and adds them when writing.  (This is
+      consistent with Microsoft applications, but Unix versions of
+      \code{iconv} usually ignore them.)
+
+      \item Support for repository type \samp{win64.binary} (used for
+      64-bit Windows binaries for \R 2.11.x only) has been removed.
+
+      \item The installers no longer put an \sQuote{Uninstall} item on
+      the start menu (to conform to current Microsoft UI guidelines).
+
+      \item Running \R always sets the environment variable \env{R_ARCH}
+      (as it does on a Unix-alike from the shell-script front-end).
+
+      \item The defaults for \code{options("browser")} and
+      \code{options("pdfviewer")} are now set from environment variables
+      \env{R_BROWSER} and \env{R_PDFVIEWER} respectively (as on a
+      Unix-alike).  A value of \code{"false"} suppresses display (even
+      if there is no \command{false.exe} present on the path).
+      
+      \item If \code{options("install.lock")} is set to \code{TRUE},
+      binary package installs are protected against failure similar to
+      the way source package installs are protected.
+
+      \item \code{file.exists()} and \code{unlink()} have more support
+      for files > 2GB.
+
+      \item The versions of \command{R.exe} in
+      \file{R_HOME/bin/{i386,x64}/bin} now support options such as
+      \command{R --vanilla CMD}: there is no comparable interface for
+      \file{Rcmd.exe}.
+
+      \item A few more file operations will now work with >2GB files.
+
+      \item The environment variable \env{R_HOME} in an \R session now
+      uses slash as the path separator (as it always has when set by
+      \command{Rcmd.exe}).
+
+      \item \command{Rgui} has a new menu item for the PDF
+      \sQuote{Sweave User Manual}.
+    }
+  }
+
+  \subsection{DEPRECATED}{
+    \itemize{
+      \item{zip.unpack()} is deprecated: use \code{unzip()}.
+    }
+  }
+  \subsection{INSTALLATION}{
+    \itemize{
+      \item There is support for \samp{libjpeg-turbo} \emph{via}
+      setting \code{JPEGDIR} to that value in \file{MkRules.local}.
+
+      Support for \samp{jpeg-6b} has been removed.
+
+      \item The sources now work with \samp{libpng-1.5.1}, 
+      \samp{jpegsrc.v8c} (which are used in the CRAN builds) and
+      \samp{tiff-4.0.0beta6} (CRAN builds use 3.9.1).  It is possible
+      that they no longer work with older versions than 
+      \samp{libpng-1.4.5}. 
+    } 
+  }
+
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item Workaround for the incorrect values given by Windows'
+      \code{casinh} function on the branch cuts.
+
+      \item Bug fixes for drawing raster objects on \code{windows()}.  The
+      symptom was the occasional raster image not being drawn, especially
+      when drawing multiple raster images in a single expression.
+      Thanks to Michael Sumner for report and testing.
+      
+      \item Printing extremely long string values could overflow the
+      stack and cause the GUI to crash.  (\PR{14543})
+    }
+  }
+}
+
+\section{CHANGES IN R VERSION 2.12.2}{
+  \subsection{NEW FEATURES}{
+    \itemize{
+      \item Building badly-written vignettes which used the default
+      device (\code{pdf(file = "Rplots.pdf")} could leave the device
+      open and hence the file \file{Rplots.pdf} could not be removed on
+      Windows: all devices are now closed.
+    }
+  }
+
+  \subsection{BUG FIXES}{
+    \itemize{
+      \item In some circumstances the caret (cursor) could be positioned 
+      incorrectly. (\PR{14460})
+      
+      \item When loading \file{Rconsole} from disk, a spurious warning
+      message was sometimes shown.
+      
+      \item In \R 2.12.1, \code{system()} sometimes passed an empty
+      input stream to the new process rather than allowing user input.
+
+      \item The internal method for \code{untar()} does a better job of
+      unravelling symbolic links in the tarball (but still with many
+      limitations).
+      
+      \item The graphical dialog version of \code{select.list()} could
+      cause later dialogs to fail if Windows events were not processed
+      between the calls.
+    }
+  }
+}
+
 \section{CHANGES IN R VERSION 2.12.1}{
   \subsection{NEW FEATURES}{
     \itemize{

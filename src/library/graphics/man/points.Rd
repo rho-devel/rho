@@ -22,7 +22,7 @@ points(x, \dots)
   \item{x, y}{coordinate vectors of points to plot.}
   \item{type}{character indicating the type of plotting; actually any of
     the \code{type}s as in \code{\link{plot.default}}.}
-  \item{\dots}{Further graphical parameters may also be supplied as
+  \item{\dots}{Further \link{graphical parameters} may also be supplied as
     arguments.  See \sQuote{Details}.}
 }
 \details{
@@ -60,10 +60,11 @@ points(x, \dots)
   Others less commonly used are \code{lty} and \code{lwd} for
   types such as \code{"b"} and \code{"l"}.
 
-  Graphical parameters \code{pch}, \code{col}, \code{bg}, \code{cex} and
-  \code{lwd} can be vectors (which will be recycled as needed) giving a
-  value for each point plotted.  If lines are to be plotted (e.g. for
-  \code{type = "b"}/ the first element of \code{lwd} is used.
+  The \link{graphical parameters} \code{pch}, \code{col}, \code{bg},
+  \code{cex} and \code{lwd} can be vectors (which will be recycled as
+  needed) giving a value for each point plotted.  If lines are to be
+  plotted (e.g. for \code{type = "b"}/ the first element of \code{lwd}
+  is used.
 
   Points whose \code{x}, \code{y}, \code{pch}, \code{col} or \code{cex}
   value is \code{NA} are omitted from the plot.
@@ -85,7 +86,7 @@ points(x, \dots)
   Note that unlike S (which uses octagons), symbols \code{1}, \code{10},
   \code{13} and \code{16} use circles.  The filled shapes \code{15:18}
   do not include a border.
-  
+
   The following  \R plotting symbols are can be obtained with
   \code{pch=19:25}: those with \code{21:25} can be colored and
   filled with different colors: \code{col} gives the border color
@@ -107,7 +108,7 @@ points(x, \dots)
   The difference between \code{pch=16} and \code{pch=19} is that the
   latter uses a border and so is perceptibly larger when \code{lty} is
   large relative to \code{cex}.
-      
+
   Values \code{pch=26:31} are currently unused and \code{pch=32:127}
   give the ASCII characters.  In a single-byte locale
   \code{pch=128:255} give the corresponding character (if any) in
@@ -148,6 +149,7 @@ points(x, \dots)
   Wadsworth & Brooks/Cole.
 }
 \seealso{
+  \code{\link{points.formula}} for the formula method;
   \code{\link{plot}}, \code{\link{lines}}, and the underlying
   workhorse function \code{\link{plot.xy}}.
 }

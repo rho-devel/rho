@@ -15,15 +15,16 @@
 formatC(x, digits = NULL, width = NULL,
         format = NULL, flag = "", mode = NULL,
         big.mark = "", big.interval = 3L,
-      small.mark = "", small.interval = 5L,
-    decimal.mark = ".", preserve.width = "individual",
+        small.mark = "", small.interval = 5L,
+        decimal.mark = ".", preserve.width = "individual",
         zero.print = NULL, drop0trailing = FALSE)
 
 prettyNum(x, big.mark = "",   big.interval = 3L,
           small.mark = "", small.interval = 5L,
           decimal.mark = ".",
           preserve.width = c("common", "individual", "none"),
-          zero.print = NULL, drop0trailing = FALSE, is.cmplx = NA, \dots)
+          zero.print = NULL, drop0trailing = FALSE, is.cmplx = NA,
+          \dots)
 }
 \arguments{
   \item{x}{an atomic numerical or character object, possibly
@@ -140,6 +141,13 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
   unexpectedly if \code{x} is a \code{character} vector not resulting from
   something like \code{format(<number>)}: in particular it assumes that
   a period is a decimal mark.
+  
+  Because \code{\link{gsub}} is used to insert the \code{big.mark}
+  and \code{small.mark}, special characters need escaping.  In particular, 
+  to insert a single backslash, use \code{"\\\\\\\\"}.  
+  
+  In versions of \R before 2.13.0, the \code{big.mark} would be
+  reversed on insertion if it contained more than one character.  
 }
 \author{
   \code{formatC} was originally written by Bill Dunlap, later much
@@ -148,7 +156,7 @@ prettyNum(x, big.mark = "",   big.interval = 3L,
 }
 \references{
   Kernighan, B. W. and Ritchie, D. M. (1988)
-  \emph{The C Programming Language.}  Second edition. Prentice Hall.
+  \emph{The C Programming Language.}  Second edition.  Prentice Hall.
 }
 \seealso{
   \code{\link{format}}.

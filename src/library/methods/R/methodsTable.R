@@ -56,6 +56,10 @@
   signature <- generic@signature
   if(!exists(".SigLength", envir = fenv, inherits = FALSE))
      .setupMethodsTables(generic)
+  if(add)
+      allTable <- NULL # .AllMTable but only if required
+  else
+      allTable <- get(".AllMTable", envir = fenv)
   n <- get(".SigLength", envir = fenv)
   anySig <- rep("ANY", n)
   anyLabel <- .sigLabel(anySig)
@@ -88,11 +92,21 @@
         n <- ns
       }
     }
-    if(add)
-      assign(what, obj, envir = table)
+    if(add) {
+        if(exists(what, envir = table, inherits = FALSE)) {
+            ## must replace in .AllMTable also
+            if(is.null(allTable))
+                allTable <- get(".AllMTable", envir = fenv)
+            assign(what, obj, envir = allTable)
+        }
+        assign(what, obj, envir = table)
+    }
     else if(exists(what, envir = table, inherits = FALSE) &&
-            !all(obj@defined == "ANY") ) # remove methods, but not the default
-      remove(list = what, envir = table)
+            !all(obj@defined == "ANY") ) {
+        ## remove methods, but not the default
+        remove(list = what, envir = allTable)
+        remove(list = what, envir = table)
+    }
     ## else warning?
   }
   NULL
@@ -669,8 +683,11 @@
         generics[[i]] <- getGeneric(groups[[i]])
     .checkGroupSigLength(groups, generics)
   }
-  else if(is(generic, "groupGenericFunction"))
-    .checkGroupSigLength(list(generic@generic), list(generic))
+  if(is(generic, "groupGenericFunction")) {
+      .checkGroupSigLength(list(generic@generic), list(generic))
+      for(g in getGroupMembers(generic))
+          .updateMethodsInTable(getGeneric(g), where, attach)
+  }
   .resetInheritedMethods(fenv, mtable)
   mtable
 }
@@ -1142,7 +1159,8 @@ listFromMethods <- function(generic, where, table) {
 testInheritedMethods <- function(f, signatures, test = TRUE,  virtual = FALSE,
                                  groupMethods = TRUE,  where = .GlobalEnv)
 {
-  getSigs <- function(fdef) objects(methods:::.getMethodsTable(fdef), all=TRUE)
+  getSigs <- function(fdef)
+      objects(methods:::.getMethodsTable(fdef), all.names = TRUE)
 
   ## Function relevantClasses is defined here to set object .undefClasses
   ## in testInheritedMethods as a marker to warn about undefined subclasses

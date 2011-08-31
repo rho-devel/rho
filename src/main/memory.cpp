@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2008  The R Development Core Team.
+ *  Copyright (C) 1998--2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -79,13 +79,10 @@ extern void *Rm_realloc(void * p, size_t n);
 #define GC_TORTURE
 
 #ifdef GC_TORTURE
-# define FORCE_GC !gc_inhibit_torture
-#else
-# define FORCE_GC 0
+// The following are 'loose wheels' in CXXR: they have no effect.
+static int gc_force_wait = 0;
+static int gc_force_gap = 0;
 #endif
-
-#define GC_PROT(X) {int __t = gc_inhibit_torture; \
-	gc_inhibit_torture = 1 ; X ; gc_inhibit_torture = __t;}
 
 /* Miscellaneous Globals. */
 
@@ -145,15 +142,50 @@ unsigned int GCNode::protectCstructs()
     return protect_count;
 }
 
+/* public interface for controlling GC torture settings */
+// NB: all these are loose wheels in CXXR.
+void R_gc_torture(int gap, int wait, Rboolean inhibit)
+{
+    if (gap != NA_INTEGER && gap >= 0)
+	gc_force_wait = gc_force_gap = gap;
+    if (gap > 0) {
+	if (wait != NA_INTEGER && wait > 0)
+	    gc_force_wait = wait;
+    }
+}
+
 SEXP attribute_hidden do_gctorture(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    int i;
-    SEXP old = ScalarLogical(!gc_inhibit_torture);
+    int gap;
+    SEXP old = ScalarLogical(gc_force_wait > 0);
 
     checkArity(op, args);
-    i = asLogical(CAR(args));
-    if (i != NA_LOGICAL)
-	gc_inhibit_torture = !i;
+
+    if (isLogical(CAR(args))) {
+	Rboolean on = CXXRCONSTRUCT(Rboolean, asLogical(CAR(args)));
+	if (on == NA_LOGICAL) gap = NA_INTEGER;
+	else if (on) gap = 1;
+	else gap = 0;
+    }
+    else gap = asInteger(CAR(args));
+
+    R_gc_torture(gap, 0, FALSE);
+
+    return old;
+}
+
+SEXP attribute_hidden do_gctorture2(SEXP call, SEXP op, SEXP args, SEXP rho)
+{
+    int gap, wait;
+    Rboolean inhibit;
+    SEXP old = ScalarInteger(gc_force_gap);
+
+    checkArity(op, args);
+    gap = asInteger(CAR(args));
+    wait = asInteger(CADR(args));
+    inhibit = CXXRCONSTRUCT(Rboolean, asLogical(CADDR(args)));
+    R_gc_torture(gap, wait, inhibit);
+
     return old;
 }
 
@@ -433,8 +465,9 @@ void *R_chk_calloc(std::size_t nelem, std::size_t elsize)
 	return(NULL);
 #endif
     p = calloc(nelem, elsize);
-    if(!p) error(_("Calloc could not allocate (%u of %u) memory"),
-		 nelem, elsize);
+    if(!p) /* problem here is that we don't have a format for size_t. */
+	error(_("Calloc could not allocate memory (%.0f of %u bytes)"),
+	      double( nelem), elsize);
     return(p);
 }
 
@@ -443,7 +476,9 @@ void *R_chk_realloc(void *ptr, std::size_t size)
     void *p;
     /* Protect against broken realloc */
     if(ptr) p = realloc(ptr, size); else p = malloc(size);
-    if(!p) error(_("Realloc could not re-allocate (size %u) memory"), size);
+    if(!p)
+	error(_("Realloc could not re-allocate memory (%.0f bytes)"), 
+	      double( size));
     return(p);
 }
 

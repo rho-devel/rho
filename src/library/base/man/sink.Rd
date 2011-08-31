@@ -1,6 +1,6 @@
 % File src/library/base/man/sink.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{sink}
@@ -15,9 +15,9 @@ sink(file = NULL, append = FALSE, type = c("output", "message"),
 sink.number(type = c("output", "message"))
 }
 \arguments{
-  \item{file}{a writable connection or a character string naming the
+  \item{file}{a writable \link{connection} or a character string naming the
     file to write to, or \code{NULL} to stop sink-ing.}
-  \item{append}{logical. If \code{TRUE}, output will be appended to
+  \item{append}{logical.  If \code{TRUE}, output will be appended to
     \code{file}; otherwise, it will overwrite the contents of
     \code{file}.}
   \item{type}{character.  Either the output stream or the messages
@@ -77,11 +77,6 @@ sink.number(type = c("output", "message"))
   For \code{sink.number("message")} the connection number used for
   messages, 2 if no diversion has been used.
 }
-\note{
-  \code{sink(split = TRUE)} is only available on systems which support
-  the C99 function \code{va_copy} (or under the name \code{__va_copy}),
-  but we know of no current systems which do not.
-}
 \section{Warning}{
   Do not use a connection that is open for \code{sink} for any other
   purpose.  The software will stop you closing one such inadvertently.
@@ -95,7 +90,7 @@ sink.number(type = c("output", "message"))
   Wadsworth & Brooks/Cole.
 
   Chambers, J. M. (1998)
-  \emph{Programming with Data. A Guide to the S Language}.
+  \emph{Programming with Data.  A Guide to the S Language}.
   Springer.
 }
 \seealso{\code{\link{capture.output}}}

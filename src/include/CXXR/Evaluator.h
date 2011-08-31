@@ -44,6 +44,8 @@
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
+/* Maybe #define BYTECODE here */
+
 #ifdef __cplusplus
 #include <utility>
 
@@ -71,8 +73,6 @@ extern "C" {
     /** @brief Are interrupts currently suspended?
      */
     extern Rboolean R_interrupts_suspended;
-
-#define BYTECODE
 
 #ifdef BYTECODE
 #define R_BCNODESTACKSIZE 10000

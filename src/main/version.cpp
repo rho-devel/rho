@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2007   The R Development Core Team
+ *  Copyright (C) 1998--2011   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -43,23 +43,16 @@
 
 void attribute_hidden PrintGreeting(void)
 {
-    char buf[128];
+    char buf[384];
 
     // To facilitate automated tests, make sure that when lines
     // containing the string "CXXR" are grepped out, you are left with
     // the standard R greeting.
 
     Rprintf("\n");
-    Rprintf("This is CXXR 0.35-2.12.1, based on:\n");
-    PrintVersionString(buf);
-    Rprintf("%s", buf);
-    Rprintf("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
-	    R_YEAR);
-
-    Rprintf("ISBN 3-900051-07-0\n");
-    Rprintf("Platform: %s", R_PLATFORM);
-    if(strlen(R_ARCH)) Rprintf("/%s", R_ARCH);
-    Rprintf(" (%d-bit)\n\n", 8*sizeof(void *));
+    Rprintf("This is CXXR 0.36-2.13.1, based on:\n");
+    PrintVersion_part_1(buf);
+    Rprintf("%s\n", buf);
     Rprintf(_("CXXR Copyright (C) 2008-11 Andrew Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
@@ -123,17 +116,14 @@ SEXP attribute_hidden do_version(SEXP call, SEXP op, SEXP args, SEXP env)
 
 void attribute_hidden PrintVersion(char *s)
 {
-    char tmp[128];
+    PrintVersion_part_1(s);
 
-    PrintVersionString(s);
-    sprintf(tmp, "\nCopyright (C) %s The R Foundation for Statistical Computing\n", R_YEAR);
-    strcat(s, tmp);
-    strcat(s, "ISBN 3-900051-07-0\n\n");
-    strcat(s, "R is free software and comes with ABSOLUTELY NO WARRANTY.\n");
-    strcat(s, "You are welcome to redistribute it under the terms of the\n");
-    strcat(s, "GNU General Public License version 2.\n");
-    strcat(s, "For more information about these matters see\n");
-    strcat(s, "http://www.gnu.org/licenses/.\n");
+    strcat(s, "\n"
+	   "R is free software and comes with ABSOLUTELY NO WARRANTY.\n"
+	   "You are welcome to redistribute it under the terms of the\n"
+	   "GNU General Public License version 2.\n"
+	   "For more information about these matters see\n"
+	   "http://www.gnu.org/licenses/.\n");
 }
 
 void attribute_hidden PrintVersionString(char *s)
@@ -154,4 +144,19 @@ void attribute_hidden PrintVersionString(char *s)
 		    R_SVN_REVISION);
 	}
     }
+}
+
+
+void attribute_hidden PrintVersion_part_1(char *s)
+{
+#define SPRINTF_2(_FMT, _OBJ) sprintf(tmp, _FMT, _OBJ); strcat(s, tmp)
+    char tmp[128];
+
+    PrintVersionString(s);
+    SPRINTF_2("\nCopyright (C) %s The R Foundation for Statistical Computing\n",
+	      R_YEAR);
+    strcat(s, "ISBN 3-900051-07-0\n");
+    SPRINTF_2("Platform: %s", R_PLATFORM);
+    if(strlen(R_ARCH)) { SPRINTF_2("/%s", R_ARCH); }
+    SPRINTF_2(" (%d-bit)\n", 8*int(sizeof(void *)));
 }

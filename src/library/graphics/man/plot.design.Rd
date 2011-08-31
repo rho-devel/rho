@@ -1,11 +1,11 @@
 % File src/library/graphics/man/plot.design.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{plot.design}
 \alias{plot.design}
-\title{Plot Univariate Effects of a `Design' or Model}
+\title{Plot Univariate Effects of a Design or Model}
 \description{
   Plot univariate effects of one or more \code{\link{factor}}s,
   typically for a designed experiment as analyzed by \code{\link{aov}()}.
@@ -27,7 +27,8 @@ plot.design(x, y = NULL, fun = mean, data = NULL, \dots,
     subset.  It must return one number for a numeric (vector) input.}
   \item{data}{data frame containing the variables referenced by \code{x}
     when that is formula like.}
-  \item{\dots}{graphical arguments such as \code{col}, see \code{\link{par}}.}
+  \item{\dots}{\link{graphical parameters} such as \code{col},
+    see \code{\link{par}}.}
   \item{ylim}{range of y values, as in \code{\link{plot.default}}.}
   \item{xlab}{x axis label, see \code{\link{title}}.}
   \item{ylab}{y axis label with a \sQuote{smart} default.}

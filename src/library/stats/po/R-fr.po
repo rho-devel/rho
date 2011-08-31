@@ -7,15 +7,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2010-09-17 09:19\n"
-"PO-Revision-Date: 2010-10-04 11:15+0100\n"
+"POT-Creation-Date: 2011-03-22 15:33\n"
+"PO-Revision-Date: 2011-03-29 20:04+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Poedit-Language: French\n"
+
+msgid "models are not all fitted to the same number of observations"
+msgstr "tous les modèles n'ont pas été ajustés sur le même nombre d'observations"
 
 msgid "empty model supplied"
 msgstr "modèle fourni vide"
@@ -44,8 +48,8 @@ msgstr "la série temporelle a moins de 2 périodes"
 msgid "the series is entirely NA"
 msgstr "la série ne contient que des NAs"
 
-msgid "frequency must be a positive integer for BSM"
-msgstr "la fréquence doit être un entier positif pour BSM"
+msgid "frequency must be a positive integer >= 2 for BSM"
+msgstr "la fréquence doit être un entier >= 2 pour BSM"
 
 msgid "only implemented for univariate time series"
 msgstr "implémenté seulement pour les séries temporelles univariées"
@@ -456,8 +460,8 @@ msgstr "les distances doivent provenir de 'dist' ou d'une matrice carrée"
 msgid "'k' must be in {1, 2, ..  n - 1}"
 msgstr "'k' doit être dans {1, 2, ..  n - 1}"
 
-msgid "some of the first %d eigenvalues are < 0"
-msgstr "certaines des %d premières valeurs propres sont négatives"
+msgid "only %d of the first %d eigenvalues are > 0"
+msgstr "seulement %d des premières  %d valeurs propres sont positives"
 
 msgid "initial value is not in the interior of the feasible region"
 msgstr "la valeur initiale ne se trouve pas à l'intérieur de la région admissible"
@@ -521,6 +525,9 @@ msgstr "nombre de degrés de liberté insuffisant pour définir des contrastes"
 
 msgid "baseline group number out of range"
 msgstr "nombre de groupe de base en dehors de l'intervalle"
+
+msgid "invalid 'use' argument"
+msgstr "argument 'use' incorrect"
 
 msgid "supply both 'x' and 'y' or a matrix-like 'x'"
 msgstr "fournir 'x' et 'y' ou bien 'x' en matrice"
@@ -598,9 +605,6 @@ msgstr "les éléments de 'k' doivent être compris entre 1 et %d"
 msgid "'merge' and 'height' do not fit!"
 msgstr "'merge' et 'height' ne se correspondent pas"
 
-msgid "we require a dendrogram"
-msgstr "nous avons besoin d'un dendrogramme"
-
 msgid "dendrogram node with non-positive #{branches}"
 msgstr "un noeud du dendrogramme a un nombre de branches < 1"
 
@@ -613,11 +617,17 @@ msgstr "sous-arbre de longueur 0 qui n'est pas une feuille"
 msgid "'order.dendrogram' requires a dendrogram"
 msgstr "'order.dendrogram' nécessite un dendrogramme"
 
+msgid "we require a dendrogram"
+msgstr "nous avons besoin d'un dendrogramme"
+
 msgid "invalid (length 0) node in dendrogram"
 msgstr "noeud incorrect (longueur 0) dans le dendrogramme"
 
 msgid "dendrogram non-leaf node with non-positive #{branches}"
 msgstr "un noeud du dendrogramme qui n'est pas une feuille a un nombre de branches < 1"
+
+msgid "'height' must be at least %g, the maximal height of its components"
+msgstr "'height' doit être au moins %g, la hauteur maximale de ses composants"
 
 msgid "'X' is not a dendrogram"
 msgstr "'X' n'est pas un dendrogramme"
@@ -1333,6 +1343,12 @@ msgstr "pas de modèle à comparer"
 msgid "extra arguments discarded"
 msgstr "arguments supplémentaires ignorés"
 
+msgid "no \"nobs\" attribute is available"
+msgstr "aucun attribut \"nobs\" n'est disponible"
+
+msgid "no 'nobs' method is available"
+msgstr "pas de méthode 'nobs' disponible"
+
 msgid "'start' and 'table' must be same length"
 msgstr "'start' et 'table' doivent avoir la même longueur"
 
@@ -1469,8 +1485,8 @@ msgstr "eff.aovlist : des contrastes non orthogonaux donneraient un résultat inc
 msgid "cannot create a formula from a zero-column data frame"
 msgstr "impossible de créer une formule à partir d'une tableau de données à zéro colonnes"
 
-msgid "no terms component"
-msgstr "pas de composante terms"
+msgid "no terms component nor attribute"
+msgstr "pas de composante 'terms' ni d'attribut"
 
 msgid "'termlabels' must be a character vector of length at least one"
 msgstr "'termlabels' doit être un vecteur de caractères de longueur >= 1"
@@ -1859,6 +1875,9 @@ msgstr "'ref' doit être un niveau existant"
 msgid "ref = %d must be in 1L:%d"
 msgstr "ref = %d doit appartenir à 1L:%d"
 
+msgid "'sep' must be a character string"
+msgstr "'sep' doit être une chaîne de caractères"
+
 msgid "Failed to guess time-varying variables from their names"
 msgstr "Impossible de déterminer les variables dépendant du temps depuis leurs noms"
 
@@ -1922,12 +1941,6 @@ msgstr "tentative de lisser des valeurs NA"
 msgid "wrong endrule"
 msgstr "règle de fin incorrecte"
 
-msgid "'nknots' must be numeric <= n"
-msgstr "'nknots' doit être numérique et <= n"
-
-msgid "cannot use more inner knots than unique 'x' values"
-msgstr "impossible d'utiliser un nombre de noeuds internes supérieur au nombre de valeurs différentes de 'x'"
-
 msgid "invalid 'control.spar'"
 msgstr "'control.spar' incorrect"
 
@@ -1943,8 +1956,26 @@ msgstr "certains poids doivent être positifs"
 msgid "need at least four unique 'x' values"
 msgstr "il faut au moins quatre valeurs de 'x' différentes"
 
+msgid "'cv' must not be NA when 'df' is specified"
+msgstr "'cv' ne peut être NA lorsque 'df' est spécifié"
+
 msgid "crossvalidation with non-unique 'x' values seems doubtful"
 msgstr "la validation croisée avec des valeurs de 'x' répétées paraît douteuse"
+
+msgid "'all.knots' is TRUE; 'nknots' specification is disregarded"
+msgstr "'all.knots' est vrai (TRUE) ; la valeur fournie pour 'nknots' est ignorée "
+
+msgid "'nknots' must be numeric (in {1,..,n})"
+msgstr "'nknots' doit être numérique (dans {1, ..., n})"
+
+msgid "'nknots' must be at least 1"
+msgstr "'nknots' doit valoir au moins 1"
+
+msgid "cannot use more inner knots than unique 'x' values"
+msgstr "impossible d'utiliser un nombre de noeuds internes supérieur au nombre de valeurs différentes de 'x'"
+
+msgid "specified both 'df' and 'cv'; will disregard the latter"
+msgstr "'df' et 'cv' sont spécifiés simultanément ; le second sera ignoré"
 
 msgid "you must supply 1 < df <= n,  n = #{unique x} ="
 msgstr "il faut fournir 1 < df <= n,  n = #{unique x} ="
@@ -2274,6 +2305,11 @@ msgid "there are %d Error terms: only 1 is allowed"
 msgid_plural "there are %d Error terms: only 1 is allowed"
 msgstr[0] "il y a %d terme d'erreur : un seul est autorisé"
 msgstr[1] "il y a %d termes d'erreur : un seul est autorisé"
+
+msgid "extra argument %s is not a \"%s\""
+msgid_plural "extra arguments %s are not \"%s\"s"
+msgstr[0] "l'argument supplémentaire %s n'est pas un \"%s\""
+msgstr[1] "les arguments supplémentaires %s ne sont pas des \"%s\""
 
 msgid "%d observation deleted due to missingness"
 msgid_plural "%d observations deleted due to missingness"

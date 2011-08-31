@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2009  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -235,7 +235,7 @@ static SEXP deparse1WithCutoff(SEXP call, Rboolean abbrev, int cutoff,
     localData.opts = opts;
     localData.strvec = R_NilValue;
 
-    PrintDefaults(R_NilValue);/* from global options() */
+    PrintDefaults();/* from global options() */
     savedigits = R_print.digits;
     R_print.digits = DBL_DIG;/* MAX precision */
 
@@ -332,33 +332,35 @@ SEXP attribute_hidden do_dput(SEXP call, SEXP op, SEXP args, SEXP rho)
     ifile = asInteger(CADR(args));
 
     wasopen = CXXRTRUE;
-    if (ifile != 1) {
-	con = getConnection(ifile);
-	wasopen = con->isopen;
-	if(!wasopen) {
-	    char mode[5];	
-	    strcpy(mode, con->mode);
-	    strcpy(con->mode, "w");
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    strcpy(con->mode, mode);
-	    if(!con->canwrite) {
-		con->close(con);
-		error(_("cannot write to this connection"));
+    try {
+	if (ifile != 1) {
+	    con = getConnection(ifile);
+	    wasopen = con->isopen;
+	    if(!wasopen) {
+		char mode[5];	
+		strcpy(mode, con->mode);
+		strcpy(con->mode, "w");
+		if(!con->open(con)) error(_("cannot open the connection"));
+		strcpy(con->mode, mode);
 	    }
-	} else if(!con->canwrite)
-	    error(_("cannot write to this connection"));
-    }/* else: "Stdout" */
-    for (i = 0; i < LENGTH(tval); i++)
-	if (ifile == 1)
-	    Rprintf("%s\n", CHAR(STRING_ELT(tval, i)));
-	else {
-	    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
-	    if(!havewarned &&
-	       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
-		warning(_("wrote too few characters"));
-	}
-    UNPROTECT(1); /* tval */
-    if (!wasopen) con->close(con);
+	    if(!con->canwrite) error(_("cannot write to this connection"));
+	}/* else: "Stdout" */
+	for (i = 0; i < LENGTH(tval); i++)
+	    if (ifile == 1)
+		Rprintf("%s\n", CHAR(STRING_ELT(tval, i)));
+	    else {
+		res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, i)));
+		if(!havewarned &&
+		   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, i)))) + 1)
+		    warning(_("wrote too few characters"));
+	    }
+	UNPROTECT(1); /* tval */
+	if (!wasopen) con->close(con);
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
+    }
     return (CAR(args));
 }
 
@@ -425,37 +427,39 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 		strcpy(con->mode, "w");
 		if(!con->open(con)) error(_("cannot open the connection"));
 		strcpy(con->mode, mode);
-		if(!con->canwrite) {
-		    con->close(con);
-		    error(_("cannot write to this connection"));
-		}
-	    } else if(!con->canwrite)
-		error(_("cannot write to this connection"));
-	    for (i = 0, nout = 0; i < nobjs; i++) {
-		const char *s;
-		int extra = 6;
-		if (CAR(o) == R_UnboundValue) continue;
-		SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
-		s = translateChar(STRING_ELT(names, i));
-		if(isValidName(s)) {
-		    extra = 4;
-		    res = Rconn_printf(con, "%s <-\n", s);
-		} else if(opts & S_COMPAT)
-		    res = Rconn_printf(con, "\"%s\" <-\n", s);
-		else
-		    res = Rconn_printf(con, "`%s` <-\n", s);
-		if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
-		    warning(_("wrote too few characters"));
-		tval = deparse1(CAR(o), CXXRFALSE, opts);
-		for (j = 0; j < LENGTH(tval); j++) {
-		    res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
-		    if(!havewarned &&
-		       res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
-			warning(_("wrote too few characters"));
-		}
-		o = CDR(o);
 	    }
-	    if (!wasopen) con->close(con);
+	    try {
+		if(!con->canwrite) error(_("cannot write to this connection"));
+		for (i = 0, nout = 0; i < nobjs; i++) {
+		    const char *s;
+		    int extra = 6;
+		    if (CAR(o) == R_UnboundValue) continue;
+		    SET_STRING_ELT(outnames, nout++, STRING_ELT(names, i));
+		    s = translateChar(STRING_ELT(names, i));
+		    if(isValidName(s)) {
+			extra = 4;
+			res = Rconn_printf(con, "%s <-\n", s);
+		    } else if(opts & S_COMPAT)
+			res = Rconn_printf(con, "\"%s\" <-\n", s);
+		    else
+			res = Rconn_printf(con, "`%s` <-\n", s);
+		    if(!havewarned && res < CXXRCONSTRUCT(int, strlen(s)) + extra)
+			warning(_("wrote too few characters"));
+		    tval = deparse1(CAR(o), CXXRFALSE, opts);
+		    for (j = 0; j < LENGTH(tval); j++) {
+			res = Rconn_printf(con, "%s\n", CHAR(STRING_ELT(tval, j)));
+			if(!havewarned &&
+			   res < CXXRCONSTRUCT(int, strlen(CHAR(STRING_ELT(tval, j)))) + 1)
+			    warning(_("wrote too few characters"));
+		    }
+		    o = CDR(o);
+		}
+		if (!wasopen) con->close(con);
+	    } catch (...) {
+		if (!wasopen && con->isopen)
+		    con->close(con);
+		throw;
+	    }
 	}
     }
 

@@ -770,7 +770,7 @@ namespace CXXR {
 		DimIndexer& di = dimindexer[d];
 		for (unsigned int i = 0; i < di.nindices; ++i)
 		    if (isNA((*di.indices)[i]))
-			Rf_error(_("NAs subscripts are not allowed"
+			Rf_error(_("NA subscripts are not allowed"
 				   " in this context"));
 	    }
 	}
@@ -921,7 +921,7 @@ namespace CXXR {
 	    // process.
 	    for (unsigned int i = 0; i < ni; ++i)
 		if (isNA((*indices)[i]))
-		    Rf_error(_("NAs subscripts are not allowed"
+		    Rf_error(_("NA subscripts are not allowed"
 			       " in this context"));
 	}
 	GCStackRoot<VL> ans(lhs);

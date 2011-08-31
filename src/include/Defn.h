@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998--2010  The R Development Core Team.
+ *  Copyright (C) 1998--2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,8 +62,6 @@
 
 /* seems unused */
 #define COUNTING
-
-#define BYTECODE
 
 /* probably no longer needed */
 #define NEW_CONDITION_HANDLING
@@ -123,11 +121,25 @@ extern0 SEXP	R_WholeSrcrefSymbol;   /* "wholeSrcref" */
 extern0 SEXP	R_SrcrefSymbol;     /* "srcref" */
 extern0 SEXP	R_TmpvalSymbol;     /* "*tmp*" */
 extern0 SEXP	R_UseNamesSymbol;   /* "use.names" */
+extern0 SEXP	R_DoubleColonSymbol;   /* "::" */
+extern0 SEXP	R_TripleColonSymbol;   /* ":::" */
+extern0 SEXP    R_ConnIdSymbol;  /* "conn_id" */
+extern0 SEXP    R_DevicesSymbol;  /* ".Devices" */
+
+extern0 SEXP    R_dot_Generic;  /* ".Generic" */
+extern0 SEXP    R_dot_Methods;  /* ".Methods" */
+extern0 SEXP    R_dot_Group;  /* ".Group" */
+extern0 SEXP    R_dot_Class;  /* ".Class" */
+extern0 SEXP    R_dot_GenericCallEnv;  /* ".GenericCallEnv" */
+extern0 SEXP    R_dot_GenericDefEnv;  /* ".GenericDefEnv" */
 
 
+#define BYTES_MASK (1<<1)
 #define HASHASH_MASK 1
-/**** HASHASH uses the first bit -- see HASHAS_MASK defined below */
+/**** HASHASH uses the first bit -- see HASHASH_MASK defined below */
 
+int IS_BYTES(SEXP x);
+void SET_BYTES(SEXP x);
 int IS_CACHED(SEXP x);
 /* macros and declarations for managing CHARSXP cache */
 /* Not implemented within CXXR: */
@@ -316,6 +328,7 @@ extern int putenv(char *string);
 #endif
 
 #ifdef __cplusplus
+
 /* There is much more in Rinternals.h, including function versions
  * of the Promise and Hasking groups.
  */
@@ -411,8 +424,6 @@ typedef enum {
 # define INI_as(v)
 #define extern0 extern attribute_hidden
 
-extern int	gc_inhibit_torture INI_as(1);
-
 LibExtern Rboolean R_interrupts_suspended INI_as(FALSE);
 LibExtern int R_interrupts_pending INI_as(0);
 
@@ -486,7 +497,7 @@ extern0 Rboolean R_warn_partial_match_dollar INI_as(FALSE);
 extern0 Rboolean R_warn_partial_match_attr INI_as(FALSE);
 extern0 Rboolean R_ShowWarnCalls INI_as(FALSE);
 extern0 Rboolean R_ShowErrorCalls INI_as(FALSE);
-extern0 int R_NShowCalls INI_as(50);
+extern0 int	R_NShowCalls INI_as(50);
 extern0 SEXP	R_Srcref;
 
 LibExtern Rboolean utf8locale  INI_as(FALSE);  /* is this a UTF-8 locale? */
@@ -499,6 +510,7 @@ extern0   void WinCheckUTF8(void);
 #endif
 
 extern0 char OutDec	INI_as('.');  /* decimal point used for output */
+extern0 Rboolean R_DisableNLinBrowser	INI_as(FALSE);
 
 /* Initialization of the R environment when it is embedded */
 extern int Rf_initEmbeddedR(int argc, char **argv);
@@ -515,6 +527,13 @@ extern double elapsedLimit2		INI_as(-1.0);
 extern double elapsedLimitValue		INI_as(-1.0);
 
 void resetTimeLimits(void);
+
+extern0 int R_jit_enabled INI_as(0);
+extern0 int R_compile_pkgs INI_as(0);
+extern SEXP R_cmpfun(SEXP);
+extern void R_init_jit_enabled(void);
+LibExtern int R_num_math_threads INI_as(1);
+LibExtern int R_max_num_math_threads INI_as(1);
 
 /* Pointer  type and utilities for dispatch in the methods package */
 typedef SEXP (*R_stdGen_ptr_t)(SEXP, SEXP, SEXP); /* typedef */
@@ -545,7 +564,6 @@ extern0 unsigned int max_contour_segments INI_as(25000);
 
 extern0 Rboolean known_to_be_latin1 INI_as(FALSE);
 extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
-
 
 #ifdef __MAIN__
 # undef extern
@@ -653,6 +671,7 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define PrintValueEnv		Rf_PrintValueEnv
 # define PrintValueRec		Rf_PrintValueRec
 # define PrintVersion		Rf_PrintVersion
+# define PrintVersion_part_1	Rf_PrintVersion_part_1
 # define PrintVersionString    	Rf_PrintVersionString
 # define PrintWarnings		Rf_PrintWarnings
 # define promiseArgs		Rf_promiseArgs
@@ -827,13 +846,14 @@ RETSIGTYPE Rf_onsigusr1(int);
 RETSIGTYPE Rf_onsigusr2(int);
 int Rf_OneIndex(SEXP, SEXP, int, int, SEXP*, int, SEXP);
 SEXP Rf_parse(FILE*, int);
-void Rf_PrintDefaults(SEXP);
+void Rf_PrintDefaults(void);
 void Rf_PrintGreeting(void);
 void Rf_PrintValueEnv(SEXP, SEXP);
 void Rf_PrintValueRec(SEXP, SEXP);
 void Rf_PrintVersion(char *);
 void Rf_PrintVersionString(char *);
 void Rf_PrintWarnings(void);
+void PrintVersion_part_1(char *);
 void process_site_Renviron(void);
 void process_system_Renviron(void);
 void process_user_Renviron(void);
@@ -846,6 +866,7 @@ SEXP R_LoadFromFile(FILE*, int);
 SEXP R_NewHashedEnv(SEXP, SEXP);
 extern int R_Newhashpjw(const char *);
 FILE* R_OpenLibraryFile(const char *);
+SEXP R_Primitive(const char *);
 void R_RestoreGlobalEnv(void);
 void R_RestoreGlobalEnvFromFile(const char *, Rboolean);
 void R_SaveGlobalEnv(void);
@@ -865,6 +886,7 @@ void Rf_ssort(CXXR::StringVector*,int);
 #endif
 SEXP Rf_strmat2intmat(SEXP, SEXP, SEXP);
 SEXP Rf_substituteList(SEXP, SEXP);
+char* R_tmpnam2(const char *, const char *, const char *); /* in the API in R 2.14.0+ */
 Rboolean Rf_tsConform(SEXP,SEXP);
 SEXP Rf_tspgets(SEXP, SEXP);
 SEXP Rf_type2symbol(SEXPTYPE);
@@ -1024,7 +1046,7 @@ extern char *alloca(size_t);
 #endif
 
 /* Or use typedef? */
-#ifdef HAVE_LONG_DOUBLE
+#if SIZEOF_LONG_DOUBLE
 # define LDOUBLE long double
 #else
 # define LDOUBLE double

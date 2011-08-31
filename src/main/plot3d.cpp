@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -47,10 +47,6 @@
 #include <Print.h>
 #include <R_ext/Boolean.h>
 #include "basedecl.h"
-
-#ifndef HAVE_HYPOT
-# define hypot pythag
-#endif
 
 /* Conversion of degrees to radians */
 
@@ -210,7 +206,7 @@ static
 int TestLabelIntersection(SEXP label1, SEXP label2) {
 
     int i, j, l1, l2;
-    double Ax, Bx, Ay, By, ax, ay, bx, by, q1, q2;
+    double Ax, Bx, Ay, By, ax, ay, bx, by;
     double dom;
     double result1, result2;
 
@@ -224,9 +220,6 @@ int TestLabelIntersection(SEXP label1, SEXP label2) {
 	    ay = REAL(label2)[j+4];
 	    bx = REAL(label2)[(j+1)%4];
 	    by = REAL(label2)[(j+1)%4+4];
-
-	    q1 = Ax*(ay-by);
-	    q2 = Ay*(bx-ax);
 
 	    dom = Bx*by - Bx*ay - Ax*by + Ax*ay - bx*By + bx*Ay + ax*By - ax*Ay;
 	    if (dom == 0.0) {
@@ -682,7 +675,7 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		     SEGP* segmentDB, int nlines, SEXP container)
 {
     double xend, yend;
-    int i, ii, j, jj, ns, ns2, dir, nc;
+    int i, ii, j, jj, ns, dir, nc;
     SEGP seglist, seg, s, start, end;
     SEXP ctr, level, xsxp, ysxp, names;
     /* Begin following contours. */
@@ -735,9 +728,6 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		}
 		if(ns == CXXRCONSTRUCT(int, max_contour_segments))
 		    warning(_("contour(): circular/long seglist -- bug.report()!"));
-
-		/* countour midpoint : use for labelling sometime (not yet!) */
-		if (ns > 3) ns2 = ns/2; else ns2 = -1;
 
 		/*
 		 * "write" the contour locations into the list of contours
@@ -886,10 +876,8 @@ SEXP GEcontourLines(double *x, int nx, double *y, int ny,
 
 SEXP attribute_hidden do_contourLines(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP oargs, c, x, y, z;
+    SEXP c, x, y, z;
     int nx, ny, nc;
-
-    oargs = args;
 
     x = CAR(args);
     internalTypeCheck(call, x, REALSXP);
@@ -942,20 +930,18 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
     const void *vmax;
 
     double xend, yend;
-    int i, ii, j, jj, ns, ns2, dir;
+    int i, ii, j, jj, ns, dir;
     SEGP seglist, seg, s, start, end;
     double *xxx, *yyy;
 
     double variance, dX, dY, deltaX, deltaY;
-    double dXC, dYC, deltaXC, deltaYC;
+    double dXC, dYC;
     int range=0, indx=0, n; /* -Wall */
     double lowestVariance;
-    double squareSum, sum;
+    double squareSum;
     int iii, jjj;
     double distanceSum, labelDistance, avgGradient;
-    int zeroCount;
     char buffer[255];
-    double avg;
     int result;
     double ux, uy, vx, vy;
     double xStart, yStart;
@@ -1028,8 +1014,10 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 	    if(ns == CXXRCONSTRUCT(int, max_contour_segments))
 		warning(_("contour(): circular/long seglist -- bug.report()!"));
 
-	    /* countour midpoint : use for labelling sometime (not yet!) */
-	    if (ns > 3) ns2 = ns/2; else ns2 = -1;
+	    /* contour midpoint : use for labelling sometime (not yet!)
+	       int ns2;
+	       if (ns > 3) ns2 = ns/2; else ns2 = -1;
+	    */
 
 	    vmax = vmaxget();
 	    xxx = static_cast<double *>( CXXR_alloc(ns + 1, sizeof(double)));
@@ -1144,9 +1132,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 			    distanceSum = 0;
 			    avgGradient = 0;
 			    squareSum = 0;
-			    sum = 0;
 			    n = 0;
-			    zeroCount = 0;
 			    jjj = (iii + 1);
 			    while ((jjj < ns-1) &&
 				   (distanceSum < labelDistance)) {
@@ -1166,8 +1152,6 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 				*/
 				deltaX = xxx[jjj] - xxx[jjj - 1];
 				deltaY = yyy[jjj] - yyy[jjj - 1];
-				deltaXC = GConvertXUnits(deltaX, USER, INCHES, dd);
-				deltaYC = GConvertYUnits(deltaY, USER, INCHES, dd);
 				if (deltaX == 0) {deltaX = 1;}
 				avgGradient += (deltaY/deltaX);
 				squareSum += avgGradient * avgGradient;
@@ -1198,7 +1182,6 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 				    lowestVariance = variance;
 				    indx = iii;
 				    range = n;
-				    avg = avgGradient;
 				}
 			    }
 			    if (lowestVariance < 9999999)
@@ -1218,7 +1201,6 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 			if (ns-1-indx-range > 0)
 			    GPolyline(ns-indx-range, xxx+indx+range, yyy+indx+range,
 			          USER, dd);
-
 			if (gotLabel) {
 			    /* find which plot edge we are closest to */
 			    int closest; /* 0 = indx,  1 = indx+range */
@@ -1376,7 +1358,7 @@ SEXP attribute_hidden do_contour(SEXP call, SEXP op, SEXP args, SEXP env)
 
     if (length(args) < 4)
 	error(_("too few arguments"));
-    PrintDefaults(R_GlobalEnv); /* prepare for labelformat */
+    PrintDefaults(); /* prepare for labelformat */
 
     oargs = args;
 
@@ -1665,14 +1647,14 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
     SEXP oargs, sx, sy, sz, sc, scol;
     double *x, *y, *z, *c;
     rcolor *col;
-    int i, j, k, npt, nx, ny, nz, nc, ncol, colsave, xpdsave;
+    int i, j, k, npt, nx, ny, nc, ncol, colsave, xpdsave;
     double px[8], py[8], pz[8];
     pGEDevDesc dd = GEcurrentDevice();
 
     GCheckState(dd);
 
     checkArity(op,args);
-    PrintDefaults(R_GlobalEnv); /* prepare for labelformat */
+    PrintDefaults(); /* prepare for labelformat */
     oargs = args;
 
     sx = CAR(args);
@@ -1687,7 +1669,6 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
 
     sz = CAR(args);
     internalTypeCheck(call, sz, REALSXP);
-    nz = length(sz);
     args = CDR(args);
 
     sc = CAR(args);/* levels */
@@ -2085,19 +2066,16 @@ static short int Edge[6][4] = {
     { 9, 6,10, 1},
 };
 
-/* Which edges have been drawn previously */
-static char EdgeDone[12];
-
-static void PerspBox(int front, double *x, double *y, double *z, pGEDevDesc dd)
+static void PerspBox(int front, double *x, double *y, double *z,
+		     char *EdgeDone, pGEDevDesc dd)
 {
     Vector3d u0, v0, u1, v1, u2, v2, u3, v3;
     double d[3], e[3];
     int f, i, p0, p1, p2, p3, nearby;
     int ltysave = gpptr(dd)->lty;
-    if (front)
-	gpptr(dd)->lty = LTY_DOTTED;
-    else
-	gpptr(dd)->lty = LTY_SOLID;
+
+    gpptr(dd)->lty = front ? LTY_DOTTED : LTY_SOLID;
+
     for (f = 0; f < 6; f++) {
 	p0 = Face[f][0];
 	p1 = Face[f][1];
@@ -2456,9 +2434,10 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
     double ltheta, lphi;
     double expand, xc = 0.0, yc = 0.0, zc = 0.0, xs = 0.0, ys = 0.0, zs = 0.0;
     int i, j, scale, ncol, dobox, doaxes, nTicks, tickType;
+    char EdgeDone[12]; /* Which edges have been drawn previously */
     pGEDevDesc dd;
 
-    if (length(args) < 24)
+    if (length(args) < 24)  /* 24 plus any inline par()s */
 	error(_("too few parameters"));
     gcall = call;
     originalArgs = args;
@@ -2596,27 +2575,27 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
 
     PerspWindow(REAL(xlim), REAL(ylim), REAL(zlim), dd);
 
-    /* Compute facet order. */
+    /* Compute facet order:
+       We order the facets by depth and then draw them back to front.
+       This is the "painters" algorithm. */
 
     PROTECT(depth = allocVector(REALSXP, (nrows(z) - 1)*(ncols(z) - 1)));
     PROTECT(indx = allocVector(INTSXP, (nrows(z) - 1)*(ncols(z) - 1)));
     DepthOrder(REAL(z), REAL(x), REAL(y), nrows(z), ncols(z),
 	       REAL(depth), INTEGER(indx));
 
-    /* Now we order the facets by depth and then draw them back to front.
-     * This is the "painters" algorithm. */
-
     GMode(1, dd);
 
     if (dobox) {
-	PerspBox(0, REAL(xlim), REAL(ylim), REAL(zlim), dd);
+	/* Draw (solid) faces which face away from the viewer */
+	PerspBox(0, REAL(xlim), REAL(ylim), REAL(zlim), EdgeDone, dd);
 	if (doaxes) {
 	    SEXP xl = STRING_ELT(xlab, 0), yl = STRING_ELT(ylab, 0),
 		zl = STRING_ELT(zlab, 0);
 	    PerspAxes(REAL(xlim), REAL(ylim), REAL(zlim),
-		      (xl == NA_STRING)? "" : CHAR(xl), getCharCE(xl),
-		      (yl == NA_STRING)? "" : CHAR(yl), getCharCE(yl),
-		      (zl == NA_STRING)? "" : CHAR(zl), getCharCE(zl),
+		      (xl == NA_STRING) ? "" : CHAR(xl), getCharCE(xl),
+		      (yl == NA_STRING) ? "" : CHAR(yl), getCharCE(yl),
+		      (zl == NA_STRING) ? "" : CHAR(zl), getCharCE(zl),
 		      nTicks, tickType, dd);
 	}
     }
@@ -2625,8 +2604,10 @@ SEXP attribute_hidden do_persp(SEXP call, SEXP op, SEXP args, SEXP env)
 	       1/xs, 1/ys, expand/zs,
 	       INTEGER(col), ncol, INTEGER(border)[0]);
 
+    /* Draw (dotted) not-already-plotted edges of faces which face
+       towards from the viewer */
     if (dobox)
-	PerspBox(1, REAL(xlim), REAL(ylim), REAL(zlim), dd);
+	PerspBox(1, REAL(xlim), REAL(ylim), REAL(zlim), EdgeDone, dd);
     GMode(0, dd);
 
     GRestorePars(dd);

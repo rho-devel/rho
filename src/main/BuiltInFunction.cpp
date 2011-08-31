@@ -40,6 +40,7 @@
 
 #include "CXXR/BuiltInFunction.h"
 
+#include <cstdarg>
 #include "Internal.h"
 #include "CXXR/ArgList.hpp"
 #include "CXXR/DotInternal.h"
@@ -52,7 +53,6 @@
 #include "CXXR/errors.h"
 #include "R_ext/Print.h"
 
-using namespace std;
 using namespace CXXR;
 
 namespace CXXR {
@@ -115,14 +115,16 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
     size_t pps_size = ProtectStack::size();
 #endif
     Evaluator::enableResultPrinting(m_result_printing_mode != FORCE_OFF);
-    if (sexptype() == BUILTINSXP)
-	arglist->evaluate(env);
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
+	if (sexptype() == BUILTINSXP)
+	    arglist->evaluate(env);
 	ans = invoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
+	if (sexptype() == BUILTINSXP)
+	    arglist->evaluate(env);
 	ans = invoke(env, arglist, call);
     }
     if (m_result_printing_mode != SOFT_ON)

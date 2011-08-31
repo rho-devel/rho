@@ -4,21 +4,25 @@
 # Copyright (C) 2008 The R Foundation
 # This file is distributed under the same license as the R package.
 # Copyright (C) 2010 Alexey Shipunov <dactylorhiza at gmail>
-# Copyright (C) 2009 Anton Korobeynikov <asl at math dot spbu dot ru>
+# Copyright (C) 2009-2011 Anton Korobeynikov <asl at math dot spbu dot ru>
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2010-09-17 09:19\n"
-"PO-Revision-Date: 2010-09-30 01:58-0600\n"
-"Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
+"POT-Creation-Date: 2011-03-22 15:33\n"
+"PO-Revision-Date: 2011-03-30 02:50+0300\n"
+"Last-Translator: Anton Korobeynikov <asl at math dot spbu dot ru>\n"
 "Language-Team: Russian\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=KOI8-R\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: Russian\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "models are not all fitted to the same number of observations"
+msgstr "не все модели были подогнаны под размер данных"
 
 msgid "empty model supplied"
 msgstr "предложена пустая модель"
@@ -47,8 +51,8 @@ msgstr "временной ряд не имеет или имеет меньше 2 периодов"
 msgid "the series is entirely NA"
 msgstr "ряд целиком из NA"
 
-msgid "frequency must be a positive integer for BSM"
-msgstr "частота для BSM должна быть положительным целым"
+msgid "frequency must be a positive integer >= 2 for BSM"
+msgstr "частота для BSM должна быть положительным целым >= 2"
 
 msgid "only implemented for univariate time series"
 msgstr "реализовано только для одномерных временных рядов"
@@ -459,8 +463,8 @@ msgstr "расстояния должны быть результатом 'dist' или квадратной матрицей"
 msgid "'k' must be in {1, 2, ..  n - 1}"
 msgstr "'k' должен быть из {1, 2, ..  n - 1}"
 
-msgid "some of the first %d eigenvalues are < 0"
-msgstr "некоторые из первых %d собственных значений < 0"
+msgid "only %d of the first %d eigenvalues are > 0"
+msgstr "только %d из первых %d собственных значений > 0"
 
 msgid "initial value is not in the interior of the feasible region"
 msgstr "начальное значение не является внутренним в допустимом регионе"
@@ -524,6 +528,9 @@ msgstr "недостаточно степеней свободы, чтобы определить контрасты"
 
 msgid "baseline group number out of range"
 msgstr "номер базовой группы -- вне диапазона"
+
+msgid "invalid 'use' argument"
+msgstr "недопустимый аргумент 'use'"
 
 msgid "supply both 'x' and 'y' or a matrix-like 'x'"
 msgstr "укажите и 'x', и 'y' или матрице-подобный 'x'"
@@ -601,9 +608,6 @@ msgstr "элементы 'k' должны быть между 1 и %d"
 msgid "'merge' and 'height' do not fit!"
 msgstr "'merge' и 'height' не соответствуют!"
 
-msgid "we require a dendrogram"
-msgstr "нам нужна дендрограмма"
-
 msgid "dendrogram node with non-positive #{branches}"
 msgstr "узел дендрограммы с неположительными #{branches}"
 
@@ -616,11 +620,17 @@ msgstr "безлистное дерево нулевой длины"
 msgid "'order.dendrogram' requires a dendrogram"
 msgstr "'order.дендрограмма' требует дендрограмму"
 
+msgid "we require a dendrogram"
+msgstr "нам нужна дендрограмма"
+
 msgid "invalid (length 0) node in dendrogram"
 msgstr "неправильный (длина = 0) узел дендрограммы"
 
 msgid "dendrogram non-leaf node with non-positive #{branches}"
 msgstr "безлистный узел дендрограммы с неположительными #{branches}"
+
+msgid "'height' must be at least %g, the maximal height of its components"
+msgstr "'height' должен быть по меньшей мере %g (максимальная высота отдельных компонент)"
 
 msgid "'X' is not a dendrogram"
 msgstr "'X' не является дендрограммой"
@@ -1335,6 +1345,12 @@ msgstr "нет моделей для сравнения"
 msgid "extra arguments discarded"
 msgstr "дополнительные аргументы отброшены"
 
+msgid "no \"nobs\" attribute is available"
+msgstr "недоступен атрибут \"nobs\""
+
+msgid "no 'nobs' method is available"
+msgstr "нет доступного метода 'nobs'"
+
 msgid "'start' and 'table' must be same length"
 msgstr "'start' и 'table' должны быть одной длины"
 
@@ -1471,8 +1487,8 @@ msgstr "eff.aovlist: не-ортогональные контрасты могут дать неправильный ответ"
 msgid "cannot create a formula from a zero-column data frame"
 msgstr "не могу создать формулу из таблицы данных без колонок"
 
-msgid "no terms component"
-msgstr "нет компонента выражений"
+msgid "no terms component nor attribute"
+msgstr "нет ни компонента terms, ни атрибута"
 
 msgid "'termlabels' must be a character vector of length at least one"
 msgstr "'termlabels' должен быть текстовым вектором с длиной не меньше единицы"
@@ -1861,6 +1877,9 @@ msgstr "'ref' должен быть существующим уровнем"
 msgid "ref = %d must be in 1L:%d"
 msgstr "ref = %d должен быть в пределах 1L:%d"
 
+msgid "'sep' must be a character string"
+msgstr "'sep' должен быть текстовой строкой"
+
 msgid "Failed to guess time-varying variables from their names"
 msgstr "Не получилось создать временнЫе переменные из их имен"
 
@@ -1924,12 +1943,6 @@ msgstr "попытка сгладить пропущенные значения"
 msgid "wrong endrule"
 msgstr "неправильное конечное правило"
 
-msgid "'nknots' must be numeric <= n"
-msgstr "'nknots' должен быть числом <= n"
-
-msgid "cannot use more inner knots than unique 'x' values"
-msgstr "не могу использовать внутренних узлов больше, чем уникальных значений 'x'"
-
 msgid "invalid 'control.spar'"
 msgstr "неправильный 'control.spar'"
 
@@ -1945,8 +1958,26 @@ msgstr "некоторые веса должны быть положительны"
 msgid "need at least four unique 'x' values"
 msgstr "нужны как минимум 4 уникальных значения 'x'"
 
+msgid "'cv' must not be NA when 'df' is specified"
+msgstr "'cv' не может быть NA в случае, когда указан 'df'"
+
 msgid "crossvalidation with non-unique 'x' values seems doubtful"
 msgstr "кросс-валидация с неуникальными значениями 'x' выглядит сомнительно"
+
+msgid "'all.knots' is TRUE; 'nknots' specification is disregarded"
+msgstr "'all.knots' выставлено в TRUE; значение 'nknots' проигнорировано"
+
+msgid "'nknots' must be numeric (in {1,..,n})"
+msgstr "'nknots' должен быть числом (в пределах {1,..,n})"
+
+msgid "'nknots' must be at least 1"
+msgstr "'nknots' должен быть по меньшей мере 1"
+
+msgid "cannot use more inner knots than unique 'x' values"
+msgstr "не могу использовать внутренних узлов больше, чем уникальных значений 'x'"
+
+msgid "specified both 'df' and 'cv'; will disregard the latter"
+msgstr "указано и 'df' и 'cv'; значение последнего проигнорировано"
 
 msgid "you must supply 1 < df <= n,  n = #{unique x} ="
 msgstr "Вы должны указать 1 < df <= n,  n = #{unique x} ="
@@ -2278,6 +2309,12 @@ msgstr[0] "здесь %d ошибочных выражения: разрешено лишь одно"
 msgstr[1] "здесь %d ошибочных выражения: разрешено лишь одно"
 msgstr[2] "здесь %d ошибочных выражений: разрешено лишь одно"
 
+msgid "extra argument %s is not a \"%s\""
+msgid_plural "extra arguments %s are not \"%s\"s"
+msgstr[0] "дополнительный аргумент %s не является \"%s\""
+msgstr[1] "дополнительные аргументы %s не являются \"%s\""
+msgstr[2] "дополнительные аргументы %s не являются \"%s\""
+
 msgid "%d observation deleted due to missingness"
 msgid_plural "%d observations deleted due to missingness"
 msgstr[0] "%d пропущенное наблюдение удалено"
@@ -2292,32 +2329,45 @@ msgstr[2] "параметры %s не встречаются в формуле модели"
 
 #~ msgid "'FUN' must always return a scalar"
 #~ msgstr "'FUN' должен всегда возвращать скаляр"
+
 #~ msgid "model order:"
 #~ msgstr "порядок модели:"
+
 #~ msgid "singularities in the computation of the projection matrix"
 #~ msgstr "сингулярности при вычислении матрицы проекции"
+
 #~ msgid "results are only valid up to model order"
 #~ msgstr "результаты действительны только для порядка модели"
+
 #~ msgid "invalid 'method': %s"
 #~ msgstr "неправильный 'method': %s"
+
 #~ msgid "invalid 'method'"
 #~ msgstr "неправильный 'method'"
+
 #~ msgid "'newdata' does not contain the variables needed"
 #~ msgstr "'newdata' не содержит нужных переменных"
+
 #~ msgid "diagonal has non-finite entries"
 #~ msgstr "диагональ имеет не-конечные элементы"
+
 #~ msgid "no 'time' or 'id' specified"
 #~ msgstr "не указан ни 'time', ни 'id'"
+
 #~ msgid "trying +"
 #~ msgstr "пробую +"
+
 #~ msgid "trying -"
 #~ msgstr "пробую -"
+
 #~ msgid "Start:  AIC="
 #~ msgstr "Старт:  AIC="
+
 #~ msgid "Step:  AIC="
 #~ msgstr "Ступень:  AIC="
+
 #~ msgid "contrasts not defined for 0 degrees of freedom"
 #~ msgstr "контрасты для 0 степеней свободы не определены"
+
 #~ msgid "Convergence failure:"
 #~ msgstr "Ошибка схождения:"
-

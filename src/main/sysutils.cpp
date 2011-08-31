@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1996   Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997-2010   The R Development Core Team
+ *  Copyright (C) 1997-2011   The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,6 +76,21 @@ int (*ptr_CocoaSystem)(char*);
 extern	Rboolean useaqua;
 #endif
 
+#ifdef Win32
+Rboolean attribute_hidden R_FileExists(const char *path)
+{
+    struct _stati64 sb;
+    return _stati64(R_ExpandFileName(path), &sb) == 0;
+}
+
+double attribute_hidden R_FileMtime(const char *path)
+{
+    struct _stati64 sb;
+    if (_stati64(R_ExpandFileName(path), &sb) != 0)
+	error(_("cannot determine file modification time of '%s'"), path);
+    return sb.st_mtime;
+}
+#else
 Rboolean attribute_hidden R_FileExists(const char *path)
 {
     struct stat sb;
@@ -89,6 +104,7 @@ double attribute_hidden R_FileMtime(const char *path)
 	error(_("cannot determine file modification time of '%s'"), path);
     return sb.st_mtime;
 }
+#endif
 
     /*
      *  Unix file names which begin with "." are invisible.
@@ -154,9 +170,10 @@ FILE *R_fopen(const char *filename, const char *mode)
 
 #if defined(Win32)
 
+#define BSIZE 100000 
 wchar_t *filenameToWchar(const SEXP fn, const Rboolean expand)
 {
-    static wchar_t filename[PATH_MAX+1];
+    static wchar_t filename[BSIZE+1];
     void *obj;
     const char *from = "", *inbuf;
     char *outbuf;
@@ -168,19 +185,20 @@ wchar_t *filenameToWchar(const SEXP fn, const Rboolean expand)
     }
     if(IS_LATIN1(fn)) from = "latin1";
     if(IS_UTF8(fn)) from = "UTF-8";
+    if(IS_BYTES(fn)) error(_("encoding of a filename cannot be 'bytes'"));
     obj = Riconv_open("UCS-2LE", from);
     if(obj == (void *)(-1))
-	error("unsupported conversion from '%s' in 'filenameToWchar' in codepage %d", 
+	error(_("unsupported conversion from '%s' in codepage %d"), 
 	      from, localeCP);
 
     if(expand) inbuf = R_ExpandFileName(CHAR(fn)); else inbuf = CHAR(fn);
 
-    inb = strlen(inbuf)+1; outb = 2*PATH_MAX+1;
+    inb = strlen(inbuf)+1; outb = 2*BSIZE;
     outbuf = (char *) filename;
     res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
     Riconv_close(obj);
-    if(res == -1) error(_("file name conversion problem"));
     if(inb > 0) error(_("file name conversion problem -- name too long?"));
+    if(res == -1) error(_("file name conversion problem"));
 
     return filename;
 }
@@ -236,29 +254,36 @@ SEXP attribute_hidden do_tempdir(SEXP call, SEXP op, SEXP args, SEXP env)
 
 SEXP attribute_hidden do_tempfile(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP  ans, pattern, tempdir;
-    const char *tn, *td;
+    SEXP  ans, pattern, fileext, tempdir;
+    const char *tn, *td, *te;
     char *tm;
-    int i, n1, n2, slen;
+    int i, n1, n2, n3, slen;
 
     checkArity(op, args);
-    pattern = CAR(args); n1 = length(pattern);
-    tempdir = CADR(args); n2 = length(tempdir);
+    pattern = CAR(args); n1 = length(pattern); args = CDR(args);
+    tempdir = CAR(args); n2 = length(tempdir); args = CDR(args);
+    fileext = CAR(args); n3 = length(fileext);
     if (!isString(pattern))
 	error(_("invalid filename pattern"));
     if (!isString(tempdir))
 	error(_("invalid '%s' value"), "tempdir");
+    if (!isString(fileext))
+	error(_("invalid file extension"));
     if (n1 < 1)
 	error(_("no 'pattern'"));
     if (n2 < 1)
 	error(_("no 'tempdir'"));
+    if (n3 < 1)
+        error(_("no 'fileext'"));
     slen = (n1 > n2) ? n1 : n2;
+    slen = (n3 > slen) ? n3 : slen;
     PROTECT(ans = allocVector(STRSXP, slen));
     for(i = 0; i < slen; i++) {
 	tn = translateChar( STRING_ELT( pattern , i%n1 ) );
 	td = translateChar( STRING_ELT( tempdir , i%n2 ) );
+	te = translateChar( STRING_ELT( fileext , i%n3 ) );
 	/* try to get a new file name */
-	tm = R_tmpnam(tn, td);
+	tm = R_tmpnam2(tn, td, te);
 	SET_STRING_ELT(ans, i, mkChar(tm));
 	if(tm) free(tm);
     }
@@ -324,7 +349,7 @@ int R_system(const char *command)
 # include <crt_externs.h>
 # define environ (*_NSGetEnviron())
 #else
-#include <unistd.h>  // But what if it doesn't exist?
+extern char ** environ;
 #endif
 
 #ifdef Win32
@@ -608,7 +633,7 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	obj = Riconv_open(to, from);
 	if(obj == iconv_t((-1)))
 #ifdef Win32
-	    error("unsupported conversion from '%s' to '%s' in codepage %d", 
+	    error(_("unsupported conversion from '%s' to '%s' in codepage %d"), 
 		  from, to, localeCP);
 #else
 	    error(_("unsupported conversion from '%s' to '%s'"), from, to);
@@ -617,6 +642,10 @@ SEXP attribute_hidden do_iconv(SEXP call, SEXP op, SEXP args, SEXP env)
 	R_AllocStringBuffer(0, &cbuff);  /* 0 -> default */
 	for(i = 0; i < LENGTH(x); i++) {
 	    si = STRING_ELT(x, i);
+	    if (si == NA_STRING) {
+		SET_STRING_ELT(ans, i, NA_STRING);
+		continue;
+	    }
 	top_of_loop:
 	    inbuf = CHAR(si); inb = LENGTH(si);
 	    outbuf = cbuff.data; outb = cbuff.bufsize - 1;
@@ -679,6 +708,7 @@ cetype_t getCharCE(SEXP x)
 	error(_("'%s' must be called on a CHARSXP"), "getCharCE");
     if(IS_UTF8(x)) return CE_UTF8;
     else if(IS_LATIN1(x)) return CE_LATIN1;
+    else if(IS_BYTES(x)) return CE_BYTES;
     else return CE_NATIVE;
 }
 
@@ -706,7 +736,8 @@ void * Riconv_open (const char* tocode, const char* fromcode)
 #endif
 }
 
-/* Should be defined in config.h */
+/* Should be defined in config.h, but prior to 2.13.0 was only checked
+   if the NLS was enabled */
 #ifndef ICONV_CONST
 # define ICONV_CONST
 #endif
@@ -739,6 +770,8 @@ const char *translateChar(SEXP x)
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "translateChar");
     if(x == NA_STRING || !(ENC_KNOWN(x))) return ans;
+    if(IS_BYTES(x))
+	error(_("translating strings with \"bytes\" encoding is not allowed"));
     if(utf8locale && IS_UTF8(x)) return ans;
     if(latin1locale && IS_LATIN1(x)) return ans;
     if(strIsASCII(CHAR(x))) return ans;
@@ -749,7 +782,7 @@ const char *translateChar(SEXP x)
 	    /* should never happen */
 	    if(obj == reinterpret_cast<void *>((-1)))
 #ifdef Win32
-		error("unsupported conversion from %s in codepage %d",
+		error("unsupported conversion from '%s' in codepage %d",
 		      "latin1", localeCP);
 #else
 	        error(_("unsupported conversion from '%s' to '%s'"),
@@ -764,7 +797,7 @@ const char *translateChar(SEXP x)
 	    /* should never happen */
 	    if(obj == reinterpret_cast<void *>((-1))) 
 #ifdef Win32
-		error("unsupported conversion from %s in codepage %d",
+		error(_("unsupported conversion from '%s' in codepage %d"),
 		      "latin1", localeCP);
 #else
 	        error(_("unsupported conversion from '%s' to '%s'"),
@@ -831,6 +864,14 @@ next_char:
     return p;
 }
 
+const char *translateChar0(SEXP x)
+{
+    if(TYPEOF(x) != CHARSXP)
+	error(_("'%s' must be called on a CHARSXP"), "translateChar0");
+    if(IS_BYTES(x)) return CHAR(x);
+    return translateChar(x);
+}
+
 const char *translateCharUTF8(SEXP x)
 {
     void *obj;
@@ -844,15 +885,16 @@ const char *translateCharUTF8(SEXP x)
     if(x == NA_STRING) return ans;
     if(IS_UTF8(x)) return ans;
     if(strIsASCII(CHAR(x))) return ans;
+    if(IS_BYTES(x))
+	error(_("translating strings with \"bytes\" encoding is not allowed"));
 
     obj = Riconv_open("UTF-8", IS_LATIN1(x) ? "latin1" : "");
     if(obj == reinterpret_cast<void *>((-1))) 
 #ifdef Win32
-		error("unsupported conversion from %s in codepage %d",
-		      "latin1", localeCP);
+	error(_("unsupported conversion from '%s' in codepage %d"),
+	      "latin1", localeCP);
 #else
-	        error(_("unsupported conversion from '%s' to '%s'"),
-		      "latin1", "UTF-8");
+       error(_("unsupported conversion from '%s' to '%s'"), "latin1", "UTF-8");
 #endif
     R_AllocStringBuffer(0, &cbuff);
 top_of_loop:
@@ -916,6 +958,9 @@ const wchar_t *wtransChar(SEXP x)
     if(TYPEOF(x) != CHARSXP)
 	error(_("'%s' must be called on a CHARSXP"), "wtransChar");
 
+    if(IS_BYTES(x))
+	error(_("translating strings with \"bytes\" encoding is not allowed"));
+
     if(IS_LATIN1(x)) {
 	if(!latin1_wobj) {
 	    obj = Riconv_open(TO_WCHAR, "latin1");
@@ -940,7 +985,7 @@ const wchar_t *wtransChar(SEXP x)
 	obj = Riconv_open(TO_WCHAR, "");
 	if(obj == reinterpret_cast<void *>((-1)))
 #ifdef Win32
-	    error("unsupported conversion to '%s' from codepage %d",
+	    error(_("unsupported conversion to '%s' from codepage %d"),
 		  TO_WCHAR, localeCP);
 #else
 	    error(_("unsupported conversion from '%s' to '%s'"), "", TO_WCHAR);
@@ -1280,10 +1325,18 @@ size_t ucstoutf8(char *s, const unsigned int wc)
 
 static int isDir(CXXRCONST char *path)
 {
+#ifdef Win32
+    struct _stati64 sb;
+#else
     struct stat sb;
+#endif
     int isdir = 0;
     if(!path) return 0;
+#ifdef Win32
+    if(_stati64(path, &sb) == 0) {
+#else
     if(stat(path, &sb) == 0) {
+#endif
 	isdir = (sb.st_mode & S_IFDIR) > 0; /* is a directory */
 #ifdef HAVE_ACCESS
 	/* We want to know if the directory is writable by this user,
@@ -1380,7 +1433,12 @@ void attribute_hidden InitTempDir()
 
 char * R_tmpnam(const char * prefix, const char * tempdir)
 {
-    char tm[PATH_MAX], tmp1[PATH_MAX], *res;
+    return R_tmpnam2(prefix, tempdir, "");
+}
+
+char * R_tmpnam2(const char * prefix, const char * tempdir, const char * fileext)
+{
+    char tm[PATH_MAX], *res;
     unsigned int n, done = 0;
 #ifdef Win32
     char filesep[] = "\\";
@@ -1389,14 +1447,23 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
 #endif
 
     if(!prefix) prefix = "";	/* NULL */
-    if(strlen(tempdir) >= PATH_MAX) error(_("invalid 'tempdir' in R_tmpnam"));
-    strcpy(tmp1, tempdir);
+    if(!fileext) fileext = "";  /*  "   */
+
+#if RAND_MAX > 16777215
+#define RAND_WIDTH 8
+#else
+#define RAND_WIDTH 12
+#endif
+    
+    if(strlen(tempdir) + 1 + strlen(prefix) + RAND_WIDTH + strlen(fileext) >= PATH_MAX) 
+    	error(_("temporary name too long"));
+    	
     for (n = 0; n < 100; n++) {
 	/* try a random number at the end.  Need at least 6 hex digits */
 #if RAND_MAX > 16777215
-	sprintf(tm, "%s%s%s%x", tmp1, filesep, prefix, rand());
+	snprintf(tm, PATH_MAX, "%s%s%s%x%s", tempdir, filesep, prefix, rand(), fileext);
 #else
-	sprintf(tm, "%s%s%s%x%x", tmp1, filesep, prefix, rand(), rand());
+	snprintf(tm, PATH_MAX, "%s%s%s%x%x%s", tempdir, filesep, prefix, rand(), rand(), fileext);
 #endif
 	if(!R_FileExists(tm)) {
 	    done = 1;
@@ -1407,7 +1474,7 @@ char * R_tmpnam(const char * prefix, const char * tempdir)
 	error(_("cannot find unused tempfile name"));
     res = static_cast<char *>( malloc((strlen(tm)+1) * sizeof(char)));
     if(!res)
-	error(_("allocation failed in R_tmpnam"));
+	error(_("allocation failed in R_tmpnam2"));
     strcpy(res, tm);
     return res;
 }

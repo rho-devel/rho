@@ -80,10 +80,12 @@
 #include <R_ext/RS.h>
 #include <Rcomplex.h>
 #include <Rconnections.h>
+#include <cstdarg>
 
 #include "RBufferUtils.h"
 #include "CXXR/StringVector.h"
 
+using namespace std;
 using namespace CXXR;
 
 extern int R_OutputCon; /* from connections.c */
@@ -452,11 +454,11 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 		i = Rstrlen(s, quote);
 		cnt = LENGTH(s);
 	    } else {
-		p = translateChar(s);
+		p = translateChar0(s);
 		if(p == CHAR(s)) {
 		    i = Rstrlen(s, quote);
 		    cnt = LENGTH(s);
-		} else { /* drop anything after embedded nul */
+		} else {
 		    cnt = strlen(p);
 		    i = Rstrwid(p, cnt, CE_NATIVE, quote);
 		}
@@ -465,13 +467,34 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	} else
 #endif
 	{
-	    p = translateChar(s);
-	    if(p == CHAR(s)) {
-		i = Rstrlen(s, quote);
-		cnt = LENGTH(s);
-	    } else { /* drop anything after embedded nul */
+	    if(IS_BYTES(s)) {
+		p = CHAR(s);
 		cnt = strlen(p);
-		i = Rstrwid(p, cnt, CE_NATIVE, quote);
+		const char *q;
+		char *pp = R_alloc(4*cnt+1, 1), *qq = pp, buf[5];
+		for (q = p; *q; q++) {
+		    unsigned char k = static_cast<unsigned char>( *q);
+		    if (k >= 0x20 && k < 0x80) {
+			*qq++ = *q;
+			if (quote && *q == '"') cnt++;
+		    } else {
+			snprintf(buf, 5, "\\x%02x", k);
+			for(j = 0; j < 4; j++) *qq++ = buf[j];
+			cnt += 3;
+		    }
+		}
+		*qq = '\0';
+		p = pp;
+		i = cnt;
+	    } else {
+		p = translateChar(s);
+		if(p == CHAR(s)) {
+		    i = Rstrlen(s, quote);
+		    cnt = LENGTH(s);
+		} else {
+		    cnt = strlen(p);
+		    i = Rstrwid(p, cnt, CE_NATIVE, quote);
+		}
 	    }
 	}
     }
@@ -500,8 +523,9 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 	mbstate_t mb_st;
 	wchar_t wc;
 	unsigned int k; /* not wint_t as it might be signed */
+#ifndef __STDC_ISO_10646__
 	Rboolean Unicode_warning = FALSE;
-
+#endif
 	if(ienc != CE_UTF8)  mbs_init(&mb_st);
 #ifdef Win32
 	else if(WinUTF8out) { memcpy(q, UTF8in, 3); q += 3; }
@@ -553,7 +577,9 @@ const char *EncodeString(SEXP s, int w, int quote, Rprt_adj justify)
 			for(j = 0; j < res; j++) *q++ = *p++;
 		    } else {
 #ifndef Win32
+# ifndef __STDC_ISO_10646__
 			Unicode_warning = TRUE;
+# endif
 			if(k > 0xffff)
 			    snprintf(buf, 11, "\\U%08x", k);
 			else
@@ -805,7 +831,7 @@ void Rvprintf(const char *format, va_list arg)
       con = getConnection(con_num);
 #ifdef HAVE_VA_COPY
       va_copy(argcopy, arg);
-      /* Parentheses added for FC4 with gcc4 and -D_FORTIFY_SOURCE=2 */
+      /* Parentheses added for Fedora with -D_FORTIFY_SOURCE=2 */
       (con->vfprintf)(con, format, argcopy);
       va_end(argcopy);
 #else /* don't support sink(,split=TRUE) */

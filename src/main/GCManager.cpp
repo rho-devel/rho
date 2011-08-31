@@ -42,6 +42,7 @@
 #include "CXXR/GCManager.hpp"
 
 #include <cmath>
+#include <cstdarg>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -49,14 +50,13 @@
 #include "CXXR/GCNode.hpp"
 #include "CXXR/WeakRef.h"
 
-using namespace std;
 using namespace CXXR;
 
 size_t GCManager::s_threshold;
 size_t GCManager::s_min_threshold;
 size_t GCManager::s_max_bytes = 0;
 size_t GCManager::s_max_nodes = 0;
-ostream* GCManager::s_os = 0;
+std::ostream* GCManager::s_os = 0;
 
 void (*GCManager::s_pre_gc)() = 0;
 void (*GCManager::s_post_gc)() = 0;
@@ -97,19 +97,20 @@ void GCManager::gcController()
 {
     ++gc_count;
 
-    s_max_bytes = max(s_max_bytes, MemoryBank::bytesAllocated());
-    s_max_nodes = max(s_max_nodes, GCNode::numNodes());
+    s_max_bytes = std::max(s_max_bytes, MemoryBank::bytesAllocated());
+    s_max_nodes = std::max(s_max_nodes, GCNode::numNodes());
 
     if (s_pre_gc) (*s_pre_gc)();
     GCNode::gc();
-    s_threshold = max(size_t(0.9*s_threshold),
-		      max(s_min_threshold, 2*MemoryBank::bytesAllocated()));
+    s_threshold = std::max(size_t(0.9*s_threshold),
+			   std::max(s_min_threshold,
+				    2*MemoryBank::bytesAllocated()));
     if (s_post_gc) (*s_post_gc)();
 }
 
 void GCManager::initialize()
 {
-    setGCThreshold(numeric_limits<size_t>::max());
+    setGCThreshold(std::numeric_limits<size_t>::max());
     gc_count = 0;
 }
 
@@ -124,9 +125,9 @@ void GCManager::setGCThreshold(size_t initial_threshold)
     s_min_threshold = s_threshold = initial_threshold;
 }
 
-ostream* GCManager::setReporting(ostream* os)
+std::ostream* GCManager::setReporting(std::ostream* os)
 {
-    ostream* ans = s_os;
+    std::ostream* ans = s_os;
     s_os = os;
     return ans;
 }

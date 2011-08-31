@@ -204,11 +204,13 @@ namespace CXXR {
     Symbol* const BraceSymbol = Symbol::obtain("{");
     Symbol* const TmpvalSymbol = Symbol::obtain("*tmp*");
     Symbol* const ClassSymbol = Symbol::obtain("class");
-    Symbol* const DeviceSymbol = Symbol::obtain(".Device");
+    Symbol* const ConnIdSymbol = Symbol::obtain("conn_id");
     Symbol* const DimNamesSymbol = Symbol::obtain("dimnames");
     Symbol* const DimSymbol = Symbol::obtain("dim");
     Symbol* const DollarSymbol = Symbol::obtain("$");
     Symbol* const DotClassSymbol = Symbol::obtain(".Class");
+    Symbol* const DotDeviceSymbol = Symbol::obtain(".Device");
+    Symbol* const DotDevicesSymbol = Symbol::obtain(".Devices");
     Symbol* const DotGenericSymbol = Symbol::obtain(".Generic");
     Symbol* const DotGenericCallEnvSymbol = Symbol::obtain(".GenericCallEnv");
     Symbol* const DotGenericDefEnvSymbol = Symbol::obtain(".GenericDefEnv");
@@ -218,6 +220,7 @@ namespace CXXR {
     Symbol* const DotdefinedSymbol = Symbol::obtain(".defined");
     Symbol* const DotsSymbol = Symbol::obtain("...");
     Symbol* const DottargetSymbol = Symbol::obtain(".target");
+    Symbol* const DoubleColonSymbol = Symbol::obtain("::");
     Symbol* const DropSymbol = Symbol::obtain("drop");
     Symbol* const ExactSymbol = Symbol::obtain("exact");
     Symbol* const LastvalueSymbol = Symbol::obtain(".Last.value");
@@ -233,6 +236,7 @@ namespace CXXR {
     Symbol* const S3MethodsTableSymbol = Symbol::obtain(".__S3MethodsTable__.");
     Symbol* const SeedsSymbol = Symbol::obtain(".Random.seed");
     Symbol* const SourceSymbol = Symbol::obtain("source");
+    Symbol* const TripleColonSymbol = Symbol::obtain(":::");
     Symbol* const TspSymbol = Symbol::obtain("tsp");
     Symbol* const CommentSymbol = Symbol::obtain("comment");
     Symbol* const DotEnvSymbol = Symbol::obtain(".Environment");
@@ -249,11 +253,14 @@ SEXP R_Bracket2Symbol = CXXR::Bracket2Symbol;
 SEXP R_BracketSymbol = CXXR::BracketSymbol;
 SEXP R_BraceSymbol = CXXR::BraceSymbol;
 SEXP R_ClassSymbol = CXXR::ClassSymbol;
-SEXP R_DeviceSymbol = CXXR::DeviceSymbol;
+SEXP R_ConnIdSymbol = CXXR::ConnIdSymbol;
+SEXP R_DeviceSymbol = CXXR::DotDeviceSymbol;
+SEXP R_DevicesSymbol = CXXR::DotDevicesSymbol;
 SEXP R_DimNamesSymbol = CXXR::DimNamesSymbol;
 SEXP R_DimSymbol = CXXR::DimSymbol;
 SEXP R_DollarSymbol = CXXR::DollarSymbol;
 SEXP R_DotsSymbol = CXXR::DotsSymbol;
+SEXP R_DoubleColonSymbol = CXXR::DoubleColonSymbol;
 SEXP R_DropSymbol = CXXR::DropSymbol;
 SEXP R_LastvalueSymbol = CXXR::LastvalueSymbol;
 SEXP R_LevelsSymbol = CXXR::LevelsSymbol;
@@ -266,6 +273,7 @@ SEXP R_QuoteSymbol = CXXR::QuoteSymbol;
 SEXP R_RowNamesSymbol = CXXR::RowNamesSymbol;
 SEXP R_SeedsSymbol = CXXR::SeedsSymbol;
 SEXP R_SourceSymbol = CXXR::SourceSymbol;
+SEXP R_TripleColonSymbol = CXXR::TripleColonSymbol;
 SEXP R_TspSymbol = CXXR::TspSymbol;
 
 SEXP R_CommentSymbol = CXXR::CommentSymbol;
@@ -277,6 +285,11 @@ SEXP R_SrcrefSymbol = CXXR::SrcrefSymbol;
 SEXP R_WholeSrcrefSymbol = CXXR::WholeSrcrefSymbol;
 SEXP R_TmpvalSymbol = CXXR::TmpvalSymbol;
 SEXP R_UseNamesSymbol = CXXR::UseNamesSymbol;
+
+SEXP R_dot_Generic = CXXR::DotGenericSymbol;
+SEXP R_dot_Method = CXXR::DotMethodSymbol;
+SEXP R_dot_defined = CXXR::DotdefinedSymbol;
+SEXP R_dot_target = CXXR::DottargetSymbol;
 
 // Rf_install() is currently defined in main.cpp
 

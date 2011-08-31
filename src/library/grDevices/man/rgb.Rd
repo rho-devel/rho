@@ -12,7 +12,8 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
 \description{
   This function creates colors corresponding to the given
   intensities (between 0 and \code{max}) of the red, green and blue
-  primaries.
+  primaries.  The colour specification refers to the
+  standard sRGB colorspace  (IEC standard 61966).
 
   An alpha transparency value can also be specified
   (0 means fully transparent and \code{max} means opaque).
@@ -20,7 +21,7 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
 
   The names argument may be used to provide names for the
   colors.
-  
+
   The values returned by these functions can be used with a
   \code{col=} specification in graphics functions or in \code{\link{par}}.
 }
@@ -58,7 +59,7 @@ rgb(red, green, blue, alpha, names = NULL, maxColorValue = 1)
   hexadecimal (after rescaling to \code{0 ... 255}).
 }
 \seealso{
-  \code{\link{col2rgb}}for translating \R colors to RGB vectors;
+  \code{\link{col2rgb}} for translating \R colors to RGB vectors;
   \code{\link{rainbow}}, \code{\link{hsv}}, \code{\link{hcl}},
   \code{\link{gray}}.
 }

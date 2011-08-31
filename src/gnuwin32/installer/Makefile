@@ -1,9 +1,11 @@
 # Makefile for R for Windows Installers
 
 include ../MkRules
+
+## Formerly in MkRules
+FIND = find
+
 R_HOME = ../../..
-## for TCL_HOME
-RHOME = ../../..
 include $(R_HOME)/share/make/vars.mk
 
 ## use this to install other packages from main library
@@ -21,7 +23,7 @@ Internet = 0
 ## Used to set Registry entries
 Producer = R-core
 
-ifeq ($(strip $(WIN)),64)
+ifeq "$(WIN)" "64"
 ifneq ($(strip $(HOME32)),)
 SUFF = win
 else
@@ -32,12 +34,11 @@ SUFF = win32
 endif
 
 FULLVERSION=`cat ../../../VERSION`
-#RPREFIX = $(shell $(R_HOME)/tools/GETRWVERSION $(R_HOME)/VERSION)
 RPREFIX = $(shell ../../../bin$(R_ARCH)/Rscript ../fixed/rwver.R)
-LIBFILES = $(foreach i, $(R_PKGS_BASE) $(R_PKGS_RECOMMENDED) $(EXTRA_PKGS), $(R_HOME)/library/$i) $(R_HOME)/library/R.css
+LIBFILES = $(foreach i, $(R_PKGS_BASE) $(R_PKGS_RECOMMENDED) $(EXTRA_PKGS), $(R_HOME)/library/$i)
 
 INFO_FILES = COPYING NEWS README
-DOC_INFO_FILES = AUTHORS COPYING COPYING.LIB FAQ RESOURCES THANKS CHANGES
+DOC_INFO_FILES = AUTHORS COPYING FAQ RESOURCES THANKS CHANGES
 GW_INFO_FILES = COPYRIGHTS README.Rterm rw-FAQ
 
 ETC_FILES = Rprofile.site Rconsole Rdevga rgb.txt repositories Rcmd_environ
@@ -113,13 +114,21 @@ md5sums:
 	  R_DEFAULT_PACKAGES=NULL LC_COLLATE=C R_OSTYPE=windows \
 	  ../../../../$(BINDIR)/Rterm.exe --vanilla --slave)
 
+PDF_FILES = $(wildcard $(RPREFIX)/library/*/doc/*.pdf)
+
 fixups:
-	echo "make.packages.html(.Library, verbose=FALSE)" | $(RPREFIX)/$(BINDIR)/Rterm.exe --vanilla --slave LC_COLLATE=C
-	$(CP) -prf "$(TCL_HOME)" $(RPREFIX)
+	echo "make.packages.html(.Library,temp=FALSE,verbose=FALSE)" | $(RPREFIX)/$(BINDIR)/Rterm.exe --vanilla --slave LC_COLLATE=C
+	$(CP) -prf $(R_HOME)/Tcl $(RPREFIX)
 	$(RM) $(RPREFIX)/Tcl*/lib/*.lib
+ifneq ($(strip $(QPDF)),)
+	@for f in $(PDF_FILES); do \
+	  $(QPDF)/bin/qpdf --stream-data=compress $${f} tmp.pdf; \
+	  mv tmp.pdf $${f}; \
+	done
+endif
 
 32bit:
-ifeq ($(strip $(WIN)),64)
+ifeq "$(WIN)" "64"
 ifneq ($(strip $(HOME32)),)
 	@echo "------------ including 32-bit files"
 	(cd "$(HOME32)"; zip -qr9X 32bit */i386 library/*/libs/i386 bin/R.exe bin/Rscript.exe)
@@ -156,17 +165,17 @@ uuidgen.exe: uuidgen.o
 
 # currently use about 3300
 uuids: uuidgen.exe
-	uuidgen 4000 > $@
+	./uuidgen 4000 > $@
 
 files.wxs: imagedir fixups 32bit md5sums
-	"$(WIX3DIR)/bin/heat" dir $(RPREFIX) -sw5150 -nologo -o $@
+	"$(WIX3DIR)/heat" dir $(RPREFIX) -sw5150 -nologo -o $@
 
 R.wxs: WIXins.R uuids files.wxs
-	Rscript WIXins.R $(RPREFIX) $(RPREFIX) $(WIX_PERSONAL) || (rm -f $@;exit 1)
+	../../../bin$(R_ARCH)/Rscript WIXins.R $(RPREFIX) $(RPREFIX) $(WIX_PERSONAL) || (rm -f $@;exit 1)
 
 $(RPREFIX)-$(SUFF).msi: R.wxs License.rtf
-	"$(WIX3DIR)/bin/candle" R.wxs > $(RPREFIX).log 2>&1
-	"$(WIX3DIR)/bin/light" -out $@ R.wixobj -dcl:high \
+	"$(WIX3DIR)/candle" R.wxs > $(RPREFIX).log 2>&1
+	"$(WIX3DIR)/light" -out $@ R.wixobj -dcl:high \
 	 -ext WixUIExtension -sw1076 -sval -spdb >> $(RPREFIX).log 2>&1
 
 

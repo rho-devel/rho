@@ -7,10 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2010-09-27 09:37\n"
-"PO-Revision-Date: 2010-10-01 20:59+0100\n"
+"POT-Creation-Date: 2011-03-25 10:08\n"
+"PO-Revision-Date: 2011-03-27 22:36+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -46,6 +47,12 @@ msgstr "Impossible de spécifier des arguments matrix() lorsque .Data est specifi
 
 msgid "Cannot specify array() arguments when specifying .Data"
 msgstr "Impossible de spécifier des arguments array() lorsque .Data est specifié"
+
+msgid "Can't have more than one unnamed argument as environment"
+msgstr "Impossible d'utiliser plus d'un argument non nommé comme environnement"
+
+msgid "Unnamed argument to new() must be an environment for the new object"
+msgstr "L'argument non nommé de new() doit être un environnement pour le nouvel objet"
 
 msgid "methods may not be defined for primitive function \"%s\" in this version of R"
 msgstr "les méthodes ne sont peut-être pas définies pour la fonction primitive \"%s\" dans cette version de R"
@@ -233,8 +240,8 @@ msgstr "mauvaise classe spécifiée pour l'élément %d (doit être une simple chaîne
 msgid "first argument should be the name(s) of generic functions (got object of class \"%s\")"
 msgstr "le premier argument doit être le ou les nom(s) des fonctions génériques (un objet de classe \"%s\" est fourni)"
 
-msgid "\"%s\" is not a generic function in \"%s\"; methods not removed"
-msgstr "\"%s\" n'est pas une fonction générique dans \"%s\" ; Les méthodes ne sont pas éliminées"
+msgid "\"%s\" is not an S4 generic function in \"%s\"; methods not removed"
+msgstr "\"%s\" n'est pas une fonction générique S4 dans \"%s\" ; Les méthodes ne sont pas éliminées"
 
 msgid "cannot remove methods for  \"%s\" in locked environment/package \"%s\""
 msgstr "impossible d'éliminer la méthode pour \"%s\" dans l'environnement / le package \"%s\" verrouillé"
@@ -242,8 +249,8 @@ msgstr "impossible d'éliminer la méthode pour \"%s\" dans l'environnement / le p
 msgid "restoring default function definition of \"%s\""
 msgstr "rétablissement de la définition par défaut de la fonction \"%s\""
 
-msgid "error in updating generic function \"%s\"; the function definition is not a generic function (class \"%s\")"
-msgstr "erreur lors de la mise-à-jour de la fonction générique \"%s\" ; La définition de fonction n'est pas une fonction générique (classe \"%s\")"
+msgid "error in updating S4 generic function \"%s\"; the function definition is not an S4 generic function (class \"%s\")"
+msgstr "erreur lors de la mise-à-jour de la fonction générique S4 \"%s\" ; La définition de fonction n'est pas une fonction générique S4 (classe \"%s\")"
 
 msgid "function \"%s\" is already a group generic; no change"
 msgstr "la fonction \"%s\" est déjà un groupe générique ; Pas de changement"
@@ -320,8 +327,8 @@ msgstr "Seul FALSE a un sens pour 'inherited', lorsque 'where' est fourni (il s'
 msgid "argument \"f\" must be a generic function or %s"
 msgstr "L'argument \"f\" doit être une fonction générique ou %s"
 
-msgid "'%s' is not a generic function in '%s' {and 'package' not specified}"
-msgstr "'%s' ne correspond pas à une fonction générique dans '%s' {et le 'package' n'est pas spécifié}"
+msgid "'%s' is not a known generic function {and 'package' not specified}"
+msgstr "'%s' ne correspond pas à une fonction générique connue {et le 'package' n'est pas spécifié}"
 
 msgid "invalid first argument: should be the name of the first argument in the dispatch"
 msgstr "premier argument incorrect : il doit être le nom du premier argument dans le dispatching"
@@ -659,9 +666,6 @@ msgstr "\"%s\" n'est pas une fonction générique (ou elle n'est pas visible)"
 msgid "invalid element in the groupMembers slot (class \"%s\")"
 msgstr "élément incorrect dans le slot 'groupMembers' (classe \"%s\")"
 
-msgid "\" is not a known action (warn, stop, once, ignore); no action recorded for function \""
-msgstr "\" n'est pas une action connue (warn, stop, once, ignore) ; aucune action enregistrée pour la fonction \""
-
 msgid "argument f must be a generic function with signature \"...\""
 msgstr "l'argument f doit être une fonction générique ayant une signature \"...\""
 
@@ -756,11 +760,11 @@ msgid "no definition of \"%s\" to use for %s"
 msgstr "aucune définition de \"%s\" à utiliser pour %s"
 
 msgid ""
-"multiple definitions of class \"%s\" visible; using the definition\n"
+"multiple definitions of class \"%s\" visible (%s); using the definition\n"
 "   in package \"%s\" for %s"
 msgstr ""
-"plusieurs définition de classe \"%s\" existent ;\n"
-"   celle du package \"%s\" est utilisée pour %s"
+"plusieurs définitions de la classe \"%s\" sont visibles (%s) ; utilisation de la définition\n"
+"   du package \"%s\" pour %s"
 
 msgid "Class definition cannot extend more than one of these data types: %s"
 msgstr "La définition de classe ne peut être étendue à plus d'un de ces types de données : %s"
@@ -1048,18 +1052,6 @@ msgstr "aucune définition de la classe \"%s\" n'existe à la position spécifiée, 
 msgid "Field \"%s\" is not a valid field or method name for reference class \"%s\""
 msgstr "Le champ \"%s\" n'est pas un champ correct ou le nom d'une méthode pour la classe de référence \"%s\""
 
-msgid "The class of field \"%s\" in the object is not compatible with the desired class \"%s\" in the target"
-msgstr "La classe du champ \"%s\" dans l'objet n'est pas compatible avec la classe souhaitée \"%s\" pour la cible"
-
-msgid "\"%s\" is not a defined class in this environment"
-msgstr "\"%s\" n'est pas une classe définie dans cet environnement"
-
-msgid "Invalid Class argument:  should be a single string"
-msgstr "Mauvaise argument Classe :  doit être une chaîne de caractères unique"
-
-msgid "\"%s\" is not one of the reference super classes for this object"
-msgstr "\"%s\" n'est pas une des références à des superclasses pour cet objet"
-
 msgid "Method %s from class %s was not processed into a class method until being installed.  Possible corruption of the methods in the class."
 msgstr "La méthode %s de la classe %s n'a pas été traitée comme méthode de classe avant installation. Les méthodes de la classe sont peut-être corrompues."
 
@@ -1072,20 +1064,26 @@ msgstr "\"%s\" n'est pas une référence de classe"
 msgid "\"%s\" is not a field in class \"%s\""
 msgstr "\"%s\" n'est pas un champ de la classe \"%s\""
 
+msgid "The class of field \"%s\" in the object is not compatible with the desired class \"%s\" in the target"
+msgstr "La classe du champ \"%s\" dans l'objet n'est pas compatible avec la classe souhaitée \"%s\" pour la cible"
+
+msgid "\"%s\" is not a defined class in this environment"
+msgstr "\"%s\" n'est pas une classe définie dans cet environnement"
+
+msgid "Invalid Class argument:  should be a single string"
+msgstr "Mauvaise argument Classe :  doit être une chaîne de caractères unique"
+
+msgid "\"%s\" is not one of the reference super classes for this object"
+msgstr "\"%s\" n'est pas une des références à des superclasses pour cet objet"
+
 msgid "direct calls to callSuper() are invalid:  should only be called from another method"
 msgstr "les appels directs à callSuper() ne sont pas autorisés : ils ne peuvent être réalisés qu'à partir d'une autre méthode"
 
+msgid "\"%s\" is not a field in this class"
+msgstr "\"%s\" n'est pas un champ de cette classe"
+
 msgid "Arguments to methods() must be named, or one named list"
 msgstr "Les arguments à methods() doivent être nommés, ou dans une liste nommée"
-
-msgid "must give named list of refdefined fields"
-msgstr "nécessite une liste nommée de redéfinition de champs"
-
-msgid "Only accessor fields can be replaced:  field \"%s\" has class \"%s\""
-msgstr "Seuls les champs d'accès peuvent être remplacés : le champ \"%s\" a la classe \"%s\""
-
-msgid "replacement for field \"%s\" must be an accessor function: got an object of class \"%s\""
-msgstr "lle remplaçant pour le champ \"%s\" doit être une fonction d'accession : un objet de classe \"%s\" est obtenu à la place"
 
 msgid ""
 "Topic \"%s\" is not a method name in class \"%s\"\n"
@@ -1093,6 +1091,12 @@ msgid ""
 msgstr ""
 "L'item \"%s\" n'est pas un nom de méthode dans la classe \"%s\"\n"
 "La définition de classe est la suivante"
+
+msgid "Arguments must all be character string names of fields"
+msgstr "Les arguments doivent tous être des noms sous forme de chaînes de caractères des champs"
+
+msgid "Field \"%s\"  of class \"%s\" has a non-default binding and cannot be locked"
+msgstr "Le champ \"%s\" de la classe \"%s\" a un lien non standard et ne peut être verrouillé"
 
 msgid "The overriding class(\"%s\") of field \"%s\" is not a subclass of the existing field definition (\"%s\")"
 msgstr "La redéfinition de classe (\"%s\") pour le champ \"%s\" n'est pas une sous-classe de la définition de champ existante (\"%s\")"
@@ -1102,12 +1106,6 @@ msgstr "Champ \""
 
 msgid "\" is read-only"
 msgstr "\" en lecture seule"
-
-msgid "Arguments must all be character string names of fieds"
-msgstr "Les arguments doivent tous être des noms sous forme de chaînes de caractères ou des champs"
-
-msgid "Field \"%s\"  of class \"%s\" has a non-default binding and cannot be locked"
-msgstr "Le champ \"%s\" de la classe \"%s\" a un lien non standard et ne peut être verrouillé"
 
 msgid "The contains= argument should be the names of superclasses:  got an element of class \"%s\""
 msgstr "L'argument 'contains=' doit renseigner les noms de superclasses : un objet de classe \"%s\" est fourni"
@@ -1123,6 +1121,9 @@ msgstr "La classe \"%s\" pour le champ \"%s\" n'est pas définie"
 
 msgid "Field \"%s\" was supplied as an object of class \"%s\"; must be a class name or a binding function"
 msgstr "Le champ \"%s\" est fourni comme étant un objet de classe \"%s\" ; il doit être un nom de classe ou une fonction de lien"
+
+msgid "Code for methods in class \"%s\" was not checked for suspicious field assignments (recommended package \"codetools\" not available?)"
+msgstr "Le code des méthodes de la classe \"%s\" n'a pas été vérifié pour les affectations de champs suspectes (package recommandé \"codetools\" indisponible ?)"
 
 msgid "A list argument for fields must have nonempty names for all the fields"
 msgstr "Un argument liste pour les champs ne peut avoir de champs non nommés"
@@ -1141,6 +1142,33 @@ msgstr "(classe \"%s\")"
 
 msgid "for method %s()"
 msgstr "pour la méthode %s()"
+
+msgid ""
+"Local assignment to field name will not change the field:\n"
+"    %s\n"
+" Did you mean to use \"<<-\"? ( in method %s for class %s)"
+msgstr ""
+"Une affectation locale vers le nom de champ ne change pas ce champ :\n"
+"    %s\n"
+"Vouliez-vous utiliser \"<<-\" ? (dans la méthode %s de la classe %s)"
+
+msgid ""
+"Non-local assignment to non-field names (possibly misspelled?)\n"
+"    %s\n"
+"( in method %s for class %s)"
+msgstr ""
+"Affectation non-locale à des noms qui ne sont pas des champs (coquille possible ?)\n"
+"    %s\n"
+"(dans la méthode %s de la classe %s)"
+
+msgid ""
+"Non-local assignment to method names is not allowed\n"
+"    %s\n"
+"( in method %s for class %s)"
+msgstr ""
+"L'affectation non-locale à des noms de méthodes n'est pas autorisée\n"
+"    %s\n"
+"(dans la méthode %s de la classe %s)"
 
 msgid "invalid ignore= argument; should be a class definition or a character vector, got an object of class %s"
 msgstr "argument 'ignore=' incorrect ; doit être une définition de classe ou une chaîne de caractères ; un objet de classe %s est obtenu"
@@ -1272,6 +1300,28 @@ msgid "no definition for class %s"
 msgid_plural "no definition for classes %s"
 msgstr[0] "aucune définition de la classe %s n'est trouvée"
 msgstr[1] "aucune définition des classes %s n'est trouvée"
+
+#~ msgid ""
+#~ "\" is not a known action (warn, stop, once, ignore); no action recorded "
+#~ "for function \""
+#~ msgstr ""
+#~ "\" n'est pas une action connue (warn, stop, once, ignore) ; aucune action "
+#~ "enregistrée pour la fonction \""
+
+#~ msgid "must give named list of refdefined fields"
+#~ msgstr "nécessite une liste nommée de redéfinition de champs"
+
+#~ msgid "Only accessor fields can be replaced:  field \"%s\" has class \"%s\""
+#~ msgstr ""
+#~ "Seuls les champs d'accès peuvent être remplacés : le champ \"%s\" a la "
+#~ "classe \"%s\""
+
+#~ msgid ""
+#~ "replacement for field \"%s\" must be an accessor function: got an object "
+#~ "of class \"%s\""
+#~ msgstr ""
+#~ "lle remplaçant pour le champ \"%s\" doit être une fonction d'accession : "
+#~ "un objet de classe \"%s\" est obtenu à la place"
 
 #, fuzzy
 #~ msgid ""

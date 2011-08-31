@@ -56,7 +56,6 @@ CFLAGS="-fexceptions -g -O2"
 
 ## Defines for C compilation.
 ## Use this to specify defines to be used in the compilation of R,
-## e.g. -DUSE_TYPE_CHECKING_STRICT
 ## DEFS=
 
 ## The following additional CFLAGS to be used only in the main
@@ -238,3 +237,8 @@ CXXFLAGS="-g -std=c++98 -Wall"
 ## archives in a non-POSIX format that untar() cannot read,
 ## so should be avoided.
 ## TAR=
+
+## Library path
+## This is be default created from libraries added to LIBS.
+## Allow user to override.
+## R_LD_LIBRARY_PATH=

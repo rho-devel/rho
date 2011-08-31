@@ -127,7 +127,7 @@ The information here applies only to recent versions of R for Windows,
 Go to any CRAN site (see @uref{http://cran.r-project.org/@/mirrors.html}
 for a list), navigate to the @file{bin/windows/base} directory and
 collect the file(s) you need.  The current release is distributed as an
-installer @samp{@RWVER@-win.exe} of about 37Mb.  This contains all the
+installer @samp{@RWVER@-win.exe} of about 38Mb.  This contains all the
 components and allows as complete as installation as you choose.
 
 There are also links on that page to the @samp{r-patched} and
@@ -140,18 +140,21 @@ release.
 @node How do I install R for Windows?, How do I check an installation?, Where can I find the latest version?, Installation and Usage
 @section How do I install R for Windows?
 
-Current binary versions of R run on Windows 2000 or later, including
-on 64-bit versions: @xref{Can I use R on 64-bit Windows?}.
+Current binary versions of R run on Windows XP or later, including on
+64-bit versions: @xref{Can I use R on 64-bit Windows?}. The last version
+known to run on Windows 2000 was 2.12.2.
+
+@c 2000 went end-of-life 2010-07-13
+@c XP SP3 goes end of life 2014-04-08
 
 We only test on versions of Windows currently supported by Microsoft,
 mainly 64-bit Windows 7 and Server 2008, but to a limited extent on
 32-bit XP SP3.
 
 Your file system must allow case-honouring long file names (as is likely
-except perhaps for some network-mounted systems).  A typical install
-either 32- or 64-bit installation takes around 50Mb of disk space, of
-both about 60Mb, a full installation about 80Mb and a minimal 32-bit one
-about 32Mb.
+except perhaps for some network-mounted systems).  A typical 32- or
+64-bit installation takes 45--50Mb of disk space, of both about 60Mb, a
+full installation about 80Mb and a minimal 32-bit one about 30Mb.
 
 If you want to be able to build packages from sources, we recommend that
 you choose an installation path not containing spaces.  (Using a path
@@ -276,14 +279,12 @@ without creating a shortcut starting in a writable folder.
 @node How do I UNinstall R?, What's the best way to upgrade?, Can I run R from a CD or USB drive?, Installation and Usage
 @section How do I UNinstall R?
 
-Normally you can do this from the R group on the Start Menu or from the
-@samp{Add/Remove Programs} (XP) or @samp{Programs and Features}
-(Vista/7) group in the Control Panel.  If it does not appear there, run
-@file{unins000.exe} in the top-level installation directory.  (There
-should be a separate uninstall item in the R group on the Start Menu for
-each installed version of R.  On recent versions of Windows you may well
-be asked to confirm that you wish to run a program from an `unknown' or
-`unidentified' publisher.)
+Normally you can do this from the @samp{Add/Remove Programs} (XP) or
+@samp{Programs and Features} (Vista/7) group in the Control Panel.  If
+it does not appear there, run @file{unins000.exe} in the top-level
+installation directory.  On recent versions of Windows you may well be
+asked to confirm that you wish to run a program from an `unknown' or
+`unidentified' publisher.
 
 Uninstalling R only removes files from the initial installation, not
 (for example) packages you have installed or updated.
@@ -306,8 +307,8 @@ versions around if you wish.
 For those with a personal library (folder @file{R\win-library\@var{x.y}}
 of your home directory, @file{R\win64-library\@var{x.y}} on 64-bit
 builds), you will need to update that too when the minor version of R
-changes (e.g.@: from 2.11.1 to 2.12.0).  A simple way to do so is to
-copy (say) @file{R\win-library\2.11} to @file{R\win-library\2.12} before
+changes (e.g.@: from 2.12.2 to 2.13.0).  A simple way to do so is to
+copy (say) @file{R\win-library\2.12} to @file{R\win-library\2.13} before
 running @code{update.packages(checkBuilt=TRUE, ask=FALSE)}.
 
 
@@ -383,7 +384,7 @@ can print help files by @code{help(fn_name, help_type="postscript")} (or
 
 Yes: use @code{R CMD BATCH --help} or @code{?BATCH} for full details.
 
-You can set also up a batch file using @command{Rterm.exe}.  A sample
+You can also set up a batch file using @command{Rterm.exe}.  A sample
 batch file might contain (as one line)
 
 @example
@@ -445,7 +446,7 @@ On the command line as name=value pairs.  For example in the shortcut to
 
 @item
 In an environment file @file{.Renviron} in the working directory
-or your home directory, for example containing the line
+or in your home directory, for example containing the line
 
 @example
 R_LIBS=p:/myRlib
@@ -516,9 +517,9 @@ Windows registry:
     (where @code{[version]} is currently @RVER@) contains the path to the R 
     home directory.
 @end itemize
-If you do not have administrative privileges on the machine while running
-the installer, then the entries are created under @code{HKEY_CURRENT_USER}.
-As from R 2.11.0 the same entries are also created under
+If you do not have administrative privileges on the machine while
+running the installer, then the entries are created under
+@code{HKEY_CURRENT_USER}.  The same entries are also created under
 @code{Software\R-core\R32} or @code{Software\R-core\R64}, for 32- and
 64-bit R respectively.
 
@@ -527,7 +528,7 @@ only) (@samp{Associate R with .RData files}) then entries are created
 under @code{HKEY_CLASSES_ROOT\.RData} and
 @code{HKEY_CLASSES_ROOT\RWorkspace}.
 
-After installation you can add the Registry entries in by running
+After installation you can add the Registry entries by running
 @code{RSetReg.exe} in a sub-folder of the @code{bin} folder, and remove
 them by running this with argument @code{/U}.  Note that this requires
 administrative privileges unless run with argument @code{/Personal} and
@@ -641,7 +642,7 @@ by looking at the number of graphs of `CPU Usage History' on the
 @node Does R run under Windows Vista?, Quotes don't come out right on the console/terminal/pager, Why does R never use more than 50% of my CPU?, Installation and Usage
 @section Does R run under Windows Vista/7/Server 2008?
 
-It does.  A few issues have been reported that related to the way
+It does.  A few issues have been reported that are related to the way
 accounts and file permissions work.  (These are not specifically R
 issues, but changes in user experiences.)
 
@@ -767,11 +768,11 @@ use fonts which render them correctly.
 The font used can affect whether quotes are rendered correctly.  The
 default font in the @code{Rgui} console and internal pager is
 @code{Courier New}, which has directional quotes on all the systems we
-tried.  @code{Lucida Console} has elegant glyphs for directional quotes,
-but seems rather light on Windows XP (it looks better than @code{Courier
-New} on Vista and later): @code{Consolas} is another font which we often
-select.  Non-TrueType fonts such as @code{Courier} and @code{FixedSys}
-lack directional double quotes on all the systems we tried.
+tried.  @code{Lucida Console} has elegant glyphs for directional quotes
+(but seems rather light unless ClearType is in use): @code{Consolas} is
+another font which we often select when ClearType is in use.
+Non-TrueType fonts such as @code{Courier} and @code{FixedSys} lack
+directional double quotes on all the systems we tried.
 
 There is a related problem with using @code{Sweave} output in
 @code{Rgui}, for LaTeX needs to be told about the encoding of
@@ -799,8 +800,8 @@ can explore those for your keyboard via the `On-Screen Keyboard' (under
 Accessories, Accessibility on XP).
 
 On all Windows versions you should be able to get tilde by holding the
-down the left Alt key and typing 0126 on the numeric keypad, then
-releasing the Alt key.
+down the left Alt key and typing 0126 on the numeric keypad (if you have
+one), then releasing the Alt key.
 
 @node Can I use R on 64-bit Windows?, Should I run 32-bit or 64-bit R?, There is no tilde on my keyboard, Installation and Usage
 @section Can I use R on 64-bit Windows?
@@ -833,39 +834,38 @@ R's memory manager to more easily handle large objects (in particular
 those of 1GB or more).  The disadvantages are that all the pointers are
 8 rather than 4 bytes and so small objects are larger and more data has
 to be moved around, and that less external software is available for
-64-bit versions of the OS.
-
-The toolchain (compilers, linkers, @dots{}) used to build 64-bit R is
-less mature than that for 32-bit R, but testing so far (and all the CRAN
-packages provide an extensive test suite) suggests that they are mature
-enough for production use.  The compilers are able to take advantage of
-extra features of all x86-64 chips (more registers, SSE2/3 instructions,
-@dots{}) and so the code may run faster despite using larger pointers.
+64-bit versions of the OS. The 64-bit compilers are able to take
+advantage of extra features of all x86-64 chips (more registers, SSE2/3
+instructions, @dots{}) and so the code may run faster despite using
+larger pointers.
 
 For advanced users the choice may be dictated by whether the contributed
-packages needed are available in 64-bit builds (and if they are not that
-is some indication that installing them from sources is problematic).
-At the time of writing the most commonly-used CRAN packages without
-64-bit versions were @code{BRugs} and @code{rggobi}. The considerations
-can be more complex: for example 32/64-bit @code{RODBC} need 32/64 ODBC
-drivers respectively, and where both exist they may not be able to be
-installed together.  An extreme example is the Microsoft Access/Excel
-ODBC drivers: if you have installed 64-bit Microsoft Office you can only
-install the 64-bit drivers and so need to use 64-bit @code{RODBC} and
-hence R.
+packages needed are available in 64-bit builds (and if CRAN binary
+packages are not that is some indication that installing them from
+sources is problematic).  At the time of writing the most commonly-used
+CRAN packages without 64-bit versions were @code{BRugs} and
+@code{rggobi}. The considerations can be more complex: for example
+32/64-bit @code{RODBC} need 32/64-bit ODBC drivers respectively, and
+where both exist they may not be able to be installed together.  An
+extreme example is the Microsoft Access/Excel ODBC drivers: if you have
+installed 64-bit Microsoft Office you can only install the 64-bit
+drivers and so need to use 64-bit @code{RODBC} and hence R.
 
 @node Can both 32- and 64-bit R be installed on the same machine?,  , Should I run 32-bit or 64-bit R?, Installation and Usage
 @section Can both 32- and 64-bit R be installed on the same machine?
 
 Obviously, only relevant if the machine is running a 64-bit version of
 Windows -- simply select both when using the installer.  You can also go
-back and add 64-bit components to a 32-bit install.
+back and add 64-bit components to a 32-bit install, or @emph{vice versa}.
 
 For many Registry items, 32- and 64-bit programs have different views of
 the Registry, but clashes can occur.  The most obvious problem is the
-file association, which will use the last installation for which this
-option is selected, and if that was for an installation of both, will
-use 32-bit R.
+file association for @file{.RData} files, which will use the last
+installation for which this option is selected, and if that was for an
+installation of both, will use 32-bit R.  To change the association the
+safest way is to edit the Registry entry
+@samp{HKEY_CLASSES_ROOT\RWorkspace\shell\open\command}
+and replace @samp{i386} by @samp{x64} or @emph{vice versa}.
 
 @newchap{}
 @node Languages and Internationalization, Packages, Installation and Usage, Top
@@ -927,9 +927,9 @@ Windows in their native language, but not R.  To do so, set
 @node I want to run R in Chinese/Japanese/Korean, I selected English for installation but R runs in Chinese, I want R in English!, Languages and Internationalization
 @section I want to run R in Chinese/Japanese/Korean.
 
-Windows versions of R support `East Asian' languages with a suitable
-copy of Windows -- e.g.@: Western installations of Windows often do not
-have such support.
+Suitable versions of Windows support what it calls `East Asian'
+languages, but e.g.@: Western installations of Windows often do not have
+such support.  So we need to assume that your copy of Windows does.
 
 Both @command{Rterm.exe} and @command{Rgui.exe} support single- and
 double-width characters.  It will be necessary to select suitable fonts
@@ -943,7 +943,7 @@ graphics devices and not, say, to @code{pdf}.)
 Note that it is important that the console font uses double-width
 characters for all CJK characters (as that is what the width table used
 assumes): this is true for the fonts intended for CJK locales but not
-for example for Lucida Console or Consolas.
+for example for @code{Lucida Console} or @code{Consolas}.
 
 You do need to ensure that R is running in a suitable locale: use
 @code{Sys.getlocale()} to find out.  (CJK users may be used to their
@@ -961,9 +961,9 @@ control panel, and the appropriate language has to be set under
 @emph{both} the `Regional Options' and `Advanced' tabs.
 
 When using @command{Rterm} the window in which it is run has to be set
-up to use a suitable font (e.g. Lucida Console, not the OEM raster
-fonts) and a suitable codepage (which for the Windows Cmd shell can be
-done by @command{chcp}).
+up to use a suitable font (e.g. @code{Lucida Console}, not the OEM
+raster fonts) and a suitable codepage (which for the Windows Cmd shell
+can be done using @command{chcp}).
 
 @node I selected English for installation but R runs in Chinese, I would like to be able to use Japanese fonts, I want to run R in Chinese/Japanese/Korean, Languages and Internationalization
 @section I selected English for installation but R runs in Chinese.
@@ -983,7 +983,7 @@ start R, or setting it in the @file{Rconsole} file.
 @section I would like to be able to use Japanese fonts.
 
 for example, in the console and to annotate graphs.  Similar comments
-apply to any non-Western European language.
+apply to any non-Western-European language.
 
 With suitable fonts, this should just work.  You will need to set MS
 Mincho or MS Gothic as the console font to ensure that single- and
@@ -1071,10 +1071,10 @@ You can install pre-compiled packages either from CRAN or from a local
 There are menu items on the @code{Packages} menu to provide a
 point-and-click interface to package installation.  The packages for
 each minor (2.x) version will be stored in a separate area, so for R
-2.12.? the files are in @file{bin/windows/contrib/2.12}.
+2.13.? the files are in @file{bin/windows/contrib/2.13}.
 
 Note that the pre-compiled versions on CRAN are unsupported: see
-@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.12/@/ReadMe},
+@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.13/@/ReadMe},
 which also gives the locations of a few other pre-compiled packages.
 
 If there is not a pre-compiled version or that is not up-to-date or you
@@ -1178,7 +1178,7 @@ For a small number of binary packages you need to install additional
 software and have its DLLs in your @code{PATH}.  Windows will normally
 give an informative message about a certain DLL not being found (except
 on Windows 2000).  See
-@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.12/@/ReadMe} for a
+@uref{http://cran.r-project.org/@/bin/@/windows/@/contrib/@/2.13/@/ReadMe} for a
 listing of some of these packages (notably @code{RGtk2},
 @code{cairoDevice}, @code{rggobi}, @code{rJava}, @code{rjags} and some
 of the packages connecting to databases).
@@ -1279,11 +1279,12 @@ need to install R and/or packages from their sources.  To install just a
 few packages with static HTML pages use
 
 @example
-R CMD INSTALL --html @var{pkg1} @var{pkg2} \ldots
+R CMD INSTALL --html @var{pkg1} @var{pkg2} @dots{}
 @end example
 
-To install R itself with static HTML pages change the following line in
-file @file{MkRules.local} (after copying @file{MkRules.dist} to
+To install R itself with static HTML pages you need to build it from the
+sources for yourself.  Change the following line in file
+@file{MkRules.local} (after copying @file{MkRules.dist} to
 @file{MkRules.local} if that has not already been done).
 
 @example
@@ -1565,14 +1566,17 @@ you want to install).
 @section  Can I use a fast BLAS?
 
 Fast BLAS (Basic Linear Algebra Subprograms,
-@uref{http://www.netlib.org/@/blas/@/faq.html}) routines are used to speed
-up numerical linear algebra.  There is support in the R sources for the
-`tuned' BLAS called ATLAS (@uref{http://math-atlas.sourceforge.net}).
-The savings can be appreciable: on a 2.6GHz P4 and a 1000 x 1000 matrix
-@code{svd} took 16.2 sec with the standard BLAS and 7.8 sec with ATLAS.
-Because ATLAS is tuned to a particular chip we can't use it generally:
-the optimal routines for a P4 or an Athlon XP are quite different and
-neither will run at all on a PII.
+@uref{http://www.netlib.org/@/blas/@/faq.html}) routines are used to
+speed up numerical linear algebra.  There is support in the R sources
+for the `tuned' BLAS called ATLAS
+(@uref{http://math-atlas.sourceforge.net}).  The savings can be
+appreciable: on a 2.6GHz P4 and a 1000 x 1000 matrix @code{svd} took
+16.2 sec with the standard BLAS and 7.8 sec with ATLAS.  Because ATLAS
+is tuned to a particular chip we can't use it generally: the optimal
+routines for a P4 or an Athlon XP are quite different and neither will
+run at all on a PII.  However, linear algebra on large matrices is not
+often an important part of R computations, and more typical calculations
+on small matrices may run slower.
 
 BLAS support is supplied by the single DLL
 @file{R_HOME\bin\i386\Rblas.dll}, and you can add a fast BLAS just by
@@ -1583,6 +1587,19 @@ Administration' manual for how to build an ATLAS @file{Rblas.dll} tuned
 to your system using the R sources.  Unfortunately the process has been
 less successful when tried for the common current chips such as Intel's
 Core 2.
+
+Versions of Dr Kazushige Goto's BLAS (see
+@uref{http://en.wikipedia.org/wiki/Kazushige_Goto}) for 64-bit Windows
+by Ei-Ji Nakama can be found at
+@uref{http://prs.ism.ac.jp/~nakama/SurviveGotoBLAS2/binary/windows/x64/}.
+Just download the file @file{Rblas.dll} appropriate to your CPU and
+replace @file{@var{R_HOME}/bin/x64/Rblas.dll}.  (There is also a generic
+version called @samp{DYNAMIC_ARCH} that tries to adapt itself to the CPU
+found -- however if you know the exact CPU used it is better to download
+the CPU-specific version.)
+
+Note that fast BLAS implementations may give different (and often
+slightly less accurate) results than the reference BLAS included in R.
 
 @node  How do I include compiled C code?, How do I debug code that I have compiled and dyn.load-ed?, Can I use a fast BLAS?, Building from Source
 @section How do I include compiled C code?
@@ -1790,7 +1807,7 @@ call @code{R_ProcessEvents()} periodically from your compiled code.
 If you want output to be updated on the console, call
 @code{R_FlushConsole()} and then @code{R_ProcessEvents()}.
 
-@set LASTEDIT 2010-10-01
+@set LASTEDIT 2011-02-22
 @ifhtml
 @html
 <hr WIDTH="100%">

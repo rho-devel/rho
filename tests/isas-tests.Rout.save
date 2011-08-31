@@ -1,9 +1,9 @@
 
-This is CXXR 0.30-2.11.1, based on:
-R version 2.12.0 Under development (unstable) (2010-04-14 r51722)
+R version 2.13.0 Patched (2011-04-13 r55430)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 R version 2.11.1 (2010-05-31)
-Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
 
 CXXR Copyright (C) 2008-10 Andrew Runnalls.  CXXR like
 R is free software and comes with ABSOLUTELY NO WARRANTY.

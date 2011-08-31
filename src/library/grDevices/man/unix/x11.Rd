@@ -1,6 +1,6 @@
 % File src/library/grDevices/man/unix/x11.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{x11}
@@ -15,6 +15,10 @@
   access to an X server.
 
   \code{x11} is recognized as a synonym for \code{X11}.
+
+  The \R function is a wrapper for two devices, one based on Xlib
+  (\url{http://en.wikipedia.org/wiki/Xlib}) and one using cairographics
+  (\url{http://www.cairographics.org}).
 }
 \usage{
 X11(display = "", width, height, pointsize, gamma, bg, canvas,
@@ -27,43 +31,56 @@ X11.options(\dots, reset = FALSE)
     The default is to use the value in the user's environment variable
     \env{DISPLAY}.  This is ignored (with a warning) if an X11 device is
     already open on another display.}
+  
   \item{width, height}{the width and height of the plotting window, in
     inches.  If \code{NA}, taken from the resources and if
     not specified there defaults to \code{7} inches.  See also
     \sQuote{Resources}.}
+  
   \item{pointsize}{the default pointsize to be used.  Defaults to \code{12}.}
-  \item{gamma}{the gamma correction factor.  This value is used
-    to help ensure that the colours perceived are linearly related to
-    RGB values (see \code{\link{hsv}}).  By default 1 (default
-    correction).}
+  
+  \item{gamma}{gamma correction fudge factor.
+    Colours in R are sRGB;  if your monitor does not conform to
+    sRGB, you might be able to improve things by tweaking this
+    parameter to apply additional gamma correction to the RGB channels.
+    By default 1 (no additional gamma correction).}
+  
   \item{bg}{colour, the initial background colour.  Default
     \code{"transparent"}.}
+  
   \item{canvas}{colour.  The colour of the canvas, which is visible only
-    when the background colour is transparent.  Should be a solid colour
+    when the background colour is transparent.  Should be an opaque colour
     (and any alpha value will be ignored).  Default \code{"white"}.}
-  \item{fonts}{X11 font description strings into which weight, slant and
+  
+  \item{fonts}{for \code{type = "Xlib"} only:
+    X11 font description strings into which weight, slant and
     size will be substituted.  There are two, the first for fonts 1 to 4
     and the second for font 5, the symbol font.  See section \sQuote{Fonts}.}
+  
   \item{xpos, ypos}{integer: initial position of the top left corner of the
     window, in pixels.  Negative values are from the opposite corner,
     e.g. \code{xpos=-100} says the top right corner should be 100 pixels
     from the right edge of the screen.  If \code{NA} (the default),
     successive devices are cascaded in 20 pixel steps from the top left.
     See also \sQuote{Resources}.}
+  
   \item{title}{character string, up to 100 bytes.  With the default,
     \code{""}, a suitable title is created internally.  A C-style format
     for an integer will be substituted by the device number (see the
     \code{file} argument to \code{\link{postscript}} for further
     details).  How non-ASCII titles are handled is
     implementation-dependent.}
-  \item{type}{character string, one of \code{"Xlib"} (the only type
-    prior to \R 2.7.0) or \code{"cairo"} or \code{"nbcairo"}.  The
-    latter two will only be available if the system was compiled with
-    support for cairo.  Default \code{"cairo"} where available, otherwise
-    \code{"Xlib"}.}
+  
+  \item{type}{character string, one of \code{"Xlib"}, \code{"cairo"} or
+    \code{"nbcairo"}.  The latter two will only be available if the
+    system was compiled with support for cairo.  Default \code{"cairo"}
+    where available and reliable, otherwise \code{"Xlib"}.}
+  
   \item{antialias}{for cairo types, the type of anti-aliasing (if any)
     to be used.  One of \code{c("default", "none", "gray", "subpixel")}.}
+  
   \item{reset}{logical: should the defaults be reset to their defaults?}
+  
   \item{\dots}{Any of the arguments to \code{X11}, plus \code{colortype}
     and \code{maxcubesize} (see section \sQuote{Colour Rendering}).}
 }
@@ -92,11 +109,21 @@ X11.options(\dots, reset = FALSE)
     plot in many languages on a single figure (and this will work even
     in non-UTF-8 locales).  The output should be locale-independent.
   }
-  \code{type = "nbcairo"} is the same device as \code{type="cairo"}
+  \code{type = "nbcairo"} is the same device as \code{type = "cairo"}
   without buffering: which is faster will depend on the X11
   connection.  Both will be slower than \code{type = "Xlib"}, especially
   on a slow X11 connection as all the rendering is done on the machine
-  running \R rather than in the X server.
+  running \R rather than in the X server.  On slow connections
+  \code{type = "nbcairo"} will be faster than \code{type = "cairo"}: on
+  fast connections and with complicated plots the buffering done by
+  \code{type = "cairo"} will make repainting much faster (unless backing
+  store is in use, which for example it always is on Mac OS X displays).
+  
+  Because of known problems with font selection on Mac OS X without
+  Pango (for example, the CRAN distribution), \code{type = "cairo"} is
+  not the default there.  These problems have included mixing up bold
+  and italic (since worked around), selecting incorrect glyphs and ugly
+  or missing symbol glyphs.
 
   All devices which use an X11 server (including the \code{type =
     "Xlib"} versions of bitmap devices such as \code{\link{png}}) share
@@ -132,7 +159,7 @@ X11.options(\dots, reset = FALSE)
 }
 
 \section{Cairo Fonts}{
-  The cairo-based device works directly with font family names such as
+  The cairographics-based devices work directly with font family names such as
   \code{"Helvetica"} which should be selected by \code{\link{par}} or
   \code{\link{gpar}}.  There are mappings for the three
   device-independent font families, \code{"sans"} for a sans-serif font
@@ -140,32 +167,35 @@ X11.options(\dots, reset = FALSE)
   \code{"Times"}) and \code{"mono"} for a monospaced font (to
   \code{"Courier"}).
 
-  The font selection is handled by \code{Pango} (usually) or
-  \code{cairo} (on Mac OS X and perhaps elsewhere).  Both make use of
-  \code{fontconfig} (\url{http://wwww.fontconfig.org}) to select fonts
-  and so the results depend on the fonts installed on the system running
-  \R -- setting the environmnent variable \env{FC_DEBUG} to 1 allows
-  some tracing of the selection process.
+  The font selection is handled by \code{Pango} (usually \emph{via}
+  \code{fontconfig}) or \code{fontconfig} (on Mac OS X and perhaps
+  elsewhere).  The results depend on the fonts installed on the system
+  running \R -- setting the environmnent variable \env{FC_DEBUG} to 1
+  normally allows some tracing of the selection process.
 
   This works best when high-quality scalable fonts are installed,
   usually in Type 1 or TrueType formats: see the \dQuote{R Installation
   and Administration Manual} for advice on how to obtain and install
-  such fonts.
-  
-  Because of known problems with font selection on Mac OS X without
-  Pango, \code{type="cairo"} is not the default (as from \R 2.11.0)
-  unless Pango is available.  These problems include mixing up bold and
-  italic and selecting incorrect glyphs.
+  such fonts.  At present the best rendering (including using kerning)
+  will be achieved with TrueType fonts: see
+  \url{http://www.freedesktop.org/software/fontconfig/fontconfig-user.html}
+  for ways to set up your system to prefer them.  The default family
+  (\code{"Helvetica"}) is likely not to use kerning: alternatives which
+  should if you have them installed are \code{"Arial"},
+  \code{"DejaVu Sans"} and \code{"Liberation Sans"} (and perhaps
+  \code{"FreeSans"}).  For those who prefer fonts with serifs, try
+  \code{"Times New Roman"}, \code{"DejaVu Serif"} and \code{"Liberation
+  Serif"}.  To match LaTeX text, use something like \code{"CM Roman"}.
   
   %  https://bugs.launchpad.net/ubuntu/+source/fontconfig/+bug/551977
   Problems with incorrect rendering of symbols (e.g. of
-  \code{quote(pi)}) have been seen on Linux systems which have the Wine
-  symbol font installed---\code{fontconfig} then prefers this and
+  \code{quote(pi)} and \code{expression(10^degree))})
+  have been seen on Linux systems which have the Wine
+  symbol font installed -- \code{fontconfig} then prefers this and
   misinterprets its encoding.  Adding the following lines
   to \file{~/.fonts.conf} or \file{/etc/fonts/local.conf} may circumvent
-  this problem.
-\preformatted{
-<fontconfig>
+  this problem by preferring the URW Type 1 symbol font.
+\preformatted{<fontconfig>
 <match target="pattern">
   <test name="family"><string>Symbol</string></test>
   <edit name="family" mode="prepend" binding="same">
@@ -182,9 +212,8 @@ X11.options(\dots, reset = FALSE)
   specified as arguments or non-\code{NA} defaults set in
   \code{X11.options}.  The class looked for is \code{R_x11}.  Note that
   the resource specifies the width and height in pixels and not in
-  inches.  See for example
-  \url{http://web.mit.edu/answers/xwindows/xwindows_resources.html} and
-  perhaps \samp{man X} (or \url{http://www.xfree86.org/current/X.7.html}).
+  inches.  See for example \samp{man X} (or
+  \url{http://www.xfree86.org/current/X.7.html}).
   An example line in \file{~/.Xresources} might be
 \preformatted{R_x11*geometry: 900x900-0+0
 }
@@ -200,11 +229,9 @@ X11.options(\dots, reset = FALSE)
   black/white.  The palette is shared between all X11 clients, so it can
   be necessary to limit the number of colours used by \R.
 
-  Cairo-based devices currently support only \sQuote{truecolor}
-  visuals. (Cairo 1.6 will support other visuals.)
-
   The default for \code{type="Xlib"} is to use the best possible colour
-  model for the visual of the X11 server.  This can be overridden by the
+  model for the visual of the X11 server: these days this will almost
+  always be \sQuote{truecolor}.  This can be overridden by the
   \code{colortype} argument of \code{X11.options}.  \bold{Note:} All
   \code{X11} and \code{type = "Xlib"} \code{\link{bmp}}, \code{jpeg},
   \code{png} and \code{tiff} devices share a \code{colortype} which is
@@ -215,11 +242,12 @@ X11.options(\dots, reset = FALSE)
   The colortype types are tried in the order \code{"true"},
   \code{"pseudo"}, \code{"gray"} and \code{"mono"} (black or white
   only).  The values \code{"pseudo"} and \code{"pseudo.cube"} provide
-  colour strategies for a pseudocolor visual.  The first strategy
-  provides on-demand colour allocation which produces exact colours until
-  the colour resources of the display are exhausted (when plotting will
-  fail).  The second allocates (if possible) a standard colour cube, and
-  requested colours are approximated by the closest value in the cube.
+  two colour strategies for a pseudocolor visual.  The first strategy
+  provides on-demand colour allocation which produces exact colours
+  until the colour resources of the display are exhausted (when plotting
+  will fail).  The second allocates (if possible) a standard colour
+  cube, and requested colours are approximated by the closest value in
+  the cube.
 
   With \code{colortype} equal to \code{"pseudo.cube"} or \code{"gray"}
   successively smaller palettes are tried until one is completely
@@ -232,10 +260,10 @@ X11.options(\dots, reset = FALSE)
   RGB, using 64 colours in the palette.
 }
 \section{Anti-aliasing}{
-  Anti-aliasing is only supported for cairo-based devices, and applies to
-  graphics and to fonts.  It is generally preferable for lines and text,
-  but can lead to undesirable effects for fills, e.g. for
-  \code{\link{image}} plots, and so is never used for fills.
+  Anti-aliasing is only supported for cairographics-based devices, and
+  applies to graphics and to fonts.  It is generally preferable for
+  lines and text, but can lead to undesirable effects for fills,
+  e.g. for \code{\link{image}} plots, and so is never used for fills.
 
   \code{antialias = "default"} is in principle platform-dependent, but
   seems most often equivalent to \code{antialias = "gray"}.
@@ -252,15 +280,15 @@ X11.options(\dots, reset = FALSE)
       "Xlib"}, 0.01 otherwise.
     \item For \code{type = "Xlib"} circle radii are in pixels with
     minimum one.
-    \item Colours are interpreted by the X11 server, normally in a fair
-    approximation to sRGB.
+    \item Colours are interpreted by the X11 server, which is
+    \emph{assumed} to conform to sRGB.
   }
 }
 \seealso{
   \code{\link{Devices}}, \code{\link{X11Fonts}}, \code{\link{savePlot}}.
 }
 \examples{\dontrun{
-## put something this is your .Rprofile to customize the defaults
+## put something like this is your .Rprofile to customize the defaults
 setHook(packageEvent("grDevices", "onLoad"),
         function(...) grDevices::X11.options(width=8, height=6, xpos=0,
                                              pointsize=10))

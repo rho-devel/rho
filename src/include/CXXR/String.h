@@ -48,6 +48,7 @@ typedef enum {
     CE_NATIVE = 0,
     CE_UTF8   = 1,
     CE_LATIN1 = 2,
+    CE_BYTES  = 3,
     CE_SYMBOL = 5,
     CE_ANY    =99
 } cetype_t;
@@ -124,7 +125,7 @@ namespace CXXR {
 	/** @brief Character encoding.
 	 *
 	 * @return the character encoding.  At present the only types
-	 * of encoding are CE_NATIVE, CE_LATIN1 and CE_UTF8.
+	 * of encoding are CE_NATIVE, CE_UTF8, CE_LATIN1 and CE_BYTES.
 	 */
 	cetype_t encoding() const
 	{
@@ -281,6 +282,23 @@ extern "C" {
 
     /**
      * @param x Pointer to a CXXR::String.
+     *
+     * @return true iff \a x is marked as having BYTES encoding.
+     */
+#ifndef __cplusplus
+    int IS_BYTES(SEXP x);
+#else
+    inline int IS_BYTES(SEXP x)
+    {
+	// Use explicit namespace qualification to prevent ambiguities:
+	const CXXR::String& str = *CXXR::SEXP_downcast<const CXXR::String*>(x);
+	return Rboolean(str.encoding() == CE_BYTES);
+    }
+#endif
+
+    /**
+     * @param x Pointer to a CXXR::String.
+     *
      * @return true iff \a x is marked as having LATIN1 encoding.
      */
 #ifndef __cplusplus

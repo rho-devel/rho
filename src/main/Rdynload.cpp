@@ -718,7 +718,6 @@ Rf_lookupRegisteredExternalSymbol(DllInfo *info, const char *name)
 static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 				 R_RegisteredNativeSymbol *symbol)
 {
-    int fail = 0;
     NativeSymbolType purpose = R_ANY_SYM;
 
     if(symbol)
@@ -737,7 +736,6 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 
 	    return(static_cast<DL_FUNC>( sym->fun));
 	}
-	fail = 1;
     }
 
     if((purpose == R_ANY_SYM || purpose == R_CALL_SYM) &&
@@ -752,7 +750,6 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 	    }
 	    return(static_cast<DL_FUNC>( sym->fun));
 	}
-	fail = 1;
     }
 
     if((purpose == R_ANY_SYM || purpose == R_FORTRAN_SYM) &&
@@ -767,7 +764,6 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 	    }
 	    return(static_cast<DL_FUNC>( sym->fun));
 	}
-	fail = 1;
     }
 
     if((purpose == R_ANY_SYM || purpose == R_EXTERNAL_SYM) &&
@@ -782,7 +778,6 @@ static DL_FUNC R_getDLLRegisteredSymbol(DllInfo *info, const char *name,
 	    }
 	    return(static_cast<DL_FUNC>( sym->fun));
 	}
-	fail = 1;
     }
 
     return(CXXRNOCAST(DL_FUNC) NULL);
@@ -1136,12 +1131,22 @@ R_getDllTable()
     int i;
     SEXP ans;
 
+ again:
     PROTECT(ans = allocVector(VECSXP, CountDLL));
     for(i = 0; i < CountDLL; i++) {
 	SET_VECTOR_ELT(ans, i, Rf_MakeDLLInfo(&(LoadedDLL[i])));
     }
     setAttrib(ans, R_ClassSymbol, mkString("DLLInfoList"));
     UNPROTECT(1);
+
+    /* There is a problem here: The allocations can cause gc, and gc
+       may result in no longer referenced DLLs being unloaded.  So
+       CountDLL can be reduced during this loop.  A simple work-around
+       is to just try again until CountDLL at the end is the same as
+       it was at the beginning.  LT */
+    if (CountDLL != LENGTH(ans))
+	goto again;
+
     return(ans);
 }
 

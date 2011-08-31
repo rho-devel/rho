@@ -15,7 +15,7 @@
 #  http://www.r-project.org/Licenses/
 
 ## give the base namespace a table for registered methods
-".__S3MethodsTable__." <- new.env(hash = TRUE, parent = baseenv())
+`.__S3MethodsTable__.` <- new.env(hash = TRUE, parent = baseenv())
 
 ## NOTA BENE:
 ##  1) This code should work also when methods is not yet loaded
@@ -57,7 +57,7 @@ getNamespaceImports <- function(ns) {
 
 getNamespaceUsers <- function(ns) {
     nsname <- getNamespaceName(asNamespace(ns))
-    users <- character(0L)
+    users <- character()
     for (n in loadedNamespaces()) {
         inames <- names(getNamespaceImports(n))
         if (match(nsname, inames, 0L))
@@ -80,20 +80,20 @@ getExportedValue <- function(ns, name) {
     else get(getInternalExportName(name, ns), envir = ns)
 }
 
-"::" <- function(pkg, name) {
+`::` <- function(pkg, name) {
     pkg <- as.character(substitute(pkg))
     name <- as.character(substitute(name))
     ns <- tryCatch(asNamespace(pkg), hasNoNamespaceError = function(e) NULL)
     if (is.null(ns)) {
         pos <- match(paste("package", pkg, sep=":"), search(), 0L)
-        if (pos == 0)
+        if (pos == 0L)
             stop(gettextf("package %s has no name space and is not on the search path", sQuote(pkg)), domain = NA)
         get(name, pos = pos, inherits = FALSE)
     }
     else getExportedValue(pkg, name)
 }
 
-":::" <- function(pkg, name) {
+`:::` <- function(pkg, name) {
     pkg <- as.character(substitute(pkg))
     name <- as.character(substitute(name))
     get(name, envir = asNamespace(pkg), inherits = FALSE)
@@ -141,7 +141,6 @@ loadNamespace <- function (package, lib.loc = NULL,
                            keep.source = getOption("keep.source.pkgs"),
                            partial = FALSE, declarativeOnly = FALSE)
 {
-    ## eventually allow version as second component; ignore for now.
     package <- as.character(package)[[1L]]
 
     ## check for cycles
@@ -160,7 +159,10 @@ loadNamespace <- function (package, lib.loc = NULL,
     }
     loading <- dynGet("__NameSpacesLoading__", NULL)
     if (match(package, loading, 0L))
-        stop("cyclic name space dependencies are not supported")
+        stop("cyclic name space dependency detected when loading ",
+             sQuote(package), ", already loading ",
+             paste(sQuote(loading), collapse = ", "),
+             domain = NA)
     "__NameSpacesLoading__" <- c(package, loading)
 
     ns <- .Internal(getRegisteredNamespace(as.name(package)))
@@ -196,8 +198,8 @@ loadNamespace <- function (package, lib.loc = NULL,
             setNamespaceInfo(env, "exports", new.env(hash = TRUE, parent = baseenv()))
             setNamespaceInfo(env, "imports", list("base" = TRUE))
             ## this should be an absolute path
-            abs_path <- function(x) {cwd <- setwd(x);on.exit(setwd(cwd));getwd()}
-            setNamespaceInfo(env, "path", abs_path(file.path(lib, name)))
+            setNamespaceInfo(env, "path",
+                             normalizePath(file.path(lib, name), "/", TRUE))
             setNamespaceInfo(env, "dynlibs", NULL)
             setNamespaceInfo(env, "S3methods", matrix(NA_character_, 0L, 3L))
             assign(".__S3MethodsTable__.",
@@ -263,7 +265,7 @@ loadNamespace <- function (package, lib.loc = NULL,
 
             symbols <- getNativeSymbolInfo(symNames, dll, unlist = FALSE,
                                                withRegistrationInfo = TRUE)
-            sapply(seq_along(symNames),
+            lapply(seq_along(symNames),
                     function(i) {
                         ## could vectorize this outside of the loop
                         ## and assign to different variable to
@@ -290,7 +292,7 @@ loadNamespace <- function (package, lib.loc = NULL,
           }
 
         ## find package and check it has a name space
-        pkgpath <- .find.package(package, lib.loc, quiet = TRUE)
+        pkgpath <- find.package(package, lib.loc, quiet = TRUE)
         if (length(pkgpath) == 0L)
             stop(gettextf("there is no package called '%s'", package),
                  domain = NA)
@@ -317,12 +319,12 @@ loadNamespace <- function (package, lib.loc = NULL,
         ## stats4 depends on methods, but exports do not matter
         ## whilst it is being built on
         nsInfoFilePath <- file.path(pkgpath, "Meta", "nsInfo.rds")
-        nsInfo <- if(file.exists(nsInfoFilePath)) .readRDS(nsInfoFilePath)
+        nsInfo <- if(file.exists(nsInfoFilePath)) readRDS(nsInfoFilePath)
         else parseNamespaceFile(package, package.lib, mustExist = FALSE)
 
         pkgInfoFP <- file.path(pkgpath, "Meta", "package.rds")
         if(file.exists(pkgInfoFP)) {
-            pkgInfo <- .readRDS(pkgInfoFP)
+            pkgInfo <- readRDS(pkgInfoFP)
             version <- pkgInfo$DESCRIPTION["Version"]
             if(is.null(built <- pkgInfo$Built))
                 stop(gettextf("package '%s' has not been installed properly\n",
@@ -433,22 +435,26 @@ loadNamespace <- function (package, lib.loc = NULL,
             ## process class definition objects
             expClasses <- nsInfo$exportClasses
             ##we take any pattern, but check to see if the matches are classes
-            pClasses <- character(0L)
+            pClasses <- character()
             aClasses <- methods:::getClasses(ns)
-            for (p in nsInfo$exportClassPatterns) {
+            classPatterns <- nsInfo$exportClassPatterns
+            ## defaults to exportPatterns
+            if(!length(classPatterns))
+                classPatterns <- nsInfo$exportPatterns
+            for (p in classPatterns) {
                 pClasses <- c(aClasses[grep(p, aClasses)], pClasses)
             }
             pClasses <- unique(pClasses)
             if( length(pClasses) ) {
-                good <- sapply(pClasses, methods:::isClass, where = ns)
-                if( !any(good) )
+                good <- vapply(pClasses, methods:::isClass, NA, where = ns)
+                if( !any(good) && length(nsInfo$exportClassPatterns))
                     warning(gettextf("exportClassPattern specified in NAMESPACE but no matching classes in package %s", sQuote(package)),
                             call. = FALSE, domain = NA)
                 expClasses <- c(expClasses, pClasses[good])
             }
             if(length(expClasses)) {
                 missingClasses <-
-                    !sapply(expClasses, methods:::isClass, where = ns)
+                    !vapply(expClasses, methods:::isClass, NA, where = ns)
                 if(any(missingClasses))
                     stop(gettextf("in package %s classes %s were specified for export but not defined",
                                   sQuote(package),
@@ -464,7 +470,6 @@ loadNamespace <- function (package, lib.loc = NULL,
                                    methods:::.getGenerics(parent.env(ns))))
             expMethods <- nsInfo$exportMethods
             expTables <- character()
-            expMLists <- character()
             if(length(allGenerics)) {
                 expMethods <-
                     unique(c(expMethods,
@@ -476,14 +481,6 @@ loadNamespace <- function (package, lib.loc = NULL,
                                   paste(expMethods[missingMethods],
                                         collapse = ", ")),
                          domain = NA)
-                ## Deprecated note:  the mlistPattern objects are deprecated in 2.7.0
-                ## and will disappear later.  For now, deal with them if they exist
-                ## but don't complain if they do not.
-                mlistPattern <- methods:::methodsPackageMetaName("M","")
-                allMethodLists <-
-                    unique(c(methods:::.getGenerics(ns, mlistPattern),
-                             methods:::.getGenerics(parent.env(ns),
-                                                    mlistPattern)))
                 tPrefix <- methods:::.TableMetaPrefix()
                 allMethodTables <-
                     unique(c(methods:::.getGenerics(ns, tPrefix),
@@ -520,8 +517,6 @@ loadNamespace <- function (package, lib.loc = NULL,
 			    ii <- ii[1L]
 			}
                         expTables[[i]] <- allMethodTables[ii]
-                        if(exists(allMethodLists[[ii]], envir = ns))
-                            expMLists <- c(expMLists, allMethodLists[[ii]])
                      }
                     else { ## but not possible?
                       warning(gettextf("failed to find metadata object for %s",
@@ -534,7 +529,7 @@ loadNamespace <- function (package, lib.loc = NULL,
                               sQuote(package),
                               paste(expMethods, collapse = ", ")),
                      domain = NA)
-            exports <- c(exports, expClasses,  expTables, expMLists)
+            exports <- c(exports, expClasses,  expTables)
         }
         namespaceExport(ns, exports)
         sealNamespace(ns)
@@ -614,88 +609,6 @@ unloadNamespace <- function(ns)
           paste(nspath, "/R/", nsname, ".rdb", sep=""),
           PACKAGE="base")
     invisible()
-}
-
-.Import <- function(...) {
-    dynGet <- function(name, notFound = stop(name, " not found")) {
-        n <- sys.nframe()
-        while (n > 1) {
-            n <- n - 1
-            env <- sys.frame(n)
-            if (exists(name, envir = env, inherits = FALSE))
-                return(get(name, envir = env, inherits = FALSE))
-        }
-        notFound
-    }
-    if (dynGet("__NamespaceDeclarativeOnly__", FALSE))
-        stop("imperative name space directives are disabled")
-    envir <- parent.frame()
-    names <- as.character(substitute(list(...)))[-1L]
-    for (n in names)
-        namespaceImportFrom(envir, n)
-}
-
-.ImportFrom <- function(name, ...) {
-    dynGet <- function(name, notFound = stop(name, " not found")) {
-        n <- sys.nframe()
-        while (n > 1) {
-            n <- n - 1
-            env <- sys.frame(n)
-            if (exists(name, envir = env, inherits = FALSE))
-                return(get(name, envir = env, inherits = FALSE))
-        }
-        notFound
-    }
-    if (dynGet("__NamespaceDeclarativeOnly__", FALSE))
-        stop("imperative name space directives are disabled")
-    envir <- parent.frame()
-    name <-  as.character(substitute(name))
-    names <- as.character(substitute(list(...)))[-1L]
-    namespaceImportFrom(envir, name, names)
-}
-
-.Export <- function(...) {
-    dynGet <- function(name, notFound = stop(name, " not found")) {
-        n <- sys.nframe()
-        while (n > 1) {
-            n <- n - 1
-            env <- sys.frame(n)
-            if (exists(name, envir = env, inherits = FALSE))
-                return(get(name, envir = env, inherits = FALSE))
-        }
-        notFound
-    }
-    if (dynGet("__NamespaceDeclarativeOnly__", FALSE))
-        stop("imperative name space directives are disabled")
-    ns <- topenv(parent.frame(), NULL)
-    if (identical(ns, .BaseNamespaceEnv))
-        warning("all objects in base name space are currently exported.")
-    else if (! isNamespace(ns))
-        stop("can only export from a name space")
-    else {
-        names <- as.character(substitute(list(...)))[-1L]
-        namespaceExport(ns, names)
-    }
-}
-
-.S3method <- function(generic, class, method) {
-    dynGet <- function(name, notFound = stop(name, " not found")) {
-        n <- sys.nframe()
-        while (n > 1) {
-            n <- n - 1
-            env <- sys.frame(n)
-            if (exists(name, envir = env, inherits = FALSE))
-                return(get(name, envir = env, inherits = FALSE))
-        }
-        notFound
-    }
-    if (dynGet("__NamespaceDeclarativeOnly__", FALSE))
-        stop("imperative name space directives are disabled")
-    generic <- as.character(substitute(generic))
-    class <- as.character(substitute(class))
-    if (missing(method)) method <- paste(generic, class, sep = ".")
-    registerS3method(generic, class, method, envir = parent.frame())
-    invisible(NULL)
 }
 
 isNamespace <- function(ns) .Internal(isNamespaceEnv(ns))
@@ -789,16 +702,10 @@ namespaceImportFrom <- function(self, ns, vars, generics, packages)
 	    {} ## first encounter, just import it
 	    else { ##
 		delete <- c(delete, i)
-		## eventually mlist objects will disappear, for now
-		## just don't import any duplicated names
-		mlname = sub("__T__", "__M__", impvars[[i]], fixed=TRUE)
-		ii = match(mlname, impvars, 0L)
-		if(ii > 0)
-		    delete <- c(delete, ii)
 		if(!missing(generics)) {
 		    genName <- generics[[i]]
-                    if(i > length(generics) || !nzchar(genName))
-                      {warning("got invalid index for importing ",mlname); next}
+                    ## if(i > length(generics) || !nzchar(genName))
+                    ##   {warning("got invalid index for importing ",mlname); next}
 		    fdef <- methods:::getGeneric(genName,
                                                  where = impenv,
                                                  package = packages[[i]])
@@ -857,7 +764,7 @@ namespaceImportMethods <- function(self, ns, vars) {
                       paste(vars[is.na(match(vars, allFuns))],
                             collapse = ", ")), call. = FALSE, domain = NA)
     for(i in seq_along(allFuns)) {
-        ## import methods list objects if asked for
+        ## import methods tables if asked for
         ## or if the corresponding generic was imported
         g <- allFuns[[i]]
         if(exists(g, envir = self, inherits = FALSE) # already imported
@@ -900,8 +807,8 @@ importIntoEnv <- function(impenv, impnames, expenv, expnames) {
         }
     }
     expnames <- unlist(lapply(expnames, get, envir = exports, inherits = FALSE))
-    if (is.null(impnames)) impnames <- character(0L)
-    if (is.null(expnames)) expnames <- character(0L)
+    if (is.null(impnames)) impnames <- character()
+    if (is.null(expnames)) expnames <- character()
     .Internal(importIntoEnv(impenv, impnames, expenv, expnames))
 }
 
@@ -938,12 +845,10 @@ namespaceExport <- function(ns, vars) {
         new <- makeImportExportNames(unique(vars))
         ## calling exists each time is too slow, so do two phases
         undef <- new[! new %in% .Internal(ls(ns, TRUE))]
-        if (length(undef)) { # avoid list result from sapply
-            undef <- undef[! sapply(undef, exists, envir = ns)]
-            if (length(undef)) {
-                undef <- do.call("paste", as.list(c(undef, sep = ", ")))
-                stop("undefined exports: ", undef)
-            }
+        undef <- undef[! vapply(undef, exists, NA, envir = ns)]
+        if (length(undef)) {
+            undef <- do.call("paste", as.list(c(undef, sep = ", ")))
+            stop("undefined exports: ", undef)
         }
         if(.isMethodsDispatchOn()) .mergeExportMethods(new, ns)
         addExports(ns, new)
@@ -987,7 +892,7 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
         ## Creates a new NativeRoutineMap.
         function(useRegistration, symbolNames, fixes) {
             proto <- list(useRegistration = FALSE,
-                          symbolNames = character(0L))
+                          symbolNames = character())
             class(proto) <- "NativeRoutineMap"
 
             mergeNativeRoutineMaps(proto, useRegistration, symbolNames, fixes)
@@ -1008,12 +913,9 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
 
     nsFile <- namespaceFilePath(package, package.lib)
     descfile <- file.path(package.lib, package, "DESCRIPTION")
-    enc <- NA
-    if (file.exists(descfile)) {
-        dcf <- read.dcf(file = descfile)
-        if(NROW(dcf) >= 1) enc <- as.list(dcf[1, ])[["Encoding"]]
-        if(is.null(enc)) enc <- NA
-    }
+    enc <- if (file.exists(descfile)) {
+        read.dcf(file = descfile, "Encoding")[1L]
+    } else NA_character_
     if (file.exists(nsFile))
         directives <- if (!is.na(enc) &&
                           ! Sys.getlocale("LC_CTYPE") %in% c("C", "POSIX")) {
@@ -1025,15 +927,15 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
         stop(gettextf("package '%s' has no NAMESPACE file", package),
              domain = NA)
     else directives <- NULL
-    exports <- character(0L)
-    exportPatterns <- character(0L)
-    exportClasses <- character(0L)
-    exportClassPatterns <- character(0L)
-    exportMethods <- character(0L)
+    exports <- character()
+    exportPatterns <- character()
+    exportClasses <- character()
+    exportClassPatterns <- character()
+    exportMethods <- character()
     imports <- list()
     importMethods <- list()
     importClasses <- list()
-    dynlibs <- character(0L)
+    dynlibs <- character()
     S3methods <- matrix(NA_character_, 500L, 3L)
     nativeRoutines <- list()
     nS3 <- 0
@@ -1053,7 +955,7 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
                else if (length(e) == 4L)
                parseDirective(e[[4L]]),
                "{" =  for (ee in as.list(e[-1L])) parseDirective(ee),
-               "=" =, 
+               "=" =,
                "<-" = {
                    parseDirective(e[[3L]])
                    if(as.character(e[[3L]][[1L]]) == "useDynLib")
@@ -1200,7 +1102,7 @@ parseNamespaceFile <- function(package, package.lib, mustExist = TRUE)
                        stop("too many 'S3method' directives", call. = FALSE)
                    S3methods[nS3, seq_along(spec)] <<- asChar(spec)
                },
-               warning(gettextf("unknown namespace directive: %s", deparse(e, nlines=1L)),
+               stop(gettextf("unknown namespace directive: %s", deparse(e, nlines=1L)),
                     call. = FALSE, domain = NA)
                )
     }
@@ -1261,7 +1163,7 @@ registerS3method <- function(genname, class, method, envir = parent.frame()) {
 registerS3methods <- function(info, package, env)
 {
     n <- NROW(info)
-    if(n == 0) return()
+    if(n == 0L) return()
 
     assignWrapped <- function(x, method, home, envir) {
 	method <- method            # force evaluation

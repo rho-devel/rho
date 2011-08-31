@@ -83,8 +83,15 @@ CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
     // This will be checked again when we actually construct the
     // CachedString, but we precheck now so that we don't create an
     // invalid cache key:
-    if (encoding != CE_NATIVE && encoding != CE_UTF8 && encoding != CE_LATIN1)
+    switch(encoding) {
+    case CE_NATIVE:
+    case CE_UTF8:
+    case CE_LATIN1:
+    case CE_BYTES:
+	break;
+    default:
         Rf_error("unknown encoding: %d", encoding);
+    }
     pair<map::iterator, bool> pr
 	= s_cache->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;
@@ -122,6 +129,7 @@ SEXP Rf_mkCharLenCE(const char* text, int length, cetype_t encoding)
     case CE_NATIVE:
     case CE_UTF8:
     case CE_LATIN1:
+    case CE_BYTES:
     case CE_SYMBOL:
     case CE_ANY:
 	break;

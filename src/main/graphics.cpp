@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2010  The R Development Core Team
+ *  Copyright (C) 1997--2011  The R Development Core Team
  *  Copyright (C) 2002--2005  The R Foundation
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -3029,11 +3029,7 @@ void GArrow(double xfrom, double yfrom, double xto, double yto, GUnit coords,
     if((code & 3) == 0) return; /* no arrows specified */
     if(length == 0) return; /* zero-length arrow heads */
 
-#ifdef HAVE_HYPOT
     if(hypot(xfromInch - xtoInch, yfromInch - ytoInch) < eps) {
-#else
-    if(pythag(xfromInch - xtoInch, yfromInch - ytoInch) < eps) {
-#endif
 	/* effectively 0-length arrow */
 	warning(_("zero-length arrow is of indeterminate angle and so skipped"));
 	return;
@@ -3233,7 +3229,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	 3 = always vertical.
 */
     double angle, xadj;
-    GUnit coords, subcoords;
+    GUnit coords;
 
     /* Init to keep -Wall happy: */
     angle = 0.;
@@ -3247,7 +3243,6 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	case 3:	    coords = OMA3;	break;
 	case 4:	    coords = OMA4;	break;
 	}
-	subcoords = NIC;
     }
     else {
 	switch(side) {
@@ -3256,7 +3251,6 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	case 3:	    coords = MAR3;	break;
 	case 4:	    coords = MAR4;	break;
 	}
-	subcoords = USER;
     }
     /* Note: I changed gpptr(dd)->yLineBias to 0.3 here. */
     /* Purely visual tuning. RI */
@@ -3265,13 +3259,21 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
        a somehow fuzzy manner with respect to current side and las settings.
        Uwe L.
     */
+    /* Note from PR#14532:
+       yLineBias is the proportion of line height that is white
+       space. The manipulation of "line" below is pure visual tuning
+       such that when we plot horizontal text on side 1 (or vertical
+       text on side 4) with padj=0 (i.e. text written *above* the
+       specified y-value), it is symmetric w.r.t text written on sides
+       1 and 2 with padj=0.
+    */
     switch(side) {
     case 1:
 	if(las == 2 || las == 3) {
 	    angle = 90;
 	}
 	else {
-	    line = line + 1 - dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 0;
 	}
 	break;
@@ -3280,7 +3282,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 0;
 	}
 	else {
-	    line = line + dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 90;
 	}
 	break;
@@ -3289,7 +3291,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 90;
 	}
 	else {
-	    line = line + dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 0;
 	}
 	break;
@@ -3298,7 +3300,7 @@ void GMtext(const char *str, cetype_t enc, int side, double line, int outer,
 	    angle = 0;
 	}
 	else {
-	    line = line + 1 - dd->dev->yLineBias;
+	    line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
 	    angle = 90;
 	}
 	break;
@@ -3363,7 +3365,7 @@ void GMathText(double x, double y, int coords, SEXP expr,
 void GMMathText(SEXP str, int side, double line, int outer,
 		double at, int las, double yadj, pGEDevDesc dd)
 {
-    int coords = 0, subcoords;
+    int coords = 0;
     double xadj, angle = 0;
 
     /* IF font metric information is not available for device */
@@ -3388,7 +3390,6 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	case 3:	    coords = OMA3;	break;
 	case 4:	    coords = OMA4;	break;
 	}
-	subcoords = NIC;
     }
     else {
 	switch(side) {
@@ -3397,7 +3398,6 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	case 3:	    coords = MAR3;	break;
 	case 4:	    coords = MAR4;	break;
 	}
-	subcoords = USER;
     }
     switch(side) {
     case 1:
@@ -3408,7 +3408,8 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*	    line = line + 1 - gpptr(dd)->yLineBias;
 		    angle = 0;
 		    yadj = NA_REAL; */
-	    line = line + 1;
+	    // line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
+	    line += 1/gpptr(dd)->mex;
 	    angle = 0;
 	}
 	break;
@@ -3420,6 +3421,9 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*	    line = line + gpptr(dd)->yLineBias;
 		    angle = 90;
 		    yadj = NA_REAL; */
+	    /* The following line is needed for symmetry with plain text
+	       but changes existing output */
+	    // line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 90;
 	}
 	break;
@@ -3431,6 +3435,9 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*   line = line + gpptr(dd)->yLineBias;
 		 angle = 0;
 		 yadj = NA_REAL; */
+	    /* The following line is needed for symmetry with plain text
+	       but changes existing output */
+	    // line += (1/gpptr(dd)->mex)*dd->dev->yLineBias;
 	    angle = 0;
 	}
 	break;
@@ -3442,7 +3449,8 @@ void GMMathText(SEXP str, int side, double line, int outer,
 	    /*   line = line + 1 - gpptr(dd)->yLineBias;
 		 angle = 90;
 		 yadj = NA_REAL; */
-	    line = line + 1;
+	    // line += (1/gpptr(dd)->mex)*(1 - dd->dev->yLineBias);
+	    line += 1/gpptr(dd)->mex;
 	    angle = 90;
 	}
 	break;

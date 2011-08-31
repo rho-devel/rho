@@ -99,9 +99,9 @@ function (x,
            s = as.double(s.start),
 
 	   ## return values
-           SSE = as.double(0L),
-           level = double(len + 1),
-           trend = double(len + 1),
+           SSE = as.double(0),
+           level = double(len + 1L),
+           trend = double(len + 1L),
            seasonal = double(len + f),
 
 	   PACKAGE = "stats"
@@ -368,7 +368,8 @@ function (x, type = c("additive", "multiplicative"), filter = NULL)
         figure - mean(figure)
     else figure / mean(figure)
 
-    seasonal <- ts(rep(figure, periods), start = start(x), frequency = f)
+    seasonal <- ts(rep(figure, periods+1)[seq_len(l)],
+                   start = start(x), frequency = f)
 
     ## return values
     structure(list(seasonal = seasonal,

@@ -40,8 +40,8 @@ influence.measures(model)
 rstandard(model, \dots)
 \method{rstandard}{lm}(model, infl = lm.influence(model, do.coef = FALSE),
           sd = sqrt(deviance(model)/df.residual(model)), \dots)
-\method{rstandard}{glm}(model, infl = lm.influence(model, do.coef = FALSE),
-          \dots)
+\method{rstandard}{glm}(model, infl=influence(model, do.coef=FALSE),
+          type=c("deviance","pearson"), \dots)
 
 rstudent(model, \dots)
 \method{rstudent}{lm}(model, infl = lm.influence(model, do.coef = FALSE),
@@ -86,6 +86,7 @@ hat(x, intercept = TRUE)
   \item{dispersion}{dispersion (for \code{\link{glm}} objects) to use,
     see default.}
   \item{hat}{hat values \eqn{H_{ii}}{H[i,i]}, see default.}
+  \item{type}{type of residuals for \code{glm} method for \code{rstandard.}}
 
   \item{x}{the \eqn{X} or design matrix.}
   \item{intercept}{should an intercept column be prepended to \code{x}?}
@@ -195,7 +196,7 @@ abline(lmH); points(xh[im$is.inf], yh[im$is.inf], pch=20, col=2)
 
 ## Irwin's data [Williams 1987]
 xi <- 1:5
-yi <- c(0,2,14,19,30) # number of mice responding to does xi
+yi <- c(0,2,14,19,30) # number of mice responding to dose xi
 mi <- rep(40, 5)      # number of mice exposed
 summary(lmI <- glm(cbind(yi, mi -yi) ~ xi, family = binomial))
 signif(cooks.distance(lmI), 3)# ~= Ci in Table 3, p.184

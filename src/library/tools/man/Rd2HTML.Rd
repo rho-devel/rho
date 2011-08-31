@@ -25,8 +25,8 @@ Rd2txt(Rd, out = "", package = "", defines = .Platform$OS.type,
        fragment = FALSE, options, ...)
 
 Rd2latex(Rd, out = "", defines = .Platform$OS.type,
-         stages = "render", outputEncoding = "ASCII", fragment = FALSE, ...,
-         writeEncoding = TRUE)
+         stages = "render", outputEncoding = "ASCII",
+         fragment = FALSE, ..., writeEncoding = TRUE)
 
 Rd2ex(Rd, out = "", defines = .Platform$OS.type,
       stages = "render", outputEncoding = "UTF-8", ...)
@@ -158,14 +158,16 @@ Rd2ex(Rd, out = "", defines = .Platform$OS.type,
 \dontrun{
 ## Simulate install and rendering of this page in HTML and text format:
 
-Rd <- file.path("src/library/tools/Rd2HTML.Rd")
+Rd <- file.path("src/library/tools/man/Rd2HTML.Rd")
 
-outfile <- paste(tempfile(), ".html", sep="")
-browseURL(Rd2HTML(Rd, outfile, package="tools", stages=c("install", "render")))
+outfile <- tempfile(fileext = ".html")
+browseURL(Rd2HTML(Rd, outfile, package = "tools",
+          stages = c("install", "render")))
 
-outfile <- paste(tempfile(), ".txt", sep="")
-file.show(Rd2txt(Rd, outfile, package="tools", stages=c("install", "render")))
+outfile <- tempfile(fileext = ".txt")
+file.show(Rd2txt(Rd, outfile, package = "tools",
+          stages = c("install", "render")))
 
-checkRd(con) # A stricter test than Rd2HTML uses
+checkRd(Rd) # A stricter test than Rd2HTML uses
 }}}
 \keyword{ documentation }

@@ -1,6 +1,6 @@
 % File src/library/base/man/taskCallbackManager.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{taskCallbackManager}
@@ -61,20 +61,16 @@ taskCallbackManager(handlers = list(), registered = FALSE,
     with the C-level dispatch mechanism and which invokes each of the
     R-level callbacks within this manager's control.}
   \item{suspend}{a function to set the suspend state
-    of the manager. If it is suspended, none of the callbacks will be
-    invoked when a task is completed. One sets the state by specifying
+    of the manager.  If it is suspended, none of the callbacks will be
+    invoked when a task is completed.  One sets the state by specifying
     a logical value for the \code{status} argument.
   }
   \item{register}{a function to register the \code{evaluate}
-    function with the internal C-level dispatch mechanism. This is
+    function with the internal C-level dispatch mechanism.  This is
     done automatically by the \code{add} function, but can be called
     manually.}
   \item{callbacks}{returns the list of callbacks being maintained by this
    manager.}
-}
-\note{
-  This is an experimental feature and the interface may be changed
-  in the future.
 }
 \seealso{
   \code{\link{addTaskCallback}},

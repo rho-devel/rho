@@ -1,6 +1,22 @@
+/*CXXR $Id$
+ *CXXR
+ *CXXR This file is part of CXXR, a project to refactor the R interpreter
+ *CXXR into C++.  It may consist in whole or in part of program code and
+ *CXXR documentation taken from the R project itself, incorporated into
+ *CXXR CXXR (and possibly MODIFIED) under the terms of the GNU General Public
+ *CXXR Licence.
+ *CXXR 
+ *CXXR CXXR is Copyright (C) 2008-11 Andrew R. Runnalls, subject to such other
+ *CXXR copyrights and copyright restrictions as may be stated below.
+ *CXXR 
+ *CXXR CXXR is not part of the R project, and bugs and other issues should
+ *CXXR not be reported via r-bugs or other R project channels; instead refer
+ *CXXR to the CXXR website.
+ *CXXR */
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
- *  Copyright (C) 2009,2010 The R Development Core Team.
+ *  Copyright (C) 2009,2011 The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +45,12 @@
 #include <Defn.h>
 
 // This is currently a no-op in CXXR (and quite likely always will be):
+/* pre is the prefix, v is the object to inspect, deep specifies
+   the recursion behavior (0 = no recursion, -1 = [sort of] unlimited
+   recursion, positive numbers define the maximum recursion depth)
+   and pvec is the max. number of vector elements to show  */
+static void inspect_tree(int pre, SEXP v, int deep, int pvec) {
+}
 
 /* internal API - takes one mandatory argument (object to inspect) and
    two optional arguments (deep and pvec - see above), positional argument
@@ -43,7 +65,19 @@ SEXP attribute_hidden do_inspect(SEXP call, SEXP op, SEXP args, SEXP env) {
 	    pvec = asInteger(CADDR(args));
     }
 	
-    // inspect(0, CAR(args), deep, pvec);
+    inspect_tree(0, CAR(args), deep, pvec);
     return obj;
+}
+
+/* the following functions can be use internally and for debugging purposes -
+   so far they are not used in any actual code */
+SEXP attribute_hidden R_inspect(SEXP x) {
+    inspect_tree(0, x, -1, 5);
+    return x;
+}
+
+SEXP attribute_hidden R_inspect3(SEXP x, int deep, int pvec) {
+    inspect_tree(0, x, deep, pvec);
+    return x;
 }
 

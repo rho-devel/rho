@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1998-2006   The R Development Core Team.
+ *  Copyright (C) 1998-2011   The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -399,10 +399,15 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     len = asInteger(CADDR(args));
     if(len != NA_INTEGER && len < 0)
 	errorcall(call, _("invalid '%s' argument"), "length.out");
+    if(length(CADDR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"), 
+		    "length.out");
 
     each = asInteger(CADDDR(args));
     if(each != NA_INTEGER && each < 0)
 	errorcall(call, _("invalid '%s' argument"), "each");
+    if(length(CADDDR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"), "each");
     if(each == NA_INTEGER) each = 1;
 
     if(lx == 0) {
@@ -531,6 +536,9 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 	double rout = asReal(len);
 	if(ISNAN(rout) || rout <= -0.5)
 	    errorcall(call, _("'length.out' must be a non-negative number"));
+	if(length(len) != 1)
+	    warningcall(call, _("first element used of '%s' argument"), 
+			"length.out");
 	lout = int( ceil(rout));
     }
 
@@ -569,8 +577,8 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		errorcall(call, _("'by' argument is much too small"));
 	    if(n < - FEPS)
 		errorcall(call, _("wrong sign in 'by' argument"));
-	    if(TYPEOF(from) == INTSXP && 
-	       TYPEOF(to) == INTSXP && 
+	    if(TYPEOF(from) == INTSXP &&
+	       TYPEOF(to) == INTSXP &&
 	       TYPEOF(by) == INTSXP) {
 		int *ia, ifrom = asInteger(from), iby = asInteger(by);
 		/* With the current limits on integers and FEPS
@@ -578,8 +586,8 @@ SEXP attribute_hidden do_seq(SEXP call, SEXP op, SEXP args, SEXP rho)
 		   next, so this is future-proofing against longer integers.
 		*/
 		nn = int(n);
-		/* seq.default gives integer result from 
-		   from + (0:n)*by 
+		/* seq.default gives integer result from
+		   from + (0:n)*by
 		*/
 		ans = allocVector(INTSXP, nn+1);
 		ia = INTEGER(ans);
@@ -663,22 +671,30 @@ SEXP attribute_hidden do_seq_along(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
     int i, len, *p;
+    static SEXP length_op = NULL;
+
+    /* Store the .Primitive for 'length' for DispatchOrEval to use. */
+    if (length_op == NULL) {
+	SEXP R_lengthSymbol = install("length");
+	length_op = eval(R_lengthSymbol, R_BaseEnv);
+	if (TYPEOF(length_op) != BUILTINSXP) {
+	    length_op = NULL;
+	    error("'length' is not a BUILTIN");
+	}
+	R_PreserveObject(length_op);
+    }
 
     checkArity(op, args);
     check1arg(args, call, "along.with");
-#ifdef R_291_and_less
-    len = length(CAR(args));
-#else
-    static RObject* length_func
-	= Environment::base()->frame()->binding(Symbol::obtain("length"))->forcedValue().first;
-    if(isObject(CAR(args)) &&
-       DispatchOrEval(call, length_func,
-		      "length", args, rho, &ans, 0, 1)) {
+    /* Try to dispatch to S3 or S4 metods for 'length'.  For cases
+       where no methods are defined this is more efficient than an
+       unconditional callback to R */
+    if (isObject(CAR(args)) &&
+	DispatchOrEval(call, length_op, "length", args, rho, &ans, 0, 1)) {
 	len = asInteger(ans);
     }
     else
 	len = length(CAR(args));
-#endif
 
     ans = allocVector(INTSXP, len);
     p = INTEGER(ans);
@@ -696,6 +712,9 @@ SEXP attribute_hidden do_seq_len(SEXP call, SEXP op, SEXP args, SEXP rho)
     len = asInteger(CAR(args));
     if(len == NA_INTEGER || len < 0)
 	errorcall(call, _("argument must be coercible to non-negative integer"));
+    if(length(CAR(args)) != 1)
+	warningcall(call, _("first element used of '%s' argument"),
+		    "length.out");
     ans = allocVector(INTSXP, len);
     p = INTEGER(ans);
     for(i = 0; i < len; i++) p[i] = i+1;

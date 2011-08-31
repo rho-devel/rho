@@ -1463,15 +1463,11 @@ static int clipTextCode(double x, double y, const char *str, cetype_t enc,
     xInches = fromDeviceX(x, GE_INCHES, dd);
     yInches = fromDeviceY(y, GE_INCHES, dd);
 
-#ifdef HAVE_HYPOT
     length = hypot(widthInches, heightInches);
-#else
-    length = pythag(widthInches, heightInches);
-#endif
     theta2 = angle + atan2(heightInches, widthInches);
 
-    x = xInches - hadj*widthInches*cos(angle);
-    y = yInches - hadj*widthInches*sin(angle);
+    x  = xInches - hadj*widthInches*cos(angle);
+    y  = yInches - hadj*widthInches*sin(angle);
     x0 = x + heightInches*cos(theta1);
     x1 = x;
     x2 = x + length*cos(theta2);
@@ -1661,7 +1657,7 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 	gc->fontface = VFontFaceCode(vfontcode, gc->fontface);
 	R_GE_VText(x, y, str, enc, xc, yc, rot, gc, dd);
     } else {
-	/* PR#7397: this seems to reset R_Visible */
+	/* PR#7397: this seemed to reset R_Visible */
 	Rboolean savevis = R_Visible;
 	int noMetricInfo = -1;
 	char *sbuf = NULL;
@@ -1679,6 +1675,10 @@ void GEText(double x, double y, const char * const str, cetype_t enc,
 	    if(enc2 != CE_SYMBOL)
 		enc2 = (dd->dev->hasTextUTF8 == TRUE) ? CE_UTF8 : CE_NATIVE;
 	    else if(dd->dev->wantSymbolUTF8 == TRUE) enc2 = CE_UTF8;
+	    else if(dd->dev->wantSymbolUTF8 == NA_LOGICAL) {
+		enc = CE_LATIN1;
+		enc2 = CE_UTF8;
+	    }
 
 #ifdef DEBUG_MI
 	    printf("string %s, enc %d, %d\n", str, enc, enc2);

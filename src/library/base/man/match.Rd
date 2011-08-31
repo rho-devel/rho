@@ -1,6 +1,6 @@
 % File src/library/base/man/match.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{match}
@@ -65,6 +65,9 @@ x \%in\% table
   
   That \code{\%in\%} never returns \code{NA} makes it particularly
   useful in \code{if} conditions.
+  
+  Character strings with marked encoding \code{"bytes"} cannot be
+  compared, so give an error.
 }
 \references{
   Becker, R. A., Chambers, J. M. and Wilks, A. R. (1988)
@@ -82,9 +85,10 @@ x \%in\% table
 }
 \examples{
 ## The intersection of two sets can be defined via match():
-## Simple version:  intersect <- function(x, y) y[match(x, y, nomatch = 0)]
+## Simple version:
+## intersect <- function(x, y) y[match(x, y, nomatch = 0)]
 intersect # the R function in base, slightly more careful
-intersect(1:10,7:20)
+intersect(1:10, 7:20)
 
 1:10 \%in\% c(1,3,5,9)
 sstr <- c("c","ab","B","bba","c",NA,"@","bla","a","Ba","\%")

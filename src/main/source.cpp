@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 2001-7      The R Development Core Team
+ *  Copyright (C) 2001-11      The R Development Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ SEXP attribute_hidden getParseContext(void)
     char context[PARSE_CONTEXT_SIZE+1];
 
     SEXP ans = R_NilValue, ans2;
-    int nn, nnn, nread;
+    int nn, nread;
     char c;
 
     context[last] = '\0';
@@ -66,7 +66,6 @@ SEXP attribute_hidden getParseContext(void)
     }
 
     nn = 16; /* initially allocate space for 16 lines */
-    nnn = nn;
     PROTECT(ans = allocVector(STRSXP, nn));
     c = context[last];
     nread = 0;
@@ -122,7 +121,7 @@ static SEXP tabExpand(SEXP strings)
     PROTECT(result = allocVector(STRSXP, length(strings)));
     for (i = 0; i < length(strings); i++) {
     	input = CHAR(STRING_ELT(strings, i));
-    	for (b = buffer; input && b-buffer < 192; input++) {
+    	for (b = buffer; *input && (b-buffer < 192); input++) {
     	    if (*input == '\t') do {
     	    	*b++ = ' ';
     	    } while (((b-buffer) & 7) != 0);
@@ -266,16 +265,17 @@ SEXP attribute_hidden do_parse(SEXP call, SEXP op, SEXP args, SEXP env)
     }
     else if (ifile >= 3) {/* file != "" */
 	if (num == NA_INTEGER) num = -1;
-	if(!wasopen) {
-	    if(!con->open(con)) error(_("cannot open the connection"));
-	    if(!con->canread) {
+	try {
+	    if(!wasopen && !con->open(con))
+		error(_("cannot open the connection"));
+	    if(!con->canread) error(_("cannot read from this connection"));
+	    s = R_ParseConn(con, num, &status, source);
+	    if(!wasopen) con->close(con);
+	} catch (...) {
+	    if (!wasopen && con->isopen)
 		con->close(con);
-		error(_("cannot read from this connection"));
-	    }
-	} else if(!con->canread)
-	    error(_("cannot read from this connection"));
-	s = R_ParseConn(con, num, &status, source);
-	if(!wasopen) con->close(con);
+	    throw;
+	}
 	if (status != PARSE_OK) parseError(call, R_ParseError);
     }
     else {

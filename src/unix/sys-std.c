@@ -752,6 +752,7 @@ R_custom_completion(const char *text, int start, int end)
 				       mkString(rl_line_buffer))),
 	startCall = PROTECT(lang2(RComp_assignStartSym, ScalarInteger(start))),
 	endCall = PROTECT(lang2(RComp_assignEndSym,ScalarInteger(end)));
+    SEXP filecompCall;
 
     /* Don't want spaces appended at the end.  Need to do this
        everytime, as readline>=6 resets it to ' ' */
@@ -762,9 +763,10 @@ R_custom_completion(const char *text, int start, int end)
     eval(endCall, rcompgen_rho);
     UNPROTECT(3);
     matches = rl_completion_matches(text, R_completion_generator);
-    infile = PROTECT(eval(lang1(RComp_getFileCompSym), rcompgen_rho));
+    filecompCall = PROTECT(lang1(RComp_getFileCompSym));
+    infile = PROTECT(eval(filecompCall, rcompgen_rho));
     if (!asLogical(infile)) rl_attempted_completion_over = 1;
-    UNPROTECT(1);
+    UNPROTECT(2);
     return matches;
 }
 

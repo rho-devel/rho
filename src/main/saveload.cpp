@@ -714,6 +714,7 @@ static SEXP DataLoad(FILE *fp, int startup, InputRoutines *m,
     }
 
 
+    /* f[gs]etpos are 64-bit on MSVCRT Windows */
     /* save the file position */
     if (fgetpos(fp, &savepos))
 	RestoreError(_("cannot save file position while restoring data"),
@@ -926,7 +927,7 @@ static void NewMakeLists (SEXP obj, SEXP sym_list, SEXP env_list)
 	else if (R_IsNamespaceEnv(obj))
 	    error(_("cannot save namespace in version 1 workspaces"));
 	if (R_HasFancyBindings(obj))
-	    error(_("cannot save environment with locked/active bindings\
+	    error(_("cannot save environment with locked/active bindings \
 in version 1 workspaces"));
 	HashAdd(obj, env_list);
 	/* FALLTHROUGH */
@@ -2078,17 +2079,14 @@ SEXP attribute_hidden do_load(SEXP call, SEXP op, SEXP args, SEXP env)
     /* the loaded objects can be placed where desired  */
 
     aenv = CADR(args);
-    if (TYPEOF(aenv) == NILSXP) {
+    if (TYPEOF(aenv) == NILSXP)
 	error(_("use of NULL environment is defunct"));
-	aenv = R_BaseEnv;
-    } else
-    if (TYPEOF(aenv) != ENVSXP)
+    else if (TYPEOF(aenv) != ENVSXP)
 	error(_("invalid '%s' argument"), "envir");
 
     /* Process the saved file to obtain a list of saved objects. */
     fp = RC_fopen(STRING_ELT(fname, 0), "rb", TRUE);
-    if (!fp)
-	error(_("unable to open file"));
+    if (!fp) error(_("unable to open file"));
 
     /* Use try-catch to close the file if there is an error */
     try {
@@ -2210,14 +2208,19 @@ void R_RestoreGlobalEnvFromFile(const char *name, Rboolean quiet)
 /* Ideally it should be possible to do this entirely in R code with
    something like
 
-	magic <- if (ascii) "RDA2\n" else
+	magic <- if (ascii) "RDA2\n" else ...
 	writeChar(magic, con, eos = NULL)
 	val <- lapply(list, get, envir = envir)
 	names(val) <- list
 	invisible(serialize(val, con, ascii = ascii))
 
    Unfortunately, this will result in too much duplication in the lapply
-   (and any other way of doing this).  Hence we need an internal version. */
+   (and any other way of doing this).  Hence we need an internal version. 
+
+   In case anyone wants to do this another way, in fact it is a
+   pairlist of objects that is serialized, but RestoreToEnv copes
+   with either a pairlist or list.
+*/
 
 SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 {
@@ -2266,56 +2269,59 @@ SEXP attribute_hidden do_saveToConn(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!con->open(con)) error(_("cannot open the connection"));
 	strcpy(con->mode, mode);
     }
-    if(!con->canwrite) {
-	if(!wasopen) con->close(con);
-	error(_("connection not open for writing"));
-    }
+    try {
+	if(!con->canwrite)
+	    error(_("connection not open for writing"));
 
-    if (ascii) {
-	magic = "RDA2\n";
-	type = R_pstream_ascii_format;
-    }
-    else {
-	if (con->text)
-	    error(_("cannot save XDR format to a text-mode connection"));
-	magic = "RDX2\n";
-	type = R_pstream_xdr_format;
-    }
-
-    if (con->text)
-	Rconn_printf(con, "%s", magic);
-    else {
-	CXXRUNSIGNED int len = strlen(magic);
-	if (len != con->write(magic, 1, len, con))
-	    error(_("error writing to connection"));
-    }
-
-    R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
-
-    len = length(list);
-    PROTECT(s = allocList(len));
-
-    t = s;
-    for (j = 0; j < len; j++, t = CDR(t)) {
-	SET_TAG(t, install(CHAR(STRING_ELT(list, j))));
-	SETCAR(t, findVar(TAG(t), source));
-	tmp = findVar(TAG(t), source);
-	if (tmp == R_UnboundValue)
-	    error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
-	if(ep && TYPEOF(tmp) == PROMSXP) {
-	    PROTECT(tmp);
-	    tmp = eval(tmp, source);
-	    UNPROTECT(1);
+	if (ascii) {
+	    magic = "RDA2\n";
+	    type = R_pstream_ascii_format;
 	}
-	SETCAR(t, tmp);
-    }
+	else {
+	    if (con->text)
+		error(_("cannot save XDR format to a text-mode connection"));
+	    magic = "RDX2\n";
+	    type = R_pstream_xdr_format;
+	}
 
-    R_Serialize(s, &out);
-    if (!wasopen) con->close(con);
-    UNPROTECT(1);
+	if (con->text)
+	    Rconn_printf(con, "%s", magic);
+	else {
+	    CXXRUNSIGNED int len = strlen(magic);
+	    if (len != con->write(magic, 1, len, con))
+		error(_("error writing to connection"));
+	}
+
+	R_InitConnOutPStream(&out, con, type, version, NULL, NULL);
+
+	len = length(list);
+	PROTECT(s = allocList(len));
+
+	t = s;
+	for (j = 0; j < len; j++, t = CDR(t)) {
+	    SET_TAG(t, install(CHAR(STRING_ELT(list, j))));
+	    SETCAR(t, findVar(TAG(t), source));
+	    tmp = findVar(TAG(t), source);
+	    if (tmp == R_UnboundValue)
+		error(_("object '%s' not found"), CHAR(PRINTNAME(TAG(t))));
+	    if(ep && TYPEOF(tmp) == PROMSXP) {
+		PROTECT(tmp);
+		tmp = eval(tmp, source);
+		UNPROTECT(1);
+	    }
+	    SETCAR(t, tmp);
+	}
+
+	R_Serialize(s, &out);
+	if (!wasopen) con->close(con);
+	UNPROTECT(1);
+    } catch (...) {
+	if (!wasopen && con->isopen)
+	    con->close(con);
+	throw;
+    }
     return R_NilValue;
 }
-
 
 /* Read and checks the magic number, open the connection if needed */
 
@@ -2334,8 +2340,6 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
     checkArity(op, args);
 
     con = getConnection(asInteger(CAR(args)));
-    if(!con->canread) error(_("cannot read from this connection"));
-    if(con->text) error(_("can only read from a binary connection"));
     wasopen = con->isopen;
     if(!wasopen) {
 	char mode[5];	
@@ -2344,46 +2348,34 @@ SEXP attribute_hidden do_loadFromConn2(SEXP call, SEXP op, SEXP args, SEXP env)
 	if(!con->open(con)) error(_("cannot open the connection"));
 	strcpy(con->mode, mode);
     }
-    if(!con->canread) {
-	if(!wasopen) con->close(con);
-	error(_("connection not open for reading"));
-    }
+    try {
+	if(!con->canread) error(_("connection not open for reading"));
+	if(con->text) error(_("can only load() from a binary connection"));
 
-    aenv = CADR(args);
-    if (TYPEOF(aenv) == NILSXP) {
-	error(_("use of NULL environment is defunct"));
-	aenv = R_BaseEnv;
-    } else if (TYPEOF(aenv) != ENVSXP)
-	error(_("invalid '%s' argument"), "envir");
+	aenv = CADR(args);
+	if (TYPEOF(aenv) == NILSXP)
+	    error(_("use of NULL environment is defunct"));
+	else if (TYPEOF(aenv) != ENVSXP)
+	    error(_("invalid '%s' argument"), "envir");
 
-    /* check magic */
-    memset(buf, 0, 6);
-    count = con->read(buf, sizeof(char), 5, con);
-    if (count == 0) error(_("no input is available"));
-    if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
-	strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
-	strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
-	/* use try-catch to close the connection 
-	   if there is an error */
-	if (wasopen) {
-	    try {
-		R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
-		GCStackRoot<> unser(R_Unserialize(&in));
-		res = RestoreToEnv(unser, aenv);
-	    }
-	    catch (...) {
-		con->close(con);
-		throw;
-	    }
-	} else {
-	    /* FIXME: this is odd: we did not open that connection, so
-	       why should we be closing it? */
+	/* check magic */
+	memset(buf, 0, 6);
+	count = con->read(buf, sizeof(char), 5, con);
+	if (count == 0) error(_("no input is available"));
+	if (strncmp(reinterpret_cast<char*>(buf), "RDA2\n", 5) == 0 ||
+	    strncmp(reinterpret_cast<char*>(buf), "RDB2\n", 5) == 0 ||
+	    strncmp(reinterpret_cast<char*>(buf), "RDX2\n", 5) == 0) {
 	    R_InitConnInPStream(&in, con, R_pstream_any_format, NULL, NULL);
 	    GCStackRoot<> unser(R_Unserialize(&in));
 	    res = RestoreToEnv(unser, aenv);
+	    if(!wasopen)
+		con->close(con);
+	} else
+	    error(_("the input does not start with a magic number compatible with loading from a connection"));
+    } catch (...) {
+	if (!wasopen && con->isopen)
 	    con->close(con);
-	}
-    } else
-	error(_("the input does not start with a magic number compatible with loading from a connection"));
+	throw;
+    }
     return res;
 }

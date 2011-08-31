@@ -77,9 +77,8 @@ static SEXP f_x_i_skeleton, fgets_x_i_skeleton, f_x_skeleton, fgets_x_skeleton;
 
 SEXP R_quick_method_check(SEXP object, SEXP fsym, SEXP fdef);
 
-static SEXP R_target, R_defined, R_nextMethod,
-    R_dot_target, R_dot_defined, R_dot_nextMethod,
-    R_loadMethod_name, R_dot_Method;
+static SEXP R_target, R_defined, R_nextMethod, R_dot_nextMethod,
+    R_loadMethod_name;
 
 static SEXP Methods_Namespace = NULL;
 
@@ -94,10 +93,7 @@ static void init_loadMethod()
     R_defined = install("defined");
     R_nextMethod = install("nextMethod");
     R_loadMethod_name = install("loadMethod");
-    R_dot_target = install(".target");
-    R_dot_defined = install(".defined");
     R_dot_nextMethod = install(".nextMethod");
-    R_dot_Method = install(".Method");
 }
 
 
@@ -462,7 +458,7 @@ SEXP R_getGeneric(SEXP name, SEXP mustFind, SEXP env, SEXP package)
 SEXP R_standardGeneric(SEXP fname, SEXP ev, SEXP fdef)
 {
     SEXP f_env=R_BaseEnv, mlist=R_NilValue, f, val=R_NilValue, fsym; /* -Wall */
-    int nprotect = 0; Rboolean prim_case = FALSE;
+    int nprotect = 0;
 
     if(!initialized)
 	R_initMethodDispatch(NULL);
@@ -479,12 +475,10 @@ SEXP R_standardGeneric(SEXP fname, SEXP ev, SEXP fdef)
 	PROTECT(mlist = findVar(s_dot_Methods, f_env)); nprotect++;
 	if(mlist == R_UnboundValue)
             mlist = R_NilValue;
-	prim_case = FALSE;
 	break;
     case SPECIALSXP: case BUILTINSXP:
         f_env = R_BaseEnv;
 	PROTECT(mlist = R_primitive_methods(fdef)); nprotect++;
-	prim_case = TRUE;
 	break;
     default: error(_("invalid generic function object for method selection for function '%s': expected a function or a primitive, got an object of class \"%s\""),
 		   CHAR(asChar(fsym)), class_string(fdef));
@@ -617,8 +611,9 @@ static SEXP do_dispatch(SEXP fname, SEXP ev, SEXP mlist, int firstTry,
 	    SEXP arg, class_obj; int check_err;
 	    PROTECT(arg = R_tryEvalSilent(arg_sym, ev, &check_err)); nprotect++;
 	    if(check_err)
-		error(_("error in evaluating the argument '%s' in selecting a method for function '%s'"),
-		      CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)));
+		error(_("error in evaluating the argument '%s' in selecting a method for function '%s': %s"),
+		      CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)),
+		      R_curErrorBuf());
 	    PROTECT(class_obj = R_data_class(arg, TRUE)); nprotect++;
 	    class = CHAR(STRING_ELT(class_obj, 0));
 	}
@@ -628,8 +623,9 @@ static SEXP do_dispatch(SEXP fname, SEXP ev, SEXP mlist, int firstTry,
 	SEXP arg; int check_err;
 	PROTECT(arg = R_tryEvalSilent(arg_sym, ev, &check_err)); nprotect++;
 	if(check_err)
-	    error(_("error in evaluating the argument '%s' in selecting a method for function '%s'"),
-		  CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)));
+	    error(_("error in evaluating the argument '%s' in selecting a method for function '%s': %s"),
+		  CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)),
+		  R_curErrorBuf());
 	class = CHAR(asChar(arg));
     }
     method = R_find_method(mlist, class, fname);
@@ -718,7 +714,8 @@ SEXP R_nextMethodCall(SEXP matched_call, SEXP ev)
 	   leaves the previous function, methods list unchanged */
 	do_set_prim_method(op, "set", R_NilValue, R_NilValue);
 	if(error_flag)
-	    Rf_error(_("error in evaluating a 'primitive' next method"));
+	    Rf_error(_("error in evaluating a 'primitive' next method: %s"),
+		     R_curErrorBuf());
     }
     else
 	val = eval(e, ev);
@@ -737,6 +734,7 @@ static SEXP R_loadMethod(SEXP def, SEXP fname, SEXP ev)
        dispatch is done. */
     SEXP s, attrib;
     int found = 1; /* we "know" the class attribute is there */
+    PROTECT(def);
     for(s = attrib = ATTRIB(def); s != R_NilValue; s = CDR(s)) {
 	SEXP t = TAG(s);
 	if(t == R_target) {
@@ -753,19 +751,22 @@ static SEXP R_loadMethod(SEXP def, SEXP fname, SEXP ev)
 	}
     }
     defineVar(R_dot_Method, def, ev);
+    UNPROTECT(1);
+
     /* this shouldn't be needed but check the generic being
        "loadMethod", which would produce a recursive loop */
     if(strcmp(CHAR(asChar(fname)), "loadMethod") == 0)
 	return def;
     if(found < length(attrib)) {
 	SEXP e, val;
+	PROTECT(def);
 	PROTECT(e = allocVector(LANGSXP, 4));
 	SETCAR(e, R_loadMethod_name); val = CDR(e);
 	SETCAR(val, def); val = CDR(val);
 	SETCAR(val, fname); val = CDR(val);
 	SETCAR(val, ev);
 	val = eval(e, ev);
-	UNPROTECT(1);
+	UNPROTECT(2);
 	return val;
     }
     else return def;
@@ -904,13 +905,12 @@ static SEXP do_mtable(SEXP fdef, SEXP ev)
 
 SEXP R_dispatchGeneric(SEXP fname, SEXP ev, SEXP fdef)
 {
-    static SEXP R_mtable = NULL, R_allmtable, R_sigargs, R_siglength, R_dots, R_dots1;
+    static SEXP R_mtable = NULL, R_allmtable, R_sigargs, R_siglength, R_dots;
     int nprotect = 0;
     SEXP mtable, classes, thisClass = R_NilValue /* -Wall */, sigargs, 
 	siglength, f_env = R_NilValue, method, f, val = R_NilValue;
     char *buf, *bufptr;
     int nargs, i, lwidth = 0;
-    Rboolean prim_case = FALSE;
 
     if(!R_mtable) {
 	R_mtable = install(".MTable");
@@ -918,7 +918,6 @@ SEXP R_dispatchGeneric(SEXP fname, SEXP ev, SEXP fdef)
 	R_sigargs = install(".SigArgs");
 	R_siglength = install(".SigLength");
 	R_dots = install("...");
-	R_dots1 = install("..1");
     }
     switch(TYPEOF(fdef)) {
     case CLOSXP:
@@ -931,7 +930,6 @@ SEXP R_dispatchGeneric(SEXP fname, SEXP ev, SEXP fdef)
 	    return R_NilValue;
 	}
 	f_env = CLOENV(fdef);
-	prim_case = TRUE;
 	break;
     default:
 	error(_("Expected a generic function or a primitive for dispatch, got an object of class \"%s\""),
@@ -968,8 +966,9 @@ SEXP R_dispatchGeneric(SEXP fname, SEXP ev, SEXP fdef)
 		UNPROTECT(1); /* for arg */
 	    }
 	    if(check_err)
-		error(_("error in evaluating the argument '%s' in selecting a method for function '%s'"),
-		      CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)));
+		error(_("error in evaluating the argument '%s' in selecting a method for function '%s': %s"),
+		      CHAR(PRINTNAME(arg_sym)),CHAR(asChar(fname)),
+		      R_curErrorBuf());
 	}
 	SET_VECTOR_ELT(classes, i, thisClass);
 	lwidth += strlen(STRING_VALUE(thisClass)) + 1;

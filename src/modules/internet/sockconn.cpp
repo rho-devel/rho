@@ -54,7 +54,7 @@ static Rboolean sock_open(Rconnection con)
 {
     Rsockconn thisconn = (Rsockconn)con->connprivate;
     int sock, sock1, mlen;
-    int timeout = asInteger(GetOption(install("timeout"), R_BaseEnv));
+    int timeout = asInteger(GetOption1(install("timeout")));
     char buf[256];
 
     if(timeout == NA_INTEGER || timeout <= 0) timeout = 60;

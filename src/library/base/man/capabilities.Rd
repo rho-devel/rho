@@ -1,6 +1,5 @@
-% File src/library/base/man/capabilities.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2008 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{capabilities}
@@ -29,7 +28,7 @@ capabilities(what = NULL)
 }
 #endif
 \value{
-  A named logical vector. Current components are
+  A named logical vector.  Current components are
     \item{jpeg}{Is the \code{\link{jpeg}} function operational?}
     \item{png}{Is the \code{\link{png}} function operational?}
     \item{tiff}{Is the \code{\link{tiff}} function operational?}
@@ -60,7 +59,7 @@ capabilities(what = NULL)
       available?}
     \item{libxml}{Is there support for integrating \code{libxml} with
       the \R event loop?}
-    \item{fifo}{are FIFO connections supported?}
+    \item{fifo}{are FIFO \link{connections} supported?}
     \item{cledit}{Is command-line editing available in the current \R
       session?  This is false in non-interactive sessions.
 #ifdef unix
@@ -77,7 +76,7 @@ capabilities(what = NULL)
     \item{cairo}{applies to Unix-alikes -- always \code{FALSE}.}
 #endif
 #ifdef unix
-    \item{cairo}{is there support for \code{type="Cairo"} in
+    \item{cairo}{is there support for \code{type = "cairo"} in
       \code{\link{X11}}, \code{\link{png}},\code{\link{jpeg}},
       \code{\link{tiff}} and \code{\link{bmp}}, and
       for the \code{\link{svg}}, \code{\link{cairo_pdf}} and

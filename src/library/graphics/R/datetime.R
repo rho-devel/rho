@@ -90,6 +90,8 @@ hist.POSIXt <- function(x, breaks, ..., xlab = deparse(substitute(x)),
     x <- as.POSIXct(x)
     incr <- 1
     ## handle breaks ourselves
+    if(missing(breaks))
+	stop("Must specify 'breaks' in hist(<POSIXt>)")
     if (inherits(breaks, "POSIXt")) {
         breaks <- as.POSIXct(breaks)
         d <- min(abs(diff(unclass(breaks))))
@@ -235,6 +237,8 @@ hist.Date <- function(x, breaks, ..., xlab = deparse(substitute(x)),
     force(xlab)
     incr <- 1
     ## handle breaks ourselves
+    if(missing(breaks))
+        stop("Must specify 'breaks' in hist(<Date>)")
     if (inherits(breaks, "Date")) {
         breaks <- as.Date(breaks)
         d <- min(abs(diff(unclass(breaks))))

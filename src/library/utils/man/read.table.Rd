@@ -1,6 +1,6 @@
 % File src/library/utils/man/read.table.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{read.table}
@@ -47,7 +47,7 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     As from \R 2.10.0 this can be a compressed file (see \code{\link{file}}).
     
     Alternatively, \code{file} can be a readable text-mode
-    \code{\link{connection}} (which will be opened for reading if
+    \link{connection} (which will be opened for reading if
     necessary, and if so \code{\link{close}}d (and hence destroyed) at
     the end of the function call).  (If \code{\link{stdin}()} is used,
     the prompts for lines may be somewhat confusing.  Terminate input
@@ -55,7 +55,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
     \code{Ctrl-Z} on Windows.  Any pushback on \code{stdin()} will be
     cleared before return.)
 
-    \code{file} can also be a complete URL.
+    \code{file} can also be a complete URL.  (For the supported URL
+    schemes, see the \sQuote{URLs} section of the help for
+    \code{\link{url}}.)
   }
 
   \item{header}{a logical value indicating whether the file contains the
@@ -149,8 +151,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
 
   \item{strip.white}{logical. Used only when \code{sep} has
     been specified, and allows the stripping of leading and trailing
-    white space from \code{character} fields (\code{numeric} fields
-    are always stripped).  See \code{\link{scan}} for further details,
+    white space from unquoted \code{character} fields (\code{numeric} fields
+    are always stripped).  See \code{\link{scan}} for further details
+    (including the exact meaning of \sQuote{white space}),
     remembering that the columns may include the row names.}
 
   \item{blank.lines.skip}{logical: if \code{TRUE} blank lines in the
@@ -175,7 +178,9 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   
   \item{fileEncoding}{character string: if non-empty declares the
     encoding used on a file (not a connection) so the character data can
-    be re-encoded.  See \code{\link{file}} and \sQuote{Note}.
+    be re-encoded.  See the \sQuote{Encoding} section of the help for
+    \code{\link{file}}, the \sQuote{R Data Import/Export Manual} and
+    \sQuote{Note}.
   }
   
   \item{encoding}{encoding to be assumed for input strings.  It is
@@ -212,7 +217,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   of input (or the whole file if it has less than five lines), or from
   the length of \code{col.names} if it is specified and
   is longer.  This could conceivably be wrong if \code{fill} or
-  \code{blank.lines.skip} are true, so specify \code{col.names} if necessary.
+  \code{blank.lines.skip} are true, so specify \code{col.names} if
+  necessary (as in the \sQuote{Examples}).
 
   \code{read.csv} and \code{read.csv2} are identical to
   \code{read.table} except for the defaults.  They are intended for
@@ -296,7 +302,8 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   \code{\link{data.frame}}.
 
   \code{\link{count.fields}} can be useful to determine problems with
-  reading files which result in reports of incorrect record lengths.
+  reading files which result in reports of incorrect record lengths (see
+  the \sQuote{Examples} below).
   
   \url{http://tools.ietf.org/html/rfc4180} for the IANA definition of
   CSV files (which requires comma as separator and CRLF line endings).
@@ -307,6 +314,20 @@ read.delim2(file, header = TRUE, sep = "\t", quote="\"", dec=",",
   \emph{Data for models.}
   Chapter 3 of \emph{Statistical Models in S}
   eds J. M. Chambers and T. J. Hastie, Wadsworth & Brooks/Cole.
+}
+
+\examples{
+## using count.fields to handle unknown maximum number of fields
+## when fill=TRUE
+test1 <- c(1:5, "6,7", "8,9,10")
+tf <- tempfile()
+writeLines(test1, tf)
+
+read.csv(tf, fill = TRUE) # 1 column
+ncol <- max(count.fields(tf, sep = ","))
+read.csv(tf, fill = TRUE, header = FALSE,
+         col.names = paste("V", seq_len(ncol), sep = ""))
+unlink(tf)
 }
 
 \keyword{file}

@@ -1,6 +1,7 @@
 % File src/library/stats/man/order.dendrogram.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2007 R Core Development Team
+% Copyright 1995-2010 R Core Development Team
+% Copyright 2002-2010 The R Foundation
 % Distributed under GPL 2 or later
 
 \name{order.dendrogram}
@@ -30,7 +31,7 @@ order.dendrogram(x)
   is returned.  From \code{r <- order.dendrogram()}, each element is the
   index into the original data (from which the dendrogram was computed).
 }
-\author{R. Gentleman (\code{order.dendrogram} and Martin Maechler
+\author{R. Gentleman (\code{order.dendrogram}) and Martin Maechler
   (\code{labels.dendrogram}).}
 
 \seealso{\code{\link{reorder}}, \code{\link{dendrogram}}.
@@ -46,6 +47,7 @@ stopifnot(hc$order == order.dendrogram(dd))
 
 d2 <- as.dendrogram(hclust(dist(USArrests)))
 labels(d2) ## in this case the same as
-stopifnot(labels(d2) == rownames(USArrests)[order.dendrogram(d2)])
+stopifnot(identical(labels(d2),
+   rownames(USArrests)[order.dendrogram(d2)]))
 }
 \keyword{manip}

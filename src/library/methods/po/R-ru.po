@@ -10,10 +10,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.11.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2010-09-27 09:37\n"
-"PO-Revision-Date: 2010-09-30 02:29-0600\n"
-"Last-Translator: Alexey Shipunov <dactylorhiza@gmail.com>\n"
+"POT-Creation-Date: 2011-03-25 10:08\n"
+"PO-Revision-Date: 2011-03-30 02:24+0300\n"
+"Last-Translator: Anton Korobeynikov <asl at math dot spbu dot ru>\n"
 "Language-Team: Russian <ru@li.org>\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=koi8-r\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -48,6 +49,12 @@ msgstr "Не могу определить аргументы matrix(), когда определяю .Data"
 
 msgid "Cannot specify array() arguments when specifying .Data"
 msgstr "Не могу определить аргументы array(), когда определяю .Data"
+
+msgid "Can't have more than one unnamed argument as environment"
+msgstr "Невозможно иметь более одного неименованного аргумента в окружении"
+
+msgid "Unnamed argument to new() must be an environment for the new object"
+msgstr "Неименованный аргумент у new() должен быть окружением для нового объекта"
 
 msgid "methods may not be defined for primitive function \"%s\" in this version of R"
 msgstr "методы не могут быть определены для элементарной функции \"%s\" в этой версии R"
@@ -235,8 +242,8 @@ msgstr "для элемента %d установлен неверный класс (должен быть односимвольной ст
 msgid "first argument should be the name(s) of generic functions (got object of class \"%s\")"
 msgstr "первый аргумент должен быть именем(-ами) общих функций (получен объект класса \"%s\")"
 
-msgid "\"%s\" is not a generic function in \"%s\"; methods not removed"
-msgstr "\"%s\" не является общей функцией в \"%s\"; методы не удалены"
+msgid "\"%s\" is not an S4 generic function in \"%s\"; methods not removed"
+msgstr "\"%s\" не является общей функцией S4 в \"%s\"; методы не удалены"
 
 msgid "cannot remove methods for  \"%s\" in locked environment/package \"%s\""
 msgstr "не могу удалить методы \"%s\" в заблокированном окружении/пакете \"%s\""
@@ -244,8 +251,8 @@ msgstr "не могу удалить методы \"%s\" в заблокированном окружении/пакете \"%s\""
 msgid "restoring default function definition of \"%s\""
 msgstr "восстанавливаю определение по умолчанию для функции \"%s\""
 
-msgid "error in updating generic function \"%s\"; the function definition is not a generic function (class \"%s\")"
-msgstr "ошибка в обновлении общей функции \"%s\"; определение функции не является общей функцией (класс \"%s\")"
+msgid "error in updating S4 generic function \"%s\"; the function definition is not an S4 generic function (class \"%s\")"
+msgstr "ошибка в обновлении общей функции S4 \"%s\"; определение функции не является общей функцией S4 (класс \"%s\")"
 
 msgid "function \"%s\" is already a group generic; no change"
 msgstr "функция \"%s\" уже в группе общие; без изменений"
@@ -322,8 +329,8 @@ msgstr "Только FALSE имеет значение для 'inherited', когда указано 'where' (полу
 msgid "argument \"f\" must be a generic function or %s"
 msgstr "аргумент \"f\" должен быть общей функцией или %s"
 
-msgid "'%s' is not a generic function in '%s' {and 'package' not specified}"
-msgstr "'%s' не общая функция в '%s' {и 'package' не указан}"
+msgid "'%s' is not a known generic function {and 'package' not specified}"
+msgstr "'%s' не является известной общей функцией {и 'package' не указан}"
 
 msgid "invalid first argument: should be the name of the first argument in the dispatch"
 msgstr "неверный первый аргумент: должно быть имя первого аргумента в отправке"
@@ -661,9 +668,6 @@ msgstr "\"%s\" не является общей функцией (либо не видна здесь)"
 msgid "invalid element in the groupMembers slot (class \"%s\")"
 msgstr "неверный элемент в groupMembers слоте (класс \"%s\")"
 
-msgid "\" is not a known action (warn, stop, once, ignore); no action recorded for function \""
-msgstr "\" не относится к известным акциям (warn, stop, once, ignore); акция для функции не записана \""
-
 msgid "argument f must be a generic function with signature \"...\""
 msgstr "аргумент \"f\" должен быть общей функцией с подписью \"...\""
 
@@ -758,10 +762,10 @@ msgid "no definition of \"%s\" to use for %s"
 msgstr "не определения \"%s\" для использования с %s"
 
 msgid ""
-"multiple definitions of class \"%s\" visible; using the definition\n"
+"multiple definitions of class \"%s\" visible (%s); using the definition\n"
 "   in package \"%s\" for %s"
 msgstr ""
-"найдено несколько определений \"%s\"; использую определение\n"
+"найдено несколько видимых определений класса \"%s\" (%s); использую определение\n"
 "   в пакете \"%s\" для %s"
 
 msgid "Class definition cannot extend more than one of these data types: %s"
@@ -1050,18 +1054,6 @@ msgstr "нет определения класса \"%s\" в указанной позиции, %s, определение(-я): 
 msgid "Field \"%s\" is not a valid field or method name for reference class \"%s\""
 msgstr "Поле \"%s\" -- неправильное поле или имя метода для ссылочного класса \"%s\""
 
-msgid "The class of field \"%s\" in the object is not compatible with the desired class \"%s\" in the target"
-msgstr "Класс или поле \"%s\" из объекта несовместимо с желаемым классом \"%s\" цели"
-
-msgid "\"%s\" is not a defined class in this environment"
-msgstr " \"%s\" -- класс, который не определен в этом окружении"
-
-msgid "Invalid Class argument:  should be a single string"
-msgstr "Invalid Class аргумент:  должен быть простой строкой"
-
-msgid "\"%s\" is not one of the reference super classes for this object"
-msgstr "\"%s\" не является одной из ссылок суперкласса на этот объект"
-
 msgid "Method %s from class %s was not processed into a class method until being installed.  Possible corruption of the methods in the class."
 msgstr "Метод %s из класса %s не был преобразован в метод класса, покуда не был установлен. Возможно повреждение методов в классе."
 
@@ -1074,20 +1066,26 @@ msgstr "\"%s\" не является ссылочным классом"
 msgid "\"%s\" is not a field in class \"%s\""
 msgstr "\"%s\" не является полем в классе \"%s\""
 
+msgid "The class of field \"%s\" in the object is not compatible with the desired class \"%s\" in the target"
+msgstr "Класс или поле \"%s\" из объекта несовместимо с желаемым классом \"%s\" цели"
+
+msgid "\"%s\" is not a defined class in this environment"
+msgstr " \"%s\" -- класс, который не определен в этом окружении"
+
+msgid "Invalid Class argument:  should be a single string"
+msgstr "Invalid Class аргумент:  должен быть простой строкой"
+
+msgid "\"%s\" is not one of the reference super classes for this object"
+msgstr "\"%s\" не является одной из ссылок суперкласса на этот объект"
+
 msgid "direct calls to callSuper() are invalid:  should only be called from another method"
 msgstr "прямые вызовы callSuper() неправильны:  можно вызывать только из другого метода"
 
+msgid "\"%s\" is not a field in this class"
+msgstr "\"%s\" не является полем в этом классе"
+
 msgid "Arguments to methods() must be named, or one named list"
 msgstr "Аргументы в methods() должны быть поименованы, или давайте один именованный список"
-
-msgid "must give named list of refdefined fields"
-msgstr "надо дать список переопределенных полей"
-
-msgid "Only accessor fields can be replaced:  field \"%s\" has class \"%s\""
-msgstr "Только сопроводительные поля могут быть заменены:  поле \"%s\" имеет класс \"%s\""
-
-msgid "replacement for field \"%s\" must be an accessor function: got an object of class \"%s\""
-msgstr "замена для поля \"%s\" должна быть сопровождающей функцией, а получил объект класса \"%s\""
 
 msgid ""
 "Topic \"%s\" is not a method name in class \"%s\"\n"
@@ -1095,6 +1093,12 @@ msgid ""
 msgstr ""
 "Топик \"%s\" не является именем метода в классе \"%s\"\n"
 "Определение класса ниже"
+
+msgid "Arguments must all be character string names of fields"
+msgstr "Аргументы должны быть текстовыми именами полей"
+
+msgid "Field \"%s\"  of class \"%s\" has a non-default binding and cannot be locked"
+msgstr "Поле \"%s\"  класса \"%s\" имеет присоединение не по умолчанию и не может быть заперто"
 
 msgid "The overriding class(\"%s\") of field \"%s\" is not a subclass of the existing field definition (\"%s\")"
 msgstr "Переписывание class(\"%s\") или поля \"%s\" не является подклассом в текущем определении поля (\"%s\")"
@@ -1104,12 +1108,6 @@ msgstr "Поле \""
 
 msgid "\" is read-only"
 msgstr "\" только для чтения"
-
-msgid "Arguments must all be character string names of fieds"
-msgstr "Аргументы должны быть текстовыми строками или полями"
-
-msgid "Field \"%s\"  of class \"%s\" has a non-default binding and cannot be locked"
-msgstr "Поле \"%s\"  класса \"%s\" имеет присоединение не по умолчанию и не может быть заперто"
 
 msgid "The contains= argument should be the names of superclasses:  got an element of class \"%s\""
 msgstr "Аргумент contains= должен быть именами суперклассов, а получил элемент класса \"%s\""
@@ -1125,6 +1123,9 @@ msgstr "Класс \"%s\" для поля \"%s\" не определен"
 
 msgid "Field \"%s\" was supplied as an object of class \"%s\"; must be a class name or a binding function"
 msgstr "Поле \"%s\" предложено как объект класса \"%s\"; а должно быть именем класса или функцией привязки"
+
+msgid "Code for methods in class \"%s\" was not checked for suspicious field assignments (recommended package \"codetools\" not available?)"
+msgstr "Код методов в классе \"%s\" не был проверен на подозрительные назначения полей (рекоммендуемый пакет \"codetools\" не доступен?)"
 
 msgid "A list argument for fields must have nonempty names for all the fields"
 msgstr "Список аргументов для полей должен иметь непустуе имена во всех полях"
@@ -1143,6 +1144,33 @@ msgstr "(класс \"%s\")"
 
 msgid "for method %s()"
 msgstr "для метода %s()"
+
+msgid ""
+"Local assignment to field name will not change the field:\n"
+"    %s\n"
+" Did you mean to use \"<<-\"? ( in method %s for class %s)"
+msgstr ""
+"Локальное назначение имени поля не изменит поле:\n"
+"    %s\n"
+" Может быть, Вы хотели использовать \"<<-\"? ( в методе %s класса %s)"
+
+msgid ""
+"Non-local assignment to non-field names (possibly misspelled?)\n"
+"    %s\n"
+"( in method %s for class %s)"
+msgstr ""
+"Нелокальное назначение не имени поля (возможна опечатка?)\n"
+"    %s\n"
+"( в методе %s класса %s)"
+
+msgid ""
+"Non-local assignment to method names is not allowed\n"
+"    %s\n"
+"( in method %s for class %s)"
+msgstr ""
+"Нелокальное назначение имен методов не разрешено\n"
+"    %s\n"
+"( в методе %s класса %s)"
 
 msgid "invalid ignore= argument; should be a class definition or a character vector, got an object of class %s"
 msgstr "неправильный ignore= argument; должен быть определенем класса или текстовой строкой; получен объект класса \"%s\""
@@ -1276,6 +1304,28 @@ msgstr[0] "нет определения класса \"%s\""
 msgstr[1] "нет определений классов \"%s\""
 msgstr[2] "нет определений классов \"%s\""
 
+#~ msgid ""
+#~ "\" is not a known action (warn, stop, once, ignore); no action recorded "
+#~ "for function \""
+#~ msgstr ""
+#~ "\" не относится к известным акциям (warn, stop, once, ignore); акция для "
+#~ "функции не записана \""
+
+#~ msgid "must give named list of refdefined fields"
+#~ msgstr "надо дать список переопределенных полей"
+
+#~ msgid "Only accessor fields can be replaced:  field \"%s\" has class \"%s\""
+#~ msgstr ""
+#~ "Только сопроводительные поля могут быть заменены:  поле \"%s\" имеет "
+#~ "класс \"%s\""
+
+#~ msgid ""
+#~ "replacement for field \"%s\" must be an accessor function: got an object "
+#~ "of class \"%s\""
+#~ msgstr ""
+#~ "замена для поля \"%s\" должна быть сопровождающей функцией, а получил "
+#~ "объект класса \"%s\""
+
 #, fuzzy
 #~ msgid ""
 #~ "Value supplied for field \"%s\" (with class \"%s\") is not a subclass of "
@@ -1299,6 +1349,7 @@ msgstr[2] "нет определений классов \"%s\""
 #, fuzzy
 #~ msgid "Trying to set a read-only field ("
 #~ msgstr "пытаюсь установить отношение 'as' от \"%s\" на себя"
+
 #~ msgid ")"
 #~ msgstr ")"
 
@@ -1309,6 +1360,7 @@ msgstr[2] "нет определений классов \"%s\""
 #, fuzzy
 #~ msgid "Invalid accessor function list: %s"
 #~ msgstr "неверный индекс для аргумента функции"
+
 #~ msgid "Defining type \"%s\" as a superclass via class \"%s\""
 #~ msgstr "Определяю тип \"%s\" как суперкласс через класс \"%s\""
 
@@ -1319,8 +1371,10 @@ msgstr[2] "нет определений классов \"%s\""
 #~ msgstr ""
 #~ "неверный аргумент \"f\", ожидается функция или ее имя, получен объект "
 #~ "класса \"%s\""
+
 #~ msgid ""
 #~ "in the method signature for function \"%s\" no definition for class: %s"
+
 #~ msgid_plural ""
 #~ "in the method signature for function \"%s\" no definition for classes: %s"
 #~ msgstr[0] ""
@@ -1329,6 +1383,7 @@ msgstr[2] "нет определений классов \"%s\""
 #~ "в идентификаторе метода для функции \"%s\" нет определения для классов: %s"
 #~ msgstr[2] ""
 #~ "в идентификаторе метода для функции \"%s\" нет определения для классов: %s"
+
 #~ msgid ""
 #~ "None of the orderings of the superclasses of class \"%s\" is consistent "
 #~ "with the superclass ordering of  its direct superclasses; using an "
@@ -1337,30 +1392,39 @@ msgstr[2] "нет определений классов \"%s\""
 #~ "Ни одно из упорядочений суперклассов класса \"%s\" не соответствует "
 #~ "упорядочиванию суперкласса его прямых суперклассов; использую "
 #~ "упорядочивание, которое конфликтует с %s"
+
 #~ msgid "Some of the superclasses in the definition of class \""
 #~ msgstr "Некоторые суперклассы в определении класса \""
+
 #~ msgid ""
 #~ "S3 methods written for S4 classes will fail inheritance!\n"
 #~ "Package"
 #~ msgstr ""
 #~ "S3 методы, написанные для S4 классов, не смогут наследоваться!\n"
 #~ "Пакет"
+
 #~ msgid "apparently has"
 #~ msgstr "очевидно имеет"
+
 #~ msgid "such methods  for the functions"
 #~ msgstr "такие методы для функций"
+
 #~ msgid "Possible dangerous methods:"
 #~ msgstr "Возможные опасные методы:"
+
 #~ msgid "(Warnings generated once per package per session)"
 #~ msgstr "(Предупреждения выдаются одно на пакет на сессию)"
+
 #~ msgid "There are apparent S3 methods for class \""
 #~ msgstr "Есть очевидные S3 методы для класса \""
+
 #~ msgid ""
 #~ "\"\n"
 #~ "DANGER: any subclasses of this class will not inherit the methods"
 #~ msgstr ""
 #~ "\"\n"
 #~ "ОПАСНО: любой субкласс этого класса не будет наследовать методы"
+
 #~ msgid ""
 #~ "\" have apparent S3 methods.\n"
 #~ "\n"
@@ -1371,45 +1435,59 @@ msgstr[2] "нет определений классов \"%s\""
 #~ "\n"
 #~ "ОПАСНО: новый класс на будет наследовать эти методы.\n"
 #~ "Пожалуйтесь автору определений суперкласса."
+
 #~ msgid "signature must be a vector of classes or an environment"
 #~ msgstr "идентификатор должен быть вектором классов или окружением"
+
 #~ msgid "selectMethod(): .SelectMethodOn - old stuff - please report"
 #~ msgstr "selectMethod(): .SelectMethodOn - это старье - пожалуйста, сообщите"
+
 #~ msgid "no unique method corresponding to this signature"
 #~ msgstr ""
 #~ "не существует единственного метода соответствующего данному идентификатору"
+
 #~ msgid "unable to match signature to methods"
 #~ msgstr "невозможно сопоставить идентификатор к методам"
+
 #~ msgid "class \"%s\" cannot be used as the data part of another class"
 #~ msgstr ""
 #~ "класс \"%s\" не может быть использован как часть данных другого класса"
+
 #~ msgid "internal error: bad code for 'setPrimitiveMethods': %s"
 #~ msgstr "внутренняя ошибка: плохой код для 'setPrimitiveMethods': %s"
+
 #~ msgid "Ambiguous method selection for \"%s\", target \"%s\""
 #~ msgstr "Неочевидный выбор метода для \"%s\", цель \"%s\""
+
 #~ msgid ""
 #~ "(the first of the signatures shown will be used)\n"
 #~ "%s"
 #~ msgstr ""
 #~ "(будет использован первый из показанных идентификаторов)\n"
 #~ "%s"
+
 #~ msgid ""
 #~ "Couldn't find methods table for \"%s\", package \"%s\" may be out of date"
 #~ msgstr ""
 #~ "Не могу найти таблицу методов для \"%s\", пакет \"%s\" может быть "
 #~ "устаревшим"
+
 #~ msgid "The class to be removed  (\""
 #~ msgstr "Данный класс будет удален  (\""
+
 #~ msgid "\") has defined subclasses that should also be removed: ("
 #~ msgstr "\") содержит определенные подклассы, которые должны быть удалены: ("
+
 #~ msgid ""
 #~ "'NextMethod' not defined because the current method is not a "
 #~ "'MethodDefinition' object"
 #~ msgstr ""
 #~ "'NextMethod' не определен, потому-что текущий метод не является объектом "
 #~ "'MethodDefinition'"
+
 #~ msgid "expected a list of signature objects, got \"%s\""
 #~ msgstr "ожидался список идентификаторов, получен \"%s\""
+
 #~ msgid ""
 #~ "New generic for \"%s\" does not agree with implicit generic from package "
 #~ "\"%s\"; a new generic will be assigned with package \"%s\""
@@ -1417,34 +1495,40 @@ msgstr[2] "нет определений классов \"%s\""
 #~ "Новая общая функция для \"%s\" не согласуется с подразумеваемой общей "
 #~ "функцией из пакета \"%s\"; новая общая функция будет присвоена пакету \"%s"
 #~ "\""
+
 #~ msgid "Function \"%s\" may not be used as a generic (implicitly prohibited)"
 #~ msgstr ""
 #~ "Функция \"%s\" не может быть использована в качестве общей (запрещается "
 #~ "безоговорочно)"
+
 #~ msgid ""
 #~ "Implicit generic exists for \"%s\", but will be overriden by explicit "
 #~ "call to setGeneric()"
 #~ msgstr ""
 #~ "Подразумеваемая общая функция для \"%s\" существует, но будет переписана "
 #~ "четким вызовом setGeneric()"
+
 #~ msgid ""
 #~ "Unable to find package environment for class \"%s\" to revise subclass "
 #~ "information"
 #~ msgstr ""
 #~ "Не могу найти окружение пакета для класса \"%s\" для пересмотра "
 #~ "информации подкласса"
+
 #~ msgid ""
 #~ "No generic function found for \"%s\"; no action taken in "
 #~ "removeMethodsObject"
 #~ msgstr ""
 #~ "Не найдено общей функции для \"%s\"; не предпринято никаких действий в "
 #~ "removeMethodsObject"
+
 #~ msgid ""
 #~ "the environment/package \"%s\" is locked; cannot remove methods data for "
 #~ "\"%s\""
 #~ msgstr ""
 #~ "окружение/пакет \"%s\" заблокировано; не могу удалить данные методов для "
 #~ "\"%s\""
+
 #~ msgid ""
 #~ "the methods object name for \"%s\" must include the name of the package "
 #~ "that contains the generic function, but no generic function of this name "
@@ -1452,39 +1536,50 @@ msgstr[2] "нет определений классов \"%s\""
 #~ msgstr ""
 #~ "имя объекта методов для \"%s\" должно включать имя пакета, содержащего "
 #~ "общую функцию, но общей функции с таким именем не найдено"
+
 #~ msgid ""
 #~ "no way to associate a generic function with an object of class \"%s\""
 #~ msgstr "нет способа ассоциировать общую функцию с объектом класса \"%s\""
+
 #~ msgid "Could not find generic function \"%s\" to initialize cached methods"
 #~ msgstr ""
 #~ "Не могу найти общую функцию \"%s\" для инициализации кэшированных методов"
+
 #~ msgid ""
 #~ "trying to change the argument list of %s with %d arguments to have "
 #~ "arguments (%s)"
 #~ msgstr ""
 #~ "пытаюсь изменить список аргументов %s с %d аргументами чтобы иметь "
 #~ "аргументы (%s)"
+
 #~ msgid ""
 #~ "get rid of variables in definition %s (%s); they conflict with the needed "
 #~ "change to argument names (%s)"
 #~ msgstr ""
 #~ "избавляюсь от переменных в определении %s (%s); они конфликтуют с "
 #~ "необходимым изменением в именах аргумента (%s)"
+
 #~ msgid "arguments in definition %s changed from (%s) to (%s)"
 #~ msgstr "аргументы в определении %s изменены с (%s) на (%s)"
+
 #~ msgid "no methods found for generic \"%s\""
 #~ msgstr "не найдено методов для общей функции \"%s\""
+
 #~ msgid "\"%s\" is not one of the basic functions"
 #~ msgstr "\"%s\" не является одной из основных функций"
+
 #~ msgid "cannot reset \"%s\", the definition is not a generic function object"
 #~ msgstr ""
 #~ "не могу сбросить \"%s\", определение не является объектом общей функции"
+
 #~ msgid "No nongeneric version of function \"%s\" exists to be restored"
 #~ msgstr ""
 #~ "Не обнаружено не общей версии функции \"%s\" для того чтобы ее "
 #~ "восстановить"
+
 #~ msgid "\"%s\" from \"%s\" is a non-generic function; no methods available"
 #~ msgstr "\"%s\" из \"%s\" не является общей функции; нет доступных методов"
+
 #~ msgid ""
 #~ "invalid 'fdef' for \"%s\" in 'getAllMethods'; expected either a "
 #~ "'genericFunction object' or a primitive function, got an object of class "
@@ -1493,12 +1588,15 @@ msgstr[2] "нет определений классов \"%s\""
 #~ "неверный 'fdef' для \"%s\" в 'getAllMethods'; ожидалась либо "
 #~ "'genericFunction object' либо элементарная функция, получен объект класса "
 #~ "\"%s\""
+
 #~ msgid "Methods list for generic \""
 #~ msgstr "Список методов для общей \""
+
 #~ msgid "\" not found"
 #~ msgstr "\" не найдено"
+
 #~ msgid ".UsingMethodsTables: 'onOff' is not TRUE or FALSE"
 #~ msgstr ".UsingMethodsTables: 'onOff' не является TRUE либо FALSE"
+
 #~ msgid "Package \"%s\" is not loaded"
 #~ msgstr "Пакет \"%s\" не загружен"
-

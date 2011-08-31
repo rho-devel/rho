@@ -17,7 +17,7 @@
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1995-1998  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1999-2010  The R Development Core Team.
+ *  Copyright (C) 1999-2011  The R Development Core Team.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -53,6 +53,9 @@ static R_len_t asVecSize(SEXP x)
     double d;
 
     if (isVectorAtomic(x) && LENGTH(x) >= 1) {
+	if (LENGTH(x) > 1)
+	    warning(_("%d lengths supplied: the first will be used"), 
+		    LENGTH(x));
 	switch (TYPEOF(x)) {
 	case LGLSXP:
 	    res = IntegerFromLogical(LOGICAL(x)[0], &warn);
@@ -415,23 +418,41 @@ SEXP attribute_hidden do_envirName(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 #ifdef Win32
 # include "rgui_UTF8.h"
+#endif
 static const char *trChar(SEXP x)
 {
-    char *p;
-    static char buf[106];
     int n = strlen(CHAR(x));
-    /* Long strings will be rare, and few per cat() call so we
-       can afford to be profligate here: translateChar is */
-    if (n < 100) p = buf; else p = R_alloc(n+7, 1);
-    if (WinUTF8out && getCharCE(x) == CE_UTF8) {
-	strcpy(p, UTF8in); strcat(p, CHAR(x)); strcat(p, UTF8out);
-	return p;
-    } else
-	return translateChar(x);
-}
-#else
-# define trChar(x) translateChar(x)
+    cetype_t ienc = getCharCE(x);
+
+    if (ienc == CE_BYTES) {
+	const char *p = CHAR(x), *q;
+	char *pp = R_alloc(4*n+1, 1), *qq = pp, buf[5];
+	for (q = p; *q; q++) {
+	    unsigned char k = static_cast<unsigned char>( *q);
+	    if (k >= 0x20 && k < 0x80) {
+		*qq++ = *q;
+	    } else {
+		snprintf(buf, 5, "\\x%02x", k);
+		for(int j = 0; j < 4; j++) *qq++ = buf[j];
+	    }
+	}
+	*qq = '\0';
+	return pp;
+    } else {
+#ifdef Win32
+	static char buf[106];
+	char *p;
+	/* Long strings will be rare, and few per cat() call so we
+	   can afford to be profligate here: translateChar is */
+	if (n < 100) p = buf; else p = R_alloc(n+7, 1);
+	if (WinUTF8out && ienc == CE_UTF8) {
+	    strcpy(p, UTF8in); strcat(p, CHAR(x)); strcat(p, UTF8out);
+	    return p;
+	} else
 #endif
+	    return translateChar(x);
+    }
+}
 
 static void cat_newline(SEXP labels, int *width, int lablen, int ntot)
 {
@@ -498,7 +519,7 @@ SEXP attribute_hidden do_cat(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
 
     /* Use standard printing defaults */
-    PrintDefaults(rho);
+    PrintDefaults();
 
     objs = CAR(args);
     args = CDR(args);
@@ -720,7 +741,7 @@ SEXP attribute_hidden do_makevector(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (len < 0) error(_("invalid '%s' argument"), "length");
     s = coerceVector(CAR(args), STRSXP);
     if (length(s) == 0)
-	error(_("vector: zero-length 'type' argument"));
+	error(_("vector: zero-length 'mode' argument"));
     mode = str2type(CHAR(STRING_ELT(s, 0))); /* ASCII */
     if (CXXRCONSTRUCT(int, mode) == -1 && streql(CHAR(STRING_ELT(s, 0)), "double"))
 	mode = REALSXP;
@@ -907,28 +928,19 @@ static SEXP expandDots(SEXP el, SEXP rho)
 }
 
 /* This function is used in do_switch to record the default value and
-   to detect multiple defaults, which will not be allowed as of 2.13.x */
-   
-static Rboolean dfltReported;
+   to detect multiple defaults, which are not allowed as of 2.13.x */
    
 static SEXP setDflt(SEXP arg, SEXP dflt) 
 {
     if (dflt) {
     	SEXP dflt1, dflt2;
+    	PROTECT(dflt1 = deparse1line(dflt, TRUE));
     	PROTECT(dflt2 = deparse1line(CAR(arg), TRUE));
-    	if (dfltReported) 
-    	    warning(_("additional switch default: '%s'"), CHAR(STRING_ELT(dflt2, 0)));
-    	else {
-    	    PROTECT(dflt1 = deparse1line(dflt, TRUE));
-    	    warning(_("duplicate switch defaults: '%s' and '%s'"), CHAR(STRING_ELT(dflt1, 0)),
-    	                                                           CHAR(STRING_ELT(dflt2, 0)));
-    	    UNPROTECT(1);
-    	}
-    	UNPROTECT(1); 
-    	dfltReported = TRUE;
-    	return(dflt);
-    } else
-        return(CAR(arg));
+    	error(_("duplicate switch defaults: '%s' and '%s'"), CHAR(STRING_ELT(dflt1, 0)),
+    	                                                   CHAR(STRING_ELT(dflt2, 0)));
+    	UNPROTECT(2); /* won't get here, but just for good form */
+    }
+    return(CAR(arg));
 }
 
 /* For switch, evaluate the first arg, if it is a character then try
@@ -967,7 +979,6 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	   there may be a ... argument */
 	PROTECT(w = expandDots(CDR(args), rho));
 	if (isString(x)) {
-	    dfltReported = FALSE;
 	    for (y = w; y != R_NilValue; y = CDR(y)) {
 		if (TAG(y) != R_NilValue) {
 		    if (pmatch(STRING_ELT(x, 0), TAG(y), CXXRTRUE /* exact */)) {
@@ -1006,7 +1017,10 @@ SEXP attribute_hidden do_switch(SEXP call, SEXP op, SEXP args, SEXP rho)
 	} else { /* Treat as numeric */
 	    argval = asInteger(x);
 	    if (argval != NA_INTEGER && argval >= 1 && argval <= length(w)) {
-		ans =  eval(CAR(nthcdr(w, argval - 1)), rho);
+		SEXP alt = CAR(nthcdr(w, argval - 1));
+		if (alt == R_MissingArg)
+		    error("empty alternative in numeric switch");
+		ans =  eval(alt, rho);
 		UNPROTECT(2);
 		return ans;
 	    }

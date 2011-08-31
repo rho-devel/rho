@@ -1,3 +1,8 @@
+% File src/library/tools/man/parseLatex.Rd
+% Part of the R package, http://www.R-project.org
+% Copyright 1995-2011 R Core Development Team
+% Distributed under GPL 2 or later
+
 \name{parseLatex}
 \alias{parseLatex}
 \alias{deparseLatex}
@@ -12,7 +17,8 @@ LaTeX object, and processes a number of different macros to convert them into
 the corresponding UTF-8 characters.
 }
 \usage{
-parseLatex(text, filename = deparse(substitute(text)), verbose = FALSE,
+parseLatex(text, filename = deparse(substitute(text)),
+           verbose = FALSE,
            verbatim = c("verbatim", "verbatim*", "Sinput", "Soutput"))
 deparseLatex(x, dropBraces=FALSE)
 latexToUtf8(x)

@@ -123,6 +123,11 @@
 #include <R_ext/RS.h>           /* for R_chk_* allocation */
 #include <ctype.h>
 
+/* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
+   so remap */
+
+#define yylloc yyllocL
+
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
 
@@ -551,9 +556,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   145,   145,   146,   147,   150,   151,   152,   153,   155,
-     156,   158,   159,   160,   161,   162,   163,   165,   165,   169,
-     171,   172
+       0,   150,   150,   151,   152,   155,   156,   157,   158,   160,
+     161,   163,   164,   165,   166,   167,   168,   170,   170,   174,
+     176,   177
 };
 #endif
 

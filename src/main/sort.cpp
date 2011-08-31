@@ -609,6 +609,7 @@ SEXP attribute_hidden do_psort(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     SETCAR(args, duplicate(CAR(args)));
     CAR(args)->clearAttributes();  /* remove all attributes */
+                                   /* and the object bit    */
     Psort0(CAR(args), 0, n - 1, l, k);
     return CAR(args);
 }

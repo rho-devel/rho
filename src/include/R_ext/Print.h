@@ -37,9 +37,15 @@
 #define R_EXT_PRINT_H_
 
 #ifdef  __cplusplus
-# include <cstdarg>
-# ifdef __SUNPRO_CC
+/* If the vprintf interface is defined at all in C++ it may only be
+   defined in namespace std. */
+/* CXXR comment 2011-07-28: ISO14882:2003 specifies that vprintf() be
+   included in cstdio. */
+# ifdef R_USE_C99_IN_CXX
+#  include <cstdarg>
+#  ifdef __SUNPRO_CC
 using _STLP_VENDOR_CSTD::va_list;
+#  endif
 # endif
 extern "C" {
 #else

@@ -48,7 +48,7 @@ Conj(z)
 
   \code{as.complex} attempts to coerce its argument to be of complex
   type: like \code{\link{as.vector}} it strips attributes including
-  names. All forms of \code{NA} and \code{NaN} are coerced to a complex
+  names.  All forms of \code{NA} and \code{NaN} are coerced to a complex
   \code{NA}, for which both the real and imaginary parts are \code{NA}.
 
   Note that \code{is.complex} and \code{is.numeric} are never both
@@ -68,7 +68,12 @@ Conj(z)
   group generic.
 
   In addition, the elementary trigonometric, logarithmic, exponential,
-  square root and hyperbolic functions are implemented for complex values.
+  square root and hyperbolic functions are implemented for complex
+  values.
+
+  Internally, complex numbers are stored as a pair of \link{double}
+  precision numbers, either or both of which can be \code{\link{NaN}} or
+  plus or minus infinity.
 }
 \section{S4 methods}{
   \code{as.complex} is primitive and can have S4 methods set.

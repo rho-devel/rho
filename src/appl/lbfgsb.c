@@ -340,7 +340,7 @@ void setulb(int n, int m, double *x, double *l, double *u, int *nbd,
     char csave[60];
 
     /* Local variables */
-    int lsnd, l1, l2, l3, ld, lr, lt;
+    int lsnd, ld, lr, lt;
     int lz, lwa, lwn, lss, lws, lwt, lsy, lwy;
 
     /* make sure csave is initialized */
@@ -369,9 +369,6 @@ void setulb(int n, int m, double *x, double *l, double *u, int *nbd,
 	isave[15] = isave[14] + n;
 	isave[16] = isave[15] + n;
     }
-    l1 = isave[1];
-    l2 = isave[2];
-    l3 = isave[3];
     lws = isave[4];
     lwy = isave[5];
     lsy = isave[6];
@@ -591,10 +588,8 @@ static void mainlb(int n, int m, double *x,
     int nact;
     double ddum;
     int info;
-    double time;
     int nfgv, ifun, iter, nint;
     char word[4]; /* allow for terminator */
-    double time1, time2;
     int i, iback, k = 0; /* -Wall */
     double gdold;
     int nfree;
@@ -643,7 +638,6 @@ static void mainlb(int n, int m, double *x,
 
     /* Function Body */
     if (strncmp(task, "START", 5) == 0) {
-	timer(&time1);
 /*	  Generate the current machine precision. */
 #ifdef NOT_USING_DBL_EPSILON
 	epsmch = dpmeps();
@@ -742,7 +736,6 @@ static void mainlb(int n, int m, double *x,
 	cachyt = dsave[7];
 	sbtime = dsave[8];
 	lnscht = dsave[9];
-	time1 = dsave[10];
 	gd = dsave[11];
 	stpmx = dsave[12];
 	sbgnrm = dsave[13];
@@ -1047,8 +1040,6 @@ L888:
 /* -------------------- the end of the loop ----------------------------- */
     goto L222;
 L999:
-    timer(&time2);
-    time = time2 - time1;
 L1000:
 /*     Save local variables. */
     lsave[1] = prjctd;
@@ -1082,7 +1073,6 @@ L1000:
     dsave[7] = cachyt;
     dsave[8] = sbtime;
     dsave[9] = lnscht;
-    dsave[10] = time1;
     dsave[11] = gd;
     dsave[12] = stpmx;
     dsave[13] = sbgnrm;

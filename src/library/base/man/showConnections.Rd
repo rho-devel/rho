@@ -1,6 +1,6 @@
 % File src/library/base/man/showConnections.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{showConnections}
@@ -14,7 +14,7 @@
 \alias{isatty}
 \title{Display Connections}
 \description{
-  Display aspects of connections.
+  Display aspects of \link{connections}.
 }
 \usage{
 showConnections(all = FALSE)
@@ -99,8 +99,8 @@ showConnections()
 #  class     description      mode text   isopen   can read can write
 #3 "letters" "textConnection" "r"  "text" "opened" "yes"    "no"     
 \dontrun{close(getConnection(3))}
-\dontshow{r <- as.numeric(row.names(showConnections()))
-close(getConnection(r))}
+\dontshow{try({r <- as.numeric(row.names(showConnections()))
+close(getConnection(r))})}
 showConnections()
 
 c(isatty(stdin()), isatty(stdout()), isatty(stderr()))

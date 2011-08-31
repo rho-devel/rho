@@ -1,6 +1,6 @@
 % File src/library/base/man/seek.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{seek}
@@ -22,7 +22,7 @@ isSeekable(con)
 truncate(con, \dots)
 }
 \arguments{
-  \item{con}{a connection.}
+  \item{con}{a \link{connection}.}
   \item{where}{numeric.  A file position (relative to the origin
     specified by \code{origin}), or \code{NA}.}
   \item{rw}{character.  Empty or \code{"read"} or \code{"write"},
@@ -35,11 +35,9 @@ truncate(con, \dots)
   \code{seek} with \code{where = NA} returns the current byte offset
   of a connection (from the beginning), and with a non-missing \code{where}
   argument the connection is re-positioned (if possible) to the
-  specified position. \code{isSeekable} returns whether the connection
+  specified position.  \code{isSeekable} returns whether the connection
   in principle supports \code{seek}: currently only (possibly
-  gz-compressed) file connections do.  \code{gzfile} connections do not
-  support \code{origin = "end"}; the file position they use is that
-  of the uncompressed file.
+  gz-compressed) file connections do.
 
   \code{where} is stored as a real but should represent an integer:
   non-integer values are likely to be truncated.  Note that the possible
@@ -61,7 +59,13 @@ truncate(con, \dots)
   the append modes.  (The reported write position for a file opened in
   an append mode will typically be unreliable until the file has been
   written to.)
-
+  
+  \code{gzfile} connections support \code{seek} with a number of
+  limitations, using the file position of the uncompressed file.
+  They do not support \code{origin = "end"}.  When writing, seeking is
+  only possible forwards: when reading seeking backwards is supported by
+  rewinding the file and re-reading from its start.
+  
   If \code{seek} is called with a non-\code{NA} value of \code{where},
   any pushback on a text-mode connection is discarded.
 
@@ -69,6 +73,9 @@ truncate(con, \dots)
   position.  It works only for \code{file} connections, and is not
   implemented on all platforms: on others (including Windows) it will
   not work for large (> 2Gb) files.
+  
+  None of these should be expected to work on text-mode connections with
+  re-encoding selected.
 }
 \section{Warning}{
   Use of \code{seek} on Windows is discouraged.  We have found so many

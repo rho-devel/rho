@@ -1,6 +1,6 @@
 % File src/library/base/man/as.POSIXlt.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{as.POSIX*}
@@ -66,13 +66,13 @@ as.POSIXlt(x, tz = "", \dots)
   but can be converted via a format specification by
   \code{\link{strptime}}.)  Fractional seconds are allowed.
   Alternatively, \code{format} can be specified for character vectors or
-  factors: if it is not specified and no standard format works for the
-  first non-\code{NA} input an error is thrown.
+  factors: if it is not specified and no standard format works for
+  all non-\code{NA} inputs an error is thrown.
   
   If \code{format} is specified, remember that some of the format
   specifications are locale-specific, and you may need to set the
   \code{LC_TIME} category appropriately \emph{via}
-  \code{\link{Sys.setlocale}}.  This most often affecs the use of
+  \code{\link{Sys.setlocale}}.  This most often affects the use of
   \code{\%b}, \code{\%B} (month names) and \code{\%p} (AM/PM).
   
   Logical \code{NA}s can be converted to either of the classes, but no
@@ -83,12 +83,29 @@ as.POSIXlt(x, tz = "", \dots)
 
   If you are given a numeric time as the number of seconds since an
   epoch, see the examples.
+
+  Character input is first converted to class \code{"POSIXlt"} by
+  \code{\link{strptime}}: numeric input is first converted to
+  \code{"POSIXct"}.  Any conversion that needs to go between the two
+  date-time classes requires a timezone: conversion from
+  \code{"POSIXlt"} to \code{"POSIXct"} will validate times in the
+  selected timezone.  One issue is what happens at transitions
+  to and from DST, for example in the UK
+\preformatted{as.POSIXct(strptime('2011-03-27 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
+  as.POSIXct(strptime('2010-10-31 01:30:00', '\%Y-\%m-\%d \%H:\%M:\%S'))
+}
+  are respectively invalid (the clocks went forward at 1:00 GMT to 2:00
+  BST) and ambiguous (the clocks went back at 2:00 BST to 1:00 GMT).  What
+  happens in such cases is OS-specific: one should expect the first to
+  be \code{NA}, but the second could be interpreted as either BST or
+  GMT (and common OSes give both possible values).
 }
 
 \value{
   \code{as.POSIXct} and \code{as.POSIXlt} return an object of the
   appropriate class.  If \code{tz} was specified, \code{as.POSIXlt}
-  will give an appropriate \code{"tzone"} attribute.
+  will give an appropriate \code{"tzone"} attribute.  Date-times known
+  to be invalid will be returned as \code{NA}.
 }
 \note{
   If you want to extract specific aspects of a time (such as the day of
@@ -103,8 +120,10 @@ as.POSIXlt(x, tz = "", \dots)
 \seealso{
   \link{DateTimeClasses} for details of the classes;
   \code{\link{strptime}} for conversion to and from character
-  representations. \code{\link{Sys.timezone}} for details of the
-  (system-specific) naming of time zones.
+  representations.
+  
+  \code{\link{Sys.timezone}} for details of the (system-specific) naming
+  of time zones.
   
   \link{locales} for locale-specific aspects.  
 }
@@ -116,6 +135,7 @@ floor(unclass(z)/86400)       # the number of days since 1970-01-01 (UTC)
 unlist(unclass(z))            # a list shown as a named vector
 
 ## suppose we have a time in seconds since 1960-01-01 00:00:00 GMT
+## (the origin used by SAS)
 z <- 1472562988
 # ways to convert this
 as.POSIXct(z, origin="1960-01-01")                # local

@@ -185,7 +185,7 @@ glm.fit <-
         residuals <- (y - mu)/mu.eta(eta)
         good <- rep(TRUE, length(residuals))
         boundary <- conv <- TRUE
-        coef <- numeric(0L)
+        coef <- numeric()
         iter <- 0L
     } else {
         coefold <- NULL
@@ -197,7 +197,7 @@ glm.fit <-
                          domain = NA)
                 else {
                     coefold <- start
-                    offset + as.vector(if (NCOL(x) == 1) x * start else x %*% start)
+                    offset + as.vector(if (NCOL(x) == 1L) x * start else x %*% start)
                 }
             else family$linkfun(mustart)
         mu <- linkinv(eta)

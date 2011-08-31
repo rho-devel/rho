@@ -118,6 +118,7 @@ void usage(void)
     fprintf(stderr, "  --restore           Do restore previously saved objects at startup\n");
     fprintf(stderr, "  --vanilla           Combine --no-save, --no-restore, --no-site-file\n");
     fprintf(stderr, "                        --no-init-file and --no-environ\n");
+    fprintf(stderr, "\n'file' should not contain spaces nor shell metacharacters\n");
 }
 
 
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
 
     p = getenv("RHOME");
 #ifdef WIN32
-    if(p && strlen(p))
+    if(p && *p)
 	snprintf(cmd, PATH_MAX+1, "%s\\%s\\Rterm.exe",  p, BINDIR);
     else {
 	char rhome[MAX_PATH];
@@ -151,8 +152,8 @@ int main(int argc, char *argv[])
 	snprintf(cmd, PATH_MAX+1, "%s\\Rterm.exe",  rhome);
     }
 #else
-    if(!(p && strlen(p))) p = rhome;
-    /* we cannot assume snprintf here */
+    if(!(p && *p)) p = rhome;
+    /* avoid snprintf here */
     if(strlen(p) + 6 > PATH_MAX) {
 	fprintf(stderr, "impossibly long path for RHOME\n");
 	exit(1);

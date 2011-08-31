@@ -18,12 +18,12 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
 \arguments{
   \item{d}{a distance structure such as that returned by \code{dist}
     or a full symmetric matrix containing the dissimilarities.}
-  \item{k}{the dimension of the space which the data are to be
+  \item{k}{the maximum dimension of the space which the data are to be
     represented in; must be in \eqn{\{1, 2, \ldots, n-1\}}{{1, 2, \dots, n-1}}.}
   \item{eig}{indicates whether eigenvalues should be returned.}
   \item{add}{logical indicating if an additive constant \eqn{c*} should
     be computed, and added to the non-diagonal dissimilarities such that
-    all \eqn{n-1} eigenvalues are non-negative.}
+    the modified dissimilarities are Euclidean.}
   \item{x.ret}{indicates whether the doubly centred symmetric distance
     matrix should be returned.}
 }
@@ -34,24 +34,26 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
   what ecologists call \sQuote{ordination}.)
 
   A set of Euclidean distances on \eqn{n} points can be represented
-  exactly in at most \eqn{n-1} dimensions.  However, the approximation
-  given by classical scaling for non-Eucliean distances can be poor for
-  large \code{k}, and warnings about negative eigenvalues should be
-  heeded.
+  exactly in at most \eqn{n - 1} dimensions.  \code{cmdscale} follows
+  the analysis of Mardia (1978), and returns the best-fitting
+  \eqn{k}-dimensional representation, where \eqn{k} may be less than the
+  argument \code{k}.
   
   The representation is only determined up to location (\code{cmdscale}
   takes the column means of the configuration to be at the origin),
   rotations and reflections.  The configuration returned is given in
   principal-component axes, so the reflection chosen may differ between
   \R platforms (see \code{\link{prcomp}}).
-
-  When \code{add = TRUE}, an additive constant \eqn{c*} is computed, and
-  the dissimilarities \eqn{d_{ij} + c*}{d[i,j] + c*} are used instead of
-  the original \eqn{d_{ij}}{d[i,j]}'s.
-
-  Whereas S (Becker \emph{et al.}, 1988) computes this constant using
-  an approximation suggested by Torgerson, \R uses the analytical
-  solution of Cailliez (1983), see also Cox and Cox (2001).
+  
+  When \code{add = TRUE}, a minimal additive constant \eqn{c*} is
+  computed such that the the dissimilarities \eqn{d_{ij} + c*}{d[i,j] +
+  c*} are Euclidean and hence can be represented in \code{n - 1}
+  dimensions.  Whereas S (Becker \emph{et al.}, 1988) computes this
+  constant using an approximation suggested by Torgerson, \R uses the
+  analytical solution of Cailliez (1983), see also Cox and Cox (2001).
+  Note that because of numerical errors the computed eigenvalues need
+  not all be non-negative, and even theoretically the representation
+  could be in fewer than \code{n - 1} dimensions.
 }
 \value{
   If \code{eig = FALSE}, \code{add = FALSE} and \code{x.ret = FALSE}
@@ -59,13 +61,13 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
   coordinates of the points chosen to represent the dissimilarities.
 
   Otherwise, a list containing the following components.
-  \item{points}{a matrix with \code{k} columns whose rows give the
+  \item{points}{a matrix with up to \code{k} columns whose rows give the
     coordinates of the points chosen to represent the dissimilarities.}
   \item{eig}{the \eqn{n} eigenvalues computed during the scaling process if
     \code{eig} is true.  \strong{NB}: versions of \R before 2.12.1
-    returned only \code{k} but were documented to return \eqn{n-1}.}
+    returned only \code{k} but were documented to return \eqn{n - 1}.}
   \item{x}{the doubly centered distance matrix if \code{x.ret} is true.}
-  \item{ac}{the additive constant \eqn{c*}, \code{0} if \code{add=FALSE}.}
+  \item{ac}{the additive constant \eqn{c*}, \code{0} if \code{add = FALSE}.}
   \item{GOF}{a numeric vector of length 2, equal to say
     \eqn{(g_1,g_2)}{(g.1,g.2)}, where
     \eqn{g_i = (\sum_{j=1}^k \lambda_j)/ (\sum_{j=1}^n T_i(\lambda_j))}{g.i = (sum{j=1..k} \lambda[j]) / (sum{j=1..n} T.i(\lambda[j]))},
@@ -97,6 +99,11 @@ cmdscale(d, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE)
   \emph{Multivariate Analysis. Part I. Distributions, Ordination and
   Inference.}  London: Edward Arnold. (Especially pp. 108--111.)
 
+  Mardia, K.V. (1978)
+  Some properties of classical multidimensional scaling.
+  \emph{Communications on Statistics -- Theory and Methods}, \bold{A7},
+  1233--41.
+  
   Mardia, K. V., Kent, J. T. and Bibby, J. M. (1979).  Chapter 14 of
   \emph{Multivariate Analysis}, London: Academic Press.
 

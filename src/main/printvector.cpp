@@ -47,6 +47,7 @@
 #include <config.h>
 #endif
 
+#include <cstdarg>
 #include "Print.h"
 
 #include <numeric>

@@ -53,8 +53,12 @@ function(topic, package = NULL, lib.loc = NULL,
     help_type <- if(!length(help_type)) "text"
     else match.arg(tolower(help_type),
                    c("text", "html", "postscript", "ps", "pdf"))
+    if (help_type %in% c("postscript", "ps"))
+        warning("Postscript offline help is deprecated",
+                call. = FALSE, immediate. = TRUE)
 
-    paths <- index.search(topic, .find.package(package, lib.loc, verbose = verbose))
+    paths <- index.search(topic,
+                          find.package(package, lib.loc, verbose = verbose))
     tried_all_packages <- FALSE
     if(!length(paths)
        && is.logical(try.all.packages) && !is.na(try.all.packages)
@@ -159,7 +163,7 @@ function(x, ...)
                 if(type == "html" || type == "latex")
                     tp <- tools::file_path_sans_ext(tp)
                 for (i in seq_along(fp)) {
-                    tmp <- try(.readRDS(fp[i]))
+                    tmp <- try(readRDS(fp[i]))
                     titles[i] <- if(inherits(tmp, "try-error"))
                         "unknown title" else
                     tmp[tools::file_path_sans_ext(tmp$File) == tp[i], "Title"]

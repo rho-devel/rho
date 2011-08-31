@@ -1,26 +1,46 @@
+#  File src/library/grDevices/R/raster.R
+#  Part of the R package, http://www.R-project.org
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  A copy of the GNU General Public License is available at
+#  http://www.r-project.org/Licenses/
 
-# A raster object is a vector of colours
+
+# A raster object is a character vector
+# of colour strings
 # plus a number of rows and columns
 # The vector gives colours in ROW ORDER,
 # starting from the TOP row
+#
+# due to the inherent inefficiency of
+# raster implementation the graphics
+# routines also support "nativeRaster"
+# which is the native R representation
+# (integer matrix) of colors in the same
+# order as raster, suitable for practical
+# use with images
 
-is.raster <- function(x) {
+is.raster <- function(x)
     inherits(x, "raster")
-}
 
-as.raster <- function(x, ...) {
+as.raster <- function(x, ...)
     UseMethod("as.raster")
-}
 
-as.raster.raster<- function(x, ...) {
-    x
-}
+as.raster.raster<- function(x, ...)  x
 
-as.raster.logical <- function(x, max=1, ...) {
+as.raster.logical <- function(x, max=1, ...)
     as.raster(matrix(x, ...), max)
-}
 
-as.raster.numeric <- as.raster.logical 
+as.raster.numeric <- as.raster.logical
 
 as.raster.character <- as.raster.logical
 
@@ -30,9 +50,13 @@ as.raster.matrix <- function(x, max=1, ...) {
         r <- t(x)
     } else if (is.numeric(x) || is.logical(x)) {
         # Assume greyscale or b&w values
-        # Use rgb() to allow for different 'max' value
+        # We have to use rgb() indirectly as it
+        # doesn't hande NAs correctly
         tx <- t(x)
-        r <- rgb(tx, tx, tx, max=max)
+        tx.na <- which(is.na(tx))
+        if (length(tx.na)) tx[tx.na] <- 0
+        r <- rgb(tx, tx, tx, maxColorValue = max)
+        if (length(tx.na)) r[tx.na] <- NA
     } else {
         stop("A raster matrix must be character, or numeric, or logical")
     }
@@ -49,9 +73,11 @@ as.raster.array <- function(x, max=1, ...) {
         stop("A raster array must have exactly 3 dimensions")
     }
     if (dim(x)[3] == 3) {
-        r <- rgb(t(x[,,1]), t(x[,,2]), t(x[,,3]), max=max)
+        r <- rgb(t(x[,,1]), t(x[,,2]), t(x[,,3]),
+                 maxColorValue = max)
     } else if (dim(x)[3] == 4) {
-        r <- rgb(t(x[,,1]), t(x[,,2]), t(x[,,3]), t(x[,,4]), max=max)
+        r <- rgb(t(x[,,1]), t(x[,,2]), t(x[,,3]), t(x[,,4]),
+                 maxColorValue = max)
     } else {
         stop("A raster array must have exactly 3 or 4 planes")
     }
@@ -79,40 +105,36 @@ print.raster <- function(x, ...) {
 # Subsetting methods
 # Non-standard because raster is ROW-wise
 # Try to piggy-back on existing methods as much as possible
-# IGNORE 'drop'
-"[.raster" <- function(x, i, j, ...) {
+# IGNORE 'drop' -- i.e. use "drop = FALSE" -- in all cases, but  m[i]
+`[.raster` <- function(x, i, j, drop, ...) {
+    mdrop <- missing(drop)
+    nA <- nargs() - (!mdrop)
+    if(!mdrop && !identical(drop,FALSE))
+        warning("'drop' is always implicitly FALSE in '[.raster'")
     m <- as.matrix(x)
-    if (missing(i) && missing(j))
-        stop('No valid indices')
-    if (missing(i)) {
-        subset <- m[1:nrow(m), j, drop=FALSE]        
-    } else if (missing(j)) {
-        if (is.matrix(i)) {
-            subset <- m[i, drop=FALSE]
-        } else {
-            subset <- m[i, 1:ncol(m), drop=FALSE]
-        }
-    } else {
-        subset <- m[i, j, drop=FALSE]
-    }
-    as.raster(subset)
+    m <-
+	if (missing(i)) {
+	    if(missing(j)) m[ , drop=FALSE] else m[, j, drop=FALSE]
+	} else if (missing(j)) {
+	    if (nA == 2) ## is.matrix(i) || is.logical(i))
+		return(m[i]) # behave as a matrix and directly return character vector
+	    else if(nA == 3) m[i, , drop=FALSE]
+	    else stop("invalid raster subsetting")
+	} else m[i, j, drop=FALSE]
+    as.raster(m)
 }
 
-"[<-.raster" <- function(x, i, j, value) {
+`[<-.raster` <- function(x, i, j, value) {
+    nA <- nargs()
     m <- as.matrix(x)
-    if (missing(i) && missing(j))
-        stop('No valid indices')
     if (missing(i)) {
-        m[1:nrow(m), j] <- value
+	if(missing(j)) m[] <- value else m[, j] <- value
     } else if (missing(j)) {
-        if (is.matrix(i)) {
-            m[i] <- value
-        } else {
-            m[i, 1:ncol(m)] <- value
-        }
-    } else {
-        m[i, j] <- value
-    }
+	if (nA == 3) ## typically is.matrix(i) || is.logical(i))
+	    m[i] <- value
+	else if(nA == 4) m[i, ] <- value
+	else stop("invalid raster subassignment")
+    } else m[i, j] <- value
     as.raster(m)
 }
 
@@ -123,7 +145,7 @@ Ops.raster <- function(e1, e2) {
         if (is.raster(e1))
             e1 <- as.matrix(e1)
         if (is.raster(e2))
-            e2 <- as.matrix(e2)        
+            e2 <- as.matrix(e2)
         # The result is a logical MATRIX
         get(.Generic)(e1, e2)
     } else {
