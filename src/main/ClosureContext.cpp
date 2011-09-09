@@ -21,6 +21,7 @@
 
 #include "CXXR/ClosureContext.hpp"
 
+#include "CXXR/ByteCode.hpp"
 #include "CXXR/Environment.h"
 
 using namespace std;

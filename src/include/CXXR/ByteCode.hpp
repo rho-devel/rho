@@ -42,6 +42,24 @@
 #define BYTECODE_HPP
 
 #include "CXXR/ConsCell.h"
+// Just to pick up define of BYTECODE:
+#include "CXXR/Evaluator.h"
+
+extern "C" {
+#ifdef BYTECODE
+#define R_BCNODESTACKSIZE 10000
+    extern SEXP* R_BCNodeStackBase;
+    extern SEXP* R_BCNodeStackTop;
+    extern SEXP* R_BCNodeStackEnd;
+#ifdef BC_INT_STACK
+#define R_BCINTSTACKSIZE 10000
+    typedef union { void *p; int i; } IStackval;
+    extern IStackval* R_BCIntStackBase;
+    extern IStackval* R_BCIntStackTop;
+    extern IStackval* R_BCIntStackEnd;
+#endif
+#endif
+}
 
 namespace CXXR {
     /** @brief Stub for future ByteCode class. 

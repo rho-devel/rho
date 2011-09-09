@@ -38,10 +38,22 @@
  */
 
 #include "CXXR/ByteCode.hpp"
+
 #include "CXXR/errors.h"
 
 using namespace std;
 using namespace CXXR;
+
+#ifdef BYTECODE
+RObject** R_BCNodeStackBase;
+RObject** R_BCNodeStackTop;
+RObject** R_BCNodeStackEnd;
+#ifdef BC_INT_STACK
+IStackval* R_BCIntStackBase;
+IStackval* R_BCIntStackTop;
+IStackval* R_BCIntStackEnd;
+#endif
+#endif
 
 // ByteCode::evaluate() is defined in eval.cpp unless:
 #ifndef BYTECODE

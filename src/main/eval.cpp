@@ -1943,6 +1943,9 @@ static SEXP R_Subassign2Sym = NULL;
 static SEXP R_TrueValue = NULL;
 static SEXP R_FalseValue = NULL;
 
+// In CXXR for the time being:
+#define NO_THREADED_CODE
+
 #if defined(__GNUC__) && ! defined(BC_PROFILING) && (! defined(NO_THREADED_CODE))
 # define THREADED_CODE
 #endif
@@ -3637,7 +3640,10 @@ static SEXP bcEval(SEXP body, SEXP rho)
     }
     OP(RETURNJMP, 0): {
       value = BCNPOP();
-      findcontext(CTXT_BROWSER | CTXT_FUNCTION, rho, value);
+      Environment* envir = SEXP_downcast<Environment*>(rho);
+      if (!envir->canReturn())
+	  Rf_error(_("no function to return from, jumping to top level"));
+      throw ReturnException(envir, value);
     }
     LASTOP;
   }

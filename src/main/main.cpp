@@ -193,6 +193,11 @@ attribute_hidden unsigned int max_contour_segments = 25000;
 attribute_hidden Rboolean known_to_be_latin1 = FALSE;
 attribute_hidden Rboolean known_to_be_utf8 = FALSE;
 
+#ifdef BYTECODE
+attribute_hidden int R_jit_enabled = 0;
+attribute_hidden int R_compile_pkgs = 0;
+#endif
+
 // Data declared LibExtern in Rembedded.h :
 
 //LibExport int R_DirtyImage;

@@ -35,17 +35,6 @@ Rboolean R_Visible = TRUE;
 int R_interrupts_pending = 0;
 Rboolean R_interrupts_suspended = FALSE;
 
-#ifdef BYTECODE
-RObject** R_BCNodeStackBase;
-RObject** R_BCNodeStackTop;
-RObject** R_BCNodeStackEnd;
-#ifdef BC_INT_STACK
-IStackval* R_BCIntStackBase;
-IStackval* R_BCIntStackTop;
-IStackval* R_BCIntStackEnd;
-#endif
-#endif
-
 unsigned int Evaluator::s_depth = 0;
 unsigned int Evaluator::s_depth_threshold = 5000;
 unsigned int Evaluator::s_depth_limit = 5000;

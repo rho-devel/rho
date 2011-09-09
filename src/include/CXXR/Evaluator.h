@@ -44,7 +44,8 @@
 #include "CXXR/Environment.h"
 #include "CXXR/PairList.h"
 
-/* Maybe #define BYTECODE here */
+// Move this to ByteCode.hpp in due course:
+#define BYTECODE
 
 #ifdef __cplusplus
 #include <utility>
@@ -73,20 +74,6 @@ extern "C" {
     /** @brief Are interrupts currently suspended?
      */
     extern Rboolean R_interrupts_suspended;
-
-#ifdef BYTECODE
-#define R_BCNODESTACKSIZE 10000
-    extern SEXP* R_BCNodeStackBase;
-    extern SEXP* R_BCNodeStackTop;
-    extern SEXP* R_BCNodeStackEnd;
-#ifdef BC_INT_STACK
-#define R_BCINTSTACKSIZE 10000
-    typedef union { void *p; int i; } IStackval;
-    extern IStackval* R_BCIntStackBase;
-    extern IStackval* R_BCIntStackTop;
-    extern IStackval* R_BCIntStackEnd;
-#endif
-#endif
 
     /** @brief Is a Symbol missing within an Environment?
      *
