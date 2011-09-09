@@ -71,10 +71,6 @@
 using namespace std;
 using namespace CXXR;
 
-#ifdef BYTECODE
-static SEXP bcEval(SEXP, SEXP);
-#endif
-
 /*#define BC_PROFILING*/
 #ifdef BC_PROFILING
 static Rboolean bc_profiling = FALSE;
@@ -434,15 +430,16 @@ static SEXP R_compileExpr(SEXP expr, SEXP rho)
 static SEXP R_compileAndExecute(SEXP call, SEXP rho)
 {
     int old_enabled = R_jit_enabled;
-    SEXP code, val;
+    ByteCode* code;
+    SEXP val;
 
     R_jit_enabled = 0;
     PROTECT(call);
     PROTECT(rho);
-    PROTECT(code = R_compileExpr(call, rho));
+    PROTECT(code = SEXP_downcast<ByteCode*>(R_compileExpr(call, rho)));
     R_jit_enabled = old_enabled;
-
-    val = bcEval(code, rho);
+    Environment* env = SEXP_downcast<Environment*>(rho);
+    val = code->evaluate(env);
     UNPROTECT(3);
     return val;
 }
@@ -2613,18 +2610,17 @@ static int opcode_counts[OPCOUNT];
   } \
 } while (0)
 
-static void loopWithContext(volatile SEXP code, volatile SEXP rho)
+static void loopWithContext(ByteCode* code, Environment* rho)
 {
-    Environment* env = SEXP_downcast<Environment*>(rho);
-    Environment::LoopScope loopscope(env);
+    Environment::LoopScope loopscope(rho);
     bool redo;
     do {
 	redo = false;
 	try {
-	    bcEval(code, rho);
+	    code->evaluate(rho);
 	}
 	catch (LoopException& lx) {
-	    if (lx.environment() != env)
+	    if (lx.environment() != rho)
 		throw;
 	    redo = lx.next();
 	}
@@ -2787,8 +2783,9 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 	}
 }
 
-static SEXP bcEval(SEXP body, SEXP rho)
+RObject* ByteCode::evaluate(Environment* rho)
 {
+  SEXP body = this;
   SEXP value, constants;
   BCODE *pc, *codebase;
   int ftype = 0;
@@ -2858,20 +2855,18 @@ static SEXP bcEval(SEXP body, SEXP rho)
     OP(PRINTVALUE, 0): Rf_PrintValue(BCNPOP()); NEXT();
     OP(STARTLOOPCNTXT, 1):
 	{
-	    SEXP code = VECTOR_ELT(constants, GETOP());
+	    ByteCode* code = SEXP_downcast<ByteCode*>(VECTOR_ELT(constants, GETOP()));
 	    loopWithContext(code, rho);
 	    NEXT();
 	}
     OP(ENDLOOPCNTXT, 0): value = R_NilValue; goto done;
     OP(DOLOOPNEXT, 0):
 	{
-	    Environment* env = SEXP_downcast<Environment*>(rho);
-	    throw LoopException(env, true);
+	    throw LoopException(rho, true);
 	}
     OP(DOLOOPBREAK, 0):
 	{
-	    Environment* env = SEXP_downcast<Environment*>(rho);
-	    throw LoopException(env, false);
+	    throw LoopException(rho, false);
 	}
     OP(STARTFOR, 3):
       {
@@ -3105,10 +3100,10 @@ static SEXP bcEval(SEXP body, SEXP rho)
       }
     OP(MAKEPROM, 1):
       {
-	SEXP code = VECTOR_ELT(constants, GETOP());
+	ByteCode* code = SEXP_downcast<ByteCode*>(VECTOR_ELT(constants, GETOP()));
 	if (ftype != SPECIALSXP) {
 	  if (ftype == BUILTINSXP)
-	    value = bcEval(code, rho);
+	    code->evaluate(rho);
 	  else
 	    value = Rf_mkPROMISE(code, rho);
 	  PUSHCALLARG(value);
@@ -3182,8 +3177,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	    Closure* closure = SEXP_downcast<Closure*>(fun);
 	    Expression* callx = SEXP_downcast<Expression*>(call);
 	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	    Environment* callenv = SEXP_downcast<Environment*>(rho);
-	    value = closure->invoke(callenv, &arglist, callx);
+	    value = closure->invoke(rho, &arglist, callx);
 	    break;
 	}
 	default: Rf_error(_("bad function"));
@@ -3532,8 +3526,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      Closure* closure = SEXP_downcast<Closure*>(fun);
 	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      Environment* callenv = SEXP_downcast<Environment*>(rho);
-	      value = closure->invoke(callenv, &arglist, callx);
+	      value = closure->invoke(rho, &arglist, callx);
 	  }    
 	  break;
 	default: Rf_error(_("bad function"));
@@ -3579,8 +3572,7 @@ static SEXP bcEval(SEXP body, SEXP rho)
 	      Closure* closure = SEXP_downcast<Closure*>(fun);
 	      Expression* callx = SEXP_downcast<Expression*>(call);
 	      ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::PROMISED);
-	      Environment* callenv = SEXP_downcast<Environment*>(rho);
-	      value = closure->invoke(callenv, &arglist, callx);
+	      value = closure->invoke(rho, &arglist, callx);
 	  }
 	  break;
 	default: Rf_error(_("bad function"));
@@ -3640,10 +3632,9 @@ static SEXP bcEval(SEXP body, SEXP rho)
     }
     OP(RETURNJMP, 0): {
       value = BCNPOP();
-      Environment* envir = SEXP_downcast<Environment*>(rho);
-      if (!envir->canReturn())
+      if (!rho->canReturn())
 	  Rf_error(_("no function to return from, jumping to top level"));
-      throw ReturnException(envir, value);
+      throw ReturnException(rho, value);
     }
     LASTOP;
   }
@@ -3657,11 +3648,6 @@ static SEXP bcEval(SEXP body, SEXP rho)
   current_opcode = old_current_opcode;
 #endif
   return value;
-}
-
-RObject* ByteCode::evaluate(Environment* env)
-{
-    return bcEval(this, env);
 }
 
 #ifdef THREADED_CODE
