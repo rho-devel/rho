@@ -21,7 +21,6 @@
 
 #include "CXXR/ClosureContext.hpp"
 
-#include "CXXR/ByteCode.hpp"
 #include "CXXR/Environment.h"
 
 using namespace std;
@@ -40,22 +39,10 @@ ClosureContext::ClosureContext(const Expression* the_call, Environment* call_env
       m_working_env(working_env), m_promise_args(promise_args)
 {
     setType(CLOSURE);
-#ifdef BYTECODE
-    m_nodestack = R_BCNodeStackTop;
-#ifdef BC_INT_STACK
-    m_intstack = R_BCIntStackTop;
-#endif
-#endif
 }
 
 ClosureContext::~ClosureContext()
 {
-#ifdef BYTECODE
-    R_BCNodeStackTop = m_nodestack;
-# ifdef BC_INT_STACK
-    R_BCIntStackTop = m_intstack;
-# endif
-#endif
     R_RestartStack = m_restartstack;
     R_HandlerStack = m_handlerstack;
     if (m_onexit) {

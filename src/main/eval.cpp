@@ -2785,6 +2785,7 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 
 RObject* ByteCode::evaluate(Environment* rho)
 {
+  Scope scope;
   SEXP body = this;
   SEXP value, constants;
   BCODE *pc, *codebase;

@@ -166,12 +166,6 @@ namespace CXXR {
 	Rboolean m_interrupts_suspended;
 	GCStackRoot<> m_handlerstack;
 	GCStackRoot<> m_restartstack;
-#ifdef BYTECODE
-	SEXP *m_nodestack;
-#ifdef BC_INT_STACK
-	IStackval *m_intstack;
-#endif
-#endif
 	GCStackRoot<Environment> m_working_env;
 	GCStackRoot<const PairList> m_promise_args;
 	GCStackRoot<> m_onexit;

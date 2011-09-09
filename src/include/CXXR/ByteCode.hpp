@@ -90,6 +90,32 @@ namespace CXXR {
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
+	// Class to save and restore the state of the ByteCode
+	// computation stacks.
+	class Scope {
+	public:
+	    Scope()
+	    {
+		m_nodestack = R_BCNodeStackTop;
+#ifdef BC_INT_STACK
+		m_intstack = R_BCIntStackTop;
+#endif
+	    }
+
+	    ~Scope()
+	    {
+		R_BCNodeStackTop = m_nodestack;
+#ifdef BC_INT_STACK
+		R_BCIntStackTop = m_intstack;
+#endif
+	    }
+	private:
+	    SEXP *m_nodestack;
+#ifdef BC_INT_STACK
+	    IStackval *m_intstack;
+#endif
+	};
+
 	// Declared private to ensure that ByteCode objects are
 	// allocated only using 'new':
 	~ByteCode() {}
