@@ -47,10 +47,6 @@
 
 extern "C" {
 #ifdef BYTECODE
-#define R_BCNODESTACKSIZE 10000
-    extern SEXP* R_BCNodeStackBase;
-    extern SEXP* R_BCNodeStackTop;
-    extern SEXP* R_BCNodeStackEnd;
 #ifdef BC_INT_STACK
 #define R_BCINTSTACKSIZE 10000
     typedef union { void *p; int i; } IStackval;
@@ -77,6 +73,13 @@ namespace CXXR {
 	    : ConsCell(BCODESXP, cr, tl, tg)
 	{}
 
+	/** @brief Initialize the class.
+	 *
+	 * This function should be called before any other use it made
+	 * of the ByteCode class.
+	 */
+	static void initialize();
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -90,13 +93,60 @@ namespace CXXR {
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
     private:
+	/** @brief Virtual machine node stack.
+	 *
+	 * Stack of pointers to RObjects manipulated by the
+	 * ByteCode virtual machine.
+	 */
+	struct NodeStack : public GCNode, public std::vector<GCEdge<> > {
+	    NodeStack();
+
+	    /** @brief pop elements from the top of the stack.
+	     *
+	     * @param count The number of elements to be popped, which
+	     *          must be no greater than the current size of
+	     *          the stack (not checked).
+	     *
+	     * @return the pointer previously at the top of the stack.
+	     */
+	    void pop(size_t count = 1) {
+		resize(size() - count);
+	    }
+
+	    /** @brief Push a pointer onto the stack.
+	     *
+	     * @param node Pointer (possibly null) to an RObject.
+	     */
+	    void push(RObject* node)
+	    {
+		resize(size() + 1);
+		back() = node;
+	    }
+
+	    /** @brief pop and return the top element of the stack.
+	     *
+	     * The stack must not be empty; this is not checked.
+	     *
+	     * @return the pointer previously at the top of the stack.
+	     */
+	    RObject* topnpop() {
+		RObject* ans = back();
+		resize(size() - 1);
+		return ans;
+	    }
+
+	    // Virtual functions of GCNode:
+	    void detachReferents();
+	    void visitReferents(const_visitor* v) const;
+	};
+
 	// Class to save and restore the state of the ByteCode
 	// computation stacks.
 	class Scope {
 	public:
 	    Scope()
 	    {
-		m_nodestack = R_BCNodeStackTop;
+		m_nodestack_size = s_nodestack->size();
 #ifdef BC_INT_STACK
 		m_intstack = R_BCIntStackTop;
 #endif
@@ -104,17 +154,19 @@ namespace CXXR {
 
 	    ~Scope()
 	    {
-		R_BCNodeStackTop = m_nodestack;
+		s_nodestack->resize(m_nodestack_size);
 #ifdef BC_INT_STACK
 		R_BCIntStackTop = m_intstack;
 #endif
 	    }
 	private:
-	    SEXP *m_nodestack;
+	    size_t m_nodestack_size;
 #ifdef BC_INT_STACK
 	    IStackval *m_intstack;
 #endif
 	};
+
+	static GCRoot<NodeStack> s_nodestack;
 
 	// Declared private to ensure that ByteCode objects are
 	// allocated only using 'new':

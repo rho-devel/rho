@@ -560,12 +560,6 @@ namespace CXXR {
 	 */
 	static void mark();
 
-	// Some structures, particularly those accessed from C code, have
-	// not been refactored to protect their members using GCRoot<>.
-	// This function is used to provide temporary protection using
-	// PROTECT().  It returns the number of items thus protected.
-	static unsigned int protectCstructs();
-
 	/** @brief Carry out the sweep phase of garbage collection.
 	 */
 	static void sweep();

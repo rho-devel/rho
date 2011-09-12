@@ -186,7 +186,6 @@ void GCNode::gclite()
     if (s_inhibitor_count != 0)
 	return;
     GCInhibitor inhibitor;
-    unsigned int protect_count = protectCstructs();
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
@@ -196,7 +195,6 @@ void GCNode::gclite()
 	    delete node;
 	else rcmmu &= ~s_moribund_mask;  // Clear moribund bit
     }
-    ProtectStack::unprotect(protect_count);
 }
 
 void GCNode::initialize()
@@ -241,13 +239,9 @@ void GCNode::mark()
     GCNode::Marker marker;
     GCRootBase::visitRoots(&marker);
     GCStackRootBase::visitRoots(&marker);
-    unsigned int protect_count = protectCstructs();
     ProtectStack::visitRoots(&marker);
-    ProtectStack::unprotect(protect_count);
     WeakRef::markThru();
 }
-
-// GCNode::protectCstructs() is in memory.cpp
 
 void GCNode::sweep()
 {

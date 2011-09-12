@@ -41,19 +41,40 @@
 
 #include "CXXR/errors.h"
 
-using namespace std;
 using namespace CXXR;
 
 #ifdef BYTECODE
-RObject** R_BCNodeStackBase;
-RObject** R_BCNodeStackTop;
-RObject** R_BCNodeStackEnd;
 #ifdef BC_INT_STACK
 IStackval* R_BCIntStackBase;
 IStackval* R_BCIntStackTop;
 IStackval* R_BCIntStackEnd;
 #endif
 #endif
+
+// ***** ByteCode::NodeStack *****
+
+ByteCode::NodeStack::NodeStack()
+{
+    reserve(100);
+}
+
+void ByteCode::NodeStack::detachReferents()
+{
+    clear();
+}
+
+void ByteCode::NodeStack::visitReferents(const_visitor* v) const
+{
+    for (const_iterator it = begin(); it != end(); ++it) {
+	const GCEdge<>& e = *it;
+	if (e)
+	    (*v)(e);
+    }
+}
+
+// ***** ByteCode *****
+
+GCRoot<ByteCode::NodeStack> ByteCode::s_nodestack;
 
 // ByteCode::evaluate() is defined in eval.cpp unless:
 #ifndef BYTECODE
@@ -63,6 +84,12 @@ RObject* ByteCode::evaluate(Environment*)
     return 0;
 }
 #endif
+
+void ByteCode::initialize()
+{
+    if (!s_nodestack)
+	s_nodestack = CXXR_NEW(NodeStack);
+}
 
 const char* ByteCode::typeName() const
 {

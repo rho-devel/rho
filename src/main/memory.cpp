@@ -127,22 +127,6 @@ SEXP attribute_hidden do_regFinaliz(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /* The Generational Collector. */
 
-unsigned int GCNode::protectCstructs()
-{
-    unsigned int protect_count = 0;
-#ifdef BYTECODE
-    // Bytecode stack:
-    {
-	SEXP *sp;
-	for (sp = R_BCNodeStackBase; sp < R_BCNodeStackTop; sp++) {
-	    PROTECT(*sp);
-	    ++protect_count;
-	}
-    }
-#endif
-    return protect_count;
-}
-
 /* public interface for controlling GC torture settings */
 // NB: all these are loose wheels in CXXR.
 void R_gc_torture(int gap, int wait, Rboolean inhibit)
@@ -306,18 +290,12 @@ void InitMemory()
     GCManager::setGCThreshold(R_VSize);
 
 #ifdef BYTECODE
-    R_BCNodeStackBase = static_cast<SEXP *>( malloc(R_BCNODESTACKSIZE * sizeof(SEXP)));
-    if (R_BCNodeStackBase == NULL)
-	R_Suicide("couldn't allocate node stack");
+    ByteCode::initialize();
 # ifdef BC_INT_STACK
     R_BCIntStackBase =
       (IStackval *) malloc(R_BCINTSTACKSIZE * sizeof(IStackval));
     if (R_BCIntStackBase == NULL)
 	R_Suicide("couldn't allocate integer stack");
-# endif
-    R_BCNodeStackTop = R_BCNodeStackBase;
-    R_BCNodeStackEnd = R_BCNodeStackBase + R_BCNODESTACKSIZE;
-# ifdef BC_INT_STACK
     R_BCIntStackTop = R_BCIntStackBase;
     R_BCIntStackEnd = R_BCIntStackBase + R_BCINTSTACKSIZE;
 # endif

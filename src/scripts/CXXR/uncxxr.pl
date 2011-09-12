@@ -65,6 +65,7 @@ while (<>) {
   s/CXXRNOCAST//g;
   s/CXXRTRUE/1/g;
   s/CXXRUNSIGNED\s*//g;
+  s/NODESTACKEND\[/R_BCNodeStackTop\[/g;
   s/Rf_//g;
   s/XVECTOR_ELT/VECTOR_ELT/g;
   s/std:://g;
