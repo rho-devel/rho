@@ -1617,14 +1617,11 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 
 static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
-    SEXP s;
-    PROTECT(s = CXXR_NEW(ByteCode));
-    SETCAR(s, ReadItem(ref_table, stream)); /* code */
-    SETCAR(s, R_bcEncode(CAR(s)));
-    SETCDR(s, ReadBCConsts(ref_table, reps, stream)); /* consts */
-    SET_TAG(s, R_NilValue); /* expr */
-    UNPROTECT(1);
-    return s;
+    GCStackRoot<> code(ReadItem(ref_table, stream));
+    code = R_bcEncode(code);
+    GCStackRoot<> constants(ReadBCConsts(ref_table, reps, stream));
+    return CXXR_NEW(ByteCode(SEXP_downcast<IntVector*>(code.get()),
+			     SEXP_downcast<ListVector*>(constants.get())));
 }
 
 static SEXP ReadBC(SEXP ref_table, R_inpstream_t stream)

@@ -60,17 +60,17 @@ extern "C" {
 namespace CXXR {
     /** @brief Stub for future ByteCode class. 
      */
-    class ByteCode : public ConsCell {
+    class ByteCode : public RObject {
     public:
 	/**
-	 * @param cr Pointer to the 'car' of the element to be
-	 *           constructed.
-	 * @param tl Pointer to the 'tail' (LISP cdr) of the element
-	 *           to be constructed.
-	 * @param tg Pointer to the 'tag' of the element to be constructed.
+	 * @param code Non-null pointer to the 'bytecode' (actually a
+	 *          set of integers).
+	 *
+	 * @param constants Non-null pointer to the associated
+	 *          constants (FIXME: improve this documentation.)
 	 */
-	explicit ByteCode(RObject* cr = 0, PairList* tl = 0, RObject* tg = 0)
-	    : ConsCell(BCODESXP, cr, tl, tg)
+	explicit ByteCode(IntVector* code, ListVector* constants)
+	    : RObject(BCODESXP), m_code(code), m_constants(constants)
 	{}
 
 	/** @brief Initialize the class.
@@ -92,6 +92,10 @@ namespace CXXR {
 	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
 	const char* typeName() const;
+
+	// Virtual functions of GCNode:
+	void detachReferents();
+	void visitReferents(const_visitor* v) const;
     private:
 	/** @brief Virtual machine node stack.
 	 *
@@ -167,6 +171,9 @@ namespace CXXR {
 	};
 
 	static GCRoot<NodeStack> s_nodestack;
+
+	GCEdge<IntVector> m_code;
+	GCEdge<ListVector> m_constants;
 
 	// Declared private to ensure that ByteCode objects are
 	// allocated only using 'new':

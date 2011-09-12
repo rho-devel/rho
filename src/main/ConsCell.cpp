@@ -180,9 +180,6 @@ SEXP Rf_allocSExp(SEXPTYPE t)
     case DOTSXP:
 	ans = new DottedArgs;
 	break;
-    case BCODESXP:
-	ans = new ByteCode;
-	break;
     default:
 	throw std::invalid_argument("Inappropriate SEXPTYPE for ConsCell.");
     }

@@ -39,6 +39,7 @@
 
 #include "CXXR/ByteCode.hpp"
 
+#include "CXXR/IntVector.h"
 #include "CXXR/errors.h"
 
 using namespace CXXR;
@@ -76,6 +77,13 @@ void ByteCode::NodeStack::visitReferents(const_visitor* v) const
 
 GCRoot<ByteCode::NodeStack> ByteCode::s_nodestack;
 
+void ByteCode::detachReferents()
+{
+    m_code.detach();
+    m_constants.detach();
+    RObject::detachReferents();
+}
+
 // ByteCode::evaluate() is defined in eval.cpp unless:
 #ifndef BYTECODE
 RObject* ByteCode::evaluate(Environment*)
@@ -94,4 +102,15 @@ void ByteCode::initialize()
 const char* ByteCode::typeName() const
 {
     return staticTypeName();
+}
+
+void ByteCode::visitReferents(const_visitor* v) const
+{
+    const GCNode* code = m_code;
+    const GCNode* constants = m_constants;
+    RObject::visitReferents(v);
+    if (code)
+	(*v)(code);
+    if (constants)
+	(*v)(constants);
 }

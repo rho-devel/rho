@@ -3709,8 +3709,8 @@ SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     bytes = CAR(args);
     consts = CADR(args);
-    GCStackRoot<> enc(R_bcEncode(bytes));
-    GCStackRoot<PairList> pl(SEXP_downcast<PairList*>(consts));
+    GCStackRoot<IntVector> enc(SEXP_downcast<IntVector*>(R_bcEncode(bytes)));
+    GCStackRoot<ListVector> pl(SEXP_downcast<ListVector*>(consts));
     return CXXR_NEW(ByteCode(enc, pl));
 }
 
