@@ -229,10 +229,6 @@ int  (HASHVALUE)(SEXP x);
 #define EXTPTR_TAG(x)	R_ExternalPtrTag(x)
 
 #ifdef BYTECODE
-/* Bytecode access macros */
-#define BCODE_CODE(x)	CAR(x)
-#define BCODE_CONSTS(x) CDR(x)
-#define BCODE_EXPR(x)	TAG(x)
 #define isByteCode(x)	(TYPEOF(x)==BCODESXP)
 #else
 #define isByteCode(x)	FALSE

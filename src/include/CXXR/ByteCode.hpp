@@ -73,6 +73,18 @@ namespace CXXR {
 	    : RObject(BCODESXP), m_code(code), m_constants(constants)
 	{}
 
+	// Interim accessor functions.  Try to get rid of these:
+
+	IntVector* code()
+	{
+	    return m_code;
+	}
+
+	ListVector* constants()
+	{
+	    return m_constants;
+	}
+
 	/** @brief Initialize the class.
 	 *
 	 * This function should be called before any other use it made

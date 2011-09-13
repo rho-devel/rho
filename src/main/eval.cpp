@@ -2317,7 +2317,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 #define BCIPOPPTR() ((--R_BCIntStackTop)->p)
 #define BCIPOPINT() ((--R_BCIntStackTop)->i)
 
-#define BCCONSTS(e) BCODE_CONSTS(e)
+#define BCCONSTS(e) (SEXP_downcast<ByteCode*>(e)->constants())
 
 #ifdef BC_INT_STACK
 static void intStackOverflow()
@@ -2383,7 +2383,6 @@ typedef int BCODE;
 #define GETOP() *pc++
 #define SKIP_OP() (pc++)
 
-#define BCCODE(e) INTEGER(BCODE_CODE(e))
 #endif
 
 static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
@@ -2769,6 +2768,7 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 RObject* ByteCode::evaluate(Environment* rho)
 {
   Scope scope;
+  std::vector<Frame::Binding*> binding_stack;
   SEXP body = this;
   SEXP value, constants;
   BCODE *pc, *codebase;
@@ -2784,8 +2784,8 @@ RObject* ByteCode::evaluate(Environment* rho)
   BC_CHECK_SIGINT();
 
   INITIALIZE_MACHINE();
-  codebase = pc = BCCODE(body);
-  constants = BCCONSTS(body);
+  codebase = pc = &(*m_code)[0];
+  constants = m_constants;
 
   /* check version */
   {
@@ -2862,7 +2862,14 @@ RObject* ByteCode::evaluate(Environment* rho)
 	}
 
 	Rf_defineVar(symbol, R_NilValue, rho);
-	BCNPUSH(reinterpret_cast<SEXP>( R_findVarLocInFrame(rho, symbol)));
+
+	// Here CR casts the return value of R_findVarLocInFrame (of
+	// type R_varloc_t, which is Frame::Binding* in CXXR) into
+	// a SEXP and pushes it onto the node stack.  In CXXR we use a
+	// separate stack for binding, but push a null pointer onto
+	// the node stack to maintain CR's stack alignment.
+	BCNPUSH(0);
+	binding_stack.push_back(R_findVarLocInFrame(rho, symbol));
 
 	value = Rf_allocVector(INTSXP, 2);
 	INTEGER(value)[0] = -1;
@@ -2890,7 +2897,7 @@ RObject* ByteCode::evaluate(Environment* rho)
 	int n = INTEGER(NODESTACKEND[-2])[1];
 	if (i < n) {
 	  SEXP seq = NODESTACKEND[-4];
-	  SEXP cell = NODESTACKEND[-3];
+	  Frame::Binding* cell = binding_stack.back();
 	  switch (TYPEOF(seq)) {
 	  case LGLSXP:
 	  case INTSXP:
@@ -2926,7 +2933,7 @@ RObject* ByteCode::evaluate(Environment* rho)
 	  default:
 	    Rf_error(_("invalid sequence argument in for loop"));
 	  }
-	  R_SetVarLocValue(reinterpret_cast<R_varloc_t>( cell), value);
+	  R_SetVarLocValue(cell, value);
 	  BC_CHECK_SIGINT();
 	  pc = codebase + label;
 	}
@@ -2936,6 +2943,7 @@ RObject* ByteCode::evaluate(Environment* rho)
       {
 	value = NODESTACKEND[-1];
 	s_nodestack->pop(3);
+	binding_stack.pop_back();
 	NODESTACKEND[-1] = value;
 	NEXT();
       }
@@ -3756,9 +3764,10 @@ static SEXP disassemble(SEXP bc)
 {
   SEXP ans, dconsts;
   int i;
-  SEXP code = BCODE_CODE(bc);
-  SEXP consts = BCODE_CONSTS(bc);
-  SEXP expr = BCODE_EXPR(bc);
+  ByteCode* bcode = SEXP_downcast<ByteCode*>(bc);
+  SEXP code = bcode->code();
+  SEXP consts = bcode->constants();
+  SEXP expr = 0;  // Set to BCODE_EXPR(bc) in CR
   int nc = LENGTH(consts);
 
   PROTECT(ans = Rf_allocVector(VECSXP, expr != R_NilValue ? 4 : 3));

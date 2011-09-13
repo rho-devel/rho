@@ -1057,7 +1057,7 @@ static void ScanForCircles1(SEXP s, SEXP ct)
     case BCODESXP:
 	{
 	    int i, n;
-	    SEXP consts = BCODE_CONSTS(s);
+	    SEXP consts = static_cast<ByteCode*>(s)->constants();
 	    n = LENGTH(consts);
 	    for (i = 0; i < n; i++)
 		ScanForCircles1(VECTOR_ELT(consts, i), ct);
@@ -1126,9 +1126,10 @@ static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
 {
     int i, n;
     SEXP code, consts;
-    PROTECT(code = R_bcDecode(BCODE_CODE(s)));
+    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
+    PROTECT(code = R_bcDecode(bc->code()));
     WriteItem(code, ref_table, stream);
-    consts = BCODE_CONSTS(s);
+    consts = bc->constants();
     n = LENGTH(consts);
     OutInteger(stream, n);
     for (i = 0; i < n; i++) {
