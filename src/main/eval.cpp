@@ -63,6 +63,7 @@
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
+#include "CXXR/PlainContext.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/S3Launcher.hpp"
@@ -3180,7 +3181,10 @@ RObject* ByteCode::evaluate(Environment* rho)
 	  Rf_error(_("not a BUILTIN function"));
 	flag = PRIMPRINT(fun);
 	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	value = PRIMFUN(fun) (call, fun, args, rho);
+	{
+	    PlainContext cntxt;
+	    value = PRIMFUN(fun) (call, fun, args, rho);
+	}
 	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	vmaxset(vmax);
 	s_nodestack->pop(2);
@@ -3201,7 +3205,10 @@ RObject* ByteCode::evaluate(Environment* rho)
 	BCNPUSH(fun);  /* for GC protection */
 	flag = PRIMPRINT(fun);
 	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	value = PRIMFUN(fun) (call, fun, CDR(call), rho);
+	{
+	    PlainContext cntxt;
+	    value = PRIMFUN(fun) (call, fun, CDR(call), rho);
+	}
 	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
 	vmaxset(vmax);
 	NODESTACKEND[-1] = value; /* replaces fun on stack */
