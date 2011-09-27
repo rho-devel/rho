@@ -3175,18 +3175,13 @@ RObject* ByteCode::evaluate(Environment* rho)
 	SEXP fun = NODESTACKEND[-3];
 	SEXP call = VECTOR_ELT(constants, GETOP());
 	SEXP args = NODESTACKEND[-2];
-	int flag;
-	const void *vmax = vmaxget();
 	if (TYPEOF(fun) != BUILTINSXP)
 	  Rf_error(_("not a BUILTIN function"));
-	flag = PRIMPRINT(fun);
-	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	{
-	    PlainContext cntxt;
-	    value = PRIMFUN(fun) (call, fun, args, rho);
-	}
-	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	vmaxset(vmax);
+	const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
+	const Expression* callx = SEXP_downcast<Expression*>(call);
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	value = func->apply(&arglist, env, callx);
 	s_nodestack->pop(2);
 	NODESTACKEND[-1] = value;
 	NEXT();
@@ -3196,21 +3191,16 @@ RObject* ByteCode::evaluate(Environment* rho)
 	SEXP call = VECTOR_ELT(constants, GETOP());
 	SEXP symbol = CAR(call);
 	SEXP fun = getPrimitive(symbol, SPECIALSXP);
-	int flag;
-	const void *vmax = vmaxget();
 	if (RTRACE(fun)) {
 	  Rprintf("trace: ");
 	  Rf_PrintValue(symbol);
 	}
 	BCNPUSH(fun);  /* for GC protection */
-	flag = PRIMPRINT(fun);
-	R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	{
-	    PlainContext cntxt;
-	    value = PRIMFUN(fun) (call, fun, CDR(call), rho);
-	}
-	if (flag < 2) R_Visible = CXXRCONSTRUCT(Rboolean, flag != 1);
-	vmaxset(vmax);
+	const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
+	const Expression* callx = SEXP_downcast<Expression*>(call);
+	Environment* env = SEXP_downcast<Environment*>(rho);
+	ArgList arglist(callx->tail(), ArgList::RAW);
+	value = func->apply(&arglist, env, callx);
 	NODESTACKEND[-1] = value; /* replaces fun on stack */
 	NEXT();
       }
