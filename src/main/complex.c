@@ -206,7 +206,8 @@ SEXP attribute_hidden complex_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     ans = allocVector(CPLXSXP, n);
-#ifdef R_MEMORY_PROFILING
+/* In CR this reads #ifdef R_MEMORY_PROFILING : */
+#if FALSE
     if (RTRACE(s1) || RTRACE(s2)){
        if (RTRACE(s1) && RTRACE(s2)){
 	  if (n1>n2)

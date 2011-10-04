@@ -676,7 +676,8 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    INTEGER(ans)[i] = NA_INTEGER;
 	return ans;
 	} */
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(s1) || RTRACE(s2)) {
        if (RTRACE(s1) && RTRACE(s2)) {
 	  if (n1 > n2)
@@ -838,7 +839,8 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     PROTECT(ans = allocVector(REALSXP, n));
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(s1) || RTRACE(s2)) {
        if (RTRACE(s1) && RTRACE(s2)) {
 	  if (n1 > n2)
@@ -1246,7 +1248,8 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 
     SETUP_Math2;
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb)) {
        if (RTRACE(sa) && RTRACE(sb)){
 	  if (na > nb)
@@ -1298,7 +1301,8 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
     SETUP_Math2;
     m_opt = asInteger(sI);
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb)) {
        if (RTRACE(sa) && RTRACE(sb)) {
 	  if (na > nb)
@@ -1341,7 +1345,8 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     i_1 = asInteger(sI1);
     i_2 = asInteger(sI2);
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb)) {
        if (RTRACE(sa) && RTRACE(sb)) {
 	  if (na > nb)
@@ -1386,7 +1391,8 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
        as no recycling will occur */
     SETUP_Math2;
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb)) {
        if (RTRACE(sa) && RTRACE(sb)) {
 	  if (na > nb)
@@ -1672,7 +1678,8 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
     SETUP_Math3;
     i_1 = asInteger(sI);
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
        if (RTRACE(sa))
 	  memtrace_report(sa, sy);
@@ -1712,7 +1719,8 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     i_1 = asInteger(sI);
     i_2 = asInteger(sJ);
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
        if (RTRACE(sa))
 	  memtrace_report(sa, sy);
@@ -1752,7 +1760,8 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 
     SETUP_Math3;
 
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
        if (RTRACE(sa))
 	  memtrace_report(sa, sy);

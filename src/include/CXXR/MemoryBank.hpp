@@ -41,6 +41,7 @@
 #define MEMORYBANK_HPP
 
 #include <cstring>
+#include "config.h"
 #include "CXXR/CellPool.hpp"
 #include "CXXR/SchwarzCounter.hpp"
 

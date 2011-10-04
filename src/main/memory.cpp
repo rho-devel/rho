@@ -514,8 +514,11 @@ static void R_OutputStackTrace(FILE *file)
     Evaluator::Context *cptr;
 
     for (cptr = Evaluator::Context::innermost(); cptr; cptr = cptr->nextOut()) {
-	if (TYPEOF(cptr->call) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call);
+	Evaluator::Context::Type type = cptr->type();
+	if (type == Evaluator::Context::FUNCTION
+	    || type == Evaluator::Context::CLOSURE) {
+	    FunctionContext* fctxt = static_cast<FunctionContext*>(cptr);
+	    SEXP fun = fctxt->call()->car();
 	    if (!newline) newline = 1;
 	    fprintf(file, "\"%s\" ",
 		    TYPEOF(fun) == SYMSXP ? CHAR(PRINTNAME(fun)) :

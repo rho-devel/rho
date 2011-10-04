@@ -1698,7 +1698,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 				  which, symName, argConverters + nargs,
 				  checkTypes ? CXXRCONSTRUCT(SEXPTYPE, checkTypes[nargs]) : NILSXP,
 				  encname);
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
 	if (RTRACE(CAR(pargs)) && dup)
 		memtrace_report(CAR(pargs), cargs[nargs]);
 #endif
@@ -2325,7 +2326,8 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 		PROTECT(s = CPtrToRObj(cargs[nargs], CAR(pargs), which,
 				       checkTypes ? checkTypes[nargs] : TYPEOF(CAR(pargs)),
 				       encname));
-#if R_MEMORY_PROFILING
+    // In CR this reads #if R_MEMORY_PROFILING :
+#if FALSE
 		if (RTRACE(CAR(pargs)) && dup){
 			memtrace_report(cargs[nargs], s);
 			SET_RTRACE(s, 1);

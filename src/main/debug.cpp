@@ -41,6 +41,7 @@
 #include "Defn.h"
 #include "basedecl.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/FunctionContext.hpp"
 
 using namespace CXXR;
 
@@ -129,7 +130,8 @@ R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 
 SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     SEXP object;
     char buffer[20];
 
@@ -164,7 +166,8 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     SEXP object;
 
     checkArity(op, args);
@@ -185,19 +188,23 @@ SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-#ifndef R_MEMORY_PROFILING
+    // In CR this reads #ifndef R_MEMORY_PROFILING :
+#if TRUE
 void attribute_hidden memtrace_report(void* old, void *_new) {
     return;
 }
 #else
 static void memtrace_stack_dump(void)
 {
-    Context *cptr;
+    Evaluator::Context *cptr;
 
-    for (cptr = Context::innermost(); cptr; cptr = cptr->nextcontext) {
-	if ((cptr->callflag & (Context::FUNCTION | Context::BUILTIN))
-	    && TYPEOF(cptr->call) == LANGSXP) {
-	    SEXP fun = CAR(cptr->call);
+    for (cptr = Evaluator::Context::innermost();
+	 cptr; cptr = cptr->nextOut()) {
+	Evaluator::Context::Type type = cptr->type();
+	if (type == Evaluator::Context::FUNCTION
+	    || type == Evaluator::Context::CLOSURE) {
+	    FunctionContext* fctxt = static_cast<FunctionContext*>(cptr);
+	    SEXP fun = fctxt->call()->car();
 	    Rprintf("%s ",
 		    TYPEOF(fun) == SYMSXP ? translateChar(PRINTNAME(fun)) :
 		    "<Anonymous>");
@@ -217,7 +224,8 @@ void attribute_hidden memtrace_report(void * old, void * _new)
 
 SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-#ifdef R_MEMORY_PROFILING
+    // In CR this reads #ifdef R_MEMORY_PROFILING :
+#if FALSE
     SEXP object, previous, ans, ap, argList;
     char buffer[20];
 
@@ -242,7 +250,7 @@ SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	snprintf(buffer, 20, "<%p>", (void *) object);
 	ans = mkString(buffer);
     } else {
-	R_Visible = 0;
+	R_Visible = CXXRFALSE;
 	ans = R_NilValue;
     }
 
