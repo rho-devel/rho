@@ -40,7 +40,7 @@
 #endif
 
 #include <Defn.h>
-#include <basedecl.h>
+#include "basedecl.h"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
 

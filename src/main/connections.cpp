@@ -96,7 +96,7 @@
 #include <R_ext/R-ftp-http.h>
 #include <R_ext/RS.h>		/* R_chk_calloc and Free */
 #include <R_ext/Riconv.h>
-#include <basedecl.h>
+#include "basedecl.h"
 #include <cstdarg>
 
 using namespace std;

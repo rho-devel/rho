@@ -467,7 +467,7 @@ static SEXP coerceToLogical(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(LGLSXP, n = length(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -509,7 +509,7 @@ static SEXP coerceToInteger(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(INTSXP, n = LENGTH(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -551,7 +551,7 @@ static SEXP coerceToReal(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(REALSXP, n = LENGTH(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -593,7 +593,7 @@ static SEXP coerceToComplex(SEXP v)
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(CPLXSXP, n = LENGTH(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -636,7 +636,7 @@ static SEXP coerceToRaw(SEXP v)
 
     PROTECT(ans = Rf_allocVector(RAWSXP, n = LENGTH(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -708,7 +708,7 @@ static SEXP coerceToString(SEXP v)
     int i, n, savedigits, warn = 0;
     PROTECT(ans = Rf_allocVector(STRSXP, n = LENGTH(v)));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -758,7 +758,7 @@ static SEXP coerceToExpression(SEXP v)
 	n = LENGTH(v);
 	PROTECT(ans = Rf_allocVector(EXPRSXP, n));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -808,7 +808,7 @@ static SEXP coerceToVectorList(SEXP v)
     n = length(v);
     PROTECT(ans = Rf_allocVector(VECSXP, n));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(v)){
        memtrace_report(v,ans);
        SET_RTRACE(ans,1);
@@ -1017,7 +1017,7 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
 	n = length(v);
 	PROTECT(rval = Rf_allocVector(type, n));
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
 	if (RTRACE(v)){
 	   memtrace_report(v, rval);
 	   SET_RTRACE(rval,1);

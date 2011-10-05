@@ -74,7 +74,7 @@ SEXP duplicate(SEXP s){
     SEXP t = RObject::clone(s);
     if (!t) return s;
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     if (RTRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
 		      TYPEOF(s) == ENVSXP)){

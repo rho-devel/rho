@@ -40,7 +40,7 @@
 #include <Defn.h>
 #include <Rdynpriv.h>
 #include <Rmodules/Rlapack.h>
-#include <basedecl.h>
+#include "basedecl.h"
 
 static R_LapackRoutines *ptr;
 

@@ -42,7 +42,7 @@
 #include <Rdynpriv.h>
 #include <R_ext/R-ftp-http.h>
 #include <Rmodules/Rinternet.h>
-#include <basedecl.h>
+#include "basedecl.h"
 
 static R_InternetRoutines routines, *ptr = &routines;
 

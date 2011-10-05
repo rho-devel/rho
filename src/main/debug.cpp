@@ -131,7 +131,7 @@ R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     SEXP object;
     char buffer[20];
 
@@ -167,7 +167,7 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     SEXP object;
 
     checkArity(op, args);
@@ -189,7 +189,7 @@ SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 
     // In CR this reads #ifndef R_MEMORY_PROFILING :
-#if TRUE
+#if 1
 void attribute_hidden memtrace_report(void* old, void *_new) {
     return;
 }
@@ -225,7 +225,7 @@ void attribute_hidden memtrace_report(void * old, void * _new)
 SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if FALSE
+#if 0
     SEXP object, previous, ans, ap, argList;
     char buffer[20];
 
