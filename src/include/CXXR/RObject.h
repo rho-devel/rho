@@ -440,7 +440,7 @@ namespace CXXR {
 	  // class attribute.  Bit 6 is set to denote an S4 object.
     public:
 	// To be private in future:
-	unsigned m_named       : 2;
+	unsigned char m_named;
 
 	// The following field is used only in connection with objects
 	// inheriting from class ConsCell (and fairly rarely then), so

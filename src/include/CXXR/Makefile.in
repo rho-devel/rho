@@ -103,4 +103,4 @@ distdir: $(DISTFILES)
 	done
 
 config.hpp :
-	cp config.hpp.in $@
+	cp $(srcdir)/config.hpp.in $@
