@@ -79,10 +79,13 @@ const unsigned char RObject::s_S4_mask;
 const unsigned char RObject::s_class_mask;
 
 RObject::RObject(const RObject& pattern)
-    : m_type(pattern.m_type), m_named(0), m_missing(pattern.m_missing),
+    : m_type(pattern.m_type), m_named(0),
+      m_memory_traced(pattern.m_memory_traced), m_missing(pattern.m_missing),
       m_argused(pattern.m_argused), m_active_binding(pattern.m_active_binding),
       m_binding_locked(pattern.m_binding_locked), m_attrib(pattern.m_attrib)
-{}
+{
+    maybeTraceMemory(&pattern);
+}
 
 const PairList* RObject::attributes() const
 {
@@ -189,6 +192,8 @@ void RObject::setS4Object(bool on)
 	m_type |= s_S4_mask;
     else m_type &= ~s_S4_mask;
 }
+
+// The implementation of RObject::traceMemory() is in debug.cpp
 
 const char* RObject::typeName() const
 {

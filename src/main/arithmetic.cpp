@@ -676,21 +676,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	    INTEGER(ans)[i] = NA_INTEGER;
 	return ans;
 	} */
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(s1) || RTRACE(s2)) {
-       if (RTRACE(s1) && RTRACE(s2)) {
-	  if (n1 > n2)
-	      memtrace_report(s1, ans);
-	  else
-	      memtrace_report(s2, ans);
-       } else if (RTRACE(s1))
-	   memtrace_report(s1, ans);
-       else /* only s2 */
-	   memtrace_report(s2, ans);
-       SET_RTRACE(ans, 1);
-    }
-#endif
+    ans->maybeTraceMemory(s1, s2);
 
     switch (code) {
     case PLUSOP:
@@ -839,21 +825,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     PROTECT(ans = allocVector(REALSXP, n));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(s1) || RTRACE(s2)) {
-       if (RTRACE(s1) && RTRACE(s2)) {
-	  if (n1 > n2)
-	      memtrace_report(s1, ans);
-	  else
-	      memtrace_report(s2, ans);
-       } else if (RTRACE(s1))
-	   memtrace_report(s1,ans);
-       else /* only s2 */
-	   memtrace_report(s2, ans);
-       SET_RTRACE(ans, 1);
-    }
-#endif
+    ans->maybeTraceMemory(s1, s2);
 
 /*    if (n1 < 1 || n2 < 1) {
       for (i = 0; i < n; i++)
@@ -1248,21 +1220,7 @@ static SEXP math2(SEXP sa, SEXP sb, double (*f)(double, double),
 
     SETUP_Math2;
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb)) {
-       if (RTRACE(sa) && RTRACE(sb)){
-	  if (na > nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1301,21 +1259,7 @@ static SEXP math2_1(SEXP sa, SEXP sb, SEXP sI,
     SETUP_Math2;
     m_opt = asInteger(sI);
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb)) {
-       if (RTRACE(sa) && RTRACE(sb)) {
-	  if (na > nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1345,21 +1289,7 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     i_1 = asInteger(sI1);
     i_2 = asInteger(sI2);
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb)) {
-       if (RTRACE(sa) && RTRACE(sb)) {
-	  if (na > nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb);
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1391,22 +1321,8 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
        as no recycling will occur */
     SETUP_Math2;
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb)) {
-       if (RTRACE(sa) && RTRACE(sb)) {
-	  if (na > nb)
-	      memtrace_report(sa, sy);
-	  else
-	      memtrace_report(sb, sy);
-       } else if (RTRACE(sa))
-	   memtrace_report(sa, sy);
-       else /* only s2 */
-	   memtrace_report(sb, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-
+    sy->maybeTraceMemory(sa, sb);
+    
     /* allocate work array for BesselJ, BesselY large enough for all
        arguments */
     amax = 0.0;
@@ -1678,18 +1594,7 @@ static SEXP math3_1(SEXP sa, SEXP sb, SEXP sc, SEXP sI,
     SETUP_Math3;
     i_1 = asInteger(sI);
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
-       if (RTRACE(sa))
-	  memtrace_report(sa, sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb, sc);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
@@ -1719,19 +1624,7 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     i_1 = asInteger(sI);
     i_2 = asInteger(sJ);
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
-       if (RTRACE(sa))
-	  memtrace_report(sa, sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
-
+    sy->maybeTraceMemory(sa, sb, sc);
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];
@@ -1760,18 +1653,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 
     SETUP_Math3;
 
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(sa) || RTRACE(sb) || RTRACE(sc)) {
-       if (RTRACE(sa))
-	  memtrace_report(sa, sy);
-       else if (RTRACE(sb))
-	  memtrace_report(sb, sy);
-       else if (RTRACE(sc))
-	  memtrace_report(sc, sy);
-       SET_RTRACE(sy, 1);
-    }
-#endif
+    sy->maybeTraceMemory(sa, sb, sc);
 
     /* allocate work array for BesselI, BesselK large enough for all
        arguments */

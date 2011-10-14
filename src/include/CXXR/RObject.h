@@ -316,6 +316,108 @@ namespace CXXR {
 	    return (m_type & s_S4_mask);
 	}
 
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * created as a copy of \a src, or if <tt>this</tt> has been
+	 * derived in some way from \a src1.  When memory profiling is
+	 * enabled, if \a src points to an RObject with the
+	 * memoryTraced() property set, this property will be
+	 * propagated to <tt>this</tt>.  Also the creation of this
+	 * object will be reported, along with the current context
+	 * stack.
+	 *
+	 * @param src Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src->memoryTraced())
+		traceMemory(src, 0, 0);
+#endif
+	}
+
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * derived in some way from \a src1 and \a src2.  When memory
+	 * profiling is enabled, if either \a src1 or \a src2 points
+	 * to an RObject with the memoryTraced() property set, this
+	 * property will be propagated to <tt>this</tt>.  Also the
+	 * creation of this object will be reported, along with the
+	 * current context stack.
+	 *
+	 * @param src1 Non-null pointer to an RObject.
+	 *
+	 * @param src2 Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src1,
+			      const RObject* src2)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src1->memoryTraced() || src2->memoryTraced())
+		traceMemory(src1, src2, 0);
+#endif
+	}
+
+	/** @brief Carry out memory tracing.
+	 *
+	 * This function is a no-op unless CXXR is built with
+	 * R_MEMORY_PROFILING defined (as will happen if it is
+	 * configured with --enable-memory-profiling).
+	 *
+	 * This function should be called if <tt>this</tt> has been
+	 * derived in some way from \a src1, \a src2 and \src 3.  When
+	 * memory profiling is enabled, if any of \a src1, \a src2 or
+	 * \a src3 points to an RObject with the memoryTraced()
+	 * property set, this property will be propagated to
+	 * <tt>this</tt>.  Also the creation of this object will be
+	 * reported, along with the current context stack.
+	 *
+	 * @param src1 Non-null pointer to an RObject.
+	 *
+	 * @param src2 Non-null pointer to an RObject.
+	 *
+	 * @param src3 Non-null pointer to an RObject.
+	 */
+	void maybeTraceMemory(const RObject* src1,
+			      const RObject* src2,
+			      const RObject* src3)
+	{
+#ifdef R_MEMORY_PROFILING
+	    if (src1->memoryTraced()
+		|| src2->memoryTraced()
+		|| src3->memoryTraced())
+		traceMemory(src1, src2, src3);
+#endif
+	}
+
+	/** @brief Is copying etc. of this object being traced?
+	 *
+	 * The property reported by this function is used by R
+	 * functions such as <tt>tracemem</tt>, and has effect only if
+	 * CXXR is built with R_MEMORY_PROFILING defined (as will
+	 * happen if it is configured with --enable-memory-profiling). 
+	 *
+	 * @return A return value of true signifies that when a copy
+	 * is made of this object, or - more generally - some
+	 * comparably sized object is derived from this object, this
+	 * fact should be reported, and the 'memory traced' property
+	 * propagated to the new object.
+	 */
+	bool memoryTraced() const
+	{
+	    return m_memory_traced;
+	}
+
 	/** @brief Reproduce the \c gp bits field used in CR.
 	 *
 	 * This function is used to reproduce the
@@ -364,6 +466,25 @@ namespace CXXR {
 	 * setting has a null value, the attribute is removed altogether).
 	 */
 	void setAttributes(const PairList* new_attributes);
+
+	/** @brief Enable/disable tracing of copying etc.
+	 *
+	 * The property set by this function is used by R functions
+	 * such as <tt>tracemem</tt>, and has effect only if CXXR is
+	 * built with R_MEMORY_PROFILING defined (as will happen if it
+	 * is configured with --enable-memory-profiling).
+	 *
+	 * @param on A value of true signifies that when a copy
+	 *          is made of this object, or - more generally - some
+	 *          comparably sized object is derived from this
+	 *          object, this fact should be reported, and the
+	 *          'memory traced' property propagated to the new
+	 *          object.
+	 */	 
+	void setMemoryTracing(bool on)
+	{
+	    m_memory_traced = on;
+	}
 
 	/** @brief Set the status of this RObject as an S4 object.
 	 *
@@ -420,8 +541,9 @@ namespace CXXR {
 	 * @param stype Required type of the RObject.
 	 */
 	explicit RObject(SEXPTYPE stype = CXXSXP)
-	    : m_type(stype & s_sexptype_mask), m_named(0), m_missing(0),
-	      m_argused(0), m_active_binding(false), m_binding_locked(false)
+	    : m_type(stype & s_sexptype_mask), m_named(0),
+	      m_memory_traced(false), m_missing(0), m_argused(0),
+	      m_active_binding(false), m_binding_locked(false)
 	{}
 
 	/** @brief Copy constructor.
@@ -441,7 +563,16 @@ namespace CXXR {
     public:
 	// To be private in future:
 	unsigned char m_named;
-
+    private:
+	// The following field is used in connection with R functions
+	// such as tracemem, and has effect only if CXXR is built with
+	// R_MEMORY_PROFILING defined.  When set, it signifies that
+	// when a copy is made of this object, or - more generally -
+	// some comparably sized object is derived from this object,
+	// this fact should be reported, and the m_memory_traced
+	// property propagated to the new object.
+	bool m_memory_traced : 1;
+    public:
 	// The following field is used only in connection with objects
 	// inheriting from class ConsCell (and fairly rarely then), so
 	// it would more logically be placed in that class (and
@@ -473,6 +604,12 @@ namespace CXXR {
 	bool m_binding_locked : 1;
     private:
 	RHandle<PairList> m_attrib;
+#ifdef R_MEMORY_PROFILING
+	// This function implements maybeTraceMemory() (qv.) when
+	// memory profiling is enabled.
+	void traceMemory(const RObject* src1, const RObject* src2,
+			 const RObject* src3);
+#endif	
     };
 }  // namespace CXXR
 

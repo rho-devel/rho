@@ -1921,13 +1921,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(x = allocMatrix(REALSXP, n, nc));
 
-// In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(vars)){
-       memtrace_report(vars, x);
-       SET_RTRACE(x, 1);
-    }
-#endif
+    x->maybeTraceMemory(vars);
 
     /* a) Begin with a column of 1s for the intercept. */
 
@@ -1946,13 +1940,7 @@ SEXP attribute_hidden do_modelmatrix(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if (INTEGER(columns)[i] == 0)
 		continue;
 	    var_i = VECTOR_ELT(variable, i);
-// In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-	    if (RTRACE(var_i)){
-	       memtrace_report(var_i, x);
-	       SET_RTRACE(x, 1);
-	    }
-#endif
+	    x->maybeTraceMemory(var_i);
 	    fik = INTEGER(factors)[i + k * nVar];
 	    if (fik) {
 		switch(fik) {

@@ -130,8 +130,7 @@ R_current_trace_state() { return Rboolean(FunctionBase::tracingEnabled()); }
 
 SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
+#ifdef R_MEMORY_PROFILING
     SEXP object;
     char buffer[20];
 
@@ -154,7 +153,7 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	errorcall(call,
 		  _("'tracemem' is not useful for weak reference or external pointer objects"));
 
-    SET_RTRACE(object, 1);
+    object->setMemoryTracing(true);
     snprintf(buffer, 20, "<%p>", (void *) object);
     return mkString(buffer);
 #else
@@ -166,8 +165,7 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
+#ifdef R_MEMORY_PROFILING
     SEXP object;
 
     checkArity(op, args);
@@ -179,8 +177,7 @@ SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 	TYPEOF(object) == SPECIALSXP)
 	errorcall(call, _("argument must not be a function"));
 
-    if (RTRACE(object))
-	SET_RTRACE(object, 0);
+    object->setMemoryTracing(false);
 #else
     errorcall(call, _("R was not compiled with support for memory profiling"));
 #endif
@@ -188,12 +185,7 @@ SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 }
 
 
-    // In CR this reads #ifndef R_MEMORY_PROFILING :
-#if 1
-void attribute_hidden memtrace_report(void* old, void *_new) {
-    return;
-}
-#else
+#ifdef R_MEMORY_PROFILING
 static void memtrace_stack_dump(void)
 {
     Evaluator::Context *cptr;
@@ -213,10 +205,28 @@ static void memtrace_stack_dump(void)
     Rprintf("\n");
 }
 
-void attribute_hidden memtrace_report(void * old, void * _new)
+void RObject::traceMemory(const RObject* src1, const RObject* src2,
+			  const RObject* src3)
 {
-    if (!R_current_trace_state()) return;
-    Rprintf("tracemem[%p -> %p]: ", (void *) old, _new);
+    setMemoryTracing(true);
+    Rprintf("tracemem[");
+    bool needs_comma = false;
+    if (src1->memoryTraced()) {
+	Rprintf("%p", src1);
+	needs_comma = true;
+    }
+    if (src2 && src2->memoryTraced()) {
+	if (needs_comma)
+	    Rprintf(", ");
+	Rprintf("%p", src2);
+	needs_comma = true;
+    }
+    if (src3 && src3->memoryTraced()) {
+	if (needs_comma)
+	    Rprintf(", ");
+	Rprintf("%p", src3);
+    }
+    Rprintf(" -> %p]: ", this);
     memtrace_stack_dump();
 }
 
@@ -224,8 +234,7 @@ void attribute_hidden memtrace_report(void * old, void * _new)
 
 SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
+#ifdef R_MEMORY_PROFILING
     SEXP object, previous, ans, ap, argList;
     char buffer[20];
 
@@ -246,7 +255,7 @@ SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(!isNull(previous) && !isString(previous))
 	    errorcall(call, _("invalid '%s' argument"), "previous");
 
-    if (RTRACE(object)){
+    if (object->memoryTraced()){
 	snprintf(buffer, 20, "<%p>", (void *) object);
 	ans = mkString(buffer);
     } else {
@@ -255,7 +264,7 @@ SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
 
     if (previous != R_NilValue){
-	SET_RTRACE(object, 1);
+	object->setMemoryTracing(true);
 	if (R_current_trace_state()) {
 	    /* FIXME: previous will have <0x....> whereas other values are
 	       without the < > */

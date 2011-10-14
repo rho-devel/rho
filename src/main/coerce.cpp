@@ -466,13 +466,7 @@ static SEXP coerceToLogical(SEXP v)
     SEXP ans;
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(LGLSXP, n = length(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case INTSXP:
@@ -508,14 +502,8 @@ static SEXP coerceToInteger(SEXP v)
     SEXP ans;
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(INTSXP, n = LENGTH(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
-    cDUPLICATE_ATTRIB(ans, v);
+    ans->maybeTraceMemory(v);
+    DUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -550,13 +538,7 @@ static SEXP coerceToReal(SEXP v)
     SEXP ans;
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(REALSXP, n = LENGTH(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
@@ -592,13 +574,7 @@ static SEXP coerceToComplex(SEXP v)
     SEXP ans;
     int i, n, warn = 0;
     PROTECT(ans = Rf_allocVector(CPLXSXP, n = LENGTH(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
@@ -635,13 +611,7 @@ static SEXP coerceToRaw(SEXP v)
     int i, n, warn = 0, tmp;
 
     PROTECT(ans = Rf_allocVector(RAWSXP, n = LENGTH(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
@@ -707,13 +677,7 @@ static SEXP coerceToString(SEXP v)
     SEXP ans;
     int i, n, savedigits, warn = 0;
     PROTECT(ans = Rf_allocVector(STRSXP, n = LENGTH(v)));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     cDUPLICATE_ATTRIB(ans, v);
     switch (TYPEOF(v)) {
     case LGLSXP:
@@ -757,13 +721,7 @@ static SEXP coerceToExpression(SEXP v)
     if (Rf_isVectorAtomic(v)) {
 	n = LENGTH(v);
 	PROTECT(ans = Rf_allocVector(EXPRSXP, n));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+	ans->maybeTraceMemory(v);
 	switch (TYPEOF(v)) {
 	case LGLSXP:
 	    for (i = 0; i < n; i++)
@@ -807,13 +765,7 @@ static SEXP coerceToVectorList(SEXP v)
     int i, n;
     n = length(v);
     PROTECT(ans = Rf_allocVector(VECSXP, n));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-    if (RTRACE(v)){
-       memtrace_report(v,ans);
-       SET_RTRACE(ans,1);
-    }
-#endif
+    ans->maybeTraceMemory(v);
     switch (TYPEOF(v)) {
     case LGLSXP:
 	for (i = 0; i < n; i++)
@@ -1016,13 +968,7 @@ static SEXP Rf_coerceVectorList(SEXP v, SEXPTYPE type)
     if (type == STRSXP) {
 	n = length(v);
 	PROTECT(rval = Rf_allocVector(type, n));
-    // In CR this reads #ifdef R_MEMORY_PROFILING :
-#if 0
-	if (RTRACE(v)){
-	   memtrace_report(v, rval);
-	   SET_RTRACE(rval,1);
-	}
-#endif
+	rval->maybeTraceMemory(v);
 	for (i = 0; i < n;  i++) {
 	    SEXP elt;
 	    if (v->sexptype() == EXPRSXP) {
