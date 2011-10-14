@@ -36,7 +36,7 @@ retracemem(x, previous = NULL)
   When an object is traced any copying of the object by the C function
   \code{duplicate} or by arithmetic or mathematical operations produces a
   message to standard output.  The message consists of the string
-  \code{tracemem}, the identifying strings for the object being copied and
+  \code{tracemem}, the identifying strings for the object(s) being copied and
   the new object being created, and a stack trace showing where the
   duplication occurred.  \code{retracemem()} is used to indicate that a
   variable should be considered a copy of a previous variable (e.g. after
@@ -44,10 +44,12 @@ retracemem(x, previous = NULL)
 
   The messages can be turned off with \code{\link{tracingState}}.
 
-  It is not possible to trace functions, as this would conflict with
-  \code{\link{trace}} and it is not useful to trace \code{NULL},
-  environments, promises, weak references, or external pointer objects, as
-  these are not duplicated.
+  In CXXR any R object (other than NULL) can be traced in this way;
+  however (as in CR) it is not useful to trace environments, promises,
+  weak references, or external pointer objects, as these are not
+  duplicated, and CXXR gives a warning in this case.  On the other hand
+  CXXR (unlike CR) does not track copying into and out of the arguments
+  of \code{.C} and \code{.Fortran}.
   
   These functions are \link{primitive}.
 }

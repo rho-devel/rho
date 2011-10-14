@@ -138,20 +138,15 @@ SEXP attribute_hidden do_tracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
     check1arg(args, call, "x");
 
     object = CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
-
     if(object == R_NilValue)
 	errorcall(call, _("cannot trace NULL"));
 
     if(TYPEOF(object) == ENVSXP || TYPEOF(object) == PROMSXP)
-	errorcall(call,
-		  _("'tracemem' is not useful for promise and environment objects"));
+	warningcall(call,
+		    _("'tracemem' is not useful for promise and environment objects"));
     if(TYPEOF(object) == EXTPTRSXP || TYPEOF(object) == WEAKREFSXP)
-	errorcall(call,
-		  _("'tracemem' is not useful for weak reference or external pointer objects"));
+	warningcall(call,
+		    _("'tracemem' is not useful for weak reference or external pointer objects"));
 
     object->setMemoryTracing(true);
     snprintf(buffer, 20, "<%p>", (void *) object);
@@ -172,11 +167,6 @@ SEXP attribute_hidden do_untracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
     check1arg(args, call, "x");
 
     object=CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
-
     object->setMemoryTracing(false);
 #else
     errorcall(call, _("R was not compiled with support for memory profiling"));
@@ -246,11 +236,6 @@ SEXP attribute_hidden do_retracemem(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(CADR(argList) == R_MissingArg) SETCAR(CDR(argList), R_NilValue);
 
     object = CAR(args);
-    if (TYPEOF(object) == CLOSXP ||
-	TYPEOF(object) == BUILTINSXP ||
-	TYPEOF(object) == SPECIALSXP)
-	errorcall(call, _("argument must not be a function"));
-
     previous = CADR(args);
     if(!isNull(previous) && !isString(previous))
 	    errorcall(call, _("invalid '%s' argument"), "previous");

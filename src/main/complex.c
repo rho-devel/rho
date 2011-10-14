@@ -206,21 +206,7 @@ SEXP attribute_hidden complex_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 
     n = (n1 > n2) ? n1 : n2;
     ans = allocVector(CPLXSXP, n);
-/* In CR this reads #ifdef R_MEMORY_PROFILING : */
-#if 0
-    if (RTRACE(s1) || RTRACE(s2)){
-       if (RTRACE(s1) && RTRACE(s2)){
-	  if (n1>n2)
-	      memtrace_report(s1,ans);
-	  else
-	      memtrace_report(s2, ans);
-       } else if (RTRACE(s1))
-	   memtrace_report(s1,ans);
-       else /* only s2 */
-	   memtrace_report(s2, ans);
-       SET_RTRACE(ans, 1);
-    }
-#endif
+    maybeTraceMemory2(ans, s1, s2);
 
     switch (code) {
     case PLUSOP:
@@ -364,6 +350,7 @@ SEXP attribute_hidden do_cmathfuns(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(y);
     DUPLICATE_ATTRIB(y, x);
     UNPROTECT(2);
+    maybeTraceMemory1(y, x);
     return y;
 }
 

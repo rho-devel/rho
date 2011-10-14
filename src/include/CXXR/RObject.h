@@ -876,6 +876,32 @@ extern "C" {
      */
     SEXP Rf_setAttrib(SEXP vec, SEXP name, SEXP val);
 
+    /** @brief C interface to RObject::traceMemory().
+     *
+     * This function provides a C language interface to
+     * <tt>dest->maybeTraceMemory(src)</tt>: see the documentation of
+     * that method for details.
+     *
+     * @param dest Non-null pointer to an RObject.
+     *
+     * @param src Non-null pointer to an RObject.
+     */
+    void maybeTraceMemory1(SEXP dest, SEXP src);
+
+    /** @brief C interface to RObject::traceMemory().
+     *
+     * This function provides a C language interface to
+     * <tt>dest->maybeTraceMemory(src1, src2)</tt>: see the documentation
+     * of that method for details.
+     *
+     * @param dest Non-null pointer to an RObject.
+     *
+     * @param src1 Non-null pointer to an RObject.
+     *
+     * @param src2 Non-null pointer to an RObject.
+     */
+    void maybeTraceMemory2(SEXP dest, SEXP src1, SEXP src2);
+
     /** @brief Name of type within R.
      *
      * Translate a ::SEXPTYPE to the name by which it is known within R.

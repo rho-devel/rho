@@ -236,3 +236,17 @@ void SET_ATTRIB(SEXP x, SEXP v)
     GCNode::GCInhibitor inhibitor;
     x->setAttributes(pl);
 }
+
+void maybeTraceMemory1(SEXP dest, SEXP src)
+{
+#ifdef R_MEMORY_PROFILING
+    dest->maybeTraceMemory(src);
+#endif
+}
+
+void maybeTraceMemory2(SEXP dest, SEXP src1, SEXP src2)
+{
+#ifdef R_MEMORY_PROFILING
+    dest->maybeTraceMemory(src1, src2);
+#endif
+}
