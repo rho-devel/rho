@@ -95,6 +95,18 @@ inline int* LOGICAL(SEXP x)
 }
 #endif
 
+    /** @brief Create a unit-length LogicalVector containing FALSE.
+     *
+     * @return a unit-length LogicalVector containing FALSE.
+     */
+    SEXP Rf_mkFalse();
+
+    /** @brief Create a unit-length LogicalVector containing TRUE.
+     *
+     * @return a unit-length LogicalVector containing TRUE.
+     */
+    SEXP Rf_mkTrue();
+
 #ifdef __cplusplus
 }
 #endif

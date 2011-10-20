@@ -84,20 +84,23 @@ void ByteCode::detachReferents()
     RObject::detachReferents();
 }
 
-// ByteCode::evaluate() is defined in eval.cpp unless:
-#ifndef BYTECODE
-RObject* ByteCode::evaluate(Environment*)
+RObject* ByteCode::evaluate(Environment* env)
 {
+#ifdef BYTECODE
+    return interpret(this, env);
+#else
     Rf_error(_("bytecode evaluation not enabled"));
     return 0;
-}
 #endif
+}
 
 void ByteCode::initialize()
 {
     if (!s_nodestack)
 	s_nodestack = CXXR_NEW(NodeStack);
 }
+
+// ByteCode::interpret() is in eval.cpp
 
 const char* ByteCode::typeName() const
 {

@@ -2766,11 +2766,11 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 	}
 }
 
-RObject* ByteCode::evaluate(Environment* rho)
+RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 {
   Scope scope;
   std::vector<Frame::Binding*> binding_stack;
-  SEXP body = this;
+  SEXP body = bcode;
   SEXP value, constants;
   BCODE *pc, *codebase;
   int ftype = 0;
@@ -2785,8 +2785,8 @@ RObject* ByteCode::evaluate(Environment* rho)
   BC_CHECK_SIGINT();
 
   INITIALIZE_MACHINE();
-  codebase = pc = &(*m_code)[0];
-  constants = m_constants;
+  codebase = pc = &(*bcode->m_code)[0];
+  constants = bcode->m_constants;
 
   /* check version */
   {

@@ -195,6 +195,8 @@ namespace CXXR {
 	// compiler-generated versions:
 	ByteCode(const ByteCode&);
 	ByteCode& operator=(const ByteCode&);
+
+	static RObject* interpret(ByteCode* bcode, Environment* env);
     };
 } // namespace CXXR
 
