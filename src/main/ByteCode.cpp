@@ -44,14 +44,6 @@
 
 using namespace CXXR;
 
-#ifdef BYTECODE
-#ifdef BC_INT_STACK
-IStackval* R_BCIntStackBase;
-IStackval* R_BCIntStackTop;
-IStackval* R_BCIntStackEnd;
-#endif
-#endif
-
 // ***** ByteCode::NodeStack *****
 
 ByteCode::NodeStack::NodeStack()

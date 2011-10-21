@@ -2311,13 +2311,6 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 
 #define BCCONSTS(e) (SEXP_downcast<ByteCode*>(e)->constants())
 
-#ifdef BC_INT_STACK
-static void intStackOverflow()
-{
-    Rf_error(_("integer stack overflow"));
-}
-#endif
-
 static SEXP bytecodeExpr(SEXP e)
 {
     if (isByteCode(e)) {
@@ -2339,26 +2332,39 @@ SEXP R_ClosureExpr(SEXP p)
 }
 
 #ifdef THREADED_CODE
-typedef union { void *v; int i; } BCODE;
+void* ByteCode::s_op_address[OPCOUNT];
+#ifndef TOKEN_THREADING
+int ByteCode::s_op_arity[OPCOUNT];
+#endif
 
-static struct { void *addr; int argc; } opinfo[OPCOUNT];
-
+#ifdef TOKEN_THREADING
 #define OP(name,n) \
-  case name##_OP: opinfo[name##_OP].addr = (__extension__ &&op_##name); \
-    opinfo[name##_OP].argc = (n); \
+  case name##_OP: s_op_address[name##_OP] = (__extension__ &&op_##name); \
     goto loop; \
     op_##name
+#else
+#define OP(name,n) \
+  case name##_OP: s_op_address[name##_OP] = (__extension__ &&op_##name); \
+    s_op_arity[name##_OP] = (n); \
+    goto loop; \
+    op_##name
+#endif
 
 #define BEGIN_MACHINE  NEXT(); init: { loop: switch(which++)
 #define LASTOP } value = R_NilValue; goto done
 #define INITIALIZE_MACHINE() if (body == NULL) goto init
 
+#ifdef TOKEN_THREADING
+#define NEXT() (__extension__ ({goto *s_op_address[*pc++];}))
+#define GETOP() *pc++
+#else
 #define NEXT() (__extension__ ({goto *(*pc++).v;}))
 #define GETOP() (*pc++).i
-#define SKIP_OP() (pc++)
+#endif
 
-#define BCCODE(e) reinterpret_cast<BCODE *>( INTEGER(BCODE_CODE(e)))
 #else
+// Not THREADED_CODE:
+
 typedef int BCODE;
 
 #define OP(name,argc) case name##_OP
@@ -2373,9 +2379,10 @@ typedef int BCODE;
 
 #define NEXT() goto loop
 #define GETOP() *pc++
-#define SKIP_OP() (pc++)
 
 #endif
+
+#define SKIP_OP() (pc++)
 
 static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
 			    Rboolean dd, Rboolean keepmiss)
@@ -2776,7 +2783,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
   BC_CHECK_SIGINT();
 
   INITIALIZE_MACHINE();
-#ifdef THREADED_CODE
+#ifdef ENCODED_BCODE
   codebase = &bcode->m_threaded_code[0];
 #else
   codebase = &(*bcode->m_code)[0];
@@ -3630,6 +3637,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 }
 
 #ifdef THREADED_CODE
+#ifndef TOKEN_THREADING
 void ByteCode::thread()
 {
     size_t n = m_code->size();
@@ -3638,7 +3646,7 @@ void ByteCode::thread()
     if (version < R_bcMinVersion || version > R_bcVersion) {
 	m_threaded_code.resize(2);
 	m_threaded_code[0].i = version;
-	m_threaded_code[1].v = opinfo[BCMISMATCH_OP].addr;
+	m_threaded_code[1].v = s_op_address[BCMISMATCH_OP];
 	return;
     }
     m_threaded_code.resize(n);
@@ -3653,11 +3661,12 @@ void ByteCode::thread()
 	while (i < n) {
 	    BCODE& cell = m_threaded_code[i];
 	    int op = cell.i;
-	    cell.v = opinfo[op].addr;
-	    i += opinfo[op].argc + 1;
+	    cell.v = s_op_address[op];
+	    i += s_op_arity[op] + 1;
 	}
     }
-}    
+}
+#endif 
 #endif
 
 SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)

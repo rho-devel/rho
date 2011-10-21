@@ -291,14 +291,6 @@ void InitMemory()
 
 #ifdef BYTECODE
     ByteCode::initialize();
-# ifdef BC_INT_STACK
-    R_BCIntStackBase =
-      (IStackval *) malloc(R_BCINTSTACKSIZE * sizeof(IStackval));
-    if (R_BCIntStackBase == NULL)
-	R_Suicide("couldn't allocate integer stack");
-    R_BCIntStackTop = R_BCIntStackBase;
-    R_BCIntStackEnd = R_BCIntStackBase + R_BCINTSTACKSIZE;
-# endif
 #endif
 }
 
@@ -655,5 +647,3 @@ int Seql(SEXP a, SEXP b)
     	return result;
     }
 }
-
-

@@ -55,14 +55,9 @@ extern "C" {
 # define THREADED_CODE
 #endif
 
-#ifdef BC_INT_STACK
-#define R_BCINTSTACKSIZE 10000
-    typedef union { void *p; int i; } IStackval;
-    extern IStackval* R_BCIntStackBase;
-    extern IStackval* R_BCIntStackTop;
-    extern IStackval* R_BCIntStackEnd;
 #endif
-#endif
+
+#define TOKEN_THREADING
 }
 
 namespace CXXR {
@@ -81,7 +76,9 @@ namespace CXXR {
 	    : RObject(BCODESXP), m_code(code), m_constants(constants)
 	{
 #ifdef THREADED_CODE
+#ifndef TOKEN_THREADING
 	    thread();
+#endif
 #endif
 	}
 
@@ -123,6 +120,12 @@ namespace CXXR {
 
 	// Make this private in due course:
 #ifdef THREADED_CODE
+#ifndef TOKEN_THREADING
+#define ENCODED_BCODE
+#endif
+#endif
+
+#ifdef ENCODED_BCODE
 	typedef union { void *v; int i; } BCODE;
 #else
 	typedef int BCODE;
@@ -182,26 +185,23 @@ namespace CXXR {
 	    Scope()
 	    {
 		m_nodestack_size = s_nodestack->size();
-#ifdef BC_INT_STACK
-		m_intstack = R_BCIntStackTop;
-#endif
 	    }
 
 	    ~Scope()
 	    {
 		s_nodestack->resize(m_nodestack_size);
-#ifdef BC_INT_STACK
-		R_BCIntStackTop = m_intstack;
-#endif
 	    }
 	private:
 	    size_t m_nodestack_size;
-#ifdef BC_INT_STACK
-	    IStackval *m_intstack;
-#endif
 	};
 
 	static GCRoot<NodeStack> s_nodestack;
+#ifdef THREADED_CODE
+	static void* s_op_address[];
+#ifndef TOKEN_THREADING
+	static int s_op_arity[];
+#endif
+#endif
 
 	GCEdge<IntVector> m_code;
 	GCEdge<ListVector> m_constants;
@@ -224,7 +224,7 @@ namespace CXXR {
 	// table(s).
 	static RObject* interpret(ByteCode* bcode, Environment* env);
 
-#ifdef THREADED_CODE
+#ifdef ENCODED_BCODE
 	// Initialize the m_threaded_code field by creating a threaded
 	// form of the code.
 	void thread();
