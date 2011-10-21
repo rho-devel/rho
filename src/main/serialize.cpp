@@ -1127,7 +1127,7 @@ static void WriteBC1(SEXP s, SEXP ref_table, SEXP reps, R_outpstream_t stream)
     int i, n;
     SEXP code, consts;
     ByteCode* bc = SEXP_downcast<ByteCode*>(s);
-    PROTECT(code = R_bcDecode(bc->code()));
+    PROTECT(code = bc->code());
     WriteItem(code, ref_table, stream);
     consts = bc->constants();
     n = LENGTH(consts);
@@ -1619,7 +1619,6 @@ static SEXP ReadBCConsts(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 static SEXP ReadBC1(SEXP ref_table, SEXP reps, R_inpstream_t stream)
 {
     GCStackRoot<> code(ReadItem(ref_table, stream));
-    code = R_bcEncode(code);
     GCStackRoot<> constants(ReadBCConsts(ref_table, reps, stream));
     return CXXR_NEW(ByteCode(SEXP_downcast<IntVector*>(code.get()),
 			     SEXP_downcast<ListVector*>(constants.get())));

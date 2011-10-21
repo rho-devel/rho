@@ -47,6 +47,14 @@
 
 extern "C" {
 #ifdef BYTECODE
+
+// In CXXR for the time being:
+//#define NO_THREADED_CODE
+
+#if defined(__GNUC__) && ! defined(BC_PROFILING) && (! defined(NO_THREADED_CODE))
+# define THREADED_CODE
+#endif
+
 #ifdef BC_INT_STACK
 #define R_BCINTSTACKSIZE 10000
     typedef union { void *p; int i; } IStackval;
@@ -71,7 +79,11 @@ namespace CXXR {
 	 */
 	explicit ByteCode(IntVector* code, ListVector* constants)
 	    : RObject(BCODESXP), m_code(code), m_constants(constants)
-	{}
+	{
+#ifdef THREADED_CODE
+	    thread();
+#endif
+	}
 
 	// Interim accessor functions.  Try to get rid of these:
 
@@ -108,6 +120,13 @@ namespace CXXR {
 	// Virtual functions of GCNode:
 	void detachReferents();
 	void visitReferents(const_visitor* v) const;
+
+	// Make this private in due course:
+#ifdef THREADED_CODE
+	typedef union { void *v; int i; } BCODE;
+#else
+	typedef int BCODE;
+#endif
     private:
 	/** @brief Virtual machine node stack.
 	 *
@@ -186,6 +205,9 @@ namespace CXXR {
 
 	GCEdge<IntVector> m_code;
 	GCEdge<ListVector> m_constants;
+#ifdef THREADED_CODE
+	std::vector<BCODE> m_threaded_code;
+#endif
 
 	// Declared private to ensure that ByteCode objects are
 	// allocated only using 'new':
@@ -196,7 +218,17 @@ namespace CXXR {
 	ByteCode(const ByteCode&);
 	ByteCode& operator=(const ByteCode&);
 
+	// Normally this implements evaluate() by evaluating bcode in
+	// the environment env.  However, if called with a null
+	// pointer for bcode, it initialises the opcode despatch
+	// table(s).
 	static RObject* interpret(ByteCode* bcode, Environment* env);
+
+#ifdef THREADED_CODE
+	// Initialize the m_threaded_code field by creating a threaded
+	// form of the code.
+	void thread();
+#endif
     };
 } // namespace CXXR
 

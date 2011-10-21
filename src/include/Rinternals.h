@@ -444,8 +444,6 @@ void R_RunWeakRefFinalizer(SEXP w);
 SEXP R_PromiseExpr(SEXP);
 SEXP R_ClosureExpr(SEXP);
 void R_initialize_bcode(void);
-SEXP R_bcEncode(SEXP);
-SEXP R_bcDecode(SEXP);
 #define PREXPR(e) R_PromiseExpr(e)
 #define BODY_EXPR(e) R_ClosureExpr(e)
 #else

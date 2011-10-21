@@ -1941,13 +1941,6 @@ static SEXP R_Subassign2Sym = NULL;
 static SEXP R_TrueValue = NULL;
 static SEXP R_FalseValue = NULL;
 
-// In CXXR for the time being:
-#define NO_THREADED_CODE
-
-#if defined(__GNUC__) && ! defined(BC_PROFILING) && (! defined(NO_THREADED_CODE))
-# define THREADED_CODE
-#endif
-
 attribute_hidden
 void R_initialize_bcode(void)
 {
@@ -1979,9 +1972,7 @@ void R_initialize_bcode(void)
   R_FalseValue = Rf_mkFalse();
   SET_NAMED(R_FalseValue, 2);
   R_PreserveObject(R_FalseValue);
-#ifdef THREADED_CODE
-  bcEval(NULL, NULL);
-#endif
+  ByteCode::initialize();
 }
 
 enum {
@@ -2785,7 +2776,12 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
   BC_CHECK_SIGINT();
 
   INITIALIZE_MACHINE();
-  codebase = pc = &(*bcode->m_code)[0];
+#ifdef THREADED_CODE
+  codebase = &bcode->m_threaded_code[0];
+#else
+  codebase = &(*bcode->m_code)[0];
+#endif
+  pc = codebase;
   constants = bcode->m_constants;
 
   /* check version */
@@ -3177,11 +3173,15 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	SEXP args = NODESTACKEND[-2];
 	if (TYPEOF(fun) != BUILTINSXP)
 	  Rf_error(_("not a BUILTIN function"));
-	const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
-	const Expression* callx = SEXP_downcast<Expression*>(call);
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
-	value = func->apply(&arglist, env, callx);
+	// Inner block because destructor of ArgList must be called
+	// before NEXT():
+	{
+	    const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
+	    const Expression* callx = SEXP_downcast<Expression*>(call);
+	    Environment* env = SEXP_downcast<Environment*>(rho);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	    value = func->apply(&arglist, env, callx);
+	}
 	s_nodestack->pop(2);
 	NODESTACKEND[-1] = value;
 	NEXT();
@@ -3196,11 +3196,15 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  Rf_PrintValue(symbol);
 	}
 	BCNPUSH(fun);  /* for GC protection */
-	const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
-	const Expression* callx = SEXP_downcast<Expression*>(call);
-	Environment* env = SEXP_downcast<Environment*>(rho);
-	ArgList arglist(callx->tail(), ArgList::RAW);
-	value = func->apply(&arglist, env, callx);
+	// Inner block because destructor of ArgList must be called
+	// before NEXT():
+	{
+	    const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
+	    const Expression* callx = SEXP_downcast<Expression*>(call);
+	    Environment* env = SEXP_downcast<Environment*>(rho);
+	    ArgList arglist(callx->tail(), ArgList::RAW);
+	    value = func->apply(&arglist, env, callx);
+	}
 	NODESTACKEND[-1] = value; /* replaces fun on stack */
 	NEXT();
       }
@@ -3626,85 +3630,34 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 }
 
 #ifdef THREADED_CODE
-SEXP R_bcEncode(SEXP bytes)
+void ByteCode::thread()
 {
-    SEXP code;
-    BCODE *pc;
-    int *ipc, i, n, m, v;
-
-    m = (sizeof(BCODE) + sizeof(int) - 1) / sizeof(int);
-
-    n = LENGTH(bytes);
-    ipc = INTEGER(bytes);
-
-    v = ipc[0];
-    if (v < R_bcMinVersion || v > R_bcVersion) {
-	code = Rf_allocVector(INTSXP, m * 2);
-	pc = reinterpret_cast<BCODE *>( INTEGER(code));
-	pc[0].i = v;
-	pc[1].v = opinfo[BCMISMATCH_OP].addr;
-	return code;
+    size_t n = m_code->size();
+    int version = (*m_code)[0];
+    // Check version:
+    if (version < R_bcMinVersion || version > R_bcVersion) {
+	m_threaded_code.resize(2);
+	m_threaded_code[0].i = version;
+	m_threaded_code[1].v = opinfo[BCMISMATCH_OP].addr;
+	return;
     }
-    else {
-	code = Rf_allocVector(INTSXP, m * n);
-	pc = reinterpret_cast<BCODE *>( INTEGER(code));
-
-	for (i = 0; i < n; i++) pc[i].i = ipc[i];
-
-	/* install the current version number */
-	pc[0].i = R_bcVersion;
-
-	for (i = 1; i < n;) {
-	    int op = pc[i].i;
-	    pc[i].v = opinfo[op].addr;
+    m_threaded_code.resize(n);
+    // Insert the current version number:
+    m_threaded_code[0].i = R_bcVersion;
+    // First do a straight copy:
+    for (size_t i = 1; i < n; ++i)
+	m_threaded_code[i].i = (*m_code)[i];
+    // Now replace the opcodes with the appropriate code addresses:
+    {
+	size_t i = 1;
+	while (i < n) {
+	    BCODE& cell = m_threaded_code[i];
+	    int op = cell.i;
+	    cell.v = opinfo[op].addr;
 	    i += opinfo[op].argc + 1;
 	}
-
-	return code;
     }
-}
-
-static int findOp(void *addr)
-{
-    int i;
-
-    for (i = 0; i < OPCOUNT; i++)
-	if (opinfo[i].addr == addr)
-	    return i;
-    Rf_error(_("cannot find index for threaded code address"));
-    return 0; /* not reached */
-}
-
-SEXP R_bcDecode(SEXP code) {
-    int n, i, j, *ipc;
-    BCODE *pc;
-    SEXP bytes;
-
-    int m = (sizeof(BCODE) + sizeof(int) - 1) / sizeof(int);
-
-    n = LENGTH(code) / m;
-    pc = reinterpret_cast<BCODE *>( INTEGER(code));
-
-    bytes = Rf_allocVector(INTSXP, n);
-    ipc = INTEGER(bytes);
-
-    /* copy the version number */
-    ipc[0] = pc[0].i;
-
-    for (i = 1; i < n;) {
-	int op = findOp(pc[i].v);
-	int argc = opinfo[op].argc;
-	ipc[i] = op;
-	i++;
-	for (j = 0; j < argc; j++, i++)
-	    ipc[i] = pc[i].i;
-    }
-
-    return bytes;
-}
-#else
-SEXP R_bcEncode(SEXP x) { return x; }
-SEXP R_bcDecode(SEXP x) { return Rf_duplicate(x); }
+}    
 #endif
 
 SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
@@ -3714,7 +3667,7 @@ SEXP attribute_hidden do_mkcode(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     bytes = CAR(args);
     consts = CADR(args);
-    GCStackRoot<IntVector> enc(SEXP_downcast<IntVector*>(R_bcEncode(bytes)));
+    GCStackRoot<IntVector> enc(SEXP_downcast<IntVector*>(bytes));
     GCStackRoot<ListVector> pl(SEXP_downcast<ListVector*>(consts));
     return CXXR_NEW(ByteCode(enc, pl));
 }
@@ -3769,7 +3722,7 @@ static SEXP disassemble(SEXP bc)
 
   PROTECT(ans = Rf_allocVector(VECSXP, expr != R_NilValue ? 4 : 3));
   SET_VECTOR_ELT(ans, 0, Rf_install(".Code"));
-  SET_VECTOR_ELT(ans, 1, R_bcDecode(code));
+  SET_VECTOR_ELT(ans, 1, code);
   SET_VECTOR_ELT(ans, 2, Rf_allocVector(VECSXP, nc));
   if (expr != R_NilValue)
       SET_VECTOR_ELT(ans, 3, Rf_duplicate(expr));

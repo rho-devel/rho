@@ -98,9 +98,14 @@ void ByteCode::initialize()
 {
     if (!s_nodestack)
 	s_nodestack = CXXR_NEW(NodeStack);
+#ifdef THREADED_CODE
+    interpret(0, 0);
+#endif
 }
 
 // ByteCode::interpret() is in eval.cpp
+
+// ByteCode::thread() is in eval.cpp
 
 const char* ByteCode::typeName() const
 {
