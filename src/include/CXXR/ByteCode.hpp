@@ -136,8 +136,20 @@ namespace CXXR {
 	 * Stack of pointers to RObjects manipulated by the
 	 * ByteCode virtual machine.
 	 */
-	struct NodeStack : public GCNode, public std::vector<GCEdge<> > {
+	class NodeStack : public GCNode {
+	public:
 	    NodeStack();
+
+	    /** @brief Pointer to 'one beyond the end' of the NodeStack.
+	     *
+	     * @return A pointer to the GCEdge<> one beyond the end of
+	     * the node stack.  This performs a function similar to
+	     * R_BCNodeStackTop in CR.
+	     */
+	    GCEdge<>* end()
+	    {
+		return &*(m_edgevec.begin() + m_size);
+	    }
 
 	    /** @brief pop elements from the top of the stack.
 	     *
@@ -147,8 +159,14 @@ namespace CXXR {
 	     *
 	     * @return the pointer previously at the top of the stack.
 	     */
-	    void pop(size_t count = 1) {
-		resize(size() - count);
+	    void pop(size_t count = 1)
+	    {
+#ifndef NDEBUG
+		if (count > m_size)
+		    badpop();
+#endif
+		while (count--)
+		    m_edgevec[--m_size] = 0;
 	    }
 
 	    /** @brief Push a pointer onto the stack.
@@ -157,8 +175,14 @@ namespace CXXR {
 	     */
 	    void push(RObject* node)
 	    {
-		resize(size() + 1);
-		back() = node;
+		if (m_size == m_edgevec.size())
+		    enlarge();
+		m_edgevec[m_size++] = node;
+	    }
+
+	    size_t size() const
+	    {
+		return m_size;
 	    }
 
 	    /** @brief pop and return the top element of the stack.
@@ -168,14 +192,30 @@ namespace CXXR {
 	     * @return the pointer previously at the top of the stack.
 	     */
 	    RObject* topnpop() {
-		RObject* ans = back();
-		resize(size() - 1);
+#ifndef NDEBUG
+		if (m_size == 0)
+		    badpop();
+#endif
+		--m_size;
+		RObject* ans = m_edgevec[m_size];
+		m_edgevec[m_size] = 0;
 		return ans;
 	    }
 
 	    // Virtual functions of GCNode:
 	    void detachReferents();
 	    void visitReferents(const_visitor* v) const;
+	private:
+	    typedef std::vector<GCEdge<> > EdgeVec;
+	    EdgeVec m_edgevec;
+	    size_t m_size;
+
+#ifndef NDEBUG
+	    void badpop();
+#endif
+
+	    // Double the size of m_edgevec:
+	    void enlarge();
 	};
 
 	// Class to save and restore the state of the ByteCode
@@ -189,7 +229,7 @@ namespace CXXR {
 
 	    ~Scope()
 	    {
-		s_nodestack->resize(m_nodestack_size);
+		s_nodestack->pop(s_nodestack->size() - m_nodestack_size);
 	    }
 	private:
 	    size_t m_nodestack_size;

@@ -2101,7 +2101,7 @@ SEXP do_subassign2_dflt(SEXP, SEXP, SEXP, SEXP);
 // library end(), i.e. one past the current top element of the stack,
 // not in the way that CR uses R_BCNodeStackEnd, which relates to the
 // end of allocated storage.
-#define NODESTACKEND (&*s_nodestack->end())
+#define NODESTACKEND (s_nodestack->end())
 
 #define DO_FAST_RELOP2(op,a,b) do { \
     double __a__ = (a), __b__ = (b); \

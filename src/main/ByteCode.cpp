@@ -47,18 +47,31 @@ using namespace CXXR;
 // ***** ByteCode::NodeStack *****
 
 ByteCode::NodeStack::NodeStack()
+    : m_edgevec(100), m_size(0)
+{}
+
+#ifndef NDEBUG
+void ByteCode::NodeStack::badpop()
 {
-    reserve(100);
+    Rf_error("Internal error: pop from empty ByteCode::NodeStack");
 }
+#endif
 
 void ByteCode::NodeStack::detachReferents()
 {
-    clear();
+    m_edgevec.clear();
+    m_size = 0;
+}
+
+void ByteCode::NodeStack::enlarge()
+{
+    m_edgevec.resize(2*m_edgevec.size() + 1);
 }
 
 void ByteCode::NodeStack::visitReferents(const_visitor* v) const
 {
-    for (const_iterator it = begin(); it != end(); ++it) {
+    EdgeVec::const_iterator stop = m_edgevec.begin() + m_size;
+    for (EdgeVec::const_iterator it = m_edgevec.begin(); it != stop; ++it) {
 	const GCEdge<>& e = *it;
 	if (e)
 	    (*v)(e);
