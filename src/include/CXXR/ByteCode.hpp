@@ -148,7 +148,7 @@ namespace CXXR {
 	     */
 	    GCEdge<>* end()
 	    {
-		return &*(m_edgevec.begin() + m_size);
+		return m_end;
 	    }
 
 	    /** @brief pop elements from the top of the stack.
@@ -162,11 +162,11 @@ namespace CXXR {
 	    void pop(size_t count = 1)
 	    {
 #ifndef NDEBUG
-		if (count > m_size)
+		if (size() == 0 && count > 0)
 		    badpop();
 #endif
 		while (count--)
-		    m_edgevec[--m_size] = 0;
+		    (--m_end)->~GCEdge<>();
 	    }
 
 	    /** @brief Push a pointer onto the stack.
@@ -175,14 +175,14 @@ namespace CXXR {
 	     */
 	    void push(RObject* node)
 	    {
-		if (m_size == m_edgevec.size())
+		if (reinterpret_cast<void**>(m_end) == &*m_edgevec.end())
 		    enlarge();
-		m_edgevec[m_size++] = node;
+		new (m_end++) GCEdge<>(node);
 	    }
 
 	    size_t size() const
 	    {
-		return m_size;
+		return (reinterpret_cast<void**>(m_end) - &*m_edgevec.begin());
 	    }
 
 	    /** @brief pop and return the top element of the stack.
@@ -193,12 +193,12 @@ namespace CXXR {
 	     */
 	    RObject* topnpop() {
 #ifndef NDEBUG
-		if (m_size == 0)
+		if (size() == 0)
 		    badpop();
 #endif
-		--m_size;
-		RObject* ans = m_edgevec[m_size];
-		m_edgevec[m_size] = 0;
+		--m_end;
+		RObject* ans = *m_end;
+		m_end->~GCEdge<>();
 		return ans;
 	    }
 
@@ -206,15 +206,20 @@ namespace CXXR {
 	    void detachReferents();
 	    void visitReferents(const_visitor* v) const;
 	private:
-	    typedef std::vector<GCEdge<> > EdgeVec;
+	    // This code assumes that sizeof(GCEdge<>) ==
+	    // sizeof(void*) and that their alignments are the same.
+	    // m_edgevec is conceptually a stack of GCEdge<>s, which
+	    // are constructed and destructed by stack operations.
+	    typedef std::vector<void*> EdgeVec;
 	    EdgeVec m_edgevec;
-	    size_t m_size;
+	    GCEdge<>* m_end;
 
 #ifndef NDEBUG
 	    void badpop();
 #endif
-
-	    // Double the size of m_edgevec:
+	    // Double the size of m_edgevec.  The implementation
+	    // assumes that this is called only when m_edgevec is full
+	    // to capacity.
 	    void enlarge();
 	};
 
