@@ -589,14 +589,13 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
 static SEXP EnsureLocal(SEXP symbol, SEXP rho)
 {
-    SEXP vl;
+    GCStackRoot<> vl;
 
     if ((vl = Rf_findVarInFrame3(rho, symbol, TRUE)) != R_UnboundValue) {
 	vl = Rf_eval(symbol, rho);	/* for promises */
 	if(NAMED(vl) == 2) {
-	    PROTECT(vl = Rf_duplicate(vl));
+	    vl = Rf_duplicate(vl);
 	    Rf_defineVar(symbol, vl, rho);
-	    UNPROTECT(1);
 	    SET_NAMED(vl, 1);
 	}
 	return vl;
@@ -606,9 +605,8 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
     if (vl == R_UnboundValue)
 	Rf_error(_("object '%s' not found"), CHAR(PRINTNAME(symbol)));
 
-    PROTECT(vl = Rf_duplicate(vl));
+    vl = Rf_duplicate(vl);
     Rf_defineVar(symbol, vl, rho);
-    UNPROTECT(1);
     SET_NAMED(vl, 1);
     return vl;
 }
@@ -1154,12 +1152,10 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 {
-    SEXP val, nexpr;
-    GCStackRoot<> nval;
     if (Rf_isNull(expr))
 	Rf_error(_("invalid (NULL) left side of assignment"));
     if (Rf_isSymbol(expr)) {
-	GCStackRoot<> exprr(expr);
+	GCStackRoot<> exprr(expr), nval;
 	if(forcelocal) {
 	    nval = EnsureLocal(expr, rho);
 	}
@@ -1169,13 +1165,14 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 	return PairList::cons(nval, PairList::cons(expr));
     }
     else if (Rf_isLanguage(expr)) {
+	GCStackRoot<> val, nexpr, nval;
 	PROTECT(expr);
-	PROTECT(val = evalseq(CADR(expr), rho, forcelocal, tmploc));
+	val = evalseq(CADR(expr), rho, forcelocal, tmploc);
 	R_SetVarLocValue(tmploc, CAR(val));
-	PROTECT(nexpr = CONS(R_GetVarLocSymbol(tmploc), CDDR(expr)));
-	PROTECT(nexpr = LCONS(CAR(expr), nexpr));
+	nexpr = CONS(R_GetVarLocSymbol(tmploc), CDDR(expr));
+	nexpr = LCONS(CAR(expr), nexpr);
 	nval = Rf_eval(nexpr, rho);
-	UNPROTECT(4);
+	UNPROTECT(1);
 	return CONS(nval, val);
     }
     else Rf_error(_("target of assignment expands to non-language object"));
@@ -1216,8 +1213,7 @@ static R_INLINE SEXP installAssignFcnName(SEXP fun)
 
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    GCStackRoot<> expr, lhs, rhs, saverhs, tmp, afun, rhsprom;
-    R_varloc_t tmploc;
+    GCStackRoot<> expr, rhs, saverhs;
 
     expr = CAR(args);
 
@@ -1274,19 +1270,20 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (rho == R_BaseEnv)
 	Rf_errorcall(call, _("cannot do complex assignments in base environment"));
     Rf_defineVar(R_TmpvalSymbol, R_NilValue, rho);
-    tmploc = R_findVarLocInFrame(rho, R_TmpvalSymbol);
+    R_varloc_t tmploc = R_findVarLocInFrame(rho, R_TmpvalSymbol);
     /* Now use try-catch to remove it when we are done, even in the
      * case of an error.  This all helps Rf_error() provide a better call.
      */
     try {
 	/*  Do a partial evaluation down through the LHS. */
-	lhs = evalseq(CADR(expr), rho,
-		      PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc);
+	GCStackRoot<> lhs(evalseq(CADR(expr), rho,
+				  PRIMVAL(op)==1 || PRIMVAL(op)==3, tmploc));
 
-	rhsprom = Rf_mkPROMISE(CADR(args), rho);
+	GCStackRoot<> rhsprom(Rf_mkPROMISE(CADR(args), rho));
 	SET_PRVALUE(rhsprom, rhs);
 
 	while (Rf_isLanguage(CADR(expr))) {
+	    GCStackRoot<> tmp;
 	    if (TYPEOF(CAR(expr)) == SYMSXP)
 		tmp = installAssignFcnName(CAR(expr));
 	    else {
@@ -1312,12 +1309,12 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    lhs = CDR(lhs);
 	    expr = CADR(expr);
 	}
+	GCStackRoot<> afun;
 	if (TYPEOF(CAR(expr)) == SYMSXP)
 	    afun = installAssignFcnName(CAR(expr));
 	else {
 	    /* check for and handle assignments of the form
 	       foo::bar(x) <- y or foo:::bar(x) <- y */
-	    tmp = R_NilValue; /* avoid uninitialized variable warnings */
 	    if (TYPEOF(CAR(expr)) == LANGSXP &&
 		(CAR(CAR(expr)) == R_DoubleColonSymbol ||
 		 CAR(CAR(expr)) == R_TripleColonSymbol) &&
