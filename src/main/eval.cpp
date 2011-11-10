@@ -618,6 +618,7 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
 
 static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
 {
+    static Symbol* valuesym = Symbol::obtain("value");
     SEXP tmp, ptmp;
     PROTECT(fun);
     PROTECT(args);
@@ -635,7 +636,7 @@ static SEXP replaceCall(SEXP fun, SEXP val, SEXP args, SEXP rhs)
 	args = CDR(args);
     }
     SETCAR(ptmp, rhs);
-    SET_TAG(ptmp, Rf_install("value"));
+    SET_TAG(ptmp, valuesym);
     return tmp;
 }
 
@@ -1152,10 +1153,11 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 {
+    GCStackRoot<> exprrt(expr);
     if (Rf_isNull(expr))
 	Rf_error(_("invalid (NULL) left side of assignment"));
     if (Rf_isSymbol(expr)) {
-	GCStackRoot<> exprr(expr), nval;
+	GCStackRoot<> nval;
 	if(forcelocal) {
 	    nval = EnsureLocal(expr, rho);
 	}
@@ -1166,13 +1168,11 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
     }
     else if (Rf_isLanguage(expr)) {
 	GCStackRoot<> val, nexpr, nval;
-	PROTECT(expr);
 	val = evalseq(CADR(expr), rho, forcelocal, tmploc);
 	R_SetVarLocValue(tmploc, CAR(val));
 	nexpr = CONS(R_GetVarLocSymbol(tmploc), CDDR(expr));
 	nexpr = LCONS(CAR(expr), nexpr);
 	nval = Rf_eval(nexpr, rho);
-	UNPROTECT(1);
 	return CONS(nval, val);
     }
     else Rf_error(_("target of assignment expands to non-language object"));
@@ -1201,15 +1201,37 @@ static const char * const asym[] = {":=", "<-", "<<-", "="};
 	R_SetVarLocValue(loc, __v__); \
     } while(0)
 
-#define ASSIGNBUFSIZ 32
-static R_INLINE SEXP installAssignFcnName(SEXP fun)
-{
-    char buf[ASSIGNBUFSIZ];
-    if(strlen(CHAR(PRINTNAME(fun))) + 3 > ASSIGNBUFSIZ)
-	Rf_error(_("overlong name in '%s'"), CHAR(PRINTNAME(fun)));
-    sprintf(buf, "%s<-", CHAR(PRINTNAME(fun)));
-    return Rf_install(buf);
+// Functions and data auxiliary to applydefine():
+namespace {
+    std::map<const Symbol*, Symbol*> sym2replac;
+
+    // Given a Symbol "foo", this function returns the Symbol "foo<-":
+    Symbol* func2ReplacementFunc(const Symbol* fsym)
+    {
+	typedef std::map<const Symbol*, Symbol*> Fmap;
+	Symbol* ans = sym2replac[fsym];
+	if (!ans) {
+	    std::string replacname = fsym->name()->stdstring() + "<-";
+	    ans = sym2replac[fsym] = Symbol::obtain(replacname);
+	}
+	return ans;
+    }
+
+    std::vector<Symbol*> obtainAssignSyms()
+    {
+	std::vector<Symbol*> ans(4);
+	for (size_t i = 0; i < 4; ++i)
+	    ans[i] = Symbol::obtain(asym[i]);
+	return ans;
+    }
 }
+
+// applydefine() handles the case where the left-hand side of an
+// assignment is not a symbol: specifically the cases where it is an
+// Expression (LANGSXP), or null (which gives an error).
+//
+// Section 13.5 of the 'yellow book' (Chambers' Software for Data
+// Analysis) gives useful background.
 
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
@@ -1285,16 +1307,16 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while (Rf_isLanguage(CADR(expr))) {
 	    GCStackRoot<> tmp;
 	    if (TYPEOF(CAR(expr)) == SYMSXP)
-		tmp = installAssignFcnName(CAR(expr));
+		tmp = func2ReplacementFunc(static_cast<Symbol*>(CAR(expr)));
 	    else {
 		/* check for and handle assignments of the form
 		   foo::bar(x) <- y or foo:::bar(x) <- y */
-		tmp = R_NilValue; /* avoid uninitialized variable warnings */
 		if (TYPEOF(CAR(expr)) == LANGSXP &&
 		    (CAR(CAR(expr)) == R_DoubleColonSymbol ||
 		     CAR(CAR(expr)) == R_TripleColonSymbol) &&
 		    length(CAR(expr)) == 3 && TYPEOF(CADDR(CAR(expr))) == SYMSXP) {
-		    tmp = installAssignFcnName(CADDR(CAR(expr)));
+		    const Symbol* fsym = static_cast<Symbol*>(CADDR(CAR(expr)));
+		    tmp = func2ReplacementFunc(fsym);
 		    tmp = Rf_lang3(CAAR(expr), CADR(CAR(expr)), tmp);
 		}
 		else
@@ -1311,7 +1333,7 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	GCStackRoot<> afun;
 	if (TYPEOF(CAR(expr)) == SYMSXP)
-	    afun = installAssignFcnName(CAR(expr));
+	    afun = func2ReplacementFunc(static_cast<Symbol*>(CAR(expr)));
 	else {
 	    /* check for and handle assignments of the form
 	       foo::bar(x) <- y or foo:::bar(x) <- y */
@@ -1319,15 +1341,17 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 		(CAR(CAR(expr)) == R_DoubleColonSymbol ||
 		 CAR(CAR(expr)) == R_TripleColonSymbol) &&
 		length(CAR(expr)) == 3 && TYPEOF(CADDR(CAR(expr))) == SYMSXP) {
-		afun = installAssignFcnName(CADDR(CAR(expr)));
+		const Symbol* fsym = static_cast<Symbol*>(CADDR(CAR(expr)));
+		afun = func2ReplacementFunc(fsym);
 		afun = Rf_lang3(CAAR(expr), CADR(CAR(expr)), afun);
 	    }
 	    else
 		Rf_error(_("invalid function in complex assignment"));
 	}
 	SET_TEMPVARLOC_FROM_CAR(tmploc, lhs);
+	static std::vector<Symbol*> assignsyms = obtainAssignSyms();
 	// Second arg in the foll. changed in CXXR at r253 (2008-03-18):
-	expr = assignCall(Rf_install(asym[PRIMVAL(op)]), CADR(lhs),
+	expr = assignCall(assignsyms[PRIMVAL(op)], CADR(lhs),
 			  afun, R_TmpvalSymbol, CDDR(expr), rhsprom);
 	expr = Rf_eval(expr, rho);
     }
