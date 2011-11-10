@@ -1235,14 +1235,14 @@ namespace {
 
 static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    GCStackRoot<> expr, rhs, saverhs;
-
-    expr = CAR(args);
+    GCStackRoot<> expr(CAR(args));
+    SEXP functor = CAR(expr);
 
     /*  It's important that the rhs get evaluated first because
 	assignment is right associative i.e.  a <- b <- c is parsed as
 	a <- (b <- c).  */
 
+    GCStackRoot<> rhs, saverhs;
     saverhs = rhs = Rf_eval(CADR(args), rho);
 
     if (PRIMVAL(op) == 2)
@@ -1304,22 +1304,28 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	GCStackRoot<> rhsprom(Rf_mkPROMISE(CADR(args), rho));
 	SET_PRVALUE(rhsprom, rhs);
 
-	while (Rf_isLanguage(CADR(expr))) {
+	SEXP firstarg = CADR(expr);
+	while (Rf_isLanguage(firstarg)) {
 	    GCStackRoot<> tmp;
-	    if (TYPEOF(CAR(expr)) == SYMSXP)
-		tmp = func2ReplacementFunc(static_cast<Symbol*>(CAR(expr)));
+	    if (TYPEOF(functor) == SYMSXP)
+		tmp = func2ReplacementFunc(static_cast<Symbol*>(functor));
 	    else {
 		/* check for and handle assignments of the form
 		   foo::bar(x) <- y or foo:::bar(x) <- y */
-		if (TYPEOF(CAR(expr)) == LANGSXP &&
-		    (CAR(CAR(expr)) == R_DoubleColonSymbol ||
-		     CAR(CAR(expr)) == R_TripleColonSymbol) &&
-		    length(CAR(expr)) == 3 && TYPEOF(CADDR(CAR(expr))) == SYMSXP) {
-		    const Symbol* fsym = static_cast<Symbol*>(CADDR(CAR(expr)));
-		    tmp = func2ReplacementFunc(fsym);
-		    tmp = Rf_lang3(CAAR(expr), CADR(CAR(expr)), tmp);
+		if (TYPEOF(functor) == LANGSXP) {
+		    SEXP funchead = CAR(functor);
+		    if ((funchead == R_DoubleColonSymbol
+			 || funchead == R_TripleColonSymbol)
+			&& length(functor) == 3) {
+			SEXP arg2 = CADDR(functor);
+			if (TYPEOF(arg2) == SYMSXP) {
+			    const Symbol* fsym = static_cast<Symbol*>(arg2);
+			    tmp = func2ReplacementFunc(fsym);
+			    tmp = Rf_lang3(funchead, CADR(functor), tmp);
+			}
+		    }
 		}
-		else
+		if (!tmp)
 		    Rf_error(_("invalid function in complex assignment"));
 	    }
 	    SET_TEMPVARLOC_FROM_CAR(tmploc, lhs);
@@ -1329,23 +1335,30 @@ static SEXP applydefine(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    // Try doing without this in CXXR:
 	    // SET_PRCODE(rhsprom, rhs); /* not good but is what we have been doing */
 	    lhs = CDR(lhs);
-	    expr = CADR(expr);
+	    expr = firstarg;
+	    functor = CAR(expr);
+	    firstarg = CADR(expr);
 	}
 	GCStackRoot<> afun;
-	if (TYPEOF(CAR(expr)) == SYMSXP)
-	    afun = func2ReplacementFunc(static_cast<Symbol*>(CAR(expr)));
+	if (TYPEOF(functor) == SYMSXP)
+	    afun = func2ReplacementFunc(static_cast<Symbol*>(functor));
 	else {
 	    /* check for and handle assignments of the form
 	       foo::bar(x) <- y or foo:::bar(x) <- y */
-	    if (TYPEOF(CAR(expr)) == LANGSXP &&
-		(CAR(CAR(expr)) == R_DoubleColonSymbol ||
-		 CAR(CAR(expr)) == R_TripleColonSymbol) &&
-		length(CAR(expr)) == 3 && TYPEOF(CADDR(CAR(expr))) == SYMSXP) {
-		const Symbol* fsym = static_cast<Symbol*>(CADDR(CAR(expr)));
-		afun = func2ReplacementFunc(fsym);
-		afun = Rf_lang3(CAAR(expr), CADR(CAR(expr)), afun);
+	    if (TYPEOF(functor) == LANGSXP) {
+		SEXP funchead = CAR(functor);
+		if ((funchead == R_DoubleColonSymbol
+		     || funchead == R_TripleColonSymbol)
+		    && length(functor) == 3) {
+		    SEXP arg2 = CADDR(functor);
+		    if (TYPEOF(arg2) == SYMSXP) {
+			const Symbol* fsym = static_cast<Symbol*>(arg2);
+			afun = func2ReplacementFunc(fsym);
+			afun = Rf_lang3(funchead, CADR(functor), afun);
+		    }
+		}
 	    }
-	    else
+	    if (!afun)
 		Rf_error(_("invalid function in complex assignment"));
 	}
 	SET_TEMPVARLOC_FROM_CAR(tmploc, lhs);
