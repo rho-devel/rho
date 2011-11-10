@@ -2682,7 +2682,7 @@ static int text_vfprintf(Rconnection con, const char *format, va_list ap)
     Routtextconn thisconn = CXXRSCAST(Routtextconn, con->connprivate);
     char buf[BUFSIZE], *b = buf, *p, *q;
     const void *vmax = vmaxget();
-    int res = 0, usedRalloc = FALSE, buffree,
+    int res = 0, usedRalloc = FALSE, buffree = 0 /* -Wall */,
 	already = strlen(thisconn->lastline);
     SEXP tmp;
 

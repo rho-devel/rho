@@ -419,7 +419,7 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
 	}
     }
 
-    bool mismatch;
+    bool mismatch = false;  // -Wall
     if (nx == ny || nx == 1 || ny == 1) mismatch = false;
     else if (nx > 0 && ny > 0) {
 	if (nx > ny) mismatch = (nx % ny != 0);

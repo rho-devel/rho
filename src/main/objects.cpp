@@ -453,7 +453,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Find the generic closure:
-    Closure* genclos;
+    Closure* genclos = 0;  // -Wall
     {
 	RObject* callcar = cptr->call()->car();
 	if (callcar->sexptype() == LANGSXP)

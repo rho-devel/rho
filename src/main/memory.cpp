@@ -332,7 +332,7 @@ SEXP NewEnvironment(SEXP namelist, SEXP valuelist, SEXP rho)
 
 SEXP allocVector(SEXPTYPE type, R_len_t length)
 {
-    SEXP s;
+    SEXP s = 0;  // -Wall
 
     if (length < 0 ) {
 	FunctionContext* ctxt = FunctionContext::innermost();

@@ -338,7 +338,7 @@ bool Subscripting::dropDimensions(VectorBase* v)
 	// for the sole remaining element, so we set up a name only if
 	// just one dimension has names.
 	if (dimnames) {
-	    StringVector* newnames;
+	    StringVector* newnames = 0;
 	    unsigned int count = 0;
 	    for (unsigned int d = 0; d < ndims; ++d) {
 		RObject* dnd = (*dimnames)[d];
