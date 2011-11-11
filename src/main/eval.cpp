@@ -1626,8 +1626,8 @@ SEXP attribute_hidden do_eval(SEXP call, SEXP op, SEXP args, SEXP rho)
     } /* else expr is returned unchanged */
     if (PRIMVAL(op)) { /* eval.with.vis(*) : */
 	PROTECT(expr);
-	PROTECT(env = Rf_allocVector(VECSXP, 2));
-	PROTECT(encl = Rf_allocVector(STRSXP, 2));
+	PROTECT(env = CXXR_NEW(ListVector(2)));
+	PROTECT(encl = CXXR_NEW(StringVector(2)));
 	SET_STRING_ELT(encl, 0, Rf_mkChar("value"));
 	SET_STRING_ELT(encl, 1, Rf_mkChar("visible"));
 	SET_VECTOR_ELT(env, 0, expr);
@@ -1649,8 +1649,8 @@ SEXP attribute_hidden do_withVisible(SEXP call, SEXP op, SEXP args, SEXP rho)
     x = CAR(args);
     x = Rf_eval(x, rho);
     PROTECT(x);
-    PROTECT(ret = Rf_allocVector(VECSXP, 2));
-    PROTECT(nm = Rf_allocVector(STRSXP, 2));
+    PROTECT(ret = CXXR_NEW(ListVector(2)));
+    PROTECT(nm = CXXR_NEW(StringVector(2)));
     SET_STRING_ELT(nm, 0, Rf_mkChar("value"));
     SET_STRING_ELT(nm, 1, Rf_mkChar("visible"));
     SET_VECTOR_ELT(ret, 0, x);
@@ -2251,7 +2251,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 }
 
 #define Builtin1(do_fun,which,rho) do {				 \
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   NODESTACKEND[-1] = CONS(NODESTACKEND[-1], R_NilValue); \
   NODESTACKEND[-1] = do_fun(call, getPrimitive(which, BUILTINSXP),	 \
 				NODESTACKEND[-1], rho); \
@@ -2259,7 +2259,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 } while(0)
 
 #define Builtin2(do_fun,which,rho) do {		     \
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   SEXP tmp = CONS(NODESTACKEND[-1], R_NilValue); \
   NODESTACKEND[-2] = CONS(NODESTACKEND[-2], tmp); \
   s_nodestack->pop(); \
@@ -2269,7 +2269,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 } while(0)
 
 #define NewBuiltin2(do_fun,opval,opsym,rho) do {        \
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   SEXP x = NODESTACKEND[-2]; \
   SEXP y = NODESTACKEND[-1]; \
   NODESTACKEND[-2] = do_fun(call, opval, opsym, x, y,rho);  \
@@ -2278,7 +2278,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 } while(0)
 
 #define Arith1(opsym) do {		\
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   SEXP x = NODESTACKEND[-1]; \
   NODESTACKEND[-1] = cmp_arith1(call, opsym, x, rho);	\
   NEXT(); \
@@ -2290,9 +2290,9 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 #define Relop2(opval,opsym) NewBuiltin2(cmp_relop,opval,opsym,rho)
 
 # define DO_FAST_BINOP(op,a,b) do { \
-    SEXP val = Rf_allocVector(REALSXP, 1); \
+    RealVector* val = CXXR_NEW(RealVector(1)); \
     SKIP_OP(); \
-    REAL(val)[0] = (a) op (b); \
+    (*val)[0] = (a) op (b); \
     NODESTACKEND[-2] = val; \
     s_nodestack->pop(); \
     NEXT(); \
@@ -2447,7 +2447,7 @@ static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
 }
 
 #define DO_GETVAR(dd,keepmiss) do { \
-  SEXP symbol = VECTOR_ELT(constants, GETOP()); \
+  SEXP symbol = (*constants)[GETOP()]; \
   R_Visible = TRUE; \
   BCNPUSH(getvar(symbol, rho, dd, keepmiss));	\
   NEXT(); \
@@ -2460,15 +2460,6 @@ static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
   if (NODESTACKEND[-2] == R_NilValue) NODESTACKEND[-2] = __cell__; \
   else SETCDR(NODESTACKEND[-1], __cell__); \
   NODESTACKEND[-1] = __cell__; \
-} while (0)
-
-/* make sure NAMED = 2 -- lower values might be safe in some cases but
-   not ingeneral, especially if the ocnstant pool was created by
-   unserializing a compiled expression. */
-#define DO_LDCONST(v) do { \
-  R_Visible = TRUE; \
-  v = VECTOR_ELT(constants, GETOP()); \
-  if (NAMED(v) < 2) SET_NAMED(v, 2); \
 } while (0)
 
 static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
@@ -2528,7 +2519,7 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
 }
 
 #define DO_STARTDISPATCH(generic) do { \
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   int label = GETOP(); \
   value = NODESTACKEND[-1]; \
   if (Rf_isObject(value) && tryDispatch(generic, call, value, rho, &value)) {\
@@ -2559,7 +2550,7 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
 } while (0)
 
 #define DO_START_ASSIGN_DISPATCH(generic) do { \
-  SEXP call = VECTOR_ELT(constants, GETOP()); \
+  SEXP call = (*constants)[GETOP()]; \
   int label = GETOP(); \
   SEXP lhs = NODESTACKEND[-2]; \
   SEXP rhs = NODESTACKEND[-1]; \
@@ -2803,7 +2794,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
   Scope scope;
   std::vector<Frame::Binding*> binding_stack;
   SEXP body = bcode;
-  SEXP value, constants;
+  SEXP value;
+  ListVector* constants;
   BCODE *pc, *codebase;
   int ftype = 0;
   static int evalcount = 0;
@@ -2855,7 +2847,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(BRIFNOT, 2):
       {
-	SEXP call = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
 	int label = GETOP();
 	int cond;
 	value = BCNPOP();
@@ -2868,16 +2860,25 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	}
 	NEXT();
       }
-    OP(POP, 0): BCNPOP_IGNORE_VALUE(); NEXT();
-    OP(DUP, 0): value = NODESTACKEND[-1]; BCNPUSH(value); NEXT();
-    OP(PRINTVALUE, 0): Rf_PrintValue(BCNPOP()); NEXT();
+    OP(POP, 0):
+	BCNPOP_IGNORE_VALUE();
+	NEXT();
+    OP(DUP, 0):
+	value = NODESTACKEND[-1];
+	BCNPUSH(value);
+	NEXT();
+    OP(PRINTVALUE, 0):
+	Rf_PrintValue(BCNPOP());
+	NEXT();
     OP(STARTLOOPCNTXT, 1):
 	{
-	    ByteCode* code = SEXP_downcast<ByteCode*>(VECTOR_ELT(constants, GETOP()));
+	    ByteCode* code = SEXP_downcast<ByteCode*>((*constants)[GETOP()].get());
 	    loopWithContext(code, rho);
 	    NEXT();
 	}
-    OP(ENDLOOPCNTXT, 0): value = R_NilValue; goto done;
+    OP(ENDLOOPCNTXT, 0):
+	value = R_NilValue;
+	goto done;
     OP(DOLOOPNEXT, 0):
 	{
 	    throw LoopException(rho, true);
@@ -2890,7 +2891,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
 	SEXP seq = NODESTACKEND[-1];
 	int callidx = GETOP();
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	int label = GETOP();
 
 	/* if we are iterating over a factor, coerce to character first */
@@ -2909,7 +2910,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	BCNPUSH(0);
 	binding_stack.push_back(R_findVarLocInFrame(rho, symbol));
 
-	value = Rf_allocVector(INTSXP, 2);
+	value = CXXR_NEW(IntVector(2));
 	INTEGER(value)[0] = -1;
 	if (Rf_isVector(seq))
 	  INTEGER(value)[1] = LENGTH(seq);
@@ -2938,32 +2939,53 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  Frame::Binding* cell = binding_stack.back();
 	  switch (TYPEOF(seq)) {
 	  case LGLSXP:
+	      {
+		  LogicalVector* lv = CXXR_NEW(LogicalVector(1));
+		  (*lv)[0] = (*static_cast<LogicalVector*>(seq))[i];
+		  value = lv;
+	      }
+	      break;
 	  case INTSXP:
-	    value = Rf_allocVector(TYPEOF(seq), 1);
-	    INTEGER(value)[0] = INTEGER(seq)[i];
-	    break;
+	      {
+		  IntVector* iv = CXXR_NEW(IntVector(1));
+		  (*iv)[0] = (*static_cast<IntVector*>(seq))[i];
+		  value = iv;
+	      }
+	      break;
 	  case REALSXP:
-	    value = Rf_allocVector(TYPEOF(seq), 1);
-	    REAL(value)[0] = REAL(seq)[i];
-	    break;
+	      {
+		  RealVector* rv = CXXR_NEW(RealVector(1));
+		  (*rv)[0] = (*static_cast<RealVector*>(seq))[i];
+		  value = rv;
+	      }
+	      break;
 	  case CPLXSXP:
-	    value = Rf_allocVector(TYPEOF(seq), 1);
-	    COMPLEX(value)[0] = COMPLEX(seq)[i];
-	    break;
+	      {
+		  ComplexVector* cv = CXXR_NEW(ComplexVector(1));
+		  (*cv)[0] = (*static_cast<ComplexVector*>(seq))[i];
+		  value = cv;
+	      }
+	      break;
 	  case STRSXP:
-	    value = Rf_allocVector(TYPEOF(seq), 1);
-	    SET_STRING_ELT(value, 0, STRING_ELT(seq, i));
-	    break;
+	      {
+		  StringVector* sv = CXXR_NEW(StringVector(1));
+		  (*sv)[0] = (*static_cast<StringVector*>(seq))[i];
+		  value = sv;
+	      }
+	      break;
 	  case RAWSXP:
-	    value = Rf_allocVector(TYPEOF(seq), 1);
-	    RAW(value)[0] = RAW(seq)[i];
-	    break;
+	      {
+		  RawVector* rv = CXXR_NEW(RawVector(1));
+		  (*rv)[0] = (*static_cast<RawVector*>(seq))[i];
+		  value = rv;
+	      }
+	      break;
 	  case EXPRSXP:
-	    value = XVECTOR_ELT(seq, i);
-	    break;
+	      value = (*static_cast<ExpressionVector*>(seq))[i];
+	      break;
 	  case VECSXP:
-	    value = VECTOR_ELT(seq, i);
-	    break;
+	      value = (*static_cast<ListVector*>(seq))[i];
+	      break;
 	  case LISTSXP:
 	    value = CAR(seq);
 	    NODESTACKEND[-4] = CDR(seq);
@@ -2986,19 +3008,40 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
       }
     OP(SETLOOPVAL, 0):
-      BCNPOP_IGNORE_VALUE(); NODESTACKEND[-1] = R_NilValue; NEXT();
-    OP(INVISIBLE,0): R_Visible = FALSE; NEXT();
+	BCNPOP_IGNORE_VALUE();
+	NODESTACKEND[-1] = R_NilValue;
+	NEXT();
+    OP(INVISIBLE,0):
+	R_Visible = FALSE;
+	NEXT();
     /**** for now LDCONST, LDTRUE, and LDFALSE duplicate/allocate to
 	  be defensive against bad package C code */
-    OP(LDCONST, 1): DO_LDCONST(value); BCNPUSH(Rf_duplicate(value)); NEXT();
-    OP(LDNULL, 0): R_Visible = TRUE; BCNPUSH(R_NilValue); NEXT();
-    OP(LDTRUE, 0): R_Visible = TRUE; BCNPUSH(Rf_mkTrue()); NEXT();
-    OP(LDFALSE, 0): R_Visible = TRUE; BCNPUSH(Rf_mkFalse()); NEXT();
+    OP(LDCONST, 1):
+	R_Visible = TRUE;
+	value = (*constants)[GETOP()];
+	/* make sure NAMED = 2 -- lower values might be safe in some
+	   cases but not ingeneral, especially if the ocnstant pool
+	   was created by unserializing a compiled expression. */
+	if (NAMED(value) < 2) SET_NAMED(value, 2);	\
+	BCNPUSH(Rf_duplicate(value));
+	NEXT();
+    OP(LDNULL, 0):
+	R_Visible = TRUE;
+	BCNPUSH(R_NilValue);
+	NEXT();
+    OP(LDTRUE, 0):
+	R_Visible = TRUE;
+	BCNPUSH(Rf_mkTrue());
+	NEXT();
+    OP(LDFALSE, 0):
+	R_Visible = TRUE;
+	BCNPUSH(Rf_mkFalse());
+	NEXT();
     OP(GETVAR, 1): DO_GETVAR(FALSE, FALSE);
     OP(DDVAL, 1): DO_GETVAR(TRUE, FALSE);
     OP(SETVAR, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = NODESTACKEND[-1];
 	switch (NAMED(value)) {
 	case 0: SET_NAMED(value, 1); break;
@@ -3010,7 +3053,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETFUN, 1):
       {
 	/* get the function */
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = Rf_findFun(symbol, rho);
 	if(RTRACE(value)) {
 	  Rprintf("trace: ");
@@ -3029,7 +3072,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETGLOBFUN, 1):
       {
 	/* get the function */
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = Rf_findFun(symbol, R_GlobalEnv);
 	if(RTRACE(value)) {
 	  Rprintf("trace: ");
@@ -3048,7 +3091,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETSYMFUN, 1):
       {
 	/* get the function */
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = SYMVALUE(symbol);
 	if (TYPEOF(value) == PROMSXP) {
 	    value = forcePromise(value);
@@ -3071,7 +3114,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETBUILTIN, 1):
       {
 	/* get the function */
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = getPrimitive(symbol, BUILTINSXP);
 	if (RTRACE(value)) {
 	  Rprintf("trace: ");
@@ -3089,7 +3132,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(GETINTLBUILTIN, 1):
       {
 	/* get the function */
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = INTERNAL(symbol);
 	if (TYPEOF(value) != BUILTINSXP)
 	  Rf_error(_("not a BUILTIN function"));
@@ -3120,7 +3163,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(MAKEPROM, 1):
       {
-	ByteCode* code = SEXP_downcast<ByteCode*>(VECTOR_ELT(constants, GETOP()));
+	  ByteCode* code = SEXP_downcast<ByteCode*>((*constants)[GETOP()].get());
 	if (ftype != SPECIALSXP) {
 	  if (ftype == BUILTINSXP)
 	    value = code->evaluate(rho);
@@ -3138,7 +3181,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(SETTAG, 1):
       {
-	SEXP tag = VECTOR_ELT(constants, GETOP());
+	SEXP tag = (*constants)[GETOP()];
 	SEXP cell = NODESTACKEND[-1];
 	if (ftype != SPECIALSXP && cell != R_NilValue)
 	  SET_TAG(cell, Rf_CreateTag(tag));
@@ -3163,20 +3206,28 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	}
 	NEXT();
       }
-    OP(PUSHARG, 0): PUSHCALLARG(BCNPOP()); NEXT();
+    OP(PUSHARG, 0):
+	PUSHCALLARG(BCNPOP());
+	NEXT();
     /**** for now PUSHCONST, PUSHTRUE, and PUSHFALSE duplicate/allocate to
 	  be defensive against bad package C code */
     OP(PUSHCONSTARG, 1):
-      value = VECTOR_ELT(constants, GETOP());
+      value = (*constants)[GETOP()];
       PUSHCALLARG(Rf_duplicate(value));
       NEXT();
-    OP(PUSHNULLARG, 0): PUSHCALLARG(R_NilValue); NEXT();
-    OP(PUSHTRUEARG, 0): PUSHCALLARG(Rf_mkTrue()); NEXT();
-    OP(PUSHFALSEARG, 0): PUSHCALLARG(Rf_mkFalse()); NEXT();
+    OP(PUSHNULLARG, 0):
+	PUSHCALLARG(R_NilValue);
+	NEXT();
+    OP(PUSHTRUEARG, 0):
+	PUSHCALLARG(Rf_mkTrue());
+	NEXT();
+    OP(PUSHFALSEARG, 0):
+	PUSHCALLARG(Rf_mkFalse());
+	NEXT();
     OP(CALL, 1):
       {
 	SEXP fun = NODESTACKEND[-3];
-	SEXP call = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
 	SEXP args = NODESTACKEND[-2];
 	int flag;
 	switch (ftype) {
@@ -3210,7 +3261,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(CALLBUILTIN, 1):
       {
 	SEXP fun = NODESTACKEND[-3];
-	SEXP call = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
 	SEXP args = NODESTACKEND[-2];
 	if (TYPEOF(fun) != BUILTINSXP)
 	  Rf_error(_("not a BUILTIN function"));
@@ -3229,7 +3280,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(CALLSPECIAL, 1):
       {
-	SEXP call = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
 	SEXP symbol = CAR(call);
 	SEXP fun = getPrimitive(symbol, SPECIALSXP);
 	if (RTRACE(fun)) {
@@ -3251,7 +3302,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(MAKECLOSURE, 1):
       {
-	SEXP fb = VECTOR_ELT(constants, GETOP());
+	SEXP fb = (*constants)[GETOP()];
 	SEXP forms = VECTOR_ELT(fb, 0);
 	SEXP body = VECTOR_ELT(fb, 1);
 	value = Rf_mkCLOSXP(forms, body, rho);
@@ -3279,7 +3330,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(DOTSERR, 0): Rf_error(_("'...' used in an incorrect context"));
     OP(STARTASSIGN, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = NODESTACKEND[-1];
 	BCNPUSH(EnsureLocal(symbol, rho));
 	BCNPUSH(value);
@@ -3288,7 +3339,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(ENDASSIGN, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = BCNPOP();
 	switch (NAMED(value)) {
 	case 0: SET_NAMED(value, 1); break;
@@ -3316,8 +3367,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(DOLLAR, 2):
       {
 	int dispatched = FALSE;
-	SEXP call = VECTOR_ELT(constants, GETOP());
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
+	SEXP symbol = (*constants)[GETOP()];
 	SEXP x = NODESTACKEND[-1];
 	if (Rf_isObject(x)) {
 	    SEXP ncall;
@@ -3336,8 +3387,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(DOLLARGETS, 2):
       {
 	int dispatched = FALSE;
-	SEXP call = VECTOR_ELT(constants, GETOP());
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
+	SEXP symbol = (*constants)[GETOP()];
 	SEXP x = NODESTACKEND[-2];
 	SEXP rhs = NODESTACKEND[-1];
 	if (NAMED(x) == 2) {
@@ -3457,10 +3508,12 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     }
     OP(GETVAR_MISSOK, 1): DO_GETVAR(FALSE, TRUE);
     OP(DDVAL_MISSOK, 1): DO_GETVAR(TRUE, TRUE);
-    OP(VISIBLE,0): R_Visible = TRUE; NEXT();
+    OP(VISIBLE,0):
+	R_Visible = TRUE;
+	NEXT();
     OP(SETVAR2, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = NODESTACKEND[-1];
 	if (NAMED(value)) {
 	    value = Rf_duplicate(value);
@@ -3471,7 +3524,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(STARTASSIGN2, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = NODESTACKEND[-1];
 	BCNPUSH(getvar(symbol, ENCLOS(rho), FALSE, FALSE));
 	BCNPUSH(value);
@@ -3480,7 +3533,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(ENDASSIGN2, 1):
       {
-	SEXP symbol = VECTOR_ELT(constants, GETOP());
+	SEXP symbol = (*constants)[GETOP()];
 	value = BCNPOP();
 	switch (NAMED(value)) {
 	case 0: SET_NAMED(value, 1); break;
@@ -3498,8 +3551,8 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
         SEXP lhs = NODESTACKEND[-5];
         SEXP rhs = NODESTACKEND[-4];
 	SEXP fun = NODESTACKEND[-3];
-	SEXP call = VECTOR_ELT(constants, GETOP());
-	SEXP vexpr = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
+	SEXP vexpr = (*constants)[GETOP()];
 	SEXP args, prom, last;
 	if (NAMED(lhs) == 2) {
 	  lhs = NODESTACKEND[-5] = Rf_duplicate(lhs);
@@ -3564,7 +3617,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       {
         SEXP lhs = NODESTACKEND[-5];
 	SEXP fun = NODESTACKEND[-3];
-	SEXP call = VECTOR_ELT(constants, GETOP());
+	SEXP call = (*constants)[GETOP()];
 	SEXP args, prom;
 	switch (ftype) {
 	case BUILTINSXP:
@@ -3618,10 +3671,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     }
     OP(SWITCH, 4): {
-       SEXP call = VECTOR_ELT(constants, GETOP());
-       SEXP names = VECTOR_ELT(constants, GETOP());
-       SEXP coffsets = VECTOR_ELT(constants, GETOP());
-       SEXP ioffsets = VECTOR_ELT(constants, GETOP());
+       SEXP call = (*constants)[GETOP()];
+       SEXP names = (*constants)[GETOP()];
+       SEXP coffsets = (*constants)[GETOP()];
+       SEXP ioffsets = (*constants)[GETOP()];
        value = BCNPOP();
        if (!Rf_isVector(value) || length(value) != 1)
 	   Rf_errorcall(call, _("EXPR must be a length 1 vector"));
