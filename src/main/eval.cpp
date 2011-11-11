@@ -1151,7 +1151,7 @@ SEXP attribute_hidden do_function(SEXP call, SEXP op, SEXP args, SEXP rho)
   nonlocal.
 */
 
-static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
+static PairList* evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 {
     GCStackRoot<> exprrt(expr);
     if (Rf_isNull(expr))
@@ -1167,13 +1167,14 @@ static SEXP evalseq(SEXP expr, SEXP rho, int forcelocal,  R_varloc_t tmploc)
 	return PairList::cons(nval, PairList::cons(expr));
     }
     else if (Rf_isLanguage(expr)) {
-	GCStackRoot<> val, nexpr, nval;
-	val = evalseq(CADR(expr), rho, forcelocal, tmploc);
-	R_SetVarLocValue(tmploc, CAR(val));
-	nexpr = CONS(R_GetVarLocSymbol(tmploc), CDDR(expr));
-	nexpr = LCONS(CAR(expr), nexpr);
-	nval = Rf_eval(nexpr, rho);
-	return CONS(nval, val);
+	Expression* exprn = static_cast<Expression*>(expr);
+	GCStackRoot<PairList> val(evalseq(exprn->tail()->car(), rho, forcelocal, tmploc));
+	R_SetVarLocValue(tmploc, val->car());
+	GCStackRoot<PairList> nexprargs(PairList::cons(R_GetVarLocSymbol(tmploc),
+						       exprn->tail()->tail()));
+	GCStackRoot<Expression> nexpr(CXXR_NEW(Expression(exprn->car(), nexprargs)));
+	GCStackRoot<> nval(Rf_eval(nexpr, rho));
+	return PairList::cons(nval, val);
     }
     else Rf_error(_("target of assignment expands to non-language object"));
     return R_NilValue;	/*NOTREACHED*/
@@ -2202,7 +2203,7 @@ static SEXP cmp_relop(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
     SEXP op = getPrimitive(opsym, BUILTINSXP);
     if (Rf_isObject(x) || Rf_isObject(y)) {
 	SEXP args, ans;
-	args = CONS(x, CONS(y, R_NilValue));
+	args = PairList::cons(x, PairList::cons(y));
 	PROTECT(args);
 	if (Rf_DispatchGroup("Ops", call, op, args, rho, &ans)) {
 	    UNPROTECT(1);
@@ -2218,7 +2219,7 @@ static SEXP cmp_arith1(SEXP call, SEXP opsym, SEXP x, SEXP rho)
     SEXP op = getPrimitive(opsym, BUILTINSXP);
     if (Rf_isObject(x)) {
 	SEXP args, ans;
-	args = CONS(x, R_NilValue);
+	args = PairList::cons(x);
 	PROTECT(args);
 	if (Rf_DispatchGroup("Ops", call, op, args, rho, &ans)) {
 	    UNPROTECT(1);
@@ -2252,7 +2253,7 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 
 #define Builtin1(do_fun,which,rho) do {				 \
   SEXP call = (*constants)[GETOP()]; \
-  NODESTACKEND[-1] = CONS(NODESTACKEND[-1], R_NilValue); \
+  NODESTACKEND[-1] = PairList::cons(NODESTACKEND[-1]);		\
   NODESTACKEND[-1] = do_fun(call, getPrimitive(which, BUILTINSXP),	 \
 				NODESTACKEND[-1], rho); \
   NEXT(); \
@@ -2260,8 +2261,8 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 
 #define Builtin2(do_fun,which,rho) do {		     \
   SEXP call = (*constants)[GETOP()]; \
-  SEXP tmp = CONS(NODESTACKEND[-1], R_NilValue); \
-  NODESTACKEND[-2] = CONS(NODESTACKEND[-2], tmp); \
+  PairList* tmp = PairList::cons(NODESTACKEND[-1]);	\
+  NODESTACKEND[-2] = PairList::cons(NODESTACKEND[-2], tmp);	\
   s_nodestack->pop(); \
   NODESTACKEND[-1] = do_fun(call, getPrimitive(which, BUILTINSXP), \
 				NODESTACKEND[-1], rho); \
@@ -2453,7 +2454,7 @@ static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
   NEXT(); \
 } while (0)
 
-#define PUSHCALLARG(v) PUSHCALLARG_CELL(CONS(v, R_NilValue))
+#define PUSHCALLARG(v) PUSHCALLARG_CELL(PairList::cons(v))
 
 #define PUSHCALLARG_CELL(c) do { \
   SEXP __cell__ = (c); \
@@ -2529,7 +2530,7 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
   } \
   else { \
     SEXP tag = TAG(CDR(call)); \
-    SEXP cell = CONS(value, R_NilValue); \
+    SEXP cell = PairList::cons(value);	\
     BCNSTACKCHECK(3); \
     s_nodestack->push(call); \
     s_nodestack->push(cell); \
@@ -2567,7 +2568,7 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
   } \
   else { \
     SEXP tag = TAG(CDR(call)); \
-    SEXP cell = CONS(lhs, R_NilValue); \
+    SEXP cell = PairList::cons(lhs);	\
     BCNSTACKCHECK(3); \
     s_nodestack->push(call); \
     s_nodestack->push(cell); \
@@ -3022,7 +3023,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	/* make sure NAMED = 2 -- lower values might be safe in some
 	   cases but not ingeneral, especially if the ocnstant pool
 	   was created by unserializing a compiled expression. */
-	if (NAMED(value) < 2) SET_NAMED(value, 2);	\
+	if (NAMED(value) < 2) SET_NAMED(value, 2);
 	BCNPUSH(Rf_duplicate(value));
 	NEXT();
     OP(LDNULL, 0):
@@ -3196,7 +3197,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	      SEXP val, cell;
 	      if (ftype == BUILTINSXP) val = Rf_eval(CAR(h), rho);
 	      else val = Rf_mkPROMISE(CAR(h), rho);
-	      cell = CONS(val, R_NilValue);
+	      cell = PairList::cons(val);
 	      PUSHCALLARG_CELL(cell);
 	      if (TAG(h) != R_NilValue) SET_TAG(cell, Rf_CreateTag(TAG(h)));
 	    }
