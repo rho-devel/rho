@@ -2941,44 +2941,38 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  switch (TYPEOF(seq)) {
 	  case LGLSXP:
 	      {
-		  LogicalVector* lv = CXXR_NEW(LogicalVector(1));
-		  (*lv)[0] = (*static_cast<LogicalVector*>(seq))[i];
-		  value = lv;
+		  LogicalVector* lseq = static_cast<LogicalVector*>(seq);
+		  value = CXXR_NEW(LogicalVector(*lseq, i));
 	      }
 	      break;
 	  case INTSXP:
 	      {
-		  IntVector* iv = CXXR_NEW(IntVector(1));
-		  (*iv)[0] = (*static_cast<IntVector*>(seq))[i];
-		  value = iv;
+		  IntVector* iseq = static_cast<IntVector*>(seq);
+		  value = CXXR_NEW(IntVector(*iseq, i));
 	      }
 	      break;
 	  case REALSXP:
 	      {
-		  RealVector* rv = CXXR_NEW(RealVector(1));
-		  (*rv)[0] = (*static_cast<RealVector*>(seq))[i];
-		  value = rv;
+		  RealVector* rseq = static_cast<RealVector*>(seq);
+		  value = CXXR_NEW(RealVector(*rseq, i));
 	      }
 	      break;
 	  case CPLXSXP:
 	      {
-		  ComplexVector* cv = CXXR_NEW(ComplexVector(1));
-		  (*cv)[0] = (*static_cast<ComplexVector*>(seq))[i];
-		  value = cv;
+		  ComplexVector* cseq = static_cast<ComplexVector*>(seq);
+		  value = CXXR_NEW(ComplexVector(*cseq, i));
 	      }
 	      break;
 	  case STRSXP:
 	      {
-		  StringVector* sv = CXXR_NEW(StringVector(1));
-		  (*sv)[0] = (*static_cast<StringVector*>(seq))[i];
-		  value = sv;
+		  StringVector* sseq = static_cast<StringVector*>(seq);
+		  value = CXXR_NEW(StringVector(*sseq, i));
 	      }
 	      break;
 	  case RAWSXP:
 	      {
-		  RawVector* rv = CXXR_NEW(RawVector(1));
-		  (*rv)[0] = (*static_cast<RawVector*>(seq))[i];
-		  value = rv;
+		  RawVector* rseq = static_cast<RawVector*>(seq);
+		  value = CXXR_NEW(RawVector(*rseq, i));
 	      }
 	      break;
 	  case EXPRSXP:

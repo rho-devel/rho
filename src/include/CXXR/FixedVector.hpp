@@ -108,6 +108,30 @@ namespace CXXR {
 	template <typename U>
 	FixedVector(std::size_t sz, const U& fill_value);
 
+	/** @brief Create a loop variable.
+	 *
+	 * This function creates a singleton vector, with its sole
+	 * element initialized to be a copy of a specified element of
+	 * another vector-like object.
+	 *
+	 * @tparam V Object amenable to indexing using [], whose
+	 *           elements are of a type from which \a T objects can
+	 *           be constructed.
+	 *
+	 * @param source \a V object from which an element is to be
+	 *          selected.
+	 *
+	 * @param index The constructed object will be initialised
+	 *          from <tt>source[index]</tt>.
+	 */
+	template <typename V>
+	FixedVector(const V& source, size_t index)
+	    : VectorBase(ST, 1), m_data(singleton())
+	{
+	    new (m_data) T(source[index]);
+	    Initializer()(this);
+	}
+
 	/** @brief Copy constructor.
 	 *
 	 * @param pattern FixedVector to be copied.
@@ -274,7 +298,7 @@ namespace CXXR {
 template <typename T, SEXPTYPE ST, typename Initr>
 template <typename U>
 CXXR::FixedVector<T, ST, Initr>::FixedVector(std::size_t sz,
-						   const U& fill_value)
+					     const U& fill_value)
     : VectorBase(ST, sz), m_data(singleton())
 {
     if (sz > 1)
