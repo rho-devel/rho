@@ -375,28 +375,47 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (CDDR(args) == R_NilValue) {
 	SEXP x = CAR(args);
 	SEXP s = CADR(args);
-	if (ATTRIB(x) == R_NilValue && ATTRIB(s) == R_NilValue) {
+	if (x && !x->attributes() && s && !s->attributes()) {
 	    int i;
-	    switch (TYPEOF(x)) {
+	    switch (s->sexptype()) {
 	    case REALSXP:
-		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
-		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
-		default:  i = -1;
+		{
+		    RealVector* rs = static_cast<RealVector*>(s);
+		    if (rs->size() == 1)
+			i = int((*rs)[0]);
 		}
-		if (i >= 1 && i <= LENGTH(x))
-		    return ScalarReal( REAL(x)[i-1] );
 		break;
 	    case INTSXP:
-		switch (TYPEOF(s)) {
-		case REALSXP: i = (LENGTH(s) == 1) ? CXXRCONSTRUCT(int, REAL(s)[0]) : -1; break;
-		case INTSXP: i = (LENGTH(s) == 1) ? INTEGER(s)[0] : -1; break;
-		default:  i = -1;
+		{
+		    IntVector* is = static_cast<IntVector*>(s);
+		    if (is->size() == 1)
+			i = (*is)[0];
 		}
-		if (i >= 1 && i <= LENGTH(x))
-		    return ScalarInteger( INTEGER(x)[i-1] );
 		break;
-	    default: break;
+	    default:
+		i = 0;  // i.e. not one of the cases being sought
+		break;
+	    }
+	    i -= 1;  // Change to indexing from zero
+	    if (i >= 0) {
+		switch (x->sexptype()) {
+		case REALSXP:
+		    {
+			RealVector* rx = static_cast<RealVector*>(x);
+			if (i < int(rx->size()))
+			    return CXXR_NEW(RealVector(*rx, i));
+		    }
+		    break;
+		case INTSXP:
+		    {
+			IntVector* ix = static_cast<IntVector*>(x);
+			if (i < int(ix->size()))
+			    return CXXR_NEW(IntVector(*ix, i));
+		    }
+		    break;
+		default:
+		    break;
+		}
 	    }
 	}
     }

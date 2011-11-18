@@ -108,7 +108,7 @@ namespace CXXR {
 	template <typename U>
 	FixedVector(std::size_t sz, const U& fill_value);
 
-	/** @brief Create a loop variable.
+	/** @brief Pick a single element from a vector.
 	 *
 	 * This function creates a singleton vector, with its sole
 	 * element initialized to be a copy of a specified element of
