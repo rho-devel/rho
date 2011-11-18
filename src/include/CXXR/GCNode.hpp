@@ -193,13 +193,12 @@ namespace CXXR {
 	};
 
 	GCNode()
-            :
+            : HeterogeneousListBase::Link(s_live),
 #ifdef GCID
-	    m_id(++s_last_id),
+	      m_id(++s_last_id),
 #endif
-	    m_rcmmu(s_mark | 1)
+	      m_rcmmu(s_mark | 1)
 	{
-	    s_live->splice_back(this);
 	    ++s_num_nodes;
 	    ++s_under_construction;
 #ifdef GCID

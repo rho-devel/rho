@@ -64,6 +64,19 @@ namespace CXXR {
 		: m_prev(this), m_next(this)
 	    {}
 
+	    /** @brief Appending constructor
+	     *
+	     * @param list Non-null pointer to a list inheriting from
+	     *          HeterogeneousListBase.  The constructed link
+	     *          will be inserted at the end of \a list.
+	     */
+	    Link(HeterogeneousListBase* list)
+		: m_prev(list->m_peg->m_prev), m_next(m_prev->m_next)
+	    {
+		m_prev->m_next = this;
+		m_next->m_prev = this;
+	    }
+
 	    /** @brief Detach Link from any list.
 	     *
 	     * This function detaches the Link from any list it may
