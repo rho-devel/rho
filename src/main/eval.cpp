@@ -479,11 +479,10 @@ void Closure::DebugScope::startDebugging() const
     working_env->setSingleStepping(true);
 #ifdef BYTECODE
     /* switch to interpreted version when debugging compiled code */
-    // CXXR FIXME:
-#if 0
-    if (TYPEOF(body) == BCODESXP)
-	body = bytecodeExpr(body);
-#endif
+    if (m_closure->body()->sexptype() == BCODESXP) {
+	Closure* closure = const_cast<Closure*>(m_closure);
+	closure->m_body = bytecodeExpr(closure->m_body);
+    }
 #endif
     Rprintf("debugging in: ");
     // Print call:
