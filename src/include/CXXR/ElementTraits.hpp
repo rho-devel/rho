@@ -106,6 +106,11 @@ namespace CXXR {
 	 */
 	template <typename T>
 	struct DetachReferents : std::unary_function<T, void> {
+	    /** @brief Detach the referents of a \a T.
+	     *
+	     * @param t Reference to the \a T object whose referents
+	     *          are to be detached.
+	     */
 	    void operator()(T& t) const
 	    {}
 	};

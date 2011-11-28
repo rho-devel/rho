@@ -818,7 +818,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
     /* duplicate it so that only the local version is mutated. */
     /* This will duplicate more often than necessary, but saves */
     /* over always duplicating. */
-    GCStackRoot<> x(args->car());
+    GCStackRoot<> x(CAR(args));
     if (NAMED(x) == 2) {
 	x = Rf_duplicate(x);
 	args->setCar(x);
@@ -839,7 +839,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
     if (!x)
 	x = coerceVector(x, TYPEOF(y));
 
-    switch (x->sexptype()) {
+    switch (TYPEOF(x)) {
     case LGLSXP:
     case INTSXP:
     case REALSXP:
@@ -867,7 +867,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP argsarg,
 	}
 	break;
     default:
-	error(R_MSG_ob_nonsub, type2char(x->sexptype()));
+	error(R_MSG_ob_nonsub, TYPEOF(x));
 	break;
     }
 

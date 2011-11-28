@@ -222,6 +222,13 @@ namespace CXXR {
 	    m_hash = -1;
 	}
 
+	/** @brief Designate the encapsulated C-style string.
+	 *
+	 * (Used by constructors of derived classes.)
+	 *
+	 * @param c_string Pointer to the C-style string which this
+	 *          object encapsulates.
+	 */
 	void setCString(const char* c_string)
 	{
 	    m_c_str = c_string;

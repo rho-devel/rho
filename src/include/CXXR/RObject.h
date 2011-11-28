@@ -170,6 +170,8 @@ namespace CXXR {
 	 * parameter, for example in FixedVector.
 	 */
 	struct DoNothing : std::unary_function<RObject*, void> {
+	    /** @brief Does nothing.
+	     */
 	    void operator()(RObject*)
 	    {}
 	};

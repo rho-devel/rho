@@ -44,6 +44,10 @@ namespace CXXR {
 #ifdef __GNUC__
     __attribute__((noreturn))
 #endif
+    /** @brief Not for general use.
+     *
+     * (Used by SEXP_downcast() to report an erroneous cast.)
+     */
     void SEXP_downcast_error(const char* given, const char* wanted);
 
     /** Down cast within the RObject class tree.

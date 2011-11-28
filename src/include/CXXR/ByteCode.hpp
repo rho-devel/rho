@@ -84,11 +84,15 @@ namespace CXXR {
 
 	// Interim accessor functions.  Try to get rid of these:
 
+	/** @brief Not for general use.
+	 */
 	IntVector* code()
 	{
 	    return m_code;
 	}
 
+	/** @brief Not for general use.
+	 */
 	ListVector* constants()
 	{
 	    return m_constants;
