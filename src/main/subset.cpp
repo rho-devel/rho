@@ -376,7 +376,7 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SEXP x = CAR(args);
 	SEXP s = CADR(args);
 	if (x && !x->attributes() && s && !s->attributes()) {
-	    int i;
+	    int i = 0;  // 0 signifies that this is not the special case sought
 	    switch (s->sexptype()) {
 	    case REALSXP:
 		{
@@ -393,7 +393,6 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 		}
 		break;
 	    default:
-		i = 0;  // i.e. not one of the cases being sought
 		break;
 	    }
 	    i -= 1;  // Change to indexing from zero
