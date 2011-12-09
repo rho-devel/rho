@@ -27,7 +27,7 @@ R_HOME=$(top_builddir)
 
 include $(top_builddir)/Makeconf
 
-SOURCES_C = complex.c gram.c gramLatex.c inlined.c unzip.c
+SOURCES_C = complex.c inlined.c unzip.c
 
 SOURCES_CXX = \
 	ArgList.cpp ArgMatcher.cpp \
@@ -59,7 +59,8 @@ SOURCES_CXX = \
 	dotcode.cpp dounzip.cpp dstruct.cpp duplicate.cpp \
 	engine.cpp envir.cpp errors.cpp eval.cpp \
 	format.cpp fourier.cpp \
-	gevents.cpp gram-ex.cpp gramRd.cpp graphics.cpp grep.cpp \
+	gevents.cpp gram-ex.cpp gram.cpp gramLatex.cpp gramRd.cpp graphics.cpp \
+	grep.cpp \
 	identical.cpp internet.cpp iosupport.cpp \
 	lapack.cpp list.cpp localecharset.cpp logic.cpp \
 	main.cpp mapply.cpp match.cpp memory.cpp model.cpp \
@@ -227,18 +228,18 @@ install-lib-local: $(libR_la)
 # suppress #line directives
 #YFLAGS=-l
 
-$(srcdir)/gram.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
-	@$(ECHO) "re-making gram.c"
-	$(YACC) $(YFLAGS) $(srcdir)/gram.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.c
+$(srcdir)/gram.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gram.y
+	@$(ECHO) "re-making gram.cpp"
+	$(YACC) $(YFLAGS) -p gram_ $(srcdir)/gram.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gram.cpp
 $(srcdir)/gramRd.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramRd.y
 	@$(ECHO) "re-making gramRd.cpp"
-	$(YACC) $(YFLAGS) $(srcdir)/gramRd.y
+	$(YACC) $(YFLAGS) -p gramRd_ $(srcdir)/gramRd.y
 	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramRd.cpp
-$(srcdir)/gramLatex.c: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
-	@$(ECHO) "re-making gramLatex.c"
-	$(YACC) $(YFLAGS) $(srcdir)/gramLatex.y
-	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramLatex.c	
+$(srcdir)/gramLatex.cpp: @MAINTAINER_MODE_TRUE@ $(srcdir)/gramLatex.y
+	@$(ECHO) "re-making gramLatex.cpp"
+	$(YACC) $(YFLAGS) -p gramLatex_ $(srcdir)/gramLatex.y
+	$(SHELL) $(top_srcdir)/tools/move-if-change y.tab.c $(srcdir)/gramLatex.cpp	
 
 install: installdirs
 	@$(MAKE) install-bin

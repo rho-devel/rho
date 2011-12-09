@@ -29,7 +29,7 @@
 
 #define YYERROR_VERBOSE 1
 
-static void yyerror(char *);
+static void yyerror(const char *);
 static int yylex();
 int yyparse(void);
 
@@ -1546,7 +1546,7 @@ static int nextchar(int expect)
 /* Syntactic Keywords + Symbolic Constants */
 
 struct {
-    char *name;
+    const char *name;
     int token;
 }
 static keywords[] = {
@@ -1693,7 +1693,7 @@ SEXP mkFalse(void)
     return s;
 }
 
-static void yyerror(char *s)
+static void yyerror(const char *s)
 {
     static const char *const yytname_translations[] =
     {
@@ -1760,7 +1760,7 @@ static void yyerror(char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i;
 	/* Edit the error message */
-	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
 	if (expecting) *expecting = '\0';
 	for (i = 0; yytname_translations[i]; i += 2) {
 	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -1797,7 +1797,7 @@ static char yytext[MAXELTSIZE];
 
 #define DECLARE_YYTEXT_BUFP(bp) char *bp = yytext
 #define YYTEXT_PUSH(c, bp) do { \
-    if ((bp) - yytext >= sizeof(yytext) - 1) \
+    if ((bp) - yytext >= int(sizeof(yytext)) - 1)			\
 	error(_("input buffer overflow at line %d"), ParseState.xxlineno); \
 	*(bp)++ = (c); \
 } while(0)
@@ -1854,7 +1854,7 @@ static int SkipSpace(void)
 static int SkipComment(void)
 {
     int c='#', i;
-    Rboolean maybeLine = (ParseState.xxcolno == 1);
+    Rboolean maybeLine = CXXRCONSTRUCT(Rboolean, (ParseState.xxcolno == 1));
     if (maybeLine) {
     	char lineDirective[] = "#line";
     	for (i=1; i<5; i++) {
@@ -1993,11 +1993,11 @@ static int NumericValue(int c)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
 	    nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = CXXRSCAST(char*, malloc(nstext));			\
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), ParseState.xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \
-	    bp = stext+nc; }		    \
+	    bp = stext+nc; }	\
 	*bp++ = (c);                        \
 } while(0)
 

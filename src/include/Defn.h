@@ -706,10 +706,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define WarningMessage		Rf_WarningMessage
 # define wcstoutf8		Rf_wcstoutf8
 # define wtransChar		Rf_wtransChar
-# define yychar			Rf_yychar
-# define yylval			Rf_yylval
-# define yynerrs		Rf_yynerrs
-# define yyparse		Rf_yyparse
 #endif /* R_NO_REMAP */
 
 /* Platform Dependent Gui Hooks */

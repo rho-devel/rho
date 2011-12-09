@@ -33,8 +33,8 @@
 
 /* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
    so remap */
-
-#define yylloc yyllocL
+// 2011-12-09: In CXXR this #define appears deleterious.
+//#define yylloc yyllocL
 
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
@@ -524,7 +524,7 @@ SEXP R_ParseLatex(SEXP text, ParseStatus *status, SEXP srcfile)
 /* Section and R code headers */
 
 struct {
-    char *name;
+    const char *name;
     int token;
 }
 static keywords[] = {
@@ -583,7 +583,7 @@ static void yyerror(const char *s)
     if (!strncmp(s, yyunexpected, sizeof yyunexpected -1)) {
 	int i, translated = FALSE;
     	/* Edit the error message */    
-    	expecting = strstr(s + sizeof yyunexpected -1, yyexpecting);
+    	expecting = CXXRCCAST(char*, strstr(s + sizeof yyunexpected -1, yyexpecting));
     	if (expecting) *expecting = '\0';
     	for (i = 0; yytname_translations[i]; i += 2) {
     	    if (!strcmp(s + sizeof yyunexpected - 1, yytname_translations[i])) {
@@ -636,7 +636,7 @@ static void yyerror(const char *s)
 	if (nc >= nstext - 1) {             \
 	    char *old = stext;              \
             nstext *= 2;                    \
-	    stext = malloc(nstext);         \
+	    stext = CXXRSCAST(char*, malloc(nstext));			\
 	    if(!stext) error(_("unable to allocate buffer for long string at line %d"), xxlineno);\
 	    memmove(stext, old, nc);        \
 	    if(old != st0) free(old);	    \

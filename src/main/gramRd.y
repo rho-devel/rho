@@ -33,8 +33,8 @@
 
 /* bison creates a non-static symbol yylloc in both gramLatex.o and gramRd.o,
    so remap */
-
-#define yylloc yyllocR
+// 2011-12-09: In CXXR this #define appears deleterious.
+//#define yylloc yyllocR
 
 #define DEBUGVALS 0		/* 1 causes detailed internal state output to R console */	
 #define DEBUGMODE 0		/* 1 causes Bison output of parse state, to stdout or stderr */
