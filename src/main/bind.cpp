@@ -672,11 +672,25 @@ static void NewExtractNames(SEXP v, SEXP base, SEXP tag, int recurse,
 	}
 	break;
     case VECSXP:
-    case EXPRSXP:
 	for (i = 0; i < n; i++) {
 	    namei = ItemName(names, i);
 	    if (recurse) {
 		NewExtractNames(VECTOR_ELT(v, i), base, namei, recurse, data, nameData);
+	    }
+	    else {
+		if (namei == R_NilValue && nameData->count == 0)
+		    nameData->firstpos = data->ans_nnames;
+		nameData->count++;
+		namei = NewName(base, namei, ++(nameData->seqno));
+		SET_STRING_ELT(data->ans_names, (data->ans_nnames)++, namei);
+	    }
+	}
+	break;
+    case EXPRSXP:
+	for (i = 0; i < n; i++) {
+	    namei = ItemName(names, i);
+	    if (recurse) {
+		NewExtractNames(XVECTOR_ELT(v, i), base, namei, recurse, data, nameData);
 	    }
 	    else {
 		if (namei == R_NilValue && nameData->count == 0)

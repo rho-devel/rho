@@ -683,7 +683,7 @@ static SEXP GetOneIndex(SEXP sub, int ind)
 /* This is only used for [[<-, so only adding one element */
 static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 {
-    SEXP indx, xi, yi, sub = CAR(s);
+    SEXP indx, xi, sub = CAR(s);
     int ii, n, nx, stretch=1;
 
     if (length(s) > 1)
@@ -700,7 +700,7 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 
     if (stretch) {
 	SEXP t = CAR(s);
-	yi = allocList(stretch - nx);
+	GCStackRoot<> yi(allocList(stretch - nx));
 	/* This is general enough for only usage */
 	if(isString(t) && length(t) == stretch - nx) {
 	    SEXP z = yi;

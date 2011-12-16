@@ -970,9 +970,9 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
     for(i=0, k=0; i<nderiv ; i++) {
 	PROTECT(ans = duplicate(expr));
 	PROTECT(ans = D(ans, install(translateChar(STRING_ELT(names, i)))));
-	ans2 = duplicate(ans);	/* keep a temporary copy */
+	PROTECT(ans2 = duplicate(ans));	/* keep a temporary copy */
 	d_index[i] = FindSubexprs(ans, exprlist, tag); /* examine the derivative first */
-	ans = duplicate(ans2);	/* restore the copy */
+	PROTECT(ans = duplicate(ans2));	/* restore the copy */
 	if (hessian) {
 	    GCStackRoot<> ansrt(ans);
 	    for(j = i; j < nderiv; j++) {
@@ -983,7 +983,7 @@ SEXP attribute_hidden do_deriv(SEXP call, SEXP op, SEXP args, SEXP env)
 		UNPROTECT(2);
 	    }
 	}
-	UNPROTECT(2);
+	UNPROTECT(4);
     }
     nexpr = length(exprlist) - 1;
     if (f_index) {

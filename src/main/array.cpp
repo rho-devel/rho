@@ -294,7 +294,8 @@ SEXP DropDims(SEXP x)
 
 SEXP attribute_hidden do_drop(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
-    SEXP x, xdims;
+    GCStackRoot<> x;
+    SEXP xdims;
     int i, n, shorten;
 
     checkArity(op, args);

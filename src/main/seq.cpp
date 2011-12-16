@@ -413,7 +413,10 @@ SEXP attribute_hidden do_rep(SEXP call, SEXP op, SEXP args, SEXP rho)
     if(lx == 0) {
 	UNPROTECT(3);
 	if(len == NA_INTEGER) return x;
-	else return lengthgets(duplicate(x), len);
+	else {
+	    GCStackRoot<> xd(duplicate(x));
+	    return lengthgets(xd, len);
+	}
     }
 
     if(len != NA_INTEGER) { /* takes precedence over times */

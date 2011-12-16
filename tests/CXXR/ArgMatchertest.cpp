@@ -74,7 +74,7 @@ namespace {
 	    while (getline(astrm, line)) {
 		boost::smatch kv_match;
 		if (!boost::regex_match(line, kv_match, kv_regex)) {
-		    cerr << "Lines must matchÂ " << kv_regex_string << '\n';
+		    cerr << "Lines must match " << kv_regex_string << '\n';
 		    exit(1);
 		}
 		cout << kv_match[1] << " : " << kv_match[2] << endl;
@@ -87,12 +87,12 @@ namespace {
 	}
 	// Construct result:
 	{
-	    PairList* ans = 0;
+	    GCStackRoot<PairList> ans;
 	    for (Vps::const_reverse_iterator rit = keyvals.rbegin();
 		 rit != keyvals.rend(); ++rit) {
 		const string& namestr = (*rit).first;
 		const string& valstr = (*rit).second;
-		RObject* value;
+		GCStackRoot<> value;
 		if (valstr.empty())
 		    value = Symbol::missingArgument();
 		else value

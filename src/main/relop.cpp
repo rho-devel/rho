@@ -119,13 +119,13 @@ SEXP attribute_hidden do_relop_dflt(SEXP call, SEXP op, SEXP xarg, SEXP yarg)
        R 2.5.0.  We deparse them as deparse() would, minus attributes */
     bool iS;
     if ((iS = isSymbol(x)) || TYPEOF(x) == LANGSXP) {
-	SEXP tmp = allocVector(STRSXP, 1);
+	GCStackRoot<> tmp(allocVector(STRSXP, 1));
 	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(x) :
 		       STRING_ELT(deparse1(x, CXXRFALSE, DEFAULTDEPARSE), 0));
 	x = tmp;
     }
     if ((iS = isSymbol(y)) || TYPEOF(y) == LANGSXP) {
-	SEXP tmp = allocVector(STRSXP, 1);
+	GCStackRoot<> tmp(allocVector(STRSXP, 1));
 	SET_STRING_ELT(tmp, 0, (iS) ? PRINTNAME(y) :
 		       STRING_ELT(deparse1(y, CXXRFALSE, DEFAULTDEPARSE), 0));
 	y = tmp;

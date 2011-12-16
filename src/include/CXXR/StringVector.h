@@ -110,7 +110,8 @@ namespace CXXR {
     inline StringVector* asStringVector(const std::string& str,
 					cetype_t encoding = CE_NATIVE)
     {
-	return CXXR_NEW(StringVector(1, CachedString::obtain(str, encoding)));
+	GCStackRoot<CachedString> cs(CachedString::obtain(str, encoding));
+	return CXXR_NEW(StringVector(1, cs));
     }
 
     /** @brief (For debugging.)

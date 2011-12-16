@@ -54,9 +54,10 @@ static SEXP makeRTclObject(Tcl_Obj *tclobj)
 {
     SEXP obj;
 
-    obj = R_MakeExternalPtr(tclobj, R_NilValue, R_NilValue);
+    PROTECT(obj = R_MakeExternalPtr(tclobj, R_NilValue, R_NilValue));
     Tcl_IncrRefCount(tclobj);
     R_RegisterCFinalizer(obj, RTcl_dec_refcount);
+    UNPROTECT(1);
     return obj;
 }
 
