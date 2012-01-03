@@ -47,6 +47,27 @@ using namespace CXXR;
 
 GCStackRootBase* GCStackRootBase::s_roots = 0;
 
+void GCStackRootBase::destruct_aux()
+{
+    GCNode::decRefCount(m_target);
+}
+
+void GCStackRootBase::protectAll()
+{
+    GCStackRootBase* sr = s_roots;
+    while (sr && !sr->m_protecting) {
+	GCNode::incRefCount(sr->m_target);
+	sr->m_protecting = true;
+	sr = sr->m_next;
+    }
+}
+
+void GCStackRootBase::retarget_aux(const GCNode* node)
+{
+    GCNode::incRefCount(node);
+    GCNode::decRefCount(m_target);
+}
+
 void GCStackRootBase::seq_error()
 {
     cerr << "Fatal error:"

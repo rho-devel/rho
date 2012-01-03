@@ -50,8 +50,7 @@
 
 #ifdef __cplusplus
 
-#include <vector>
-#include "CXXR/GCNode.hpp"
+#include "CXXR/NodeStack.hpp"
 
 namespace CXXR {
     /** @brief Class implementing CR's 'pointer protection stack'.
@@ -68,45 +67,11 @@ namespace CXXR {
 	 * be automatically popped off when that lifetime comes to an
 	 * end, i.e. when the Scope object itself goes out of scope.
 	 */
-	class Scope {
+	class Scope : public NodeStack::Scope {
 	public:
 	    Scope()
-#ifndef NDEBUG
-		: m_next_scope(ProtectStack::s_innermost_scope),
-		  m_saved_size(ProtectStack::size())
-#else
-		: m_saved_size(ProtectStack::size())
-#endif
-	    {
-#ifndef NDEBUG
-		ProtectStack::s_innermost_scope = this;
-#endif
-	    }
-
-	    ~Scope()
-	    {
-		if (ProtectStack::size() != m_saved_size)
-		    ProtectStack::trim(m_saved_size);
-#ifndef NDEBUG
-		ProtectStack::s_innermost_scope = m_next_scope;
-#endif
-	    }
-
-	    /** @brief ProtectStack size at construction.
-	     *
-	     * @return The size of the ProtectStack at the time this
-	     * Scope object was constructed.  The ProtectStack will be
-	     * restored to this size by the Scope destructor.
-	     */
-	    size_t startSize() const
-	    {
-		return m_saved_size;
-	    }
-	private:
-#ifndef NDEBUG
-	    Scope* m_next_scope;
-#endif
-	    size_t m_saved_size;
+		: NodeStack::Scope(s_stack)
+	    {}
 	};
 
 	/** @brief Push a node pointer onto the PPS.
@@ -121,11 +86,7 @@ namespace CXXR {
 	 */
 	static unsigned int protect(RObject* node)
 	{
-	    GCNode::maybeCheckExposed(node);
-	    unsigned int index = s_pps->size();
-	    GCNode::incRefCount(node);
-	    s_pps->push_back(node);
-	    return index;
+	    return s_stack->push(node);
 	}
 
 	/** @brief Change the target of a pointer on the PPS.
@@ -133,8 +94,7 @@ namespace CXXR {
 	 * Change the node that a particular cell in the C pointer
 	 * protection stack protects.  As a consistency check, it is
 	 * required that the reprotect takes place within the same
-	 * Context as the corresponding protect.  (CR does not apply this
-	 * check.)
+	 * ProtectStack::Scope as the corresponding protect.
 	 *
 	 * @param node Pointer to the node now to be protected from
 	 *          the garbage collector by the designated stack
@@ -146,7 +106,10 @@ namespace CXXR {
 	 *          the current size of the C pointer protection
 	 *          stack (checked).
 	 */
-	static void reprotect(RObject* node, unsigned int index);
+	static void reprotect(RObject* node, unsigned int index)
+	{
+	    s_stack->retarget(node, index);
+	}
 
 	/** @brief Restore PPS to a previous size.
 	 *
@@ -172,21 +135,24 @@ namespace CXXR {
 	 */
 	static size_t size()
 	{
-	    return s_pps->size();
+	    return s_stack->size();
 	}
 
 	/** @brief Pop pointers from the PPS.
 	 *
 	 * Pop cells from the C pointer protection stack.  As a
 	 * consistency check, it is required that the unprotect takes
-	 * place within the same Context as the corresponding protect.
-	 * (CR does not apply this check.)
+	 * place within the same ProtectStack::Scope as the
+	 * corresponding protect.
 	 *
 	 * @param count Number of cells to be popped.  Must not be
 	 *          larger than the current size of the C pointer
 	 *          protection stack.
 	 */
-	static void unprotect(unsigned int count = 1);
+	static void unprotect(unsigned int count = 1)
+	{
+	    s_stack->pop(count);
+	}
 
 	/**
 	 * Removes from the C pointer protection stack the uppermost
@@ -198,7 +164,10 @@ namespace CXXR {
 	 *
 	 * @deprecated Utterly.
 	 */
-	static void unprotectPtr(RObject* node);
+	static void unprotectPtr(RObject* node)
+	{
+	    s_stack->eraseTopmost(node);
+	}
 
 	/** @brief Conduct a const visitor to protected objects.
 	 *
@@ -207,29 +176,31 @@ namespace CXXR {
 	 *
 	 * @param v Pointer to the const_visitor object.
 	 */
-	static void visitRoots(GCNode::const_visitor* v);
+	static void visitRoots(GCNode::const_visitor* v)
+	{
+	    s_stack->visitRoots(v);
+	}
     private:
 	friend class GCNode;
 
-	static std::vector<RObject*>* s_pps;
-#ifndef NDEBUG
-	static Scope* s_innermost_scope;
-#endif
+	static NodeStack* s_stack;
 
 	// Not implemented:
 	ProtectStack();
 
 	// Clean up static data at end of run (called by
-	// GCNode::SchwarzCtr destructor:
-	static void cleanup() {}
+	// GCNode::SchwarzCtr destructor):
+	static void cleanup();
 
 	// Initialize static data (called by GCNode::SchwarzCtr
 	// constructor):
 	static void initialize();
 
-	// Pop entries off the stack to reduce its size to new_size,
-	// which must be no greater than the current size.
-	static void trim(size_t new_size);
+	// Put all entries into the protecting state:
+	static void protectAll()
+	{
+	    s_stack->protectAll();
+	}
     };
 }  // namespace CXXR
 
@@ -265,8 +236,8 @@ extern "C" {
      *
      * Change the node that a particular cell in the C pointer
      * protection stack protects.  As a consistency check, it is
-     * required that the reprotect takes place within the same Context
-     * as the original protect.  (CR does not apply this check.)
+     * required that the reprotect takes place within the same
+     * ProtectStack::Scope as the original protect.
      *
      * @param node Pointer to the node now to be protected from
      *          the garbage collector by the designated stack
@@ -332,8 +303,8 @@ extern "C" {
     /** @brief Pop cells from the C pointer protection stack.
      *
      * As a consistency check, it is required that the unprotect takes
-     * place within the same Context as the corresponding protect.  (CR
-     * does not apply this check.)
+     * place within the same ProtectStack::Scope as the corresponding
+     * protects.
      *
      * @param count Number of cells to be popped.  Must not be
      *          larger than the current size of the C pointer

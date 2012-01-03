@@ -43,6 +43,7 @@ SOURCES_CXX = \
         inspect.cpp IntVector.cpp \
 	ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
+	NodeStack.cpp \
         PairList.cpp Promise.cpp ProtectStack.cpp \
         RAllocStack.cpp RNG.cpp RObject.cpp RawVector.cpp Rdynload.cpp \
         RealVector.cpp Renviron.cpp ReturnBailout.cpp \

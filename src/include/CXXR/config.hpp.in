@@ -45,6 +45,22 @@
 #ifndef CXXR_CONFIG_HPP
 #define CXXR_CONFIG_HPP
 
+/* @def AGGRESSIVE_GC
+ *
+ * By default, GCNode::operator new initiates a reference-count-based
+ * garbage collection (GCNode::gclite()) only when the number of bytes
+ * allocated has risen by a certain margin from the number allocated
+ * after the last such collection.  However, if CXXR is compiled with
+ * the preprocessor variable AGGRESSIVE_GC define, every call to
+ * GCNode::operator new will initiate a reference-count-based garbage
+ * collection.  When used in conjunction with FILL55, GCID and
+ * (optionally) CELLFIFO, this can help to detect and diagnose gaps in
+ * the protection of nodes against garbage collection.
+ */
+#ifdef DOXYGEN
+#define AGGRESSIVE_GC
+#endif
+
 /** @def CELLFIFO
  *
  * @brief First-in first-out memory block allocation.

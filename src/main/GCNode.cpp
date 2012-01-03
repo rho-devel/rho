@@ -41,9 +41,11 @@
 
 #include "CXXR/GCNode.hpp"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include "CXXR/ByteCode.hpp"
 #include "CXXR/GCManager.hpp"
 #include "CXXR/GCRoot.h"
 #include "CXXR/GCStackRoot.hpp"
@@ -61,7 +63,6 @@ GCNode::List* GCNode::s_live;
 vector<const GCNode*>* GCNode::s_moribund;
 GCNode::List* GCNode::s_reachable;
 unsigned int GCNode::s_num_nodes = 0;
-unsigned int GCNode::s_under_construction = 0;
 unsigned int GCNode::s_inhibitor_count = 0;
 #ifdef GCID
 unsigned int GCNode::s_last_id = 0;
@@ -73,6 +74,8 @@ const unsigned char GCNode::s_decinc_refcount[]
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x3e,
    0x3e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 2, 0x1e,
    0x1e, 2, 2, 6, 6, 2, 2, 0xe, 0xe, 2, 2, 6, 6, 2, 0,    0};
+const size_t GCNode::s_gclite_margin = 10000;
+size_t GCNode::s_gclite_threshold;
 unsigned char GCNode::s_mark = 0;
 
 // Some versions of gcc (e.g. 4.2.1) give a spurious "throws different
@@ -83,11 +86,17 @@ unsigned char GCNode::s_mark = 0;
 void* GCNode::operator new(size_t bytes)
 {
 #ifndef RARE_GC
-    if (!s_moribund->empty())
+    if (
+#ifndef AGGRESSIVE_GC
+	MemoryBank::bytesAllocated() >= s_gclite_threshold
+#else
+	true
+#endif
+	)
 	gclite();
 #endif
     if (MemoryBank::bytesAllocated() > GCManager::triggerLevel()
-	&& s_under_construction + s_inhibitor_count == 0) {
+	&& s_inhibitor_count == 0) {
 #ifdef RARE_GC
 	gclite();
 #endif
@@ -102,6 +111,12 @@ void GCNode::abortIfNotExposed(const GCNode* node)
 	cerr << "Internal error: GCNode not exposed to GC.\n";
 	abort();
     }
+}
+
+void GCNode::alreadyExposedError()
+{
+    cerr << "Internal error: attempt to expose a node twice.\n";
+    abort();
 }
 
 bool GCNode::check()
@@ -157,6 +172,17 @@ void GCNode::cleanup()
     GCRootBase::cleanup();
 }
 
+void GCNode::destruct_aux()
+{
+    // Erase this node from the moribund list:
+    typedef std::vector<const GCNode*>::iterator Iter;
+    Iter it = std::find(s_moribund->begin(), s_moribund->end(), this);
+    if (it == s_moribund->end())
+	abort();  // Should never happen!
+    s_moribund->erase(it);
+    --s_inhibitor_count;
+}
+    
 void GCNode::gc()
 {
     // Note that recursion prevention is applied in GCManager::gc(),
@@ -166,7 +192,7 @@ void GCNode::gc()
     // GCNode::check();
     // cout << "Precheck completed OK: " << s_num_nodes << " nodes\n";
 
-    if (s_under_construction + s_inhibitor_count != 0) {
+    if (s_inhibitor_count != 0) {
 	cerr << "GCNode::gc() : mark-sweep GC must not be used"
 	    " while a GCNode is under construction, or while garbage"
 	    " collection is inhibited.\n";
@@ -186,6 +212,9 @@ void GCNode::gclite()
     if (s_inhibitor_count != 0)
 	return;
     GCInhibitor inhibitor;
+    GCStackRootBase::protectAll();
+    ProtectStack::protectAll();
+    ByteCode::protectAll();
     while (!s_moribund->empty()) {
 	// Last in, first out, for cache efficiency:
 	const GCNode* node = s_moribund->back();
@@ -195,6 +224,7 @@ void GCNode::gclite()
 	    delete node;
 	else rcmmu &= ~s_moribund_mask;  // Clear moribund bit
     }
+    s_gclite_threshold = MemoryBank::bytesAllocated() + s_gclite_margin;
 }
 
 void GCNode::initialize()
@@ -204,6 +234,7 @@ void GCNode::initialize()
     s_reachable = &reachable;
     static vector<const GCNode*> moribund;
     s_moribund = &moribund;
+    s_gclite_threshold = s_gclite_margin;
 #ifdef GCID
     s_last_id = 0;
     s_watch_addr = 0;
@@ -240,6 +271,7 @@ void GCNode::mark()
     GCRootBase::visitRoots(&marker);
     GCStackRootBase::visitRoots(&marker);
     ProtectStack::visitRoots(&marker);
+    ByteCode::visitRoots(&marker);
     WeakRef::markThru();
 }
 

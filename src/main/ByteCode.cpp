@@ -44,48 +44,7 @@
 
 using namespace CXXR;
 
-// ***** ByteCode::NodeStack *****
-
-ByteCode::NodeStack::NodeStack()
-    : m_edgevec(100), m_end(reinterpret_cast<GCEdge<>*>(&*m_edgevec.begin()))
-{}
-
-#ifndef NDEBUG
-void ByteCode::NodeStack::badpop()
-{
-    Rf_error("Internal error: pop from empty ByteCode::NodeStack");
-}
-#endif
-
-void ByteCode::NodeStack::detachReferents()
-{
-    m_edgevec.clear();
-    m_end = 0;
-}
-
-void ByteCode::NodeStack::enlarge()
-{
-    size_t sz = m_edgevec.size();
-    // +1 so enlargement happens even if sz is 0:
-    m_edgevec.resize(2*sz + 1);
-    void** beg = &*m_edgevec.begin(); 
-    m_end = reinterpret_cast<GCEdge<>*>(beg) + sz;
-}
-
-void ByteCode::NodeStack::visitReferents(const_visitor* v) const
-{
-    void* const* beg = &*m_edgevec.begin();
-    for (const GCEdge<>* p = reinterpret_cast<const GCEdge<>*>(beg);
-	 p != m_end; ++p) {
-	const GCEdge<>& e = *p;
-	if (e)
-	    (*v)(e);
-    }
-}
-
-// ***** ByteCode *****
-
-GCRoot<ByteCode::NodeStack> ByteCode::s_nodestack;
+NodeStack* ByteCode::s_nodestack = 0;
 
 void ByteCode::detachReferents()
 {
@@ -107,13 +66,19 @@ RObject* ByteCode::evaluate(Environment* env)
 void ByteCode::initialize()
 {
     if (!s_nodestack)
-	s_nodestack = CXXR_NEW(NodeStack);
+	s_nodestack = new NodeStack(512);
 #ifdef THREADED_CODE
     interpret(0, 0);
 #endif
 }
 
 // ByteCode::interpret() is in eval.cpp
+
+void ByteCode::protectAll()
+{
+    if (s_nodestack)
+	s_nodestack->protectAll();
+}
 
 // ByteCode::thread() is in eval.cpp
 
@@ -131,4 +96,10 @@ void ByteCode::visitReferents(const_visitor* v) const
 	(*v)(code);
     if (constants)
 	(*v)(constants);
+}
+
+void ByteCode::visitRoots(GCNode::const_visitor* v)
+{
+    if (s_nodestack)
+	s_nodestack->visitRoots(v);
 }

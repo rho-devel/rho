@@ -2135,7 +2135,7 @@ SEXP do_subassign2_dflt(SEXP, SEXP, SEXP, SEXP);
 // library end(), i.e. one past the current top element of the stack,
 // not in the way that CR uses R_BCNodeStackEnd, which relates to the
 // end of allocated storage.
-#define NODESTACKEND (s_nodestack->end())
+#define NSFROMEND(i) (s_nodestack->fromEnd(i))
 
 #define DO_FAST_RELOP2(op,a,b) do { \
     double __a__ = (a), __b__ = (b); \
@@ -2143,14 +2143,14 @@ SEXP do_subassign2_dflt(SEXP, SEXP, SEXP, SEXP);
     SKIP_OP(); \
     if (ISNAN(__a__) || ISNAN(__b__)) val = Rf_ScalarLogical(NA_LOGICAL); \
     else val = (__a__ op __b__) ? R_TrueValue : R_FalseValue; \
-    NODESTACKEND[-2] = val; \
+    NSFROMEND(2) = val; \
     s_nodestack->pop(); \
     NEXT(); \
 } while (0)
 
 # define FastRelop2(op,opval,opsym) do { \
-    SEXP x = NODESTACKEND[-2]; \
-    SEXP y = NODESTACKEND[-1]; \
+    SEXP x = NSFROMEND(2); \
+    SEXP y = NSFROMEND(1); \
     if (ATTRIB(x) == R_NilValue && ATTRIB(y) == R_NilValue) { \
 	if (TYPEOF(x) == REALSXP && LENGTH(x) == 1 && \
 	    TYPEOF(y) == REALSXP && LENGTH(y) == 1) \
@@ -2252,35 +2252,35 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
 
 #define Builtin1(do_fun,which,rho) do {				 \
   SEXP call = (*constants)[GETOP()]; \
-  NODESTACKEND[-1] = PairList::cons(NODESTACKEND[-1]);		\
-  NODESTACKEND[-1] = do_fun(call, getPrimitive(which, BUILTINSXP),	 \
-				NODESTACKEND[-1], rho); \
+  NSFROMEND(1) = PairList::cons(NSFROMEND(1));		\
+  NSFROMEND(1) = do_fun(call, getPrimitive(which, BUILTINSXP),	 \
+				NSFROMEND(1), rho); \
   NEXT(); \
 } while(0)
 
 #define Builtin2(do_fun,which,rho) do {		     \
   SEXP call = (*constants)[GETOP()]; \
-  PairList* tmp = PairList::cons(NODESTACKEND[-1]);	\
-  NODESTACKEND[-2] = PairList::cons(NODESTACKEND[-2], tmp);	\
+  PairList* tmp = PairList::cons(NSFROMEND(1));	\
+  NSFROMEND(2) = PairList::cons(NSFROMEND(2), tmp);	\
   s_nodestack->pop(); \
-  NODESTACKEND[-1] = do_fun(call, getPrimitive(which, BUILTINSXP), \
-				NODESTACKEND[-1], rho); \
+  NSFROMEND(1) = do_fun(call, getPrimitive(which, BUILTINSXP), \
+				NSFROMEND(1), rho); \
   NEXT(); \
 } while(0)
 
 #define NewBuiltin2(do_fun,opval,opsym,rho) do {        \
   SEXP call = (*constants)[GETOP()]; \
-  SEXP x = NODESTACKEND[-2]; \
-  SEXP y = NODESTACKEND[-1]; \
-  NODESTACKEND[-2] = do_fun(call, opval, opsym, x, y,rho);  \
+  SEXP x = NSFROMEND(2); \
+  SEXP y = NSFROMEND(1); \
+  NSFROMEND(2) = do_fun(call, opval, opsym, x, y,rho);  \
   s_nodestack->pop(); \
   NEXT(); \
 } while(0)
 
 #define Arith1(opsym) do {		\
   SEXP call = (*constants)[GETOP()]; \
-  SEXP x = NODESTACKEND[-1]; \
-  NODESTACKEND[-1] = cmp_arith1(call, opsym, x, rho);	\
+  SEXP x = NSFROMEND(1); \
+  NSFROMEND(1) = cmp_arith1(call, opsym, x, rho);	\
   NEXT(); \
 } while(0)
 
@@ -2293,13 +2293,13 @@ static SEXP cmp_arith2(SEXP call, int opval, SEXP opsym, SEXP x, SEXP y,
     RealVector* val = CXXR_NEW(RealVector(1)); \
     SKIP_OP(); \
     (*val)[0] = (a) op (b); \
-    NODESTACKEND[-2] = val; \
+    NSFROMEND(2) = val; \
     s_nodestack->pop(); \
     NEXT(); \
 } while (0)
 # define FastBinary(op,opval,opsym) do { \
-    SEXP x = NODESTACKEND[-2]; \
-    SEXP y = NODESTACKEND[-1]; \
+    SEXP x = NSFROMEND(2); \
+    SEXP y = NSFROMEND(1); \
     if (ATTRIB(x) == R_NilValue && ATTRIB(y) == R_NilValue) { \
 	if (TYPEOF(x) == REALSXP && LENGTH(x) == 1 && \
 	    TYPEOF(y) == REALSXP && LENGTH(y) == 1) \
@@ -2457,9 +2457,9 @@ static R_INLINE SEXP getvar(SEXP symbol, SEXP rho,
 
 #define PUSHCALLARG_CELL(c) do { \
   SEXP __cell__ = (c); \
-  if (NODESTACKEND[-2] == R_NilValue) NODESTACKEND[-2] = __cell__; \
-  else SETCDR(NODESTACKEND[-1], __cell__); \
-  NODESTACKEND[-1] = __cell__; \
+  if (NSFROMEND(2) == R_NilValue) NSFROMEND(2) = __cell__; \
+  else SETCDR(NSFROMEND(1), __cell__); \
+  NSFROMEND(1) = __cell__; \
 } while (0)
 
 static int tryDispatch(CXXRCONST char *generic, SEXP call, SEXP x, SEXP rho, SEXP *pv)
@@ -2521,9 +2521,9 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
 #define DO_STARTDISPATCH(generic) do { \
   SEXP call = (*constants)[GETOP()]; \
   int label = GETOP(); \
-  value = NODESTACKEND[-1]; \
+  value = NSFROMEND(1); \
   if (Rf_isObject(value) && tryDispatch(generic, call, value, rho, &value)) {\
-    NODESTACKEND[-1] = value; \
+    NSFROMEND(1) = value; \
     BC_CHECK_SIGINT(); \
     pc = codebase + label; \
   } \
@@ -2541,27 +2541,27 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
 } while (0)
 
 #define DO_DFLTDISPATCH(fun, symbol) do { \
-  SEXP call = NODESTACKEND[-3]; \
-  SEXP args = NODESTACKEND[-2]; \
+  SEXP call = NSFROMEND(3); \
+  SEXP args = NSFROMEND(2); \
   value = fun(call, symbol, args, rho); \
   s_nodestack->pop(3);	\
-  NODESTACKEND[-1] = value; \
+  NSFROMEND(1) = value; \
   NEXT(); \
 } while (0)
 
 #define DO_START_ASSIGN_DISPATCH(generic) do { \
   SEXP call = (*constants)[GETOP()]; \
   int label = GETOP(); \
-  SEXP lhs = NODESTACKEND[-2]; \
-  SEXP rhs = NODESTACKEND[-1]; \
+  SEXP lhs = NSFROMEND(2); \
+  SEXP rhs = NSFROMEND(1); \
   if (NAMED(lhs) == 2) { \
-    lhs = NODESTACKEND[-2] = Rf_duplicate(lhs); \
+    lhs = NSFROMEND(2) = Rf_duplicate(lhs); \
     SET_NAMED(lhs, 1); \
   } \
   if (Rf_isObject(lhs) && \
       tryAssignDispatch(generic, call, lhs, rhs, rho, &value)) { \
     s_nodestack->pop();	\
-    NODESTACKEND[-1] = value; \
+    NSFROMEND(1) = value; \
     BC_CHECK_SIGINT(); \
     pc = codebase + label; \
   } \
@@ -2579,23 +2579,23 @@ static int tryAssignDispatch(char *generic, SEXP call, SEXP lhs, SEXP rhs,
 } while (0)
 
 #define DO_DFLT_ASSIGN_DISPATCH(fun, symbol) do { \
-  SEXP rhs = NODESTACKEND[-4]; \
-  SEXP call = NODESTACKEND[-3]; \
-  SEXP args = NODESTACKEND[-2]; \
+  SEXP rhs = NSFROMEND(4); \
+  SEXP call = NSFROMEND(3); \
+  SEXP args = NSFROMEND(2); \
   PUSHCALLARG(rhs); \
   value = fun(call, symbol, args, rho); \
   s_nodestack->pop(4);	\
-  NODESTACKEND[-1] = value; \
+  NSFROMEND(1) = value; \
   NEXT(); \
 } while (0)
 
 #define DO_ISTEST(fun) do { \
-  NODESTACKEND[-1] = fun(NODESTACKEND[-1]) ? \
+  NSFROMEND(1) = fun(NSFROMEND(1)) ? \
 			 R_TrueValue : R_FalseValue; \
   NEXT(); \
 } while(0)
 #define DO_ISTYPE(type) do { \
-  NODESTACKEND[-1] = TYPEOF(NODESTACKEND[-1]) == type ? \
+  NSFROMEND(1) = TYPEOF(NSFROMEND(1)) == type ? \
 			 Rf_mkTrue() : Rf_mkFalse(); \
   NEXT(); \
 } while (0)
@@ -2750,12 +2750,12 @@ static SEXP setNumMatElt(SEXP mat, SEXP idx, SEXP jdx, SEXP value)
 }
 
 #define FIXUP_SCALAR_LOGICAL(callidx, arg, op) do { \
-	SEXP val = NODESTACKEND[-1]; \
+	SEXP val = NSFROMEND(1); \
 	if (TYPEOF(val) != LGLSXP || LENGTH(val) != 1) { \
 	    if (!Rf_isNumber(val))	\
 		Rf_errorcall(VECTOR_ELT(constants, callidx), \
 			  _("invalid %s type in 'x %s y'"), arg, op);	\
-	    NODESTACKEND[-1] = Rf_ScalarLogical(Rf_asLogical(val)); \
+	    NSFROMEND(1) = Rf_ScalarLogical(Rf_asLogical(val)); \
 	} \
     } while(0)
 
@@ -2791,7 +2791,7 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 
 RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 {
-  Scope scope;
+  NodeStack::Scope scope(s_nodestack);
   std::vector<Frame::Binding*> binding_stack;
   SEXP body = bcode;
   SEXP value;
@@ -2837,7 +2837,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 
   BEGIN_MACHINE {
     OP(BCMISMATCH, 0): Rf_error(_("byte code version mismatch"));
-    OP(RETURN, 0): value = NODESTACKEND[-1]; goto done;
+    OP(RETURN, 0): value = NSFROMEND(1); goto done;
     OP(GOTO, 1):
       {
 	int label = GETOP();
@@ -2864,7 +2864,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	BCNPOP_IGNORE_VALUE();
 	NEXT();
     OP(DUP, 0):
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	BCNPUSH(value);
 	NEXT();
     OP(PRINTVALUE, 0):
@@ -2889,7 +2889,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	}
     OP(STARTFOR, 3):
       {
-	SEXP seq = NODESTACKEND[-1];
+	SEXP seq = NSFROMEND(1);
 	int callidx = GETOP();
 	SEXP symbol = (*constants)[GETOP()];
 	int label = GETOP();
@@ -2897,7 +2897,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	/* if we are iterating over a factor, coerce to character first */
 	if (Rf_inherits(seq, "factor")) {
 	    seq = Rf_asCharacterFactor(seq);
-	    NODESTACKEND[-1] = seq;
+	    NSFROMEND(1) = seq;
 	}
 
 	Rf_defineVar(symbol, R_NilValue, rho);
@@ -2932,10 +2932,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(STEPFOR, 1):
       {
 	int label = GETOP();
-	int i = ++(INTEGER(NODESTACKEND[-2])[0]);
-	int n = INTEGER(NODESTACKEND[-2])[1];
+	int i = ++(INTEGER(NSFROMEND(2))[0]);
+	int n = INTEGER(NSFROMEND(2))[1];
 	if (i < n) {
-	  SEXP seq = NODESTACKEND[-4];
+	  SEXP seq = NSFROMEND(4);
 	  Frame::Binding* cell = binding_stack.back();
 	  switch (TYPEOF(seq)) {
 	  case LGLSXP:
@@ -2982,7 +2982,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	      break;
 	  case LISTSXP:
 	    value = CAR(seq);
-	    NODESTACKEND[-4] = CDR(seq);
+	    NSFROMEND(4) = CDR(seq);
 	    break;
 	  default:
 	    Rf_error(_("invalid sequence argument in for loop"));
@@ -2995,15 +2995,15 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
       }
     OP(ENDFOR, 0):
       {
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	s_nodestack->pop(3);
 	binding_stack.pop_back();
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
       }
     OP(SETLOOPVAL, 0):
 	BCNPOP_IGNORE_VALUE();
-	NODESTACKEND[-1] = R_NilValue;
+	NSFROMEND(1) = R_NilValue;
 	NEXT();
     OP(INVISIBLE,0):
 	R_Visible = FALSE;
@@ -3036,7 +3036,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(SETVAR, 1):
       {
 	SEXP symbol = (*constants)[GETOP()];
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	switch (NAMED(value)) {
 	case 0: SET_NAMED(value, 1); break;
 	case 1: SET_NAMED(value, 2); break;
@@ -3142,7 +3142,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(CHECKFUN, 0):
       {
 	/* check then the value on the stack is a function */
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	if (TYPEOF(value) != CLOSXP && TYPEOF(value) != BUILTINSXP &&
 	    TYPEOF(value) != SPECIALSXP)
 	  Rf_error(_("attempt to apply non-function"));
@@ -3176,7 +3176,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(SETTAG, 1):
       {
 	SEXP tag = (*constants)[GETOP()];
-	SEXP cell = NODESTACKEND[-1];
+	SEXP cell = NSFROMEND(1);
 	if (ftype != SPECIALSXP && cell != R_NilValue)
 	  SET_TAG(cell, Rf_CreateTag(tag));
 	NEXT();
@@ -3220,9 +3220,9 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	NEXT();
     OP(CALL, 1):
       {
-	SEXP fun = NODESTACKEND[-3];
+	SEXP fun = NSFROMEND(3);
 	SEXP call = (*constants)[GETOP()];
-	SEXP args = NODESTACKEND[-2];
+	SEXP args = NSFROMEND(2);
 	int flag;
 	switch (ftype) {
 	case BUILTINSXP:
@@ -3248,15 +3248,15 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	default: Rf_error(_("bad function"));
 	}
 	s_nodestack->pop(2);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	ftype = 0;
 	NEXT();
       }
     OP(CALLBUILTIN, 1):
       {
-	SEXP fun = NODESTACKEND[-3];
+	SEXP fun = NSFROMEND(3);
 	SEXP call = (*constants)[GETOP()];
-	SEXP args = NODESTACKEND[-2];
+	SEXP args = NSFROMEND(2);
 	if (TYPEOF(fun) != BUILTINSXP)
 	  Rf_error(_("not a BUILTIN function"));
 	// Inner block because destructor of ArgList must be called
@@ -3269,7 +3269,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	    value = func->apply(&arglist, env, callx);
 	}
 	s_nodestack->pop(2);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
       }
     OP(CALLSPECIAL, 1):
@@ -3291,7 +3291,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	    ArgList arglist(callx->tail(), ArgList::RAW);
 	    value = func->apply(&arglist, env, callx);
 	}
-	NODESTACKEND[-1] = value; /* replaces fun on stack */
+	NSFROMEND(1) = value; /* replaces fun on stack */
 	NEXT();
       }
     OP(MAKECLOSURE, 1):
@@ -3325,7 +3325,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(STARTASSIGN, 1):
       {
 	SEXP symbol = (*constants)[GETOP()];
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	BCNPUSH(EnsureLocal(symbol, rho));
 	BCNPUSH(value);
 	/* top three stack entries are now RHS value, LHS value, RHS value */
@@ -3343,7 +3343,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	/* original right-hand side value is now on top of stack again */
 	/* we do not duplicate the right-hand side value, so to be
 	   conservative mark the value as NAMED = 2 */
-	SET_NAMED(NODESTACKEND[-1], 2);
+	SET_NAMED(NSFROMEND(1), 2);
 	NEXT();
       }
     OP(STARTSUBSET, 2): DO_STARTDISPATCH("[");
@@ -3363,7 +3363,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	int dispatched = FALSE;
 	SEXP call = (*constants)[GETOP()];
 	SEXP symbol = (*constants)[GETOP()];
-	SEXP x = NODESTACKEND[-1];
+	SEXP x = NSFROMEND(1);
 	if (Rf_isObject(x)) {
 	    SEXP ncall;
 	    PROTECT(ncall = Rf_duplicate(call));
@@ -3373,9 +3373,9 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	    UNPROTECT(1);
 	}
 	if (dispatched)
-	  NODESTACKEND[-1] = value;
+	  NSFROMEND(1) = value;
 	else
-	    NODESTACKEND[-1] = R_subset3_dflt(x, PRINTNAME(symbol), R_NilValue);
+	    NSFROMEND(1) = R_subset3_dflt(x, PRINTNAME(symbol), R_NilValue);
 	NEXT();
       }
     OP(DOLLARGETS, 2):
@@ -3383,10 +3383,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	int dispatched = FALSE;
 	SEXP call = (*constants)[GETOP()];
 	SEXP symbol = (*constants)[GETOP()];
-	SEXP x = NODESTACKEND[-2];
-	SEXP rhs = NODESTACKEND[-1];
+	SEXP x = NSFROMEND(2);
+	SEXP rhs = NSFROMEND(1);
 	if (NAMED(x) == 2) {
-	  x = NODESTACKEND[-2] = Rf_duplicate(x);
+	  x = NSFROMEND(2) = Rf_duplicate(x);
 	  SET_NAMED(x, 1);
 	}
 	if (Rf_isObject(x)) {
@@ -3403,15 +3403,15 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	if (! dispatched)
 	  value = R_subassign3_dflt(call, x, symbol, rhs);
 	s_nodestack->pop();
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
       }
     OP(ISNULL, 0): DO_ISTEST(Rf_isNull);
     OP(ISLOGICAL, 0): DO_ISTYPE(LGLSXP);
     OP(ISINTEGER, 0): {
-	SEXP arg = NODESTACKEND[-1];
+	SEXP arg = NSFROMEND(1);
 	bool test = (TYPEOF(arg) == INTSXP) && ! Rf_inherits(arg, "factor");
-	NODESTACKEND[-1] = test ? Rf_mkTrue() : Rf_mkFalse();
+	NSFROMEND(1) = test ? Rf_mkTrue() : Rf_mkFalse();
 	NEXT();
       }
     OP(ISDOUBLE, 0): DO_ISTYPE(REALSXP);
@@ -3421,46 +3421,46 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(ISOBJECT, 0): DO_ISTEST(OBJECT);
     OP(ISNUMERIC, 0): DO_ISTEST(isNumericOnly);
     OP(NVECELT, 0): {
-	SEXP vec = NODESTACKEND[-2];
-	SEXP idx = NODESTACKEND[-1];
+	SEXP vec = NSFROMEND(2);
+	SEXP idx = NSFROMEND(1);
 	value = numVecElt(vec, idx);
 	s_nodestack->pop();
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
     }
     OP(NMATELT, 0): {
-	SEXP mat = NODESTACKEND[-3];
-	SEXP idx = NODESTACKEND[-2];
-	SEXP jdx = NODESTACKEND[-1];
+	SEXP mat = NSFROMEND(3);
+	SEXP idx = NSFROMEND(2);
+	SEXP jdx = NSFROMEND(1);
 	value = numMatElt(mat, idx, jdx);
 	s_nodestack->pop(2);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
     }
     OP(SETNVECELT, 0): {
-	SEXP vec = NODESTACKEND[-3];
-	SEXP idx = NODESTACKEND[-2];
-	value = NODESTACKEND[-1];
+	SEXP vec = NSFROMEND(3);
+	SEXP idx = NSFROMEND(2);
+	value = NSFROMEND(1);
 	value = setNumVecElt(vec, idx, value);
 	s_nodestack->pop(2);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
     }
     OP(SETNMATELT, 0): {
-	SEXP mat = NODESTACKEND[-4];
-	SEXP idx = NODESTACKEND[-3];
-	SEXP jdx = NODESTACKEND[-2];
-	value = NODESTACKEND[-1];
+	SEXP mat = NSFROMEND(4);
+	SEXP idx = NSFROMEND(3);
+	SEXP jdx = NSFROMEND(2);
+	value = NSFROMEND(1);
 	value = setNumMatElt(mat, idx, jdx, value);
 	s_nodestack->pop(3);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	NEXT();
     }
     OP(AND1ST, 2): {
 	int callidx = GETOP();
 	int label = GETOP();
         FIXUP_SCALAR_LOGICAL(callidx, "'x'", "&&");
-        value = NODESTACKEND[-1];
+        value = NSFROMEND(1);
 	if (LOGICAL(value)[0] == FALSE)
 	    pc = codebase + label;
 	NEXT();
@@ -3468,13 +3468,13 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(AND2ND, 1): {
 	int callidx = GETOP();
 	FIXUP_SCALAR_LOGICAL(callidx, "'y'", "&&");
-        value = NODESTACKEND[-1];
+        value = NSFROMEND(1);
 	/* The first argument is TRUE or NA. If the second argument is
 	   not TRUE then its value is the result. If the second
 	   argument is TRUE, then the first argument's value is the
 	   result. */
 	if (LOGICAL(value)[0] != TRUE)
-	    NODESTACKEND[-2] = value;
+	    NSFROMEND(2) = value;
 	s_nodestack->pop();
 	NEXT();
     }
@@ -3482,7 +3482,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	int callidx = GETOP();
 	int label = GETOP();
         FIXUP_SCALAR_LOGICAL(callidx, "'x'", "||");
-        value = NODESTACKEND[-1];
+        value = NSFROMEND(1);
 	if (LOGICAL(value)[0] != NA_LOGICAL && LOGICAL(value)[0]) /* is true */
 	    pc = codebase + label;
 	NEXT();
@@ -3490,13 +3490,13 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(OR2ND, 1):  {
 	int callidx = GETOP();
 	FIXUP_SCALAR_LOGICAL(callidx, "'y'", "||");
-        value = NODESTACKEND[-1];
+        value = NSFROMEND(1);
 	/* The first argument is FALSE or NA. If the second argument is
 	   not FALSE then its value is the result. If the second
 	   argument is FALSE, then the first argument's value is the
 	   result. */
 	if (LOGICAL(value)[0] != FALSE)
-	    NODESTACKEND[-2] = value;
+	    NSFROMEND(2) = value;
 	s_nodestack->pop();
 	NEXT();
     }
@@ -3508,10 +3508,10 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(SETVAR2, 1):
       {
 	SEXP symbol = (*constants)[GETOP()];
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	if (NAMED(value)) {
 	    value = Rf_duplicate(value);
-	    NODESTACKEND[-1] = value;
+	    NSFROMEND(1) = value;
 	}
 	Rf_setVar(symbol, value, ENCLOS(rho));
 	NEXT();
@@ -3519,7 +3519,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(STARTASSIGN2, 1):
       {
 	SEXP symbol = (*constants)[GETOP()];
-	value = NODESTACKEND[-1];
+	value = NSFROMEND(1);
 	BCNPUSH(getvar(symbol, ENCLOS(rho), FALSE, FALSE));
 	BCNPUSH(value);
 	/* top three stack entries are now RHS value, LHS value, RHS value */
@@ -3537,28 +3537,28 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	/* original right-hand side value is now on top of stack again */
 	/* we do not duplicate the right-hand side value, so to be
 	   conservative mark the value as NAMED = 2 */
-	SET_NAMED(NODESTACKEND[-1], 2);
+	SET_NAMED(NSFROMEND(1), 2);
 	NEXT();
       }
     OP(SETTER_CALL, 2):
       {
-        SEXP lhs = NODESTACKEND[-5];
-        SEXP rhs = NODESTACKEND[-4];
-	SEXP fun = NODESTACKEND[-3];
+        SEXP lhs = NSFROMEND(5);
+        SEXP rhs = NSFROMEND(4);
+	SEXP fun = NSFROMEND(3);
 	SEXP call = (*constants)[GETOP()];
 	SEXP vexpr = (*constants)[GETOP()];
 	SEXP args, prom, last;
 	if (NAMED(lhs) == 2) {
-	  lhs = NODESTACKEND[-5] = Rf_duplicate(lhs);
+	  lhs = NSFROMEND(5) = Rf_duplicate(lhs);
 	  SET_NAMED(lhs, 1);
 	}
 	switch (ftype) {
 	case BUILTINSXP:
 	  /* push RHS value onto arguments with 'value' tag */
 	  PUSHCALLARG(rhs);
-	  SET_TAG(NODESTACKEND[-1], Rf_install("value"));
+	  SET_TAG(NSFROMEND(1), Rf_install("value"));
 	  /* replace first argument with LHS value */
-	  args = NODESTACKEND[-2];
+	  args = NSFROMEND(2);
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
@@ -3566,7 +3566,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
-	  args = NODESTACKEND[-2] = Rf_duplicate(CDR(call));
+	  args = NSFROMEND(2) = Rf_duplicate(CDR(call));
 	  /* insert evaluated promise for LHS as first argument */
           prom = Rf_mkPROMISE(R_TmpvalSymbol, rho);
 	  SET_PRVALUE(prom, lhs);
@@ -3586,11 +3586,11 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  prom = Rf_mkPROMISE(vexpr, rho);
 	  SET_PRVALUE(prom, rhs);
 	  PUSHCALLARG(prom);
-	  SET_TAG(NODESTACKEND[-1], Rf_install("value"));
+	  SET_TAG(NSFROMEND(1), Rf_install("value"));
 	  /* replace first argument with evaluated promise for LHS */
           prom = Rf_mkPROMISE(R_TmpvalSymbol, rho);
 	  SET_PRVALUE(prom, lhs);
-	  args = NODESTACKEND[-2];
+	  args = NSFROMEND(2);
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
@@ -3603,20 +3603,20 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	default: Rf_error(_("bad function"));
 	}
 	s_nodestack->pop(4);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	ftype = 0;
 	NEXT();
       }
     OP(GETTER_CALL, 1):
       {
-        SEXP lhs = NODESTACKEND[-5];
-	SEXP fun = NODESTACKEND[-3];
+        SEXP lhs = NSFROMEND(5);
+	SEXP fun = NSFROMEND(3);
 	SEXP call = (*constants)[GETOP()];
 	SEXP args, prom;
 	switch (ftype) {
 	case BUILTINSXP:
 	  /* replace first argument with LHS value */
-	  args = NODESTACKEND[-2];
+	  args = NSFROMEND(2);
 	  SETCAR(args, lhs);
 	  /* make the call */
 	  checkForMissings(args, call);
@@ -3624,7 +3624,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  break;
 	case SPECIALSXP:
 	  /* duplicate arguments and put into stack for GC protection */
-	  args = NODESTACKEND[-2] = Rf_duplicate(CDR(call));
+	  args = NSFROMEND(2) = Rf_duplicate(CDR(call));
 	  /* insert evaluated promise for LHS as first argument */
           prom = Rf_mkPROMISE(R_TmpvalSymbol, rho);
 	  SET_PRVALUE(prom, lhs);
@@ -3636,7 +3636,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	  /* replace first argument with evaluated promise for LHS */
           prom = Rf_mkPROMISE(R_TmpvalSymbol, rho);
 	  SET_PRVALUE(prom, lhs);
-	  args = NODESTACKEND[-2];
+	  args = NSFROMEND(2);
 	  SETCAR(args, prom);
 	  /* make the call */
 	  {
@@ -3649,18 +3649,18 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	default: Rf_error(_("bad function"));
 	}
 	s_nodestack->pop(2);
-	NODESTACKEND[-1] = value;
+	NSFROMEND(1) = value;
 	ftype = 0;
 	NEXT();
       }
     OP(SWAP, 0): {
-	value = NODESTACKEND[-1];
-	NODESTACKEND[-1] = NODESTACKEND[-2];
-	NODESTACKEND[-2] = value;
+	value = NSFROMEND(1);
+	NSFROMEND(1) = NSFROMEND(2);
+	NSFROMEND(2) = value;
 	NEXT();
     }
     OP(DUP2ND, 0): {
-	value = NODESTACKEND[-2];
+	value = NSFROMEND(2);
 	BCNPUSH(value);
 	NEXT();
     }

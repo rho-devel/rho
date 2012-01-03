@@ -197,10 +197,11 @@ namespace CXXR {
 #ifdef GCID
 	      m_id(++s_last_id),
 #endif
-	      m_rcmmu(s_mark | 1)
+	      m_rcmmu(s_mark | s_moribund_mask | 1)
 	{
 	    ++s_num_nodes;
-	    ++s_under_construction;
+	    ++s_inhibitor_count;
+	    s_moribund->push_back(this);
 #ifdef GCID
 	    watch();
 #endif
@@ -284,8 +285,12 @@ namespace CXXR {
 	 */
 	void expose() const
 	{
-	    s_under_construction -= (m_rcmmu & 1);
+#ifndef NDEBUG
+	    if (isExposed())
+		alreadyExposedError();
+#endif
 	    m_rcmmu &= ~1;
+	    --s_inhibitor_count;
 	}
 
 	/** @brief Record that construction of a node is complete.
@@ -307,8 +312,8 @@ namespace CXXR {
 	 * This can be further simplified using the CXXR_NEW macro to
 	 * CXXR_NEW(FooNode).
 	 *
-	 * It is permissible (but pointless) for a node to be exposed
-	 * more than once.
+	 * It is not permissible for a node to be exposed more than
+	 * once, and this is checked unless \c NDEBUG is defined.
 	 *
 	 * @tparam T GCNode or any class derived from it, possibly
 	 *           qualified by const.
@@ -347,6 +352,16 @@ namespace CXXR {
 	 * counts have never have risen above zero.
 	 */
 	static void gclite();
+
+	/** @brief Has this node been exposed to garbage collection?
+	 *
+	 * @return true iff this node has been exposed to garbage
+	 * collection.
+	 */
+	bool isExposed() const
+	{
+	    return (m_rcmmu & 1) == 0;
+	}
 
 	/** @brief Subject to configuration, check that a GCNode is exposed.
 	 *
@@ -404,14 +419,16 @@ namespace CXXR {
 #ifdef GCID
 	    watch();
 #endif
-	    s_under_construction -= (m_rcmmu & 1);
+	    // Is the node still under construction?
+	    if (m_rcmmu & 1)
+		destruct_aux();
 	    --s_num_nodes;
 	}
     private:
 	friend class GCInhibitor;
 	friend class GCRootBase;
 	friend class GCStackRootBase;
-	friend class ProtectStack;
+	friend class NodeStack;
 	friend class WeakRef;
 
 	/** Visitor class used to mark nodes.
@@ -452,11 +469,18 @@ namespace CXXR {
 	  // collection, if a node is found to be reachable from the
 	  // roots, it is moved to this list. Between garbage
 	  // collections, this list should be empty.
+	static const size_t s_gclite_margin;  // operator new will
+	  // invoke gclite() when MemoryBank::bytesAllocated() exceeds
+	  // by at least s_gclite_margin the number of bytes that were
+	  // allocated following the previous gclite().  This is a
+	  // tuning parameter.
+	static size_t s_gclite_threshold;  // operator new calls
+	  // gclite() when the number of bytes allocated reaches this
+	  // level.
 	static unsigned int s_num_nodes;  // Number of nodes in existence
-	static unsigned int s_under_construction;  // Number of nodes
-	  // currently under construction (i.e. not yet exposed).
 	static unsigned int s_inhibitor_count;  // Number of GCInhibitor
-	  // objects in existence.
+	  // objects in existence, plus the number of nodes currently
+	  // under construction (i.e. not yet exposed).
 #ifdef GCID
 	// If GCID is defined, each GCNode is given an identity
 	// number.  The numbers are not unique: they wrap around
@@ -507,6 +531,10 @@ namespace CXXR {
 	// Abort program if 'node' is not exposed to GC.
 	static void abortIfNotExposed(const GCNode* node);
 
+	// Abort program with an error message if an attempt is made
+	// to expose a node more than once.
+	static void alreadyExposedError();
+
 	// Clean up static data at end of run:
 	static void cleanup();
 
@@ -522,6 +550,15 @@ namespace CXXR {
 		    node->makeMoribund();
 	    }
 	}
+
+	// Helper function for the destructor, handling the case where
+	// the node is still under construction.  This should happen
+	// only in the case where a derived class constructor has
+	// thrown an exception.
+#ifdef __GNUC__
+	__attribute__((cold))
+#endif
+	void destruct_aux();
 
 	// Increment the reference count.  Overflow is handled by the
 	// stickiness of the MSB.

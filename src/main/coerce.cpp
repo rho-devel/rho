@@ -2502,7 +2502,8 @@ static SEXP R_set_class(SEXP obj, SEXP value, SEXP call)
     if(TYPEOF(value) != STRSXP) {
 	/* Beware: assumes value is protected, which it is
 	   in the only use below */
-	PROTECT(value = Rf_coerceVector(Rf_duplicate(value), STRSXP));
+	GCStackRoot<> valdup(Rf_duplicate(value));
+	PROTECT(value = Rf_coerceVector(valdup, STRSXP));
 	nProtect++;
     }
     if(length(value) > 1) {

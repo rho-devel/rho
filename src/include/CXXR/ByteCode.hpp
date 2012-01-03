@@ -44,12 +44,15 @@
 #include "CXXR/ConsCell.h"
 // Just to pick up define of BYTECODE:
 #include "CXXR/Evaluator.h"
+#include "CXXR/IntVector.h"
+#include "CXXR/ListVector.h"
+#include "CXXR/NodeStack.hpp"
 
 extern "C" {
 #ifdef BYTECODE
 
 // In CXXR for the time being:
-//#define NO_THREADED_CODE
+#define NO_THREADED_CODE
 
 #if defined(__GNUC__) && ! defined(BC_PROFILING) && (! defined(NO_THREADED_CODE))
 # define THREADED_CODE
@@ -105,6 +108,13 @@ namespace CXXR {
 	 */
 	static void initialize();
 
+	/** @brief Ensure GC protection of all nodes.
+	 *
+	 * This function ensures that all RObjects pointed to from the
+	 * NodeStack are protected from garbage collection.
+	 */
+	static void protectAll();
+
 	/** @brief The name by which this type is known in R.
 	 *
 	 * @return the name by which this type is known in R.
@@ -113,6 +123,15 @@ namespace CXXR {
 	{
 	    return "bytecode";
 	}
+
+	/** @brief Conduct a const visitor via the NodeStack.
+	 *
+	 * Conduct a GCNode::const_visitor object to each RObject
+	 * pointed to by the NodeStack.
+	 *
+	 * @param v Pointer to the const_visitor object.
+	 */
+	static void visitRoots(GCNode::const_visitor* v);
 
 	// Virtual functions of RObject:
 	RObject* evaluate(Environment* env);
@@ -135,116 +154,7 @@ namespace CXXR {
 	typedef int BCODE;
 #endif
     private:
-	/** @brief Virtual machine node stack.
-	 *
-	 * Stack of pointers to RObjects manipulated by the
-	 * ByteCode virtual machine.
-	 */
-	class NodeStack : public GCNode {
-	public:
-	    NodeStack();
-
-	    /** @brief Pointer to 'one beyond the end' of the NodeStack.
-	     *
-	     * @return A pointer to the GCEdge<> one beyond the end of
-	     * the node stack.  This performs a function similar to
-	     * R_BCNodeStackTop in CR.
-	     */
-	    GCEdge<>* end()
-	    {
-		return m_end;
-	    }
-
-	    /** @brief pop elements from the top of the stack.
-	     *
-	     * @param count The number of elements to be popped, which
-	     *          must be no greater than the current size of
-	     *          the stack (not checked).
-	     *
-	     * @return the pointer previously at the top of the stack.
-	     */
-	    void pop(size_t count = 1)
-	    {
-#ifndef NDEBUG
-		if (size() == 0 && count > 0)
-		    badpop();
-#endif
-		while (count--)
-		    (--m_end)->~GCEdge<>();
-	    }
-
-	    /** @brief Push a pointer onto the stack.
-	     *
-	     * @param node Pointer (possibly null) to an RObject.
-	     */
-	    void push(RObject* node)
-	    {
-		if (reinterpret_cast<void**>(m_end) == &*m_edgevec.end())
-		    enlarge();
-		new (m_end++) GCEdge<>(node);
-	    }
-
-	    size_t size() const
-	    {
-		return (reinterpret_cast<void**>(m_end) - &*m_edgevec.begin());
-	    }
-
-	    /** @brief pop and return the top element of the stack.
-	     *
-	     * The stack must not be empty; this is not checked.
-	     *
-	     * @return the pointer previously at the top of the stack.
-	     */
-	    RObject* topnpop() {
-#ifndef NDEBUG
-		if (size() == 0)
-		    badpop();
-#endif
-		--m_end;
-		RObject* ans = *m_end;
-		m_end->~GCEdge<>();
-		return ans;
-	    }
-
-	    // Virtual functions of GCNode:
-	    void detachReferents();
-	    void visitReferents(const_visitor* v) const;
-	private:
-	    // This code assumes that sizeof(GCEdge<>) ==
-	    // sizeof(void*) and that their alignments are the same.
-	    // m_edgevec is conceptually a stack of GCEdge<>s, which
-	    // are constructed and destructed by stack operations.
-	    typedef std::vector<void*> EdgeVec;
-	    EdgeVec m_edgevec;
-	    GCEdge<>* m_end;
-
-#ifndef NDEBUG
-	    void badpop();
-#endif
-	    // Double the size of m_edgevec.  The implementation
-	    // assumes that this is called only when m_edgevec is full
-	    // to capacity.
-	    void enlarge();
-	};
-
-	// Class to save and restore the state of the ByteCode
-	// computation stacks.
-	class Scope {
-	public:
-	    Scope()
-	    {
-		m_nodestack_size = s_nodestack->size();
-	    }
-
-	    ~Scope()
-	    {
-		s_nodestack->pop(s_nodestack->size() - m_nodestack_size);
-	    }
-	private:
-	    size_t m_nodestack_size;
-	};
-
-	static GCRoot<NodeStack> s_nodestack;
+	static NodeStack* s_nodestack;
 #ifdef THREADED_CODE
 	static void* s_op_address[];
 #ifndef TOKEN_THREADING

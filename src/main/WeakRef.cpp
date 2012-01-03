@@ -344,12 +344,12 @@ SEXP R_MakeWeakRef(SEXP key, SEXP val, SEXP fin, Rboolean onexit)
 	if (!finf)
 	    Rf_error(_("finalizer must be a function or NULL"));
     } 
-    return CXXR_NEW(WeakRef(key, val, finf, onexit));
+    return new WeakRef(key, val, finf, onexit);
 }
 
 SEXP R_MakeWeakRefC(SEXP key, SEXP val, R_CFinalizer_t fin, Rboolean onexit)
 {
-    return CXXR_NEW(WeakRef(key, val, fin, onexit));
+    return new WeakRef(key, val, fin, onexit);
 }
 
 void R_RegisterFinalizerEx(SEXP s, SEXP fun, Rboolean onexit)

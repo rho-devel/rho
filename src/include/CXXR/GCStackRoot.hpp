@@ -72,18 +72,16 @@ namespace CXXR {
 	static void visitRoots(GCNode::const_visitor* v);
     protected:
 	GCStackRootBase(const GCNode* node)
-	    : m_next(s_roots), m_target(node)
+	    : m_next(s_roots), m_target(node), m_protecting(false)
 	{
 	    s_roots = this;
 	    GCNode::maybeCheckExposed(node);
-	    GCNode::incRefCount(m_target);
 	}
 
 	GCStackRootBase(const GCStackRootBase& source)
-	    : m_next(s_roots), m_target(source.m_target)
+	    : m_next(s_roots), m_target(source.m_target), m_protecting(false)
 	{
 	    s_roots = this;
-	    GCNode::incRefCount(m_target);
 	}
 
 	~GCStackRootBase()
@@ -92,15 +90,14 @@ namespace CXXR {
 	    if (this != s_roots)
 		seq_error();
 #endif
-	    GCNode::decRefCount(m_target);
+	    if (m_protecting)
+		destruct_aux();
 	    s_roots = m_next;
 	}
 
 	GCStackRootBase& operator=(const GCStackRootBase& source)
 	{
-	    GCNode::incRefCount(source.m_target);
-	    GCNode::decRefCount(m_target);
-	    m_target = source.m_target;
+	    retarget(source.m_target);
 	    return *this;
 	}
 
@@ -109,11 +106,11 @@ namespace CXXR {
 	 * @param node Pointer to the node now to be protected, or a
 	 * null pointer.
 	 */
-	void redirect(const GCNode* node)
+	void retarget(const GCNode* node)
 	{
 	    GCNode::maybeCheckExposed(node);
-	    GCNode::incRefCount(node);
-	    GCNode::decRefCount(m_target);
+	    if (m_protecting)
+		retarget_aux(node);
 	    m_target = node;
 	}
 
@@ -132,10 +129,38 @@ namespace CXXR {
 
 	GCStackRootBase* m_next;
 	const GCNode* m_target;
+	bool m_protecting;  // If this is set, it signifies that this
+	  // GCStackRootBase object will have incremented the
+	  // reference count of its target (if any).  In the interests
+	  // of efficiency, initially m_protecting is false; it is set
+	  // by call to protectAll().
+	  //
+	  // m_protecting && m_next implies m_next->m_protecting .
+
+	// Helper function for destructor:
+#ifdef __GNUC__
+	__attribute__((hot, fastcall))
+#endif
+        void destruct_aux();
+
+	// Put all GCStackRootBase objects into the protecting state:
+#ifdef __GNUC__
+	__attribute__((hot, fastcall))
+#endif
+	static void protectAll();
+
+	// Helper function for retarget():
+#ifdef __GNUC__
+	__attribute__((hot, fastcall))
+#endif
+	    void retarget_aux(const GCNode* node);
 
 	// Report out-of-sequence destructor call and abort program.
 	// (We can't use an exception here because it's called from a
 	// destructor.)
+#ifdef __GNUC__
+	__attribute__((cold))
+#endif
 	static void seq_error();
     };
 
@@ -182,8 +207,8 @@ namespace CXXR {
 	 *          protected from the garbage collector, or a null
 	 *          pointer.
 	 */
-    explicit GCStackRoot(T* node = 0)
-    : GCStackRootBase(node) {}
+	explicit GCStackRoot(T* node = 0)
+	    : GCStackRootBase(node) {}
 
 	/** @brief Copy constructor.
 	 *
@@ -214,7 +239,7 @@ namespace CXXR {
 	 */
 	GCStackRoot& operator=(T* node)
 	{
-	    GCStackRootBase::redirect(node);
+	    GCStackRootBase::retarget(node);
 	    return *this;
 	}
 

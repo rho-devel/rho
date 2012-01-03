@@ -882,18 +882,17 @@ static SEXP HessAssign1(SEXP name, SEXP expr)
 
 static SEXP HessAssign2(SEXP name1, SEXP name2, SEXP expr)
 {
-    SEXP ans, newname1, newname2;
-    PROTECT(newname1 = ScalarString(name1));
-    PROTECT(newname2 = ScalarString(name2));
-    ans = lang3(install("<-"),
-		lang5(install("["), install(".hessian"), R_MissingArg,
-		      newname1, newname2),
-		lang3(install("<-"),
-		      lang5(install("["), install(".hessian"), R_MissingArg,
-			    newname2, newname1),
-		      expr));
-    UNPROTECT(2);
-    return ans;
+    static Symbol* bracksym = Symbol::obtain("[");
+    static Symbol* hesssym = Symbol::obtain(".hessian");
+    static Symbol* assignsym = Symbol::obtain("<-");
+    GCStackRoot<> newname1(ScalarString(name1));
+    GCStackRoot<> newname2(ScalarString(name2));
+    GCStackRoot<> l5a(Rf_lang5(bracksym, hesssym,
+			       R_MissingArg, newname1, newname2));
+    GCStackRoot<> l5b(Rf_lang5(bracksym, hesssym,
+			       R_MissingArg, newname2, newname1));
+    GCStackRoot<> l3(Rf_lang3(assignsym, l5b, expr));
+    return Rf_lang3(assignsym, l5a, l3);
 }
 
 /* attr(.value, "gradient") <- .grad */
