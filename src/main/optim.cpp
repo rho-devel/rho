@@ -42,6 +42,10 @@
 				   samin() */
 #include <R_ext/Applic.h>	/* setulb() */
 
+#include "CXXR/GCStackRoot.hpp"
+
+using namespace CXXR;
+
 static SEXP getListElement(SEXP list, CXXRCONST char *str)
 {
     SEXP elmt = R_NilValue, names = getAttrib(list, R_NamesSymbol);
@@ -243,7 +247,8 @@ SEXP attribute_hidden do_optim(SEXP call, SEXP op, SEXP args, SEXP rho)
     args = CDR(args); options = CAR(args);
     PROTECT(OS->R_fcall = lang2(fn, R_NilValue));
     /* I don't think duplication is needed here */
-    PROTECT(par = coerceVector(duplicate(par), REALSXP));
+    GCStackRoot<> pardup(duplicate(par));
+    PROTECT(par = coerceVector(pardup, REALSXP));
     npar = LENGTH(par);
     dpar = vect(npar);
     opar = vect(npar);
