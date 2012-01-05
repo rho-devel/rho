@@ -22,14 +22,13 @@
 #include "CXXR/IntVector.h"
 #include "CXXR/PairList.h"
 #include "CXXR/RealVector.h"
+#include "CXXR/StdFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
 
 int main() {
     cout << "sizeof(bool): " << sizeof(bool)
-	 << "\nsizeof(HeterogeneousListBase::Link): "
-	 << sizeof(HeterogeneousListBase::Link)
 	 << "\nsizeof(GCNode): " << sizeof(GCNode)
 	 << "\nsizeof(RObject): " << sizeof(RObject)
 	 << "\nsizeof(ConsCell): " << sizeof(ConsCell)

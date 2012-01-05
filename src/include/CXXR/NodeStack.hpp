@@ -32,15 +32,9 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file NodeStack.h
+/** @file NodeStack.hpp
  *
- * @brief Class CXXR::NodeStack and associated C interface.
- *
- * CXXR::NodeStack encapsulates the functionality of the CR pointer
- * protection stack.
- *
- * See the paragraph 'Caller Protects' in the description of class
- * CXXR::GCStackRoot for recommended coding policy.
+ * @brief Class CXXR::NodeStack.
  */
 
 #ifndef NODESTACK_H
@@ -50,9 +44,14 @@
 #include "CXXR/RObject.h"
 
 namespace CXXR {
-    /** @brief Class implementing CR's 'pointer protection stack'.
+    /** @brief Class implementing a stack of RObject*.
      *
-     * All members of this class are static.
+     * This class is not intended for general use.  It is currently
+     * used in class ProtectStack and in the bytecode interpreter.
+     *
+     * Note that it is necessary for GCNode::gclite() to call the
+     * protectAll() method of every NodeStack in existence before it
+     * starts to delete nodes with zero references counts.
      */
     class NodeStack {
     public:

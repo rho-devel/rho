@@ -34,7 +34,7 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/** @file RHandle.h
+/** @file RHandle.hpp
  *
  * @brief Class template CXXR::RHandle.
  */

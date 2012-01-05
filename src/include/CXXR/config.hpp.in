@@ -40,12 +40,18 @@
  *
  * These definitions may in due course be merged into the top-level
  * config.h.
+ *
+ * As distributed, this file represents a configuration suitable for
+ * development, with numerous facilities enable for checking and
+ * debugging.  For maximum speed, it is recommended that this file be
+ * modified by enabling the definitions of NDEBUG and
+ * UNCHECKED_SEXP_DOWNCAST, and disabling all other definitions.
  */
 
 #ifndef CXXR_CONFIG_HPP
 #define CXXR_CONFIG_HPP
 
-/* @def AGGRESSIVE_GC
+/** @def AGGRESSIVE_GC
  *
  * By default, GCNode::operator new initiates a reference-count-based
  * garbage collection (GCNode::gclite()) only when the number of bytes
@@ -60,6 +66,7 @@
 #ifdef DOXYGEN
 #define AGGRESSIVE_GC
 #endif
+#define AGGRESSIVE_GC
 
 /** @def CELLFIFO
  *
@@ -111,6 +118,7 @@
 #ifdef DOXYGEN
 #define FILL55
 #endif
+#define FILL55
 
 /** @def GCID
  *
@@ -125,6 +133,7 @@
 #ifdef DOXYGEN
 #define GCID
 #endif
+#define GCID
 
 /** @def NDEBUG
  *

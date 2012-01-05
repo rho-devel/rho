@@ -696,7 +696,7 @@ namespace CXXR {
      * Raises an error if the Frame is locked, or an attempt is made
      * to modify a binding that is locked.
      *
-     * @param env Pointer to the Frame into which new or
+     * @param frame Pointer to the Frame into which new or
      *          modified bindings are to be incorporated.
      *
      * @param bindings List of symbol-value pairs defining bindings to
@@ -730,7 +730,7 @@ namespace CXXR {
      * recursive application of these criteria - is missing with
      * respect to the Frame of the Environment of the Promise.</li>
      *
-     * <ol>
+     * </ol>
      *
      * Note that unless Criterion 1 applies, \a sym is not considered
      * missing if it is not bound at all within \a frame, or if it has

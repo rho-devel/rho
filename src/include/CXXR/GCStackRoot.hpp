@@ -71,6 +71,10 @@ namespace CXXR {
 	 */
 	static void visitRoots(GCNode::const_visitor* v);
     protected:
+	/** @brief Primary constructor.
+	 *
+	 * @param node Pointer to be encapsulated by the GCStackRootBase.
+	 */
 	GCStackRootBase(const GCNode* node)
 	    : m_next(s_roots), m_target(node), m_protecting(false)
 	{

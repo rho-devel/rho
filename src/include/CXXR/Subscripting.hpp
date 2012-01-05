@@ -90,14 +90,14 @@ namespace CXXR {
 	 * 
 	 * @tparam VR A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a VL object, which is
-	 *            the object to whose elements assignment is to be
-	 *            made.  Where feasible, the return value will
-	 *            point to \a lhs itself, modified appropriately
-	 *            (which is why this parameter is not
-	 *            <tt>const</tt>); otherwise the return value will
-	 *            point to a modified copy of \a lhs.  (Copying
-	 *            will occur if \a lhs aliases \a rhs .)
+	 * @param lhs Non-null pointer to a \a VL object, which is
+	 *          the object to whose elements assignment is to be
+	 *          made.  Where feasible, the return value will
+	 *          point to \a lhs itself, modified appropriately
+	 *          (which is why this parameter is not
+	 *          <tt>const</tt>); otherwise the return value will
+	 *          point to a modified copy of \a lhs.  (Copying
+	 *          will occur if \a lhs aliases \a rhs .)
 	 *
 	 * @param indices Pointer to a ListVector with as many
 	 *          elements as \a v has dimensions.  Each element of
@@ -136,14 +136,14 @@ namespace CXXR {
 	 * 
 	 * @tparam VR A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a VL object, which is
-	 *            the object to whose elements assignment is to be
-	 *            made.  Where feasible, the return value will
-	 *            point to \a lhs itself, modified appropriately
-	 *            (which is why this parameter is not
-	 *            <tt>const</tt>); otherwise the return value will
-	 *            point to a modified copy of \a lhs.  (Copying
-	 *            will occur if \a lhs aliases \a rhs .)
+	 * @param lhs Non-null pointer to a \a VL object, which is
+	 *          the object to whose elements assignment is to be
+	 *          made.  Where feasible, the return value will
+	 *          point to \a lhs itself, modified appropriately
+	 *          (which is why this parameter is not
+	 *          <tt>const</tt>); otherwise the return value will
+	 *          point to a modified copy of \a lhs.  (Copying
+	 *          will occur if \a lhs aliases \a rhs .)
 	 *
 	 * @param subscripts Pointer, possibly null, to a list of
 	 *          objects inheriting from RObject , with the same
@@ -320,7 +320,7 @@ namespace CXXR {
 
 	/** Obtain canonical index vector from an arbitrary subscript object.
 	 *
-	 * @param subscripts Pointer, possibly null, to an RObject.
+	 * @param raw_indices Pointer, possibly null, to an RObject.
 	 *          If the type and contents of this object are legal
 	 *          for subscripting, canonicalization will be
 	 *          performed accordingly; otherwise an error will be
@@ -584,25 +584,16 @@ namespace CXXR {
 	 * 
 	 * @tparam VR A type inheriting from VectorBase.
 	 * 
-	 * @param v lhs Non-null pointer to a \a VL object, which is
-	 *            the object to whose elements assignment is to be
-	 *            made.  Where feasible, the return value will
-	 *            point to \a lhs itself, modified appropriately
-	 *            (which is why this parameter is not
-	 *            <tt>const</tt>); otherwise the return value will
-	 *            point to a modified copy of \a lhs.  (Copying
-	 *            will occur if \a lhs aliases either \a rhs or
-	 *            the first element of \a indices_pr , or if the
-	 *            return vector needs to be larger than \a lhs .)
-	 *
-	 * @param indices_pr A pair as returned by one of the
-	 *          canonicalization functions.  The first element of
-	 *          the pair points to a canonical index vector, and
-	 *          the second element is the minimum size implied by
-	 *          the supplied subscripts for the returned vector.
-	 *          It is an error for the canonical index vector to
-	 *          contain any NAs if \a rhs contains more than one
-	 *          element.
+	 * @param lhs Non-null pointer to a \a VL object, which is
+	 *          the object to whose elements assignment is to be
+	 *          made.  Where feasible, the return value will
+	 *          point to \a lhs itself, modified appropriately
+	 *          (which is why this parameter is not
+	 *          <tt>const</tt>); otherwise the return value will
+	 *          point to a modified copy of \a lhs.  (Copying
+	 *          will occur if \a lhs aliases either \a rhs or
+	 *          the first element of \a indices_pr , or if the
+	 *          return vector needs to be larger than \a lhs .)
 	 *
 	 * @param subscripts Pointer, possibly null, to an RObject.
 	 *          If the type and context of this object are legal

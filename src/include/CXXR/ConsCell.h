@@ -76,7 +76,7 @@ namespace CXXR {
      *
      * @note This class is used as a base class to implement CR's
      * LISTSXP, LANGSXP, DOTSXP and (for the time being) BCODESXP.
-     * Because what these ::SEXPTYPEs have in common is implementation
+     * Because what these SEXPTYPEs have in common is implementation
      * rather than meaning in the application domain, canons of
      * object-oriented design would argue against their publicly
      * inheriting from a common base class.  Without doing this,

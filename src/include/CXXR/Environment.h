@@ -63,7 +63,9 @@
  * slightly; however, it may prove beneficial in the future when
  * combined with provenance tracking.
  */
-//#define DETACH_LOCAL_FRAMES
+#ifdef DOXYGEN
+#define DETACH_LOCAL_FRAMES
+#endif
 
 namespace CXXR {
     class FunctionBase;

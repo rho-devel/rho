@@ -60,7 +60,7 @@ namespace CXXR {
     class PairList;
     class Symbol;
 
-    /** @brief Replacement for CR's ::SEXPREC.
+    /** @brief Replacement for CR's SEXPREC.
      *
      * This class is the rough equivalent within CXXR of the SEXPREC
      * union within CR.  However, all functionality relating to
@@ -377,7 +377,7 @@ namespace CXXR {
 	 * configured with --enable-memory-profiling).
 	 *
 	 * This function should be called if <tt>this</tt> has been
-	 * derived in some way from \a src1, \a src2 and \src 3.  When
+	 * derived in some way from \a src1, \a src2 and \a src 3.  When
 	 * memory profiling is enabled, if any of \a src1, \a src2 or
 	 * \a src3 points to an RObject with the memoryTraced()
 	 * property set, this property will be propagated to

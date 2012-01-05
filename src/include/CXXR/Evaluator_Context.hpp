@@ -84,7 +84,7 @@ namespace CXXR {
      * an object with more specific save/restore role, such as a
      * ProtectStack::Scope object.</li>
      *
-     * <ol>
+     * </ol>
      */
     class Evaluator::Context {
     public:
