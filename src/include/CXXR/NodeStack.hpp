@@ -113,9 +113,6 @@ namespace CXXR {
 	    ElementProxy(NodeStack* stack, unsigned int index)
 		: m_stack(stack), m_index(index)
 	    {}
-
-	    // Not implemented:
-	    ElementProxy(const ElementProxy&);
 	};
 
 	/** @brief Object constraining lifetime of NodeStack entries.
