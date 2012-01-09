@@ -53,7 +53,7 @@ void attribute_hidden PrintGreeting(void)
     Rprintf("This is CXXR 0.38-2.13.1, based on:\n");
     PrintVersion_part_1(buf);
     Rprintf("%s\n", buf);
-    Rprintf(_("CXXR Copyright (C) 2008-11 Andrew Runnalls.  CXXR like\n"));
+    Rprintf(_("CXXR Copyright (C) 2008-12 Andrew R. Runnalls.  CXXR like\n"));
     Rprintf(_("R is free software and comes with ABSOLUTELY NO WARRANTY.\n\
 You are welcome to redistribute it under certain conditions.\n\
 Type 'license()' or 'licence()' for distribution details.\n\n"));
