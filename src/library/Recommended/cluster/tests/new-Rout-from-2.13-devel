@@ -1,0 +1,8 @@
+32-bit:
+  Comparing ‘clara-151.Rout’ to ‘clara-151.Rout.save’ ...405,406c405,406
+  Comparing ‘clara-2.Rout’ to ‘clara-2.Rout.save’ ...647,648c647,648
+  Comparing ‘clara-MM.Rout’ to ‘clara-MM.Rout.save’ ...49,51c49,51
+  Comparing ‘clara.Rout’ to ‘clara.Rout.save’ ...357c357
+  Comparing ‘diana-ex.Rout’ to ‘diana-ex.Rout.save’ ...498c498
+  Comparing ‘ellipsoid-ex.Rout’ to ‘ellipsoid-ex.Rout.save’ ...183,187c183,187
+  Comparing ‘pam.Rout’ to ‘pam.Rout.save’ ...1089c1089

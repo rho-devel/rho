@@ -1,0 +1,21 @@
+Package: nlme
+Version: 3.1-101
+Date: 2011-04-06
+Priority: recommended
+Title: Linear and Nonlinear Mixed Effects Models
+Author: Jose Pinheiro (S version), Douglas Bates (up to 2007), Saikat
+        DebRoy (up to 2002), Deepayan Sarkar (up to 2005), the R Core
+        team.
+Maintainer: R-core <R-core@R-project.org>
+Description: Fit and compare Gaussian linear and nonlinear
+        mixed-effects models.
+Depends: graphics, stats, R (>= 2.13)
+Imports: lattice
+Suggests: Hmisc
+LazyLoad: yes
+LazyData: yes
+License: GPL (>= 2)
+BugReports: http://bugs.r-project.org
+Packaged: 2011-05-06 06:58:40 UTC; ripley
+Repository: CRAN
+Date/Publication: 2011-05-06 15:50:04

@@ -1,0 +1,26 @@
+useDynLib(rpart, .registration = TRUE, .fixes = "C_")
+
+export(meanvar, na.rpart, path.rpart, plotcp, post,
+       printcp, prune, prune.rpart, rpart, rpart.control, rpconvert,
+       rsq.rpart, snip.rpart, xpred.rpart)
+
+## documented but not exported
+# export(labels.rpart, meanvar.rpart, plot.rpart, post.rpart,
+#        predict.rpart, print.rpart, residuals.rpart, summary.rpart,
+#        text.rpart)
+
+importFrom(graphics, plot, text)
+importFrom(stats, model.frame, predict, residuals)
+
+S3method(labels, rpart)
+S3method(meanvar, rpart)
+S3method(model.frame, rpart)
+S3method(plot, rpart)
+S3method(post, rpart)
+S3method(predict, rpart)
+S3method(print, rpart)
+S3method(prune, rpart)
+S3method(residuals, rpart)
+S3method(summary, rpart)
+S3method(text, rpart)
+

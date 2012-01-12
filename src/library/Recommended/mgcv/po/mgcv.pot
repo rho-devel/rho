@@ -1,0 +1,165 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-09-06 21:46+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: gcv.c:290
+#, c-format
+msgid ""
+"Overall smoothing parameter estimate on upper boundary.\n"
+"Boundary GCV score change: %g. Largest change: %g"
+msgstr ""
+
+#: gcv.c:875
+msgid "resetting -ve inf"
+msgstr ""
+
+#: gcv.c:877
+msgid "resetting +ve inf"
+msgstr ""
+
+#: gcv.c:1014
+msgid ""
+"Multiple GCV didn't improve autoinitialized relative smoothing parameters"
+msgstr ""
+
+#: magic.c:507
+msgid "magic requires smoothing parameter starting values if L supplied"
+msgstr ""
+
+#: magic.c:622
+msgid "magic, the gcv/ubre optimizer, failed to converge after 400 iterations."
+msgstr ""
+
+#: matrix.c:85
+msgid "Failed to initialize memory for matrix."
+msgstr ""
+
+#: matrix.c:147 matrix.c:210
+msgid "An out of bound write to matrix has occurred!"
+msgstr ""
+
+#: matrix.c:153
+msgid "INTEGRITY PROBLEM in the extant matrix list."
+msgstr ""
+
+#: matrix.c:186
+msgid "You are trying to check matrix integrity without defining RANGECHECK."
+msgstr ""
+
+#: matrix.c:255
+#, c-format
+msgid ""
+"\n"
+"%s not found, nothing read!"
+msgstr ""
+
+#: matrix.c:325
+msgid "Target matrix too small in mcopy"
+msgstr ""
+
+#: matrix.c:345 matrix.c:353 matrix.c:366 matrix.c:374
+msgid "Incompatible matrices in matmult."
+msgstr ""
+
+#: matrix.c:480
+msgid "Attempt to invert() non-square matrix"
+msgstr ""
+
+#: matrix.c:502
+msgid "Singular Matrix passed to invert()"
+msgstr ""
+
+#: matrix.c:655
+msgid "Not a +ve def. matrix in choleski()."
+msgstr ""
+
+#: matrix.c:873
+msgid "Error in Covariance(a,b) - a,b not same length."
+msgstr ""
+
+#: matrix.c:1812
+msgid "svd() not converged"
+msgstr ""
+
+#: matrix.c:1968
+#, c-format
+msgid "%s not found by routine gettextmatrix().\n"
+msgstr ""
+
+#: matrix.c:2192
+#, c-format
+msgid "svdroot matrix not +ve semi def. %g"
+msgstr ""
+
+#: matrix.c:2416
+msgid "Sort failed"
+msgstr ""
+
+#: matrix.c:2544
+msgid "eigen_tri() failed to converge"
+msgstr ""
+
+#: matrix.c:2700
+#, c-format
+msgid "eigenvv_tri() Eigen vector %d of %d failure. Error = %g > %g"
+msgstr ""
+
+#: matrix.c:2834
+msgid "Lanczos failed"
+msgstr ""
+
+#: mgcv.c:868
+msgid ""
+"Numerical difficulties obtaining tr(A) - apparently resolved. Apply some "
+"caution to results."
+msgstr ""
+
+#: mgcv.c:872
+msgid "tr(A) utter garbage and situation un-resolvable."
+msgstr ""
+
+#: mgcv.c:873
+msgid ""
+"Numerical difficulties calculating tr(A). Not completely resolved. Use "
+"results with care!"
+msgstr ""
+
+#: mgcv.c:958
+msgid "Termwise estimate degrees of freedom are unreliable"
+msgstr ""
+
+#: qp.c:59
+msgid "ERROR in addconQT."
+msgstr ""
+
+#: qp.c:465
+msgid "QPCLS - Rank deficiency in model"
+msgstr ""
+
+#: tprs.c:45
+msgid "You must have 2m>d for a thin plate spline."
+msgstr ""
+
+#: tprs.c:99
+msgid "You must have 2m > d"
+msgstr ""
+
+#: tprs.c:357 tprs.c:365
+msgid ""
+"A term has fewer unique covariate combinations than specified maximum "
+"degrees of freedom"
+msgstr ""

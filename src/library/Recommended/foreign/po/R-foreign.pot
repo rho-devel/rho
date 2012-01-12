@@ -1,0 +1,159 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: R 2.11.0\n"
+"Report-Msgid-Bugs-To: bugs@r-project.org\n"
+"POT-Creation-Date: 2010-01-03 10:12\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+msgid "only one file"
+msgstr ""
+
+msgid "file must be character"
+msgstr ""
+
+msgid "internal error - illegal S code value"
+msgstr ""
+
+msgid "not an S object"
+msgstr ""
+
+msgid "S mode"
+msgstr ""
+
+msgid "(near byte offset"
+msgstr ""
+
+msgid ") not supported"
+msgstr ""
+
+msgid "Argument 'file' must be a character string or connection."
+msgstr ""
+
+msgid "Invalid attribute specification."
+msgstr ""
+
+msgid "Type 'relational' currently not implemented."
+msgstr ""
+
+msgid "Missing data section."
+msgstr ""
+
+msgid "Missing attribute section."
+msgstr ""
+
+msgid "Invalid type specification."
+msgstr ""
+
+msgid "Field name:"
+msgstr ""
+
+msgid "changed to:"
+msgstr ""
+
+msgid "cannot handle matrix/array columns"
+msgstr ""
+
+msgid "data frame contains columns of unsupported class(es)"
+msgstr ""
+
+msgid ","
+msgstr ""
+
+msgid "character column %d will be truncated to %d bytes"
+msgstr ""
+
+msgid "unknown column type in data frame"
+msgstr ""
+
+msgid "NA in precision"
+msgstr ""
+
+msgid "NA in scale"
+msgstr ""
+
+msgid "cannot handle unknown type"
+msgstr ""
+
+msgid "'missing.type' only applicable to version >= 8 files"
+msgstr ""
+
+msgid "cannot read factor labels from Stata 5 files"
+msgstr ""
+
+msgid "value labels ("
+msgstr ""
+
+msgid ") for"
+msgstr ""
+
+msgid "are missing"
+msgstr ""
+
+msgid "Version must be 6-11"
+msgstr ""
+
+msgid "Version must be 6-11: using 7"
+msgstr ""
+
+msgid "cannot uniquely abbreviate variable names"
+msgstr ""
+
+msgid "abbreviating variable names"
+msgstr ""
+
+msgid "cannot handle multicolumn columns"
+msgstr ""
+
+msgid "argument 'file' must be a character string or connection"
+msgstr ""
+
+msgid "file has zero or fewer variables: probably not an EpiInfo file"
+msgstr ""
+
+msgid "no records in file"
+msgstr ""
+
+msgid "wrong number of records"
+msgstr ""
+
+msgid "sectionname %s not found"
+msgstr ""
+
+msgid "SAS return code was"
+msgstr ""
+
+msgid "re-encoding from"
+msgstr ""
+
+msgid "missingness type %s is not handled"
+msgstr ""
+
+msgid "I cannot abbreviate the variable names to eight or fewer letters"
+msgstr ""
+
+msgid "some variable names were abbreviated"
+msgstr ""
+
+msgid "Cannot handle character variables longer than 255"
+msgstr ""
+
+msgid "Cannot uniquely abbreviate the variable names to"
+msgstr ""
+
+msgid "or fewer characters"
+msgstr ""
+
+msgid "Cannot uniquely abbreviate format names to conform to"
+msgstr ""
+
+msgid "eight-character limit and not ending in a digit"
+msgstr ""
+
+msgid "Some variable names were abbreviated or otherwise altered."
+msgstr ""

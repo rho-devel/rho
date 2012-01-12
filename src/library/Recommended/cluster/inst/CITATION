@@ -1,0 +1,28 @@
+## -*- R -*-
+citHeader("To cite the R package 'cluster' in publications use:")
+
+citEntry(entry  = "unpublished",
+         title  = "Cluster Analysis Basics and Extensions",
+         author = personList(
+                 person(first="Martin", last="Maechler",
+                        email="maechler@stat.math.ethz.ch"),
+                 person(first="Peter", last="Rousseeuw",
+                        email="rousse@uia.ua.ac.be"),
+                 person(first="Anja", last="Struyf",
+                        email="Anja.Struyf@uia.ua.ac.be"),
+                 person(first="Mia", last="Hubert",
+                        email="Mia.Hubert@uia.ua.ac.be")),
+         year = 2005,
+         note = paste("Rousseeuw et al provided the S original",
+         "which has been ported to R by Kurt Hornik",
+         "and has since been enhanced by Martin Maechler:",
+         "speed improvements, silhouette() functionality, bug fixes, etc. ",
+         "See the 'Changelog' file (in the package source)"),
+## FIXME:  rather give the URL to the manual on CRAN ???
+##         url = "http://stat.ethz.ch/CRAN/src/contrib/........",
+         textVersion = paste(
+         "Maechler, M., Rousseeuw, P., Struyf, A., Hubert, M. (2005). ",
+         "Cluster Analysis Basics and Extensions;",
+         "unpublished")
+         )
+

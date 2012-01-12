@@ -42,7 +42,7 @@ CLEANFILES = $(OBJECTS) Makedeps stamp-recommended
 DISTCLEANFILES = Makefile
 
 .SUFFIXES:
-.SUFFIXES: .tgz .ts
+.SUFFIXES: .ts
 
 all: Makefile R @USE_RECOMMENDED_PACKAGES_TRUE@ recommended-packages
 
@@ -57,19 +57,19 @@ stamp-recommended: $(OBJECTS)
 ## need to allow parallel installs
 INSTALL_OPTS=--no-lock --data-compress=xz --install-tests
 
-.tgz.ts:
-	@$(ECHO) "begin installing recommended package" `basename $< .tgz`
-	@rm -f $@.out
+%.ts : %
+	$(ECHO) "begin installing recommended package " $<
+	rm -f $@.out
 ## <FIXME>
 ## RG says that with FreeBSD Make calling INSTALL does not work without
 ## explicitly passing down MAKE ('unrecognized option -w ...').  But
 ## what is really going on?
 ##
 ## Also, avoid any copies installed in user/site libraries
-	@MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
+	MAKE="$(MAKE)" R_LIBS_USER= R_LIBS_SITE= $(R) CMD INSTALL $(INSTALL_OPTS) -l "$(top_builddir)/library" $< > $@.out 2>&1 || (cat $@.out && exit 1)
 ## </FIXME>
-	@cat $@.out; rm $@.out
-	@touch $@
+	cat $@.out; rm $@.out
+	touch $@
 
 R docs:
 
@@ -84,9 +84,6 @@ install-tests:
 	 cd "$(top_srcdir)"; abs_top_srcdir=`pwd`; \
 	 abs_MKINSTALLDIRS=`echo "$(MKINSTALLDIRS)" | sed "s:$(top_srcdir):$${abs_top_srcdir}:"` ; \
 	 cd $${tmp}; \
-	 for pkg in $(R_PKGS_RECOMMENDED); do \
-	   gzip -dc "$(abs_top_srcdir)/src/library/Recommended/$${pkg}.tgz" | $(TAR) xf - ; \
-	 done ; \
 	 for pkg in $(R_PKGS_RECOMMENDED); do \
 	  if test -d $${pkg}/tests; then \
 	    $${abs_MKINSTALLDIRS} "$(DESTDIR)$(rhome)/library/$${pkg}/tests" ; \

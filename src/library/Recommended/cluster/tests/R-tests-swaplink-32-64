@@ -1,0 +1,95 @@
+#!/bin/bash
+#
+## With no arguments, swap the  *Rout.save --> *Rout-(32|64)b symbolic links
+## with argument '64' (or '64b'), force '64b' ; analogously with arg  '32'
+##
+
+cwd=`pwd` ; thisdir=`basename $cwd`
+if [ $thisdir != tests ]
+then ## 2nd try:
+  cmddir=`dirname $0`
+  cd $cmddir
+  cwd=`pwd` ; thisdir=`basename $cwd`
+  if [ $thisdir != tests ]
+  then echo Must be inside 'tests' directory but am not:
+      echo "pwd = '`pwd`'"
+     exit 1
+  fi
+fi
+## Dbg:set -v -x
+if [ $# -eq 0 ]
+then
+    NOswap='.'
+else
+    NOswap=yes
+    want_end=`echo $1 | sed 's/^\(..\).*/\1/'`
+fi
+## Because we cannot have the Rout-32b files in "svn", have "Rout.save" there
+## they are no longer symbolic links !!!
+## ---> make them into symbolic links here, using $want_end !!
+## Problem: should afterward *REVERT* the action !
+## -------  but this can't happen in this script here
+## One solution: First make a *COPY* of the package into /tmp/
+## and only do the links in there
+if [ x$want_end != x ]
+then
+ end='-'${want_end}'b'
+
+ shopt -s nullglob
+ # tolink=`/bin/ls *.Rout${end} 2>&1`
+ # echo "tolink = $tolink"
+ for ff in *.Rout${end}
+ do  f=`basename $ff $end`
+     f2=${f}.save # ; echo "  ff= $ff, f2= $f2 "
+     if [ ! -L $f2 ]
+     then
+	echo " $f2 is not symbolic link -> mv to *.bak and re-creating sym.link"
+	mv    $f2 ${f2}.bak
+	ln -s $ff $f2
+     fi
+ done
+fi
+
+## Find the symbolic links:
+flinks=`/bin/ls -AlF --time-style=long-iso *.Rout.save |fgrep -e '->' | sed -e '/.* -> /s///'`
+ending=`echo $flinks | tr ' ' '\012' | sed 's/.*-//' | uniq | grep -v R`
+if [ 1 -eq `echo $ending | wc -w` ]
+then
+    if [ $ending == 64b ]
+    then o_end=32b
+    elif [ $ending == 32b ]
+    then o_end=64b
+    else
+	echo 'Unknown ending'
+	echo 'Do not know what do to ---> exiting .. '
+	exit 2
+    fi
+    if [ $NOswap = yes ]
+    then
+	if [ x$ending = x64b  -a $want_end = 64 ]
+	then echo 'have 64-bit already' ; exit 0 ; fi
+	if [ x$ending = x32b  -a $want_end = 32 ]
+	then echo 'have 32-bit already' ; exit 0 ; fi
+    fi
+
+else echo Have no or more than one ending in the symbolic links of '*.Rout.save'
+     echo $flinks
+     echo ' not clear what to do ---> exiting .. '
+     exit 3
+fi
+#
+#echo "flinks='$flinks'; ending='$ending', o_end='$o_end'"
+echo "Current ending='$ending' being changed to 'other' ending, o_end='$o_end' :"
+for f in $flinks
+do
+  ## echo $f
+  bf=`basename $f -${ending}`
+  if echo $bf | grep -s '\.Rout$' > /dev/null ; then bf="$bf.save" ; fi
+  echo -n "$bf	"
+  if [ -f $bf ]
+  then relink s/${ending}/${o_end}/ $bf
+       ls -l $bf | /u/maechler/bin/perl/ls-l-nice
+  else echo "** No file '$bf' in directory `pwd`: Not relink'ing ..."
+  fi
+done
+

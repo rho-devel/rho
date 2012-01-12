@@ -1,0 +1,40 @@
+# -*- Makefile -*-
+
+PKG_CPPFLAGS = -I./UFconfig
+## we use the BLAS and the LAPACK library:
+PKG_LIBS = $(SUBLIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+MkInclude = $(R_HOME)/etc${R_ARCH}/Makeconf
+
+include scripts/SOURCES_C.mkf
+
+OBJECTS = $(SOURCES_C:.c=.o)
+SUBDIRS = CHOLMOD COLAMD AMD
+SUBLIBS = $(SUBDIRS:=.a)
+
+all: $(SHLIB)
+## making src/*.o and in sublibs can be done simultaneously
+# for development:
+#$(SHLIB): $(OBJECTS)
+# for real:
+$(SHLIB): $(OBJECTS) sublibs
+
+## We have to clean here, to clean up between architectures:
+## INSTALL only cleans src/*.o src/*$(SHLIB_EXT) for each arch
+sublibs: subclean
+	@for d in $(SUBDIRS); do \
+	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" MkInclude="$(MkInclude)" $(MAKE) library) || exit 1; \
+	done
+
+clean: subclean
+	@-rm -rf .libs _libs
+	@-rm -f *.o $(SHLIB)
+
+subclean:
+	@-rm -f *.a
+	@for d in $(SUBDIRS); do \
+	  (cd $${d} && MkInclude="$(MkInclude)" $(MAKE) clean) || exit 1; \
+	done
+
+
+include scripts/DEPS.mkf

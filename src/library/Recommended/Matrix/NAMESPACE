@@ -1,0 +1,297 @@
+useDynLib(Matrix, .registration=TRUE)
+
+## Import non-base functions we need explicitly,
+## notably for which we define methods:
+importFrom("lattice", levelplot)
+importFrom("graphics", image)
+importFrom("utils", head, tail)
+importFrom("stats", cov2cor, update#, vcov
+           )
+
+importFrom("grid", grid.rect, gpar, grob)# others via 'grid::'
+
+## Currently, group generics need to be explicitly imported (Bug?):
+importFrom("methods", Ops, Arith, Compare, Logic, Math, Math2, Summary, Complex)
+
+## Generics and functions defined in this package
+export("Cholesky",
+       "Diagonal", ".symDiagonal", ".sparseDiagonal",
+       "Hilbert",
+       "Matrix",
+       "spMatrix",
+       "sparseMatrix",
+       "Schur",
+       "abIseq", "abIseq1", "rep2abI",
+       "band",
+       "bandSparse",
+       "bdiag", ".bdiag",
+## no longer; implicit generics now
+       ## "colMeans", "colSums", ## these needed a "..." added
+       ## "rowMeans", "rowSums",
+       "condest", "onenormest",
+       "det",# << "identical" as base - but with correct determinant()
+       "drop0",
+       "expand",
+       "expm",
+       "facmul",
+       "forceSymmetric",
+#	 "isTriangular",
+#	 "isDiagonal",
+       "isLDL",
+       "lu",
+       "nearPD",
+       "nnzero",
+       "formatSpMatrix", "formatSparseM", ".formatSparseSimple",
+       "printSpMatrix",
+       "printSpMatrix2",
+       "rankMatrix",
+       "readHB",
+       "readMM",
+       "sparse.model.matrix",
+       "symmpart",
+       "skewpart",
+       "tcrossprod",
+       "tril",
+       "triu",
+       "unpack"
+       , ".validateCsparse"
+#        "writeHB",
+       , "writeMM"
+       , ".M.classEnv"
+       )
+
+## substitute for using  cbind() / rbind()
+export("cBind",
+       "rBind")
+
+
+exportClasses(
+              ## Class unions:
+	      "index",
+	      "replValue", # if we don't export it, things fail in dispatch
+	      "atomicVector",
+	      "number",
+## LOGIC      "logic",
+              "abIndex", "rleDiff",
+
+	      ## --- 'Matrix' mother and all its daughters : ---------------
+	      "Matrix",
+	      ## also intermediate `virtual' ones:
+	      "dMatrix",
+	      "lMatrix",
+	      "nMatrix",
+	      ## not yet used, but as sub-classes;
+	      ## must provide them for 'hierarchy-analysis':
+	      "iMatrix",
+	      "zMatrix",
+
+	      "denseMatrix",
+	      "sparseMatrix",
+
+	      "compMatrix",
+	      "diagonalMatrix",
+	      "generalMatrix",
+	      "symmetricMatrix",
+	      "triangularMatrix",
+
+	      "dsparseMatrix",
+	      "lsparseMatrix",
+	      "nsparseMatrix",
+	      "TsparseMatrix",
+	      "CsparseMatrix",
+	      "RsparseMatrix",
+	      "ddenseMatrix",
+	      "ldenseMatrix",
+	      "ndenseMatrix",
+
+	      "dgCMatrix",
+	      "dgRMatrix",
+	      "dgTMatrix",
+	      "dgeMatrix",
+	      "dpoMatrix",
+	      "dppMatrix",
+	      "dsCMatrix",
+	      "dsRMatrix",
+	      "dsTMatrix",
+	      "dspMatrix",
+	      "dsyMatrix",
+	      "dtCMatrix",
+	      "dtRMatrix",
+	      "dtTMatrix",
+	      "dtpMatrix",
+	      "dtrMatrix",
+	      "ddiMatrix",
+	      "lgeMatrix",
+	      "lspMatrix",
+	      "lsyMatrix",
+	      "ltpMatrix",
+	      "ltrMatrix",
+	      "ldiMatrix",
+	      "ngeMatrix",
+	      "nspMatrix",
+	      "nsyMatrix",
+	      "ntpMatrix",
+	      "ntrMatrix",
+
+	      "lgCMatrix",
+	      "lgRMatrix",
+	      "lgTMatrix",
+	      "lsCMatrix",
+	      "lsRMatrix",
+	      "lsTMatrix",
+	      "ltCMatrix",
+	      "ltRMatrix",
+	      "ltTMatrix",
+
+	      "ngCMatrix",
+	      "ngRMatrix",
+	      "ngTMatrix",
+	      "nsCMatrix",
+	      "nsRMatrix",
+	      "nsTMatrix",
+	      "ntCMatrix",
+	      "ntRMatrix",
+	      "ntTMatrix",
+
+	      "pMatrix",
+
+	      "corMatrix", # unused
+
+	      ## --- inheriting "Matrix", but also factorizations:
+	      "BunchKaufman",
+	      "pBunchKaufman",
+	      "Cholesky",
+	      "pCholesky",
+	      ## "LDL",
+
+	      ## --- 'MatrixFactorization' mother and all its daughters : ---
+
+	      "MatrixFactorization",
+	      "CholeskyFactorization",
+
+	      "LU",
+	      "denseLU",
+	      "sparseLU",
+
+	      "CHMfactor",
+	      "CHMsuper",
+	      "CHMsimpl",
+	      "dCHMsuper",
+	      "dCHMsimpl",
+	      "nCHMsuper",# unused
+	      "nCHMsimpl",# unused
+
+	      "sparseQR",
+## 	      "SPQR",
+
+	      "Schur",
+
+	      "sparseVector", ## --- and daughters : ---
+	      "dsparseVector",
+	      "isparseVector",
+	      "lsparseVector",
+	      "nsparseVector",
+	      "zsparseVector",
+	      "xsparseVector" # the class union of all 'x' lost sparseVector's
+	      )
+
+
+
+exportMethods(## for both own and "other" generics:
+
+	      ## Group Methods
+	      "Arith",
+	      "Compare",
+	      "Logic",
+	      "Math",
+	      "Math2",
+	      "Ops",
+	      "Summary",
+
+              ## re-export S4 methods, for "stats"-S3-generics:
+              "cov2cor",
+              "update",
+
+	      "!",
+	      "+",# for dgT(Matrix) only
+	      "%*%",
+
+	      "all",
+	      "any",
+	      "all.equal",
+
+	      "BunchKaufman",
+	      "Cholesky",
+	      "Schur",
+	      "as.array",
+	      "as.matrix",
+	      "as.vector",
+	      "as.numeric",
+	      "as.integer",
+	      "as.logical",
+	      "band",
+	      "chol",
+              "chol2inv",
+	      "colMeans",
+	      "colSums",
+	      "coerce",
+	      "crossprod",
+	      "determinant",
+	      "diag",
+	      "diff",
+	      "dim",
+	      "dim<-",
+	      "dimnames",
+	      "dimnames<-",
+              "drop",
+	      "expand",
+	      "expm",
+              "format",
+	      "head",
+	      "image",
+	      "forceSymmetric",
+	      "isSymmetric",
+##	       "isDiagonal",
+##	       "isTriangular",
+              "is.na",
+	      "kronecker",
+	      "length",
+              "mean",
+	      "norm",
+              "nnzero",
+              "print",# print(x, ...) when show(x) is not sufficient
+	      "qr",
+	      "qr.R",
+	      "qr.qy",
+	      "qr.qty",
+	      "qr.coef",
+	      "qr.resid",
+	      "qr.fitted",
+	      "rep",
+	      "rcond",
+	      "rowMeans",
+	      "rowSums",
+	      "show",
+	      "solve",
+##               "spqr",
+	      "summary",
+              "symmpart",
+              "skewpart",
+	      "t",
+	      "tail",
+	      "tcrossprod",
+	      "tril",
+	      "triu",
+              "unname",
+              "which",
+	      "zapsmall"
+	      )
+
+if(getRversion() < "2.11.0" || R.version$`svn rev` < 51018)
+    export("norm")
+
+exportMethods("rbind2")
+exportMethods("cbind2")
+
+S3method(print, sparseSummary)
+S3method(c, abIndex)# < for now -- S4 method on c() seems "difficult"

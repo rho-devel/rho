@@ -1,0 +1,4 @@
+#! /bin/sh
+
+rm -f ./config.* src/Makevars src/var.h src/swap_bytes.h
+rm -rf ./autom4te.cache

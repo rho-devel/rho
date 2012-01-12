@@ -1,0 +1,41 @@
+Installation procedure for the clustering algorithms in S-PLUS
+==============================================================
+
+The S-PLUS functions can be installed by typing the following commands 
+at the S-PLUS prompt:
+
+> source("agnes.q")
+> source("clara.q")
+> source("daisy.q")
+> source("diana.q")
+> source("fanny.q")
+> source("mona.q")
+> source("pam.q")
+> source("plothier.q")
+> source("plotpart.q")
+
+
+The Fortran programs should be compiled with the Splus COMPILE utility.
+In UNIX, for example, this can be done in the following way: 
+
+ Splus COMPILE *.f
+
+The resulting object code has to be loaded into S-PLUS.
+For example, the object code resulting from the previous UNIX call,
+is dynamically loaded with the S-PLUS command
+
+> dyn.load(c("clara.o","daisy.o","fanny.o","meet.o","mona.o",
++            "pam.o","spannel.o","twins.o"))
+
+To statically load the object code, use the Splus LOAD utility.
+
+
+Finally, all help files have to be copied (omitting the extension .d) 
+into the directory
+
+ .Data/.Help (UNIX) or _Data\\_Help (Windows)
+
+In UNIX, they also have to be added to the on-line helpsystem with 
+the S-PLUS command
+
+> help.findsum(".Data")
