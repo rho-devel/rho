@@ -42,7 +42,7 @@ if(FALSE)
 plot(pdx)# failed in 1.7.0 -- now only does silhouette
 
 par(mfrow = 2:1)
-## new `dist' argument for clusplot():
+## new 'dist' argument for clusplot():
 plot(pdx, dist=dist(x))
 ## but this should work automagically (via eval()) as well:
 plot(pdx)

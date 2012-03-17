@@ -1,3 +1,7 @@
+Basically the text of the R-packages posting on Mar 28, 2008 :
+    https://stat.ethz.ch/pipermail/r-packages/2008/000911.html
+------------------------------------------------------------------------
+
 This weekend, a new version of "the Matrix" (well, actually the R
 package named "Matrix") will become available on the CRAN mirrors.
 

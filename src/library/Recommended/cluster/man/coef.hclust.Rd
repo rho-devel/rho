@@ -16,7 +16,7 @@
   be used to compare datasets of very different sizes.
 }
 \usage{
-coef.hclust(object, \dots)
+coef.hclust(object, \dots)%-- we export this, on purpose
 \method{coef}{hclust}(object, \dots)
 \method{coef}{twins}(object, \dots)
 }
@@ -43,7 +43,7 @@ coef(aa) # really just extracts aa$ac
 coef(as.hclust(aa))# recomputes
 \dontshow{
  d.a <- dist(agriculture, "manhattan")
- for (m in c("average", "single", "complete")) 
+ for (m in c("average", "single", "complete"))
     stopifnot(all.equal(coef(hclust(d.a, method=m)),
                         coef(agnes (d.a, method=m)), tol=1e-13))
 }

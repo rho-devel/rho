@@ -227,7 +227,7 @@ plot.silhouette <-
 	else ## unit wise coloring
             if(lc != n)
                 col <- rep(col, length = n)
-	col <- rev(col[attr(x, "iOrd")])
+	col <- rev(col) # was rev(col[attr(x, "iOrd")])
     }
     y <- barplot(s, space = space, names = names, xlab = xlab,
 		 xlim = c(min(0, min(s)), 1),

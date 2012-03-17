@@ -60,7 +60,8 @@ Diagonal(n, x = NULL)
   of the diagonal from a matrix works for all \dQuote{Matrices}.
 
   \code{\link{bandSparse}} constructs a \emph{banded} sparse matrix from
-  its non-zero sub-/super - diagonals.
+  its non-zero sub-/super - diagonals.  \code{\link{band}(A)} returns a
+  band matrix containing some sub-/super - diagonals of \code{A}.
 
   \code{\link{Matrix}} for general matrix construction;
   further, class \code{\linkS4class{diagonalMatrix}}.

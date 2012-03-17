@@ -16,15 +16,19 @@ maxk <- 15                # at most 15 clusters
 silh.wid <- numeric(maxk)  # myind[k] := the silh.value for k clusters
 silh.wid[1] <- NA # 1-cluster: silhouette not defined
 
+op <- par(mfrow = c(4,4), mar = .1+ c(2,1,2,1), mgp=c(1.5, .6,0))
 for(k in 2:maxk) {
     cat("\n", k,":\n==\n")
     k.gr <- cutree(as.hclust(hc), k = k)
     cat("grouping table: "); print(table(k.gr))
     si <- silhouette(k.gr, mdist)
     cat("silhouette:\n"); print(summary(si))
+    plot(si, main = paste("k =",k),
+         col = 2:(k+1), do.n.k=FALSE, do.clus.stat=FALSE)
     silh.wid[k] <- summary(si)$avg.width
     ##      ===
 }
+par(op)
 
 summary(si.p <- silhouette(50 - k.gr, mdist))
 stopifnot(identical(si.p[,3],         si[,3]),

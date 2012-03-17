@@ -29,7 +29,8 @@
 /**
  * RLE (Run Length Encoding) -- only when it's worth
  *
- * @param x  R vector which can be coerced to "double" / "integer"
+ * @param x_  R vector which can be coerced to "double" / "integer"
+ * @param force_  R logical indicating if the result must be "RLE" even when inefficient
  *
  * @return NULL or a valid R object of class "rle"
  */

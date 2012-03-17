@@ -24,17 +24,27 @@ stack.data.frame <- function(x, select, ...)
 	vars <- eval(substitute(select),nl, parent.frame())
         x <- x[, vars, drop=FALSE]
     }
-    x <- x[, unlist(lapply(x, is.vector)), drop = FALSE]
+    keep <- unlist(lapply(x, is.vector))
+    if(!sum(keep)) stop("no vector columns were selected")
+    if(!all(keep))
+        warning("non-vector columns will be ignored")
+    x <- x[, keep, drop = FALSE]
+    ## need to avoid promotion to factors
     data.frame(values = unlist(unname(x)),
-               ind = factor(rep.int(names(x), lapply(x, length))))
+               ind = factor(rep.int(names(x), lapply(x, length))),
+               stringsAsFactors = FALSE)
 }
 
 stack.default <- function(x, ...)
 {
     x <- as.list(x)
-    x <- x[unlist(lapply(x, is.vector))]
+    keep <- unlist(lapply(x, is.vector))
+    if(!sum(keep)) stop("at least one vector element is required")
+    if(!all(keep)) warning("non-vector elements will be ignored")
+    x <- x[keep]
     data.frame(values = unlist(unname(x)),
-               ind = factor(rep.int(names(x), lapply(x, length))))
+               ind = factor(rep.int(names(x), lapply(x, length))),
+               stringsAsFactors = FALSE)
 }
 
 unstack <- function(x, ...) UseMethod("unstack")
@@ -45,9 +55,9 @@ unstack.data.frame <- function(x, form, ...)
     if (length(form) < 3)
         stop("'form' must be a two-sided formula")
     res <- c(tapply(eval(form[[2L]], x), eval(form[[3L]], x), as.vector))
-    if (length(res) < 2L || any(diff(unlist(lapply(res, length))) != 0L))
+    if (length(res) >= 2L && any(diff(unlist(lapply(res, length))) != 0L))
         return(res)
-    data.frame(res)
+    data.frame(res, stringsAsFactors = FALSE)
 }
 
 unstack.default <- function(x, form, ...)
@@ -57,7 +67,7 @@ unstack.default <- function(x, form, ...)
     if ((length(form) < 3) || (length(all.vars(form))>2))
         stop("'form' must be a two-sided formula with one term on each side")
     res <- c(tapply(eval(form[[2L]], x), eval(form[[3L]], x), as.vector))
-    if (length(res) < 2L || any(diff(unlist(lapply(res, length))) != 0L))
+    if (length(res) >= 2L && any(diff(unlist(lapply(res, length))) != 0L))
         return(res)
-    data.frame(res)
+    data.frame(res, stringsAsFactors = FALSE)
 }

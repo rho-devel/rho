@@ -61,29 +61,3 @@ experimentalOptions <- function()
 
 
 
-
-## If present, .First.lib will be used if the NAMESPACE file is
-## missing.  This is useful during development, thanks to C-c C-l in
-## Emacs/ESS. It won't be used if a NAMESPACE file is present.  Note:
-## Due to registration of C functions done in the NAMESPACE file,
-## wireframe (and possibly cloud) won't work in this scenario.
-
-
-.First.lib <- function(lib, pkg) 
-{
-    cat(gettext("Note: you shouldn't be seeing this message unless\nyou are using a non-standard version of lattice"),
-        fill = TRUE)
-    library.dynam("lattice", pkg, lib )
-    ## having the next line causes a warning from R CMD check
-    ## if (!require("grid")) stop("The grid package couldn't be loaded.\nPlease check your installation of R")
-    haveGrid <- eval(parse(text = "require(grid)"))
-    if (!haveGrid) stop("The grid package couldn't be loaded.\nPlease check your installation of R")
-    lattice.options(.defaultLatticeOptions())
-    lattice.options(experimentalOptions())
-    lattice.setStatus(.defaultLatticeStatus())
-}
-
-
-
-
-

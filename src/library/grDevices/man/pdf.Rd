@@ -18,13 +18,19 @@
 pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     width, height, onefile, family, title, fonts, version,
     paper, encoding, bg, fg, pointsize, pagecentre, colormodel,
-    useDingbats, useKerning, fillOddEven, maxRasters)
+    useDingbats, useKerning, fillOddEven, maxRasters, compress)
 }
 \arguments{
   \item{file}{a character string giving the name of the file.
+    If it is of the form \code{"|cmd"}, the output is piped to the
+    command given by \command{cmd}.  If it is \code{NULL},
+    then no external file is created (effectively, no drawing occurs),
+    but the device may still be queried (e.g., for size of text).
     For use with \code{onefile = FALSE} give a C integer format such
     as \code{"Rplot\%03d.pdf"} (the default in that case).
     (See \code{\link{postscript}} for further details.)
+
+    Tilde expansion (see \code{\link{path.expand}}) is done.
   }
   \item{width, height}{the width and height of the graphics region in
     inches.  The default values are \code{7}.}
@@ -66,12 +72,15 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     page? -- is only relevant for \code{paper != "special"}.  
     Defaults to \code{TRUE}.}
   \item{colormodel}{a character string describing the color model:
-    currently allowed values are \code{"rgb"}, \code{"gray"} and
-    \code{"cmyk"}.  Defaults to \code{"rgb"}.}
+    currently allowed values are \code{"srgb"}, \code{"gray"} (or
+    \code{"grey"}) and \code{"cmyk"}.  Defaults to \code{"srgb"}.  See section
+    \sQuote{Color models}.}
   \item{useDingbats}{logical.  Should small circles be rendered
     \emph{via} the Dingbats font?  Defaults to \code{TRUE}, which produces
     smaller and better output.  Setting this to \code{FALSE} can work
-    around font display problems in broken PDF viewers.
+    around font display problems in broken PDF viewers: although this
+    font is one of the 14 guaranteed to be available in all PDF viewers,
+    that guarantee is not always honoured.
 #ifdef unix
     See the \sQuote{Note} for a possible fix for such viewers.
 #endif
@@ -80,8 +89,11 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     setting text and calculating string widths?  Defaults to \code{TRUE}.}
   \item{fillOddEven}{logical controlling the polygon fill mode:  see
     \code{\link{polygon}} for details.  Defaults to \code{FALSE}.}
-  \item{maxRasters}{integer.  The maximum number of raster images that
-    can be stored in this PDF document. }
+  \item{maxRasters}{integer.  Unused in \R >= 2.14.0, previously the
+    maximum number of raster images to be stored in this PDF document
+    (default \code{64} in \R < 2.13.2).}
+  \item{compress}{logical.  Should PDF streams be generated with Flate
+    compression?  Defaults to \code{TRUE}.}
 }
 \details{
   All arguments except \code{file} default to values given by
@@ -132,25 +144,18 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   code is shared between the drivers.  The native PDF encoding is given
   in file \file{PDFDoc.enc}.
 
-  \code{pdf} writes uncompressed PDF.  It is primarily intended for
-  producing PDF graphics for inclusion in other documents, and
-  PDF-includers are usually able to handle compression.  There are a
-  large number of PDF compression utilities: \code{\link{compactPDF}} in
-  package \pkg{tools} provides a convenient interface to some of them
-  and its help page and the \sQuote{Writing R Extensions} manual discuss
-  others.
-
-  The PDF produced is fairly simple, with each page being represented
-  as a single stream.  The \R graphics model does not distinguish
-  graphics objects at the level of the driver interface.
+  The PDF produced is fairly simple, with each page being represented as
+  a single stream (by default compressed and possibly with references to
+  raster images).  The \R graphics model does not distinguish graphics
+  objects at the level of the driver interface.
 
   The \code{version} argument declares the version of PDF that gets
-  produced.  The version must be at least 1.4 for semi-transparent
-  output to be understood, and at least 1.3 if CID fonts are to be used:
-  if these features are used the version number will be increased (with
-  a warning).  Specifying a low version number is useful if you want to
-  produce PDF output that can be viewed on older or non-Adobe PDF
-  viewers.  (PDF 1.4 requires Acrobat 5 or later.)
+  produced.  The version must be at least 1.2 when compression is used,
+  1.4 for semi-transparent output to be understood, and at least 1.3 if
+  CID fonts are to be used: if any of these features are used the
+  version number will be increased (with a warning).  (PDF 1.4 was first
+  supported by Acrobat 5 in 2001; it is very unlikely not to be
+  supported in a current viewer.)
 
   Line widths as controlled by \code{par(lwd=)} are in multiples of
   1/96 inch.  Multiples less than 1 are allowed.  \code{pch="."} with
@@ -170,22 +175,25 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   on a landscape A4 page with 0.25 inch margins.
 
   When the background colour is fully transparent (as is the initial
-  default value), the PDF produced does not paint the background.
-  Almost all PDF viewers will use a white canvas so the visual effect is
-  if the background were white.  This will not be the case when printing
-  onto coloured paper, though.
-
-  If you are planning to use a large number of raster images in your
-  output, you may need to specify a larger value for argument
-  \code{maxRasters}.
+  default value), the PDF produced does not paint the background.  Most
+  PDF viewers will use a white canvas so the visual effect is if the
+  background were white.  This will not be the case when printing onto
+  coloured paper, though.
 }
 
 \section{Color models}{
-  The default color model is sRGB, and model \code{"gray"} maps sRGB
-  colors to greyscale using perceived luminosity (biased towards green).
-  \code{"cmyk"} outputs in CMYK colorspace.  The simplest
-  possible conversion from sRGB to CMYK is used
-  (\url{http://en.wikipedia.org/wiki/CMYK_color_model#Mapping_RGB_to_CMYK}).
+  The default color model (\code{"srgb"}) is sRGB.  Model \code{"gray"}
+  (or \code{"grey"}) maps sRGB colors to greyscale using perceived
+  luminosity (biased towards green).  \code{"cmyk"} outputs in CMYK
+  colorspace.  The simplest possible conversion from sRGB to CMYK is
+  used
+  (\url{http://en.wikipedia.org/wiki/CMYK_color_model#Mapping_RGB_to_CMYK}),
+  and raster images are output in RGB.
+
+  Also available for backwards compatibility is model \code{"rgb"} which
+  uses uncalibrated RGB and corresponds to the model used with that name
+  in \R prior to 2.13.0.  Some viewers may render some plots in that
+  colorspace faster than in sRGB, and the plot files will be smaller.
 }
 
 \section{Conventions}{
@@ -197,13 +205,13 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
     \item Font sizes are in big points.
     \item The default font family is Helvetica.
     \item Line widths are as a multiple of 1/96 inch, with a minimum
-    of 0.01 enforced.   
+    of 0.01 enforced.
     \item Circles of any radius are allowed.  Unless \code{useDingbats =
-    FALSE}, opaque circles of less than 10 big
-    points radius are rendered using char 108 in the Dingbats font:
-    all semi-transparent and larger circles using a \enc{Bézier}{Bezier}
-    curve for each quadrant.
-    \item Colours are specified as sRGB.
+      FALSE}, opaque circles of less than 10 big points radius are
+    rendered using char 108 in the Dingbats font: all semi-transparent
+    and larger circles using a \enc{Bézier}{Bezier} curve for each
+    quadrant.
+    \item Colours are by default specified as sRGB.
   }
 
   At very small line widths, the line type may be forced to solid.
@@ -254,6 +262,13 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   viewers using \sQuote{fontconfig} are given in the \sQuote{Cairo Fonts}
   section of the help for \code{\link{X11}}.
 #endif
+#ifdef windows
+  The TeXworks PDF viewer is one of those which has been seen to fail to
+  display Dingbats correctly.  Whereas on other platforms the problems
+  seen are incorrect output, on Windows points are silently omitted.  One
+  workaround is to use the argument \code{useDingbats = FALSE}: another
+  it to use a better PDF viewer.
+#endif
 }
 
 \seealso{
@@ -261,9 +276,13 @@ pdf(file = ifelse(onefile, "Rplots.pdf", "Rplot\%03d.pdf"),
   \code{\link{embedFonts}},
   \code{\link{Devices}},
   \code{\link{postscript}}.
-#ifdef unix
-  
+
+#ifdef unix  
   \code{\link{cairo_pdf}} and (on Mac OS X only) \code{\link{quartz}}
+  for other devices that can produce PDF.
+#endif
+#ifdef windows  
+  \code{\link{cairo_pdf}} and (on Mac OS X only) \code{quartz}
   for other devices that can produce PDF.
 #endif
 

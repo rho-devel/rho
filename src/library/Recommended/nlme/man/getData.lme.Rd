@@ -2,7 +2,6 @@
 % Part of the nlme package for R
 % Distributed under GPL 2 or later: see nlme/LICENCE
 
-% $Id: getData.lme.Rd,v 1.6 2002/03/05 14:59:39 bates Exp $
 \name{getData.lme}
 \title{Extract lme Object Data}
 \usage{
@@ -25,6 +24,11 @@
   \code{na.action} and \code{subset} applied to it, if also present in
   the call that produced \code{object}) is returned;
   else, \code{NULL} is returned.
+
+  Note that as from version 3.1-102, this only omits rows omitted in the
+  fit if \code{na.action = na.omit}, and does not omit at all if
+  \code{na.action = na.exclude}.  That is generally what is wanted for
+  plotting, the main use of this function.
 }
 
 \author{Jose Pinheiro and Douglas Bates \email{bates@stat.wisc.edu}}

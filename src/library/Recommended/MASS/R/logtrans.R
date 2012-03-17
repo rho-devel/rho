@@ -45,6 +45,7 @@ function(object, ..., alpha = seq(0.5, 6, by = 0.25) - min(y),
         mx <- (1L:m)[loglik == max(loglik)][1L]
         Lmax <- loglik[mx]
         lim <- Lmax - qchisq(19/20, 1)/2
+        dev.hold(); on.exit(dev.flush())
         plot(xl, loglik, xlab = xlab, ylab = ylab, type
              = "l", ylim = range(loglik, lim))
         plims <- par("usr")

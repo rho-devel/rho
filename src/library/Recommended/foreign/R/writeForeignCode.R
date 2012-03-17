@@ -15,8 +15,11 @@
 
 write.foreign <-
     function(df, datafile, codefile, package = c("SPSS","Stata","SAS"), ...)
+{
     do.call(paste("writeForeign", package, sep = ""),
             c(list(df = df, datafile = datafile, codefile = codefile), ...))
+    invisible(NULL)
+}
 
 ## we want ASCII quotes, not UTF-8 quotes here
 adQuote <- function(x) paste("\"", x, "\"", sep = "")

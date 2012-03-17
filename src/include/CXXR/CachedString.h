@@ -79,7 +79,10 @@ namespace CXXR {
 	 *
 	 * @param encoding The encoding of the required CachedString.
 	 *          Only CE_NATIVE, CE_UTF8 or CE_LATIN1 are permitted
-	 *          in this context (checked).
+	 *          in this context (checked).  Note that if \a str
+	 *          contains no non-ASCII characters, then the
+	 *          encoding is set to CE_NATIVE regardless of the
+	 *          value of the \a encoding parameter.
 	 *
 	 * @return Pointer to a CachedString (preexisting or newly
 	 * created) representing the specified text in the specified

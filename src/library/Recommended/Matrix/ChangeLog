@@ -1,7 +1,125 @@
+2011-11-02  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/zzz.R (.onLoad): when R version >= 2.15.0, no longer
+	need to assignInNamespace( ns = "base"), methods provides S4 generic.
+
+2011-10-30  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-2, CRAN-released: ..., r...
+
+	* tests/other-pkgs.R: print more, don't run SparseM on Solaris for now.
+	* tests/Simple.R: encoding warning should not be promoted to error.
+
+2011-10-22  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/rankMatrix.R (rankMatrix): 'method = "qrLINPACK"' now also
+	works for sparse matrices, but using \code{sparseQR()}.
+
+	* man/sparseQR-class.Rd: document options "Matrix.quiet" (old) and
+	new "Matrix.quiet.qr.R" for suppressiong the permutation warning.
+	* R/sparseQR.R:
+
+2011-10-17  Douglas Bates <bates@stat.wisc.edu>
+
+	* src/Csparse.c (Csparse_submatrix): plugging memory leak
+
+2011-10-08  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bind2.R (cbind2Sparse, rbind2Sparse): auxiliaries,
+	used, also in new methods for <sparse, dense>.
+	* tests/bind.R: testing some of these.
+
+	* R/Matrix.R, man/Matrix.Rd: optional argument 'doDiag'.
+
+	* DESCRIPTION (Version): 1.0-1, CRAN-released: 2011-10-18, r2732
+
+2011-09-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.0-0 -- to be released for R 2.14.0
+
+2011-09-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R (solve.dsC.mat): new utility which calls lu() if
+	CHOLMOD'S Cholesky() errors (when matrix is not pos.def.).
+
+2011-09-15  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/bandSparse.R (bandSparse): and
+	* R/sparseMatrix.R (sparseMatrix): add 'giveCsparse = TRUE'
+	argument and allow returning Tsparse*, useful e.g. when used in
+	bdiag().
+
+2011-08-17  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* NAMESPACE: export diagN2U() & diagU2N(). They were "missing" for
+	at least one user (GG).
+	* man/diagU2N.Rd: docu + example.
+
+	* DESCRIPTION (Version): 0.9996875-4 (*not* yet released)
+
+2011-08-12  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.9996875-3, for CRAN
+
+2011-08-05  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseVector.R (head): method; used in a few cases, eliminating
+	two FIXMEs.
+
+	* DESCRIPTION (Version): 0.9996875-1
+
+	* R/ngTMatrix.R: stop() instead of warning() when NA's are coerced.
+	* R/Csparse.R, R/Tsparse.R
+	* src/t_Csparse_subassign.c, src/Csparse.c: <Csparse>[..] <- val
+	now works via .Call(*Csparse_subassign, ...) and no longer suffers
+	from unnecessary memory-blowup.
+
+2011-07-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dgTMatrix.R (image): add 'useRaster = FALSE' argument,
+	providing the possibility of using raster (instead of rectangle
+	drawing vector) images.
+
+2011-07-27  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/nearPD.R: allow 'ensureSymmetry' argument for speedup.
+
+2011-06-10  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/diagMatrix.R (Cspdiagprod, diagCspprod): fixup for symmetric
+	sparse, and non constant-diagonal.
+
+2011-05-20  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/dsCMatrix.R (determinant(<dsCMatrix>): fix for Matrix(0, 1) case.
+
+2011-05-18  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* R/sparseMatrix.R (sparseMatrix): add 'symmetric' argument.
+
+2011-04-04  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* src/Csparse.c (Csparse_subassign): unfinished prototype
+
+	* src/....: Finally no longer hack "UFlong := int", but rather
+	* src/UFconfig/UFconfig.h: use standard CHOLMOD headers
+
+	* DESCRIPTION (Version): 0.9996875-0
+
+2011-03-31  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 0.999375-49
+
+2011-03-30  Douglas Bates <bates@stat.wisc.edu>
+
+	* Matrix/src/chm_common.c: [r2658] Install symbols first -
+	{preventing seg.fault under -gct}
+
 2011-03-17  Martin Maechler  <maechler@stat.math.ethz.ch>
 
-	* DESCRIPTION (Version): 0.999375-48 -- *only* difference to CRAN
-	released *-47, is the work around Sweave bug in inst/doc/sparseModels.Rnw.
+	* DESCRIPTION (Version): 0.999375-48
+	*only* difference to CRAN released *-47, is the work around Sweave bug
+	in inst/doc/sparseModels.Rnw.
 
 2011-02-23  Martin Maechler  <maechler@stat.math.ethz.ch>
 

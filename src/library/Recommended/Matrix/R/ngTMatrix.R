@@ -21,7 +21,7 @@ setAs("matrix", "ngTMatrix",
 	  if(!is.logical(from))
 	      storage.mode(from) <- "logical"
 	  if(any(is.na(from)))
-	      warning("'NA's coerced to 'FALSE' in coercion to logical sparse")
+	      stop("cannot coerce 'NA's to \"nsparseMatrix\"")
           dn <- dimnames(from)
           if(is.null(dn))
               dn <- list(NULL,NULL)

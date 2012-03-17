@@ -106,4 +106,16 @@ grMeth <- "Arith"
     }
 ##O }
 
+## check the abIndex versions of  indDiag() and indTri() :
+for(n in 1:7)
+    stopifnot(isValid(ii <- Matrix:::abIindDiag(n), "abIndex"),
+              ii@kind == "rleDiff",
+              Matrix:::indDiag(n) == as(ii, "numeric"))
+
+for(n in 0:7)
+ for(diag in c(TRUE,FALSE))
+  for(upper in c(TRUE,FALSE))
+    stopifnot(isValid(ii <- Matrix:::abIindTri(n, diag=diag,upper=upper), "abIndex"),
+              Matrix:::indTri(n, diag=diag,upper=upper) == as(ii, "numeric"))
+
 cat('Time elapsed: ', (.pt <- proc.time()),'\n') # "stats"

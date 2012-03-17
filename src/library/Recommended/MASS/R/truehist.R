@@ -26,6 +26,7 @@ function(data, nbins = "Scott", h, x0 = -h/1000, breaks,
                  col = NULL, border = NULL, lty = NULL, lwd = par("lwd"), ...)
     {
         n <- length(breaks)
+        dev.hold(); on.exit(dev.flush())
         plot(xlim, c(0, ymax), type = "n", xlab = xlab, ylab = ylab,
              bty = bty, ...)
         rect(breaks[-n], 0, breaks[-1L], est,

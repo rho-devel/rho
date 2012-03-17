@@ -118,12 +118,14 @@ strip.default <-
         pushViewport(viewport(y = (which.given-0.5)/length(which.panel),
                               height = 1/length(which.panel),
                               clip = trellis.par.get("clip")$strip,
-                              name = paste("strip.default", which.given, sep = ".")))
+                              name = paste(lattice.getStatus("current.prefix"),
+                                "strip.default", which.given, sep = ".")))
     else 
         pushViewport(viewport(x = 1 - (which.given-0.5)/length(which.panel),
                               width = 1/length(which.panel),
                               clip = trellis.par.get("clip")$strip,
-                              name = paste("strip.left.default", which.given, sep = ".")))
+                              name = paste(lattice.getStatus("current.prefix"),
+                                "strip.left.default", which.given, sep = ".")))
 
     gp.text <- 
         gpar(col = par.strip.text$col,
@@ -266,12 +268,14 @@ strip.default <-
         pushViewport(viewport(y = (which.given-0.5)/length(which.panel),
                               height = 1/length(which.panel),
                               clip = "off",
-                              name = paste("strip.default.off", which.given, sep = ".")))
+                              name = paste(lattice.getStatus("current.prefix"),
+                                "strip.default.off", which.given, sep = ".")))
     else 
         pushViewport(viewport(x = 1 - (which.given-0.5)/length(which.panel),
                               width = 1/length(which.panel),
                               clip = "off",
-                              name = paste("strip.left.default.off", which.given, sep = ".")))
+                              name = paste(lattice.getStatus("current.prefix"),
+                                "strip.left.default.off", which.given, sep = ".")))
 
 
     strip.border <- trellis.par.get("strip.border")

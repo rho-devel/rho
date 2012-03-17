@@ -247,8 +247,8 @@ SEXP check_scalar_string(SEXP sP, char *vals, char *nm)
 	if (strlen(str) != 1) {
 	    SPRINTF(buf, _("'%s' must have string length 1"), nm);
 	} else {
-	    int i, len, match;
-	    for (i = 0, len = strlen(vals), match = 0; i < len; i++) {
+	    int i, len;
+	    for (i = 0, len = strlen(vals); i < len; i++) {
 		if (str[0] == vals[i])
 		    return R_NilValue;
 	    }
@@ -731,7 +731,7 @@ SEXP new_dgeMatrix(int nrow, int ncol)
  *
  * @param ij: 2-column integer matrix
  * @param di: dim(.), i.e. length 2 integer vector
- * @param chk_bounds: logical indicating  0 <= ij[,k] < di[k]  need to be checked.
+ * @param chk_bnds: logical indicating  0 <= ij[,k] < di[k]  need to be checked.
  *
  * @return encoded index; integer if prod(dim) is small; double otherwise
  */
@@ -845,10 +845,10 @@ int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho)
     }
     /* if not found directly, now search the non-virtual super classes :*/
     if(IS_S4_OBJECT(x)) {
-	/* now try the superclasses, i.e.,  try   is(x, "....") : */
+	/* now try the superclasses, i.e.,  try   is(x, "....");  superCl :=
+	   .selectSuperClasses(getClass("...")@contains, dropVirtual=TRUE)  */
 	SEXP classExts, superCl, _call;
 	int i;
-/* 	PROTECT(cl); */
 	PROTECT(_call = lang2(install("getClassDef"), cl));
 	classExts = GET_SLOT(eval(_call, rho),
 			     install("contains"));

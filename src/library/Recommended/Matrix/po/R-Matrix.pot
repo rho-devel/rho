@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.10.0\n"
+"Project-Id-Version: R 2.15.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2009-05-29 12:38\n"
+"POT-Creation-Date: 2011-10-14 21:52\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -62,9 +62,6 @@ msgstr ""
 msgid "general Matrix class not yet implemented for"
 msgstr ""
 
-msgid "not yet implemented for packed class"
-msgstr ""
-
 msgid "arguments in"
 msgstr ""
 
@@ -74,6 +71,9 @@ msgstr ""
 msgid "not a symmetric matrix; consider forceSymmetric() or symmpart()"
 msgstr ""
 
+msgid "Matrix-internal error in <CsparseM>[i,,d]; please report"
+msgstr ""
+
 msgid "nothing to replace with"
 msgstr ""
 
@@ -81,6 +81,15 @@ msgid "number of items to replace is not a multiple of replacement length"
 msgstr ""
 
 msgid "too many replacement values"
+msgstr ""
+
+msgid "i1[1] == 0 ==> C-level verbosity will not happen!"
+msgstr ""
+
+msgid "using\t \"old code\" part in  Csparse subassignment"
+msgstr ""
+
+msgid "Cholesky(<nsparse...>) -> *symbolic* factorization -- not yet implemented"
 msgstr ""
 
 msgid "Not a valid format"
@@ -143,6 +152,9 @@ msgstr ""
 msgid "'%s()' is not yet implemented for  representation '%s'"
 msgstr ""
 
+msgid "trimmed mean of 'sparseVector' -- suboptimally using as.numeric(.)"
+msgstr ""
+
 msgid "'V' is not a square matrix"
 msgstr ""
 
@@ -171,6 +183,9 @@ msgid "complex matrices not yet implemented in Matrix package"
 msgstr ""
 
 msgid "using slow kronecker() method"
+msgstr ""
+
+msgid "Cholesky(A) called for 'A' of class \"%s\";\n\t it is currently defined for sparseMatrix only; consider using chol() instead"
 msgstr ""
 
 msgid "'lag' and 'differences' must be integers >= 1"
@@ -227,7 +242,13 @@ msgstr ""
 msgid "inefficient method used for \"- e1\""
 msgstr ""
 
-msgid "internal bug in \"Compare\" method for \"dMatrix\"; please report"
+msgid "<Matrix>"
+msgstr ""
+
+msgid "(0) is undefined"
+msgstr ""
+
+msgid "internal bug in \"Compare\" method (Cmp.Mat.atomic); please report"
 msgstr ""
 
 msgid "Matrices must have same number of rows for arithmetic"
@@ -242,13 +263,7 @@ msgstr ""
 msgid "length of 1st arg does not match dimension of 2nd"
 msgstr ""
 
-msgid "internal bug in \"Logic\" method for \"lMatrix\"; please report"
-msgstr ""
-
-msgid "<Matrix>"
-msgstr ""
-
-msgid "numeric(0) is undefined"
+msgid "internal bug in \"Logic\" method (.Logic.Mat.atomic); please report"
 msgstr ""
 
 msgid "numeric(<too-long>)"
@@ -257,7 +272,7 @@ msgstr ""
 msgid "longer object length\n\tis not a multiple of shorter object length"
 msgstr ""
 
-msgid "numeric(0)"
+msgid "(0)"
 msgstr ""
 
 msgid "<Matrix> is undefined"
@@ -267,6 +282,9 @@ msgid "longer object length"
 msgstr ""
 
 msgid "is not a multiple of shorter object length"
+msgstr ""
+
+msgid "dim [product %d] do not match the length of object [%d]"
 msgstr ""
 
 msgid "invalid class:"
@@ -284,10 +302,16 @@ msgstr ""
 msgid "index larger than maximal"
 msgstr ""
 
+msgid "logical subscript too long (%d, should be %d)"
+msgstr ""
+
 msgid "no 'dimnames[[.]]': cannot use character indexing"
 msgstr ""
 
 msgid "invalid character indexing"
+msgstr ""
+
+msgid "Matrix-internal error in <TsparseM>[i,,d]; please report"
 msgstr ""
 
 msgid "FIXME: NOT YET FINISHED IMPLEMENTATION"
@@ -302,6 +326,15 @@ msgstr ""
 msgid "internal bug: matrix 'i' in replTmat(): please report"
 msgstr ""
 
+msgid "x[.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s."
+msgstr ""
+
+msgid "x[.,.] <- val: x is \"%s\", val not in {TRUE, FALSE} is coerced%s."
+msgstr ""
+
+msgid "x[.,.] <- val : x being coerced from Tsparse* to CsparseMatrix"
+msgstr ""
+
 msgid "nargs() = %d should never happen; please report."
 msgstr ""
 
@@ -314,10 +347,52 @@ msgstr ""
 msgid "duplicate ij-entries in 'Matrix[ ij ] <- value'; using last"
 msgstr ""
 
+msgid "'force' must be (coercable to) TRUE or FALSE"
+msgstr ""
+
+msgid "invalid (to - from)/by in seq(.)"
+msgstr ""
+
+msgid "wrong sign in 'by' argument"
+msgstr ""
+
+msgid "'by' argument is much too small"
+msgstr ""
+
+msgid "length must be non-negative number"
+msgstr ""
+
+msgid "too many arguments"
+msgstr ""
+
+msgid "c(<abIndex>,..) of different kinds, coercing all to 'rleDiff'"
+msgstr ""
+
 msgid "<abIndex>[i]  is not yet implemented"
 msgstr ""
 
+msgid "all(<abIndex>) is not yet implemented"
+msgstr ""
+
+msgid "sum(<abIndex>) is not yet implemented"
+msgstr ""
+
+msgid "prod(<abIndex>) is not yet implemented"
+msgstr ""
+
 msgid "not yet implemented"
+msgstr ""
+
+msgid "x / 0 for an <abIndex> x with sign-change"
+msgstr ""
+
+msgid "no longer representable as 'rleDiff'"
+msgstr ""
+
+msgid "<abIndex>  -->  <seqMat>  is not yet implemented"
+msgstr ""
+
+msgid "<seqMat>  -->  <abIndex>  is not yet implemented"
 msgstr ""
 
 msgid "'diagonals' matrix must have %d columns (= length(k) )"
@@ -338,7 +413,28 @@ msgstr ""
 msgid "too short; filling with NA's"
 msgstr ""
 
-msgid "cbind2() method for (%s,%s) not-yet defined"
+msgid "'A' must be a square matrix"
+msgstr ""
+
+msgid "must either specify 'A' or the functions 'A.x' and 'At.x'"
+msgstr ""
+
+msgid "when 'A' is specified, 'A.x' and 'At.x' are disregarded"
+msgstr ""
+
+msgid "not converged in"
+msgstr ""
+
+msgid "iterations"
+msgstr ""
+
+msgid "hit a cycle (1) -- stop iterations"
+msgstr ""
+
+msgid "hit a cycle (2) -- stop iterations"
+msgstr ""
+
+msgid "not enough new vecs -- stop iterations"
 msgstr ""
 
 msgid "\"dMatrix\" object with NAs cannot be coerced to \"nMatrix\""
@@ -371,7 +467,7 @@ msgstr ""
 msgid "'x' has invalid data type"
 msgstr ""
 
-msgid "length(x) must be 1 or n"
+msgid "length(x) must be either 1 or #{cols}"
 msgstr ""
 
 msgid "some arguments are not matrices"
@@ -428,13 +524,13 @@ msgstr ""
 msgid "\"lMatrix\" object with NAs cannot be coerced to \"nMatrix\""
 msgstr ""
 
+msgid "Matrix seems negative semi-definite"
+msgstr ""
+
 msgid "nearPD() did not converge in"
 msgstr ""
 
-msgid "iterations"
-msgstr ""
-
-msgid "'NA's coerced to 'FALSE' in coercion to logical sparse"
+msgid "cannot coerce 'NA's to \"nsparseMatrix\""
 msgstr ""
 
 msgid "temporarily disabled"
@@ -452,16 +548,22 @@ msgstr ""
 msgid "must have exactly one non-zero entry per row"
 msgstr ""
 
-msgid "partially replacing \"pMatrix\" entries is not sensible"
+msgid "replacing \"pMatrix\" entries is not allowed, as rarely sensible"
 msgstr ""
 
 msgid "not-yet-implemented method for <%s> %%*%% <%s>"
 msgstr ""
 
-msgid "crossprod(x) calculated as x %*% x for sparse, symmetric x"
+msgid "model frame and formula mismatch in model.matrix()"
 msgstr ""
 
-msgid "tcrossprod(x) calculated as x %*% x for sparse, symmetric x"
+msgid "variable '%s' converted to a factor"
+msgstr ""
+
+msgid "invalid 'contrasts.arg' argument"
+msgstr ""
+
+msgid "variable '%s' is absent, its contrast will be ignored"
 msgstr ""
 
 msgid "exactly one of 'i', 'j', or 'p' must be missing from call"
@@ -473,7 +575,7 @@ msgstr ""
 msgid "NA's in (i,j) are not allowed"
 msgstr ""
 
-msgid "(j,p) --> RsparseMatrix :  not yet implemented"
+msgid "symmetric matrix must be square"
 msgstr ""
 
 msgid "length(i) is not a multiple of length(x)"
@@ -500,9 +602,6 @@ msgstr ""
 msgid "'V' is not a *square* matrix"
 msgstr ""
 
-msgid "unknown method"
-msgstr ""
-
 msgid "must supply either 'formula' or 'data'"
 msgstr ""
 
@@ -521,6 +620,9 @@ msgstr ""
 msgid "cannot coerce 'NA's to \"nsparseVector\""
 msgstr ""
 
+msgid "'x' must inherit from \"sparseVector\""
+msgstr ""
+
 msgid "'ncol' must be >= 0"
 msgstr ""
 
@@ -533,10 +635,10 @@ msgstr ""
 msgid "'nrow' is not a factor of length(x)"
 msgstr ""
 
-msgid "indexing out of range 0:"
+msgid "too large index i > n ="
 msgstr ""
 
-msgid "index must be numeric or logical for 'sparseVector' indexing"
+msgid "index must be numeric, logical or sparseVector for indexing sparseVectors"
 msgstr ""
 
 msgid "'times >= 0' is required"

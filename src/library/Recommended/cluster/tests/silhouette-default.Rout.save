@@ -1,7 +1,8 @@
 
-R version 2.9.0 Patched (2009-05-12 r48535)
-Copyright (C) 2009 The R Foundation for Statistical Computing
+R Under development (unstable) (2011-08-28 r56813)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: i686-pc-linux-gnu (32-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -33,12 +34,15 @@ Type 'q()' to quit R.
 > silh.wid <- numeric(maxk)  # myind[k] := the silh.value for k clusters
 > silh.wid[1] <- NA # 1-cluster: silhouette not defined
 > 
+> op <- par(mfrow = c(4,4), mar = .1+ c(2,1,2,1), mgp=c(1.5, .6,0))
 > for(k in 2:maxk) {
 +     cat("\n", k,":\n==\n")
 +     k.gr <- cutree(as.hclust(hc), k = k)
 +     cat("grouping table: "); print(table(k.gr))
 +     si <- silhouette(k.gr, mdist)
 +     cat("silhouette:\n"); print(summary(si))
++     plot(si, main = paste("k =",k),
++          col = 2:(k+1), do.n.k=FALSE, do.clus.stat=FALSE)
 +     silh.wid[k] <- summary(si)$avg.width
 +     ##      ===
 + }
@@ -252,6 +256,7 @@ Silhouette of 150 units in 15 clusters from silhouette.default(x = k.gr, dist = 
 Individual silhouette widths:
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 -0.5929  0.3859  0.6211  0.5335  0.7478  0.8551 
+> par(op)
 > 
 > summary(si.p <- silhouette(50 - k.gr, mdist))
 Silhouette of 150 units in 15 clusters from silhouette.default(x = 50 - k.gr, dist = mdist) :
@@ -601,11 +606,11 @@ Individual silhouette widths:
 > plot(silhouette(kl6, D6))# gives error in earlier cluster versions
 > 
 > dev.off()
-null device 
-          1 
+pdf 
+  2 
 > 
 > ## Last Line:
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  2.969 0.034 3.042 0 0 
+Time elapsed:  3.453 0.03 3.503 0 0 
 > 
 > 

@@ -26,7 +26,7 @@ regression splines. \code{m} specifies the order of the derivatives in the thin 
   randomly subsample \code{max.knots} unique data locations if there are more than \code{max.knots}
   such, and to use the sub-sample for basis construction. The sampling is
   always done with the same random seed to ensure repeatability (does not
-  reset R RNG). \code{max.knots} is 3000, by default. Both seed and
+  reset R RNG). \code{max.knots} is 2000, by default. Both seed and
   \code{max.knots} can be modified using the \code{xt} argument to \code{s}.
    Alternatively the user can supply knots from which to construct a basis. 
 
@@ -65,8 +65,11 @@ out duplicate locations).}
 wiggliness penalty for this term.}
 }
 
-\details{ The default basis dimension for this class is \code{k=10*3^(d-1)} where \code{d} is the number
- of covariates for the term. This is essentially arbitrary, and should be checked.
+\details{ The default basis dimension for this class is \code{k=M+k.def} where \code{M} is the null space dimension 
+(dimension of unpenalized function space) and \code{k.def} is 8 for dimension 1, 27 for dimension 2 and 100 for higher dimensions. 
+This is essentially arbitrary, and should be checked, but as with all penalized regression smoothers, results are statistically 
+insensitive to the exact choise, provided it is not so small that it forces oversmoothing (the smoother's 
+degrees of freedom are controlled primarily by its smoothing parameter).
 
 The default is to set \code{m} (the order of derivative in the thin plate spline penalty) to the smallest value satisfying \code{2m > d+1} where \code{d} if the number of covariates of the term: this yields `visually smooth' functions. In any case \code{2m>d} must be satisfied. 
 

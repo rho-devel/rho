@@ -25,7 +25,7 @@ nobs(object, ...)
   \item{\dots}{Further arguments to be passed to methods.}
 }
 \details{
-  This is a generic function, with an S4 generic in package \pkg{nobs}.
+  This is a generic function, with an S4 generic in package \pkg{stats4}.
   There are methods in this package for objects of classes
   \code{"\link{lm}"}, \code{"\link{glm}"}, \code{"\link{nls}"} and
   \code{"\link{logLik}"}, as well as a default method (which throws an
@@ -38,6 +38,9 @@ nobs(object, ...)
   quick check that different fits have been fitted to the same set of
   data (and not, say, that further rows have been dropped because of NAs
   in the new predictors).
+  
+  For \code{lm} and \code{glm} fits, observatiosn with zero weight are
+  not included.
 }
 \value{
   A single number, normally an integer.  Could be \code{NA}.

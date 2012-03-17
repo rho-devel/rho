@@ -103,10 +103,8 @@ boot <- function(data, statistic, R, sim = "ordinary",
     parallel <- match.arg(parallel)
     have_mc <- have_snow <- FALSE
     if (parallel != "no" && ncpus > 1L) {
-        if (parallel == "multicore")
-            have_mc <- require("multicore", quietly = TRUE)
-        else if (parallel == "snow")
-            have_snow <- require("snow", quietly = TRUE)
+        if (parallel == "multicore") have_mc <- .Platform$OS.type != "windows"
+        else if (parallel == "snow") have_snow <- TRUE
         if (!have_mc && !have_snow) ncpus <- 1L
     }
     if (simple && (sim != "ordinary" || stype != "i" || sum(m))) {
@@ -152,7 +150,7 @@ boot <- function(data, statistic, R, sim = "ordinary",
 
     pred.i <- NULL
     fn <- if (sim == "parametric") {
-        ## force promises, so values get sent by snow
+        ## force promises, so values get sent by parallel
         ran.gen; data; mle
         function(r) {
             dd <- ran.gen(data, mle)
@@ -178,20 +176,19 @@ boot <- function(data, statistic, R, sim = "ordinary",
         else function(r) statistic(data, i[r, ], ...)
     }
     RR <- sum(R)
-    res <- if (ncpus > 1 && (have_mc || have_snow)) {
+    res <- if (ncpus > 1L && (have_mc || have_snow)) {
         if (have_mc) {
-            multicore::mclapply(seq_len(RR), fn, mc.cores = ncpus)
+            parallel::mclapply(seq_len(RR), fn, mc.cores = ncpus)
         } else if (have_snow) {
+            list(...) # evaluate any promises
             if (is.null(cl)) {
-                setRNG <- function()
-                    set.seed((Sys.getpid() + as.integer(Sys.time())) %%1024)
-                environment(setRNG) <- baseenv()
-                cl <- snow::makeSOCKcluster(rep("localhost", ncpus))
-                snow::clusterCall(cl, setRNG)
-                res <- snow::parLapply(cl, seq_len(RR), fn)
-                snow::stopCluster(cl)
+                cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
+                if(RNGkind()[1L] == "L'Ecuyer-CMRG")
+                    parallel::clusterSetRNGStream(cl)
+                res <- parallel::parLapply(cl, seq_len(RR), fn)
+                parallel::stopCluster(cl)
                 res
-            } else snow::parLapply(cl, seq_len(RR), fn)
+            } else parallel::parLapply(cl, seq_len(RR), fn)
         }
     } else lapply(seq_len(RR), fn)
     t.star <- matrix(, RR, length(t0))
@@ -1290,10 +1287,8 @@ censboot <-
     parallel <- match.arg(parallel)
     have_mc <- have_snow <- FALSE
     if (parallel != "no" && ncpus > 1L) {
-        if (parallel == "multicore")
-            have_mc <- require("multicore", quietly = TRUE)
-        else if (parallel == "snow")
-            have_snow <- require("snow", quietly = TRUE)
+        if (parallel == "multicore") have_mc <- .Platform$OS.type != "windows"
+        else if (parallel == "snow") have_snow <- TRUE
         if (!have_mc && !have_snow) ncpus <- 1L
     }
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) runif(1)
@@ -1377,21 +1372,20 @@ censboot <-
 
     res <- if (ncpus > 1L && (have_mc || have_snow)) {
         if (have_mc) {
-            multicore::mclapply(seq_len(R), fn, ..., mc.cores = ncpus)
+            parallel::mclapply(seq_len(R), fn, ..., mc.cores = ncpus)
         } else if (have_snow) {
+            list(...) # evaluate any promises
             if (is.null(cl)) {
-                setRNG <- function()
-                    set.seed((Sys.getpid() + as.integer(Sys.time())) %%1024)
-                environment(setRNG) <- baseenv()
-                cl <- snow::makeSOCKcluster(rep("localhost", ncpus))
-                snow::clusterCall(cl, setRNG)
-                snow::clusterEvalQ(cl, library(survival))
-                res <- snow::parLapply(cl, seq_len(R), fn)
-                snow::stopCluster(cl)
+                cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
+                if(RNGkind()[1L] == "L'Ecuyer-CMRG")
+                    parallel::clusterSetRNGStream(cl)
+                parallel::clusterEvalQ(cl, library(survival))
+                res <- parallel::parLapply(cl, seq_len(R), fn)
+                parallel::stopCluster(cl)
                 res
             } else {
-                snow::clusterEvalQ(cl, library(survival))
-                snow::parLapply(cl, seq_len(R), fn)
+                parallel::clusterEvalQ(cl, library(survival))
+                parallel::parLapply(cl, seq_len(R), fn)
             }
        }
     } else lapply(seq_len(R), fn)
@@ -3381,10 +3375,8 @@ tsboot <- function(tseries, statistic, R, l = NULL, sim = "model",
     parallel <- match.arg(parallel)
     have_mc <- have_snow <- FALSE
     if (parallel != "no" && ncpus > 1L) {
-        if (parallel == "multicore")
-            have_mc <- require("multicore", quietly = TRUE)
-        else if (parallel == "snow")
-            have_snow <- require("snow", quietly = TRUE)
+        if (parallel == "multicore") have_mc <- .Platform$OS.type != "windows"
+        else if (parallel == "snow") have_snow <- TRUE
         if (!have_mc && !have_snow) ncpus <- 1L
     }
 
@@ -3439,18 +3431,17 @@ tsboot <- function(tseries, statistic, R, l = NULL, sim = "model",
 
     res <- if (ncpus > 1L && (have_mc || have_snow)) {
         if (have_mc) {
-            multicore::mclapply(seq_len(R), fn, mc.cores = ncpus)
+            parallel::mclapply(seq_len(R), fn, mc.cores = ncpus)
         } else if (have_snow) {
+            list(...) # evaluate any promises
             if (is.null(cl)) {
-                setRNG <- function()
-                    set.seed((Sys.getpid() + as.integer(Sys.time())) %%1024)
-                environment(setRNG) <- baseenv()
-                cl <- snow::makeSOCKcluster(rep("localhost", ncpus))
-                snow::clusterCall(cl, setRNG)
-                res <- snow::parLapply(cl, seq_len(R), fn)
-                snow::stopCluster(cl)
+                cl <- parallel::makePSOCKcluster(rep("localhost", ncpus))
+                if(RNGkind()[1L] == "L'Ecuyer-CMRG")
+                    parallel::clusterSetRNGStream(cl)
+                res <- parallel::parLapply(cl, seq_len(R), fn)
+                parallel::stopCluster(cl)
                 res
-            } else snow::parLapply(cl, seq_len(R), fn)
+            } else parallel::parLapply(cl, seq_len(R), fn)
        }
     } else lapply(seq_len(R), fn)
 

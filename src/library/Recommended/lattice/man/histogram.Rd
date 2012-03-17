@@ -69,7 +69,6 @@ do.breaks(endpoints, nint)
 }
 \arguments{
   \item{x}{
-
     The object on which method dispatch is carried out.
     
     For the \code{formula} method, \code{x} can be a formula of the form
@@ -93,16 +92,13 @@ do.breaks(endpoints, nint)
 
   }
   \item{data}{
-
     For the \code{formula} method, an optional data source (usually a
     data frame) in which variables are to be evaluated (see
     \code{\link{xyplot}} for details).  \code{data} should not be
     specified for the other methods, and is ignored with a warning if it
     is.
-
   }
   \item{type}{
-
     A character string indicating the type of histogram that is to be
     drawn.  \code{"percent"} and \code{"count"} give relative frequency
     and frequency histograms respectively, and can be misleading when
@@ -112,26 +108,20 @@ do.breaks(endpoints, nint)
     \code{type} defaults to \code{"density"} when the breakpoints are
     unequally spaced or \code{breaks = NULL}, and to \code{"percent"}
     otherwise.
-
   }
   \item{nint}{
-    
     An integer specifying the number of histogram bins, applicable only
     when \code{breaks} is unspecified or \code{NULL} in the call.
     Ignored when the variable being plotted is a factor.
-
   }
   \item{endpoints}{
-
     A numeric vector of length 2 indicating the range of x-values that
     is to be covered by the histogram.  This applies only when
     \code{breaks} is unspecified and the variable being plotted is not a
     factor.  In \code{do.breaks}, this specifies the interval that is to
     be divided up.
-
   }
   \item{breaks}{
-
     Usually a numeric vector of length (number of bins + 1) defining the
     breakpoints of the bins.  Note that when breakpoints are not equally
     spaced, the only value of \code{type} that makes sense is density.
@@ -155,25 +145,18 @@ do.breaks(endpoints, nint)
     \code{\link{hist}}.  This allows specification of \code{breaks} as
     an integer giving the number of bins (similar to \code{nint}), as a
     character string denoting a method, or as a function.
-
   }
   \item{equal.widths}{
-
     A logical flag, relevant only when \code{breaks=NULL}.  If
     \code{TRUE}, equally spaced bins will be selected, otherwise,
     approximately equal area bins will be selected (typically producing
     unequally spaced breakpoints).
-
   }
   \item{n}{
-
     Integer, giving the number of points at which the kernel density is
     to be evaluated.  Passed on as an argument to \code{\link{density}}.
-
   }
-
   \item{panel}{
-
     A function, called once for each panel, that uses the packet (subset
     of panel variables) corresponding to the panel to create a display.
     The default panel functions \code{\link{panel.histogram}} and
@@ -181,7 +164,6 @@ do.breaks(endpoints, nint)
     arguments that can be used to customize its output in various ways.
     Such arguments can usually be directly supplied to the high-level
     function.
-
   }
   \item{allow.multiple, outer}{ See \code{\link{xyplot}}. }
   \item{auto.key}{ See \code{\link{xyplot}}. }
@@ -190,11 +172,9 @@ do.breaks(endpoints, nint)
   \item{scales}{ See \code{\link{xyplot}}. }
   \item{strip}{ See \code{\link{xyplot}}. }
   \item{groups}{
-
     See \code{\link{xyplot}}.  Note that the default panel function for
     \code{histogram} does not support grouped displays, whereas the one
     for \code{densityplot} does.
-
   }
   \item{xlab, ylab}{ See \code{\link{xyplot}}. }
   \item{xlim, ylim}{ See \code{\link{xyplot}}. }
@@ -203,8 +183,6 @@ do.breaks(endpoints, nint)
   \item{default.scales}{ See \code{\link{xyplot}}. }
   \item{subscripts}{ See \code{\link{xyplot}}. }
   \item{subset}{ See \code{\link{xyplot}}. }
-
-
   \item{default.prepanel}{
     Fallback prepanel function.  See \code{\link{xyplot}}.
   }
@@ -219,53 +197,38 @@ do.breaks(endpoints, nint)
     so just bug the maintainer if you need this feature).
   }
   \item{bw, adjust, width}{
-
     Arguments controlling bandwidth.  Passed on as arguments to
     \code{\link{density}}.
-
   }
   \item{kernel, window}{
-
     The choice of kernel.  Passed on as arguments to
     \code{\link{density}}.  
-
   }
   \item{give.Rkern}{
-
     Logical flag, passed on as argument to \code{\link{density}}.
     This argument is made available only for ease of implementation, and
     will produce an error if \code{TRUE}.
-
   }
   \item{from, to, cut}{ 
-
     Controls range over which density is evaluated.  Passed on as
     arguments to \code{\link{density}}.
-
   }
-
   \item{na.rm}{
-
     Logical flag specifying whether \code{NA} values should be ignored.
     Passed on as argument to \code{\link{density}}, but unlike in
     \code{density}, the default is \code{TRUE}.
-
   }
-  
   \item{\dots}{ Further arguments.  See corresponding entry in
     \code{\link{xyplot}} for non-trivial details.  }
 }
 \value{
-
   An object of class \code{"trellis"}. The
   \code{\link[lattice:update.trellis]{update}} method can be used to
   update components of the object and the
   \code{\link[lattice:print.trellis]{print}} method (usually called by
   default) will plot it on an appropriate plotting device.
-
 }
 \details{
-
   \code{histogram} draws Conditional Histograms, and \code{densityplot}
   draws Conditional Kernel Density Plots.  The default panel function
   uses the \code{\link{density}} function to compute the density
@@ -282,10 +245,8 @@ do.breaks(endpoints, nint)
 
   \code{do.breaks} is an utility function that calculates breakpoints
   given an interval and the number of pieces to break it into.
-  
 }
 \note{
-
   The form of the arguments accepted by the default panel function
   \code{panel.histogram} is different from that in S-PLUS. Whereas
   S-PLUS calculates the heights inside \code{histogram} and passes only
@@ -293,15 +254,12 @@ do.breaks(endpoints, nint)
   simply passes along the original variable \code{x} along with the
   breakpoints. This approach is more flexible; see the example below
   with an estimated density superimposed over the histogram.
-
 }
 
 \references{
-
   Sarkar, Deepayan (2008) \emph{Lattice: Multivariate Data
     Visualization with R}, Springer.
   \url{http://lmdvr.r-forge.r-project.org/}
-
 }
 
 \seealso{

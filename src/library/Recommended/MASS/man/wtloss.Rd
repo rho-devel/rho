@@ -1,5 +1,5 @@
 % file MASS/man/wtloss.Rd
-% copyright (C) 1994-9 W. N. Venables and B. D. Ripley
+% copyright (C) 1994-2011 W. N. Venables and B. D. Ripley
 %
 \name{wtloss}
 \alias{wtloss}
@@ -33,7 +33,9 @@ wtloss
 }
 \examples{
 wtloss.fm <- nls(Weight ~ b0 + b1*2^(-Days/th),
-    data = wtloss, start = list(b0=90, b1=95, th=120),
-    trace = TRUE)
+    data = wtloss, start = list(b0=90, b1=95, th=120))
+wtloss.fm
+plot(wtloss)
+with(wtloss, lines(Days, fitted(wtloss.fm)))
 }
 \keyword{datasets}

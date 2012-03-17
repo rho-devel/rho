@@ -1,5 +1,26 @@
 
 
+Changes in lattice 0.20
+=======================
+
+ o The primary goal of the 0.20 series is to further improve
+   documentation, building up to an eventual 1.0 release.  Specific
+   major changes are given below.
+
+ o Use dev.hold()/dev.flush() introduced in R 2.14.0 for smoother
+   displays and transition.
+
+ o It is now easier to use raster images in levelplot() by specifying
+   top-level argument 'useRaster=TRUE'.
+
+ o 'pos' can now be a vector in ltext(), just as it can in text().
+
+ o Explicit components in 'colorkey' (for levelplot()) to specify
+   graphical parameters of boundary and tick marks/labels.
+
+ o "spline" added as a possibly 'type' in panel.xyplot(), following a
+   suggestion from Patrick Breheny.
+
 Changes in lattice 0.19
 =======================
 

@@ -1,5 +1,1128 @@
 R News
 
+CHANGES IN R VERSION 2.14.0 patched:
+
+  NEW FEATURES:
+
+    • parallel::detectCores() is now able to find the number of
+      physical cores (rather than CPUs) on Sparc Solaris.
+
+      It can also do so on most versions of Windows; however the
+      default remains detectCores(logical = TRUE) on that platform.
+
+    • Reference classes now keep a record of which fields are locked.
+      $lock() with no arguments returns the names of the locked fields.
+
+    • HoltWinters() reports a warning rather than an error for some
+      optimization failures (where the answer might be a reasonable
+      one).
+
+    • tools::dependsOnPkg() now accepts the shorthand dependencies =
+      "all".
+
+    • parallel::clusterExport() now allows specification of an
+      environment from which to export.
+
+    • The quartz() device now does tilde expansion on its file
+      argument.
+
+    • tempfile() on a Unix-alike now takes the process ID into account.
+      This is needed with multicore (and as part of parallel) because
+      the parent and all the children share a session temporary
+      directory, and they can share the C random number stream used to
+      produce the uniaue part.  Further, two children can call
+      tempfile() simultaneously.
+
+    • Option print in Sweave's RweaveLatex() driver now emulates
+      auto-printing rather than printing (which can differ for an S4
+      object by calling show() rather than print()).
+
+    • filled.contour() now accepts infinite values: previously it might
+      have generated invalid graphics files (e.g. containing NaN
+      values).
+
+  INSTALLATION:
+
+    • On 64-bit Linux systems, configure now only sets LIBnn to lib64
+      if /usr/lib64 exists.  This may obviate setting LIBnn explicitly
+      on Debian-derived systems.
+
+      It is still necessary to set LIBnn = lib (or lib32) for 32-bit
+      builds of R on a 64-bit OS on those Linux distributions capable
+      for supporting that concept.
+
+    • configure looks for inconsolata.sty, and if not found adjusts the
+      default R_RD4PDF to not use it (with a warning, since it is
+      needed for high-quality rendering of manuals).
+
+  PACKAGE INSTALLATION:
+
+    • R CMD INSTALL will now do a test load for all sub-architectures
+      for which code was compiled (rather than just the primary
+      sub-architecture).
+
+  UTILITIES:
+
+    • When checking examples under more than one sub-architecture, R
+      CMD check now uses a separate directory examples_arch for each
+      sub-architecture, and leaves the output in file
+      pkgname-Ex_arch.Rout.  Some packages expect their examples to be
+      run in a clean directory ....
+
+  BUG FIXES:
+
+    • stack() now gives an error if no vector column is selected,
+      rather than returning a 1-column data frame (contrary to its
+      documentation).
+
+    • summary.mlm() did not handle objects where the formula had been
+      specified by an expression.  (Reported by Helios de Rosario
+      Martinez).
+
+    • tools::deparseLatex(dropBraces=TRUE) could drop text as well as
+      braces.
+
+    • colormodel = "grey" (new in R 2.14.0)) did not always work in
+      postscript() and pdf().
+
+    • file.append() could return TRUE for failures.  (PR#14727)
+
+    • gzcon() connections are no longer subject to garbage collection:
+      it was possible for this to happen when unintended (e.g. when
+      calling load()).
+
+    • nobs() does not count zero-weight observations for glm() fits,
+      for consistency with lm().  This affects the BIC() values
+      reported for such glm() fits.  (Spotted by Bill Dunlap.)
+
+    • options(warn = 0) failed to end a (C-level) context with more
+      than 50 accumulated warnings.  (Spotted by Jeffery Horner.)
+
+    • The internal plot.default() code did not do sanity checks on a
+      cex argument, so invalid input could cause problems.  (Reported
+      by Ben Bolker.)
+
+    • anyDuplicated(<array>, MARGIN=0) no longer fails.  (Reported by
+      Hervé Pagès.)
+
+    • read.dcf() removes trailing blanks: unfortunately on some
+      platforms this included \xa0 (non-breaking space) which is the
+      trailing byte of a UTF-8 character.  It now only considers ASCII
+      space and tab to be ‘blank’.
+
+    • There was a sign error in part of the calculations for the
+      variance returned by KalmanSmooth().  (PR#14738)
+
+    • pbinom(10, 1e6, 0.01, log.p = TRUE) was NaN thanks to the buggy
+      fix to PR#14320 in R 2.11.0.  (PR#14739)
+
+    • RweaveLatex() now emulates auto-printing rather than printing, by
+      calling methods::show() when auto-printing would.
+
+    • duplicated() ignored fromLast for a one-column data frame.
+      (PR#14742)
+
+    • source() and related functions did not put the correct timestamp
+      on the source references; srcfilecopy() has gained a new argument
+      timestamp to support this fix. (PR#14750)
+
+    • LaTeX conversion of Rd files did not correctly handle
+      preformatted backslashes.  (PR#14751)
+
+    • HTML conversion of Rd files did not handle markup within tabular
+      cells properly.  (PR#14708)
+
+    • source() on an empty file with keep.source = TRUE tried to read
+      from stdin(), in R 2.14.0 only.  (PR#14753)
+
+    • The code to check Rd files in packages would abort if duplicate
+      description sections were present.
+
+CHANGES IN R VERSION 2.14.0:
+
+  SIGNIFICANT USER-VISIBLE CHANGES:
+
+    • All packages must have a namespace, and one is created on
+      installation if not supplied in the sources.  This means that any
+      package without a namespace must be re-installed under this
+      version of R (but previously-installed data-only packages without
+      R code can still be used).
+
+    • The yLineBias of the X11() and windows() families of devices has
+      been changed from 0.1 to 0.2: this changes slightly the vertical
+      positioning of text in the margins (including axis annotations).
+      This is mainly for consistency with other devices such as
+      quartz() and pdf().  (Wish of PR#14538.)
+
+      There is a new graphics parameter "ylbias" which allows the
+      y-line bias of the graphics device to be tweaked, including to
+      reproduce output from earlier versions of R.
+
+    • Labeling of the p-values in various anova tables has been
+      rationalized to be either "Pr(>F)" or "Pr(>Chi)" (i.e. the
+      "Pr(F)", "Pr(Chi)" and "P(>|Chi|)" variants have been
+      eliminated).  Code which extracts the p value _via_ indexing by
+      name may need adjustment.
+
+    • :: can now be used for datasets made available for lazy-loading
+      in packages with namespaces (which makes it consistent with its
+      use for data-only packages without namespaces in earlier versions
+      of R).
+
+    • There is a new package parallel.
+
+      It incorporates (slightly revised) copies of packages multicore
+      and snow (excluding MPI, PVM and NWS clusters).  Code written to
+      use the higher-level API functions in those packages should work
+      unchanged (apart from changing any references to their namespaces
+      to a reference to parallel, and links explicitly to multicore or
+      snow on help pages).
+
+      It also contains support for multiple RNG streams following
+      L'Ecuyer _et al_ (2002), with support for both mclapply and snow
+      clusters.  This replaces functions like clusterSetupRNG() from
+      snow (which are not in parallel).
+
+      The version released for R 2.14.0 contains base functionality:
+      higher-level convenience functions are planned (and some are
+      already available in the ‘R-devel’ version of R).
+
+    • Building PDF manuals (for R itself or packages, e.g. _via_ R CMD
+      check) by default requires the LaTeX package inconsolata: see the
+      section on ‘Making the manuals’ in the ‘R Installation and
+      Administration Manual’.
+
+    • axTicks(*, log=TRUE) has changed in some cases to satisfy the
+      documented behavior and be consistent.
+
+  NEW FEATURES:
+
+    • txtProgressBar() can write to an open connection instead of the
+      console.
+
+    • Non-portable package names ending in . are no longer allowed.
+      Nor are single-character package names (R was already
+      disallowed).
+
+    • regexpr() and gregexpr() with perl = TRUE allows Python-style
+      named captures.  (Wish and contribution of PR#14518.)
+
+    • The placement of ‘plotmath’ text in the margins of plots done by
+      base graphics now makes the same vertical adjustment as ordinary
+      text, so using ordinary and plotmath text on the same margin line
+      will seem better aligned (but not exactly aligned, since ordinary
+      text has descenders below the baseline and plotmath places them
+      on the baseline).  (Related to PR#14537.)
+
+    • sunflowerplot() now has a formula interface.  (Wish of PR#14541.)
+
+    • iconv() has a new argument toRaw to handle encodings such as
+      UTF-16 with embedded nuls (as was possible before the CHARSXP
+      cache was introduced).
+
+      It will also accept as input the type of list generated with
+      toRaw = TRUE.
+
+    • Garbage-collecting an unused input text connection no longer
+      gives a warning (since it ‘connects’ to nothing outside R).
+
+    • read.table() and scan() have gained a text argument, to allow
+      reading data from a (possibly literal) character string.
+
+    • optim(*, method = .) now allows method = "Brent" as an interface
+      to optimize(), for use in cases such as mle() where optim() is
+      used internally.
+
+    • mosaicplot() gains a border argument.  (Wish of PR#14550.)
+
+    • smooth.spline() gains a tol argument which controls how different
+      x values need to be to be treated as distinct.  The default has
+      been changed to be more reliable for inputs whose range is small
+      compared to their maximum absolute value.  (Wish of PR#14452.)
+
+    • gl() runs faster by avoiding calling factor().
+
+    • The print() method for object.size() accepts B as well as b as an
+      abbreviation for ‘bytes’.
+
+    • unlink() gains a force argument to work like rm -f and if
+      possible override restrictive permissions.
+
+    • pbirthday() and qbirthday() now use exact calculations for
+      coincident = 2.
+
+    • unzip() and unz() connections have been updated with support for
+      more recent Zip64 features (including large file sizes and bzip2
+      compression, but not UTF-8 file names).
+
+      unzip() has a new option to restore file times from those
+      recorded (in an unknown timezone) in the zip file.
+
+    • update.packages() now accepts a character vector of package names
+      for the oldPkgs argument.  (Suggestion of Tal Galili.)
+
+    • The special reference class fields .self and .refClassDef are now
+      read-only to prevent corrupting the object.
+
+    • decompose() now returns the original series as part of its value,
+      so it can be used (rather than reconstructed) when plotting.
+      (Suggestion of Rob Hyndman.)
+
+    • Rao's efficient score test has been implemented for glm objects.
+      Specifically, the add1, drop1, and anova methods now allow test =
+      "Rao".
+
+    • If a saved workspace (e.g. .RData) contains objects that cannot
+      be loaded, R will now start with an warning message and an empty
+      workspace, rather than failing to start.
+
+    • strptime() now accepts times such as 24:00 for midnight at the
+      end of the day, for although these are disallowed by POSIX
+      1003.1-2008, ISO 8601:2004 allows them.
+
+    • Assignment of names() to S4 objects now checks for a
+      corresponding "names" slot, and generates a warning or an error
+      if that slot is not defined.  See the section on slots in
+      ?Classes.
+
+    • The default methods for is.finite(), is.infinite() and is.nan()
+      now signal an error if their argument is not an atomic vector.
+
+    • The formula method for plot() no longer places package stats on
+      the search path (it loads the namespace instead).
+
+    • There now is a genuine "function" method for plot() rather than
+      the generic dispatching internally to graphics::plot.function().
+      It is now exported, so can be called directly as plot.function().
+
+    • The one-sided ks.test() allows exact = TRUE to be specified in
+      the presence of ties (but the approximate calculation remains the
+      default: the ‘exact’ computation makes assumptions known to be
+      invalid in the presence of ties).
+
+    • The behaviour of curve(add = FALSE) has changed: it now no longer
+      takes the default x limits from the previous plot (if any):
+      rather they default to c(0, 1) just as the "function" method for
+      plot().  To get the previous behaviour use curve(add = NA), which
+      also takes the default for log-scaling of the x-axis from the
+      previous plot.
+
+    • Both curve() and the plot() method for functions have a new
+      argument xname to facilitate plots such as sin(t) _vs_ t.
+
+    • The local argument to source() can specify an environment as well
+      as TRUE (parent.env()) and FALSE (.GlobalEnv).  It gives better
+      error messages for other values, such as NA.
+
+    • vcov() gains methods for classes "summary.lm" and "summary.glm".
+
+    • The plot() method for class "profile.nls" gains ylab and lty
+      arguments, and passes ... on to plot.default.
+
+    • Character-string arguments such as the mode argument of vector(),
+      as.vector() and is.vector() and the description argument of
+      file() are required to be of length exactly one, rather than any
+      further elements being silently discarded.  This helps catch
+      incorrect usage in programming.
+
+    • The length argument of vector() and its wrappers such as
+      numeric() is required to be of length exactly one (other values
+      are now an error rather than giving a warning as previously).
+
+    • vector(len) and length(x) <- len no longer acccept TRUE/FALSE for
+      len (not that they were ever documented to, but there was
+      special-casing in the C code).
+
+    • There is a new function Sys.setFileTime() to set the time of a
+      file (including a directory).  See its help for exactly which
+      times it sets on various OSes.
+
+    • The file times reported by file.info() are reported to sub-second
+      resolution on systems which support it.  (Currently the POSIX
+      2008 and FreeBSD/Darwin/NetBSD methods are detected.)
+
+    • New function getCall(m) as an abstraction for m$call, enabling
+      update()'s default method to apply more universally.  (NB: this
+      can be masked by existing functions in packages.)
+
+    • Sys.info() gains a euser component to report the ‘effective’ user
+      on OSes which have that concept.
+
+    • The result returned by try() now contains the original error
+      condition object as the "condition" attribute.
+
+    • All packages with R code are lazy-loaded irrespective of the
+      LazyLoad field in the DESCRIPTION file.  A warning is given if
+      the LazyLoad field is overridden.
+
+    • Rd markup has a new \figure tag so that figures can be included
+      in help pages when converted to HTML or LaTeX.  There are
+      examples on the help pages for par() and points().
+
+    • The built-in httpd server now allows access to files in the
+      session temporary directory tempdir(), addressed as the /session
+      directory on the httpd server.
+
+    • Development versions of R are no longer referred to by the number
+      under which they might be released, e.g. in the startup banner, R
+      --version and sessionUtils().  The correct way to refer to a
+      development version of R is ‘R-devel’, preferably with the date
+      and SVN version number.
+      E.g. R-devel (2011-07-04 r56266)
+
+    • There is a new function texi2pdf() in package tools, currently a
+      convenience wrapper for texi2dvi(pdf = TRUE).
+
+    • There are two new options for typesetting PDF manuals from Rd
+      files.  These are beramono and inconsolata, and used the named
+      font for monospaced output. They are intended to be used in
+      combination with times, and times,inconsolata,hyper is now the
+      default for the reference manual and package manuals.  If you do
+      not have that font installed, you can set R_RD4PF to one of the
+      other options: see the ‘R Installation and Administration
+      Manual’.
+
+    • Automatic printing for reference classes is now done by the
+      $show() method.  A method is defined for class envRefClass and
+      may be overriden for user classes (see the ?ReferenceClasses
+      example).  S4 show() methods should no longer be needed for
+      reference classes.
+
+    • tools::Rdiff (by default) and R CMD Rdiff now ignore differences
+      in pointer values when comparing printed environments, compiled
+      byte code, etc.
+
+    • The "source" attribute on functions created with keep.source=TRUE
+      has been replaced with a "srcref" attribute.  The "srcref"
+      attribute references an in-memory copy of the source file using
+      the "srcfilecopy" class or the new "srcfilealias" class.
+
+      *NB:* This means that functions sourced with keep.source = TRUE
+      and saved (e.g., by save() or readRDS()) in earlier versions of R
+      will no longer show the original sources (including comments).
+
+    • New items User Manuals and Technical Papers have been added to
+      the HTML help main page.  These link to vignettes in the base and
+      recommended packages and to a collection of papers about R
+      issues, respectively.
+
+    • Documentation and messages have been standardized to use
+      “namespace” rather than “name space”.
+
+    • setGeneric() now looks in the default packages for a non-generic
+      version of a function if called from a package with a namespace.
+      (It always did for packages without a namespace.)
+
+    • Setting the environment variable _R_WARN_ON_LOCKED_BINDINGS_ will
+      give a warning if an attempt is made to change a locked binding.
+
+    • \SweaveInput is now supported when generating concordances in
+      Sweave().
+
+    • findLineNum() and setBreakpoint() now allow the environment to be
+      specified indirectly; the latter gains a clear argument to allow
+      it to call untrace().
+
+    • The body of a closure can be one of further types of R objects,
+      including enviroments and external pointers.
+
+    • The Rd2HTML() function in package tools now has a stylesheet
+      argument, allowing pages to be displayed in alternate formats.
+
+    • New function requireNamespace() analogous to require(), returning
+      a logical value after attempting to load a namespace.
+
+    • There is a new type of RNG, "L'Ecuyer-CMRG", implementing
+      L'Ecuyer (1999)'s ‘combined multiple-recursive generator’
+      MRG32k3a.  See the comments on ?RNG.
+
+    • help.search() and ?? can now display vignettes and demos as well
+      as help pages.  The new option "help.search.types" controls the
+      types of documentation and the order of their display.
+
+      This also applies to HTML searches, which now give results in all
+      of help pages, vignettes and demos.
+
+    • socketConnection() now has a timeout argument.  It is now
+      documented that large values (package snow used a year) do not
+      work on some OSes.
+
+    • The initialization of the random-number generator now uses the
+      process ID as well as the current time, just in case two R
+      processes are launched very rapidly on a machine with
+      low-resolution wall clock (some have a resolution of a second;
+      modern systems have microsecond-level resolution).
+
+    • New function pskill() in the tools package to send a terminate
+      signal to one or more processes, plus constants such as SIGTERM
+      to provide a portable way to refer to signals (since the numeric
+      values are OS-dependent).
+
+    • New function psnice() in the tools package to return or change
+      the ‘niceness’ of a process.  (Refers to the ‘priority class’ on
+      Windows.)
+
+    • list.dirs() gains a recursive argument.
+
+    • An Authors@R field in a package DESCRIPTION file can now be used
+      to generate Author and Maintainer fields if needed, and to
+      auto-generate package citations.
+
+    • New utility getElement() for accessing either a list component or
+      a slot in an S4 object.
+
+    • stars() gains a col.lines argument, thanks to Dustin Sallings.
+      (Wish of PR#14657.)
+
+    • New function regmatches() for extracting or replacing matched or
+      non-matched substrings from match data obtained by regexpr(),
+      gregexpr() and regexec().
+
+    • help(package = "pkg_name", help_type = "HTML") now gives HTML
+      help on the package rather than text help.  (This gives direct
+      access to the HTML version of the package manual shown _via_
+      help.start()'s ‘Packages’ menu.)
+
+    • agrep() gains a fixed argument to optionally allow approximate
+      regular expression matching, and a costs argument to specify
+      possibly different integer match costs for insertions, deletions
+      and substitutions.
+
+    • read.dcf() and write.dcf() gain a keep.white argument to indicate
+      fields where whitespace should be kept as is.
+
+    • available.packages() now works around servers that fail to return
+      an error code when PACKAGES.gz does not exist.  (Patch submitted
+      by Seth Schommer.)
+
+    • readBin() can now read more than 2^31 - 1 bytes in a single call
+      (the previously documented limitation).
+
+    • New function regexec() for finding the positions of matches as
+      well as all substrings corresponding to parenthesized
+      subexpressions of the given regular expression.
+
+    • New function adist() in package utils for computing ‘edit’
+      (generalized Levenshtein) distances between strings.
+
+    • Class "raster" gains an is.na method to avoid confusion from the
+      misuse of the matrix method (such as PR#14618).
+
+    • The identical() function gains an ignore.bytecode argument to
+      control comparison of compiled functions.
+
+    • pmin and pmax now warn if an argument is partially recycled (wish
+      of PR#14638).
+
+    • The default for image(useRaster=) is now taken from option
+      "preferRaster": for the small print see ?image.
+
+    • str() now displays reference class objects and their fields,
+      rather than treating them as classical S4 classes.
+
+    • New function aregexec() in package utils for finding the
+      positions of approximate string matches as well as all substrings
+      corresponding to parenthesized subexpressions of the given
+      regular expression.
+
+    • download.file() has an extra argument to pass additional
+      command-line options to the non-default methods using
+      command-line utilities.
+
+      cacheOK = FALSE is now supported for method = "curl".
+
+    • interaction.plot(*, type = .) now also allows type "o" or "c".
+
+    • axTicks(*, log=TRUE) did sometimes give more values than the
+      ticks in the corresponding graphics::axis().  By default, it now
+      makes use of the new (graphics-package independent) axisTicks()
+      which can make use of a new utility .axisPars().  Further, it now
+      returns a decreasing sequence (as for log=FALSE) when usr is
+      decreasing.
+
+    • Using fix() or edit() on a R object (except perhaps a matrix or
+      data frame) writes its temporary file with extension .R so
+      editors which select their mode based on the extension will
+      select a suitable mode.
+
+  GRAPHICS DEVICES:
+
+    • The pdf() device makes use of Flate compression: this is
+      controlled by the new logical argument compress, and is enabled
+      by default.
+
+    • Devices svg(), cairo_pdf() and cairo_ps() gain a family argument.
+
+      On a Unix-alike X11() gains a family argument.  This is one of
+      the x11.options() and so can be passed as an argument to the
+      bmp(), jpeg(), png() and tiff() devices.
+
+      Analogous changes have been made on Windows, so all built-in R
+      graphics devices now have a family argument except pictex()
+      (which has no means to change fonts).
+
+    • The bmp(), jpeg(), png() and tiff() devices now make use of the
+      antialias argument for type = "quartz".
+
+    • There are several new built-in font mappings for X11(type =
+      "Xlib"): see the help on X11Fonts().
+
+    • There is a new type X11(type = "dbcairo") which updates the
+      screeen less frequently: see its help page.
+
+    • The X11() device now makes use of cursors to distinguish its
+      states.  The normal cursor is an arrow (rather than a crosshair);
+      the crosshair is used when the locator is in use, and a watch
+      cursor is shown when plotting computations are being done.
+      (These are the standard names for X11 cursors: how they are
+      actually displayed depends on the window manager.)
+
+    • New functions dev.hold() and dev.flush() for use with graphics
+      devices with buffering.  These are used for most of the
+      high-level graphics functions such as boxplot(), so that the plot
+      is only displayed when the page is complete.
+
+      Currently implemented for windows(buffered = TRUE), quartz() and
+      the cairographics-based X11() types with buffering (which are the
+      default on-screen devices).
+
+    • New function dev.capture() for capture of bitmap snapshots of
+      image-based devices (a superset of the functionality provided by
+      grid.cap() in grid).
+
+    • The default colormodel for pdf() and postscript() is now called
+      "srgb" to more accurately describe it.  (Instead of "rgb", and in
+      the case of postscript() it no longer switches to and from the
+      gray colorspace, by default.)
+
+      The colormodel for postscript() which does use both gray and sRGB
+      colorspaces is now called "srgb+gray".
+
+      Plots which are known to use only black/white/transparent can
+      advantageously use colormodel = "gray" (just as before, but there
+      is now slightly more advantage in doing so).
+
+    • postscript() with values colormodel = "rgb" and colormodel =
+      "rgb-nogray" give the behaviour prior to R 2.13.0 of uncalibrated
+      RGB, which under some circumstances can be rendered much faster
+      by a viewer.
+
+      pdf(colormodel = "rgb") gives the behaviour prior to R 2.13.0 of
+      uncalibrated RGB, which under some circumstances can be rendered
+      faster by a viewer, and the files will be smaller (by about 9KB
+      if compression is not used).
+
+    • The postscript() device only includes the definition of the sRGB
+      colorspace in the output file for the colormodels which use it.
+
+    • The postscript() and pdf() devices now output greyscale raster
+      images (and not RGB) when colormodel = "gray".
+
+    • postscript(colormodel = "gray") now accepts non-grey colours and
+      uses their luminance (as pdf() long has).
+
+    • colormodel = "grey" is allowed as an alternative name for
+      postscript() and pdf().
+
+    • pdf() in the default sRGB colorspace outputs many fewer changes
+      of colorspace, which may speed up rendering in some viewing
+      applications.
+
+    • There is a new function dev.capabilities() to query the
+      capabilities of the current device.  The initial set of
+      capabilities are support for semi-transparent colours, rendering
+      and capturing raster images, the locator and for interactive
+      events.
+
+    • For pdf(), maxRasters is increased as needed so the argument is
+      no longer used.
+
+  SWEAVE & VIGNETTES:
+
+    • Options keep.source = TRUE, figs.only = FALSE are now the
+      default.
+
+    • The way the type of user-defined options is determined has
+      changed.  Previously they were all regarded as logical: now the
+      type is determined by the value given at first use.
+
+    • The allowed values of logical options are now precisely those
+      allowed for character inputs to as.logical(): this means that t
+      and f are no longer allowed (although T and F still are).
+
+    • The preferred location for vignette sources is now the directory
+      vignettes and not inst/doc: R CMD build will now re-build
+      vignettes in directory vignettes and copy the .Rnw (etc) files
+      and the corresponding PDFs to inst/doc.  Further files to be
+      copied to inst/doc can be specified _via_ the file
+      vignettes/.install_extras.
+
+    • R CMD Sweave now supports a --driver option to select the Sweave
+      driver: the default is equivalent to --driver=RweaveLatex.
+
+    • R CMD Sweave and R CMD Stangle support options --encoding and
+      --options.
+
+    • The Rtangle() driver allows output = "stdout" or output =
+      "stderr" to select the output or message connection.  This is
+      convenient for scripting using something like
+      
+          R CMD Stangle --options='output="stdout"' foo.Rnw > foo2.R
+
+    • There is a new option pdf.compress controlling whether PDF
+      figures are generated using Flate compression (they are by
+      default).
+
+    • R CMD Sweave now has a --pdf option to produce a PDF version of
+      the processed Sweave document.
+
+    • It is no longer allowed to have two vignettes with the same
+      vignette basename (e.g. vig.Rnw and vig.Snw).  (Previously one
+      vignette hid the other in the vignette() function.)
+
+  C-LEVEL FACILITIES:
+
+    • Function R_tmpnam2 has been added to the API to allow a temporary
+      filename to include a specified extension.
+
+  PACKAGE INSTALLATION:
+
+    • Package DESCRIPTION file field KeepSource forces the package to
+      be installed with keep.source = TRUE (or FALSE).  (Suggestion of
+      Greg Snow.  Note that as all packages are lazy-loaded, this is
+      now only relevant at installation.)
+
+      There are corresponding options --with-keep.source and
+      --without-keep.source for R CMD INSTALL.
+
+    • R CMD INSTALL has a new option --byte-compile to byte-compile the
+      packages during installation (since all packages are now
+      lazy-loaded).  This can be controlled on a per-package basis by
+      the optional field ByteCompile in the DESCRIPTION file.
+
+    • A package R code but without a NAMESPACE file will have a default
+      one created at R CMD build or R CMD INSTALL time, so all packages
+      will be installed with namespaces.  A consequence of this is that
+      .First.lib() functions need to be copied to .onLoad() (usually)
+      or .onAttach().  For the time being, if there is an
+      auto-generated NAMESPACE file and no .onLoad() nor .onAttach()
+      function is found but .First.lib() is, it will be run as the
+      attach hook (unless the package is one of a list of known
+      exceptions, when it will be run as the load hook).
+
+    • A warning is given if test-loading a package changes a locked
+      binding in a package other than itself.  It is likely that this
+      will be disallowed in future releases.  (There are _pro tem_ some
+      exceptions to the warning.)
+
+    • A dependency on SVN revision is allowed for R, e.g. R (>=
+      r56550).  This should be used in conjunction with a version
+      number, e.g. R (>= 2.14.0), R (>= r56550) to distinguish beteen
+      R-patched and R-devel versions with the same SVN revision.
+
+    • installed.packages() now hashes the names of its cache files to
+      avoid very rare problems with excessively long path names.
+      (PR#14669)
+
+    • A top-level COPYING file in a package is no longer installed
+      (file names LICENSE or LICENCE having long been preferred).
+
+  UTILITIES:
+
+    • R CMD check now gives an error if the R code in a vignette fails
+      to run, unless this is caused by a missing package.
+
+    • R CMD check now unpacks tarballs in the same way as R CMD
+      INSTALL, including making use of the environment variable
+      R_INSTALL_TAR to override the default behaviour.
+
+    • R CMD check performs additional code analysis of package startup
+      functions, and notifies about incorrect argument lists and
+      (incorrect) calls to functions which modify the search path or
+      inappropriately generate messages.
+
+    • R CMD check now also checks compiled code for symbols
+      corresponding to functions which might terminate R or write to
+      stdout/stderr instead of the console.
+
+    • R CMD check now uses a pdf() device when checking examples
+      (rather than postscript()).
+
+    • R CMD check now checks line-endings of makefiles and
+      C/C++/Fortran sources in subdirectories of src as well as in src
+      itself.
+
+    • R CMD check now reports as a NOTE what look like methods
+      documented with their full names even if there is a namespace and
+      they are exported.  In almost all cases they are intended to be
+      used only as methods and should use the \method markup.  In the
+      other rare cases the recommended form is to use a function such
+      as coefHclust which would not get confused with a method,
+      document that and register it in the NAMESPACE file by
+      s3method(coef, hclust, coefHclust).
+
+    • The default for the environment variable _R_CHECK_COMPACT_DATA2_
+      is now true: thus if using the newer forms of compression
+      introduced in R 2.10.0 would be beneficial is now checked (by
+      default).
+
+    • Reference output for a vignette can be supplied when checking a
+      package by R CMD check: see ‘Writing R Extensions’.
+
+    • R CMD Rd2dvi allows the use of LaTeX package inputenx rather than
+      inputenc: the value of the environment variable RD2DVI_INPUTENC
+      is used.  (LaTeX package inputenx is an optional install which
+      provides greater coverage of the UTF-8 encoding.)
+
+    • Rscript on a Unix-alike now accepts file names containing spaces
+      (provided these are escaped or quoted in the shell).
+
+    • R CMD build on a Unix-alike (only) now tries to preserve dates on
+      files it copies from its input directory.  (This was the
+      undocumented behaviour prior to R 2.13.0.)
+
+  DEPRECATED AND DEFUNCT:
+
+    • require() no longer has a save argument.
+
+    • The gamma argument to hsv(), rainbow(), and rgb2hsv() has been
+      removed.
+
+    • The --no-docs option for R CMD build --binary is defunct: use
+      --install-args instead.
+
+    • The option --unsafe to R CMD INSTALL is defunct: use the
+      identical option --no-lock instead.
+
+    • The entry point pythag formerly in Rmath.h is defunct: use
+      instead the C99 function hypot.
+
+    • R CMD build --binary is formally defunct: R CMD INSTALL --build
+      has long been the preferred alternative.
+
+    • zip.file.extract() is now defunct: use unzip() or unz() instead.
+
+    • R CMD Rd2dvi without the --pdf option is now deprecated: only PDF
+      output will be supported in future releases (since this allows
+      the use of fonts only supported for PDF), and only R CMD Rd2pdf
+      will be available.
+
+    • Options such as --max-nsize and the function mem.limits() are now
+      deprecated: these limits are nowadays almost never used, and are
+      reported by gc() when they are in use.
+
+    • Forms like binomial(link = "link") for GLM families deprecated
+      since R 2.4.0 are now defunct.
+
+    • The declarativeOnly argument to loadNamespace() (not relevant
+      since R 2.13.0) has been removed.
+
+    • Use of library.dynam() without specifying all the first three
+      arguments is deprecated.  (It is often called from a namespace,
+      and the defaults are only appropriate to a package.)
+
+      Use of chname in library.dynam() with the extension .so or .dll
+      (which is clearly not allowed according to the help page) is
+      deprecated.  This also applies to library.dynam.unload() and
+      useDynLib directives in NAMESPACE files.
+
+    • It is deprecated to use mean(x) and sd(x) directly on data frames
+      (or also matrices, for sd) x, instead of simply using sapply.
+
+      In the same spirit, median(x) now gives an error for a data frame
+      x (it often gave nonsensical results).
+
+    • The keep.source argument to library() and require() is
+      deprecated: it was only used for packages installed without
+      lazy-loading, and now all packages are lazy-loaded.
+
+    • Using a false value for the DESCRIPTION field LazyLoad is
+      deprecated.
+
+  INSTALLATION:
+
+    • The base and recommended packages are now byte-compiled
+      (equivalent to make bytecode in R 2.13.x).
+
+    • Configure option --with-system-zlib now only makes use of the
+      basic interface of zlib and not the C function gzseek which has
+      shown erroneous behaviour in zlib 1.2.4 and 1.2.5.
+
+    • The zlib in the R sources is now version 1.2.5.  (This is safe
+      even on 32-bit Linux systems because only the basic interface is
+      now used.)
+
+    • The .afm files in package grDevices are now installed as
+      compressed files (as long done on Windows), saving ca 2MB on the
+      installed size.
+
+    • The non-screen cairo-based devices are no longer in the X11
+      module and so can be installed without X11.  (We have never seen
+      a Unix-alike system with cairographics installed but not X11, but
+      a user might select --without-x.)
+
+    • Configure will try to use -fobjc-exceptions for the Objective-C
+      compiler (if present) to ensure that even compilers that do not
+      enable exceptions by default (such as vanilla gcc) can be used.
+      (Objective-C is currently only used on Mac OS X.)
+
+    • The system call times is required.
+
+    • The C99 functions acosh, asinh, atanh, snprintf and vsnprintf are
+      now required.
+
+    • There is no longer support for making DVI manuals _via_ make dvi,
+      make install-dvi and similar.  Only PDF manuals are supported (to
+      allow the use of fonts which are only available for PDF.)
+
+    • The configure arguments used during configuration of R are
+      included as a comment in Makeconf for informative purposes on
+      Unix-alikes in a form suitable for shell execution.  Note that
+      those are merely command-line arguments, they do not include
+      environment variables (one more reason to use configure variables
+      instead) or site configuration settings.
+
+    • Framework installation now supports DESTDIR (Mac OS X only).
+
+    • Java detection (R CMD javareconf) works around bogus
+      java.library.path property in recent Oracle Java binaries.
+
+  BUG FIXES:
+
+    • The locale category LC_MONETARY was only being set on startup on
+      Windows: that is now done on Unix-alikes where supported.
+
+    • Reference class utilities will detect an attempt to modify
+      methods or fields in a locked class definition (e.g., in a
+      namespace) and generate an error.
+
+    • The formula methods for lines(), points() and text() now work
+      even if package stats is not on the search path.
+
+    • In principle, S4 classes from different packages could have the
+      same name.  This has not previously worked.  Changes have now
+      been installed that should allow such classes and permit methods
+      to use them.  New functions className() and multipleClasses() are
+      related tools for programming.
+
+    • Work around an issue in Linux (a system select call resetting tv)
+      which prevented internet operations from timing out properly.
+
+    • Several stack trampling and overflow issues have been fixed in
+      TRE, triggered by agrep and friends with long patterns.
+      (PR#14627.)
+
+    • (“design infelicity”) Field assignments in reference classes are
+      now consistent with slots in S4 classes: the assigned value must
+      come from the declared class (if any) for the field or from a
+      subclass.
+
+    • The methods objects constructed for "coerce" and "coerce<-" were
+      lacking some essential information in the generic, defined and
+      target slots; as() did not handle duplicate class definitions
+      correctly.
+
+    • The parser no longer accepts the digit 8 in an octal character
+      code in a string, nor does it accept unterminated strings in a
+      file.  (Reported by Bill Dunlap.)
+
+    • The print() method for class "summary.aov" did not pass on
+      argument digits when summary() was called on a single object, and
+      hence used more digits than documented.
+
+    • The X11() device's cairo back-end produced incorrect capture
+      snapshot images on big-endian machines.
+
+    • loglin() gave a spurious error when argument margin consisted of
+      a single element of length one.  (PR#14690)
+
+    • loess() is better protected against misuse, e.g. zero-length
+      span.  (PR#14691)
+
+    • HoltWinters() checks that the optimization succeeded. (PR#14694)
+
+    • The (undocumented) inclusion of superclass objects in default
+      initializing of reference classes overwrote explicit field
+      arguments. The bug is fixed, the feature documented and a test
+      added.
+
+    • round(x, -Inf) now does something sensible (return zero rather
+      than NA).
+
+    • signif(x, -Inf) now behaves as documented (signif(x, 1)) rather
+      than giving zero.
+
+    • The "table" method for Axis() hardcoded side = 1, hence calls to
+      plot(<vector>, <table>) labelled the wrong axis. (PR#14699)
+
+    • Creating a connection might fail under gctorture(TRUE).
+
+    • stack() and unstack() converted character columns to factors.
+
+      unstack() sometimes produced incorrect results (a list or a
+      vector) if the factor on which to un-split had only one level.
+
+    • On some systems help(".C", help_type = "pdf") and similar
+      generated file names that TeX was unable to handle.
+
+    • Non-blocking listening socket connections continued to report
+      isIncomplete() as true even when the peer had closed down and all
+      available input had been read.
+
+    • The revised HTML search system now generates better hyperlinks to
+      help topics found: previously it gave problems with help pages
+      with names containing e.g. spaces and slashes.
+
+    • A late change in R 2.13.2 broke \Sexpr expressions in Rd files.
+
+    • The creation of ticks on log axes (including by axTicks())
+      sometimes incorrectly omitted a tick at one end of the range by
+      rounding error in a platform-dependent way.  This could be seen
+      in the examples for axTicks(), where with axis limits c(0.2, 88)
+      the tick for 0.2 was sometimes omitted.
+
+    • qgamma() for small shape underflows to 0 rather than sometimes
+      giving NaN.  (PR#8528, PR#14710)
+
+    • mapply() now gives an explicit error message (rather than an
+      obscure one) if inputs of zero and positive length are mixed.
+
+    • Setting a Hershey font family followed by string height query
+      would crash R.
+
+    • R CMD javareconf -e would fail for some shells due to a shift
+      error. Also the resulting paths will no longer contain
+      $(JAVA_HOME) as that can result in an unintended substitution
+      based on Makeconf instead of the shell setting.
+
+CHANGES IN R VERSION 2.13.2:
+
+  NEW FEATURES:
+
+    • mem.limits() now reports values larger than the maximum integer
+      (previously documented to be reported as NA), and allows larger
+      values to be set, including Inf to remove the limit.
+
+    • The print() methods for classes "Date", "POSIXct" and "POSIXlt"
+      respect the option "max.print" and so are much faster for very
+      long datetime vectors.  (Suggestion of Yohan Chalabi.)
+
+    • untar2() now works around errors generated with tar files that
+      use more than the standard 6 digits for the checksum. (PR#14654)
+
+    • install.packages() with Ncpus > 1 guards against simultaneous
+      installation of indirect dependencies as well as direct ones.
+
+    • Sweave now knows about a few more Windows' encodings (including
+      cp1250 and cp1257) and some inputenx encodings such as koi8-r.
+
+    • postscript(colormodel = "rgb-nogray") no longer sets the sRGB
+      colorspace for each colour and so some viewers may render its
+      files much faster than the default colormodel ="rgb".
+
+    • The default for pdf(maxRasters=) has been increased from 64 to
+      1000.
+
+    • readBin() now warns if signed = FALSE is used inappropriately
+      (rather than being silently ignored).
+
+      It enforces the documented limit of 2^31-1 bytes in a single
+      call.
+
+    • PCRE has been updated to version 8.13, a bug-fix release with
+      updated Unicode tables (version 6.0.0).  An additional patch
+      (r611 from PCRE 8.20-to-be) has been added to fix a collation
+      symbol recognition issue.
+
+  INSTALLATION:
+
+    • It is possible to build in src/extra/xdr on more platforms.
+      (Needed since glibc 2.14 hides its RPC implementation.)
+
+    • configure will find the Sun TI-RPC implementation of xdr (in
+      libtirpc) provided its header files are in the search path: see
+      the ‘R Installation and Administration Manual’.
+
+  PACKAGE INSTALLATION:
+
+    • Using a broad exportPattern directive in a NAMESPACE file is no
+      longer allowed to export internal objects such as .onLoad and
+      .__S3MethodsTable__. .
+
+      These are also excluded from imports, along with .First.lib.
+
+  BUG FIXES:
+
+    • fisher.test() had a buglet: If arguments were factors with unused
+      levels, levels were dropped and you would get an error saying
+      that there should be at least two levels, inconsistently with
+      pre-tabulated data.  (Reported by Michael Fay).
+
+    • package.skeleton() will no longer dump S4 objects supplied
+      directly rather than in a code file.  These cannot be restored
+      correctly from the dumped version.
+
+    • Build-time expressions in help files did not have access to
+      functions in the package being built (with R CMD build).
+
+    • Because quote() did not mark its result as being in use,
+      modification of the result could in some circumstances modify the
+      original call.
+
+    • Plotting pch = '.' now guarantees at least a one-pixel dot if cex
+      > 0.
+
+    • The very-rarely-used command-line option --max-vsize was
+      incorrectly interpreted as a number of Vcells and not in bytes as
+      documented.  (Spotted by Christophe Rhodes.)
+
+    • The HTML generated by Rd2HTML() comes closer to being standards
+      compliant.
+
+    • filter(x, recursive = TRUE) gave incorrect results on a series
+      containing NAs.  (Spotted by Bill Dunlap.)
+
+    • Profiling stats::mle() fits with a fixed parameter was not
+      supported.  (PR#14646)
+
+    • retracemem() was still using positional matching.  (PR#14650)
+
+    • The quantile method for "ecdf" objects now works and is
+      documented.
+
+    • xtabs(~ .., ..., sparse=TRUE) now also works together with an
+      exclude = .. specification.
+
+    • decompose() computed an incorrect seasonal component for time
+      series with odd frequencies.
+
+    • The pdf() device only includes the definition of the sRGB
+      colorspace in the output file for the "rgb" colormodel (and not
+      for "gray" nor "cmyk"): this saves ca 9KB in the output file.
+
+    • .hasSlot() wrongly gave FALSE in some cases.
+
+    • Sweave() with keep.source=TRUE could generate spurious NA lines
+      when a chunk reference appeared last in a code chunk.
+
+    • \Sexpr[results=rd] in an .Rd file now first tries
+      parse_Rd(fragment=FALSE) to allow Rd section-level macros to be
+      inserted.
+
+    • The print() method for class "summary.aov" did not pass on
+      arguments such as signif.stars when summary() was called on a
+      single object.  (PR#14684)
+
+    • In rare cases ks.test() could return a p-value very slightly less
+      than 0 by rounding error.  (PR#14671)
+
+    • If trunc() was called on a "POSIXlt" vector and the result was
+      subsetted, all but the first element was converted to NA.
+      (PR#14679)
+
+    • cbind() and rbind() could cause memory corruption when used on a
+      combination of raw and logical/integer vectors.
+
 CHANGES IN R VERSION 2.13.1:
 
   NEW FEATURES:
@@ -129,7 +1252,7 @@ CHANGES IN R VERSION 2.13.1:
       (Related to PR#14550.)
 
     • dataframe[[row,col]] now dispatches on [[ methods for the
-      selected column (spotted by Bill Dunlap).
+      selected column.  (Spotted by Bill Dunlap).
 
     • sort.int() would strip the class of an object, but leave its
       object bit set.  (Reported by Bill Dunlap.)
@@ -190,7 +1313,14 @@ CHANGES IN R VERSION 2.13.1:
       argument inadvertently.
 
     • Rd conversion to latex mis-handled multi-line titles (including
-      cases where there was a blank line in the \title section).
+      cases where there was a blank line in the \title section).  (It
+      seems this happened only in 2.13.0 patched.)
+
+    • postscript() with an sRGB colormodel now uses sRGB for raster
+      images (in R 2.13.[01] it used uncalibrated RGB).
+
+      There is no longer an undocumented 21845-pixel limit on raster
+      images.
 
 CHANGES IN R VERSION 2.13.0:
 
@@ -483,7 +1613,7 @@ CHANGES IN R VERSION 2.13.0:
 
     • findClasses, getGeneric, findMethods and hasMethods are revised
       to deal consistently with the package= argument and be consistent
-      with soft name space policy for finding objects.
+      with soft namespace policy for finding objects.
 
     • tools::Rdiff() now has the option to return not only the status
       but a character vector of observed differences (which are still
@@ -694,7 +1824,7 @@ CHANGES IN R VERSION 2.13.0:
       It now extracts and runs the R code for each vignette in a
       separate directory and R process: this is done in the package's
       declared encoding.  Rather than call tools::checkVignettes(), it
-      calls tool::buildVignettes() to see if the vignettes can be
+      calls tools::buildVignettes() to see if the vignettes can be
       re-built as they would be by R CMD build.  Option --use-valgrind
       now applies only to these runs, and not when running code to
       rebuild the vignettes.  This version does a much better job of
@@ -703,7 +1833,7 @@ CHANGES IN R VERSION 2.13.0:
       The 00check.log file is a more complete record of what is output
       to stdout: in particular contains more details of the tests.
 
-      It now check all syntactically valid Rd usage entries, and warns
+      It now checks all syntactically valid Rd usage entries, and warns
       about assignments (unless these give the usage of replacement
       functions).
 
@@ -819,7 +1949,7 @@ CHANGES IN R VERSION 2.13.0:
       Installed packages with zip-ed data sets can still be used, but a
       warning that they should be re-installed will be given.
 
-    • The ‘experimental’ alternative specification of a name space via
+    • The ‘experimental’ alternative specification of a namespace via
       .Export() etc is now defunct.
 
     • The option --unsafe to R CMD INSTALL is deprecated: use the
@@ -1034,7 +2164,7 @@ CHANGES IN R VERSION 2.12.2:
 
   DEPRECATED & DEFUNCT:
 
-    • The ‘experimental’ alternative specification of a name space via
+    • The ‘experimental’ alternative specification of a namespace via
       .Export() etc is now deprecated.
 
     • zip.file.extract() is now deprecated.
@@ -2287,9 +3417,9 @@ CHANGES IN R VERSION 2.11.0:
 
     • The use of .required by require() and detach() has been replaced
       by .Depends which is set from the Depends field of a package
-      (even in packages with name spaces).  By default detach()
-      prevents such dependencies from being detached: this can be
-      overridden by the argument force.
+      (even in packages with namespaces).  By default detach() prevents
+      such dependencies from being detached: this can be overridden by
+      the argument force.
 
     • bquote() has been extended to work on function definitions.
       (Wish of PR#14031).
@@ -2993,8 +4123,8 @@ CHANGES IN R VERSION 2.10.1:
     • chisq.test() could fail when given argument x or y which deparsed
       to more than one line.  (Reported by Laurent Gauthier.)
 
-    • S4 methods are uncached whenever the name space containing them
-      is unloaded (by unloadNamespace() as well as by detach(unload =
+    • S4 methods are uncached whenever the namespace containing them is
+      unloaded (by unloadNamespace() as well as by detach(unload =
       TRUE)).
 
     • The internal record-keeping by dyn.load/dyn.unload was
@@ -3438,7 +4568,7 @@ CHANGES IN R VERSION 2.10.0:
 
       A function offline_help_helper() will be used if this exists in
       the workspace or further down the search path, otherwise the
-      function of that name in the utils name space is used.
+      function of that name in the utils namespace is used.
 
     • Plain text help is now used as the fallback for HTML help (as it
       always was for Compiled HTML help on Windows).

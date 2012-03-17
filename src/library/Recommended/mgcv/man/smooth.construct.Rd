@@ -120,7 +120,8 @@ for example because they are inverse variance components.  }
 unpenalized and unconstrained). If this is null then \code{smoothCon} will set it to the basis 
 dimension. \code{smoothCon} will reduce this by the number of constraints.}
 
-\item{te.ok}{\code{FALSE} if this term should not be used as a tensor product marginal. Set to \code{TRUE} if \code{NULL}.}
+\item{te.ok}{\code{0} if this term should not be used as a tensor product marginal, \code{1} if 
+it can be used and plotted, and \code{2} is it can be used but not plotted. Set to \code{1} if \code{NULL}.}
 
 \item{plot.me}{Set to \code{FALSE} if this smooth should not be plotted by \code{\link{plot.gam}}.  Set to \code{TRUE} if \code{NULL}.}
 

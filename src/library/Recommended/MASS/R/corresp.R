@@ -80,6 +80,7 @@ plot.correspondence <- function(x, scale=1, ...)
     x <- cs[col(Fr)]
     y <- rs[row(Fr)]
     rcn <- names(dimnames(Fr))
+    dev.hold(); on.exit(dev.flush())
     plot(x, y, xlim = xs, ylim = ys, xlab = rcn[2L], ylab = rcn[1L], pch = 3)
     size <- min(par("pin"))/20 * scale
     symbols(x, y, circles = as.vector(sqrt(Fr)), inches = size, add = TRUE)

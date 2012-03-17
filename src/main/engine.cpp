@@ -211,8 +211,16 @@ void GEunregisterSystem(int registerIndex)
 
     /* safety check if called before Ginit() */
     if(registerIndex < 0) return;
-    if (numGraphicsSystems == 0)
-	error(_("no graphics system to unregister"));
+    if (numGraphicsSystems == 0) {
+	/* This gets called from KillAllDevices, which is called
+	   during shutdown.  Prior to 2.14.0 it gave an error, which
+	   would inhibit shutdown.  This should not happen, but
+	   apparently it did after a segfault:
+	   https://stat.ethz.ch/pipermail/r-devel/2011-June/061153.html
+	*/
+	warning(_("no graphics system to unregister"));
+	return;
+    }
     /* Run through the existing devices and remove the information
      * from any GEDevDesc's
      */
@@ -1375,6 +1383,11 @@ void GEPath(double *x, double *y,
             Rboolean winding,
             const pGEcontext gc, pGEDevDesc dd)
 {
+    /* safety check: this will be NULL if the device did not set it. */
+    if (!dd->dev->path) {
+	warning(_("Path rendering is not implemented for this device"));
+	return;
+    }
     /* FIXME: what about clipping? (if the device can't) 
     */
     if (gc->lty == LTY_BLANK)
@@ -1407,6 +1420,12 @@ void GERaster(unsigned int *raster, int w, int h,
               Rboolean interpolate,
               const pGEcontext gc, pGEDevDesc dd)
 {
+    /* safety check: this will be NULL if the device did not set it. */
+    if (!dd->dev->raster) {
+	warning(_("Raster rendering is not implemented for this device"));
+	return;
+    }
+
     /* FIXME: what about clipping? (if the device can't) 
      * Maybe not too bad because it is just a matter of shaving off
      * some rows and columns from the image? (because R only does
@@ -1425,6 +1444,11 @@ void GERaster(unsigned int *raster, int w, int h,
 
 SEXP GECap(pGEDevDesc dd)
 {
+    /* safety check: this will be NULL if the device did not set it. */
+    if (!dd->dev->cap) {
+	warning(_("Raster capture is not available for this device"));
+	return R_NilValue;
+    }
     return dd->dev->cap(dd->dev);
 }
 
@@ -1946,7 +1970,7 @@ void GEMode(int mode, pGEDevDesc dd)
 {
     if (NoDevices())
 	error(_("no graphics device is active"));
-    dd->dev->mode(mode, dd->dev);
+    if(dd->dev->mode) dd->dev->mode(mode, dd->dev);
 }
 
 /****************************************************************
@@ -2004,14 +2028,14 @@ void GESymbol(double x, double y, int pch, double size,
 	       pixels are not square, but only on low resolution
 	       devices where we can do nothing better.
 
-	       For this option only, size is cex (see engine.c).
+	       For this symbol only, size is cex (see engine.c).
 
 	       Prior to 2.1.0 the offsets were always 0.5.
 	    */
 	    xc = size * fabs(toDeviceWidth(0.005, GE_INCHES, dd));
 	    yc = size * fabs(toDeviceHeight(0.005, GE_INCHES, dd));
-	    if(size == 1 && xc < 0.5) xc = 0.5;
-	    if(size == 1 && yc < 0.5) yc = 0.5;
+	    if(size > 0 && xc < 0.5) xc = 0.5;
+	    if(size > 0 && yc < 0.5) yc = 0.5;
 	    GERect(x-xc, y-yc, x+xc, y+yc, gc, dd);
 	} else {
 	    char str[2];
@@ -2493,7 +2517,7 @@ double GEStrHeight(const char *str, cetype_t enc, const pGEcontext gc, pGEDevDes
     if (vfontcode >= 100)
 	return R_GE_VStrHeight(str, enc, gc, dd);
     else if (vfontcode >= 0) {
-	gc->fontfamily[0] = vfontcode;
+	gc->fontfamily[3] = vfontcode;
 	gc->fontface = VFontFaceCode(vfontcode, gc->fontface);
 	return R_GE_VStrHeight(str, enc, gc, dd);
     } else {

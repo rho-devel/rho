@@ -52,12 +52,17 @@
       (number of non-zero elements).  These are the \emph{0-based} row numbers for
       each non-zero element in the matrix, i.e., \code{i} must be in
       \code{0:(nrow(.)-1)}}.
-    \item{\code{p}:}{Object of class \code{"integer"} for providing pointers, one
+    \item{\code{p}:}{\code{\link{integer}} vector for providing pointers, one
       for each column, to the initial (zero-based) index of elements in
       the column.  \code{.@p} is of length \code{ncol(.) + 1}, with
       \code{p[1] == 0} and \code{p[length(p)] == nnzero}, such that in
       fact, \code{diff(.@p)} are the number of non-zero elements for
-      each column.}
+      each column.
+
+      In other words, \code{m@p[1:ncol(m)]} contains the indices of
+      those elements in \code{m@x} that are the first elements in the
+      respective column of \code{m}.
+    }
     \item{\code{Dim}, \code{Dimnames}:}{inherited from
       the superclass, see the \code{\linkS4class{sparseMatrix}} class.}
   }
@@ -133,11 +138,5 @@ getClass("CsparseMatrix")
 
 ## The common validity check function (based on C code):
 getValidity(getClass("CsparseMatrix"))
-
-## This behavior has been changed
-# un-sorted i-slot on input is automatically "sorted" :
-#M <- new("dgCMatrix", Dim = 2:3, p = as.integer(c(0,1,1,3)),
-#         i = c(1L, 1:0), x= c(2,2,1))
-#stopifnot(M@i == c(1L, 0:1), M@x == c(2,1,2))
 }
 \keyword{classes}

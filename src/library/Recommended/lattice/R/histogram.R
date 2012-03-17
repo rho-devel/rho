@@ -314,10 +314,8 @@ histogram.formula <-
     prefer.density <- 
         (is.function(breaks) || 
          (is.null(breaks) && !equal.widths) ||
-         (is.numeric(breaks) && {
-             ddb <- diff(diff(breaks))
-             identical(FALSE, all.equal(ddb, numeric(length(ddb))))
-         }))
+         (is.numeric(breaks) && !isTRUE(all.equal(diff(range(diff(breaks))), 0)))
+         )
     if (missing(type) && prefer.density)
         type <- "density"
     type <- match.arg(type)

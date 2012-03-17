@@ -63,7 +63,5 @@ eqscplot <- function(x, y, ratio = 1, tol = 0.04, uin, ...)
   Call$ylim <- ylim
   Call$xaxs <- Call$yaxs <- "i"
   Call[[1L]] <- as.name("plot")
-  #plot(x, y, xlim = xlim, ylim = ylim, xaxs = "i", yaxs = "i",
-  #     xlab = xlab, ylab = ylab, ...)
   eval.parent(Call)
 }

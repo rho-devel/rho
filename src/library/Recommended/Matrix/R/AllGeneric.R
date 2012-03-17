@@ -28,10 +28,6 @@ setGeneric("lu", function(x, ...) standardGeneric("lu"))
 ##NB     setGeneric("qr", def =   function(x, tol=1e-7,...) standardGeneric("qr"),
 ##NB                useAsDefault= function(x, tol=1e-7,...) base::qr(x, tol, ...))
 
-if(getRversion() < "2.11.0" || R.version$`svn rev` < 51018)
-    setGeneric("norm", function(x, type, ...) standardGeneric("norm"))
-## it is *implicit* generic in standard R from 2.11.0 (~= rev 51018)
-
     setGeneric("Schur", function(x, vectors, ...) standardGeneric("Schur"))
 
     setGeneric("unpack", function(x, ...) standardGeneric("unpack"))

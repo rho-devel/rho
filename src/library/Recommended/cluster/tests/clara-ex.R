@@ -1,5 +1,5 @@
 #### These are *NOT* compared with output in the released version of
-###  `cluster'  currently
+###  'cluster'  currently
 
 library(cluster)
 

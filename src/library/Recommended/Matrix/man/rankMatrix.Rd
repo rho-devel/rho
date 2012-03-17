@@ -23,8 +23,13 @@ rankMatrix(x, tol = NULL,
     can be abbreviated:
     \describe{
       \item{tolNorm2}{the number of singular values \code{>= tol};}
-      \item{qrLINPACK}{= \code{\link{qr}(x, tol, LAPACK=FALSE)$rank};
-	this used to be \emph{the} recommended way to compute a matrix
+      \item{qrLINPACK}{this is the rank of \code{\link{qr}(x, tol,
+	  LAPACK=FALSE)}, which is \code{qr(...)$rank} for a dense
+	matrix, and the rank of \eqn{R} for sparse \code{x} (where
+	\code{qr} uses a "sparseQR" method, see
+	\code{\link{qr-methods}}, and not LINPACK).
+
+	This used to be \emph{the} recommended way to compute a matrix
 	rank for a while in the past.  For this method, \code{sval} are
 	not used (nor computed).}
       \item{useGrad}{considering the \dQuote{gradient} of the
@@ -64,6 +69,11 @@ rankMatrix(H12, tol = 1e-20) # 12;  but  11  with default method & tol.
 sapply(meths, function(.m.) rankMatrix(H12, method = .m.))
 ## tolNorm2 qrLINPACK   useGrad maybeGrad
 ##       11        12        11        11
+
+## "sparse" case:
+M15 <- kronecker(diag(x=c(100,1,10)), Hilbert(5))
+sapply(meths, function(.m.) rankMatrix(M15, method = .m.))
+#--> all 15, but 'useGrad' has 14.
 }
 \keyword{algebra}
 \keyword{array}

@@ -808,6 +808,7 @@ lattice.options <- function(...)
 
          panel.contourplot = "panel.contourplot",
          panel.levelplot = "panel.levelplot",
+         panel.levelplot.raster = "panel.levelplot.raster",
          panel.parallel = "panel.parallel",
          panel.densityplot = "panel.densityplot",
          panel.splom = "panel.splom",

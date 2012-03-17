@@ -8,7 +8,9 @@ MatrixRversion <- pkgRversion("Matrix")
 
 ###-- 1)  'graph' (from Bioconductor) ---------------------------
 ###-- ==  =======                     ---------------------------
-if(isTRUE(try(require(graph)))) { # may be there and fail (with R-devel)
+## do not run the test "usually" for now [Solaris problem after detach() ..]:
+if((Sys.getenv("USER")=="maechler" || nzchar(Sys.getenv("R_MATRIX_CHECK_EXTRA"))) &&
+   isTRUE(try(require(graph)))) { # may be there and fail (with R-devel)
 
     if(packageDescription("graph")$Version <= "1.10.2") {
         ## graph 1.10.x for x <= 2 had too many problems  as(<graph>, "matrix")
@@ -36,7 +38,7 @@ if(isTRUE(try(require(graph)))) { # may be there and fail (with R-devel)
     sm.g <- as(gR, "sparseMatrix")
     str(sm.g) ## dgC: TODO: want 'ds.' (symmetric)
     validObject(sm.g)
-    sm.g ## (incl colnames !)
+    show( sm.g )## (incl colnames !)
 
     ## 1b) weighted
     set.seed(123)
@@ -47,14 +49,14 @@ if(isTRUE(try(require(graph)))) { # may be there and fail (with R-devel)
     sm.gw <- as(gRw, "sparseMatrix")
     str(sm.gw) ## *numeric* dgCMatrix
     validObject(sm.gw)
-    sm.gw ## U[0,1] numbers in anti-diagonal
+    show( sm.gw )## U[0,1] numbers in anti-diagonal
 
     ## 2) directed
     gU <- gR; edgemode(gU) <- "directed"
     sgU <- as(gU, "sparseMatrix")
     str(sgU) ## 'dgC'
     validObject(sgU)
-    sgU
+    show( sgU )
 
     ## Reverse :  sparseMatrix -> graph
     sm.g[1,2] <- 1

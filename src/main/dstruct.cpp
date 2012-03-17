@@ -34,8 +34,6 @@
  *  http://www.r-project.org/Licenses/
  */
 
-/* <UTF8> char here is either ASCII or handled as a whole */
-
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -85,13 +83,16 @@ SEXP attribute_hidden Rf_mkCLOSXP(SEXP formals, SEXP body, SEXP rho)
     GCStackRoot<> bodyrt(body);
     GCStackRoot<Environment> envrt(rho ? SEXP_downcast<Environment*>(rho)
 				   : Environment::global());
-    if (!isList(body) && !isLanguage(body) && !isSymbol(body)
-	&& !isExpression(body) && !isVector(body)
-#ifdef BYTECODE
-	&& !isByteCode(body)
-#endif
-	)
-	Rf_error(_("invalid body argument for \"function\"\n"
-		   "Should NEVER happen; please bug.report() [mkCLOSXP]"));
+    switch (TYPEOF(body)) {
+    case CLOSXP:
+    case BUILTINSXP:
+    case SPECIALSXP:
+    case DOTSXP:
+    case ANYSXP:
+	Rf_error(_("invalid body argument for 'function'"));
+	break;
+    default:
+	break;
+    }
     return CXXR_NEW(Closure(formrt, bodyrt, envrt));
 }

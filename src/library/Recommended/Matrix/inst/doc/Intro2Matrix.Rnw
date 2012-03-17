@@ -9,7 +9,7 @@
 %
 %%\VignetteIndexEntry{2nd Introduction to the Matrix Package}
 %%\VignetteDepends{Matrix}
-\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=7,height=4,strip.white=TRUE,keep.source=TRUE}
+\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=7,height=4,strip.white=true,keep.source=TRUE}
 %								          ^^^^^^^^^^^^^^^^
 \title{2nd Introduction to the Matrix package}
 \author{Martin Maechler and Douglas Bates\\ R Core Development Team

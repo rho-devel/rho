@@ -37,11 +37,9 @@ SEXP dspMatrix_norm(SEXP obj, SEXP type)
 SEXP dspMatrix_rcond(SEXP obj, SEXP type)
 {
     SEXP trf = dspMatrix_trf(obj);
-    char typnm[] = {'\0', '\0'};
     int *dims = INTEGER(GET_SLOT(obj, Matrix_DimSym)), info;
     double anorm = get_norm_sp(obj, "O"), rcond;
 
-    typnm[0] = La_rcond_type(CHAR(asChar(type)));
     F77_CALL(dspcon)(uplo_P(trf), dims,
 		     REAL   (GET_SLOT(trf, Matrix_xSym)),
 		     INTEGER(GET_SLOT(trf, Matrix_permSym)),

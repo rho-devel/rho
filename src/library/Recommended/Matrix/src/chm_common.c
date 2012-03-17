@@ -4,7 +4,7 @@
 Rboolean isValid_Csparse(SEXP x); /* -> Csparse.c */
 
 cholmod_common c;
-/* cholmod_common cl; */
+cholmod_common cl;
 
 SEXP chm_common_env;
 static SEXP dboundSym, grow0Sym, grow1Sym, grow2Sym, maxrankSym,
@@ -88,7 +88,7 @@ SEXP CHM_set_common_env(SEXP rho) {
     CHM_store_common();
     return R_NilValue;
 }
-    
+
 static int stype(int ctype, SEXP x)
 {
     if ((ctype % 3) == 1) return (*uplo_P(x) == 'U') ? 1 : -1;
@@ -164,7 +164,7 @@ static void chm2Ralloc(CHM_SP dest, CHM_SP src)
 
     /* R_alloc the vector storage for dest and copy the contents from src */
     np1 = src->ncol + 1;
-    nnz = (int) cholmod_l_nnz(src, &c);
+    nnz = (int) cholmod_nnz(src, &c);
     dest->p = (void*) Memcpy((int*)R_alloc(sizeof(int), np1),
 			     (int*)(src->p), np1);
     dest->i = (void*) Memcpy((int*)R_alloc(sizeof(int), nnz),
@@ -232,7 +232,7 @@ CHM_SP as_cholmod_sparse(CHM_SP ans, SEXP x,
 	error(_("invalid object passed to as_cholmod_sparse"));
     memset(ans, 0, sizeof(cholmod_sparse)); /* zero the struct */
 
-    ans->itype = CHOLMOD_LONG;	/* characteristics of the system */
+    ans->itype = CHOLMOD_INT;	/* characteristics of the system */
     ans->dtype = CHOLMOD_DOUBLE;
     ans->packed = TRUE;
 				/* slots always present */
@@ -255,36 +255,36 @@ CHM_SP as_cholmod_sparse(CHM_SP ans, SEXP x,
     ans->sorted = check_sorted_chm(ans);
     if (!(ans->sorted)) { /* sort columns */
 	if(sort_in_place) {
-	    if (!cholmod_l_sort(ans, &c))
-		error(_("in_place cholmod_l_sort returned an error code"));
+	    if (!cholmod_sort(ans, &c))
+		error(_("in_place cholmod_sort returned an error code"));
 	    ans->sorted = 1;
 	}
 	else {
-	    CHM_SP tmp = cholmod_l_copy_sparse(ans, &c);
-	    if (!cholmod_l_sort(tmp, &c))
-		error(_("cholmod_l_sort returned an error code"));
+	    CHM_SP tmp = cholmod_copy_sparse(ans, &c);
+	    if (!cholmod_sort(tmp, &c))
+		error(_("cholmod_sort returned an error code"));
 
 #ifdef DEBUG_Matrix
 	    /* This "triggers" exactly for return values of dtCMatrix_sparse_solve():*/
 	    /* Don't want to translate this: want it report */
-	    Rprintf("Note: as_cholmod_sparse() needed cholmod_l_sort()ing\n");
+	    Rprintf("Note: as_cholmod_sparse() needed cholmod_sort()ing\n");
 #endif
 	    chm2Ralloc(ans, tmp);
-	    cholmod_l_free_sparse(&tmp, &c);
+	    cholmod_free_sparse(&tmp, &c);
 	}
     }
 
     if (check_Udiag && ctype % 3 == 2 && (*diag_P(x) == 'U')) { /* diagU2N(.)  "in place" : */
 	double one[] = {1, 0};
-	CHM_SP eye = cholmod_l_speye(ans->nrow, ans->ncol, ans->xtype, &c);
-	CHM_SP tmp = cholmod_l_add(ans, eye, one, one, TRUE, TRUE, &c);
+	CHM_SP eye = cholmod_speye(ans->nrow, ans->ncol, ans->xtype, &c);
+	CHM_SP tmp = cholmod_add(ans, eye, one, one, TRUE, TRUE, &c);
 
 #ifdef DEBUG_Matrix_verbose /* quite often, e.g. in ../tests/indexing.R */
 	Rprintf("Note: as_cholmod_sparse(<ctype=%d>) - diagU2N\n", ctype);
 #endif
 	chm2Ralloc(ans, tmp);
-	cholmod_l_free_sparse(&tmp, &c);
-	cholmod_l_free_sparse(&eye, &c);
+	cholmod_free_sparse(&tmp, &c);
+	cholmod_free_sparse(&eye, &c);
     } /* else :
        * NOTE: if(*diag_P(x) == 'U'), the diagonal is lost (!);
        * ---- that may be ok, e.g. if we are just converting from/to Tsparse,
@@ -298,7 +298,7 @@ CHM_SP as_cholmod_sparse(CHM_SP ans, SEXP x,
  * optionally, free a or free both a and its the pointers to its contents.
  *
  * @param a  (cholmod_sparse) matrix to be converted
- * @param dofree 0 - don't free a; > 0 cholmod_l_free a; < 0 Free a
+ * @param dofree 0 - don't free a; > 0 cholmod_free a; < 0 Free a
  * @param uploT 0 - not triangular; > 0 upper triangular; < 0 lower
  * @param Rkind - vector type to store for a->xtype == CHOLMOD_REAL,
  *                0 - REAL; 1 - LOGICAL
@@ -313,12 +313,15 @@ SEXP chm_sparse_to_SEXP(CHM_SP a, int dofree, int uploT, int Rkind,
 {
     SEXP ans;
     char *cls = "";/* -Wall */
-    int *dims, nnz, *aii = (int*)(a->i), *api = (int*)(a->p);
+    int *dims, nnz, *ansp, *ansi, *aii = (int*)(a->i), *api = (int*)(a->p),
+	longi = (a->itype) == CHOLMOD_LONG;
+    UF_long *ail = (UF_long*)(a->i), *apl = (UF_long*)(a->p);
 
     PROTECT(dn);  /* dn is usually UNPROTECTed before the call */
 
 				/* ensure a is sorted and packed */
-    if (!a->sorted || !a->packed) cholmod_l_sort(a, &c);
+    if (!a->sorted || !a->packed)
+	longi ? cholmod_l_sort(a, &cl) : cholmod_sort(a, &c);
 				/* determine the class of the result */
     switch(a->xtype){
     case CHOLMOD_PATTERN:
@@ -343,11 +346,13 @@ SEXP chm_sparse_to_SEXP(CHM_SP a, int dofree, int uploT, int Rkind,
     }
     ans = PROTECT(NEW_OBJECT(MAKE_CLASS(cls)));
 				/* allocate and copy common slots */
-    nnz = cholmod_l_nnz(a, &c);
+    nnz = longi ? cholmod_l_nnz(a, &cl) : cholmod_nnz(a, &c);
     dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
     dims[0] = a->nrow; dims[1] = a->ncol;
-    Memcpy(INTEGER(ALLOC_SLOT(ans, Matrix_pSym, INTSXP, a->ncol + 1)), api, a->ncol + 1);
-    Memcpy(INTEGER(ALLOC_SLOT(ans, Matrix_iSym, INTSXP, nnz)), aii, nnz);
+    ansp = INTEGER(ALLOC_SLOT(ans, Matrix_pSym, INTSXP, a->ncol + 1));
+    ansi = INTEGER(ALLOC_SLOT(ans, Matrix_iSym, INTSXP, nnz));
+    for (int j = 0; j <= a->ncol; j++) ansp[j] = longi ? (int)(apl[j]) : api[j];
+    for (int p = 0; p < nnz; p++) ansi[p] = longi ? (int)(ail[p]) : aii[p];
 				/* copy data slot if present */
     if (a->xtype == CHOLMOD_REAL) {
 	int i, *m_x;
@@ -360,7 +365,7 @@ SEXP chm_sparse_to_SEXP(CHM_SP a, int dofree, int uploT, int Rkind,
 	case 1:
 	    m_x = LOGICAL(ALLOC_SLOT(ans, Matrix_xSym, LGLSXP, nnz));
 	    for (i=0; i < nnz; i++)
-		m_x[i] = ISNAN(a_x[i]) ? NA_LOGICAL : (int) a_x[i]; /* or f != 0 */
+		m_x[i] = ISNAN(a_x[i]) ? NA_LOGICAL : (a_x[i] != 0);
 	    break;
 	}
     }
@@ -376,7 +381,8 @@ SEXP chm_sparse_to_SEXP(CHM_SP a, int dofree, int uploT, int Rkind,
     if (a->stype)		/* slot for symmetricMatrix */
 	SET_SLOT(ans, Matrix_uploSym,
 		 mkString((a->stype > 0) ? "U" : "L"));
-    if (dofree > 0) cholmod_l_free_sparse(&a, &c);
+    if (dofree > 0)
+	longi ? cholmod_l_free_sparse(&a, &cl) : cholmod_free_sparse(&a, &c);
     if (dofree < 0) Free(a);
     if (dn != R_NilValue)
 	SET_SLOT(ans, Matrix_DimNamesSym, duplicate(dn));
@@ -403,12 +409,7 @@ SEXP chm_sparse_to_SEXP(CHM_SP a, int dofree, int uploT, int Rkind,
  */
 CHM_TR as_cholmod_triplet(CHM_TR ans, SEXP x, Rboolean check_Udiag)
 {
-    static const char *valid[] = {
-	"dgTMatrix", "dsTMatrix", "dtTMatrix",
-	"lgTMatrix", "lsTMatrix", "ltTMatrix",
-	"ngTMatrix", "nsTMatrix", "ntTMatrix",
-	"zgTMatrix", "zsTMatrix", "ztTMatrix",
-	""};
+    static const char *valid[] = { MATRIX_VALID_Tsparse, ""};
     int *dims = INTEGER(GET_SLOT(x, Matrix_DimSym)),
 	ctype = Matrix_check_class_etc(x, valid);
     SEXP islot = GET_SLOT(x, Matrix_iSym);
@@ -418,7 +419,7 @@ CHM_TR as_cholmod_triplet(CHM_TR ans, SEXP x, Rboolean check_Udiag)
 
     memset(ans, 0, sizeof(cholmod_triplet)); /* zero the struct */
 
-    ans->itype = CHOLMOD_LONG;	/* characteristics of the system */
+    ans->itype = CHOLMOD_INT;	/* characteristics of the system */
     ans->dtype = CHOLMOD_DOUBLE;
 				/* nzmax, dimensions, types and slots : */
     ans->nnz = ans->nzmax = m;
@@ -437,7 +438,7 @@ CHM_TR as_cholmod_triplet(CHM_TR ans, SEXP x, Rboolean check_Udiag)
 	CHM_TR tmp = cholmod_l_copy_triplet(ans, &c);
 	int *a_i, *a_j;
 
-	if(!cholmod_l_reallocate_triplet((size_t) k, tmp, &c))
+	if(!cholmod_reallocate_triplet((size_t) k, tmp, &c))
 	    error(_("as_cholmod_triplet(): could not reallocate for internal diagU2N()"
 		      ));
 
@@ -489,7 +490,7 @@ CHM_TR as_cholmod_triplet(CHM_TR ans, SEXP x, Rboolean check_Udiag)
  * optionally, free a or free both a and its the pointers to its contents.
  *
  * @param a matrix to be converted
- * @param dofree 0 - don't free a; > 0 cholmod_l_free a; < 0 Free a
+ * @param dofree 0 - don't free a; > 0 cholmod_free a; < 0 Free a
  * @param uploT 0 - not triangular; > 0 upper triangular; < 0 lower
  * @param Rkind - vector type to store for a->xtype == CHOLMOD_REAL,
  *                0 - REAL; 1 - LOGICAL
@@ -549,9 +550,9 @@ SEXP chm_triplet_to_SEXP(CHM_TR a, int dofree, int uploT, int Rkind,
 		   a_x, a->nnz);
 	    break;
 	case 1:
-	    m_x= LOGICAL(ALLOC_SLOT(ans, Matrix_xSym, LGLSXP, a->nnz));
+	    m_x = LOGICAL(ALLOC_SLOT(ans, Matrix_xSym, LGLSXP, a->nnz));
 	    for (i=0; i < a->nnz; i++)
-		m_x[i] = ISNAN(a_x[i]) ? NA_LOGICAL : (int) a_x[i]; /* or f != 0 */
+		m_x[i] = ISNAN(a_x[i]) ? NA_LOGICAL : (a_x[i] != 0);
 	    break;
 	}
     }
@@ -568,7 +569,7 @@ SEXP chm_triplet_to_SEXP(CHM_TR a, int dofree, int uploT, int Rkind,
     if (a->stype)
 	SET_SLOT(ans, Matrix_uploSym,
 		 mkString((a->stype > 0) ? "U" : "L"));
-    if (dofree > 0) cholmod_l_free_triplet(&a, &c);
+    if (dofree > 0) cholmod_free_triplet(&a, &c);
     if (dofree < 0) Free(a);
     if (dn != R_NilValue)
 	SET_SLOT(ans, Matrix_DimNamesSym, duplicate(dn));
@@ -592,11 +593,7 @@ SEXP chm_triplet_to_SEXP(CHM_TR a, int dofree, int uploT, int Rkind,
 CHM_DN as_cholmod_dense(CHM_DN ans, SEXP x)
 {
 #define _AS_cholmod_dense_1						\
-    static const char *valid[] = {					\
-        "dmatrix", "dgeMatrix",						\
-	"lmatrix", "lgeMatrix",						\
-	"nmatrix", "ngeMatrix",						\
-	"zmatrix", "zgeMatrix", ""};					\
+    static const char *valid[] = { MATRIX_VALID_dense, ""};		\
     int dims[2], ctype = Matrix_check_class_etc(x, valid), nprot = 0;	\
 									\
     if (ctype < 0) {		/* not a classed matrix */		\
@@ -680,11 +677,11 @@ void R_cholmod_error(int status, const char *file, int line, const char *message
 #ifndef R_CHOLMOD_ALWAYS_ERROR
     if(status < 0) {
 #endif
-	error(_("Cholmod error '%s' at file:%s, line %d"), message, file, line);
+	error(_("Cholmod error '%s' at file %s, line %d"), message, file, line);
 #ifndef R_CHOLMOD_ALWAYS_ERROR
     }
     else
-	warning(_("Cholmod warning '%s' at file:%s, line %d"),
+	warning(_("Cholmod warning '%s' at file %s, line %d"),
 		message, file, line);
 #endif
 }
@@ -705,23 +702,20 @@ int R_cholmod_printf(const char* fmt, ...)
  * Initialize the CHOLMOD library and replace the print and error functions
  * by R-specific versions.
  *
- * @param cl pointer to a cholmod_common structure to be initialized
+ * @param c pointer to a cholmod_common structure to be initialized
  *
  * @return TRUE if successful
  */
-int R_cholmod_l_start(CHM_CM cl)
+int R_cholmod_start(CHM_CM c)
 {
-/* NB: keep in sync with M_R_cholmod_l_start(), ../inst/include/Matrix_stubs.c */
     int res;
-    if (!(res = cholmod_l_start(cl)))
-	error(_("Unable to initialize cholmod_l: error code %d"), res);
-    cl->print_function = R_cholmod_printf; /* Rprintf gives warning */
-    /* Since we provide an error handler, it may not be a good idea to
-     * allow CHOLMOD printing.
-     * FIXME? alternative {slightly more efficient}:
-     * do *compile* CHOLMOD with '#define NPRINT'  */
-    cl->print_function = NULL;
-    cl->error_handler = R_cholmod_error;
+    if (!(res = cholmod_start(c)))
+	error(_("Unable to initialize cholmod: error code %d"), res);
+    c->print_function = R_cholmod_printf; /* Rprintf gives warning */
+    /* Since we provide an error handler, it may not be a good idea to allow CHOLMOD printing,
+     * because that's not easily suppressed on the R level :
+     * Hence consider, at least temporarily *  c->print_function = NULL; */
+    c->error_handler = R_cholmod_error;
     return TRUE;
 }
 
@@ -730,7 +724,7 @@ int R_cholmod_l_start(CHM_CM cl)
  * optionally, free a or free both a and its pointer to its contents.
  *
  * @param a matrix to be converted
- * @param dofree 0 - don't free a; > 0 cholmod_l_free a; < 0 Free a
+ * @param dofree 0 - don't free a; > 0 cholmod_free a; < 0 Free a
  * @param Rkind type of R matrix to be generated (special to this function)
  * @param dn   -- dimnames [list(.,.) or NULL]
  *
@@ -774,18 +768,17 @@ SEXP chm_dense_to_SEXP(CHM_DN a, int dofree, int Rkind, SEXP dn)
     if (a->d == a->nrow) {	/* copy data slot -- always present in dense(!) */
 	if (a->xtype == CHOLMOD_REAL) {
 	    int i, *m_x;
+	    double *a_x = (double *) a->x;
 	    switch(Rkind) {
 	    case 0:
 		Memcpy(REAL(ALLOC_SLOT(ans, Matrix_xSym, REALSXP, ntot)),
-		       (double *) a->x, ntot);
+		       a_x, ntot);
 		break;
 	    case -1: /* nge*/
 	    case 1:  /* lge*/
 		m_x = LOGICAL(ALLOC_SLOT(ans, Matrix_xSym, LGLSXP, ntot));
 		for (i=0; i < ntot; i++)
-		    m_x[i] = (int) ((double *) a->x)[i];
-/* 		Memcpy(LOGICAL(ALLOC_SLOT(ans, Matrix_xSym, LGLSXP, ntot)), */
-/* 		       (int *) a->x, ntot); */
+		    m_x[i] = ISNAN(a_x[i]) ? NA_LOGICAL : (a_x[i] != 0);
 		break;
 	    }
 	}
@@ -795,7 +788,7 @@ SEXP chm_dense_to_SEXP(CHM_DN a, int dofree, int Rkind, SEXP dn)
 /*	       (complex *) a->x, ntot); */
     } else error(_("code for cholmod_dense with holes not yet written"));
 
-    if (dofree > 0) cholmod_l_free_dense(&a, &c);
+    if (dofree > 0) cholmod_free_dense(&a, &c);
     if (dofree < 0) Free(a);
     if (dn != R_NilValue)
 	SET_SLOT(ans, Matrix_DimNamesSym, duplicate(dn));
@@ -808,7 +801,7 @@ SEXP chm_dense_to_SEXP(CHM_DN a, int dofree, int Rkind, SEXP dn)
  * or free both a and its pointer to its contents.
  *
  * @param a cholmod_dense structure to be converted
- * @param dofree 0 - don't free a; > 0 cholmod_l_free a; < 0 Free a
+ * @param dofree 0 - don't free a; > 0 cholmod_free a; < 0 Free a
  * @param dn either R_NilValue or an SEXP suitable for the Dimnames slot.
  *
  * @return SEXP containing a copy of a as a matrix object
@@ -837,7 +830,7 @@ SEXP chm_dense_to_matrix(CHM_DN a, int dofree, SEXP dn)
 /* 	       (complex *) a->x, a->nz); */
     } else error(_("code for cholmod_dense with holes not yet written"));
 
-    if (dofree > 0) cholmod_l_free_dense(&a, &c);
+    if (dofree > 0) cholmod_free_dense(&a, &c);
     if (dofree < 0) Free(a);
     if (dn != R_NilValue)
         setAttrib(ans, R_DimNamesSymbol, duplicate(dn));
@@ -871,8 +864,7 @@ CHM_DN numeric_as_chm_dense(CHM_DN ans, double *v, int nr, int nc)
  */
 CHM_FR as_cholmod_factor(CHM_FR ans, SEXP x)
 {
-    static const char *valid[] = {"dCHMsuper", "dCHMsimpl",
-				  "nCHMsuper", "nCHMsimpl", ""};
+    static const char *valid[] = { MATRIX_VALID_CHMfactor, ""};
     int *type = INTEGER(GET_SLOT(x, install("type"))),
 	ctype = Matrix_check_class_etc(x, valid);
     SEXP tmp;
@@ -880,7 +872,7 @@ CHM_FR as_cholmod_factor(CHM_FR ans, SEXP x)
     if (ctype < 0) error(_("invalid class of object to as_cholmod_factor"));
     memset(ans, 0, sizeof(cholmod_factor)); /* zero the struct */
 
-    ans->itype = CHOLMOD_LONG;	/* characteristics of the system */
+    ans->itype = CHOLMOD_INT;	/* characteristics of the system */
     ans->dtype = CHOLMOD_DOUBLE;
     ans->z = (void *) NULL;
     ans->xtype = (ctype < 2) ? CHOLMOD_REAL : CHOLMOD_PATTERN;
@@ -930,10 +922,11 @@ CHM_FR as_cholmod_factor(CHM_FR ans, SEXP x)
 	ans->next = INTEGER(GET_SLOT(x, install("nxt")));
 	ans->prev = INTEGER(GET_SLOT(x, install("prv")));
     }
-    if (!cholmod_l_check_factor(ans, &c))
+    if (!cholmod_check_factor(ans, &c))
 	error(_("failure in as_cholmod_factor"));
     return ans;
 }
+
 
 /**
  * Copy the contents of f to an appropriate CHMfactor object and,
@@ -950,6 +943,9 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
     int *dims, *type;
     char *class = (char*) NULL;	/* -Wall */
 
+    if(!chm_factor_ok(f))
+	error(_("previous CHOLMOD factorization was unsuccessful"));
+
     switch(f->xtype) {
     case CHOLMOD_REAL:
 	class = f->is_super ? "dCHMsuper" : "dCHMsimpl";
@@ -960,9 +956,10 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
     default:
 	error(_("f->xtype of %d not recognized"), f->xtype);
     }
-    ans = PROTECT(NEW_OBJECT(MAKE_CLASS(class)));
-    if (f->minor < f->n)
+    if(!chm_factor_ok(f))
 	error(_("CHOLMOD factorization was unsuccessful"));
+
+    ans = PROTECT(NEW_OBJECT(MAKE_CLASS(class)));
     dims = INTEGER(ALLOC_SLOT(ans, Matrix_DimSym, INTSXP, 2));
     dims[0] = dims[1] = f->n;
 				/* copy component of known length */
@@ -1001,7 +998,7 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
 
     }
     if(dofree) {
-	if (dofree > 0) cholmod_l_free_factor(&f, &c);
+	if (dofree > 0) cholmod_free_factor(&f, &c);
 	else /* dofree < 0 */ Free(f);
     }
     UNPROTECT(1);
@@ -1021,7 +1018,7 @@ SEXP chm_factor_to_SEXP(CHM_FR f, int dofree)
  */
 void chm_diagN2U(CHM_SP chx, int uploT, Rboolean do_realloc)
 {
-    int i, n = chx->nrow, nnz = (int)cholmod_l_nnz(chx, &c),
+    int i, n = chx->nrow, nnz = (int)cholmod_nnz(chx, &c),
 	n_nnz = nnz - n, /* the new nnz : we will have removed  n entries */
 	i_to = 0, i_from = 0;
 
@@ -1029,7 +1026,7 @@ void chm_diagN2U(CHM_SP chx, int uploT, Rboolean do_realloc)
 	error(_("chm_diagN2U(<non-square matrix>): nrow=%d, ncol=%d"),
 	      n, chx->ncol);
 
-    if (!chx->sorted || !chx->packed) cholmod_l_sort(chx, &c);
+    if (!chx->sorted || !chx->packed) cholmod_sort(chx, &c);
 				/* dimensions and nzmax */
 
 #define _i(I) (   (int*) chx->i)[I]
@@ -1081,7 +1078,7 @@ void chm_diagN2U(CHM_SP chx, int uploT, Rboolean do_realloc)
 #undef _p
 
     if(do_realloc) /* shorten (i- and x-slots from nnz to n_nnz */
-	cholmod_l_reallocate_sparse(n_nnz, chx, &c);
+	cholmod_reallocate_sparse(n_nnz, chx, &c);
     return;
 }
 

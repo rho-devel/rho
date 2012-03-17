@@ -270,6 +270,13 @@ aspell_filter_db <- new.env(hash = FALSE) # small
 aspell_filter_db$Rd <- tools::RdTextFilter
 aspell_filter_db$Sweave <- tools::SweaveTeXFilter
 
+aspell_filter_db$pot <- 
+function(ifile, encoding)
+{
+    lines <- readLines(ifile, encoding = encoding)
+    ifelse(grepl("^msgid ", lines), sub("^msgid ", "      ", lines), "")
+}
+
 aspell_find_program <-
 function(program = NULL)
 {
@@ -422,7 +429,8 @@ function(which = NULL, dir = NULL, drop = "\\references",
 ## For spell-checking Rd files in a package:
 
 aspell_package_Rd_files <-
-function(dir, drop = "\\references", control = list(), program = NULL)
+function(dir, drop = c("\\author", "\\references"), control = list(),
+         program = NULL)
 {
     dir <- tools::file_path_as_absolute(dir)
 
@@ -480,10 +488,9 @@ aspell_control_R_vignettes <-
 aspell_R_vignettes <-
 function(program = NULL)
 {
-    ## Currently, all vignettes are in grid.
     files <- Sys.glob(file.path(tools:::.R_top_srcdir_from_Rd(),
-                                "src", "library", "grid", "inst", "doc",
-                                "*.Snw"))
+                                "src", "library", "*", "vignettes",
+                                "*.Rnw"))
 
     program <- aspell_find_program(program)
 
@@ -544,6 +551,26 @@ function(dir, control = list(), program = NULL)
              control),
            program = program)
 }
+
+## For spell checking pot files in a package.
+## (Of course, directly analyzing the message strings would be more
+## useful, but require writing an R text filter along the lines of
+## tools::xgettext2pot().)
+
+aspell_package_pot_files <-
+function(dir, control = list(), program = NULL)
+{
+    dir <- tools::file_path_as_absolute(dir)
+    subdir <- file.path(dir, "po")
+    files <- if(file_test("-d", subdir))
+        Sys.glob(file.path(subdir, "*.pot"))
+    else character()
+    meta <- tools:::.get_package_metadata(dir, installed = FALSE)
+    if(is.na(encoding <- meta["Encoding"])) 
+        encoding <- "unknown"
+    aspell(files, filter = "pot", control = control, 
+           encoding = encoding, program = program)
+}    
 
 ## For writing personal dictionaries:
 

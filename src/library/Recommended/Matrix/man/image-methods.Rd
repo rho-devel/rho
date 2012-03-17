@@ -24,6 +24,7 @@
       ylim = .5 + c(di[1], 0), aspect = "iso",
       sub = sprintf("Dimensions: \%d x \%d", di[1], di[2]),
       xlab = "Column", ylab = "Row", cuts = 15,
+      useRaster = FALSE,
       useAbs = NULL, colorkey = !useAbs,
       col.regions = NULL,
       lwd = NULL, \dots)
@@ -39,6 +40,15 @@
     see \code{\link{plot.default}}.}
   \item{cuts}{number of levels the range of matrix values would be
     divided into.}
+  \item{useRaster}{logical indicating if raster graphics should be used
+    (instead of the tradition rectangle vector drawing).  If true,
+    \code{\link[lattice]{panel.levelplot.raster}} (from \pkg{lattice}
+    package) is used, and the colorkey is also done via rasters, see
+    also \code{\link[lattice]{levelplot}} and possibly
+    \code{\link[grid]{grid.raster}}.
+
+    Note that using raster graphics may often be faster, but can be slower,
+    depending on the matrix dimensions and the graphics device (dimensions).}
   \item{useAbs}{logical indicating if \code{\link{abs}(x)} should be
     shown; if \code{TRUE}, the former (implicit) default, the default
     \code{col.regions} will be \code{\link{grey}} colors (and no
@@ -46,7 +56,9 @@
     matrix has no negative entries.}
   \item{colorkey}{logical indicating if a color key aka \sQuote{legend}
     should be produced.  Default is to draw one, unless \code{useAbs} is
-    true.}
+    true.  You can also specify a \code{\link{list}}, see
+    \code{\link[lattice]{levelplot}}, such as\code{list(raster=TRUE)} in
+    the case of rastering.}
   \item{col.regions}{vector of gradually varying colors; see
     \code{\link[lattice]{levelplot}}.}
   \item{lwd}{non-negative number or \code{NULL} (default), specifying the
@@ -86,6 +98,16 @@ image(sign(USCounties))## just the pattern
 image(USCounties[1:400,1:200], lwd=.1)
 image(USCounties[1:200,1:200], lwd=.5)
 image(USCounties[1:200,1:200], lwd=.01)
+
+## Using raster graphics: For PDF this would give a 77 MB file,
+## however, for such a large matrix, this is typically considerably
+## *slower* (than vector graphics rectangles) in most cases :
+if(doPNG <- !dev.interactive())
+png("image-USCounties-raster.png", width=3200, height=3200)
+image(USCounties, useRaster = TRUE) # should not suffer from anti-aliasing
+if(doPNG)
+   dev.off()
+   ## and now look at the *.png image in a viewer you can easily zoom in and out
 }
 \keyword{methods}
 \keyword{hplot}

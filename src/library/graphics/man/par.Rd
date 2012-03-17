@@ -127,7 +127,7 @@ par(\dots, no.readonly = FALSE)
   \code{"cra"}, \code{"csi"}, \code{"cxy"} and \code{"din"} are always
   read-only.)
 
-  There are several parameters can only be set by a call to \code{par()}:
+  Several parameters can only be set by a call to \code{par()}:
   \itemize{
     \item \code{"ask"},
     \item \code{"fig"}, \code{"fin"},
@@ -138,7 +138,8 @@ par(\dots, no.readonly = FALSE)
     \item \code{"oma"}, \code{"omd"}, \code{"omi"},
     \item \code{"pin"}, \code{"plt"}, \code{"ps"}, \code{"pty"},
     \item \code{"usr"},
-    \item \code{"xlog"}, \code{"ylog"}
+    \item \code{"xlog"}, \code{"ylog"},
+    \item \code{"ylbias"}
   }
   The remaining parameters can also be set as arguments (often via
   \code{\dots}) to high-level plot functions such as
@@ -278,7 +279,9 @@ par(\dots, no.readonly = FALSE)
       Note that \code{c(\link{strwidth}(ch), \link{strheight}(ch))} for
       a given string \code{ch} is usually much more precise.}
     \item{\code{din}}{\emph{\bold{R.O.}}; the device dimensions,
-      \code{(width,height)}, in inches.}
+      \code{(width,height)}, in inches.  See also
+      \code{\link{dev.size}}, which is updated immediately when an
+      on-screen device windows is re-sized.}
     \item{\code{err}}{(\emph{Unimplemented}; \R is silent when points
       outside the plot region are \emph{not} plotted.)
       The degree of error reporting desired.}
@@ -392,7 +395,10 @@ par(\dots, no.readonly = FALSE)
     }
     \item{\code{mai}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the margin size specified in
-      inches.}
+      inches.\cr
+      \if{html}{\figure{mai.png}{options: width=35\% alt="Figure: mai.png"}}
+      \if{latex}{\figure{mai.pdf}{options: width=7cm}}
+    }
     \item{\code{mar}}{A numerical vector of the form \code{c(bottom,
         left, top, right)} which gives the number of lines of margin to be
       specified on the four sides of the plot.
@@ -449,7 +455,10 @@ par(\dots, no.readonly = FALSE)
       an error (ignored with a warning) to try to use \code{new = TRUE}
       on a device that does not currently contain a high-level plot.}
     \item{\code{oma}}{A vector of the form \code{c(bottom, left, top,
-        right)} giving the size of the outer margins in lines of text.}
+        right)} giving the size of the outer margins in lines of text.\cr
+      \if{html}{\figure{oma.png}{options: width=25\% alt="Figure: oma.png"}}
+      \if{latex}{\figure{oma.pdf}{options: width=6cm}}
+    }
     \item{\code{omd}}{A vector of the form \code{c(x1, x2, y1, y2)}
       giving the region \emph{inside} outer margins in NDC (=
       normalized device coordinates), i.e., as a fraction (in \eqn{[0, 1]})
@@ -565,6 +574,12 @@ par(\dots, no.readonly = FALSE)
       for the y-axis.  See \code{xaxs} above.}
     \item{\code{yaxt}}{A character which specifies the y axis type.
       Specifying \code{"n"} suppresses plotting.}
+    \item{\code{ylbias}}{A positive real value used in the positioning
+      of text in the margins by \code{\link{axis}} and
+      \code{\link{mtext}}.  The default is in principle device-specific,
+      but currently \code{0.2} for all of \R's own devices.  Set this to
+      \code{0.2} for compatibility with \R < 2.14.0 on \code{x11} and
+      \code{windows()} devices.}
     \item{\code{ylog}}{A logical value; see \code{xlog} above.}
   }
 }

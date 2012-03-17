@@ -1,4 +1,5 @@
-bandSparse <- function(n, m = n, k, diagonals, symmetric = FALSE)
+bandSparse <- function(n, m = n, k, diagonals,
+		       symmetric = FALSE, giveCsparse = TRUE)
 {
     ## Purpose: Compute a band-matrix by speciyfying its (sub-)diagonal(s)
     ## ----------------------------------------------------------------------
@@ -70,20 +71,20 @@ bandSparse <- function(n, m = n, k, diagonals, symmetric = FALSE)
 	off.i <- off.i + l.kk
     }
     if(symmetric) { ## we should have smarter sparseMatrix()
-        UpLo <- if(min(k) >= 0) "U" else "L"
-	as(if(use.x) {
+	UpLo <- if(min(k) >= 0) "U" else "L"
+	T <- if(use.x) {
 	    if(is.integer(x)) x <- as.double(x)
-            kx <- Matrix:::.M.kind(x)
-            cc <- paste(kx, "sTMatrix", sep = "")
-	    new(cc, i= i-1L, j = j-1L, x = x, Dim= dims, uplo=UpLo)
-        } else
-	   new("nsTMatrix", i= i-1L, j = j-1L, Dim= dims, uplo=UpLo),
-	   "CsparseMatrix")
+	    cc <- paste(Matrix:::.M.kind(x), "sTMatrix", sep = "")
+	    new(cc, i= i-1L, j= j-1L, x = x, Dim= dims, uplo=UpLo)
+	}
+	else
+	    new("nsTMatrix", i= i-1L, j= j-1L, Dim= dims, uplo=UpLo)
+	if(giveCsparse) as(T, "CsparseMatrix") else T
     }
     else { ## general, not symmetric
 	if(use.x)
-	    sparseMatrix(i=i, j=j, x=x, dims=dims)
+	    sparseMatrix(i=i, j=j, x=x, dims=dims, giveCsparse=giveCsparse)
 	else
-	    sparseMatrix(i=i, j=j, dims=dims)
+	    sparseMatrix(i=i, j=j,	dims=dims, giveCsparse=giveCsparse)
     }
 }

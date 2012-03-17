@@ -737,6 +737,19 @@ SEXP attribute_hidden do_namesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     PROTECT(args = ans);
     if (NAMED(CAR(args)) == 2)
 	SETCAR(args, duplicate(CAR(args)));
+    if(IS_S4_OBJECT(CAR(args))) {
+	const char *klass = CHAR(STRING_ELT(R_data_class(CAR(args), FALSE), 0));
+	if(getAttrib(CAR(args), R_NamesSymbol) == R_NilValue) {
+	    /* S4 class w/o a names slot or attribute */
+	    if(TYPEOF(CAR(args)) == S4SXP)
+		error(_("Class '%s' has no 'names' slot"), klass);
+	    else
+		warning(_("Class '%s' has no 'names' slot; assigning a names attribute will create an invalid object"), klass);
+	}
+	else if(TYPEOF(CAR(args)) == S4SXP)
+	    error(_("Illegal to use names()<- to set the 'names' slot in a non-vector class ('%s')"), klass);
+	/* else, go ahead, but can't check validity of replacement*/
+    }
     if (CADR(args) != R_NilValue) {
 	GCStackRoot<PairList> tl(CXXR_NEW(PairList));
         PROTECT(call = CXXR_NEW(Expression(0, tl)));
@@ -833,7 +846,8 @@ SEXP attribute_hidden do_names(SEXP call, SEXP op, SEXP args, SEXP env)
 	return(ans);
     PROTECT(args = ans);
     ans = CAR(args);
-    if (isVector(ans) || isList(ans) || isLanguage(ans))
+    if (isVector(ans) || isList(ans) || isLanguage(ans) ||
+	IS_S4_OBJECT(ans))
 	ans = getAttrib(ans, R_NamesSymbol);
     else ans =  R_NilValue;
     UNPROTECT(1);
@@ -1203,7 +1217,7 @@ SEXP attribute_hidden do_attr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP ap, argList, s, t, tag = R_NilValue, alist, ans;
     const char *str;
-    unsigned int n;
+    size_t n;
     int nargs = length(args), exact = 0;
     enum { NONE, PARTIAL, PARTIAL2, FULL } match = NONE;
 

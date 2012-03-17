@@ -8,7 +8,7 @@
 %%                    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 %%\VignetteIndexEntry{Design Issues in Matrix package Development}
 %%\VignetteDepends{Matrix}
-\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=TRUE,keep.source=TRUE}
+\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=true,keep.source=TRUE}
 %								          ^^^^^^^^^^^^^^^^
 \title{Design Issues in Matrix package Development}
 \author{Martin Maechler and Douglas Bates\\R Core Development Team

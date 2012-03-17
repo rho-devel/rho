@@ -52,6 +52,7 @@ onenormest(A, t = min(n, 5), A.x, At.x, n,
   \item{iter}{the number of iterations used.}
 }
 \references{
+%% See also Tim Davis(2006, p.96):
   Nicholas J. Higham and Françoise Tisseur (2000).
   A Block Algorithm for Matrix 1-Norm Estimation, with an Application to 1-Norm
   Pseudospectra.

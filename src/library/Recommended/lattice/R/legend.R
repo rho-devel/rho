@@ -761,6 +761,8 @@ draw.colorkey <- function(key, draw = FALSE, vp = NULL)
                  space = "right",
                  raster = FALSE,
                  interpolate = FALSE,
+                 axis.line = list(),
+                 axis.text = list(),
                  ...)
         {
             regions <- trellis.par.get("regions")
@@ -773,13 +775,15 @@ draw.colorkey <- function(key, draw = FALSE, vp = NULL)
                  space = space,
                  raster = raster,
                  interpolate = interpolate,
+                 axis.line = axis.line,
+                 axis.text = axis.text,
                  ...)
         }
 
-    axis.line <- trellis.par.get("axis.line")
-    axis.text <- trellis.par.get("axis.text")
-
     key <- do.call(process.key, key)
+
+    axis.line <- updateList(trellis.par.get("axis.line"), key$axis.line)
+    axis.text <- updateList(trellis.par.get("axis.text"), key$axis.text)
 
 ## FIXME: delete later
 #str(key)

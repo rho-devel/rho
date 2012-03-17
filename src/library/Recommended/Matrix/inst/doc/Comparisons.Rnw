@@ -5,7 +5,7 @@
 %%\VignetteIndexEntry{Comparisons of Least Squares calculation speeds}
 %%\VignetteDepends{Matrix}
 \begin{document}
-\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=TRUE,keep.source=TRUE}
+\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=true,keep.source=TRUE}
 \setkeys{Gin}{width=\textwidth}
 \title{Comparing Least Squares Calculations}
 \author{Douglas Bates\\R Development Core Team\\\email{Douglas.Bates@R-project.org}}

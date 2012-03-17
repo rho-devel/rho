@@ -12,11 +12,15 @@
 \alias{Ops,sparseMatrix,diagonalMatrix-method}
 %
 \alias{cbind2,sparseMatrix,sparseMatrix-method}
+\alias{cbind2,denseMatrix,sparseMatrix-method}
+\alias{cbind2,sparseMatrix,denseMatrix-method}
 \alias{cbind2,sparseMatrix,matrix-method}
 \alias{cbind2,matrix,sparseMatrix-method}
 \alias{cbind2,sparseMatrix,numeric-method}
 \alias{cbind2,numeric,sparseMatrix-method}
 \alias{rbind2,sparseMatrix,sparseMatrix-method}
+\alias{rbind2,denseMatrix,sparseMatrix-method}
+\alias{rbind2,sparseMatrix,denseMatrix-method}
 \alias{rbind2,sparseMatrix,matrix-method}
 \alias{rbind2,matrix,sparseMatrix-method}
 \alias{rbind2,sparseMatrix,numeric-method}
@@ -93,6 +97,14 @@
       \code{\link{print}} method resembles Matlab's way of printing
       sparse matrices, and also the MatrixMarket format, see
       \code{\link{writeMM}}.}
+    \item{cbind2}{\code{(x = *, y = *)}: several methods for binding
+      matrices together, column-wise, see the basic \code{\link{cbind}}
+      and \code{\link{rbind}} functions.\cr
+      Note that the result will typically be sparse, even when one
+      argument is dense and larger than the sparse one.
+    }
+    \item{rbind2}{\code{(x = *, y = *)}: binding matrices together
+      row-wise, see \code{cbind2} above.}
     \item{determinant}{\code{(x = "sparseMatrix", logarithm=TRUE)}:
       \code{\link{determinant}()} methods for sparse matrices typically
       work via \code{\link{Cholesky}} or \code{\link{lu}} decompositions.}

@@ -50,6 +50,47 @@ vec2abI <- function(from, force = FALSE) {
     }
     ans
 }
+
+## "abIndex" version of  indDiag(n) === which(diag(n) == 1) -> ./Auxiliaries.R
+abIindDiag <- function(n) {
+    ## cumsum(c(1L, rep.int(n+1L, n-1)))
+    stopifnot((n <- as.integer(n)) >= 1)
+    rl <- if(n == 1) .rle(n[0],n[0]) else .rle(n-1L, n+1L)
+    new("abIndex", kind = "rleDiff",
+        rleD = new("rleDiff", first = 1, rle = rl))
+}
+
+## "abIndex" version of  indTri(n) ... --> ./Auxiliaries.R
+abIindTri <- function(n, upper = TRUE, diag = FALSE) {
+    ## Indices of strict upper/lower triangular part
+    ## == which(upper.tri(diag(n), diag=diag) or
+    ##	  which(lower.tri(diag(n), diag=diag) -- but as abIndex
+    stopifnot(length(n) == 1, n == (n. <- as.integer(n)), (n <- n.) >= 0)
+    if(n <= 2) {
+	vec2abI(
+		if(n == 0) integer(0)
+		else if(n == 1) { if(diag) 1L else integer(0) }
+		else { ## n == 2
+		    v <- if(upper) 3L else 2L
+		    if(diag) c(1L, v, 4L) else v
+		})
+    }
+    else { ## n >= 3 [also for n == 2 && diag (==TRUE)] :
+	## First, compute the 'diff(.)' of the result [fast, using integers]
+	n. <- if(diag) n else n - 1L
+	n1 <- n. - 1L
+	tt <- if(diag) 2L else 3L
+	mk1s <- function(n,m) as.vector(rbind(1L, n:m))
+	mks1 <- function(n,m) as.vector(rbind(n:m, 1L))
+	rl <- .rle(len = if(upper) mk1s(1L,n1) else mks1(n1,1L),
+		   val = if(upper) mks1(n, tt) else mk1s(tt, n))
+	frst <- if(diag) 1L else if(upper) n+1L else 2L
+	new("abIndex", kind = "rleDiff",
+	    rleD = new("rleDiff", first = frst, rle = rl))
+    }
+}
+
+
 setAs("numeric", "abIndex", function(from) vec2abI(from))
 setAs("logical", "abIndex", function(from) vec2abI(from))
 
@@ -95,7 +136,7 @@ abIseq1 <- function(from = 1, to = 1) {
 		 values = as.integer(sign(to)))))
 }
 
-## Constructor of   n:m --- an "abIndex" version of seq(), i.e. seq.default():
+## an "abIndex" version of seq(), i.e. seq.default():
 abIseq <- function(from = 1, to = 1, by = ((to - from)/(length.out - 1)),
 		   length.out = NULL, along.with = NULL)
 {
@@ -280,6 +321,10 @@ setAs("abIndex", "integer", function(from) as.integer(abI2num(from)))
 ## for S3 lovers and back-compatibility:
 setMethod(as.integer, "abIndex", function(x) as.integer(abI2num(x)))
 setMethod(as.numeric, "abIndex", function(x) abI2num(x))
+setMethod(as.vector,  c(x = "abIndex", mode = "ANY"), function(x) abI2num(x))
+setMethod(as.vector,  c(x = "abIndex", mode = "character"),
+	  ## this is beautiful -- because of as() !
+	  function(x, mode) as(abI2num(x), mode))
 
 ## Need   max(<i>), min(<i>),   all(<i> == <j>)   any(<i> == <j>)
 

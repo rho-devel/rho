@@ -156,3 +156,8 @@ Version 2.23-6
 Analogous change to bkde, needed if gridsize was a power of 2 for some
 'x' where 'range.x' is given (and small).
 
+
+Version 2.23-7
+==============
+
+Typo in dpik reported by Tanya Tang.

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: R 2.14.0\n"
+"Project-Id-Version: R 2.15.0\n"
 "Report-Msgid-Bugs-To: bugs@r-project.org\n"
-"POT-Creation-Date: 2011-06-30 15:39\n"
+"POT-Creation-Date: 2011-10-19 09:42\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -188,6 +188,15 @@ msgstr ""
 msgid "Invalid label.style"
 msgstr ""
 
+msgid "device support for raster images unknown, ignoring 'raster=TRUE'"
+msgstr ""
+
+msgid "device has no raster support, ignoring 'raster=TRUE'"
+msgstr ""
+
+msgid "device does not support raster images with NA, ignoring 'raster=TRUE'"
+msgstr ""
+
 msgid "'x' values are not equispaced; output may be wrong"
 msgstr ""
 
@@ -200,7 +209,7 @@ msgstr ""
 msgid "error"
 msgstr ""
 
-msgid "Invalid value of 'pos'"
+msgid "Invalid value of 'pos' ignored."
 msgstr ""
 
 msgid "(loaded the KernSmooth namespace)"
@@ -387,10 +396,4 @@ msgid "'drop=TRUE' ignored"
 msgstr ""
 
 msgid "Invalid indices"
-msgstr ""
-
-msgid "Note: you shouldn't be seeing this message unless\nyou are using a non-standard version of lattice"
-msgstr ""
-
-msgid "The grid package couldn't be loaded.\nPlease check your installation of R"
 msgstr ""

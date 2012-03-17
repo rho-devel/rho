@@ -209,15 +209,26 @@ format.POSIXct <- function(x, format = "", tz = "", usetz = FALSE, ...)
               names=names(x))
 }
 
+## could handle arrays for max.print
 print.POSIXct <- function(x, ...)
 {
-    print(format(x, usetz=TRUE, ...), ...)
+    max.print <- getOption("max.print", 9999L)
+    if(max.print < length(x)) {
+        print(format(x[seq_len(max.print)], usetz=TRUE), ...)
+        cat(' [ reached getOption("max.print") -- omitted',
+            length(x) - max.print, 'entries ]\n')
+    } else print(format(x, usetz=TRUE), ...)
     invisible(x)
 }
 
 print.POSIXlt <- function(x, ...)
 {
-    print(format(x, usetz=TRUE), ...)
+    max.print <- getOption("max.print", 9999L)
+    if(max.print < length(x)) {
+        print(format(x[seq_len(max.print)], usetz=TRUE), ...)
+        cat(' [ reached getOption("max.print") -- omitted',
+            length(x) - max.print, 'entries ]\n')
+   } else print(format(x, usetz=TRUE), ...)
     invisible(x)
 }
 
@@ -400,8 +411,12 @@ all.equal.POSIXct <- function(target, current, ..., scale=1)
 
 ISOdatetime <- function(year, month, day, hour, min, sec, tz="")
 {
-    x <- paste(year, month, day, hour, min, sec, sep="-")
-    as.POSIXct(strptime(x, "%Y-%m-%d-%H-%M-%OS", tz=tz), tz=tz)
+    if(min(sapply(list(year, month, day, hour, min, sec), length)) == 0L)
+        .POSIXct(numeric(), tz=tz)
+    else {
+        x <- paste(year, month, day, hour, min, sec, sep="-")
+        as.POSIXct(strptime(x, "%Y-%m-%d-%H-%M-%OS", tz=tz), tz=tz)
+    }
 }
 
 ISOdate <- function(year, month, day, hour=12, min=0, sec=0, tz="GMT")
@@ -858,10 +873,10 @@ trunc.POSIXt <- function(x, units=c("secs", "mins", "hours", "days"), ...)
     if(length(x$sec))
 	switch(units,
 	       "secs" = {x$sec <- trunc(x$sec)},
-	       "mins" = {x$sec <- 0},
-	       "hours"= {x$sec <- 0; x$min <- 0L},
+	       "mins" = {x$sec[] <- 0},
+	       "hours"= {x$sec[] <- 0; x$min[] <- 0L},
                ## start of day need not be on the same DST.
-	       "days" = {x$sec <- 0; x$min <- 0L; x$hour <- 0L; x$isdst <- -1L}
+	       "days" = {x$sec[] <- 0; x$min[] <- 0L; x$hour[] <- 0L; x$isdst[] <- -1L}
 	       )
     x
 }
@@ -881,7 +896,7 @@ round.POSIXt <- function(x, units=c("secs", "mins", "hours", "days"))
 
 `[.POSIXlt` <- function(x, ..., drop = TRUE)
 {
-    val <- lapply(x, "[", ..., drop = drop)
+    val <- lapply(X = x, FUN = "[", ..., drop = drop)
     attributes(val) <- attributes(x) # need to preserve timezones
     val
 }
@@ -915,7 +930,7 @@ rep.POSIXct <- function(x, ...)
 
 rep.POSIXlt <- function(x, ...)
 {
-    y <- lapply(x, rep, ...)
+    y <- lapply(X = x, FUN = rep, ...)
     attributes(y) <- attributes(x)
     y
 }

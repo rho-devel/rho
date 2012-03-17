@@ -2,11 +2,10 @@
 % Part of the nlme package for R
 % Distributed under GPL 2 or later: see nlme/LICENCE
 
-% $Id: simulate.lme.Rd,v 1.6 2002/03/05 14:59:39 bates Exp $
 \name{simulate.lme}
-\title{Simulate results from lme models}
+\title{Simulate Results from \code{lme} Models}
 \usage{
-simulate.lme(object, nsim, seed, m2, method, niterEM, useGen, \dots)
+\method{simulate}{lme}(object, nsim, seed, m2, method, niterEM, useGen, \dots)
 }
 \alias{simulate.lme}
 \alias{plot.simulate.lme}

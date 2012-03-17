@@ -1,4 +1,4 @@
-### $Id: plotpart.q 5842 2011-06-07 12:39:38Z maechler $
+### $Id: plotpart.q 5904 2011-09-14 21:12:43Z maechler $
 plot.partition <-
 function(x, ask = FALSE, which.plots = NULL,
 	 nmax.lab = 40, max.strlen = 5, data = x$data, dist = NULL,
@@ -471,6 +471,7 @@ function(x, clus, diss = FALSE, cor = TRUE, stand = FALSE, lines = 2,
 	    identify(x1, labels = labels1, col = col.txt[1])
 	}
 	else {
+### FIXME --- 'cex.txt' but also allow to specify 'cex' (for the points) ???
 	    Stext <- function(xy, labs, ...) {
 		## FIXME: these displacements are not quite ok!
 		xy[, 1] <- xy[, 1] + diff(x.range)/130

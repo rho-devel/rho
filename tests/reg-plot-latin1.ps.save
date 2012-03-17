@@ -12,33 +12,36 @@
 %%BoundingBox: 46 169 550 673
 %%EndComments
 %%BeginProlog
-/bp  { gs 595.00 0 translate 90 rotate gs } def
+/bp  { gs sRGB 595.00 0 translate 90 rotate gs } def
 % begin .ps.prolog
-/gs  { gsave } def
-/gr  { grestore } def
-/ep  { showpage gr gr } def
-/m   { moveto } def
-/l  { rlineto } def
-/np  { newpath } def
-/cp  { closepath } def
-/f   { fill } def
-/o   { stroke } def
-/c   { newpath 0 360 arc } def
-/r   { 4 2 roll moveto 1 copy 3 -1 roll exch 0 exch rlineto 0 rlineto -1 mul 0 exch rlineto closepath } def
-/p1  { stroke } def
-/p2  { gsave bg fill grestore newpath } def
-/p3  { gsave bg fill grestore stroke } def
-/p6  { gsave bg eofill grestore newpath } def
-/p7  { gsave bg eofill grestore stroke } def
+/gs  { gsave } bind def
+/gr  { grestore } bind def
+/ep  { showpage gr gr } bind def
+/m   { moveto } bind def
+/l  { rlineto } bind def
+/np  { newpath } bind def
+/cp  { closepath } bind def
+/f   { fill } bind def
+/o   { stroke } bind def
+/c   { newpath 0 360 arc } bind def
+/r   { 4 2 roll moveto 1 copy 3 -1 roll exch 0 exch rlineto 0 rlineto -1 mul 0 exch rlineto closepath } bind def
+/p1  { stroke } bind def
+/p2  { gsave bg fill grestore newpath } bind def
+/p3  { gsave bg fill grestore stroke } bind def
+/p6  { gsave bg eofill grestore newpath } bind def
+/p7  { gsave bg eofill grestore stroke } bind def
 /t   { 5 -2 roll moveto gsave rotate
        1 index stringwidth pop
-       mul neg 0 rmoveto show grestore } def
-/ta  { 4 -2 roll moveto gsave rotate show } def
-/tb  { 2 -1 roll 0 rmoveto show } def
+       mul neg 0 rmoveto show grestore } bind def
+/ta  { 4 -2 roll moveto gsave rotate show } bind def
+/tb  { 2 -1 roll 0 rmoveto show } bind def
 /cl  { grestore gsave newpath 3 index 3 index moveto 1 index
        4 -1 roll lineto  exch 1 index lineto lineto
-       closepath clip newpath } def
-/srgb { [ /CIEBasedABC
+       closepath clip newpath } bind def
+/rgb { setrgbcolor } bind def
+/s   { scalefont setfont } bind def
+% end   .ps.prolog
+/sRGB { [ /CIEBasedABC
           << /DecodeLMN
                [ { dup 0.03928 le
                         {12.92321 div}
@@ -51,10 +54,8 @@
                          0.180437 0.072175 0.950301]
              /WhitePoint [0.9505 1.0 1.0890]
            >>
-         ] setcolorspace } def
-/setrgb { srgb setcolor } def
-/s   { scalefont setfont } def
-% end   .ps.prolog
+         ] setcolorspace } bind def
+/srgb { setcolor } bind def
 %%IncludeResource: font Helvetica
 /Helvetica findfont
 dup length dict begin
@@ -97,15 +98,8 @@ dup length dict begin
 %%EndProlog
 %%Page: 1 1
 bp
-[ /CIEBasedABC
-  << /DecodeLMN
-       [ { dup 0.03928 le {12.92321 div} {0.055 add 1.055 div 2.4 exp } ifelse } bind dup dup ]
-     /MatrixLMN [0.412457 0.212673 0.019334 0.357576 0.715152 0.119192 0.180437 0.072175 0.950301]
-     /WhitePoint [0.9505 1.0 1.0890]
-  >>
-] setcolorspace
 168.94 45.64 672.94 549.64 cl
-0 setgray
+0 0 0 srgb
 0.75 setlinewidth
 [] 0 setdash
 1 setlinecap
@@ -179,12 +173,12 @@ np
 o
 168.94 45.64 672.94 549.64 cl
 /Font1 findfont 12 s
-0 setgray
+0 0 0 srgb
 435.34 64.36 (Re) .5 0 t
 181.90 304.84 (Im) .5 90 t
 227.98 119.08 642.70 490.60 cl
 /Font1 findfont 12 s
-1 0 0 setrgb
+1 0 0 srgb
 612.73 366.44 (1) .5 0 t
 571.11 422.24 (2) .5 0 t
 508.82 459.64 (3) .5 0 t
@@ -204,16 +198,9 @@ o
 ep
 %%Page: 2 2
 bp
-[ /CIEBasedABC
-  << /DecodeLMN
-       [ { dup 0.03928 le {12.92321 div} {0.055 add 1.055 div 2.4 exp } ifelse } bind dup dup ]
-     /MatrixLMN [0.412457 0.212673 0.019334 0.357576 0.715152 0.119192 0.180437 0.072175 0.950301]
-     /WhitePoint [0.9505 1.0 1.0890]
-  >>
-] setcolorspace
 227.98 119.08 642.70 490.60 cl
 227.98 119.08 642.70 490.60 cl
-0 setgray
+0 0 0 srgb
 0.75 setlinewidth
 [] 0 setdash
 1 setlinecap
@@ -230,7 +217,7 @@ bp
 584.68 438.62 2.70 c p1
 627.34 476.84 2.70 c p1
 168.94 45.64 672.94 549.64 cl
-0 setgray
+0 0 0 srgb
 0.75 setlinewidth
 [] 0 setdash
 1 setlinecap
@@ -304,7 +291,7 @@ np
 o
 168.94 45.64 672.94 549.64 cl
 /Font2 findfont 14 s
-0 setgray
+0 0 0 srgb
 378.55 523.73 (te) 0 ta
 -0.210 (xt\(...\) e) tb
 -0.210 (xamples) tb gr
@@ -316,10 +303,10 @@ o
 181.90 304.84 (1:10) .5 90 t
 168.94 45.64 672.94 549.64 cl
 /Font1 findfont 12 s
-0 setgray
+0 0 0 srgb
 435.34 493.48 («Latin-1 accented chars»: éè øØ å<Å æ<Æ) .5 0 t
 227.98 119.08 642.70 490.60 cl
-1 0 0 setrgb
+1 0 0 srgb
 0.75 setlinewidth
 [] 0 setdash
 1 setlinecap
@@ -342,7 +329,7 @@ np
 0 30.55 l
 o
 /Font1 findfont 10 s
-0 setgray
+0 0 0 srgb
 339.27 168.45 (the te) 0 ta
 -0.300 (xt is CENTERED around \(x,y\) = \(6,2\) b) tb
 -0.200 (y def) tb

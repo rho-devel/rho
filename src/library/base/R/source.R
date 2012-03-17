@@ -33,7 +33,13 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
 		  parent.frame() else baseenv())
 	.Internal(eval.with.vis(expr, envir, enclos))
 
-    envir <- if (local) parent.frame() else .GlobalEnv
+    envir <- if (isTRUE(local)) {
+        parent.frame()
+    } else if(identical(local, FALSE)) {
+        .GlobalEnv
+    } else if (is.environment(local)) {
+        local
+    } else stop("'local' must be TRUE, FALSE or an environment")
     have_encoding <- !missing(encoding) && encoding != "unknown"
     if (!missing(echo)) {
 	if (!is.logical(echo))
@@ -61,7 +67,7 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
             for(e in enc) {
                 if(is.na(e)) next
                 zz <- file(file, encoding = e)
-                res <- tryCatch(readLines(zz), error = identity)
+                res <- tryCatch(readLines(zz, warn = FALSE), error = identity)
                 close(zz)
                 if(!inherits(res, "error")) { encoding <- e; break }
             }
@@ -73,11 +79,17 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
             cat(gettextf('encoding = "%s" chosen', encoding), "\n", sep = "")
         if(file == "") file <- stdin()
         else {
-            if (isTRUE(keep.source))
-            	srcfile <- srcfile(file, encoding = encoding)
-	    file <- file(file, "r", encoding = encoding)
+            filename <- file
+	    file <- file(filename, "r", encoding = encoding)
 	    on.exit(close(file))
-            from_file <- TRUE
+            if (isTRUE(keep.source)) {
+	    	lines <- readLines(file, warn = FALSE)
+	    	on.exit()
+	    	close(file)
+            	srcfile <- srcfilecopy(filename, lines, file.info(filename)[1,"mtime"])
+	    } else
+            	from_file <- TRUE
+
             ## We translated the file (possibly via a guess),
             ## so don't want to mark the strings.as from that encoding
             ## but we might know what we have encoded to, so
@@ -89,13 +101,28 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
                        "unknown")
             else "unknown"
 	}
+    } else {
+    	lines <- readLines(file, warn = FALSE)
+    	if (isTRUE(keep.source))
+    	    srcfile <- srcfilecopy(deparse(substitute(file)), lines)
     }
-    exprs <- .Internal(parse(file, n = -1, NULL, "?", srcfile, encoding))
+
+    ## parse() uses this option in the C code.
+    if (!isTRUE(keep.source)) {
+        op <- options(keep.source = FALSE)
+        on.exit(options(op), add = TRUE)
+    } else op <- NULL
+    exprs <- if (!from_file) {
+        if (length(lines))  # there is a C-level test for this
+            .Internal(parse(stdin(), n = -1, lines, "?", srcfile, encoding))
+        else expression()
+    } else
+    	.Internal(parse(file, n = -1, NULL, "?", srcfile, encoding))
+    on.exit()
+    if (from_file) close(file)
+    if (!is.null(op)) options(op)
+
     Ne <- length(exprs)
-    if (from_file) { # we are done with the file now
-        close(file)
-        on.exit()
-    }
     if (verbose)
 	cat("--> parsed", Ne, "expressions; now eval(.)ing them:\n")
 
@@ -127,10 +154,10 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
         ## same-named one in Sweave
 	trySrcLines <- function(srcfile, showfrom, showto) {
 	    lines <- try(suppressWarnings(getSrcLines(srcfile, showfrom, showto)), silent=TRUE)
-	    if (inherits(lines, "try-error")) 
+	    if (inherits(lines, "try-error"))
     	    	lines <- character(0)
     	    lines
-	}	       
+	}
     }
     yy <- NULL
     lastshown <- 0
@@ -182,7 +209,7 @@ function(file, local = FALSE, echo = verbose, print.eval = echo,
 				 sep="")
 		    nd <- nchar(dep, "c") - 1L
 		}
-	    }	    
+	    }
 	    if (nd) {
 		do.trunc <- nd > max.deparse.length
 		dep <- substr(dep, 1L, if (do.trunc) max.deparse.length else nd)
@@ -229,10 +256,16 @@ function(file, envir = baseenv(), chdir = FALSE,
 {
     if(!(is.character(file) && file.exists(file)))
 	stop(gettextf("'%s' is not an existing file", file))
-    oop <- options(keep.source = as.logical(keep.source),
+    keep.source <- as.logical(keep.source)
+    oop <- options(keep.source = keep.source,
 		   topLevelEnvironment = as.environment(envir))
     on.exit(options(oop))
-    exprs <- parse(n = -1, file = file)
+    if (keep.source) {
+    	lines <- readLines(file, warn = FALSE)
+    	srcfile <- srcfilecopy(file, lines, file.info(file)[1,"mtime"])
+    	exprs <- parse(text = lines, srcfile = srcfile)
+    } else
+    	exprs <- parse(n = -1, file = file)
     if (length(exprs) == 0L)
 	return(invisible())
     if (chdir && (path <- dirname(file)) != ".") {

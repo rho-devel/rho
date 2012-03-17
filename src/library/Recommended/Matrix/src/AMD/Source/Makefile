@@ -20,8 +20,8 @@ LIB = ../../AMD.a
 
 lib: $(LIB)
 
-$(LIB): amd_global.o $(AMDL) # $(AMDI)
-	$(AR) -rucs $(LIB) amd_global.o $(AMDL) # $(AMDI)
+$(LIB): amd_global.o $(AMDI) $(AMDL)
+	$(AR) -rucs $(LIB) amd_global.o $(AMDI) $(AMDL)
 
 amd_global.o: amd_global.c $(INC)
 

@@ -44,7 +44,7 @@ src/avl.h
 Copyright (C) 1998-9, 2000 Free Software Foundation, Inc.
 Written by Ben Pfaff <blp@gnu.org> (for libAVL:
 <http://www.stanford.edu/~blp/avl/index.html>)
-Modified for R foreign library by Saikat DebRoy <saikat@stat.wisc.edu>.
+Modified for R foreign package by Saikat DebRoy <saikat@stat.wisc.edu>.
 
 
 The following files are based on PSPP
@@ -62,22 +62,22 @@ src/sfmP.h
 
 Copyright (C) 1997-9, 2000 Free Software Foundation, Inc.
 Written by Ben Pfaff <blp@gnu.org>.
-Modified for R foreign library by Saikat DebRoy <saikat@stat.wisc.edu>
+Modified for R foreign package by Saikat DebRoy <saikat@stat.wisc.edu>
 and others.
 
 
 src/minitab.c
 src/SASxport.c
 
-Copyright 1999-1999 Douglas M. Bates <bates@stat.wisc.edu>,
-                    Saikat DebRoy <saikat@stat.wisc.edu>
+Copyright 1999 Douglas M. Bates <bates@stat.wisc.edu>,
+               Saikat DebRoy <saikat@stat.wisc.edu>
 
 
 src/foreign.h
 src/spss.c
 
-Copyright 2000-2000 Saikat DebRoy <saikat@stat.wisc.edu>
-                    Thomas Lumley <tlumley@u.washington.edu>
+Copyright 2000 Saikat DebRoy <saikat@stat.wisc.edu>
+               Thomas Lumley <tlumley@u.washington.edu>
 
 
 src/stata.c

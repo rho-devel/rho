@@ -6,13 +6,13 @@
 nearPD <-
     ## Computes the nearest correlation matrix to an approximate
     ## correlation matrix, i.e. not positive semidefinite.
-
     function(x               # n-by-n approx covariance/correlation matrix
              , corr = FALSE, keepDiag = FALSE
              , do2eigen = TRUE  # if TRUE do a sfsmisc::posdefify() eigen step
              , doSym = FALSE  # symmetrize after tcrossprod()
              , doDykstra = TRUE # do use Dykstra's correction
              , only.values = FALSE# if TRUE simply return lambda[j].
+             , ensureSymmetry = !isSymmetric(x)# so user can set to FALSE iff she knows..
              , eig.tol   = 1e-6 # defines relative positiveness of eigenvalues compared to largest
              , conv.tol  = 1e-7 # convergence tolerance for algorithm
              , posd.tol  = 1e-8 # tolerance for enforcing positive definiteness
@@ -20,8 +20,8 @@ nearPD <-
              , trace = FALSE # set to TRUE (or 1 ..) to trace iterations
              )
 {
-    if(!isSymmetric(x)) { ## ideally the user should do this herself
-	message("applying nearPD() to symmpart(x)")
+    if(ensureSymmetry) { ## only if needed/wanted ...
+	## message("applying nearPD() to symmpart(x)")
 	x <- symmpart(x)
     }
     n <- ncol(x)

@@ -15,13 +15,15 @@ SUBLIBS = $(SUBDIRS:=.a)
 all: $(SHLIB)
 ## making src/*.o and in sublibs can be done simultaneously
 # for development:
-#$(SHLIB): $(OBJECTS)
+#$(SHLIB): $(OBJECTS) sublibraries
 # for real:
 $(SHLIB): $(OBJECTS) sublibs
 
 ## We have to clean here, to clean up between architectures:
 ## INSTALL only cleans src/*.o src/*$(SHLIB_EXT) for each arch
-sublibs: subclean
+sublibs: subclean sublibraries
+
+sublibraries:
 	@for d in $(SUBDIRS); do \
 	  (cd $${d} && CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" MkInclude="$(MkInclude)" $(MAKE) library) || exit 1; \
 	done

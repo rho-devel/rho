@@ -996,7 +996,8 @@ SEXP attribute_hidden do_radixsort(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP x, ans;
     Rboolean nalast, decreasing;
-    int i, n, tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
+    R_len_t i, n;
+    int tmp, xmax = NA_INTEGER, xmin = NA_INTEGER, off, napos;
 
     checkArity(op, args);
 

@@ -7,7 +7,7 @@
 summaries from it. (See \code{\link{sink}} to divert output to a file.)
 }
 \usage{
-\method{summary}{gam}(object, dispersion=NULL, freq=FALSE, alpha=0, ...)
+\method{summary}{gam}(object, dispersion=NULL, freq=FALSE, p.type = 0, ...)
 
 \method{print}{summary.gam}(x,digits = max(3, getOption("digits") - 3), 
                   signif.stars = getOption("show.signif.stars"),...)
@@ -25,7 +25,10 @@ summaries from it. (See \code{\link{sink}} to divert output to a file.)
 covariance matrix of the parameter estimators. If this is set to TRUE then
 the frequentist covariance matrix of the parameters is used instead. See details. }
 
-\item{alpha}{ adjustment to reference distribution per estimated smoothing parameter. 
+\item{p.type}{determines how p-values are computed when \code{freq==FALSE}. 0 uses a test statistic with 
+distribution determined by the un-rounded edf of the term. 1 uses upwardly biased rounding of the edf and -1
+uses a version of the test statistic with a null distribution that has to be simulated. Other options are
+poor, generate a warning, and are only of research interest. See details.
 }
 
 \item{digits}{controls number of digits printed in output.}
@@ -61,9 +64,10 @@ which case it will have been estimated) the statistic is compared
 to an F distribution with k upper d.f.  and lower d.f. given by the residual degrees of freedom for the model. 
 Typically the p-values will be somewhat too low.
 
-If \code{freq=FALSE} then `Bayesian p-values' are returned for the smooth terms, based on a test statistic motivated
-by Nychka's (1988) analysis of the frequentist properties of Bayesian confidence intervals for smooths. 
-These appear to have better frequentist performance (in terms of power and distribution under the null) 
+If \code{freq=FALSE} then `Bayesian p-values' are returned for the smooth terms, based on a 
+test statistic motivated
+by an extension of Nychka's (1988) analysis of the frequentist properties of Bayesian confidence intervals for smooths. 
+These have better frequentist performance (in terms of power and distribution under the null) 
 than the alternative strictly frequentist approximation. Let \eqn{\bf f}{f} denote the vector of 
 values of a smooth term evaluated at the original 
 covariate values and let \eqn{{\bf V}_f}{V_f} denote the corresponding Bayesian covariance matrix. Let 
@@ -71,20 +75,20 @@ covariate values and let \eqn{{\bf V}_f}{V_f} denote the corresponding Bayesian 
 EDF for the term. The statistic used is then 
 \deqn{T = {\bf f}^T {\bf V}_f^{r-}{\bf f}}{T = f'V*_f f}
 (this can be calculated efficiently without forming the pseudoinverse explicitly). \eqn{T}{T} is compared to a 
-chi-squared distribution with degrees of freedom given by the EDF for the term + \code{alpha} * (number of 
-estimated smoothing parameters), or \eqn{T}{T} is used as a component in an F ratio statistic if the 
-scale parameter has been estimated.  The non-integer rank truncated inverse is constructed to give an 
-approximation varying smoothly between the bounding integer rank approximations, while yielding test statistics with the 
-correct mean and variance. 
+chi-squared distribution with degrees of freedom given by the EDF for the term, 
+or \eqn{T}{T} is used as a component in an F ratio statistic if the 
+scale parameter has been estimated.  
 
-The definition of Bayesian p-value used is: 
-the probability of observing an \eqn{\bf f}{f} less probable than \eqn{\bf 0}{0}, under the approximation for the posterior 
-for \eqn{\bf f}{f} implied by the truncation used in the test statistic.
+The non-integer rank truncated inverse is constructed to give an 
+approximation varying smoothly between the bounding integer rank approximations, while yielding test statistics with the correct mean and variance under the null. Alternatively (\code{p.type==1}) \eqn{r}{r} is obtained by 
+biased rounding of the EDF: values less than .05 above the preceding integer are rounded down, while other values are rounded up. Another option (\code{p.type==-1}) uses a statistic of formal rank given by the number of coefficients for the smooth, but with its terms weighted by the eigenvalues of the covariance matrix, so that penalized terms are down-weighted, but the null distribution requires simulation. Other options for \code{p.type} are 2 (naive rounding), 3 (round up), 4 (numerical rank determination): these are poor options for theoretically known reasons, and will generate a warning. 
 
-Note that the p-values distributional approximations start to break down below one effective degree of freedom, and 
-p-values are not reported below 0.5 degrees of freedom. 
+The resulting p-value also has a  Bayesian interpretation: 
+the probability of observing an \eqn{\bf f}{f} less probable than \eqn{\bf 0}{0}, under the approximation for the posterior for \eqn{\bf f}{f} implied by the truncation used in the test statistic.
 
-In simualtions the p-values have best behaviour under ML smoothness selection, with REML coming second. 
+Note that the p-values distributional approximations start to break down below one effective degree of freedom, and p-values are not reported below 0.5 degrees of freedom. 
+
+In simulations the p-values have best behaviour under ML smoothness selection, with REML coming second. 
 
 }
 

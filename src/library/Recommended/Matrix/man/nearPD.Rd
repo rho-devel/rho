@@ -8,14 +8,15 @@
 \usage{
 nearPD(x, corr = FALSE, keepDiag = FALSE, do2eigen = TRUE,
        doSym = FALSE, doDykstra = TRUE, only.values = FALSE,
+       ensureSymmetry = !isSymmetric(x),
        eig.tol = 1e-06, conv.tol = 1e-07, posd.tol = 1e-08,
        maxit = 100, trace = FALSE)
 }
 \arguments{
   \item{x}{numeric \eqn{n \times n}{n * n} approximately positive
     definite matrix, typically an approximation to a correlation or
-    covariance matrix.  If \code{x} is not symmetric,
-    \code{\link{symmpart}(x)} is used.}
+    covariance matrix.  If \code{x} is not symmetric (and
+    \code{ensureSymmetry} is not false), \code{\link{symmpart}(x)} is used.}
   \item{corr}{logical indicating if the matrix should be a
     \emph{correlation} matrix.}
   \item{keepDiag}{logical, generalizing \code{corr}: if \code{TRUE}, the
@@ -32,6 +33,11 @@ nearPD(x, corr = FALSE, keepDiag = FALSE, do2eigen = TRUE,
     \eqn{Y_k = P_U(P_S(Y_{k-1}))}{Y(k) = P_U(P_S(Y(k-1)))}.}
   \item{only.values}{logical; if \code{TRUE}, the result is just the
     vector of eigen values of the approximating matrix.}
+  \item{ensureSymmetry}{logical; by default, \code{\link{symmpart}(x)}
+    is used whenever \code{\link{isSymmetric}(x)} is not true.  The user
+    can explicitly set this to \code{TRUE} or \code{FALSE}, saving the
+    symmetry test. \emph{Beware} however that setting it \code{FALSE}
+    for an \bold{a}symmetric input \code{x}, is typically nonsense!}
   \item{eig.tol}{defines relative positiveness of eigenvalues compared
     to largest one, \eqn{\lambda_1}. Eigen values \eqn{\lambda_k} are
     treated as if zero when \eqn{\lambda_k / \lambda_1 \le eig.tol}.}

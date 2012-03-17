@@ -1,7 +1,8 @@
 
-R version 2.7.0 Under development (unstable) (2007-09-24 r42966)
-Copyright (C) 2007 The R Foundation for Statistical Computing
+R version 2.14.0 alpha (2011-10-06 r57181)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-unknown-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -25,7 +26,7 @@ Loading required package: cluster
 +     (verC <- readLines(Dfile <- file.path(pkgPath, "DESCRIPTION"), n = 2)[2])
 + }
 > 
-> ## trivial cases should `work':
+> ## trivial cases should 'work':
 > daisy(cbind(1))
 Dissimilarities :
 dissimilarity(0)
@@ -72,7 +73,7 @@ Metric :  euclidean
 Number of objects : 3
 Warning message:
 In daisy(d32, stand = TRUE) :
-  ‘x’ has constant columns 1, 2; these are standardized to 0
+  'x' has constant columns 1, 2; these are standardized to 0
 > daisy(d32, type = list(ordratio="zwei"))
 Dissimilarities :
   A B

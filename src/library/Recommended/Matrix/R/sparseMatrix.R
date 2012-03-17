@@ -27,7 +27,9 @@ spMatrix <- function(nrow, ncol,
         j = as.integer(j - 1L))
 }
 
-sparseMatrix <- function(i = ep, j = ep, p, x, dims, dimnames, index1 = TRUE)
+sparseMatrix <- function(i = ep, j = ep, p, x, dims, dimnames,
+                         symmetric = FALSE, index1 = TRUE,
+                         giveCsparse = TRUE, check = TRUE)
 {
   ## Purpose: user-level substitute for most  new(<sparseMatrix>, ..) calls
   ## Author: Douglas Bates, Date: 12 Jan 2009, based on Martin's version
@@ -53,9 +55,11 @@ sparseMatrix <- function(i = ep, j = ep, p, x, dims, dimnames, index1 = TRUE)
         stopifnot(all(dims >= dims.min))
         dims <- as.integer(dims)
     }
+    if(symmetric && dims[1] != dims[2])
+        stop("symmetric matrix must be square")
     isPat <- missing(x) ## <-> patter"n" Matrix
     kx <- if(isPat) "n" else .M.kind(x)
-    r <- new(paste(kx, "gTMatrix", sep=''))
+    r <- new(paste(kx, if(symmetric)"s" else "g", "TMatrix", sep=''))
     r@Dim <- dims
     if(!isPat) {
 	if(kx == "d" && !is.double(x)) x <- as.double(x)
@@ -70,8 +74,8 @@ sparseMatrix <- function(i = ep, j = ep, p, x, dims, dimnames, index1 = TRUE)
     r@j <- j - 1L
     if(!missing(dimnames))
 	r@Dimnames <- dimnames
-    validObject(r)
-    as(r, "CsparseMatrix")
+    if(check) validObject(r)
+    if(giveCsparse) as(r, "CsparseMatrix") else r
 }
 
 ## "graph" coercions -- this needs the graph package which is currently

@@ -6,7 +6,7 @@
   Compute points on the ellipsoid boundary, mostly for drawing.
 }
 \usage{
-%  method *and* stand alone:
+% method *and* stand alone on purpose :
 predict.ellipsoid(object, n.out=201, \dots)
 \method{predict}{ellipsoid}(object, n.out=201, \dots)
 ellipsoidPoints(A, d2, loc, n.half = 201)

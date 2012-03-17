@@ -48,6 +48,7 @@ export(anova.gam, bam, bam.update, concurvity, cSplineDes,
        smooth.construct.sos.smooth.spec,
        smooth.construct.ad.smooth.spec,
        summary.gam,sp.vcov,
+       spasm.construct,spasm.sp,spasm.smooth,
        t2,te,tensor.prod.model.matrix,tensor.prod.penalties,
        Tweedie,uniquecombs, vcov.gam, vis.gam)
 
@@ -60,7 +61,7 @@ importFrom(stats,.checkMFClasses,.getXlevels, as.formula, anova,anova.glmlist,co
             predict,printCoefmat ,quantile,qqnorm, reformulate,residuals,rnorm,runif,termplot,terms,terms.formula, uniroot, 
            var,vcov)
 importFrom(nlme,Dim,corMatrix,logDet,pdConstruct,pdFactor,pdMatrix)
-importFrom(Matrix,t,mean,colMeans,colSums)
+importFrom(Matrix,t,mean,colMeans,colSums,chol,solve,diag)
 
 S3method(anova, gam)
 S3method(influence, gam)
@@ -93,8 +94,6 @@ S3method(pdMatrix,pdIdnot)
 S3method(solve,pdIdnot)
 S3method(summary,pdIdnot)
 
-
-
 S3method(smooth.construct,ad.smooth.spec)
 S3method(smooth.construct,ps.smooth.spec)
 S3method(smooth.construct,cp.smooth.spec)
@@ -114,6 +113,11 @@ S3method(Predict.matrix,cyclic.smooth)
 S3method(Predict.matrix,tensor.smooth)
 S3method(Predict.matrix,tprs.smooth)
 
+S3method(spasm.construct,cus)
+S3method(spasm.sp,cus)
+S3method(spasm.smooth,cus)
 
-
-
+S3method(smooth2random,mgcv.smooth)
+S3method(smooth2random,fs.interaction)
+S3method(smooth2random,tensor.smooth)
+S3method(smooth2random,t2.smooth)

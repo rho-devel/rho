@@ -575,7 +575,8 @@ levelplot.formula <-
              allow.multiple = is.null(groups) || outer,
              outer = TRUE,
              aspect = "fill",
-             panel = lattice.getOption("panel.levelplot"),
+             panel = if (useRaster) lattice.getOption("panel.levelplot.raster")
+                     else lattice.getOption("panel.levelplot"),
              prepanel = NULL,
              scales = list(),
              strip = TRUE,
@@ -592,6 +593,7 @@ levelplot.formula <-
              region = TRUE,
              drop.unused.levels = lattice.getOption("drop.unused.levels"),
              ...,
+             useRaster = FALSE,
              lattice.options = NULL,
              default.scales = list(),
              default.prepanel = lattice.getOption("prepanel.default.levelplot"),
@@ -634,12 +636,34 @@ levelplot.formula <-
 
     subscr <- seq_len(length(form$left))
 
-    if (!is.function(panel)) panel <- eval(panel)
-    if (!is.function(strip)) strip <- eval(strip)
     cond <- form$condition
     z <- form$left
     x <- form$right.x
     y <- form$right.y
+
+    if (useRaster)
+    {
+        ## Does device support raster images?
+        devRaster <- dev.capabilities("rasterImage")$rasterImage
+        if (is.na(devRaster)) 
+        {
+            warning("device support for raster images unknown, ignoring 'raster=TRUE'")
+            useRaster <- FALSE
+        }
+        else if (devRaster == "no")
+        {
+            warning("device has no raster support, ignoring 'raster=TRUE'")
+            useRaster <- FALSE
+        }
+        else if (devRaster == "non-missing" && any(is.na(z)))
+        {
+            warning("device does not support raster images with NA, ignoring 'raster=TRUE'")
+            useRaster <- FALSE
+        }
+    }
+
+    if (!is.function(panel)) panel <- eval(panel)
+    if (!is.function(strip)) strip <- eval(strip)
     if (length(cond) == 0)
     {
         strip <- FALSE
@@ -654,6 +678,7 @@ levelplot.formula <-
             if (pretty) pretty(zrng, cuts)
             else seq(zrng[1], zrng[2], length.out = cuts + 2)
     
+
     ## create a skeleton trellis object with the
     ## less complicated components:
 
@@ -736,6 +761,7 @@ levelplot.formula <-
         if (colorkey)
         {
             colorkey <- list(at = at, space = "right")
+            if (useRaster) colorkey$raster <- TRUE
             if (!missing(col.regions)) colorkey$col <- col.regions
             if (!missing(alpha.regions)) colorkey$alpha <- alpha.regions
         }
@@ -748,6 +774,7 @@ levelplot.formula <-
                  at = at)
         if (!missing(col.regions)) tmp$col <- col.regions
         if (!missing(alpha.regions)) tmp$alpha <- alpha.regions
+        if (useRaster) tmp$raster <- TRUE
         colorkey <- updateList(tmp, colorkey)
     }
     foo$legend <-
@@ -939,7 +966,7 @@ panel.levelplot.raster <-
                 just = c("left", "bottom"),
                 default.units = "native",
                 name = trellis.grobname(paste(identifier, "raster", sep="."),
-                  type = "panel", group = group))
+                                        type = "panel", group = group))
 }
 
 

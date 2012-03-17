@@ -39,6 +39,8 @@
 
 #include "CXXR/String.h"
 
+#include <algorithm>
+#include "boost/lambda/lambda.hpp"
 #include "R_ext/Error.h"
 #include "CXXR/UncachedString.h"
 
@@ -117,4 +119,12 @@ unsigned int String::packGPBits() const
 	break;
     }
     return ans;
+}
+
+bool CXXR::isASCII(const std::string& str)
+{
+    using namespace boost::lambda;
+    std::string::const_iterator it
+	= std::find_if(str.begin(), str.end(), _1 > 0x7F);
+    return it == str.end();
 }

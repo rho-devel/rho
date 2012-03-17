@@ -296,6 +296,10 @@ stopifnot(identical(crossprod(I5), I5),
           identical(solve(D5), solve(D5, I5)),
           all.equal(D5, solve(solve(D5)), tol = 1e-12)
           )
-solve(D5)
+solve(D5)# efficient as is diagonal
+
+# an unusual way to construct a band matrix:
+rbind2(cbind2(I5, D5),
+       cbind2(D5, I5))
 }
 \keyword{classes}

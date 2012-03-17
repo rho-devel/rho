@@ -4,10 +4,10 @@
 @settitle R FAQ
 @setchapternewpage on
 @set FAQ_YEAR 2011
-@set FAQ_DATE @value{FAQ_YEAR}-07-05
+@set FAQ_DATE @value{FAQ_YEAR}-12-16
 @set REL_YEAR 2011
 @set REL_MAJOR 2
-@set REL_MINOR 13
+@set REL_MINOR 14
 @set REL_PATCHLEVEL 1
 @set REL_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{REL_PATCHLEVEL}
 @set FAQ_VERSION @value{REL_MAJOR}.@value{REL_MINOR}.@value{FAQ_DATE}
@@ -58,7 +58,7 @@ FORTRAN
 @strong{\p\}
 @end macro
 
-@macro cpkg {p}
+@macro CRANpkg {p}
 @url{http://CRAN.R-project.org/package=\p\, @strong{\p\}}
 @end macro
 
@@ -162,12 +162,12 @@ The latest version of this document is always available from
 From there, you can obtain versions converted to
 @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.txt,, plain
 @acronym{ASCII} text},
-@url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.dvi.gz,, DVI},
+@c @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.dvi.gz,, DVI},
 @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.info.gz,, @acronym{GNU}
 info}, @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.html,, @HTML{}},
 @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.pdf,, PDF},
-@url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.ps.gz,, PostScript} as
-well as the @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.texi,,
+@c @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.ps.gz,, PostScript}
+as well as the @url{http://CRAN.R-project.org/doc/FAQ/R-FAQ.texi,,
 Texinfo source} used for creating all these formats using the
 @url{http://texinfo.org/, @acronym{GNU} Texinfo system}.
 
@@ -277,10 +277,11 @@ by sending code and bug reports.
 
 Since mid-1997 there has been a core group (the ``R Core Team'') who can
 modify the R source code archive.  The group currently consists of Doug
-Bates, John Chambers, Peter Dalgaard, Robert Gentleman, Kurt Hornik,
-Stefano Iacus, Ross Ihaka, Friedrich Leisch, Thomas Lumley, Martin
-Maechler, Duncan Murdoch, Paul Murrell, Martyn Plummer, Brian Ripley,
-Duncan Temple Lang, Luke Tierney, and Simon Urbanek.
+Bates, John Chambers, Peter Dalgaard, Seth Falcon, Robert Gentleman,
+Kurt Hornik, Stefano Iacus, Ross Ihaka, Friedrich Leisch, Uwe Ligges,
+Thomas Lumley, Martin Maechler, Duncan Murdoch, Paul Murrell, Martyn
+Plummer, Brian Ripley, Deepayan Sarkar, Duncan Temple Lang, Luke
+Tierney, and Simon Urbanek.
 
 R has a home page at @url{http://www.R-project.org/}.  It is
 @url{http://www.gnu.org/philosophy/free-sw.html, free software}
@@ -1656,7 +1657,7 @@ to a remote server, see for example the collection of links available from
 @url{http://biostat.mc.vanderbilt.edu/twiki/bin/view/Main/StatCompCourse}.
 
 @url{http://www.warwick.ac.uk/go/dfirth, David Firth} has written
-@cpkg{CGIwithR}, an R add-on package available from @CRAN{}.  It
+@CRANpkg{CGIwithR}, an R add-on package available from @CRAN{}.  It
 provides some simple extensions to R to facilitate running R scripts
 through the CGI interface to a web server, and allows submission of data
 using both GET and POST methods.  It is easily installed using Apache
@@ -1710,17 +1711,31 @@ interface is created automatically.  There is no need for the user to do
 any extra scripting or learn any new scripting techniques.  Rwui can
 also be found at @uref{http://rwui.cryst.bbk.ac.uk}.
 
-The @cpkg{R.rsp} package by Henrik Bengtsson introduces ``R Server
+The @CRANpkg{R.rsp} package by Henrik Bengtsson introduces ``R Server
 Pages''.  Analogous to Java Server Pages, an R server page is typically
 @HTML{} with embedded R code that gets evaluated when the page is
 requested.  The package includes an internal cross-platform HTTP server
 implemented in Tcl, so provides a good framework for including web-based
 user interfaces in packages.  The approach is similar to the use of the
-@cpkg{brew} package with @url{http://rapache.net/, Rapache} with the
+@CRANpkg{brew} package with @url{http://rapache.net/, Rapache} with the
 advantage of cross-platform support and easy installation.
 
-Finally, the @cpkg{Rook} package by Jeffrey Horner provides a web server
-server interface borrowing heavily from Ruby's Rack project.
+The @CRANpkg{Rook} package by Jeffrey Horner provides a web server
+interface borrowing heavily from Ruby's Rack project.
+
+Finally, @uref{http://code.google.com/p/concerto-platform/, Concerto} is
+a user friendly open-source Web Interface to R developed at the
+Psychometrics Centre of Cambridge University.  It was designed as an
+online platform to design and run Computerized Adaptive Tests, but can
+be also used as a general-purpose R Web Interface.  It allows R users
+with no programming or web designing background to quickly develop
+flexible and powerful online applications, websites, and psychometrics
+tests.  To maximize its reliability, security, and performance, Concerto
+relies on the popular and reliable open-source elements such as MySQL
+server (exchange and storage of the data), @uref{http://rstudio.org/,
+Rstudio} (R code designing and testing, file management), CKEditor
+(@HTML{} Layer design), and PHP.
+
 
 @node R Add-On Packages, R and Emacs, R Web Interfaces, Top
 @chapter R Add-On Packages
@@ -1755,6 +1770,8 @@ The R distribution comes with the following packages:
 @c 3.0.0
 @item base
 Base R functions (and datasets before R 2.0.0).
+@item compiler
+R byte code compiler (added in R 2.13.0).
 @item datasets
 Base R datasets (added in R 2.0.0).
 @item grDevices
@@ -1768,6 +1785,9 @@ interaction.
 @item methods
 Formally defined methods and classes for R objects, plus other
 programming tools, as described in the Green Book.
+@item parallel
+Support for parallel computation, including by forking and by sockets, 
+and random-number generation (added in R 2.14.0).
 @item splines
 Regression spline functions and classes.
 @item stats
@@ -1786,7 +1806,7 @@ former @pkg{base} was split into the four packages @pkg{base},
 @pkg{graphics}, @pkg{stats}, and @pkg{utils}.  Packages @pkg{ctest},
 @pkg{eda}, @pkg{modreg}, @pkg{mva}, @pkg{nls}, @pkg{stepfun} and
 @pkg{ts} were merged into @pkg{stats}, package @pkg{lqs} returned to the
-recommended package @pkg{MASS}, and package @pkg{mle} moved to
+recommended package @CRANpkg{MASS}, and package @pkg{mle} moved to
 @pkg{stats4}.
 
 @node Add-on packages from CRAN, Add-on packages from Omegahat, Add-on packages in R, Which add-on packages exist for R?
@@ -2270,6 +2290,7 @@ dir /opt/R/src/unix
 * How do I create a plot with two y-axes?::  
 * How do I access the source code for a function?::  
 * Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?::  
+* Why is R apparently not releasing memory?::  
 @end menu
 
 @c @node Why does R run out of memory?, Why does sourcing a correct file fail?, R Miscellanea, R Miscellanea
@@ -2538,9 +2559,9 @@ internal codes).
 @node Are Trellis displays implemented in R?, What are the enclosing and parent environments?, How do I convert factors to numeric?, R Miscellanea
 @section Are Trellis displays implemented in R?
 
-The recommended package @pkg{lattice} (which is based on another
-recommended package, @pkg{grid}) provides graphical functionality
-that is compatible with most Trellis commands.
+The recommended package @CRANpkg{lattice} (which is based on base
+package @pkg{grid}) provides graphical functionality that is compatible
+with most Trellis commands.
 
 You could also look at @code{coplot()} and @code{dotchart()} which might
 do at least some of what you want.  Note also that the R version of
@@ -2683,15 +2704,15 @@ strings file ``names''.
 @node Are GAMs implemented in R?, Why is the output not printed when I source() a file?, What are valid names?, R Miscellanea
 @section Are GAMs implemented in R?
 
-Package @cpkg{gam} from @CRAN{} implements all the Generalized Additive
-Models (GAM) functionality as described in the GAM chapter of the White
-Book.  In particular, it implements backfitting with both local
-regression and smoothing splines, and is extendable.  There is a
-@code{gam()} function for GAMs in package @pkg{mgcv}, but it is not an
-exact clone of what is described in the White Book (no @code{lo()} for
-example).  Package @cpkg{gss} can fit spline-based GAMs too.  And if you
-can accept regression splines you can use @code{glm()}.  For Gaussian
-GAMs you can use @code{bruto()} from package @cpkg{mda}.
+Package @CRANpkg{gam} from @CRAN{} implements all the Generalized
+Additive Models (GAM) functionality as described in the GAM chapter of
+the White Book.  In particular, it implements backfitting with both
+local regression and smoothing splines, and is extendable.  There is a
+@code{gam()} function for GAMs in package @CRANpkg{mgcv}, but it is not
+an exact clone of what is described in the White Book (no @code{lo()}
+for example).  Package @CRANpkg{gss} can fit spline-based GAMs too.  And
+if you can accept regression splines you can use @code{glm()}.  For
+Gaussian GAMs you can use @code{bruto()} from package @CRANpkg{mda}.
 
 @node Why is the output not printed when I source() a file?, Why does outer() behave strangely with my function?, Are GAMs implemented in R?, R Miscellanea
 @section Why is the output not printed when I source() a file?
@@ -2811,16 +2832,16 @@ available for versions of R prior to 2.7.0, or without support for
 cairo.  From R 2.7.0 @code{png()} by default uses the Quartz device
 on Mac OS X, and that too works in batch mode.
 
-Earlier versions of the @code{png()} device uses the X11 driver, which is 
-a problem in batch mode or for remote operation.  If you have Ghostscript 
-you can use @code{bitmap()}, which produces a PostScript or PDF file then 
-converts it to any bitmap format supported by Ghostscript.  On some 
-installations this produces ugly output, on others it is perfectly 
-satisfactory.  Many systems now come with Xvfb from 
-@url{http://www.x.org/Downloads.html, X.Org} (possibly as an optional 
-install), which is an X11 server that does not require a screen; and there 
-is the @cpkg{GDD} package from @CRAN{}, which produces PNG, JPEG and GIF 
-bitmaps without X11.
+Earlier versions of the @code{png()} device uses the X11 driver, which
+is a problem in batch mode or for remote operation.  If you have
+Ghostscript you can use @code{bitmap()}, which produces a PostScript or
+PDF file then converts it to any bitmap format supported by Ghostscript.
+On some installations this produces ugly output, on others it is
+perfectly satisfactory.  Many systems now come with Xvfb from
+@url{http://www.x.org/Downloads.html, X.Org} (possibly as an optional
+install), which is an X11 server that does not require a screen; and
+there is the @CRANpkg{GDD} package from @CRAN{}, which produces PNG,
+JPEG and GIF bitmaps without X11.
 
 @node How can I get command line editing to work?, How can I turn a string into a variable?, How do I produce PNG graphics in batch mode?, R Miscellanea
 @section How can I get command line editing to work?
@@ -2902,7 +2923,7 @@ without any of this messing about.
 
 The most likely reason is that you forgot to tell R to display the
 graph.  Lattice functions such as @code{xyplot()} create a graph object,
-but do not display it (the same is true of @cpkg{ggplot2} graphics,
+but do not display it (the same is true of @CRANpkg{ggplot2} graphics,
 and Trellis graphics in @SPLUS{}).  The @code{print()} method for the
 graph object produces the actual display.  When you use these functions
 interactively at the command line, the result is automatically printed,
@@ -3268,18 +3289,19 @@ warning.
 @section How can I put error bars or confidence bands on my plot?
 
 Some functions will display a particular kind of plot with error bars,
-such as the @code{bar.err()} function in the @cpkg{agricolae} package,
-the @code{plotCI()} function in the @cpkg{gplots} package, the
-@code{plotCI()} and @code{brkdn.plot()} functions in the @cpkg{plotrix}
-package and the @code{error.bars()}, @code{error.crosses()} and
-@code{error.bars.by()} functions in the @cpkg{psych} package.  Within
-these types of functions, some will accept the measures of dispersion
-(e.g., @code{plotCI}), some will calculate the dispersion measures from
-the raw values (@code{bar.err}, @code{brkdn.plot}), and some will do
-both (@code{error.bars}).  Still other functions will just display error
-bars, like the dispersion function in the @cpkg{plotrix} package.  Most
-of the above functions use the @code{arrows()} function in the base
-@pkg{graphics} package to draw the error bars.
+such as the @code{bar.err()} function in the @CRANpkg{agricolae}
+package, the @code{plotCI()} function in the @CRANpkg{gplots} package,
+the @code{plotCI()} and @code{brkdn.plot()} functions in the
+@CRANpkg{plotrix} package and the @code{error.bars()},
+@code{error.crosses()} and @code{error.bars.by()} functions in the
+@CRANpkg{psych} package.  Within these types of functions, some will
+accept the measures of dispersion (e.g., @code{plotCI}), some will
+calculate the dispersion measures from the raw values (@code{bar.err},
+@code{brkdn.plot}), and some will do both (@code{error.bars}).  Still
+other functions will just display error bars, like the dispersion
+function in the @CRANpkg{plotrix} package.  Most of the above functions
+use the @code{arrows()} function in the base @pkg{graphics} package to
+draw the error bars.
 
 The above functions all use the base graphics system.  The grid and
 lattice graphics systems also have specific functions for displaying
@@ -3287,9 +3309,10 @@ error bars, e.g., the @code{grid.arrow()} function in the @pkg{grid}
 package, and the @code{geom_errorbar()}, @code{geom_errorbarh()},
 @code{geom_pointrange()}, @code{geom_linerange()},
 @code{geom_crossbar()} and @code{geom_ribbon()} functions in the
-@cpkg{ggplot2} package.  In the lattice system, error bars can be
-displayed with @code{Dotplot()} or @code{xYplot()} in the @cpkg{Hmisc}
-package and @code{segplot()} in the @cpkg{latticeExtra} package.
+@CRANpkg{ggplot2} package.  In the lattice system, error bars can be
+displayed with @code{Dotplot()} or @code{xYplot()} in the
+@CRANpkg{Hmisc} package and @code{segplot()} in the
+@CRANpkg{latticeExtra} package.
 
 @node How do I create a plot with two y-axes?, How do I access the source code for a function?, How can I put error bars or confidence bands on my plot?, R Miscellanea
 @section How do I create a plot with two y-axes?
@@ -3299,9 +3322,9 @@ scaled to the same vertical size and showing separate vertical axes on
 the left and right sides of the plot that reflect the original scales of
 the data, is possible in R but is not recommended.  The basic approach
 for constructing such graphs is to use @code{par(new=TRUE)} (see
-@code{?par}); functions @code{twoord.plot()} (in the @cpkg{plotrix}
-package) and @code{doubleYScale()} (in the @cpkg{latticeExtra} package)
-automate the process somewhat.  See
+@code{?par}); functions @code{twoord.plot()} (in the @CRANpkg{plotrix}
+package) and @code{doubleYScale()} (in the @CRANpkg{latticeExtra}
+package) automate the process somewhat.  See
 @url{http://rwiki.sciviews.org/@/doku.php?id=tips:graphics-base:2yaxes}
 for more information, including strong arguments against this sort of
 graph.
@@ -3315,7 +3338,7 @@ a complete overview on how to access source code, see Uwe Ligges (2006),
 ``Help Desk: Accessing the sources'', @emph{R News}, @strong{6/4},
 43--45 (@url{http://cran.r-project.org/doc/Rnews/Rnews_2006-4.pdf}).
 
-@node Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?,  , How do I access the source code for a function?, R Miscellanea
+@node Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?, Why is R apparently not releasing memory?, How do I access the source code for a function?, R Miscellanea
 @section Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?
 
 As described in @code{?summary.lm}, when the intercept is zero (e.g.,
@@ -3354,6 +3377,61 @@ compare to the fitted line, the model where @math{x} doesn't explain any
 of the variance, is the model where @math{E[Y]=0} everywhere.  (If you
 don't know a priori that @math{E[Y]=0} when @math{x=0}, then you
 probably shouldn't be fitting a line through the origin.)
+
+@node Why is R apparently not releasing memory?,  , Why does summary() report strange results for the R^2 estimate when I fit a linear model with no intercept?, R Miscellanea
+@section Why is R apparently not releasing memory?
+
+This question is often asked in different flavors along the lines of
+``I have removed objects in R and run @code{gc()} and yet
+@code{ps}/@code{top} still shows the R process using a lot of
+memory'', often on Linux machines.
+
+This is an artifact of the way the operating system (OS) allocates
+memory.  In general it is common that the OS is not capable of
+releasing all unused memory.  In extreme cases it is possible that even
+if R frees almost all its memory, the OS can not release any of it due
+to its design and thus tools such as @code{ps} or @code{top} will
+report substantial amount of resident RAM used by the R process even
+though R has released all that memory.  In general such tools do
+@emph{not} report the actual memory usage of the process but rather
+what the OS is reserving for that process.
+
+The short answer is that this is a limitation of the memory allocator
+in the operating system and there is nothing R can do about it. That
+space is simply kept by the OS in the hope that R will ask for it
+later.  The following paragraph gives more in-depth answer with
+technical details on how this happens.
+
+Most systems use two separate ways to allocate memory. For allocation
+of large chunks they will use @code{mmap} to map memory into the
+process address space.  Such chunks can be released immediately when
+they are completely free, because they can reside anywhere in the
+virtual memory.  However, this is a relatively expensive operation and
+many OSes have a limit on the number of such allocated chunks, so this
+is only used for allocating large memory regions.  For smaller
+allocations the system can expand the data segment of the process
+(historically using the @code{brk} system call), but this whole area
+is always contiguous.  The OS can only move the end of this space, it
+cannot create any ``holes''. Since this operation is fairly cheap, it
+is used for allocations of small pieces of memory.  However, the
+side-effect is that even if there is just one byte that is in use
+at the end of the data segment, the OS cannot release any memory
+at all, because it cannot change the address of that byte.  This is
+actually more common than it may seem, because allocating a lot of
+intermediate objects, then allocating a result object and removing all
+intermediate objects is a very common practice.  Since the result is
+allocated at the end it will prevent the OS from releasing any memory
+used by the intermediate objects.  In practice, this is not necessarily
+a problem, because modern operating systems can page out unused
+portions of the virtual memory so it does not necessarily reduce the
+amount of real memory available for other applications.  Typically,
+small objects such as strings or pairlists will be affected by this
+behavior, whereas large objects such as long vectors will be allocated
+using @code{mmap} and thus not affected.  On Linux (and possibly other
+Unix-like systems) it is possible to use the @code{mallinfo} system call
+(also see the @url{http://rforge.net/mallinfo, mallinfo} package) to
+query the allocator about the layout of the allocations, including the
+actually used memory as well as unused memory that cannot be released.
 
 @node R Programming, R Bugs, R Miscellanea, Top
 @chapter R Programming

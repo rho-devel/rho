@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h> // C99 for int64_t
 #include <ctype.h>
 #include <R.h>  /* includes Rconfig.h */
 #include <Rversion.h>
@@ -125,6 +126,7 @@ extern	 /* stored pointers to symbols initialized in R_init_Matrix */
 
 // Define this "Cholmod compatible" to some degree
 enum x_slot_kind {x_pattern=-1, x_double=0, x_logical=1, x_integer=2, x_complex=3};
+//		    n		  d	      l		   i		z
 
 /* should also work for "matrix" matrices: */
 #define Real_KIND(_x_)	(IS_S4_OBJECT(_x_) ? Real_kind(_x_) : \
@@ -211,7 +213,7 @@ int* expand_cmprPt(int ncol, const int mp[], int mj[])
 /**
  * Check if slot(obj, "x") contains any NA (or NaN).
  *
- * @param obj   a 'Matrix' object with an 'x' slot.
+ * @param obj   a 'Matrix' object with a (double precision) 'x' slot.
  *
  * @return Rboolean :== any(is.na(slot(obj, "x") )
  */
@@ -255,6 +257,33 @@ mMatrix_as_geMatrix(SEXP A)
     return strcmp(class_P(A) + 1, "geMatrix") ? dup_mMatrix_as_geMatrix(A) : A;
 }
 
+// Keep centralized --- *and* in sync with ../inst/include/Matrix.h :
+#define MATRIX_VALID_dense			\
+        "dmatrix", "dgeMatrix",			\
+	"lmatrix", "lgeMatrix",			\
+	"nmatrix", "ngeMatrix",			\
+	"zmatrix", "zgeMatrix"
+
+#define MATRIX_VALID_Csparse			\
+ "dgCMatrix", "dsCMatrix", "dtCMatrix",		\
+ "lgCMatrix", "lsCMatrix", "ltCMatrix",		\
+ "ngCMatrix", "nsCMatrix", "ntCMatrix",		\
+ "zgCMatrix", "zsCMatrix", "ztCMatrix"
+
+#define MATRIX_VALID_Tsparse			\
+ "dgTMatrix", "dsTMatrix", "dtTMatrix",		\
+ "lgTMatrix", "lsTMatrix", "ltTMatrix",		\
+ "ngTMatrix", "nsTMatrix", "ntTMatrix",		\
+ "zgTMatrix", "zsTMatrix", "ztTMatrix"
+
+#define MATRIX_VALID_Rsparse			\
+ "dgRMatrix", "dsRMatrix", "dtRMatrix",		\
+ "lgRMatrix", "lsRMatrix", "ltRMatrix",		\
+ "ngRMatrix", "nsRMatrix", "ntRMatrix",		\
+ "zgRMatrix", "zsRMatrix", "ztRMatrix"
+
+#define MATRIX_VALID_CHMfactor "dCHMsuper", "dCHMsimpl", "nCHMsuper", "nCHMsimpl"
+
 /**
  * Return the 0-based index of a string match in a vector of strings
  * terminated by an empty string.  Returns -1 for no match.
@@ -284,6 +313,35 @@ int Matrix_check_class_and_super(SEXP x, const char **valid, SEXP rho);
 #else
 # define Matrix_check_class_and_super R_check_class_and_super
 #endif
+
+
+/** Accessing  *sparseVectors :  fast (and recycling)  v[i] for v = ?sparseVector:
+ * -> ./sparseVector.c  -> ./t_sparseVector.c :
+ */
+// Type_ans sparseVector_sub(int64_t i, int nnz_v, int* v_i, Type_ans* v_x, int len_v):
+
+/* Define all of
+ *  dsparseVector_sub(....)
+ *  isparseVector_sub(....)
+ *  lsparseVector_sub(....)
+ *  nsparseVector_sub(....)
+ *  zsparseVector_sub(....)
+ */
+#define _dspV_
+#include "t_sparseVector.c"
+
+#define _ispV_
+#include "t_sparseVector.c"
+
+#define _lspV_
+#include "t_sparseVector.c"
+
+#define _nspV_
+#include "t_sparseVector.c"
+
+#define _zspV_
+#include "t_sparseVector.c"
+
 
 #ifdef __cplusplus
 }

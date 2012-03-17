@@ -41,6 +41,7 @@
 \alias{Summary,nsparseVector-method}
 %
 \alias{coerce,ANY,sparseVector-method}
+\alias{coerce,ANY,nsparseVector-method}
 \alias{coerce,CsparseMatrix,sparseVector-method}
 \alias{coerce,TsparseMatrix,sparseVector-method}
 \alias{coerce,sparseMatrix,sparseVector-method}
@@ -85,6 +86,8 @@
 \alias{tcrossprod,Matrix,sparseVector-method}
 \alias{tcrossprod,sparseVector,Matrix-method}
 %
+\alias{head,sparseVector-method}
+\alias{tail,sparseVector-method}
 \alias{[,sparseVector,index,ANY,ANY-method}
 \alias{[,sparseVector,lsparseVector,ANY,ANY-method}
 \alias{[,sparseVector,nsparseVector,ANY,ANY-method}
@@ -153,6 +156,12 @@
       coerces a sparse vector to a sparse Matrix, i.e., an object
       inheriting from \code{\linkS4class{sparseMatrix}}, of the
       appropriate dimension.}
+    \item{head}{\code{signature(x = "sparseVector")}: as with \R's
+      (package \pkg{util}) \code{\link{head}}, \code{head(x,n)} (for
+      \eqn{n >= 1}) is equivalent to \code{x[1:n]}, but here can be much
+      more efficient, see the example.}
+    \item{tail}{\code{signature(x = "sparseVector")}: analogous to
+      \code{\link{head}}, see above.}
     \item{rep}{\code{signature(x = "sparseVector")} repeat \code{x},
       with the same argument list \code{(x, times, length.out, each,
 	...)} as the default method for rep().}
@@ -202,8 +211,24 @@ stopifnot(all(ss == print(as(ss, "CsparseMatrix"))))
 sN <- sx; sN[4] <- NA
 (svN <- as(sN, "sparseVector"))
 
-%% maybe move to ../tests/ ?
-stopifnot(identical(is | FALSE, is != 0),
+v <- as(c(0,0,3, 3.2, rep(0,9),-3,0,-1, rep(0,20),5,0),
+         "sparseVector")
+v <- rep(rep(v, 50), 5000)
+set.seed(1); v[sample(v@i, 1e6)] <- 0
+str(v)
+% Formal class 'dsparseVector' [package "Matrix"] with 3 slots
+%   ..@ x     : num [1:250000] 3.2 -1 -3 3 5 3.2 -3 3 -1 5 ...
+%   ..@ length: int 9500000
+%   ..@ i     : int [1:250000] 4 16 52 155 189 194 204 231 244 265 ...
+system.time(for(i in 1:4) hv <- head(v, 1e6))
+##   user  system elapsed
+##  0.033   0.000   0.032
+system.time(for(i in 1:4) h2 <- v[1:1e6])
+##   user  system elapsed
+##  1.317   0.000   1.319
+
+stopifnot(identical(hv, h2),
+          identical(is | FALSE, is != 0),
 	  validObject(svN), validObject(lis), as.logical(is.na(svN[4])),
 	  identical(is^2 > 0,	is & TRUE),
 	  all(!lis), !any(lis), length(nn@i) == 0, !any(nn), all(!nn),

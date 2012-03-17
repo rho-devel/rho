@@ -41,12 +41,11 @@ void  tweedious(double *w,double *w1,double *w2,double *y,double *phi,double *p,
 void psum(double *y, double *x,int *index,int *n);
 void rwMatrix(int *stop,int *row,double *w,double *X,int *n,int *p);
 void in_out(double *bx, double *by, double *break_code, double *x,double *y,int *in, int *nb, int *n);
-void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm);
+void Rlanczos(double *A,double *U,double *D,int *n, int *m, int *lm,double *tol);
 void RQT(double *A,int *r,int *c);
 void RuniqueCombs(double *X,int *ind,int *r, int *c);
 void  RPCLS(double *Xd,double *pd,double *yd, double *wd,double *Aind,double *bd,double *Afd,double *Hd,double *Sd,int *off,int *dim,double *theta, int *m,int *nar);
 void RMonoCon(double *Ad,double *bd,double *xd,int *control,double *lower,double *upper,int *n);
-void mgcv_AtA(double *AA,double *A,int *q,int *n);
 void MinimumSeparation(double *gx,double *gy,int *gn,double *dx,double *dy, int *dn,double *dist);
 void rksos(double *x,int *n,double *eps);
 
@@ -59,7 +58,8 @@ void mgcv_backsolve(double *R,int *r,int *c,double *B,double *C, int *bc);
 void mgcv_forwardsolve(double *R,int *r,int *c,double *B,double *C, int *bc);
 void mgcv_qr(double *x, int *r, int *c,int *pivot,double *tau);
 void update_qr(double *Q,double *R,int *n, int *q,double *lam, int *k);
-void mgcv_mmult(double *A,double *B,double *C,int *bt,int *ct,int *r,int *c,int *n);
+extern void mgcv_mmult(double *A,double *B,double *C,int *bt,int *ct,int *r,int *c,int *n);
+void mgcv_mmult0(double *A,double *B,double *C,int *bt,int *ct,int *r,int *c,int *n);
 void mgcv_svd_full(double *x,double *vt,double *d,int *r,int *c);
 void mgcv_symeig(double *A,double *ev,int *n,int *use_dsyevd, int *get_vectors,int *descending);
 void mroot(double *A,int *rank,int *n);
@@ -67,6 +67,10 @@ void R_cond(double *R,int *r,int *c,double *work,double *Rcondition);
 void mgcv_td_qy(double *S,double *tau,int *m,int *n, double *B,int *left,int *transpose);
 void mgcv_tri_diag(double *S,int *n,double *tau);
 void mgcv_trisymeig(double *d,double *g,double *v,int *n,int getvec,int descending); 
+void getXtWX(double *XtWX, double *X,double *w,int *r,int *c,double *work);
+void getXtX(double *XtX,double *X,int *r,int *c);
+void getXtMX(double *XtMX,double *X,double *M,int *r,int *c,double *work);
+void getXXt(double *XXt,double *X,int *r,int *c);
 
 /* basis constructor/prediction routines*/
 
@@ -76,3 +80,18 @@ void predict_tprs(double *x, int *d,int *n,int *m,int *k,int *M,double *Xu,int *
 void construct_tprs(double *x,int *d,int *n,double *knt,int *nk,int *m,int *k,double *X,double *S,
                     double *UZ,double *Xu,int *nXu,double *C);
 void gen_tps_poly_powers(int *pi,int *M,int *m, int *d);
+
+/* sparse smooth related routines */
+void sparse_penalty(double *X,int *n,int *d,double *D,int *ni,int *k,int *m,int *a_weight,double *kappa);
+void k_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,int *get_a);
+void kba_nn(double *X,double *dist,double *a,int *ni,int *n,int *d,int *k,
+            int *get_a,double *cut_off);
+void Rkdtree(double *X,int *n, int *d,double *lo,double *hi,int *ind, int *rind);
+void tri2nei(int *t,int *nt,int *n,int *d,int *off);
+void nei_penalty(double *X,int *n,int *d,double *D,int *ni,int *ii,int *off,
+		 int *m,int *a_weight,double *kappa);
+void sspl_construct(double *lambda,double *x,double *w,double *U,double *V,
+             double *diagA,double *lb,int *n,double *tol);
+void sspl_mapply(double *y,double *x,double *w,double *U,double *V,int *n,int *nf,double *tol,int *m);
+
+

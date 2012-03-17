@@ -16,7 +16,7 @@
 \begin{document}
 \maketitle
 \SweaveOpts{engine=R, keep.source=TRUE}
-\SweaveOpts{eps=FALSE, pdf=TRUE, width=8, height=5.5, strip.white=TRUE}
+\SweaveOpts{eps=FALSE, pdf=TRUE, width=8, height=5.5, strip.white=true}
 \setkeys{Gin}{width=\textwidth}
 
 % \begin{abstract}

@@ -1,7 +1,130 @@
 **  denotes quite substantial/important changes
 *** denotes really big changes 
-ISSUES:
 
+1.7-12
+
+* bam can now compute the leading order QR decomposition on a cluster
+  set up using the parallel package.
+
+* Default k for "tp" and "ds" modified so that it doesn't exceed the 100 + 
+  the null space dimension (to avoid complaints from users smoothing in 
+  quite alot of dimensions). Also defualt sub-sample size reduced to 2000.
+
+* Greater use of BLAS routines in the underlying method code. In particular 
+  all leading order operations count steps for gam fitting now use BLAS. 
+  You'll need R to be using a rather fancy BLAS to see much difference, 
+  however. 
+
+* Amusingly, some highly tuned blas libraries can result in lapack not always 
+  giving identical eigenvalues when called twice with the same matrix. The 
+  `newton' optimizer had assumed this wouldn't happen: not any more.
+
+* Now byte compiled by default. Turn this off in DESCRIPTION if it interferes
+  with debugging.
+ 
+* summary.gam p-value computation options modified (default remains the 
+  same).
+
+* summary.gam default p-value computation made more computationally 
+  efficient.
+
+* gamm and bam could fail under some options for specifying binomial models.
+  Now fixed.
+
+1.7-11
+
+* smoothCon bug fix to avoid NA labels for matrix arguments when 
+  no by variable provided. 
+
+* modification to p-value computation in summary.gam: `alpha' argument 
+  removed (was set to zero anyway); computation now deals with possibility
+  of rank deficiency computing psuedo-inverse of cov matrix for statistic. 
+  Previously p-value computation could fail for random effect smooths with 
+  large datasets, when a random effect has many levels. Also for large data
+  sets test statistic is now based on randomly sampling max(1000,np*2) model
+  matrix rows, where np is number of model coefficients (random number 
+  generator state unchanged by this), previous sample size was 3000. 
+
+* plot.mrf.smooth modified to allow passing '...' argument.
+
+* 'negbin' modified to avoid spurious warnings on initialization call.
+
+1.7-10
+
+* fix stupid bug in 1.7-9 that lost term labels in plot.gam.
+
+1.7-9
+
+* rather lovely plot method added for splines on the sphere.
+
+* plot.gam modified to allow 'scheme' to be specified for plots, to easily
+  select different plot looks.
+
+* schemes added for default smooth plotting method, modified for mrfs and 
+  factor-smooth interactions.
+
+* mgcv function deprected, since magic and gam are much better (let me know 
+  if this is really a problem).  
+
+1.7-8
+
+* gamm.setup fix. Bug introduced in 1.7-7 whereby gamm with no smooths would
+  fail.
+
+* gamm gives returned object a class "gamm"
+
+
+1.7-7
+
+* "fs" smooth factor interaction class introduced, for smooth factor 
+  interactions where smoothing parameters are same at each factor level.
+  Very efficient with gamm, so good for e.g. individual subject smooths.
+
+* qq.gam default method modified for increased power.
+
+* "re" terms now allowed as tensor product marginals.
+
+* log saturated likelihoods modified w.r.t. weight handling, so that weights
+  are treated as modifying the scale parameter, when scale parameter is free.
+  i.e. obs specific scale parameter is overall scale parameter divided by 
+  obs weight. This ensures that when the scale parameter is free, RE/ML based
+  inference is invariant to multiplicative rescaling of weights. 
+
+* te and t2 now accept lists for 'm'. This allows more flexibility with 
+  marginals that can have vector 'm' arguments (Duchon splines, P splines).   
+
+* minor mroot fix/gam.reparam fix. Could declare symmetric matrix 
+  not symmetric and halt gam fit.
+
+* argument sparse added to bam to allow exploitation of sparsity in fitting,
+  but results disappointing.
+
+* "mrf" now evaluates rank of penalty null space numerically (previously 
+   assumed it was always one, which it need not be with e.g. a supplied 
+   penalty).
+
+* gam.side now corrects the penalty rank in smooth objects that have 
+  been constrained, to account for the constraint. Avoids some nested 
+  model failures.
+
+* gamm and gamm.setup code restructured to allow smooths nested in factors
+  and for cleaner object oriented converion of smooths to random effects.
+
+* gam.fit3 bug. Could fail on immediate divergence as null.eta was matrix.
+
+* slanczos bug fixes --- could segfault if k negative. Could also fail to 
+  return correct values when k small and kl < 0 (due to a convergence 
+  testing bug, now fixed)
+
+* gamm bug --- could fail if only smooth was a fixed one, by looking for
+  non-existent sp vector. fixed.
+
+* 'cc' Predict.matrix bug fix - prediction failed for single points.
+
+* summary.gam failed for single coefficient random effects. fixed.
+
+* gam returns rV, where t(rV)%*%rV*scale is Bayesian cov matrix.
+ 
 1.7-6
 
 ** factor `by' variable handling extended: if a by variable is an

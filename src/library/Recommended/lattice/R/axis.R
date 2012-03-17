@@ -887,7 +887,7 @@ panel.axis <-
     keep.labels <- TRUE
 
     ## could possibly treat ticks and labels separately, but that
-    ## wasn't liked much I'll still keep 'keep.labels' around for now,
+    ## wasn't liked much.   I'll still keep 'keep.labels' around for now,
     ## but it's currently redundant
 
     ## if (check.overlap)
@@ -974,7 +974,6 @@ panel.axis <-
 
     if (draw.labels && !is.null(labels))
     {
-        
         {
             just <-
                 if (outside)
@@ -999,7 +998,7 @@ panel.axis <-
                          check.overlap = check.overlap,
                          just = just,
                          name = trellis.grobname("ticklabels.bottom",
-                           type="panel"),
+                                                 type="panel"),
                          gp = gp.text),
                top =
                grid.text(label = labels[axid & keep.labels],
@@ -1009,7 +1008,7 @@ panel.axis <-
                          check.overlap = check.overlap,
                          just = just,
                          name = trellis.grobname("ticklabels.top",
-                           type="panel"),
+                                                 type="panel"),
                          gp = gp.text),
                left =
                grid.text(label = labels[axid & keep.labels],
@@ -1019,7 +1018,7 @@ panel.axis <-
                          check.overlap = check.overlap,
                          just = just,
                          name = trellis.grobname("ticklabels.left",
-                           type="panel"),
+                                                 type="panel"),
                          gp = gp.text),
                right =
                grid.text(label = labels[axid & keep.labels],
@@ -1029,7 +1028,7 @@ panel.axis <-
                          check.overlap = check.overlap,
                          just = just,
                          name = trellis.grobname("ticklabels.right",
-                           type="panel"),
+                                                 type="panel"),
                          gp = gp.text))
     }
     invisible()

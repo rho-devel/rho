@@ -1,6 +1,6 @@
 % File src/library/base/man/regex.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2009 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{regex}
@@ -85,8 +85,9 @@
     \item{\samp{[:alpha:]}}{Alphabetic characters: \samp{[:lower:]} and
       \samp{[:upper:]}.}
 
-    \item{\samp{[:blank:]}}{Blank characters: space and tab. (This is an
-      extension to the POSIX standard.)}
+    \item{\samp{[:blank:]}}{Blank characters: space and tab, and
+      possibly other locale-dependent characters such as non-breaking
+      space.}
 
     \item{\samp{[:cntrl:]}}{
       Control characters.  In ASCII, these characters have octal codes
@@ -109,7 +110,7 @@
 
     \item{\samp{[:space:]}}{
       Space characters: tab, newline, vertical tab, form feed, carriage
-      return, and space.}
+      return, space and possibly other locale-dependent characters.}
 
     \item{\samp{[:upper:]}}{Upper-case letters in the current locale.}
 
@@ -305,8 +306,14 @@
   Patterns \samp{(?<=...)} and \samp{(?<!...)} are the lookbehind
   equivalents: they do not allow repetition quantifiers nor \samp{\\C}
   in \code{\dots}.
+  
+  As from \R 2.14.0 \code{regexpr} and \code{gregexpr} support
+  \sQuote{named capture}.  If groups are named, e.g.,
+  \code{"(?<first>[A-Z][a-z]+)"} then the positions of the matches are
+  also returned by name.  (Named backreferences are not supported by
+  \code{sub}.)
 
-  Named subpatterns, atomic grouping, possessive qualifiers and conditional
+  Atomic grouping, possessive qualifiers and conditional
   and recursive patterns are not covered here.
 }
 \author{

@@ -1,6 +1,6 @@
 % File src/library/base/man/Extract.Rd
 % Part of the R package, http://www.R-project.org
-% Copyright 1995-2010 R Core Development Team
+% Copyright 1995-2011 R Core Development Team
 % Distributed under GPL 2 or later
 
 \name{Extract}
@@ -12,6 +12,7 @@
 \alias{[.simple.list}
 \alias{[[}
 \alias{$}
+\alias{getElement}
 \alias{[<-}
 \alias{[[<-}
 \alias{$<-}
@@ -26,13 +27,15 @@ x[i, j, \dots , drop = TRUE]
 x[[i, exact = TRUE]]
 x[[i, j, \dots, exact = TRUE]]
 x$name
+getElement(object, name)
 
 x[i] <- value
 x[i, j, \dots] <- value
+x[[i]] <- value
 x$i <- value
 }
 \arguments{
-  \item{x}{
+  \item{x, object}{
     object from which to extract element(s) or in which to replace element(s).
   }
   \item{i, j, \dots}{
@@ -170,6 +173,10 @@ x$i <- value
   \code{x[["name", exact = FALSE]]}.  Also, the partial matching
   behavior of \code{[[} can be controlled using the \code{exact} argument.
 
+  \code{getElement(x, name)} is a version of \code{x[[name, exact = TRUE]]}
+  which for formally classed (S4) objects returns \code{\link{slot}(x, name)},
+  hence providing access to even more general list-like objects.
+
   \code{[} and \code{[[} are sometimes applied to other recursive
   objects such as \link{call}s and \link{expression}s.  Pairlists are
   coerced to lists for extraction by \code{[}, but all three operators
@@ -180,8 +187,9 @@ x$i <- value
   equivalent to \code{alist[[i1]]\dots[[ip]]} providing all but the
   final indexing results in a list.
 
-  When either \code{[[} or \code{$} is used for replacement, a value of
-  \code{NULL} deletes the corresponding item of the list.
+  Note that in all three kinds of replacement, a value of \code{NULL}
+  deletes the corresponding item of the list.  To set entries to
+  \code{NULL}, you need \code{x[i] <- list(NULL)}.
 
   When \code{$<-} is applied to a \code{NULL} \code{x}, it first coerces
   \code{x} to \code{list()}.  This is what also happens with \code{[[<-}

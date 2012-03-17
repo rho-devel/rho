@@ -164,6 +164,7 @@ fh_close_handle (struct file_handle *h)
   if (h->class)
     h->class->close (h);
   h->class = NULL;
+  if(h->ext) Free(h->ext);
   h->ext = NULL;
 }
 

@@ -194,6 +194,9 @@ panel.xyplot <-
         if ("smooth" %in% type)
             panel.loess(x, y, horizontal = horizontal,
                         col = col.line, lty = lty, lwd = lwd, ...)
+        if ("spline" %in% type)
+            panel.spline(x, y, horizontal = horizontal,
+                        col = col.line, lty = lty, lwd = lwd, ...)
         if ("a" %in% type)
             panel.linejoin(x, y, 
                            horizontal = horizontal,

@@ -68,7 +68,6 @@ $(R_HOME)/$(BINDIR)/open.exe: open.exe
 
 rgui-CPPFLAGS=-DWin32
 rterm-CPPFLAGS=-DWin32
-graphappmain-CPPFLAGS=$(DEFS_W64)
 
 ## -luser32 -lkernel32 -ladvapi32 -lshell32 are now standard
 Rgui-LIBS=-L../../../$(IMPDIR) -lR -lRgraphapp
@@ -87,6 +86,7 @@ rcico.o: Rcmd.exe.manifest
 rgico.o: Rgui32.manifest
 rtico.o: Rterm32.manifest
 else
+RESFLAGS = -DWN64
 rtico.o: Rterm64.manifest
 rgico.o: Rgui64.manifest
 endif

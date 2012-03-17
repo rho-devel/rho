@@ -58,9 +58,9 @@
     \item{\code{i}:}{Object of class \code{"integer"} of length nnZ
       (\emph{half} number of non-zero elements).  These are the row
       numbers for each non-zero element in the lower triangle of the matrix.}
-    \item{\code{p}:}{(only in class \code{"dsCMatrix"}:) Object of class
-      \code{"integer"} of pointers, one for each column, to the initial
-      (zero-based) index of elements in the column.}
+    \item{\code{p}:}{(only in class \code{"dsCMatrix"}:) an
+      \code{\link{integer}} vector for providing pointers, one for each
+      column, see the detailed description in \code{\linkS4class{CsparseMatrix}}.}
     \item{\code{j}:}{(only in class \code{"dsTMatrix"}:) Object of
       class \code{"integer"} of length nnZ (as \code{i}).  These are the
       column numbers for each non-zero element in the lower triangle of
@@ -142,6 +142,7 @@ mT <- as(mm, "dgTMatrix")
 sC <- Matrix(mT, sparse=TRUE, forceCheck=TRUE)
 
 sym2 <- as(symC, "TsparseMatrix")
+## --> the same as 'symM', a "dsTMatrix"
 \dontshow{
 stopifnot(identical(symC, sC), identical(sym2, symM),
           class(sym2) == "dsTMatrix",

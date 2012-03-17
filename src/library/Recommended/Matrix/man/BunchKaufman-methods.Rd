@@ -22,11 +22,21 @@ BunchKaufman(x, \dots)
   Currently, only methods for \bold{dense} numeric symmetric matrices
   are implemented.
   \describe{
-    \item{\code{x = "dspMatrix"}}{...}%FIXME
-    \item{\code{x = "dsyMatrix"}}{...}
+    \item{\code{x = "dspMatrix"}}{uses Lapack routine \code{dsptrf},}
+    \item{\code{x = "dsyMatrix"}}{uses Lapack routine \code{dsytrf},
+      computing the Bunch-Kaufman decomposition.}
   }
-  These rely on the Lapack routines \code{dsptrf} and
-  \code{dsytrf}, respectively.
+}
+\value{
+  an object of class \code{\linkS4class{BunchKaufman}}, which can also
+  be used as a (triangular) matrix directly.
+%% FIXME: Really need an expand() method, in order to *work* with the result!
+}
+\references{
+  The original LAPACK source code, including documentation;
+  \url{http://www.netlib.org/lapack/double/dsytrf.f}
+  and
+  \url{http://www.netlib.org/lapack/double/dsptrf.f}
 }
 \seealso{
   The resulting class, \code{\linkS4class{BunchKaufman}}.
@@ -44,6 +54,10 @@ if(FALSE) # no method defined yet for *sparse* :
 ## does apply to *dense* symmetric matrices:
 bkCA <- BunchKaufman(as(CAs, "denseMatrix"))
 bkCA
+
+image(bkCA)# shows how sparse it is, too
+str(R.CA <- as(bkCA, "sparseMatrix"))
+## an upper triangular 72x72 matrix with only 144 non-zero entries
 }
 \keyword{methods}
 

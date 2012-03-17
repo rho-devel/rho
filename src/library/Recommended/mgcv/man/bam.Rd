@@ -10,14 +10,14 @@ The degree of smoothness of model terms is estimated as part of
 fitting. In use the function is much like \code{\link{gam}}, except that the numerical methods
 are designed for datasets containing upwards of several tens of thousands of data. The advantage 
 of \code{bam} is much lower memory footprint than \code{\link{gam}}, but it can also be much faster, 
-for large datasets.
+for large datasets. \code{bam} can also compute on a cluster set up by the \link[parallel]{parallel} package.
 
 }
 \usage{
 bam(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,
     na.action=na.omit, offset=NULL,method="REML",control=list(),
     scale=0,gamma=1,knots=NULL,sp=NULL,min.sp=NULL,paraPen=NULL,
-    chunk.size=10000,rho=0,...)
+    chunk.size=10000,rho=0,sparse=FALSE,cluster=NULL,gc.level=1,...)
 }
 %- maybe also `usage' for other objects documented here.
 
@@ -106,6 +106,16 @@ if smooths share smoothing parameters).}
 \item{rho}{An AR1 error model can be used for the residuals (based on dataframe order), of Gaussian-identity 
            link models. This is the AR1 correlation parameter.}
 
+\item{sparse}{If all smooths are P-splines and all tensor products are of the form \code{te(...,bs="ps",np=FALSE)} 
+then in principle computation could be made faster using sparse matrix methods, and you could set this to \code{TRUE}. 
+In practice the speed up is disappointing, and the computation is less well conditioned than the default. See details.}
+
+\item{cluster}{\code{bam} can compute the computationally dominant QR decomposition in parallel using \link[parallel]{parLapply}
+from the \code{parallel} package, if it is supplied with a cluster on which to do this (a cluster here can be some cores of a 
+single machine). See details and example code. 
+}
+\item{gc.level}{to keep the memory footprint down, it helps to call the garbage collector often, but this takes 
+a substatial amount of time. Setting this to zero means that garbage collection only happens when R decides it should. Setting to 2 gives frequent garbage collection. 1 is in between.}
 \item{...}{further arguments for 
 passing on e.g. to \code{gam.fit} (such as \code{mustart}). }
 
@@ -123,25 +133,34 @@ block processing, fitting takes place, without the need to ever form the whole m
 
 In the generalized case, the same trick is used with the weighted model matrix and weighted pseudodata, at each step of the PIRLS.
 Smoothness selection is performed on the working model at each stage (performance oriented iteration), to maintain the 
-small memory footprint. This is easy to 
-justify in the case of GCV or Cp/UBRE/AIC based model selection, and also for REML/ML with known scale parameter. It is slightly 
-less well justified in the REML/ML unknown scale parameter case, but it seems unlikely that this case actually behaves any less well.
+small memory footprint. This is trivial to justify in the case of GCV or Cp/UBRE/AIC based model selection, and 
+for REML/ML is justified via the asymptotic multivariate normality of Q'z where z is the IRLS pseudodata. 
 
 Note that POI is not as stable as the default nested iteration used with \code{\link{gam}}, but that for very large, information rich,
 datasets, this is unlikely to matter much. 
 
-Note that it is possible to spend most of the computational time on basis evaluation, if an expensive basis is used. In practice 
-this means that the default \code{"tp"} basis should be avoided: almost any other basis (e.g. \code{"cr"} or \code{"ps"}) 
+Note also that it is possible to spend most of the computational time on basis evaluation, if an expensive basis is used. In practice this means that the default \code{"tp"} basis should be avoided: almost any other basis (e.g. \code{"cr"} or \code{"ps"}) 
 can be used in the 1D case, and tensor product smooths (\code{te}) are typically much less costly in the multi-dimensional case. 
+
+If \code{cluster} is provided as a cluster set up using \code{\link[parallel]{makeCluster}} (or \code{\link[parallel]{makeForkCluster}}) from the \code{parallel} package, then the rate limiting QR decomposition of the model matrix is performed in parallel using this cluster. Note that the speed ups are often not that great. On a multi-core machine it is usually best to set the cluster size to the number of physical cores, which is often less than what is reported by \code{\link[parallel]{detectCores}}. Using more than the number of physical cores can result in no speed up at all (or even a slow down). Note that a highly parallel BLAS may negate all advantage from using a cluster of cores. Computing in parallel of course requires more memory than computing in series. See examples.
+
+If the argument \code{sparse=TRUE} then QR updating is replaced by an alternative scheme, in which the model matrix is stored whole
+ as a sparse matrix. This only makes sense if all smooths are P-splines and all tensor products are of the 
+form \code{te(...,bs="ps",np=FALSE)}, but no check is made. The computations are then based on the Choleski decomposition of 
+the crossproduct of the sparse model matrix. Although this crossproduct is nearly dense, sparsity should make its 
+formation efficient, which is useful as it is the leading order term in the operations count. However there is no benefit 
+in using sparse methods to form the Choleski decomposition, given that the crossproduct is dense. 
+In practice the sparse matrix handling overheads mean that modest or no speed ups are produced 
+by this approach, while the computation is less stable than the default, and the memory footprint often higher 
+(but please let the author know if you find an example where the speedup is really worthwhile).
 
 }
 
 
 \references{
-
-
 \url{http://www.maths.bath.ac.uk/~sw283/}
 }
+
 \author{ Simon N. Wood \email{simon.wood@r-project.org}
 
 
@@ -175,23 +194,47 @@ library(mgcv)
 
 dat <- gamSim(1,n=15000,dist="normal",scale=20)
 bs <- "ps";k <- 20
-b<-bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
+b <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
            s(x3,bs=bs,k=k),data=dat,method="REML")
 summary(b)
 plot(b,pages=1,rug=FALSE)  ## plot smooths, but not rug
 plot(b,pages=1,rug=FALSE,seWithMean=TRUE) ## `with intercept' CIs
 
-ba<-bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
+ba <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
             s(x3,bs=bs,k=k),data=dat,method="GCV.Cp") ## use GCV
 summary(ba)
 
 ## A Poisson example...
 
 dat <- gamSim(1,n=15000,dist="poisson",scale=.1)
-b1<-bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
-            s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson())
+system.time(b1 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
+            s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson()))
 b1
 
+## repeat on a cluster
+require(parallel)  
+nc <- 2   ## cluster size, set for example portability
+if (detectCores()>1) { ## no point otherwise
+  cl <- makeCluster(nc) 
+  ## could also use makeForkCluster, but read warnings first!
+} else cl <- NULL
+  
+system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
+       s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson(),cluster=cl))
+
+## ... first call has startup overheads, repeat shows speed up...
+
+system.time(b2 <- bam(y ~ s(x0,bs=bs,k=k)+s(x1,bs=bs,k=k)+s(x2,bs=bs,k=k)+
+       s(x3,bs=bs,k=k),data=dat,method="ML",family=poisson(),cluster=cl))
+
+if (!is.null(cl)) stopCluster(cl)
+b2
+
+## Sparse smoothers example...
+b3 <- bam(y ~ te(x0,x1,bs="ps",k=10,np=FALSE)+s(x2,bs="ps",k=30)+
+            s(x3,bs="ps",k=30),data=dat,method="ML",
+            family=poisson(),sparse=TRUE)
+b3
 
 }
 

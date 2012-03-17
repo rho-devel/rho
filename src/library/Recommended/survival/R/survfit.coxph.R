@@ -116,6 +116,11 @@ survfit.coxph <-
            x <- scale(x, center=xcenter, scale=FALSE)    
            }
         }
+    temp <- untangle.specials(Terms, 'cluster')
+    if (length(temp$vars)) {
+        Terms <- Terms[-temp$terms]
+        stype <- stype[-temp$terms]
+    }
     if (missing(newdata)) {
         mf2 <- as.list(object$means)   #create a dummy newdata
         names(mf2) <- names(object$coefficients)
@@ -125,14 +130,11 @@ survfit.coxph <-
         if (!is.null(object$frail))
             stop("Newdata cannot be used when a model has sparse frailty terms")
 
-        temp <- untangle.specials(Terms, 'cluster')
-        if (length(temp$vars)) Terms2 <- Terms[-temp$terms]
-        else Terms2 <- Terms
         if (!individual) {
-            Terms2 <- delete.response(Terms2)
+            Terms2 <- delete.response(Terms)
             if (any(stype>0)) Terms2 <- Terms2[stype==0] #strata and interactions
             }
-        
+        else Terms2 <- Terms
         tcall <- Call[c(1, match(c('newdata', 'id'), names(Call), nomatch=0))]
         names(tcall)[2] <- 'data'  #rename newdata to data
         tcall$formula <- Terms2

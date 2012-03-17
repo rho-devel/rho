@@ -81,26 +81,15 @@ rcond(x, norm, \dots)
   \dQuote{traditional} matrix, even non-square ones, with respect to the
   \eqn{p=2} (Euclidean) \code{\link{norm}}.
   \code{\link[base]{solve}}.
+
+  \code{\link{condest}}, a newer approximate estimate of
+  the (1-norm) condition number, particularly efficient for large sparse
+  matrices.
 }
 \references{
   Golub, G., and Van Loan, C. F. (1989).
   \emph{Matrix Computations,}
   2nd edition, Johns Hopkins, Baltimore.
-
-%% For sparse matrices, Matlab's condest() uses normest(), which is
-%%  based on this. See also Tim Davis(2006, p.96)
-%% We should use a version of this {and probably optim(.)}:
-%%
-%   @article{ higham00block,
-%     author = "Nicholas J. Higham and Fran{\c{c}}oise Tisseur",
-%     title = "A Block Algorithm for Matrix $1$-Norm Estimation,
-%              with an Application to $1$-Norm Pseudospectra",
-%     journal = "SIAM Journal on Matrix Analysis and Applications",
-%     volume = "21",
-%     number = "4",
-%     pages = "1185--1201",
-%     year = "2000",
-%     url = "citeseer.ist.psu.edu/article/higham00block.html" }
 }
 \examples{
 x <- Matrix(rnorm(9), 3, 3)

@@ -5,7 +5,7 @@ CHMfactor.o: CHMfactor.c CHMfactor.h Mutils.h Syms.h \
   CHOLMOD/Include/cholmod_cholesky.h CHOLMOD/Include/cholmod_partition.h \
   CHOLMOD/Include/cholmod_supernodal.h \
   CHOLMOD/Include/cholmod_matrixops.h CHOLMOD/Include/cholmod_modify.h
-Csparse.o: Csparse.c Csparse.h Mutils.h Syms.h \
+Csparse.o: Csparse.c Csparse.h Tsparse.h Mutils.h Syms.h t_Csparse_subassign.c \
   chm_common.h UFconfig/UFconfig.h CHOLMOD/Include/cholmod.h \
   CHOLMOD/Include/cholmod_io64.h CHOLMOD/Include/cholmod_config.h \
   CHOLMOD/Include/cholmod_core.h CHOLMOD/Include/cholmod_check.h \
@@ -97,3 +97,5 @@ ldense.o: ldense.c ldense.h Mutils.h Syms.h
 lgCMatrix.o: lgCMatrix.c lgCMatrix.h Mutils.h Syms.h dgCMatrix.h \
   cs_utils.h cs.h
 sparseQR.o: sparseQR.c sparseQR.h Mutils.h Syms.h cs_utils.h cs.h
+
+sparseVector.o: sparseVector.c Mutils.h t_sparseVector.c

@@ -249,17 +249,17 @@ SEXP lapack_qr(SEXP Xin, SEXP tl)
 SEXP dense_to_Csparse(SEXP x)
 {
     CHM_DN chxd = AS_CHM_DN(PROTECT(mMatrix_as_geMatrix(x)));
-    /* cholmod_l_dense_to_sparse() in CHOLMOD/Core/ below does only work for
+    /* cholmod_dense_to_sparse() in CHOLMOD/Core/ below does only work for
        "REAL" 'xtypes', i.e. *not* for "nMatrix".
        ===> need "_x" in above call.
 
        Also it cannot keep symmetric / triangular, hence the
        as_geMatrix() above.  Note that this is already a *waste* for
        symmetric matrices; However, we could conceivably use an
-       enhanced cholmod_l_dense_to_sparse(), with an extra boolean
+       enhanced cholmod_dense_to_sparse(), with an extra boolean
        argument for symmetry.
     */
-    CHM_SP chxs = cholmod_l_dense_to_sparse(chxd, 1, &c);
+    CHM_SP chxs = cholmod_dense_to_sparse(chxd, 1, &c);
     int Rkind = (chxd->xtype == CHOLMOD_REAL) ? Real_KIND2(x) : 0;
     /* Note: when 'x' was integer Matrix, Real_KIND(x) = -1, but *_KIND2(.) = 0 */
     R_CheckStack();

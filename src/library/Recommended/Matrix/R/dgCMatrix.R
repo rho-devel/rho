@@ -66,14 +66,11 @@ setMethod("qr", signature(x = "sparseMatrix"),
 	  function(x, ...)
 	  qr(as(as(as(x, "CsparseMatrix"), "dsparseMatrix"), "dgCMatrix"), ...))
 
-setMethod("lu", signature(x = "dgCMatrix"),
-          ## by default do give an error on singularity
-	  function(x, errSing = TRUE, ...) {
-	      .Call(dgCMatrix_LU, x,
-		    TRUE, ## <- orderp
-		    1,	  ## <- tol
-		    errSing)
-	      })
+LU.dgC <- function(x, errSing = TRUE, order = TRUE, tol = 1.0, ...)
+    .Call(dgCMatrix_LU, x, order, tol, errSing)
+
+setMethod("lu", signature(x = "dgCMatrix"), LU.dgC)
+
 setMethod("lu", signature(x = "sparseMatrix"),
 	  function(x, ...) # "FIXME": do in C, so can cache 'x@factors$LU'
 	  lu(as(as(as(x, "CsparseMatrix"), "dsparseMatrix"), "dgCMatrix"), ...))

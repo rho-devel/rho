@@ -7,6 +7,7 @@ importFrom(methods, hasArg)
 
 importFrom(grDevices,
 
+           dev.hold, dev.flush,
            dev.list, cm.colors, gray, col2rgb, rgb,
            heat.colors, grey, hsv, xy.coords,
            boxplot.stats, contourLines, colorRampPalette, as.raster)

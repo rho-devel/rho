@@ -109,6 +109,9 @@ case "${host_os}" in
 esac
 AC_SUBST(R_OSTYPE)
 
+R_CONFIG_ARGS="${ac_configure_args}"
+AC_SUBST(R_CONFIG_ARGS)
+
 ### ** Defaults.
 
 ## NB: autoconf loads such files too
@@ -142,7 +145,9 @@ case "${host_os}" in
     ## Not all distros use this: some choose to march out of step  
     case "${host_cpu}" in
       x86_64|mips64|ppc64|powerpc64|sparc64|s390x)
-        libnn=lib64
+        if test -d /usr/lib64; then
+          libnn=lib64
+	fi
       ;;
     esac
     ;;
@@ -439,9 +444,9 @@ AC_ARG_WITH([ICU],
 ## Byte-compilation of packages.
 AC_ARG_ENABLE([byte-compiled-packages],
 [AS_HELP_STRING([--enable-byte-compiled-packages],
-                [(not yet operational) byte-compile R packages @<:@no@:>@])],
+                [byte-compile base and recommended packages @<:@yes@:>@])],
 [want_byte_compiled_packages="${enableval}"],
-[want_byte_compiled_packages=no])
+[want_byte_compiled_packages=yes])
 AM_CONDITIONAL(BYTE_COMPILE_PACKAGES,
                [test "x${want_byte_compiled_packages}" = xyes])
 
@@ -740,8 +745,8 @@ AC_SUBST(READLINE_LIBS)
 ### * Checks for header files.
 
 AC_HEADER_STDC
-AC_HEADER_TIME
 AC_HEADER_DIRENT
+## we also assume readdir and closedir
 if test "${ac_cv_search_opendir}" = "no"; then
    AC_MSG_ERROR([Building R requires the 'opendir' system call])
 fi
@@ -749,17 +754,26 @@ AC_HEADER_SYS_WAIT
 ## <NOTE>
 ## Some of these are also checked for when Autoconf computes the default
 ## includes.
+##
+## The following headers are POSIX: dlfcn.h fcntl.h glob.h grp.h
+## pwd.h strings.h sys/resource.h sys/select.h sys/socket.h 
+## sys/stat.h sys/time.h sys/times.h sys/utsname.h unistd.h utime.h
+## dl.h seems to be for HP-UX
+## floatingpoint.h is on FreeBSD and Solaris, originating in SysV.  
+## (It is probably only used for fpsetmask on FreeBSD).
+## fpu_control.h is only used on Linux, for the obsolete __setfpucw.
+## sys/param.h is one way to get PATH_MAX.
 AC_CHECK_HEADERS(arpa/inet.h dl.h dlfcn.h elf.h fcntl.h floatingpoint.h \
-  fpu_control.h glob.h grp.h locale.h \
-  netdb.h netinet/in.h pwd.h strings.h \
-  sys/param.h sys/select.h sys/socket.h sys/stat.h sys/resource.h \
-  sys/time.h sys/times.h sys/utsname.h time.h unistd.h)
+  fpu_control.h glob.h grp.h netdb.h netinet/in.h pwd.h strings.h \
+  sys/param.h sys/resource.h sys/select.h sys/socket.h \
+  sys/stat.h sys/time.h sys/times.h sys/utsname.h unistd.h utime.h)
 ## </NOTE>
 ## <NOTE>
 ## These are C99 headers but some C code (written to work also
 ## without assuming C99) may need the corresponding conditionals.
-AC_CHECK_HEADERS(errno.h inttypes.h limits.h stdarg.h stdbool.h \
+AC_CHECK_HEADERS(errno.h inttypes.h limits.h locale.h stdarg.h stdbool.h \
                  stdint.h string.h)
+## only vsnprintf.c requires stdarg.h
 ## </NOTE>
 
 R_HEADER_SETJMP
@@ -810,10 +824,6 @@ AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(size_t)
-dnl AC_CHECK_SIZEOF(time_t, [
-dnl #include <stdio.h>
-dnl #include <time.h>
-dnl ])
 
 R_PROG_CC_MAKEFRAG
 R_PROG_CC_LO_MAKEFRAG
@@ -848,6 +858,14 @@ AC_LANG_POP(C++)
 
 R_PROG_OBJC_MAKEFRAG
 R_PROG_OBJC_RUNTIME
+## FSF builds of gcc (and maybe others?) need -fobjc-exceptions otherwise
+## @try and friends don't work
+R_PROG_OBJC_FLAG([-fobjc-exceptions],
+		 R_SH_VAR_ADD(OBJCFLAGS, [-fobjc-exceptions]))
+## FIXME: checks for Foundation are not darwin-specifc at all. In fact the whole
+##        point of R_OBJC_FOUNDATION is to detect foundation classes on other
+##        platforms (on Darwin we already *know* that is it -framework Foundation
+##        but not so on Linux!), so the following was not intended to be conditonal.
 case "${host_os}" in
   darwin*)
     R_OBJC_FOUNDATION
@@ -1070,6 +1088,8 @@ AC_SUBST(R_XTRA_LIBS)
 AC_SUBST(OBJC_LIBS)
 AC_SUBST(OBJCFLAGS)
 AC_SUBST(OBJCXXFLAGS)
+
+R_ABI
 
 ### ** DLL stuff.
 
@@ -1725,9 +1745,6 @@ fi
 ## isblank should be a macro according to C99.  It was missing on Solaris 8
 AC_CHECK_FUNCS(isblank)
 
-## time is C89
-R_CHECK_FUNCS([time], [#include <time.h>])
-
 ## fseeko/ftello are POSIX, may be macros
 ## matherr is SVID, redefined in arithmetic.c if present
 AC_CHECK_FUNCS(fseeko ftello matherr)
@@ -1736,24 +1753,33 @@ AC_CHECK_FUNCS(fseeko ftello matherr)
 R_CHECK_FUNCS([fcntl], [#include <fcntl.h>])
 R_CHECK_FUNCS([getgrgid], [#include <grp.h>])
 R_CHECK_FUNCS([getpwuid], [#include <pwd.h>])
-R_CHECK_FUNCS([sigaction sigaltstack sigemptyset], [#include <signal.h>])
+R_CHECK_FUNCS([kill sigaction sigaltstack sigemptyset], [#include <signal.h>])
 R_CHECK_FUNCS([fdopen popen], [#include <stdio.h>])
 if test "${ac_cv_have_decl_popen}" = "no"; then
    AC_MSG_ERROR([Building R requires the 'popen' system call])
 fi
 ## Windows has neither setenv nor unsetenv
 R_CHECK_FUNCS([setenv unsetenv], [#include <stdlib.h>])
-R_CHECK_FUNCS([getrlimit getrusage], [#include <sys/resource.h>])
+R_CHECK_FUNCS([getrlimit getrusage getpriority], [#include <sys/resource.h>])
 R_CHECK_FUNCS([chmod mkfifo stat umask], [#include <sys/stat.h>])
 if test "${ac_cv_have_decl_stat}" = "no"; then
    AC_MSG_ERROR([Building R requires the 'stat' system call])
 fi
-R_CHECK_FUNCS([gettimeofday], [#include <sys/time.h>])
+R_CHECK_FUNCS([gettimeofday utimes], [#include <sys/time.h>])
 R_CHECK_FUNCS([times], [#include <sys/times.h>])
-R_CHECK_FUNCS([access chdir execv ftruncate getcwd getuid link readlink symlink sysconf],
+R_CHECK_FUNCS([access chdir execv ftruncate getcwd geteuid getuid link readlink symlink sysconf],
 [#ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif])
+## This was declared obsolescent in POSIX 2008 (use utimes instead)
+R_CHECK_FUNCS([utime], [#include <utime.h>])
+## clock_gettime is POSIX 1993, but not on MacOS X
+## Some OSes need -lrt: Linux, Solaris, not FreeBSD.
+## Unsurprising, as POSIX 2008 moved it from its timers section to base.
+R_CHECK_FUNCS([clock_gettime], [#include <time.h>])
+if test "${ac_cv_have_decl_clock_gettime}" = "yes"; then
+AC_CHECK_LIB(rt, clock_gettime)
+fi
 ## We need setenv or putenv.  It seems that everyone does have
 ## putenv, as earlier versions of R would have failed without it.
 ## It is not always declared, so we do not require a declaration.
@@ -1772,11 +1798,14 @@ AC_CHECK_DECLS([realpath], , , [#include <stdlib.h>
 #include <unistd.h>
 #endif])
 ## glob is POSIX: we have a substitute on Windows
+## assume without checking that if we have glob we also have globfree
 R_CHECK_FUNCS([glob], [#ifdef HAVE_GLOB_H
 # include <glob.h>
 #endif])
 
-## Lots of uses of getwd(), file.access(), Sys.glob()
+## Lots of uses of getwd(), file.access(), Sys.glob().
+## We don't need times() except as a fallback for getrusage and
+## clock_gettime/gettimeofday -- but it is older and always there.
 case "${host_os}" in
   mingw*)
   ;;
@@ -1793,9 +1822,12 @@ case "${host_os}" in
     if test "${ac_cv_search_chdir}" = "no"; then
        AC_MSG_ERROR([Building R requires the 'chdir' system call])
     fi
+    if test "${ac_cv_search_times}" = "no"; then
+      AC_MSG_ERROR([Building R requires the 'times' system call])
+    fi
   ;;
 esac
-
+## We also use getlogin isatty rename unlink without checking.
 
 ## <NOTE>
 ## No need checking for bcopy bzero memcpy even though ifnames
@@ -1845,15 +1877,16 @@ fi
 AC_SUBST(RMATH_HAVE_LOG1P)
 
 ## Do we need substitutes?
-## mkdtemp is not on Solaris
-AC_REPLACE_FUNCS(acosh asinh atanh mkdtemp snprintf strdup strncasecmp vsnprintf)
+## mkdtemp is not on Solaris, added in POSIX 2008
+## strdup strncasecmp were first required in POSIX 2008.
+AC_REPLACE_FUNCS([mkdtemp strdup strncasecmp])
 ## Enable declarations in Defn.h?
-AC_CHECK_DECLS([acosh, asinh, atanh], , , [#include <math.h>])
-AC_CHECK_DECLS([mkdtemp, snprintf, strdup, strncasecmp, vsnprintf])
+AC_CHECK_DECLS([mkdtemp, strdup, strncasecmp])
 
 AC_SEARCH_LIBS(connect, [socket])
+# gethostbyname was removed in POSIX 2008 (in favour of getaddrinfo, POSIX 2004)
 AC_SEARCH_LIBS(gethostbyname, [nsl socket])
-AC_SEARCH_LIBS(xdr_string, [nsl])
+AC_SEARCH_LIBS(xdr_string, [nsl tirpc])
 R_FUNC___SETFPUCW
 R_FUNC_CALLOC
 
@@ -2056,6 +2089,7 @@ R_X11_Xmu
 if test "x${want_cairo}" = "xyes"; then
 R_PANGO_CAIRO
 fi
+AM_CONDITIONAL(BUILD_DEVCAIRO, [test "x${r_cv_cairo_works}" = xyes])
 
 
 ## Aqua
@@ -2064,6 +2098,10 @@ case "${host_os}" in
     ## check for CoreFoundation framework (chances are much higher
     ## that we can build AQUA if this one is present)
     R_CHECK_FRAMEWORK(CFStringGetSystemEncoding, CoreFoundation)
+    ## FIXME: we should verify that we can use Obj-C exceptions
+    ##        such as @try and friends. The OBJC compiler tests
+    ##	      above add -fobjc-exceptions where possible, but
+    ##	      they don't check that the exceptions are available.
     R_AQUA
   ;;
   *)
@@ -2101,6 +2139,9 @@ R_PCRE
 
 ## POSIX times.
 R_SYS_POSIX_LEAPSECONDS
+
+## stat times
+gl_STAT_TIME
  
 ## R profiling.
 if test "${want_R_profiling}" = yes; then
@@ -2495,12 +2536,16 @@ AC_CONFIG_FILES(
   src/library/grDevices/DESCRIPTION
   src/library/grDevices/Makefile
   src/library/grDevices/src/Makefile
+  src/library/grDevices/src/cairo/Makefile
   src/library/grid/DESCRIPTION
   src/library/grid/Makefile
   src/library/grid/src/Makefile
   src/library/methods/DESCRIPTION
   src/library/methods/Makefile
   src/library/methods/src/Makefile
+  src/library/parallel/DESCRIPTION
+  src/library/parallel/Makefile
+  src/library/parallel/src/Makefile
   src/library/profile/Makefile
   src/library/stats/DESCRIPTION
   src/library/stats/Makefile
@@ -2675,9 +2720,6 @@ R is now configured for ${host}
 if test -n "${warn_f77_cc_double_complex}"; then
   AC_MSG_WARN([${warn_f77_cc_double_complex}])
 fi
-if test -n "${warn_xcompile_sizeof_int}"; then
-  AC_MSG_WARN([${warn_xcompile_sizeof_int}])
-fi
 if test -n "${warn_xcompile_sizeof_long}"; then
   AC_MSG_WARN([${warn_xcompile_sizeof_long}])
 fi
@@ -2696,14 +2738,8 @@ fi
 if test -n "${warn_fcpicflags}"; then
   AC_MSG_WARN([${warn_fcpicflags}])
 fi
-if test -n "${warn_libglade_version}"; then
-  AC_MSG_WARN([${warn_libglade_version}])
-fi
 if test -n "${warn_tcltk_version}"; then
   AC_MSG_WARN([${warn_tcltk_version}])
-fi
-if test -n "${warn_perl5}"; then
-  AC_MSG_WARN([${warn_perl5}])
 fi
 if test -n "${warn_dvi1}"; then
   AC_MSG_WARN([${warn_dvi1}])
@@ -2719,6 +2755,9 @@ if test -n "${warn_pdf1}"; then
 fi
 if test -n "${warn_pdf2}"; then
   AC_MSG_WARN([${warn_pdf2}])
+fi
+if test -n "${warn_pdf3}"; then
+  AC_MSG_WARN([${warn_pdf3}])
 fi
 if test -n "${warn_pager}"; then
   AC_MSG_WARN([${warn_pager}])

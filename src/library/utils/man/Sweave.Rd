@@ -66,9 +66,10 @@ Stangle(file, driver = Rtangle(),
   
   Non-ASCII source files should contain a line of the form
 \preformatted{\usepackage[foo]{inputenc}}
-  but if none is supplied the value of the \code{encoding} argument is
-  used (and if that is empty, Latin-1).  Re-encoding can be turned off
-  completely with \code{encoding = "bytes"}.
+  (where \samp{foo} is typically \samp{latin1}, \samp{latin2}, \samp{utf8} or
+  \samp{cp1252} or \samp{cp1250}) or they will give an error.
+  Re-encoding can be turned off completely with argument \code{encoding
+    = "bytes"}.
 }
 
 \section{Syntax Definition}{
@@ -121,10 +122,10 @@ options(device.ask.default=FALSE)
 Sweave(testfile)
 
 ## This can be compiled to PDF by
-## tools::texi2dvi("Sweave-test-1.tex", pdf=TRUE)
+## tools::texi2pdf("Sweave-test-1.tex")
 ## or outside R by
 #ifdef unix
-## R CMD texi2dvi --pdf Sweave-test-1.tex
+## R CMD texi2pdf Sweave-test-1.tex
 ## which sets the appropriate TEXINPUTS path.
 #endif
 #ifdef windows

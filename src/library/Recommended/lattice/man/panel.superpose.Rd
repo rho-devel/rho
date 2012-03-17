@@ -58,13 +58,11 @@ panel.superpose.plain(\dots,
     using \code{\link{trellis.par.get}} wherever appropriate.
   }
 
-  \item{type}{
-
-    Usually a character vector specifying how each group should be
-    drawn.  Formally, it is passed on to the \code{panel.groups}
-    function, which must know what to do with it.  By default,
-    \code{panel.groups} is \code{\link{panel.xyplot}}, whose help page
-    describes the admissible values.
+  \item{type}{ Usually a character vector specifying how each group
+    should be drawn.  Formally, it is passed on to the
+    \code{panel.groups} function, which must know what to do with it.
+    By default, \code{panel.groups} is \code{\link{panel.xyplot}}, whose
+    help page describes the admissible values.
 
     The functions \code{panel.superpose} and \code{panel.superpose.2}
     differ only in the default value of \code{distribute.type}, which
@@ -145,10 +143,13 @@ panel.superpose.plain(\dots,
 \seealso{
   Different functions when used as \code{panel.groups} gives different
   types of plots, for example \code{\link{panel.xyplot}},
-  \code{\link{panel.dotplot}} and \code{\link{panel.linejoin}} (This can
+  \code{\link{panel.dotplot}} and \code{\link{panel.average}} (This can
   be used to produce interaction plots).
 
-  See \code{\link{Lattice}} for an overview of the package.
+  See \code{\link{Lattice}} for an overview of the package, and
+  \code{\link{xyplot}} for common arguments (in particular, the
+  discussion of the extended formula interface and the \code{groups}
+  argument).
 }
 
 \author{

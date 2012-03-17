@@ -112,6 +112,9 @@ setAs("sparseVector", "logical", function(from) sp2vec(from, mode = "logical"))
 ## the "catch all remaining" method:
 setAs("ANY", "sparseVector",
       function(from) as(as.vector(from), "sparseVector"))
+## "nsparse*" is special -- by default "lsparseVector" are produced
+setAs("ANY", "nsparseVector",
+      function(from) as(as(from, "sparseVector"),"nsparseVector"))
 
 setAs("diagonalMatrix", "sparseVector",
       function(from) {
@@ -278,7 +281,7 @@ setMethod("show", signature(object = "sparseVector"),
 	   prSpVector(object, maxp = maxp)
        } else { # n > maxp : will cut length of what we'll display :
 	   ## cannot easily show head(.) & tail(.) because of "[1] .." printing of tail
-	   prSpVector(object[seq_len(maxp)], maxp = maxp)
+	   prSpVector(head(object, maxp), maxp = maxp)
 	   cat(" ............................",
 	       "\n ........suppressing ", n - maxp,
 	       " entries in show(); maybe adjust 'options(max.print= *)'",
@@ -298,11 +301,10 @@ prSpVector <- function(x, digits = getOption("digits"),
 ##     has.x <- kind != "n"
     n <- x@length
     if(n > 0) {
-        if(n > maxp) { # n > maxp =: nn : will cut length of what we'll display :
-            ## FIXME: very inefficient for very large maxp < n
-            x <- x[seq_len(maxp)]       # need "[" to work ...
-            n <- maxp
-        }
+	if(n > maxp) { # n > maxp =: nn : will cut length of what we'll display :
+	    x <- head(x, maxp)
+	    n <- maxp
+	}
         xi <- x@i
         is.n <- extends(cld, "nsparseVector")
         logi <- is.n || extends(cld, "lsparseVector")
@@ -359,6 +361,41 @@ intIv <- function(i, n, cl.i = getClass(class(i)))
     else
         stop("index must be numeric, logical or sparseVector for indexing sparseVectors")
 } ## intIv()
+
+
+setMethod("head", signature(x = "sparseVector"),
+	  function(x, n = 6, ...) {
+	      stopifnot(length(n) == 1)
+	      if(n >= (nx <- x@length)) return(x)
+	      if(is.integer(x@i)) n <- as.integer(n) else stopifnot(n == round(n))
+              if(n < 0) n <- max(0L, n + nx)
+	      ## now be careful to *NOT* use seq_len(n), as this be efficient for huge n
+	      ## n < x@length  now.
+	      ## As we *know* that '@i' is sorted increasingly: [x@i <= n] <==> [1:kk]
+	      x@length <- n
+	      x@i <- x@i[ii <- seq_len(which.max(x@i > n) - 1L)]
+	      if(substr(class(x), 1,1) != "n") ## be fast, ...
+		  x@x <- x@x[ii]
+	      x
+	  })
+setMethod("tail", signature(x = "sparseVector"),
+	  function(x, n = 6, ...) {
+	      stopifnot(length(n) == 1)
+	      if(n >= (nx <- x@length)) return(x)
+	      if(is.integer(x@i)) n <- as.integer(n) else stopifnot(n == round(n))
+	      if(n < 0) n <- max(0L, n + nx)
+	      ## now be careful to *NOT* use seq_len(n), as this be efficient for huge n
+	      ## n < x@length  now.
+	      ## As we *know*  '@i' is sorted increasingly: [x@i > nx-n] <==> [kk:nx]
+	      x@length <- n
+	      n <- nx-n # and keep indices > n
+	      N <- length(x@i)
+	      ii <- if(any(G <- x@i > n)) which.max(G):N else FALSE
+	      x@i <- x@i[ii] - n
+	      if(substr(class(x), 1,1) != "n") ## be fast, ...
+		  x@x <- x@x[ii]
+	      x
+	  })
 
 
 setMethod("[", signature(x = "sparseVector", i = "index"),
@@ -670,7 +707,7 @@ repSpV <- function(x, times) {
 setMethod("rep", "sparseVector",
 	  function(x, times, length.out, each, ...) {
 	      if (length(x) == 0)
-		  return(if(missing(length.out)) x else x[seq_len(length.out)])
+		  return(if(missing(length.out)) x else head(x, length.out))
 	      if (!missing(each)) {
 		  tm <- rep.int(each, length(x))
 		  x <- rep(x, tm) # "recursively"
@@ -680,12 +717,10 @@ setMethod("rep", "sparseVector",
 	      if (!missing(length.out)) # takes precedence over times
 		  times <- ceiling(length.out/length(x))
 	      r <- repSpV(x, times)
-	      if (!missing(length.out) && length(r) != length.out)
-                  ## FIXME: for large length.out > maxInt (and very sparse r),
-                  ##       the following fails, *unnecessarily*
-                  ## --> need a  subset(x, i) function which works with abIndex 'i'
-		  return(r[if(length.out > 0) 1:length.out else integer(0)])
-	      return(r)
+	      if (!missing(length.out) && length(r) != length.out) {
+		  if(length.out > 0) head(r, length.out) else r[integer(0)]
+	      }
+	      else r
 	  })
 
 

@@ -63,9 +63,7 @@
 #include "Startup.h"
 #include "basedecl.h"
 
-#ifdef HAVE_LOCALE_H
-# include <locale.h>
-#endif
+#include <locale.h>
 
 #include "CXXR/Browser.hpp"
 #include "CXXR/ClosureContext.hpp"
@@ -146,6 +144,7 @@ FILE*	R_Consolefile	= NULL;	/* Console output file */
 FILE*	R_Outputfile	= NULL;	/* Output file */
 int	R_DirtyImage	= 0;	/* Current image dirty */
 const char	*R_GUIType	= "unknown";
+Rboolean R_isForkedChild = FALSE;
 double cpuLimit = -1.0;
 double cpuLimit2 = -1.0;
 double cpuLimitValue = -1.0;
@@ -369,7 +368,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     }
 
     ProtectStack::restoreSize(savestack);
-    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &state->status, NULL);
+    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &state->status);
     
     switch(state->status) {
 
@@ -386,7 +385,7 @@ Rf_ReplIteration(SEXP rho, CXXRUNSIGNED int savestack, R_ReplState *state)
     case PARSE_OK:
 
 	R_IoBufferReadReset(&R_ConsoleIob);
-	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status, NULL);
+	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &state->status);
 	if (browselevel) {
 	    browsevalue = ParseBrowser(R_CurrentExpr, rho);
 	    if(browsevalue == 1) return -1;
@@ -486,7 +485,7 @@ int R_ReplDLLdo1(void)
 	if(c == ';' || c == '\n') break;
     }
     ProtectStack::restoreSize(0);
-    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &status, NULL);
+    R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 0, &status);
 
     switch(status) {
     case PARSE_NULL:
@@ -495,7 +494,7 @@ int R_ReplDLLdo1(void)
 	break;
     case PARSE_OK:
 	R_IoBufferReadReset(&R_ConsoleIob);
-	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &status, NULL);
+	R_CurrentExpr = R_Parse1Buffer(&R_ConsoleIob, 1, &status);
 	R_Visible = FALSE;
 	Evaluator::setDepth(0);
 	resetTimeLimits();
@@ -809,19 +808,9 @@ static void R_LoadProfile(FILE *fparg, SEXP env)
 
 int R_SignalHandlers = 0;  /* Exposed in R_interface.h */ // 2007/07/23 arr
 
-/* Use this to allow e.g. Win32 malloc to call warning.
-   Don't use R-specific type, e.g. Rboolean */
-/* int R_Is_Running = 0; now in Defn.h */
+unsigned int TimeToSeed(void); /* datetime.c */
 
-#include <time.h>
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
-
-#ifdef Win32
-# include <windows.h> /* for GetTickCount */
-# include <process.h> /* for getpid */
-#endif
+const char* get_workspace_name();  /* from startup.c */
 
 void setup_Rmainloop(void)
 {
@@ -889,8 +878,13 @@ void setup_Rmainloop(void)
 		 "Setting LC_MESSAGES failed, using \"C\"\n");
 #endif
     /* NB: we do not set LC_NUMERIC */
+#ifdef LC_MONETARY
+    if(!setlocale(LC_MONETARY, ""))
+	snprintf(deferred_warnings[ndeferred_warnings++], 250,
+		 "Setting LC_PAPER failed, using \"C\"\n");
+#endif
 #ifdef LC_PAPER
-    if(!setlocale(LC_PAPER, ""))
+    if(!setlocale(LC_MONETARY, ""))
 	snprintf(deferred_warnings[ndeferred_warnings++], 250,
 		 "Setting LC_PAPER failed, using \"C\"\n");
 #endif
@@ -919,28 +913,8 @@ void setup_Rmainloop(void)
 #endif
 #endif
 
-    /* make sure srand is called before R_tmpnam, PR#14381
-       Copied from RNG.c: Randomize */
-    {
-	int seed;
-#if HAVE_GETTIMEOFDAY
-	{
-	    struct timeval tv;
-	    gettimeofday (&tv, NULL);
-	    seed = (uint64_t( tv.tv_usec) << 16) ^ tv.tv_sec;
-	}
-#elif defined(Win32)
-	/* Try to avoid coincidence for processes launched almost
-	   simultaneously */
-	seed = (int) GetTickCount() + getpid();
-#elif HAVE_TIME
-	/* C89, so should work */
-	seed = time(NULL);
-#else
-	/* unlikely, but use random contents */
-#endif
-	srand(seed);    
-    }
+    /* make sure srand is called before R_tmpnam, PR#14381 */
+    srand(TimeToSeed());
 
     InitTempDir(); /* must be before InitEd */
     InitMemory();
@@ -1044,7 +1018,8 @@ void setup_Rmainloop(void)
 	R_InitialData();
     }
     catch (CommandTerminated) {
-	R_Suicide(_("unable to restore saved data in .RData\n"));
+	warning(_("unable to restore saved data in %s\n"), get_workspace_name());
+	throw;
     }
 
     /* Initial Loading is done.

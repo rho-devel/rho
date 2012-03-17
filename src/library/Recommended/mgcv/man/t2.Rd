@@ -33,8 +33,11 @@ and full list. User defined bases can
 also be used here (see \code{\link{smooth.construct}} for an example). If only one 
 basis code is given then this is used for all bases.}
 
-\item{m}{The order of the penalty (for smooth classes that use this) for each term. 
-   If a single number is given  then it is used for all terms. \code{NA} autoinitializes. 
+\item{m}{The order of the spline and its penalty (for smooth classes that use this) for each term. 
+   If a single number is given  then it is used for all terms. A vector can be used to 
+  supply a different \code{m} for each margin. For marginals that take vector \code{m} 
+  (e.g. \code{\link{p.spline}} and \code{\link{Duchon.spline}}), then
+  a list can be supplied, with a vector element for each margin. \code{NA} autoinitializes. 
   \code{m} is ignored by some bases (e.g. \code{"cr"}).}
 
 \item{d}{array of marginal basis dimensions. For example if you want a smooth for 3 covariates 
@@ -208,9 +211,9 @@ v <- runif(n);w<-runif(n);u<-runif(n)
 f <- test2(u,v,w)
 y <- f + rnorm(n)*0.2
 
-## tensor product of 2D thin plate regression spline and 1D cr spline
-
-b <- gam(y~t2(v,w,u,k=c(30,5),d=c(2,1),bs=c("tp","cr")))
+## tensor product of 2D Duchon spline and 1D cr spline
+m <- list(c(1,.5),0)
+b <- gam(y~t2(v,w,u,k=c(30,5),d=c(2,1),bs=c("ds","cr"),m=m))
 
 ## look at the edf per penalty. "rr" denotes interaction term 
 ## (range space range space). "rn" is interaction of null space

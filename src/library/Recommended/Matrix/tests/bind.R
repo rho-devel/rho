@@ -113,5 +113,19 @@ for(i in 1:6) {
 }
 m4 ## now show some non-structural zeros:
 
+## Mixture of dense and sparse/diagonal -- used to fail, even in 1.0-0
+D5 <- Diagonal(x = 10*(1:5))
+(D5.1 <- cbind2(D5, 1))
+## "FIXME" in newer versions of R, do not need Matrix() here:
+s42 <- Matrix(z42 <- cbind2(rep(0:1,4), rep(1:0,4)),
+              sparse=TRUE)
+(C86 <- rBind(1, 0, D5.1, 0))
+stopifnot(TRUE
+	  ,isValid(D5.1, "dgCMatrix")
+	  ,isValid(print(rbind2(Matrix(1:10, 2,5), D5)),   "dgCMatrix")
+	  ,isValid(print(cbind2(Matrix(10:1, 5,2), D5.1)), "dgeMatrix")
+	  ,isValid(zz <- cbind2(z42, C86), "dgCMatrix")
+          ,identical(zz, cbind2(s42, C86))
+	  )
 
 showProc.time()

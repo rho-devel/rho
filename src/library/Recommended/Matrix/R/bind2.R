@@ -51,10 +51,9 @@ setMethod("rbind2", signature(x = "Matrix", y = "ANY"),
 
 ## Makes sure one gets x decent error message for the unimplemented cases:
 setMethod("cbind2", signature(x = "Matrix", y = "Matrix"),
-          function(x, y) {
-              rowCheck(x,y)
-              stop(gettextf("cbind2() method for (%s,%s) not-yet defined",
-                            class(x), class(y)))
+	  function(x, y) {
+	      rowCheck(x,y)
+	      .bail.out.2("cbind2", class(x), class(y))
           })
 
 ## Use a working fall back {particularly useful for sparse}:
@@ -213,51 +212,130 @@ for(cls in names(getClass("diagonalMatrix")@subclasses)) {
 
 ## originally from ./dsparseMatrix.R : --------------------------------
 
+## FIXME: dimnames() handling should happen in C code
+## ------> ../src/Csparse.c
+
 ## Fast - almost non-checking methods
 .cbind2Csp <- function(x,y) .Call(Csparse_horzcat, as_Csp2(x), as_Csp2(y))
 .rbind2Csp <- function(x,y) .Call(Csparse_vertcat, as_Csp2(x), as_Csp2(y))
 
+cbind2Sparse <- function(x,y) {
+    ## beware of (packed) triangular, symmetric, ...
+    if(identical(c(dnx <- dimnames(x),
+		   dny <- dimnames(y)),
+		 list(NULL,NULL,NULL,NULL)))
+	## keep empty dimnames
+	.cbind2Csp(x,y)
+    else {
+	## R and S+ are different in which names they take
+	## if they differ -- but there's no warning in any case
+	rn <- if(!is.null(dnx[[1]])) dnx[[1]] else dny[[1]]
+	cx <- dnx[[2]] ; cy <- dny[[2]]
+	cn <- if(is.null(cx) && is.null(cy)) NULL
+	else c(if(!is.null(cx)) cx else character(ncol(x)),
+	       if(!is.null(cy)) cy else character(ncol(y)))
+	ans <- .cbind2Csp(x,y)
+	ans@Dimnames <- list(rn, cn)
+	ans
+    }
+}
 setMethod("cbind2", signature(x = "sparseMatrix", y = "sparseMatrix"),
 	  function(x, y) {
 	      nr <- rowCheck(x,y)
-	      ## beware of (packed) triangular, symmetric, ...
-	      hasDN <- !identical(c(dnx <- dimnames(x),
-				    dny <- dimnames(y)),
-				  list(NULL,NULL,NULL,NULL))
-	      ans <- .Call(Csparse_horzcat, as_Csp2(x), as_Csp2(y))
-	      if(hasDN) {
-		  ## R and S+ are different in which names they take
-		  ## if they differ -- but there's no warning in any case
-		  rn <- if(!is.null(dnx[[1]])) dnx[[1]] else dny[[1]]
-		  cx <- dnx[[2]] ; cy <- dny[[2]]
-		  cn <- if(is.null(cx) && is.null(cy)) NULL
-		  else c(if(!is.null(cx)) cx else character(ncol(x)),
-			 if(!is.null(cy)) cy else character(ncol(y)))
-		  ans@Dimnames <- list(rn, cn)
-	      }
-	      ans
+	      cbind2Sparse(x,y)
 	  })
 
+rbind2Sparse <- function(x,y) {
+    ## beware of (packed) triangular, symmetric, ...
+    if(identical(c(dnx <- dimnames(x),
+		   dny <- dimnames(y)),
+		 list(NULL,NULL,NULL,NULL)))
+	## keep empty dimnames
+	.rbind2Csp(x,y)
+    else {
+	## R and S+ are different in which names they take
+	## if they differ -- but there's no warning in any case
+	cn <- if(!is.null(dnx[[2]])) dnx[[2]] else dny[[2]]
+	rx <- dnx[[1]] ; ry <- dny[[1]]
+	rn <- if(is.null(rx) && is.null(ry)) NULL
+	else c(if(!is.null(rx)) rx else character(nrow(x)),
+	       if(!is.null(ry)) ry else character(nrow(y)))
+	ans <- .rbind2Csp(x,y)
+	ans@Dimnames <- list(rn, cn)
+	ans
+    }
+}
 setMethod("rbind2", signature(x = "sparseMatrix", y = "sparseMatrix"),
 	  function(x, y) {
 	      nc <- colCheck(x,y)
-	      ## beware of (packed) triangular, symmetric, ...
-	      hasDN <- !identical(c(dnx <- dimnames(x),
-				    dny <- dimnames(y)),
-				  list(NULL,NULL,NULL,NULL))
-	      ans <- .Call(Csparse_vertcat, as_Csp2(x), as_Csp2(y))
-	      if(hasDN) {
-		  ## R and S+ are different in which names they take
-		  ## if they differ -- but there's no warning in any case
-		  cn <- if(!is.null(dnx[[2]])) dnx[[2]] else dny[[2]]
-		  rx <- dnx[[1]] ; ry <- dny[[1]]
-		  rn <- if(is.null(rx) && is.null(ry)) NULL
-		  else c(if(!is.null(rx)) rx else character(nrow(x)),
-			 if(!is.null(ry)) ry else character(nrow(y)))
-		  ans@Dimnames <- list(rn, cn)
-	      }
-	      ans
+	      rbind2Sparse(x,y)
 	  })
+
+if(length(formals(cbind2)) >= 3) { ## newer R -- can use optional 'sparse = NA'
+
+setMethod("cbind2", signature(x = "sparseMatrix", y = "denseMatrix"),
+	  function(x, y, sparse = NA) {
+	      nr <- rowCheck(x,y)
+	      if(is.na(sparse)) # result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+		  sparse <- (nnzero(x)+nnzero(y)) * 2 < nr * (ncol(x)+ncol(y))
+	      if(sparse) cbind2Sparse(x,y) else cbind2(as(x, "denseMatrix"), y)
+	  })
+setMethod("cbind2", signature(x = "denseMatrix", y = "sparseMatrix"),
+	  function(x, y, sparse = NA) {
+	      nr <- rowCheck(x,y)
+	      if(is.na(sparse)) # result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+		  sparse <- (nnzero(x)+nnzero(y)) * 2 < nr * (ncol(x)+ncol(y))
+	      if(sparse) cbind2Sparse(x,y) else cbind2(x, as(y, "denseMatrix"))
+	  })
+setMethod("rbind2", signature(x = "sparseMatrix", y = "denseMatrix"),
+	  function(x, y, sparse = NA) {
+	      nc <- colCheck(x,y)
+	      if(is.na(sparse)) # result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+		  sparse <- (nnzero(x)+nnzero(y)) * 2 < (nrow(x)+nrow(y)) * nc
+	      if(sparse) rbind2Sparse(x,y) else rbind2(as(x, "denseMatrix"), y)
+	  })
+setMethod("rbind2", signature(x = "denseMatrix", y = "sparseMatrix"),
+	  function(x, y, sparse = NA) {
+	      nc <- colCheck(x,y)
+	      if(is.na(sparse)) # result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+		  sparse <- (nnzero(x)+nnzero(y)) * 2 < (nrow(x)+nrow(y)) * nc
+	      if(sparse) rbind2Sparse(x,y) else rbind2(x, as(y, "denseMatrix"))
+	  })
+
+} else { ## older version of R -- cbind2() has no "..."
+
+setMethod("cbind2", signature(x = "sparseMatrix", y = "denseMatrix"),
+	  function(x, y) {
+	      nr <- rowCheck(x,y)
+	      ## result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+	      sparse <- (nnzero(x)+nnzero(y)) * 2 < nr * (ncol(x)+ncol(y))
+	      if(sparse) cbind2Sparse(x,y) else cbind2(as(x, "denseMatrix"), y)
+	  })
+setMethod("cbind2", signature(x = "denseMatrix", y = "sparseMatrix"),
+	  function(x, y) {
+	      nr <- rowCheck(x,y)
+	      ## result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+	      sparse <- (nnzero(x)+nnzero(y)) * 2 < nr * (ncol(x)+ncol(y))
+	      if(sparse) cbind2Sparse(x,y) else cbind2(x, as(y, "denseMatrix"))
+	  })
+setMethod("rbind2", signature(x = "sparseMatrix", y = "denseMatrix"),
+	  function(x, y) {
+	      nc <- colCheck(x,y)
+	      ## result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+	      sparse <- (nnzero(x)+nnzero(y)) * 2 < (nrow(x)+nrow(y)) * nc
+	      if(sparse) rbind2Sparse(x,y) else rbind2(as(x, "denseMatrix"), y)
+	  })
+setMethod("rbind2", signature(x = "denseMatrix", y = "sparseMatrix"),
+	  function(x, y) {
+	      nc <- colCheck(x,y)
+	      ## result is sparse if "enough zeros" <==> sparseDefault() in Matrix()
+	      sparse <- (nnzero(x)+nnzero(y)) * 2 < (nrow(x)+nrow(y)) * nc
+	      if(sparse) rbind2Sparse(x,y) else rbind2(x, as(y, "denseMatrix"))
+	  })
+}# older R -- no "sparse = NA"
+
+
+
 
 if(FALSE) {
     ## FIXME

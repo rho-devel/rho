@@ -32,13 +32,13 @@ summary(fanny(x,3))# one extra cluster
 
 data(ruspini) # < to run under R 1.9.1
 summary(fanny(ruspini, 3), digits = 9)
-summary(fanny(ruspini, 4), digits = 9)# `correct' #{clusters}
+summary(fanny(ruspini, 4), digits = 9)# 'correct' #{clusters}
 summary(fanny(ruspini, 5), digits = 9)
 
 cat('Time elapsed: ', proc.time() - .proctime00,'\n')
 data(chorSub)
 p4cl <- pam(chorSub, k = 4, cluster.only = TRUE)
-## The first two are ``completely fuzzy'' -- and now give a warnings
+## The first two are "completely fuzzy" -- and now give a warnings
 f4.20 <- fanny(chorSub, k = 4, trace.lev = 1) ; f4.20$coef
 f4.18  <- fanny(chorSub, k = 4,   memb.exp = 1.8) # same problem
 f4.18. <- fanny(chorSub, k = 4,   memb.exp = 1.8,

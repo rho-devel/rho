@@ -252,10 +252,10 @@ LibExtern SEXP	R_GlobalEnv;	    /* The "global" environment */
 LibExtern SEXP  R_EmptyEnv;	    /* An empty environment at the root of the
 				    	environment tree */
 LibExtern SEXP  R_BaseEnv;	    /* The base environment; formerly R_NilValue */
-LibExtern SEXP	R_BaseNamespace;    /* The (fake) name space for base */
-LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered name spaces */
+LibExtern SEXP	R_BaseNamespace;    /* The (fake) namespace for base */
+LibExtern SEXP	R_NamespaceRegistry;/* Registry for registered namespaces */
 
-/* Special Values */
+LibExtern SEXP	R_Srcref;           /* Current srcref, for debuggers */
 
 /* Note that NULL will in turn typically expand to (void*)0 in C, and
  *  simply to 0 in C++.
@@ -330,8 +330,6 @@ SEXP Rf_arraySubscript(int, SEXP, SEXP, SEXP (*)(SEXP,SEXP),
                        SEXP (*)(SEXP, int), SEXP);
 SEXP Rf_classgets(SEXP, SEXP);
 SEXP Rf_cons(SEXP, SEXP);
-Rboolean R_compute_identical(SEXP, SEXP, Rboolean num_eq,
-			     Rboolean single_NA, Rboolean attr_asSet);
 void Rf_copyMatrix(SEXP, SEXP, Rboolean);
 void Rf_copyMostAttrib(SEXP, SEXP);
 void Rf_copyVector(SEXP, SEXP);
@@ -578,6 +576,16 @@ void R_RunExitFinalizers(void);	/* in memory.c */
 FILE *R_popen(const char *, const char *);
 #endif
 int R_system(const char *);
+
+/* R_compute_identical:  C version of identical() function
+   The third arg to R_compute_identical() consists of bitmapped flags for non-default options:  
+   currently all default to TRUE, so the flag is set for FALSE values:
+   1 = !NUM_EQ
+   2 = !SINGLE_NA
+   4 = !ATTR_AS_SET
+   8 = !IGNORE_BYTECODE
+*/
+Rboolean R_compute_identical(SEXP, SEXP, int);
 
 /* These Rf_ macros are retained for backwards compatibility, but
  * their use is deprecated within CXXR.  In particular header files

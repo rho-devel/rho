@@ -28,7 +28,8 @@ profile.glm <- function(fitted, which = 1:p, alpha = 0.01,
     summ <- summary(fitted)
     std.err <- summ$coefficients[, "Std. Error", drop = FALSE] # unaliased only
     mf <- model.frame(fitted)
-    n <- length(Y <- model.response(mf))
+    Y <- model.response(mf) ### change
+    n <- NROW(Y)            ### change: NROW() rather than length()
     O <- model.offset(mf)
     if(!length(O)) O <- rep(0, n)
     W <- model.weights(mf)
@@ -38,25 +39,16 @@ profile.glm <- function(fitted, which = 1:p, alpha = 0.01,
     X <- model.matrix(fitted)
     fam <- family(fitted)
     switch(fam$family,
-           binomial = {
-               if(!is.null(dim(Y))) {
-                   n <- n/2
-                   O <- O[1L:n]
-                   W <- drop(Y %*% c(1, 1))
-                   Y <- ifelse(W == 0, 0, Y[, 1]/W)
-               }
-               zmax <- sqrt(qchisq(1 - alpha, 1))
-               profName <- "z"
-           },
+           binomial = ,
            poisson = ,
-           "Negative Binomial" = {
+           `Negative Binomial` = {
                zmax <- sqrt(qchisq(1 - alpha, 1))
                profName <- "z"
            }
            ,
            gaussian = ,
            quasi = ,
-           "inverse.gaussian" = ,
+           inverse.gaussian = ,
            quasibinomial = ,
            quasipoisson = ,
        {
@@ -124,11 +116,13 @@ plot.profile <-
     for(nm in names(x)) {
         tau <- x[[nm]][[1L]]
         parval <- x[[nm]][[2L]][, nm]
+        dev.hold()
         plot(parval, tau, xlab = nm, ylab = "tau", type="n")
         ## allow for profiling failures
         if(sum(tau == 0) == 1) points(parval[tau == 0], 0, pch = 3)
         splineVals <- spline(parval, tau)
         lines(splineVals$x, splineVals$y)
+        dev.flush()
     }
 }
 
@@ -165,6 +159,7 @@ function(x, colours = 2:3, ...)
         ci <- npar - i
         pi <- Pnames[i]
         for(j in 1L:npar) {
+            dev.hold()
             pj <- Pnames[j]
             par(fig = del * c(j - 1, j, ci, ci + 1))
             if(i == j) {
@@ -204,6 +199,7 @@ function(x, colours = 2:3, ...)
             if(j == 1) axis(2)
             if(i == 1) axis(3)
             if(j == npar) axis(4)
+            dev.flush()
         }
     }
     par(fig = c(0, 1, 0, 1))

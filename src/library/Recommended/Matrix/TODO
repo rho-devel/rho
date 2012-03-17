@@ -1,3 +1,24 @@
+##-*- mode: org -*-
+
+- Look at Paul Bailey's problem -- CHOLMOD error (even seg.fault for him)
+  --> ~/R/MM/Pkg-ex/Matrix/sparseOrderedLogit.R
+
+- BunchKaufman()'s result is not really useful yet {but it is used on C
+  level e.g. for solve(<dsyMatrix>).   Should define  expand() method or
+  similar, see man/BunchKaufman-methods.Rd and R/dsyMatrix.R (at end).
+
+- R/zzz.R : Remove the  '%x%'  base assignInNamespace hack --
+  	  as soon as R's  '%x%'  is properly generic  // or itself calls the generic kronecker()
+
+----------------------------------------
+
+- Investigate the "band changing (and getting) ideas  'band<-' etc,
+  from Jeremy D Silver, per posts to R-devel on Aug.26,2011
+  {MM: ~/R/MM/Pkg-ex/Matrix/bands-Jeremy_Silver-ex.R }
+
+- cbind2() / rbind2() for sparseMatrices: dimnames propagation should
+  happen in C, see  R/bind2.R and src/Csparse.c (Csparse_horzcat etc).
+
 - Check for DimNames propagation in coercion and other operations.
 
 - Report the problem in the Linux ldexp manual page.  The second and
@@ -94,10 +115,11 @@
   be for triangularMatrix, and probably also "dense*general*Matrix" since the
   above currently goes via "matrix" and back instead of using the 'x' slot
   directly; in particular, the triangular* "class property" is lost!
+  [current ??]
 
-  Note that 'diag(M[,-1]) <- val' is deadly slow for large sparse M,
-  but that's because of the "outer" assignment in the equivalent
-  M[,-1] <- `diag<-`(M[,-1], val).
+- The "[<-" now uses  src/t_Csparse_subassign.c and no longer explodes
+  memory.  *However* it is still too slow when the replacment region is large.
+
 
 - examples for solve( Cholesky(.), b, system = c("A", "LDLt"....))
   probably rather in man/CHMfactor-class.Rd than man/Cholesky.Rd
@@ -118,7 +140,10 @@
   we should also provide a generic and methods.
 - diag(A %*% B) might look like a "generalization" of tr(A %*% B),
   but as the above tricks show, is not really.
-  Still, it's well worth to provide  diag.prod(A, B) 
+  Still, it's well worth to provide  diag.prod(A, B):
+
+  Well, if A %*% B is square,   diag(A %*% B)  ===  colSums(t(A) * B)
+  and we should probably teach people about that !
 
 - qr.R(qr(x)) may differ for the "same" matrix, depending on it being
   sparse or dense:
@@ -208,10 +233,9 @@
 - (systematically check that LAPACK-calling functions check for
    0-dimensional input themselves; LAPACK gives an integer error code)
 
-- the  f[,5762] <- thisCol # now ...
-  line in tests/indexing.R uses very large objects unnecessarily;
-  Improve  replTmat()  in R/Tsparse.R, making use of new "abIndex"
-  vectors.
+- the  f[,5762] <- thisCol  now go via Csparse_subassign() call ...
+  [ in tests/indexing.R ].
+  Still would be nice to be able to use abIndex (see replTmat in R/Tsparse.R)
 
 - {IS THIS CURRENT?}
   Sept. 2009:
@@ -234,3 +258,9 @@
   In some cases, e.g. lmer()'s  "Lambda" (block triangular, small blocks)
        rcond(L) :=  1 / (norm(L) * norm(solve(L)))
   is simple {and remains sparse, as solve(L) is still block triangular}
+
+- How can we ensure that     inst/include/cholmod.h		 remains
+  correct and equivalent to  src/CHOLMOD/Include/cholmod_core.h  and  siblings ???
+  {currently need to do this manually (Emacs M-x compare-windows) for the   typedefs}
+
+- finalize and activate the new *unused* code in src/t_sparseVector.c

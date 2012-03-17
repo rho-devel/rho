@@ -448,7 +448,7 @@ fillBuffer(SEXPTYPE type, int strip, int *bch, LocalData *d,
  donefill:
     /* strip trailing white space, if desired and if item is non-null */
     bufp = &buffer->data[m];
-    if (strip && m > mm) {
+   if (strip && m > mm) {
 	do {c = int(*--bufp);} while(m-- > mm && Rspace(c));
 	bufp++;
     }
@@ -1547,9 +1547,11 @@ SEXP attribute_hidden do_readtablehead(SEXP call, SEXP op, SEXP args, SEXP rho)
 	while((c = scanchar(TRUE, &data)) != R_EOF) {
 	    if(nbuf >= buf_size -1) {
 		buf_size *= 2;
-		buf = static_cast<char *>( realloc(buf, buf_size));
-		if(!buf)
+		char *tmp = static_cast<char *>( realloc(buf, buf_size));
+		if(!tmp) {
+		    free(buf);
 		    error(_("cannot allocate buffer in 'readTableHead'"));
+		} else buf = tmp;
 	    }
 	    /* Need to handle escaped embedded quotes, and how they are
 	       escaped depends on 'sep' */

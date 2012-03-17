@@ -312,11 +312,7 @@ trellis.panelArgs(x, packet.number)
   Once a panel or strip is in focus, \code{trellis.panelArgs} can be
   used to retrieve the arguments that were available to the panel
   function at that position.  In this case, it can be called without
-  arguments as
-
-  \preformatted{
-    trellis.panelArgs()
-  }
+  arguments as \preformatted{trellis.panelArgs()}
 
   This usage is also allowed when a \code{"trellis"} object is being
   printed, e.g. inside the panel functions or the axis function (but not

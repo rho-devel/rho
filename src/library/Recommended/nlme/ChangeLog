@@ -1,3 +1,21 @@
+2011-07-19  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: version is 3.1-102
+	* R/newMethods.R: getData.nls (aka getData.lme) used the na.action
+	of the call on the whole data and not on the model frame: should
+	have used the na.action component of the result.
+	* tests/{lme.R,lme.Rout.save,ss2.rda}: test for above.
+	* man/simulate.lme: document as method.
+
+2011-07-11  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* COPYING: rename to GPL-2
+	* LICENCE, inst/LICENCE: adjust wording accordingly
+
+2011-05-30  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* R/newFunc.R: name arguments to lapply() when ... is present.
+
 2011-05-06  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: version is 3.1-101
@@ -32,7 +50,7 @@
 2011-02-23  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: version is 3.1-99 (unreleased, used for R-devel),
-	remove email addresses of former authors (and JP has moved).
+	remove email addresses of former authors (and JCP has moved).
 
 	* R/{new,zz}Methods.R:
 	Put all BIC() methods in one place, as the default method.

@@ -18,6 +18,11 @@ possible improvements to the code.  Any further errors found should be
 reported to the author (Angelo Canty) for correction in the next
 version.
 
+Version 1.3; May 2011:
+
+Added parallel support, some code cleanup for efficiency.
+
+
 The package contains the following functions, all of which
 have online help available.
 

@@ -1,5 +1,5 @@
 
-R version 2.12.2 (2011-02-25)
+R version 2.13.0 (2011-04-13)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
@@ -32,9 +32,9 @@ coxph(formula = Surv(futime, fustat) ~ x1 + x2, data = test3,
     iter = 25)
 
 
-    coef exp(coef) se(coef)        z p
-x1 -22.2  2.28e-10    17431 -0.00127 1
-x2 -22.9  1.09e-10    18626 -0.00123 1
+    coef exp(coef) se(coef)         z p
+x1 -22.2  2.28e-10    28740 -0.000773 1
+x2 -22.9  1.09e-10    30708 -0.000747 1
 
 Likelihood ratio test=10.2  on 2 df, p=0.00625  n= 12, number of events= 3 
 Warning message:

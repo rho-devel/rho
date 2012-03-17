@@ -46,8 +46,10 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             stop("'x' and 'y' must have the same length")
         DNAME <- paste(DNAME, "and", deparse(substitute(y)))
         OK <- complete.cases(x, y)
-        x <- factor(x[OK])
-        y <- factor(y[OK])
+        ## use as.factor rather than factor here to be consistent with
+        ## pre-tabulated data
+        x <- as.factor(x[OK])
+        y <- as.factor(y[OK])
         if((nlevels(x) < 2L) || (nlevels(y) < 2L))
             stop("'x' and 'y' must have at least 2 levels")
         x <- table(x, y)
@@ -92,7 +94,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             sc <- colSums(x)
             n <- sum(sc)
             STATISTIC <- -sum(lfactorial(x))
-	    tmp <- .C("fisher_sim",
+	    tmp <- .C(C_fisher_sim,
 		      as.integer(nr),
 		      as.integer(nc),
 		      as.integer(sr),
@@ -109,7 +111,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
             ## PR#10558: STATISTIC is negative
 	    PVAL <- (1 + sum(tmp <= STATISTIC/almost.1)) / (B + 1)
         } else if(hybrid) {
-            PVAL <- .C("fexact",
+            PVAL <- .C(C_fexact,
                        nr,
                        nc,
                        x,
@@ -124,7 +126,7 @@ function(x, y = NULL, workspace = 200000, hybrid = FALSE,
                        mult = as.integer(mult),
                        PACKAGE = "stats")$p
         } else
-            PVAL <- .C("fexact",
+            PVAL <- .C(C_fexact,
                        nr,
                        nc,
                        x,

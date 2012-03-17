@@ -19,63 +19,12 @@ USA. */
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <R.h>
 #define ANSI
 /*#define DEBUG*/
 #include "matrix.h"
 #include "mgcv.h"
 
-
-void getXtX(double *XtX,double *X,int *r,int *c)
-/* form X'X (nearly) as efficiently as possible */
-{ double *p0,*p1,*p2,*p3,*p4,x;
-  int i,j;
-  for (p0=X,i=0;i<*c;i++,p0 += *r) 
-  for (p1=X,j=0;j<=i;j++,p1 += *r) {
-    for (x=0.0,p2=p0,p3=p1,p4=p0 + *r;p2<p4;p2++,p3++) x += *p2 * *p3;    
-    XtX[i + j * *c] = XtX[j + i * *c] = x;
-  }
-}
-
-void getXtWX(double *XtWX, double *X,double *w,int *r,int *c,double *work)
-/* forms X'WX as efficiently as possible, where W = diag(w)
-   and X is an r by c matrix stored column wise. 
-   work should be an r-vector (longer is no problem).
-*/ 
-{ int i,j;
-  double *p,*p1,*p2,*pX0,*pX1,xx;
-  pX0=X;
-  for (i=0;i< *c;i++) { 
-    p2 = work + *r;
-    for (p=w,p1=work;p1<p2;p++,p1++,pX0++) *p1 = *pX0 * *p; 
-    for (pX1=X,j=0;j<=i;j++) {
-      for (xx=0.0,p=work;p<p2;p++,pX1++) xx += *p * *pX1;
-      XtWX[i * *c + j] = XtWX[j * *c + i] = xx;
-    }
-  }
-}
-
-void getXtMX(double *XtMX,double *X,double *M,int *r,int *c,double *work)
-/* forms X'MX as efficiently as possible, where M is a symmetric matrix
-   and X is an r by c matrix. X and M are stored column wise. 
-   work should be an r-vector (longer is no problem).
-*/
-
-{ int i,j;
-  double *p,*p1,*p2,*pX0,*pX1,xx,*pM;
-  pX0=X;
-  for (i=0;i< *c;i++) { 
-    /* first form MX[:,i] */
-    p2 = work + *r;pM=M;
-    for (p1=work;p1<p2;pM++,p1++) *p1 = *pX0 * *pM;pX0++;
-    for (j=1;j< *r;j++,pX0++) 
-    for (p1=work;p1<p2;pM++,p1++) *p1 += *pX0 * *pM;
-    /* now form ith row and column of X'MX */
-    for (pX1=X,j=0;j<=i;j++) {
-      for (xx=0.0,p=work;p<p2;p++,pX1++) xx += *p * *pX1;
-      XtMX[i * *c + j] = XtMX[j * *c + i] = xx;
-    }
-  }
-}
 
 double trBtAB(double *A,double *B,int *n,int*m) 
 /* form tr(B'AB) where A is n by n and B is n by m, m < n,
@@ -1175,7 +1124,7 @@ void get_trA2(double *trA,double *trA1,double *trA2,double *P,double *K,double *
 */
 
 { double *diagKKt,*diagKKtKKt,xx,*KtTK,*KtTKKtK,*KKtK,*KtK,*work,*pTk,*pTm,*pdKKt,*pdKKtKKt,*p0,*p1,*p2,*p3,*pd,
-    *PtrSm,*PtSP,*KPtrSm,*diagKPtSPKt,*diagKPtSPKtKKt,*PtSPKtK, *KtKPtrSm, *KKtKPtrSm,*Ip,*IpK;
+    *PtrSm,*PtSP,*KPtrSm,*diagKPtSPKt,*diagKPtSPKtKKt,*PtSPKtK, *KtKPtrSm, *KKtKPtrSm,*Ip,*IpK/*,lowK,hiK*/;
   int i,m,k,bt,ct,j,one=1,km,mk,rSoff,deriv2,neg_w=0;
   if (*deriv==2) deriv2=1; else deriv2=0;
   /* Get the sign array for negative w_i */
@@ -1201,8 +1150,19 @@ void get_trA2(double *trA,double *trA1,double *trA2,double *P,double *K,double *
     IpK = (double *)calloc((size_t) *r * *n,sizeof(double));
     for (p0=IpK,p3=K,i=0;i<*r;i++) 
       for (p1=Ip,p2=p1 + *n;p1<p2;p1++,p0++,p3++) *p0 = *p1 * *p3; 
-  } else IpK = K;
+  } else { 
+    IpK = (double *)calloc((size_t) *r * *n,sizeof(double));
+    for (p0=IpK,p1=K,p2=K+ *n * *r;p1<p2;p0++,p1++) *p0 = *p1; 
+    /*IpK = K;*/
+  }
+  /*  lowK=hiK=*K;
+
+  for (p1=K,i=0;i<*n;i++) for (j=0;j<*r;j++,p1++) {
+      if (*p1>hiK) hiK= *p1; else if (*p1<lowK) lowK = *p1;
+    }
+    Rprintf("K range = %g - %g\n",lowK,hiK);*/
   bt=1;ct=0;mgcv_mmult(KtK,K,IpK,&bt,&ct,r,r,n);  
+  if (neg_w) free(IpK); else free(IpK);
   KKtK = (double *)calloc((size_t)*n * *r,sizeof(double));
   bt=0;ct=0;mgcv_mmult(KKtK,K,KtK,&bt,&ct,n,r,r);  
 
@@ -1319,7 +1279,7 @@ void get_trA2(double *trA,double *trA1,double *trA2,double *P,double *K,double *
    /* clear up */
    free(PtrSm);free(KPtrSm);free(PtSP);free(KtKPtrSm);free(diagKPtSPKt);
    free(diagKPtSPKtKKt);free(work);free(KtK);free(KKtK);free(PtSPKtK);free(KKtKPtrSm);
-   free(Ip);if (neg_w) free(IpK);  
+   free(Ip);  
 } /* end get_trA2 */
 
 
@@ -1865,7 +1825,7 @@ void gdi1(double *X,double *E,double *Es,double *rS,double *U1,
     *PKtz,*v1,*v2,*wi,*w1,*w2,*pw2,*Tk,*Tkm,*Tfk=NULL,*Tfkm=NULL,
          *pb2, *dev_grad,*dev_hess=NULL,Rcond,
          ldetXWXS=0.0,reml_penalty=0.0,bSb=0.0,*R,
-    *alpha1,*alpha2,*raw,*Q1,*IQ,  d_tol,Rnorm,Enorm,*nulli,ldetI2D;
+    *alpha1,*alpha2,*raw,*Q1,*IQ, Rnorm,Enorm,*nulli,ldetI2D;
   int    i,j,k,*pivot,*pivot1,ScS,*pi,rank,left,tp,bt,ct,iter=0,m,one=1,n_2dCols=0,n_b1,n_b2,n_drop,*drop,
     n_eta1=0,n_eta2=0,n_work,deriv2,neg_w=0,*nind,nr,TRUE=1,FALSE=0;
 
@@ -1874,7 +1834,7 @@ void gdi1(double *X,double *E,double *Es,double *rS,double *U1,
 
   ScS=0;for (pi=rSncol;pi<rSncol + *M;pi++) ScS+= *pi;  /* total columns of input rS */
 
-  d_tol = sqrt(*rank_tol * 100);
+  /*d_tol = sqrt(*rank_tol * 100);*/
   /* first step is to obtain P and K */
   zz = (double *)calloc((size_t)*n,sizeof(double)); /* storage for z=[sqrt(|W|)z,0] */
   raw = (double *)calloc((size_t) *n,sizeof(double)); /* storage for sqrt(|w|) */

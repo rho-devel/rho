@@ -46,6 +46,8 @@
 #define VERSION_7SE 111
 #define VERSION_8 113
 #define VERSION_114 114
+#define VERSION_115 115
+
 /*
 http://statacorp.com/statalist/archive/2007-06/msg01021.html
 says 113 is versions 8-9, 114 is version 10.
@@ -215,9 +217,15 @@ SEXP R_LoadStataData(FILE *fp)
 	version = -10;
 	varnamelength = 32;
 	fmtlist_len = 49;
+    case VERSION_115:
+	/* Stata say the formats are identical,
+	   but _115 allows business dates */
+	version = -12;
+	varnamelength = 32;
+	fmtlist_len = 49;
 	break;
     default:
-	error(_("not a Stata version 5-10 .dta file"));
+	error(_("not a Stata version 5-12 .dta file"));
     }
     stata_endian = (int) RawByteBinary(fp, 1);     /* byte ordering */
     swapends = stata_endian != CN_TYPE_NATIVE;
@@ -235,6 +243,7 @@ SEXP R_LoadStataData(FILE *fp)
     case 7:
     case 8:
     case 10:
+    case 12:
 	InStringBinary(fp, 81, datalabel);
 	break;
     }
@@ -362,6 +371,7 @@ SEXP R_LoadStataData(FILE *fp)
     case 7:
     case 8:
     case 10:
+    case 12:
 	for(i = 0; i < nvar; i++) {
 	    InStringBinary(fp, 81, datalabel);
 	    SET_STRING_ELT(varlabels, i, mkChar(datalabel));

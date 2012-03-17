@@ -114,7 +114,7 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
     const char* ss=s;
     const char* r2;
     static char ans[BUF_SIZE];
-    int nans;
+    size_t nans;
 
     if(!strlen(s)) return "";
     ans[0] = '\0';
@@ -126,10 +126,10 @@ static CXXRCONST char *findterm(CXXRCONST char *s)
 	if(!q) break;
 	/* copy over leading part */
 	nans = strlen(ans);
-	strncat(ans, s, p-s); ans[nans + p - s] = '\0';
+	strncat(ans, s, size_t (p - s)); ans[nans + p - s] = '\0';
 	vector<char> rv(q - p + 2);
 	char* r = &rv[0];
-	strncpy(r, p, q - p + 1);
+	strncpy(r, p, size_t (q - p + 1));
 	r[q - p + 1] = '\0';
 	r2 = subterm(r);
 	if(strlen(ans) + strlen(r2) < BUF_SIZE) strcat(ans, r2); else return ss;
@@ -328,7 +328,7 @@ void process_user_Renviron()
     process_Renviron(s);
 }
 
-SEXP do_readEnviron(SEXP call, SEXP op, SEXP args, SEXP env)
+SEXP attribute_hidden do_readEnviron(SEXP call, SEXP op, SEXP args, SEXP env)
 {
 
     checkArity(op, args);

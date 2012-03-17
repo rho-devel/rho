@@ -1,8 +1,3 @@
-.onLoad <- function(lib, pkg) {
-    if(is.null(getOption("max.print")))
-	options(max.print = 10000)#-> show() of large matrices
-}
-
 ## --- New "logic" class -- currently using "raw" instead of "logical"
 ## LOGIC setClass("logic", contains = "raw")
 
@@ -710,17 +705,20 @@ setClass("rleDiff", representation(first = "numLike", rle = "rle"),
 	     TRUE
 	 })
 
-### 2010-03-04 -- thinking about *implenting* some 'abIndex' methodology,
+### 2010-03-04 -- thinking about *implementing* some 'abIndex' methodology,
 ### I conclude that the following structure would probably be even more
 ### efficient than the "rleDiff" one :
-### for now, at least use it, and define  "seqMat" <--> "abIndex" coercions:
+### IDEA: Store subsequences in a numeric matrix of three rows, where
+### ----- one column = [from, to, by]  defining a sub seq()ence
+
+## for now, at least use it, and [TODO!] define  "seqMat" <--> "abIndex" coercions:
 setClass("seqMat", contains = "matrix",
-	 prototype = prototype(matrix(0, nrow = 2, ncol=0)),
+	 prototype = prototype(matrix(0, nrow = 3, ncol=0)),
 	 validity = function(object) {
 	     if(!is.numeric(object)) return("is not numeric")
 	     d <- dim(object)
-	     if(length(d) != 2 || d[1] != 2)
-		 return("not a	 2 x n	matrix")
+	     if(length(d) != 3 || d[1] != 3)
+		 return("not a	 3 x n	matrix")
 	     if(any(object != floor(object)))
 		 return("some entries are not integer valued")
 	     TRUE

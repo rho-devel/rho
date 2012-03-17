@@ -1,5 +1,5 @@
 ## routines for very large dataset generalized additive modelling.
-## (c) Simon N. Wood 2009 
+## (c) Simon N. Wood 2009-2011
 
 
 ls.size <- function(x) {
@@ -46,6 +46,36 @@ qr.update <- function(Xn,yn,R=matrix(0,0,ncol(Xn)),f=array(0,0),y.norm2=0)
   list(R = qr.R(qrx),f=fn,y.norm2=y.norm2)
 }
 
+
+qr.up <- function(arg) {
+## routine for parallel computation of the QR factorization of 
+## a large gam model matrix, suitable for calling with parLapply.
+  wt <- rep(0,0) 
+  dev <- 0    
+  for (b in 1:arg$n.block) {
+    ind <- arg$start[b]:arg$stop[b]
+    arg$G$model <- arg$mf[ind,]
+    X <- predict(arg$G,type="lpmatrix")
+    if (is.null(arg$coef)) eta1 <- arg$eta[ind] else eta1 <- drop(X%*%arg$coef) + arg$offset[ind]
+    mu <- arg$linkinv(eta1) 
+    y <- arg$G$y[ind] ## arg$G$model[[arg$response]] 
+    weights <- arg$G$w[ind]
+    mu.eta.val <- arg$mu.eta(eta1)
+    good <- (weights > 0) & (mu.eta.val != 0)
+    z <- (eta1 - arg$offset[ind])[good] + (y - mu)[good]/mu.eta.val[good]
+    w <- (weights[good] * mu.eta.val[good]^2)/arg$variance(mu)[good]
+    dev <- dev + sum(arg$dev.resids(y,mu,weights))
+    wt <- c(wt,w)
+    w <- sqrt(w)
+    if (b == 1) qrx <- qr.update(w*X[good,],w*z) 
+    else qrx <- qr.update(w*X[good,],w*z,qrx$R,qrx$f,qrx$y.norm2)
+    rm(X);if(arg$gc.level>1) gc() ## X can be large: remove and reclaim
+  }
+  qrx$dev <- dev;qrx$wt <- wt
+  if (arg$gc.level>1) { rm(arg,ind,mu,y,weights,mu.eta.val,good,z,w,wt,w);gc()}
+  qrx
+}
+
 mini.mf <-function(mf,chunk.size) {
 ## takes a model frame and produces a representative subset of it, suitable for 
 ## basis setup.
@@ -82,7 +112,7 @@ mini.mf <-function(mf,chunk.size) {
 
 bgam.fit <- function (G, mf, chunk.size, gp ,scale ,gamma,method, etastart = NULL,
     mustart = NULL, offset = rep(0, nobs),
-    control = gam.control(), intercept = TRUE)
+    control = gam.control(), intercept = TRUE, cl = NULL,gc.level=0)
 {   y <- mf[[gp$response]]
     weights <- G$w
     conv <- FALSE
@@ -123,55 +153,294 @@ bgam.fit <- function (G, mf, chunk.size, gp ,scale ,gamma,method, etastart = NUL
        stop("cannot find valid starting values: please specify some")
     dev <- sum(dev.resids(y, mu, weights))*2 ## just to avoid converging at iter 1
     boundary <- conv <- FALSE
-    ## construct indices for splitting up model matrix construction... 
-    n.block <- nobs%/%chunk.size ## number of full sized blocks
-    stub <- nobs%%chunk.size ## size of end block
-    if (n.block>0) {
-      start <- (0:(n.block-1))*chunk.size+1
-      stop <- (1:n.block)*chunk.size
-      if (stub>0) {
-        start[n.block+1] <- stop[n.block]+1
-        stop[n.block+1] <- nobs
-        n.block <- n.block+1
-      } 
-    } else {
-      n.block <- 1
-      start <- 1
-      stop <- nobs
-    }
- 
+   
     G$coefficients <- rep(0,ncol(G$X))
-    class(G) <- "gam"
+    class(G) <- "gam"  
     
+    ## need to reset response and weights to post initialization values
+    ## in particular to deal with binomial properly...
+    G$y <- y
+    G$w <- weights
+
+    ## set up cluster for parallel coputation...
+
+    if (!is.null(cl)&&inherits(cl,"cluster")) {
+      n.threads <- length(cl)
+    } else n.threads <- 1
+
+ 
+
+    if (n.threads>1) { ## set up thread argument lists
+      ## number of obs per thread
+      nt <- rep(ceiling(nobs/n.threads),n.threads)
+      nt[n.threads] <- nobs - sum(nt[-n.threads])
+      arg <- list()
+      n1 <- 0
+      for (i in 1:n.threads) {
+        n0 <- n1+1;n1 <- n1+nt[i]
+        ind <- n0:n1 ## this threads data block from mf
+        n.block <- nt[i]%/%chunk.size ## number of full sized blocks
+        stub <- nt[i]%%chunk.size ## size of end block
+        if (n.block>0) {
+          start <- (0:(n.block-1))*chunk.size+1
+          stop <- (1:n.block)*chunk.size
+          if (stub>0) {
+            start[n.block+1] <- stop[n.block]+1
+            stop[n.block+1] <- nt[i]
+            n.block <- n.block+1
+          } 
+        } else {
+          n.block <- 1
+          start <- 1
+          stop <- nt[i]
+        }
+        arg[[i]] <- list(nobs= nt[i],start=start,stop=stop,n.block=n.block,
+                         linkinv=linkinv,dev.resids=dev.resids,gc.level=gc.level,
+                         mu.eta=mu.eta,variance=variance,mf = mf[ind,],
+                         eta = eta[ind],offset = offset[ind],G = G)
+        arg[[i]]$G$w <- G$w[ind];arg[[i]]$G$model <- NULL
+        arg[[i]]$G$y <- G$y[ind]
+      }
+    } else { ## single thread, requires single indices
+      ## construct indices for splitting up model matrix construction... 
+      n.block <- nobs%/%chunk.size ## number of full sized blocks
+      stub <- nobs%%chunk.size ## size of end block
+      if (n.block>0) {
+        start <- (0:(n.block-1))*chunk.size+1
+        stop <- (1:n.block)*chunk.size
+        if (stub>0) {
+          start[n.block+1] <- stop[n.block]+1
+          stop[n.block+1] <- nobs
+          n.block <- n.block+1
+        } 
+      } else {
+        n.block <- 1
+        start <- 1
+        stop <- nobs
+      }
+   } ## single thread indices complete
+ 
     conv <- FALSE
+ 
     for (iter in 1L:control$maxit) { ## main fitting loop
        ## accumulate the QR decomposition of the weighted model matrix
        wt <- rep(0,0) 
        devold <- dev
-       dev <- 0     
-       for (b in 1:n.block) {
+       dev <- 0
+       if (n.threads == 1) { ## use original serial update code     
+         for (b in 1:n.block) {
         
-         ind <- start[b]:stop[b]
-         G$model <- mf[ind,]
-         X <- predict(G,type="lpmatrix")
-         if (iter>1) eta1 <- drop(X%*%coef) + offset[ind] else eta1 <- eta[ind]
-         mu <- linkinv(eta1) 
-         y <- G$model[[gp$response]] ## - G$offset[ind]
-         weights <- G$w[ind]
-         mu.eta.val <- mu.eta(eta1)
-         good <- (weights > 0) & (mu.eta.val != 0)
-         z <- (eta1 - offset[ind])[good] + (y - mu)[good]/mu.eta.val[good]
-         w <- (weights[good] * mu.eta.val[good]^2)/variance(mu)[good]
-         dev <- dev + sum(dev.resids(y,mu,weights))
-         wt <- c(wt,w)
-         w <- sqrt(w)
-         if (b == 1) qrx <- qr.update(w*X[good,],w*z) 
-         else qrx <- qr.update(w*X[good,],w*z,qrx$R,qrx$f,qrx$y.norm2)
-         rm(X);gc() ## X can be large: remove and reclaim
-      }
-   
+           ind <- start[b]:stop[b]
+           G$model <- mf[ind,]
+           X <- predict(G,type="lpmatrix")
+           if (iter>1) eta1 <- drop(X%*%coef) + offset[ind] else eta1 <- eta[ind]
+           mu <- linkinv(eta1) 
+           y <- G$y[ind] ## G$model[[gp$response]] ## - G$offset[ind]
+           weights <- G$w[ind]
+           mu.eta.val <- mu.eta(eta1)
+           good <- (weights > 0) & (mu.eta.val != 0)
+           z <- (eta1 - offset[ind])[good] + (y - mu)[good]/mu.eta.val[good]
+           w <- (weights[good] * mu.eta.val[good]^2)/variance(mu)[good]
+           dev <- dev + sum(dev.resids(y,mu,weights))
+           wt <- c(wt,w)
+           w <- sqrt(w)
+           if (b == 1) qrx <- qr.update(w*X[good,],w*z) 
+           else qrx <- qr.update(w*X[good,],w*z,qrx$R,qrx$f,qrx$y.norm2)
+           rm(X);if(gc.level>1) gc() ## X can be large: remove and reclaim
+        }
+      } else { ## use new parallel accumulation 
+        if (iter>1) for (i in 1:length(arg)) arg[[i]]$coef <- coef
+         res <- parLapply(cl,arg,qr.up) 
+         ## single thread debugging version 
+         #res <- list()
+         #for (i in 1:length(arg)) {
+         #  res[[i]] <- qr.up(arg[[i]])
+         #}
+        ## now consolidate the results from the parallel threads...
+        R <- res[[1]]$R;f <- res[[1]]$f;dev <- res[[1]]$dev
+        wt <- res[[1]]$wt;y.norm2 <- res[[1]]$y.norm2
+        for (i in 2:n.threads) {
+          R <- rbind(R,res[[i]]$R); f <- c(f,res[[i]]$f)
+          wt <- c(wt,res[[i]]$wt); dev <- dev + res[[i]]$dev
+          y.norm2 <- y.norm2 + res[[i]]$y.norm2
+        }         
+        qrx <- qr(R,tol=0) 
+        f <- qr.qty(qrx,f)[1:ncol(R)]
+        qrx <- list(R=qr.R(qrx),f=f,y.norm2=y.norm2)
+      } 
+
       G$n <- nobs
-      G$y <- mf[[gp$response]]
+      #G$y <- mf[[gp$response]]
+   
+      rss.extra <- qrx$y.norm2 - sum(qrx$f^2)
+      
+      if (control$trace)
+         cat("Deviance =", dev, "Iterations -", iter,"\n")
+
+      if (!is.finite(dev)) stop("Non-finite deviance")
+
+      ## preparation for working model fit is ready, but need to test for convergence first
+      if (iter>2 && abs(dev - devold)/(0.1 + abs(dev)) < control$epsilon) {
+          conv <- TRUE
+          coef <- start
+          break
+      }
+
+      if (method=="GCV.Cp") {
+         fit <- magic(qrx$f,qrx$R,G$sp,G$S,G$off,L=G$L,lsp0=G$lsp0,rank=G$rank,
+                      H=G$H,C=G$C,gamma=gamma,scale=scale,gcv=(scale<=0),
+                      extra.rss=rss.extra,n.score=G$n)
+ 
+         post <- magic.post.proc(qrx$R,fit,qrx$f*0+1) 
+      } else { ## method is "REML" or "ML"
+        y <- G$y; w <- G$w; n <- G$n;offset <- G$offset
+        G$y <- qrx$f
+        G$w <- G$y*0+1
+        G$X <- qrx$R
+        G$n <- length(G$y)
+        G$offset <- G$y*0
+        G$dev.extra <- rss.extra
+        G$pearson.extra <- rss.extra
+        G$n.true <- n
+        object <- gam(G=G,method=method,gamma=gamma,scale=scale)
+        y -> G$y; w -> G$w; n -> G$n;offset -> G$offset
+      }
+     
+      if (method=="GCV.Cp") { 
+        object <- list()
+        object$coefficients <- fit$b
+        object$edf <- post$edf
+        object$full.sp <- fit$sp.full
+        object$gcv.ubre <- fit$score
+        object$hat <- post$hat
+        object$mgcv.conv <- fit$gcv.info 
+        object$optimizer="magic"
+        object$rank <- fit$gcv.info$rank
+        object$Ve <- post$Ve
+        object$Vp <- post$Vb
+        object$sig2 <- object$scale <- fit$scale
+        object$sp <- fit$sp
+        names(object$sp) <- names(G$sp)
+        class(object)<-c("gam")
+      }
+
+      coef <- object$coefficients
+        
+      if (any(!is.finite(coef))) {
+          conv <- FALSE
+          warning("non-finite coefficients at iteration ",
+                  iter)
+          break
+      }
+    } ## fitting iteration
+
+    if (!conv)
+       warning("algorithm did not converge")
+   
+    eps <- 10 * .Machine$double.eps
+    if (family$family == "binomial") {
+         if (any(mu > 1 - eps) || any(mu < eps))
+                warning("fitted probabilities numerically 0 or 1 occurred")
+    }
+    if (family$family == "poisson") {
+            if (any(mu < eps))
+                warning("fitted rates numerically 0 occurred")
+    }
+      
+  
+   
+  #  wtdmu <- if (intercept)
+  #      sum(weights * y)/sum(weights)
+  #  else linkinv(offset)
+  #  nulldev <- sum(dev.resids(y, wtdmu, weights))
+  # if (n.threads!=1) stopCluster(cl)
+  object$wt <- wt
+  object$y <- G$y
+  rm(G);if (gc.level>0) gc()
+  object
+} ## end bgam.fit
+
+
+
+bgam.fit2 <- function (G, mf, chunk.size, gp ,scale ,gamma,method, etastart = NULL,
+    mustart = NULL, offset = rep(0, nobs),
+    control = gam.control(), intercept = TRUE)
+## version using sparse full model matrix in place of QR update...
+## not multi-threaded, due to anyway disappointing performance
+{   G$y <- y <- mf[[gp$response]]
+    weights <- G$w
+    conv <- FALSE
+    nobs <- nrow(mf)
+    nvars <- ncol(G$X)
+    offset <- G$offset
+    family <- G$family
+    G$family <- gaussian() ## needed if REML/ML used
+    variance <- family$variance
+    dev.resids <- family$dev.resids
+    aic <- family$aic
+    linkinv <- family$linkinv
+    mu.eta <- family$mu.eta
+    if (!is.function(variance) || !is.function(linkinv))
+        stop("'family' argument seems not to be a valid family object")
+    valideta <- family$valideta
+    if (is.null(valideta))
+        valideta <- function(eta) TRUE
+    validmu <- family$validmu
+    if (is.null(validmu))
+        validmu <- function(mu) TRUE
+    if (is.null(mustart)) {
+        eval(family$initialize)
+    }
+    else {
+        mukeep <- mustart
+        eval(family$initialize)
+        mustart <- mukeep
+    }
+ 
+    coefold <- NULL
+    eta <- if (!is.null(etastart))
+         etastart
+    else family$linkfun(mustart)
+    
+    mu <- linkinv(eta)
+    if (!(validmu(mu) && valideta(eta)))
+       stop("cannot find valid starting values: please specify some")
+    dev <- sum(dev.resids(y, mu, weights))*2 ## just to avoid converging at iter 1
+    boundary <- conv <- FALSE
+
+    G$n <- nobs
+    X <- G$X 
+    ## need to reset response and weights to post initialization values
+    ## in particular to deal with binomial properly...
+    G$y <- y
+    G$w <- weights
+
+    conv <- FALSE
+    for (iter in 1L:control$maxit) { ## main fitting loop
+      devold <- dev
+      if (iter>1) eta <- as.numeric(X%*%coef) + offset
+      mu <- linkinv(eta)
+      mu.eta.val <- mu.eta(eta)
+      good <- (G$w > 0) & (mu.eta.val != 0)
+      z <- (eta - offset)[good] + (y - mu)/mu.eta.val
+      w <- (G$w[good] * mu.eta.val[good]^2)/variance(mu)[good]
+      dev <- sum(dev.resids(y,mu,G$w))
+      W <- Diagonal(length(w),sqrt(w))
+      if (sum(good)<nobs) {
+        XWX <- as(Matrix:::crossprod(W%*%X[good,]),"matrix")
+      } else {
+        XWX <- as(Matrix:::crossprod(W%*%X),"matrix")
+      }      
+      qrx <- list(R = chol(XWX))
+      Wz <- W%*%z
+
+      ## in following note that Q = WXR^{-1} 
+      if (sum(good)<nobs) {
+        qrx$f <- forwardsolve(t(qrx$R),as.numeric(t(X[good,])%*%(W%*%Wz)))
+      } else {
+        qrx$f <- forwardsolve(t(qrx$R),as.numeric(t(X)%*%(W%*%Wz)))
+      }
+      qrx$y.norm2 <- sum(Wz^2)
    
       rss.extra <- qrx$y.norm2 - sum(qrx$f^2)
       
@@ -250,19 +519,55 @@ bgam.fit <- function (G, mf, chunk.size, gp ,scale ,gamma,method, etastart = NUL
     }
       
   
-   
-  #  wtdmu <- if (intercept)
-  #      sum(weights * y)/sum(weights)
-  #  else linkinv(offset)
-  #  nulldev <- sum(dev.resids(y, wtdmu, weights))
-  object$wt <- wt
+  object$wt <- w
+  object$y <- G$y
   rm(G);gc()
   object
-} ## end bgam.fit
+} ## end bgam.fit2
 
+ar.qr.up <- function(arg) {
+## function to perform QR updating with AR reiduals, on one execution thread
+  if (arg$rho!=0) { ## AR1 error model
+     ld <- 1/sqrt(1 - arg$rho^2) ## leading diagonal of root inverse correlation
+     sd <- -arg$rho * ld         ## sub diagonal
+  } 
+  yX.last <- NULL
+  qrx <- list(R=matrix(0,0,ncol(arg$G$X)),f=array(0,0),y.norm2=0) ## initial empty qr object
+  for (i in 1:arg$n.block) {
+    ind <- arg$start[i]:arg$end[i] 
+    if (arg$rho!=0) { ## have to find AR1 transform...
+       N <- arg$end[i]-arg$start[i]+1
+       ## not first row implied by this transform
+       ## is always dropped, unless really at beginning of data.
+       row <- c(1,rep(1:N,rep(2,N))[-c(1,2*N)])
+       weight <- c(1,rep(c(sd,ld),N-1))
+       stop <- c(1,1:(N-1)*2+1)
+     } 
+     arg$G$model <- arg$mf[ind,]
+     w <- sqrt(arg$G$w[ind])
+     X <- w*predict(arg$G,type="lpmatrix")
+     y <- w*(arg$G$model[[arg$response]] - arg$offset[ind])
+     if (arg$rho!=0) {
+       ## Apply transform...
+       if (arg$last&&arg$end[i]==arg$nobs) yX.last <- 
+           c(y[nrow(X)],X[nrow(X),]) ## store final row, in case of update
+       if (arg$first&&i==1) {
+          X <- rwMatrix(stop,row,weight,X)
+          y <- rwMatrix(stop,row,weight,y)
+       } else {
+          X <- rwMatrix(stop,row,weight,X)[-1,]
+          y <- rwMatrix(stop,row,weight,y)[-1]
+       } 
+     } ## dealt with AR1      
+     qrx <- qr.update(X,y,qrx$R,qrx$f,qrx$y.norm2)
+     rm(X);if (arg$gc.level>1) {gc()} ## X can be large: remove and reclaim
+  } ## all blocks dealt with
+  qrx$yX.last <- yX.last
+  if (arg$gc.level>1) {rm(arg,w,y,ind);gc()}
+  qrx
+}
 
-
-bam.fit <- function(G,mf,chunk.size,gp,scale,gamma,method,rho=0) 
+bam.fit <- function(G,mf,chunk.size,gp,scale,gamma,method,rho=0,cl=NULL,gc.level=0) 
 ## function that does big additive model fit in strictly additive case
 {  ## first perform the QR decomposition, blockwise....
    n <- nrow(mf)
@@ -270,72 +575,124 @@ bam.fit <- function(G,mf,chunk.size,gp,scale,gamma,method,rho=0)
      ld <- 1/sqrt(1-rho^2) ## leading diagonal of root inverse correlation
      sd <- -rho*ld         ## sub diagonal
    }
-   if (n>chunk.size) { 
-    G$coefficients <- rep(0,ncol(G$X))
-    class(G) <- "gam"
-    n.block <- n%/%chunk.size ## number of full sized blocks
-    stub <- n%%chunk.size ## size of end block
-    if (stub>0) n.block <- n.block + 1
-#    start <- 0:(n.block-1)*chunk.size + 1 ## block starts
-#    end <- start + chunk.size;           ## block ends
-#    if (rho==0) end <- end - 1  ## otherwise most blocks go to 1 beyond block end
-#    end[n.block] <- n           ## block ends
 
-    start <- 0:(n.block-1)*chunk.size    ## block starts
-    end <- start + chunk.size;           ## block ends
-    end[n.block] <- n
-    if (rho==0) start <- start + 1  ## otherwise most blocks go to 1 before block start
-    start[1] <- 1  
+   if (n>chunk.size) { ## then use QR accumulation approach
+     if (!is.null(cl)&&inherits(cl,"cluster")) { 
+       require(parallel)
+       n.threads <- length(cl)
+     } else n.threads <- 1
 
-    qrx <- list(R=matrix(0,0,ncol(G$X)),f=array(0,0),y.norm2=0) ## initial empty qr object
-    for (i in 1:n.block) {
-      ind <- start[i]:end[i] 
-      if (rho!=0) {
-        N <- end[i]-start[i]+1
-        ## following are alternative form (harder to update)...       
-        #row <- rep(1:N,rep(2,N))[-1]
-        #weight <- c(rep(c(ld,sd),N-1),ld)
-        #if (end[i]==n) weight[2*N-1] <- 1
-        #stop <- c(1:(N-1)*2,2*N-1)
-        row <- c(1,rep(1:N,rep(2,N))[-c(1,2*N)])
-        weight <- c(1,rep(c(sd,ld),N-1))
-        stop <- c(1,1:(N-1)*2+1)
-        
-      }
-      G$model <- mf[ind,]
-      w <- sqrt(G$w[ind])
-      X <- w*predict(G,type="lpmatrix")
-      y <- w*(G$model[[gp$response]] - G$offset[ind])
-      if (rho!=0) {
-        ## Apply transform...
-     #   if (end[i]==n) {
-     #     X <- rwMatrix(stop,row,weight,X)
-     #     y <- rwMatrix(stop,row,weight,y)
-     #   } else {
-     #     X <- rwMatrix(stop,row,weight,X)[-N,]
-     #     y <- rwMatrix(stop,row,weight,y)[-N]
-     #   }
-        if (end[i]==n) yX.last <- c(y[nrow(X)],X[nrow(X),]) ## store final row, in case of update
-        if (i==1) {
-           X <- rwMatrix(stop,row,weight,X)
-           y <- rwMatrix(stop,row,weight,y)
-        } else {
-           X <- rwMatrix(stop,row,weight,X)[-1,]
-           y <- rwMatrix(stop,row,weight,y)[-1]
-        } 
-      }      
+     G$coefficients <- rep(0,ncol(G$X))
+     class(G) <- "gam"
 
-      qrx <- qr.update(X,y,qrx$R,qrx$f,qrx$y.norm2)
-      rm(X);gc() ## X can be large: remove and reclaim
-    }
-    G$n <- n
-    G$y <- mf[[gp$response]]
+     if (n.threads>1) { ## set up thread argument lists
+       ## number of obs per thread
+       nt <- rep(ceiling(n/n.threads),n.threads)
+       nt[n.threads] <- n - sum(nt[-n.threads])
+       arg <- list()
+       n1 <- 0
+       for (i in 1:n.threads) { 
+         n0 <- n1+1;n1 <- n1+nt[i]
+         if (i>1&&rho!=0) { ## need to start from end of last block if rho!=0
+           n0 <- n0-1;nt[i] <- nt[i]+1 
+         }   
+         ind <- n0:n1 ## this thread's data block from mf
+         n.block <- nt[i]%/%chunk.size ## number of full sized blocks
+         stub <- nt[i]%%chunk.size ## size of end block
+         if (n.block>0) { 
+           ## each block is of size 
+           start <- (0:(n.block-1))*chunk.size+1
+           end <- start + chunk.size - 1
+           if (stub>0) {
+             start[n.block+1] <- end[n.block]+1
+             end[n.block+1] <- nt[i]
+             n.block <- n.block+1
+           } 
+           if (rho!=0) { ## then blocks must overlap
+             ns <- length(start)
+             if (ns>1) start[2:ns] <- start[2:ns]-1 
+           }
+         } else {
+           n.block <- 1
+           start <- 1
+           end <- nt[i]
+         }
+         arg[[i]] <- list(nobs= nt[i],start=start,end=end,n.block=n.block,
+                         rho=rho,mf = mf[ind,],gc.level=gc.level,
+                         offset = G$offset[ind],G = G,response=gp$response,
+                         first=FALSE,last=FALSE)
+         if (i==1) arg[[1]]$first <- TRUE
+         if (i==n.threads) arg[[i]]$last <- TRUE 
+         arg[[i]]$G$w <- G$w[ind];arg[[i]]$G$model <- NULL
+       }
+     } else { ## single thread, requires single indices 
+       n.block <- n%/%chunk.size ## number of full sized blocks
+       stub <- n%%chunk.size ## size of end block
+       if (stub>0) n.block <- n.block + 1
+       start <- 0:(n.block-1)*chunk.size    ## block starts
+       end <- start + chunk.size;           ## block ends
+       end[n.block] <- n
+       if (rho==0) start <- start + 1  ## otherwise most blocks go to 1 before block start
+       start[1] <- 1  
+     } 
+    
+     if (n.threads==1) { ## use original single thread method...
+       qrx <- list(R=matrix(0,0,ncol(G$X)),f=array(0,0),y.norm2=0) ## initial empty qr object
+       for (i in 1:n.block) {
+         ind <- start[i]:end[i] 
+         if (rho!=0) {
+           N <- end[i]-start[i]+1
+
+           row <- c(1,rep(1:N,rep(2,N))[-c(1,2*N)])
+           weight <- c(1,rep(c(sd,ld),N-1))
+           stop <- c(1,1:(N-1)*2+1)
+         } 
+         G$model <- mf[ind,]
+         w <- sqrt(G$w[ind])
+         X <- w*predict(G,type="lpmatrix")
+         y <- w*(G$model[[gp$response]] - G$offset[ind])
+         if (rho!=0) {
+           ## Apply transform...
+           if (end[i]==n) yX.last <- c(y[nrow(X)],X[nrow(X),]) ## store final row, in case of update
+           if (i==1) {
+             X <- rwMatrix(stop,row,weight,X)
+             y <- rwMatrix(stop,row,weight,y)
+           } else {
+             X <- rwMatrix(stop,row,weight,X)[-1,]
+             y <- rwMatrix(stop,row,weight,y)[-1]
+           } 
+         }      
+
+         qrx <- qr.update(X,y,qrx$R,qrx$f,qrx$y.norm2)
+         rm(X)
+         if (gc.level>1) {gc()} ## X can be large: remove and reclaim
+       } ## end of single thread block loop
+     } else { ## use parallel accumulation
+     
+       res <- parLapply(cl,arg,ar.qr.up)
+       ## Single thread de-bugging...
+       # res <- list()
+       # for (i in 1:length(arg)) {
+       #   res[[i]] <- ar.qr.up(arg[[i]])
+       # }
+
+       ## now consolidate the results from the parallel threads...
+       R <- res[[1]]$R;f <- res[[1]]$f;dev <- res[[1]]$dev
+       y.norm2 <- res[[1]]$y.norm2
+       for (i in 2:n.threads) {
+         R <- rbind(R,res[[i]]$R); f <- c(f,res[[i]]$f)
+         y.norm2 <- y.norm2 + res[[i]]$y.norm2
+       }         
+       qrx <- qr(R,tol=0) 
+       f <- qr.qty(qrx,f)[1:ncol(R)]
+       qrx <- list(R=qr.R(qrx),f=f,y.norm2=y.norm2)
+       yX.last <- res[[n.threads]]$yX.last
+     } 
+     G$n <- n
+     G$y <- mf[[gp$response]]
    
-  } else { ## n <= chunk.size
-    if (rho==0) qrx <- qr.update(sqrt(G$w)*G$X,sqrt(G$w)*G$y) else {
-       #row <- rep(1:n,rep(2,n))[-1]
-       #weight <- c(rep(c(ld,sd),n-1),1)
-       #stop <- c(1:(n-1)*2,2*n-1)
+   } else { ## n <= chunk.size
+     if (rho==0) qrx <- qr.update(sqrt(G$w)*G$X,sqrt(G$w)*G$y) else {
        row <- c(1,rep(1:n,rep(2,n))[-c(1,2*n)])
        weight <- c(1,rep(c(sd,ld),n-1))
        stop <- c(1,1:(n-1)*2+1)
@@ -344,76 +701,110 @@ bam.fit <- function(G,mf,chunk.size,gp,scale,gamma,method,rho=0)
        y <- rwMatrix(stop,row,weight,sqrt(G$w)*G$y)
        qrx <- qr.update(X,y)
    
-       rm(X);gc() ## X can be large: remove and reclaim
-    }
-  }
+       rm(X); if (gc.level>1) gc() ## X can be large: remove and reclaim
+     }
+   }
 
-  rss.extra <- qrx$y.norm2 - sum(qrx$f^2)
+   rss.extra <- qrx$y.norm2 - sum(qrx$f^2)
  
-  if (method=="GCV.Cp") {
-    fit <- magic(qrx$f,qrx$R,G$sp,G$S,G$off,L=G$L,lsp0=G$lsp0,rank=G$rank,
-               H=G$H,C=G$C,gamma=gamma,scale=scale,gcv=(scale<=0),
-               extra.rss=rss.extra,n.score=G$n)
+   if (method=="GCV.Cp") {
+     fit <- magic(qrx$f,qrx$R,G$sp,G$S,G$off,L=G$L,lsp0=G$lsp0,rank=G$rank,
+                H=G$H,C=G$C,gamma=gamma,scale=scale,gcv=(scale<=0),
+                extra.rss=rss.extra,n.score=G$n)
  
-    post <- magic.post.proc(qrx$R,fit,qrx$f*0+1) 
-  } else { ## method is "REML" or "ML"
-    y <- G$y; w <- G$w; n <- G$n;offset <- G$offset
-    G$y <- qrx$f
-    G$w <- G$y*0+1
-    G$X <- qrx$R
-    G$n <- length(G$y)
-    G$offset <- G$y*0
-    G$dev.extra <- rss.extra
-    G$pearson.extra <- rss.extra
-    G$n.true <- n
-    object <- gam(G=G,method=method,gamma=gamma,scale=scale)
-    y -> G$y; w -> G$w; n -> G$n;offset -> G$offset
-    if (rho!=0) { ## correct RE/ML score for AR1 transform
-      object$gcv.ubre <- object$gcv.ubre - (n-1)*log(ld)
-    }
-  }
-  gc()
-  if (method=="GCV.Cp") { 
-    object <- list()
-    object$coefficients <- fit$b
-    object$edf <- post$edf
-    object$full.sp <- fit$sp.full
-    object$gcv.ubre <- fit$score
-    object$hat <- post$hat
-    object$mgcv.conv <- fit$gcv.info 
-    object$optimizer="magic"
-    object$rank <- fit$gcv.info$rank
-    object$Ve <- post$Ve
-    object$Vp <- post$Vb
-    object$sig2 <- object$scale <- fit$scale
-    object$sp <- fit$sp
-    class(object)<-c("gam")
-  } else {
+     post <- magic.post.proc(qrx$R,fit,qrx$f*0+1) 
+   } else { ## method is "REML" or "ML"
+     y <- G$y; w <- G$w; n <- G$n;offset <- G$offset
+     G$y <- qrx$f
+     G$w <- G$y*0+1
+     G$X <- qrx$R
+     G$n <- length(G$y)
+     G$offset <- G$y*0
+     G$dev.extra <- rss.extra
+     G$pearson.extra <- rss.extra
+     G$n.true <- n
+     object <- gam(G=G,method=method,gamma=gamma,scale=scale)
+     y -> G$y; w -> G$w; n -> G$n;offset -> G$offset
+     if (rho!=0) { ## correct RE/ML score for AR1 transform
+       object$gcv.ubre <- object$gcv.ubre - (n-1)*log(ld)
+     }
+   }
+   if (method=="GCV.Cp") { 
+     object <- list()
+     object$coefficients <- fit$b
+     object$edf <- post$edf
+     object$full.sp <- fit$sp.full
+     object$gcv.ubre <- fit$score
+     object$hat <- post$hat
+     object$mgcv.conv <- fit$gcv.info 
+     object$optimizer="magic"
+     object$rank <- fit$gcv.info$rank
+     object$Ve <- post$Ve
+     object$Vp <- post$Vb
+     object$sig2 <- object$scale <- fit$scale
+     object$sp <- fit$sp
+     class(object)<-c("gam")
+   } else {
     
-  }
-  G$smooth <- G$X <- NULL
+   }
+   G$smooth <- G$X <- NULL
 
-  object$AR1.rho <- rho
-  if (rho!=0) { ## need to store last model matrix row, to allow update
-    object$yX.last <- yX.last
-  }
+   object$AR1.rho <- rho
+   if (rho!=0) { ## need to store last model matrix row, to allow update
+     object$yX.last <- yX.last
+   }
+  
+ 
+   object$gamma <- gamma;object$G <- G;object$qrx <- qrx ## to allow updating of the model
+   object$y <- mf[[gp$response]]
+   object
+} # end of bam.fit
 
-  object$gamma <- gamma;object$G <- G;object$qrx <- qrx ## to allow updating of the model
-  object
+
+sparse.model.matrix <- function(G,mf,chunk.size) {
+## create a whole sparse model matrix
+  nobs = nrow(mf)
+  n.block <- nobs%/%chunk.size ## number of full sized blocks
+  stub <- nobs%%chunk.size ## size of end block
+  if (n.block>0) {
+    start <- (0:(n.block-1))*chunk.size+1
+      stop <- (1:n.block)*chunk.size
+      if (stub>0) {
+        start[n.block+1] <- stop[n.block]+1
+        stop[n.block+1] <- nobs
+        n.block <- n.block+1
+      } 
+  } else {
+    n.block <- 1
+    start <- 1
+    stop <- nobs
+  }
+  G$coefficients <- rep(0,ncol(G$X))
+  class(G) <- "gam"
+
+  X <- Matrix(0,nobs,ncol(G$X))   
+  for (b in 1:n.block) {    
+    ind <- start[b]:stop[b]
+    G$model <- mf[ind,]
+    X[ind,] <- as(predict(G,type="lpmatrix"),"dgCMatrix")
+    gc()
+  }
+  X
 }
-
 
 
 
 bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,na.action=na.omit,
                 offset=NULL,method="REML",control=list(),scale=0,gamma=1,knots=NULL,
-                sp=NULL,min.sp=NULL,paraPen=NULL,chunk.size=10000,rho=0,...)
+                sp=NULL,min.sp=NULL,paraPen=NULL,chunk.size=10000,rho=0,sparse=FALSE,cluster=NULL,
+                gc.level=1,...)
 
 ## Routine to fit an additive model to a large dataset. The model is stated in the formula, 
 ## which is then interpreted to figure out which bits relate to smooth terms and which to 
 ## parametric terms.
 ## This is a modification of `gam' designed to build the QR decompostion of the model matrix 
 ## up in chunks, to keep memory costs down.
+## If n.threads!=1 uses parallel QR build on n.thread threads. If n.threads==0
 { control <- do.call("gam.control",control)
   if (is.character(family))
             family <- eval(parse(text = family))
@@ -429,8 +820,8 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
   cl<-match.call() # call needed in gam object for update to work
   mf<-match.call(expand.dots=FALSE)
   mf$formula<-gp$fake.formula 
-  mf$method <-  mf$family<-mf$control<-mf$scale<-mf$knots<-mf$sp<-mf$min.sp <-
-  mf$gamma <- mf$paraPen<- mf$chunk.size <- mf$rho <- mf$...<-NULL
+  mf$method <-  mf$family<-mf$control<-mf$scale<-mf$knots<-mf$sp<-mf$min.sp <- mf$gc.level <-
+  mf$gamma <- mf$paraPen<- mf$chunk.size <- mf$rho <- mf$sparse <- mf$cluster <- mf$...<-NULL
   mf$drop.unused.levels<-TRUE
   mf[[1]]<-as.name("model.frame")
   pmf <- mf
@@ -438,12 +829,13 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
   pmf$formula <- gp$pf
   pmf <- eval(pmf, parent.frame()) # pmf contains all data for parametric part
   pterms <- attr(pmf,"terms") ## pmf only used for this
-  rm(pmf);gc()
+  rm(pmf);
+  if (gc.level>0) gc()
 
   mf <- eval(mf, parent.frame()) # the model frame now contains all the data 
   if (nrow(mf)<2) stop("Not enough (non-NA) data to do anything meaningful")
   terms <- attr(mf,"terms")
-  gc()  
+  if (gc.level>0) gc()  
 
   ## summarize the *raw* input variables
   ## note can't use get_all_vars here -- buggy with matrices
@@ -457,13 +849,13 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
   if (!control$keepData) { rm(data);gc()} ## save space
   names(dl) <- vars ## list of all variables needed
   var.summary <- mgcv:::variable.summary(gp$pf,dl,nrow(mf)) ## summarize the input data
-  rm(dl);gc() ## save space    
+  rm(dl); if (gc.level>0) gc() ## save space    
 
   ## need mini.mf for basis setup, then accumulate full X, y, w and offset
   mf0 <- mini.mf(mf,chunk.size)
     
-  G<-mgcv:::gam.setup(gp,pterms=pterms,data=mf0,knots=knots,sp=sp,min.sp=min.sp,
-                 H=NULL,absorb.cons=TRUE,sparse.cons=0,select=FALSE,
+  G <- mgcv:::gam.setup(gp,pterms=pterms,data=mf0,knots=knots,sp=sp,min.sp=min.sp,
+                 H=NULL,absorb.cons=TRUE,sparse.cons=as.numeric(sparse)*2,select=FALSE,
                  idLinksBases=TRUE,scale.penalty=control$scalePenalty,
                  paraPen=paraPen)
 
@@ -500,17 +892,25 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
   
   colnamesX <- colnames(G$X)  
 
-  if (am) {
-    if (nrow(mf)>chunk.size) G$X <- matrix(0,0,ncol(G$X)); gc() 
-    object <- bam.fit(G,mf,chunk.size,gp,scale,gamma,method,rho=rho)
+  if (sparse) { ## Form a sparse model matrix...
+    require(Matrix)
+    if (sum(G$X==0)/prod(dim(G$X))<.5) warning("model matrix too dense for any possible benefit from sparse")
+    if (nrow(mf)<=chunk.size) G$X <- as(G$X,"dgCMatrix") else 
+      G$X <- sparse.model.matrix(G,mf,chunk.size)
+    if (rho!=0) warning("AR1 parameter rho unused with sparse fitting")
+    object <- bgam.fit2(G, mf, chunk.size, gp ,scale ,gamma,method=method,
+                       control = control,...)
+  } else if (am) {
+    if (nrow(mf)>chunk.size) G$X <- matrix(0,0,ncol(G$X)); if (gc.level>1) gc() 
+    object <- bam.fit(G,mf,chunk.size,gp,scale,gamma,method,rho=rho,cl=cluster,gc.level=gc.level)
   } else {
-    G$X  <- matrix(0,0,ncol(G$X)); gc()
+    G$X  <- matrix(0,0,ncol(G$X)); if (gc.level>1) gc()
     if (rho!=0) warning("AR1 parameter rho unused with generalized model")
     object <- bgam.fit(G, mf, chunk.size, gp ,scale ,gamma,method=method,
-                       control = control,...)
+                       control = control,cl=cluster,gc.level=gc.level,...)
   }
 
-  gc()
+  if (gc.level>0) gc()
 
   if (control$trace) cat("Fit complete. Finishing gam object.\n")
 
@@ -541,10 +941,10 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
     object$method <- method
   }
   object$min.edf<-G$min.edf
-  object$model <- mf;rm(mf);gc()
+  object$model <- mf;rm(mf);if (gc.level>0) gc()
   object$na.action <- attr(object$model,"na.action") # how to deal with NA's
   object$nsdf <- G$nsdf
-  names(object$coefficients)[1:G$nsdf] <- colnamesX[1:G$nsdf]
+  if (G$nsdf>0) names(object$coefficients)[1:G$nsdf] <- colnamesX[1:G$nsdf]
   object$offset <- G$offset
   object$prior.weights <- G$w
   object$pterms <- G$pterms
@@ -556,10 +956,10 @@ bam <- function(formula,family=gaussian(),data=list(),weights=NULL,subset=NULL,n
  
   object$weights <- object$prior.weights
   object$xlevels <- G$xlevels
-  object$y <- object$model[[gp$response]]
+  #object$y <- object$model[[gp$response]]
   object$NA.action <- na.action ## version to use in bam.update
 
-  rm(G);gc()
+  rm(G);if (gc.level>0) gc()
 
   ## note that predict.gam assumes that it must be ok not to split the 
   ## model frame, if no new data supplied, so need to supply explicitly
@@ -724,5 +1124,5 @@ bam.update <- function(b,data,chunk.size=10000) {
 
 #### ISSUES:   
 ## ? negative binomial support --- docs say it's there...
-## need to add `bam' examples to the test suite, and possibly update the test suite
-## to work through failures, logging them. 
+## offset unused in bam/bgam.fit, also gp only needed for "response",
+## so could efficiently be replaced

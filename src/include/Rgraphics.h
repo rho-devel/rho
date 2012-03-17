@@ -206,7 +206,7 @@ void GPolyline(int, double*, double*, GUnit, pGEDevDesc);
 void GRect(double, double, double, double, GUnit, int, int, pGEDevDesc);
 /* Draw a raster image given two opposite corners: */
 void GRaster(unsigned int*, int, int,
-             double, double, double, double, 
+             double, double, double, double,
              double, Rboolean, pGEDevDesc);
 /* Return the height of the specified string in the specified units: */
 double GStrHeight(const char *, cetype_t, GUnit, pGEDevDesc);

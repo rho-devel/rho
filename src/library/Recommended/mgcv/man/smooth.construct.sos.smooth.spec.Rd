@@ -8,8 +8,8 @@
 \description{\code{\link{gam}} can use isotropic smooths on the sphere, via terms like 
 \code{s(la,lo,bs="sos",m=2,k=100)}. There must be exactly 2 arguments to such a smooth. 
 The first is taken to be latitude (in degrees) and the second longitude (in degrees). 
-\code{m} (default 1) is an integer in the range 0 to 4 determining the order of the penalty used. 
-For \code{m>0}, \code{(m+2)/2} is the penalty order, so \code{m=2} is the equivalent to the usual second 
+\code{m} (default 0) is an integer in the range -1 to 4 determining the order of the penalty used. 
+For \code{m>0}, \code{(m+2)/2} is the penalty order, with \code{m=2} equivalent to the usual second 
 derivative penalty. \code{m=0} signals to use the 2nd order spline on the sphere, computed by 
 Wendelberger's (1981) method. \code{m = -1} results in a \code{\link{Duchon.spline}} being 
 used (with m=2 and s=1/2), following an unpublished suggestion of Jean Duchon.
@@ -45,8 +45,8 @@ out duplicate locations).}
 
 \details{ For \code{m>0}, the smooths implemented here are based on the pseudosplines on the sphere of Wahba (1981) 
 (there is a correction of table 1 in 1982, but the correction has a misprint in the definition of A --- the A
-given in the 1981 paper is correct). For \code{m=0} then a second order spline on the sphere is used which is the analogue of 
-a second order thin plate spline in 2D: the computation is based on Chapter 4 of Wendelberger, 1981. 
+given in the 1981 paper is correct). For \code{m=0} (default) then a second order spline on the sphere is used which is the 
+analogue of a second order thin plate spline in 2D: the computation is based on Chapter 4 of Wendelberger, 1981. 
 Optimal low rank approximations are obtained using exactly the approach given in Wood (2003). For \code{m = -1} a smooth of the 
 general type discussed in Duchon (1977) is used: the sphere is embedded in a 3D Euclidean space, but 
 smoothing employs a penalty based on second derivatives (so that locally as the smoothing parameter tends 
@@ -55,6 +55,17 @@ Duchon.
 
 Note that the null space of the penalty is always the space of constant functions on the sphere, whatever the order of penalty. 
 
+This class has a plot method, with 3 schemes. \code{scheme==0} plots one hemisphere of the sphere, projected onto a circle.
+The plotting sphere has the north pole at the top, and the 0 meridian running down the middle of the plot, and towards 
+the viewer. The smoothing sphere is rotated within the plotting sphere, by specifying the location of its pole in the 
+co-ordinates of the viewing sphere. \code{theta}, \code{phi} give the longitude and latitude of the smoothing sphere pole
+within the plotting sphere (in plotting sphere co-ordinates). (You can visualize the smoothing sphere as a globe, free to 
+rotate within the fixed transparent plotting sphere.) The value of the smooth is shown by a heat map overlaid with a 
+contour plot. lat, lon gridlines are also plotted. 
+
+\code{scheme==1} is as \code{scheme==0}, but in black and white, without the image plot. \code{scheme>1} calls the default 
+plotting method with \code{scheme} decremented by 2.
+ 
 }
 
 \references{
@@ -67,8 +78,8 @@ Wendelberger, J. (1981) PhD Thesis, University of Winsconsin.
 Wood, S.N. (2003) Thin plate regression splines. J.R.Statist.Soc.B 65(1):95-114
 }
 
-\author{ Simon N. Wood \email{simon.wood@r-project.org}, 
-with help from Grace Wahba (m=0 case) and Jean Duchon (m = -1, case).}
+\author{ Simon Wood \email{simon.wood@r-project.org}, 
+with help from Grace Wahba (m=0 case) and Jean Duchon (m = -1 case).}
 
 \examples{
 set.seed(0)
@@ -98,8 +109,6 @@ zm <- matrix(fz,30,60)
 require(mgcv)
 dat <- data.frame(la = la *180/pi,lo = lo *180/pi,y=y)
 
-method <- "GCV.Cp";m <- 3
-
 ## fit spline on sphere model...
 bp <- gam(y~s(la,lo,bs="sos",k=60),data=dat)
 
@@ -116,9 +125,11 @@ cor(fitted(b),ff)
 pd <- data.frame(la=gr$la*180/pi,lo=gr$lo*180/pi)
 fv <- matrix(predict(b,pd),30,60)
 
-par(mfrow=c(2,1),mar=c(4,4,1,1))
+par(mfrow=c(2,2),mar=c(4,4,1,1))
 contour(lom,lam,t(zm))
 contour(lom,lam,t(fv))
+plot(bp,rug=FALSE)
+plot(bp,scheme=1,theta=-30,phi=20,pch=19,cex=.5)
 
 }
 \keyword{models} \keyword{regression}%-- one or more ..

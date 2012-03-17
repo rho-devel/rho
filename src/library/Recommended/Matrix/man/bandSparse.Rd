@@ -6,7 +6,7 @@
   super-diagonals.
 }
 \usage{
-bandSparse(n, m = n, k, diagonals, symmetric = FALSE)
+bandSparse(n, m = n, k, diagonals, symmetric = FALSE, giveCsparse = TRUE)
 }
 \arguments{
   \item{n,m}{the matrix dimension \eqn{(n,m) = (nrow, ncol)}.}
@@ -26,6 +26,10 @@ bandSparse(n, m = n, k, diagonals, symmetric = FALSE)
     (inheriting from class \code{\linkS4class{symmetricMatrix}}) and
     only the upper or lower triangle must be specified (via \code{k} and
     \code{diagonals}).}
+  \item{giveCsparse}{logical indicating if the result should be a
+    \code{\linkS4class{CsparseMatrix}} or a
+    \code{\linkS4class{TsparseMatrix}}.  The default, \code{TRUE} is
+    very often more efficient subsequently, but not always.}
 }
 % \details{  __needed ?__
 %

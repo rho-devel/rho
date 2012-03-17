@@ -208,7 +208,7 @@ double EasySmooth(matrix *T,matrix *z,double *v,double *df,long n,double *sig2,d
    least squares problem passed to MultiSmooth is an approximation, so that
    GCV minima taking the model parameters too far from their current values 
    may move the model too far from the true problem being approximated to
-   be menaingful. This occurs, for example, with some binary data gams.
+   be meaningful. This occurs, for example, with some binary data gams.
    Note that this local minimum searching is only done on the initial coarse
    grid - the algorithm does not attempt to locate each local minimum 
    exactly. Furthermore local minima are only considered if they meet some 
@@ -403,13 +403,12 @@ void boringHg(matrix R,matrix Q,matrix *LZSZL,matrix *y,double *rw,
    differencing  */
 
 { double f,v,v1,v2,tr,rss,tr1,rss1,
-        /* v3,v4,r3,r4,t3,t4, */
-         t1,t2,r1,r2,t,r;
+    t1,t2,r1,r2;/*,t,r;*/
          
   int i,j,k;
   matrix a,M,p;
   Rprintf("\nHit Return ... ");getc(stdin);
-  v=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&tr,&rss,sig2);t=tr;r=rss;
+  v=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&tr,&rss,sig2);/*t=tr;r=rss;*/
   Rprintf("\ntedious cv = %g\n",v);
   for (i=0;i<m;i++) /* the gradients of the gcv function */
   { trial[i]+=dt1;
@@ -422,21 +421,7 @@ void boringHg(matrix R,matrix Q,matrix *LZSZL,matrix *y,double *rw,
   Rprintf("\n");
   for (i=0;i<m;i++) for (j=0;j<=i;j++)
   { if (i!=j)
-    { /*trial[i] += dt1/2;trial[j]+=dt2/2;
-      v1=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t1,&r1,sig2);
-      trial[i]-=dt1;
-      v2=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t2,&r2,sig2);
-      trial[j] -= dt1;
-      v3=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t3,&r3,sig2);
-      trial[i] +=dt1;
-      v4=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t4,&r4,sig2);
-      trial[i] -=dt1/2; trial[j]+=dt1/2;
-      f=(v4+v2)-(v3+v1);f/= -dt1*dt1;
-      f=(r4+r2)-(r3+r1);f/= -dt1*dt1;
-      f=(t4+t2)-(t3+t1);f/= -dt1*dt1;
-      printf("%8.4g  ",f);
-
-*/
+    {
       M=initmat(6L,6L);a=initmat(6L,1L);p=initmat(6L,1L);
       trial[i]+=dt1/2;
       v1=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t1,&r1,sig2);
@@ -479,9 +464,7 @@ void boringHg(matrix R,matrix Q,matrix *LZSZL,matrix *y,double *rw,
       v2=tediouscv(R,Q,LZSZL,y,rw,trial,rho,m,&t2,&r2,sig2);
       trial[i] +=dt1;
       f=(v1-2*v+v2);f/=dt1*dt1;
-    /*  f=(r1-2*r+r2);f/=dt1*dt1; */
-     /* f=(t1-2*t+t2);f/=dt1*dt1; */
-
+   
       Rprintf("%8.4g\n",f);
     }
   }
@@ -1263,7 +1246,7 @@ void MSmooth(double ft(int,int,int,double*,double*,int,int,int),
         if (reject==9) reject=0;
         if (!reject&&iter>3) ok=0;
       }
-      if (op) printf("\n%12.6g  %12.6g",v,vmin);
+      if (op) Rprintf("\n%12.6g  %12.6g",v,vmin);
     }
     /* get choleski decomposition of (I*rho+T) */
     for (i=0;i<T.r;i++) T.M[i][i] += rho;
@@ -1436,10 +1419,10 @@ void MSmooth(double ft(int,int,int,double*,double*,int,int,int),
       }
     /*  boringHg(R,Q,LZSZL,y,rw,trial,rho,m);*/
       if (op)
-      { printf("\n");
+      { Rprintf("\n");
         for (i=0;i<m;i++)
-        { for (j=0;j<=i;j++) printf("%8.4g  ",Hess.M[i][j]);printf("\n");}
-        for (i=0;i<m;i++) printf("\n%g",g.V[i]);
+        { for (j=0;j<=i;j++) Rprintf("%8.4g  ",Hess.M[i][j]);Rprintf("\n");}
+        for (i=0;i<m;i++) Rprintf("\n%g",g.V[i]);
       }
       /* Now transform the Hessian and gradient if necessary */
       if (transform)

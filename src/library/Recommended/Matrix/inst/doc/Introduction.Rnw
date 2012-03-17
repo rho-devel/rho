@@ -4,7 +4,7 @@
 \bibliographystyle{plainnat}
 %%\VignetteIndexEntry{Introduction to the Matrix Package}
 %%\VignetteDepends{Matrix}
-\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=TRUE,keep.source=TRUE}
+\SweaveOpts{engine=R,eps=FALSE,pdf=TRUE,width=5,height=3,strip.white=true,keep.source=TRUE}
 \title{Introduction to the Matrix package --- as of Feb.~2005\footnote{
     There's an unfinished ``2nd Introduction to the Matrix package''
     which contains partly newer information, but is not at all self-contained.

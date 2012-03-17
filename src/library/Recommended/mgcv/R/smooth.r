@@ -1,4 +1,4 @@
-##  R routines for the package mgcv (c) Simon Wood 2000-2010
+##  R routines for the package mgcv (c) Simon Wood 2000-2011
 
 ##  This file is primarily concerned with defining classes of smoother,
 ##  via constructor methods and prediction matrix methods. There are
@@ -60,7 +60,7 @@ nat.param <- function(X,S,rank=NULL,type=0,tol=.Machine$double.eps^.8,unit.fnorm
       Xn <- X[,ind,drop=FALSE] ## null basis 
       n <- nrow(Xn)
       one <- rep(1,n)
-      Xn <- Xn - one%*%t(one)%*%Xn/n
+      Xn <- Xn - one%*%(t(one)%*%Xn)/n
       um <- eigen(t(Xn)%*%Xn,symmetric=TRUE) 
       ## use ind in next 2 lines to have const column last,
       ## rind to have it first (among null space cols)
@@ -219,7 +219,9 @@ te <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,fx=FALSE,mp=TRUE,np=TRUE,xt=NUL
 # e.g. te(x0,x1,x2,k=c(5,4,4),bs=c("tp","cr","cr"),m=c(1,1,2),by=x3) specifies a rank 80 tensor  
 # product spline. The first basis is rank 5, t.p.r.s. basis penalty order 1, and the next 2 bases
 # are rank 4 cubic regression splines with m ignored.  
-# k, bs,m,d and fx can be supplied as single numbers or arrays with an element for each basis.
+# k, bs,d and fx can be supplied as single numbers or arrays with an element for each basis.
+# m can be a single number, and array with one element for each basis, or a list, with an 
+#   array for each basis
 # Returns a list consisting of:
 # * margin - a list of smooth.spec objects specifying the marginal bases
 # * term   - array of covariate names
@@ -232,9 +234,7 @@ te <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,fx=FALSE,mp=TRUE,np=TRUE,xt=NUL
   by.var<-deparse(substitute(by),backtick=TRUE) #getting the name of the by variable
   term<-deparse(vars[[1]],backtick=TRUE) # first covariate
   if (dim>1) # then deal with further covariates
-  for (i in 2:dim)
-  { term[i]<-deparse(vars[[i]],backtick=TRUE)
-  }
+  for (i in 2:dim) term[i]<-deparse(vars[[i]],backtick=TRUE)
   for (i in 1:dim) term[i] <- attr(terms(reformulate(term[i])),"term.labels")
   # term now contains the names of the covariates for this model term
   
@@ -262,6 +262,7 @@ te <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,fx=FALSE,mp=TRUE,np=TRUE,xt=NUL
     else if (length(k)!=n.bases) ok<-FALSE
     if (!ok) k<-5^d 
   }
+
   # evaluate fx
   if (sum(is.na(fx))||is.null(fx)) fx<-rep(FALSE,n.bases)
   else if (length(fx)==1) fx<-rep(fx,n.bases)
@@ -280,23 +281,27 @@ te <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,fx=FALSE,mp=TRUE,np=TRUE,xt=NUL
   if (length(bs)==1) bs<-rep(bs,n.bases)
   if (length(bs)!=n.bases) {warning("bs wrong length and ignored.");bs<-rep("cr",n.bases)}
   bs[d>1&(bs=="cr"|bs=="cs"|bs=="ps"|bs=="cp")]<-"tp"
-  # finally the penalty orders
-  if (length(m)==1) m<-rep(m,n.bases)
-  if (length(m)!=n.bases) 
-  { warning("m wrong length and ignored.");m<-rep(0,n.bases)}
-  m[m<0]<-0
+
+  # finally the spline/penalty orders
+  if (!is.list(m)&&length(m)==1) m <- rep(m,n.bases)
+  if (length(m)!=n.bases) { 
+    warning("m wrong length and ignored.");
+    m <- rep(0,n.bases)
+  }
+  if (!is.list(m)) m[m<0] <- 0 ## Duchon splines can have -ve elements in a vector m
+
   # check for repeated variables in function argument list
   if (length(unique(term))!=dim) stop("Repeated variables as arguments of a smooth are not permitted")
   # Now construct smooth.spec objects for the margins
-  j<-1 # counter for terms
-  margin<-list()
+  j <- 1 # counter for terms
+  margin <- list()
   for (i in 1:n.bases)
   { j1<-j+d[i]-1
     if (is.null(xt)) xt1 <- NULL else xt1 <- xtra[[i]]
     stxt<-"s("
     for (l in j:j1) stxt<-paste(stxt,term[l],",",sep="")
     stxt<-paste(stxt,"k=",deparse(k[i],backtick=TRUE),",bs=",deparse(bs[i],backtick=TRUE),
-                ",m=",deparse(m[i],backtick=TRUE),",xt=xt1", ")")
+                ",m=",deparse(m[[i]],backtick=TRUE),",xt=xt1", ")")
     margin[[i]]<- eval(parse(text=stxt))  # NOTE: fx and by not dealt with here!
     j<-j1+1
   }
@@ -378,11 +383,15 @@ t2 <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,xt=NULL,id=NULL,sp=NULL,full=FA
   if (length(bs)==1) bs<-rep(bs,n.bases)
   if (length(bs)!=n.bases) {warning("bs wrong length and ignored.");bs<-rep("cr",n.bases)}
   bs[d>1&(bs=="cr"|bs=="cs"|bs=="ps"|bs=="cp")]<-"tp"
-  # finally the penalty orders
-  if (length(m)==1) m<-rep(m,n.bases)
-  if (length(m)!=n.bases) 
-  { warning("m wrong length and ignored.");m<-rep(0,n.bases)}
-  m[m<0]<-0
+
+  # finally the spline/penalty orders
+  if (!is.list(m)&&length(m)==1) m <- rep(m,n.bases)
+  if (length(m)!=n.bases) { 
+    warning("m wrong length and ignored.");
+    m <- rep(0,n.bases)
+  }
+  if (!is.list(m)) m[m<0] <- 0 ## Duchon splines can have -ve elements in a vector m
+
   # check for repeated variables in function argument list
   if (length(unique(term))!=dim) stop("Repeated variables as arguments of a smooth are not permitted")
   # Now construct smooth.spec objects for the margins
@@ -394,7 +403,7 @@ t2 <- function(..., k=NA,bs="cr",m=NA,d=NA,by=NA,xt=NULL,id=NULL,sp=NULL,full=FA
     stxt<-"s("
     for (l in j:j1) stxt<-paste(stxt,term[l],",",sep="")
     stxt<-paste(stxt,"k=",deparse(k[i],backtick=TRUE),",bs=",deparse(bs[i],backtick=TRUE),
-                ",m=",deparse(m[i],backtick=TRUE),",xt=xt1", ")")
+                ",m=",deparse(m[[i]],backtick=TRUE),",xt=xt1", ")")
     margin[[i]]<- eval(parse(text=stxt))  # NOTE: fx and by not dealt with here!
     j<-j1+1
   }
@@ -431,7 +440,7 @@ s <- function (..., k=-1,fx=FALSE,bs="tp",m=NA,by=NA,xt=NULL,id=NULL,sp=NULL)
 { vars<-as.list(substitute(list(...)))[-1] # gets terms to be smoothed without evaluation
 
   d<-length(vars) # dimension of smoother
-  term<-deparse(vars[[d]],backtick=TRUE,width.cutoff=500) # last term in the ... arguments
+# term<-deparse(vars[[d]],backtick=TRUE,width.cutoff=500) # last term in the ... arguments
   by.var<-deparse(substitute(by),backtick=TRUE,width.cutoff=500) #getting the name of the by variable
   if (by.var==".") stop("by=. not allowed")
   term<-deparse(vars[[1]],backtick=TRUE,width.cutoff=500) # first covariate
@@ -475,13 +484,13 @@ tensor.prod.model.matrix<-function(X)
 # X is a list of model matrices, from which a tensor product model matrix is to be produced.
 # e.g. ith row is basically X[[1]][i,]%x%X[[2]][i,]%x%X[[3]][i,], but this routine works 
 # column-wise, for efficiency
-{ m<-length(X)
-  X1<-X[[m]]
-  n<-nrow(X1)
+{ m <- length(X)
+  X1 <- X[[m]]
+  n <- nrow(X1)
   if (m>1) for (i in (m-1):1)
-  { X0<-X1;X1<-matrix(0,n,0)
+  { X0 <- X1;X1 <- matrix(0,n,0)
     for (j in 1:ncol(X[[i]]))
-    X1<-cbind(X1,X[[i]][,j]*X0)
+    X1 <- cbind(X1,X[[i]][,j]*X0)
   }
   X1
 } ## end tensor.prod.model.matrix
@@ -520,8 +529,9 @@ smooth.construct.tensor.smooth.spec<-function(object,data,knots)
 { m<-length(object$margin)  # number of marginal bases
   Xm<-list();Sm<-list();nr<-r<-d<-array(0,m)
   C <- NULL
-  for (i in 1:m)
-  { knt <- dat <- list()
+  object$plot.me <- TRUE 
+  for (i in 1:m) { 
+    knt <- dat <- list()
     term <- object$margin[[i]]$term
     for (j in 1:length(term)) { 
       dat[[term[j]]] <- data[[term[j]]]
@@ -529,7 +539,10 @@ smooth.construct.tensor.smooth.spec<-function(object,data,knots)
     }
     object$margin[[i]]<-smooth.construct(object$margin[[i]],dat,knt)
     Xm[[i]]<-object$margin[[i]]$X
-    if (!is.null(object$margin[[i]]$te.ok) && !object$margin[[i]]$te.ok) stop("attempt to use unsuitable marginal smooth class")
+    if (!is.null(object$margin[[i]]$te.ok)) {
+      if (object$margin[[i]]$te.ok == 0) stop("attempt to use unsuitable marginal smooth class")
+      if (object$margin[[i]]$te.ok == 2) object$plot.me <- FALSE ## margin has declared itself unplottable in a te term
+    }
     if (length(object$margin[[i]]$S)>1) 
     stop("Sorry, tensor products of smooths with multiple penalties are not supported.")
     Sm[[i]]<-object$margin[[i]]$S[[1]]
@@ -541,8 +554,9 @@ smooth.construct.tensor.smooth.spec<-function(object,data,knots)
   XP <- list()
   if (object$np) # reparameterize 
   for (i in 1:m)
-  { if (object$margin[[i]]$dim==1) {
-      if (!inherits(object$margin[[i]],c("cs.smooth","cr.smooth","cyclic.smooth"))) { # these classes already optimal
+  { if (object$margin[[i]]$dim==1) { 
+      # only do classes not already optimal (or otherwise excluded)
+      if (!inherits(object$margin[[i]],c("cs.smooth","cr.smooth","cyclic.smooth","random.effect"))) {
         x <- get.var(object$margin[[i]]$term,data)
         np <- ncol(object$margin[[i]]$X) ## number of params
         ## note: to avoid extrapolating wiggliness measure
@@ -732,6 +746,7 @@ smooth.construct.t2.smooth.spec <- function(object,data,knots)
   Xm <- list();Sm <- list();nr <- r <- d <- array(0,m)
   Pm <- list() ## list for matrices by which to postmultiply raw model matris to get repara version
   C <- NULL ## potential constraint matrix
+  object$plot.me <- TRUE
   for (i in 1:m) { ## create marginal model matrices and penalties...
     ## pick up the required variables....
     knt <- dat <- list()
@@ -743,8 +758,10 @@ smooth.construct.t2.smooth.spec <- function(object,data,knots)
     ## construct marginal smooth...
     object$margin[[i]]<-smooth.construct(object$margin[[i]],dat,knt)
     Xm[[i]]<-object$margin[[i]]$X
-    if (!is.null(object$margin[[i]]$te.ok) && !object$margin[[i]]$te.ok) 
-      stop("attempt to use unsuitable marginal smooth class")
+    if (!is.null(object$margin[[i]]$te.ok)) {
+      if (object$margin[[i]]$te.ok==0) stop("attempt to use unsuitable marginal smooth class")
+      if (object$margin[[i]]$te.ok==2) object$plot.me <- FALSE ## margin declared itself unplottable
+    }
     if (length(object$margin[[i]]$S)>1) 
     stop("Sorry, tensor products of smooths with multiple penalties are not supported.")
     Sm[[i]]<-object$margin[[i]]$S[[1]]
@@ -840,10 +857,6 @@ Predict.matrix.t2.smooth <- function(object,data)
     rank[i] <-  object$margin[[i]]$rank
   }
   T <- t2.model.matrix(X,rank,full=object$full)
-  #if (!is.null(object$X.shift)) { ## have to centre columns, as in original constructor
-  #  nup <- length(object$X.shift)
-  #  T[,1:nup] <- sweep(T[,1:nup],2,object$X.shift)
-  #}
   T
 } ## end of Predict.matrix.t2.smooth
 
@@ -946,7 +959,7 @@ smooth.construct.tp.smooth.spec<-function(object,data,knots)
   ## deal with possible extra arguments of "tp" type smooth
   xtra <- list()
 
-  if (is.null(object$xt$max.knots)) xtra$max.knots <- 3000 
+  if (is.null(object$xt$max.knots)) xtra$max.knots <- 2000 
   else xtra$max.knots <- object$xt$max.knots 
   if (is.null(object$xt$seed)) xtra$seed <- 1 
   else xtra$seed <- object$xt$seed 
@@ -997,10 +1010,13 @@ smooth.construct.tp.smooth.spec<-function(object,data,knots)
       assign(".Random.seed",seed,envir=.GlobalEnv) ## RNG behaves as if it had not been used
     }
   } ## end of large data set handling
-  if (object$bs.dim[1]<0) object$bs.dim <- 10*3^(object$dim-1) # auto-initialize basis dimension
+  ##if (object$bs.dim[1]<0) object$bs.dim <- 10*3^(object$dim-1) # auto-initialize basis dimension
   object$p.order[is.na(object$p.order)] <- 0 ## auto-initialize
-  k<-object$bs.dim 
   M<-null.space.dimension(object$dim,object$p.order) 
+  def.k <- c(8,27,100) ## default penalty range space dimension for different dimensions 
+  dd <- min(object$dim,length(def.k))
+  if (object$bs.dim[1]<0) object$bs.dim <- M+def.k[dd] ##10*3^(object$dim-1) # auto-initialize basis dimension
+  k<-object$bs.dim 
   if (k<M+1) # essential or construct_tprs will segfault, as tprs_setup does this
   { k<-M+1
     object$bs.dim<-k
@@ -1302,12 +1318,12 @@ Predict.matrix.cyclic.smooth<-function(object,data)
     j1<-hj<-j-1
     j[j==n]<-1
     I<-diag(n-1)
-    X<-BD[j1,]*as.numeric(knots[j1+1]-x)^3/as.numeric(6*h[hj])+
-       BD[j,]*as.numeric(x-knots[j1])^3/as.numeric(6*h[hj])-
-       BD[j1,]*as.numeric(h[hj]*(knots[j1+1]-x)/6)-
-       BD[j,]*as.numeric(h[hj]*(x-knots[j1])/6) +
-       I[j1,]*as.numeric((knots[j1+1]-x)/h[hj]) +
-       I[j,]*as.numeric((x-knots[j1])/h[hj])
+    X<-BD[j1,,drop=FALSE]*as.numeric(knots[j1+1]-x)^3/as.numeric(6*h[hj])+
+       BD[j,,drop=FALSE]*as.numeric(x-knots[j1])^3/as.numeric(6*h[hj])-
+       BD[j1,,drop=FALSE]*as.numeric(h[hj]*(knots[j1+1]-x)/6)-
+       BD[j,,drop=FALSE]*as.numeric(h[hj]*(x-knots[j1])/6) +
+       I[j1,,drop=FALSE]*as.numeric((knots[j1+1]-x)/h[hj]) +
+       I[j,,drop=FALSE]*as.numeric((x-knots[j1])/h[hj])
     X
   }
   x <- data[[object$term]]
@@ -1381,8 +1397,7 @@ smooth.construct.cp.smooth.spec<-function(object,data,knots)
 
 Predict.matrix.cpspline.smooth<-function(object,data)
 ## prediction method function for the cpspline smooth class
-{ require(splines)
-  X <- cSplineDes(data[[object$term]],object$knots,object$m[1]+2)
+{ X <- cSplineDes(data[[object$term]],object$knots,object$m[1]+2)
   X
 }
 
@@ -1444,6 +1459,147 @@ Predict.matrix.pspline.smooth<-function(object,data)
   X <- spline.des(object$knots,data[[object$term]],object$m[1]+2)$design
   X
 }
+
+#######################################################################
+# Smooth-factor interactions. Efficient alternative to s(x,by=fac,id=1) 
+#######################################################################
+
+smooth.construct.fs.smooth.spec<-function(object,data,knots) {
+## Smooths in which one covariate is a factor. Generates a smooth
+## for each level of the factor, with penalties on null space 
+## components. Smooths are not centred. xt element specifies basis
+## to use for smooths. Only one smoothing parameter for the whole term.
+## If called from gamm, is set up for efficient computation by nesting
+## smooth within factor.
+## Unsuitable for tensor products. 
+
+  if (!is.null(attr(object,"gamm"))) gamm <- TRUE else ## signals call from gamm
+  gamm <- FALSE 
+
+  if (is.null(object$xt)) object$base.bs <- "tp" ## default smooth class
+  else if (is.list(object$xt)) {
+    if (is.null(object$xt$bs)) object$base.bs <- "tp" else
+    object$base.bs <- object$xt$bs 
+  } else { 
+    object$base.bs <- object$xt
+    object$xt <- NULL ## avoid messing up call to base constructor
+  }
+  object$base.bs <- paste(object$base.bs,".smooth.spec",sep="")
+
+  fterm <- NULL ## identify the factor variable
+  for (i in 1:length(object$term)) if (is.factor(data[[object$term[i]]])) { 
+    if (is.null(fterm)) fterm <- object$term[i] else
+    stop("fs smooths can only have one factor argument") 
+  }
+  
+  ## deal with no factor case, just base smooth constructor
+  if (is.null(fterm)) {
+    class(object) <- object$base.bs
+    return(smooth.construct(object,data,knots))
+  }
+
+  ## deal with factor only case, just transfer to "re" class
+  if (length(object$term)==1) {
+    class(object) <- "re.smooth.spec"
+    return(smooth.construct(object,data,knots))
+  } 
+
+  ## Now remove factor term from data...
+  fac <- data[[fterm]] 
+  data[[fterm]] <- NULL
+  k <- 1
+  oterm <- object$term
+
+  for (i in 1:object$dim) if (object$term[i]!=fterm) {
+    object$term[k] <- object$term[i]
+    k <- k + 1
+  }
+  object$term <- object$term[-object$dim]
+  object$dim <- length(object$term)
+
+  
+  ## call base constructor...
+  class(object) <- object$base.bs
+  object <- smooth.construct(object,data,knots)
+  if (length(object$S)>1) stop("\"fs\" smooth cannot use a multiply penalized basis (wrong basis in xt)")
+
+  ## save some base smooth information
+
+  object$base <- list(bs=class(object),bs.dim=object$bs.dim,
+                      rank=object$rank,null.space.dim=object$null.space.dim,
+                      term=object$term)
+  object$term <- oterm ## restore original term list
+  ## Re-parameterize to separate out null space.  
+  rp <- nat.param(object$X,object$S[[1]],rank=object$rank,type=3)
+  
+  ## copy range penalty and create null space penalties...
+  null.d <- ncol(object$X) - object$rank ## null space dim
+  object$S[[1]] <- diag(c(rp$D,rep(0,null.d))) ## range space penalty
+  for (i in 1:null.d) { ## create null space element penalties
+    object$S[[i+1]] <- object$S[[1]]*0
+    object$S[[i+1]][object$rank+i,object$rank+i] <- 1  
+  }
+  
+  object$P <- rp$P ## X' = X%*%P, where X is original version
+  object$fterm <- fterm ## the factor name...
+  object$flev <- levels(fac)
+
+  ## Now the model matrix 
+  if (gamm) { ## no duplication, gamm will handle this by nesting
+    if (object$fixed==TRUE) stop("\"fs\" terms can not be fixed here")
+    object$X <- rp$X 
+    object$fac <- fac ## gamm should use this for grouping
+    object$te.ok <- 0 ## would break special handling
+    ## rank??
+    
+  } else { ## duplicate model matrix columns, and penalties...
+    nf <- length(object$flev)
+    ## creating the model matrix...
+    object$X <- rp$X * as.numeric(fac==object$flev[1])
+    if (nf>1) for (i in 2:nf) { 
+      object$X <- cbind(object$X,rp$X * as.numeric(fac==object$flev[i]))
+    } 
+    ## now penalties...
+    object$S[[1]] <- diag(rep(c(rp$D,rep(0,null.d)),nf)) ## range space penalties
+    for (i in 1:null.d) { ## null space penalties
+      um <- rep(0,ncol(rp$X));um[object$rank+i] <- 1
+      object$S[[i+1]] <- diag(rep(um,nf))
+    }
+   
+    object$bs.dim <- ncol(object$X)
+    object$te.ok <- 0
+    object$rank <- c(object$rank*nf,rep(nf,null.d))
+  }
+ 
+  object$null.space.dim <- 0
+  object$C <- matrix(0,0,ncol(object$X)) # null constraint matrix
+  object$plot.me <- TRUE
+  #object$base.bs <- class(object) ## base smoother class
+  class(object) <- "fs.interaction"
+  object
+} ## end of smooth.construct.fs.smooth.spec
+
+
+Predict.matrix.fs.interaction <- function(object,data)
+# prediction method function for the smooth-factor interaction class
+{ ## first remove factor from the data...  
+  fac <- data[[object$fterm]]
+  data[[object$fterm]] <- NULL
+
+  ## now get base prediction matrix...
+  class(object) <- object$base$bs
+  object$rank <- object$base$rank
+  object$null.space.dim <- object$base$null.space.dim
+  object$bs.dim <- object$base$bs.dim
+  object$term <- object$base$term
+  Xb <- Predict.matrix(object,data)%*%object$P
+  X <- matrix(0,nrow(Xb),0)
+  for (i in 1:length(object$flev)) {
+    X <- cbind(X,Xb * as.numeric(fac==object$flev[i]))
+  }
+  X
+}
+
 
 ##########################################
 ## Adaptive smooth constructors start here
@@ -1640,9 +1796,9 @@ smooth.construct.ad.smooth.spec<-function(object,data,knots)
       } ## adaptive penalty finished
     } ## penalized case finished
   } 
-  pspl$te.ok <- FALSE ## not suitable as a tensor product marginal
+  pspl$te.ok <- 0 ## not suitable as a tensor product marginal
   pspl
-}
+} ## end of smooth.construct.ad.smooth.spec
 
 
 ########################################################
@@ -1676,8 +1832,9 @@ smooth.construct.re.smooth.spec<-function(object,data,knots)
   ## need to store formula (levels taken care of by calling function)
   object$form <- form
 
-  ##object$plot.me <- FALSE ## "re" terms should not be plotted by plot.gam
-  object$te.ok <- FALSE ## these terms are not suitable as te marginals
+  object$plot.me <- TRUE ## "re" terms can be plotted by plot.gam
+  object$te.ok <- 2 ## these terms are  suitable as te marginals, but 
+                    ##   can not be plotted
 
   class(object)<-"random.effect"  # Give object a class
 
@@ -1863,10 +2020,11 @@ smooth.construct.mrf.smooth.spec <- function(object, data, knots) {
     object$S[[1]] <- diag(c(rp$D[ind],0))
    
   }
-
-  object$rank <- ncol(object$X)-1
-  object$null.space.dim <- 1
-  object$knots<-k
+  ## numerically evaluate mrf penalty rank... 
+  ev <- eigen(object$S[[1]],symmetric=TRUE,only.values=TRUE)$values
+  object$rank <- sum(ev >.Machine$double.eps^.8*max(ev)) ## ncol(object$X)-1
+  object$null.space.dim <- ncol(object$X) - object$rank
+  object$knots <- k
   object$df <- ncol(object$X)
   ##object$plot.me <- FALSE
   class(object)<-"mrf.smooth"
@@ -1960,7 +2118,7 @@ makeR <- function(la,lo,lak,lok,m=2) {
   if (m==2) { ## order 2 penalty
     q2 <- A*(6*W2-2*W)-3*C*W+3*W+1/2
     ## This is Wahba's pseudospline r.k. alternative would be to 
-    ## sum series to get regular spline kernel... 
+    ## sum series to get regular spline kernel, as in m=0 case above
     R <- matrix((q2/2-1/6)/(2*pi),length(la),length(lak)) ## rk matrix
     attr(R,"T") <- matrix(1,nrow(R),1)
     attr(R,"Tc") <- matrix(1,ncol(R),1) ## constraint
@@ -2054,7 +2212,7 @@ smooth.construct.sos.smooth.spec<-function(object,data,knots)
 
   ## Now get the rk matrix...
 
-  if (is.na(object$p.order)) object$p.order <- 1
+  if (is.na(object$p.order)) object$p.order <- 0
   object$p.order <- round(object$p.order)
   if (object$p.order< -1) object$p.order <- -1
   if (object$p.order>4) object$p.order <- 4
@@ -2253,7 +2411,7 @@ smooth.construct.ds.smooth.spec<-function(object,data,knots)
 
  
 
-  if (object$bs.dim[1]<0) object$bs.dim <-  10*3^(object$dim[1]-1) # auto-initialize basis dimension
+ ## if (object$bs.dim[1]<0) object$bs.dim <-  10*3^(object$dim[1]-1) # auto-initialize basis dimension
 
   ## Check the conditions on Duchon's m, s and n (p.order[1], p.order[2] and dim)... 
 
@@ -2296,6 +2454,15 @@ smooth.construct.ds.smooth.spec<-function(object,data,knots)
   T <- DuchonT(knt,m=object$p.order[1],n=object$dim) ## constraint matrix
 
   ind <- 1:ncol(T)
+  
+  def.k <- c(10,30,100)
+  dd <- min(object$dim,length(def.k))
+  if (object$bs.dim[1]<0) object$bs.dim <- ncol(T) + def.k[dd] ## default basis dimension 
+  if (object$bs.dim < ncol(T)+1) {
+    object$bs.dim <- ncol(T)+1
+    warning("basis dimension reset to minimum possible")
+  }
+
   k <- object$bs.dim   
 
   if (k<nk) {
@@ -2336,7 +2503,7 @@ smooth.construct.ds.smooth.spec<-function(object,data,knots)
 
 
 Predict.matrix.duchon.spline <- function(object,data)
-# prediction method function for the p.spline smooth class
+# prediction method function for the Duchon smooth class
 { nk <- nrow(object$knt) ## number of 'knots'
 
   ## get evaluation points....
@@ -2484,7 +2651,7 @@ ExtractData <- function(object,data,knots) {
 
 #########################################################################
 ## What follows are the wrapper functions that gam.setup actually
-## calls for basis construction, and other functions call for prediction
+## calls for basis construction, and other functions used for prediction
 #########################################################################
 
 smoothCon <- function(object,data,knots,absorb.cons=FALSE,scale.penalty=TRUE,n=nrow(data),
@@ -2594,7 +2761,7 @@ smoothCon <- function(object,data,knots,absorb.cons=FALSE,scale.penalty=TRUE,n=n
     }
     if (is.null(by)) stop("Can't find by variable")
     offs <- attr(sm$X,"offset")
-    if (is.factor(by)) { 
+    if (is.factor(by)) { ## generates smooth for each level of by
       if (matrixArg) stop("factor `by' variables can not be used with matrix arguments.")
       sml <- list()
       lev <- levels(by)
@@ -2657,13 +2824,14 @@ smoothCon <- function(object,data,knots,absorb.cons=FALSE,scale.penalty=TRUE,n=n
         if (!is.null(offs)) attr(sml[[1]]$X,"offset") <- offs*as.numeric(by)
       }
 
-      sml[[1]]$label <- paste(sm$label,":",object$by,sep="") 
+      if (object$by == "NA") sml[[1]]$label <- sm$label else 
+        sml[[1]]$label <- paste(sm$label,":",object$by,sep="") 
      
       ## test for cases where no centring constraint on the smooth is needed. 
       if (!alwaysCon) {
         if (matrixArg) {
           ##q <- nrow(sml[[1]]$X)/n
-          L1 <- matrix(by,n,q)%*%rep(1,q)
+          L1 <- as.numeric(matrix(by,n,q)%*%rep(1,q))
           if (sd(L1)>mean(L1)*.Machine$double.eps*1000) { 
             sml[[1]]$C <- sm$C <- matrix(0,0,1)
             if (!is.null(sm$Cp)) sml[[1]]$Cp <- sm$Cp <- NULL

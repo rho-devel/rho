@@ -1,3 +1,19 @@
+2011-10-16  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* po/: setup of for translation
+
+2011-09-14  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* inst/CITATION: update according to state-of-the-art.
+
+2011-08-29  Martin Maechler  <maechler@stat.math.ethz.ch>
+
+	* DESCRIPTION (Version): 1.14.1, (not yet released)
+
+	* R/silhouette.R (plot.silhouette): col = <one per cluster> had
+	ordering bug.
+	* man/silhouette.Rd: added example
+
 2011-06-07  Martin Maechler  <maechler@stat.math.ethz.ch>
 
 	* DESCRIPTION (Version): 1.14.0, released to CRAN

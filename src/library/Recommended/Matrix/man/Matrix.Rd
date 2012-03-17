@@ -3,7 +3,7 @@
 \title{Construct a Classed Matrix}
 \usage{
 Matrix(data=NA, nrow=1, ncol=1, byrow=FALSE, dimnames=NULL,
-       sparse = NULL, forceCheck = FALSE)
+       sparse = NULL, doDiag = TRUE, forceCheck = FALSE)
 }
 \description{
   Construct a Matrix of a class that inherits from \code{Matrix}.
@@ -19,7 +19,15 @@ Matrix(data=NA, nrow=1, ncol=1, byrow=FALSE, dimnames=NULL,
     \code{\link{NULL}} (as per default).}
   \item{sparse}{logical or \code{NULL}, specifying if the result should
     be sparse or not.  By default, it is made sparse when more than half
-    of the entries are 0.}
+    of the entries are 0.
+
+    Note that when the resulting matrix is diagonal (\dQuote{mathematically}),
+    \code{sparse=FALSE} results in a \code{\linkS4class{diagonalMatrix}},
+    unless \code{doDiag=FALSE} as well, see the first examples.}
+  \item{doDiag}{only when \code{sparse = FALSE}, logical indicating
+    if a \code{\linkS4class{diagonalMatrix}} object should be considered
+    (default).  Otherwise, in such a case, a dense (symmetric) matrix
+    will be returned.}
   \item{forceCheck}{logical indicating if the checks for structure
     should even happen when \code{data} is already a \code{"Matrix"}
     object.}
@@ -65,7 +73,9 @@ Matrix(data=NA, nrow=1, ncol=1, byrow=FALSE, dimnames=NULL,
 }
 \examples{
 Matrix(0, 3, 2)             # 3 by 2 matrix of zeros -> sparse
-Matrix(0, 3, 2, sparse=FALSE)# forced 'dense'
+Matrix(0, 3, 2, sparse=FALSE)# -> 'dense'
+Matrix(0, 2, 2, sparse=FALSE)# diagonal !
+Matrix(0, 2, 2, sparse=FALSE, doDiag=FALSE)# -> dense
 Matrix(1:6, 3, 2)           # a 3 by 2 matrix (+ integer warning)
 Matrix(1:6 + 1, nrow=3)
 

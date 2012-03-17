@@ -396,7 +396,6 @@ larrows <-
 
 
 
-
 ltext <- function(x, ...) UseMethod("ltext")
 
 ltext.default <-
@@ -418,31 +417,65 @@ ltext.default <-
 {
     add.text <- trellis.par.get("add.text")
     xy <- xy.coords(x, y, recycle = TRUE)
-    if (length(xy$x) == 0) return()
+    n <- length(xy$x)
+    if (n == 0) return()
     ux <- unit(xy$x, "native")
     uy <- unit(xy$y, "native")
+    if (length(adj) == 1) adj <- c(adj, .5)
+    hjust <- adj[1]
+    vjust <- adj[2]
     if (!is.null(pos))
     {
-        if (pos == 1) {
-            uy <- uy - unit(offset, "char")
-            adj <- c(.5, 1)
+        if (length(pos) == 1) # 'pos' scalar
+        {
+            hjust <- vjust <- 0.5
+            if (pos == 1) {
+                uy <- uy - unit(offset, "char")
+                vjust <- 1
+            }
+            else if (pos == 2) {
+                ux <- ux - unit(offset, "char")
+                hjust <- 1
+            }
+            else if (pos == 3) {
+                uy <- uy + unit(offset, "char")
+                vjust <- 0
+            }
+            else if (pos == 4) {
+                ux <- ux + unit(offset, "char")
+                hjust <- 0
+            }
+            else warning("Invalid value of 'pos' ignored.")
         }
-        else if (pos == 2) {
-            ux <- ux - unit(offset, "char")
-            adj <- c(1, .5)
+        else # 'pos' vector
+        {
+            ## Note, replacements like x[i] <- something don't work
+            ## for "unit" objects, so we have to do full updates.
+            pos <- rep(pos, length.out = n)
+            hjust <- vjust <- rep(0.5, n)
+            if (any(i <- (pos == 1)))
+            {
+                ## uy[i] <- uy[i] - unit(offset, "char") # no good
+                uy <- uy - unit(ifelse(i, offset, 0), "char")
+                vjust[i] <- 1
+            }
+            if (any(i <- (pos == 2)))
+            {
+                ux <- ux - unit(ifelse(i, offset, 0), "char")
+                hjust[i] <- 1
+            }
+            if (any(i <- (pos == 3)))
+            {
+                uy <- uy + unit(ifelse(i, offset, 0), "char")
+                vjust[i] <- 0
+            }
+            if (any(i <- (pos == 4)))
+            {
+                ux <- ux + unit(ifelse(i, offset, 0), "char")
+                hjust[i] <- 0
+            }
         }
-        else if (pos == 3) {
-            uy <- uy + unit(offset, "char")
-            adj <- c(.5, 0)
-        }
-        else if (pos == 4) {
-            ux <- ux + unit(offset, "char")
-            adj <- c(0, .5)
-        }
-        else stop("Invalid value of 'pos'")
-        
     }
-    if (length(adj) == 1) adj <- c(adj, .5)
     ## replace non-finite srt by 0
     srt[!is.finite(srt)] <- 0
     if (hasArg(group.number))
@@ -457,13 +490,7 @@ ltext.default <-
                    fontfamily = fontfamily,
                    fontface = chooseFace(fontface, font),
                    cex = cex, ...),
-              just = adj,
-##               just = c(if (adj[1] == 0) "left"
-##               else if (adj[1] == 1) c("right")
-##               else "centre",
-##               if (adj[2] == 0) "bottom"
-##               else if (adj[2] == 1) c("top")
-##               else "centre"),
+              hjust = hjust, vjust = vjust,
               rot = srt)
 }
 

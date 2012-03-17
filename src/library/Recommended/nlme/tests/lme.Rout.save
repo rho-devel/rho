@@ -1,7 +1,8 @@
 
-R version 2.13.0 Under development (unstable) (2011-02-23 r54556)
+R Under development (unstable) (2011-07-19 r56420)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -16,7 +17,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 Type 'q()' to quit R.
 
 > library(nlme)
-> data(Oxboys)
 > fm1 <- lmList(Oxboys)
 > fm1
 Call:
@@ -125,4 +125,22 @@ In lme.formula(distance ~ age, data = Orthodont, control = lmeControl(msMaxIter 
 attr(,"label")
 [1] "Predicted values (mm)"
 > # failed in 3.1-88
+> 
+> ## wrong results from getData:
+> load("ss2.rda")
+> m1 <- lme(PV1MATH ~  ESCS + Age +time ,
++           random = ~   time|SCHOOLID,
++           data = ss2,
++           weights = varIdent(form=~1|time),
++           corr = corCompSymm(form=~1|SCHOOLID/StIDStd),
++           na.action = na.omit)
+> plot(m1, resid(.) ~ WEALTH)
+> 
+> m2 <- lme(PV1MATH ~  ESCS + Age +time ,
++           random = ~   time|SCHOOLID,
++           data = ss2,
++           weights = varIdent(form=~1|time),
++           corr = corCompSymm(form=~1|SCHOOLID/StIDStd),
++           na.action = na.omit)
+> plot(m2, resid(.) ~ WEALTH)
 > 

@@ -86,7 +86,7 @@ L[sample(length(L), 10)] <- NA
 ll <- as(L,"logical")
 stopifnot(all.equal(mean(L,  na.rm=TRUE),
 		    mean(ll, na.rm=TRUE), tol= 1e-14),
-	  all.equal(mean(L,  na.rm=TRUE, trim=1/4),
+	  all.equal(mean(L,  na.rm=TRUE, trim=1/4),# <- with a warning
 		    mean(ll, na.rm=TRUE, trim=1/4), tol= 1e-14))
 
 
@@ -115,6 +115,7 @@ str(l0 <- Matrix(FALSE, nrow=100, ncol = 200))
 stopifnot(all(!l0),
           identical(FALSE, any(l0)))
 
+if(!interactive()) warnings()
 ## really large {length(<dense equivalent>) is beyond R's limits}:
 op <- options(warn = 2) # warnings here are errors
 n <- 50000L
@@ -709,6 +710,7 @@ D. <- Diagonal(x= c(-2,3:4)); D.[lower.tri(D.)] <- 1:3 ; D.
 D0 <- Diagonal(x= 0:3);       D0[upper.tri(D0)] <- 1:6 ; D0
 stopifnot(all.equal(list(modulus = structure(24, logarithm = FALSE), sign = -1L),
                     unclass(determinant(D.,FALSE)), tol=1e-15),
+	  det(Matrix(0,1)) == 0,
           all.equal(list(modulus = structure(0, logarithm = FALSE), sign = 1L),
                     unclass(determinant(D0,FALSE)), tol=0)
           )
@@ -730,6 +732,7 @@ as(sv, "zsparseVector")
 stopifnot(identical(sv., sv2),
 	  identical(  Matrix(sv, 3,4, byrow=TRUE),
 		    t(Matrix(sv, 4,3))))
+options(warn = 0)# no longer error
 
 
 ## "Large" sparse:
@@ -772,3 +775,14 @@ for(nm in ls()) if(is(.m <- get(nm), "Matrix")) {
 cat('Time elapsed: ', proc.time() - .pt,'\n') # "stats"
 
 if(!interactive()) warnings()
+
+## Platform - and other such info -- so we find it in old saved outputs
+SysI <- Sys.info()
+structure(Sys.info()[c(4,5,1:3)], class="simple.list")
+sessionInfo()
+c(Matrix = packageDescription("Matrix")$Built)
+if(SysI[["sysname"]] == "Linux" && require("sfsmisc")) local({
+    nn <- names(.Sc <- sfsmisc::Sys.cpuinfo())
+    nn <- names(.Sc <- .Sc[nn != "flags"])
+    print(.Sc[grep("\\.[0-9]$", nn, invert=TRUE)])
+})

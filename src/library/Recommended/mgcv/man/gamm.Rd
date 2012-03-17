@@ -190,6 +190,9 @@ Wang, Y. (1998) Mixed effects smoothing spline analysis of variance. J.R. Statis
 
 \section{WARNINGS }{
 
+\code{gamm} performs poorly with binary data, since it uses PQL. It is 
+better to use \code{gam} with \code{s(...,bs="re")} terms, or \code{gamm4}.
+
 \code{gamm} assumes that you know what you are doing! For example, unlike 
 \code{glmmPQL} from \code{MASS} it will return the complete \code{lme} object
 from the working model at convergence of the PQL iteration, including the `log 

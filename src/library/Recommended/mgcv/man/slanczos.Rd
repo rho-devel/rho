@@ -6,24 +6,37 @@
 }
 
 \usage{
-slanczos(A,k=10,kl=-1)
+slanczos(A,k=10,kl=-1,tol=.Machine$double.eps^.5)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
 \item{A}{A symmetric matrix.}
 
-\item{k}{If \code{kl} is negative, then the \code{k} largest magnitude eigenvalues are found, together with the corresponding eigenvectors. Otherwise the \code{k} highest eigenvalues are found.}
+\item{k}{Must be non-negative. If \code{kl} is negative, then the \code{k} largest magnitude eigenvalues 
+are found, together with the corresponding eigenvectors. If \code{kl} is non-negative then the \code{k}
+ highest eigenvalues are found together with their eigenvectors and the \code{kl} lowest eigenvalues with
+eigenvectors are also returned.}
 
-\item{kl}{The \code{kl} lowest eigenvalues are returned, unless \code{kl} is negative. }
+\item{kl}{If \code{kl} is non-negative then the \code{kl} lowest eigenvalues are returned together with their 
+corresponding eigenvectors (in addition to the \code{k} highest eignevalues + vectors). 
+negative \code{kl} signals that the \code{k} largest magnitude eigenvalues should be returned, with eigenvectors.}
+
+\item{tol}{tolerance to use for convergence testing of eigenvalues. Error in eigenvalues will be less 
+    than the magnitude of the dominant eigenvalue multiplied by \code{tol} (or the machine precision!).}
 
 }
 
-\details{ The routine implements Lanczos iteration with full re-orthogonalization as described in Demmel (1997). Lanczos 
+\details{ If \code{kl} is non-negative, returns the highest \code{k} and lowest \code{kl} eigenvalues, 
+with their corresponding eigenvectors. If \code{kl} is negative, returns the largest magnitude \code{k} 
+eigenvalues, with corresponding eigenvectors.
+
+The routine implements Lanczos iteration with full re-orthogonalization as described in Demmel (1997). Lanczos 
 iteraction iteratively constructs a tridiagonal matrix, the eigenvalues of which converge to the eigenvalues of \code{A},
 as the iteration proceeds (most extreme first). Eigenvectors can also be computed. For small \code{k} and \code{kl} the 
 approach is faster than computing the full symmetric eigendecompostion. The tridiagonal eigenproblems are handled using LAPACK.
 
-The implementation is not optimal: in particular the inner triadiagonal problems could be handled more efficiently. 
+The implementation is not optimal: in particular the inner triadiagonal problems could be handled more efficiently, and 
+there would be some savings to be made by not always returning eigenvectors. 
 } 
 
 \value{ A list with elements \code{values} (array of eigenvalues); \code{vectors} (matrix with eigenvectors in its columns); 

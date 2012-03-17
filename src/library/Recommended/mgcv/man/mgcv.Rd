@@ -161,6 +161,7 @@ especially in contexts where the weights vary wildly. }
 }
 
 \examples{
+\dontrun{
 library(help="mgcv") # listing of all routines
 
 set.seed(1);n<-400;sig2<-4
@@ -175,7 +176,7 @@ y <- f + e
 G<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),fit=FALSE)
 # fit using mgcv
 mgfit<-mgcv(G$y,G$X,G$sp,G$S,G$off,C=G$C)
- 
+} 
 }
 \keyword{models} \keyword{smooth} \keyword{regression}%-- one or more ..
 

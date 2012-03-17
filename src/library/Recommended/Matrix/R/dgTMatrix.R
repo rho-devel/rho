@@ -78,6 +78,7 @@ setMethod("image", "dgTMatrix",
                    aspect = "iso", ## was default "fill"
                    sub = sprintf("Dimensions: %d x %d", di[1], di[2]),
 		   xlab = "Column", ylab = "Row", cuts = 15,
+		   useRaster = FALSE,
                    useAbs = NULL, colorkey = !useAbs, col.regions = NULL,
                    lwd = NULL, ...)
       {
@@ -111,8 +112,9 @@ setMethod("image", "dgTMatrix",
                     xlim = xlim, ylim = ylim, aspect = aspect,
 		    colorkey = colorkey, col.regions = col.regions, cuts = cuts,
 		    par.settings = list(background = list(col = "transparent")),
-                    panel = function(x, y, z, subscripts, at, ..., col.regions)
-                {
+		    panel = if(useRaster) panel.levelplot.raster else
+		    function(x, y, z, subscripts, at, ..., col.regions)
+		{   ## a trimmed down version of  lattice::panel.levelplot
                     x <- as.numeric(x[subscripts])
                     y <- as.numeric(y[subscripts])
 

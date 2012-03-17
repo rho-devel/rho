@@ -55,6 +55,11 @@ static R_CallMethodDef CallEntries[] = {
     CALLDEF(Csparse_to_nz_pattern, 2),
     CALLDEF(Csparse_to_matrix, 1),
     CALLDEF(Csparse_submatrix, 3),
+    CALLDEF(dCsparse_subassign, 4),
+    CALLDEF(lCsparse_subassign, 4),
+    CALLDEF(iCsparse_subassign, 4),
+    CALLDEF(nCsparse_subassign, 4),
+    CALLDEF(zCsparse_subassign, 4),
     CALLDEF(Csparse_general_to_symmetric, 2),
     CALLDEF(Csparse_symmetric_to_general, 1),
     CALLDEF(Csparse_transpose, 2),
@@ -254,55 +259,57 @@ R_init_Matrix(DllInfo *dll)
     RREGDEF(as_cholmod_dense);
     RREGDEF(as_cholmod_factor);
     RREGDEF(as_cholmod_sparse);
+    RREGDEF(as_cholmod_triplet);
     RREGDEF(chm_factor_to_SEXP);
     RREGDEF(chm_factor_ldetL2);
     RREGDEF(chm_factor_update);
     RREGDEF(chm_sparse_to_SEXP);
     RREGDEF(chm_triplet_to_SEXP);
 
-    RREGDEF(cholmod_l_aat);
-    RREGDEF(cholmod_l_add);
-    RREGDEF(cholmod_l_allocate_dense);
-    RREGDEF(cholmod_l_allocate_sparse);
-    RREGDEF(cholmod_l_allocate_triplet);
-    RREGDEF(cholmod_l_analyze);
-    RREGDEF(cholmod_l_analyze_p);
-    RREGDEF(cholmod_l_band_inplace);
-    RREGDEF(cholmod_l_change_factor);
-    RREGDEF(cholmod_l_copy);
-    RREGDEF(cholmod_l_copy_dense);
-    RREGDEF(cholmod_l_copy_factor);
-    RREGDEF(cholmod_l_copy_sparse);
-    RREGDEF(cholmod_l_defaults);
-    RREGDEF(cholmod_l_dense_to_sparse);
-    RREGDEF(cholmod_l_factor_to_sparse);
-    RREGDEF(cholmod_l_factorize);
-    RREGDEF(cholmod_l_factorize_p);
-    RREGDEF(cholmod_l_finish);
-    RREGDEF(cholmod_l_free_dense);
-    RREGDEF(cholmod_l_free_factor);
-    RREGDEF(cholmod_l_free_sparse);
-    RREGDEF(cholmod_l_free_triplet);
-    RREGDEF(cholmod_l_nnz);
-    RREGDEF(cholmod_l_scale);
-    RREGDEF(cholmod_l_sdmult);
-    RREGDEF(cholmod_l_solve);
-    RREGDEF(cholmod_l_sort);
-    RREGDEF(cholmod_l_sparse_to_dense);
-    RREGDEF(cholmod_l_sparse_to_triplet);
-    RREGDEF(cholmod_l_speye);
-    RREGDEF(cholmod_l_spsolve);
-    RREGDEF(cholmod_l_ssmult);
-    RREGDEF(cholmod_l_start);
-    RREGDEF(cholmod_l_submatrix);
-    RREGDEF(cholmod_l_transpose);
-    RREGDEF(cholmod_l_triplet_to_sparse);
-    RREGDEF(cholmod_l_vertcat);
+    RREGDEF(cholmod_aat);
+    RREGDEF(cholmod_add);
+    RREGDEF(cholmod_allocate_dense);
+    RREGDEF(cholmod_allocate_sparse);
+    RREGDEF(cholmod_allocate_triplet);
+    RREGDEF(cholmod_analyze);
+    RREGDEF(cholmod_analyze_p);
+    RREGDEF(cholmod_band_inplace);
+    RREGDEF(cholmod_change_factor);
+    RREGDEF(cholmod_copy);
+    RREGDEF(cholmod_copy_dense);
+    RREGDEF(cholmod_copy_factor);
+    RREGDEF(cholmod_copy_sparse);
+    RREGDEF(cholmod_dense_to_sparse);
+    RREGDEF(cholmod_factor_to_sparse);
+    RREGDEF(cholmod_factorize);
+    RREGDEF(cholmod_factorize_p);
+    RREGDEF(cholmod_finish);
+    RREGDEF(cholmod_free_dense);
+    RREGDEF(cholmod_free_factor);
+    RREGDEF(cholmod_free_sparse);
+    RREGDEF(cholmod_free_triplet);
+    RREGDEF(cholmod_nnz);
+    RREGDEF(cholmod_scale);
+    RREGDEF(cholmod_sdmult);
+    RREGDEF(cholmod_solve);
+    RREGDEF(cholmod_sort);
+    RREGDEF(cholmod_sparse_to_dense);
+    RREGDEF(cholmod_sparse_to_triplet);
+    RREGDEF(cholmod_speye);
+    RREGDEF(cholmod_spsolve);
+    RREGDEF(cholmod_ssmult);
+    RREGDEF(cholmod_start);
+    RREGDEF(cholmod_submatrix);
+    RREGDEF(cholmod_transpose);
+    RREGDEF(cholmod_triplet_to_sparse);
+    RREGDEF(cholmod_vertcat);
 
     RREGDEF(dpoMatrix_chol);
     RREGDEF(numeric_as_chm_dense);
+    RREGDEF(Matrix_check_class_etc);
 
-    R_cholmod_l_start(&c);
+    R_cholmod_start(&c);
+//    R_cholmod_l_start(&cl);
 
     Matrix_DimNamesSym = install("Dimnames");
     Matrix_DimSym = install("Dim");
@@ -334,5 +341,5 @@ R_init_Matrix(DllInfo *dll)
 
 void R_unload_Matrix(DllInfo *dll)
 {
-    cholmod_l_finish(&c);
+    cholmod_finish(&c);
 }

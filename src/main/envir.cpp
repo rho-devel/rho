@@ -252,7 +252,7 @@ void attribute_hidden InitGlobalEnv()
     R_NamespaceRegistry = R_NewHashedEnv(R_NilValue, zero);
     R_PreserveObject(R_NamespaceRegistry);
     defineVar(install("base"), R_BaseNamespace, R_NamespaceRegistry);
-    /**** needed to properly initialize the base name space */
+    /**** needed to properly initialize the base namespace */
 }
 
 
@@ -1581,41 +1581,6 @@ SEXP attribute_hidden do_builtins(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 /*----------------------------------------------------------------------
 
-  do_libfixup
-
-  This function copies the bindings in the loading environment to the
-  library environment frame (the one that gets put in the search path)
-  and removes the bindings from the loading environment.  Values that
-  contain promises (created by delayedAssign, for example) are not forced.
-  Values that are closures with environments equal to the loading
-  environment are reparented to .GlobalEnv.  Finally, all bindings are
-  removed from the loading environment.
-
-  This routine can die if we automatically create a name space when
-  loading a package.
-*/
-
-SEXP attribute_hidden do_libfixup(SEXP call, SEXP op, SEXP args, SEXP rho)
-{
-    SEXP libenv, loadenv, p;
-    checkArity(op, args);
-    loadenv = CAR(args);
-    libenv = CADR(args);
-    if (TYPEOF(libenv) != ENVSXP || !isEnvironment(loadenv))
-	errorcall(call, _("invalid arguments"));
-    p = FRAME(loadenv);
-    while (p != R_NilValue) {
-	if (TYPEOF(CAR(p)) == CLOSXP && CLOENV(CAR(p)) == loadenv)
-	    SET_CLOENV(CAR(p), R_GlobalEnv);
-	defineVar(TAG(p), CAR(p), libenv);
-	p = CDR(p);
-    }
-    static_cast<Environment*>(loadenv)->frame()->clear();
-    return libenv;
-}
-
-/*----------------------------------------------------------------------
-
   do_pos2env
 
   This function returns the environment at a specified position in the
@@ -2016,9 +1981,9 @@ SEXP attribute_hidden do_isNSEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
 SEXP R_NamespaceEnvSpec(SEXP rho)
 {
-    /* The name space spec is a character vector that specifies the
-       name space.  The first element is the name space name.  The
-       second element, if present, is the name space version.  Further
+    /* The namespace spec is a character vector that specifies the
+       namespace.  The first element is the namespace name.  The
+       second element, if present, is the namespace version.  Further
        elements may be added later. */
     if (rho == R_BaseNamespace)
 	return R_BaseNamespaceName;
@@ -2059,7 +2024,7 @@ static SEXP checkNSname(SEXP call, SEXP name)
 	}
 	/* else fall through */
     default:
-	errorcall(call, _("bad name space name"));
+	errorcall(call, _("bad namespace name"));
     }
     return name;
 }
@@ -2071,7 +2036,7 @@ SEXP attribute_hidden do_regNS(SEXP call, SEXP op, SEXP args, SEXP rho)
     name = checkNSname(call, CAR(args));
     val = CADR(args);
     if (findVarInFrame(R_NamespaceRegistry, name) != R_UnboundValue)
-	errorcall(call, _("name space already registered"));
+	errorcall(call, _("namespace already registered"));
     defineVar(name, val, R_NamespaceRegistry);
     return R_NilValue;
 }
@@ -2082,7 +2047,7 @@ SEXP attribute_hidden do_unregNS(SEXP call, SEXP op, SEXP args, SEXP rho)
     checkArity(op, args);
     name = checkNSname(call, CAR(args));
     if (findVarInFrame(R_NamespaceRegistry, name) == R_UnboundValue)
-	errorcall(call, _("name space not registered"));
+	errorcall(call, _("namespace not registered"));
     RemoveVariable(name, R_NamespaceRegistry);
     return R_NilValue;
 }

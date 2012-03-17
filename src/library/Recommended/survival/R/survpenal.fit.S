@@ -1,5 +1,5 @@
 # 
-#  $Id: survpenal.fit.S 11194 2009-02-01 13:32:50Z therneau $
+#  $Id: survpenal.fit.S 11498 2011-09-30 19:14:34Z therneau $
 # fit a penalized parametric model
 #
 survpenal.fit<- function(x, y, weights, offset, init, controlvals, dist, 
@@ -342,8 +342,9 @@ survpenal.fit<- function(x, y, weights, offset, init, controlvals, dist,
     # Manufacture the list of calls to cfun, with appropriate arguments
     #
     temp1 <- c('x', 'coef', 'plik', 'loglik', 'status', 'neff',  'df', 'trH')
-    temp2 <- c('frailx', 'fcoef', 'loglik',  'fit$loglik', 'status', 'n.eff')
-    temp3 <- c('x[,pen.col]', 'coef[pen.col]','loglik',
+    temp2 <- c('frailx', 'fcoef', 'fit$loglik-fit$penalty',  'fit$loglik', 
+               'status', 'n.eff')
+    temp3 <- c('x[,pen.col]', 'coef[pen.col]', 'fit$loglik-fit$penalty',
 	       'fit$loglik', 'status', 'n.eff')
     calls <- vector('expression', length(cfun))
     cargs <- lapply(pattr, function(x) x$cargs)

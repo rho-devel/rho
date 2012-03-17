@@ -92,9 +92,16 @@
 \description{
   Methods for \code{"[<-"}, i.e., extraction or subsetting mostly of
   matrices, in package \pkg{Matrix}.
+
+  \bold{Note}: Contrary to standadrd \code{\link{matrix}} assignment in
+  base \R, in \code{x[..] <- val} it is typically an \bold{error} (see
+  \code{\link{stop}}) when the \link{type} or \code{\link{class}} of
+  \code{val} would require the class of \code{x} to be changed, e.g.,
+  when \code{x} is logical, say \code{"lsparseMatrix"}, and \code{val}
+  is numeric.
 }
 \section{Methods}{
-  There are more than these:
+  There are \emph{many many} more than these:
   \describe{
     \item{x = "Matrix", i = "missing", j = "missing", value= "ANY"}{
       is currently a simple fallback method implementation which ensures

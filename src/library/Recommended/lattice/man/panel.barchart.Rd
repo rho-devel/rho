@@ -22,22 +22,22 @@ panel.barchart(x, y, box.ratio = 1, box.width,
 }
 \arguments{
   \item{x}{ Extent of Bars. By default, bars start at left of panel,
-    unless \code{origin} is specified, in which case they start there
+    unless \code{origin} is specified, in which case they start there.
   }
-  \item{y}{ Horizontal location of bars, possibly factor}
-  \item{box.ratio}{ratio of bar width to inter-bar space}
-  \item{box.width}{ thickness of bars in absolute units; overrides
+  \item{y}{ Horizontal location of bars. Possibly a factor. }
+  \item{box.ratio}{ Ratio of bar width to inter-bar space. }
+  \item{box.width}{ Thickness of bars in absolute units; overrides
     \code{box.ratio}.  Useful for specifying thickness when the
     categorical variable is not a factor, as use of \code{box.ratio}
     alone cannot achieve a thickness greater than 1. }
   \item{horizontal}{
-    logical. If FALSE, the plot is \sQuote{transposed} in the sense that
-    the behaviours of x and y are switched. x is now the
+    Logical flag. If FALSE, the plot is \sQuote{transposed} in the sense
+    that the behaviours of x and y are switched. x is now the
     \sQuote{factor}.  Interpretation of other arguments change
     accordingly. See documentation of \code{\link{bwplot}} for a fuller
     explanation.
   }
-  \item{origin}{ the origin for the bars.  For grouped displays with
+  \item{origin}{ The origin for the bars.  For grouped displays with
     \code{stack = TRUE}, this argument is ignored and the origin set to
     0.  Otherwise, defaults to \code{NULL}, in which case bars start at
     the left (or bottom) end of a panel.  This choice is somewhat
@@ -47,15 +47,15 @@ panel.barchart(x, y, box.ratio = 1, box.width,
     use of a bar chart in the first place (dot plots are often a good
     alternative).
   }
-  \item{reference}{ logical, whether a reference line is to be drawn at
-    the origin
+  \item{reference}{ Logical, whether a reference line is to be drawn at
+    the origin.
   }
   \item{stack}{ logical, relevant when groups is non-null. If
     \code{FALSE} (the default), bars for different values of the
     grouping variable are drawn side by side, otherwise they are
     stacked.
   }
-  \item{groups}{ optional grouping variable}
+  \item{groups}{ Optional grouping variable. }
   \item{col, border, lty, lwd}{
     Graphical parameters for the bars. By default, the trellis parameter
     \code{plot.polygon} is used if there is no grouping variable, otherwise
@@ -63,7 +63,7 @@ panel.barchart(x, y, box.ratio = 1, box.width,
     \code{border} the border color, and \code{lty} and \code{lwd} the
     line type and width of the borders.
   }
-  \item{\dots}{ extra arguments will be accepted but ignored }
+  \item{\dots}{ Extra arguments will be accepted but ignored. }
   \item{identifier}{
     A character string that is prepended to the names of grobs
     that are created by this panel function.

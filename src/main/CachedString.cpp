@@ -92,6 +92,8 @@ CachedString* CachedString::obtain(const std::string& str, cetype_t encoding)
     default:
         Rf_error("unknown encoding: %d", encoding);
     }
+    if (CXXR::isASCII(str))
+	encoding = CE_NATIVE;
     pair<map::iterator, bool> pr
 	= s_cache->insert(map::value_type(key(str, encoding), 0));
     map::iterator it = pr.first;

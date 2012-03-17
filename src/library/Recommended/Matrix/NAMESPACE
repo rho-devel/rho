@@ -4,14 +4,22 @@ useDynLib(Matrix, .registration=TRUE)
 ## notably for which we define methods:
 importFrom("lattice", levelplot)
 importFrom("graphics", image)
-importFrom("utils", head, tail)
+importFrom("utils", head, tail, assignInNamespace)
 importFrom("stats", cov2cor, update#, vcov
            )
 
 importFrom("grid", grid.rect, gpar, grob)# others via 'grid::'
 
-## Currently, group generics need to be explicitly imported (Bug?):
-importFrom("methods", Ops, Arith, Compare, Logic, Math, Math2, Summary, Complex)
+importFrom("methods",
+	   ## still needed {group generics needed to be explicitly imported} ?
+	   Ops, Arith, Compare, Logic, Math, Math2, Summary, Complex,
+           ## generics for which we export new methods:
+	   coerce, show)
+
+if(getRversion() >= "2.15.0") {
+    importFrom("methods", kronecker)
+}
+
 
 ## Generics and functions defined in this package
 export("Cholesky",
@@ -30,6 +38,7 @@ export("Cholesky",
        ## "rowMeans", "rowSums",
        "condest", "onenormest",
        "det",# << "identical" as base - but with correct determinant()
+       "diagN2U", "diagU2N",
        "drop0",
        "expand",
        "expm",
@@ -287,11 +296,13 @@ exportMethods(## for both own and "other" generics:
 	      "zapsmall"
 	      )
 
-if(getRversion() < "2.11.0" || R.version$`svn rev` < 51018)
-    export("norm")
-
 exportMethods("rbind2")
 exportMethods("cbind2")
 
 S3method(print, sparseSummary)
 S3method(c, abIndex)# < for now -- S4 method on c() seems "difficult"
+
+## So that such dispatch also works inside base functions:
+S3method(as.array, Matrix)
+S3method(as.matrix, Matrix)
+S3method(as.vector, Matrix)

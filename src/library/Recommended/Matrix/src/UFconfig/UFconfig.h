@@ -1,19 +1,3 @@
-/* This file has been modified for the Matrix package for R.  The SPQR
- * package requires the UF_long versions of other SuiteSparse
- * packages. On 32-bit systems these would be 32-bit ints but on
- * 64-bit systems these would be 64-bit ints.  R does not have a
- * native 64-bit int type.  To provide compatibility with the R
- * storage types and to allow use of SPQR without requiring both the
- * INT and the LONG versions to be compiled, we redefine UF_long to be
- * an int.  This is against the spirit of the documentation included
- * below but allows for only one version of the SparseSuite libraries
- * to be compiled and linked. Having a version of sparse matrices with
- * 64-bit integers in the compiled code does not make sense because
- * these cannot at present be represented as R objects (well, without
- * trickery like representing the i, j and p slots as doubles).
- */
-
-
 /* ========================================================================== */
 /* === UFconfig.h =========================================================== */
 /* ========================================================================== */
@@ -37,7 +21,7 @@
  * could be added to UFconfig.mk:
  *
  * CFLAGS = -O -D'UF_long=long long' -D'UF_long_max=9223372036854775801' \
- *   -D'UF_long_id="%lld"'
+ *   -D'UF_long_idd="lld"'
  *
  * This file defines UF_long as either long (on all but _WIN64) or
  * __int64 on Windows 64.  The intent is that a UF_long is always a 64-bit
@@ -58,39 +42,60 @@ extern "C" {
 #endif
 
 #include <limits.h>
+#include <stdlib.h>
 
 /* ========================================================================== */
 /* === UF_long ============================================================== */
 /* ========================================================================== */
 
-
 #ifndef UF_long
-/* Changes for the Matrix package in R.  Unconditionally define
- * UF_long as int.
- */
-
-#define UF_long int
-#define UF_long_max INT_MAX
-#define UF_long_id "%d"
-
-/*
 
 #ifdef _WIN64
 
 #define UF_long __int64
 #define UF_long_max _I64_MAX
-#define UF_long_id "%I64d"
+#define UF_long_idd "I64d"
 
 #else
 
 #define UF_long long
 #define UF_long_max LONG_MAX
-#define UF_long_id "%ld"
+#define UF_long_idd "ld"
 
 #endif
-*/
-
+#define UF_long_id "%" UF_long_idd
 #endif
+
+/* ========================================================================== */
+/* === UFconfig parameters and functions ==================================== */
+/* ========================================================================== */
+
+/* SuiteSparse-wide parameters will be placed in this struct.  So far, they
+   are only used by RBio. */
+
+typedef struct UFconfig_struct
+{
+    void *(*malloc_memory) (size_t) ;		/* pointer to malloc */
+    void *(*realloc_memory) (void *, size_t) ;  /* pointer to realloc */
+    void (*free_memory) (void *) ;		/* pointer to free */
+    void *(*calloc_memory) (size_t, size_t) ;	/* pointer to calloc */
+
+} UFconfig ;
+
+void *UFmalloc              /* pointer to allocated block of memory */
+(
+    size_t nitems,          /* number of items to malloc (>=1 is enforced) */
+    size_t size_of_item,    /* sizeof each item */
+    int *ok,                /* TRUE if successful, FALSE otherwise */
+    UFconfig *config        /* SuiteSparse-wide configuration */
+) ;
+
+void *UFfree                /* always returns NULL */
+(
+    void *p,                /* block to free */
+    UFconfig *config        /* SuiteSparse-wide configuration */
+) ;
+
 
 /* ========================================================================== */
 /* === SuiteSparse version ================================================== */
@@ -104,27 +109,27 @@ extern "C" {
  * version of SuiteSparse, with another package from another version of
  * SuiteSparse, may or may not work.
  *
- * SuiteSparse Version 3.4.0 contains the following packages:
+ * SuiteSparse Version 3.6.0 contains the following packages:
  *
- *  AMD		    version 2.2.0
- *  CAMD	    version 2.2.0
- *  COLAMD	    version 2.7.1
- *  CCOLAMD	    version 2.7.1
- *  CHOLMOD	    version 1.7.1
- *  CSparse	    version 2.2.3
- *  CXSparse	    version 2.2.3
- *  KLU		    version 1.1.0
- *  BTF		    version 1.1.0
- *  LDL		    version 2.0.1
+ *  AMD		    version 2.2.2
+ *  BTF		    version 1.1.2
+ *  CAMD	    version 2.2.2
+ *  CCOLAMD	    version 2.7.3
+ *  CHOLMOD	    version 1.7.3
+ *  COLAMD	    version 2.7.3
+ *  CSparse	    version 2.2.5
+ *  CXSparse	    version 2.2.5
+ *  KLU		    version 1.1.2
+ *  LDL		    version 2.0.3
+ *  RBio	    version 2.0.1
+ *  SPQR            version 1.2.1 (also called SuiteSparseQR)
+ *  UFcollection    version 1.4.0
  *  UFconfig	    version number is the same as SuiteSparse
- *  UMFPACK	    version 5.4.0
- *  RBio	    version 1.1.2
- *  UFcollection    version 1.2.0
+ *  UMFPACK	    version 5.5.1
  *  LINFACTOR       version 1.1.0
  *  MESHND          version 1.1.1
- *  SSMULT          version 2.0.0
+ *  SSMULT          version 2.0.2
  *  MATLAB_Tools    no specific version number
- *  SuiteSparseQR   version 1.1.2
  *
  * Other package dependencies:
  *  BLAS	    required by CHOLMOD and UMFPACK
@@ -132,10 +137,10 @@ extern "C" {
  *  METIS 4.0.1	    required by CHOLMOD (optional) and KLU (optional)
  */
 
-#define SUITESPARSE_DATE "May 20, 2009"
+#define SUITESPARSE_DATE "Jan 25, 2011"
 #define SUITESPARSE_VER_CODE(main,sub) ((main) * 1000 + (sub))
 #define SUITESPARSE_MAIN_VERSION 3
-#define SUITESPARSE_SUB_VERSION 4
+#define SUITESPARSE_SUB_VERSION 6
 #define SUITESPARSE_SUBSUB_VERSION 0
 #define SUITESPARSE_VERSION \
     SUITESPARSE_VER_CODE(SUITESPARSE_MAIN_VERSION,SUITESPARSE_SUB_VERSION)

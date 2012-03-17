@@ -58,7 +58,9 @@ void free2d(double **a) {free(*a);free(a);}
 
 
 void mgcv_AtA(double *AA,double *A,int *q,int *n)
-/* form A'A efficiently where A is an R matrix supplied using 
+/* REDUNDANT: call getXtX(AA,A,n,q) instead.
+ 
+   form A'A efficiently where A is an R matrix supplied using 
    as.double(A) so that it is stored column wise. A has n rows
    and q columns.
    Typical R call something like
@@ -66,93 +68,13 @@ void mgcv_AtA(double *AA,double *A,int *q,int *n)
               as.integer(n),PACKAGE="mgcv")[[1]],q,q)
 */
 { double xx,*p,*p1,*p2,*p3,*p4;
-  int nq,i,j;
-  nq= *n * *q;
+  int i,j;
+  /*nq= *n * *q;*/
   for (i=0,p=A;i < *q;p+= *n,i++) for (j=i,p1=p;j< *q;p1+= *n,j++)
   { for (xx=0.0,p2=p,p3=p1,p4=p+ *n;p2<p4;p2++,p3++) xx += *p2 * *p3;
     AA[i * *q + j] = AA[ j * *q + i]=xx;
   }
 }
-
-
-void mgcv_mmult(double *A,double *B,double *C,int *bt,int *ct,int *r,int *c,int *n)
-/* Forms r by c product of B and C, transposing each according to bt and ct.
-   n is the common dimension of the two matrices, which are stored in R 
-   default column order form. Algorithm is inner loop optimized in each case 
-   (i.e. inner loops only update pointers by 1, rather than jumping).
-   
-  
-   r<-1000;c<-1000;n<-1000
-   A<-matrix(0,r,c);B<-matrix(rnorm(r*n),n,r);C<-matrix(rnorm(n*c),c,n)
-   system.time(
-   A<-matrix(.C("mgcv_mmult",as.double(A),as.double(B),as.double(C),as.integer(1),as.integer(1),
-          as.integer(r),as.integer(c),as.integer(n))[[1]],r,c))
-   range(as.numeric(t(B)%*%t(C)-A))
-   A<-matrix(0,r,c);B<-matrix(rnorm(r*n),n,r);C<-matrix(rnorm(n*c),n,c)
-   system.time(
-   A<-matrix(.C("mgcv_mmult",as.double(A),as.double(B),as.double(C),as.integer(1),as.integer(0),
-          as.integer(r),as.integer(c),as.integer(n))[[1]],r,c))
-   range(as.numeric(t(B)%*%C-A))
-   A<-matrix(0,r,c);B<-matrix(rnorm(r*n),r,n);C<-matrix(rnorm(n*c),c,n)
-   system.time(
-   A<-matrix(.C("mgcv_mmult",as.double(A),as.double(B),as.double(C),as.integer(0),as.integer(1),
-          as.integer(r),as.integer(c),as.integer(n))[[1]],r,c))
-   range(as.numeric(B%*%t(C)-A))
-   A<-matrix(0,r,c);B<-matrix(rnorm(r*n),r,n);C<-matrix(rnorm(n*c),n,c)
-   system.time(
-   A<-matrix(.C("mgcv_mmult",as.double(A),as.double(B),as.double(C),as.integer(0),as.integer(0),
-          as.integer(r),as.integer(c),as.integer(n))[[1]],r,c))
-   range(as.numeric(B%*%C-A))  
-*/
-
-{ double xx,*bp,*cp,*cp1,*cp2,*cp3,*ap,*ap1;
-  int br,cr,i,j;
-  if (*bt)
-  { if (*ct) /* A=B'C' */
-    { /* this one is really awkward: have to use first row of C' as working storage
-         for current A row; move most slowly through B */
-      for (i=0;i<*r;i++) /* update A *row-wise*, one full sweep of C per i */    
-      { cp1 = C + *c;
-        /* back up row 1 of C' (in A), and initialize current row of A (stored in row 1 of C') */
-        xx = *B;
-        for (ap=A,cp=C;cp<cp1;cp++,ap+= *r) { *ap = *cp; *cp *= xx;}  
-        B++;cp2=cp1;
-        for (j=1;j< *n;j++,B++) 
-	    for (xx= *B,cp=C;cp<cp1;cp++,cp2++) *cp += xx * *cp2;      
-        /* row i of A is now in row 1 of C', need to swap back */
-        for (ap=A,cp=C;cp<cp1;cp++,ap+= *r) { xx = *ap; *ap = *cp; *cp = xx;}
-        A++;
-      } 
-    } else /* A=B'C - easiest case: move most slowly through A*/
-    { br= *n;cr= *n;cp2 = C + *c * cr;
-      for (ap=A,cp1=C;cp1< cp2;cp1+=cr) for (bp=B,i=0;i< *r;i++,ap++)  
-      { for (xx=0.0,cp=cp1,cp3=cp1+ *n;cp< cp3;cp++,bp++) xx += *cp * *bp; /* B[k+br*i]*C[k+cr*j];*/
-        *ap=xx;
-      }
-    }
-  } else
-  { if (*ct) /* A=BC' - update A column-wise, move most slowly through C (but in big steps)*/
-    { cp = C;
-      for (j=0;j< *c;j++) /* go through columns of A, one full B sweep per j */
-      { ap1 = A + *r;C=cp;xx = *C;bp=B;
-        for (ap=A;ap<ap1;ap++,bp++) *ap = xx * *bp ;
-        C += *c;
-        for (i=1;i< *n;i++,C+= *c) 
-	for (xx=*C,ap=A;ap<ap1;ap++,bp++) *ap += xx * *bp;
-        A=ap1;cp++;
-      }
-    } else /* A=BC - update A column-wise, moving most slowly through C */
-    { for (j=0;j< *c;j++) /* go through columns of A, one full B sweep per j */
-      { ap1 = A + *r;xx = *C;bp=B;
-        for (ap=A;ap<ap1;ap++,bp++) *ap = xx * *bp ;
-        C++;
-        for (i=1;i< *n;i++,C++) 
-	for (xx=*C,ap=A;ap<ap1;ap++,bp++) *ap += xx * *bp;
-        A=ap1;
-      }
-    }
-  }
-} 
 
 
 
@@ -301,7 +223,8 @@ void magic_gH(double *U1U1,double **M,double **K,double *VS,double **My,double *
 
 { double *p,*p1,*p2,*p3,*p4,xx,xx1,x1,x2;
   int i,j,*ip,bt,ct,r,c; 
-  mgcv_AtA(U1U1,U1,&rank,&q); /* U_1'U_1 U1 is q by rank*/
+  /*mgcv_AtA(U1U1,U1,&rank,&q);*/ /* U_1'U_1 U1 is q by rank*/
+  getXtX(U1U1,U1,&q,&rank);
   for (p=S,ip=cS,i=0;ip<cS+m;p+= *ip *q,ip++,i++) /* work through all smooths */ 
   { bt=1;ct=0;r=rank;c= *ip;
     mgcv_mmult(VS,V,p,&bt,&ct,&r,&c,&q); /* V'S_i^0.5 result is rank by cS[i] */ 

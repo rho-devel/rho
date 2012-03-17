@@ -1125,6 +1125,7 @@ static keywords[] = {
     
     { "\\eqn",     VERBMACRO2 },
     { "\\deqn",    VERBMACRO2 },
+    { "\\figure",  VERBMACRO2 },
     
     /* We parse IFDEF/IFNDEF as markup, not as a separate preprocessor step */ 
     

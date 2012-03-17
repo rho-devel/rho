@@ -1,5 +1,5 @@
 
-R version 2.13.0 Patched (2011-06-06 r56067)
+R version 2.14.0 alpha (2011-10-06 r57181)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-unknown-linux-gnu (64-bit)
@@ -632,7 +632,7 @@ attr(,"class")
 > plot(pdx)# failed in 1.7.0 -- now only does silhouette
 > 
 > par(mfrow = 2:1)
-> ## new `dist' argument for clusplot():
+> ## new 'dist' argument for clusplot():
 > plot(pdx, dist=dist(x))
 > ## but this should work automagically (via eval()) as well:
 > plot(pdx)
@@ -1041,7 +1041,7 @@ Available components:
  [6] "clusinfo"   "silinfo"    "diss"       "call"       "data"      
 > 
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  1.253 0.036 1.303 0 0 
+Time elapsed:  1.347 0.044 1.447 0 0 
 > 
 > ## re-starting with medoids from pv6  shouldn't change:
 > pv6. <- pam(votes.repub, 6, medoids = pv6$id.med, trace = 3)
@@ -1117,6 +1117,6 @@ null device
 > 
 > ## Last Line:
 > cat('Time elapsed: ', proc.time() - .proctime00,'\n')
-Time elapsed:  1.264 0.037 1.316 0 0 
+Time elapsed:  1.356 0.045 1.457 0 0 
 > 
 > 

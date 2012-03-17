@@ -58,24 +58,29 @@ read.dta(file, convert.dates = TRUE, convert.factors = TRUE,
   include \code{"label.table"}.  Possible versions are \code{5, 6, 7},
   \code{-7} (Stata 7SE, \sQuote{format-111}), \code{8} (Stata 8 and 9,
   \sQuote{format-113}) and \code{10} (Stata 10 and 11, \sQuote{format-114}).
-
+  Stata 12 by default uses \sQuote{format-115}, which is read as
+  \sQuote{format-114} (the Stata documentation says its structure is identical).
+  
   The value labels in attribute \code{"val.labels"} name a table for
   each variable, or are an empty string.  The tables are elements of the
   named list attribute \code{"label.table"}: each is an integer vector with
-  names,
+  names.
 }
 \references{
   Stata Users Manual (versions 5 & 6), Programming manual (version 7),
   or online help (version 8 and later) describe the format of the files.
   Or at \url{http://www.stata.com/help.cgi?dta} and
-  \url{http://www.stata.com/help.cgi?dta_113}
+  \url{http://www.stata.com/help.cgi?dta_113}.
 }
 
 \author{Thomas Lumley and R-core members}
 \seealso{
+  A different approach is available in package \pkg{memisc}: see its
+  help for \code{Stata.file}.
+
   \code{\link{write.dta}},
-  \code{\link{attributes}}
-  \code{\link{Date}}
+  \code{\link{attributes}},
+  \code{\link{Date}},
   \code{\link{factor}}
 }
 \examples{

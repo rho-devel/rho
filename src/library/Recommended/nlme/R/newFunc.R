@@ -166,7 +166,7 @@ gapply <-
            )
     object <- object[, which, drop = FALSE]
   }
-  val <- lapply(split(object, groups), FUN, ...)
+  val <- lapply(X = split(object, groups), FUN = FUN, ...)
   if (is.atomic(val[[1]]) && length(val[[1]]) == 1) {
     val <- unlist(val)
   }

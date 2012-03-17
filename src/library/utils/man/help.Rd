@@ -28,13 +28,14 @@ help(topic, package = NULL, lib.loc = NULL,
    See \sQuote{Details} for what happens if this is omitted.
  }
  \item{package}{a name or character vector giving the packages to look
-   into for documentation, or \code{NULL}. By default, all packages in
-   the search path are used. To avoid a name being deparsed use e.g.
-   \code{(pkg_ref)}.}
+   into for documentation, or \code{NULL}.  By default, all packages in
+   the search path are used.  To avoid a name being deparsed use e.g.
+   \code{(pkg_ref)} (see the examples).}
  \item{lib.loc}{a character vector of directory names of \R libraries,
    or \code{NULL}.  The default value of \code{NULL} corresponds to all
    libraries currently known.  If the default is used, the loaded
-   packages are searched before the libraries.}
+   packages are searched before the libraries.  This is not used for
+   HTML help (see \sQuote{Details}.}
  \item{verbose}{logical; if \code{TRUE}, the file name is reported.}
  \item{try.all.packages}{logical; see \code{Note}.}
  \item{help_type}{character string: the type of help required.
@@ -56,7 +57,7 @@ help(topic, package = NULL, lib.loc = NULL,
     If for some reason HTML help is unavailable (see
     \code{\link{startDynamicHelp}}), plain text help will be used
     instead.
-    \item For \code{help} only, typeset as a PostScript or PDF file --
+    \item For \code{help} only, typeset as a PDF or PostScript file --
     see the section on \sQuote{Offline help}.
   }
 #ifdef unix
@@ -73,18 +74,23 @@ help(topic, package = NULL, lib.loc = NULL,
   used do not support these quotes so this can be turned off by setting
   \code{\link{options}(useFancyQuotes = FALSE)}.
 
-  \code{topic} is not optional: if it is omitted \R will give (text)
-  information on the package (including hints to suitable help topics)
-  if a package is specified, a (text) list of available packages if
-  \code{lib.loc} only is specified, and help on \code{help} itself if
-  none of the first three arguments is specified.
+  \code{topic} is not optional: if it is omitted \R will give
+  \itemize{
+    \item If a package is specified, (text or, in interactive use only,
+    HTML) information on the package, including hints/links to suitable
+    help topics.
+    \item If \code{lib.loc} only is specified, a (text) list of available
+    packages.
+    \item Help on \code{help} itself if none of the first three
+  arguments is specified.
+  }
 
   Some topics need to be quoted (by \link{backtick}s) or given as a
-  character string.  There include those which cannot syntactically
+  character string.  These include those which cannot syntactically
   appear on their own such as unary and binary operators,
   \code{function} and control-flow \link{reserved} words (including
   \code{if}, \code{else} \code{for}, \code{in}, \code{repeat},
-  \code{while}, \code{break} and \code{next}.  The other \code{reserved}
+  \code{while}, \code{break} and \code{next}).  The other \code{reserved}
   words can be used as if they were names, for example \code{TRUE},
   \code{NA} and \code{Inf}.
 
@@ -93,30 +99,38 @@ help(topic, package = NULL, lib.loc = NULL,
   first on the search path is used.  (For HTML help the menu will be an
   HTML page, otherwise a graphical menu if possible if
   \code{\link{getOption}("menu.graphics")} is true, the default.)
+  
+  Note that HTML help does not make use of \code{lib.loc}: it will
+  always look first in the attached packages and then along
+  \code{.libPaths()}.
 }
 
 \section{Offline help}{
   Typeset documentation is produced by running the LaTeX version of the
-  help page through \command{latex} and \command{dvips} or, if
-  \code{help_type = "PDF"}, \command{pdflatex}.  This will produce
-  either a PostScript or PDF file and possibly (depending on the
-  configuration of \command{dvips}) send a PostScript file to a printer.
-  You can set \code{\link{options}("dvipscmd")} to customize how
-  \command{dvips}) is called.
+  help page through \command{pdflatex} or (deprecated) \command{latex}
+  and \command{dvips}.  This will produce a PDF or PostScript file and
+  possibly (depending on the configuration of \command{dvips}) send a
+  PostScript file to a printer.
 
   The appearance of the output can be customized through a file
   \file{Rhelp.cfg} somewhere in your LaTeX search path: this will be
-  input as a LaTeX style file after \code{Rd.sty}.  Some 
+  input as a LaTeX style file after \code{Rd.sty}.  Some
   \link{environment variables} are consulted, notably \env{R_PAPERSIZE}
-  (\emph{via} \code{getOption("papersize")}) and \env{R_RD4DVI} /
-  \env{R_RD4PDF} (see \sQuote{Making manuals} in the
-  \sQuote{R Installation and Administration Manual}).
+  (\emph{via} \code{getOption("papersize")}) and \env{R_RD4PDF} (see
+  \sQuote{Making manuals} in the \sQuote{R Installation and
+  Administration Manual}).
 
   If there is a function \code{offline_help_helper} in the workspace or
   further down the search path it is used to do the typesetting,
-  otherwise the function of that name in the \code{utils} name space
-  (to which the first paragraph applies).  It should have two 
-  arguments, the name of the LaTeX file to be typeset and the type.
+  otherwise the function of that name in the \code{utils} namespace (to
+  which the first paragraph applies).  It should accept at least two
+  arguments, the name of the LaTeX file to be typeset and the type.  As
+  from \R 2.14.0 it should accept a third argument, \code{texinputs},
+  which will give the graphics path when the help document contains
+  figures, and will otherwise not be supplied.
+  
+  PostScript rendering of help pages containing figures will often not
+  include the figures (which is one reason it is deprecated).
 }
 
 \note{
@@ -172,5 +186,9 @@ help(topi)
 try(help("bs", try.all.packages=FALSE)) # reports not found (an error)
 help("bs", try.all.packages=TRUE)       # reports can be found
                                         # in package 'splines'
-}
+
+\donttest{## For programmatic use:
+topic <- "family"; pkg_ref <- "stats"
+help((topic), (pkg_ref))
+}}
 \keyword{documentation}

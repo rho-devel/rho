@@ -13,7 +13,7 @@ Duchon's (1977) construction generalizes the usual thin plate spline penalty as 
 of the squared Euclidian norm of a vector of mixed partial derivatives of the function w.r.t. its arguments. Duchon re-expresses 
 this penalty in the Fourier domain, and then weights the squared norm in the integral by the Euclidean norm of the fourier frequencies, 
 raised to the power 2s. s is a user selected constant taking integer values divided by 2. If d is the numberof arguments of the smooth, 
-then it is required that -d/2 < m < d/2. To obtain smooth functions we further require that m + s > d/2. If s=0 then the usual thin plate 
+then it is required that -d/2 < s < d/2. To obtain continuous functions we further require that m + s > d/2. If s=0 then the usual thin plate 
 spline is recovered.
 
 The construction is amenable to exactly the low rank approximation method given in Wood (2003) to thin plate splines, with similar 
@@ -53,20 +53,23 @@ out duplicate locations).}
 wiggliness penalty for this term.}
 }
 
-\details{ The default basis dimension for this class is \code{k=10*3^(d-1)} where \code{d} is the number
- of covariates for the term. This is essentially arbitrary, and should be checked.
+\details{  The default basis dimension for this class is \code{k=M+k.def} where \code{M} is the null space dimension 
+(dimension of unpenalized function space) and \code{k.def} is 10 for dimension 1, 30 for dimension 2 and 100 for higher dimensions. 
+This is essentially arbitrary, and should be checked, but as with all penalized regression smoothers, results are statistically 
+insensitive to the exact choise, provided it is not so small that it forces oversmoothing (the smoother's 
+degrees of freedom are controlled primarily by its smoothing parameter).
 
 The constructor is not normally called directly, but is rather used internally by \code{\link{gam}}. 
 To use for basis setup it is recommended to use \code{\link{smooth.construct2}}.  
 
 For these classes the specification \code{object} will contain
 information on how to handle large datasets in their \code{xt} field. The default is to randomly
-subsample 2000 `knots' from which to produce a tprs basis, if the number of
-unique predictor variable combinations in excess of 2000. The default can be
+subsample 2000 `knots' from which to produce a reduced rank eigen approximation to the full basis, 
+if the number of unique predictor variable combinations in excess of 2000. The default can be
 modified via the \code{xt} argument to \code{\link{s}}. This is supplied as a
 list with elements \code{max.knots} and \code{seed} containing a number
 to use in place of 2000, and the random number seed to use (either can be
-missing). 
+missing). Note that the random sampling will not effect the state of R's RNG. 
 
 For these bases \code{knots} has two uses. Firstly, as mentioned already, for large datasets 
 the calculation of the \code{tp} basis can be time-consuming. The user can retain most of the advantages of the 

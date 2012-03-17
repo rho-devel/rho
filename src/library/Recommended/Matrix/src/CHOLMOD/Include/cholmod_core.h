@@ -244,11 +244,11 @@
  *	#endif
  */
 
-#define CHOLMOD_DATE "Sept 30, 2008"
+#define CHOLMOD_DATE "Jan 25, 2011"
 #define CHOLMOD_VER_CODE(main,sub) ((main) * 1000 + (sub))
 #define CHOLMOD_MAIN_VERSION 1
 #define CHOLMOD_SUB_VERSION 7
-#define CHOLMOD_SUBSUB_VERSION 1
+#define CHOLMOD_SUBSUB_VERSION 3
 #define CHOLMOD_VERSION \
     CHOLMOD_VER_CODE(CHOLMOD_MAIN_VERSION,CHOLMOD_SUB_VERSION)
 
@@ -903,9 +903,9 @@ typedef struct cholmod_common_struct
      */
 
     /* ---------------------------------------------------------------------- */
-    double other1 [12] ;        /* reduced from size 16 in v1.6 */
+    double other1 [10] ;
 
-    double SPQR_xstat [2] ;     /* for SuiteSparseQR statistics */
+    double SPQR_xstat [4] ;     /* for SuiteSparseQR statistics */
 
     /* SuiteSparseQR control parameters: */
     double SPQR_grain ;         /* task size is >= max (total flops / grain) */
@@ -1439,7 +1439,7 @@ cholmod_sparse *cholmod_l_copy_sparse (cholmod_sparse *, cholmod_common *) ;
 /* cholmod_copy:  C = A, with possible change of stype */
 /* -------------------------------------------------------------------------- */
 
-cholmod_sparse *cholmod_copy
+cholmod_sparse *cholmod_copy 
 (
     /* ---- input ---- */
     cholmod_sparse *A,	/* matrix to copy */
@@ -1686,7 +1686,7 @@ int cholmod_l_change_factor ( int, int, int, int, int, cholmod_factor *,
 /* cholmod_pack_factor:  pack the columns of a factor */
 /* -------------------------------------------------------------------------- */
 
-/* Pack the columns of a simplicial factor.  Unlike change_factor,
+/* Pack the columns of a simplicial factor.  Unlike cholmod_change_factor,
  * it can pack the columns of a factor even if they are not stored in their
  * natural order (non-monotonic). */
 
@@ -2201,10 +2201,10 @@ int cholmod_realloc_multiple
     int nint,		/* number of int/UF_long blocks */
     int xtype,		/* CHOLMOD_PATTERN, _REAL, _COMPLEX, or _ZOMPLEX */
     /* ---- in/out --- */
-    void **I,		/* int or UF_long block */
-    void **J,		/* int or UF_long block */
-    void **X,		/* complex, double, or float block */
-    void **Z,		/* zomplex case only: double or float block */
+    void **Iblock,	/* int or UF_long block */
+    void **Jblock,	/* int or UF_long block */
+    void **Xblock,	/* complex, double, or float block */
+    void **Zblock,	/* zomplex case only: double or float block */
     size_t *n,		/* current size of the I,J,X,Z blocks on input,
 			 * nnew on output if successful */
     /* --------------- */

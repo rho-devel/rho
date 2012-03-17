@@ -65,6 +65,7 @@ plot.mca <- function(x, rows = TRUE,
                      col, cex = par("cex"), ...)
 {
   if(length(cex) == 1L) cex <- rep(cex, 2L)
+  dev.hold(); on.exit(dev.flush())
   eqscplot(x$cs, type="n", xlab="", ...)
   if(missing(col)) {
     col <- par("col")

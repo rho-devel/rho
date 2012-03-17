@@ -32,7 +32,11 @@ str( lapply(eigen(m3), zapsmall))
 
 ### outer()  used to work thanks to  as.array() -- up to R 2.2.1
 ##  no longer, because the definition of outer has changed  -- FIXME?
-##stopifnot(identical(outer(m, m2),
+## Whould work by providing an as.vector(.) method
+##  *and*  is.array(.) \-> TRUE  which may be too strong
+##--> For %o%: "need" to make  outer(.,.) an S3 generic
+##    *and* provide Matrix S3 methods
+## stopifnot(identical(outer(m, m2),
 ##                    outer(as(m,"matrix"), as(m2,"matrix"))),
 ##          identical(outer(m3, m2),
 ##                    outer(as(m3,"matrix"), as(m2,"matrix"))))

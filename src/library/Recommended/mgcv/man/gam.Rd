@@ -352,29 +352,46 @@ an infinite range on the linear predictor scale.
 library(mgcv)
 set.seed(0) ## simulate some data... 
 dat <- gamSim(1,n=400,dist="normal",scale=2)
-b<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
+b <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat)
 summary(b)
 plot(b,pages=1,residuals=TRUE)  ## show partial residuals
 plot(b,pages=1,seWithMean=TRUE) ## `with intercept' CIs
 
 ## same fit in two parts .....
-G<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),fit=FALSE,data=dat)
-b<-gam(G=G)
+G <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),fit=FALSE,data=dat)
+b <- gam(G=G)
 print(b)
 
 ## change the smoothness selection method to REML
-b0<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat,method="REML")
-plot(b,pages=1)
+b0 <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat,method="REML")
+plot(b0,pages=1,scheme=1)
 
-## ... and do automatic terms selection as well
-b1<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat,
+## Would a smooth interaction of x0 and x1 be better?
+## Use tensor product smooth of x0 and x1, basis 
+## dimension 49 (see ?te for details, also ?t2).
+bt <- gam(y~te(x0,x1,k=7)+s(x2)+s(x3),data=dat,
+          method="REML")
+plot(bt,pages=1) 
+plot(bt,pages=1,scheme=2) ## alternative visualization
+AIC(b0,bt) ## interaction worse than additive
+
+## If it is believed that x0 and x1 are naturally on 
+## the same scale, and should be treated isotropically 
+## then could try...
+bs <- gam(y~s(x0,x1,k=50)+s(x2)+s(x3),data=dat,
+          method="REML")
+plot(bs,pages=1)
+AIC(b0,bt,bs) ## additive still better. 
+
+## Now do automatic terms selection as well
+b1 <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),data=dat,
        method="REML",select=TRUE)
 plot(b1,pages=1)
 
 
 ## set the smoothing parameter for the first term, estimate rest ...
-bp<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),sp=c(0.01,-1,-1,-1),data=dat)
-plot(bp,pages=1)
+bp <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),sp=c(0.01,-1,-1,-1),data=dat)
+plot(bp,pages=1,scheme=1)
 ## alternatively...
 bp <- gam(y~s(x0,sp=.01)+s(x1)+s(x2)+s(x3),data=dat)
 
@@ -395,12 +412,6 @@ print(b0);print(bp)
 b0<-gam(y~s(x0,k=4,fx=TRUE,bs="tp")+s(x1,k=12)+s(x2,k=15),data=dat)
 plot(b0,pages=1)
 
-## now fit a 2-d term to x0,x1
-b1<-gam(y~s(x0,x1)+s(x2)+s(x3),data=dat)
-par(mfrow=c(2,2))
-plot(b1)
-
-par(mfrow=c(1,1))
 ## now simulate poisson data...
 dat <- gamSim(1,n=4000,dist="poisson",scale=.1)
 
@@ -432,7 +443,7 @@ b4<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=poisson,
         data=dat,method="GACV.Cp",scale=-1)
 plot(b4,pages=1)
 
-## repeat using REML as in Wood 2009...
+## repeat using REML as in Wood 2011...
 
 b5<-gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=poisson,
         data=dat,method="REML")
@@ -445,6 +456,7 @@ dat <- gamSim(1,n=400,dist="binary",scale=.33)
 
 lr.fit <- gam(y~s(x0)+s(x1)+s(x2)+s(x3),family=binomial,
               data=dat,method="REML")
+
 ## plot model components with truth overlaid in red
 op <- par(mfrow=c(2,2))
 fn <- c("f0","f1","f2","f3");xn <- c("x0","x1","x2","x3")
@@ -472,7 +484,7 @@ Ey <- exp(dat$f);scale <- .5 ## mean and GLM scale parameter
 dat$y <- rgamma(Ey*0,shape=1/scale,scale=Ey*scale)
 bg <- gam(y~ s(x0)+ s(x1)+s(x2)+s(x3),family=Gamma(link=log),
           data=dat,method="REML")
-plot(bg,pages=1)
+plot(bg,pages=1,scheme=1)
 
 ## For inverse Gaussian, see ?rig
 
@@ -496,23 +508,28 @@ par(op)
 ## largish dataset example with user defined knots
 ##################################################
 
-par(mfrow=c(1,1))
+par(mfrow=c(2,2))
 eg <- gamSim(2,n=10000,scale=.5)
 attach(eg)
 
 ind<-sample(1:10000,1000,replace=FALSE)
 b5<-gam(y~s(x,z,k=50),data=data,
         knots=list(x=data$x[ind],z=data$z[ind]))
-vis.gam(b5)
+## various visualizations
+vis.gam(b5,theta=30,phi=30)
+plot(b5)
+plot(b5,scheme=1,theta=50,phi=20)
+plot(b5,scheme=2)
 
+par(mfrow=c(1,1))
 ## and a pure "knot based" spline of the same data
 b6<-gam(y~s(x,z,k=100),data=data,knots=list(x= rep((1:10-0.5)/10,10),
         z=rep((1:10-0.5)/10,rep(10,10))))
-vis.gam(b6,color="heat")
+vis.gam(b6,color="heat",theta=30,phi=30)
 
 ## varying the default large dataset behaviour via `xt'
 b7 <- gam(y~s(x,z,k=50,xt=list(max.knots=1000,seed=2)),data=data)
-vis.gam(b7)
+vis.gam(b7,theta=30,phi=30)
 detach(eg)
 
 ################################################################

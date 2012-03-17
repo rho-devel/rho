@@ -69,7 +69,6 @@ stopifnot(identical(mn["rc", "D"], mn[3,4]), mn[3,4] == 24,
 	  identical(unname(z), zz),
 	  identical(a.m, array(v, dim=dim(mn), dimnames=dimnames(mn)))
 	  )
-
 showProc.time()
 
 ## Printing sparse colnames:
@@ -114,43 +113,6 @@ showProc.time()
 
 ## more sparse Matrices --------------------------------------
 
-m <- 1:800
-set.seed(101) ; m[sample(800, 600)] <- 0
-m0 <- Matrix(m, nrow = 40)
-m1 <- add.simpleDimnames(m0)
-for(m in list(m0,m1)) { ## -- with and without dimnames
-mm <- as(m, "matrix")
-str(mC <- as(m, "dgCMatrix"))
-str(mT <- as(m, "dgTMatrix"))
-stopifnot(identical(mT, as(mC, "dgTMatrix")),
-	  identical(mC, as(mT, "dgCMatrix")),
-	  Qidentical(mC[0,0], new("dgCMatrix")),
-	  Qidentical(mT[0,0], new("dgTMatrix")),
-	  identical(unname(mT[0,]), new("dgTMatrix", Dim = c(0L,20L))),
-	  identical(unname(mT[,0]), new("dgTMatrix", Dim = c(40L,0L))),
-	  identical(mC[0,], as(mT[FALSE,], "dgCMatrix")),
-	  identical(mC[,0], as(mT[,FALSE], "dgCMatrix")),
-	  sapply(c(0:2, 5:10), function(k) {i <- seq_len(k); all(mC[i,i] == mT[i,i])}),
-	  TRUE)
-cat("ok\n")
-show(mC[,1])
-show(mC[1:2,])
-show(mC[7,  drop = FALSE])
-assert.EQ.mat(mC[1:2,], mm[1:2,])
-assert.EQ.mat(mC[0,], mm[0,])
-assert.EQ.mat(mC[,FALSE], mm[,FALSE])
-##
-## *repeated* (aka 'duplicated') indices - did not work at all ...
-i <- rep(8:10,2)
-j <- c(2:4, 4:3)
-assert.EQ.mat(mC[i,], mm[i,])
-assert.EQ.mat(mC[,j], mm[,j])
-## FIXME? assert.EQ.mat(mC[,NA], mm[,NA]) -- mC[,NA] is all 0 "instead" of all NA
-## MM currently thinks we should  NOT  allow  <sparse>[ <NA> ]
-assert.EQ.mat(mC[i, 2:1], mm[i, 2:1])
-assert.EQ.mat(mC[c(4,1,2:1), j], mm[c(4,1,2:1), j])
-assert.EQ.mat(mC[i,j], mm[i,j])
-
 ##' @title Check sparseMatrix sub-assignment   m[i,j] <- v
 ##' @param ms sparse Matrix
 ##' @param mm its [traditional matrix]-equivalent
@@ -160,7 +122,12 @@ assert.EQ.mat(mC[i,j], mm[i,j])
 ##' @return
 ##' @author Martin Maechler
 chkAssign <- function(ms, mm = as(ms, "matrix"),
-                      k = min(20,dim(mm)), n.uniq = k %/% 3, show=FALSE)
+                      k = min(20,dim(mm)), n.uniq = k %/% 3,
+                      vRNG = { if(is.numeric(mm) || is.complex(mm))
+                                   function(n) rpois(n,lambda= 0.75)# <- about 47% zeros
+                      else ## logical
+                          function(n) runif(n) > 0.8 }, ## 80% zeros
+                      show=FALSE)
 {
     stopifnot(is(ms,"sparseMatrix"))
     s1 <- function(n) sample(n, pmin(n, pmax(1, rpois(1, n.uniq))))
@@ -168,21 +135,79 @@ chkAssign <- function(ms, mm = as(ms, "matrix"),
     j <- sample(s1(ncol(ms)), k/2+ rpois(1, k/2), replace = TRUE)
     assert.EQ.mat(ms[i,j], mm[i,j])
     ## now sub*assign* to these repeated indices, and then compare -----
-    x <- rpois(length(i) * length(j), lambda= 0.75)#- about 47% zeros
-    ms[i,j] <- x
-    mm[i,j] <- x
+    v <- vRNG(length(i) * length(j))
+    mm[i,j] <- v
+    ms[i,j] <- v
     if(!show) { op <- options(error = recover); on.exit(options(op)) }
     assert.EQ.mat(ms, mm, show=show)
 }
-set.seed(7)
-cat(" for(): ")
-for(n in 1:50) {
-    chkAssign(mC, mm)
-    chkAssign(mC[-3,-2], mm[-3,-2])
-    cat(".")
+
+## Get duplicated index {because these are "hard" (and rare)
+getDuplIndex <- function(n, k) {
+    repeat {
+        i <- sample(n, k, replace=TRUE) # 3 4 6 9 2 9 :  9 is twice
+        if(anyDuplicated(i)) break
+    }
+    i
 }
-cat("ok\n----\n")
-}## end{for}
+
+## From package 'sfsmisc':
+repChar <- function (char, no) paste(rep.int(char, no), collapse = "")
+
+m <- 1:800
+set.seed(101) ; m[sample(800, 600)] <- 0
+m0 <- Matrix(m, nrow = 40)
+m1 <- add.simpleDimnames(m0)
+for(kind in c("n", "l", "d")) {
+ for(m in list(m0,m1)) { ## -- with and without dimnames -------------------------
+    kClass <- paste(kind, "Matrix", sep="")
+    Ckind <- paste(kind, "gCMatrix", sep="")
+    Tkind <- paste(kind, "gTMatrix", sep="")
+    str(mC <- as(m, Ckind))
+    str(mT <- as(as(as(m, kClass), "TsparseMatrix"), Tkind))
+    mm <- as(mC, "matrix") # also logical or double
+    IDENT <- if(kind == "n") function(x,y) Q.eq2(x,y, tol=0) else identical
+    stopifnot(identical(mT, as(as(mC, "TsparseMatrix"), Tkind)),
+              identical(mC, as(mT, Ckind)),
+              Qidentical(mC[0,0], new(Ckind)),
+              Qidentical(mT[0,0], new(Tkind)),
+              identical(unname(mT[0,]), new(Tkind, Dim = c(0L,20L))),
+              identical(unname(mT[,0]), new(Tkind, Dim = c(40L,0L))),
+              IDENT(mC[0,], as(mT[FALSE,], Ckind)),
+              IDENT(mC[,0], as(mT[,FALSE], Ckind)),
+              sapply(c(0:2, 5:10),
+                     function(k) {i <- seq_len(k); all(mC[i,i] == mT[i,i])}),
+              TRUE)
+    cat("ok\n")
+    show(mC[,1])
+    show(mC[1:2,])
+    show(mC[7,  drop = FALSE])
+    assert.EQ.mat(mC[1:2,], mm[1:2,])
+    assert.EQ.mat(mC[0,], mm[0,])
+    assert.EQ.mat(mC[,FALSE], mm[,FALSE])
+    ##
+    ## *repeated* (aka 'duplicated') indices - did not work at all ...
+    i <- rep(8:10,2)
+    j <- c(2:4, 4:3)
+    assert.EQ.mat(mC[i,], mm[i,])
+    assert.EQ.mat(mC[,j], mm[,j])
+    ## FIXME? assert.EQ.mat(mC[,NA], mm[,NA]) -- mC[,NA] is all 0 "instead" of all NA
+    ## MM currently thinks we should  NOT  allow  <sparse>[ <NA> ]
+    assert.EQ.mat(mC[i, 2:1], mm[i, 2:1])
+    assert.EQ.mat(mC[c(4,1,2:1), j], mm[c(4,1,2:1), j])
+    assert.EQ.mat(mC[i,j], mm[i,j])
+    ##
+    ## set.seed(7)
+    cat(" for(): ")
+    for(n in 1:50) {
+        chkAssign(mC, mm)
+        chkAssign(mC[-3,-2], mm[-3,-2])
+        cat(".")
+    }
+    cat(sprintf("\n[Ok]%s\n\n", repChar("-", 64)))
+ }
+ cat(sprintf("\nok( %s )\n== ###%s\n\n", kind, repChar("=", 70)))
+}## end{for}---------------------------------------------------------------
 showProc.time()
 
 ##---- Symmetric indexing of symmetric Matrix ----------
@@ -338,6 +363,48 @@ stopifnot(sm[2,] == c(0:1, rep.int(0,ncol(sm)-2)),
 	  )
 showProc.time()
 
+##---  "nsparse*" sub-assignment :----------
+M <- Matrix(c(1, rep(0,7), 1:4), 3,4)
+N0 <- kronecker(M,M)
+Nn <- as(N0, "nMatrix"); nn <- as(Nn,"matrix")
+(Nn00 <- Nn0 <- Nn); nn00 <- nn0 <- nn
+
+set.seed(1)
+Nn0 <- Nn00; nn0 <- nn00
+for(i in 1:200) {
+    Nn <- Nn0
+    nn <- nn0
+    i. <- getDuplIndex(nrow(N0), 6)
+    j. <- getDuplIndex(ncol(N0), 4)
+    vv <- sample(c(FALSE,TRUE),
+                 length(i.)*length(j.), replace=TRUE)
+    cat(",")
+    Nn[i., j.] <- vv
+    nn[i., j.] <- vv
+    assert.EQ.mat(Nn, nn)
+    if(!all(Nn == nn)) {
+        cat("i=",i,":\n i. <- "); dput(i.)
+        cat("j. <- "); dput(j.)
+        cat("which(vv): "); dput(which(vv))
+        cat("Difference matrix:\n")
+        show(drop0(Nn - nn))
+    }
+    cat("k")
+    ## sub-assign double precision to logical sparseMatrices should error:
+    ## well... warning for now {back compatibility: gave *no* warning, nothing .. !}:
+    assertWarning(Nn[1:2,] <- -pi)
+    assertWarning(Nn[, 5] <- -pi)
+    assertWarning(Nn[2:4, 5:8] <- -pi)
+    ##
+    cat(".")
+    if(i %% 10 == 0) cat("\n")
+    if(i == 100) {
+        Nn0 <- as(Nn0, "CsparseMatrix")
+        cat("Now: class", class(Nn0)," :\n~~~~~~~~~~~~~~~~~\n")
+    }
+}
+showProc.time()
+
 m0 <- Diagonal(5)
 stopifnot(identical(m0[2,], m0[,2]),
 	  identical(m0[,1], c(1,0,0,0,0)))
@@ -372,7 +439,7 @@ checkMatrix(M)
 M <- m1; M[1:3, 3] <- 0 ;M
 assert.EQ.mat(M, diag(c(1,1, 0, 1,1)), tol=0)
 T <- m1; T[1:3, 3] <- 10; checkMatrix(T)
-stopifnot(isValid(T, "dtTMatrix"), identical(T[,3], c(10,10,10,0,0)))
+stopifnot(is(T, "triangularMatrix"), identical(T[,3], c(10,10,10,0,0)))
 
 M <- m2; M[1,] <- 0 ; M ; assert.EQ.mat(M, diag(c(0,rep(1,4))), tol=0)
 M <- m2; M[,3] <- 3 ; stopifnot(is(M,"sparseMatrix"), M[,3] == 3)

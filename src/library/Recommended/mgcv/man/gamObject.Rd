@@ -132,6 +132,8 @@ for smoothness estimation. }
 
 \item{residuals}{the working residuals for the fitted model.}
 
+\item{rV}{If present, \code{rV\%*\%t(rV)*sig2} gives the estimated Bayesian covariance matrix.} 
+
 \item{scale}{when present, the scale (as \code{sig2})}
 
 \item{scale.estimated}{ \code{TRUE} if the scale parameter was estimated, \code{FALSE} otherwise.}

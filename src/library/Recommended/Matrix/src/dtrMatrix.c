@@ -152,7 +152,8 @@ SEXP dtrMatrix_dtrMatrix_mm(SEXP a, SEXP b, SEXP right, SEXP trans)
     const char
 	*uplo_a_ch = CHAR(STRING_ELT(uplo_a, 0)), /* = uplo_P(a) */
 	*diag_a_ch = CHAR(STRING_ELT(diag_a, 0)); /* = diag_P(a) */
-    Rboolean same_uplo = (*uplo_a_ch == *uplo_P(b)), uDiag_b;
+    Rboolean same_uplo = (*uplo_a_ch == *uplo_P(b)),
+	uDiag_b = /* -Wall: */ FALSE;
 
     if (INTEGER(GET_SLOT(b, Matrix_DimSym))[0] != n)
 	/* validity checking already "assures" square matrices ... */

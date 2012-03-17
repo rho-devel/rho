@@ -75,9 +75,10 @@
   Class \code{"Matrix"}, by class \code{"dtrMatrix"}.
 }
 \section{Methods}{
-  There are currently no methods defined with class "Cholesky" in the
-  signature.  Of course methods for \code{"dtrMatrix"} or
-  \code{"MatrixFactorization"} do apply.
+  Both these factorizations can \emph{directly} be treated as
+  (triangular) matrices, as they extend \code{"dtrMatrix"}, see above.
+  There are currently no further explicit methods defined with class
+  \code{"Cholesky"} or \code{"BunchKaufman"} in the signature.
 }
 \seealso{
   Classes \code{\linkS4class{dtrMatrix}}, \code{\linkS4class{dpoMatrix}};

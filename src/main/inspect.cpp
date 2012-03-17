@@ -80,4 +80,3 @@ SEXP attribute_hidden R_inspect3(SEXP x, int deep, int pvec) {
     inspect_tree(0, x, deep, pvec);
     return x;
 }
-

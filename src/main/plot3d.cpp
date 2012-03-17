@@ -727,8 +727,8 @@ int addContourLines(double *x, int nx, double *y, int ny,
 		    s = s->next;
 		}
 		if(ns == CXXRCONSTRUCT(int, max_contour_segments))
-		    warning(_("contour(): circular/long seglist -- bug.report()!"));
-
+		    warning(_("contour(): circular/long seglist -- set %s > %d?"), 
+		            "options(\"max.contour.segments\")", max_contour_segments);
 		/*
 		 * "write" the contour locations into the list of contours
 		 */
@@ -1012,7 +1012,8 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 		s = s->next;
 	    }
 	    if(ns == CXXRCONSTRUCT(int, max_contour_segments))
-		warning(_("contour(): circular/long seglist -- bug.report()!"));
+		warning(_("contour(): circular/long seglist -- set %s > %d?"), 
+		        "options(\"max.contour.segments\")", max_contour_segments);
 
 	    /* contour midpoint : use for labelling sometime (not yet!)
 	       int ns2;
@@ -1045,7 +1046,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 			    (iii < ns-1) ? "," : "\n");
 #endif
 
-	    GMode(1, dd);
+//	    GMode(1, dd);
 
 	    if (drawLabels) {
 		/* If user supplied labels, use i'th one of them
@@ -1319,7 +1320,7 @@ static void contour(SEXP x, int nx, SEXP y, int ny, SEXP z,
 		GPolyline(ns, xxx, yyy, USER, dd);
 	    }
 
-	    GMode(0, dd);
+//	    GMode(0, dd);
 	    vmaxset(vmax);
 	} /* while */
       } /* for(i .. )  for(j ..) */
@@ -1544,41 +1545,49 @@ FindCutPoints(double low, double high,
     double c;
 
     if (z1 > z2 ) {
-	if (z2 > high || z1 < low)
-	    return;
+	if (z2 > high || z1 < low) return;
 	if (z1 < high) {
 	    x[*npt] = x1;
 	    y[*npt] = y1;
 	    z[*npt] = z1;
 	    ++*npt;
-	}
-	else {
+	} else if (z1 == R_PosInf) {
+	    x[*npt] = x2;
+	    y[*npt] = y1;
+	    z[*npt] = z2;
+	    ++*npt;
+	} else { /* z1 >= high, z2 in range */
 	    c = (z1 - high) / (z1 - z2);
 	    x[*npt] = x1 + c * (x2 - x1);
 	    y[*npt] = y1;
 	    z[*npt] = z1 + c * (z2 - z1);
 	    ++*npt;
 	}
-	if (z2 > low) {
-	}
-	else {
+	if (z2 == R_NegInf) {
+	    x[*npt] = x1;
+	    y[*npt] = y1;
+	    z[*npt] = z1;
+	    ++*npt;
+	} else if (z2 <= low) { /* and z1 in range */
 	    c = (z2 -low) / (z2 - z1);
 	    x[*npt] = x2 - c * (x2 - x1);
 	    y[*npt] = y1;
 	    z[*npt] = z2 - c * (z2 - z1);
 	    ++*npt;
 	}
-    }
-    else if (z1 < z2) {
-	if (z2 < low || z1 > high)
-	    return;
+    } else if (z1 < z2) {
+	if (z2 < low || z1 > high) return;
 	if (z1 > low) {
 	    x[*npt] = x1;
 	    y[*npt] = y1;
 	    z[*npt] = z1;
 	    ++*npt;
-	}
-	else {
+	} else if (z1 == R_NegInf) {
+	    x[*npt] = x2;
+	    y[*npt] = y1;
+	    z[*npt] = z2;;
+	    ++*npt;
+	} else { /* and z2 in range */
 	    c = (z1 - low) / (z1 - z2);
 	    x[*npt] = x1 + c * (x2 - x1);
 	    y[*npt] = y1;
@@ -1593,16 +1602,19 @@ FindCutPoints(double low, double high,
 	    z[*npt] = z2;
 	    ++*npt;
 #endif
-	}
-	else {
+	} else if (z2 == R_PosInf) {
+	    x[*npt] = x1;
+	    y[*npt] = y1;
+	    z[*npt] = z1;
+	    ++*npt;
+	} else { /* z2 high, z1 in range */
 	    c = (z2 - high) / (z2 - z1);
 	    x[*npt] = x2 - c * (x2 - x1);
 	    y[*npt] = y1;
 	    z[*npt] = z2 - c * (z2 - z1);
 	    ++*npt;
 	}
-    }
-    else {
+    } else {
 	if(low <= z1 && z1 <= high) {
 	    x[*npt] = x1;
 	    y[*npt] = y1;
@@ -1733,7 +1745,7 @@ SEXP attribute_hidden do_filledcontour(SEXP call, SEXP op, SEXP args, SEXP env)
 				    z[i + j * nx],
 				    px, py, pz, &npt);
 		if (npt > 2)
-		    GPolygon(npt, px, py, USER, col[(k-1)%ncol],
+		    GPolygon(npt, px, py, USER, col[(k-1) % ncol],
 			     R_TRANWHITE, dd);
 	    }
 	}
@@ -2025,14 +2037,18 @@ static int LimitCheck(double *lim, double *c, double *s)
     return 1;
 }
 
-/* PerspBox: The following code carries out a visibility test */
-/* on the surfaces of the xlim/ylim/zlim box around the plot. */
-/* If front = 0, only the faces with their inside toward the */
-/* eyepoint are drawn.  If front = 1, only the faces with */
-/* their outside toward the eye are drawn.  This lets us carry */
-/* out hidden line removal by drawing any faces which will be */
-/* obscured before the surface, and those which will not be */
-/* obscured after the surface. */
+/* PerspBox: The following code carries out a visibility test
+   on the surfaces of the xlim/ylim/zlim box around the plot.
+   If front = 0, only the faces with their inside toward the
+   eyepoint are drawn.  If front = 1, only the faces with
+   their outside toward the eye are drawn.  This lets us carry
+   out hidden line removal by drawing any faces which will be
+   obscured before the surface, and those which will not be
+   obscured after the surface. 
+
+   Unfortunately as PR#202 showed, this is simplistic as the surface
+   can go outside the box.
+*/
 
 /* The vertices of the box */
 static short int Vertex[8][3] = {
@@ -2066,14 +2082,15 @@ static short int Edge[6][4] = {
     { 9, 6,10, 1},
 };
 
-static void PerspBox(int front, double *x, double *y, double *z,
+
+static void PerspBox(int front, double *x, double *y, double *z, 
 		     char *EdgeDone, pGEDevDesc dd)
 {
     Vector3d u0, v0, u1, v1, u2, v2, u3, v3;
     double d[3], e[3];
     int f, i, p0, p1, p2, p3, nearby;
     int ltysave = gpptr(dd)->lty;
-
+    
     gpptr(dd)->lty = front ? LTY_DOTTED : LTY_SOLID;
 
     for (f = 0; f < 6; f++) {

@@ -24,9 +24,9 @@ SEXP Tsparse_validate(SEXP x)
 
     for (j = 0; j < nnz; j++) {
 	if (xi[j] < 0 || xi[j] >= nrow)
-	    return mkString(_("all row indices must be between 0 and nrow-1"));
+	    return mkString(_("all row indices (slot 'i') must be between 0 and nrow-1 in a TsparseMatrix"));
 	if (xj[j] < 0 || xj[j] >= ncol)
-	    return mkString(_("all column indices must be between 0 and ncol-1"));
+	    return mkString(_("all column indices (slot 'j') must be between 0 and ncol-1 in a TsparseMatrix"));
     }
     return ScalarLogical(1);
 }
@@ -34,7 +34,7 @@ SEXP Tsparse_validate(SEXP x)
 SEXP Tsparse_to_Csparse(SEXP x, SEXP tri)
 {
     CHM_TR chxt = AS_CHM_TR__(x); /* << should *preserve*  diag = "U" ! */
-    CHM_SP chxs = cholmod_l_triplet_to_sparse(chxt, chxt->nnz, &c);
+    CHM_SP chxs = cholmod_triplet_to_sparse(chxt, chxt->nnz, &c);
     int tr = asLogical(tri);
     int Rkind = (chxt->xtype != CHOLMOD_PATTERN) ? Real_kind(x) : 0;
     R_CheckStack();
@@ -49,7 +49,7 @@ SEXP Tsparse_to_Csparse(SEXP x, SEXP tri)
 SEXP Tsparse_to_tCsparse(SEXP x, SEXP uplo, SEXP diag)
 {
     CHM_TR chxt = AS_CHM_TR__(x);
-    CHM_SP chxs = cholmod_l_triplet_to_sparse(chxt, chxt->nnz, &c);
+    CHM_SP chxs = cholmod_triplet_to_sparse(chxt, chxt->nnz, &c);
     int Rkind = (chxt->xtype != CHOLMOD_PATTERN) ? Real_kind(x) : 0;
     R_CheckStack();
 

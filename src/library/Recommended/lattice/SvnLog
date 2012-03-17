@@ -1,4 +1,94 @@
 ------------------------------------------------------------------------
+r706 | deepayan | 2011-10-18 23:48:18 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/xyplot.R
+   M /pkg/man/panel.xyplot.Rd
+
+'spline' is a new possible 'type' in panel.xyplot
+------------------------------------------------------------------------
+r705 | deepayan | 2011-10-18 23:42:38 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/legend.R
+   M /pkg/man/levelplot.Rd
+
+new components in colorkey to specify parameters of colorkey border, ticks, and labels
+------------------------------------------------------------------------
+r704 | deepayan | 2011-10-18 23:20:15 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/miscellaneous.R
+
+'pos' can now be a vector in ltext()
+------------------------------------------------------------------------
+r703 | deepayan | 2011-10-18 18:16:51 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/man/interaction.Rd
+   M /pkg/man/panel.superpose.Rd
+
+formatting and clarifications
+------------------------------------------------------------------------
+r702 | deepayan | 2011-10-18 18:15:03 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/levelplot.R
+   M /pkg/R/settings.R
+   M /pkg/man/levelplot.Rd
+
+made it easier to use raster images in levelplot
+------------------------------------------------------------------------
+r701 | deepayan | 2011-10-18 18:12:16 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/bwplot.R
+
+removed old version of panel.bwplot
+------------------------------------------------------------------------
+r700 | deepayan | 2011-10-18 01:12:47 +0530 (Tue, 18 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/NAMESPACE
+   M /pkg/R/axis.R
+   M /pkg/R/print.trellis.R
+
+depend on R 2.14 for dev.hold/flush.
+------------------------------------------------------------------------
+r699 | paul | 2011-10-03 05:19:37 +0530 (Mon, 03 Oct 2011) | 1 line
+Changed paths:
+   M /pkg/R/strip.R
+
+fix to naming of strip.default viewports (were missing plot prefix)
+------------------------------------------------------------------------
+r694 | deepayan | 2011-08-19 20:25:34 +0530 (Fri, 19 Aug 2011) | 1 line
+Changed paths:
+   M /pkg/inst/po/de/LC_MESSAGES/R-lattice.mo
+   M /pkg/inst/po/en@quot/LC_MESSAGES/R-lattice.mo
+   M /pkg/inst/po/fr/LC_MESSAGES/R-lattice.mo
+   M /pkg/man/histogram.Rd
+   M /pkg/po/R-de.po
+   M /pkg/po/R-en@quot.po
+   M /pkg/po/R-fr.po
+   M /pkg/po/R-lattice.pot
+   M /pkg/update.sh
+
+formatting, translations
+------------------------------------------------------------------------
+r693 | deepayan | 2011-08-19 20:24:50 +0530 (Fri, 19 Aug 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/R/print.trellis.R
+
+use dev.hold/dev.flush for smoother transitions
+------------------------------------------------------------------------
+r692 | deepayan | 2011-08-19 20:23:19 +0530 (Fri, 19 Aug 2011) | 1 line
+Changed paths:
+   M /pkg/R/histogram.R
+
+fixed incorrect check for equal bins
+------------------------------------------------------------------------
+r691 | deepayan | 2011-08-10 20:20:00 +0530 (Wed, 10 Aug 2011) | 1 line
+Changed paths:
+   M /pkg/DESCRIPTION
+   M /pkg/R/zzz.R
+
+Removed redundant .First.lib
+------------------------------------------------------------------------
 r679 | deepayan | 2011-06-26 15:27:13 +0530 (Sun, 26 Jun 2011) | 1 line
 Changed paths:
    M /pkg/DESCRIPTION

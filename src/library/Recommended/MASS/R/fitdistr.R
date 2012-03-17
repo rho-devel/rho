@@ -30,6 +30,7 @@ fitdistr <- function(x, densfun, start, ...)
     if(any(!is.finite(x))) stop("'x' contains missing or infinite values")
     if(missing(densfun) || !(is.function(densfun) || is.character(densfun)))
         stop("'densfun' must be supplied as a function or name")
+    control <- list()
     n <- length(x)
     if(is.character(densfun)) {
         distname <- tolower(densfun)
@@ -136,6 +137,7 @@ fitdistr <- function(x, densfun, start, ...)
             m <- mean(x); v <- var(x)
             start <- list(shape = m^2/v, rate = m/v)
             start <- start[!is.element(names(start), dots)]
+            control <- list(parscale = c(1, start$rate))
         }
         if(distname == "negative binomial" && is.null(start)) {
             m <- mean(x); v <- var(x)
@@ -174,6 +176,7 @@ fitdistr <- function(x, densfun, start, ...)
     Call$par <- start
     Call$fn <- if("log" %in% args) mylogfn else myfn
     Call$hessian <- TRUE
+    if(length(control)) Call$control <- control
     if(is.null(Call$method)) {
         if(any(c("lower", "upper") %in% names(Call))) Call$method <- "L-BFGS-B"
         else if (length(start) > 1L) Call$method <- "BFGS"

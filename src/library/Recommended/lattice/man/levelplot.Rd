@@ -19,7 +19,8 @@ contourplot(x, data, \dots)
           allow.multiple = is.null(groups) || outer,
           outer = TRUE,
           aspect = "fill",
-          panel = lattice.getOption("panel.levelplot"),
+          panel = if (useRaster) lattice.getOption("panel.levelplot.raster")
+                  else lattice.getOption("panel.levelplot"),
           prepanel = NULL,
           scales = list(),
           strip = TRUE,
@@ -35,6 +36,7 @@ contourplot(x, data, \dots)
           drop.unused.levels =
               lattice.getOption("drop.unused.levels"),
           \dots,
+          useRaster = FALSE,
           lattice.options = NULL,
           default.scales = list(),
           default.prepanel =
@@ -78,7 +80,7 @@ contourplot(x, data, \dots)
 
 }
 \description{
-  Draw Level Plots and Contour plots.
+  Draws false color level plots and contour plots.
 }
 \arguments{
   \item{x}{
@@ -127,7 +129,7 @@ contourplot(x, data, \dots)
     as described in \code{\link{xyplot}}.
   }
   \item{at}{
-    numeric vector giving breakpoints along the range of
+    A numeric vector giving breakpoints along the range of
     \code{z}. Contours (if any) will be drawn at these heights, and the
     regions in between would be colored using \code{col.regions}.  In
     the latter case, values outside the range of \code{at} will not be
@@ -199,6 +201,14 @@ contourplot(x, data, \dots)
       \item{\code{interpolate}:}{ Logical flag, passed to
 	\code{\link{rasterGrob}} when \code{raster=TRUE}. }
 
+      \item{\code{axis.line}:}{ A list giving graphical parameters for
+	the color key boundary and tick marks.  Defaults to
+	\code{trellis.par.get("axis.line")}.  }
+
+      \item{\code{axis.text}:}{ A list giving graphical parameters for
+	the tick mark labels on the color key.  Defaults to
+	\code{trellis.par.get("axis.text")}.  }
+
     }
   }
   \item{contour}{
@@ -219,7 +229,8 @@ contourplot(x, data, \dots)
     logical, whether to use pretty cut locations and labels
   }
   \item{region}{
-    logical, whether regions between contour lines should be filled
+    A logical flag, indicating whether regions between contour lines
+    should be filled as in a level plot.
   }
   \item{allow.multiple, outer, prepanel, scales, strip, groups, xlab,
     xlim, ylab, ylim, drop.unused.levels, lattice.options,
@@ -230,9 +241,27 @@ contourplot(x, data, \dots)
   \item{default.prepanel}{
     Fallback prepanel function.  See \code{\link{xyplot}}.
   }
-  \item{\dots}{ other arguments.  Some are processed by \code{levelplot}
-    or \code{contourplot}, and those unrecognized are passed on to the
-    panel function.  }
+  \item{\dots}{
+    Further arguments may be supplied.  Some are processed by
+    \code{levelplot} or \code{contourplot}, and those that are
+    unrecognized are passed on to the panel function.
+  }
+  \item{useRaster}{
+    A logical flag indicating whether raster representations should be
+    used, both for the false color image and the color key (if present).
+    Effectively, setting this to \code{TRUE} changes the default panel
+    function from \code{\link{panel.levelplot}} to
+    \code{\link{panel.levelplot.raster}}, and sets the default value of
+    \code{colorkey$raster} to \code{TRUE}.
+    
+    Note that \code{\link{panel.levelplot.raster}} provides only a
+    subset of the features of \code{\link{panel.levelplot}}, but setting
+    \code{useRaster=TRUE} will not check whether any of the additional
+    features have been requested.
+
+    Not all devices support raster images.  For devices that appear to
+    lack support, \code{useRaster=TRUE} will be ignored with a warning.
+  }
 }
 \details{
   These and all other high level Trellis functions have several

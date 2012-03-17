@@ -42,12 +42,10 @@ SEXP dsyMatrix_norm(SEXP obj, SEXP type)
 SEXP dsyMatrix_rcond(SEXP obj, SEXP type)
 {
     SEXP trf = dsyMatrix_trf(obj);
-    char typnm[] = {'\0', '\0'};
     int *dims = INTEGER(GET_SLOT(obj, Matrix_DimSym)), info;
     double anorm = get_norm_sy(obj, "O");
     double rcond;
 
-    typnm[0] = La_rcond_type(CHAR(asChar(type)));
     F77_CALL(dsycon)(uplo_P(trf), dims,
 		     REAL   (GET_SLOT(trf, Matrix_xSym)), dims,
 		     INTEGER(GET_SLOT(trf, Matrix_permSym)),

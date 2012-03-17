@@ -289,7 +289,7 @@ colCheck <- function(a, b) {
 is.na_nsp <- function(x) {
     d <- x@Dim
     dn <- x@Dimnames
-    ## step-wise construction ==> no validity for speedup
+    ## step-wise construction ==> no validity check for speedup
     r <- new(if(d[1] == d[2] && identical(dn[[1]], dn[[2]]))
 	     "nsCMatrix" else "ngCMatrix")
     r@Dim <- d

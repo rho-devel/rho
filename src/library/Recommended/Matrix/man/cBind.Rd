@@ -42,8 +42,14 @@ rBind(..., deparse.level = 1)
 \value{
   typically a \sQuote{matrix-like} object of a similar
   \code{\link{class}} as the first argument in \code{\dots}.
+
+  Note that sometimes by default, the result is a
+  \code{\linkS4class{sparseMatrix}} if one of the arguments is (even in
+  the case where this is not efficient).  In other cases,
+  the result is chosen to be sparse when there are more zero entries is
+  than non-zero ones (as the default \code{sparse} in
+  \code{\link{Matrix}()}).
 }
-% \references{ ~put references to the literature/web site here ~ }
 \author{Martin Maechler}
 \seealso{\code{\link{cbind2}}, \code{\link{cbind}},
   \code{\link[methods]{Methods}}.

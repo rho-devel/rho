@@ -131,8 +131,6 @@ SEXP do_machine(SEXP call, SEXP op, SEXP args, SEXP env)
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#ifdef _R_HAVE_TIMING_
-
 static DWORD StartTime;
 
 static FILETIME Create, Exit, Kernel, User;
@@ -171,7 +169,6 @@ double R_getClockIncrement(void)
 {
     return 1.0 / 100.0;
 }
-#endif /* _R_HAVE_TIMING_ */
 
 /*
  * flag =0 don't wait/ignore stdout

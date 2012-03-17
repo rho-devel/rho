@@ -164,14 +164,18 @@ assert.EQ.mat(crossprod(tru, cu3),
 
 cl2
 cu2. <- Diagonal(4) + Matrix(c(rep(0,9),14,0,0,6,0,0,0), 4,4)
+D4 <- Diagonal(4, x=10:7)
 stopifnot(all(cu2 == cu2.),# was wrong for ver. <= 0.999375-4
 	  is(cu2, "dtCMatrix"), is(cl2, "dtCMatrix"), # triangularity preserved
 	  cu2@diag == "U", cl2@diag == "U",# UNIT-triangularity preserved
-	  all.equal(Diagonal(4, x=10) %*% cu,
-		    Diagonal(4, x=10) %*% as.matrix(cu)),
-          identical(t(cl2), cu2), # !!
-          identical( crossprod(cu), Matrix( crossprod(as.matrix(cu)),sparse=TRUE)),
-          identical(tcrossprod(cu), Matrix(tcrossprod(as.matrix(cu)),sparse=TRUE)))
+	  all.equal(D4 %*% cu, D4 %*% as.matrix(cu)),
+	  all.equal(cu %*% D4, as.matrix(cu) %*% D4),
+	  isValid(su <- crossprod(cu), "dsCMatrix"),
+	  all(D4 %*% su == D4 %*% as.mat(su)),
+	  all(su %*% D4 == as.mat(su) %*% D4),
+	  identical(t(cl2), cu2), # !!
+	  identical( crossprod(cu), Matrix( crossprod(as.matrix(cu)),sparse=TRUE)),
+	  identical(tcrossprod(cu), Matrix(tcrossprod(as.matrix(cu)),sparse=TRUE)))
 tr8 <- kronecker(rbind(c(2,0),c(1,4)), cl2)
 T8 <- tr8 %*% (tr8/2) # triangularity preserved?
 T8.2 <- (T8 %*% T8) / 4

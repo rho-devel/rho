@@ -237,7 +237,7 @@ void LSQPdelcon(matrix *Q,matrix *T,matrix *Rf,matrix *Py,matrix *PX,int sth)
 */
 
 { int i,j,colj,coli,k,Tr,Tc,Qr,T1r,T1c;
-  double r,s,c,xi,xj,**TM,**QM,**T1M,*TV,*QV,*T1V,*RfV,*RfV1;
+  double r,s,c,xi,xj,**TM,**QM,*TV,*QV,*T1V,*RfV,*RfV1;
   Tr=T->r;TM=T->M;QM=Q->M;Tc=T->c;Qr=Q->r;
   for (i=sth+1;i<Tr;i++)   /* work down the rows from the deletion point (row not removed yet) */
   { coli=Tc-i-1;colj=Tc-i;    /* coli is zeroed - colj=coli+1 */
@@ -290,7 +290,7 @@ void LSQPdelcon(matrix *Q,matrix *T,matrix *Rf,matrix *Py,matrix *PX,int sth)
   }
   /* Now actually remove the extra row from T - this could be done awefully efficiently */
   /* by shuffling the pointers to rows, but it would probably end in tears, so I haven't */
-  T->r--;T1M=T->M;T1r=T->r;T1c=T->c;
+  T->r--;T1r=T->r;T1c=T->c;
   for (k=0;k<T1r;k++)
   { T1V=TM[k];TV=TM[k];
     for (j=0;j<T1c-k-1;j++) T1V[j]=0.0;

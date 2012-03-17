@@ -47,7 +47,13 @@ expm(x)
   has been fixed by Martin Maechler.
 }
 %\note{}
-\seealso{\code{\link{Schur}}}
+\seealso{\code{\link{Schur}}; additionally,
+    \code{\link[expm]{expm}}, \code{\link[expm]{logm}}, etc in package \pkg{expm}.
+}
+\note{The \pkg{expm} package contains newer (partly faster and more
+  accurate) algorithms for \code{expm()} and includes
+  \code{\link[expm]{logm}} and \code{\link[expm]{sqrtm}}.
+}
 \examples{
 (m1 <- Matrix(c(1,0,1,1), nc = 2))
 (e1 <- expm(m1)) ; e <- exp(1)

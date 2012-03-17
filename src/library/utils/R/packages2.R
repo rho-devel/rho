@@ -202,9 +202,9 @@ install.packages <-
     ok <- file.info(lib)$isdir & (file.access(lib, 2) == 0)
     if(length(lib) > 1 && any(!ok))
         stop(sprintf(ngettext(sum(!ok),
-                              "'lib' element '%s' is not a writable directory",
-                              "'lib' elements '%s' are not writable directories"),
-                     paste(lib[!ok], collapse=", ")), domain = NA)
+                              "'lib' element %s is not a writable directory",
+                              "'lib' elements %s are not writable directories"),
+                     paste(sQuote(lib[!ok]), collapse=", ")), domain = NA)
     if(length(lib) == 1L && .Platform$OS.type == "windows") {
         ## file.access is unreliable on Windows, especially >= Vista.
         ## the only known reliable way is to try it
@@ -223,9 +223,9 @@ install.packages <-
         userdir <- unlist(strsplit(Sys.getenv("R_LIBS_USER"),
                                    .Platform$path.sep))[1L]
         if(interactive() && !file.exists(userdir)) {
-            msg <- gettext("Would you like to create a personal library\n'%s'\nto install packages into?")
+            msg <- gettext("Would you like to create a personal library\n%s\nto install packages into?")
             if(.Platform$OS.type == "windows") {
-                ans <- winDialog("yesno", sprintf(msg, userdir))
+                ans <- winDialog("yesno", sprintf(msg, sQuote(userdir)))
                 if(ans != "YES") stop("unable to install packages")
             } else {
                 ans <- readline(paste(sprintf(msg, userdir), " (y/n) "))
@@ -279,7 +279,7 @@ install.packages <-
     } else {
         if(substr(type, 1L, 10L) == "mac.binary") {
             if(!length(grep("darwin", R.version$platform)))
-                stop("cannot install MacOS X binary packages on this plaform")
+                stop("cannot install MacOS X binary packages on this platform")
             .install.macbinary(pkgs = pkgs, lib = lib, contriburl = contriburl,
                                method = method, available = available,
                                destdir = destdir,
@@ -288,7 +288,7 @@ install.packages <-
         }
 
         if(type %in% "win.binary")
-            stop("cannot install Windows binary packages on this plaform")
+            stop("cannot install Windows binary packages on this platform")
 
         if(!file.exists(file.path(R.home("bin"), "INSTALL")))
             stop("This version of R is not set up to install source packages\nIf it was installed from an RPM, you may need the R-devel RPM")
@@ -330,18 +330,20 @@ install.packages <-
                          shQuote(update[i, 1L]))
             if(system(cmd) > 0L)
                 warning(gettextf(
-                 "installation of package '%s' had non-zero exit status",
-                                update[i, 1L]), domain = NA)
+                 "installation of package %s had non-zero exit status",
+                                sQuote(update[i, 1L])),
+                        domain = NA)
         }
         return(invisible())
     }
 
     tmpd <- destdir
-    nonlocalcran <- length(grep("^file:", contriburl)) < length(contriburl)
-    if(is.null(destdir) && nonlocalcran) {
+    nonlocalrepos <- length(grep("^file:", contriburl)) < length(contriburl)
+    if(is.null(destdir) && nonlocalrepos) {
         tmpd <- file.path(tempdir(), "downloaded_packages")
         if (!file.exists(tmpd) && !dir.create(tmpd))
-            stop(gettextf("unable to create temporary directory '%s'", tmpd),
+            stop(gettextf("unable to create temporary directory %s",
+                          sQuote(tmpd)),
                  domain = NA)
     }
 
@@ -376,26 +378,41 @@ install.packages <-
             cmd0 <- paste(cmd0, "--pkglock")
             tmpd <- file.path(tempdir(), "make_packages")
             if (!file.exists(tmpd) && !dir.create(tmpd))
-                stop(gettextf("unable to create temporary directory '%s'", tmpd),
+                stop(gettextf("unable to create temporary directory %s",
+                              sQuote(tmpd)),
                      domain = NA)
             mfile <- file.path(tmpd, "Makefile")
             conn <- file(mfile, "wt")
-            cat("all: ", paste(paste(update[, 1L], ".ts", sep=""),
-                               collapse=" "),
-                "\n", sep = "", file = conn)
+            deps <- paste(paste(update[, 1L], ".ts", sep=""), collapse=" ")
+            deps <- strwrap(deps, width = 75, exdent = 2)
+            deps <- paste(deps, collapse=" \\\n")
+            cat("all: ", deps, "\n", sep = "", file = conn)
+            nms <- rownames(available)
+            aDL <- vector("list", length(nms))
+            names(aDL) <- nms
+            for (i in seq_along(nms)) aDL[[i]] <- .clean_up_dependencies(available[i, c("Depends", "Imports", "LinkingTo"), drop = FALSE])
             for(i in seq_len(nrow(update))) {
                 pkg <- update[i, 1L]
                 cmd <- paste(cmd0, "-l", shQuote(update[i, 2L]),
                              getConfigureArgs(update[i, 3L]),
                              getConfigureVars(update[i, 3L]),
-                             update[i, 3L],
+                             shQuote(update[i, 3L]),
                              ">", paste(pkg, ".out", sep=""), "2>&1")
-                deps <- DL[[pkg]]
+                ## We need recursive dependencies, not just direct ones
+                p <- DL[[pkg]]
+                repeat {
+                    extra <- unlist(aDL[p[p %in% nms]])
+                    extra <- extra[extra != pkg]
+                    deps <- unique(c(p, extra))
+                    if (length(deps) <= length(p)) break
+                    p <- deps
+                }
                 deps <- deps[deps %in% pkgs]
+                ## very unlikely to be too long
                 deps <- if(length(deps))
                     paste(paste(deps, ".ts", sep=""), collapse=" ") else ""
                 cat(paste(pkg, ".ts: ", deps, sep=""),
-                    paste("\t@echo installing package", pkg),
+                    paste("\t@echo begin installing package", sQuote(pkg)),
                     paste("\t@", cmd, " && touch ", pkg, ".ts", sep=""),
                     paste("\t@cat ", pkg, ".out", sep=""),
                     "", sep="\n", file = conn)
@@ -426,11 +443,11 @@ install.packages <-
                              update[i, 3L])
                 status <- system(cmd)
                 if(status > 0L)
-                    warning(gettextf("installation of package '%s' had non-zero exit status",
-                                     update[i, 1L]), domain = NA)
+                    warning(gettextf("installation of package %s had non-zero exit status",
+                                     sQuote(update[i, 1L])), domain = NA)
             }
         }
-        if(!is.null(tmpd) && is.null(destdir))
+        if(nonlocalrepos && !is.null(tmpd) && is.null(destdir))
             cat("\n", gettextf("The downloaded packages are in\n\t%s",
                                sQuote(normalizePath(tmpd, mustWork = FALSE))),
                 "\n", sep = "")

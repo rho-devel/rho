@@ -421,6 +421,7 @@ static void *RObjToCPtr(SEXP s, int naok, int dup, int narg, int Fort,
 		    cptr[i] = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = 3*inb;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
+		    errno = 0; /* precaution */
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
 		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
@@ -546,6 +547,7 @@ static SEXP CPtrToRObj(void *p, SEXP arg, int Fort,
 		    p = outbuf = static_cast<char*>(R_alloc(outb0 + 1, sizeof(char)));
 		    outb = outb0;
 		    Riconv(obj, NULL, NULL, &outbuf, &outb);
+		    errno = 0; /* precaution */
 		    res = Riconv(obj, &inbuf , &inb, &outbuf, &outb);
 		    if(res == CXXRCONSTRUCT(std::size_t, -1) && errno == E2BIG) {
 			outb0 *= 3;
@@ -2374,7 +2376,7 @@ SEXP attribute_hidden do_dotCode(SEXP call, SEXP op, SEXP args, SEXP env)
 
 static const struct {
     const char *name;
-    SEXPTYPE type;
+    const SEXPTYPE type;
 }
 typeinfo[] = {
     {"logical",	  LGLSXP },

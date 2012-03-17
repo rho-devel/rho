@@ -1,8 +1,8 @@
 
-R version 2.13.1 RC (2011-07-05 r56282)
+R version 2.14.0 Patched (2011-12-05 r57815)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -1307,10 +1307,10 @@ Residual standard error: 2.351 on 8 degrees of freedom
 > ### ** Examples
 > 
 > DNase.1 <- subset(DNase, Run == 1)
-> SSlogis(log(DNase.1$conc), 4.5, 2.3, 0.7)   # response only
- [1] 0.002252677 0.002252677 0.016271550 0.016271550 0.043533453 0.043533453
- [7] 0.115296351 0.115296351 0.297460928 0.297460928 0.720167577 0.720167577
-[13] 1.525513075 1.525513075 2.609666856 2.609666856
+> SSgompertz(log(DNase.1$conc), 4.5, 2.3, 0.7)   # response only
+ [1] 0.00525729 0.00525729 0.07323255 0.07323255 0.18049064 0.18049064
+ [7] 0.36508763 0.36508763 0.63288772 0.63288772 0.97257180 0.97257180
+[13] 1.36033340 1.36033340 1.76786902 1.76786902
 > Asym <- 4.5; b2 <- 2.3; b3 <- 0.7
 > SSgompertz(log(DNase.1$conc), Asym, b2, b3) # response and gradient
  [1] 0.00525729 0.00525729 0.07323255 0.07323255 0.18049064 0.18049064
@@ -1714,10 +1714,10 @@ Variances:
 > require(graphics)
 > 
 > summary(fm1 <- aov(breaks ~ wool + tension, data = warpbreaks))
-            Df Sum Sq Mean Sq F value   Pr(>F)   
-wool         1  450.7  450.67  3.3393 0.073614 . 
-tension      2 2034.3 1017.13  7.5367 0.001378 **
-Residuals   50 6747.9  134.96                    
+            Df Sum Sq Mean Sq F value  Pr(>F)   
+wool         1    451   450.7   3.339 0.07361 . 
+tension      2   2034  1017.1   7.537 0.00138 **
+Residuals   50   6748   135.0                   
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > TukeyHSD(fm1, "tension", ordered = TRUE)
@@ -1970,7 +1970,7 @@ Single term deletions
 Model:
 Fertility ~ Agriculture + Examination + Education + Catholic + 
     Infant.Mortality
-                 Df Sum of Sq  RSS AIC F value   Pr(F)    
+                 Df Sum of Sq  RSS AIC F value  Pr(>F)    
 <none>                        2105 191                    
 Agriculture       1       308 2413 195    5.99  0.0187 *  
 Examination       1        53 2158 190    1.03  0.3155    
@@ -1999,10 +1999,10 @@ Single term deletions
 
 Model:
 counts ~ outcome + treatment
-          Df Deviance  AIC  LRT Pr(Chi)  
-<none>           5.13 56.8               
-outcome    2    10.58 58.2 5.45   0.065 .
-treatment  2     5.13 52.8 0.00   1.000  
+          Df Deviance  AIC  LRT Pr(>Chi)  
+<none>           5.13 56.8                
+outcome    2    10.58 58.2 5.45    0.065 .
+treatment  2     5.13 52.8 0.00    1.000  
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > drop1(glm.D93, test="F")
@@ -2012,10 +2012,18 @@ Single term deletions
 
 Model:
 counts ~ outcome + treatment
-          Df Deviance  AIC F value Pr(F)
-<none>           5.13 56.8              
-outcome    2    10.58 58.2    2.13  0.23
-treatment  2     5.13 52.8    0.00  1.00
+          Df Deviance  AIC F value Pr(>F)
+<none>           5.13 56.8               
+outcome    2    10.58 58.2    2.13   0.23
+treatment  2     5.13 52.8    0.00   1.00
+> add1(glm.D93, scope=~outcome*treatment, test="Rao") ## Pearson Chi-square 
+Single term additions
+
+Model:
+counts ~ outcome + treatment
+                  Df Deviance  AIC Rao score Pr(>Chi)
+<none>                   5.13 56.8                   
+outcome:treatment  4     0.00 59.6      5.17     0.27
 > ## Don't show: 
 > options(od)
 > ## End Don't show
@@ -2509,12 +2517,21 @@ Response: counts
 Terms added sequentially (first to last)
 
 
-          Df Deviance Resid. Df Resid. Dev P(>|Chi|)  
-NULL                          8    10.5814            
-outcome    2   5.4523         6     5.1291   0.06547 .
-treatment  2   0.0000         4     5.1291   1.00000  
+          Df Deviance Resid. Df Resid. Dev Pr(>Chi)  
+NULL                          8    10.5814           
+outcome    2   5.4523         6     5.1291  0.06547 .
+treatment  2   0.0000         4     5.1291  1.00000  
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+> glm.D93a <- update(glm.D93, ~treatment*outcome) ## equivalent to Pearson Chi-square
+> anova(glm.D93, glm.D93a, test = "Rao")
+Analysis of Deviance Table
+
+Model 1: counts ~ outcome + treatment
+Model 2: counts ~ treatment + outcome + treatment:outcome
+  Resid. Df Resid. Dev Df Deviance    Rao Pr(>Chi)
+1         4     5.1291                            
+2         0     0.0000  4   5.1291 5.1732     0.27
 > 
 > 
 > 
@@ -2949,19 +2966,19 @@ Estimated effects are balanced
 > summary(npk.aovE)
 
 Error: block
-          Df  Sum Sq Mean Sq F value Pr(>F)
-N:P:K      1  37.002  37.002  0.4832 0.5252
-Residuals  4 306.293  76.573               
+          Df Sum Sq Mean Sq F value Pr(>F)
+N:P:K      1   37.0   37.00   0.483  0.525
+Residuals  4  306.3   76.57               
 
 Error: Within
-          Df  Sum Sq Mean Sq F value   Pr(>F)   
-N          1 189.282 189.282 12.2587 0.004372 **
-P          1   8.402   8.402  0.5441 0.474904   
-K          1  95.202  95.202  6.1657 0.028795 * 
-N:P        1  21.282  21.282  1.3783 0.263165   
-N:K        1  33.135  33.135  2.1460 0.168648   
-P:K        1   0.482   0.482  0.0312 0.862752   
-Residuals 12 185.287  15.441                    
+          Df Sum Sq Mean Sq F value  Pr(>F)   
+N          1 189.28  189.28  12.259 0.00437 **
+P          1   8.40    8.40   0.544 0.47490   
+K          1  95.20   95.20   6.166 0.02880 * 
+N:P        1  21.28   21.28   1.378 0.26317   
+N:K        1  33.14   33.14   2.146 0.16865   
+P:K        1   0.48    0.48   0.031 0.86275   
+Residuals 12 185.29   15.44                   
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > options(op)# reset to previous
@@ -3490,12 +3507,12 @@ Time Series:
 Start = 1 
 End = 63 
 Frequency = 1 
- [1]  0.55581369  0.24784310 -0.81731397 -0.38489074 -0.23879363 -0.02072454
- [7] -0.51659746 -0.52656352 -0.14929470  0.60799345  0.48274167  0.45161036
-[13]  0.09619957 -0.67131840 -0.69255089 -0.56224855 -0.19460329  0.53033906
-[19]  0.77731208  0.40648891 -0.02697881  0.08101538  0.22706667 -0.10950179
-[25] -0.38234788 -0.13676247  0.27995532  0.23211867  0.53580487  0.43571145
-[31] -0.07756004 -0.03502284 -0.56957456  0.26261214  1.09213953  0.64829971
+ [1]  0.55638574  0.24800500 -0.81744783 -0.38508849 -0.23890454 -0.02072714
+ [7] -0.51654590 -0.52651638 -0.14927781  0.60798558  0.48272646  0.45160066
+[13]  0.09619832 -0.67131480 -0.69254708 -0.56224691 -0.19460368  0.53033791
+[19]  0.77731125  0.40648873 -0.02697856  0.08101569  0.22706682 -0.10950180
+[25] -0.38234797 -0.13676254  0.27995530  0.23211869  0.53580489  0.43571147
+[31] -0.07756004 -0.03502285 -0.56957457  0.26261214  1.09213953  0.64829971
 [37] -0.15198589 -0.14659775 -0.27894630  0.91394089  0.68582187  0.71550492
 [43]  0.24452551 -0.37501019 -0.29768875 -0.94420587  0.11988146  0.29844068
 [49]  1.26774646  0.99077203  0.14790214  0.02779843 -0.57682386 -0.90337297
@@ -3508,11 +3525,11 @@ Time Series:
 Start = 1 
 End = 63 
 Frequency = 1 
- [1] -0.08082626 -0.37591270 -1.05660766 -0.99223818 -0.15203570 -0.06140229
- [7] -0.55850504 -0.54699388 -0.72097968 -0.98045782 -0.80880880 -0.61218117
-[13] -0.66268962 -0.29302831 -0.83022588 -0.08803565 -0.37932453  0.10532583
-[19]  0.08033262 -0.29269089 -0.69193389  0.81677316 -0.25402283 -0.08812259
-[25] -0.34117757  0.29026867 -0.54848673 -0.44974248 -0.34110520 -0.17826306
+ [1] -0.08101433 -0.37596592 -1.05656365 -0.99217317 -0.15199924 -0.06140144
+ [7] -0.55852200 -0.54700937 -0.72098523 -0.98045523 -0.80880380 -0.61217798
+[13] -0.66268921 -0.29302949 -0.83022714 -0.08803618 -0.37932440  0.10532621
+[19]  0.08033289 -0.29269083 -0.69193397  0.81677306 -0.25402288 -0.08812258
+[25] -0.34117754  0.29026870 -0.54848673 -0.44974248 -0.34110521 -0.17826307
 [31] -0.35396760  0.98465366  0.21136827  0.05042017 -0.02400316 -0.42642295
 [37] -0.61906692  1.92955621 -0.36050863 -0.68488280  0.10141464  0.64328982
 [43]  0.31906603  0.17275054 -0.13570368 -0.13451166 -0.11717037  0.02330814
@@ -3654,7 +3671,7 @@ sigma^2 estimated as 0.4566:  log likelihood = -101.2,  aic = 212.4
 > x <- matrix(rnorm(30), ncol=3)
 > hc <- hclust(dist(x), method="complete")
 > 
-> if(require(cluster, quietly=TRUE)) {# is a recommended package
+> if(require("cluster", quietly=TRUE)) {# is a recommended package
 +   ag <- agnes(x, method="complete")
 +   hcag <- as.hclust(ag)
 +   ## The dendrograms order slightly differently:
@@ -3684,7 +3701,7 @@ detaching ‘package:cluster’
 > 
 > asOneSidedFormula("age")
 ~age
-<environment: 0x3c52ac0>
+<environment: 0x45f6b68>
 > asOneSidedFormula(~ age)
 ~age
 > 
@@ -3888,8 +3905,20 @@ probability of success
 > require(graphics)
 > 
 > ## the standard version
-> qbirthday()
+> qbirthday() # 23
 [1] 23
+> ## probability of > 2 people with the same birthday
+> pbirthday(23, coincident = 3)
+[1] 0.01441541
+> 
+> ## examples from Diaconis & Mosteller p. 858.
+> ## 'coincidence' is that husband, wife, daughter all born on the 16th
+> qbirthday(classes = 30, coincident = 3) # approximately 18
+[1] 18
+> qbirthday(coincident = 4)  # exact value 187
+[1] 187
+> qbirthday(coincident = 10) # exact value 1181
+[1] 1179
 > 
 > ## same 4-digit PIN number
 > qbirthday(classes = 10^4)
@@ -3907,22 +3936,8 @@ probability of success
 > pbirthday(1000, coincident = 100)
 [1] 1.531434e-113
 > 
-> ## Accuracy compared to exact calculation
-> x1 <-  sapply(10:100, pbirthday)
-> x2 <- 1-sapply(10:100, function(n) prod((365:(365-n+1))/rep(365,n)))
-> par(mfrow = c(2, 2))
-> plot(x1, x2, xlab = "approximate", ylab = "exact")
-> abline(0, 1)
-> plot(x1, x1-x2, xlab = "approximate", ylab = "error")
-> abline(h = 0)
-> plot(x1, x2, log = "xy", xlab = "approximate", ylab = "exact")
-> abline(0, 1)
-> plot(1-x1, 1-x2, log = "xy", xlab = "approximate", ylab = "exact")
-> abline(0, 1)
 > 
 > 
-> 
-> graphics::par(get("par.postscript", pos = 'CheckExEnv'))
 > cleanEx()
 > nameEx("box.test")
 > ### * box.test
@@ -4035,7 +4050,7 @@ $ycenter
 > 
 > flush(stderr()); flush(stdout())
 > 
-> ### Name: case/variable.names
+> ### Name: case+variable.names
 > ### Title: Case and Variable Names of Fitted Models
 > ### Aliases: case.names case.names.lm variable.names variable.names.lm
 > ### Keywords: regression models
@@ -4747,6 +4762,7 @@ function (V)
     r[cbind(1L:p, 1L:p)] <- 1
     r
 }
+<bytecode: 0x3a40d90>
 <environment: namespace:stats>
 > stopifnot(all.equal(Cl, cov2cor(cov(longley))),
 +           all.equal(cor(longley, method="kendall"),
@@ -6319,7 +6335,7 @@ x :  num [1:8] -2.2 -2 -0.6 0 0.1 0.6 0.8 0.9
 y :  num [1:8] 0.0833 0.1667 0.3333 0.5 0.5833 ...
 yleft :  num 0
 yright :  num 1
-> 
+> stopifnot(all.equal(quantile(Fn12), quantile(y)))
 > 
 > ###----------------- Plotting --------------------------
 > require(graphics)
@@ -6736,7 +6752,8 @@ List of 12
 > gf$linkinv
 function (eta) 
 1/eta
-<environment: 0x64d6f80>
+<bytecode: 0x2af7688>
+<environment: 0x8151c30>
 > gf$variance(-3:4) #- == (.)^2
 [1]  9  4  1  0  1  4  9 16
 > 
@@ -7138,7 +7155,7 @@ attr(,".Environment")
 > environment(as.formula("y ~ x"))
 <environment: R_GlobalEnv>
 > environment(as.formula("y ~ x", env=new.env()))
-<environment: 0x83ef650>
+<environment: 0x9cf60e0>
 > 
 > 
 > ## Create a formula for a model with a large number of variables:
@@ -10237,7 +10254,7 @@ a b
 > nlmod <- nls(y ~  Const + A * exp(B * x))
 Warning in nls(y ~ Const + A * exp(B * x)) :
   No starting values specified for some parameters.
-Intializing ‘Const’, ‘A’, ‘B’ to '1.'.
+Initializing ‘Const’, ‘A’, ‘B’ to '1.'.
 Consider specifying 'start' or using a selfStart model
 > 
 > plot(x,y, main = "nls(*), data, true function and fit, n=100")
@@ -11515,22 +11532,26 @@ attr(,"degree")
 $linkfun
 function (mu) 
 mu
-<environment: 0x80dfce0>
+<bytecode: 0x2b4bc78>
+<environment: 0x7e36170>
 
 $linkinv
 function (eta) 
 eta
-<environment: 0x80dfce0>
+<bytecode: 0x2b4bce8>
+<environment: 0x7e36170>
 
 $mu.eta
 function (eta) 
 rep.int(1, length(eta))
-<environment: 0x80dfce0>
+<bytecode: 0x2b4bd58>
+<environment: 0x7e36170>
 
 $valideta
 function (eta) 
 TRUE
-<environment: 0x80dfce0>
+<bytecode: 0x2b4bf18>
+<environment: 0x7e36170>
 
 $name
 [1] "identity"
@@ -11541,12 +11562,14 @@ attr(,"class")
 $linkfun
 function (mu) 
 mu^lambda
-<environment: 0x80e8390>
+<bytecode: 0x7e37128>
+<environment: 0x7e2ddb0>
 
 $linkinv
 function (eta) 
 pmax(eta^(1/lambda), .Machine$double.eps)
-<environment: 0x80e8390>
+<bytecode: 0x7e37240>
+<environment: 0x7e2ddb0>
 
 > 
 > 
@@ -13704,8 +13727,8 @@ block     N     P     K
  5:11    Mean   :2.886   Mean   :0.5918  
  6:11    3rd Qu.:5.000   3rd Qu.:0.8325  
  3:11    Max.   :8.000   Max.   :2.7200  
-> wide <- reshape(Indometh, v.names="conc", idvar="Subject",
-+                 timevar="time", direction="wide")
+> wide <- reshape(Indometh, v.names = "conc", idvar = "Subject",
++                 timevar = "time", direction = "wide")
 > wide
    Subject conc.0.25 conc.0.5 conc.0.75 conc.1 conc.1.25 conc.2 conc.3 conc.4
 1        1      1.50     0.94      0.78   0.48      0.37   0.19   0.12   0.11
@@ -13722,7 +13745,7 @@ block     N     P     K
 45   0.08   0.10   0.06
 56   0.13   0.10   0.09
 > 
-> reshape(wide, direction="long")
+> reshape(wide, direction = "long")
        Subject time conc
 1.0.25       1 0.25 1.50
 2.0.25       2 0.25 2.03
@@ -13790,8 +13813,8 @@ block     N     P     K
 4.8          4 8.00 0.07
 5.8          5 8.00 0.06
 6.8          6 8.00 0.09
-> reshape(wide, idvar="Subject", varying=list(2:12),
-+         v.names="conc", direction="long")
+> reshape(wide, idvar = "Subject", varying = list(2:12),
++         v.names = "conc", direction = "long")
      Subject time conc
 1.1        1    1 1.50
 2.1        2    1 2.03
@@ -13861,9 +13884,9 @@ block     N     P     K
 6.11       6   11 0.09
 > 
 > ## times need not be numeric
-> df <- data.frame(id=rep(1:4,rep(2,4)),
-+                  visit=I(rep(c("Before","After"),4)),
-+                  x=rnorm(4), y=runif(4))
+> df <- data.frame(id = rep(1:4, rep(2,4)),
++                  visit = I(rep(c("Before","After"), 4)),
++                  x = rnorm(4), y = runif(4))
 > df
   id  visit          x          y
 1  1 Before -0.6264538 0.62911404
@@ -13874,14 +13897,14 @@ block     N     P     K
 6  3  After  0.1836433 0.06178627
 7  4 Before -0.8356286 0.20597457
 8  4  After  1.5952808 0.17655675
-> reshape(df, timevar="visit", idvar="id", direction="wide")
+> reshape(df, timevar = "visit", idvar = "id", direction = "wide")
   id   x.Before  y.Before   x.After    y.After
 1  1 -0.6264538 0.6291140 0.1836433 0.06178627
 3  2 -0.8356286 0.2059746 1.5952808 0.17655675
 5  3 -0.6264538 0.6291140 0.1836433 0.06178627
 7  4 -0.8356286 0.2059746 1.5952808 0.17655675
 > ## warns that y is really varying
-> reshape(df, timevar="visit", idvar="id", direction="wide", v.names="x")
+> reshape(df, timevar = "visit", idvar = "id", direction = "wide", v.names = "x")
 Warning in reshapeWide(data, idvar = idvar, timevar = timevar, varying = varying,  :
   some constant variables (y) are really varying
   id         y   x.Before   x.After
@@ -13892,7 +13915,7 @@ Warning in reshapeWide(data, idvar = idvar, timevar = timevar, varying = varying
 > 
 > 
 > ##  unbalanced 'long' data leads to NA fill in 'wide' form
-> df2 <- df[1:7,]
+> df2 <- df[1:7, ]
 > df2
   id  visit          x          y
 1  1 Before -0.6264538 0.62911404
@@ -13902,7 +13925,7 @@ Warning in reshapeWide(data, idvar = idvar, timevar = timevar, varying = varying
 5  3 Before -0.6264538 0.62911404
 6  3  After  0.1836433 0.06178627
 7  4 Before -0.8356286 0.20597457
-> reshape(df2, timevar="visit", idvar="id", direction="wide")
+> reshape(df2, timevar = "visit", idvar = "id", direction = "wide")
   id   x.Before  y.Before   x.After    y.After
 1  1 -0.6264538 0.6291140 0.1836433 0.06178627
 3  2 -0.8356286 0.2059746 1.5952808 0.17655675
@@ -13910,9 +13933,9 @@ Warning in reshapeWide(data, idvar = idvar, timevar = timevar, varying = varying
 7  4 -0.8356286 0.2059746        NA         NA
 > 
 > ## Alternative regular expressions for guessing names
-> df3 <- data.frame(id=1:4, age=c(40,50,60,50), dose1=c(1,2,1,2),
-+                   dose2=c(2,1,2,1), dose4=c(3,3,3,3))
-> reshape(df3, direction="long", varying=3:5, sep="")
+> df3 <- data.frame(id = 1:4, age = c(40,50,60,50), dose1 = c(1,2,1,2),
++                   dose2 = c(2,1,2,1), dose4 = c(3,3,3,3))
+> reshape(df3, direction = "long", varying = 3:5, sep = "")
     id age time dose
 1.1  1  40    1    1
 2.1  2  50    1    2
@@ -13930,11 +13953,11 @@ Warning in reshapeWide(data, idvar = idvar, timevar = timevar, varying = varying
 > 
 > ## an example that isn't longitudinal data
 > state.x77 <- as.data.frame(state.x77)
-> long <- reshape(state.x77, idvar="state", ids=row.names(state.x77),
-+                 times=names(state.x77), timevar="Characteristic",
-+                 varying=list(names(state.x77)), direction="long")
+> long <- reshape(state.x77, idvar = "state", ids = row.names(state.x77),
++                 times = names(state.x77), timevar = "Characteristic",
++                 varying = list(names(state.x77)), direction = "long")
 > 
-> reshape(long, direction="wide")
+> reshape(long, direction = "wide")
                                    state Population Income Illiteracy Life Exp
 Alabama.Population               Alabama       3615   3624        2.1    69.05
 Alaska.Population                 Alaska        365   6315        1.5    69.31
@@ -14038,7 +14061,7 @@ West Virginia.Population     6.7    41.6   100  24070
 Wisconsin.Population         3.0    54.5   149  54464
 Wyoming.Population           6.9    62.9   173  97203
 > 
-> reshape(long, direction="wide", new.row.names=unique(long$state))
+> reshape(long, direction = "wide", new.row.names = unique(long$state))
                         state Population Income Illiteracy Life Exp Murder
 Alabama               Alabama       3615   3624        2.1    69.05   15.1
 Alaska                 Alaska        365   6315        1.5    69.31   11.3
@@ -14143,10 +14166,9 @@ Wisconsin         54.5   149  54464
 Wyoming           62.9   173  97203
 > 
 > ## multiple id variables
-> df3 <- data.frame(school=rep(1:3,each=4), class=rep(9:10,6),
-+                   time=rep(c(1,1,2,2),3),
-+ score=rnorm(12))
-> wide <- reshape(df3, idvar=c("school","class"), direction="wide")
+> df3 <- data.frame(school = rep(1:3, each = 4), class = rep(9:10, 6),
++                   time = rep(c(1,1,2,2), 3), score = rnorm(12))
+> wide <- reshape(df3, idvar = c("school","class"), direction = "wide")
 > wide
    school class     score.1     score.2
 1       1     9  0.48742905  0.57578135
@@ -14356,15 +14378,15 @@ Contrast 1
 Contrast 1 
   -1.26356 
 > summary(fit, split=list(B=1:2), expand.split = TRUE)
-            Df  Sum Sq Mean Sq F value   Pr(>F)   
-A            1  18.778  18.778  2.2208 0.146606   
-B            2  62.000  31.000  3.6662 0.037629 * 
-  B: C1      1   1.500   1.500  0.1774 0.676621   
-  B: C2      1  60.500  60.500  7.1551 0.011986 * 
-A:B          2  81.556  40.778  4.8226 0.015274 * 
-  A:B: C1    1  13.500  13.500  1.5966 0.216119   
-  A:B: C2    1  68.056  68.056  8.0486 0.008085 **
-Residuals   30 253.667   8.456                    
+            Df Sum Sq Mean Sq F value  Pr(>F)   
+A            1  18.78   18.78   2.221 0.14661   
+B            2  62.00   31.00   3.666 0.03763 * 
+  B: C1      1   1.50    1.50   0.177 0.67662   
+  B: C2      1  60.50   60.50   7.155 0.01199 * 
+A:B          2  81.56   40.78   4.823 0.01527 * 
+  A:B: C1    1  13.50   13.50   1.597 0.21612   
+  A:B: C2    1  68.06   68.06   8.049 0.00809 **
+Residuals   30 253.67    8.46                   
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > ## t.stat^2 is the F value on the A:B: C1 line (with Helmert contrasts)
@@ -15200,11 +15222,12 @@ Step function with continuity 'f'= 0.2 ,  3 knots at
 > ## look at the internal structure:
 > unclass(sfun0)
 function (v) 
-.C("R_approxfun", as.double(x), as.double(y), as.integer(n), 
+.C(C_R_approxfun, as.double(x), as.double(y), as.integer(n), 
     xout = as.double(v), as.integer(length(v)), as.integer(method), 
     as.double(yleft), as.double(yright), as.double(f), NAOK = TRUE, 
     PACKAGE = "stats")$xout
-<environment: 0x6aa3ce8>
+<bytecode: 0x3fd01c8>
+<environment: 0x8d5f7a8>
 attr(,"call")
 stepfun(1:3, y0, f = 0)
 > ls(envir = environment(sfun0))
@@ -15339,54 +15362,54 @@ f.f1c  1.0 1.00    1 2.00  2.0 2.00    2 4.00  4.0  4.00     4  3.00   3.0
 + )
 > CC.aov <- aov(y ~ N * P, data = CC , weights = rep(12, 9))
 > summary(CC.aov)
-            Df  Sum Sq Mean Sq
-N            2 1016.67  508.33
-P            2  917.39  458.69
-N:P          4  399.28   99.82
+            Df Sum Sq Mean Sq
+N            2 1016.7   508.3
+P            2  917.4   458.7
+N:P          4  399.3    99.8
 > 
 > # Split both main effects into linear and quadratic parts.
 > summary(CC.aov, split = list(N = list(L = 1, Q = 2),
 +                              P = list(L = 1, Q = 2)))
-            Df  Sum Sq Mean Sq
-N            2 1016.67  508.33
-  N: L       1 1012.50 1012.50
-  N: Q       1    4.17    4.17
-P            2  917.39  458.69
-  P: L       1  917.35  917.35
-  P: Q       1    0.04    0.04
-N:P          4  399.28   99.82
-  N:P: L.L   1  184.08  184.08
-  N:P: Q.L   1  152.11  152.11
-  N:P: L.Q   1   49.00   49.00
-  N:P: Q.Q   1   14.08   14.08
+            Df Sum Sq Mean Sq
+N            2 1016.7   508.3
+  N: L       1 1012.5  1012.5
+  N: Q       1    4.2     4.2
+P            2  917.4   458.7
+  P: L       1  917.3   917.3
+  P: Q       1    0.0     0.0
+N:P          4  399.3    99.8
+  N:P: L.L   1  184.1   184.1
+  N:P: Q.L   1  152.1   152.1
+  N:P: L.Q   1   49.0    49.0
+  N:P: Q.Q   1   14.1    14.1
 > 
 > # Split only the interaction
 > summary(CC.aov, split = list("N:P" = list(L.L = 1, Q = 2:4)))
-            Df  Sum Sq Mean Sq
-N            2 1016.67  508.33
-P            2  917.39  458.69
-N:P          4  399.28   99.82
-  N:P: L.L   1  184.08  184.08
-  N:P: Q     3  215.19   71.73
+            Df Sum Sq Mean Sq
+N            2 1016.7   508.3
+P            2  917.4   458.7
+N:P          4  399.3    99.8
+  N:P: L.L   1  184.1   184.1
+  N:P: Q     3  215.2    71.7
 > 
 > # split on just one var
 > summary(CC.aov, split = list(P = list(lin = 1, quad = 2)))
-            Df  Sum Sq Mean Sq
-N            2 1016.67  508.33
-P            2  917.39  458.69
-  P: lin     1  917.35  917.35
-  P: quad    1    0.04    0.04
-N:P          4  399.28   99.82
-  N:P: lin   2  336.19  168.10
-  N:P: quad  2   63.08   31.54
+            Df Sum Sq Mean Sq
+N            2 1016.7   508.3
+P            2  917.4   458.7
+  P: lin     1  917.3   917.3
+  P: quad    1    0.0     0.0
+N:P          4  399.3    99.8
+  N:P: lin   2  336.2   168.1
+  N:P: quad  2   63.1    31.5
 > summary(CC.aov, split = list(P = list(lin = 1, quad = 2)),
 +         expand.split=FALSE)
-            Df  Sum Sq Mean Sq
-N            2 1016.67  508.33
-P            2  917.39  458.69
-  P: lin     1  917.35  917.35
-  P: quad    1    0.04    0.04
-N:P          4  399.28   99.82
+            Df Sum Sq Mean Sq
+N            2 1016.7   508.3
+P            2  917.4   458.7
+  P: lin     1  917.3   917.3
+  P: quad    1    0.0     0.0
+N:P          4  399.3    99.8
 > 
 > 
 > cleanEx()
@@ -16548,7 +16571,7 @@ Frequency = 1
 > 
 > ### Name: update
 > ### Title: Update and Re-fit a Model Call
-> ### Aliases: update update.default
+> ### Aliases: update update.default getCall getCall.default
 > ### Keywords: models
 > 
 > ### ** Examples
@@ -16600,6 +16623,9 @@ Coefficients:
 (Intercept)       group1  
      4.8465      -0.1855  
 
+> getCall(lm.D90)# "through the origin"
+lm(formula = weight ~ group - 1)
+> 
 > options(oldcon)
 > 
 > 
@@ -17277,9 +17303,9 @@ B    L                 27 14 29 19 29 31 41 20 44
 Loading required package: Matrix
 Loading required package: lattice
 
-Attaching package: 'Matrix'
+Attaching package: ‘Matrix’
 
-The following object(s) are masked from 'package:base':
+The following object(s) are masked from ‘package:base’:
 
     det
 
@@ -17424,7 +17450,7 @@ Number of Fisher Scoring iterations: 6
 > ### * <FOOTER>
 > ###
 > cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  14.886 0.447 15.637 0 0 
+Time elapsed:  12.179 0.339 12.589 0 0 
 > grDevices::dev.off()
 null device 
           1 

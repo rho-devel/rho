@@ -8,7 +8,7 @@
 lu(x, \dots)
 \S4method{lu}{matrix}(x, warnSing = TRUE, \dots)
 \S4method{lu}{dgeMatrix}(x, warnSing = TRUE, \dots)
-\S4method{lu}{dgCMatrix}(x, errSing = TRUE, \dots)
+\S4method{lu}{dgCMatrix}(x, errSing = TRUE, order = TRUE, tol = 1, \dots)
 }
 \description{
   Computes (generalized) triangular decompositions of square and other
@@ -27,6 +27,11 @@ lu(x, \dots)
     returns \code{\link{NA}} instead of an LU decomposition.  No
     warning is signalled and the useR should be careful in that case.
   }
+  \item{order}{logical or integer, used to chose which will-reducing
+    permutation technique will be used internally.  Do not change unless
+    you know what you are doing.}
+  \item{tol}{positive number indicating the pivoting tolerance used in
+    \code{cs_lu}.  Do only change with much care.}
   \item{\dots}{further arguments passed to or from other methods.}
 }
 \value{

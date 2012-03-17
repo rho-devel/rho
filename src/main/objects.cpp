@@ -1476,7 +1476,7 @@ SEXP R_isS4Object(SEXP object)
 
 SEXP R_setS4Object(SEXP object, SEXP onOff, SEXP do_complete)
 {
-    Rboolean flag = CXXRCONSTRUCT(Rboolean, Rf_asLogical(onOff)), complete = CXXRCONSTRUCT(Rboolean, Rf_asInteger(do_complete));
+  Rboolean flag = CXXRCONSTRUCT(Rboolean, Rf_asLogical(onOff)), complete = CXXRCONSTRUCT(Rboolean, Rf_asInteger(do_complete));
     if(flag == CXXRCONSTRUCT(Rboolean, IS_S4_OBJECT(object)))
 	return object;
     else

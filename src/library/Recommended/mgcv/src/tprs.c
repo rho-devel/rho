@@ -28,21 +28,20 @@ USA.*/
 
 void ErrorMessage(char *msg, int fatal);
 
-double eta(int m,int d,double r)
+static inline double eta(int m,int d,double r)
 
 /* the basis functions for a thin plate spline for d- dimensional data, with an mth order 
    wiggliness penalty. */
 
-{ static int first=1;
-  static double pi,rpi,Ghalf;
+{ /*static int first=1;*/
+  double pi=PI,Ghalf=1.772453850905515881919; /* Gamma function of 0.5 = sqrt(pi) */
   double f;
   int i,k;
-  if (first)
+  /*if (first)
   { first=0;
     pi=asin(1.0)*2.0; 
-    rpi=sqrt(pi);
-    Ghalf=sqrt(pi);   /* Gamma function of 0.5 */
-  }
+    Ghalf=sqrt(pi);  
+    }*/
   if (2*m<=d) ErrorMessage(_("You must have 2m>d for a thin plate spline."),1);
   if (r<=0.0) return(0.0); /* this is safe: even if eta() gets inlined so that r comes in in an fp register! */
   if (d%2==0) /* then d even */
@@ -256,12 +255,10 @@ int *Xd_strip(matrix *Xd)
 */
 
 { int *yxindex,start,stop,ok,i;
-  long Xdor;
   double xi,**dum;
   yxindex = (int *)calloc((size_t)Xd->r,sizeof(int));
   dum = (double **)calloc((size_t)Xd->r,sizeof(double *));
   msort(*Xd);
-  Xdor=Xd->r; /* keep record of original length of Xd */
   start=stop=0;ok=1;
   while(ok)
   { /* look for start of run of equal rows ..... */
@@ -348,7 +345,9 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
 { matrix X1,E,U,v,TU,T,Z,p;
  
   int l,i,j,M,*yxindex,pure_knot=0,nk,minus=-1,kk;
-  double w,*xc,*XMi,**UZM,*X1V,*Ea,*Ua;
+  double w,*xc,*XMi,**UZM,*X1V,*Ea,*Ua,tol=DOUBLE_EPS;
+  tol = pow(tol,.7);
+
   if (n_knots<k) /* then use the covariate points as knots */
   { *Xu=initmat((long)n,(long)d+1);
     for (i=0;i<n;i++) { for (j=0;j<d;j++) Xu->M[i][j]=x[j][i];Xu->M[i][d]=(double)i;}
@@ -397,7 +396,7 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
       RArrayFromMatrix(Ea,nk,&E);
       minus = -1;kk=k; 
   
-      Rlanczos(Ea,Ua,v.M[0],&nk, &kk, &minus);
+      Rlanczos(Ea,Ua,v.M[0],&nk, &kk, &minus,&tol);
 
       U = Rmatrix(Ua,E.r,k);free(Ea);free(Ua);
     
@@ -483,6 +482,95 @@ void tprs_setup(double **x,double **knt,int m,int d,int n,int k,int constant,mat
   free(yxindex);freemat(Z);freemat(TU);freemat(E);freemat(T);
   if (!pure_knot) {freemat(U);freemat(v);}
 }
+
+
+void construct_tprs(double *x,int *d,int *n,double *knt,int *nk,int *m,int *k,double *X,double *S,
+                    double *UZ,double *Xu,int *nXu,double *C)
+/* inputs: 
+   x contains the n values of each of the d covariates, stored end to end
+   knt contains the nk knot locations packed as x
+   m is the order of the penalty 
+   k is the basis dimension
+   max_knots is the maximum number of knots to allow in t.p.r.s. setup.   
+
+   outputs:
+   X is the n by k model matrix
+   S is the K by K penalty matrix
+   UZ is the (nXu+M) by k matrix transforming from the truncated to full bases
+   Xu is the nXu by d matrix of unique covariate combinations
+   C is the 1 by k sum to zero constraint matrix 
+*/ 
+
+{ double **xx,**kk=NULL,*dum,**XM;
+  matrix Xm,Sm,UZm,Xum;
+  int i,j,Xr;
+  xx=(double **)calloc((size_t)(*d),sizeof(double*));
+  for (i=0;i<*d;i++) xx[i]=x + i * *n;
+  if (*nk)
+  { kk=(double **)calloc((size_t)(*d),sizeof(double*));
+    for (i=0;i<*d;i++) kk[i]=knt + i * *nk;
+  }
+  tprs_setup(xx,kk,*m,*d,*n,*k,1,&Xm,&Sm,&UZm,&Xum,*nk); /* Do actual setup */
+  RArrayFromMatrix(X,Xm.r,&Xm);
+  RArrayFromMatrix(S,Sm.r,&Sm);
+  RArrayFromMatrix(UZ,UZm.r,&UZm);  
+  RArrayFromMatrix(Xu,Xum.r,&Xum);
+  *nXu=Xum.r;  
+  /* construct the sum to zero constraint */
+  dum=C;XM=Xm.M;Xr=Xm.r;
+  for (i=0;i< *k;i++)
+  { *dum = 0.0;
+    for (j=0;j<Xr;j++) *dum += XM[j][i];
+    dum++;
+  }
+  freemat(Xm);freemat(Sm);freemat(UZm);freemat(Xum);
+  free(xx);if(*nk) free(kk);
+}
+
+void predict_tprs(double *x, int *d,int *n,int *m,int *k,int *M,double *Xu,int *nXu,
+                  double *UZ,double *by,int *by_exists,double *X)
+/* inputs are:
+   * The n values of the d covariates at which to predict - covariates packed end to end in x
+     - any required centering to be done before this call.
+   * m is the penalty order and M the null space dimension
+   * k is the rank of the basis
+   * Xu is the nXu by d matrix of unique covariate values
+   * UZ is the basis of the reduced space 
+
+   returns the n by k matrix X mapping the parameters to the predicted values.
+*/
+{ matrix Xm,UZm,Xum,b,p;
+  double by_mult,*xx;
+  int i,j,l;
+  p.r=0L;
+  Xum=Rmatrix(Xu,*nXu,*d);
+  UZm=Rmatrix(UZ,*nXu + *M,*k);
+  b=initmat(UZm.r,1L);
+  Xm=initmat((long)*n,(long)*k);
+  xx=(double*)calloc((size_t) *d,sizeof(double));
+  for (i=0;i< *n;i++) 
+  { if (*by_exists) by_mult=by[i]; else by_mult=1.0;
+    if (by_mult==0.0)         /* then don't waste flops on calculating stuff that will only be zeroed */
+    { for (j=0;j<UZm.c;j++) Xm.M[i][j]=0.0;
+    } else                    /* proceed as normal */
+    { for (j=0;j< *d;j++) xx[j]=x[j * *n + i];
+      tps_g(&Xum,&p,xx,*d,*m,&b,1);             
+      for (j=0;j<UZm.c;j++) 
+      { Xm.M[i][j]=0.0;
+        for (l=0;l<b.r;l++) Xm.M[i][j] += b.V[l]*UZm.M[l][j]; /* forming b'UZ */
+        Xm.M[i][j] *= by_mult;
+      }
+    }
+  }
+  /* Now clean up and copy X back.*/
+  RArrayFromMatrix(X,Xm.r,&Xm);
+  tps_g(&Xum,&p,x,0,0,&b,1); /* have tps_g clear up */ 
+  freemat(Xm);freemat(Xum);freemat(UZm);freemat(b);
+  free(xx);
+}
+
+
+
 
 
 /******************************************************************************************/

@@ -17,11 +17,11 @@ sweep1 <- function(cov, i, det = 1)
   ## -------------------------------------------------------------------------
   ## Author: Martin Maechler, Date: 22 Jan 2002, 08:58
     if(!is.matrix(cov) || 0 != diff(D <- dim(cov)))
-        stop("`cov' must be a square matrix")
+        stop("'cov' must be a square matrix")
     if((nord <- as.integer(D[1] - 1)) < 1)## cov[0:nord, 0:nord]
-        stop("`cov' must be at least 2 x 2")
+        stop("'cov' must be at least 2 x 2")
     if(0 > (i <- as.integer(i)) || i > nord)
-        stop("`i' must be in 0:nord, where nord = nrow(cov)-1")
+        stop("'i' must be in 0:nord, where nord = nrow(cov)-1")
     storage.mode(cov) <- "double"
     .C(cluster:::cl_sweep,
        cov,
@@ -39,9 +39,9 @@ sweepAll <- function(cov, det = 1)
   ## -------------------------------------------------------------------------
   ## Author: Martin Maechler, Date: 22 Jan 2002, 08:58
     if(!is.matrix(cov) || 0 != diff(D <- dim(cov)))
-        stop("`cov' must be a square matrix")
+        stop("'cov' must be a square matrix")
     if((nord <- as.integer(D[1] - 1)) < 1)## cov[0:nord, 0:nord]
-        stop("`cov' must be at least 2 x 2")
+        stop("'cov' must be at least 2 x 2")
     storage.mode(cov) <- "double"
     for(i in 0:nord) {
 	.C(cluster:::cl_sweep,
@@ -50,7 +50,7 @@ sweepAll <- function(cov, det = 1)
 	   ixlo = 0:0,
 	   i = i,
 	   deter = det,
-	   DUP = FALSE) # i.e. work on `cov' and `det' directly
+	   DUP = FALSE) # i.e. work on 'cov' and 'det' directly
         if(det <= 0)
             cat("** i = ", i, "; deter = ", format(det)," <= 0\n",sep="")
     }

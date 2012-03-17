@@ -62,7 +62,7 @@ mle <- function(minuslogl, start = formals(minuslogl), method = "BFGS",
     else list(par = numeric(), value = f(start))
     coef <- oout$par
     vcov <- if(length(coef)) solve(oout$hessian) else matrix(numeric(), 0L, 0L)
-    min <-  oout$value
+    min <- oout$value
     fullcoef[nm] <- coef
     new("mle", call = call, coef = coef, fullcoef = unlist(fullcoef),
         vcov = vcov, min = min, details = oout, minuslogl = minuslogl,
@@ -108,7 +108,7 @@ setMethod("profile", "mle",
         bi <- B0[i] + sgn * step * del * std.err[i]
         fix <- list(bi)
         names(fix) <- pi
-        call$fixed <- fix
+        call$fixed <- c(fix, fix0)
         pfit <- tryCatch(eval.parent(call, 2L), error = identity)
         if(inherits(pfit, "error")) return(NA)
         else {
@@ -140,6 +140,7 @@ setMethod("profile", "mle",
     call$minuslogl <- fitted@minuslogl
     ndeps <- eval.parent(call$control$ndeps)
     parscale <- eval.parent(call$control$parscale)
+    fix0 <- eval.parent(call$fixed)
     for (i in which) {
         zi <- 0
         pvi <- pv0
@@ -222,6 +223,7 @@ function (x, levels, conf = c(99, 95, 90, 80, 50)/100, nseg = 50,
                 xlim[1L] <- min(obj[[i]]$par.vals[, i])
             if (is.na(xlim[2L]))
                 xlim[2L] <- max(obj[[i]]$par.vals[, i])
+            dev.hold()
             plot(abs(z) ~ par.vals[, i], data = obj[[i]], xlab = i,
                 ylim = c(0, mlev), xlim = xlim, ylab = expression(abs(z)),
                 type = "n")
@@ -241,6 +243,7 @@ function (x, levels, conf = c(99, 95, 90, 80, 50)/100, nseg = 50,
                 pred <- ifelse(is.na(pred), xlim, pred)
                 lines(pred, rep(lev, 2), type = "l", col = 6, lty = 2)
             }
+            dev.flush()
         }
     }
     else {
@@ -256,6 +259,7 @@ function (x, levels, conf = c(99, 95, 90, 80, 50)/100, nseg = 50,
                 xlim[1L] <- min(obj[[i]]$par.vals[, i])
             if (is.na(xlim[2L]))
                 xlim[2L] <- max(obj[[i]]$par.vals[, i])
+            dev.hold()
             plot(z ~ par.vals[, i], data = obj[[i]], xlab = i,
                 ylim = c(-mlev, mlev), xlim = xlim, ylab = expression(z),
                 type = "n")
@@ -268,6 +272,7 @@ function (x, levels, conf = c(99, 95, 90, 80, 50)/100, nseg = 50,
                 lines(c(x0,pred[2L]), rep(lev, 2), type = "l", col = 6, lty = 2)
                 lines(c(pred[1L],x0), rep(-lev, 2), type = "l", col = 6, lty = 2)
             }
+            dev.flush()
         }
     }
     par(opar)

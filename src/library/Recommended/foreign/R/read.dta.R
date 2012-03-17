@@ -36,7 +36,7 @@ read.dta <- function(file, convert.dates = TRUE,
 
 
     if(!missing.type) {
-        if (abs(attr(rval,"version")) >= 8L) {
+        if (abs(attr(rval, "version")) >= 8L) {
             for(v in which(types > 250L)) {
                 this.type <- types[v] - 250L
                 rval[[v]][rval[[v]] >= stata.na$min[this.type]] <- NA
@@ -107,11 +107,12 @@ write.dta <-
              convert.factors = c("labels","string","numeric","codes"))
 {
 
-    if (version < 6L) stop("Version must be 6-11")
+    if (version < 6L) stop("Version must be 6-12")
     if (version == 9L) version <- 8L
     if (version == 11L) version <- 10L
-    if (version > 11L) {
-        warning("Version must be 6-11: using 7")
+    if (version == 12L) version <- 10L
+    if (version > 12L) {
+        warning("Version must be 6-12: using 7")
         version <- 7L
     }
 

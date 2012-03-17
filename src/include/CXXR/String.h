@@ -245,6 +245,16 @@ namespace CXXR {
 	String(const String&);
 	String& operator=(const String&);
     };
+
+    /** @brief Is a std::string entirely ASCII?
+     *
+     * @param str The string to be examined.
+     *
+     * @return false if str contains at least one non-ASCII character,
+     * otherwise true.  In particular the function returns true for an
+     * empty string.
+     */
+    bool isASCII(const std::string& str);
 }  // namespace CXXR
 
 extern "C" {

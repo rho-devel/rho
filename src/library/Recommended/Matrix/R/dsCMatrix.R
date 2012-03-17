@@ -64,39 +64,61 @@ setMethod("triu", "dsCMatrix",
 	      else triu(as(x, "dgCMatrix"), k = k, ...)
 	  })
 
+solve.dsC.mat <- function(a,b, tol) {
+    r <- tryCatch(.Call(dsCMatrix_matrix_solve, a, b),
+		  error=function(e)NULL, warning=function(w)NULL)
+    if(is.null(r)) { ## cholmod factorization was not ok
+	Matrix.msg("Cholmod Cholesky factorization was unsuccessful --> using LU")
+	if(missing(tol) || is.na(tol)) tol <- 1.# special "code" for 'order := 2' in C
+	e.a <- expand(lu.a <- LU.dgC(as(a,"dgCMatrix"), tol=tol, errSing=TRUE))
+	##  A = PLU  <--> A^{-1} x = U^-1 L^-1 P x
+	solve(e.a$U, solve(e.a$L, b[lu.a@p + 1L,]))
+    }
+    else r
+}
+
 setMethod("solve", signature(a = "dsCMatrix", b = "ddenseMatrix"),
-          function(a, b, ...) {
-              if (class(b) != "dgeMatrix")
-                  b <- .Call(dup_mMatrix_as_dgeMatrix, b)
-              .Call(dsCMatrix_matrix_solve, a, b)
-          },
-          valueClass = "dgeMatrix")
+	  function(a, b, ...) {
+	      if (class(b) != "dgeMatrix")
+		  b <- .Call(dup_mMatrix_as_dgeMatrix, b)
+	      solve.dsC.mat(a,b)
+	  },
+	  valueClass = "dgeMatrix")
 setMethod("solve", signature(a = "dsCMatrix", b = "denseMatrix"),
 	  ## only triggers for diagonal*, ldense*.. (but *not* ddense: above)
 	  function(a, b, ...)
-	      .Call(dsCMatrix_matrix_solve, a,
-		    as(.Call(dup_mMatrix_as_geMatrix, b), "dgeMatrix")))
+	  solve.dsC.mat(a, as(.Call(dup_mMatrix_as_geMatrix, b), "dgeMatrix")))
 
 setMethod("solve", signature(a = "dsCMatrix", b = "matrix"),
-          function(a, b, ...)
-          .Call(dsCMatrix_matrix_solve, a,
-                .Call(dup_mMatrix_as_dgeMatrix, b)),
-          valueClass = "dgeMatrix")
+	  function(a, b, ...)
+	  solve.dsC.mat(a, .Call(dup_mMatrix_as_dgeMatrix, b)),
+	  valueClass = "dgeMatrix")
 
 setMethod("solve", signature(a = "dsCMatrix", b = "numeric"),
-          function(a, b, ...)
-          .Call(dsCMatrix_matrix_solve, a,
-                .Call(dup_mMatrix_as_dgeMatrix, b)),
-          valueClass = "dgeMatrix")
+	  function(a, b, ...)
+	  solve.dsC.mat(a, .Call(dup_mMatrix_as_dgeMatrix, b)),
+	  valueClass = "dgeMatrix")
 
 ## `` Fully-sparse'' solve() :
+solve.dsC.dsC <- function(a,b, tol) {
+    r <- tryCatch(.Call(dsCMatrix_Csparse_solve, a, b),
+		  error=function(e)NULL, warning=function(w)NULL)
+    if(is.null(r)) { ## cholmod factorization was not ok
+	Matrix.msg("Cholmod Cholesky factorization was unsuccessful --> using LU")
+	if(missing(tol) || is.na(tol)) tol <- 1.# special "code" for 'order := 2' in C
+	e.a <- expand(lu.a <- LU.dgC(as(a,"dgCMatrix"), tol=tol, errSing=TRUE))
+	##  A = PLU  <--> A^{-1} x = U^-1 L^-1 P x
+	solve(e.a$U, solve(e.a$L, b[lu.a@p + 1L,]))
+    }
+    else r
+}
 setMethod("solve", signature(a = "dsCMatrix", b = "dsparseMatrix"),
 	  function(a, b, ...) {
 	      if (!is(b, "CsparseMatrix"))
 		  b <- as(b, "CsparseMatrix")
 	      if (is(b, "symmetricMatrix")) ## not supported (yet) by cholmod_spsolve
 		  b <- as(b, "dgCMatrix")
-	      .Call(dsCMatrix_Csparse_solve, a, b)
+	      solve.dsC.dsC(a,b)
 	  })
 
 
@@ -145,7 +167,7 @@ setMethod("determinant", signature(x = "dsCMatrix", logarithm = "logical"),
 	  function(x, logarithm, ...)
       {
 	  if((n <- x@Dim[1]) <= 1)
-	      return(mkDet(x@x, logarithm))
+	      return(mkDet(diag(x), logarithm))
 	  Chx <- tryCatch(suppressWarnings(Cholesky(x, LDL=TRUE)),
                           error = function(e) NULL)
 	  ## or

@@ -8,48 +8,92 @@
 extern "C" {
 #endif
 
+// from ../../src/UFconfig/UFconfig.h - line 51 :
+#ifndef UF_long
+
+#ifdef _WIN64
+
+#define UF_long __int64
+#define UF_long_max _I64_MAX
+#define UF_long_idd "I64d"
+
+#else
+
 #define UF_long long
 #define UF_long_max LONG_MAX
-#define UF_long_id "%ld"
-#define UFSPARSE_DATE "Aug 31, 2006"
-#define UFSPARSE_VER_CODE(main,sub) ((main) * 1000 + (sub))
-#define UFSPARSE_MAIN_VERSION 2
-#define UFSPARSE_SUB_VERSION 1
-#define UFSPARSE_SUBSUB_VERSION 0
-#define UFSPARSE_VERSION \
-    UFSPARSE_VER_CODE(UFSPARSE_MAIN_VERSION,UFSPARSE_SUB_VERSION)
+#define UF_long_idd "ld"
 
+#endif
+#define UF_long_id "%" UF_long_idd
+#endif
+
+#define CHOLMOD_DATE "Jan 25, 2011"
+// from ../../src/CHOLMOD/Include/cholmod_core.h - line 275 :
+/* Each CHOLMOD object has its own type code. */
+
+#define CHOLMOD_COMMON 0
+#define CHOLMOD_SPARSE 1
+#define CHOLMOD_FACTOR 2
+#define CHOLMOD_DENSE 3
+#define CHOLMOD_TRIPLET 4
+
+/* ========================================================================== */
+/* === CHOLMOD Common ======================================================= */
+/* ========================================================================== */
+
+/* itype defines the types of integer used: */
 #define CHOLMOD_INT 0		/* all integer arrays are int */
-#define CHOLMOD_INTLONG 1	/* most are int, some are long */
-#define CHOLMOD_LONG 2		/* all integer arrays are long */
+#define CHOLMOD_INTLONG 1	/* most are int, some are UF_long */
+#define CHOLMOD_LONG 2		/* all integer arrays are UF_long */
 
+/* dtype defines what the numerical type is (double or float): */
+#define CHOLMOD_DOUBLE 0	/* all numerical values are double */
+#define CHOLMOD_SINGLE 1	/* all numerical values are float */
+
+/* The dtype of all parameters for all CHOLMOD routines must match.
+ *
+ * Scalar floating-point values are always passed as double arrays of size 2
+ * (for the real and imaginary parts).  They are typecast to float as needed.
+ * FUTURE WORK: the float case is not supported yet.
+ */
+
+/* xtype defines the kind of numerical values used: */
 #define CHOLMOD_PATTERN 0	/* pattern only, no numerical values */
 #define CHOLMOD_REAL 1		/* a real matrix */
 #define CHOLMOD_COMPLEX 2	/* a complex matrix (ANSI C99 compatible) */
 #define CHOLMOD_ZOMPLEX 3	/* a complex matrix (MATLAB compatible) */
 
-#define CHOLMOD_MAXMETHODS 9	/* maximum number of different methods that
-				 * cholmod_analyze can try. Must be >= 9. */
+/* Definitions for cholmod_common: */
+#define CHOLMOD_MAXMETHODS 9	/* maximum number of different methods that */
+				/* cholmod_analyze can try. Must be >= 9. */
+
+/* Common->status values.  zero means success, negative means a fatal error,
+ * positive is a warning. */
 #define CHOLMOD_OK 0			/* success */
 #define CHOLMOD_NOT_INSTALLED (-1)	/* failure: method not installed */
 #define CHOLMOD_OUT_OF_MEMORY (-2)	/* failure: out of memory */
 #define CHOLMOD_TOO_LARGE (-3)		/* failure: integer overflow occured */
 #define CHOLMOD_INVALID (-4)		/* failure: invalid input */
 #define CHOLMOD_NOT_POSDEF (1)		/* warning: matrix not pos. def. */
-#define CHOLMOD_DSMALL (2)		/* warning: D for LDL'  or diag(L) or
-					 * LL' has tiny absolute value */
+#define CHOLMOD_DSMALL (2)		/* warning: D for LDL'  or diag(L) or */
+					/* LL' has tiny absolute value */
 
+/* ordering method (also used for L->ordering) */
 #define CHOLMOD_NATURAL 0	/* use natural ordering */
 #define CHOLMOD_GIVEN 1		/* use given permutation */
 #define CHOLMOD_AMD 2		/* use minimum degree (AMD) */
 #define CHOLMOD_METIS 3		/* use METIS' nested dissection */
-#define CHOLMOD_NESDIS 4	/* use CHOLMOD's version of nested dissection:
-				 * node bisector applied recursively, followed
+#define CHOLMOD_NESDIS 4	/* use CHOLMOD's version of nested dissection:*/
+				/* node bisector applied recursively, followed
 				 * by constrained minimum degree (CSYMAMD or
 				 * CCOLAMD) */
 #define CHOLMOD_COLAMD 5	/* use AMD for A, COLAMD for A*A' */
+
+/* POSTORDERED is not a method, but a result of natural ordering followed by a
+ * weighted postorder.  It is used for L->ordering, not method [ ].ordering. */
 #define CHOLMOD_POSTORDERED 6	/* natural ordering, postordered. */
 
+/* supernodal strategy (for Common->supernodal) */
 #define CHOLMOD_SIMPLICIAL 0	/* always do simplicial */
 #define CHOLMOD_AUTO 1		/* select simpl/super depending on matrix */
 #define CHOLMOD_SUPERNODAL 2	/* always do supernodal */
@@ -195,7 +239,8 @@ typedef struct cholmod_common_struct
 			 * of a try/catch block.  No error message is printed
 	 * and the Common->error_handler function is not called. */
 
-    void (*error_handler) (int status, const char *file, int line, const char *message) ;
+    void (*error_handler) (int status, const char *file,
+        int line, const char *message) ;
 
 	/* Common->error_handler is the user's error handling routine.  If not
 	 * NULL, this routine is called if an error occurs in CHOLMOD.  status
@@ -232,7 +277,7 @@ typedef struct cholmod_common_struct
      *	    i = 0: user-provided ordering (cholmod_analyze_p only)
      *	    i = 1: AMD (for both A and A*A')
      *	    i = 2: METIS
-     *	    i = 3: CHOLMOD's nested dissection (NESDIS), default parameters
+ou     *	    i = 3: CHOLMOD's nested dissection (NESDIS), default parameters
      *	    i = 4: natural
      *	    i = 5: NESDIS with nd_small = 20000
      *	    i = 6: NESDIS with nd_small = 4, no constrained minimum degree
@@ -562,12 +607,33 @@ typedef struct cholmod_common_struct
      * and workspace.  Note:  additional entries were added in v1.1 to the
      * method array, above, and thus v1.0 and v1.1 are not binary compatible.
      *
-     * v1.1 and v1.2 are binary compatible.
+     * v1.1 to the current version are binary compatible.
      */
 
-    double  other1 [16] ;
-    UF_long other2 [16] ;
-    int     other3 [14] ;   /* reduced from size 16 in v1.1. */
+    /* ---------------------------------------------------------------------- */
+    double other1 [10] ;
+
+    double SPQR_xstat [4] ;     /* for SuiteSparseQR statistics */
+
+    /* SuiteSparseQR control parameters: */
+    double SPQR_grain ;         /* task size is >= max (total flops / grain) */
+    double SPQR_small ;         /* task size is >= small */
+
+    /* ---------------------------------------------------------------------- */
+    UF_long SPQR_istat [10] ;   /* for SuiteSparseQR statistics */
+    UF_long other2 [6] ;        /* reduced from size 16 in v1.6 */
+
+    /* ---------------------------------------------------------------------- */
+    int other3 [10] ;       /* reduced from size 16 in v1.1. */
+
+    int prefer_binary ;	    /* cholmod_read_triplet converts a symmetric
+			     * pattern-only matrix into a real matrix.  If
+	* prefer_binary is FALSE, the diagonal entries are set to 1 + the degree
+	* of the row/column, and off-diagonal entries are set to -1 (resulting
+	* in a positive definite matrix if the diagonal is zero-free).  Most
+	* symmetric patterns are the pattern a positive definite matrix.  If
+	* this parameter is TRUE, then the matrix is returned with a 1 in each
+	* entry, instead.  Default: FALSE.  Added in v1.3. */
 
     /* control parameter (added for v1.2): */
     int default_nesdis ;    /* Default: FALSE.  If FALSE, then the default
@@ -580,10 +646,22 @@ typedef struct cholmod_common_struct
     int called_nd ;	    /* TRUE if the last call to
 			     * cholmod_analyze called NESDIS or METIS. */
 
+    int blas_ok ;           /* FALSE if BLAS int overflow; TRUE otherwise */
+
+    /* SuiteSparseQR control parameters: */
+    int SPQR_shrink ;        /* controls stack realloc method */
+    int SPQR_nthreads ;      /* number of TBB threads, 0 = auto */
+
+    /* ---------------------------------------------------------------------- */
     size_t  other4 [16] ;
+
+    /* ---------------------------------------------------------------------- */
     void   *other5 [16] ;
 
 } cholmod_common ;
+
+// in ../../src/CHOLMOD/Include/cholmod_core.h  skip forward to - line 1114 :
+/* A sparse matrix stored in compressed-column form. */
 
 typedef struct cholmod_sparse_struct
 {
@@ -634,6 +712,10 @@ typedef struct cholmod_sparse_struct
 			 * (nz is required) */
 
 } cholmod_sparse ;
+
+// in ../../src/CHOLMOD/Include/cholmod_core.h  skip forward to - line 1495 :
+/* A symbolic and numeric factorization, either simplicial or supernodal.
+ * In all cases, the row indices in the columns of L are kept sorted. */
 
 typedef struct cholmod_factor_struct
 {
@@ -756,6 +838,11 @@ typedef struct cholmod_factor_struct
 
 } cholmod_factor ;
 
+// in ../../src/CHOLMOD/Include/cholmod_core.h  skip forward to - line 1773 :
+/* A dense matrix in column-oriented form.  It has no itype since it contains
+ * no integers.  Entry in row i and column j is located in x [i+j*d].
+ */
+
 typedef struct cholmod_dense_struct
 {
     size_t nrow ;	/* the matrix is nrow-by-ncol */
@@ -768,6 +855,9 @@ typedef struct cholmod_dense_struct
     int dtype ;		/* x and z double or float */
 
 } cholmod_dense ;
+
+// in ../../src/CHOLMOD/Include/cholmod_core.h  skip forward to - line 1952 :
+/* A sparse matrix stored in triplet form. */
 
 typedef struct cholmod_triplet_struct
 {
@@ -782,12 +872,14 @@ typedef struct cholmod_triplet_struct
     void *z ;		/* size nzmax, if present */
 
     int stype ;		/* symmetry type */
+    //                  [................................]
     int itype ;		/* CHOLMOD_LONG: i and j are UF_long.  Otherwise int. */
     int xtype ;		/* pattern, real, complex, or zomplex */
     int dtype ;		/* x and z are double or float */
 
 } cholmod_triplet ;
 
+// -------- our (Matrix)  short and const_ forms of of the pointers :
 typedef       cholmod_common*        CHM_CM;
 typedef       cholmod_dense*         CHM_DN;
 typedef const cholmod_dense*   const_CHM_DN;
@@ -797,6 +889,9 @@ typedef       cholmod_sparse*        CHM_SP;
 typedef const cholmod_sparse*  const_CHM_SP;
 typedef       cholmod_triplet*       CHM_TR;
 typedef const cholmod_triplet* const_CHM_TR;
+
+
+// --------- Matrix ("M_") R ("R_") pkg  routines "re-exported": ---------------
 
 int M_R_cholmod_start(CHM_CM);
 void M_R_cholmod_error(int status, const char *file, int line, const char *message);
@@ -820,6 +915,7 @@ CHM_SP M_cholmod_copy(const_CHM_SP, int stype, int mode, CHM_CM);
 CHM_SP M_cholmod_add(const_CHM_SP, const_CHM_SP, double alpha [2], double beta [2],
 		     int values, int sorted, CHM_CM);
 
+// from ../../src/CHOLMOD/Include/cholmod_cholesky.h - line 178 :
 #define CHOLMOD_A    0		/* solve Ax=b */
 #define CHOLMOD_LDLt 1		/* solve LDL'x=b */
 #define CHOLMOD_LD   2		/* solve LDx=b */
@@ -843,6 +939,7 @@ CHM_SP M_cholmod_copy_sparse(const_CHM_SP, CHM_CM);
 CHM_DN M_cholmod_copy_dense(const_CHM_DN, CHM_CM);
 CHM_SP M_cholmod_aat(const_CHM_SP, int *fset, size_t fsize, int mode,
 		     CHM_CM);
+int M_cholmod_band_inplace(CHM_SP A, int k1, int k2, int mode, CHM_CM);
 CHM_SP M_cholmod_add(const_CHM_SP, const_CHM_SP, double alpha[2], double beta[2],
 		     int values, int sorted, CHM_CM);
 CHM_DN M_cholmod_allocate_dense(size_t nrow, size_t ncol, size_t d,
@@ -866,6 +963,7 @@ CHM_DN M_cholmod_sparse_to_dense(const_CHM_SP, CHM_CM);
 CHM_TR M_cholmod_allocate_triplet (size_t nrow, size_t ncol, size_t nzmax,
 				   int stype, int xtype, CHM_CM);
 
+// from ../../src/CHOLMOD/Include/cholmod_matrixops.h - line 107 :
 /* scaling modes, selected by the scale input parameter: */
 #define CHOLMOD_SCALAR 0	/* A = s*A */
 #define CHOLMOD_ROW 1		/* A = diag(s)*A */

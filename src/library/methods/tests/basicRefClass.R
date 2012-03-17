@@ -7,6 +7,7 @@ f1$bar <- 1
 stopifnot(identical(f1$bar, 1))
 fg$methods(showAll = function() c(bar, flag))
 stopifnot(all.equal(f1$showAll(), c(1, "testing")))
+str(f1)
 
 fg <- setRefClass("foo", list(bar = "numeric", flag = "character",
                               tag = "ANY"),
@@ -16,21 +17,28 @@ fg <- setRefClass("foo", list(bar = "numeric", flag = "character",
                       b
                   } )
                   )
+fg$lock("flag")
+stopifnot(identical(fg$lock(), "flag"))
+
 ff <- new("foo", bar = 1.5)
 stopifnot(identical(ff$bar, 1.5))
 ff$bar <- pi
 stopifnot(identical(ff$bar, pi))
+## flag has not yet been set
+ff$flag <- "flag test"
+stopifnot(identical(ff$flag, "flag test"))
+## but no second assign
+stopifnot(is(tryCatch(ff$flag <- "new", error = function(e)e), "error"))
+
 ## test against generator
 
-f2 <- fg$new(bar = pi)
+f2 <- fg$new(bar = pi, flag = "flag test")
 ## identical does not return TRUE if *contents* of env are identical
 stopifnot(identical(ff$bar, f2$bar), identical(ff$flag, f2$flag))
+## but flag was now assigned once
+stopifnot(is(tryCatch(f2$flag <- "new", error = function(e)e), "error"))
 
-f2$flag <- "standard flag"
-stopifnot(identical(f2$flag, "standard flag"))
-
-## fg$lock("flag")
-## tryCatch(f2$flag <- "other", error = function(e)e)
+str(f2)
 
 
 ## add some accessor methods
@@ -63,7 +71,7 @@ stopifnot(is(tryCatch(setRefClass("foo2", list(b2 = "numeric",
                 setB2(getB2() + incr)
                 })),
           error = function(e)e), "error"))
-## but with flag as a subclass of "character", should work
+## but with flag as a subclass of "characters", should work
 ## Also subclasses "tag" which had class "ANY before
 setClass("ratedChar", contains = "character",
          representation(score = "numeric"))
@@ -81,6 +89,7 @@ f2 <- foo2$new(bar = -3, flag = as("ANY", "ratedChar"),
 ## but not a second one
 stopifnot(is(tryCatch(f2$flag <- "Try again",
          error = function(e)e), "error"))
+str(f2)
 f22 <- foo2$new(bar = f2$bar)
 ## same story if assignment follows the initialization
 f22$flag <- f2$flag
@@ -98,7 +107,7 @@ f2$addBoth(-1)
 stopifnot(all.equal(f2$bar, -4), all.equal(f2$b2, 1:3+0))
 
 ## test callSuper()
-setRefClass("foo3", fields = list(flag2 = "ratedChar"),
+foo3 <- setRefClass("foo3", fields = list(flag2 = "ratedChar"),
             contains = "foo2",
 	    methods = list(addBoth = function(incr) {
 		callSuper(incr)
@@ -109,7 +118,7 @@ setRefClass("foo3", fields = list(flag2 = "ratedChar"),
             }))
 
 f2 <- foo2$new(bar = -3, flag = as("ANY", "ratedChar"), b2 =  1:3)
-f3 <- new("foo3")
+f3 <- foo3$new()
 f3$import(f2)
 stopifnot(all.equal(f3$b2, f2$b2), all.equal(f3$bar, f2$bar),
           all.equal(f3$flag, f2$flag))
@@ -120,21 +129,41 @@ stopifnot(all.equal(f3$bar, -2), all.equal(f3$b2, 2:4+0),
 ## but the import should have used up the one write for $flag
 stopifnot(is(tryCatch(f3$flag <- "Try again",
          error = function(e)e), "error"))
+str(f3)
 
-## a class with an initialize method, and an extra slot
+## importing the same class (not very useful but documented to work)
+f3 <- foo3$new()
+f4 <- foo3$new(bar = -3, flag = as("More", "ratedChar"), b2 =  1:3, flag2 = f2$flag)
+f3$import(f4)
+stopifnot(identical(f3$bar, f4$bar),
+          identical(f3$flag, f4$flag),
+          identical(f3$b2, f4$b2),
+          identical(f3$flag2, f4$flag2))
+
+## similar to $import() but using superclass object in the $new() call
+## The explicitly supplied flag= should override and be allowed
+## by the default $initialize()
+f3b <- foo3$new(f2, flag = as("Other", "ratedChar"),
+                flag2 = as("More", "ratedChar"))
+## check that inherited and direct field assignments worked
+stopifnot(identical(f3b$tag, f2$tag),
+          identical(f3b$flag, as("Other", "ratedChar")),
+          identical(f3b$flag2, as("More", "ratedChar")))
+
+## a class with an initialize method, and an extra slot (legal, not a good idea)
 setOldClass(c("simple.list", "list"))
 fg4 <- setRefClass("foo4",
             contains = "foo2",
             methods = list(
               initialize = function(...) {
-                  .self <- initFields(...)
-                  .self@made = R.version
+                  .self$initFields(...)
+                  .self@made <<- R.version
                   .self
               }),
             representation = list(made = "simple.list")
             )
 
-f4 <- new("foo4", flag = "another test", bar = 1:3)
+f4 <- new("foo4", flag = as("another test", "ratedChar"), bar = 1:3)
 stopifnot(identical(f4@made, R.version))
 
 ## a trivial class with no fields, using fields = list(), failed up to rev 56035
@@ -398,14 +427,41 @@ TestClass2 <- setRefClass("TestClass2",
         contains = "TestClass",
         fields = list( version = "integer"),
         methods = list(
-          initialize = function(..., version = 1)
-              callSuper(..., version = version+1))
+          initialize = function(..., version = 0L)
+              callSuper(..., version = version+1L))
   )
-tt <- TestClass2$new("test", version = 1)
+tt <- TestClass2$new("test", version = 1L)
 stopifnot(identical(tt$text, "test:"), identical(tt$version, as.integer(2)))
-tt <- TestClass2$new(version=3) # default text
+tt <- TestClass2$new(version=3L) # default text
 stopifnot(identical(tt$text, ":"), identical(tt$version, as.integer(4)))
 
+
+## test some capabilities but read-only for .self
+.changeAllFields <- function(replacement) {
+    fields <- names(.refClassDef@fieldClasses)
+    for(field in fields)
+        eval(substitute(.self$FIELD <- replacement$FIELD,
+                        list(FIELD = field)))
+}
+
+mEditor$methods(change = .changeAllFields)
+xx <- mEditor$new(data = xMat)
+xx$edit(2, 2, 0)
+
+yy <- mEditor$new(data = xMat+1)
+yy$change(xx)
+stopifnot(identical(yy$data, xx$data), identical(yy$edits, xx$edits))
+
+## but don't allow assigment
+if(methods:::.hasCodeTools())
+        stopifnot(is(tryCatch(yy$.self$data <- xMat, error = function(e)e), "error"))
+
+## the locked binding of refObjectGenerator class should prevent modifying
+## methods, locking fields or setting accessor methods
+evr <- getRefClass("refObjectGenerator") # in methods
+stopifnot(is(tryCatch(evr$methods(foo = function()"..."), error = function(e)e), "error"),
+         is(tryCatch(evr$lock("def"), error = function(e)e), "error"),
+         is(tryCatch(evr$accessors("def"), error = function(e)e), "error"))
 
 ##getRefClass() method and function should work with either
 ## a class name or a class representation (bug report 14600)
@@ -415,3 +471,15 @@ tgg <- t1$getRefClass()
 tggg <- getRefClass("tg")
 stopifnot(identical(tgg$def, tggg$def),
           identical(tg$def, tgg$def))
+## TODO:  the className returned by setRefClass should have
+## a package attribute, which would allow:
+##          identical(tg$className, tgg$className))
+
+## this used to fail in initFieldArgs() from partial matching "self"
+selfClass <- setRefClass("selfClass",
+        fields=list(
+            self="character", super="character", sub="character"
+        )
+    )
+
+stopifnot(identical(selfClass$new(self="B", super="A", sub="C")$self, "B"))

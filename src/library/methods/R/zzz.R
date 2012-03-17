@@ -23,7 +23,8 @@
     if(missing(where)) {
         where <- match(paste("package:", pkgname, sep=""), search())
         if(is.na(where)) {
-            warning(gettextf("not a package name: \"%s\"", pkgname), domain = NA)
+            warning(gettextf("not a package name: %s", sQuote(pkgname)),
+                    domain = NA)
             return()
         }
         where <- as.environment(where)
@@ -85,6 +86,7 @@
         assign("implicitGeneric", .implicitGeneric, envir = where)
         cacheMetaData(where, TRUE, searchWhere = .GlobalEnv, FALSE)
         assign(".checkRequiredGenerics", ..checkRequiredGenerics,envir = where)
+        assign(".methodPackageSlots", ..methodPackageSlots, envir = where)
         ## unlock some bindings that must be modifiable
         unlockBinding(".BasicFunsList", where)
          assign(".saveImage", TRUE, envir = where)
@@ -107,13 +109,13 @@
     }
 }
 
-.onLoad <- function(libname, pkgName) {
+.onLoad <- function(libname, pkgname) {
     env <- environment(sys.function())
     doSave <- identical(get(".saveImage", envir = env), FALSE)
-    ..First.lib(libname, pkgName, env)
+    ..First.lib(libname, pkgname, env)
     if(doSave) {
-        dbbase <- file.path(libname, pkgName, "R", pkgName)
-        ns <- asNamespace(pkgName)
+        dbbase <- file.path(libname, pkgname, "R", pkgname)
+        ns <- asNamespace(pkgname)
         tools:::makeLazyLoadDB(ns, dbbase)
     }
     if(Sys.getenv("R_S4_BIND") == "active")
@@ -128,7 +130,7 @@
 }
 
 
-.onAttach <- function(libname, pkgName) {
+.onAttach <- function(libname, pkgname) {
     env <- environment(sys.function())
     ## unlock some bindings that must be modifiable
     unlockBinding(".BasicFunsList", env)

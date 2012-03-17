@@ -6554,13 +6554,11 @@ disappear.
 
 @table @code
 @item
-Login, start your windowing system.
-@item $ R
-Start @R{} as appropriate for your platform.
+Start @R{} appropriately for your platform (@pxref{Invoking R}).
 
 The @R{} program begins, with a banner.
 
-(Within @R{}, the prompt on the left hand side will not be shown to
+(Within @R{} code, the prompt on the left hand side will not be shown to
 avoid confusion.)
 
 @item help.start()
@@ -6931,8 +6929,8 @@ Combine @option{--no-save}, @option{--no-environ},
 @itemx --file=@var{file}
 (not @command{Rgui.exe}) Take input from @var{file}: @samp{-} means
 @code{stdin}.  Implies @option{--no-save} unless @option{--save} has
-been set.  On a Unix-alike, no spaces nor other characters which would
-be interpreted by a shell as allowed in @var{file}.
+been set.  On a Unix-alike, shell metacharacters should be avoided in
+@var{file} (but as from @R{} 2.14.0 spaces are allowed).
 
 @item -e @var{expression}
 (not @command{Rgui.exe}) Use @var{expression} as an input line.  One or
@@ -6952,18 +6950,10 @@ tilde-expansion: see the help for @code{path.expand}.
 
 @item --min-vsize=@var{N}
 @itemx --max-vsize=@var{N}
-Specify the minimum or maximum amount of memory used for variable size
-objects by setting the ``vector heap'' size to @var{N} bytes.  Here,
-@var{N} must either be an integer or an integer ending with @samp{G},
-@samp{M}, @samp{K}, or @samp{k}, meaning `Giga' (2^30), `Mega' (2^20),
-(computer) `Kilo' (2^10), or regular `kilo' (1000).
-
-@item --min-nsize=@var{N}
+@itemx --min-nsize=@var{N}
 @itemx --max-nsize=@var{N}
-Specify the amount of memory used for fixed size objects by setting the
-number of ``cons cells'' to @var{N}.  See the previous option for
-details on @var{N}.  A cons cell takes 28 bytes on a 32-bit machine, and
-usually 56 bytes on a 64-bit machine.
+Deprecated, and almost entirely of historical interest: see
+@code{?Memory} in @R{}.
 
 @item --max-ppsize=@var{N}
 Specify the maximum size of the pointer protection stack as @var{N}
@@ -7080,10 +7070,8 @@ Post-process @R{} profiling files.
 Convert Rd format to various other formats, including @HTML{}, @LaTeX{},
 plain text, and extracting the examples.  @code{Rd2txt} can be used as
 shorthand for @code{Rd2conv -t txt}.
-@item Rd2dvi
 @itemx Rd2pdf
-Convert Rd format to DVI/PDF.  @code{Rd2pdf} can be used as shorthand
-for @code{Rd2dvi --pdf}.
+Convert Rd format to PDF.
 @item Stangle
 Extract S/R code from Sweave documentation
 @item Sweave

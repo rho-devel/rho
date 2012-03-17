@@ -1,4 +1,3 @@
-
 ##  R plotting routines for the package mgcv (c) Simon Wood 2000-2010
 ##  With contributions from Henric Nilsson
 
@@ -79,7 +78,7 @@ fix.family.rd <- function(fam) {
 }
 
 
-qq.gam <- function(object, rep=0, level=.9,
+qq.gam <- function(object, rep=0, level=.9,s.rep=10,
                    type=c("deviance","pearson","response"),
                    pch=".", rl.col=2, rep.col="gray80",...) {
 ## get deviance residual quantiles under good fit
@@ -96,39 +95,52 @@ qq.gam <- function(object, rep=0, level=.9,
     if (is.null(fam$qf))
       rep <- 50 ## try simulation if quantile function not available
     level <- 0
-  }
+  } 
+  n <- length(D)
   if (rep > 0) { ## simulate quantiles
     fam <- fix.family.rd(object$family)
     if (!is.null(fam$rd)) {
       d <- rep(0,0)
-      ## simulate deviates...
+      ## simulate deviates... 
+      dm <- matrix(0,n,rep)
       for (i in 1:rep) { 
         yr <- fam$rd(object$fitted.values, object$prior.weights, object$sig2)
         #di <- fam$dev.resids(yr,object$fitted.values,object$prior.weights)^.5*
         #       sign(yr-object$fitted.values)
         object$y <- yr
-        di <- residuals(object,type=type)
-        d <- c(d,sort(di))
+        dm[,i] <- sort(residuals(object,type=type))
+        #d <- c(d,sort(di))
       }
-      n <- length(D)
-      Dq <- quantile(d,(1:n - .5)/n) 
+      # n <- length(D)
+      Dq <- quantile(as.numeric(dm),(1:n - .5)/n) 
     
       ## now get simulation limits on QQ plot
-      dm <- matrix(d,length(Dq),rep)
+      #dm <- matrix(d,length(Dq),rep)
       alpha <- (1-level)/2
       if (alpha>.5||alpha<0) alpha <- .05
-      if (level>0) lim <- apply(dm,1,FUN=quantile,p=c(alpha,1-alpha))
+      if (level>0&&level<1) lim <- apply(dm,1,FUN=quantile,p=c(alpha,1-alpha)) else
+      if (level >= 1) lim <- level 
     }
   } else {
     ## ix <- sort.int(D,index.return=TRUE)$ix ## messes up under multiple ties!
     ix <- rank(D)
     U <- (ix-.5)/length(D)
-    if (!is.null(fam$qf)) {
-      q <- fam$qf(U,object$fitted.values,object$prior.weights,object$sig2)
-      #Dq <- sort(fam$dev.resids(q,object$fitted.values,object$prior.weights)^.5*
-      #         sign(q-object$fitted.values))
-      object$y <- q
-      Dq <- sort(residuals(object,type=type))
+    if (!is.null(fam$qf)) { 
+      dm <- matrix(0,n,s.rep)
+      for (i in 1:s.rep) { 
+        U <- sample(U,n) ## randomize uniform quantiles w.r.t. obs
+        q0 <- fam$qf(U,object$fitted.values,object$prior.weights,object$sig2)
+        object$y <- q0
+        dm[,i] <- sort(residuals(object,type=type)) ## original proposal
+      }
+      Dq <- sort(rowMeans(dm))
+     # Dq <- quantile(as.numeric(dm),(1:n - .5)/n)
+
+     # nd <- length(Dq)
+     # q1 <- fam$qf(1-U,object$fitted.values,object$prior.weights,object$sig2)
+     # object$y <- q1
+     # Dq <- sort(c(Dq,residuals(object,type=type)))
+     # Dq <- (Dq[(1:nd)*2]+Dq[(1:nd)*2-1])*.5 ## more powerful alternative 
     }
   }
  
@@ -219,7 +231,7 @@ plot.random.effect <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2
                      partial.resids=FALSE,rug=TRUE,se=TRUE,scale=-1,n=100,n2=40,
                      pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
                      ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
-                     shift=0,trans=I,by.resids=FALSE,scheme=NULL,...) {
+                     shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
 ## plot method for a "random.effect" smooth class
  
   if (is.null(P)) { ## get plotting information...
@@ -239,6 +251,179 @@ plot.random.effect <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2
   } ## end of plot production
 } ## end of plot.random.effect
 
+
+repole <- function(lo,la,lop,lap) {
+## painfully plodding function to get new lo, la relative to pole at
+## lap,lop...
+  ## x,y,z location of pole...
+  yp <- sin(lap)
+  xp <- cos(lap)*sin(lop)
+  zp <- cos(lap)*cos(lop)
+  
+  ## x,y,z location of meridian point for pole - i.e. point lat pi/2
+  ## from pole on pole's lon.
+
+  ym <- sin(lap-pi/2)
+  xm <- cos(lap-pi/2)*sin(lop)
+  zm <- cos(lap-pi/2)*cos(lop)
+
+  ## x,y,z locations of points in la, lo
+
+  y <- sin(la)
+  x <- cos(la)*sin(lo)
+  z <- cos(la)*cos(lo)
+
+  ## get angle between points and new equatorial plane (i.e. plane orthogonal to pole)
+  d <- sqrt((x-xp)^2+(y-yp)^2+(z-zp)^2) ## distance from points to to pole 
+  phi <- pi/2-2*asin(d/2)
+
+  ## location of images of la,lo on (new) equatorial plane
+  ## sin(phi) gives distance to plane, -(xp, yp, zp) is 
+  ## direction... 
+  x <- x - xp*sin(phi)
+  y <- y - yp*sin(phi)
+  z <- z - zp*sin(phi)
+
+  ## get distances to meridian point
+  d <- sqrt((x-xm)^2+(y-ym)^2+(z-zm)^2)
+  ## angles to meridian plane (i.e. plane containing origin, meridian point and pole)...
+  theta <- acos((1+cos(phi)^2-d^2)/(2*cos(phi)))
+  
+  ## now decide which side of meridian plane...
+
+  ## get points at extremes of hemispheres on either side
+  ## of meridian plane.... 
+  y1 <- 0
+  x1 <- sin(lop+pi/2)
+  z1 <- cos(lop+pi/2)
+
+  y0 <- 0
+  x0 <- sin(lop-pi/2)
+  z0 <- cos(lop-pi/2)
+
+  d1 <- sqrt((x-x1)^2+(y-y1)^2+(z-z1)^2)
+  d0 <- sqrt((x-x0)^2+(y-y0)^2+(z-z0)^2)
+
+  ii <- d0 < d1 ## index -ve lon hemisphere 
+  theta[ii] <- -theta[ii]
+  
+  list(lo=theta,la=phi)
+} ## end of repole
+
+lolaxy <- function(lo,la,theta,phi) {
+## takes locations lo,la, relative to a pole at lo=theta, la=phi. 
+## theta, phi are expressed relative to plotting co-ordinate system 
+## with pole at top. Convert to x,y in plotting co-ordinates.
+## all in radians!
+  er <- repole(-lo,la,-pi,phi)
+  er$lo <- er$lo - theta
+  y <- sin(er$la)
+  x <- cos(er$la)*sin(er$lo)
+  z <- cos(er$la)*cos(er$lo)
+  ind <- z<0
+  list(x=x[ind],y=y[ind])
+} ## end of lolaxy
+
+plot.sos.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
+                     partial.resids=FALSE,rug=TRUE,se=TRUE,scale=-1,n=100,n2=40,
+                     pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
+                     ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
+                     shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
+## plot method function for sos.smooth terms
+  if (scheme>1) return(plot.mgcv.smooth(x,P=P,data=data,label=label,se1.mult=se1.mult,se2.mult=se2.mult,
+                     partial.resids=partial.resids,rug=rug,se=se,scale=scale,n=n,n2=n2,
+                     pers=pers,theta=theta,phi=phi,jit=jit,xlab=xlab,ylab=ylab,main=main,
+                     ylim=ylim,xlim=xlim,too.far=too.far,shade=shade,shade.col=shade.col,
+                     shift=shift,trans=trans,by.resids=by.resids,scheme=scheme-2,...))
+  ## convert location of pole in plotting grid to radians
+  phi <- phi*pi/180
+  theta <- theta*pi/180
+  
+  ## re-map to sensible values...
+  theta <- theta%%(2*pi)
+  if (theta>pi) theta <- theta - 2*pi
+ 
+  phi <- phi%%(2*pi)
+  if (phi > pi) phi <- phi - 2*pi
+  if (phi > pi/2) phi <- pi - phi
+  if (phi < -pi/2 ) phi <- -(phi+pi)  
+
+  if (is.null(P)) { ## get plotting information...
+    if (!x$plot.me) return(NULL) ## shouldn't or can't plot
+    ## get basic plot data 
+    raw <- data[x$term]
+    if (rug) { ## need to project data onto plotting grid...
+      raw <- lolaxy(lo=raw[[2]]*pi/180,la=raw[[1]]*pi/180,theta,phi)
+    }
+
+    m <- round(n2*1.5)
+    ym <- xm <- seq(-1,1,length=m)
+    gr <- expand.grid(x=xm,y=ym)
+    r <- z <- gr$x^2+gr$y^2
+    z[z>1] <- NA
+    z <- sqrt(1-z)
+
+    ## generate la, lo in plotting grid co-ordinates...
+    ind <- !is.na(z) 
+    r <- r[ind]
+    la <- asin(gr$y[ind])
+    lo <- cos(la)
+    lo <- asin(gr$x[ind]/lo)
+
+    um <- repole(lo,la,theta,phi)
+ 
+    dat <- data.frame(la=um$la*180/pi,lo=um$lo*180/pi)
+    names(dat) <- x$term
+
+    X <- PredictMat(x,dat)   # prediction matrix for this term
+
+    ## fix lo for smooth contouring
+    lo <- dat[[2]]
+    ii <- lo <= -177
+    lo[ii] <- lo[ii] <- 360 + lo[ii]
+    ii <- lo < -165 & lo > -177 
+    ii <- ii | (abs(dat[[1]])>80) 
+    lo[ii] <- NA
+
+    return(list(X=X,scale=FALSE,se=FALSE,raw=raw,xlab="",ylab="",main="",
+                ind=ind,xm=xm,ym=ym,lo=lo,la=dat[[1]]))
+  } else { ## do plot
+    op <- par(pty="s",mar=c(0,0,0,0))
+    m <- length(P$xm); zz <- rep(NA,m*m)
+    if (scheme == 0) {
+      col <- 1# "lightgrey 
+      zz[P$ind] <- P$fit
+      image(P$xm,P$ym,matrix(zz,m,m),col=heat.colors(100),axes=FALSE,xlab="",ylab="",...)
+      if (rug) { 
+        if (is.null(list(...)[["pch"]])) points(P$raw$x,P$raw$y,pch=".",...) else
+        points(P$raw$x,P$raw$y,...)
+      }
+      zz[P$ind] <- P$la
+      contour(P$xm,P$ym,matrix(zz,m,m),add=TRUE,levels=c(-8:8*10),col=col,...)
+      zz[P$ind] <- P$lo
+      contour(P$xm,P$ym,matrix(zz,m,m),add=TRUE,levels=c(-8:9*20),col=col,...)
+      zz[P$ind] <- P$fit
+      contour(P$xm,P$ym,matrix(zz,m,m),add=TRUE,col=3,...)
+    } else if (scheme == 1) {
+      col <- 1 
+      zz[P$ind] <- P$fit
+      contour(P$xm,P$ym,matrix(zz,m,m),col=1,axes=FALSE,xlab="",ylab="",...) 
+      if (rug) { 
+        if (is.null(list(...)[["pch"]])) points(P$raw$x,P$raw$y,pch=".",...) else
+        points(P$raw$x,P$raw$y,...)
+      }
+      zz[P$ind] <- P$la
+      contour(P$xm,P$ym,matrix(zz,m,m),add=TRUE,levels=c(-8:8*10),col=col,lty=2,...)
+      zz[P$ind] <- P$lo
+      contour(P$xm,P$ym,matrix(zz,m,m),add=TRUE,levels=c(-8:9*20),col=col,lty=2,...)
+      theta <- seq(-pi/2,pi/2,length=200)
+      x <- sin(theta);y <- cos(theta)
+      x <- c(x,x[200:1]);y <- c(y,-y[200:1])
+      lines(x,y)
+    } 
+    par(op)
+  }
+} ## end plot.sos.smooth
 
 poly2 <- function(x,col) {
 ## let x be a 2 col matrix defining some polygons. 
@@ -314,7 +499,7 @@ polys.plot <- function(pc,z=NULL,scheme="heat",lab="",...) {
          (zlim[2]-zlim[1])*(pc[[i]][,2]-ylim[1])/(ylim[2]-ylim[1])
   
     ylim <- zlim
-    plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",bty="n",xlab="",ylab=lab)
+    plot(0,0,ylim=ylim,xlim=xlim,type="n",xaxt="n",bty="n",xlab="",ylab=lab,...)
     for (i in 1:length(pc)) {
       coli <- round((z[i] - zlim[1])/(zlim[2]-zlim[1])*100)    
       poly2(pc[[i]],col=scheme[coli])
@@ -339,35 +524,64 @@ polys.plot <- function(pc,z=NULL,scheme="heat",lab="",...) {
   par(oldpar)
 }
 
-
 plot.mrf.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
                      partial.resids=FALSE,rug=TRUE,se=TRUE,scale=-1,n=100,n2=40,
                      pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
                      ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
-                     shift=0,trans=I,by.resids=FALSE,scheme="grey",...) {
+                     shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
 ## plot method function for mrf.smooth terms, depends heavily on polys.plot, above
   if (is.null(P)) { ## get plotting information...
     if (!x$plot.me||is.null(x$xt$polys)) return(NULL) ## shouldn't or can't plot
     ## get basic plot data 
     raw <- data[x$term][[1]]
-    dat<-data.frame(x=factor(names(x$xt$polys),levels=levels(x$knots)));names(dat) <- x$term
+    dat <- data.frame(x=factor(names(x$xt$polys),levels=levels(x$knots)));names(dat) <- x$term
     X <- PredictMat(x,dat)   # prediction matrix for this term
     if (is.null(xlab)) xlabel<- "" else xlabel <- xlab
     if (is.null(ylab)) ylabel <- "" else ylabel <- ylab
     return(list(X=X,scale=FALSE,se=FALSE,raw=raw,xlab=xlabel,ylab=ylabel,
              main=label))
     } else { ## do plot
-      polys.plot(x$xt$polys,P$fit,scheme=scheme,lab=P$main)
+      if (scheme==0) scheme <- "heat" else scheme <- "grey"
+      polys.plot(x$xt$polys,P$fit,scheme=scheme,lab=P$main,...)
     }
 
-}
+} ## end plot.mrf.smooth
 
+plot.fs.interaction <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
+                     partial.resids=FALSE,rug=TRUE,se=TRUE,scale=-1,n=100,n2=40,
+                     pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
+                     ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
+                     shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
+## plot method for simple smooth factor interactions...
+  if (is.null(P)) { ## get plotting info
+    if (x$dim!=1) return(NULL) ## no method for base smooth dim > 1
+    raw <- data[x$base$term][[1]]
+    xx <- seq(min(raw),max(raw),length=n) # generate x sequence for prediction
+    nf <- length(x$flev)
+    fac <- rep(x$flev,rep(n,nf))
+    dat <- data.frame(fac,xx)
+    names(dat) <- c(x$fterm,x$base$term)
+    X <- Predict.matrix.fs.interaction(x,dat)
+    if (is.null(xlab)) xlabel <- x$base$term else xlabel <- xlab
+    if (is.null(ylab)) ylabel <- label else ylabel <- ylab
+    return(list(X=X,scale=TRUE,se=FALSE,raw=raw,xlab=xlabel,ylab=ylabel,
+             main="",x=xx,n=n,nf=nf))
+  } else { ## produce the plot
+    ind <- 1:P$n
+    plot(P$x[ind],P$fit[ind],ylim=range(P$fit),xlab=P$xlab,ylab=P$ylab,type="l")
+    if (P$nf>1) for (i in 2:P$nf) {
+      ind <- ind + P$n
+      if (scheme==0) lines(P$x,P$fit[ind],lty=i,col=i) else 
+      lines(P$x,P$fit[ind],lty=i)
+    }
+  }
+} ## end plot.fs.interaction
 
 plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
                      partial.resids=FALSE,rug=TRUE,se=TRUE,scale=-1,n=100,n2=40,
                      pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
                      ylim=NULL,xlim=NULL,too.far=0.1,shade=FALSE,shade.col="gray80",
-                     shift=0,trans=I,by.resids=FALSE,scheme=NULL,...) {
+                     shift=0,trans=I,by.resids=FALSE,scheme=0,...) {
 ## default plot method for smooth objects `x' inheriting from "mgcv.smooth"
 ## `x' is a smooth object, usually part of a `gam' fit.
 ## `P' is a list of plot data. 
@@ -517,6 +731,7 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
   } else { ## produce plot
     if (se) { ## produce CI's
       if (x$dim==1) { 
+        if (scheme == 1) shade <- TRUE
         ul <- P$fit + P$se ## upper CL
         ll <- P$fit - P$se ## lower CL
         if (scale==0&&is.null(ylim)) { ## get scale 
@@ -536,7 +751,7 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
                  xlim=P$xlim,ylab=P$ylab,main=P$main,...)
           polygon(c(P$x,P$x[n:1],P$x[1]),
                     trans(c(ul,ll[n:1],ul[1])+shift),col = shade.col,border = NA)
-          lines(P$x,trans(P$fit+shift))
+          lines(P$x,trans(P$fit+shift),...)
         } else { ## ordinary plot 
           plot(P$x,trans(P$fit+shift),type="l",xlab=P$xlab,ylim=trans(ylimit+shift),xlim=P$xlim,
                  ylab=P$ylab,main=P$main,...)
@@ -566,9 +781,18 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
 
       } else if (x$dim==2) { 
         P$fit[P$exclude] <- NA
-        if (pers) { ## perspective plot 
+        if (pers) scheme <- 1
+        if (scheme == 1) { ## perspective plot 
           persp(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),xlab=P$xlab,ylab=P$ylab,
                   zlab=P$main,ylim=P$ylim,xlim=P$xlim,theta=theta,phi=phi,...)
+        } else if (scheme==2) {
+          image(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),xlab=P$xlab,ylab=P$ylab,
+                  main=P$main,xlim=P$xlim,ylim=P$ylim,col=heat.colors(50),...)
+          contour(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),add=TRUE,col=3,...)
+          if (rug) {  
+            if (is.null(list(...)[["pch"]])) points(P$raw$x,P$raw$y,pch=".",...) else
+            points(P$raw$x,P$raw$y,...)
+          }
         } else { ## contour plot with error contours
           sp.contour(P$x,P$y,matrix(P$fit,n2,n2),matrix(P$se,n2,n2),
                      xlab=P$xlab,ylab=P$ylab,zlab=P$main,titleOnly=!is.null(main),
@@ -602,9 +826,18 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
       } else if (x$dim==2) { 
         P$fit[P$exclude] <- NA
         if (!is.null(main)) P$title <- main
-        if (pers) { 
+        if (pers) scheme <- 1
+        if (scheme==1) { 
           persp(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),xlab=P$xlab,ylab=P$ylab,
                           zlab=P$main,theta=theta,phi=phi,xlim=P$xlim,ylim=P$ylim,...)
+        } else if (scheme==2) {
+          image(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),xlab=P$xlab,ylab=P$ylab,
+                  main=P$main,xlim=P$xlim,ylim=P$ylim,col=heat.colors(50),...)
+          contour(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),add=TRUE,col=3,...)
+          if (rug) {  
+            if (is.null(list(...)[["pch"]])) points(P$raw$x,P$raw$y,pch=".",...) else
+            points(P$raw$x,P$raw$y,...)
+          }
         } else { 
           contour(P$x,P$y,matrix(trans(P$fit+shift),n2,n2),xlab=P$xlab,ylab=P$ylab,
                   main=P$main,xlim=P$xlim,ylim=P$ylim,...)
@@ -625,7 +858,7 @@ plot.mgcv.smooth <- function(x,P=NULL,data=NULL,label="",se1.mult=1,se2.mult=2,
 plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scale=-1,n=100,n2=40,
                      pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
                      ylim=NULL,xlim=NULL,too.far=0.1,all.terms=FALSE,shade=FALSE,shade.col="gray80",
-                     shift=0,trans=I,seWithMean=FALSE,by.resids=FALSE,scheme="grey",...)
+                     shift=0,trans=I,seWithMean=FALSE,by.resids=FALSE,scheme=0,...)
 
 # Create an appropriate plot for each smooth term of a GAM.....
 # x is a gam object
@@ -673,6 +906,13 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
 
   m <- length(x$smooth) ## number of smooth terms
 
+  if (length(scheme)==1) scheme <- rep(scheme,m)
+  if (length(scheme)!=m) { 
+    warn <- paste("scheme should be a single number, or a vector with",m,"elements")
+    warning(warn)
+    scheme <- rep(scheme[1],m)
+  }
+
   order <- attr(x$pterms,"order") # array giving order of each parametric term
 
   if (all.terms) # plot parametric terms as well
@@ -706,8 +946,14 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
     last <- x$smooth[[i]]$last.para
     edf <- sum(x$edf[first:last]) ## Effective DoF for this term
     term.lab <- sub.edf(x$smooth[[i]]$label,edf)
-    P <- plot(x$smooth[[i]],P=NULL,data=x$model,n=n,n2=n2,xlab=xlab,ylab=ylab,too.far=too.far,label=term.lab,
-              se1.mult=se1.mult,se2.mult=se2.mult,xlim=xlim,ylim=ylim,main=main,...)
+    #P <- plot(x$smooth[[i]],P=NULL,data=x$model,n=n,n2=n2,xlab=xlab,ylab=ylab,too.far=too.far,label=term.lab,
+    #          se1.mult=se1.mult,se2.mult=se2.mult,xlim=xlim,ylim=ylim,main=main,scheme=scheme[i],...)
+    P <- plot(x$smooth[[i]],P=NULL,data=x$model,partial.resids=partial.resids,rug=rug,se=se,scale=scale,n=n,n2=n2,
+                     pers=pers,theta=theta,phi=phi,jit=jit,xlab=xlab,ylab=ylab,main=main,label=term.lab,
+                     ylim=ylim,xlim=xlim,too.far=too.far,shade=shade,shade.col=shade.col,
+                     se1.mult=se1.mult,se2.mult=se2.mult,shift=shift,trans=trans,
+                     by.resids=by.resids,scheme=scheme[i],...)
+
     if (is.null(P)) pd[[i]] <- list(plot.me=FALSE) else {
       p <- x$coefficients[first:last]   ## relevent coefficients 
       offset <- attr(P$X,"offset")      ## any term specific offset
@@ -754,13 +1000,6 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
     } 
 
     # now figure out number of rows and columns
-#    c<-trunc(sqrt(ppp))
-#	if (c<1) c<-1
-#    r<-ppp%/%c
-#    if (r<1) r<-1
-#    while (r*c<ppp) r<-r+1
-#    while (r*c-ppp >c && r>1) r<-r-1
-#    while (r*c-ppp >r && c>1) c<-c-1 
     c <- r <- trunc(sqrt(ppp))
     if (c<1) r <- c <- 1
     if (c*r < ppp) c <- c + 1
@@ -823,7 +1062,7 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
     plot(x$smooth[[i]],P=pd[[i]],partial.resids=partial.resids,rug=rug,se=se,scale=scale,n=n,n2=n2,
                      pers=pers,theta=theta,phi=phi,jit=jit,xlab=xlab,ylab=ylab,main=main,
                      ylim=ylim,xlim=xlim,too.far=too.far,shade=shade,shade.col=shade.col,
-                     shift=shift,trans=trans,by.resids=by.resids,scheme=scheme,...)
+                     shift=shift,trans=trans,by.resids=by.resids,scheme=scheme[i],...)
 
   } ## end of smooth plotting loop
   
@@ -842,7 +1081,7 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
         term.labels <- attr(x$pterms,"term.labels")
         term.labels <- term.labels[order==1]
         if (select <= length(term.labels)) {
-          if (interactive() && m &&i%%ppp==0) 
+          # if (interactive() && m &&i%%ppp==0) 
           termplot(x,terms=term.labels[select],se=se,rug=rug,col.se=1,col.term=1)
         }  
       }
@@ -850,465 +1089,6 @@ plot.gam <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scal
   }
   if (pages>0) par(oldpar)
 } ## end plot.gam
-
-
-### following is old version, before object orientation of term plotting...
-
-
-plot.gam0 <- function(x,residuals=FALSE,rug=TRUE,se=TRUE,pages=0,select=NULL,scale=-1,n=100,n2=40,
-                     pers=FALSE,theta=30,phi=30,jit=FALSE,xlab=NULL,ylab=NULL,main=NULL,
-                     ylim=NULL,xlim=NULL,too.far=0.1,all.terms=FALSE,shade=FALSE,shade.col="gray80",
-                     shift=0,trans=I,seWithMean=FALSE,by.resids=FALSE,...)
-
-# Create an appropriate plot for each smooth term of a GAM.....
-# x is a gam object
-# rug determines whether a rug plot should be added to each plot
-# se determines whether twice standard error bars are to be added
-# pages is the number of pages over which to split output - 0 implies that 
-# graphic settings should not be changed for plotting
-# scale -1 for same y scale for each plot
-#        0 for different y scales for each plot
-# n - number of x axis points to use for plotting each term
-# n2 is the square root of the number of grid points to use for contouring
-# 2-d terms.
-
-{ sub.edf <- function(lab,edf) {
-    ## local function to substitute edf into brackets of label
-    ## labels are e.g. smooth[[1]]$label
-    pos <- regexpr(":",lab)[1]
-    if (pos<0) { ## there is no by variable stuff
-      pos <- nchar(lab) - 1
-      lab <- paste(substr(lab,start=1,stop=pos),",",round(edf,digits=2),")",sep="")
-    } else {
-      lab1 <- substr(lab,start=1,stop=pos-2)
-      lab2 <- substr(lab,start=pos-1,stop=nchar(lab))
-      lab <- paste(lab1,",",round(edf,digits=2),lab2,sep="")
-    }
-    lab
-  } ## end of sub.edf
-
-
-  sp.contour <- function(x,y,z,zse,xlab="",ylab="",zlab="",titleOnly=FALSE,
-               se.plot=TRUE,se.mult=1,trans=I,shift=0,...)   
-  # internal function for contouring 2-d smooths with 1 s.e. limits
-  { gap<-median(zse,na.rm=TRUE)  
-    zr<-max(trans(z+zse+shift),na.rm=TRUE)-min(trans(z-zse+shift),na.rm=TRUE) # plotting range  
-    n<-10  
-    while (n>1 && zr/n<2.5*gap) n<-n-1    
-    zrange<-c(min(trans(z-zse+shift),na.rm=TRUE),max(trans(z+zse+shift),na.rm=TRUE))  
-    zlev<-pretty(zrange,n)  ## ignore codetools on this one  
-    yrange<-range(y);yr<-yrange[2]-yrange[1]  
-    xrange<-range(x);xr<-xrange[2]-xrange[1]  
-    ypos<-yrange[2]+yr/10
-    args <- as.list(substitute(list(...)))[-1]
-    args$x <- substitute(x);args$y <- substitute(y)
-    args$type="n";args$xlab<-args$ylab<-"";args$axes<-FALSE
-    do.call("plot",args)
-##  plot(x,y,type="n",xlab="",ylab="",axes=FALSE)
-    cs<-(yr/10)/strheight(zlab);if (cs>1) cs<-1 # text scaling based on height  
-##  cw<-par()$cxy[1]  
-    tl<-strwidth(zlab);  
-    if (tl*cs>3*xr/10) cs<-(3*xr/10)/tl  
-    args <- as.list(substitute(list(...)))[-1]
-    n.args <- names(args)
-    zz <- trans(z+shift) ## ignore codetools for this
-    args$x<-substitute(x);args$y<-substitute(y);args$z<-substitute(zz)
-    if (!"levels"%in%n.args) args$levels<-substitute(zlev)
-    if (!"lwd"%in%n.args) args$lwd<-2
-    if (!"labcex"%in%n.args) args$labcex<-cs*.65
-    if (!"axes"%in%n.args) args$axes <- FALSE
-    if (!"add"%in%n.args) args$add <- TRUE
-    do.call("contour",args)
-##  contour(x,y,z,levels=zlev,lwd=2,labcex=cs*0.65,axes=FALSE,add=TRUE)  
-    if (is.null(args$cex.main)) cm <- 1 else cm <- args$cex.main
-    if (titleOnly)  title(zlab,cex.main=cm) else 
-    { xpos<-xrange[1]+3*xr/10  
-      xl<-c(xpos,xpos+xr/10); yl<-c(ypos,ypos)   
-      lines(xl,yl,xpd=TRUE,lwd=args$lwd)  
-      text(xpos+xr/10,ypos,zlab,xpd=TRUE,pos=4,cex=cs*cm,off=0.5*cs*cm)  
-    }
-    if  (is.null(args$cex.axis)) cma <- 1 else cma <- args$cex.axis
-    axis(1,cex.axis=cs*cma);axis(2,cex.axis=cs*cma);box();
-    if  (is.null(args$cex.lab)) cma <- 1 else cma <- args$cex.lab  
-    mtext(xlab,1,2.5,cex=cs*cma);mtext(ylab,2,2.5,cex=cs*cma)  
-    if (!"lwd"%in%n.args) args$lwd<-1
-    if (!"lty"%in%n.args) args$lty<-2
-    if (!"col"%in%n.args) args$col<-2
-    if (!"labcex"%in%n.args) args$labcex<-cs*.5
-    zz <- trans(z+zse+shift)
-    args$z<-substitute(zz)
-
-    do.call("contour",args)
-#    contour(x,y,z+zse,levels=zlev,add=TRUE,lty=2,col=2,labcex=cs*0.5)  
-
-    if (!titleOnly) {
-      xpos<-xrange[1]  
-      xl<-c(xpos,xpos+xr/10)#;yl<-c(ypos,ypos)  
-      lines(xl,yl,xpd=TRUE,lty=args$lty,col=args$col)  
-      text(xpos+xr/10,ypos,paste("-",round(se.mult),"se",sep=""),xpd=TRUE,pos=4,cex=cs*cm,off=0.5*cs*cm)  
-    }
-
-    if (!"lty"%in%n.args) args$lty<-3
-    if (!"col"%in%n.args) args$col<-3
-    zz <- trans(z - zse+shift)
-    args$z<-substitute(zz)
-    do.call("contour",args)
-#    contour(x,y,z-zse,levels=zlev,add=TRUE,lty=3,col=3,labcex=cs*0.5)  
-    
-    if (!titleOnly) {
-      xpos<-xrange[2]-xr/5  
-      xl<-c(xpos,xpos+xr/10);  
-      lines(xl,yl,xpd=TRUE,lty=args$lty,col=args$col)  
-      text(xpos+xr/10,ypos,paste("+",round(se.mult),"se",sep=""),xpd=TRUE,pos=4,cex=cs*cm,off=0.5*cs*cm)  
-    }
-  }  ## end of sp.contour
-
-  #########################
-  ## start of main function
-  #########################
-  w.resid<-NULL
-  if (length(residuals)>1) # residuals supplied 
-  { if (length(residuals)==length(x$residuals)) 
-    w.resid <- residuals else
-    warning("residuals argument to plot.gam is wrong length: ignored")
-    partial.resids <- TRUE
-  } else partial.resids <- residuals # use working residuals or none
-  m<-length(x$smooth) # number of smooth terms
-  order <- attr(x$pterms,"order") # array giving order of each parametric term
-  if (all.terms) # plot parametric terms as well
-  n.para <- sum(order==1) # plotable parametric terms   
-  else n.para <- 0 
-  if (m+n.para==0) stop("No terms to plot - nothing for plot.gam() to do.")
-  if (se)
-  { if (is.numeric(se)) se2.mult<-se1.mult<-se else { se1.mult<-2;se2.mult<-1} 
-    if (se1.mult<0) se1.mult<-0;if (se2.mult<0) se2.mult<-0
-  } else se1.mult<-se2.mult<-1
-  
-  if (se && x$Vp[1,1]<=0) 
-  { se<-FALSE
-    warning("No variance estimates available")
-  }
-  # plot should ignore all "by" variables
-  
-  # sort out number of pages and plots per page
-  n.plots <- n.para
-  if (m>0) for (i in 1:m) n.plots <- n.plots + as.numeric(x$smooth[[i]]$plot.me) 
-
-  if (pages>n.plots) pages<-n.plots
-  if (pages<0) pages<-0
-  if (pages!=0)    # figure out how to display things
-  { ppp<-n.plots%/%pages
-    if (n.plots%%pages!=0) 
-    { ppp<-ppp+1
-      while (ppp*(pages-1)>=n.plots) pages<-pages-1
- ##     if (n.plots%%pages) last.pages<-0 ##else last.ppp<-n.plots-ppp*pages
-    } 
- ## else last.ppp<-0
-    # now figure out number of rows and columns
-    c<-trunc(sqrt(ppp))
-	if (c<1) c<-1
-    r<-ppp%/%c
-    if (r<1) r<-1
-    while (r*c<ppp) r<-r+1
-    while (r*c-ppp >c && r>1) r<-r-1
-    while (r*c-ppp >r && c>1) c<-c-1 
-    oldpar<-par(mfrow=c(r,c))
-  
-  } else
-  { ppp<-1;oldpar<-par()}
-  
-  if ((pages==0&&prod(par("mfcol"))<n.plots&&dev.interactive())||
-       pages>1&&dev.interactive()) ask <- TRUE else ask <- FALSE 
-
-  ##if (pages==0&&is.null(select)) par(mfrow=par("mfrow")) ## new display
-
-  if (ask) {
-        oask <- devAskNewPage(TRUE)
-        on.exit(devAskNewPage(oask))
-    }
-
-  # work through all smooth terms assembling the plot data list pd with elements
-  # dim, x, fit, se, ylab, xlab for 1-d terms;
-  # dim, xm, ym, fit, se, ylab, xlab, title for 2-d terms;
-  # and dim otherwise
-  if (partial.resids) 
-  { fv.terms <- predict(x,type="terms")
-    if (is.null(w.resid)) w.resid<-x$residuals*sqrt(x$weights) # weighted working residuals
-  }
-  pd<-list();
-  i<-1 # needs a value if no smooths, but parametric terms ...
-
-  ## First the loop to get the data for the plots...
-  if (m>0) for (i in 1:m) # work through smooth terms
-  if (x$smooth[[i]]$plot.me)
-  { if (x$smooth[[i]]$dim==1)
-    { raw<-x$model[x$smooth[[i]]$term]
-      xx<-seq(min(raw),max(raw),length=n)   # generate x sequence for prediction
-      if (x$smooth[[i]]$by!="NA")         # deal with any by variables
-      { by<-rep(1,n);dat<-data.frame(x=xx,by=by)
-        names(dat)<-c(x$smooth[[i]]$term,x$smooth[[i]]$by)
-      } else
-      { dat<-data.frame(x=xx);names(dat)<-x$smooth[[i]]$term}  # prediction data.frame
-      X <- PredictMat(x$smooth[[i]],dat)   # prediction matrix from this term
-      first<-x$smooth[[i]]$first.para;last<-x$smooth[[i]]$last.para
-      p<-x$coefficients[first:last]       # relevent coefficients 
-      offset <- attr(X,"offset")
-      if (is.null(offset)) 
-      fit <- X%*%p else fit<-X%*%p + offset       # fitted values
-      if (se) {
-        ## test whether mean variability to be added to variability (only for centred terms)
-        if (seWithMean && attr(x$smooth[[i]],"nCons")>0) {
-          X1 <- matrix(x$cmX,nrow(X),ncol(x$Vp),byrow=TRUE)
-          meanL1 <- x$smooth[[i]]$meanL1
-          if (!is.null(meanL1)) X1 <- X1 / meanL1
-          X1[,first:last] <- X
-          se.fit <- sqrt(rowSums((X1%*%x$Vp)*X1))
-        } else se.fit <- ## se in centred (or anyway unconstained) space only
-        sqrt(rowSums((X%*%x$Vp[first:last,first:last])*X))
-      }
-      edf<-sum(x$edf[first:last])
-      xterm <- x$smooth[[i]]$term
-      if (is.null(xlab)) xlabel<- xterm else xlabel <- xlab
-      if (is.null(ylab)) ylabel <- sub.edf(x$smooth[[i]]$label,edf) else
-                         ylabel <- ylab
-      pd.item<-list(fit=fit,dim=1,x=xx,ylab=ylabel,xlab=xlabel,raw=raw[[1]])
-      if (partial.resids) {pd.item$p.resid <- fv.terms[,length(order)+i]+w.resid}
-      if (se) pd.item$se=se.fit*se1.mult  # Note multiplier
-      pd[[i]]<-pd.item;rm(pd.item)
-    } else 
-    if (x$smooth[[i]]$dim==2)
-    { xterm <- x$smooth[[i]]$term[1]
-      if (is.null(xlab)) xlabel <- xterm else xlabel <- xlab
-      yterm <- x$smooth[[i]]$term[2]
-      if (is.null(ylab)) ylabel <- yterm else ylabel <- ylab
-      raw<-data.frame(x=as.numeric(x$model[xterm][[1]]),
-                      y=as.numeric(x$model[yterm][[1]]))
-      n2<-max(10,n2)
-      xm<-seq(min(raw$x),max(raw$x),length=n2)
-      ym<-seq(min(raw$y),max(raw$y),length=n2)  
-      xx<-rep(xm,n2)
-      yy<-rep(ym,rep(n2,n2))
-      if (too.far>0)
-      exclude <- exclude.too.far(xx,yy,raw$x,raw$y,dist=too.far) else
-      exclude <- rep(FALSE,n2*n2)
-      if (x$smooth[[i]]$by!="NA")         # deal with any by variables
-      { by<-rep(1,n2^2);dat<-data.frame(x=xx,y=yy,by=by)
-        names(dat)<-c(xterm,yterm,x$smooth[[i]]$by)
-      } else
-      { dat<-data.frame(x=xx,y=yy);names(dat)<-c(xterm,yterm)}  # prediction data.frame
-      X <- PredictMat(x$smooth[[i]],dat)   # prediction matrix for this term
-      first<-x$smooth[[i]]$first.para;last<-x$smooth[[i]]$last.para
-      p<-x$coefficients[first:last]      # relevent coefficients 
-      offset <- attr(X,"offset")
-      if (is.null(offset)) 
-      fit <- X%*%p else fit<-X%*%p + offset       # fitted values
-      fit[exclude] <- NA                 # exclude grid points too far from data
-      if (se) {  
-        if (seWithMean && attr(x$smooth[[i]],"nCons")>0) { ## then se to include uncertainty in overall mean
-          X1 <- matrix(x$cmX,nrow(X),ncol(x$Vp),byrow=TRUE)
-          meanL1 <- x$smooth[[i]]$meanL1
-          if (!is.null(meanL1)) X1 <- X1 / meanL1
-          X1[,first:last] <- X
-          se.fit <- sqrt(rowSums((X1%*%x$Vp)*X1))
-        } else se.fit <- ## se in centred space only
-        sqrt(rowSums((X%*%x$Vp[first:last,first:last])*X))
-
-        se.fit[exclude] <- NA # exclude grid points too distant from data
-      }
-      edf<-sum(x$edf[first:last])
-      if (is.null(main)) 
-      { title <- sub.edf(x$smooth[[i]]$label,edf)
-      }
-      else title <- main
-      pd.item<-list(fit=fit,dim=2,xm=xm,ym=ym,ylab=ylabel,xlab=xlabel,title=title,raw=raw)
-      if (is.null(ylim)) pd.item$ylim <- range(ym) else pd.item$ylim <- ylim
-      if (is.null(xlim)) pd.item$xlim <- range(xm) else pd.item$xlim <- xlim
-      if (se) pd.item$se=se.fit*se2.mult  # Note multiplier
-      pd[[i]]<-pd.item;rm(pd.item)
-    } else
-    { pd[[i]]<-list(dim=x$smooth[[i]]$dim)}
-  } ## end of loop creating plot data
-
-  
-  ## now plot .....
-  if (se)   # pd$fit and pd$se
-  { k<-0
-    if (scale==-1&&is.null(ylim)) # getting common scale for 1-d terms
-    if (m>0) for (i in 1:m)
-    if (x$smooth[[i]]$plot.me)
-    { if (pd[[i]]$dim==1)
-      { ul<-pd[[i]]$fit+pd[[i]]$se
-        ll<-pd[[i]]$fit-pd[[i]]$se
-        if (k==0) 
-        { ylim<-c(min(ll),max(ul));k<-1;
-        } else
-        { if (min(ll)<ylim[1]) ylim[1]<-min(ll)
-	  if (max(ul)>ylim[2]) ylim[2]<-max(ul)
-        }
-        if (partial.resids)
-        { ul <- max(pd[[i]]$p.resid,na.rm=TRUE)
-          if (ul > ylim[2]) ylim[2] <- ul
-          ll <-  min(pd[[i]]$p.resid,na.rm=TRUE)
-          if (ll < ylim[1]) ylim[1] <- ll
-        }
-      }
-    }
-    j<-1
-    if (m>0) for (i in 1:m)
-    if (x$smooth[[i]]$plot.me)
-    { if (is.null(select)||i==select)
-      { ##if (interactive()&& is.null(select) && pd[[i]]$dim<3 && i>1&&(i-1)%%ppp==0) 
-        ##readline("Press return for next page....")
-        if (pd[[i]]$dim==1)
-        { ul<-pd[[i]]$fit+pd[[i]]$se
-          ll<-pd[[i]]$fit-pd[[i]]$se
-          if (scale==0&&is.null(ylim)) 
-          { ylimit<-c(min(ll),max(ul))
-            if (partial.resids)
-            { max.r <- max(pd[[i]]$p.resid,na.rm=TRUE)
-              if ( max.r> ylimit[2]) ylimit[2] <- max.r
-              min.r <-  min(pd[[i]]$p.resid,na.rm=TRUE)
-              if (min.r < ylimit[1]) ylimit[1] <- min.r
-            }
-          }
-          if (!is.null(ylim)) ylimit <- ylim
-          if (shade)
-          { plot(pd[[i]]$x,trans(pd[[i]]$fit+shift),type="n",xlab=pd[[i]]$xlab,ylim=trans(ylimit+shift),
-                 xlim=xlim,ylab=pd[[i]]$ylab,main=main,...)
-            polygon(c(pd[[i]]$x,pd[[i]]$x[n:1],pd[[i]]$x[1]),
-                     trans(c(ul,ll[n:1],ul[1])+shift),col = shade.col,border = NA)
-            lines(pd[[i]]$x,trans(pd[[i]]$fit+shift))
-          } else
-          { plot(pd[[i]]$x,trans(pd[[i]]$fit+shift),type="l",xlab=pd[[i]]$xlab,ylim=trans(ylimit+shift),xlim=xlim,
-                 ylab=pd[[i]]$ylab,main=main,...)
-	    if (is.null(list(...)[["lty"]]))
-            { lines(pd[[i]]$x,trans(ul+shift),lty=2,...)
-              lines(pd[[i]]$x,trans(ll+shift),lty=2,...)
-            } else
-            { lines(pd[[i]]$x,trans(ul+shift),...)
-              lines(pd[[i]]$x,trans(ll+shift),...)
-            }
-          } 
-          if (partial.resids&&(by.resids||x$smooth[[i]]$by=="NA"))
-          { if (length(pd[[i]]$raw)==length(pd[[i]]$p.resid)) {
-              if (is.null(list(...)[["pch"]]))
-              points(pd[[i]]$raw,trans(pd[[i]]$p.resid+shift),pch=".",...) else
-              points(pd[[i]]$raw,trans(pd[[i]]$p.resid+shift),...) 
-            } else {
-              warning("Partial residuals do not have a natural x-axis location for linear functional terms")
-            }
-          }
-	  if (rug) 
-          { if (jit) rug(jitter(as.numeric(pd[[i]]$raw)),...)
-             else rug(as.numeric(pd[[i]]$raw),...)
-	  }
-        } else if (pd[[i]]$dim==2)
-        { 
-          if (pers) 
-          { if (!is.null(main)) pd[[i]]$title <- main
-            persp(pd[[i]]$xm,pd[[i]]$ym,matrix(trans(pd[[i]]$fit+shift),n2,n2),xlab=pd[[i]]$xlab,ylab=pd[[i]]$ylab,
-                  zlab=pd[[i]]$title,ylim=pd[[i]]$ylim,xlim=pd[[i]]$xlim,theta=theta,phi=phi,...)
-          } else
-          { sp.contour(pd[[i]]$xm,pd[[i]]$ym,matrix(pd[[i]]$fit,n2,n2),matrix(pd[[i]]$se,n2,n2),
-                     xlab=pd[[i]]$xlab,ylab=pd[[i]]$ylab,zlab=pd[[i]]$title,titleOnly=!is.null(main),
-                     se.mult=se2.mult,trans=trans,shift=shift,...)
-            if (rug) { 
-              if (is.null(list(...)[["pch"]]))
-              points(pd[[i]]$raw$x,pd[[i]]$raw$y,pch=".",...) else
-              points(pd[[i]]$raw$x,pd[[i]]$raw$y,...) 
-            }
-          } 
-        } else
-        { warning("no automatic plotting for smooths of more than two variables")
-        }
-      }  
-      j<-j+pd[[i]]$dim
-    }
-  } else # don't plot confidence limits
-  { k<-0
-    if (scale==-1&&is.null(ylim))
-    if (m>0) for (i in 1:m)
-    { if (pd[[i]]$dim==1)
-      { if (k==0) { 
-          if (partial.resids) ylim <- range(pd[[i]]$p.resid,na.rm=TRUE) else 
-          ylim<-range(pd[[i]]$fit);k<-1 
-        } else
-        { if (partial.resids)
-          { if (min(pd[[i]]$p.resid)<ylim[1]) ylim[1]<-min(pd[[i]]$p.resid,na.rm=TRUE)
-	    if (max(pd[[i]]$p.resid)>ylim[2]) ylim[2]<-max(pd[[i]]$p.resid,na.rm=TRUE)
-          } else
-          { if (min(pd[[i]]$fit)<ylim[1]) ylim[1]<-min(pd[[i]]$fit)
-	    if (max(pd[[i]]$fit)>ylim[2]) ylim[2]<-max(pd[[i]]$fit)
-          }
-	}
-      }
-    }
-    j<-1
-    if (m>0) for (i in 1:m)
-    { if (is.null(select)||i==select)
-      {### if (interactive() && is.null(select) && pd[[i]]$dim<3 && i>1&&(i-1)%%ppp==0) readline("Press return for next page....")
-        if (pd[[i]]$dim==1)
-        { if (scale==0&&is.null(ylim)) 
-          { if (partial.resids) ylimit <- range(pd[[i]]$p.resid,na.rm=TRUE) else ylimit <-range(pd[[i]]$fit)}
-          if (!is.null(ylim)) ylimit <- ylim
-          plot(pd[[i]]$x,trans(pd[[i]]$fit+shift),type="l",,xlab=pd[[i]]$xlab,
-               ylab=pd[[i]]$ylab,ylim=trans(ylimit+shift),xlim=xlim,main=main,...)
-          if (rug) 
-	  { if (jit) rug(jitter(as.numeric(pd[[i]]$raw)),...)
-            else rug(as.numeric(pd[[i]]$raw),...) 
-          }
-          if (partial.resids&&(by.resids||x$smooth[[i]]$by=="NA"))
-          { if (is.null(list(...)[["pch"]]))
-            points(pd[[i]]$raw,trans(pd[[i]]$p.resid+shift),pch=".",...) else
-            points(pd[[i]]$raw,trans(pd[[i]]$p.resid+shift),...)
-          }
-        } else if (pd[[i]]$dim==2)
-        { if (!is.null(main)) pd[[i]]$title <- main
-          if (pers) 
-          { persp(pd[[i]]$xm,pd[[i]]$ym,matrix(trans(pd[[i]]$fit+shift),n2,n2),xlab=pd[[i]]$xlab,ylab=pd[[i]]$ylab,
-                          zlab=pd[[i]]$title,theta=theta,phi=phi,xlim=pd[[i]]$xlim,ylim=pd[[i]]$ylim,...)
-          }
-          else
-          { contour(pd[[i]]$xm,pd[[i]]$ym,matrix(trans(pd[[i]]$fit+shift),n2,n2),xlab=pd[[i]]$xlab,ylab=pd[[i]]$ylab,
-                    main=pd[[i]]$title,xlim=pd[[i]]$xlim,ylim=pd[[i]]$ylim,...)
-            if (rug) 
-            {  if (is.null(list(...)[["pch"]])) points(pd[[i]]$raw$x,pd[[i]]$raw$y,pch=".",...) else
-               points(pd[[i]]$raw$x,pd[[i]]$raw$y,...)
-            }
-          }  
-
-        } else
-        { warning("no automatic plotting for smooths of more than one variable")}
-      }
-      j<-j+pd[[i]]$dim
-    } 
-  }
-
-
-  if (n.para>0) # plot parameteric terms
-  { class(x) <- c("gam","glm","lm") # needed to get termplot to call model.frame.glm 
-    if (is.null(select)) {
-      attr(x,"para.only") <- TRUE
-    #  if (interactive() && m && i%%ppp==0) 
-    #  readline("Press return for next page....")
-      termplot(x,se=se,rug=rug,col.se=1,col.term=1)
-    } else { # figure out which plot is required
-      if (select > m) { 
-        select <- select - m # i.e. which parametric term
-        term.labels <- attr(x$pterms,"term.labels")
-        term.labels <- term.labels[order==1]
-        if (select <= length(term.labels)) {
-        if (interactive() && m &&i%%ppp==0) 
-##        readline("Press return for next page....")
-        termplot(x,terms=term.labels[select],se=se,rug=rug,col.se=1,col.term=1)
-        }  
-      }
-    }
-  }
-  if (pages>0) par(oldpar)
-} ## end plot.gam0
-
-
 
 
 
@@ -1363,7 +1143,7 @@ vis.gam <- function(x,view=NULL,cond=list(),n.grid=30,too.far=0,col=NA,color="he
 
   ## basic issues in the following are that not all objects will have a useful `data'
   ## component, but they all have a `model' frame. Furthermore, `predict.gam' recognises
-  ## when a model fram has been supplied
+  ## when a model frame has been supplied
 
   v.names  <- names(x$var.summary) ## names of all variables
 

@@ -396,7 +396,7 @@ function(data, g, nbins = 25, h, x0 = -h/1000, breaks,
             est[[grp]] <- est1
         }
     }
-    if(type=="density" || type == "both"){
+    if(type == "density" || type == "both"){
         xd <- vector("list", length(groups))
         for (grp in groups){
             if(missing(width)) width <- width.SJ(data[g==grp])
@@ -406,6 +406,7 @@ function(data, g, nbins = 25, h, x0 = -h/1000, breaks,
             xd[[grp]] <- xd1
         }
     }
+    dev.hold(); on.exit(dev.flush())
     if(!sep) plot(xlim, c(0, ymax), type = "n", xlab = xlab, ylab = "",
                   bty = bty)
     else {

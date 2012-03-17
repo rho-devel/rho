@@ -51,9 +51,9 @@
     \item{\code{diag}:}{Object of class \code{"character"}. Must be
       either \code{"U"}, for unit triangular (diagonal is all ones), or
       \code{"N"}; see \code{\linkS4class{triangularMatrix}}.}
-    \item{\code{p}:}{Object of class \code{"integer"} of pointers, one
-      for each column, to the initial (zero-based) index of elements in
-      the column. (Only present in the \code{dtCMatrix} class.)}
+    \item{\code{p}:}{(only present in \code{"dtCMatrix"}:) an
+      \code{\link{integer}} vector for providing pointers, one for each
+      column, see the detailed description in \code{\linkS4class{CsparseMatrix}}.}
     \item{\code{i}:}{Object of class \code{"integer"} of length nnzero
       (number of non-zero elements).  These are the row numbers for
       each non-zero element in the matrix.}

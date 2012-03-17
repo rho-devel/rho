@@ -85,7 +85,9 @@ strptime(x, format, tz = "")
     \item{\code{\%c}}{Date and time.   Locale-specific on output,
       \code{"\%a \%b \%e \%H:\%M:\%S \%Y"} on input.}
     \item{\code{\%d}}{Day of the month as decimal number (01--31).}
-    \item{\code{\%H}}{Hours as decimal number (00--23).}
+    \item{\code{\%H}}{Hours as decimal number (00--23).  As a special
+      exception times such as \samp{24:00:00} are accepted for input,
+      since ISO 8601 allows these.}
     \item{\code{\%I}}{Hours as decimal number (01--12).}
     \item{\code{\%j}}{Day of year as decimal number (001--366).}
     \item{\code{\%m}}{Month as decimal number (01--12).}
@@ -103,17 +105,22 @@ strptime(x, format, tz = "")
     \item{\code{\%w}}{Weekday as decimal number (0--6, Sunday is 0).}
     \item{\code{\%W}}{Week of the year as decimal number (00--53) using
       Monday as the first day of week (and typically with the
-      first Monday of the year as day 1 of week 1). The UK convention.}
+      first Monday of the year as day 1 of week 1).  The UK convention.}
     \item{\code{\%x}}{Date.  Locale-specific on output,
       \code{"\%y/\%m/\%d"} on input.}
     \item{\code{\%X}}{Time.  Locale-specific on output,
       \code{"\%H:\%M:\%S"} on input.}
-    \item{\code{\%y}}{Year without century (00--99). Values 00 to 68 are
-      prefixed by 20 and 69 to 99 by 19 -- that is the behaviour specified
-      by the 2004 POSIX standard, but it does also say \sQuote{it is
-  expected that in a future version the default century inferred from a
-  2-digit year will change}.}
-    \item{\code{\%Y}}{Year with century.}
+    \item{\code{\%y}}{Year without century (00--99).  On input, values
+      00 to 68 are prefixed by 20 and 69 to 99 by 19 -- that is the
+      behaviour specified by the 2004 and 2008 POSIX standards, but they do
+      also say \sQuote{it is expected that in a future version the
+	default century inferred from a 2-digit year will change}.}
+    \item{\code{\%Y}}{Year with century.  Note that whereas there was no
+      zero in the original Gregorian calendar, ISO 8601:2004 defines it
+      to be valid (interpreted as 1BC): see
+      \url{http://en.wikipedia.org/wiki/0_(year)}.  Note that the standard
+      also says that years before 1582 in its calendar should only be used
+      with agreement of the parties involved.} 
     \item{\code{\%z}}{Signed offset in hours and minutes from UTC, so
       \code{-0800} is 8 hours behind UTC.}
     \item{\code{\%Z}}{(output only.) Time zone as a character
@@ -192,7 +199,9 @@ strptime(x, format, tz = "")
   \code{isdst} component and to set the \code{"tzone"} attribute if
   \code{tz != ""}.  If the specified time is invalid (for example
   \samp{"2010-02-30 08:00"}) all the components of the result are
-  \code{NA}.
+  \code{NA}.  (NB: this does means exactly what it says -- if it is an
+  invalid time, not just a time that does not exist in some timezone.)
+  %% One of Master B Diggs moments of infamy
 }
 \note{
   The default formats follow the rules of the ISO 8601 international
@@ -207,23 +216,28 @@ strptime(x, format, tz = "")
   If the timezone specified is invalid on your system, what happens is
   system-specific but it will probably be ignored.
 
-  OS facilities will probably not print years before 1CE (aka 1AD)
+  OS facilities will probably not print years before 1 CE (aka 1 AD)
   correctly.
 
   Remember that in most timezones some times do not occur and some occur
   twice because of transitions to/from summer time.  \code{strptime}
   does not validate such times (it does not assume a specific timezone),
-  but conversion by \code{\link{as.POSIXct}}) will do so.
+  but conversion by \code{\link{as.POSIXct}}) will do so.  Conversion by
+  \code{strftime} and formatting/printing uses OS facilities and may
+  (and does on Windows) return nonsensical results for non-existent
+  times at DST transitions.
 }
 \references{
   International Organization for Standardization (2004, 2000, 1988, 1997,
   \dots)
-  \emph{ISO 8601. Data elements and interchange formats --
+  \emph{ISO 8601.  Data elements and interchange formats --
     Information interchange -- Representation of dates and times.}
   For links to versions available on-line see (at the time of writing)
   \url{http://www.qsl.net/g1smd/isopdf.htm}; for information on the
   current official version, see
   \url{http://www.iso.org/iso/en/prods-services/popstds/datesandtime.html}.
+  
+  The POSIX 1003.1 standard, which is in some respects stricter than ISO 8601.
 }
 \seealso{
   \link{DateTimeClasses} for details of the date-time classes;

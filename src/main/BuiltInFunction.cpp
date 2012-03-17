@@ -102,7 +102,6 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_paren
 		     || m_function == do_repeat
 		     || m_function == do_return
-		     || m_function == do_set
 		     || m_function == do_while);
 }
 

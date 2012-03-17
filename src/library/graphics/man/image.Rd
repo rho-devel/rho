@@ -12,7 +12,7 @@ image(x, \dots)
 
 \method{image}{default}(x, y, z, zlim, xlim, ylim, col = heat.colors(12),
       add = FALSE, xaxs = "i", yaxs = "i", xlab, ylab,
-      breaks, oldstyle = FALSE, useRaster = FALSE, \dots)
+      breaks, oldstyle = FALSE, useRaster, \dots)
 }
 \arguments{
   \item{x,y}{locations of grid lines at which the values in \code{z} are
@@ -53,7 +53,8 @@ image(x, \dots)
     lengths between the limits.}
   \item{useRaster}{logical; if \code{TRUE} a bitmap raster is used to
     plot the image instead of polygons. The grid must be regular in that
-    case, otherwise an error is raised.}
+    case, otherwise an error is raised.   For the behaviour when this is
+    not specified, see \sQuote{Details}.}
   \item{\dots}{\link{graphical parameters} for \code{\link{plot}} may also be
     passed as arguments to this function, as can the plot aspect ratio
     \code{asp} and \code{axes} (see \code{\link{plot.window}}).}
@@ -77,7 +78,8 @@ image(x, \dots)
   only makes sense to specify the midpoints of an equally-spaced
   grid.  If you specify just one row or column and a length-one \code{x}
   or \code{y}, the whole user area in the corresponding direction is
-  filled.
+  filled. For logarithmic \code{x} or \code{y} axes the boundaries between 
+  cells must be specified.
 
   Rectangles corresponding to missing values are not plotted (and so are
   transparent and (unless \code{add=TRUE}) the default background painted
@@ -94,13 +96,28 @@ image(x, \dots)
   i.e. a 90 degree counter-clockwise rotation of the conventional
   printed layout of a matrix.
 
-  Images for large \code{z} on a regular grid are more efficient with
-  \code{useRaster} enabled and can prevent rare anti-aliasing artifacts,
-  but may not be supported by all graphics devices.
+  Images for large \code{z} on a regular grid are rendered more
+  efficiently with \code{useRaster = TRUE} and can prevent rare
+  anti-aliasing artifacts, but may not be supported by all graphics
+  devices.  Some devices (such as \code{postscript} and
+  \code{X11(type = "Xlib")}) which do not support semi-transparent
+  colours may emit missing values as white rather than transparent, and
+  there may be limitations on the size of a raster image.
+#ifdef windows
+  Problems with the rendering of raster images have been reported using
+  \code{windows()} devices under Remote Desktop.
+#endif
+  
+  The graphics files in PDF and PostScript can be much smaller under
+  this option.
+
+  If \code{useRaster} is not specified, raster images are used when the
+  \code{\link{getOption}("preferRaster")} is true, the grid is regular
+  and either \code{\link{dev.capabilities}("raster")} is \code{"yes"} or
+  it is \code{"non-missing"} and there are no missing values.
 }
 \note{
-  Based on a function by Thomas Lumley
-  \email{tlumley@u.washington.edu}.
+  Originally based on a function by Thomas Lumley.
 }
 \seealso{
   \code{\link{filled.contour}} or \code{\link{heatmap}} which can
@@ -112,6 +129,9 @@ image(x, \dots)
   \code{\link{heat.colors}}, \code{\link{topo.colors}},
   \code{\link{terrain.colors}}, \code{\link{rainbow}},
   \code{\link{hsv}}, \code{\link{par}}.
+  
+  \code{\link{dev.capabilities}} to see if \code{useRaster = TRUE} is
+  supported on the current device.
 }
 \examples{
 require(grDevices) # for colours

@@ -136,9 +136,10 @@ SEXP attribute_hidden do_nzchar(SEXP call, SEXP op, SEXP args, SEXP env)
 SEXP attribute_hidden do_nchar(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP d, s, x, stype;
-    int i, len, ntype, allowNA;
-    const char *type;
+    int i, len, allowNA;
+    size_t ntype;
     int nc;
+    const char *type;
     const char *xi;
     wchar_t *wc;
     const void *vmax;
@@ -259,7 +260,8 @@ static void substr(char *buf, const char *str, int ienc, int sa, int so)
 SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, sa, so, el;
-    int i, len, start, stop, slen, k, l;
+    int i, len, start, stop, k, l;
+    size_t slen;
     cetype_t ienc;
     const char *ss;
     char *buf;
@@ -292,10 +294,10 @@ SEXP attribute_hidden do_substr(SEXP call, SEXP op, SEXP args, SEXP env)
 	    slen = strlen(ss); /* FIXME -- should handle embedded nuls */
 	    buf = static_cast<char*>(R_AllocStringBuffer(slen+1, &cbuff));
 	    if (start < 1) start = 1;
-	    if (start > stop || start > slen) {
+	    if (start > stop || start > CXXRCONSTRUCT(int, slen)) {
 		buf[0] = '\0';
 	    } else {
-		if (stop > slen) stop = slen;
+		if (stop > CXXRCONSTRUCT(int, slen)) stop = slen;
 		substr(buf, ss, ienc, start, stop);
 	    }
 	    SET_STRING_ELT(s, i, mkCharCE(buf, ienc));
@@ -350,7 +352,8 @@ substrset(char *buf, const char *const str, cetype_t ienc, int sa, int so)
 SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 {
     SEXP s, x, sa, so, value, el, v_el;
-    int i, len, start, stop, slen, k, l, v;
+    int i, len, start, stop, k, l, v;
+    size_t slen;
     cetype_t ienc, venc;
     const char *ss, *v_ss;
     char *buf;
@@ -390,7 +393,7 @@ SEXP attribute_hidden do_substrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	    ss = CHAR(el);
 	    slen = strlen(ss);
 	    if (start < 1) start = 1;
-	    if (stop > slen) stop = slen; /* SBCS optimization */
+	    if (stop > CXXRCONSTRUCT(int, slen)) stop = slen; /* SBCS optimization */
 	    if (start > stop) {
 		/* just copy element across */
 		SET_STRING_ELT(s, i, STRING_ELT(x, i));

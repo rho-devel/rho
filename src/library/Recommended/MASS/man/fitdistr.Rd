@@ -1,5 +1,5 @@
 % file MASS/man/fitdistr.Rd
-% copyright (C) 2001-10 W. N. Venables and B. D. Ripley
+% copyright (C) 2001-11 W. N. Venables and B. D. Ripley
 %
 \name{fitdistr}
 \alias{fitdistr}
@@ -78,11 +78,19 @@ fitdistr(x, densfun, start, \dots)
   There are \code{\link{print}}, \code{\link{coef}}, \code{\link{vcov}}
   and \code{\link{logLik}} methods for class \code{"fitdistr"}.
 }
+\note{
+  Numerical optimization cannot work miracles: please note the comments
+  in \code{\link{optim}} on scaling data.  If the fitted parameters are
+  far away from one, consider re-fitting specifying the control
+  parameter \code{parscale}.
+}
 \references{
   Venables, W. N. and Ripley, B. D. (2002)
   \emph{Modern Applied Statistics with S.} Fourth edition.  Springer.
 }
 \examples{
+## avoid spurious accuracy
+op <- options(digits = 3)
 set.seed(123)
 x <- rgamma(100, shape = 5, rate = 0.1)
 fitdistr(x, "gamma")
@@ -105,6 +113,7 @@ fitdistr(x3, "weibull")
 set.seed(123)
 x4 <- rnegbin(500, mu = 5, theta = 4)
 fitdistr(x4, "Negative Binomial")
+options(op)
 }
 \keyword{distribution}
 \keyword{htest}

@@ -132,15 +132,6 @@ AC_DEFUN([R_PROG_TEXMF],
 ## TEX PDFTEX LATEX PDFLATEX MAKEINDEX TEXI2DVI are used to make manuals
 ## TEXI2DVICMD sets default for R_TEXI2DVICMD, used for options('texi2dvi')
 AC_PATH_PROGS(TEX, [${TEX} tex], )
-if test -z "${ac_cv_path_TEX}" ; then
-  warn_dvi1="you cannot build DVI versions of the R manuals"
-  AC_MSG_WARN([${warn_dvi1}])
-fi
-AC_PATH_PROGS(LATEX, [${LATEX} latex], )
-if test -z "${ac_cv_path_LATEX}"; then
-  warn_dvi2="you cannot build DVI versions of all the help pages"
-  AC_MSG_WARN([${warn_dvi2}])
-fi
 AC_PATH_PROGS(PDFTEX, [${PDFTEX} pdftex], )
 if test -z "${ac_cv_path_PDFTEX}" ; then
   warn_pdf1="you cannot build PDF versions of the R manuals"
@@ -148,7 +139,7 @@ if test -z "${ac_cv_path_PDFTEX}" ; then
 fi
 AC_PATH_PROGS(PDFLATEX, [${PDFLATEX} pdflatex], )
 if test -z "${ac_cv_path_PDFLATEX}" ; then
-  warn_pdf2="you cannot build PDF versions of all the help pages"
+  warn_pdf2="you cannot build PDF versions of vignettes and help pages"
   AC_MSG_WARN([${warn_pdf2}])
 fi
 AC_PATH_PROGS(MAKEINDEX, [${MAKEINDEX} makeindex], )
@@ -161,7 +152,18 @@ fi
 AC_SUBST(TEXI2DVICMD)
 : ${R_RD4DVI="ae"}
 AC_SUBST(R_RD4DVI)
-: ${R_RD4PDF="times,hyper"}
+AC_PATH_PROGS(KPSEWHICH, [${KPSEWHICH} kpsewhich], "")
+r_rd4pdf="times,inconsolata,hyper"
+if test -n "${KPSEWHICH}"; then
+  if test -z `${KPSEWHICH} inconsolata.sty`; then
+     r_rd4pdf="times,hyper"
+     if test -z "${R_RD4PDF}" ;  then
+       warn_pdf3="inconsolata.sty not found: PDF vignettes and package manuals will not be rendered optimally"
+       AC_MSG_WARN([${warn_pdf3}])
+     fi
+  fi
+fi
+: ${R_RD4PDF=${r_rd4pdf}}
 AC_SUBST(R_RD4PDF)
 ])# R_PROG_TEXMF
 
@@ -1208,6 +1210,39 @@ fi
 AC_SUBST_FILE(r_objc_rules_frag)
 ])# R_PROG_OBJC_MAKEFRAG
 
+## R_PROG_OBJC_FLAG(FLAG, [ACTION-IF-TRUE])
+## ---------------------------------------
+## Check whether the Obj-C compiler handles command line option FLAG,
+## and set shell variable r_cv_prog_objc_flag_SFLAG accordingly (where
+## SFLAG is a shell-safe transliteration of FLAG).
+## In addition, execute ACTION-IF-TRUE in case of success.
+AC_DEFUN([R_PROG_OBJC_FLAG],
+[ac_safe=AS_TR_SH($1)
+
+  if test -z "${OBJC}"; then
+    eval r_cv_prog_objc_flag_${ac_safe}=no
+  else
+    AC_MSG_CHECKING([whether ${OBJC} accepts $1])
+    AC_CACHE_VAL([r_cv_prog_objc_flag_${ac_safe}],
+    [AC_LANG_PUSH([Objective C])
+    r_save_OBJCFLAGS="${OBJCFLAGS}"
+    OBJCFLAGS="${OBJCFLAGS} $1"
+    AC_LINK_IFELSE([AC_LANG_PROGRAM()],
+               [eval "r_cv_prog_objc_flag_${ac_safe}=yes"],
+               [eval "r_cv_prog_objc_flag_${ac_safe}=no"])
+	       OBJCFLAGS="${r_save_OBJCFLAGS}"
+	       AC_LANG_POP([Objective C])
+	       ])
+    if eval "test \"`echo '$r_cv_prog_objc_flag_'$ac_safe`\" = yes"; then
+      AC_MSG_RESULT([yes])
+      [$2]
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+])# R_PROG_OBJC_FLAG
+
+
 ## R_PROG_OBJC_RUNTIME
 ## -------------------
 ## Check for ObjC runtime and style.
@@ -2026,6 +2061,7 @@ AC_EGREP_CPP([yes],
 ## otherwise.
 ## /opt/csw/lib and /usr/sfw/lib are for Solaris (blastwave and sunfreeware
 ## respectively).
+## /opt/freeware/lib is for 'IBM AIX Toolbox for Linux Applications'
 ## We want to look in LIBnn only here.
 AC_DEFUN([_R_PATH_TCL_CONFIG],
 [AC_MSG_CHECKING([for tclConfig.sh in library (sub)directories])
@@ -2876,32 +2912,47 @@ AC_SUBST(LAPACK_LIBS)
 ## Try finding XDR library functions and headers.
 ## FreeBSD in particular needs rpc/types.h before rpc/xdr.h.
 AC_DEFUN([R_XDR],
+[AC_CACHE_CHECK([for XDR support], [r_cv_xdr],
+save_CPPFLAGS=${CPPFLAGS}
 [AC_CHECK_HEADER(rpc/types.h)
 if test "${ac_cv_header_rpc_types_h}" = yes ; then
   AC_CHECK_HEADER(rpc/xdr.h, , , [#include <rpc/types.h>])
 fi
-AC_CACHE_CHECK([for XDR support],
-                [r_cv_xdr],
-[if test "${ac_cv_header_rpc_types_h}" = yes \
-     && test "${ac_cv_header_rpc_xdr_h}" = yes \
-     && test "${ac_cv_search_xdr_string}" != no ; then
+if test "${ac_cv_header_rpc_types_h}" = yes && \
+   test "${ac_cv_header_rpc_xdr_h}" = yes && \
+   test "${ac_cv_search_xdr_string}" != no ; then
   r_cv_xdr=yes
 else
   r_cv_xdr=no
 fi
+## No RPC headers, so try for TI-RPC headers: do need /usr/include/tirpc
+## on include path to find /usr/include/tirpc/netconfig.h
+if test "${r_cv_xdr}" = no ; then
+  CPPFLAGS="${CPPFLAGS} -I/usr/include/tirpc"
+  AC_CHECK_HEADER(tirpc/rpc/types.h)
+  if test "${ac_cv_header_tirpc_rpc_types_h}" = yes ; then
+    AC_CHECK_HEADER(tirpc/rpc/xdr.h, , , [#include <tirpc/rpc/types.h>])
+  fi
+  if test "${ac_cv_header_tirpc_rpc_types_h}" = yes && \
+    test "${ac_cv_header_tirpc_rpc_xdr_h}" = yes &&
+    test "${ac_cv_search_xdr_string}" != no ; then
+    TIRPC_CPPFLAGS=-I/usr/include/tirpc
+    r_cv_xdr=yes
+  fi
+  CPPFLAGS="${save_CPPFLAGS}"
+fi
 ])
 AM_CONDITIONAL(BUILD_XDR, [test "x${r_cv_xdr}" = xno])
+AC_SUBST(TIRPC_CPPFLAGS)
 ])# R_XDR
 
 ## R_ZLIB
 ## ------
 ## Try finding zlib library and headers.
 ## We check that both are installed, and that the header >= 1.2.3
-## and that gzeof is in the library (which suggests the library
-## is also recent enough).
 AC_DEFUN([R_ZLIB],
 [if test "x${use_system_zlib}" = xyes; then
-  AC_CHECK_LIB(z, gzeof, [have_zlib=yes], [have_zlib=no])
+  AC_CHECK_LIB(z, inflateInit2_, [have_zlib=yes], [have_zlib=no])
   if test "${have_zlib}" = yes; then
     AC_CHECK_HEADER(zlib.h, [have_zlib=yes], [have_zlib=no])
   fi
@@ -3750,6 +3801,86 @@ else
 fi
 ])# R_ICU
 
+## R_ABI
+## ------------
+AC_DEFUN([R_ABI],
+[## System type.
+case "${host_os}" in
+  linux*)
+    R_SYSTEM_ABI="linux"
+    ;;
+  solaris*)    
+    R_SYSTEM_ABI="solaris"
+    ;;
+  darwin*)
+    R_SYSTEM_ABI="osx"
+    ;;
+  *)
+    R_SYSTEM_ABI="?"
+    ;;
+esac
+## Compiler types
+## C: AC_PROG_CC does
+##   If using the GNU C compiler, set shell variable `GCC' to `yes'.
+##   Alternatively, could use ac_cv_c_compiler_gnu (undocumented).
+if test "${GCC}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gcc"
+else
+case "${host_os}" in
+  solaris*)
+  ## we assume native compilers elsewhere (e.g. for -KPIC), so do so here too.
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solcc"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## C++: AC_PROG_CXX does
+##   If using the GNU C++ compiler, set shell variable `GXX' to `yes'.
+##   Alternatively, could use ac_cv_cxx_compiler_gnu (undocumented).
+if test "${GXX}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gxx"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solCC"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## Fortran 77: AC_PROG_F77 does
+##   If using `g77' (the GNU Fortran 77 compiler), then set the shell
+##   variable `G77' to `yes' (and also seems to do so for gfortran, which
+##   is what we really need).
+##   Alternatively, could use ac_cv_f77_compiler_gnu (undocumented).
+if test "${G77}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gfortran"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solf95"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+## Fortran 90/95: AC_PROG_FC does not seem to set a shell variable
+##   indicating the GNU Fortran 90/95 compiler.
+##   Hence, need to use ac_cv_fc_compiler_gnu (undocumented).
+if test "${ac_cv_fc_compiler_gnu}" = yes; then
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},gfortran"
+else
+case "${host_os}" in
+  solaris*)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},solf95"
+  ;;
+  *)
+  R_SYSTEM_ABI="${R_SYSTEM_ABI},?"
+esac
+fi
+AC_SUBST(R_SYSTEM_ABI)
+]) # R_ABI
 
 ### Local variables: ***
 ### mode: outline-minor ***

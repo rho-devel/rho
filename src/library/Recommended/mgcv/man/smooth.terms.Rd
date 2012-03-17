@@ -60,7 +60,7 @@ then it represents the parametric interaction of these arguments, with the coeff
 assumption that the coefficients are i.i.d. normal random effects. See \code{\link{smooth.construct.re.smooth.spec}}. Note that random effect terms are not suitable 
 for use in tensor product smooths.}
 
-\item{Markov Random Fields}{\code{bs="mrf"}. These are popular when space is split up into disctrete contiguous 
+\item{Markov Random Fields}{\code{bs="mrf"}. These are popular when space is split up into discrete contiguous 
 geographic units (districts of a town, for example). In this case a simple smoothing penalty is constructed
 based on the neighbourhood structure of the geographic units. See \code{\link{mrf}} for details and an example.}
 
@@ -85,12 +85,21 @@ metres and seconds: a tensor product smooth will  give the same
 answer in both cases (see \code{\link{te}} for an example of this). Note that tensor product terms are knot based, and the 
 thin plate splines seem to offer no advantage over cubic or P-splines as  marginal bases.
  
-Finally univariate and bivariate adaptive (\code{bs="ad"}) smooths are available (see \code{\link{adaptive.smooth}}). 
+
+Some further specialist smoothers that are not suitable for use in tensor products are also available.
+\describe{
+\item{Adaptive smoothers}{\code{bs="ad"}}
+Univariate and bivariate adaptive smooths are available (see \code{\link{adaptive.smooth}}). 
 These are appropriate when the degree of smoothing should itself vary with the covariates to be smoothed, and the 
 data contain sufficient information to be able to estimate the appropriate variation. Because this flexibility is 
 achieved by splitting the penalty into several `basis penalties' these terms are not suitable as components of tensor 
 product smooths, and are not supported by \code{gamm}.
 
+\item{Factor smooth interactions}{\code{bs="fs"}}
+Smooth factor interactions are often produced using \code{by} variables (see \code{\link{gam.models}}), but a special smoother
+class (see \code{\link{factor.smooth.interaction}}) is available for the case in which a smooth is required at each of a large number of factor levels (for example a smooth for each patient in a study), and each smooth should have the same smoothing parameter. The \code{"fs"} smoothers are set up to be efficient when used with \code{\link{gamm}}, and have penalties on each null sapce component (i.e. they are fully `random effects'). 
+
+}
 
 }
 

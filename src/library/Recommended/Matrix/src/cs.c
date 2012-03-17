@@ -551,7 +551,7 @@ int *cs_counts (const cs *A, const int *parent, const int *post, int ata)
         if (parent [j] != -1) colcount [parent [j]] += colcount [j] ;
     }
     return (cs_idone (colcount, AT, w, 1)) ;    /* success: free workspace */
-} 
+}
 /* p [0..n] = cumulative sum of c [0..n-1], and then copy p [0..n-1] into c */
 double cs_cumsum (int *p, int *c, int n)
 {
@@ -761,7 +761,7 @@ static int cs_nonzero (int i, int j, double aij, void *other)
 int cs_dropzeros (cs *A)
 {
     return (cs_fkeep (A, &cs_nonzero, NULL)) ;  /* keep all nonzero entries */
-} 
+}
 /* remove duplicate entries from A */
 int cs_dupl (cs *A)
 {
@@ -1072,6 +1072,8 @@ csn *cs_lu (const cs *A, const css *S, double tol)
             }
         }
         if (ipiv == -1 || a <= 0) return (cs_ndone (N, NULL, xi, x, 0)) ;
+	// As we want to allow  LU for singular matrices, we could try to allow  "a == 0",
+	// by replacing " a <= 0 " with  " a < 0 "   but that seems not to help...
         if (pinv [col] < 0 && fabs (x [col]) >= a*tol) ipiv = col ;
         /* --- Divide by pivot ---------------------------------------------- */
         pivot = x [ipiv] ;          /* the chosen pivot */
@@ -1271,7 +1273,7 @@ cs *cs_multiply (const cs *A, const cs *B)
         if (nz + m > C->nzmax && !cs_sprealloc (C, 2*(C->nzmax)+m))
         {
             return (cs_done (C, w, x, 0)) ;             /* out of memory */
-        } 
+        }
         Ci = C->i ; Cx = C->x ;         /* C->i and C->x may be reallocated */
         Cp [j] = nz ;                   /* column j of C starts here */
         for (p = Bp [j] ; p < Bp [j+1] ; p++)
@@ -1402,12 +1404,12 @@ int cs_pvec (const int *p, const double *b, double *x, int n)
 csn *cs_qr (const cs *A, const css *S)
 {
     double *Rx, *Vx, *Ax, *x,  *Beta ;
-    int i, k, p, m, n, vnz, p1, top, m2, len, col, rnz, *s, *leftmost, *Ap, *Ai,
+    int i, k, p, n, vnz, p1, top, m2, len, col, rnz, *s, *leftmost, *Ap, *Ai,
         *parent, *Rp, *Ri, *Vp, *Vi, *w, *pinv, *q ;
     cs *R, *V ;
     csn *N ;
     if (!CS_CSC (A) || !S) return (NULL) ;
-    m = A->m ; n = A->n ; Ap = A->p ; Ai = A->i ; Ax = A->x ;
+    n = A->n ; Ap = A->p ; Ai = A->i ; Ax = A->x ;
     q = S->q ; parent = S->parent ; pinv = S->pinv ; m2 = S->m2 ;
     vnz = S->lnz ; rnz = S->unz ; leftmost = S->leftmost ;
     w = cs_malloc (m2+n, sizeof (int)) ;            /* get int workspace */

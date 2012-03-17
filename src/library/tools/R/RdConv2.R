@@ -263,17 +263,48 @@ processRdChunk <- function(code, stage, options, env, Rdfile)
 	    res <- as.character(err)   # The last value of the chunk
 	    tmpcon <- file()
 	    writeLines(res, tmpcon, useBytes = TRUE)
-	    res <- parse_Rd(tmpcon, fragment=TRUE)
+	    parseFragment <- function(cond) {
+	    	               seek(tmpcon, 0)
+	    	               parse_Rd(tmpcon, fragment=TRUE)
+	    	            }
+	    res <- tryCatch(parse_Rd(tmpcon, fragment=FALSE), 
+	    	            warning = parseFragment, error = parseFragment,
+	    	            finally = close(tmpcon))
 	    # Now remove that extra newline added by the writeLines
 	    last <- res[[length(res)]]
 	    if (attr(last, "Rd_tag") == "TEXT" && (len <- length(last)))
 	        res[[length(res)]][len] <- gsub("\\n$", "", last[len])
 	    flag <- getDynamicFlags(res)
-	    res <- tagged(res, "LIST")
-	    res <- setDynamicFlags(res, flag)
-	    close(tmpcon)
-	    res <- prepare_Rd(res, defines = .Platform$OS.type, options=options,
+	    # We may have multiple chunks now.  If they are in 
+	    # a section, we can wrap them in LIST, but at top
+	    # level we can't, so we disallow multiple sections.
+	    
+	    # First clear out the junk.
+	    tags <- RdTags(res)
+	    keep <- rep(TRUE, length(tags))
+	    for (i in seq_along(tags)) {
+	        if (tags[i] == "TEXT" && res[[i]] == "")
+	            keep[i] <- FALSE
+	    }
+	    res <- res[keep]
+	    tags <- tags[keep]
+	    if (length(res) > 1) {
+	    	is_section <- !is.na(sectionOrder[tags])
+	    	if (!any(is_section)) 
+	    	    res <- tagged(res, "LIST")
+	    	else {
+	    	    if (sum(is_section) > 1) 
+	    		stop("Only one Rd section per \\Sexpr is supported.")
+	    	    res <- res[[which(is_section)]]
+	    	}
+	    } else if (length(res) == 1) res <- res[[1]]
+	    else res <- tagged("", "TEXT")
+	    
+	    if (is.list(res)) {
+	    	res <- setDynamicFlags(res, flag)
+	    	res <- prepare_Rd(res, defines = .Platform$OS.type, options=options,
 	                           stage2 = FALSE, stage3 = FALSE)
+	    }
 	} else if (options$results == "text")
 	    res <- tagged(err, "TEXT")
 	else if (length(res)) {
@@ -674,7 +705,8 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
                    inEnc2 <<- FALSE
                },
                "\\eqn" =,
-               "\\deqn" = {
+               "\\deqn" =,
+               "\\figure" = {
                    checkContent(block[[1L]])
                    if (length(block) > 1L) checkContent(block[[2L]])
                },
@@ -869,17 +901,17 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
     	    warnRd(Rd, Rdfile, level = 5, "Must have a ", tag)
     	else {
             if (length(which) > 1L)
-    	    warnRd(Rd[[which[2L]]], Rdfile, level = 5,
+    	    	warnRd(Rd[[which[2L]]], Rdfile, level = 5,
                    "Only one ", tag, " is allowed")
             empty <- TRUE
-            for(block in Rd[[which]]) {
+            for(block in Rd[which]) {
                 switch(attr(block, "Rd_tag"),
                        TEXT = if(!grepl("^[[:space:]]*$", block))
                        empty <- FALSE,
                        empty <- FALSE)
             }
             if(empty)
-                warnRd(Rd[[which]], Rdfile, level = 5,
+                warnRd(Rd[[which[1L]]], Rdfile, level = 5,
                        "Tag ", tag, " must not be empty")
         }
     }
@@ -923,7 +955,7 @@ checkRd <- function(Rd, defines=.Platform$OS.type, stages="render",
     ## Normally prepare_Rd will have dropped duplicates already
     unique_tags <-
         paste("\\",
-              c("name", "title", "description", # must exist and be unique
+              c("name", "title", # "description" checked above
                 "usage", "arguments",  "synopsis",
                 "format", "details", "value", "references", "source",
                 "seealso", "examples", "author", "encoding"),

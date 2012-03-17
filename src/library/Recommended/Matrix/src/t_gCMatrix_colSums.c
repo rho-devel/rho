@@ -157,7 +157,7 @@ SEXP gCMatrix_colSums(SEXP x, SEXP NArm, SEXP spRes, SEXP trans, SEXP means)
     R_CheckStack();
 
     if (tr) {
-	cholmod_sparse *cxt = cholmod_l_transpose(cx, (int)cx->xtype, &c);
+	cholmod_sparse *cxt = cholmod_transpose(cx, (int)cx->xtype, &c);
 	cx = cxt;
     }
 
@@ -173,7 +173,7 @@ SEXP gCMatrix_colSums(SEXP x, SEXP NArm, SEXP spRes, SEXP trans, SEXP means)
     SEXP ans = PROTECT(sp ? NEW_OBJECT(MAKE_CLASS(SparseResult_class))
 			  : allocVector(SXP_ans, nc));
 
-    if (sp) { /* sparseResult - never allocating length-nc ... */
+    if (sp) { // sparseResult, i.e. *sparseVector (never allocating length-nc)
 	int nza, i1, i2, p, *ai;
 	Type_ans *ax;
 
@@ -206,7 +206,7 @@ SEXP gCMatrix_colSums(SEXP x, SEXP NArm, SEXP spRes, SEXP trans, SEXP means)
 	}
     }
 
-    if (tr) cholmod_l_free_sparse(&cx, &c);
+    if (tr) cholmod_free_sparse(&cx, &c);
     UNPROTECT(1);
     return ans;
 }

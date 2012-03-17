@@ -78,7 +78,8 @@ geographic area. Otherwise a low rank approximation is obtained based on truncat
 Wood (2006) Section 4.10.4. 
 
 Note that smooths of this class have a built in plot method, and that the utility function \code{\link{in.out}} 
-can be useful for working with discrete area data.
+can be useful for working with discrete area data. The plot method has two schemes, \code{scheme==0} is colour, 
+\code{scheme==1} is grey scale.
 
 }
 
@@ -89,7 +90,7 @@ Wood S.N. (2006) Generalized additive models: an intriduction with R CRC.
 \author{ Simon N. Wood \email{simon.wood@r-project.org} and Thomas Kneib
 (Fabian Scheipl prorotyped the low rank MRF idea) } 
 
-\seealso{\code{\link{in.out}}, code{\link{polys.plot}}}
+\seealso{\code{\link{in.out}}, \code{\link{polys.plot}}}
 
 \examples{
 library(mgcv)
@@ -100,14 +101,14 @@ xt <- list(polys=columb.polys) ## neighbourhood structure info for MRF
 par(mfrow=c(2,2))
 ## First a full rank MRF...
 b <- gam(crime ~ s(district,bs="mrf",xt=xt),data=columb,method="REML")
-plot(b)
+plot(b,scheme=1)
 ## Compare to reduced rank version...
 b <- gam(crime ~ s(district,bs="mrf",k=20,xt=xt),data=columb,method="REML")
-plot(b)
+plot(b,scheme=1)
 ## An important covariate added...
 b <- gam(crime ~ s(district,bs="mrf",k=20,xt=xt)+s(income),
          data=columb,method="REML")
-plot(b,shade=TRUE,scheme="heat")
+plot(b,scheme=c(0,1))
 
 ## plot fitted values by district
 par(mfrow=c(1,1))

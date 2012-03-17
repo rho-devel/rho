@@ -60,7 +60,7 @@ VR_sammon(double *dd, Sint *nn, Sint *kd, double *Y, Sint *niter,
 		d1 += xd * xd;
 	    }
 	    ee = d - sqrt(d1);
-	    if(d1 == 0) error("configuration has duplicates");
+	    if(d1 == 0) error("initial configuration has duplicates");
 	    e += (ee * ee / d);
 	}
     e /= tot;
@@ -261,7 +261,7 @@ VR_mds_dovm(double *val, Sint *maxit, Sint *trace, double *xx, double *tol)
 {
     int   i, ifail, fncount, grcount, *mask;
 
-    mask = (int *) R_alloc(dimx, sizeof(int));
+    mask = (int *) R_alloc((size_t) dimx, sizeof(int));
     for (i = 0; i < dimx; i++) mask[i] = 1;
     vmmin(dimx, x, val, fminfn, fmingr, (int) *maxit, (int) *trace, mask,
 	  abstol, *tol, REPORT, NULL, &fncount, &grcount, &ifail);

@@ -196,7 +196,7 @@ void attribute_hidden InitArithmetic()
 
 /* Keep these two in step */
 /* FIXME: consider using
-    tmp = (LDOUBLE)x1 - floor(q) * (LDOUBLE)x2;
+    tmp = (long double)x1 - floor(q) * (long double)x2;
  */
 static double myfmod(double x1, double x2)
 {
@@ -1331,7 +1331,7 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 	if (av > amax) amax = av;
     }
     nw = 1 + long(floor(amax));
-    work = static_cast<double *>( CXXR_alloc(nw, sizeof(double)));
+    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
 
     mod_iterate(na, nb, ia, ib) {
 	ai = a[ia];
@@ -1366,8 +1366,8 @@ SEXP attribute_hidden do_math2(SEXP call, SEXP op, SEXP args, SEXP env)
     switch (PRIMVAL(op)) {
 
     case  0: return Math2(args, atan2);
-    case 10001: return Math2(args, fround);
-    case 10004: return Math2(args, fprec); /* signif() */
+    case 10001: return Math2(args, fround);/* round(), src/nmath/fround.c */
+    case 10004: return Math2(args, fprec); /* signif(), src/nmath/fprec.c */
 
     case  2: return Math2(args, lbeta);
     case  3: return Math2(args, beta);
@@ -1663,7 +1663,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 	if (av > amax) amax = av;
     }
     nw = 1 + long(floor(amax));
-    work = static_cast<double *>( CXXR_alloc(nw, sizeof(double)));
+    work = static_cast<double *>( CXXR_alloc(size_t( nw), sizeof(double)));
 
     mod_iterate3 (na, nb, nc, ia, ib, ic) {
 	ai = a[ia];

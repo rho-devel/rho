@@ -144,7 +144,7 @@ vcov.polr <- function(object, ...)
     if(is.null(object$Hessian)) {
         message("\nRe-fitting to get Hessian\n")
 	utils::flush.console()
-        object <- update(object, Hess=TRUE,
+        object <- update(object, Hess = TRUE,
                          start = c(object$coefficients, object$zeta))
     }
     vc <- ginv(object$Hessian)

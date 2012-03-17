@@ -26,6 +26,8 @@ setAs(from = "matrix", to = "Matrix", function(from) Matrix(from))
 setMethod("as.matrix", signature(x = "Matrix"), function(x) as(x, "matrix"))
 ## for 'Matrix' objects, as.array() should be equivalent:
 setMethod("as.array",  signature(x = "Matrix"), function(x) as(x, "matrix"))
+## Such that also base functions dispatch properly on our classes:
+as.array.Matrix <- as.matrix.Matrix <- function(x, ...) as(x, "matrix")
 
 ## head and tail apply to all Matrix objects for which subscripting is allowed:
 setMethod("head", signature(x = "Matrix"), utils::head.matrix)
@@ -37,6 +39,8 @@ setMethod("drop", signature(x = "Matrix"),
 ## slow "fall back" method {subclasses should have faster ones}:
 setMethod("as.vector", signature(x = "Matrix", mode = "missing"),
 	  function(x, mode) as.vector(as(x, "matrix"), mode))
+## so base functions calling as.vector() work too:
+as.vector.Matrix <- function(x, mode) as.vector(as(x, "matrix"), mode)
 
 setAs("Matrix", "vector",  function(from) as.vector (as(from, "matrix")))
 setAs("Matrix", "numeric", function(from) as.numeric(as(from, "matrix")))
@@ -153,7 +157,8 @@ setMethod("unname", signature("Matrix", force="missing"),
 
 
 Matrix <- function (data = NA, nrow = 1, ncol = 1, byrow = FALSE,
-                    dimnames = NULL, sparse = NULL, forceCheck = FALSE)
+                    dimnames = NULL, sparse = NULL,
+                    doDiag = TRUE, forceCheck = FALSE)
 {
     sparseDefault <- function(m) prod(dim(m)) > 2*sum(isN0(as(m, "matrix")))
 
@@ -226,7 +231,7 @@ Matrix <- function (data = NA, nrow = 1, ncol = 1, byrow = FALSE,
 	isTri <- isTriangular(data)
     isDiag <- isSym # cannot be diagonal if it isn't symmetric
     if(isDiag) # do not *build*  1 x 1 diagonalMatrix
-	isDiag <- !isTRUE(sparse1) && nrow(data) > 1 && isDiagonal(data)
+	isDiag <- doDiag && !isTRUE(sparse1) && nrow(data) > 1 && isDiagonal(data)
 
     ## try to coerce ``via'' virtual classes
     if(isDiag) { ## diagonal is preferred to sparse !

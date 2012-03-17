@@ -48,6 +48,8 @@ export(callNextMethod)
 export(canCoerce)
 export(checkSlotAssignment)
 export(classMetaName)
+export(classLabel)
+export(className)
 export(classesToAM)
 export(coerce)
 export("coerce<-")
@@ -146,6 +148,7 @@ export(methodsPackageMetaName)
 export(method.skeleton)
 export(missingArg)
 export(mlistMetaName)
+export(multipleClasses)
 export(new)
 export(newBasic)
 export(newClassRepresentation)
@@ -227,4 +230,5 @@ export(registerImplicitGenerics)
 ## reference classes
 export(setRefClass)
 export(getRefClass)
-export(initFieldArgs) # used in initialize methods
+export(initFieldArgs) # used in initialize methods--old version
+export(initRefFields) # used in initialize methods

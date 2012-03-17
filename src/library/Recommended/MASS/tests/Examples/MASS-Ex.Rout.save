@@ -1,8 +1,8 @@
 
-R version 2.14.0 Under development (unstable) (2011-04-11 r55409)
+R version 2.14.0 alpha (2011-10-06 r57179)
 Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
-Platform: x86_64-unknown-linux-gnu (64-bit)
+Platform: x86_64-apple-darwin9.8.0/x86_64 (32-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -456,7 +456,7 @@ Response: Days
 Terms added sequentially (first to last)
 
 
-            Df Deviance Resid. Df Resid. Dev P(>|Chi|)    
+            Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
 NULL                          145     270.03              
 Eth          1  19.0989       144     250.93 1.241e-05 ***
 Age          3  16.3483       141     234.58  0.000962 ***
@@ -1551,7 +1551,7 @@ Coefficients:
 (Intercept)        1.122e+00  2.008e-01   5.590 2.28e-08 ***
 predplacebo-base   1.087e-01  4.691e-02   2.318 0.020474 *  
 preddrug-placebo  -1.016e-01  6.507e-02  -1.561 0.118431    
-factor(subject)2  -2.300e-15  2.828e-01   0.000 1.000000    
+factor(subject)2  -4.271e-15  2.828e-01   0.000 1.000000    
 factor(subject)3  -3.857e-01  3.144e-01  -1.227 0.219894    
 factor(subject)4  -1.744e-01  2.960e-01  -0.589 0.555847    
 factor(subject)5   1.577e+00  2.197e-01   7.178 7.08e-13 ***
@@ -1743,50 +1743,53 @@ detaching ‘package:nlme’
 > 
 > ### ** Examples
 > 
+> ## avoid spurious accuracy
+> op <- options(digits = 3)
 > set.seed(123)
 > x <- rgamma(100, shape = 5, rate = 0.1)
 > fitdistr(x, "gamma")
-     shape         rate   
-  6.45947303   0.13593172 
- (0.89052011) (0.01948648)
+   shape     rate 
+  6.4870   0.1365 
+ (0.8946) (0.0196)
 > ## now do this directly with more control.
 > fitdistr(x, dgamma, list(shape = 1, rate = 0.1), lower = 0.001)
-     shape         rate   
-  6.48686551   0.13651012 
- (0.89438948) (0.01956818)
+   shape     rate 
+  6.4869   0.1365 
+ (0.8944) (0.0196)
 > 
 > set.seed(123)
 > x2 <- rt(250, df = 9)
 > fitdistr(x2, "t", df = 9)
-        m             s     
-  -0.01069496    1.04410551 
- ( 0.07222623) ( 0.05434369)
+      m         s   
+  -0.0107    1.0441 
+ ( 0.0722) ( 0.0543)
 > ## allow df to vary: not a very good idea!
 > fitdistr(x2, "t")
 Warning in dt(x, df, log) : NaNs produced
-        m              s              df     
-  -0.009653468    1.006167671    6.627292034 
- ( 0.071472707) ( 0.077072978) ( 2.710332064)
+      m          s          df   
+  -0.00965    1.00617    6.62729 
+ ( 0.07147) ( 0.07707) ( 2.71033)
 > ## now do fixed-df fit directly with more control.
 > mydt <- function(x, m, s, df) dt((x-m)/s, df)/s
 > fitdistr(x2, mydt, list(m = 0, s = 1), df = 9, lower = c(-Inf, 0))
-        m             s     
-  -0.01069635    1.04409435 
- ( 0.07222562) ( 0.05434249)
+      m         s   
+  -0.0107    1.0441 
+ ( 0.0722) ( 0.0543)
 > 
 > set.seed(123)
 > x3 <- rweibull(100, shape = 4, scale = 100)
 > fitdistr(x3, "weibull")
-     shape        scale   
-   4.0803423   99.9836881 
- ( 0.3126797) ( 2.5819679)
+    shape     scale 
+    4.080    99.984 
+ (  0.313) (  2.582)
 > 
 > set.seed(123)
 > x4 <- rnegbin(500, mu = 5, theta = 4)
 > fitdistr(x4, "Negative Binomial")
-     size         mu    
-  4.2159071   4.9447685 
- (0.5043658) (0.1466082)
+   size     mu  
+  4.216   4.945 
+ (0.504) (0.147)
+> options(op)
 > 
 > 
 > 
@@ -2862,10 +2865,10 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 > 
 > immer.aov <- aov((Y1+Y2)/2 ~ Var + Loc, data = immer)
 > summary(immer.aov)
-            Df  Sum Sq Mean Sq F value    Pr(>F)    
-Var          4  2655.0  663.75  5.9891  0.002453 ** 
-Loc          5 10610.5 2122.09 19.1480 5.212e-07 ***
-Residuals   20  2216.5  110.83                      
+            Df Sum Sq Mean Sq F value   Pr(>F)    
+Var          4   2655   663.7   5.989  0.00245 ** 
+Loc          5  10610  2122.1  19.148 5.21e-07 ***
+Residuals   20   2217   110.8                     
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > model.tables(immer.aov, type = "means", se = TRUE, cterms = "Var")
@@ -3653,15 +3656,15 @@ Residual standard error: 3.929447
 1 out of 13 effects not estimable
 Estimated effects may be unbalanced
 > summary(npk.aov)
-            Df Sum Sq Mean Sq F value   Pr(>F)   
-block        5 343.30  68.659  4.4467 0.015939 * 
-N            1 189.28 189.282 12.2587 0.004372 **
-P            1   8.40   8.402  0.5441 0.474904   
-K            1  95.20  95.202  6.1657 0.028795 * 
-N:P          1  21.28  21.282  1.3783 0.263165   
-N:K          1  33.14  33.135  2.1460 0.168648   
-P:K          1   0.48   0.482  0.0312 0.862752   
-Residuals   12 185.29  15.441                    
+            Df Sum Sq Mean Sq F value  Pr(>F)   
+block        5  343.3   68.66   4.447 0.01594 * 
+N            1  189.3  189.28  12.259 0.00437 **
+P            1    8.4    8.40   0.544 0.47490   
+K            1   95.2   95.20   6.166 0.02880 * 
+N:P          1   21.3   21.28   1.378 0.26317   
+N:K          1   33.1   33.14   2.146 0.16865   
+P:K          1    0.5    0.48   0.031 0.86275   
+Residuals   12  185.3   15.44                   
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > alias(npk.aov)
@@ -3757,40 +3760,40 @@ replic.     4    12    12
 
 Error: B
           Df Sum Sq Mean Sq F value Pr(>F)
-Residuals  5  15875  3175.1               
+Residuals  5  15875    3175               
 
 Error: B:V
           Df Sum Sq Mean Sq F value Pr(>F)
-V          2 1786.4  893.18  1.4853 0.2724
-Residuals 10 6013.3  601.33               
+V          2   1786   893.2   1.485  0.272
+Residuals 10   6013   601.3               
 
 Error: Within
-          Df  Sum Sq Mean Sq F value    Pr(>F)    
-Nf         3 20020.5  6673.5 37.6856 2.458e-12 ***
-Nf:V       6   321.7    53.6  0.3028    0.9322    
-Residuals 45  7968.8   177.1                      
+          Df Sum Sq Mean Sq F value   Pr(>F)    
+Nf         3  20020    6673  37.686 2.46e-12 ***
+Nf:V       6    322      54   0.303    0.932    
+Residuals 45   7969     177                     
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > summary(oats.aov, split = list(Nf=list(L=1, Dev=2:3)))
 
 Error: B
           Df Sum Sq Mean Sq F value Pr(>F)
-Residuals  5  15875  3175.1               
+Residuals  5  15875    3175               
 
 Error: B:V
           Df Sum Sq Mean Sq F value Pr(>F)
-V          2 1786.4  893.18  1.4853 0.2724
-Residuals 10 6013.3  601.33               
+V          2   1786   893.2   1.485  0.272
+Residuals 10   6013   601.3               
 
 Error: Within
-            Df  Sum Sq Mean Sq  F value    Pr(>F)    
-Nf           3 20020.5  6673.5  37.6856 2.458e-12 ***
-  Nf: L      1 19536.4 19536.4 110.3232 1.091e-13 ***
-  Nf: Dev    2   484.1   242.1   1.3669    0.2653    
-Nf:V         6   321.7    53.6   0.3028    0.9322    
-  Nf:V: L    2   168.3    84.2   0.4753    0.6248    
-  Nf:V: Dev  4   153.4    38.3   0.2166    0.9279    
-Residuals   45  7968.8   177.1                       
+            Df Sum Sq Mean Sq F value   Pr(>F)    
+Nf           3  20020    6673  37.686 2.46e-12 ***
+  Nf: L      1  19536   19536 110.323 1.09e-13 ***
+  Nf: Dev    2    484     242   1.367    0.265    
+Nf:V         6    322      54   0.303    0.932    
+  Nf:V: L    2    168      84   0.475    0.625    
+  Nf:V: Dev  4    153      38   0.217    0.928    
+Residuals   45   7969     177                     
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
 > par(mfrow = c(1,2), pty = "s")
@@ -5197,19 +5200,26 @@ detaching ‘package:lattice’
 > ### ** Examples
 > 
 > wtloss.fm <- nls(Weight ~ b0 + b1*2^(-Days/th),
-+     data = wtloss, start = list(b0=90, b1=95, th=120),
-+     trace = TRUE)
-67.54349 :   90  95 120 
-40.18081 :   82.72629 101.30457 138.71374 
-39.24489 :   81.39868 102.65836 141.85859 
-39.2447 :   81.37375 102.68417 141.91052 
++     data = wtloss, start = list(b0=90, b1=95, th=120))
+> wtloss.fm
+Nonlinear regression model
+  model:  Weight ~ b0 + b1 * 2^(-Days/th) 
+   data:  wtloss 
+    b0     b1     th 
+ 81.37 102.68 141.91 
+ residual sum-of-squares: 39.24
+
+Number of iterations to convergence: 3 
+Achieved convergence tolerance: 4.39e-06 
+> plot(wtloss)
+> with(wtloss, lines(Days, fitted(wtloss.fm)))
 > 
 > 
 > 
 > ### * <FOOTER>
 > ###
 > cat("Time elapsed: ", proc.time() - get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  19.211 0.176 30.254 0 0 
+Time elapsed:  22.282 1.2 26.796 0 0 
 > grDevices::dev.off()
 null device 
           1 

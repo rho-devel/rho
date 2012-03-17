@@ -619,9 +619,12 @@ Cspdiagprod <- function(x, y) {
     dx <- dim(x <- .Call(Csparse_diagU2N, x))
     dy <- dim(y)
     if(dx[2] != dy[1]) stop("non-matching dimensions")
-    ind <- rep.int(seq_len(dx[2]), x@p[-1] - x@p[-dx[2]-1L])
-    if(y@diag == "N")
-        x@x <- x@x * y@x[ind]
+    if(y@diag == "N") {
+	if(!all(y@x[1L] == y@x[-1L]) && is(x, "symmetricMatrix"))
+	    x <- as(x, "generalMatrix")
+	ind <- rep.int(seq_len(dx[2]), x@p[-1] - x@p[-dx[2]-1L])
+	x@x <- x@x * y@x[ind]
+    }
     if(is(x, "compMatrix") && length(xf <- x@factors)) {
         ## instead of dropping all factors, be smart about some
 	## TODO ......
@@ -634,8 +637,11 @@ diagCspprod <- function(x, y) {
     dx <- dim(x)
     dy <- dim(y <- .Call(Csparse_diagU2N, y))
     if(dx[2] != dy[1]) stop("non-matching dimensions")
-    if(x@diag == "N")
-        y@x <- y@x * x@x[y@i + 1L]
+    if(x@diag == "N") {
+	if(!all(x@x[1L] == x@x[-1L]) && is(y, "symmetricMatrix"))
+	    y <- as(y, "generalMatrix")
+	y@x <- y@x * x@x[y@i + 1L]
+    }
     if(is(y, "compMatrix") && length(yf <- y@factors)) {
 	## instead of dropping all factors, be smart about some
 	## TODO

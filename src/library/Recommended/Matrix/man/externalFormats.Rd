@@ -40,6 +40,11 @@ writeMM(obj, file, ...)
   The Harwell-Boeing format is older and less flexible than the
   MatrixMarket format.  The function \code{writeHB} was deprecated and
   has now been removed.  Please use \code{writeMM} instead.
+
+  A very simple way to export small sparse matrices \code{S}, is to use
+  \code{summary(S)} which returns a \code{\link{data.frame}} with
+  columns \code{i}, \code{j}, and possibly \code{x}, see \code{summary} in
+  \code{\link{sparseMatrix-class}}, and an example below.
 }
 \references{
   \url{http://math.nist.gov/MatrixMarket}
@@ -67,6 +72,16 @@ str(jgl009 <-
 }
 data(KNex)
 writeMM(KNex$mm, "mmMM.mtx")
+
+## very simple export - in triplet format - to text file:
+data(CAex)
+s.CA <- summary(CAex)
+message("writing to ", outf <- tempfile())
+write.table(s.CA, file = outf, row.names=FALSE)
+## and read it back -- showing off  sparseMatrix():
+dd <- read.table(outf, header=TRUE)
+mm <- do.call(sparseMatrix, dd)
+stopifnot(all.equal(mm, CAex, tol=1e-15))
 }
 \keyword{IO}
 \keyword{array}

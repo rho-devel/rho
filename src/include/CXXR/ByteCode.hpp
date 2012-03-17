@@ -188,7 +188,18 @@ namespace CXXR {
 	// form of the code.
 	void thread();
 #endif
+
+	// Helper functions from CR which need to be inside the
+	// ByteCode class in CXXR:
+	static void DO_MATSUBSET(SEXP rho);
+	static void DO_SETVECSUBSET(SEXP rho);
+	static void DO_SETMATSUBSET(SEXP rho);
     };
 } // namespace CXXR
+
+// Bytecode related stuff from Defn.h.  Try to get rid of these in due
+// course:
+
+typedef SEXP R_bcstack_t;
 
 #endif /* BYTECODE_HPP */

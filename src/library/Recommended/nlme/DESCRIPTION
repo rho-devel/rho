@@ -1,6 +1,6 @@
 Package: nlme
-Version: 3.1-101
-Date: 2011-04-06
+Version: 3.1-102
+Date: 2011-07-19
 Priority: recommended
 Title: Linear and Nonlinear Mixed Effects Models
 Author: Jose Pinheiro (S version), Douglas Bates (up to 2007), Saikat
@@ -16,6 +16,6 @@ LazyLoad: yes
 LazyData: yes
 License: GPL (>= 2)
 BugReports: http://bugs.r-project.org
-Packaged: 2011-05-06 06:58:40 UTC; ripley
+Packaged: 2011-07-19 13:11:56 UTC; ripley
 Repository: CRAN
-Date/Publication: 2011-05-06 15:50:04
+Date/Publication: 2011-07-23 16:15:22

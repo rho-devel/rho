@@ -3,7 +3,7 @@
 #include "matrix.h"
 #endif
 
-double eta(int m,int d,double r);
+/*extern double eta(int m,int d,double r);*/
 void tpsE(matrix *E,matrix *X,int m,int d);
 
 void tpsT(matrix *T,matrix *X,int m,int d);

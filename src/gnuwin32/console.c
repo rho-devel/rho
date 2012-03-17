@@ -19,7 +19,7 @@
  *  file console.c
  *  Copyright (C) 1998--2003  Guido Masarotto and Brian Ripley
  *  Copyright (C) 2004-8      The R Foundation
- *  Copyright (C) 2004-10     The R Core Team
+ *  Copyright (C) 2004-11     The R Core Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -295,10 +295,18 @@ static size_t enctowcs(wchar_t *wc, char *s, int n)
 static void xbufadds(xbuf p, const char *s, int user)
 {
     int n = strlen(s) + 1; /* UCS-2 must be shorter */
-    /* wchar_t tmp[n];  this might blow the stack */
-    wchar_t *tmp = (wchar_t*) R_alloc(n, sizeof(wchar_t));
-    enctowcs(tmp, (char *) s, n);
-    xbufaddxs(p, tmp, user);
+    if (n < 1000) {
+	wchar_t tmp[n];
+	enctowcs(tmp, (char *) s, n);
+	xbufaddxs(p, tmp, user);
+    } else {
+	/* very long line */
+	void *vmax = vmaxget();
+	wchar_t *tmp = (wchar_t*) R_alloc(n, sizeof(wchar_t));
+	enctowcs(tmp, (char *) s, n);
+	xbufaddxs(p, tmp, user);
+	vmaxset(vmax);
+    }
 }
 
 static void xbuffixl(xbuf p)
@@ -334,6 +342,8 @@ newconsoledata(font f, int rows, int cols, int bufbytes, int buflines,
     if (!p)
 	return NULL;
     p->kind = kind;
+    /* PR#14624 claimed this was needed, with no example */
+    p->chbrk = p->modbrk = '\0';
     if (kind == CONSOLE) {
 	p->lbuf = newxbuf(bufbytes, buflines, SLBUF);
 	if (!p->lbuf) {

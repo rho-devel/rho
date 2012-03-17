@@ -12,7 +12,7 @@
          ylab=NULL,main=NULL,ylim=NULL,xlim=NULL,too.far=0.1,
          all.terms=FALSE,shade=FALSE,shade.col="gray80",
          shift=0,trans=I,seWithMean=FALSE,by.resids=FALSE,
-         scheme="grey",...)
+         scheme=0,...)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{ 
@@ -105,8 +105,7 @@ and this is also suggested by simulation.}
 \item{by.resids}{Should partial residuals be plotted for terms with \code{by} variables? 
 Usually the answer is no, they would be meaningless.}
 
-\item{scheme}{\code{"grey"} yields greyscale, and \code{"heat"} heatmap colors, for plot methods 
-              that take any notice of this (e.g. \code{\link{mrf}} smooths).}
+\item{scheme}{Integer or integer vector selecting a plotting scheme for each plot. See details.}
 
 \item{...}{ other graphics parameters to pass on to plotting commands.}
 
@@ -116,15 +115,20 @@ Usually the answer is no, they would be meaningless.}
   handled by \code{\link{termplot}}.
 
 For smooth  terms \code{plot.gam} actually calls plot method functions depending on the 
-class of the smooth. Currently random effect and Markov random field smooths have special methods,
+class of the smooth. Currently \code{\link{random.effects}}, Markov random fields (\code{\link{mrf}}), 
+\code{\link{Spherical.Spline}}  and 
+\code{\link{factor.smooth.interaction}} terms have special methods (documented in their help files), 
 the rest use the defaults described below. 
 
+For plots of 1-d smooths, the x axis of each plot is labelled 
+with the covariate name, while the y axis is labelled \code{s(cov,edf) } where \code{cov}
+is the covariate name, and \code{edf} the estimated (or user defined for regression splines) 
+degrees of freedom of the smooth. \code{scheme == 0} produces a smooth curve with dashed curves 
+indicating 2 standard error bounds. \code{scheme == 1} illustrates the error bounds using a shaded
+region.
 
-  For plots of 1-d smooths, the x axis of each plot is labelled 
-   with the covariate name, while the y axis is labelled \code{s(cov,edf) } where \code{cov}
-   is the covariate name, and \code{edf} the estimated (or user defined for regression splines) degrees of freedom of the smooth.
 
-Contour plots are produced for 2-d smooths with the x-axes labelled with the first covariate
+For \code{scheme==0}, contour plots are produced for 2-d smooths with the x-axes labelled with the first covariate
 name and the y axis with the second covariate name. The main title of
 the plot is something like \code{s(var1,var2,edf)}, indicating the
 variables of which the term is a function, and the estimated degrees of
@@ -135,6 +139,8 @@ by the s.e. Contour levels are chosen to try and ensure reasonable
 separation of the contours of the different plots, but this is not
 always easy to achieve. Note that these plots can not be modified to the same extent as the other plot. 
    
+For 2-d smooths \code{scheme==1} produces a perspective plot, while \code{scheme==2} produces a heatmap, 
+with overlaid contours. 
 
 Smooths of more than 2 variables are not plotted, but see \code{\link{vis.gam}}.
 
@@ -145,6 +151,12 @@ Note that, if \code{seWithMean=TRUE}, the confidence bands include the uncertain
 although each smooth is shown centred, the confidence bands are obtained as if every other term in the model was 
 constrained to have average 0, (average taken over the covariate values), except for the smooth concerned. This seems to correspond more closely to how most users interpret componentwise intervals in practice, and also results in intervals with
 close to nominal (frequentist) coverage probabilities by an extension of Nychka's (1988) results.
+
+Sometimes you may want a small change to a default plot, and the arguments to \code{plot.gam} just won't let you do it. 
+In this case, the quickest option is sometimes to clone the \code{smooth.construct} and \code{Predict.matrix} methods for 
+the smooth concerned, modifying only the returned smoother class (e.g. to \code{foo.smooth}). 
+Then copy the plot method function for the original class (e.g. \code{mgcv:::plot.mgcv.smooth}), modify the source code to plot exactly as you want and rename the plot method function (e.g. \code{plot.foo.smooth}). You can then use the cloned 
+smooth in models (e.g. \code{s(x,bs="foo")}), and it will automatically plot using the modified plotting function. 
 
 }
 
@@ -223,11 +235,18 @@ for (i in 1:3) {
 }
 par(op)
 
-## example with 2-d plots...
-b1<-gam(y~x0+s(x1,x2)+s(x3))
-op<-par(mfrow=c(2,2))
+## example with 2-d plots, and use of schemes...
+b1 <- gam(y~x0+s(x1,x2)+s(x3))
+op <- par(mfrow=c(2,2))
 plot(b1,all.terms=TRUE)
 par(op) 
+op <- par(mfrow=c(2,2))
+plot(b1,all.terms=TRUE,scheme=1)
+par(op)
+op <- par(mfrow=c(2,2))
+plot(b1,all.terms=TRUE,scheme=c(2,1))
+par(op)
+
 }
 \keyword{models} \keyword{smooth} \keyword{regression} \keyword{hplot}%-- one or more ...
 

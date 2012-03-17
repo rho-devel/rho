@@ -14,6 +14,8 @@
 %
 \alias{as.integer,abIndex-method}
 \alias{as.numeric,abIndex-method}
+\alias{as.vector,abIndex,ANY-method}
+\alias{as.vector,abIndex,character-method}
 \alias{[,abIndex,index,ANY,ANY-method}
 \alias{coerce,logical,abIndex-method}
 \alias{coerce,numeric,abIndex-method}
@@ -68,7 +70,7 @@
 }
 \section{Methods}{
   \describe{
-    \item{as.numeric}{\code{signature(x = "abIndex")}: ... }
+    \item{as.numeric, as.integer, as.vector}{\code{signature(x = "abIndex")}: ... }
     \item{[}{\code{signature(x = "abIndex", i = "index", j = "ANY", drop = "ANY")}: ... }
     \item{coerce}{\code{signature(from = "numeric", to = "abIndex")}: ... }
     \item{coerce}{\code{signature(from = "abIndex", to = "numeric")}: ... }

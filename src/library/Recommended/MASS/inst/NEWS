@@ -175,3 +175,7 @@ This file documents software changes since the third edition.
 - hubers() copes in extreme case when middle 50% of data is constant.
 - tests/ now includes dataset for polr.R, so checking depends only on
   base packages and lattice.
+- The "glm" method for profile() failed when given a binomial model
+  with a two-column response.
+- fitdistr() works harder to rescale the problem when fitting a gamma.
+

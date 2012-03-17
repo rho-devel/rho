@@ -26,15 +26,7 @@
 #include "tre-stack.h"
 #include "tre-parse.h"
 
-/* fake definition */
-extern void Rf_error(const char *str);
 #define assert(a) R_assert(a)
-
-static void assert(int expr)
-{
-    if(expr == 0)
-	Rf_error("internal error in TRE");
-}
 
 /* Characters with special meanings in regexp syntax. */
 #define CHAR_PIPE	   L'|'
@@ -193,11 +185,6 @@ int tre_isascii_func(tre_cint_t c) { return tre_isascii(c); }
 int tre_isascii_func(tre_cint_t c) { return !(c >> 7); }
 #endif /* !tre_isascii */
 
-
-/* R addition:  this platform has the function but not the declaration */
-#ifdef W64
-int iswblank(wint_t wc);
-#endif
 
 #ifdef tre_isblank
 int tre_isblank_func(tre_cint_t c) { return tre_isblank(c); }

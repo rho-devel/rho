@@ -35,7 +35,8 @@
     the DLL given by this argument (plus the conventional extension,
     \file{.so}, \file{.sl}, \file{.dll}, \dots).  This is intended to
     add safety for packages, which can ensure by using this argument
-    that no other package can override their external symbols.  Use
+    that no other package can override their external symbols, and also
+    speeds up the search (see \sQuote{Note}).  Use
     \code{PACKAGE="base"} for symbols linked in to \R.}
   \item{ENCODING}{optional name for an encoding to be assumed for
     character vectors.  See \sQuote{Details}.}
@@ -119,7 +120,7 @@
   (\code{TRUE}) or \code{INT_MIN = -2147483648} (\code{NA}, but only if
   \code{NAOK = TRUE}), and the compiled code should return one of these
   three values: however non-zero value other than \code{INT_MIN} are
-  mapped to \code{TRUE} as from \R 2.12.0.
+  mapped to \code{TRUE}.
 
   \emph{Note:} The C types corresponding to \code{integer} and
   \code{logical} are \code{int}, not \code{long} as in S.  This
@@ -222,6 +223,12 @@
   \file{Rinternals.h} and/or the macros in \file{Rdefines.h},
   as other header files are not installed and are even more
   likely to be changed.
+}
+
+\note{
+  If one of these functions is to be used frequently, do specify
+  \code{PACKAGE} (to confine the search to a single DLL) or pass
+  \code{name} as one of the native symbol objects.
 }
 
 \references{

@@ -57,8 +57,9 @@ abIseq (from = 1, to = 1, by = ((to - from)/(length.out - 1)),
 stopifnot(identical(-3:20,
                     as(abIseq1(-3,20), "vector")))
 
-if(FALSE) ## (arithmetic) not yet implemented
+try( ## (arithmetic) not yet implemented
 abIseq(1, 50, by = 3)
+)
 
 %% FIXME: add / exchange with ../tests/abIndex-tsts.R
 }

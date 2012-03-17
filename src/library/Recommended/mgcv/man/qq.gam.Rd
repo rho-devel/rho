@@ -10,7 +10,7 @@
   departures from this line). 
 }
 \usage{
-qq.gam(object, rep=0, level=.9, 
+qq.gam(object, rep=0, level=.9,s.rep=10,
        type=c("deviance","pearson","response"),
        pch=".", rl.col=2, rep.col="gray80", \dots)
 }
@@ -22,6 +22,7 @@ qq.gam(object, rep=0, level=.9,
   the object family.}
 \item{level}{If simulation is used for the quantiles, then reference intervals can be provided for the QQ-plot, this specifies the level. 
              0 or less for no intervals, 1 or more to simply plot the QQ plot for each replicate generated.}
+\item{s.rep}{how many times to randomize uniform quantiles to data under direct computation.}
 \item{type}{what sort of residuals should be plotted?  See
   \code{\link{residuals.gam}}.}
 \item{pch}{plot character to use. 19 is good.}
@@ -30,16 +31,14 @@ qq.gam(object, rep=0, level=.9,
 \item{...}{extra graphics parameters to pass to plotting functions.}
 }
 \details{QQ-plots of the the model residuals can be produced in one of two ways. The cheapest method generates reference quantiles by 
-ordering the deviance residuals, associating a quantile of the uniform distribution with the corresponding datum according to the ordering, 
-and then feeding these uniform quantiles into the quantile function associated with each datum. The resulting quantiles are then used in place of 
-each datum to generate residuals. When sorted, these give approximate quantiles for the residual distribution expected for the fitted model.
+associating a quantile of the uniform distribution with each datum, and feeding these uniform quantiles into the quantile function associated with each datum. The resulting quantiles are then used in place of each datum to generate approximate quantiles of residuals.
+The residual quantiles are averaged over \code{s.rep} randomizations of the uniform quantiles to data. 
 
-The second method is to simulate. For each replicate, data are simulated from the fitted model, and the corresponding residuals computed. 
+
+The second method is to use direct simulatation. For each replicate, data are simulated from the fitted model, and the corresponding residuals computed. This is repeated \code{rep} times.
 Quantiles are readily obtained from the empirical distribution of residuals so obtained. From this method reference bands are also computable.  
 
-Even if \code{rep} is set to zero, the routine will attempt to simulate quantiles if no quantile function is available for the family. If no random 
-deviate generating function family is available (e.g. for the quasi families), then a normal QQ-plot is produced. The routine conditions on the 
-fitted model coefficents and the scale parameter estimate. 
+Even if \code{rep} is set to zero, the routine will attempt to simulate quantiles if no quantile function is available for the family. If no random deviate generating function family is available (e.g. for the quasi families), then a normal QQ-plot is produced. The routine conditions on the fitted model coefficents and the scale parameter estimate. 
 
 The plots are very similar to those proposed in Ben and Yohai (2004), but are substantially cheaper to produce (the interpretation of 
 residuals for binary data in Ben and Yohai is not recommended).  

@@ -1,3 +1,65 @@
+2011-12-06  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-48.
+
+2011-12-03  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/writeForeignSAS.R, man/write.foreign.Rd: add 'libpath'
+	argument contributed by Xiaobo Gu.
+
+2011-11-23  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/var.h.in: this assumed values for sizes, ignoring those
+	computed by configure.  And we know sizeof(double) is always 8.
+	
+	* configure, configure.ac, src/Makevars.in, src/swap_bytes.h.in,
+	cleanup:  The header had always #undef-ed HAVE_GLIBC_SWAP, so
+	remove never-used code branches.  This means that 'long long' is
+	never used and so no warning needs to be suppressed, so
+	src/Makevars and all configuration are not needed.
+
+2011-11-22  Kurt Hornik <Kurt.Hornik@R-project.org>
+
+	* R/arff.R: handle "Date" objects in addition to "POSIXt" ones.
+	(Spotted by Xiaobo Gu <guxiaobo1982@gmail.com>.)
+
+2011-11-08  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-47, use Authors@R field
+
+2011-10-15  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* R/read.dta.R, man/read.data.Rd, src/stataread.c: read Stata 12
+	files as if they were format_114: the description is unchanged.
+
+2011-09-26  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* man/read.dta.Rd: refer to package 'memisc'.
+	* man/read.spss.Rd: tweak wording, refer to package 'memisc'.
+
+2011-09-23  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-46
+	* R/writeForeignSAS.R: write out logicals (patch from Patrick
+	McCormick).
+	* R/writeForeignCode.R: give invisible return value.
+	* man/write.foreign.Rd: update documentation.
+
+2011-08-28  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/dbfopen.c: Use REprintf.
+
+2011-07-12  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* DESCRIPTION: Version is 0.8-45
+	* COPYING: rename to GPL-2
+	* LICENCE: reflect that change.
+	* COPYRIGHTS: library -> package
+
+2011-05-04  Brian Ripley <Brian.Ripley@R-project.org>
+
+	* src/file-handle.c: plug memory leaks in read.spss()
+
 2011-04-10  Brian Ripley <Brian.Ripley@R-project.org>
 
 	* DESCRIPTION: Version is 0.8-44

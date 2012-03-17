@@ -7,7 +7,7 @@ if(interactive()) {
     (verC <- readLines(Dfile <- file.path(pkgPath, "DESCRIPTION"), n = 2)[2])
 }
 
-## trivial cases should `work':
+## trivial cases should 'work':
 daisy(cbind(1))
 (d10 <- daisy(matrix(0., 1,0))); str(d10)
 d01 <- daisy(matrix(0., 0,1))

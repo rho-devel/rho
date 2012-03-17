@@ -1,3 +1,5 @@
+##-*- mode: org -*-
+
 [[ This file 'Done' lists items that were in file ./TODO at some time ]]
 
 - Sparse matrix methods can now be based on the CHOLMOD package.  We
@@ -381,3 +383,21 @@
   -> also in other (lme4a ?) cases where we may not yet know if we are
      talking about a dense or sparse cholesky factor.
 
+- base as.matrix() & as.array() are no longer hacked to be correctly S4
+  generic -- instead we provide a S3 method {yuck!}.
+
+-  Note that 'diag(M[,-1]) <- val' is deadly slow (*) for large sparse M,
+  but that's because of the 2nd line assignment in the equivalent
+    tmpM <- `diag<-`(M[,-1], val)
+    M[,-1] <- tmpM
+  (*): gives *error* {about negative integer} when
+       prod(dim(M)) > .Machine$integer.max, e.g. for square (n x n) M when
+       n >= 46341 == ceiling(2^15.5)
+  This is "the same" as Ashley Ford's report (25 Feb 2010),
+  MM @ ~/R/MM/Pkg-ex/Matrix/nsp-2col-index-bug.R
+  --> This no longer happens; Tsparse* now also does .Call(Csparse_subassign, *)
+
+- Fix the bug that our solve("dsCMatrix") uses CHOLMOD's  LDL'  but that
+  typically (but not at all always!) fails when the matrix is *not* pos.def !!
+  ~/R/MM/Pkg-ex/Matrix/solve-Gorjanc-bug.R
+  ==> must fall back to LU (e.g.) in that case.

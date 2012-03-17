@@ -26,8 +26,8 @@ read.spss(file, use.value.labels = TRUE, to.data.frame = FALSE,
     trailing spaces ignored when matching for \code{use.value.labels = TRUE}?}
   \item{reencode}{logical: should character strings be re-encoded to the
     current locale.  The default, \code{NA}, means to do so in a UTF-8
-    locale, only.  Alternatively character, specifying an encoding to
-    assume.}
+    locale, only.  Alternatively a character string specifying an encoding to
+    assume for the file.}
   \item{use.missings}{logical: should information on user-defined
     missing values be used to set the corresponding values to
     \code{NA}?}
@@ -43,7 +43,7 @@ read.spss(file, use.value.labels = TRUE, to.data.frame = FALSE,
   There may be attributes \code{"label.table"} and
   \code{"variable.labels"}.  Attribute \code{"label.table"} is a named
   list of value labels with one element per variable, either \code{NULL}
-  or a names character vector.
+  or a named character vector.
   Attribute \code{"variable.labels"} is a named character vector with
   names the short variable names and elements the long names.
   
@@ -69,7 +69,7 @@ read.spss(file, use.value.labels = TRUE, to.data.frame = FALSE,
   temporary file and then read.  (\samp{https:} is only supported on
   some platforms.)
   
-  Occasionally in SPSS value labels will be added to some values of a
+  Occasionally in SPSS, value labels will be added to some values of a
   continuous variable (e.g. to distinguish different types of missing
   data), and you will not want these variables converted to factors.  By
   setting \code{max.val.labels} you can specify that variables with a
@@ -112,7 +112,11 @@ read.spss(file, use.value.labels = TRUE, to.data.frame = FALSE,
   Windows codepage.  Automatic re-encoding is done only in UTF-8
   locales: see argument \code{reencode}.
 }
-\author{Saikat DebRoy and the R Core team}
+\author{Saikat DebRoy and the R-core team}
+\seealso{
+  A different interface also based on the PSPP codebase is available in
+  package \pkg{memisc}: see its help for \code{spss.system.file}.
+}
 \examples{
 \dontrun{
 read.spss("datafile")
