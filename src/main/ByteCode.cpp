@@ -45,6 +45,7 @@
 using namespace CXXR;
 
 NodeStack* ByteCode::s_nodestack = 0;
+std::vector<Frame::Binding*>* ByteCode::s_loopvar_stack = 0;
 
 void ByteCode::detachReferents()
 {
@@ -65,11 +66,13 @@ RObject* ByteCode::evaluate(Environment* env)
 
 void ByteCode::initialize()
 {
-    if (!s_nodestack)
+    if (!s_nodestack) {
 	s_nodestack = new NodeStack(512);
+	s_loopvar_stack = new std::vector<Frame::Binding*>;
 #ifdef THREADED_CODE
-    interpret(0, 0);
+	interpret(0, 0);
 #endif
+    }
 }
 
 // ByteCode::interpret() is in eval.cpp

@@ -64,7 +64,7 @@ extern "C" {
 }
 
 namespace CXXR {
-    /** @brief Stub for future ByteCode class. 
+    /** @brief ByteCode interpreter.
      */
     class ByteCode : public RObject {
     public:
@@ -103,7 +103,7 @@ namespace CXXR {
 
 	/** @brief Initialize the class.
 	 *
-	 * This function should be called before any other use it made
+	 * This function should be called before any other use is made
 	 * of the ByteCode class.
 	 */
 	static void initialize();
@@ -154,7 +154,30 @@ namespace CXXR {
 	typedef int BCODE;
 #endif
     private:
+	// Object whose constructor saves, and destructor restores,
+	// the states of s_nodestack and s_loopvar_stack:
+	class Scope {
+	public:
+	    Scope()
+		: m_nodestack_scope(ByteCode::s_nodestack),
+		  m_loopvar_stack_size(ByteCode::s_loopvar_stack->size())
+	    {}
+
+	    ~Scope()
+	    {
+		ByteCode::s_loopvar_stack->resize(m_loopvar_stack_size);
+	    }
+	private:
+	    NodeStack::Scope m_nodestack_scope;
+	    size_t m_loopvar_stack_size;
+	};
+
 	static NodeStack* s_nodestack;
+
+	// Stack of pointers to the bindings of loop variables, which
+	// CXXR manipulates alongside s_nodestack.  (In CR, these
+	// bindings are put directly on s_nodestack, with type coercion.)
+	static std::vector<Frame::Binding*>* s_loopvar_stack;
 #ifdef THREADED_CODE
 	static void* s_op_address[];
 #ifndef TOKEN_THREADING

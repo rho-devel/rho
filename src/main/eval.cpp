@@ -3253,8 +3253,7 @@ static R_INLINE void checkForMissings(SEXP args, SEXP call)
 
 RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 {
-  NodeStack::Scope scope(s_nodestack);
-  std::vector<Frame::Binding*> binding_stack;
+  ByteCode::Scope scope;
   SEXP body = bcode;
   SEXP value;
   ListVector* constants;
@@ -3402,7 +3401,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	// bindings, but push a null pointer onto the node stack to
 	// maintain CR's stack alignment.
 	BCNPUSH(0);
-	binding_stack.push_back(GET_BINDING_CELL(symbol, rho));
+	s_loopvar_stack->push_back(GET_BINDING_CELL(symbol, rho));
 
 	value = CXXR_NEW(IntVector(2));
 	INTEGER(value)[0] = -1;
@@ -3442,7 +3441,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	int n = INTEGER(GETSTACK(-2))[1];
 	if (i < n) {
 	  SEXP seq = GETSTACK(-4);
-	  Frame::Binding* cell = binding_stack.back();
+	  Frame::Binding* cell = s_loopvar_stack->back();
 	  switch (TYPEOF(seq)) {
 	  case LGLSXP:
 	    GET_VEC_LOOP_VALUE(value, -1);
@@ -3494,7 +3493,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
     OP(ENDFOR, 0):
       {
 	s_nodestack->pop(3);
-	binding_stack.pop_back();
+	s_loopvar_stack->pop_back();
 	SETSTACK(-1, R_NilValue);
 	NEXT();
       }
