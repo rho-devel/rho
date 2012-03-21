@@ -159,7 +159,7 @@ double unif_rand(void)
 	   http://www.iro.umontreal.ca/~lecuyer/myftp/streams00/c2010/RngStream.c
 	   but using int_least64_t, which C99 guarantees.
 	*/
-	int k;
+	int_least64_t k;  // CXXR change
 	int_least64_t p1, p2;
 
 #define II(i) (RNG_Table[RNG_kind].i_seed[i])
