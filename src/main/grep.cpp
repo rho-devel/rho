@@ -2486,13 +2486,21 @@ SEXP attribute_hidden do_regexpr(SEXP call, SEXP op, SEXP args, SEXP env)
 		    rc = pcre_exec(re_pcre, re_pe, s, strlen(s), 0, 0, 
 				   ovector, ovector_size);
 		    if (rc >= 0) {
-			extract_match_and_groups(use_UTF8, ovector, 
-						 capture_count,
-						 INTEGER(ans) + i,
-						 INTEGER(matchlen) + i,
-						 INTEGER(capture_start) + i,
-						 INTEGER(capturelen) + i,
-						 s, n);
+			if (capture_count > 0) {  // CXXR change
+			    extract_match_and_groups(use_UTF8, ovector, 
+						     capture_count,
+						     INTEGER(ans) + i,
+						     INTEGER(matchlen) + i,
+						     INTEGER(capture_start) + i,
+						     INTEGER(capturelen) + i,
+						     s, n);
+			} else {
+			    extract_match_and_groups(use_UTF8, ovector, 
+						     capture_count,
+						     INTEGER(ans) + i,
+						     INTEGER(matchlen) + i, NULL, NULL,
+						     s, n);
+			}
 		    } else {
 			INTEGER(ans)[i] = INTEGER(matchlen)[i] = -1;
 			for(int cn = 0; cn < capture_count; cn++) {

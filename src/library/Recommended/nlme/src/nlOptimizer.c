@@ -30,22 +30,23 @@ int
 evaluate(double *param, longint nParam aMOD, double **value aSEV)
 {
 #ifdef R_S_H
-  SEXP newPars, result;
+    SEXP newPars, result, l2;
   int i, nResult;
 
   PROTECT(newPars = allocVector(REALSXP, nParam));
   PROTECT(model);
   for(i = 0; i < nParam; i++)
     REAL(newPars)[i] = param[i];
-  PROTECT(result = eval(lang2(model, newPars), R_GlobalEnv));
+  PROTECT(l2 = lang2(model, newPars));
+  PROTECT(result = eval(l2, R_GlobalEnv));
   nResult = LENGTH(result);
   if(value[0] == (double *) 0) {
-    UNPROTECT(3);
+    UNPROTECT(4);
     return(nResult);
   }
   for(i = 0; i < nResult; i++)
     value[0][i] = REAL(result)[i];
-  UNPROTECT(3);
+  UNPROTECT(4);
 #else
   spread(param, nParam SEV);
   eval_model(TRUE SEV);
