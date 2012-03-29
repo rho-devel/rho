@@ -179,6 +179,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     PROTECT(val_i_slot = coerceVector(GET_SLOT(value, Matrix_iSym), REALSXP));
     double *val_i = REAL(val_i_slot);
     int nnz_val =  LENGTH(GET_SLOT(value, Matrix_iSym));
+    SEXP val_x_slot = 0;
     Type_x *val_x = NULL;
     if(!value_is_nsp) {
 	if(ctype_v) { // matrix 'x' and 'value' are of different kinds
@@ -201,9 +202,11 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
 	       error(_("programming error in Csparse_subassign() should never happen"));
 	    }
 	    // otherwise: "coerce" :  as(., <sparseVector>) :
-	    val_x = STYP_x(coerceVector(GET_SLOT(value, Matrix_xSym), SXP_x));
+	    PROTECT(val_x_slot = coerceVector(GET_SLOT(value, Matrix_xSym), SXP_x));
+	    val_x = STYP_x(val_x_slot);
 	} else {
 	    val_x = STYP_x(		GET_SLOT(value, Matrix_xSym));
+	    PROTECT(val_x_slot);  // To balance 'then' clause
 	}
     }
     int64_t len_val = (int64_t) asReal(GET_SLOT(value, Matrix_lengthSym));
@@ -428,7 +431,7 @@ SEXP Csparse_subassign(SEXP x, SEXP i_, SEXP j_, SEXP value)
     Free(rx);
 #endif
     Free(ri);
-    UNPROTECT(4);
+    UNPROTECT(5);
     return ans;
 }
 
