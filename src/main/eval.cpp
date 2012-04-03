@@ -3771,7 +3771,7 @@ RObject* ByteCode::interpret(ByteCode* bcode, Environment* rho)
 	    const BuiltInFunction* func = static_cast<BuiltInFunction*>(fun);
 	    const Expression* callx = SEXP_downcast<Expression*>(call);
 	    Environment* env = SEXP_downcast<Environment*>(rho);
-	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
+	    ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::EVALUATED);
 	    value = func->apply(&arglist, env, callx);
 	}
 	s_nodestack->pop(2);

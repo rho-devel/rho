@@ -117,12 +117,12 @@ RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
     GCStackRoot<> ans;
     if (m_transparent) {
 	PlainContext cntxt;
-	if (sexptype() == BUILTINSXP)
+	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
 	ans = invoke(env, arglist, call);
     } else {
 	FunctionContext cntxt(const_cast<Expression*>(call), env, this);
-	if (sexptype() == BUILTINSXP)
+	if (arglist->status() != ArgList::EVALUATED && sexptype() == BUILTINSXP)
 	    arglist->evaluate(env);
 	ans = invoke(env, arglist, call);
     }
