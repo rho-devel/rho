@@ -61,13 +61,13 @@
 #include "CXXR/ByteCode.hpp"
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/LoopBailout.hpp"
 #include "CXXR/LoopException.hpp"
 #include "CXXR/PlainContext.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/ReturnException.hpp"
 #include "CXXR/S3Launcher.hpp"
-#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -530,7 +530,7 @@ SEXP R_execMethod(SEXP op, SEXP rho)
 
     // create a new environment frame enclosed by the lexical
     // environment of the method
-    GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
     GCStackRoot<Environment>
 	newrho(CXXR_NEW(Environment(func->environment(), newframe)));
     Frame* tof = newrho->frame();
@@ -1775,7 +1775,7 @@ int Rf_DispatchOrEval(SEXP call, SEXP op, const char *generic, SEXP args,
 	       triggered (by something very obscure, but still).
 	       Hence here and in the other Rf_usemethod() uses below a
 	       new environment rho1 is created and used.  LT */
-	    GCStackRoot<Frame> frame(CXXR_NEW(VectorFrame));
+	    GCStackRoot<Frame> frame(CXXR_NEW(ListFrame));
 	    Environment* working_env = CXXR_NEW(Environment(callenv, frame));
 	    ClosureContext cntxt(callx, callenv, func,
 				 working_env, arglist.list());
@@ -1915,7 +1915,7 @@ int Rf_DispatchGroup(const char* group, SEXP call, SEXP op, SEXP args, SEXP rho,
 
     /* we either have a group method or a class method */
 
-    GCStackRoot<Frame> supp_frame(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> supp_frame(CXXR_NEW(ListFrame));
     // Set up special method bindings:
     m->addMethodBindings(supp_frame);
 

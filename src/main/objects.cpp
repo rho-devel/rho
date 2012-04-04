@@ -51,9 +51,9 @@
 #include "CXXR/ClosureContext.hpp"
 #include "CXXR/DottedArgs.hpp"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/ReturnBailout.hpp"
 #include "CXXR/S3Launcher.hpp"
-#include "CXXR/VectorFrame.hpp"
 
 using namespace CXXR;
 
@@ -241,7 +241,7 @@ int Rf_usemethod(const char *generic, SEXP obj, SEXP call, SEXP,
 
     // Create a new frame without any of the formals to the
     // generic in it:
-    GCStackRoot<Frame> newframe(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> newframe(CXXR_NEW(ListFrame));
     if (op->sexptype() == CLOSXP) {
 	Closure* clos = static_cast<Closure*>(op);
 	const Environment* generic_wk_env = cptr->workingEnvironment();
@@ -288,7 +288,7 @@ SEXP attribute_hidden do_usemethod(SEXP call, SEXP op, SEXP args, SEXP env)
 	static Symbol* objectsym(Symbol::obtain("object"));
 	static GCRoot<ArgMatcher>
 	    matcher(ArgMatcher::make(genericsym, objectsym));
-	GCStackRoot<Frame> matchframe(CXXR_NEW(VectorFrame));
+	GCStackRoot<Frame> matchframe(CXXR_NEW(ListFrame));
 	GCStackRoot<Environment>
 	    matchenv(CXXR_NEW(Environment(0, matchframe)));
 	ArgList arglist(SEXP_downcast<PairList*>(args), ArgList::RAW);
@@ -732,7 +732,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     }
 
     // Set up special method bindings:
-    GCStackRoot<Frame> method_bindings(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> method_bindings(CXXR_NEW(ListFrame));
     {
 	if (klass) {
 	    size_t sz = klass->size() - nextidx;

@@ -47,9 +47,9 @@
 #include "R_ext/Error.h"
 #include "localization.h"
 #include "CXXR/FunctionBase.h"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/StdFrame.hpp"
 #include "CXXR/Symbol.h"
-#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -174,7 +174,7 @@ void Environment::initialize()
     // Symbols at load factor 0.5.
     s_cache = new Cache(509);
     s_cache->max_load_factor(0.5);
-    GCStackRoot<Frame> empty_frame(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> empty_frame(CXXR_NEW(ListFrame));
     static GCRoot<Environment> empty_env(CXXR_NEW(Environment(0, empty_frame)));
     R_EmptyEnv = empty_env.get();
     GCStackRoot<Frame> base_frame(CXXR_NEW(StdFrame));

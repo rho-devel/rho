@@ -39,9 +39,9 @@
 
 #include "CXXR/CachedString.h"
 #include "CXXR/GCStackRoot.hpp"
+#include "CXXR/ListFrame.hpp"
 #include "CXXR/PairList.h"
 #include "CXXR/Symbol.h"
-#include "CXXR/VectorFrame.hpp"
 
 using namespace std;
 using namespace CXXR;
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
     ptr_R_WriteConsoleEx = WriteConsoleEx;
     Rf_InitOptions();
     // Set up Environments:
-    GCStackRoot<Frame> ff(CXXR_NEW(VectorFrame));
+    GCStackRoot<Frame> ff(CXXR_NEW(ListFrame));
     GCStackRoot<Environment> fenvrt(CXXR_NEW(Environment(0, ff)));
     fenv = fenvrt;
     // Process formals:

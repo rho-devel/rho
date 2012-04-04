@@ -41,7 +41,7 @@ SOURCES_CXX = \
         GCEdge.cpp GCManager.cpp GCNode.cpp GCRoot.cpp GCStackRoot.cpp \
 	HeterogeneousList.cpp \
         inspect.cpp IntVector.cpp \
-	ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
+	ListFrame.cpp ListVector.cpp LogicalVector.cpp LoopBailout.cpp \
 	MemoryBank.cpp \
 	NodeStack.cpp \
         PairList.cpp Promise.cpp ProtectStack.cpp \
@@ -50,7 +50,7 @@ SOURCES_CXX = \
         S3Launcher.cpp S4Object.cpp SEXP_downcast.cpp StdFrame.cpp \
         String.cpp StringVector.cpp Subscripting.cpp Symbol.cpp \
 	UnaryFunction.cpp UncachedString.cpp \
-        VectorBase.cpp VectorFrame.cpp \
+        VectorBase.cpp \
         WeakRef.cpp \
 	apply.cpp agrep.cpp arithmetic.cpp array.cpp attrib.cpp \
 	base.cpp bind.cpp builtin.cpp \
