@@ -42,6 +42,8 @@
 #define RPROMISE_H
 
 #include "CXXR/RObject.h"
+// Just to pick up define of BYTECODE:
+#include "CXXR/Evaluator.h"
 
 #ifdef __cplusplus
 
@@ -292,6 +294,17 @@ extern "C" {
      * @todo Replace this with a method call to evaluate the promise.
      */
     void SET_PRVALUE(SEXP x, SEXP v);
+
+    // PREXPR() behaves similarly to valueGenerator(), but has special
+    // (but apparently undocumented) behaviour if m_valgen (PRCODE) is
+    // bytecode.  My guess is that if the bytecode evaluates to a
+    // symbol, PREXPR returns that symbol, otherwise R_NilValue.
+#ifdef BYTECODE
+    SEXP R_PromiseExpr(SEXP);
+#define PREXPR(e) R_PromiseExpr(e)
+#else
+#define PREXPR(e) PRCODE(e)
+#endif
 
 #ifdef __cplusplus
 }

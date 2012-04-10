@@ -139,10 +139,8 @@ void ArgMatcher::unusedArgsError(const SuppliedList& supplied_list)
 	 rit != supplied_list.rend(); ++rit) {
 	const SuppliedData& supplied_data = *rit;
 	RObject* value = supplied_data.value;
-	if (value->sexptype() == PROMSXP) {
-	    Promise* prom = static_cast<Promise*>(value);
-	    value = const_cast<RObject*>(prom->valueGenerator());
-	}
+	if (value->sexptype() == PROMSXP)
+	    value = const_cast<RObject*>(PREXPR(value));
 	unused_list = PairList::cons(value, unused_list, supplied_data.tag);
     }
     // Prepare error message:

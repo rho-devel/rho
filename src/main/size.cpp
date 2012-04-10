@@ -42,6 +42,7 @@
 #endif
 
 #include "Defn.h"
+#include "CXXR/ByteCode.hpp"
 #include "CXXR/GCStackRoot.hpp"
 
 using namespace CXXR;
@@ -72,11 +73,17 @@ static R_size_t objectsize(SEXP s)
 	break;
     case LISTSXP:
     case LANGSXP:
-    case BCODESXP:
 	cnt += objectsize(TAG(s));
 	cnt += objectsize(CAR(s));
 	cnt += objectsize(CDR(s));
 	break;
+    case BCODESXP:
+	{
+	    ByteCode* bc = SEXP_downcast<ByteCode*>(s);
+	    cnt += objectsize(bc->code());
+	    cnt += objectsize(bc->constants());
+	    break;
+	}
     case CLOSXP:
 	cnt += objectsize(FORMALS(s));
 	cnt += objectsize(BODY(s));

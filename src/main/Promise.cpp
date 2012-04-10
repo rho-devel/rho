@@ -100,24 +100,26 @@ bool Promise::isMissingSymbol() const
     if (m_value == Symbol::missingArgument())
      	return true;
     */
-    if (m_value == Symbol::unboundValue()
-	&& m_valgen && m_valgen->sexptype() == SYMSXP) {
-	// According to Luke Tierney's comment to R_isMissing() in CR,
-	// if a cycle is found then a missing argument has been
-	// encountered, so the return value is true.
-	if (m_under_evaluation)
-	    return true;
-	try {
-	    const Symbol* promsym
-		= static_cast<const Symbol*>(valueGenerator());
-	    m_under_evaluation = true;
-	    ans = isMissingArgument(promsym, environment()->frame());
-	}
-	catch (...) {
+    if (m_value == Symbol::unboundValue() && m_valgen) {
+	RObject* prexpr = PREXPR(const_cast<Promise*>(this));
+	if (prexpr->sexptype() == SYMSXP) {
+	    // According to Luke Tierney's comment to R_isMissing() in CR,
+	    // if a cycle is found then a missing argument has been
+	    // encountered, so the return value is true.
+	    if (m_under_evaluation)
+		return true;
+	    try {
+		const Symbol* promsym
+		    = static_cast<const Symbol*>(prexpr);
+		m_under_evaluation = true;
+		ans = isMissingArgument(promsym, environment()->frame());
+	    }
+	    catch (...) {
+		m_under_evaluation = false;
+		throw;
+	    }
 	    m_under_evaluation = false;
-	    throw;
 	}
-	m_under_evaluation = false;
     }
     return ans;
 }

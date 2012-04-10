@@ -439,13 +439,10 @@ SEXP R_WeakRefValue(SEXP w);
 void R_RunWeakRefFinalizer(SEXP w);
 
 #ifdef BYTECODE
-SEXP R_PromiseExpr(SEXP);
 SEXP R_ClosureExpr(SEXP);
 void R_initialize_bcode(void);
-#define PREXPR(e) R_PromiseExpr(e)
 #define BODY_EXPR(e) R_ClosureExpr(e)
 #else
-#define PREXPR(e) PRCODE(e)
 #define BODY_EXPR(e) BODY(e)
 #endif
 
