@@ -116,6 +116,8 @@ except <- c("call", "switch", ".C", ".Fortran", ".Call", ".External",
             ".Call.graphics", ".External.graphics", ".subset", ".subset2",
             ".primTrace", ".primUntrace", "lazyLoadDBfetch",
             ".Internal", ".Primitive", "^", "|", "%*%", "rep", "seq.int",
+            ## not implemented in CXXR:
+            "gc.time",
             ## these may not be enabled
             "tracemem", "retracemem", "untracemem")
 

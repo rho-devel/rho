@@ -124,7 +124,9 @@ unsigned int String::packGPBits() const
 bool CXXR::isASCII(const std::string& str)
 {
     using namespace boost::lambda;
+    // Beware of the iterator dereferencing to a *signed* char, hence
+    // the bitwise test:
     std::string::const_iterator it
-	= std::find_if(str.begin(), str.end(), _1 > 0x7F);
+	= std::find_if(str.begin(), str.end(), _1 & 0x80);
     return it == str.end();
 }

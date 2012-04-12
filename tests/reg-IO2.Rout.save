@@ -83,7 +83,7 @@ In read.table("foo3", header = TRUE, col.names = letters[1:4]) :
 1    2
 3    4
 Warning message:
-In lines <- .Internal(readTableHead(file, nlines, comment.char,  :
+In read.table("foo4", header = TRUE) :
   incomplete final line found by readTableHeader on 'foo4'
 > unlink("foo4")
 > 
