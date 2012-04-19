@@ -1,3 +1,5 @@
+#include <cstdio>
+
 #include "CXXR/Parentage.hpp"
 #include "CXXR/Provenance.hpp"
 

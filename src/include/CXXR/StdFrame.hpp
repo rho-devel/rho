@@ -46,12 +46,12 @@
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/split_member.hpp>
+#include <boost/serialization/unordered_map.hpp>
 #include <tr1/unordered_map>
 #include "CXXR/Allocator.hpp"
 #include "CXXR/BSerializer.hpp"
 #include "CXXR/Frame.hpp"
 #include "CXXR/Symbol_serialization.hpp"
-#include "serialization/unordered_map.hpp"
 
 namespace CXXR {
     /** @brief General-purpose implementation of CXXR::Frame.

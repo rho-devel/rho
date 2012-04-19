@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <cstdio>
 #include <ctime>
 #include <set>
 #include "CXXR/Provenance.hpp"
