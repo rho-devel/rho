@@ -46,6 +46,7 @@
 
 #ifdef __cplusplus
 
+#include <map>
 #include "CXXR/ArgList.hpp"
 #include "CXXR/Environment.h"
 #include "CXXR/Expression.h"
@@ -127,18 +128,6 @@ namespace CXXR {
 	    PREC_SUBSET	 = 17
 	};
 
-	/** @brief Constructor.
-	 *
-	 * @param offset The required table offset.  (Not
-	 *          range-checked in any way.)  Whether the
-	 *          constructed object is a BUILTINSXP or a SPECIALSXP
-	 *          is determined from the table entry.
-	 *
-	 * @todo This constructor ought really to be private, but is
-	 * currently used by deserialization code.
-	 */
-	BuiltInFunction(unsigned int offset);
-
 	/** @brief 'Arity' of the function.
 	 *
 	 * @return The number of arguments expected by the function.
@@ -175,19 +164,6 @@ namespace CXXR {
 	    return m_function;
 	}
 
-	/** @brief Find a built-in function within the function table.
-	 *
-	 * @param name Name of the sought built-in function.
-	 *
-	 * @return Index (counting from 0) of the function within the
-	 * table, or -1 if there is no built-in function with the
-	 * given name.
-	 *
-	 * @deprecated Function table details ought not to be exposed
-	 * outside the class.
-	 */
-	static int indexInTable(const char* name);
-
 	/** @brief Kind of built-in function.
 	 *
 	 * (Used mainly in deparsing.)
@@ -207,6 +183,28 @@ namespace CXXR {
 	{
 	    return s_function_table[m_offset].name;
 	}
+
+	/** @brief Get a pointer to a BuiltInFunction object.
+	 *
+	 * If \a name is not the name of a built-in function this
+	 * function will raise a warning and return a null pointer.
+	 * Otherwise the function will return a pointer to the
+	 * (unique) BuiltInFunction object embodying that function.
+	 * If no such object already exists, one will be created.
+	 *
+	 * @param name The name of the built-in function.
+	 *
+	 * @return a pointer to the BuiltInFunction object
+	 * representing the function with the specified \a name, or a
+	 * null pointer if \a name is not the name of a built-in
+	 * function.
+	 *
+	 * @note The reason this function raises a warning and not an
+	 * error if passed an inappropriate \a name is so that loading
+	 * an archive will not fail completely simply because it
+	 * refers to an obsolete built-in function.
+	 */
+	static BuiltInFunction* obtain(const std::string& name);
 
 	/** @brief Get table offset.
 	 *
@@ -316,6 +314,11 @@ namespace CXXR {
 	// Actually an array:
 	static TableEntry* s_function_table;
 
+	// Mapping from function names to pointers to BuiltInFunction
+	// objects:
+	typedef std::map<std::string, BuiltInFunction*> map;
+	static map* s_cache;
+
 	unsigned int m_offset;
 	CCODE m_function;
 	ResultPrintingMode m_result_printing_mode;
@@ -323,8 +326,30 @@ namespace CXXR {
 			     // FunctionContext when this function is
 			     // applied.
 
-	static void cleanup()
-	{}
+	/** @brief Constructor.
+	 *
+	 * @param offset The required table offset.  (Not
+	 *          range-checked in any way.)  Whether the
+	 *          constructed object is a BUILTINSXP or a SPECIALSXP
+	 *          is determined from the table entry.
+	 */
+	BuiltInFunction(unsigned int offset);
+
+	// Declared private to ensure that BuiltInFunction objects are
+	// allocated only using 'new'.
+	~BuiltInFunction();
+
+	static void cleanup();
+
+	/** @brief Find a built-in function within the function table.
+	 *
+	 * @param name Name of the sought built-in function.
+	 *
+	 * @return Index (counting from 0) of the function within the
+	 * table, or -1 if there is no built-in function with the
+	 * given name.
+	 */
+	static int indexInTable(const char* name);
 
 	// Put primitive functions into the base environment, and
 	// internal functions into the DotInternalTable:

@@ -64,6 +64,7 @@ namespace CXXR {
 }
 
 BuiltInFunction::TableEntry* BuiltInFunction::s_function_table = 0;
+BuiltInFunction::map* BuiltInFunction::s_cache = 0;
 
 // BuiltInFunction::apply() creates a FunctionContext only if
 // m_transparent is false.  This affects the location at which
@@ -103,6 +104,13 @@ BuiltInFunction::BuiltInFunction(unsigned int offset)
 		     || m_function == do_repeat
 		     || m_function == do_return
 		     || m_function == do_while);
+}
+
+BuiltInFunction::~BuiltInFunction()
+{
+    // During program exit, s_cache may already have been deleted:
+    if (s_cache)
+	s_cache->erase(name());
 }
 
 RObject* BuiltInFunction::apply(ArgList* arglist, Environment* env,
@@ -153,6 +161,13 @@ void BuiltInFunction::checkNumArgs(const PairList* args,
     }
 }
 
+void BuiltInFunction::cleanup()
+{
+    // Clearing s_cache avoids valgrind 'possibly lost' reports on exit:
+    s_cache->clear();
+    s_cache = 0;
+}
+
 int BuiltInFunction::indexInTable(const char* name)
 {
     for (int i = 0; s_function_table[i].name; ++i)
@@ -162,6 +177,29 @@ int BuiltInFunction::indexInTable(const char* name)
 }
 
 // BuiltInFunction::initialize() is in names.cpp
+
+BuiltInFunction* BuiltInFunction::obtain(const std::string& name)
+{
+    int offset = indexInTable(name.c_str());
+    if (offset < 0) {
+	Rf_warning(_("%s is not the name of a built-in or special function"),
+		   name.c_str());
+	return 0;
+    }
+    std::pair<map::iterator, bool> pr
+	= s_cache->insert(map::value_type(name, 0));
+    map::iterator it = pr.first;
+    if (pr.second) {
+	try {
+	    map::value_type& val = *it;
+	    val.second = CXXR_NEW(BuiltInFunction(offset));
+	} catch (...) {
+	    s_cache->erase(it);
+	    throw;
+	}
+    }
+    return (*it).second;
+}
 
 const char* BuiltInFunction::typeName() const
 {

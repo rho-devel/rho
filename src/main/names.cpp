@@ -103,6 +103,9 @@ using namespace CXXR;
 
 void BuiltInFunction::initialize()
 {
+    static map the_map;
+    s_cache = &the_map;
+
     static TableEntry function_table[] = {
 	// Now begins the function table, deliberately retaining CR's indentation:
 
@@ -1069,10 +1072,7 @@ void BuiltInFunction::initialize()
 
 SEXP attribute_hidden R_Primitive(const char *primname)
 {
-    int index = BuiltInFunction::indexInTable(primname);
-    if (index < 0)
-	return 0;
-    return CXXR_NEW(BuiltInFunction(index));
+    return BuiltInFunction::obtain(primname);
 }
     
 SEXP attribute_hidden do_primitive(SEXP call, SEXP op, SEXP args, SEXP env)
